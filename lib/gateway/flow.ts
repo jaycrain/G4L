@@ -63,16 +63,24 @@ export async function runOnboarding(
   };
   const identityParagraph = await provider.composeIdentityParagraph(input);
 
-  const { rows } = await db.query<{ member_id: string }>(
-    `insert into member_profile
-       (display_name, email, named_door, identity_noun, identity_paragraph,
-        intake_athletic_past, intake_gap, intake_right_now, reclaim_list, ai_consent_granted_at)
-     values ($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb, now())
-     returning member_id`,
-    [input.displayName, f.email.trim(), door, input.identityNoun.toUpperCase(), identityParagraph,
-     input.athleticPast, input.gap, input.rightNow, JSON.stringify(f.reclaimList)],
-  );
-  return { ok: true, memberId: rows[0]!.member_id };
+  try {
+    const { rows } = await db.query<{ member_id: string }>(
+      `insert into member_profile
+         (display_name, email, named_door, identity_noun, identity_paragraph,
+          intake_athletic_past, intake_gap, intake_right_now, reclaim_list, ai_consent_granted_at)
+       values ($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb, now())
+       returning member_id`,
+      [input.displayName, f.email.trim(), door, input.identityNoun.toUpperCase(), identityParagraph,
+       input.athleticPast, input.gap, input.rightNow, JSON.stringify(f.reclaimList)],
+    );
+    return { ok: true, memberId: rows[0]!.member_id };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    if ((e as { code?: string })?.code === '23505' || /duplicate key|member_profile_email_active/i.test(msg)) {
+      return { ok: false, errors: ['An account with that email already exists. Try a different email.'] };
+    }
+    throw e;
+  }
 }
 
 // --- IDQ submission ---------------------------------------------------------------------

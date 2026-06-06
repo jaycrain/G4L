@@ -12,6 +12,7 @@
     "start": "next start",
     "test": "node --experimental-strip-types --test tests/*.test.ts",
     "db:verify": "node --experimental-strip-types scripts/db/verify.ts",
+    "db:reset": "rm -rf .pglite && echo 'local dev DB wiped — restart the dev server to recreate it'",
     "agent:check": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/agent/check.ts",
     "typecheck": "tsc --noEmit"
   },

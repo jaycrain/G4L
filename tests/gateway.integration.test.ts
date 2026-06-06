@@ -91,6 +91,21 @@ test('crisis language in intake halts onboarding and routes to 988', async () =>
   assert.equal(n, 0);
 });
 
+test('re-onboarding the same email returns a friendly error, not a crash', async () => {
+  const db = await freshDb();
+  const first = await runOnboarding(db, scriptedProvider, validOnboarding);
+  assert.equal(first.ok, true);
+
+  const second = await runOnboarding(db, scriptedProvider, validOnboarding);
+  assert.equal(second.ok, false);
+  if (second.ok) return;
+  assert.match((second as { errors: string[] }).errors.join(' '), /already exists/i);
+
+  // a different email still works
+  const third = await runOnboarding(db, scriptedProvider, { ...validOnboarding, email: 'tom2@example.com' });
+  assert.equal(third.ok, true);
+});
+
 test('onboarding rejects a Reclaim List that is not exactly 7', async () => {
   const db = await freshDb();
   const res = await runOnboarding(db, scriptedProvider, {
