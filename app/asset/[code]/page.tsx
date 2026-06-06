@@ -1,4 +1,4 @@
-import { getDb } from '../../../lib/db/pglite.ts';
+import { getDb } from '../../../lib/db/index.ts';
 import { getAssetDefinition } from '../../../lib/assets/definitions.ts';
 import { assignVariant } from '../../../lib/assets/variant.ts';
 import { startAsset } from '../../../lib/assets/engine.ts';

@@ -1,6 +1,6 @@
 'use server';
 
-import { getDb } from '../../lib/db/pglite.ts';
+import { getDb } from '../../lib/db/index.ts';
 import { getProvider } from '../../lib/agent/provider.ts';
 import { runOnboarding } from '../../lib/gateway/flow.ts';
 import {

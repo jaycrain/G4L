@@ -1,6 +1,6 @@
 'use server';
 
-import { getDb } from '../../lib/db/pglite.ts';
+import { getDb } from '../../lib/db/index.ts';
 import { submitIdq } from '../../lib/gateway/flow.ts';
 import type { Db } from '../../lib/db/schema.ts';
 

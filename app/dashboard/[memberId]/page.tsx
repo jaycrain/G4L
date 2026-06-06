@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { getDb } from '../../../lib/db/pglite.ts';
+import { getDb } from '../../../lib/db/index.ts';
 import { getDashboard } from '../../../lib/gateway/flow.ts';
 import { completedCodes } from '../../../lib/assets/engine.ts';
 import { recommendedNext, assetStatus, ASSET_ORDER, GATES, type AssetStatus } from '../../../lib/assets/gating.ts';

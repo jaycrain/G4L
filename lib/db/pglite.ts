@@ -1,28 +1,18 @@
 // Local development database — a persisted, in-process Postgres (pglite). No Docker, no
-// hosted account needed. This is the LOCAL data layer; production swaps this module for the
-// hosted Supabase Postgres (same SQL, same Db interface). Server-only.
-//
-// Singleton across Next.js hot reloads via globalThis so we keep one connection on the
-// persisted data dir (.pglite/, gitignored).
+// hosted account. Used when DATABASE_URL is NOT set. Production uses the Postgres adapter
+// (lib/db/postgres.ts) against hosted Supabase. Both expose the same Db interface.
 
 import { PGlite } from '@electric-sql/pglite';
 import { ensureSchema, type Db } from './schema.ts';
 
 const DATA_DIR = '.pglite';
 
-declare global {
-  // eslint-disable-next-line no-var
-  var __g4l_db__: Promise<PGlite> | undefined;
-}
-
-async function init(): Promise<PGlite> {
+/** Create the local pglite Db and ensure the schema is applied (runtime migrations are fine
+ *  locally; in production migrations are applied out-of-band via `npm run db:migrate`). */
+export async function getPgliteDb(): Promise<Db> {
   const db = new PGlite(DATA_DIR);
   await db.waitReady;
-  await ensureSchema(db as unknown as Db);
-  return db;
-}
-
-export function getDb(): Promise<PGlite> {
-  if (!globalThis.__g4l_db__) globalThis.__g4l_db__ = init();
-  return globalThis.__g4l_db__;
+  const handle = db as unknown as Db;
+  await ensureSchema(handle);
+  return handle;
 }

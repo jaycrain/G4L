@@ -43,7 +43,7 @@ export function normalizeIdScore(raw: number): number {
 }
 
 function dimensionRaw(responses: IdqResponses, dimension: Dimension): number {
-  return DIMENSION_ITEM_INDICES[dimension].reduce((sum, idx) => sum + responses[idx], 0);
+  return DIMENSION_ITEM_INDICES[dimension].reduce((sum, idx) => sum + (responses[idx] ?? 0), 0);
 }
 
 /** Score a validated 24-item response set. Throws on invalid input — validate upstream. */

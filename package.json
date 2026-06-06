@@ -13,6 +13,8 @@
     "test": "node --experimental-strip-types --test tests/*.test.ts",
     "db:verify": "node --experimental-strip-types scripts/db/verify.ts",
     "db:reset": "rm -rf .pglite && echo 'local dev DB wiped — restart the dev server to recreate it'",
+    "db:migrate": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/db/migrate.ts",
+    "db:seed-demo": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/db/seed-demo.ts",
     "agent:check": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/agent/check.ts",
     "typecheck": "tsc --noEmit"
   },
@@ -20,6 +22,7 @@
     "@anthropic-ai/sdk": "^0.40.0",
     "@supabase/supabase-js": "^2.45.0",
     "next": "^15.1.0",
+    "postgres": "^3.4.5",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "zod": "^3.23.0"
