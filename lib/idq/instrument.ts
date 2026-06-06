@@ -24,6 +24,52 @@ export const DIMENSION_ITEM_INDICES: Record<Dimension, readonly number[]> = {
 export type LikertValue = 1 | 2 | 3 | 4 | 5;
 export type IdqResponses = number[]; // length 24, each LIKERT_MIN..LIKERT_MAX
 
+// PLACEHOLDER item stems — readable draft wording so the conversational IDQ has something to
+// present. The real G4L-native instrument (authored from self-discrepancy theory, finalized
+// with Greg + Legal — CONTRACTS §1) drops in here; the structure/scoring around it is locked.
+export const PLACEHOLDER_ITEM_STEMS: Record<Dimension, readonly string[]> = {
+  physical: [
+    'I have the energy to do the physical things that matter to me.',
+    'My body can keep up with what my day asks of it.',
+    "I take care of my physical health in ways I'm glad about.",
+    'I feel strong enough for the life I want.',
+    'I trust my body to show up when I need it.',
+    'I recover well after physical effort.',
+  ],
+  self: [
+    'I recognize myself in how I spend my days.',
+    'My choices reflect who I actually am.',
+    'I feel like the author of my own life.',
+    'I know what I stand for right now.',
+    'I act in line with what matters to me.',
+    'I feel like myself most of the time.',
+  ],
+  social: [
+    'I feel genuinely connected to the people who matter to me.',
+    'There are people I can be fully honest with.',
+    'I feel like I belong somewhere.',
+    'I feel seen by the people around me.',
+    'I have relationships that give as much as they take.',
+    "I don't feel alone in what I'm going through.",
+  ],
+  outlook: [
+    "I'm hopeful about what's ahead.",
+    'I believe I can grow from where I am.',
+    "I have things I'm genuinely looking forward to.",
+    'I feel capable of meeting what comes.',
+    'I have a sense of purpose right now.',
+    'I expect good things from the months ahead.',
+  ],
+};
+
+export function dimensionForIndex(i: number): Dimension {
+  return DIMENSIONS[Math.floor(i / ITEMS_PER_DIMENSION)]!;
+}
+
+export function itemStem(i: number): string {
+  return PLACEHOLDER_ITEM_STEMS[dimensionForIndex(i)]![i % ITEMS_PER_DIMENSION]!;
+}
+
 export type ValidationResult = { ok: true } | { ok: false; errors: string[] };
 
 /** Validate a raw 24-item IDQ response set: correct length, integers within Likert range. */

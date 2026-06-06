@@ -1,4 +1,4 @@
-import IdqForm from './idq-form.tsx';
+import IdqChat from './idq-chat.tsx';
 
 export default async function IdqPage({
   searchParams,
@@ -9,5 +9,5 @@ export default async function IdqPage({
   if (!member) {
     return <p className="error">No member in context. Start at the beginning.</p>;
   }
-  return <IdqForm memberId={member} />;
+  return <IdqChat memberId={member} />;
 }
