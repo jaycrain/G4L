@@ -62,7 +62,9 @@ function anthropicProvider(): AgentProvider {
               `from this intake. Name their Door and propose THE ${i.identityNoun.toUpperCase()} ` +
               'as the identity to reclaim. No metrics, no praise.\n\n' +
               `Athletic past: ${i.athleticPast}\nThe gap (${i.doorDisplayName}): ${i.gap}\n` +
-              `Right now: ${i.rightNow}`,
+              `Right now: ${i.rightNow}\n\n` +
+              'Output ONLY the paragraph itself — plain text, second person ("you"). ' +
+              'No preamble, no heading, no labels, no markdown, no quotation marks.',
           },
         ],
       });
