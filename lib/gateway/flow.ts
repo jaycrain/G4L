@@ -71,7 +71,7 @@ export async function runOnboarding(
        values ($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb, now())
        returning member_id`,
       [input.displayName, f.email.trim(), door, input.identityNoun.toUpperCase(), identityParagraph,
-       input.athleticPast, input.gap, input.rightNow, JSON.stringify(f.reclaimList)],
+       input.athleticPast, input.gap, input.rightNow, f.reclaimList],
     );
     return { ok: true, memberId: rows[0]!.member_id };
   } catch (e) {
@@ -110,7 +110,7 @@ export async function submitIdq(db: Db, memberId: string, responses: number[]): 
         physical_score, self_score, social_score, outlook_score, id_score_raw, id_score,
         delta_from_baseline, delta_from_previous, direction)
      values ($1,1,$2,$3::jsonb,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
-    [memberId, sequenceNo, JSON.stringify(responses),
+    [memberId, sequenceNo, responses,
      score.dimensions.physical, score.dimensions.self, score.dimensions.social, score.dimensions.outlook,
      score.idScoreRaw, score.idScore,
      movement.deltaFromBaseline, movement.deltaFromPrevious, movement.direction],

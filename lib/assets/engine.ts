@@ -14,7 +14,7 @@ async function emitEvent(
   await db.query(
     `insert into asset_event (member_id, asset_code, event_type, time_on_asset_ms, drop_off_point, variant, payload)
      values ($1,$2,$3,$4,$5,$6,$7::jsonb)`,
-    [p.memberId, p.code, p.type, p.timeMs ?? null, p.point ?? null, p.variant ?? null, JSON.stringify(p.payload ?? {})],
+    [p.memberId, p.code, p.type, p.timeMs ?? null, p.point ?? null, p.variant ?? null, p.payload ?? {}],
   );
 }
 
@@ -47,7 +47,7 @@ export async function completeAsset(
      on conflict (member_id, cycle_indicator, asset_code) do update
        set variant = excluded.variant, asset_version = excluded.asset_version,
            outputs = excluded.outputs, reflection = excluded.reflection, completed_at = now()`,
-    [p.memberId, p.code, p.variant ?? null, p.version, JSON.stringify(p.outputs ?? {}), p.reflection ?? null],
+    [p.memberId, p.code, p.variant ?? null, p.version, p.outputs ?? {}, p.reflection ?? null],
   );
   await emitEvent(db, { memberId: p.memberId, code: p.code, type: 'completed', variant: p.variant, timeMs: p.timeMs });
   return { ok: true };

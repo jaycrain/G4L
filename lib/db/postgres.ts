@@ -12,7 +12,7 @@ let client: ReturnType<typeof postgres> | undefined;
 
 function getClient() {
   if (!client) {
-    client = postgres(process.env.DATABASE_URL!, { prepare: false });
+    client = postgres(process.env.DATABASE_URL!, { prepare: false, ssl: 'require' });
   }
   return client;
 }
