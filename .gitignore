@@ -1,0 +1,32 @@
+# Secrets — NEVER commit (AI Governance + CLAUDE.md: no keys, no member data)
+.env
+.env.*
+!.env.example
+*.pem
+secrets/
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+dist/
+build/
+*.tsbuildinfo
+npm-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Supabase local
+.supabase/
+supabase/.temp/
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Local data / scratch — never let member data into the repo
+/tmp/
+*.local.*
+member-data/
