@@ -16,7 +16,7 @@
 -- at the bottom. Single public tenant only for the charter MVP.
 -- ============================================================================
 
-create extension if not exists pgcrypto;  -- gen_random_uuid()
+-- gen_random_uuid() is built into Postgres core since v13 — no extension needed.
 
 -- updated_at touch trigger -----------------------------------------------------
 create or replace function set_updated_at()
