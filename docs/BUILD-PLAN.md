@@ -6,9 +6,23 @@ slices (CLAUDE.md: plan the shape, review, then build).
 
 ## Where we are now
 
-✅ **Step 0 — Scaffold + schema (this commit).** Repo, `CLAUDE.md` at root, source docs in
-`docs/source/`, locked contracts in `docs/CONTRACTS.md`, and the **Gateway database schema**
-(`supabase/migrations/0001` + seed). No application code yet — shape up for review.
+✅ **Step 0 — Scaffold + schema.** Repo, `CLAUDE.md` at root, source docs in `docs/source/`,
+locked contracts in `docs/CONTRACTS.md`, and the **Gateway database schema**
+(`supabase/migrations/0001` + seed).
+
+✅ **Step 1a — Gateway logic core (verified, 21 tests green).** Pure, framework-free modules
+with `node --test` coverage — no DB or API needed to run them (`npm test`):
+- `lib/idq/instrument.ts` — 24-item / 4-dimension structure + response validation
+- `lib/idq/scoring.ts` — dimension sums, ID Score raw→normalized (0–100), deltas, direction (no bands)
+- `lib/agent/governance.ts` — AI disclosure, 988 crisis detection, prohibitions, compliant score presentation
+- `lib/member/reclaim.ts` — Reclaim-List (exactly 7) + Door validation (frozen contract)
+- `lib/doors.ts` — the canonical 8 Doors
+- `lib/agent/system-prompt.ts` — Member Agent Layer 1, composed from the governance source
+- Project foundation: `package.json`, `tsconfig.json`, `next.config.mjs`
+
+⏭ **Step 1b — runtime + UI (needs `npm install` + Supabase project + Anthropic key).** The
+provider-abstraction wrapper, the conversational onboarding flow, IDQ administration, and
+dashboard-lite read. Each its own reviewable slice. Built on the verified core above.
 
 ## Charter MVP (P1, Oct 2026) — the seven pieces
 
