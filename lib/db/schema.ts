@@ -13,19 +13,28 @@ export type Db = {
 // Resolved from the project root (cwd) — stable under `next dev`, tests, and scripts alike.
 const sqlFile = (rel: string) => readFileSync(join(process.cwd(), 'supabase', rel), 'utf8');
 
-export const MIGRATION_SQL = () => sqlFile('migrations/0001_gateway_schema.sql');
+// Each migration with a sentinel table so we can apply only the ones a database is missing.
+const MIGRATIONS: Array<{ file: string; sentinel: string }> = [
+  { file: 'migrations/0001_gateway_schema.sql', sentinel: 'door' },
+  { file: 'migrations/0002_assets.sql', sentinel: 'asset_completion' },
+];
 export const SEED_SQL = () => sqlFile('seed/0001_reference_data.sql');
 
-/** Apply migration + seed unconditionally (use on a fresh database). */
+/** Apply all migrations in order + seed (use on a fresh database; tests/verify). */
 export async function applySchema(db: Db): Promise<void> {
-  await db.exec(MIGRATION_SQL());
+  for (const m of MIGRATIONS) await db.exec(sqlFile(m.file));
   await db.exec(SEED_SQL());
 }
 
-/** Apply schema only if it hasn't been applied yet (safe to call on every boot). */
+async function tableExists(db: Db, t: string): Promise<boolean> {
+  const { rows } = await db.query<{ e: boolean }>(`select to_regclass('public.${t}') is not null as e`);
+  return Boolean(rows[0]?.e);
+}
+
+/** Apply any not-yet-applied migrations, then (idempotently) re-seed. Safe on every boot. */
 export async function ensureSchema(db: Db): Promise<void> {
-  const { rows } = await db.query<{ exists: boolean }>(
-    "select to_regclass('public.door') is not null as exists",
-  );
-  if (!rows[0]?.exists) await applySchema(db);
+  for (const m of MIGRATIONS) {
+    if (!(await tableExists(db, m.sentinel))) await db.exec(sqlFile(m.file));
+  }
+  await db.exec(SEED_SQL()); // idempotent (on conflict do update)
 }

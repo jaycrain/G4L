@@ -3,9 +3,10 @@
 // the frozen-contract constraints actually fire. Uses the app's own scoreIdq so the
 // logic core and the schema are proven together. Run: `npm run db:verify`.
 
-import { readFileSync } from 'node:fs';
 import { PGlite } from '@electric-sql/pglite';
 import { scoreIdq } from '../../lib/idq/scoring.ts';
+import { applySchema, type Db } from '../../lib/db/schema.ts';
+import { completeAsset, completedCodes } from '../../lib/assets/engine.ts';
 
 let failures = 0;
 function check(name: string, pass: boolean, detail = '') {
@@ -23,12 +24,10 @@ async function expectError(name: string, fn: () => Promise<unknown>, match: RegE
 }
 
 const db = new PGlite();
-const sql = (p: string) => readFileSync(p, 'utf8');
 
-// 1. Apply migration + seed
-await db.exec(sql('supabase/migrations/0001_gateway_schema.sql'));
-await db.exec(sql('supabase/seed/0001_reference_data.sql'));
-check('migration + seed apply cleanly', true);
+// 1. Apply all migrations + seed
+await applySchema(db as unknown as Db);
+check('migrations + seed apply cleanly', true);
 
 // 2. Reference data
 const n = async (q: string) => ((await db.query<{ n: number }>(q)).rows[0]!.n);
@@ -91,6 +90,19 @@ await expectError(
   'unknown door is rejected (FK)',
   () => db.query(`insert into member_profile (display_name,email,named_door) values ('x','z@y.z','the_career')`),
   /foreign key|violates|door/i,
+);
+
+// 5. Asset engine (migration 0002)
+await completeAsset(db as unknown as Db, {
+  memberId, code: 'R-4', variant: 'a', version: '0.1-draft', outputs: { excavated: ['x'] },
+});
+check('asset_completion persists', (await n(`select count(*)::int n from asset_completion where member_id='${memberId}'`)) === 1);
+const codes = await completedCodes(db as unknown as Db, memberId);
+check('completedCodes includes R-1 (baseline IDQ) + R-4', codes.has('R-1') && codes.has('R-4'));
+await expectError(
+  'asset variant must be a or b',
+  () => db.query(`insert into asset_completion (member_id,asset_code,asset_version,variant) values ($1,'W-1','0.1-draft','c')`, [memberId]),
+  /variant_chk|check/i,
 );
 
 console.log(`\n${failures === 0 ? 'ALL CHECKS PASSED' : failures + ' CHECK(S) FAILED'}`);
