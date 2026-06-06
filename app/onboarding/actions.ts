@@ -1,37 +1,58 @@
 'use server';
 
-import { redirect } from 'next/navigation';
 import { getDb } from '../../lib/db/pglite.ts';
 import { getProvider } from '../../lib/agent/provider.ts';
-import { runOnboarding, type OnboardingFields } from '../../lib/gateway/flow.ts';
+import { runOnboarding } from '../../lib/gateway/flow.ts';
+import {
+  onboardingNextTurn,
+  collectedToFields,
+  INITIAL_STATE,
+  type ConvState,
+  type ConvMessage,
+  type Ctx,
+} from '../../lib/agent/onboarding.ts';
 import type { Db } from '../../lib/db/schema.ts';
 
-export type OnboardingState = { errors?: string[]; crisis?: string } | null;
+export type TurnInput = {
+  ctx: Ctx;
+  state: ConvState | null;
+  history: ConvMessage[];
+  memberMessage: string | null;
+};
 
-export async function onboardingAction(
-  _prev: OnboardingState,
-  formData: FormData,
-): Promise<OnboardingState> {
-  const reclaimList = Array.from({ length: 7 }, (_, i) =>
-    String(formData.get(`reclaim_${i}`) ?? '').trim(),
-  );
-  const fields: OnboardingFields = {
-    displayName: String(formData.get('displayName') ?? ''),
-    email: String(formData.get('email') ?? ''),
-    door: String(formData.get('door') ?? ''),
-    identityNoun: String(formData.get('identityNoun') ?? ''),
-    athleticPast: String(formData.get('athleticPast') ?? ''),
-    gap: String(formData.get('gap') ?? ''),
-    rightNow: String(formData.get('rightNow') ?? ''),
-    reclaimList,
-  };
+export type TurnOutput = {
+  reply: string;
+  state: ConvState;
+  complete: boolean;
+  crisis?: boolean;
+  memberId?: string;
+  errors?: string[];
+};
+
+/**
+ * One conversational onboarding turn. Runs the Member Agent (live Claude or scripted), and
+ * on completion persists the member (reusing the proven runOnboarding path) and returns the
+ * memberId so the client can move to the IDQ. State is passed round-trip from the client for
+ * this slice; production would persist a conversation session server-side.
+ */
+export async function onboardingTurn(input: TurnInput): Promise<TurnOutput> {
+  const state = input.state ?? INITIAL_STATE;
+  const turn = await onboardingNextTurn({
+    ctx: input.ctx,
+    state,
+    history: input.history,
+    memberMessage: input.memberMessage,
+  });
+
+  if (!turn.complete) {
+    return { reply: turn.reply, state: turn.state, complete: false, crisis: turn.crisis };
+  }
 
   const db = (await getDb()) as unknown as Db;
-  const res = await runOnboarding(db, getProvider(), fields);
-
+  const res = await runOnboarding(db, getProvider(), collectedToFields(input.ctx, turn.state.collected));
   if (!res.ok) {
-    if ('crisis' in res && res.crisis) return { crisis: res.message };
-    return { errors: 'errors' in res ? res.errors : ['Something went wrong.'] };
+    const errors = 'errors' in res ? res.errors : ['Could not save your intake — please try again.'];
+    return { reply: turn.reply, state: turn.state, complete: false, errors };
   }
-  redirect(`/idq?member=${res.memberId}`); // throws NEXT_REDIRECT — must stay outside try/catch
+  return { reply: turn.reply, state: turn.state, complete: true, memberId: res.memberId };
 }

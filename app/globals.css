@@ -94,6 +94,16 @@ button:hover, .btn:hover { background: var(--deep-red); }
 ul.reclaim { padding-left: 1.1rem; }
 ul.reclaim li { margin: 0.2rem 0; }
 
+/* Conversational onboarding */
+.chat { display: flex; flex-direction: column; gap: 0.6rem; margin: 1.25rem 0; }
+.bubble { padding: 0.65rem 0.95rem; border-radius: 14px; max-width: 85%; white-space: pre-wrap; }
+.bubble.agent { background: var(--grey); color: var(--charcoal); align-self: flex-start; border-bottom-left-radius: 4px; }
+.bubble.member { background: var(--navy); color: var(--white); align-self: flex-end; border-bottom-right-radius: 4px; }
+.typing { color: var(--navy); opacity: 0.6; align-self: flex-start; }
+.chat-input { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
+.chat-input input { flex: 1; margin: 0; }
+.chat-input button { margin: 0; }
+
 .likert { display: flex; gap: 0.9rem; margin: 0.3rem 0 0.9rem; }
 .likert label { display: inline-flex; align-items: center; gap: 0.3rem; margin: 0; font-weight: 400; }
 .idq-dim-head { color: var(--orange); margin-top: 1.5rem; }

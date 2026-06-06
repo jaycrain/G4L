@@ -8,6 +8,12 @@ import { PGlite } from '@electric-sql/pglite';
 import { applySchema, type Db } from '../lib/db/schema.ts';
 import { scriptedProvider } from '../lib/agent/provider.ts';
 import { runOnboarding, submitIdq, getDashboard } from '../lib/gateway/flow.ts';
+import {
+  onboardingNextTurn,
+  collectedToFields,
+  INITIAL_STATE,
+  type ConvMessage,
+} from '../lib/agent/onboarding.ts';
 
 async function freshDb(): Promise<Db> {
   const db = new PGlite();
@@ -104,6 +110,40 @@ test('re-onboarding the same email returns a friendly error, not a crash', async
   // a different email still works
   const third = await runOnboarding(db, scriptedProvider, { ...validOnboarding, email: 'tom2@example.com' });
   assert.equal(third.ok, true);
+});
+
+test('conversational onboarding drives to completion and persists end-to-end', async () => {
+  const db = await freshDb();
+  const ctx = { name: 'Reshma Patel', email: 'reshma@example.com' };
+
+  // opening (scripted path, no key in test env)
+  const open = await onboardingNextTurn({ ctx, state: INITIAL_STATE, history: [], memberMessage: null });
+  assert.match(open.reply, /guided by AI/);
+  let state = open.state;
+  const history: ConvMessage[] = [{ role: 'agent', text: open.reply }];
+  async function say(text: string) {
+    const t = await onboardingNextTurn({ ctx, state, history, memberMessage: text });
+    history.push({ role: 'member', text }, { role: 'agent', text: t.reply });
+    state = t.state;
+    return t;
+  }
+
+  await say('a marathoner who ran before dawn');
+  await say('a diagnosis stopped me cold');
+  await say('cautious, slower, unsure of my body');
+  await say('runner');
+  await say('run a 5k, sleep deep, travel, garden, call mom weekly, cook again, laugh more');
+  const last = await say('The Diagnosis');
+  assert.equal(last.complete, true);
+
+  const res = await runOnboarding(db, scriptedProvider, collectedToFields(ctx, last.state.collected));
+  assert.equal(res.ok, true);
+  if (!res.ok) return;
+
+  const dash = await getDashboard(db, res.memberId);
+  assert.equal(dash?.identityNoun, 'RUNNER');
+  assert.equal(dash?.door?.displayName, 'The Diagnosis');
+  assert.equal(dash?.reclaimList.length, 7);
 });
 
 test('onboarding rejects a Reclaim List that is not exactly 7', async () => {
