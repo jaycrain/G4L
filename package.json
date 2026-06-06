@@ -12,6 +12,7 @@
     "start": "next start",
     "test": "node --experimental-strip-types --test tests/*.test.ts",
     "db:verify": "node --experimental-strip-types scripts/db/verify.ts",
+    "agent:check": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/agent/check.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
