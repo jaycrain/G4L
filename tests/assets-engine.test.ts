@@ -8,6 +8,7 @@ import { applySchema, type Db } from '../lib/db/schema.ts';
 import { startAsset, completeAsset, dropOffAsset, completedCodes } from '../lib/assets/engine.ts';
 import { assignVariant } from '../lib/assets/variant.ts';
 import { getAssetDefinition } from '../lib/assets/definitions.ts';
+import { recommendedNext } from '../lib/assets/gating.ts';
 
 async function dbWithMember(): Promise<{ db: Db; memberId: string }> {
   const db = new PGlite() as unknown as Db;
@@ -59,6 +60,21 @@ test('drop-off telemetry is captured with a point', async () => {
   const { db, memberId } = await dbWithMember();
   await dropOffAsset(db, { memberId, code: 'B-1', point: 'step-2', timeMs: 5000 });
   assert.equal(await count(db, `select count(*)::int n from asset_event where member_id=$1 and event_type='drop_off' and drop_off_point='step-2'`, [memberId]), 1);
+});
+
+test('dashboard composition: completed + recommendedNext advance the program loop', async () => {
+  const { db, memberId } = await dbWithMember();
+  const dims = { physical: 18, self: 18, social: 18, outlook: 18 };
+
+  // baseline IDQ done → R-1 complete → next is R-4
+  await db.query(
+    `insert into idq_retake (member_id,cycle_indicator,sequence_no,responses,physical_score,self_score,social_score,outlook_score,id_score_raw,id_score)
+     values ($1,1,0,'[]'::jsonb,18,18,18,18,72,60)`, [memberId]);
+  assert.equal(recommendedNext({ completed: await completedCodes(db, memberId), dimensions: dims }), 'R-4');
+
+  // complete R-4 → next is R-6
+  await completeAsset(db, { memberId, code: 'R-4', variant: 'a', version: '0.1-draft' });
+  assert.equal(recommendedNext({ completed: await completedCodes(db, memberId), dimensions: dims }), 'R-6');
 });
 
 test('completedCodes includes R-1 once a baseline IDQ exists', async () => {

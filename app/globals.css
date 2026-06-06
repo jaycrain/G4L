@@ -94,6 +94,16 @@ button:hover, .btn:hover { background: var(--deep-red); }
 ul.reclaim { padding-left: 1.1rem; }
 ul.reclaim li { margin: 0.2rem 0; }
 
+/* Program map */
+ul.program { list-style: none; padding: 0; margin: 0; }
+.prog { display: grid; grid-template-columns: 1.5rem 1fr auto; align-items: center; gap: 0.5rem; padding: 0.4rem 0; border-bottom: 1px solid var(--grey); }
+.prog .mark { font-weight: 700; text-align: center; }
+.prog.completed .mark { color: var(--olive); }
+.prog.available .mark { color: var(--orange); }
+.prog.locked { opacity: 0.5; }
+.prog.available .pname { font-weight: 600; color: var(--navy); }
+.prog .pgroup { font-size: 0.8rem; color: var(--navy); opacity: 0.6; }
+
 /* Conversational onboarding */
 .chat { display: flex; flex-direction: column; gap: 0.6rem; margin: 1.25rem 0; }
 .bubble { padding: 0.65rem 0.95rem; border-radius: 14px; max-width: 85%; white-space: pre-wrap; }

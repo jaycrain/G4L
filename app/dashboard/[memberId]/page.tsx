@@ -1,6 +1,12 @@
+import Link from 'next/link';
 import { getDb } from '../../../lib/db/pglite.ts';
 import { getDashboard } from '../../../lib/gateway/flow.ts';
+import { completedCodes } from '../../../lib/assets/engine.ts';
+import { recommendedNext, assetStatus, ASSET_ORDER, GATES, type AssetStatus } from '../../../lib/assets/gating.ts';
+import { ASSET_NAMES } from '../../../lib/assets/definitions.ts';
 import type { Db } from '../../../lib/db/schema.ts';
+
+const STATUS_MARK: Record<AssetStatus, string> = { completed: '✓', available: '→', locked: '·' };
 
 const DIM_LABEL: Record<string, string> = {
   physical: 'Physical',
@@ -20,6 +26,17 @@ export default async function DashboardPage({
   const dash = await getDashboard(db, memberId);
 
   if (!dash) return <p className="error">We couldn&apos;t find that member.</p>;
+
+  // The program loop: what's done, what's next (dosed by current focus).
+  const completed = await completedCodes(db, memberId);
+  const gateCtx = { completed, dimensions: dash.score?.dimensions };
+  const nextCode = recommendedNext(gateCtx);
+  const program = ASSET_ORDER.map((code) => ({
+    code,
+    name: ASSET_NAMES[code]!,
+    group: GATES[code]!.group,
+    status: assetStatus(gateCtx, code),
+  }));
 
   return (
     <>
@@ -73,8 +90,28 @@ export default async function DashboardPage({
         <div className="card">
           <h3>Current focus</h3>
           <span className="focus-chip">{dash.currentFocus.label}</span>
+          {nextCode && (
+            <p style={{ marginTop: '0.9rem' }}>
+              <Link className="btn" href={`/asset/${nextCode}?member=${memberId}`}>
+                Start: {ASSET_NAMES[nextCode]}
+              </Link>
+            </p>
+          )}
         </div>
       )}
+
+      <div className="card">
+        <h3>Your program</h3>
+        <ul className="program">
+          {program.map((a) => (
+            <li key={a.code} className={`prog ${a.status}`}>
+              <span className="mark">{STATUS_MARK[a.status]}</span>
+              <span className="pname">{a.name}</span>
+              <span className="pgroup">{a.group}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
 
       <div className="card">
         <h3>Your Reclaim List</h3>
