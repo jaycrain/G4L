@@ -21,7 +21,7 @@ flowchart TD
 
   Member --> Landing --> Onb --> IDQ --> Dash
   Dash --> Asset --> Dash
-  Dash -.opens.-> Bubble
+  Dash -.->|opens| Bubble
   Jay --> Admin
 
   subgraph AG["AI Agents"]
@@ -55,7 +55,7 @@ flowchart TD
   MA --> Prov
   FA --> Prov
   Prov --> Claude
-  Prov -.degrades to.-> Scripted
+  Prov -.->|degrades to| Scripted
 
   subgraph DB["Data — Supabase Postgres (RLS-ready)"]
     MP["member_profile"]:::data
@@ -74,9 +74,9 @@ flowchart TD
 
   GH["GitHub jaycrain/G4L"]:::ext --> Vercel["Vercel (auto-deploy)"]:::ext --> SURF
 
-  FA -. "planned send" .-> HubSpot["HubSpot email / SMS"]:::planned
-  SURF -. "planned" .-> Integ["Circle, Tovuti, Stripe"]:::planned
-  DB -. "planned (Path B)" .-> Auth["Supabase Auth + RLS + consent"]:::planned
+  FA -.->|planned send| HubSpot["HubSpot email / SMS"]:::planned
+  SURF -.->|planned| Integ["Circle, Tovuti, Stripe"]:::planned
+  DB -.->|planned Path B| Auth["Supabase Auth + RLS + consent"]:::planned
 
   classDef person fill:#374F63,color:#fff,stroke:#101045
   classDef agent fill:#EC6233,color:#fff,stroke:#BB2127
