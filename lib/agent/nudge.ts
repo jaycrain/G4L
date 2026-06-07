@@ -1,0 +1,93 @@
+// Proactive nudges — what the Member Agent surfaces, signal-driven and gentle. Per
+// docs/design/member-agent-companion.md: witness a win / catch a drift, never nag. The engine
+// picks the single most relevant nudge from the member's real signals; it shows as the
+// resting-bubble teaser (and could seed a push later). Frequency-capping across visits needs a
+// nudge log (conversation persistence) — noted as a follow-up.
+
+import type { Db } from '../db/schema.ts';
+import { ASSET_NAMES } from '../assets/definitions.ts';
+
+export type NudgeSignals = {
+  hasIdq: boolean;
+  daysSinceLastIdq: number | null;
+  recentAssetName: string | null;
+  daysSinceRecentAsset: number | null;
+  daysSinceActivity: number | null;
+  direction: 'up' | 'down' | 'flat' | null;
+  delta: number | null;
+  nextAssetName: string | null;
+};
+
+export type Nudge = { kind: string; text: string; priority: number };
+
+/** All applicable nudges, highest priority first. Pure — easy to test/tune. */
+export function computeNudges(s: NudgeSignals): Nudge[] {
+  const n: Nudge[] = [];
+  if (!s.hasIdq) {
+    n.push({ kind: 'idq_baseline', text: 'Ready for your IDQ? It sets your baseline ID Score.', priority: 90 });
+  } else if (s.daysSinceLastIdq != null && s.daysSinceLastIdq >= 60) {
+    n.push({ kind: 'idq_due', text: 'Your IDQ is ready again — it shows how far you have come.', priority: 85 });
+  }
+  if (s.recentAssetName && s.daysSinceRecentAsset != null && s.daysSinceRecentAsset <= 3) {
+    n.push({ kind: 'asset_reflect', text: `You finished ${s.recentAssetName}. Want to talk about how it landed?`, priority: 70 });
+  }
+  if (s.daysSinceActivity != null && s.daysSinceActivity >= 10) {
+    n.push({ kind: 'silence', text: 'It has been a little while. How are you landing this week?', priority: 60 });
+  }
+  if (s.direction === 'down') {
+    n.push({ kind: 'down', text: 'Checking in — how are you doing this week?', priority: 50 });
+  } else if (s.direction === 'up' && s.delta) {
+    n.push({ kind: 'up', text: 'Your ID Score moved up. Want to talk about what is working?', priority: 45 });
+  }
+  if (s.nextAssetName) {
+    n.push({ kind: 'next_asset', text: `Ready for ${s.nextAssetName}? Or just want to talk?`, priority: 30 });
+  }
+  n.push({ kind: 'default', text: 'How are you landing this week?', priority: 10 });
+  return n.sort((a, b) => b.priority - a.priority);
+}
+
+/** The single nudge to surface right now. */
+export function topNudge(s: NudgeSignals): Nudge {
+  return computeNudges(s)[0]!;
+}
+
+/** Gather the time-based signals from the warehouse (days computed in SQL, no JS clock). */
+export async function timeSignals(
+  db: Db,
+  memberId: string,
+): Promise<Pick<NudgeSignals, 'hasIdq' | 'daysSinceLastIdq' | 'recentAssetName' | 'daysSinceRecentAsset' | 'daysSinceActivity'>> {
+  const idq = (
+    await db.query<{ n: number; days: number | null }>(
+      `select count(*)::int n, floor(extract(epoch from (now()-max(taken_at)))/86400)::int as days
+       from idq_retake where member_id=$1 and cycle_indicator=1`,
+      [memberId],
+    )
+  ).rows[0]!;
+
+  const asset = (
+    await db.query<{ asset_code: string; days: number }>(
+      `select asset_code, floor(extract(epoch from (now()-completed_at))/86400)::int as days
+       from asset_completion where member_id=$1 order by completed_at desc limit 1`,
+      [memberId],
+    )
+  ).rows[0];
+
+  const activity = (
+    await db.query<{ days: number | null }>(
+      `select floor(extract(epoch from (now()-max(t)))/86400)::int as days from (
+         select completed_at t from asset_completion where member_id=$1
+         union all select taken_at from idq_retake where member_id=$1
+         union all select occurred_at from asset_event where member_id=$1
+       ) x`,
+      [memberId],
+    )
+  ).rows[0]!;
+
+  return {
+    hasIdq: idq.n > 0,
+    daysSinceLastIdq: idq.days,
+    recentAssetName: asset ? (ASSET_NAMES[asset.asset_code] ?? asset.asset_code) : null,
+    daysSinceRecentAsset: asset ? asset.days : null,
+    daysSinceActivity: activity.days,
+  };
+}

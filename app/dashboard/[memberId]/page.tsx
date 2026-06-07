@@ -4,6 +4,7 @@ import { getDashboard } from '../../../lib/gateway/flow.ts';
 import { completedCodes } from '../../../lib/assets/engine.ts';
 import { recommendedNext, assetStatus, ASSET_ORDER, GATES, type AssetStatus } from '../../../lib/assets/gating.ts';
 import { ASSET_NAMES } from '../../../lib/assets/definitions.ts';
+import { timeSignals, topNudge } from '../../../lib/agent/nudge.ts';
 import type { Db } from '../../../lib/db/schema.ts';
 import AgentBubble from '../agent-bubble.tsx';
 
@@ -39,12 +40,14 @@ export default async function DashboardPage({
     status: assetStatus(gateCtx, code),
   }));
 
-  // A light, signal-driven teaser for the always-on companion bubble.
-  const teaser = !dash.score
-    ? 'Ready for your IDQ when you are.'
-    : nextCode
-      ? `Ready for ${ASSET_NAMES[nextCode]}? Or just want to talk?`
-      : 'How are you landing this week?';
+  // Signal-driven proactive nudge for the always-on companion bubble.
+  const nudgeSignals = {
+    ...(await timeSignals(db, memberId)),
+    direction: dash.score?.direction ?? null,
+    delta: dash.score?.delta ?? null,
+    nextAssetName: nextCode ? ASSET_NAMES[nextCode]! : null,
+  };
+  const teaser = topNudge(nudgeSignals).text;
 
   return (
     <>
