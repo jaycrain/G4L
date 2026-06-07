@@ -72,9 +72,14 @@ export async function onboardingNextTurn(args: {
   if (detectCrisis(args.memberMessage).flagged) {
     return { reply: CRISIS_RESPONSE_US, state: args.state, complete: false, crisis: true };
   }
-  return process.env.ANTHROPIC_API_KEY
-    ? liveTurn(args.ctx, args.history, args.state, args.memberMessage)
-    : scriptedTurn(args.state, args.memberMessage);
+  if (process.env.ANTHROPIC_API_KEY) {
+    try {
+      return await liveTurn(args.ctx, args.history, args.state, args.memberMessage);
+    } catch (e) {
+      console.warn('onboarding: live agent unavailable, using scripted —', (e as Error).message);
+    }
+  }
+  return scriptedTurn(args.state, args.memberMessage);
 }
 
 /** Build the OnboardingFields to persist (via flow.runOnboarding) once the conversation completes. */
@@ -181,7 +186,7 @@ async function liveTurn(
   memberMessage: string,
 ): Promise<Turn> {
   const { default: Anthropic } = await import('@anthropic-ai/sdk');
-  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, timeout: 9000, maxRetries: 1 });
 
   const messages = [
     ...history.map((m) => ({

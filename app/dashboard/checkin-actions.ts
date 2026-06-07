@@ -24,11 +24,18 @@ export async function checkinTurn(
   history: CheckinMessage[],
   memberMessage: string | null,
 ): Promise<{ reply: string; crisis?: boolean }> {
-  const db = (await getDb()) as unknown as Db;
-  const dash = await getDashboard(db, memberId);
-  if (!dash) return { reply: "I can't reach your profile right now — try reopening in a moment." };
+  try {
+    const db = (await getDb()) as unknown as Db;
+    const dash = await getDashboard(db, memberId);
+    if (!dash) return { reply: "I can't reach your profile right now — try reopening in a moment." };
 
-  const ctx = toContext(dash);
-  if (memberMessage === null) return { reply: await checkinOpening(ctx) };
-  return checkinReply(ctx, history, memberMessage);
+    const ctx = toContext(dash);
+    if (memberMessage === null) return { reply: await checkinOpening(ctx) };
+    return await checkinReply(ctx, history, memberMessage);
+  } catch (e) {
+    console.error('checkinTurn failed:', (e as Error).message);
+    return {
+      reply: "I'm having a moment on my end — try again shortly. If something feels urgent, please reach out to someone you trust, or call or text 988.",
+    };
+  }
 }

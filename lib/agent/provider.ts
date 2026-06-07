@@ -48,8 +48,9 @@ function anthropicProvider(): AgentProvider {
   return {
     name: 'anthropic',
     async composeIdentityParagraph(i) {
+     try {
       const { default: Anthropic } = await import('@anthropic-ai/sdk');
-      const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+      const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, timeout: 9000, maxRetries: 1 });
       const msg = await client.messages.create({
         model: process.env.ANTHROPIC_MODEL ?? 'claude-sonnet-4-6',
         max_tokens: 300,
@@ -69,7 +70,12 @@ function anthropicProvider(): AgentProvider {
         ],
       });
       const text = msg.content.find((b) => b.type === 'text');
-      return text && text.type === 'text' ? text.text.trim() : '';
+      const out = text && text.type === 'text' ? text.text.trim() : '';
+      return out || scriptedProvider.composeIdentityParagraph(i);
+     } catch (e) {
+      console.warn('identity paragraph: live agent unavailable, using scripted —', (e as Error).message);
+      return scriptedProvider.composeIdentityParagraph(i);
+     }
     },
   };
 }

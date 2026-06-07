@@ -69,7 +69,7 @@ function scriptedReply(memberMessage: string): string {
 // --- Live (Claude) --------------------------------------------------------------------------
 async function liveReply(system: string, history: CheckinMessage[], userText: string): Promise<string> {
   const { default: Anthropic } = await import('@anthropic-ai/sdk');
-  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, timeout: 9000, maxRetries: 1 });
   const res = await client.messages.create({
     model: process.env.ANTHROPIC_MODEL ?? 'claude-sonnet-4-6',
     max_tokens: 400,
@@ -85,11 +85,15 @@ async function liveReply(system: string, history: CheckinMessage[], userText: st
 
 export async function checkinOpening(c: CheckinContext): Promise<string> {
   if (process.env.ANTHROPIC_API_KEY) {
-    return liveReply(
-      checkinSystem(c),
-      [],
-      'The member just opened the check-in and has not said anything yet. Greet them warmly in G4L voice, reference their recent context if there is any, and ask one gentle opening question.',
-    );
+    try {
+      return await liveReply(
+        checkinSystem(c),
+        [],
+        'The member just opened the check-in and has not said anything yet. Greet them warmly in G4L voice, reference their recent context if there is any, and ask one gentle opening question.',
+      );
+    } catch (e) {
+      console.warn('check-in opening: live agent unavailable, using scripted —', (e as Error).message);
+    }
   }
   return scriptedOpening(c);
 }
@@ -100,10 +104,14 @@ export async function checkinReply(
   memberMessage: string,
 ): Promise<CheckinTurn> {
   if (detectCrisis(memberMessage).flagged) return { reply: CRISIS_RESPONSE_US, crisis: true };
-  const reply = process.env.ANTHROPIC_API_KEY
-    ? await liveReply(checkinSystem(c), history, memberMessage)
-    : scriptedReply(memberMessage);
-  return { reply };
+  if (process.env.ANTHROPIC_API_KEY) {
+    try {
+      return { reply: await liveReply(checkinSystem(c), history, memberMessage) };
+    } catch (e) {
+      console.warn('check-in reply: live agent unavailable, using scripted —', (e as Error).message);
+    }
+  }
+  return { reply: scriptedReply(memberMessage) };
 }
 
 /** A short, dismissible proactive teaser for the resting bubble (or null). Signal-driven. */

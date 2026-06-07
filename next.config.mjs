@@ -2,7 +2,7 @@
 const nextConfig = {
   reactStrictMode: true,
   // pglite ships WASM; postgres uses node net/tls — keep both as external server packages.
-  serverExternalPackages: ['@electric-sql/pglite', 'postgres'],
+  serverExternalPackages: ['@electric-sql/pglite', 'postgres', '@anthropic-ai/sdk'],
   // Production uses hosted Postgres (DATABASE_URL), never pglite. Exclude pglite's large WASM
   // from dependency tracing so Vercel's "Collecting build traces" step doesn't OOM.
   outputFileTracingExcludes: {
