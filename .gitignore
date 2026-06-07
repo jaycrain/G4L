@@ -34,3 +34,6 @@ member-data/
 # Local dev database (pglite) and Next types
 .pglite/
 next-env.d.ts
+
+# Vercel CLI link
+.vercel
