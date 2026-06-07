@@ -17,6 +17,7 @@ const sqlFile = (rel: string) => readFileSync(join(process.cwd(), 'supabase', re
 const MIGRATIONS: Array<{ file: string; sentinel: string }> = [
   { file: 'migrations/0001_gateway_schema.sql', sentinel: 'door' },
   { file: 'migrations/0002_assets.sql', sentinel: 'asset_completion' },
+  { file: 'migrations/0003_founder_agent.sql', sentinel: 'founder_agent_drafts' },
 ];
 export const SEED_SQL = () => sqlFile('seed/0001_reference_data.sql');
 

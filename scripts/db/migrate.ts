@@ -5,7 +5,7 @@
 // NOTE: never prints DATABASE_URL — errors are masked so credentials can't leak to logs.
 
 import postgres from 'postgres';
-import { applySchema, type Db } from '../../lib/db/schema.ts';
+import { ensureSchema, type Db } from '../../lib/db/schema.ts';
 
 const url = process.env.DATABASE_URL;
 if (!url) {
@@ -20,8 +20,8 @@ try {
     query: async (text: string, params: unknown[] = []) => ({ rows: (await sql!.unsafe(text, params as any[])) as unknown as never[] }),
     exec: async (text: string) => { await sql!.unsafe(text); },
   };
-  await applySchema(db);
-  console.log('✓ migrations + seed applied to Supabase');
+  await ensureSchema(db); // applies only not-yet-applied migrations + (idempotent) re-seed
+  console.log('✓ migrations applied to Supabase (only pending ones) + reference data ensured');
 } catch (e) {
   const err = e as { code?: string; message?: string };
   // Print only a code + short reason — NEVER the URL/credentials.
