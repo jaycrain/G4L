@@ -5,6 +5,7 @@ import { completedCodes } from '../../../lib/assets/engine.ts';
 import { recommendedNext, assetStatus, ASSET_ORDER, GATES, type AssetStatus } from '../../../lib/assets/gating.ts';
 import { ASSET_NAMES } from '../../../lib/assets/definitions.ts';
 import type { Db } from '../../../lib/db/schema.ts';
+import AgentBubble from '../agent-bubble.tsx';
 
 const STATUS_MARK: Record<AssetStatus, string> = { completed: '✓', available: '→', locked: '·' };
 
@@ -37,6 +38,13 @@ export default async function DashboardPage({
     group: GATES[code]!.group,
     status: assetStatus(gateCtx, code),
   }));
+
+  // A light, signal-driven teaser for the always-on companion bubble.
+  const teaser = !dash.score
+    ? 'Ready for your IDQ when you are.'
+    : nextCode
+      ? `Ready for ${ASSET_NAMES[nextCode]}? Or just want to talk?`
+      : 'How are you landing this week?';
 
   return (
     <>
@@ -127,6 +135,8 @@ export default async function DashboardPage({
           Your Door: <strong>{dash.door.displayName}</strong>
         </p>
       )}
+
+      <AgentBubble memberId={memberId} teaser={teaser} />
     </>
   );
 }
