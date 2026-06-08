@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { loginAction } from './actions.ts';
+import PasswordField from '../password-field.tsx';
 
 export default function LoginForm() {
   const router = useRouter();
@@ -29,7 +30,7 @@ export default function LoginForm() {
       <label htmlFor="email">Email</label>
       <input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
       <label htmlFor="password">Password</label>
-      <input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
+      <PasswordField id="password" value={password} onChange={setPassword} required autoComplete="current-password" />
       {error && <p className="error">{error}</p>}
       <button type="submit" disabled={pending}>
         {pending ? 'Signing in…' : 'Log in'}

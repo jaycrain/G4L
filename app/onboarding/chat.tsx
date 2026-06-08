@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { AI_DISCLOSURE } from '../../lib/agent/governance.ts';
 import { onboardingTurn } from './actions.ts';
 import { setupAction } from '../account/setup/actions.ts';
+import PasswordField from '../password-field.tsx';
 import type { ConvState, ConvMessage } from '../../lib/agent/onboarding.ts';
 
 export default function OnboardingChat() {
@@ -90,9 +91,9 @@ export default function OnboardingChat() {
           <label htmlFor="email">Email</label>
           <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
           <label htmlFor="password">Password</label>
-          <input id="password" type="password" minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} required />
+          <PasswordField id="password" value={password} onChange={setPassword} required minLength={8} autoComplete="new-password" />
           <label htmlFor="confirm">Confirm password</label>
-          <input id="confirm" type="password" minLength={8} value={confirm} onChange={(e) => setConfirm(e.target.value)} required />
+          <PasswordField id="confirm" value={confirm} onChange={setConfirm} required minLength={8} autoComplete="new-password" />
           {error && <p className="error">{error}</p>}
           <button type="submit">Begin the conversation</button>
         </form>

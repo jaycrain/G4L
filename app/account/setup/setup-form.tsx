@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { setupAction } from './actions.ts';
+import PasswordField from '../../password-field.tsx';
 
 export default function SetupForm({ memberId, email }: { memberId: string; email: string }) {
   const router = useRouter();
@@ -32,9 +33,9 @@ export default function SetupForm({ memberId, email }: { memberId: string; email
       <label>Email</label>
       <input type="email" value={email} disabled readOnly />
       <label htmlFor="password">Create a password</label>
-      <input id="password" type="password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} />
+      <PasswordField id="password" value={password} onChange={setPassword} required minLength={8} autoComplete="new-password" />
       <label htmlFor="confirm">Confirm password</label>
-      <input id="confirm" type="password" required minLength={8} value={confirm} onChange={(e) => setConfirm(e.target.value)} />
+      <PasswordField id="confirm" value={confirm} onChange={setConfirm} required minLength={8} autoComplete="new-password" />
       {error && <p className="error">{error}</p>}
       <button type="submit" disabled={pending}>
         {pending ? 'Saving…' : 'Save & continue'}

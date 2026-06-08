@@ -50,6 +50,12 @@ input[type='text'], input[type='email'], input[type='password'], textarea, selec
 }
 textarea { min-height: 4.5rem; resize: vertical; }
 
+/* Password field with show/hide (eye) toggle */
+.pw-wrap { position: relative; }
+.pw-wrap input { padding-right: 2.6rem; }
+.pw-toggle { position: absolute; top: 50%; transform: translateY(-50%); right: 0.5rem; margin: 0; padding: 0.25rem; background: none; border: none; border-radius: 6px; color: var(--navy); opacity: 0.55; cursor: pointer; display: inline-flex; }
+.pw-toggle:hover { background: none; color: var(--teal); opacity: 1; }
+
 button, .btn {
   display: inline-block;
   margin-top: 1.5rem;
