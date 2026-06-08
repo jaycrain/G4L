@@ -16,6 +16,8 @@ members** (the charter/public cohort). Per CLAUDE.md, security + the data model 
 - [ ] Security headers + strict Content-Security-Policy.
 - [ ] Session rotation on login; idle + absolute expiry; "log out everywhere".
 - [ ] Auth audit log (sign-ins, failures, credential + admin events).
+- [ ] Up-front duplicate-email check at sign-up — today a taken email only fails *after* the
+      member finishes the whole onboarding conversation; validate at the gate instead.
 
 ## Required before real members
 - [ ] **DB-level Row-Level Security (RLS).** We chose app-layer isolation for now; DB enforcement
