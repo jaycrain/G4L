@@ -5,6 +5,7 @@ import { getDb } from '../../lib/db/index.ts';
 import { completeAsset } from '../../lib/assets/engine.ts';
 import { maybeTriggerDraft } from '../../lib/founder/triggers.ts';
 import { ASSET_NAMES } from '../../lib/assets/definitions.ts';
+import { authorizeMember } from '../authz.ts';
 import type { Db } from '../../lib/db/schema.ts';
 import type { AssetVariant } from '../../lib/assets/types.ts';
 
@@ -16,6 +17,7 @@ export async function completeAssetAction(input: {
   outputs: Record<string, unknown>;
   reflection?: string;
 }): Promise<{ ok: boolean; errors?: string[] }> {
+  if (!(await authorizeMember(input.memberId))) return { ok: false, errors: ['Not authorized.'] };
   const db = (await getDb()) as unknown as Db;
   try {
     await completeAsset(db, { ...input });

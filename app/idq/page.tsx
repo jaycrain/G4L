@@ -1,3 +1,5 @@
+import { redirect } from 'next/navigation';
+import { authorizeMember } from '../authz.ts';
 import IdqChat from './idq-chat.tsx';
 
 export default async function IdqPage({
@@ -9,5 +11,6 @@ export default async function IdqPage({
   if (!member) {
     return <p className="error">No member in context. Start at the beginning.</p>;
   }
+  if (!(await authorizeMember(member))) redirect('/login');
   return <IdqChat memberId={member} />;
 }

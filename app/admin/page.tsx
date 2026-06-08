@@ -1,6 +1,8 @@
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 import { getDb } from '../../lib/db/index.ts';
 import { listPending } from '../../lib/founder/store.ts';
+import { isAdmin } from '../authz.ts';
 import type { Db } from '../../lib/db/schema.ts';
 
 export default async function AdminHome({
@@ -8,6 +10,7 @@ export default async function AdminHome({
 }: {
   searchParams: Promise<{ q?: string }>;
 }) {
+  if (!(await isAdmin())) redirect('/admin/login');
   const { q } = await searchParams;
   const db = (await getDb()) as unknown as Db;
 

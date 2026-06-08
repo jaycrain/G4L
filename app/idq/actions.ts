@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { getDb } from '../../lib/db/index.ts';
 import { submitIdq } from '../../lib/gateway/flow.ts';
 import { maybeTriggerDraft } from '../../lib/founder/triggers.ts';
+import { authorizeMember } from '../authz.ts';
 import type { Db } from '../../lib/db/schema.ts';
 
 /** Score + persist a completed 24-item IDQ response set. The conversation runs client-side
@@ -12,6 +13,7 @@ export async function submitIdqResponses(
   memberId: string,
   responses: number[],
 ): Promise<{ ok: boolean; errors?: string[] }> {
+  if (!(await authorizeMember(memberId))) return { ok: false, errors: ['Not authorized.'] };
   const db = (await getDb()) as unknown as Db;
   const res = await submitIdq(db, memberId, responses);
   if (!res.ok) return { ok: false, errors: res.errors };

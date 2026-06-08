@@ -5,11 +5,14 @@ import { listForMember } from '../../../../lib/founder/store.ts';
 import { MOMENTS, type OperatingMoment } from '../../../../lib/founder/draft.ts';
 import { countSubscriptions } from '../../../../lib/push/store.ts';
 import { buildNudge } from '../../../../lib/agent/nudge.ts';
+import { redirect } from 'next/navigation';
 import type { Db } from '../../../../lib/db/schema.ts';
 import { generateDraftAction, sendNudgePushAction } from '../../actions.ts';
+import { isAdmin } from '../../../authz.ts';
 import DraftReview from '../../draft-review.tsx';
 
 export default async function AdminMember({ params }: { params: Promise<{ memberId: string }> }) {
+  if (!(await isAdmin())) redirect('/admin/login');
   const { memberId } = await params;
   const db = (await getDb()) as unknown as Db;
   const dash = await getDashboard(db, memberId);

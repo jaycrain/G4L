@@ -1,4 +1,6 @@
+import { redirect } from 'next/navigation';
 import { getDb } from '../../../lib/db/index.ts';
+import { authorizeMember } from '../../authz.ts';
 import { getAssetDefinition } from '../../../lib/assets/definitions.ts';
 import { assignVariant } from '../../../lib/assets/variant.ts';
 import { startAsset } from '../../../lib/assets/engine.ts';
@@ -18,6 +20,7 @@ export default async function AssetPage({
   if (!member || !UUID_RE.test(member)) {
     return <p className="error">No member in context. Start at the beginning.</p>;
   }
+  if (!(await authorizeMember(member))) redirect('/login');
 
   const db = (await getDb()) as unknown as Db;
   const exists = (await db.query('select 1 from member_profile where member_id = $1', [member])).rows[0];

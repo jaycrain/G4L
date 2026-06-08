@@ -8,9 +8,11 @@ import { createDraft, approveSend, rejectDraft } from '../../lib/founder/store.t
 import { buildNudge } from '../../lib/agent/nudge.ts';
 import { sendPushToMember } from '../../lib/push/send.ts';
 import { buildNudgePayload } from '../../lib/push/payload.ts';
+import { isAdmin } from '../authz.ts';
 import type { Db } from '../../lib/db/schema.ts';
 
 export async function generateDraftAction(memberId: string, moment: OperatingMoment): Promise<void> {
+  if (!(await isAdmin())) return;
   const db = (await getDb()) as unknown as Db;
   const ctx = await buildFounderContext(db, memberId);
   if (!ctx) return;
@@ -21,6 +23,7 @@ export async function generateDraftAction(memberId: string, moment: OperatingMom
 }
 
 export async function approveSendAction(id: string, memberId: string, editedBody: string): Promise<void> {
+  if (!(await isAdmin())) return;
   const db = (await getDb()) as unknown as Db;
   await approveSend(db, id, editedBody);
   revalidatePath(`/admin/member/${memberId}`);
@@ -29,6 +32,7 @@ export async function approveSendAction(id: string, memberId: string, editedBody
 
 /** Push the member's current Member Agent nudge to their devices (proactive companion, live). */
 export async function sendNudgePushAction(memberId: string): Promise<void> {
+  if (!(await isAdmin())) return;
   const db = (await getDb()) as unknown as Db;
   const nudge = await buildNudge(db, memberId);
   if (!nudge) return;
@@ -37,6 +41,7 @@ export async function sendNudgePushAction(memberId: string): Promise<void> {
 }
 
 export async function rejectAction(id: string, memberId: string): Promise<void> {
+  if (!(await isAdmin())) return;
   const db = (await getDb()) as unknown as Db;
   await rejectDraft(db, id);
   revalidatePath(`/admin/member/${memberId}`);

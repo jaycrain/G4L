@@ -11,6 +11,8 @@ import { firstName, initials } from '../../../lib/member/avatar.ts';
 import type { Db } from '../../../lib/db/schema.ts';
 import AgentBubble from '../agent-bubble.tsx';
 import { logoutAction } from '../../login/actions.ts';
+import { authorizeMember } from '../../authz.ts';
+import { redirect } from 'next/navigation';
 import EnableNotifications from '../enable-notifications.tsx';
 
 const STATUS_MARK: Record<AssetStatus, string> = { completed: '✓', available: '→', locked: '·' };
@@ -29,6 +31,7 @@ export default async function DashboardPage({
   params: Promise<{ memberId: string }>;
 }) {
   const { memberId } = await params;
+  if (!(await authorizeMember(memberId))) redirect('/login');
   const db = (await getDb()) as unknown as Db;
   const dash = await getDashboard(db, memberId);
 

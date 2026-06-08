@@ -2,9 +2,11 @@
 
 import { getDb } from '../../lib/db/index.ts';
 import { saveSubscription, deleteSubscription, type PushSub } from '../../lib/push/store.ts';
+import { authorizeMember } from '../authz.ts';
 import type { Db } from '../../lib/db/schema.ts';
 
 export async function subscribeAction(memberId: string, sub: PushSub): Promise<{ ok: boolean }> {
+  if (!(await authorizeMember(memberId))) return { ok: false };
   const db = (await getDb()) as unknown as Db;
   try {
     await saveSubscription(db, memberId, sub);
