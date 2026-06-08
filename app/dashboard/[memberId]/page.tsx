@@ -170,7 +170,13 @@ export default async function DashboardPage({
           {program.map((a) => (
             <li key={a.code} className={`prog ${a.status}`}>
               <span className="mark">{STATUS_MARK[a.status]}</span>
-              <span className="pname">{a.name}</span>
+              <span className="pname">
+                {a.status === 'locked' ? (
+                  a.name
+                ) : (
+                  <Link href={`/asset/${a.code}?member=${memberId}`}>{a.name}</Link>
+                )}
+              </span>
               <span className="pgroup">{a.group}</span>
             </li>
           ))}
