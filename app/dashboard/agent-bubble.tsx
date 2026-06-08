@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { openCheckin, sendCheckin, loadCheckin } from './checkin-actions.ts';
+import { consumeBiteAction } from './bite-actions.ts';
+import { KIND_LABEL, type Bite } from '../../lib/bites/definitions.ts';
 
 type Msg = { role: 'agent' | 'member'; text: string };
 
@@ -17,6 +19,7 @@ export default function AgentBubble({
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState('');
   const [pending, setPending] = useState(false);
+  const [bite, setBite] = useState<Bite | null>(null);
   const pendingRef = useRef(false);
   useEffect(() => {
     pendingRef.current = pending;
@@ -59,8 +62,9 @@ export default function AgentBubble({
     if (messages.length === 0) {
       setPending(true);
       try {
-        const thread = await openCheckin(memberId); // saved history, or a fresh opening
+        const { messages: thread, bite: todays } = await openCheckin(memberId); // history + today's bite
         setMessages(thread.length ? thread : [{ role: 'agent', text: 'I’m here. What’s on your mind?' }]);
+        setBite(todays);
       } catch {
         setMessages([{ role: 'agent', text: 'I’m here. Something hiccupped loading our thread — send a message and we’ll go.' }]);
       } finally {
@@ -87,6 +91,20 @@ export default function AgentBubble({
     }
   }
 
+  async function consumeBite() {
+    if (!bite || pending) return;
+    setPending(true);
+    try {
+      await consumeBiteAction(memberId, bite.code);
+      setBite(null);
+      setMessages((m) => [...m, { role: 'agent', text: 'Logged — that’s a rep. Your GRINTA! just moved. 🚴' }]);
+    } catch {
+      setMessages((m) => [...m, { role: 'agent', text: 'Couldn’t log that just now — try again in a moment.' }]);
+    } finally {
+      setPending(false);
+    }
+  }
+
   return (
     <div className="agent-dock">
       {open ? (
@@ -103,6 +121,17 @@ export default function AgentBubble({
                 {m.text}
               </div>
             ))}
+            {bite && (
+              <div className="bubble agent bite-offer">
+                <span className="bite-tag">Today’s GRINTA! bite · {KIND_LABEL[bite.kind]} · {bite.minutes} min</span>
+                <strong className="bite-offer-title">{bite.title}</strong>
+                <p className="bite-body">{bite.body}</p>
+                {bite.attribution && <span className="bite-by">— {bite.attribution}</span>}
+                <button type="button" className="bite-got" onClick={consumeBite} disabled={pending}>
+                  {pending ? 'Logging…' : 'Got it — log it'}
+                </button>
+              </div>
+            )}
             {pending && <div className="typing">…</div>}
           </div>
           <form className="chat-input" onSubmit={send}>

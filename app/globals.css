@@ -173,6 +173,10 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .bite-meta { font-size: 0.78rem; color: var(--navy); opacity: 0.6; }
 .bite-body { white-space: pre-wrap; }
 .bite-by { font-style: italic; color: var(--navy); opacity: 0.8; font-size: 0.9rem; margin: 0.4rem 0 0; }
+/* In-bubble bite offer (the agent serves it; consume right here) */
+.bite-offer { display: flex; flex-direction: column; gap: 0.25rem; align-self: flex-start; max-width: 100%; }
+.bite-offer-title { font-size: 1rem; color: var(--navy); }
+.bite-got { margin: 0.5rem 0 0; padding: 0.4rem 0.9rem; font-size: 0.85rem; align-self: flex-start; }
 
 /* GRINTA! Index — the daily process metric (olive num, distinct from the teal ID Score) */
 .grinta .num { color: var(--olive); }

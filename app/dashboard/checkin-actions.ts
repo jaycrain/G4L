@@ -5,6 +5,7 @@ import { getDashboard } from '../../lib/gateway/flow.ts';
 import { checkinOpening, checkinReply, type CheckinContext, type CheckinMessage } from '../../lib/agent/checkin.ts';
 import { loadConversation, appendMessages } from '../../lib/agent/conversation.ts';
 import { getBitePanel } from '../../lib/bites/store.ts';
+import type { Bite } from '../../lib/bites/definitions.ts';
 import { authorizeMember } from '../authz.ts';
 import type { Db } from '../../lib/db/schema.ts';
 
@@ -25,22 +26,26 @@ function toContext(
   };
 }
 
-/** Open the companion: return the saved thread, or generate + persist a first opening. */
-export async function openCheckin(memberId: string): Promise<CheckinMessage[]> {
-  if (!(await authorizeMember(memberId))) return [];
+export type OpenCheckin = { messages: CheckinMessage[]; bite: Bite | null };
+
+/** Open the companion: the saved thread (or a first opening) PLUS today's bite, if one is waiting
+ *  — so the agent can serve it right here and the member can consume it in the bubble. */
+export async function openCheckin(memberId: string): Promise<OpenCheckin> {
+  if (!(await authorizeMember(memberId))) return { messages: [], bite: null };
   try {
     const db = (await getDb()) as unknown as Db;
+    const panel = await getBitePanel(db, memberId);
+    const bite = panel.state === 'available' ? panel.bite : null;
     const history = await loadConversation(db, memberId);
-    if (history.length > 0) return history; // pick up where we left off
+    if (history.length > 0) return { messages: history, bite }; // pick up where we left off
     const dash = await getDashboard(db, memberId);
-    if (!dash) return [{ role: 'agent', text: "I can't reach your profile right now — try reopening in a moment." }];
-    const bite = await getBitePanel(db, memberId);
-    const opening = await checkinOpening(toContext(dash, bite.state === 'available' ? bite.bite.title : null));
+    if (!dash) return { messages: [{ role: 'agent', text: "I can't reach your profile right now — try reopening in a moment." }], bite };
+    const opening = await checkinOpening(toContext(dash, bite?.title ?? null));
     await appendMessages(db, memberId, [{ role: 'agent', text: opening }]);
-    return [{ role: 'agent', text: opening }];
+    return { messages: [{ role: 'agent', text: opening }], bite };
   } catch (e) {
     console.error('openCheckin failed:', (e as Error).message);
-    return [{ role: 'agent', text: "I'm here. Something hiccupped loading our thread — say hello and we'll pick it up." }];
+    return { messages: [{ role: 'agent', text: "I'm here. Something hiccupped loading our thread — say hello and we'll pick it up." }], bite: null };
   }
 }
 
