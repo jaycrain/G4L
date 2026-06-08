@@ -21,7 +21,7 @@ const r7 = (a: string[]) => a;
 const DEMOS: Demo[] = [
   {
     fields: {
-      displayName: 'Demo — Tom', email: 'demo-tom@grintaforlife.test', door: 'career_cliff', identityNoun: 'athlete',
+      displayName: 'Tom Miller', email: 'demo-tom@grintaforlife.test', door: 'career_cliff', identityNoun: 'athlete',
       athleticPast: 'competitive cyclist, raced every weekend', gap: 'the role ended and the bike gathered dust',
       rightNow: 'winded on the stairs, rebuilding slowly',
       reclaimList: r7(['ride again', 'sleep well', 'coach a friend', 'climb', 'reconnect with Dana', 'race Moab', 'feel strong']),
@@ -31,7 +31,7 @@ const DEMOS: Demo[] = [
   },
   {
     fields: {
-      displayName: 'Demo — Reshma', email: 'demo-reshma@grintaforlife.test', door: 'diagnosis', identityNoun: 'runner',
+      displayName: 'Reshma Patel', email: 'demo-reshma@grintaforlife.test', door: 'diagnosis', identityNoun: 'runner',
       athleticPast: 'marathoner who ran before dawn', gap: 'a diagnosis stopped me cold',
       rightNow: 'cautious, slower, unsure of my body',
       reclaimList: r7(['run a 5k', 'sleep deep', 'travel', 'garden', 'call mom weekly', 'cook again', 'laugh more']),
