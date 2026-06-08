@@ -38,6 +38,17 @@ export async function openCheckin(memberId: string): Promise<CheckinMessage[]> {
   }
 }
 
+/** Read-only: the member's saved thread (no new turn). Used to keep open devices in sync. */
+export async function loadCheckin(memberId: string): Promise<CheckinMessage[]> {
+  if (!(await authorizeMember(memberId))) return [];
+  try {
+    const db = (await getDb()) as unknown as Db;
+    return await loadConversation(db, memberId);
+  } catch {
+    return [];
+  }
+}
+
 /** One member turn: reply with continuity (loads recent thread server-side) and persist both sides. */
 export async function sendCheckin(memberId: string, memberMessage: string): Promise<{ reply: string; crisis?: boolean }> {
   if (!(await authorizeMember(memberId))) return { reply: 'Not authorized.' };

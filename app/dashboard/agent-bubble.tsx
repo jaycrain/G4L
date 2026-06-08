@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { openCheckin, sendCheckin } from './checkin-actions.ts';
+import { useState, useEffect, useRef } from 'react';
+import { openCheckin, sendCheckin, loadCheckin } from './checkin-actions.ts';
 
 type Msg = { role: 'agent' | 'member'; text: string };
 
@@ -17,6 +17,41 @@ export default function AgentBubble({
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState('');
   const [pending, setPending] = useState(false);
+  const pendingRef = useRef(false);
+  useEffect(() => {
+    pendingRef.current = pending;
+  }, [pending]);
+
+  // Keep open devices (e.g. Mac + iPad) in sync: while the panel is open, re-pull the saved
+  // thread on a short poll and the moment this device regains focus. Replace only when the
+  // server thread differs and we're not mid-send (so we never clobber an in-flight message).
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    const refresh = async () => {
+      if (pendingRef.current || (typeof document !== 'undefined' && document.visibilityState === 'hidden')) return;
+      try {
+        const thread = await loadCheckin(memberId);
+        if (cancelled || pendingRef.current || thread.length === 0) return;
+        setMessages((cur) => {
+          const sameTail = thread.length === cur.length && thread[thread.length - 1]?.text === cur[cur.length - 1]?.text;
+          return sameTail ? cur : thread;
+        });
+      } catch {
+        /* transient — try again next tick */
+      }
+    };
+    const id = setInterval(refresh, 5000);
+    const onFocus = () => void refresh();
+    window.addEventListener('focus', onFocus);
+    document.addEventListener('visibilitychange', onFocus);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+      window.removeEventListener('focus', onFocus);
+      document.removeEventListener('visibilitychange', onFocus);
+    };
+  }, [open, memberId]);
 
   async function openPanel() {
     setOpen(true);
