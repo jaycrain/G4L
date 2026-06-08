@@ -21,11 +21,14 @@ export default function PwaClient() {
       navigator.serviceWorker.register('/sw.js').catch(() => {});
     }
 
+    // The install affordance is only worthwhile on mobile (home screen + push). On desktop,
+    // "install the web app" is noise — members just use the tab. (SW still registers above.)
+    const isMobile = window.matchMedia('(pointer: coarse)').matches;
     const standalone =
       window.matchMedia('(display-mode: standalone)').matches ||
       (navigator as unknown as { standalone?: boolean }).standalone === true;
     const dismissed = localStorage.getItem('g4l-install-dismissed') === '1';
-    if (standalone || dismissed) return;
+    if (!isMobile || standalone || dismissed) return;
 
     const onPrompt = (e: Event) => {
       e.preventDefault();
