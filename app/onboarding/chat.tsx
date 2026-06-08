@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AI_DISCLOSURE } from '../../lib/agent/governance.ts';
 import { onboardingTurn } from './actions.ts';
+import { setupAction } from '../account/setup/actions.ts';
 import type { ConvState, ConvMessage } from '../../lib/agent/onboarding.ts';
 
 export default function OnboardingChat() {
@@ -11,6 +12,8 @@ export default function OnboardingChat() {
   const [phase, setPhase] = useState<'gate' | 'chat'>('gate');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirm, setConfirm] = useState('');
   const [messages, setMessages] = useState<ConvMessage[]>([]);
   const [state, setState] = useState<ConvState | null>(null);
   const [input, setInput] = useState('');
@@ -22,6 +25,15 @@ export default function OnboardingChat() {
   async function begin(e: React.FormEvent) {
     e.preventDefault();
     if (!ctx.name || !ctx.email) return;
+    if (password.length < 8) {
+      setError('Choose a password of at least 8 characters.');
+      return;
+    }
+    if (password !== confirm) {
+      setError('Those passwords don’t match.');
+      return;
+    }
+    setError(null);
     setPhase('chat');
     setPending(true);
     const r = await onboardingTurn({ ctx, state: null, history: [], memberMessage: null });
@@ -45,19 +57,29 @@ export default function OnboardingChat() {
     setState(r.state);
     setPending(false);
     if (r.errors) setError(r.errors.join('; '));
-    if (r.complete && r.memberId) router.push(`/account/setup?member=${r.memberId}`);
+    if (r.complete && r.memberId) {
+      // Secure the account with the password captured at sign-up; fall back to the setup
+      // screen only if that didn't take.
+      const saved = await setupAction(r.memberId, password);
+      router.push(saved.ok ? `/idq?member=${r.memberId}` : `/account/setup?member=${r.memberId}`);
+    }
   }
 
   if (phase === 'gate') {
     return (
       <>
-        <h1>Let&apos;s start with you</h1>
+        <h1>Create your account</h1>
         <p className="disclosure">{AI_DISCLOSURE}</p>
         <form onSubmit={begin}>
           <label htmlFor="name">Your name</label>
           <input id="name" type="text" value={name} onChange={(e) => setName(e.target.value)} required />
           <label htmlFor="email">Email</label>
           <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+          <label htmlFor="password">Password</label>
+          <input id="password" type="password" minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} required />
+          <label htmlFor="confirm">Confirm password</label>
+          <input id="confirm" type="password" minLength={8} value={confirm} onChange={(e) => setConfirm(e.target.value)} required />
+          {error && <p className="error">{error}</p>}
           <button type="submit">Begin the conversation</button>
         </form>
       </>
