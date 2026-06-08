@@ -85,6 +85,9 @@ button:hover, .btn:hover { background: var(--navy); }
 .avatar { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; display: block; }
 .avatar-initials { width: 48px; height: 48px; border-radius: 50%; background: var(--teal); color: var(--white); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.05rem; letter-spacing: 0.02em; }
 .greeting { font-size: 1.35rem; font-weight: 600; color: var(--navy); }
+.logout-form { margin-left: auto; }
+.logout-link { margin: 0; background: none; color: var(--navy); border: none; padding: 0.2rem 0.4rem; font: inherit; font-size: 0.85rem; font-weight: 600; opacity: 0.6; cursor: pointer; text-decoration: underline; }
+.logout-link:hover { background: none; color: var(--teal); opacity: 1; }
 
 .score { display: flex; align-items: baseline; gap: 0.6rem; }
 .score .num { font-size: 3rem; font-weight: 700; color: var(--teal); }

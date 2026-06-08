@@ -45,7 +45,7 @@ export default function OnboardingChat() {
     setState(r.state);
     setPending(false);
     if (r.errors) setError(r.errors.join('; '));
-    if (r.complete && r.memberId) router.push(`/idq?member=${r.memberId}`);
+    if (r.complete && r.memberId) router.push(`/account/setup?member=${r.memberId}`);
   }
 
   if (phase === 'gate') {

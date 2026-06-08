@@ -10,6 +10,7 @@ import { formatDistance, formatDuration, typeLabel, relativeDay } from '../../..
 import { firstName, initials } from '../../../lib/member/avatar.ts';
 import type { Db } from '../../../lib/db/schema.ts';
 import AgentBubble from '../agent-bubble.tsx';
+import { logoutAction } from '../../login/actions.ts';
 import EnableNotifications from '../enable-notifications.tsx';
 
 const STATUS_MARK: Record<AssetStatus, string> = { completed: '✓', available: '→', locked: '·' };
@@ -68,6 +69,9 @@ export default async function DashboardPage({
           </span>
         )}
         <span className="greeting">Hi, {firstName(dash.displayName)}</span>
+        <form action={logoutAction} className="logout-form">
+          <button type="submit" className="logout-link">Log out</button>
+        </form>
       </div>
 
       <div className="hero">
