@@ -1,6 +1,5 @@
 'use server';
 
-import { after } from 'next/server';
 import { revalidatePath } from 'next/cache';
 import { getDb } from '../../lib/db/index.ts';
 import { submitIdq } from '../../lib/gateway/flow.ts';
@@ -17,14 +16,12 @@ export async function submitIdqResponses(
   const res = await submitIdq(db, memberId, responses);
   if (!res.ok) return { ok: false, errors: res.errors };
 
-  // Founder Agent auto-trigger: a welcome (baseline) or retake note, drafted into Jay's review
-  // queue after the response. Draft-only; the human send gate is untouched.
-  const sequenceNo = res.sequenceNo;
-  after(async () => {
-    await maybeTriggerDraft(db, memberId, { kind: 'idq', sequenceNo });
-    revalidatePath('/admin');
-    revalidatePath(`/admin/member/${memberId}`);
-  });
+  // Founder Agent auto-trigger: draft a welcome (baseline) or retake note into Jay's review
+  // queue. Drafted inline so it's reliably there the moment the member finishes; draft-only —
+  // the human send gate is untouched, and a draft failure can't fail the IDQ (graceful).
+  await maybeTriggerDraft(db, memberId, { kind: 'idq', sequenceNo: res.sequenceNo });
+  revalidatePath('/admin');
+  revalidatePath(`/admin/member/${memberId}`);
 
   return { ok: true };
 }
