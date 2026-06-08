@@ -41,6 +41,30 @@ const doorOptions = () =>
   `Which door opened? ${DOORS.map((d, i) => `${i + 1}. ${d.displayName}`).join('   ')} — reply with the number or the name.`;
 const doorName = (slug: DoorSlug) => DOORS.find((d) => d.slug === slug)!.displayName;
 
+// Derive the stage from what's collected — keeps state coherent on the live path so a scripted
+// fallback (after a transient live failure) resumes at the right question instead of restarting.
+export function nextStage(c: Collected): Stage {
+  if (!c.athleticPast) return 'athletic_past';
+  if (!c.gap) return 'gap';
+  if (!c.rightNow) return 'right_now';
+  if (!c.identityNoun) return 'identity';
+  if (!c.reclaimList || c.reclaimList.length !== RECLAIM_LIST_SIZE) return 'reclaim';
+  if (!c.door) return 'door';
+  return 'complete';
+}
+
+// A safety-net question per stage — used if a live turn comes back with no text (tool-only),
+// so the member never sees a blank reply that looks like the agent stalled.
+const STAGE_PROMPT: Record<Stage, string> = {
+  athletic_past: 'Who were you, back when you felt most like yourself?',
+  gap: 'And then something shifted — what happened?',
+  right_now: 'Where are you right now, this week — without polishing it?',
+  identity: 'In one word: who do you want to be again?',
+  reclaim: `Name ${RECLAIM_LIST_SIZE} things you want back — one per line, or separated by commas.`,
+  door: doorOptions(),
+  complete: 'Thank you — that’s everything we need. Let’s look at your baseline next.',
+};
+
 // The member chooses their Door explicitly (number or name) — the agent does not guess it
 // from free text, which is ambiguous ("lost my job" vs "lost my mother") and would risk
 // assigning an identity the member didn't confirm.
@@ -228,5 +252,7 @@ async function liveTurn(
         !!collected.identityNoun && collected.reclaimList?.length === RECLAIM_LIST_SIZE && !!collected.door;
     }
   }
-  return { reply: reply.trim(), state: { stage: complete ? 'complete' : state.stage, collected }, complete };
+  const stage: Stage = complete ? 'complete' : nextStage(collected);
+  const finalReply = reply.trim() || STAGE_PROMPT[stage];
+  return { reply: finalReply, state: { stage, collected }, complete };
 }

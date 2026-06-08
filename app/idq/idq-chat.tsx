@@ -30,10 +30,16 @@ export default function IdqChat({ memberId }: { memberId: string }) {
     if (t.complete && t.responses) {
       setPending(true);
       setError(null);
-      const r = await submitIdqResponses(memberId, t.responses);
-      if (r.ok) router.push(`/dashboard/${memberId}`);
-      else {
+      try {
+        const r = await submitIdqResponses(memberId, t.responses);
+        if (r.ok) {
+          router.push(`/dashboard/${memberId}`);
+          return;
+        }
         setError((r.errors ?? ['Could not save your IDQ — please try again.']).join('; '));
+      } catch {
+        setError('That didn’t save — please try again in a moment.');
+      } finally {
         setPending(false);
       }
     }

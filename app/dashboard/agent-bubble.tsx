@@ -23,9 +23,14 @@ export default function AgentBubble({
     setShowTeaser(false);
     if (messages.length === 0) {
       setPending(true);
-      const r = await checkinTurn(memberId, [], null); // opening
-      setMessages([{ role: 'agent', text: r.reply }]);
-      setPending(false);
+      try {
+        const r = await checkinTurn(memberId, [], null); // opening
+        setMessages([{ role: 'agent', text: r.reply }]);
+      } catch {
+        setMessages([{ role: 'agent', text: 'I’m here. Something hiccupped loading this — send a message and we’ll go.' }]);
+      } finally {
+        setPending(false);
+      }
     }
   }
 
@@ -37,9 +42,14 @@ export default function AgentBubble({
     setMessages([...history, { role: 'member', text }]);
     setInput('');
     setPending(true);
-    const r = await checkinTurn(memberId, history, text);
-    setMessages([...history, { role: 'member', text }, { role: 'agent', text: r.reply }]);
-    setPending(false);
+    try {
+      const r = await checkinTurn(memberId, history, text);
+      setMessages([...history, { role: 'member', text }, { role: 'agent', text: r.reply }]);
+    } catch {
+      setMessages([...history, { role: 'member', text }, { role: 'agent', text: 'Sorry — that didn’t go through. Try again in a moment.' }]);
+    } finally {
+      setPending(false);
+    }
   }
 
   return (

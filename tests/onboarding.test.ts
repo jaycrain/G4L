@@ -4,11 +4,26 @@ import {
   onboardingNextTurn,
   scriptedTurn,
   collectedToFields,
+  nextStage,
   INITIAL_STATE,
   type ConvState,
 } from '../lib/agent/onboarding.ts';
 
 const ctx = { name: 'Tom Miller', email: 'tom@example.com' };
+
+test('nextStage advances only as each requirement is met, and completes after the Door', () => {
+  assert.equal(nextStage({}), 'athletic_past');
+  assert.equal(nextStage({ athleticPast: 'x' }), 'gap');
+  assert.equal(nextStage({ athleticPast: 'x', gap: 'y' }), 'right_now');
+  assert.equal(nextStage({ athleticPast: 'x', gap: 'y', rightNow: 'z' }), 'identity');
+  assert.equal(nextStage({ athleticPast: 'x', gap: 'y', rightNow: 'z', identityNoun: 'RUNNER' }), 'reclaim');
+  // a reclaim list of the wrong length keeps us at reclaim (the contract is exactly 7)
+  const six = ['a', 'b', 'c', 'd', 'e', 'f'];
+  assert.equal(nextStage({ athleticPast: 'x', gap: 'y', rightNow: 'z', identityNoun: 'RUNNER', reclaimList: six }), 'reclaim');
+  const seven = [...six, 'g'];
+  assert.equal(nextStage({ athleticPast: 'x', gap: 'y', rightNow: 'z', identityNoun: 'RUNNER', reclaimList: seven }), 'door');
+  assert.equal(nextStage({ athleticPast: 'x', gap: 'y', rightNow: 'z', identityNoun: 'RUNNER', reclaimList: seven, door: 'career_cliff' }), 'complete');
+});
 
 test('opening turn leads with the verbatim AI disclosure and one question', async () => {
   const t = await onboardingNextTurn({ ctx, state: INITIAL_STATE, history: [], memberMessage: null });

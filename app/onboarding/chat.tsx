@@ -36,10 +36,16 @@ export default function OnboardingChat() {
     setError(null);
     setPhase('chat');
     setPending(true);
-    const r = await onboardingTurn({ ctx, state: null, history: [], memberMessage: null });
-    setMessages([{ role: 'agent', text: r.reply }]);
-    setState(r.state);
-    setPending(false);
+    try {
+      const r = await onboardingTurn({ ctx, state: null, history: [], memberMessage: null });
+      setMessages([{ role: 'agent', text: r.reply }]);
+      setState(r.state);
+    } catch {
+      setError('Couldn’t start the conversation — please try again.');
+      setPhase('gate');
+    } finally {
+      setPending(false);
+    }
   }
 
   async function send(e: React.FormEvent) {
@@ -52,16 +58,24 @@ export default function OnboardingChat() {
     setPending(true);
     setError(null);
 
-    const r = await onboardingTurn({ ctx, state, history: prior, memberMessage: text });
-    setMessages([...prior, { role: 'member', text }, { role: 'agent', text: r.reply }]);
-    setState(r.state);
-    setPending(false);
-    if (r.errors) setError(r.errors.join('; '));
-    if (r.complete && r.memberId) {
-      // Secure the account with the password captured at sign-up; fall back to the setup
-      // screen only if that didn't take.
-      const saved = await setupAction(r.memberId, password);
-      router.push(saved.ok ? `/idq?member=${r.memberId}` : `/account/setup?member=${r.memberId}`);
+    try {
+      const r = await onboardingTurn({ ctx, state, history: prior, memberMessage: text });
+      setMessages([...prior, { role: 'member', text }, { role: 'agent', text: r.reply }]);
+      setState(r.state);
+      if (r.errors) setError(r.errors.join('; '));
+      if (r.complete && r.memberId) {
+        // Secure the account with the password captured at sign-up; fall back to the setup
+        // screen only if that didn't take.
+        const saved = await setupAction(r.memberId, password);
+        router.push(saved.ok ? `/idq?member=${r.memberId}` : `/account/setup?member=${r.memberId}`);
+      }
+    } catch {
+      // Roll back the optimistic message and restore the draft so they can simply resend.
+      setMessages(prior);
+      setInput(text);
+      setError('That didn’t go through — please send it again.');
+    } finally {
+      setPending(false);
     }
   }
 
