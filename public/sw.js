@@ -1,6 +1,6 @@
 // G4L service worker — conservative on purpose. It makes the app installable and gives an
 // offline fallback, without ever serving stale dynamic content or touching server actions.
-const CACHE = 'g4l-v2';
+const CACHE = 'g4l-v3';
 const PRECACHE = ['/offline', '/icons/icon-192.png'];
 
 self.addEventListener('install', (event) => {
