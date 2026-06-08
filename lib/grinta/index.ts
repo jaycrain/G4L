@@ -1,7 +1,10 @@
 // The GRINTA! Index — the daily "process" metric: how consistently you're showing up. It moves
 // every day (rolling 14-day window), unlike the ID Score (the longitudinal "product," every 60
 // days). Process → product: this is the needle that moves daily and feeds the work that lifts the
-// ID Score. A COMPANION metric — it never alters the frozen ID Score. (v0 formula; Greg to refine.)
+// ID Score. Named for the GRINTA! documentary (Eros Poli); Greg equates it to HARDINESS — a
+// developable construct — so this v0 consistency formula is a placeholder to evolve toward the
+// hardiness dimensions (commitment/control/challenge). A COMPANION metric — never alters the
+// frozen ID Score. See docs/momentum-grinta-index.md.
 
 import type { Db } from '../db/schema.ts';
 
