@@ -19,11 +19,14 @@ export type ScheduledNudgeResult = {
 
 export async function runScheduledNudges(
   db: Db,
-  opts?: { sender?: PushSender; cooldownHours?: number },
+  opts?: { sender?: PushSender; cooldownHours?: number; activeWithinHours?: number },
 ): Promise<ScheduledNudgeResult> {
   const cooldownHours = opts?.cooldownHours ?? 72;
+  const activeWithinHours = opts?.activeWithinHours ?? 24;
 
-  // Members with a subscription who haven't been auto-pushed within the cooldown window.
+  // Eligible = has a subscription, NOT auto-pushed within the cooldown, AND not recently active.
+  // The recency rule means a proactive push only reaches people who've drifted — never someone
+  // who's currently in the app and already seeing the same nudge on their dashboard.
   const { rows: members } = await db.query<{ member_id: string }>(
     `select distinct ps.member_id
        from push_subscription ps
@@ -31,8 +34,17 @@ export async function runScheduledNudges(
         select 1 from nudge_log nl
          where nl.member_id = ps.member_id and nl.channel = 'push'
            and nl.sent_at > now() - ($1 * interval '1 hour')
+      )
+      and not exists (
+        select 1 from (
+          select completed_at t from asset_completion where member_id = ps.member_id
+          union all select taken_at     from idq_retake       where member_id = ps.member_id
+          union all select occurred_at  from asset_event      where member_id = ps.member_id
+          union all select started_at   from activity_event   where member_id = ps.member_id
+        ) act
+        where act.t > now() - ($2 * interval '1 hour')
       )`,
-    [cooldownHours],
+    [cooldownHours, activeWithinHours],
   );
 
   let pushed = 0,

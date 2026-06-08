@@ -24,7 +24,7 @@ rendered by the generic engine with a signed **Science Check**:
 1. **Code mapping.** Greg numbers Rebuild assets R1/R2/R3 + "Asset 5/6/7"; we use B-1…B-5 (our R
    = Reconnect, B = Rebuild). Agree a single naming scheme. His doc also contains two more we
    haven't added yet: **Movement Menu** ("Asset 5") and **Rebuild Checkpoint** ("Asset 7").
-2. **12-week frame.** Greg proposes ReConnect 3wk + ReWire 3wk + ReBuild 6wk (R3 = 4wk) = ~12
+2. **12-week frame.** Greg proposes Reconnect 3wk + Rewire 3wk + Rebuild 6wk (R3 = 4wk) = ~12
    weeks, vs the earlier 8. No engineering impact — the dashboard shows "current focus," not a
    fixed duration. Content/cadence decision.
 3. **Sequence vs. parallel.** CLAUDE.md currently models Rewire + Rebuild as parallel/dosed.
