@@ -17,6 +17,7 @@ type State = 'loading' | 'idle' | 'working' | 'on' | 'denied' | 'unsupported';
 
 export default function EnableNotifications({ memberId }: { memberId: string }) {
   const [state, setState] = useState<State>('loading');
+  const [msg, setMsg] = useState<string | null>(null);
 
   useEffect(() => {
     if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) {
@@ -35,34 +36,56 @@ export default function EnableNotifications({ memberId }: { memberId: string }) 
 
   const enable = async () => {
     setState('working');
+    setMsg(null);
     try {
+      // Ask permission FIRST so the request stays inside the user gesture (iOS is strict here).
       const perm = await Notification.requestPermission();
+      if (perm === 'denied') {
+        setState('denied');
+        return;
+      }
       if (perm !== 'granted') {
-        setState(perm === 'denied' ? 'denied' : 'idle');
-        return;
-      }
-      const reg = await navigator.serviceWorker.ready;
-      const key = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
-      if (!key) {
         setState('idle');
+        setMsg('The notification prompt was dismissed — tap to try again.');
         return;
       }
-      const sub = await reg.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(key),
-      });
+
+      const reg = await navigator.serviceWorker.ready;
+      // Reuse an existing subscription if there is one (avoids re-subscribe errors).
+      let sub = await reg.pushManager.getSubscription();
+      if (!sub) {
+        const key = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+        if (!key) {
+          setState('idle');
+          setMsg('Push key missing — fully close and reopen the app, then try again.');
+          return;
+        }
+        sub = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(key),
+        });
+      }
+
       const json = sub.toJSON() as { endpoint?: string; keys?: { p256dh?: string; auth?: string } };
       if (!json.endpoint || !json.keys?.p256dh || !json.keys?.auth) {
         setState('idle');
+        setMsg('The browser returned an incomplete subscription.');
         return;
       }
       const res = await subscribeAction(memberId, {
         endpoint: json.endpoint,
         keys: { p256dh: json.keys.p256dh, auth: json.keys.auth },
       });
-      setState(res.ok ? 'on' : 'idle');
-    } catch {
+      if (res.ok) {
+        setState('on');
+      } else {
+        setState('idle');
+        setMsg('Saving the subscription failed on the server.');
+      }
+    } catch (e) {
       setState('idle');
+      const err = e as Error;
+      setMsg(`Couldn't enable: ${err.name || 'Error'} — ${err.message || 'unknown'}`);
     }
   };
 
@@ -83,6 +106,7 @@ export default function EnableNotifications({ memberId }: { memberId: string }) 
           <button onClick={enable} disabled={state === 'working'}>
             {state === 'working' ? 'Turning on…' : 'Turn on notifications'}
           </button>
+          {msg && <p className="error" style={{ marginTop: '0.6rem', fontWeight: 400 }}>{msg}</p>}
         </>
       )}
     </div>
