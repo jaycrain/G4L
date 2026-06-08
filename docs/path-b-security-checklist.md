@@ -26,7 +26,9 @@ members** (the charter/public cohort). Per CLAUDE.md, security + the data model 
 - [ ] **Password reset** (email link) — needs a transactional email provider (recommend Resend).
 - [ ] **Email verification** at signup — same provider.
 - [ ] **Consent capture + research/product data separation** (AI Governance Framework): product
-      telemetry = internal QI; research data separate and explicitly consented.
+      telemetry = internal QI; research data separate and explicitly consented. NOTE: Member Agent
+      conversations are now persisted (`agent_message`) — sensitive content; covered by app-layer
+      isolation today, but needs consent + a retention/deletion policy here.
 - [ ] **Crisis escalation to a human:** the agent already detects distress and routes to 988 — define
       the human owner + notification path (who's alerted, how, response expectation).
 - [ ] **Senior security review** of auth, sessions, RLS, and the data model (fractional senior eng).

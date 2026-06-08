@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { checkinTurn } from './checkin-actions.ts';
+import { openCheckin, sendCheckin } from './checkin-actions.ts';
 
 type Msg = { role: 'agent' | 'member'; text: string };
 
@@ -24,10 +24,10 @@ export default function AgentBubble({
     if (messages.length === 0) {
       setPending(true);
       try {
-        const r = await checkinTurn(memberId, [], null); // opening
-        setMessages([{ role: 'agent', text: r.reply }]);
+        const thread = await openCheckin(memberId); // saved history, or a fresh opening
+        setMessages(thread.length ? thread : [{ role: 'agent', text: 'I’m here. What’s on your mind?' }]);
       } catch {
-        setMessages([{ role: 'agent', text: 'I’m here. Something hiccupped loading this — send a message and we’ll go.' }]);
+        setMessages([{ role: 'agent', text: 'I’m here. Something hiccupped loading our thread — send a message and we’ll go.' }]);
       } finally {
         setPending(false);
       }
@@ -43,7 +43,7 @@ export default function AgentBubble({
     setInput('');
     setPending(true);
     try {
-      const r = await checkinTurn(memberId, history, text);
+      const r = await sendCheckin(memberId, text);
       setMessages([...history, { role: 'member', text }, { role: 'agent', text: r.reply }]);
     } catch {
       setMessages([...history, { role: 'member', text }, { role: 'agent', text: 'Sorry — that didn’t go through. Try again in a moment.' }]);
