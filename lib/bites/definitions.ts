@@ -1,8 +1,10 @@
 // GRINTA! Bites — small, non-program content the Member Agent serves day to day. Versioned content
 // (a registry, like assets), tagged for relevance. Consuming one is a daily "rep" that feeds the
-// GRINTA! Index. Science Checks, short articles, and excerpts of bigger assets all live here.
+// GRINTA! Index. Science Checks are DERIVED from the asset registry, so every Science Check Greg
+// writes (or edits) flows in as a bite automatically — single-sourced, no duplication.
 
-import type { RGroup } from '../assets/gating.ts';
+import { GATES, type RGroup } from '../assets/gating.ts';
+import { ASSET_NAMES, getAssetDefinition } from '../assets/definitions.ts';
 
 export type BiteKind = 'science_check' | 'article' | 'asset_excerpt';
 
@@ -23,7 +25,8 @@ export const KIND_LABEL: Record<BiteKind, string> = {
   asset_excerpt: 'From the Atlas',
 };
 
-export const BITES: Bite[] = [
+// Hand-authored articles + excerpts (not signed Science Checks — those are derived below).
+const HAND_AUTHORED: Bite[] = [
   {
     code: 'bite-hardiness',
     title: 'What “Grinta” actually is',
@@ -32,16 +35,6 @@ export const BITES: Bite[] = [
     tags: ['grinta', 'hardiness', 'identity'],
     group: 'Rewire',
     body: 'Grinta isn’t about being tough. It’s hardiness — and the science says it’s learnable. Three habits build it: commitment (staying engaged with what matters), control (acting on what you can change), and challenge (treating change as the path, not the threat). Every time you show up — a ride, a page, a hard conversation — you’re training it. That’s why no rep in the loop is wasted.',
-  },
-  {
-    code: 'bite-first-step',
-    title: 'Why the first step matters',
-    kind: 'science_check',
-    minutes: 2,
-    tags: ['grinta', 'rebuild', 'physical'],
-    group: 'Rebuild',
-    attribution: 'Dr. Greg Welk',
-    body: 'Physical inactivity acts as an accelerant that roughly doubles the rate of physiological decline — and about half of the decline we associate with aging is preventable. A baseline gives you real information to work with: not guesses, not how you feel, but where you actually are. The jump from zero to something is the most important transition there is.',
   },
   {
     code: 'bite-zero-to-something',
@@ -61,17 +54,30 @@ export const BITES: Bite[] = [
     group: 'Reconnect',
     body: 'Think of a moment — even a small, ordinary one — when you last felt fully like yourself. Not a highlight reel. A morning, a road, a room where you recognized you. That window is still open. The whole work of Reconnect is widening it until you can climb back through.',
   },
-  {
-    code: 'bite-fuel-to-move',
-    title: 'Fuel to move',
-    kind: 'science_check',
-    minutes: 2,
-    tags: ['grinta', 'rebuild', 'nutrition'],
-    group: 'Rebuild',
-    attribution: 'Dr. Greg Welk',
-    body: 'A diet isn’t something you go on — it’s something you have. The evidence for midlife is clear: diet and movement work best linked into one “fuel to move” lifestyle, not managed separately. Favor whole foods, keep moving, and let the two reinforce each other. The body regulates weight like a thermostat — consistent movement is what keeps it honest.',
-  },
 ];
+
+// Science Checks, derived from the asset registry — Greg's content becomes bites automatically.
+function scienceCheckBites(): Bite[] {
+  const out: Bite[] = [];
+  for (const code of Object.keys(ASSET_NAMES)) {
+    const sc = getAssetDefinition(code).scienceCheck;
+    if (!sc) continue;
+    const group = GATES[code]?.group;
+    out.push({
+      code: `bite-sc-${code}`,
+      title: sc.title,
+      kind: 'science_check',
+      minutes: 2,
+      tags: ['grinta', 'science', ...(group ? [group.toLowerCase()] : [])],
+      group,
+      attribution: sc.attribution,
+      body: sc.body,
+    });
+  }
+  return out;
+}
+
+export const BITES: Bite[] = [...HAND_AUTHORED, ...scienceCheckBites()];
 
 const byCode = new Map(BITES.map((b) => [b.code, b]));
 export const getBite = (code: string): Bite | undefined => byCode.get(code);

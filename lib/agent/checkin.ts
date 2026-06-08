@@ -18,6 +18,7 @@ export type CheckinContext = {
   currentFocus: string | null;
   lastCompletedAsset: string | null;
   reclaimList: string[];
+  biteTitle?: string | null; // today's GRINTA! bite, if one is waiting (the agent may offer it)
 };
 
 export type CheckinMessage = { role: 'agent' | 'member'; text: string };
@@ -33,6 +34,7 @@ function contextBlock(c: CheckinContext): string {
     c.idScore !== null ? `Latest ID Score: ${c.idScore}${c.direction ? ` (${c.direction})` : ''}` : 'No IDQ yet',
     c.currentFocus ? `Current focus: ${c.currentFocus}` : null,
     c.lastCompletedAsset ? `Most recent asset: ${c.lastCompletedAsset}` : null,
+    c.biteTitle ? `Today's GRINTA! bite (a 2-min read on their dashboard — offer it lightly): "${c.biteTitle}"` : null,
   ].filter(Boolean).join('\n');
 }
 
@@ -49,10 +51,10 @@ ${contextBlock(c)}`;
 
 // --- Scripted (offline) — brand-voice safe (no "journey" / "I hear you" / "amazing") --------
 function scriptedOpening(c: CheckinContext): string {
-  const name = firstName(c.displayName);
-  if (c.lastCompletedAsset) return `Good to see you${name ? `, ${name}` : ''}. You just finished ${c.lastCompletedAsset} — how did it land?`;
-  if (c.idScore === null) return `Good to see you${name ? `, ${name}` : ''}. What's on your mind today?`;
-  return `Good to see you${name ? `, ${name}` : ''}. What's on your mind today?`;
+  const hi = `Good to see you${firstName(c.displayName) ? `, ${firstName(c.displayName)}` : ''}.`;
+  if (c.lastCompletedAsset) return `${hi} You just finished ${c.lastCompletedAsset} — how did it land?`;
+  if (c.biteTitle) return `${hi} I’ve got today’s GRINTA! bite for you — “${c.biteTitle},” on your dashboard. But first, what’s on your mind?`;
+  return `${hi} What's on your mind today?`;
 }
 
 function scriptedReply(memberMessage: string): string {
@@ -89,7 +91,7 @@ export async function checkinOpening(c: CheckinContext): Promise<string> {
       return await liveReply(
         checkinSystem(c),
         [],
-        'The member just opened the check-in and has not said anything yet. Greet them warmly in G4L voice, reference their recent context if there is any, and ask one gentle opening question.',
+        'The member just opened the check-in and has not said anything yet. Greet them warmly in G4L voice, reference their recent context if there is any (if a GRINTA! bite is listed, offer it lightly — never push), and ask one gentle opening question.',
       );
     } catch (e) {
       console.warn('check-in opening: live agent unavailable, using scripted —', (e as Error).message);

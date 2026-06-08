@@ -51,12 +51,17 @@ export default async function DashboardPage({
     status: assetStatus(gateCtx, code),
   }));
 
-  // Signal-driven proactive nudge for the always-on companion bubble.
+  // Today's GRINTA! bite — small daily content the agent serves; consuming it feeds the Index.
+  const focusGroup = dash.currentFocus?.label?.split(' ')[0] as RGroup | undefined;
+  const bitePanel = await getBitePanel(db, memberId, focusGroup);
+
+  // Signal-driven proactive nudge for the always-on companion bubble (incl. today's bite).
   const nudgeSignals = {
     ...(await timeSignals(db, memberId)),
     direction: dash.score?.direction ?? null,
     delta: dash.score?.delta ?? null,
     nextAssetName: nextCode ? ASSET_NAMES[nextCode]! : null,
+    biteReadyTitle: bitePanel.state === 'available' ? bitePanel.bite.title : null,
   };
   const teaser = topNudge(nudgeSignals).text;
 
@@ -65,10 +70,6 @@ export default async function DashboardPage({
 
   // GRINTA! Index — the daily "process" metric (companion to the longitudinal ID Score).
   const grinta = await getGrinta(db, memberId, dash.identityNoun);
-
-  // Today's GRINTA! bite — small daily content the agent serves; consuming it feeds the Index.
-  const focusGroup = dash.currentFocus?.label?.split(' ')[0] as RGroup | undefined;
-  const bitePanel = await getBitePanel(db, memberId, focusGroup);
 
   return (
     <>

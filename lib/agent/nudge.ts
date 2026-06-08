@@ -9,6 +9,7 @@ import { ASSET_NAMES } from '../assets/definitions.ts';
 import { getDashboard } from '../gateway/flow.ts';
 import { completedCodes } from '../assets/engine.ts';
 import { recommendedNext } from '../assets/gating.ts';
+import { getBitePanel } from '../bites/store.ts';
 
 export type NudgeSignals = {
   hasIdq: boolean;
@@ -21,6 +22,7 @@ export type NudgeSignals = {
   nextAssetName: string | null;
   recentWorkoutType?: string | null; // a logged Strava activity (ride/run/walk…)
   daysSinceWorkout?: number | null;
+  biteReadyTitle?: string | null; // today's GRINTA! bite, if one is waiting
 };
 
 // A logged activity → a natural verb for the witness nudge.
@@ -59,6 +61,9 @@ export function computeNudges(s: NudgeSignals): Nudge[] {
   } else if (s.direction === 'up' && s.delta) {
     n.push({ kind: 'up', text: 'Your ID Score moved up. Want to talk about what is working?', priority: 45 });
   }
+  if (s.biteReadyTitle) {
+    n.push({ kind: 'bite_ready', text: `Today’s GRINTA! bite is ready: “${s.biteReadyTitle}.” A quick one.`, priority: 40 });
+  }
   if (s.nextAssetName) {
     n.push({ kind: 'next_asset', text: `Ready for ${s.nextAssetName}? Or just want to talk?`, priority: 30 });
   }
@@ -77,11 +82,13 @@ export async function buildNudge(db: Db, memberId: string): Promise<Nudge | null
   if (!dash) return null;
   const completed = await completedCodes(db, memberId);
   const nextCode = recommendedNext({ completed, dimensions: dash.score?.dimensions });
+  const bite = await getBitePanel(db, memberId);
   return topNudge({
     ...(await timeSignals(db, memberId)),
     direction: dash.score?.direction ?? null,
     delta: dash.score?.delta ?? null,
     nextAssetName: nextCode ? (ASSET_NAMES[nextCode] ?? null) : null,
+    biteReadyTitle: bite.state === 'available' ? bite.bite.title : null,
   });
 }
 

@@ -4,10 +4,14 @@ import { getDb } from '../../lib/db/index.ts';
 import { getDashboard } from '../../lib/gateway/flow.ts';
 import { checkinOpening, checkinReply, type CheckinContext, type CheckinMessage } from '../../lib/agent/checkin.ts';
 import { loadConversation, appendMessages } from '../../lib/agent/conversation.ts';
+import { getBitePanel } from '../../lib/bites/store.ts';
 import { authorizeMember } from '../authz.ts';
 import type { Db } from '../../lib/db/schema.ts';
 
-function toContext(dash: NonNullable<Awaited<ReturnType<typeof getDashboard>>>): CheckinContext {
+function toContext(
+  dash: NonNullable<Awaited<ReturnType<typeof getDashboard>>>,
+  biteTitle: string | null = null,
+): CheckinContext {
   return {
     displayName: dash.displayName,
     identityNoun: dash.identityNoun,
@@ -17,6 +21,7 @@ function toContext(dash: NonNullable<Awaited<ReturnType<typeof getDashboard>>>):
     currentFocus: dash.currentFocus?.label ?? null,
     lastCompletedAsset: null, // (wire to most-recent asset_completion later)
     reclaimList: dash.reclaimList,
+    biteTitle,
   };
 }
 
@@ -29,7 +34,8 @@ export async function openCheckin(memberId: string): Promise<CheckinMessage[]> {
     if (history.length > 0) return history; // pick up where we left off
     const dash = await getDashboard(db, memberId);
     if (!dash) return [{ role: 'agent', text: "I can't reach your profile right now — try reopening in a moment." }];
-    const opening = await checkinOpening(toContext(dash));
+    const bite = await getBitePanel(db, memberId);
+    const opening = await checkinOpening(toContext(dash, bite.state === 'available' ? bite.bite.title : null));
     await appendMessages(db, memberId, [{ role: 'agent', text: opening }]);
     return [{ role: 'agent', text: opening }];
   } catch (e) {
