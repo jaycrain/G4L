@@ -21,15 +21,33 @@ export type DraftRow = {
 
 export async function createDraft(
   db: Db,
-  p: { memberId: string; moment: OperatingMoment; channel?: 'email' | 'sms'; draft: Draft; inputSnapshot?: unknown },
+  p: {
+    memberId: string;
+    moment: OperatingMoment;
+    channel?: 'email' | 'sms';
+    draft: Draft;
+    inputSnapshot?: unknown;
+    triggerKey?: string; // set by auto-triggers; null for manual drafts
+  },
 ): Promise<string> {
   const { rows } = await db.query<{ id: string }>(
     `insert into founder_agent_drafts
-       (member_id, operating_moment, channel, draft_subject, draft_body, input_snapshot)
-     values ($1,$2,$3,$4,$5,$6) returning id`,
-    [p.memberId, p.moment, p.channel ?? 'email', p.draft.subject, p.draft.body, p.inputSnapshot ?? {}],
+       (member_id, operating_moment, channel, draft_subject, draft_body, input_snapshot, trigger_key)
+     values ($1,$2,$3,$4,$5,$6,$7) returning id`,
+    [p.memberId, p.moment, p.channel ?? 'email', p.draft.subject, p.draft.body, p.inputSnapshot ?? {}, p.triggerKey ?? null],
   );
   return rows[0]!.id;
+}
+
+/** Has an auto-trigger already drafted for this member + event? Keeps one event → one draft. */
+export async function draftExistsForTrigger(db: Db, memberId: string, triggerKey: string): Promise<boolean> {
+  const { rows } = await db.query<{ e: boolean }>(
+    `select exists(
+       select 1 from founder_agent_drafts where member_id = $1 and trigger_key = $2
+     ) as e`,
+    [memberId, triggerKey],
+  );
+  return Boolean(rows[0]?.e);
 }
 
 export async function listPending(db: Db): Promise<DraftRow[]> {

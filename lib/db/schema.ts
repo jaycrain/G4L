@@ -21,6 +21,7 @@ const MIGRATIONS: Array<{ file: string; sentinel: Sentinel }> = [
   { file: 'migrations/0002_assets.sql', sentinel: 'asset_completion' },
   { file: 'migrations/0003_founder_agent.sql', sentinel: 'founder_agent_drafts' },
   { file: 'migrations/0004_avatar.sql', sentinel: { table: 'member_profile', column: 'avatar_url' } },
+  { file: 'migrations/0005_founder_trigger_key.sql', sentinel: { table: 'founder_agent_drafts', column: 'trigger_key' } },
 ];
 export const SEED_SQL = () => sqlFile('seed/0001_reference_data.sql');
 
