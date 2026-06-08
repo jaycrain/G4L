@@ -158,6 +158,14 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .agent-chat { flex: 1; overflow-y: auto; padding: 0.9rem; margin: 0; }
 .agent-panel .chat-input { padding: 0.6rem; border-top: 1px solid var(--grey); margin: 0; }
 
+/* PWA install bar — slim, dismissible, top of viewport (clear of the agent dock) */
+.install-bar { position: sticky; top: 0; z-index: 60; display: flex; align-items: center; gap: 0.6rem; background: var(--navy); color: var(--white); padding: 0.5rem 0.8rem; padding-top: max(0.5rem, env(safe-area-inset-top)); font-size: 0.9rem; }
+.install-icon { border-radius: 6px; flex: 0 0 auto; }
+.install-text { flex: 1; line-height: 1.25; }
+.install-btn { margin: 0; background: var(--teal); padding: 0.4rem 0.9rem; border-radius: 8px; font-size: 0.85rem; flex: 0 0 auto; }
+.install-btn:hover { background: var(--white); color: var(--navy); }
+.install-x { background: none; border: none; color: var(--white); font-size: 1.25rem; line-height: 1; margin: 0; padding: 0 0.25rem; cursor: pointer; opacity: 0.7; flex: 0 0 auto; }
+
 .likert { display: flex; gap: 0.9rem; margin: 0.3rem 0 0.9rem; }
 .likert label { display: inline-flex; align-items: center; gap: 0.3rem; margin: 0; font-weight: 400; }
 .idq-dim-head { color: var(--teal); margin-top: 1.5rem; }
