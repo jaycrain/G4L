@@ -6,6 +6,7 @@ import { recommendedNext, assetStatus, ASSET_ORDER, GATES, type AssetStatus } fr
 import { ASSET_NAMES } from '../../../lib/assets/definitions.ts';
 import { timeSignals, topNudge } from '../../../lib/agent/nudge.ts';
 import { getActivityPanel } from '../../../lib/activity/store.ts';
+import { getGrinta } from '../../../lib/grinta/index.ts';
 import { formatDistance, formatDuration, typeLabel, relativeDay } from '../../../lib/activity/summary.ts';
 import { firstName, initials } from '../../../lib/member/avatar.ts';
 import type { Db } from '../../../lib/db/schema.ts';
@@ -59,6 +60,9 @@ export default async function DashboardPage({
 
   // Activity panel — objective evidence of the identity coming back (Strava). Reflective, not graded.
   const activity = await getActivityPanel(db, memberId, dash.identityNoun);
+
+  // GRINTA! Index — the daily "process" metric (companion to the longitudinal ID Score).
+  const grinta = await getGrinta(db, memberId, dash.identityNoun);
 
   return (
     <>
@@ -122,6 +126,22 @@ export default async function DashboardPage({
           <p className="muted">Your IDQ baseline isn&apos;t in yet.</p>
         </div>
       )}
+
+      {/* GRINTA! Index — the daily process metric: how you're showing up. Moves daily; never alters the ID Score. */}
+      <div className="card grinta">
+        <h3>Your GRINTA! Index</h3>
+        <div className="score">
+          <span className="num">{grinta.score}</span>
+          <span className={`dir-${grinta.direction}`}>
+            {ARROW[grinta.direction]}
+            {grinta.delta !== 0 ? ` ${grinta.delta > 0 ? '+' : ''}${grinta.delta}` : ''}
+          </span>
+        </div>
+        <p className="muted">{grinta.line}</p>
+        <p className="muted grinta-bridge">
+          Your daily effort moves this. Your ID Score is where it lands when you next take the IDQ.
+        </p>
+      </div>
 
       {dash.currentFocus && (
         <div className="card">

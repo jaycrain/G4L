@@ -167,6 +167,10 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .science-check h3 { margin: 0.25rem 0 0.45rem; font-size: 1.05rem; }
 .science-check .sc-by { font-style: italic; color: var(--navy); opacity: 0.8; margin: 0.55rem 0 0; font-size: 0.9rem; }
 
+/* GRINTA! Index — the daily process metric (olive num, distinct from the teal ID Score) */
+.grinta .num { color: var(--olive); }
+.grinta-bridge { font-size: 0.85rem; margin-top: 0.45rem; }
+
 /* Activity panel (Strava) — reflective, not gamified */
 .activity-week { display: flex; gap: 1.25rem; margin: 0.4rem 0 0.7rem; font-size: 0.95rem; color: var(--charcoal); }
 .activity-week strong { color: var(--teal); font-size: 1.15rem; }
