@@ -174,8 +174,11 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .bite-body { white-space: pre-wrap; }
 .bite-by { font-style: italic; color: var(--navy); opacity: 0.8; font-size: 0.9rem; margin: 0.4rem 0 0; }
 
-/* GRINTA! Index — the daily process metric (olive num, distinct from the teal ID Score) */
-.grinta .num { color: var(--olive); }
+/* GRINTA! Index — the daily process metric. Subservient to the ID Score: ~half the number size,
+   olive (vs. the ID's teal), lighter card. The ID Score stays the hero. */
+.grinta .num { color: var(--olive); font-size: 1.5rem; }
+.grinta h3 { font-size: 1rem; opacity: 0.9; }
+.grinta .score { align-items: center; }
 .grinta-bridge { font-size: 0.85rem; margin-top: 0.45rem; }
 
 /* Activity panel (Strava) — reflective, not gamified */
