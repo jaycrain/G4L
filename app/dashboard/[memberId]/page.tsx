@@ -61,7 +61,6 @@ export default async function DashboardPage({
     direction: dash.score?.direction ?? null,
     delta: dash.score?.delta ?? null,
     nextAssetName: nextCode ? ASSET_NAMES[nextCode]! : null,
-    biteReadyTitle: bitePanel.state === 'available' ? bitePanel.bite.title : null,
   };
   const teaser = topNudge(nudgeSignals).text;
 

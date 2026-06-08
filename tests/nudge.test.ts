@@ -47,15 +47,6 @@ test('with nothing pressing, it offers the next asset; default is the floor', ()
   assert.equal(topNudge(base).kind, 'default');
 });
 
-test("today's GRINTA! bite surfaces — below pressing signals, above the next-asset prompt", () => {
-  assert.equal(topNudge({ ...base, biteReadyTitle: 'What “Grinta” actually is' }).kind, 'bite_ready');
-  assert.equal(
-    topNudge({ ...base, biteReadyTitle: 'x', recentAssetName: 'Window Exercise', daysSinceRecentAsset: 1 }).kind,
-    'asset_reflect',
-  );
-  assert.equal(topNudge({ ...base, biteReadyTitle: 'x', nextAssetName: 'Identity Excavation' }).kind, 'bite_ready');
-});
-
 test('all nudge copy respects the brand voice', () => {
   for (const sig of [
     { ...base, hasIdq: false },

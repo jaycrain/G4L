@@ -1,13 +1,22 @@
 // GRINTA! Bites store — consumption + the daily-serve panel. Framework-free (takes a Db).
 import type { Db } from '../db/schema.ts';
 import type { RGroup } from '../assets/gating.ts';
-import { pickDailyBite, type Bite } from './definitions.ts';
+import { pickDailyBite, getBite, type Bite } from './definitions.ts';
 
 export async function consumeBite(db: Db, memberId: string, biteCode: string): Promise<void> {
   await db.query(
     `insert into bite_consumed (member_id, bite_code) values ($1,$2) on conflict do nothing`,
     [memberId, biteCode],
   );
+}
+
+/** Titles of the member's most recently consumed bites (for the agent's awareness). */
+export async function recentConsumedTitles(db: Db, memberId: string, limit = 3): Promise<string[]> {
+  const { rows } = await db.query<{ bite_code: string }>(
+    `select bite_code from bite_consumed where member_id=$1 order by consumed_at desc limit $2`,
+    [memberId, limit],
+  );
+  return rows.map((r) => getBite(r.bite_code)?.title).filter((t): t is string => Boolean(t));
 }
 
 export async function consumedCodes(db: Db, memberId: string): Promise<Set<string>> {

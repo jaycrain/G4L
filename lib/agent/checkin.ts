@@ -18,7 +18,9 @@ export type CheckinContext = {
   currentFocus: string | null;
   lastCompletedAsset: string | null;
   reclaimList: string[];
-  biteTitle?: string | null; // today's GRINTA! bite, if one is waiting (the agent may offer it)
+  grintaScore?: number | null; // the daily GRINTA! Index — for awareness, not to pitch
+  grintaTrend?: 'up' | 'down' | 'flat' | null;
+  consumedBites?: string[]; // titles of recently read bites
 };
 
 export type CheckinMessage = { role: 'agent' | 'member'; text: string };
@@ -34,7 +36,8 @@ function contextBlock(c: CheckinContext): string {
     c.idScore !== null ? `Latest ID Score: ${c.idScore}${c.direction ? ` (${c.direction})` : ''}` : 'No IDQ yet',
     c.currentFocus ? `Current focus: ${c.currentFocus}` : null,
     c.lastCompletedAsset ? `Most recent asset: ${c.lastCompletedAsset}` : null,
-    c.biteTitle ? `Today's GRINTA! bite (a 2-min read on their dashboard — offer it lightly): "${c.biteTitle}"` : null,
+    c.grintaScore != null ? `GRINTA! Index: ${c.grintaScore}${c.grintaTrend ? ` (${c.grintaTrend} lately)` : ''}` : null,
+    c.consumedBites && c.consumedBites.length ? `Recently read: ${c.consumedBites.join('; ')}` : null,
   ].filter(Boolean).join('\n');
 }
 
@@ -44,6 +47,7 @@ function checkinSystem(c: CheckinContext): string {
 OPERATING MOMENT: Ongoing Check-in.
 The member opened the companion to check in — maybe to share a win, vent, or think out loud, maybe because there is no one else to talk to right now. Be present. Open warmly and, when natural, reference their most recent moment. Listen and reflect more than you advise. One question at a time.
 Your quiet north star is their human connectedness: when it fits, gently bridge them toward people — the G4L community, a friend, a coach, or Jay — rather than keeping the conversation only with you. Be comfortable letting a short conversation end. Never pull for engagement or screen time.
+You are aware of their GRINTA! Index (their daily showing-up), its trend, and what they have recently read — reference these naturally if they help the conversation (e.g. "your GRINTA! has been climbing"). Do NOT pitch content or hand out tasks; the daily bite lives on their dashboard, not in this chat.
 
 MEMBER CONTEXT (facts — do not invent beyond these):
 ${contextBlock(c)}`;
@@ -53,7 +57,6 @@ ${contextBlock(c)}`;
 function scriptedOpening(c: CheckinContext): string {
   const hi = `Good to see you${firstName(c.displayName) ? `, ${firstName(c.displayName)}` : ''}.`;
   if (c.lastCompletedAsset) return `${hi} You just finished ${c.lastCompletedAsset} — how did it land?`;
-  if (c.biteTitle) return `${hi} I’ve got today’s GRINTA! bite for you — “${c.biteTitle},” on your dashboard. But first, what’s on your mind?`;
   return `${hi} What's on your mind today?`;
 }
 
@@ -91,7 +94,7 @@ export async function checkinOpening(c: CheckinContext): Promise<string> {
       return await liveReply(
         checkinSystem(c),
         [],
-        'The member just opened the check-in and has not said anything yet. Greet them warmly in G4L voice, reference their recent context if there is any (if a GRINTA! bite is listed, offer it lightly — never push), and ask one gentle opening question.',
+        'The member just opened the check-in and has not said anything yet. Greet them warmly in G4L voice, reference their recent context if there is any, and ask one gentle opening question.',
       );
     } catch (e) {
       console.warn('check-in opening: live agent unavailable, using scripted —', (e as Error).message);
