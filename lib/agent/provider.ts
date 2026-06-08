@@ -6,6 +6,7 @@
 // to live Claude the moment a key is present — zero code change.
 
 import { MEMBER_AGENT_SYSTEM_PROMPT } from './system-prompt.ts';
+import { cleanIdentityNoun } from '../member/identity.ts';
 import type { DoorSlug } from '../doors.ts';
 
 export type OnboardingInput = {
@@ -30,7 +31,7 @@ export interface AgentProvider {
 export const scriptedProvider: AgentProvider = {
   name: 'scripted',
   async composeIdentityParagraph(i) {
-    const noun = i.identityNoun.toUpperCase();
+    const noun = cleanIdentityNoun(i.identityNoun).toUpperCase();
     return [
       `You were ${article(i.athleticPast)} ${i.athleticPast.trim()}.`,
       `Then ${i.doorDisplayName} changed that, and lately ${lower(i.rightNow.trim())}.`,
@@ -60,9 +61,9 @@ function anthropicProvider(): AgentProvider {
             role: 'user',
             content:
               'Write the member identity paragraph (3–5 short sentences, G4L Member-facing voice) ' +
-              `from this intake. Name their Door and propose THE ${i.identityNoun.toUpperCase()} ` +
-              'as the identity to reclaim. No metrics, no praise.\n\n' +
-              `Athletic past: ${i.athleticPast}\nThe gap (${i.doorDisplayName}): ${i.gap}\n` +
+              `from this intake. Name their Door and propose THE ${cleanIdentityNoun(i.identityNoun).toUpperCase()} ` +
+              'as the identity to reclaim (whatever kind of person that is — do not assume it is athletic). No metrics, no praise.\n\n' +
+              `Past self: ${i.athleticPast}\nThe gap (${i.doorDisplayName}): ${i.gap}\n` +
               `Right now: ${i.rightNow}\n\n` +
               'Output ONLY the paragraph itself — plain text, second person ("you"). ' +
               'No preamble, no heading, no labels, no markdown, no quotation marks.',

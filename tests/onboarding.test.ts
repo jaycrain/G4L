@@ -13,7 +13,9 @@ const ctx = { name: 'Tom Miller', email: 'tom@example.com' };
 test('opening turn leads with the verbatim AI disclosure and one question', async () => {
   const t = await onboardingNextTurn({ ctx, state: INITIAL_STATE, history: [], memberMessage: null });
   assert.match(t.reply, /^This conversation is guided by AI\./);
-  assert.match(t.reply, /what kind of athlete/i);
+  assert.match(t.reply, /who were you/i); // identity-agnostic opening
+  assert.match(t.reply, /writer|musician/i); // reclaimed identity is not limited to athletics
+  assert.equal((t.reply.match(/\?/g) ?? []).length, 1); // still one question
   assert.equal(t.complete, false);
   assert.equal(t.crisis, undefined);
 });

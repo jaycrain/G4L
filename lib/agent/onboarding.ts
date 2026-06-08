@@ -33,7 +33,7 @@ export type Turn = { reply: string; state: ConvState; complete: boolean; crisis?
 export const INITIAL_STATE: ConvState = { stage: 'athletic_past', collected: {} };
 
 const FIRST_QUESTION =
-  'Before we start — what kind of athlete or active person were you, back when you felt most like yourself?';
+  'Before we start — who were you, back when you felt most like yourself? Not your job title — the version of you that has faded. A writer, a runner, a musician, a builder, a parent who used to play. Whatever that was for you.';
 
 export const OPENING_REPLY = `${AI_DISCLOSURE}\n\n${FIRST_QUESTION}`;
 
@@ -116,7 +116,9 @@ export function scriptedTurn(state: ConvState, message: string): Turn {
       collected.rightNow = message.trim();
       return done('identity', 'Thank you for being straight about it. In one word: who do you want to be again?');
     case 'identity': {
-      const noun = (message.trim().split(/\s+/)[0] ?? '').replace(/[^A-Za-z-]/g, '').toUpperCase();
+      // Strip a leading article first ("the writer" → "writer") so we never render "THE THE".
+      const cleaned = message.trim().replace(/^(the|a|an)\s+/i, '');
+      const noun = (cleaned.split(/\s+/)[0] ?? '').replace(/[^A-Za-z-]/g, '').toUpperCase();
       collected.identityNoun = noun;
       return done(
         'reclaim',
@@ -154,8 +156,8 @@ const ONBOARDING_SYSTEM = `${MEMBER_AGENT_SYSTEM_PROMPT}
 
 OPERATING MOMENT: Onboarding.
 Conduct the four-chapter intake as a conversation, at the member's pace, in G4L voice:
-1) the athletic past, 2) the gap (the Door that opened), 3) right now, 4) identity synthesis.
-Use synthesize-propose-confirm for the identity noun: propose it from their own words ("It sounds like THE ATHLETE"), and only treat it as set once they confirm.
+1) who they were when they felt most themselves (a past self of ANY kind — writer, musician, runner, builder, teacher, parent — never assume it is athletic), 2) the gap (the Door that opened), 3) right now, 4) identity synthesis.
+Use synthesize-propose-confirm for the identity noun: propose it from their OWN words (e.g. "It sounds like THE WRITER" / "THE RUNNER" / "THE MUSICIAN" — match what they said), and only treat it as set once they confirm. The reclaimed identity is whoever they name; the Rewire and Rebuild work (the health and wellness fundamentals) is the same path back regardless of who that is. Record identityNoun as the bare noun WITHOUT a leading "the/a/an".
 Then gather the Reclaim List (exactly ${RECLAIM_LIST_SIZE} things they want back) and the member's Door (one of the eight).
 Ask ONE question per turn. Reflect before asking.
 

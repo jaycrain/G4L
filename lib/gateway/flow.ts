@@ -7,6 +7,7 @@ import type { AgentProvider, OnboardingInput } from '../agent/provider.ts';
 import { DOORS, isDoorSlug, type DoorSlug } from '../doors.ts';
 import { validateReconnectOutput } from '../member/reclaim.ts';
 import { detectCrisis, CRISIS_RESPONSE_US, presentScore, type ScorePresentation } from '../agent/governance.ts';
+import { cleanIdentityNoun } from '../member/identity.ts';
 import { scoreIdq, computeMovement, type DimensionScores } from '../idq/scoring.ts';
 import { validateResponses, DIMENSIONS, type Dimension } from '../idq/instrument.ts';
 
@@ -56,7 +57,7 @@ export async function runOnboarding(
     displayName: f.displayName.trim(),
     door,
     doorDisplayName: doorName(door),
-    identityNoun: f.identityNoun.trim(),
+    identityNoun: cleanIdentityNoun(f.identityNoun),
     athleticPast: f.athleticPast.trim(),
     gap: f.gap.trim(),
     rightNow: f.rightNow.trim(),
@@ -177,7 +178,7 @@ export async function getDashboard(db: Db, memberId: string): Promise<Dashboard 
   return {
     displayName: m.display_name,
     avatarUrl: m.avatar_url ?? null,
-    identityNoun: m.identity_noun,
+    identityNoun: m.identity_noun ? cleanIdentityNoun(m.identity_noun) : null,
     identityParagraph: m.identity_paragraph,
     door: isDoorSlug(m.named_door) ? { slug: m.named_door, displayName: doorName(m.named_door) } : null,
     reclaimList: Array.isArray(m.reclaim_list) ? m.reclaim_list : [],
