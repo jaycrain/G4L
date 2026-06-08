@@ -9,11 +9,13 @@ import { scriptedProvider } from '../../lib/agent/provider.ts';
 import { runOnboarding, submitIdq } from '../../lib/gateway/flow.ts';
 import { completeAsset } from '../../lib/assets/engine.ts';
 import { assignVariant } from '../../lib/assets/variant.ts';
+import { seedActivityFor, type Persona } from './seed-activity.ts';
 
 type Demo = {
   fields: Parameters<typeof runOnboarding>[2];
   responses: number[];
   completeR4?: boolean;
+  persona?: Persona;
 };
 
 const r7 = (a: string[]) => a;
@@ -28,6 +30,7 @@ const DEMOS: Demo[] = [
     },
     responses: [2, 2, 3, 2, 2, 3, 4, 4, 3, 4, 4, 3, 3, 2, 3, 3, 2, 3, 4, 4, 3, 4, 3, 4], // mixed; lower Physical
     completeR4: true,
+    persona: 'cyclist',
   },
   {
     fields: {
@@ -36,6 +39,7 @@ const DEMOS: Demo[] = [
       rightNow: 'cautious, slower, unsure of my body',
       reclaimList: r7(['run a 5k', 'sleep deep', 'travel', 'garden', 'call mom weekly', 'cook again', 'laugh more']),
     },
+    persona: 'runner',
     responses: Array.from({ length: 24 }, () => 3), // flat 60
   },
 ];
@@ -51,6 +55,7 @@ for (const d of DEMOS) {
   if (d.completeR4) {
     await completeAsset(db, { memberId: ob.memberId, code: 'R-4', variant: assignVariant(ob.memberId, 'R-4'), version: '0.1-draft', outputs: { excavated: ['the racer'] } });
   }
+  if (d.persona) await seedActivityFor(db, ob.memberId, d.persona);
   console.log(`✓ ${d.fields.displayName} → /dashboard/${ob.memberId}`);
 }
 console.log('\nDemo members seeded. (Re-run after db:reset / a fresh DB.)');

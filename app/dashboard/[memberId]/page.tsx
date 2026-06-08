@@ -5,6 +5,8 @@ import { completedCodes } from '../../../lib/assets/engine.ts';
 import { recommendedNext, assetStatus, ASSET_ORDER, GATES, type AssetStatus } from '../../../lib/assets/gating.ts';
 import { ASSET_NAMES } from '../../../lib/assets/definitions.ts';
 import { timeSignals, topNudge } from '../../../lib/agent/nudge.ts';
+import { getActivityPanel } from '../../../lib/activity/store.ts';
+import { formatDistance, formatDuration, typeLabel, relativeDay } from '../../../lib/activity/summary.ts';
 import { firstName, initials } from '../../../lib/member/avatar.ts';
 import type { Db } from '../../../lib/db/schema.ts';
 import AgentBubble from '../agent-bubble.tsx';
@@ -50,6 +52,9 @@ export default async function DashboardPage({
     nextAssetName: nextCode ? ASSET_NAMES[nextCode]! : null,
   };
   const teaser = topNudge(nudgeSignals).text;
+
+  // Activity panel — objective evidence of the identity coming back (Strava). Reflective, not graded.
+  const activity = await getActivityPanel(db, memberId, dash.identityNoun);
 
   return (
     <>
@@ -122,6 +127,40 @@ export default async function DashboardPage({
               </Link>
             </p>
           )}
+        </div>
+      )}
+
+      {activity.connected ? (
+        <div className="card">
+          <h3>Your movement</h3>
+          <p className="muted">{activity.line}</p>
+          <div className="activity-week">
+            <span>
+              <strong>{activity.thisWeek.count}</strong> this week
+            </span>
+            {formatDistance(activity.thisWeek.distanceM) && <span>{formatDistance(activity.thisWeek.distanceM)}</span>}
+            {formatDuration(activity.thisWeek.movingTimeS) && <span>{formatDuration(activity.thisWeek.movingTimeS)}</span>}
+          </div>
+          {activity.recent.length > 0 && (
+            <ul className="activity-list">
+              {activity.recent.slice(0, 3).map((a, i) => (
+                <li key={i}>
+                  <span className="act-type">{typeLabel(a.type)}</span>
+                  <span className="act-meta">
+                    {[formatDistance(a.distanceM), relativeDay(a.daysAgo)].filter(Boolean).join(' · ')}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+          <p className="muted activity-src">Synced from Strava</p>
+        </div>
+      ) : (
+        <div className="card">
+          <h3>Your movement</h3>
+          <p className="muted">
+            Connect Strava to let your movement show up here — your rides, runs, and walks, witnessed alongside the work.
+          </p>
         </div>
       )}
 

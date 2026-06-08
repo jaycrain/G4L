@@ -19,6 +19,19 @@ export type NudgeSignals = {
   direction: 'up' | 'down' | 'flat' | null;
   delta: number | null;
   nextAssetName: string | null;
+  recentWorkoutType?: string | null; // a logged Strava activity (ride/run/walk…)
+  daysSinceWorkout?: number | null;
+};
+
+// A logged activity → a natural verb for the witness nudge.
+const WORKOUT_VERB: Record<string, string> = {
+  ride: 'ride',
+  run: 'run',
+  walk: 'walk',
+  hike: 'hike',
+  swim: 'swim',
+  workout: 'workout',
+  other: 'workout',
 };
 
 export type Nudge = { kind: string; text: string; priority: number };
@@ -33,6 +46,10 @@ export function computeNudges(s: NudgeSignals): Nudge[] {
   }
   if (s.recentAssetName && s.daysSinceRecentAsset != null && s.daysSinceRecentAsset <= 3) {
     n.push({ kind: 'asset_reflect', text: `You finished ${s.recentAssetName}. Want to talk about how it landed?`, priority: 70 });
+  }
+  if (s.recentWorkoutType && s.daysSinceWorkout != null && s.daysSinceWorkout <= 3) {
+    const verb = WORKOUT_VERB[s.recentWorkoutType] ?? 'workout';
+    n.push({ kind: 'activity_witness', text: `Saw you got out for a ${verb}. How did it feel?`, priority: 65 });
   }
   if (s.daysSinceActivity != null && s.daysSinceActivity >= 10) {
     n.push({ kind: 'silence', text: 'It has been a little while. How are you landing this week?', priority: 60 });
@@ -72,7 +89,12 @@ export async function buildNudge(db: Db, memberId: string): Promise<Nudge | null
 export async function timeSignals(
   db: Db,
   memberId: string,
-): Promise<Pick<NudgeSignals, 'hasIdq' | 'daysSinceLastIdq' | 'recentAssetName' | 'daysSinceRecentAsset' | 'daysSinceActivity'>> {
+): Promise<
+  Pick<
+    NudgeSignals,
+    'hasIdq' | 'daysSinceLastIdq' | 'recentAssetName' | 'daysSinceRecentAsset' | 'daysSinceActivity' | 'recentWorkoutType' | 'daysSinceWorkout'
+  >
+> {
   const idq = (
     await db.query<{ n: number; days: number | null }>(
       `select count(*)::int n, floor(extract(epoch from (now()-max(taken_at)))/86400)::int as days
@@ -95,10 +117,19 @@ export async function timeSignals(
          select completed_at t from asset_completion where member_id=$1
          union all select taken_at from idq_retake where member_id=$1
          union all select occurred_at from asset_event where member_id=$1
+         union all select started_at from activity_event where member_id=$1
        ) x`,
       [memberId],
     )
   ).rows[0]!;
+
+  const workout = (
+    await db.query<{ activity_type: string; days: number }>(
+      `select activity_type, floor(extract(epoch from (now()-started_at))/86400)::int as days
+       from activity_event where member_id=$1 order by started_at desc limit 1`,
+      [memberId],
+    )
+  ).rows[0];
 
   return {
     hasIdq: idq.n > 0,
@@ -106,5 +137,7 @@ export async function timeSignals(
     recentAssetName: asset ? (ASSET_NAMES[asset.asset_code] ?? asset.asset_code) : null,
     daysSinceRecentAsset: asset ? asset.days : null,
     daysSinceActivity: activity.days,
+    recentWorkoutType: workout ? workout.activity_type : null,
+    daysSinceWorkout: workout ? workout.days : null,
   };
 }
