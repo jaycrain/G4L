@@ -24,6 +24,7 @@ const MIGRATIONS: Array<{ file: string; sentinel: Sentinel }> = [
   { file: 'migrations/0005_founder_trigger_key.sql', sentinel: { table: 'founder_agent_drafts', column: 'trigger_key' } },
   { file: 'migrations/0006_push_subscription.sql', sentinel: 'push_subscription' },
   { file: 'migrations/0007_activity.sql', sentinel: 'activity_event' },
+  { file: 'migrations/0008_nudge_log.sql', sentinel: 'nudge_log' },
 ];
 export const SEED_SQL = () => sqlFile('seed/0001_reference_data.sql');
 
