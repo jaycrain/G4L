@@ -12,6 +12,7 @@ export const ASSET_NAMES: Record<string, string> = {
   'W-3': 'Visualization Workshop',
   'W-5': 'False Start Protocol',
   'B-1': 'First Step Assessment',
+  'B-2': 'Appreciating Your Strengths and Weaknesses',
   'B-3': 'First 1,000 Miles',
   'B-5': 'Fuel Plan',
   'C-1': 'Reclaim Readiness Assessment',
@@ -89,6 +90,22 @@ const B1_DEF: AssetDefinition = {
   },
 };
 
+// B-2 Appreciating Your Strengths and Weaknesses — self-management skills (Greg's "Asset R2", new)
+const B2_DEF: AssetDefinition = {
+  code: 'B-2',
+  version: GREG_VERSION,
+  title: 'Appreciating Your Strengths and Weaknesses',
+  intro:
+    "The Rebuild is about building the skills to sustain a healthy lifestyle over time. Before you start, take honest stock of your self-management skills — the ones that get you where you want to go. Like any skill, you improve them by practicing. This activity asks for an honest read on twelve core skills; then you'll watch how they help or hinder you over the coming week. The focus isn't on monitoring your behavior — it's on noticing the skills underneath it.",
+  steps: [
+    { type: 'prose', body: 'Part A — Self-Management Assessment. Rate yourself across twelve core skills, for both physical activity and nutrition: self-assessment, self-monitoring, goal-setting, planning, performance skills, balancing attitudes, overcoming barriers, consumer skills, social support, relapse prevention, time management, and confidence/motivation.' },
+    { type: 'prose', body: 'These group into three families: what predisposes you to act, what enables the action, and what reinforces it over time. You will likely be strong in some and thin in others — that is the point.' },
+    { type: 'prompt', input: { kind: 'textarea', key: 'strengths', label: 'Which of these are real strengths for you — and which are the weak spots?' } },
+    { type: 'prose', body: 'Part B — Track & Reflect. Over the coming week, log decisions about activity and eating. Don’t try to change anything yet — just notice which skills showed up when you made a healthy choice, and which were missing when you didn’t.' },
+    { type: 'reflection', key: 'reflection', label: 'Which single skill, if you strengthened it, would change the most?' },
+  ],
+};
+
 // B-5 Fuel Plan — the Lifestyle Pilot (Greg's "Asset R3")
 const B5_DEF: AssetDefinition = {
   code: 'B-5',
@@ -106,7 +123,7 @@ const B5_DEF: AssetDefinition = {
   ],
   scienceCheck: {
     title: 'Nutrition and activity for midlife',
-    body: 'A diet isn’t something you go on — it’s something you have, adopted over time and sustained. Favor nutrient-dense foods — fruits, vegetables, whole grains, legumes, nuts — and limit added sugars, sodium, and ultra-processed foods. The body regulates weight like a thermostat: cut calories alone and it fights back by slowing metabolism, which is why regular movement is non-optional for long-term weight management.',
+    body: 'A diet isn’t something you go on — it’s something you have, adopted over time and sustained. Favor nutrient-dense foods — fruits, vegetables, whole grains, legumes, nuts — and limit added sugars, sodium, and ultra-processed foods. The body regulates weight like a thermostat: cut calories alone and it fights back by slowing metabolism, which is why regular movement is non-optional for long-term weight management. And the two work best together — in a cohort of 7,000+ midlife adults, improving diet quality and physical activity at the same time produced the greatest reduction in visceral fat, the evidence behind treating fuel and movement as one plan (Aryannezhad et al., JAMA Network Open, 2025).',
     attribution: 'Dr. Greg Welk',
   },
 };
@@ -133,7 +150,7 @@ const B3_DEF: AssetDefinition = {
   },
 };
 
-const REGISTRY: Record<string, AssetDefinition> = { 'B-1': B1_DEF, 'B-3': B3_DEF, 'B-5': B5_DEF };
+const REGISTRY: Record<string, AssetDefinition> = { 'B-1': B1_DEF, 'B-2': B2_DEF, 'B-3': B3_DEF, 'B-5': B5_DEF };
 
 export function getAssetDefinition(code: string, variant?: AssetVariant): AssetDefinition {
   if (code === 'R-4') return variant === 'b' ? R4_B : R4_A;

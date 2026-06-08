@@ -18,6 +18,7 @@ export const GATES: Record<string, { requires: string[]; group: RGroup }> = {
   'W-3': { requires: ['W-1'], group: 'Rewire' },
   'W-5': { requires: ['W-3'], group: 'Rewire' },
   'B-1': { requires: ['R-6'], group: 'Rebuild' },
+  'B-2': { requires: ['B-1'], group: 'Rebuild' },
   'B-3': { requires: ['B-1'], group: 'Rebuild' },
   'B-5': { requires: ['B-3'], group: 'Rebuild' },
   'C-1': { requires: ['W-1', 'B-1'], group: 'Reclaim' },
@@ -25,7 +26,7 @@ export const GATES: Record<string, { requires: string[]; group: RGroup }> = {
   'C-5': { requires: ['C-3'], group: 'Reclaim' },
 };
 
-export const ASSET_ORDER = ['R-1', 'R-4', 'R-6', 'W-1', 'W-3', 'W-5', 'B-1', 'B-3', 'B-5', 'C-1', 'C-3', 'C-5'];
+export const ASSET_ORDER = ['R-1', 'R-4', 'R-6', 'W-1', 'W-3', 'W-5', 'B-1', 'B-2', 'B-3', 'B-5', 'C-1', 'C-3', 'C-5'];
 
 const GROUP_FOR_DIMENSION: Record<string, RGroup> = {
   physical: 'Rebuild',

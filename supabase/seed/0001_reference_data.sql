@@ -39,11 +39,12 @@ insert into atlas_asset (code, name, r_group, layer, is_gated, supports_variants
   ('W-3','Visualization Workshop',       'Rewire',   'Visualization',true, false, 5),
   ('W-5','False Start Protocol',         'Rewire',   'Hardiness',    true, false, 6),
   ('B-1','First Step Assessment',        'Rebuild',  null,           true, false, 7),
-  ('B-3','First 1,000 Miles',            'Rebuild',  null,           true, false, 8),
-  ('B-5','Fuel Plan',                    'Rebuild',  null,           true, false, 9),
-  ('C-1','Reclaim Readiness Assessment', 'Reclaim',  null,           true, false, 10),
-  ('C-3','Adventure Planning Worksheet', 'Reclaim',  null,           true, false, 11),
-  ('C-5','Your Success Story',           'Reclaim',  null,           true, false, 12)
+  ('B-2','Appreciating Your Strengths and Weaknesses', 'Rebuild', null, true, false, 8),
+  ('B-3','First 1,000 Miles',            'Rebuild',  null,           true, false, 9),
+  ('B-5','Fuel Plan',                    'Rebuild',  null,           true, false, 10),
+  ('C-1','Reclaim Readiness Assessment', 'Reclaim',  null,           true, false, 11),
+  ('C-3','Adventure Planning Worksheet', 'Reclaim',  null,           true, false, 12),
+  ('C-5','Your Success Story',           'Reclaim',  null,           true, false, 13)
 on conflict (code) do update
   set name = excluded.name, r_group = excluded.r_group, layer = excluded.layer,
       is_gated = excluded.is_gated, supports_variants = excluded.supports_variants,

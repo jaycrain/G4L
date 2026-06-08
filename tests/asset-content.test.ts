@@ -13,6 +13,16 @@ test("Greg's Rebuild assets carry real content + a signed Science Check", () => 
   }
 });
 
+test('B-2 (new self-management asset) is authored and in the program order', async () => {
+  const def = getAssetDefinition('B-2');
+  assert.equal(def.title, 'Appreciating Your Strengths and Weaknesses');
+  assert.ok(!def.intro.includes('Draft content'));
+  assert.ok(def.steps.length >= 4);
+  const { ASSET_ORDER, GATES } = await import('../lib/assets/gating.ts');
+  assert.ok(ASSET_ORDER.includes('B-2'));
+  assert.deepEqual(GATES['B-2'], { requires: ['B-1'], group: 'Rebuild' });
+});
+
 test('an un-authored asset still falls back to the generic placeholder', () => {
   const def = getAssetDefinition('C-3');
   assert.ok(def.intro.includes('Draft content'));
