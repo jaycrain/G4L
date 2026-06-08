@@ -138,6 +138,7 @@ export function currentFocus(dims: DimensionScores): { dimension: Dimension; lab
 // --- Dashboard read ---------------------------------------------------------------------
 export type Dashboard = {
   displayName: string;
+  avatarUrl: string | null;
   identityNoun: string | null;
   identityParagraph: string | null;
   door: { slug: string; displayName: string } | null;
@@ -148,7 +149,7 @@ export type Dashboard = {
 
 export async function getDashboard(db: Db, memberId: string): Promise<Dashboard | null> {
   const m = (await db.query<any>(
-    `select display_name, identity_noun, identity_paragraph, named_door, reclaim_list
+    `select display_name, avatar_url, identity_noun, identity_paragraph, named_door, reclaim_list
      from member_profile where member_id=$1`, [memberId])).rows[0];
   if (!m) return null;
 
@@ -175,6 +176,7 @@ export async function getDashboard(db: Db, memberId: string): Promise<Dashboard 
 
   return {
     displayName: m.display_name,
+    avatarUrl: m.avatar_url ?? null,
     identityNoun: m.identity_noun,
     identityParagraph: m.identity_paragraph,
     door: isDoorSlug(m.named_door) ? { slug: m.named_door, displayName: doorName(m.named_door) } : null,

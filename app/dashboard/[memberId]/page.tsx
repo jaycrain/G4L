@@ -5,6 +5,7 @@ import { completedCodes } from '../../../lib/assets/engine.ts';
 import { recommendedNext, assetStatus, ASSET_ORDER, GATES, type AssetStatus } from '../../../lib/assets/gating.ts';
 import { ASSET_NAMES } from '../../../lib/assets/definitions.ts';
 import { timeSignals, topNudge } from '../../../lib/agent/nudge.ts';
+import { firstName, initials } from '../../../lib/member/avatar.ts';
 import type { Db } from '../../../lib/db/schema.ts';
 import AgentBubble from '../agent-bubble.tsx';
 
@@ -51,6 +52,18 @@ export default async function DashboardPage({
 
   return (
     <>
+      <div className="member-greeting">
+        {dash.avatarUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img className="avatar" src={dash.avatarUrl} alt={dash.displayName} />
+        ) : (
+          <span className="avatar-initials" aria-hidden="true">
+            {initials(dash.displayName)}
+          </span>
+        )}
+        <span className="greeting">Hi, {firstName(dash.displayName)}</span>
+      </div>
+
       <div className="hero">
         <h1>
           {dash.identityNoun ? (

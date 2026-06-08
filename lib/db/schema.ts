@@ -13,11 +13,14 @@ export type Db = {
 // Resolved from the project root (cwd) — stable under `next dev`, tests, and scripts alike.
 const sqlFile = (rel: string) => readFileSync(join(process.cwd(), 'supabase', rel), 'utf8');
 
-// Each migration with a sentinel table so we can apply only the ones a database is missing.
-const MIGRATIONS: Array<{ file: string; sentinel: string }> = [
+// Each migration with a sentinel so we can apply only the ones a database is missing.
+// A string sentinel is a table name; a {table,column} sentinel is a column (for ALTERs).
+type Sentinel = string | { table: string; column: string };
+const MIGRATIONS: Array<{ file: string; sentinel: Sentinel }> = [
   { file: 'migrations/0001_gateway_schema.sql', sentinel: 'door' },
   { file: 'migrations/0002_assets.sql', sentinel: 'asset_completion' },
   { file: 'migrations/0003_founder_agent.sql', sentinel: 'founder_agent_drafts' },
+  { file: 'migrations/0004_avatar.sql', sentinel: { table: 'member_profile', column: 'avatar_url' } },
 ];
 export const SEED_SQL = () => sqlFile('seed/0001_reference_data.sql');
 
@@ -32,10 +35,25 @@ async function tableExists(db: Db, t: string): Promise<boolean> {
   return Boolean(rows[0]?.e);
 }
 
+async function columnExists(db: Db, table: string, column: string): Promise<boolean> {
+  const { rows } = await db.query<{ e: boolean }>(
+    `select exists (
+       select 1 from information_schema.columns
+       where table_schema='public' and table_name=$1 and column_name=$2
+     ) as e`,
+    [table, column],
+  );
+  return Boolean(rows[0]?.e);
+}
+
+async function isApplied(db: Db, s: Sentinel): Promise<boolean> {
+  return typeof s === 'string' ? tableExists(db, s) : columnExists(db, s.table, s.column);
+}
+
 /** Apply any not-yet-applied migrations, then (idempotently) re-seed. Safe on every boot. */
 export async function ensureSchema(db: Db): Promise<void> {
   for (const m of MIGRATIONS) {
-    if (!(await tableExists(db, m.sentinel))) await db.exec(sqlFile(m.file));
+    if (!(await isApplied(db, m.sentinel))) await db.exec(sqlFile(m.file));
   }
   await db.exec(SEED_SQL()); // idempotent (on conflict do update)
 }

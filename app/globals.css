@@ -53,7 +53,7 @@ textarea { min-height: 4.5rem; resize: vertical; }
 button, .btn {
   display: inline-block;
   margin-top: 1.5rem;
-  background: var(--orange);
+  background: var(--teal);
   color: var(--white);
   border: none;
   border-radius: 8px;
@@ -63,7 +63,7 @@ button, .btn {
   cursor: pointer;
   text-decoration: none;
 }
-button:hover, .btn:hover { background: var(--deep-red); }
+button:hover, .btn:hover { background: var(--navy); }
 
 .error { color: var(--deep-red); font-weight: 600; }
 .crisis {
@@ -78,7 +78,13 @@ button:hover, .btn:hover { background: var(--deep-red); }
 /* Dashboard */
 .hero { background: var(--navy); color: var(--white); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; }
 .hero h1 { color: var(--white); }
-.hero .noun { color: var(--orange); font-weight: 700; letter-spacing: 0.02em; }
+.hero .noun { color: var(--white); font-weight: 700; letter-spacing: 0.02em; }
+
+/* Member greeting — top-left of the dashboard */
+.member-greeting { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.25rem; }
+.avatar { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; display: block; }
+.avatar-initials { width: 48px; height: 48px; border-radius: 50%; background: var(--teal); color: var(--white); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.05rem; letter-spacing: 0.02em; }
+.greeting { font-size: 1.35rem; font-weight: 600; color: var(--navy); }
 
 .score { display: flex; align-items: baseline; gap: 0.6rem; }
 .score .num { font-size: 3rem; font-weight: 700; color: var(--teal); }
@@ -99,7 +105,7 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .prog { display: grid; grid-template-columns: 1.5rem 1fr auto; align-items: center; gap: 0.5rem; padding: 0.4rem 0; border-bottom: 1px solid var(--grey); }
 .prog .mark { font-weight: 700; text-align: center; }
 .prog.completed .mark { color: var(--olive); }
-.prog.available .mark { color: var(--orange); }
+.prog.available .mark { color: var(--teal); }
 .prog.locked { opacity: 0.5; }
 .prog.available .pname { font-weight: 600; color: var(--navy); }
 .prog .pgroup { font-size: 0.8rem; color: var(--navy); opacity: 0.6; }
@@ -154,4 +160,4 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 
 .likert { display: flex; gap: 0.9rem; margin: 0.3rem 0 0.9rem; }
 .likert label { display: inline-flex; align-items: center; gap: 0.3rem; margin: 0; font-weight: 400; }
-.idq-dim-head { color: var(--orange); margin-top: 1.5rem; }
+.idq-dim-head { color: var(--teal); margin-top: 1.5rem; }
