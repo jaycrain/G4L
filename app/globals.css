@@ -167,6 +167,13 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .science-check h3 { margin: 0.25rem 0 0.45rem; font-size: 1.05rem; }
 .science-check .sc-by { font-style: italic; color: var(--navy); opacity: 0.8; margin: 0.55rem 0 0; font-size: 0.9rem; }
 
+/* GRINTA! Bites — small daily content the agent serves */
+.bite-head { display: flex; justify-content: space-between; align-items: baseline; gap: 0.5rem; }
+.bite-tag { display: inline-block; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--olive); }
+.bite-meta { font-size: 0.78rem; color: var(--navy); opacity: 0.6; }
+.bite-body { white-space: pre-wrap; }
+.bite-by { font-style: italic; color: var(--navy); opacity: 0.8; font-size: 0.9rem; margin: 0.4rem 0 0; }
+
 /* GRINTA! Index — the daily process metric (olive num, distinct from the teal ID Score) */
 .grinta .num { color: var(--olive); }
 .grinta-bridge { font-size: 0.85rem; margin-top: 0.45rem; }

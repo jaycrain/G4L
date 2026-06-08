@@ -2,11 +2,13 @@ import Link from 'next/link';
 import { getDb } from '../../../lib/db/index.ts';
 import { getDashboard } from '../../../lib/gateway/flow.ts';
 import { completedCodes } from '../../../lib/assets/engine.ts';
-import { recommendedNext, assetStatus, ASSET_ORDER, GATES, type AssetStatus } from '../../../lib/assets/gating.ts';
+import { recommendedNext, assetStatus, ASSET_ORDER, GATES, type AssetStatus, type RGroup } from '../../../lib/assets/gating.ts';
 import { ASSET_NAMES } from '../../../lib/assets/definitions.ts';
 import { timeSignals, topNudge } from '../../../lib/agent/nudge.ts';
 import { getActivityPanel } from '../../../lib/activity/store.ts';
 import { getGrinta } from '../../../lib/grinta/index.ts';
+import { getBitePanel } from '../../../lib/bites/store.ts';
+import BiteCard from '../bite-card.tsx';
 import { formatDistance, formatDuration, typeLabel, relativeDay } from '../../../lib/activity/summary.ts';
 import { firstName, initials } from '../../../lib/member/avatar.ts';
 import type { Db } from '../../../lib/db/schema.ts';
@@ -63,6 +65,10 @@ export default async function DashboardPage({
 
   // GRINTA! Index — the daily "process" metric (companion to the longitudinal ID Score).
   const grinta = await getGrinta(db, memberId, dash.identityNoun);
+
+  // Today's GRINTA! bite — small daily content the agent serves; consuming it feeds the Index.
+  const focusGroup = dash.currentFocus?.label?.split(' ')[0] as RGroup | undefined;
+  const bitePanel = await getBitePanel(db, memberId, focusGroup);
 
   return (
     <>
@@ -142,6 +148,20 @@ export default async function DashboardPage({
           Your daily effort moves this. Your ID Score is where it lands when you next take the IDQ.
         </p>
       </div>
+
+      {/* Today's GRINTA! bite — a small daily rep the agent serves; consuming it ticks the Index. */}
+      {bitePanel.state === 'available' ? (
+        <BiteCard memberId={memberId} bite={bitePanel.bite} />
+      ) : (
+        <div className="card bite">
+          <span className="bite-tag">Today’s GRINTA! bite</span>
+          <p className="muted" style={{ marginTop: '0.4rem' }}>
+            {bitePanel.state === 'done'
+              ? 'Logged today — that rep’s in. Another bite tomorrow.'
+              : 'You’ve worked through every bite for now. More on the way.'}
+          </p>
+        </div>
+      )}
 
       {dash.currentFocus && (
         <div className="card">
