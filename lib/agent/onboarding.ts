@@ -37,8 +37,9 @@ const FIRST_QUESTION =
 
 export const OPENING_REPLY = `${AI_DISCLOSURE}\n\n${FIRST_QUESTION}`;
 
+const DOOR_LIST = () => DOORS.map((d, i) => `${i + 1}. ${d.displayName} — ${d.descriptor}`).join('\n');
 const doorOptions = () =>
-  `Which door opened? ${DOORS.map((d, i) => `${i + 1}. ${d.displayName}`).join('   ')} — reply with the number or the name.`;
+  `We call the change that set this chapter in motion your “Door.” From what you’ve told me, which of these fits best?\n\n${DOOR_LIST()}\n\nReply with the number or the name.`;
 const doorName = (slug: DoorSlug) => DOORS.find((d) => d.slug === slug)!.displayName;
 
 // Derive the stage from what's collected — keeps state coherent on the live path so a scripted
@@ -158,11 +159,14 @@ export function scriptedTurn(state: ConvState, message: string): Turn {
         );
       }
       collected.reclaimList = items;
-      return done('door', `That's your Reclaim List. Last thing — ${doorOptions()}`);
+      return done(
+        'door',
+        `That's your Reclaim List — hold onto it; it's what we work toward.\n\nOne last thing before your baseline. ${doorOptions()}`,
+      );
     }
     case 'door': {
       const slug = matchDoor(message);
-      if (!slug) return done('door', `I didn't catch which one. ${doorOptions()}`);
+      if (!slug) return done('door', `I didn't catch which one — reply with the number or the name:\n\n${DOOR_LIST()}`);
       collected.door = slug;
       return done(
         'complete',
@@ -182,7 +186,9 @@ OPERATING MOMENT: Onboarding.
 Conduct the four-chapter intake as a conversation, at the member's pace, in G4L voice:
 1) who they were when they felt most themselves (a past self of ANY kind — writer, musician, runner, builder, teacher, parent — never assume it is athletic), 2) the gap (the Door that opened), 3) right now, 4) identity synthesis.
 Use synthesize-propose-confirm for the identity noun: propose it from their OWN words (e.g. "It sounds like THE WRITER" / "THE RUNNER" / "THE MUSICIAN" — match what they said), and only treat it as set once they confirm. The reclaimed identity is whoever they name; the Rewire and Rebuild work (the health and wellness fundamentals) is the same path back regardless of who that is. Record identityNoun as the bare noun WITHOUT a leading "the/a/an".
-Then gather the Reclaim List (exactly ${RECLAIM_LIST_SIZE} things they want back) and the member's Door (one of the eight).
+Then gather the Reclaim List (exactly ${RECLAIM_LIST_SIZE} things they want back).
+Finally, map their story to a "Door" — the life event that opened this chapter (the same gap they already described). Don't ask it cold: acknowledge their Reclaim List, then in one plain sentence say what a Door is and tie it back to what they told you, and present these eight so they can choose by number or name:
+${DOORS.map((d, i) => `${i + 1}. ${d.displayName} — ${d.descriptor}`).join('\n')}
 Ask ONE question per turn. Reflect before asking.
 
 On EVERY turn you MUST also call the record_progress tool with everything gathered so far. Set complete=true only once all of these are gathered: athleticPast, gap, rightNow, a confirmed identityNoun, a reclaimList of exactly ${RECLAIM_LIST_SIZE}, and door.`;
