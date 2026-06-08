@@ -23,7 +23,8 @@ export default function PwaClient() {
 
     // The install affordance is only worthwhile on mobile (home screen + push). On desktop,
     // "install the web app" is noise — members just use the tab. (SW still registers above.)
-    const isMobile = window.matchMedia('(pointer: coarse)').matches;
+    const touch = navigator.maxTouchPoints > 1; // true on iPad even when it reports as a Mac
+    const isMobile = window.matchMedia('(pointer: coarse)').matches || touch;
     const standalone =
       window.matchMedia('(display-mode: standalone)').matches ||
       (navigator as unknown as { standalone?: boolean }).standalone === true;
@@ -39,8 +40,8 @@ export default function PwaClient() {
     window.addEventListener('appinstalled', () => setShow(false));
 
     const ua = navigator.userAgent;
-    const isIOS = /iphone|ipad|ipod/i.test(ua);
-    const isSafari = /safari/i.test(ua) && !/crios|fxios|edgios/i.test(ua);
+    const isIOS = /iphone|ipad|ipod/i.test(ua) || (touch && /Macintosh/i.test(ua)); // iPadOS reports as Mac
+    const isSafari = /safari/i.test(ua) && !/crios|fxios|edgios|android/i.test(ua);
     if (isIOS && isSafari) {
       setIosHint(true);
       setShow(true);
