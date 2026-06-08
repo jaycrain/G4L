@@ -18,6 +18,8 @@ export type Step =
   | { type: 'prompt'; input: StepInput }
   | { type: 'reflection'; key: string; label: string };
 
+export type ScienceCheck = { title: string; body: string; attribution: string };
+
 export type AssetDefinition = {
   code: string;
   version: string;
@@ -26,4 +28,5 @@ export type AssetDefinition = {
   intro: string;
   steps: Step[];
   scienceCheckRef?: string; // e.g. 'greg.science_check.R-4' (Greg's Layer-2 sub-corpus)
+  scienceCheck?: ScienceCheck; // member-facing, signed by the scientist
 };

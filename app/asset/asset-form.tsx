@@ -63,6 +63,14 @@ export default function AssetForm({
             </div>
           );
         })}
+        {def.scienceCheck && (
+          <aside className="science-check">
+            <span className="sc-tag">Science Check</span>
+            <h3>{def.scienceCheck.title}</h3>
+            <p>{def.scienceCheck.body}</p>
+            <p className="sc-by">— {def.scienceCheck.attribution}</p>
+          </aside>
+        )}
         {error && <p className="error">{error}</p>}
         <button type="submit" disabled={pending}>
           {pending ? 'Saving…' : 'Complete'}

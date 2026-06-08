@@ -158,6 +158,12 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .agent-chat { flex: 1; overflow-y: auto; padding: 0.9rem; margin: 0; }
 .agent-panel .chat-input { padding: 0.6rem; border-top: 1px solid var(--grey); margin: 0; }
 
+/* Science Check — the scientist's voice inside an asset (signed) */
+.science-check { background: var(--grey); border-left: 4px solid var(--teal); border-radius: 6px; padding: 0.9rem 1.1rem; margin: 1.5rem 0; }
+.science-check .sc-tag { display: inline-block; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--teal); }
+.science-check h3 { margin: 0.25rem 0 0.45rem; font-size: 1.05rem; }
+.science-check .sc-by { font-style: italic; color: var(--navy); opacity: 0.8; margin: 0.55rem 0 0; font-size: 0.9rem; }
+
 /* Activity panel (Strava) — reflective, not gamified */
 .activity-week { display: flex; gap: 1.25rem; margin: 0.4rem 0 0.7rem; font-size: 0.95rem; color: var(--charcoal); }
 .activity-week strong { color: var(--teal); font-size: 1.15rem; }
