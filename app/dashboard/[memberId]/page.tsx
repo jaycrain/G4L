@@ -8,6 +8,7 @@ import { timeSignals, topNudge } from '../../../lib/agent/nudge.ts';
 import { firstName, initials } from '../../../lib/member/avatar.ts';
 import type { Db } from '../../../lib/db/schema.ts';
 import AgentBubble from '../agent-bubble.tsx';
+import EnableNotifications from '../enable-notifications.tsx';
 
 const STATUS_MARK: Record<AssetStatus, string> = { completed: '✓', available: '→', locked: '·' };
 
@@ -151,6 +152,8 @@ export default async function DashboardPage({
           Your Door: <strong>{dash.door.displayName}</strong>
         </p>
       )}
+
+      <EnableNotifications memberId={memberId} />
 
       <AgentBubble memberId={memberId} teaser={teaser} />
     </>

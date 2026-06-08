@@ -3,8 +3,10 @@ import { getDb } from '../../../../lib/db/index.ts';
 import { getDashboard } from '../../../../lib/gateway/flow.ts';
 import { listForMember } from '../../../../lib/founder/store.ts';
 import { MOMENTS, type OperatingMoment } from '../../../../lib/founder/draft.ts';
+import { countSubscriptions } from '../../../../lib/push/store.ts';
+import { buildNudge } from '../../../../lib/agent/nudge.ts';
 import type { Db } from '../../../../lib/db/schema.ts';
-import { generateDraftAction } from '../../actions.ts';
+import { generateDraftAction, sendNudgePushAction } from '../../actions.ts';
 import DraftReview from '../../draft-review.tsx';
 
 export default async function AdminMember({ params }: { params: Promise<{ memberId: string }> }) {
@@ -14,6 +16,8 @@ export default async function AdminMember({ params }: { params: Promise<{ member
   if (!dash) return <p className="error">Member not found. <Link href="/admin">Back</Link></p>;
 
   const drafts = await listForMember(db, memberId);
+  const pushCount = await countSubscriptions(db, memberId);
+  const nudge = await buildNudge(db, memberId);
 
   return (
     <>
@@ -42,6 +46,26 @@ export default async function AdminMember({ params }: { params: Promise<{ member
             </form>
           ))}
         </div>
+      </div>
+
+      <div className="card">
+        <h3>Push a Member Agent nudge</h3>
+        {pushCount === 0 ? (
+          <p className="muted">
+            No devices subscribed yet. This member turns on notifications from their dashboard, then their
+            current nudge can be pushed here.
+          </p>
+        ) : (
+          <>
+            <p className="muted">
+              {pushCount} device{pushCount === 1 ? '' : 's'} subscribed. Sends now:{' '}
+              <em>&ldquo;{nudge?.text}&rdquo;</em>
+            </p>
+            <form action={sendNudgePushAction.bind(null, memberId)}>
+              <button type="submit">Send notification</button>
+            </form>
+          </>
+        )}
       </div>
 
       <h3>Drafts &amp; sent ({drafts.length})</h3>

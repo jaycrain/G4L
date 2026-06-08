@@ -5,6 +5,9 @@ import { getDb } from '../../lib/db/index.ts';
 import { generateDraft, type OperatingMoment } from '../../lib/founder/draft.ts';
 import { buildFounderContext } from '../../lib/founder/context.ts';
 import { createDraft, approveSend, rejectDraft } from '../../lib/founder/store.ts';
+import { buildNudge } from '../../lib/agent/nudge.ts';
+import { sendPushToMember } from '../../lib/push/send.ts';
+import { buildNudgePayload } from '../../lib/push/payload.ts';
 import type { Db } from '../../lib/db/schema.ts';
 
 export async function generateDraftAction(memberId: string, moment: OperatingMoment): Promise<void> {
@@ -22,6 +25,15 @@ export async function approveSendAction(id: string, memberId: string, editedBody
   await approveSend(db, id, editedBody);
   revalidatePath(`/admin/member/${memberId}`);
   revalidatePath('/admin');
+}
+
+/** Push the member's current Member Agent nudge to their devices (proactive companion, live). */
+export async function sendNudgePushAction(memberId: string): Promise<void> {
+  const db = (await getDb()) as unknown as Db;
+  const nudge = await buildNudge(db, memberId);
+  if (!nudge) return;
+  await sendPushToMember(db, memberId, buildNudgePayload(nudge, memberId));
+  revalidatePath(`/admin/member/${memberId}`);
 }
 
 export async function rejectAction(id: string, memberId: string): Promise<void> {

@@ -6,6 +6,9 @@
 
 import type { Db } from '../db/schema.ts';
 import { ASSET_NAMES } from '../assets/definitions.ts';
+import { getDashboard } from '../gateway/flow.ts';
+import { completedCodes } from '../assets/engine.ts';
+import { recommendedNext } from '../assets/gating.ts';
 
 export type NudgeSignals = {
   hasIdq: boolean;
@@ -49,6 +52,20 @@ export function computeNudges(s: NudgeSignals): Nudge[] {
 /** The single nudge to surface right now. */
 export function topNudge(s: NudgeSignals): Nudge {
   return computeNudges(s)[0]!;
+}
+
+/** Assemble every signal for a member and return the one nudge to surface (dashboard + push). */
+export async function buildNudge(db: Db, memberId: string): Promise<Nudge | null> {
+  const dash = await getDashboard(db, memberId);
+  if (!dash) return null;
+  const completed = await completedCodes(db, memberId);
+  const nextCode = recommendedNext({ completed, dimensions: dash.score?.dimensions });
+  return topNudge({
+    ...(await timeSignals(db, memberId)),
+    direction: dash.score?.direction ?? null,
+    delta: dash.score?.delta ?? null,
+    nextAssetName: nextCode ? (ASSET_NAMES[nextCode] ?? null) : null,
+  });
 }
 
 /** Gather the time-based signals from the warehouse (days computed in SQL, no JS clock). */
