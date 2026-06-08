@@ -13,14 +13,32 @@ function urlBase64ToUint8Array(base64: string): Uint8Array<ArrayBuffer> {
   return arr;
 }
 
-type State = 'loading' | 'idle' | 'working' | 'on' | 'denied' | 'unsupported';
+type State = 'idle' | 'working' | 'on' | 'denied' | 'unsupported';
+
+const supported = () =>
+  typeof navigator !== 'undefined' &&
+  'serviceWorker' in navigator &&
+  typeof window !== 'undefined' &&
+  'PushManager' in window &&
+  'Notification' in window;
+
+async function saveSub(memberId: string, sub: PushSubscription): Promise<boolean> {
+  const json = sub.toJSON() as { endpoint?: string; keys?: { p256dh?: string; auth?: string } };
+  if (!json.endpoint || !json.keys?.p256dh || !json.keys?.auth) return false;
+  const res = await subscribeAction(memberId, {
+    endpoint: json.endpoint,
+    keys: { p256dh: json.keys.p256dh, auth: json.keys.auth },
+  });
+  return res.ok;
+}
 
 export default function EnableNotifications({ memberId }: { memberId: string }) {
-  const [state, setState] = useState<State>('loading');
+  // Default to showing the button — never hide behind a pending check.
+  const [state, setState] = useState<State>('idle');
   const [msg, setMsg] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) {
+    if (!supported()) {
       setState('unsupported');
       return;
     }
@@ -28,17 +46,23 @@ export default function EnableNotifications({ memberId }: { memberId: string }) 
       setState('denied');
       return;
     }
-    navigator.serviceWorker.ready
-      .then((reg) => reg.pushManager.getSubscription())
-      .then((sub) => setState(sub ? 'on' : 'idle'))
-      .catch(() => setState('idle'));
-  }, []);
+    // If this browser already has a subscription, make sure the server has it too (self-heal),
+    // then reflect the on state. Failures here just leave the button available.
+    (async () => {
+      try {
+        const reg = await navigator.serviceWorker.ready;
+        const existing = await reg.pushManager.getSubscription();
+        if (existing && (await saveSub(memberId, existing))) setState('on');
+      } catch {
+        /* leave as idle — the button stays */
+      }
+    })();
+  }, [memberId]);
 
   const enable = async () => {
     setState('working');
     setMsg(null);
     try {
-      // Ask permission FIRST so the request stays inside the user gesture (iOS is strict here).
       const perm = await Notification.requestPermission();
       if (perm === 'denied') {
         setState('denied');
@@ -46,18 +70,17 @@ export default function EnableNotifications({ memberId }: { memberId: string }) 
       }
       if (perm !== 'granted') {
         setState('idle');
-        setMsg('The notification prompt was dismissed — tap to try again.');
+        setMsg('The notification prompt was dismissed — click to try again.');
         return;
       }
 
       const reg = await navigator.serviceWorker.ready;
-      // Reuse an existing subscription if there is one (avoids re-subscribe errors).
       let sub = await reg.pushManager.getSubscription();
       if (!sub) {
         const key = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
         if (!key) {
           setState('idle');
-          setMsg('Push key missing — fully close and reopen the app, then try again.');
+          setMsg('Push key missing — hard-reload the page and try again.');
           return;
         }
         sub = await reg.pushManager.subscribe({
@@ -65,18 +88,7 @@ export default function EnableNotifications({ memberId }: { memberId: string }) 
           applicationServerKey: urlBase64ToUint8Array(key),
         });
       }
-
-      const json = sub.toJSON() as { endpoint?: string; keys?: { p256dh?: string; auth?: string } };
-      if (!json.endpoint || !json.keys?.p256dh || !json.keys?.auth) {
-        setState('idle');
-        setMsg('The browser returned an incomplete subscription.');
-        return;
-      }
-      const res = await subscribeAction(memberId, {
-        endpoint: json.endpoint,
-        keys: { p256dh: json.keys.p256dh, auth: json.keys.auth },
-      });
-      if (res.ok) {
+      if (await saveSub(memberId, sub)) {
         setState('on');
       } else {
         setState('idle');
@@ -89,7 +101,7 @@ export default function EnableNotifications({ memberId }: { memberId: string }) 
     }
   };
 
-  if (state === 'unsupported' || state === 'loading') return null;
+  if (state === 'unsupported') return null;
 
   return (
     <div className="card">
@@ -98,7 +110,7 @@ export default function EnableNotifications({ memberId }: { memberId: string }) 
         <p className="muted">You&apos;re set to hear from your Member Agent. ✓</p>
       ) : state === 'denied' ? (
         <p className="muted">
-          Notifications are turned off in your browser settings. Turn them on for G4L to let your Member Agent check in.
+          Notifications are blocked in your browser settings. Allow them for this site, then click below.
         </p>
       ) : (
         <>
@@ -106,7 +118,11 @@ export default function EnableNotifications({ memberId }: { memberId: string }) 
           <button onClick={enable} disabled={state === 'working'}>
             {state === 'working' ? 'Turning on…' : 'Turn on notifications'}
           </button>
-          {msg && <p className="error" style={{ marginTop: '0.6rem', fontWeight: 400 }}>{msg}</p>}
+          {msg && (
+            <p className="error" style={{ marginTop: '0.6rem', fontWeight: 400 }}>
+              {msg}
+            </p>
+          )}
         </>
       )}
     </div>
