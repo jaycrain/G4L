@@ -32,7 +32,7 @@ export default async function AdminHome({
       <h1>Founder Agent — admin</h1>
       <p className="disclosure">
         Operator surface (Jay only). Drafts in your voice land here for review before anything sends.
-        <strong> Preview — no login yet; demo data; sends are simulated.</strong>
+        <strong> Approving delivers a real email to the member — nothing sends without your click.</strong>
       </p>
 
       <div className="card">
