@@ -24,6 +24,18 @@ export async function findCredentialByEmail(
   return rows[0] ?? null;
 }
 
+export async function getCredentialByMember(db: Db, memberId: string): Promise<{ password_hash: string } | null> {
+  const { rows } = await db.query<{ password_hash: string }>(
+    `select password_hash from member_credential where member_id = $1`,
+    [memberId],
+  );
+  return rows[0] ?? null;
+}
+
+export async function updatePasswordHash(db: Db, memberId: string, passwordHash: string): Promise<void> {
+  await db.query(`update member_credential set password_hash = $2 where member_id = $1`, [memberId, passwordHash]);
+}
+
 export async function hasCredential(db: Db, memberId: string): Promise<boolean> {
   const { rows } = await db.query<{ e: boolean }>(
     `select exists(select 1 from member_credential where member_id = $1) as e`,

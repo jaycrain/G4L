@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { subscribeAction } from '../push/actions.ts';
+import { subscribeAction, unsubscribeAction } from '../push/actions.ts';
 
 // VAPID public key (base64url) → the Uint8Array applicationServerKey the browser expects.
 function urlBase64ToUint8Array(base64: string): Uint8Array<ArrayBuffer> {
@@ -36,6 +36,25 @@ export default function EnableNotifications({ memberId }: { memberId: string }) 
   // Default to showing the button — never hide behind a pending check.
   const [state, setState] = useState<State>('idle');
   const [msg, setMsg] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const disable = async () => {
+    setBusy(true);
+    setMsg(null);
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.getSubscription();
+      if (sub) {
+        await sub.unsubscribe();
+        await unsubscribeAction(sub.endpoint);
+      }
+      setState('idle');
+    } catch {
+      setMsg('Couldn’t turn off — try again.');
+    } finally {
+      setBusy(false);
+    }
+  };
 
   useEffect(() => {
     if (!supported()) {
@@ -107,7 +126,13 @@ export default function EnableNotifications({ memberId }: { memberId: string }) 
     <div className="card">
       <h3>Notifications</h3>
       {state === 'on' ? (
-        <p className="muted">You&apos;re set to hear from your Member Agent. ✓</p>
+        <>
+          <p className="muted">You&apos;re set to hear from your Member Agent. ✓</p>
+          <button className="btn-secondary" onClick={disable} disabled={busy}>
+            {busy ? 'Turning off…' : 'Turn off notifications'}
+          </button>
+          {msg && <p className="error" style={{ marginTop: '0.6rem', fontWeight: 400 }}>{msg}</p>}
+        </>
       ) : state === 'denied' ? (
         <p className="muted">
           Notifications are blocked in your browser settings. Allow them for this site, then click below.

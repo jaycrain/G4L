@@ -6,6 +6,8 @@ import { hashPassword, verifyPassword } from '../lib/auth/password.ts';
 import {
   createCredential,
   findCredentialByEmail,
+  getCredentialByMember,
+  updatePasswordHash,
   hasCredential,
   createSession,
   getSessionMember,
@@ -38,6 +40,18 @@ test('credential create + lookup by email is case-insensitive', async () => {
   const cred = await findCredentialByEmail(db, 'greg@example.com'); // different case
   assert.equal(cred?.member_id, memberId);
   assert.equal(await verifyPassword('passw0rd!', cred!.password_hash), true);
+});
+
+test('changing a password updates the stored hash (old fails, new verifies)', async () => {
+  const { db, memberId } = await dbWithMember('change@x.com');
+  await createCredential(db, memberId, 'change@x.com', await hashPassword('oldpassw0rd'));
+  const cred1 = await getCredentialByMember(db, memberId);
+  assert.equal(await verifyPassword('oldpassw0rd', cred1!.password_hash), true);
+
+  await updatePasswordHash(db, memberId, await hashPassword('newpassw0rd!'));
+  const cred2 = await getCredentialByMember(db, memberId);
+  assert.equal(await verifyPassword('oldpassw0rd', cred2!.password_hash), false);
+  assert.equal(await verifyPassword('newpassw0rd!', cred2!.password_hash), true);
 });
 
 test('sessions resolve to the member, and revoke on delete', async () => {

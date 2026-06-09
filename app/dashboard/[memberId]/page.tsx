@@ -16,7 +16,6 @@ import AgentBubble from '../agent-bubble.tsx';
 import { logoutAction } from '../../login/actions.ts';
 import { authorizeMember } from '../../authz.ts';
 import { redirect } from 'next/navigation';
-import EnableNotifications from '../enable-notifications.tsx';
 
 const STATUS_MARK: Record<AssetStatus, string> = { completed: '✓', available: '→', locked: '·' };
 
@@ -73,18 +72,23 @@ export default async function DashboardPage({
   return (
     <>
       <div className="member-greeting">
-        {dash.avatarUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img className="avatar" src={dash.avatarUrl} alt={dash.displayName} />
-        ) : (
-          <span className="avatar-initials" aria-hidden="true">
-            {initials(dash.displayName)}
-          </span>
-        )}
-        <span className="greeting">Hi, {firstName(dash.displayName)}</span>
-        <form action={logoutAction} className="logout-form">
-          <button type="submit" className="logout-link">Log out</button>
-        </form>
+        <Link href="/account" className="member-greeting-link" aria-label="Your account">
+          {dash.avatarUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img className="avatar" src={dash.avatarUrl} alt={dash.displayName} />
+          ) : (
+            <span className="avatar-initials" aria-hidden="true">
+              {initials(dash.displayName)}
+            </span>
+          )}
+          <span className="greeting">Hi, {firstName(dash.displayName)}</span>
+        </Link>
+        <span className="greeting-actions">
+          <Link href="/account" className="logout-link">Account</Link>
+          <form action={logoutAction} className="logout-form">
+            <button type="submit" className="logout-link">Log out</button>
+          </form>
+        </span>
       </div>
 
       <div className="hero">
@@ -244,8 +248,6 @@ export default async function DashboardPage({
           Your Door: <strong>{dash.door.displayName}</strong>
         </p>
       )}
-
-      <EnableNotifications memberId={memberId} />
 
       <AgentBubble memberId={memberId} teaser={teaser} />
     </>
