@@ -20,11 +20,18 @@ export default function DraftReview({
   const router = useRouter();
   const [edited, setEdited] = useState(body);
   const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function approve() {
     setPending(true);
-    await approveSendAction(id, memberId, edited);
-    router.refresh();
+    setError(null);
+    const r = await approveSendAction(id, memberId, edited);
+    if (r.ok) {
+      router.refresh(); // it sent — the draft moves to "sent"
+    } else {
+      setError(r.message);
+      setPending(false); // keep it editable so you can fix + resend
+    }
   }
   async function reject() {
     setPending(true);
@@ -48,7 +55,8 @@ export default function DraftReview({
           Reject
         </button>
       </div>
-      <p className="muted draft-note">You are the send gate — nothing goes out until you approve. (Send is simulated in this preview; no email is actually delivered yet.)</p>
+      {error && <p className="error draft-note">{error}</p>}
+      <p className="muted draft-note">You are the send gate — nothing goes out until you approve. Approving emails it to the member in your voice.</p>
     </div>
   );
 }
