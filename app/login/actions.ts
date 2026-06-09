@@ -23,5 +23,5 @@ export async function loginAction(
 
 export async function logoutAction(): Promise<void> {
   await endSession();
-  redirect('/');
+  redirect('/login?out=1');
 }

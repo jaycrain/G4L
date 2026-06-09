@@ -43,5 +43,5 @@ export async function logoutEverywhereAction(): Promise<void> {
     await db.query('delete from member_session where member_id = $1', [memberId]);
   }
   await endSession();
-  redirect('/');
+  redirect('/login?out=1');
 }
