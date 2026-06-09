@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { getDb } from '../../lib/db/index.ts';
 import { getCredentialByMember, updatePasswordHash } from '../../lib/auth/store.ts';
 import { hashPassword, verifyPassword } from '../../lib/auth/password.ts';
+import { isAvatarValue } from '../../lib/member/avatar.ts';
 import { currentMemberId, endSession } from '../auth.ts';
 import type { Db } from '../../lib/db/schema.ts';
 
@@ -18,6 +19,21 @@ export async function updateDisplayNameAction(name: string): Promise<{ ok: boole
   if (trimmed.length > 80) return { ok: false, error: 'That’s a bit long — keep it under 80 characters.' };
   const db = (await getDb()) as unknown as Db;
   await db.query('update member_profile set display_name = $2 where member_id = $1', [memberId, trimmed]);
+  revalidatePath('/account');
+  revalidatePath(`/dashboard/${memberId}`);
+  return { ok: true };
+}
+
+export async function setAvatarAction(dataUrl: string | null): Promise<{ ok: boolean; error?: string }> {
+  const memberId = await currentMemberId();
+  if (!memberId) return { ok: false, error: 'You’re not signed in.' };
+  const db = (await getDb()) as unknown as Db;
+  if (!dataUrl) {
+    await db.query('update member_profile set avatar_url = null where member_id = $1', [memberId]);
+  } else {
+    if (!isAvatarValue(dataUrl)) return { ok: false, error: 'That image didn’t come through — try a smaller JPG or PNG.' };
+    await db.query('update member_profile set avatar_url = $2 where member_id = $1', [memberId, dataUrl]);
+  }
   revalidatePath('/account');
   revalidatePath(`/dashboard/${memberId}`);
   return { ok: true };

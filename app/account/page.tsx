@@ -6,6 +6,7 @@ import { logoutAction } from '../login/actions.ts';
 import { logoutEverywhereAction } from './actions.ts';
 import { initials } from '../../lib/member/avatar.ts';
 import EnableNotifications from '../dashboard/enable-notifications.tsx';
+import AvatarUpload from './avatar-upload.tsx';
 import ProfileForm from './profile-form.tsx';
 import PasswordForm from './password-form.tsx';
 import type { Db } from '../../lib/db/schema.ts';
@@ -41,6 +42,7 @@ export default async function AccountPage() {
 
       <div className="card">
         <h3>Profile</h3>
+        <AvatarUpload initialAvatar={m.avatar_url} name={m.display_name} />
         <ProfileForm initialName={m.display_name} />
         <p className="muted" style={{ marginTop: '1rem' }}>
           Email: <strong>{m.email}</strong>

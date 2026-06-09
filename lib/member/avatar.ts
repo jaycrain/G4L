@@ -7,6 +7,13 @@ export function firstName(displayName: string): string {
   return words[0] ?? (displayName ?? '').trim();
 }
 
+/** A safe member-set avatar: a small image data URL (browser-resized) or a served path like
+ *  /avatars/tom.png. Caps size to keep it sane in the DB. */
+export function isAvatarValue(s: string): boolean {
+  if (s.startsWith('/avatars/')) return true; // seeded/served file
+  return s.startsWith('data:image/') && s.includes(';base64,') && s.length <= 300_000; // ~220KB
+}
+
 /** Up to two initials from the member's name. "Tom Miller" → "TM"; "Demo — Maria" → "DM". */
 export function initials(displayName: string): string {
   const words = (displayName ?? '').split(/\s+/).filter((w) => /[a-z]/i.test(w));

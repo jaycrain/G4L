@@ -91,6 +91,10 @@ button:hover, .btn:hover { background: var(--navy); }
 .avatar { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; display: block; }
 .avatar-initials { width: 48px; height: 48px; border-radius: 50%; background: var(--teal); color: var(--white); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.05rem; letter-spacing: 0.02em; }
 .greeting { font-size: 1.35rem; font-weight: 600; color: var(--navy); }
+.avatar-edit { display: flex; align-items: center; gap: 1rem; margin-bottom: 0.5rem; }
+.avatar-lg { width: 72px; height: 72px; font-size: 1.6rem; flex: 0 0 auto; }
+.avatar-edit-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
+.avatar-edit-actions button { margin: 0; }
 .member-greeting-link { display: flex; align-items: center; gap: 0.75rem; text-decoration: none; }
 .member-greeting-link:hover .greeting { color: var(--teal); }
 .greeting-actions { margin-left: auto; display: flex; align-items: center; gap: 0.9rem; }
