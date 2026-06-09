@@ -75,9 +75,9 @@ test('a throwing sender is counted as failed, never crashes the fan-out', async 
   assert.deepEqual(res, { sent: 0, pruned: 0, failed: 1 });
 });
 
-test('nudge payload deep-links to the member dashboard', () => {
+test('nudge payload opens the member companion chat (so they can respond)', () => {
   const p = buildNudgePayload({ kind: 'silence', text: 'How are you landing this week?', priority: 60 }, 'abc-123');
   assert.equal(p.body, 'How are you landing this week?');
-  assert.equal(p.url, '/dashboard/abc-123');
+  assert.equal(p.url, '/dashboard/abc-123?chat=1');
   assert.equal(p.title, 'Grinta for Life');
 });
