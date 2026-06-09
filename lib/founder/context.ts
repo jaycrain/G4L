@@ -23,7 +23,7 @@ export async function buildFounderContext(
   return {
     firstName: firstName(dash.displayName || ''),
     identityNoun: dash.identityNoun,
-    doorDisplayName: dash.door?.displayName ?? null,
+    doorDisplayNames: dash.doors.map((d) => d.displayName),
     idScore: dash.score?.score ?? null,
     direction: dash.score?.direction ?? null,
     delta: dash.score?.delta ?? null,

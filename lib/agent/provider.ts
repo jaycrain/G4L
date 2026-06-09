@@ -6,7 +6,7 @@
 // to live Claude the moment a key is present — zero code change.
 
 import { MEMBER_AGENT_SYSTEM_PROMPT } from './system-prompt.ts';
-import { cleanIdentityNoun } from '../member/identity.ts';
+import { identityLabel } from '../member/identity.ts';
 import type { DoorSlug } from '../doors.ts';
 
 export type OnboardingInput = {
@@ -16,7 +16,6 @@ export type OnboardingInput = {
   identityNoun: string;
   athleticPast: string;
   gap: string;
-  rightNow: string;
 };
 
 export interface AgentProvider {
@@ -31,18 +30,15 @@ export interface AgentProvider {
 export const scriptedProvider: AgentProvider = {
   name: 'scripted',
   async composeIdentityParagraph(i) {
-    const noun = cleanIdentityNoun(i.identityNoun).toUpperCase();
+    const label = identityLabel(i.identityNoun); // "the Athlete"
     return [
-      `You were ${article(i.athleticPast)} ${i.athleticPast.trim()}.`,
-      `Then ${i.doorDisplayName} changed that, and lately ${lower(i.rightNow.trim())}.`,
-      `What you want back is THE ${noun}.`,
+      `You told me who you were, before the gap.`,
+      `Then ${i.doorDisplayName} changed that.`,
+      `What you want back is ${label}.`,
       `That is where we start. One step at a time.`,
     ].join(' ');
   },
 };
-
-function lower(s: string) { return s.charAt(0).toLowerCase() + s.slice(1); }
-function article(s: string) { return /^[aeiou]/i.test(s.trim()) ? 'an' : 'a'; }
 
 // --- Anthropic (live) -------------------------------------------------------------------
 function anthropicProvider(): AgentProvider {
@@ -61,10 +57,10 @@ function anthropicProvider(): AgentProvider {
             role: 'user',
             content:
               'Write the member identity paragraph (3–5 short sentences, G4L Member-facing voice) ' +
-              `from this intake. Name their Door and propose THE ${cleanIdentityNoun(i.identityNoun).toUpperCase()} ` +
-              'as the identity to reclaim (whatever kind of person that is — do not assume it is athletic). No metrics, no praise.\n\n' +
-              `Past self: ${i.athleticPast}\nThe gap (${i.doorDisplayName}): ${i.gap}\n` +
-              `Right now: ${i.rightNow}\n\n` +
+              `from this intake. Name their Door and propose ${identityLabel(i.identityNoun)} ` +
+              'as the identity to reclaim (whatever kind of person that is — do not assume it is athletic). ' +
+              'Use natural case for the identity ("the Athlete", never all-caps). No metrics, no praise.\n\n' +
+              `Past self: ${i.athleticPast}\nThe gap (${i.doorDisplayName}): ${i.gap}\n\n` +
               'Output ONLY the paragraph itself — plain text, second person ("you"). ' +
               'No preamble, no heading, no labels, no markdown, no quotation marks.',
           },

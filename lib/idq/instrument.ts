@@ -24,41 +24,43 @@ export const DIMENSION_ITEM_INDICES: Record<Dimension, readonly number[]> = {
 export type LikertValue = 1 | 2 | 3 | 4 | 5;
 export type IdqResponses = number[]; // length 24, each LIKERT_MIN..LIKERT_MAX
 
-// PLACEHOLDER item stems — readable draft wording so the conversational IDQ has something to
-// present. The real G4L-native instrument (authored from self-discrepancy theory, finalized
-// with Greg + Legal — CONTRACTS §1) drops in here; the structure/scoring around it is locked.
-export const PLACEHOLDER_ITEM_STEMS: Record<Dimension, readonly string[]> = {
+// IDQ item stems — G4L voice rewrite v1 (second-person, spoken). Each maps 1:1 to the original
+// validated item (original item number in the trailing comment); the construct, the four
+// dimensions, and the 1–5 scale are UNCHANGED. The reworded items ship for the live onboarding
+// check and carry Greg's validation pass (the science underneath is untouched — this is the
+// voice layer on top). Array order matches DIMENSION_ITEM_INDICES.
+export const ITEM_STEMS: Record<Dimension, readonly string[]> = {
   physical: [
-    'I have the energy to do the physical things that matter to me.',
-    'My body can keep up with what my day asks of it.',
-    "I take care of my physical health in ways I'm glad about.",
-    'I feel strong enough for the life I want.',
-    'I trust my body to show up when I need it.',
-    'I recover well after physical effort.',
+    'Your body feels like it belongs to you — you know it, you trust it, you’re at home in it.', // item 1
+    'If you wanted to ask something real of your body today — something demanding — you could, without bracing for it to hurt.', // item 2
+    'You know your numbers — weight, blood pressure, resting heart rate — and you can look at them without looking away.', // item 3
+    'You’re as physically capable today as you were five years ago.', // item 4
+    'The way you eat is something you actually decide — not something running on autopilot.', // item 5
+    'You sleep well, and you wake up with the day in front of you as something to show up for.', // item 6
   ],
   self: [
-    'I recognize myself in how I spend my days.',
-    'My choices reflect who I actually am.',
-    'I feel like the author of my own life.',
-    'I know what I stand for right now.',
-    'I act in line with what matters to me.',
-    'I feel like myself most of the time.',
+    'If your twenty-five-year-old self walked in right now, they’d recognize the person you’ve become.', // item 7
+    'You regularly make time for things you care about that have nothing to do with work or anyone else’s needs.', // item 8
+    'Asked “who are you?”, you’ve got an answer that isn’t your job title or your role in the family.', // item 9
+    'You haven’t quietly traded away something you loved to make room for something you don’t.', // item 10
+    'The life you’re in right now is one you chose, on purpose — eyes open.', // item 11
+    'You’re the main character in your own story, not the supporting cast in everyone else’s.', // item 12
   ],
   social: [
-    'I feel genuinely connected to the people who matter to me.',
-    'There are people I can be fully honest with.',
-    'I feel like I belong somewhere.',
-    'I feel seen by the people around me.',
-    'I have relationships that give as much as they take.',
-    "I don't feel alone in what I'm going through.",
+    'There’s at least one person in your life who sees the real you and tells you the truth.', // item 13
+    'You show up all the way for the people you love — actually present, not just in the room.', // item 14
+    'You’re the one who calls, who plans, who says yes — the one who shows up, not the one who bails.', // item 15
+    'Your closest relationships have gotten deeper this past year, not thinner.', // item 16
+    'You belong somewhere — a group, a community — really belong, not just attend.', // item 17
+    'When someone asks how you’re doing, you tell them the truth.', // item 18
   ],
   outlook: [
-    "I'm hopeful about what's ahead.",
-    'I believe I can grow from where I am.',
-    "I have things I'm genuinely looking forward to.",
-    'I feel capable of meeting what comes.',
-    'I have a sense of purpose right now.',
-    'I expect good things from the months ahead.',
+    'You’ve got a clear picture of what you want your next chapter to be, past what you’re obligated to do.', // item 19
+    'In the last six months you’ve set a goal that genuinely excites you — yours, not one handed to you.', // item 20
+    'You’re willing to do hard things on purpose, because of who they’re turning you into.', // item 21
+    'Picture the next ten years — you can see specific moments you want to be inside of.', // item 22
+    'In the last month you did something because the person you’re becoming would do it.', // item 23
+    'You believe your best chapters are still ahead — and you’re willing to bet on it.', // item 24
   ],
 };
 
@@ -67,7 +69,7 @@ export function dimensionForIndex(i: number): Dimension {
 }
 
 export function itemStem(i: number): string {
-  return PLACEHOLDER_ITEM_STEMS[dimensionForIndex(i)]![i % ITEMS_PER_DIMENSION]!;
+  return ITEM_STEMS[dimensionForIndex(i)]![i % ITEMS_PER_DIMENSION]!;
 }
 
 export type ValidationResult = { ok: true } | { ok: false; errors: string[] };

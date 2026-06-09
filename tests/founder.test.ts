@@ -7,8 +7,8 @@ import { createDraft, listPending, getDraft, approveSend, rejectDraft, listForMe
 
 const ctx: FounderContext = {
   firstName: 'Tom',
-  identityNoun: 'ATHLETE',
-  doorDisplayName: 'The Career Cliff',
+  identityNoun: 'Athlete',
+  doorDisplayNames: ['The Career Cliff'],
   idScore: 60,
   direction: 'up',
   delta: 5,

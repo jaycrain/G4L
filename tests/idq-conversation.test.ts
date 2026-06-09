@@ -2,12 +2,13 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { idqOpening, idqRespond, parseLikert, type IdqConvState } from '../lib/agent/idq-conversation.ts';
 
-test('opening presents the intro, Physical framing, and item 1 with anchors', () => {
+test('opening presents the Fade-framed intro, body transition, and item 1 with anchors', () => {
   const t = idqOpening();
-  assert.match(t.reply, /24 short statements/);
-  assert.match(t.reply, /about your Physical/);
+  assert.match(t.reply, /twenty-four things/);
+  assert.match(t.reply, /the Fade/); // identity-distance framing, not lab-coat language
+  assert.match(t.reply, /keeping score/); // Physical (body) transition line
   assert.match(t.reply, /^.*1\. /ms);
-  assert.match(t.reply, /1 = not at all like me/);
+  assert.match(t.reply, /not landing at all/);
   assert.equal(t.state.responses.length, 0);
 });
 
@@ -40,7 +41,7 @@ test('shows a dimension transition header at the boundary', () => {
   const s: IdqConvState = { responses: [3, 3, 3, 3, 3] }; // 5 answered; next answer completes Physical
   const t = idqRespond(s, '3');
   assert.equal(t.state.responses.length, 6);
-  assert.match(t.reply, /about your Self/); // now framing the Self dimension
+  assert.match(t.reply, /harder ground/); // now transitioning into the Self dimension
 });
 
 test('answering all 24 completes with a 24-length response set', () => {

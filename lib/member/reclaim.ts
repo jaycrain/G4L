@@ -1,19 +1,24 @@
-// Reconnect required outputs — frozen data contract (docs/CONTRACTS.md §6).
-// Every Reconnect variant must produce: the Reclaim List (exactly 7 items), the member's
-// Door (one of the 8), and the baseline ID Score. This module validates the first two.
+// Reconnect required outputs — data contract (docs/CONTRACTS.md §6).
+// Every Reconnect variant must produce: the Reclaim List, the member's Door(s) (one or more
+// of the 8), and the baseline ID Score. This module validates the first two.
+//
+// Reclaim List sizing (Decision Log, voice rewrite v1): a MINIMUM of 3 to proceed, no maximum.
+// The agent gently keeps drawing more out toward a soft target of ~7, but never forces a count.
+// (Superseded the earlier "exactly 7" rule.)
 
 import { isDoorSlug, type DoorSlug } from '../doors.ts';
 
-export const RECLAIM_LIST_SIZE = 7;
+export const RECLAIM_LIST_MIN = 3; // hard floor to proceed
+export const RECLAIM_LIST_TARGET = 7; // soft aim — guides the agent, not enforced
 
 export type ValidationResult = { ok: true } | { ok: false; errors: string[] };
 
-/** A Reclaim List is valid only when it has exactly 7 non-empty, member-stated items. */
+/** A Reclaim List is valid with at least RECLAIM_LIST_MIN non-empty, member-stated items (no max). */
 export function validateReclaimList(items: unknown): ValidationResult {
   if (!Array.isArray(items)) return { ok: false, errors: ['reclaim list must be an array'] };
   const errors: string[] = [];
-  if (items.length !== RECLAIM_LIST_SIZE) {
-    errors.push(`reclaim list must have exactly ${RECLAIM_LIST_SIZE} items (got ${items.length})`);
+  if (items.length < RECLAIM_LIST_MIN) {
+    errors.push(`reclaim list must have at least ${RECLAIM_LIST_MIN} items (got ${items.length})`);
   }
   items.forEach((it, i) => {
     if (typeof it !== 'string' || it.trim().length === 0) {
@@ -23,29 +28,34 @@ export function validateReclaimList(items: unknown): ValidationResult {
   return errors.length ? { ok: false, errors } : { ok: true };
 }
 
-/** Validate the member's chosen Door against the canonical eight. */
-export function validateDoor(slug: unknown): ValidationResult {
-  return isDoorSlug(slug)
-    ? { ok: true }
-    : { ok: false, errors: [`unknown door: ${JSON.stringify(slug)}`] };
+/** Validate the member's chosen Door(s) — one or more of the canonical eight. */
+export function validateDoors(slugs: unknown): ValidationResult {
+  if (!Array.isArray(slugs) || slugs.length === 0) {
+    return { ok: false, errors: ['at least one Door is required'] };
+  }
+  const errors: string[] = [];
+  slugs.forEach((s) => {
+    if (!isDoorSlug(s)) errors.push(`unknown door: ${JSON.stringify(s)}`);
+  });
+  return errors.length ? { ok: false, errors } : { ok: true };
 }
 
-/** The complete frozen Reconnect output, ready to persist to member_profile + idq_retake. */
+/** The complete Reconnect output, ready to persist to member_profile + member_door + idq_retake. */
 export type ReconnectOutput = {
-  reclaimList: string[]; // 7
-  door: DoorSlug;
+  reclaimList: string[]; // >= 3
+  doors: DoorSlug[]; // one or more
   baselineIdScore: number; // 0..100
 };
 
 export function validateReconnectOutput(o: {
   reclaimList: unknown;
-  door: unknown;
+  doors: unknown;
   baselineIdScore: unknown;
 }): ValidationResult {
   const errors: string[] = [];
   const rl = validateReclaimList(o.reclaimList);
   if (!rl.ok) errors.push(...rl.errors);
-  const d = validateDoor(o.door);
+  const d = validateDoors(o.doors);
   if (!d.ok) errors.push(...d.errors);
   if (typeof o.baselineIdScore !== 'number' || o.baselineIdScore < 0 || o.baselineIdScore > 100) {
     errors.push('baselineIdScore must be a number 0–100');

@@ -12,7 +12,7 @@ import type { Direction } from '../idq/scoring.ts';
 export type CheckinContext = {
   displayName: string;
   identityNoun: string | null;
-  doorDisplayName: string | null;
+  doorDisplayNames: string[];
   idScore: number | null;
   direction: Direction | null;
   currentFocus: string | null;
@@ -31,8 +31,8 @@ const firstName = (n: string) => (n || '').trim().split(/\s+/)[0] ?? '';
 function contextBlock(c: CheckinContext): string {
   return [
     `Member: ${c.displayName}`,
-    c.identityNoun ? `Reclaiming: THE ${c.identityNoun}` : null,
-    c.doorDisplayName ? `Door: ${c.doorDisplayName}` : null,
+    c.identityNoun ? `Reclaiming: the ${c.identityNoun}` : null,
+    c.doorDisplayNames.length ? `Door${c.doorDisplayNames.length > 1 ? 's' : ''}: ${c.doorDisplayNames.join(', ')}` : null,
     c.idScore !== null ? `Latest ID Score: ${c.idScore}${c.direction ? ` (${c.direction})` : ''}` : 'No IDQ yet',
     c.currentFocus ? `Current focus: ${c.currentFocus}` : null,
     c.lastCompletedAsset ? `Most recent asset: ${c.lastCompletedAsset}` : null,

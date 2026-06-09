@@ -7,7 +7,7 @@ import type { AgentProvider, OnboardingInput } from '../agent/provider.ts';
 import { DOORS, isDoorSlug, type DoorSlug } from '../doors.ts';
 import { validateReconnectOutput } from '../member/reclaim.ts';
 import { detectCrisis, CRISIS_RESPONSE_US, presentScore, type ScorePresentation } from '../agent/governance.ts';
-import { cleanIdentityNoun } from '../member/identity.ts';
+import { cleanIdentityNoun, displayIdentityNoun } from '../member/identity.ts';
 import { scoreIdq, computeMovement, type DimensionScores } from '../idq/scoring.ts';
 import { validateResponses, DIMENSIONS, type Dimension } from '../idq/instrument.ts';
 
@@ -17,12 +17,11 @@ const doorName = (slug: DoorSlug) => DOORS.find((d) => d.slug === slug)!.display
 export type OnboardingFields = {
   displayName: string;
   email: string;
-  door: string;
+  doors: string[]; // one or more Door slugs (first = primary)
   identityNoun: string;
   athleticPast: string;
   gap: string;
-  rightNow: string;
-  reclaimList: string[]; // 7
+  reclaimList: string[]; // >= 3
 };
 
 export type OnboardingResult =
@@ -36,7 +35,7 @@ export async function runOnboarding(
   f: OnboardingFields,
 ): Promise<OnboardingResult> {
   // Governance first: scan free-text for distress before anything else (Emotional Safety).
-  for (const text of [f.athleticPast, f.gap, f.rightNow]) {
+  for (const text of [f.athleticPast, f.gap]) {
     if (detectCrisis(text ?? '').flagged) {
       return { ok: false, crisis: true, message: CRISIS_RESPONSE_US };
     }
@@ -46,21 +45,20 @@ export async function runOnboarding(
   if (!f.displayName?.trim()) errors.push('name is required');
   if (!f.email?.trim()) errors.push('email is required');
   if (!f.identityNoun?.trim()) errors.push('an identity noun is required');
-  if (!isDoorSlug(f.door)) errors.push('a valid Door is required');
-  // Reclaim List (exactly 7) + Door — the frozen Reconnect contract (baseline score added at IDQ).
-  const rc = validateReconnectOutput({ reclaimList: f.reclaimList, door: f.door, baselineIdScore: 0 });
+  const doors = (f.doors ?? []).filter(isDoorSlug);
+  // Reclaim List (>= 3) + Door(s) — the Reconnect contract (baseline score added at IDQ).
+  const rc = validateReconnectOutput({ reclaimList: f.reclaimList, doors, baselineIdScore: 0 });
   if (!rc.ok) errors.push(...rc.errors.filter((e) => !e.includes('baselineIdScore')));
   if (errors.length) return { ok: false, errors };
 
-  const door = f.door as DoorSlug;
+  const primaryDoor = doors[0]!;
   const input: OnboardingInput = {
     displayName: f.displayName.trim(),
-    door,
-    doorDisplayName: doorName(door),
+    door: primaryDoor,
+    doorDisplayName: doorName(primaryDoor),
     identityNoun: cleanIdentityNoun(f.identityNoun),
     athleticPast: f.athleticPast.trim(),
     gap: f.gap.trim(),
-    rightNow: f.rightNow.trim(),
   };
   const identityParagraph = await provider.composeIdentityParagraph(input);
 
@@ -71,10 +69,19 @@ export async function runOnboarding(
           intake_athletic_past, intake_gap, intake_right_now, reclaim_list, ai_consent_granted_at)
        values ($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb, now())
        returning member_id`,
-      [input.displayName, f.email.trim(), door, input.identityNoun.toUpperCase(), identityParagraph,
-       input.athleticPast, input.gap, input.rightNow, f.reclaimList],
+      [input.displayName, f.email.trim(), primaryDoor, displayIdentityNoun(input.identityNoun), identityParagraph,
+       input.athleticPast, input.gap, '', f.reclaimList],
     );
-    return { ok: true, memberId: rows[0]!.member_id };
+    const memberId = rows[0]!.member_id;
+    // The full Door set (named_door above is kept as the primary for single-value reads).
+    for (let i = 0; i < doors.length; i++) {
+      await db.query(
+        `insert into member_door (member_id, door_slug, is_primary, sort_order)
+         values ($1,$2,$3,$4) on conflict (member_id, door_slug) do nothing`,
+        [memberId, doors[i], i === 0, i],
+      );
+    }
+    return { ok: true, memberId };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     if ((e as { code?: string })?.code === '23505' || /duplicate key|member_profile_email_active/i.test(msg)) {
@@ -137,12 +144,14 @@ export function currentFocus(dims: DimensionScores): { dimension: Dimension; lab
 }
 
 // --- Dashboard read ---------------------------------------------------------------------
+export type DoorRef = { slug: string; displayName: string; isPrimary: boolean };
 export type Dashboard = {
   displayName: string;
   avatarUrl: string | null;
   identityNoun: string | null;
   identityParagraph: string | null;
-  door: { slug: string; displayName: string } | null;
+  door: { slug: string; displayName: string } | null; // primary (back-compat single-value reads)
+  doors: DoorRef[]; // the full set, primary first
   reclaimList: string[];
   score: (ScorePresentation & { dimensions: DimensionScores }) | null;
   currentFocus: { dimension: Dimension; label: string } | null;
@@ -153,6 +162,18 @@ export async function getDashboard(db: Db, memberId: string): Promise<Dashboard 
     `select display_name, avatar_url, identity_noun, identity_paragraph, named_door, reclaim_list
      from member_profile where member_id=$1`, [memberId])).rows[0];
   if (!m) return null;
+
+  // The full Door set; fall back to named_door for legacy members with no member_door rows.
+  const doorRows = (await db.query<any>(
+    `select door_slug, is_primary from member_door where member_id=$1 order by sort_order, is_primary desc`,
+    [memberId])).rows;
+  let doors: DoorRef[] = doorRows
+    .filter((r: any) => isDoorSlug(r.door_slug))
+    .map((r: any) => ({ slug: r.door_slug, displayName: doorName(r.door_slug), isPrimary: r.is_primary === true }));
+  if (doors.length === 0 && isDoorSlug(m.named_door)) {
+    doors = [{ slug: m.named_door, displayName: doorName(m.named_door), isPrimary: true }];
+  }
+  const primary = doors.find((d) => d.isPrimary) ?? doors[0] ?? null;
 
   const latest = (await db.query<any>(
     `select id_score, physical_score, self_score, social_score, outlook_score,
@@ -178,9 +199,10 @@ export async function getDashboard(db: Db, memberId: string): Promise<Dashboard 
   return {
     displayName: m.display_name,
     avatarUrl: m.avatar_url ?? null,
-    identityNoun: m.identity_noun ? cleanIdentityNoun(m.identity_noun) : null,
+    identityNoun: m.identity_noun ? displayIdentityNoun(m.identity_noun) : null,
     identityParagraph: m.identity_paragraph,
-    door: isDoorSlug(m.named_door) ? { slug: m.named_door, displayName: doorName(m.named_door) } : null,
+    door: primary ? { slug: primary.slug, displayName: primary.displayName } : null,
+    doors,
     reclaimList: Array.isArray(m.reclaim_list) ? m.reclaim_list : [],
     score,
     currentFocus: focus,

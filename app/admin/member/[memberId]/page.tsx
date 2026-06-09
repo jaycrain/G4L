@@ -30,8 +30,8 @@ export default async function AdminMember({ params }: { params: Promise<{ member
 
       <div className="card">
         <p>
-          {dash.identityNoun && <>Reclaiming <strong>THE {dash.identityNoun}</strong> · </>}
-          {dash.door && <>Door: <strong>{dash.door.displayName}</strong> · </>}
+          {dash.identityNoun && <>Reclaiming <strong>the {dash.identityNoun}</strong> · </>}
+          {dash.doors.length > 0 && <>Door{dash.doors.length > 1 ? 's' : ''}: <strong>{dash.doors.map((d) => d.displayName).join(', ')}</strong> · </>}
           {dash.score
             ? <>ID Score: <strong>{dash.score.score}</strong>{dash.score.direction ? ` (${dash.score.direction})` : ''}</>
             : 'No IDQ yet'}

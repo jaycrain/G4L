@@ -4,8 +4,8 @@ import { checkinOpening, checkinReply, proactiveTeaser, type CheckinContext } fr
 
 const base: CheckinContext = {
   displayName: 'Tom Miller',
-  identityNoun: 'ATHLETE',
-  doorDisplayName: 'The Career Cliff',
+  identityNoun: 'Athlete',
+  doorDisplayNames: ['The Career Cliff', 'The Body'],
   idScore: 60,
   direction: 'up',
   currentFocus: 'Rebuild — your body',

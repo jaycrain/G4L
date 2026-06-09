@@ -32,7 +32,7 @@ test('trend compares this window to the prior one', () => {
 });
 
 test('the line is reflective and names the identity, with a gentle empty state', () => {
-  assert.match(grintaLine(11, W, 'athlete'), /shown up 11 of the last 14 days/);
-  assert.match(grintaLine(11, W, 'athlete'), /THE ATHLETE/);
-  assert.match(grintaLine(0, W, 'athlete'), /fresh window/i);
+  assert.match(grintaLine(11, W, 'Athlete'), /shown up 11 of the last 14 days/);
+  assert.match(grintaLine(11, W, 'Athlete'), /the Athlete/); // natural case, not all-caps
+  assert.match(grintaLine(0, W, 'Athlete'), /fresh window/i);
 });

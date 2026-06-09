@@ -24,11 +24,10 @@ async function freshDb(): Promise<Db> {
 const validOnboarding = {
   displayName: 'Tom Miller',
   email: 'tom@example.com',
-  door: 'career_cliff',
+  doors: ['career_cliff', 'body'], // multi-Door
   identityNoun: 'athlete',
   athleticPast: 'competitive cyclist who rode every weekend',
   gap: 'the role ended and the bike gathered dust',
-  rightNow: 'I get winded on the stairs and barely recognize myself',
   reclaimList: ['ride again', 'sleep well', 'coach a friend', 'climb', 'reconnect with Dana', 'race Moab', 'feel strong'],
 };
 
@@ -49,10 +48,13 @@ test('full Gateway: onboarding -> IDQ -> dashboard', async () => {
   const dash = await getDashboard(db, ob.memberId);
   assert.ok(dash);
   assert.equal(dash!.displayName, 'Tom Miller');
-  assert.equal(dash!.identityNoun, 'ATHLETE');
+  assert.equal(dash!.identityNoun, 'Athlete'); // natural case, not all-caps
+  // Primary Door for single-value reads; full set available too.
   assert.equal(dash!.door?.displayName, 'The Career Cliff');
+  assert.deepEqual(dash!.doors.map((d) => d.slug), ['career_cliff', 'body']);
+  assert.equal(dash!.doors[0]!.isPrimary, true);
   assert.equal(dash!.reclaimList.length, 7);
-  assert.match(dash!.identityParagraph ?? '', /THE ATHLETE/);
+  assert.match(dash!.identityParagraph ?? '', /the Athlete/);
 
   // Score is presented compliantly (number + context), never bare; baseline => no direction.
   assert.equal(dash!.score?.score, 60);
@@ -85,7 +87,7 @@ test('crisis language in intake halts onboarding and routes to 988', async () =>
   const db = await freshDb();
   const res = await runOnboarding(db, scriptedProvider, {
     ...validOnboarding,
-    rightNow: "honestly some days I want to die and don't see the point",
+    gap: "honestly some days I want to die and don't see the point",
   });
   assert.equal(res.ok, false);
   if (res.ok) return;
@@ -128,12 +130,10 @@ test('conversational onboarding drives to completion and persists end-to-end', a
     return t;
   }
 
-  await say('a marathoner who ran before dawn');
-  await say('a diagnosis stopped me cold');
-  await say('cautious, slower, unsure of my body');
-  await say('runner');
-  await say('run a 5k, sleep deep, travel, garden, call mom weekly, cook again, laugh more');
-  const last = await say('The Diagnosis');
+  await say('a marathoner who ran before dawn'); // who they were
+  await say('runner'); // name it
+  await say('run a 5k, sleep deep, travel, garden, call mom weekly'); // reclaim list (>= 3)
+  const last = await say('a diagnosis stopped me cold, and then the empty nest'); // multi-Door
   assert.equal(last.complete, true);
 
   const res = await runOnboarding(db, scriptedProvider, collectedToFields(ctx, last.state.collected));
@@ -141,16 +141,18 @@ test('conversational onboarding drives to completion and persists end-to-end', a
   if (!res.ok) return;
 
   const dash = await getDashboard(db, res.memberId);
-  assert.equal(dash?.identityNoun, 'RUNNER');
-  assert.equal(dash?.door?.displayName, 'The Diagnosis');
-  assert.equal(dash?.reclaimList.length, 7);
+  assert.equal(dash?.identityNoun, 'Runner');
+  // matchDoors returns canonical order; the first becomes primary.
+  assert.deepEqual(dash?.doors.map((d) => d.slug), ['empty_nest', 'diagnosis']);
+  assert.equal(dash?.door?.displayName, 'The Empty Nest');
+  assert.ok((dash?.reclaimList.length ?? 0) >= 3);
 });
 
-test('onboarding rejects a Reclaim List that is not exactly 7', async () => {
+test('onboarding rejects a Reclaim List below the minimum', async () => {
   const db = await freshDb();
   const res = await runOnboarding(db, scriptedProvider, {
     ...validOnboarding,
-    reclaimList: ['only', 'three', 'items'],
+    reclaimList: ['only', 'two'],
   });
   assert.equal(res.ok, false);
 });

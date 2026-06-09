@@ -59,15 +59,15 @@ test('listRecentActivities respects the window and computes daysAgo', async () =
 test('panel buckets this week vs last and frames by identity', async () => {
   const { db, memberId } = await dbWithMember();
   await saveActivities(db, memberId, [ride('t1', 1, 32), ride('t2', 5, 20), ride('l1', 10, 40)]);
-  const panel = await getActivityPanel(db, memberId, 'cyclist');
+  const panel = await getActivityPanel(db, memberId, 'Cyclist');
   assert.equal(panel.connected, false); // no connection row yet
   await setConnection(db, memberId, 'strava', 'Strava');
-  const p2 = await getActivityPanel(db, memberId, 'cyclist');
+  const p2 = await getActivityPanel(db, memberId, 'Cyclist');
   assert.equal(p2.connected, true);
   assert.equal(p2.thisWeek.count, 2); // 1d + 5d
   assert.equal(p2.lastWeek.count, 1); // 10d
   assert.equal(p2.thisWeek.distanceM, 52000);
-  assert.equal(p2.line, 'THE CYCLIST has been showing up.');
+  assert.equal(p2.line, 'The Cyclist has been showing up.'); // natural case
 });
 
 test('framing + format helpers', () => {

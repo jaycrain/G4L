@@ -57,10 +57,11 @@ underneath is engineered.
   (Physical, Self, Social, Outlook) → ID Score. Retaken every 60 days. **Schema, scoring,
   and cadence are frozen** — do not alter. (Typeform is an acceptable interim delivery
   surface before the conversational version.)
-- **Reconnect outputs (required, every variant):** the **Reclaim List** (7 items), the
-  member's **Door**, and the baseline **ID Score**. These feed the dashboard hero, First
-  Step (B-1), and the agent's routing. This contract is stable regardless of which
-  Reconnect variant wins the A/B test.
+- **Reconnect outputs (required, every variant):** the **Reclaim List** (**≥3 items**, no max,
+  soft-aim ~7 — voice rewrite v1, Jun 2026, superseding the old "exactly 7"), the member's
+  **Door(s)** (**one or more** of the 8; stored as a set, with a primary), and the baseline
+  **ID Score**. These feed the dashboard hero, First Step (B-1), and the agent's routing. Stable
+  regardless of which Reconnect variant wins the A/B test.
 - **Telemetry (capture from day one):** asset started / completed / time-on-asset /
   drop-off point. These are the implementation-outcome measures; treat as required events.
 
@@ -108,8 +109,11 @@ From the published AI Governance Framework. These are not guidelines:
 - **Voice:** plain, measured, no hype. Call things what they are. Member-facing copy is
   normalizing and reflective, not motivational-pep or corrective.
 - **Names are real, scaffolding is not.** Use: 4Rs, IDQ, ID Score, the Atlas, the Door,
-  Member Agent, Founder Agent. Do **not** introduce invented framing terms (no "Horizon,"
-  "pillar," "track").
+  the Fade, Member Agent, Founder Agent. Do **not** introduce invented framing terms (no
+  "Horizon," "pillar," "track"). **The Fade** = the identity distance the IDQ measures (the
+  gap between who you are today and who you still are underneath); **the Door** = the life event
+  that opened it. A member's reclaimed identity renders in **natural case** ("the Athlete"),
+  never all-caps.
 
 ---
 

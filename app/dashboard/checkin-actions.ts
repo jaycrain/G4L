@@ -21,7 +21,7 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
   return {
     displayName: dash.displayName,
     identityNoun: dash.identityNoun,
-    doorDisplayName: dash.door?.displayName ?? null,
+    doorDisplayNames: dash.doors.map((d) => d.displayName),
     idScore: dash.score?.score ?? null,
     direction: dash.score?.direction ?? null,
     currentFocus: dash.currentFocus?.label ?? null,

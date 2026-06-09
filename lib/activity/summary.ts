@@ -5,7 +5,7 @@ import type { ActivityType, WeekStats } from './types.ts';
 /** The one reflective line on the panel — witnesses the identity, never scores it. */
 export function framingLine(identityNoun: string | null, thisWeek: WeekStats): string {
   if (thisWeek.count === 0) return 'A quiet week — that is part of it too.';
-  const noun = identityNoun ? `THE ${identityNoun.toUpperCase()}` : 'You';
+  const noun = identityNoun ? `The ${identityNoun}` : 'You';
   return `${noun} has been showing up.`;
 }
 

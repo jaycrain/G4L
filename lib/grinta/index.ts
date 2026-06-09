@@ -34,7 +34,7 @@ export type Grinta = {
 /** Reflective, never a grade. */
 export function grintaLine(daysActive: number, windowDays: number, identityNoun: string | null): string {
   if (daysActive === 0) return 'A fresh window. One small thing today gets it moving.';
-  const noun = identityNoun ? `THE ${identityNoun.toUpperCase()}` : 'the person you’re reclaiming';
+  const noun = identityNoun ? `the ${identityNoun}` : 'the person you’re reclaiming';
   return `You’ve shown up ${daysActive} of the last ${windowDays} days. The reps are adding up — this is the work that brings ${noun} back.`;
 }
 

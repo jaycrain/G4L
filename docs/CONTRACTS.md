@@ -25,17 +25,21 @@ file wins and the spec note says why (most conflicts are pre–"May 2026 cascade
 - **Cadence:** retaken every **60 days**. Baseline = `sequence_no 0`.
 - ⚠️ Member Agent Tech Spec v1.1 prose still says *Physical/Identity/Relational/Forward*.
   That naming is **stale** — use Physical/Self/Social/Outlook everywhere.
-- The instrument items themselves are **G4L-native, authored from self-discrepancy theory**,
-  still being finalized with Greg + Legal. The *structure and scoring below are locked*; the
-  exact 24 item stems land from Greg.
+- The instrument items themselves are **G4L-native, authored from self-discrepancy theory**.
+  The *structure and scoring below are locked.* The **24 second-person item stems (voice rewrite v1)
+  are now in the build** (`lib/idq/instrument.ts`, each mapped 1:1 to its original validated item
+  number) and ship for the live onboarding check — they carry **Greg's validation pass** (the
+  science underneath is untouched; this is the voice layer on top).
 
 ## 2. ID Score — scoring math (locked; pending Greg's final scientific sign-off)
 
 - Per-dimension raw = sum of its 6 items → **6–30** (the simplified scale is written as 0–30).
 - **ID Score raw = sum of the four dimensions = 24–120** (written as 0–120).
 - **ID Score (member-facing headline) = raw normalized to 0–100** = `(raw / 120) × 100`.
-- **Bands are RETIRED.** There is no Starting Line / Fade / Drifting / In Flow.
+- **Bands are RETIRED.** There is no Starting Line / Fade / Drifting / In Flow *as score bands*.
   Movement is shown as **direction arrow + signed delta + the raw/normalized number**.
+  ⚠️ Note: "**the Fade**" is reused (voice rewrite v1) as the name for the **identity-distance
+  concept** the IDQ measures — NOT a score band. The retired thing is the *band* called Fade.
 - ⚠️ Two stale-language traps to scrub when we touch those docs:
   - MA v1.1 schema says dimension scores are "0–25" — **wrong**, it's 0–30.
   - MA v1.1 prompt slices *and* **AI Governance v2.0 prohibition #2** still say "never reveal
@@ -103,14 +107,21 @@ engine** — never hardcoded screens. Gating/dosing rules are **config** (Greg o
 - **First 1,000 Miles (B-3)** is a gated Rebuild-track asset *but* the standalone tracking
   subsystem is **optional and post-launch** — not a universal progress gate.
 
-## 6. Reconnect required outputs — FROZEN data contract (every variant)
+## 6. Reconnect required outputs — data contract (every variant)
 
 Regardless of which Reconnect variant wins, Reconnect must produce:
-- **The Reclaim List** — exactly **7 items** (member-stated).
-- **The member's Door** — one of the 8 above.
+- **The Reclaim List** — **at least 3 items** (member-stated), no maximum. The agent gently
+  aims for a soft target of ~7 but never forces a count. *(Voice rewrite v1, Jun 2026 — superseded
+  the earlier "exactly 7" rule, which is flagged to Greg.)*
+- **The member's Door(s)** — **one or more** of the 8 above. Stored as a set (`member_door`);
+  `member_profile.named_door` holds the primary for single-value reads.
 - **The baseline ID Score.**
 
 These feed the dashboard hero, First Step (B-1), and the Member Agent's routing.
+
+The reclaimed identity is stored as a bare noun and rendered in **natural case** ("the Athlete",
+never "THE ATHLETE"). **The Fade** is the named concept for the identity distance the IDQ measures;
+**the Door** is the life event that opened it — both are canonical vocabulary.
 
 ## 7. Telemetry — capture from day one (internal QI, no IRB dependency)
 

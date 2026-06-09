@@ -95,7 +95,7 @@ export default async function DashboardPage({
         <h1>
           {dash.identityNoun ? (
             <>
-              Reconnecting: <span className="noun">THE {dash.identityNoun}</span>
+              Reconnecting: <span className="noun">the {dash.identityNoun}</span>
             </>
           ) : (
             dash.displayName
@@ -243,9 +243,10 @@ export default async function DashboardPage({
         </ul>
       </div>
 
-      {dash.door && (
+      {dash.doors.length > 0 && (
         <p className="muted">
-          Your Door: <strong>{dash.door.displayName}</strong>
+          Your Door{dash.doors.length > 1 ? 's' : ''}:{' '}
+          <strong>{dash.doors.map((d) => d.displayName).join(', ')}</strong>
         </p>
       )}
 

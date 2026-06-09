@@ -46,7 +46,7 @@ export const MOMENTS: Record<OperatingMoment, { label: string; posture: string }
 export type FounderContext = {
   firstName: string;
   identityNoun: string | null;
-  doorDisplayName: string | null;
+  doorDisplayNames: string[];
   idScore: number | null;
   direction: Direction | null;
   delta: number | null;
@@ -77,8 +77,8 @@ const firstNameOr = (c: FounderContext) => c.firstName || 'there';
 // --- Scripted fallback (brand-safe, no banned phrases) --------------------------------------
 function scriptedDraft(moment: OperatingMoment, c: FounderContext): Draft {
   const name = firstNameOr(c);
-  const door = c.doorDisplayName ?? 'the door that opened';
-  const noun = c.identityNoun ? `THE ${c.identityNoun}` : 'the person you are reclaiming';
+  const door = c.doorDisplayNames.length ? c.doorDisplayNames.join(' and ') : 'the door that opened';
+  const noun = c.identityNoun ? `the ${c.identityNoun}` : 'the person you are reclaiming';
   switch (moment) {
     case 'post_idq_welcome':
       return {
@@ -122,8 +122,8 @@ const DRAFT_TOOL = {
 function contextLines(c: FounderContext): string {
   return [
     `First name: ${c.firstName || '(unknown)'}`,
-    c.identityNoun ? `Reclaiming: THE ${c.identityNoun}` : null,
-    c.doorDisplayName ? `Door: ${c.doorDisplayName}` : null,
+    c.identityNoun ? `Reclaiming: the ${c.identityNoun}` : null,
+    c.doorDisplayNames.length ? `Door${c.doorDisplayNames.length > 1 ? 's' : ''}: ${c.doorDisplayNames.join(', ')}` : null,
     c.idScore !== null ? `Latest ID Score: ${c.idScore}${c.direction ? ` (${c.direction}${c.delta != null ? `, ${c.delta > 0 ? '+' : ''}${c.delta}` : ''})` : ''}` : 'No IDQ yet',
     c.currentFocus ? `Current focus: ${c.currentFocus}` : null,
     c.lastCompletedAsset ? `Most recent asset: ${c.lastCompletedAsset}` : null,

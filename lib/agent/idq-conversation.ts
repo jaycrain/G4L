@@ -15,11 +15,13 @@ import {
 } from '../idq/instrument.ts';
 import { detectCrisis, CRISIS_RESPONSE_US } from './governance.ts';
 
-const DIM_LABEL: Record<(typeof DIMENSIONS)[number], string> = {
-  physical: 'Physical',
-  self: 'Self',
-  social: 'Social',
-  outlook: 'Outlook',
+// Voice rewrite v1: each dimension opens with a transition line at its first item; the lab-coat /
+// "epidemic" framing is gone and the Fade carries the warmth.
+const TRANSITION: Record<(typeof DIMENSIONS)[number], string> = {
+  physical: 'Let’s start with the body. It’s keeping score whether or not we choose to look.',
+  self: 'Now the harder ground — who you are underneath the roles.',
+  social: 'Let’s talk about the people around you.',
+  outlook: 'Last stretch — where you’re headed.',
 };
 
 export type IdqConvState = { responses: number[] };
@@ -33,13 +35,11 @@ export type IdqTurn = {
 
 export const INITIAL_IDQ_STATE: IdqConvState = { responses: [] };
 
-const anchors = `(${LIKERT_MIN} = not at all like me … ${LIKERT_MAX} = very much like me)`;
+const anchors = `(${LIKERT_MIN} = not landing at all … ${LIKERT_MAX} = dead-on)`;
 
 function frame(i: number): string {
-  // Header at the first item of each dimension.
-  return i % ITEMS_PER_DIMENSION === 0
-    ? `These six are about your ${DIM_LABEL[dimensionForIndex(i)]}.\n\n`
-    : '';
+  // Transition line at the first item of each dimension.
+  return i % ITEMS_PER_DIMENSION === 0 ? `${TRANSITION[dimensionForIndex(i)]}\n\n` : '';
 }
 
 function presentItem(i: number): string {
@@ -61,8 +61,17 @@ export function parseLikert(message: string): number | null {
 
 export function idqOpening(): IdqTurn {
   const intro =
-    "I'll read 24 short statements — six per area. Rate each from 1 (not at all like me) to 5 (very much like me). " +
-    "There are no wrong answers; honest is the goal.\n\n";
+    'Alright — before we do anything else together, let’s get an honest picture of where you’re starting from. ' +
+    'As honest as you can stand. That’s the whole game today.\n\n' +
+    'Here’s how it goes. I’ll put twenty-four things in front of you — about your body, about who you are, about ' +
+    'the people around you, and about where you’re headed. For each one, you tell me how true it feels right now: ' +
+    '1 if it’s not landing at all, 5 if it’s dead-on.\n\n' +
+    'Nothing to study for. No right answers to find. A few of these are going to sting a little — and when one does, ' +
+    'that sting is the point. It means we found something real.\n\n' +
+    'Think of the whole thing as a mirror. You hold it up, you look, and you see the distance between who you are ' +
+    'today and who you know you still are underneath. We’ve got a name for that distance around here: the Fade. ' +
+    'Seeing it clearly is how you start closing it.\n\n' +
+    'No clock. No score to pass. Go when you’re ready.\n\n';
   return { reply: intro + frame(0) + presentItem(0), state: INITIAL_IDQ_STATE, complete: false };
 }
 
@@ -80,7 +89,11 @@ export function idqRespond(state: IdqConvState, message: string): IdqTurn {
   const next = responses.length;
   if (next === TOTAL_ITEMS) {
     return {
-      reply: "That's all 24. Scoring your baseline now…",
+      reply:
+        'That’s all twenty-four. Now look back — where did the low numbers cluster?\n\n' +
+        'Don’t argue with it. Just see it. That cluster is where the Fade has done its quietest, heaviest work.\n\n' +
+        'And it’s not bad news. It’s exactly where we start. That’s your starting line — and the difference between ' +
+        'today and most days is that now you can see it.',
       state: { responses },
       complete: true,
       responses,
