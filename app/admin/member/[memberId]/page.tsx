@@ -7,9 +7,10 @@ import { countSubscriptions } from '../../../../lib/push/store.ts';
 import { buildNudge } from '../../../../lib/agent/nudge.ts';
 import { redirect } from 'next/navigation';
 import type { Db } from '../../../../lib/db/schema.ts';
-import { generateDraftAction, sendNudgePushAction } from '../../actions.ts';
+import { generateDraftAction } from '../../actions.ts';
 import { isAdmin } from '../../../authz.ts';
 import DraftReview from '../../draft-review.tsx';
+import PushNudgeButton from '../push-nudge-button.tsx';
 
 export default async function AdminMember({ params }: { params: Promise<{ memberId: string }> }) {
   if (!(await isAdmin())) redirect('/admin/login');
@@ -64,9 +65,7 @@ export default async function AdminMember({ params }: { params: Promise<{ member
               {pushCount} device{pushCount === 1 ? '' : 's'} subscribed. Sends now:{' '}
               <em>&ldquo;{nudge?.text}&rdquo;</em>
             </p>
-            <form action={sendNudgePushAction.bind(null, memberId)}>
-              <button type="submit">Send notification</button>
-            </form>
+            <PushNudgeButton memberId={memberId} />
           </>
         )}
       </div>
