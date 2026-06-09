@@ -22,6 +22,14 @@ export default function AgentBubble({
     pendingRef.current = pending;
   }, [pending]);
 
+  // Arrived from a notification tap (?chat=1) → open the companion so they can respond right here.
+  useEffect(() => {
+    if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('chat')) {
+      void openPanel();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Keep open devices (e.g. Mac + iPad) in sync: while the panel is open, re-pull the saved
   // thread on a short poll and the moment this device regains focus. Replace only when the
   // server thread differs and we're not mid-send (so we never clobber an in-flight message).
