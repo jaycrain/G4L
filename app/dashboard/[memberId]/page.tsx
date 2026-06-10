@@ -262,11 +262,12 @@ export default async function DashboardPage({
       {/* Past Beats — a re-readable record so completed work never just vanishes. */}
       <div className="card">
         <h3>Past Beats</h3>
+        <p className="card-subtitle">The Story so Far</p>
         {pastBeats.length === 0 ? (
           <p className="muted">Beats you’ve worked will collect here — each one feeds your GRINTA! Index.</p>
         ) : (
           <>
-            <p className="muted">{pastBeats.length} worked — each one fed your GRINTA! Index. Tap any to revisit.</p>
+            <p className="muted">Each contributed to your GRINTA! Index. Tap any to revisit.</p>
             <ul className="past-beats">
               {pastBeats.map((pb, i) => (
                 <li key={i}>
