@@ -172,6 +172,23 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 
 .card-subtitle { margin: -0.4rem 0 0.6rem; font-size: 0.95rem; font-style: italic; color: var(--navy); opacity: 0.8; }
 
+/* Field Guide — orientation overlay */
+.fg-overlay { position: fixed; inset: 0; background: rgba(16, 16, 69, 0.45); display: flex; align-items: flex-start; justify-content: center; padding: 2rem 1rem; z-index: 1000; overflow-y: auto; }
+.fg-panel { background: var(--white); border-radius: 12px; max-width: 640px; width: 100%; padding: 1.4rem 1.6rem 2rem; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.28); }
+.fg-head { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--grey); padding-bottom: 0.6rem; }
+.fg-head h2 { margin: 0; color: var(--navy); }
+.fg-close { background: none; border: none; font-size: 1.7rem; line-height: 1; color: var(--navy); cursor: pointer; margin: 0; padding: 0 0.3rem; }
+.fg-close:hover { background: none; color: var(--teal); }
+.fg-panel section { margin-top: 1.2rem; }
+.fg-panel section h3 { margin: 0 0 0.4rem; }
+.fg-panel section p { margin: 0.4rem 0; color: var(--charcoal); }
+.fg-rs { list-style: none; padding: 0; margin: 0.6rem 0; display: flex; flex-direction: column; gap: 0.55rem; }
+.fg-rs li { color: var(--charcoal); }
+.fg-rs strong { color: var(--navy); }
+.fg-panels { margin: 0.5rem 0 0; }
+.fg-panels dt { font-weight: 700; color: var(--navy); margin-top: 0.75rem; }
+.fg-panels dd { margin: 0.1rem 0 0; color: var(--charcoal); }
+
 /* Past Beats — re-readable record of completed work */
 .past-beats { list-style: none; padding: 0; margin: 0.5rem 0 0; }
 .past-beats li { border-bottom: 1px solid var(--grey); }

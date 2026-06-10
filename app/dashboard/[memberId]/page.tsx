@@ -10,6 +10,7 @@ import { nextBeat, getJourney, getBeatHistory, dailyHardiness } from '../../../l
 import NextBeat from '../next-beat.tsx';
 import DailyBeat from '../daily-beat.tsx';
 import JourneyRings from '../journey-rings.tsx';
+import FieldGuide from '../field-guide.tsx';
 import { formatDistance, formatDuration, typeLabel, relativeDay } from '../../../lib/activity/summary.ts';
 import { firstName, initials } from '../../../lib/member/avatar.ts';
 import type { Db } from '../../../lib/db/schema.ts';
@@ -71,6 +72,8 @@ export default async function DashboardPage({
     [...program].reverse().find((p) => p.status === 'completed')?.group ??
     'Reconnect';
   const heroVerb = HERO_VERB[currentGroup];
+  // The Field Guide's identity line mirrors the hero (verb-tracks-the-phase).
+  const heroLabel = dash.identityNoun ? `${heroVerb} the ${dash.identityNoun}` : null;
 
   // Signal-driven teaser for the companion bubble — a check-in/witness prompt. Program content
   // lives in "Your next Beat", so the bubble stays purely companion (no asset/Beat names here).
@@ -113,6 +116,7 @@ export default async function DashboardPage({
           <span className="greeting">Hi, {firstName(dash.displayName)}</span>
         </Link>
         <span className="greeting-actions">
+          <FieldGuide identityLine={heroLabel} />
           <Link href="/account" className="logout-link">Account</Link>
           <form action={logoutAction} className="logout-form">
             <button type="submit" className="logout-link">Log out</button>
