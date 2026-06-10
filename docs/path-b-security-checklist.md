@@ -23,9 +23,16 @@ members** (the charter/public cohort). Per CLAUDE.md, security + the data model 
       member finishes the whole onboarding conversation; validate at the gate instead.
 
 ## Required before real members
-- [ ] **DB-level Row-Level Security (RLS).** We chose app-layer isolation for now; DB enforcement
-      likely means migrating to Supabase Auth (JWT → `auth.uid()` policies), which would replace the
-      custom auth. **Decide the auth model before doing this.**
+- [x] **RLS enabled on all public tables** (migration 0013, Jun 2026) — closes the Supabase
+      advisories rls_disabled_in_public + sensitive_columns_exposed. The app connects as the
+      table-owner `postgres` role (bypasses RLS), so the Data API roles (anon/authenticated) are
+      now default-denied with no app impact. NO policies added yet; app-layer isolation
+      (authorizeMember) is still the access control.
+- [ ] **Per-role RLS *policies*** for the anon/authenticated roles — only needed if/when the
+      Supabase Data API (PostgREST) is ever used. Likely means migrating to Supabase Auth
+      (JWT → `auth.uid()` policies), which would replace the custom auth. **Decide the auth model
+      before doing this.** Belt-and-suspenders meanwhile: the Data API can simply be disabled in
+      Supabase → Settings → API (we don't use it; `@supabase/supabase-js` is an unused dep).
 - [ ] **Password reset** (email link) — *email provider ready (Resend live)*; just need the reset flow + tokens.
 - [ ] **Email verification** at signup — *email provider ready (Resend live)*; just need the verify flow.
 - [ ] **Consent capture + research/product data separation** (AI Governance Framework): product
