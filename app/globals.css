@@ -84,6 +84,10 @@ button:hover, .btn:hover { background: var(--navy); }
 /* Dashboard */
 .hero { background: var(--navy); color: var(--white); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; }
 .hero h1 { color: var(--white); }
+.hero-intro p { margin: 0.5rem 0 0; }
+.hero-intro.collapsed p { display: -webkit-box; -webkit-line-clamp: 1; line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+.hero-toggle { background: none; border: none; color: var(--white); opacity: 0.75; text-decoration: underline; font: inherit; font-size: 0.82rem; padding: 0; margin-top: 0.4rem; cursor: pointer; }
+.hero-toggle:hover { background: none; opacity: 1; }
 .hero .noun { color: var(--white); font-weight: 700; letter-spacing: 0.02em; }
 
 /* Member greeting — top-left of the dashboard */

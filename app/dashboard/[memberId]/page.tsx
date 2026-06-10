@@ -11,6 +11,7 @@ import NextBeat from '../next-beat.tsx';
 import DailyBeat from '../daily-beat.tsx';
 import JourneyRings from '../journey-rings.tsx';
 import FieldGuide from '../field-guide.tsx';
+import HeroIntro from '../hero-intro.tsx';
 import { formatDistance, formatDuration, typeLabel, relativeDay } from '../../../lib/activity/summary.ts';
 import { firstName, initials } from '../../../lib/member/avatar.ts';
 import type { Db } from '../../../lib/db/schema.ts';
@@ -134,7 +135,7 @@ export default async function DashboardPage({
             dash.displayName
           )}
         </h1>
-        {dash.identityParagraph && <p>{dash.identityParagraph}</p>}
+        {dash.identityParagraph && <HeroIntro text={dash.identityParagraph} />}
       </div>
 
       {/* ID Score — never a bare number: always direction + delta + plain-language context */}
