@@ -62,7 +62,8 @@ const reclaimPrompt = (noun?: string) =>
   'The real, specific stuff: riding before work without dreading it. Keeping up on the trail instead of waving ' +
   'everyone ahead. Looking in the mirror and recognizing the person looking back. Booking the trip you keep ' +
   'talking yourself out of.\n\n' +
-  `Give me a few of yours — three to start, more if they keep coming. These become your Reclaim List: the concrete things we go after.`;
+  'These become your Reclaim List — the concrete things we go after, three to start and more if they keep coming. ' +
+  'What do you want back?';
 
 function doorPhrase(doors: DoorSlug[]): string {
   const names = doors.map(doorName);
@@ -171,7 +172,7 @@ export function scriptedTurn(state: ConvState, message: string): Turn {
       if (items.length < RECLAIM_LIST_MIN) {
         return done(
           'reclaim',
-          `Three is enough to start — you've given me ${items.length}. Add a couple more, whatever comes to mind.`,
+          `Three is enough to start — you've given me ${items.length}. What else comes to mind?`,
         );
       }
       collected.reclaimList = items;
@@ -216,7 +217,8 @@ ${DOORS.map((d) => `- ${d.slug}: ${d.displayName} — ${d.descriptor}`).join('\n
 
 Then hand off to the IDQ: name the Door(s), the reclaimed identity, and the Reclaim List in one or two plain sentences, and say a set of honest questions comes next (no studying, no score to pass).
 
-VOICE: no meta-narration about the program's own mechanics; gender-inclusive; warm, direct, short sentences. Let the Fade carry the weight, not statistics. Ask ONE question per turn; reflect before asking.
+VOICE: no meta-narration about the program's own mechanics; gender-inclusive; warm, direct, short sentences. Let the Fade carry the weight, not statistics.
+TURN-TAKING (important): reflect first, then ALWAYS end your turn with exactly ONE clear question or prompt that tells the member what to do next. Never end on a bare statement or reflection — that strands the member, unsure whether it is their turn. The ONLY turn without a question is the final IDQ handoff, which closes with "Ready when you are."
 
 On EVERY turn you MUST also call the record_progress tool with everything gathered so far. Set complete=true only once ALL of these are gathered: athleticPast, a confirmed natural-case identityNoun, a reclaimList of at least ${RECLAIM_LIST_MIN}, and at least one door.`;
 

@@ -63,7 +63,7 @@ export default function IdqChat({ memberId }: { memberId: string }) {
       {done ? (
         <div className="chat-continue">
           <button type="button" onClick={() => router.push(`/dashboard/${memberId}`)}>
-            See where I’m starting →
+            See where you’re starting →
           </button>
         </div>
       ) : (

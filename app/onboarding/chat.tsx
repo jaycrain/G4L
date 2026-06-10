@@ -105,7 +105,7 @@ export default function OnboardingChat() {
 
   return (
     <>
-      <h1>Onboarding</h1>
+      <h1>Getting to Know You</h1>
       <div className="chat">
         {messages.map((m, i) => (
           <div key={i} className={`bubble ${m.role}`}>
