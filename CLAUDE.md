@@ -144,6 +144,11 @@ From the published AI Governance Framework. These are not guidelines:
 - Authoring Brief v1.3 — the 12 gated assets, the science corpus pipeline
 - Program & Science Reference — the 4Rs science and the Atlas catalog
 - Platform Backlog v1.1 — prioritized build queue (P1 = charter MVP)
+- Learning Strategy Source of Truth v2.2 + Measurement & Delivery Model — the governing learning
+  philosophy: the 4Rs arc, three-feedback model (ID Score / Grinta / Journey), and the **Beat**
+  content model. The Beat engine slice is built — see `docs/beat-engine.md`. **"Beat" supersedes
+  "Bite."** Reclaim items carry an IDQ-dimension **category**; the **close** turns delivery into
+  measurement.
 - Decision Log (latest) — every decision + its platform impact; **check it before
   assuming anything**
 

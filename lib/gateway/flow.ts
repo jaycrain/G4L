@@ -8,6 +8,8 @@ import { DOORS, isDoorSlug, type DoorSlug } from '../doors.ts';
 import { validateReconnectOutput } from '../member/reclaim.ts';
 import { detectCrisis, CRISIS_RESPONSE_US, presentScore, type ScorePresentation } from '../agent/governance.ts';
 import { cleanIdentityNoun, displayIdentityNoun } from '../member/identity.ts';
+import { addReclaimItems } from '../beats/store.ts';
+import { inferCategory } from '../beats/category.ts';
 import { scoreIdq, computeMovement, type DimensionScores } from '../idq/scoring.ts';
 import { validateResponses, DIMENSIONS, type Dimension } from '../idq/instrument.ts';
 
@@ -81,6 +83,13 @@ export async function runOnboarding(
         [memberId, doors[i], i === 0, i],
       );
     }
+    // Reclaim List as categorized rows for the Beat engine (category v1: keyword-inferred;
+    // upgrades to agent-inferred in the onboarding shaping conversation).
+    await addReclaimItems(
+      db,
+      memberId,
+      f.reclaimList.map((text) => ({ text, category: inferCategory(text) })),
+    );
     return { ok: true, memberId };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
@@ -175,6 +184,16 @@ export async function getDashboard(db: Db, memberId: string): Promise<Dashboard 
   }
   const primary = doors.find((d) => d.isPrimary) ?? doors[0] ?? null;
 
+  // Reclaim List now lives as categorized rows (reclaim_item); fall back to the legacy jsonb.
+  const riRows = (
+    await db.query<{ text: string }>('select text from reclaim_item where member_id=$1 order by sort_order, created_at', [memberId])
+  ).rows;
+  const reclaimList = riRows.length
+    ? riRows.map((r) => r.text)
+    : Array.isArray(m.reclaim_list)
+      ? m.reclaim_list
+      : [];
+
   const latest = (await db.query<any>(
     `select id_score, physical_score, self_score, social_score, outlook_score,
             delta_from_baseline, delta_from_previous, direction
@@ -203,7 +222,7 @@ export async function getDashboard(db: Db, memberId: string): Promise<Dashboard 
     identityParagraph: m.identity_paragraph,
     door: primary ? { slug: primary.slug, displayName: primary.displayName } : null,
     doors,
-    reclaimList: Array.isArray(m.reclaim_list) ? m.reclaim_list : [],
+    reclaimList,
     score,
     currentFocus: focus,
   };

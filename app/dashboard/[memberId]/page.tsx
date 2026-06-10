@@ -8,7 +8,9 @@ import { timeSignals, topNudge } from '../../../lib/agent/nudge.ts';
 import { getActivityPanel } from '../../../lib/activity/store.ts';
 import { getGrinta } from '../../../lib/grinta/index.ts';
 import { getBitePanel } from '../../../lib/bites/store.ts';
+import { nextBeat } from '../../../lib/beats/store.ts';
 import BiteCard from '../bite-card.tsx';
+import NextBeat from '../next-beat.tsx';
 import { formatDistance, formatDuration, typeLabel, relativeDay } from '../../../lib/activity/summary.ts';
 import { firstName, initials } from '../../../lib/member/avatar.ts';
 import type { Db } from '../../../lib/db/schema.ts';
@@ -84,6 +86,9 @@ export default async function DashboardPage({
 
   // GRINTA! Index — the daily "process" metric (companion to the longitudinal ID Score).
   const grinta = await getGrinta(db, memberId, dash.identityNoun);
+
+  // The next Beat — the Member Agent's "next right thing," served one at a time, ending in a close.
+  const initialBeat = await nextBeat(db, memberId);
 
   return (
     <>
@@ -258,6 +263,8 @@ export default async function DashboardPage({
           ))}
         </ul>
       </div>
+
+      <NextBeat memberId={memberId} initial={initialBeat} />
 
       {dash.doors.length > 0 && (
         <p className="muted">

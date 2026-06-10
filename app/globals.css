@@ -138,6 +138,18 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .chat-continue { margin-top: 0.75rem; }
 .chat-continue button { margin: 0; width: 100%; }
 
+/* Your next Beat — the work surface */
+.beat-card { border-left: 4px solid var(--olive); }
+.beat-title { font-weight: 700; color: var(--navy); margin: 0.25rem 0 0.35rem; }
+.beat-content { color: var(--charcoal); margin: 0 0 0.9rem; }
+.beat-close { font-weight: 600; color: var(--navy); margin: 0 0 0.6rem; }
+.beat-ack { margin: 0 0 0.5rem; color: var(--olive); font-weight: 600; }
+.beat-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+.beat-actions button { margin: 0; }
+.beat-reflect { display: flex; gap: 0.5rem; flex: 1; }
+.beat-reflect input { flex: 1; margin: 0; }
+.beat-reflect button { margin: 0; }
+
 /* Founder Agent admin */
 .admin-search { display: flex; gap: 0.5rem; margin: 0.5rem 0 1rem; }
 .admin-search input { flex: 1; margin: 0; }
