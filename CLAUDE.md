@@ -108,12 +108,14 @@ From the published AI Governance Framework. These are not guidelines:
   White. No tints, shades, or off-palette colors.
 - **Voice:** plain, measured, no hype. Call things what they are. Member-facing copy is
   normalizing and reflective, not motivational-pep or corrective.
-- **Names are real, scaffolding is not.** Use: 4Rs, IDQ, ID Score, the Atlas, the Door,
-  the Fade, Member Agent, Founder Agent. Do **not** introduce invented framing terms (no
-  "Horizon," "pillar," "track"). **The Fade** = the identity distance the IDQ measures (the
-  gap between who you are today and who you still are underneath); **the Door** = the life event
-  that opened it. A member's reclaimed identity renders in **natural case** ("the Athlete"),
-  never all-caps.
+- **Names are real, scaffolding is not.** Use: 4Rs, IDQ, ID Score, GRINTA! Index, the Journey,
+  the Atlas, the Beat, the close, the Door, the Fade, the Reclaim List, the Loop, Member Agent,
+  Founder Agent. Do **not** introduce invented framing terms (no "Horizon," "pillar," "track").
+  **The Fade** = the identity distance the IDQ measures; **the Door** = the life event that opened
+  it. **Three feedbacks:** the ID Score (mirror), the GRINTA! Index (grit), the Journey (place on
+  the 4Rs + Reclaim List movement — never a score). A member's reclaimed identity renders in
+  **natural case** ("the Athlete"), never all-caps. Note: avoid generic/cliché "journey" as filler,
+  but "the Journey" (capitalized) is a real, explainable feature — the Member Agent must know it.
 
 ---
 
