@@ -153,15 +153,8 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 /* The Journey — a place, not a score */
 .journey-card { border-left: 4px solid var(--teal); }
 .journey-line { font-weight: 600; color: var(--navy); margin: 0.25rem 0 0.6rem; }
-.journey-path { display: flex; list-style: none; padding: 0; margin: 0.5rem 0 0.2rem; gap: 0.4rem; }
-.jstep { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 0.3rem; text-align: center; }
-.jstep .jdot { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; border: 2px solid var(--grey); color: var(--white); background: var(--grey); }
-.jstep .jlabel { font-size: 0.72rem; font-weight: 600; color: var(--navy); opacity: 0.55; }
-.jstep.done .jdot { background: var(--teal); border-color: var(--teal); }
-.jstep.done .jlabel { opacity: 0.8; }
-.jstep.current .jdot { background: var(--white); border-color: var(--teal); box-shadow: 0 0 0 3px rgba(59,148,149,0.18); }
-.jstep.current .jlabel { opacity: 1; color: var(--teal); }
-.journey-layer { margin: 0.5rem 0 0; font-size: 0.85rem; }
+.journey-rings { width: 132px; height: 132px; display: block; margin: 0.6rem auto 0.3rem; }
+.journey-layer { margin: 0.5rem 0 0; font-size: 0.85rem; text-align: center; }
 .journey-rs { list-style: none; padding: 0; margin: 0.7rem 0 0; display: flex; flex-direction: column; gap: 0.35rem; }
 .jr { display: flex; gap: 0.6rem; align-items: baseline; opacity: 0.5; }
 .jr.current { opacity: 1; }

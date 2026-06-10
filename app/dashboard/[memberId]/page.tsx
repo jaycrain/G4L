@@ -8,6 +8,7 @@ import { getActivityPanel } from '../../../lib/activity/store.ts';
 import { getGrinta } from '../../../lib/grinta/index.ts';
 import { nextBeat, getJourney } from '../../../lib/beats/store.ts';
 import NextBeat from '../next-beat.tsx';
+import JourneyRings from '../journey-rings.tsx';
 import { formatDistance, formatDuration, typeLabel, relativeDay } from '../../../lib/activity/summary.ts';
 import { firstName, initials } from '../../../lib/member/avatar.ts';
 import type { Db } from '../../../lib/db/schema.ts';
@@ -15,6 +16,14 @@ import AgentBubble from '../agent-bubble.tsx';
 import { logoutAction } from '../../login/actions.ts';
 import { authorizeMember } from '../../authz.ts';
 import { redirect } from 'next/navigation';
+
+// The 4Rs ring colors (match the logo), used to color the Journey legend.
+const R_RING_COLOR: Record<string, string> = {
+  reconnect: '#374f63',
+  rewire: '#3b9495',
+  rebuild: '#919536',
+  reclaim: '#ec6233',
+};
 
 const DIM_LABEL: Record<string, string> = {
   physical: 'Physical',
@@ -159,14 +168,7 @@ export default async function DashboardPage({
       <div className="card journey-card">
         <h3>Your journey</h3>
         <p className="journey-line">{journey.line}</p>
-        <ol className="journey-path" aria-label="Your position on the 4Rs">
-          {journey.path.map((step) => (
-            <li key={step.r} className={`jstep ${step.state}`}>
-              <span className="jdot" aria-hidden="true">{step.state === 'done' ? '✓' : ''}</span>
-              <span className="jlabel">{step.label}</span>
-            </li>
-          ))}
-        </ol>
+        <JourneyRings currentR={journey.currentR} />
         {journey.currentLayer && (
           <p className="muted journey-layer">
             Right now: <strong>{journey.currentRLabel} · {journey.currentLayer}</strong>
@@ -175,7 +177,7 @@ export default async function DashboardPage({
         <ul className="journey-rs">
           {journey.path.map((step) => (
             <li key={step.r} className={`jr ${step.state}`}>
-              <span className="jr-name">{step.label}</span>
+              <span className="jr-name" style={{ color: R_RING_COLOR[step.r] }}>{step.label}</span>
               <span className="jr-blurb">{step.blurb}</span>
             </li>
           ))}
