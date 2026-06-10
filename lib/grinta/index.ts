@@ -62,7 +62,7 @@ export async function getGrinta(db: Db, memberId: string, identityNoun: string |
        union all select taken_at,     'other'   from idq_retake       where member_id=$1
        union all select created_at,   'other'   from agent_message    where member_id=$1 and role='member'
        union all select consumed_at,  'program' from bite_consumed     where member_id=$1
-       union all select completed_at, 'program' from beat_completion   where member_id=$1
+       union all select completed_at, 'program' from beat_completion   where member_id=$1 and close_response is distinct from 'onboarding'
      )
      select
        count(distinct date(t)) filter (where t >= now() - interval '14 days')                                          dac,

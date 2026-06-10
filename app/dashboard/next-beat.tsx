@@ -20,7 +20,9 @@ export default function NextBeat({ memberId, initial }: { memberId: string; init
     if (!served || pending) return;
     setPending(true);
     const r = await closeBeatAction(memberId, served.beat.beat_id, response);
-    setAck(r.reclaimed ? 'Reclaimed. That one’s yours now.' : 'Logged — that’s a rep.');
+    // Only surface a message on a real milestone (an item reclaimed); routine completions just
+    // advance — the next Beat appearing is the feedback. (No persistent "that's a rep" line.)
+    setAck(r.reclaimed ? 'Reclaimed. That one’s yours now.' : null);
     setText('');
     setServed(r.next);
     setPending(false);

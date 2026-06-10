@@ -2,14 +2,11 @@ import Link from 'next/link';
 import { getDb } from '../../../lib/db/index.ts';
 import { getDashboard } from '../../../lib/gateway/flow.ts';
 import { completedCodes } from '../../../lib/assets/engine.ts';
-import { recommendedNext, assetStatus, ASSET_ORDER, GATES, type AssetStatus, type RGroup } from '../../../lib/assets/gating.ts';
-import { ASSET_NAMES } from '../../../lib/assets/definitions.ts';
+import { recommendedNext, assetStatus, ASSET_ORDER, GATES, type RGroup } from '../../../lib/assets/gating.ts';
 import { timeSignals, topNudge } from '../../../lib/agent/nudge.ts';
 import { getActivityPanel } from '../../../lib/activity/store.ts';
 import { getGrinta } from '../../../lib/grinta/index.ts';
-import { getBitePanel } from '../../../lib/bites/store.ts';
 import { nextBeat, getJourney } from '../../../lib/beats/store.ts';
-import BiteCard from '../bite-card.tsx';
 import NextBeat from '../next-beat.tsx';
 import { formatDistance, formatDuration, typeLabel, relativeDay } from '../../../lib/activity/summary.ts';
 import { firstName, initials } from '../../../lib/member/avatar.ts';
@@ -18,8 +15,6 @@ import AgentBubble from '../agent-bubble.tsx';
 import { logoutAction } from '../../login/actions.ts';
 import { authorizeMember } from '../../authz.ts';
 import { redirect } from 'next/navigation';
-
-const STATUS_MARK: Record<AssetStatus, string> = { completed: '✓', available: '→', locked: '·' };
 
 const DIM_LABEL: Record<string, string> = {
   physical: 'Physical',
@@ -45,9 +40,8 @@ export default async function DashboardPage({
   const completed = await completedCodes(db, memberId);
   const gateCtx = { completed, dimensions: dash.score?.dimensions };
   const nextCode = recommendedNext(gateCtx);
+  // Asset-level rollup retained only to derive the hero heading verb's current R-group.
   const program = ASSET_ORDER.map((code) => ({
-    code,
-    name: ASSET_NAMES[code]!,
     group: GATES[code]!.group,
     status: assetStatus(gateCtx, code),
   }));
@@ -68,16 +62,14 @@ export default async function DashboardPage({
     'Reconnect';
   const heroVerb = HERO_VERB[currentGroup];
 
-  // Today's GRINTA! bite — small daily content the agent serves; consuming it feeds the Index.
-  const focusGroup = dash.currentFocus?.label?.split(' ')[0] as RGroup | undefined;
-  const bitePanel = await getBitePanel(db, memberId, focusGroup);
-
-  // Signal-driven proactive nudge for the always-on companion bubble (incl. today's bite).
+  // Signal-driven teaser for the companion bubble — a check-in/witness prompt. Program content
+  // lives in "Your next Beat", so the bubble stays purely companion (no asset/Beat names here).
   const nudgeSignals = {
     ...(await timeSignals(db, memberId)),
     direction: dash.score?.direction ?? null,
     delta: dash.score?.delta ?? null,
-    nextAssetName: nextCode ? ASSET_NAMES[nextCode]! : null,
+    recentAssetName: null,
+    nextAssetName: null,
   };
   const teaser = topNudge(nudgeSignals).text;
 
@@ -200,20 +192,6 @@ export default async function DashboardPage({
           Your daily effort moves this. Your ID Score is where it lands when you next take the IDQ.
         </p>
       </div>
-
-      {/* Today's GRINTA! bite — a small daily rep the agent serves; consuming it ticks the Index. */}
-      {bitePanel.state === 'available' ? (
-        <BiteCard memberId={memberId} bite={bitePanel.bite} />
-      ) : (
-        <div className="card bite">
-          <span className="bite-tag">Today’s GRINTA! bite</span>
-          <p className="muted" style={{ marginTop: '0.4rem' }}>
-            {bitePanel.state === 'done'
-              ? 'Logged today — that rep’s in. Another bite tomorrow.'
-              : 'You’ve worked through every bite for now. More on the way.'}
-          </p>
-        </div>
-      )}
 
       {activity.connected ? (
         <div className="card">

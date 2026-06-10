@@ -50,7 +50,7 @@ export async function seedOnboardingBeats(db: Db, memberId: string): Promise<voi
   for (const id of ONBOARDING_COVERED_BEATS) {
     await db.query(
       `insert into beat_completion (member_id, beat_id, close_type, close_response, feeds_consistency)
-       select $1,$2,'reflect','onboarding',true
+       select $1,$2,'reflect','onboarding',false
        where not exists (select 1 from beat_completion where member_id=$1 and beat_id=$2)`,
       [memberId, id],
     );
