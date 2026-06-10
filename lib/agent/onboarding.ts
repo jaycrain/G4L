@@ -22,6 +22,7 @@ export type Collected = {
   athleticPast?: string; // Step 1: the past self, in the member's own words
   identityNoun?: string; // the reclaimed identity, natural case (e.g. "Athlete")
   reclaimList?: string[]; // >= RECLAIM_LIST_MIN
+  reclaimCategories?: string[]; // IDQ-dimension category per item, same order (agent-inferred)
   gap?: string; // Step 3 free-text: how the gap opened (member's words)
   doors?: DoorSlug[]; // one or more
 };
@@ -146,6 +147,7 @@ export function collectedToFields(ctx: Ctx, c: Collected) {
     athleticPast: c.athleticPast ?? '',
     gap: c.gap ?? '',
     reclaimList: c.reclaimList ?? [],
+    reclaimCategories: c.reclaimCategories ?? [],
   };
 }
 
@@ -219,7 +221,7 @@ Conduct the intake as a warm, member-paced conversation. Capture exactly three r
 
 1) RECLAIMED IDENTITY. Open with the question about who they were when they felt most themselves (a past self of ANY kind — runner, writer, musician, builder, teacher, parent, the friend who always called — never assume it is athletic). Listen. Then reflect a specific detail of THEIR OWN words back, propose the identity as a single natural-case noun ("So — the Runner." / "the Writer." / "the Builder."), and confirm it with them before moving on. NEVER all-caps the noun ("the Athlete", never "THE ATHLETE"). Record identityNoun as the bare noun in natural case, without a leading "the/a/an".
 
-2) RECLAIM LIST. Ask what having that self back looks like on an ordinary day — concrete, specific things they want back. Gather at least ${RECLAIM_LIST_MIN}; there is NO maximum. Gently keep drawing more out toward about ${RECLAIM_LIST_TARGET}, but never force a count or make it feel like a quota.
+2) RECLAIM LIST. Ask what having that self back looks like on an ordinary day — concrete, specific things they want back. Gather at least ${RECLAIM_LIST_MIN}; there is NO maximum. Gently keep drawing more out toward about ${RECLAIM_LIST_TARGET}, but never force a count or make it feel like a quota. SILENTLY shape each item to be specific and observable — concrete enough to witness — with a natural follow-up if needed ("what would the athlete be doing on a Tuesday that you're not doing now?"), never a worksheet. For EACH item, also assign a category — the life area it belongs to: physical (body/movement/food/sleep), self (identity/who they are), social (people/relationships), or outlook (purpose/future/mindset). Record the items in reclaimList and their categories in reclaimCategories, same order.
 
 3) FADE DOOR(S). Ask how the gap opened. The member answers in their own words; map silently to one OR MORE of the eight Doors below (most people walked through more than one). Do not make them pick from a numbered list — confirm gently only if their answer is ambiguous. Record doors as an array of slugs.
 ${DOORS.map((d) => `- ${d.slug}: ${d.displayName} — ${d.descriptor}`).join('\n')}
@@ -239,7 +241,12 @@ const RECORD_PROGRESS_TOOL = {
     properties: {
       athleticPast: { type: 'string', description: "the member's past self, in their own words" },
       identityNoun: { type: 'string', description: 'confirmed identity noun, natural case (e.g. "Athlete")' },
-      reclaimList: { type: 'array', items: { type: 'string' } },
+      reclaimList: { type: 'array', items: { type: 'string' }, description: 'specific, observable items the member wants back' },
+      reclaimCategories: {
+        type: 'array',
+        items: { type: 'string', enum: ['physical', 'self', 'social', 'outlook'] },
+        description: 'category for each reclaimList item, in the same order',
+      },
       gap: { type: 'string', description: 'how the gap opened, in the member’s words' },
       doors: { type: 'array', items: { type: 'string', enum: [...DOOR_SLUGS] }, description: 'one or more Door slugs' },
       complete: { type: 'boolean' },
@@ -286,6 +293,9 @@ async function liveTurn(
         ...(p.athleticPast !== undefined && { athleticPast: p.athleticPast }),
         ...(p.identityNoun !== undefined && { identityNoun: displayIdentityNoun(p.identityNoun) }),
         ...(Array.isArray(p.reclaimList) && { reclaimList: p.reclaimList }),
+        ...(Array.isArray((p as { reclaimCategories?: string[] }).reclaimCategories) && {
+          reclaimCategories: (p as { reclaimCategories?: string[] }).reclaimCategories,
+        }),
         ...(p.gap !== undefined && { gap: p.gap }),
         ...(doors && doors.length > 0 && { doors }),
       };

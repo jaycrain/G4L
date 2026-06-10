@@ -23,9 +23,26 @@ export function eligibleBeats(s: MemberBeatState, channel: Channel = 'in_app'): 
   );
 }
 
+const R_ORDER: Record<string, number> = { reconnect: 0, rewire: 1, rebuild: 2, reclaim: 3, cross_cutting: 4 };
+const DOSE_ORDER: Record<string, number> = { light: 0, medium: 1, heavy: 2 };
+
+// Rank eligible Beats: don't skip ahead (earlier R first); within an R, dose toward the member's
+// weakest IDQ dimension (the Strategy's "subscores tune which Beats are served"); then lighter
+// first. Array.sort is stable, so equal Beats keep authored registry order.
+export function rankBeats(beats: Beat[], s: MemberBeatState): Beat[] {
+  return [...beats].sort((a, b) => {
+    const r = (R_ORDER[a.position.r] ?? 9) - (R_ORDER[b.position.r] ?? 9);
+    if (r !== 0) return r;
+    const aLow = s.lowestDimension && a.serves.includes(s.lowestDimension) ? 0 : 1;
+    const bLow = s.lowestDimension && b.serves.includes(s.lowestDimension) ? 0 : 1;
+    if (aLow !== bLow) return aLow - bLow;
+    return (DOSE_ORDER[a.dose] ?? 1) - (DOSE_ORDER[b.dose] ?? 1);
+  });
+}
+
 /** The next Beat to serve on the in-app surface, or null if nothing is currently eligible. */
 export function selectNextBeat(s: MemberBeatState): Beat | null {
-  return eligibleBeats(s, 'in_app')[0] ?? null;
+  return rankBeats(eligibleBeats(s, 'in_app'), s)[0] ?? null;
 }
 
 /** Eligible cross-cutting Hardiness Beats (daily heartbeat; run across every gate). */

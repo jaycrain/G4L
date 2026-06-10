@@ -8,7 +8,7 @@ import { timeSignals, topNudge } from '../../../lib/agent/nudge.ts';
 import { getActivityPanel } from '../../../lib/activity/store.ts';
 import { getGrinta } from '../../../lib/grinta/index.ts';
 import { getBitePanel } from '../../../lib/bites/store.ts';
-import { nextBeat } from '../../../lib/beats/store.ts';
+import { nextBeat, getJourney } from '../../../lib/beats/store.ts';
 import BiteCard from '../bite-card.tsx';
 import NextBeat from '../next-beat.tsx';
 import { formatDistance, formatDuration, typeLabel, relativeDay } from '../../../lib/activity/summary.ts';
@@ -89,6 +89,8 @@ export default async function DashboardPage({
 
   // The next Beat — the Member Agent's "next right thing," served one at a time, ending in a close.
   const initialBeat = await nextBeat(db, memberId);
+  // The Journey — the third feedback: where you are on the path + your Reclaim List movement.
+  const journey = await getJourney(db, memberId);
 
   return (
     <>
@@ -158,6 +160,31 @@ export default async function DashboardPage({
         </div>
       )}
 
+      {/* The work — the Member Agent serves one Beat at a time, each ending in a close. The Program panel. */}
+      <NextBeat memberId={memberId} initial={initialBeat} />
+
+      {/* The Journey — where you are on the path + your Reclaim List movement. A place, never a score. */}
+      <div className="card journey-card">
+        <h3>Your journey</h3>
+        <p className="journey-line">{journey.line}</p>
+        {journey.currentRLabel && (
+          <p className="muted">
+            On the path:{' '}
+            <strong>
+              {journey.currentRLabel}
+              {journey.currentLayer ? ` · ${journey.currentLayer}` : ''}
+            </strong>
+          </p>
+        )}
+        {journey.reclaim.total > 0 && (
+          <div className="journey-reclaim">
+            <span><strong>{journey.reclaim.reclaimed}</strong> reclaimed</span>
+            <span><strong>{journey.reclaim.moving}</strong> moving</span>
+            <span><strong>{journey.reclaim.notYet}</strong> to go</span>
+          </div>
+        )}
+      </div>
+
       {/* GRINTA! Index — the daily process metric: how you're showing up. Moves daily; never alters the ID Score. */}
       <div className="card grinta">
         <h3>Your GRINTA! Index</h3>
@@ -185,20 +212,6 @@ export default async function DashboardPage({
               ? 'Logged today — that rep’s in. Another bite tomorrow.'
               : 'You’ve worked through every bite for now. More on the way.'}
           </p>
-        </div>
-      )}
-
-      {dash.currentFocus && (
-        <div className="card">
-          <h3>Current focus</h3>
-          <span className="focus-chip">{dash.currentFocus.label}</span>
-          {nextCode && (
-            <p style={{ marginTop: '0.9rem' }}>
-              <Link className="btn" href={`/asset/${nextCode}?member=${memberId}`}>
-                Start: {ASSET_NAMES[nextCode]}
-              </Link>
-            </p>
-          )}
         </div>
       )}
 
@@ -237,25 +250,6 @@ export default async function DashboardPage({
       )}
 
       <div className="card">
-        <h3>Your program</h3>
-        <ul className="program">
-          {program.map((a) => (
-            <li key={a.code} className={`prog ${a.status}`}>
-              <span className="mark">{STATUS_MARK[a.status]}</span>
-              <span className="pname">
-                {a.status === 'locked' ? (
-                  a.name
-                ) : (
-                  <Link href={`/asset/${a.code}?member=${memberId}`}>{a.name}</Link>
-                )}
-              </span>
-              <span className="pgroup">{a.group}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      <div className="card">
         <h3>Your Reclaim List</h3>
         <ul className="reclaim">
           {dash.reclaimList.map((item, i) => (
@@ -263,8 +257,6 @@ export default async function DashboardPage({
           ))}
         </ul>
       </div>
-
-      <NextBeat memberId={memberId} initial={initialBeat} />
 
       {dash.doors.length > 0 && (
         <p className="muted">

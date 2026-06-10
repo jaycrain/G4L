@@ -3,7 +3,7 @@
 // Grinta component flags and advancing the served Reclaim item's state machine).
 
 import type { Db } from '../db/schema.ts';
-import { beatById, type Beat, type Category, type CloseType, type Rhythm } from './registry.ts';
+import { allBeats, beatById, type Beat, type Category, type CloseType, type RGroup, type Rhythm } from './registry.ts';
 import { isReady } from './readiness.ts';
 import { selectNextBeat } from './select.ts';
 import { bindGoalItem, effectiveCloseType, renderClose } from './serves.ts';
@@ -33,6 +33,28 @@ export async function getReclaimItems(db: Db, memberId: string): Promise<Reclaim
     sortOrder: Number(r.sort_order ?? 0),
     lastServedAt: toIso(r.last_served_at),
   }));
+}
+
+// Reconnect Beats whose work the onboarding conversation + IDQ already do (the gateway is the
+// compressed Reconnect). Seeded as completed on IDQ baseline so the dashboard Beat surface opens at
+// genuinely-next work instead of re-asking the member to name their identity or rebuild their list.
+const ONBOARDING_COVERED_BEATS = [
+  'RCN-IDQ-01', 'RCN-IDQ-02', // the IDQ itself
+  'RCN-FDR-01', 'RCN-FDR-02', 'RCN-FDR-03', // Fade Door(s)
+  'RCN-EXC-04', // naming the Reclaimed Identity
+  'RCN-WIN-03', 'RCN-WIN-04', // building + sharpening the Reclaim List
+];
+
+/** Seed the onboarding-covered Reconnect Beats as completed (idempotent). Feeds Consistency. */
+export async function seedOnboardingBeats(db: Db, memberId: string): Promise<void> {
+  for (const id of ONBOARDING_COVERED_BEATS) {
+    await db.query(
+      `insert into beat_completion (member_id, beat_id, close_type, close_response, feeds_consistency)
+       select $1,$2,'reflect','onboarding',true
+       where not exists (select 1 from beat_completion where member_id=$1 and beat_id=$2)`,
+      [memberId, id],
+    );
+  }
 }
 
 /** Insert categorized Reclaim items (onboarding + test seeding). Appends after any existing. */
@@ -68,14 +90,26 @@ export async function assembleState(db: Db, memberId: string): Promise<MemberBea
   }
 
   const idqRows = (
-    await db.query<{ taken_at: unknown }>(
-      'select taken_at from idq_retake where member_id=$1 order by taken_at desc limit 1',
+    await db.query<{ taken_at: unknown; physical_score: number; self_score: number; social_score: number; outlook_score: number }>(
+      `select taken_at, physical_score, self_score, social_score, outlook_score
+       from idq_retake where member_id=$1 order by cycle_indicator desc, sequence_no desc limit 1`,
       [memberId],
     )
   ).rows;
   const idqDone = idqRows.length > 0;
   const lastIdqIso = idqDone ? toIso(idqRows[0]!.taken_at) : null;
   const daysSinceLastIdq = lastIdqIso ? Math.floor((Date.now() - new Date(lastIdqIso).getTime()) / 86_400_000) : null;
+
+  let lowestDimension: Category | null = null;
+  if (idqDone) {
+    const r = idqRows[0]!;
+    const dims: [Category, number][] = [
+      ['physical', Number(r.physical_score)], ['self', Number(r.self_score)],
+      ['social', Number(r.social_score)], ['outlook', Number(r.outlook_score)],
+    ];
+    dims.sort((a, b) => a[1] - b[1]);
+    lowestDimension = dims[0]![0];
+  }
 
   const prof = (
     await db.query<{ identity_noun: string | null; named_door: string | null }>(
@@ -94,6 +128,7 @@ export async function assembleState(db: Db, memberId: string): Promise<MemberBea
     rewireCheckpointDone: completedBeatIds.has('RWR-CHK-01'),
     rebuildFoundationCount,
     daysSinceLastIdq,
+    lowestDimension,
   };
 }
 
@@ -181,6 +216,62 @@ export async function completeBeat(
     itemReclaimed: out.itemUpdate?.reclaimedNow ?? false,
   };
 }
+
+// --- Journey — the third feedback: a place, never a score -------------------------------
+const R_LABEL: Record<RGroup, string> = {
+  reconnect: 'Reconnect', rewire: 'Rewire', rebuild: 'Rebuild', reclaim: 'Reclaim', cross_cutting: 'Daily',
+};
+const R_RANK: Record<string, number> = { reconnect: 0, rewire: 1, rebuild: 2, reclaim: 3, cross_cutting: -1 };
+
+export type Journey = {
+  currentR: RGroup | null;
+  currentRLabel: string | null;
+  currentLayer: string | null;
+  reclaim: { total: number; reclaimed: number; moving: number; notYet: number };
+  line: string;
+};
+
+/** Where the member is on the 4Rs (the frontier Beat's position) + their Reclaim List movement. */
+export async function getJourney(db: Db, memberId: string): Promise<Journey> {
+  const state = await assembleState(db, memberId);
+  const next = selectNextBeat(state);
+
+  let currentR: RGroup | null = next?.position.r ?? null;
+  let currentLayer: string | null = next?.position.layer ?? null;
+  if (!currentR && state.completedBeatIds.size > 0) {
+    // No frontier Beat — read the furthest R the member has completed.
+    let best = -2;
+    for (const id of state.completedBeatIds) {
+      const b = beatById(id);
+      if (b && (R_RANK[b.position.r] ?? -2) > best) {
+        best = R_RANK[b.position.r] ?? -2;
+        currentR = b.position.r;
+        currentLayer = b.position.layer;
+      }
+    }
+  }
+
+  const items = state.reclaimItems;
+  const reclaim = {
+    total: items.length,
+    reclaimed: items.filter((i) => i.state === 'reclaimed').length,
+    moving: items.filter((i) => i.state === 'closer').length,
+    notYet: items.filter((i) => i.state === 'not_yet').length,
+  };
+
+  const place = currentR ? R_LABEL[currentR] : 'the start';
+  const line =
+    reclaim.total === 0
+      ? `You're in ${place}. Your Reclaim List is where this all points.`
+      : reclaim.reclaimed > 0
+        ? `You're in ${place} — ${reclaim.reclaimed} of ${reclaim.total} reclaimed, the rest in motion.`
+        : `You're in ${place}. ${reclaim.total} things to win back, and you've started.`;
+
+  return { currentR, currentRLabel: currentR ? R_LABEL[currentR] : null, currentLayer, reclaim, line };
+}
+
+// re-exported for callers that need the raw helpers
+export { allBeats };
 
 // Re-exports so callers import one module.
 export { isReady, selectNextBeat };

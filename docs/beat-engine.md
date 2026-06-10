@@ -44,8 +44,21 @@ in parallel). Rebuild Structure/Elevation wait for `rewire_threshold_met` (= Rew
 - Proof: `tests/beats.test.ts` — pure engine + the Tom slice (reflect/rep/goal → metrics move,
   item reclaims, ID Score holds).
 
-## Deferred past the slice (intentional)
-SMS pulse (Twilio/10DLC/TCPA), the Day-30 Pulse Check, the full content-as-navigation interface,
-rhythm-based re-serving of daily/weekly Beats, ranking sophistication, and re-deriving the dashboard
-heading/program-loop from Beat completion (still asset-level today). Reclaim-item `category` is
-keyword-inferred for now; the full onboarding shaping conversation will make it agent-inferred.
+## Early-journey experience (built — second pass)
+Beyond the engine slice, the coherent early-journey experience is now in:
+- **Agent-inferred categories** — the onboarding shaping conversation assigns each Reclaim item a
+  category and shapes it to specific+observable; `record_progress` carries `reclaimCategories`
+  (keyword `inferCategory` remains the fallback).
+- **Onboarding → Beat handoff** — IDQ baseline seeds the onboarding-covered Reconnect Beats
+  (`seedOnboardingBeats`), so the dashboard opens at genuinely-next work.
+- **Dose-aware selection** — `rankBeats` serves current-R first, then the member's weakest IDQ
+  dimension's category, then lighter dose (the Strategy's "subscores tune which Beats are served").
+- **The Journey panel** — `getJourney`: place on the 4Rs + Reclaim List movement, never a gauge.
+- **The Program panel** — the Beat surface is now the dashboard's primary work panel; the old
+  asset-checklist / Current-focus cards are retired from the member view.
+
+## Still deferred (intentional)
+SMS pulse (Twilio/10DLC/TCPA), the Day-30 Pulse Check, rhythm-based re-serving of daily/weekly
+Beats, the fuller content-as-navigation interface (tap-any-panel-into-depth), and unifying the hero
+heading verb onto the Beat frontier (it still reads asset gates — they agree for the early journey).
+Greg-gated: the `rewire_threshold_met` depth value and the Grinta Index weighting (plumbing done).

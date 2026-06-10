@@ -8,8 +8,9 @@ import { DOORS, isDoorSlug, type DoorSlug } from '../doors.ts';
 import { validateReconnectOutput } from '../member/reclaim.ts';
 import { detectCrisis, CRISIS_RESPONSE_US, presentScore, type ScorePresentation } from '../agent/governance.ts';
 import { cleanIdentityNoun, displayIdentityNoun } from '../member/identity.ts';
-import { addReclaimItems } from '../beats/store.ts';
+import { addReclaimItems, seedOnboardingBeats } from '../beats/store.ts';
 import { inferCategory } from '../beats/category.ts';
+import { isCategory } from '../beats/registry.ts';
 import { scoreIdq, computeMovement, type DimensionScores } from '../idq/scoring.ts';
 import { validateResponses, DIMENSIONS, type Dimension } from '../idq/instrument.ts';
 
@@ -24,6 +25,7 @@ export type OnboardingFields = {
   athleticPast: string;
   gap: string;
   reclaimList: string[]; // >= 3
+  reclaimCategories?: string[]; // agent-inferred category per item (same order); heuristic fallback
 };
 
 export type OnboardingResult =
@@ -88,7 +90,10 @@ export async function runOnboarding(
     await addReclaimItems(
       db,
       memberId,
-      f.reclaimList.map((text) => ({ text, category: inferCategory(text) })),
+      f.reclaimList.map((text, i) => {
+        const agentCat = f.reclaimCategories?.[i];
+        return { text, category: isCategory(agentCat) ? agentCat : inferCategory(text) };
+      }),
     );
     return { ok: true, memberId };
   } catch (e) {
@@ -132,6 +137,9 @@ export async function submitIdq(db: Db, memberId: string, responses: number[]): 
      score.idScoreRaw, score.idScore,
      movement.deltaFromBaseline, movement.deltaFromPrevious, movement.direction],
   );
+  // Baseline closes the Reconnect gateway → mark the onboarding-covered Beats done so the dashboard
+  // opens at the next real work.
+  if (sequenceNo === 0) await seedOnboardingBeats(db, memberId);
   return { ok: true, idScore: score.idScore, sequenceNo };
 }
 

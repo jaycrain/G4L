@@ -6,9 +6,9 @@ import { allBeats, beatById, goalCategory } from '../lib/beats/registry.ts';
 import { predicateMet, isReady } from '../lib/beats/readiness.ts';
 import { bindGoalItem, effectiveCloseType, renderClose } from '../lib/beats/serves.ts';
 import { resolveClose } from '../lib/beats/close.ts';
-import { selectNextBeat } from '../lib/beats/select.ts';
+import { selectNextBeat, rankBeats } from '../lib/beats/select.ts';
 import { inferCategory } from '../lib/beats/category.ts';
-import { addReclaimItems, assembleState, serveBeat, completeBeat, getReclaimItems } from '../lib/beats/store.ts';
+import { addReclaimItems, assembleState, serveBeat, completeBeat, getReclaimItems, getJourney } from '../lib/beats/store.ts';
 import { getDashboard, submitIdq } from '../lib/gateway/flow.ts';
 import { getGrinta } from '../lib/grinta/index.ts';
 import type { MemberBeatState, ReclaimItem } from '../lib/beats/types.ts';
@@ -24,6 +24,7 @@ const baseState = (over: Partial<MemberBeatState> = {}): MemberBeatState => ({
   rewireCheckpointDone: false,
   rebuildFoundationCount: 0,
   daysSinceLastIdq: 0,
+  lowestDimension: null,
   ...over,
 });
 
@@ -127,6 +128,33 @@ test('Tom reaches reconnect_core_complete and the engine selects a Beat', async 
   assert.ok(selectNextBeat(state)); // something to serve
 });
 
+test('the onboarding→Beat handoff seeds covered Reconnect Beats and never re-serves them', async () => {
+  const { db, memberId } = await seedTom(); // submitIdq seeds the covered Beats
+  const state = await assembleState(db, memberId);
+  // identity-naming + reclaim-list-building Beats are marked done by the gateway
+  assert.ok(state.completedBeatIds.has('RCN-EXC-04'));
+  assert.ok(state.completedBeatIds.has('RCN-WIN-03'));
+  // and the surface won't re-serve a covered Beat
+  const next = selectNextBeat(state);
+  assert.ok(next && !['RCN-EXC-04', 'RCN-WIN-03', 'RCN-FDR-01'].includes(next.beat_id));
+});
+
+test('selection doses toward the weakest IDQ dimension', () => {
+  const outlookBeat = beatById('RWR-DIS-01')!; // serves outlook
+  const physicalBeat = beatById('RWR-NUM-01')!; // serves physical
+  const ranked = rankBeats([outlookBeat, physicalBeat], baseState({ lowestDimension: 'physical' }));
+  assert.equal(ranked[0]!.beat_id, 'RWR-NUM-01'); // weakest dimension served first
+});
+
+test('getJourney reports a place and Reclaim List movement, not a score', async () => {
+  const { db, memberId } = await seedTom();
+  const j = await getJourney(db, memberId);
+  assert.ok(j.currentRLabel); // a place on the path
+  assert.equal(j.reclaim.total, 3);
+  assert.equal(j.reclaim.notYet, 3);
+  assert.match(j.line, /Reclaim List|reclaimed|win back/i);
+});
+
 test('SLICE: reflect + rep + goal closes move Grinta & the Reclaim List, ID Score holds', async () => {
   const { db, memberId } = await seedTom();
   const before = await getDashboard(db, memberId);
@@ -153,11 +181,12 @@ test('SLICE: reflect + rep + goal closes move Grinta & the Reclaim List, ID Scor
   assert.equal(physical.state, 'reclaimed');
   assert.equal(physical.closerCount, 3);
 
-  // component plumbing: 5 completions all feed Consistency; the 3 goal-closers feed Reach
+  // component plumbing (excluding the onboarding-seeded Reconnect Beats): our 5 completions all
+  // feed Consistency; the 3 goal-closers feed Reach.
   const flags = (
     await db.query<{ c: number; reach: number }>(
       `select count(*) filter (where feeds_consistency)::int c, count(*) filter (where feeds_reach)::int reach
-       from beat_completion where member_id=$1`,
+       from beat_completion where member_id=$1 and close_response <> 'onboarding'`,
       [memberId],
     )
   ).rows[0]!;

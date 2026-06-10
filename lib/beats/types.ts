@@ -3,6 +3,8 @@
 
 import type { Category, Rhythm } from './registry.ts';
 
+export type { Category } from './registry.ts';
+
 export type ReclaimState = 'not_yet' | 'closer' | 'reclaimed';
 
 export type ReclaimItem = {
@@ -25,6 +27,7 @@ export type MemberBeatState = {
   rewireCheckpointDone: boolean; // RWR-CHK-01 completed
   rebuildFoundationCount: number; // completed Rebuild Foundation Beats
   daysSinceLastIdq: number | null;
+  lowestDimension: Category | null; // weakest IDQ subscore → biases Beat selection toward it
 };
 
 // "Reclaimed" threshold (Slice decide-in-passing #1): an item flips to reclaimed after this many
