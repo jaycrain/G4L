@@ -25,3 +25,14 @@ export function inferCategory(text: string): Category {
   for (const p of PATTERNS) if (p.re.test(t)) return p.category;
   return 'self';
 }
+
+// A Reclaim item is "vague" when it names a subjective feeling/state rather than something
+// observable. Safety net for the close: a goal Beat never binds to a vague item (its close would
+// be unanswerable fog — "did this move you toward feeling better about myself?"), so it degrades to
+// a rep close until the item is sharpened. Catching the worst offenders is enough — a false positive
+// just loses the goal-close (still a valid rep); false negatives are rare. Pairs with the onboarding
+// shaping pass (which tries to prevent vague items reaching here in the first place).
+const VAGUE = /\b(feel|feeling|feels|felt|happier|happy|better about|good about|confiden|less stress|more myself|at peace|content|fulfilled|whole again|self-?esteem|mindset|love myself)\b/i;
+export function isVagueReclaim(text: string): boolean {
+  return VAGUE.test((text || '').toLowerCase());
+}

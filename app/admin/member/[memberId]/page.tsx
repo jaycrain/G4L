@@ -33,7 +33,7 @@ export default async function AdminMember({ params }: { params: Promise<{ member
           {dash.identityNoun && <>Reclaiming <strong>the {dash.identityNoun}</strong> · </>}
           {dash.doors.length > 0 && <>Door{dash.doors.length > 1 ? 's' : ''}: <strong>{dash.doors.map((d) => d.displayName).join(', ')}</strong> · </>}
           {dash.score
-            ? <>ID Score: <strong>{dash.score.score}</strong>{dash.score.direction ? ` (${dash.score.direction})` : ''}</>
+            ? <>ID Score: <strong>{Math.round(dash.score.score)}</strong>{dash.score.direction ? ` (${dash.score.direction})` : ''}</>
             : 'No IDQ yet'}
           {dash.currentFocus && <> · Focus: {dash.currentFocus.label}</>}
         </p>

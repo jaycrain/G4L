@@ -138,12 +138,12 @@ export default async function DashboardPage({
         <div className="card">
           <h3>ID Score</h3>
           <div className="score">
-            <span className="num">{dash.score.score}</span>
+            <span className="num">{Math.round(dash.score.score)}</span>
             {dash.score.direction && (
               <span className={`dir-${dash.score.direction}`}>
                 {ARROW[dash.score.direction]}
-                {dash.score.delta !== null && dash.score.delta !== 0
-                  ? ` ${dash.score.delta > 0 ? '+' : ''}${dash.score.delta}`
+                {dash.score.delta !== null && Math.round(dash.score.delta) !== 0
+                  ? ` ${dash.score.delta > 0 ? '+' : ''}${Math.round(dash.score.delta)}`
                   : ''}
               </span>
             )}

@@ -7,7 +7,7 @@ import { predicateMet, isReady } from '../lib/beats/readiness.ts';
 import { bindGoalItem, effectiveCloseType, renderClose } from '../lib/beats/serves.ts';
 import { resolveClose } from '../lib/beats/close.ts';
 import { selectNextBeat, rankBeats } from '../lib/beats/select.ts';
-import { inferCategory } from '../lib/beats/category.ts';
+import { inferCategory, isVagueReclaim } from '../lib/beats/category.ts';
 import { addReclaimItems, assembleState, serveBeat, completeBeat, getReclaimItems, getJourney, getBeatHistory, dailyHardiness } from '../lib/beats/store.ts';
 import { getDashboard, submitIdq } from '../lib/gateway/flow.ts';
 import { getGrinta } from '../lib/grinta/index.ts';
@@ -89,6 +89,22 @@ test('resolveClose: components per Decision 4, and the reclaimed threshold', () 
   // rep + reflect feed Consistency only; no item movement
   const rep = resolveClose({ effectiveType: 'rep', response: 'yes', boundItem: null, isReturn: false });
   assert.deepEqual({ c: rep.feedsConsistency, reach: rep.feedsReach, item: rep.itemUpdate }, { c: true, reach: false, item: null });
+});
+
+test('vague Reclaim items are caught, so a goal Beat never points a close at fog', () => {
+  assert.equal(isVagueReclaim('feeling better about myself'), true);
+  assert.equal(isVagueReclaim('be happier'), true);
+  assert.equal(isVagueReclaim('ride before work without dreading it'), false);
+  assert.equal(isVagueReclaim('get body weight down to 190'), false);
+  const goal = beatById('RWR-FOO-02')!; // goal, serves physical
+  // only a vague item in the category → no bind → close degrades to rep (no "did this move you toward fog")
+  const vagueOnly = [item({ category: 'physical', text: 'feel better about myself' })];
+  assert.equal(bindGoalItem(goal, vagueOnly), null);
+  assert.equal(effectiveCloseType(goal, vagueOnly), 'rep');
+  // a specific item in the category still binds normally
+  const withSpecific = [vagueOnly[0]!, item({ id: 'p2', category: 'physical', text: 'ride before work' })];
+  assert.equal(bindGoalItem(goal, withSpecific)!.text, 'ride before work');
+  assert.equal(effectiveCloseType(goal, withSpecific), 'goal');
 });
 
 test('inferCategory maps to an IDQ dimension, defaulting to self', () => {
