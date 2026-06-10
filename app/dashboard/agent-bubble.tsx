@@ -155,12 +155,7 @@ export default function AgentBubble({
             </div>
           )}
           <button type="button" className="agent-fab" onClick={openPanel} aria-label="Talk to your companion">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path
-                d="M5 4h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H10l-5 4v-4H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"
-                fill="currentColor"
-              />
-            </svg>
+            Talk
           </button>
         </>
       )}
