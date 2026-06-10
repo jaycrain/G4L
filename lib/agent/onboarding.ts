@@ -97,10 +97,19 @@ export function nextStage(c: Collected): Stage {
 const STAGE_PROMPT: Record<Stage, string> = {
   identity: 'Who were you, back when you felt most like yourself?',
   identity_name: 'If you put that person in a single word — the Runner, the Writer, the Builder — what is the word?',
-  reclaim: `Name a few things you want back — three to start, more if they keep coming.`,
+  reclaim: `What are a few things you want back? Three to start, more if they keep coming.`,
   door: doorPrompt(),
   complete: "That's everything we need. Let's look at where you're starting from next.",
 };
+
+// Guarantee a non-final turn ends with a forward question, so the member is never stranded.
+// Live models sometimes end on a bare reflection ("That stays with you.") with no next step —
+// when that happens we append the question for wherever the conversation now is.
+export function withForwardPrompt(reply: string, stage: Stage): string {
+  const r = reply.trim();
+  if (!r) return STAGE_PROMPT[stage];
+  return /\?/.test(r) ? r : `${r}\n\n${STAGE_PROMPT[stage]}`;
+}
 
 // --- Public engine ----------------------------------------------------------------------
 export async function onboardingNextTurn(args: {
@@ -288,6 +297,10 @@ async function liveTurn(
     }
   }
   const stage: Stage = complete ? 'complete' : nextStage(collected);
-  const finalReply = reply.trim() || STAGE_PROMPT[stage];
+  // On completion the handoff is intentionally a statement (followed by the Continue button);
+  // every other turn must end with a forward question so the member is never left hanging.
+  const finalReply = complete
+    ? reply.trim() || STAGE_PROMPT.complete
+    : withForwardPrompt(reply, stage);
   return { reply: finalReply, state: { stage, collected }, complete };
 }

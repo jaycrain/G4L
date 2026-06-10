@@ -5,6 +5,7 @@ import {
   scriptedTurn,
   collectedToFields,
   nextStage,
+  withForwardPrompt,
   INITIAL_STATE,
   type ConvState,
 } from '../lib/agent/onboarding.ts';
@@ -83,6 +84,18 @@ test('full scripted conversation collects every field, in natural case, and comp
   assert.deepEqual(fields.doors, ['career_cliff', 'body']);
   assert.equal(fields.reclaimList.length, 3);
   assert.equal(fields.identityNoun, 'Athlete');
+});
+
+test('withForwardPrompt never leaves a non-final turn without a question', () => {
+  // A bare reflection (no question) gets the forward question appended.
+  const stalled = withForwardPrompt('That stays with you.', 'identity_name');
+  assert.match(stalled, /That stays with you\./);
+  assert.match(stalled, /\?$/m);
+  assert.match(stalled, /what is the word/i);
+  // A turn that already asks something is left alone (no double question).
+  assert.equal(withForwardPrompt('And what shifted?', 'identity_name'), 'And what shifted?');
+  // Empty model output falls back to the stage prompt.
+  assert.match(withForwardPrompt('   ', 'reclaim'), /what are a few things you want back/i);
 });
 
 test('member names the Door(s) in free text; one or more map; unclear input re-prompts', () => {
