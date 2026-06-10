@@ -166,6 +166,10 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .jr-blurb { font-size: 0.82rem; color: var(--charcoal); }
 .journey-loop { margin: 0.7rem 0 0; font-size: 0.8rem; font-style: italic; }
 
+/* Today's daily Hardiness rep */
+.daily-beat { border-left: 4px solid var(--olive); }
+.daily-tag { display: inline-block; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--olive); }
+
 /* Past Beats — re-readable record of completed work */
 .past-beats { list-style: none; padding: 0; margin: 0.5rem 0 0; }
 .past-beats li { border-bottom: 1px solid var(--grey); }

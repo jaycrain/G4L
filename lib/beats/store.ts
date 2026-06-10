@@ -306,6 +306,38 @@ export async function getJourney(db: Db, memberId: string): Promise<Journey> {
   };
 }
 
+// --- Daily Hardiness Beat — the cross-cutting daily rep (runs across every gate) ---------
+export type DailyHardiness = { served: ServedBeat | null; doneToday: boolean };
+
+/** One Hardiness Beat for today — least-recently-done (cycles through them); null + doneToday
+ *  once the member has logged one today. These feed Grinta Consistency like any completion. */
+export async function dailyHardiness(db: Db, memberId: string): Promise<DailyHardiness> {
+  const hardiness = allBeats().filter((b) => b.source === 'hardiness_beat');
+  const rows = (
+    await db.query<{ beat_id: string; completed_at: unknown }>(
+      `select beat_id, completed_at from beat_completion
+       where member_id=$1 and beat_id like 'HRD-%' order by completed_at desc`,
+      [memberId],
+    )
+  ).rows;
+  const today = new Date().toDateString();
+  const doneToday = rows.some((r) => {
+    const iso = toIso(r.completed_at);
+    return iso != null && new Date(iso).toDateString() === today;
+  });
+  if (doneToday) return { served: null, doneToday: true };
+
+  const lastMs = new Map<string, number>();
+  for (const r of rows) {
+    if (!lastMs.has(r.beat_id)) lastMs.set(r.beat_id, new Date(toIso(r.completed_at) ?? 0).getTime());
+  }
+  const pick = [...hardiness].sort(
+    (a, b) => (lastMs.get(a.beat_id) ?? -Infinity) - (lastMs.get(b.beat_id) ?? -Infinity),
+  )[0];
+  if (!pick) return { served: null, doneToday: false };
+  return { served: await serveBeat(db, memberId, pick.beat_id), doneToday: false };
+}
+
 // --- Past Beats — a re-readable record of completed work --------------------------------
 export type PastBeat = {
   beatId: string;

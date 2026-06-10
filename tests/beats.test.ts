@@ -8,7 +8,7 @@ import { bindGoalItem, effectiveCloseType, renderClose } from '../lib/beats/serv
 import { resolveClose } from '../lib/beats/close.ts';
 import { selectNextBeat, rankBeats } from '../lib/beats/select.ts';
 import { inferCategory } from '../lib/beats/category.ts';
-import { addReclaimItems, assembleState, serveBeat, completeBeat, getReclaimItems, getJourney, getBeatHistory } from '../lib/beats/store.ts';
+import { addReclaimItems, assembleState, serveBeat, completeBeat, getReclaimItems, getJourney, getBeatHistory, dailyHardiness } from '../lib/beats/store.ts';
 import { getDashboard, submitIdq } from '../lib/gateway/flow.ts';
 import { getGrinta } from '../lib/grinta/index.ts';
 import type { MemberBeatState, ReclaimItem } from '../lib/beats/types.ts';
@@ -165,6 +165,21 @@ test('getBeatHistory returns completed work, re-readable, excluding onboarding s
   const reflectItem = hist.find((h) => h.beatId === 'RWR-FOO-01')!;
   assert.match(reflectItem.answered, /a memory surfaced/);
   assert.ok(reflectItem.content.length > 0); // the content is re-readable
+});
+
+test('dailyHardiness serves one cross-cutting rep, then rests once done today', async () => {
+  const { db, memberId } = await seedTom();
+  const d1 = await dailyHardiness(db, memberId);
+  assert.ok(d1.served, 'a daily Hardiness Beat is offered');
+  assert.equal(d1.served!.beat.source, 'hardiness_beat');
+  assert.equal(d1.doneToday, false);
+  await completeBeat(db, memberId, d1.served!.beat.beat_id, 'yes');
+  const d2 = await dailyHardiness(db, memberId);
+  assert.equal(d2.doneToday, true);
+  assert.equal(d2.served, null);
+  // and it shows up in Past Beats (re-readable record)
+  const hist = await getBeatHistory(db, memberId);
+  assert.ok(hist.some((h) => h.beatId === d1.served!.beat.beat_id));
 });
 
 test('getJourney reports a place and Reclaim List movement, not a score', async () => {
