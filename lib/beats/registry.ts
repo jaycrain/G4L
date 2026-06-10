@@ -2,8 +2,7 @@
 // authored source (beats.json, itself derived from G4L_Beat_Registry.xlsx). Versioned content,
 // like the asset/bite registries — never hardcoded screens. The engine reads from here.
 
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { BEATS_DATA } from './beats.data.ts';
 
 export type RGroup = 'reconnect' | 'rewire' | 'rebuild' | 'reclaim' | 'cross_cutting';
 export type CloseType = 'goal' | 'rep' | 'reflect';
@@ -31,15 +30,11 @@ export type Beat = {
   provenance: string;
 };
 
-type Registry = { schema_version: string; count: number; beats: Beat[] };
-
 let cache: Beat[] | null = null;
 
 export function allBeats(): Beat[] {
   if (cache) return cache;
-  const raw = readFileSync(join(process.cwd(), 'lib/beats/beats.json'), 'utf8');
-  const reg = JSON.parse(raw) as Registry;
-  cache = reg.beats;
+  cache = BEATS_DATA.beats as unknown as Beat[];
   return cache;
 }
 

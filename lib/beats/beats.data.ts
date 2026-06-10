@@ -1,0 +1,1592 @@
+// AUTO-GENERATED from beats.json — do not edit by hand.
+// Embedded as a TS module (not read via node:fs) so the registry is safe to pull into any bundle.
+// Regenerate: node -e '...' reading beats.json (see commit history).
+
+export const BEATS_DATA = {
+  "schema_version": "2.2",
+  "close_rule": "goal|rep|reflect — see Legend",
+  "count": 70,
+  "note": "Source of truth = G4L_Beat_Registry_v1.3.xlsx. Content is v1 draft pending Jay + Greg review.",
+  "beats": [
+    {
+      "beat_id": "RCN-BKQ-01",
+      "asset": "Book Quiz",
+      "position": {
+        "r": "reconnect",
+        "layer": "Recognition"
+      },
+      "source": "asset_beat",
+      "title": "Why you're here",
+      "content": "Quick gut check before we start. Finish this line however it lands: \"Lately I feel most like a stranger to myself when ____.\" One sentence. No wrong answer.",
+      "dose": "light",
+      "rhythm": "once",
+      "channel": "in_app",
+      "readiness": [
+        "onboarding_complete"
+      ],
+      "serves": [
+        "self"
+      ],
+      "close_type": "reflect",
+      "close": "No grade here — just notice. What's one thing that surfaced you didn't expect?",
+      "provenance": "net-new"
+    },
+    {
+      "beat_id": "RCN-BKQ-02",
+      "asset": "Book Quiz",
+      "position": {
+        "r": "reconnect",
+        "layer": "Recognition"
+      },
+      "source": "asset_beat",
+      "title": "The Fade, named",
+      "content": "Here's a word for that feeling: the Fade — the slow drift away from the person you used to be, built from a hundred reasonable decisions. Does that name fit what you just described? Tell me where it does and where it doesn't.",
+      "dose": "light",
+      "rhythm": "once",
+      "channel": "in_app",
+      "readiness": [
+        "RCN-BKQ-01"
+      ],
+      "serves": [
+        "self"
+      ],
+      "close_type": "reflect",
+      "close": "No grade here — just notice. What's one thing that surfaced you didn't expect?",
+      "provenance": "book"
+    },
+    {
+      "beat_id": "RCN-BKQ-03",
+      "asset": "Book Quiz",
+      "position": {
+        "r": "reconnect",
+        "layer": "Recognition"
+      },
+      "source": "asset_beat",
+      "title": "What this is and isn't",
+      "content": "This isn't a program that tells you what to eat and tracks whether you obey. It's the opposite — you'll run your own comeback, and I'm here to hand you the tools and stay beside you. Sound like something you actually want?",
+      "dose": "light",
+      "rhythm": "once",
+      "channel": "in_app",
+      "readiness": [
+        "RCN-BKQ-02"
+      ],
+      "serves": [
+        "outlook"
+      ],
+      "close_type": "reflect",
+      "close": "No grade here — just notice. What's one thing that surfaced you didn't expect?",
+      "provenance": "book"
+    },
+    {
+      "beat_id": "RCN-IDQ-01",
+      "asset": "IDQ",
+      "position": {
+        "r": "reconnect",
+        "layer": "Recognition"
+      },
+      "source": "asset_beat",
+      "title": "Set up the mirror",
+      "content": "Before anything else, let's get an honest read on where you're starting. Twenty-four things, 1 to 5, how true each feels right now. Nothing to study for, no score to pass. A few will sting — that sting is the point.",
+      "dose": "medium",
+      "rhythm": "once",
+      "channel": "in_app",
+      "readiness": [
+        "RCN-BKQ-03"
+      ],
+      "serves": [],
+      "close_type": "reflect",
+      "close": "That's the read. Where did the low numbers cluster? Don't argue with it — just see it.",
+      "provenance": "voice-rewrite"
+    },
+    {
+      "beat_id": "RCN-IDQ-02",
+      "asset": "IDQ",
+      "position": {
+        "r": "reconnect",
+        "layer": "Recognition"
+      },
+      "source": "asset_beat",
+      "title": "The four dimensions back",
+      "content": "Your ID Score is set — one number for how far the gap runs today, built from four parts: body, self, the people around you, and where you're headed. This is your slow, honest metric. It moves every 60 days, not every day, on purpose.",
+      "dose": "light",
+      "rhythm": "once",
+      "channel": "in_app",
+      "readiness": [
+        "RCN-IDQ-01"
+      ],
+      "serves": [],
+      "close_type": "reflect",
+      "close": "No grade here — just notice. What's one thing that surfaced you didn't expect?",
+      "provenance": "voice-rewrite"
+    },
+    {
+      "beat_id": "RCN-IDQ-RETAKE",
+      "asset": "IDQ",
+      "position": {
+        "r": "reconnect",
+        "layer": "Recognition"
+      },
+      "source": "asset_beat",
+      "title": "The 60-day retake",
+      "content": "It's been 60 days. Same twenty-four, same honesty. Let's see what's moved. Remember: this one's allowed to be still — real change in who you are doesn't jump week to week.",
+      "dose": "medium",
+      "rhythm": "once",
+      "channel": "in_app",
+      "readiness": [
+        "day>=60_since_last_idq"
+      ],
+      "serves": [],
+      "close_type": "reflect",
+      "close": "Compare it to last time, gently. What moved, and what's the work still asking of you?",
+      "provenance": "voice-rewrite"
+    },
+    {
+      "beat_id": "RCN-FDR-01",
+      "asset": "Fade Doors",
+      "position": {
+        "r": "reconnect",
+        "layer": "Recognition"
+      },
+      "source": "asset_beat",
+      "title": "How the gap opened",
+      "content": "Something usually opens the gap — rarely all at once. For most people it traces to one of eight doors: the Career Cliff, the Aging Parents, the Empty Nest, the Vanishing, the Body, the Diagnosis, the Marriage, the Loss. Which one sounds like yours?",
+      "dose": "medium",
+      "rhythm": "once",
+      "channel": "in_app",
+      "readiness": [
+        "RCN-BKQ-03"
+      ],
+      "serves": [
+        "self"
+      ],
+      "close_type": "reflect",
+      "close": "No grade here — just notice. What's one thing that surfaced you didn't expect?",
+      "provenance": "voice-rewrite"
+    },
+    {
+      "beat_id": "RCN-FDR-02",
+      "asset": "Fade Doors",
+      "position": {
+        "r": "reconnect",
+        "layer": "Recognition"
+      },
+      "source": "asset_beat",
+      "title": "More than one door",
+      "content": "Most people walked through more than one. If a second fits, name it — there's no prize for keeping it simple, and the truth helps me meet you where you actually are.",
+      "dose": "light",
+      "rhythm": "once",
+      "channel": "in_app",
+      "readiness": [
+        "RCN-FDR-01"
+      ],
+      "serves": [
+        "self"
+      ],
+      "close_type": "reflect",
+      "close": "No grade here — just notice. What's one thing that surfaced you didn't expect?",
+      "provenance": "voice-rewrite"
+    },
+    {
+      "beat_id": "RCN-FDR-03",
+      "asset": "Fade Doors",
+      "position": {
+        "r": "reconnect",
+        "layer": "Recognition"
+      },
+      "source": "asset_beat",
+      "title": "Naming it back",
+      "content": "That's a door a lot of good people have walked through — and most never had a name for it. Now you do. Naming the door doesn't fix it; it just means we stop pretending it isn't there.",
+      "dose": "light",
+      "rhythm": "once",
+      "channel": "in_app",
+      "readiness": [
+        "RCN-FDR-01"
+      ],
+      "serves": [
+        "self"
+      ],
+      "close_type": "reflect",
+      "close": "No grade here — just notice. What's one thing that surfaced you didn't expect?",
+      "provenance": "book"
+    },
+    {
+      "beat_id": "RCN-EXC-01",
+      "asset": "Identity Excavation",
+      "position": {
+        "r": "reconnect",
+        "layer": "Excavation"
+      },
+      "source": "asset_beat",
+      "title": "The archaeological dig",
+      "content": "Start digging. What did twelve-year-old you do when nobody was watching? What made you lose track of time before mortgages and meetings? The sport, the instrument, the thing you quit because it 'wasn't practical.' That thing is probably your vein of gold.",
+      "dose": "medium",
+      "rhythm": "once",
+      "channel": "in_app",
+      "readiness": [
+        "RCN-FDR-01"
+      ],
+      "serves": [
+        "self"
+      ],
+      "close_type": "reflect",
+      "close": "No grade here — just notice. What's one thing that surfaced you didn't expect?",
+      "provenance": "book"
+    },
+    {
+      "beat_id": "RCN-EXC-02",
+      "asset": "Identity Excavation",
+      "position": {
+        "r": "reconnect",
+        "layer": "Excavation"
+      },
+      "source": "asset_beat",
+      "title": "Your identity knows",
+      "content": "Your mind will lie to you — too old, too far gone, too busy. Your identity knows better; it's buried under decades of being responsible, not gone. Say it plainly: who were you, underneath all the roles?",
+      "dose": "medium",
+      "rhythm": "once",
+      "channel": "in_app",
+      "readiness": [
+        "RCN-EXC-01"
+      ],
+      "serves": [
+        "self"
+      ],
+      "close_type": "reflect",
+      "close": "No grade here — just notice. What's one thing that surfaced you didn't expect?",
+      "provenance": "book"
+    },
+    {
+      "beat_id": "RCN-EXC-03",
+      "asset": "Identity Excavation",
+      "position": {
+        "r": "reconnect",
+        "layer": "Excavation"
+      },
+      "source": "asset_beat",
+      "title": "Make yourself the protagonist",
+      "content": "You've spent years as a supporting character in everyone else's story — the company's, the kids', the partner's. All worthy. None of them yours. Reconnecting means deciding you deserve a story that's yours too. That isn't selfish. It's overdue.",
+      "dose": "medium",
+      "rhythm": "once",
+      "channel": "in_app",
+      "readiness": [
+        "RCN-EXC-02"
+      ],
+      "serves": [
+        "self"
+      ],
+      "close_type": "reflect",
+      "close": "No grade here — just notice. What's one thing that surfaced you didn't expect?",
+      "provenance": "book"
+    },
+    {
+      "beat_id": "RCN-EXC-04",
+      "asset": "Identity Excavation",
+      "position": {
+        "r": "reconnect",
+        "layer": "Excavation"
+      },
+      "source": "asset_beat",
+      "title": "Name the Reclaimed Identity",
+      "content": "Put a word on the person we're bringing back — the one that finishes 'Reclaiming the ____.' The Athlete. The Builder. The Friend. It doesn't have to be perfect; it has to be true enough to aim at.",
+      "dose": "light",
+      "rhythm": "once",
+      "channel": "in_app",
+      "readiness": [
+        "RCN-EXC-03"
+      ],
+      "serves": [
+        "self"
+      ],
+      "close_type": "reflect",
+      "close": "No grade here — just notice. What's one thing that surfaced you didn't expect?",
+      "provenance": "voice-rewrite"
+    },
+    {
+      "beat_id": "RCN-DFT-01",
+      "asset": "Drift Quiz",
+      "position": {
+        "r": "reconnect",
+        "layer": "Excavation"
+      },
+      "source": "asset_beat",
+      "title": "Be honest what it cost",
+      "content": "Every life you build costs something. Be specific about what you traded away to get here: morning rides, deep friendships, the feeling of being in your body instead of trapped in your head. Name three. This isn't regret — it's inventory.",
+      "dose": "medium",
+      "rhythm": "once",
+      "channel": "in_app",
+      "readiness": [
+        "RCN-FDR-01"
+      ],
+      "serves": [
+        "self"
+      ],
+      "close_type": "reflect",
+      "close": "No grade here — just notice. What's one thing that surfaced you didn't expect?",
+      "provenance": "book"
+    },
+    {
+      "beat_id": "RCN-DFT-02",
+      "asset": "Drift Quiz",
+      "position": {
+        "r": "reconnect",
+        "layer": "Excavation"
+      },
+      "source": "asset_beat",
+      "title": "How far, honestly",
+      "content": "On a normal week right now, how far are you from that buried version of you — a little dusty, or a stranger? There's no failing grade. The distance is just the starting line, and you can't close a gap you won't look at.",
+      "dose": "light",
+      "rhythm": "once",
+      "channel": "in_app",
+      "readiness": [
+        "RCN-DFT-01"
+      ],
+      "serves": [
+        "self"
+      ],
+      "close_type": "reflect",
+      "close": "No grade here — just notice. What's one thing that surfaced you didn't expect?",
+      "provenance": "net-new"
+    },
+    {
+      "beat_id": "RCN-WIN-01",
+      "asset": "Window Exercise",
+      "position": {
+        "r": "reconnect",
+        "layer": "Spark"
+      },
+      "source": "asset_beat",
+      "title": "The window",
+      "content": "There's a window between who you are today and who you keep saying you'll be. Most people never look through it. Today you look: picture an ordinary Tuesday a year from now if nothing changes. Sit with that profile for a second.",
+      "dose": "medium",
+      "rhythm": "once",
+      "channel": "in_app",
+      "readiness": [
+        "RCN-EXC-04"
+      ],
+      "serves": [
+        "outlook"
+      ],
+      "close_type": "reflect",
+      "close": "No grade here — just notice. What's one thing that surfaced you didn't expect?",
+      "provenance": "book"
+    },
+    {
+      "beat_id": "RCN-WIN-02",
+      "asset": "Window Exercise",
+      "position": {
+        "r": "reconnect",
+        "layer": "Spark"
+      },
+      "source": "asset_beat",
+      "title": "The other window",
+      "content": "Now the other Tuesday — same year out, but you've been doing the work. What's different by 7am? Not the highlight reel. The ordinary stuff: how you wake up, what you reach for, how you move. That's the spark we're going to protect.",
+      "dose": "medium",
+      "rhythm": "once",
+      "channel": "in_app",
+      "readiness": [
+        "RCN-WIN-01"
+      ],
+      "serves": [
+        "outlook"
+      ],
+      "close_type": "reflect",
+      "close": "No grade here — just notice. What's one thing that surfaced you didn't expect?",
+      "provenance": "book"
+    },
+    {
+      "beat_id": "RCN-WIN-03",
+      "asset": "Window Exercise",
+      "position": {
+        "r": "reconnect",
+        "layer": "Spark"
+      },
+      "source": "asset_beat",
+      "title": "Build the Reclaim List",
+      "content": "Turn that second Tuesday into real, specific things you want back. Riding before work without dreading it. Keeping up on the trail. Recognizing the person in the mirror. Give me a few — three to start, more if they keep coming. This becomes your Reclaim List.",
+      "dose": "medium",
+      "rhythm": "once",
+      "channel": "in_app",
+      "readiness": [
+        "RCN-WIN-02"
+      ],
+      "serves": [],
+      "close_type": "reflect",
+      "close": "No grade here — just notice. What's one thing that surfaced you didn't expect?",
+      "provenance": "voice-rewrite"
+    },
+    {
+      "beat_id": "RCN-WIN-04",
+      "asset": "Window Exercise",
+      "position": {
+        "r": "reconnect",
+        "layer": "Spark"
+      },
+      "source": "asset_beat",
+      "title": "Make each one checkable",
+      "content": "Let's sharpen one. You said you want to 'feel like an athlete again' — what would the Athlete actually be doing on a Tuesday that you're not doing now? (We do this quietly for each item, so every goal on your list is something we can both see when it happens.)",
+      "dose": "light",
+      "rhythm": "once",
+      "channel": "in_app",
+      "readiness": [
+        "RCN-WIN-03"
+      ],
+      "serves": [],
+      "close_type": "reflect",
+      "close": "No grade here — just notice. What's one thing that surfaced you didn't expect?",
+      "provenance": "net-new"
+    },
+    {
+      "beat_id": "RWR-DIS-01",
+      "asset": "Disinformation Audit",
+      "position": {
+        "r": "rewire",
+        "layer": "Awareness"
+      },
+      "source": "asset_beat",
+      "title": "The comfortable lies",
+      "content": "Your mind runs a quiet disinformation campaign to keep you comfortable: 'too late for me,' 'I don't have time,' 'this is just what fifty looks like.' Write down the one it tells you most. Naming the lie is how you stop obeying it.",
+      "dose": "medium",
+      "rhythm": "once",
+      "channel": "in_app",
+      "readiness": [
+        "reconnect_core_complete"
+      ],
+      "serves": [
+        "outlook"
+      ],
+      "close_type": "rep",
+      "close": "Did you do it?  (Yes / No)",
+      "provenance": "net-new"
+    },
+    {
+      "beat_id": "RWR-DIS-02",
+      "asset": "Disinformation Audit",
+      "position": {
+        "r": "rewire",
+        "layer": "Awareness"
+      },
+      "source": "asset_beat",
+      "title": "Cross-examine it",
+      "content": "Take that lie to court. What's the actual evidence for it — and against it? 'Too old' is a story; the people who started at your age and didn't are the counter-evidence. Most of these don't survive being looked at directly.",
+      "dose": "medium",
+      "rhythm": "once",
+      "channel": "in_app",
+      "readiness": [
+        "RWR-DIS-01"
+      ],
+      "serves": [
+        "outlook"
+      ],
+      "close_type": "rep",
+      "close": "Did you do it?  (Yes / No)",
+      "provenance": "net-new"
+    },
+    {
+      "beat_id": "RWR-DIS-03",
+      "asset": "Disinformation Audit",
+      "position": {
+        "r": "rewire",
+        "layer": "Awareness"
+      },
+      "source": "asset_beat",
+      "title": "Write the true line",
+      "content": "Replace it with one true sentence you can actually stand behind — not a slogan, something you believe. 'I'm out of shape and I'm starting anyway.' That's the line you'll come back to when the old one gets loud.",
+      "dose": "light",
+      "rhythm": "weekly",
+      "channel": "either",
+      "readiness": [
+        "RWR-DIS-02"
+      ],
+      "serves": [
+        "outlook"
+      ],
+      "close_type": "rep",
+      "close": "Did you do it?  (Yes / No)",
+      "provenance": "net-new"
+    },
+    {
+      "beat_id": "RWR-NUM-01",
+      "asset": "Numbers Exercise",
+      "position": {
+        "r": "rewire",
+        "layer": "Awareness"
+      },
+      "source": "asset_beat",
+      "title": "Know your numbers",
+      "content": "Self-assessment is where real change starts — not guesses, not how you feel, but where you actually are. Pull your numbers: weight, resting heart rate, blood pressure if you've got it. Just gather them today. We're not judging them, we're facing them.",
+      "dose": "medium",
+      "rhythm": "once",
+      "channel": "in_app",
+      "readiness": [
+        "reconnect_core_complete"
+      ],
+      "serves": [
+        "physical"
+      ],
+      "close_type": "rep",
+      "close": "Did you do it?  (Yes / No)",
+      "provenance": "science-check (Greg)"
+    },
+    {
+      "beat_id": "RWR-NUM-02",
+      "asset": "Numbers Exercise",
+      "position": {
+        "r": "rewire",
+        "layer": "Awareness"
+      },
+      "source": "asset_beat",
+      "title": "Look without flinching",
+      "content": "Now look at them without looking away. A baseline you can see is information you can use — that clarity is what makes it possible to set goals that mean something. This is your starting line, not your verdict.",
+      "dose": "light",
+      "rhythm": "once",
+      "channel": "in_app",
+      "readiness": [
+        "RWR-NUM-01"
+      ],
+      "serves": [
+        "physical"
+      ],
+      "close_type": "rep",
+      "close": "Did you do it?  (Yes / No)",
+      "provenance": "science-check (Greg)"
+    },
+    {
+      "beat_id": "RWR-VIS-01",
+      "asset": "Visualization Workshop",
+      "position": {
+        "r": "rewire",
+        "layer": "Visualization"
+      },
+      "source": "asset_beat",
+      "title": "Why this isn't woo",
+      "content": "Athletes visualize the shot before they take it because the brain can't fully tell a vividly imagined action from a real one — same neural pathways fire. We're going to use that on purpose. It's a skill, and you can build it.",
+      "dose": "light",
+      "rhythm": "once",
+      "channel": "in_app",
+      "readiness": [
+        "reconnect_core_complete"
+      ],
+      "serves": [
+        "outlook"
+      ],
+      "close_type": "rep",
+      "close": "Did you do it?  (Yes / No)",
+      "provenance": "science-check (Greg)"
+    },
+    {
+      "beat_id": "RWR-VIS-02",
+      "asset": "Visualization Workshop",
+      "position": {
+        "r": "rewire",
+        "layer": "Visualization"
+      },
+      "source": "asset_beat",
+      "title": "Rehearse the feeling",
+      "content": "Close your eyes and run the tape: finishing a hard effort, the confidence after, standing a little taller. Don't picture the outcome — feel the emotions. Sixty seconds. That rehearsal strengthens your capacity to push through when the real moment comes.",
+      "dose": "medium",
+      "rhythm": "daily",
+      "channel": "either",
+      "readiness": [
+        "RWR-VIS-01"
+      ],
+      "serves": [
+        "outlook"
+      ],
+      "close_type": "rep",
+      "close": "Did you do it?  (Yes / No)",
+      "provenance": "science-check (Greg)"
+    },
+    {
+      "beat_id": "RWR-FOO-01",
+      "asset": "Food Relationship Assessment",
+      "position": {
+        "r": "rewire",
+        "layer": "Awareness"
+      },
+      "source": "asset_beat",
+      "title": "Fuel, not comfort",
+      "content": "Quick honesty: when you eat off-plan, what's it usually doing for you — hunger, or comfort, reward, boredom? No shame in the answer. Naming food's real job in your day is the first move toward changing it.",
+      "dose": "medium",
+      "rhythm": "once",
+      "channel": "in_app",
+      "readiness": [
+        "reconnect_core_complete"
+      ],
+      "serves": [
+        "physical"
+      ],
+      "close_type": "reflect",
+      "close": "No grade here — just notice. What's one thing that surfaced you didn't expect?",
+      "provenance": "science-check (Greg)"
+    },
+    {
+      "beat_id": "RWR-FOO-02",
+      "asset": "Food Relationship Assessment",
+      "position": {
+        "r": "rewire",
+        "layer": "Visualization"
+      },
+      "source": "asset_beat",
+      "title": "One reframe",
+      "content": "Try this lens for one meal today: food as fuel for the person you're reclaiming, not a reward or a punishment. Notice the difference between physical hunger and the other kind. It takes time to build a new relationship with food — start with one plate.",
+      "dose": "light",
+      "rhythm": "daily",
+      "channel": "either",
+      "readiness": [
+        "RWR-FOO-01"
+      ],
+      "serves": [
+        "physical"
+      ],
+      "close_type": "goal",
+      "close": "You're working toward {reclaim_item}. Did this move you closer?  (Closer / Not yet / Took me sideways)",
+      "provenance": "science-check (Greg)"
+    },
+    {
+      "beat_id": "RWR-FST-01",
+      "asset": "False Start Protocol",
+      "position": {
+        "r": "rewire",
+        "layer": "Hardiness"
+      },
+      "source": "asset_beat",
+      "title": "Setbacks are built in",
+      "content": "Here's the truth nobody sells you: setbacks are part of the process, not a sign you failed. The people who make it aren't the ones who never slip — they're the ones who don't let a slip become a slide. Let's build your plan for the slip before it happens.",
+      "dose": "medium",
+      "rhythm": "once",
+      "channel": "in_app",
+      "readiness": [
+        "reconnect_core_complete"
+      ],
+      "serves": [
+        "outlook"
+      ],
+      "close_type": "reflect",
+      "close": "No grade here — just notice. What's one thing that surfaced you didn't expect?",
+      "provenance": "science-check (Greg)"
+    },
+    {
+      "beat_id": "RWR-FST-02",
+      "asset": "False Start Protocol",
+      "position": {
+        "r": "rewire",
+        "layer": "Hardiness"
+      },
+      "source": "asset_beat",
+      "title": "Your clip-back-in move",
+      "content": "Write your return move now, while it's calm: the smallest possible action that counts as clipping back in after a missed day or a bad week. Not a redemption arc — one rep. Decide it now so the next-day you doesn't have to.",
+      "dose": "medium",
+      "rhythm": "once",
+      "channel": "in_app",
+      "readiness": [
+        "RWR-FST-01"
+      ],
+      "serves": [
+        "outlook"
+      ],
+      "close_type": "rep",
+      "close": "Did you do it?  (Yes / No)",
+      "provenance": "net-new (science-grounded)"
+    },
+    {
+      "beat_id": "RWR-STK-01",
+      "asset": "Self-Talk Audit",
+      "position": {
+        "r": "rewire",
+        "layer": "Awareness"
+      },
+      "source": "asset_beat",
+      "title": "Catch the voice",
+      "content": "For one day, just notice how you talk to yourself when you mess up. Would you say it to a friend you respect? Most of us run a coach we'd never tolerate from anyone else. Step one is hearing it.",
+      "dose": "light",
+      "rhythm": "daily",
+      "channel": "either",
+      "readiness": [
+        "reconnect_core_complete"
+      ],
+      "serves": [
+        "self"
+      ],
+      "close_type": "rep",
+      "close": "Did you do it?  (Yes / No)",
+      "provenance": "net-new"
+    },
+    {
+      "beat_id": "RWR-STK-02",
+      "asset": "Self-Talk Audit",
+      "position": {
+        "r": "rewire",
+        "layer": "Hardiness"
+      },
+      "source": "asset_beat",
+      "title": "Reframe one line",
+      "content": "Reframing is a skill: take one harsh line you caught and rewrite it as something true but forgiving. 'I always quit' becomes 'I've stopped before and I'm here again.' Forgiving yourself isn't going soft — it's how the change survives a bad day.",
+      "dose": "medium",
+      "rhythm": "weekly",
+      "channel": "either",
+      "readiness": [
+        "RWR-STK-01"
+      ],
+      "serves": [
+        "self"
+      ],
+      "close_type": "rep",
+      "close": "Did you do it?  (Yes / No)",
+      "provenance": "science-check (Greg)"
+    },
+    {
+      "beat_id": "RWR-CHK-01",
+      "asset": "Rewire Checkpoint",
+      "position": {
+        "r": "rewire",
+        "layer": "Hardiness"
+      },
+      "source": "asset_beat",
+      "title": "Has the frame moved?",
+      "content": "Checkpoint — no grade. Has anything actually shifted in how you think about your body, food, or what's possible? Point to one belief that's looser than it was. This is the gate: the body work lands better once the frame has started to give.",
+      "dose": "medium",
+      "rhythm": "once",
+      "channel": "in_app",
+      "readiness": [
+        "RWR-DIS-03",
+        "RWR-FST-02"
+      ],
+      "serves": [
+        "outlook"
+      ],
+      "close_type": "rep",
+      "close": "Did you do it?  (Yes / No)",
+      "provenance": "net-new"
+    },
+    {
+      "beat_id": "RWR-CHK-02",
+      "asset": "Rewire Checkpoint",
+      "position": {
+        "r": "rewire",
+        "layer": "Hardiness"
+      },
+      "source": "asset_beat",
+      "title": "Open the Rebuild gate",
+      "content": "You've done enough of the rewiring to stand on. That's what unlocks the body work — not because you're 'done' thinking, but because you've shifted the frame enough that rebuilding will hold. Ready to start moving?",
+      "dose": "light",
+      "rhythm": "once",
+      "channel": "in_app",
+      "readiness": [
+        "RWR-CHK-01"
+      ],
+      "serves": [
+        "physical"
+      ],
+      "close_type": "rep",
+      "close": "Did you do it?  (Yes / No)",
+      "provenance": "net-new"
+    },
+    {
+      "beat_id": "RBD-FST-01",
+      "asset": "First Step Assessment",
+      "position": {
+        "r": "rebuild",
+        "layer": "Foundation"
+      },
+      "source": "asset_beat",
+      "title": "Pick the vehicle",
+      "content": "Time to move. The best exercise is the one you'll actually do — walking is the most popular for a reason, and cycling's right behind it. What's your vehicle? Pick the thing you won't talk yourself out of by Wednesday.",
+      "dose": "light",
+      "rhythm": "once",
+      "channel": "in_app",
+      "readiness": [
+        "reconnect_core_complete"
+      ],
+      "serves": [
+        "physical"
+      ],
+      "close_type": "rep",
+      "close": "Did you do it?  (Yes / No)",
+      "provenance": "science-check (Greg)"
+    },
+    {
+      "beat_id": "RBD-FST-02",
+      "asset": "First Step Assessment",
+      "position": {
+        "r": "rebuild",
+        "layer": "Foundation"
+      },
+      "source": "asset_beat",
+      "title": "Where you're starting",
+      "content": "Honest baseline for your vehicle: how long can you go right now before it gets hard? No target yet, no judgment. We build from where you actually are — that's the only place a foundation holds.",
+      "dose": "medium",
+      "rhythm": "once",
+      "channel": "in_app",
+      "readiness": [
+        "RBD-FST-01"
+      ],
+      "serves": [
+        "physical"
+      ],
+      "close_type": "rep",
+      "close": "Did you do it?  (Yes / No)",
+      "provenance": "net-new"
+    },
+    {
+      "beat_id": "RBD-7MIN-01",
+      "asset": "The Seven Minutes",
+      "position": {
+        "r": "rebuild",
+        "layer": "Foundation"
+      },
+      "source": "asset_beat",
+      "title": "Just the first seven",
+      "content": "Today's whole job: seven minutes. That's it. Nobody white-knuckles a full workout on a dead start — but anyone can do seven, and seven is usually enough to remember why you started. Go when you're ready and tell me when it's done.",
+      "dose": "light",
+      "rhythm": "daily",
+      "channel": "sms",
+      "readiness": [
+        "RBD-FST-02"
+      ],
+      "serves": [
+        "physical"
+      ],
+      "close_type": "goal",
+      "close": "{reclaim_item} today?  (Yes / No)",
+      "provenance": "book"
+    },
+    {
+      "beat_id": "RBD-7MIN-02",
+      "asset": "The Seven Minutes",
+      "position": {
+        "r": "rebuild",
+        "layer": "Foundation"
+      },
+      "source": "asset_beat",
+      "title": "The deal with yourself",
+      "content": "The deal: you only owe seven minutes. If you want to stop after, you stop with a clean conscience. Most days you won't want to. That's not willpower — that's momentum, and it's on your side now.",
+      "dose": "light",
+      "rhythm": "daily",
+      "channel": "sms",
+      "readiness": [
+        "RBD-7MIN-01"
+      ],
+      "serves": [
+        "physical"
+      ],
+      "close_type": "goal",
+      "close": "{reclaim_item} today?  (Yes / No)",
+      "provenance": "book"
+    },
+    {
+      "beat_id": "RBD-INV-01",
+      "asset": "Invisible Foundations Checklist",
+      "position": {
+        "r": "rebuild",
+        "layer": "Foundation"
+      },
+      "source": "asset_beat",
+      "title": "The stuff nobody sees",
+      "content": "The work nobody sees is the work that holds: hydration, basic mobility, not sitting for nine hours straight. Pick one invisible foundation to shore up this week. Minimizing sedentary time alone buys you benefits beyond your workout minutes.",
+      "dose": "light",
+      "rhythm": "weekly",
+      "channel": "either",
+      "readiness": [
+        "reconnect_core_complete"
+      ],
+      "serves": [
+        "physical"
+      ],
+      "close_type": "goal",
+      "close": "You're working toward {reclaim_item}. Did this move you closer?  (Closer / Not yet / Took me sideways)",
+      "provenance": "science-check (Greg)"
+    },
+    {
+      "beat_id": "RBD-FUEL-01",
+      "asset": "Fuel Plan",
+      "position": {
+        "r": "rebuild",
+        "layer": "Structure"
+      },
+      "source": "asset_beat",
+      "title": "A diet you have, not go on",
+      "content": "A diet isn't something you go on — it's something you have. We're building a pattern you can sustain: more nutrient-dense food, fruits, vegetables, whole grains, less added sugar and ultra-processed stuff. What's one swap you'd actually keep?",
+      "dose": "medium",
+      "rhythm": "once",
+      "channel": "in_app",
+      "readiness": [
+        "RBD-7MIN-02",
+        "rewire_threshold_met"
+      ],
+      "serves": [
+        "physical"
+      ],
+      "close_type": "goal",
+      "close": "You're working toward {reclaim_item}. Did this move you closer?  (Closer / Not yet / Took me sideways)",
+      "provenance": "science-check (Greg)"
+    },
+    {
+      "beat_id": "RBD-FUEL-02",
+      "asset": "Fuel Plan",
+      "position": {
+        "r": "rebuild",
+        "layer": "Structure"
+      },
+      "source": "asset_beat",
+      "title": "The thermostat",
+      "content": "If weight's a goal, the science is plain: a caloric deficit takes it off, but keeping it off means resetting your set point — like nudging a thermostat, slowly. Crash diets fight the thermostat and lose. We're going to move it instead.",
+      "dose": "light",
+      "rhythm": "weekly",
+      "channel": "either",
+      "readiness": [
+        "RBD-FUEL-01"
+      ],
+      "serves": [
+        "physical"
+      ],
+      "close_type": "goal",
+      "close": "You're working toward {reclaim_item}. Did this move you closer?  (Closer / Not yet / Took me sideways)",
+      "provenance": "science-check (Greg)"
+    },
+    {
+      "beat_id": "RBD-MOVE-01",
+      "asset": "Movement Menu",
+      "position": {
+        "r": "rebuild",
+        "layer": "Structure"
+      },
+      "source": "asset_beat",
+      "title": "Build the week",
+      "content": "Aim for the floor first: about 150 minutes of moderate movement a week — roughly 30 minutes, five days. That's achievable for almost anyone. More helps, but let's lock the floor before we chase the ceiling. What does your week look like?",
+      "dose": "medium",
+      "rhythm": "weekly",
+      "channel": "either",
+      "readiness": [
+        "RBD-7MIN-02",
+        "rewire_threshold_met"
+      ],
+      "serves": [
+        "physical"
+      ],
+      "close_type": "goal",
+      "close": "You're working toward {reclaim_item}. Did this move you closer?  (Closer / Not yet / Took me sideways)",
+      "provenance": "science-check (Greg)"
+    },
+    {
+      "beat_id": "RBD-MOVE-02",
+      "asset": "Movement Menu",
+      "position": {
+        "r": "rebuild",
+        "layer": "Structure"
+      },
+      "source": "asset_beat",
+      "title": "Today's dose",
+      "content": "Did you get your movement in today? One word back. A yes feeds the streak; a no after a run of yeses is just life, and the next yes is the one that counts most.",
+      "dose": "light",
+      "rhythm": "daily",
+      "channel": "sms",
+      "readiness": [
+        "RBD-MOVE-01"
+      ],
+      "serves": [
+        "physical"
+      ],
+      "close_type": "goal",
+      "close": "{reclaim_item} today?  (Yes / No)",
+      "provenance": "net-new (science-grounded)"
+    },
+    {
+      "beat_id": "RBD-1KMI-01",
+      "asset": "First 1,000 Miles",
+      "position": {
+        "r": "rebuild",
+        "layer": "Elevation"
+      },
+      "source": "asset_beat",
+      "title": "The number that compounds",
+      "content": "Set a stretch total that scares you a little — miles, minutes, sessions, your call. Gary rode 1,052 miles his first year at 250+ pounds, on flat roads and a trainer. The number isn't the point; the consistency it forces is. What's yours?",
+      "dose": "medium",
+      "rhythm": "once",
+      "channel": "in_app",
+      "readiness": [
+        "RBD-MOVE-01"
+      ],
+      "serves": [
+        "physical"
+      ],
+      "close_type": "goal",
+      "close": "You're working toward {reclaim_item}. Did this move you closer?  (Closer / Not yet / Took me sideways)",
+      "provenance": "book"
+    },
+    {
+      "beat_id": "RBD-1KMI-02",
+      "asset": "First 1,000 Miles",
+      "position": {
+        "r": "rebuild",
+        "layer": "Elevation"
+      },
+      "source": "asset_beat",
+      "title": "The work nobody sees",
+      "content": "The base gets built in the cold months, on the trainer, when nobody's watching. That's the part that makes the big day possible. Log today's chunk against your number — every unit is a vote for the person you're becoming.",
+      "dose": "light",
+      "rhythm": "daily",
+      "channel": "sms",
+      "readiness": [
+        "RBD-1KMI-01"
+      ],
+      "serves": [
+        "physical"
+      ],
+      "close_type": "goal",
+      "close": "{reclaim_item} today?  (Yes / No)",
+      "provenance": "book"
+    },
+    {
+      "beat_id": "RBD-SLP-01",
+      "asset": "Sleep & Recover",
+      "position": {
+        "r": "rebuild",
+        "layer": "Foundation"
+      },
+      "source": "asset_beat",
+      "title": "Recovery is the work",
+      "content": "Adaptation happens during recovery, not during the effort — the body only keeps the gains if you let it rebuild. How are you actually sleeping? Pick one lever tonight: a fixed wind-down, screens off earlier, a darker room.",
+      "dose": "light",
+      "rhythm": "daily",
+      "channel": "either",
+      "readiness": [
+        "reconnect_core_complete"
+      ],
+      "serves": [
+        "physical"
+      ],
+      "close_type": "goal",
+      "close": "You're working toward {reclaim_item}. Did this move you closer?  (Closer / Not yet / Took me sideways)",
+      "provenance": "science-check (Greg)"
+    },
+    {
+      "beat_id": "RBD-CHK-01",
+      "asset": "Rebuild Checkpoint",
+      "position": {
+        "r": "rebuild",
+        "layer": "Elevation"
+      },
+      "source": "asset_beat",
+      "title": "The numbers begin to move",
+      "content": "Checkpoint. Pull your numbers again and set them next to your baseline. Something's probably moving — capacity, weight, resting heart rate, how stairs feel. Name the one that surprised you. This is the measuring stick doing its job.",
+      "dose": "medium",
+      "rhythm": "once",
+      "channel": "in_app",
+      "readiness": [
+        "RBD-MOVE-01",
+        "RBD-FUEL-01"
+      ],
+      "serves": [
+        "physical"
+      ],
+      "close_type": "rep",
+      "close": "Did you do it?  (Yes / No)",
+      "provenance": "book"
+    },
+    {
+      "beat_id": "RCL-RDY-01",
+      "asset": "Reclaim Readiness",
+      "position": {
+        "r": "reclaim",
+        "layer": "Emergence"
+      },
+      "source": "asset_beat",
+      "title": "Are you carrying it yet",
+      "content": "Reclaim isn't a finish line — it's the moment the recovered identity starts showing up in the wider world. Quick read: are you starting to feel like the person on your list, even a little? No rush. The Loop comes back around either way.",
+      "dose": "light",
+      "rhythm": "once",
+      "channel": "in_app",
+      "readiness": [
+        "rebuild_underway"
+      ],
+      "serves": [
+        "self"
+      ],
+      "close_type": "reflect",
+      "close": "No grade here — just notice. What's one thing that surfaced you didn't expect?",
+      "provenance": "science-check (Greg)"
+    },
+    {
+      "beat_id": "RCL-RDY-02",
+      "asset": "Reclaim Readiness",
+      "position": {
+        "r": "reclaim",
+        "layer": "Emergence"
+      },
+      "source": "asset_beat",
+      "title": "Agency, not arrival",
+      "content": "Reclaiming doesn't mean you were broken. It means you've got the agency to direct what comes next — on purpose. Successful aging comes down to three things: meaningful activity, close relationships, and a sense of purpose. We're going after all three.",
+      "dose": "light",
+      "rhythm": "once",
+      "channel": "in_app",
+      "readiness": [
+        "RCL-RDY-01"
+      ],
+      "serves": [
+        "outlook"
+      ],
+      "close_type": "reflect",
+      "close": "No grade here — just notice. What's one thing that surfaced you didn't expect?",
+      "provenance": "science-check (Greg)"
+    },
+    {
+      "beat_id": "RCL-SUC-01",
+      "asset": "Your Success Story",
+      "position": {
+        "r": "reclaim",
+        "layer": "Emergence"
+      },
+      "source": "asset_beat",
+      "title": "Say it in your words",
+      "content": "Tell me the story of one thing you got back — out loud, in your own words. Not the metrics. What it felt like the first time you noticed the old you was back in the room. Saying it makes it real and easier to defend when doubt returns.",
+      "dose": "medium",
+      "rhythm": "once",
+      "channel": "in_app",
+      "readiness": [
+        "RCL-RDY-01"
+      ],
+      "serves": [
+        "self"
+      ],
+      "close_type": "reflect",
+      "close": "No grade here — just notice. What's one thing that surfaced you didn't expect?",
+      "provenance": "net-new"
+    },
+    {
+      "beat_id": "RCL-ADV-01",
+      "asset": "Adventure Planning",
+      "position": {
+        "r": "reclaim",
+        "layer": "Extension"
+      },
+      "source": "asset_beat",
+      "title": "Put a measuring stick on the calendar",
+      "content": "Reclaimed identities need a proving ground. Pick a real event or trip that scares-and-excites you — the thing that makes you say 'I can do this, I did this' when it's done. Half the joy is the planning: the route, the gear, the build-up. What's the stick?",
+      "dose": "medium",
+      "rhythm": "once",
+      "channel": "in_app",
+      "readiness": [
+        "rebuild_underway"
+      ],
+      "serves": [
+        "physical"
+      ],
+      "close_type": "goal",
+      "close": "You're working toward {reclaim_item}. Did this move you closer?  (Closer / Not yet / Took me sideways)",
+      "provenance": "book"
+    },
+    {
+      "beat_id": "RCL-ADV-02",
+      "asset": "Adventure Planning",
+      "position": {
+        "r": "reclaim",
+        "layer": "Extension"
+      },
+      "source": "asset_beat",
+      "title": "Back-plan the build",
+      "content": "Now work backward from the date. What does the body need to handle that day, and what's the base you build in the quiet weeks before? You don't fight conditions on the day — you prepare so the day is a celebration, not a survival.",
+      "dose": "medium",
+      "rhythm": "weekly",
+      "channel": "either",
+      "readiness": [
+        "RCL-ADV-01"
+      ],
+      "serves": [
+        "physical"
+      ],
+      "close_type": "goal",
+      "close": "You're working toward {reclaim_item}. Did this move you closer?  (Closer / Not yet / Took me sideways)",
+      "provenance": "book"
+    },
+    {
+      "beat_id": "RCL-BIG-01",
+      "asset": "Bigger World Audit",
+      "position": {
+        "r": "reclaim",
+        "layer": "Extension"
+      },
+      "source": "asset_beat",
+      "title": "Widen the circle",
+      "content": "The Fade shrinks your world; Reclaim widens it back. Where has your world gone small — places you stopped going, things you stopped saying yes to? Name one edge you'd push back out this month.",
+      "dose": "medium",
+      "rhythm": "once",
+      "channel": "in_app",
+      "readiness": [
+        "rebuild_underway"
+      ],
+      "serves": [
+        "social"
+      ],
+      "close_type": "goal",
+      "close": "You're working toward {reclaim_item}. Did this move you closer?  (Closer / Not yet / Took me sideways)",
+      "provenance": "net-new"
+    },
+    {
+      "beat_id": "RCL-INV-01",
+      "asset": "Invitation Exercise",
+      "position": {
+        "r": "reclaim",
+        "layer": "Extension"
+      },
+      "source": "asset_beat",
+      "title": "Come ride with me",
+      "content": "The door opens through relationships, not credentials. Who in your life would you say 'come do this with me' to? Reach out to one person this week — not to coach them, just to share the thing. That's how this becomes a movement instead of a solo act.",
+      "dose": "medium",
+      "rhythm": "weekly",
+      "channel": "either",
+      "readiness": [
+        "rebuild_underway"
+      ],
+      "serves": [
+        "social"
+      ],
+      "close_type": "goal",
+      "close": "You're working toward {reclaim_item}. Did this move you closer?  (Closer / Not yet / Took me sideways)",
+      "provenance": "book"
+    },
+    {
+      "beat_id": "RCL-INV-02",
+      "asset": "Invitation Exercise",
+      "position": {
+        "r": "reclaim",
+        "layer": "Extension"
+      },
+      "source": "asset_beat",
+      "title": "The words that matter",
+      "content": "When you reach out, the line that lands isn't 'you should exercise more.' It's 'I know what you're capable of.' Same words that got said to me, that I said to Gary. Who needs to hear it from you?",
+      "dose": "light",
+      "rhythm": "weekly",
+      "channel": "either",
+      "readiness": [
+        "RCL-INV-01"
+      ],
+      "serves": [
+        "social"
+      ],
+      "close_type": "goal",
+      "close": "You're working toward {reclaim_item}. Did this move you closer?  (Closer / Not yet / Took me sideways)",
+      "provenance": "book"
+    },
+    {
+      "beat_id": "RCL-SOC-01",
+      "asset": "Social Connection",
+      "position": {
+        "r": "reclaim",
+        "layer": "Legacy"
+      },
+      "source": "asset_beat",
+      "title": "Find your people",
+      "content": "Social support is one of the strongest predictors of change that sticks — and a real stress buffer. Where do you belong, or want to? A group, a ride, a community. Belonging beats attending. What's one place you could really show up?",
+      "dose": "medium",
+      "rhythm": "weekly",
+      "channel": "either",
+      "readiness": [
+        "rebuild_underway"
+      ],
+      "serves": [
+        "social"
+      ],
+      "close_type": "goal",
+      "close": "You're working toward {reclaim_item}. Did this move you closer?  (Closer / Not yet / Took me sideways)",
+      "provenance": "science-check (Greg)"
+    },
+    {
+      "beat_id": "RCL-LEG-01",
+      "asset": "Legacy Letter",
+      "position": {
+        "r": "reclaim",
+        "layer": "Legacy"
+      },
+      "source": "asset_beat",
+      "title": "Write it forward",
+      "content": "Write a short letter to someone who'll read it later — a kid, a friend, the next person walking through your door. What did you reclaim, and what do you want them to know is still possible in midlife? This is the philosophy of life part: proactively guiding what comes next.",
+      "dose": "heavy",
+      "rhythm": "once",
+      "channel": "in_app",
+      "readiness": [
+        "RCL-SUC-01"
+      ],
+      "serves": [
+        "outlook"
+      ],
+      "close_type": "reflect",
+      "close": "No grade here — just notice. What's one thing that surfaced you didn't expect?",
+      "provenance": "science-check (Greg)"
+    },
+    {
+      "beat_id": "RCL-LEG-02",
+      "asset": "Legacy Letter",
+      "position": {
+        "r": "reclaim",
+        "layer": "Legacy"
+      },
+      "source": "asset_beat",
+      "title": "The Loop, named",
+      "content": "One more thing. The finish line moves — you'll reclaim these, life will shift, and the list will re-form. That's not failure, it's the design. It's why it's called Grinta for Life. When you're ready, we clip back in and go again.",
+      "dose": "light",
+      "rhythm": "once",
+      "channel": "in_app",
+      "readiness": [
+        "RCL-LEG-01"
+      ],
+      "serves": [
+        "outlook"
+      ],
+      "close_type": "reflect",
+      "close": "No grade here — just notice. What's one thing that surfaced you didn't expect?",
+      "provenance": "book"
+    },
+    {
+      "beat_id": "HRD-01",
+      "asset": "(Hardiness Beats)",
+      "position": {
+        "r": "cross_cutting",
+        "layer": "Commitment"
+      },
+      "source": "hardiness_beat",
+      "title": "Daily clip-in",
+      "content": "One question to start the day: are you clipped in today? Not perfect — in. Yes or no.",
+      "dose": "light",
+      "rhythm": "daily",
+      "channel": "sms",
+      "readiness": [],
+      "serves": [
+        "commitment"
+      ],
+      "close_type": "rep",
+      "close": "Did you do it?  (Yes / No)",
+      "provenance": "book"
+    },
+    {
+      "beat_id": "HRD-02",
+      "asset": "(Hardiness Beats)",
+      "position": {
+        "r": "cross_cutting",
+        "layer": "Control"
+      },
+      "source": "hardiness_beat",
+      "title": "Name the controllable",
+      "content": "Lots is out of your hands today. Name one thing that isn't, and do that. Control is a muscle.",
+      "dose": "light",
+      "rhythm": "daily",
+      "channel": "either",
+      "readiness": [],
+      "serves": [
+        "control"
+      ],
+      "close_type": "rep",
+      "close": "Did you do it?  (Yes / No)",
+      "provenance": "book"
+    },
+    {
+      "beat_id": "HRD-03",
+      "asset": "(Hardiness Beats)",
+      "position": {
+        "r": "cross_cutting",
+        "layer": "Challenge"
+      },
+      "source": "hardiness_beat",
+      "title": "One hard thing on purpose",
+      "content": "Pick one thing today that's a little harder than necessary — on purpose, because of who it's turning you into. What is it?",
+      "dose": "light",
+      "rhythm": "daily",
+      "channel": "either",
+      "readiness": [],
+      "serves": [
+        "challenge"
+      ],
+      "close_type": "rep",
+      "close": "Did you do it?  (Yes / No)",
+      "provenance": "book"
+    },
+    {
+      "beat_id": "HRD-04",
+      "asset": "(Hardiness Beats)",
+      "position": {
+        "r": "cross_cutting",
+        "layer": "Control"
+      },
+      "source": "hardiness_beat",
+      "title": "The return after a miss",
+      "content": "Missed yesterday? Good — today's the rep that matters most. The slip isn't the story; the return is. Clip back in.",
+      "dose": "light",
+      "rhythm": "daily",
+      "channel": "sms",
+      "readiness": [],
+      "serves": [
+        "control"
+      ],
+      "close_type": "rep",
+      "close": "Did you do it?  (Yes / No)",
+      "provenance": "book"
+    },
+    {
+      "beat_id": "HRD-05",
+      "asset": "(Hardiness Beats)",
+      "position": {
+        "r": "cross_cutting",
+        "layer": "Commitment"
+      },
+      "source": "hardiness_beat",
+      "title": "Why, in one line",
+      "content": "Remind yourself in one line why you started. Keep it where you'll see it. Motivation fades; a reason you can read doesn't.",
+      "dose": "light",
+      "rhythm": "weekly",
+      "channel": "either",
+      "readiness": [],
+      "serves": [
+        "commitment"
+      ],
+      "close_type": "rep",
+      "close": "Did you do it?  (Yes / No)",
+      "provenance": "book"
+    },
+    {
+      "beat_id": "HRD-06",
+      "asset": "(Hardiness Beats)",
+      "position": {
+        "r": "cross_cutting",
+        "layer": "Challenge"
+      },
+      "source": "hardiness_beat",
+      "title": "Borrow the Grinta",
+      "content": "There's a moment everyone's struggling — the one with more Grinta keeps going. That's not a feeling, it's a decision. Make it once today.",
+      "dose": "light",
+      "rhythm": "daily",
+      "channel": "either",
+      "readiness": [],
+      "serves": [
+        "challenge"
+      ],
+      "close_type": "rep",
+      "close": "Did you do it?  (Yes / No)",
+      "provenance": "book"
+    },
+    {
+      "beat_id": "HRD-07",
+      "asset": "(Hardiness Beats)",
+      "position": {
+        "r": "cross_cutting",
+        "layer": "Control"
+      },
+      "source": "hardiness_beat",
+      "title": "Don't let a slip become a slide",
+      "content": "One off day is a slip. Three is a slide. You're allowed the slip — let's make sure today isn't day two.",
+      "dose": "light",
+      "rhythm": "daily",
+      "channel": "sms",
+      "readiness": [],
+      "serves": [
+        "control"
+      ],
+      "close_type": "rep",
+      "close": "Did you do it?  (Yes / No)",
+      "provenance": "book"
+    },
+    {
+      "beat_id": "HRD-08",
+      "asset": "(Hardiness Beats)",
+      "position": {
+        "r": "cross_cutting",
+        "layer": "Commitment"
+      },
+      "source": "hardiness_beat",
+      "title": "Show up for someone",
+      "content": "Text one person in your corner — a check-in, a plan, a 'come do this with me.' Relatedness is fuel, and it's reciprocal.",
+      "dose": "light",
+      "rhythm": "weekly",
+      "channel": "either",
+      "readiness": [],
+      "serves": [
+        "commitment"
+      ],
+      "close_type": "rep",
+      "close": "Did you do it?  (Yes / No)",
+      "provenance": "book"
+    },
+    {
+      "beat_id": "HRD-09",
+      "asset": "(Hardiness Beats)",
+      "position": {
+        "r": "cross_cutting",
+        "layer": "Challenge"
+      },
+      "source": "hardiness_beat",
+      "title": "Measuring-stick check",
+      "content": "Is there a stretch effort on your horizon? If not, the work gets flat. Put one small challenge on the calendar.",
+      "dose": "light",
+      "rhythm": "weekly",
+      "channel": "either",
+      "readiness": [],
+      "serves": [
+        "challenge"
+      ],
+      "close_type": "rep",
+      "close": "Did you do it?  (Yes / No)",
+      "provenance": "book"
+    },
+    {
+      "beat_id": "HRD-10",
+      "asset": "(Hardiness Beats)",
+      "position": {
+        "r": "cross_cutting",
+        "layer": "Control"
+      },
+      "source": "hardiness_beat",
+      "title": "Forgive, then move",
+      "content": "If you're running the harsh tape about yourself, cut it. Forgiveness isn't softness — it's how the change survives. One kind, true line, then go.",
+      "dose": "light",
+      "rhythm": "daily",
+      "channel": "either",
+      "readiness": [],
+      "serves": [
+        "control"
+      ],
+      "close_type": "rep",
+      "close": "Did you do it?  (Yes / No)",
+      "provenance": "book"
+    },
+    {
+      "beat_id": "HRD-11",
+      "asset": "(Hardiness Beats)",
+      "position": {
+        "r": "cross_cutting",
+        "layer": "Commitment"
+      },
+      "source": "hardiness_beat",
+      "title": "The streak isn't the point",
+      "content": "Don't chase the streak for its own sake. Chase the person it's building. If the streak breaks, the person doesn't.",
+      "dose": "light",
+      "rhythm": "weekly",
+      "channel": "either",
+      "readiness": [],
+      "serves": [
+        "commitment"
+      ],
+      "close_type": "rep",
+      "close": "Did you do it?  (Yes / No)",
+      "provenance": "book"
+    },
+    {
+      "beat_id": "HRD-12",
+      "asset": "(Hardiness Beats)",
+      "position": {
+        "r": "cross_cutting",
+        "layer": "Challenge"
+      },
+      "source": "hardiness_beat",
+      "title": "Two true Tuesdays",
+      "content": "Picture the Tuesday a year out if you keep going. Then go do one small thing your future self would thank you for.",
+      "dose": "light",
+      "rhythm": "weekly",
+      "channel": "either",
+      "readiness": [],
+      "serves": [
+        "challenge"
+      ],
+      "close_type": "rep",
+      "close": "Did you do it?  (Yes / No)",
+      "provenance": "book"
+    }
+  ]
+} as const;
