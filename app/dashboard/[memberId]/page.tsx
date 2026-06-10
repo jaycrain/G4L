@@ -192,6 +192,15 @@ export default async function DashboardPage({
         )}
       </div>
 
+      <div className="card">
+        <h3>Reclaim List</h3>
+        <ul className="reclaim">
+          {dash.reclaimList.map((item, i) => (
+            <li key={i}>{item}</li>
+          ))}
+        </ul>
+      </div>
+
       {/* GRINTA! Index — the daily process metric: how you're showing up. Moves daily; never alters the ID Score. */}
       <div className="card grinta">
         <h3>GRINTA! Index</h3>
@@ -241,15 +250,6 @@ export default async function DashboardPage({
           </p>
         </div>
       )}
-
-      <div className="card">
-        <h3>Reclaim List</h3>
-        <ul className="reclaim">
-          {dash.reclaimList.map((item, i) => (
-            <li key={i}>{item}</li>
-          ))}
-        </ul>
-      </div>
 
       {dash.doors.length > 0 && (
         <p className="muted">
