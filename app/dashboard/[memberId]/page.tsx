@@ -172,6 +172,15 @@ export default async function DashboardPage({
             Right now: <strong>{journey.currentRLabel} · {journey.currentLayer}</strong>
           </p>
         )}
+        <ul className="journey-rs">
+          {journey.path.map((step) => (
+            <li key={step.r} className={`jr ${step.state}`}>
+              <span className="jr-name">{step.label}</span>
+              <span className="jr-blurb">{step.blurb}</span>
+            </li>
+          ))}
+        </ul>
+        <p className="muted journey-loop">The 4Rs move as a loop — when you Reclaim, life shifts and you clip back in at Reconnect. That return is the Loop.</p>
         {journey.reclaim.total > 0 && (
           <div className="journey-reclaim">
             <span><strong>{journey.reclaim.reclaimed}</strong> reclaimed</span>

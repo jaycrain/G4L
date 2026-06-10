@@ -162,6 +162,14 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .jstep.current .jdot { background: var(--white); border-color: var(--teal); box-shadow: 0 0 0 3px rgba(59,148,149,0.18); }
 .jstep.current .jlabel { opacity: 1; color: var(--teal); }
 .journey-layer { margin: 0.5rem 0 0; font-size: 0.85rem; }
+.journey-rs { list-style: none; padding: 0; margin: 0.7rem 0 0; display: flex; flex-direction: column; gap: 0.35rem; }
+.jr { display: flex; gap: 0.6rem; align-items: baseline; opacity: 0.5; }
+.jr.current { opacity: 1; }
+.jr.done { opacity: 0.7; }
+.jr-name { flex: 0 0 5.5rem; font-weight: 700; color: var(--navy); font-size: 0.85rem; }
+.jr.current .jr-name { color: var(--teal); }
+.jr-blurb { font-size: 0.82rem; color: var(--charcoal); }
+.journey-loop { margin: 0.7rem 0 0; font-size: 0.8rem; font-style: italic; }
 .journey-reclaim { display: flex; gap: 1.25rem; margin-top: 0.6rem; }
 .journey-reclaim span { font-size: 0.9rem; color: var(--navy); opacity: 0.85; }
 .journey-reclaim strong { font-size: 1.15rem; color: var(--teal); opacity: 1; }

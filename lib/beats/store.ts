@@ -223,7 +223,16 @@ const R_LABEL: Record<RGroup, string> = {
 };
 const R_RANK: Record<string, number> = { reconnect: 0, rewire: 1, rebuild: 2, reclaim: 3, cross_cutting: -1 };
 
-export type JourneyStep = { r: RGroup; label: string; state: 'done' | 'current' | 'ahead' };
+export type JourneyStep = { r: RGroup; label: string; blurb: string; state: 'done' | 'current' | 'ahead' };
+
+// One-line meaning of each R (canonical, from the Learning Strategy) — context for "where you are".
+const R_BLURB: Record<RGroup, string> = {
+  reconnect: 'See where you are honestly, remember who you were, find the spark.',
+  rewire: 'Dismantle the old stories; build new frames around body, food, and self.',
+  rebuild: 'The physical work — movement, fuel, sleep. The numbers start to move.',
+  reclaim: 'Carry the recovered identity outward — people, community, adventure.',
+  cross_cutting: 'The daily reps that run across every part of the path.',
+};
 export type Journey = {
   currentR: RGroup | null;
   currentRLabel: string | null;
@@ -269,6 +278,7 @@ export async function getJourney(db: Db, memberId: string): Promise<Journey> {
   const path: JourneyStep[] = PATH_RS.map((r) => ({
     r,
     label: R_LABEL[r],
+    blurb: R_BLURB[r],
     state: (R_RANK[r] ?? 0) < curRank ? 'done' : currentR === r ? 'current' : 'ahead',
   }));
   const beatsDone = state.completedBeatIds.size; // earned (the onboarding gateway counts as real work)
