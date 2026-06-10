@@ -20,6 +20,7 @@ export default function OnboardingChat() {
   const [input, setInput] = useState('');
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [next, setNext] = useState<string | null>(null); // set on completion; member clicks to proceed
 
   const ctx = { name: name.trim(), email: email.trim() };
 
@@ -66,9 +67,10 @@ export default function OnboardingChat() {
       if (r.errors) setError(r.errors.join('; '));
       if (r.complete && r.memberId) {
         // Secure the account with the password captured at sign-up; fall back to the setup
-        // screen only if that didn't take.
+        // screen only if that didn't take. Do NOT auto-advance — let them read the summary
+        // and continue when ready ("Ready when you are.").
         const saved = await setupAction(r.memberId, password);
-        router.push(saved.ok ? `/idq?member=${r.memberId}` : `/account/setup?member=${r.memberId}`);
+        setNext(saved.ok ? `/idq?member=${r.memberId}` : `/account/setup?member=${r.memberId}`);
       }
     } catch {
       // Roll back the optimistic message and restore the draft so they can simply resend.
@@ -113,19 +115,27 @@ export default function OnboardingChat() {
         {pending && <div className="typing">…</div>}
       </div>
       {error && <p className="error">{error}</p>}
-      <form className="chat-input" onSubmit={send}>
-        <input
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="Type your reply…"
-          autoFocus
-          disabled={pending}
-        />
-        <button type="submit" disabled={pending || !input.trim()}>
-          Send
-        </button>
-      </form>
+      {next ? (
+        <div className="chat-continue">
+          <button type="button" onClick={() => router.push(next)}>
+            {next.includes('/idq') ? 'Continue to the Identity Distance Questionnaire (IDQ) →' : 'Continue →'}
+          </button>
+        </div>
+      ) : (
+        <form className="chat-input" onSubmit={send}>
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Type your reply…"
+            autoFocus
+            disabled={pending}
+          />
+          <button type="submit" disabled={pending || !input.trim()}>
+            Send
+          </button>
+        </form>
+      )}
     </>
   );
 }

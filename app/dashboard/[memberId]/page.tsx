@@ -133,7 +133,7 @@ export default async function DashboardPage({
         </div>
       ) : (
         <div className="card">
-          <p className="muted">Your IDQ baseline isn&apos;t in yet.</p>
+          <p className="muted">Your Identity Distance Questionnaire (IDQ) baseline isn&apos;t in yet.</p>
         </div>
       )}
 

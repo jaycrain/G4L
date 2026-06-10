@@ -15,6 +15,7 @@ export default function IdqChat({ memberId }: { memberId: string }) {
   const [input, setInput] = useState('');
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [done, setDone] = useState(false); // scored; member clicks to see their starting point
 
   async function send(e: React.FormEvent) {
     e.preventDefault();
@@ -33,10 +34,12 @@ export default function IdqChat({ memberId }: { memberId: string }) {
       try {
         const r = await submitIdqResponses(memberId, t.responses);
         if (r.ok) {
-          router.push(`/dashboard/${memberId}`);
+          // Scored. Don't auto-advance — let them sit with the closing reflection and
+          // continue when ready.
+          setDone(true);
           return;
         }
-        setError((r.errors ?? ['Could not save your IDQ — please try again.']).join('; '));
+        setError((r.errors ?? ['Could not save your responses — please try again.']).join('; '));
       } catch {
         setError('That didn’t save — please try again in a moment.');
       } finally {
@@ -47,7 +50,7 @@ export default function IdqChat({ memberId }: { memberId: string }) {
 
   return (
     <>
-      <h1>The IDQ</h1>
+      <h1>Identity Distance Questionnaire (IDQ)</h1>
       <div className="chat">
         {messages.map((m, i) => (
           <div key={i} className={`bubble ${m.role}`}>
@@ -57,20 +60,28 @@ export default function IdqChat({ memberId }: { memberId: string }) {
         {pending && <div className="typing">scoring…</div>}
       </div>
       {error && <p className="error">{error}</p>}
-      <form className="chat-input" onSubmit={send}>
-        <input
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="1–5…"
-          autoFocus
-          disabled={pending}
-          inputMode="numeric"
-        />
-        <button type="submit" disabled={pending || !input.trim()}>
-          Send
-        </button>
-      </form>
+      {done ? (
+        <div className="chat-continue">
+          <button type="button" onClick={() => router.push(`/dashboard/${memberId}`)}>
+            See where I’m starting →
+          </button>
+        </div>
+      ) : (
+        <form className="chat-input" onSubmit={send}>
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="1–5…"
+            autoFocus
+            disabled={pending}
+            inputMode="numeric"
+          />
+          <button type="submit" disabled={pending || !input.trim()}>
+            Send
+          </button>
+        </form>
+      )}
     </>
   );
 }
