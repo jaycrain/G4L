@@ -131,7 +131,7 @@ export default async function DashboardPage({
       {/* ID Score — never a bare number: always direction + delta + plain-language context */}
       {dash.score ? (
         <div className="card">
-          <h3>Your ID Score</h3>
+          <h3>ID Score</h3>
           <div className="score">
             <span className="num">{dash.score.score}</span>
             {dash.score.direction && (
@@ -166,7 +166,7 @@ export default async function DashboardPage({
 
       {/* The Journey — where you are on the path + your Reclaim List movement. A place, never a score. */}
       <div className="card journey-card">
-        <h3>Your journey</h3>
+        <h3>Journey</h3>
         <p className="journey-line">{journey.line}</p>
         <JourneyRings currentR={journey.currentR} />
         {journey.currentLayer && (
@@ -194,7 +194,7 @@ export default async function DashboardPage({
 
       {/* GRINTA! Index — the daily process metric: how you're showing up. Moves daily; never alters the ID Score. */}
       <div className="card grinta">
-        <h3>Your GRINTA! Index</h3>
+        <h3>GRINTA! Index</h3>
         <div className="score">
           <span className="num">{grinta.score}</span>
           <span className={`dir-${grinta.direction}`}>
@@ -210,7 +210,7 @@ export default async function DashboardPage({
 
       {activity.connected ? (
         <div className="card">
-          <h3>Your movement</h3>
+          <h3>Movement</h3>
           <p className="muted">{activity.line}</p>
           <div className="activity-week">
             <span>
@@ -235,7 +235,7 @@ export default async function DashboardPage({
         </div>
       ) : (
         <div className="card">
-          <h3>Your movement</h3>
+          <h3>Movement</h3>
           <p className="muted">
             Connect Strava to let your movement show up here — your rides, runs, and walks, witnessed alongside the work.
           </p>
@@ -243,7 +243,7 @@ export default async function DashboardPage({
       )}
 
       <div className="card">
-        <h3>Your Reclaim List</h3>
+        <h3>Reclaim List</h3>
         <ul className="reclaim">
           {dash.reclaimList.map((item, i) => (
             <li key={i}>{item}</li>

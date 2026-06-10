@@ -32,7 +32,7 @@ export default function NextBeat({ memberId, initial }: { memberId: string; init
   if (!served) {
     return (
       <div className="card beat-card">
-        <h3>Your next Beat</h3>
+        <h3>Next Beat</h3>
         <p className="muted">{ack ?? 'You’re caught up for now. Come back tomorrow — or just talk to me.'}</p>
       </div>
     );
@@ -41,7 +41,7 @@ export default function NextBeat({ memberId, initial }: { memberId: string; init
   const b = served.beat;
   return (
     <div className="card beat-card">
-      <h3>Your next Beat</h3>
+      <h3>Next Beat</h3>
       <p className="beat-title">{b.title}</p>
       <p className="beat-content">{b.content}</p>
       <p className="beat-close">{served.close}</p>
