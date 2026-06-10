@@ -50,6 +50,22 @@ export default async function DashboardPage({
     status: assetStatus(gateCtx, code),
   }));
 
+  // Hero verb follows the R-group of the next recommended asset — so the heading advances as the
+  // member finishes one R's assets and the loop moves them to the next. Falls back to the furthest
+  // group they've completed (when nothing is recommended next), then to Reconnect (the gateway).
+  // Not a renamed "phase": it mirrors the program-loop card's current group.
+  const HERO_VERB: Record<RGroup, string> = {
+    Reconnect: 'Reconnecting',
+    Rewire: 'Rewiring',
+    Rebuild: 'Rebuilding',
+    Reclaim: 'Reclaiming',
+  };
+  const currentGroup: RGroup =
+    (nextCode ? GATES[nextCode]?.group : undefined) ??
+    [...program].reverse().find((p) => p.status === 'completed')?.group ??
+    'Reconnect';
+  const heroVerb = HERO_VERB[currentGroup];
+
   // Today's GRINTA! bite — small daily content the agent serves; consuming it feeds the Index.
   const focusGroup = dash.currentFocus?.label?.split(' ')[0] as RGroup | undefined;
   const bitePanel = await getBitePanel(db, memberId, focusGroup);
@@ -95,7 +111,7 @@ export default async function DashboardPage({
         <h1>
           {dash.identityNoun ? (
             <>
-              Reconnecting: <span className="noun">the {dash.identityNoun}</span>
+              {heroVerb}: <span className="noun">the {dash.identityNoun}</span>
             </>
           ) : (
             dash.displayName
