@@ -22,7 +22,9 @@ html, body {
   line-height: 1.5;
 }
 
-main { max-width: 720px; margin: 0 auto; padding: 2.5rem 1.25rem 4rem; }
+/* Generous bottom runway so the fixed Talk dock (FAB + teaser, ~8rem tall) never traps a panel's
+   numbers beneath it — any card can be scrolled clear of the bubble. */
+main { max-width: 720px; margin: 0 auto; padding: 2.5rem 1.25rem 9rem; }
 
 h1, h2, h3 { color: var(--navy); font-weight: 600; line-height: 1.2; }
 h1 { font-size: 2rem; margin: 0 0 0.5rem; }
