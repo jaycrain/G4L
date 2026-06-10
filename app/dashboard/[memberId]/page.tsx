@@ -159,13 +159,17 @@ export default async function DashboardPage({
       <div className="card journey-card">
         <h3>Your journey</h3>
         <p className="journey-line">{journey.line}</p>
-        {journey.currentRLabel && (
-          <p className="muted">
-            On the path:{' '}
-            <strong>
-              {journey.currentRLabel}
-              {journey.currentLayer ? ` · ${journey.currentLayer}` : ''}
-            </strong>
+        <ol className="journey-path" aria-label="Your position on the 4Rs">
+          {journey.path.map((step) => (
+            <li key={step.r} className={`jstep ${step.state}`}>
+              <span className="jdot" aria-hidden="true">{step.state === 'done' ? '✓' : ''}</span>
+              <span className="jlabel">{step.label}</span>
+            </li>
+          ))}
+        </ol>
+        {journey.currentLayer && (
+          <p className="muted journey-layer">
+            Right now: <strong>{journey.currentRLabel} · {journey.currentLayer}</strong>
           </p>
         )}
         {journey.reclaim.total > 0 && (

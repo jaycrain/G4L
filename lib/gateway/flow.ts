@@ -147,11 +147,14 @@ export async function submitIdq(db: Db, memberId: string, responses: number[]): 
 // The lowest IDQ dimension points at where attention is dosed next (Decision Log Jun 9:
 // Rewire = mind, Rebuild = body; "current focus", never "phase"). Rules-based to start;
 // the agent applies it. Not a linear pipeline.
+// Names the life AREA to focus on (the weakest IDQ dimension) — deliberately NOT prefixed with an
+// R verb, since "Reconnect — your people" collided with Reconnect the gateway. The dimension key
+// still drives dosing/gating; this is just the human label.
 const FOCUS_BY_DIMENSION: Record<Dimension, string> = {
-  physical: 'Rebuild — your body',
-  self: 'Rewire — your sense of self',
-  outlook: 'Rewire — your outlook',
-  social: 'Reconnect — your people',
+  physical: 'Your body',
+  self: 'Your sense of self',
+  outlook: 'Your outlook',
+  social: 'Your people',
 };
 
 export function currentFocus(dims: DimensionScores): { dimension: Dimension; label: string } {

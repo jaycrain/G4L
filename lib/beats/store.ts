@@ -223,13 +223,18 @@ const R_LABEL: Record<RGroup, string> = {
 };
 const R_RANK: Record<string, number> = { reconnect: 0, rewire: 1, rebuild: 2, reclaim: 3, cross_cutting: -1 };
 
+export type JourneyStep = { r: RGroup; label: string; state: 'done' | 'current' | 'ahead' };
 export type Journey = {
   currentR: RGroup | null;
   currentRLabel: string | null;
   currentLayer: string | null;
   reclaim: { total: number; reclaimed: number; moving: number; notYet: number };
+  beatsDone: number; // earned reps so far (incl. the onboarding gateway) — immediate progress
+  path: JourneyStep[]; // the 4Rs with the member's position marked
   line: string;
 };
+
+const PATH_RS: RGroup[] = ['reconnect', 'rewire', 'rebuild', 'reclaim'];
 
 /** Where the member is on the 4Rs (the frontier Beat's position) + their Reclaim List movement. */
 export async function getJourney(db: Db, memberId: string): Promise<Journey> {
@@ -259,15 +264,36 @@ export async function getJourney(db: Db, memberId: string): Promise<Journey> {
     notYet: items.filter((i) => i.state === 'not_yet').length,
   };
 
-  const place = currentR ? R_LABEL[currentR] : 'the start';
-  const line =
-    reclaim.total === 0
-      ? `You're in ${place}. Your Reclaim List is where this all points.`
-      : reclaim.reclaimed > 0
-        ? `You're in ${place} — ${reclaim.reclaimed} of ${reclaim.total} reclaimed, the rest in motion.`
-        : `You're in ${place}. ${reclaim.total} things to win back, and you've started.`;
+  // The 4Rs as a path, with the member's position marked — so progress reads immediately.
+  const curRank = currentR ? (R_RANK[currentR] ?? 0) : PATH_RS.length;
+  const path: JourneyStep[] = PATH_RS.map((r) => ({
+    r,
+    label: R_LABEL[r],
+    state: (R_RANK[r] ?? 0) < curRank ? 'done' : currentR === r ? 'current' : 'ahead',
+  }));
+  const beatsDone = state.completedBeatIds.size; // earned (the onboarding gateway counts as real work)
 
-  return { currentR, currentRLabel: currentR ? R_LABEL[currentR] : null, currentLayer, reclaim, line };
+  const place = currentR ? R_LABEL[currentR] : 'the start';
+  const reclaimBit =
+    reclaim.reclaimed > 0
+      ? ` ${reclaim.reclaimed} of ${reclaim.total} reclaimed, the rest in motion.`
+      : reclaim.total > 0
+        ? ` ${reclaim.total} things to win back.`
+        : '';
+  const line =
+    beatsDone > 0
+      ? `You've cleared the gateway — ${beatsDone} steps in, and you're into ${place}.${reclaimBit}`
+      : `You're at the start. Your Reclaim List is where this all points.`;
+
+  return {
+    currentR,
+    currentRLabel: currentR ? R_LABEL[currentR] : null,
+    currentLayer,
+    reclaim,
+    beatsDone,
+    path,
+    line,
+  };
 }
 
 // re-exported for callers that need the raw helpers
