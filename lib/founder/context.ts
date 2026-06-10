@@ -24,6 +24,7 @@ export async function buildFounderContext(
     firstName: firstName(dash.displayName || ''),
     identityNoun: dash.identityNoun,
     doorDisplayNames: dash.doors.map((d) => d.displayName),
+    reclaimList: dash.reclaimList,
     idScore: dash.score?.score ?? null,
     direction: dash.score?.direction ?? null,
     delta: dash.score?.delta ?? null,

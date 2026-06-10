@@ -146,6 +146,14 @@ test('selection doses toward the weakest IDQ dimension', () => {
   assert.equal(ranked[0]!.beat_id, 'RWR-NUM-01'); // weakest dimension served first
 });
 
+test('completing a reflect Beat moves Grinta — Consistency credits every completion', async () => {
+  const { db, memberId } = await seedTom();
+  const before = (await getGrinta(db, memberId, 'Cyclist')).score;
+  await completeBeat(db, memberId, 'RWR-FOO-01', 'a memory surfaced'); // a reflect-close Beat
+  const after = (await getGrinta(db, memberId, 'Cyclist')).score;
+  assert.ok(after > before, `Grinta should rise on a reflect completion (${before} → ${after})`);
+});
+
 test('getJourney reports a place and Reclaim List movement, not a score', async () => {
   const { db, memberId } = await seedTom();
   const j = await getJourney(db, memberId);

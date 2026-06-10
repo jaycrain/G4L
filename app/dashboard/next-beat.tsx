@@ -44,6 +44,8 @@ export default function NextBeat({ memberId, initial }: { memberId: string; init
       <h3>Next Beat</h3>
       <p className="beat-title">{b.title}</p>
       <p className="beat-content">{b.content}</p>
+      <div className="beat-close-step">
+      <span className="beat-close-label">The close — your turn</span>
       <p className="beat-close">{served.close}</p>
       {ack && <p className="muted beat-ack">{ack}</p>}
       <div className="beat-actions">
@@ -76,6 +78,7 @@ export default function NextBeat({ memberId, initial }: { memberId: string; init
             <button type="submit" disabled={pending}>Done</button>
           </form>
         )}
+      </div>
       </div>
     </div>
   );

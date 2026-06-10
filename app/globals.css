@@ -142,6 +142,8 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .beat-card { border-left: 4px solid var(--olive); }
 .beat-title { font-weight: 700; color: var(--navy); margin: 0.25rem 0 0.35rem; }
 .beat-content { color: var(--charcoal); margin: 0 0 0.9rem; }
+.beat-close-step { margin-top: 1rem; padding-top: 0.9rem; border-top: 1px solid var(--grey); }
+.beat-close-label { display: inline-block; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--olive); margin-bottom: 0.4rem; }
 .beat-close { font-weight: 600; color: var(--navy); margin: 0 0 0.6rem; }
 .beat-ack { margin: 0 0 0.5rem; color: var(--olive); font-weight: 600; }
 .beat-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }

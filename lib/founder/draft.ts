@@ -47,6 +47,7 @@ export type FounderContext = {
   firstName: string;
   identityNoun: string | null;
   doorDisplayNames: string[];
+  reclaimList?: string[];
   idScore: number | null;
   direction: Direction | null;
   delta: number | null;
@@ -79,11 +80,15 @@ function scriptedDraft(moment: OperatingMoment, c: FounderContext): Draft {
   const name = firstNameOr(c);
   const door = c.doorDisplayNames.length ? c.doorDisplayNames.join(' and ') : 'the door that opened';
   const noun = c.identityNoun ? `the ${c.identityNoun}` : 'the person you are reclaiming';
+  const list = c.reclaimList ?? [];
+  const reclaimBit = list.length
+    ? ` You also named ${list.length} thing${list.length === 1 ? '' : 's'} you want back${list[0] ? ` — starting with “${list[0]}”` : ''}. That's your Reclaim List, and it's what we work toward.`
+    : '';
   switch (moment) {
     case 'post_idq_welcome':
       return {
         subject: `${name} — welcome to G4L`,
-        body: `${name},\n\nWelcome. You named ${door}, and you put words to where you are. That takes something.\n\nThe work ahead is steady, not dramatic. We start by getting reacquainted with ${noun}. Your first step is waiting on your dashboard.\n\nI read every welcome myself. Glad you're here.\n\n— Jay`,
+        body: `${name},\n\nWelcome. You named ${door}, and you put words to where you are.${reclaimBit} That takes something.\n\nThe work ahead is steady, not dramatic. We start by getting reacquainted with ${noun}. Your first step is waiting on your dashboard.\n\nI read every welcome myself. Glad you're here.\n\n— Jay`,
       };
     case 'retake_commentary':
       return {
@@ -124,6 +129,7 @@ function contextLines(c: FounderContext): string {
     `First name: ${c.firstName || '(unknown)'}`,
     c.identityNoun ? `Reclaiming: the ${c.identityNoun}` : null,
     c.doorDisplayNames.length ? `Door${c.doorDisplayNames.length > 1 ? 's' : ''}: ${c.doorDisplayNames.join(', ')}` : null,
+    c.reclaimList?.length ? `Reclaim List: ${c.reclaimList.join('; ')}` : null,
     c.idScore !== null ? `Latest ID Score: ${c.idScore}${c.direction ? ` (${c.direction}${c.delta != null ? `, ${c.delta > 0 ? '+' : ''}${c.delta}` : ''})` : ''}` : 'No IDQ yet',
     c.currentFocus ? `Current focus: ${c.currentFocus}` : null,
     c.lastCompletedAsset ? `Most recent asset: ${c.lastCompletedAsset}` : null,
