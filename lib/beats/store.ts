@@ -306,6 +306,63 @@ export async function getJourney(db: Db, memberId: string): Promise<Journey> {
   };
 }
 
+// --- Past Beats — a re-readable record of completed work --------------------------------
+export type PastBeat = {
+  beatId: string;
+  title: string;
+  content: string;
+  closeType: CloseType;
+  response: string; // raw stored close response
+  answered: string; // human label of what they answered ("Closer", "Yes", or their reflection)
+  when: string; // relative, e.g. "2h ago"
+};
+
+const relWhen = (iso: string | null): string => {
+  if (!iso) return '';
+  const sec = Math.round((Date.now() - new Date(iso).getTime()) / 1000);
+  if (sec < 90) return 'just now';
+  const m = Math.floor(sec / 60);
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  const d = Math.floor(h / 24);
+  return d < 7 ? `${d}d ago` : `${Math.floor(d / 7)}w ago`;
+};
+
+function answeredLabel(closeType: CloseType, response: string): string {
+  if (closeType === 'reflect') return response?.trim() ? `“${response.trim()}”` : 'Reflected';
+  const goal: Record<string, string> = { closer: 'Closer', not_yet: 'Not yet', sideways: 'Took me sideways' };
+  const rep: Record<string, string> = { yes: 'Yes', no: 'No' };
+  return goal[response] ?? rep[response] ?? response ?? '';
+}
+
+/** Completed Beats, most recent first — re-readable, with what the member answered. Excludes the
+ *  onboarding-handoff seeds (bookkeeping, not member-worked). */
+export async function getBeatHistory(db: Db, memberId: string, limit = 30): Promise<PastBeat[]> {
+  const rows = (
+    await db.query<{ beat_id: string; close_type: CloseType; close_response: string | null; completed_at: unknown }>(
+      `select beat_id, close_type, close_response, completed_at
+       from beat_completion
+       where member_id=$1 and close_response is distinct from 'onboarding'
+       order by completed_at desc limit $2`,
+      [memberId, limit],
+    )
+  ).rows;
+  return rows.map((r) => {
+    const beat = beatById(r.beat_id);
+    const response = r.close_response ?? '';
+    return {
+      beatId: r.beat_id,
+      title: beat?.title ?? r.beat_id,
+      content: beat?.content ?? '',
+      closeType: r.close_type,
+      response,
+      answered: answeredLabel(r.close_type, response),
+      when: relWhen(toIso(r.completed_at)),
+    };
+  });
+}
+
 // re-exported for callers that need the raw helpers
 export { allBeats };
 

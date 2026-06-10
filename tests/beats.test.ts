@@ -8,7 +8,7 @@ import { bindGoalItem, effectiveCloseType, renderClose } from '../lib/beats/serv
 import { resolveClose } from '../lib/beats/close.ts';
 import { selectNextBeat, rankBeats } from '../lib/beats/select.ts';
 import { inferCategory } from '../lib/beats/category.ts';
-import { addReclaimItems, assembleState, serveBeat, completeBeat, getReclaimItems, getJourney } from '../lib/beats/store.ts';
+import { addReclaimItems, assembleState, serveBeat, completeBeat, getReclaimItems, getJourney, getBeatHistory } from '../lib/beats/store.ts';
 import { getDashboard, submitIdq } from '../lib/gateway/flow.ts';
 import { getGrinta } from '../lib/grinta/index.ts';
 import type { MemberBeatState, ReclaimItem } from '../lib/beats/types.ts';
@@ -152,6 +152,19 @@ test('completing a reflect Beat moves Grinta — Consistency credits every compl
   await completeBeat(db, memberId, 'RWR-FOO-01', 'a memory surfaced'); // a reflect-close Beat
   const after = (await getGrinta(db, memberId, 'Cyclist')).score;
   assert.ok(after > before, `Grinta should rise on a reflect completion (${before} → ${after})`);
+});
+
+test('getBeatHistory returns completed work, re-readable, excluding onboarding seeds', async () => {
+  const { db, memberId } = await seedTom();
+  await completeBeat(db, memberId, 'RWR-FOO-01', 'a memory surfaced'); // reflect
+  await completeBeat(db, memberId, 'RWR-DIS-01', 'yes'); // rep
+  const hist = await getBeatHistory(db, memberId);
+  assert.equal(hist.length, 2); // only the worked Beats, not the 8 onboarding seeds
+  assert.equal(hist[0]!.beatId, 'RWR-DIS-01'); // most recent first
+  assert.equal(hist[0]!.answered, 'Yes');
+  const reflectItem = hist.find((h) => h.beatId === 'RWR-FOO-01')!;
+  assert.match(reflectItem.answered, /a memory surfaced/);
+  assert.ok(reflectItem.content.length > 0); // the content is re-readable
 });
 
 test('getJourney reports a place and Reclaim List movement, not a score', async () => {

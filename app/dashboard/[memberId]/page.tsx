@@ -6,7 +6,7 @@ import { recommendedNext, assetStatus, ASSET_ORDER, GATES, type RGroup } from '.
 import { timeSignals, topNudge } from '../../../lib/agent/nudge.ts';
 import { getActivityPanel } from '../../../lib/activity/store.ts';
 import { getGrinta } from '../../../lib/grinta/index.ts';
-import { nextBeat, getJourney } from '../../../lib/beats/store.ts';
+import { nextBeat, getJourney, getBeatHistory } from '../../../lib/beats/store.ts';
 import NextBeat from '../next-beat.tsx';
 import JourneyRings from '../journey-rings.tsx';
 import { formatDistance, formatDuration, typeLabel, relativeDay } from '../../../lib/activity/summary.ts';
@@ -92,6 +92,8 @@ export default async function DashboardPage({
   const initialBeat = await nextBeat(db, memberId);
   // The Journey — the third feedback: where you are on the path + your Reclaim List movement.
   const journey = await getJourney(db, memberId);
+  // Past Beats — a re-readable record of completed work, so nothing the member does vanishes.
+  const pastBeats = await getBeatHistory(db, memberId);
 
   return (
     <>
@@ -250,6 +252,35 @@ export default async function DashboardPage({
           </p>
         </div>
       )}
+
+      {/* Past Beats — a re-readable record so completed work never just vanishes. */}
+      <div className="card">
+        <h3>Past Beats</h3>
+        {pastBeats.length === 0 ? (
+          <p className="muted">Beats you’ve worked will collect here — each one feeds your GRINTA! Index.</p>
+        ) : (
+          <>
+            <p className="muted">{pastBeats.length} worked — each one fed your GRINTA! Index. Tap any to revisit.</p>
+            <ul className="past-beats">
+              {pastBeats.map((pb, i) => (
+                <li key={i}>
+                  <details>
+                    <summary>
+                      <span className="pb-title">{pb.title}</span>
+                      <span className="pb-when">{pb.when}</span>
+                    </summary>
+                    <p className="pb-content">{pb.content}</p>
+                    <p className="pb-answered">
+                      {pb.closeType === 'reflect' ? 'You noted: ' : 'You answered: '}
+                      <strong>{pb.answered}</strong>
+                    </p>
+                  </details>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
+      </div>
 
       {dash.doors.length > 0 && (
         <p className="muted">

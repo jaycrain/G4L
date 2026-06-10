@@ -165,6 +165,18 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .jr.current .jr-name { color: var(--teal); }
 .jr-blurb { font-size: 0.82rem; color: var(--charcoal); }
 .journey-loop { margin: 0.7rem 0 0; font-size: 0.8rem; font-style: italic; }
+
+/* Past Beats — re-readable record of completed work */
+.past-beats { list-style: none; padding: 0; margin: 0.5rem 0 0; }
+.past-beats li { border-bottom: 1px solid var(--grey); }
+.past-beats details { padding: 0.5rem 0; }
+.past-beats summary { display: flex; justify-content: space-between; align-items: baseline; gap: 0.75rem; cursor: pointer; list-style: none; }
+.past-beats summary::-webkit-details-marker { display: none; }
+.pb-title { font-weight: 600; color: var(--navy); }
+.past-beats details[open] .pb-title { color: var(--teal); }
+.pb-when { font-size: 0.78rem; color: var(--navy); opacity: 0.55; white-space: nowrap; }
+.pb-content { margin: 0.5rem 0 0.4rem; color: var(--charcoal); white-space: pre-wrap; }
+.pb-answered { margin: 0; font-size: 0.85rem; color: var(--navy); opacity: 0.85; }
 .journey-reclaim { display: flex; gap: 1.25rem; margin-top: 0.6rem; }
 .journey-reclaim span { font-size: 0.9rem; color: var(--navy); opacity: 0.85; }
 .journey-reclaim strong { font-size: 1.15rem; color: var(--teal); opacity: 1; }
