@@ -75,6 +75,13 @@ export default async function DashboardPage({
   const heroVerb = HERO_VERB[currentGroup];
   // The Field Guide's identity line mirrors the hero (verb-tracks-the-phase).
   const heroLabel = dash.identityNoun ? `${heroVerb} the ${dash.identityNoun}` : null;
+  // Auto-open the Field Guide once per member (across devices).
+  const fgSeen = (
+    await db.query<{ field_guide_seen_at: unknown }>(
+      'select field_guide_seen_at from member_profile where member_id=$1',
+      [memberId],
+    )
+  ).rows[0]?.field_guide_seen_at;
 
   // Signal-driven teaser for the companion bubble — a check-in/witness prompt. Program content
   // lives in "Your next Beat", so the bubble stays purely companion (no asset/Beat names here).
@@ -117,7 +124,7 @@ export default async function DashboardPage({
           <span className="greeting">Hi, {firstName(dash.displayName)}</span>
         </Link>
         <span className="greeting-actions">
-          <FieldGuide identityLine={heroLabel} />
+          <FieldGuide identityLine={heroLabel} memberId={memberId} autoOpen={!fgSeen} />
           <Link href="/account" className="logout-link">Account</Link>
           <form action={logoutAction} className="logout-form">
             <button type="submit" className="logout-link">Log out</button>

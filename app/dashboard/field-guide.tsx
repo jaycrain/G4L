@@ -1,26 +1,32 @@
 'use client';
 
 // The Field Guide — in-product orientation: what the program is, how the 4Rs work, and how to read
-// every dashboard panel. A persistent header link; auto-opens once (per device) the first time a
-// member lands on the dashboard, so nobody hits it cold; read-only overlay after that. Static copy —
-// the only dynamic piece is the member's identity line (verb-tracks-the-phase, same as the hero).
+// every dashboard panel. A persistent header link; auto-opens once-per-MEMBER (across devices) the
+// first time they land on the dashboard, so nobody hits it cold; read-only overlay after that.
+// Static copy — the only dynamic piece is the member's identity line (verb-tracks-the-phase).
 
 import { useEffect, useState } from 'react';
+import { markFieldGuideSeenAction } from './field-guide-actions.ts';
 
-export default function FieldGuide({ identityLine }: { identityLine: string | null }) {
+export default function FieldGuide({
+  identityLine,
+  memberId,
+  autoOpen,
+}: {
+  identityLine: string | null;
+  memberId: string;
+  autoOpen: boolean;
+}) {
   const [open, setOpen] = useState(false);
 
-  // Auto-open once per device on first dashboard arrival.
+  // Auto-open once per member (the server flag decides); mark seen so it never auto-pops again,
+  // on this device or any other.
   useEffect(() => {
-    try {
-      if (!localStorage.getItem('g4l_fg_seen')) {
-        setOpen(true);
-        localStorage.setItem('g4l_fg_seen', '1');
-      }
-    } catch {
-      /* private mode / no storage — just don't auto-open */
+    if (autoOpen) {
+      setOpen(true);
+      void markFieldGuideSeenAction(memberId);
     }
-  }, []);
+  }, [autoOpen, memberId]);
 
   useEffect(() => {
     if (!open) return;
