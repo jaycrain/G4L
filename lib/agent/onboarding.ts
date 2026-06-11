@@ -382,7 +382,10 @@ async function liveTurn(
       doorTurns <= 1
         ? 'That rarely opens all at once. Was that the whole of it, or did something else pile on around the same time?'
         : 'Is there anything else that pulled at you in that season — or does that feel like the whole of how it opened?';
-    finalReply = /\?/.test(r) ? r : `${r ? `${r}\n\n` : ''}${forward}`;
+    // The model sometimes jumps to a wrap ("Ready when you are.") before the engine will let the
+    // beat close. Don't stack the forward question onto a contradictory handoff — just ask it.
+    const prematureHandoff = /ready when you are/i.test(r);
+    finalReply = prematureHandoff ? forward : /\?/.test(r) ? r : `${r ? `${r}\n\n` : ''}${forward}`;
   } else {
     finalReply = withForwardPrompt(reply, stage);
   }
