@@ -89,6 +89,11 @@ YOU KNOW THEIR DATA. The dashboard and you are one surface — you hold everythi
 
 NEVER RE-ONBOARD, AND NEVER EXPOSE A DATA GAP AS A TASK. You are the companion, not intake. Do NOT ask the member to supply profile data that belongs to onboarding — who they were ("who were you, at your best…"), their reclaimed identity, their Reclaim List, or their Door(s). You already know them. If a detail is simply absent from MEMBER CONTEXT, work with what you have — never announce the gap ("one thing I don't have yet is…", "I don't have your…") and never hand them a form-fill question. Above all, never say or imply you don't already know them. (If, much later, a specific memory would genuinely help the conversation, you may gently invite it in passing — but as reflection between people who know each other, never as data collection.)
 
+TENDING THEIR RECORDS (add-only). A member sometimes wasn't fully focused during onboarding, or surfaces something new later. When they clearly want to add to or sharpen their Reclaim List, or name another way the gap opened, you can record it with your tools:
+- add_reclaim_item — for something specific they want back. It MUST be observable, something you could both witness in an ordinary week. If they offer a feeling ("be happier", "more confident", "less stressed"), do NOT save it as-is — sharpen it WITH them first ("what would that look like on an ordinary Tuesday?"), then save the observable version. The tool refuses fog and will tell you to sharpen.
+- add_door — when they genuinely name another Fade Door (another way the gap opened), not when they're simply venting.
+Rules: only when they clearly want it, never unprompted; reflect the wording back and confirm before you save; you can ADD only — you cannot delete or rename here, so if they want to remove or change something, acknowledge it warmly and say you'll note it, do not pretend to delete; after saving, acknowledge briefly and naturally (it now shows on their dashboard and you'll work it together). Never turn this into data-entry — it stays a conversation.
+
 MEMBER CONTEXT (facts — do not invent beyond these):
 ${contextBlock(c)}`;
 }
@@ -119,19 +124,79 @@ function scriptedReply(memberMessage: string): string {
 }
 
 // --- Live (Claude) --------------------------------------------------------------------------
-async function liveReply(system: string, history: CheckinMessage[], userText: string): Promise<string> {
+
+// The member can ask the agent to tend their own records (add a Reclaim List item, name another
+// Door). The action layer supplies an executor with DB access; checkin.ts stays DB-agnostic. Tools
+// are additive only — there is intentionally no delete/overwrite here.
+export type ToolResult = { ok: boolean; message: string };
+export type ToolExecutor = (name: string, input: Record<string, unknown>) => Promise<ToolResult>;
+
+const REFINE_TOOLS = [
+  {
+    name: 'add_reclaim_item',
+    description:
+      "Add ONE new item to the member's Reclaim List — only when they clearly want to add something they want back. The text must be SPECIFIC and OBSERVABLE (something you could both witness in an ordinary week), not a feeling or inner state. Confirm the wording with them first. If they give a feeling, sharpen it with them before calling this.",
+    input_schema: {
+      type: 'object',
+      properties: { text: { type: 'string', description: 'the specific, observable item, in the member’s spirit' } },
+      required: ['text'],
+    },
+  },
+  {
+    name: 'add_door',
+    description:
+      'Record an additional Fade Door the member surfaces — another way the gap opened. Pass their description in their own words; it is mapped to the canonical Doors. Only when they are genuinely naming another Door, not just venting.',
+    input_schema: {
+      type: 'object',
+      properties: { description: { type: 'string', description: 'how that part of the gap opened, in their words' } },
+      required: ['description'],
+    },
+  },
+];
+
+async function liveReply(
+  system: string,
+  history: CheckinMessage[],
+  userText: string,
+  executor?: ToolExecutor,
+): Promise<string> {
   const { default: Anthropic } = await import('@anthropic-ai/sdk');
-  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, timeout: 9000, maxRetries: 1 });
-  const res = await client.messages.create({
+  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, timeout: 20000, maxRetries: 2 });
+  const messages: any[] = [
+    ...history.map((m) => ({ role: (m.role === 'agent' ? 'assistant' : 'user') as 'assistant' | 'user', content: m.text })),
+    { role: 'user' as const, content: userText },
+  ];
+
+  // Tool loop: let the model call a refine tool, run it, feed the result back, continue. Capped.
+  for (let i = 0; i < 4; i++) {
+    const res = await client.messages.create({
+      model: process.env.ANTHROPIC_MODEL ?? 'claude-sonnet-4-6',
+      max_tokens: 500,
+      system,
+      messages,
+      ...(executor ? { tools: REFINE_TOOLS as any } : {}),
+    });
+    const toolUses = res.content.filter((b) => b.type === 'tool_use');
+    if (!executor || res.stop_reason !== 'tool_use' || toolUses.length === 0) {
+      const block = res.content.find((b) => b.type === 'text');
+      return block && block.type === 'text' ? block.text.trim() : '';
+    }
+    messages.push({ role: 'assistant', content: res.content });
+    const results = [];
+    for (const tu of toolUses) {
+      const out = await executor((tu as any).name, ((tu as any).input ?? {}) as Record<string, unknown>);
+      results.push({ type: 'tool_result', tool_use_id: (tu as any).id, content: out.message });
+    }
+    messages.push({ role: 'user', content: results });
+  }
+  // Loop exhausted: one final text-only turn so we never return empty.
+  const fin = await client.messages.create({
     model: process.env.ANTHROPIC_MODEL ?? 'claude-sonnet-4-6',
     max_tokens: 400,
     system,
-    messages: [
-      ...history.map((m) => ({ role: (m.role === 'agent' ? 'assistant' : 'user') as 'assistant' | 'user', content: m.text })),
-      { role: 'user' as const, content: userText },
-    ],
+    messages,
   });
-  const block = res.content.find((b) => b.type === 'text');
+  const block = fin.content.find((b) => b.type === 'text');
   return block && block.type === 'text' ? block.text.trim() : '';
 }
 
@@ -159,11 +224,12 @@ export async function checkinReply(
   c: CheckinContext,
   history: CheckinMessage[],
   memberMessage: string,
+  executor?: ToolExecutor,
 ): Promise<CheckinTurn> {
   if (detectCrisis(memberMessage).flagged) return { reply: CRISIS_RESPONSE_US, crisis: true };
   if (process.env.ANTHROPIC_API_KEY) {
     try {
-      return { reply: await liveReply(checkinSystem(c), history, memberMessage) };
+      return { reply: await liveReply(checkinSystem(c), history, memberMessage, executor) };
     } catch (e) {
       console.warn('check-in reply: live agent unavailable, using scripted —', (e as Error).message);
     }

@@ -307,12 +307,12 @@ export default async function DashboardPage({
           <>
             Your Door{dash.doors.length > 1 ? 's' : ''}:{' '}
             <strong>{dash.doors.map((d) => d.displayName).join(', ')}</strong>
-            <Link href={`/onboarding/doors?member=${memberId}`} style={{ marginLeft: '0.85rem', whiteSpace: 'nowrap' }}>
-              Add or refine →
-            </Link>
+            <span style={{ marginLeft: '0.85rem', opacity: 0.85 }}>
+              To add or refine these, just tell your Member Agent below.
+            </span>
           </>
         ) : (
-          <Link href={`/onboarding/doors?member=${memberId}`}>Name the Doors that opened your gap →</Link>
+          <>Tell your Member Agent below how the gap opened, and it’ll help you name your Doors.</>
         )}
       </p>
 

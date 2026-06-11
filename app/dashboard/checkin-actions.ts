@@ -2,10 +2,17 @@
 
 import { getDb } from '../../lib/db/index.ts';
 import { getDashboard } from '../../lib/gateway/flow.ts';
-import { checkinOpening, checkinReply, type CheckinContext, type CheckinMessage } from '../../lib/agent/checkin.ts';
+import {
+  checkinOpening,
+  checkinReply,
+  type CheckinContext,
+  type CheckinMessage,
+  type ToolExecutor,
+} from '../../lib/agent/checkin.ts';
 import { loadConversation, appendMessages } from '../../lib/agent/conversation.ts';
 import { recentConsumedTitles } from '../../lib/bites/store.ts';
 import { getReclaimItems } from '../../lib/beats/store.ts';
+import { addReclaimItemForMember, addDoorForMember } from '../../lib/member/refine.ts';
 import { getGrinta } from '../../lib/grinta/index.ts';
 import { itemStem, dimensionForIndex } from '../../lib/idq/instrument.ts';
 import { authorizeMember } from '../authz.ts';
@@ -110,7 +117,34 @@ export async function sendCheckin(memberId: string, memberMessage: string): Prom
     const ctx = await buildContext(db, memberId);
     if (!ctx) return { reply: "I can't reach your profile right now — try again in a moment." };
     const history = (await loadConversation(db, memberId)).slice(-16); // bound the agent context
-    const r = await checkinReply(ctx, history, memberMessage);
+    // The member can ask the agent to tend their own records — additive only, guarded in the store.
+    const executor: ToolExecutor = async (name, input) => {
+      if (name === 'add_reclaim_item') {
+        const res = await addReclaimItemForMember(db, memberId, String(input.text ?? ''));
+        if (res.ok) {
+          return { ok: true, message: `Saved "${res.text}" to their Reclaim List (category: ${res.category}). It now shows on their dashboard and the Beat engine can work toward it — acknowledge it briefly and warmly.` };
+        }
+        if (res.reason === 'vague') {
+          return { ok: false, message: 'Not saved — that is a feeling/inner state, not something you could both watch happen in an ordinary week. Ask what it would look like on a Tuesday, sharpen it WITH them, then call add_reclaim_item again with the observable version.' };
+        }
+        if (res.reason === 'duplicate') {
+          return { ok: false, message: 'Not saved — that is already on their Reclaim List. Let them know it is already there.' };
+        }
+        return { ok: false, message: 'Not saved — no text was provided.' };
+      }
+      if (name === 'add_door') {
+        const res = await addDoorForMember(db, memberId, String(input.description ?? ''));
+        if (res.ok) {
+          return { ok: true, message: `Recorded Door(s): ${res.added.join(', ')}. Name it back gently as recognition; it now shows on their dashboard.` };
+        }
+        if (res.reason === 'already') {
+          return { ok: false, message: 'Not saved — that Door is already recorded for them.' };
+        }
+        return { ok: false, message: "Couldn't map that to one of the Fade Doors. Reflect what they said and ask a little more about what happened, then try again." };
+      }
+      return { ok: false, message: 'Unknown tool.' };
+    };
+    const r = await checkinReply(ctx, history, memberMessage, executor);
     await appendMessages(db, memberId, [
       { role: 'member', text: memberMessage },
       { role: 'agent', text: r.reply },
