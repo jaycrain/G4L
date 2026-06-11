@@ -62,3 +62,25 @@ SMS pulse (Twilio/10DLC/TCPA), the Day-30 Pulse Check, rhythm-based re-serving o
 Beats, the fuller content-as-navigation interface (tap-any-panel-into-depth), and unifying the hero
 heading verb onto the Beat frontier (it still reads asset gates — they agree for the early journey).
 Greg-gated: the `rewire_threshold_met` depth value and the Grinta Index weighting (plumbing done).
+
+## Planned: progressive goal-sharpening (a quiet capability)
+Goal quality is load-bearing — the close, the Journey, and Grinta Reach all point at the member's
+own Reclaim items, so vague items break the measurement. Onboarding shaping already reaches for
+specificity at capture (`THE BAR` in `onboarding.ts`: catch feeling-fog AND "real action + vague/
+mission-scale tail", press for a number/frequency/named event). The deferred extension is to make
+this **progressive across the lifecycle**, not a one-shot at onboarding:
+
+- People often can't quantify on day one ("ride more"); clarity is *earned*. Six weeks in they can
+  ("…three mornings a week"). So the agent plants an observable-but-loose goal, then **revisits and
+  sharpens it later** — "you've been riding; can you put a number on it now?"
+- **Natural moments to ask:** a check-in, or when a Reclaim item keeps returning `not_yet` (a signal
+  it's too vague or too big — a non-judgmental opening to re-shape). The Reclaim List is already
+  mutable, so the data model supports it.
+- **Guardrails (non-negotiable):** it's an *invitation, never a gate* (easy "not yet"); only where a
+  number actually fits (skip inherently-qualitative items like "recognize the person in the mirror");
+  and it stays a **quiet capability — never a promised outcome.** We guide and witness; the member
+  does the work (Independence Guarantee). Decided Jun 2026: quiet capability, not a stated promise —
+  promising goal-attainment would shift agency onto us and clash with the program's autonomy ethos.
+- Pairs with the Greg-gated **behavioral-vs-outcome** framing (nudge each outcome toward the
+  controllable behavior under it — "190, and the rides that get you there").
+- **Status:** revisit after the core loop is proven; belongs with the ongoing check-in / re-shape work.
