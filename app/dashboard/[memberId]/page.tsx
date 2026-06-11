@@ -301,12 +301,18 @@ export default async function DashboardPage({
         )}
       </div>
 
-      {dash.doors.length > 0 && (
-        <p className="muted">
-          Your Door{dash.doors.length > 1 ? 's' : ''}:{' '}
-          <strong>{dash.doors.map((d) => d.displayName).join(', ')}</strong>
-        </p>
-      )}
+      <p className="muted">
+        {dash.doors.length > 0 ? (
+          <>
+            Your Door{dash.doors.length > 1 ? 's' : ''}:{' '}
+            <strong>{dash.doors.map((d) => d.displayName).join(', ')}</strong>
+            {'  '}
+            <Link href={`/onboarding/doors?member=${memberId}`}>Add or refine →</Link>
+          </>
+        ) : (
+          <Link href={`/onboarding/doors?member=${memberId}`}>Name the Door(s) that opened your gap →</Link>
+        )}
+      </p>
 
       <AgentBubble memberId={memberId} teaser={teaser} />
     </>
