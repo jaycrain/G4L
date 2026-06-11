@@ -248,6 +248,7 @@ The strongest items name a number, a frequency, or a named event ("down to 190",
 For EACH item, also assign a category — the life area it belongs to: physical (body/movement/food/sleep), self (identity/who they are), social (people/relationships), or outlook (purpose/future/mindset). Record the items in reclaimList and their categories in reclaimCategories, same order.
 
 3) FADE DOOR(S) — EXPLORE, never list. This is the most important and most vulnerable beat. Open it with a real question about how the gap opened ("Something opened this gap, and it's rarely all at once — what happened? When did you first feel the drift?"). Then have a CONVERSATION, not a form: follow up to understand HOW it unfolded — the sequence, when they first noticed, what it quietly cost them — reflecting their own words back. Your job is to understand how it happened, not just that it did. Stay with their story for two or three exchanges; don't rush to wrap it.
+THE GAP IS USUALLY MORE THAN ONE DOOR. The Fade rarely opens through a single event — the body starts saying no AND the career plateaus; the nest empties AND a parent gets sick. Once you understand the FIRST door, explicitly check whether others stacked onto it ("Was that the whole of it, or did something else pile on around the same time?"). Capture every door that genuinely applies, not just the first one named. Ask this once — don't interrogate; if they say it was just the one, accept that and move on.
 Do NOT recite a menu of Doors or ask them to pick one — listing options stops the conversation cold. The eight Doors below are YOUR private map for tagging, never shown to the member. Map their story silently to one OR MORE of them. You may gently name a Door back ONLY as recognition, to help them feel seen ("a lot of good people would call that the Empty Nest — the house going quiet"), never as an option to choose. Record their account in gap and the mapped slug(s) in doors.
 [internal Door map — do not list to the member]
 ${DOORS.map((d) => `- ${d.slug}: ${d.displayName} — ${d.descriptor}`).join('\n')}
@@ -258,7 +259,7 @@ VOICE: no meta-narration about the program's own mechanics; gender-inclusive; wa
 TURN-TAKING (important): reflect first, then ALWAYS end your turn with exactly ONE clear question or prompt that tells the member what to do next. Never end on a bare statement or reflection — that strands the member, unsure whether it is their turn. The ONLY turn without a question is the final IDQ handoff, which closes with "Ready when you are."
 ALWAYS write a spoken message to the member on EVERY turn — never respond with only a tool call and no text (a tool-only turn makes the app repeat the last prompt, which feels broken). And NEVER re-ask a question the member has already answered or repeat a prompt you've already sent — if you have their answer, acknowledge it and move forward. Once you understand how the gap opened and have mapped at least one Door, record it and move to the handoff; do not keep circling the same question.
 
-On EVERY turn you MUST also call the record_progress tool with everything gathered so far. Set complete=true only once ALL of these are gathered: athleticPast, a confirmed natural-case identityNoun, a reclaimList of at least ${RECLAIM_LIST_MIN}, and at least one door — AND you have genuinely explored HOW that door opened, not just labeled it. Do not complete on the first mention of what happened; understand the story first.`;
+On EVERY turn you MUST also call the record_progress tool with everything gathered so far. Set complete=true only once ALL of these are gathered: athleticPast, a confirmed natural-case identityNoun, a reclaimList of at least ${RECLAIM_LIST_MIN}, and at least one door — AND you have genuinely explored HOW that door opened (not just labeled it) AND checked whether more than one door was involved. Do not complete on the first mention of what happened; understand the story, and whether there was more than one door, first.`;
 
 const RECORD_PROGRESS_TOOL = {
   name: 'record_progress',
@@ -338,12 +339,13 @@ async function liveTurn(
     // are.") — never the model's last turn, which can truncate or be skipped for the tool call.
     finalReply = handoff(collected.doors ?? [], collected.identityNoun);
   } else if (doorJustCaptured) {
-    // Hold one more turn to explore the Door. Use the model's text if it asked something; otherwise
-    // deepen — never re-ask the opening Door question (that reads as a loop).
+    // Hold one more turn before we can complete. Use the model's text if it asked something;
+    // otherwise widen — the gap is usually more than one door, so the engine's own fallback
+    // checks for others rather than re-asking the opening question (which reads as a loop).
     const r = reply.trim();
     finalReply = /\?/.test(r)
       ? r
-      : `${r ? `${r}\n\n` : ''}Tell me a little more about how that unfolded — when you first felt it, and what it quietly cost you.`;
+      : `${r ? `${r}\n\n` : ''}That rarely opens all at once. Was that the whole of it, or did something else pile on around the same time?`;
   } else {
     finalReply = withForwardPrompt(reply, stage);
   }
