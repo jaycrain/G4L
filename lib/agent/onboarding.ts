@@ -309,10 +309,13 @@ async function liveTurn(
     }
   }
   const stage: Stage = complete ? 'complete' : nextStage(collected);
-  // On completion the handoff is intentionally a statement (followed by the Continue button);
-  // every other turn must end with a forward question so the member is never left hanging.
+  // On completion, ALWAYS use the engine-owned handoff (names the Door(s), identity, and Reclaim
+  // List, ending "Ready when you are.") rather than the live agent's last turn — which can get
+  // truncated by the token limit or skipped when the model jumps straight to the tool call, leaving
+  // the member with a mid-sentence stop before the IDQ button. Every other turn ends with a forward
+  // question so the member is never left hanging.
   const finalReply = complete
-    ? reply.trim() || STAGE_PROMPT.complete
+    ? handoff(collected.doors ?? [], collected.identityNoun)
     : withForwardPrompt(reply, stage);
   return { reply: finalReply, state: { stage, collected }, complete };
 }
