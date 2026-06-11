@@ -32,14 +32,14 @@ export default function DoorsChat({ memberId }: { memberId: string }) {
         const seed = await seedDoorsAction(memberId);
         if (cancelled) return;
         if (!seed) {
-          setError('Couldn’t open your Door(s). Head back to your dashboard and try again.');
+          setError('Couldn’t open your Doors. Head back to your dashboard and try again.');
           setPending(false);
           return;
         }
         setMessages([{ role: 'agent', text: seed.opening }]);
         setState(seed.state);
       } catch {
-        if (!cancelled) setError('Couldn’t open your Door(s). Please try again.');
+        if (!cancelled) setError('Couldn’t open your Doors. Please try again.');
       } finally {
         if (!cancelled) setPending(false);
       }
@@ -84,13 +84,13 @@ export default function DoorsChat({ memberId }: { memberId: string }) {
     try {
       const r = await saveDoorsAction(memberId, state);
       if (!r.ok) {
-        setError(r.error ?? 'Could not save your Door(s).');
+        setError(r.error ?? 'Could not save your Doors.');
         setSaving(false);
         return;
       }
       router.push(`/dashboard/${memberId}`);
     } catch {
-      setError('Could not save your Door(s) — please try again.');
+      setError('Could not save your Doors — please try again.');
       setSaving(false);
     }
   }
@@ -99,7 +99,7 @@ export default function DoorsChat({ memberId }: { memberId: string }) {
 
   return (
     <>
-      <h1>Your Door(s)</h1>
+      <h1>Your Door{doorCount === 1 ? '' : 's'}</h1>
       <p className="muted">
         The Fade rarely opens through just one thing. Take a moment to add or refine the doors that
         opened your gap — then save when it feels complete.
@@ -134,7 +134,7 @@ export default function DoorsChat({ memberId }: { memberId: string }) {
       </form>
       <div className="chat-continue">
         <button type="button" onClick={save} disabled={saving || pending || doorCount === 0}>
-          {saving ? 'Saving…' : 'Save my Door(s) & return to dashboard'}
+          {saving ? 'Saving…' : `Save my Door${doorCount === 1 ? '' : 's'} & return to dashboard`}
         </button>
       </div>
     </>

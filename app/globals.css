@@ -202,9 +202,12 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .past-beats details { padding: 0.5rem 0; }
 .past-beats summary { display: flex; justify-content: space-between; align-items: baseline; gap: 0.75rem; cursor: pointer; list-style: none; }
 .past-beats summary::-webkit-details-marker { display: none; }
-.pb-title { font-weight: 600; color: var(--navy); }
+.pb-title { font-weight: 600; color: var(--navy); flex: 1; }
+.past-beats summary:hover .pb-title { color: var(--teal); }
 .past-beats details[open] .pb-title { color: var(--teal); }
 .pb-when { font-size: 0.78rem; color: var(--navy); opacity: 0.55; white-space: nowrap; }
+.pb-caret { color: var(--teal); font-weight: 700; line-height: 1; transition: transform 0.15s ease; }
+.past-beats details[open] .pb-caret { transform: rotate(90deg); }
 .pb-content { margin: 0.5rem 0 0.4rem; color: var(--charcoal); white-space: pre-wrap; }
 .pb-answered { margin: 0; font-size: 0.85rem; color: var(--navy); opacity: 0.85; }
 .journey-reclaim { display: flex; gap: 1.25rem; margin-top: 0.6rem; }

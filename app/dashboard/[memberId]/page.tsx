@@ -279,7 +279,7 @@ export default async function DashboardPage({
           <p className="muted">Beats you’ve worked will collect here — each one feeds your GRINTA! Index.</p>
         ) : (
           <>
-            <p className="muted">Each contributed to your GRINTA! Index. Tap any to revisit.</p>
+            <p className="muted">Each fed your GRINTA! Index — tap any to reopen and reread it.</p>
             <ul className="past-beats">
               {pastBeats.map((pb, i) => (
                 <li key={i}>
@@ -287,6 +287,7 @@ export default async function DashboardPage({
                     <summary>
                       <span className="pb-title">{pb.title}</span>
                       <span className="pb-when">{pb.when}</span>
+                      <span className="pb-caret" aria-hidden="true">›</span>
                     </summary>
                     <p className="pb-content">{pb.content}</p>
                     <p className="pb-answered">
@@ -306,11 +307,12 @@ export default async function DashboardPage({
           <>
             Your Door{dash.doors.length > 1 ? 's' : ''}:{' '}
             <strong>{dash.doors.map((d) => d.displayName).join(', ')}</strong>
-            {'  '}
-            <Link href={`/onboarding/doors?member=${memberId}`}>Add or refine →</Link>
+            <Link href={`/onboarding/doors?member=${memberId}`} style={{ marginLeft: '0.85rem', whiteSpace: 'nowrap' }}>
+              Add or refine →
+            </Link>
           </>
         ) : (
-          <Link href={`/onboarding/doors?member=${memberId}`}>Name the Door(s) that opened your gap →</Link>
+          <Link href={`/onboarding/doors?member=${memberId}`}>Name the Doors that opened your gap →</Link>
         )}
       </p>
 
