@@ -91,6 +91,27 @@ export function nextStage(c: Collected): Stage {
   return 'complete';
 }
 
+// ENGINE-LEVEL GUARANTEE against an abrupt Door ending. The live model may not complete onboarding
+// on the turn it FIRST captures a Door — the Door must have been present in the PRIOR state
+// (captured an earlier turn), which forces at least one more exchange to actually explore HOW it
+// opened. Prompt instructions alone proved unreliable here, so completion is gated in code.
+export function resolveCompletion(
+  prior: Collected,
+  collected: Collected,
+  wantsComplete: boolean,
+): { complete: boolean; stage: Stage; doorJustCaptured: boolean } {
+  const reqsMet =
+    !!collected.athleticPast &&
+    !!collected.identityNoun &&
+    (collected.reclaimList?.length ?? 0) >= RECLAIM_LIST_MIN &&
+    (collected.doors?.length ?? 0) >= 1;
+  const doorCapturedEarlier = (prior.doors?.length ?? 0) >= 1;
+  const doorJustCaptured = reqsMet && !doorCapturedEarlier;
+  const complete = wantsComplete && reqsMet && doorCapturedEarlier;
+  const stage: Stage = complete ? 'complete' : doorJustCaptured ? 'door' : nextStage(collected);
+  return { complete, stage, doorJustCaptured };
+}
+
 // A safety-net question per stage — used if a live turn comes back with no text (tool-only),
 // so the member never sees a blank reply that looks like the agent stalled.
 const STAGE_PROMPT: Record<Stage, string> = {
@@ -288,7 +309,7 @@ async function liveTurn(
 
   let reply = '';
   let collected: Collected = { ...state.collected };
-  let complete = false;
+  let wantsComplete = false;
   for (const block of res.content) {
     if (block.type === 'text') reply += block.text;
     if (block.type === 'tool_use' && block.name === 'record_progress') {
@@ -305,21 +326,26 @@ async function liveTurn(
         ...(p.gap !== undefined && { gap: p.gap }),
         ...(doors && doors.length > 0 && { doors }),
       };
-      // Trust complete only when the hard requirements are actually present.
-      complete = Boolean(p.complete) &&
-        !!collected.athleticPast && !!collected.identityNoun &&
-        (collected.reclaimList?.length ?? 0) >= RECLAIM_LIST_MIN &&
-        (collected.doors?.length ?? 0) >= 1;
+      wantsComplete = Boolean(p.complete);
     }
   }
-  const stage: Stage = complete ? 'complete' : nextStage(collected);
-  // On completion, ALWAYS use the engine-owned handoff (names the Door(s), identity, and Reclaim
-  // List, ending "Ready when you are.") rather than the live agent's last turn — which can get
-  // truncated by the token limit or skipped when the model jumps straight to the tool call, leaving
-  // the member with a mid-sentence stop before the IDQ button. Every other turn ends with a forward
-  // question so the member is never left hanging.
-  const finalReply = complete
-    ? handoff(collected.doors ?? [], collected.identityNoun)
-    : withForwardPrompt(reply, stage);
+
+  const { complete, stage, doorJustCaptured } = resolveCompletion(state.collected, collected, wantsComplete);
+
+  let finalReply: string;
+  if (complete) {
+    // Always the engine-owned handoff (names Door(s), identity, Reclaim List, "Ready when you
+    // are.") — never the model's last turn, which can truncate or be skipped for the tool call.
+    finalReply = handoff(collected.doors ?? [], collected.identityNoun);
+  } else if (doorJustCaptured) {
+    // Hold one more turn to explore the Door. Use the model's text if it asked something; otherwise
+    // deepen — never re-ask the opening Door question (that reads as a loop).
+    const r = reply.trim();
+    finalReply = /\?/.test(r)
+      ? r
+      : `${r ? `${r}\n\n` : ''}Tell me a little more about how that unfolded — when you first felt it, and what it quietly cost you.`;
+  } else {
+    finalReply = withForwardPrompt(reply, stage);
+  }
   return { reply: finalReply, state: { stage, collected }, complete };
 }
