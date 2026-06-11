@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { AI_DISCLOSURE } from '../../lib/agent/governance.ts';
-import { onboardingTurn } from './actions.ts';
+import { onboardingTurn, loadOnboardingSessionAction } from './actions.ts';
 import { setupAction } from '../account/setup/actions.ts';
 import PasswordField from '../password-field.tsx';
 import type { ConvState, ConvMessage } from '../../lib/agent/onboarding.ts';
@@ -22,6 +22,7 @@ export default function OnboardingChat() {
   const [error, setError] = useState<string | null>(null);
   const [next, setNext] = useState<string | null>(null); // set on completion; member clicks to proceed
   const taRef = useRef<HTMLTextAreaElement>(null);
+  const tokenRef = useRef<string>(''); // per-device onboarding resume token
 
   // Grow the reply box with what they're typing (so they can see it), capped so it never takes over.
   useEffect(() => {
@@ -49,7 +50,32 @@ export default function OnboardingChat() {
     setPhase('chat');
     setPending(true);
     try {
-      const r = await onboardingTurn({ ctx, state: null, history: [], memberMessage: null });
+      // Resume an in-flight onboarding on this device, if one exists for this email.
+      let token = '';
+      try {
+        token = localStorage.getItem('g4l_onboarding_token') ?? '';
+      } catch {
+        /* no storage */
+      }
+      if (token) {
+        const resumed = await loadOnboardingSessionAction(ctx.email, token);
+        if (resumed && resumed.messages.length) {
+          tokenRef.current = token;
+          setMessages(resumed.messages);
+          setState(resumed.state);
+          setPending(false);
+          return;
+        }
+      }
+      // Fresh start — mint a per-device resume token.
+      try {
+        token = crypto?.randomUUID?.() ?? String(Date.now());
+        localStorage.setItem('g4l_onboarding_token', token);
+      } catch {
+        token = String(Date.now());
+      }
+      tokenRef.current = token;
+      const r = await onboardingTurn({ ctx, state: null, history: [], memberMessage: null, token });
       setMessages([{ role: 'agent', text: r.reply }]);
       setState(r.state);
     } catch {
@@ -71,11 +97,17 @@ export default function OnboardingChat() {
     setError(null);
 
     try {
-      const r = await onboardingTurn({ ctx, state, history: prior, memberMessage: text });
+      const r = await onboardingTurn({ ctx, state, history: prior, memberMessage: text, token: tokenRef.current });
       setMessages([...prior, { role: 'member', text }, { role: 'agent', text: r.reply }]);
       setState(r.state);
       if (r.errors) setError(r.errors.join('; '));
       if (r.complete && r.memberId) {
+        // Onboarding's done — the in-flight resume token can go.
+        try {
+          localStorage.removeItem('g4l_onboarding_token');
+        } catch {
+          /* no storage */
+        }
         // Secure the account with the password captured at sign-up; fall back to the setup
         // screen only if that didn't take. Do NOT auto-advance — let them read the summary
         // and continue when ready ("Ready when you are.").
