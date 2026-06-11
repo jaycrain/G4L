@@ -162,12 +162,19 @@ export async function onboardingNextTurn(args: {
     return { reply: CRISIS_RESPONSE_US, state: args.state, complete: false, crisis: true };
   }
   if (process.env.ANTHROPIC_API_KEY) {
+    // LIVE mode. If a live turn fails (e.g. a transient API timeout mid-conversation) we must NOT
+    // silently fall back to scriptedTurn: the scripted path is a separate, simpler state machine
+    // that can't read the live context and just re-asks its stage prompt — which stranded the Door
+    // beat in a "won't take yes for an answer" loop. Surface the failure instead; the client rolls
+    // back and lets the member resend, state preserved, and the next attempt hits the live engine.
     try {
       return await liveTurn(args.ctx, args.history, args.state, args.memberMessage);
     } catch (e) {
-      console.warn('onboarding: live agent unavailable, using scripted —', (e as Error).message);
+      console.warn('onboarding: live turn failed —', (e as Error).message);
+      throw e;
     }
   }
+  // No API key (offline / tests): the deterministic scripted engine.
   return scriptedTurn(args.state, args.memberMessage);
 }
 
@@ -305,7 +312,9 @@ async function liveTurn(
   memberMessage: string,
 ): Promise<Turn> {
   const { default: Anthropic } = await import('@anthropic-ai/sdk');
-  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, timeout: 9000, maxRetries: 1 });
+  // Deep-in-conversation turns carry a large context; 9s was too tight and tripped intermittent
+  // timeouts that dropped the member into the scripted fallback. Give it room, and retry transient blips.
+  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, timeout: 25000, maxRetries: 2 });
 
   const messages = [
     ...history.map((m) => ({
