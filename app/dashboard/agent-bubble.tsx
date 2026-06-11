@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { openCheckin, sendCheckin, loadCheckin } from './checkin-actions.ts';
 
 type Msg = { role: 'agent' | 'member'; text: string };
@@ -12,6 +13,7 @@ export default function AgentBubble({
   memberId: string;
   teaser: string | null;
 }) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [showTeaser, setShowTeaser] = useState(true);
 
@@ -107,6 +109,10 @@ export default function AgentBubble({
     try {
       const r = await sendCheckin(memberId, text);
       setMessages([...history, { role: 'member', text }, { role: 'agent', text: r.reply }]);
+      // The agent just wrote to the member's records (added a Reclaim item / Door) — re-render the
+      // server-rendered dashboard panels so the change shows immediately. Soft refresh keeps the
+      // bubble open and its messages intact (client state survives).
+      if (r.mutated) router.refresh();
     } catch {
       setMessages([...history, { role: 'member', text }, { role: 'agent', text: 'Sorry — that didn’t go through. Try again in a moment.' }]);
     } finally {

@@ -110,7 +110,7 @@ export async function loadCheckin(memberId: string): Promise<CheckinMessage[]> {
 }
 
 /** One member turn: reply with continuity (loads recent thread server-side) and persist both sides. */
-export async function sendCheckin(memberId: string, memberMessage: string): Promise<{ reply: string; crisis?: boolean }> {
+export async function sendCheckin(memberId: string, memberMessage: string): Promise<{ reply: string; crisis?: boolean; mutated?: boolean }> {
   if (!(await authorizeMember(memberId))) return { reply: 'Not authorized.' };
   try {
     const db = (await getDb()) as unknown as Db;
@@ -118,10 +118,12 @@ export async function sendCheckin(memberId: string, memberMessage: string): Prom
     if (!ctx) return { reply: "I can't reach your profile right now — try again in a moment." };
     const history = (await loadConversation(db, memberId)).slice(-16); // bound the agent context
     // The member can ask the agent to tend their own records — additive only, guarded in the store.
+    let mutated = false; // a successful tool write → signal the client to refresh the dashboard panels
     const executor: ToolExecutor = async (name, input) => {
       if (name === 'add_reclaim_item') {
         const res = await addReclaimItemForMember(db, memberId, String(input.text ?? ''));
         if (res.ok) {
+          mutated = true;
           return { ok: true, message: `Saved "${res.text}" to their Reclaim List (category: ${res.category}). It now shows on their dashboard and the Beat engine can work toward it — acknowledge it briefly and warmly.` };
         }
         if (res.reason === 'vague') {
@@ -135,6 +137,7 @@ export async function sendCheckin(memberId: string, memberMessage: string): Prom
       if (name === 'add_door') {
         const res = await addDoorForMember(db, memberId, String(input.description ?? ''));
         if (res.ok) {
+          mutated = true;
           return { ok: true, message: `Recorded Door(s): ${res.added.join(', ')}. Name it back gently as recognition; it now shows on their dashboard.` };
         }
         if (res.reason === 'already') {
@@ -149,7 +152,7 @@ export async function sendCheckin(memberId: string, memberMessage: string): Prom
       { role: 'member', text: memberMessage },
       { role: 'agent', text: r.reply },
     ]);
-    return r;
+    return { ...r, mutated };
   } catch (e) {
     console.error('sendCheckin failed:', (e as Error).message);
     return {
