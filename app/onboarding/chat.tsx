@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { AI_DISCLOSURE } from '../../lib/agent/governance.ts';
 import { onboardingTurn } from './actions.ts';
@@ -21,6 +21,16 @@ export default function OnboardingChat() {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [next, setNext] = useState<string | null>(null); // set on completion; member clicks to proceed
+  const taRef = useRef<HTMLTextAreaElement>(null);
+
+  // Grow the reply box with what they're typing (so they can see it), capped so it never takes over.
+  useEffect(() => {
+    const el = taRef.current;
+    if (el) {
+      el.style.height = 'auto';
+      el.style.height = `${Math.min(el.scrollHeight, 200)}px`;
+    }
+  }, [input]);
 
   const ctx = { name: name.trim(), email: email.trim() };
 
@@ -50,8 +60,8 @@ export default function OnboardingChat() {
     }
   }
 
-  async function send(e: React.FormEvent) {
-    e.preventDefault();
+  async function send(e?: React.FormEvent) {
+    e?.preventDefault();
     const text = input.trim();
     if (!text || pending) return;
     const prior = messages;
@@ -112,7 +122,7 @@ export default function OnboardingChat() {
             {m.text}
           </div>
         ))}
-        {pending && <div className="typing">…</div>}
+        {pending && <div className="typing">Thinking…</div>}
       </div>
       {error && <p className="error">{error}</p>}
       {next ? (
@@ -123,11 +133,18 @@ export default function OnboardingChat() {
         </div>
       ) : (
         <form className="chat-input" onSubmit={send}>
-          <input
-            type="text"
+          <textarea
+            ref={taRef}
+            rows={1}
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Type your reply…"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                void send();
+              }
+            }}
+            placeholder="Type your reply…  (Enter to send, Shift+Enter for a new line)"
             autoFocus
             disabled={pending}
           />

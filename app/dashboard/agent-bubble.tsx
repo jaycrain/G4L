@@ -31,6 +31,16 @@ export default function AgentBubble({
     pendingRef.current = pending;
   }, [pending]);
 
+  // Grow the input with what they're typing (capped) so they can see longer, honest replies.
+  const taRef = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => {
+    const el = taRef.current;
+    if (el) {
+      el.style.height = 'auto';
+      el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
+    }
+  }, [input]);
+
   // Arrived from a notification tap (?chat=1) → open the companion so they can respond right here.
   useEffect(() => {
     if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('chat')) {
@@ -86,8 +96,8 @@ export default function AgentBubble({
     }
   }
 
-  async function send(e: React.FormEvent) {
-    e.preventDefault();
+  async function send(e?: React.FormEvent) {
+    e?.preventDefault();
     const text = input.trim();
     if (!text || pending) return;
     const history = messages; // before appending the new message
@@ -120,13 +130,20 @@ export default function AgentBubble({
                 {m.text}
               </div>
             ))}
-            {pending && <div className="typing">…</div>}
+            {pending && <div className="typing">Thinking…</div>}
           </div>
           <form className="chat-input" onSubmit={send}>
-            <input
-              type="text"
+            <textarea
+              ref={taRef}
+              rows={1}
               value={input}
               onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  void send();
+                }
+              }}
               placeholder="Tell me what's going on…"
               autoFocus
               disabled={pending}
