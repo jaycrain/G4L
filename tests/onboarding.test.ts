@@ -88,26 +88,31 @@ test('full scripted conversation collects every field, in natural case, and comp
   assert.equal(fields.identityNoun, 'Athlete');
 });
 
-test('completion is gated: the Door beat must be explored before it can complete', () => {
+test('completion is gated on BOTH sides: explore first, then close reliably', () => {
   const full = { athleticPast: 'x', identityNoun: 'Runner', reclaimList: ['a', 'b', 'c'], doors: ['career_cliff'] } as Collected;
-  const priorNoDoor = { athleticPast: 'x', identityNoun: 'Runner', reclaimList: ['a', 'b', 'c'] } as Collected;
+  const partial = { athleticPast: 'x', identityNoun: 'Runner', reclaimList: ['a', 'b', 'c'] } as Collected;
 
-  // Door just captured, only one exchange so far → cannot complete; held in the door beat.
-  const just = resolveCompletion(priorNoDoor, full, true, 1);
+  // Under the exploration minimum → cannot complete; held in the door beat (even if the model asks).
+  const just = resolveCompletion(full, true, 1);
   assert.equal(just.complete, false);
   assert.equal(just.stage, 'door');
   assert.equal(just.exploringDoor, true);
+  assert.equal(resolveCompletion(full, true, 2).complete, false);
 
-  // Door present but still under the exploration minimum → still held, not complete.
-  assert.equal(resolveCompletion(full, full, true, 2).complete, false);
+  // Explored enough + the model signals completion → done.
+  const byModel = resolveCompletion(full, true, 3);
+  assert.equal(byModel.complete, true);
+  assert.equal(byModel.stage, 'complete');
 
-  // Door explored enough (>= DOOR_MIN_TURNS) and the agent wants to finish → completion honored.
-  const later = resolveCompletion(full, full, true, 3);
-  assert.equal(later.complete, true);
-  assert.equal(later.stage, 'complete');
+  // Explored enough + the MEMBER affirms the read (model didn't set complete) → done. (The "It does" fix.)
+  assert.equal(resolveCompletion(full, false, 4, true).complete, true);
+  // Affirmation before the beat has breathed does NOT complete.
+  assert.equal(resolveCompletion(full, false, 2, true).complete, false);
 
-  // Plenty of exploration, but the agent didn't request completion → not complete.
-  assert.equal(resolveCompletion(full, full, false, 5).complete, false);
+  // Soft cap: even with no model/member signal, it must wrap by DOOR_MAX_TURNS (can't run forever).
+  assert.equal(resolveCompletion(full, false, 6).complete, true);
+  // ...but never before requirements are met (missing a Door keeps it out of the door beat entirely).
+  assert.equal(resolveCompletion(partial, true, 9).complete, false);
 });
 
 test('withForwardPrompt never leaves a non-final turn without a question', () => {

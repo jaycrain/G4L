@@ -95,18 +95,22 @@ export function nextStage(c: Collected): Stage {
   return 'complete';
 }
 
-// The Door beat must actually breathe before onboarding can complete. It is the most important and
-// most vulnerable exchange, and the live model kept racing to the handoff (looping, then completing
-// on the first answer). Prompt instructions alone proved unreliable, so completion is gated in code:
-// the member must have had at least DOOR_MIN_TURNS exchanges within the Door beat — enough to explore
-// HOW the gap opened and whether more than one Door was involved — before a complete=true is honored.
+// Completion timing for the Door beat is unreliable when left to the model alone — it raced to the
+// handoff (ending abruptly), then, once gated, refused to take "yes" for an answer and kept re-asking.
+// So the engine bounds it on BOTH sides, and this is safe because the handoff is now reversible
+// ("keep talking"):
+//   - it may NOT complete before DOOR_MIN_TURNS exchanges (the beat must breathe — explore HOW the
+//     gap opened and whether more than one Door was involved);
+//   - after that, it completes when the model signals it, when the member affirms the read ("it
+//     does", "yes, that's right"), or at the DOOR_MAX_TURNS soft cap (so it can never run forever).
 const DOOR_MIN_TURNS = 3;
+const DOOR_MAX_TURNS = 6;
 
 export function resolveCompletion(
-  prior: Collected,
   collected: Collected,
   wantsComplete: boolean,
   doorTurns = 0,
+  memberAffirmed = false,
 ): { complete: boolean; stage: Stage; exploringDoor: boolean } {
   const reqsMet =
     !!collected.athleticPast &&
@@ -114,7 +118,8 @@ export function resolveCompletion(
     (collected.reclaimList?.length ?? 0) >= RECLAIM_LIST_MIN &&
     (collected.doors?.length ?? 0) >= 1;
   const exploredEnough = doorTurns >= DOOR_MIN_TURNS;
-  const complete = wantsComplete && reqsMet && exploredEnough;
+  const mustWrap = doorTurns >= DOOR_MAX_TURNS;
+  const complete = reqsMet && exploredEnough && (wantsComplete || memberAffirmed || mustWrap);
   // We hold in the Door beat whenever we have a Door but aren't completing — so the engine keeps the
   // conversation there (widening to other Doors, then deepening) instead of stranding or rushing.
   const exploringDoor = !complete && reqsMet;
@@ -269,7 +274,7 @@ VOICE: no meta-narration about the program's own mechanics; gender-inclusive; wa
 TURN-TAKING (important): reflect first, then ALWAYS end your turn with exactly ONE clear question or prompt that tells the member what to do next. Never end on a bare statement or reflection — that strands the member, unsure whether it is their turn. The ONLY turn without a question is the final IDQ handoff, which closes with "Ready when you are."
 ALWAYS write a spoken message to the member on EVERY turn — never respond with only a tool call and no text (a tool-only turn makes the app repeat the last prompt, which feels broken). And NEVER re-ask a question the member has already answered or repeat a prompt you've already sent — if you have their answer, acknowledge it and move forward. Once you understand how the gap opened and have mapped at least one Door, record it and move to the handoff; do not keep circling the same question.
 
-On EVERY turn you MUST also call the record_progress tool with everything gathered so far. Set complete=true only once ALL of these are gathered: athleticPast, a confirmed natural-case identityNoun, a reclaimList of at least ${RECLAIM_LIST_MIN}, and at least one door — AND you have genuinely explored HOW that door opened (not just labeled it) AND checked whether more than one door was involved. Do not complete on the first mention of what happened; understand the story, and whether there was more than one door, first.`;
+On EVERY turn you MUST also call the record_progress tool with everything gathered so far. Set complete=true only once ALL of these are gathered: athleticPast, a confirmed natural-case identityNoun, a reclaimList of at least ${RECLAIM_LIST_MIN}, and at least one door — AND you have genuinely explored HOW that door opened (not just labeled it) AND checked whether more than one door was involved. Do not complete on the first mention of what happened; understand the story, and whether there was more than one door, first. CLOSING THE BEAT: once you have reflected the full picture of how the gap opened and the member confirms it is accurate ("it does", "yes, that's right"), you are DONE — call record_progress with complete=true and hand off on that same turn. Do NOT ask another question, and NEVER re-ask what changed or when they first noticed it once they have already told you. Their confirmation is the signal to wrap; honor it.`;
 
 const RECORD_PROGRESS_TOOL = {
   name: 'record_progress',
@@ -346,7 +351,13 @@ async function liveTurn(
   const engagingDoor = state.stage === 'door' || justGotDoor;
   const doorTurns = (state.doorTurns ?? 0) + (engagingDoor ? 1 : 0);
 
-  const { complete, stage, exploringDoor } = resolveCompletion(state.collected, collected, wantsComplete, doorTurns);
+  // A short, clear affirmation of the read ("it does", "yes, that's right") is the member's signal
+  // to wrap. Kept short so "yes, and also…" (which adds a Door) isn't mistaken for closure.
+  const affirmRe =
+    /\b(yes|yep|yeah|yup|it does|that'?s right|that'?s it|exactly|correct|spot on|sounds right|accurate|that'?s the (whole )?picture|pretty much|that'?s fair)\b/i;
+  const memberAffirmed = affirmRe.test(memberMessage) && memberMessage.trim().split(/\s+/).length <= 6;
+
+  const { complete, stage, exploringDoor } = resolveCompletion(collected, wantsComplete, doorTurns, memberAffirmed);
 
   let finalReply: string;
   if (complete) {
@@ -355,13 +366,13 @@ async function liveTurn(
     finalReply = handoff(collected.doors ?? [], collected.identityNoun);
   } else if (exploringDoor) {
     // Stay in the Door beat. Use the model's text if it asked something; otherwise drive the beat
-    // forward ourselves — widen first (the gap is usually more than one Door), then deepen — never
-    // re-asking the opening Door question (that reads as the loop members hit before).
+    // forward ourselves — widen first (the gap is usually more than one Door), then move toward
+    // closure. Never re-ask what changed or when (that reads as the loop members hit before).
     const r = reply.trim();
     const forward =
       doorTurns <= 1
         ? 'That rarely opens all at once. Was that the whole of it, or did something else pile on around the same time?'
-        : 'Stay with that a moment — when did you first feel it, and what did it quietly cost you?';
+        : 'Is there anything else that pulled at you in that season — or does that feel like the whole of how it opened?';
     finalReply = /\?/.test(r) ? r : `${r ? `${r}\n\n` : ''}${forward}`;
   } else {
     finalReply = withForwardPrompt(reply, stage);
