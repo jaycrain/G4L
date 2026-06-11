@@ -14,10 +14,15 @@ import type { Db } from '../../lib/db/schema.ts';
 async function buildContext(db: Db, memberId: string): Promise<CheckinContext | null> {
   const dash = await getDashboard(db, memberId);
   if (!dash) return null;
-  const [grinta, consumedBites] = await Promise.all([
+  const [grinta, consumedBites, profRows] = await Promise.all([
     getGrinta(db, memberId, dash.identityNoun),
     recentConsumedTitles(db, memberId),
+    db.query<{ intake_athletic_past: string | null; intake_gap: string | null }>(
+      'select intake_athletic_past, intake_gap from member_profile where member_id=$1',
+      [memberId],
+    ),
   ]);
+  const prof = profRows.rows[0];
   return {
     displayName: dash.displayName,
     identityNoun: dash.identityNoun,
@@ -30,6 +35,11 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
     grintaScore: grinta.score,
     grintaTrend: grinta.direction,
     consumedBites,
+    // The narrative from onboarding — so the agent can reference what the member actually shared,
+    // not just the dashboard facts. This is what makes the first interaction feel "it knows me."
+    pastSelf: prof?.intake_athletic_past ?? null,
+    gapStory: prof?.intake_gap ?? null,
+    identityParagraph: dash.identityParagraph ?? null,
   };
 }
 

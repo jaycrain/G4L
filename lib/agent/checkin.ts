@@ -21,6 +21,9 @@ export type CheckinContext = {
   grintaScore?: number | null; // the daily GRINTA! Index — for awareness, not to pitch
   grintaTrend?: 'up' | 'down' | 'flat' | null;
   consumedBites?: string[]; // titles of recently read bites
+  pastSelf?: string | null; // their own words on who they were (from onboarding)
+  gapStory?: string | null; // their own words on how the gap opened (from onboarding)
+  identityParagraph?: string | null; // the synthesized identity paragraph
 };
 
 export type CheckinMessage = { role: 'agent' | 'member'; text: string };
@@ -38,6 +41,10 @@ function contextBlock(c: CheckinContext): string {
     c.lastCompletedAsset ? `Most recent asset: ${c.lastCompletedAsset}` : null,
     c.grintaScore != null ? `GRINTA! Index: ${c.grintaScore}${c.grintaTrend ? ` (${c.grintaTrend} lately)` : ''}` : null,
     c.consumedBites && c.consumedBites.length ? `Recently read: ${c.consumedBites.join('; ')}` : null,
+    c.reclaimList && c.reclaimList.length ? `Reclaim List (what they want back): ${c.reclaimList.join('; ')}` : null,
+    c.pastSelf ? `Who they were, in their own words: "${c.pastSelf}"` : null,
+    c.gapStory ? `How the gap opened, in their own words: "${c.gapStory}"` : null,
+    c.identityParagraph ? `Their story, synthesized: ${c.identityParagraph}` : null,
   ].filter(Boolean).join('\n');
 }
 
@@ -56,8 +63,13 @@ ${contextBlock(c)}`;
 // --- Scripted (offline) — brand-voice safe (no "journey" / "I hear you" / "amazing") --------
 function scriptedOpening(c: CheckinContext): string {
   const hi = `Good to see you${firstName(c.displayName) ? `, ${firstName(c.displayName)}` : ''}.`;
-  if (c.lastCompletedAsset) return `${hi} You just finished ${c.lastCompletedAsset} — how did it land?`;
-  return `${hi} What's on your mind today?`;
+  const noun = c.identityNoun ? `the ${c.identityNoun}` : 'the person you’re reclaiming';
+  const item = c.reclaimList?.[0];
+  let line = `${hi} I’ve been sitting with what you told me — you’re reclaiming ${noun}`;
+  if (item) line += `, and part of what you want back is ${item.charAt(0).toLowerCase() + item.slice(1)}`;
+  line += '.';
+  if (c.doorDisplayNames.length) line += ` ${c.doorDisplayNames[0]} is a real one to come through.`;
+  return `${line} Where do you want to start?`;
 }
 
 function scriptedReply(memberMessage: string): string {
@@ -94,7 +106,7 @@ export async function checkinOpening(c: CheckinContext): Promise<string> {
       return await liveReply(
         checkinSystem(c),
         [],
-        'The member just opened the check-in and has not said anything yet. Greet them warmly in G4L voice, reference their recent context if there is any, and ask one gentle opening question.',
+        'This is the member\'s VERY FIRST conversation with you — moments after a personal onboarding that is still fresh in their mind. Do NOT greet generically, and do NOT restate their dashboard or list facts back at them. Open by showing you were truly listening: reflect back something specific they told you — their reclaimed identity, a concrete item from their Reclaim List, or how their Door opened — in their own words and spirit, warmly, so they feel known. Two or three sentences, then one gentle, open question. The goal is that they think "this actually gets me."',
       );
     } catch (e) {
       console.warn('check-in opening: live agent unavailable, using scripted —', (e as Error).message);

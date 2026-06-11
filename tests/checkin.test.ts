@@ -16,10 +16,11 @@ const base: CheckinContext = {
 const BANNED = [/\bjourney\b/i, /\bI hear you\b/i, /\bamazing\b/i];
 const clean = (s: string) => BANNED.every((re) => !re.test(s));
 
-test('scripted opening greets by first name and references the recent asset', async () => {
+test('first opening shows it knows the member (identity + what they want back), not a dashboard rehash', async () => {
   const r = await checkinOpening(base); // no key in test env → scripted
-  assert.match(r, /Tom/);
-  assert.match(r, /Identity Excavation/);
+  assert.match(r, /Tom/); // by name
+  assert.match(r, /Athlete/); // their reclaimed identity
+  assert.match(r, /ride again/i); // a concrete Reclaim item
   assert.ok(clean(r), 'opening must respect banned-phrase voice rules');
 });
 
