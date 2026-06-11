@@ -32,6 +32,15 @@ underneath is engineered.
   logs, never in test fixtures. Ask if unsure.
 - **Match decisions, don't reinvent them.** If something here or in the Decision Log
   settles a question, follow it. Flag conflicts instead of guessing.
+- **Reconcile every feature with the Member Agent — it's part of "done."** The dashboard
+  and the MA are one surface, so any feature that surfaces something to the member (a metric,
+  panel, signal, asset, event, anything represented about them) must, before it ships:
+  (1) be made **known to the Member Agent** — no data the member can see should be invisible to
+  the agent; and (2) be reconciled for its **significance to guiding the member toward their
+  desired outcomes — the Reclaim List.** Ask of every feature: does the agent know about this,
+  and how does it move the member toward reclaiming their list? If it does neither, question why
+  it exists. Handle all such data within the agent's governance posture (never a bare number,
+  never a verdict, used to help them understand themselves).
 
 ---
 
