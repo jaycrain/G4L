@@ -49,13 +49,11 @@ export const OPENING_REPLY = `${AI_DISCLOSURE}\n\n${FIRST_QUESTION}`;
 const doorName = (slug: DoorSlug) => DOORS.find((d) => d.slug === slug)!.displayName;
 const capFirst = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
 
-const DOOR_LINES = () => DOORS.map((d) => `${d.displayName} — ${d.descriptor}`).join('\n');
+// The Door is explored as a story, never presented as a menu — listing options stops the
+// conversation, and we need to understand HOW the gap opened, not just label it.
 const doorPrompt = () =>
-  'One more thing before the work starts — and it might be the most important one: how did the gap open?\n\n' +
-  'Something usually does it, and rarely all at once. For most people it traces back to one of a handful of doors. ' +
-  'See if one of these is your story:\n\n' +
-  `${DOOR_LINES()}\n\n` +
-  'Which one sounds like yours? And if more than one fits, tell me — most people walked through more than one, not just one.';
+  'One more thing before the work starts — and it might be the most important: how did the gap open?\n\n' +
+  'Something usually does it, and rarely all at once. Tell me what happened — when you first felt the drift, and what it quietly cost you.';
 
 const reclaimPrompt = (noun?: string) =>
   `Good. ${capFirst(identityLabel(noun) || 'That person')} is the who. Now the what.\n\n` +
@@ -197,7 +195,7 @@ export function scriptedTurn(state: ConvState, message: string): Turn {
       if (doors.length === 0) {
         return done(
           'door',
-          `Tell me in your own words what changed — or name the one from the list that fits closest.\n\n${DOOR_LINES()}`,
+          `Take your time — tell me in your own words what changed, and roughly when you first noticed it.`,
         );
       }
       collected.gap = message.trim();
@@ -228,7 +226,9 @@ THE BAR (important): every item you record MUST be specific and observable — s
 The strongest items name a number, a frequency, or a named event ("down to 190", "ride with a group weekly", "race-ready for Big Sugar"). Only record an item once it clears the bar — but keep it a warm conversation, one gentle press at a time, never an interrogation.
 For EACH item, also assign a category — the life area it belongs to: physical (body/movement/food/sleep), self (identity/who they are), social (people/relationships), or outlook (purpose/future/mindset). Record the items in reclaimList and their categories in reclaimCategories, same order.
 
-3) FADE DOOR(S). Ask how the gap opened. The member answers in their own words; map silently to one OR MORE of the eight Doors below (most people walked through more than one). Do not make them pick from a numbered list — confirm gently only if their answer is ambiguous. Record doors as an array of slugs.
+3) FADE DOOR(S) — EXPLORE, never list. This is the most important and most vulnerable beat. Open it with a real question about how the gap opened ("Something opened this gap, and it's rarely all at once — what happened? When did you first feel the drift?"). Then have a CONVERSATION, not a form: follow up to understand HOW it unfolded — the sequence, when they first noticed, what it quietly cost them — reflecting their own words back. Your job is to understand how it happened, not just that it did. Stay with their story for two or three exchanges; don't rush to wrap it.
+Do NOT recite a menu of Doors or ask them to pick one — listing options stops the conversation cold. The eight Doors below are YOUR private map for tagging, never shown to the member. Map their story silently to one OR MORE of them. You may gently name a Door back ONLY as recognition, to help them feel seen ("a lot of good people would call that the Empty Nest — the house going quiet"), never as an option to choose. Record their account in gap and the mapped slug(s) in doors.
+[internal Door map — do not list to the member]
 ${DOORS.map((d) => `- ${d.slug}: ${d.displayName} — ${d.descriptor}`).join('\n')}
 
 Then hand off to the IDQ: name the Door(s), the reclaimed identity, and the Reclaim List in one or two plain sentences, and say a set of honest questions comes next (no studying, no score to pass).
@@ -236,7 +236,7 @@ Then hand off to the IDQ: name the Door(s), the reclaimed identity, and the Recl
 VOICE: no meta-narration about the program's own mechanics; gender-inclusive; warm, direct, short sentences. Let the Fade carry the weight, not statistics.
 TURN-TAKING (important): reflect first, then ALWAYS end your turn with exactly ONE clear question or prompt that tells the member what to do next. Never end on a bare statement or reflection — that strands the member, unsure whether it is their turn. The ONLY turn without a question is the final IDQ handoff, which closes with "Ready when you are."
 
-On EVERY turn you MUST also call the record_progress tool with everything gathered so far. Set complete=true only once ALL of these are gathered: athleticPast, a confirmed natural-case identityNoun, a reclaimList of at least ${RECLAIM_LIST_MIN}, and at least one door.`;
+On EVERY turn you MUST also call the record_progress tool with everything gathered so far. Set complete=true only once ALL of these are gathered: athleticPast, a confirmed natural-case identityNoun, a reclaimList of at least ${RECLAIM_LIST_MIN}, and at least one door — AND you have genuinely explored HOW that door opened, not just labeled it. Do not complete on the first mention of what happened; understand the story first.`;
 
 const RECORD_PROGRESS_TOOL = {
   name: 'record_progress',
