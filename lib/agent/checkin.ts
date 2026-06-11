@@ -65,11 +65,13 @@ function scriptedOpening(c: CheckinContext): string {
   const hi = `Good to see you${firstName(c.displayName) ? `, ${firstName(c.displayName)}` : ''}.`;
   const noun = c.identityNoun ? `the ${c.identityNoun}` : 'the person you’re reclaiming';
   const item = c.reclaimList?.[0];
-  let line = `${hi} I’ve been sitting with what you told me — you’re reclaiming ${noun}`;
-  if (item) line += `, and part of what you want back is ${item.charAt(0).toLowerCase() + item.slice(1)}`;
-  line += '.';
-  if (c.doorDisplayNames.length) line += ` ${c.doorDisplayNames[0]} is a real one to come through.`;
-  return `${line} Where do you want to start?`;
+  let knew = `${hi} I’ve been sitting with what you told me — you’re reclaiming ${noun}`;
+  if (item) knew += `, and part of what you want back is ${item.charAt(0).toLowerCase() + item.slice(1)}`;
+  knew += '.';
+  if (c.doorDisplayNames.length) knew += ` ${c.doorDisplayNames[0]} is a real one to come through.`;
+  const compact =
+    'There’s a lot on your dashboard now — that’s your program, made specific to you. I’ll help those numbers make sense, and we’ll work that list together, one step at a time. Everything here stays between us, and the more honest you can be with yourself, the better this tends to go. I’m here, I’m listening, and we’ll keep refining it as we both learn what’s really going on.';
+  return `${knew}\n\n${compact}\n\nWhere do you want to start?`;
 }
 
 function scriptedReply(memberMessage: string): string {
@@ -106,7 +108,11 @@ export async function checkinOpening(c: CheckinContext): Promise<string> {
       return await liveReply(
         checkinSystem(c),
         [],
-        'This is the member\'s VERY FIRST conversation with you — moments after a personal onboarding that is still fresh in their mind. Do NOT greet generically, and do NOT restate their dashboard or list facts back at them. Open by showing you were truly listening: reflect back something specific they told you — their reclaimed identity, a concrete item from their Reclaim List, or how their Door opened — in their own words and spirit, warmly, so they feel known. Two or three sentences, then one gentle, open question. The goal is that they think "this actually gets me."',
+        'This is the member\'s VERY FIRST conversation with you — moments after a personal onboarding, now looking at a dashboard full of new numbers and panels for the first time. In your own warm voice (a short paragraph, never a script or a bulleted list), do three things:\n' +
+          '1) SHOW YOU KNOW THEM — reflect back something specific they told you (their reclaimed identity, a concrete Reclaim List item, or how their Door opened), in their own words and spirit, so they feel heard. Do not restate the dashboard at them.\n' +
+          '2) EASE THEM IN — let them know the dashboard is their program made specific to them, and that you\'ll help those cold numbers make sense and work the Reclaim List together, a step at a time. Do NOT explain each panel (the Field Guide does that) — just reassure them you\'ll make sense of it WITH them.\n' +
+          '3) SET THE COMPACT, lightly — you\'re here and listening, this space is confidential, the more honest they can be with themselves the better and faster this tends to go, and you\'ll both keep refining as you learn what\'s really going on. You care, and you\'re here to help.\n' +
+          'Keep it human and unhurried, end with one gentle open invitation, and never promise outcomes or imply you\'ll do the work for them — they do the work; you guide, witness, and stay beside them.',
       );
     } catch (e) {
       console.warn('check-in opening: live agent unavailable, using scripted —', (e as Error).message);
