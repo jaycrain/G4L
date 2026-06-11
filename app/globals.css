@@ -206,7 +206,7 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .past-beats summary:hover .pb-title { color: var(--teal); }
 .past-beats details[open] .pb-title { color: var(--teal); }
 .pb-when { font-size: 0.78rem; color: var(--navy); opacity: 0.55; white-space: nowrap; }
-.pb-caret { color: var(--teal); font-weight: 700; line-height: 1; transition: transform 0.15s ease; }
+.pb-caret { color: var(--teal); font-weight: 700; font-size: 1.5rem; line-height: 0.8; align-self: center; transition: transform 0.15s ease; }
 .past-beats details[open] .pb-caret { transform: rotate(90deg); }
 .pb-content { margin: 0.5rem 0 0.4rem; color: var(--charcoal); white-space: pre-wrap; }
 .pb-answered { margin: 0; font-size: 0.85rem; color: var(--navy); opacity: 0.85; }
