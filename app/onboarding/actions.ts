@@ -46,15 +46,17 @@ export type TurnOutput = {
   state: ConvState;
   complete: boolean;
   crisis?: boolean;
-  memberId?: string;
-  errors?: string[];
 };
 
 /**
- * One conversational onboarding turn. Runs the Member Agent (live Claude or scripted), and
- * on completion persists the member (reusing the proven runOnboarding path) and returns the
- * memberId so the client can move to the IDQ. State is passed round-trip from the client for
- * this slice; production would persist a conversation session server-side.
+ * One conversational onboarding turn. Runs the Member Agent (live Claude or scripted) and saves the
+ * in-flight session every turn so a hang / refresh / crash can resume.
+ *
+ * IMPORTANT: reaching `complete: true` does NOT create the member. Completion is a *ready* state —
+ * the conversation has everything it needs and offers the IDQ handoff — but the member is only
+ * committed when they explicitly proceed (see `finalizeOnboardingAction`). This keeps the handoff
+ * reversible: a member can say "I'm not finished" and keep talking (e.g. add another Door) with
+ * nothing to undo, and the session survives a reload right up until they commit.
  */
 export async function onboardingTurn(input: TurnInput): Promise<TurnOutput> {
   const state = input.state ?? INITIAL_STATE;
@@ -73,28 +75,39 @@ export async function onboardingTurn(input: TurnInput): Promise<TurnOutput> {
       ? [{ role: 'agent', text: turn.reply }]
       : [...input.history, { role: 'member', text: input.memberMessage }, { role: 'agent', text: turn.reply }];
 
-  // Save progress every turn so a hang / refresh / crash can resume (best-effort — never fail a turn).
-  const persist = async () => {
-    if (!email || !input.token) return;
+  // Save progress every turn — including the completed/ready turn — so a refresh resumes exactly
+  // where they are, handoff and all. Best-effort; never fail a turn over a save.
+  if (email && input.token) {
     try {
       await saveOnboardingSession(db, email, input.token, turn.state, messages);
     } catch (e) {
       console.warn('onboarding session save failed (non-fatal):', (e as Error).message);
     }
-  };
-
-  if (!turn.complete) {
-    await persist();
-    return { reply: turn.reply, state: turn.state, complete: false, crisis: turn.crisis };
   }
 
-  const res = await runOnboarding(db, getProvider(), collectedToFields(input.ctx, turn.state.collected));
+  return { reply: turn.reply, state: turn.state, complete: turn.complete, crisis: turn.crisis };
+}
+
+export type FinalizeInput = { ctx: Ctx; state: ConvState; token: string };
+export type FinalizeOutput =
+  | { ok: true; memberId: string }
+  | { ok: false; crisis: true; message: string }
+  | { ok: false; crisis?: false; errors: string[] };
+
+/**
+ * Commit the conversation: persist the member (the proven runOnboarding path) and clear the
+ * in-flight session. Called only when the member explicitly proceeds to the IDQ — never on
+ * reaching the ready state. If it fails, the session is kept so nothing is lost.
+ */
+export async function finalizeOnboardingAction(input: FinalizeInput): Promise<FinalizeOutput> {
+  const db = (await getDb()) as unknown as Db;
+  const res = await runOnboarding(db, getProvider(), collectedToFields(input.ctx, input.state.collected));
   if (!res.ok) {
-    await persist(); // keep their progress so they can retry, not lose it
+    if ('crisis' in res && res.crisis) return { ok: false, crisis: true, message: res.message };
     const errors = 'errors' in res ? res.errors : ['Could not save your intake — please try again.'];
-    return { reply: turn.reply, state: turn.state, complete: false, errors };
+    return { ok: false, errors };
   }
-  // Done — the member is persisted; the in-flight session can go.
+  const email = input.ctx.email?.trim();
   if (email) {
     try {
       await clearOnboardingSession(db, email);
@@ -102,5 +115,5 @@ export async function onboardingTurn(input: TurnInput): Promise<TurnOutput> {
       /* non-fatal */
     }
   }
-  return { reply: turn.reply, state: turn.state, complete: true, memberId: res.memberId };
+  return { ok: true, memberId: res.memberId };
 }

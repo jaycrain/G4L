@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { AI_DISCLOSURE } from '../../lib/agent/governance.ts';
-import { onboardingTurn, loadOnboardingSessionAction } from './actions.ts';
+import { onboardingTurn, finalizeOnboardingAction, loadOnboardingSessionAction } from './actions.ts';
 import { setupAction } from '../account/setup/actions.ts';
 import PasswordField from '../password-field.tsx';
 import type { ConvState, ConvMessage } from '../../lib/agent/onboarding.ts';
@@ -20,7 +20,7 @@ export default function OnboardingChat() {
   const [input, setInput] = useState('');
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [next, setNext] = useState<string | null>(null); // set on completion; member clicks to proceed
+  const [ready, setReady] = useState(false); // conversation has everything; offer the handoff (reversible)
   const taRef = useRef<HTMLTextAreaElement>(null);
   const tokenRef = useRef<string>(''); // per-device onboarding resume token
 
@@ -63,6 +63,9 @@ export default function OnboardingChat() {
           tokenRef.current = token;
           setMessages(resumed.messages);
           setState(resumed.state);
+          // If they'd already reached the handoff, resume straight into the ready screen (still
+          // reversible — they can keep talking or proceed).
+          if (resumed.state.stage === 'complete') setReady(true);
           setPending(false);
           return;
         }
@@ -100,20 +103,9 @@ export default function OnboardingChat() {
       const r = await onboardingTurn({ ctx, state, history: prior, memberMessage: text, token: tokenRef.current });
       setMessages([...prior, { role: 'member', text }, { role: 'agent', text: r.reply }]);
       setState(r.state);
-      if (r.errors) setError(r.errors.join('; '));
-      if (r.complete && r.memberId) {
-        // Onboarding's done — the in-flight resume token can go.
-        try {
-          localStorage.removeItem('g4l_onboarding_token');
-        } catch {
-          /* no storage */
-        }
-        // Secure the account with the password captured at sign-up; fall back to the setup
-        // screen only if that didn't take. Do NOT auto-advance — let them read the summary
-        // and continue when ready ("Ready when you are.").
-        const saved = await setupAction(r.memberId, password);
-        setNext(saved.ok ? `/idq?member=${r.memberId}` : `/account/setup?member=${r.memberId}`);
-      }
+      // Reaching "complete" is a READY state, not a commit: show the handoff with the option to
+      // proceed or keep talking. The member is only created when they choose to proceed.
+      if (r.complete) setReady(true);
     } catch {
       // Roll back the optimistic message and restore the draft so they can simply resend.
       setMessages(prior);
@@ -122,6 +114,40 @@ export default function OnboardingChat() {
     } finally {
       setPending(false);
     }
+  }
+
+  // Commit the conversation and move to the IDQ. This is the only path that creates the member.
+  async function proceed() {
+    if (!state || pending) return;
+    setPending(true);
+    setError(null);
+    try {
+      const r = await finalizeOnboardingAction({ ctx, state, token: tokenRef.current });
+      if (!r.ok) {
+        setError('crisis' in r && r.crisis ? r.message : r.errors.join('; '));
+        setPending(false);
+        return;
+      }
+      // Committed — the in-flight resume token can go.
+      try {
+        localStorage.removeItem('g4l_onboarding_token');
+      } catch {
+        /* no storage */
+      }
+      // Secure the account with the password captured at sign-up; fall back to the setup screen.
+      const saved = await setupAction(r.memberId, password);
+      router.push(saved.ok ? `/idq?member=${r.memberId}` : `/account/setup?member=${r.memberId}`);
+    } catch {
+      setError('That didn’t go through — please try again.');
+      setPending(false);
+    }
+  }
+
+  // "I'm not finished" — drop back into the conversation. Nothing to undo (no member was created);
+  // the session is still saved, so they can add another Door and reach the handoff again.
+  function keepTalking() {
+    setReady(false);
+    setError(null);
   }
 
   if (phase === 'gate') {
@@ -157,10 +183,13 @@ export default function OnboardingChat() {
         {pending && <div className="typing">Thinking…</div>}
       </div>
       {error && <p className="error">{error}</p>}
-      {next ? (
+      {ready ? (
         <div className="chat-continue">
-          <button type="button" onClick={() => router.push(next)}>
-            {next.includes('/idq') ? 'Continue to the Identity Distance Questionnaire (IDQ) →' : 'Continue →'}
+          <button type="button" onClick={proceed} disabled={pending}>
+            {pending ? 'Saving…' : 'Continue to the Identity Distance Questionnaire (IDQ) →'}
+          </button>
+          <button type="button" className="btn-secondary" onClick={keepTalking} disabled={pending} style={{ marginTop: '0.5rem' }}>
+            I’m not finished — keep talking
           </button>
         </div>
       ) : (

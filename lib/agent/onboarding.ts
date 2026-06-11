@@ -27,7 +27,11 @@ export type Collected = {
   doors?: DoorSlug[]; // one or more
 };
 
-export type ConvState = { stage: Stage; collected: Collected };
+export type ConvState = {
+  stage: Stage;
+  collected: Collected;
+  doorTurns?: number; // how many exchanges the Door beat has had (gates completion — see resolveCompletion)
+};
 export type ConvMessage = { role: 'agent' | 'member'; text: string };
 export type Ctx = { name: string; email: string };
 
@@ -91,25 +95,31 @@ export function nextStage(c: Collected): Stage {
   return 'complete';
 }
 
-// ENGINE-LEVEL GUARANTEE against an abrupt Door ending. The live model may not complete onboarding
-// on the turn it FIRST captures a Door — the Door must have been present in the PRIOR state
-// (captured an earlier turn), which forces at least one more exchange to actually explore HOW it
-// opened. Prompt instructions alone proved unreliable here, so completion is gated in code.
+// The Door beat must actually breathe before onboarding can complete. It is the most important and
+// most vulnerable exchange, and the live model kept racing to the handoff (looping, then completing
+// on the first answer). Prompt instructions alone proved unreliable, so completion is gated in code:
+// the member must have had at least DOOR_MIN_TURNS exchanges within the Door beat — enough to explore
+// HOW the gap opened and whether more than one Door was involved — before a complete=true is honored.
+const DOOR_MIN_TURNS = 3;
+
 export function resolveCompletion(
   prior: Collected,
   collected: Collected,
   wantsComplete: boolean,
-): { complete: boolean; stage: Stage; doorJustCaptured: boolean } {
+  doorTurns = 0,
+): { complete: boolean; stage: Stage; exploringDoor: boolean } {
   const reqsMet =
     !!collected.athleticPast &&
     !!collected.identityNoun &&
     (collected.reclaimList?.length ?? 0) >= RECLAIM_LIST_MIN &&
     (collected.doors?.length ?? 0) >= 1;
-  const doorCapturedEarlier = (prior.doors?.length ?? 0) >= 1;
-  const doorJustCaptured = reqsMet && !doorCapturedEarlier;
-  const complete = wantsComplete && reqsMet && doorCapturedEarlier;
-  const stage: Stage = complete ? 'complete' : doorJustCaptured ? 'door' : nextStage(collected);
-  return { complete, stage, doorJustCaptured };
+  const exploredEnough = doorTurns >= DOOR_MIN_TURNS;
+  const complete = wantsComplete && reqsMet && exploredEnough;
+  // We hold in the Door beat whenever we have a Door but aren't completing — so the engine keeps the
+  // conversation there (widening to other Doors, then deepening) instead of stranding or rushing.
+  const exploringDoor = !complete && reqsMet;
+  const stage: Stage = complete ? 'complete' : exploringDoor ? 'door' : nextStage(collected);
+  return { complete, stage, exploringDoor };
 }
 
 // A safety-net question per stage — used if a live turn comes back with no text (tool-only),
@@ -331,23 +341,30 @@ async function liveTurn(
     }
   }
 
-  const { complete, stage, doorJustCaptured } = resolveCompletion(state.collected, collected, wantsComplete);
+  // Count exchanges spent in the Door beat (we were in the door stage, or just captured a Door).
+  const justGotDoor = (collected.doors?.length ?? 0) >= 1 && (state.collected.doors?.length ?? 0) === 0;
+  const engagingDoor = state.stage === 'door' || justGotDoor;
+  const doorTurns = (state.doorTurns ?? 0) + (engagingDoor ? 1 : 0);
+
+  const { complete, stage, exploringDoor } = resolveCompletion(state.collected, collected, wantsComplete, doorTurns);
 
   let finalReply: string;
   if (complete) {
     // Always the engine-owned handoff (names Door(s), identity, Reclaim List, "Ready when you
     // are.") — never the model's last turn, which can truncate or be skipped for the tool call.
     finalReply = handoff(collected.doors ?? [], collected.identityNoun);
-  } else if (doorJustCaptured) {
-    // Hold one more turn before we can complete. Use the model's text if it asked something;
-    // otherwise widen — the gap is usually more than one door, so the engine's own fallback
-    // checks for others rather than re-asking the opening question (which reads as a loop).
+  } else if (exploringDoor) {
+    // Stay in the Door beat. Use the model's text if it asked something; otherwise drive the beat
+    // forward ourselves — widen first (the gap is usually more than one Door), then deepen — never
+    // re-asking the opening Door question (that reads as the loop members hit before).
     const r = reply.trim();
-    finalReply = /\?/.test(r)
-      ? r
-      : `${r ? `${r}\n\n` : ''}That rarely opens all at once. Was that the whole of it, or did something else pile on around the same time?`;
+    const forward =
+      doorTurns <= 1
+        ? 'That rarely opens all at once. Was that the whole of it, or did something else pile on around the same time?'
+        : 'Stay with that a moment — when did you first feel it, and what did it quietly cost you?';
+    finalReply = /\?/.test(r) ? r : `${r ? `${r}\n\n` : ''}${forward}`;
   } else {
     finalReply = withForwardPrompt(reply, stage);
   }
-  return { reply: finalReply, state: { stage, collected }, complete };
+  return { reply: finalReply, state: { stage, collected, doorTurns }, complete };
 }

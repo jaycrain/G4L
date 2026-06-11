@@ -88,23 +88,26 @@ test('full scripted conversation collects every field, in natural case, and comp
   assert.equal(fields.identityNoun, 'Athlete');
 });
 
-test('completion is gated: the Door cannot complete on the turn it is first captured', () => {
+test('completion is gated: the Door beat must be explored before it can complete', () => {
   const full = { athleticPast: 'x', identityNoun: 'Runner', reclaimList: ['a', 'b', 'c'], doors: ['career_cliff'] } as Collected;
   const priorNoDoor = { athleticPast: 'x', identityNoun: 'Runner', reclaimList: ['a', 'b', 'c'] } as Collected;
 
-  // Door just captured this turn (prior had none) → cannot complete; held in the door stage.
-  const just = resolveCompletion(priorNoDoor, full, true);
+  // Door just captured, only one exchange so far → cannot complete; held in the door beat.
+  const just = resolveCompletion(priorNoDoor, full, true, 1);
   assert.equal(just.complete, false);
   assert.equal(just.stage, 'door');
-  assert.equal(just.doorJustCaptured, true);
+  assert.equal(just.exploringDoor, true);
 
-  // Door was present a turn ago → one more exchange happened → completion honored.
-  const later = resolveCompletion(full, full, true);
+  // Door present but still under the exploration minimum → still held, not complete.
+  assert.equal(resolveCompletion(full, full, true, 2).complete, false);
+
+  // Door explored enough (>= DOOR_MIN_TURNS) and the agent wants to finish → completion honored.
+  const later = resolveCompletion(full, full, true, 3);
   assert.equal(later.complete, true);
   assert.equal(later.stage, 'complete');
 
-  // The agent didn't request completion → not complete.
-  assert.equal(resolveCompletion(full, full, false).complete, false);
+  // Plenty of exploration, but the agent didn't request completion → not complete.
+  assert.equal(resolveCompletion(full, full, false, 5).complete, false);
 });
 
 test('withForwardPrompt never leaves a non-final turn without a question', () => {
