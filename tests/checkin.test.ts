@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { checkinOpening, checkinReply, proactiveTeaser, type CheckinContext } from '../lib/agent/checkin.ts';
+import { checkinOpening, checkinReply, proactiveTeaser, contextBlock, type CheckinContext } from '../lib/agent/checkin.ts';
 
 const base: CheckinContext = {
   displayName: 'Tom Miller',
@@ -38,6 +38,22 @@ test('scripted replies are reflective, brand-safe, and bridge wins toward people
   const vent = await checkinReply(base, [], 'feeling lonely and stuck this week');
   assert.ok(vent.reply.length > 0);
   assert.ok(clean(vent.reply));
+});
+
+test('contextBlock surfaces the full member data the MA can speak to', () => {
+  const block = contextBlock({
+    ...base,
+    dimensions: { physical: 14, self: 22, social: 18, outlook: 20 },
+    idScoreHistory: [60, 67],
+    idqAnswers: [{ dimension: 'physical', stem: 'Your body feels like it belongs to you.', score: 2 }],
+    reclaimDetail: [{ text: 'ride again', category: 'physical', state: 'closer' }],
+    beatsDone: 5,
+  });
+  assert.match(block, /Physical 14/); // dimension subscores
+  assert.match(block, /60 → 67/); // trend
+  assert.match(block, /Your body feels like it belongs to you\. — 2/); // a specific IDQ answer
+  assert.match(block, /ride again \[physical\] — closer/); // Reclaim item + progress
+  assert.match(block, /Beats worked so far: 5/);
 });
 
 test('proactiveTeaser is signal-driven', () => {

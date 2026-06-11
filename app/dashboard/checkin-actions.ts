@@ -5,7 +5,9 @@ import { getDashboard } from '../../lib/gateway/flow.ts';
 import { checkinOpening, checkinReply, type CheckinContext, type CheckinMessage } from '../../lib/agent/checkin.ts';
 import { loadConversation, appendMessages } from '../../lib/agent/conversation.ts';
 import { recentConsumedTitles } from '../../lib/bites/store.ts';
+import { getReclaimItems } from '../../lib/beats/store.ts';
 import { getGrinta } from '../../lib/grinta/index.ts';
+import { itemStem, dimensionForIndex } from '../../lib/idq/instrument.ts';
 import { authorizeMember } from '../authz.ts';
 import type { Db } from '../../lib/db/schema.ts';
 
@@ -14,15 +16,38 @@ import type { Db } from '../../lib/db/schema.ts';
 async function buildContext(db: Db, memberId: string): Promise<CheckinContext | null> {
   const dash = await getDashboard(db, memberId);
   if (!dash) return null;
-  const [grinta, consumedBites, profRows] = await Promise.all([
+  const [grinta, consumedBites, profRows, idqRows, reclaimItems, beatRows] = await Promise.all([
     getGrinta(db, memberId, dash.identityNoun),
     recentConsumedTitles(db, memberId),
     db.query<{ intake_athletic_past: string | null; intake_gap: string | null }>(
       'select intake_athletic_past, intake_gap from member_profile where member_id=$1',
       [memberId],
     ),
+    db.query<any>(
+      `select sequence_no, id_score, physical_score, self_score, social_score, outlook_score, responses
+       from idq_retake where member_id=$1 and cycle_indicator=1 order by sequence_no`,
+      [memberId],
+    ),
+    getReclaimItems(db, memberId),
+    db.query<{ n: number }>('select count(*)::int n from beat_completion where member_id=$1', [memberId]),
   ]);
   const prof = profRows.rows[0];
+
+  // Full IDQ data: dimensions + trend + the 24 answers (so the agent can speak to any of it).
+  const latest = idqRows.rows[idqRows.rows.length - 1];
+  const dimensions = latest
+    ? {
+        physical: Number(latest.physical_score),
+        self: Number(latest.self_score),
+        social: Number(latest.social_score),
+        outlook: Number(latest.outlook_score),
+      }
+    : null;
+  const idScoreHistory = idqRows.rows.map((r) => Math.round(Number(r.id_score)));
+  const responses: unknown = latest?.responses;
+  const idqAnswers = Array.isArray(responses)
+    ? responses.map((score: number, i: number) => ({ dimension: dimensionForIndex(i), stem: itemStem(i), score }))
+    : [];
   return {
     displayName: dash.displayName,
     identityNoun: dash.identityNoun,
@@ -40,6 +65,11 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
     pastSelf: prof?.intake_athletic_past ?? null,
     gapStory: prof?.intake_gap ?? null,
     identityParagraph: dash.identityParagraph ?? null,
+    dimensions,
+    idScoreHistory,
+    idqAnswers,
+    reclaimDetail: reclaimItems.map((r) => ({ text: r.text, category: r.category, state: r.state })),
+    beatsDone: beatRows.rows[0]?.n ?? 0,
   };
 }
 
