@@ -216,6 +216,7 @@ export default async function DashboardPage({
             <li key={i}>{item}</li>
           ))}
         </ul>
+        <p className="muted refine-hint">To Add or Refine talk directly to Your G4L Companion</p>
       </div>
 
       {/* GRINTA! Index — the daily process metric: how you're showing up. Moves daily; never alters the ID Score. */}
@@ -302,19 +303,13 @@ export default async function DashboardPage({
         )}
       </div>
 
-      <p className="muted">
-        {dash.doors.length > 0 ? (
-          <>
-            Your Door{dash.doors.length > 1 ? 's' : ''}:{' '}
-            <strong>{dash.doors.map((d) => d.displayName).join(', ')}</strong>
-            <span style={{ marginLeft: '0.85rem', opacity: 0.85 }}>
-              To add or refine these, just tell your Member Agent below.
-            </span>
-          </>
-        ) : (
-          <>Tell your Member Agent below how the gap opened, and it’ll help you name your Doors.</>
-        )}
-      </p>
+      {dash.doors.length > 0 && (
+        <p className="muted">
+          Your Door{dash.doors.length > 1 ? 's' : ''}:{' '}
+          <strong>{dash.doors.map((d) => d.displayName).join(', ')}</strong>
+        </p>
+      )}
+      <p className="muted refine-hint">To Add or Refine talk directly to Your G4L Companion</p>
 
       <AgentBubble memberId={memberId} teaser={teaser} />
     </>

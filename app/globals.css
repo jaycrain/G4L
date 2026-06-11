@@ -196,6 +196,9 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .fg-panels dt { font-weight: 700; color: var(--navy); margin-top: 0.75rem; }
 .fg-panels dd { margin: 0.1rem 0 0; color: var(--charcoal); }
 
+/* "To Add or Refine…" hint — its own line, set apart from the list/doors it follows */
+.refine-hint { margin-top: 0.8rem; font-size: 0.82rem; opacity: 0.75; }
+
 /* Past Beats — re-readable record of completed work */
 .past-beats { list-style: none; padding: 0; margin: 0.5rem 0 0; }
 .past-beats li { border-bottom: 1px solid var(--grey); }
