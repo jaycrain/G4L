@@ -196,6 +196,36 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .fg-panels dt { font-weight: 700; color: var(--navy); margin-top: 0.75rem; }
 .fg-panels dd { margin: 0.1rem 0 0; color: var(--charcoal); }
 
+/* ── Your G4L Playbook (secondary page) ─────────────────────────────────────── */
+.pb-back { display: inline-block; font-weight: 600; color: var(--teal); text-decoration: none; margin-bottom: 0.75rem; }
+.pb-title { font-size: 1.9rem; font-weight: 700; color: var(--navy); margin: 0 0 0.15rem; }
+.pb-sub { font-style: italic; color: var(--muted, #6B7680); margin: 0 0 0.6rem; }
+.pb-intro { color: var(--muted, #6B7680); max-width: 42rem; line-height: 1.55; margin: 0 0 1.2rem; }
+.pb-card { background: var(--white); border: 1px solid var(--grey); border-radius: 14px; padding: 1.1rem 1.25rem; margin-bottom: 1rem; }
+.pb-sec { font-size: 0.8rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--navy); margin: 0 0 0.15rem; }
+.pb-sec-d { font-size: 0.88rem; color: var(--muted, #6B7680); margin: 0 0 0.9rem; }
+.pb-entry { padding: 0.7rem 0; border-top: 1px solid var(--grey); }
+.pb-entry:first-of-type { border-top: none; padding-top: 0.2rem; }
+.pb-line { font-size: 1.02rem; line-height: 1.5; color: var(--charcoal); margin: 0 0 0.45rem; white-space: pre-wrap; }
+.pb-meta { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap; }
+.pb-chip { font-size: 0.72rem; font-weight: 600; color: var(--navy); background: var(--grey); padding: 0.15rem 0.6rem; border-radius: 20px; }
+.pb-chip.sci { color: #fff; background: var(--olive); }
+.pb-tools { display: flex; gap: 0.85rem; }
+.pb-tools button { background: none; border: none; padding: 0; margin: 0; font: inherit; font-size: 0.8rem; color: var(--muted, #6B7680); cursor: pointer; }
+.pb-tools button:hover { color: var(--teal); }
+.pb-proposed { background: #fff; border: 1.5px dashed var(--teal); border-radius: 12px; padding: 0.8rem 0.95rem; margin: 0.7rem 0; }
+.pb-prop-head { font-size: 0.78rem; font-weight: 700; color: var(--teal); margin-bottom: 0.4rem; }
+.pb-actions { display: flex; gap: 0.6rem; margin-top: 0.5rem; }
+.pb-btn { font: inherit; font-size: 0.85rem; font-weight: 600; border-radius: 20px; padding: 0.35rem 1rem; cursor: pointer; border: 1px solid var(--teal); }
+.pb-btn.keep { background: var(--teal); color: #fff; }
+.pb-btn.ghost { background: #fff; color: var(--muted, #6B7680); border-color: var(--grey); }
+.pb-btn:disabled { opacity: 0.5; cursor: default; }
+.pb-empty { font-size: 0.92rem; color: var(--muted, #6B7680); line-height: 1.55; margin: 0.2rem 0 0; font-style: italic; }
+.pb-edit textarea, .pb-add textarea { width: 100%; resize: vertical; font: inherit; padding: 0.5rem 0.65rem; border: 1px solid var(--grey); border-radius: 8px; }
+.pb-add { margin-top: 0.6rem; display: flex; flex-direction: column; gap: 0.5rem; align-items: flex-start; }
+.pb-add .pb-btn { align-self: flex-end; }
+.pb-foot { font-size: 0.85rem; color: var(--muted, #6B7680); line-height: 1.55; max-width: 42rem; margin-top: 0.5rem; }
+
 /* "To Add or Refine…" hint — its own line, set apart from the list/doors it follows */
 .refine-hint { margin-top: 0.8rem; font-size: 0.82rem; opacity: 0.75; }
 

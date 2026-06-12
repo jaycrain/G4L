@@ -125,6 +125,7 @@ export default async function DashboardPage({
         </Link>
         <span className="greeting-actions">
           <FieldGuide identityLine={heroLabel} memberId={memberId} autoOpen={!fgSeen} />
+          <Link href={`/playbook/${memberId}`} className="logout-link">Playbook</Link>
           <Link href="/account" className="logout-link">Account</Link>
           <form action={logoutAction} className="logout-form">
             <button type="submit" className="logout-link">Log out</button>
