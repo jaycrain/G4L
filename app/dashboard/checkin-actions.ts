@@ -13,6 +13,7 @@ import { loadConversation, appendMessages } from '../../lib/agent/conversation.t
 import { recentConsumedTitles } from '../../lib/bites/store.ts';
 import { getReclaimItems } from '../../lib/beats/store.ts';
 import { addReclaimItemForMember, addDoorForMember } from '../../lib/member/refine.ts';
+import { proposeEntry, playbookForAgent, isPlaybookSection } from '../../lib/playbook/store.ts';
 import { getGrinta } from '../../lib/grinta/index.ts';
 import { itemStem, dimensionForIndex } from '../../lib/idq/instrument.ts';
 import { authorizeMember } from '../authz.ts';
@@ -23,7 +24,7 @@ import type { Db } from '../../lib/db/schema.ts';
 async function buildContext(db: Db, memberId: string): Promise<CheckinContext | null> {
   const dash = await getDashboard(db, memberId);
   if (!dash) return null;
-  const [grinta, consumedBites, profRows, idqRows, reclaimItems, beatRows] = await Promise.all([
+  const [grinta, consumedBites, profRows, idqRows, reclaimItems, beatRows, playbook] = await Promise.all([
     getGrinta(db, memberId, dash.identityNoun),
     recentConsumedTitles(db, memberId),
     db.query<{ intake_athletic_past: string | null; intake_gap: string | null }>(
@@ -37,6 +38,7 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
     ),
     getReclaimItems(db, memberId),
     db.query<{ n: number }>('select count(*)::int n from beat_completion where member_id=$1', [memberId]),
+    playbookForAgent(db, memberId),
   ]);
   const prof = profRows.rows[0];
 
@@ -77,6 +79,8 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
     idqAnswers,
     reclaimDetail: reclaimItems.map((r) => ({ text: r.text, category: r.category, state: r.state })),
     beatsDone: beatRows.rows[0]?.n ?? 0,
+    playbookKeepers: playbook.keepers,
+    playbookNotes: playbook.recentNotes,
   };
 }
 
@@ -144,6 +148,24 @@ export async function sendCheckin(memberId: string, memberMessage: string): Prom
           return { ok: false, message: 'Not saved — that Door is already recorded for them.' };
         }
         return { ok: false, message: "Couldn't map that to one of the Fade Doors. Reflect what they said and ask a little more about what happened, then try again." };
+      }
+      if (name === 'propose_playbook_entry') {
+        const section = String(input.section ?? '');
+        const body = String(input.body ?? '').trim();
+        if (!isPlaybookSection(section) || section === 'journal' || !body) {
+          return { ok: false, message: 'Not saved — a valid section (what_works | why_works | own_words) and body are required.' };
+        }
+        const confirmed = input.confirmed === true;
+        const r = await proposeEntry(db, memberId, {
+          section,
+          body,
+          keep: confirmed,
+          source: { kind: 'checkpoint', label: typeof input.source_label === 'string' ? input.source_label : undefined },
+        });
+        mutated = true;
+        return confirmed
+          ? { ok: true, message: `Kept "${r.entry.body}" in their Playbook (${section}). Acknowledge it briefly and warmly.` }
+          : { ok: true, message: `Proposed "${r.entry.body}" to their Playbook (${section}) — it's waiting there for them to keep or dismiss. Mention it lightly; don't oversell.` };
       }
       return { ok: false, message: 'Unknown tool.' };
     };

@@ -31,6 +31,10 @@ export type CheckinContext = {
   idqAnswers?: { dimension: string; stem: string; score: number }[]; // the 24 answers, 1–5
   reclaimDetail?: { text: string; category: string; state: string }[]; // Reclaim items + progress
   beatsDone?: number; // Beats worked so far
+  // The Playbook (the two-way loop): kept keepers + recent journal notes. Used to help — never
+  // quoted back coldly or weaponized. Capped/summarized upstream.
+  playbookKeepers?: { section: string; body: string }[];
+  playbookNotes?: string[];
 };
 
 export type CheckinMessage = { role: 'agent' | 'member'; text: string };
@@ -74,6 +78,12 @@ export function contextBlock(c: CheckinContext): string {
     c.gapStory ? `How the gap opened, in their own words: "${c.gapStory}"` : null,
     c.identityParagraph ? `Their story, synthesized: ${c.identityParagraph}` : null,
     idq,
+    c.playbookKeepers && c.playbookKeepers.length
+      ? `Their Playbook — what's working for them (kept):\n${c.playbookKeepers.map((k) => `  • [${k.section}] ${k.body}`).join('\n')}`
+      : null,
+    c.playbookNotes && c.playbookNotes.length
+      ? `Recent Playbook journal entries (their own private writing):\n${c.playbookNotes.map((n) => `  • ${n}`).join('\n')}`
+      : null,
   ].filter(Boolean).join('\n');
 }
 
@@ -95,6 +105,9 @@ TENDING THEIR RECORDS (add-only). A member sometimes wasn't fully focused during
 HOW SAVING WORKS — READ CAREFULLY. The ONLY way anything is saved is by calling the tool. Writing "I've added that" or "it's on your list now" in your reply saves NOTHING — it is just text. So whenever you intend to add an item or a Door, you MUST emit the tool call (add_reclaim_item / add_door) in that turn. Reflect the wording back so they recognize it, and — once it is specific and observable — call the tool in the same turn; do not wait for a separate "yes" and do not promise to add it "later". After the tool returns success, then (and only then) acknowledge it's on their dashboard.
 Rules: only when they clearly want it, never unprompted; you can ADD only — you cannot delete or rename here, so if they want to remove or change something, acknowledge it warmly and say you'll note it, do not pretend to delete; keep it conversational, never data-entry.
 CRITICAL: never tell the member something was added / is on their list unless you actually called the tool and it returned success THIS turn. If you didn't call it, or it refused (fog, duplicate, no match), do NOT claim it was saved — instead do the next real thing (call the tool now, or ask them to sharpen the wording). Never describe a save you didn't make.
+
+THE PLAYBOOK (their kept record of what's working). When a genuine keeper surfaces in conversation — a reframe that's working for them, a piece of science that actually convinced THEM, or a line of theirs worth holding onto — you may add it with propose_playbook_entry (phrased tight, in their voice). Default is a PROPOSAL they confirm on their Playbook page; set confirmed=true only if they've clearly asked to keep/save it now. Mention at most one or two in a conversation — never turn the chat into a list — and you can ADD only. Same save rule as everything else: only say it's in their Playbook after the tool confirms it.
+Their Playbook (kept keepers + recent journal entries) appears in MEMBER CONTEXT. It is the member's most personal writing. Use it to understand and help them, and fold it in naturally — but NEVER quote their journal back coldly ("you wrote on Tuesday…"), never use it to pressure or guilt ("but you said you would…"), and only respond to a journal entry if they ask. It is theirs; hold it with care.
 
 MEMBER CONTEXT (facts — do not invent beyond these):
 ${contextBlock(c)}`;
@@ -152,6 +165,21 @@ const REFINE_TOOLS = [
       type: 'object',
       properties: { description: { type: 'string', description: 'how that part of the gap opened, in their words' } },
       required: ['description'],
+    },
+  },
+  {
+    name: 'propose_playbook_entry',
+    description:
+      "Add an entry to the member's Playbook — their kept record of what's working. Use it when a real keeper surfaces in conversation: a reframe/tactic that's clearly working for them (what_works), a piece of science that genuinely convinced THEM (why_works), or a line they said that's worth holding onto (in_words). Phrase it tight, in their voice. By default it's a PROPOSAL they confirm later; set confirmed=true only if they've clearly asked to save/keep it now.",
+    input_schema: {
+      type: 'object',
+      properties: {
+        section: { type: 'string', enum: ['what_works', 'why_works', 'own_words'], description: 'which section it belongs in' },
+        body: { type: 'string', description: 'the keeper, tight and in the member’s own voice' },
+        source_label: { type: 'string', description: 'optional short provenance chip, e.g. "Rewire · Food as fuel"' },
+        confirmed: { type: 'boolean', description: 'true only if the member explicitly asked to keep/save it now' },
+      },
+      required: ['section', 'body'],
     },
   },
 ];

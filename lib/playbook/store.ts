@@ -60,9 +60,10 @@ async function nextSortOrder(db: Db, memberId: string, section: PlaybookSection)
 export async function proposeEntry(
   db: Db,
   memberId: string,
-  input: { section: PlaybookSection; body: string; source?: PlaybookSource },
+  input: { section: PlaybookSection; body: string; source?: PlaybookSource; keep?: boolean },
 ): Promise<{ created: boolean; entry: PlaybookEntry }> {
   const body = input.body.trim();
+  const state: PlaybookState = input.keep ? 'kept' : 'proposed';
   const dupe = (
     await db.query<any>(
       `select * from playbook_entry
@@ -71,13 +72,22 @@ export async function proposeEntry(
       [memberId, input.section, body],
     )
   ).rows[0];
-  if (dupe) return { created: false, entry: rowToEntry(dupe) };
+  if (dupe) {
+    // Verbal keep of an already-proposed line: promote it rather than duplicate.
+    if (input.keep && dupe.state === 'proposed') {
+      const upd = (
+        await db.query<any>('update playbook_entry set state=$2, updated_at=now() where id=$1 returning *', [dupe.id, 'kept'])
+      ).rows[0];
+      return { created: false, entry: rowToEntry(upd) };
+    }
+    return { created: false, entry: rowToEntry(dupe) };
+  }
 
   const sort = await nextSortOrder(db, memberId, input.section);
   const { rows } = await db.query<any>(
     `insert into playbook_entry (member_id, section, body, authorship, state, source_kind, source_ref, source_label, sort_order)
-     values ($1,$2,$3,'gathered','proposed',$4,$5,$6,$7) returning *`,
-    [memberId, input.section, body, input.source?.kind ?? null, input.source?.ref ?? null, input.source?.label ?? null, sort],
+     values ($1,$2,$3,'gathered',$4,$5,$6,$7,$8) returning *`,
+    [memberId, input.section, body, state, input.source?.kind ?? null, input.source?.ref ?? null, input.source?.label ?? null, sort],
   );
   return { created: true, entry: rowToEntry(rows[0]) };
 }

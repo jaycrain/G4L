@@ -43,6 +43,22 @@ test('proposed keepers land as proposed/gathered; de-dupes the same line', async
   assert.equal(again.entry.id, a.entry.id);
 });
 
+test('propose with keep lands kept; a verbal keep promotes an existing proposal', async () => {
+  const { db, memberId } = await seed();
+  // explicit keep on first propose → kept immediately
+  const direct = await proposeEntry(db, memberId, { section: 'what_works', body: 'Ride before work sets the day.', keep: true });
+  assert.equal(direct.entry.state, 'kept');
+
+  // propose (proposed), then verbal keep of the same line promotes it (no duplicate)
+  const prop = await proposeEntry(db, memberId, { section: 'own_words', body: 'The return is the story.' });
+  assert.equal(prop.entry.state, 'proposed');
+  const promote = await proposeEntry(db, memberId, { section: 'own_words', body: 'the return is the story.', keep: true });
+  assert.equal(promote.created, false);
+  assert.equal(promote.entry.id, prop.entry.id);
+  assert.equal(promote.entry.state, 'kept');
+  assert.equal((await listPlaybook(db, memberId)).filter((e) => e.section === 'own_words').length, 1);
+});
+
 test('free-add lands kept/authored in the journal and is visible immediately', async () => {
   const { db, memberId } = await seed();
   const note = await addOwnEntry(db, memberId, 'Rode Brainard at dawn. Felt like myself for an hour.');
