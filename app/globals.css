@@ -196,6 +196,18 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .fg-panels dt { font-weight: 700; color: var(--navy); margin-top: 0.75rem; }
 .fg-panels dd { margin: 0.1rem 0 0; color: var(--charcoal); }
 
+/* Confidentiality footer — evaluation build; appears on every screen (root layout) */
+.confidential-footer {
+  max-width: 880px;
+  margin: 2.5rem auto 0;
+  padding: 1rem 1.25rem calc(1rem + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--grey);
+  font-size: 0.72rem;
+  line-height: 1.5;
+  color: var(--muted, #6B7680);
+  text-align: center;
+}
+
 /* ── Your G4L Playbook (secondary page) ─────────────────────────────────────── */
 .pb-back { display: inline-block; font-weight: 600; color: var(--teal); text-decoration: none; margin-bottom: 0.75rem; }
 .pb-page-title { font-size: 1.9rem; font-weight: 700; color: var(--navy); margin: 0 0 0.15rem; }
