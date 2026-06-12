@@ -11,6 +11,7 @@ import {
   pinEntryAction,
   editEntryAction,
   removeEntryAction,
+  gatherFromHistoryAction,
 } from './actions.ts';
 
 type SectionMeta = { key: PlaybookSection; title: string; sub: string; empty: string };
@@ -47,12 +48,39 @@ const SECTIONS: SectionMeta[] = [
   },
 ];
 
-export default function PlaybookView({ memberId, initial }: { memberId: string; initial: PlaybookEntry[] }) {
+export default function PlaybookView({
+  memberId,
+  initial,
+  hasHistory,
+}: {
+  memberId: string;
+  initial: PlaybookEntry[];
+  hasHistory: boolean;
+}) {
   const [entries, setEntries] = useState<PlaybookEntry[]>(initial);
   const [busy, setBusy] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState('');
   const [note, setNote] = useState('');
+  const [gathering, setGathering] = useState(false);
+  const [gatherMsg, setGatherMsg] = useState<string | null>(null);
+
+  async function gather() {
+    if (gathering || busy) return;
+    setGathering(true);
+    setGatherMsg(null);
+    try {
+      const r = await gatherFromHistoryAction(memberId);
+      await refresh();
+      setGatherMsg(
+        r.proposed > 0
+          ? `Gathered ${r.proposed} from your work — review them below and keep what rings true.`
+          : 'Nothing new to gather yet — keep working your Beats and there’ll be more to pull from.',
+      );
+    } finally {
+      setGathering(false);
+    }
+  }
 
   async function refresh() {
     setEntries(await loadPlaybookAction(memberId));
@@ -152,6 +180,16 @@ export default function PlaybookView({ memberId, initial }: { memberId: string; 
         your own best lines. Gathered by your companion, kept by you. Reach for it whenever you need it.
       </p>
 
+      {gathering ? (
+        <div className="pb-gather"><span className="typing">Gathering from your work…</span></div>
+      ) : entries.length === 0 && hasHistory ? (
+        <div className="pb-gather-cta">
+          <p>You’ve already built real material. Let’s gather it into your Playbook.</p>
+          <button type="button" className="pb-btn keep" onClick={gather}>Gather from your work →</button>
+        </div>
+      ) : null}
+      {gatherMsg && <p className="pb-gather-msg">{gatherMsg}</p>}
+
       {SECTIONS.map((meta) => {
         const all = inSection(meta.key);
         const kept = all.filter((e) => e.state === 'kept');
@@ -184,6 +222,12 @@ export default function PlaybookView({ memberId, initial }: { memberId: string; 
           </section>
         );
       })}
+
+      {entries.length > 0 && hasHistory && !gathering && (
+        <p className="pb-gather-link">
+          <button type="button" className="pb-linkbtn" onClick={gather}>Gather from recent work →</button>
+        </p>
+      )}
 
       <p className="pb-foot">
         Your companion gathers these as you go and flags keepers — you decide what stays. Edit, pin, or remove anything.

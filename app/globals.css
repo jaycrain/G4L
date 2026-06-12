@@ -225,6 +225,12 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .pb-add { margin-top: 0.6rem; display: flex; flex-direction: column; gap: 0.5rem; align-items: flex-start; }
 .pb-add .pb-btn { align-self: flex-end; }
 .pb-foot { font-size: 0.85rem; color: var(--muted, #6B7680); line-height: 1.55; max-width: 42rem; margin-top: 0.5rem; }
+.pb-gather-cta { background: rgba(59,148,149,0.07); border: 1px solid var(--teal); border-radius: 14px; padding: 1.1rem 1.25rem; margin-bottom: 1rem; }
+.pb-gather-cta p { margin: 0 0 0.7rem; color: var(--navy); font-weight: 600; }
+.pb-gather { margin-bottom: 1rem; }
+.pb-gather-msg { font-size: 0.9rem; color: var(--teal); font-weight: 600; margin: 0 0 1rem; }
+.pb-gather-link { margin: 0.4rem 0 0.6rem; }
+.pb-linkbtn { background: none; border: none; padding: 0; font: inherit; font-size: 0.85rem; font-weight: 600; color: var(--teal); cursor: pointer; }
 
 /* "To Add or Refine…" hint — its own line, set apart from the list/doors it follows */
 .refine-hint { margin-top: 0.8rem; font-size: 0.82rem; opacity: 0.75; }
