@@ -15,6 +15,27 @@ empty on day one.
 
 ---
 
+## Nomenclature (locked)
+
+**Two layers, not three:**
+- **Companion Ceremony** — the category. **`CeremonySurface`** is the stage that renders any ceremony.
+- **The named ceremonies** — **The Threshold · Clip-Back-In · Checkpoint · Crisis.** Each has a
+  plain-language **trigger**, not a third noun: Threshold → first dashboard arrival; Clip-Back-In → a
+  new Door / new cycle (the Loop); Checkpoint → finishing an R; Crisis → a distress disclosure.
+
+**"Crossing" is a metaphor, not a term.** The Threshold genuinely *is* a crossing — keep that in prose
+— but it is not a taxonomy tier. Don't introduce "crossing" (or any third noun for "the trigger").
+
+**Checkpoint is ONE concept.** The Checkpoint *ceremony* and the Checkpoint *Beat* (`RWR-CHK-01` Rewire
+Checkpoint, Rebuild Checkpoint, already in the registry) are the same thing: the Beat, when served,
+plays on the `CeremonySurface` and runs the probe-and-harvest. Never fork a second "Checkpoint."
+Likewise **Clip-Back-In** extends the brand verb "clip in" — continuity, not a new coinage.
+
+The Threshold is singular — crossed once, ever. The Loop gets the **Clip-Back-In**, never "another
+Threshold."
+
+---
+
 ## Locked decisions (Q1–Q6)
 
 **Q1 — Harvest at finalize, from the real transcript.** When onboarding completes
