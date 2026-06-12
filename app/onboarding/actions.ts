@@ -17,6 +17,8 @@ import {
   clearOnboardingSession,
   type OnboardingSession,
 } from '../../lib/agent/onboarding-session.ts';
+import { curateKeepersFromOnboarding } from '../../lib/agent/onboarding-harvest.ts';
+import { proposeEntry } from '../../lib/playbook/store.ts';
 import type { Db } from '../../lib/db/schema.ts';
 
 export type TurnInput = {
@@ -108,6 +110,22 @@ export async function finalizeOnboardingAction(input: FinalizeInput): Promise<Fi
     return { ok: false, errors };
   }
   const email = input.ctx.email?.trim();
+  // Harvest the onboarding transcript into the Playbook's first pages — BEFORE we clear the session
+  // (it's the only place the real conversation lives). Best-effort: a harvest hiccup never fails the
+  // commit. Proposals only — the member resolves them on the Playbook / sees them at the Threshold.
+  if (email && input.token) {
+    try {
+      const session = await loadOnboardingSession(db, email, input.token);
+      if (session?.messages?.length) {
+        const keepers = await curateKeepersFromOnboarding(input.state.collected.identityNoun ?? null, session.messages);
+        for (const k of keepers) {
+          await proposeEntry(db, res.memberId, { section: k.section, body: k.body, source: { kind: 'checkpoint', label: k.sourceLabel } });
+        }
+      }
+    } catch (e) {
+      console.warn('onboarding harvest failed (non-fatal):', (e as Error).message);
+    }
+  }
   if (email) {
     try {
       await clearOnboardingSession(db, email);
