@@ -15,7 +15,7 @@ const sqlFile = (rel: string) => readFileSync(join(process.cwd(), 'supabase', re
 
 // Each migration with a sentinel so we can apply only the ones a database is missing.
 // A string sentinel is a table name; a {table,column} sentinel is a column (for ALTERs).
-type Sentinel = string | { table: string; column: string };
+type Sentinel = string | { table: string; column: string } | { sql: string };
 const MIGRATIONS: Array<{ file: string; sentinel: Sentinel }> = [
   { file: 'migrations/0001_gateway_schema.sql', sentinel: 'door' },
   { file: 'migrations/0002_assets.sql', sentinel: 'asset_completion' },
@@ -35,6 +35,12 @@ const MIGRATIONS: Array<{ file: string; sentinel: Sentinel }> = [
   { file: 'migrations/0016_onboarding_session.sql', sentinel: 'onboarding_session' },
   { file: 'migrations/0017_playbook.sql', sentinel: 'playbook_entry' },
   { file: 'migrations/0018_threshold.sql', sentinel: { table: 'member_profile', column: 'threshold_crossed_at' } },
+  {
+    file: 'migrations/0019_reclaim_life_category.sql',
+    sentinel: {
+      sql: "select exists (select 1 from pg_constraint where conname='reclaim_item_category_check' and pg_get_constraintdef(oid) like '%life%') as e",
+    },
+  },
 ];
 export const SEED_SQL = () => sqlFile('seed/0001_reference_data.sql');
 
@@ -61,7 +67,12 @@ async function columnExists(db: Db, table: string, column: string): Promise<bool
 }
 
 async function isApplied(db: Db, s: Sentinel): Promise<boolean> {
-  return typeof s === 'string' ? tableExists(db, s) : columnExists(db, s.table, s.column);
+  if (typeof s === 'string') return tableExists(db, s);
+  if ('sql' in s) {
+    const { rows } = await db.query<{ e: boolean }>(s.sql);
+    return Boolean(rows[0]?.e);
+  }
+  return columnExists(db, s.table, s.column);
 }
 
 /** Apply any not-yet-applied migrations, then (idempotently) re-seed. Safe on every boot. */

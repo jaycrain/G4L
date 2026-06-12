@@ -6,6 +6,13 @@
 import type { Category } from './registry.ts';
 
 const PATTERNS: { category: Exclude<Category, 'self'>; re: RegExp }[] = [
+  // 'life' first — clear money/venture signals win even if the text also brushes a dimension keyword
+  // (e.g. "raise $250k for the Movement" must be life, not physical's "movement"). Agent-inferred is
+  // the primary path; this heuristic is the conservative fallback for the dashboard add.
+  {
+    category: 'life',
+    re: /(\$|\b(\d+k|\d{1,3}(,\d{3})+)\b|raise(s|d)? (capital|money|funds|\$)|fundrais|\bsavings?\b|\brevenue\b|\bprofit\b|\binvest(ing|ment)?\b|\bretirement\b|\bmortgage\b|\bnet worth\b|\bincome\b|\bdebt\b|start ?up\b|\blaunch (a|my|the)\b|\bthe round\b|\bcharter member)/i,
+  },
   {
     category: 'physical',
     re: /\b(rid(e|ing)|run|walk|hik|bike|cycl|gym|lift|strength|fit|weight|sleep|eat|food|fuel|nutri|trail|climb|swim|5k|10k|race|mile|stair|energy|strong|movement|workout|body|muscle|breath)\w*/i,

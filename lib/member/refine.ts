@@ -6,6 +6,7 @@
 import type { Db } from '../db/schema.ts';
 import { addReclaimItems, getReclaimItems } from '../beats/store.ts';
 import { inferCategory, isVagueReclaim } from '../beats/category.ts';
+import { isCategory, type Category } from '../beats/registry.ts';
 import { DOORS, matchDoors, isDoorSlug, type DoorSlug } from '../doors.ts';
 
 const doorDisplay = (slug: DoorSlug) => DOORS.find((d) => d.slug === slug)?.displayName ?? slug;
@@ -19,7 +20,12 @@ export type AddReclaimResult =
  * can actually bind work to it, infers the IDQ-dimension category, and appends (never reorders or
  * drops existing items, so the ≥3 contract can't be violated by an add).
  */
-export async function addReclaimItemForMember(db: Db, memberId: string, rawText: string): Promise<AddReclaimResult> {
+export async function addReclaimItemForMember(
+  db: Db,
+  memberId: string,
+  rawText: string,
+  agentCategory?: string, // the MA's inferred category (incl. 'life'); falls back to the heuristic
+): Promise<AddReclaimResult> {
   const text = (rawText ?? '').trim();
   if (!text) return { ok: false, reason: 'empty' };
   if (isVagueReclaim(text)) return { ok: false, reason: 'vague' };
@@ -27,7 +33,7 @@ export async function addReclaimItemForMember(db: Db, memberId: string, rawText:
   if (existing.some((i) => i.text.trim().toLowerCase() === text.toLowerCase())) {
     return { ok: false, reason: 'duplicate' };
   }
-  const category = inferCategory(text);
+  const category: Category = isCategory(agentCategory) ? agentCategory : inferCategory(text);
   await addReclaimItems(db, memberId, [{ text, category }]);
   return { ok: true, text, category };
 }

@@ -75,6 +75,39 @@ export async function addReclaimItems(
   }
 }
 
+/**
+ * Mark a Reclaim item reclaimed by a member's text reference — the companion-only path (life items'
+ * only advancement; also honors a member's clear "it's done" for any item). Sets state=reclaimed and
+ * records a marker beat_completion so it counts as program activity / Reach like a real close — that
+ * marker (close_response='self_marked') is hidden from Past Beats. Idempotent. See docs/reclaim-anygoal.md.
+ */
+export async function markReclaimReclaimedByText(
+  db: Db,
+  memberId: string,
+  query: string,
+): Promise<{ ok: boolean; text?: string; reason?: 'nomatch' | 'empty' }> {
+  const q = (query ?? '').trim().toLowerCase();
+  if (!q) return { ok: false, reason: 'empty' };
+  const rows = (
+    await db.query<{ id: string; text: string; state: string }>(
+      'select id, text, state from reclaim_item where member_id=$1 order by sort_order, created_at',
+      [memberId],
+    )
+  ).rows;
+  const norm = (s: string) => s.trim().toLowerCase();
+  const match =
+    rows.find((r) => norm(r.text) === q) ?? rows.find((r) => norm(r.text).includes(q) || q.includes(norm(r.text)));
+  if (!match) return { ok: false, reason: 'nomatch' };
+  if (match.state === 'reclaimed') return { ok: true, text: match.text }; // idempotent
+  await db.query("update reclaim_item set state='reclaimed', reclaimed_at=now() where member_id=$1 and id=$2", [memberId, match.id]);
+  await db.query(
+    `insert into beat_completion (member_id, beat_id, close_type, close_response, reclaim_item_id, feeds_consistency, feeds_recovery, feeds_reach)
+     values ($1,'SELF-MARK','goal','self_marked',$2,true,false,true)`,
+    [memberId, match.id],
+  );
+  return { ok: true, text: match.text };
+}
+
 export async function assembleState(db: Db, memberId: string): Promise<MemberBeatState> {
   const reclaimItems = await getReclaimItems(db, memberId);
 
@@ -375,7 +408,7 @@ export async function getBeatHistory(db: Db, memberId: string, limit = 30): Prom
     await db.query<{ beat_id: string; close_type: CloseType; close_response: string | null; completed_at: unknown }>(
       `select beat_id, close_type, close_response, completed_at
        from beat_completion
-       where member_id=$1 and close_response is distinct from 'onboarding'
+       where member_id=$1 and coalesce(close_response,'') not in ('onboarding','self_marked')
        order by completed_at desc limit $2`,
       [memberId, limit],
     )

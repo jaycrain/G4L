@@ -13,6 +13,7 @@ import { loadConversation, appendMessages } from '../../lib/agent/conversation.t
 import { recentConsumedTitles } from '../../lib/bites/store.ts';
 import { getReclaimItems } from '../../lib/beats/store.ts';
 import { addReclaimItemForMember, addDoorForMember } from '../../lib/member/refine.ts';
+import { markReclaimReclaimedByText } from '../../lib/beats/store.ts';
 import { proposeEntry, playbookForAgent, isPlaybookSection } from '../../lib/playbook/store.ts';
 import { getGrinta } from '../../lib/grinta/index.ts';
 import { itemStem, dimensionForIndex } from '../../lib/idq/instrument.ts';
@@ -125,7 +126,7 @@ export async function sendCheckin(memberId: string, memberMessage: string): Prom
     let mutated = false; // a successful tool write → signal the client to refresh the dashboard panels
     const executor: ToolExecutor = async (name, input) => {
       if (name === 'add_reclaim_item') {
-        const res = await addReclaimItemForMember(db, memberId, String(input.text ?? ''));
+        const res = await addReclaimItemForMember(db, memberId, String(input.text ?? ''), typeof input.category === 'string' ? input.category : undefined);
         if (res.ok) {
           mutated = true;
           return { ok: true, message: `Saved "${res.text}" to their Reclaim List (category: ${res.category}). It now shows on their dashboard and the Beat engine can work toward it — acknowledge it briefly and warmly.` };
@@ -148,6 +149,17 @@ export async function sendCheckin(memberId: string, memberMessage: string): Prom
           return { ok: false, message: 'Not saved — that Door is already recorded for them.' };
         }
         return { ok: false, message: "Couldn't map that to one of the Fade Doors. Reflect what they said and ask a little more about what happened, then try again." };
+      }
+      if (name === 'mark_reclaim_reclaimed') {
+        const res = await markReclaimReclaimedByText(db, memberId, String(input.item ?? ''));
+        if (res.ok) {
+          mutated = true;
+          return { ok: true, message: `Marked "${res.text}" reclaimed — it now shows as won on their Journey and Reclaim List. Acknowledge it warmly; this is a real milestone.` };
+        }
+        if (res.reason === 'nomatch') {
+          return { ok: false, message: "Couldn't find that item on their Reclaim List. Reflect what they said and ask which item they mean, then try again." };
+        }
+        return { ok: false, message: 'Not marked — no item reference was provided.' };
       }
       if (name === 'propose_playbook_entry') {
         const section = String(input.section ?? '');

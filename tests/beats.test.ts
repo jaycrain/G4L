@@ -2,13 +2,13 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { PGlite } from '@electric-sql/pglite';
 import { applySchema, type Db } from '../lib/db/schema.ts';
-import { allBeats, beatById, goalCategory } from '../lib/beats/registry.ts';
+import { allBeats, beatById, goalCategory, isCoachedCategory } from '../lib/beats/registry.ts';
 import { predicateMet, isReady } from '../lib/beats/readiness.ts';
 import { bindGoalItem, effectiveCloseType, renderClose } from '../lib/beats/serves.ts';
 import { resolveClose } from '../lib/beats/close.ts';
 import { selectNextBeat, rankBeats } from '../lib/beats/select.ts';
 import { inferCategory, isVagueReclaim } from '../lib/beats/category.ts';
-import { addReclaimItems, assembleState, serveBeat, completeBeat, getReclaimItems, getJourney, getBeatHistory, dailyHardiness } from '../lib/beats/store.ts';
+import { addReclaimItems, assembleState, serveBeat, completeBeat, getReclaimItems, getJourney, getBeatHistory, dailyHardiness, markReclaimReclaimedByText } from '../lib/beats/store.ts';
 import { getDashboard, submitIdq } from '../lib/gateway/flow.ts';
 import { getGrinta } from '../lib/grinta/index.ts';
 import type { MemberBeatState, ReclaimItem } from '../lib/beats/types.ts';
@@ -112,6 +112,57 @@ test('inferCategory maps to an IDQ dimension, defaulting to self', () => {
   assert.equal(inferCategory('call my brother every week'), 'social');
   assert.equal(inferCategory('feel hopeful about the next chapter'), 'outlook');
   assert.equal(inferCategory('recognize myself in the mirror'), 'self');
+});
+
+test('any-goal: life category — money/venture goals route to life (and never coach)', () => {
+  assert.equal(inferCategory('raise $250k for the Movement'), 'life'); // "Movement" must NOT win as physical
+  assert.equal(inferCategory('get $10k a month into savings'), 'life');
+  assert.equal(inferCategory('build the business to profit'), 'life');
+  // a genuine self goal that just doesn't keyword-match stays coached (default self), never life
+  assert.equal(inferCategory('show up as myself in hard rooms'), 'self');
+  // coached vs witnessed
+  assert.equal(isCoachedCategory('physical'), true);
+  assert.equal(isCoachedCategory('self'), true);
+  assert.equal(isCoachedCategory('life'), false);
+  // a life item never binds to a goal Beat (even the only open item in front of a physical goal)
+  const goal = beatById('RWR-FOO-02')!;
+  const lifeOnly = [item({ id: 'L1', category: 'life', text: 'raise $250k' })];
+  assert.equal(bindGoalItem(goal, lifeOnly), null);
+});
+
+test('any-goal: companion marks a life item reclaimed — Journey ticks, not shown in Past Beats', async () => {
+  const db = new PGlite() as unknown as Db;
+  await applySchema(db);
+  const memberId = (
+    await db.query<{ member_id: string }>(
+      `insert into member_profile (display_name, email) values ('Jay','j@x.com') returning member_id`,
+    )
+  ).rows[0]!.member_id;
+  await addReclaimItems(db, memberId, [
+    { text: 'ride before work', category: 'physical' },
+    { text: 'raise $250k for the Movement', category: 'life' },
+  ]);
+
+  // no match → graceful
+  const miss = await markReclaimReclaimedByText(db, memberId, 'climb everest');
+  assert.equal(miss.ok, false);
+  if (!miss.ok) assert.equal(miss.reason, 'nomatch');
+
+  // mark the life item via a loose reference
+  const r = await markReclaimReclaimedByText(db, memberId, 'raise $250k');
+  assert.equal(r.ok, true);
+  if (r.ok) assert.equal(r.text, 'raise $250k for the Movement');
+
+  const items = await getReclaimItems(db, memberId);
+  assert.equal(items.find((i) => i.category === 'life')!.state, 'reclaimed');
+
+  const journey = await getJourney(db, memberId);
+  assert.equal(journey.reclaim.reclaimed, 1); // life completion counts toward the Journey
+  assert.equal(journey.reclaim.total, 2);
+
+  // the marker completion must NOT pollute Past Beats
+  const past = await getBeatHistory(db, memberId);
+  assert.ok(!past.some((p) => p.beatId === 'SELF-MARK'));
 });
 
 // ---- DB-backed slice proof (Tom) ------------------------------------------------------

@@ -9,7 +9,13 @@ export type CloseType = 'goal' | 'rep' | 'reflect';
 export type Dose = 'light' | 'medium' | 'heavy';
 export type Rhythm = 'daily' | 'weekly' | 'once';
 export type Channel = 'in_app' | 'sms' | 'either';
-export type Category = 'physical' | 'self' | 'social' | 'outlook';
+// physical|self|social|outlook are the four IDQ dimensions (coached by Beats). 'life' is the fifth,
+// INTERNAL category for any goal that doesn't map to a dimension (e.g. "raise $250k") — tracked and
+// witnessed, never coached. Invisible to the member. See docs/reclaim-anygoal.md.
+export type Category = 'physical' | 'self' | 'social' | 'outlook' | 'life';
+
+/** Coached categories bind to goal Beats; 'life' does not (no content coaches it). */
+export const isCoachedCategory = (c: Category): boolean => c !== 'life';
 
 export type Beat = {
   beat_id: string;
@@ -43,7 +49,7 @@ export function beatById(id: string): Beat | undefined {
 }
 
 // The four reclaim categories (= IDQ dimensions). "any" on a Beat matches broadly.
-export const CATEGORIES: readonly Category[] = ['physical', 'self', 'social', 'outlook'];
+export const CATEGORIES: readonly Category[] = ['physical', 'self', 'social', 'outlook', 'life'];
 export function isCategory(v: unknown): v is Category {
   return typeof v === 'string' && (CATEGORIES as readonly string[]).includes(v);
 }
