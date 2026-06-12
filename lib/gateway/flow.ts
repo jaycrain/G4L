@@ -172,7 +172,8 @@ export type Dashboard = {
   identityParagraph: string | null;
   door: { slug: string; displayName: string } | null; // primary (back-compat single-value reads)
   doors: DoorRef[]; // the full set, primary first
-  reclaimList: string[];
+  reclaimList: string[]; // text only (back-compat for the agent context + legacy reads)
+  reclaimItems: { text: string; reclaimed: boolean }[]; // same items, with state — for the panel's check
   score: (ScorePresentation & { dimensions: DimensionScores }) | null;
   currentFocus: { dimension: Dimension; label: string } | null;
 };
@@ -197,13 +198,15 @@ export async function getDashboard(db: Db, memberId: string): Promise<Dashboard 
 
   // Reclaim List now lives as categorized rows (reclaim_item); fall back to the legacy jsonb.
   const riRows = (
-    await db.query<{ text: string }>('select text from reclaim_item where member_id=$1 order by sort_order, created_at', [memberId])
+    await db.query<{ text: string; state: string }>(
+      'select text, state from reclaim_item where member_id=$1 order by sort_order, created_at',
+      [memberId],
+    )
   ).rows;
-  const reclaimList = riRows.length
-    ? riRows.map((r) => r.text)
-    : Array.isArray(m.reclaim_list)
-      ? m.reclaim_list
-      : [];
+  const reclaimItems = riRows.length
+    ? riRows.map((r) => ({ text: r.text, reclaimed: r.state === 'reclaimed' }))
+    : (Array.isArray(m.reclaim_list) ? (m.reclaim_list as string[]) : []).map((text) => ({ text, reclaimed: false }));
+  const reclaimList = reclaimItems.map((i) => i.text);
 
   const latest = (await db.query<any>(
     `select id_score, physical_score, self_score, social_score, outlook_score,
@@ -234,6 +237,7 @@ export async function getDashboard(db: Db, memberId: string): Promise<Dashboard 
     door: primary ? { slug: primary.slug, displayName: primary.displayName } : null,
     doors,
     reclaimList,
+    reclaimItems,
     score,
     currentFocus: focus,
   };

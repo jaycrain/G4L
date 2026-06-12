@@ -231,8 +231,13 @@ export default async function DashboardPage({
       <div className="card">
         <h3>Reclaim List</h3>
         <ul className="reclaim">
-          {dash.reclaimList.map((item, i) => (
-            <li key={i}>{item}</li>
+          {dash.reclaimItems.map((item, i) => (
+            <li key={i} className={item.reclaimed ? 'reclaimed' : undefined}>
+              {item.reclaimed && (
+                <span className="reclaim-check" aria-label="reclaimed" title="Reclaimed">✓</span>
+              )}
+              {item.text}
+            </li>
           ))}
         </ul>
         <p className="muted refine-hint">To Add or Refine talk directly to Your G4L Companion</p>
