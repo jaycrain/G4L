@@ -145,7 +145,7 @@ export default function PlaybookView({ memberId, initial }: { memberId: string; 
   return (
     <>
       <Link href={`/dashboard/${memberId}`} className="pb-back">← Dashboard</Link>
-      <h1 className="pb-title">Your G4L Playbook</h1>
+      <h1 className="pb-page-title">Your G4L Playbook</h1>
       <p className="pb-sub">The plays that are working for you</p>
       <p className="pb-intro">
         The handful of things actually working for you — the reframes that landed, the science that convinced you, and

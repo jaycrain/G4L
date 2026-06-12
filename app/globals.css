@@ -198,7 +198,7 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 
 /* ── Your G4L Playbook (secondary page) ─────────────────────────────────────── */
 .pb-back { display: inline-block; font-weight: 600; color: var(--teal); text-decoration: none; margin-bottom: 0.75rem; }
-.pb-title { font-size: 1.9rem; font-weight: 700; color: var(--navy); margin: 0 0 0.15rem; }
+.pb-page-title { font-size: 1.9rem; font-weight: 700; color: var(--navy); margin: 0 0 0.15rem; }
 .pb-sub { font-style: italic; color: var(--muted, #6B7680); margin: 0 0 0.6rem; }
 .pb-intro { color: var(--muted, #6B7680); max-width: 42rem; line-height: 1.55; margin: 0 0 1.2rem; }
 .pb-card { background: var(--white); border: 1px solid var(--grey); border-radius: 14px; padding: 1.1rem 1.25rem; margin-bottom: 1rem; }
