@@ -16,6 +16,8 @@ import { formatDistance, formatDuration, typeLabel, relativeDay } from '../../..
 import { firstName, initials } from '../../../lib/member/avatar.ts';
 import type { Db } from '../../../lib/db/schema.ts';
 import AgentBubble from '../agent-bubble.tsx';
+import Threshold from '../threshold.tsx';
+import { listPlaybook } from '../../../lib/playbook/store.ts';
 import { logoutAction } from '../../login/actions.ts';
 import { authorizeMember } from '../../authz.ts';
 import { redirect } from 'next/navigation';
@@ -75,13 +77,14 @@ export default async function DashboardPage({
   const heroVerb = HERO_VERB[currentGroup];
   // The Field Guide's identity line mirrors the hero (verb-tracks-the-phase).
   const heroLabel = dash.identityNoun ? `${heroVerb} the ${dash.identityNoun}` : null;
-  // Auto-open the Field Guide once per member (across devices).
-  const fgSeen = (
-    await db.query<{ field_guide_seen_at: unknown }>(
-      'select field_guide_seen_at from member_profile where member_id=$1',
+  // The Threshold ceremony fires once per member, on first dashboard arrival (mirrors the old
+  // field_guide auto-open flag). It now owns first arrival; the Field Guide auto-open is retired.
+  const thresholdCrossed = !!(
+    await db.query<{ threshold_crossed_at: unknown }>(
+      'select threshold_crossed_at from member_profile where member_id=$1',
       [memberId],
     )
-  ).rows[0]?.field_guide_seen_at;
+  ).rows[0]?.threshold_crossed_at;
 
   // Signal-driven teaser for the companion bubble — a check-in/witness prompt. Program content
   // lives in "Your next Beat", so the bubble stays purely companion (no asset/Beat names here).
@@ -109,8 +112,23 @@ export default async function DashboardPage({
   // Today's daily Hardiness rep — the cross-cutting GRINTA! Beat.
   const daily = await dailyHardiness(db, memberId);
 
+  // Threshold ceremony — an overlay on THIS real dashboard (no duplicate screen). Only assemble its
+  // data when it will actually fire (first arrival). Seeds = the onboarding-harvested Playbook lines.
+  const playbookSeeds = thresholdCrossed
+    ? []
+    : (await listPlaybook(db, memberId)).filter((e) => e.authorship === 'gathered').slice(0, 3).map((e) => e.body);
+  const thresholdData = {
+    identityNoun: dash.identityNoun,
+    doors: dash.doors.map((d) => d.displayName),
+    winCount: dash.reclaimList.length,
+    idScore: dash.score?.score ?? null,
+    seeds: playbookSeeds,
+    firstMoveTitle: null,
+  };
+
   return (
     <>
+      {!thresholdCrossed && <Threshold memberId={memberId} data={thresholdData} />}
       <div className="member-greeting">
         <Link href="/account" className="member-greeting-link" aria-label="Your account">
           {dash.avatarUrl ? (
@@ -124,7 +142,7 @@ export default async function DashboardPage({
           <span className="greeting">Hi, {firstName(dash.displayName)}</span>
         </Link>
         <span className="greeting-actions">
-          <FieldGuide identityLine={heroLabel} memberId={memberId} autoOpen={!fgSeen} />
+          <FieldGuide identityLine={heroLabel} memberId={memberId} autoOpen={false} />
           <Link href={`/playbook/${memberId}`} className="logout-link">Playbook</Link>
           <Link href="/account" className="logout-link">Account</Link>
           <form action={logoutAction} className="logout-form">

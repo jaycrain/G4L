@@ -196,6 +196,46 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .fg-panels dt { font-weight: 700; color: var(--navy); margin-top: 0.75rem; }
 .fg-panels dd { margin: 0.1rem 0 0; color: var(--charcoal); }
 
+/* ── Companion Ceremony surface (Threshold + future ceremonies) ─────────────── */
+.cer-overlay {
+  position: fixed; inset: 0; z-index: 50;
+  display: flex; align-items: center; justify-content: center; padding: 24px;
+  background: rgba(16, 16, 69, 0.55); /* dims the live dashboard underneath */
+  backdrop-filter: blur(3px);
+}
+.cer-card {
+  background: #fff; border: 1px solid var(--grey); border-radius: 20px;
+  padding: 30px 32px; max-width: 560px; width: 100%;
+  box-shadow: 0 18px 60px rgba(55, 79, 99, 0.28); cursor: pointer;
+}
+.cer-comp { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
+.cer-spark {
+  width: 32px; height: 32px; border-radius: 50%; background: var(--teal); color: #fff;
+  display: flex; align-items: center; justify-content: center; font-size: 16px;
+}
+.cer-label { font-size: 0.82rem; font-weight: 600; color: var(--teal); letter-spacing: 0.02em; }
+.cer-beat { font-size: 1.5rem; line-height: 1.42; color: var(--navy); font-weight: 600; margin: 0; min-height: 100px; }
+.cer-beat.small { font-size: 1.2rem; font-weight: 500; line-height: 1.5; }
+.cer-caret { color: var(--teal); font-weight: 400; }
+.cer-reveal { margin: 16px 0 2px; }
+.cer-chips { display: flex; gap: 9px; flex-wrap: wrap; }
+.cer-chip { font-size: 0.82rem; font-weight: 600; color: var(--navy); background: var(--grey); padding: 6px 13px; border-radius: 20px; }
+.cer-chip.score { color: #fff; background: var(--teal); }
+.cer-seed-tag { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted, #6B7680); margin: 0 0 8px; }
+.cer-seed { border-left: 3px solid var(--teal); padding: 6px 0 6px 14px; margin: 8px 0; font-size: 0.95rem; font-style: italic; color: var(--navy); line-height: 1.45; }
+.cer-journey { display: flex; gap: 18px; }
+.cer-rstep { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.cer-rdot { width: 13px; height: 13px; border-radius: 50%; background: var(--grey); }
+.cer-rstep.lit .cer-rdot { background: var(--navy); }
+.cer-rname { font-size: 0.75rem; font-weight: 600; color: var(--muted, #6B7680); }
+.cer-rstep.lit .cer-rname { color: var(--navy); }
+.cer-controls { display: flex; align-items: center; justify-content: space-between; margin-top: 24px; }
+.cer-dots { display: flex; gap: 7px; }
+.cer-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--grey); }
+.cer-dot.on { background: var(--teal); }
+.cer-btn { font: inherit; font-size: 0.95rem; font-weight: 600; border: none; cursor: pointer; border-radius: 24px; padding: 11px 28px; background: var(--teal); color: #fff; }
+.cer-btn:disabled { opacity: 0.6; cursor: default; }
+
 /* Confidentiality footer — evaluation build; appears on every screen (root layout) */
 .confidential-footer {
   max-width: 880px;
