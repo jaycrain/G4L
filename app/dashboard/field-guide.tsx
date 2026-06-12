@@ -1,32 +1,14 @@
 'use client';
 
 // The Field Guide — in-product orientation: what the program is, how the 4Rs work, and how to read
-// every dashboard panel. A persistent header link; auto-opens once-per-MEMBER (across devices) the
-// first time they land on the dashboard, so nobody hits it cold; read-only overlay after that.
-// Static copy — the only dynamic piece is the member's identity line (verb-tracks-the-phase).
+// every dashboard panel (Field Guide Build Spec v1.2). A persistent header link, read-and-dismiss
+// overlay. NO auto-open — the Threshold owns first arrival (personalized); this is the generic
+// reference a member returns to on demand. Static copy; the only dynamic piece is the identity line.
 
 import { useEffect, useState } from 'react';
-import { markFieldGuideSeenAction } from './field-guide-actions.ts';
 
-export default function FieldGuide({
-  identityLine,
-  memberId,
-  autoOpen,
-}: {
-  identityLine: string | null;
-  memberId: string;
-  autoOpen: boolean;
-}) {
+export default function FieldGuide({ identityLine }: { identityLine: string | null }) {
   const [open, setOpen] = useState(false);
-
-  // Auto-open once per member (the server flag decides); mark seen so it never auto-pops again,
-  // on this device or any other.
-  useEffect(() => {
-    if (autoOpen) {
-      setOpen(true);
-      void markFieldGuideSeenAction(memberId);
-    }
-  }, [autoOpen, memberId]);
 
   useEffect(() => {
     if (!open) return;
@@ -72,34 +54,50 @@ export default function FieldGuide({
               <p>
                 You start at Reconnect. Rewire and Rebuild run together from there. Reclaim is the state
                 you’re working toward — and when you reach it, life shifts, your list re-forms, and you go
-                again. That return is the Loop.
+                again. You “clip in” to begin, and “clip back in” every time the Loop brings you around for
+                another lap.
               </p>
             </section>
 
             <section>
-              <h3>How to read your Dashboard</h3>
-              <p>Every panel is live, and all of it is yours. Top to bottom:</p>
+              <h3>Your G4L Playbook</h3>
+              <p>
+                As you go, your companion builds you a Playbook — the short, personal record of what’s
+                actually working for you: the reframes that landed, the science that convinced you, and your
+                own best lines. It’s the thing you keep and reach for when you need it. (Different from The
+                Story so Far, which is the full log of everything you’ve done — the Playbook is the cheat
+                sheet of what it meant.) Find it up top, next to this guide.
+              </p>
+            </section>
+
+            <section>
+              <h3>How to read your screen — top to bottom</h3>
+              <p>Every panel is live, and all of it is yours.</p>
               <dl className="fg-panels">
+                <dt>Up top (the header)</dt>
+                <dd>your name, and in the corner — this Field Guide and your Playbook.</dd>
                 <dt>{identityLine ?? 'Reconnecting your identity'}</dt>
                 <dd>who you’re bringing back, and why we start there.</dd>
                 <dt>ID Score</dt>
-                <dd>the mirror. How far you’ve drifted from yourself, 0–100. It moves slowly on purpose; you retake the IDQ every 60 days. The four dimensions below it — Physical, Self, Social, Outlook — are what it’s built from.</dd>
+                <dd>the mirror. How far you’ve drifted from yourself, 0–100; it moves slowly, on purpose (you retake the IDQ every 60 days). The four dimensions beneath read across then down — Physical, Self, Social, Outlook.</dd>
                 <dt>Next Beat</dt>
                 <dd>your next small piece of work. Each one ends with a close — your turn to answer. That’s how doing the work becomes progress you can see.</dd>
                 <dt>Journey</dt>
                 <dd>where you are on the path, and how many things you’ve still got to win back.</dd>
                 <dt>Reclaim List</dt>
-                <dd>the concrete things you’re after. The whole point.</dd>
+                <dd>the concrete things you’re after. The whole point. Add or refine them anytime — just talk to your companion.</dd>
                 <dt>GRINTA! Index</dt>
                 <dd>your grit. Unlike the ID Score, this moves every time you show up. The mirror tells you where you are; the grit tells you how hard you’re fighting. Two reads, two jobs.</dd>
+                <dt>Today’s GRINTA! Beat</dt>
+                <dd>your daily clip-in — one rep keeps the grit moving.</dd>
                 <dt>Movement</dt>
                 <dd>connect Strava and your rides, runs, and walks show up alongside the work.</dd>
                 <dt>Past Beats · The Story so Far</dt>
                 <dd>everything you’ve worked, saved to revisit anytime.</dd>
                 <dt>Your Doors</dt>
-                <dd>how the Fade got in.</dd>
-                <dt>Talk</dt>
-                <dd>your guide is always here. Tap it anytime.</dd>
+                <dd>how the Fade got in. Add or refine these too — just talk to your companion.</dd>
+                <dt>Talk · Your G4L Companion</dt>
+                <dd>always in the corner. Tap it anytime.</dd>
               </dl>
             </section>
           </div>

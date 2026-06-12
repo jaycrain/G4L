@@ -142,7 +142,7 @@ export default async function DashboardPage({
           <span className="greeting">Hi, {firstName(dash.displayName)}</span>
         </Link>
         <span className="greeting-actions">
-          <FieldGuide identityLine={heroLabel} memberId={memberId} autoOpen={false} />
+          <FieldGuide identityLine={heroLabel} />
           <Link href={`/playbook/${memberId}`} className="logout-link">Playbook</Link>
           <Link href="/account" className="logout-link">Account</Link>
           <form action={logoutAction} className="logout-form">
