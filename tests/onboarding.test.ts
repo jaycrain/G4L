@@ -7,6 +7,7 @@ import {
   nextStage,
   withForwardPrompt,
   resolveCompletion,
+  isAffirmation,
   INITIAL_STATE,
   type ConvState,
   type Collected,
@@ -113,6 +114,16 @@ test('completion is gated on BOTH sides: explore first, then close reliably', ()
   assert.equal(resolveCompletion(full, false, 6).complete, true);
   // ...but never before requirements are met (missing a Door keeps it out of the door beat entirely).
   assert.equal(resolveCompletion(partial, true, 9).complete, false);
+});
+
+test('isAffirmation recognizes short confirmations (incl. "for sure"), not longer add-ons', () => {
+  for (const yes of ['For sure', 'yes', 'that’s right', 'exactly', 'you got it', 'pretty much', 'sounds about right', 'absolutely']) {
+    assert.equal(isAffirmation(yes), true, `expected affirmation: "${yes}"`);
+  }
+  // long messages aren't treated as a wrap signal, even if they contain an affirming word
+  assert.equal(isAffirmation('yes, and also my finances really started to pile on around then too'), false);
+  assert.equal(isAffirmation('not really, there was more to it'), false);
+  assert.equal(isAffirmation(''), false);
 });
 
 test('withForwardPrompt never leaves a non-final turn without a question', () => {

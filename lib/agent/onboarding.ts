@@ -106,6 +106,15 @@ export function nextStage(c: Collected): Stage {
 const DOOR_MIN_TURNS = 3;
 const DOOR_MAX_TURNS = 6;
 
+// A short, clear affirmation of the read ("for sure", "yes, that's right") is the member's signal to
+// wrap the Door beat. Kept short so "yes, and also…" (which adds a Door) isn't mistaken for closure.
+const AFFIRM_RE =
+  /\b(yes|yep|yeah|yup|for sure|absolutely|definitely|totally|it does|that'?s right|that'?s it|that'?s me|exactly|correct|spot on|sounds (right|about right)|accurate|you got it|nailed it|that'?s the (whole )?picture|pretty much|that'?s fair)\b/i;
+export function isAffirmation(message: string): boolean {
+  const m = (message ?? '').trim().replace(/[‘’]/g, "'"); // normalize curly apostrophes
+  return AFFIRM_RE.test(m) && m.split(/\s+/).length <= 6;
+}
+
 export function resolveCompletion(
   collected: Collected,
   wantsComplete: boolean,
@@ -355,18 +364,24 @@ async function liveTurn(
     }
   }
 
+  // SAFETY NET: the model sometimes explores the Door(s) in prose but forgets to record them in the
+  // tool — which strands the beat re-asking the opening question (its stage prompt). If the core is
+  // ready (identity + Reclaim List) and no Door was recorded, infer the Door(s) from what the member
+  // actually said, so the engine is never blind to a Door the conversation clearly surfaced.
+  const coreReady =
+    !!collected.athleticPast && !!collected.identityNoun && (collected.reclaimList?.length ?? 0) >= RECLAIM_LIST_MIN;
+  if (coreReady && (collected.doors?.length ?? 0) === 0) {
+    const memberText = [...history.filter((m) => m.role === 'member').map((m) => m.text), memberMessage, collected.gap ?? ''].join('  ');
+    const inferred = matchDoors(memberText);
+    if (inferred.length > 0) collected = { ...collected, doors: inferred, ...(collected.gap ? {} : { gap: memberMessage }) };
+  }
+
   // Count exchanges spent in the Door beat (we were in the door stage, or just captured a Door).
   const justGotDoor = (collected.doors?.length ?? 0) >= 1 && (state.collected.doors?.length ?? 0) === 0;
   const engagingDoor = state.stage === 'door' || justGotDoor;
   const doorTurns = (state.doorTurns ?? 0) + (engagingDoor ? 1 : 0);
 
-  // A short, clear affirmation of the read ("it does", "yes, that's right") is the member's signal
-  // to wrap. Kept short so "yes, and also…" (which adds a Door) isn't mistaken for closure.
-  const affirmRe =
-    /\b(yes|yep|yeah|yup|it does|that'?s right|that'?s it|exactly|correct|spot on|sounds right|accurate|that'?s the (whole )?picture|pretty much|that'?s fair)\b/i;
-  const memberAffirmed = affirmRe.test(memberMessage) && memberMessage.trim().split(/\s+/).length <= 6;
-
-  const { complete, stage, exploringDoor } = resolveCompletion(collected, wantsComplete, doorTurns, memberAffirmed);
+  const { complete, stage, exploringDoor } = resolveCompletion(collected, wantsComplete, doorTurns, isAffirmation(memberMessage));
 
   let finalReply: string;
   if (complete) {
