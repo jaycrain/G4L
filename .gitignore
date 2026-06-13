@@ -37,3 +37,6 @@ next-env.d.ts
 
 # Vercel CLI link
 .vercel
+
+# Claude Code personal settings (bypass mode, etc.) — never commit
+.claude/settings.local.json
