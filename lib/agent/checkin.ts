@@ -118,6 +118,8 @@ Their Playbook (kept keepers + recent journal entries) appears in MEMBER CONTEXT
 ANY GOAL, AND MARKING IT DONE. The Reclaim List can hold ANY goal that matters to them — not just identity work, but life goals too (money, a venture, savings, a fundraise). When you add one, set its category; use 'life' for goals that don't map to body/self/people/outlook. Categories are INTERNAL — never name a category to the member, never imply some goals are treated differently.
 A goal is reclaimed when the real-world thing actually happened — the member is the authority on that (the same standard the close already uses). So when they clearly declare one done, you can mark it reclaimed with mark_reclaim_reclaimed — but ONLY after you confirm it this turn ("Want me to mark that one reclaimed?") and pass confirmed=true; a passing mention is never enough. For LIFE goals this is the path, so honor a clear "done" readily. For IDENTITY goals the coached Beats are the real path — never suggest marking one done; only honor an unambiguous, member-initiated "that one's genuinely done." If the member says a mark was premature, use unmark_reclaim_reclaimed to set it back. And when they want to RESTATE an item — they phrased it off, or want it sharper — refine its wording with refine_reclaim_item (keep it specific and observable; this keeps the item's progress). "Add or refine" means both.
 
+A LINK THE MEMBER SHARES. If the member pastes a link (a URL) and wants you to look at it, you can open it with the web_fetch tool and reflect on what's there — a training plan, a route, a race page, an article that moved them. Boundaries, not optional: (1) ONLY open a link the member actually shared in this conversation — never go searching the web, and never fetch a URL they didn't give you. (2) Read it and reflect on it within your usual posture — in service of their Reclaim List and what they're working on, never extracting. (3) NEVER present what you read as G4L's science or program guidance — the science is the program's; an outside page is just something they shared. (4) NEVER turn fetched content into medical, clinical, or health advice — if it raises a health or medical question, reflect gently and point them to a professional and to the program's own science, never an outside page's claims. (5) Some links can't be opened (paywalled, login-required, or heavy interactive pages) — if a fetch comes back empty, just say you couldn't open it and ask them to paste the part that matters. Use this sparingly and only when they ask.
+
 MEMBER CONTEXT (facts — do not invent beyond these):
 ${contextBlock(c)}`;
 }
@@ -251,16 +253,37 @@ async function liveReply(
     { role: 'user' as const, content: userText },
   ];
 
-  // Tool loop: let the model call a refine tool, run it, feed the result back, continue. Capped.
+  // web_fetch lets the agent open a link the MEMBER shares (server-side; Anthropic fetches it).
+  // Only offered in the companion (executor present). Governed in the prompt to member-shared links
+  // only — never open web search. SAFETY: if a turn errors with the tool attached, we retry the same
+  // turn WITHOUT it, so a tool-spec incompatibility degrades to normal chat — never a broken companion.
+  const WEB_FETCH_TOOL = { type: 'web_fetch_20260209', name: 'web_fetch', max_uses: 3 };
+  let useFetch = executor !== undefined;
+  const toolsFor = () => (executor ? (useFetch ? [...REFINE_TOOLS, WEB_FETCH_TOOL] : REFINE_TOOLS) : undefined);
+  const model = process.env.ANTHROPIC_MODEL ?? 'claude-sonnet-4-6';
+  const create = async (max_tokens: number) => {
+    const tools = toolsFor();
+    try {
+      return await client.messages.create({ model, max_tokens, system, messages, ...(tools ? { tools: tools as any } : {}) });
+    } catch (e) {
+      if (useFetch) {
+        useFetch = false; // never let link-reading break the companion — drop it and retry this turn
+        const t = toolsFor();
+        return await client.messages.create({ model, max_tokens, system, messages, ...(t ? { tools: t as any } : {}) });
+      }
+      throw e;
+    }
+  };
+
+  // Tool loop: client tools (refine/mark/playbook) we execute; the server web_fetch runs inline and
+  // may pause_turn (we resume). Capped.
   for (let i = 0; i < 4; i++) {
-    const res = await client.messages.create({
-      model: process.env.ANTHROPIC_MODEL ?? 'claude-sonnet-4-6',
-      max_tokens: 500,
-      system,
-      messages,
-      ...(executor ? { tools: REFINE_TOOLS as any } : {}),
-    });
-    const toolUses = res.content.filter((b) => b.type === 'tool_use');
+    const res = await create(500);
+    if ((res.stop_reason as string) === 'pause_turn') {
+      messages.push({ role: 'assistant', content: res.content }); // resume the server tool loop
+      continue;
+    }
+    const toolUses = res.content.filter((b) => b.type === 'tool_use'); // our client tools only
     if (!executor || res.stop_reason !== 'tool_use' || toolUses.length === 0) {
       const block = res.content.find((b) => b.type === 'text');
       return block && block.type === 'text' ? block.text.trim() : '';
@@ -274,12 +297,7 @@ async function liveReply(
     messages.push({ role: 'user', content: results });
   }
   // Loop exhausted: one final text-only turn so we never return empty.
-  const fin = await client.messages.create({
-    model: process.env.ANTHROPIC_MODEL ?? 'claude-sonnet-4-6',
-    max_tokens: 400,
-    system,
-    messages,
-  });
+  const fin = await client.messages.create({ model, max_tokens: 400, system, messages });
   const block = fin.content.find((b) => b.type === 'text');
   return block && block.type === 'text' ? block.text.trim() : '';
 }
