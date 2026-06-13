@@ -10,6 +10,7 @@ import {
   measuresForAgent,
   findReclaimItemId,
   looksTrackable,
+  suggestTracker,
 } from '../lib/measure/store.ts';
 import { getJourney } from '../lib/beats/store.ts';
 
@@ -156,4 +157,28 @@ test('Journey tally counts a climbing tracker as moving — including a witnesse
   assert.equal(j.reclaim.moving, 1); // life goal now reads as moving (the false-zero fix)
   assert.equal(j.reclaim.notYet, 0);
   assert.equal(j.reclaim.reclaimed, 0);
+});
+
+test('suggestTracker parses sensible defaults from goal wording', () => {
+  const w = suggestTracker('Weight down to 190 — started at 213.4');
+  assert.equal(w.label, 'Weight');
+  assert.equal(w.unit, 'lbs');
+  assert.equal(w.direction, 'down');
+  assert.equal(w.target, 190);
+
+  const raise = suggestTracker('Raise at least $250k and launch a charter cohort for G4L');
+  assert.equal(raise.unit, '$');
+  assert.equal(raise.direction, 'up');
+  assert.equal(raise.target, 250000);
+  assert.equal(raise.label, 'Funds raised');
+
+  const save = suggestTracker('$10k per month into retirement savings');
+  assert.equal(save.target, 10000);
+  assert.equal(save.direction, 'up');
+  assert.equal(save.label, 'Savings');
+
+  const miles = suggestTracker('Two hard rides a week with 115+ miles total');
+  assert.equal(miles.unit, 'mi');
+  assert.equal(miles.direction, 'up');
+  assert.equal(miles.target, 115);
 });

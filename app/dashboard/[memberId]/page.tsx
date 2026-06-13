@@ -19,6 +19,8 @@ import AgentBubble from '../agent-bubble.tsx';
 import Threshold from '../threshold.tsx';
 import MeasureCard from '../measure-card.tsx';
 import DashboardSync from '../dashboard-sync.tsx';
+import TrackThis from '../track-this.tsx';
+import { looksTrackable, suggestTracker } from '../../../lib/measure/store.ts';
 import { listPlaybook } from '../../../lib/playbook/store.ts';
 import { logoutAction } from '../../login/actions.ts';
 import { authorizeMember } from '../../authz.ts';
@@ -236,6 +238,7 @@ export default async function DashboardPage({
         <ul className="reclaim">
           {dash.reclaimItems.map((item, i) => {
             const linked = item.id ? dash.measures.filter((m) => m.reclaimItemId === item.id) : [];
+            const offerTrack = item.id && !item.reclaimed && linked.length === 0 && looksTrackable(item.text);
             return (
               <li key={i} className={item.reclaimed ? 'reclaimed' : undefined}>
                 {item.reclaimed && (
@@ -245,6 +248,9 @@ export default async function DashboardPage({
                 {linked.map((m) => (
                   <MeasureCard key={m.id} memberId={memberId} measure={m} />
                 ))}
+                {offerTrack && (
+                  <TrackThis memberId={memberId} reclaimItemId={item.id!} suggestion={suggestTracker(item.text)} />
+                )}
               </li>
             );
           })}

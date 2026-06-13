@@ -158,6 +158,37 @@ ul.reclaim li.reclaimed { color: var(--navy); }
 .measure-meta { font-size: 0.74rem; margin-top: 0.3rem; opacity: 0.7; }
 .measure-error { color: var(--deep-red); font-size: 0.76rem; margin: 0.3rem 0 0; }
 .measure-saved { color: var(--teal); font-size: 0.78rem; font-weight: 600; margin: 0.3rem 0 0; }
+/* "Track this" affordance — the deterministic offer on a numbered goal with no tracker yet. */
+.track-this-btn {
+  margin: 0.35rem 0 0.2rem; padding: 0.25rem 0.6rem; font-size: 0.78rem; font-weight: 600;
+  cursor: pointer; background: transparent; color: var(--teal);
+  border: 1px dashed var(--teal); border-radius: 6px; font-family: inherit;
+}
+.track-this-btn:hover { background: rgba(59, 148, 149, 0.08); }
+.track-this-form {
+  margin: 0.5rem 0 0.7rem; padding: 0.55rem 0.7rem; background: #fff;
+  border: 1px solid var(--light-grey); border-left: 3px solid var(--teal); border-radius: 8px;
+}
+.tt-row { display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.4rem; flex-wrap: wrap; }
+.track-this-form input, .track-this-form select {
+  padding: 0.3rem 0.45rem; font-size: 0.83rem; font-family: inherit;
+  border: 1px solid var(--light-grey); border-radius: 6px; min-width: 0;
+}
+.tt-label { flex: 1; }
+.tt-unit { width: 4.5rem; }
+.tt-num { width: 5rem; }
+.tt-arrow { color: var(--charcoal); opacity: 0.6; }
+.tt-dir { flex: 1; }
+.tt-actions { display: flex; gap: 0.4rem; }
+.tt-create {
+  padding: 0.3rem 0.8rem; font-size: 0.82rem; font-weight: 600; cursor: pointer;
+  background: var(--teal); color: #fff; border: none; border-radius: 6px;
+}
+.tt-cancel {
+  padding: 0.3rem 0.7rem; font-size: 0.82rem; cursor: pointer;
+  background: transparent; color: var(--charcoal); border: 1px solid var(--light-grey); border-radius: 6px;
+}
+.tt-create:disabled, .tt-cancel:disabled { opacity: 0.5; cursor: default; }
 .measures-loose { margin-top: 0.8rem; }
 .measures-loose-title { font-size: 0.82rem; font-weight: 600; color: var(--charcoal); margin: 0 0 0.3rem; opacity: 0.85; }
 

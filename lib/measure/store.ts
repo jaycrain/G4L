@@ -45,6 +45,69 @@ export function looksTrackable(text: string): boolean {
   return TRACKABLE_PATTERNS.some((re) => re.test(t));
 }
 
+export type TrackerSuggestion = {
+  label: string;
+  unit: string;
+  direction: MeasureDirection;
+  target: number | null;
+};
+
+/** Pre-fill guesses for the "Track this" affordance, parsed from a goal's wording. All editable. */
+export function suggestTracker(text: string): TrackerSuggestion {
+  const t = (text ?? '').trim();
+  const low = t.toLowerCase();
+
+  // target: $ amount (k/m suffix) → "to/under/…" N → N% → N+ → N <unit>
+  let target: number | null = null;
+  let m = low.match(/\$\s?([\d,.]+)\s?(k|m)?/);
+  if (m) {
+    let n = parseFloat(m[1]!.replace(/,/g, ''));
+    if (/k/.test(m[2] ?? '')) n *= 1000;
+    if (/m/.test(m[2] ?? '')) n *= 1_000_000;
+    target = n;
+  } else if ((m = low.match(/\b(?:to|under|below|above|over|reach|hit)\s+([\d,.]+)/))) {
+    target = parseFloat(m[1]!.replace(/,/g, ''));
+  } else if ((m = low.match(/([\d,.]+)\s?%/))) {
+    target = parseFloat(m[1]!);
+  } else if ((m = low.match(/([\d,.]+)\s?\+/))) {
+    target = parseFloat(m[1]!.replace(/,/g, ''));
+  } else if ((m = low.match(/\b([\d,.]+)\s?(?:lbs?|kg|miles?|mi|km|bpm)\b/))) {
+    target = parseFloat(m[1]!.replace(/,/g, ''));
+  }
+  if (target != null && !Number.isFinite(target)) target = null;
+
+  const unit = /\$/.test(t)
+    ? '$'
+    : /%/.test(t)
+      ? '%'
+      : /\b(?:lbs?|pounds?|weight)\b/.test(low)
+        ? 'lbs'
+        : /\b(?:miles?|mi)\b/.test(low)
+          ? 'mi'
+          : /\b(?:bpm|heart rate)\b/.test(low)
+            ? 'bpm'
+            : '';
+
+  // direction: lower-is-better cues vs higher-is-better cues; sensible defaults by topic
+  const downCues = /\b(?:lose|drop|down to|under|below|cut|reduce|lower)\b/.test(low) || /\bweight\b/.test(low);
+  const upCues = /\b(?:raise|save|saving|reach|up to|grow|increase|more|hit|\+)\b/.test(low) || /\b(?:miles?|mi)\b/.test(low);
+  const direction: MeasureDirection = downCues && !/\braise\b/.test(low) ? 'down' : upCues ? 'up' : 'up';
+
+  const label = /\bweight\b/.test(low)
+    ? 'Weight'
+    : /\b(?:raise|fundrais|\$\s?\d)/.test(low) && /\b(?:raise|fund)/.test(low)
+      ? 'Funds raised'
+      : /\b(?:saving|retirement)\b/.test(low)
+        ? 'Savings'
+        : /\bmiles?\b/.test(low)
+          ? 'Weekly miles'
+          : /\b(?:bpm|heart rate)\b/.test(low)
+            ? 'Resting HR'
+            : t.split(/\s+/).slice(0, 3).join(' '); // fall back to the opening words
+
+  return { label, unit, direction, target };
+}
+
 /** Resolve a reclaim item the member references, by exact-ish text match. Returns its id or null. */
 export async function findReclaimItemId(db: Db, memberId: string, ref: string): Promise<string | null> {
   const want = norm(ref);
