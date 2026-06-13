@@ -18,6 +18,7 @@ import type { Db } from '../../../lib/db/schema.ts';
 import AgentBubble from '../agent-bubble.tsx';
 import Threshold from '../threshold.tsx';
 import MeasureCard from '../measure-card.tsx';
+import DashboardSync from '../dashboard-sync.tsx';
 import { listPlaybook } from '../../../lib/playbook/store.ts';
 import { logoutAction } from '../../login/actions.ts';
 import { authorizeMember } from '../../authz.ts';
@@ -129,6 +130,7 @@ export default async function DashboardPage({
 
   return (
     <>
+      <DashboardSync />
       {!thresholdCrossed && <Threshold memberId={memberId} data={thresholdData} />}
       <div className="member-greeting">
         <Link href="/account" className="member-greeting-link" aria-label="Your account">
