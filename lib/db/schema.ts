@@ -41,6 +41,7 @@ const MIGRATIONS: Array<{ file: string; sentinel: Sentinel }> = [
       sql: "select exists (select 1 from pg_constraint where conname='reclaim_item_category_check' and pg_get_constraintdef(oid) like '%life%') as e",
     },
   },
+  { file: 'migrations/0020_measure.sql', sentinel: 'measure' },
 ];
 export const SEED_SQL = () => sqlFile('seed/0001_reference_data.sql');
 

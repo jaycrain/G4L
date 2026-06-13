@@ -15,6 +15,7 @@ import { getReclaimItems } from '../../lib/beats/store.ts';
 import { addReclaimItemForMember, addDoorForMember } from '../../lib/member/refine.ts';
 import { markReclaimReclaimedByText, unmarkReclaimReclaimedByText, refineReclaimItemByText } from '../../lib/beats/store.ts';
 import { proposeEntry, playbookForAgent, isPlaybookSection } from '../../lib/playbook/store.ts';
+import { createMeasure, logReadingByLabel, measuresForAgent, findReclaimItemId } from '../../lib/measure/store.ts';
 import { getGrinta } from '../../lib/grinta/index.ts';
 import { itemStem, dimensionForIndex } from '../../lib/idq/instrument.ts';
 import { authorizeMember } from '../authz.ts';
@@ -25,7 +26,7 @@ import type { Db } from '../../lib/db/schema.ts';
 async function buildContext(db: Db, memberId: string): Promise<CheckinContext | null> {
   const dash = await getDashboard(db, memberId);
   if (!dash) return null;
-  const [grinta, consumedBites, profRows, idqRows, reclaimItems, beatRows, playbook] = await Promise.all([
+  const [grinta, consumedBites, profRows, idqRows, reclaimItems, beatRows, playbook, measures] = await Promise.all([
     getGrinta(db, memberId, dash.identityNoun),
     recentConsumedTitles(db, memberId),
     db.query<{ intake_athletic_past: string | null; intake_gap: string | null }>(
@@ -40,6 +41,7 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
     getReclaimItems(db, memberId),
     db.query<{ n: number }>('select count(*)::int n from beat_completion where member_id=$1', [memberId]),
     playbookForAgent(db, memberId),
+    measuresForAgent(db, memberId),
   ]);
   const prof = profRows.rows[0];
 
@@ -83,6 +85,7 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
     beatsDone: beatRows.rows[0]?.n ?? 0,
     playbookKeepers: playbook.keepers,
     playbookNotes: playbook.recentNotes,
+    measures,
   };
 }
 
@@ -220,6 +223,46 @@ export async function sendCheckin(memberId: string, memberMessage: string): Prom
         return confirmed
           ? { ok: true, message: `Kept "${r.entry.body}" in their Playbook (${section}). Acknowledge it briefly and warmly.` }
           : { ok: true, message: `Proposed "${r.entry.body}" to their Playbook (${section}) — it's waiting there for them to keep or dismiss. Mention it lightly; don't oversell.` };
+      }
+      if (name === 'create_measure') {
+        const label = String(input.label ?? '').trim();
+        const reclaimRef = typeof input.reclaim_item === 'string' ? input.reclaim_item : '';
+        const reclaimItemId = reclaimRef ? await findReclaimItemId(db, memberId, reclaimRef) : null;
+        const res = await createMeasure(db, memberId, {
+          label,
+          unit: typeof input.unit === 'string' ? input.unit : undefined,
+          direction: input.direction === 'up' || input.direction === 'down' ? input.direction : undefined,
+          startValue: typeof input.start_value === 'number' ? input.start_value : null,
+          targetValue: typeof input.target_value === 'number' ? input.target_value : null,
+          reclaimItemId,
+        });
+        if (res.ok) {
+          mutated = true;
+          const linked = reclaimItemId ? ' It shows next to that goal on their dashboard.' : ' It shows on their dashboard.';
+          return { ok: true, message: `Started tracking "${res.label}".${linked} Tell them it's set and they can log readings here or on the card.` };
+        }
+        if (res.reason === 'duplicate') {
+          return { ok: false, message: `Not created — they already have a measure called "${label}". Log a reading on it instead.` };
+        }
+        return { ok: false, message: 'Not created — a label is required.' };
+      }
+      if (name === 'log_reading') {
+        const value = typeof input.value === 'number' ? input.value : Number(input.value);
+        const res = await logReadingByLabel(
+          db,
+          memberId,
+          String(input.measure ?? ''),
+          value,
+          typeof input.date === 'string' ? input.date : undefined,
+        );
+        if (res.ok) {
+          mutated = true;
+          return { ok: true, message: `Logged ${res.value} for "${res.label}". It's on their dashboard now — reflect on the movement warmly, never grade the number.` };
+        }
+        if (res.reason === 'nomatch') {
+          return { ok: false, message: "Couldn't find a measure by that name. If they want to start tracking it, use create_measure first." };
+        }
+        return { ok: false, message: 'Not logged — that reading was not a number.' };
       }
       return { ok: false, message: 'Unknown tool.' };
     };

@@ -36,6 +36,9 @@ export type CheckinContext = {
   // quoted back coldly or weaponized. Capped/summarized upstream.
   playbookKeepers?: { section: string; body: string }[];
   playbookNotes?: string[];
+  // Measures — numbers the member watches move (weight, miles, etc.). The agent can create one and
+  // log readings, and reflects on real movement here (never a verdict, never clinical).
+  measures?: { label: string; unit: string; start: number | null; latest: number | null; target: number | null; lastOn: string | null; atTarget: boolean; count: number }[];
 };
 
 export type CheckinMessage = { role: 'agent' | 'member'; text: string };
@@ -86,6 +89,19 @@ export function contextBlock(c: CheckinContext): string {
     c.playbookNotes && c.playbookNotes.length
       ? `Recent Playbook journal entries (their own private writing):\n${c.playbookNotes.map((n) => `  • ${n}`).join('\n')}`
       : null,
+    c.measures && c.measures.length
+      ? `Measures they're watching (numbers over time — reflect on movement, never grade):\n${c.measures
+          .map((m) => {
+            const u = m.unit ? ` ${m.unit}` : '';
+            const start = m.start != null ? `${m.start}${u}` : '—';
+            const latest = m.latest != null ? `${m.latest}${u}` : 'no reading yet';
+            const tgt = m.target != null ? `, target ${m.target}${u}` : '';
+            const on = m.lastOn ? ` (as of ${m.lastOn})` : '';
+            const hit = m.atTarget ? ' — AT/PAST TARGET' : '';
+            return `  • ${m.label}: started ${start} → now ${latest}${on}${tgt}${hit} [${m.count} reading${m.count === 1 ? '' : 's'}]`;
+          })
+          .join('\n')}`
+      : null,
   ].filter(Boolean).join('\n');
 }
 
@@ -121,6 +137,8 @@ ANY GOAL, AND MARKING IT DONE. The Reclaim List can hold ANY goal that matters t
 A goal is reclaimed when the real-world thing actually happened — the member is the authority on that (the same standard the close already uses). So when they clearly declare one done, you can mark it reclaimed with mark_reclaim_reclaimed — but ONLY after you confirm it this turn ("Want me to mark that one reclaimed?") and pass confirmed=true; a passing mention is never enough. For LIFE goals this is the path, so honor a clear "done" readily. For IDENTITY goals the coached Beats are the real path — never suggest marking one done; only honor an unambiguous, member-initiated "that one's genuinely done." If the member says a mark was premature, use unmark_reclaim_reclaimed to set it back. And when they want to RESTATE an item — they phrased it off, or want it sharper — refine its wording with refine_reclaim_item (keep it specific and observable; this keeps the item's progress). "Add or refine" means both.
 
 A LINK THE MEMBER SHARES. If the member pastes a link (a URL) and wants you to look at it, you can open it with the web_fetch tool and reflect on what's there — a training plan, a route, a race page, an article that moved them. Boundaries, not optional: (1) ONLY open a link the member actually shared in this conversation — never go searching the web, and never fetch a URL they didn't give you. (2) Read it and reflect on it within your usual posture — in service of their Reclaim List and what they're working on, never extracting. (3) NEVER present what you read as G4L's science or program guidance — the science is the program's; an outside page is just something they shared. (4) NEVER turn fetched content into medical, clinical, or health advice — if it raises a health or medical question, reflect gently and point them to a professional and to the program's own science, never an outside page's claims. (5) Some links can't be opened (paywalled, login-required, or heavy interactive pages) — if a fetch comes back empty, just say you couldn't open it and ask them to paste the part that matters. Use this sparingly and only when they ask.
+
+WATCHING A NUMBER (MEASURES). A member can track any number that matters — weight, weekly miles, resting heart rate, dollars saved — and watch it move over time, right next to the goal it serves. When they want to start tracking something, create it with create_measure: a label, a unit, the desired direction (direction='down' when lower is better like weight or resting HR; 'up' when higher is better like miles or savings), their current/baseline number as start_value, a target_value if they have one, and reclaim_item set to the text of the Reclaim List item it serves when there is one. When they report a reading ("I'm 211 today", "rode 92 miles this week"), record it with log_reading (the measure label + the value; pass date only if it isn't today). Their measures and movement are in MEMBER CONTEXT — reflect honestly and warmly: name the movement ("down 1.6 since you started"), never grade, praise, or moralize a number, and for body/health numbers never get clinical — if something looks concerning, reflect gently and point them to a professional rather than interpret it yourself. Words don't save a reading — you must call the tool. If a measure reaches its target, you may offer to mark its linked goal reclaimed (same hard-confirm rule as always).
 
 MEMBER CONTEXT (facts — do not invent beyond these):
 ${contextBlock(c)}`;
@@ -238,6 +256,37 @@ const REFINE_TOOLS = [
         confirmed: { type: 'boolean', description: 'true only if the member explicitly asked to keep/save it now' },
       },
       required: ['section', 'body'],
+    },
+  },
+  {
+    name: 'create_measure',
+    description:
+      "Start tracking a number the member watches over time (weight, weekly miles, resting heart rate, dollars saved) so it shows beside their goal. Use when they want to begin tracking something. Set direction='down' when lower is better (weight, resting HR) or 'up' when higher is better (miles, savings). Set start_value to their current/baseline number, target_value to their goal if they have one, and reclaim_item to the text of the Reclaim List item it serves (so it renders next to it).",
+    input_schema: {
+      type: 'object',
+      properties: {
+        label: { type: 'string', description: 'short name, e.g. "Weight", "Weekly miles", "Resting HR"' },
+        unit: { type: 'string', description: 'unit, e.g. "lbs", "mi", "bpm", "$"' },
+        direction: { type: 'string', enum: ['down', 'up'], description: "'down' if lower is better, 'up' if higher is better" },
+        start_value: { type: 'number', description: 'their current/baseline number' },
+        target_value: { type: 'number', description: 'the goal number, if they have one' },
+        reclaim_item: { type: 'string', description: 'text of the Reclaim List item this measure serves, to link them' },
+      },
+      required: ['label'],
+    },
+  },
+  {
+    name: 'log_reading',
+    description:
+      "Record a new reading for a measure when the member reports a number ('I'm 211 today', 'rode 92 miles this week'). Pass the measure's label and the value. Only pass date if the reading is not for today (YYYY-MM-DD). Re-logging the same day updates that day's value. Words don't save it — you must call this tool.",
+    input_schema: {
+      type: 'object',
+      properties: {
+        measure: { type: 'string', description: 'the measure label, e.g. "Weight"' },
+        value: { type: 'number', description: 'the reading' },
+        date: { type: 'string', description: 'YYYY-MM-DD, only if not today' },
+      },
+      required: ['measure', 'value'],
     },
   },
 ];

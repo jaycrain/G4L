@@ -17,6 +17,7 @@ import { firstName, initials } from '../../../lib/member/avatar.ts';
 import type { Db } from '../../../lib/db/schema.ts';
 import AgentBubble from '../agent-bubble.tsx';
 import Threshold from '../threshold.tsx';
+import MeasureCard from '../measure-card.tsx';
 import { listPlaybook } from '../../../lib/playbook/store.ts';
 import { logoutAction } from '../../login/actions.ts';
 import { authorizeMember } from '../../authz.ts';
@@ -231,15 +232,33 @@ export default async function DashboardPage({
       <div className="card">
         <h3>Reclaim List</h3>
         <ul className="reclaim">
-          {dash.reclaimItems.map((item, i) => (
-            <li key={i} className={item.reclaimed ? 'reclaimed' : undefined}>
-              {item.reclaimed && (
-                <span className="reclaim-check" aria-label="reclaimed" title="Reclaimed">✓</span>
-              )}
-              {item.text}
-            </li>
-          ))}
+          {dash.reclaimItems.map((item, i) => {
+            const linked = item.id ? dash.measures.filter((m) => m.reclaimItemId === item.id) : [];
+            return (
+              <li key={i} className={item.reclaimed ? 'reclaimed' : undefined}>
+                {item.reclaimed && (
+                  <span className="reclaim-check" aria-label="reclaimed" title="Reclaimed">✓</span>
+                )}
+                {item.text}
+                {linked.map((m) => (
+                  <MeasureCard key={m.id} memberId={memberId} measure={m} />
+                ))}
+              </li>
+            );
+          })}
         </ul>
+        {(() => {
+          const linkedIds = new Set(dash.reclaimItems.map((it) => it.id).filter(Boolean));
+          const loose = dash.measures.filter((m) => !m.reclaimItemId || !linkedIds.has(m.reclaimItemId));
+          return loose.length ? (
+            <div className="measures-loose">
+              <h4 className="measures-loose-title">Numbers you&apos;re watching</h4>
+              {loose.map((m) => (
+                <MeasureCard key={m.id} memberId={memberId} measure={m} />
+              ))}
+            </div>
+          ) : null;
+        })()}
         <p className="muted refine-hint">To Add or Refine talk directly to Your G4L Companion</p>
       </div>
 

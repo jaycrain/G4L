@@ -12,6 +12,7 @@ import { addReclaimItems, seedOnboardingBeats } from '../beats/store.ts';
 import { inferCategory } from '../beats/category.ts';
 import { isCategory } from '../beats/registry.ts';
 import { scoreIdq, computeMovement, type DimensionScores } from '../idq/scoring.ts';
+import { listMeasures, type MeasureView } from '../measure/store.ts';
 import { validateResponses, DIMENSIONS, type Dimension } from '../idq/instrument.ts';
 
 const doorName = (slug: DoorSlug) => DOORS.find((d) => d.slug === slug)!.displayName;
@@ -173,7 +174,8 @@ export type Dashboard = {
   door: { slug: string; displayName: string } | null; // primary (back-compat single-value reads)
   doors: DoorRef[]; // the full set, primary first
   reclaimList: string[]; // text only (back-compat for the agent context + legacy reads)
-  reclaimItems: { text: string; reclaimed: boolean }[]; // same items, with state — for the panel's check
+  reclaimItems: { id: string | null; text: string; reclaimed: boolean }[]; // same items, with state — for the panel's check
+  measures: MeasureView[]; // numbers the member watches; linked ones carry reclaimItemId
   score: (ScorePresentation & { dimensions: DimensionScores }) | null;
   currentFocus: { dimension: Dimension; label: string } | null;
 };
@@ -198,15 +200,16 @@ export async function getDashboard(db: Db, memberId: string): Promise<Dashboard 
 
   // Reclaim List now lives as categorized rows (reclaim_item); fall back to the legacy jsonb.
   const riRows = (
-    await db.query<{ text: string; state: string }>(
-      'select text, state from reclaim_item where member_id=$1 order by sort_order, created_at',
+    await db.query<{ id: string; text: string; state: string }>(
+      'select id, text, state from reclaim_item where member_id=$1 order by sort_order, created_at',
       [memberId],
     )
   ).rows;
   const reclaimItems = riRows.length
-    ? riRows.map((r) => ({ text: r.text, reclaimed: r.state === 'reclaimed' }))
-    : (Array.isArray(m.reclaim_list) ? (m.reclaim_list as string[]) : []).map((text) => ({ text, reclaimed: false }));
+    ? riRows.map((r) => ({ id: r.id, text: r.text, reclaimed: r.state === 'reclaimed' }))
+    : (Array.isArray(m.reclaim_list) ? (m.reclaim_list as string[]) : []).map((text) => ({ id: null, text, reclaimed: false }));
   const reclaimList = reclaimItems.map((i) => i.text);
+  const measures = await listMeasures(db, memberId);
 
   const latest = (await db.query<any>(
     `select id_score, physical_score, self_score, social_score, outlook_score,
@@ -238,6 +241,7 @@ export async function getDashboard(db: Db, memberId: string): Promise<Dashboard 
     doors,
     reclaimList,
     reclaimItems,
+    measures,
     score,
     currentFocus: focus,
   };
