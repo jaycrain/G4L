@@ -10,6 +10,7 @@ import { detectCrisis, CRISIS_RESPONSE_US } from './governance.ts';
 import type { Direction } from '../idq/scoring.ts';
 
 export type CheckinContext = {
+  today?: string; // current date, injected server-side so the agent has a real temporal anchor
   displayName: string;
   identityNoun: string | null;
   doorDisplayNames: string[];
@@ -63,6 +64,7 @@ export function contextBlock(c: CheckinContext): string {
           .join('\n')}`
       : null;
   return [
+    c.today ? `Today is ${c.today}.` : null,
     `Member: ${c.displayName}`,
     c.identityNoun ? `Reclaiming: the ${c.identityNoun}` : null,
     c.doorDisplayNames.length ? `Door${c.doorDisplayNames.length > 1 ? 's' : ''}: ${c.doorDisplayNames.join(', ')}` : null,

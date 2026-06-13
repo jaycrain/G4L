@@ -59,6 +59,7 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
     ? responses.map((score: number, i: number) => ({ dimension: dimensionForIndex(i), stem: itemStem(i), score }))
     : [];
   return {
+    today: new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }),
     displayName: dash.displayName,
     identityNoun: dash.identityNoun,
     doorDisplayNames: dash.doors.map((d) => d.displayName),
