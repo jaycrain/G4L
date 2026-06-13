@@ -33,14 +33,18 @@ export default function TrackThis({
       return;
     }
     setError(null);
-    const startValue = start.trim() === '' ? null : Number(start.trim());
+    const currentValue = start.trim() === '' ? null : Number(start.trim());
     const targetValue = target.trim() === '' ? null : Number(target.trim());
+    // Accumulation goals (raise/save) baseline at 0 so the amount entered counts as progress; other
+    // goals baseline at the current value (the first entry IS the starting line).
+    const startValue = suggestion.accumulation ? 0 : currentValue;
     startTransition(async () => {
       const res = await createMeasureForItemAction(memberId, reclaimItemId, {
         label: label.trim(),
         unit: unit.trim(),
         direction,
         startValue,
+        currentValue,
         targetValue,
       });
       if (!res.ok) {
@@ -66,7 +70,7 @@ export default function TrackThis({
         <input className="tt-unit" value={unit} onChange={(e) => setUnit(e.target.value)} placeholder="unit" aria-label="Unit" disabled={pending} />
       </div>
       <div className="tt-row">
-        <input className="tt-num" type="number" inputMode="decimal" step="any" value={start} onChange={(e) => setStart(e.target.value)} placeholder="Current" aria-label="Current value" disabled={pending} />
+        <input className="tt-num" type="number" inputMode="decimal" step="any" value={start} onChange={(e) => setStart(e.target.value)} placeholder={suggestion.accumulation ? 'So far' : 'Current'} aria-label={suggestion.accumulation ? 'Amount so far' : 'Current value'} disabled={pending} />
         <span className="tt-arrow">→</span>
         <input className="tt-num" type="number" inputMode="decimal" step="any" value={target} onChange={(e) => setTarget(e.target.value)} placeholder="Target" aria-label="Target value" disabled={pending} />
         <select className="tt-dir" value={direction} onChange={(e) => setDirection(e.target.value === 'down' ? 'down' : 'up')} aria-label="Better when" disabled={pending}>

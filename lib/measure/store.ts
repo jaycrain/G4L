@@ -50,6 +50,7 @@ export type TrackerSuggestion = {
   unit: string;
   direction: MeasureDirection;
   target: number | null;
+  accumulation: boolean; // a "raise/save toward N" goal — baseline at 0 so the amount logged is progress
 };
 
 /** Pre-fill guesses for the "Track this" affordance, parsed from a goal's wording. All editable. */
@@ -105,7 +106,11 @@ export function suggestTracker(text: string): TrackerSuggestion {
             ? 'Resting HR'
             : t.split(/\s+/).slice(0, 3).join(' '); // fall back to the opening words
 
-  return { label, unit, direction, target };
+  // Accumulation goals (raise/save a dollar amount toward a target) start at 0, so any amount logged
+  // reads as progress — unlike a rate/level goal (weight, weekly miles) where the first entry IS the baseline.
+  const accumulation = direction === 'up' && (/\$/.test(t) || /\b(?:raise|save|saving|savings|fundrais|retirement)\b/.test(low));
+
+  return { label, unit, direction, target, accumulation };
 }
 
 /** Resolve a reclaim item the member references, by exact-ish text match. Returns its id or null. */

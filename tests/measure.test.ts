@@ -181,4 +181,10 @@ test('suggestTracker parses sensible defaults from goal wording', () => {
   assert.equal(miles.unit, 'mi');
   assert.equal(miles.direction, 'up');
   assert.equal(miles.target, 115);
+  assert.equal(miles.accumulation, false); // a weekly rate, not accumulation
+
+  // accumulation goals baseline at 0 so the amount logged reads as progress
+  assert.equal(suggestTracker('Raise at least $250k for G4L').accumulation, true);
+  assert.equal(suggestTracker('$10k per month into retirement savings').accumulation, true);
+  assert.equal(suggestTracker('Weight down to 190').accumulation, false);
 });

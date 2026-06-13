@@ -27,7 +27,7 @@ export async function logMeasureReadingAction(
 export async function createMeasureForItemAction(
   memberId: string,
   reclaimItemId: string,
-  input: { label: string; unit: string; direction: MeasureDirection; startValue: number | null; targetValue: number | null },
+  input: { label: string; unit: string; direction: MeasureDirection; startValue: number | null; currentValue: number | null; targetValue: number | null },
 ): Promise<{ ok: boolean; error?: string }> {
   if (!(await authorizeMember(memberId))) return { ok: false, error: 'Not authorized.' };
   const label = (input.label ?? '').trim();
@@ -43,6 +43,11 @@ export async function createMeasureForItemAction(
       reclaimItemId,
     });
     if (!res.ok) return { ok: false, error: res.reason === 'duplicate' ? 'You already have a tracker by that name.' : 'Give it a name.' };
+    // Seed the member's current value as the first reading, so the card shows it (and an accumulation
+    // goal — baselined at 0 — reads as moving right away).
+    if (Number.isFinite(input.currentValue as number)) {
+      await logReadingById(db, memberId, res.id, input.currentValue as number);
+    }
     return { ok: true };
   } catch {
     return { ok: false, error: 'Could not set that up just now.' };
