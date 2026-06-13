@@ -15,7 +15,7 @@ import { getReclaimItems } from '../../lib/beats/store.ts';
 import { addReclaimItemForMember, addDoorForMember } from '../../lib/member/refine.ts';
 import { markReclaimReclaimedByText, unmarkReclaimReclaimedByText, refineReclaimItemByText } from '../../lib/beats/store.ts';
 import { proposeEntry, playbookForAgent, isPlaybookSection } from '../../lib/playbook/store.ts';
-import { createMeasure, logReadingByLabel, measuresForAgent, findReclaimItemId } from '../../lib/measure/store.ts';
+import { createMeasure, logReadingByLabel, measuresForAgent, findReclaimItemId, looksTrackable } from '../../lib/measure/store.ts';
 import { getGrinta } from '../../lib/grinta/index.ts';
 import { itemStem, dimensionForIndex } from '../../lib/idq/instrument.ts';
 import { authorizeMember } from '../authz.ts';
@@ -26,7 +26,7 @@ import type { Db } from '../../lib/db/schema.ts';
 async function buildContext(db: Db, memberId: string): Promise<CheckinContext | null> {
   const dash = await getDashboard(db, memberId);
   if (!dash) return null;
-  const [grinta, consumedBites, profRows, idqRows, reclaimItems, beatRows, playbook, measures] = await Promise.all([
+  const [grinta, consumedBites, profRows, idqRows, reclaimItems, beatRows, playbook, measures, linkedMeasureRows] = await Promise.all([
     getGrinta(db, memberId, dash.identityNoun),
     recentConsumedTitles(db, memberId),
     db.query<{ intake_athletic_past: string | null; intake_gap: string | null }>(
@@ -42,8 +42,17 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
     db.query<{ n: number }>('select count(*)::int n from beat_completion where member_id=$1', [memberId]),
     playbookForAgent(db, memberId),
     measuresForAgent(db, memberId),
+    db.query<{ reclaim_item_id: string }>(
+      'select distinct reclaim_item_id from measure where member_id=$1 and reclaim_item_id is not null and archived_at is null',
+      [memberId],
+    ),
   ]);
   const prof = profRows.rows[0];
+  // Proactive tracker offer: goals whose wording has a measurable target but no tracker yet.
+  const linkedIds = new Set(linkedMeasureRows.rows.map((r) => r.reclaim_item_id));
+  const trackableUntracked = reclaimItems
+    .filter((i) => i.state !== 'reclaimed' && !linkedIds.has(i.id) && looksTrackable(i.text))
+    .map((i) => i.text);
 
   // Full IDQ data: dimensions + trend + the 24 answers (so the agent can speak to any of it).
   const latest = idqRows.rows[idqRows.rows.length - 1];
@@ -86,6 +95,7 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
     playbookKeepers: playbook.keepers,
     playbookNotes: playbook.recentNotes,
     measures,
+    trackableUntracked,
   };
 }
 
@@ -133,7 +143,10 @@ export async function sendCheckin(memberId: string, memberMessage: string): Prom
         const res = await addReclaimItemForMember(db, memberId, String(input.text ?? ''), typeof input.category === 'string' ? input.category : undefined);
         if (res.ok) {
           mutated = true;
-          return { ok: true, message: `Saved "${res.text}" to their Reclaim List (category: ${res.category}). It now shows on their dashboard and the Beat engine can work toward it — acknowledge it briefly and warmly.` };
+          const trackNudge = looksTrackable(res.text)
+            ? ' This goal has a measurable number in it — consider OFFERING to set up a tracker for it (ask first, never force).'
+            : '';
+          return { ok: true, message: `Saved "${res.text}" to their Reclaim List (category: ${res.category}). It now shows on their dashboard and the Beat engine can work toward it — acknowledge it briefly and warmly.${trackNudge}` };
         }
         if (res.reason === 'vague') {
           return { ok: false, message: 'Not saved — that is a feeling/inner state, not something you could both watch happen in an ordinary week. Ask what it would look like on a Tuesday, sharpen it WITH them, then call add_reclaim_item again with the observable version.' };
@@ -179,7 +192,10 @@ export async function sendCheckin(memberId: string, memberMessage: string): Prom
         );
         if (res.ok) {
           mutated = true;
-          return { ok: true, message: `Updated their Reclaim List item to "${res.newText}" (kept its progress). Reflect the new wording back so they know it took.` };
+          const refineTrackNudge = res.newText && looksTrackable(res.newText)
+            ? ' It now has a measurable number — if there is no tracker on it yet, consider OFFERING to set one up (ask first).'
+            : '';
+          return { ok: true, message: `Updated their Reclaim List item to "${res.newText}" (kept its progress). Reflect the new wording back so they know it took.${refineTrackNudge}` };
         }
         if (res.reason === 'vague') {
           return { ok: false, message: 'Not changed — the new wording is a feeling, not something you could both watch happen. Sharpen it WITH them, then call refine_reclaim_item again.' };

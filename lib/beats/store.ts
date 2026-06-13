@@ -10,6 +10,7 @@ import { selectNextBeat } from './select.ts';
 import { bindGoalItem, effectiveCloseType, renderClose } from './serves.ts';
 import { resolveClose } from './close.ts';
 import { RECLAIMED_THRESHOLD, type MemberBeatState, type ReclaimItem } from './types.ts';
+import { listMeasures, measureMoving } from '../measure/store.ts';
 
 const toIso = (v: unknown): string | null => {
   if (v == null) return null;
@@ -370,12 +371,21 @@ export async function getJourney(db: Db, memberId: string): Promise<Journey> {
     }
   }
 
+  // The tally must reflect REAL movement, not just coached-Beat state: a goal with a climbing
+  // tracker (incl. witnessed life goals, which never earn coached Beats) reads as "moving", so
+  // "0 moving" stops being a false zero. Counts ALL items — coached and witnessed alike.
   const items = state.reclaimItems;
+  const measures = await listMeasures(db, memberId);
+  const movingByTracker = new Set(
+    measures.filter(measureMoving).map((m) => m.reclaimItemId).filter((id): id is string => Boolean(id)),
+  );
+  const isMoving = (i: ReclaimItem) =>
+    i.state !== 'reclaimed' && (i.state === 'closer' || movingByTracker.has(i.id));
   const reclaim = {
     total: items.length,
     reclaimed: items.filter((i) => i.state === 'reclaimed').length,
-    moving: items.filter((i) => i.state === 'closer').length,
-    notYet: items.filter((i) => i.state === 'not_yet').length,
+    moving: items.filter(isMoving).length,
+    notYet: items.filter((i) => i.state !== 'reclaimed' && !isMoving(i)).length,
   };
 
   // The 4Rs as a path, with the member's position marked — so progress reads immediately.

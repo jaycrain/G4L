@@ -27,6 +27,24 @@ export type MeasureView = {
 const norm = (s: string) => s.toLowerCase().replace(/\s+/g, ' ').trim();
 const isDir = (d: unknown): d is MeasureDirection => d === 'down' || d === 'up';
 
+// Deterministic "does this goal have a measurable target?" backstop for the proactive tracker offer
+// (the agent adds nuance; this catches the obvious numeric/target goals — same belt-and-suspenders as
+// the categorizer and the vague-item guard). Tuned to avoid bare dates ("(June 28)") and name lists.
+const TRACKABLE_PATTERNS: RegExp[] = [
+  /\$\s?\d/, // currency: $250, $10k
+  /\d[\d,.]*\s?%/, // percent: 20%
+  /\b(?:to|under|over|below|above|reach|hit)\s+\$?\d/i, // "down to 190", "under 200"
+  /\b\d[\d,.]*\s?\+?\s?(?:lbs?|kg|kgs|miles?|mi|km|bpm|reps?|hrs?|hours?|min|mins?|minutes?|words?|steps?|k)\b/i, // 115 miles, 10k
+  /\b\d[\d,.]*\s?\+/, // 115+
+];
+
+/** True when a goal's wording carries a measurable target worth offering a tracker for. */
+export function looksTrackable(text: string): boolean {
+  const t = (text ?? '').trim();
+  if (!t) return false;
+  return TRACKABLE_PATTERNS.some((re) => re.test(t));
+}
+
 /** Resolve a reclaim item the member references, by exact-ish text match. Returns its id or null. */
 export async function findReclaimItemId(db: Db, memberId: string, ref: string): Promise<string | null> {
   const want = norm(ref);
@@ -188,6 +206,13 @@ export async function listMeasures(db: Db, memberId: string): Promise<MeasureVie
     out.push(computeView(row, readings));
   }
   return out;
+}
+
+/** True when a measure has moved in its desired direction (or hit target) — i.e. real movement. */
+export function measureMoving(m: MeasureView): boolean {
+  if (m.atTarget) return true;
+  if (m.startValue == null || m.latestValue == null) return false;
+  return m.direction === 'down' ? m.latestValue < m.startValue : m.latestValue > m.startValue;
 }
 
 /** Compact, text-friendly view for the Member Agent's context. */

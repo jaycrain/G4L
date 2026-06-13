@@ -9,7 +9,9 @@ import {
   listMeasures,
   measuresForAgent,
   findReclaimItemId,
+  looksTrackable,
 } from '../lib/measure/store.ts';
+import { getJourney } from '../lib/beats/store.ts';
 
 async function seed(): Promise<{ db: Db; memberId: string }> {
   const db = new PGlite() as unknown as Db;
@@ -22,11 +24,11 @@ async function seed(): Promise<{ db: Db; memberId: string }> {
   return { db, memberId };
 }
 
-async function addReclaim(db: Db, memberId: string, text: string): Promise<string> {
+async function addReclaim(db: Db, memberId: string, text: string, category = 'physical'): Promise<string> {
   return (
     await db.query<{ id: string }>(
-      `insert into reclaim_item (member_id, text, category) values ($1,$2,'physical') returning id`,
-      [memberId, text],
+      `insert into reclaim_item (member_id, text, category) values ($1,$2,$3) returning id`,
+      [memberId, text, category],
     )
   ).rows[0].id;
 }
@@ -124,4 +126,34 @@ test('measuresForAgent is compact and reflects state', async () => {
   assert.equal(a.target, 190);
   assert.equal(a.atTarget, false);
   assert.equal(a.count, 1);
+});
+
+test('looksTrackable detects measurable targets, ignores bare dates and name lists', () => {
+  assert.equal(looksTrackable('Weight down to 190'), true);
+  assert.equal(looksTrackable('Raise at least $250k and launch a charter cohort for G4L'), true);
+  assert.equal(looksTrackable('$10k per month into retirement savings'), true);
+  assert.equal(looksTrackable('Two hard rides a week with 115+ miles total'), true);
+  assert.equal(looksTrackable('finish in the top 20% of my age group'), true);
+  // negatives — dates and people, no measurable target
+  assert.equal(looksTrackable('Race-ready for SBT GRVL (June 28) and Big Sugar (Oct 17)'), false);
+  assert.equal(looksTrackable('Text family and friends every other day to stay close'), false);
+  assert.equal(looksTrackable('Make a list of college friends and riding buddies'), false);
+  assert.equal(looksTrackable(''), false);
+});
+
+test('Journey tally counts a climbing tracker as moving — including a witnessed life goal', async () => {
+  const { db, memberId } = await seed();
+  const itemId = await addReclaim(db, memberId, 'Raise $250k and launch a cohort for G4L', 'life');
+  await createMeasure(db, memberId, { label: 'Funds raised', unit: '$', direction: 'up', startValue: 0, targetValue: 250000, reclaimItemId: itemId });
+
+  let j = await getJourney(db, memberId);
+  assert.equal(j.reclaim.total, 1);
+  assert.equal(j.reclaim.moving, 0); // a tracker with no reading hasn't moved
+  assert.equal(j.reclaim.notYet, 1);
+
+  await logReadingByLabel(db, memberId, 'Funds raised', 50000, '2026-06-13'); // climbed toward target
+  j = await getJourney(db, memberId);
+  assert.equal(j.reclaim.moving, 1); // life goal now reads as moving (the false-zero fix)
+  assert.equal(j.reclaim.notYet, 0);
+  assert.equal(j.reclaim.reclaimed, 0);
 });

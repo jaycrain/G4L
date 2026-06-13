@@ -39,6 +39,9 @@ export type CheckinContext = {
   // Measures — numbers the member watches move (weight, miles, etc.). The agent can create one and
   // log readings, and reflects on real movement here (never a verdict, never clinical).
   measures?: { label: string; unit: string; start: number | null; latest: number | null; target: number | null; lastOn: string | null; atTarget: boolean; count: number }[];
+  // Reclaim goals whose wording carries a measurable target but have NO tracker yet — the agent
+  // proactively OFFERS to set one up (offered, never forced; confirm, then create_measure).
+  trackableUntracked?: string[];
 };
 
 export type CheckinMessage = { role: 'agent' | 'member'; text: string };
@@ -102,6 +105,11 @@ export function contextBlock(c: CheckinContext): string {
           })
           .join('\n')}`
       : null,
+    c.trackableUntracked && c.trackableUntracked.length
+      ? `Goals that look trackable but have NO tracker yet (offer to set one up — see WATCHING A NUMBER):\n${c.trackableUntracked
+          .map((t) => `  • ${t}`)
+          .join('\n')}`
+      : null,
   ].filter(Boolean).join('\n');
 }
 
@@ -138,7 +146,8 @@ A goal is reclaimed when the real-world thing actually happened — the member i
 
 A LINK THE MEMBER SHARES. If the member pastes a link (a URL) and wants you to look at it, you can open it with the web_fetch tool and reflect on what's there — a training plan, a route, a race page, an article that moved them. Boundaries, not optional: (1) ONLY open a link the member actually shared in this conversation — never go searching the web, and never fetch a URL they didn't give you. (2) Read it and reflect on it within your usual posture — in service of their Reclaim List and what they're working on, never extracting. (3) NEVER present what you read as G4L's science or program guidance — the science is the program's; an outside page is just something they shared. (4) NEVER turn fetched content into medical, clinical, or health advice — if it raises a health or medical question, reflect gently and point them to a professional and to the program's own science, never an outside page's claims. (5) Some links can't be opened (paywalled, login-required, or heavy interactive pages) — if a fetch comes back empty, just say you couldn't open it and ask them to paste the part that matters. Use this sparingly and only when they ask.
 
-WATCHING A NUMBER (MEASURES). A member can track any number that matters — weight, weekly miles, resting heart rate, dollars saved — and watch it move over time, right next to the goal it serves. When they want to start tracking something, create it with create_measure: a label, a unit, the desired direction (direction='down' when lower is better like weight or resting HR; 'up' when higher is better like miles or savings), their current/baseline number as start_value, a target_value if they have one, and reclaim_item set to the text of the Reclaim List item it serves when there is one. When they report a reading ("I'm 211 today", "rode 92 miles this week"), record it with log_reading (the measure label + the value; pass date only if it isn't today). Their measures and movement are in MEMBER CONTEXT — reflect honestly and warmly: name the movement ("down 1.6 since you started"), never grade, praise, or moralize a number, and for body/health numbers never get clinical — if something looks concerning, reflect gently and point them to a professional rather than interpret it yourself. Words don't save a reading — you must call the tool. If a measure reaches its target, you may offer to mark its linked goal reclaimed (same hard-confirm rule as always).
+WATCHING A NUMBER (MEASURES). A member can track any number that matters — weight, weekly miles, resting heart rate, dollars saved — and watch it move over time, right next to the goal it serves. When they want to start tracking something, create it with create_measure: a label, a unit, the desired direction (direction='down' when lower is better like weight or resting HR; 'up' when higher is better like miles or savings), their current/baseline number as start_value, a target_value if they have one, and reclaim_item set to the text of the Reclaim List item it serves when there is one. When they report a reading ("I'm 211 today", "rode 92 miles this week"), record it with log_reading (the measure label + the value; pass date only if it isn't today). Their measures and movement are in MEMBER CONTEXT — reflect honestly and warmly: name the movement ("down 1.6 since you started"), never grade, praise, or moralize a number, and for body/health numbers never get clinical — if something looks concerning, reflect gently and point them to a professional rather than interpret it yourself. RELIABILITY: words don't save a reading — you MUST call the tool, and only tell them it's logged AFTER the tool returns success; never say "logged"/"saved"/"updated" before that. If the tool reports a problem, say so plainly instead of pretending it worked.
+OFFER A TRACKER WHEN ONE FITS. MEMBER CONTEXT may list "Goals that look trackable but have no tracker yet." When a goal has a real number in it (a weight, a dollar amount, a mileage, a percentage) and isn't being tracked, be generous and OFFER to set one up — naturally, in passing: "I notice 'weight down to 190' has a number on it — want me to set up a tracker so we can watch it move?" Offered, never forced or naggy — one light offer, drop it if they're not interested. On a yes, call create_measure (link it to that goal). This works for witnessed life goals too (a fundraise, savings) — there the tracker IS how you witness the number move.
 
 MEMBER CONTEXT (facts — do not invent beyond these):
 ${contextBlock(c)}`;

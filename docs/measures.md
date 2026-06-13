@@ -49,3 +49,14 @@ link a measure to the goal a member names).
 "track/tracking" is a banned framing term (CLAUDE.md). Member-facing label is **"Numbers
 you're watching,"** echoing the IDQ copy ("you know your numbers"). Final naming is the
 founder's call — the surface label is easy to change.
+
+## Give-Back slice v1.1 additions
+
+- **Proactive offer.** `looksTrackable(text)` is a deterministic backstop (numbers/$/%/units/"to N")
+  paired with the agent's judgment. The MA context lists "goals that look trackable but have no
+  tracker yet"; the agent *offers* to set one up (offered, never forced) and creates it on a yes.
+  On add/refine of a numeric goal, the executor nudges an immediate offer.
+- **Reliability.** The agent only confirms a log AFTER the tool returns success — never preemptively.
+- **Journey tally (the false-zero fix).** `getJourney` now counts a goal as **moving** if its
+  tracker has climbed toward target (or it's `closer`/marked), across ALL items including witnessed
+  life goals — so "0 moving" stops lying when goals are actually moving. Tally-wiring only.
