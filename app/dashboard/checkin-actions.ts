@@ -13,7 +13,7 @@ import { loadConversation, appendMessages } from '../../lib/agent/conversation.t
 import { recentConsumedTitles } from '../../lib/bites/store.ts';
 import { getReclaimItems } from '../../lib/beats/store.ts';
 import { addReclaimItemForMember, addDoorForMember } from '../../lib/member/refine.ts';
-import { markReclaimReclaimedByText, unmarkReclaimReclaimedByText } from '../../lib/beats/store.ts';
+import { markReclaimReclaimedByText, unmarkReclaimReclaimedByText, refineReclaimItemByText } from '../../lib/beats/store.ts';
 import { proposeEntry, playbookForAgent, isPlaybookSection } from '../../lib/playbook/store.ts';
 import { getGrinta } from '../../lib/grinta/index.ts';
 import { itemStem, dimensionForIndex } from '../../lib/idq/instrument.ts';
@@ -164,6 +164,29 @@ export async function sendCheckin(memberId: string, memberMessage: string): Prom
           return { ok: false, message: "Couldn't find that item on their Reclaim List. Reflect what they said and ask which item they mean, then try again." };
         }
         return { ok: false, message: 'Not marked — no item reference was provided.' };
+      }
+      if (name === 'refine_reclaim_item') {
+        const res = await refineReclaimItemByText(
+          db,
+          memberId,
+          String(input.item ?? ''),
+          String(input.text ?? ''),
+          typeof input.category === 'string' ? input.category : undefined,
+        );
+        if (res.ok) {
+          mutated = true;
+          return { ok: true, message: `Updated their Reclaim List item to "${res.newText}" (kept its progress). Reflect the new wording back so they know it took.` };
+        }
+        if (res.reason === 'vague') {
+          return { ok: false, message: 'Not changed — the new wording is a feeling, not something you could both watch happen. Sharpen it WITH them, then call refine_reclaim_item again.' };
+        }
+        if (res.reason === 'duplicate') {
+          return { ok: false, message: 'Not changed — that wording matches another item already on their list.' };
+        }
+        if (res.reason === 'nomatch') {
+          return { ok: false, message: "Couldn't find the item they want to reword — ask which one they mean." };
+        }
+        return { ok: false, message: 'Not changed — need both the current item and the new wording.' };
       }
       if (name === 'unmark_reclaim_reclaimed') {
         const res = await unmarkReclaimReclaimedByText(db, memberId, String(input.item ?? ''));

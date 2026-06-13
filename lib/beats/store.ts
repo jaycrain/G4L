@@ -3,7 +3,8 @@
 // Grinta component flags and advancing the served Reclaim item's state machine).
 
 import type { Db } from '../db/schema.ts';
-import { allBeats, beatById, type Beat, type Category, type CloseType, type RGroup, type Rhythm } from './registry.ts';
+import { allBeats, beatById, isCategory, type Beat, type Category, type CloseType, type RGroup, type Rhythm } from './registry.ts';
+import { isVagueReclaim } from './category.ts';
 import { isReady } from './readiness.ts';
 import { selectNextBeat } from './select.ts';
 import { bindGoalItem, effectiveCloseType, renderClose } from './serves.ts';
@@ -145,6 +146,38 @@ export async function unmarkReclaimReclaimedByText(
     [memberId, match.id, newState],
   );
   return { ok: true, text: match.text };
+}
+
+/**
+ * Refine the WORDING of an existing Reclaim item (the "Refine" half of add/refine). Keeps the item's
+ * id, state, progress (closer_count), bindings, and category — only the text changes — so it's the
+ * SAFE edit (the risky delete / progress-losing edits stay deferred). Refuses fog (must stay
+ * specific & observable). Optionally updates category if the agent says it genuinely changed.
+ */
+export async function refineReclaimItemByText(
+  db: Db,
+  memberId: string,
+  query: string,
+  newText: string,
+  agentCategory?: string,
+): Promise<{ ok: boolean; oldText?: string; newText?: string; reason?: 'empty' | 'vague' | 'nomatch' | 'duplicate' }> {
+  const q = (query ?? '').trim().toLowerCase();
+  const text = (newText ?? '').trim();
+  if (!q || !text) return { ok: false, reason: 'empty' };
+  if (isVagueReclaim(text)) return { ok: false, reason: 'vague' };
+  const rows = (
+    await db.query<{ id: string; text: string; category: string }>(
+      'select id, text, category from reclaim_item where member_id=$1 order by sort_order, created_at',
+      [memberId],
+    )
+  ).rows;
+  const norm = (s: string) => s.trim().toLowerCase();
+  const match = rows.find((r) => norm(r.text) === q) ?? rows.find((r) => norm(r.text).includes(q) || q.includes(norm(r.text)));
+  if (!match) return { ok: false, reason: 'nomatch' };
+  if (rows.some((r) => r.id !== match.id && norm(r.text) === text.toLowerCase())) return { ok: false, reason: 'duplicate' };
+  const category: Category = isCategory(agentCategory) ? agentCategory : (match.category as Category);
+  await db.query('update reclaim_item set text=$3, category=$4 where member_id=$1 and id=$2', [memberId, match.id, text, category]);
+  return { ok: true, oldText: match.text, newText: text };
 }
 
 export async function assembleState(db: Db, memberId: string): Promise<MemberBeatState> {

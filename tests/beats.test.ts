@@ -8,7 +8,7 @@ import { bindGoalItem, effectiveCloseType, renderClose } from '../lib/beats/serv
 import { resolveClose } from '../lib/beats/close.ts';
 import { selectNextBeat, rankBeats } from '../lib/beats/select.ts';
 import { inferCategory, isVagueReclaim } from '../lib/beats/category.ts';
-import { addReclaimItems, assembleState, serveBeat, completeBeat, getReclaimItems, getJourney, getBeatHistory, dailyHardiness, markReclaimReclaimedByText, unmarkReclaimReclaimedByText } from '../lib/beats/store.ts';
+import { addReclaimItems, assembleState, serveBeat, completeBeat, getReclaimItems, getJourney, getBeatHistory, dailyHardiness, markReclaimReclaimedByText, unmarkReclaimReclaimedByText, refineReclaimItemByText } from '../lib/beats/store.ts';
 import { getDashboard, submitIdq } from '../lib/gateway/flow.ts';
 import { getGrinta } from '../lib/grinta/index.ts';
 import type { MemberBeatState, ReclaimItem } from '../lib/beats/types.ts';
@@ -176,6 +176,18 @@ test('any-goal: companion marks a life item reclaimed — Journey ticks, not sho
   const un2 = await unmarkReclaimReclaimedByText(db, memberId, 'ride before work');
   assert.equal(un2.ok, false);
   if (!un2.ok) assert.equal(un2.reason, 'not_self_marked');
+
+  // refine the WORDING of an item — keeps its category/state, only the text changes
+  const ref = await refineReclaimItemByText(db, memberId, 'ride before work', 'ride to Brainard before work twice a week');
+  assert.equal(ref.ok, true);
+  const after = await getReclaimItems(db, memberId);
+  const refined = after.find((i) => i.text.includes('Brainard'))!;
+  assert.equal(refined.category, 'physical'); // category preserved
+  assert.ok(!after.some((i) => i.text === 'ride before work')); // old wording gone
+  // refining to fog is refused
+  const fog = await refineReclaimItemByText(db, memberId, 'Brainard', 'just feel better about riding');
+  assert.equal(fog.ok, false);
+  if (!fog.ok) assert.equal(fog.reason, 'vague');
 });
 
 // ---- DB-backed slice proof (Tom) ------------------------------------------------------

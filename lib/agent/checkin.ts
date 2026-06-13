@@ -112,7 +112,7 @@ THE PLAYBOOK (their kept record of what's working). When a genuine keeper surfac
 Their Playbook (kept keepers + recent journal entries) appears in MEMBER CONTEXT. It is the member's most personal writing. Use it to understand and help them, and fold it in naturally — but NEVER quote their journal back coldly ("you wrote on Tuesday…"), never use it to pressure or guilt ("but you said you would…"), and only respond to a journal entry if they ask. It is theirs; hold it with care.
 
 ANY GOAL, AND MARKING IT DONE. The Reclaim List can hold ANY goal that matters to them — not just identity work, but life goals too (money, a venture, savings, a fundraise). When you add one, set its category; use 'life' for goals that don't map to body/self/people/outlook. Categories are INTERNAL — never name a category to the member, never imply some goals are treated differently.
-A goal is reclaimed when the real-world thing actually happened — the member is the authority on that (the same standard the close already uses). So when they clearly declare one done, you can mark it reclaimed with mark_reclaim_reclaimed — but ONLY after you confirm it this turn ("Want me to mark that one reclaimed?") and pass confirmed=true; a passing mention is never enough. For LIFE goals this is the path, so honor a clear "done" readily. For IDENTITY goals the coached Beats are the real path — never suggest marking one done; only honor an unambiguous, member-initiated "that one's genuinely done." If the member says a mark was premature, use unmark_reclaim_reclaimed to set it back.
+A goal is reclaimed when the real-world thing actually happened — the member is the authority on that (the same standard the close already uses). So when they clearly declare one done, you can mark it reclaimed with mark_reclaim_reclaimed — but ONLY after you confirm it this turn ("Want me to mark that one reclaimed?") and pass confirmed=true; a passing mention is never enough. For LIFE goals this is the path, so honor a clear "done" readily. For IDENTITY goals the coached Beats are the real path — never suggest marking one done; only honor an unambiguous, member-initiated "that one's genuinely done." If the member says a mark was premature, use unmark_reclaim_reclaimed to set it back. And when they want to RESTATE an item — they phrased it off, or want it sharper — refine its wording with refine_reclaim_item (keep it specific and observable; this keeps the item's progress). "Add or refine" means both.
 
 MEMBER CONTEXT (facts — do not invent beyond these):
 ${contextBlock(c)}`;
@@ -181,6 +181,20 @@ const REFINE_TOOLS = [
         confirmed: { type: 'boolean', description: 'true ONLY after the member explicitly says yes to marking it reclaimed this turn' },
       },
       required: ['item', 'confirmed'],
+    },
+  },
+  {
+    name: 'refine_reclaim_item',
+    description:
+      "Refine the WORDING of an existing Reclaim List item when the member wants to restate it (they phrased it off, or want it sharper). Pass their reference to the current item and the new wording. Keeps its progress and category — only the text changes. The new wording must stay SPECIFIC and OBSERVABLE; if they drift to a feeling, sharpen it with them first. Set category only if the goal's area genuinely changed.",
+    input_schema: {
+      type: 'object',
+      properties: {
+        item: { type: 'string', description: 'reference to the current Reclaim List item' },
+        text: { type: 'string', description: 'the new wording, specific and observable, in their voice' },
+        category: { type: 'string', enum: ['physical', 'self', 'social', 'outlook', 'life'], description: 'only if the area genuinely changed' },
+      },
+      required: ['item', 'text'],
     },
   },
   {
