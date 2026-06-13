@@ -8,7 +8,7 @@ import { isReady } from './readiness.ts';
 import { selectNextBeat } from './select.ts';
 import { bindGoalItem, effectiveCloseType, renderClose } from './serves.ts';
 import { resolveClose } from './close.ts';
-import type { MemberBeatState, ReclaimItem } from './types.ts';
+import { RECLAIMED_THRESHOLD, type MemberBeatState, type ReclaimItem } from './types.ts';
 
 const toIso = (v: unknown): string | null => {
   if (v == null) return null;
@@ -104,6 +104,45 @@ export async function markReclaimReclaimedByText(
     `insert into beat_completion (member_id, beat_id, close_type, close_response, reclaim_item_id, feeds_consistency, feeds_recovery, feeds_reach)
      values ($1,'SELF-MARK','goal','self_marked',$2,true,false,true)`,
     [memberId, match.id],
+  );
+  return { ok: true, text: match.text };
+}
+
+/**
+ * Reverse a member self-mark (the minimal undo). Only undoes a self_marked completion — a goal earned
+ * through the Beats is untouched. Deletes the marker (removes its Reach/activity contribution) and
+ * restores state from genuine progress (closer_count): >=threshold → reclaimed (was already), >0 →
+ * closer, else not_yet. Journey re-reads state, so the tick reverses.
+ */
+export async function unmarkReclaimReclaimedByText(
+  db: Db,
+  memberId: string,
+  query: string,
+): Promise<{ ok: boolean; text?: string; reason?: 'nomatch' | 'not_self_marked' | 'empty' }> {
+  const q = (query ?? '').trim().toLowerCase();
+  if (!q) return { ok: false, reason: 'empty' };
+  const rows = (
+    await db.query<{ id: string; text: string; closer_count: number }>(
+      'select id, text, closer_count from reclaim_item where member_id=$1 order by sort_order, created_at',
+      [memberId],
+    )
+  ).rows;
+  const norm = (s: string) => s.trim().toLowerCase();
+  const match = rows.find((r) => norm(r.text) === q) ?? rows.find((r) => norm(r.text).includes(q) || q.includes(norm(r.text)));
+  if (!match) return { ok: false, reason: 'nomatch' };
+  const marker = (
+    await db.query<{ id: string }>(
+      "select id from beat_completion where member_id=$1 and reclaim_item_id=$2 and close_response='self_marked' order by completed_at desc limit 1",
+      [memberId, match.id],
+    )
+  ).rows[0];
+  if (!marker) return { ok: false, reason: 'not_self_marked' };
+  await db.query('delete from beat_completion where id=$1', [marker.id]);
+  const cc = Number(match.closer_count ?? 0);
+  const newState = cc >= RECLAIMED_THRESHOLD ? 'reclaimed' : cc > 0 ? 'closer' : 'not_yet';
+  await db.query(
+    "update reclaim_item set state=$3, reclaimed_at = case when $3='reclaimed' then reclaimed_at else null end where member_id=$1 and id=$2",
+    [memberId, match.id, newState],
   );
   return { ok: true, text: match.text };
 }

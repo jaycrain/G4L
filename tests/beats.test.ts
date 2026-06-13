@@ -8,7 +8,7 @@ import { bindGoalItem, effectiveCloseType, renderClose } from '../lib/beats/serv
 import { resolveClose } from '../lib/beats/close.ts';
 import { selectNextBeat, rankBeats } from '../lib/beats/select.ts';
 import { inferCategory, isVagueReclaim } from '../lib/beats/category.ts';
-import { addReclaimItems, assembleState, serveBeat, completeBeat, getReclaimItems, getJourney, getBeatHistory, dailyHardiness, markReclaimReclaimedByText } from '../lib/beats/store.ts';
+import { addReclaimItems, assembleState, serveBeat, completeBeat, getReclaimItems, getJourney, getBeatHistory, dailyHardiness, markReclaimReclaimedByText, unmarkReclaimReclaimedByText } from '../lib/beats/store.ts';
 import { getDashboard, submitIdq } from '../lib/gateway/flow.ts';
 import { getGrinta } from '../lib/grinta/index.ts';
 import type { MemberBeatState, ReclaimItem } from '../lib/beats/types.ts';
@@ -163,6 +163,19 @@ test('any-goal: companion marks a life item reclaimed — Journey ticks, not sho
   // the marker completion must NOT pollute Past Beats
   const past = await getBeatHistory(db, memberId);
   assert.ok(!past.some((p) => p.beatId === 'SELF-MARK'));
+
+  // minimal undo: reverse the self-mark → back to in-progress, marker gone, Journey un-ticks
+  const un = await unmarkReclaimReclaimedByText(db, memberId, 'raise $250k');
+  assert.equal(un.ok, true);
+  assert.equal((await getReclaimItems(db, memberId)).find((i) => i.category === 'life')!.state, 'not_yet');
+  assert.equal((await getJourney(db, memberId)).reclaim.reclaimed, 0);
+  const markerN = (await db.query<{ n: number }>("select count(*)::int n from beat_completion where member_id=$1 and close_response='self_marked'", [memberId])).rows[0]!.n;
+  assert.equal(markerN, 0);
+
+  // can't "undo" something that was never self-marked (e.g. earned through the work)
+  const un2 = await unmarkReclaimReclaimedByText(db, memberId, 'ride before work');
+  assert.equal(un2.ok, false);
+  if (!un2.ok) assert.equal(un2.reason, 'not_self_marked');
 });
 
 // ---- DB-backed slice proof (Tom) ------------------------------------------------------

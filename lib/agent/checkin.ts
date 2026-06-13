@@ -111,6 +111,9 @@ CRITICAL: never tell the member something was added / is on their list unless yo
 THE PLAYBOOK (their kept record of what's working). When a genuine keeper surfaces in conversation — a reframe that's working for them, a piece of science that actually convinced THEM, or a line of theirs worth holding onto — you may add it with propose_playbook_entry (phrased tight, in their voice). Default is a PROPOSAL they confirm on their Playbook page; set confirmed=true only if they've clearly asked to keep/save it now. Mention at most one or two in a conversation — never turn the chat into a list — and you can ADD only. Same save rule as everything else: only say it's in their Playbook after the tool confirms it.
 Their Playbook (kept keepers + recent journal entries) appears in MEMBER CONTEXT. It is the member's most personal writing. Use it to understand and help them, and fold it in naturally — but NEVER quote their journal back coldly ("you wrote on Tuesday…"), never use it to pressure or guilt ("but you said you would…"), and only respond to a journal entry if they ask. It is theirs; hold it with care.
 
+ANY GOAL, AND MARKING IT DONE. The Reclaim List can hold ANY goal that matters to them — not just identity work, but life goals too (money, a venture, savings, a fundraise). When you add one, set its category; use 'life' for goals that don't map to body/self/people/outlook. Categories are INTERNAL — never name a category to the member, never imply some goals are treated differently.
+A goal is reclaimed when the real-world thing actually happened — the member is the authority on that (the same standard the close already uses). So when they clearly declare one done, you can mark it reclaimed with mark_reclaim_reclaimed — but ONLY after you confirm it this turn ("Want me to mark that one reclaimed?") and pass confirmed=true; a passing mention is never enough. For LIFE goals this is the path, so honor a clear "done" readily. For IDENTITY goals the coached Beats are the real path — never suggest marking one done; only honor an unambiguous, member-initiated "that one's genuinely done." If the member says a mark was premature, use unmark_reclaim_reclaimed to set it back.
+
 MEMBER CONTEXT (facts — do not invent beyond these):
 ${contextBlock(c)}`;
 }
@@ -170,10 +173,23 @@ const REFINE_TOOLS = [
   {
     name: 'mark_reclaim_reclaimed',
     description:
-      "Mark a Reclaim List item as reclaimed — when the member clearly says they've achieved/finished it ('I raised the round', 'I'm riding Carter Lake every week now, that one's done'). Pass their reference to the item. ALWAYS confirm first ('Want me to mark that one reclaimed?') — a passing mention isn't a completion. This is how life goals (and any goal the member declares done) advance.",
+      "Mark a Reclaim List item reclaimed — when the member clearly declares they've achieved it ('I raised the round'; 'I'm riding Carter Lake every week now, that one's done'). A goal is done when the real-world thing happened — the member is the authority on that. You MUST confirm first ('Want me to mark that one reclaimed?') and only then call this with confirmed=true; a passing mention is not a declaration. This is the path for life goals; for identity goals the coached Beats are the default — never suggest marking one done, only honor an unambiguous member-initiated 'that one's genuinely done.'",
     input_schema: {
       type: 'object',
-      properties: { item: { type: 'string', description: 'the member’s reference to the Reclaim List item they’ve completed' } },
+      properties: {
+        item: { type: 'string', description: 'the member’s reference to the Reclaim List item they’ve completed' },
+        confirmed: { type: 'boolean', description: 'true ONLY after the member explicitly says yes to marking it reclaimed this turn' },
+      },
+      required: ['item', 'confirmed'],
+    },
+  },
+  {
+    name: 'unmark_reclaim_reclaimed',
+    description:
+      "Reverse a reclaimed mark when the member says it was premature ('actually that's not done', 'undo that'). Only reverses a member self-mark — a goal earned through the Beats can't be undone here. Pass their reference to the item.",
+    input_schema: {
+      type: 'object',
+      properties: { item: { type: 'string', description: 'the Reclaim List item to set back to in-progress' } },
       required: ['item'],
     },
   },

@@ -13,7 +13,7 @@ import { loadConversation, appendMessages } from '../../lib/agent/conversation.t
 import { recentConsumedTitles } from '../../lib/bites/store.ts';
 import { getReclaimItems } from '../../lib/beats/store.ts';
 import { addReclaimItemForMember, addDoorForMember } from '../../lib/member/refine.ts';
-import { markReclaimReclaimedByText } from '../../lib/beats/store.ts';
+import { markReclaimReclaimedByText, unmarkReclaimReclaimedByText } from '../../lib/beats/store.ts';
 import { proposeEntry, playbookForAgent, isPlaybookSection } from '../../lib/playbook/store.ts';
 import { getGrinta } from '../../lib/grinta/index.ts';
 import { itemStem, dimensionForIndex } from '../../lib/idq/instrument.ts';
@@ -151,15 +151,33 @@ export async function sendCheckin(memberId: string, memberMessage: string): Prom
         return { ok: false, message: "Couldn't map that to one of the Fade Doors. Reflect what they said and ask a little more about what happened, then try again." };
       }
       if (name === 'mark_reclaim_reclaimed') {
+        // Hard confirm gate (code, not just prompt): a goal can't be flipped on a passing mention.
+        if (input.confirmed !== true) {
+          return { ok: false, message: 'Not marked yet — confirm with the member first ("Want me to mark that one reclaimed?"), then call again with confirmed=true.' };
+        }
         const res = await markReclaimReclaimedByText(db, memberId, String(input.item ?? ''));
         if (res.ok) {
           mutated = true;
-          return { ok: true, message: `Marked "${res.text}" reclaimed — it now shows as won on their Journey and Reclaim List. Acknowledge it warmly; this is a real milestone.` };
+          return { ok: true, message: `Marked "${res.text}" reclaimed — it now shows a check on their Reclaim List and ticked their Journey. Acknowledge it warmly; this is a real milestone.` };
         }
         if (res.reason === 'nomatch') {
           return { ok: false, message: "Couldn't find that item on their Reclaim List. Reflect what they said and ask which item they mean, then try again." };
         }
         return { ok: false, message: 'Not marked — no item reference was provided.' };
+      }
+      if (name === 'unmark_reclaim_reclaimed') {
+        const res = await unmarkReclaimReclaimedByText(db, memberId, String(input.item ?? ''));
+        if (res.ok) {
+          mutated = true;
+          return { ok: true, message: `Set "${res.text}" back to in progress. Acknowledge it simply — no fuss.` };
+        }
+        if (res.reason === 'not_self_marked') {
+          return { ok: false, message: "That one wasn't a self-mark (it was earned through the work), so there's nothing to undo here." };
+        }
+        if (res.reason === 'nomatch') {
+          return { ok: false, message: "Couldn't find that item — ask which one they mean." };
+        }
+        return { ok: false, message: 'Nothing to undo — no item reference was provided.' };
       }
       if (name === 'propose_playbook_entry') {
         const section = String(input.section ?? '');
