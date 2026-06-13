@@ -261,6 +261,15 @@ async function liveReply(
   let useFetch = executor !== undefined;
   const toolsFor = () => (executor ? (useFetch ? [...REFINE_TOOLS, WEB_FETCH_TOOL] : REFINE_TOOLS) : undefined);
   const model = process.env.ANTHROPIC_MODEL ?? 'claude-sonnet-4-6';
+  // Join ALL text blocks. With a server tool (web_fetch), the model emits a preamble text block,
+  // then the fetch, then the real reflection in a LATER text block — taking only the first would
+  // throw the answer away. Joining preserves the full reply in tool and non-tool turns alike.
+  const textOf = (content: any[]): string =>
+    content
+      .filter((b) => b.type === 'text' && typeof b.text === 'string' && b.text.trim())
+      .map((b) => b.text.trim())
+      .join('\n\n')
+      .trim();
   const create = async (max_tokens: number) => {
     const tools = toolsFor();
     try {
@@ -285,8 +294,7 @@ async function liveReply(
     }
     const toolUses = res.content.filter((b) => b.type === 'tool_use'); // our client tools only
     if (!executor || res.stop_reason !== 'tool_use' || toolUses.length === 0) {
-      const block = res.content.find((b) => b.type === 'text');
-      return block && block.type === 'text' ? block.text.trim() : '';
+      return textOf(res.content);
     }
     messages.push({ role: 'assistant', content: res.content });
     const results = [];
@@ -298,8 +306,7 @@ async function liveReply(
   }
   // Loop exhausted: one final text-only turn so we never return empty.
   const fin = await client.messages.create({ model, max_tokens: 400, system, messages });
-  const block = fin.content.find((b) => b.type === 'text');
-  return block && block.type === 'text' ? block.text.trim() : '';
+  return textOf(fin.content);
 }
 
 export async function checkinOpening(c: CheckinContext): Promise<string> {
