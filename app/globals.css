@@ -155,7 +155,9 @@ ul.reclaim li.reclaimed { color: var(--navy); }
   background: var(--teal); color: #fff; border: none; border-radius: 6px;
 }
 .measure-log button:disabled { opacity: 0.5; cursor: default; }
+.measure-meta { font-size: 0.74rem; margin-top: 0.3rem; opacity: 0.7; }
 .measure-error { color: var(--deep-red); font-size: 0.76rem; margin: 0.3rem 0 0; }
+.measure-saved { color: var(--teal); font-size: 0.78rem; font-weight: 600; margin: 0.3rem 0 0; }
 .measures-loose { margin-top: 0.8rem; }
 .measures-loose-title { font-size: 0.82rem; font-weight: 600; color: var(--charcoal); margin: 0 0 0.3rem; opacity: 0.85; }
 

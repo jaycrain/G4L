@@ -35,6 +35,7 @@ export default function MeasureCard({ memberId, measure }: { memberId: string; m
   const [value, setValue] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const [saved, setSaved] = useState<string | null>(null); // confirmation after a successful log
   const router = useRouter();
 
   const unit = measure.unit ? ` ${measure.unit}` : '';
@@ -42,6 +43,13 @@ export default function MeasureCard({ memberId, measure }: { memberId: string; m
   const moved =
     measure.startValue != null && latest != null ? Math.round((latest - measure.startValue) * 10) / 10 : null;
   const movedGood = moved != null && (measure.direction === 'down' ? moved < 0 : moved > 0);
+
+  function fmtDay(d: string | null): string | null {
+    if (!d) return null;
+    const dt = new Date(`${d}T00:00:00`);
+    return Number.isNaN(dt.getTime()) ? d : dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  }
+  const lastLogged = fmtDay(measure.latestOn);
 
   function submit() {
     const n = Number(value.trim());
@@ -57,6 +65,7 @@ export default function MeasureCard({ memberId, measure }: { memberId: string; m
         return;
       }
       setValue('');
+      setSaved(`${n}${unit}`); // explicit feedback even when the number didn't change
       router.refresh();
     });
   }
@@ -85,6 +94,11 @@ export default function MeasureCard({ memberId, measure }: { memberId: string; m
         )}
         {measure.progressPct != null && <span className="muted measure-pct">{measure.progressPct}%</span>}
       </div>
+      <div className="measure-meta muted">
+        {measure.count > 0
+          ? `Last logged ${lastLogged} · ${measure.count} ${measure.count === 1 ? 'reading' : 'readings'}`
+          : 'No readings yet — log your first below.'}
+      </div>
       <div className="measure-log">
         <input
           type="number"
@@ -92,7 +106,11 @@ export default function MeasureCard({ memberId, measure }: { memberId: string; m
           step="any"
           placeholder={`Log ${measure.label.toLowerCase()}…`}
           value={value}
-          onChange={(e) => setValue(e.target.value)}
+          onChange={(e) => {
+            setValue(e.target.value);
+            if (saved) setSaved(null);
+            if (error) setError(null);
+          }}
           onKeyDown={(e) => e.key === 'Enter' && submit()}
           aria-label={`Log a ${measure.label} reading`}
           disabled={pending}
@@ -102,6 +120,7 @@ export default function MeasureCard({ memberId, measure }: { memberId: string; m
         </button>
       </div>
       {error && <p className="measure-error">{error}</p>}
+      {saved && !error && <p className="measure-saved">Saved ✓ {saved}</p>}
     </div>
   );
 }
