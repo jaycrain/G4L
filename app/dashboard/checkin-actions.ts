@@ -90,7 +90,7 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
     dimensions,
     idScoreHistory,
     idqAnswers,
-    reclaimDetail: reclaimItems.map((r) => ({ text: r.text, category: r.category, state: r.state })),
+    reclaimDetail: reclaimItems.map((r) => ({ text: r.text, category: r.category, state: r.state, tracked: linkedIds.has(r.id) })),
     beatsDone: beatRows.rows[0]?.n ?? 0,
     playbookKeepers: playbook.keepers,
     playbookNotes: playbook.recentNotes,
