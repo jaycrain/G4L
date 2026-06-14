@@ -24,12 +24,54 @@ export function grintaScore(i: GrintaInput): number {
 export type Grinta = {
   score: number;
   daysActive: number;
+  prevDaysActive: number;
   windowDays: number;
   workouts: number;
   direction: 'up' | 'down' | 'flat';
   delta: number;
   line: string;
 };
+
+// The three hardiness components (Give-Back Model v0.4): Consistency (showing up) · Recovery (clipping
+// back in after a miss) · Reach (doing the hard thing). STRUCTURE is locked; the values + threshold are
+// PROVISIONAL — Greg finishes the math. Consistency is real (show-up density); Recovery/Reach are
+// provisional derivations from available signals so the sliders read honestly until the engine lands.
+export type GrintaComponent = { key: 'consistency' | 'recovery' | 'reach'; label: string; fill: number; threshold: number; passed: boolean; story: string };
+
+export function grintaComponents(g: Grinta, reclaimMoving: number): GrintaComponent[] {
+  const threshold = 70; // provisional pass-line
+  const pct = (x: number) => Math.round(clamp01(x) * 100);
+  const consistency = pct(g.daysActive / g.windowDays);
+  // Recovery: are they clipping back in? Holding/rising vs the prior window reads as recovery.
+  const recovery = g.prevDaysActive === 0 ? consistency : pct(g.daysActive / Math.max(g.prevDaysActive, g.daysActive || 1));
+  const reach = pct(reclaimMoving / 3); // provisional scale toward "a few goals in motion"
+  return [
+    {
+      key: 'consistency',
+      label: 'Consistency',
+      fill: consistency,
+      threshold,
+      passed: consistency >= threshold,
+      story: g.daysActive ? `Shown up ${g.daysActive} of the last ${g.windowDays} days.` : 'A fresh window — one rep gets it moving.',
+    },
+    {
+      key: 'recovery',
+      label: 'Recovery',
+      fill: recovery,
+      threshold,
+      passed: recovery >= threshold,
+      story: g.daysActive >= g.prevDaysActive ? 'Clipping back in — no miss left to recover from.' : 'A lighter stretch; the move now is clipping back in.',
+    },
+    {
+      key: 'reach',
+      label: 'Reach',
+      fill: reach,
+      threshold,
+      passed: reach >= threshold,
+      story: reclaimMoving > 0 ? `${reclaimMoving} goal${reclaimMoving === 1 ? '' : 's'} moving toward reclaimed.` : 'No goal moving yet — pick one to push.',
+    },
+  ];
+}
 
 /** Reflective, never a grade. */
 export function grintaLine(daysActive: number, windowDays: number, identityNoun: string | null): string {
@@ -44,6 +86,7 @@ export function computeGrinta(cur: GrintaInput, prev: GrintaInput, identityNoun:
   return {
     score,
     daysActive: cur.daysActive,
+    prevDaysActive: prev.daysActive,
     windowDays: cur.windowDays,
     workouts: cur.workouts,
     direction: delta > 0 ? 'up' : delta < 0 ? 'down' : 'flat',

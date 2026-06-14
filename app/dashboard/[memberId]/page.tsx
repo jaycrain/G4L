@@ -3,7 +3,7 @@ import { getDb } from '../../../lib/db/index.ts';
 import { getDashboard } from '../../../lib/gateway/flow.ts';
 import { timeSignals, topNudge } from '../../../lib/agent/nudge.ts';
 import { getActivityPanel } from '../../../lib/activity/store.ts';
-import { getGrinta } from '../../../lib/grinta/index.ts';
+import { getGrinta, grintaComponents } from '../../../lib/grinta/index.ts';
 import { getJourney } from '../../../lib/beats/store.ts';
 import JourneyRings from '../journey-rings.tsx';
 import FieldGuide from '../field-guide.tsx';
@@ -52,6 +52,13 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
     getJourney(db, memberId),
     getActivityPanel(db, memberId, dash.identityNoun),
   ]);
+
+  // The three GRINTA components (sliders) + the next scheduled IDQ (last retake + 60 days).
+  const grintaComps = grintaComponents(grinta, journey.reclaim.moving);
+  const lastIdq = (await db.query<{ t: string | null }>('select max(taken_at) t from idq_retake where member_id=$1', [memberId])).rows[0]?.t;
+  const nextIdq = lastIdq
+    ? new Date(new Date(lastIdq).getTime() + 60 * 24 * 3600 * 1000).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+    : null;
 
   // Hero verb tracks the active phase (the one the forecast marks "You're here").
   const activePhase = forecast.phases.find((p) => p.status === "You're here")?.phase ?? 'reconnect';
@@ -123,64 +130,83 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
         {dash.identityParagraph && <HeroIntro text={dash.identityParagraph} />}
       </div>
 
-      {/* ZONE 1 · status — the three metrics */}
+      {/* ZONE 1 · status — three squarish metric panels, each with a See-more sub-page */}
       <div className="metrics-grid">
         {dash.score ? (
-          <div className="card id-card">
+          <div className="card metric id-card">
             <h3>ID Score</h3>
-            <div className="score">
-              <span className="num">{Math.round(dash.score.score)}</span>
-              {dash.score.direction && (
-                <span className={`dir-${dash.score.direction}`}>
-                  {ARROW[dash.score.direction]}
-                  {dash.score.delta !== null && Math.round(dash.score.delta) !== 0 ? ` ${dash.score.delta > 0 ? '+' : ''}${Math.round(dash.score.delta)}` : ''}
-                </span>
-              )}
+            <div className="metric-body">
+              <div className="score">
+                <span className="num">{Math.round(dash.score.score)}</span>
+                {dash.score.direction && (
+                  <span className={`dir-${dash.score.direction}`}>
+                    {ARROW[dash.score.direction]}
+                    {dash.score.delta !== null && Math.round(dash.score.delta) !== 0 ? ` ${dash.score.delta > 0 ? '+' : ''}${Math.round(dash.score.delta)}` : ''}
+                  </span>
+                )}
+              </div>
+              <div className="dims">
+                {dash.score.dimensions &&
+                  (Object.keys(DIM_LABEL) as Array<keyof typeof dash.score.dimensions>).map((k) => (
+                    <div className="dim" key={k}>
+                      <span>{DIM_LABEL[k]}</span>
+                      <span>{dash.score!.dimensions[k]} / 30</span>
+                    </div>
+                  ))}
+              </div>
+              {nextIdq && <p className="muted metric-foot">Your next scheduled IDQ is {nextIdq}.</p>}
             </div>
-            <p className="muted">{dash.score.context}</p>
-            <div className="dims" style={{ marginTop: '0.75rem' }}>
-              {dash.score.dimensions &&
-                (Object.keys(DIM_LABEL) as Array<keyof typeof dash.score.dimensions>).map((k) => (
-                  <div className="dim" key={k}>
-                    <span>{DIM_LABEL[k]}</span>
-                    <span>{dash.score!.dimensions[k]} / 30</span>
-                  </div>
-                ))}
-            </div>
+            <Link href={`/score/${memberId}`} className="see-more">See more →</Link>
           </div>
         ) : (
-          <div className="card id-card">
+          <div className="card metric id-card">
             <h3>ID Score</h3>
-            <p className="muted">Your Identity Distance Questionnaire (IDQ) baseline isn&apos;t in yet.</p>
+            <div className="metric-body"><p className="muted">Your Identity Distance Questionnaire (IDQ) baseline isn&apos;t in yet.</p></div>
+            <Link href={`/score/${memberId}`} className="see-more">See more →</Link>
           </div>
         )}
 
-        <div className="card journey-card">
+        <div className="card metric journey-card">
           <h3>Journey</h3>
-          <JourneyRings currentR={journey.currentR} />
-          {journey.currentLayer && (
-            <p className="muted journey-layer">Right now: <strong>{journey.currentRLabel} · {journey.currentLayer}</strong></p>
-          )}
-          {journey.reclaim.total > 0 && (
-            <div className="journey-reclaim">
-              <span><strong>{journey.reclaim.reclaimed}</strong> reclaimed</span>
-              <span><strong>{journey.reclaim.moving}</strong> moving</span>
-              <span><strong>{journey.reclaim.notYet}</strong> to go</span>
-            </div>
-          )}
+          <div className="metric-body metric-center">
+            <JourneyRings currentR={journey.currentR} />
+            {journey.reclaim.total > 0 && (
+              <div className="journey-reclaim">
+                <span><strong>{journey.reclaim.reclaimed}</strong> reclaimed</span>
+                <span><strong>{journey.reclaim.moving}</strong> moving</span>
+                <span><strong>{journey.reclaim.notYet}</strong> to go</span>
+              </div>
+            )}
+          </div>
+          <Link href={`/journey/${memberId}`} className="see-more">See more →</Link>
         </div>
 
-        <div className="card grinta">
-          <h3>GRINTA! Index</h3>
-          <div className="score">
-            <span className="num">{grinta.score}</span>
-            <span className={`dir-${grinta.direction}`}>
-              {ARROW[grinta.direction]}
-              {grinta.delta !== 0 ? ` ${grinta.delta > 0 ? '+' : ''}${grinta.delta}` : ''}
-            </span>
+        <div className="card metric grinta">
+          <h3>Grinta Index</h3>
+          <div className="metric-body">
+            <div className="score">
+              <span className="num">{grinta.score}</span>
+              <span className={`dir-${grinta.direction}`}>
+                {ARROW[grinta.direction]}
+                {grinta.delta !== 0 ? ` ${grinta.delta > 0 ? '+' : ''}${grinta.delta}` : ''}
+              </span>
+            </div>
+            <div className="gcomps">
+              {grintaComps.map((c) => (
+                <div className="gcomp" key={c.key}>
+                  <div className="gcomp-top">
+                    <span className="gcomp-name">{c.label}</span>
+                    <span className={c.passed ? 'gcomp-pass' : 'gcomp-build'}>{c.passed ? 'passed ✓' : 'building'}</span>
+                  </div>
+                  <div className="gbar">
+                    <div className="gfill" style={{ width: `${c.fill}%` }} />
+                    <div className="gthr" style={{ left: `${c.threshold}%` }} />
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
-          <p className="muted">{grinta.line}</p>
-          <p className="muted grinta-bridge">Your daily effort moves this. Your ID Score is where it lands when you next take the IDQ.</p>
+          <Link href={`/grinta/${memberId}`} className="see-more">See more →</Link>
         </div>
       </div>
 

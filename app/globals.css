@@ -489,12 +489,28 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .idq-dim-head { color: var(--teal); margin-top: 1.5rem; }
 
 /* ===== v0.4 dashboard shell — IA from the mock, the app's own type/weights ===== */
-/* Zone 1 — three metrics side by side (mock proportions), stack on narrow screens */
+/* Zone 1 — three squarish metric panels side by side; each with a See-more pinned to the foot */
 .metrics-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
 .metrics-grid .card { margin-bottom: 0; }
 @media (max-width: 760px) { .metrics-grid { grid-template-columns: 1fr; } }
+.metric { display: flex; flex-direction: column; min-height: 290px; }
+.metric .metric-body { flex: 1; }
+.metric .metric-center { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.metric .metric-foot { font-size: 0.8rem; margin-top: 0.7rem; }
+.see-more { margin-top: 0.9rem; align-self: flex-start; font-size: 0.85rem; font-weight: 600; color: var(--teal); text-decoration: none; }
+.see-more:hover { text-decoration: underline; }
 .id-card .dim { display: flex; justify-content: space-between; font-size: 0.9rem; padding: 0.25rem 0; border-top: 1px solid var(--light-grey); }
 .id-card .dim:first-child { border-top: none; }
+.journey-card .rings svg { width: 84px; height: 84px; }
+/* Grinta sliders (component build + provisional threshold) */
+.gcomps { margin-top: 0.8rem; }
+.gcomp { margin-bottom: 0.6rem; }
+.gcomp-top { display: flex; justify-content: space-between; font-size: 0.78rem; font-weight: 600; color: var(--charcoal); margin-bottom: 0.25rem; }
+.gcomp-pass { color: var(--teal); font-weight: 700; }
+.gcomp-build { color: #AEB3B8; }
+.gbar { position: relative; height: 8px; background: var(--light-grey); border-radius: 5px; }
+.gfill { position: absolute; left: 0; top: 0; height: 8px; border-radius: 5px; background: var(--olive); }
+.gthr { position: absolute; top: -3px; width: 2px; height: 14px; background: var(--navy); }
 
 /* Zone 2 — badge passport */
 .passport .passport-head { display: flex; align-items: baseline; justify-content: space-between; }
