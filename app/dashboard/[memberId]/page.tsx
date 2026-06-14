@@ -6,7 +6,6 @@ import { getActivityPanel } from '../../../lib/activity/store.ts';
 import { getGrinta, grintaComponents } from '../../../lib/grinta/index.ts';
 import { getJourney } from '../../../lib/beats/store.ts';
 import JourneyRings from '../journey-rings.tsx';
-import FieldGuide from '../field-guide.tsx';
 import HeroIntro from '../hero-intro.tsx';
 import { formatDistance, formatDuration, typeLabel, relativeDay } from '../../../lib/activity/summary.ts';
 import { firstName, initials } from '../../../lib/member/avatar.ts';
@@ -63,7 +62,6 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
   // Hero verb tracks the active phase (the one the forecast marks "You're here").
   const activePhase = forecast.phases.find((p) => p.status === "You're here")?.phase ?? 'reconnect';
   const heroVerb = HERO_VERB[activePhase] ?? 'Reconnecting';
-  const heroLabel = facets.length ? `${heroVerb} ${facets.join(' · ')}` : null;
 
   // Threshold ceremony — overlay on first arrival (unchanged).
   const thresholdCrossed = !!(
@@ -106,7 +104,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
           <span className="greeting">Hi, {firstName(dash.displayName)}</span>
         </Link>
         <span className="greeting-actions">
-          <FieldGuide identityLine={heroLabel} />
+          <Link href={`/field-guide/${memberId}`} className="logout-link">Field Guide</Link>
           <Link href={`/playbook/${memberId}`} className="logout-link">Playbook</Link>
           <Link href="/account" className="logout-link">Account</Link>
           <form action={logoutAction} className="logout-form">
