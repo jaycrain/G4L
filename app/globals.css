@@ -130,8 +130,7 @@ ul.reclaim li.reclaimed { color: var(--navy); }
   margin: 0.4rem 0 0.5rem;
   padding: 0.5rem 0.65rem;
   background: #fff;
-  border: 1px solid var(--light-grey);
-  border-left: 3px solid var(--teal);
+  border: 1px solid #bfbdb8; /* light-grey, ~20% darker; no teal left-accent */
   border-radius: 8px;
 }
 .measure-head { display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; }
@@ -167,7 +166,7 @@ ul.reclaim li.reclaimed { color: var(--navy); }
 .track-this-btn:hover { background: rgba(59, 148, 149, 0.08); }
 .track-this-form {
   margin: 0.5rem 0 0.7rem; padding: 0.55rem 0.7rem; background: #fff;
-  border: 1px solid var(--light-grey); border-left: 3px solid var(--teal); border-radius: 8px;
+  border: 1px solid #bfbdb8; border-radius: 8px;
 }
 .tt-row { display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.4rem; flex-wrap: wrap; }
 .track-this-form input, .track-this-form select {
