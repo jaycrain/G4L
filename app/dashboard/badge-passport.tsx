@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import type { Badge } from '../../lib/curriculum/types.ts';
 
 // The passport (Zone 2) — uniform ~32px stamps, each unique in color (category) + glyph (the badge).
@@ -29,23 +30,38 @@ function Stamp({ badge }: { badge: Badge & { earned: boolean } }) {
   );
 }
 
-export default function BadgePassport({ earned, total, badges }: { earned: number; total: number; badges: (Badge & { earned: boolean })[] }) {
+export default function BadgePassport({
+  memberId,
+  earned,
+  total,
+  badges,
+  placeholders,
+}: {
+  memberId: string;
+  earned: number;
+  total: number;
+  badges: (Badge & { earned: boolean })[];
+  placeholders: number;
+}) {
   return (
     <div className="card passport">
       <div className="passport-head">
         <h3>Your Badges</h3>
         <span className="passport-count">{earned} of {total} earned</span>
       </div>
-      <p className="muted">
-        {earned <= 1
-          ? "Each one's a real thing you did — and they won't come easy. Stack them, and you're winning yourself back."
-          : "Real things you've done. The point isn't any single one — it's how many you stack."}
-      </p>
       <div className="stamps">
         {badges.map((b) => (
           <Stamp key={b.id} badge={b} />
         ))}
+        {Array.from({ length: placeholders }).map((_, i) => (
+          <span key={`ph-${i}`} className="stamp lock" aria-label="Badge still to earn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#9a9a93" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+              <path d={GLYPH.star} />
+            </svg>
+          </span>
+        ))}
       </div>
+      <Link href={`/badges/${memberId}`} className="see-more">See more →</Link>
     </div>
   );
 }

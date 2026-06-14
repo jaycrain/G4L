@@ -211,7 +211,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
       </div>
 
       {/* ZONE 2 · proof — the badge passport */}
-      <BadgePassport earned={passport.earned} total={passport.total} badges={passport.badges} />
+      <BadgePassport memberId={memberId} earned={passport.earned} total={passport.total} badges={passport.badges} placeholders={passport.placeholders} />
 
       {/* ZONE 3 · work — the Reclaim List (the fuel), then the curriculum forecast */}
       <div className="card">

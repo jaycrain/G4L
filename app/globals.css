@@ -513,9 +513,10 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .gthr { position: absolute; top: -3px; width: 2px; height: 14px; background: var(--navy); }
 
 /* Zone 2 — badge passport */
+.passport { max-width: 440px; }
 .passport .passport-head { display: flex; align-items: baseline; justify-content: space-between; }
 .passport .passport-count { font-size: 0.85rem; color: var(--navy); opacity: 0.7; font-weight: 600; }
-.passport .stamps { display: flex; flex-wrap: wrap; gap: 0.55rem; margin-top: 0.85rem; }
+.passport .stamps { display: flex; flex-wrap: wrap; gap: 0.45rem; margin-top: 0.75rem; }
 .passport .stamp { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(0,0,0,.06); }
 .passport .stamp svg { width: 16px; height: 16px; }
 .passport .stamp.lock { background: #F1F0EC; border: 1px dashed #cdccc6; }

@@ -81,15 +81,25 @@ export async function getForecast(db: Db, memberId: string): Promise<Forecast> {
   };
 }
 
-export type PassportView = { earned: number; total: number; badges: (Badge & { earned: boolean })[] };
+export type PassportView = { earned: number; total: number; badges: (Badge & { earned: boolean })[]; placeholders: number };
+
+// The passport's forward-map size — what the full collection grows to. The grid always shows this
+// many slots so the member can see how much there is to earn; real badges (defined in the registry)
+// fill in, the rest are anonymous greyed slots until they're authored.
+const PASSPORT_TOTAL = 16;
 
 export async function getPassport(db: Db, memberId: string): Promise<PassportView> {
-  const earned = new Set(await earnedBadgeIds(db, memberId));
+  const earnedSet = new Set(await earnedBadgeIds(db, memberId));
   // Known badges form the forward-map; surprise badges only appear once earned (uncounted until then).
   const badges = listBadges()
-    .filter((b) => b.visibility === 'known' || earned.has(b.id))
-    .map((b) => ({ ...b, earned: earned.has(b.id) }));
-  return { earned: badges.filter((b) => b.earned).length, total: badges.length, badges };
+    .filter((b) => b.visibility === 'known' || earnedSet.has(b.id))
+    .map((b) => ({ ...b, earned: earnedSet.has(b.id) }));
+  return {
+    earned: badges.filter((b) => b.earned).length,
+    total: PASSPORT_TOTAL,
+    badges,
+    placeholders: Math.max(0, PASSPORT_TOTAL - badges.length),
+  };
 }
 
 /** Identity strip facets — the reclaimed selves the member has NAMED (Identity Excavation onward).
