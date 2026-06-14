@@ -103,16 +103,14 @@ button:hover, .btn:hover { background: var(--navy); }
 .phase-cross-blurb { margin: 0; color: var(--charcoal); line-height: 1.5; font-size: 0.95rem; }
 .phase-cross-cta { display: inline-block; margin-top: 0.75rem; font-weight: 700; color: var(--navy); text-decoration: underline; }
 
-/* Your Daily Beat — the soul panel. The one panel that asks nothing, so it reads differently: a solid
-   olive block (like the hero is solid navy), tightened vertically. */
-.daily-beat-panel { background: var(--olive); border-color: var(--olive); padding-top: 0.8rem; padding-bottom: 0.85rem; }
-.daily-beat-panel h3 { color: var(--charcoal); margin: 0 0 0.1rem; }
-.daily-beat-panel .db-hook { color: var(--charcoal); opacity: 0.75; margin: 0 0 0.15rem; }
-.daily-beat-panel .db-text { margin: 0.35rem 0 0; font-size: 1.05rem; line-height: 1.45; color: var(--charcoal); }
-.daily-beat-panel .db-foot { margin-top: 0.6rem; }
-.daily-beat-panel .db-keep { background: none; border: none; padding: 0; font: inherit; font-weight: 700; color: var(--charcoal); text-decoration: underline; cursor: pointer; }
+/* Your Daily Beat — a standard panel like the rest (navy outline, white background, charcoal text);
+   the only flourish is the quiet "keep this" action. */
+.daily-beat-panel .db-text { margin: 0.5rem 0 0; font-size: 1.05rem; line-height: 1.6; color: var(--charcoal); }
+.daily-beat-panel .db-foot { margin-top: 0.8rem; }
+.daily-beat-panel .db-keep { background: none; border: none; padding: 0; font: inherit; font-weight: 700; color: var(--teal); cursor: pointer; }
+.daily-beat-panel .db-keep:hover { text-decoration: underline; }
 .daily-beat-panel .db-keep:disabled { opacity: 0.6; cursor: default; }
-.daily-beat-panel .db-kept { font-size: 0.85rem; font-weight: 700; color: var(--charcoal); }
+.daily-beat-panel .db-kept { font-size: 0.85rem; font-weight: 700; color: var(--olive); }
 
 .hero { background: var(--navy); color: var(--white); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; }
 .hero h1 { color: var(--white); }
