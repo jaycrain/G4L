@@ -94,11 +94,6 @@ export default function MeasureCard({ memberId, measure }: { memberId: string; m
         )}
         {measure.progressPct != null && <span className="muted measure-pct">{measure.progressPct}%</span>}
       </div>
-      <div className="measure-meta muted">
-        {measure.count > 0
-          ? `Last logged ${lastLogged} · ${measure.count} ${measure.count === 1 ? 'reading' : 'readings'}`
-          : 'No readings yet — log your first below.'}
-      </div>
       <div className="measure-log">
         <input
           type="number"
@@ -121,6 +116,11 @@ export default function MeasureCard({ memberId, measure }: { memberId: string; m
       </div>
       {error && <p className="measure-error">{error}</p>}
       {saved && !error && <p className="measure-saved">Saved ✓ {saved}</p>}
+      <div className="measure-meta muted">
+        {measure.count > 0
+          ? `Last logged ${lastLogged} · ${measure.count} ${measure.count === 1 ? 'reading' : 'readings'}`
+          : 'No readings yet — log your first below.'}
+      </div>
     </div>
   );
 }
