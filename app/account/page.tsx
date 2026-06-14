@@ -27,6 +27,9 @@ export default async function AccountPage() {
 
   return (
     <>
+      <div className="crumb">
+        <Link href={`/dashboard/${memberId}`} className="back-link">← Dashboard</Link>
+      </div>
       <div className="member-greeting">
         {m.avatar_url ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -35,9 +38,6 @@ export default async function AccountPage() {
           <span className="avatar-initials" aria-hidden="true">{initials(m.display_name)}</span>
         )}
         <span className="greeting">Your account</span>
-        <Link href={`/dashboard/${memberId}`} className="logout-link" style={{ marginLeft: 'auto' }}>
-          ← Dashboard
-        </Link>
       </div>
 
       <div className="card">
