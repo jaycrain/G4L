@@ -136,6 +136,33 @@ test('badges earn idempotently (newly-earned signal fires once)', async () => {
   assert.deepEqual(await earnedBadgeIds(db, memberId), ['named-yourself']);
 });
 
+test('forecast progression: Identity Excavation → Checkpoint → Rewire unlocks', async () => {
+  const { getForecast } = await import('../lib/curriculum/view.ts');
+  const { db, memberId } = await seed();
+
+  // Fresh: Reconnect is "You're here", the lit asset is the one built Session.
+  let f = await getForecast(db, memberId);
+  assert.equal(f.phases.find((p) => p.phase === 'reconnect')!.status, "You're here");
+  assert.equal(f.current!.id, 'RCN-EXC');
+
+  // Close Identity Excavation → the Reconnect Checkpoint becomes the lit asset.
+  await saveAnswer(db, memberId, 'RCN-EXC', 4, 'the Elite Cyclist', 4);
+  await closeSession(db, memberId, 'RCN-EXC');
+  f = await getForecast(db, memberId);
+  assert.equal(f.current!.id, 'RCN-CHECK');
+  assert.equal(f.phases[0]!.items.find((i) => i.id === 'RCN-EXC')!.state, 'done');
+
+  // Pass the Checkpoint → Reconnect Complete, Rewire active, the checkpoint reads done.
+  await setGate(db, memberId, 'reconnect_checkpoint_passed');
+  await setGate(db, memberId, 'rewire_unlocked');
+  f = await getForecast(db, memberId);
+  assert.equal(f.phases.find((p) => p.phase === 'reconnect')!.status, 'Complete');
+  assert.equal(f.phases.find((p) => p.phase === 'rewire')!.status, "You're here");
+  assert.equal(f.phases[0]!.items.find((i) => i.id === 'RCN-CHECK')!.state, 'done');
+  // the next stop is Rewire's first Session (not authored yet → shown but not openable)
+  assert.equal(f.current!.id, 'RWR-DISINFO');
+});
+
 test('phase gates: set + check', async () => {
   const { db, memberId } = await seed();
   assert.equal(await hasGate(db, memberId, 'rewire_unlocked'), false);

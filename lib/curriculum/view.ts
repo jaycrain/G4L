@@ -42,14 +42,21 @@ export async function getForecast(db: Db, memberId: string): Promise<Forecast> {
   const gates = new Set(gatesArr);
   const activeIdx = activePhaseIndex(gates);
 
-  // The lit Session: the first non-closed, BUILT asset, scanning phases in order. For the slice that's
-  // Identity Excavation; after it closes, the Reconnect Checkpoint (once Phase 5 wires it).
+  // An asset is done if its Session is closed, or — for a Checkpoint — its phase gate has passed.
+  const isDone = (a: Asset): boolean => closed.has(a.id) || (a.kind === 'checkpoint' && gates.has(`${a.phase}_checkpoint_passed`));
+
+  // The lit asset: the first non-done BUILT asset (authored Session or the Reconnect Checkpoint). If
+  // none remain built (e.g. just passed Reconnect, next Rewire Session not authored yet), fall back to
+  // the first non-done asset in the active phase so the path still shows the next stop ("coming soon").
   const flat = phaseColumns().flatMap((c) => c.items);
-  const currentAsset = flat.find((a) => !closed.has(a.id) && isBuilt(a)) ?? null;
+  const currentAsset =
+    flat.find((a) => !isDone(a) && isBuilt(a)) ??
+    flat.find((a) => !isDone(a) && PHASE_ORDER.indexOf(a.phase) === activeIdx) ??
+    null;
 
   const phases: ForecastPhase[] = phaseColumns().map((col, idx) => {
     const items: ForecastItem[] = col.items.map((a) => {
-      const done = closed.has(a.id);
+      const done = isDone(a);
       const state: ForecastItem['state'] = done ? 'done' : currentAsset && a.id === currentAsset.id ? 'current' : 'up';
       return {
         id: a.id,
@@ -61,9 +68,9 @@ export async function getForecast(db: Db, memberId: string): Promise<Forecast> {
         ...(state === 'current' ? { hook: a.summary } : {}),
       };
     });
-    const allDone = items.length > 0 && items.every((i) => i.state === 'done');
-    const hasCurrent = items.some((i) => i.state === 'current');
-    const status: ForecastPhase['status'] = allDone ? 'Complete' : hasCurrent || idx <= activeIdx ? "You're here" : 'Ahead';
+    // Phase progression is gate-driven (not every Session is authored in the slice): phases before the
+    // active index read Complete, the active phase "You're here", the rest Ahead.
+    const status: ForecastPhase['status'] = idx < activeIdx ? 'Complete' : idx === activeIdx ? "You're here" : 'Ahead';
     return { phase: col.phase, label: PHASE_LABEL[col.phase] ?? col.phase, status, items };
   });
 

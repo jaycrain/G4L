@@ -569,3 +569,26 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .sess-ct { font-size: 1.05rem; font-weight: 700; color: var(--navy); margin: 0 0 0.4rem; }
 .sess-cbtn-locked { display: inline-flex; margin-top: 0.6rem; background: var(--light-grey); color: #AEB3B8; font-weight: 700; font-size: 0.85rem; padding: 0.5rem 1rem; border-radius: 22px; }
 .sess-done-card .sess-done-tag { font-size: 0.65rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--teal); margin-bottom: 0.3rem; }
+
+/* Reconnect Checkpoint — center-stage ceremony (the one firm gate) */
+.ckpt-wrap { display: flex; justify-content: center; padding: 1rem 0 3rem; }
+.ckpt-card { width: 100%; max-width: 620px; background: var(--navy); color: var(--white); border-radius: 16px; padding: 1.8rem 1.7rem; box-shadow: 0 10px 40px rgba(16,16,69,.18); }
+.ckpt-label { font-size: 0.72rem; font-weight: 700; letter-spacing: 1.3px; text-transform: uppercase; color: #9fb0bd; margin-bottom: 1rem; }
+.ckpt-bubble { background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.12); border-radius: 12px; border-top-left-radius: 3px; padding: 1rem 1.1rem; font-size: 1.02rem; line-height: 1.55; color: #eef3f6; }
+.ckpt-agent { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--teal); margin-bottom: 0.4rem; }
+.ckpt-facets { font-size: 0.92rem; color: #C9D2DA; margin: 0.9rem 0 0; }
+.ckpt-facets strong { color: #fff; }
+.ckpt-field { display: block; width: 100%; margin-top: 1rem; border: 1.5px solid rgba(255,255,255,.18); border-radius: 10px; padding: 0.85rem 0.95rem; font-family: inherit; font-size: 0.98rem; line-height: 1.55; background: rgba(255,255,255,.05); color: #fff; resize: vertical; }
+.ckpt-field::placeholder { color: #9fb0bd; }
+.ckpt-nudge { font-size: 0.88rem; color: #f0d9cf; margin: 0.7rem 0 0; font-style: italic; }
+.ckpt-actions { display: flex; flex-wrap: wrap; gap: 0.7rem; margin-top: 1.2rem; }
+.ckpt-declare { background: var(--teal); color: #fff; font-weight: 700; font-size: 0.95rem; padding: 0.7rem 1.4rem; border-radius: 24px; border: none; cursor: pointer; width: auto; }
+.ckpt-declare:hover { background: var(--olive); }
+.ckpt-notyet { background: transparent; color: #C9D2DA; font-weight: 600; font-size: 0.9rem; padding: 0.7rem 1.1rem; border: 1px solid rgba(255,255,255,.22); border-radius: 24px; cursor: pointer; width: auto; }
+.ckpt-notyet:hover { background: rgba(255,255,255,.08); }
+.ckpt-crossed .ckpt-milestone { font-size: 0.78rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--teal); margin-bottom: 0.6rem; }
+.ckpt-affirm { font-size: 1.1rem; line-height: 1.55; color: #fff; margin: 0 0 1rem; }
+.ckpt-badge { font-size: 0.92rem; color: #C9D2DA; margin: 0 0 0.4rem; }
+.ckpt-badge strong { color: var(--teal); }
+.ckpt-crossed .muted, .ckpt-held .muted { color: #C9D2DA; opacity: 1; }
+.ckpt-crossed .ckpt-declare, .ckpt-held .ckpt-notyet { margin-top: 1.1rem; }

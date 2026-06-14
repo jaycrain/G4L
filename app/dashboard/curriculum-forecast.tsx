@@ -22,13 +22,15 @@ export default function CurriculumForecast({ memberId, forecast }: { memberId: s
             {ph.items.map((it) =>
               it.state === 'current' ? (
                 <div className="litrow" key={it.id}>
-                  <div className="littag">▶ Next Session</div>
+                  <div className="littag">{it.kind === 'checkpoint' ? '⚑ Checkpoint' : '▶ Next Session'}</div>
                   <div className="littitle">{it.title}</div>
                   {it.hook && <div className="lithook">{it.hook}</div>}
-                  {it.openable ? (
-                    <Link className="open" href={`/session/${memberId}/${it.id}`}>Open this Session →</Link>
-                  ) : (
+                  {!it.openable ? (
                     <span className="open open-soon">Coming soon</span>
+                  ) : it.kind === 'checkpoint' ? (
+                    <Link className="open" href={`/checkpoint/${memberId}/${it.id}`}>Cross this Checkpoint →</Link>
+                  ) : (
+                    <Link className="open" href={`/session/${memberId}/${it.id}`}>Open this Session →</Link>
                   )}
                 </div>
               ) : (
