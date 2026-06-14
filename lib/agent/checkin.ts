@@ -431,5 +431,5 @@ export function proactiveTeaser(c: CheckinContext): string | null {
   if (c.lastCompletedAsset) return `How did ${c.lastCompletedAsset} land?`;
   if (c.direction === 'up') return 'Your score moved up — want to talk about what is working?';
   if (c.direction === 'down') return 'Checking in — how are you landing this week?';
-  return 'How are you landing this week?';
+  return "What's on your mind today?";
 }
