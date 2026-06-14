@@ -9,7 +9,7 @@ const R_COLOR: Record<string, string> = { reconnect: '#374f63', rewire: '#3b9495
 export default function CurriculumForecast({ memberId, forecast }: { memberId: string; forecast: Forecast }) {
   return (
     <div className="card curric">
-      <h3>Your Curriculum</h3>
+      <h3>Your Program</h3>
       <p className="muted">Every chapter, start to finish — so you always know what you&apos;re walking into. Your next Session is lit.</p>
 
       <div className="cgrid">
