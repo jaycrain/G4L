@@ -436,8 +436,11 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 
 /* Member Agent dock — the always-on companion bubble */
 .agent-dock { position: fixed; right: 1.25rem; bottom: 1.25rem; z-index: 50; display: flex; flex-direction: column; align-items: flex-end; gap: 0.6rem; }
-.agent-fab { margin: 0; display: inline-flex; align-items: center; gap: 0.5rem; background: var(--teal); color: var(--white); border: none; border-radius: 999px; padding: 0.75rem 1.4rem; font-weight: 700; box-shadow: 0 6px 20px rgba(16,16,69,0.25); cursor: pointer; }
+.agent-fab { position: relative; margin: 0; display: inline-flex; align-items: center; gap: 0.5rem; background: var(--teal); color: var(--white); border: none; border-radius: 999px; padding: 0.75rem 1.4rem; font-weight: 700; box-shadow: 0 6px 20px rgba(16,16,69,0.25); cursor: pointer; }
+/* speech-bubble tail, bottom-right */
+.agent-fab::after { content: ""; position: absolute; right: 26px; bottom: -9px; width: 0; height: 0; border-left: 6px solid transparent; border-right: 14px solid transparent; border-top: 13px solid var(--teal); }
 .agent-fab:hover { background: var(--navy); }
+.agent-fab:hover::after { border-top-color: var(--navy); }
 .agent-teaser { position: relative; background: var(--white); color: var(--charcoal); border: 1px solid var(--grey); border-left: 4px solid var(--teal); border-radius: 12px; padding: 0.6rem 1.9rem 0.6rem 0.8rem; max-width: 260px; box-shadow: 0 6px 18px rgba(16,16,69,0.15); cursor: pointer; font-size: 0.92rem; }
 .teaser-x { position: absolute; top: 0.15rem; right: 0.3rem; background: none; border: none; color: var(--navy); font-size: 1rem; margin: 0; padding: 0 0.2rem; cursor: pointer; opacity: 0.5; }
 .agent-panel { width: min(380px, calc(100vw - 2rem)); height: min(520px, calc(100vh - 3rem)); background: var(--white); border: 1px solid var(--grey); border-radius: 14px; box-shadow: 0 14px 44px rgba(16,16,69,0.28); display: flex; flex-direction: column; overflow: hidden; }
@@ -517,6 +520,11 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 /* Full-width strip: the 16 forward-map slots sit in one tight row on desktop, wrapping only on small screens. */
 .passport .stamps { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.75rem; }
 .passport .see-more { margin-top: 1.25rem; }
+/* badge category legend (sub-page) */
+.badge-legend { display: flex; flex-wrap: wrap; gap: 0.4rem 1rem; margin-top: 1.1rem; }
+.badge-legend .bl { display: inline-flex; align-items: center; gap: 0.45rem; font-size: 0.85rem; color: var(--navy); opacity: 0.85; }
+.badge-legend .bl-sw { width: 13px; height: 13px; border-radius: 3px; flex: none; }
+.badge-legend .bl-lock { background: #F1F0EC; border: 1px dashed #cdccc6; }
 .passport .stamp { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(0,0,0,.06); }
 .passport .stamp svg { width: 16px; height: 16px; }
 .passport .stamp.lock { background: #F1F0EC; border: 1px dashed #cdccc6; }

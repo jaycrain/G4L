@@ -26,6 +26,13 @@ export default async function BadgesMorePage({ params }: { params: Promise<{ mem
           Checkpoint. They’re the same size on purpose — the point isn’t any single one, it’s how many you
           stack. Some you can see coming, greyed in until you earn them; some you won’t see until they land.
         </p>
+        <div className="badge-legend">
+          <span className="bl"><span className="bl-sw" style={{ background: '#374F63' }} />Milestones</span>
+          <span className="bl"><span className="bl-sw" style={{ background: '#3B9495' }} />Hardiness</span>
+          <span className="bl"><span className="bl-sw" style={{ background: '#919536' }} />Goals reclaimed</span>
+          <span className="bl"><span className="bl-sw" style={{ background: '#EC6233' }} />Comebacks</span>
+          <span className="bl"><span className="bl-sw bl-lock" />Still to earn</span>
+        </div>
       </div>
     </>
   );
