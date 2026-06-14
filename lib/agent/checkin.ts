@@ -42,6 +42,9 @@ export type CheckinContext = {
   // Reclaim goals whose wording carries a measurable target but have NO tracker yet — the agent
   // proactively OFFERS to set one up (offered, never forced; confirm, then create_measure).
   trackableUntracked?: string[];
+  // Durable memory distilled from earlier conversations (people, relationships, life context) that
+  // have aged out of the recent thread — so the knowing compounds. Treat as things you already know.
+  agentMemory?: string | null;
 };
 
 export type CheckinMessage = { role: 'agent' | 'member'; text: string };
@@ -85,6 +88,9 @@ export function contextBlock(c: CheckinContext): string {
     c.pastSelf ? `Who they were, in their own words: "${c.pastSelf}"` : null,
     c.gapStory ? `How the gap opened, in their own words: "${c.gapStory}"` : null,
     c.identityParagraph ? `Their story, synthesized: ${c.identityParagraph}` : null,
+    c.agentMemory && c.agentMemory.trim()
+      ? `What you remember about them from earlier conversations (people, relationships, life — treat as already known, weave in naturally, never recite):\n${c.agentMemory.trim()}`
+      : null,
     idq,
     c.playbookKeepers && c.playbookKeepers.length
       ? `Their Playbook — what's working for them (kept):\n${c.playbookKeepers.map((k) => `  • [${k.section}] ${k.body}`).join('\n')}`

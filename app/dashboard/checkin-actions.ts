@@ -16,6 +16,7 @@ import { addReclaimItemForMember, addDoorForMember } from '../../lib/member/refi
 import { markReclaimReclaimedByText, unmarkReclaimReclaimedByText, refineReclaimItemByText } from '../../lib/beats/store.ts';
 import { proposeEntry, playbookForAgent, isPlaybookSection } from '../../lib/playbook/store.ts';
 import { createMeasure, logReadingByLabel, measuresForAgent, findReclaimItemId, looksTrackable } from '../../lib/measure/store.ts';
+import { maybeFoldMemory } from '../../lib/agent/memory.ts';
 import { getGrinta } from '../../lib/grinta/index.ts';
 import { itemStem, dimensionForIndex } from '../../lib/idq/instrument.ts';
 import { authorizeMember } from '../authz.ts';
@@ -26,11 +27,12 @@ import type { Db } from '../../lib/db/schema.ts';
 async function buildContext(db: Db, memberId: string): Promise<CheckinContext | null> {
   const dash = await getDashboard(db, memberId);
   if (!dash) return null;
+  await maybeFoldMemory(db, memberId); // distill anything that has aged out of recall (best-effort, no-op until due)
   const [grinta, consumedBites, profRows, idqRows, reclaimItems, beatRows, playbook, measures, linkedMeasureRows] = await Promise.all([
     getGrinta(db, memberId, dash.identityNoun),
     recentConsumedTitles(db, memberId),
-    db.query<{ intake_athletic_past: string | null; intake_gap: string | null }>(
-      'select intake_athletic_past, intake_gap from member_profile where member_id=$1',
+    db.query<{ intake_athletic_past: string | null; intake_gap: string | null; agent_memory: string | null }>(
+      'select intake_athletic_past, intake_gap, agent_memory from member_profile where member_id=$1',
       [memberId],
     ),
     db.query<any>(
@@ -96,6 +98,7 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
     playbookNotes: playbook.recentNotes,
     measures,
     trackableUntracked,
+    agentMemory: prof?.agent_memory ?? null,
   };
 }
 
