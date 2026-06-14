@@ -45,7 +45,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
 
   // v0.4 zones, all from the registry + member state.
   const [facets, forecast, passport, grinta, journey, activity] = await Promise.all([
-    getFacets(db, memberId, dash.identityNoun),
+    getFacets(db, memberId),
     getForecast(db, memberId),
     getPassport(db, memberId),
     getGrinta(db, memberId, dash.identityNoun),
@@ -115,7 +115,10 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
             {heroVerb}: <span className="noun">{facets.join('  ·  ')}</span>
           </h1>
         ) : (
-          <h1>{dash.displayName}</h1>
+          <>
+            <h1>{heroVerb}</h1>
+            <p className="heromore">Who are you reclaiming? You&apos;ll name that in Identity Excavation — and it lands here.</p>
+          </>
         )}
         {dash.identityParagraph && <HeroIntro text={dash.identityParagraph} />}
       </div>

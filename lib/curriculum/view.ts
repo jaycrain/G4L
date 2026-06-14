@@ -4,7 +4,7 @@
 import type { Db } from '../db/schema.ts';
 import type { Asset, Badge } from './types.ts';
 import { phaseColumns, dailyLayer, listBadges, PHASE_ORDER } from './registry.ts';
-import { closedSessionIds, listGates, earnedBadgeIds, listFacets, addFacet, earnBadge } from './store.ts';
+import { closedSessionIds, listGates, earnedBadgeIds, listFacets, earnBadge } from './store.ts';
 
 const PHASE_LABEL: Record<string, string> = { reconnect: 'Reconnect', rewire: 'Rewire', rebuild: 'Rebuild', reclaim: 'Reclaim' };
 
@@ -92,14 +92,11 @@ export async function getPassport(db: Db, memberId: string): Promise<PassportVie
   return { earned: badges.filter((b) => b.earned).length, total: badges.length, badges };
 }
 
-/** Identity strip facets. Seeds the onboarding identity as facet #1 if the member has none yet. */
-export async function getFacets(db: Db, memberId: string, identityNoun: string | null): Promise<string[]> {
-  let facets = await listFacets(db, memberId);
-  if (facets.length === 0 && identityNoun) {
-    await addFacet(db, memberId, `the ${identityNoun}`);
-    facets = await listFacets(db, memberId);
-  }
-  return facets.map((f) => f.text);
+/** Identity strip facets — the reclaimed selves the member has NAMED (Identity Excavation onward).
+ * Not seeded from onboarding: in v0.4 the identity is named through the work, so the strip fills as
+ * Sessions place facets. The dashboard falls back to a gentle prompt when there are none yet. */
+export async function getFacets(db: Db, memberId: string): Promise<string[]> {
+  return (await listFacets(db, memberId)).map((f) => f.text);
 }
 
 /** Reaching the dashboard means onboarding was completed — seed the Onboarding Courage badge. */
