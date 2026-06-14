@@ -555,7 +555,7 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .sess-clab { display: flex; align-items: center; gap: 0.55rem; padding: 0.95rem 1.1rem 0; }
 .sess-cnum { width: 22px; height: 22px; border-radius: 50%; background: var(--olive); color: #fff; font-size: 0.78rem; font-weight: 700; display: flex; align-items: center; justify-content: center; flex: none; }
 .sess-ctt { font-weight: 700; color: var(--navy); }
-.sess-bubble { margin: 0.85rem 1.1rem 0; background: #EFF5F4; border: 1px solid #d4e6e4; border-radius: 12px; border-top-left-radius: 3px; padding: 0.85rem 1rem; font-size: 0.95rem; color: var(--charcoal); line-height: 1.5; }
+.sess-bubble { margin: 0.85rem 1.1rem 0; background: var(--grey); border-radius: 14px; border-bottom-left-radius: 4px; padding: 0.85rem 1rem; font-size: 0.95rem; color: var(--charcoal); line-height: 1.5; }
 .sess-agent { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--teal); margin-bottom: 0.35rem; }
 .sess-q { font-size: 1.02rem; font-weight: 700; color: var(--navy); margin: 1rem 1.1rem 0.5rem; }
 .sess-field { display: block; width: calc(100% - 2.2rem); margin: 0 1.1rem; border: 1.5px solid var(--light-grey); border-radius: 10px; padding: 0.8rem 0.9rem; font-family: inherit; font-size: 0.95rem; color: var(--charcoal); line-height: 1.5; resize: vertical; }

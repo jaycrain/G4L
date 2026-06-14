@@ -107,7 +107,7 @@ export default function SessionRunner({
             <div className="sess-sec cur" key={s.n}>
               <div className="sess-clab"><span className="sess-cnum">{s.n}</span><span className="sess-ctt">{s.title}</span></div>
               <div className="sess-bubble">
-                <div className="sess-agent">Your companion</div>
+                <div className="sess-agent">Your G4L companion</div>
                 {pending && !frame ? '…' : frame}
               </div>
               <div className="sess-q">{s.prompt}</div>

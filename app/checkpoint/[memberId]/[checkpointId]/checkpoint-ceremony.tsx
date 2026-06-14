@@ -61,7 +61,7 @@ export default function CheckpointCeremony({
         {phase === 'reflect' && (
           <>
             <div className="ckpt-bubble">
-              <div className="ckpt-agent">Your G4L Companion</div>
+              <div className="ckpt-agent">Your G4L companion</div>
               {opening}
             </div>
             {facets.length > 0 && (
@@ -107,7 +107,7 @@ export default function CheckpointCeremony({
         {phase === 'held' && (
           <div className="ckpt-held">
             <div className="ckpt-bubble">
-              <div className="ckpt-agent">Your G4L Companion</div>
+              <div className="ckpt-agent">Your G4L companion</div>
               {hold}
             </div>
             <button type="button" className="ckpt-notyet" onClick={() => router.push(`/dashboard/${memberId}`)}>
