@@ -21,6 +21,7 @@ export type Stage = 'identity' | 'identity_name' | 'reclaim' | 'door' | 'complet
 export type Collected = {
   athleticPast?: string; // Step 1: the past self, in the member's own words
   identityNoun?: string; // the reclaimed identity, natural case (e.g. "Athlete")
+  identitySkipped?: boolean; // the member chose not to name an identity yet (they'll find it at Identity Excavation)
   reclaimList?: string[]; // >= RECLAIM_LIST_MIN
   reclaimCategories?: string[]; // IDQ-dimension category per item, same order (agent-inferred)
   gap?: string; // Step 3 free-text: how the gap opened (member's words)
@@ -89,7 +90,7 @@ function handoff(doors: DoorSlug[], noun?: string): string {
 // fallback (after a transient live failure) resumes at the right question instead of restarting.
 export function nextStage(c: Collected): Stage {
   if (!c.athleticPast) return 'identity';
-  if (!c.identityNoun) return 'identity_name';
+  if (!c.identityNoun && !c.identitySkipped) return 'identity_name';
   if (!c.reclaimList || c.reclaimList.length < RECLAIM_LIST_MIN) return 'reclaim';
   if (!c.doors || c.doors.length === 0) return 'door';
   return 'complete';
@@ -115,6 +116,10 @@ export function isAffirmation(message: string): boolean {
   return AFFIRM_RE.test(m) && m.split(/\s+/).length <= 6;
 }
 
+// At the naming step, a member may genuinely not know yet — honor it, don't force a label.
+const DECLINE_IDENTITY_RE =
+  /\b(not sure|don'?t know|dunno|no idea|no clue|unsure|can'?t say|hard to say|not yet|don'?t have (one|a word)|skip|pass|i don'?t)\b/i;
+
 export function resolveCompletion(
   collected: Collected,
   wantsComplete: boolean,
@@ -123,7 +128,7 @@ export function resolveCompletion(
 ): { complete: boolean; stage: Stage; exploringDoor: boolean } {
   const reqsMet =
     !!collected.athleticPast &&
-    !!collected.identityNoun &&
+    (!!collected.identityNoun || !!collected.identitySkipped) && // named it, or chose "not yet"
     (collected.reclaimList?.length ?? 0) >= RECLAIM_LIST_MIN &&
     (collected.doors?.length ?? 0) >= 1;
   const exploredEnough = doorTurns >= DOOR_MIN_TURNS;
@@ -218,6 +223,14 @@ export function scriptedTurn(state: ConvState, message: string): Turn {
         'That stays with you — I can hear it.\n\nIf you put that person in a single word — the Runner, the Writer, the Builder, the Friend — what is the word?',
       );
     case 'identity_name': {
+      // Honor "I'm not sure yet" — never force a name. They'll find it at Identity Excavation.
+      if (DECLINE_IDENTITY_RE.test(message.trim().replace(/[‘’]/g, "'"))) {
+        collected.identitySkipped = true;
+        return done(
+          'reclaim',
+          `That's an honest answer — and totally fine. You don't have to name it today; we'll find it together as you go.\n\n${reclaimPrompt()}`,
+        );
+      }
       // The member names it themselves (governance: identity is never assigned without confirmation).
       const cleaned = cleanIdentityNoun(message);
       const word = (cleaned.split(/\s+/)[0] ?? '').replace(/[^A-Za-z-]/g, '');
@@ -270,6 +283,7 @@ OPERATING MOMENT: Onboarding (voice rewrite v1).
 Conduct the intake as a warm, member-paced conversation. Capture exactly three records, in this order:
 
 1) RECLAIMED IDENTITY. Open with the question about who they were when they felt most themselves (a past self of ANY kind — runner, writer, musician, builder, teacher, parent, the friend who always called — never assume it is athletic). Listen. Then reflect a specific detail of THEIR OWN words back, propose the identity as a single natural-case noun ("So — the Runner." / "the Writer." / "the Builder."), and confirm it with them before moving on. NEVER all-caps the noun ("the Athlete", never "THE ATHLETE"). Record identityNoun as the bare noun in natural case, without a leading "the/a/an".
+NOT SURE IS OK. If they genuinely don't know yet, or aren't ready to put a single word to it, do NOT push — reassure them warmly that they don't have to name it today and they'll find it through the work (Identity Excavation comes soon). In that case call record_progress with identitySkipped=true and leave identityNoun empty, then move on to the Reclaim List. Never assign or pressure a name.
 
 2) RECLAIM LIST. Ask what having that self back looks like on an ordinary day — concrete, specific things they want back. Gather at least ${RECLAIM_LIST_MIN}; there is NO maximum. Gently keep drawing more out toward about ${RECLAIM_LIST_TARGET}, but never force a count or make it feel like a quota.
 THE BAR (important): every item you record MUST be specific and observable — something you could BOTH witness happening in an ordinary week. Catch two failure modes, warmly and without a worksheet:
@@ -290,7 +304,7 @@ VOICE: no meta-narration about the program's own mechanics; gender-inclusive; wa
 TURN-TAKING (important): reflect first, then ALWAYS end your turn with exactly ONE clear question or prompt that tells the member what to do next. Never end on a bare statement or reflection — that strands the member, unsure whether it is their turn. The ONLY turn without a question is the final IDQ handoff, which closes with "Ready when you are."
 ALWAYS write a spoken message to the member on EVERY turn — never respond with only a tool call and no text (a tool-only turn makes the app repeat the last prompt, which feels broken). And NEVER re-ask a question the member has already answered or repeat a prompt you've already sent — if you have their answer, acknowledge it and move forward. Once you understand how the gap opened and have mapped at least one Door, record it and move to the handoff; do not keep circling the same question.
 
-On EVERY turn you MUST also call the record_progress tool with everything gathered so far. Set complete=true only once ALL of these are gathered: athleticPast, a confirmed natural-case identityNoun, a reclaimList of at least ${RECLAIM_LIST_MIN}, and at least one door — AND you have genuinely explored HOW that door opened (not just labeled it) AND checked whether more than one door was involved. Do not complete on the first mention of what happened; understand the story, and whether there was more than one door, first. CLOSING THE BEAT: once you have reflected the full picture of how the gap opened and the member confirms it is accurate ("it does", "yes, that's right"), you are DONE — call record_progress with complete=true and hand off on that same turn. Do NOT ask another question, and NEVER re-ask what changed or when they first noticed it once they have already told you. Their confirmation is the signal to wrap; honor it.`;
+On EVERY turn you MUST also call the record_progress tool with everything gathered so far. Set complete=true only once ALL of these are gathered: athleticPast, EITHER a confirmed natural-case identityNoun OR identitySkipped=true (they chose not to name one yet), a reclaimList of at least ${RECLAIM_LIST_MIN}, and at least one door — AND you have genuinely explored HOW that door opened (not just labeled it) AND checked whether more than one door was involved. Do not complete on the first mention of what happened; understand the story, and whether there was more than one door, first. CLOSING THE BEAT: once you have reflected the full picture of how the gap opened and the member confirms it is accurate ("it does", "yes, that's right"), you are DONE — call record_progress with complete=true and hand off on that same turn. Do NOT ask another question, and NEVER re-ask what changed or when they first noticed it once they have already told you. Their confirmation is the signal to wrap; honor it.`;
 
 const RECORD_PROGRESS_TOOL = {
   name: 'record_progress',
@@ -300,6 +314,7 @@ const RECORD_PROGRESS_TOOL = {
     properties: {
       athleticPast: { type: 'string', description: "the member's past self, in their own words" },
       identityNoun: { type: 'string', description: 'confirmed identity noun, natural case (e.g. "Athlete")' },
+      identitySkipped: { type: 'boolean', description: 'true if the member chose not to name an identity yet (they will find it at Identity Excavation)' },
       reclaimList: { type: 'array', items: { type: 'string' }, description: 'specific, observable items the member wants back' },
       reclaimCategories: {
         type: 'array',
@@ -352,7 +367,8 @@ async function liveTurn(
       collected = {
         ...collected,
         ...(p.athleticPast !== undefined && { athleticPast: p.athleticPast }),
-        ...(p.identityNoun !== undefined && { identityNoun: displayIdentityNoun(p.identityNoun) }),
+        ...(p.identityNoun !== undefined && p.identityNoun !== '' && { identityNoun: displayIdentityNoun(p.identityNoun) }),
+        ...(p.identitySkipped === true && { identitySkipped: true }),
         ...(Array.isArray(p.reclaimList) && { reclaimList: p.reclaimList }),
         ...(Array.isArray((p as { reclaimCategories?: string[] }).reclaimCategories) && {
           reclaimCategories: (p as { reclaimCategories?: string[] }).reclaimCategories,
@@ -369,7 +385,9 @@ async function liveTurn(
   // ready (identity + Reclaim List) and no Door was recorded, infer the Door(s) from what the member
   // actually said, so the engine is never blind to a Door the conversation clearly surfaced.
   const coreReady =
-    !!collected.athleticPast && !!collected.identityNoun && (collected.reclaimList?.length ?? 0) >= RECLAIM_LIST_MIN;
+    !!collected.athleticPast &&
+    (!!collected.identityNoun || !!collected.identitySkipped) &&
+    (collected.reclaimList?.length ?? 0) >= RECLAIM_LIST_MIN;
   if (coreReady && (collected.doors?.length ?? 0) === 0) {
     const memberText = [...history.filter((m) => m.role === 'member').map((m) => m.text), memberMessage, collected.gap ?? ''].join('  ');
     const inferred = matchDoors(memberText);

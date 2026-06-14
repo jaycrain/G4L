@@ -19,6 +19,7 @@ import {
 } from '../../lib/agent/onboarding-session.ts';
 import { curateKeepersFromOnboarding } from '../../lib/agent/onboarding-harvest.ts';
 import { proposeEntry } from '../../lib/playbook/store.ts';
+import { addFacet } from '../../lib/curriculum/store.ts';
 import type { Db } from '../../lib/db/schema.ts';
 
 export type TurnInput = {
@@ -109,6 +110,17 @@ export async function finalizeOnboardingAction(input: FinalizeInput): Promise<Fi
     const errors = 'errors' in res ? res.errors : ['Could not save your intake — please try again.'];
     return { ok: false, errors };
   }
+  // Seed the named identity as the member's first facet (the identity strip). A member who chose
+  // "not sure yet" has no identityNoun — their first facet comes from Identity Excavation instead.
+  const namedIdentity = input.state.collected.identityNoun?.trim();
+  if (namedIdentity) {
+    try {
+      await addFacet(db, res.memberId, `the ${namedIdentity}`);
+    } catch {
+      /* non-fatal — the strip falls back to its prompt */
+    }
+  }
+
   const email = input.ctx.email?.trim();
   // Harvest the onboarding transcript into the Playbook's first pages — BEFORE we clear the session
   // (it's the only place the real conversation lives). Best-effort: a harvest hiccup never fails the

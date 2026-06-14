@@ -152,3 +152,24 @@ test('member names the Door(s) in free text; one or more map; unclear input re-p
   assert.equal(unclear.complete, false);
   assert.match(unclear.reply, /your own words/i);
 });
+
+test('identity opt-out: "I\'m not sure yet" skips naming, still completes', () => {
+  // scripted decline at the naming step → identitySkipped, advances to reclaim, no identityNoun
+  const afterPast = scriptedTurn({ stage: 'identity', collected: {} }, 'someone who rode every dawn');
+  assert.equal(afterPast.state.stage, 'identity_name');
+  const declined = scriptedTurn(afterPast.state, "honestly, I'm not sure yet");
+  assert.equal(declined.state.collected.identitySkipped, true);
+  assert.equal(declined.state.collected.identityNoun, undefined);
+  assert.equal(declined.state.stage, 'reclaim');
+
+  // nextStage doesn't loop on naming once skipped
+  assert.equal(nextStage({ athleticPast: 'x', identitySkipped: true }), 'reclaim');
+
+  // completion gate is satisfied by identitySkipped in place of identityNoun
+  const five = ['a', 'b', 'c', 'd', 'e'];
+  const skipped = { athleticPast: 'x', identitySkipped: true, reclaimList: five, doors: ['career_cliff'] as const };
+  assert.equal(resolveCompletion(skipped as never, true, 3).complete, true);
+  // and a named member still completes the same way
+  const named = { athleticPast: 'x', identityNoun: 'Runner', reclaimList: five, doors: ['career_cliff'] as const };
+  assert.equal(resolveCompletion(named as never, true, 3).complete, true);
+});
