@@ -148,7 +148,7 @@ ul.reclaim li.reclaimed { color: var(--navy); }
 .measure-log { display: flex; gap: 0.4rem; margin-top: 0.45rem; }
 .measure-log input {
   flex: 1; min-width: 0; padding: 0.35rem 0.5rem; font-size: 0.85rem;
-  border: 1px solid var(--light-grey); border-radius: 6px; font-family: inherit;
+  border: 1px solid rgba(55, 79, 99, 0.38); border-radius: 6px; font-family: inherit;
 }
 .measure-log button {
   padding: 0.35rem 0.8rem; font-size: 0.82rem; font-weight: 600; cursor: pointer;
