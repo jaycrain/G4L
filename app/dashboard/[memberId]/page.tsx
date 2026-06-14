@@ -63,6 +63,12 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
   const activePhase = forecast.phases.find((p) => p.status === "You're here")?.phase ?? 'reconnect';
   const heroVerb = HERO_VERB[activePhase] ?? 'Reconnecting';
 
+  // Journey rings, gate-driven from the forecast: a finished R stays darkened (reinforcing completion),
+  // the active R is the lit one, the rest sit dimmed.
+  const ringStates: Record<string, 'done' | 'current' | 'ahead'> = Object.fromEntries(
+    forecast.phases.map((p) => [p.phase, p.status === 'Complete' ? 'done' : p.status === "You're here" ? 'current' : 'ahead']),
+  );
+
   // Threshold ceremony — overlay on first arrival (unchanged).
   const thresholdCrossed = !!(
     await db.query<{ threshold_crossed_at: unknown }>('select threshold_crossed_at from member_profile where member_id=$1', [memberId])
@@ -167,7 +173,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
         <div className="card metric journey-card">
           <h3>Journey</h3>
           <div className="metric-body metric-center">
-            <JourneyRings currentR={journey.currentR} />
+            <JourneyRings states={ringStates} />
             {journey.reclaim.total > 0 && (
               <div className="journey-reclaim">
                 <span><strong>{journey.reclaim.reclaimed}</strong> reclaimed</span>
