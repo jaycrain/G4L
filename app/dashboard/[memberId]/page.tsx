@@ -1,14 +1,10 @@
 import Link from 'next/link';
 import { getDb } from '../../../lib/db/index.ts';
 import { getDashboard } from '../../../lib/gateway/flow.ts';
-import { completedCodes } from '../../../lib/assets/engine.ts';
-import { recommendedNext, assetStatus, ASSET_ORDER, GATES, type RGroup } from '../../../lib/assets/gating.ts';
 import { timeSignals, topNudge } from '../../../lib/agent/nudge.ts';
 import { getActivityPanel } from '../../../lib/activity/store.ts';
 import { getGrinta } from '../../../lib/grinta/index.ts';
-import { nextBeat, getJourney, getBeatHistory, dailyHardiness } from '../../../lib/beats/store.ts';
-import NextBeat from '../next-beat.tsx';
-import DailyBeat from '../daily-beat.tsx';
+import { getJourney } from '../../../lib/beats/store.ts';
 import JourneyRings from '../journey-rings.tsx';
 import FieldGuide from '../field-guide.tsx';
 import HeroIntro from '../hero-intro.tsx';
@@ -20,108 +16,52 @@ import Threshold from '../threshold.tsx';
 import MeasureCard from '../measure-card.tsx';
 import DashboardSync from '../dashboard-sync.tsx';
 import TrackThis from '../track-this.tsx';
+import BadgePassport from '../badge-passport.tsx';
+import CurriculumForecast from '../curriculum-forecast.tsx';
 import { looksTrackable, suggestTracker } from '../../../lib/measure/store.ts';
 import { listPlaybook } from '../../../lib/playbook/store.ts';
+import { getForecast, getPassport, getFacets, ensureOnboardingBadge } from '../../../lib/curriculum/view.ts';
 import { logoutAction } from '../../login/actions.ts';
 import { authorizeMember } from '../../authz.ts';
 import { redirect } from 'next/navigation';
 
-// Give the companion's live turns room to finish (the Member Agent call is the long pole) so slow
-// turns complete instead of being cut short — matches onboarding/playbook.
+// Give the companion's live turns room to finish (the Member Agent call is the long pole).
 export const maxDuration = 30;
 
-// The 4Rs ring colors (match the logo), used to color the Journey legend.
-const R_RING_COLOR: Record<string, string> = {
-  reconnect: '#374f63',
-  rewire: '#3b9495',
-  rebuild: '#919536',
-  reclaim: '#ec6233',
-};
-
-const DIM_LABEL: Record<string, string> = {
-  physical: 'Physical',
-  self: 'Self',
-  social: 'Social',
-  outlook: 'Outlook',
-};
+const R_RING_COLOR: Record<string, string> = { reconnect: '#374f63', rewire: '#3b9495', rebuild: '#919536', reclaim: '#ec6233' };
+const DIM_LABEL: Record<string, string> = { physical: 'Physical', self: 'Self', social: 'Social', outlook: 'Outlook' };
 const ARROW: Record<string, string> = { up: '↑', down: '↓', flat: '→' };
+const HERO_VERB: Record<string, string> = { reconnect: 'Reconnecting', rewire: 'Rewiring', rebuild: 'Rebuilding', reclaim: 'Reclaiming' };
 
-export default async function DashboardPage({
-  params,
-}: {
-  params: Promise<{ memberId: string }>;
-}) {
+export default async function DashboardPage({ params }: { params: Promise<{ memberId: string }> }) {
   const { memberId } = await params;
   if (!(await authorizeMember(memberId))) redirect('/login');
   const db = (await getDb()) as unknown as Db;
   const dash = await getDashboard(db, memberId);
-
   if (!dash) return <p className="error">We couldn&apos;t find that member.</p>;
 
-  // The program loop: what's done, what's next (dosed by current focus).
-  const completed = await completedCodes(db, memberId);
-  const gateCtx = { completed, dimensions: dash.score?.dimensions };
-  const nextCode = recommendedNext(gateCtx);
-  // Asset-level rollup retained only to derive the hero heading verb's current R-group.
-  const program = ASSET_ORDER.map((code) => ({
-    group: GATES[code]!.group,
-    status: assetStatus(gateCtx, code),
-  }));
+  // Reaching the dashboard means onboarding was completed — seed the passport's first badge.
+  await ensureOnboardingBadge(db, memberId);
 
-  // Hero verb follows the R-group of the next recommended asset — so the heading advances as the
-  // member finishes one R's assets and the loop moves them to the next. Falls back to the furthest
-  // group they've completed (when nothing is recommended next), then to Reconnect (the gateway).
-  // Not a renamed "phase": it mirrors the program-loop card's current group.
-  const HERO_VERB: Record<RGroup, string> = {
-    Reconnect: 'Reconnecting',
-    Rewire: 'Rewiring',
-    Rebuild: 'Rebuilding',
-    Reclaim: 'Reclaiming',
-  };
-  const currentGroup: RGroup =
-    (nextCode ? GATES[nextCode]?.group : undefined) ??
-    [...program].reverse().find((p) => p.status === 'completed')?.group ??
-    'Reconnect';
-  const heroVerb = HERO_VERB[currentGroup];
-  // The Field Guide's identity line mirrors the hero (verb-tracks-the-phase).
-  const heroLabel = dash.identityNoun ? `${heroVerb} the ${dash.identityNoun}` : null;
-  // The Threshold ceremony fires once per member, on first dashboard arrival (mirrors the old
-  // field_guide auto-open flag). It now owns first arrival; the Field Guide auto-open is retired.
+  // v0.4 zones, all from the registry + member state.
+  const [facets, forecast, passport, grinta, journey, activity] = await Promise.all([
+    getFacets(db, memberId, dash.identityNoun),
+    getForecast(db, memberId),
+    getPassport(db, memberId),
+    getGrinta(db, memberId, dash.identityNoun),
+    getJourney(db, memberId),
+    getActivityPanel(db, memberId, dash.identityNoun),
+  ]);
+
+  // Hero verb tracks the active phase (the one the forecast marks "You're here").
+  const activePhase = forecast.phases.find((p) => p.status === "You're here")?.phase ?? 'reconnect';
+  const heroVerb = HERO_VERB[activePhase] ?? 'Reconnecting';
+  const heroLabel = facets.length ? `${heroVerb} ${facets.join(' · ')}` : null;
+
+  // Threshold ceremony — overlay on first arrival (unchanged).
   const thresholdCrossed = !!(
-    await db.query<{ threshold_crossed_at: unknown }>(
-      'select threshold_crossed_at from member_profile where member_id=$1',
-      [memberId],
-    )
+    await db.query<{ threshold_crossed_at: unknown }>('select threshold_crossed_at from member_profile where member_id=$1', [memberId])
   ).rows[0]?.threshold_crossed_at;
-
-  // Signal-driven teaser for the companion bubble — a check-in/witness prompt. Program content
-  // lives in "Your next Beat", so the bubble stays purely companion (no asset/Beat names here).
-  const nudgeSignals = {
-    ...(await timeSignals(db, memberId)),
-    direction: dash.score?.direction ?? null,
-    delta: dash.score?.delta ?? null,
-    recentAssetName: null,
-    nextAssetName: null,
-  };
-  const teaser = topNudge(nudgeSignals).text;
-
-  // Activity panel — objective evidence of the identity coming back (Strava). Reflective, not graded.
-  const activity = await getActivityPanel(db, memberId, dash.identityNoun);
-
-  // GRINTA! Index — the daily "process" metric (companion to the longitudinal ID Score).
-  const grinta = await getGrinta(db, memberId, dash.identityNoun);
-
-  // The next Beat — the Member Agent's "next right thing," served one at a time, ending in a close.
-  const initialBeat = await nextBeat(db, memberId);
-  // The Journey — the third feedback: where you are on the path + your Reclaim List movement.
-  const journey = await getJourney(db, memberId);
-  // Past Beats — a re-readable record of completed work, so nothing the member does vanishes.
-  const pastBeats = await getBeatHistory(db, memberId);
-  // Today's daily Hardiness rep — the cross-cutting GRINTA! Beat.
-  const daily = await dailyHardiness(db, memberId);
-
-  // Threshold ceremony — an overlay on THIS real dashboard (no duplicate screen). Only assemble its
-  // data when it will actually fire (first arrival). Seeds = the onboarding-harvested Playbook lines.
   const playbookSeeds = thresholdCrossed
     ? []
     : (await listPlaybook(db, memberId)).filter((e) => e.authorship === 'gathered').slice(0, 3).map((e) => e.body);
@@ -134,19 +74,27 @@ export default async function DashboardPage({
     firstMoveTitle: null,
   };
 
+  const nudgeSignals = {
+    ...(await timeSignals(db, memberId)),
+    direction: dash.score?.direction ?? null,
+    delta: dash.score?.delta ?? null,
+    recentAssetName: null,
+    nextAssetName: null,
+  };
+  const teaser = topNudge(nudgeSignals).text;
+
   return (
     <>
       <DashboardSync />
       {!thresholdCrossed && <Threshold memberId={memberId} data={thresholdData} />}
+
       <div className="member-greeting">
         <Link href="/account" className="member-greeting-link" aria-label="Your account">
           {dash.avatarUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img className="avatar" src={dash.avatarUrl} alt={dash.displayName} />
           ) : (
-            <span className="avatar-initials" aria-hidden="true">
-              {initials(dash.displayName)}
-            </span>
+            <span className="avatar-initials" aria-hidden="true">{initials(dash.displayName)}</span>
           )}
           <span className="greeting">Hi, {firstName(dash.displayName)}</span>
         </Link>
@@ -160,83 +108,83 @@ export default async function DashboardPage({
         </span>
       </div>
 
+      {/* ZONE 0 · identity strip — all the selves they're bringing back */}
       <div className="hero">
-        <h1>
-          {dash.identityNoun ? (
-            <>
-              {heroVerb}: <span className="noun">the {dash.identityNoun}</span>
-            </>
-          ) : (
-            dash.displayName
-          )}
-        </h1>
+        {facets.length ? (
+          <h1>
+            {heroVerb}: <span className="noun">{facets.join('  ·  ')}</span>
+          </h1>
+        ) : (
+          <h1>{dash.displayName}</h1>
+        )}
         {dash.identityParagraph && <HeroIntro text={dash.identityParagraph} />}
       </div>
 
-      {/* ID Score — never a bare number: always direction + delta + plain-language context */}
-      {dash.score ? (
-        <div className="card">
-          <h3>ID Score</h3>
+      {/* ZONE 1 · status — the three metrics */}
+      <div className="metrics-grid">
+        {dash.score ? (
+          <div className="card id-card">
+            <h3>ID Score</h3>
+            <div className="score">
+              <span className="num">{Math.round(dash.score.score)}</span>
+              {dash.score.direction && (
+                <span className={`dir-${dash.score.direction}`}>
+                  {ARROW[dash.score.direction]}
+                  {dash.score.delta !== null && Math.round(dash.score.delta) !== 0 ? ` ${dash.score.delta > 0 ? '+' : ''}${Math.round(dash.score.delta)}` : ''}
+                </span>
+              )}
+            </div>
+            <p className="muted">{dash.score.context}</p>
+            <div className="dims" style={{ marginTop: '0.75rem' }}>
+              {dash.score.dimensions &&
+                (Object.keys(DIM_LABEL) as Array<keyof typeof dash.score.dimensions>).map((k) => (
+                  <div className="dim" key={k}>
+                    <span>{DIM_LABEL[k]}</span>
+                    <span>{dash.score!.dimensions[k]} / 30</span>
+                  </div>
+                ))}
+            </div>
+          </div>
+        ) : (
+          <div className="card id-card">
+            <h3>ID Score</h3>
+            <p className="muted">Your Identity Distance Questionnaire (IDQ) baseline isn&apos;t in yet.</p>
+          </div>
+        )}
+
+        <div className="card journey-card">
+          <h3>Journey</h3>
+          <JourneyRings currentR={journey.currentR} />
+          {journey.currentLayer && (
+            <p className="muted journey-layer">Right now: <strong>{journey.currentRLabel} · {journey.currentLayer}</strong></p>
+          )}
+          {journey.reclaim.total > 0 && (
+            <div className="journey-reclaim">
+              <span><strong>{journey.reclaim.reclaimed}</strong> reclaimed</span>
+              <span><strong>{journey.reclaim.moving}</strong> moving</span>
+              <span><strong>{journey.reclaim.notYet}</strong> to go</span>
+            </div>
+          )}
+        </div>
+
+        <div className="card grinta">
+          <h3>GRINTA! Index</h3>
           <div className="score">
-            <span className="num">{Math.round(dash.score.score)}</span>
-            {dash.score.direction && (
-              <span className={`dir-${dash.score.direction}`}>
-                {ARROW[dash.score.direction]}
-                {dash.score.delta !== null && Math.round(dash.score.delta) !== 0
-                  ? ` ${dash.score.delta > 0 ? '+' : ''}${Math.round(dash.score.delta)}`
-                  : ''}
-              </span>
-            )}
+            <span className="num">{grinta.score}</span>
+            <span className={`dir-${grinta.direction}`}>
+              {ARROW[grinta.direction]}
+              {grinta.delta !== 0 ? ` ${grinta.delta > 0 ? '+' : ''}${grinta.delta}` : ''}
+            </span>
           </div>
-          <p className="muted">{dash.score.context}</p>
-
-          <div className="dims" style={{ marginTop: '0.75rem' }}>
-            {dash.score.dimensions &&
-              (Object.keys(DIM_LABEL) as Array<keyof typeof dash.score.dimensions>).map((k) => (
-                <div className="dim" key={k}>
-                  <span>{DIM_LABEL[k]}</span>
-                  <span>{dash.score!.dimensions[k]} / 30</span>
-                </div>
-              ))}
-          </div>
+          <p className="muted">{grinta.line}</p>
+          <p className="muted grinta-bridge">Your daily effort moves this. Your ID Score is where it lands when you next take the IDQ.</p>
         </div>
-      ) : (
-        <div className="card">
-          <p className="muted">Your Identity Distance Questionnaire (IDQ) baseline isn&apos;t in yet.</p>
-        </div>
-      )}
-
-      {/* The work — the Member Agent serves one Beat at a time, each ending in a close. The Program panel. */}
-      <NextBeat memberId={memberId} initial={initialBeat} />
-
-      {/* The Journey — where you are on the path + your Reclaim List movement. A place, never a score. */}
-      <div className="card journey-card">
-        <h3>Journey</h3>
-        <p className="journey-line">{journey.line}</p>
-        <JourneyRings currentR={journey.currentR} />
-        {journey.currentLayer && (
-          <p className="muted journey-layer">
-            Right now: <strong>{journey.currentRLabel} · {journey.currentLayer}</strong>
-          </p>
-        )}
-        <ul className="journey-rs">
-          {journey.path.map((step) => (
-            <li key={step.r} className={`jr ${step.state}`}>
-              <span className="jr-name" style={{ color: R_RING_COLOR[step.r] }}>{step.label}</span>
-              <span className="jr-blurb">{step.blurb}</span>
-            </li>
-          ))}
-        </ul>
-        <p className="muted journey-loop">The 4Rs move as a loop — when you Reclaim, life shifts and you clip back in at Reconnect. That return is the Loop.</p>
-        {journey.reclaim.total > 0 && (
-          <div className="journey-reclaim">
-            <span><strong>{journey.reclaim.reclaimed}</strong> reclaimed</span>
-            <span><strong>{journey.reclaim.moving}</strong> moving</span>
-            <span><strong>{journey.reclaim.notYet}</strong> to go</span>
-          </div>
-        )}
       </div>
 
+      {/* ZONE 2 · proof — the badge passport */}
+      <BadgePassport earned={passport.earned} total={passport.total} badges={passport.badges} />
+
+      {/* ZONE 3 · work — the Reclaim List (the fuel), then the curriculum forecast */}
       <div className="card">
         <h3>Reclaim List</h3>
         <ul className="reclaim">
@@ -245,16 +193,12 @@ export default async function DashboardPage({
             const offerTrack = item.id && !item.reclaimed && linked.length === 0 && looksTrackable(item.text);
             return (
               <li key={i} className={item.reclaimed ? 'reclaimed' : undefined}>
-                {item.reclaimed && (
-                  <span className="reclaim-check" aria-label="reclaimed" title="Reclaimed">✓</span>
-                )}
+                {item.reclaimed && <span className="reclaim-check" aria-label="reclaimed" title="Reclaimed">✓</span>}
                 {item.text}
                 {linked.map((m) => (
                   <MeasureCard key={m.id} memberId={memberId} measure={m} />
                 ))}
-                {offerTrack && (
-                  <TrackThis memberId={memberId} reclaimItemId={item.id!} suggestion={suggestTracker(item.text)} />
-                )}
+                {offerTrack && <TrackThis memberId={memberId} reclaimItemId={item.id!} suggestion={suggestTracker(item.text)} />}
               </li>
             );
           })}
@@ -271,36 +215,18 @@ export default async function DashboardPage({
             </div>
           ) : null;
         })()}
-        <p className="muted refine-hint">To Add or Refine talk directly to Your G4L Companion</p>
+        <p className="muted refine-hint">To add or refine, just talk to Your G4L Companion</p>
       </div>
 
-      {/* GRINTA! Index — the daily process metric: how you're showing up. Moves daily; never alters the ID Score. */}
-      <div className="card grinta">
-        <h3>GRINTA! Index</h3>
-        <div className="score">
-          <span className="num">{grinta.score}</span>
-          <span className={`dir-${grinta.direction}`}>
-            {ARROW[grinta.direction]}
-            {grinta.delta !== 0 ? ` ${grinta.delta > 0 ? '+' : ''}${grinta.delta}` : ''}
-          </span>
-        </div>
-        <p className="muted">{grinta.line}</p>
-        <p className="muted grinta-bridge">
-          Your daily effort moves this. Your ID Score is where it lands when you next take the IDQ.
-        </p>
-      </div>
+      <CurriculumForecast memberId={memberId} forecast={forecast} />
 
-      {/* Today's daily Hardiness rep — the cross-cutting GRINTA! Beat that runs across every gate. */}
-      <DailyBeat memberId={memberId} initial={daily} />
-
+      {/* Movement — objective evidence of the identity coming back (kept; reflective, not graded) */}
       {activity.connected ? (
         <div className="card">
           <h3>Movement</h3>
           <p className="muted">{activity.line}</p>
           <div className="activity-week">
-            <span>
-              <strong>{activity.thisWeek.count}</strong> this week
-            </span>
+            <span><strong>{activity.thisWeek.count}</strong> this week</span>
             {formatDistance(activity.thisWeek.distanceM) && <span>{formatDistance(activity.thisWeek.distanceM)}</span>}
             {formatDuration(activity.thisWeek.movingTimeS) && <span>{formatDuration(activity.thisWeek.movingTimeS)}</span>}
           </div>
@@ -309,62 +235,21 @@ export default async function DashboardPage({
               {activity.recent.slice(0, 3).map((a, i) => (
                 <li key={i}>
                   <span className="act-type">{typeLabel(a.type)}</span>
-                  <span className="act-meta">
-                    {[formatDistance(a.distanceM), relativeDay(a.daysAgo)].filter(Boolean).join(' · ')}
-                  </span>
+                  <span className="act-meta">{[formatDistance(a.distanceM), relativeDay(a.daysAgo)].filter(Boolean).join(' · ')}</span>
                 </li>
               ))}
             </ul>
           )}
           <p className="muted activity-src">Synced from Strava</p>
         </div>
-      ) : (
-        <div className="card">
-          <h3>Movement</h3>
-          <p className="muted">
-            Connect Strava to let your movement show up here — your rides, runs, and walks, witnessed alongside the work.
-          </p>
-        </div>
-      )}
+      ) : null}
 
-      {/* Past Beats — a re-readable record so completed work never just vanishes. */}
-      <div className="card">
-        <h3>Past Beats</h3>
-        <p className="card-subtitle">The Story so Far</p>
-        {pastBeats.length === 0 ? (
-          <p className="muted">Beats you’ve worked will collect here — each one feeds your GRINTA! Index.</p>
-        ) : (
-          <>
-            <p className="muted">Each fed your GRINTA! Index — tap any to reopen and reread it.</p>
-            <ul className="past-beats">
-              {pastBeats.map((pb, i) => (
-                <li key={i}>
-                  <details>
-                    <summary>
-                      <span className="pb-title">{pb.title}</span>
-                      <span className="pb-when">{pb.when}</span>
-                      <span className="pb-caret" aria-hidden="true">›</span>
-                    </summary>
-                    <p className="pb-content">{pb.content}</p>
-                    <p className="pb-answered">
-                      {pb.closeType === 'reflect' ? 'You noted: ' : 'You answered: '}
-                      <strong>{pb.answered}</strong>
-                    </p>
-                  </details>
-                </li>
-              ))}
-            </ul>
-          </>
-        )}
-      </div>
-
+      {/* ZONE 4 · persistent — Doors at the foot, the companion always there */}
       {dash.doors.length > 0 && (
-        <p className="muted">
-          Your Door{dash.doors.length > 1 ? 's' : ''}:{' '}
-          <strong>{dash.doors.map((d) => d.displayName).join(', ')}</strong>
+        <p className="muted doors-foot">
+          Your Door{dash.doors.length > 1 ? 's' : ''}: <strong>{dash.doors.map((d) => d.displayName).join(' · ')}</strong>
         </p>
       )}
-      <p className="muted refine-hint">To Add or Refine talk directly to Your G4L Companion</p>
 
       <AgentBubble memberId={memberId} teaser={teaser} />
     </>
