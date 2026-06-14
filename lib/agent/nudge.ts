@@ -62,7 +62,7 @@ export function computeNudges(s: NudgeSignals): Nudge[] {
   if (s.nextAssetName) {
     n.push({ kind: 'next_asset', text: `Ready for ${s.nextAssetName}? Or just want to talk?`, priority: 30 });
   }
-  n.push({ kind: 'default', text: 'How are you landing this week?', priority: 10 });
+  n.push({ kind: 'default', text: "What's on your mind today?", priority: 10 });
   return n.sort((a, b) => b.priority - a.priority);
 }
 
