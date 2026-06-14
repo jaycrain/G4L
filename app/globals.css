@@ -9,6 +9,8 @@
   --charcoal: #2a2a2a;
   --grey: #e8e6e6;
   --white: #ffffff;
+  /* Main panel outline — navy-tinted, darkened a notch past the 0.38 accent level (one place to tune). */
+  --panel-line: rgba(55, 79, 99, 0.55);
 }
 
 * { box-sizing: border-box; }
@@ -129,7 +131,7 @@ button:hover, .btn:hover { background: var(--navy); }
 .score .dir-down { color: var(--deep-red); font-weight: 700; }
 .score .dir-flat { color: var(--navy); font-weight: 700; }
 
-.card { border: 1.25px solid var(--grey); border-radius: 10px; padding: 1.1rem 1.25rem; margin: 1rem 0; }
+.card { border: 1.25px solid var(--panel-line); border-radius: 10px; padding: 1.1rem 1.25rem; margin: 1rem 0; }
 .dims { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.4rem 0.7rem; }
 .dim { display: flex; justify-content: space-between; border-bottom: 1px solid var(--grey); padding: 0.3rem 0; }
 .focus-chip { display: inline-block; background: var(--teal); color: var(--white); border-radius: 999px; padding: 0.25rem 0.8rem; font-weight: 600; }
