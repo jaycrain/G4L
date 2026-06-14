@@ -16,8 +16,16 @@ import {
 
 type SectionMeta = { key: PlaybookSection; title: string; sub: string; empty: string };
 
-// The three synthesized sections (the cheat sheet) + the member's own journal.
+// Your own words lead (the truest, most personal material — from Excavation onward); then the
+// synthesized cheat sheet (what works / why), then the member's own journal.
 const SECTIONS: SectionMeta[] = [
+  {
+    key: 'own_words',
+    title: 'In your own words',
+    sub: 'Things you said that are worth keeping.',
+    empty:
+      'Lines you say that are worth holding onto land here — your companion keeps the ones that matter, and you decide what stays.',
+  },
   {
     key: 'what_works',
     title: 'What works for you',
@@ -31,13 +39,6 @@ const SECTIONS: SectionMeta[] = [
     sub: 'The science that convinced you — the bits that motivate, not the whole textbook.',
     empty:
       'This fills as the science starts to land for you — the few facts that actually convince you get kept here, in plain language.',
-  },
-  {
-    key: 'own_words',
-    title: 'In your own words',
-    sub: 'Things you said that are worth keeping.',
-    empty:
-      'Lines you say that are worth holding onto land here — your companion keeps the ones that matter, and you decide what stays.',
   },
   {
     key: 'journal',
