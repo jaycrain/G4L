@@ -19,6 +19,8 @@ import BadgePassport from '../badge-passport.tsx';
 import CurriculumForecast from '../curriculum-forecast.tsx';
 import PhaseCrossing from '../phase-crossing.tsx';
 import { crossingToShow } from '../../../lib/curriculum/crossing.ts';
+import DailyBeatPanel from '../daily-beat-panel.tsx';
+import { getDailyBeat } from '../../../lib/daily-beat/store.ts';
 import { looksTrackable, suggestTracker } from '../../../lib/measure/store.ts';
 import { listPlaybook } from '../../../lib/playbook/store.ts';
 import { getForecast, getPassport, getFacets, ensureOnboardingBadge } from '../../../lib/curriculum/view.ts';
@@ -70,6 +72,17 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
   const ringStates: Record<string, 'done' | 'current' | 'ahead'> = Object.fromEntries(
     forecast.phases.map((p) => [p.phase, p.status === 'Complete' ? 'done' : p.status === "You're here" ? 'current' : 'ahead']),
   );
+
+  // The Daily Beat — one rotating reflection a day, phase-weighted to where they are. Persisted so it's
+  // stable on refresh. (Local day via server tz; member tz isn't tracked yet.)
+  const today = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD
+  const dailyBeat = await getDailyBeat(db, memberId, activePhase, today);
+  const dailyBeatKept = dailyBeat
+    ? (await db.query<{ one: number }>(
+        "select 1 as one from playbook_entry where member_id=$1 and source_ref=$2 and state in ('proposed','kept') limit 1",
+        [memberId, dailyBeat.id],
+      )).rows.length > 0
+    : false;
 
   // Threshold ceremony — overlay on first arrival (unchanged). Same row carries the one-time
   // R-crossing marker (the banner shown when they cross a Checkpoint into the next R).
@@ -278,6 +291,16 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
         })()}
         <p className="muted refine-hint">To add or refine, just talk to Your G4L Companion</p>
       </div>
+
+      {dailyBeat && (
+        <DailyBeatPanel
+          memberId={memberId}
+          reflectionId={dailyBeat.id}
+          text={dailyBeat.text}
+          keepable={dailyBeat.keepable}
+          kept={dailyBeatKept}
+        />
+      )}
 
       <CurriculumForecast memberId={memberId} forecast={forecast} />
 

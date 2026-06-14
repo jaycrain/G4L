@@ -16,6 +16,7 @@ export type CheckinContext = {
   namedSelves?: string[]; // all reclaimed selves the member has named (the identity strip facets)
   completedSessions?: string[]; // curriculum Sessions they've finished (Identity Excavation, …)
   nextStep?: { title: string; kind: string; openable: boolean } | null; // the lit step on their path (send them there)
+  dailyBeat?: string | null; // today's Daily Beat reflection on their dashboard (a read, not a task)
   doorDisplayNames: string[];
   idScore: number | null;
   direction: Direction | null;
@@ -103,6 +104,7 @@ export function contextBlock(c: CheckinContext): string {
     c.grintaScore != null ? `GRINTA! Index: ${c.grintaScore}${c.grintaTrend ? ` (${c.grintaTrend} lately)` : ''}` : null,
     c.beatsDone != null ? `Beats worked so far: ${c.beatsDone}` : null,
     c.consumedBites && c.consumedBites.length ? `Recently read: ${c.consumedBites.join('; ')}` : null,
+    c.dailyBeat ? `Today's Daily Beat on their dashboard (a reflection they may have read — only speak to it if they raise it): "${c.dailyBeat}"` : null,
     reclaim,
     c.pastSelf ? `Who they were, in their own words: "${c.pastSelf}"` : null,
     c.gapStory ? `How the gap opened, in their own words: "${c.gapStory}"` : null,

@@ -22,6 +22,7 @@ import { getGrinta } from '../../lib/grinta/index.ts';
 import { listFacets, closedSessionIds } from '../../lib/curriculum/store.ts';
 import { getForecast } from '../../lib/curriculum/view.ts';
 import { getAsset } from '../../lib/curriculum/registry.ts';
+import { getDailyBeat } from '../../lib/daily-beat/store.ts';
 import { itemStem, dimensionForIndex } from '../../lib/idq/instrument.ts';
 import { authorizeMember } from '../authz.ts';
 import type { Db } from '../../lib/db/schema.ts';
@@ -70,7 +71,10 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
   const lastCompletedAsset = lastSessionId ? (getAsset(lastSessionId)?.title ?? null) : null;
   // The R they're in now (for noticing a Checkpoint crossing) + the lit next step (to route them to).
   const activePhase = forecast.phases.find((p) => p.status === "You're here")?.label ?? null;
+  const activePhaseKey = forecast.phases.find((p) => p.status === "You're here")?.phase ?? null;
   const nextStep = forecast.current ? { title: forecast.current.title, kind: forecast.current.kind, openable: forecast.current.openable } : null;
+  // Today's Daily Beat — so the companion knows the reflection on their dashboard if they bring it up.
+  const dailyBeat = (await getDailyBeat(db, memberId, activePhaseKey, new Date().toLocaleDateString('en-CA')))?.text ?? null;
 
   // Pillar 2 — change-detection: diff the member's key signals against the last interaction's
   // snapshot, then persist the new snapshot for next time. So the companion notices what moved.
@@ -120,6 +124,7 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
     namedSelves,
     completedSessions,
     nextStep,
+    dailyBeat,
     doorDisplayNames: dash.doors.map((d) => d.displayName),
     idScore: dash.score?.score ?? null,
     direction: dash.score?.direction ?? null,
