@@ -230,7 +230,7 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .beat-reflect button { margin: 0; }
 
 /* The Journey — a place, not a score */
-.journey-card { border-left: 4px solid var(--teal); }
+/* (Journey's old teal left-accent removed — it now matches the other metric panels in the row.) */
 .journey-line { font-weight: 600; color: var(--navy); margin: 0.25rem 0 0.6rem; }
 .journey-rings { width: 132px; height: 132px; display: block; margin: 0.6rem auto 0.3rem; }
 .journey-layer { margin: 0.5rem 0 0; font-size: 0.85rem; text-align: center; }
