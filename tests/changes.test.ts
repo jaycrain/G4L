@@ -29,6 +29,27 @@ test('nothing moved → empty', () => {
   assert.deepEqual(diffSnapshot(base, { ...base }), []);
 });
 
+test('notices a finished Session and a newly-named self (curriculum awareness)', () => {
+  const prev: DashboardSnapshot = { ...base, closedSessions: [], namedSelves: ['the Elite Cyclist'] };
+  const curr: DashboardSnapshot = {
+    ...base,
+    closedSessions: ['Identity Excavation'],
+    namedSelves: ['the Elite Cyclist', 'the Entrepreneur'],
+  };
+  const d = diffSnapshot(prev, curr);
+  assert.ok(d.some((x) => x.includes('Finished Identity Excavation')));
+  assert.ok(d.some((x) => x.includes('the Entrepreneur')));
+  assert.ok(!d.some((x) => x.includes('the Elite Cyclist')), 'an already-named self is not re-reported');
+});
+
+test('an older snapshot with no curriculum fields catches up once', () => {
+  const prev = asSnapshot(JSON.stringify(base)); // base has no closedSessions/namedSelves
+  const curr: DashboardSnapshot = { ...base, closedSessions: ['Identity Excavation'], namedSelves: ['the Builder'] };
+  const d = diffSnapshot(prev, curr);
+  assert.ok(d.some((x) => x.includes('Finished Identity Excavation')));
+  assert.ok(d.some((x) => x.includes('the Builder')));
+});
+
 test('does not report a goal that was already reclaimed', () => {
   const prev: DashboardSnapshot = { ...base, reclaimedItems: ['Race done'] };
   const curr: DashboardSnapshot = { ...base, reclaimedItems: ['Race done'] };

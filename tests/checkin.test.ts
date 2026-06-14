@@ -56,6 +56,17 @@ test('contextBlock surfaces the full member data the MA can speak to', () => {
   assert.match(block, /Beats worked so far: 5/);
 });
 
+test('contextBlock surfaces the named selves + completed Sessions (curriculum awareness)', () => {
+  const block = contextBlock({
+    ...base,
+    namedSelves: ['the Elite Cyclist', 'the Entrepreneur'],
+    completedSessions: ['Identity Excavation'],
+  });
+  assert.match(block, /the Elite Cyclist, the Entrepreneur/); // speaks to all selves
+  assert.match(block, /speak to all of them/); // the steer
+  assert.match(block, /Sessions they've completed: Identity Excavation/);
+});
+
 test('proactiveTeaser is signal-driven', () => {
   assert.match(proactiveTeaser({ ...base, idScore: null }), /IDQ/);
   assert.match(proactiveTeaser({ ...base, lastCompletedAsset: 'Fuel Plan' }), /Fuel Plan/);

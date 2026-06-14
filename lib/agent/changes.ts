@@ -8,6 +8,8 @@ export type DashboardSnapshot = {
   beatsDone: number;
   reclaimedItems: string[]; // texts of items in the reclaimed state
   measures: Record<string, number | null>; // latest reading per measure label
+  closedSessions?: string[]; // titles of completed curriculum Sessions (Identity Excavation, …)
+  namedSelves?: string[]; // reclaimed identity facets the member has named
 };
 
 const n = (v: unknown): number | null => (typeof v === 'number' && Number.isFinite(v) ? v : null);
@@ -29,6 +31,8 @@ export function asSnapshot(raw: unknown): DashboardSnapshot | null {
     beatsDone: typeof o.beatsDone === 'number' ? o.beatsDone : 0,
     reclaimedItems: Array.isArray(o.reclaimedItems) ? (o.reclaimedItems as string[]) : [],
     measures: o.measures && typeof o.measures === 'object' ? (o.measures as Record<string, number | null>) : {},
+    closedSessions: Array.isArray(o.closedSessions) ? (o.closedSessions as string[]) : [],
+    namedSelves: Array.isArray(o.namedSelves) ? (o.namedSelves as string[]) : [],
   };
 }
 
@@ -52,6 +56,14 @@ export function diffSnapshot(prev: DashboardSnapshot | null, curr: DashboardSnap
   }
   const wasReclaimed = new Set(prev.reclaimedItems);
   for (const t of curr.reclaimedItems) if (!wasReclaimed.has(t)) out.push(`Newly reclaimed: "${t}"`);
+
+  // Curriculum Sessions they've finished (Identity Excavation, …) since last time.
+  const wasClosed = new Set(prev.closedSessions ?? []);
+  for (const t of curr.closedSessions ?? []) if (!wasClosed.has(t)) out.push(`Finished ${t}`);
+
+  // New reclaimed selves they named (the identity strip got a facet).
+  const wasNamed = new Set((prev.namedSelves ?? []).map((s) => s.toLowerCase()));
+  for (const s of curr.namedSelves ?? []) if (!wasNamed.has(s.toLowerCase())) out.push(`Named a self they're reclaiming: ${s}`);
 
   for (const [label, cv] of Object.entries(curr.measures)) {
     if (!(label in prev.measures)) {

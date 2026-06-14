@@ -13,6 +13,8 @@ export type CheckinContext = {
   today?: string; // current date, injected server-side so the agent has a real temporal anchor
   displayName: string;
   identityNoun: string | null;
+  namedSelves?: string[]; // all reclaimed selves the member has named (the identity strip facets)
+  completedSessions?: string[]; // curriculum Sessions they've finished (Identity Excavation, …)
   doorDisplayNames: string[];
   idScore: number | null;
   direction: Direction | null;
@@ -81,7 +83,12 @@ export function contextBlock(c: CheckinContext): string {
       ? `Since they last talked with you, their dashboard moved:\n${c.recentChanges.map((x) => `  • ${x}`).join('\n')}`
       : null,
     `Member: ${c.displayName}`,
-    c.identityNoun ? `Reclaiming: the ${c.identityNoun}` : null,
+    c.namedSelves && c.namedSelves.length
+      ? `Reclaimed selves they've named: ${c.namedSelves.join(', ')} (speak to all of them, not just one)`
+      : c.identityNoun
+        ? `Reclaiming: the ${c.identityNoun}`
+        : null,
+    c.completedSessions && c.completedSessions.length ? `Sessions they've completed: ${c.completedSessions.join(', ')}` : null,
     c.doorDisplayNames.length ? `Door${c.doorDisplayNames.length > 1 ? 's' : ''}: ${c.doorDisplayNames.join(', ')}` : null,
     c.idScore !== null ? `Latest ID Score: ${c.idScore}${c.direction ? ` (${c.direction})` : ''}` : 'No IDQ yet',
     dims,

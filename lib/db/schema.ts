@@ -45,6 +45,12 @@ const MIGRATIONS: Array<{ file: string; sentinel: Sentinel }> = [
   { file: 'migrations/0021_agent_memory.sql', sentinel: { table: 'member_profile', column: 'agent_memory' } },
   { file: 'migrations/0022_dashboard_snapshot.sql', sentinel: { table: 'member_profile', column: 'dashboard_snapshot' } },
   { file: 'migrations/0023_curriculum_slice.sql', sentinel: 'session_progress' },
+  {
+    file: 'migrations/0024_playbook_session_source.sql',
+    sentinel: {
+      sql: "select exists (select 1 from pg_constraint where conname='playbook_entry_source_kind_check' and pg_get_constraintdef(oid) like '%session%') as e",
+    },
+  },
 ];
 export const SEED_SQL = () => sqlFile('seed/0001_reference_data.sql');
 

@@ -8,7 +8,7 @@ import type { Db } from '../db/schema.ts';
 export type PlaybookSection = 'what_works' | 'why_works' | 'own_words' | 'journal';
 export type Authorship = 'gathered' | 'authored';
 export type PlaybookState = 'proposed' | 'kept' | 'dismissed';
-export type SourceKind = 'beat' | 'science' | 'checkpoint' | 'own';
+export type SourceKind = 'beat' | 'science' | 'checkpoint' | 'own' | 'session';
 
 export type PlaybookSource = { kind?: SourceKind; ref?: string; label?: string };
 

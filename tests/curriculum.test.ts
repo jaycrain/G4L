@@ -182,6 +182,23 @@ test('the mirror refresh is a no-op for a Session with no reflections (nothing t
   assert.equal(out, null);
 });
 
+test('Session→Playbook harvest is safe + a no-op with no API key (proposals come from live curation)', async () => {
+  const { harvestSessionToPlaybook } = await import('../lib/agent/session-harvest.ts');
+  const { listPlaybook } = await import('../lib/playbook/store.ts');
+  const key = process.env.ANTHROPIC_API_KEY;
+  delete process.env.ANTHROPIC_API_KEY;
+  try {
+    const { db, memberId } = await seed();
+    const exc = getSession('RCN-EXC')!;
+    const answers = { '1': 'the dig scene', '2': 'who I was', '3': 'my story', '4': 'the Builder' };
+    const filed = await harvestSessionToPlaybook(db, memberId, exc, answers);
+    assert.equal(filed, 0); // no live curation without a key — never throws, never fabricates
+    assert.equal((await listPlaybook(db, memberId)).length, 0);
+  } finally {
+    if (key !== undefined) process.env.ANTHROPIC_API_KEY = key;
+  }
+});
+
 test('badges earn idempotently (newly-earned signal fires once)', async () => {
   const { db, memberId } = await seed();
   assert.equal(await earnBadge(db, memberId, 'named-yourself'), true);

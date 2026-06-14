@@ -6,6 +6,7 @@ import { getSession, getBadge } from '../../../../lib/curriculum/registry.ts';
 import { getSessionProgress, saveAnswer, closeSession, addFacet, earnBadge, listFacets } from '../../../../lib/curriculum/store.ts';
 import { guideSessionStep, facetFromAnswers, extractFacets, cleanFacet, type PriorAnswer } from '../../../../lib/agent/session-guide.ts';
 import { refreshIdentityNarrative } from '../../../../lib/agent/identity-narrative.ts';
+import { harvestSessionToPlaybook } from '../../../../lib/agent/session-harvest.ts';
 import type { Db } from '../../../../lib/db/schema.ts';
 
 async function memberMeta(db: Db, memberId: string): Promise<{ displayName: string; memory: string | null }> {
@@ -80,8 +81,12 @@ export async function closeSessionAction(memberId: string, sessionId: string): P
     const named = await extractFacets(raw, existing, { displayName: meta.displayName, memory: meta.memory });
     for (const f of named) await addFacet(db, memberId, f, sessionId);
     await closeSession(db, memberId, sessionId);
-    // Sharpen the dashboard mirror with what they just said — in their own words (best-effort).
-    await refreshIdentityNarrative(db, memberId, session);
+    // After the facets land, sharpen the dashboard mirror AND harvest the member's words into their
+    // Playbook — concurrently, both best-effort (neither is allowed to break the close).
+    await Promise.all([
+      refreshIdentityNarrative(db, memberId, session),
+      harvestSessionToPlaybook(db, memberId, session, progress?.answers ?? {}),
+    ]);
     const facetText = named[0] ?? cleanFacet(raw) ?? raw; // for the close ceremony copy
 
     let badgeName: string | null = null;

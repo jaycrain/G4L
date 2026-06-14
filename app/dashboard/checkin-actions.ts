@@ -19,6 +19,8 @@ import { createMeasure, logReadingByLabel, measuresForAgent, findReclaimItemId, 
 import { maybeFoldMemory } from '../../lib/agent/memory.ts';
 import { asSnapshot, diffSnapshot, type DashboardSnapshot } from '../../lib/agent/changes.ts';
 import { getGrinta } from '../../lib/grinta/index.ts';
+import { listFacets, closedSessionIds } from '../../lib/curriculum/store.ts';
+import { getAsset } from '../../lib/curriculum/registry.ts';
 import { itemStem, dimensionForIndex } from '../../lib/idq/instrument.ts';
 import { authorizeMember } from '../authz.ts';
 import type { Db } from '../../lib/db/schema.ts';
@@ -29,7 +31,7 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
   const dash = await getDashboard(db, memberId);
   if (!dash) return null;
   await maybeFoldMemory(db, memberId); // distill anything that has aged out of recall (best-effort, no-op until due)
-  const [grinta, consumedBites, profRows, idqRows, reclaimItems, beatRows, playbook, measures, linkedMeasureRows] = await Promise.all([
+  const [grinta, consumedBites, profRows, idqRows, reclaimItems, beatRows, playbook, measures, linkedMeasureRows, facets, closedIds, lastClosedRows] = await Promise.all([
     getGrinta(db, memberId, dash.identityNoun),
     recentConsumedTitles(db, memberId),
     db.query<{ intake_athletic_past: string | null; intake_gap: string | null; agent_memory: string | null; dashboard_snapshot: unknown }>(
@@ -49,8 +51,21 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
       'select distinct reclaim_item_id from measure where member_id=$1 and reclaim_item_id is not null and archived_at is null',
       [memberId],
     ),
+    listFacets(db, memberId),
+    closedSessionIds(db, memberId),
+    db.query<{ session_id: string }>(
+      "select session_id from session_progress where member_id=$1 and status='closed' order by closed_at desc nulls last limit 1",
+      [memberId],
+    ),
   ]);
   const prof = profRows.rows[0];
+
+  // Curriculum awareness — the named selves (identity strip) + completed Sessions, so the companion
+  // knows the identity work the member has done (CLAUDE.md: nothing the member sees is invisible to the MA).
+  const namedSelves = facets.map((f) => f.text);
+  const completedSessions = closedIds.map((id) => getAsset(id)?.title).filter((t): t is string => !!t);
+  const lastSessionId = lastClosedRows.rows[0]?.session_id;
+  const lastCompletedAsset = lastSessionId ? (getAsset(lastSessionId)?.title ?? null) : null;
 
   // Pillar 2 — change-detection: diff the member's key signals against the last interaction's
   // snapshot, then persist the new snapshot for next time. So the companion notices what moved.
@@ -60,6 +75,8 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
     beatsDone: beatRows.rows[0]?.n ?? 0,
     reclaimedItems: reclaimItems.filter((r) => r.state === 'reclaimed').map((r) => r.text),
     measures: Object.fromEntries(measures.map((m) => [m.label, m.latest])),
+    closedSessions: completedSessions,
+    namedSelves,
   };
   const recentChanges = diffSnapshot(asSnapshot(prof?.dashboard_snapshot), currSnapshot);
   await db
@@ -94,11 +111,13 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
     today: new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }),
     displayName: dash.displayName,
     identityNoun: dash.identityNoun,
+    namedSelves,
+    completedSessions,
     doorDisplayNames: dash.doors.map((d) => d.displayName),
     idScore: dash.score?.score ?? null,
     direction: dash.score?.direction ?? null,
     currentFocus: dash.currentFocus?.label ?? null,
-    lastCompletedAsset: null, // (wire to most-recent asset_completion later)
+    lastCompletedAsset, // most-recently completed curriculum Session (Identity Excavation, …)
     reclaimList: dash.reclaimList,
     grintaScore: grinta.score,
     grintaTrend: grinta.direction,
