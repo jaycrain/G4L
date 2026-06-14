@@ -26,6 +26,10 @@ import { logoutAction } from '../../login/actions.ts';
 import { authorizeMember } from '../../authz.ts';
 import { redirect } from 'next/navigation';
 
+// Give the companion's live turns room to finish (the Member Agent call is the long pole) so slow
+// turns complete instead of being cut short — matches onboarding/playbook.
+export const maxDuration = 30;
+
 // The 4Rs ring colors (match the logo), used to color the Journey legend.
 const R_RING_COLOR: Record<string, string> = {
   reconnect: '#374f63',

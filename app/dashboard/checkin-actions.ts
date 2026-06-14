@@ -135,7 +135,7 @@ export async function sendCheckin(memberId: string, memberMessage: string): Prom
     const db = (await getDb()) as unknown as Db;
     const ctx = await buildContext(db, memberId);
     if (!ctx) return { reply: "I can't reach your profile right now — try again in a moment." };
-    const history = (await loadConversation(db, memberId)).slice(-16); // bound the agent context
+    const history = (await loadConversation(db, memberId)).slice(-40); // bound the agent context (deeper recall)
     // The member can ask the agent to tend their own records — additive only, guarded in the store.
     let mutated = false; // a successful tool write → signal the client to refresh the dashboard panels
     const executor: ToolExecutor = async (name, input) => {

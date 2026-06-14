@@ -307,7 +307,9 @@ async function liveReply(
   executor?: ToolExecutor,
 ): Promise<string> {
   const { default: Anthropic } = await import('@anthropic-ai/sdk');
-  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, timeout: 20000, maxRetries: 2 });
+  // One bounded attempt with a single quick retry — never the 40–60s retry stack that made turns
+  // feel like the companion stalled. Stays within the route's 30s maxDuration.
+  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, timeout: 26000, maxRetries: 1 });
   const messages: any[] = [
     ...history.map((m) => ({ role: (m.role === 'agent' ? 'assistant' : 'user') as 'assistant' | 'user', content: m.text })),
     { role: 'user' as const, content: userText },
@@ -398,7 +400,10 @@ export async function checkinReply(
   if (detectCrisis(memberMessage).flagged) return { reply: CRISIS_RESPONSE_US, crisis: true };
   if (process.env.ANTHROPIC_API_KEY) {
     try {
-      return { reply: await liveReply(checkinSystem(c), history, memberMessage, executor) };
+      const reply = await liveReply(checkinSystem(c), history, memberMessage, executor);
+      // Never render an empty bubble — a rare empty turn degrades to a soft, in-voice nudge.
+      if (reply.trim()) return { reply };
+      return { reply: "I'm with you — say a little more?" };
     } catch (e) {
       console.warn('check-in reply: live agent unavailable, using scripted —', (e as Error).message);
     }
