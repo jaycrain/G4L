@@ -177,8 +177,14 @@ export default function AgentBubble({
               </button>
             </div>
           )}
-          <button type="button" className="agent-fab" onClick={openPanel} aria-label="Talk to your companion">
-            Talk
+          <button type="button" className="agent-fab" onClick={openPanel} aria-label="Open your G4L companion">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" width="18" height="18" aria-hidden="true">
+              <path d="M21 11.5a8.5 8.5 0 01-12.3 7.6L3 20l1-4.6A8.5 8.5 0 1121 11.5z" />
+              <circle cx="8.5" cy="11.5" r="1" fill="currentColor" stroke="none" />
+              <circle cx="12" cy="11.5" r="1" fill="currentColor" stroke="none" />
+              <circle cx="15.5" cy="11.5" r="1" fill="currentColor" stroke="none" />
+            </svg>
+            Your G4L companion
           </button>
         </>
       )}
