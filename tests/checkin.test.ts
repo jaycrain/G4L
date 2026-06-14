@@ -60,5 +60,5 @@ test('proactiveTeaser is signal-driven', () => {
   assert.match(proactiveTeaser({ ...base, idScore: null }), /IDQ/);
   assert.match(proactiveTeaser({ ...base, lastCompletedAsset: 'Fuel Plan' }), /Fuel Plan/);
   assert.match(proactiveTeaser({ ...base, lastCompletedAsset: null, direction: 'up' }), /working/);
-  assert.match(proactiveTeaser({ ...base, lastCompletedAsset: null, direction: null }), /landing/);
+  assert.match(proactiveTeaser({ ...base, lastCompletedAsset: null, direction: null }), /on your mind/);
 });
