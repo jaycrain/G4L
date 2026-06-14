@@ -17,6 +17,7 @@ import { markReclaimReclaimedByText, unmarkReclaimReclaimedByText, refineReclaim
 import { proposeEntry, playbookForAgent, isPlaybookSection } from '../../lib/playbook/store.ts';
 import { createMeasure, logReadingByLabel, measuresForAgent, findReclaimItemId, looksTrackable } from '../../lib/measure/store.ts';
 import { maybeFoldMemory } from '../../lib/agent/memory.ts';
+import { asSnapshot, diffSnapshot, type DashboardSnapshot } from '../../lib/agent/changes.ts';
 import { getGrinta } from '../../lib/grinta/index.ts';
 import { itemStem, dimensionForIndex } from '../../lib/idq/instrument.ts';
 import { authorizeMember } from '../authz.ts';
@@ -31,8 +32,8 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
   const [grinta, consumedBites, profRows, idqRows, reclaimItems, beatRows, playbook, measures, linkedMeasureRows] = await Promise.all([
     getGrinta(db, memberId, dash.identityNoun),
     recentConsumedTitles(db, memberId),
-    db.query<{ intake_athletic_past: string | null; intake_gap: string | null; agent_memory: string | null }>(
-      'select intake_athletic_past, intake_gap, agent_memory from member_profile where member_id=$1',
+    db.query<{ intake_athletic_past: string | null; intake_gap: string | null; agent_memory: string | null; dashboard_snapshot: unknown }>(
+      'select intake_athletic_past, intake_gap, agent_memory, dashboard_snapshot from member_profile where member_id=$1',
       [memberId],
     ),
     db.query<any>(
@@ -50,6 +51,24 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
     ),
   ]);
   const prof = profRows.rows[0];
+
+  // Pillar 2 — change-detection: diff the member's key signals against the last interaction's
+  // snapshot, then persist the new snapshot for next time. So the companion notices what moved.
+  const currSnapshot: DashboardSnapshot = {
+    idScore: dash.score?.score ?? null,
+    grinta: grinta.score ?? null,
+    beatsDone: beatRows.rows[0]?.n ?? 0,
+    reclaimedItems: reclaimItems.filter((r) => r.state === 'reclaimed').map((r) => r.text),
+    measures: Object.fromEntries(measures.map((m) => [m.label, m.latest])),
+  };
+  const recentChanges = diffSnapshot(asSnapshot(prof?.dashboard_snapshot), currSnapshot);
+  await db
+    .query('update member_profile set dashboard_snapshot=$1::jsonb, dashboard_snapshot_at=now() where member_id=$2', [
+      JSON.stringify(currSnapshot),
+      memberId,
+    ])
+    .catch(() => {});
+
   // Proactive tracker offer: goals whose wording has a measurable target but no tracker yet.
   const linkedIds = new Set(linkedMeasureRows.rows.map((r) => r.reclaim_item_id));
   const trackableUntracked = reclaimItems
@@ -99,6 +118,7 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
     measures,
     trackableUntracked,
     agentMemory: prof?.agent_memory ?? null,
+    recentChanges,
   };
 }
 
