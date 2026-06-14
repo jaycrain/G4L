@@ -3,8 +3,8 @@
 import { getDb } from '../../../../lib/db/index.ts';
 import { authorizeMember } from '../../../authz.ts';
 import { getSession, getBadge } from '../../../../lib/curriculum/registry.ts';
-import { getSessionProgress, saveAnswer, closeSession, addFacet, earnBadge } from '../../../../lib/curriculum/store.ts';
-import { guideSessionStep, facetFromAnswers, type PriorAnswer } from '../../../../lib/agent/session-guide.ts';
+import { getSessionProgress, saveAnswer, closeSession, addFacet, earnBadge, listFacets } from '../../../../lib/curriculum/store.ts';
+import { guideSessionStep, facetFromAnswers, extractFacets, cleanFacet, type PriorAnswer } from '../../../../lib/agent/session-guide.ts';
 import type { Db } from '../../../../lib/db/schema.ts';
 
 async function memberMeta(db: Db, memberId: string): Promise<{ displayName: string; memory: string | null }> {
@@ -23,12 +23,23 @@ export async function frameForStep(memberId: string, sessionId: string, stepN: n
   if (!session || !step) return '';
   try {
     const db = (await getDb()) as unknown as Db;
-    const [progress, meta] = await Promise.all([getSessionProgress(db, memberId, sessionId), memberMeta(db, memberId)]);
+    const [progress, meta, facets] = await Promise.all([
+      getSessionProgress(db, memberId, sessionId),
+      memberMeta(db, memberId),
+      listFacets(db, memberId),
+    ]);
     const answers = progress?.answers ?? {};
     const priorAnswers: PriorAnswer[] = (session.steps ?? [])
       .filter((s) => s.n < stepN && (answers[String(s.n)] ?? '').trim())
       .map((s) => ({ title: s.title, prompt: s.prompt, answer: answers[String(s.n)]! }));
-    return await guideSessionStep({ sessionTitle: session.title, step, priorAnswers, displayName: meta.displayName, memory: meta.memory });
+    return await guideSessionStep({
+      sessionTitle: session.title,
+      step,
+      priorAnswers,
+      displayName: meta.displayName,
+      memory: meta.memory,
+      existingFacets: facets.map((f) => f.text),
+    });
   } catch {
     return step.companion_frame; // never a broken frame
   }
@@ -58,12 +69,17 @@ export async function closeSessionAction(memberId: string, sessionId: string): P
   if (!session) return { ok: false, reason: 'error' };
   try {
     const db = (await getDb()) as unknown as Db;
-    const progress = await getSessionProgress(db, memberId, sessionId);
-    const facetText = facetFromAnswers(session.steps, progress?.answers ?? {});
-    if (!facetText) return { ok: false, reason: 'incomplete' }; // the naming step must be answered
+    const [progress, meta] = await Promise.all([getSessionProgress(db, memberId, sessionId), memberMeta(db, memberId)]);
+    const raw = facetFromAnswers(session.steps, progress?.answers ?? {});
+    if (!raw) return { ok: false, reason: 'incomplete' }; // the naming step must be answered
 
-    await addFacet(db, memberId, facetText, sessionId); // dedupes against the onboarding seed
+    // Normalize the member's words into the clean self/selves they named, with already-named ones
+    // stripped out — so the identity strip never repeats a known self.
+    const existing = (await listFacets(db, memberId)).map((f) => f.text);
+    const named = await extractFacets(raw, existing, { displayName: meta.displayName, memory: meta.memory });
+    for (const f of named) await addFacet(db, memberId, f, sessionId);
     await closeSession(db, memberId, sessionId);
+    const facetText = named[0] ?? cleanFacet(raw) ?? raw; // for the close ceremony copy
 
     let badgeName: string | null = null;
     let ceremony = false;

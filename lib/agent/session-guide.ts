@@ -12,6 +12,7 @@ export type GuideInput = {
   priorAnswers: PriorAnswer[];
   displayName: string;
   memory?: string | null;
+  existingFacets?: string[]; // selves already named (onboarding seed + earlier Sessions)
 };
 
 const SYSTEM =
@@ -30,9 +31,18 @@ export async function guideSessionStep(input: GuideInput): Promise<string> {
     const prior = input.priorAnswers.length
       ? input.priorAnswers.map((p) => `Step "${p.title}" — asked: ${p.prompt}\nThey answered: ${p.answer}`).join('\n\n')
       : '(this is the first step)';
+    // At a facet-naming step, tell the companion what the member has already named so it elicits a
+    // CLEAN, DISTINCT self — sharpen an existing one or surface a new one — never a restatement.
+    const facetNote =
+      input.step.contributes === 'facet' && input.existingFacets?.length
+        ? `\nThey have ALREADY named these selves: ${input.existingFacets.join(', ')}. ` +
+          `Frame this as naming the self they're reclaiming right now — they can sharpen one of those or surface another, ` +
+          `but ask for ONE clean natural-case phrase and steer them away from simply repeating an already-named self.\n`
+        : '';
     const user =
       `Session: ${input.sessionTitle}\nMember: ${input.displayName}\n` +
       (input.memory ? `What you remember about them:\n${input.memory}\n` : '') +
+      facetNote +
       `\nPrior answers:\n${prior}\n\n` +
       `CURRENT step — "${input.step.title}"\nThe question they'll answer: ${input.step.prompt}\n` +
       `Your authored framing (use as the base, personalize it): ${input.step.companion_frame}\n` +
@@ -53,4 +63,67 @@ export function facetFromAnswers(step: Step[] | undefined, answers: Record<strin
   if (!facetStep) return null;
   const raw = (answers[String(facetStep.n)] ?? '').trim();
   return raw || null;
+}
+
+const normFacet = (s: string) => s.toLowerCase().replace(/\s+/g, ' ').trim();
+
+/** Normalize a member's phrasing into a wearable natural-case self: "An Elite Cyclist" → "the Elite
+ * Cyclist", "Builder" → "the Builder". Preserves the member's casing of the noun itself. */
+export function cleanFacet(s: string): string {
+  let t = (s ?? '').replace(/\s+/g, ' ').trim().replace(/[.,;:!?]+$/, '');
+  if (!t) return '';
+  t = t.replace(/^(an?|the|my)\s+/i, '').trim();
+  return t ? `the ${t}` : '';
+}
+
+/** Drop empties and any candidate that restates an already-named (or earlier-in-batch) self. */
+function dedupeFacets(cands: string[], existing: string[]): string[] {
+  const seen = new Set(existing.map(normFacet));
+  const out: string[] = [];
+  for (const c of cands) {
+    const t = c.trim();
+    if (!t) continue;
+    const k = normFacet(t);
+    if (seen.has(k)) continue;
+    seen.add(k);
+    out.push(t);
+  }
+  return out;
+}
+
+/** Turn the member's naming-step answer into the clean reclaimed self/selves they just named, with
+ * any already-named ones stripped out (so the identity strip never repeats a known self). Faithful to
+ * their own words — never invents an identity. Live Claude when available; deterministic fallback. */
+export async function extractFacets(
+  rawAnswer: string,
+  existingFacets: string[],
+  opts?: { displayName?: string; memory?: string | null },
+): Promise<string[]> {
+  const fallback = dedupeFacets([cleanFacet(rawAnswer)], existingFacets);
+  if (!process.env.ANTHROPIC_API_KEY) return fallback;
+  try {
+    const { default: Anthropic } = await import('@anthropic-ai/sdk');
+    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, timeout: 16000, maxRetries: 1 });
+    const model = process.env.ANTHROPIC_MODEL ?? 'claude-sonnet-4-6';
+    const already = existingFacets.length ? existingFacets.join(', ') : '(none yet)';
+    const sys =
+      "You normalize a member's own words into the reclaimed identity (or identities) they just named in a guided exercise. " +
+      'Return ONLY identities the member themselves stated — NEVER invent, infer, or relabel. ' +
+      'Each as a short natural-case noun phrase that reads as a self to wear, like "the Elite Cyclist" or "the Builder". ' +
+      'EXCLUDE any self they have already named (given below) — do not repeat it. If their answer restates an already-named self ' +
+      'plus a new one, return only the new one(s). Output STRICT JSON only: {"facets": string[]} — use [] when nothing is new.';
+    const user = `Already named: ${already}\nTheir answer: ${rawAnswer}`;
+    const res = await client.messages.create({ model, max_tokens: 200, system: sys, messages: [{ role: 'user', content: user }] });
+    const block = res.content.find((b) => b.type === 'text');
+    const text = block && block.type === 'text' ? block.text.trim() : '';
+    const a = text.indexOf('{');
+    const b = text.lastIndexOf('}');
+    if (a < 0 || b < a) return fallback;
+    const parsed = JSON.parse(text.slice(a, b + 1)) as { facets?: unknown };
+    const arr = Array.isArray(parsed.facets) ? parsed.facets : [];
+    const clean = arr.map((x) => cleanFacet(String(x))).filter(Boolean);
+    return dedupeFacets(clean, existingFacets);
+  } catch {
+    return fallback;
+  }
 }

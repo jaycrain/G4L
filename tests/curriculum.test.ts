@@ -129,6 +129,29 @@ test('facets: append + case-insensitive dedupe, ordered', async () => {
   assert.equal(f[0]!.sourceSession, 'RCN-EXC');
 });
 
+test('cleanFacet normalizes a member phrase into a wearable natural-case self', async () => {
+  const { cleanFacet } = await import('../lib/agent/session-guide.ts');
+  assert.equal(cleanFacet('An Elite Cyclist'), 'the Elite Cyclist');
+  assert.equal(cleanFacet('Builder'), 'the Builder');
+  assert.equal(cleanFacet('the Climber.'), 'the Climber');
+  assert.equal(cleanFacet('  my Writer  '), 'the Writer');
+  assert.equal(cleanFacet(''), '');
+});
+
+test('extractFacets (no-API fallback) strips a self already named, so the strip never repeats', async () => {
+  const { extractFacets } = await import('../lib/agent/session-guide.ts');
+  const key = process.env.ANTHROPIC_API_KEY;
+  delete process.env.ANTHROPIC_API_KEY; // force the deterministic path
+  try {
+    // restates the seeded self verbatim → nothing new to add
+    assert.deepEqual(await extractFacets('the Elite Cyclist', ['the Elite Cyclist']), []);
+    // a brand-new self → cleaned + kept
+    assert.deepEqual(await extractFacets('Entrepreneur', ['the Elite Cyclist']), ['the Entrepreneur']);
+  } finally {
+    if (key !== undefined) process.env.ANTHROPIC_API_KEY = key;
+  }
+});
+
 test('badges earn idempotently (newly-earned signal fires once)', async () => {
   const { db, memberId } = await seed();
   assert.equal(await earnBadge(db, memberId, 'named-yourself'), true);
