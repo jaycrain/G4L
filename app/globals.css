@@ -11,6 +11,8 @@
   --white: #ffffff;
   /* Main panel outline — navy-tinted, darkened a notch past the 0.38 accent level (one place to tune). */
   --panel-line: rgba(55, 79, 99, 0.55);
+  /* Data-entry field outline — the standard (solid navy); one knob so every field reads the same. */
+  --field-line: var(--navy);
 }
 
 * { box-sizing: border-box; }
@@ -52,7 +54,7 @@ input[type='text'], input[type='email'], input[type='password'], textarea, selec
   width: 100%;
   font: inherit;
   padding: 0.6rem 0.7rem;
-  border: 1px solid var(--navy);
+  border: 1px solid var(--field-line);
   border-radius: 6px;
   background: var(--white);
   color: var(--charcoal);
@@ -164,7 +166,7 @@ ul.reclaim li.reclaimed { color: var(--navy); }
 .measure-log { display: flex; gap: 0.4rem; margin-top: 0.45rem; }
 .measure-log input {
   flex: 1; min-width: 0; padding: 0.35rem 0.5rem; font-size: 0.85rem;
-  border: 1px solid rgba(55, 79, 99, 0.38); border-radius: 6px; font-family: inherit;
+  border: 1px solid var(--field-line); border-radius: 6px; font-family: inherit;
 }
 .measure-log button {
   padding: 0.35rem 0.8rem; font-size: 0.82rem; font-weight: 600; cursor: pointer;
@@ -188,7 +190,7 @@ ul.reclaim li.reclaimed { color: var(--navy); }
 .tt-row { display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.4rem; flex-wrap: wrap; }
 .track-this-form input, .track-this-form select {
   padding: 0.3rem 0.45rem; font-size: 0.83rem; font-family: inherit;
-  border: 1px solid var(--light-grey); border-radius: 6px; min-width: 0;
+  border: 1px solid var(--field-line); border-radius: 6px; min-width: 0;
 }
 .tt-label { flex: 1; }
 .tt-unit { width: 4.5rem; }
@@ -365,7 +367,7 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .pb-btn.ghost { background: #fff; color: var(--muted, #6B7680); border-color: var(--grey); }
 .pb-btn:disabled { opacity: 0.5; cursor: default; }
 .pb-empty { font-size: 0.92rem; color: var(--muted, #6B7680); line-height: 1.55; margin: 0.2rem 0 0; font-style: italic; }
-.pb-edit textarea, .pb-add textarea { width: 100%; resize: vertical; font: inherit; padding: 0.5rem 0.65rem; border: 1px solid var(--grey); border-radius: 8px; }
+.pb-edit textarea, .pb-add textarea { width: 100%; resize: vertical; font: inherit; padding: 0.5rem 0.65rem; border: 1px solid var(--field-line); border-radius: 8px; }
 .pb-add { margin-top: 0.6rem; display: flex; flex-direction: column; gap: 0.5rem; align-items: flex-start; }
 .pb-add .pb-btn { align-self: flex-end; }
 .pb-foot { font-size: 0.85rem; color: var(--muted, #6B7680); line-height: 1.55; max-width: 42rem; margin-top: 0.5rem; }
@@ -606,7 +608,7 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .sess-bubble { margin: 0.85rem 1.1rem 0; background: var(--grey); border-radius: 14px; border-bottom-left-radius: 4px; padding: 0.85rem 1rem; font-size: 0.95rem; color: var(--charcoal); line-height: 1.5; }
 .sess-agent { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--teal); margin-bottom: 0.35rem; }
 .sess-q { font-size: 1.02rem; font-weight: 700; color: var(--navy); margin: 1rem 1.1rem 0.5rem; }
-.sess-field { display: block; width: calc(100% - 2.2rem); margin: 0 1.1rem; border: 1.5px solid rgba(55, 79, 99, 0.38); border-radius: 10px; padding: 0.8rem 0.9rem; font-family: inherit; font-size: 0.95rem; color: var(--charcoal); line-height: 1.5; resize: vertical; }
+.sess-field { display: block; width: calc(100% - 2.2rem); margin: 0 1.1rem; border: 1.5px solid var(--field-line); border-radius: 10px; padding: 0.8rem 0.9rem; font-family: inherit; font-size: 0.95rem; color: var(--charcoal); line-height: 1.5; resize: vertical; }
 .sess-probe { margin: 0.6rem 1.1rem 0; font-size: 0.82rem; color: var(--navy); opacity: 0.7; font-style: italic; }
 .sess-crow { display: flex; align-items: center; justify-content: space-between; margin: 1rem 1.1rem 0; gap: 0.75rem; }
 .sess-next { background: var(--teal); color: #fff; font-weight: 600; font-size: 0.9rem; padding: 0.55rem 1.2rem; border-radius: 22px; border: none; cursor: pointer; width: auto; }
