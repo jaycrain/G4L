@@ -32,6 +32,23 @@ test('a fresh asset completion is witnessed', () => {
   assert.match(n.text, /Window Exercise/);
 });
 
+test('a ready next step routes them there — a Checkpoint outranks reflecting on what just finished', () => {
+  const n = topNudge({
+    ...base,
+    recentAssetName: 'Identity Excavation',
+    daysSinceRecentAsset: 1,
+    curriculumNext: { title: 'Reconnect', kind: 'checkpoint' },
+  });
+  assert.equal(n.kind, 'curriculum_next');
+  assert.match(n.text, /Reconnect Checkpoint is ready/);
+});
+
+test('a ready next Session points to the Program', () => {
+  const n = topNudge({ ...base, curriculumNext: { title: 'Body Inventory', kind: 'session' } });
+  assert.equal(n.kind, 'curriculum_next');
+  assert.match(n.text, /Body Inventory/);
+});
+
 test('a long silence is caught gently', () => {
   const n = topNudge({ ...base, daysSinceActivity: 14 });
   assert.equal(n.kind, 'silence');

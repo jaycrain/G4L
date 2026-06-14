@@ -67,6 +67,16 @@ test('contextBlock surfaces the named selves + completed Sessions (curriculum aw
   assert.match(block, /Sessions they've completed: Identity Excavation/);
 });
 
+test('contextBlock surfaces a ready next step (so the MA can send them there)', () => {
+  const cp = contextBlock({ ...base, nextStep: { title: 'Reconnect', kind: 'checkpoint', openable: true } });
+  assert.match(cp, /next step on the path/);
+  assert.match(cp, /Reconnect Checkpoint/);
+  assert.match(cp, /send them there/);
+  // A not-yet-built step is NOT surfaced (don't route them to "coming soon").
+  const soon = contextBlock({ ...base, nextStep: { title: 'Body Inventory', kind: 'session', openable: false } });
+  assert.doesNotMatch(soon, /next step on the path/);
+});
+
 test('proactiveTeaser is signal-driven', () => {
   assert.match(proactiveTeaser({ ...base, idScore: null }), /IDQ/);
   assert.match(proactiveTeaser({ ...base, lastCompletedAsset: 'Fuel Plan' }), /Fuel Plan/);

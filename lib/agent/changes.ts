@@ -10,6 +10,7 @@ export type DashboardSnapshot = {
   measures: Record<string, number | null>; // latest reading per measure label
   closedSessions?: string[]; // titles of completed curriculum Sessions (Identity Excavation, …)
   namedSelves?: string[]; // reclaimed identity facets the member has named
+  activePhase?: string | null; // the R they're currently in (Reconnect/Rewire/…) — changes when a Checkpoint is crossed
 };
 
 const n = (v: unknown): number | null => (typeof v === 'number' && Number.isFinite(v) ? v : null);
@@ -33,6 +34,7 @@ export function asSnapshot(raw: unknown): DashboardSnapshot | null {
     measures: o.measures && typeof o.measures === 'object' ? (o.measures as Record<string, number | null>) : {},
     closedSessions: Array.isArray(o.closedSessions) ? (o.closedSessions as string[]) : [],
     namedSelves: Array.isArray(o.namedSelves) ? (o.namedSelves as string[]) : [],
+    activePhase: typeof o.activePhase === 'string' ? o.activePhase : null,
   };
 }
 
@@ -64,6 +66,11 @@ export function diffSnapshot(prev: DashboardSnapshot | null, curr: DashboardSnap
   // New reclaimed selves they named (the identity strip got a facet).
   const wasNamed = new Set((prev.namedSelves ?? []).map((s) => s.toLowerCase()));
   for (const s of curr.namedSelves ?? []) if (!wasNamed.has(s.toLowerCase())) out.push(`Named a self they're reclaiming: ${s}`);
+
+  // Crossed a Checkpoint into a new R — a real milestone the companion should witness.
+  if (prev.activePhase && curr.activePhase && curr.activePhase !== prev.activePhase) {
+    out.push(`Crossed into ${curr.activePhase} (${prev.activePhase} complete)`);
+  }
 
   for (const [label, cv] of Object.entries(curr.measures)) {
     if (!(label in prev.measures)) {

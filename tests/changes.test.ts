@@ -42,6 +42,14 @@ test('notices a finished Session and a newly-named self (curriculum awareness)',
   assert.ok(!d.some((x) => x.includes('the Elite Cyclist')), 'an already-named self is not re-reported');
 });
 
+test('notices crossing a Checkpoint into a new R (the gateway moment)', () => {
+  const prev: DashboardSnapshot = { ...base, activePhase: 'Reconnect' };
+  const curr: DashboardSnapshot = { ...base, activePhase: 'Rewire' };
+  const d = diffSnapshot(prev, curr);
+  assert.ok(d.some((x) => x.includes('Crossed into Rewire')));
+  assert.ok(d.some((x) => x.includes('Reconnect complete')));
+});
+
 test('an older snapshot with no curriculum fields catches up once', () => {
   const prev = asSnapshot(JSON.stringify(base)); // base has no closedSessions/namedSelves
   const curr: DashboardSnapshot = { ...base, closedSessions: ['Identity Excavation'], namedSelves: ['the Builder'] };

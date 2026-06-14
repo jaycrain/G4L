@@ -91,6 +91,9 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
     delta: dash.score?.delta ?? null,
     recentAssetName: null,
     nextAssetName: null,
+    // The lit, openable step on their path — so the resting bubble routes them to it (a Checkpoint
+    // especially shouldn't have to be hunted for).
+    curriculumNext: forecast.current?.openable ? { title: forecast.current.title, kind: forecast.current.kind } : null,
   };
   const teaser = topNudge(nudgeSignals).text;
 

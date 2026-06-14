@@ -20,6 +20,7 @@ import { maybeFoldMemory } from '../../lib/agent/memory.ts';
 import { asSnapshot, diffSnapshot, type DashboardSnapshot } from '../../lib/agent/changes.ts';
 import { getGrinta } from '../../lib/grinta/index.ts';
 import { listFacets, closedSessionIds } from '../../lib/curriculum/store.ts';
+import { getForecast } from '../../lib/curriculum/view.ts';
 import { getAsset } from '../../lib/curriculum/registry.ts';
 import { itemStem, dimensionForIndex } from '../../lib/idq/instrument.ts';
 import { authorizeMember } from '../authz.ts';
@@ -31,7 +32,7 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
   const dash = await getDashboard(db, memberId);
   if (!dash) return null;
   await maybeFoldMemory(db, memberId); // distill anything that has aged out of recall (best-effort, no-op until due)
-  const [grinta, consumedBites, profRows, idqRows, reclaimItems, beatRows, playbook, measures, linkedMeasureRows, facets, closedIds, lastClosedRows] = await Promise.all([
+  const [grinta, consumedBites, profRows, idqRows, reclaimItems, beatRows, playbook, measures, linkedMeasureRows, facets, closedIds, lastClosedRows, forecast] = await Promise.all([
     getGrinta(db, memberId, dash.identityNoun),
     recentConsumedTitles(db, memberId),
     db.query<{ intake_athletic_past: string | null; intake_gap: string | null; agent_memory: string | null; dashboard_snapshot: unknown }>(
@@ -57,6 +58,7 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
       "select session_id from session_progress where member_id=$1 and status='closed' order by closed_at desc nulls last limit 1",
       [memberId],
     ),
+    getForecast(db, memberId),
   ]);
   const prof = profRows.rows[0];
 
@@ -66,6 +68,9 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
   const completedSessions = closedIds.map((id) => getAsset(id)?.title).filter((t): t is string => !!t);
   const lastSessionId = lastClosedRows.rows[0]?.session_id;
   const lastCompletedAsset = lastSessionId ? (getAsset(lastSessionId)?.title ?? null) : null;
+  // The R they're in now (for noticing a Checkpoint crossing) + the lit next step (to route them to).
+  const activePhase = forecast.phases.find((p) => p.status === "You're here")?.label ?? null;
+  const nextStep = forecast.current ? { title: forecast.current.title, kind: forecast.current.kind, openable: forecast.current.openable } : null;
 
   // Pillar 2 — change-detection: diff the member's key signals against the last interaction's
   // snapshot, then persist the new snapshot for next time. So the companion notices what moved.
@@ -77,6 +82,7 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
     measures: Object.fromEntries(measures.map((m) => [m.label, m.latest])),
     closedSessions: completedSessions,
     namedSelves,
+    activePhase,
   };
   const recentChanges = diffSnapshot(asSnapshot(prof?.dashboard_snapshot), currSnapshot);
   await db
@@ -113,6 +119,7 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
     identityNoun: dash.identityNoun,
     namedSelves,
     completedSessions,
+    nextStep,
     doorDisplayNames: dash.doors.map((d) => d.displayName),
     idScore: dash.score?.score ?? null,
     direction: dash.score?.direction ?? null,

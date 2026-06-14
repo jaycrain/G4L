@@ -20,7 +20,9 @@ export type ForecastItem = {
 export type ForecastPhase = { phase: string; label: string; status: 'Complete' | "You're here" | 'Ahead'; items: ForecastItem[] };
 export type Forecast = {
   phases: ForecastPhase[];
-  current: { id: string; title: string; summary: string } | null; // the lit Session (the Open-this-Session CTA)
+  // the lit step (the Open-this-Session / Cross-this-Checkpoint CTA). openable=false means it's the
+  // next stop but not yet built ("coming soon") — so the companion knows not to send them to it.
+  current: { id: string; title: string; summary: string; kind: Asset['kind']; openable: boolean } | null;
   daily: { id: string; title: string; kind: Asset['kind'] }[];
 };
 
@@ -76,7 +78,9 @@ export async function getForecast(db: Db, memberId: string): Promise<Forecast> {
 
   return {
     phases,
-    current: currentAsset ? { id: currentAsset.id, title: currentAsset.title, summary: currentAsset.summary } : null,
+    current: currentAsset
+      ? { id: currentAsset.id, title: currentAsset.title, summary: currentAsset.summary, kind: currentAsset.kind, openable: isBuilt(currentAsset) }
+      : null,
     daily: dailyLayer().map((a) => ({ id: a.id, title: a.title, kind: a.kind })),
   };
 }

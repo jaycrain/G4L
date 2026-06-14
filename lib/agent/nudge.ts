@@ -21,6 +21,7 @@ export type NudgeSignals = {
   nextAssetName: string | null;
   recentWorkoutType?: string | null; // a logged Strava activity (ride/run/walk…)
   daysSinceWorkout?: number | null;
+  curriculumNext?: { title: string; kind: string } | null; // the lit, openable step on their path (Session/Checkpoint)
 };
 
 // A logged activity → a natural verb for the witness nudge.
@@ -43,6 +44,14 @@ export function computeNudges(s: NudgeSignals): Nudge[] {
     n.push({ kind: 'idq_baseline', text: 'Ready for your IDQ? It sets your baseline ID Score.', priority: 90 });
   } else if (s.daysSinceLastIdq != null && s.daysSinceLastIdq >= 60) {
     n.push({ kind: 'idq_due', text: 'Your IDQ is ready again — it shows how far you have come.', priority: 85 });
+  }
+  if (s.curriculumNext) {
+    const c = s.curriculumNext;
+    const text =
+      c.kind === 'checkpoint'
+        ? `Your ${c.title} Checkpoint is ready — cross it in your Program.`
+        : `Your next Session, ${c.title}, is ready in your Program.`;
+    n.push({ kind: 'curriculum_next', text, priority: 80 });
   }
   if (s.recentAssetName && s.daysSinceRecentAsset != null && s.daysSinceRecentAsset <= 3) {
     n.push({ kind: 'asset_reflect', text: `You finished ${s.recentAssetName}. Want to talk about how it landed?`, priority: 70 });
