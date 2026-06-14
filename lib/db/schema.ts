@@ -51,6 +51,7 @@ const MIGRATIONS: Array<{ file: string; sentinel: Sentinel }> = [
       sql: "select exists (select 1 from pg_constraint where conname='playbook_entry_source_kind_check' and pg_get_constraintdef(oid) like '%session%') as e",
     },
   },
+  { file: 'migrations/0025_phase_crossing_seen.sql', sentinel: { table: 'member_profile', column: 'phase_crossing_seen' } },
 ];
 export const SEED_SQL = () => sqlFile('seed/0001_reference_data.sql');
 

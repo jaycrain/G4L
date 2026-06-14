@@ -89,6 +89,16 @@ button:hover, .btn:hover { background: var(--navy); }
 }
 
 /* Dashboard */
+/* One-time R-crossing banner — sits above the navy hero, so it reads as a distinct, celebratory beat. */
+.phase-cross { position: relative; background: var(--white); border: 1px solid rgba(55, 79, 99, 0.38); border-left: 5px solid var(--orange); border-radius: 12px; padding: 1.1rem 1.25rem; margin-bottom: 1rem; }
+.phase-cross-x { position: absolute; top: 0.5rem; right: 0.6rem; background: none; border: none; font-size: 1.15rem; line-height: 1; color: var(--charcoal); opacity: 0.45; cursor: pointer; }
+.phase-cross-x:hover { opacity: 0.9; }
+.phase-cross-eyebrow { font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--orange); font-weight: 700; }
+.phase-cross-title { font-size: 1.35rem; font-weight: 800; color: var(--navy); margin: 0.15rem 0 0.4rem; }
+.phase-cross-title span { color: var(--teal); }
+.phase-cross-blurb { margin: 0; color: var(--charcoal); line-height: 1.5; font-size: 0.95rem; }
+.phase-cross-cta { display: inline-block; margin-top: 0.75rem; font-weight: 700; color: var(--navy); text-decoration: underline; }
+
 .hero { background: var(--navy); color: var(--white); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; }
 .hero h1 { color: var(--white); }
 .hero-intro p { margin: 0.5rem 0 0; }

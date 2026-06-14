@@ -17,6 +17,8 @@ import DashboardSync from '../dashboard-sync.tsx';
 import TrackThis from '../track-this.tsx';
 import BadgePassport from '../badge-passport.tsx';
 import CurriculumForecast from '../curriculum-forecast.tsx';
+import PhaseCrossing from '../phase-crossing.tsx';
+import { crossingToShow } from '../../../lib/curriculum/crossing.ts';
 import { looksTrackable, suggestTracker } from '../../../lib/measure/store.ts';
 import { listPlaybook } from '../../../lib/playbook/store.ts';
 import { getForecast, getPassport, getFacets, ensureOnboardingBadge } from '../../../lib/curriculum/view.ts';
@@ -69,10 +71,29 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
     forecast.phases.map((p) => [p.phase, p.status === 'Complete' ? 'done' : p.status === "You're here" ? 'current' : 'ahead']),
   );
 
-  // Threshold ceremony — overlay on first arrival (unchanged).
-  const thresholdCrossed = !!(
-    await db.query<{ threshold_crossed_at: unknown }>('select threshold_crossed_at from member_profile where member_id=$1', [memberId])
-  ).rows[0]?.threshold_crossed_at;
+  // Threshold ceremony — overlay on first arrival (unchanged). Same row carries the one-time
+  // R-crossing marker (the banner shown when they cross a Checkpoint into the next R).
+  const profileFlags = (
+    await db.query<{ threshold_crossed_at: unknown; phase_crossing_seen: string | null }>(
+      'select threshold_crossed_at, phase_crossing_seen from member_profile where member_id=$1',
+      [memberId],
+    )
+  ).rows[0];
+  const thresholdCrossed = !!profileFlags?.threshold_crossed_at;
+
+  // One-time "you've crossed into the next R" banner. Decide from the gate-driven active phase vs.
+  // what they've already been shown, then mark it seen so it fires exactly once.
+  const crossing = crossingToShow(activePhase, profileFlags?.phase_crossing_seen ?? null);
+  if (crossing) {
+    await db.query('update member_profile set phase_crossing_seen=$2 where member_id=$1', [memberId, crossing.phase]).catch(() => {});
+  }
+  const crossingCta =
+    crossing && forecast.current?.openable
+      ? {
+          href: `/${forecast.current.kind === 'checkpoint' ? 'checkpoint' : 'session'}/${memberId}/${forecast.current.id}`,
+          label: forecast.current.kind === 'checkpoint' ? 'Cross this Checkpoint' : 'Open this Session',
+        }
+      : null;
   const playbookSeeds = thresholdCrossed
     ? []
     : (await listPlaybook(db, memberId)).filter((e) => e.authorship === 'gathered').slice(0, 3).map((e) => e.body);
@@ -121,6 +142,10 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
           </form>
         </span>
       </div>
+
+      {crossing && (
+        <PhaseCrossing prevLabel={crossing.prevLabel} newLabel={crossing.newLabel} blurb={crossing.blurb} cta={crossingCta} />
+      )}
 
       {/* ZONE 0 · identity strip — all the selves they're bringing back */}
       <div className="hero">
