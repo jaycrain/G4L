@@ -43,7 +43,7 @@ const SECTIONS: SectionMeta[] = [
   {
     key: 'journal',
     title: 'Your own entries',
-    sub: 'Your space to write — anytime.',
+    sub: 'Your space to write—a little or a lot, anytime.',
     empty:
       'Write your own entry anytime. This is your space — your companion reads it to understand you better, and only responds if you ask.',
   },
