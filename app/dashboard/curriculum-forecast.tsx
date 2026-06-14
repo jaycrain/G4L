@@ -10,7 +10,7 @@ export default function CurriculumForecast({ memberId, forecast }: { memberId: s
   return (
     <div className="card curric">
       <h3>Your Program</h3>
-      <p className="muted">Every chapter, start to finish — so you always know what you&apos;re walking into. Your next Session is lit.</p>
+      <p className="muted">Every step in the framework, start to finish — so you always know what you&apos;re walking into. Your next Session is lit.</p>
 
       <div className="cgrid">
         {forecast.phases.map((ph) => (
