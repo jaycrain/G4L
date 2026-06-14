@@ -26,6 +26,11 @@ html, body {
    numbers beneath it — any card can be scrolled clear of the bubble. */
 main { max-width: 720px; margin: 0 auto; padding: 2.5rem 1.25rem 9rem; }
 
+/* Brand lockup — quiet, persistent product identity at the top of every page */
+.brand-bar { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1.4rem; }
+.brand-mark { width: 26px; height: 26px; border-radius: 50%; display: block; flex: none; }
+.brand-name { font-weight: 700; font-size: 1.05rem; color: var(--navy); letter-spacing: -0.01em; }
+
 h1, h2, h3 { color: var(--navy); font-weight: 600; line-height: 1.2; }
 h1 { font-size: 2rem; margin: 0 0 0.5rem; }
 a { color: var(--teal); }

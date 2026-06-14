@@ -31,7 +31,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={barlow.variable}>
       <body>
-        <main>{children}</main>
+        <main>
+          <div className="brand-bar">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img className="brand-mark" src="/icons/icon-192.png" alt="" aria-hidden="true" />
+            <span className="brand-name">Grinta for Life</span>
+          </div>
+          {children}
+        </main>
         <footer className="confidential-footer">
           Confidential — © 2026 Adjacent Lab, LLC. Prepared for evaluation only. Do not copy, distribute, or disclose
           without written permission.
