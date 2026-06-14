@@ -44,6 +44,7 @@ const MIGRATIONS: Array<{ file: string; sentinel: Sentinel }> = [
   { file: 'migrations/0020_measure.sql', sentinel: 'measure' },
   { file: 'migrations/0021_agent_memory.sql', sentinel: { table: 'member_profile', column: 'agent_memory' } },
   { file: 'migrations/0022_dashboard_snapshot.sql', sentinel: { table: 'member_profile', column: 'dashboard_snapshot' } },
+  { file: 'migrations/0023_curriculum_slice.sql', sentinel: 'session_progress' },
 ];
 export const SEED_SQL = () => sqlFile('seed/0001_reference_data.sql');
 
