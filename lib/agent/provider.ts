@@ -18,10 +18,27 @@ export type OnboardingInput = {
   gap: string;
 };
 
+/** Material for re-sharpening the dashboard mirror after the member does identity work in a Session. */
+export type NarrativeInput = {
+  displayName: string;
+  facets: string[]; // the clean reclaimed selves, natural case
+  priorParagraph: string | null; // what the mirror said before — build on it, don't contradict
+  sessionTitle: string;
+  reflections: { prompt: string; answer: string }[]; // the member's own words from this Session
+};
+
 export interface AgentProvider {
   readonly name: 'anthropic' | 'scripted';
   /** Synthesize the member identity paragraph (G4L voice) that becomes the dashboard hero. */
   composeIdentityParagraph(input: OnboardingInput): Promise<string>;
+  /** Re-sharpen the dashboard mirror from deeper Session work — in the member's own words. */
+  composeIdentityNarrative(input: NarrativeInput): Promise<string>;
+}
+
+/** "a and b" / "a, b and c" — for naming the selves in prose. */
+function joinSelves(facets: string[]): string {
+  if (facets.length <= 1) return facets[0] ?? 'the self you named';
+  return `${facets.slice(0, -1).join(', ')} and ${facets[facets.length - 1]}`;
 }
 
 // --- Scripted (offline) -----------------------------------------------------------------
@@ -36,6 +53,15 @@ export const scriptedProvider: AgentProvider = {
       `Then ${i.doorDisplayName} changed that.`,
       `What you want back is ${label}.`,
       `That is where we start. One step at a time.`,
+    ].join(' ');
+  },
+  async composeIdentityNarrative(i) {
+    const selves = joinSelves(i.facets);
+    return [
+      `You went back to the version of you that felt most alive, and you named it: ${selves}.`,
+      `Not a role anyone handed you — the self you are choosing to wear again.`,
+      `We start from your own words, and we sharpen it from here.`,
+      `One step at a time.`,
     ].join(' ');
   },
 };
@@ -72,6 +98,40 @@ function anthropicProvider(): AgentProvider {
      } catch (e) {
       console.warn('identity paragraph: live agent unavailable, using scripted —', (e as Error).message);
       return scriptedProvider.composeIdentityParagraph(i);
+     }
+    },
+    async composeIdentityNarrative(i) {
+     try {
+      const { default: Anthropic } = await import('@anthropic-ai/sdk');
+      const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, timeout: 12000, maxRetries: 1 });
+      const reflections = i.reflections.map((r) => `- ${r.prompt}\n  ${r.answer}`).join('\n');
+      const msg = await client.messages.create({
+        model: process.env.ANTHROPIC_MODEL ?? 'claude-sonnet-4-6',
+        max_tokens: 320,
+        system: MEMBER_AGENT_SYSTEM_PROMPT,
+        messages: [
+          {
+            role: 'user',
+            content:
+              "Rewrite the short identity reflection on the member's dashboard — the mirror of who they are reclaiming. " +
+              'They have just done deeper identity work, so make it SHARPER and more personal than before, in THEIR OWN words and scenes — ' +
+              'relate it back to what they actually said. 3–5 short sentences, second person, plain G4L voice. ' +
+              'Name the self or selves they are reclaiming in natural case (e.g. "the Elite Cyclist"). ' +
+              'No metrics, no praise, no diagnosis, no quotation marks.\n\n' +
+              `Selves they have named: ${i.facets.join(', ') || '(none yet)'}\n` +
+              (i.priorParagraph ? `Their earlier reflection (build on it, do not contradict):\n${i.priorParagraph}\n\n` : '\n') +
+              `What they said in ${i.sessionTitle}:\n${reflections}\n\n` +
+              'Output ONLY the paragraph — plain text, second person, no preamble, heading, labels, markdown, or quotation marks.',
+          },
+        ],
+      });
+      const text = msg.content.find((b) => b.type === 'text');
+      const out = text && text.type === 'text' ? text.text.trim() : '';
+      return out || scriptedProvider.composeIdentityNarrative(i);
+     } catch (e) {
+      console.warn('identity narrative: live agent unavailable, keeping prior —', (e as Error).message);
+      // Never regress to a generic line when we already have a real paragraph.
+      return (i.priorParagraph ?? '').trim() || scriptedProvider.composeIdentityNarrative(i);
      }
     },
   };

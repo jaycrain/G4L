@@ -5,6 +5,7 @@ import { authorizeMember } from '../../../authz.ts';
 import { getSession, getBadge } from '../../../../lib/curriculum/registry.ts';
 import { getSessionProgress, saveAnswer, closeSession, addFacet, earnBadge, listFacets } from '../../../../lib/curriculum/store.ts';
 import { guideSessionStep, facetFromAnswers, extractFacets, cleanFacet, type PriorAnswer } from '../../../../lib/agent/session-guide.ts';
+import { refreshIdentityNarrative } from '../../../../lib/agent/identity-narrative.ts';
 import type { Db } from '../../../../lib/db/schema.ts';
 
 async function memberMeta(db: Db, memberId: string): Promise<{ displayName: string; memory: string | null }> {
@@ -79,6 +80,8 @@ export async function closeSessionAction(memberId: string, sessionId: string): P
     const named = await extractFacets(raw, existing, { displayName: meta.displayName, memory: meta.memory });
     for (const f of named) await addFacet(db, memberId, f, sessionId);
     await closeSession(db, memberId, sessionId);
+    // Sharpen the dashboard mirror with what they just said — in their own words (best-effort).
+    await refreshIdentityNarrative(db, memberId, session);
     const facetText = named[0] ?? cleanFacet(raw) ?? raw; // for the close ceremony copy
 
     let badgeName: string | null = null;

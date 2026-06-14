@@ -152,6 +152,36 @@ test('extractFacets (no-API fallback) strips a self already named, so the strip 
   }
 });
 
+test('the dashboard mirror re-sharpens after a Session, names the selves, and persists', async () => {
+  const { refreshIdentityNarrative } = await import('../lib/agent/identity-narrative.ts');
+  const key = process.env.ANTHROPIC_API_KEY;
+  delete process.env.ANTHROPIC_API_KEY; // deterministic scripted narrative
+  try {
+    const { db, memberId } = await seed();
+    const exc = getSession('RCN-EXC')!;
+    for (const s of exc.steps!) await saveAnswer(db, memberId, exc.id, s.n, `their words for step ${s.n}`, s.n + 1);
+    await addFacet(db, memberId, 'the Builder', exc.id);
+
+    const out = await refreshIdentityNarrative(db, memberId, exc);
+    assert.ok(out && out.includes('the Builder'), 'mirror reflects the named self');
+
+    const stored = (
+      await db.query<{ identity_paragraph: string | null }>('select identity_paragraph from member_profile where member_id=$1', [memberId])
+    ).rows[0]!.identity_paragraph;
+    assert.equal(stored, out, 'the sharpened mirror is persisted');
+  } finally {
+    if (key !== undefined) process.env.ANTHROPIC_API_KEY = key;
+  }
+});
+
+test('the mirror refresh is a no-op for a Session with no reflections (nothing to dial in)', async () => {
+  const { refreshIdentityNarrative } = await import('../lib/agent/identity-narrative.ts');
+  const { db, memberId } = await seed();
+  const exc = getSession('RCN-EXC')!;
+  const out = await refreshIdentityNarrative(db, memberId, exc); // no answers saved
+  assert.equal(out, null);
+});
+
 test('badges earn idempotently (newly-earned signal fires once)', async () => {
   const { db, memberId } = await seed();
   assert.equal(await earnBadge(db, memberId, 'named-yourself'), true);
