@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { frameForStep, saveStep, closeSessionAction, type CloseResult } from './session-actions.ts';
+import SessionCeremony from './session-ceremony.tsx';
 import type { Step } from '../../../../lib/curriculum/types.ts';
 
 type SessionLite = { id: string; title: string; phase: string; layer: string; summary: string; steps: Step[]; earns?: string };
@@ -83,7 +84,12 @@ export default function SessionRunner({
 
   const allAnswered = session.steps.every((s) => (answers[String(s.n)] ?? '').trim() !== '');
 
-  // ---- closed confirmation ----
+  // ---- milestone close → the Companion Ceremony (felt weight) ----
+  if (closed && result && result.ok && result.ceremony) {
+    return <SessionCeremony memberId={memberId} facet={result.facet} badgeId={result.badgeId} badgeName={result.badgeName} />;
+  }
+
+  // ---- plain close confirmation (non-ceremony closes) ----
   if (closed && result && result.ok) {
     return (
       <div className="card sess-done-card">

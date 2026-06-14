@@ -47,7 +47,7 @@ export async function saveStep(memberId: string, sessionId: string, stepN: numbe
 }
 
 export type CloseResult =
-  | { ok: true; facet: string; badgeName: string | null; ceremony: boolean; newlyEarned: boolean }
+  | { ok: true; facet: string; badgeId: string | null; badgeName: string | null; ceremony: boolean; newlyEarned: boolean }
   | { ok: false; reason: 'incomplete' | 'error' };
 
 /** The one close: write the facet, close the Session, earn its badge. Reliability: writes first,
@@ -74,7 +74,7 @@ export async function closeSessionAction(memberId: string, sessionId: string): P
       badgeName = b?.name ?? null;
       ceremony = b?.ceremony ?? false;
     }
-    return { ok: true, facet: facetText, badgeName, ceremony, newlyEarned };
+    return { ok: true, facet: facetText, badgeId: session.earns ?? null, badgeName, ceremony, newlyEarned };
   } catch {
     return { ok: false, reason: 'error' };
   }

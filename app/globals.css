@@ -291,6 +291,12 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .cer-chips { display: flex; gap: 9px; flex-wrap: wrap; }
 .cer-chip { font-size: 0.82rem; font-weight: 500; color: var(--navy); background: var(--grey); padding: 6px 13px; border-radius: 20px; }
 .cer-chip.score { color: #fff; background: var(--teal); }
+/* close-ceremony reveals: a prominent facet chip + the earned badge stamp */
+.cer-facet { font-size: 1.1rem; font-weight: 700; color: #fff; background: var(--teal); padding: 8px 18px; border-radius: 20px; }
+.cer-badge-reveal { display: flex; align-items: center; gap: 0.7rem; }
+.cer-badge-stamp { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex: none; }
+.cer-badge-stamp svg { width: 20px; height: 20px; }
+.cer-badge-name { font-size: 1.05rem; font-weight: 700; color: #fff; }
 .cer-seed-tag { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted, #6B7680); margin: 0 0 8px; }
 .cer-seed { border-left: 3px solid var(--teal); padding: 6px 0 6px 14px; margin: 8px 0; font-size: 0.95rem; font-style: italic; color: var(--navy); line-height: 1.45; }
 .cer-journey { display: flex; gap: 18px; }
