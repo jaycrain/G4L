@@ -15,7 +15,7 @@ export default async function BadgesMorePage({ params }: { params: Promise<{ mem
   return (
     <>
       <div className="crumb">
-        <Link href={`/dashboard/${memberId}`} className="back-link">← Back to dashboard</Link>
+        <Link href={`/dashboard/${memberId}`} className="back-link">← Dashboard</Link>
       </div>
       <div className="hero"><h1>More about your Badges</h1></div>
       <div className="card">

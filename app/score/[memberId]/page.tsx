@@ -15,7 +15,7 @@ export default async function ScoreMorePage({ params }: { params: Promise<{ memb
   return (
     <>
       <div className="crumb">
-        <Link href={`/dashboard/${memberId}`} className="back-link">← Back to dashboard</Link>
+        <Link href={`/dashboard/${memberId}`} className="back-link">← Dashboard</Link>
       </div>
       <div className="hero"><h1>More about your ID Score</h1></div>
       <div className="card">

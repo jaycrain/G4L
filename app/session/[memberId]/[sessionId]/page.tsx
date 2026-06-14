@@ -18,7 +18,7 @@ export default async function SessionPage({ params }: { params: Promise<{ member
 
   const crumb = (
     <div className="crumb">
-      <Link href={`/dashboard/${memberId}`} className="back-link">← Back to dashboard</Link>
+      <Link href={`/dashboard/${memberId}`} className="back-link">← Dashboard</Link>
       {session && <span className="where">{session.phase} · {session.layer}</span>}
     </div>
   );

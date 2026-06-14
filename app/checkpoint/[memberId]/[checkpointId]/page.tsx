@@ -42,7 +42,7 @@ export default async function CheckpointPage({ params }: { params: Promise<{ mem
   return (
     <>
       <div className="crumb">
-        <Link href={`/dashboard/${memberId}`} className="back-link">← Back to dashboard</Link>
+        <Link href={`/dashboard/${memberId}`} className="back-link">← Dashboard</Link>
         <span className="where">{asset.phase} · Checkpoint</span>
       </div>
       <CheckpointCeremony memberId={memberId} checkpointId={checkpointId} title={asset.title} opening={opening} facets={facets} />
