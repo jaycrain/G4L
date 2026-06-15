@@ -18,14 +18,12 @@ export default async function ScoreMorePage({ params }: { params: Promise<{ memb
         <Link href={`/dashboard/${memberId}`} className="back-link">← Dashboard</Link>
       </div>
       <div className="hero"><h1>More about your ID Score</h1></div>
-      <div className="card">
-        <p>
-          Your ID Score is the mirror — a 0–100 read of how far you’ve drifted from yourself, across four
-          dimensions: Physical, Self, Social, and Outlook. It moves slowly, on purpose. You retake the IDQ
-          every 60 days, so the number reflects real change over time, not a daily mood. A lower score is
-          never a verdict — it’s honest information about where the distance runs widest, and where the work
-          will matter most.
-        </p>
+      <div className="card sub-copy">
+        <p>Your ID Score is the mirror — and like any honest mirror, it won’t flatter you and it won’t lie. It’s a single 0–100 read of how close you are to the person you’re reclaiming, drawn from four corners of a life: your Physical self, your Self, your Social world, and your Outlook.</p>
+        <p>The big number is the whole picture. The four dimensions beneath it show where the distance runs widest — and a low one there isn’t a failing grade, it’s a map. It’s telling you exactly where the work will pay off most.</p>
+        <p>It comes from the IDQ — twenty-four honest questions you answer about every 60 days. That pace is on purpose. Who you are doesn’t lurch from week to week, so neither should this. The ID Score is built to move slowly, so that when it does move, you know you earned it — real change, not a good night’s sleep.</p>
+        <p>So don’t chase it daily; you won’t catch it moving, and that’s the point. Do the reps, and let the next IDQ tell the truth. When the number climbs, that isn’t a better score — it’s more of you, back.</p>
+        <p>This is your starting line, not your verdict. Everything from here is the gap, closing.</p>
         {dash?.score?.context && <p className="muted">{dash.score.context}</p>}
       </div>
     </>

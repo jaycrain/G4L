@@ -112,6 +112,11 @@ button:hover, .btn:hover { background: var(--navy); }
 .daily-beat-panel .db-keep:disabled { opacity: 0.6; cursor: default; }
 .daily-beat-panel .db-kept { font-size: 0.85rem; font-weight: 700; color: var(--olive); }
 
+/* "More about…" sub-page explainers — readable, paced body copy. */
+.sub-copy p { line-height: 1.62; margin: 0 0 0.9rem; }
+.sub-copy p:last-child { margin-bottom: 0; }
+.sub-copy p.muted { margin-top: 1rem; }
+
 .onboard-fresh { font-size: 0.8rem; margin-top: 1rem; text-align: center; }
 .onboard-fresh button { background: none; border: none; padding: 0; font: inherit; color: var(--teal); font-weight: 700; cursor: pointer; text-decoration: underline; }
 

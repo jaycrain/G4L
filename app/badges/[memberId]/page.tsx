@@ -18,14 +18,13 @@ export default async function BadgesMorePage({ params }: { params: Promise<{ mem
         <Link href={`/dashboard/${memberId}`} className="back-link">← Dashboard</Link>
       </div>
       <div className="hero"><h1>More about your Badges</h1></div>
-      <div className="card">
-        <p>
-          You’ve earned <strong>{passport.earned} of {passport.total}</strong>. Each badge is a real thing you
-          did — and they won’t come easy. Not for showing up or logging in; for the plays that count: passing
-          a stretch of grit, reclaiming something on your list, coming back after a slump, crossing a
-          Checkpoint. They’re the same size on purpose — the point isn’t any single one, it’s how many you
-          stack. Some you can see coming, greyed in until you earn them; some you won’t see until they land.
-        </p>
+      <div className="card sub-copy">
+        <p>Your Badges are the receipts — proof, in one place, of the real things you’ve actually done. Think passport stamps, not trophies: every one is the same size, each with its own color and design, and the point was never any single one. The point is how many you stack.</p>
+        <p>A grid that fills as you go. The ones you’ve earned are lit; the ones still ahead are greyed in, so you can see what’s possible. Color tells you the kind — Milestones, Hardiness (stretches of grit), Goals reclaimed, and Comebacks (a real return after a slump). Some you can see coming. Some you won’t see until they land — earned, not expected.</p>
+        <p>You don’t get one for showing up or logging in. You get one for the plays that count — passing a stretch of grit, reclaiming something on your list, coming back after a miss, crossing a Checkpoint. They’re meant to be hard. The accumulation is the whole game: a passport that fills is a life being won back.</p>
+        <p>So don’t measure yourself against the one you don’t have yet. Look at the density — a board crowding with color is the story, told in stamps.</p>
+        <p>Your first was the hardest to see coming: getting through onboarding and into this room. That one took facing yourself. The rest, you’ll stack.</p>
+        <p className="muted">You’ve earned <strong>{passport.earned} of {passport.total}</strong> so far.</p>
         <div className="badge-legend">
           <span className="bl"><span className="bl-sw" style={{ background: '#374F63' }} />Milestones</span>
           <span className="bl"><span className="bl-sw" style={{ background: '#3B9495' }} />Hardiness</span>
