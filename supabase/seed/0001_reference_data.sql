@@ -14,7 +14,8 @@ insert into door (slug, display_name, descriptor, sort_order) values
   ('body',         'The Body',        'The body that started saying no to what it used to do easily.', 5),
   ('diagnosis',    'The Diagnosis',   'The mirror moment you couldn''t look away from.', 6),
   ('marriage',     'The Marriage',    'The drift from partnership into just coexisting.', 7),
-  ('loss',         'The Loss',        'Losing someone close, and everything changing after.', 8)
+  ('loss',         'The Loss',        'Losing someone close, and everything changing after.', 8),
+  ('full_house',   'The Full House',  'The house filling up — marriage, young kids, everyone needing you — and no space left for yourself.', 9)
 on conflict (slug) do update
   set display_name = excluded.display_name,
       descriptor   = excluded.descriptor,

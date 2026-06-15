@@ -49,9 +49,9 @@ file wins and the spec note says why (most conflicts are pre–"May 2026 cascade
   floor is ~20, not 0. Confirm whether to keep the simple 0–100 normalization or re-base.
   *(Authoring Brief v1.3, Q5.)* The schema stores raw responses so any re-norm is non-breaking.
 
-## 3. The 8 Doors — LOCKED to the pitch deck (Jay confirmed)
+## 3. The 9 Doors (Jay confirmed)
 
-Identity loss accumulates through "doors that open, then close behind you." The canonical eight:
+Identity loss accumulates through "doors that open, then close behind you." The canonical set:
 
 | slug | Display name | Descriptor |
 |------|--------------|------------|
@@ -63,6 +63,7 @@ Identity loss accumulates through "doors that open, then close behind you." The 
 | `diagnosis`     | The Diagnosis | The mirror moment you couldn't avoid. |
 | `marriage`      | The Marriage | The drift from partnership into coexistence. |
 | `loss`          | The Loss | The death of someone close that changed everything. |
+| `full_house`    | The Full House | The house filling up — marriage, young kids, everyone needing you — and no space left for yourself. (Added Jun 2026: the family-formation Fade that the post-family Doors couldn't name — the mirror of The Empty Nest.) |
 
 ⚠️ MA v1.1 lists a different set (splits "The Career" and "The Cliff", omits "The Vanishing").
 **Stale — ignore it.** Use these eight.

@@ -12,6 +12,7 @@ export const DOORS = [
   { slug: 'diagnosis',     displayName: 'The Diagnosis',     descriptor: 'The mirror moment you couldn’t look away from.' },
   { slug: 'marriage',      displayName: 'The Marriage',      descriptor: 'The drift from partnership into just coexisting.' },
   { slug: 'loss',          displayName: 'The Loss',          descriptor: 'Losing someone close, and everything changing after.' },
+  { slug: 'full_house',    displayName: 'The Full House',    descriptor: 'The house filling up — marriage, young kids, everyone needing you — and no space left for yourself.' },
 ] as const;
 
 export type DoorSlug = (typeof DOORS)[number]['slug'];
@@ -24,19 +25,27 @@ export function isDoorSlug(value: unknown): value is DoorSlug {
 
 const shortName = (displayName: string) => displayName.toLowerCase().replace(/^the\s+/, ''); // "career cliff"
 
+// Plain-language phrases that map to a Door when the member describes it in their own words (the
+// safety-net matcher; the live agent maps richer stories itself). Keyed only where the Door's title
+// isn't itself likely to appear — e.g. someone says "had kids", never "the full house".
+const DOOR_ALIASES: Partial<Record<DoorSlug, string[]>> = {
+  full_house: ['young kids', 'had kids', 'having kids', 'new baby', 'raising kids', 'small kids', 'little kids', 'new family', 'providing', 'provider'],
+};
+
 // Map a member's free-text answer to one or more Doors (voice rewrite v1: members answer in their
 // own words; the agent maps silently). Matches by slug, full/short display name, or a 1–8 number;
 // returns canonical-ordered, de-duplicated slugs. Empty array means nothing recognized → re-ask.
 export function matchDoors(message: string): DoorSlug[] {
   const m = (message || '').toLowerCase();
   const found = new Set<DoorSlug>();
-  for (const numMatch of m.matchAll(/\b([1-8])\b/g)) {
+  for (const numMatch of m.matchAll(/\b([1-9])\b/g)) {
     const idx = Number(numMatch[1]) - 1;
     if (DOORS[idx]) found.add(DOORS[idx]!.slug);
   }
   for (const d of DOORS) {
     const short = shortName(d.displayName);
-    if (m.includes(d.slug.replace(/_/g, ' ')) || m.includes(short) || m.includes(d.displayName.toLowerCase())) {
+    const aliases = DOOR_ALIASES[d.slug] ?? [];
+    if (m.includes(d.slug.replace(/_/g, ' ')) || m.includes(short) || m.includes(d.displayName.toLowerCase()) || aliases.some((a) => m.includes(a))) {
       found.add(d.slug);
     }
   }

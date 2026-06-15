@@ -18,8 +18,9 @@ test('reclaim list needs at least the minimum non-empty items, with no maximum',
   assert.equal(validateReclaimList(['a', 'b', '  ']).ok, false); // empty item rejected
 });
 
-test('one or more of the 8 canonical doors validate; unknown / empty do not', () => {
-  assert.equal(DOOR_SLUGS.length, 8);
+test('one or more of the canonical doors validate; unknown / empty do not', () => {
+  assert.equal(DOOR_SLUGS.length, 9); // 8 original + The Full House (family-formation Fade)
+  assert.equal(validateDoors(['full_house']).ok, true);
   assert.equal(validateDoors(['vanishing']).ok, true);
   assert.equal(validateDoors(['vanishing', 'body']).ok, true); // multi-Door
   assert.equal(validateDoors([]).ok, false); // at least one required
@@ -31,6 +32,9 @@ test('matchDoors maps free text to one or more Doors in canonical order', () => 
   assert.deepEqual(matchDoors('the empty nest'), ['empty_nest']);
   assert.deepEqual(matchDoors('aging parents and the marriage'), ['aging_parents', 'marriage']);
   assert.deepEqual(matchDoors('5'), ['body']); // numbered, back-compat
+  // The Full House maps from plain family-formation language, not just its title.
+  assert.deepEqual(matchDoors('when I got married then had kids'), ['full_house']);
+  assert.deepEqual(matchDoors('the full house'), ['full_house']);
   assert.deepEqual(matchDoors('nothing recognizable here'), []);
 });
 
