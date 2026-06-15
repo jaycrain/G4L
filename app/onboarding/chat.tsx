@@ -50,25 +50,31 @@ export default function OnboardingChat() {
     setPhase('chat');
     setPending(true);
     try {
-      // Resume an in-flight onboarding on this device, if one exists for this email.
+      // Resume an in-flight onboarding for this email. Attempt it ALWAYS — even with no device token
+      // (lost to a force-quit / cleared storage) — so resume recovers by email instead of a fresh
+      // start overwriting the saved session. Adopt whatever token the saved session carries.
       let token = '';
       try {
         token = localStorage.getItem('g4l_onboarding_token') ?? '';
       } catch {
         /* no storage */
       }
-      if (token) {
-        const resumed = await loadOnboardingSessionAction(ctx.email, token);
-        if (resumed && resumed.messages.length) {
-          tokenRef.current = token;
-          setMessages(resumed.messages);
-          setState(resumed.state);
-          // If they'd already reached the handoff, resume straight into the ready screen (still
-          // reversible — they can keep talking or proceed).
-          if (resumed.state.stage === 'complete') setReady(true);
-          setPending(false);
-          return;
+      const resumed = await loadOnboardingSessionAction(ctx.email, token);
+      if (resumed && resumed.messages.length) {
+        token = resumed.token; // adopt the saved session's token (covers a lost-token device)
+        try {
+          localStorage.setItem('g4l_onboarding_token', token);
+        } catch {
+          /* no storage */
         }
+        tokenRef.current = token;
+        setMessages(resumed.messages);
+        setState(resumed.state);
+        // If they'd already reached the handoff, resume straight into the ready screen (still
+        // reversible — they can keep talking or proceed).
+        if (resumed.state.stage === 'complete') setReady(true);
+        setPending(false);
+        return;
       }
       // Fresh start — mint a per-device resume token.
       try {

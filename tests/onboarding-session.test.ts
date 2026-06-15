@@ -32,10 +32,26 @@ test('save then load round-trips state + transcript (matching token)', async () 
   assert.equal(got!.messages[1]!.text, 'a cyclist who rode every weekend');
 });
 
-test('a wrong token does NOT resume (no resuming someone else by guessing the email)', async () => {
+test('a wrong (present) token does NOT resume (no resuming someone else by guessing the email)', async () => {
   const d = await db();
   await saveOnboardingSession(d, 'jay@x.com', 'tok-1', state, messages);
   assert.equal(await loadOnboardingSession(d, 'jay@x.com', 'tok-WRONG'), null);
+});
+
+test('an EMPTY token recovers by email (lost-token device) and surfaces the saved token to adopt', async () => {
+  const d = await db();
+  await saveOnboardingSession(d, 'jay@x.com', 'tok-1', state, messages);
+  const got = await loadOnboardingSession(d, 'jay@x.com', '');
+  assert.ok(got, 'empty token should recover the in-flight session by email');
+  assert.equal(got!.state.stage, 'reclaim');
+  assert.equal(got!.token, 'tok-1'); // the client adopts this so the device re-syncs
+});
+
+test('a matching token still resumes and returns the token', async () => {
+  const d = await db();
+  await saveOnboardingSession(d, 'jay@x.com', 'tok-1', state, messages);
+  const got = await loadOnboardingSession(d, 'jay@x.com', 'tok-1');
+  assert.equal(got!.token, 'tok-1');
 });
 
 test('saving again upserts (one in-flight session per email)', async () => {

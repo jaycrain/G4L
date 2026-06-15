@@ -6,7 +6,7 @@
 import type { Db } from '../db/schema.ts';
 import type { ConvState, ConvMessage } from './onboarding.ts';
 
-export type OnboardingSession = { state: ConvState; messages: ConvMessage[] };
+export type OnboardingSession = { state: ConvState; messages: ConvMessage[]; token: string };
 
 export async function saveOnboardingSession(
   db: Db,
@@ -24,17 +24,21 @@ export async function saveOnboardingSession(
   );
 }
 
-/** Returns the saved session ONLY if the token matches (per-device resume). Null otherwise. */
+/** Resume the in-flight onboarding for this email. A matching device token always resumes. A device
+ * with NO token (empty — it was lost to a force-quit / cleared storage) may RECOVER the session by
+ * email, and adopt its token. A WRONG (non-empty) token never resumes — so you can't hijack another
+ * in-flight onboarding by guessing the email. Pre-account working state only; no account exists yet. */
 export async function loadOnboardingSession(db: Db, email: string, token: string): Promise<OnboardingSession | null> {
   const { rows } = await db.query<{ state: unknown; messages: unknown; token: string }>(
     'select state, messages, token from onboarding_session where email=$1',
     [email],
   );
   const r = rows[0];
-  if (!r || r.token !== token) return null;
+  if (!r) return null;
+  if (token && r.token !== token) return null; // a present-but-wrong token is denied (no email hijack)
   const state = (typeof r.state === 'string' ? JSON.parse(r.state) : r.state) as ConvState;
   const messages = (typeof r.messages === 'string' ? JSON.parse(r.messages) : r.messages) as ConvMessage[];
-  return { state, messages: Array.isArray(messages) ? messages : [] };
+  return { state, messages: Array.isArray(messages) ? messages : [], token: r.token };
 }
 
 export async function clearOnboardingSession(db: Db, email: string): Promise<void> {
