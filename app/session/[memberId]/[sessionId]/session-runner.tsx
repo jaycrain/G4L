@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { frameForStep, saveStep, closeSessionAction, type CloseResult } from './session-actions.ts';
 import SessionCeremony from './session-ceremony.tsx';
@@ -37,6 +37,23 @@ export default function SessionRunner({
 
   const cur = session.steps.find((s) => s.n === stepIdx) ?? null;
 
+  // Persist the in-progress draft so backing out mid-step never loses it. Saves at the CURRENT step
+  // (no advance); deduped against what's already saved. Debounced as they type + flushed on blur
+  // (tapping a back link blurs the field first), so a partial answer survives leaving the page.
+  const savedRef = useRef<Record<string, string>>({ ...initialAnswers });
+  function persistDraft(n: number, text: string) {
+    const t = text.trim();
+    if (!t || savedRef.current[String(n)] === t) return;
+    savedRef.current = { ...savedRef.current, [String(n)]: t };
+    void saveStep(memberId, session.id, n, t, n).catch(() => {});
+  }
+  useEffect(() => {
+    if (closed || atClose) return;
+    const id = setTimeout(() => persistDraft(stepIdx, draft), 800);
+    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draft, stepIdx, closed, atClose]);
+
   function goToStep(n: number) {
     setStepIdx(n);
     setDraft(answers[String(n)] ?? '');
@@ -59,6 +76,7 @@ export default function SessionRunner({
     const nextN = n + 1;
     const updated = { ...answers, [String(n)]: draft.trim() };
     setAnswers(updated);
+    savedRef.current = { ...savedRef.current, [String(n)]: draft.trim() }; // keep autosave in sync
     startTransition(async () => {
       await saveStep(memberId, session.id, n, draft.trim(), Math.min(nextN, total));
       if (nextN > total) {
@@ -121,6 +139,7 @@ export default function SessionRunner({
                 className="sess-field"
                 value={draft}
                 onChange={(e) => { setDraft(e.target.value); if (error) setError(null); }}
+                onBlur={() => persistDraft(stepIdx, draft)}
                 placeholder="Take your time…"
                 rows={4}
                 disabled={pending}
