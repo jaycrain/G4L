@@ -69,6 +69,20 @@ test('the forecast is derived purely from registry rows — every non-daily asse
   assert.equal(inColumns, nonDaily);
 });
 
+test('the whole program is authored — all four phases, every Session has steps, one checkpoint each', () => {
+  const cols = phaseColumns();
+  const counts = Object.fromEntries(cols.map((c) => [c.phase, c.items.length]));
+  assert.deepEqual(counts, { reconnect: 8, rewire: 7, rebuild: 6, reclaim: 8 });
+  for (const c of cols) {
+    assert.equal(c.items.filter((i) => i.kind === 'checkpoint').length, 1, `${c.phase} needs one checkpoint`);
+    for (const s of c.items.filter((i) => i.kind === 'session')) {
+      assert.ok((s.steps?.length ?? 0) >= 1, `${s.id} should be authored`);
+    }
+  }
+  // every phase checkpoint earns its milestone badge
+  for (const id of ['RCN-CHK', 'RWR-CHK', 'RBD-CHK', 'RCL-CHK']) assert.ok(getAsset(id)!.earns, `${id} earns a badge`);
+});
+
 test('the daily layer runs across, separate from the phase columns', () => {
   const daily = dailyLayer();
   assert.ok(daily.length >= 5);

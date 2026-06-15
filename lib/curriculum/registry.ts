@@ -6,6 +6,8 @@
 import type { Asset, Badge, BadgeCategory, Kind, KindProfile } from './types.ts';
 import { RECONNECT_SESSIONS } from './content/reconnect.ts';
 import { REWIRE_SESSIONS } from './content/rewire.ts';
+import { REBUILD_SESSIONS } from './content/rebuild.ts';
+import { RECLAIM_SESSIONS } from './content/reclaim.ts';
 
 export const CATEGORY_COLOR: Record<BadgeCategory, string> = {
   milestone: '#374F63', // navy
@@ -99,22 +101,12 @@ export const CURRICULUM: Asset[] = [
   // ── Rewire ── (Sessions authored from the framework; the Checkpoint is a soft gate)
   ...REWIRE_SESSIONS,
   meta('RWR-CHK', 'The Rewire Checkpoint', 'rewire', 'Checkpoint', 'checkpoint', 7, 'Has the frame moved? Opens the deeper Rebuild work.', { close_type: 'milestone', earns: 'rewire-milestone' }),
-  // ── Rebuild ──
-  meta('RBD-FIRSTSTEP', 'First Step Assessment', 'rebuild', 'Foundation', 'session', 1, 'Pick your vehicle and set an honest baseline.', { close_type: 'goal' }),
-  meta('RBD-INVISIBLE', 'Invisible Foundations', 'rebuild', 'Foundation', 'session', 2, 'Shore up the unseen basics that hold everything.', { close_type: 'reflect' }),
-  meta('RBD-SLEEP', 'Sleep & Recover', 'rebuild', 'Foundation', 'session', 3, "Set up recovery — it's part of the work, not a break from it.", { close_type: 'reflect' }),
-  meta('RBD-FUEL', 'Fuel Plan', 'rebuild', 'Structure', 'session', 4, 'Build a pattern of eating you have, not one you go on.', { close_type: 'goal' }),
-  meta('RBD-MOVEMENT', 'Movement Menu', 'rebuild', 'Structure', 'session', 5, 'Build your week of movement around the floor of 150 minutes.', { close_type: 'goal' }),
-  meta('RBD-CHECK', 'Rebuild Checkpoint', 'rebuild', 'Checkpoint', 'checkpoint', 6, 'The numbers begin to move — pull them against your baseline.', { close_type: 'milestone' }),
-  // ── Reclaim ──
-  meta('RCL-READY', 'Reclaim Readiness', 'reclaim', 'Emergence', 'session', 1, 'Are you starting to carry the recovered identity outward?', { close_type: 'reflect' }),
-  meta('RCL-STORY', 'Your Success Story', 'reclaim', 'Emergence', 'session', 2, 'Say the story of what you got back, in your own words.', { close_type: 'reflect' }),
-  meta('RCL-ADVENTURE', 'Adventure Planning', 'reclaim', 'Extension', 'session', 3, 'Put a measuring-stick event on the calendar and back-plan it.', { close_type: 'goal' }),
-  meta('RCL-WORLD', 'Bigger World Audit', 'reclaim', 'Extension', 'session', 4, 'Widen the circle the Fade shrank.', { close_type: 'reflect' }),
-  meta('RCL-INVITE', 'Invitation Exercise', 'reclaim', 'Extension', 'session', 5, 'Bring someone with you — “come do this with me.”', { close_type: 'reflect' }),
-  meta('RCL-SOCIAL', 'Social Connection', 'reclaim', 'Legacy', 'session', 6, 'Find the people and place you really belong.', { close_type: 'reflect' }),
-  meta('RCL-LEGACY', 'Legacy Letter', 'reclaim', 'Legacy', 'session', 7, 'Write it forward — and name the Loop.', { close_type: 'reflect' }),
-  meta('RCL-CHECK', 'Reclaim Checkpoint', 'reclaim', 'Checkpoint', 'checkpoint', 8, 'Carrying it outward — and the Loop clips you back in.', { close_type: 'milestone' }),
+  // ── Rebuild ── (Sessions authored from the framework; the Checkpoint is a soft gate)
+  ...REBUILD_SESSIONS,
+  meta('RBD-CHK', 'The Rebuild Checkpoint', 'rebuild', 'Checkpoint', 'checkpoint', 6, 'The numbers begin to move — pull them against your baseline.', { close_type: 'milestone', earns: 'rebuild-milestone' }),
+  // ── Reclaim ── (Sessions authored from the framework; the Checkpoint is the capstone)
+  ...RECLAIM_SESSIONS,
+  meta('RCL-CHK', 'The Reclaim Checkpoint', 'reclaim', 'Checkpoint', 'checkpoint', 8, 'Carrying it outward — the capstone, and the Loop clips you back in.', { close_type: 'milestone', earns: 'reclaim-capstone' }),
   // ── The daily layer (runs across the path; layer='Daily' routes it to the forecast's across-row) ──
   meta('DLY-SEVEN', 'The Seven Minutes', 'reconnect', 'Daily', 'pulse', 1, 'A daily short rep to keep your grit warm.'),
   meta('DLY-CLIPIN', 'Daily clip-in', 'reconnect', 'Daily', 'pulse', 2, 'The daily rep — plus the Hardiness reps.'),
@@ -140,6 +132,8 @@ export const BADGES: Badge[] = [
   badge('named-yourself', 'Named Yourself', 'milestone', 'flag', 'session:RCN-EXC:closed', true),
   badge('reconnect-milestone', 'Reconnected', 'milestone', 'up', 'checkpoint:reconnect:passed', true),
   badge('rewire-milestone', 'Rewired', 'milestone', 'up', 'checkpoint:rewire:passed', true),
+  badge('rebuild-milestone', 'Rebuilt', 'milestone', 'up', 'checkpoint:rebuild:passed', true),
+  badge('reclaim-capstone', 'Reclaimed — a full cycle', 'capstone', 'star', 'checkpoint:reclaim:passed', true),
 ];
 
 // --- Accessors (the renderer reads only through these) ---
