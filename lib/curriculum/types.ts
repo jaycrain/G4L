@@ -9,8 +9,21 @@ export type Phase = 'reconnect' | 'rewire' | 'rebuild' | 'reclaim';
 export type Kind = 'session' | 'pulse' | 'tracker' | 'checkpoint' | 'measurement';
 
 export type CloseType = 'reflect' | 'goal' | 'rep' | 'milestone';
-export type InputType = 'writing' | 'choice' | 'assessment' | 'number' | 'scale';
-export type Contributes = 'facet' | 'goal' | 'none';
+// Authoring vocab from the program framework (g4l_program_framework.json). New variants are content
+// metadata, not new renderer branches — the Session runner reads them; unknown ones fall back to text.
+export type InputType =
+  | 'writing'
+  | 'writing_one_line'
+  | 'writing_short'
+  | 'writing_two_part'
+  | 'choice'
+  | 'assessment'
+  | 'numbers'
+  | 'number'
+  | 'scale';
+// The artifact a step can yield at the close. facet → identity strip; your_doors → Doors; reclaim_list
+// → Reclaim List; goal/tracker_optional → a measure; id_score → the IDQ; playbook → a kept line; none.
+export type Contributes = 'facet' | 'goal' | 'reclaim_list' | 'your_doors' | 'id_score' | 'tracker_optional' | 'playbook' | 'none';
 
 // One lit section inside a Session. The companion delivers companion_frame, the member answers the
 // prompt, the companion probes if the answer is thin. contributes = the artifact this step can yield.
@@ -22,6 +35,15 @@ export type Step = {
   companion_frame: string; // base scaffold; the live companion personalizes against the member's words
   probe: string; // the push-for-depth when an answer is thin
   contributes: Contributes;
+};
+
+// A Session's one close — the companion's closing frame + the artifact it files to the Playbook
+// (pending; member keeps or cuts). From the framework's per-Session `close`.
+export type Close = {
+  companion: string;
+  prompt?: string;
+  options?: string[];
+  to_playbook?: boolean;
 };
 
 export type Asset = {
@@ -36,6 +58,8 @@ export type Asset = {
   close_type?: CloseType; // Sessions/Checkpoints
   serves?: string[]; // physical|self|social|outlook|any or a GRINTA component
   steps?: Step[]; // Sessions only — the ordered lit sections
+  produces?: string; // the artifact this Session yields (for the close + Playbook)
+  close?: Close; // the authored close frame (Sessions)
   earns?: string; // badge id this asset's close earns, if any
 };
 

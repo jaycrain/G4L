@@ -28,7 +28,7 @@ export type Forecast = {
 
 // An asset is "openable" when it's actually built: an authored Session (has steps) or — wired in
 // Phase 5 — the Reconnect Checkpoint. Everything else is content-pending and renders greyed.
-const isBuilt = (a: Asset): boolean => (a.kind === 'session' && !!a.steps?.length) || a.id === 'RCN-CHECK';
+const isBuilt = (a: Asset): boolean => (a.kind === 'session' && !!a.steps?.length) || a.id === 'RCN-CHK';
 
 function activePhaseIndex(gates: Set<string>): number {
   let i = 0;
@@ -44,8 +44,12 @@ export async function getForecast(db: Db, memberId: string): Promise<Forecast> {
   const gates = new Set(gatesArr);
   const activeIdx = activePhaseIndex(gates);
 
-  // An asset is done if its Session is closed, or — for a Checkpoint — its phase gate has passed.
-  const isDone = (a: Asset): boolean => closed.has(a.id) || (a.kind === 'checkpoint' && gates.has(`${a.phase}_checkpoint_passed`));
+  // An asset is done if its Session is closed, its Checkpoint's phase gate has passed, or its whole
+  // phase is already behind the member (a phase you've crossed reads fully done — no pulling back).
+  const isDone = (a: Asset): boolean =>
+    closed.has(a.id) ||
+    PHASE_ORDER.indexOf(a.phase) < activeIdx ||
+    (a.kind === 'checkpoint' && gates.has(`${a.phase}_checkpoint_passed`));
 
   // The lit asset: the first non-done BUILT asset (authored Session or the Reconnect Checkpoint). If
   // none remain built (e.g. just passed Reconnect, next Rewire Session not authored yet), fall back to

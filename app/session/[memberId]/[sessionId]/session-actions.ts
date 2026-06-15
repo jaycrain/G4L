@@ -72,22 +72,33 @@ export async function closeSessionAction(memberId: string, sessionId: string): P
   try {
     const db = (await getDb()) as unknown as Db;
     const [progress, meta] = await Promise.all([getSessionProgress(db, memberId, sessionId), memberMeta(db, memberId)]);
-    const raw = facetFromAnswers(session.steps, progress?.answers ?? {});
-    if (!raw) return { ok: false, reason: 'incomplete' }; // the naming step must be answered
+    const answers = progress?.answers ?? {};
+    const steps = session.steps ?? [];
 
-    // Normalize the member's words into the clean self/selves they named, with already-named ones
-    // stripped out — so the identity strip never repeats a known self.
-    const existing = (await listFacets(db, memberId)).map((f) => f.text);
-    const named = await extractFacets(raw, existing, { displayName: meta.displayName, memory: meta.memory });
-    for (const f of named) await addFacet(db, memberId, f, sessionId);
+    // Complete = they reached and answered the last lit step (the close sits behind it).
+    const lastStep = steps[steps.length - 1];
+    const completed = lastStep ? (answers[String(lastStep.n)] ?? '').trim().length > 0 : Object.keys(answers).length > 0;
+    if (!completed) return { ok: false, reason: 'incomplete' };
+
+    // A facet is one possible artifact (identity Sessions). Most Sessions produce a Playbook line, a
+    // Door, or a Reclaim item instead — they still close. Only an identity Session names a facet here.
+    const facetStep = steps.find((s) => s.contributes === 'facet');
+    let facetText = '';
+    if (facetStep) {
+      const raw = facetFromAnswers(steps, answers);
+      if (raw) {
+        const existing = (await listFacets(db, memberId)).map((f) => f.text);
+        const named = await extractFacets(raw, existing, { displayName: meta.displayName, memory: meta.memory });
+        for (const f of named) await addFacet(db, memberId, f, sessionId);
+        facetText = named[0] ?? cleanFacet(raw);
+      }
+    }
     await closeSession(db, memberId, sessionId);
-    // After the facets land, sharpen the dashboard mirror AND harvest the member's words into their
-    // Playbook — concurrently, both best-effort (neither is allowed to break the close).
-    await Promise.all([
-      refreshIdentityNarrative(db, memberId, session),
-      harvestSessionToPlaybook(db, memberId, session, progress?.answers ?? {}),
-    ]);
-    const facetText = named[0] ?? cleanFacet(raw) ?? raw; // for the close ceremony copy
+    // Best-effort, concurrent (neither breaks the close): harvest the member's words into their Playbook
+    // (every Session), and — for identity Sessions only — re-sharpen the dashboard mirror.
+    const tasks: Promise<unknown>[] = [harvestSessionToPlaybook(db, memberId, session, answers)];
+    if (facetStep) tasks.push(refreshIdentityNarrative(db, memberId, session));
+    await Promise.all(tasks);
 
     let badgeName: string | null = null;
     let ceremony = false;
@@ -98,7 +109,7 @@ export async function closeSessionAction(memberId: string, sessionId: string): P
       badgeName = b?.name ?? null;
       ceremony = b?.ceremony ?? false;
     }
-    return { ok: true, facet: facetText, badgeId: session.earns ?? null, badgeName, ceremony, newlyEarned };
+    return { ok: true, facet: facetText || session.produces || session.title, badgeId: session.earns ?? null, badgeName, ceremony, newlyEarned };
   } catch {
     return { ok: false, reason: 'error' };
   }

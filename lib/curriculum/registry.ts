@@ -4,6 +4,7 @@
 // the dashboard forecast needs (title/phase/layer/kind/order/summary), with steps authored as the
 // other 23 Sessions get written — pure content work, no engineering.
 import type { Asset, Badge, BadgeCategory, Kind, KindProfile } from './types.ts';
+import { RECONNECT_SESSIONS } from './content/reconnect.ts';
 
 export const CATEGORY_COLOR: Record<BadgeCategory, string> = {
   milestone: '#374F63', // navy
@@ -89,15 +90,11 @@ const meta = (
 ): Asset => ({ id, title, phase, layer, kind, order, summary, ...extra });
 
 export const CURRICULUM: Asset[] = [
-  // ── Reconnect ──
-  meta('RCN-BOOK', 'Book Quiz', 'reconnect', 'Recognition', 'session', 1, 'Orient, and put a name to the feeling that brought you here.', { close_type: 'reflect' }),
-  meta('RCN-IDQ', 'The IDQ', 'reconnect', 'Recognition', 'measurement', 2, 'The 24-item identity-distance read that sets your ID Score. Retakes every 60 days.'),
-  meta('RCN-DOORS', 'Fade Doors', 'reconnect', 'Recognition', 'session', 3, 'Name the door (or doors) the Fade came through.', { close_type: 'reflect' }),
+  // ── Reconnect ── (Sessions authored from the framework; the IDQ is a measurement; the Checkpoint is the firm gate)
+  ...RECONNECT_SESSIONS,
+  meta('RCN-IDQ', 'The IDQ', 'reconnect', 'Recognition', 'measurement', 2, 'The honest mirror — your starting read across four dimensions. Retakes every 60 days.', { produces: 'your ID Score (baseline measurement)' }),
   IDENTITY_EXCAVATION,
-  meta('RCN-DRIFT', 'Drift Quiz', 'reconnect', 'Excavation', 'session', 5, "An honest read of what the Fade cost and how far you've drifted.", { close_type: 'reflect' }),
-  meta('RCN-WINDOW', 'The Window', 'reconnect', 'Spark', 'session', 6, 'See the two Tuesdays — who you become if nothing changes, and if it does.', { close_type: 'reflect' }),
-  meta('RCN-LIST', 'Build Your Reclaim List', 'reconnect', 'Spark', 'session', 7, 'Turn the vision into specific, checkable things you want back.', { close_type: 'goal' }),
-  meta('RCN-CHECK', 'Reconnect Checkpoint', 'reconnect', 'Checkpoint', 'checkpoint', 8, 'The reconnection milestone — have you found yourself? Firm gate; opens Rewire.', { close_type: 'milestone', earns: 'reconnect-milestone', gating: 'reconnect_core_complete' }),
+  meta('RCN-CHK', 'The Reconnect Checkpoint', 'reconnect', 'Checkpoint', 'checkpoint', 8, 'The reconnection milestone — have you found yourself? Firm gate; opens Rewire.', { close_type: 'milestone', earns: 'reconnect-milestone', gating: 'reconnect_core_complete' }),
   // ── Rewire ──
   meta('RWR-DISINFO', 'Disinformation Audit', 'rewire', 'Awareness', 'session', 1, 'Catch the comfortable lies your mind runs, and take them apart.', { close_type: 'reflect', gating: 'rewire_unlocked' }),
   meta('RWR-NUMBERS', 'Numbers Exercise', 'rewire', 'Awareness', 'session', 2, 'Pull your numbers and look at them without flinching.', { close_type: 'reflect' }),

@@ -40,8 +40,19 @@ test('Identity Excavation is fully authored: 4 steps, reflect close, earns Named
 });
 
 test('getSession returns null for a non-session asset (a checkpoint)', () => {
-  assert.equal(getSession('RCN-CHECK'), null);
-  assert.equal(getAsset('RCN-CHECK')!.kind, 'checkpoint');
+  assert.equal(getSession('RCN-CHK'), null);
+  assert.equal(getAsset('RCN-CHK')!.kind, 'checkpoint');
+});
+
+test('the Reconnect phase is fully authored — every Session has steps; key artifacts are wired', () => {
+  for (const id of ['RCN-BKQ', 'RCN-FDR', 'RCN-EXC', 'RCN-DFT', 'RCN-WIN', 'RCN-WIN-LIST']) {
+    const s = getSession(id);
+    assert.ok(s, `missing ${id}`);
+    assert.ok((s!.steps?.length ?? 0) >= 1, `${id} has no steps`);
+  }
+  assert.ok(getSession('RCN-FDR')!.steps!.some((st) => st.contributes === 'your_doors'));
+  assert.ok(getSession('RCN-WIN-LIST')!.steps!.some((st) => st.contributes === 'reclaim_list'));
+  assert.equal(getAsset('RCN-IDQ')!.kind, 'measurement'); // the IDQ stays an instrument, not a Session
 });
 
 test('the forecast is derived purely from registry rows — every non-daily asset, order-sorted', () => {
@@ -210,16 +221,18 @@ test('forecast progression: Identity Excavation → Checkpoint → Rewire unlock
   const { getForecast } = await import('../lib/curriculum/view.ts');
   const { db, memberId } = await seed();
 
-  // Fresh: Reconnect is "You're here", the lit asset is the one built Session.
+  // Fresh: Reconnect is "You're here", the lit asset is the first built Session by order.
   let f = await getForecast(db, memberId);
   assert.equal(f.phases.find((p) => p.phase === 'reconnect')!.status, "You're here");
-  assert.equal(f.current!.id, 'RCN-EXC');
+  assert.equal(f.current!.id, 'RCN-BKQ');
 
-  // Close Identity Excavation → the Reconnect Checkpoint becomes the lit asset.
-  await saveAnswer(db, memberId, 'RCN-EXC', 4, 'the Elite Cyclist', 4);
-  await closeSession(db, memberId, 'RCN-EXC');
+  // Close every built Reconnect Session → the Checkpoint becomes the lit asset (the IDQ measurement is skipped).
+  for (const id of ['RCN-BKQ', 'RCN-FDR', 'RCN-EXC', 'RCN-DFT', 'RCN-WIN', 'RCN-WIN-LIST']) {
+    await saveAnswer(db, memberId, id, 1, 'x', 1);
+    await closeSession(db, memberId, id);
+  }
   f = await getForecast(db, memberId);
-  assert.equal(f.current!.id, 'RCN-CHECK');
+  assert.equal(f.current!.id, 'RCN-CHK');
   assert.equal(f.phases[0]!.items.find((i) => i.id === 'RCN-EXC')!.state, 'done');
 
   // Pass the Checkpoint → Reconnect Complete, Rewire active, the checkpoint reads done.
@@ -228,7 +241,7 @@ test('forecast progression: Identity Excavation → Checkpoint → Rewire unlock
   f = await getForecast(db, memberId);
   assert.equal(f.phases.find((p) => p.phase === 'reconnect')!.status, 'Complete');
   assert.equal(f.phases.find((p) => p.phase === 'rewire')!.status, "You're here");
-  assert.equal(f.phases[0]!.items.find((i) => i.id === 'RCN-CHECK')!.state, 'done');
+  assert.equal(f.phases[0]!.items.find((i) => i.id === 'RCN-CHK')!.state, 'done');
   // the next stop is Rewire's first Session (not authored yet → shown but not openable)
   assert.equal(f.current!.id, 'RWR-DISINFO');
 });
