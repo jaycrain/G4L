@@ -5,6 +5,7 @@
 // other 23 Sessions get written — pure content work, no engineering.
 import type { Asset, Badge, BadgeCategory, Kind, KindProfile } from './types.ts';
 import { RECONNECT_SESSIONS } from './content/reconnect.ts';
+import { REWIRE_SESSIONS } from './content/rewire.ts';
 
 export const CATEGORY_COLOR: Record<BadgeCategory, string> = {
   milestone: '#374F63', // navy
@@ -95,14 +96,9 @@ export const CURRICULUM: Asset[] = [
   meta('RCN-IDQ', 'The IDQ', 'reconnect', 'Recognition', 'measurement', 2, 'The honest mirror — your starting read across four dimensions. Retakes every 60 days.', { produces: 'your ID Score (baseline measurement)' }),
   IDENTITY_EXCAVATION,
   meta('RCN-CHK', 'The Reconnect Checkpoint', 'reconnect', 'Checkpoint', 'checkpoint', 8, 'The reconnection milestone — have you found yourself? Firm gate; opens Rewire.', { close_type: 'milestone', earns: 'reconnect-milestone', gating: 'reconnect_core_complete' }),
-  // ── Rewire ──
-  meta('RWR-DISINFO', 'Disinformation Audit', 'rewire', 'Awareness', 'session', 1, 'Catch the comfortable lies your mind runs, and take them apart.', { close_type: 'reflect', gating: 'rewire_unlocked' }),
-  meta('RWR-NUMBERS', 'Numbers Exercise', 'rewire', 'Awareness', 'session', 2, 'Pull your numbers and look at them without flinching.', { close_type: 'reflect' }),
-  meta('RWR-FOOD', 'Food Relationship Assessment', 'rewire', 'Awareness', 'session', 3, "Reframe food as fuel for who you're becoming.", { close_type: 'reflect' }),
-  meta('RWR-VIZ', 'Visualization Workshop', 'rewire', 'Visualization', 'session', 4, 'Rehearse the feeling of doing the hard thing.', { close_type: 'reflect' }),
-  meta('RWR-SELFTALK', 'Self-Talk Audit', 'rewire', 'Hardiness', 'session', 5, 'Catch the harsh inner voice and reframe one line of it.', { close_type: 'reflect' }),
-  meta('RWR-FALSESTART', 'False Start Protocol', 'rewire', 'Hardiness', 'session', 6, 'Write your clip-back-in move before the slip happens.', { close_type: 'reflect' }),
-  meta('RWR-CHECK', 'Rewire Checkpoint', 'rewire', 'Checkpoint', 'checkpoint', 7, 'Has the frame moved? Opens the deeper Rebuild work.', { close_type: 'milestone' }),
+  // ── Rewire ── (Sessions authored from the framework; the Checkpoint is a soft gate)
+  ...REWIRE_SESSIONS,
+  meta('RWR-CHK', 'The Rewire Checkpoint', 'rewire', 'Checkpoint', 'checkpoint', 7, 'Has the frame moved? Opens the deeper Rebuild work.', { close_type: 'milestone', earns: 'rewire-milestone' }),
   // ── Rebuild ──
   meta('RBD-FIRSTSTEP', 'First Step Assessment', 'rebuild', 'Foundation', 'session', 1, 'Pick your vehicle and set an honest baseline.', { close_type: 'goal' }),
   meta('RBD-INVISIBLE', 'Invisible Foundations', 'rebuild', 'Foundation', 'session', 2, 'Shore up the unseen basics that hold everything.', { close_type: 'reflect' }),
@@ -143,6 +139,7 @@ export const BADGES: Badge[] = [
   badge('onboarding-courage', 'Onboarding Courage', 'milestone', 'star', 'onboarding_complete', false),
   badge('named-yourself', 'Named Yourself', 'milestone', 'flag', 'session:RCN-EXC:closed', true),
   badge('reconnect-milestone', 'Reconnected', 'milestone', 'up', 'checkpoint:reconnect:passed', true),
+  badge('rewire-milestone', 'Rewired', 'milestone', 'up', 'checkpoint:rewire:passed', true),
 ];
 
 // --- Accessors (the renderer reads only through these) ---

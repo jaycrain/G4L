@@ -242,8 +242,9 @@ test('forecast progression: Identity Excavation → Checkpoint → Rewire unlock
   assert.equal(f.phases.find((p) => p.phase === 'reconnect')!.status, 'Complete');
   assert.equal(f.phases.find((p) => p.phase === 'rewire')!.status, "You're here");
   assert.equal(f.phases[0]!.items.find((i) => i.id === 'RCN-CHK')!.state, 'done');
-  // the next stop is Rewire's first Session (not authored yet → shown but not openable)
-  assert.equal(f.current!.id, 'RWR-DISINFO');
+  // the next stop is Rewire's first authored Session, now openable
+  assert.equal(f.current!.id, 'RWR-DIS');
+  assert.equal(f.current!.openable, true);
 });
 
 test('phase gates: set + check', async () => {
