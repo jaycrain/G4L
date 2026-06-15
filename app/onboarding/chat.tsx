@@ -8,6 +8,16 @@ import { setupAction } from '../account/setup/actions.ts';
 import PasswordField from '../password-field.tsx';
 import type { ConvState, ConvMessage } from '../../lib/agent/onboarding.ts';
 
+// Onboarding can be taken in multiple sittings — completed turns persist server-side per turn; these
+// device-local bits let a member return straight into it (and keep an unsent draft). Never the password.
+const LS = { token: 'g4l_onboarding_token', email: 'g4l_onboarding_email', name: 'g4l_onboarding_name', draft: 'g4l_onboarding_draft' };
+const ls = {
+  get: (k: string) => { try { return localStorage.getItem(k) ?? ''; } catch { return ''; } },
+  set: (k: string, v: string) => { try { localStorage.setItem(k, v); } catch { /* no storage */ } },
+  del: (k: string) => { try { localStorage.removeItem(k); } catch { /* no storage */ } },
+};
+const clearOnboardingStorage = () => { ls.del(LS.token); ls.del(LS.email); ls.del(LS.name); ls.del(LS.draft); };
+
 export default function OnboardingChat() {
   const router = useRouter();
   const [phase, setPhase] = useState<'gate' | 'chat'>('gate');
@@ -33,11 +43,56 @@ export default function OnboardingChat() {
     }
   }, [input]);
 
+  // On first load: pre-fill name/email, and auto-resume straight into the conversation if one's saved —
+  // so a returning member never has to re-enter the gate or start over.
+  useEffect(() => {
+    const savedName = ls.get(LS.name), savedEmail = ls.get(LS.email), token = ls.get(LS.token);
+    if (savedName) setName(savedName);
+    if (savedEmail) setEmail(savedEmail);
+    if (!savedEmail) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const resumed = await loadOnboardingSessionAction(savedEmail, token);
+        if (cancelled || !resumed || !resumed.messages.length) return;
+        tokenRef.current = resumed.token;
+        ls.set(LS.token, resumed.token);
+        setMessages(resumed.messages);
+        setState(resumed.state);
+        setInput(ls.get(LS.draft));
+        if (resumed.state.stage === 'complete') setReady(true);
+        setPhase('chat'); // pick up exactly where they left off
+      } catch {
+        /* no resume — fall back to the gate */
+      }
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Keep the unsent draft so a half-written reply survives leaving the page.
+  useEffect(() => {
+    if (phase !== 'chat') return;
+    if (input.trim()) ls.set(LS.draft, input);
+    else ls.del(LS.draft);
+  }, [input, phase]);
+
   const ctx = { name: name.trim(), email: email.trim() };
+
+  // Return to a blank gate (wrong person, or starting a new account) — clears the saved onboarding.
+  function startFresh() {
+    clearOnboardingStorage();
+    tokenRef.current = '';
+    setMessages([]); setState(null); setInput(''); setReady(false); setError(null);
+    setName(''); setEmail(''); setPassword(''); setConfirm('');
+    setPhase('gate');
+  }
 
   async function begin(e: React.FormEvent) {
     e.preventDefault();
     if (!ctx.name || !ctx.email) return;
+    ls.set(LS.name, ctx.name); // remember so a return visit pre-fills (and can auto-resume)
+    ls.set(LS.email, ctx.email);
     if (password.length < 8) {
       setError('Choose a password of at least 8 characters.');
       return;
@@ -134,12 +189,8 @@ export default function OnboardingChat() {
         setPending(false);
         return;
       }
-      // Committed — the in-flight resume token can go.
-      try {
-        localStorage.removeItem('g4l_onboarding_token');
-      } catch {
-        /* no storage */
-      }
+      // Committed — the saved onboarding (token, name/email, draft) can go.
+      clearOnboardingStorage();
       // Secure the account with the password captured at sign-up; fall back to the setup screen.
       const saved = await setupAction(r.memberId, password);
       router.push(saved.ok ? `/idq?member=${r.memberId}` : `/account/setup?member=${r.memberId}`);
@@ -220,6 +271,10 @@ export default function OnboardingChat() {
           </button>
         </form>
       )}
+      <p className="muted onboard-fresh">
+        Saved automatically — take your time, you can leave and pick this up anytime.{' '}
+        <button type="button" onClick={startFresh}>Not you? Start fresh</button>
+      </p>
     </>
   );
 }
