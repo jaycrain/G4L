@@ -116,6 +116,9 @@ button:hover, .btn:hover { background: var(--navy); }
 .sub-copy p { line-height: 1.62; margin: 0 0 0.9rem; }
 .sub-copy p:last-child { margin-bottom: 0; }
 .sub-copy p.muted { margin-top: 1rem; }
+/* The personalized "your read" line — up top, distinct from the explainer beneath it. */
+.sub-personal { border-left: 4px solid var(--navy); padding: 0.3rem 0 0.3rem 0.85rem; margin: 0 0 1.15rem; color: var(--navy); font-size: 1.05rem; font-weight: 600; line-height: 1.5; }
+.sub-personal strong { color: var(--navy); }
 
 .onboard-fresh { font-size: 0.8rem; margin-top: 1rem; text-align: center; }
 .onboard-fresh button { background: none; border: none; padding: 0; font: inherit; color: var(--teal); font-weight: 700; cursor: pointer; text-decoration: underline; }
