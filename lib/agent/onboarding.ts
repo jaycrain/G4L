@@ -12,7 +12,7 @@
 
 import { AI_DISCLOSURE, CRISIS_RESPONSE_US, detectCrisis } from './governance.ts';
 import { MEMBER_AGENT_SYSTEM_PROMPT } from './system-prompt.ts';
-import { DOORS, DOOR_SLUGS, isDoorSlug, matchDoors, type DoorSlug } from '../doors.ts';
+import { DOORS, DOOR_SLUGS, isDoorSlug, matchDoors, correctDoors, type DoorSlug } from '../doors.ts';
 import { cleanIdentityNoun, displayIdentityNoun, identityLabel } from '../member/identity.ts';
 import { RECLAIM_LIST_MIN, RECLAIM_LIST_TARGET } from '../member/reclaim.ts';
 
@@ -322,6 +322,10 @@ MAP WHAT THEY ACTUALLY SAID — NOT A PROJECTED LIFE STAGE. Tag the event they d
 IF THEY PUSH BACK on a Door you named ("that's not it", "what do you mean", "those don't seem right"), treat it as a correction, not a detour: set the label aside immediately, say plainly you may have misread, ask them to tell you more about what actually changed, and RE-MAP from their answer. NEVER repeat a Door label the member has just questioned.
 [internal Door map — do not list to the member]
 ${DOORS.map((d) => `- ${d.slug}: ${d.displayName} — ${d.descriptor}`).join('\n')}
+DISAMBIGUATE the three family Doors — they are NOT interchangeable, and confusing them is the most common mistake:
+- aging_parents is caring for your OWN AGING PARENTS. A spouse's needs, a partner's struggles, or young kids are NOT this.
+- empty_nest is kids who GREW UP and MOVED OUT, leaving the house quiet. Getting married, HAVING kids, or RAISING young kids is the OPPOSITE of this — never tag empty_nest for it.
+- full_house is the years a household FILLS UP: marriage, young or dependent kids, a partner who needs carrying, becoming the one everyone leans on, until there's no room left for yourself. THIS is the Door for "I got married, then we had kids, and the responsibility took over." When someone describes marrying and raising a family and losing themselves in it, it is full_house — never empty_nest or aging_parents.
 
 Then hand off to the IDQ: name the Door(s), the reclaimed identity, and the Reclaim List in one or two plain sentences, and say a set of honest questions comes next (no studying, no score to pass).
 
@@ -417,6 +421,13 @@ async function liveTurn(
     const memberText = [...history.filter((m) => m.role === 'member').map((m) => m.text), memberMessage, collected.gap ?? ''].join('  ');
     const inferred = matchDoors(memberText);
     if (inferred.length > 0) collected = { ...collected, doors: inferred, ...(collected.gap ? {} : { gap: memberMessage }) };
+  }
+
+  // Guard the model's most common Door mix-up — a marriage/young-kids/load-bearer story is The Full
+  // House, never the later-life Empty Nest or Aging Parents. Correct from the actual narrative.
+  if ((collected.doors?.length ?? 0) > 0) {
+    const narrative = [...history.filter((m) => m.role === 'member').map((m) => m.text), memberMessage, collected.gap ?? ''].join('  ');
+    collected = { ...collected, doors: correctDoors(collected.doors!, narrative) };
   }
 
   // Count exchanges spent in the Door beat — only once the gap/Door is actually being discussed, NOT

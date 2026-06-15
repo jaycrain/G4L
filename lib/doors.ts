@@ -51,3 +51,24 @@ export function matchDoors(message: string): DoorSlug[] {
   }
   return DOORS.filter((d) => found.has(d.slug)).map((d) => d.slug);
 }
+
+// Guard the model's most common Door mix-up: a marriage + young-kids + load-bearer story is The Full
+// House — NOT the later-life Empty Nest (kids grew up and left) or Aging Parents (caring for your own
+// parents). When the narrative clearly signals the Full House and those siblings carry no signal of
+// their own, correct them. Conservative: it only ever fires on a clear Full House story.
+export function correctDoors(doors: DoorSlug[], narrative: string): DoorSlug[] {
+  const m = (narrative || '').toLowerCase();
+  const fullHouseSignal =
+    matchDoors(m).includes('full_house') ||
+    /\b(had kids|having kids|when we had|after (we )?had kids|after kids|young kids|small kids|little kids|new baby|babies|a toddler|raising (the |our )?kids)\b/.test(m);
+  const agingParentsSignal = /\b(aging parent|elderly|my (mom|dad|mother|father|parents)|caring for (my|a|an|his|her|aging) ?(mom|dad|mother|father|parent|parents)?)\b/.test(m);
+  const emptyNestSignal = /\b(empty nest|moved out|left (home|the house|the nest)|kids? (are )?(grown|gone|all gone|all left|out of the house)|off to college|last one (gone|left))\b/.test(m);
+
+  const set = new Set<DoorSlug>(doors);
+  if (fullHouseSignal) {
+    if (!agingParentsSignal) set.delete('aging_parents');
+    if (!emptyNestSignal) set.delete('empty_nest');
+    set.add('full_house');
+  }
+  return DOORS.filter((d) => set.has(d.slug)).map((d) => d.slug);
+}

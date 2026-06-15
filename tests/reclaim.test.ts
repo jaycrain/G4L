@@ -6,7 +6,7 @@ import {
   validateReconnectOutput,
   RECLAIM_LIST_MIN,
 } from '../lib/member/reclaim.ts';
-import { DOOR_SLUGS, matchDoors } from '../lib/doors.ts';
+import { DOOR_SLUGS, matchDoors, correctDoors } from '../lib/doors.ts';
 
 const five = ['a', 'b', 'c', 'd', 'e'];
 
@@ -36,6 +36,20 @@ test('matchDoors maps free text to one or more Doors in canonical order', () => 
   assert.deepEqual(matchDoors('when I got married then had kids'), ['full_house']);
   assert.deepEqual(matchDoors('the full house'), ['full_house']);
   assert.deepEqual(matchDoors('nothing recognizable here'), []);
+});
+
+test('correctDoors fixes the marriage/young-kids mis-tag (Full House, not Empty Nest / Aging Parents)', () => {
+  // Scott's story: married, then kids, wife's struggles became his to carry — the model wrongly tagged
+  // aging_parents + empty_nest. Neither has any signal here, so both are corrected to The Full House.
+  const narrative = 'When I got married. Then we had kids and she suffered and the responsibility fell on me. New job, alimony, gained weight.';
+  assert.deepEqual(correctDoors(['aging_parents', 'empty_nest'], narrative), ['full_house']);
+  // It keeps legitimately-signaled Doors alongside, and adds Full House.
+  assert.deepEqual(correctDoors(['body'], narrative), ['body', 'full_house']);
+  // It does NOT touch a genuine Empty Nest / Aging Parents story (their own signal is present).
+  assert.deepEqual(correctDoors(['empty_nest'], 'the kids grew up and moved out, the house went quiet'), ['empty_nest']);
+  assert.deepEqual(correctDoors(['aging_parents'], 'I became the one caring for my aging mother'), ['aging_parents']);
+  // No Full House signal → leaves the model's doors alone.
+  assert.deepEqual(correctDoors(['career_cliff'], 'my role was eliminated in a restructure'), ['career_cliff']);
 });
 
 test('full Reconnect output validates the contract together', () => {
