@@ -10,6 +10,7 @@ import {
   isAffirmation,
   isDoorDispute,
   doorEngaged,
+  ensureIdqHandoff,
   INITIAL_STATE,
   type ConvState,
   type Collected,
@@ -152,6 +153,16 @@ test('isAffirmation recognizes short confirmations (incl. "for sure"), not longe
   assert.equal(isAffirmation('yes, and also my finances really started to pile on around then too'), false);
   assert.equal(isAffirmation('not really, there was more to it'), false);
   assert.equal(isAffirmation(''), false);
+});
+
+test('ensureIdqHandoff keeps the model\'s summary and only adds the IDQ transition when missing', () => {
+  const summary = 'Here is your whole story reflected back — the house filling up, marriage and young kids, you carrying it all. That is The Full House.';
+  const out = ensureIdqHandoff(summary);
+  assert.match(out, /The Full House/); // the model's summary is preserved
+  assert.match(out, /Ready when you are/); // the IDQ transition is appended
+  // If the model already closed with the transition, it isn't doubled.
+  const withTail = `${summary} Ready when you are.`;
+  assert.equal(ensureIdqHandoff(withTail), withTail);
 });
 
 test('withForwardPrompt never leaves a non-final turn without a question', () => {

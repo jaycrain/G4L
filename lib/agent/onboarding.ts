@@ -86,6 +86,15 @@ function handoff(doors: DoorSlug[], noun?: string): string {
   );
 }
 
+const IDQ_HANDOFF_TAIL =
+  'Next, a set of honest questions to see exactly how far the gap runs right now — no studying, no score to pass. Ready when you are.';
+// Prefer the model's OWN close (it can summarize the member's story and reveal the Door(s) in context,
+// not just name them) — just guarantee the IDQ transition is on the end.
+export function ensureIdqHandoff(modelText: string): string {
+  const t = modelText.trim();
+  return /ready when you are/i.test(t) ? t : `${t}\n\n${IDQ_HANDOFF_TAIL}`;
+}
+
 // Derive the stage from what's collected — keeps state coherent on the live path so a scripted
 // fallback (after a transient live failure) resumes at the right question instead of restarting.
 export function nextStage(c: Collected): Stage {
@@ -327,7 +336,12 @@ DISAMBIGUATE the three family Doors — they are NOT interchangeable, and confus
 - empty_nest is kids who GREW UP and MOVED OUT, leaving the house quiet. Getting married, HAVING kids, or RAISING young kids is the OPPOSITE of this — never tag empty_nest for it.
 - full_house is the years a household FILLS UP: marriage, young or dependent kids, a partner who needs carrying, becoming the one everyone leans on, until there's no room left for yourself. THIS is the Door for "I got married, then we had kids, and the responsibility took over." When someone describes marrying and raising a family and losing themselves in it, it is full_house — never empty_nest or aging_parents.
 
-Then hand off to the IDQ: name the Door(s), the reclaimed identity, and the Reclaim List in one or two plain sentences, and say a set of honest questions comes next (no studying, no score to pass).
+CLOSE WITH A SUMMARY, NOT A LIST. Once you understand how the gap opened and have checked whether more than one Door stacked on (about three or four exchanges — don't keep asking past that), close the beat in ONE warm turn, and call record_progress with complete=true on that turn:
+(1) reflect their WHOLE story back in two or three sentences, in their own words — what actually opened the gap and what it cost them;
+(2) name the Door(s) you heard, each with its plain meaning AND its title — e.g. "the years the house filled up — marriage, young kids, everyone leaning on you, no room left for you — what we'd call The Full House";
+(3) confirm the reclaimed identity is who you're bringing back, and the Reclaim List is what that looks like in real life;
+(4) transition to the IDQ — a set of honest questions to see how far the gap runs, no studying, no score — ending with "Ready when you are."
+NEVER close by just listing Door names with no summary — the member should feel their whole story reflected back before any label.
 
 VOICE: no meta-narration about the program's own mechanics; gender-inclusive; warm, direct, short sentences. Let the Fade carry the weight, not statistics.
 TURN-TAKING (important): reflect first, then ALWAYS end your turn with exactly ONE clear question or prompt that tells the member what to do next. Never end on a bare statement or reflection — that strands the member, unsure whether it is their turn. The ONLY turn without a question is the final IDQ handoff, which closes with "Ready when you are."
@@ -449,9 +463,11 @@ async function liveTurn(
 
   let finalReply: string;
   if (complete) {
-    // Always the engine-owned handoff (names Door(s), identity, Reclaim List, "Ready when you
-    // are.") — never the model's last turn, which can truncate or be skipped for the tool call.
-    finalReply = handoff(collected.doors ?? [], collected.identityNoun);
+    // Prefer the model's OWN close — a warm summary of how the gap opened with the Door(s) named in
+    // context (not a bare list). Fall back to the engine handoff only when the model gave no real
+    // text (e.g. a tool-only turn). Ensure the IDQ transition is on the end either way.
+    const r = reply.trim();
+    finalReply = r.length >= 100 ? ensureIdqHandoff(r) : handoff(collected.doors ?? [], collected.identityNoun);
   } else if (disputed) {
     // Honor the pushback: use the model's own reply (it's reconsidering / asking what actually
     // changed), guaranteeing a forward question — never the canned forward or a repeated label.
