@@ -8,6 +8,8 @@ import {
   withForwardPrompt,
   resolveCompletion,
   isAffirmation,
+  isDoorDispute,
+  doorEngaged,
   INITIAL_STATE,
   type ConvState,
   type Collected,
@@ -114,6 +116,32 @@ test('completion is gated on BOTH sides: explore first, then close reliably', ()
   assert.equal(resolveCompletion(full, false, 6).complete, true);
   // ...but never before requirements are met (missing a Door keeps it out of the door beat entirely).
   assert.equal(resolveCompletion(partial, true, 9).complete, false);
+});
+
+test('a Door dispute reopens the beat — never wraps, even past the soft cap or when the model says complete', () => {
+  const full = { athleticPast: 'x', identityNoun: 'Runner', reclaimList: ['a', 'b', 'c'], doors: ['career_cliff'] } as Collected;
+  // Member is pushing back ⇒ blocked=true ⇒ cannot complete (model-signaled, affirmed, OR soft-cap).
+  assert.equal(resolveCompletion(full, true, 3, false, true).complete, false);
+  assert.equal(resolveCompletion(full, false, 6, false, true).complete, false);
+  // It stays in the door beat to re-map, not stranded.
+  assert.equal(resolveCompletion(full, true, 3, false, true).stage, 'door');
+});
+
+test('isDoorDispute catches real pushback (incl. Scott\'s line) but not an affirmation', () => {
+  for (const d of ["What do you mean by Aging Parents and Empty Nest?", "those don't seem like the problem", "that's not it", "no, that wasn't what happened", "I wouldn't call it that"]) {
+    assert.equal(isDoorDispute(d), true, `dispute: "${d}"`);
+  }
+  assert.equal(isDoorDispute('yes, that\'s right'), false);
+  assert.equal(isDoorDispute('the body, and the career cliff too'), false);
+});
+
+test('door turns are counted only once the gap/Door is on the table (not when the Reclaim List just filled)', () => {
+  // Reclaim just hit the minimum; no gap, no door yet → NOT a door turn (the beat hasn\'t begun).
+  assert.equal(doorEngaged({ reclaimList: ['a', 'b', 'c'] } as Collected, { reclaimList: ['a', 'b', 'c'] } as Collected), false);
+  // The member just told us how the gap opened → now we\'re engaging the Door beat.
+  assert.equal(doorEngaged({} as Collected, { gap: 'when I got married then had kids' } as Collected), true);
+  // A Door already captured earlier → still engaging on the next turn.
+  assert.equal(doorEngaged({ doors: ['career_cliff'] } as Collected, {} as Collected), true);
 });
 
 test('isAffirmation recognizes short confirmations (incl. "for sure"), not longer add-ons', () => {

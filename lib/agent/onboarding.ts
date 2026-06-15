@@ -116,6 +116,23 @@ export function isAffirmation(message: string): boolean {
   return AFFIRM_RE.test(m) && m.split(/\s+/).length <= 6;
 }
 
+// The Door beat is "engaged" only once the gap story or a Door is actually on the table — NOT merely
+// because the Reclaim List filled (nextStage flips to 'door' then, but the model may still be drawing
+// out Reclaim items). Counting from real Door material is what keeps the beat from wrapping on the
+// member's very first gap answer.
+export function doorEngaged(prev: Collected, next: Collected): boolean {
+  const has = (c: Collected) => !!c.gap || (c.doors?.length ?? 0) >= 1;
+  return has(prev) || has(next);
+}
+
+// The member pushing back on the Door read ("that's not it", "what do you mean", "those don't fit").
+// A dispute must REOPEN the beat — never wrap, never replay the same label.
+const DISPUTE_RE =
+  /\b(what do you mean|that'?s not (it|right|quite)|that wasn'?t (it|the)|doesn'?t (seem|sound|fit|feel)|don'?t (seem|think|see|fit)|i (wouldn'?t|don'?t) (say|call|think)|not (really )?(it|right|the problem|what)|disagree|off( |-)base|that'?s wrong|no,? that|isn'?t (it|right))\b/i;
+export function isDoorDispute(message: string): boolean {
+  return DISPUTE_RE.test((message ?? '').replace(/[‘’]/g, "'"));
+}
+
 // At the naming step, a member may genuinely not know yet — honor it, don't force a label.
 const DECLINE_IDENTITY_RE =
   /\b(not sure|don'?t know|dunno|no idea|no clue|unsure|can'?t say|hard to say|not yet|don'?t have (one|a word)|skip|pass|i don'?t)\b/i;
@@ -125,6 +142,7 @@ export function resolveCompletion(
   wantsComplete: boolean,
   doorTurns = 0,
   memberAffirmed = false,
+  blocked = false, // a Door dispute this turn — never wrap; reopen the beat instead
 ): { complete: boolean; stage: Stage; exploringDoor: boolean } {
   const reqsMet =
     !!collected.athleticPast &&
@@ -133,7 +151,7 @@ export function resolveCompletion(
     (collected.doors?.length ?? 0) >= 1;
   const exploredEnough = doorTurns >= DOOR_MIN_TURNS;
   const mustWrap = doorTurns >= DOOR_MAX_TURNS;
-  const complete = reqsMet && exploredEnough && (wantsComplete || memberAffirmed || mustWrap);
+  const complete = !blocked && reqsMet && exploredEnough && (wantsComplete || memberAffirmed || mustWrap);
   // We hold in the Door beat whenever we have a Door but aren't completing — so the engine keeps the
   // conversation there (widening to other Doors, then deepening) instead of stranding or rushing.
   const exploringDoor = !complete && reqsMet;
@@ -295,6 +313,8 @@ For EACH item, also assign a category — the area it belongs to: physical (body
 3) FADE DOOR(S) — EXPLORE, never list. This is the most important and most vulnerable beat. Open it with a real question about how the gap opened ("Something opened this gap, and it's rarely all at once — what happened? When did you first feel the drift?"). Then have a CONVERSATION, not a form: follow up to understand HOW it unfolded — the sequence, when they first noticed, what it quietly cost them — reflecting their own words back. Your job is to understand how it happened, not just that it did. Stay with their story for two or three exchanges; don't rush to wrap it.
 THE GAP IS USUALLY MORE THAN ONE DOOR. The Fade rarely opens through a single event — the body starts saying no AND the career plateaus; the nest empties AND a parent gets sick. Once you understand the FIRST door, explicitly check whether others stacked onto it ("Was that the whole of it, or did something else pile on around the same time?"). Capture every door that genuinely applies, not just the first one named. Ask this once — don't interrogate; if they say it was just the one, accept that and move on.
 Do NOT recite a menu of Doors or ask them to pick one — listing options stops the conversation cold. The eight Doors below are YOUR private map for tagging, never shown to the member. Map their story silently to one OR MORE of them. You may gently name a Door back ONLY as recognition, to help them feel seen ("a lot of good people would call that the Empty Nest — the house going quiet"), never as an option to choose. Record their account in gap and the mapped slug(s) in doors.
+MAP WHAT THEY ACTUALLY SAID — NOT A PROJECTED LIFE STAGE. Tag the event they describe, in the timeframe they describe it. Do NOT project forward: someone describing getting married or having young kids is NOT "the Empty Nest" or "the Aging Parents" (those are later-life stages) — if anything it's the responsibility of a new family crowding out the self. If their story does not clearly fit any of the eight, do NOT force one: reflect their OWN words, keep exploring, and name a Door only as tentative recognition they would themselves agree with. A Door the member wouldn't recognize is worse than none yet — never assert one as a verdict.
+IF THEY PUSH BACK on a Door you named ("that's not it", "what do you mean", "those don't seem right"), treat it as a correction, not a detour: set the label aside immediately, say plainly you may have misread, ask them to tell you more about what actually changed, and RE-MAP from their answer. NEVER repeat a Door label the member has just questioned.
 [internal Door map — do not list to the member]
 ${DOORS.map((d) => `- ${d.slug}: ${d.displayName} — ${d.descriptor}`).join('\n')}
 
@@ -394,18 +414,32 @@ async function liveTurn(
     if (inferred.length > 0) collected = { ...collected, doors: inferred, ...(collected.gap ? {} : { gap: memberMessage }) };
   }
 
-  // Count exchanges spent in the Door beat (we were in the door stage, or just captured a Door).
-  const justGotDoor = (collected.doors?.length ?? 0) >= 1 && (state.collected.doors?.length ?? 0) === 0;
-  const engagingDoor = state.stage === 'door' || justGotDoor;
+  // Count exchanges spent in the Door beat — only once the gap/Door is actually being discussed, NOT
+  // the moment the Reclaim List fills (nextStage flips to 'door' then, even while the model is still
+  // drawing out Reclaim items — counting those would wrap the beat on the first real gap answer).
+  const engagingDoor = doorEngaged(state.collected, collected);
   const doorTurns = (state.doorTurns ?? 0) + (engagingDoor ? 1 : 0);
 
-  const { complete, stage, exploringDoor } = resolveCompletion(collected, wantsComplete, doorTurns, isAffirmation(memberMessage));
+  // The member disputing the Door read must REOPEN the beat: never wrap, never replay the same label —
+  // let the model's reply (which reconsiders / re-maps) through instead of the canned handoff.
+  const disputed = isDoorDispute(memberMessage) && ((state.collected.doors?.length ?? 0) >= 1 || !!state.collected.gap);
+  const { complete, stage, exploringDoor } = resolveCompletion(
+    collected,
+    wantsComplete && !disputed,
+    doorTurns,
+    isAffirmation(memberMessage) && !disputed,
+    disputed,
+  );
 
   let finalReply: string;
   if (complete) {
     // Always the engine-owned handoff (names Door(s), identity, Reclaim List, "Ready when you
     // are.") — never the model's last turn, which can truncate or be skipped for the tool call.
     finalReply = handoff(collected.doors ?? [], collected.identityNoun);
+  } else if (disputed) {
+    // Honor the pushback: use the model's own reply (it's reconsidering / asking what actually
+    // changed), guaranteeing a forward question — never the canned forward or a repeated label.
+    finalReply = withForwardPrompt(reply, 'door');
   } else if (exploringDoor) {
     // Stay in the Door beat. Use the model's text if it asked something; otherwise drive the beat
     // forward ourselves — widen first (the gap is usually more than one Door), then move toward
