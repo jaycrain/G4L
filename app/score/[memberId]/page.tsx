@@ -26,7 +26,7 @@ export default async function ScoreMorePage({ params }: { params: Promise<{ memb
         <p>The big number is the whole picture. The four dimensions beneath it show where the distance runs widest — and a low one there isn’t a failing grade, it’s a map. It’s telling you exactly where the work will pay off most.</p>
         <p>It comes from the IDQ — twenty-four honest questions you answer about every 60 days. That pace is on purpose. Who you are doesn’t lurch from week to week, so neither should this. The ID Score is built to move slowly, so that when it does move, you know you earned it — real change, not a good night’s sleep.</p>
         <p>So don’t chase it daily; you won’t catch it moving, and that’s the point. Do the reps, and let the next IDQ tell the truth. When the number climbs, that isn’t a better score — it’s more of you, back.</p>
-        <p>This is your starting line, not your verdict. Everything from here is the gap, closing.</p>
+        <p>Sixty days from now, this number gets to tell a different story. The space in between is where you write it.</p>
       </div>
     </>
   );
