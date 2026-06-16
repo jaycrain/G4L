@@ -3,53 +3,9 @@
 // Excavation) lives in registry.ts; the IDQ is a measurement; the Checkpoint is a ceremony.
 import type { Asset } from '../types.ts';
 
+// The Book Quiz (RCN-BKQ) is retired — its terminology-check job (the Fade, what-this-is) moved into
+// onboarding (the start page + Getting to Know You). Reconnect now opens on the Doors.
 export const RECONNECT_SESSIONS: Asset[] = [
-  {
-    id: 'RCN-BKQ',
-    title: 'The Book Quiz',
-    phase: 'reconnect',
-    layer: 'Recognition',
-    kind: 'session',
-    order: 1,
-    summary: 'Orient, and put a name to the feeling that brought you here.',
-    close_type: 'reflect',
-    produces: 'the moment you feel most like a stranger to yourself',
-    steps: [
-      {
-        n: 1,
-        title: 'Why you\'re here',
-        prompt: 'Finish this line however it lands: \'Lately I feel most like a stranger to myself when ___.\'',
-        input_type: 'writing_one_line',
-        companion_frame: 'Before we start, a quick gut check — no studying, no wrong answers, just notice what comes up. There\'s usually one moment where the gap between who you are and who you feel like you\'ve become is loudest.',
-        probe: 'Don\'t reach for the respectable answer. When does it actually hit — and where are you when it does?',
-        contributes: 'playbook',
-      },
-      {
-        n: 2,
-        title: 'The Fade, named',
-        prompt: 'Does \'the Fade\' fit what you just described? Tell me where it fits, and where it doesn\'t.',
-        input_type: 'writing',
-        companion_frame: 'Here\'s a word for that feeling: the Fade — the slow drift away from the person you used to be, built not from one disaster but from a hundred reasonable decisions. Most people never had a name for it. Now you do.',
-        probe: 'Where doesn\'t it fit? The places it misses tell me your version — as useful as where it lands.',
-        contributes: 'none',
-      },
-      {
-        n: 3,
-        title: 'What this is and isn\'t',
-        prompt: 'Honestly — is that the kind of thing you actually want? Say it plainly.',
-        input_type: 'writing',
-        companion_frame: 'This isn\'t a program that tells you what to eat and tracks whether you obey. It\'s the opposite: you run your own comeback, and I hand you the tools and stay beside you the whole way.',
-        probe: 'If there\'s a hesitation in there, name it. Better to say it now than carry it quietly.',
-        contributes: 'none',
-      },
-    ],
-    close: {
-      companion: 'No grade here — just noticing. You\'ve named the feeling and given it a word, and that\'s where every comeback starts. I\'ve kept what surfaced in your Playbook to keep or cut.',
-      prompt: 'Ready to look a little closer?',
-      options: ['Yes', 'Give me a second'],
-      to_playbook: true,
-    },
-  },
   {
     id: 'RCN-FDR',
     title: 'The Fade Doors',

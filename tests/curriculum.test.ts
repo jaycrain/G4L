@@ -45,7 +45,7 @@ test('getSession returns null for a non-session asset (a checkpoint)', () => {
 });
 
 test('the Reconnect phase is fully authored — every Session has steps; key artifacts are wired', () => {
-  for (const id of ['RCN-BKQ', 'RCN-FDR', 'RCN-EXC', 'RCN-DFT', 'RCN-WIN', 'RCN-WIN-LIST']) {
+  for (const id of ['RCN-FDR', 'RCN-EXC', 'RCN-DFT', 'RCN-WIN', 'RCN-WIN-LIST']) {
     const s = getSession(id);
     assert.ok(s, `missing ${id}`);
     assert.ok((s!.steps?.length ?? 0) >= 1, `${id} has no steps`);
@@ -58,10 +58,10 @@ test('the Reconnect phase is fully authored — every Session has steps; key art
 test('the forecast is derived purely from registry rows — every non-daily asset, order-sorted', () => {
   const cols = phaseColumns();
   assert.deepEqual(cols.map((c) => c.phase), ['reconnect', 'rewire', 'rebuild', 'reclaim']);
-  // reconnect column: 8 items in order, ending in the Checkpoint
+  // reconnect column: 7 items in order, ending in the Checkpoint (Book Quiz retired → order 1 gone)
   const recon = cols[0]!.items;
-  assert.equal(recon.length, 8);
-  assert.deepEqual(recon.map((a) => a.order), [1, 2, 3, 4, 5, 6, 7, 8]);
+  assert.equal(recon.length, 7);
+  assert.deepEqual(recon.map((a) => a.order), [2, 3, 4, 5, 6, 7, 8]);
   assert.equal(recon[recon.length - 1]!.kind, 'checkpoint');
   // every non-daily asset appears exactly once across the columns (proves no hardcoding)
   const inColumns = cols.flatMap((c) => c.items).length;
@@ -72,7 +72,7 @@ test('the forecast is derived purely from registry rows — every non-daily asse
 test('the whole program is authored — all four phases, every Session has steps, one checkpoint each', () => {
   const cols = phaseColumns();
   const counts = Object.fromEntries(cols.map((c) => [c.phase, c.items.length]));
-  assert.deepEqual(counts, { reconnect: 8, rewire: 7, rebuild: 6, reclaim: 8 });
+  assert.deepEqual(counts, { reconnect: 7, rewire: 7, rebuild: 6, reclaim: 8 });
   for (const c of cols) {
     assert.equal(c.items.filter((i) => i.kind === 'checkpoint').length, 1, `${c.phase} needs one checkpoint`);
     for (const s of c.items.filter((i) => i.kind === 'session')) {
@@ -247,10 +247,10 @@ test('forecast progression: Identity Excavation → Checkpoint → Rewire unlock
   // Fresh: Reconnect is "You're here", the lit asset is the first built Session by order.
   let f = await getForecast(db, memberId);
   assert.equal(f.phases.find((p) => p.phase === 'reconnect')!.status, "You're here");
-  assert.equal(f.current!.id, 'RCN-BKQ');
+  assert.equal(f.current!.id, 'RCN-FDR'); // Book Quiz retired; the Doors lead Reconnect now
 
   // Close every built Reconnect Session → the Checkpoint becomes the lit asset (the IDQ measurement is skipped).
-  for (const id of ['RCN-BKQ', 'RCN-FDR', 'RCN-EXC', 'RCN-DFT', 'RCN-WIN', 'RCN-WIN-LIST']) {
+  for (const id of ['RCN-FDR', 'RCN-EXC', 'RCN-DFT', 'RCN-WIN', 'RCN-WIN-LIST']) {
     await saveAnswer(db, memberId, id, 1, 'x', 1);
     await closeSession(db, memberId, id);
   }

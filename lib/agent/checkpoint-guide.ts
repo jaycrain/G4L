@@ -46,7 +46,7 @@ function material(c: CheckpointCtx): string {
 export function checkpointOpening(c: CheckpointCtx): Promise<string> {
   const fallback =
     `You've done the excavation — you named who you're reclaiming. Before Rewire, the real question, and it's yours to answer: ` +
-    `have you found yourself again? Not all the way back — but have you remembered who that is? Sit with it. What surfaced for you, and what does it mean?`;
+    `have you found yourself again? Not all the way back — but have you remembered who that is? Let that land. What surfaced for you, and what does it mean?`;
   return say(
     VOICE +
       ' Ask the existential questions — have you found yourself? what surfaced? what does it mean? — reflecting their own material so it lands personally. 2–4 sentences. End by inviting them to answer in their own words. Output only what you say.',
