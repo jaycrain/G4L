@@ -6,6 +6,7 @@ import { getAsset } from '../../../../lib/curriculum/registry.ts';
 import { listFacets, hasGate } from '../../../../lib/curriculum/store.ts';
 import { checkpointOpening } from '../../../../lib/agent/checkpoint-guide.ts';
 import { getPlaybookSynthesis } from '../../../../lib/agent/playbook-synthesis.ts';
+import { reclaimForReconcile } from './checkpoint-actions.ts';
 import { DOORS, isDoorSlug } from '../../../../lib/doors.ts';
 import type { Db } from '../../../../lib/db/schema.ts';
 
@@ -47,7 +48,15 @@ export default async function CheckpointPage({ params }: { params: Promise<{ mem
         <Link href={`/dashboard/${memberId}`} className="back-link">← Dashboard</Link>
         <span className="where">{asset.phase} · Checkpoint</span>
       </div>
-      <CheckpointCeremony memberId={memberId} checkpointId={checkpointId} title={asset.title} opening={opening} facets={facets} />
+      <CheckpointCeremony
+        memberId={memberId}
+        checkpointId={checkpointId}
+        phase={asset.phase}
+        title={asset.title}
+        opening={opening}
+        facets={facets}
+        reclaimItems={asset.phase === 'reclaim' ? await reclaimForReconcile(memberId) : []}
+      />
     </>
   );
 }

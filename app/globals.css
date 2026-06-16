@@ -662,6 +662,12 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .ckpt-agent { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--teal); margin-bottom: 0.4rem; }
 .ckpt-facets { font-size: 0.92rem; color: #C9D2DA; margin: 0.9rem 0 0; }
 .ckpt-facets strong { color: #fff; }
+/* Reclaim capstone — the goal-reconciliation walk. */
+.ckpt-reconcile { margin: 1rem 0 0.4rem; display: flex; flex-direction: column; gap: 0.5rem; }
+.ckpt-recon-row { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; padding: 0.55rem 0.7rem; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12); border-radius: 10px; }
+.ckpt-recon-text { color: #eef3f6; font-size: 0.95rem; line-height: 1.35; }
+.ckpt-recon-row select { flex: 0 0 auto; background: var(--white); color: var(--charcoal); border: none; border-radius: 7px; padding: 0.35rem 0.5rem; font: inherit; font-size: 0.85rem; }
+.ckpt-recon-msg { font-size: 0.95rem; color: #C9D2DA; margin: 0 0 0.9rem; font-weight: 600; }
 .ckpt-field { display: block; width: 100%; margin-top: 1rem; border: 1.5px solid rgba(255,255,255,.18); border-radius: 10px; padding: 0.85rem 0.95rem; font-family: inherit; font-size: 0.98rem; line-height: 1.55; background: rgba(255,255,255,.05); color: #fff; resize: vertical; }
 .ckpt-field::placeholder { color: #9fb0bd; }
 .ckpt-nudge { font-size: 0.88rem; color: #f0d9cf; margin: 0.7rem 0 0; font-style: italic; }

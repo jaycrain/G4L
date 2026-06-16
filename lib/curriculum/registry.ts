@@ -133,6 +133,7 @@ export const BADGES: Badge[] = [
   badge('reconnect-milestone', 'Reconnected', 'milestone', 'bullseye', 'checkpoint:reconnect:passed', true),
   badge('rewire-milestone', 'Rewired', 'milestone', 'bolt', 'checkpoint:rewire:passed', true),
   badge('rebuild-milestone', 'Rebuilt', 'milestone', 'mountain', 'checkpoint:rebuild:passed', true),
+  badge('goal-reclaimed', 'Goal Reclaimed', 'goal', 'check', 'reclaim:item:reclaimed', false),
   badge('reclaim-capstone', 'Reclaimed — a full cycle', 'capstone', 'sun', 'checkpoint:reclaim:passed', true),
 ];
 

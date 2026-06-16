@@ -6,9 +6,56 @@ import { authorizeMember } from '../../../authz.ts';
 import { getAsset, getBadge, listCurriculum, PHASE_ORDER } from '../../../../lib/curriculum/registry.ts';
 import { setGate, earnBadge, listFacets } from '../../../../lib/curriculum/store.ts';
 import { checkpointAffirmation, checkpointHold, type CheckpointCtx } from '../../../../lib/agent/checkpoint-guide.ts';
-import { getPlaybookSynthesis } from '../../../../lib/agent/playbook-synthesis.ts';
+import { getPlaybookSynthesis, refreshPlaybookSynthesis } from '../../../../lib/agent/playbook-synthesis.ts';
+import { getReclaimItems, markReclaimReclaimedByText } from '../../../../lib/beats/store.ts';
 import { DOORS, isDoorSlug } from '../../../../lib/doors.ts';
 import type { Db } from '../../../../lib/db/schema.ts';
+
+export type ReclaimDisposition = { text: string; disposition: 'reclaimed' | 'moving' | 'release' };
+
+/** The Reclaim capstone's goal-reconciliation: walk the Reclaim List against where each item landed.
+ * Reclaimed → mark it + drop the Goal Reclaimed badge. Moving / not-this-lap → carries to the next lap.
+ * Feeds the badges + Playbook synthesis + the Loop. Run before the capstone declaration. */
+export async function reconcileReclaim(
+  memberId: string,
+  dispositions: ReclaimDisposition[],
+): Promise<{ ok: boolean; reclaimed: number; carried: number; badgeName: string | null }> {
+  if (!(await authorizeMember(memberId))) return { ok: false, reclaimed: 0, carried: 0, badgeName: null };
+  try {
+    const db = (await getDb()) as unknown as Db;
+    let reclaimed = 0;
+    let carried = 0;
+    for (const d of dispositions) {
+      if (d.disposition === 'reclaimed') {
+        const r = await markReclaimReclaimedByText(db, memberId, d.text);
+        if (r.ok) reclaimed++;
+      } else {
+        carried++; // moving + not-this-lap both carry to the next lap (the Loop); nothing destroyed
+      }
+    }
+    let badgeName: string | null = null;
+    if (reclaimed > 0) {
+      await earnBadge(db, memberId, 'goal-reclaimed');
+      badgeName = getBadge('goal-reclaimed')?.name ?? null;
+    }
+    await refreshPlaybookSynthesis(db, memberId); // the reconciliation re-weaves the story
+    revalidatePath(`/dashboard/${memberId}`);
+    return { ok: true, reclaimed, carried, badgeName };
+  } catch {
+    return { ok: false, reclaimed: 0, carried: 0, badgeName: null };
+  }
+}
+
+/** The Reclaim List for the capstone reconciliation UI (text + current state). */
+export async function reclaimForReconcile(memberId: string): Promise<{ text: string; state: string }[]> {
+  if (!(await authorizeMember(memberId))) return [];
+  try {
+    const db = (await getDb()) as unknown as Db;
+    return (await getReclaimItems(db, memberId)).map((i) => ({ text: i.text, state: i.state }));
+  } catch {
+    return [];
+  }
+}
 
 const doorName = (slug: string): string => DOORS.find((d) => d.slug === slug)?.displayName ?? slug;
 
