@@ -3,6 +3,11 @@
 // Live Claude when ANTHROPIC_API_KEY is set; deterministic scripted fallback otherwise (and on
 // any live failure — graceful degradation).
 //
+// SCOPE (see docs/founder-agent-reconcile.md): these are v1.0's FIVE event-driven DRAFT moments.
+// v1.0's sixth moment — Ambient Educational Surfacing — is "library, not draft" (the dashboard
+// educational layer), a separate concern, not a gap here. v2.0 (cross-tenant admin) is dated
+// July 2027 / Stage 2–3 and is correctly NOT built now (architecture #3: dormant at launch).
+//
 // NOTE: Jay's real writing corpus (Layer 2 — prior emails, book Part Three) is not wired yet;
 // the voice here is described in the system prompt. The corpus drops in later for true fidelity.
 
