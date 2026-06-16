@@ -1,5 +1,6 @@
 'use server';
 
+import { revalidatePath } from 'next/cache';
 import { getDb } from '../../../../lib/db/index.ts';
 import { authorizeMember } from '../../../authz.ts';
 import { getAsset, getBadge, listCurriculum, PHASE_ORDER } from '../../../../lib/curriculum/registry.ts';
@@ -54,6 +55,7 @@ export async function declareReconnected(memberId: string, checkpointId: string,
     const firstRewire = firstSessionOfNextPhase(asset.phase);
     const ctx = await buildCtx(db, memberId, reflection);
     const affirmation = await checkpointAffirmation(ctx, firstRewire?.title ?? 'your next Session');
+    revalidatePath(`/dashboard/${memberId}`); // surface the dropped badge + next phase immediately
     return { ok: true, affirmation, badgeName, firstRewire };
   } catch {
     return { ok: false };

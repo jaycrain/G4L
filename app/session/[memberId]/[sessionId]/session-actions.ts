@@ -1,5 +1,6 @@
 'use server';
 
+import { revalidatePath } from 'next/cache';
 import { getDb } from '../../../../lib/db/index.ts';
 import { authorizeMember } from '../../../authz.ts';
 import { getSession, getBadge } from '../../../../lib/curriculum/registry.ts';
@@ -109,6 +110,7 @@ export async function closeSessionAction(memberId: string, sessionId: string): P
       badgeName = b?.name ?? null;
       ceremony = b?.ceremony ?? false;
     }
+    revalidatePath(`/dashboard/${memberId}`); // light the next Session promptly — no stale cache
     return { ok: true, facet: facetText || session.produces || session.title, badgeId: session.earns ?? null, badgeName, ceremony, newlyEarned };
   } catch {
     return { ok: false, reason: 'error' };

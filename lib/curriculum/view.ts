@@ -26,9 +26,10 @@ export type Forecast = {
   daily: { id: string; title: string; kind: Asset['kind'] }[];
 };
 
-// An asset is "openable" when it's actually built: an authored Session (has steps) or — wired in
-// Phase 5 — the Reconnect Checkpoint. Everything else is content-pending and renders greyed.
-const isBuilt = (a: Asset): boolean => (a.kind === 'session' && !!a.steps?.length) || a.id === 'RCN-CHK';
+// An asset is "openable" when it's actually built: an authored Session (has steps) or ANY Checkpoint
+// (every phase resolves to its own crossable Checkpoint — the page + actions are phase-generic). Other
+// kinds (measurement/pulse/tracker) are content-pending and render greyed until the daily-layer pass.
+const isBuilt = (a: Asset): boolean => (a.kind === 'session' && !!a.steps?.length) || a.kind === 'checkpoint';
 
 function activePhaseIndex(gates: Set<string>): number {
   let i = 0;

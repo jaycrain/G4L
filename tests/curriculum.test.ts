@@ -83,6 +83,15 @@ test('the whole program is authored — all four phases, every Session has steps
   for (const id of ['RCN-CHK', 'RWR-CHK', 'RBD-CHK', 'RCL-CHK']) assert.ok(getAsset(id)!.earns, `${id} earns a badge`);
 });
 
+test('every Checkpoint is crossable (openable) — so each phase resolves to its OWN checkpoint', async () => {
+  const { getForecast } = await import('../lib/curriculum/view.ts');
+  const { db, memberId } = await seed();
+  const f = await getForecast(db, memberId);
+  const cps = f.phases.flatMap((p) => p.items).filter((i) => i.kind === 'checkpoint');
+  assert.equal(cps.length, 4); // one per phase
+  for (const c of cps) assert.equal(c.openable, true, `${c.id} should be crossable`);
+});
+
 test('the daily layer runs across, separate from the phase columns', () => {
   const daily = dailyLayer();
   assert.ok(daily.length >= 5);
