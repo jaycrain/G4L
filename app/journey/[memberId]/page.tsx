@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { getDb } from '../../../lib/db/index.ts';
 import { getJourney } from '../../../lib/beats/store.ts';
 import { authorizeMember } from '../../authz.ts';
+import { logEvent } from '../../../lib/telemetry/store.ts';
 import type { Db } from '../../../lib/db/schema.ts';
 
 // "More about your Journey" — the map explainer (copy v1.0) + the member's place + Reclaim tally.
@@ -10,6 +11,7 @@ export default async function JourneyMorePage({ params }: { params: Promise<{ me
   const { memberId } = await params;
   if (!(await authorizeMember(memberId))) redirect('/login');
   const db = (await getDb()) as unknown as Db;
+  await logEvent(db, memberId, 'page_view', { surface: 'journey' });
   const journey = await getJourney(db, memberId);
   const r = journey.reclaim;
 

@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { getDb } from '../../../lib/db/index.ts';
 import { authorizeMember } from '../../authz.ts';
 import { getFacets, getForecast } from '../../../lib/curriculum/view.ts';
+import { logEvent } from '../../../lib/telemetry/store.ts';
 import type { Db } from '../../../lib/db/schema.ts';
 
 const HERO_VERB: Record<string, string> = { reconnect: 'Reconnecting', rewire: 'Rewiring', rebuild: 'Rebuilding', reclaim: 'Reclaiming' };
@@ -13,6 +14,7 @@ export default async function FieldGuidePage({ params }: { params: Promise<{ mem
   const { memberId } = await params;
   if (!(await authorizeMember(memberId))) redirect('/login');
   const db = (await getDb()) as unknown as Db;
+  await logEvent(db, memberId, 'page_view', { surface: 'field_guide' });
   const [facets, forecast] = await Promise.all([getFacets(db, memberId), getForecast(db, memberId)]);
   const verb = HERO_VERB[forecast.phases.find((p) => p.status === "You're here")?.phase ?? 'reconnect'] ?? 'Reconnecting';
   const identityLine = facets.length ? `${verb} ${facets.join(' · ')}` : 'Reconnecting';

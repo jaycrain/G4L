@@ -59,6 +59,7 @@ export type FounderContext = {
   currentFocus: string | null;
   lastCompletedAsset: string | null;
   intakeQuote: string | null;
+  experienceSummary?: string | null; // how they've moved through the program (telemetry) — reflect, never grade
 };
 
 export type Draft = { subject: string; body: string };
@@ -138,6 +139,7 @@ function contextLines(c: FounderContext): string {
     c.idScore !== null ? `Latest ID Score: ${c.idScore}${c.direction ? ` (${c.direction}${c.delta != null ? `, ${c.delta > 0 ? '+' : ''}${c.delta}` : ''})` : ''}` : 'No IDQ yet',
     c.currentFocus ? `Current focus: ${c.currentFocus}` : null,
     c.lastCompletedAsset ? `Most recent asset: ${c.lastCompletedAsset}` : null,
+    c.experienceSummary ? `How they've moved through the program (reflect, don't grade): ${c.experienceSummary}` : null,
     c.intakeQuote ? `Their intake words: "${c.intakeQuote}"` : null,
   ].filter(Boolean).join('\n');
 }

@@ -8,6 +8,7 @@ import { checkpointOpening } from '../../../../lib/agent/checkpoint-guide.ts';
 import { getPlaybookSynthesis } from '../../../../lib/agent/playbook-synthesis.ts';
 import { reclaimForReconcile } from './checkpoint-actions.ts';
 import { DOORS, isDoorSlug } from '../../../../lib/doors.ts';
+import { logEvent } from '../../../../lib/telemetry/store.ts';
 import type { Db } from '../../../../lib/db/schema.ts';
 
 const doorName = (slug: string): string => DOORS.find((d) => d.slug === slug)?.displayName ?? slug;
@@ -26,6 +27,8 @@ export default async function CheckpointPage({ params }: { params: Promise<{ mem
 
   // Already crossed → no re-gating; send them back to the dashboard.
   if (await hasGate(db, memberId, `${asset.phase}_checkpoint_passed`)) redirect(`/dashboard/${memberId}`);
+
+  await logEvent(db, memberId, 'checkpoint_open', { surface: 'checkpoint', ref: checkpointId }); // arriving at the gate
 
   const prof = (
     await db.query<{ display_name: string; agent_memory: string | null }>('select display_name, agent_memory from member_profile where member_id=$1', [memberId])

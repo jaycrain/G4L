@@ -26,6 +26,7 @@ import { listPlaybook } from '../../../lib/playbook/store.ts';
 import { getForecast, getPassport, getFacets, ensureOnboardingBadge } from '../../../lib/curriculum/view.ts';
 import { logoutAction } from '../../login/actions.ts';
 import { authorizeMember } from '../../authz.ts';
+import { logEvent } from '../../../lib/telemetry/store.ts';
 import { redirect } from 'next/navigation';
 
 // Give the companion's live turns room to finish (the Member Agent call is the long pole).
@@ -43,6 +44,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
   const dash = await getDashboard(db, memberId);
   if (!dash) return <p className="error">We couldn&apos;t find that member.</p>;
 
+  await logEvent(db, memberId, 'page_view', { surface: 'dashboard' });
   // Reaching the dashboard means onboarding was completed — seed the passport's first badge.
   await ensureOnboardingBadge(db, memberId);
 

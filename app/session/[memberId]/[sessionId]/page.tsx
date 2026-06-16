@@ -7,6 +7,7 @@ import { getSessionProgress } from '../../../../lib/curriculum/store.ts';
 import type { Db } from '../../../../lib/db/schema.ts';
 import SessionRunner from './session-runner.tsx';
 import { frameForStep } from './session-actions.ts';
+import { logEvent } from '../../../../lib/telemetry/store.ts';
 
 export const maxDuration = 30;
 
@@ -55,6 +56,10 @@ export default async function SessionPage({ params }: { params: Promise<{ member
       </>
     );
   }
+
+  // Telemetry: each visit to a working Session is an "open" (re-engagement counts toward
+  // time-on-asset + the companion noticing returns). Closed re-visits already returned above.
+  await logEvent(db, memberId, 'session_open', { surface: 'session', ref: sessionId, step: initialStep });
 
   const initialFrame = await frameForStep(memberId, sessionId, initialStep);
 

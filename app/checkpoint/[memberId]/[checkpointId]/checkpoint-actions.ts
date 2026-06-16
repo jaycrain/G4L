@@ -9,6 +9,7 @@ import { checkpointAffirmation, checkpointHold, type CheckpointCtx } from '../..
 import { getPlaybookSynthesis, refreshPlaybookSynthesis } from '../../../../lib/agent/playbook-synthesis.ts';
 import { getReclaimItems, markReclaimReclaimedByText } from '../../../../lib/beats/store.ts';
 import { DOORS, isDoorSlug } from '../../../../lib/doors.ts';
+import { logEvent } from '../../../../lib/telemetry/store.ts';
 import type { Db } from '../../../../lib/db/schema.ts';
 
 export type ReclaimDisposition = { text: string; disposition: 'reclaimed' | 'moving' | 'release' };
@@ -96,6 +97,7 @@ export async function declareReconnected(memberId: string, checkpointId: string,
     const next = PHASE_ORDER[idx + 1];
     await setGate(db, memberId, `${asset.phase}_checkpoint_passed`);
     if (next) await setGate(db, memberId, `${next}_unlocked`);
+    await logEvent(db, memberId, 'checkpoint_cross', { surface: 'checkpoint', ref: checkpointId, meta: { phase: asset.phase } });
     let badgeName: string | null = null;
     if (asset.earns) {
       await earnBadge(db, memberId, asset.earns);

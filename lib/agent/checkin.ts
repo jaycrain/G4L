@@ -52,6 +52,9 @@ export type CheckinContext = {
   // What moved on their dashboard since they last talked with you (Pillar 2) — score/GRINTA/Beats/
   // trackers/reclaimed. The agent notices the meaningful one or two warmly; never a data dump.
   recentChanges?: string[];
+  // How they've actually moved through the program (experience telemetry): time-on-asset, where they
+  // stalled, what they keep returning to. For awareness — notice a stall or a return warmly, never grade.
+  experienceSummary?: string | null;
 };
 
 export type CheckinMessage = { role: 'agent' | 'member'; text: string };
@@ -103,6 +106,9 @@ export function contextBlock(c: CheckinContext): string {
     c.currentFocus ? `Current focus: ${c.currentFocus}` : null,
     c.grintaScore != null ? `GRINTA! Index: ${c.grintaScore}${c.grintaTrend ? ` (${c.grintaTrend} lately)` : ''}` : null,
     c.beatsDone != null ? `Beats worked so far: ${c.beatsDone}` : null,
+    c.experienceSummary && c.experienceSummary.trim()
+      ? `How they've moved through the program lately (for awareness — gently notice a stall or a return, e.g. "you opened Visualization a couple times — want to pick it back up?"; NEVER grade or guilt): ${c.experienceSummary.trim()}`
+      : null,
     c.consumedBites && c.consumedBites.length ? `Recently read: ${c.consumedBites.join('; ')}` : null,
     c.dailyBeat ? `Today's Daily Beat on their dashboard (a reflection they may have read — only speak to it if they raise it): "${c.dailyBeat}"` : null,
     reclaim,

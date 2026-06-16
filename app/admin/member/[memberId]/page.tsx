@@ -6,8 +6,9 @@ import { MOMENTS, type OperatingMoment } from '../../../../lib/founder/draft.ts'
 import { countSubscriptions } from '../../../../lib/push/store.ts';
 import { buildNudge } from '../../../../lib/agent/nudge.ts';
 import { getMemberUsage, relativeTime } from '../../../../lib/admin/roster.ts';
+import { getMemberExperience } from '../../../../lib/telemetry/store.ts';
 import { getForecast, getPassport, getFacets } from '../../../../lib/curriculum/view.ts';
-import { getSession } from '../../../../lib/curriculum/registry.ts';
+import { getSession, getAsset } from '../../../../lib/curriculum/registry.ts';
 import { redirect } from 'next/navigation';
 import type { Db } from '../../../../lib/db/schema.ts';
 import { generateDraftAction } from '../../actions.ts';
@@ -25,14 +26,15 @@ export default async function AdminMember({ params }: { params: Promise<{ member
   const drafts = await listForMember(db, memberId);
   const pushCount = await countSubscriptions(db, memberId);
   const nudge = await buildNudge(db, memberId);
-  const [usage, forecast, passport, facets] = await Promise.all([
+  const sessionTitle = (id: string) => getSession(id)?.title ?? id;
+  const [usage, forecast, passport, facets, experience] = await Promise.all([
     getMemberUsage(db, memberId),
     getForecast(db, memberId),
     getPassport(db, memberId),
     getFacets(db, memberId),
+    getMemberExperience(db, memberId, (id) => getAsset(id)?.title ?? id),
   ]);
   const now = Date.now();
-  const sessionTitle = (id: string) => getSession(id)?.title ?? id;
   const STATUS_LABEL: Record<string, string> = { closed: 'closed', in_progress: 'in progress', locked: 'locked' };
 
   return (
@@ -121,6 +123,56 @@ export default async function AdminMember({ params }: { params: Promise<{ member
           {usage.checkinDays} check-in day{usage.checkinDays === 1 ? '' : 's'}
           {usage.lastMessageAt && <span className="muted"> (last message {relativeTime(usage.lastMessageAt, now)})</span>}
         </p>
+      </div>
+
+      <div className="card">
+        <h3>How they moved through it</h3>
+        <p className="muted">
+          Experience telemetry — time-on-asset, where they stalled, what they keep returning to. The same read
+          both agents now hold (so the companion can notice a stall, and a draft can reflect real experience).
+        </p>
+
+        {experience.sessions.length > 0 ? (
+          <ul className="member-sessions">
+            {experience.sessions.map((s) => {
+              const min = s.durationMs != null ? Math.max(1, Math.round(s.durationMs / 60000)) : null;
+              return (
+                <li key={s.sessionId}>
+                  <span className="member-session-title">{sessionTitle(s.sessionId)}</span>{' '}
+                  {s.closed ? (
+                    <span className="muted">
+                      closed{min != null ? ` · ~${min} min` : ''}
+                      {s.opens > 1 ? ` · opened ${s.opens}×` : ''} · {relativeTime(s.closedAt, now)}
+                    </span>
+                  ) : (
+                    <span className="muted">
+                      {s.opens > 1 ? `opened ${s.opens}× · ` : ''}
+                      {s.dropOffStep ? `stalled at step ${s.dropOffStep}` : 'opened, no steps yet'} · {relativeTime(s.lastActivityAt, now)}
+                    </span>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        ) : (
+          <p className="muted">No Session telemetry yet — events accrue as they work through Sessions.</p>
+        )}
+
+        {experience.surfaces.length > 0 && (
+          <p className="member-meta">
+            <strong>Surfaces opened:</strong>{' '}
+            {experience.surfaces.map((u, i) => (
+              <span key={u.surface}>
+                {i > 0 && ' · '}
+                {u.surface.replace(/_/g, ' ')} <span className="muted">({u.views})</span>
+              </span>
+            ))}
+          </p>
+        )}
+
+        {experience.summary && (
+          <p className="member-meta muted"><em>Agent read:</em> {experience.summary}</p>
+        )}
       </div>
 
       <div className="card">

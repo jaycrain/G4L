@@ -5,6 +5,8 @@
 import type { Db } from '../db/schema.ts';
 import { getDashboard } from '../gateway/flow.ts';
 import { firstName } from '../member/avatar.ts';
+import { getMemberExperience } from '../telemetry/store.ts';
+import { getAsset } from '../curriculum/registry.ts';
 import type { FounderContext } from './draft.ts';
 
 export async function buildFounderContext(
@@ -14,12 +16,12 @@ export async function buildFounderContext(
 ): Promise<FounderContext | null> {
   const dash = await getDashboard(db, memberId);
   if (!dash) return null;
-  const prof = (
-    await db.query<{ intake_right_now: string | null }>(
-      'select intake_right_now from member_profile where member_id = $1',
-      [memberId],
-    )
-  ).rows[0];
+  const [prof, experience] = await Promise.all([
+    db
+      .query<{ intake_right_now: string | null }>('select intake_right_now from member_profile where member_id = $1', [memberId])
+      .then((r) => r.rows[0]),
+    getMemberExperience(db, memberId, (id) => getAsset(id)?.title ?? id),
+  ]);
   return {
     firstName: firstName(dash.displayName || ''),
     identityNoun: dash.identityNoun,
@@ -31,5 +33,6 @@ export async function buildFounderContext(
     currentFocus: dash.currentFocus?.label ?? null,
     lastCompletedAsset: opts?.lastCompletedAsset ?? null,
     intakeQuote: prof?.intake_right_now ?? null,
+    experienceSummary: experience.summary || null,
   };
 }

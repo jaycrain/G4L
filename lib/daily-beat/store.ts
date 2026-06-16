@@ -3,6 +3,7 @@
 // The pick is persisted in daily_beat_log so a given day is stable on refresh.
 import type { Db } from '../db/schema.ts';
 import { REFLECTIONS, reflectionById, type Reflection } from './reflections.ts';
+import { logEvent } from '../telemetry/store.ts';
 
 const CYCLE = REFLECTIONS.length; // 70 — the no-repeat window
 
@@ -57,7 +58,10 @@ export async function getDailyBeat(db: Db, memberId: string, currentR: string | 
      on conflict (member_id, shown_on) do nothing returning reflection_id`,
     [memberId, today, pick.id],
   );
-  if (ins.rows[0]) return pick;
+  if (ins.rows[0]) {
+    await logEvent(db, memberId, 'daily_beat_view', { surface: 'dashboard', ref: pick.id }); // first surfacing today
+    return pick;
+  }
   const after = await db.query<{ reflection_id: string }>(
     'select reflection_id from daily_beat_log where member_id=$1 and shown_on=$2',
     [memberId, today],

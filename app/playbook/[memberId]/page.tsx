@@ -3,6 +3,7 @@ import { authorizeMember } from '../../authz.ts';
 import { getDb } from '../../../lib/db/index.ts';
 import { listPlaybook } from '../../../lib/playbook/store.ts';
 import { getPlaybookSynthesis } from '../../../lib/agent/playbook-synthesis.ts';
+import { logEvent } from '../../../lib/telemetry/store.ts';
 import type { Db } from '../../../lib/db/schema.ts';
 import PlaybookView from './playbook-view.tsx';
 
@@ -14,6 +15,7 @@ export default async function PlaybookPage({ params }: { params: Promise<{ membe
   const { memberId } = await params;
   if (!(await authorizeMember(memberId))) redirect('/login');
   const db = (await getDb()) as unknown as Db;
+  await logEvent(db, memberId, 'page_view', { surface: 'playbook' });
   const entries = await listPlaybook(db, memberId);
   // Is there past work to gather? (drives the context-aware empty-state CTA)
   const hist = await db.query<{ n: number }>(

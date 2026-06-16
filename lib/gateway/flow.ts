@@ -14,6 +14,7 @@ import { isCategory } from '../beats/registry.ts';
 import { scoreIdq, computeMovement, type DimensionScores } from '../idq/scoring.ts';
 import { listMeasures, type MeasureView } from '../measure/store.ts';
 import { validateResponses, DIMENSIONS, type Dimension } from '../idq/instrument.ts';
+import { logEvent } from '../telemetry/store.ts';
 
 const doorName = (slug: DoorSlug) => DOORS.find((d) => d.slug === slug)!.displayName;
 
@@ -138,6 +139,7 @@ export async function submitIdq(db: Db, memberId: string, responses: number[]): 
      score.idScoreRaw, score.idScore,
      movement.deltaFromBaseline, movement.deltaFromPrevious, movement.direction],
   );
+  await logEvent(db, memberId, 'idq_complete', { surface: 'idq', step: sequenceNo, meta: { idScore: score.idScore, sequenceNo } });
   // Baseline closes the Reconnect gateway → mark the onboarding-covered Beats done so the dashboard
   // opens at the next real work.
   if (sequenceNo === 0) await seedOnboardingBeats(db, memberId);

@@ -10,6 +10,7 @@ import { refreshIdentityNarrative } from '../../../../lib/agent/identity-narrati
 import { harvestSessionToPlaybook } from '../../../../lib/agent/session-harvest.ts';
 import { refreshPlaybookSynthesis } from '../../../../lib/agent/playbook-synthesis.ts';
 import { getMemberDoors, getMemberDoorNames, setMemberDoors, reconcileDoors } from '../../../../lib/member/refine.ts';
+import { logEvent } from '../../../../lib/telemetry/store.ts';
 import type { Db } from '../../../../lib/db/schema.ts';
 
 async function memberMeta(db: Db, memberId: string): Promise<{ displayName: string; memory: string | null }> {
@@ -85,6 +86,8 @@ export async function saveStep(memberId: string, sessionId: string, stepN: numbe
   try {
     const db = (await getDb()) as unknown as Db;
     await saveAnswer(db, memberId, sessionId, stepN, answer.trim(), nextStep);
+    // Telemetry: record the step they advanced TO — drives furthest-step / drop-off.
+    await logEvent(db, memberId, 'session_step', { surface: 'session', ref: sessionId, step: nextStep });
     return { ok: true };
   } catch {
     return { ok: false };
@@ -149,6 +152,7 @@ export async function closeSessionAction(memberId: string, sessionId: string): P
       }
     }
     await closeSession(db, memberId, sessionId);
+    await logEvent(db, memberId, 'session_close', { surface: 'session', ref: sessionId }); // closes the time-on-asset window
     // Best-effort, concurrent (neither breaks the close): harvest the member's words into their Playbook
     // (every Session), and — for identity Sessions only — re-sharpen the dashboard mirror.
     const tasks: Promise<unknown>[] = [

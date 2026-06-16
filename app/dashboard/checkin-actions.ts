@@ -23,6 +23,7 @@ import { listFacets, closedSessionIds } from '../../lib/curriculum/store.ts';
 import { getForecast } from '../../lib/curriculum/view.ts';
 import { getAsset } from '../../lib/curriculum/registry.ts';
 import { getDailyBeat } from '../../lib/daily-beat/store.ts';
+import { getMemberExperience } from '../../lib/telemetry/store.ts';
 import { itemStem, dimensionForIndex } from '../../lib/idq/instrument.ts';
 import { authorizeMember } from '../authz.ts';
 import type { Db } from '../../lib/db/schema.ts';
@@ -33,7 +34,7 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
   const dash = await getDashboard(db, memberId);
   if (!dash) return null;
   await maybeFoldMemory(db, memberId); // distill anything that has aged out of recall (best-effort, no-op until due)
-  const [grinta, consumedBites, profRows, idqRows, reclaimItems, beatRows, playbook, measures, linkedMeasureRows, facets, closedIds, lastClosedRows, forecast] = await Promise.all([
+  const [grinta, consumedBites, profRows, idqRows, reclaimItems, beatRows, playbook, measures, linkedMeasureRows, facets, closedIds, lastClosedRows, forecast, experience] = await Promise.all([
     getGrinta(db, memberId, dash.identityNoun),
     recentConsumedTitles(db, memberId),
     db.query<{ intake_athletic_past: string | null; intake_gap: string | null; agent_memory: string | null; dashboard_snapshot: unknown }>(
@@ -60,6 +61,7 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
       [memberId],
     ),
     getForecast(db, memberId),
+    getMemberExperience(db, memberId, (id) => getAsset(id)?.title ?? id),
   ]);
   const prof = profRows.rows[0];
 
@@ -150,6 +152,7 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
     trackableUntracked,
     agentMemory: prof?.agent_memory ?? null,
     recentChanges,
+    experienceSummary: experience.summary || null,
   };
 }
 

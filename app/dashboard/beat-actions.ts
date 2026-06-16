@@ -7,6 +7,7 @@
 import { getDb } from '../../lib/db/index.ts';
 import { authorizeMember } from '../authz.ts';
 import { nextBeat, completeBeat, type ServedBeat } from '../../lib/beats/store.ts';
+import { logEvent } from '../../lib/telemetry/store.ts';
 import type { Db } from '../../lib/db/schema.ts';
 
 export async function loadNextBeatAction(memberId: string): Promise<ServedBeat | null> {
@@ -25,6 +26,7 @@ export async function closeBeatAction(
   if (!(await authorizeMember(memberId))) return { ok: false, next: null, reclaimed: false };
   const db = (await getDb()) as unknown as Db;
   const res = await completeBeat(db, memberId, beatId, response);
+  if (res) await logEvent(db, memberId, 'beat_close', { surface: 'dashboard', ref: beatId, meta: { response } });
   const next = await nextBeat(db, memberId);
   return { ok: !!res, next, reclaimed: res?.itemReclaimed ?? false };
 }
