@@ -12,6 +12,7 @@ import {
   memberWantsToWrap,
   doorEngaged,
   ensureIdqHandoff,
+  stripLeadingDisclosure,
   INITIAL_STATE,
   type ConvState,
   type Collected,
@@ -178,6 +179,19 @@ test('isAffirmation recognizes short confirmations (incl. "for sure"), not longe
   assert.equal(isAffirmation('yes, and also my finances really started to pile on around then too'), false);
   assert.equal(isAffirmation('not really, there was more to it'), false);
   assert.equal(isAffirmation(''), false);
+});
+
+test('stripLeadingDisclosure removes a repeated AI disclosure but leaves the real reply', () => {
+  // The exact turn-2 leak from Joanne's run: disclosure prepended to the actual reflection.
+  const leaked =
+    "This conversation is guided by AI. Everything you share shapes your G4L experience and is handled with the same care you'd expect from a person. You can stop at any time.\n\nThat's a vivid picture — the one who held the social fabric together. So — the Connector. Does that land?";
+  const out = stripLeadingDisclosure(leaked);
+  assert.doesNotMatch(out, /guided by AI/);
+  assert.match(out, /^That's a vivid picture/);
+  assert.match(out, /the Connector/);
+  // A normal reply (no disclosure) is untouched.
+  const clean = 'So — the Connector. Does that land, or is there a closer word?';
+  assert.equal(stripLeadingDisclosure(clean), clean);
 });
 
 test('ensureIdqHandoff keeps the model\'s summary and only adds the IDQ transition when missing', () => {

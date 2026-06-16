@@ -101,6 +101,15 @@ export function ensureIdqHandoff(modelText: string): string {
   return /ready when you are/i.test(t) ? t : `${t}\n\n${IDQ_HANDOFF_TAIL}`;
 }
 
+// The AI disclosure is shown ONCE, on the start page (the gate). The live model still sometimes opens
+// its first spoken turn with it — it's the final instruction in the shared system prompt — which lands
+// redundantly mid-conversation (the awkward turn-2 disclosure). Strip a leading disclosure so it never
+// repeats inside onboarding; the start-page disclosure remains the single, up-front one (governance met).
+const DISCLOSURE_LEAD_RE = /^\s*this conversation is guided by ai\b[\s\S]*?stop at any time\.?\s*/i;
+export function stripLeadingDisclosure(text: string): string {
+  return text.replace(DISCLOSURE_LEAD_RE, '').replace(/^\s+/, '');
+}
+
 // Derive the stage from what's collected — keeps state coherent on the live path so a scripted
 // fallback (after a transient live failure) resumes at the right question instead of restarting.
 export function nextStage(c: Collected): Stage {
@@ -366,6 +375,7 @@ CLOSE WITH A SUMMARY, NOT A LIST. Once you understand how the gap opened and hav
 (5) THE HANDOFF — a set of honest questions to see how far the gap runs comes next, no studying, no score — end with "Ready when you are."
 NEVER close on a bare label: the member should feel their whole story reflected, understand what a Door even is, and see their own Reclaim List named back before the conversation moves on.
 
+AI DISCLOSURE — ALREADY SHOWN, DO NOT REPEAT. The member saw the AI disclosure on the start page before this conversation began. Never begin a turn with "This conversation is guided by AI" or otherwise restate that you are AI / that they can stop — that is handled. Open straight into your reflection and question. (This overrides the disclosure note in the base instructions above, which applies to other moments, not onboarding.)
 VOICE: no meta-narration about the program's own mechanics; gender-inclusive; warm, direct, short sentences. Let the Fade carry the weight, not statistics.
 TURN-TAKING (important): reflect first, then ALWAYS end your turn with exactly ONE clear question or prompt that tells the member what to do next. Never end on a bare statement or reflection — that strands the member, unsure whether it is their turn. The ONLY turn without a question is the final IDQ handoff, which closes with "Ready when you are."
 ALWAYS write a spoken message to the member on EVERY turn — never respond with only a tool call and no text (a tool-only turn makes the app repeat the last prompt, which feels broken). And NEVER re-ask a question the member has already answered or repeat a prompt you've already sent — if you have their answer, acknowledge it and move forward. Once you understand how the gap opened and have mapped at least one Door, record it and move to the handoff; do not keep circling the same question.
@@ -445,6 +455,7 @@ async function liveTurn(
       wantsComplete = Boolean(p.complete);
     }
   }
+  reply = stripLeadingDisclosure(reply); // disclosure lives on the start page — never repeat it here
 
   // SAFETY NET: the model sometimes explores the Door(s) in prose but forgets to record them in the
   // tool — which strands the beat re-asking the opening question (its stage prompt). If the core is
