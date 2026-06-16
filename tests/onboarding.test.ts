@@ -9,6 +9,7 @@ import {
   resolveCompletion,
   isAffirmation,
   isDoorDispute,
+  memberWantsToWrap,
   doorEngaged,
   ensureIdqHandoff,
   INITIAL_STATE,
@@ -117,6 +118,24 @@ test('completion is gated on BOTH sides: explore first, then close reliably', ()
   assert.equal(resolveCompletion(full, false, 6).complete, true);
   // ...but never before requirements are met (missing a Door keeps it out of the door beat entirely).
   assert.equal(resolveCompletion(partial, true, 9).complete, false);
+});
+
+test('the member ending the beat wraps it — even below the explore-minimum (Independence Guarantee)', () => {
+  const full = { athleticPast: 'x', identityNoun: 'Adventurer', reclaimList: ['a', 'b', 'c'], doors: ['body'] } as Collected;
+  // "I'm done" on door turn 1 (below the 3-turn floor) still completes — the member's call to stop wins.
+  assert.equal(resolveCompletion(full, false, 1, false, false, true).complete, true);
+  // but a dispute still holds even if they sound done-ish (blocked overrides memberDone)
+  assert.equal(resolveCompletion(full, false, 1, false, true, true).complete, false);
+  // without the done signal, turn 1 still holds for exploration
+  assert.equal(resolveCompletion(full, false, 1, false, false, false).complete, false);
+});
+
+test('memberWantsToWrap catches a clear "I\'m done" (incl. Joanne\'s line), not a normal answer', () => {
+  for (const m of ['I am done I think as I want to go to bed', "that's it", 'nothing else', "let's move on", 'this is enough for now']) {
+    assert.equal(memberWantsToWrap(m), true, `wrap: "${m}"`);
+  }
+  assert.equal(memberWantsToWrap('it was the body, and the career too'), false);
+  assert.equal(memberWantsToWrap('there was more to it actually'), false);
 });
 
 test('a Door dispute reopens the beat — never wraps, even past the soft cap or when the model says complete', () => {

@@ -147,6 +147,15 @@ export function isDoorDispute(message: string): boolean {
   return DISPUTE_RE.test((message ?? '').replace(/[‘’]/g, "'"));
 }
 
+// The member clearly ending the Door beat ("I'm done", "that's it", "nothing else", "let's move on").
+// This is the member's call to make — it OVERRIDES the explore-minimum (which only exists to stop the
+// model racing, never to trap a member who wants to stop). Independence Guarantee: stop anytime.
+const WRAP_RE =
+  /\b(i'?m done|i am done|that'?s it|that is it|that'?s all|that is all|nothing (else|more)|no more|that'?s the whole|ready to move on|let'?s move on|move (on|forward)|enough for now|i'?m good|i think i'?m good|wrap (it )?up|go to bed|that'?s enough)\b/i;
+export function memberWantsToWrap(message: string): boolean {
+  return WRAP_RE.test((message ?? '').replace(/[‘’]/g, "'"));
+}
+
 // At the naming step, a member may genuinely not know yet — honor it, don't force a label.
 const DECLINE_IDENTITY_RE =
   /\b(not sure|don'?t know|dunno|no idea|no clue|unsure|can'?t say|hard to say|not yet|don'?t have (one|a word)|skip|pass|i don'?t)\b/i;
@@ -157,6 +166,7 @@ export function resolveCompletion(
   doorTurns = 0,
   memberAffirmed = false,
   blocked = false, // a Door dispute this turn — never wrap; reopen the beat instead
+  memberDone = false, // the member explicitly ended the beat — honor it, even below the explore-minimum
 ): { complete: boolean; stage: Stage; exploringDoor: boolean } {
   const reqsMet =
     !!collected.athleticPast &&
@@ -165,7 +175,9 @@ export function resolveCompletion(
     (collected.doors?.length ?? 0) >= 1;
   const exploredEnough = doorTurns >= DOOR_MIN_TURNS;
   const mustWrap = doorTurns >= DOOR_MAX_TURNS;
-  const complete = !blocked && reqsMet && exploredEnough && (wantsComplete || memberAffirmed || mustWrap);
+  // The member saying they're done wraps it even before the explore-minimum — the floor exists to stop
+  // the MODEL racing, not to override the MEMBER. Otherwise it's: explored enough + a signal to close.
+  const complete = !blocked && reqsMet && (memberDone || (exploredEnough && (wantsComplete || memberAffirmed || mustWrap)));
   // We hold in the Door beat whenever we have a Door but aren't completing — so the engine keeps the
   // conversation there (widening to other Doors, then deepening) instead of stranding or rushing.
   const exploringDoor = !complete && reqsMet;
@@ -326,6 +338,8 @@ For EACH item, also assign a category — the area it belongs to: physical (body
 
 3) FADE DOOR(S) — EXPLORE, never list. This is the most important and most vulnerable beat. Open it with a real question about how the gap opened ("Something opened this gap, and it's rarely all at once — what happened? When did you first feel the drift?"). Then have a CONVERSATION, not a form: follow up to understand HOW it unfolded — the sequence, when they first noticed, what it quietly cost them — reflecting their own words back. Your job is to understand how it happened, not just that it did. Stay with their story for two or three exchanges; don't rush to wrap it.
 THE GAP IS USUALLY MORE THAN ONE DOOR. The Fade rarely opens through a single event — the body starts saying no AND the career plateaus; the nest empties AND a parent gets sick. Once you understand the FIRST door, explicitly check whether others stacked onto it ("Was that the whole of it, or did something else pile on around the same time?"). Capture every door that genuinely applies, not just the first one named. Ask this once — don't interrogate; if they say it was just the one, accept that and move on.
+NOT EVERYONE HAS A CLASSIC FADE — and you must not force one. Some members are thriving and want MORE: to optimize, expand, chase peak experiences, not recover from a loss. If they tell you they haven't drifted ("I just want more", "no pressing issues"), DO NOT push a drift narrative or keep asking how the gap opened. Acknowledge it plainly, capture the Door that best fits the pull they DO name (often the Body / the closing window of time, or the nearest one), confirm it lightly, and move to the handoff.
+HONOR "DONE." The moment a member signals they're finished — "that's it", "I'm done", "let's move on", "that's enough", "I want to go to bed" — WRAP immediately: reflect what you have and hand off. Do NOT ask another question. Their call to stop always overrides your urge to explore one more turn.
 Do NOT recite a menu of Doors or ask them to pick one — listing options stops the conversation cold. The eight Doors below are YOUR private map for tagging, never shown to the member. Map their story silently to one OR MORE of them, and record their account in gap and the mapped slug(s) in doors.
 HOW TO SURFACE A DOOR — context first, the NAME last (never open with the bare label; it's cryptic and unearned). When you recognize which Door fits, reveal it in three beats, not one:
 (1) CONTEXT — reflect what they described back in plain words, using the Door's one-line meaning (given in the map below) as your language, NOT its title. e.g. "the house getting quiet after the kids moved out", "your body starting to say no to what it used to do easily", "the role reversal where you became the one doing the caring." They should feel seen by the description.
@@ -459,12 +473,16 @@ async function liveTurn(
   // The member disputing the Door read must REOPEN the beat: never wrap, never replay the same label —
   // let the model's reply (which reconsiders / re-maps) through instead of the canned handoff.
   const disputed = isDoorDispute(memberMessage) && ((state.collected.doors?.length ?? 0) >= 1 || !!state.collected.gap);
+  // The member explicitly ending the beat wraps it — even below the explore-minimum (Independence
+  // Guarantee). A dispute is the one thing that still holds (they're correcting, not finishing).
+  const memberDone = memberWantsToWrap(memberMessage) && !disputed;
   const { complete, stage, exploringDoor } = resolveCompletion(
     collected,
     wantsComplete && !disputed,
     doorTurns,
     isAffirmation(memberMessage) && !disputed,
     disputed,
+    memberDone,
   );
 
   let finalReply: string;
