@@ -482,6 +482,58 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .member-sessions li:last-child { border-bottom: none; }
 .member-session-title { font-weight: 600; }
 .tele-head { margin: 1rem 0 0.25rem; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--teal); }
+
+/* Send Feedback — quiet ghost pill, bottom-LEFT (opposite the Member Agent bubble); never competes. */
+.fb-launch {
+  position: fixed; left: 18px; bottom: 18px; z-index: 60;
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  padding: 0.5rem 0.9rem; border-radius: 999px;
+  background: var(--white, #fff); color: var(--navy);
+  border: 1px solid var(--panel-line); box-shadow: 0 2px 12px rgba(42, 42, 42, 0.16);
+  font-family: var(--font-barlow); font-weight: 600; font-size: 0.82rem; cursor: pointer;
+}
+.fb-launch:hover { background: rgba(59, 148, 149, 0.08); border-color: var(--navy); }
+.fb-launch svg { color: var(--teal); }
+.fb-panel {
+  position: fixed; left: 18px; bottom: 66px; z-index: 61;
+  width: min(340px, calc(100vw - 36px));
+  background: #fff; border: 1px solid var(--panel-line); border-radius: 12px;
+  box-shadow: 0 10px 34px rgba(42, 42, 42, 0.22); padding: 1rem;
+}
+.fb-panel-head { display: flex; align-items: center; justify-content: space-between; color: var(--navy); }
+.fb-x { background: none; border: none; font-size: 1.3rem; line-height: 1; color: var(--navy); opacity: 0.6; cursor: pointer; padding: 0 0.2rem; }
+.fb-x:hover { opacity: 1; }
+.fb-hint { font-size: 0.8rem; color: var(--charcoal); opacity: 0.8; margin: 0.4rem 0 0.7rem; }
+.fb-kinds { display: flex; gap: 0.4rem; margin-bottom: 0.6rem; }
+.fb-kind {
+  flex: 1; padding: 0.35rem 0; border-radius: 7px; cursor: pointer;
+  background: #fff; color: var(--navy); border: 1px solid var(--panel-line);
+  font-family: var(--font-barlow); font-weight: 600; font-size: 0.78rem;
+}
+.fb-kind.on { background: var(--teal); color: #fff; border-color: var(--teal); }
+.fb-text {
+  width: 100%; box-sizing: border-box; font: inherit; font-size: 0.85rem;
+  padding: 0.55rem; border: 1px solid var(--field-line); border-radius: 7px; resize: vertical;
+}
+.fb-actions { display: flex; justify-content: flex-end; margin-top: 0.6rem; }
+.fb-send {
+  padding: 0.45rem 1.1rem; border-radius: 999px; border: none; cursor: pointer;
+  background: var(--orange); color: #fff; font-family: var(--font-barlow); font-weight: 700; font-size: 0.82rem;
+}
+.fb-send:disabled { opacity: 0.5; cursor: default; }
+.fb-thanks { color: var(--navy); font-weight: 600; margin: 0.3rem 0; }
+/* Feedback queue (admin) */
+.fb-item { border: 1px solid var(--panel-line); border-radius: 8px; padding: 0.7rem 0.8rem; margin-top: 0.6rem; }
+.fb-item-head { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+.fb-kind-chip { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; padding: 0.1rem 0.5rem; border-radius: 999px; background: var(--light-grey, #e8e6e6); color: var(--charcoal); }
+.fb-kind-chip.issue { background: rgba(187, 33, 39, 0.14); color: var(--deep-red, #bb2127); }
+.fb-kind-chip.suggestion { background: rgba(145, 149, 54, 0.16); color: var(--olive); }
+.fb-body { margin: 0.45rem 0 0.3rem; }
+.fb-ctx { font-size: 0.74rem; color: var(--charcoal); opacity: 0.7; }
+.fb-status-row { display: flex; gap: 0.4rem; margin-top: 0.5rem; }
+.fb-status-row form { display: inline; }
+.fb-status-row button { font-size: 0.74rem; padding: 0.2rem 0.6rem; border-radius: 6px; border: 1px solid var(--panel-line); background: #fff; color: var(--navy); cursor: pointer; }
+.fb-status-row button:hover { background: rgba(59, 148, 149, 0.08); }
 .draft-subject { margin: 0.3rem 0; }
 .draft-body { width: 100%; font: inherit; padding: 0.6rem; border: 1px solid var(--navy); border-radius: 6px; }
 .draft-actions { display: flex; gap: 0.6rem; margin-top: 0.6rem; }

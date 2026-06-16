@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Barlow } from 'next/font/google';
 import './globals.css';
 import PwaClient from './pwa-client.tsx';
+import FeedbackLauncher from './feedback-launcher.tsx';
 
 const barlow = Barlow({
   subsets: ['latin'],
@@ -44,6 +45,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           without written permission.
         </footer>
         <PwaClient />
+        <FeedbackLauncher />
       </body>
     </html>
   );

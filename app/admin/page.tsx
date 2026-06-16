@@ -3,6 +3,8 @@ import { redirect } from 'next/navigation';
 import { getDb } from '../../lib/db/index.ts';
 import { listPending } from '../../lib/founder/store.ts';
 import { getRoster, summarizeRoster, relativeTime } from '../../lib/admin/roster.ts';
+import { listFeedback, type FeedbackStatus } from '../../lib/feedback/store.ts';
+import { setFeedbackStatusAction } from '../feedback-actions.ts';
 import { isAdmin } from '../authz.ts';
 import { initials } from '../../lib/member/avatar.ts';
 import type { Db } from '../../lib/db/schema.ts';
@@ -17,8 +19,15 @@ export default async function AdminHome() {
 
   const pending = await listPending(db);
   const roster = await getRoster(db);
+  const feedback = await listFeedback(db);
+  const openFeedback = feedback.filter((f) => f.status !== 'resolved');
   const now = Date.now();
   const summary = summarizeRoster(roster, now);
+  const NEXT_STATUS: Record<FeedbackStatus, { to: FeedbackStatus; label: string }[]> = {
+    new: [{ to: 'triaged', label: 'Triage' }, { to: 'resolved', label: 'Resolve' }],
+    triaged: [{ to: 'resolved', label: 'Resolve' }, { to: 'new', label: 'Reopen' }],
+    resolved: [{ to: 'new', label: 'Reopen' }],
+  };
 
   return (
     <>
@@ -38,6 +47,43 @@ export default async function AdminHome() {
               </li>
             ))}
           </ul>
+        )}
+      </div>
+
+      <div className="card">
+        <h3>Feedback ({openFeedback.length} open · {feedback.length} total)</h3>
+        {feedback.length === 0 ? (
+          <p className="muted">No feedback yet. Members and operators file it from the “Send Feedback” pill.</p>
+        ) : (
+          feedback.map((f) => {
+            const events = Array.isArray(f.context?.recentEvents) ? (f.context.recentEvents as { kind: string; ref: string | null; step: number | null }[]) : [];
+            return (
+              <div key={f.id} className={`fb-item${f.status === 'resolved' ? ' muted' : ''}`}>
+                <div className="fb-item-head">
+                  <span className={`fb-kind-chip ${f.kind}`}>{f.kind}</span>
+                  {f.memberId ? (
+                    <Link href={`/admin/member/${f.memberId}`}><strong>{f.displayName ?? f.author ?? 'Member'}</strong></Link>
+                  ) : (
+                    <strong>{f.author ?? 'Operator'}</strong>
+                  )}
+                  <span className="muted">· {relativeTime(f.createdAt, now)}</span>
+                  {f.status !== 'new' && <span className={`pill ${f.status === 'resolved' ? 'approved' : 'pending'}`}>{f.status}</span>}
+                </div>
+                <p className="fb-body">{f.body}</p>
+                <div className="fb-ctx">
+                  {f.surface && <>on <code>{f.surface}</code></>}
+                  {events.length > 0 && <> · last: {events.slice(-4).map((e) => `${e.kind}${e.ref ? ' ' + e.ref : ''}${e.step ? ' s' + e.step : ''}`).join(' · ')}</>}
+                </div>
+                <div className="fb-status-row">
+                  {NEXT_STATUS[f.status].map((n) => (
+                    <form key={n.to} action={setFeedbackStatusAction.bind(null, f.id, n.to)}>
+                      <button type="submit">{n.label}</button>
+                    </form>
+                  ))}
+                </div>
+              </div>
+            );
+          })
         )}
       </div>
 
