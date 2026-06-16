@@ -137,11 +137,15 @@ export default function PlaybookView({
           <>
             <p className="pb-line">{e.body}</p>
             <div className="pb-meta">
-              {(e.source.label || e.source.kind === 'science') && (
-                <span className={`pb-chip${e.source.kind === 'science' ? ' sci' : ''}`}>
-                  {/* science chips read just "Science" — never a Greg attribution */}
-                  {e.source.kind === 'science' && (!e.source.label || /greg/i.test(e.source.label)) ? 'Science' : e.source.label}
-                </span>
+              {e.section === 'journal' ? (
+                <span className="pb-date">{new Date(e.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+              ) : (
+                (e.source.label || e.source.kind === 'science') && (
+                  <span className={`pb-chip${e.source.kind === 'science' ? ' sci' : ''}`}>
+                    {/* science chips read just "Science" — never a Greg attribution */}
+                    {e.source.kind === 'science' && (!e.source.label || /greg/i.test(e.source.label)) ? 'Science' : e.source.label}
+                  </span>
+                )
               )}
               <span className="pb-tools">
                 <button type="button" onClick={() => run(() => pinEntryAction(memberId, e.id, !e.pinned))} disabled={busy}>
