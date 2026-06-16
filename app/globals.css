@@ -370,6 +370,8 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .pb-card { background: var(--white); border: 1px solid var(--panel-line); border-radius: 14px; padding: 1.1rem 1.25rem; margin-bottom: 1rem; }
 .pb-sec { font-size: 0.8rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--navy); margin: 0 0 0.15rem; }
 .pb-sec-d { font-size: 0.88rem; color: var(--muted, #6B7680); margin: 0 0 0.9rem; }
+.pb-synth { border-left: 4px solid var(--navy); }
+.pb-synth-body { line-height: 1.62; color: var(--charcoal); margin: 0; white-space: pre-wrap; }
 .pb-entry { padding: 0.7rem 0; border-top: 1px solid var(--grey); }
 .pb-entry:first-of-type { border-top: none; padding-top: 0.2rem; }
 .pb-line { font-size: 1.02rem; line-height: 1.5; color: var(--charcoal); margin: 0 0 0.45rem; white-space: pre-wrap; }
@@ -648,6 +650,7 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .sess-ct { font-size: 1.05rem; font-weight: 700; color: var(--navy); margin: 0 0 0.4rem; }
 .sess-cbtn-locked { display: inline-flex; margin-top: 0.6rem; background: var(--light-grey); color: #AEB3B8; font-weight: 700; font-size: 0.85rem; padding: 0.5rem 1rem; border-radius: 22px; }
 .sess-done-card .sess-done-tag { font-size: 0.65rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--teal); margin-bottom: 0.3rem; }
+.sess-closewords { font-size: 1rem; line-height: 1.55; color: var(--charcoal); margin: 0 0 0.8rem; }
 
 /* Reconnect Checkpoint — center-stage ceremony (the one firm gate) */
 .ckpt-wrap { display: flex; justify-content: center; padding: 1rem 0 3rem; }

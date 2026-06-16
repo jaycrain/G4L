@@ -5,6 +5,7 @@ import { authorizeMember } from '../../../authz.ts';
 import { getAsset } from '../../../../lib/curriculum/registry.ts';
 import { listFacets, hasGate } from '../../../../lib/curriculum/store.ts';
 import { checkpointOpening } from '../../../../lib/agent/checkpoint-guide.ts';
+import { getPlaybookSynthesis } from '../../../../lib/agent/playbook-synthesis.ts';
 import { DOORS, isDoorSlug } from '../../../../lib/doors.ts';
 import type { Db } from '../../../../lib/db/schema.ts';
 
@@ -37,6 +38,7 @@ export default async function CheckpointPage({ params }: { params: Promise<{ mem
     facets,
     doors,
     memory: prof?.agent_memory ?? null,
+    synthesis: await getPlaybookSynthesis(db, memberId),
   });
 
   return (

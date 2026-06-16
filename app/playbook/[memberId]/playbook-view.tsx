@@ -53,10 +53,12 @@ export default function PlaybookView({
   memberId,
   initial,
   hasHistory,
+  synthesis,
 }: {
   memberId: string;
   initial: PlaybookEntry[];
   hasHistory: boolean;
+  synthesis?: string | null;
 }) {
   const [entries, setEntries] = useState<PlaybookEntry[]>(initial);
   const [busy, setBusy] = useState(false);
@@ -190,6 +192,14 @@ export default function PlaybookView({
         </div>
       ) : null}
       {gatherMsg && <p className="pb-gather-msg">{gatherMsg}</p>}
+
+      {synthesis && (
+        <section className="pb-card pb-synth">
+          <div className="pb-sec">Your story so far</div>
+          <div className="pb-sec-d">Where you’ve been, where you are, where you’re headed — your companion keeps this woven from your own words as you go.</div>
+          <p className="pb-synth-body">{synthesis}</p>
+        </section>
+      )}
 
       {SECTIONS.map((meta) => {
         const all = inSection(meta.key);

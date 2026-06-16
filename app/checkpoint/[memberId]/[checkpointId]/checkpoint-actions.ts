@@ -6,6 +6,7 @@ import { authorizeMember } from '../../../authz.ts';
 import { getAsset, getBadge, listCurriculum, PHASE_ORDER } from '../../../../lib/curriculum/registry.ts';
 import { setGate, earnBadge, listFacets } from '../../../../lib/curriculum/store.ts';
 import { checkpointAffirmation, checkpointHold, type CheckpointCtx } from '../../../../lib/agent/checkpoint-guide.ts';
+import { getPlaybookSynthesis } from '../../../../lib/agent/playbook-synthesis.ts';
 import { DOORS, isDoorSlug } from '../../../../lib/doors.ts';
 import type { Db } from '../../../../lib/db/schema.ts';
 
@@ -18,7 +19,8 @@ async function buildCtx(db: Db, memberId: string, reflection?: string): Promise<
   const doorRows = (await db.query<{ door_slug: string }>('select door_slug from member_door where member_id=$1 order by sort_order', [memberId])).rows;
   const doors = doorRows.map((r) => r.door_slug).filter(isDoorSlug).map((s) => doorName(s));
   const facets = (await listFacets(db, memberId)).map((f) => f.text);
-  return { displayName: prof?.display_name ?? 'there', facets, doors, memory: prof?.agent_memory ?? null, reflection };
+  const synthesis = await getPlaybookSynthesis(db, memberId);
+  return { displayName: prof?.display_name ?? 'there', facets, doors, memory: prof?.agent_memory ?? null, reflection, synthesis };
 }
 
 function firstSessionOfNextPhase(phase: string): { id: string; title: string } | null {

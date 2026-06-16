@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { authorizeMember } from '../../authz.ts';
 import { getDb } from '../../../lib/db/index.ts';
 import { listPlaybook } from '../../../lib/playbook/store.ts';
+import { getPlaybookSynthesis } from '../../../lib/agent/playbook-synthesis.ts';
 import type { Db } from '../../../lib/db/schema.ts';
 import PlaybookView from './playbook-view.tsx';
 
@@ -20,5 +21,6 @@ export default async function PlaybookPage({ params }: { params: Promise<{ membe
     [memberId],
   );
   const hasHistory = (hist.rows[0]?.n ?? 0) > 0;
-  return <PlaybookView memberId={memberId} initial={entries} hasHistory={hasHistory} />;
+  const synthesis = await getPlaybookSynthesis(db, memberId);
+  return <PlaybookView memberId={memberId} initial={entries} hasHistory={hasHistory} synthesis={synthesis} />;
 }

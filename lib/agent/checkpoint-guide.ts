@@ -9,6 +9,7 @@ export type CheckpointCtx = {
   doors: string[]; // how the Fade got in
   memory?: string | null;
   reflection?: string; // what the member wrote at the gate
+  synthesis?: string | null; // the living Playbook synthesis — a Checkpoint's richest material
 };
 
 async function say(system: string, user: string, fallback: string, maxTokens = 280): Promise<string> {
@@ -36,6 +37,7 @@ function material(c: CheckpointCtx): string {
     `Member: ${c.displayName}\n` +
     (c.facets.length ? `Who they've named reclaiming: ${c.facets.join(', ')}\n` : '') +
     (c.doors.length ? `How the Fade got in (their Doors): ${c.doors.join(', ')}\n` : '') +
+    (c.synthesis ? `Their story so far (the richest read — lean on this):\n${c.synthesis}\n` : '') +
     (c.memory ? `What you remember about them:\n${c.memory}\n` : '')
   );
 }

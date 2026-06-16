@@ -8,6 +8,7 @@ import { getSessionProgress, saveAnswer, closeSession, addFacet, earnBadge, list
 import { guideSessionStep, respondToStep, facetFromAnswers, extractFacets, cleanFacet, type PriorAnswer } from '../../../../lib/agent/session-guide.ts';
 import { refreshIdentityNarrative } from '../../../../lib/agent/identity-narrative.ts';
 import { harvestSessionToPlaybook } from '../../../../lib/agent/session-harvest.ts';
+import { refreshPlaybookSynthesis } from '../../../../lib/agent/playbook-synthesis.ts';
 import type { Db } from '../../../../lib/db/schema.ts';
 
 async function memberMeta(db: Db, memberId: string): Promise<{ displayName: string; memory: string | null }> {
@@ -87,9 +88,21 @@ export async function saveStep(memberId: string, sessionId: string, stepN: numbe
   }
 }
 
+export type CloseKind = 'facet' | 'doors' | 'reclaim' | 'tracker' | 'playbook';
 export type CloseResult =
-  | { ok: true; facet: string; badgeId: string | null; badgeName: string | null; ceremony: boolean; newlyEarned: boolean }
+  | { ok: true; closeKind: CloseKind; facet: string; closeWords: string; badgeId: string | null; badgeName: string | null; ceremony: boolean; newlyEarned: boolean }
   | { ok: false; reason: 'incomplete' | 'error' };
+
+// What this Session actually files at the close — read from its steps' `contributes`, so the close
+// speaks to its real artifact (only an identity Session names a facet; the rest don't claim one).
+function closeArtifact(steps: { contributes?: string }[]): CloseKind {
+  const c = steps.map((s) => s.contributes ?? 'none');
+  if (c.includes('facet')) return 'facet';
+  if (c.includes('your_doors')) return 'doors';
+  if (c.includes('reclaim_list') || c.includes('goal')) return 'reclaim';
+  if (c.includes('tracker_optional')) return 'tracker';
+  return 'playbook';
+}
 
 /** The one close: write the facet, close the Session, earn its badge. Reliability: writes first,
  * success reported only after they persist. */
@@ -124,7 +137,10 @@ export async function closeSessionAction(memberId: string, sessionId: string): P
     await closeSession(db, memberId, sessionId);
     // Best-effort, concurrent (neither breaks the close): harvest the member's words into their Playbook
     // (every Session), and — for identity Sessions only — re-sharpen the dashboard mirror.
-    const tasks: Promise<unknown>[] = [harvestSessionToPlaybook(db, memberId, session, answers)];
+    const tasks: Promise<unknown>[] = [
+      harvestSessionToPlaybook(db, memberId, session, answers),
+      refreshPlaybookSynthesis(db, memberId), // the living narrative, re-woven after each Session
+    ];
     if (facetStep) tasks.push(refreshIdentityNarrative(db, memberId, session));
     await Promise.all(tasks);
 
@@ -138,7 +154,16 @@ export async function closeSessionAction(memberId: string, sessionId: string): P
       ceremony = b?.ceremony ?? false;
     }
     revalidatePath(`/dashboard/${memberId}`); // light the next Session promptly — no stale cache
-    return { ok: true, facet: facetText || session.produces || session.title, badgeId: session.earns ?? null, badgeName, ceremony, newlyEarned };
+    return {
+      ok: true,
+      closeKind: closeArtifact(steps),
+      facet: facetText || session.produces || session.title,
+      closeWords: session.close?.companion ?? '', // the authored reflection — the MA's close words
+      badgeId: session.earns ?? null,
+      badgeName,
+      ceremony,
+      newlyEarned,
+    };
   } catch {
     return { ok: false, reason: 'error' };
   }

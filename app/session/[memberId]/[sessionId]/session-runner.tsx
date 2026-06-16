@@ -131,15 +131,22 @@ export default function SessionRunner({
     return <SessionCeremony memberId={memberId} facet={result.facet} badgeId={result.badgeId} badgeName={result.badgeName} />;
   }
 
-  // ---- plain close confirmation (non-ceremony closes) ----
+  // ---- plain close confirmation (non-ceremony closes) — speaks to the real artifact ----
   if (closed && result && result.ok) {
+    const ARTIFACT: Record<string, { head: string; line: React.ReactNode }> = {
+      facet: { head: result.facet, line: <>It’s on your identity strip now as a self you’re reclaiming.</> },
+      doors: { head: 'Added to Your Doors', line: <>What opened the gap is on the record now — your companion will work from it.</> },
+      reclaim: { head: 'On your Reclaim List', line: <>It’s on your dashboard now, ready to track and work toward.</> },
+      tracker: { head: 'Ready to track', line: <>Turn it into a number you watch — clip in and we’ll follow it together.</> },
+      playbook: { head: 'Kept in your Playbook', line: <>Your companion filed what surfaced — it’s yours to keep or cut.</> },
+    };
+    const a = ARTIFACT[result.closeKind] ?? ARTIFACT.playbook!;
     return (
       <div className="card sess-done-card">
         <p className="sess-done-tag">Session closed</p>
-        <h2>{result.facet}</h2>
-        {result.badgeName && (
-          <p className="muted">You earned the <strong>{result.badgeName}</strong> badge.</p>
-        )}
+        {result.closeWords && <p className="sess-closewords">{result.closeWords}</p>}
+        <h2>{a.head}</h2>
+        <p className="muted">{a.line}{result.badgeName ? <> You earned the <strong>{result.badgeName}</strong> badge.</> : null}</p>
         <button type="button" className="sess-next" onClick={() => router.push(`/dashboard/${memberId}`)}>Back to your dashboard →</button>
       </div>
     );
