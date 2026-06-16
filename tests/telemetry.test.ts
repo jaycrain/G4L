@@ -6,6 +6,10 @@ import {
   logEvent,
   getMemberEvents,
   deriveSessionTelemetry,
+  deriveCheckpointTelemetry,
+  deriveBeatActivity,
+  deriveDailyBeatActivity,
+  deriveIdqActivity,
   deriveSurfaceUsage,
   experienceSummary,
   getMemberExperience,
@@ -49,6 +53,51 @@ test('deriveSessionTelemetry: open Session reports the drop-off step', () => {
   assert.equal(t!.closed, false);
   assert.equal(t!.dropOffStep, 2, 'furthest step reached, never closed = where they stalled');
   assert.equal(t!.durationMs, null, 'no duration without a close');
+});
+
+test('deriveCheckpointTelemetry: arrival → crossing yields time-at-the-gate', () => {
+  const t = deriveCheckpointTelemetry([
+    ev('checkpoint_open', { ref: 'RCN-CHK', minsAgo: 25 }),
+    ev('checkpoint_open', { ref: 'RCN-CHK', minsAgo: 12 }), // came back to the gate
+    ev('checkpoint_cross', { ref: 'RCN-CHK', minsAgo: 10 }),
+  ]);
+  assert.equal(t[0]!.checkpointId, 'RCN-CHK');
+  assert.equal(t[0]!.opens, 2);
+  assert.equal(t[0]!.crossed, true);
+  assert.equal(t[0]!.timeToCrossMs, 15 * 60000, 'first arrival → crossing');
+});
+
+test('deriveCheckpointTelemetry: arrived but not crossed', () => {
+  const t = deriveCheckpointTelemetry([ev('checkpoint_open', { ref: 'RWR-CHK', minsAgo: 5 })]);
+  assert.equal(t[0]!.crossed, false);
+  assert.equal(t[0]!.timeToCrossMs, null);
+});
+
+test('deriveBeatActivity counts closes and surfaces recent (newest first)', () => {
+  const b = deriveBeatActivity([
+    ev('beat_close', { ref: 'BT-1', meta: { response: 'closer' }, minsAgo: 30 }),
+    ev('beat_close', { ref: 'BT-2', meta: { response: 'yes' }, minsAgo: 5 }),
+    ev('page_view', { surface: 'dashboard', minsAgo: 4 }), // ignored
+  ]);
+  assert.equal(b.total, 2);
+  assert.equal(b.recent[0]!.beatId, 'BT-2', 'newest first');
+  assert.equal(b.recent[0]!.response, 'yes');
+});
+
+test('deriveDailyBeatActivity and deriveIdqActivity read their own events', () => {
+  const d = deriveDailyBeatActivity([
+    ev('daily_beat_view', { ref: 'RCN-EXC-01', minsAgo: 1440 }),
+    ev('daily_beat_view', { ref: 'RCN-EXC-02', minsAgo: 10 }),
+  ]);
+  assert.equal(d.days, 2);
+  assert.equal(d.recent[0]!.reflectionId, 'RCN-EXC-02');
+
+  const i = deriveIdqActivity([
+    ev('idq_complete', { step: 0, meta: { idScore: 60 }, minsAgo: 5000 }),
+    ev('idq_complete', { step: 1, meta: { idScore: 71 }, minsAgo: 10 }),
+  ]);
+  assert.equal(i.count, 2);
+  assert.equal(i.latestScore, 71, 'most recent retake score');
 });
 
 test('deriveSurfaceUsage counts page views per surface, most-used first', () => {

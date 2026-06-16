@@ -481,6 +481,7 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .member-sessions li { padding: 0.35rem 0; border-bottom: 1px solid var(--panel-line); }
 .member-sessions li:last-child { border-bottom: none; }
 .member-session-title { font-weight: 600; }
+.tele-head { margin: 1rem 0 0.25rem; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--teal); }
 .draft-subject { margin: 0.3rem 0; }
 .draft-body { width: 100%; font: inherit; padding: 0.6rem; border: 1px solid var(--navy); border-radius: 6px; }
 .draft-actions { display: flex; gap: 0.6rem; margin-top: 0.6rem; }

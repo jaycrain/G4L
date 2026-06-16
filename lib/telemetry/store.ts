@@ -135,6 +135,87 @@ export function deriveSurfaceUsage(events: MemberEvent[]): SurfaceUsage[] {
     .sort((a, b) => b.views - a.views);
 }
 
+export type CheckpointTelemetry = {
+  checkpointId: string;
+  opens: number; // times they arrived at the gate
+  crossed: boolean;
+  firstOpenAt: string | null;
+  crossedAt: string | null;
+  timeToCrossMs: number | null; // first arrival → crossing (how long they sat at the gate)
+};
+
+// Roll checkpoint_open / checkpoint_cross up per checkpoint.
+export function deriveCheckpointTelemetry(events: MemberEvent[]): CheckpointTelemetry[] {
+  const byRef = new Map<string, MemberEvent[]>();
+  for (const e of events) {
+    if (e.kind !== 'checkpoint_open' && e.kind !== 'checkpoint_cross') continue;
+    if (!e.ref) continue;
+    (byRef.get(e.ref) ?? byRef.set(e.ref, []).get(e.ref)!).push(e);
+  }
+  const out: CheckpointTelemetry[] = [];
+  for (const [checkpointId, evs] of byRef) {
+    const opens = evs.filter((e) => e.kind === 'checkpoint_open');
+    const crossEv = evs.filter((e) => e.kind === 'checkpoint_cross').at(-1) ?? null;
+    const firstOpenAt = opens[0]?.createdAt ?? evs[0]?.createdAt ?? null;
+    const crossedAt = crossEv?.createdAt ?? null;
+    out.push({
+      checkpointId,
+      opens: opens.length,
+      crossed: !!crossEv,
+      firstOpenAt,
+      crossedAt,
+      timeToCrossMs:
+        firstOpenAt && crossedAt ? Math.max(0, new Date(crossedAt).getTime() - new Date(firstOpenAt).getTime()) : null,
+    });
+  }
+  out.sort((a, b) => (b.crossedAt ?? b.firstOpenAt ?? '').localeCompare(a.crossedAt ?? a.firstOpenAt ?? ''));
+  return out;
+}
+
+export type BeatActivity = {
+  total: number; // Beats closed
+  lastAt: string | null;
+  recent: { beatId: string | null; response: string | null; at: string }[]; // newest first, capped
+};
+
+export function deriveBeatActivity(events: MemberEvent[]): BeatActivity {
+  const closes = events.filter((e) => e.kind === 'beat_close');
+  const recent = closes
+    .slice()
+    .reverse()
+    .slice(0, 8)
+    .map((e) => ({ beatId: e.ref, response: (e.meta?.response as string) ?? null, at: e.createdAt }));
+  return { total: closes.length, lastAt: closes.at(-1)?.createdAt ?? null, recent };
+}
+
+export type DailyBeatActivity = {
+  days: number; // distinct days a Daily Beat was surfaced (one event per day)
+  lastAt: string | null;
+  recent: { reflectionId: string | null; at: string }[];
+};
+
+export function deriveDailyBeatActivity(events: MemberEvent[]): DailyBeatActivity {
+  const views = events.filter((e) => e.kind === 'daily_beat_view');
+  const recent = views
+    .slice()
+    .reverse()
+    .slice(0, 8)
+    .map((e) => ({ reflectionId: e.ref, at: e.createdAt }));
+  return { days: views.length, lastAt: views.at(-1)?.createdAt ?? null, recent };
+}
+
+export type IdqActivity = {
+  count: number; // completed IDQs (baseline + retakes)
+  lastAt: string | null;
+  latestScore: number | null;
+};
+
+export function deriveIdqActivity(events: MemberEvent[]): IdqActivity {
+  const done = events.filter((e) => e.kind === 'idq_complete');
+  const last = done.at(-1);
+  return { count: done.length, lastAt: last?.createdAt ?? null, latestScore: (last?.meta?.idScore as number) ?? null };
+}
+
 const mins = (ms: number) => Math.max(1, Math.round(ms / 60000));
 
 // A compact, governance-safe read of the member's experience for BOTH agents. Facts only —
@@ -165,9 +246,15 @@ export function experienceSummary(
   return lines.join(' ');
 }
 
-// Convenience: one call for the per-member read (admin panel + agent context).
+// Convenience: one call for the per-member read (admin panel + agent context). Each program
+// surface gets its OWN readout (sessions / checkpoints / Beats / Daily Beat / IDQ) alongside the
+// blended summary the agents read.
 export type MemberExperience = {
   sessions: SessionTelemetry[];
+  checkpoints: CheckpointTelemetry[];
+  beats: BeatActivity;
+  dailyBeat: DailyBeatActivity;
+  idq: IdqActivity;
   surfaces: SurfaceUsage[];
   summary: string;
   totalEvents: number;
@@ -181,5 +268,14 @@ export async function getMemberExperience(
   const events = await getMemberEvents(db, memberId);
   const sessions = deriveSessionTelemetry(events);
   const surfaces = deriveSurfaceUsage(events);
-  return { sessions, surfaces, summary: experienceSummary(sessions, surfaces, titleOf), totalEvents: events.length };
+  return {
+    sessions,
+    checkpoints: deriveCheckpointTelemetry(events),
+    beats: deriveBeatActivity(events),
+    dailyBeat: deriveDailyBeatActivity(events),
+    idq: deriveIdqActivity(events),
+    surfaces,
+    summary: experienceSummary(sessions, surfaces, titleOf),
+    totalEvents: events.length,
+  };
 }

@@ -35,6 +35,8 @@ export default async function AdminMember({ params }: { params: Promise<{ member
     getMemberExperience(db, memberId, (id) => getAsset(id)?.title ?? id),
   ]);
   const now = Date.now();
+  const checkpointTitle = (id: string) => getAsset(id)?.title ?? id;
+  const fmtMin = (ms: number) => Math.max(1, Math.round(ms / 60000));
   const STATUS_LABEL: Record<string, string> = { closed: 'closed', in_progress: 'in progress', locked: 'locked' };
 
   return (
@@ -128,39 +130,102 @@ export default async function AdminMember({ params }: { params: Promise<{ member
       <div className="card">
         <h3>How they moved through it</h3>
         <p className="muted">
-          Experience telemetry — time-on-asset, where they stalled, what they keep returning to. The same read
-          both agents now hold (so the companion can notice a stall, and a draft can reflect real experience).
+          Experience telemetry — time-on-asset, where they stalled, what they keep returning to. Each program
+          surface reads on its own below; the blended <em>agent read</em> at the bottom is what both agents hold.
         </p>
 
+        {/* Sessions — open → step → close: time-on-asset, drop-off, re-engagement. */}
+        <h4 className="tele-head">Sessions</h4>
         {experience.sessions.length > 0 ? (
           <ul className="member-sessions">
-            {experience.sessions.map((s) => {
-              const min = s.durationMs != null ? Math.max(1, Math.round(s.durationMs / 60000)) : null;
-              return (
-                <li key={s.sessionId}>
-                  <span className="member-session-title">{sessionTitle(s.sessionId)}</span>{' '}
-                  {s.closed ? (
-                    <span className="muted">
-                      closed{min != null ? ` · ~${min} min` : ''}
-                      {s.opens > 1 ? ` · opened ${s.opens}×` : ''} · {relativeTime(s.closedAt, now)}
-                    </span>
-                  ) : (
-                    <span className="muted">
-                      {s.opens > 1 ? `opened ${s.opens}× · ` : ''}
-                      {s.dropOffStep ? `stalled at step ${s.dropOffStep}` : 'opened, no steps yet'} · {relativeTime(s.lastActivityAt, now)}
-                    </span>
-                  )}
-                </li>
-              );
-            })}
+            {experience.sessions.map((s) => (
+              <li key={s.sessionId}>
+                <span className="member-session-title">{sessionTitle(s.sessionId)}</span>{' '}
+                {s.closed ? (
+                  <span className="muted">
+                    closed{s.durationMs != null ? ` · ~${fmtMin(s.durationMs)} min` : ''}
+                    {s.opens > 1 ? ` · opened ${s.opens}×` : ''} · {relativeTime(s.closedAt, now)}
+                  </span>
+                ) : (
+                  <span className="muted">
+                    {s.opens > 1 ? `opened ${s.opens}× · ` : ''}
+                    {s.dropOffStep ? `stalled at step ${s.dropOffStep}` : 'opened, no steps yet'} · {relativeTime(s.lastActivityAt, now)}
+                  </span>
+                )}
+              </li>
+            ))}
           </ul>
         ) : (
           <p className="muted">No Session telemetry yet — events accrue as they work through Sessions.</p>
         )}
 
-        {experience.surfaces.length > 0 && (
+        {/* Checkpoints — arrival → crossing, and how long they sat at the gate. */}
+        <h4 className="tele-head">Checkpoints</h4>
+        {experience.checkpoints.length > 0 ? (
+          <ul className="member-sessions">
+            {experience.checkpoints.map((c) => (
+              <li key={c.checkpointId}>
+                <span className="member-session-title">{checkpointTitle(c.checkpointId)}</span>{' '}
+                {c.crossed ? (
+                  <span className="muted">
+                    crossed{c.timeToCrossMs != null ? ` · ${fmtMin(c.timeToCrossMs)} min at the gate` : ''}
+                    {c.opens > 1 ? ` · ${c.opens} visits` : ''} · {relativeTime(c.crossedAt, now)}
+                  </span>
+                ) : (
+                  <span className="muted">at the gate, not crossed{c.opens > 1 ? ` · ${c.opens} visits` : ''} · {relativeTime(c.firstOpenAt, now)}</span>
+                )}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="muted">No checkpoint arrivals yet.</p>
+        )}
+
+        {/* Beats — the daily program reps. */}
+        <h4 className="tele-head">Beats</h4>
+        {experience.beats.total > 0 ? (
           <p className="member-meta">
-            <strong>Surfaces opened:</strong>{' '}
+            {experience.beats.total} closed{experience.beats.lastAt && <span className="muted"> · last {relativeTime(experience.beats.lastAt, now)}</span>}
+            {experience.beats.recent.length > 0 && (
+              <span className="muted">
+                {' '}— recent:{' '}
+                {experience.beats.recent
+                  .map((b) => `${b.beatId ?? 'beat'}${b.response ? ` (${b.response})` : ''}`)
+                  .join(', ')}
+              </span>
+            )}
+          </p>
+        ) : (
+          <p className="muted">No Beats closed yet.</p>
+        )}
+
+        {/* Daily Beat — the lightweight daily reflection. */}
+        <h4 className="tele-head">Daily Beat</h4>
+        {experience.dailyBeat.days > 0 ? (
+          <p className="member-meta">
+            surfaced on {experience.dailyBeat.days} day{experience.dailyBeat.days === 1 ? '' : 's'}
+            {experience.dailyBeat.lastAt && <span className="muted"> · last {relativeTime(experience.dailyBeat.lastAt, now)}</span>}
+          </p>
+        ) : (
+          <p className="muted">No Daily Beat views yet.</p>
+        )}
+
+        {/* IDQ — baseline + retakes. */}
+        <h4 className="tele-head">IDQ</h4>
+        {experience.idq.count > 0 ? (
+          <p className="member-meta">
+            {experience.idq.count} completed
+            {experience.idq.latestScore != null && <span className="muted"> · latest ID Score {Math.round(experience.idq.latestScore)}</span>}
+            {experience.idq.lastAt && <span className="muted"> · {relativeTime(experience.idq.lastAt, now)}</span>}
+          </p>
+        ) : (
+          <p className="muted">No IDQ completed yet.</p>
+        )}
+
+        {/* Surfaces — which panels they actually open. */}
+        <h4 className="tele-head">Surfaces opened</h4>
+        {experience.surfaces.length > 0 ? (
+          <p className="member-meta">
             {experience.surfaces.map((u, i) => (
               <span key={u.surface}>
                 {i > 0 && ' · '}
@@ -168,6 +233,8 @@ export default async function AdminMember({ params }: { params: Promise<{ member
               </span>
             ))}
           </p>
+        ) : (
+          <p className="muted">No page views yet.</p>
         )}
 
         {experience.summary && (

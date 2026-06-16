@@ -7,6 +7,7 @@ import { PGlite } from '@electric-sql/pglite';
 import { scoreIdq } from '../../lib/idq/scoring.ts';
 import { applySchema, type Db } from '../../lib/db/schema.ts';
 import { completeAsset, completedCodes } from '../../lib/assets/engine.ts';
+import { DOOR_SLUGS } from '../../lib/doors.ts';
 
 let failures = 0;
 function check(name: string, pass: boolean, detail = '') {
@@ -31,9 +32,10 @@ check('migrations + seed apply cleanly', true);
 
 // 2. Reference data
 const n = async (q: string) => ((await db.query<{ n: number }>(q)).rows[0]!.n);
-check('8 Doors seeded', (await n('select count(*)::int n from door')) === 8);
+check(`${DOOR_SLUGS.length} Doors seeded`, (await n('select count(*)::int n from door')) === DOOR_SLUGS.length);
 check('4 IDQ dimensions seeded', (await n('select count(*)::int n from idq_dimension')) === 4);
-check('12 gated assets seeded', (await n("select count(*)::int n from atlas_asset where is_gated")) === 12);
+// (The 12-gated-assets seed assertion is retired: the live product delivers via the
+//  curriculum engine — registry-as-data in lib/curriculum — not the old gated-asset set.)
 check(
   'canonical doors present (incl. The Vanishing)',
   (await n("select count(*)::int n from door where slug in ('career_cliff','vanishing','loss')")) === 3,
@@ -66,11 +68,18 @@ check('baseline IDQ retake persists with correct score', Number(back.id_score) =
   `id_score=${back.id_score}, raw=${back.id_score_raw}`);
 
 // 4. Constraints must actually fire
+// Reclaim List contract (Decision Log, voice rewrite v1, superseding the old "exactly 7"):
+// at least RECLAIM_LIST_MIN (3) items, no maximum. A list of 6 is now valid.
+const sixItem = await db.query<{ member_id: string }>(
+  `insert into member_profile (display_name,email,reclaim_list) values ('Six','six@y.z',$1::jsonb) returning member_id`,
+  [JSON.stringify(['a', 'b', 'c', 'd', 'e', 'f'])],
+);
+check('reclaim_list of 6 is accepted (>= 3, no max)', !!sixItem.rows[0]?.member_id);
 await expectError(
-  'reclaim_list of 6 is rejected',
-  () => db.query(`insert into member_profile (display_name,email,reclaim_list) values ('x','x@y.z',$1::jsonb)`,
-    [JSON.stringify(['a', 'b', 'c', 'd', 'e', 'f'])]),
-  /reclaim_list_is_seven/i,
+  'reclaim_list below the minimum of 3 is rejected',
+  () => db.query(`insert into member_profile (display_name,email,reclaim_list) values ('Two','two@y.z',$1::jsonb)`,
+    [JSON.stringify(['a', 'b'])]),
+  /reclaim_list_min_3/i,
 );
 await expectError(
   'dimension scores must sum to id_score_raw',
