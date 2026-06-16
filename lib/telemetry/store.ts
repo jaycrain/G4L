@@ -49,20 +49,38 @@ const toIso = (v: unknown): string => {
   return Number.isNaN(d.getTime()) ? new Date(0).toISOString() : d.toISOString();
 };
 
+const mapRawEvent = (r: RawEvent): MemberEvent => ({
+  kind: r.kind as EventKind,
+  surface: r.surface,
+  ref: r.ref,
+  step: r.step == null ? null : Number(r.step),
+  meta: typeof r.meta === 'object' && r.meta ? (r.meta as Record<string, unknown>) : {},
+  createdAt: toIso(r.created_at),
+});
+
 export async function getMemberEvents(db: Db, memberId: string, limit = 2000): Promise<MemberEvent[]> {
   const { rows } = await db.query<RawEvent>(
     `select kind, surface, ref, step, meta, created_at from member_event
        where member_id = $1 order by created_at asc limit $2`,
     [memberId, limit],
   );
-  return rows.map((r) => ({
-    kind: r.kind as EventKind,
-    surface: r.surface,
-    ref: r.ref,
-    step: r.step == null ? null : Number(r.step),
-    meta: (typeof r.meta === 'object' && r.meta ? (r.meta as Record<string, unknown>) : {}),
-    createdAt: toIso(r.created_at),
-  }));
+  return rows.map(mapRawEvent);
+}
+
+// Bulk read for the operator roster: every active member's events in one query, grouped by member.
+// Members with no events simply don't appear in the map (callers default to []).
+export async function getEventsForMembers(db: Db, memberIds: string[]): Promise<Map<string, MemberEvent[]>> {
+  const out = new Map<string, MemberEvent[]>();
+  if (memberIds.length === 0) return out;
+  const { rows } = await db.query<RawEvent & { member_id: string }>(
+    `select member_id, kind, surface, ref, step, meta, created_at from member_event
+       where member_id = any($1) order by member_id, created_at asc`,
+    [memberIds],
+  );
+  for (const r of rows) {
+    (out.get(r.member_id) ?? out.set(r.member_id, []).get(r.member_id)!).push(mapRawEvent(r));
+  }
+  return out;
 }
 
 // --- Pure derivations -----------------------------------------------------------------------

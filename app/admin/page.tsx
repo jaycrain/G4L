@@ -8,6 +8,8 @@ import { initials } from '../../lib/member/avatar.ts';
 import type { Db } from '../../lib/db/schema.ts';
 
 const fmtDoor = (d: string | null) => (d ? d.replace(/_/g, ' ') : '—');
+// Compact time-on-task: minutes under an hour, else h/m.
+const fmtMinutes = (m: number): string => (m <= 0 ? '—' : m < 60 ? `${m}m` : `${Math.floor(m / 60)}h ${m % 60}m`);
 
 export default async function AdminHome() {
   if (!(await isAdmin())) redirect('/admin/login');
@@ -59,6 +61,10 @@ export default async function AdminHome() {
             <span className="tile-num">{summary.sessionsClosedTotal}</span>
             <span className="tile-label">Sessions closed</span>
           </div>
+          <div className="summary-tile">
+            <span className="tile-num">{fmtMinutes(summary.engagedMinutesTotal)}</span>
+            <span className="tile-label">Time on task</span>
+          </div>
         </div>
 
         {roster.length === 0 ? (
@@ -72,6 +78,8 @@ export default async function AdminHome() {
                   <th>Door</th>
                   <th className="num">ID Score</th>
                   <th className="num">Sessions</th>
+                  <th className="num">Time on task</th>
+                  <th className="num">Drop-off</th>
                   <th className="num">Activity</th>
                   <th>Last active</th>
                   <th>Joined</th>
@@ -128,6 +136,19 @@ export default async function AdminHome() {
                       >
                         {m.sessionsClosed}
                         <span className="muted"> / {m.sessionsOpened}</span>
+                      </td>
+                      <td className="num" title="Time-on-asset summed across closed Sessions (telemetry, accrues from new activity)">
+                        {fmtMinutes(m.engagedMinutes)}
+                      </td>
+                      <td
+                        className="num"
+                        title={m.stalledSessions > 0 ? 'Sessions opened but never closed — where they dropped off' : 'No stalled Sessions'}
+                      >
+                        {m.stalledSessions > 0 ? (
+                          <span className="trend-down">{m.stalledSessions}</span>
+                        ) : (
+                          <span className="muted">—</span>
+                        )}
                       </td>
                       <td
                         className="num"

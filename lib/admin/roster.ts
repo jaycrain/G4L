@@ -3,6 +3,7 @@
 // during the pre-launch window. No new infrastructure; pure reads over existing tables.
 
 import type { Db } from '../db/schema.ts';
+import { getEventsForMembers, deriveSessionTelemetry } from '../telemetry/store.ts';
 
 export type RosterRow = {
   memberId: string;
@@ -29,6 +30,9 @@ export type RosterRow = {
   dailyBeatDays: number; // distinct days a Daily Beat was surfaced
   workouts: number; // logged activities (Strava)
   checkinDays: number; // distinct days the member sent the agent a message
+  // EXPERIENCE TELEMETRY — derived from member_event (only accrues from events going forward).
+  engagedMinutes: number; // summed time-on-asset across closed Sessions
+  stalledSessions: number; // Sessions opened but never closed (drop-off)
 };
 
 type RawRow = {
@@ -108,6 +112,7 @@ export type RosterSummary = {
   joinedLast30: number;
   activeLast7: number;
   sessionsClosedTotal: number; // Sessions closed across the roster (true program progress)
+  engagedMinutesTotal: number; // time-on-asset summed across the roster
 };
 
 export function summarizeRoster(rows: RosterRow[], nowMs: number): RosterSummary {
@@ -116,12 +121,14 @@ export function summarizeRoster(rows: RosterRow[], nowMs: number): RosterSummary
   let joinedLast30 = 0;
   let activeLast7 = 0;
   let sessionsClosedTotal = 0;
+  let engagedMinutesTotal = 0;
   for (const r of rows) {
     if (new Date(r.joinedAt).getTime() >= d30) joinedLast30++;
     if (r.lastActiveAt && new Date(r.lastActiveAt).getTime() >= d7) activeLast7++;
     sessionsClosedTotal += r.sessionsClosed;
+    engagedMinutesTotal += r.engagedMinutes;
   }
-  return { total: rows.length, joinedLast30, activeLast7, sessionsClosedTotal };
+  return { total: rows.length, joinedLast30, activeLast7, sessionsClosedTotal, engagedMinutesTotal };
 }
 
 // Compact relative-time label for the operator table ("3d ago", "just now", "—").
@@ -184,8 +191,15 @@ const ROSTER_SQL = `
 
 export async function getRoster(db: Db): Promise<RosterRow[]> {
   const { rows } = await db.query<RawRow>(ROSTER_SQL);
+  // Experience telemetry, derived from the event log in one bulk read (roster is small pre-launch).
+  const events = await getEventsForMembers(db, rows.map((r) => r.member_id));
   const mapped: RosterRow[] = rows.map((r) => {
     const lastSignInAt = toIso(r.last_sign_in_at);
+    const sessionTele = deriveSessionTelemetry(events.get(r.member_id) ?? []);
+    const engagedMinutes = Math.round(
+      sessionTele.reduce((sum, s) => sum + (s.durationMs ?? 0), 0) / 60000,
+    );
+    const stalledSessions = sessionTele.filter((s) => !s.closed).length;
     return {
       memberId: r.member_id,
       displayName: r.display_name,
@@ -216,6 +230,8 @@ export async function getRoster(db: Db): Promise<RosterRow[]> {
       dailyBeatDays: toNum(r.daily_beat_days),
       workouts: toNum(r.workouts),
       checkinDays: toNum(r.checkin_days),
+      engagedMinutes,
+      stalledSessions,
     };
   });
   // Liveliest first; never-active members sink to the bottom.

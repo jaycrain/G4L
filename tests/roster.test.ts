@@ -64,6 +64,13 @@ async function seed(): Promise<{ db: Db; alice: string; demo: string }> {
   await db.query(`insert into badge_earned (member_id, badge_id, earned_at) values ($1,'onboarding',$2)`, [a, daysAgoISO(6)]);
   await db.query(`insert into facet (member_id, text, sort_order) values ($1,'the Athlete',0)`, [a]);
   await db.query(`insert into phase_gate (member_id, gate, set_at) values ($1,'reconnect_checkpoint_passed',$2)`, [a, daysAgoISO(6)]);
+  // EXPERIENCE TELEMETRY (member_event): RCN-EXC opened then closed 15 min later (time-on-asset);
+  // RCN-VAL opened but never closed (a drop-off / stalled Session).
+  const excOpen = new Date(NOW - 6 * 86_400_000).toISOString();
+  const excClose = new Date(NOW - 6 * 86_400_000 + 15 * 60_000).toISOString();
+  await db.query(`insert into member_event (member_id, kind, surface, ref, step, created_at) values ($1,'session_open','session','RCN-EXC',1,$2)`, [a, excOpen]);
+  await db.query(`insert into member_event (member_id, kind, surface, ref, step, created_at) values ($1,'session_close','session','RCN-EXC',null,$2)`, [a, excClose]);
+  await db.query(`insert into member_event (member_id, kind, surface, ref, step, created_at) values ($1,'session_open','session','RCN-VAL',1,$2)`, [a, daysAgoISO(4)]);
   // ACTIVITY — Beats closed + Daily Beat days.
   await db.query(
     `insert into beat_completion (member_id, beat_id, close_type, completed_at) values ($1,'BT-1','reflect',$2)`,
@@ -127,6 +134,9 @@ test('getRoster aggregates live progress, activity, and ID Score correctly', asy
   assert.equal(alice.workouts, 1);
   assert.equal(alice.checkinDays, 2, 'two distinct days with member messages');
   assert.equal(activityCount(alice), 6, '1 beat + 2 daily-beat days + 1 workout + 2 check-in days');
+  // Experience telemetry derived from member_event.
+  assert.equal(alice.engagedMinutes, 15, 'RCN-EXC: open → close 15 min apart');
+  assert.equal(alice.stalledSessions, 1, 'RCN-VAL opened, never closed = a drop-off');
   assert.equal(alice.idScore, 71);
   assert.equal(alice.idBaseline, 60);
   assert.equal(alice.idDirection, 'up');
@@ -151,15 +161,16 @@ test('demo member with no activity has null timestamps and zero counts', async (
 
 test('summarizeRoster counts totals, recent joins, 7-day actives, and Sessions closed', () => {
   const rows: RosterRow[] = [
-    { joinedAt: daysAgoISO(2), lastActiveAt: daysAgoISO(1), sessionsClosed: 3 } as RosterRow,
-    { joinedAt: daysAgoISO(40), lastActiveAt: daysAgoISO(20), sessionsClosed: 1 } as RosterRow,
-    { joinedAt: daysAgoISO(5), lastActiveAt: null, sessionsClosed: 0 } as RosterRow,
+    { joinedAt: daysAgoISO(2), lastActiveAt: daysAgoISO(1), sessionsClosed: 3, engagedMinutes: 20 } as RosterRow,
+    { joinedAt: daysAgoISO(40), lastActiveAt: daysAgoISO(20), sessionsClosed: 1, engagedMinutes: 5 } as RosterRow,
+    { joinedAt: daysAgoISO(5), lastActiveAt: null, sessionsClosed: 0, engagedMinutes: 0 } as RosterRow,
   ];
   const s = summarizeRoster(rows, NOW);
   assert.equal(s.total, 3);
   assert.equal(s.joinedLast30, 2, 'two joined within 30 days');
   assert.equal(s.activeLast7, 1, 'only one active within 7 days');
   assert.equal(s.sessionsClosedTotal, 4);
+  assert.equal(s.engagedMinutesTotal, 25);
 });
 
 test('relativeTime renders compact buckets and handles null/future', () => {
