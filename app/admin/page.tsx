@@ -56,8 +56,8 @@ export default async function AdminHome() {
             <span className="tile-label">Active · 7 days</span>
           </div>
           <div className="summary-tile">
-            <span className="tile-num">{summary.assetsTotal}</span>
-            <span className="tile-label">Assets completed</span>
+            <span className="tile-num">{summary.sessionsClosedTotal}</span>
+            <span className="tile-label">Sessions closed</span>
           </div>
         </div>
 
@@ -71,7 +71,7 @@ export default async function AdminHome() {
                   <th>Member</th>
                   <th>Door</th>
                   <th className="num">ID Score</th>
-                  <th className="num">Assets</th>
+                  <th className="num">Sessions</th>
                   <th className="num">Activity</th>
                   <th>Last active</th>
                   <th>Joined</th>
@@ -122,10 +122,16 @@ export default async function AdminHome() {
                           </span>
                         )}
                       </td>
-                      <td className="num">{m.assets}</td>
                       <td
                         className="num"
-                        title={`${m.bites} bite${m.bites === 1 ? '' : 's'} · ${m.workouts} workout${m.workouts === 1 ? '' : 's'} · ${m.checkinDays} check-in day${m.checkinDays === 1 ? '' : 's'}`}
+                        title={`${m.sessionsClosed} closed · ${m.sessionsOpened} opened · ${m.badges} badge${m.badges === 1 ? '' : 's'} · ${m.gates} gate${m.gates === 1 ? '' : 's'} crossed`}
+                      >
+                        {m.sessionsClosed}
+                        <span className="muted"> / {m.sessionsOpened}</span>
+                      </td>
+                      <td
+                        className="num"
+                        title={`${m.beats} Beat${m.beats === 1 ? '' : 's'} closed · ${m.dailyBeatDays} Daily Beat day${m.dailyBeatDays === 1 ? '' : 's'} · ${m.workouts} workout${m.workouts === 1 ? '' : 's'} · ${m.checkinDays} check-in day${m.checkinDays === 1 ? '' : 's'}`}
                       >
                         {activityCount(m)}
                       </td>
@@ -143,8 +149,9 @@ export default async function AdminHome() {
           </div>
         )}
         <p className="muted roster-foot">
-          Sorted by most recent activity. <strong>Last active</strong> reflects any tracked action; <strong>sign-in</strong>{' '}
-          only refreshes on login. Hover <strong>Activity</strong> for the breakdown.
+          Sorted by most recent activity. <strong>Sessions</strong> = closed / opened (a Session closed is a completed
+          asset). <strong>Last active</strong> reflects any tracked action; <strong>sign-in</strong> only refreshes on
+          login. Hover <strong>Sessions</strong> or <strong>Activity</strong> for the breakdown.
         </p>
       </div>
     </>

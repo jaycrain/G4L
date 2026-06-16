@@ -476,6 +476,11 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .pill.pending { background: var(--olive); color: var(--white); }
 .pill.approved { background: var(--teal); color: var(--white); }
 .pill.rejected { background: var(--grey); color: var(--charcoal); }
+.member-meta { margin: 0.6rem 0 0; line-height: 1.6; }
+.member-sessions { list-style: none; padding: 0; margin: 0.8rem 0 0; }
+.member-sessions li { padding: 0.35rem 0; border-bottom: 1px solid var(--panel-line); }
+.member-sessions li:last-child { border-bottom: none; }
+.member-session-title { font-weight: 600; }
 .draft-subject { margin: 0.3rem 0; }
 .draft-body { width: 100%; font: inherit; padding: 0.6rem; border: 1px solid var(--navy); border-radius: 6px; }
 .draft-actions { display: flex; gap: 0.6rem; margin-top: 0.6rem; }

@@ -17,9 +17,17 @@ export type RosterRow = {
   idScore: number | null; // latest ID Score (0–100)
   idBaseline: number | null; // baseline ID Score (sequence 0)
   idDirection: string | null; // 'up' | 'down' | 'flat'
-  assets: number; // program asset completions (true progress)
-  bites: number;
-  workouts: number;
+  // PROGRESS — the live curriculum/Session engine (lib/curriculum). The member's true progress
+  // flows here now; the old asset-delivery engine (asset_completion) is no longer in the live UI.
+  sessionsOpened: number; // distinct Sessions started (a Session opened = "asset viewed")
+  sessionsClosed: number; // Sessions closed (a Session closed = "asset completed")
+  badges: number; // passport badges earned
+  facets: number; // reclaimed identities named at Session closes
+  gates: number; // phase gates crossed (4Rs / checkpoint progress)
+  // ACTIVITY — showing-up signals.
+  beats: number; // Beats closed (the daily program work)
+  dailyBeatDays: number; // distinct days a Daily Beat was surfaced
+  workouts: number; // logged activities (Strava)
   checkinDays: number; // distinct days the member sent the agent a message
 };
 
@@ -32,12 +40,18 @@ type RawRow = {
   joined_at: unknown;
   last_sign_in_at: unknown;
   last_msg_at: unknown;
-  last_asset_at: unknown;
+  last_session_at: unknown;
+  last_beat_at: unknown;
+  last_daily_beat_at: unknown;
   last_workout_at: unknown;
-  last_bite_at: unknown;
   last_retake_at: unknown;
-  assets: unknown;
-  bites: unknown;
+  sessions_opened: unknown;
+  sessions_closed: unknown;
+  badges: unknown;
+  facets: unknown;
+  gates: unknown;
+  beats: unknown;
+  daily_beat_days: unknown;
   workouts: unknown;
   checkin_days: unknown;
   id_score: unknown;
@@ -81,17 +95,19 @@ export function newestIso(...isos: (string | null)[]): string | null {
   return best;
 }
 
-// "Activity" rollup = the companion signals a member generates by showing up.
-// Kept separate from `assets` (true program progress) so the meaningful number isn't buried.
-export function activityCount(row: Pick<RosterRow, 'bites' | 'workouts' | 'checkinDays'>): number {
-  return row.bites + row.workouts + row.checkinDays;
+// "Activity" rollup = the showing-up signals a member generates between Sessions.
+// Kept separate from Session progress (true program progress) so the meaningful number isn't buried.
+export function activityCount(
+  row: Pick<RosterRow, 'beats' | 'dailyBeatDays' | 'workouts' | 'checkinDays'>,
+): number {
+  return row.beats + row.dailyBeatDays + row.workouts + row.checkinDays;
 }
 
 export type RosterSummary = {
   total: number;
   joinedLast30: number;
   activeLast7: number;
-  assetsTotal: number;
+  sessionsClosedTotal: number; // Sessions closed across the roster (true program progress)
 };
 
 export function summarizeRoster(rows: RosterRow[], nowMs: number): RosterSummary {
@@ -99,13 +115,13 @@ export function summarizeRoster(rows: RosterRow[], nowMs: number): RosterSummary
   const d7 = nowMs - 7 * 86_400_000;
   let joinedLast30 = 0;
   let activeLast7 = 0;
-  let assetsTotal = 0;
+  let sessionsClosedTotal = 0;
   for (const r of rows) {
     if (new Date(r.joinedAt).getTime() >= d30) joinedLast30++;
     if (r.lastActiveAt && new Date(r.lastActiveAt).getTime() >= d7) activeLast7++;
-    assetsTotal += r.assets;
+    sessionsClosedTotal += r.sessionsClosed;
   }
-  return { total: rows.length, joinedLast30, activeLast7, assetsTotal };
+  return { total: rows.length, joinedLast30, activeLast7, sessionsClosedTotal };
 }
 
 // Compact relative-time label for the operator table ("3d ago", "just now", "—").
@@ -133,15 +149,21 @@ const ROSTER_SQL = `
   select
     p.member_id, p.display_name, p.email, p.avatar_url, p.named_door,
     p.created_at as joined_at,
-    (select max(s.created_at)   from member_session s   where s.member_id  = p.member_id) as last_sign_in_at,
-    (select max(am.created_at)  from agent_message am   where am.member_id = p.member_id) as last_msg_at,
-    (select max(ac.completed_at) from asset_completion ac where ac.member_id = p.member_id) as last_asset_at,
-    (select max(ae.started_at)  from activity_event ae  where ae.member_id = p.member_id) as last_workout_at,
-    (select max(bc.consumed_at) from bite_consumed bc   where bc.member_id = p.member_id) as last_bite_at,
-    (select max(r.taken_at)     from idq_retake r       where r.member_id  = p.member_id) as last_retake_at,
-    (select count(*) from asset_completion ac where ac.member_id = p.member_id) as assets,
-    (select count(*) from bite_consumed bc   where bc.member_id = p.member_id) as bites,
-    (select count(*) from activity_event ae  where ae.member_id = p.member_id) as workouts,
+    (select max(s.created_at)   from member_session s    where s.member_id  = p.member_id) as last_sign_in_at,
+    (select max(am.created_at)  from agent_message am    where am.member_id = p.member_id) as last_msg_at,
+    (select max(sp.updated_at)  from session_progress sp where sp.member_id = p.member_id) as last_session_at,
+    (select max(bc.completed_at) from beat_completion bc where bc.member_id = p.member_id) as last_beat_at,
+    (select max(dbl.created_at) from daily_beat_log dbl  where dbl.member_id = p.member_id) as last_daily_beat_at,
+    (select max(ae.started_at)  from activity_event ae   where ae.member_id = p.member_id) as last_workout_at,
+    (select max(r.taken_at)     from idq_retake r        where r.member_id  = p.member_id) as last_retake_at,
+    (select count(*) from session_progress sp where sp.member_id = p.member_id) as sessions_opened,
+    (select count(*) from session_progress sp where sp.member_id = p.member_id and sp.status = 'closed') as sessions_closed,
+    (select count(*) from badge_earned be where be.member_id = p.member_id) as badges,
+    (select count(*) from facet f         where f.member_id  = p.member_id) as facets,
+    (select count(*) from phase_gate pg   where pg.member_id = p.member_id) as gates,
+    (select count(*) from beat_completion bc where bc.member_id = p.member_id) as beats,
+    (select count(distinct dbl.shown_on) from daily_beat_log dbl where dbl.member_id = p.member_id) as daily_beat_days,
+    (select count(*) from activity_event ae where ae.member_id = p.member_id) as workouts,
     (select count(distinct date_trunc('day', am.created_at)) from agent_message am
        where am.member_id = p.member_id and am.role = 'member') as checkin_days,
     lr.id_score as id_score, lr.direction as id_direction,
@@ -176,16 +198,22 @@ export async function getRoster(db: Db): Promise<RosterRow[]> {
       lastActiveAt: newestIso(
         lastSignInAt,
         toIso(r.last_msg_at),
-        toIso(r.last_asset_at),
+        toIso(r.last_session_at),
+        toIso(r.last_beat_at),
+        toIso(r.last_daily_beat_at),
         toIso(r.last_workout_at),
-        toIso(r.last_bite_at),
         toIso(r.last_retake_at),
       ),
       idScore: toNumOrNull(r.id_score),
       idBaseline: toNumOrNull(r.id_baseline),
       idDirection: r.id_direction,
-      assets: toNum(r.assets),
-      bites: toNum(r.bites),
+      sessionsOpened: toNum(r.sessions_opened),
+      sessionsClosed: toNum(r.sessions_closed),
+      badges: toNum(r.badges),
+      facets: toNum(r.facets),
+      gates: toNum(r.gates),
+      beats: toNum(r.beats),
+      dailyBeatDays: toNum(r.daily_beat_days),
       workouts: toNum(r.workouts),
       checkinDays: toNum(r.checkin_days),
     };
@@ -198,4 +226,87 @@ export async function getRoster(db: Db): Promise<RosterRow[]> {
     return new Date(b.joinedAt).getTime() - new Date(a.joinedAt).getTime();
   });
   return mapped;
+}
+
+// --- Per-member usage detail (the /admin/member drill-down) ---------------------------------
+// The raw activity signals for one member, with per-Session state. Pairs with the curriculum
+// view helpers (getForecast / getPassport / getFacets) for the progress side.
+
+export type MemberSessionRow = {
+  sessionId: string;
+  status: string; // 'in_progress' | 'closed' | 'locked'
+  currentStep: number;
+  updatedAt: string | null;
+  closedAt: string | null;
+};
+
+export type MemberUsage = {
+  sessions: MemberSessionRow[];
+  sessionsOpened: number;
+  sessionsClosed: number;
+  beats: number;
+  dailyBeatDays: number;
+  workouts: number;
+  checkinDays: number;
+  gates: number;
+  lastBeatAt: string | null;
+  lastDailyBeatAt: string | null;
+  lastWorkoutAt: string | null;
+  lastMessageAt: string | null;
+  lastSessionAt: string | null;
+};
+
+const MEMBER_USAGE_SQL = `
+  select
+    (select count(*) from beat_completion bc where bc.member_id = $1) as beats,
+    (select count(distinct dbl.shown_on) from daily_beat_log dbl where dbl.member_id = $1) as daily_beat_days,
+    (select count(*) from activity_event ae where ae.member_id = $1) as workouts,
+    (select count(*) from phase_gate pg where pg.member_id = $1) as gates,
+    (select count(distinct date_trunc('day', am.created_at)) from agent_message am
+       where am.member_id = $1 and am.role = 'member') as checkin_days,
+    (select max(bc.completed_at) from beat_completion bc where bc.member_id = $1) as last_beat_at,
+    (select max(dbl.created_at) from daily_beat_log dbl where dbl.member_id = $1) as last_daily_beat_at,
+    (select max(ae.started_at) from activity_event ae where ae.member_id = $1) as last_workout_at,
+    (select max(am.created_at) from agent_message am where am.member_id = $1) as last_message_at,
+    (select max(sp.updated_at) from session_progress sp where sp.member_id = $1) as last_session_at
+`;
+
+export async function getMemberUsage(db: Db, memberId: string): Promise<MemberUsage> {
+  const { rows: sess } = await db.query<{
+    session_id: string;
+    status: string;
+    current_step: unknown;
+    updated_at: unknown;
+    closed_at: unknown;
+  }>(
+    `select session_id, status, current_step, updated_at, closed_at
+       from session_progress where member_id = $1
+       order by (status = 'closed') desc, updated_at desc`,
+    [memberId],
+  );
+  const sessions: MemberSessionRow[] = sess.map((s) => ({
+    sessionId: s.session_id,
+    status: s.status,
+    currentStep: toNum(s.current_step),
+    updatedAt: toIso(s.updated_at),
+    closedAt: toIso(s.closed_at),
+  }));
+
+  const { rows } = await db.query<Record<string, unknown>>(MEMBER_USAGE_SQL, [memberId]);
+  const r = rows[0] ?? {};
+  return {
+    sessions,
+    sessionsOpened: sessions.length,
+    sessionsClosed: sessions.filter((s) => s.status === 'closed').length,
+    beats: toNum(r.beats),
+    dailyBeatDays: toNum(r.daily_beat_days),
+    workouts: toNum(r.workouts),
+    checkinDays: toNum(r.checkin_days),
+    gates: toNum(r.gates),
+    lastBeatAt: toIso(r.last_beat_at),
+    lastDailyBeatAt: toIso(r.last_daily_beat_at),
+    lastWorkoutAt: toIso(r.last_workout_at),
+    lastMessageAt: toIso(r.last_message_at),
+    lastSessionAt: toIso(r.last_session_at),
+  };
 }

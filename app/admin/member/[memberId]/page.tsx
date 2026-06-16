@@ -5,6 +5,9 @@ import { listForMember } from '../../../../lib/founder/store.ts';
 import { MOMENTS, type OperatingMoment } from '../../../../lib/founder/draft.ts';
 import { countSubscriptions } from '../../../../lib/push/store.ts';
 import { buildNudge } from '../../../../lib/agent/nudge.ts';
+import { getMemberUsage, relativeTime } from '../../../../lib/admin/roster.ts';
+import { getForecast, getPassport, getFacets } from '../../../../lib/curriculum/view.ts';
+import { getSession } from '../../../../lib/curriculum/registry.ts';
 import { redirect } from 'next/navigation';
 import type { Db } from '../../../../lib/db/schema.ts';
 import { generateDraftAction } from '../../actions.ts';
@@ -22,6 +25,15 @@ export default async function AdminMember({ params }: { params: Promise<{ member
   const drafts = await listForMember(db, memberId);
   const pushCount = await countSubscriptions(db, memberId);
   const nudge = await buildNudge(db, memberId);
+  const [usage, forecast, passport, facets] = await Promise.all([
+    getMemberUsage(db, memberId),
+    getForecast(db, memberId),
+    getPassport(db, memberId),
+    getFacets(db, memberId),
+  ]);
+  const now = Date.now();
+  const sessionTitle = (id: string) => getSession(id)?.title ?? id;
+  const STATUS_LABEL: Record<string, string> = { closed: 'closed', in_progress: 'in progress', locked: 'locked' };
 
   return (
     <>
@@ -38,6 +50,77 @@ export default async function AdminMember({ params }: { params: Promise<{ member
           {dash.currentFocus && <> · Focus: {dash.currentFocus.label}</>}
         </p>
         {dash.identityParagraph && <p className="muted">{dash.identityParagraph}</p>}
+      </div>
+
+      <div className="card">
+        <h3>Usage &amp; progress</h3>
+
+        <div className="roster-summary">
+          <div className="summary-tile">
+            <span className="tile-num">{usage.sessionsClosed}<span className="muted"> / {usage.sessionsOpened}</span></span>
+            <span className="tile-label">Sessions closed / opened</span>
+          </div>
+          <div className="summary-tile">
+            <span className="tile-num">{passport.earned}<span className="muted"> / {passport.total}</span></span>
+            <span className="tile-label">Badges earned</span>
+          </div>
+          <div className="summary-tile">
+            <span className="tile-num">{facets.length}</span>
+            <span className="tile-label">Facets reclaimed</span>
+          </div>
+          <div className="summary-tile">
+            <span className="tile-num">{usage.gates}</span>
+            <span className="tile-label">Gates crossed</span>
+          </div>
+        </div>
+
+        {/* Where they are on the 4Rs — the same forecast the member sees, status only. */}
+        <p className="member-meta">
+          <strong>Journey:</strong>{' '}
+          {forecast.phases.map((p, i) => (
+            <span key={p.phase}>
+              {i > 0 && ' · '}
+              {p.label} <span className="muted">({p.status})</span>
+            </span>
+          ))}
+        </p>
+        {forecast.current && (
+          <p className="member-meta">
+            <strong>Next stop:</strong> {forecast.current.title}
+            {!forecast.current.openable && <span className="muted"> (coming soon)</span>}
+          </p>
+        )}
+
+        {/* Per-Session state — opened vs. closed, and where they stalled if mid-Session. */}
+        {usage.sessions.length > 0 ? (
+          <ul className="member-sessions">
+            {usage.sessions.map((s) => (
+              <li key={s.sessionId}>
+                <span className="member-session-title">{sessionTitle(s.sessionId)}</span>{' '}
+                <span className={`pill ${s.status === 'closed' ? 'approved' : 'pending'}`}>
+                  {STATUS_LABEL[s.status] ?? s.status}
+                </span>{' '}
+                {s.status === 'closed' ? (
+                  <span className="muted">closed {relativeTime(s.closedAt, now)}</span>
+                ) : (
+                  <span className="muted">at step {s.currentStep} · {relativeTime(s.updatedAt, now)}</span>
+                )}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="muted">No Sessions opened yet.</p>
+        )}
+
+        {/* Activity — the showing-up signals between Sessions. */}
+        <p className="member-meta">
+          <strong>Activity:</strong> {usage.beats} Beat{usage.beats === 1 ? '' : 's'} closed
+          {usage.lastBeatAt && <span className="muted"> (last {relativeTime(usage.lastBeatAt, now)})</span>} ·{' '}
+          {usage.dailyBeatDays} Daily Beat day{usage.dailyBeatDays === 1 ? '' : 's'} ·{' '}
+          {usage.workouts} workout{usage.workouts === 1 ? '' : 's'} ·{' '}
+          {usage.checkinDays} check-in day{usage.checkinDays === 1 ? '' : 's'}
+          {usage.lastMessageAt && <span className="muted"> (last message {relativeTime(usage.lastMessageAt, now)})</span>}
+        </p>
       </div>
 
       <div className="card">

@@ -18,9 +18,6 @@ const daysAgoISO = (d: number) => new Date(NOW - d * 86_400_000).toISOString();
 async function seed(): Promise<{ db: Db; alice: string; demo: string }> {
   const db = new PGlite() as unknown as Db;
   await applySchema(db);
-  await db.query(
-    `insert into atlas_asset (code, name, r_group, sort_order) values ('R-1','First Step','Reconnect',1) on conflict (code) do nothing`,
-  );
 
   const a = (
     await db.query<{ member_id: string }>(
@@ -49,15 +46,39 @@ async function seed(): Promise<{ db: Db; alice: string; demo: string }> {
     new Date(NOW - 3_600_000).toISOString(),
   ]);
   await db.query(`insert into agent_message (member_id, role, text, created_at) values ($1,'agent','reply',$2)`, [a, daysAgoISO(3)]);
-  await db.query(`insert into bite_consumed (member_id, bite_code, consumed_at) values ($1,'bite-1',$2)`, [a, daysAgoISO(4)]);
   await db.query(
     `insert into activity_event (member_id, external_id, activity_type, started_at) values ($1,'s1','run',$2)`,
     [a, daysAgoISO(5)],
   );
+  // PROGRESS — the live curriculum engine: one Session closed, one still in progress.
   await db.query(
-    `insert into asset_completion (member_id, asset_code, asset_version, completed_at) values ($1,'R-1','v1',$2)`,
+    `insert into session_progress (member_id, session_id, current_step, status, updated_at, closed_at)
+     values ($1,'RCN-EXC',5,'closed',$2,$2)`,
     [a, daysAgoISO(6)],
   );
+  await db.query(
+    `insert into session_progress (member_id, session_id, current_step, status, updated_at)
+     values ($1,'RCN-VAL',2,'in_progress',$2)`,
+    [a, daysAgoISO(4)],
+  );
+  await db.query(`insert into badge_earned (member_id, badge_id, earned_at) values ($1,'onboarding',$2)`, [a, daysAgoISO(6)]);
+  await db.query(`insert into facet (member_id, text, sort_order) values ($1,'the Athlete',0)`, [a]);
+  await db.query(`insert into phase_gate (member_id, gate, set_at) values ($1,'reconnect_checkpoint_passed',$2)`, [a, daysAgoISO(6)]);
+  // ACTIVITY — Beats closed + Daily Beat days.
+  await db.query(
+    `insert into beat_completion (member_id, beat_id, close_type, completed_at) values ($1,'BT-1','reflect',$2)`,
+    [a, daysAgoISO(4)],
+  );
+  await db.query(`insert into daily_beat_log (member_id, shown_on, reflection_id, created_at) values ($1,$2,'RCN-EXC-01',$3)`, [
+    a,
+    daysAgoISO(5).slice(0, 10),
+    daysAgoISO(5),
+  ]);
+  await db.query(`insert into daily_beat_log (member_id, shown_on, reflection_id, created_at) values ($1,$2,'RCN-EXC-02',$3)`, [
+    a,
+    daysAgoISO(4).slice(0, 10),
+    daysAgoISO(4),
+  ]);
   // Baseline + a later retake (latest ID Score = 71, up from 60). Pin taken_at in the
   // past — the column defaults to now(), which would otherwise win "last active".
   await db.query(
@@ -91,14 +112,21 @@ test('getRoster distinguishes real accounts from demo personas', async () => {
   assert.equal(demo.isDemo, true);
 });
 
-test('getRoster aggregates activity and ID Score correctly', async () => {
+test('getRoster aggregates live progress, activity, and ID Score correctly', async () => {
   const { db } = await seed();
   const alice = (await getRoster(db)).find((r) => r.email === 'alice@x.com')!;
-  assert.equal(alice.assets, 1);
-  assert.equal(alice.bites, 1);
+  // Progress — the live curriculum engine.
+  assert.equal(alice.sessionsOpened, 2, 'two Sessions touched (one closed, one in progress)');
+  assert.equal(alice.sessionsClosed, 1, 'one Session closed = one completed asset');
+  assert.equal(alice.badges, 1);
+  assert.equal(alice.facets, 1);
+  assert.equal(alice.gates, 1);
+  // Activity — showing-up signals.
+  assert.equal(alice.beats, 1);
+  assert.equal(alice.dailyBeatDays, 2, 'two distinct Daily Beat days');
   assert.equal(alice.workouts, 1);
   assert.equal(alice.checkinDays, 2, 'two distinct days with member messages');
-  assert.equal(activityCount(alice), 4, '1 bite + 1 workout + 2 check-in days');
+  assert.equal(activityCount(alice), 6, '1 beat + 2 daily-beat days + 1 workout + 2 check-in days');
   assert.equal(alice.idScore, 71);
   assert.equal(alice.idBaseline, 60);
   assert.equal(alice.idDirection, 'up');
@@ -121,17 +149,17 @@ test('demo member with no activity has null timestamps and zero counts', async (
   assert.equal(activityCount(demo), 0);
 });
 
-test('summarizeRoster counts totals, recent joins, and 7-day actives', () => {
+test('summarizeRoster counts totals, recent joins, 7-day actives, and Sessions closed', () => {
   const rows: RosterRow[] = [
-    { joinedAt: daysAgoISO(2), lastActiveAt: daysAgoISO(1), assets: 3 } as RosterRow,
-    { joinedAt: daysAgoISO(40), lastActiveAt: daysAgoISO(20), assets: 1 } as RosterRow,
-    { joinedAt: daysAgoISO(5), lastActiveAt: null, assets: 0 } as RosterRow,
+    { joinedAt: daysAgoISO(2), lastActiveAt: daysAgoISO(1), sessionsClosed: 3 } as RosterRow,
+    { joinedAt: daysAgoISO(40), lastActiveAt: daysAgoISO(20), sessionsClosed: 1 } as RosterRow,
+    { joinedAt: daysAgoISO(5), lastActiveAt: null, sessionsClosed: 0 } as RosterRow,
   ];
   const s = summarizeRoster(rows, NOW);
   assert.equal(s.total, 3);
   assert.equal(s.joinedLast30, 2, 'two joined within 30 days');
   assert.equal(s.activeLast7, 1, 'only one active within 7 days');
-  assert.equal(s.assetsTotal, 4);
+  assert.equal(s.sessionsClosedTotal, 4);
 });
 
 test('relativeTime renders compact buckets and handles null/future', () => {
