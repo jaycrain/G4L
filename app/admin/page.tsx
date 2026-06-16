@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getDb } from '../../lib/db/index.ts';
 import { listPending } from '../../lib/founder/store.ts';
-import { getRoster, summarizeRoster, relativeTime, activityCount } from '../../lib/admin/roster.ts';
+import { getRoster, summarizeRoster, relativeTime } from '../../lib/admin/roster.ts';
 import { isAdmin } from '../authz.ts';
 import { initials } from '../../lib/member/avatar.ts';
 import type { Db } from '../../lib/db/schema.ts';
@@ -77,10 +77,16 @@ export default async function AdminHome() {
                   <th>Member</th>
                   <th>Door</th>
                   <th className="num">ID Score</th>
-                  <th className="num">Sessions</th>
-                  <th className="num">Time on task</th>
+                  <th className="num">Sessions<br />closed</th>
+                  <th className="num">Sessions<br />opened</th>
+                  <th className="num">Badges</th>
+                  <th className="num">Gates</th>
+                  <th className="num">Time on<br />task</th>
                   <th className="num">Drop-off</th>
-                  <th className="num">Activity</th>
+                  <th className="num">Beats</th>
+                  <th className="num">Daily<br />Beat</th>
+                  <th className="num">Workouts</th>
+                  <th className="num">Check-in<br />days</th>
                   <th>Last active</th>
                   <th>Joined</th>
                 </tr>
@@ -130,38 +136,24 @@ export default async function AdminHome() {
                           </span>
                         )}
                       </td>
-                      <td
-                        className="num"
-                        title={`${m.sessionsClosed} closed · ${m.sessionsOpened} opened · ${m.badges} badge${m.badges === 1 ? '' : 's'} · ${m.gates} gate${m.gates === 1 ? '' : 's'} crossed`}
-                      >
-                        {m.sessionsClosed}
-                        <span className="muted"> / {m.sessionsOpened}</span>
-                      </td>
-                      <td className="num" title="Time-on-asset summed across closed Sessions (telemetry, accrues from new activity)">
-                        {fmtMinutes(m.engagedMinutes)}
-                      </td>
-                      <td
-                        className="num"
-                        title={m.stalledSessions > 0 ? 'Sessions opened but never closed — where they dropped off' : 'No stalled Sessions'}
-                      >
+                      <td className="num">{m.sessionsClosed || <span className="muted">—</span>}</td>
+                      <td className="num">{m.sessionsOpened || <span className="muted">—</span>}</td>
+                      <td className="num">{m.badges || <span className="muted">—</span>}</td>
+                      <td className="num">{m.gates || <span className="muted">—</span>}</td>
+                      <td className="num">{m.engagedMinutes > 0 ? fmtMinutes(m.engagedMinutes) : <span className="muted">—</span>}</td>
+                      <td className="num">
                         {m.stalledSessions > 0 ? (
                           <span className="trend-down">{m.stalledSessions}</span>
                         ) : (
                           <span className="muted">—</span>
                         )}
                       </td>
-                      <td
-                        className="num"
-                        title={`${m.beats} Beat${m.beats === 1 ? '' : 's'} closed · ${m.dailyBeatDays} Daily Beat day${m.dailyBeatDays === 1 ? '' : 's'} · ${m.workouts} workout${m.workouts === 1 ? '' : 's'} · ${m.checkinDays} check-in day${m.checkinDays === 1 ? '' : 's'}`}
-                      >
-                        {activityCount(m)}
-                      </td>
-                      <td className="roster-time" title={m.lastActiveAt ?? ''}>
-                        {relativeTime(m.lastActiveAt, now)}
-                      </td>
-                      <td className="roster-time" title={m.joinedAt}>
-                        {relativeTime(m.joinedAt, now)}
-                      </td>
+                      <td className="num">{m.beats || <span className="muted">—</span>}</td>
+                      <td className="num">{m.dailyBeatDays || <span className="muted">—</span>}</td>
+                      <td className="num">{m.workouts || <span className="muted">—</span>}</td>
+                      <td className="num">{m.checkinDays || <span className="muted">—</span>}</td>
+                      <td className="roster-time">{relativeTime(m.lastActiveAt, now)}</td>
+                      <td className="roster-time">{relativeTime(m.joinedAt, now)}</td>
                     </tr>
                   );
                 })}
@@ -170,9 +162,9 @@ export default async function AdminHome() {
           </div>
         )}
         <p className="muted roster-foot">
-          Sorted by most recent activity. <strong>Sessions</strong> = closed / opened (a Session closed is a completed
-          asset). <strong>Last active</strong> reflects any tracked action; <strong>sign-in</strong> only refreshes on
-          login. Hover <strong>Sessions</strong> or <strong>Activity</strong> for the breakdown.
+          Sorted by most recent activity. A closed Session is a completed asset; <strong>Drop-off</strong> = Sessions
+          opened but never closed. <strong>Time on task</strong> and <strong>Drop-off</strong> are experience telemetry
+          (they accrue from new activity going forward). <strong>Last active</strong> reflects any tracked action.
         </p>
       </div>
     </>
