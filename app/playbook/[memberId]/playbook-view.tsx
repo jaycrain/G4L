@@ -137,7 +137,12 @@ export default function PlaybookView({
           <>
             <p className="pb-line">{e.body}</p>
             <div className="pb-meta">
-              {e.source.label && <span className={`pb-chip${e.source.kind === 'science' ? ' sci' : ''}`}>{e.source.label}</span>}
+              {(e.source.label || e.source.kind === 'science') && (
+                <span className={`pb-chip${e.source.kind === 'science' ? ' sci' : ''}`}>
+                  {/* science chips read just "Science" — never a Greg attribution */}
+                  {e.source.kind === 'science' && (!e.source.label || /greg/i.test(e.source.label)) ? 'Science' : e.source.label}
+                </span>
+              )}
               <span className="pb-tools">
                 <button type="button" onClick={() => run(() => pinEntryAction(memberId, e.id, !e.pinned))} disabled={busy}>
                   {e.pinned ? 'Unpin' : 'Pin'}
@@ -177,10 +182,10 @@ export default function PlaybookView({
     <>
       <Link href={`/dashboard/${memberId}`} className="pb-back">← Dashboard</Link>
       <h1 className="pb-page-title">Your G4L Playbook</h1>
-      <p className="pb-sub">The plays that are working for you</p>
+      <p className="pb-sub">The story you’re telling about yourself — and the plays that back it up</p>
       <p className="pb-intro">
-        The handful of things actually working for you — the reframes that landed, the science that convinced you, and
-        your own best lines. Gathered by your companion, kept by you. Reach for it whenever you need it.
+        Your companion keeps two things here: the story you’re writing as you go, and the handful of reframes, science,
+        and your own best lines that hold it up. Re-woven every time you close a Session. Reach for it whenever you need it.
       </p>
 
       {gathering ? (
@@ -193,13 +198,21 @@ export default function PlaybookView({
       ) : null}
       {gatherMsg && <p className="pb-gather-msg">{gatherMsg}</p>}
 
+      {/* HERO — the synthesis narrative leads; captures support it below. */}
       {synthesis && (
-        <section className="pb-card pb-synth">
+        <section className="pb-card pb-hero">
           <div className="pb-sec">Your story so far</div>
-          <div className="pb-sec-d">Where you’ve been, where you are, where you’re headed — your companion keeps this woven from your own words as you go.</div>
-          <p className="pb-synth-body">{synthesis}</p>
+          <div className="pb-sec-d">A living read your companion re-weaves each time you close a Session.</div>
+          <div className="pb-narr">
+            {synthesis.split(/\n\n+/).map((p) => p.trim()).filter(Boolean).map((para, k) => (
+              <p key={k}>{para}</p>
+            ))}
+          </div>
+          <div className="pb-rewoven">Re-woven each time you close a Session — it deepens with every one you complete.</div>
         </section>
       )}
+
+      {synthesis && <p className="pb-drawnfrom">What it’s drawn from</p>}
 
       {SECTIONS.map((meta) => {
         const all = inSection(meta.key);

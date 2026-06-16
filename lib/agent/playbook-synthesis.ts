@@ -16,9 +16,15 @@ const SYNTH_SYSTEM = `${MEMBER_AGENT_SYSTEM_PROMPT}
 OPERATING MOMENT: the Playbook synthesis — the living story the program keeps for this member.
 Write it as ONE flowing narrative (no headers, no list), 5–8 short sentences, second person, in their
 own spirit — warm, plain, never clinical, never praise. Move through five beats so it reads as an arc:
-where they were (the self they're reclaiming), how the gap opened (their Door(s)), where they are now,
-the new intentions or habits taking shape, and where they're headed. Use THEIR words, selves, and goals
-— never generic. This is theirs; it should feel like being known. Output ONLY the narrative.`;
+1) WHERE THEY WERE — the prior strong self, in their own proof/evidence.
+2) THE FADE — what drifted and the Door it came through (backward-looking, their words).
+3) WHERE THEY ARE NOW — the honest present, the hinge.
+4) WHAT THEY'RE PUTTING BACK — the intentions and plays they've actually adopted (forward).
+5) WHERE THEY'RE HEADED — the reclaimed self: back to who they were AND a fresh version of it.
+RULES: weave THEIR words and facts — quote-adjacent, never invented; pull only from the material below.
+Thin is fine early (you may only have beats 1–3); it gets richer as more accumulates. DIRECTION: the dig
+looks backward (who life stripped away); the destination opens FORWARD — "the you you're reclaiming," a
+fresh version — never "back to a frozen old self." Light touch, no wordplay drumbeat. Output ONLY the narrative.`;
 
 /** Recompose + persist the member's Playbook synthesis. Returns it, or null if skipped/unavailable. */
 export async function refreshPlaybookSynthesis(db: Db, memberId: string): Promise<string | null> {
