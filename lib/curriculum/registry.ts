@@ -128,12 +128,12 @@ const badge = (id: string, name: string, category: BadgeCategory, icon: string, 
 });
 
 export const BADGES: Badge[] = [
-  badge('onboarding-courage', 'Onboarding Courage', 'milestone', 'star', 'onboarding_complete', false),
-  badge('named-yourself', 'Named Yourself', 'milestone', 'flag', 'session:RCN-EXC:closed', true),
-  badge('reconnect-milestone', 'Reconnected', 'milestone', 'up', 'checkpoint:reconnect:passed', true),
-  badge('rewire-milestone', 'Rewired', 'milestone', 'up', 'checkpoint:rewire:passed', true),
-  badge('rebuild-milestone', 'Rebuilt', 'milestone', 'up', 'checkpoint:rebuild:passed', true),
-  badge('reclaim-capstone', 'Reclaimed — a full cycle', 'capstone', 'star', 'checkpoint:reclaim:passed', true),
+  badge('onboarding-courage', 'Onboarding Courage', 'milestone', 'door', 'onboarding_complete', false),
+  badge('named-yourself', 'Named Yourself', 'milestone', 'spark', 'session:RCN-EXC:closed', true),
+  badge('reconnect-milestone', 'Reconnected', 'milestone', 'bullseye', 'checkpoint:reconnect:passed', true),
+  badge('rewire-milestone', 'Rewired', 'milestone', 'bolt', 'checkpoint:rewire:passed', true),
+  badge('rebuild-milestone', 'Rebuilt', 'milestone', 'mountain', 'checkpoint:rebuild:passed', true),
+  badge('reclaim-capstone', 'Reclaimed — a full cycle', 'capstone', 'sun', 'checkpoint:reclaim:passed', true),
 ];
 
 // --- Accessors (the renderer reads only through these) ---

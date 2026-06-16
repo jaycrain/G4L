@@ -92,6 +92,13 @@ test('every Checkpoint is crossable (openable) — so each phase resolves to its
   for (const c of cps) assert.equal(c.openable, true, `${c.id} should be crossable`);
 });
 
+test('every badge maps to a real glyph in the delivered imagery set', async () => {
+  const { BADGE_GLYPH_KEYS } = await import('../lib/curriculum/badge-glyph-keys.ts');
+  for (const b of listBadges()) {
+    assert.ok((BADGE_GLYPH_KEYS as readonly string[]).includes(b.icon), `badge ${b.id} icon "${b.icon}" has no glyph`);
+  }
+});
+
 test('the daily layer runs across, separate from the phase columns', () => {
   const daily = dailyLayer();
   assert.ok(daily.length >= 5);
