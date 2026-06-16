@@ -152,6 +152,16 @@ export function doorEngaged(prev: Collected, next: Collected): boolean {
   return has(prev) || has(next);
 }
 
+// Catch a real SECOND Door the model verbalized but forgot to record — ONLY when at least one Door is
+// already recorded (the gap beat genuinely happened). It must NEVER fabricate a FIRST Door by scraping
+// scattered words: that mis-tagged Joanne as Empty Nest from "retired / granddaughter / LA" when the
+// Door beat had never run. With no recorded Door, return the (empty) set unchanged so the contract
+// holds the conversation in the Door beat and the engine asks how the gap actually opened.
+export function augmentDoors(recorded: DoorSlug[], narrative: string): DoorSlug[] {
+  if (recorded.length === 0) return recorded;
+  return Array.from(new Set<DoorSlug>([...recorded, ...matchDoors(narrative)]));
+}
+
 // The member pushing back on the Door read ("that's not it", "what do you mean", "those don't fit").
 // A dispute must REOPEN the beat — never wrap, never replay the same label.
 const DISPUTE_RE =
@@ -465,15 +475,17 @@ async function liveTurn(
     !!collected.athleticPast &&
     (!!collected.identityNoun || !!collected.identitySkipped) &&
     (collected.reclaimList?.length ?? 0) >= RECLAIM_LIST_MIN;
-  // AUGMENT, don't just fill: merge any Door the narrative clearly names into the model's set. The
-  // model sometimes verbalizes a Door (e.g. "caring for your 95-year-old mom is its own weight") but
-  // records only the first — so a real second Door is caught from the member's own words, not dropped.
+  // AUGMENT a SECOND Door only — never FABRICATE the first Door or the gap. The model sometimes
+  // verbalizes a real second Door (e.g. "caring for your 95-year-old mom is its own weight") but
+  // records only the first; we catch that. But if the model recorded NO Door, the gap beat hasn't
+  // genuinely happened — do NOT scrape a Door from scattered words (that mis-tagged Joanne as Empty
+  // Nest from "retired/granddaughter/LA"), and NEVER backfill the gap from an arbitrary message (that
+  // stuffed a reclaim answer into the fade story). With nothing fabricated, the contract holds the
+  // conversation in the Door beat and the engine asks "how did the gap open?" — capturing a REAL gap.
   if (coreReady) {
     const memberText = [...history.filter((m) => m.role === 'member').map((m) => m.text), memberMessage, collected.gap ?? ''].join('  ');
-    const merged = Array.from(new Set<DoorSlug>([...(collected.doors ?? []), ...matchDoors(memberText)]));
-    if (merged.length > (collected.doors?.length ?? 0)) {
-      collected = { ...collected, doors: merged, ...(collected.gap ? {} : { gap: memberMessage }) };
-    }
+    const augmented = augmentDoors(collected.doors ?? [], memberText);
+    if (augmented.length !== (collected.doors?.length ?? 0)) collected = { ...collected, doors: augmented };
   }
 
   // Guard the model's most common Door mix-up — a marriage/young-kids/load-bearer story is The Full
@@ -532,6 +544,14 @@ async function liveTurn(
     // beat close. Don't stack the forward question onto a contradictory handoff — just ask it.
     const prematureHandoff = /ready when you are/i.test(r);
     finalReply = prematureHandoff ? forward : /\?/.test(r) ? r : `${r ? `${r}\n\n` : ''}${forward}`;
+  } else if (stage === 'door' && (collected.doors?.length ?? 0) === 0 && memberDone) {
+    // Reclaim list is satisfied and the member is winding it down ("that's enough for now") — but the
+    // fade story hasn't been touched. DRIVE the transition to the Door beat instead of letting a
+    // lingering "anything else for your list?" stall it (that's how the gap beat got skipped). Keep the
+    // model's reflection as the lead, then ask how the gap opened. (No fabrication — a real answer next.)
+    const r = reply.trim();
+    const lead = r && !/ready when you are/i.test(r) && !/\?\s*$/.test(r) ? `${r}\n\n` : '';
+    finalReply = `${lead}${doorPrompt()}`;
   } else {
     finalReply = withForwardPrompt(reply, stage);
   }

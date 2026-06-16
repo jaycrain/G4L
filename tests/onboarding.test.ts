@@ -11,6 +11,7 @@ import {
   isDoorDispute,
   memberWantsToWrap,
   doorEngaged,
+  augmentDoors,
   ensureIdqHandoff,
   stripLeadingDisclosure,
   INITIAL_STATE,
@@ -169,6 +170,21 @@ test('door turns are counted only once the gap/Door is on the table (not when th
   assert.equal(doorEngaged({} as Collected, { gap: 'when I got married then had kids' } as Collected), true);
   // A Door already captured earlier → still engaging on the next turn.
   assert.equal(doorEngaged({ doors: ['career_cliff'] } as Collected, {} as Collected), true);
+});
+
+test('augmentDoors never FABRICATES a first Door (Joanne run 3) but catches a real second one', () => {
+  // The run-3 failure: the gap beat never ran, but scattered words ("retired, granddaughter, LA")
+  // got scraped into Empty Nest. With NO Door recorded, augment must return nothing — so the contract
+  // keeps the conversation in the Door beat instead of completing on a fabricated Door.
+  const joanneNarrative = 'now that I am retired I want to spend time with my girlfriends and my granddaughter Clair in LA';
+  assert.deepEqual(augmentDoors([], joanneNarrative), [], 'no recorded Door → never invent one');
+  // Legit augment (Joanne run 1): the model recorded career_cliff; her words also name aging parents.
+  assert.deepEqual(
+    augmentDoors(['career_cliff'], 'caring for my 95 year old mom took over'),
+    ['career_cliff', 'aging_parents'],
+  );
+  // Nothing new to add → unchanged.
+  assert.deepEqual(augmentDoors(['body'], 'just the body saying no'), ['body']);
 });
 
 test('isAffirmation recognizes short confirmations (incl. "for sure"), not longer add-ons', () => {
