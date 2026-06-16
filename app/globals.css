@@ -255,6 +255,17 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .chat-continue { margin-top: 0.75rem; }
 .chat-continue button { margin: 0; width: 100%; }
 
+/* Onboarding confirmation card — the member's final check before the IDQ (a Door into the product). */
+.onboard-summary { border: 1px solid var(--panel-line); border-radius: 12px; padding: 1.1rem 1.2rem; background: #fff; box-shadow: 0 2px 12px rgba(42, 42, 42, 0.08); }
+.onboard-summary h2 { margin: 0 0 0.3rem; font-size: 1.15rem; color: var(--navy); }
+.onboard-summary > .muted { margin: 0 0 0.9rem; }
+.summary-list { margin: 0 0 1rem; }
+.summary-list dt { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--teal); margin-top: 0.8rem; }
+.summary-list dt:first-child { margin-top: 0; }
+.summary-list dd { margin: 0.15rem 0 0; color: var(--charcoal); line-height: 1.5; }
+.summary-reclaim { margin: 0.2rem 0 0; padding-left: 1.2rem; }
+.summary-reclaim li { margin: 0.15rem 0; }
+
 /* Your next Beat — the work surface */
 .beat-card { border-left: 4px solid var(--olive); }
 .beat-title { font-weight: 700; color: var(--navy); margin: 0.25rem 0 0.35rem; }

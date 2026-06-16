@@ -15,9 +15,13 @@ export async function saveOnboardingSession(
   state: ConvState,
   messages: ConvMessage[],
 ): Promise<void> {
+  // Cast the already-stringified JSON through ::text::jsonb. Without the explicit ::text, the prod
+  // driver (postgres.js) re-encodes a JSON string param as a jsonb *scalar string* (double-encoding);
+  // ::text forces it to parse the JSON once, storing a real jsonb object/array on both drivers.
+  // (loadOnboardingSession still defensively re-parses, so a legacy double-encoded row reads fine too.)
   await db.query(
     `insert into onboarding_session (email, token, state, messages, updated_at)
-     values ($1,$2,$3::jsonb,$4::jsonb, now())
+     values ($1,$2,$3::text::jsonb,$4::text::jsonb, now())
      on conflict (email) do update
        set token = excluded.token, state = excluded.state, messages = excluded.messages, updated_at = now()`,
     [email, token, JSON.stringify(state), JSON.stringify(messages)],

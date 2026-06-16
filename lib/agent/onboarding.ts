@@ -15,6 +15,7 @@ import { MEMBER_AGENT_SYSTEM_PROMPT } from './system-prompt.ts';
 import { DOORS, DOOR_SLUGS, isDoorSlug, matchDoors, correctDoors, type DoorSlug } from '../doors.ts';
 import { cleanIdentityNoun, displayIdentityNoun, identityLabel } from '../member/identity.ts';
 import { RECLAIM_LIST_MIN, RECLAIM_LIST_TARGET } from '../member/reclaim.ts';
+import { contractMet, gapIsNarrative } from './onboarding-contract.ts';
 
 export type Stage = 'identity' | 'identity_name' | 'reclaim' | 'door' | 'complete';
 
@@ -107,6 +108,9 @@ export function nextStage(c: Collected): Stage {
   if (!c.identityNoun && !c.identitySkipped) return 'identity_name';
   if (!c.reclaimList || c.reclaimList.length < RECLAIM_LIST_MIN) return 'reclaim';
   if (!c.doors || c.doors.length === 0) return 'door';
+  // The fade STORY is captured in the Door beat — a Door slug without a real "how it opened"
+  // narrative is an unfinished beat (Joanne run 2: door tagged, gap was a stray goal).
+  if (!gapIsNarrative(c.gap, c.reclaimList ?? [])) return 'door';
   return 'complete';
 }
 
@@ -168,19 +172,18 @@ export function resolveCompletion(
   blocked = false, // a Door dispute this turn — never wrap; reopen the beat instead
   memberDone = false, // the member explicitly ended the beat — honor it, even below the explore-minimum
 ): { complete: boolean; stage: Stage; exploringDoor: boolean } {
-  const reqsMet =
-    !!collected.athleticPast &&
-    (!!collected.identityNoun || !!collected.identitySkipped) && // named it, or chose "not yet"
-    (collected.reclaimList?.length ?? 0) >= RECLAIM_LIST_MIN &&
-    (collected.doors?.length ?? 0) >= 1;
+  // The full contract — incl. a real gap NARRATIVE, not just a Door slug (see onboarding-contract.ts).
+  // This is what makes "complete" honest: the agent cannot hand off without the fade story.
+  const reqsMet = contractMet(collected);
   const exploredEnough = doorTurns >= DOOR_MIN_TURNS;
   const mustWrap = doorTurns >= DOOR_MAX_TURNS;
   // The member saying they're done wraps it even before the explore-minimum — the floor exists to stop
   // the MODEL racing, not to override the MEMBER. Otherwise it's: explored enough + a signal to close.
+  // (memberDone still cannot complete an unmet contract — `reqsMet` gates it either way.)
   const complete = !blocked && reqsMet && (memberDone || (exploredEnough && (wantsComplete || memberAffirmed || mustWrap)));
-  // We hold in the Door beat whenever we have a Door but aren't completing — so the engine keeps the
-  // conversation there (widening to other Doors, then deepening) instead of stranding or rushing.
-  const exploringDoor = !complete && reqsMet;
+  // Hold in the Door beat whenever a Door is on the table but we're not done — so the engine keeps the
+  // conversation there (drawing out the gap story, widening to other Doors) instead of stranding.
+  const exploringDoor = !complete && (collected.doors?.length ?? 0) >= 1;
   const stage: Stage = complete ? 'complete' : exploringDoor ? 'door' : nextStage(collected);
   return { complete, stage, exploringDoor };
 }
@@ -506,8 +509,12 @@ async function liveTurn(
     // forward ourselves — widen first (the gap is usually more than one Door), then move toward
     // closure. Never re-ask what changed or when (that reads as the loop members hit before).
     const r = reply.trim();
-    const forward =
-      doorTurns <= 1
+    // If the fade STORY isn't captured yet, that's the priority — ask how it opened before widening to
+    // other Doors. (Prevents completing on a Door slug with no real "how it opened" narrative.)
+    const needGap = !gapIsNarrative(collected.gap, collected.reclaimList ?? []);
+    const forward = needGap
+      ? 'Help me understand how that opened — when did you first feel the drift, and what did it quietly cost you?'
+      : doorTurns <= 1
         ? 'That rarely opens all at once. Was that the whole of it, or did something else pile on around the same time?'
         : 'Is there anything else that pulled at you in that season — or does that feel like the whole of how it opened?';
     // The model sometimes jumps to a wrap ("Ready when you are.") before the engine will let the

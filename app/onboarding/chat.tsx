@@ -6,6 +6,7 @@ import { onboardingTurn, finalizeOnboardingAction, loadOnboardingSessionAction }
 import { setupAction } from '../account/setup/actions.ts';
 import PasswordField from '../password-field.tsx';
 import type { ConvState, ConvMessage } from '../../lib/agent/onboarding.ts';
+import { buildSummaryCard } from '../../lib/agent/onboarding-contract.ts';
 
 // Onboarding can be taken in multiple sittings — completed turns persist server-side per turn; these
 // device-local bits let a member return straight into it (and keep an unsent draft). Never the password.
@@ -243,15 +244,40 @@ export default function OnboardingChat() {
         {pending && <div className="typing">Thinking…</div>}
       </div>
       {error && <p className="error">{error}</p>}
-      {ready ? (
-        <div className="chat-continue">
-          <button type="button" onClick={proceed} disabled={pending}>
-            {pending ? 'Saving…' : 'Continue to the Identity Distance Questionnaire (IDQ) →'}
-          </button>
-          <button type="button" className="btn-secondary" onClick={keepTalking} disabled={pending} style={{ marginTop: '0.5rem' }}>
-            I’m not finished — keep talking
-          </button>
-        </div>
+      {ready && state ? (
+        (() => {
+          // The confirmation card — built from what was actually captured. The member is the final
+          // check before a member row is created: they catch a dropped item or a wrong Door here.
+          const card = buildSummaryCard(state.collected);
+          return (
+            <div className="onboard-summary">
+              <h2>Before your first ID Score — does this look right?</h2>
+              <p className="muted">This is what I captured. If anything’s missing or off, we’ll fix it — nothing’s saved yet.</p>
+              <dl className="summary-list">
+                <dt>Who you’re reclaiming</dt>
+                <dd>{card.identityLabel ?? 'You’ll name this through the work (Identity Excavation comes soon).'}</dd>
+                <dt>How the gap opened</dt>
+                <dd>{card.gap}</dd>
+                <dt>Door{card.doors.length === 1 ? '' : 's'}</dt>
+                <dd>{card.doors.map((d) => d.displayName).join(', ') || '—'}</dd>
+                <dt>Your Reclaim List</dt>
+                <dd>
+                  <ul className="summary-reclaim">
+                    {card.reclaimList.map((it, i) => (<li key={i}>{it}</li>))}
+                  </ul>
+                </dd>
+              </dl>
+              <div className="chat-continue">
+                <button type="button" onClick={proceed} disabled={pending}>
+                  {pending ? 'Saving…' : 'Looks right — continue to the IDQ →'}
+                </button>
+                <button type="button" className="btn-secondary" onClick={keepTalking} disabled={pending} style={{ marginTop: '0.5rem' }}>
+                  Something’s missing or wrong — keep talking
+                </button>
+              </div>
+            </div>
+          );
+        })()
       ) : (
         <form className="chat-input" onSubmit={send}>
           <textarea

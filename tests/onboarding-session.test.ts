@@ -32,6 +32,19 @@ test('save then load round-trips state + transcript (matching token)', async () 
   assert.equal(got!.messages[1]!.text, 'a cyclist who rode every weekend');
 });
 
+test('stored as real jsonb (object/array), not a double-encoded scalar string', async () => {
+  const d = await db();
+  await saveOnboardingSession(d, 'jay@x.com', 'tok-1', state, messages);
+  // jsonb_typeof must see structured values, not a string — guards the prod double-encode regression.
+  const t = (
+    await d.query<{ st: string; mt: string }>(
+      "select jsonb_typeof(state) st, jsonb_typeof(messages) mt from onboarding_session where email='jay@x.com'",
+    )
+  ).rows[0]!;
+  assert.equal(t.st, 'object', 'state is a jsonb object, not a scalar string');
+  assert.equal(t.mt, 'array', 'messages is a jsonb array, not a scalar string');
+});
+
 test('a wrong (present) token does NOT resume (no resuming someone else by guessing the email)', async () => {
   const d = await db();
   await saveOnboardingSession(d, 'jay@x.com', 'tok-1', state, messages);

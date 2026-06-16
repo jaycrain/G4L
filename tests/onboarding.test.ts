@@ -27,8 +27,14 @@ test('nextStage advances only as each requirement is met, and completes after th
   // fewer than the minimum (3) keeps us at reclaim
   assert.equal(nextStage({ athleticPast: 'x', identityNoun: 'Runner', reclaimList: ['a', 'b'] }), 'reclaim');
   assert.equal(nextStage({ athleticPast: 'x', identityNoun: 'Runner', reclaimList: ['a', 'b', 'c'] }), 'door');
+  // A Door slug WITHOUT the fade story isn't a finished beat — stays in 'door' to draw out the gap.
   assert.equal(
     nextStage({ athleticPast: 'x', identityNoun: 'Runner', reclaimList: five, doors: ['career_cliff'] }),
+    'door',
+  );
+  // Door + a real "how it opened" narrative → complete.
+  assert.equal(
+    nextStage({ athleticPast: 'x', identityNoun: 'Runner', reclaimList: five, doors: ['career_cliff'], gap: 'my role was cut and the riding quietly stopped' }),
     'complete',
   );
 });
@@ -94,7 +100,7 @@ test('full scripted conversation collects every field, in natural case, and comp
 });
 
 test('completion is gated on BOTH sides: explore first, then close reliably', () => {
-  const full = { athleticPast: 'x', identityNoun: 'Runner', reclaimList: ['a', 'b', 'c'], doors: ['career_cliff'] } as Collected;
+  const full = { athleticPast: 'x', identityNoun: 'Runner', reclaimList: ['a', 'b', 'c'], doors: ['career_cliff'], gap: 'my role was cut and the riding quietly stopped' } as Collected;
   const partial = { athleticPast: 'x', identityNoun: 'Runner', reclaimList: ['a', 'b', 'c'] } as Collected;
 
   // Under the exploration minimum → cannot complete; held in the door beat (even if the model asks).
@@ -121,7 +127,7 @@ test('completion is gated on BOTH sides: explore first, then close reliably', ()
 });
 
 test('the member ending the beat wraps it — even below the explore-minimum (Independence Guarantee)', () => {
-  const full = { athleticPast: 'x', identityNoun: 'Adventurer', reclaimList: ['a', 'b', 'c'], doors: ['body'] } as Collected;
+  const full = { athleticPast: 'x', identityNoun: 'Adventurer', reclaimList: ['a', 'b', 'c'], doors: ['body'], gap: 'my body started saying no and I slowly pulled back from the climbs' } as Collected;
   // "I'm done" on door turn 1 (below the 3-turn floor) still completes — the member's call to stop wins.
   assert.equal(resolveCompletion(full, false, 1, false, false, true).complete, true);
   // but a dispute still holds even if they sound done-ish (blocked overrides memberDone)
@@ -225,9 +231,10 @@ test('identity opt-out: "I\'m not sure yet" skips naming, still completes', () =
 
   // completion gate is satisfied by identitySkipped in place of identityNoun
   const five = ['a', 'b', 'c', 'd', 'e'];
-  const skipped = { athleticPast: 'x', identitySkipped: true, reclaimList: five, doors: ['career_cliff'] as const };
+  const gap = 'my role was cut and the riding quietly stopped';
+  const skipped = { athleticPast: 'x', identitySkipped: true, reclaimList: five, doors: ['career_cliff'] as const, gap };
   assert.equal(resolveCompletion(skipped as never, true, 3).complete, true);
   // and a named member still completes the same way
-  const named = { athleticPast: 'x', identityNoun: 'Runner', reclaimList: five, doors: ['career_cliff'] as const };
+  const named = { athleticPast: 'x', identityNoun: 'Runner', reclaimList: five, doors: ['career_cliff'] as const, gap };
   assert.equal(resolveCompletion(named as never, true, 3).complete, true);
 });

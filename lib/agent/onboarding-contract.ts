@@ -1,0 +1,82 @@
+// The onboarding completion CONTRACT — the single, deterministic source of truth for "is the intake
+// done." The conversation (live model or scripted) gathers; THIS decides whether what was gathered is
+// complete enough to hand off. Completion is never the model's call alone — it must satisfy the
+// contract here, and (Leg 2) the member must confirm the summary card built from it.
+//
+// Pure + framework-free so it unit-tests exhaustively against the personas that have broken.
+
+import { DOORS, type DoorSlug } from '../doors.ts';
+import { identityLabel } from '../member/identity.ts';
+import { RECLAIM_LIST_MIN } from '../member/reclaim.ts';
+import type { Collected } from './onboarding.ts';
+
+export type ContractGap = 'athleticPast' | 'identity' | 'reclaimList' | 'gap' | 'doors';
+
+// A gap must read like the STORY of how the Fade opened — not a restated Reclaim-List goal. Joanne's
+// run-2 failure was `gap = "I'd like to lose 30 lbs"`: a goal, captured where the fade story belongs.
+// Lenient by design (the confirmation card is the real human check) — it only rejects the obvious
+// non-stories: too short, a verbatim reclaim item, or a bare future-goal phrasing.
+const GOAL_PHRASE_RE = /^(i\s*'?\s*d\s+(?:like|love)\s+to|i\s+want\s+to|i\s*'?\s*d\s+like|i\s+wish|i\s+hope\s+to)\b/i;
+
+export function gapIsNarrative(gap: string | undefined, reclaimList: string[] = []): boolean {
+  const g = (gap ?? '').trim();
+  if (g.length < 20) return false; // too short to be a "how it opened" story
+  if (reclaimList.some((it) => it.trim().toLowerCase() === g.toLowerCase())) return false; // a list goal, not a story
+  if (GOAL_PHRASE_RE.test(g) && g.length < 60) return false; // a short future-goal line ("I'd like to lose 30 lbs")
+  return true;
+}
+
+export function hasIdentity(c: Collected): boolean {
+  return !!c.identityNoun || !!c.identitySkipped; // named it, or chose "not yet" (found at Excavation)
+}
+
+// Which required slots are still unmet. Empty array = the contract is satisfied.
+export function contractGaps(c: Collected): ContractGap[] {
+  const missing: ContractGap[] = [];
+  if (!c.athleticPast) missing.push('athleticPast');
+  if (!hasIdentity(c)) missing.push('identity');
+  if ((c.reclaimList?.length ?? 0) < RECLAIM_LIST_MIN) missing.push('reclaimList');
+  if (!gapIsNarrative(c.gap, c.reclaimList ?? [])) missing.push('gap');
+  if ((c.doors?.length ?? 0) < 1) missing.push('doors');
+  return missing;
+}
+
+/** The gate. True only when every required record is present and substantive. */
+export function contractMet(c: Collected): boolean {
+  return contractGaps(c).length === 0;
+}
+
+// --- The summary card (Leg 2) ---------------------------------------------------------------
+// The card the member confirms before the IDQ. It can ONLY be presented as "ready" when the contract
+// is met — "if the card can't be built fulfilling every criterion, the agent isn't done." The card
+// data is always derivable (so we can also show the member what's still missing).
+
+export type SummaryCard = {
+  ready: boolean; // contract satisfied — safe to offer the handoff
+  missing: ContractGap[]; // unmet slots (drives "let's get the rest" when not ready)
+  identityLabel: string | null; // "the Connector", or null if they chose to name it later
+  doors: { slug: DoorSlug; displayName: string }[];
+  reclaimList: string[];
+  gap: string;
+};
+
+export function buildSummaryCard(c: Collected): SummaryCard {
+  const missing = contractGaps(c);
+  return {
+    ready: missing.length === 0,
+    missing,
+    identityLabel: c.identityNoun ? identityLabel(c.identityNoun) : null,
+    doors: (c.doors ?? []).map((slug) => ({ slug, displayName: DOORS.find((d) => d.slug === slug)?.displayName ?? slug })),
+    reclaimList: c.reclaimList ?? [],
+    gap: c.gap ?? '',
+  };
+}
+
+// Member-facing label for an unmet slot — used when the conversation must keep going.
+export const GAP_LABEL: Record<ContractGap, string> = {
+  athleticPast: 'who you were',
+  identity: 'the person you’re reclaiming',
+  reclaimList: 'your Reclaim List',
+  gap: 'how the gap opened',
+  doors: 'the Door that opened it',
+};
