@@ -118,9 +118,9 @@ test('conversational onboarding drives to completion and persists end-to-end', a
   const db = await freshDb();
   const ctx = { name: 'Reshma Patel', email: 'reshma@example.com' };
 
-  // opening (scripted path, no key in test env)
+  // opening (scripted path, no key in test env) — opens on the question; disclosure is on the start page
   const open = await onboardingNextTurn({ ctx, state: INITIAL_STATE, history: [], memberMessage: null });
-  assert.match(open.reply, /guided by AI/);
+  assert.match(open.reply, /who were you/i);
   let state = open.state;
   const history: ConvMessage[] = [{ role: 'agent', text: open.reply }];
   async function say(text: string) {

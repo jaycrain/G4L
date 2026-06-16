@@ -10,7 +10,7 @@
 // Governance runs on every member turn (crisis detection -> 988 halt). The AI disclosure is the
 // verbatim first line. Voice is G4L (Member-facing) — never Jay's, never impersonating Greg.
 
-import { AI_DISCLOSURE, CRISIS_RESPONSE_US, detectCrisis } from './governance.ts';
+import { CRISIS_RESPONSE_US, detectCrisis } from './governance.ts';
 import { MEMBER_AGENT_SYSTEM_PROMPT } from './system-prompt.ts';
 import { DOORS, DOOR_SLUGS, isDoorSlug, matchDoors, correctDoors, type DoorSlug } from '../doors.ts';
 import { cleanIdentityNoun, displayIdentityNoun, identityLabel } from '../member/identity.ts';
@@ -41,15 +41,20 @@ export type Turn = { reply: string; state: ConvState; complete: boolean; crisis?
 export const INITIAL_STATE: ConvState = { stage: 'identity', collected: {} };
 
 const FIRST_QUESTION =
-  'Before we start — who were you, back when you felt most like yourself?\n\n' +
+  "Before we get to any numbers or plans, I want to understand who I'm helping you reclaim — the fullest version of you. Everything we build here points at that person, so let's start with them.\n\n" +
+  'Who were you, back when you felt most like yourself?\n\n' +
   'Not the job title. Not the role everyone knows you for. The version underneath all that — ' +
   'the one who showed up before life got busy and quietly talked you out of it.\n\n' +
-  'Maybe you were the one who never thought twice about the stairs. The one who played until your ' +
-  'fingers hurt. The early riser. The friend who always called. The one who said yes to the trip. ' +
-  'The builder, the writer, the runner, the parent down on the floor with the kids.\n\n' +
-  'Whoever that was — tell me about them.';
+  'Maybe you never thought twice about the stairs. The one who played until your fingers hurt, the ' +
+  'early riser, the friend who always called, the one who said yes to the trip. The builder, the ' +
+  'writer, the runner, the parent down on the floor with the kids.\n\n' +
+  "Whoever that was — tell me about them. The more real you make them, the less abstract your comeback " +
+  'gets: in a few minutes, your first ID Score will put a number on the distance between who you are ' +
+  "right now and the you you're reclaiming — and from there, every step closes it.";
 
-export const OPENING_REPLY = `${AI_DISCLOSURE}\n\n${FIRST_QUESTION}`;
+// The AI disclosure is woven into the start page (the gate), so the conversation opens straight on the
+// question — no stiff repeat here.
+export const OPENING_REPLY = FIRST_QUESTION;
 
 const doorName = (slug: DoorSlug) => DOORS.find((d) => d.slug === slug)!.displayName;
 const capFirst = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);

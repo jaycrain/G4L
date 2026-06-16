@@ -2,7 +2,6 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { AI_DISCLOSURE } from '../../lib/agent/governance.ts';
 import { onboardingTurn, finalizeOnboardingAction, loadOnboardingSessionAction } from './actions.ts';
 import { setupAction } from '../account/setup/actions.ts';
 import PasswordField from '../password-field.tsx';
@@ -210,8 +209,12 @@ export default function OnboardingChat() {
   if (phase === 'gate') {
     return (
       <>
-        <h1>Create your account</h1>
-        <p className="disclosure">{AI_DISCLOSURE}</p>
+        <h1>Let’s find your starting line</h1>
+        <div className="onboard-intro">
+          <p>The person you know you are can get quiet — worn down by life, by a hundred reasonable decisions, by everyone else’s needs. This is where you start turning that around.</p>
+          <p>We begin by finding your starting line: a short conversation, a quick questionnaire (the IDQ), and your first ID Score — so reclaiming who you are isn’t a vague idea, it’s a real number you can watch move.</p>
+          <p>From here, it’s you and your G4L companion — an AI built for this one thing and nothing else. Everything you share shapes your experience and is handled with real care, the way you’d want a trusted person to hold it. No rush, no wrong answers, and you can stop anytime.</p>
+        </div>
         <form onSubmit={begin}>
           <label htmlFor="name">Your name</label>
           <input id="name" type="text" value={name} onChange={(e) => setName(e.target.value)} required />
@@ -222,7 +225,7 @@ export default function OnboardingChat() {
           <label htmlFor="confirm">Confirm password</label>
           <PasswordField id="confirm" value={confirm} onChange={setConfirm} required minLength={8} autoComplete="new-password" />
           {error && <p className="error">{error}</p>}
-          <button type="submit">Begin the conversation</button>
+          <button type="submit">Begin →</button>
         </form>
       </>
     );
