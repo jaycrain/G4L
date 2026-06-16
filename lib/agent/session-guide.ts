@@ -13,6 +13,7 @@ export type GuideInput = {
   displayName: string;
   memory?: string | null;
   existingFacets?: string[]; // selves already named (onboarding seed + earlier Sessions)
+  existingDoors?: string[]; // Doors onboarding seeded — the Doors Session refines them (Option A+)
 };
 
 const SYSTEM =
@@ -39,10 +40,16 @@ export async function guideSessionStep(input: GuideInput): Promise<string> {
           `Frame this as naming the self they're reclaiming right now — they can sharpen one of those or surface another, ` +
           `but ask for ONE clean natural-case phrase and steer them away from simply repeating an already-named self.\n`
         : '';
+    // Doors Session (Option A+): acknowledge what onboarding seeded, then confirm/sharpen/add — never recite a menu.
+    const doorNote =
+      input.step.contributes === 'your_doors' && input.existingDoors?.length
+        ? `\nWhen you first talked, they named these Doors: ${input.existingDoors.join(', ')}. Acknowledge those, confirm they still fit, and help them sharpen the wording or add one that surfaced (or drop one that doesn't). Do NOT recite the list of eight Doors — work from what they already named.\n`
+        : '';
     const user =
       `Session: ${input.sessionTitle}\nMember: ${input.displayName}\n` +
       (input.memory ? `What you remember about them:\n${input.memory}\n` : '') +
       facetNote +
+      doorNote +
       `\nPrior answers:\n${prior}\n\n` +
       `CURRENT step — "${input.step.title}"\nThe question they'll answer: ${input.step.prompt}\n` +
       `Your authored framing (use as the base, personalize it): ${input.step.companion_frame}\n` +

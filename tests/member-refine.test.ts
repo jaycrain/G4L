@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { PGlite } from '@electric-sql/pglite';
 import { applySchema, type Db } from '../lib/db/schema.ts';
 import { getReclaimItems } from '../lib/beats/store.ts';
-import { addReclaimItemForMember, addDoorForMember } from '../lib/member/refine.ts';
+import { addReclaimItemForMember, addDoorForMember, getMemberDoors, setMemberDoors, reconcileDoors } from '../lib/member/refine.ts';
 
 async function seedMember(): Promise<{ db: Db; memberId: string }> {
   const db = new PGlite() as unknown as Db;
@@ -76,4 +76,27 @@ test('addDoorForMember: unmappable text returns nomatch and writes nothing', asy
   if (!r.ok) assert.equal(r.reason, 'nomatch');
   const after = (await db.query<{ n: number }>('select count(*)::int n from member_door where member_id=$1', [memberId])).rows[0]!.n;
   assert.equal(after, before);
+});
+
+test('setMemberDoors writes the canonical set — adds new, drops removed, first is primary, never empty', async () => {
+  const { db, memberId } = await seedMember(); // seeded with 'body'
+  await setMemberDoors(db, memberId, ['full_house', 'career_cliff']);
+  assert.deepEqual(await getMemberDoors(db, memberId), ['full_house', 'career_cliff']); // primary first
+  const primary = (await db.query<{ door_slug: string }>("select door_slug from member_door where member_id=$1 and is_primary", [memberId])).rows[0]!.door_slug;
+  assert.equal(primary, 'full_house');
+  // an empty set is refused (≥1 Door contract) — the existing set stands
+  await setMemberDoors(db, memberId, []);
+  assert.deepEqual(await getMemberDoors(db, memberId), ['full_house', 'career_cliff']);
+});
+
+test('reconcileDoors (no-API fallback) keeps current + adds what the conversation surfaced', async () => {
+  const key = process.env.ANTHROPIC_API_KEY;
+  delete process.env.ANTHROPIC_API_KEY;
+  try {
+    const out = await reconcileDoors('honestly it was the body, and then I got married and had kids', ['body']);
+    assert.ok(out.includes('body')); // kept
+    assert.ok(out.includes('full_house')); // surfaced from "married + had kids"
+  } finally {
+    if (key !== undefined) process.env.ANTHROPIC_API_KEY = key;
+  }
 });

@@ -9,6 +9,7 @@ import { guideSessionStep, respondToStep, facetFromAnswers, extractFacets, clean
 import { refreshIdentityNarrative } from '../../../../lib/agent/identity-narrative.ts';
 import { harvestSessionToPlaybook } from '../../../../lib/agent/session-harvest.ts';
 import { refreshPlaybookSynthesis } from '../../../../lib/agent/playbook-synthesis.ts';
+import { getMemberDoors, getMemberDoorNames, setMemberDoors, reconcileDoors } from '../../../../lib/member/refine.ts';
 import type { Db } from '../../../../lib/db/schema.ts';
 
 async function memberMeta(db: Db, memberId: string): Promise<{ displayName: string; memory: string | null }> {
@@ -27,10 +28,11 @@ export async function frameForStep(memberId: string, sessionId: string, stepN: n
   if (!session || !step) return '';
   try {
     const db = (await getDb()) as unknown as Db;
-    const [progress, meta, facets] = await Promise.all([
+    const [progress, meta, facets, doorNames] = await Promise.all([
       getSessionProgress(db, memberId, sessionId),
       memberMeta(db, memberId),
       listFacets(db, memberId),
+      getMemberDoorNames(db, memberId),
     ]);
     const answers = progress?.answers ?? {};
     const priorAnswers: PriorAnswer[] = (session.steps ?? [])
@@ -43,6 +45,7 @@ export async function frameForStep(memberId: string, sessionId: string, stepN: n
       displayName: meta.displayName,
       memory: meta.memory,
       existingFacets: facets.map((f) => f.text),
+      existingDoors: doorNames,
     });
   } catch {
     return step.companion_frame; // never a broken frame
@@ -132,6 +135,17 @@ export async function closeSessionAction(memberId: string, sessionId: string): P
         const named = await extractFacets(raw, existing, { displayName: meta.displayName, memory: meta.memory });
         for (const f of named) await addFacet(db, memberId, f, sessionId);
         facetText = named[0] ?? cleanFacet(raw);
+      }
+    }
+    // Doors Session = the source of truth for the Door set: reconcile the canonical set from this
+    // conversation + what onboarding seeded, and write it (add/sharpen/drop). Best-effort.
+    if (closeArtifact(steps) === 'doors') {
+      try {
+        const convo = steps.map((s) => answers[String(s.n)]).filter(Boolean).join('\n');
+        const set = await reconcileDoors(convo, await getMemberDoors(db, memberId));
+        await setMemberDoors(db, memberId, set);
+      } catch {
+        /* never break the close over a door reconcile */
       }
     }
     await closeSession(db, memberId, sessionId);
