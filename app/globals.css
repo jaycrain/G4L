@@ -630,9 +630,18 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .sess-q { font-size: 1.02rem; font-weight: 700; color: var(--navy); margin: 1rem 1.1rem 0.5rem; }
 .sess-field { display: block; width: calc(100% - 2.2rem); margin: 0 1.1rem; border: 1.5px solid var(--field-line); border-radius: 10px; padding: 0.8rem 0.9rem; font-family: inherit; font-size: 0.95rem; color: var(--charcoal); line-height: 1.5; resize: vertical; }
 .sess-probe { margin: 0.6rem 1.1rem 0; font-size: 0.82rem; color: var(--navy); opacity: 0.7; font-style: italic; }
+/* The member's side of the in-step exchange — mirrors the companion bubble, opposite side. */
+.sess-mbubble { margin: 0.85rem 1.1rem 0; margin-left: auto; max-width: 85%; background: var(--navy); color: var(--white); border-radius: 14px; border-bottom-right-radius: 4px; padding: 0.7rem 0.95rem; font-size: 0.95rem; line-height: 1.5; white-space: pre-wrap; }
+.sess-bubble.typing { opacity: 0.6; }
 .sess-crow { display: flex; align-items: center; justify-content: space-between; margin: 1rem 1.1rem 0; gap: 0.75rem; }
+.sess-send { background: var(--teal); color: #fff; font-weight: 600; font-size: 0.9rem; padding: 0.55rem 1.2rem; border-radius: 22px; border: none; cursor: pointer; width: auto; }
+.sess-send:hover { background: var(--navy); }
+.sess-send:disabled { opacity: 0.5; cursor: default; }
 .sess-next { background: var(--teal); color: #fff; font-weight: 600; font-size: 0.9rem; padding: 0.55rem 1.2rem; border-radius: 22px; border: none; cursor: pointer; width: auto; }
 .sess-next:hover { background: var(--navy); }
+/* When the companion hasn't yet confirmed depth, advancing is offered quietly (soft, never gated). */
+.sess-next.soft { background: none; color: var(--navy); text-decoration: underline; padding: 0.55rem 0.4rem; }
+.sess-next.soft:hover { background: none; color: var(--teal); }
 .sess-close { margin-top: 0.75rem; border: 1.5px dashed #cdccc6; border-radius: 14px; padding: 1.1rem 1.2rem; background: #F7F7F6; }
 .sess-close.locked .sess-ct { color: #AEB3B8; }
 .sess-ctag { font-size: 0.65rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #AEB3B8; margin: 0 0 0.3rem; }

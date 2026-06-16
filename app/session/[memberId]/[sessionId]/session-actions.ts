@@ -5,7 +5,7 @@ import { getDb } from '../../../../lib/db/index.ts';
 import { authorizeMember } from '../../../authz.ts';
 import { getSession, getBadge } from '../../../../lib/curriculum/registry.ts';
 import { getSessionProgress, saveAnswer, closeSession, addFacet, earnBadge, listFacets } from '../../../../lib/curriculum/store.ts';
-import { guideSessionStep, facetFromAnswers, extractFacets, cleanFacet, type PriorAnswer } from '../../../../lib/agent/session-guide.ts';
+import { guideSessionStep, respondToStep, facetFromAnswers, extractFacets, cleanFacet, type PriorAnswer } from '../../../../lib/agent/session-guide.ts';
 import { refreshIdentityNarrative } from '../../../../lib/agent/identity-narrative.ts';
 import { harvestSessionToPlaybook } from '../../../../lib/agent/session-harvest.ts';
 import type { Db } from '../../../../lib/db/schema.ts';
@@ -45,6 +45,33 @@ export async function frameForStep(memberId: string, sessionId: string, stepN: n
     });
   } catch {
     return step.companion_frame; // never a broken frame
+  }
+}
+
+/** The conversational turn: persist what they wrote, then the companion reads it and responds —
+ * reflecting, pressing for depth, or confirming. `ready` is a soft signal (never a hard gate). */
+export async function replyToStep(
+  memberId: string,
+  sessionId: string,
+  stepN: number,
+  answer: string,
+): Promise<{ ok: boolean; reply: string; ready: boolean }> {
+  if (!(await authorizeMember(memberId))) return { ok: false, reply: '', ready: false };
+  const session = getSession(sessionId);
+  const step = session?.steps?.find((s) => s.n === stepN);
+  if (!session || !step) return { ok: false, reply: '', ready: false };
+  try {
+    const db = (await getDb()) as unknown as Db;
+    await saveAnswer(db, memberId, sessionId, stepN, answer.trim(), stepN); // persist at this step (no advance)
+    const [progress, meta] = await Promise.all([getSessionProgress(db, memberId, sessionId), memberMeta(db, memberId)]);
+    const answers = progress?.answers ?? {};
+    const priorAnswers: PriorAnswer[] = (session.steps ?? [])
+      .filter((s) => s.n < stepN && (answers[String(s.n)] ?? '').trim())
+      .map((s) => ({ title: s.title, prompt: s.prompt, answer: answers[String(s.n)]! }));
+    const r = await respondToStep({ sessionTitle: session.title, step, priorAnswers, answer, displayName: meta.displayName, memory: meta.memory });
+    return { ok: true, reply: r.reply, ready: r.ready };
+  } catch {
+    return { ok: true, reply: step.probe || 'Tell me a little more about that.', ready: answer.trim().length >= 40 };
   }
 }
 

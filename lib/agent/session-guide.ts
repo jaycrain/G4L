@@ -57,6 +57,73 @@ export async function guideSessionStep(input: GuideInput): Promise<string> {
   }
 }
 
+// The companion's RESPONSE to what the member just wrote on a step — the move that makes a Session a
+// conversation, not a worksheet. Reflects their words, presses once when it's thin, confirms when it
+// lands. `ready` is a SOFT signal (encourage depth, never gate). Live Claude; scripted fallback.
+const STEP_RESPONSE_SYSTEM =
+  'You are the G4L Member Agent, threaded through a Session as a real guide — not a worksheet. ' +
+  'Voice: warm, plain, second-person; tough love that RESPECTS; never grade, fix, or pathologize; normalize, never praise. ' +
+  'HARD VOICE RULES: declare what something IS — never "it\'s not X, it\'s Y". Never tell them to "name" anything — ask directly ("which…", "what…", "tell me"). ' +
+  'Do not say "sit with" — use "let that land" / "give it a minute". Do NOT use the word "honest" or "honestly". ' +
+  'The member just answered the current step. Respond in 2–3 short sentences: reflect what they ACTUALLY said, in their own words; if it\'s thin or surface, press ONCE for more (use the depth-probe); if it has real depth, affirm it landed and that you have it. One move, no lists. ' +
+  'Then set ready: true once they\'ve given something real to move forward on (soft — you\'re drawing out depth, not gating).';
+
+export type StepResponse = { reply: string; ready: boolean };
+
+export async function respondToStep(input: {
+  sessionTitle: string;
+  step: Step;
+  priorAnswers: PriorAnswer[];
+  answer: string;
+  displayName: string;
+  memory?: string | null;
+}): Promise<StepResponse> {
+  const answer = (input.answer ?? '').trim();
+  const fallback: StepResponse = {
+    reply: input.step.probe || 'Tell me a little more about that — what’s underneath it?',
+    ready: answer.length >= 40,
+  };
+  if (!answer || !process.env.ANTHROPIC_API_KEY) return fallback;
+  try {
+    const { default: Anthropic } = await import('@anthropic-ai/sdk');
+    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, timeout: 16000, maxRetries: 1 });
+    const model = process.env.ANTHROPIC_MODEL ?? 'claude-sonnet-4-6';
+    const prior = input.priorAnswers.length
+      ? input.priorAnswers.map((p) => `Step "${p.title}": ${p.answer}`).join('\n')
+      : '(first step)';
+    const user =
+      `Session: ${input.sessionTitle}\nMember: ${input.displayName}\n` +
+      (input.memory ? `What you remember: ${input.memory}\n` : '') +
+      `Earlier in this Session:\n${prior}\n\n` +
+      `CURRENT step — "${input.step.title}"\nThe question: ${input.step.prompt}\nDepth-probe (use if you press): ${input.step.probe}\n\n` +
+      `They just wrote: ${answer}\n\nRespond, and set ready.`;
+    const tool = {
+      name: 'step_response',
+      description: 'Your spoken reply to the member, plus whether their answer is ready to move forward on.',
+      input_schema: {
+        type: 'object' as const,
+        properties: { reply: { type: 'string' }, ready: { type: 'boolean' } },
+        required: ['reply', 'ready'],
+      },
+    };
+    const res = await client.messages.create({
+      model,
+      max_tokens: 260,
+      system: STEP_RESPONSE_SYSTEM,
+      tools: [tool],
+      tool_choice: { type: 'tool', name: 'step_response' },
+      messages: [{ role: 'user', content: user }],
+    });
+    const tu = res.content.find((b) => b.type === 'tool_use');
+    if (!tu || tu.type !== 'tool_use') return fallback;
+    const p = tu.input as { reply?: string; ready?: boolean };
+    const reply = typeof p.reply === 'string' && p.reply.trim() ? p.reply.trim() : fallback.reply;
+    return { reply, ready: p.ready === true };
+  } catch {
+    return fallback;
+  }
+}
+
 /** The reclaimed identity a Session close commits — the answer to the step that contributes a facet. */
 export function facetFromAnswers(step: Step[] | undefined, answers: Record<string, string>): string | null {
   const facetStep = (step ?? []).find((s) => s.contributes === 'facet');
