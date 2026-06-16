@@ -36,6 +36,12 @@ test('matchDoors maps free text to one or more Doors in canonical order', () => 
   assert.deepEqual(matchDoors('when I got married then had kids'), ['full_house']);
   assert.deepEqual(matchDoors('the full house'), ['full_house']);
   assert.deepEqual(matchDoors('nothing recognizable here'), []);
+  // Caregiving-for-a-parent in plain words — the Door missed in testing (Joanne's 95-yo mom).
+  assert.ok(matchDoors('taking care of my mother took over').includes('aging_parents'));
+  assert.ok(matchDoors('caring for my 95 year old mom').includes('aging_parents'));
+  assert.equal(matchDoors('more energy for my mom and my granddaughter').includes('aging_parents'), false); // a passing mention doesn't trip it
+  // Joanne's full story surfaces BOTH doors, in canonical order.
+  assert.deepEqual(matchDoors('bigger job, more responsibility, crazy hours — and caring for my 95 year old mom took over'), ['career_cliff', 'aging_parents']);
 });
 
 test('correctDoors fixes the marriage/young-kids mis-tag (Full House, not Empty Nest / Aging Parents)', () => {

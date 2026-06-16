@@ -30,6 +30,21 @@ const shortName = (displayName: string) => displayName.toLowerCase().replace(/^t
 // isn't itself likely to appear — e.g. someone says "had kids", never "the full house".
 const DOOR_ALIASES: Partial<Record<DoorSlug, string[]>> = {
   full_house: ['young kids', 'had kids', 'having kids', 'new baby', 'raising kids', 'small kids', 'little kids', 'new family', 'providing', 'provider'],
+  // Caregiving-for-a-parent, in their own words (kept precise — needs a caregiving verb or an elderly marker,
+  // so a passing "my mom" doesn't trip it). This was the missed Door in testing.
+  aging_parents: [
+    'caring for my mom', 'caring for my mother', 'caring for my dad', 'caring for my father', 'caring for my parent', 'caring for my parents',
+    'caring for a parent', 'caring for an aging', 'caring for an elderly', 'taking care of my mom', 'taking care of my mother',
+    'taking care of my dad', 'taking care of my father', 'taking care of my parent', 'take care of my mom', 'take care of my mother',
+    'look after my mom', 'look after my mother', 'aging parent', 'aging mother', 'aging father', 'elderly parent', 'elderly mother',
+    'elderly father', 'my mother took over', 'my mom took over', 'year old mom', 'year old mother', 'year old dad', 'year old father',
+  ],
+  career_cliff: ['laid off', 'lost my job', 'got let go', 'forced out', 'stepped down', 'work took over', 'crazy hours', 'bigger job', 'more responsibility', 'the role ended', 'plateaued', 'retirement'],
+  empty_nest: ['empty nest', 'kids moved out', 'kids left home', 'kids are grown', 'last one left', 'off to college', 'house got quiet'],
+  loss: ['passed away', 'lost my husband', 'lost my wife', 'lost my partner', 'death of', 'when he died', 'when she died'],
+  diagnosis: ['diagnosed', 'the diagnosis', 'my diagnosis'],
+  marriage: ['divorce', 'divorced', 'separated', 'my marriage ended'],
+  vanishing: ['friends drifted', 'lost touch', 'friendships faded', 'friends slipped away', 'no close friends'],
 };
 
 // Map a member's free-text answer to one or more Doors (voice rewrite v1: members answer in their

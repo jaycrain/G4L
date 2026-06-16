@@ -451,10 +451,15 @@ async function liveTurn(
     !!collected.athleticPast &&
     (!!collected.identityNoun || !!collected.identitySkipped) &&
     (collected.reclaimList?.length ?? 0) >= RECLAIM_LIST_MIN;
-  if (coreReady && (collected.doors?.length ?? 0) === 0) {
+  // AUGMENT, don't just fill: merge any Door the narrative clearly names into the model's set. The
+  // model sometimes verbalizes a Door (e.g. "caring for your 95-year-old mom is its own weight") but
+  // records only the first — so a real second Door is caught from the member's own words, not dropped.
+  if (coreReady) {
     const memberText = [...history.filter((m) => m.role === 'member').map((m) => m.text), memberMessage, collected.gap ?? ''].join('  ');
-    const inferred = matchDoors(memberText);
-    if (inferred.length > 0) collected = { ...collected, doors: inferred, ...(collected.gap ? {} : { gap: memberMessage }) };
+    const merged = Array.from(new Set<DoorSlug>([...(collected.doors ?? []), ...matchDoors(memberText)]));
+    if (merged.length > (collected.doors?.length ?? 0)) {
+      collected = { ...collected, doors: merged, ...(collected.gap ? {} : { gap: memberMessage }) };
+    }
   }
 
   // Guard the model's most common Door mix-up — a marriage/young-kids/load-bearer story is The Full
