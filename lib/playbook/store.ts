@@ -178,7 +178,7 @@ export async function playbookForAgent(
     await db.query<{ body: string }>(
       `select body from playbook_entry
        where member_id=$1 and section='journal' and state='kept'
-       order by created_at desc limit $2`,
+       order by created_at desc, sort_order desc limit $2`,
       [memberId, journalMax],
     )
   ).rows.map((r) => r.body);
