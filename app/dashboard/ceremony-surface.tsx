@@ -30,6 +30,18 @@ export default function CeremonySurface<R>({
   const done = shown >= full.length;
   const isLast = i >= beats.length - 1;
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
+  // A brief hold after a reveal lands (e.g. the ID Score on beat 3) so it can't be tapped past
+  // instantly — "the pacing is the product."
+  const [held, setHeld] = useState(false);
+  useEffect(() => {
+    if (done && beat.reveal !== undefined) {
+      setHeld(true);
+      const t = setTimeout(() => setHeld(false), 1500);
+      return () => clearTimeout(t);
+    }
+    setHeld(false);
+    return undefined;
+  }, [done, beat.reveal, i]);
 
   // Typewriter: type the current beat; reset on advance. "The pacing is the product."
   useEffect(() => {
@@ -54,6 +66,7 @@ export default function CeremonySurface<R>({
       setShown(full.length); // tap to finish typing
       return;
     }
+    if (held) return; // let the reveal land before moving on
     if (isLast) {
       if (resolving) return;
       setResolving(true);

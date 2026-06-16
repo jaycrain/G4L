@@ -115,6 +115,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
     doors: dash.doors.map((d) => d.displayName),
     winCount: dash.reclaimList.length,
     idScore: dash.score?.score ?? null,
+    dimensions: dash.score?.dimensions ?? null,
     seeds: playbookSeeds,
     firstMoveTitle: null,
   };

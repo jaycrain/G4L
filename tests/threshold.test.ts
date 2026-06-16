@@ -7,6 +7,7 @@ const base: ThresholdData = {
   doors: ['The Career Cliff', 'The Body'],
   winCount: 5,
   idScore: 34,
+  dimensions: { physical: 12, self: 22, social: 18, outlook: 20 },
   seeds: ['I’ve been a supporting character in my own life.', 'Run the Creek path without walking.'],
   firstMoveTitle: 'The Seven Minutes',
 };
@@ -23,6 +24,7 @@ test('builds the seven-beat Threshold with the uncovered reveal carrying the mem
     assert.deepEqual(uncovered.doors, ['The Career Cliff', 'The Body']);
     assert.equal(uncovered.winCount, 5);
     assert.equal(uncovered.idScore, 34);
+    assert.equal(uncovered.dimensions?.physical, 12); // the dimensions ride along for the cluster read
   }
 
   // Beat 5 is the Journey reveal; the last beat carries the first move + is the resolve (clip-in) beat.

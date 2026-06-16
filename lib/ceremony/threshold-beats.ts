@@ -2,8 +2,9 @@
 // the member's own data so it's deterministic and testable. Copy lives here as config — wordsmith
 // freely. The CeremonySurface renders these; only the data interpolates.
 
+export type Dimensions = { physical: number; self: number; social: number; outlook: number };
 export type ThresholdReveal =
-  | { kind: 'uncovered'; identity: string | null; doors: string[]; winCount: number; idScore: number | null }
+  | { kind: 'uncovered'; identity: string | null; doors: string[]; winCount: number; idScore: number | null; dimensions: Dimensions | null }
   | { kind: 'seeds'; seeds: string[] }
   | { kind: 'journey' };
 
@@ -14,6 +15,7 @@ export type ThresholdData = {
   doors: string[]; // display names
   winCount: number; // Reclaim List length
   idScore: number | null; // baseline ID Score
+  dimensions: Dimensions | null; // the four subscores (each /30) — for the "distance runs widest" read
   seeds: string[]; // 2–3 onboarding-harvested Playbook lines
   firstMoveTitle: string | null; // the engine's real next Beat title (Q3a) — null → generic
 };
@@ -38,7 +40,7 @@ export const THRESHOLD_COPY = {
   // 5 — reveal: the 4Rs Journey, Reconnect lit
   journey: "Here's the path ahead — your Journey.",
   // 6 — the Playbook is the thing you keep
-  lasts: 'Your Playbook fills in with what works for you as we go. That’s the thing you keep — it’s how the Grinta lasts.',
+  lasts: 'Your Playbook fills in with what works for you as we go. That’s the thing you keep — it’s why the Grinta lasts.',
   // 7 — the hand-off; this beat carries the clip-in. {firstMove} renders only when known.
   clipIn: 'Ready to clip in? Your first move’s a small one.',
   clipInWithMove: (firstMove: string) => `Ready to clip in? Your first move’s a small one — ${firstMove}.`,
@@ -49,7 +51,7 @@ export function buildThresholdBeats(d: ThresholdData): CeremonyBeat[] {
   return [
     { text: c.stop },
     { text: c.honor, small: true },
-    { text: c.uncovered, reveal: { kind: 'uncovered', identity: d.identityNoun, doors: d.doors, winCount: d.winCount, idScore: d.idScore } },
+    { text: c.uncovered, reveal: { kind: 'uncovered', identity: d.identityNoun, doors: d.doors, winCount: d.winCount, idScore: d.idScore, dimensions: d.dimensions } },
     // Beat 4 — seeds reveal only if the harvest produced any; otherwise the softer no-seeds line.
     d.seeds.length > 0
       ? { text: c.playbookSeeded, reveal: { kind: 'seeds', seeds: d.seeds.slice(0, 3) } }

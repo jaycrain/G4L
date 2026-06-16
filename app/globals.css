@@ -328,6 +328,8 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .cer-beat.small { font-size: 1.2rem; font-weight: 400; line-height: 1.5; }
 .cer-caret { color: var(--teal); font-weight: 400; }
 .cer-reveal { margin: 16px 0 2px; }
+.cer-cluster { margin: 0.8rem 0 0; font-size: 0.95rem; line-height: 1.55; color: var(--charcoal); }
+.cer-cluster strong { color: var(--navy); }
 .cer-chips { display: flex; gap: 9px; flex-wrap: wrap; }
 .cer-chip { font-size: 0.82rem; font-weight: 500; color: var(--navy); background: var(--grey); padding: 6px 13px; border-radius: 20px; }
 .cer-chip.score { color: #fff; background: var(--teal); }
