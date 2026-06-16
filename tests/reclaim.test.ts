@@ -31,7 +31,12 @@ test('one or more of the canonical doors validate; unknown / empty do not', () =
 test('matchDoors maps free text to one or more Doors in canonical order', () => {
   assert.deepEqual(matchDoors('the empty nest'), ['empty_nest']);
   assert.deepEqual(matchDoors('aging parents and the marriage'), ['aging_parents', 'marriage']);
-  assert.deepEqual(matchDoors('5'), ['body']); // numbered, back-compat
+  assert.deepEqual(matchDoors('5'), ['body']); // a bare numeric pick still works (back-compat)
+  assert.deepEqual(matchDoors('1 and 3'), ['career_cliff', 'empty_nest']); // an explicit numeric pick still maps
+  // ...but an incidental number in PROSE must NOT be read as a Door pick. Joanne run 4: her workout
+  // frequency "3 walks / 3 workouts" wrongly tagged Door #3 (The Empty Nest) when scanned for doors.
+  assert.equal(matchDoors('do 3 Apple Fitness workouts a week and at least 3 walks').includes('empty_nest'), false);
+  assert.equal(matchDoors("I'd like to lose 30 lbs").length, 0);
   // The Full House maps from plain family-formation language, not just its title.
   assert.deepEqual(matchDoors('when I got married then had kids'), ['full_house']);
   assert.deepEqual(matchDoors('the full house'), ['full_house']);

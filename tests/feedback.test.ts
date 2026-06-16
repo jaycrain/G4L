@@ -30,6 +30,9 @@ test('listFeedback joins display name, orders newest-first, filters by status', 
   const { db, memberId } = await seed();
   await logFeedback(db, { memberId, author: 'Test Member <t@x.test>', kind: 'question', body: 'first' });
   await logFeedback(db, { memberId, author: 'Test Member <t@x.test>', kind: 'suggestion', body: 'second' });
+  // Pin distinct timestamps — both inserts can land in the same microsecond (now()), which ties the
+  // created_at sort and flakes "newest first" only under full-suite timing.
+  await db.query("update member_feedback set created_at = now() - interval '1 minute' where body = 'first'");
   const all = await listFeedback(db);
   assert.equal(all.length, 2);
   assert.equal(all[0]!.body, 'second', 'newest first');

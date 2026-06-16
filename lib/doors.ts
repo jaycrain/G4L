@@ -53,9 +53,16 @@ const DOOR_ALIASES: Partial<Record<DoorSlug, string[]>> = {
 export function matchDoors(message: string): DoorSlug[] {
   const m = (message || '').toLowerCase();
   const found = new Set<DoorSlug>();
-  for (const numMatch of m.matchAll(/\b([1-9])\b/g)) {
-    const idx = Number(numMatch[1]) - 1;
-    if (DOORS[idx]) found.add(DOORS[idx]!.slug);
+  // Numbered selection ("5", "1 and 3") maps to a Door by position — but ONLY when the whole message
+  // IS a numeric pick. Otherwise an incidental number in prose ("3 walks a week", "lose 30 lbs") gets
+  // misread as "pick Door 3" — which silently tagged Joanne with The Empty Nest (Door #3) from her
+  // workout frequency. The conversational onboarding never shows a numbered menu, so this is rare.
+  const isNumericSelection = /^[\s,]*[1-9]([\s,]+(and\s+)?[1-9])*[\s,]*$/.test(m.trim());
+  if (isNumericSelection) {
+    for (const numMatch of m.matchAll(/\b([1-9])\b/g)) {
+      const idx = Number(numMatch[1]) - 1;
+      if (DOORS[idx]) found.add(DOORS[idx]!.slug);
+    }
   }
   for (const d of DOORS) {
     const short = shortName(d.displayName);
