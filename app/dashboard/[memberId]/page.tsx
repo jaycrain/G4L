@@ -331,7 +331,15 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
           )}
           <p className="muted activity-src">Synced from Strava</p>
         </div>
-      ) : null}
+      ) : (
+        <div className="card">
+          <h3>Movement</h3>
+          <p className="muted">
+            When you connect your activity, your movement — rides, runs, walks — shows up here: quiet
+            evidence of the work coming back in your body. Activity sync is coming soon.
+          </p>
+        </div>
+      )}
 
       {/* ZONE 4 · persistent — Doors at the foot, the companion always there */}
       {dash.doors.length > 0 && (
