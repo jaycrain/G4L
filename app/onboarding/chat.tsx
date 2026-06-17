@@ -31,6 +31,7 @@ export default function OnboardingChat() {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [ready, setReady] = useState(false); // conversation has everything; offer the handoff (reversible)
+  const [cardReturns, setCardReturns] = useState(0); // times the member sent the card back ("keep talking") — capture-quality signal
   const taRef = useRef<HTMLTextAreaElement>(null);
   const tokenRef = useRef<string>(''); // per-device onboarding resume token
 
@@ -83,7 +84,7 @@ export default function OnboardingChat() {
   function startFresh() {
     clearOnboardingStorage();
     tokenRef.current = '';
-    setMessages([]); setState(null); setInput(''); setReady(false); setError(null);
+    setMessages([]); setState(null); setInput(''); setReady(false); setError(null); setCardReturns(0);
     setName(''); setEmail(''); setPassword(''); setConfirm('');
     setPhase('gate');
   }
@@ -183,7 +184,7 @@ export default function OnboardingChat() {
     setPending(true);
     setError(null);
     try {
-      const r = await finalizeOnboardingAction({ ctx, state, token: tokenRef.current });
+      const r = await finalizeOnboardingAction({ ctx, state, token: tokenRef.current, cardReturns });
       if (!r.ok) {
         setError('crisis' in r && r.crisis ? r.message : r.errors.join('; '));
         setPending(false);
@@ -203,6 +204,7 @@ export default function OnboardingChat() {
   // "I'm not finished" — drop back into the conversation. Nothing to undo (no member was created);
   // the session is still saved, so they can add another Door and reach the handoff again.
   function keepTalking() {
+    setCardReturns((c) => c + 1); // they sent the card back to fix/add — a capture-quality signal
     setReady(false);
     setError(null);
   }

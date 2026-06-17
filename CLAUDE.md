@@ -44,6 +44,39 @@ underneath is engineered.
 
 ---
 
+## Capture quality — patterns, not patches (how we keep the AI surfaces reliable)
+
+The conversational surfaces (onboarding capture, the agents) are fuzzy by nature — the model will
+always get some captures wrong. What keeps them reliable over time is **discipline, not vigilance**.
+Hold these, especially as we scale (Charter → ~1,000 members):
+
+- **Fix the pattern, not the symptom.** When a capture bug appears, ask: is this a *new* shape or
+  another instance of one I've seen? **The second occurrence of a shape is the signal to stop
+  patching and fix the abstraction.** (Empty Nest, then The Body, then the gap-fragment were all one
+  pattern — "a guess promoted to committed truth"; the structural fix killed all three.) Never let a
+  bug-shape reach its fourth patch — that's where brittleness is born. Adding another regex/branch is
+  a smell; prefer a pure, testable function and a contract.
+- **The confirmation card is the seatbelt.** A deterministic completion contract gates the handoff,
+  and the member confirms a summary card before anything commits. This is what makes imperfect capture
+  *survivable*: the member sees the wrong door / missing item and fixes it. Protect this property —
+  capture will never be perfect; recoverability is the point.
+- **The "keep talking" rate is the health metric.** Every time a member corrects the card, that's a
+  free, member-labeled "capture got this wrong" signal with the transcript attached. Watch it. At
+  scale, this replaces eyeballs-in-prod — a rising rate means capture quality is degrading *before*
+  it's a crisis. Surfaced on `/admin`.
+- **Capture edge cases as replayable fixtures.** Edge cases are raw material for robustness, not a
+  liability — *if* they're written down. Real runs become regression fixtures so a pattern fix can be
+  proven not to break the others, and bug discovery moves from "a human finds it in prod" to CI. (Live
+  orchestration in `liveTurn` is the least-testable, highest-risk code — extract decision logic into
+  pure functions like `augmentDoors`/`confirmsWhole`/the contract so it can be tested.) Member
+  transcripts are vulnerable data: retain for QI only with consent, behind the wall, separate from
+  research, senior-reviewed before scaling.
+- **Not every edge case earns a structural fix.** Truly one-off inputs are handled by the card (the
+  member fixes it) — log them, move on. Reserve abstraction for *recurring* shapes. Over-engineering
+  for the rare is its own brittleness.
+
+---
+
 ## Architecture principles (non-negotiable)
 
 1. **Assets are versioned content, not hardcoded screens.** The 28 Atlas assets (12

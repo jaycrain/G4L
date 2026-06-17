@@ -16,6 +16,7 @@ export type EventKind =
   | 'daily_beat_view'
   | 'idq_start'
   | 'idq_complete'
+  | 'onboarding_confirmed' // member confirmed the summary card → IDQ; meta holds the card snapshot + cardReturns
   | 'page_view';
 
 export type LogOpts = { surface?: string | null; ref?: string | null; step?: number | null; meta?: Record<string, unknown> };
@@ -277,6 +278,62 @@ export type MemberExperience = {
   summary: string;
   totalEvents: number;
 };
+
+// --- Onboarding confirmation card (the saved snapshot + "keep talking" health metric) ------------
+
+export type ConfirmationRecord = {
+  cardReturns: number; // times the member sent the card back to fix/add before confirming
+  card: Record<string, unknown> | null; // the SummaryCard snapshot as confirmed (immutable)
+  at: string | null;
+};
+
+// The card a member confirmed at the end of onboarding, for /admin/member. Latest wins.
+export async function getOnboardingConfirmation(db: Db, memberId: string): Promise<ConfirmationRecord | null> {
+  const { rows } = await db.query<{ meta: unknown; created_at: unknown }>(
+    `select meta, created_at from member_event
+       where member_id = $1 and kind = 'onboarding_confirmed' order by created_at desc limit 1`,
+    [memberId],
+  );
+  const r = rows[0];
+  if (!r) return null;
+  const meta = typeof r.meta === 'object' && r.meta ? (r.meta as Record<string, unknown>) : {};
+  return {
+    cardReturns: Number(meta.cardReturns ?? 0),
+    card: (meta.card as Record<string, unknown>) ?? null,
+    at: toIso(r.created_at),
+  };
+}
+
+// Every onboarding's return count, for the roster-wide rate.
+export async function getOnboardingReturns(db: Db): Promise<number[]> {
+  const { rows } = await db.query<{ meta: unknown }>(
+    `select meta from member_event where kind = 'onboarding_confirmed'`,
+  );
+  return rows.map((r) => {
+    const m = typeof r.meta === 'object' && r.meta ? (r.meta as Record<string, unknown>) : {};
+    return Number(m.cardReturns ?? 0);
+  });
+}
+
+export type KeepTalkingStats = {
+  confirmed: number; // onboardings that reached the card + confirmed
+  withCorrections: number; // …that the member had to send back at least once
+  ratePct: number; // withCorrections / confirmed — the capture-quality signal (lower is better)
+  avgReturns: number; // mean corrections per onboarding
+};
+
+// Pure: roll return counts into the "keep talking" rate (the capture-quality health metric).
+export function keepTalkingStats(returns: number[]): KeepTalkingStats {
+  const confirmed = returns.length;
+  const withCorrections = returns.filter((n) => n > 0).length;
+  const total = returns.reduce((a, b) => a + b, 0);
+  return {
+    confirmed,
+    withCorrections,
+    ratePct: confirmed ? Math.round((withCorrections / confirmed) * 100) : 0,
+    avgReturns: confirmed ? Math.round((total / confirmed) * 10) / 10 : 0,
+  };
+}
 
 export async function getMemberExperience(
   db: Db,

@@ -18,6 +18,8 @@ import {
   type OnboardingSession,
 } from '../../lib/agent/onboarding-session.ts';
 import { curateKeepersFromOnboarding } from '../../lib/agent/onboarding-harvest.ts';
+import { buildSummaryCard } from '../../lib/agent/onboarding-contract.ts';
+import { logEvent } from '../../lib/telemetry/store.ts';
 import { proposeEntry } from '../../lib/playbook/store.ts';
 import { addFacet } from '../../lib/curriculum/store.ts';
 import type { Db } from '../../lib/db/schema.ts';
@@ -91,7 +93,7 @@ export async function onboardingTurn(input: TurnInput): Promise<TurnOutput> {
   return { reply: turn.reply, state: turn.state, complete: turn.complete, crisis: turn.crisis };
 }
 
-export type FinalizeInput = { ctx: Ctx; state: ConvState; token: string };
+export type FinalizeInput = { ctx: Ctx; state: ConvState; token: string; cardReturns?: number };
 export type FinalizeOutput =
   | { ok: true; memberId: string }
   | { ok: false; crisis: true; message: string }
@@ -144,6 +146,19 @@ export async function finalizeOnboardingAction(input: FinalizeInput): Promise<Fi
     } catch {
       /* non-fatal */
     }
+  }
+  // Save the confirmation card the member saw + how many times they corrected it before confirming
+  // ("keep talking" returns). Immutable snapshot in the event meta — surfaced on /admin/member, and
+  // the return counts roll up into the "keep talking" rate (the capture-quality health metric).
+  try {
+    const card = buildSummaryCard(input.state.collected);
+    await logEvent(db, res.memberId, 'onboarding_confirmed', {
+      surface: 'onboarding',
+      step: input.cardReturns ?? 0,
+      meta: { cardReturns: input.cardReturns ?? 0, card },
+    });
+  } catch {
+    /* telemetry is best-effort — never fail the commit over it */
   }
   return { ok: true, memberId: res.memberId };
 }

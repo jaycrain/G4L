@@ -5,6 +5,7 @@ import { listPending } from '../../lib/founder/store.ts';
 import { getRoster, summarizeRoster, relativeTime } from '../../lib/admin/roster.ts';
 import { listFeedback, type FeedbackStatus } from '../../lib/feedback/store.ts';
 import { setFeedbackStatusAction } from '../feedback-actions.ts';
+import { getOnboardingReturns, keepTalkingStats } from '../../lib/telemetry/store.ts';
 import { isAdmin } from '../authz.ts';
 import { initials } from '../../lib/member/avatar.ts';
 import type { Db } from '../../lib/db/schema.ts';
@@ -21,6 +22,7 @@ export default async function AdminHome() {
   const roster = await getRoster(db);
   const feedback = await listFeedback(db);
   const openFeedback = feedback.filter((f) => f.status !== 'resolved');
+  const onboardingStats = keepTalkingStats(await getOnboardingReturns(db));
   const now = Date.now();
   const summary = summarizeRoster(roster, now);
   const NEXT_STATUS: Record<FeedbackStatus, { to: FeedbackStatus; label: string }[]> = {
@@ -110,6 +112,15 @@ export default async function AdminHome() {
           <div className="summary-tile">
             <span className="tile-num">{fmtMinutes(summary.engagedMinutesTotal)}</span>
             <span className="tile-label">Time on task</span>
+          </div>
+          <div
+            className="summary-tile"
+            title={`${onboardingStats.withCorrections} of ${onboardingStats.confirmed} onboardings were sent back at the confirmation card before continuing (avg ${onboardingStats.avgReturns} corrections). The capture-quality signal — lower is better.`}
+          >
+            <span className="tile-num">
+              {onboardingStats.confirmed === 0 ? '—' : `${onboardingStats.ratePct}%`}
+            </span>
+            <span className="tile-label">Card corrections</span>
           </div>
         </div>
 

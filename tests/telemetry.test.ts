@@ -13,6 +13,7 @@ import {
   deriveSurfaceUsage,
   experienceSummary,
   getMemberExperience,
+  keepTalkingStats,
   type MemberEvent,
 } from '../lib/telemetry/store.ts';
 
@@ -155,6 +156,17 @@ test('logEvent + getMemberExperience round-trip through the DB (RLS-bypassing ow
   assert.equal(exp.sessions[0]!.furthestStep, 2);
   assert.equal(exp.surfaces[0]!.surface, 'dashboard');
   assert.match(exp.summary, /Closed Identity Excavation/);
+});
+
+test('keepTalkingStats rolls return counts into the capture-quality rate', () => {
+  // 5 onboardings: three confirmed first try, two needed corrections (1 and 2 returns).
+  const s = keepTalkingStats([0, 0, 1, 0, 2]);
+  assert.equal(s.confirmed, 5);
+  assert.equal(s.withCorrections, 2);
+  assert.equal(s.ratePct, 40); // 2/5
+  assert.equal(s.avgReturns, 0.6); // 3 returns / 5
+  // Empty (no onboardings yet) → zeros, no divide-by-zero.
+  assert.deepEqual(keepTalkingStats([]), { confirmed: 0, withCorrections: 0, ratePct: 0, avgReturns: 0 });
 });
 
 test('logEvent never throws on a bad write (telemetry must not break the app)', async () => {

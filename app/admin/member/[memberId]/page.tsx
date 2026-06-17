@@ -6,7 +6,7 @@ import { MOMENTS, type OperatingMoment } from '../../../../lib/founder/draft.ts'
 import { countSubscriptions } from '../../../../lib/push/store.ts';
 import { buildNudge } from '../../../../lib/agent/nudge.ts';
 import { getMemberUsage, relativeTime } from '../../../../lib/admin/roster.ts';
-import { getMemberExperience } from '../../../../lib/telemetry/store.ts';
+import { getMemberExperience, getOnboardingConfirmation } from '../../../../lib/telemetry/store.ts';
 import { getForecast, getPassport, getFacets } from '../../../../lib/curriculum/view.ts';
 import { getSession, getAsset } from '../../../../lib/curriculum/registry.ts';
 import { redirect } from 'next/navigation';
@@ -27,13 +27,19 @@ export default async function AdminMember({ params }: { params: Promise<{ member
   const pushCount = await countSubscriptions(db, memberId);
   const nudge = await buildNudge(db, memberId);
   const sessionTitle = (id: string) => getSession(id)?.title ?? id;
-  const [usage, forecast, passport, facets, experience] = await Promise.all([
+  const [usage, forecast, passport, facets, experience, confirmation] = await Promise.all([
     getMemberUsage(db, memberId),
     getForecast(db, memberId),
     getPassport(db, memberId),
     getFacets(db, memberId),
     getMemberExperience(db, memberId, (id) => getAsset(id)?.title ?? id),
+    getOnboardingConfirmation(db, memberId),
   ]);
+  // The saved onboarding confirmation card (immutable snapshot of what they confirmed before the IDQ).
+  const obCard = confirmation?.card as
+    | { identityLabel?: string | null; gap?: string; doors?: { displayName?: string }[]; reclaimList?: string[] }
+    | null
+    | undefined;
   const now = Date.now();
   const checkpointTitle = (id: string) => getAsset(id)?.title ?? id;
   const fmtMin = (ms: number) => Math.max(1, Math.round(ms / 60000));
@@ -55,6 +61,32 @@ export default async function AdminMember({ params }: { params: Promise<{ member
         </p>
         {dash.identityParagraph && <p className="muted">{dash.identityParagraph}</p>}
       </div>
+
+      {obCard && (
+        <div className="card">
+          <h3>Onboarding capture</h3>
+          <p className="muted">
+            The confirmation card this member reviewed before their first ID Score —{' '}
+            {confirmation!.cardReturns === 0
+              ? 'confirmed first try.'
+              : `corrected ${confirmation!.cardReturns}× before confirming.`}
+          </p>
+          <dl className="summary-list">
+            <dt>Who they’re reclaiming</dt>
+            <dd>{obCard.identityLabel ?? '— (to be named at Identity Excavation)'}</dd>
+            <dt>How the gap opened</dt>
+            <dd>{obCard.gap || '—'}</dd>
+            <dt>Door{(obCard.doors?.length ?? 0) === 1 ? '' : 's'}</dt>
+            <dd>{(obCard.doors ?? []).map((d) => d.displayName).filter(Boolean).join(', ') || '—'}</dd>
+            <dt>Reclaim List</dt>
+            <dd>
+              <ul className="summary-reclaim">
+                {(obCard.reclaimList ?? []).map((it, i) => (<li key={i}>{it}</li>))}
+              </ul>
+            </dd>
+          </dl>
+        </div>
+      )}
 
       <div className="card">
         <h3>Usage &amp; progress</h3>
