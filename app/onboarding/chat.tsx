@@ -193,9 +193,19 @@ export default function OnboardingChat() {
       }
       // Committed — the saved onboarding (token, name/email, draft) can go.
       clearOnboardingStorage();
-      // Secure the account with the password captured at sign-up; fall back to the setup screen.
-      const saved = await setupAction(r.memberId, password);
-      router.push(saved.ok ? `/idq?member=${r.memberId}` : `/account/setup?member=${r.memberId}`);
+      // Secure the account, then go to the IDQ. The password is captured at the gate — but a RESUMED
+      // onboarding (refresh / returning device) re-enters straight into the conversation and skips the
+      // gate, so `password` is empty here. Account creation must NOT depend on that in-memory value
+      // surviving a resume: only attempt inline setup when we actually hold a valid password; otherwise
+      // hand off to the dedicated set-password step, which creates the credential, starts the session,
+      // and continues to the IDQ. (Empty-password inline setup is what stranded a completed member at
+      // "log in again.")
+      if (password.length >= 8) {
+        const saved = await setupAction(r.memberId, password);
+        router.push(saved.ok ? `/idq?member=${r.memberId}` : `/account/setup?member=${r.memberId}`);
+      } else {
+        router.push(`/account/setup?member=${r.memberId}`);
+      }
     } catch {
       setError('That didn’t go through — please try again.');
       setPending(false);
