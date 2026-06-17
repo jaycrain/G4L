@@ -258,10 +258,11 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
         </div>
       </div>
 
-      {/* ZONE 2 · proof — the badge passport */}
-      <BadgePassport memberId={memberId} earned={passport.earned} total={passport.total} badges={passport.badges} placeholders={passport.placeholders} />
+      {/* Your Program — the daily work, the thing members touch most after the Companion. Sits
+          directly under the metrics, then the Reclaim List it serves, then Your Badges. */}
+      <CurriculumForecast memberId={memberId} forecast={forecast} />
 
-      {/* ZONE 3 · work — the Reclaim List (the fuel), then the curriculum forecast */}
+      {/* The Reclaim List — the fuel the Program is working toward. */}
       <div className="card">
         <h3>Reclaim List</h3>
         <ul className="reclaim">
@@ -295,6 +296,9 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
         <p className="muted refine-hint">To add or refine, just talk to Your G4L Companion</p>
       </div>
 
+      {/* Your Badges — the proof, sitting just below the work it rewards. */}
+      <BadgePassport memberId={memberId} earned={passport.earned} total={passport.total} badges={passport.badges} placeholders={passport.placeholders} />
+
       {dailyBeat && (
         <DailyBeatPanel
           memberId={memberId}
@@ -304,8 +308,6 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
           kept={dailyBeatKept}
         />
       )}
-
-      <CurriculumForecast memberId={memberId} forecast={forecast} />
 
       {/* Movement — objective evidence of the identity coming back (kept; reflective, not graded) */}
       {activity.connected ? (
