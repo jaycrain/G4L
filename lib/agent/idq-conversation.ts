@@ -61,7 +61,7 @@ export function parseLikert(message: string): number | null {
 
 export function idqOpening(): IdqTurn {
   const intro =
-    'Alright — before we do anything else together, let’s get an honest picture of where you’re starting from. ' +
+    'Alright — before we do anything else together, let’s get a clear picture of where you’re starting from. ' +
     'As honest as you can stand. That’s the whole game today.\n\n' +
     'Here’s how it goes. I’ll put twenty-four things in front of you — about your body, about who you are, about ' +
     'the people around you, and about where you’re headed. For each one, you tell me how true it feels right now: ' +

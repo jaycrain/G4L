@@ -56,7 +56,7 @@ const IDENTITY_EXCAVATION: Asset = {
       prompt: 'Who were you when you did it — not the activity, the person?',
       input_type: 'writing',
       companion_frame: 'You told me what you did. Now tell me who you were — the person, not the activity. What did the people around you call you? Who did you become the moment you started?',
-      probe: "Take your time. One honest sentence beats a paragraph of hedging — and don't shrink it. If you were good, say you were good.",
+      probe: "Take your time. One straight sentence beats a paragraph of hedging — and don't shrink it. If you were good, say you were good.",
       contributes: 'none',
     },
     {
@@ -95,7 +95,7 @@ const meta = (
 export const CURRICULUM: Asset[] = [
   // ── Reconnect ── (Sessions authored from the framework; the IDQ is a measurement; the Checkpoint is the firm gate)
   ...RECONNECT_SESSIONS,
-  meta('RCN-IDQ', 'The IDQ', 'reconnect', 'Recognition', 'measurement', 2, 'The honest mirror — your starting read across four dimensions. Retakes every 60 days.', { produces: 'your ID Score (baseline measurement)' }),
+  meta('RCN-IDQ', 'The IDQ', 'reconnect', 'Recognition', 'measurement', 2, 'The mirror — your starting read across four dimensions. Retakes every 60 days.', { produces: 'your ID Score (baseline measurement)' }),
   IDENTITY_EXCAVATION,
   meta('RCN-CHK', 'The Reconnect Checkpoint', 'reconnect', 'Checkpoint', 'checkpoint', 8, 'The reconnection milestone — have you found yourself? Firm gate; opens Rewire.', { close_type: 'milestone', earns: 'reconnect-milestone', gating: 'reconnect_core_complete' }),
   // ── Rewire ── (Sessions authored from the framework; the Checkpoint is a soft gate)

@@ -25,7 +25,7 @@ export const REWIRE_SESSIONS: Asset[] = [
       {
         n: 2,
         title: 'Cross-examine it',
-        prompt: 'Two honest columns: what\'s the real evidence this is true? And what\'s the evidence it\'s not?',
+        prompt: 'Two columns: what\'s the real evidence this is true? And what\'s the evidence it\'s not?',
         input_type: 'writing_two_part',
         companion_frame: 'Now we put it on trial. A lie survives because no one ever asks it for evidence. What\'s the actual proof for it — and against it? \'Too old\' is a story; the people who started at your age and didn\'t stop are the counter-evidence.',
         probe: 'You found a lot against it and not much for it. So why have you been treating it like a verdict?',
@@ -101,7 +101,7 @@ export const REWIRE_SESSIONS: Asset[] = [
         title: 'Fuel, not comfort',
         prompt: 'When you eat when you\'re not hungry — what\'s it really for?',
         input_type: 'writing',
-        companion_frame: 'Quick honesty, no shame. When you eat and you\'re not hungry, what\'s it actually doing for you — comfort, reward, boredom? Naming food\'s real job is the first move toward changing it.',
+        companion_frame: 'Quick gut check, no shame. When you eat and you\'re not hungry, what\'s it actually doing for you — comfort, reward, boredom? Naming food\'s real job is the first move toward changing it.',
         probe: 'Go past \'stress.\' What\'s the feeling right before you reach for it?',
         contributes: 'none',
       },
@@ -210,7 +210,7 @@ export const REWIRE_SESSIONS: Asset[] = [
       {
         n: 1,
         title: 'Setbacks are built in',
-        prompt: 'Be honest — what does your slip usually look like? How does a good run fall apart?',
+        prompt: 'What does your slip usually look like? How does a good run fall apart?',
         input_type: 'writing',
         companion_frame: 'Setbacks are part of the process, not proof you failed. The people who make it aren\'t the ones who never slip — they\'re the ones who don\'t let a slip become a slide. Let\'s build your plan for the slip before it happens.',
         probe: 'Name the real pattern, not the excuse. What\'s the first domino?',

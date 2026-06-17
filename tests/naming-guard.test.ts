@@ -13,6 +13,13 @@ import { join } from 'node:path';
 const BANNED: { re: RegExp; why: string }[] = [
   { re: /Fade Doors?/i, why: 'use "the Doors" — the "Fade Door(s)" label is retired (member-facing AND internal)' },
   { re: /\bBKQ\b/, why: 'the Book Quiz (RCN-BKQ) is retired — no beat/reflection/id should reference it' },
+  // Count-guard (count-AGNOSTIC, not just eight/nine/ten): a hardcoded door count has been wrong twice
+  // and moves again (we're at 11). Say "the Doors" / "a door", never "one of N doors". Matches a number
+  // word or digit immediately before "doors"; "the Doors" (no count) is fine and never matches.
+  {
+    re: /\b(?:\d{1,2}|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\s+doors\b/i,
+    why: 'do not hardcode a door count — say "the Doors"; the count has been wrong twice and changes again',
+  },
 ];
 
 const ROOTS = ['lib', 'app'];
@@ -30,7 +37,7 @@ function walk(dir: string, out: string[] = []): string[] {
   return out;
 }
 
-test('retired terms (Fade Door / BKQ) never reappear in lib or app', () => {
+test('retired terms (Fade Door / BKQ) and hardcoded door counts never reappear in lib or app', () => {
   const offenders: string[] = [];
   for (const root of ROOTS) {
     for (const file of walk(root)) {
@@ -43,4 +50,61 @@ test('retired terms (Fade Door / BKQ) never reappear in lib or app', () => {
     }
   }
   assert.equal(offenders.length, 0, `Retired naming resurfaced:\n${offenders.join('\n')}`);
+});
+
+// --- Soft honest/real lint (FLAGS, never fails) -----------------------------------------------
+// The "honest" tic — the companion asserting its OWN candor — was scrubbed from member copy (Jun 2026).
+// This watch keeps it from quietly creeping back. It is SOFT by design: it emits diagnostics and always
+// passes, so it never blocks CI — it's a mirror, not a gate. Encodes the durable rule:
+//   KEEP  — "honest" as an INVITATION to the member's candor ("be honest", "honest with yourself",
+//           "as honest as you can"). A person can choose not to be honest, so the word does work there.
+//   FLAG  — "honest" DESCRIBING a thing (an honest mirror / read / question / metric / baseline). A
+//           mirror or a score can't be otherwise, so the adjective is idle. "real" as a bare intensifier
+//           ("a real baseline") rides the same watch, so we don't trade one crutch for the next.
+// Scope: member-DELIVERED content + the member-facing explainer pages (NOT agent system prompts, which
+// system-prompt.ts governs, and NOT docs).
+const MEMBER_COPY_ROOTS = [
+  'lib/curriculum',
+  'lib/daily-beat',
+  'lib/beats/beats.json',
+  'app/score',
+  'app/grinta',
+  'app/field-guide',
+];
+// Member-directed invitations to candor — these PASS (load-bearing, the therapeutic posture).
+const HONEST_INVITATION = /\b(?:be|being|been|get|getting|stay|stayed|are|is)\s+honest\b|\bhonest\s+(?:with|about)\b|\bas\s+honest\s+as\b|\bmore\s+honest\s+(?:you|they|we)\b/i;
+const HONEST_ANY = /\bhonest(?:ly|y)?\b/i;
+const REAL_INTENSIFIER = /\b(?:a|an|your|the|our)\s+real\s+\w+/i; // bare intensifier; genuine contrast ("real X, not Y") is reviewed by eye
+
+function collectFiles(target: string): string[] {
+  try {
+    const s = statSync(target);
+    if (s.isFile()) return [target];
+    if (s.isDirectory()) return walk(target);
+  } catch {
+    /* path may not exist in every checkout — skip */
+  }
+  return [];
+}
+
+test('soft watch: idle "honest"/"real" in member copy (flags, never fails)', (t) => {
+  const flags: string[] = [];
+  for (const root of MEMBER_COPY_ROOTS) {
+    for (const file of collectFiles(root)) {
+      if (file.endsWith('beats.data.ts')) continue; // generated from beats.json — watch the source only
+      const lines = readFileSync(file, 'utf8').split('\n');
+      lines.forEach((line, i) => {
+        if (HONEST_ANY.test(line) && !HONEST_INVITATION.test(line)) {
+          flags.push(`${file}:${i + 1} — idle "honest"? (describes a thing → cut; invitation → keep)\n    ${line.trim().slice(0, 120)}`);
+        }
+        if (REAL_INTENSIFIER.test(line) && !/real\s+\w+\s*,\s*not\b/i.test(line)) {
+          flags.push(`${file}:${i + 1} — "real" as filler? (keep only for genuine contrast)\n    ${line.trim().slice(0, 120)}`);
+        }
+      });
+    }
+  }
+  if (flags.length) {
+    t.diagnostic(`Soft voice watch — ${flags.length} candidate(s) to eyeball (NOT a failure):\n${flags.join('\n')}`);
+  }
+  assert.ok(true, 'soft lint never fails — it only surfaces candidates');
 });

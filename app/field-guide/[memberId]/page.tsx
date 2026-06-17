@@ -42,7 +42,7 @@ export default async function FieldGuidePage({ params }: { params: Promise<{ mem
             identity slips and life keeps moving. That’s why it’s Grinta for Life.
           </p>
           <ul className="fg-rs">
-            <li><strong>Reconnect</strong> — See where you are, honestly. Remember who you were before life talked you out of it. Find the spark.</li>
+            <li><strong>Reconnect</strong> — See where you are. Remember who you were before life talked you out of it. Find the spark.</li>
             <li><strong>Rewire</strong> — Take apart the old stories your mind tells to keep you comfortable. Build new frames around your body, your food, and yourself.</li>
             <li><strong>Rebuild</strong> — The physical work: move, fuel, sleep. The numbers start to move here — and you begin it early, while you’re still rewiring.</li>
             <li><strong>Reclaim</strong> — Carry the recovered identity back out into the world: people, community, adventure.</li>
@@ -58,7 +58,7 @@ export default async function FieldGuidePage({ params }: { params: Promise<{ mem
           <h3>The shape of the work</h3>
           <p>The work comes in a few forms, and your companion is in all of them.</p>
           <ul className="fg-rs">
-            <li><strong>Sessions</strong> — guided exercises the two of you move through together, one piece at a time. A form, a few honest questions, something to write. Your companion sets up each piece, asks the next thing, and helps you go deeper than you would on your own.</li>
+            <li><strong>Sessions</strong> — guided exercises the two of you move through together, one piece at a time. A form, a few questions, something to write. Your companion sets up each piece, asks the next thing, and helps you go deeper than you would on your own.</li>
             <li><strong>Clip-ins</strong> — some days are lighter: a single rep to keep your grit moving.</li>
             <li><strong>Things you track</strong> — a few numbers you just keep — your weight, your miles. Tell your companion; it remembers.</li>
             <li><strong>Checkpoints</strong> — at the end of each movement, a real conversation about what’s actually landed before you go on. Reconnect’s is the one that matters most: you have to find yourself before you can build on it, so we hold that line. Fronting it doesn’t last — you’d just sleepwalk.</li>

@@ -59,13 +59,13 @@ export const RECONNECT_SESSIONS: Asset[] = [
     layer: 'Excavation',
     kind: 'session',
     order: 5,
-    summary: 'An honest read of what the Fade cost, and how far you\'ve drifted.',
+    summary: 'A clear read of what the Fade cost, and how far you\'ve drifted.',
     close_type: 'reflect',
-    produces: 'your inventory + your honest distance',
+    produces: 'your inventory + your distance',
     steps: [
       {
         n: 1,
-        title: 'Be honest what it cost',
+        title: 'What it cost',
         prompt: 'Name three things the Fade cost you — be specific.',
         input_type: 'writing',
         companion_frame: 'Every life you build costs something. Be specific about what you traded away to get here: morning rides, deep friendships, the feeling of being in your body instead of trapped in your head. This isn\'t regret — it\'s inventory.',
@@ -74,8 +74,8 @@ export const RECONNECT_SESSIONS: Asset[] = [
       },
       {
         n: 2,
-        title: 'How far, honestly',
-        prompt: 'Honestly, how far are you from that version of you right now?',
+        title: 'How far',
+        prompt: 'How far are you from that version of you right now?',
         input_type: 'writing',
         companion_frame: 'On a normal week right now — how far are you from that buried version of you? A little dusty, or a stranger? There\'s no failing grade. The distance is just the starting line, and you can\'t close a gap you won\'t look at.',
         probe: 'Don\'t soften it to feel better. The real distance is the one we get to close.',
@@ -83,7 +83,7 @@ export const RECONNECT_SESSIONS: Asset[] = [
       },
     ],
     close: {
-      companion: 'That\'s your honest inventory — what it cost, and how far the drift ran. Not to sit in, to push off from. I\'ve put it in your Playbook to keep or cut.',
+      companion: 'That\'s your inventory — what it cost, and how far the drift ran. Not to sit in, to push off from. I\'ve put it in your Playbook to keep or cut.',
       prompt: 'Ready to see what\'s on the other side?',
       options: ['Yes', 'Give me a second'],
       to_playbook: true,
