@@ -17,13 +17,9 @@ export default function AgentBubble({
   const [open, setOpen] = useState(false);
   const [showTeaser, setShowTeaser] = useState(true);
 
-  // The teaser is a brief nudge, not a persistent pill — it auto-retreats to the compact FAB so it
-  // never sits over panel data. (Still tap-to-open / ×-to-dismiss while visible.)
-  useEffect(() => {
-    if (!teaser) return;
-    const t = setTimeout(() => setShowTeaser(false), 10000);
-    return () => clearTimeout(t);
-  }, [teaser]);
+  // The teaser STAYS PUT — a persistent nudge so the companion reads as active and waiting, not a
+  // static label members were missing. It no longer auto-retreats; it clears only on open or
+  // ×-dismiss. (Deliberate trade: a little standing real estate in exchange for being recognized.)
 
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState('');
