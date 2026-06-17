@@ -5,6 +5,7 @@ import {
   contractMet,
   gapIsNarrative,
   buildSummaryCard,
+  doorsToConfirm,
 } from '../lib/agent/onboarding-contract.ts';
 import type { Collected } from '../lib/agent/onboarding.ts';
 
@@ -74,6 +75,18 @@ test('contract catches each missing slot independently', () => {
   assert.deepEqual(contractGaps({ ...base, reclaimList: ['a', 'b'] }), ['reclaimList']);
   assert.deepEqual(contractGaps({ ...base, doors: [] }), ['doors']);
   assert.deepEqual(contractGaps({ ...base, gap: undefined }), ['gap']);
+});
+
+test('doorsToConfirm flags Doors not grounded in the fade story (Blake: The Body, and a matcher-missed Career Cliff)', () => {
+  // Blake committed [career_cliff, body, loss]. His gap is a decade of losses → matchDoors(gap) = loss.
+  // The Body (from his fitness Reclaim List) and Career Cliff (phrased as "career turbulence", which
+  // the matcher misses) aren't traceable to the fade story → both flagged for "was this confirmed?".
+  const gap = "Lost his dad unexpectedly, then his mom after a long Alzheimer's battle, and a painful breakup — a decade of stacking losses.";
+  assert.deepEqual(doorsToConfirm(['career_cliff', 'body', 'loss'], gap), ['career_cliff', 'body']);
+  // A gap-grounded Door is never flagged.
+  assert.deepEqual(doorsToConfirm(['loss'], gap), []);
+  // No doors → nothing.
+  assert.deepEqual(doorsToConfirm([], gap), []);
 });
 
 test('buildSummaryCard renders the confirmable card from collected state', () => {

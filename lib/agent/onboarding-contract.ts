@@ -5,10 +5,22 @@
 //
 // Pure + framework-free so it unit-tests exhaustively against the personas that have broken.
 
-import { DOORS, type DoorSlug } from '../doors.ts';
+import { DOORS, matchDoors, type DoorSlug } from '../doors.ts';
 import { identityLabel } from '../member/identity.ts';
 import { RECLAIM_LIST_MIN } from '../member/reclaim.ts';
 import type { Collected } from './onboarding.ts';
+
+// Recorded Doors NOT evidenced in the fade story (the gap narrative). If a Door isn't traceable to
+// how the gap opened, it likely came from the Reclaim List or a model inference (e.g. The Body from a
+// fitness-heavy list, as in Blake's run) — exactly the kind the MA must have CONFIRMED with the member
+// ("would you call that a Door too?"), not tacked on. A deterministic REVIEW signal for /admin: never
+// auto-stripped (the member may have legitimately affirmed it; the matcher can also simply miss a Door
+// that IS in the story), it just flags "make sure this was actually asked." Pairs with the prompt rule.
+export function doorsToConfirm(doors: string[], gap: string): string[] {
+  if (!doors.length) return [];
+  const grounded = new Set<string>(matchDoors(gap ?? ''));
+  return doors.filter((d) => !grounded.has(d));
+}
 
 export type ContractGap = 'athleticPast' | 'identity' | 'reclaimList' | 'gap' | 'doors';
 

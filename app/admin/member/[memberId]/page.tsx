@@ -7,6 +7,7 @@ import { countSubscriptions } from '../../../../lib/push/store.ts';
 import { buildNudge } from '../../../../lib/agent/nudge.ts';
 import { getMemberUsage, relativeTime } from '../../../../lib/admin/roster.ts';
 import { getMemberExperience, getOnboardingConfirmation } from '../../../../lib/telemetry/store.ts';
+import { doorsToConfirm } from '../../../../lib/agent/onboarding-contract.ts';
 import { getForecast, getPassport, getFacets } from '../../../../lib/curriculum/view.ts';
 import { getSession, getAsset } from '../../../../lib/curriculum/registry.ts';
 import { redirect } from 'next/navigation';
@@ -37,9 +38,15 @@ export default async function AdminMember({ params }: { params: Promise<{ member
   ]);
   // The saved onboarding confirmation card (immutable snapshot of what they confirmed before the IDQ).
   const obCard = confirmation?.card as
-    | { identityLabel?: string | null; gap?: string; doors?: { displayName?: string }[]; reclaimList?: string[] }
+    | { identityLabel?: string | null; gap?: string; doors?: { slug?: string; displayName?: string }[]; reclaimList?: string[] }
     | null
     | undefined;
+  // Flag any Door that looks drawn from the Reclaim List rather than the fade story — the MA should
+  // have CONFIRMED it with the member ("would you call that a Door too?"), not tacked it on.
+  const obDerived = obCard
+    ? doorsToConfirm((obCard.doors ?? []).map((d) => d.slug ?? '').filter(Boolean), obCard.gap ?? '')
+    : [];
+  const obDerivedNames = (obCard?.doors ?? []).filter((d) => d.slug && obDerived.includes(d.slug)).map((d) => d.displayName);
   const now = Date.now();
   const checkpointTitle = (id: string) => getAsset(id)?.title ?? id;
   const fmtMin = (ms: number) => Math.max(1, Math.round(ms / 60000));
@@ -77,7 +84,15 @@ export default async function AdminMember({ params }: { params: Promise<{ member
             <dt>How the gap opened</dt>
             <dd>{obCard.gap || '—'}</dd>
             <dt>Door{(obCard.doors?.length ?? 0) === 1 ? '' : 's'}</dt>
-            <dd>{(obCard.doors ?? []).map((d) => d.displayName).filter(Boolean).join(', ') || '—'}</dd>
+            <dd>
+              {(obCard.doors ?? []).map((d) => d.displayName).filter(Boolean).join(', ') || '—'}
+              {obDerivedNames.length > 0 && (
+                <span className="fb-ctx" style={{ display: 'block', marginTop: '0.3rem', color: 'var(--deep-red)' }}>
+                  ⚠ {obDerivedNames.join(', ')} not clearly traceable to the fade story — confirm the companion raised it as a
+                  Door (and the member affirmed it), rather than tacking it on from the Reclaim List.
+                </span>
+              )}
+            </dd>
             <dt>Reclaim List</dt>
             <dd>
               <ul className="summary-reclaim">
