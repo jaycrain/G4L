@@ -152,14 +152,15 @@ export function doorEngaged(prev: Collected, next: Collected): boolean {
   return has(prev) || has(next);
 }
 
-// Catch a real SECOND Door the model verbalized but forgot to record — ONLY when at least one Door is
-// already recorded (the gap beat genuinely happened). It must NEVER fabricate a FIRST Door by scraping
-// scattered words: that mis-tagged Joanne as Empty Nest from "retired / granddaughter / LA" when the
-// Door beat had never run. With no recorded Door, return the (empty) set unchanged so the contract
-// holds the conversation in the Door beat and the engine asks how the gap actually opened.
-export function augmentDoors(recorded: DoorSlug[], narrative: string): DoorSlug[] {
-  if (recorded.length === 0) return recorded;
-  return Array.from(new Set<DoorSlug>([...recorded, ...matchDoors(narrative)]));
+// Infer Door(s) from the GAP NARRATIVE the member actually told us — catching doors the model
+// discussed but forgot to record (incl. the FIRST door, which is why Donna got re-asked the gap
+// question forever: her rich gap named her doors, but none were captured). This is safe against the
+// old fabrication bug because the caller passes ONLY the gap (never the Reclaim List or scattered
+// text), and the gap is never backfilled from a stray message — so a skipped Door beat means an empty
+// gap → matchDoors('') → [] → nothing invented. A door drawn from the fade story is reading their
+// account, not fabricating one.
+export function augmentDoors(recorded: DoorSlug[], gap: string): DoorSlug[] {
+  return Array.from(new Set<DoorSlug>([...recorded, ...matchDoors(gap ?? '')]));
 }
 
 // The member pushing back on the Door read ("that's not it", "what do you mean", "those don't fit").
@@ -564,14 +565,19 @@ async function liveTurn(
     // beat close. Don't stack the forward question onto a contradictory handoff — just ask it.
     const prematureHandoff = /ready when you are/i.test(r);
     finalReply = prematureHandoff ? forward : /\?/.test(r) ? r : `${r ? `${r}\n\n` : ''}${forward}`;
-  } else if (stage === 'door' && (collected.doors?.length ?? 0) === 0 && memberDone) {
-    // Reclaim list is satisfied and the member is winding it down ("that's enough for now") — but the
-    // fade story hasn't been touched. DRIVE the transition to the Door beat instead of letting a
-    // lingering "anything else for your list?" stall it (that's how the gap beat got skipped). Keep the
-    // model's reflection as the lead, then ask how the gap opened. (No fabrication — a real answer next.)
+  } else if (stage === 'door') {
+    // In the Door beat, not yet exploring (no Door recorded) and not complete. NEVER re-ask "how did
+    // the gap open?" once the gap is already captured — that's the loop Donna hit (she answered in
+    // full and got the same question back). If the gap ISN'T captured yet, ask it; if it IS, acknowledge
+    // it and move to naming the Door instead of re-asking. Keep the model's own question if it asked one.
     const r = reply.trim();
-    const lead = r && !/ready when you are/i.test(r) && !/\?\s*$/.test(r) ? `${r}\n\n` : '';
-    finalReply = `${lead}${doorPrompt()}`;
+    const needGap = !gapIsNarrative(collected.gap, collected.reclaimList ?? []);
+    const forward = needGap
+      ? doorPrompt()
+      : 'You’ve already told me how it opened — I’ve got that. If you had to name the one thing that opened the gap, what would you call it?';
+    const prematureHandoff = /ready when you are/i.test(r);
+    const lead = r && !prematureHandoff && !/\?\s*$/.test(r) ? `${r}\n\n` : '';
+    finalReply = !prematureHandoff && /\?/.test(r) ? r : `${lead}${forward}`;
   } else {
     finalReply = withForwardPrompt(reply, stage);
   }

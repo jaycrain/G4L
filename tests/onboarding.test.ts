@@ -187,23 +187,21 @@ test('door turns are counted only once the gap/Door is on the table (not when th
   assert.equal(doorEngaged({ doors: ['career_cliff'] } as Collected, {} as Collected), true);
 });
 
-test('augmentDoors never FABRICATES a first Door (Joanne run 3) but catches a real second one', () => {
-  // The run-3 failure: the gap beat never ran, but scattered words ("retired, granddaughter, LA")
-  // got scraped into Empty Nest. With NO Door recorded, augment must return nothing — so the contract
-  // keeps the conversation in the Door beat instead of completing on a fabricated Door.
-  const joanneNarrative = 'now that I am retired I want to spend time with my girlfriends and my granddaughter Clair in LA';
-  assert.deepEqual(augmentDoors([], joanneNarrative), [], 'no recorded Door → never invent one');
-  // Legit augment (Joanne run 1): the model recorded career_cliff; her words also name aging parents.
+test('augmentDoors infers Door(s) from the GAP narrative — incl. the first — but invents nothing from an empty gap', () => {
+  // Donna's bug: a real gap named her doors, but none were recorded → she got re-asked the gap forever.
+  // Inferring the first Door FROM THE GAP is reading her account, not fabricating.
+  assert.deepEqual(augmentDoors([], 'caring for my 95 year old mom took over'), ['aging_parents']);
+  // Run-3 protection: a skipped Door beat means an empty gap (never backfilled) → nothing invented.
+  assert.deepEqual(augmentDoors([], ''), []);
+  // Catches a second Door the model missed, alongside one it recorded.
   assert.deepEqual(
     augmentDoors(['career_cliff'], 'caring for my 95 year old mom took over'),
     ['career_cliff', 'aging_parents'],
   );
-  // Nothing new to add → unchanged.
-  assert.deepEqual(augmentDoors(['body'], 'just the body saying no'), ['body']);
-  // Joanne run 4: a weight/shape RECLAIM goal must NOT become a Door. Door inference reads the GAP
-  // narrative (career + caregiving), where 'body' does not appear — so it isn't added.
+  // The caller passes the GAP only — so a fitness-heavy Reclaim List can't leak in: a career+caregiving
+  // gap yields no spurious The Body.
   const joanneGap = 'Working too many hours, caring for my 95 year old mom with an inconsistent sister — the better part of 5 years';
-  assert.deepEqual(augmentDoors(['career_cliff', 'aging_parents'], joanneGap), ['career_cliff', 'aging_parents'], 'no spurious The Body from reclaim goals');
+  assert.deepEqual(augmentDoors(['career_cliff', 'aging_parents'], joanneGap), ['career_cliff', 'aging_parents']);
 });
 
 test('isAffirmation recognizes short confirmations (incl. "for sure"), not longer add-ons', () => {
