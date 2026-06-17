@@ -7,15 +7,17 @@
 
 -- The 8 Doors — CONTRACTS §3 (locked to the pitch deck) -----------------------
 insert into door (slug, display_name, descriptor, sort_order) values
-  ('career_cliff', 'The Career Cliff', 'The role that ended, plateaued, or a retirement that became a freefall.', 1),
-  ('aging_parents','The Aging Parents','The role reversal that made you the one doing the caring.', 2),
+  ('career_cliff', 'The Career Cliff', 'The role that ended, plateaued, or hollowed out — a retirement that became a freefall.', 1),
+  ('aging_parents','The Aging Parents','The role reversal that made you the one doing the caring — for a parent.', 2),
   ('empty_nest',   'The Empty Nest',  'The house that got quiet when the kids left.', 3),
-  ('vanishing',    'The Vanishing',   'The friendships that slipped away without a goodbye.', 4),
+  ('vanishing',    'The Vanishing',   'The relational world that knew you slipping away — friendships, the social self, being known.', 4),
   ('body',         'The Body',        'The body that started saying no to what it used to do easily.', 5),
   ('diagnosis',    'The Diagnosis',   'The mirror moment you couldn''t look away from.', 6),
   ('marriage',     'The Marriage',    'The drift from partnership into just coexisting.', 7),
   ('loss',         'The Loss',        'Losing someone close, and everything changing after.', 8),
-  ('full_house',   'The Full House',  'The house filling up — marriage, young kids, everyone needing you — and no space left for yourself.', 9)
+  ('full_house',   'The Full House',  'The active-family season — marriage, young kids, everyone needing you — and no space left for yourself.', 9),
+  ('grind',        'The Grind',       'The work or ambition that grew until it crowded out the person underneath.', 10),
+  ('load_bearer',  'The Load-Bearer', 'Becoming the one who carries everyone — the household, the money, the needs — until there''s no room left for you.', 11)
 on conflict (slug) do update
   set display_name = excluded.display_name,
       descriptor   = excluded.descriptor,

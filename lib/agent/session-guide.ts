@@ -43,7 +43,7 @@ export async function guideSessionStep(input: GuideInput): Promise<string> {
     // Doors Session (Option A+): acknowledge what onboarding seeded, then confirm/sharpen/add — never recite a menu.
     const doorNote =
       input.step.contributes === 'your_doors' && input.existingDoors?.length
-        ? `\nWhen you first talked, they named these Doors: ${input.existingDoors.join(', ')}. Acknowledge those, confirm they still fit, and help them sharpen the wording or add one that surfaced (or drop one that doesn't). Do NOT recite the list of eight Doors — work from what they already named.\n`
+        ? `\nWhen you first talked, they named these Doors: ${input.existingDoors.join(', ')}. Acknowledge those, confirm they still fit, and help them sharpen the wording or add one that surfaced (or drop one that doesn't). Do NOT recite the list of Doors — work from what they already named.\n`
         : '';
     const user =
       `Session: ${input.sessionTitle}\nMember: ${input.displayName}\n` +

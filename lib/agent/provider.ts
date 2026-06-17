@@ -11,9 +11,9 @@ import type { DoorSlug } from '../doors.ts';
 
 export type OnboardingInput = {
   displayName: string;
-  door: DoorSlug;
-  doorDisplayName: string;
-  identityNoun: string;
+  door: DoorSlug | null; // null = the Fade routed to no canonical Door (Taxonomy Spec §1); recognition lives in the gap
+  doorDisplayName: string | null;
+  identityNoun: string; // may be empty when the member chose to name their identity later (identitySkipped)
   athleticPast: string;
   gap: string;
 };
@@ -47,11 +47,14 @@ function joinSelves(facets: string[]): string {
 export const scriptedProvider: AgentProvider = {
   name: 'scripted',
   async composeIdentityParagraph(i) {
-    const label = identityLabel(i.identityNoun); // "the Athlete"
+    const label = identityLabel(i.identityNoun); // "the Athlete", or "" if they chose to name it later
     return [
       `You told me who you were, before the gap.`,
-      `Then ${i.doorDisplayName} changed that.`,
-      `What you want back is ${label}.`,
+      // Door is optional (Taxonomy Spec §1): if it routed to a Door, name it; otherwise reflect that
+      // the gap opened in their own words rather than reaching for a label they wouldn't claim.
+      i.doorDisplayName ? `Then ${i.doorDisplayName} changed that.` : `Then, in the way you described, the gap opened.`,
+      // Identity is optional (they may name it later at Excavation): name it if we have it.
+      label ? `What you want back is ${label}.` : `What you want back is the person underneath — we'll name them together as you go.`,
       `That is where we start. One step at a time.`,
     ].join(' ');
   },
@@ -83,10 +86,13 @@ function anthropicProvider(): AgentProvider {
             role: 'user',
             content:
               'Write the member identity paragraph (3–5 short sentences, G4L Member-facing voice) ' +
-              `from this intake. Name their Door and propose ${identityLabel(i.identityNoun)} ` +
-              'as the identity to reclaim (whatever kind of person that is — do not assume it is athletic). ' +
-              'Use natural case for the identity ("the Athlete", never all-caps). No metrics, no praise.\n\n' +
-              `Past self: ${i.athleticPast}\nThe gap (${i.doorDisplayName}): ${i.gap}\n\n` +
+              'from this intake. ' +
+              (i.doorDisplayName ? `Name their Door (${i.doorDisplayName}). ` : 'Their fade did not map to a named Door — reflect how the gap opened in their OWN words; do NOT invent or force a Door label. ') +
+              (identityLabel(i.identityNoun)
+                ? `Propose ${identityLabel(i.identityNoun)} as the identity to reclaim (whatever kind of person that is — do not assume it is athletic). Use natural case for the identity ("the Athlete", never all-caps). `
+                : "They haven't named the identity yet — they'll find it through the work; frame it as a person they're reclaiming, without putting a single word to it. ") +
+              'No metrics, no praise.\n\n' +
+              `Past self: ${i.athleticPast}\nThe gap${i.doorDisplayName ? ` (${i.doorDisplayName})` : ''}: ${i.gap}\n\n` +
               'Output ONLY the paragraph itself — plain text, second person ("you"). ' +
               'No preamble, no heading, no labels, no markdown, no quotation marks.',
           },

@@ -73,7 +73,10 @@ test('contract catches each missing slot independently', () => {
   assert.deepEqual(contractGaps({ ...base, identityNoun: undefined }), ['identity']);
   assert.deepEqual(contractGaps({ ...base, identityNoun: undefined, identitySkipped: true }), [], 'opt-out counts as identity');
   assert.deepEqual(contractGaps({ ...base, reclaimList: ['a', 'b'] }), ['reclaimList']);
-  assert.deepEqual(contractGaps({ ...base, doors: [] }), ['doors']);
+  // Doors are NOT a contract gap — routing is optional (Taxonomy Spec §1). A real Fade with a clear
+  // gap story and NO Door is a complete, valid intake.
+  assert.deepEqual(contractGaps({ ...base, doors: [] }), [], 'null routing is complete');
+  assert.equal(contractMet({ ...base, doors: [] }), true, 'a real Fade completes with no Door');
   assert.deepEqual(contractGaps({ ...base, gap: undefined }), ['gap']);
 });
 

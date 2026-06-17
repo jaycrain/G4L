@@ -18,12 +18,14 @@ test('reclaim list needs at least the minimum non-empty items, with no maximum',
   assert.equal(validateReclaimList(['a', 'b', '  ']).ok, false); // empty item rejected
 });
 
-test('one or more of the canonical doors validate; unknown / empty do not', () => {
-  assert.equal(DOOR_SLUGS.length, 9); // 8 original + The Full House (family-formation Fade)
+test('canonical doors validate; unknown do not; empty is valid (null routing, Taxonomy Spec §1)', () => {
+  assert.equal(DOOR_SLUGS.length, 11); // 8 original + Full House + Grind + Load-Bearer (Jun 2026 taxonomy)
   assert.equal(validateDoors(['full_house']).ok, true);
+  assert.equal(validateDoors(['grind']).ok, true);
+  assert.equal(validateDoors(['load_bearer']).ok, true);
   assert.equal(validateDoors(['vanishing']).ok, true);
   assert.equal(validateDoors(['vanishing', 'body']).ok, true); // multi-Door
-  assert.equal(validateDoors([]).ok, false); // at least one required
+  assert.equal(validateDoors([]).ok, true); // null routing is valid — a real Fade can map to no Door
   assert.equal(validateDoors(['the_career']).ok, false); // stale MA v1.1 name
   assert.equal(validateDoors('vanishing').ok, false); // must be an array
 });
@@ -45,8 +47,10 @@ test('matchDoors maps free text to one or more Doors in canonical order', () => 
   assert.ok(matchDoors('taking care of my mother took over').includes('aging_parents'));
   assert.ok(matchDoors('caring for my 95 year old mom').includes('aging_parents'));
   assert.equal(matchDoors('more energy for my mom and my granddaughter').includes('aging_parents'), false); // a passing mention doesn't trip it
-  // Joanne's full story surfaces BOTH doors, in canonical order.
-  assert.deepEqual(matchDoors('bigger job, more responsibility, crazy hours — and caring for my 95 year old mom took over'), ['career_cliff', 'aging_parents']);
+  // Joanne's full story surfaces BOTH doors, in canonical order. Work that GREW over her is now The
+  // Grind (not Career Cliff = the role that ENDED — Taxonomy Spec §4 direction split), alongside the
+  // parent-care Door.
+  assert.deepEqual(matchDoors('bigger job, more responsibility, crazy hours — and caring for my 95 year old mom took over'), ['aging_parents', 'grind']);
 });
 
 test('correctDoors fixes the marriage/young-kids mis-tag (Full House, not Empty Nest / Aging Parents)', () => {
@@ -68,7 +72,10 @@ test('full Reconnect output validates the contract together', () => {
     validateReconnectOutput({ reclaimList: five, doors: ['vanishing', 'body'], baselineIdScore: 42.5 }).ok,
     true,
   );
+  // Empty doors is NOT an error (null routing valid); the two real failures are list + score.
   const bad = validateReconnectOutput({ reclaimList: ['only', 'two'], doors: [], baselineIdScore: 130 });
   assert.equal(bad.ok, false);
-  if (!bad.ok) assert.equal(bad.errors.length, 3); // list (too few) + doors (none) + score (out of range)
+  if (!bad.ok) assert.equal(bad.errors.length, 2); // list (too few) + score (out of range)
+  // An UNKNOWN door slug is still rejected even though empty is allowed.
+  assert.equal(validateReconnectOutput({ reclaimList: five, doors: ['not_a_door'], baselineIdScore: 42 }).ok, false);
 });

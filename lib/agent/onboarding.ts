@@ -33,6 +33,7 @@ export type ConvState = {
   stage: Stage;
   collected: Collected;
   doorTurns?: number; // how many exchanges the Door beat has had (gates completion — see resolveCompletion)
+  identityTurns?: number; // how many exchanges spent at the naming beat (drives the identity gate — see liveTurn)
 };
 export type ConvMessage = { role: 'agent' | 'member'; text: string };
 export type Ctx = { name: string; email: string };
@@ -82,9 +83,12 @@ function doorPhrase(doors: DoorSlug[]): string {
 }
 
 function handoff(doors: DoorSlug[], noun?: string): string {
+  // Null routing is valid (Taxonomy Spec §1): a real Fade can complete with no Door. Lead with the
+  // member's own account rather than a label they wouldn't claim.
+  const opened = doors.length ? `${doorPhrase(doors)} is how it started.` : 'How you described it — in your own words — is how it started.';
   return (
     "Okay. Here's what we've got.\n\n" +
-    `${doorPhrase(doors)} is how it started. ${capFirst(identityLabel(noun) || 'That person')} is who we're bringing back. ` +
+    `${opened} ${capFirst(identityLabel(noun) || 'That person')} is who we're bringing back. ` +
     'And your Reclaim List is what that looks like, in real life.\n\n' +
     'Before we go to work, we need one honest thing: a clear read on exactly how far the gap runs right now. ' +
     "That's next — a set of questions that hold up a mirror. No studying, no score to pass. Then we start closing the distance.\n\n" +
@@ -116,9 +120,10 @@ export function nextStage(c: Collected): Stage {
   if (!c.athleticPast) return 'identity';
   if (!c.identityNoun && !c.identitySkipped) return 'identity_name';
   if (!c.reclaimList || c.reclaimList.length < RECLAIM_LIST_MIN) return 'reclaim';
-  if (!c.doors || c.doors.length === 0) return 'door';
-  // The fade STORY is captured in the Door beat — a Door slug without a real "how it opened"
-  // narrative is an unfinished beat (Joanne run 2: door tagged, gap was a stray goal).
+  // The Door BEAT is held by the fade STORY, not by a Door tag (routing may be null — Taxonomy Spec
+  // §1). What an unfinished Door beat looks like is an empty/thin gap narrative, NOT a missing slug
+  // (Joanne run 2: door tagged, gap was a stray goal). So we stay in 'door' until the gap reads like a
+  // real "how it opened" story; a member can complete with that story and NO Door.
   if (!gapIsNarrative(c.gap, c.reclaimList ?? [])) return 'door';
   return 'complete';
 }
@@ -133,6 +138,13 @@ export function nextStage(c: Collected): Stage {
 //     does", "yes, that's right"), or at the DOOR_MAX_TURNS soft cap (so it can never run forever).
 const DOOR_MIN_TURNS = 3;
 const DOOR_MAX_TURNS = 6;
+
+// IDENTITY GATE (Issue 1 — Charter blocker). The conversation must not leave the naming beat without
+// either a confirmed identityNoun OR identitySkipped, or the completion contract can never be met
+// (Donna: 71 turns, un-completable — the model drifted past the identity beat recording neither). After
+// this many exchanges spent asking, the engine stops just re-asking and OFFERS the explicit "name it
+// later" skip (found at Identity Excavation); accepting it sets identitySkipped. Mirrors the Door drive.
+const IDENTITY_SKIP_OFFER_AFTER = 2;
 
 // A short, clear affirmation of the read ("for sure", "yes, that's right") is the member's signal to
 // wrap the Door beat. Kept short so "yes, and also…" (which adds a Door) isn't mistaken for closure.
@@ -194,6 +206,31 @@ export function confirmsWhole(message: string): boolean {
 const DECLINE_IDENTITY_RE =
   /\b(not sure|don'?t know|dunno|no idea|no clue|unsure|can'?t say|hard to say|not yet|don'?t have (one|a word)|skip|pass|i don'?t)\b/i;
 
+// IDENTITY GATE decision (Issue 1), extracted pure so it unit-tests without the live model. Given the
+// state coming IN (prev) and the member's message, decide: are we at the naming beat, how many turns
+// have been spent there, should the identity be marked skipped THIS turn (an explicit decline, or a
+// bare affirmation accepting a skip the engine already offered), and should the engine now OFFER the
+// explicit "name it later" skip. The caller (liveTurn) still only applies setSkipped when the model
+// itself left identity unset — so a model that DID capture a name this turn always wins.
+export function resolveIdentityGate(
+  prev: Collected,
+  message: string,
+  identityTurnsBefore = 0,
+): { atNamingBeat: boolean; identityTurns: number; setSkipped: boolean; offerSkip: boolean } {
+  const atNamingBeat = !!prev.athleticPast && !prev.identityNoun && !prev.identitySkipped;
+  const identityTurns = (identityTurnsBefore ?? 0) + (atNamingBeat ? 1 : 0);
+  if (!atNamingBeat) return { atNamingBeat, identityTurns, setSkipped: false, offerSkip: false };
+  const m = (message ?? '').trim().replace(/[‘’]/g, "'");
+  const declined = DECLINE_IDENTITY_RE.test(m);
+  const acceptedSkipOffer = identityTurns > IDENTITY_SKIP_OFFER_AFTER && isAffirmation(message);
+  return {
+    atNamingBeat,
+    identityTurns,
+    setSkipped: declined || acceptedSkipOffer,
+    offerSkip: identityTurns >= IDENTITY_SKIP_OFFER_AFTER,
+  };
+}
+
 export function resolveCompletion(
   collected: Collected,
   wantsComplete: boolean,
@@ -211,9 +248,12 @@ export function resolveCompletion(
   // the MODEL racing, not to override the MEMBER. Otherwise it's: explored enough + a signal to close.
   // (memberDone still cannot complete an unmet contract — `reqsMet` gates it either way.)
   const complete = !blocked && reqsMet && (memberDone || (exploredEnough && (wantsComplete || memberAffirmed || mustWrap)));
-  // Hold in the Door beat whenever a Door is on the table but we're not done — so the engine keeps the
-  // conversation there (drawing out the gap story, widening to other Doors) instead of stranding.
-  const exploringDoor = !complete && (collected.doors?.length ?? 0) >= 1;
+  // Hold in the Door beat whenever the fade STORY or a Door is on the table but we're not done — so the
+  // engine keeps the conversation there (drawing out the gap story, widening to other Doors) instead of
+  // stranding. Keyed on the gap too (not just a Door tag) so a NULL-routing member — a real Fade whose
+  // story maps to no Door (Taxonomy Spec §1) — is still held in the beat to develop the story, never
+  // pushed to name a Door they wouldn't claim.
+  const exploringDoor = !complete && (!!collected.gap || (collected.doors?.length ?? 0) >= 1);
   const stage: Stage = complete ? 'complete' : exploringDoor ? 'door' : nextStage(collected);
   return { complete, stage, exploringDoor };
 }
@@ -276,6 +316,7 @@ export function collectedToFields(ctx: Ctx, c: Collected) {
     email: ctx.email,
     doors: c.doors ?? [],
     identityNoun: c.identityNoun ?? '',
+    identitySkipped: c.identitySkipped ?? false,
     athleticPast: c.athleticPast ?? '',
     gap: c.gap ?? '',
     reclaimList: c.reclaimList ?? [],
@@ -373,13 +414,13 @@ For EACH item, also assign a category — the area it belongs to: physical (body
 THE GAP IS USUALLY MORE THAN ONE DOOR. The Fade rarely opens through a single event — the body starts saying no AND the career plateaus; the nest empties AND a parent gets sick. Once you understand the FIRST door, explicitly check whether others stacked onto it ("Was that the whole of it, or did something else pile on around the same time?"). Capture every door that genuinely applies, not just the first one named. Ask this once — don't interrogate; if they say it was just the one, accept that and move on.
 NOT EVERYONE HAS A CLASSIC FADE — and you must not force one. Some members are thriving and want MORE: to optimize, expand, chase peak experiences, not recover from a loss. If they tell you they haven't drifted ("I just want more", "no pressing issues"), DO NOT push a drift narrative or keep asking how the gap opened. Acknowledge it plainly, capture the Door that best fits the pull they DO name (often the Body / the closing window of time, or the nearest one), confirm it lightly, and move to the handoff.
 HONOR "DONE." The moment a member signals they're finished — "that's it", "I'm done", "let's move on", "that's enough", "I want to go to bed" — WRAP immediately: reflect what you have and hand off. Do NOT ask another question. Their call to stop always overrides your urge to explore one more turn.
-Do NOT recite a menu of Doors or ask them to pick one — listing options stops the conversation cold. The eight Doors below are YOUR private map for tagging, never shown to the member. Map their story silently to one OR MORE of them, and record their account in gap and the mapped slug(s) in doors.
+Do NOT recite a menu of Doors or ask them to pick one — listing options stops the conversation cold. The Doors below are YOUR private map for tagging, never shown to the member. Map their story silently to one OR MORE of them, and record their account in gap and the mapped slug(s) in doors.
 HOW TO SURFACE A DOOR — context first, the NAME last (never open with the bare label; it's cryptic and unearned). When you recognize which Door fits, reveal it in three beats, not one:
 (1) CONTEXT — reflect what they described back in plain words, using the Door's one-line meaning (given in the map below) as your language, NOT its title. e.g. "the house getting quiet after the kids moved out", "your body starting to say no to what it used to do easily", "the role reversal where you became the one doing the caring." They should feel seen by the description.
 (2) METAPHOR — then offer the frame lightly: a single life event like that is what we call a Door — the moment the Fade quietly opened.
 (3) NAME — only THEN give it its name, and offer it for them to accept or adjust: "some people call that one The Empty Nest — does that fit, or is it not quite that?" Let them take it, refine it, or wave it off.
 Never collapse these into "That's The Empty Nest." The name is the last beat, after the description and the metaphor have landed.
-MAP WHAT THEY ACTUALLY SAID — NOT A PROJECTED LIFE STAGE. Tag the event they describe, in the timeframe they describe it. Do NOT project forward: someone describing getting married or having young kids is NOT "the Empty Nest" or "the Aging Parents" (those are later-life stages) — if anything it's the responsibility of a new family crowding out the self. If their story does not clearly fit any of the eight, do NOT force one: reflect their OWN words, keep exploring, and name a Door only as tentative recognition they would themselves agree with. A Door the member wouldn't recognize is worse than none yet — never assert one as a verdict.
+MAP WHAT THEY ACTUALLY SAID — NOT A PROJECTED LIFE STAGE. Tag the event they describe, in the timeframe they describe it. Do NOT project forward: someone describing getting married or having young kids is NOT "the Empty Nest" or "the Aging Parents" (those are later-life stages) — if anything it's the responsibility of a new family crowding out the self. If their story does not clearly fit any of the Doors below, do NOT force one: reflect their OWN words, keep exploring, and name a Door only as tentative recognition they would themselves agree with. A Door the member wouldn't recognize is worse than none yet — never assert one as a verdict. Routing can be left open — it is better to record the gap in their OWN words with NO Door than to staple on one they wouldn't claim.
 A DOOR DRAWN FROM THE RECLAIM LIST MUST BE CONFIRMED — NEVER TACKED ON. The Door(s) come from how the gap OPENED (the fade story), not from what the member wants back. But sometimes a CLUSTER of Reclaim-List items points at a life area that may itself be a Door — e.g. several items about the body and fitness (back in shape, the gym, physical activity) can suggest The Body; several about people can suggest a relational Door. If you sense one this way, do NOT silently record it. Raise it as a question and let the member decide, e.g.: "I'm hearing several things about your body — getting back in shape, the gym, physical activity. Sometimes that's its own Door — the body itself drifting. Would you call it that, or is it just part of what you want back?" Record that Door ONLY if they affirm it. A Reclaim-List theme is what they want BACK; it is not automatically a Door (how the gap opened). When unsure whether something is a Door, ask — never assume.
 IF THEY PUSH BACK on a Door you named ("that's not it", "what do you mean", "those don't seem right"), treat it as a correction, not a detour: set the label aside immediately, say plainly you may have misread, ask them to tell you more about what actually changed, and RE-MAP from their answer. NEVER repeat a Door label the member has just questioned.
 [internal Door map — do not list to the member]
@@ -388,6 +429,12 @@ DISAMBIGUATE the three family Doors — they are NOT interchangeable, and confus
 - aging_parents is caring for your OWN AGING PARENTS. A spouse's needs, a partner's struggles, or young kids are NOT this.
 - empty_nest is kids who GREW UP and MOVED OUT, leaving the house quiet. Getting married, HAVING kids, or RAISING young kids is the OPPOSITE of this — never tag empty_nest for it.
 - full_house is the years a household FILLS UP: marriage, young or dependent kids, a partner who needs carrying, becoming the one everyone leans on, until there's no room left for yourself. THIS is the Door for "I got married, then we had kids, and the responsibility took over." When someone describes marrying and raising a family and losing themselves in it, it is full_house — never empty_nest or aging_parents.
+
+DISAMBIGUATE the two load Doors (grind, load_bearer) — these are the self crowded out by accumulated load, and they collide easily with the work and family Doors. The line is SOURCE and DIRECTION:
+- grind (The Grind) vs career_cliff (The Career Cliff) is DIRECTION. Career Cliff = the role ENDED or shrank (subtraction: laid off, retired, plateaued, hollowed out, a freefall). The Grind = the role or ambition GREW OVER them (addition: took over, consumed, crazy hours, bigger job, no room left). Overwork that THEN ended → route by the loss they feel more sharply; let their words decide.
+- load_bearer (The Load-Bearer) is the catch-all for load from ANY OTHER source: a partner's abdicated share, the household, the money, diffuse responsibility that fell on them — load carried largely alone, OUTSIDE parent-care or the active-family season. It ranks LAST among the load Doors: the specific load Door wins, Load-Bearer catches what they don't.
+  - load_bearer vs aging_parents / full_house is SOURCE and SEASON. Parent caretaking → aging_parents. Active-family-season load (kids in the house) → full_house. Other or diffuse load, or load that persists outside that season → load_bearer. Never tag load_bearer alongside aging_parents or full_house for the SAME load — pick the specific one.
+  - load_bearer vs marriage is the OBJECT of the Fade. Marriage = the relational distance from the partner (drift into coexisting; they grieve the DISTANCE). Load-Bearer = being buried by the weight — even when a partner stepping back caused it, the Fade is the LOAD, not the relational drift (they grieve the WEIGHT). e.g. "he semi-retired and I carried the financial weight for a decade" is load_bearer, not marriage.
 
 CLOSE WITH A SUMMARY, NOT A LIST. Once you understand how the gap opened and have checked whether more than one Door stacked on (about three or four exchanges — don't keep asking past that), close the beat in ONE warm turn, and call record_progress with complete=true on that turn. Include ALL of these, in this order:
 (1) SUMMARY — reflect their WHOLE story back in two or three sentences, in their own words: what actually opened the gap and what it quietly cost them.
@@ -400,9 +447,11 @@ NEVER close on a bare label: the member should feel their whole story reflected,
 AI DISCLOSURE — ALREADY SHOWN, DO NOT REPEAT. The member saw the AI disclosure on the start page before this conversation began. Never begin a turn with "This conversation is guided by AI" or otherwise restate that you are AI / that they can stop — that is handled. Open straight into your reflection and question. (This overrides the disclosure note in the base instructions above, which applies to other moments, not onboarding.)
 VOICE: no meta-narration about the program's own mechanics; gender-inclusive; warm, direct, short sentences. Let the Fade carry the weight, not statistics.
 TURN-TAKING (important): reflect first, then ALWAYS end your turn with exactly ONE clear question or prompt that tells the member what to do next. Never end on a bare statement or reflection — that strands the member, unsure whether it is their turn. The ONLY turn without a question is the final IDQ handoff, which closes with "Ready when you are."
-ALWAYS write a spoken message to the member on EVERY turn — never respond with only a tool call and no text (a tool-only turn makes the app repeat the last prompt, which feels broken). And NEVER re-ask a question the member has already answered or repeat a prompt you've already sent — if you have their answer, acknowledge it and move forward. Once you understand how the gap opened and have mapped at least one Door, record it and move to the handoff; do not keep circling the same question.
+ALWAYS write a spoken message to the member on EVERY turn — never respond with only a tool call and no text (a tool-only turn makes the app repeat the last prompt, which feels broken). And NEVER re-ask a question the member has already answered or repeat a prompt you've already sent — if you have their answer, acknowledge it and move forward. Once you understand how the gap opened, record it and move to the handoff; do not keep circling the same question.
 
-On EVERY turn you MUST also call the record_progress tool with everything gathered so far. Set complete=true only once ALL of these are gathered: athleticPast, EITHER a confirmed natural-case identityNoun OR identitySkipped=true (they chose not to name one yet), a reclaimList of at least ${RECLAIM_LIST_MIN}, and at least one door — AND you have genuinely explored HOW that door opened (not just labeled it) AND checked whether more than one door was involved. Do not complete on the first mention of what happened; understand the story, and whether there was more than one door, first. CLOSING THE BEAT: once you have reflected the full picture of how the gap opened and the member confirms it is accurate ("it does", "yes, that's right"), you are DONE — call record_progress with complete=true and hand off on that same turn. Do NOT ask another question, and NEVER re-ask what changed or when they first noticed it once they have already told you. Their confirmation is the signal to wrap; honor it. On that closing turn, the Doors you name in your spoken summary MUST be exactly the Doors you record — name every one, in plain meaning and title. A recorded Door you don't say back is a part of their story you failed to reflect.`;
+RECOGNITION OVER ROUTING (important): the thing you MUST capture is the member's fade story IN THEIR OWN WORDS — that is what makes them feel seen. The Door is just a best-fit category tag behind their words, and it is OPTIONAL. When a Door fits confidently, name it. When none fits, lead with their own words and a soft descriptor and record NO Door — never force a label onto a real Fade, and never show "Other." A real Fade with a clear story and no Door is a COMPLETE, valid intake.
+
+On EVERY turn you MUST also call the record_progress tool with everything gathered so far. Set complete=true only once ALL of these are gathered: athleticPast, EITHER a confirmed natural-case identityNoun OR identitySkipped=true (they chose not to name one yet), a reclaimList of at least ${RECLAIM_LIST_MIN}, and a real gap story (HOW the fade opened, in their words) — AND you have genuinely explored HOW it opened (not just labeled it) AND checked whether more than one Door was involved. A Door tag is NOT required to complete — the gap story is. Do not complete on the first mention of what happened; understand the story, and whether there was more than one Door, first. CLOSING THE BEAT: once you have reflected the full picture of how the gap opened and the member confirms it is accurate ("it does", "yes, that's right"), you are DONE — call record_progress with complete=true and hand off on that same turn. Do NOT ask another question, and NEVER re-ask what changed or when they first noticed it once they have already told you. Their confirmation is the signal to wrap; honor it. On that closing turn, any Doors you name in your spoken summary MUST be exactly the Doors you record — name every one, in plain meaning and title; if you recorded no Door, reflect their own words instead of reaching for a label. A recorded Door you don't say back is a part of their story you failed to reflect.`;
 
 const RECORD_PROGRESS_TOOL = {
   name: 'record_progress',
@@ -478,6 +527,16 @@ async function liveTurn(
     }
   }
   reply = stripLeadingDisclosure(reply); // disclosure lives on the start page — never repeat it here
+
+  // IDENTITY GATE (Issue 1): a deterministic hold on the naming beat, mirroring the Door drive. Decide
+  // (pure) whether we're at the naming beat, the turn count, and whether to mark identity skipped — then
+  // apply the skip only if the model itself left identity unset (a model that captured a name wins).
+  // This guarantees the member can always move past identity (named or skipped) — the gate Donna lacked.
+  const idGate = resolveIdentityGate(state.collected, memberMessage, state.identityTurns ?? 0);
+  const identityTurns = idGate.identityTurns;
+  if (idGate.setSkipped && !collected.identityNoun && !collected.identitySkipped) {
+    collected = { ...collected, identitySkipped: true };
+  }
 
   // SAFETY NET: the model sometimes explores the Door(s) in prose but forgets to record them in the
   // tool — which strands the beat re-asking the opening question (its stage prompt). If the core is
@@ -578,8 +637,21 @@ async function liveTurn(
     const prematureHandoff = /ready when you are/i.test(r);
     const lead = r && !prematureHandoff && !/\?\s*$/.test(r) ? `${r}\n\n` : '';
     finalReply = !prematureHandoff && /\?/.test(r) ? r : `${lead}${forward}`;
+  } else if (stage === 'identity_name') {
+    // IDENTITY GATE forced-forward: hold the conversation on naming the reclaimed identity until the
+    // member names it (model records identityNoun) or chooses to find it later (identitySkipped). Keep
+    // the model's reply ONLY when it's genuinely asking the naming question — otherwise it drifted
+    // (Donna: wandered into the Reclaim List), so drop its off-track question and drive the beat. After
+    // IDENTITY_SKIP_OFFER_AFTER tries, the forward becomes the explicit "name it later" skip offer.
+    const r = reply.trim();
+    const forward = idGate.offerSkip
+      ? 'No rush on the perfect word — and you don’t have to land it today. If one comes — the Runner, the Writer, the Builder, the Friend — say it. If not, that’s completely fine; we’ll find it together as you go. Want to leave it for now?'
+      : 'If you put that person in a single word — the Runner, the Writer, the Builder, the Friend — what would it be?';
+    const onTopic = /\?/.test(r) && /\b(word|name|call it|single|one word|who you were|that person|leave it for now)\b/i.test(r);
+    const lead = r && !/\?/.test(r) ? `${r}\n\n` : ''; // keep a non-question reflection; drop a drift question
+    finalReply = onTopic ? r : `${lead}${forward}`;
   } else {
     finalReply = withForwardPrompt(reply, stage);
   }
-  return { reply: finalReply, state: { stage, collected, doorTurns }, complete };
+  return { reply: finalReply, state: { stage, collected, doorTurns, identityTurns }, complete };
 }

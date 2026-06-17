@@ -2,7 +2,7 @@
   "_generated": {
     "note": "GENERATED from the repo TS registries — read-only. Do NOT hand-edit; regenerate from code.",
     "regenerate": "node --experimental-strip-types scripts/export-framework.ts",
-    "at": "2026-06-17T17:20:33.889Z",
+    "at": "2026-06-17T18:45:32.922Z",
     "sourceOfTruth": "the repo (TypeScript), not this file"
   },
   "curriculum": {
@@ -1143,12 +1143,12 @@
     {
       "slug": "career_cliff",
       "displayName": "The Career Cliff",
-      "descriptor": "The role that ended, plateaued, or a retirement that became a freefall."
+      "descriptor": "The role that ended, plateaued, or hollowed out — a retirement that became a freefall."
     },
     {
       "slug": "aging_parents",
       "displayName": "The Aging Parents",
-      "descriptor": "The role reversal that made you the one doing the caring."
+      "descriptor": "The role reversal that made you the one doing the caring — for a parent."
     },
     {
       "slug": "empty_nest",
@@ -1158,7 +1158,7 @@
     {
       "slug": "vanishing",
       "displayName": "The Vanishing",
-      "descriptor": "The friendships that slipped away without a goodbye."
+      "descriptor": "The relational world that knew you slipping away — friendships, the social self, being known."
     },
     {
       "slug": "body",
@@ -1183,7 +1183,17 @@
     {
       "slug": "full_house",
       "displayName": "The Full House",
-      "descriptor": "The house filling up — marriage, young kids, everyone needing you — and no space left for yourself."
+      "descriptor": "The active-family season — marriage, young kids, everyone needing you — and no space left for yourself."
+    },
+    {
+      "slug": "grind",
+      "displayName": "The Grind",
+      "descriptor": "The work or ambition that grew until it crowded out the person underneath."
+    },
+    {
+      "slug": "load_bearer",
+      "displayName": "The Load-Bearer",
+      "descriptor": "Becoming the one who carries everyone — the household, the money, the needs — until there’s no room left for you."
     }
   ],
   "idq": {

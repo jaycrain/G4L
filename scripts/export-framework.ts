@@ -23,7 +23,7 @@ const out = {
   // still holds here). Source: lib/curriculum/content/*.ts → registry.ts.
   curriculum: { phaseOrder: PHASE_ORDER, kindProfiles: KIND_PROFILES, assets: CURRICULUM },
   badges: BADGES,
-  // The 9 Doors + the matcher's descriptors. Source: lib/doors.ts (code constant).
+  // The Doors + the matcher's descriptors. Source: lib/doors.ts (code constant).
   doors: DOORS,
   // The frozen IDQ contract. Source: lib/idq/instrument.ts.
   idq: {

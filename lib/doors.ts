@@ -1,18 +1,22 @@
-// The 8 Doors — canonical set, locked to the pitch deck (docs/CONTRACTS.md §3).
+// The Doors — canonical set, locked to the pitch deck (docs/CONTRACTS.md §3) + the Jun 2026 taxonomy
+// spec (G4L_Doors_Taxonomy_Spec_v1.0): The Grind and The Load-Bearer added; The Vanishing tightened.
 // Shared source of truth for the app and for validation. Mirrors the DB seed
 // (supabase/seed/0001_reference_data.sql); the DB `door` table is the runtime source,
 // this constant is for type-safety, validation, and seeding parity.
-
+//
+// A Door is the event OR the slow stretch where the Fade opened — descriptors accept both.
 export const DOORS = [
-  { slug: 'career_cliff',  displayName: 'The Career Cliff',  descriptor: 'The role that ended, plateaued, or a retirement that became a freefall.' },
-  { slug: 'aging_parents', displayName: 'The Aging Parents', descriptor: 'The role reversal that made you the one doing the caring.' },
+  { slug: 'career_cliff',  displayName: 'The Career Cliff',  descriptor: 'The role that ended, plateaued, or hollowed out — a retirement that became a freefall.' },
+  { slug: 'aging_parents', displayName: 'The Aging Parents', descriptor: 'The role reversal that made you the one doing the caring — for a parent.' },
   { slug: 'empty_nest',    displayName: 'The Empty Nest',    descriptor: 'The house that got quiet when the kids left.' },
-  { slug: 'vanishing',     displayName: 'The Vanishing',     descriptor: 'The friendships that slipped away without a goodbye.' },
+  { slug: 'vanishing',     displayName: 'The Vanishing',     descriptor: 'The relational world that knew you slipping away — friendships, the social self, being known.' },
   { slug: 'body',          displayName: 'The Body',          descriptor: 'The body that started saying no to what it used to do easily.' },
   { slug: 'diagnosis',     displayName: 'The Diagnosis',     descriptor: 'The mirror moment you couldn’t look away from.' },
   { slug: 'marriage',      displayName: 'The Marriage',      descriptor: 'The drift from partnership into just coexisting.' },
   { slug: 'loss',          displayName: 'The Loss',          descriptor: 'Losing someone close, and everything changing after.' },
-  { slug: 'full_house',    displayName: 'The Full House',    descriptor: 'The house filling up — marriage, young kids, everyone needing you — and no space left for yourself.' },
+  { slug: 'full_house',    displayName: 'The Full House',    descriptor: 'The active-family season — marriage, young kids, everyone needing you — and no space left for yourself.' },
+  { slug: 'grind',         displayName: 'The Grind',         descriptor: 'The work or ambition that grew until it crowded out the person underneath.' },
+  { slug: 'load_bearer',   displayName: 'The Load-Bearer',   descriptor: 'Becoming the one who carries everyone — the household, the money, the needs — until there’s no room left for you.' },
 ] as const;
 
 export type DoorSlug = (typeof DOORS)[number]['slug'];
@@ -39,12 +43,18 @@ const DOOR_ALIASES: Partial<Record<DoorSlug, string[]>> = {
     'look after my mom', 'look after my mother', 'aging parent', 'aging mother', 'aging father', 'elderly parent', 'elderly mother',
     'elderly father', 'my mother took over', 'my mom took over', 'year old mom', 'year old mother', 'year old dad', 'year old father',
   ],
-  career_cliff: ['laid off', 'lost my job', 'got let go', 'forced out', 'stepped down', 'work took over', 'crazy hours', 'bigger job', 'more responsibility', 'the role ended', 'plateaued', 'retirement'],
+  // Career Cliff = the role ENDED or shrank (subtraction). The role that GREW over you is The Grind.
+  career_cliff: ['laid off', 'lost my job', 'got let go', 'forced out', 'stepped down', 'the role ended', 'plateaued', 'retirement', 'restructure', 'pushed out'],
   empty_nest: ['empty nest', 'kids moved out', 'kids left home', 'kids are grown', 'last one left', 'off to college', 'house got quiet'],
   loss: ['passed away', 'lost my husband', 'lost my wife', 'lost my partner', 'death of', 'when he died', 'when she died'],
   diagnosis: ['diagnosed', 'the diagnosis', 'my diagnosis'],
   marriage: ['divorce', 'divorced', 'separated', 'my marriage ended'],
-  vanishing: ['friends drifted', 'lost touch', 'friendships faded', 'friends slipped away', 'no close friends'],
+  vanishing: ['friends drifted', 'lost touch', 'friendships faded', 'friends slipped away', 'no close friends', 'stopped being known'],
+  // The Grind = work/ambition that GREW until it crowded out the self (addition: took over, consumed).
+  grind: ['work took over', 'took over my life', 'crazy hours', 'longer hours', 'bigger job', 'more responsibility', 'grew bigger', 'global team', 'consumed me', 'all-consuming', 'work became everything', 'no room left for', 'ate everything', 'the grind'],
+  // The Load-Bearer = carrying everyone's load (household/money/needs), outside parent-care or the
+  // active-family season — incl. a partner's abdicated share.
+  load_bearer: ['carrying everyone', 'carry everyone', 'carry the load', 'carrying the load', 'held the financial', 'hold everything together', 'holding everything together', 'everyone leans on me', 'everyone needs me', 'on my shoulders', 'fell on me', 'more than my fair share', 'carry more than', 'left me holding', 'the one holding everything', 'carrying the household', 'do it all'],
 };
 
 // Map a member's free-text answer to one or more Doors (voice rewrite v1: members answer in their
@@ -70,6 +80,13 @@ export function matchDoors(message: string): DoorSlug[] {
     if (m.includes(d.slug.replace(/_/g, ' ')) || m.includes(short) || m.includes(d.displayName.toLowerCase()) || aliases.some((a) => m.includes(a))) {
       found.add(d.slug);
     }
+  }
+  // Precedence among LOAD doors (taxonomy spec §4): Aging Parents (parent care) and Full House
+  // (active-family season) own their load; The Load-Bearer is the catch-all for OTHER load, so it
+  // yields to them — it never redundantly re-tags a load a specific Door already owns. (Genuine
+  // multi-load is the model's call via record_progress; this is only the gap-only backstop matcher.)
+  if (found.has('load_bearer') && (found.has('aging_parents') || found.has('full_house'))) {
+    found.delete('load_bearer');
   }
   return DOORS.filter((d) => found.has(d.slug)).map((d) => d.slug);
 }

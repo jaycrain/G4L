@@ -57,7 +57,7 @@ export async function reconcileDoors(conversation: string, current: DoorSlug[]):
     const sys =
       'You reconcile a member\'s Doors after the Doors Session. From the conversation + the Doors they had coming in, ' +
       'return the CANONICAL set they affirm now — keep the ones that still fit, ADD any new one they surfaced, DROP any they ' +
-      'clearly disowned. Map only to the eight Doors below; never invent or infer one they did not own. Most-central first. ' +
+      'clearly disowned. Map only to the Doors below; never invent or infer one they did not own. Leaving the set empty is valid — better none than a Door they would not claim. Most-central first. ' +
       'Output STRICT JSON only: {"doors": string[]} of slugs.\n\n' + map;
     const user = `Doors they came in with: ${current.length ? current.join(', ') : '(none yet)'}\n\nThe Doors-Session conversation:\n${conversation}`;
     const res = await client.messages.create({

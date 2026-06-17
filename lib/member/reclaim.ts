@@ -1,6 +1,8 @@
 // Reconnect required outputs — data contract (docs/CONTRACTS.md §6).
-// Every Reconnect variant must produce: the Reclaim List, the member's Door(s) (one or more
-// of the 8), and the baseline ID Score. This module validates the first two.
+// Every Reconnect variant must produce: the Reclaim List and the baseline ID Score, plus the member's
+// fade story in their own words. The Door(s) are an OPTIONAL routing tag (Doors Taxonomy Spec v1.0 §1 —
+// recognition is decoupled from routing; a null Door is valid for a real Fade). This module validates
+// the Reclaim List and any Doors present.
 //
 // Reclaim List sizing (Decision Log, voice rewrite v1): a MINIMUM of 3 to proceed, no maximum.
 // The agent gently keeps drawing more out toward a soft target of ~7, but never forces a count.
@@ -28,10 +30,15 @@ export function validateReclaimList(items: unknown): ValidationResult {
   return errors.length ? { ok: false, errors } : { ok: true };
 }
 
-/** Validate the member's chosen Door(s) — one or more of the canonical eight. */
+/**
+ * Validate the member's Door(s). Routing is OPTIONAL (Doors Taxonomy Spec v1.0 §1): a real-Fade member
+ * whose story maps to no canonical Door is still served — recognition lives in their own words (the gap
+ * narrative), not in the routing tag. So an EMPTY set is valid (null routing). Any slugs present must be
+ * canonical.
+ */
 export function validateDoors(slugs: unknown): ValidationResult {
-  if (!Array.isArray(slugs) || slugs.length === 0) {
-    return { ok: false, errors: ['at least one Door is required'] };
+  if (!Array.isArray(slugs)) {
+    return { ok: false, errors: ['doors must be an array'] };
   }
   const errors: string[] = [];
   slugs.forEach((s) => {
@@ -43,7 +50,7 @@ export function validateDoors(slugs: unknown): ValidationResult {
 /** The complete Reconnect output, ready to persist to member_profile + member_door + idq_retake. */
 export type ReconnectOutput = {
   reclaimList: string[]; // >= 3
-  doors: DoorSlug[]; // one or more
+  doors: DoorSlug[]; // zero or more — empty = null routing (valid for a real Fade), see §1
   baselineIdScore: number; // 0..100
 };
 

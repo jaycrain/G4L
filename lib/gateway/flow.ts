@@ -22,8 +22,9 @@ const doorName = (slug: DoorSlug) => DOORS.find((d) => d.slug === slug)!.display
 export type OnboardingFields = {
   displayName: string;
   email: string;
-  doors: string[]; // one or more Door slugs (first = primary)
-  identityNoun: string;
+  doors: string[]; // zero or more Door slugs (first = primary); empty = null routing (Taxonomy Spec §1)
+  identityNoun: string; // may be empty when identitySkipped is true
+  identitySkipped?: boolean; // the member chose to name their reclaimed identity later (at Excavation)
   athleticPast: string;
   gap: string;
   reclaimList: string[]; // >= 3
@@ -50,18 +51,21 @@ export async function runOnboarding(
   const errors: string[] = [];
   if (!f.displayName?.trim()) errors.push('name is required');
   if (!f.email?.trim()) errors.push('email is required');
-  if (!f.identityNoun?.trim()) errors.push('an identity noun is required');
+  // Identity is required UNLESS the member chose to name it later (identitySkipped) — they'll surface it
+  // at Identity Excavation. Recognition is still carried by their gap story. (Issue 1 identity gate.)
+  if (!f.identityNoun?.trim() && !f.identitySkipped) errors.push('an identity noun is required');
   const doors = (f.doors ?? []).filter(isDoorSlug);
-  // Reclaim List (>= 3) + Door(s) — the Reconnect contract (baseline score added at IDQ).
+  // Reclaim List (>= 3) + any Doors present — the Reconnect contract. Doors are OPTIONAL (null routing,
+  // Taxonomy Spec §1): a real Fade can complete with no Door, its recognition carried by the gap story.
   const rc = validateReconnectOutput({ reclaimList: f.reclaimList, doors, baselineIdScore: 0 });
   if (!rc.ok) errors.push(...rc.errors.filter((e) => !e.includes('baselineIdScore')));
   if (errors.length) return { ok: false, errors };
 
-  const primaryDoor = doors[0]!;
+  const primaryDoor = doors[0] ?? null; // null routing is valid — member_profile.named_door is nullable
   const input: OnboardingInput = {
     displayName: f.displayName.trim(),
     door: primaryDoor,
-    doorDisplayName: doorName(primaryDoor),
+    doorDisplayName: primaryDoor ? doorName(primaryDoor) : null,
     identityNoun: cleanIdentityNoun(f.identityNoun),
     athleticPast: f.athleticPast.trim(),
     gap: f.gap.trim(),

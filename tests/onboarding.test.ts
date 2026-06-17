@@ -15,10 +15,13 @@ import {
   augmentDoors,
   ensureIdqHandoff,
   stripLeadingDisclosure,
+  resolveIdentityGate,
   INITIAL_STATE,
   type ConvState,
   type Collected,
 } from '../lib/agent/onboarding.ts';
+import { matchDoors } from '../lib/doors.ts';
+import { contractMet, contractGaps, buildSummaryCard } from '../lib/agent/onboarding-contract.ts';
 
 const ctx = { name: 'Tom Miller', email: 'tom@example.com' };
 const five = ['a', 'b', 'c', 'd', 'e'];
@@ -284,4 +287,122 @@ test('identity opt-out: "I\'m not sure yet" skips naming, still completes', () =
   // and a named member still completes the same way
   const named = { athleticPast: 'x', identityNoun: 'Runner', reclaimList: five, doors: ['career_cliff'] as const, gap };
   assert.equal(resolveCompletion(named as never, true, 3).complete, true);
+});
+
+// ============================================================================
+// Doors Taxonomy Spec v1.0 — §7 acceptance tests (The Grind + The Load-Bearer,
+// the §4 anti-collision precedence, null routing, the identity gate, regression).
+// Acceptance bar: "Donna completes."
+// ============================================================================
+
+test('§7.1 recognition — Joanne routes to The Grind (work that GREW over her), not the Career Cliff', () => {
+  // Career Cliff = the role ENDED. The Grind = the role GREW until it crowded out the self.
+  const joanne = matchDoors('the job just kept getting bigger — more responsibility, crazy hours, it took over my life and there was no room left for me');
+  assert.ok(joanne.includes('grind'), 'work-consumption maps to The Grind');
+  assert.equal(joanne.includes('career_cliff'), false, 'work that GREW is not the Career Cliff (which is the role ending)');
+});
+
+test('§7.1 recognition — Donna routes to The Load-Bearer (household/financial load), not Full House / Aging Parents / Marriage', () => {
+  // Donna's reproduction gap: a decade carrying the financial weight after a partner stepped back.
+  const donna = matchDoors('when my husband semi-retired I held the financial weight for the family — I was carrying more than my fair share for a decade');
+  assert.ok(donna.includes('load_bearer'), 'carrying everyone\'s load maps to The Load-Bearer');
+  assert.equal(donna.includes('full_house'), false, 'not the active-family season');
+  assert.equal(donna.includes('aging_parents'), false, 'not parent caretaking');
+  assert.equal(donna.includes('marriage'), false, 'the Fade is the weight, not relational drift');
+});
+
+test('§7.2 collision — Load-Bearer yields to the specific load Door (Aging Parents / Full House) per §4 precedence', () => {
+  // A story that trips BOTH a specific load Door and the Load-Bearer catch-all routes to the specific one.
+  const withParentCare = matchDoors('I was carrying everyone — and caring for my aging mother on top of it all fell on me');
+  assert.ok(withParentCare.includes('aging_parents'), 'parent care is recognized');
+  assert.equal(withParentCare.includes('load_bearer'), false, 'Load-Bearer yields to the specific Aging Parents Door');
+
+  const withFullHouse = matchDoors('married young, then we had kids, everyone leaning on me, and I was carrying the household with no room left');
+  assert.ok(withFullHouse.includes('full_house'), 'active-family season is recognized');
+  assert.equal(withFullHouse.includes('load_bearer'), false, 'Load-Bearer yields to the specific Full House Door');
+});
+
+test('§7.3 no-map — a real Fade whose story maps to no Door completes (null routing), with own-words recognition', () => {
+  const gap = 'It crept in over years — the version of me that took risks just quietly went silent, and I let it.';
+  assert.deepEqual(matchDoors(gap), [], 'this story maps to no canonical Door');
+  const nullRouted: Collected = {
+    athleticPast: 'someone who used to chase the next big thing',
+    identityNoun: 'Risk-Taker',
+    reclaimList: ['Say yes to the trip', 'Start the side project', 'Speak up in the room'],
+    gap,
+    doors: [], // null routing
+  };
+  assert.deepEqual(contractGaps(nullRouted), [], 'no missing slots — a Door is not required');
+  assert.equal(contractMet(nullRouted), true, 'the gap story carries recognition; the intake is complete');
+  const card = buildSummaryCard(nullRouted);
+  assert.equal(card.ready, true, 'the confirmation card is offerable with no Door');
+  assert.deepEqual(card.doors, [], 'no Door, and no "Other" label invented');
+  // The engine holds the beat to develop the story (never pushes to name a Door) until done.
+  assert.equal(resolveCompletion(nullRouted as never, false, 1).stage, 'door', 'held in the beat below the explore-minimum');
+  assert.equal(resolveCompletion(nullRouted as never, true, 3).complete, true, 'completes once explored, with no Door');
+});
+
+test('§7.4 regression — the existing load/work Doors keep their clean matches after the taxonomy change', () => {
+  assert.deepEqual(matchDoors('I was laid off and the role just ended'), ['career_cliff']);
+  assert.deepEqual(matchDoors('when I got married then had kids'), ['full_house']);
+  assert.ok(matchDoors('caring for my aging mother took over').includes('aging_parents'));
+  assert.deepEqual(matchDoors('we drifted into just coexisting, my marriage ended'), ['marriage']);
+  assert.deepEqual(matchDoors('the kids moved out and the house got quiet'), ['empty_nest']);
+});
+
+test('§Issue1 identity gate — held at identity_name with neither field; advances on a name or an explicit skip', () => {
+  // The deterministic core: nextStage cannot leave the naming beat until a field is set.
+  assert.equal(nextStage({ athleticPast: 'x' }), 'identity_name', 'neither field set → held');
+  assert.equal(nextStage({ athleticPast: 'x', identityNoun: 'Runner' }), 'reclaim', 'named → advances');
+  assert.equal(nextStage({ athleticPast: 'x', identitySkipped: true }), 'reclaim', 'skipped → advances');
+
+  // The live drive (pure): an explicit decline at the naming beat sets identitySkipped even if the
+  // model failed to record it — so the member can always move on (the gate Donna's run lacked).
+  const atBeat: Collected = { athleticPast: 'someone who rode at dawn' };
+  const declined = resolveIdentityGate(atBeat, "honestly I'm not sure yet", 0);
+  assert.equal(declined.atNamingBeat, true);
+  assert.equal(declined.setSkipped, true, 'an explicit "not sure" skips');
+
+  // A vague non-answer does NOT skip on its own — but after the engine has OFFERED the skip
+  // (IDENTITY_SKIP_OFFER_AFTER turns), a bare "yeah" accepts the offer.
+  const stillThinking = resolveIdentityGate(atBeat, 'hmm, let me think about that', 0); // identityTurns → 1
+  assert.equal(stillThinking.setSkipped, false, 'not a decline — keep asking');
+  assert.equal(stillThinking.offerSkip, false, 'too early to offer the skip');
+  const offered = resolveIdentityGate(atBeat, 'still pondering', 1); // identityTurns → 2 (== offer-after)
+  assert.equal(offered.offerSkip, true, 'after two tries the engine offers the explicit skip');
+  const accepted = resolveIdentityGate(atBeat, 'yeah', 3); // identityTurns → 4 (> offer-after)
+  assert.equal(accepted.setSkipped, true, 'a bare affirmation accepts the offered skip');
+
+  // Once identity is captured, the gate is inert (a model that recorded a name wins).
+  const past: Collected = { athleticPast: 'x', identityNoun: 'Runner' };
+  const inert = resolveIdentityGate(past, 'skip', 5);
+  assert.equal(inert.atNamingBeat, false);
+  assert.equal(inert.setSkipped, false, 'not at the naming beat → never auto-skips');
+});
+
+test('§Donna reproduction — the full run that stalled at 71 turns now completes (identity skipped + Load-Bearer)', () => {
+  // Donna failed BOTH: identity never captured AND her load-fade mapped to no Door. Pass A fixes both.
+  const gap = 'When my husband semi-retired, I held the financial weight for the whole family and carried more than my fair share for a decade.';
+  const doors = matchDoors(gap);
+  assert.deepEqual(doors, ['load_bearer'], 'her load-fade now has a Door');
+
+  // She declines to name the identity at the gate → identitySkipped via the pure drive.
+  const atBeat: Collected = { athleticPast: 'the one who used to have her own plans' };
+  assert.equal(resolveIdentityGate(atBeat, "I don't know, not yet", 1).setSkipped, true);
+
+  const donna: Collected = {
+    athleticPast: 'the one who used to have her own plans',
+    identitySkipped: true,
+    reclaimList: ['My own projects again', 'Time that is mine', 'Travel I choose'],
+    gap,
+    doors,
+  };
+  assert.equal(contractMet(donna), true, 'contract is satisfiable — the stall is gone');
+  const res = resolveCompletion(donna as never, true, 3);
+  assert.equal(res.complete, true, 'Donna completes');
+  // And she persists: identity may be empty (skipped), the Door set is present.
+  const fields = collectedToFields(ctx, donna);
+  assert.equal(fields.identitySkipped, true);
+  assert.equal(fields.identityNoun, '');
+  assert.deepEqual(fields.doors, ['load_bearer']);
 });

@@ -22,7 +22,11 @@ export function doorsToConfirm(doors: string[], gap: string): string[] {
   return doors.filter((d) => !grounded.has(d));
 }
 
-export type ContractGap = 'athleticPast' | 'identity' | 'reclaimList' | 'gap' | 'doors';
+// Note: 'doors' is intentionally NOT a contract gap. Per the Doors Taxonomy Spec v1.0 §1, recognition
+// (the member's Fade in their OWN words — the gap narrative) is decoupled from routing (the Door tag).
+// Recognition is required; routing MAY be null. A real-Fade member whose story maps to no Door is still
+// served — their words carry recognition — so the Door list never has to be exhaustive to ship.
+export type ContractGap = 'athleticPast' | 'identity' | 'reclaimList' | 'gap';
 
 // A gap must read like the STORY of how the Fade opened — not a restated Reclaim-List goal. Joanne's
 // run-2 failure was `gap = "I'd like to lose 30 lbs"`: a goal, captured where the fade story belongs.
@@ -49,7 +53,8 @@ export function contractGaps(c: Collected): ContractGap[] {
   if (!hasIdentity(c)) missing.push('identity');
   if ((c.reclaimList?.length ?? 0) < RECLAIM_LIST_MIN) missing.push('reclaimList');
   if (!gapIsNarrative(c.gap, c.reclaimList ?? [])) missing.push('gap');
-  if ((c.doors?.length ?? 0) < 1) missing.push('doors');
+  // Doors (routing) are deliberately optional — see the ContractGap note above. A null Door is a valid
+  // completed state for a real-Fade member; the gap narrative carries recognition.
   return missing;
 }
 
@@ -90,5 +95,4 @@ export const GAP_LABEL: Record<ContractGap, string> = {
   identity: 'the person you’re reclaiming',
   reclaimList: 'your Reclaim List',
   gap: 'how the gap opened',
-  doors: 'the Door that opened it',
 };
