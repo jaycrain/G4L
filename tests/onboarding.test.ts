@@ -10,6 +10,7 @@ import {
   isAffirmation,
   isDoorDispute,
   memberWantsToWrap,
+  confirmsWhole,
   doorEngaged,
   augmentDoors,
   ensureIdqHandoff,
@@ -136,6 +137,20 @@ test('the member ending the beat wraps it — even below the explore-minimum (In
   assert.equal(resolveCompletion(full, false, 1, false, true, true).complete, false);
   // without the done signal, turn 1 still holds for exploration
   assert.equal(resolveCompletion(full, false, 1, false, false, false).complete, false);
+});
+
+test('confirmsWhole reads a soft close to the widen question (Scott: "the biggest contributors")', () => {
+  for (const m of ['Those are the biggest contributors', "that's the main ones", 'those are the main factors', "that's the whole of it", 'that covers it', "that's the full picture"]) {
+    assert.equal(confirmsWhole(m), true, `whole: "${m}"`);
+  }
+  // Not a closure — the member is still adding / pushing back.
+  assert.equal(confirmsWhole('there was also my dad getting sick'), false);
+  assert.equal(confirmsWhole('what do you mean?'), false);
+  // It closes the beat (via memberDone) only once the contract is met — never a half-finished intake.
+  const full = { athleticPast: 'x', identityNoun: 'Athlete', reclaimList: ['a', 'b', 'c'], doors: ['full_house'], gap: 'married young, kids to raise, a job that consumed me — nine years gone' } as Collected;
+  assert.equal(resolveCompletion(full, false, 2, false, false, /*memberDone*/ true).complete, true, 'closes when contract met');
+  const noGap = { athleticPast: 'x', identityNoun: 'Athlete', reclaimList: ['a', 'b', 'c'], doors: ['full_house'] } as Collected;
+  assert.equal(resolveCompletion(noGap, false, 2, false, false, true).complete, false, 'never completes a half-finished intake');
 });
 
 test('memberWantsToWrap catches a clear "I\'m done" (incl. Joanne\'s line), not a normal answer', () => {

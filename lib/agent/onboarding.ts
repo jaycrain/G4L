@@ -179,6 +179,16 @@ export function memberWantsToWrap(message: string): boolean {
   return WRAP_RE.test((message ?? '').replace(/[‘’]/g, "'"));
 }
 
+// Answering "is that the whole of it?" with "those are the main/biggest ones" — a soft close the
+// narrow affirmation set missed, so the engine re-asked the same question verbatim (Scott:
+// "Those are the biggest contributors"). Treat it as the member closing the Door beat (only matters
+// once the contract is met — it can never complete a half-finished intake).
+const WHOLE_RE =
+  /\b(those are (the )?(biggest|main|primary|major|ones|two|three)|that'?s (the )?(whole|main|biggest|it|everything|gist)|the whole of it|that covers it|that'?s (the )?(full )?picture|(biggest|main|primary|major) (one|ones|contributor|contributors|factor|factors|thing|things))\b/i;
+export function confirmsWhole(message: string): boolean {
+  return WHOLE_RE.test((message ?? '').replace(/[‘’]/g, "'"));
+}
+
 // At the naming step, a member may genuinely not know yet — honor it, don't force a label.
 const DECLINE_IDENTITY_RE =
   /\b(not sure|don'?t know|dunno|no idea|no clue|unsure|can'?t say|hard to say|not yet|don'?t have (one|a word)|skip|pass|i don'?t)\b/i;
@@ -509,7 +519,9 @@ async function liveTurn(
   const disputed = isDoorDispute(memberMessage) && ((state.collected.doors?.length ?? 0) >= 1 || !!state.collected.gap);
   // The member explicitly ending the beat wraps it — even below the explore-minimum (Independence
   // Guarantee). A dispute is the one thing that still holds (they're correcting, not finishing).
-  const memberDone = memberWantsToWrap(memberMessage) && !disputed;
+  // "I'm done" OR "those are the main ones" both close the beat (once the contract is met) — the
+  // latter answers the widen question, so re-asking it is the bug we're fixing.
+  const memberDone = (memberWantsToWrap(memberMessage) || confirmsWhole(memberMessage)) && !disputed;
   const { complete, stage, exploringDoor } = resolveCompletion(
     collected,
     wantsComplete && !disputed,
@@ -538,11 +550,15 @@ async function liveTurn(
     // If the fade STORY isn't captured yet, that's the priority — ask how it opened before widening to
     // other Doors. (Prevents completing on a Door slug with no real "how it opened" narrative.)
     const needGap = !gapIsNarrative(collected.gap, collected.reclaimList ?? []);
+    // Vary the widen question by turn so it can NEVER repeat verbatim (the "asked the same thing twice"
+    // bug), and escalate toward closing rather than circling.
     const forward = needGap
       ? 'Help me understand how that opened — when did you first feel the drift, and what did it quietly cost you?'
       : doorTurns <= 1
         ? 'That rarely opens all at once. Was that the whole of it, or did something else pile on around the same time?'
-        : 'Is there anything else that pulled at you in that season — or does that feel like the whole of how it opened?';
+        : doorTurns === 2
+          ? 'Got it. Anything else from that stretch worth naming — or is that the heart of it?'
+          : 'That sounds like the full picture. Ready to move on whenever you are — unless there’s one more piece.';
     // The model sometimes jumps to a wrap ("Ready when you are.") before the engine will let the
     // beat close. Don't stack the forward question onto a contradictory handoff — just ask it.
     const prematureHandoff = /ready when you are/i.test(r);
