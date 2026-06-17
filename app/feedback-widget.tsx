@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { submitFeedbackAction } from './feedback-actions.ts';
+import { submitFeedbackAction, submitOnboardingFeedbackAction } from './feedback-actions.ts';
 import type { FeedbackKind } from '../lib/feedback/store.ts';
 
 const KINDS: { value: FeedbackKind; label: string }[] = [
@@ -12,7 +12,7 @@ const KINDS: { value: FeedbackKind; label: string }[] = [
 
 // The quiet bottom-left "Send Feedback" pill + its panel. Deliberately understated and opposite the
 // Member Agent bubble (bottom-right) — it never competes with the companion.
-export default function FeedbackWidget() {
+export default function FeedbackWidget({ onboarding }: { onboarding?: { name: string; email: string } } = {}) {
   const [open, setOpen] = useState(false);
   const [kind, setKind] = useState<FeedbackKind>('issue');
   const [body, setBody] = useState('');
@@ -31,7 +31,9 @@ export default function FeedbackWidget() {
     setBusy(true);
     try {
       const surface = typeof window !== 'undefined' ? window.location.pathname : '';
-      const r = await submitFeedbackAction(kind, text, surface);
+      const r = onboarding
+        ? await submitOnboardingFeedbackAction(kind, text, onboarding.name, onboarding.email, surface)
+        : await submitFeedbackAction(kind, text, surface);
       if (r.ok) {
         setDone(true);
         setBody('');

@@ -43,6 +43,30 @@ export async function submitFeedbackAction(
   return { ok };
 }
 
+// Feedback during ONBOARDING — no member account exists yet, so attribution comes from the name/email
+// entered at the gate (stored as `author`, with member_id null per the store's design). Unauthenticated
+// by necessity (pre-account); it's a write-only feedback row, validated + length-capped by logFeedback.
+export async function submitOnboardingFeedbackAction(
+  kind: FeedbackKind,
+  body: string,
+  name: string,
+  email: string,
+  surface: string,
+): Promise<{ ok: boolean }> {
+  const db = (await getDb()) as unknown as Db;
+  const author = email ? `${(name || 'Onboarding').trim()} <${email.trim()}>` : (name || 'Onboarding visitor').trim();
+  const ok = await logFeedback(db, {
+    memberId: null,
+    author,
+    kind,
+    body,
+    surface,
+    context: { path: surface, stage: 'onboarding', name: name?.trim() || null, email: email?.trim() || null },
+  });
+  if (ok) revalidatePath('/admin');
+  return { ok };
+}
+
 // Operator-only: move a feedback item through new → triaged → resolved.
 export async function setFeedbackStatusAction(id: string, status: FeedbackStatus): Promise<void> {
   if (!(await isAdmin())) return;

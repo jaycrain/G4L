@@ -7,6 +7,7 @@ import { setupAction } from '../account/setup/actions.ts';
 import PasswordField from '../password-field.tsx';
 import type { ConvState, ConvMessage } from '../../lib/agent/onboarding.ts';
 import { buildSummaryCard } from '../../lib/agent/onboarding-contract.ts';
+import FeedbackWidget from '../feedback-widget.tsx';
 
 // Onboarding can be taken in multiple sittings — completed turns persist server-side per turn; these
 // device-local bits let a member return straight into it (and keep an unsent draft). Never the password.
@@ -306,6 +307,9 @@ export default function OnboardingChat() {
         Saved automatically — take your time, you can leave and pick this up anytime.{' '}
         <button type="button" onClick={startFresh}>Not you? Start fresh</button>
       </p>
+      {/* Feedback during onboarding — no member account yet, so attribute by the gate's name/email.
+          The global launcher is hidden pre-auth, so this is the only feedback path here. */}
+      <FeedbackWidget onboarding={{ name: ctx.name, email: ctx.email }} />
     </>
   );
 }
