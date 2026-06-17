@@ -482,17 +482,20 @@ async function liveTurn(
   // Nest from "retired/granddaughter/LA"), and NEVER backfill the gap from an arbitrary message (that
   // stuffed a reclaim answer into the fade story). With nothing fabricated, the contract holds the
   // conversation in the Door beat and the engine asks "how did the gap open?" — capturing a REAL gap.
+  // Door inference reads ONLY the gap narrative — how the fade actually opened — NOT the reclaim
+  // answers. Matching over the whole transcript mis-added a Door twice: Empty Nest from
+  // "retired/granddaughter/LA", then The Body from "lose weight/get in shape". A reclaim goal is what
+  // the member wants BACK, not a Door that opened the Fade. The gap is the only honest source.
+  const fadeNarrative = collected.gap ?? '';
   if (coreReady) {
-    const memberText = [...history.filter((m) => m.role === 'member').map((m) => m.text), memberMessage, collected.gap ?? ''].join('  ');
-    const augmented = augmentDoors(collected.doors ?? [], memberText);
+    const augmented = augmentDoors(collected.doors ?? [], fadeNarrative);
     if (augmented.length !== (collected.doors?.length ?? 0)) collected = { ...collected, doors: augmented };
   }
 
   // Guard the model's most common Door mix-up — a marriage/young-kids/load-bearer story is The Full
-  // House, never the later-life Empty Nest or Aging Parents. Correct from the actual narrative.
+  // House, never the later-life Empty Nest or Aging Parents. Correct from the fade narrative.
   if ((collected.doors?.length ?? 0) > 0) {
-    const narrative = [...history.filter((m) => m.role === 'member').map((m) => m.text), memberMessage, collected.gap ?? ''].join('  ');
-    collected = { ...collected, doors: correctDoors(collected.doors!, narrative) };
+    collected = { ...collected, doors: correctDoors(collected.doors!, fadeNarrative) };
   }
 
   // Count exchanges spent in the Door beat — only once the gap/Door is actually being discussed, NOT

@@ -185,6 +185,10 @@ test('augmentDoors never FABRICATES a first Door (Joanne run 3) but catches a re
   );
   // Nothing new to add → unchanged.
   assert.deepEqual(augmentDoors(['body'], 'just the body saying no'), ['body']);
+  // Joanne run 4: a weight/shape RECLAIM goal must NOT become a Door. Door inference reads the GAP
+  // narrative (career + caregiving), where 'body' does not appear — so it isn't added.
+  const joanneGap = 'Working too many hours, caring for my 95 year old mom with an inconsistent sister — the better part of 5 years';
+  assert.deepEqual(augmentDoors(['career_cliff', 'aging_parents'], joanneGap), ['career_cliff', 'aging_parents'], 'no spurious The Body from reclaim goals');
 });
 
 test('isAffirmation recognizes short confirmations (incl. "for sure"), not longer add-ons', () => {
