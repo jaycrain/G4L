@@ -2,7 +2,7 @@
   "_generated": {
     "note": "GENERATED from the repo TS registries — read-only. Do NOT hand-edit; regenerate from code.",
     "regenerate": "node --experimental-strip-types scripts/export-framework.ts",
-    "at": "2026-06-17T16:58:32.620Z",
+    "at": "2026-06-17T17:20:33.889Z",
     "sourceOfTruth": "the repo (TypeScript), not this file"
   },
   "curriculum": {
@@ -1238,26 +1238,26 @@
     "count": 70,
     "reflections": [
       {
-        "id": "RCN-BKQ-01",
+        "id": "RCN-FAD-01",
         "text": "There's a moment most days when you feel most like a stranger to yourself. Noticing exactly when it hits — that isn't weakness. It's the start of the way back.",
         "phase": "reconnect",
-        "source": "Book Quiz",
+        "source": "The Fade",
         "theme": "the fade",
         "keepable": true
       },
       {
-        "id": "RCN-BKQ-02",
+        "id": "RCN-FAD-02",
         "text": "The Fade: the slow drift away from the person you used to be — built not from one disaster but from a hundred reasonable decisions. Naming it doesn't fix it. It means you stop pretending it isn't there.",
         "phase": "reconnect",
-        "source": "Book Quiz",
+        "source": "The Fade",
         "theme": "the fade",
         "keepable": true
       },
       {
-        "id": "RCN-BKQ-03",
+        "id": "RCN-FAD-03",
         "text": "This was never about a program that tells you what to eat and checks whether you obeyed. It's the opposite — you run your own comeback. The tools are in your hands, and you're not doing it alone.",
         "phase": "reconnect",
-        "source": "Book Quiz",
+        "source": "The Fade",
         "theme": "agency",
         "keepable": true
       },
@@ -1289,7 +1289,7 @@
         "id": "RCN-FDR-01",
         "text": "The gap rarely opens all at once. For most people it traces to a single door — a career cliff, an aging parent, an empty nest, a diagnosis, a loss. Knowing which one is yours is the start of walking back through it.",
         "phase": "reconnect",
-        "source": "Fade Doors",
+        "source": "The Doors",
         "theme": "doors",
         "keepable": true
       },
@@ -1297,7 +1297,7 @@
         "id": "RCN-FDR-02",
         "text": "Most people walked through more than one door. There's no prize for keeping your story simple — the truth is what lets you be met where you actually are.",
         "phase": "reconnect",
-        "source": "Fade Doors",
+        "source": "The Doors",
         "theme": "doors",
         "keepable": true
       },
@@ -1305,7 +1305,7 @@
         "id": "RCN-FDR-03",
         "text": "The door you came through is one a lot of good people have walked through — and most never had a name for it. Naming it doesn't fix it. It means you stop pretending it isn't there.",
         "phase": "reconnect",
-        "source": "Fade Doors",
+        "source": "The Doors",
         "theme": "doors",
         "keepable": true
       },
@@ -1800,8 +1800,8 @@
     ]
   },
   "beats": {
-    "_pointer": "lib/beats/beats.json",
-    "_warning": "Separately sourced (from G4L_Beat_Registry xlsx) and CURRENTLY STALE — still references the Book Quiz (RCN-BKQ). Reconcile against the change-set."
+    "_pointer": "lib/beats/beats.json → lib/beats/beats.data.ts (regen: node --experimental-strip-types scripts/gen-beats.ts)",
+    "_note": "Reconciled to the change-set Jun 2026 — Book Quiz beats retired, \"Fade Doors\" asset → \"The Doors\". A naming guard (tests/naming-guard.test.ts) keeps BKQ / \"Fade Door\" from returning."
   },
   "onboarding": {
     "_pointer": "lib/agent/onboarding.ts + lib/agent/onboarding-contract.ts",

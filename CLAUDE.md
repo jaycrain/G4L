@@ -16,6 +16,13 @@ This repo is **G4L Platform Development** (the product). It is a real, purpose-b
 platform — not AI bolted onto a template. The member experience is simple; the engine
 underneath is engineered.
 
+**Who we're for (scope — locked Jun 2026):** people experiencing **midlife identity loss** — a real
+**Fade** (felt distance from who they still are underneath). We are **not** for the no-deficit,
+forward-looking optimizer ("no drift, I just want more"). Serving everyone makes us a generic
+flourishing product in a crowded field; our edge is a specific demographic + a specific problem. A
+member with no Fade stalling at intake is the system **correctly declining a non-member** — not a bug
+to engineer around. (See `docs/onboarding-open-issues.md` Issue 2.)
+
 **Launch plan:** charter MVP Oct 2026 → paid public launch Jan 1 2027.
 **MVP scope = the 12 gated assets** across all four Rs (see the Authoring Brief).
 

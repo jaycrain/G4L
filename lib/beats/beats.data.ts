@@ -1,82 +1,13 @@
 // AUTO-GENERATED from beats.json — do not edit by hand.
 // Embedded as a TS module (not read via node:fs) so the registry is safe to pull into any bundle.
-// Regenerate: node -e '...' reading beats.json (see commit history).
+// Regenerate: node --experimental-strip-types scripts/gen-beats.ts
 
 export const BEATS_DATA = {
   "schema_version": "2.2",
   "close_rule": "goal|rep|reflect — see Legend",
-  "count": 70,
+  "count": 67,
   "note": "Source of truth = G4L_Beat_Registry_v1.3.xlsx. Content is v1 draft pending Jay + Greg review.",
   "beats": [
-    {
-      "beat_id": "RCN-BKQ-01",
-      "asset": "Book Quiz",
-      "position": {
-        "r": "reconnect",
-        "layer": "Recognition"
-      },
-      "source": "asset_beat",
-      "title": "Why you're here",
-      "content": "Quick gut check before we start. Finish this line however it lands: \"Lately I feel most like a stranger to myself when ____.\" One sentence. No wrong answer.",
-      "dose": "light",
-      "rhythm": "once",
-      "channel": "in_app",
-      "readiness": [
-        "onboarding_complete"
-      ],
-      "serves": [
-        "self"
-      ],
-      "close_type": "reflect",
-      "close": "No grade here — just notice. What's one thing that surfaced you didn't expect?",
-      "provenance": "net-new"
-    },
-    {
-      "beat_id": "RCN-BKQ-02",
-      "asset": "Book Quiz",
-      "position": {
-        "r": "reconnect",
-        "layer": "Recognition"
-      },
-      "source": "asset_beat",
-      "title": "The Fade, named",
-      "content": "Here's a word for that feeling: the Fade — the slow drift away from the person you used to be, built from a hundred reasonable decisions. Does that name fit what you just described? Tell me where it does and where it doesn't.",
-      "dose": "light",
-      "rhythm": "once",
-      "channel": "in_app",
-      "readiness": [
-        "RCN-BKQ-01"
-      ],
-      "serves": [
-        "self"
-      ],
-      "close_type": "reflect",
-      "close": "No grade here — just notice. What's one thing that surfaced you didn't expect?",
-      "provenance": "book"
-    },
-    {
-      "beat_id": "RCN-BKQ-03",
-      "asset": "Book Quiz",
-      "position": {
-        "r": "reconnect",
-        "layer": "Recognition"
-      },
-      "source": "asset_beat",
-      "title": "What this is and isn't",
-      "content": "This isn't a program that tells you what to eat and tracks whether you obey. It's the opposite — you'll run your own comeback, and I'm here to hand you the tools and stay beside you. Sound like something you actually want?",
-      "dose": "light",
-      "rhythm": "once",
-      "channel": "in_app",
-      "readiness": [
-        "RCN-BKQ-02"
-      ],
-      "serves": [
-        "outlook"
-      ],
-      "close_type": "reflect",
-      "close": "No grade here — just notice. What's one thing that surfaced you didn't expect?",
-      "provenance": "book"
-    },
     {
       "beat_id": "RCN-IDQ-01",
       "asset": "IDQ",
@@ -90,9 +21,7 @@ export const BEATS_DATA = {
       "dose": "medium",
       "rhythm": "once",
       "channel": "in_app",
-      "readiness": [
-        "RCN-BKQ-03"
-      ],
+      "readiness": [],
       "serves": [],
       "close_type": "reflect",
       "close": "That's the read. Where did the low numbers cluster? Don't argue with it — just see it.",
@@ -142,7 +71,7 @@ export const BEATS_DATA = {
     },
     {
       "beat_id": "RCN-FDR-01",
-      "asset": "Fade Doors",
+      "asset": "The Doors",
       "position": {
         "r": "reconnect",
         "layer": "Recognition"
@@ -153,9 +82,7 @@ export const BEATS_DATA = {
       "dose": "medium",
       "rhythm": "once",
       "channel": "in_app",
-      "readiness": [
-        "RCN-BKQ-03"
-      ],
+      "readiness": [],
       "serves": [
         "self"
       ],
@@ -165,7 +92,7 @@ export const BEATS_DATA = {
     },
     {
       "beat_id": "RCN-FDR-02",
-      "asset": "Fade Doors",
+      "asset": "The Doors",
       "position": {
         "r": "reconnect",
         "layer": "Recognition"
@@ -188,7 +115,7 @@ export const BEATS_DATA = {
     },
     {
       "beat_id": "RCN-FDR-03",
-      "asset": "Fade Doors",
+      "asset": "The Doors",
       "position": {
         "r": "reconnect",
         "layer": "Recognition"

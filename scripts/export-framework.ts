@@ -35,10 +35,10 @@ const out = {
   },
   // Daily Beat rotation pool. Source: lib/daily-beat/reflections.ts.
   dailyBeat: { count: REFLECTIONS.length, reflections: REFLECTIONS },
-  // Beats — NOT in this registry; they live in their own JSON, separately sourced AND currently stale.
+  // Beats — NOT in this registry; they live in their own JSON (authored), regenerated into beats.data.ts.
   beats: {
-    _pointer: 'lib/beats/beats.json',
-    _warning: 'Separately sourced (from G4L_Beat_Registry xlsx) and CURRENTLY STALE — still references the Book Quiz (RCN-BKQ). Reconcile against the change-set.',
+    _pointer: 'lib/beats/beats.json → lib/beats/beats.data.ts (regen: node --experimental-strip-types scripts/gen-beats.ts)',
+    _note: 'Reconciled to the change-set Jun 2026 — Book Quiz beats retired, "Fade Doors" asset → "The Doors". A naming guard (tests/naming-guard.test.ts) keeps BKQ / "Fade Door" from returning.',
   },
   // Conversational surfaces — CODE + prompts, not framework data. Cannot be expressed as a data row.
   onboarding: {

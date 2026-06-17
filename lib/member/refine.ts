@@ -55,7 +55,7 @@ export async function reconcileDoors(conversation: string, current: DoorSlug[]):
     const model = process.env.ANTHROPIC_MODEL ?? 'claude-sonnet-4-6';
     const map = DOORS.map((d) => `- ${d.slug}: ${d.displayName} — ${d.descriptor}`).join('\n');
     const sys =
-      'You reconcile a member\'s Fade Doors after the Doors Session. From the conversation + the Doors they had coming in, ' +
+      'You reconcile a member\'s Doors after the Doors Session. From the conversation + the Doors they had coming in, ' +
       'return the CANONICAL set they affirm now — keep the ones that still fit, ADD any new one they surfaced, DROP any they ' +
       'clearly disowned. Map only to the eight Doors below; never invent or infer one they did not own. Most-central first. ' +
       'Output STRICT JSON only: {"doors": string[]} of slugs.\n\n' + map;
@@ -109,7 +109,7 @@ export type AddDoorResult =
   | { ok: false; reason: 'nomatch' | 'already' };
 
 /**
- * Record additional Fade Door(s) from the member's own words. Maps free text to the canonical Doors,
+ * Record additional Door(s) from the member's own words. Maps free text to the canonical Doors,
  * adds only ones they don't already have (additive), and makes the first Door primary if they had none.
  */
 export async function addDoorForMember(db: Db, memberId: string, description: string): Promise<AddDoorResult> {

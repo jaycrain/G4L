@@ -42,7 +42,7 @@ export async function getReclaimItems(db: Db, memberId: string): Promise<Reclaim
 // genuinely-next work instead of re-asking the member to name their identity or rebuild their list.
 const ONBOARDING_COVERED_BEATS = [
   'RCN-IDQ-01', 'RCN-IDQ-02', // the IDQ itself
-  'RCN-FDR-01', 'RCN-FDR-02', 'RCN-FDR-03', // Fade Door(s)
+  'RCN-FDR-01', 'RCN-FDR-02', 'RCN-FDR-03', // the Doors
   'RCN-EXC-04', // naming the Reclaimed Identity
   'RCN-WIN-03', 'RCN-WIN-04', // building + sharpening the Reclaim List
 ];

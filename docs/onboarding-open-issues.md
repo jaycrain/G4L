@@ -34,25 +34,33 @@ unit-testable (a pure check + a forced forward), mirroring `contractMet` / the g
 
 ---
 
-## Issue 2 — The Door taxonomy doesn't fit every real fade (THIRD data point)
+## Issue 2 — The Door taxonomy doesn't fit every *in-scope* fade
 
-**What happens.** A member tells a genuine, substantive fade story — but it doesn't map to any of the
-eight Doors. The matcher returns nothing, the model can't land a Door it (or the member) would
-recognize, and the Door beat stalls. Because the contract requires ≥1 Door, the member can't complete.
+**SCOPE DECISION (Jun 2026, Jay — locked):** G4L is for **midlife identity loss**. The no-deficit,
+forward-looking optimizer (Greg — "no drift, I just want *more*") is **explicitly NOT our member at
+launch.** Serving him broadens the market but turns us into a generic flourishing-for-everyone product
+(a crowded space); our edge is a specific demographic + a specific problem. So **Greg's case is closed,
+not a taxonomy gap**: no Door, no instrument change, no door-less completion for the optimizer. The IDQ
+flooring on him (flat baseline) is the instrument working correctly — near-zero identity distance =
+"not our member." A no-Fade person stalling is the system correctly declining to serve a non-member.
 
-**Three data points now, same shape — "the self vanished, but not through a named Door":**
-- **Greg** — no deficit at all; forward-looking ("I just want *more*", optimize/expand). The model had
-  to force the nearest Door.
+**What happens (in scope).** A member who *does* have a real midlife Fade tells a genuine, substantive
+story — but it doesn't map to any of the nine Doors. The matcher returns nothing, the model can't land
+a Door they'd recognize, and the Door beat stalls. Because the contract requires ≥1 Door, they can't
+complete.
+
+**Two in-scope data points, same shape — "the self vanished, but not through a named event":**
 - **Joanne** — work / success crowded out the rest of life (a "the role took over" story; only loosely
-  Career Cliff).
+  Career Cliff, which is the role *ending*, not *consuming*).
 - **Donna** — the self disappeared under carrying the household load after a partner's major life
   change. No Door covers "I became the one holding everything up." Matcher returned nothing across 71
   turns; no Door was ever landed.
 
-**Why it matters.** This is no longer an edge case — it's a recurring class. The eight Doors cover
+**Why it matters.** This is a recurring class *within the target demographic*. The nine Doors cover
 discrete *life events* (career cliff, empty nest, aging parents, loss, body, diagnosis, marriage, the
-vanishing, full house). They under-cover **slow-accretion / relational-load fades** where there was no
-single event — the self just got crowded out over years by someone else's needs or choices.
+vanishing, full house). They under-cover **slow-accretion / relational-load fades** — no single event,
+the self crowded out over years by someone else's needs or choices. That's still midlife identity loss;
+the taxonomy just lacks the slot.
 
 **Fix direction (product/science decision — Jay + Greg, not an engineering patch):**
 - **Option A — expand the taxonomy:** add a Door (or Doors) for the slow-load / "I carry everyone"

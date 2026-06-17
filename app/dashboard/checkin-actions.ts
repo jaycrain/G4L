@@ -222,7 +222,7 @@ export async function sendCheckin(memberId: string, memberMessage: string): Prom
         if (res.reason === 'already') {
           return { ok: false, message: 'Not saved — that Door is already recorded for them.' };
         }
-        return { ok: false, message: "Couldn't map that to one of the Fade Doors. Reflect what they said and ask a little more about what happened, then try again." };
+        return { ok: false, message: "Couldn't map that to one of the Doors. Reflect what they said and ask a little more about what happened, then try again." };
       }
       if (name === 'mark_reclaim_reclaimed') {
         // Hard confirm gate (code, not just prompt): a goal can't be flipped on a passing mention.

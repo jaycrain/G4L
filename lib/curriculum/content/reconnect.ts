@@ -3,8 +3,8 @@
 // Excavation) lives in registry.ts; the IDQ is a measurement; the Checkpoint is a ceremony.
 import type { Asset } from '../types.ts';
 
-// The Book Quiz (RCN-BKQ) is retired — its terminology-check job (the Fade, what-this-is) moved into
-// onboarding (the start page + Getting to Know You). Reconnect now opens on the Doors.
+// The old orientation Session is retired — its terminology-check job (the Fade, what-this-is) moved
+// into onboarding (the start page + Getting to Know You). Reconnect now opens on the Doors.
 export const RECONNECT_SESSIONS: Asset[] = [
   {
     id: 'RCN-FDR',

@@ -33,9 +33,9 @@ const item = (over: Partial<ReclaimItem>): ReclaimItem => ({
   state: 'not_yet', closerCount: 0, sortOrder: 0, lastServedAt: null, ...over,
 });
 
-test('the registry loads all 70 Beats with valid close types', () => {
+test('the registry loads all 67 Beats with valid close types', () => {
   const beats = allBeats();
-  assert.equal(beats.length, 70);
+  assert.equal(beats.length, 67); // 70 − 3 retired Book Quiz beats (Jun 2026 change-set sweep)
   assert.ok(beats.every((b) => ['goal', 'rep', 'reflect'].includes(b.close_type)));
 });
 
