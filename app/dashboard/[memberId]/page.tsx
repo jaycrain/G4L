@@ -8,11 +8,12 @@ import StravaConnect from '../../account/strava-connect.tsx';
 import { getGrinta, grintaComponents } from '../../../lib/grinta/index.ts';
 import { getJourney } from '../../../lib/beats/store.ts';
 import JourneyRings from '../journey-rings.tsx';
-import HeroIntro from '../hero-intro.tsx';
 import { formatDistance, formatDuration, typeLabel, relativeDay } from '../../../lib/activity/summary.ts';
 import { firstName, initials } from '../../../lib/member/avatar.ts';
 import type { Db } from '../../../lib/db/schema.ts';
-import AgentBubble from '../agent-bubble.tsx';
+import CompanionDock from '../companion-dock.tsx';
+import CompanionHero from '../companion-hero.tsx';
+import IdentityStrip from '../identity-strip.tsx';
 import Threshold from '../threshold.tsx';
 import MeasureCard from '../measure-card.tsx';
 import DashboardSync from '../dashboard-sync.tsx';
@@ -37,7 +38,6 @@ export const maxDuration = 30;
 const R_RING_COLOR: Record<string, string> = { reconnect: '#374f63', rewire: '#3b9495', rebuild: '#919536', reclaim: '#ec6233' };
 const DIM_LABEL: Record<string, string> = { physical: 'Physical', self: 'Self', social: 'Social', outlook: 'Outlook' };
 const ARROW: Record<string, string> = { up: '↑', down: '↓', flat: '→' };
-const HERO_VERB: Record<string, string> = { reconnect: 'Reconnecting', rewire: 'Rewiring', rebuild: 'Rebuilding', reclaim: 'Reclaiming' };
 
 export default async function DashboardPage({ params }: { params: Promise<{ memberId: string }> }) {
   const { memberId } = await params;
@@ -67,9 +67,8 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
     ? new Date(new Date(lastIdq).getTime() + 60 * 24 * 3600 * 1000).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
     : null;
 
-  // Hero verb tracks the active phase (the one the forecast marks "You're here").
+  // The active phase (the one the forecast marks "You're here") — drives the Daily Beat + crossing.
   const activePhase = forecast.phases.find((p) => p.status === "You're here")?.phase ?? 'reconnect';
-  const heroVerb = HERO_VERB[activePhase] ?? 'Reconnecting';
 
   // Journey rings, gate-driven from the forecast: a finished R stays darkened (reinforcing completion),
   // the active R is the lit one, the rest sit dimmed.
@@ -136,11 +135,29 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
   };
   const teaser = topNudge(nudgeSignals).text;
 
+  // §2 distilled identity line — the selves they're reclaiming, in one line (full narrative tucks behind
+  // "Your full story"). §3 deterministic companion hero (v1, no new intelligence): greet + the single most
+  // relevant existing item — the lit next Session — + CTA, else a warm open. (The composed call is Slice 2.)
+  const identityLine = facets.length
+    ? `${facets.join(' · ')} — back in the fight`
+    : 'Who you’re reclaiming lands here once you name it at Identity Excavation.';
+  const litCurrent = forecast.current?.openable ? forecast.current : null;
+  const heroCta = litCurrent
+    ? {
+        label: litCurrent.kind === 'checkpoint' ? 'Cross this Checkpoint →' : 'Open this Session →',
+        href: `/${litCurrent.kind === 'checkpoint' ? 'checkpoint' : 'session'}/${memberId}/${litCurrent.id}`,
+      }
+    : null;
+  const heroMessage = litCurrent
+    ? `Your next step is ready — ${litCurrent.title}.${litCurrent.summary ? ` ${litCurrent.summary}` : ''}`
+    : 'Whenever you’re ready, tell me what’s on your mind — or one thing you want to move toward today.';
+
   return (
     <>
       <DashboardSync />
       {!thresholdCrossed && <Threshold memberId={memberId} data={thresholdData} />}
 
+      <CompanionDock memberId={memberId} hasNudge={!!teaser}>
       <div className="member-greeting">
         <Link href="/account" className="member-greeting-link" aria-label="Your account">
           {dash.avatarUrl ? (
@@ -165,23 +182,24 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
         <PhaseCrossing prevLabel={crossing.prevLabel} newLabel={crossing.newLabel} blurb={crossing.blurb} cta={crossingCta} />
       )}
 
-      {/* ZONE 0 · identity strip — all the selves they're bringing back */}
-      <div className="hero">
-        {facets.length ? (
-          <h1>
-            {heroVerb}: <span className="noun">{facets.join('  ·  ')}</span>
-          </h1>
+      {/* §2 · distilled identity line — the selves they're reclaiming, full narrative behind "Your full story" */}
+      <IdentityStrip line={identityLine} fullStory={dash.identityParagraph ?? null} />
+
+      {/* §3 · companion hero — the lead block (greeting + proactive message + CTA) */}
+      <CompanionHero name={firstName(dash.displayName)} message={heroMessage} cta={heroCta} />
+
+      {/* §1 · priority pair — Your Program (next Session) + the Daily Beat, side by side */}
+      <div className="priority-pair">
+        <CurriculumForecast memberId={memberId} forecast={forecast} />
+        {dailyBeat ? (
+          <DailyBeatPanel memberId={memberId} reflectionId={dailyBeat.id} text={dailyBeat.text} keepable={dailyBeat.keepable} kept={dailyBeatKept} />
         ) : (
-          <>
-            <h1>{heroVerb}</h1>
-            <p className="heromore">Who are you reclaiming? You&apos;ll name that in Identity Excavation — and it lands here.</p>
-          </>
+          <div className="card daily-empty"><h3>Daily Beat</h3><p className="muted">Today&apos;s reflection lands here.</p></div>
         )}
-        {dash.identityParagraph && <HeroIntro text={dash.identityParagraph} />}
       </div>
 
-      {/* ZONE 1 · status — three squarish metric panels, each with a See-more sub-page */}
-      <div className="metrics-grid">
+      {/* §6 · witness row — the metrics, demoted below the action */}
+      <div className="metrics-grid witness-row">
         {dash.score ? (
           <div className="card metric id-card">
             <h3>ID Score</h3>
@@ -252,6 +270,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
                     <div className="gfill" style={{ width: `${c.fill}%` }} />
                     <div className="gthr" style={{ left: `${c.threshold}%` }} />
                   </div>
+                  {c.gloss && <p className="gcomp-gloss">{c.gloss}</p>}
                 </div>
               ))}
             </div>
@@ -259,10 +278,6 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
           <Link href={`/grinta/${memberId}`} className="see-more">See more →</Link>
         </div>
       </div>
-
-      {/* Your Program — the daily work, the thing members touch most after the Companion. Sits
-          directly under the metrics, then the Reclaim List it serves, then Your Badges. */}
-      <CurriculumForecast memberId={memberId} forecast={forecast} />
 
       {/* The Reclaim List — the fuel the Program is working toward. */}
       <div className="card">
@@ -301,16 +316,6 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
       {/* Your Badges — the proof, sitting just below the work it rewards. */}
       <BadgePassport memberId={memberId} earned={passport.earned} total={passport.total} badges={passport.badges} placeholders={passport.placeholders} />
 
-      {dailyBeat && (
-        <DailyBeatPanel
-          memberId={memberId}
-          reflectionId={dailyBeat.id}
-          text={dailyBeat.text}
-          keepable={dailyBeat.keepable}
-          kept={dailyBeatKept}
-        />
-      )}
-
       {/* Movement — objective evidence of the identity coming back (kept; reflective, not graded) */}
       {activity.connected ? (
         <div className="card">
@@ -347,7 +352,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
         </p>
       )}
 
-      <AgentBubble memberId={memberId} teaser={teaser} />
+      </CompanionDock>
     </>
   );
 }

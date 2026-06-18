@@ -677,6 +677,63 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .curric .chip { font-size: 0.78rem; color: var(--charcoal); background: #F7F9F8; border: 1px solid var(--light-grey); border-radius: 14px; padding: 0.2rem 0.7rem; }
 .doors-foot { margin-top: 0.5rem; }
 
+/* ===== Dashboard Reshuffle (Slice 1) — companion dock, hero, identity strip, layout ===== */
+/* The dock: main column + a docked right rail that PUSHES (never overlaps) so the whole dashboard stays
+   visible. Wide screens just narrow; tighter widths let cards restack via their existing grids. */
+.dock { position: relative; transition: padding-right 0.22s ease; }
+.dock-open { padding-right: 360px; }
+.companion-rail {
+  position: fixed; top: 0; right: 0; bottom: 0; width: 360px; z-index: 60;
+  background: var(--white); border-left: 1px solid var(--panel-line);
+  box-shadow: -8px 0 24px rgba(16, 16, 69, 0.08);
+  display: flex; flex-direction: column; transform: translateX(100%);
+  transition: transform 0.22s ease; visibility: hidden;
+}
+.dock-open .companion-rail { transform: translateX(0); visibility: visible; }
+.rail-head { display: flex; align-items: center; justify-content: space-between; padding: 0.9rem 1rem; border-bottom: 1px solid var(--panel-line); font-weight: 700; color: var(--navy); }
+.rail-x { background: none; border: none; font-size: 1.5rem; line-height: 1; color: #AEB3B8; cursor: pointer; }
+.rail-chat { flex: 1; overflow-y: auto; padding: 1rem; }
+.companion-rail .chat-input { border-top: 1px solid var(--panel-line); padding: 0.6rem; }
+
+/* The persistent edge handle — an invitation; the badge says "I have something", never auto-opens. */
+.companion-handle {
+  position: fixed; right: 0; top: 50%; transform: translateY(-50%); z-index: 55;
+  display: flex; align-items: center; justify-content: center; width: 38px; height: 60px;
+  background: var(--teal); color: var(--white); border: none; border-radius: 12px 0 0 12px;
+  cursor: pointer; box-shadow: -3px 0 12px rgba(16, 16, 69, 0.12);
+}
+.dock-open .companion-handle { display: none; }
+.companion-handle .handle-badge { position: absolute; top: 8px; right: 7px; width: 9px; height: 9px; border-radius: 50%; background: var(--orange); border: 2px solid var(--white); }
+
+/* Companion hero — the lead block */
+.companion-hero { background: var(--navy); color: var(--white); border-radius: 14px; padding: 1.4rem 1.5rem; margin-bottom: 1.1rem; }
+.companion-hero-head { display: flex; align-items: center; gap: 0.55rem; margin-bottom: 0.55rem; }
+.companion-avatar { display: inline-flex; opacity: 0.9; }
+.companion-greeting { font-size: 1.05rem; font-weight: 700; }
+.companion-message { font-size: 1.1rem; line-height: 1.5; margin: 0 0 1rem; }
+.companion-hero-cta { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center; }
+.hero-primary { display: inline-flex; align-items: center; background: var(--orange); color: var(--white); font-weight: 700; font-size: 0.9rem; padding: 0.55rem 1.15rem; border-radius: 22px; text-decoration: none; }
+.hero-talk { background: transparent; color: var(--white); border: 1px solid rgba(255, 255, 255, 0.5); font-weight: 600; font-size: 0.9rem; padding: 0.5rem 1.1rem; border-radius: 22px; cursor: pointer; }
+
+/* Distilled identity line */
+.identity-strip { margin-bottom: 1rem; }
+.identity-strip .idline { font-size: 1.35rem; font-weight: 800; color: var(--navy); line-height: 1.25; margin: 0; }
+.full-story-toggle { background: none; border: none; padding: 0.25rem 0 0; color: var(--teal); font-weight: 600; font-size: 0.85rem; cursor: pointer; }
+.identity-strip .idstory { font-size: 0.95rem; line-height: 1.55; color: var(--charcoal); margin: 0.5rem 0 0; }
+
+/* Priority pair — Program + Daily Beat side by side; witness row demoted below */
+.priority-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; align-items: start; }
+@media (max-width: 760px) { .priority-pair { grid-template-columns: 1fr; } }
+.witness-row { margin-bottom: 1rem; }
+.gcomp-gloss { font-size: 0.72rem; color: var(--charcoal); opacity: 0.7; margin: 0.2rem 0 0; }
+
+@media (max-width: 760px) {
+  /* Mobile: no push — the rail goes full-screen; the handle docks bottom-right. */
+  .dock-open { padding-right: 0; }
+  .companion-rail { width: 100%; }
+  .companion-handle { top: auto; bottom: 18px; border-radius: 50%; width: 52px; height: 52px; }
+}
+
 /* Dashboard "Your Program" SLIM panel (Reshuffle §4) — phase + progress + lit next Session only */
 .curric-slim .curric-slim-head { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; }
 .curric-slim .curric-slim-head .see-more { margin-top: 0; align-self: baseline; }
