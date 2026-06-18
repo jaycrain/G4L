@@ -73,11 +73,18 @@ Hold these, especially as we scale (Charter → ~1,000 members):
   it's a crisis. Surfaced on `/admin`.
 - **Capture edge cases as replayable fixtures.** Edge cases are raw material for robustness, not a
   liability — *if* they're written down. Real runs become regression fixtures so a pattern fix can be
-  proven not to break the others, and bug discovery moves from "a human finds it in prod" to CI. (Live
-  orchestration in `liveTurn` is the least-testable, highest-risk code — extract decision logic into
-  pure functions like `augmentDoors`/`confirmsWhole`/the contract so it can be tested.) Member
-  transcripts are vulnerable data: retain for QI only with consent, behind the wall, separate from
-  research, senior-reviewed before scaling.
+  proven not to break the others, and bug discovery moves from "a human finds it in prod" to CI. The
+  onboarding live loop is now split into a thin API wrapper (`liveTurn`) + a PURE engine
+  (`applyModelTurn` in `lib/agent/onboarding.ts`) that holds every decision. **To reproduce or regress
+  an onboarding bug: add a fixture to `tests/onboarding-replay.test.ts`** — a sequence of turns, each
+  with the member's message and the model's turn (`{text, record?}`, where `record` is `undefined` when
+  the model conversed *without* recording — the most common real failure). The harness replays it through
+  `applyModelTurn` offline (no API) and asserts the invariants (never repeats verbatim, never completes
+  on an unmet contract, never strands a non-final turn). Prefer this over chasing live runs. Keep
+  decision logic in pure functions (`augmentDoors`/`confirmsWhole`/`resolveCompletion`/
+  `shouldCaptureGapFromMessage`/the contract) so it stays replayable. Member transcripts are vulnerable
+  data: retain for QI only with consent, behind the wall, separate from research, senior-reviewed before
+  scaling.
 - **Not every edge case earns a structural fix.** Truly one-off inputs are handled by the card (the
   member fixes it) — log them, move on. Reserve abstraction for *recurring* shapes. Over-engineering
   for the rare is its own brittleness.
