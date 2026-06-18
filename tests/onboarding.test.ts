@@ -13,6 +13,7 @@ import {
   confirmsWhole,
   doorEngaged,
   augmentDoors,
+  shouldCaptureGapFromMessage,
   ensureIdqHandoff,
   stripLeadingDisclosure,
   resolveIdentityGate,
@@ -455,4 +456,22 @@ test('the explore-floor still protects a THIN single-Door gap (no front-loaded s
   assert.equal(resolveCompletion(thin, /*wantsComplete*/ true, /*doorTurns*/ 1).complete, false, 'thin story still breathes below the floor');
   // ...but the member can still end it themselves at any time (Independence Guarantee).
   assert.equal(resolveCompletion(thin, false, 1, false, false, /*memberDone*/ true).complete, true);
+});
+
+test('gap-capture backstop: the member\'s own door-beat narrative is captured when the model fails to record it', () => {
+  // Donna's run: she told her whole fade, the agent reflected it, but the model never wrote `gap` —
+  // so the engine looped on "how did the gap open?". The backstop reads her account at the Door beat.
+  const atDoorBeat: Collected = { athleticPast: 'x', identityNoun: 'Cheerleader', reclaimList: ['a', 'b', 'c'] };
+  assert.equal(nextStage(atDoorBeat), 'door', 'identity + reclaim done, no gap yet → at the Door beat');
+  assert.equal(shouldCaptureGapFromMessage(atDoorBeat, donnaGap), true, 'a real fade narrative is captured');
+  // ...and once captured, the contract is met.
+  assert.equal(contractMet({ ...atDoorBeat, gap: donnaGap }), true);
+
+  // It does NOT fire on a non-narrative (a protest / proceed request) — no gap fabricated from those.
+  assert.equal(shouldCaptureGapFromMessage(atDoorBeat, "What's next?"), false);
+  assert.equal(shouldCaptureGapFromMessage(atDoorBeat, 'it seems like you are hung up'), false);
+  // It does NOT fire OFF the Door beat (still gathering the Reclaim List) — a narrative there isn't the gap.
+  assert.equal(shouldCaptureGapFromMessage({ athleticPast: 'x', identityNoun: 'C', reclaimList: ['a'] }, donnaGap), false);
+  // It does NOT capture a reclaim item restated (gapIsNarrative rejects it) — the old fabrication guard holds.
+  assert.equal(shouldCaptureGapFromMessage({ ...atDoorBeat, reclaimList: ['a', 'b', donnaGap] }, donnaGap), false);
 });

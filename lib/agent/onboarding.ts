@@ -175,6 +175,25 @@ export function augmentDoors(recorded: DoorSlug[], gap: string): DoorSlug[] {
   return Array.from(new Set<DoorSlug>([...recorded, ...matchDoors(gap ?? '')]));
 }
 
+// Live-path backstop for a model that CONVERSES without recording: should the engine capture the
+// member's own message as the gap? True only AT the Door beat (nextStage 'door' — identity + Reclaim
+// List done, no narrative gap yet, so the question on the table IS "how did the gap open?") and only
+// when their message reads as a real fade narrative. Pure + testable. Safe against the old fabrication
+// bug: it never fires off-beat and gapIsNarrative rejects a reclaim item or a bare goal line — so it
+// reads the member's account, it doesn't invent one. (Donna told her whole story; the model reflected
+// it but never wrote `gap`, so the engine looped on the opening question — this closes that hole.)
+const GAP_CAPTURE_MIN_CHARS = 80; // a genuine fade-opening answer is a sentence or two, not a one-liner
+export function shouldCaptureGapFromMessage(collected: Collected, message: string): boolean {
+  const m = (message ?? '').trim();
+  if (nextStage(collected) !== 'door') return false; // only the Door beat — never mid-Reclaim
+  // A close/affirm/dispute/advance message is NOT the story (a protest like "it seems like you're hung
+  // up" or "move me on" must never become the gap). And a real "how it opened" answer is substantial —
+  // gapIsNarrative alone is too lenient (it passes any 20+ char line), so require real heft too.
+  if (memberWantsToWrap(m) || isAffirmation(m) || isDoorDispute(m)) return false;
+  if (m.length < GAP_CAPTURE_MIN_CHARS) return false;
+  return gapIsNarrative(m, collected.reclaimList ?? []);
+}
+
 // The member pushing back on the Door read ("that's not it", "what do you mean", "those don't fit").
 // A dispute must REOPEN the beat — never wrap, never replay the same label.
 const DISPUTE_RE =
@@ -556,6 +575,20 @@ async function liveTurn(
     collected = { ...collected, identitySkipped: true };
   }
 
+  // GAP-CAPTURE BACKSTOP: the model is the primary recorder, but it sometimes CONVERSES and reflects the
+  // fade without ever persisting it via record_progress. Donna told her whole story across several turns,
+  // the agent reflected it warmly — yet `gap` stayed empty, so the engine kept re-asking "how did the gap
+  // open?" (and repeated it verbatim when the model went quiet). The scripted path captures the member's
+  // answer as the gap; the live path must too, so the engine is never blind to a story the member has
+  // plainly told. When we're AT the Door beat (`nextStage` is 'door' — identity + Reclaim List done, no
+  // narrative gap yet, so the question on the table IS "how did the gap open?") and the member's own
+  // message reads as a real fade narrative, record it as the gap. This is reading their account — safe
+  // against the old fabrication bug: it fires ONLY at the Door beat, ONLY on a substantive narrative, and
+  // never scrapes reclaim items or scattered text (gapIsNarrative rejects a reclaim item or a short goal).
+  if (shouldCaptureGapFromMessage(collected, memberMessage)) {
+    collected = { ...collected, gap: memberMessage.trim() };
+  }
+
   // SAFETY NET: the model sometimes explores the Door(s) in prose but forgets to record them in the
   // tool — which strands the beat re-asking the opening question (its stage prompt). If the core is
   // ready (identity + Reclaim List) and no Door was recorded, infer the Door(s) from what the member
@@ -671,5 +704,19 @@ async function liveTurn(
   } else {
     finalReply = withForwardPrompt(reply, stage);
   }
+
+  // ANTI-REPEAT (the "you're hung up" guard): when the model returns a degraded turn (no usable text or
+  // tool call — e.g. an API wobble mid-conversation), the forced-forward can land on the SAME canned
+  // prompt we just sent. Donna got the identical gap question four times in a row, even after "it seems
+  // like you're hung up." Never echo our own last message verbatim: if it would repeat (and we're not
+  // completing), acknowledge the snag and hand the member an explicit way forward — including a clear
+  // exit ("that's everything") that the close-detection already honors.
+  const lastAgent = [...history].reverse().find((mm) => mm.role === 'agent')?.text?.trim();
+  if (!complete && lastAgent && finalReply.trim() === lastAgent) {
+    finalReply =
+      'I think I got tangled there — sorry about that. You’ve already shared a lot, and I have it. ' +
+      'If there’s more to how the gap opened, tell me in a line — otherwise say “that’s everything” and I’ll take us straight to what’s next.';
+  }
+
   return { reply: finalReply, state: { stage, collected, doorTurns, identityTurns }, complete };
 }
