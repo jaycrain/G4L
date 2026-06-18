@@ -183,11 +183,16 @@ export function isDoorDispute(message: string): boolean {
   return DISPUTE_RE.test((message ?? '').replace(/[‘’]/g, "'"));
 }
 
-// The member clearly ending the Door beat ("I'm done", "that's it", "nothing else", "let's move on").
-// This is the member's call to make — it OVERRIDES the explore-minimum (which only exists to stop the
-// model racing, never to trap a member who wants to stop). Independence Guarantee: stop anytime.
+// The member clearly ending the Door beat ("I'm done", "that's it", "nothing else", "let's move on") OR
+// explicitly asking to advance ("move me through to the IDQ", "what's next", "let's proceed"). Both are
+// the member's call — they OVERRIDE the explore-minimum (which only exists to stop the model racing,
+// never to trap a member who wants to move). Independence Guarantee: stop, or move on, anytime.
+// NOTE (capture-quality discipline): this is the close-detection shape we've now extended a few times
+// (AFFIRM_RE "it does", WHOLE_RE "the biggest ones", and here). It's bounded — "the member is done OR
+// asking to proceed" — but if a FOURTH distinct phrasing slips through, consolidate the three detectors
+// into one "member is closing/advancing" signal rather than widening regexes again.
 const WRAP_RE =
-  /\b(i'?m done|i am done|that'?s it|that is it|that'?s all|that is all|nothing (else|more)|no more|that'?s the whole|ready to move on|let'?s move on|move (on|forward)|enough for now|i'?m good|i think i'?m good|wrap (it )?up|go to bed|that'?s enough)\b/i;
+  /\b(i'?m done|i am done|that'?s it|that is it|that'?s all|that is all|nothing (else|more)|no more|that'?s the whole|ready to move on|let'?s move on|move (on|forward|ahead)|move me (on|forward|ahead|through|to|along)|take me (to|through)|to the idq|what'?s next|what is next|let'?s (go|proceed|continue)|i'?m ready|can (we|you) (move|proceed|continue|go)|proceed|keep going|next step|enough for now|i'?m good|i think i'?m good|wrap (it )?up|go to bed|that'?s enough)\b/i;
 export function memberWantsToWrap(message: string): boolean {
   return WRAP_RE.test((message ?? '').replace(/[‘’]/g, "'"));
 }
@@ -242,7 +247,20 @@ export function resolveCompletion(
   // The full contract — incl. a real gap NARRATIVE, not just a Door slug (see onboarding-contract.ts).
   // This is what makes "complete" honest: the agent cannot hand off without the fade story.
   const reqsMet = contractMet(collected);
-  const exploredEnough = doorTurns >= DOOR_MIN_TURNS;
+  // The explore-floor (DOOR_MIN_TURNS) exists to stop the MODEL racing to "done" on a member's first
+  // gap sentence and to give the beat room to widen ("did more than one Door pile on?"). But a member
+  // who FRONT-LOADS a rich, multi-Door fade in one pass (Donna gave finances + marriage + parents + the
+  // buried self in a single message) has already done both — forcing two more "what else piled on?"
+  // turns just traps someone who's ready, even as the model says "I have everything, let me close."
+  // So the floor is also satisfied when the captured story is already substantial: 2+ Doors on the
+  // table (the widen question is moot) OR a long narrative gap. Completion STILL needs a close signal
+  // below (the model's complete, a member affirmation, or the member asking to move on) — this only
+  // removes the turn-count trap, never the need for a signal; a thin single-Door gap still breathes.
+  const gap = collected.gap ?? '';
+  const storyIsRich =
+    gapIsNarrative(gap, collected.reclaimList ?? []) &&
+    ((collected.doors?.length ?? 0) >= 2 || gap.length >= 240);
+  const exploredEnough = doorTurns >= DOOR_MIN_TURNS || storyIsRich;
   const mustWrap = doorTurns >= DOOR_MAX_TURNS;
   // The member saying they're done wraps it even before the explore-minimum — the floor exists to stop
   // the MODEL racing, not to override the MEMBER. Otherwise it's: explored enough + a signal to close.

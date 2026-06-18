@@ -406,3 +406,53 @@ test('§Donna reproduction — the full run that stalled at 71 turns now complet
   assert.equal(fields.identityNoun, '');
   assert.deepEqual(fields.doors, ['load_bearer']);
 });
+
+// ============================================================================
+// Donna run 2 (Jun 18 2026) — a contract-met member who FRONT-LOADED a rich, multi-Door fade in one
+// pass got trapped: doorTurns=1 < the explore-floor, so the engine kept asking "what else piled on?"
+// and ignored her explicit "move me through to the IDQ." Two fixes: a rich/multi-Door story satisfies
+// the floor, and an explicit request to advance is honored (member sovereignty).
+// ============================================================================
+
+const donnaGap =
+  'Seven years ago her husband semi-retired without a conversation; she became the sole financial ' +
+  'support, carrying the household and the debt while managing his emotional volatility. When she lost ' +
+  'her own job he did not step up, and the affection disappeared. Around the same time her father went ' +
+  'into a coma and she saw her mother\'s decline — the Cheerleader got buried in survival mode.';
+const donna: Collected = {
+  athleticPast: 'Optimistic, energetic, a problem-solver who lifts others up',
+  identityNoun: 'Cheerleader',
+  reclaimList: ['Reach out to friends regularly', 'Stop worrying about finances', 'A meaningful creative role'],
+  gap: donnaGap,
+  doors: ['aging_parents', 'marriage', 'grind', 'load_bearer'],
+};
+
+test('memberWantsToWrap honors an explicit request to advance (Donna: "move me through to the IDQ")', () => {
+  for (const m of ['Can you move me through to the IDQ?', 'What\'s next?', 'move me to the IDQ', 'let\'s proceed', "I'm ready", 'take me through']) {
+    assert.equal(memberWantsToWrap(m), true, `advance: "${m}"`);
+  }
+  // ...but a normal substantive answer is NOT a wrap.
+  assert.equal(memberWantsToWrap('My father went into a coma that same year'), false);
+});
+
+test('a front-loaded rich multi-Door story completes without grinding out the turn-floor', () => {
+  assert.equal(contractMet(donna), true, 'her contract is fully met');
+  // doorTurns = 1 (she gave it all at once) — but the story is rich (4 Doors), so the floor is satisfied.
+  // The model says "I have everything, let me close" (wantsComplete) → she completes, no extra widening.
+  assert.equal(resolveCompletion(donna, /*wantsComplete*/ true, /*doorTurns*/ 1).complete, true);
+  // And her explicit "move me through to the IDQ" (memberDone) completes it even if the model didn't flag.
+  assert.equal(resolveCompletion(donna, false, 1, false, false, /*memberDone*/ true).complete, true);
+});
+
+test('the explore-floor still protects a THIN single-Door gap (no front-loaded story → it breathes)', () => {
+  // A short, single-Door narrative is NOT "rich": the beat must still breathe so the model can check
+  // whether more than one Door piled on. This is the original "explore first" guarantee, preserved.
+  const thin: Collected = {
+    athleticPast: 'x', identityNoun: 'Runner', reclaimList: ['a', 'b', 'c'],
+    doors: ['career_cliff'], gap: 'my role was cut and the riding quietly stopped',
+  };
+  assert.equal(contractMet(thin), true);
+  assert.equal(resolveCompletion(thin, /*wantsComplete*/ true, /*doorTurns*/ 1).complete, false, 'thin story still breathes below the floor');
+  // ...but the member can still end it themselves at any time (Independence Guarantee).
+  assert.equal(resolveCompletion(thin, false, 1, false, false, /*memberDone*/ true).complete, true);
+});
