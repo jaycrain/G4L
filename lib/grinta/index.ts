@@ -36,7 +36,10 @@ export type Grinta = {
 // back in after a miss) · Reach (doing the hard thing). STRUCTURE is locked; the values + threshold are
 // PROVISIONAL — Greg finishes the math. Consistency is real (show-up density); Recovery/Reach are
 // provisional derivations from available signals so the sliders read honestly until the engine lands.
-export type GrintaComponent = { key: 'consistency' | 'recovery' | 'reach'; label: string; fill: number; threshold: number; passed: boolean; story: string };
+// LABELS were relabelled to the three Cs (Dashboard Reshuffle §5): Consistency→Commitment ·
+// Recovery→Challenge · Reach→Choice. Labels ONLY — the keys, values, and computation are UNCHANGED
+// (Slice 4 + the Greg-fold settle the operational definitions, so the label↔math gap is known debt).
+export type GrintaComponent = { key: 'consistency' | 'recovery' | 'reach'; label: string; fill: number; threshold: number; passed: boolean; story: string; gloss?: string };
 
 export function grintaComponents(g: Grinta, reclaimMoving: number): GrintaComponent[] {
   const threshold = 70; // provisional pass-line
@@ -48,7 +51,7 @@ export function grintaComponents(g: Grinta, reclaimMoving: number): GrintaCompon
   return [
     {
       key: 'consistency',
-      label: 'Consistency',
+      label: 'Commitment',
       fill: consistency,
       threshold,
       passed: consistency >= threshold,
@@ -56,7 +59,7 @@ export function grintaComponents(g: Grinta, reclaimMoving: number): GrintaCompon
     },
     {
       key: 'recovery',
-      label: 'Recovery',
+      label: 'Challenge',
       fill: recovery,
       threshold,
       passed: recovery >= threshold,
@@ -64,11 +67,12 @@ export function grintaComponents(g: Grinta, reclaimMoving: number): GrintaCompon
     },
     {
       key: 'reach',
-      label: 'Reach',
+      label: 'Choice',
       fill: reach,
       threshold,
       passed: reach >= threshold,
       story: reclaimMoving > 0 ? `${reclaimMoving} goal${reclaimMoving === 1 ? '' : 's'} moving toward reclaimed.` : 'No goal moving yet — pick one to push.',
+      gloss: 'The next call is yours.',
     },
   ];
 }
