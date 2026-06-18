@@ -513,25 +513,37 @@ const RECORD_PROGRESS_TOOL = {
   },
 };
 
+// A single model turn, decoupled from the live API so the engine can be replayed deterministically from
+// recorded transcripts (tests/onboarding-replay.test.ts). `record` is the record_progress input the model
+// emitted that turn, or undefined when the model conversed WITHOUT recording (the Donna failure mode).
+export type ModelTurn = { text: string; record?: Partial<Collected> & { complete?: boolean } };
+
+// Parse an Anthropic response into a ModelTurn (prose + the record_progress tool input, if any).
+function parseModelTurn(content: readonly unknown[]): ModelTurn {
+  let text = '';
+  let record: (Partial<Collected> & { complete?: boolean }) | undefined;
+  for (const b of content as Array<{ type: string; text?: string; name?: string; input?: unknown }>) {
+    if (b.type === 'text' && typeof b.text === 'string') text += b.text;
+    if (b.type === 'tool_use' && b.name === 'record_progress') record = b.input as Partial<Collected> & { complete?: boolean };
+  }
+  return { text, record };
+}
+
+// Thin LIVE wrapper: build the request, call the model, hand off to the PURE engine. This is the only
+// non-deterministic, untestable part of a turn — every DECISION lives in applyModelTurn below.
 async function liveTurn(
-  ctx: Ctx,
+  _ctx: Ctx,
   history: ConvMessage[],
   state: ConvState,
   memberMessage: string,
 ): Promise<Turn> {
   const { default: Anthropic } = await import('@anthropic-ai/sdk');
-  // Deep-in-conversation turns carry a large context; 9s was too tight and tripped intermittent
-  // timeouts that dropped the member into the scripted fallback. Give it room, and retry transient blips.
+  // Deep-in-conversation turns carry a large context; give it room and retry transient blips.
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, timeout: 25000, maxRetries: 2 });
-
   const messages = [
-    ...history.map((m) => ({
-      role: (m.role === 'agent' ? 'assistant' : 'user') as 'assistant' | 'user',
-      content: m.text,
-    })),
+    ...history.map((m) => ({ role: (m.role === 'agent' ? 'assistant' : 'user') as 'assistant' | 'user', content: m.text })),
     { role: 'user' as const, content: memberMessage },
   ];
-
   const res = await client.messages.create({
     model: process.env.ANTHROPIC_MODEL ?? 'claude-sonnet-4-6',
     max_tokens: 600,
@@ -539,31 +551,40 @@ async function liveTurn(
     tools: [RECORD_PROGRESS_TOOL],
     messages,
   });
+  return applyModelTurn(state, history, memberMessage, parseModelTurn(res.content));
+}
 
-  let reply = '';
+// THE ENGINE — pure and replayable. Given the state coming in, the conversation history, the member's
+// message, and the model's turn, it merges the record, runs every decision (identity gate, gap-capture,
+// door inference, completion gating, the forced-forward branches, anti-repeat) and returns the reply +
+// next state. No API, no SDK — so it unit-tests and replays offline against recorded transcripts. This is
+// the fix for "the live loop is the least-testable, highest-risk code": now the risk is one thin wrapper.
+export function applyModelTurn(
+  state: ConvState,
+  history: ConvMessage[],
+  memberMessage: string,
+  model: ModelTurn,
+): Turn {
   let collected: Collected = { ...state.collected };
   let wantsComplete = false;
-  for (const block of res.content) {
-    if (block.type === 'text') reply += block.text;
-    if (block.type === 'tool_use' && block.name === 'record_progress') {
-      const p = block.input as Partial<Collected> & { complete?: boolean };
-      const doors = Array.isArray(p.doors) ? p.doors.filter(isDoorSlug) : undefined;
-      collected = {
-        ...collected,
-        ...(p.athleticPast !== undefined && { athleticPast: p.athleticPast }),
-        ...(p.identityNoun !== undefined && p.identityNoun !== '' && { identityNoun: displayIdentityNoun(p.identityNoun) }),
-        ...(p.identitySkipped === true && { identitySkipped: true }),
-        ...(Array.isArray(p.reclaimList) && { reclaimList: p.reclaimList }),
-        ...(Array.isArray((p as { reclaimCategories?: string[] }).reclaimCategories) && {
-          reclaimCategories: (p as { reclaimCategories?: string[] }).reclaimCategories,
-        }),
-        ...(p.gap !== undefined && { gap: p.gap }),
-        ...(doors && doors.length > 0 && { doors }),
-      };
-      wantsComplete = Boolean(p.complete);
-    }
+  if (model.record) {
+    const p = model.record;
+    const doors = Array.isArray(p.doors) ? p.doors.filter(isDoorSlug) : undefined;
+    collected = {
+      ...collected,
+      ...(p.athleticPast !== undefined && { athleticPast: p.athleticPast }),
+      ...(p.identityNoun !== undefined && p.identityNoun !== '' && { identityNoun: displayIdentityNoun(p.identityNoun) }),
+      ...(p.identitySkipped === true && { identitySkipped: true }),
+      ...(Array.isArray(p.reclaimList) && { reclaimList: p.reclaimList }),
+      ...(Array.isArray((p as { reclaimCategories?: string[] }).reclaimCategories) && {
+        reclaimCategories: (p as { reclaimCategories?: string[] }).reclaimCategories,
+      }),
+      ...(p.gap !== undefined && { gap: p.gap }),
+      ...(doors && doors.length > 0 && { doors }),
+    };
+    wantsComplete = Boolean(p.complete);
   }
-  reply = stripLeadingDisclosure(reply); // disclosure lives on the start page — never repeat it here
+  let reply = stripLeadingDisclosure(model.text); // disclosure lives on the start page — never repeat it here
 
   // IDENTITY GATE (Issue 1): a deterministic hold on the naming beat, mirroring the Door drive. Decide
   // (pure) whether we're at the naming beat, the turn count, and whether to mark identity skipped — then
