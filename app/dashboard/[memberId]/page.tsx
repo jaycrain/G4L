@@ -3,6 +3,8 @@ import { getDb } from '../../../lib/db/index.ts';
 import { getDashboard } from '../../../lib/gateway/flow.ts';
 import { timeSignals, topNudge } from '../../../lib/agent/nudge.ts';
 import { getActivityPanel } from '../../../lib/activity/store.ts';
+import { stravaConfigured } from '../../../lib/activity/strava.ts';
+import StravaConnect from '../../account/strava-connect.tsx';
 import { getGrinta, grintaComponents } from '../../../lib/grinta/index.ts';
 import { getJourney } from '../../../lib/beats/store.ts';
 import JourneyRings from '../journey-rings.tsx';
@@ -334,10 +336,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
       ) : (
         <div className="card">
           <h3>Movement</h3>
-          <p className="muted">
-            When you connect your activity, your movement — rides, runs, walks — shows up here: quiet
-            evidence of the work coming back in your body. Activity sync is coming soon.
-          </p>
+          <StravaConnect connected={false} configured={stravaConfigured()} />
         </div>
       )}
 

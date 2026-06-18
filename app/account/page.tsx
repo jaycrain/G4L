@@ -9,6 +9,9 @@ import EnableNotifications from '../dashboard/enable-notifications.tsx';
 import AvatarUpload from './avatar-upload.tsx';
 import ProfileForm from './profile-form.tsx';
 import PasswordForm from './password-form.tsx';
+import StravaConnect from './strava-connect.tsx';
+import { getConnection } from '../../lib/activity/store.ts';
+import { stravaConfigured } from '../../lib/activity/strava.ts';
 import type { Db } from '../../lib/db/schema.ts';
 
 export const metadata = { title: 'Your account — Grinta for Life' };
@@ -24,6 +27,8 @@ export default async function AccountPage() {
     )
   ).rows[0];
   if (!m) redirect('/login');
+
+  const stravaConn = await getConnection(db, memberId, 'strava');
 
   return (
     <>
@@ -54,6 +59,16 @@ export default async function AccountPage() {
       <div className="card">
         <h3>Password</h3>
         <PasswordForm />
+      </div>
+
+      <div className="card">
+        <h3>Movement</h3>
+        <StravaConnect
+          connected={stravaConn?.status === 'connected'}
+          athleteName={stravaConn?.athleteName ?? null}
+          configured={stravaConfigured()}
+          showManage
+        />
       </div>
 
       <EnableNotifications memberId={memberId} />
