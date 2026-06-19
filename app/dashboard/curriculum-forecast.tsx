@@ -15,10 +15,7 @@ export default function CurriculumForecast({ memberId, forecast }: { memberId: s
 
   return (
     <div className="card curric curric-slim">
-      <div className="curric-slim-head">
-        <h3>Your Program</h3>
-        <Link href={`/program/${memberId}`} className="see-more">Full program →</Link>
-      </div>
+      <h3>Your Program</h3>
 
       {here && (
         <div className="curric-progress">
@@ -46,6 +43,8 @@ export default function CurriculumForecast({ memberId, forecast }: { memberId: s
       ) : (
         <p className="muted">You&apos;re all caught up on your path for now.</p>
       )}
+
+      <Link href={`/program/${memberId}`} className="see-more">Full program →</Link>
     </div>
   );
 }

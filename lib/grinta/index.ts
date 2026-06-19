@@ -58,14 +58,6 @@ export function grintaComponents(g: Grinta, reclaimMoving: number): GrintaCompon
       story: g.daysActive ? `Shown up ${g.daysActive} of the last ${g.windowDays} days.` : 'A fresh window — one rep gets it moving.',
     },
     {
-      key: 'recovery',
-      label: 'Challenge',
-      fill: recovery,
-      threshold,
-      passed: recovery >= threshold,
-      story: g.daysActive >= g.prevDaysActive ? 'Clipping back in — no miss left to recover from.' : 'A lighter stretch; the move now is clipping back in.',
-    },
-    {
       key: 'reach',
       label: 'Choice',
       fill: reach,
@@ -73,6 +65,14 @@ export function grintaComponents(g: Grinta, reclaimMoving: number): GrintaCompon
       passed: reach >= threshold,
       story: reclaimMoving > 0 ? `${reclaimMoving} goal${reclaimMoving === 1 ? '' : 's'} moving toward reclaimed.` : 'No goal moving yet — pick one to push.',
       gloss: 'The next call is yours.',
+    },
+    {
+      key: 'recovery',
+      label: 'Challenge',
+      fill: recovery,
+      threshold,
+      passed: recovery >= threshold,
+      story: g.daysActive >= g.prevDaysActive ? 'Clipping back in — no miss left to recover from.' : 'A lighter stretch; the move now is clipping back in.',
     },
   ];
 }

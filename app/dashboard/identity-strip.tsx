@@ -1,23 +1,16 @@
-'use client';
+import Link from 'next/link';
 
-import { useState } from 'react';
-
-// The distilled identity line (Dashboard Reshuffle §2) — the navy wall-of-text hero collapses to one
-// line (the selves they're reclaiming); the full narrative tucks behind "Your full story." This is the
-// identity READ (who you are) — distinct from the Playbook's arc (where you've been → where you're
-// going); they link to the same stored paragraph but are never two copies of one story.
-export default function IdentityStrip({ line, fullStory }: { line: string; fullStory: string | null }) {
-  const [showStory, setShowStory] = useState(false);
+// The distilled identity line as its own panel (Dashboard Reshuffle §2) — one line (the selves they're
+// reclaiming) + the standard sub-page-nav link to the full narrative. This is the identity READ (who you
+// are), distinct from the Playbook's arc (where you've been → where you're going); they link to the same
+// stored paragraph but never read as two copies. "Your full story →" uses the standard panel→sub-page
+// link pattern (the same .see-more treatment as Score / Program / Journey).
+export default function IdentityStrip({ line, memberId, hasStory }: { line: string; memberId: string; hasStory: boolean }) {
   return (
-    <div className="identity-strip">
+    <div className="card identity-strip">
       <p className="idline">{line}</p>
-      {fullStory && (
-        <>
-          <button type="button" className="full-story-toggle" onClick={() => setShowStory((s) => !s)} aria-expanded={showStory}>
-            {showStory ? 'Hide story' : 'Your full story'} ›
-          </button>
-          {showStory && <p className="idstory">{fullStory}</p>}
-        </>
+      {hasStory && (
+        <Link href={`/story/${memberId}`} className="see-more">Your full story →</Link>
       )}
     </div>
   );

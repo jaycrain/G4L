@@ -38,6 +38,7 @@ export const maxDuration = 30;
 const R_RING_COLOR: Record<string, string> = { reconnect: '#374f63', rewire: '#3b9495', rebuild: '#919536', reclaim: '#ec6233' };
 const DIM_LABEL: Record<string, string> = { physical: 'Physical', self: 'Self', social: 'Social', outlook: 'Outlook' };
 const ARROW: Record<string, string> = { up: '↑', down: '↓', flat: '→' };
+const HERO_VERB: Record<string, string> = { reconnect: 'Reconnecting', rewire: 'Rewiring', rebuild: 'Rebuilding', reclaim: 'Reclaiming' };
 
 export default async function DashboardPage({ params }: { params: Promise<{ memberId: string }> }) {
   const { memberId } = await params;
@@ -138,16 +139,13 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
   // §2 distilled identity line — the selves they're reclaiming, in one line (full narrative tucks behind
   // "Your full story"). §3 deterministic companion hero (v1, no new intelligence): greet + the single most
   // relevant existing item — the lit next Session — + CTA, else a warm open. (The composed call is Slice 2.)
+  // Lead with the active-R verb (Reconnecting/Rewiring/Rebuilding/Reclaiming) so the line reflects which
+  // R they're on — like the former dashboard hero ("Rewiring the Elite Cyclist · the Entrepreneur").
+  const heroVerb = HERO_VERB[activePhase] ?? 'Reconnecting';
   const identityLine = facets.length
-    ? `${facets.join(' · ')} — back in the fight`
+    ? `${heroVerb} ${facets.join(' · ')}`
     : 'Who you’re reclaiming lands here once you name it at Identity Excavation.';
   const litCurrent = forecast.current?.openable ? forecast.current : null;
-  const heroCta = litCurrent
-    ? {
-        label: litCurrent.kind === 'checkpoint' ? 'Cross this Checkpoint →' : 'Open this Session →',
-        href: `/${litCurrent.kind === 'checkpoint' ? 'checkpoint' : 'session'}/${memberId}/${litCurrent.id}`,
-      }
-    : null;
   const heroMessage = litCurrent
     ? `Your next step is ready — ${litCurrent.title}.${litCurrent.summary ? ` ${litCurrent.summary}` : ''}`
     : 'Whenever you’re ready, tell me what’s on your mind — or one thing you want to move toward today.';
@@ -157,7 +155,6 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
       <DashboardSync />
       {!thresholdCrossed && <Threshold memberId={memberId} data={thresholdData} />}
 
-      <CompanionDock memberId={memberId} hasNudge={!!teaser}>
       <div className="member-greeting">
         <Link href="/account" className="member-greeting-link" aria-label="Your account">
           {dash.avatarUrl ? (
@@ -178,15 +175,17 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
         </span>
       </div>
 
+      <CompanionDock memberId={memberId} hasNudge={!!teaser}>
+
       {crossing && (
         <PhaseCrossing prevLabel={crossing.prevLabel} newLabel={crossing.newLabel} blurb={crossing.blurb} cta={crossingCta} />
       )}
 
       {/* §2 · distilled identity line — the selves they're reclaiming, full narrative behind "Your full story" */}
-      <IdentityStrip line={identityLine} fullStory={dash.identityParagraph ?? null} />
+      <IdentityStrip line={identityLine} memberId={memberId} hasStory={!!dash.identityParagraph} />
 
       {/* §3 · companion hero — the lead block (greeting + proactive message + CTA) */}
-      <CompanionHero name={firstName(dash.displayName)} message={heroMessage} cta={heroCta} />
+      <CompanionHero message={heroMessage} />
 
       {/* §1 · priority pair — Your Program (next Session) + the Daily Beat, side by side */}
       <div className="priority-pair">

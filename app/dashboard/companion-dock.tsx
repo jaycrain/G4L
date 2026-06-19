@@ -1,8 +1,9 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { openCheckin, sendCheckin, loadCheckin } from './checkin-actions.ts';
+import { CompanionCtx } from './companion-context.tsx';
 
 // The companion dock (Dashboard Reshuffle §3) — replaces the floating corner bubble. A slim edge handle
 // is always present (with a proactive badge when there's something — an invitation, never auto-open).
@@ -10,12 +11,6 @@ import { openCheckin, sendCheckin, loadCheckin } from './checkin-actions.ts';
 // whole dashboard stays visible and the member can watch updates land; on mobile it's a full-screen
 // thread. The thread is the existing persisted check-in conversation (agent_message) — no new store.
 type Msg = { role: 'agent' | 'member'; text: string };
-
-const CompanionCtx = createContext<{ open: () => void } | null>(null);
-/** Openers (the hero CTA, a panel's "talk to me about this") call this to open the rail. */
-export function useCompanion() {
-  return useContext(CompanionCtx);
-}
 
 export default function CompanionDock({
   memberId,
@@ -45,6 +40,8 @@ export default function CompanionDock({
       el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
     }
   }, [input]);
+
+  const railRef = useRef<HTMLElement>(null);
 
   const openRail = useCallback(async () => {
     setOpen(true);
@@ -134,39 +131,44 @@ export default function CompanionDock({
   const showBadge = !!hasNudge && !open && !badgeDismissed;
 
   return (
-    <CompanionCtx.Provider value={{ open: () => void openRail() }}>
+    <CompanionCtx.Provider value={{ open: () => void openRail(), showBadge }}>
       <div className={`dock${open ? ' dock-open' : ''}`}>
         {/* Clicking the dashboard while the rail is open closes it (links still work). */}
         <div className="dock-main" onClick={() => open && setOpen(false)}>
           {children}
         </div>
 
-        {/* Persistent edge handle — an invitation, never an auto-open. */}
-        <button
-          type="button"
-          className={`companion-handle${showBadge ? ' has-nudge' : ''}`}
-          onClick={() => void openRail()}
-          aria-label="Talk to your companion"
-        >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" width="18" height="18" aria-hidden="true">
-            <path d="M21 11.5a8.5 8.5 0 01-12.3 7.6L3 20l1-4.6A8.5 8.5 0 1121 11.5z" />
-            <circle cx="8.5" cy="11.5" r="1" fill="currentColor" stroke="none" />
-            <circle cx="12" cy="11.5" r="1" fill="currentColor" stroke="none" />
-            <circle cx="15.5" cy="11.5" r="1" fill="currentColor" stroke="none" />
-          </svg>
-          {showBadge && <span className="handle-badge" aria-hidden="true" />}
-        </button>
-
-        <aside className="companion-rail" aria-hidden={!open}>
+        <aside ref={railRef} className="companion-rail" aria-hidden={!open}>
           <div className="rail-head">
-            <span>Your companion</span>
+            <span className="rail-id">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img className="rail-head-avatar" src="/icons/icon-192.png" alt="" aria-hidden="true" />
+              <span className="rail-id-text">
+                <span className="rail-title">Your G4L Companion</span>
+                <span className="rail-status"><span className="rail-status-dot" aria-hidden="true" /> here with you</span>
+              </span>
+            </span>
             <button type="button" className="rail-x" onClick={() => setOpen(false)} aria-label="Close">×</button>
           </div>
           <div className="chat rail-chat">
-            {messages.map((m, i) => (
-              <div key={i} className={`bubble ${m.role}`}>{m.text}</div>
-            ))}
-            {pending && <div className="typing">Thinking…</div>}
+            {messages.map((m, i) =>
+              m.role === 'agent' ? (
+                <div key={i} className="rail-msg">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img className="rail-avatar" src="/icons/icon-192.png" alt="" aria-hidden="true" />
+                  <div className="bubble agent">{m.text}</div>
+                </div>
+              ) : (
+                <div key={i} className="bubble member">{m.text}</div>
+              ),
+            )}
+            {pending && (
+              <div className="rail-msg">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img className="rail-avatar" src="/icons/icon-192.png" alt="" aria-hidden="true" />
+                <div className="typing">Thinking…</div>
+              </div>
+            )}
           </div>
           <form className="chat-input" onSubmit={send}>
             <textarea
