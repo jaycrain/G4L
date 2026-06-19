@@ -755,13 +755,24 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .tour-settle-mark.landed .tour-mark { width: 30px; height: 30px; }
 .tour-settle-mark .tour-line { color: #fff; max-width: 260px; }
 
-/* Companion hero — the lead block */
-.companion-hero { position: sticky; top: 0.75rem; z-index: 5; background: var(--navy); color: var(--white); border-radius: 14px; padding: 1.4rem 1.5rem; margin-bottom: 1.1rem; }
-.companion-hero-head { display: flex; align-items: center; gap: 0.55rem; margin-bottom: 0.55rem; }
+/* Companion hero — the lead block. Two states: FULL (at rest) and CONDENSED (a slim sticky bar once
+   scrolled past, so it stops covering the panels below — Condensed Scroll spec). The sentinel is a
+   zero-height marker in flow just above the panel; the hero toggles .is-condensed off its visibility. */
+.companion-hero-sentinel { height: 0; margin: 0; padding: 0; }
+.companion-hero { position: sticky; top: 0.75rem; z-index: 5; background: var(--navy); color: var(--white); border-radius: 14px; padding: 1.4rem 1.5rem; margin-bottom: 1.1rem; transition: padding 0.24s ease; }
+.companion-hero-head { display: flex; align-items: center; gap: 0.55rem; margin-bottom: 0.55rem; transition: margin 0.24s ease; }
 .companion-avatar { display: inline-flex; opacity: 0.9; }
 .companion-greeting { font-size: 1.05rem; font-weight: 700; }
-.companion-message { font-size: 1.1rem; line-height: 1.5; margin: 0 0 1rem; }
+.companion-message { font-size: 1.1rem; line-height: 1.5; margin: 0 0 1rem; max-height: 12rem; overflow: hidden; transition: max-height 0.24s ease, opacity 0.18s ease, margin 0.24s ease; }
 .companion-hero-cta { display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center; }
+
+/* CONDENSED: a single navy row — mark + label on the left, the load-bearing Talk to me on the right.
+   The message collapses (and yields its flex width) so the two ends meet; padding shrinks to a slim bar. */
+.companion-hero.is-condensed { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; padding: 0.5rem 0.7rem 0.5rem 1.05rem; }
+.companion-hero.is-condensed .companion-hero-head { margin-bottom: 0; }
+.companion-hero.is-condensed .companion-message { flex: 0 0 0; min-width: 0; max-height: 0; opacity: 0; margin: 0; }
+.companion-hero.is-condensed .companion-hero-cta { flex: none; }
+.companion-hero.is-condensed .hero-talk { padding: 0.42rem 0.95rem; font-size: 0.85rem; margin-left: 0; }
 .hero-primary { display: inline-flex; align-items: center; background: var(--orange); color: var(--white); font-weight: 700; font-size: 0.9rem; padding: 0.55rem 1.15rem; border-radius: 22px; text-decoration: none; }
 .hero-talk { margin-left: auto; display: inline-flex; align-items: center; gap: 0.4rem; background: var(--teal); color: var(--white); border: none; font-weight: 700; font-size: 0.9rem; padding: 0.55rem 1.2rem; border-radius: 22px; cursor: pointer; transition: background 0.14s ease; }
 .hero-talk:hover, .hero-talk:focus-visible { background: #347f80; }

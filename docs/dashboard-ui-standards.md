@@ -12,6 +12,13 @@ them rather than re-deriving. They live in `app/globals.css` + `app/dashboard/*`
 - **The companion is the dashboard's hero**: a sticky navy panel titled **"The G4L Companion"** with one
   proactive message + a single teal **"Talk to me →"** CTA. It sticks to the top (`position: sticky`) and
   the rest of the dashboard scrolls beneath it.
+- **Two hero states — full and condensed (a default, not a one-off).** At rest it's the **full** panel
+  (label + message + CTA). Once scrolled to where the tall sticky panel would start covering the panels
+  below, it collapses to a **condensed** slim bar — one row: mark + label + a compact **Talk to me →**
+  (the CTA is load-bearing; never drop it). Scroll back to top → re-expands; transition is smooth. Purely
+  a visual state of the hero — same companion, same rail, no new data. Driven by a zero-height sentinel +
+  `IntersectionObserver` that flips `.is-condensed` the instant the hero would engage stickiness (so it
+  never overlaps content); the message collapses via `max-height`/`opacity` to animate.
 - **The conversation opens as a docked rail** (desktop) reusing the persisted check-in thread
   (`agent_message` / `lib/agent/conversation.ts`) — no new store. Below **1000px it's a full-screen
   overlay**. Opens from the hero CTA / `?chat=1`; closes via ✕, Esc, or clicking the dashboard.
@@ -19,7 +26,7 @@ them rather than re-deriving. They live in `app/globals.css` + `app/dashboard/*`
   open — a zero-width bordered element leaves a hairline, so border lives on `.dock-open .companion-rail`);
   G4L bullseye avatar + teal "● here with you" status in the header; an avatar beside each companion
   message; **white soft-bordered** companion bubbles, navy member bubbles; **frosted** (translucent white
-  `0.86` + `backdrop-filter: blur`) sticky header & input so the thread shows through.
+  `0.72` + `backdrop-filter: blur`) sticky header & input so the thread shows through.
 - **Input**: `field-sizing: content` + `min-height` ≈ Send-button height + `max-height` cap. Rests at one
   line, grows as you type, never gets stuck tall. (Don't rely on JS auto-grow alone — it can leave a stale
   height after send.)
