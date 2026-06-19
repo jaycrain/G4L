@@ -34,9 +34,9 @@ main { max-width: 720px; margin: 0 auto; padding: 1rem 1.25rem 4rem; transition:
 main:has(.dock-open) { max-width: 1240px; }
 
 /* Brand lockup — quiet, persistent product identity at the top of every page */
-.brand-bar { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.6rem; }
-.brand-wordmark { height: 3.25rem; width: auto; display: block; flex: none; }
-.brand-mark { width: 52px; height: 52px; border-radius: 50%; display: block; flex: none; }
+.brand-bar { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-bottom: 1.15rem; }
+.brand-wordmark { height: 2.45rem; width: auto; display: block; flex: none; }
+.brand-mark { width: 39px; height: 39px; border-radius: 50%; display: block; flex: none; }
 
 h1, h2, h3 { color: var(--navy); font-weight: 600; line-height: 1.2; }
 h1 { font-size: 2rem; margin: 0 0 0.5rem; }
