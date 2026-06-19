@@ -164,6 +164,13 @@ export default function OnboardingChat() {
 
     try {
       const r = await onboardingTurn({ ctx, state, history: prior, memberMessage: text, token: tokenRef.current });
+      // Our-side outage (usage cap, key, API down): roll back, keep the draft, show the calm message.
+      if (r.outage) {
+        setMessages(prior);
+        setInput(text);
+        setError(r.outageMessage ?? 'We’re having a brief technical hiccup on our end — try again in a minute.');
+        return;
+      }
       setMessages([...prior, { role: 'member', text }, { role: 'agent', text: r.reply }]);
       setState(r.state);
       // Reaching "complete" is a READY state, not a commit: show the handoff with the option to

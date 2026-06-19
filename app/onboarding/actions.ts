@@ -51,7 +51,15 @@ export type TurnOutput = {
   state: ConvState;
   complete: boolean;
   crisis?: boolean;
+  // Set when the live AI turn failed on our side (usage cap, key, outage) rather than the member's
+  // input. The client shows `outageMessage` and leaves their draft + state intact to resend. Thrown
+  // errors are masked by Next in prod, so we surface this as a returned value, not an exception.
+  outage?: boolean;
+  outageMessage?: string;
 };
+
+const OUTAGE_MESSAGE =
+  'We’re having a brief technical hiccup on our end — your progress is saved. Give it a minute and send again.';
 
 /**
  * One conversational onboarding turn. Runs the Member Agent (live Claude or scripted) and saves the
@@ -65,12 +73,20 @@ export type TurnOutput = {
  */
 export async function onboardingTurn(input: TurnInput): Promise<TurnOutput> {
   const state = input.state ?? INITIAL_STATE;
-  const turn = await onboardingNextTurn({
-    ctx: input.ctx,
-    state,
-    history: input.history,
-    memberMessage: input.memberMessage,
-  });
+  let turn;
+  try {
+    turn = await onboardingNextTurn({
+      ctx: input.ctx,
+      state,
+      history: input.history,
+      memberMessage: input.memberMessage,
+    });
+  } catch {
+    // A live-turn failure is always our side (the API call, not the member's words). Return a soft
+    // outage so the client shows a calm message and keeps their draft + state to resend — no member
+    // is created here, nothing is lost. The cron + /admin badge tell the operator what actually broke.
+    return { reply: '', state, complete: false, outage: true, outageMessage: OUTAGE_MESSAGE };
+  }
 
   const db = (await getDb()) as unknown as Db;
   const email = input.ctx.email?.trim();

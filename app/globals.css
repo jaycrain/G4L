@@ -883,3 +883,11 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .ckpt-badge strong { color: var(--teal); }
 .ckpt-crossed .muted, .ckpt-held .muted { color: #C9D2DA; opacity: 1; }
 .ckpt-crossed .ckpt-declare, .ckpt-held .ckpt-notyet { margin-top: 1.1rem; }
+
+/* /admin AI-surfaces health badge (0034). Palette only: teal ok, deep red down. */
+.health-line { display: flex; align-items: center; flex-wrap: wrap; gap: 0.4rem; margin: 0; }
+.health-dot { width: 0.6rem; height: 0.6rem; border-radius: 50%; display: inline-block; flex: none; }
+.health-ok { background: var(--teal); }
+.health-bad { background: var(--deep-red); }
+.health-card.health-down { border-color: var(--deep-red); }
+.health-card.health-down h3 { color: var(--deep-red); }

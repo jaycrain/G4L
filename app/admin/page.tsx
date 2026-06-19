@@ -6,6 +6,7 @@ import { getRoster, summarizeRoster, relativeTime } from '../../lib/admin/roster
 import { listFeedback, type FeedbackStatus } from '../../lib/feedback/store.ts';
 import { setFeedbackStatusAction } from '../feedback-actions.ts';
 import { getOnboardingReturns, keepTalkingStats } from '../../lib/telemetry/store.ts';
+import { getHealth } from '../../lib/health/store.ts';
 import { isAdmin } from '../authz.ts';
 import { initials } from '../../lib/member/avatar.ts';
 import type { Db } from '../../lib/db/schema.ts';
@@ -13,6 +14,10 @@ import type { Db } from '../../lib/db/schema.ts';
 const fmtDoor = (d: string | null) => (d ? d.replace(/_/g, ' ') : '—');
 // Compact time-on-task: minutes under an hour, else h/m.
 const fmtMinutes = (m: number): string => (m <= 0 ? '—' : m < 60 ? `${m}m` : `${Math.floor(m / 60)}h ${m % 60}m`);
+const AI_STATUS_LABEL: Record<string, string> = {
+  ok: 'OK', usage_limit: 'DOWN — usage/spend cap', auth: 'DOWN — key rejected',
+  overloaded: 'DEGRADED — overloaded', down: 'DOWN',
+};
 
 export default async function AdminHome() {
   if (!(await isAdmin())) redirect('/admin/login');
@@ -23,6 +28,7 @@ export default async function AdminHome() {
   const feedback = await listFeedback(db);
   const openFeedback = feedback.filter((f) => f.status !== 'resolved');
   const onboardingStats = keepTalkingStats(await getOnboardingReturns(db));
+  const aiHealth = await getHealth(db, 'ai');
   const now = Date.now();
   const summary = summarizeRoster(roster, now);
   const NEXT_STATUS: Record<FeedbackStatus, { to: FeedbackStatus; label: string }[]> = {
@@ -34,6 +40,21 @@ export default async function AdminHome() {
   return (
     <>
       <h1>Founder Agent</h1>
+
+      <div className={`card health-card${aiHealth && aiHealth.status !== 'ok' ? ' health-down' : ''}`}>
+        <h3>AI surfaces</h3>
+        {aiHealth ? (
+          <p className="health-line">
+            <span className={`health-dot health-${aiHealth.status === 'ok' ? 'ok' : 'bad'}`} aria-hidden="true" />
+            <strong>{AI_STATUS_LABEL[aiHealth.status] ?? aiHealth.status}</strong>
+            {aiHealth.status === 'ok' && aiHealth.latency_ms != null ? ` · ${aiHealth.latency_ms}ms` : ''}
+            {aiHealth.detail && aiHealth.status !== 'ok' ? ` — ${aiHealth.detail}` : ''}
+            <span className="muted"> · checked {relativeTime(aiHealth.checked_at, now)}</span>
+          </p>
+        ) : (
+          <p className="muted">No check recorded yet — the probe runs every 15 minutes.</p>
+        )}
+      </div>
 
       <div className="card">
         <h3>Review queue ({pending.length})</h3>
