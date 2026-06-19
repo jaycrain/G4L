@@ -19,17 +19,27 @@ export default function CompanionHero({ message }: { message: string }) {
 
   useEffect(() => {
     const el = sentinelRef.current;
-    if (!el || typeof IntersectionObserver === 'undefined') return;
-    // Condense once the sentinel crosses the sticky offset (top: 0.75rem ≈ 12px) above the viewport —
-    // i.e. exactly when the hero would begin sticking over the content beneath it.
-    const io = new IntersectionObserver(
-      ([entry]) => {
-        if (entry) setCondensed(!entry.isIntersecting);
-      },
-      { rootMargin: '-12px 0px 0px 0px', threshold: 0 },
-    );
-    io.observe(el);
-    return () => io.disconnect();
+    if (!el) return;
+    // Toggle off the sentinel's position, with HYSTERESIS — condense once it reaches the sticky line
+    // (~top of viewport), but only re-expand after scrolling well back up. The dead zone between the two
+    // thresholds stops the sub-pixel trackpad jitter that made a single knife-edge trigger vibrate.
+    let raf = 0;
+    const evaluate = () => {
+      raf = 0;
+      const top = el.getBoundingClientRect().top;
+      setCondensed((c) => (c ? (top >= 56 ? false : c) : top <= 4 ? true : c));
+    };
+    const onScroll = () => {
+      if (!raf) raf = requestAnimationFrame(evaluate);
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll, { passive: true });
+    evaluate();
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onScroll);
+      if (raf) cancelAnimationFrame(raf);
+    };
   }, []);
 
   return (
