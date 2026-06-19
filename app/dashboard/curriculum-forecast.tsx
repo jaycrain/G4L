@@ -14,7 +14,7 @@ export default function CurriculumForecast({ memberId, forecast }: { memberId: s
   const cur = forecast.current;
 
   return (
-    <div className="card curric curric-slim">
+    <div className="card curric curric-slim" data-tour="program">
       <h3>Your Program</h3>
 
       {here && (
@@ -28,7 +28,7 @@ export default function CurriculumForecast({ memberId, forecast }: { memberId: s
       )}
 
       {cur ? (
-        <div className="litrow">
+        <div className="litrow" data-tour="next-step">
           <div className="littag">{cur.kind === 'checkpoint' ? '⚑ Checkpoint' : '▶ Next Session'}</div>
           <div className="littitle">{cur.title}</div>
           {cur.summary && <div className="lithook">{cur.summary}</div>}

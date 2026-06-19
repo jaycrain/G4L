@@ -14,6 +14,7 @@ import type { Db } from '../../../lib/db/schema.ts';
 import CompanionDock from '../companion-dock.tsx';
 import CompanionHero from '../companion-hero.tsx';
 import IdentityStrip from '../identity-strip.tsx';
+import PostCeremonyTour from '../post-ceremony-tour.tsx';
 import Threshold from '../threshold.tsx';
 import MeasureCard from '../measure-card.tsx';
 import DashboardSync from '../dashboard-sync.tsx';
@@ -91,12 +92,13 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
   // Threshold ceremony — overlay on first arrival (unchanged). Same row carries the one-time
   // R-crossing marker (the banner shown when they cross a Checkpoint into the next R).
   const profileFlags = (
-    await db.query<{ threshold_crossed_at: unknown; phase_crossing_seen: string | null }>(
-      'select threshold_crossed_at, phase_crossing_seen from member_profile where member_id=$1',
+    await db.query<{ threshold_crossed_at: unknown; phase_crossing_seen: string | null; tour_completed_at: unknown }>(
+      'select threshold_crossed_at, phase_crossing_seen, tour_completed_at from member_profile where member_id=$1',
       [memberId],
     )
   ).rows[0];
   const thresholdCrossed = !!profileFlags?.threshold_crossed_at;
+  const tourCompleted = !!profileFlags?.tour_completed_at;
 
   // One-time "you've crossed into the next R" banner. Decide from the gate-driven active phase vs.
   // what they've already been shown, then mark it seen so it fires exactly once.
@@ -150,10 +152,30 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
     ? `Your next step is ready — ${litCurrent.title}.${litCurrent.summary ? ` ${litCurrent.summary}` : ''}`
     : 'Whenever you’re ready, tell me what’s on your mind — or one thing you want to move toward today.';
 
+  // Post-Ceremony Tour copy — the Doors spotlight line, named back from their own onboarding (§7: declare
+  // what it is). Falls back to a generic line if doors weren't captured (the foot line won't render then).
+  const doorNames = dash.doors.map((d) => d.displayName);
+  const namedDoors =
+    doorNames.length <= 1
+      ? doorNames[0] ?? ''
+      : `${doorNames.slice(0, -1).join(', ')} and ${doorNames[doorNames.length - 1]}`;
+  const doorsLine = doorNames.length
+    ? `Your Door${doorNames.length > 1 ? 's' : ''} — how the gap opened. You named ${namedDoors}.`
+    : 'Your Doors — how the gap opened, in your own words.';
+
   return (
     <>
       <DashboardSync />
       {!thresholdCrossed && <Threshold memberId={memberId} data={thresholdData} />}
+      {thresholdCrossed && (
+        <PostCeremonyTour
+          memberId={memberId}
+          firstName={firstName(dash.displayName)}
+          doorsLine={doorsLine}
+          nextSessionTitle={litCurrent?.title ?? null}
+          autoStart={!tourCompleted}
+        />
+      )}
 
       <div className="member-greeting">
         <Link href="/account" className="member-greeting-link" aria-label="Your account">
@@ -200,7 +222,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
       {/* §6 · witness row — the metrics, demoted below the action */}
       <div className="metrics-grid witness-row">
         {dash.score ? (
-          <div className="card metric id-card">
+          <div className="card metric id-card" data-tour="idscore">
             <h3>ID Score</h3>
             <div className="metric-body">
               <div className="score">
@@ -226,7 +248,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
             <Link href={`/score/${memberId}`} className="see-more">See more →</Link>
           </div>
         ) : (
-          <div className="card metric id-card">
+          <div className="card metric id-card" data-tour="idscore">
             <h3>ID Score</h3>
             <div className="metric-body"><p className="muted">Your Identity Distance Questionnaire (IDQ) baseline isn&apos;t in yet.</p></div>
             <Link href={`/score/${memberId}`} className="see-more">See more →</Link>
@@ -279,7 +301,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
       </div>
 
       {/* The Reclaim List — the fuel the Program is working toward. */}
-      <div className="card">
+      <div className="card" data-tour="reclaim">
         <h3>Reclaim List</h3>
         <ul className="reclaim">
           {dash.reclaimItems.map((item, i) => {
@@ -346,7 +368,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
 
       {/* ZONE 4 · persistent — Doors at the foot, the companion always there */}
       {dash.doors.length > 0 && (
-        <p className="muted doors-foot">
+        <p className="muted doors-foot" data-tour="doors">
           Your Door{dash.doors.length > 1 ? 's' : ''}: <strong>{dash.doors.map((d) => d.displayName).join(' · ')}</strong>
         </p>
       )}

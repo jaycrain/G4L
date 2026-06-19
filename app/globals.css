@@ -733,6 +733,28 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .companion-nav:hover, .companion-nav:focus-visible { background: rgba(59, 148, 149, 0.2); border-color: var(--teal); }
 .companion-nav-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--orange); }
 
+/* Post-Ceremony Tour — dim/spotlight walk + settle into the companion hero */
+.tour-scrim { position: fixed; inset: 0; z-index: 100; }
+.tour-dim { background: rgba(16, 16, 69, 0.6); display: flex; align-items: center; justify-content: center; padding: 1.25rem; }
+.tour-cutout { position: fixed; border-radius: 12px; box-shadow: 0 0 0 9999px rgba(16, 16, 69, 0.62); pointer-events: none; transition: top 0.25s ease, left 0.25s ease, width 0.25s ease, height 0.25s ease; }
+.tour-card { position: fixed; background: var(--white); border-radius: 14px; padding: 1.05rem 1.2rem; box-shadow: 0 14px 44px rgba(16, 16, 69, 0.3); }
+.tour-intro { position: static; max-width: 440px; }
+.tour-mark { width: 30px; height: 30px; border-radius: 50%; }
+.tour-line { font-size: 1rem; line-height: 1.5; color: var(--navy); margin: 0.5rem 0 0.9rem; }
+.tour-cta { display: flex; align-items: center; gap: 0.6rem; }
+.tour-next { background: var(--teal); color: #fff; border: none; font-weight: 700; font-size: 0.9rem; padding: 0.5rem 1.1rem; border-radius: 20px; cursor: pointer; }
+.tour-skip { background: none; border: none; color: #AEB3B8; font-weight: 600; font-size: 0.85rem; cursor: pointer; }
+.tour-foot { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; margin-top: 0.3rem; }
+.tour-dots { display: inline-flex; gap: 0.32rem; }
+.tour-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--light-grey); }
+.tour-dot.on { background: var(--teal); }
+.tour-settle { background: rgba(16, 16, 69, 0.18); }
+.tour-settle-mark { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; gap: 0.6rem; text-align: center; transition: top 0.7s cubic-bezier(0.4, 0, 0.2, 1), left 0.7s cubic-bezier(0.4, 0, 0.2, 1), transform 0.7s cubic-bezier(0.4, 0, 0.2, 1); }
+.tour-settle-mark.landed { transform: translate(0, 0); }
+.tour-settle-mark .tour-mark { width: 42px; height: 42px; box-shadow: 0 0 0 7px rgba(59, 148, 149, 0.28); transition: width 0.7s ease, height 0.7s ease; }
+.tour-settle-mark.landed .tour-mark { width: 30px; height: 30px; }
+.tour-settle-mark .tour-line { color: #fff; max-width: 260px; }
+
 /* Companion hero — the lead block */
 .companion-hero { position: sticky; top: 0.75rem; z-index: 5; background: var(--navy); color: var(--white); border-radius: 14px; padding: 1.4rem 1.5rem; margin-bottom: 1.1rem; }
 .companion-hero-head { display: flex; align-items: center; gap: 0.55rem; margin-bottom: 0.55rem; }

@@ -18,3 +18,18 @@ export async function markThresholdCrossedAction(memberId: string): Promise<{ ok
     return { ok: false };
   }
 }
+
+/** Stamp the once-per-member Post-Ceremony Tour flag when the member finishes or skips the tour. */
+export async function completeTourAction(memberId: string): Promise<{ ok: boolean }> {
+  if (!(await authorizeMember(memberId))) return { ok: false };
+  try {
+    const db = (await getDb()) as unknown as Db;
+    await db.query(
+      'update member_profile set tour_completed_at = now() where member_id=$1 and tour_completed_at is null',
+      [memberId],
+    );
+    return { ok: true };
+  } catch {
+    return { ok: false };
+  }
+}

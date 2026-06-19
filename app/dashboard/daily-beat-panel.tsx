@@ -34,7 +34,7 @@ export default function DailyBeatPanel({
   }
 
   return (
-    <div className="card daily-beat-panel">
+    <div className="card daily-beat-panel" data-tour="daily">
       <h3>Daily Beat</h3>
       <p className="muted db-hook">One thought to carry today.</p>
       <p className="db-text">{text}</p>

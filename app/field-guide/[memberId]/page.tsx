@@ -122,8 +122,19 @@ export default async function FieldGuidePage({ params }: { params: Promise<{ mem
             <dt>Your Doors</dt>
             <dd>how the Fade got in. Add or refine these too — just talk to your companion.</dd>
             <dt>Your G4L Companion</dt>
-            <dd>always in the corner. Tap the bubble anytime.</dd>
+            <dd>its own panel near the top — one proactive message and a “Talk to me” that opens the chat. It’s home base; it’s always there.</dd>
           </dl>
+        </section>
+
+        <section>
+          <h3>The walkthrough</h3>
+          <p>
+            Your companion gave you a quick tour of this screen the first time you arrived. Want it again? It
+            walks you through each panel and points at your next step.
+          </p>
+          <p>
+            <Link href={`/dashboard/${memberId}?tour=1`} className="see-more">Take the tour again →</Link>
+          </p>
         </section>
       </div>
     </>

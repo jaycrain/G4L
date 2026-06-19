@@ -9,7 +9,7 @@ import { useCompanion } from './companion-context.tsx';
 export default function CompanionHero({ message }: { message: string }) {
   const companion = useCompanion();
   return (
-    <div className="companion-hero">
+    <div className="companion-hero" data-tour="companion">
       <div className="companion-hero-head">
         <span className="companion-avatar" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" width="20" height="20">
