@@ -195,6 +195,17 @@ interaction and outranks any copy edit — do not let it drift:
 
 ---
 
+## Dashboard & companion UI standards
+
+The member dashboard + companion patterns are settled — see **`docs/dashboard-ui-standards.md`** and
+match them rather than re-deriving. The load-bearing ones: the companion is **never a floating bot** —
+it's the dashboard's sticky hero panel + a docked rail (full-screen overlay below 1000px) reusing the
+persisted check-in thread; panels link to sub-pages via the **`.see-more` "Label →"** foot link
+(`/program`, `/story`, See more); reset the default `<h3>` margin inside cards. Two engineering rules that
+cost real time: **put shared React context/hooks in their own module** (importing a hook from a component
+file creates a client↔client cycle webpack-dev resolves to `undefined` — the "reading 'call'" error), and
+**run dev on Turbopack** (`next dev --turbopack`) to dodge the Next 15 webpack-dev client-component bug.
+
 ## Stack & tools
 
 - AI: Anthropic API (Claude) powers both agents.
