@@ -151,6 +151,9 @@ button:hover, .btn:hover { background: var(--navy); }
 .logout-form { margin: 0; }
 .logout-link { margin: 0; background: none; color: var(--navy); border: none; padding: 0.2rem 0.4rem; font: inherit; font-size: 0.85rem; font-weight: 600; opacity: 0.6; cursor: pointer; text-decoration: underline; }
 .logout-link:hover { background: none; color: var(--teal); opacity: 1; }
+/* Header nav (Field Guide · Playbook) — full-strength navy, more prominent than the quiet Log out. */
+.greeting-nav { color: var(--navy); font-weight: 600; font-size: 1.05rem; text-decoration: underline; text-underline-offset: 2px; }
+.greeting-nav:hover { color: var(--teal); }
 
 .score { display: flex; align-items: baseline; gap: 0.6rem; }
 .score .num { font-size: 3rem; font-weight: 700; color: var(--teal); }

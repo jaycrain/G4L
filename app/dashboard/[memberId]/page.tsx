@@ -178,7 +178,8 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
       )}
 
       <div className="member-greeting">
-        <Link href="/account" className="member-greeting-link" aria-label="Your account">
+        {/* The avatar + name is the account entry — tapping it opens /account (no separate link). */}
+        <Link href="/account" className="member-greeting-link" aria-label="Your account" title="Your account">
           {dash.avatarUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img className="avatar" src={dash.avatarUrl} alt={dash.displayName} />
@@ -187,13 +188,12 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
           )}
           <span className="greeting">Hi, {firstName(dash.displayName)}</span>
         </Link>
+        <form action={logoutAction} className="logout-form">
+          <button type="submit" className="logout-link">Log out</button>
+        </form>
         <span className="greeting-actions">
-          <Link href={`/field-guide/${memberId}`} className="logout-link">Field Guide</Link>
-          <Link href={`/playbook/${memberId}`} className="logout-link">Playbook</Link>
-          <Link href="/account" className="logout-link">Account</Link>
-          <form action={logoutAction} className="logout-form">
-            <button type="submit" className="logout-link">Log out</button>
-          </form>
+          <Link href={`/field-guide/${memberId}`} className="greeting-nav">Field Guide</Link>
+          <Link href={`/playbook/${memberId}`} className="greeting-nav">Playbook</Link>
         </span>
       </div>
 
