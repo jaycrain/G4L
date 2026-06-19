@@ -3,6 +3,7 @@
 // facts are distilled into a running memory the agent always carries, so people/relationships and
 // life context never just scroll away. Framework-free (takes a Db).
 import type { Db } from '../db/schema.ts';
+import { writeAsActor } from '../db/actor.ts';
 
 export const RECALL_WINDOW = 40; // must match the slice in sendCheckin's history
 const FOLD_BATCH = 10; // only run the (LLM) fold once at least this many messages have aged out
@@ -72,11 +73,13 @@ export async function maybeFoldMemory(db: Db, memberId: string): Promise<void> {
     if (!sel) return;
     const updated = await mergeMemory(prof.agent_memory ?? '', sel.batch);
     if (updated && updated.trim()) {
-      await db.query('update member_profile set agent_memory=$1, agent_memory_seq=$2 where member_id=$3', [
-        updated.trim(),
-        sel.newThroughSeq,
-        memberId,
-      ]);
+      await writeAsActor(db, 'member_agent', (tx) =>
+        tx.query('update member_profile set agent_memory=$1, agent_memory_seq=$2 where member_id=$3', [
+          updated.trim(),
+          sel.newThroughSeq,
+          memberId,
+        ]),
+      );
     }
   } catch (e) {
     console.warn('memory fold skipped:', (e as Error).message);

@@ -27,5 +27,22 @@ export function getPostgresDb(): Db {
     exec: async (text: string) => {
       await sql.unsafe(text);
     },
+    // Run fn in one transaction, tagging the audit actor first (set_config(..., true) = txn-local,
+    // so it can't leak across pooled connections). The actor is passed as a bound param, never
+    // interpolated.
+    withActor: async <T>(actor: string, fn: (tx: Db) => Promise<T>) =>
+      sql.begin(async (tx) => {
+        await tx.unsafe(`select set_config('g4l.actor', $1, true)`, [actor]);
+        const txDb: Db = {
+          query: async <U = Record<string, unknown>>(text: string, params: unknown[] = []) => {
+            const rows = await tx.unsafe(text, params as any[]);
+            return { rows: rows as unknown as U[] };
+          },
+          exec: async (text: string) => {
+            await tx.unsafe(text);
+          },
+        };
+        return fn(txDb);
+      }) as Promise<T>,
   };
 }

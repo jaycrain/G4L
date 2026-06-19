@@ -5,6 +5,7 @@
 // Checkpoint as its richest material. Best-effort: never throws into a close. Live Claude only.
 
 import type { Db } from '../db/schema.ts';
+import { writeAsActor } from '../db/actor.ts';
 import { MEMBER_AGENT_SYSTEM_PROMPT } from './system-prompt.ts';
 import { listFacets } from '../curriculum/store.ts';
 import { getJourney } from '../beats/store.ts';
@@ -68,7 +69,9 @@ export async function refreshPlaybookSynthesis(db: Db, memberId: string): Promis
     const synthesis = block && block.type === 'text' ? block.text.trim() : '';
     if (!synthesis) return null;
 
-    await db.query('update member_profile set playbook_synthesis=$2 where member_id=$1', [memberId, synthesis]);
+    await writeAsActor(db, 'member_agent', (tx) =>
+      tx.query('update member_profile set playbook_synthesis=$2 where member_id=$1', [memberId, synthesis]),
+    );
     return synthesis;
   } catch {
     return null; // synthesis is enrichment — never break a close

@@ -4,6 +4,7 @@
 // NOT here (state-machine + Journey integrity) — see the deferred follow-up.
 
 import type { Db } from '../db/schema.ts';
+import { writeAsActor } from '../db/actor.ts';
 import { addReclaimItems, getReclaimItems } from '../beats/store.ts';
 import { inferCategory, isVagueReclaim } from '../beats/category.ts';
 import { isCategory, type Category } from '../beats/registry.ts';
@@ -39,7 +40,9 @@ export async function setMemberDoors(db: Db, memberId: string, slugs: DoorSlug[]
       [memberId, valid[i], i === 0, i],
     );
   }
-  await db.query('update member_profile set named_door=$2 where member_id=$1', [memberId, valid[0]]);
+  await writeAsActor(db, 'member_agent', (tx) =>
+    tx.query('update member_profile set named_door=$2 where member_id=$1', [memberId, valid[0]]),
+  );
   return valid.map(doorDisplay);
 }
 
@@ -142,6 +145,9 @@ export async function addDoorForMember(db: Db, memberId: string, description: st
 
   if (added.length === 0) return { ok: false, reason: 'already' };
   // Keep named_door (the single-value primary used by some reads) in sync if there wasn't one.
-  if (!hadPrimary) await db.query('update member_profile set named_door=$2 where member_id=$1', [memberId, added[0]]);
+  if (!hadPrimary)
+    await writeAsActor(db, 'member_agent', (tx) =>
+      tx.query('update member_profile set named_door=$2 where member_id=$1', [memberId, added[0]]),
+    );
   return { ok: true, added: added.map(doorDisplay) };
 }

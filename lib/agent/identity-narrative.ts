@@ -3,6 +3,7 @@
 // Session feeds the member's own words + their named selves back into a sharper reflection. Best-effort:
 // never throws into the close path, never blanks an existing paragraph.
 import type { Db } from '../db/schema.ts';
+import { writeAsActor } from '../db/actor.ts';
 import type { Asset } from '../curriculum/types.ts';
 import { getProvider } from './provider.ts';
 import { listFacets, getSessionProgress } from '../curriculum/store.ts';
@@ -39,7 +40,9 @@ export async function refreshIdentityNarrative(db: Db, memberId: string, session
     ).trim();
     if (!narrative) return null;
 
-    await db.query('update member_profile set identity_paragraph=$2 where member_id=$1', [memberId, narrative]);
+    await writeAsActor(db, 'member_agent', (tx) =>
+      tx.query('update member_profile set identity_paragraph=$2 where member_id=$1', [memberId, narrative]),
+    );
     return narrative;
   } catch {
     return null; // the mirror refresh is never allowed to break a Session close

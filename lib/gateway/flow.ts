@@ -3,6 +3,7 @@
 // (local pglite now, hosted Supabase later). Governance + scoring + dosing wired in.
 
 import type { Db } from '../db/schema.ts';
+import { writeAsActor } from '../db/actor.ts';
 import type { AgentProvider, OnboardingInput } from '../agent/provider.ts';
 import { DOORS, isDoorSlug, type DoorSlug } from '../doors.ts';
 import { validateReconnectOutput } from '../member/reclaim.ts';
@@ -73,14 +74,16 @@ export async function runOnboarding(
   const identityParagraph = await provider.composeIdentityParagraph(input);
 
   try {
-    const { rows } = await db.query<{ member_id: string }>(
-      `insert into member_profile
+    const { rows } = await writeAsActor(db, 'member', (tx) =>
+      tx.query<{ member_id: string }>(
+        `insert into member_profile
          (display_name, email, named_door, identity_noun, identity_paragraph,
           intake_athletic_past, intake_gap, intake_right_now, reclaim_list, ai_consent_granted_at)
        values ($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb, now())
        returning member_id`,
-      [input.displayName, f.email.trim(), primaryDoor, displayIdentityNoun(input.identityNoun), identityParagraph,
-       input.athleticPast, input.gap, '', f.reclaimList],
+        [input.displayName, f.email.trim(), primaryDoor, displayIdentityNoun(input.identityNoun), identityParagraph,
+         input.athleticPast, input.gap, '', f.reclaimList],
+      ),
     );
     const memberId = rows[0]!.member_id;
     // The full Door set (named_door above is kept as the primary for single-value reads).

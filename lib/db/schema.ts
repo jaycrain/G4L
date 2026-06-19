@@ -8,6 +8,11 @@ import { join } from 'node:path';
 export type Db = {
   query: <T = Record<string, unknown>>(sql: string, params?: unknown[]) => Promise<{ rows: T[] }>;
   exec: (sql: string) => Promise<unknown>;
+  /** Run fn inside a transaction that tags the audit actor (sets the per-txn GUC g4l.actor, read by
+   *  the member_profile_audit trigger — migration 0032). Optional: backends without transaction
+   *  support (raw pglite in tests) omit it, and writes log the default actor 'system'. Prefer the
+   *  writeAsActor() helper, which falls back gracefully. */
+  withActor?: <T>(actor: string, fn: (tx: Db) => Promise<T>) => Promise<T>;
 };
 
 // Resolved from the project root (cwd) — stable under `next dev`, tests, and scripts alike.
@@ -64,6 +69,10 @@ const MIGRATIONS: Array<{ file: string; sentinel: Sentinel }> = [
   {
     file: 'migrations/0032_member_profile_audit_trigger.sql',
     sentinel: { sql: "select exists (select 1 from pg_trigger where tgname = 'member_profile_audit_del') as e" },
+  },
+  {
+    file: 'migrations/0033_audit_skip_derived_columns.sql',
+    sentinel: { sql: "select (pg_get_functiondef('audit_member_profile'::regproc) ilike '%dashboard_snapshot%') as e" },
   },
 ];
 export const SEED_SQL = () => sqlFile('seed/0001_reference_data.sql');
