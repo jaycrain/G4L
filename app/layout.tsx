@@ -35,8 +35,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <main>
           <div className="brand-bar">
             {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img className="brand-wordmark" src="/brand/g4l-wordmark.svg" alt="Grinta for Life" />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img className="brand-mark" src="/icons/icon-192.png" alt="" aria-hidden="true" />
-            <span className="brand-name">Grinta for Life.</span>
           </div>
           {children}
         </main>
