@@ -61,6 +61,10 @@ const MIGRATIONS: Array<{ file: string; sentinel: Sentinel }> = [
     sentinel: { table: 'activity_connection', column: 'access_token_enc' },
   },
   { file: 'migrations/0031_post_ceremony_tour.sql', sentinel: { table: 'member_profile', column: 'tour_completed_at' } },
+  {
+    file: 'migrations/0032_member_profile_audit_trigger.sql',
+    sentinel: { sql: "select exists (select 1 from pg_trigger where tgname = 'member_profile_audit_del') as e" },
+  },
 ];
 export const SEED_SQL = () => sqlFile('seed/0001_reference_data.sql');
 
