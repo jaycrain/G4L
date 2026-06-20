@@ -46,6 +46,31 @@ git push -u origin main
 - Visit the Vercel URL → the live preview. Onboard → IDQ → dashboard, with live Claude.
 - A demo member's dashboard is at `/dashboard/<memberId>` (printed by `db:seed-demo`).
 
+## Post-deploy smoke test (`npm run smoke`)
+
+A Playwright check that logs into a **demo** account through the real `/login` form against a
+target URL and asserts the member-facing pages render (dashboard "The Program" panel, `/program`,
+`/field-guide`, no 5xx). It exits non-zero on failure — drop it into CI as a post-deploy gate.
+
+**Guardrails baked in:** demo-only (refuses any non-`.test` account), the real login path (no
+bypass, no extra product endpoint), and the demo password lives in a secret — never committed,
+never logged. Senior-engineer review required before pointing it at a DB that holds real members.
+
+**One-time setup (needs the target DB — you run this, it stays with your prod creds):**
+```bash
+# against local pglite (no DATABASE_URL) or hosted (DATABASE_URL=<pooler string>)
+SMOKE_EMAIL='demo-tom@grintaforlife.test' SMOKE_PASSWORD='<pick a strong one>' \
+  npm run db:set-demo-password
+```
+Store that `SMOKE_PASSWORD` as a secret (and `SMOKE_EMAIL`). For live, the demo member must exist
+in that DB first (`db:seed-demo`).
+
+**Run it (needs only the demo login + a URL — never the DB creds):**
+```bash
+SMOKE_EMAIL='demo-tom@grintaforlife.test' SMOKE_PASSWORD='<the secret>' \
+  npm run smoke -- https://g4l-ten.vercel.app      # or http://localhost:3100, or a branch preview URL
+```
+
 ## Notes / guardrails
 - **No login yet** — anyone with a `/dashboard/<uuid>` link sees that profile. Fine for fake
   data; do NOT put real members here until Path B.

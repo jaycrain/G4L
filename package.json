@@ -16,6 +16,8 @@
     "db:migrate": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/db/migrate.ts",
     "db:seed-demo": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/db/seed-demo.ts",
     "agent:check": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/agent/check.ts",
+    "db:set-demo-password": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/db/set-demo-password.ts",
+    "smoke": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/smoke.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -34,6 +36,7 @@
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@types/web-push": "^3.6.4",
+    "playwright": "^1.61.0",
     "typescript": "^5.7.0"
   }
 }
