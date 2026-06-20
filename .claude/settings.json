@@ -12,11 +12,19 @@
       "Bash(npm run db:reset)",
       "Bash(npm run db:seed-demo)",
       "Bash(npm run db:migrate)",
+      "Bash(npm run db:set-demo-password)",
+      "Bash(npm run smoke *)",
       "Bash(npm run agent:check)",
       "Bash(npm run dev)",
       "Bash(git add *)",
       "Bash(git commit *)",
-      "Bash(curl *)"
+      "Bash(curl *)",
+      "Bash(vercel ls *)",
+      "Bash(vercel inspect *)",
+      "mcp__Claude_Preview__preview_snapshot",
+      "mcp__Claude_Preview__preview_screenshot",
+      "mcp__Claude_Preview__preview_logs",
+      "mcp__Claude_Preview__preview_console_logs"
     ]
   }
 }
