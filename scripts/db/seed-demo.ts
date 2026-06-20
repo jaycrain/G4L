@@ -23,9 +23,8 @@ const r7 = (a: string[]) => a;
 const DEMOS: Demo[] = [
   {
     fields: {
-      displayName: 'Tom Miller', email: 'demo-tom@grintaforlife.test', door: 'career_cliff', identityNoun: 'athlete',
+      displayName: 'Tom Miller', email: 'demo-tom@grintaforlife.test', doors: ['career_cliff'], identityNoun: 'athlete',
       athleticPast: 'competitive cyclist, raced every weekend', gap: 'the role ended and the bike gathered dust',
-      rightNow: 'winded on the stairs, rebuilding slowly',
       reclaimList: r7(['ride again', 'sleep well', 'coach a friend', 'climb', 'reconnect with Dana', 'race Moab', 'feel strong']),
     },
     responses: [2, 2, 3, 2, 2, 3, 4, 4, 3, 4, 4, 3, 3, 2, 3, 3, 2, 3, 4, 4, 3, 4, 3, 4], // mixed; lower Physical
@@ -34,9 +33,8 @@ const DEMOS: Demo[] = [
   },
   {
     fields: {
-      displayName: 'Reshma Patel', email: 'demo-reshma@grintaforlife.test', door: 'diagnosis', identityNoun: 'runner',
+      displayName: 'Reshma Patel', email: 'demo-reshma@grintaforlife.test', doors: ['diagnosis'], identityNoun: 'runner',
       athleticPast: 'marathoner who ran before dawn', gap: 'a diagnosis stopped me cold',
-      rightNow: 'cautious, slower, unsure of my body',
       reclaimList: r7(['run a 5k', 'sleep deep', 'travel', 'garden', 'call mom weekly', 'cook again', 'laugh more']),
     },
     persona: 'runner',
@@ -44,19 +42,33 @@ const DEMOS: Demo[] = [
   },
 ];
 
-const db = await getDb();
-for (const d of DEMOS) {
-  const ob = await runOnboarding(db, scriptedProvider, d.fields);
-  if (!ob.ok) {
-    console.log(`skip ${d.fields.displayName}: ${'errors' in ob ? ob.errors.join('; ') : 'crisis'}`);
-    continue;
+// Reusable seeding routine. Callable in-process (e.g. the dev-only /dev preview page) as well as
+// from the CLI below. Returns the seeded members so a caller can link straight to their dashboards.
+export async function seedDemoMembers(
+  db: Awaited<ReturnType<typeof getDb>>,
+): Promise<Array<{ name: string; memberId: string }>> {
+  const seeded: Array<{ name: string; memberId: string }> = [];
+  for (const d of DEMOS) {
+    const ob = await runOnboarding(db, scriptedProvider, d.fields);
+    if (!ob.ok) {
+      console.log(`skip ${d.fields.displayName}: ${'errors' in ob ? ob.errors.join('; ') : 'crisis'}`);
+      continue;
+    }
+    await submitIdq(db, ob.memberId, d.responses);
+    if (d.completeR4) {
+      await completeAsset(db, { memberId: ob.memberId, code: 'R-4', variant: assignVariant(ob.memberId, 'R-4'), version: '0.1-draft', outputs: { excavated: ['the racer'] } });
+    }
+    if (d.persona) await seedActivityFor(db, ob.memberId, d.persona);
+    seeded.push({ name: d.fields.displayName, memberId: ob.memberId });
   }
-  await submitIdq(db, ob.memberId, d.responses);
-  if (d.completeR4) {
-    await completeAsset(db, { memberId: ob.memberId, code: 'R-4', variant: assignVariant(ob.memberId, 'R-4'), version: '0.1-draft', outputs: { excavated: ['the racer'] } });
-  }
-  if (d.persona) await seedActivityFor(db, ob.memberId, d.persona);
-  console.log(`✓ ${d.fields.displayName} → /dashboard/${ob.memberId}`);
+  return seeded;
 }
-console.log('\nDemo members seeded. (Re-run after db:reset / a fresh DB.)');
-process.exit(0);
+
+// CLI entry: only when invoked directly as a script (npm run db:seed-demo), not on import.
+if (process.argv[1]?.endsWith('seed-demo.ts')) {
+  const db = await getDb();
+  const seeded = await seedDemoMembers(db);
+  for (const s of seeded) console.log(`✓ ${s.name} → /dashboard/${s.memberId}`);
+  console.log('\nDemo members seeded. (Re-run after db:reset / a fresh DB.)');
+  process.exit(0);
+}
