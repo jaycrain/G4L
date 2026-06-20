@@ -23,7 +23,7 @@ export default async function ProgramPage({ params }: { params: Promise<{ member
         <Link href={`/dashboard/${memberId}`} className="back-link">← Dashboard</Link>
       </div>
       <div className="hero">
-        <h1>Your Program</h1>
+        <h1>The Program</h1>
         <p className="heromore">Every step in the framework, start to finish — so you always know what you&apos;re walking into. Your next Session is lit.</p>
       </div>
       <div className="card curric">

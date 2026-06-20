@@ -115,7 +115,7 @@ export default async function FieldGuidePage({ params }: { params: Promise<{ mem
             <dd>the ones you’ve earned and the ones still ahead, greyed in until you reach them.</dd>
             <dt>Reclaim List</dt>
             <dd>the concrete things you’re after. The whole point. Add or refine them anytime — just talk to your companion.</dd>
-            <dt>Your Program</dt>
+            <dt>The Program</dt>
             <dd>the whole program, with your next Session lit and ready to open. The rest of the path waits below it, and the daily clip-ins and your numbers run along the bottom.</dd>
             <dt>Movement</dt>
             <dd>connect Strava and your rides, runs, and walks show up here, alongside the work.</dd>
