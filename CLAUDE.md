@@ -214,7 +214,10 @@ file creates a client↔client cycle webpack-dev resolves to `undefined` — the
 ## Stack & tools
 
 - AI: Anthropic API (Claude) powers both agents.
-- Community: Circle. Course/content delivery: Tovuti. Payments: Stripe.
+- Community: **Connect** — built native on our stack (Supabase + Next), **not** Circle (dropped
+  Jun 2026: didn't need the full feature set, disliked the org/UI, expensive). Name plays off the
+  4Rs: Reconnect (with yourself) → Connect (with others). Design: `docs/connect-design.md`.
+  Course/content delivery: Tovuti. Payments: Stripe.
   Lifecycle/email: HubSpot. (Integrations, not rebuilds.)
 - App stack, hosting, DB, auth: **[to confirm with the fractional senior engineer]** —
   whatever is chosen, record it here.

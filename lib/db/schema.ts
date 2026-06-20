@@ -75,6 +75,7 @@ const MIGRATIONS: Array<{ file: string; sentinel: Sentinel }> = [
     sentinel: { sql: "select (pg_get_functiondef('audit_member_profile'::regproc) ilike '%dashboard_snapshot%') as e" },
   },
   { file: 'migrations/0034_system_health.sql', sentinel: 'system_health' },
+  { file: 'migrations/0035_connect.sql', sentinel: 'connect_post' },
 ];
 export const SEED_SQL = () => sqlFile('seed/0001_reference_data.sql');
 
