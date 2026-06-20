@@ -34,6 +34,11 @@ to engineer around. (See `docs/onboarding-open-issues.md` Issue 2.)
   This is a privacy-critical product; we review the shape first.
 - **Small, verifiable steps.** Build one feature/panel/asset at a time. Show it working.
 - **Write and run tests.** Prove each change. Don't report done without verification.
+- **Verify live after a deploy, not just locally.** `main` auto-deploys to Vercel. After a push
+  that changes member-facing UI, run the post-deploy smoke test —
+  `npm run smoke -- https://g4l-ten.vercel.app` — to confirm the *real* site renders (it logs in
+  as a demo account through the real `/login` and checks the gated pages) before calling it done.
+  "It deployed Ready" is not "it works." Setup + how-to in `DEPLOY.md`.
 - **Read the specs before coding** — they are the source of truth (see Key Documents).
 - **Never commit secrets.** API keys, member data, `.env` — never in the repo, never in
   logs, never in test fixtures. Ask if unsure.
