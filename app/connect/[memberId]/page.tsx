@@ -55,7 +55,7 @@ export default async function ConnectPage({ params }: { params: Promise<{ member
             <input type="checkbox" name="showName" defaultChecked={revealDefault} /> Post under my real name ({myName})
             {profile && <span> — otherwise as {profile.handle}</span>}
           </label>
-          <button type="submit" className="btn">Share</button>
+          <button type="submit" className="connect-cta">Share</button>
         </div>
       </form>
 
@@ -94,7 +94,7 @@ export default async function ConnectPage({ params }: { params: Promise<{ member
 
               <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginTop: 8 }}>
                 <form action={cheerAction.bind(null, 'post', p.id)}>
-                  <button type="submit" className="btn-quiet" style={{ fontSize: '0.85rem' }}>
+                  <button type="submit" className="connect-cta">
                     {p.iCheered ? '♥ Cheered' : '♡ Cheer'}{p.cheerCount ? ` · ${p.cheerCount}` : ''}
                   </button>
                 </form>
@@ -103,7 +103,7 @@ export default async function ConnectPage({ params }: { params: Promise<{ member
               <form action={replyAction.bind(null, p.id)} style={{ marginTop: 8, display: 'flex', gap: 8 }}>
                 <input type="hidden" name="showName" value={revealDefault ? 'on' : ''} />
                 <input name="body" required placeholder="Reply…" style={{ flex: 1 }} />
-                <button type="submit" className="btn-quiet">Reply</button>
+                <button type="submit" className="btn">Reply</button>
               </form>
             </div>
           ))
@@ -124,7 +124,7 @@ export default async function ConnectPage({ params }: { params: Promise<{ member
                     : `${it.otherName} asked you to ${it.commitment}.`}
                 </span>
                 <form action={checkInAction.bind(null, it.id)}>
-                  <button type="submit" className="btn-quiet" style={{ whiteSpace: 'nowrap' }}>Check in</button>
+                  <button type="submit" className="connect-cta" style={{ whiteSpace: 'nowrap' }}>Check in</button>
                 </form>
               </div>
             ))}

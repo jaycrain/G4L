@@ -628,6 +628,9 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .metric .metric-foot { font-size: 0.8rem; margin-top: 0.7rem; }
 .see-more { margin-top: 0.9rem; align-self: flex-start; font-size: 0.85rem; font-weight: 600; color: var(--teal); text-decoration: none; }
 .see-more:hover { text-decoration: underline; }
+/* Connect CTAs: quiet teal text like .see-more, for buttons and links (Reply stays a real button). */
+.connect-cta { background: none; border: none; border-radius: 0; padding: 0; margin: 0; font: inherit; font-size: 0.85rem; font-weight: 600; color: var(--teal); text-decoration: none; cursor: pointer; }
+.connect-cta:hover { background: none; color: var(--teal); text-decoration: underline; }
 .id-card .dim { display: flex; justify-content: space-between; gap: 0.4rem; font-size: 0.8rem; padding: 0.22rem 0; border-top: 1px solid var(--light-grey); }
 .id-card .dim span { white-space: nowrap; }
 .id-card .dim:first-child, .id-card .dim:nth-child(2) { border-top: none; }

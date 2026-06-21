@@ -60,20 +60,7 @@ export default async function ConnectPanel({ memberId }: { memberId: string }) {
       )}
 
       <div style={{ marginTop: '1rem' }}>
-        <Link
-          href={`/connect/${memberId}`}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 6,
-            background: '#3B9495',
-            color: '#fff',
-            padding: '0.5rem 1rem',
-            borderRadius: 999,
-            textDecoration: 'none',
-            fontWeight: 600,
-          }}
-        >
+        <Link href={`/connect/${memberId}`} className="connect-cta">
           Connect with others now →
         </Link>
       </div>
