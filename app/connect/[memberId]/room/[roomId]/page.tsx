@@ -7,6 +7,7 @@ import { getRoom, getRoomMessages } from '../../../../../lib/connect/rooms.ts';
 import { getConnectProfile } from '../../../../../lib/connect/store.ts';
 import { CRISIS_RESPONSE_US } from '../../../../../lib/agent/governance.ts';
 import RoomChat from './room-chat.tsx';
+import { closeRoomAction } from '../../../actions.ts';
 import type { Db } from '../../../../../lib/db/schema.ts';
 
 export const metadata = { title: 'Live room — Connect' };
@@ -30,7 +31,14 @@ export default async function RoomPage({ params }: { params: Promise<{ memberId:
         <Link href={`/connect/${memberId}`} className="back-link">← Connect</Link>
       </div>
       <div className="hero">
-        <h1>{room.title}</h1>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12 }}>
+          <h1 style={{ margin: 0 }}>{room.title}</h1>
+          {room.createdBy === memberId && room.status === 'open' && (
+            <form action={closeRoomAction.bind(null, roomId)}>
+              <button type="submit" className="connect-cta" style={{ whiteSpace: 'nowrap' }}>Close room →</button>
+            </form>
+          )}
+        </div>
         <p className="heromore">
           Live{room.status === 'closed' ? ' (closed)' : ''} — say what's true, keep each other honest. Messages here are
           kept and can be reported, the same as everywhere on Connect.

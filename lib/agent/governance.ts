@@ -46,6 +46,15 @@ const CRISIS_PATTERNS: readonly RegExp[] = [
   /\bself[-\s]?harm\b/i,
   /\bbetter\s+off\s+(dead|without\s+me)\b/i,
   /\bcan'?t\s+(go\s+on|do\s+this\s+anymore)\b/i,
+  // Passive ideation — questioning whether life is worth living, giving up, no point. These catch
+  // concerning entries the explicit set above misses (e.g. "I don't know if my life's worth living").
+  // Scoped so an ordinary positive ("what makes life worth living") does NOT fire.
+  /\b(not|isn'?t|ain'?t|never)\s+worth\s+(living|being\s+(here|alive))\b/i,
+  /\b(if|whether|know\s+if|wonder\s+if|wondering\s+if|sure\s+if|unsure\s+if|questioning\s+(whether|if))\b[^.?!]{0,24}\bworth\s+(living|being\s+(here|alive))\b/i,
+  /\bwhat'?s\s+the\s+point\s+(of\s+)?(living|life|going\s+on|it\s+all|anything|any\s+of\s+(this|it))\b/i,
+  /\bgiv(e|ing)\s+up\s+on\s+(life|living|everything|myself)\b/i,
+  /\btired\s+of\s+(living|being\s+(here|alive)|it\s+all)\b/i,
+  /\bdon'?t\s+want\s+to\s+(wake\s+up|exist|be\s+around)\b/i,
 ];
 
 export type CrisisCheck = { flagged: boolean; matched: string[] };

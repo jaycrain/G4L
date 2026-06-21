@@ -49,12 +49,18 @@ export async function listOpenRooms(db: Db): Promise<Room[]> {
   }));
 }
 
-export async function getRoom(db: Db, roomId: string): Promise<{ id: string; title: string; status: 'open' | 'closed' } | null> {
-  const { rows } = await db.query<{ id: string; title: string; status: 'open' | 'closed' }>(
-    `select id, title, status from connect_room where id = $1`,
+export async function getRoom(db: Db, roomId: string): Promise<{ id: string; title: string; status: 'open' | 'closed'; createdBy: string } | null> {
+  const { rows } = await db.query<{ id: string; title: string; status: 'open' | 'closed'; created_by: string }>(
+    `select id, title, status, created_by from connect_room where id = $1`,
     [roomId],
   );
-  return rows[0] ?? null;
+  const r = rows[0];
+  return r ? { id: r.id, title: r.title, status: r.status, createdBy: r.created_by } : null;
+}
+
+/** Close a room — only its creator (host) can. Closed rooms drop out of Live now. */
+export async function closeRoom(db: Db, memberId: string, roomId: string): Promise<void> {
+  await db.query(`update connect_room set status = 'closed' where id = $1 and created_by = $2`, [roomId, memberId]);
 }
 
 /** Visible messages in a room. `afterIso` powers polling (only newer than the cursor); blocks filtered. */
