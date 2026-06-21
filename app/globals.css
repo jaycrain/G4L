@@ -631,6 +631,9 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 /* Connect CTAs: quiet teal text like .see-more, for buttons and links (Reply stays a real button). */
 .connect-cta { background: none; border: none; border-radius: 0; padding: 0; margin: 0; font: inherit; font-size: 0.85rem; font-weight: 600; color: var(--teal); text-decoration: none; cursor: pointer; }
 .connect-cta:hover { background: none; color: var(--teal); text-decoration: underline; }
+/* Primary pill action with arrow — the shared standard behind "Talk to me" / "Open this Session". */
+.btn-pill { display: inline-flex; align-items: center; gap: 0.4rem; margin: 0; background: var(--teal); color: var(--white); font-weight: 600; font-size: 0.85rem; padding: 0.45rem 1rem; border-radius: 20px; }
+.btn-pill:hover { background: #347f80; }
 .id-card .dim { display: flex; justify-content: space-between; gap: 0.4rem; font-size: 0.8rem; padding: 0.22rem 0; border-top: 1px solid var(--light-grey); }
 .id-card .dim span { white-space: nowrap; }
 .id-card .dim:first-child, .id-card .dim:nth-child(2) { border-top: none; }

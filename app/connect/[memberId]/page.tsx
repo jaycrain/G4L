@@ -103,7 +103,7 @@ export default async function ConnectPage({ params }: { params: Promise<{ member
               <form action={replyAction.bind(null, p.id)} style={{ marginTop: 8, display: 'flex', gap: 8 }}>
                 <input type="hidden" name="showName" value={revealDefault ? 'on' : ''} />
                 <input name="body" required placeholder="Reply…" style={{ flex: 1 }} />
-                <button type="submit" className="btn">Reply</button>
+                <button type="submit" className="btn-pill">Reply <span aria-hidden="true">→</span></button>
               </form>
             </div>
           ))
