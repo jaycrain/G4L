@@ -21,6 +21,7 @@ import DashboardSync from '../dashboard-sync.tsx';
 import TrackThis from '../track-this.tsx';
 import BadgePassport from '../badge-passport.tsx';
 import CurriculumForecast from '../curriculum-forecast.tsx';
+import ConnectPanel from '../connect-panel.tsx';
 import PhaseCrossing from '../phase-crossing.tsx';
 import { crossingToShow } from '../../../lib/curriculum/crossing.ts';
 import DailyBeatPanel from '../daily-beat-panel.tsx';
@@ -299,6 +300,9 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
           <Link href={`/grinta/${memberId}`} className="see-more">See more →</Link>
         </div>
       </div>
+
+      {/* Connect — the community surface, slotted right under the metrics strip */}
+      <ConnectPanel memberId={memberId} />
 
       {/* The Reclaim List — the fuel the Program is working toward. */}
       <div className="card" data-tour="reclaim">
