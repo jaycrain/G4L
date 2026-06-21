@@ -25,6 +25,7 @@ import { getAsset } from '../../lib/curriculum/registry.ts';
 import { getDailyBeat } from '../../lib/daily-beat/store.ts';
 import { getMemberExperience } from '../../lib/telemetry/store.ts';
 import { itemStem, dimensionForIndex } from '../../lib/idq/instrument.ts';
+import { getConnectSummaryForAgent } from '../../lib/connect/agent.ts';
 import { authorizeMember } from '../authz.ts';
 import type { Db } from '../../lib/db/schema.ts';
 
@@ -119,6 +120,7 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
   const idqAnswers = Array.isArray(responses)
     ? responses.map((score: number, i: number) => ({ dimension: dimensionForIndex(i), stem: itemStem(i), score }))
     : [];
+  const connect = await getConnectSummaryForAgent(db, memberId);
   return {
     today: new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }),
     displayName: dash.displayName,
@@ -153,6 +155,7 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
     agentMemory: prof?.agent_memory ?? null,
     recentChanges,
     experienceSummary: experience.summary || null,
+    connect,
   };
 }
 
