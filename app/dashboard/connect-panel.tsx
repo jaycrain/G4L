@@ -59,11 +59,11 @@ export default async function ConnectPanel({ memberId }: { memberId: string }) {
           )}
           {nudge && (
             <div style={{ border: '1px solid #E8E6E6', borderRadius: 8, padding: '0.6rem 0.75rem' }}>
-              <div className="muted" style={{ fontSize: '0.72rem', marginBottom: 2 }}>On you</div>
+              <div className="muted" style={{ fontSize: '0.72rem', marginBottom: 2 }}>Accountability</div>
               <div>
                 {nudge.direction === 'i_committed'
                   ? `You told ${nudge.otherName} you'd ${nudge.commitment}.`
-                  : `${nudge.otherName} asked you to ${nudge.commitment}.`}
+                  : `You're holding ${nudge.otherName} to: ${nudge.commitment}.`}
               </div>
             </div>
           )}

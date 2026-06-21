@@ -206,7 +206,7 @@ export default async function ConnectPage({
                 <span>
                   {it.direction === 'i_committed'
                     ? `You told ${it.otherName} you'd ${it.commitment}.`
-                    : `${it.otherName} asked you to ${it.commitment}.`}
+                    : `You're holding ${it.otherName} to: ${it.commitment}.`}
                 </span>
                 <form action={checkInAction.bind(null, it.id)}>
                   <button type="submit" className="connect-cta" style={{ whiteSpace: 'nowrap' }}>Check in</button>

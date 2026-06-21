@@ -12,7 +12,7 @@ export type ConnectAgentSummary = {
   recentEngagement: { actor: string; kind: 'reply' | 'cheer'; postLabel: string; unread: boolean }[];
   ownRecentPosts: string[];
   pacts: {
-    direction: 'i_committed' | 'asked_of_me';
+    direction: 'i_committed' | 'holding';
     commitment: string;
     other: string;
     reclaimItem: string | null;
@@ -33,13 +33,13 @@ export async function getConnectSummaryForAgent(db: Db, memberId: string): Promi
       [memberId],
     ),
     db.query<{
-      direction: 'i_committed' | 'asked_of_me';
+      direction: 'i_committed' | 'holding';
       commitment: string;
       other_name: string;
       reclaim_text: string | null;
       last_checkin: string | null;
     }>(
-      `select case when pact.doer_id = $1 then 'i_committed' else 'asked_of_me' end as direction,
+      `select case when pact.doer_id = $1 then 'i_committed' else 'holding' end as direction,
               pact.commitment,
               case when pact.doer_id = $1 then partner.display_name else doer.display_name end as other_name,
               ri.text as reclaim_text,
@@ -96,7 +96,7 @@ export function connectContextLines(c: ConnectAgentSummary): string {
     const tie = p.reclaimItem ? ` (toward their Reclaim item “${p.reclaimItem}”)` : '';
     const quiet = p.lastCheckinDays == null ? ' — no check-in yet' : p.lastCheckinDays >= 7 ? ` — gone quiet (${p.lastCheckinDays}d)` : '';
     lines.push(
-      `  • Accountability: ${p.direction === 'i_committed' ? `they told ${p.other} they'd ${p.commitment}` : `${p.other} asked them to ${p.commitment}`}${tie}${quiet}`,
+      `  • Accountability: ${p.direction === 'i_committed' ? `they told ${p.other} they'd ${p.commitment}` : `they're holding ${p.other} to ${p.commitment}`}${tie}${quiet}`,
     );
   }
   return lines.join('\n');

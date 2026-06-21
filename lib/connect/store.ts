@@ -28,7 +28,9 @@ export type FeedReply = {
 
 export type AccountabilityItem = {
   id: string;
-  direction: 'i_committed' | 'asked_of_me';
+  // 'i_committed' = the member is the doer (they made the commitment).
+  // 'holding'     = the member is the partner (the OTHER person committed; the member holds them to it).
+  direction: 'i_committed' | 'holding';
   commitment: string;
   otherName: string;
   status: string;
@@ -125,11 +127,11 @@ export async function getAccountability(db: Db, memberId: string): Promise<Accou
     id: string;
     commitment: string;
     status: string;
-    direction: 'i_committed' | 'asked_of_me';
+    direction: 'i_committed' | 'holding';
     other_name: string;
   }>(
     `select pact.id, pact.commitment, pact.status,
-            case when pact.doer_id = $1 then 'i_committed' else 'asked_of_me' end as direction,
+            case when pact.doer_id = $1 then 'i_committed' else 'holding' end as direction,
             case when pact.doer_id = $1 then partner.display_name else doer.display_name end as other_name
        from connect_pact pact
        join member_profile doer    on doer.member_id    = pact.doer_id

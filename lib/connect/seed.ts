@@ -61,8 +61,10 @@ export async function seedConnectDemo(db: Db, byName: Record<string, string>): P
   );
 
   // Accountability in both directions, so Tom sees one he made and one asked of him.
+  // doer commits; partner holds them to it. Verb-phrase commitments so both views read cleanly:
+  // "You told X you'd <commitment>" (doer) / "You're holding X to: <commitment>" (partner).
   await db.query(
     `insert into connect_pact (doer_id, partner_id, commitment) values ($1, $2, $3), ($4, $5, $6)`,
-    [tom, reshma, 'ride twice this week', reshma, tom, 'keep her honest on sleep'],
+    [tom, reshma, 'ride twice this week', reshma, tom, 'log sleep every night this week'],
   );
 }
