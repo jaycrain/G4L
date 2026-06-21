@@ -155,3 +155,80 @@ export async function getConnectProfile(db: Db, memberId: string): Promise<Conne
   );
   return rows[0] ? { handle: rows[0].handle, revealDefault: rows[0].reveal_default } : null;
 }
+
+export type ConnectNotification = {
+  id: string;
+  kind: 'reply' | 'cheer';
+  actorLabel: string; // handle, or real name if the actor's default identity is revealed
+  postId: string;
+  postLabel: string;
+  createdAt: string;
+  read: boolean;
+};
+
+// An actor's ambient label (cheers, notifications): their handle unless their default identity is revealed.
+const ACTOR_LABEL = `case when cp.reveal_default then mp.display_name else coalesce(cp.handle, mp.display_name) end`;
+
+/** A member's Connect notifications — who replied to / cheered their posts. */
+export async function getNotifications(db: Db, memberId: string, limit = 20): Promise<ConnectNotification[]> {
+  const { rows } = await db.query<{
+    id: string;
+    kind: 'reply' | 'cheer';
+    post_id: string;
+    created_at: string;
+    read_at: string | null;
+    post_title: string | null;
+    post_body: string | null;
+    actor_label: string;
+  }>(
+    `select n.id, n.kind, n.post_id, n.created_at, n.read_at,
+            p.title as post_title, p.body as post_body,
+            ${ACTOR_LABEL} as actor_label
+       from connect_notification n
+       join member_profile mp on mp.member_id = n.actor_id
+       left join connect_profile cp on cp.member_id = n.actor_id
+       left join connect_post p on p.id = n.post_id
+      where n.member_id = $1
+      order by n.created_at desc
+      limit $2`,
+    [memberId, limit],
+  );
+  return rows.map((r) => ({
+    id: r.id,
+    kind: r.kind,
+    actorLabel: r.actor_label,
+    postId: r.post_id,
+    postLabel: r.post_title ?? (r.post_body ? `${r.post_body.slice(0, 50)}…` : 'your post'),
+    createdAt: r.created_at,
+    read: r.read_at != null,
+  }));
+}
+
+export async function unreadNotificationCount(db: Db, memberId: string): Promise<number> {
+  const { rows } = await db.query<{ n: number }>(
+    `select count(*)::int as n from connect_notification where member_id = $1 and read_at is null`,
+    [memberId],
+  );
+  return Number(rows[0]?.n ?? 0);
+}
+
+export async function markNotificationsRead(db: Db, memberId: string): Promise<void> {
+  await db.query(`update connect_notification set read_at = now() where member_id = $1 and read_at is null`, [memberId]);
+}
+
+/** Who cheered each post — labels, chronological. */
+export async function getCheerersFor(db: Db, postIds: string[]): Promise<Record<string, string[]>> {
+  if (postIds.length === 0) return {};
+  const { rows } = await db.query<{ post_id: string; label: string }>(
+    `select x.target_id as post_id, ${ACTOR_LABEL} as label
+       from connect_reaction x
+       join member_profile mp on mp.member_id = x.member_id
+       left join connect_profile cp on cp.member_id = x.member_id
+      where x.target_kind = 'post' and x.kind = 'cheer' and x.target_id = any($1)
+      order by x.created_at asc`,
+    [postIds],
+  );
+  const out: Record<string, string[]> = {};
+  for (const r of rows) (out[r.post_id] ??= []).push(r.label);
+  return out;
+}

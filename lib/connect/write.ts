@@ -51,6 +51,20 @@ async function routeCrisis(db: Db, kind: 'post' | 'reply', id: string, body: str
   return true;
 }
 
+async function postAuthor(db: Db, postId: string): Promise<string | null> {
+  const { rows } = await db.query<{ author_id: string }>(`select author_id from connect_post where id = $1`, [postId]);
+  return rows[0]?.author_id ?? null;
+}
+
+// Notify the post author that someone engaged. Never notify yourself.
+async function notify(db: Db, recipientId: string | null, kind: 'reply' | 'cheer', actorId: string, postId: string, replyId: string | null = null): Promise<void> {
+  if (!recipientId || recipientId === actorId) return;
+  await db.query(
+    `insert into connect_notification (member_id, kind, actor_id, post_id, reply_id) values ($1, $2, $3, $4, $5)`,
+    [recipientId, kind, actorId, postId, replyId],
+  );
+}
+
 async function handleTaken(db: Db, handle: string, exceptMember?: string): Promise<boolean> {
   const { rows } = await db.query<{ e: boolean }>(
     `select exists(select 1 from connect_profile where lower(handle) = lower($1) and ($2::uuid is null or member_id <> $2)) as e`,
@@ -123,6 +137,7 @@ export async function createReply(
     [postId, memberId, body, input.showName],
   );
   await db.query(`update connect_post set last_activity_at = now() where id = $1`, [postId]);
+  await notify(db, await postAuthor(db, postId), 'reply', memberId, postId, rows[0]!.id);
   const crisis = await routeCrisis(db, 'reply', rows[0]!.id, body);
   return { ok: true, crisis };
 }
@@ -159,12 +174,19 @@ export async function toggleCheer(db: Db, memberId: string, targetKind: 'post' |
   );
   if (existing.rows[0]) {
     await db.query(`delete from connect_reaction where id = $1`, [existing.rows[0].id]);
+    if (targetKind === 'post') {
+      await db.query(
+        `delete from connect_notification where kind = 'cheer' and actor_id = $1 and post_id = $2`,
+        [memberId, targetId],
+      );
+    }
   } else {
     await db.query(
       `insert into connect_reaction (target_kind, target_id, member_id, kind) values ($1, $2, $3, 'cheer')
          on conflict do nothing`,
       [targetKind, targetId, memberId],
     );
+    if (targetKind === 'post') await notify(db, await postAuthor(db, targetId), 'cheer', memberId, targetId);
   }
 }
 

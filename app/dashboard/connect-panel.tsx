@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { getDb } from '../../lib/db/index.ts';
-import { getFeed, getAccountability } from '../../lib/connect/store.ts';
+import { getFeed, getAccountability, unreadNotificationCount } from '../../lib/connect/store.ts';
 import type { Db } from '../../lib/db/schema.ts';
 
 // Connect — the dashboard launch panel (sits right under the metrics strip). A glance at what's
@@ -9,7 +9,11 @@ import type { Db } from '../../lib/db/schema.ts';
 // Live now is Phase 2 (shown as a "soon" marker). Design: docs/connect-design.md.
 export default async function ConnectPanel({ memberId }: { memberId: string }) {
   const db = (await getDb()) as unknown as Db;
-  const [feed, pacts] = await Promise.all([getFeed(db, 1), getAccountability(db, memberId)]);
+  const [feed, pacts, unread] = await Promise.all([
+    getFeed(db, 1),
+    getAccountability(db, memberId),
+    unreadNotificationCount(db, memberId),
+  ]);
   const trending = feed[0] ?? null;
   const nudge = pacts[0] ?? null;
   const empty = !trending && !nudge;
@@ -21,9 +25,16 @@ export default async function ConnectPanel({ memberId }: { memberId: string }) {
           <h3 style={{ margin: 0, color: '#374F63' }}>Connect</h3>
           <p className="muted" style={{ margin: '0.2rem 0 0' }}>Reach out. Share, inspire, keep each other honest.</p>
         </div>
-        <span className="muted" style={{ fontSize: '0.75rem', whiteSpace: 'nowrap', border: '1px solid #E8E6E6', borderRadius: 6, padding: '2px 8px' }}>
-          Live now · soon
-        </span>
+        <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+          {unread > 0 && (
+            <span style={{ fontSize: '0.75rem', whiteSpace: 'nowrap', background: '#3B9495', color: '#fff', borderRadius: 6, padding: '2px 8px' }}>
+              {unread} new for you
+            </span>
+          )}
+          <span className="muted" style={{ fontSize: '0.75rem', whiteSpace: 'nowrap', border: '1px solid #E8E6E6', borderRadius: 6, padding: '2px 8px' }}>
+            Live now · soon
+          </span>
+        </div>
       </div>
 
       {empty ? (

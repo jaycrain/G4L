@@ -3,7 +3,15 @@ import { redirect } from 'next/navigation';
 import { getDb } from '../../../lib/db/index.ts';
 import { authorizeMember } from '../../authz.ts';
 import { logEvent } from '../../../lib/telemetry/store.ts';
-import { getFeed, getRepliesFor, getAccountability, getConnectProfile } from '../../../lib/connect/store.ts';
+import {
+  getFeed,
+  getRepliesFor,
+  getAccountability,
+  getConnectProfile,
+  getNotifications,
+  getCheerersFor,
+  markNotificationsRead,
+} from '../../../lib/connect/store.ts';
 import { composeAction, replyAction, cheerAction, checkInAction, reportAction, blockAction } from '../actions.ts';
 import { CRISIS_RESPONSE_US } from '../../../lib/agent/governance.ts';
 import type { Db } from '../../../lib/db/schema.ts';
@@ -38,8 +46,15 @@ export default async function ConnectPage({
     getConnectProfile(db, memberId),
     db.query<{ display_name: string }>('select display_name from member_profile where member_id = $1', [memberId]),
   ]);
-  const replies = await getRepliesFor(db, feed.map((p) => p.id), memberId);
+  const ids = feed.map((p) => p.id);
+  const [replies, cheerers, notifications] = await Promise.all([
+    getRepliesFor(db, ids, memberId),
+    getCheerersFor(db, ids),
+    getNotifications(db, memberId),
+  ]);
   await logEvent(db, memberId, 'page_view', { surface: 'connect' });
+  // Showing them here counts as seen — clear the unread badge for next visit.
+  await markNotificationsRead(db, memberId);
 
   const myName = nameRow.rows[0]?.display_name ?? 'my real name';
   const revealDefault = profile?.revealDefault ?? false;
@@ -59,6 +74,19 @@ export default async function ConnectPage({
       )}
       {notice && (
         <p className="muted" role="status" style={{ border: '1px solid var(--line, #E8E6E6)', borderRadius: 8, padding: '0.6rem 0.9rem', marginBottom: '1rem' }}>{notice}</p>
+      )}
+
+      {notifications.length > 0 && (
+        <section style={{ marginBottom: '1.25rem' }}>
+          <h3>For you</h3>
+          <div className="card">
+            {notifications.map((n) => (
+              <p key={n.id} style={{ margin: '0.4rem 0', fontWeight: n.read ? 400 : 600 }}>
+                {n.actorLabel} {n.kind === 'reply' ? 'replied to' : 'cheered'} your post “{n.postLabel}”
+              </p>
+            ))}
+          </div>
+        </section>
       )}
 
       {/* Compose */}
@@ -113,6 +141,9 @@ export default async function ConnectPage({
                     {p.iCheered ? '♥ Cheered' : '♡ Cheer'}{p.cheerCount ? ` · ${p.cheerCount}` : ''}
                   </button>
                 </form>
+                {(cheerers[p.id]?.length ?? 0) > 0 && (
+                  <span className="muted" style={{ fontSize: '0.8rem' }}>Cheered by {cheerers[p.id]!.join(', ')}</span>
+                )}
               </div>
 
               <form action={replyAction.bind(null, p.id)} style={{ marginTop: 8, display: 'flex', gap: 8 }}>
