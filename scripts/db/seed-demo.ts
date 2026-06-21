@@ -10,6 +10,7 @@ import { runOnboarding, submitIdq } from '../../lib/gateway/flow.ts';
 import { completeAsset } from '../../lib/assets/engine.ts';
 import { assignVariant } from '../../lib/assets/variant.ts';
 import { seedActivityFor, type Persona } from './seed-activity.ts';
+import { seedConnectDemo } from '../../lib/connect/seed.ts';
 
 type Demo = {
   fields: Parameters<typeof runOnboarding>[2];
@@ -61,6 +62,9 @@ export async function seedDemoMembers(
     if (d.persona) await seedActivityFor(db, ob.memberId, d.persona);
     seeded.push({ name: d.fields.displayName, memberId: ob.memberId });
   }
+  const byName: Record<string, string> = {};
+  for (const s of seeded) byName[s.name] = s.memberId;
+  await seedConnectDemo(db, byName);
   return seeded;
 }
 
