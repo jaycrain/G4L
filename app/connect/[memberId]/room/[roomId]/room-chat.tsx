@@ -39,7 +39,12 @@ export default function RoomChat({
     const data = await r.json().catch(() => ({}));
     const incoming: Msg[] = data.messages ?? [];
     if (incoming.length) {
-      setMessages((m) => [...m, ...incoming]);
+      // Dedupe by id — overlapping polls (and any cursor fuzz) must never double-render a message.
+      setMessages((m) => {
+        const have = new Set(m.map((x) => x.id));
+        const fresh = incoming.filter((x) => !have.has(x.id));
+        return fresh.length ? [...m, ...fresh] : m;
+      });
       lastAt.current = incoming[incoming.length - 1]!.createdAt;
     }
   }

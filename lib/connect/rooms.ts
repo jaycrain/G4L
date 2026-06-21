@@ -72,7 +72,9 @@ export async function getRoomMessages(db: Db, roomId: string, viewerId: string, 
        join member_profile mp on mp.member_id = m.author_id
        left join connect_profile cp on cp.member_id = m.author_id
       where m.room_id = $1 and m.status = 'visible'
-        and ($2::timestamptz is null or m.created_at > $2)
+        -- Truncate to ms: the cursor the client sends is ms-precision (ISO), but the column is µs —
+        -- comparing raw would re-match the boundary message every poll.
+        and ($2::timestamptz is null or date_trunc('milliseconds', m.created_at) > $2::timestamptz)
         and m.author_id not in (select blocked_member_id from connect_block where member_id = $3)
       order by m.created_at asc
       limit 200`,
