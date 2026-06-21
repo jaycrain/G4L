@@ -40,7 +40,7 @@ export default function PasswordForm() {
       <label htmlFor="confirm">Confirm new password</label>
       <PasswordField id="confirm" value={confirm} onChange={setConfirm} required minLength={8} autoComplete="new-password" />
       {msg && <p className={msg.ok ? 'muted' : 'error'} style={{ marginTop: '0.4rem' }}>{msg.ok ? '✓ ' : ''}{msg.text}</p>}
-      <button type="submit" disabled={pending}>
+      <button type="submit" className="btn-pill" disabled={pending}>
         {pending ? 'Updating…' : 'Change password'}
       </button>
     </form>

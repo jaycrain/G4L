@@ -92,10 +92,10 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
         <p className="muted">Signed in on this device.</p>
         <div className="draft-actions">
           <form action={logoutAction}>
-            <button type="submit">Log out</button>
+            <button type="submit" className="connect-cta">Log out →</button>
           </form>
           <form action={logoutEverywhereAction}>
-            <button type="submit" className="btn-secondary">Log out everywhere</button>
+            <button type="submit" className="connect-cta">Log out everywhere →</button>
           </form>
         </div>
       </div>

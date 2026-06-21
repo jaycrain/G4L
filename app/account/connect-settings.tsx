@@ -20,7 +20,7 @@ export default function ConnectSettings({
       <form action={setHandleAction} style={{ marginBottom: '1.1rem' }}>
         <label htmlFor="handle">Your handle</label>
         <input id="handle" name="handle" defaultValue={handle ?? ''} placeholder="e.g. uphill_again" style={{ marginRight: 8 }} />
-        <button type="submit">Save handle</button>
+        <button type="submit" className="btn-pill">Save handle</button>
         <p className="muted" style={{ fontSize: '0.85rem', marginTop: 6 }}>
           Your name in Connect. You start anonymous — others see this, not your real name. 3–20 letters, numbers, or underscores.
         </p>
@@ -31,7 +31,7 @@ export default function ConnectSettings({
           <input type="checkbox" name="revealDefault" defaultChecked={revealDefault} />
           Post under my real name ({myName}) by default
         </label>
-        <button type="submit" style={{ marginTop: 6 }}>Save default</button>
+        <button type="submit" className="btn-pill" style={{ marginTop: 6 }}>Save default</button>
       </form>
 
       <div>
@@ -41,11 +41,11 @@ export default function ConnectSettings({
         <div className="draft-actions">
           <form action={revealPastAction}>
             <input type="hidden" name="reveal" value="true" />
-            <button type="submit" className="btn-secondary">Show my name on all past posts</button>
+            <button type="submit" className="connect-cta">Show my name on all past posts →</button>
           </form>
           <form action={revealPastAction}>
             <input type="hidden" name="reveal" value="false" />
-            <button type="submit" className="btn-secondary">Hide it again</button>
+            <button type="submit" className="connect-cta">Hide it again →</button>
           </form>
         </div>
       </div>

@@ -25,7 +25,7 @@ export default function ProfileForm({ initialName }: { initialName: string }) {
       <label htmlFor="name">Name</label>
       <input id="name" type="text" value={name} onChange={(e) => setName(e.target.value)} required />
       {msg && <p className={msg.ok ? 'muted' : 'error'} style={{ marginTop: '0.4rem' }}>{msg.ok ? '✓ ' : ''}{msg.text}</p>}
-      <button type="submit" disabled={pending || name.trim() === initialName.trim()}>
+      <button type="submit" className="btn-pill" disabled={pending || name.trim() === initialName.trim()}>
         {pending ? 'Saving…' : 'Save'}
       </button>
     </form>
