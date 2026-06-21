@@ -6,7 +6,7 @@
 // through crisis routing + be reportable BEFORE this is exposed to real members. That lands in the
 // trust-&-safety slice; do not apply 0035 to prod / ship Connect writes without it.
 import { randomInt } from 'node:crypto';
-import { detectCrisis } from '../agent/governance.ts';
+import { assessCrisis } from './crisis.ts';
 import type { Db } from '../db/schema.ts';
 
 const ADJ = ['steady', 'quiet', 'uphill', 'open', 'keen', 'early', 'calm', 'plain', 'game', 'willing', 'morning', 'patient'];
@@ -46,8 +46,9 @@ export async function reportContent(
 // out — that's the point). We surface 988 resources to them (the caller redirects) and quietly file a
 // system report so a human follows up. AI Governance: crisis routing is always on.
 async function routeCrisis(db: Db, kind: 'post' | 'reply', id: string, body: string): Promise<boolean> {
-  if (!detectCrisis(body).flagged) return false;
-  await reportContent(db, null, kind, id, 'Auto-flagged by crisis-language detection — please follow up.', true, 'system');
+  const a = await assessCrisis(body);
+  if (!a.flagged) return false;
+  await reportContent(db, null, kind, id, `Auto-flagged by crisis detection (${a.source}) — please follow up.`, true, 'system');
   return true;
 }
 

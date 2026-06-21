@@ -28,7 +28,7 @@ export default async function RoomPage({ params }: { params: Promise<{ memberId:
   return (
     <>
       <div className="crumb">
-        <Link href={`/connect/${memberId}`} className="back-link">← Connect</Link>
+        <Link href={`/connect/${memberId}`} className="back-link">← G4L Community</Link>
       </div>
       <div className="hero">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12 }}>

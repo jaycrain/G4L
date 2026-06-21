@@ -16,7 +16,7 @@ import { listOpenRooms } from '../../../lib/connect/rooms.ts';
 import { CRISIS_RESPONSE_US } from '../../../lib/agent/governance.ts';
 import type { Db } from '../../../lib/db/schema.ts';
 
-export const metadata = { title: 'Connect — Grinta for Life' };
+export const metadata = { title: 'G4L Community — Grinta for Life' };
 
 // Connect — the community subpage (Reconnect → Connect with others). Phase 1, interactive: compose,
 // reply, cheer, and accountability check-ins (all server-action forms, no client JS required). Live
@@ -65,7 +65,7 @@ export default async function ConnectPage({
         <Link href={`/dashboard/${memberId}`} className="back-link">← Dashboard</Link>
       </div>
       <div className="hero">
-        <h1>Connect</h1>
+        <h1>G4L Community</h1>
         <p className="heromore">Reach out. Share the wins and the hard parts. Keep each other honest.</p>
       </div>
 

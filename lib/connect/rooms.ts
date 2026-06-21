@@ -1,7 +1,7 @@
 // Connect Live now — live rooms (Phase 2). Messages are persisted so the room is moderatable and
 // every message runs through crisis routing, same posture as posts/replies. Delivery is polling in
 // 2a; Supabase Realtime in 2b. Design: docs/connect-design.md.
-import { detectCrisis } from '../agent/governance.ts';
+import { assessCrisis } from './crisis.ts';
 import { ensureProfile, reportContent } from './write.ts';
 import type { Db } from '../db/schema.ts';
 
@@ -129,12 +129,11 @@ export async function postRoomMessage(
   );
   await db.query(`update connect_room set last_activity_at = now() where id = $1`, [roomId]);
   // Crisis routing — never censor; surface help to them (caller) and file a system report for review.
-  let crisis = false;
-  if (detectCrisis(text).flagged) {
-    crisis = true;
-    await reportContent(db, null, 'room_message', rows[0]!.id, 'Auto-flagged by crisis-language detection — please follow up.', true, 'system');
+  const a = await assessCrisis(text);
+  if (a.flagged) {
+    await reportContent(db, null, 'room_message', rows[0]!.id, `Auto-flagged by crisis detection (${a.source}) — please follow up.`, true, 'system');
   }
-  return { ok: true, crisis };
+  return { ok: true, crisis: a.flagged };
 }
 
 export async function reportRoomMessage(db: Db, reporterId: string, messageId: string, reason: string, concern: boolean): Promise<void> {
