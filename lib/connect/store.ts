@@ -65,6 +65,7 @@ export async function getFeed(db: Db, limit = 50, viewerId: string | null = null
        left join connect_profile cp on cp.member_id = p.author_id
        left join reclaim_item ri on ri.id = p.reclaim_item_id
       where p.status = 'visible'
+        and p.author_id not in (select blocked_member_id from connect_block where member_id = $2)
       order by p.last_activity_at desc
       limit $1`,
     [limit, viewerId],
@@ -85,7 +86,7 @@ export async function getFeed(db: Db, limit = 50, viewerId: string | null = null
 }
 
 /** Visible replies for the given posts, grouped by post id (chronological). */
-export async function getRepliesFor(db: Db, postIds: string[]): Promise<Record<string, FeedReply[]>> {
+export async function getRepliesFor(db: Db, postIds: string[], viewerId: string | null = null): Promise<Record<string, FeedReply[]>> {
   if (postIds.length === 0) return {};
   const { rows } = await db.query<{
     id: string;
@@ -101,8 +102,9 @@ export async function getRepliesFor(db: Db, postIds: string[]): Promise<Record<s
        join member_profile mp on mp.member_id = r.author_id
        left join connect_profile cp on cp.member_id = r.author_id
       where r.post_id = any($1) and r.status = 'visible'
+        and r.author_id not in (select blocked_member_id from connect_block where member_id = $2)
       order by r.created_at asc`,
-    [postIds],
+    [postIds, viewerId],
   );
   const out: Record<string, FeedReply[]> = {};
   for (const r of rows) {

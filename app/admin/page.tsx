@@ -7,6 +7,8 @@ import { listFeedback, type FeedbackStatus } from '../../lib/feedback/store.ts';
 import { setFeedbackStatusAction } from '../feedback-actions.ts';
 import { getOnboardingReturns, keepTalkingStats } from '../../lib/telemetry/store.ts';
 import { getHealth } from '../../lib/health/store.ts';
+import { getModerationQueue, openReportCount } from '../../lib/connect/moderation.ts';
+import { moderateAction } from './connect-actions.ts';
 import { isAdmin } from '../authz.ts';
 import { initials } from '../../lib/member/avatar.ts';
 import type { Db } from '../../lib/db/schema.ts';
@@ -29,6 +31,8 @@ export default async function AdminHome() {
   const openFeedback = feedback.filter((f) => f.status !== 'resolved');
   const onboardingStats = keepTalkingStats(await getOnboardingReturns(db));
   const aiHealth = await getHealth(db, 'ai');
+  const modQueue = await getModerationQueue(db);
+  const modCount = await openReportCount(db);
   const now = Date.now();
   const summary = summarizeRoster(roster, now);
   const NEXT_STATUS: Record<FeedbackStatus, { to: FeedbackStatus; label: string }[]> = {
@@ -53,6 +57,46 @@ export default async function AdminHome() {
           </p>
         ) : (
           <p className="muted">No check recorded yet — the probe runs every 15 minutes.</p>
+        )}
+      </div>
+
+      <div className={`card${modCount.safety > 0 ? ' health-down' : ''}`}>
+        <h3>Connect moderation ({modCount.total} open{modCount.safety > 0 ? ` · ${modCount.safety} safety` : ''})</h3>
+        {modQueue.length === 0 ? (
+          <p className="muted">No open reports. Member reports and crisis flags land here, safety concerns first.</p>
+        ) : (
+          modQueue.map((it) => (
+            <div key={it.reportId} className="fb-item">
+              <div className="fb-item-head">
+                {it.concernForSafety && <span className="fb-kind-chip issue">safety</span>}
+                <span className="fb-kind-chip">{it.source === 'system' ? 'crisis flag' : 'report'}</span>
+                <strong>{it.subjectKind}</strong>
+                {it.authorName && <span className="muted">· by {it.authorName}</span>}
+                <span className="muted">· {relativeTime(it.createdAt, now)}</span>
+                {it.contentStatus && it.contentStatus !== 'visible' && <span className="pill approved">{it.contentStatus}</span>}
+              </div>
+              {it.reason && <p className="fb-body">{it.reason}</p>}
+              {it.contentBody && (
+                <p className="fb-ctx">“{it.postTitle ? `${it.postTitle} — ` : ''}{it.contentBody.slice(0, 200)}”</p>
+              )}
+              <div className="fb-ctx">{it.reporterName ? `reported by ${it.reporterName}` : 'auto-flagged by the system'}</div>
+              <div className="fb-status-row">
+                {(it.subjectKind === 'post' || it.subjectKind === 'reply') && (
+                  <>
+                    <form action={moderateAction.bind(null, 'hide', it.reportId, it.subjectKind, it.subjectId)}>
+                      <button type="submit">Hide</button>
+                    </form>
+                    <form action={moderateAction.bind(null, 'remove', it.reportId, it.subjectKind, it.subjectId)}>
+                      <button type="submit">Remove</button>
+                    </form>
+                  </>
+                )}
+                <form action={moderateAction.bind(null, 'dismiss', it.reportId, it.subjectKind, it.subjectId)}>
+                  <button type="submit">Dismiss</button>
+                </form>
+              </div>
+            </div>
+          ))
         )}
       </div>
 

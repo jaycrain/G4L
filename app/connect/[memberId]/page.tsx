@@ -4,7 +4,8 @@ import { getDb } from '../../../lib/db/index.ts';
 import { authorizeMember } from '../../authz.ts';
 import { logEvent } from '../../../lib/telemetry/store.ts';
 import { getFeed, getRepliesFor, getAccountability, getConnectProfile } from '../../../lib/connect/store.ts';
-import { composeAction, replyAction, cheerAction, checkInAction } from '../actions.ts';
+import { composeAction, replyAction, cheerAction, checkInAction, reportAction, blockAction } from '../actions.ts';
+import { CRISIS_RESPONSE_US } from '../../../lib/agent/governance.ts';
 import type { Db } from '../../../lib/db/schema.ts';
 
 export const metadata = { title: 'Connect — Grinta for Life' };
@@ -20,9 +21,16 @@ function ago(iso: string): string {
   return `${Math.round(hrs / 24)}d ago`;
 }
 
-export default async function ConnectPage({ params }: { params: Promise<{ memberId: string }> }) {
+export default async function ConnectPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ memberId: string }>;
+  searchParams: Promise<{ care?: string; notice?: string }>;
+}) {
   const { memberId } = await params;
   if (!(await authorizeMember(memberId))) redirect('/login');
+  const { care, notice } = await searchParams;
   const db = (await getDb()) as unknown as Db;
   const [feed, pacts, profile, nameRow] = await Promise.all([
     getFeed(db, 50, memberId),
@@ -30,7 +38,7 @@ export default async function ConnectPage({ params }: { params: Promise<{ member
     getConnectProfile(db, memberId),
     db.query<{ display_name: string }>('select display_name from member_profile where member_id = $1', [memberId]),
   ]);
-  const replies = await getRepliesFor(db, feed.map((p) => p.id));
+  const replies = await getRepliesFor(db, feed.map((p) => p.id), memberId);
   await logEvent(db, memberId, 'page_view', { surface: 'connect' });
 
   const myName = nameRow.rows[0]?.display_name ?? 'my real name';
@@ -45,6 +53,13 @@ export default async function ConnectPage({ params }: { params: Promise<{ member
         <h1>Connect</h1>
         <p className="heromore">Reach out. Share the wins and the hard parts. Keep each other honest.</p>
       </div>
+
+      {care && (
+        <div className="crisis" role="alert" style={{ marginBottom: '1rem' }}>{CRISIS_RESPONSE_US}</div>
+      )}
+      {notice && (
+        <p className="muted" role="status" style={{ border: '1px solid var(--line, #E8E6E6)', borderRadius: 8, padding: '0.6rem 0.9rem', marginBottom: '1rem' }}>{notice}</p>
+      )}
 
       {/* Compose */}
       <form action={composeAction} className="card" style={{ marginBottom: '1.25rem' }}>
@@ -105,6 +120,20 @@ export default async function ConnectPage({ params }: { params: Promise<{ member
                 <input name="body" required placeholder="Reply…" style={{ flex: 1 }} />
                 <button type="submit" className="btn-pill">Reply <span aria-hidden="true">→</span></button>
               </form>
+
+              <details style={{ marginTop: 8 }}>
+                <summary className="muted" style={{ fontSize: '0.78rem', cursor: 'pointer' }}>Report or block</summary>
+                <form action={reportAction.bind(null, 'post', p.id)} style={{ margin: '8px 0 4px' }}>
+                  <input name="reason" placeholder="What's wrong with this post?" style={{ width: '100%' }} />
+                  <label className="muted" style={{ fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: 6, margin: '5px 0' }}>
+                    <input type="checkbox" name="concern" /> I&apos;m worried about their safety
+                  </label>
+                  <button type="submit" className="connect-cta">Report</button>
+                </form>
+                <form action={blockAction.bind(null, p.id)}>
+                  <button type="submit" className="connect-cta">Block this person</button>
+                </form>
+              </details>
             </div>
           ))
         )}

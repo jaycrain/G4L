@@ -12,6 +12,8 @@ import {
   setHandle,
   setRevealDefault,
   revealPast,
+  reportTarget,
+  blockPostAuthor,
 } from '../../lib/connect/write.ts';
 import type { Db } from '../../lib/db/schema.ts';
 
@@ -30,21 +32,37 @@ function refresh(memberId: string): void {
 
 export async function composeAction(formData: FormData): Promise<void> {
   const { db, memberId } = await actor();
-  await createPost(db, memberId, {
+  const res = await createPost(db, memberId, {
     title: String(formData.get('title') ?? ''),
     body: String(formData.get('body') ?? ''),
     showName: formData.get('showName') === 'on',
   });
   refresh(memberId);
+  if (!res.ok) redirect(`/connect/${memberId}?notice=${encodeURIComponent(res.error)}`);
+  if (res.crisis) redirect(`/connect/${memberId}?care=1`);
 }
 
 export async function replyAction(postId: string, formData: FormData): Promise<void> {
   const { db, memberId } = await actor();
-  await createReply(db, memberId, postId, {
+  const res = await createReply(db, memberId, postId, {
     body: String(formData.get('body') ?? ''),
     showName: formData.get('showName') === 'on',
   });
   refresh(memberId);
+  if (!res.ok) redirect(`/connect/${memberId}?notice=${encodeURIComponent(res.error)}`);
+  if (res.crisis) redirect(`/connect/${memberId}?care=1`);
+}
+
+export async function reportAction(subjectKind: 'post' | 'reply', subjectId: string, formData: FormData): Promise<void> {
+  const { db, memberId } = await actor();
+  await reportTarget(db, memberId, subjectKind, subjectId, String(formData.get('reason') ?? ''), formData.get('concern') === 'on');
+  redirect(`/connect/${memberId}?notice=${encodeURIComponent('Thanks — a moderator will review this.')}`);
+}
+
+export async function blockAction(postId: string): Promise<void> {
+  const { db, memberId } = await actor();
+  await blockPostAuthor(db, memberId, postId);
+  redirect(`/connect/${memberId}?notice=${encodeURIComponent('Blocked. You won’t see their posts.')}`);
 }
 
 export async function cheerAction(targetKind: 'post' | 'reply', targetId: string): Promise<void> {

@@ -6,6 +6,7 @@
 // through crisis routing + be reportable BEFORE this is exposed to real members. That lands in the
 // trust-&-safety slice; do not apply 0035 to prod / ship Connect writes without it.
 import { randomInt } from 'node:crypto';
+import { detectCrisis } from '../agent/governance.ts';
 import type { Db } from '../db/schema.ts';
 
 const ADJ = ['steady', 'quiet', 'uphill', 'open', 'keen', 'early', 'calm', 'plain', 'game', 'willing', 'morning', 'patient'];
@@ -13,7 +14,42 @@ const NOUN = ['rider', 'runner', 'walker', 'maker', 'climber', 'road', 'mile', '
 
 const HANDLE_RE = /^[a-z0-9_]{3,20}$/i;
 
-type WriteResult = { ok: true } | { ok: false; error: string };
+type WriteResult = { ok: true; crisis?: boolean } | { ok: false; error: string };
+
+// Per-member posting caps (a quiet brake on spam/pile-ons), counted over a short window.
+async function rateLimited(db: Db, memberId: string, table: 'connect_post' | 'connect_reply', cap: number): Promise<boolean> {
+  const { rows } = await db.query<{ n: number }>(
+    `select count(*)::int as n from ${table} where author_id = $1 and created_at > now() - interval '5 minutes'`,
+    [memberId],
+  );
+  return Number(rows[0]?.n ?? 0) >= cap;
+}
+
+/** File a report. reporterId is null for system-generated (crisis) flags. */
+export async function reportContent(
+  db: Db,
+  reporterId: string | null,
+  subjectKind: 'post' | 'reply' | 'member',
+  subjectId: string,
+  reason: string | null,
+  concernForSafety: boolean,
+  source: 'member' | 'system' = 'member',
+): Promise<void> {
+  await db.query(
+    `insert into connect_report (reporter_id, subject_kind, subject_id, reason, concern_for_safety, source)
+       values ($1, $2, $3, $4, $5, $6)`,
+    [reporterId, subjectKind, subjectId, reason?.trim() || null, concernForSafety, source],
+  );
+}
+
+// Crisis routing: composed content that trips detectCrisis is NEVER censored (the member is reaching
+// out — that's the point). We surface 988 resources to them (the caller redirects) and quietly file a
+// system report so a human follows up. AI Governance: crisis routing is always on.
+async function routeCrisis(db: Db, kind: 'post' | 'reply', id: string, body: string): Promise<boolean> {
+  if (!detectCrisis(body).flagged) return false;
+  await reportContent(db, null, kind, id, 'Auto-flagged by crisis-language detection — please follow up.', true, 'system');
+  return true;
+}
 
 async function handleTaken(db: Db, handle: string, exceptMember?: string): Promise<boolean> {
   const { rows } = await db.query<{ e: boolean }>(
@@ -58,12 +94,16 @@ export async function createPost(
 ): Promise<WriteResult> {
   const body = (input.body ?? '').trim();
   if (!body) return { ok: false, error: 'Write something to share first.' };
+  if (await rateLimited(db, memberId, 'connect_post', 5)) {
+    return { ok: false, error: 'You’re posting quickly — take a breath and try again in a minute.' };
+  }
   await ensureProfile(db, memberId);
-  await db.query(
-    `insert into connect_post (author_id, title, body, show_name) values ($1, $2, $3, $4)`,
+  const { rows } = await db.query<{ id: string }>(
+    `insert into connect_post (author_id, title, body, show_name) values ($1, $2, $3, $4) returning id`,
     [memberId, input.title?.trim() || null, body, input.showName],
   );
-  return { ok: true };
+  const crisis = await routeCrisis(db, 'post', rows[0]!.id, body);
+  return { ok: true, crisis };
 }
 
 export async function createReply(
@@ -74,13 +114,41 @@ export async function createReply(
 ): Promise<WriteResult> {
   const body = (input.body ?? '').trim();
   if (!body) return { ok: false, error: 'Write a reply first.' };
+  if (await rateLimited(db, memberId, 'connect_reply', 15)) {
+    return { ok: false, error: 'You’re replying quickly — take a breath and try again in a minute.' };
+  }
   await ensureProfile(db, memberId);
-  await db.query(
-    `insert into connect_reply (post_id, author_id, body, show_name) values ($1, $2, $3, $4)`,
+  const { rows } = await db.query<{ id: string }>(
+    `insert into connect_reply (post_id, author_id, body, show_name) values ($1, $2, $3, $4) returning id`,
     [postId, memberId, body, input.showName],
   );
   await db.query(`update connect_post set last_activity_at = now() where id = $1`, [postId]);
-  return { ok: true };
+  const crisis = await routeCrisis(db, 'reply', rows[0]!.id, body);
+  return { ok: true, crisis };
+}
+
+/** Block another member; their content drops out of this member's feed. By post (keeps author ids
+ *  off the client — the page only knows post ids, preserving pseudonymity). */
+export async function blockPostAuthor(db: Db, memberId: string, postId: string): Promise<void> {
+  const { rows } = await db.query<{ author_id: string }>(`select author_id from connect_post where id = $1`, [postId]);
+  const author = rows[0]?.author_id;
+  if (!author || author === memberId) return;
+  await db.query(
+    `insert into connect_block (member_id, blocked_member_id) values ($1, $2) on conflict do nothing`,
+    [memberId, author],
+  );
+}
+
+/** Report a post or reply (member-initiated). concernForSafety jumps the moderation queue. */
+export async function reportTarget(
+  db: Db,
+  reporterId: string,
+  subjectKind: 'post' | 'reply',
+  subjectId: string,
+  reason: string,
+  concernForSafety: boolean,
+): Promise<void> {
+  await reportContent(db, reporterId, subjectKind, subjectId, reason, concernForSafety, 'member');
 }
 
 /** Toggle a cheer on a post or reply (the inspire signal). */
