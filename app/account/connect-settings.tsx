@@ -19,8 +19,10 @@ export default function ConnectSettings({
 
       <form action={setHandleAction} style={{ marginBottom: '1.1rem' }}>
         <label htmlFor="handle">Your handle</label>
-        <input id="handle" name="handle" defaultValue={handle ?? ''} placeholder="e.g. uphill_again" style={{ marginRight: 8 }} />
-        <button type="submit" className="btn-pill">Save handle</button>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 4 }}>
+          <input id="handle" name="handle" defaultValue={handle ?? ''} placeholder="e.g. uphill_again" style={{ flex: 1 }} />
+          <button type="submit" className="btn-pill">Save handle</button>
+        </div>
         <p className="muted" style={{ fontSize: '0.85rem', marginTop: 6 }}>
           Your name in Connect. You start anonymous — others see this, not your real name. 3–20 letters, numbers, or underscores.
         </p>
@@ -31,7 +33,7 @@ export default function ConnectSettings({
           <input type="checkbox" name="revealDefault" defaultChecked={revealDefault} />
           Post under my real name ({myName}) by default
         </label>
-        <button type="submit" className="btn-pill" style={{ marginTop: 6 }}>Save default</button>
+        <button type="submit" className="btn-pill" style={{ marginTop: '0.7rem' }}>Save default</button>
       </form>
 
       <div>

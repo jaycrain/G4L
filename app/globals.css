@@ -632,7 +632,8 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .connect-cta { background: none; border: none; border-radius: 0; padding: 0; margin: 0; font: inherit; font-size: 0.85rem; font-weight: 600; color: var(--teal); text-decoration: none; cursor: pointer; }
 .connect-cta:hover { background: none; color: var(--teal); text-decoration: underline; }
 /* Primary pill action with arrow — the shared standard behind "Talk to me" / "Open this Session". */
-.btn-pill { display: inline-flex; align-items: center; gap: 0.4rem; margin: 0; background: var(--teal); color: var(--white); font-weight: 600; font-size: 0.85rem; padding: 0.45rem 1rem; border-radius: 20px; }
+.btn-pill { display: inline-flex; align-items: center; gap: 0.4rem; margin: 0; background: var(--teal); color: var(--white); font-weight: 600; font-size: 0.85rem; padding: 0.45rem 1rem; border-radius: 20px; text-decoration: none; }
+.btn-pill:hover { text-decoration: none; }
 .btn-pill:hover { background: #347f80; }
 .connect-cta:disabled, .btn-pill:disabled { opacity: 0.45; cursor: default; }
 .btn-pill:disabled:hover { background: var(--teal); }
