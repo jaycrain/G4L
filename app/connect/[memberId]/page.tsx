@@ -10,9 +10,8 @@ import {
   getConnectProfile,
   getNotifications,
   getCheerersFor,
-  markNotificationsRead,
 } from '../../../lib/connect/store.ts';
-import { composeAction, replyAction, cheerAction, checkInAction, reportAction, blockAction } from '../actions.ts';
+import { composeAction, replyAction, cheerAction, checkInAction, reportAction, blockAction, markAllReadAction } from '../actions.ts';
 import { CRISIS_RESPONSE_US } from '../../../lib/agent/governance.ts';
 import type { Db } from '../../../lib/db/schema.ts';
 
@@ -53,9 +52,8 @@ export default async function ConnectPage({
     getNotifications(db, memberId),
   ]);
   await logEvent(db, memberId, 'page_view', { surface: 'connect' });
-  // Showing them here counts as seen — clear the unread badge for next visit.
-  await markNotificationsRead(db, memberId);
 
+  const unreadCount = notifications.filter((n) => !n.read).length;
   const myName = nameRow.rows[0]?.display_name ?? 'my real name';
   const revealDefault = profile?.revealDefault ?? false;
 
@@ -78,12 +76,39 @@ export default async function ConnectPage({
 
       {notifications.length > 0 && (
         <section style={{ marginBottom: '1.25rem' }}>
-          <h3>For you</h3>
-          <div className="card">
-            {notifications.map((n) => (
-              <p key={n.id} style={{ margin: '0.4rem 0', fontWeight: n.read ? 400 : 600 }}>
-                {n.actorLabel} {n.kind === 'reply' ? 'replied to' : 'cheered'} your post “{n.postLabel}”
-              </p>
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12 }}>
+            <h3 style={{ margin: 0 }}>For you{unreadCount > 0 ? ` (${unreadCount})` : ''}</h3>
+            {unreadCount > 0 && (
+              <form action={markAllReadAction}>
+                <button type="submit" className="connect-cta">Mark all as read</button>
+              </form>
+            )}
+          </div>
+          <div className="card" style={{ padding: 0, marginTop: '0.6rem', overflow: 'hidden' }}>
+            {notifications.map((n, i) => (
+              <a
+                key={n.id}
+                href={`#post-${n.postId}`}
+                style={{
+                  display: 'flex',
+                  alignItems: 'baseline',
+                  gap: 10,
+                  padding: '0.65rem 0.9rem',
+                  borderTop: i ? '1px solid var(--light-grey, #E8E6E6)' : 'none',
+                  background: n.read ? 'transparent' : 'rgba(59, 148, 149, 0.07)',
+                  textDecoration: 'none',
+                  color: 'inherit',
+                }}
+              >
+                <span
+                  aria-hidden="true"
+                  style={{ width: 8, height: 8, borderRadius: '50%', flex: 'none', position: 'relative', top: 6, background: n.read ? 'transparent' : 'var(--teal, #3B9495)' }}
+                />
+                <span style={{ fontWeight: n.read ? 400 : 600 }}>
+                  {n.actorLabel} {n.kind === 'reply' ? 'replied to' : 'cheered'} your post “{n.postLabel}”
+                </span>
+                <span className="muted" style={{ marginLeft: 'auto', fontSize: '0.78rem', whiteSpace: 'nowrap' }}>{ago(n.createdAt)}</span>
+              </a>
             ))}
           </div>
         </section>
@@ -118,7 +143,7 @@ export default async function ConnectPage({
           <p className="muted">No topics yet — be the first to share something.</p>
         ) : (
           feed.map((p) => (
-            <div className="card" key={p.id} style={{ marginBottom: '0.75rem' }}>
+            <div className="card" key={p.id} id={`post-${p.id}`} style={{ marginBottom: '0.75rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'baseline' }}>
                 <strong>{p.title ?? p.body}</strong>
                 <span className="muted" style={{ whiteSpace: 'nowrap', fontSize: '0.8rem' }}>{ago(p.lastActivityAt)}</span>

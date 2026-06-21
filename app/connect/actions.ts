@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { getDb } from '../../lib/db/index.ts';
 import { currentMemberId } from '../auth.ts';
+import { markNotificationsRead } from '../../lib/connect/store.ts';
 import {
   createPost,
   createReply,
@@ -63,6 +64,13 @@ export async function blockAction(postId: string): Promise<void> {
   const { db, memberId } = await actor();
   await blockPostAuthor(db, memberId, postId);
   redirect(`/connect/${memberId}?notice=${encodeURIComponent('Blocked. You won’t see their posts.')}`);
+}
+
+export async function markAllReadAction(): Promise<void> {
+  const { db, memberId } = await actor();
+  await markNotificationsRead(db, memberId);
+  refresh(memberId);
+  redirect(`/connect/${memberId}`);
 }
 
 export async function cheerAction(targetKind: 'post' | 'reply', targetId: string): Promise<void> {
