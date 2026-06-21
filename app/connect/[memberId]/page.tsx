@@ -3,14 +3,15 @@ import { redirect } from 'next/navigation';
 import { getDb } from '../../../lib/db/index.ts';
 import { authorizeMember } from '../../authz.ts';
 import { logEvent } from '../../../lib/telemetry/store.ts';
-import { getFeed, getAccountability } from '../../../lib/connect/store.ts';
+import { getFeed, getRepliesFor, getAccountability, getConnectProfile } from '../../../lib/connect/store.ts';
+import { composeAction, replyAction, cheerAction, checkInAction } from '../actions.ts';
 import type { Db } from '../../../lib/db/schema.ts';
 
 export const metadata = { title: 'Connect — Grinta for Life' };
 
-// Connect — the community subpage (Reconnect → Connect with others). Phase 1, read path: the global
-// feed (Topics) + accountability, with Live now held for Phase 2. Composing/replying/reacting and the
-// dashboard launch panel land in the next slices. Design: docs/connect-design.md.
+// Connect — the community subpage (Reconnect → Connect with others). Phase 1, interactive: compose,
+// reply, cheer, and accountability check-ins (all server-action forms, no client JS required). Live
+// now is Phase 2. Design: docs/connect-design.md.
 function ago(iso: string): string {
   const mins = Math.max(1, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
   if (mins < 60) return `${mins}m ago`;
@@ -23,8 +24,17 @@ export default async function ConnectPage({ params }: { params: Promise<{ member
   const { memberId } = await params;
   if (!(await authorizeMember(memberId))) redirect('/login');
   const db = (await getDb()) as unknown as Db;
-  const [feed, pacts] = await Promise.all([getFeed(db), getAccountability(db, memberId)]);
+  const [feed, pacts, profile, nameRow] = await Promise.all([
+    getFeed(db, 50, memberId),
+    getAccountability(db, memberId),
+    getConnectProfile(db, memberId),
+    db.query<{ display_name: string }>('select display_name from member_profile where member_id = $1', [memberId]),
+  ]);
+  const replies = await getRepliesFor(db, feed.map((p) => p.id));
   await logEvent(db, memberId, 'page_view', { surface: 'connect' });
+
+  const myName = nameRow.rows[0]?.display_name ?? 'my real name';
+  const revealDefault = profile?.revealDefault ?? false;
 
   return (
     <>
@@ -36,9 +46,18 @@ export default async function ConnectPage({ params }: { params: Promise<{ member
         <p className="heromore">Reach out. Share the wins and the hard parts. Keep each other honest.</p>
       </div>
 
-      <p className="muted" style={{ border: '1px solid var(--line, #E8E6E6)', borderRadius: 8, padding: '0.7rem 0.9rem' }}>
-        Share a win, a setback, or a question with the group… <em>(composing lands in the next slice)</em>
-      </p>
+      {/* Compose */}
+      <form action={composeAction} className="card" style={{ marginBottom: '1.25rem' }}>
+        <input name="title" placeholder="Title (optional)" style={{ width: '100%', marginBottom: 8 }} />
+        <textarea name="body" required rows={3} placeholder="Share a win, a setback, or a question with the group…" style={{ width: '100%' }} />
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginTop: 8, flexWrap: 'wrap' }}>
+          <label className="muted" style={{ fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <input type="checkbox" name="showName" defaultChecked={revealDefault} /> Post under my real name ({myName})
+            {profile && <span> — otherwise as {profile.handle}</span>}
+          </label>
+          <button type="submit" className="btn">Share</button>
+        </div>
+      </form>
 
       <section>
         <h3 style={{ color: '#374F63' }}>
@@ -62,10 +81,30 @@ export default async function ConnectPage({ params }: { params: Promise<{ member
                 <span className="muted" style={{ whiteSpace: 'nowrap', fontSize: '0.8rem' }}>{ago(p.lastActivityAt)}</span>
               </div>
               {p.title && <p style={{ margin: '0.35rem 0 0' }}>{p.body}</p>}
-              <p className="muted" style={{ margin: '0.4rem 0 0', fontSize: '0.85rem' }}>
+              <p className="muted" style={{ margin: '0.4rem 0 0.6rem', fontSize: '0.85rem' }}>
                 {p.replyCount} {p.replyCount === 1 ? 'reply' : 'replies'} · {p.authorLabel}
-                {p.category ? ` · ${p.category}` : ''}
               </p>
+
+              {(replies[p.id] ?? []).map((r) => (
+                <div key={r.id} style={{ borderLeft: '2px solid #E8E6E6', padding: '0.15rem 0 0.15rem 0.7rem', margin: '0.35rem 0' }}>
+                  {r.body}
+                  <span className="muted" style={{ fontSize: '0.78rem' }}> — {r.authorLabel}, {ago(r.createdAt)}</span>
+                </div>
+              ))}
+
+              <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginTop: 8 }}>
+                <form action={cheerAction.bind(null, 'post', p.id)}>
+                  <button type="submit" className="btn-quiet" style={{ fontSize: '0.85rem' }}>
+                    {p.iCheered ? '♥ Cheered' : '♡ Cheer'}{p.cheerCount ? ` · ${p.cheerCount}` : ''}
+                  </button>
+                </form>
+              </div>
+
+              <form action={replyAction.bind(null, p.id)} style={{ marginTop: 8, display: 'flex', gap: 8 }}>
+                <input type="hidden" name="showName" value={revealDefault ? 'on' : ''} />
+                <input name="body" required placeholder="Reply…" style={{ flex: 1 }} />
+                <button type="submit" className="btn-quiet">Reply</button>
+              </form>
             </div>
           ))
         )}
@@ -78,11 +117,16 @@ export default async function ConnectPage({ params }: { params: Promise<{ member
         ) : (
           <div className="card">
             {pacts.map((it) => (
-              <p key={it.id} style={{ margin: '0.5rem 0' }}>
-                {it.direction === 'i_committed'
-                  ? `You told ${it.otherName} you'd ${it.commitment}.`
-                  : `${it.otherName} asked you to ${it.commitment}.`}
-              </p>
+              <div key={it.id} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center', padding: '0.4rem 0' }}>
+                <span>
+                  {it.direction === 'i_committed'
+                    ? `You told ${it.otherName} you'd ${it.commitment}.`
+                    : `${it.otherName} asked you to ${it.commitment}.`}
+                </span>
+                <form action={checkInAction.bind(null, it.id)}>
+                  <button type="submit" className="btn-quiet" style={{ whiteSpace: 'nowrap' }}>Check in</button>
+                </form>
+              </div>
             ))}
           </div>
         )}

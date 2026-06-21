@@ -10,13 +10,15 @@ import AvatarUpload from './avatar-upload.tsx';
 import ProfileForm from './profile-form.tsx';
 import PasswordForm from './password-form.tsx';
 import StravaConnect from './strava-connect.tsx';
+import ConnectSettings from './connect-settings.tsx';
 import { getConnection } from '../../lib/activity/store.ts';
+import { getConnectProfile } from '../../lib/connect/store.ts';
 import { stravaConfigured } from '../../lib/activity/strava.ts';
 import type { Db } from '../../lib/db/schema.ts';
 
 export const metadata = { title: 'Your account — Grinta for Life' };
 
-export default async function AccountPage() {
+export default async function AccountPage({ searchParams }: { searchParams: Promise<{ connect?: string }> }) {
   const memberId = await currentMemberId();
   if (!memberId) redirect('/login');
   const db = (await getDb()) as unknown as Db;
@@ -29,6 +31,8 @@ export default async function AccountPage() {
   if (!m) redirect('/login');
 
   const stravaConn = await getConnection(db, memberId, 'strava');
+  const connectProfile = await getConnectProfile(db, memberId);
+  const connectMsg = (await searchParams).connect;
 
   return (
     <>
@@ -68,6 +72,16 @@ export default async function AccountPage() {
           athleteName={stravaConn?.athleteName ?? null}
           configured={stravaConfigured()}
           showManage
+        />
+      </div>
+
+      <div className="card">
+        <h3>Connect</h3>
+        <ConnectSettings
+          handle={connectProfile?.handle ?? null}
+          revealDefault={connectProfile?.revealDefault ?? false}
+          myName={m.display_name}
+          msg={connectMsg}
         />
       </div>
 

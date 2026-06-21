@@ -1,8 +1,7 @@
-// Connect — read path for the subpage (Phase 1). Writes (compose, reply, react, pact, report) land
-// next. Identity rule: a member is pseudonymous by default — we show their handle unless the post's
-// own `show_name` is set (the per-post reveal), in which case we show their real display name.
-// Access is enforced upstream by authorizeMember (app-layer isolation); these are owner-connection
-// reads. Design: docs/connect-design.md.
+// Connect — read path for the dashboard panel + subpage (Phase 1). Identity rule: a member is
+// pseudonymous by default — we show their handle unless the post's own `show_name` is set (the
+// per-post reveal), in which case we show their real display name. Access is enforced upstream by
+// authorizeMember (app-layer isolation); these are owner-connection reads. Design: docs/connect-design.md.
 import type { Db } from '../db/schema.ts';
 
 export type FeedPost = {
@@ -10,23 +9,35 @@ export type FeedPost = {
   title: string | null;
   body: string;
   authorLabel: string; // handle, or real name when the author revealed it on this post
-  category: string | null; // optional IDQ-dimension tag
-  reclaimItem: string | null; // tied Reclaim List item, if any
+  category: string | null;
+  reclaimItem: string | null;
   replyCount: number;
+  cheerCount: number;
+  iCheered: boolean;
   createdAt: string;
   lastActivityAt: string;
+};
+
+export type FeedReply = {
+  id: string;
+  postId: string;
+  body: string;
+  authorLabel: string;
+  createdAt: string;
 };
 
 export type AccountabilityItem = {
   id: string;
   direction: 'i_committed' | 'asked_of_me';
   commitment: string;
-  otherName: string; // the other member in the pact (a personal tie — shown by name)
+  otherName: string;
   status: string;
 };
 
-/** The global feed: visible posts, most-recently-active first. */
-export async function getFeed(db: Db, limit = 50): Promise<FeedPost[]> {
+export type ConnectProfile = { handle: string; revealDefault: boolean };
+
+/** The global feed: visible posts, most-recently-active first. `viewerId` powers the "I cheered" flag. */
+export async function getFeed(db: Db, limit = 50, viewerId: string | null = null): Promise<FeedPost[]> {
   const { rows } = await db.query<{
     id: string;
     title: string | null;
@@ -37,6 +48,8 @@ export async function getFeed(db: Db, limit = 50): Promise<FeedPost[]> {
     category: string | null;
     reclaim_text: string | null;
     reply_count: number;
+    cheer_count: number;
+    i_cheered: boolean;
     created_at: string;
     last_activity_at: string;
   }>(
@@ -44,6 +57,8 @@ export async function getFeed(db: Db, limit = 50): Promise<FeedPost[]> {
             cp.handle, mp.display_name,
             ri.text as reclaim_text,
             (select count(*) from connect_reply r where r.post_id = p.id and r.status = 'visible') as reply_count,
+            (select count(*) from connect_reaction x where x.target_kind = 'post' and x.target_id = p.id and x.kind = 'cheer') as cheer_count,
+            exists(select 1 from connect_reaction x where x.target_kind = 'post' and x.target_id = p.id and x.kind = 'cheer' and x.member_id = $2) as i_cheered,
             p.created_at, p.last_activity_at
        from connect_post p
        join member_profile mp on mp.member_id = p.author_id
@@ -52,7 +67,7 @@ export async function getFeed(db: Db, limit = 50): Promise<FeedPost[]> {
       where p.status = 'visible'
       order by p.last_activity_at desc
       limit $1`,
-    [limit],
+    [limit, viewerId],
   );
   return rows.map((r) => ({
     id: r.id,
@@ -62,9 +77,44 @@ export async function getFeed(db: Db, limit = 50): Promise<FeedPost[]> {
     category: r.category,
     reclaimItem: r.reclaim_text,
     replyCount: Number(r.reply_count),
+    cheerCount: Number(r.cheer_count),
+    iCheered: Boolean(r.i_cheered),
     createdAt: r.created_at,
     lastActivityAt: r.last_activity_at,
   }));
+}
+
+/** Visible replies for the given posts, grouped by post id (chronological). */
+export async function getRepliesFor(db: Db, postIds: string[]): Promise<Record<string, FeedReply[]>> {
+  if (postIds.length === 0) return {};
+  const { rows } = await db.query<{
+    id: string;
+    post_id: string;
+    body: string;
+    show_name: boolean;
+    handle: string | null;
+    display_name: string;
+    created_at: string;
+  }>(
+    `select r.id, r.post_id, r.body, r.show_name, cp.handle, mp.display_name, r.created_at
+       from connect_reply r
+       join member_profile mp on mp.member_id = r.author_id
+       left join connect_profile cp on cp.member_id = r.author_id
+      where r.post_id = any($1) and r.status = 'visible'
+      order by r.created_at asc`,
+    [postIds],
+  );
+  const out: Record<string, FeedReply[]> = {};
+  for (const r of rows) {
+    (out[r.post_id] ??= []).push({
+      id: r.id,
+      postId: r.post_id,
+      body: r.body,
+      authorLabel: r.show_name ? r.display_name : (r.handle ?? 'A member'),
+      createdAt: r.created_at,
+    });
+  }
+  return out;
 }
 
 /** Active pacts the member is part of — ones they committed to, and ones asked of them. */
@@ -93,4 +143,13 @@ export async function getAccountability(db: Db, memberId: string): Promise<Accou
     otherName: r.other_name,
     status: r.status,
   }));
+}
+
+/** The member's Connect identity (for the account settings card). Null if they haven't posted yet. */
+export async function getConnectProfile(db: Db, memberId: string): Promise<ConnectProfile | null> {
+  const { rows } = await db.query<{ handle: string; reveal_default: boolean }>(
+    `select handle, reveal_default from connect_profile where member_id = $1`,
+    [memberId],
+  );
+  return rows[0] ? { handle: rows[0].handle, revealDefault: rows[0].reveal_default } : null;
 }
