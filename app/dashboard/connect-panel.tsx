@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { getDb } from '../../lib/db/index.ts';
 import { getFeed, getAccountability, unreadNotificationCount } from '../../lib/connect/store.ts';
+import { listOpenRooms } from '../../lib/connect/rooms.ts';
 import type { Db } from '../../lib/db/schema.ts';
 
 // Connect — the dashboard launch panel (sits right under the metrics strip). A glance at what's
@@ -9,11 +10,13 @@ import type { Db } from '../../lib/db/schema.ts';
 // Live now is Phase 2 (shown as a "soon" marker). Design: docs/connect-design.md.
 export default async function ConnectPanel({ memberId }: { memberId: string }) {
   const db = (await getDb()) as unknown as Db;
-  const [feed, pacts, unread] = await Promise.all([
+  const [feed, pacts, unread, rooms] = await Promise.all([
     getFeed(db, 1),
     getAccountability(db, memberId),
     unreadNotificationCount(db, memberId),
+    listOpenRooms(db),
   ]);
+  const liveCount = rooms.length;
   const trending = feed[0] ?? null;
   const nudge = pacts[0] ?? null;
   const empty = !trending && !nudge;
@@ -31,9 +34,12 @@ export default async function ConnectPanel({ memberId }: { memberId: string }) {
               {unread} new for you
             </span>
           )}
-          <span className="muted" style={{ fontSize: '0.75rem', whiteSpace: 'nowrap', border: '1px solid #E8E6E6', borderRadius: 6, padding: '2px 8px' }}>
-            Live now · soon
-          </span>
+          {liveCount > 0 && (
+            <span style={{ fontSize: '0.75rem', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: 5, border: '1px solid #E8E6E6', borderRadius: 6, padding: '2px 8px' }}>
+              <span aria-hidden="true" style={{ width: 7, height: 7, borderRadius: '50%', background: '#D85A30', display: 'inline-block' }} />
+              {liveCount} live
+            </span>
+          )}
         </div>
       </div>
 

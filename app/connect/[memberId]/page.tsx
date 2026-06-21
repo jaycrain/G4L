@@ -11,7 +11,8 @@ import {
   getNotifications,
   getCheerersFor,
 } from '../../../lib/connect/store.ts';
-import { composeAction, replyAction, cheerAction, checkInAction, reportAction, blockAction, markAllReadAction } from '../actions.ts';
+import { composeAction, replyAction, cheerAction, checkInAction, reportAction, blockAction, markAllReadAction, createRoomAction } from '../actions.ts';
+import { listOpenRooms } from '../../../lib/connect/rooms.ts';
 import { CRISIS_RESPONSE_US } from '../../../lib/agent/governance.ts';
 import type { Db } from '../../../lib/db/schema.ts';
 
@@ -46,10 +47,11 @@ export default async function ConnectPage({
     db.query<{ display_name: string }>('select display_name from member_profile where member_id = $1', [memberId]),
   ]);
   const ids = feed.map((p) => p.id);
-  const [replies, cheerers, notifications] = await Promise.all([
+  const [replies, cheerers, notifications, rooms] = await Promise.all([
     getRepliesFor(db, ids, memberId),
     getCheerersFor(db, ids),
     getNotifications(db, memberId),
+    listOpenRooms(db),
   ]);
   await logEvent(db, memberId, 'page_view', { surface: 'connect' });
 
@@ -128,13 +130,31 @@ export default async function ConnectPage({
       </form>
 
       <section>
-        <h3 style={{ color: '#374F63' }}>
-          Live now <span className="muted" style={{ fontSize: '0.75rem', fontWeight: 400 }}>· coming in Phase 2</span>
+        <h3 style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span aria-hidden="true" style={{ width: 9, height: 9, borderRadius: '50%', background: '#D85A30', display: 'inline-block' }} />
+          Live now
         </h3>
-        <div className="card" style={{ borderStyle: 'dashed' }}>
-          <strong>Drop into conversations as they happen</strong>
-          <p className="muted" style={{ margin: '0.25rem 0 0' }}>Real-time check-ins and live rooms land here next.</p>
-        </div>
+        {rooms.length === 0 ? (
+          <p className="muted">No live rooms right now — start one below.</p>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {rooms.map((rm) => (
+              <div className="card" key={rm.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+                <div style={{ minWidth: 0 }}>
+                  <strong>{rm.title}</strong>
+                  <p className="muted" style={{ margin: '2px 0 0', fontSize: '0.85rem' }}>
+                    {rm.hereNow > 0 ? `${rm.hereNow} here now · ` : ''}{rm.messageCount} message{rm.messageCount === 1 ? '' : 's'}
+                  </p>
+                </div>
+                <Link href={`/connect/${memberId}/room/${rm.id}`} className="btn-pill">Join <span aria-hidden="true">→</span></Link>
+              </div>
+            ))}
+          </div>
+        )}
+        <form action={createRoomAction} style={{ marginTop: 10, display: 'flex', gap: 8 }}>
+          <input name="title" required placeholder="Start a room — what's it about?" style={{ flex: 1 }} />
+          <button type="submit" className="connect-cta">Start a room →</button>
+        </form>
       </section>
 
       <section>

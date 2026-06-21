@@ -16,11 +16,11 @@ async function adminDb(): Promise<Db> {
 export async function moderateAction(
   action: 'hide' | 'remove' | 'dismiss',
   reportId: string,
-  kind: 'post' | 'reply' | 'member',
+  kind: 'post' | 'reply' | 'member' | 'room_message',
   subjectId: string,
 ): Promise<void> {
   const db = await adminDb();
-  if (action !== 'dismiss' && (kind === 'post' || kind === 'reply')) {
+  if (action !== 'dismiss' && kind !== 'member') {
     await setContentStatus(db, kind, subjectId, action === 'remove' ? 'removed' : 'hidden');
   }
   await resolveReport(db, reportId);

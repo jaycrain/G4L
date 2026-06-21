@@ -4,7 +4,7 @@ import type { Db } from '../db/schema.ts';
 
 export type ModItem = {
   reportId: string;
-  subjectKind: 'post' | 'reply' | 'member';
+  subjectKind: 'post' | 'reply' | 'member' | 'room_message';
   subjectId: string;
   reason: string | null;
   concernForSafety: boolean;
@@ -21,7 +21,7 @@ export type ModItem = {
 export async function getModerationQueue(db: Db): Promise<ModItem[]> {
   const { rows } = await db.query<{
     report_id: string;
-    subject_kind: 'post' | 'reply' | 'member';
+    subject_kind: 'post' | 'reply' | 'member' | 'room_message';
     subject_id: string;
     reason: string | null;
     concern_for_safety: boolean;
@@ -35,16 +35,18 @@ export async function getModerationQueue(db: Db): Promise<ModItem[]> {
   }>(
     `select rep.id as report_id, rep.subject_kind, rep.subject_id, rep.reason, rep.concern_for_safety,
             rep.source, rep.created_at,
-            coalesce(po.body, re.body) as content_body,
+            coalesce(po.body, re.body, rm.body) as content_body,
             po.title as post_title,
-            coalesce(po.status, re.status) as content_status,
-            coalesce(pa.display_name, ra.display_name, ma.display_name) as author_name,
+            coalesce(po.status, re.status, rm.status) as content_status,
+            coalesce(pa.display_name, ra.display_name, rma.display_name, ma.display_name) as author_name,
             reporter.display_name as reporter_name
        from connect_report rep
        left join connect_post  po on rep.subject_kind = 'post'  and po.id = rep.subject_id
        left join connect_reply re on rep.subject_kind = 'reply' and re.id = rep.subject_id
+       left join connect_room_message rm on rep.subject_kind = 'room_message' and rm.id = rep.subject_id
        left join member_profile pa on pa.member_id = po.author_id
        left join member_profile ra on ra.member_id = re.author_id
+       left join member_profile rma on rma.member_id = rm.author_id
        left join member_profile ma on rep.subject_kind = 'member' and ma.member_id = rep.subject_id
        left join member_profile reporter on reporter.member_id = rep.reporter_id
       where rep.status = 'open'
@@ -74,8 +76,8 @@ export async function openReportCount(db: Db): Promise<{ total: number; safety: 
   return { total: Number(rows[0]?.total ?? 0), safety: Number(rows[0]?.safety ?? 0) };
 }
 
-export async function setContentStatus(db: Db, kind: 'post' | 'reply', id: string, status: 'visible' | 'hidden' | 'removed'): Promise<void> {
-  const table = kind === 'post' ? 'connect_post' : 'connect_reply';
+export async function setContentStatus(db: Db, kind: 'post' | 'reply' | 'room_message', id: string, status: 'visible' | 'hidden' | 'removed'): Promise<void> {
+  const table = kind === 'post' ? 'connect_post' : kind === 'reply' ? 'connect_reply' : 'connect_room_message';
   await db.query(`update ${table} set status = $2 where id = $1`, [id, status]);
 }
 

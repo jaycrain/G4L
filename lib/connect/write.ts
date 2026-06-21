@@ -29,7 +29,7 @@ async function rateLimited(db: Db, memberId: string, table: 'connect_post' | 'co
 export async function reportContent(
   db: Db,
   reporterId: string | null,
-  subjectKind: 'post' | 'reply' | 'member',
+  subjectKind: 'post' | 'reply' | 'member' | 'room_message',
   subjectId: string,
   reason: string | null,
   concernForSafety: boolean,

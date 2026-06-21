@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache';
 import { getDb } from '../../lib/db/index.ts';
 import { currentMemberId } from '../auth.ts';
 import { markNotificationsRead } from '../../lib/connect/store.ts';
+import { createRoom, reportRoomMessage } from '../../lib/connect/rooms.ts';
 import {
   createPost,
   createReply,
@@ -71,6 +72,18 @@ export async function markAllReadAction(): Promise<void> {
   await markNotificationsRead(db, memberId);
   refresh(memberId);
   redirect(`/connect/${memberId}`);
+}
+
+export async function createRoomAction(formData: FormData): Promise<void> {
+  const { db, memberId } = await actor();
+  const res = await createRoom(db, memberId, String(formData.get('title') ?? ''));
+  if (!res.ok) redirect(`/connect/${memberId}?notice=${encodeURIComponent(res.error)}`);
+  redirect(`/connect/${memberId}/room/${res.id}`);
+}
+
+export async function reportRoomMessageAction(messageId: string): Promise<void> {
+  const { db, memberId } = await actor();
+  await reportRoomMessage(db, memberId, messageId, 'Reported from a live room', false);
 }
 
 export async function cheerAction(targetKind: 'post' | 'reply', targetId: string): Promise<void> {
