@@ -46,6 +46,7 @@ export default async function RoomPage({ params }: { params: Promise<{ memberId:
       </div>
       <RoomChat
         roomId={roomId}
+        memberId={memberId}
         initial={initial}
         revealDefault={profile?.revealDefault ?? false}
         myName={nameRow.rows[0]?.display_name ?? 'my real name'}

@@ -113,7 +113,7 @@ export async function postRoomMessage(
   roomId: string,
   body: string,
   showName: boolean,
-): Promise<{ ok: true; crisis: boolean } | { ok: false; error: string }> {
+): Promise<{ ok: true; crisis: boolean; message: RoomMessage } | { ok: false; error: string }> {
   const text = (body ?? '').trim();
   if (!text) return { ok: false, error: 'empty' };
   // Brake on flooding a room.
@@ -123,17 +123,32 @@ export async function postRoomMessage(
   );
   if (Number(recent.rows[0]?.n ?? 0) >= 20) return { ok: false, error: 'Slow down a moment.' };
   await ensureProfile(db, memberId);
-  const { rows } = await db.query<{ id: string }>(
-    `insert into connect_room_message (room_id, author_id, body, show_name) values ($1, $2, $3, $4) returning id`,
+  const { rows } = await db.query<{ id: string; created_at: string }>(
+    `insert into connect_room_message (room_id, author_id, body, show_name) values ($1, $2, $3, $4) returning id, created_at`,
     [roomId, memberId, text, showName],
   );
   await db.query(`update connect_room set last_activity_at = now() where id = $1`, [roomId]);
+  // Build the author label exactly as getRoomMessages would, so the broadcast peers get an identical
+  // row to what a poll would return (dedupe-by-id then stays consistent).
+  const who = await db.query<{ display_name: string; handle: string | null }>(
+    `select mp.display_name, cp.handle
+       from member_profile mp
+       left join connect_profile cp on cp.member_id = mp.member_id
+      where mp.member_id = $1`,
+    [memberId],
+  );
+  const message: RoomMessage = {
+    id: rows[0]!.id,
+    body: text,
+    authorLabel: showName ? who.rows[0]!.display_name : (who.rows[0]?.handle ?? 'A member'),
+    createdAt: new Date(rows[0]!.created_at).toISOString(),
+  };
   // Crisis routing — never censor; surface help to them (caller) and file a system report for review.
   const a = await assessCrisis(text);
   if (a.flagged) {
     await reportContent(db, null, 'room_message', rows[0]!.id, `Auto-flagged by crisis detection (${a.source}) — please follow up.`, true, 'system');
   }
-  return { ok: true, crisis: a.flagged };
+  return { ok: true, crisis: a.flagged, message };
 }
 
 export async function reportRoomMessage(db: Db, reporterId: string, messageId: string, reason: string, concern: boolean): Promise<void> {
