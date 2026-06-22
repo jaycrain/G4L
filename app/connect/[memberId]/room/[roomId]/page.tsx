@@ -10,7 +10,7 @@ import RoomChat from './room-chat.tsx';
 import { closeRoomAction } from '../../../actions.ts';
 import type { Db } from '../../../../../lib/db/schema.ts';
 
-export const metadata = { title: 'Live room — Connect' };
+export const metadata = { title: 'Live room — G4L Community' };
 
 export default async function RoomPage({ params }: { params: Promise<{ memberId: string; roomId: string }> }) {
   const { memberId, roomId } = await params;
@@ -41,7 +41,7 @@ export default async function RoomPage({ params }: { params: Promise<{ memberId:
         </div>
         <p className="heromore">
           Live{room.status === 'closed' ? ' (closed)' : ''} — say what's true, keep each other honest. Messages here are
-          kept and can be reported, the same as everywhere on Connect.
+          kept and can be reported, the same as everywhere in the Community.
         </p>
       </div>
       <RoomChat

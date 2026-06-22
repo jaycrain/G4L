@@ -24,7 +24,7 @@ export default function ConnectSettings({
           <button type="submit" className="btn-pill">Save handle</button>
         </div>
         <p className="muted" style={{ fontSize: '0.85rem', marginTop: 6 }}>
-          Your name in Connect. You start anonymous — others see this, not your real name. 3–20 letters, numbers, or underscores.
+          Your name in the Community. You start anonymous — others see this, not your real name. 3–20 letters, numbers, or underscores.
         </p>
       </form>
 

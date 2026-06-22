@@ -61,7 +61,7 @@ export default async function AdminHome() {
       </div>
 
       <div className={`card${modCount.safety > 0 ? ' health-down' : ''}`}>
-        <h3>Connect moderation ({modCount.total} open{modCount.safety > 0 ? ` · ${modCount.safety} safety` : ''})</h3>
+        <h3>Community moderation ({modCount.total} open{modCount.safety > 0 ? ` · ${modCount.safety} safety` : ''})</h3>
         {modQueue.length === 0 ? (
           <p className="muted">No open reports. Member reports and crisis flags land here, safety concerns first.</p>
         ) : (

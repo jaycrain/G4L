@@ -78,7 +78,7 @@ export default async function ConnectPanel({ memberId }: { memberId: string }) {
 
       <div style={{ marginTop: '1rem' }}>
         <Link href={`/connect/${memberId}`} className="connect-cta">
-          Connect with others now →
+          Open the Community →
         </Link>
       </div>
     </div>

@@ -76,7 +76,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
       </div>
 
       <div className="card">
-        <h3>Connect</h3>
+        <h3>Community</h3>
         <ConnectSettings
           handle={connectProfile?.handle ?? null}
           revealDefault={connectProfile?.revealDefault ?? false}
