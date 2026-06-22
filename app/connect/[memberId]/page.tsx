@@ -77,7 +77,7 @@ export default async function ConnectPage({
       )}
 
       {notifications.length > 0 && (
-        <section style={{ marginBottom: '1.25rem' }}>
+        <div className="card" style={{ marginBottom: '1.25rem' }}>
           <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12 }}>
             <h3 style={{ margin: 0 }}>For you{unreadCount > 0 ? ` (${unreadCount})` : ''}</h3>
             {unreadCount > 0 && (
@@ -86,7 +86,7 @@ export default async function ConnectPage({
               </form>
             )}
           </div>
-          <div className="card" style={{ padding: 0, marginTop: '0.6rem', overflow: 'hidden' }}>
+          <div style={{ marginTop: '0.7rem' }}>
             {notifications.map((n, i) => (
               <a
                 key={n.id}
@@ -95,17 +95,15 @@ export default async function ConnectPage({
                   display: 'flex',
                   alignItems: 'baseline',
                   gap: 10,
-                  padding: '0.65rem 0.9rem',
+                  padding: '0.55rem 0.6rem',
+                  borderRadius: 6,
                   borderTop: i ? '1px solid var(--light-grey, #E8E6E6)' : 'none',
                   background: n.read ? 'transparent' : 'rgba(59, 148, 149, 0.07)',
                   textDecoration: 'none',
                   color: 'inherit',
                 }}
               >
-                <span
-                  aria-hidden="true"
-                  style={{ width: 8, height: 8, borderRadius: '50%', flex: 'none', position: 'relative', top: 6, background: n.read ? 'transparent' : 'var(--teal, #3B9495)' }}
-                />
+                <span aria-hidden="true" style={{ width: 8, height: 8, borderRadius: '50%', flex: 'none', position: 'relative', top: 6, background: n.read ? 'transparent' : 'var(--teal, #3B9495)' }} />
                 <span style={{ fontWeight: n.read ? 400 : 600 }}>
                   {n.actorLabel} {n.kind === 'reply' ? 'replied to' : 'cheered'} your post “{n.postLabel}”
                 </span>
@@ -113,57 +111,33 @@ export default async function ConnectPage({
               </a>
             ))}
           </div>
-        </section>
+        </div>
       )}
 
-      {/* Compose */}
-      <form action={composeAction} className="card" style={{ marginBottom: '1.25rem' }}>
-        <input name="title" placeholder="Title (optional)" style={{ width: '100%', marginBottom: 8 }} />
-        <textarea name="body" required rows={3} placeholder="Share a win, a setback, or a question with the group…" style={{ width: '100%' }} />
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginTop: 8, flexWrap: 'wrap' }}>
-          <label className="muted" style={{ fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: 6 }}>
-            <input type="checkbox" name="showName" defaultChecked={revealDefault} /> Post under my real name ({myName})
-            {profile && <span> — otherwise as {profile.handle}</span>}
-          </label>
-          <button type="submit" className="connect-cta">Share</button>
-        </div>
-      </form>
-
-      <section>
-        <h3 style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span aria-hidden="true" style={{ width: 9, height: 9, borderRadius: '50%', background: '#D85A30', display: 'inline-block' }} />
-          Live now
-        </h3>
-        {rooms.length === 0 ? (
-          <p className="muted">No live rooms right now — start one below.</p>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {rooms.map((rm) => (
-              <div className="card" key={rm.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
-                <div style={{ minWidth: 0 }}>
-                  <strong>{rm.title}</strong>
-                  <p className="muted" style={{ margin: '2px 0 0', fontSize: '0.85rem' }}>
-                    {rm.hereNow > 0 ? `${rm.hereNow} here now · ` : ''}{rm.messageCount} message{rm.messageCount === 1 ? '' : 's'}
-                  </p>
-                </div>
-                <Link href={`/connect/${memberId}/room/${rm.id}`} className="btn-pill">Join <span aria-hidden="true">→</span></Link>
-              </div>
-            ))}
+      {/* Start a Topic */}
+      <div className="card" style={{ marginBottom: '1.25rem' }}>
+        <h3>Start a Topic</h3>
+        <form action={composeAction}>
+          <input name="title" placeholder="Title (optional)" style={{ width: '100%', marginBottom: 8 }} />
+          <textarea name="body" required rows={3} placeholder="Share a win, a setback, or a question with the group…" style={{ width: '100%' }} />
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginTop: 8, flexWrap: 'wrap' }}>
+            <label className="muted" style={{ fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <input type="checkbox" name="showName" defaultChecked={revealDefault} /> Post under my real name ({myName})
+              {profile && <span> — otherwise as {profile.handle}</span>}
+            </label>
+            <button type="submit" className="connect-cta">Share</button>
           </div>
-        )}
-        <form action={createRoomAction} style={{ marginTop: 10, display: 'flex', gap: 8 }}>
-          <input name="title" required placeholder="Start a room — what's it about?" style={{ flex: 1 }} />
-          <button type="submit" className="connect-cta">Start a room →</button>
         </form>
-      </section>
+      </div>
 
-      <section>
+      {/* Topics */}
+      <div className="card" style={{ marginBottom: '1.25rem' }}>
         <h3>Topics</h3>
         {feed.length === 0 ? (
           <p className="muted">No topics yet — be the first to share something.</p>
         ) : (
-          feed.map((p) => (
-            <div className="card" key={p.id} id={`post-${p.id}`} style={{ marginBottom: '0.75rem' }}>
+          feed.map((p, i) => (
+            <div key={p.id} id={`post-${p.id}`} style={{ borderTop: i ? '1px solid var(--light-grey, #E8E6E6)' : 'none', paddingTop: i ? '0.9rem' : 0, marginTop: i ? '0.9rem' : '0.5rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'baseline' }}>
                 <strong>{p.title ?? p.body}</strong>
                 <span className="muted" style={{ whiteSpace: 'nowrap', fontSize: '0.8rem' }}>{ago(p.lastActivityAt)}</span>
@@ -213,29 +187,55 @@ export default async function ConnectPage({
             </div>
           ))
         )}
-      </section>
+      </div>
 
-      <section>
-        <h3>Your accountability</h3>
+      {/* Live now */}
+      <div className="card" style={{ marginBottom: '1.25rem' }}>
+        <h3 style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span aria-hidden="true" style={{ width: 9, height: 9, borderRadius: '50%', background: '#D85A30', display: 'inline-block' }} />
+          Live now
+        </h3>
+        {rooms.length === 0 ? (
+          <p className="muted">No live rooms right now — start one below.</p>
+        ) : (
+          rooms.map((rm, i) => (
+            <div key={rm.id} style={{ borderTop: i ? '1px solid var(--light-grey, #E8E6E6)' : 'none', paddingTop: i ? '0.7rem' : 0, marginTop: i ? '0.7rem' : '0.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+              <div style={{ minWidth: 0 }}>
+                <strong>{rm.title}</strong>
+                <p className="muted" style={{ margin: '2px 0 0', fontSize: '0.85rem' }}>
+                  {rm.hereNow > 0 ? `${rm.hereNow} here now · ` : ''}{rm.messageCount} message{rm.messageCount === 1 ? '' : 's'}
+                </p>
+              </div>
+              <Link href={`/connect/${memberId}/room/${rm.id}`} className="btn-pill">Join <span aria-hidden="true">→</span></Link>
+            </div>
+          ))
+        )}
+        <form action={createRoomAction} style={{ marginTop: 12, display: 'flex', gap: 8 }}>
+          <input name="title" required placeholder="Start a room — what's it about?" style={{ flex: 1 }} />
+          <button type="submit" className="connect-cta">Start a room →</button>
+        </form>
+      </div>
+
+      {/* Your Accountability */}
+      <div className="card" style={{ marginBottom: '1.25rem' }}>
+        <h3>Your Accountability</h3>
         {pacts.length === 0 ? (
           <p className="muted">No commitments yet.</p>
         ) : (
-          <div className="card">
-            {pacts.map((it) => (
-              <div key={it.id} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center', padding: '0.4rem 0' }}>
-                <span>
-                  {it.direction === 'i_committed'
-                    ? `You told ${it.otherName} you'd ${it.commitment}.`
-                    : `You're holding ${it.otherName} to: ${it.commitment}.`}
-                </span>
-                <form action={checkInAction.bind(null, it.id)}>
-                  <button type="submit" className="connect-cta" style={{ whiteSpace: 'nowrap' }}>Check in</button>
-                </form>
-              </div>
-            ))}
-          </div>
+          pacts.map((it, i) => (
+            <div key={it.id} style={{ borderTop: i ? '1px solid var(--light-grey, #E8E6E6)' : 'none', display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center', paddingTop: i ? '0.7rem' : '0.4rem', marginTop: i ? '0.7rem' : 0 }}>
+              <span>
+                {it.direction === 'i_committed'
+                  ? `You told ${it.otherName} you'd ${it.commitment}.`
+                  : `You're holding ${it.otherName} to: ${it.commitment}.`}
+              </span>
+              <form action={checkInAction.bind(null, it.id)}>
+                <button type="submit" className="connect-cta" style={{ whiteSpace: 'nowrap' }}>Check in</button>
+              </form>
+            </div>
+          ))
         )}
-      </section>
+      </div>
     </>
   );
 }
