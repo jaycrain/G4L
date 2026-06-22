@@ -120,7 +120,7 @@ export default async function ConnectPage({
       <div className="card" style={{ marginBottom: '1.25rem' }}>
         <h3>Start a Topic</h3>
         <form action={composeAction}>
-          <input name="title" placeholder="Title (optional)" style={{ width: '100%', marginBottom: 8 }} />
+          <input name="title" placeholder="Title (optional)" style={{ width: '100%', marginBottom: 8, padding: '0.95rem 0.8rem' }} />
           <textarea name="body" required rows={3} placeholder="Share a win, a setback, or a question with the group…" style={{ width: '100%' }} />
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginTop: 8, flexWrap: 'wrap' }}>
             <label className="muted" style={{ fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -213,7 +213,7 @@ export default async function ConnectPage({
           ))
         )}
         <form action={createRoomAction} style={{ marginTop: 12, display: 'flex', gap: 8 }}>
-          <input name="title" required placeholder="Start a room — what's it about?" style={{ flex: 1 }} />
+          <input name="title" required placeholder="Start a room — what's it about?" style={{ flex: 1, padding: '0.95rem 0.8rem' }} />
           <button type="submit" className="connect-cta">Start a room →</button>
         </form>
       </div>
