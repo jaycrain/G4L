@@ -62,6 +62,19 @@ input[type='text'], input[type='email'], input[type='password'], textarea, selec
   background: var(--white);
   color: var(--charcoal);
 }
+/* App-wide standard: an <input> with no type attribute defaults to text but is NOT matched by the
+   selector above — so it would fall back to the browser's grey default border. Give type-less inputs
+   the same navy field styling so no one has to remember type="text". Deliberately omits width:100% so
+   inline/flex inputs (e.g. the narrow .tt-unit) keep their own width; class rules (later in source)
+   still win on padding where they set it. */
+input:not([type]) {
+  font: inherit;
+  padding: 0.6rem 0.7rem;
+  border: 1px solid var(--field-line);
+  border-radius: 6px;
+  background: var(--white);
+  color: var(--charcoal);
+}
 textarea { min-height: 4.5rem; resize: vertical; }
 
 /* Password field with show/hide (eye) toggle */
