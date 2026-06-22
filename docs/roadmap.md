@@ -16,7 +16,7 @@ We can do all of these immediately — no waiting on anyone:
 - **Proactive nudges** — the Member Agent reaches out (signal-driven, capped). ← *building first*
 - **Founder Agent auto-triggers** — drafts auto-drop into Jay's queue on milestone / silence / retake.
 - **Conversation persistence** — the companion truly remembers across visits.
-- **Activity panel UI** — the dashboard panel + a manual/sample feed now (real Strava later).
+- **Activity panel UI** — dashboard panel shipped; **Strava OAuth + sync now built** (pending security review).
 - **PWA shell** — installable + push plumbing (push pairs with proactive nudges).
 - **Corpus pipeline tooling** — the freeform → structured → sign-off flow (so Greg's content has a home to land in).
 - **Stripe in test mode** — billing flow end-to-end without going live.
@@ -31,8 +31,21 @@ We can do all of these immediately — no waiting on anyone:
 
 ## Phases (dates set by the paced clock)
 
+> **Dates below are under revision (Jun 2026)** — being re-sequenced. Treat the *ordering/status* as
+> current; the specific dates are being re-established (working draft lives outside the repo).
+
 **Phase 0 — Foundation ✅ done.** Both agents · Gateway · asset engine · dosing v1 · dashboard ·
 telemetry · admin Review UI · governance rails · deployed preview · billing/secrets hardened.
+
+**Shipped ahead of the paced clock (Jun 2026) ✅** — pulled forward well past where this roadmap
+originally placed them:
+- **Connect / Community** — built *native* on our stack (Supabase + Next), not Circle. Global feed
+  (Topics), replies, cheers, accountability pacts, **live rooms with real-time presence + broadcast**
+  (Supabase Realtime), anonymous-handle identity with opt-in real-name reveal, dashboard launch panel,
+  full **trust & safety** (reports, block, unified admin queue, always-on crisis routing), notifications.
+- **Two-layer crisis detection** — regex + an LLM semantic second pass, on every conversational surface.
+- **Resilience** — app-wide error boundaries + iOS/Safari hardening (prefetch crash fixed).
+- **Strava** — OAuth + activity sync **built** (Path-B health data); *review-pending* before real members.
 
 **Phase 1 — Charter MVP (Oct 2026)** — *real charter members run the program*
 - ⏸ Greg's science layer + content for the 12 assets + final IDQ items *(gated: Greg)*
@@ -41,12 +54,13 @@ telemetry · admin Review UI · governance rails · deployed preview · billing/
 - First IDQ retakes ~Dec 2026 *(gated: calendar)*
 
 **Phase 2 — Paid public launch (Jan 1 2027)** — *anyone joins & pays; companion proactive*
+- ✅ **Connect / Community** (incl. real-time live rooms + trust & safety) — *shipped early, Jun 2026*
 - 🟢 Proactive nudges · Founder auto-triggers · conversation persistence · PWA *(build-ahead — pulled forward into the demo/charter window)*
 - 🟢 Stripe billing flow (test now → live by Dec) · Science Check Zones *(needs Greg's checks)*
 - ⏸ Real HubSpot send rail *(needs email auth)*
 
 **Phase 3 — Deepening (post-launch 2027)**
-- 🟢 Activity panel UI now → ⏸ real Strava/aggregator integration *(gated: external API)*
+- ✅ Activity panel UI · 🟢 Strava OAuth + sync **built** → ⏸ enable for real members *(gated: security review)* · ⏸ other aggregators *(gated: external API)*
 - First 1,000 Miles · richer dosing · research feed *(gated: IRB)*
 
 **Phase 4 — Expansion (mid-2027+)**
