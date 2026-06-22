@@ -169,14 +169,14 @@ export default async function ConnectPage({
 
               <form action={replyAction.bind(null, p.id)} style={{ marginTop: 8, display: 'flex', gap: 8 }}>
                 <input type="hidden" name="showName" value={revealDefault ? 'on' : ''} />
-                <input name="body" required placeholder="Reply…" style={{ flex: 1 }} />
+                <input type="text" name="body" required placeholder="Reply…" style={{ flex: 1 }} />
                 <button type="submit" className="btn-pill">Reply <span aria-hidden="true">→</span></button>
               </form>
 
               <details style={{ marginTop: 8 }}>
                 <summary className="muted" style={{ fontSize: '0.78rem', cursor: 'pointer' }}>Report or block</summary>
                 <form action={reportAction.bind(null, 'post', p.id)} style={{ margin: '8px 0 4px' }}>
-                  <input name="reason" placeholder="What's wrong with this post?" style={{ width: '100%' }} />
+                  <input type="text" name="reason" placeholder="What's wrong with this post?" style={{ width: '100%' }} />
                   <label className="muted" style={{ fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: 6, margin: '5px 0' }}>
                     <input type="checkbox" name="concern" /> I&apos;m worried about their safety
                   </label>

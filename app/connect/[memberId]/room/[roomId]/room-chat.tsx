@@ -168,7 +168,7 @@ export default function RoomChat({
       {notice && <p className="muted" role="status" style={{ marginTop: 6 }}>{notice}</p>}
 
       <form onSubmit={send} style={{ marginTop: 10, display: 'flex', gap: 8 }}>
-        <input value={input} onChange={(e) => setInput(e.target.value)} placeholder="Say something…" style={{ flex: 1 }} />
+        <input type="text" value={input} onChange={(e) => setInput(e.target.value)} placeholder="Say something…" style={{ flex: 1 }} />
         <button type="submit" className="btn-pill">Send <span aria-hidden="true">→</span></button>
       </form>
       <label className="muted" style={{ fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: 6, marginTop: 6 }}>
