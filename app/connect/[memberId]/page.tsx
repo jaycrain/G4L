@@ -76,18 +76,20 @@ export default async function ConnectPage({
         <p className="muted" role="status" style={{ border: '1px solid var(--line, #E8E6E6)', borderRadius: 8, padding: '0.6rem 0.9rem', marginBottom: '1rem' }}>{notice}</p>
       )}
 
-      {notifications.length > 0 && (
-        <div className="card" style={{ marginBottom: '1.25rem' }}>
-          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12 }}>
-            <h3 style={{ margin: 0 }}>For you{unreadCount > 0 ? ` (${unreadCount})` : ''}</h3>
-            {unreadCount > 0 && (
-              <form action={markAllReadAction}>
-                <button type="submit" className="connect-cta">Mark all as read</button>
-              </form>
-            )}
-          </div>
-          <div style={{ marginTop: '0.7rem' }}>
-            {notifications.map((n, i) => (
+      <div className="card" style={{ marginBottom: '1.25rem' }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12 }}>
+          <h3 style={{ margin: 0 }}>For you{unreadCount > 0 ? ` (${unreadCount})` : ''}</h3>
+          {unreadCount > 0 && (
+            <form action={markAllReadAction}>
+              <button type="submit" className="connect-cta">Mark all as read</button>
+            </form>
+          )}
+        </div>
+        <div style={{ marginTop: '0.7rem' }}>
+          {notifications.length === 0 ? (
+            <p className="muted" style={{ margin: 0 }}>Nothing yet — when someone replies to or cheers your posts, it&apos;ll show up here.</p>
+          ) : (
+            notifications.map((n, i) => (
               <a
                 key={n.id}
                 href={`#post-${n.postId}`}
@@ -107,12 +109,12 @@ export default async function ConnectPage({
                 <span style={{ fontWeight: n.read ? 400 : 600 }}>
                   {n.actorLabel} {n.kind === 'reply' ? 'replied to' : 'cheered'} your post “{n.postLabel}”
                 </span>
-                <span className="muted" style={{ marginLeft: 'auto', fontSize: '0.78rem', whiteSpace: 'nowrap' }}>{ago(n.createdAt)}</span>
-              </a>
-            ))}
-          </div>
+                  <span className="muted" style={{ marginLeft: 'auto', fontSize: '0.78rem', whiteSpace: 'nowrap' }}>{ago(n.createdAt)}</span>
+                </a>
+              ))
+          )}
         </div>
-      )}
+      </div>
 
       {/* Start a Topic */}
       <div className="card" style={{ marginBottom: '1.25rem' }}>
