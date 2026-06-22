@@ -157,7 +157,10 @@ button:hover, .btn:hover { background: var(--navy); }
 .avatar-edit { display: flex; align-items: center; gap: 1rem; margin-bottom: 0.5rem; }
 .avatar-lg { width: 72px; height: 72px; font-size: 1.6rem; flex: 0 0 auto; }
 .avatar-edit-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
-.avatar-edit-actions button { margin: 0; }
+/* Match the pill shape the rest of the account page uses (Save, etc.) — applies to both the
+   teal "Add/Change photo" and the grey btn-secondary "Remove" so they stay consistent with each
+   other. Colors come from the base/btn-secondary rules; this only sets the pill geometry. */
+.avatar-edit-actions button { margin: 0; border-radius: 20px; padding: 0.45rem 1rem; font-size: 0.85rem; }
 .member-greeting-link { display: flex; align-items: center; gap: 0.75rem; text-decoration: none; }
 .member-greeting-link:hover .greeting { color: var(--teal); }
 .greeting-actions { margin-left: auto; display: flex; align-items: center; gap: 0.9rem; }
