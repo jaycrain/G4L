@@ -131,6 +131,37 @@ shared mission — the membership itself is the strongest moderator.
 `post_created, reply_created, reaction_added, pact_created, pact_checkin, report_filed` (Phase 2 adds
 `live_join`). These are the implementation-outcome measures for Connect.
 
+## Live rooms — delivery (Phase 2a / 2b)
+
+Live rooms are persisted, moderatable, and crisis-routed exactly like posts/replies — delivery is the
+only thing that changes between phases. Messages always go through the server (`postRoomMessage`, owner
+connection) so the DB is the single source of truth; "real-time" is layered on top, never instead.
+
+- **Phase 2a — polling (always available).** The room client polls `GET /api/connect/rooms/[roomId]`
+  every 3s with an `after` cursor; a single `merge()` dedupes by id. This is the floor — it works with
+  no extra infrastructure and is the fallback whenever Realtime isn't on or won't connect.
+- **Phase 2b — Supabase Realtime (broadcast + presence).** When `NEXT_PUBLIC_SUPABASE_URL` and
+  `NEXT_PUBLIC_SUPABASE_ANON_KEY` are set, the client joins a per-room channel `connect-room:<roomId>`:
+  - **broadcast** delivers new messages instantly. The sender posts via the API (DB write + crisis
+    routing), gets the saved message back, shows it locally, and broadcasts it to peers — no extra DB
+    round-trip. `merge()` dedupes so poll + broadcast + own-send can't double-render.
+  - **presence** gives the live "N here now" count.
+  - **Why broadcast, not `postgres_changes`:** our tables are RLS-enabled with **no policies** (the app
+    uses an owner connection; the anon key can't read them). `postgres_changes` would need readable
+    tables. Broadcast/presence are ephemeral pub/sub that **never touch the DB**, so they work under our
+    posture untouched.
+  - **Backstop:** because broadcast is best-effort, polling doesn't stop when live — it drops to a slow
+    15s reconciling poll so any dropped message still lands.
+
+**The switch:** Realtime is gated entirely on the two `NEXT_PUBLIC_*` vars (Next inlines them at build
+time). Absent → polling only. So 2b ships dark and is turned on per-deploy by setting the vars in Vercel
+— no code change. `lib/connect/realtime-client.ts` returns `null` when they're unset.
+
+**Security follow-up (before scale):** channels are currently **public** — reachable by anyone holding
+the anon key *and* a room's UUID. Room UUIDs are unguessable and never exposed (Data API is RLS-blocked),
+so this is acceptable for MVP. Harden with **private channels + RLS on `realtime.messages`** when we move
+past charter scale.
+
 ## Decided
 
 - **Identity:** anonymous handle by default; opt-in reveal to real name; pseudonymous to peers,
