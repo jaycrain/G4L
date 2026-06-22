@@ -25,9 +25,9 @@ export default function ProgramMap({ memberId, phases }: { memberId: string; pha
                 {!it.openable ? (
                   <span className="open open-soon">Coming soon</span>
                 ) : it.kind === 'checkpoint' ? (
-                  <Link className="open" href={`/checkpoint/${memberId}/${it.id}`}>Cross this Checkpoint →</Link>
+                  <Link className="open" href={`/checkpoint/${memberId}/${it.id}`} prefetch={false}>Cross this Checkpoint →</Link>
                 ) : (
-                  <Link className="open" href={`/session/${memberId}/${it.id}`}>Open this Session →</Link>
+                  <Link className="open" href={`/session/${memberId}/${it.id}`} prefetch={false}>Open this Session →</Link>
                 )}
               </div>
             ) : (

@@ -35,16 +35,16 @@ export default function CurriculumForecast({ memberId, forecast }: { memberId: s
           {!cur.openable ? (
             <span className="open open-soon">Coming soon</span>
           ) : cur.kind === 'checkpoint' ? (
-            <Link className="open" href={`/checkpoint/${memberId}/${cur.id}`}>Cross this Checkpoint →</Link>
+            <Link className="open" href={`/checkpoint/${memberId}/${cur.id}`} prefetch={false}>Cross this Checkpoint →</Link>
           ) : (
-            <Link className="open" href={`/session/${memberId}/${cur.id}`}>Open this Session →</Link>
+            <Link className="open" href={`/session/${memberId}/${cur.id}`} prefetch={false}>Open this Session →</Link>
           )}
         </div>
       ) : (
         <p className="muted">You&apos;re all caught up on your path for now.</p>
       )}
 
-      <Link href={`/program/${memberId}`} className="see-more">Full program →</Link>
+      <Link href={`/program/${memberId}`} className="see-more" prefetch={false}>Full program →</Link>
     </div>
   );
 }

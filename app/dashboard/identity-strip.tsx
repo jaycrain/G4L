@@ -10,7 +10,7 @@ export default function IdentityStrip({ line, memberId, hasStory }: { line: stri
     <div className="card identity-strip">
       <p className="idline">{line}</p>
       {hasStory && (
-        <Link href={`/story/${memberId}`} className="see-more">Your full story →</Link>
+        <Link href={`/story/${memberId}`} className="see-more" prefetch={false}>Your full story →</Link>
       )}
     </div>
   );
