@@ -9,6 +9,7 @@ import { getOnboardingReturns, keepTalkingStats } from '../../lib/telemetry/stor
 import { getHealth } from '../../lib/health/store.ts';
 import { getModerationQueue, openReportCount } from '../../lib/connect/moderation.ts';
 import { moderateAction } from './connect-actions.ts';
+import AiHealthCheck from './ai-health-check.tsx';
 import { isAdmin } from '../authz.ts';
 import { initials } from '../../lib/member/avatar.ts';
 import type { Db } from '../../lib/db/schema.ts';
@@ -58,6 +59,7 @@ export default async function AdminHome() {
         ) : (
           <p className="muted">No check recorded yet — the probe runs every 15 minutes.</p>
         )}
+        <AiHealthCheck />
       </div>
 
       <div className={`card${modCount.safety > 0 ? ' health-down' : ''}`}>
