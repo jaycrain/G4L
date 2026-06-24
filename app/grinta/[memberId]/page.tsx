@@ -22,10 +22,23 @@ export default async function GrintaMorePage({ params }: { params: Promise<{ mem
       <div className="hero"><h1>More about your Grinta Index</h1></div>
       <div className="card sub-copy">
         {grinta.line && <p className="sub-personal">{grinta.line}</p>}
-        <p>The ID Score tells you where you are. The Grinta Index tells you how hard you’re fighting to get back — and it’s the engine that actually moves the mirror. Grinta is Italian for grit, and this is yours, measured.</p>
-        <p>One number for your grit right now, and three ways it shows up: Consistency (showing up), Recovery (clipping back in after a miss), and Reach (doing the hard thing on purpose). Each has a slider that fills as you put in the reps — and a marker on it, the line you’re working to cross. Cross it, and you’ve passed that stretch of grit. That one’s worth a badge.</p>
-        <p>Unlike the ID Score, this one’s alive — it moves every time you show up. Your daily effort lands here first, and then, over the slow weeks, it shows up in your ID Score when you next take the IDQ. Grit is the cause; reclaiming is the effect.</p>
-        <p>It’s the slightly tough-love number. It won’t pretend you’re harder than you are, and it won’t let you coast — but it’s also the most responsive thing on your dashboard. Show up tomorrow, and you’ll see it.</p>
+        <p>Your ID Score tells you where you are. Your Grinta Index is your grit — the part that keeps you going when motivation runs out. Grinta is Italian for grit, and this is yours. It’s the engine of the whole thing.</p>
+
+        <h3>Three ways grit shows up</h3>
+        <p>Grinta is built from three habits of a hardy person. You build them by doing the work; they’re scored at your Checkpoints.</p>
+        <ul className="sub-list">
+          <li><strong>Commitment</strong> — you have a reason, and you show up for it.</li>
+          <li><strong>Control</strong> — you run your life and your choices, instead of them running you.</li>
+          <li><strong>Challenge</strong> — you move toward the hard, growthful thing on purpose, instead of away from it.</li>
+        </ul>
+
+        <h3>How it’s built, and how it’s measured</h3>
+        <p>Every Session you finish and every day you log is a rep — that’s the work that builds grit. You’ll feel that daily effort as your own pulse: showing up, and clipping back in after a miss, always counts. A slip you notice and recover from is the muscle working, not a mark against you.</p>
+        <p>The score itself updates at each Checkpoint — the look-back at the end of every R. Each of the three habits has a level you’re building, and a line you’re working to cross. Cross it, and you’ve earned that stretch of grit — sometimes a badge with it. The Checkpoint is where the reps you’ve banked get counted.</p>
+
+        <h3>Grit and the mirror, side by side</h3>
+        <p>Watch your Grinta and your ID Score move together over time. They’re two true pictures of the same comeback — grit is how hard you’re working, the ID Score is how reconnected you feel. We don’t claim one mechanically drives the other; we just keep both honest, and let you see them rise alongside each other.</p>
+        <p>It’s the slightly tough-love number. It won’t pretend you’re further along than you are, and it won’t let you coast. But it’s also the most rewarding one to watch, because it answers to one thing only: the work you put in.</p>
         <p>Nobody reclaims themselves by waiting to feel ready. You build the grit; the grit does the work. That’s the whole engine.</p>
       </div>
     </>

@@ -86,7 +86,7 @@ try {
     check(h1 === 'The Program', '/program heading', h1 || 'missing');
 
     await open(`/field-guide/${memberId}`);
-    const fg = await page.locator('dt', { hasText: 'The Program' }).count();
+    const fg = await page.locator('.fg-pieces', { hasText: 'The Program' }).count();
     check(fg > 0, '/field-guide "The Program" entry');
   }
 

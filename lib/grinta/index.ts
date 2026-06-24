@@ -37,7 +37,7 @@ export type Grinta = {
 // PROVISIONAL — Greg finishes the math. Consistency is real (show-up density); Recovery/Reach are
 // provisional derivations from available signals so the sliders read honestly until the engine lands.
 // LABELS were relabelled to the three Cs (Dashboard Reshuffle §5): Consistency→Commitment ·
-// Recovery→Challenge · Reach→Choice. Labels ONLY — the keys, values, and computation are UNCHANGED
+// Recovery→Challenge · Reach→Control. Labels ONLY — the keys, values, and computation are UNCHANGED
 // (Slice 4 + the Greg-fold settle the operational definitions, so the label↔math gap is known debt).
 export type GrintaComponent = { key: 'consistency' | 'recovery' | 'reach'; label: string; fill: number; threshold: number; passed: boolean; story: string; gloss?: string };
 
@@ -59,7 +59,7 @@ export function grintaComponents(g: Grinta, reclaimMoving: number): GrintaCompon
     },
     {
       key: 'reach',
-      label: 'Choice',
+      label: 'Control',
       fill: reach,
       threshold,
       passed: reach >= threshold,

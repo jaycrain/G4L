@@ -8,6 +8,7 @@ import StravaConnect from '../../account/strava-connect.tsx';
 import { getGrinta, grintaComponents } from '../../../lib/grinta/index.ts';
 import { getJourney } from '../../../lib/beats/store.ts';
 import JourneyRings from '../journey-rings.tsx';
+import IdqRadar from '../idq-radar.tsx';
 import { formatDistance, formatDuration, typeLabel, relativeDay } from '../../../lib/activity/summary.ts';
 import { firstName, initials } from '../../../lib/member/avatar.ts';
 import type { Db } from '../../../lib/db/schema.ts';
@@ -235,6 +236,11 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
                   </span>
                 )}
               </div>
+              {dash.score.dimensions && (
+                <div className="metric-radar">
+                  <IdqRadar current={dash.score.dimensions} size={132} withLabels={false} />
+                </div>
+              )}
               <div className="dims">
                 {dash.score.dimensions &&
                   (Object.keys(DIM_LABEL) as Array<keyof typeof dash.score.dimensions>).map((k) => (

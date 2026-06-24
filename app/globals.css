@@ -135,6 +135,29 @@ button:hover, .btn:hover { background: var(--navy); }
 /* The personalized "your read" line — up top, distinct from the explainer beneath it. */
 .sub-personal { border-left: 4px solid var(--navy); padding: 0.3rem 0 0.3rem 0.85rem; margin: 0 0 1.15rem; color: var(--navy); font-size: 1.05rem; font-weight: 600; line-height: 1.5; }
 .sub-personal strong { color: var(--navy); }
+/* Detail-page subheads + lists (ID Score / Grinta / Journey copy refresh) */
+.sub-copy h3 { color: var(--navy); font-size: 1.08rem; margin: 1.6rem 0 0.55rem; }
+.sub-copy h3:first-of-type { margin-top: 0.5rem; }
+.sub-copy ul.sub-list { margin: 0 0 0.9rem; padding-left: 1.1rem; }
+.sub-copy ul.sub-list li { line-height: 1.55; margin-bottom: 0.45rem; }
+/* ID Score identity radar */
+.radar-wrap { margin: 0.5rem 0 1.1rem; }
+.radar-legend { display: flex; align-items: center; justify-content: center; gap: 0.45rem; font-size: 0.8rem; color: var(--navy); opacity: 0.75; margin: 0.4rem 0 0; }
+.radar-legend .rl-now, .radar-legend .rl-prev { display: inline-block; width: 16px; height: 0; border-top: 3px solid var(--teal); }
+.radar-legend .rl-prev { border-top: 2px dashed var(--navy); opacity: 0.55; }
+.dim-legend { margin: 0 0 1.1rem; }
+.dim-legend .dim-row { display: grid; grid-template-columns: 8rem 1fr; gap: 0.6rem; padding: 0.5rem 0; border-top: 1px solid var(--light-grey, #E8E6E6); }
+.dim-legend .dim-row:first-child { border-top: none; }
+.dim-legend dt { font-weight: 600; color: var(--navy); margin: 0; }
+.dim-legend dd { margin: 0; line-height: 1.5; }
+.dim-legend .dim-val { color: var(--teal); font-weight: 700; white-space: nowrap; }
+.dim-legend .dim-max { color: var(--navy); opacity: 0.5; font-weight: 400; font-size: 0.85em; }
+/* Dashboard ID Score card — compact radar */
+.metric-radar { margin: 0.25rem auto 0.55rem; max-width: 140px; }
+/* Field Guide — the pieces list */
+.fg-pieces { margin: 0.2rem 0 0; padding-left: 1.1rem; }
+.fg-pieces li { line-height: 1.6; margin-bottom: 0.7rem; }
+.fg-pieces em { color: var(--navy); opacity: 0.85; }
 
 .onboard-intro { margin: 0 0 1.4rem; }
 .onboard-intro p { line-height: 1.6; margin: 0 0 0.85rem; color: var(--charcoal); }

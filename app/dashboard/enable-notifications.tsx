@@ -127,7 +127,7 @@ export default function EnableNotifications({ memberId }: { memberId: string }) 
       <h3>Notifications</h3>
       {state === 'on' ? (
         <>
-          <p className="muted">You&apos;re set to hear from your Member Agent. ✓</p>
+          <p className="muted">You&apos;re set to hear from your Companion. ✓</p>
           <button className="btn-secondary" onClick={disable} disabled={busy}>
             {busy ? 'Turning off…' : 'Turn off notifications'}
           </button>
@@ -139,7 +139,7 @@ export default function EnableNotifications({ memberId }: { memberId: string }) 
         </p>
       ) : (
         <>
-          <p className="muted">Let your Member Agent reach out — a gentle check-in when it matters, never noise.</p>
+          <p className="muted">Let your Companion reach out — a gentle check-in when it matters, never noise.</p>
           <button onClick={enable} disabled={state === 'working'}>
             {state === 'working' ? 'Turning on…' : 'Turn on notifications'}
           </button>
