@@ -50,5 +50,22 @@ flow; then it can light up per the roadmap.
 
 ---
 
+## Supabase Data API — evaluate disabling it (security review)
+**Status:** open question for the senior-security pass — defense-in-depth, not urgent.
+**Context:** RLS is now swept on (migration `0039`) so the Data API (PostgREST, anon/authenticated roles)
+default-denies. But the app **doesn't use the Data API at all** — it talks to Postgres over the direct
+table-OWNER connection, and Realtime uses **broadcast + presence** (which never touch tables, so they
+don't need PostgREST). So the Data API is pure attack surface we don't use.
+**The move to weigh:** disable the Data API entirely in Supabase (Project Settings → Data API), which
+closes the REST path regardless of RLS — belt-and-suspenders on top of `0039`.
+**Why it's a review item, not a quick flip:** confirm nothing latent depends on PostgREST (it doesn't
+today), and that the multi-tenant "switch-on later" plan — which *might* want the Data API — is weighed.
+The published anon key (`NEXT_PUBLIC_SUPABASE_ANON_KEY`) stays as-is either way; it's only used for the
+Realtime socket. Pairs with the still-open **private channels + `realtime.messages` RLS** hardening
+(see `docs/connect-design.md`).
+**Definition of done:** decision recorded (disable vs keep-with-RLS) with the senior-eng reasoning.
+
+---
+
 ## Done
 _(move shipped items here with a date)_
