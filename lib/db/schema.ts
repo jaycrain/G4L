@@ -79,6 +79,7 @@ const MIGRATIONS: Array<{ file: string; sentinel: Sentinel }> = [
   { file: 'migrations/0036_connect_safety.sql', sentinel: { table: 'connect_report', column: 'source' } },
   { file: 'migrations/0037_connect_notifications.sql', sentinel: 'connect_notification' },
   { file: 'migrations/0038_connect_rooms.sql', sentinel: 'connect_room' },
+  { file: 'migrations/0039_enable_rls_sweep.sql', sentinel: '_rls_sweep_0039' },
 ];
 export const SEED_SQL = () => sqlFile('seed/0001_reference_data.sql');
 
