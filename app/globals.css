@@ -758,7 +758,9 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .companion-rail .chat-input button { flex-shrink: 0; }
 .rail-head { position: absolute; top: 0; left: 0; right: 0; z-index: 2; display: flex; align-items: center; justify-content: space-between; padding: 0.55rem 0.9rem; font-weight: 700; color: var(--navy); background: rgba(255, 255, 255, 0.72); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
 .rail-x { background: none; border: none; font-size: 1.5rem; line-height: 1; color: #AEB3B8; cursor: pointer; }
-.rail-chat { position: absolute; inset: 0; overflow-y: auto; overflow-anchor: none; margin: 0; padding: 56px 1rem 78px; }
+/* Top padding must clear the absolutely-positioned .rail-head (≈88px) — otherwise the first message's
+   top sits under the header and can't be scrolled into view. 96px = header + a little breathing room. */
+.rail-chat { position: absolute; inset: 0; overflow-y: auto; overflow-anchor: none; margin: 0; padding: 96px 1rem 78px; }
 .companion-rail .chat-input { position: absolute; bottom: 0; left: 0; right: 0; z-index: 2; padding: 0.5rem 0.75rem 0.6rem; background: rgba(255, 255, 255, 0.72); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
 /* Clean companion thread — G4L avatar + "here with you", an avatar beside each companion message,
    white soft-bordered bubbles (agent) and navy bubbles (member). */
