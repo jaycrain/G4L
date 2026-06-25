@@ -42,26 +42,24 @@ export default function CompanionDock({
   }, [input]);
 
   const railRef = useRef<HTMLElement>(null);
+  const chatRef = useRef<HTMLDivElement>(null);
+  const initScrolledRef = useRef(false);
 
+  const loadedRef = useRef(false);
   const openRail = useCallback(async () => {
     setOpen(true);
     setBadgeDismissed(true);
-    setMessages((cur) => {
-      if (cur.length) return cur;
-      // load lazily below; mark so we only fetch once
-      void (async () => {
-        setPending(true);
-        try {
-          const thread = await openCheckin(memberId);
-          setMessages(thread.length ? thread : [{ role: 'agent', text: 'I’m here. What’s on your mind?' }]);
-        } catch {
-          setMessages([{ role: 'agent', text: 'I’m here. Something hiccupped loading our thread — send a message and we’ll go.' }]);
-        } finally {
-          setPending(false);
-        }
-      })();
-      return cur;
-    });
+    if (loadedRef.current) return; // thread already loaded this session — a reopen shows it instantly
+    loadedRef.current = true;
+    setPending(true);
+    try {
+      const thread = await openCheckin(memberId);
+      setMessages(thread.length ? thread : [{ role: 'agent', text: 'I’m here. What’s on your mind?' }]);
+    } catch {
+      setMessages([{ role: 'agent', text: 'I’m here. Something hiccupped loading our thread — send a message and we’ll go.' }]);
+    } finally {
+      setPending(false);
+    }
   }, [memberId]);
 
   // Esc closes; arriving from a notification (?chat=1) opens.
@@ -69,6 +67,21 @@ export default function CompanionDock({
     if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('chat')) void openRail();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // On open, pin the thread to the TOP once the opening message has rendered, so a long opening
+  // message is read from its start (it could otherwise come up scrolled past its top). Re-asserts
+  // across a couple of frames so a late layout shift (avatar load, textarea autosize) can't nudge it.
+  useEffect(() => {
+    if (!open) { initScrolledRef.current = false; return; }
+    if (initScrolledRef.current || messages.length === 0) return;
+    initScrolledRef.current = true;
+    const el = chatRef.current;
+    if (!el) return;
+    el.scrollTop = 0;
+    requestAnimationFrame(() => { if (chatRef.current) chatRef.current.scrollTop = 0; });
+    const t = setTimeout(() => { if (chatRef.current) chatRef.current.scrollTop = 0; }, 140);
+    return () => clearTimeout(t);
+  }, [open, messages]);
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
@@ -150,7 +163,7 @@ export default function CompanionDock({
             </span>
             <button type="button" className="rail-x" onClick={() => setOpen(false)} aria-label="Close">×</button>
           </div>
-          <div className="chat rail-chat">
+          <div ref={chatRef} className="chat rail-chat">
             {messages.map((m, i) =>
               m.role === 'agent' ? (
                 <div key={i} className="rail-msg">

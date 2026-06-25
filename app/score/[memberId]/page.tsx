@@ -63,8 +63,8 @@ export default async function ScoreMorePage({ params }: { params: Promise<{ memb
           {DIM_COPY.map((d) => (
             <div key={d.key} className="dim-row">
               <dt>
-                {d.label}
-                {dims && <span className="dim-val"> {dims[d.key]}<span className="dim-max">/30</span></span>}
+                <span className="dim-name">{d.label}</span>
+                {dims && <span className="dim-val">{dims[d.key]}<span className="dim-max">/30</span></span>}
               </dt>
               <dd>{d.reads}</dd>
             </div>

@@ -149,6 +149,7 @@ button:hover, .btn:hover { background: var(--navy); }
 .dim-legend .dim-row { display: grid; grid-template-columns: 8rem 1fr; gap: 0.6rem; padding: 0.5rem 0; border-top: 1px solid var(--light-grey, #E8E6E6); }
 .dim-legend .dim-row:first-child { border-top: none; }
 .dim-legend dt { font-weight: 600; color: var(--navy); margin: 0; }
+.dim-legend .dim-name { display: inline-block; min-width: 4.6rem; }
 .dim-legend dd { margin: 0; line-height: 1.5; }
 .dim-legend .dim-val { color: var(--teal); font-weight: 700; white-space: nowrap; }
 .dim-legend .dim-max { color: var(--navy); opacity: 0.5; font-weight: 400; font-size: 0.85em; }
@@ -757,7 +758,7 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .companion-rail .chat-input button { flex-shrink: 0; }
 .rail-head { position: absolute; top: 0; left: 0; right: 0; z-index: 2; display: flex; align-items: center; justify-content: space-between; padding: 0.55rem 0.9rem; font-weight: 700; color: var(--navy); background: rgba(255, 255, 255, 0.72); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
 .rail-x { background: none; border: none; font-size: 1.5rem; line-height: 1; color: #AEB3B8; cursor: pointer; }
-.rail-chat { position: absolute; inset: 0; overflow-y: auto; margin: 0; padding: 56px 1rem 78px; }
+.rail-chat { position: absolute; inset: 0; overflow-y: auto; overflow-anchor: none; margin: 0; padding: 56px 1rem 78px; }
 .companion-rail .chat-input { position: absolute; bottom: 0; left: 0; right: 0; z-index: 2; padding: 0.5rem 0.75rem 0.6rem; background: rgba(255, 255, 255, 0.72); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
 /* Clean companion thread — G4L avatar + "here with you", an avatar beside each companion message,
    white soft-bordered bubbles (agent) and navy bubbles (member). */
