@@ -811,6 +811,11 @@ ul.program { list-style: none; padding: 0; margin: 0; }
    scrolled past, so it stops covering the panels below — Condensed Scroll spec). The sentinel is a
    zero-height marker in flow just above the panel; the hero toggles .is-condensed off its visibility. */
 .companion-hero-sentinel { height: 0; margin: 0; padding: 0; }
+/* Scroll anchoring fights the sticky hero's condense: when the panel shrinks, the browser yanks
+   scrollY ~30px to "keep content stable", which re-crosses the condense threshold and makes slow
+   scrolling jump/oscillate. Disable anchoring on the dashboard (where the hero lives) so it's smooth.
+   Scoped via :has() to the page that has the hero — no app-wide change. */
+html:has(.companion-hero), body:has(.companion-hero) { overflow-anchor: none; }
 .companion-hero { position: sticky; top: 0.75rem; z-index: 5; background: var(--navy); color: var(--white); border-radius: 14px; padding: 1.4rem 1.5rem; margin-bottom: 1.1rem; transition: padding 0.24s ease; }
 .companion-hero-head { display: flex; align-items: center; gap: 0.55rem; margin-bottom: 0.55rem; transition: margin 0.24s ease; }
 .companion-avatar { display: inline-flex; opacity: 0.9; }
