@@ -49,9 +49,9 @@ test('nextStage advances only as each requirement is met, and completes after th
 test('opening turn opens on the Getting-to-Know-You question (disclosure now lives on the start page)', async () => {
   const t = await onboardingNextTurn({ ctx, state: INITIAL_STATE, history: [], memberMessage: null });
   assert.doesNotMatch(t.reply, /guided by AI/); // the AI disclosure is woven into the start page, not repeated here
-  assert.match(t.reply, /who were you/i); // identity-agnostic opening
+  assert.match(t.reply, /who you were/i); // identity-agnostic opening (voice rewrite v1)
   assert.match(t.reply, /writer|musician|builder|runner/i); // reclaimed identity is not limited to athletics
-  assert.equal((t.reply.match(/\?/g) ?? []).length, 1); // still exactly one question
+  assert.match(t.reply, /tell me about them/i); // a single, warm invitation to talk about that person
   assert.equal(t.complete, false);
   assert.equal(t.crisis, undefined);
 });

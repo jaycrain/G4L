@@ -116,3 +116,66 @@ save→load→resume round-trip. Small, but we're in this code anyway.
    program), or keep it strongly-encouraged-but-optional so a terse member isn't blocked?
 3. **Scope now:** all three legs, or land Leg 1 + Leg 2 first (stops the showstopper) and schedule
    Leg 3 as the hardening follow-up?
+
+---
+
+## Leg 3 — build log (the deferred follow-up, picked up Jun 25 2026)
+
+Legs 1 + 2 shipped Jun 16–17 (replay harness; contract-gated completion + the confirmation card). **Leg
+3 was deferred** (the answer to Open Question #3) and never built — onboarding still used the single
+monolithic `record_progress` tool with no reconciliation. A fresh Charter run (Donna, Jun 25) hit exactly
+the failure Leg 3 was meant to close, so it's now being built in parts.
+
+### Part A — the Door-beat-entry gate *(shipped Jun 25)*
+
+**The bug Donna hit.** Identity skipped, the Reclaim List filled, and on the turn she *confirmed the
+list was done* the model paraphrased a Reclaim item into `gap`. The intake completed and handed off to
+the IDQ with a **fabricated fade story and the Door question never asked** ("assumptions without any
+questions"). Reproduced offline; the confirmation card (Leg 2) did catch it (she could "keep talking"),
+but the upstream racing is the defect.
+
+**Root.** The engine equated *"the Reclaim List reached the minimum count"* with *"the Reclaim beat is
+over → we're in the Door beat."* `nextStage` returned `door` the instant `reclaimList.length >=
+RECLAIM_LIST_MIN`, while the agent was still asking "anything else for your list?" — so a gap could be
+captured and the intake completed before the Door question was ever posed, and a member confirming their
+*list* was misread as confirming the *whole intake*.
+
+**The fix (structural, not a guard on top).** A new `ConvState.doorAsked` flag marks whether the Door
+beat has actually been **entered** (the "how did the gap open?" question posed). The list has no max, so
+"hit the minimum" no longer ends the Reclaim beat — the member signals it's done:
+- We **enter** the Door beat only when identity is captured, the list is at the minimum, and the list did
+  **not** grow this turn (the member is done adding). On that turn the engine poses the Door question and
+  sets `doorAsked` (sticky thereafter).
+- **No gap is committed before the beat is entered.** The model's `gap`/`doors` are trusted only once
+  *already* in the beat (a prior turn asked the question); on the entry turn the gap can come only from
+  the member's **own words** (the existing `shouldCaptureGapFromMessage` backstop) — never a model
+  paraphrase. With no gap, the completion contract can't be met, so the intake **cannot complete before
+  the Door question is asked** (an explicit "move me on" still routes to the question — a real gap
+  narrative is a hard requirement, Open Question #2, recommended).
+- The `stage==='door'` reply branch now distinguishes *still gathering the list* (keep it open, ask
+  "anything else?"), *entering the beat* (pose the Door question, never keep a lingering reclaim
+  question), and *in the beat* (draw out how it opened).
+
+**Files:** `lib/agent/onboarding.ts` (`ConvState`, `applyModelTurn`). Pure, fully replay-testable; the
+live wrapper and the tool schema are untouched.
+
+**Part D — proof.** `tests/onboarding-replay.test.ts` gains the Donna fixture (list confirmed before the
+Door beat → must NOT complete, must NOT accept a paraphrased Reclaim item as the gap, must pose the Door
+question). It went in **red** (reproduced today) and Part A turned it green. The "full happy path"
+fixture was updated to the corrected flow (the Door question is now its own beat), and the `atDoorBeat`
+fixture carries `doorAsked: true` (it represents a beat already entered). tsc clean; onboarding 29/0,
+replay 6/0.
+
+### Parts B + C — still open (the rest of Leg 3)
+
+- **B — structured capture tools.** Replace the monolithic `record_progress` with `set_identity` /
+  `add_reclaim_item` / `set_gap` / `set_doors` so capture is deliberate per field and `collected` is the
+  single source of truth (read back from it when summarizing — "added to your list" true by
+  construction). `parseModelTurn` can merge the calls into the same record shape, so the engine and every
+  fixture stay unchanged; the win is reduced model fabrication pressure upstream.
+- **C — reconciliation backstop.** Post-turn deterministic drift check: an item acknowledged in prose
+  but not captured (the "Clair" say/do gap), a Door not grounded in the gap (reuse `doorsToConfirm`).
+  Surfaces on the confirmation card / blocks completion.
+
+Part A makes the engine refuse to be fooled (deterministic); B + C reduce how often the model misbehaves
+and close the say/do gap. Lower urgency now that A holds.

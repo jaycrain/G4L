@@ -55,9 +55,11 @@ function assertInvariants(turns: Turn[]) {
   }
 }
 
-// A member who's reached the Door beat (identity named, Reclaim List in) — the shape Donna was in.
+// A member who's reached the Door beat (identity named, Reclaim List in, the Door question already posed)
+// — the shape Donna was in. doorAsked:true = the beat has been entered, so the gap can now be captured.
 const atDoorBeat: ConvState = {
   stage: 'door',
+  doorAsked: true,
   collected: {
     athleticPast: 'Optimistic, energetic, creative — the one who lifts everyone up',
     identityNoun: 'Cheerleader',
@@ -112,11 +114,14 @@ test('REPLAY — Donna run 2: had the model recorded the gap properly, she still
   assert.deepEqual(finalState.collected.doors, ['aging_parents', 'load_bearer']); // canonical order
 });
 
-test('REPLAY — full happy path from scratch (identity → reclaim → door → complete)', () => {
+test('REPLAY — full happy path from scratch (identity → reclaim → Door beat → complete)', () => {
   const { turns, finalState } = replay([
     { member: 'I was a competitive cyclist who rode every weekend', model: { text: 'That comes through clearly.', record: { athleticPast: 'a competitive cyclist who rode every weekend' } } },
     { member: 'The Athlete', model: { text: 'The Athlete it is.', record: { identityNoun: 'Athlete' } } },
     { member: 'ride again, sleep well, coach a friend', model: { text: 'A real list.', record: { reclaimList: ['ride again', 'sleep well', 'coach a friend'] } } },
+    // The list is in and she confirms it — the engine ENTERS the Door beat and asks how the gap opened
+    // (it does NOT capture a gap or complete off the list itself).
+    { member: 'that’s my list', model: { text: 'Good — that’s a real list.' } },
     { member: 'my role was cut and the riding quietly stopped', model: { text: 'That’s the Career Cliff.', record: { gap: 'my role was cut and the riding quietly stopped', doors: ['career_cliff'] } } },
     { member: 'that’s everything', model: { text: 'Okay — the Career Cliff is how it started, and the Athlete is who we’re bringing back. Ready when you are.', record: { complete: true } } },
   ]);
@@ -125,8 +130,10 @@ test('REPLAY — full happy path from scratch (identity → reclaim → door →
   assert.equal(finalState.collected.identityNoun, 'Athlete');
   assert.deepEqual(finalState.collected.doors, ['career_cliff']);
   assert.equal((finalState.collected.reclaimList ?? []).length, 3);
+  // The Door question was actually posed once the list was done — before any gap was captured.
+  assert.match(turns[3]!.reply, /gap began to open|first felt the drift|how it went for you/i, 'Door question posed once the list is done');
   // The beat breathed: a thin single-Door gap did NOT complete on the turn it was given.
-  assert.equal(turns[3]!.complete, false, 'thin gap explores before closing');
+  assert.equal(turns[4]!.complete, false, 'thin gap explores before closing');
 });
 
 test('REPLAY — Donna at the Reclaim List (win-list): model reflects her items but records NONE, then she pushes; engine must NOT loop the prompt or strand her', () => {
@@ -169,4 +176,31 @@ test('REPLAY — identity gate: model drifts past naming; engine holds, then the
   assert.equal(turns[0]!.state.stage, 'identity_name', 'held at the naming beat while identity is unset');
   assert.equal(finalState.collected.identitySkipped, true, 'an explicit "not sure" advances via skip');
   assert.notEqual(finalState.stage, 'identity_name', 'no longer trapped at naming once skipped');
+});
+
+test('REPLAY — Donna: confirming the Reclaim List must not complete or fabricate a gap before the Door beat', () => {
+  // The reported failure (Donna, fresh run): identity skipped, the Reclaim List fills, and on the turn she
+  // confirms the LIST is done the model paraphrases a Reclaim item into `gap` — so the intake completed
+  // and handed off to the IDQ with a fabricated fade story, the DOOR QUESTION NEVER ASKED. The engine must
+  // not equate "list reached the minimum" with "in the Door beat": a list confirmation must pose the Door
+  // question, never accept a paraphrased Reclaim item as the fade story, and never complete here.
+  const steps = [
+    { member: 'I felt most like myself as a filmmaker — completely at home in my own life and my community.',
+      model: { text: 'Being at home in your own life — that comes through.', record: { athleticPast: 'a filmmaker, at home in her own life and community' } } },
+    { member: 'Honestly I’m not sure I can put it in one word yet.',
+      model: { text: 'That’s completely fine — you’ll find it through the work. Let’s talk about what you want back.', record: { identitySkipped: true } } },
+    { member: 'Feeling at home in my own home; walking Maple, my chocolate lab, as a daily rhythm; work I enjoy that pays well enough that money isn’t a constant worry.',
+      model: { text: 'That’s a real start.', record: { reclaimList: ['Feel at home in my own home', 'Walk Maple as a daily rhythm', 'Enjoyable work that pays well enough that financial concerns aren’t a constant worry'], reclaimCategories: ['self', 'physical', 'life'] } } },
+    { member: 'Also losing 20 lbs, and a bigger volunteer role with the Boulder County Film Commission and Sundance.',
+      model: { text: 'Got it — anything else, or does that feel like the list?', record: { reclaimList: ['Feel at home in my own home', 'Walk Maple as a daily rhythm', 'Enjoyable work that pays well enough that financial concerns aren’t a constant worry', 'Lose 20 lbs', 'A bigger volunteer role with the Boulder County Film Commission and Sundance'], reclaimCategories: ['self', 'physical', 'life', 'physical', 'social'] } } },
+    // DECISIVE: she confirms the LIST is done; the model paraphrases Reclaim item #3 into `gap`.
+    { member: 'That’s everything.',
+      model: { text: 'Anything else, or does that feel like the list?', record: { gap: 'Clients and projects that are work I enjoy that pays well enough that I don’t have financial concerns' } } },
+  ];
+  const { turns, finalState } = replay(steps);
+  const last = turns[turns.length - 1]!;
+  assert.equal(last.complete, false, 'must NOT complete on a Reclaim-List confirmation — the Door beat never ran');
+  assert.ok(!finalState.collected.gap, 'must NOT accept a paraphrased Reclaim item as the fade story');
+  assert.match(last.reply, /gap began to open|first felt the drift|how it went for you/i, 'must pose the Door question next');
+  assertInvariants(turns);
 });

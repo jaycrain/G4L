@@ -34,6 +34,9 @@ export type ConvState = {
   collected: Collected;
   doorTurns?: number; // how many exchanges the Door beat has had (gates completion — see resolveCompletion)
   identityTurns?: number; // how many exchanges spent at the naming beat (drives the identity gate — see liveTurn)
+  doorAsked?: boolean; // has the Door beat actually been ENTERED (the "how did the gap open?" question posed)?
+  // Until then a gap can't be captured and the intake can't complete — "list hit the minimum" is NOT
+  // "we're in the Door beat" (the list has no max). The fix for capturing/completing before the ask.
 };
 export type ConvMessage = { role: 'agent' | 'member'; text: string };
 export type Ctx = { name: string; email: string };
@@ -577,10 +580,17 @@ export function applyModelTurn(
   model: ModelTurn,
 ): Turn {
   let collected: Collected = { ...state.collected };
+  const inDoorBeat = state.doorAsked ?? false; // was the Door question already posed on a prior turn?
   let wantsComplete = false;
+  let modelGap: string | undefined;
+  let modelDoors: DoorSlug[] | undefined;
   if (model.record) {
     const p = model.record;
-    const doors = Array.isArray(p.doors) ? p.doors.filter(isDoorSlug) : undefined;
+    modelGap = p.gap;
+    modelDoors = Array.isArray(p.doors) ? p.doors.filter(isDoorSlug) : undefined;
+    // Early-beat records (identity, Reclaim List) commit as gathered. The Door-beat records (gap, doors)
+    // are held until we're actually IN the Door beat (below) — so a model that races ahead and paraphrases
+    // a Reclaim item into `gap` can't satisfy the contract before the Door question is even asked (Donna).
     collected = {
       ...collected,
       ...(p.athleticPast !== undefined && { athleticPast: p.athleticPast }),
@@ -590,8 +600,6 @@ export function applyModelTurn(
       ...(Array.isArray((p as { reclaimCategories?: string[] }).reclaimCategories) && {
         reclaimCategories: (p as { reclaimCategories?: string[] }).reclaimCategories,
       }),
-      ...(p.gap !== undefined && { gap: p.gap }),
-      ...(doors && doors.length > 0 && { doors }),
     };
     wantsComplete = Boolean(p.complete);
   }
@@ -607,6 +615,25 @@ export function applyModelTurn(
     collected = { ...collected, identitySkipped: true };
   }
 
+  // DOOR-BEAT ENTRY. "The Reclaim List reached the minimum count" is NOT "the Reclaim beat is over" — the
+  // list has no max. We ENTER the Door beat only once the member is done adding (the list did NOT grow
+  // this turn); on that turn the engine poses the "how did the gap open?" question. Until the beat is
+  // entered, no gap is committed and the intake cannot complete — the fix for capturing a gap / handing
+  // off before the Door question was ever asked (Donna). Once entered, `doorAsked` stays true (sticky via
+  // state.doorAsked → inDoorBeat next turn).
+  const identityCaptured = !!collected.athleticPast && (!!collected.identityNoun || !!collected.identitySkipped);
+  const listAtMin = (collected.reclaimList?.length ?? 0) >= RECLAIM_LIST_MIN;
+  const listGrew = (collected.reclaimList?.length ?? 0) > (state.collected.reclaimList?.length ?? 0);
+  const enteringDoorBeat = !inDoorBeat && identityCaptured && listAtMin && !listGrew;
+  const doorActive = inDoorBeat || enteringDoorBeat;
+  const doorAsked = doorActive;
+
+  // The model's gap/doors are trusted only once we're ALREADY in the Door beat (a prior turn asked the
+  // question). On the entry turn the gap can come only from the member's OWN words (the backstop below) —
+  // never the model — so a paraphrased Reclaim item can never be promoted to the fade story.
+  if (inDoorBeat && modelGap !== undefined) collected = { ...collected, gap: modelGap };
+  if (inDoorBeat && modelDoors && modelDoors.length > 0) collected = { ...collected, doors: modelDoors };
+
   // GAP-CAPTURE BACKSTOP: the model is the primary recorder, but it sometimes CONVERSES and reflects the
   // fade without ever persisting it via record_progress. Donna told her whole story across several turns,
   // the agent reflected it warmly — yet `gap` stayed empty, so the engine kept re-asking "how did the gap
@@ -617,7 +644,7 @@ export function applyModelTurn(
   // message reads as a real fade narrative, record it as the gap. This is reading their account — safe
   // against the old fabrication bug: it fires ONLY at the Door beat, ONLY on a substantive narrative, and
   // never scrapes reclaim items or scattered text (gapIsNarrative rejects a reclaim item or a short goal).
-  if (shouldCaptureGapFromMessage(collected, memberMessage)) {
+  if (doorActive && shouldCaptureGapFromMessage(collected, memberMessage)) {
     collected = { ...collected, gap: memberMessage.trim() };
   }
 
@@ -708,18 +735,26 @@ export function applyModelTurn(
     const prematureHandoff = /ready when you are/i.test(r);
     finalReply = prematureHandoff ? forward : /\?/.test(r) ? r : `${r ? `${r}\n\n` : ''}${forward}`;
   } else if (stage === 'door') {
-    // In the Door beat, not yet exploring (no Door recorded) and not complete. NEVER re-ask "how did
-    // the gap open?" once the gap is already captured — that's the loop Donna hit (she answered in
-    // full and got the same question back). If the gap ISN'T captured yet, ask it; if it IS, acknowledge
-    // it and move to naming the Door instead of re-asking. Keep the model's own question if it asked one.
     const r = reply.trim();
-    const needGap = !gapIsNarrative(collected.gap, collected.reclaimList ?? []);
-    const forward = needGap
-      ? doorPrompt()
-      : 'You’ve already told me how it opened — I’ve got that. If you had to name the one thing that opened the gap, what would you call it?';
     const prematureHandoff = /ready when you are/i.test(r);
     const lead = r && !prematureHandoff && !/\?\s*$/.test(r) ? `${r}\n\n` : '';
-    finalReply = !prematureHandoff && /\?/.test(r) ? r : `${lead}${forward}`;
+    if (!doorActive) {
+      // The Reclaim List hit the minimum but the member is still adding — keep the list OPEN; never pose
+      // the Door question yet, never capture/complete. (The list has no max — count alone never ends it.)
+      finalReply = /\?/.test(r) ? r : `${lead}Anything else you want back, or does that feel like the list?`;
+    } else if (enteringDoorBeat) {
+      // The member just finished the Reclaim List — ENTER the Door beat and pose the question. Never keep
+      // a lingering "anything else?" reclaim question here: the gap can only be gathered once we've asked.
+      finalReply = `${lead}${doorPrompt()}`;
+    } else {
+      // Already in the Door beat, gap not yet a narrative. NEVER re-ask "how did the gap open?" once it's
+      // captured (the loop Donna hit). If it isn't captured yet, ask it; if it is, move to naming the Door.
+      const needGap = !gapIsNarrative(collected.gap, collected.reclaimList ?? []);
+      const forward = needGap
+        ? doorPrompt()
+        : 'You’ve already told me how it opened — I’ve got that. If you had to name the one thing that opened the gap, what would you call it?';
+      finalReply = !prematureHandoff && /\?/.test(r) ? r : `${lead}${forward}`;
+    }
   } else if (stage === 'identity_name') {
     // IDENTITY GATE forced-forward: hold the conversation on naming the reclaimed identity until the
     // member names it (model records identityNoun) or chooses to find it later (identitySkipped). Keep
@@ -750,5 +785,5 @@ export function applyModelTurn(
       'If there’s more to how the gap opened, tell me in a line — otherwise say “that’s everything” and I’ll take us straight to what’s next.';
   }
 
-  return { reply: finalReply, state: { stage, collected, doorTurns, identityTurns }, complete };
+  return { reply: finalReply, state: { stage, collected, doorTurns, identityTurns, doorAsked }, complete };
 }
