@@ -26,7 +26,7 @@ export default function DailyBeat({ memberId, initial }: { memberId: string; ini
   if (done || !served) {
     return (
       <div className="card daily-beat">
-        <span className="daily-tag">Today’s GRINTA! Beat</span>
+        <span className="daily-tag">Today’s Grinta Beat</span>
         <p className="muted" style={{ marginTop: '0.4rem' }}>
           {done ? 'Today’s rep is in — that’s grit. Another one tomorrow.' : 'Your daily rep will appear here.'}
         </p>
@@ -36,7 +36,7 @@ export default function DailyBeat({ memberId, initial }: { memberId: string; ini
 
   return (
     <div className="card daily-beat">
-      <span className="daily-tag">Today’s GRINTA! Beat</span>
+      <span className="daily-tag">Today’s Grinta Beat</span>
       <p className="beat-content" style={{ marginTop: '0.4rem' }}>{served.beat.content}</p>
       <div className="beat-actions">
         <button type="button" disabled={pending} onClick={() => respond('yes')}>Yes</button>

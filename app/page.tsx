@@ -11,7 +11,7 @@ export default async function Home() {
       <h1>Grinta for Life</h1>
       <p className="muted">
         Somewhere along the way, who you know you are gets diminished by life and others&apos;
-        needs. The Gateway is where we start: a short conversation, the Identity Distance
+        needs. This is where we start: a short conversation, the Identity Distance
         Questionnaire (IDQ), and your first ID Score — so reclaiming your identity isn&apos;t abstract.
       </p>
       <p>

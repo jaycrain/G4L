@@ -264,6 +264,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
 
         <div className="card metric journey-card">
           <h3>Journey</h3>
+          <p className="journey-intro">This is your Journey — the whole path, and where you are on it right now.</p>
           <div className="metric-body metric-center">
             <JourneyRings states={ringStates} />
             {journey.reclaim.total > 0 && (
@@ -274,6 +275,13 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
               </div>
             )}
           </div>
+          <p className="journey-lead">The path runs through four movements, as a loop:</p>
+          <ol className="journey-4rs">
+            <li>Reconnect</li>
+            <li>Rewire</li>
+            <li>Rebuild</li>
+            <li>Reclaim</li>
+          </ol>
           <Link href={`/journey/${memberId}`} className="see-more">See more →</Link>
         </div>
 

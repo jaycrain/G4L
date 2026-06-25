@@ -24,7 +24,7 @@ export const BEATS_DATA = {
       "readiness": [],
       "serves": [],
       "close_type": "reflect",
-      "close": "That's the read. Where did the low numbers cluster? Don't argue with it — just see it.",
+      "close": "That's the read. Where did the low numbers land? Don't argue with it — just see it.",
       "provenance": "voice-rewrite"
     },
     {
@@ -1272,7 +1272,7 @@ export const BEATS_DATA = {
       },
       "source": "hardiness_beat",
       "title": "Daily clip-in",
-      "content": "One question to start the day: are you clipped in today? Not perfect — in. Yes or no.",
+      "content": "One question to start the day: are you in today? (Clipping in = committing to one small move, not a perfect day.) Yes or no.",
       "dose": "light",
       "rhythm": "daily",
       "channel": "sms",

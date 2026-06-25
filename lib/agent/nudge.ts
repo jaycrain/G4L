@@ -61,7 +61,7 @@ export function computeNudges(s: NudgeSignals): Nudge[] {
     n.push({ kind: 'activity_witness', text: `Saw you got out for a ${verb}. How did it feel?`, priority: 65 });
   }
   if (s.daysSinceActivity != null && s.daysSinceActivity >= 10) {
-    n.push({ kind: 'silence', text: 'It has been a little while. How are you landing this week?', priority: 60 });
+    n.push({ kind: 'silence', text: 'It has been a little while. How are you feeling today?', priority: 60 });
   }
   if (s.direction === 'down') {
     n.push({ kind: 'down', text: 'Checking in — how are you doing this week?', priority: 50 });

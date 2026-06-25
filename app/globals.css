@@ -351,7 +351,7 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 
 /* Today's daily Hardiness rep */
 .daily-beat { border-left: 4px solid var(--olive); }
-.daily-tag { display: inline-block; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--olive); }
+.daily-tag { display: inline-block; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; font-variant: small-caps; color: var(--olive); }
 
 .card-subtitle { margin: -0.4rem 0 0.6rem; font-size: 0.95rem; font-style: italic; color: var(--navy); opacity: 0.8; }
 
@@ -493,6 +493,11 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .past-beats details[open] .pb-caret { transform: rotate(90deg); }
 .pb-content { margin: 0.5rem 0 0.4rem; color: var(--charcoal); white-space: pre-wrap; }
 .pb-answered { margin: 0; font-size: 0.85rem; color: var(--navy); opacity: 0.85; }
+.journey-intro { font-size: 0.84rem; line-height: 1.5; color: var(--charcoal); opacity: 0.85; margin: 0.1rem 0 0; }
+.journey-lead { font-size: 0.82rem; color: var(--navy); margin: 0.8rem 0 0.45rem; }
+.journey-4rs { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem 0.45rem; font-size: 0.82rem; font-weight: 600; color: var(--navy); }
+.journey-4rs li { display: inline-flex; align-items: center; }
+.journey-4rs li:not(:last-child)::after { content: '→'; margin-left: 0.45rem; font-weight: 400; color: var(--teal); opacity: 0.8; }
 .journey-reclaim { display: flex; gap: 0.9rem; margin-top: 0.6rem; }
 .journey-reclaim span { font-size: 0.82rem; color: var(--navy); opacity: 0.85; white-space: nowrap; }
 .journey-reclaim strong { font-size: 1.05rem; color: var(--teal); opacity: 1; }
@@ -632,7 +637,7 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 
 /* GRINTA! Bites — small daily content the agent serves */
 .bite-head { display: flex; justify-content: space-between; align-items: baseline; gap: 0.5rem; }
-.bite-tag { display: inline-block; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--olive); }
+.bite-tag { display: inline-block; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; font-variant: small-caps; color: var(--olive); }
 .bite-meta { font-size: 0.78rem; color: var(--navy); opacity: 0.6; }
 .bite-body { white-space: pre-wrap; }
 .bite-by { font-style: italic; color: var(--navy); opacity: 0.8; font-size: 0.9rem; margin: 0.4rem 0 0; }

@@ -61,8 +61,8 @@ export function parseLikert(message: string): number | null {
 
 export function idqOpening(): IdqTurn {
   const intro =
-    'Alright — before we do anything else together, let’s get a clear picture of where you’re starting from. ' +
-    'As honest as you can stand. That’s the whole game today.\n\n' +
+    'Alright — before we do anything else together, let’s get a clear picture of where you’re starting from — ' +
+    'as honest as you can stand. That’s the whole game today.\n\n' +
     'Here’s how it goes. I’ll put twenty-four things in front of you — about your body, about who you are, about ' +
     'the people around you, and about where you’re headed. For each one, you tell me how true it feels right now: ' +
     '1 if it’s not landing at all, 5 if it’s dead-on.\n\n' +
@@ -90,8 +90,8 @@ export function idqRespond(state: IdqConvState, message: string): IdqTurn {
   if (next === TOTAL_ITEMS) {
     return {
       reply:
-        'That’s all twenty-four. Now look back — where did the low numbers cluster?\n\n' +
-        'Don’t argue with it. Just see it. That cluster is where the Fade has done its quietest, heaviest work.\n\n' +
+        'That’s all twenty-four. Now look back — where did the low numbers land?\n\n' +
+        'Don’t argue with it. Just see it. Those low spots are where the Fade has done its heaviest work.\n\n' +
         'And it’s not bad news. It’s exactly where we start. That’s your starting line — and the difference between ' +
         'today and most days is that now you can see it.',
       state: { responses },

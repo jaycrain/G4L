@@ -43,8 +43,8 @@ export type Turn = { reply: string; state: ConvState; complete: boolean; crisis?
 export const INITIAL_STATE: ConvState = { stage: 'identity', collected: {} };
 
 const FIRST_QUESTION =
-  "Before we get to any numbers or plans, I want to understand who I'm helping you reclaim — the fullest version of you. Everything we build here points at that person, so let's start with them.\n\n" +
-  'Who were you, back when you felt most like yourself?\n\n' +
+  "Before we get to any numbers or plans, I want to understand who I'm helping you reclaim — the fullest version of you. Everything we build here points at that person.\n\n" +
+  "Let's start by taking a minute to think about who you were back when you felt most like yourself.\n\n" +
   'Not the job title. Not the role everyone knows you for. The version underneath all that — ' +
   'the one who showed up before life got busy and quietly talked you out of it.\n\n' +
   'Maybe you never thought twice about the stairs. The one who played until your fingers hurt, the ' +

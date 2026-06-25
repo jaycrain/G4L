@@ -22,7 +22,7 @@ export default function BiteCard({ memberId, bite }: { memberId: string; bite: B
   return (
     <div className="card bite">
       <div className="bite-head">
-        <span className="bite-tag">Today’s GRINTA! bite</span>
+        <span className="bite-tag">Today’s Grinta Bite</span>
         <span className="bite-meta">
           {KIND_LABEL[bite.kind]} · {bite.minutes} min
         </span>

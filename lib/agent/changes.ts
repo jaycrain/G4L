@@ -50,7 +50,7 @@ export function diffSnapshot(prev: DashboardSnapshot | null, curr: DashboardSnap
     out.push(`ID Score: ${prev.idScore} → ${curr.idScore}`);
   }
   if (prev.grinta != null && curr.grinta != null && curr.grinta !== prev.grinta) {
-    out.push(`GRINTA! Index: ${prev.grinta} → ${curr.grinta}`);
+    out.push(`Grinta Index: ${prev.grinta} → ${curr.grinta}`);
   }
   if (curr.beatsDone > prev.beatsDone) {
     const d = curr.beatsDone - prev.beatsDone;

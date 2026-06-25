@@ -467,7 +467,7 @@ export async function getJourney(db: Db, memberId: string): Promise<Journey> {
         : '';
   const line =
     beatsDone > 0
-      ? `You've cleared the gateway — ${beatsDone} steps in, and you're into ${place}.${reclaimBit}`
+      ? `You've crossed the Threshold — ${beatsDone} steps in, and you're into ${place}.${reclaimBit}`
       : `You're at the start. Your Reclaim List is where this all points.`;
 
   return {
