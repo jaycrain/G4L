@@ -13,7 +13,7 @@ import { loadConversation, appendMessages } from '../../lib/agent/conversation.t
 import { recentConsumedTitles } from '../../lib/bites/store.ts';
 import { getReclaimItems } from '../../lib/beats/store.ts';
 import { addReclaimItemForMember, addDoorForMember } from '../../lib/member/refine.ts';
-import { markReclaimReclaimedByText, unmarkReclaimReclaimedByText, refineReclaimItemByText } from '../../lib/beats/store.ts';
+import { markReclaimReclaimedByText, unmarkReclaimReclaimedByText, refineReclaimItemByText, removeReclaimItemByText, reorderReclaimList } from '../../lib/beats/store.ts';
 import { proposeEntry, playbookForAgent, isPlaybookSection } from '../../lib/playbook/store.ts';
 import { createMeasure, logReadingByLabel, measuresForAgent, findReclaimItemId, looksTrackable } from '../../lib/measure/store.ts';
 import { maybeFoldMemory } from '../../lib/agent/memory.ts';
@@ -281,6 +281,29 @@ export async function sendCheckin(memberId: string, memberMessage: string): Prom
           return { ok: false, message: "Couldn't find that item — ask which one they mean." };
         }
         return { ok: false, message: 'Nothing to undo — no item reference was provided.' };
+      }
+      if (name === 'remove_reclaim_item') {
+        const res = await removeReclaimItemByText(db, memberId, String(input.item ?? ''));
+        if (res.ok) {
+          mutated = true;
+          return { ok: true, message: `Removed "${res.removedText}" from their Reclaim List — set aside, not destroyed (reversible). Acknowledge it warmly and recovery-first, e.g. "Done — I took ${res.removedText} off your Reclaim List. We can bring it back any time you want." NEVER frame it as a setback.` };
+        }
+        if (res.reason === 'nomatch') {
+          return { ok: false, message: "Couldn't find that item on their Reclaim List — ask which one they mean, then try again." };
+        }
+        return { ok: false, message: 'Not removed — no item reference was provided.' };
+      }
+      if (name === 'reorder_reclaim_list') {
+        const order = Array.isArray(input.order) ? (input.order as unknown[]).map((x) => String(x ?? '')) : [];
+        const res = await reorderReclaimList(db, memberId, order);
+        if (res.ok) {
+          mutated = true;
+          return { ok: true, message: 'Reordered their Reclaim List — it now shows in the new order on their dashboard. Confirm it simply.' };
+        }
+        if (res.reason === 'nomatch') {
+          return { ok: false, message: "Couldn't match those to items on their list — reflect the current list and ask how they'd like it ordered." };
+        }
+        return { ok: false, message: 'Not reordered — no order was provided.' };
       }
       if (name === 'propose_playbook_entry') {
         const section = String(input.section ?? '');

@@ -118,7 +118,7 @@ export async function findReclaimItemId(db: Db, memberId: string, ref: string): 
   const want = norm(ref);
   if (!want) return null;
   const { rows } = await db.query<{ id: string; text: string }>(
-    'select id, text from reclaim_item where member_id=$1',
+    'select id, text from reclaim_item where member_id=$1 and removed_at is null',
     [memberId],
   );
   // exact, then contains-either-way (a short ref like "weight" matches "Weight down to 190 …")

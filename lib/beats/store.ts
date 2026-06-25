@@ -22,7 +22,7 @@ const toIso = (v: unknown): string | null => {
 export async function getReclaimItems(db: Db, memberId: string): Promise<ReclaimItem[]> {
   const { rows } = await db.query<any>(
     `select id, text, category, rhythm, state, closer_count, sort_order, last_served_at
-     from reclaim_item where member_id=$1 order by sort_order, created_at`,
+     from reclaim_item where member_id=$1 and removed_at is null order by sort_order, created_at`,
     [memberId],
   );
   return rows.map((r) => ({
@@ -92,7 +92,7 @@ export async function markReclaimReclaimedByText(
   if (!q) return { ok: false, reason: 'empty' };
   const rows = (
     await db.query<{ id: string; text: string; state: string }>(
-      'select id, text, state from reclaim_item where member_id=$1 order by sort_order, created_at',
+      'select id, text, state from reclaim_item where member_id=$1 and removed_at is null order by sort_order, created_at',
       [memberId],
     )
   ).rows;
@@ -125,7 +125,7 @@ export async function unmarkReclaimReclaimedByText(
   if (!q) return { ok: false, reason: 'empty' };
   const rows = (
     await db.query<{ id: string; text: string; closer_count: number }>(
-      'select id, text, closer_count from reclaim_item where member_id=$1 order by sort_order, created_at',
+      'select id, text, closer_count from reclaim_item where member_id=$1 and removed_at is null order by sort_order, created_at',
       [memberId],
     )
   ).rows;
@@ -168,7 +168,7 @@ export async function refineReclaimItemByText(
   if (isVagueReclaim(text)) return { ok: false, reason: 'vague' };
   const rows = (
     await db.query<{ id: string; text: string; category: string }>(
-      'select id, text, category from reclaim_item where member_id=$1 order by sort_order, created_at',
+      'select id, text, category from reclaim_item where member_id=$1 and removed_at is null order by sort_order, created_at',
       [memberId],
     )
   ).rows;
@@ -179,6 +179,66 @@ export async function refineReclaimItemByText(
   const category: Category = isCategory(agentCategory) ? agentCategory : (match.category as Category);
   await db.query('update reclaim_item set text=$3, category=$4 where member_id=$1 and id=$2', [memberId, match.id, text, category]);
   return { ok: true, oldText: match.text, newText: text };
+}
+
+// Remove an item from the Reclaim List — SOFT, audited, reversible (handoff 2026-06-25). NEVER a hard
+// delete: stamps removed_at so the row and its whole history survive and it can be restored by clearing
+// removed_at. Fuzzy-matches the member's wording the same way refine/mark do.
+export async function removeReclaimItemByText(
+  db: Db,
+  memberId: string,
+  query: string,
+): Promise<{ ok: boolean; removedText?: string; reason?: 'empty' | 'nomatch' }> {
+  const q = (query ?? '').trim().toLowerCase();
+  if (!q) return { ok: false, reason: 'empty' };
+  const rows = (
+    await db.query<{ id: string; text: string }>(
+      'select id, text from reclaim_item where member_id=$1 and removed_at is null order by sort_order, created_at',
+      [memberId],
+    )
+  ).rows;
+  const norm = (s: string) => s.trim().toLowerCase();
+  const match = rows.find((r) => norm(r.text) === q) ?? rows.find((r) => norm(r.text).includes(q) || q.includes(norm(r.text)));
+  if (!match) return { ok: false, reason: 'nomatch' };
+  await db.query('update reclaim_item set removed_at=now() where member_id=$1 and id=$2 and removed_at is null', [memberId, match.id]);
+  return { ok: true, removedText: match.text };
+}
+
+// Reorder the Reclaim List. The agent passes the list in the desired order (item texts); each is matched
+// and assigned its new sort_order. Any active item not named keeps its relative order, after the named
+// ones. State/order only — no deletion.
+export async function reorderReclaimList(
+  db: Db,
+  memberId: string,
+  orderedTexts: string[],
+): Promise<{ ok: boolean; count: number; reason?: 'empty' | 'nomatch' }> {
+  const wanted = (orderedTexts ?? []).map((t) => (t ?? '').trim()).filter(Boolean);
+  if (!wanted.length) return { ok: false, count: 0, reason: 'empty' };
+  const rows = (
+    await db.query<{ id: string; text: string }>(
+      'select id, text from reclaim_item where member_id=$1 and removed_at is null order by sort_order, created_at',
+      [memberId],
+    )
+  ).rows;
+  const norm = (s: string) => s.trim().toLowerCase();
+  const used = new Set<string>();
+  const ordered: string[] = [];
+  for (const w of wanted) {
+    const wn = norm(w);
+    const m =
+      rows.find((r) => !used.has(r.id) && norm(r.text) === wn) ??
+      rows.find((r) => !used.has(r.id) && (norm(r.text).includes(wn) || wn.includes(norm(r.text))));
+    if (m) {
+      used.add(m.id);
+      ordered.push(m.id);
+    }
+  }
+  if (!ordered.length) return { ok: false, count: 0, reason: 'nomatch' };
+  for (const r of rows) if (!used.has(r.id)) ordered.push(r.id); // unnamed items keep their order, after
+  for (let i = 0; i < ordered.length; i++) {
+    await db.query('update reclaim_item set sort_order=$3 where member_id=$1 and id=$2', [memberId, ordered[i], i]);
+  }
+  return { ok: true, count: used.size };
 }
 
 export async function assembleState(db: Db, memberId: string): Promise<MemberBeatState> {

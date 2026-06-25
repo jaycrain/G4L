@@ -537,6 +537,21 @@ function parseModelTurn(content: readonly unknown[]): ModelTurn {
 
 // Thin LIVE wrapper: build the request, call the model, hand off to the PURE engine. This is the only
 // non-deterministic, untestable part of a turn — every DECISION lives in applyModelTurn below.
+// Make the carried state EXPLICIT to the model each turn so it stops re-asking what it already has
+// (feedback #2, Donna — the conversation felt memoryless). The full history is always sent too; this
+// is the at-a-glance "you already have these — build on them, don't ask again" record.
+function capturedSoFar(c: Collected): string {
+  const lines: string[] = [];
+  if (c.athleticPast) lines.push(`- who they were, at their best: "${c.athleticPast}"`);
+  if (c.identityNoun) lines.push(`- reclaimed identity: the ${c.identityNoun}`);
+  else if (c.identitySkipped) lines.push('- reclaimed identity: they chose to name it later (do NOT ask for a single word again)');
+  if (c.reclaimList?.length) lines.push(`- Reclaim List (${c.reclaimList.length} so far): ${c.reclaimList.join('; ')}`);
+  if (c.gap) lines.push(`- how the gap opened, in their words: "${c.gap}"`);
+  if (c.doors?.length) lines.push(`- Door(s) recorded: ${c.doors.join(', ')}`);
+  if (!lines.length) return '';
+  return `\n\nALREADY CAPTURED THIS CONVERSATION — you have these; do NOT ask for any of them again, build on them:\n${lines.join('\n')}`;
+}
+
 async function liveTurn(
   _ctx: Ctx,
   history: ConvMessage[],
@@ -553,7 +568,7 @@ async function liveTurn(
   const res = await client.messages.create({
     model: process.env.ANTHROPIC_MODEL ?? 'claude-sonnet-4-6',
     max_tokens: 600,
-    system: ONBOARDING_SYSTEM,
+    system: ONBOARDING_SYSTEM + capturedSoFar(state.collected),
     tools: [RECORD_PROGRESS_TOOL],
     messages,
   });
