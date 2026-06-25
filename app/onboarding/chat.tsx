@@ -239,8 +239,14 @@ export default function OnboardingChat() {
         </p>
         <div className="onboard-intro">
           <p>The person you know you are can get quiet — worn down by life, by a hundred reasonable decisions, by everyone else’s needs. This is where you start turning that around.</p>
-          <p>We begin by finding your starting line: a short conversation, a quick questionnaire (the IDQ), and your first ID Score — so reclaiming who you are isn’t a vague idea, it’s a real number you can watch move.</p>
-          <p>From here, it’s you and your G4L companion. Everything you share shapes your experience and is handled with real care, the way you’d want a trusted person to hold it. No rush, no wrong answers, and you can stop anytime.</p>
+          <p>We start by finding your starting line: a short conversation, a quick questionnaire, and your first ID Score — so reclaiming who you are isn’t a vague idea but a number you can watch move.</p>
+          <p>Everything you share shapes your experience and is handled with real care, the way you’d want a trusted person to hold it. No rush, no wrong answers, and you can stop anytime.</p>
+        </div>
+        {/* Primer — practical orientation before the first conversation (time, comfort, how it goes). */}
+        <div className="onboard-primer">
+          <h2>Before we start</h2>
+          <p>This is the foundation for everything that follows, so give it room. Set aside about <strong>15–20 minutes</strong>, get comfortable, and treat it like a conversation — not a form. There are no wrong answers, nothing is timed, and you can stop and pick up where you left off any time.</p>
+          <p>Here’s how it goes: first we talk for a few minutes about who you are and what’s pulled you off course. Then a short questionnaire. Then your first <strong>ID Score</strong> — a real number for how far you’ve drifted from yourself, and the starting line you’ll watch move.</p>
         </div>
         <form onSubmit={begin}>
           <label htmlFor="name">Your name</label>

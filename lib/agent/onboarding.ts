@@ -51,8 +51,10 @@ const FIRST_QUESTION =
   'early riser, the friend who always called, the one who said yes to the trip. The builder, the ' +
   'writer, the runner, the parent down on the floor with the kids.\n\n' +
   "Whoever that was — tell me about them. The more real you make them, the less abstract your comeback " +
-  'gets: in a few minutes, your first ID Score will put a number on the distance between who you are ' +
-  "right now and the you you're reclaiming — and from there, every step closes it.";
+  'gets. We have a name for the distance between who you are right now and the you you’re reclaiming — ' +
+  'the Fade: the slow drift between who you are and who you know you still are underneath. It opens ' +
+  'gradually, through a hundred reasonable decisions, and most people are the last to notice it. In a few ' +
+  'minutes your first ID Score puts a number on it — and from there, every step closes it.';
 
 // The AI disclosure is woven into the start page (the gate), so the conversation opens straight on the
 // question — no stiff repeat here.
@@ -64,17 +66,21 @@ const capFirst = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s)
 // The Door is explored as a story, never presented as a menu — listing options stops the
 // conversation, and we need to understand HOW the gap opened, not just label it.
 const doorPrompt = () =>
-  'One more thing before the work starts — and it might be the most important: how did the gap open?\n\n' +
-  'Something usually does it, and rarely all at once. Tell me what happened — when you first felt the drift, and what it quietly cost you.';
+  'One more thing before we start the work — and it might matter most. Somewhere, the gap began to open.\n\n' +
+  'Sometimes it’s one clear thing — a loss, a diagnosis, a move, a job that swallowed you. More often it’s ' +
+  'slower: a season that quietly took more than it gave. There’s no wrong story here. Tell me how it went ' +
+  'for you — when you first felt the drift, and what it quietly cost you.';
 
-const reclaimPrompt = (noun?: string) =>
-  `Good. ${capFirst(identityLabel(noun) || 'That person')} is the who. Now the what.\n\n` +
-  'Picture having that back — not the highlight reel, an ordinary Tuesday. What does it actually look like? ' +
+// Shared Reclaim ask — the picture + the forecast (what the list IS and that the program points at it) +
+// the ask. Prepended by the identity-lock connecting line (or the skip line) so it reads as one beat.
+const reclaimPrompt = () =>
+  'Picture having that back — not the highlight reel, an ordinary day. What does it actually look like? ' +
   'The real, specific stuff: riding before work without dreading it. Keeping up on the trail instead of waving ' +
   'everyone ahead. Looking in the mirror and recognizing the person looking back. Booking the trip you keep ' +
   'talking yourself out of.\n\n' +
-  'These become your Reclaim List — the concrete things we go after, three to start and more if they keep coming. ' +
-  'What do you want back?';
+  'These become your Reclaim List — the concrete things you’re coming back for, in your own words. The whole ' +
+  'program points at this list: you’ll add to it, and check things off, as you go.\n\n' +
+  'Three to start — more if they keep coming. What do you want back?';
 
 function doorPhrase(doors: DoorSlug[]): string {
   const names = doors.map(doorName);
@@ -375,7 +381,7 @@ export function scriptedTurn(state: ConvState, message: string): Turn {
       collected.athleticPast = message.trim();
       return done(
         'identity_name',
-        'That stays with you — I can hear it.\n\nIf you put that person in a single word — the Runner, the Writer, the Builder, the Friend — what is the word?',
+        'That stays with you — I can hear it.\n\nIf you had to put that person in a single word — a handle to hold onto, not a label set in stone — what would it be? Something like the Runner, the Builder, the Friend, or a word of your own.',
       );
     case 'identity_name': {
       // Honor "I'm not sure yet" — never force a name. They'll find it at Identity Excavation.
@@ -383,7 +389,7 @@ export function scriptedTurn(state: ConvState, message: string): Turn {
         collected.identitySkipped = true;
         return done(
           'reclaim',
-          `That's an honest answer — and totally fine. You don't have to name it today; we'll find it together as you go.\n\n${reclaimPrompt()}`,
+          `That's an honest answer — and totally fine. You don't have to name it today; we'll find it together as you go.\n\nLet's talk about what you want back.\n\n${reclaimPrompt()}`,
         );
       }
       // The member names it themselves (governance: identity is never assigned without confirmation).
@@ -393,7 +399,7 @@ export function scriptedTurn(state: ConvState, message: string): Turn {
       collected.identityNoun = noun;
       return done(
         'reclaim',
-        `${capFirst(identityLabel(noun))}. That's who we're bringing back, and I'll keep that in front of us the whole way.\n\n${reclaimPrompt(noun)}`,
+        `Locked. ${capFirst(identityLabel(noun))} is the version of you that feels most like yourself. Now let's talk about what you want back from them.\n\n${reclaimPrompt()}`,
       );
     }
     case 'reclaim': {
@@ -437,12 +443,12 @@ const ONBOARDING_SYSTEM = `${MEMBER_AGENT_SYSTEM_PROMPT}
 OPERATING MOMENT: Onboarding (voice rewrite v1).
 Conduct the intake as a warm, member-paced conversation. Capture exactly three records, in this order:
 
-1) RECLAIMED IDENTITY. Open with the question about who they were when they felt most themselves (a past self of ANY kind — runner, writer, musician, builder, teacher, parent, the friend who always called — never assume it is athletic). Listen. Then reflect a specific detail of THEIR OWN words back, propose the identity as a single natural-case noun ("So — the Runner." / "the Writer." / "the Builder."), and confirm it with them before moving on. NEVER all-caps the noun ("the Athlete", never "THE ATHLETE"). Record identityNoun as the bare noun in natural case, without a leading "the/a/an".
+1) RECLAIMED IDENTITY. Open with the question about who they were when they felt most themselves (a past self of ANY kind — runner, writer, musician, builder, teacher, parent, the friend who always called — never assume it is athletic). Listen. NARROW GRADUALLY — never jump from the opening question straight to "give me one word." First reflect a specific detail of THEIR OWN words back, THEN — drawn from their own language — offer a couple of candidate words and invite them to choose one or coin their own, framing it as a HANDLE to hold onto (changeable later), not a verdict: e.g. "From what you said I'd reach for the Runner, maybe the Builder — does either fit, or is there a truer word? It's just a handle; we can change it." Confirm the word with them before moving on. NEVER all-caps the noun ("the Athlete", never "THE ATHLETE"). Record identityNoun as the bare noun in natural case, without a leading "the/a/an".
 NOT SURE IS OK. If they genuinely don't know yet, or aren't ready to put a single word to it, do NOT push — reassure them warmly that they don't have to name it today and they'll find it through the work (Identity Excavation comes soon). In that case call record_progress with identitySkipped=true and leave identityNoun empty, then move on to the Reclaim List. Never assign or pressure a name.
 
 2) RECLAIM LIST. Ask what having that self back looks like on an ordinary day — concrete, specific things they want back. Gather at least ${RECLAIM_LIST_MIN}; there is NO maximum. Gently keep drawing more out toward about ${RECLAIM_LIST_TARGET}, but never force a count or make it feel like a quota.
 THE BAR (important): every item you record MUST be specific and observable — something you could BOTH witness happening in an ordinary week. Catch two failure modes, warmly and without a worksheet:
-(a) A feeling or inner state on its own — "feel better about myself", "be happier", "more confident", "less stressed" — is fog and cannot be measured. Ask "what would that look like on a Tuesday?" and sharpen until observable ("feel better about myself" → "recognize the person in the mirror"; "be healthier" → "walk 30 minutes most mornings").
+(a) A feeling or inner state on its own — "feel better about myself", "be happier", "more confident", "less stressed" — is fog and cannot be measured. Ask "what would that look like in an ordinary week?" and sharpen until observable ("feel better about myself" → "recognize the person in the mirror"; "be healthier" → "walk 30 minutes most mornings").
 (b) A real action with a vague or mission-scale tail — "train hard enough to build the movement", "ride to get away from it all", "eat right" — where the action is good but the aim isn't witnessable. Don't accept the abstract finish line; press ONCE MORE to anchor it to something countable or concrete ("how many hard training days a week would that be?", "what does 'eat right' look like on a normal day?"). This is the easy one to let slide — don't.
 The strongest items name a number, a frequency, or a named event ("down to 190", "ride with a group weekly", "race-ready for Big Sugar"). Only record an item once it clears the bar — but keep it a warm conversation, one gentle press at a time, never an interrogation.
 For EACH item, also assign a category — the area it belongs to: physical (body/movement/food/sleep), self (identity/who they are), social (people/relationships), outlook (purpose/future/mindset), or life (any goal that doesn't map to those — money, a venture, savings, a milestone like "raise $250k"). The Reclaim List holds ANY goal that matters to them, not just identity work; don't force a money/venture goal into a dimension — that's what life is for. Record the items in reclaimList and their categories in reclaimCategories, same order. (Category is internal — never name it to the member.)

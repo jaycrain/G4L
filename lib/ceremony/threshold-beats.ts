@@ -39,11 +39,11 @@ export const THRESHOLD_COPY = {
     "These aren't answers to a form. They're the start of your Playbook — the record of what's working, which fills as you go.",
   // 5 — reveal: the 4Rs Journey, Reconnect lit
   journey: "Here's the path ahead — your Journey.",
-  // 6 — the Playbook is the thing you keep
-  lasts: 'Your Playbook fills in with what works for you as we go. That’s the thing you keep — it’s why the Grinta lasts.',
-  // 7 — the hand-off; this beat carries the clip-in. {firstMove} renders only when known.
-  clipIn: 'Ready to clip in? Your first move’s a small one.',
-  clipInWithMove: (firstMove: string) => `Ready to clip in? Your first move’s a small one — ${firstMove}.`,
+  // 6 — the Playbook is the thing you keep; glosses Grinta on first use
+  lasts: 'Your Playbook fills with what works for you as we go — the thing you keep. It’s what builds your Grinta: the grit that keeps you going when motivation runs out. (It’s Italian for grit — you’ll see the word a lot around here.)',
+  // 7 — the hand-off; this beat carries the clip-in (glossed on first use). {firstMove} renders only when known.
+  clipIn: 'Ready to begin? We call it clipping in — like locking into a pedal before a ride: you commit, and the work carries you from there. Your first move’s a small one.',
+  clipInWithMove: (firstMove: string) => `Ready to begin? We call it clipping in — like locking into a pedal before a ride: you commit, and the work carries you from there. Your first move’s a small one — ${firstMove}.`,
 } as const;
 
 export function buildThresholdBeats(d: ThresholdData): CeremonyBeat[] {

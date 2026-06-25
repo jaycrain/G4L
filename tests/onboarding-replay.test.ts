@@ -48,9 +48,10 @@ function assertInvariants(turns: Turn[]) {
   for (const t of turns) {
     if (t.complete) assert.equal(contractMet(t.state.collected), true, 'completed with an unmet contract');
   }
-  // 3) Every non-final reply ends with a prompt/question (never strands the member).
+  // 3) Every non-final reply invites a next step (never strands the member) — a question mark, the
+  //    handoff phrases, or a warm imperative invitation ("Tell me …", as the slowed-down Door prompt uses).
   for (const t of turns.slice(0, -1)) {
-    if (!t.complete) assert.match(t.reply, /\?|ready when you are|that’s everything|that's everything/i, 'a non-final turn left the member with no next step');
+    if (!t.complete) assert.match(t.reply, /\?|ready when you are|that’s everything|that's everything|tell me/i, 'a non-final turn left the member with no next step');
   }
 }
 
@@ -91,7 +92,7 @@ test('REPLAY — Donna run 2: model reflects but never records the gap, then goe
   // The engine captured her story as the gap even though the model never recorded it.
   assert.ok(finalState.collected.gap && finalState.collected.gap.length > 80, 'gap captured from her own words');
   // No turn re-emitted the canned door prompt verbatim.
-  for (const t of turns) assert.doesNotMatch(t.reply, /One more thing before the work starts/i, 'verbatim door prompt re-asked');
+  for (const t of turns) assert.doesNotMatch(t.reply, /One more thing before we start the work/i, 'verbatim door prompt re-asked');
   // She completes on her explicit "move me through to the IDQ" — the contract is met via the captured gap.
   assert.equal(turns[turns.length - 1]!.complete, true, 'Donna completes once she asks to proceed');
   assert.equal(contractMet(finalState.collected), true);
