@@ -128,6 +128,31 @@ test('REPLAY — full happy path from scratch (identity → reclaim → door →
   assert.equal(turns[3]!.complete, false, 'thin gap explores before closing');
 });
 
+test('REPLAY — Donna at the Reclaim List (win-list): model reflects her items but records NONE, then she pushes; engine must NOT loop the prompt or strand her', () => {
+  // The reported dead-end (Donna, member run-through): at the "what do you want back?" win-list step the
+  // model CONVERSES (warm reflections) but its record_progress carries no reclaimList, so the beat can't
+  // advance. The engine must never re-emit the win-list prompt verbatim and never leave a turn without a
+  // next step; once the list is actually recorded it must move OFF the reclaim beat (a forward path exists).
+  const atReclaim: ConvState = {
+    stage: 'reclaim',
+    collected: { athleticPast: 'a competitive cyclist who rode every weekend', identityNoun: 'Athlete' },
+  };
+  const { turns, finalState } = replay(
+    [
+      // She names what she wants back — model reflects warmly but records NOTHING.
+      { member: 'I want to ride again, sleep through the night, and feel like myself on the trail', model: { text: 'Those are real — I can picture all three of them.' } },
+      // The dead-end symptom: she wonders if it's stuck (degraded/empty model turn).
+      { member: 'I just told you — is this thing stuck?', model: { text: '' } },
+      // She restates; this time the model records the list — the beat must now advance.
+      { member: 'ride again, sleep well, feel like myself on the trail', model: { text: 'Got them down.', record: { reclaimList: ['ride again', 'sleep well', 'feel like myself on the trail'] } } },
+    ],
+    atReclaim,
+  );
+  assertInvariants(turns); // never repeats verbatim, never strands a non-final turn, never completes unmet
+  assert.ok((finalState.collected.reclaimList ?? []).length >= 3, 'reclaim list captured once recorded');
+  assert.notEqual(finalState.stage, 'reclaim', 'advances off the win-list step once the items are in — a forward path exists');
+});
+
 test('REPLAY — identity gate: model drifts past naming; engine holds, then the member skips', () => {
   const fromIdentityNamed: ConvState = { stage: 'identity_name', collected: { athleticPast: 'someone who used to chase the next big thing' } };
   const { turns, finalState } = replay(

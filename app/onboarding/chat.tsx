@@ -231,10 +231,16 @@ export default function OnboardingChat() {
     return (
       <>
         <h1>Let’s find your starting line</h1>
+        {/* AI disclosure — explicit + upfront, its own beat before the first question (governance/compliance). */}
+        <p className="ai-disclosure" role="note">
+          A quick note before we start: you’ll be talking with your Companion — an AI built for this one
+          thing, helping you find your way back to yourself. It remembers what you share, so you never have
+          to repeat yourself or start over. It’s here whenever you want it, and you can stop any time.
+        </p>
         <div className="onboard-intro">
           <p>The person you know you are can get quiet — worn down by life, by a hundred reasonable decisions, by everyone else’s needs. This is where you start turning that around.</p>
           <p>We begin by finding your starting line: a short conversation, a quick questionnaire (the IDQ), and your first ID Score — so reclaiming who you are isn’t a vague idea, it’s a real number you can watch move.</p>
-          <p>From here, it’s you and your G4L companion — an AI built for this one thing and nothing else. Everything you share shapes your experience and is handled with real care, the way you’d want a trusted person to hold it. No rush, no wrong answers, and you can stop anytime.</p>
+          <p>From here, it’s you and your G4L companion. Everything you share shapes your experience and is handled with real care, the way you’d want a trusted person to hold it. No rush, no wrong answers, and you can stop anytime.</p>
         </div>
         <form onSubmit={begin}>
           <label htmlFor="name">Your name</label>
