@@ -93,6 +93,13 @@ Hold these, especially as we scale (Charter → ~1,000 members):
 - **Not every edge case earns a structural fix.** Truly one-off inputs are handled by the card (the
   member fixes it) — log them, move on. Reserve abstraction for *recurring* shapes. Over-engineering
   for the rare is its own brittleness.
+- **When the live capture loop regresses, REVERT the regression — don't patch over it.** This surface is
+  load-bearing and took a long road to get right; default to not touching it. Before any fix, `git diff`
+  the live path (`lib/agent/onboarding.ts`) against the last-known-good commit to isolate exactly what
+  changed, and prefer a clean revert to adding another guard. Baseline "solid" = a clean run as the
+  Joanne persona. (Case study: the `capturedSoFar` "do-not-re-ask" injection that raced the model and
+  promoted guesses to committed truth — removed, not softened. See
+  `docs/handoffs/2026-06-25-onboarding-capture-guardrail.md`.)
 
 ---
 
