@@ -7,9 +7,21 @@ refresh). The *living copy* source of truth stays in Platform Content; **handoff
 
 ## Why handoffs live in the repo
 A handoff dropped in a loose Desktop folder is fragile — it got deleted in a cleanup once. In-repo it's
-versioned, diffable, un-deletable, and Claude Code can reference it by path mid-build. Cowork can't write
-directly into the repo, so the flow is: **Cowork produces repo-ready markdown → Jay pastes it into
-`docs/handoffs/` (or points Cowork at a synced path)** → Claude Code builds from it.
+versioned, diffable, un-deletable, and Claude Code can reference it by path mid-build.
+
+**Delivery (current, working flow):** Cowork produces the handoff as repo-ready markdown → **Jay places it
+in `docs/handoffs/` or points CC at the file** → CC commits it and works from it → CC writes
+verdicts/results **in place** in the same file and hands the read-back to Cowork. Jay is the bridge
+(Cowork can't write into the repo, and CC works from a throwaway worktree, so dropped files don't
+auto-appear). It's manual but quick, and it's held across multiple handoffs.
+
+**Upgrade (drops the manual relay) — secrets-safe variant only:** connect a **dedicated drop folder
+that holds NO secrets** (e.g. `~/g4l-handoffs/`, *outside* the repo) to Cowork; Cowork writes handoffs
+there, CC picks them up from that folder and commits them into `docs/handoffs/`.
+⚠️ **Do NOT connect the repo working folder (`~/g4l-platform`) itself** — its root holds `.env.local`
+(prod `DATABASE_URL`, `ANTHROPIC_API_KEY`, `ADMIN_PASSWORD`, …), and a folder connection grants *read*
+access to those regardless of the commit/approval gate. Either way, **CC still owns the commit/push** and
+the approval gates are unchanged.
 
 **Naming:** `YYYY-MM-DD-short-slug.md` (e.g. `2026-06-24-member-facing-refresh.md`). One file per handoff.
 
