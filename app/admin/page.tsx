@@ -4,7 +4,7 @@ import { getDb } from '../../lib/db/index.ts';
 import { listPending } from '../../lib/founder/store.ts';
 import { getRoster, summarizeRoster, relativeTime } from '../../lib/admin/roster.ts';
 import { listFeedback, type FeedbackStatus } from '../../lib/feedback/store.ts';
-import { setFeedbackStatusAction } from '../feedback-actions.ts';
+import { setFeedbackStatusAction, deleteResolvedFeedbackAction } from '../feedback-actions.ts';
 import { getOnboardingReturns, keepTalkingStats } from '../../lib/telemetry/store.ts';
 import { getHealth } from '../../lib/health/store.ts';
 import { getModerationQueue, openReportCount } from '../../lib/connect/moderation.ts';
@@ -30,6 +30,7 @@ export default async function AdminHome() {
   const roster = await getRoster(db);
   const feedback = await listFeedback(db);
   const openFeedback = feedback.filter((f) => f.status !== 'resolved');
+  const resolvedCount = feedback.length - openFeedback.length;
   const onboardingStats = keepTalkingStats(await getOnboardingReturns(db));
   const aiHealth = await getHealth(db, 'ai');
   const modQueue = await getModerationQueue(db);
@@ -116,43 +117,6 @@ export default async function AdminHome() {
               </li>
             ))}
           </ul>
-        )}
-      </div>
-
-      <div className="card">
-        <h3>Feedback ({openFeedback.length} open · {feedback.length} total)</h3>
-        {feedback.length === 0 ? (
-          <p className="muted">No feedback yet. Members and operators file it from the “Send Feedback” pill.</p>
-        ) : (
-          feedback.map((f) => {
-            const events = Array.isArray(f.context?.recentEvents) ? (f.context.recentEvents as { kind: string; ref: string | null; step: number | null }[]) : [];
-            return (
-              <div key={f.id} className={`fb-item${f.status === 'resolved' ? ' muted' : ''}`}>
-                <div className="fb-item-head">
-                  <span className={`fb-kind-chip ${f.kind}`}>{f.kind}</span>
-                  {f.memberId ? (
-                    <Link href={`/admin/member/${f.memberId}`}><strong>{f.displayName ?? f.author ?? 'Member'}</strong></Link>
-                  ) : (
-                    <strong>{f.author ?? 'Operator'}</strong>
-                  )}
-                  <span className="muted">· {relativeTime(f.createdAt, now)}</span>
-                  {f.status !== 'new' && <span className={`pill ${f.status === 'resolved' ? 'approved' : 'pending'}`}>{f.status}</span>}
-                </div>
-                <p className="fb-body">{f.body}</p>
-                <div className="fb-ctx">
-                  {f.surface && <>on <code>{f.surface}</code></>}
-                  {events.length > 0 && <> · last: {events.slice(-4).map((e) => `${e.kind}${e.ref ? ' ' + e.ref : ''}${e.step ? ' s' + e.step : ''}`).join(' · ')}</>}
-                </div>
-                <div className="fb-status-row">
-                  {NEXT_STATUS[f.status].map((n) => (
-                    <form key={n.to} action={setFeedbackStatusAction.bind(null, f.id, n.to)}>
-                      <button type="submit">{n.label}</button>
-                    </form>
-                  ))}
-                </div>
-              </div>
-            );
-          })
         )}
       </div>
 
@@ -290,6 +254,50 @@ export default async function AdminHome() {
           opened but never closed. <strong>Time on task</strong> and <strong>Drop-off</strong> are experience telemetry
           (they accrue from new activity going forward). <strong>Last active</strong> reflects any tracked action.
         </p>
+      </div>
+
+      <div className="card">
+        <div className="fb-head" style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+          <h3 style={{ margin: 0 }}>Feedback ({openFeedback.length} open · {feedback.length} total)</h3>
+          {resolvedCount > 0 && (
+            <form action={deleteResolvedFeedbackAction}>
+              <button type="submit" className="btn-secondary">Clear resolved ({resolvedCount})</button>
+            </form>
+          )}
+        </div>
+        {feedback.length === 0 ? (
+          <p className="muted">No feedback yet. Members and operators file it from the “Send Feedback” pill.</p>
+        ) : (
+          feedback.map((f) => {
+            const events = Array.isArray(f.context?.recentEvents) ? (f.context.recentEvents as { kind: string; ref: string | null; step: number | null }[]) : [];
+            return (
+              <div key={f.id} className={`fb-item${f.status === 'resolved' ? ' muted' : ''}`}>
+                <div className="fb-item-head">
+                  <span className={`fb-kind-chip ${f.kind}`}>{f.kind}</span>
+                  {f.memberId ? (
+                    <Link href={`/admin/member/${f.memberId}`}><strong>{f.displayName ?? f.author ?? 'Member'}</strong></Link>
+                  ) : (
+                    <strong>{f.author ?? 'Operator'}</strong>
+                  )}
+                  <span className="muted">· {relativeTime(f.createdAt, now)}</span>
+                  {f.status !== 'new' && <span className={`pill ${f.status === 'resolved' ? 'approved' : 'pending'}`}>{f.status}</span>}
+                </div>
+                <p className="fb-body">{f.body}</p>
+                <div className="fb-ctx">
+                  {f.surface && <>on <code>{f.surface}</code></>}
+                  {events.length > 0 && <> · last: {events.slice(-4).map((e) => `${e.kind}${e.ref ? ' ' + e.ref : ''}${e.step ? ' s' + e.step : ''}`).join(' · ')}</>}
+                </div>
+                <div className="fb-status-row">
+                  {NEXT_STATUS[f.status].map((n) => (
+                    <form key={n.to} action={setFeedbackStatusAction.bind(null, f.id, n.to)}>
+                      <button type="submit">{n.label}</button>
+                    </form>
+                  ))}
+                </div>
+              </div>
+            );
+          })
+        )}
       </div>
     </>
   );

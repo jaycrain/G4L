@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { getDb } from '../lib/db/index.ts';
 import { currentMemberId } from './auth.ts';
 import { isAdmin } from './authz.ts';
-import { logFeedback, setFeedbackStatus, type FeedbackKind, type FeedbackStatus } from '../lib/feedback/store.ts';
+import { logFeedback, setFeedbackStatus, deleteResolvedFeedback, type FeedbackKind, type FeedbackStatus } from '../lib/feedback/store.ts';
 import { getMemberEvents } from '../lib/telemetry/store.ts';
 import type { Db } from '../lib/db/schema.ts';
 
@@ -72,5 +72,13 @@ export async function setFeedbackStatusAction(id: string, status: FeedbackStatus
   if (!(await isAdmin())) return;
   const db = (await getDb()) as unknown as Db;
   await setFeedbackStatus(db, id, status);
+  revalidatePath('/admin');
+}
+
+// Operator-only: permanently clear all resolved feedback (keeps the panel to the live items).
+export async function deleteResolvedFeedbackAction(): Promise<void> {
+  if (!(await isAdmin())) return;
+  const db = (await getDb()) as unknown as Db;
+  await deleteResolvedFeedback(db);
   revalidatePath('/admin');
 }

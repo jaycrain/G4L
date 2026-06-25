@@ -117,6 +117,14 @@ export async function setFeedbackStatus(db: Db, id: string, status: FeedbackStat
   return true;
 }
 
+/** Operator cleanup: permanently delete every resolved feedback row. Returns how many were removed. */
+export async function deleteResolvedFeedback(db: Db): Promise<number> {
+  const { rows } = await db.query<{ id: string }>(
+    `delete from member_feedback where status = 'resolved' returning id`,
+  );
+  return rows.length;
+}
+
 export type FeedbackCounts = { new: number; triaged: number; resolved: number; total: number };
 
 export async function feedbackCounts(db: Db): Promise<FeedbackCounts> {
