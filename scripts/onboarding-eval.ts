@@ -69,6 +69,10 @@ again." "Sleep." "Feel like myself." Do not elaborate. If pushed, give one more 
     expect: (c, done) => {
       const out: string[] = [];
       const g = (c.gap ?? '').toLowerCase();
+      // Sam HAS a real fade (knee, divorce) — stranding him (no completion / nothing captured) is a failure,
+      // not a clean pass. This guards the silent-stall blind spot a terse fragment exposed (Jun 26).
+      if (!done) out.push('terse stranded — did not complete (fragmented fade never captured)');
+      if (done && (c.gap ?? '').length === 0) out.push('completed with an empty gap');
       if (done && g.length > 0 && !/knee|injur|run|divorce|marriage|split/.test(g)) out.push("gap may be fabricated — doesn't reflect Sam's words (knee/divorce)");
       return out;
     },

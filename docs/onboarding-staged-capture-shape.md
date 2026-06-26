@@ -228,16 +228,23 @@ Trajectory on the standing gauge: **v1 ~50% → 57% → 87.5%.**
 |---|---|---|
 | **rita** | **7/8 = 87.5%** clean; every clean run captured all 3 Doors | Gate-3 batch ✓ |
 | **no-fade** | **DECLINES** (complete:false, no gap, no Door, 0 items) | Gate-3 suite ✓ |
-| terse | clean | Gate-2 suite ✓ (Gate-3 live re-confirm blocked by API cap) |
-| front-loader | clean (multi-Door, no refusal-as-gap) | Gate-2 suite ✓ (Gate-3 live re-confirm blocked by API cap) |
+| **terse** | **3/3 complete** ("Knee. Then divorce." captured, marriage Door, 1 item) | Gate-3 re-confirm ✓ |
+| **front-loader** | complete, multi-Door, **9 items** (over-aim but real, card-trims), no refusal-as-gap | Gate-3 re-confirm ✓ |
 
-**Before the flag flips (all must hold):**
-1. **Live re-confirm terse + front-loader on the current build** — BLOCKED: the eval API key hit its monthly
-   usage limit (regain 2026-07-01, or raise the cap). Both passed pre-gap-change; the change is offline-fixture-
-   covered but not yet live-re-confirmed.
-2. **no-fade decline UX/copy** — the Jay+Greg decision (Issue 2); the engine currently holds with placeholder
-   `NO_FADE_REFLECTION` copy and never force-completes.
+Gate-3 re-confirm (API cap lifted) caught + fixed a hard terse failure: terse's whole fade is a fragment
+("Knee. Then divorce.", 19 chars) that the 80-char backstop AND the `isRealFade` fade-gate both rejected, so
+nothing was captured and terse stranded 24 turns. Fix: a clear Door signal captures a gap regardless of length;
+the fade-gate rejects on AMBITION (`isForwardAmbition`), not shortness. Also closed an eval blind spot — terse's
+check now flags non-completion (a stall used to read as "clean").
+
+**Before the flag flips:**
+1. ✅ **All four personas live-confirmed on the current build** (rita 87.5%, no-fade declines, terse completes,
+   front-loader completes).
+2. **no-fade decline UX/copy** — the ONLY remaining gate: the Jay+Greg decision (Issue 2). The engine holds with
+   placeholder `NO_FADE_REFLECTION` and never force-completes; the member-facing wording/flow is theirs to set.
 3. Then flip `ONBOARDING_ENGINE` default to `staged`, tag `onboarding-v2.0`, retire the v1 path.
+
+Minor follow-up (not a blocker): bound front-loader parking nearer the ~7 aim (now ~9, real items).
 
 ---
 
