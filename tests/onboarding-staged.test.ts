@@ -223,6 +223,30 @@ test('STAGED reclaim — never-trap: a wrap below the minimum nudges ONCE, then 
   assert.equal(turns[2]!.complete, false, 'still cannot complete below the minimum');
 });
 
+test('STAGED reclaim — backstop: model converses WITHOUT add_reclaim_item; engine captures the wants in-stage', () => {
+  const atReclaim: ConvState = {
+    stage: 'reclaim',
+    collected: { athleticPast: 'a leader', identityNoun: 'Leader', gap: 'The layoff took the role, then everything else slowly went with it over a couple of hard years.' },
+  };
+  // The exact live failure the eval caught: the model reflects each want warmly but never tags it.
+  const { turns, finalState } = replayStaged(
+    [
+      { member: 'I want paid creative work — writing, something that uses that part of my mind again', model: { text: 'That sounds important to you.' } },
+      { member: 'and I want my financial independence back', model: { text: 'Of course.' } },
+      { member: 'and to feel like myself in a room again', model: { text: 'I hear that.' } },
+      { member: 'yes, that’s the heart of it', model: { text: 'Okay.' } },
+    ],
+    atReclaim,
+  );
+  assert.equal(finalState.collected.reclaimList?.length, 3, 'backstop captured all three untagged wants');
+  assert.equal(finalState.stage, 'complete', 'reached the minimum and completed — no 0-item stall');
+  assert.equal(turns.at(-1)!.complete, true);
+  // a wrap/refusal in-stage is NOT captured as an item
+  const wrapState: ConvState = { stage: 'reclaim', collected: { athleticPast: 'x', identityNoun: 'X', gap: 'a'.repeat(40), reclaimList: ['one'] } };
+  const w = applyStagedTurn(wrapState, [], 'no, that’s all — I’m done, let’s move on', { text: 'Okay.' });
+  assert.equal(w.state.collected.reclaimList?.length, 1, 'a wrap line never becomes a reclaim item');
+});
+
 test('STAGED end-to-end — opening → identity → gap → reclaim → complete, full contract met', () => {
   const { turns, finalState } = replayStaged([
     { member: 'I used to be a competitive swimmer, up at 5am every day for the pool', model: { text: 'That dedication shows.', record: { athleticPast: 'a competitive swimmer up at 5am every day' } } },

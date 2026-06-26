@@ -16,8 +16,10 @@
 // backstop (capture the member's own message as the gap only in-stage when the model failed to tag it).
 // SLICE c builds: the RECLAIM stage — add_reclaim_item gather to RECLAIM_LIST_MIN, re-surfacing of parked
 // front-loader items at stage entry ("earlier you said X — let's start there"), the never-trap nudge
-// (nudge once below the minimum, never loop, never complete below the frozen floor), and the handoff into
-// the confirmation card. The flow is now END-TO-END behind the flag — the first live-eval gate.
+// (nudge once below the minimum, never loop, never complete below the frozen floor), the stage-scoped
+// reclaim BACKSTOP (the live eval proved the model under-tags wants and strands the list at 0 — so this is
+// load-bearing, not deferrable), and the handoff into the confirmation card. The flow is now END-TO-END
+// behind the flag — the first live-eval gate.
 
 import { cleanIdentityNoun, displayIdentityNoun, identityLabel } from '../member/identity.ts';
 import { isDoorSlug, type DoorSlug } from '../doors.ts';
@@ -26,6 +28,7 @@ import { gapIsNarrative } from './onboarding-contract.ts';
 import { MEMBER_AGENT_SYSTEM_PROMPT } from './system-prompt.ts';
 import {
   augmentDoors,
+  confirmsWhole,
   isAffirmation,
   memberWantsToWrap,
   stripLeadingDisclosure,
@@ -99,6 +102,14 @@ const RECLAIM_NUDGE =
 const COMPLETE_HANDOFF =
   "That's everything I need to get you started. Let me show you what I captured — take a look and tell me if " +
   "it's right. Nothing's saved yet.";
+
+// Said when the member has been nudged once and is still closing BELOW the minimum: honor them (Independence
+// Guarantee) — never fabricate, never re-ask identically. A warm, non-looping hold that leaves the door open
+// for one more without pressure. (The frozen ≥3 floor means we still can't finalize here — see the engine
+// note; whether a determined sub-min member can complete is a pending data-contract decision.)
+const RECLAIM_SOFT_HOLD =
+  "That's a real start, and there's no rush — your list is never locked, and you can add to it any time as " +
+  'more comes back to you. If even one more surfaces right now, tell me; if not, that\'s completely okay.';
 
 function reflectIdentity(c: Collected): string {
   const label = capFirst(identityLabel(c.identityNoun) || 'that person');
@@ -184,6 +195,34 @@ function shouldCaptureStagedGap(message: string): boolean {
   return gapIsNarrative(m, []);
 }
 
+// Stage-scoped RECLAIM backstop. Same discipline as the gap backstop, and just as load-bearing: the live
+// model frequently reflects a member's wants WITHOUT calling add_reclaim_item (the #1 real failure), which
+// would strand the list at 0 forever. In the reclaim stage every substantive member message IS a want, so
+// capturing it is safe — there's no other field to contaminate. We reject wraps/affirms/uncertainty/stage-
+// directions so refusals and "that's all" don't become list items. Lossy-but-recoverable: the card is the
+// seatbelt for any mis-grab.
+const UNCERTAIN_RE = /\b(i (don'?t|do not) know|not sure|no idea|i'?m not sure|dunno|can'?t think of)\b/i;
+function shouldCaptureStagedReclaim(message: string): boolean {
+  const m = (message ?? '').replace(/\*[^*]*\*/g, '').replace(/[‘’]/g, "'").trim(); // drop *stage directions*
+  if (m.length < 6) return false;
+  if (memberWantsToWrap(m) || isAffirmation(m) || correctsReflection(m)) return false;
+  if (UNCERTAIN_RE.test(m) && m.length < 40) return false;
+  return true;
+}
+
+// ONE "the member is closing the Reclaim List" signal — consolidates the three close shapes (wrap, whole,
+// and the reclaim-specific "that's the list / those are the real ones" closings) per the capture-quality
+// rule: when a close-detection shape recurs, unify the detectors rather than widen a regex elsewhere. This
+// is what makes the warm nudge fire at the RIGHT moment (when they soft-close below the minimum) instead of
+// a bare "what else?" that reads as not-listening — and it keeps the backstop from grabbing a close/refusal
+// as a fabricated item.
+const RECLAIM_CLOSE_RE =
+  /\b(that'?s (actually |really |pretty much |honestly )?(it|all|everything|the list)|those are (the )?(real|only|main|biggest) ones|that'?s (my|the) (real )?list|the (real )?list( is)?( complete| done| it)?|i'?m (good|done|ready)|i'?ve (answered|said|told you)|(let'?s |can we )?(move on|moving on|move forward|keep going)|i'?m (stepping away|not answering|done answering))\b/i;
+function memberClosingReclaim(message: string): boolean {
+  const m = (message ?? '').replace(/[‘’]/g, "'");
+  return memberWantsToWrap(m) || confirmsWhole(m) || RECLAIM_CLOSE_RE.test(m);
+}
+
 // --- THE STAGED ENGINE (pure, replayable) --------------------------------------------------------------
 export function applyStagedTurn(
   state: ConvState,
@@ -262,20 +301,32 @@ export function applyStagedTurn(
       finalReply = modelText && /\?/.test(modelText) ? modelText : GAP_OPEN;
     }
   } else if (stage === 'reclaim') {
+    const closing = memberClosingReclaim(memberMessage);
+    // Backstop: capture an untagged want ONLY when the member is OFFERING (not closing/refusing). The live
+    // eval proved the model under-tags wants (stranding the list at 0); the close-guard proves it never
+    // fabricates a list item from a "that's my list" / frustrated refusal. Offering → capture; closing → never.
+    const grewThisTurn = (collected.reclaimList?.length ?? 0) > (state.collected.reclaimList?.length ?? 0);
+    if (!grewThisTurn && !closing && shouldCaptureStagedReclaim(memberMessage)) {
+      collected.reclaimList = [...(collected.reclaimList ?? []), memberMessage.trim()];
+      collected.reclaimCategories = [...(collected.reclaimCategories ?? []), ''];
+    }
     const count = collected.reclaimList?.length ?? 0;
     if (count >= RECLAIM_LIST_MIN) {
       // Target met — reflect the whole list back and await the member's confirm (the transition to the card).
       finalReply = reflectReclaim(collected);
       awaitingConfirm = true;
-    } else if (memberWantsToWrap(memberMessage) && !reclaimNudged) {
-      // Below the minimum AND they're signalling done: nudge ONCE (lower the bar, small things count), then
-      // never nudge again. Never-trap: we don't loop, and we don't complete below the floor (RECLAIM_LIST_MIN
-      // is the frozen data contract — a sub-minimum list can't finalize, so we keep the conversation moving
-      // warmly rather than re-asking the same question or stranding them).
+    } else if (closing && !reclaimNudged) {
+      // Soft-close below the minimum → nudge ONCE: lower the bar (small things count), draw out more. This is
+      // the moment a genuine multi-want member names the rest; it fires HERE (not a bare "what else?") because
+      // memberClosingReclaim catches the soft "that's the list" closings, not just explicit wraps.
       reclaimNudged = true;
       finalReply = RECLAIM_NUDGE;
+    } else if (closing && reclaimNudged) {
+      // Already nudged, still closing below the floor → honor them. Never fabricate, never loop the question.
+      // (RECLAIM_LIST_MIN is frozen, so we can't finalize here; the warm hold leaves room for one more.)
+      finalReply = RECLAIM_SOFT_HOLD;
     } else {
-      // Gather: keep the model's question if it asked one; otherwise invite the next item.
+      // Still offering — keep the model's question if it asked one; otherwise invite the next item.
       finalReply = modelText && /\?/.test(modelText) ? modelText : RECLAIM_MORE;
     }
   } else {

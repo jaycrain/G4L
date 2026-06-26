@@ -117,15 +117,22 @@ const ctx = { name: 'Eval Member', email: 'eval@example.test' };
 async function runPersona(p: Persona): Promise<boolean> {
   let state: ConvState = INITIAL_STATE;
   const history: ConvMessage[] = [];
+  const trace = !!process.env.EVAL_TRACE;
   let turn = await onboardingNextTurn({ ctx, state, history, memberMessage: null });
   history.push({ role: 'agent', text: turn.reply });
   state = turn.state;
+  if (trace) console.log(`\n[A|${(state as { stage?: string }).stage ?? '-'}] ${turn.reply}`);
   for (let i = 0; i < 24 && !turn.complete; i++) {
     const m = await member(p.system, history);
     history.push({ role: 'member', text: m });
+    if (trace) console.log(`[M] ${m}`);
     turn = await onboardingNextTurn({ ctx, state, history, memberMessage: m });
     history.push({ role: 'agent', text: turn.reply });
     state = turn.state;
+    if (trace) {
+      const c = turn.state.collected;
+      console.log(`[A|${(turn.state as { stage?: string }).stage ?? '-'}|reclaim:${(c.reclaimList ?? []).length}|gap:${c.gap ? 'y' : 'n'}|conf:${(turn.state as { awaitingConfirm?: boolean }).awaitingConfirm ? 'y' : 'n'}] ${turn.reply}`);
+    }
   }
   const c = state.collected;
   const issues = p.expect(c, turn.complete);
