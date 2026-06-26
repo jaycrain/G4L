@@ -230,23 +230,22 @@ export default function OnboardingChat() {
   if (phase === 'gate') {
     return (
       <>
-        <h1>Let’s find your starting line</h1>
-        {/* AI disclosure — explicit + upfront, its own beat before the first question (governance/compliance). */}
+        <h1>Let’s start with an honest conversation</h1>
+        {/* AI disclosure — explicit + upfront, its own beat before the first question (governance/compliance). §2 */}
         <p className="ai-disclosure" role="note">
           A quick note before we start: you’ll be talking with your Companion — an AI built for this one
-          thing, helping you find your way back to yourself. It remembers what you share, so you never have
-          to repeat yourself or start over. It’s here whenever you want it, and you can stop any time.
+          thing: helping you find your way back to yourself. It remembers everything you share, so you’ll
+          never repeat yourself. And it’s completely confidential — just between you two — so you can fully
+          be yourself here. No judgment, no pressure, and you can stop any time.
         </p>
         <div className="onboard-intro">
           <p>The person you know you are can get quiet — worn down by life, by a hundred reasonable decisions, by everyone else’s needs. This is where you start turning that around.</p>
-          <p>We start by finding your starting line: a short conversation, a quick questionnaire, and your first ID Score — so reclaiming who you are isn’t a vague idea but a number you can watch move.</p>
-          <p>Everything you share shapes your experience and is handled with real care, the way you’d want a trusted person to hold it. No rush, no wrong answers, and you can stop anytime.</p>
         </div>
-        {/* Primer — practical orientation before the first conversation (time, comfort, how it goes). */}
+        {/* Primer — map + safe-space (no "first ID Score" here; the score is earned later in Reconnect). §2 */}
         <div className="onboard-primer">
           <h2>Before we start</h2>
-          <p>This is the foundation for everything that follows, so give it room. Set aside about <strong>15–20 minutes</strong>, get comfortable, and treat it like a conversation — not a form. There are no wrong answers, nothing is timed, and you can stop and pick up where you left off any time.</p>
-          <p>Here’s how it goes: first we talk for a few minutes about who you are and what’s pulled you off course. Then a short questionnaire. Then your first <strong>ID Score</strong> — a real number for how far you’ve drifted from yourself, and the starting line you’ll watch move.</p>
+          <p>This is the foundation for all the work you’ll do in G4L, so give it room — at least <strong>15–20 minutes</strong>, and take as much as you need. You can be vulnerable, honest, even angry; there are no wrong answers. Because it’s a safe space, the more honest you are now, the more it serves you later.</p>
+          <p>Here’s how it’ll go: first, who you are — by remembering who you used to be. Then how the gap opened. Then what you want back.</p>
         </div>
         <form onSubmit={begin}>
           <label htmlFor="name">Your name</label>
@@ -283,8 +282,8 @@ export default function OnboardingChat() {
           const card = buildSummaryCard(state.collected);
           return (
             <div className="onboard-summary">
-              <h2>Before your first ID Score — does this look right?</h2>
-              <p className="muted">This is what I captured. If anything’s missing or off, we’ll fix it — nothing’s saved yet.</p>
+              <h2>Does this look like you?</h2>
+              <p className="muted">Great job getting here. Here’s what I captured from our conversation. If anything’s missing or off, we’ll fix it — nothing’s saved yet.</p>
               <dl className="summary-list">
                 <dt>Who you’re reclaiming</dt>
                 <dd>{card.identityLabel ?? 'You’ll name this through the work (Identity Excavation comes soon).'}</dd>
@@ -301,7 +300,7 @@ export default function OnboardingChat() {
               </dl>
               <div className="chat-continue">
                 <button type="button" onClick={proceed} disabled={pending}>
-                  {pending ? 'Saving…' : 'Looks right — continue to the IDQ →'}
+                  {pending ? 'Saving…' : 'Looks right — let’s begin →'}
                 </button>
                 <button type="button" className="btn-secondary" onClick={keepTalking} disabled={pending} style={{ marginTop: '0.5rem' }}>
                   Something’s missing or wrong — keep talking
