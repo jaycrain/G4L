@@ -92,19 +92,22 @@ test('STAGED gap — set_gap captures the story, derives the Door, reflect-confi
   const { turns, finalState } = replayStaged(
     [
       { member: GAP_STORY, model: { text: 'That sounds like it took everything you had.', record: { gap: GAP_STORY, doors: ['aging_parents'] } } },
-      { member: 'Yes, that’s how it went', model: { text: 'Okay.' } },
+      { member: 'That’s the whole of it', model: { text: 'Thank you.' } }, // signals the story whole → reflect
+      { member: 'Yes, you’ve got it', model: { text: 'Okay.' } }, // confirm → advance
     ],
     atGap,
   );
-  // turn 1: gap captured + Door derived + reflect-confirm
-  assert.equal(turns[0]!.state.awaitingConfirm, true, 'reflects the gap and awaits confirm');
+  // turn 1: gap captured + Door derived, but still RECEIVING (invites the rest before reflecting)
   assert.equal(turns[0]!.state.collected.gap, GAP_STORY);
   assert.deepEqual(turns[0]!.state.collected.doors, ['aging_parents'], 'Door tagged by the model is kept');
-  assert.match(turns[0]!.reply, /come back to the specific doors|shape of how it went/i, 'forecasts the Doors session');
-  // turn 2: affirm → advance to reclaim, ends on hope
+  assert.equal(turns[0]!.state.awaitingConfirm ?? false, false, 'gathers the whole story before reflecting');
+  // turn 2: story signalled whole → reflect-confirm + forecast the Doors session
+  assert.equal(turns[1]!.state.awaitingConfirm, true, 'reflects once the story is whole');
+  assert.match(turns[1]!.reply, /come back to the specific doors|shape of how it went/i, 'forecasts the Doors session');
+  // turn 3: affirm → advance to reclaim, ends on hope
   assert.equal(finalState.stage, 'reclaim', 'advances to the reclaim stage on confirm');
   assert.equal(finalState.awaitingConfirm, false);
-  assert.match(turns[1]!.reply, /want back|good part/i, 'reframes into what they want back');
+  assert.match(turns[2]!.reply, /want back|good part/i, 'reframes into what they want back');
 });
 
 test('STAGED gap — no Door tagged is a complete capture (recognition over routing, never forced)', () => {
@@ -113,9 +116,15 @@ test('STAGED gap — no Door tagged is a complete capture (recognition over rout
   const story =
     'I honestly cannot point to anything. There was no event, no crisis. I just slowly stopped doing the ' +
     'things I loved, a little at a time, and one day I looked up and they were gone. Nothing happened, exactly.';
-  const { turns } = replayStaged([{ member: story, model: { text: 'I hear that.', record: { gap: story } } }], atGap);
-  assert.equal(turns[0]!.state.awaitingConfirm, true, 'a gap with zero Doors still reflects + advances');
-  assert.deepEqual(turns[0]!.state.collected.doors ?? [], [], 'no Door invented when none was described');
+  const { turns } = replayStaged(
+    [
+      { member: story, model: { text: 'I hear that.', record: { gap: story } } },
+      { member: 'That’s the whole picture', model: { text: 'Okay.' } }, // whole → reflect
+    ],
+    atGap,
+  );
+  assert.equal(turns[1]!.state.awaitingConfirm, true, 'a gap with zero Doors still reflects once whole');
+  assert.deepEqual(turns[1]!.state.collected.doors ?? [], [], 'no Door invented when none was described');
 });
 
 test('STAGED gap — backstop: model converses WITHOUT set_gap; engine captures the message in-stage', () => {
@@ -124,10 +133,16 @@ test('STAGED gap — backstop: model converses WITHOUT set_gap; engine captures 
   const story =
     'It was slow. I became the one caring for my aging mother — the role reversal where I was suddenly the ' +
     'parent to my own parent — and somewhere in those years I stopped being anyone but the person who showed up.';
-  const { turns } = replayStaged([{ member: story, model: { text: 'That must have been so hard.' } }], atGap);
+  const { turns } = replayStaged(
+    [
+      { member: story, model: { text: 'That must have been so hard.' } },
+      { member: 'That’s about it', model: { text: 'Okay.' } }, // whole → reflect
+    ],
+    atGap,
+  );
   assert.equal(turns[0]!.state.collected.gap, story, 'backstop captured the member’s own gap message');
-  assert.equal(turns[0]!.state.awaitingConfirm, true, 'and moved to reflect-confirm — no loop on the opening question');
-  assert.deepEqual(turns[0]!.state.collected.doors, ['aging_parents'], 'Door still derived from the captured gap');
+  assert.equal(turns[1]!.state.awaitingConfirm, true, 'reflects once whole — no loop on the opening question');
+  assert.deepEqual(turns[1]!.state.collected.doors, ['aging_parents'], 'Door still derived from the captured gap');
 });
 
 test('STAGED gap — a short dispute re-opens but NEVER wipes the gap or Doors (never drop what they gave)', () => {
@@ -292,10 +307,16 @@ test('STAGED fade gate — does NOT misfire on a real fade that also mentions wa
   const atGap: ConvState = { stage: 'gap', collected: { athleticPast: 'a runner', identityNoun: 'Runner' } };
   // Has a real loss AND forward language — the loss signal must win (isForwardAmbition is false when loss present).
   const story = 'After my divorce I lost myself and stopped running; now I want more from life again, to level up and feel alive.';
-  const { turns } = replayStaged([{ member: story, model: { text: 'That makes sense.', record: { gap: story } } }], atGap);
+  const { turns } = replayStaged(
+    [
+      { member: story, model: { text: 'That makes sense.', record: { gap: story } } },
+      { member: 'that’s the whole story', model: { text: 'Okay.' } }, // whole → reflect
+    ],
+    atGap,
+  );
   assert.equal(turns[0]!.state.collected.gap, story, 'a real fade with forward language is still captured');
   assert.equal(turns[0]!.state.noFade ?? false, false, 'not misread as no-fade');
-  assert.equal(turns[0]!.state.awaitingConfirm, true, 'proceeds to reflect-confirm');
+  assert.equal(turns[1]!.state.awaitingConfirm, true, 'proceeds to reflect-confirm once the story is whole');
 });
 
 test('STAGED reclaim — sub-3 completion (Gate-1 decision): two items + done → completes, card carries shortfall', () => {

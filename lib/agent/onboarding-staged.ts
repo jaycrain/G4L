@@ -85,6 +85,13 @@ const GAP_FORECAST_CONFIRM =
   'further on. For now: did I understand the shape of how it went?';
 const REOPEN_GAP = "I want to get this right — tell me how it really went, in your own words.";
 
+// Invite the REST of the story (a fade is often several things at once — job, then the household, then a
+// parent) WITHOUT excavating Door-by-Door. Asked after each chapter until the member signals the story whole;
+// this is what lets a progressive revealer's later Doors surface before we reflect and move on.
+const GAP_MORE =
+  'Thank you for that. Was there more around that same stretch — other things that landed at the same time — ' +
+  'or is that the heart of how it opened?';
+
 // Said when the engine recognizes there is NO Fade — a forward-looking member with no loss or drift. We do
 // NOT manufacture a gap or push them to completion (locked scope: this person isn't our member). Honest and
 // non-pathologizing; holds rather than completing. PLACEHOLDER COPY — the real decline message/UX is the
@@ -274,6 +281,16 @@ function memberClosingReclaim(message: string): boolean {
   return memberDeflecting(m) || confirmsWhole(m) || RECLAIM_CLOSE_RE.test(m);
 }
 
+// The member signalling the fade story is WHOLE ("that's the whole of it", "no more", "that's how it went").
+// Until this fires (or a turn adds nothing new), the gap stage keeps RECEIVING — so a multi-event story fully
+// surfaces (and its Doors with it) before we reflect and advance.
+const GAP_DONE_RE =
+  /\b(that'?s (the )?(whole|all|it|everything|gist|story|picture|heart)|the (whole|full) (story|picture|thing|of it)|no(thing)? (more|else)|no more|that'?s how it (went|happened|unfolded)|that covers it|that'?s about it|that'?s most of it|pretty much it|that'?s the heart)\b/i;
+function memberSignalsGapComplete(message: string): boolean {
+  const m = (message ?? '').replace(/[‘’]/g, "'");
+  return confirmsWhole(m) || memberWantsToWrap(m) || GAP_DONE_RE.test(m);
+}
+
 // Every member message so far + the current one — the corpus we scan for Doors. rita reveals her Doors
 // PROGRESSIVELY (layoff one turn, the household load another, the parent's illness a third), so scanning only
 // the latest message drops the earlier ones. Identity-stage answers don't false-match (matchDoors is specific).
@@ -370,9 +387,18 @@ export function applyStagedTurn(
       // words match the aliases better than the model's third-person summary. augmentDoors unions and never
       // invents off empty text; 0/1/several are all valid; the stage NEVER gates on Door count.
       collected.doors = augmentDoors(collected.doors ?? [], gapStageCorpus(history, memberMessage));
-      // Reflect the story back + forecast the dedicated Doors session, then await the member's confirm.
-      finalReply = reflectGap(modelText);
-      awaitingConfirm = true;
+      // RECEIVE THE WHOLE STORY before reflecting. A fade is often several things at once, told across turns.
+      // If this turn ADDED a chapter and the member hasn't signalled the story is whole, invite the rest
+      // (GAP_MORE) — don't reflect-and-advance on chapter one (that dropped rita's later Doors). Only once the
+      // story is complete (they signal done, or a turn adds nothing new) do we reflect-confirm.
+      const gapGrew = modelTaggedGap || collected.gap.length > (state.collected.gap?.length ?? 0);
+      if (gapGrew && !memberSignalsGapComplete(memberMessage)) {
+        finalReply = modelText && /\?/.test(modelText) ? modelText : GAP_MORE;
+      } else {
+        // Story whole → reflect it back + forecast the dedicated Doors session, then await the member's confirm.
+        finalReply = reflectGap(modelText);
+        awaitingConfirm = true;
+      }
     } else {
       // No fade captured yet. Watch for the no-fade signal: a member describing only ambition / no loss.
       gapTurns += 1;
