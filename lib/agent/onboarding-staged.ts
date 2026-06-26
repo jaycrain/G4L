@@ -50,8 +50,10 @@ function nextStagedStage(s: StagedStage): StagedStage {
   return STAGE_ORDER[Math.min(STAGE_ORDER.indexOf(s) + 1, STAGE_ORDER.length - 1)]!;
 }
 
-// After this many identity gather-turns without a word, offer the explicit "find it later" skip.
+// After this many identity gather-turns, offer the explicit "find it later" skip (even with no past-self yet).
 const IDENTITY_SKIP_OFFER_AFTER = 2;
+// Hard never-strand escape: after this many, skip identity outright and move on (recovered at Excavation).
+const IDENTITY_MAX_TURNS = 5;
 
 // --- copy (engine-owned forwards; the model leads when it asks a real question) -------------------------
 export const STAGED_OPENING =
@@ -92,15 +94,15 @@ const GAP_MORE =
   'Thank you for that. Was there more around that same stretch — other things that landed at the same time — ' +
   'or is that the heart of how it opened?';
 
-// Said when the engine recognizes there is NO Fade — a forward-looking member with no loss or drift. We do
-// NOT manufacture a gap or push them to completion (locked scope: this person isn't our member). Honest and
-// non-pathologizing; holds rather than completing. PLACEHOLDER COPY — the real decline message/UX is the
-// flagged Jay+Greg decision (docs/onboarding-open-issues.md Issue 2).
-const NO_FADE_REFLECTION =
-  "It sounds like you're genuinely in a good place — moving forward, not trying to get something back. That's " +
-  'real, and worth saying plainly: this program is built for people feeling a distance from who they used to ' +
-  "be, and that may just not be where you are right now. If that ever changes, we'll be here. Is there anything " +
-  'about that I have wrong?';
+// FLOOR (Jay+Greg, Jun 26): when there's no real Fade, ADMIT at baseline — don't decline. Honest reflection
+// (they're reaching forward, not back), no fabricated fade, then straight into Reclaim. Their ID Score (earned
+// later in Reconnect) comes back high; the score tells the truth. Copy is light/tunable, not a release gate.
+const FLOOR_REFLECT =
+  "It sounds like you're in a genuinely good place — reaching forward more than reaching back, and that's worth " +
+  "saying plainly. We'll still map what you want, and your first check-in down the line will show you where " +
+  'you’re starting from.';
+// The truthful light gap recorded when a no-fade member gives nothing loss-shaped to capture in their words.
+const NO_FADE_GAP = 'No significant gap — in a good place, looking to keep building.';
 
 // The reframe into Stage 3 (reclaim) — the conversation turns toward hope.
 const RECLAIM_OPEN =
@@ -187,17 +189,22 @@ const NO_LOSS_RE =
   /\b(no (real )?(loss|drift|regret|hardship|crisis)( or (loss|drift|regret|hardship))?|nothing (ever |really )?(went |is )?wrong|haven'?t (drifted|lost|fallen)|don'?t feel (a |any )?(loss|drift|gap))\b/i;
 const LOSS_RE =
   /\b(lost|loss|losing|died|death|passed|sick|illness|diagnos|divorce|laid off|layoff|let go|left me|gone|stopped|gave up|drift|faded|fading|disappear|alone|lonely|empty|caregiver|caring for|injur|grief|grieving|miss(ed|ing)?|used to|no longer|slipped away|fell apart|burned out|breakdown)\b/i;
+// Real loss LANGUAGE, ignoring explicit "no loss / nothing wrong" declarations. Deliberately keyed on loss
+// VERBS/events (LOSS_RE), NOT on a Door-name match — "marriage is genuinely good" mentions the word "marriage"
+// but is not a loss, and must not read as The Marriage Door / a fade.
 function hasGenuineLoss(text: string): boolean {
-  const stripped = (text ?? '').replace(NO_LOSS_RE, ' '); // remove "no loss / nothing wrong" before reading loss
-  return LOSS_RE.test(stripped) || matchDoors(text ?? '').length > 0;
+  return LOSS_RE.test((text ?? '').replace(NO_LOSS_RE, ' '));
 }
 function isForwardAmbition(text: string): boolean {
   const t = text ?? '';
-  if (hasGenuineLoss(t)) return false; // genuine loss present wins — a real fade can still say "no crisis"
+  if (hasGenuineLoss(t)) return false; // a genuine loss verb wins — a real fade can still say "no crisis"
   return NO_LOSS_RE.test(t) || AMBITION_RE.test(t); // explicit no-fade declaration, or pure forward ambition
 }
+// For the gap backstop's "is this substantial enough to be a fade" check, a Door match still counts as a loss
+// signal (a terse "Knee. Then divorce." names The Marriage) — but only alongside the length/ambition guards
+// already in shouldCaptureStagedGap, so a positive Door-name mention can't sneak a gap in on its own.
 function hasLossSignal(text: string): boolean {
-  return hasGenuineLoss(text);
+  return hasGenuineLoss(text) || matchDoors(text ?? '').length > 0;
 }
 // A captured gap is a REAL fade (not ambition). The model's explicit set_gap is trusted unless it's clearly
 // ambition; the BACKSTOP is stricter (requires a loss signal) since it's inferring from an untagged message.
@@ -366,58 +373,67 @@ export function applyStagedTurn(
       finalReply = reflectIdentity(collected);
       awaitingConfirm = true;
     } else {
-      // Gather: keep the model's question if it asked one; otherwise drive the identity forward, and after
-      // a couple of tries offer the explicit "find it later" skip (the v1 identity-gate intent, staged).
+      // Gather. Never-strand: a member who won't name a PAST self (a thriving no-fade optimizer, or just a
+      // guarded one) must not loop the opening question forever. Offer the "find it later" skip after a couple
+      // of tries even if no past-self was captured, and HARD-ESCAPE after a few — skip identity and move on (it's
+      // recovered at Identity Excavation in Reconnect). This is what lets a no-fade member reach the gap-stage
+      // floor instead of stalling at the door.
       identityTurns += 1;
-      if (modelText && /\?/.test(modelText)) finalReply = modelText;
-      else if (!collected.athleticPast) finalReply = STAGED_OPENING;
-      else finalReply = identityTurns >= IDENTITY_SKIP_OFFER_AFTER ? SKIP_OFFER : NAME_PROMPT;
+      const skipOfferable = identityTurns >= IDENTITY_SKIP_OFFER_AFTER;
+      if (identityTurns >= IDENTITY_MAX_TURNS && !collected.athleticPast && !collected.identityNoun) {
+        collected.identitySkipped = true;
+        stage = 'gap';
+        finalReply = `${SKIP_ACK}\n\n${GAP_OPEN}`;
+      } else if (modelText && /\?/.test(modelText)) {
+        finalReply = modelText;
+      } else if (!collected.athleticPast) {
+        finalReply = skipOfferable ? SKIP_OFFER : STAGED_OPENING;
+      } else {
+        finalReply = skipOfferable ? SKIP_OFFER : NAME_PROMPT;
+      }
     }
   } else if (stage === 'gap') {
-    // FADE GATE. A captured gap that is actually forward-looking ambition (no loss) is NOT a fade — reject it
-    // so a no-fade optimizer can't be force-completed (we never trust the tag over the contract). Reject on
-    // AMBITION specifically, not on shortness — a terse but real fade ("Knee. Then divorce.") must survive.
-    if (collected.gap && isForwardAmbition(collected.gap)) collected.gap = undefined;
-    // Backstop: when the model did NOT tag set_gap this turn, capture the member's own message as the gap if
-    // it's a real fade with a loss signal — and ACCUMULATE (append), so a progressive revealer's later chapters
-    // are never lost. (When the model DID tag, mergeStaged already holds its summary — don't double-append.)
-    const modelTaggedGap = model.record?.gap !== undefined && model.record.gap !== '';
-    if (!modelTaggedGap && shouldCaptureStagedGap(memberMessage)) {
-      collected.gap = collected.gap ? `${collected.gap} ${memberMessage.trim()}` : memberMessage.trim();
+    // The model's explicit no-fade judgement (note_no_fade) is the PRIMARY signal — it reads "this person has
+    // no Fade" far more reliably than any regex. Sticky once set.
+    if (model.noFade) noFade = true;
+    // FADE GATE. Reject a model-tagged gap that is forward-looking ambition so we never FABRICATE a fade —
+    // unless we're admitting at the floor (below), where the member's honest light gap is kept. Reject on
+    // AMBITION specifically, not shortness — a terse real fade ("Knee. Then divorce.") must survive.
+    if (collected.gap && isForwardAmbition(collected.gap) && !noFade) collected.gap = undefined;
+    // Backstop: when the model did NOT tag a (real-fade) set_gap this turn, capture the member's own message as
+    // the gap if it reads as a real fade — ACCUMULATE (append) so a progressive revealer's chapters aren't lost.
+    const modelTaggedGap = model.record?.gap !== undefined && model.record.gap !== '' && !isForwardAmbition(model.record.gap);
+    if (!collected.gap && !noFade && shouldCaptureStagedGap(memberMessage)) {
+      collected.gap = memberMessage.trim();
+    } else if (collected.gap && !noFade && !modelTaggedGap && shouldCaptureStagedGap(memberMessage)) {
+      collected.gap = `${collected.gap} ${memberMessage.trim()}`;
     }
-    if (collected.gap) {
-      // Door quality (lighter posture — receive, don't excavate): scan the WHOLE gap-stage corpus (every
-      // member message so far), not just the latest — rita reveals her Doors across turns, and her first-person
-      // words match the aliases better than the model's third-person summary. augmentDoors unions and never
-      // invents off empty text; 0/1/several are all valid; the stage NEVER gates on Door count.
+    if (!collected.gap && !noFade) gapTurns += 1; // count gather turns only while no real fade is in hand
+
+    if (noFade || (!collected.gap && isForwardAmbition(memberMessage) && gapTurns >= 2)) {
+      // FLOOR (Jay+Greg, Jun 26): no real Fade → ADMIT at baseline, never decline. Keep a light, TRUTHFUL gap
+      // (their own no-loss words), clear any incidental Door match ("marriage is good"), and move straight into
+      // Reclaim — never fabricate a fade, never strand. The (later) ID Score comes back high; the score tells
+      // the truth, we don't.
+      noFade = true;
+      collected.gap = collected.gap || memberMessage.trim() || NO_FADE_GAP;
+      collected.doors = [];
+      stage = 'reclaim';
+      finalReply = `${FLOOR_REFLECT}\n\n${RECLAIM_OPEN}`;
+    } else if (collected.gap) {
+      // Real fade. Accumulate Doors across the WHOLE corpus (rita reveals them progressively), and RECEIVE the
+      // whole story before reflecting — invite the rest (GAP_MORE) until the member signals it's whole.
       collected.doors = augmentDoors(collected.doors ?? [], gapStageCorpus(history, memberMessage));
-      // RECEIVE THE WHOLE STORY before reflecting. A fade is often several things at once, told across turns.
-      // If this turn ADDED a chapter and the member hasn't signalled the story is whole, invite the rest
-      // (GAP_MORE) — don't reflect-and-advance on chapter one (that dropped rita's later Doors). Only once the
-      // story is complete (they signal done, or a turn adds nothing new) do we reflect-confirm.
       const gapGrew = modelTaggedGap || collected.gap.length > (state.collected.gap?.length ?? 0);
       if (gapGrew && !memberSignalsGapComplete(memberMessage)) {
         finalReply = modelText && /\?/.test(modelText) ? modelText : GAP_MORE;
       } else {
-        // Story whole → reflect it back + forecast the dedicated Doors session, then await the member's confirm.
         finalReply = reflectGap(modelText);
         awaitingConfirm = true;
       }
     } else {
-      // No fade captured yet. Watch for the no-fade signal: a member describing only ambition / no loss.
-      gapTurns += 1;
-      // Decline once we've asked how it opened and they're STILL giving only forward ambition (2nd+ turn),
-      // or once already recognized as no-fade (sticky).
-      if (noFade || (isForwardAmbition(memberMessage) && gapTurns >= 2)) {
-        // DECLINE — recognize there's no Fade and stop. Never fabricate a gap, never complete. The member-
-        // facing decline copy/UX is the flagged Jay+Greg decision (Issue 2); the engine's job is to not force
-        // it. We surface an honest, non-pathologizing reflection and hold (no completion).
-        noFade = true;
-        finalReply = NO_FADE_REFLECTION;
-      } else {
-        // Genuinely still gathering — keep the model's question if it asked one; otherwise hold the gap open.
-        finalReply = modelText && /\?/.test(modelText) ? modelText : GAP_OPEN;
-      }
+      // Still gathering a real fade (no ambition signal yet) — keep the model's question, else hold the gap open.
+      finalReply = modelText && /\?/.test(modelText) ? modelText : GAP_OPEN;
     }
   } else if (stage === 'reclaim') {
     const closing = memberClosingReclaim(memberMessage);
@@ -509,6 +525,14 @@ export const STAGED_TOOLS = [
     input_schema: { type: 'object' as const, properties: { slug: { type: 'string' } }, required: ['slug'] },
   },
   {
+    name: 'note_no_fade',
+    description:
+      "Call this when the member genuinely has NO Fade — no loss, no drift, no distance from who they were; they're " +
+      'thriving and simply want MORE (optimize, level up, the next challenge). Do NOT fabricate a hardship; mark this ' +
+      'instead. They will still be admitted and build a Reclaim List — their first ID Score later just comes back high.',
+    input_schema: { type: 'object' as const, properties: {}, required: [] },
+  },
+  {
     name: 'add_reclaim_item',
     description:
       'Record one thing the member wants back (a Reclaim-List item), in their words. Call once per item; it accumulates. ' +
@@ -524,6 +548,7 @@ export const STAGED_TOOLS = [
 // Parse a staged model response (per-field tool calls) into the merged Partial<Collected> the engine reads.
 export function parseStagedTurn(content: readonly unknown[]): ModelTurn {
   let text = '';
+  let noFade = false;
   const rec: Partial<Collected> = {};
   for (const b of content as Array<{ type: string; text?: string; name?: string; input?: Record<string, unknown> }>) {
     if (b.type === 'text' && typeof b.text === 'string') text += b.text;
@@ -539,9 +564,10 @@ export function parseStagedTurn(content: readonly unknown[]): ModelTurn {
         (rec.reclaimList ??= []).push(b.input.text);
         (rec.reclaimCategories ??= []).push(typeof b.input.category === 'string' ? b.input.category : '');
       }
+      if (b.name === 'note_no_fade') noFade = true;
     }
   }
-  return { text, record: rec };
+  return { text, record: rec, noFade };
 }
 
 // Is the staged engine selected? Flag only — defaults OFF, so v1 serves prod until cut-over.
@@ -591,10 +617,9 @@ named event go un-tagged. Do NOT keep digging or re-ask "any others?"; the speci
 session later, and you may say so warmly. One Door, several, or none are all complete.
 CRITICAL — DO NOT FABRICATE A FADE: this program is for people feeling a real distance from who they were
 (a loss, a decline, a slow drift). If the member describes NO loss and NO drift — they're thriving and simply
-want MORE (optimize, level up, the next challenge) — that person is NOT yours to capture. Do NOT call set_gap,
-do NOT invent a hardship to please anyone. Gently reflect that they sound like they're in a good place and
-this may not be what they need right now. A member with no Fade is the system correctly recognizing a
-non-member — not a conversation to force forward.
+want MORE (optimize, level up, the next challenge) — do NOT call set_gap and do NOT invent a hardship. Instead
+call **note_no_fade**. They're still admitted and will build a Reclaim List; their first ID Score (later) just
+comes back high. Reflect warmly that they sound like they're in a good place, and move on to what they want.
 
 The AI disclosure was shown on the start page — never repeat it. Reflect first, then exactly ONE warm
 question per turn. No meta-narration about the program's mechanics.`;

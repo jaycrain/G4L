@@ -42,8 +42,9 @@ If asked how the gap opened, tell ALL of it (job, husband/household, parents) �
   },
   {
     name: 'no-fade',
-    // A thriving optimizer — explicitly NOT our member (scope decision). Correct behavior: the engine does
-    // NOT fabricate a fade to force completion. Not completing / no Door is the RIGHT outcome here.
+    // A thriving optimizer with no real Fade. FLOOR decision (Jay+Greg, Jun 26): ADMIT at baseline — complete
+    // normally with a light, TRUTHFUL gap; never fabricate a fade, never force a Door, never strand/hold. The
+    // (later) ID Score comes back high. So the correct outcome here is now: completes, no invented loss.
     system: `You are role-playing "Theo", a 52-year-old man who is genuinely THRIVING and just wants MORE.
 Respond ONLY as Theo — 1-3 short sentences. There is NO loss or drift in your life: career's strong, marriage's
 good, kids are great, you're fit and healthy. You're here to optimize and chase bigger challenges — a faster
@@ -52,9 +53,10 @@ gap opened, say honestly that nothing went wrong — you haven't drifted, you ju
 NOT invent a loss or a hard chapter to please the guide; gently insist you're doing well.`,
     expect: (c, done) => {
       const out: string[] = [];
-      // Forcing a Door + completing on a no-Fade member = inventing a fade. Stalling / no Door is correct.
-      if (done && (c.doors?.length ?? 0) > 0) out.push('forced a Door onto a no-Fade member (should decline, not invent a fade)');
-      if (done && (c.gap ?? '').length > 140) out.push('completed with a long gap — check it is not a fabricated loss');
+      // FLOOR: admit, don't decline. Failure modes now = stranding (no completion) OR a fabricated fade.
+      if (!done) out.push('no-fade did NOT complete — stranded/held (floor decision: admit at baseline)');
+      if ((c.doors?.length ?? 0) > 0) out.push('forced a Door onto a no-Fade member (invented a fade)');
+      if (/\b(lost|loss|died|divorce|laid off|diagnos|grief|caregiver)\b/i.test(c.gap ?? '')) out.push('gap contains invented LOSS — a fabricated fade (floor must capture a truthful no-loss gap)');
       return out;
     },
   },
