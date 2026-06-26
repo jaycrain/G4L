@@ -145,6 +145,54 @@ test('STAGED gap — backstop: model converses WITHOUT set_gap; engine captures 
   assert.deepEqual(turns[1]!.state.collected.doors, ['aging_parents'], 'Door still derived from the captured gap');
 });
 
+test('STAGED gap — never-strand (run-2 fix): short progressive turns the matcher misses still get captured', () => {
+  // Each message is short and uses phrasing matchDoors doesn't catch + the model never tags set_gap — exactly
+  // the run-2 stall. After a few turns the engine must capture the accumulated story and advance, not loop.
+  const atGap: ConvState = { stage: 'gap', collected: { athleticPast: 'a leader', identitySkipped: true } };
+  const { turns } = replayStaged(
+    [
+      { member: 'It all came apart at once, honestly.', model: { text: 'Tell me more.' } },
+      { member: 'The work thing ended after a long time there.', model: { text: 'Go on.' } },
+      { member: 'Then money got really tight at home.', model: { text: 'That’s hard.' } },
+      { member: 'And someone close needed me at the same time.', model: { text: 'I hear you.' } },
+      { member: 'That’s the whole of it.', model: { text: 'Thank you.' } }, // signals whole → reflect
+    ],
+    atGap,
+  );
+  assert.ok((turns[3]!.state.collected.gap ?? '').length > 0, 'by turn 4 the accumulated story is captured — no 24-turn stall');
+  assert.equal(/most like yourself/i.test(turns[3]!.reply), false); // not looping the opening question
+  assert.equal(turns[4]!.state.awaitingConfirm, true, 'and the stage advances to reflect-confirm when she signals whole');
+});
+
+test('STAGED reclaim — complete-when-done (run-6 fix): ≥3 items then a non-adding turn reflects, never loops', () => {
+  // She has 3 items and then says something that adds NO new item and isn't an explicit "that's the list".
+  // The engine must reflect (she's done offering), not loop "what else?" forever. Never force-closes — she
+  // still confirms the card.
+  const atReclaim: ConvState = {
+    stage: 'reclaim',
+    collected: {
+      athleticPast: 'a runner', identityNoun: 'Runner', gap: 'a real fade over a long hard decade of putting everyone else first',
+      reclaimList: ['running', 'sleep', 'seeing friends'],
+    },
+  };
+  const turn = applyStagedTurn(atReclaim, [], 'hm, I’m not sure what else right now', { text: 'Okay.' });
+  assert.equal(turn.state.collected.reclaimList?.length, 3, 'a non-item reply is not captured as an item');
+  assert.equal(turn.state.awaitingConfirm, true, 'reflects the list once she stops adding — no infinite "what else?"');
+  assert.equal(turn.complete, false, 'reflect is not completion — she still confirms the card (never force-closed)');
+  assert.match(turn.reply, /want to reclaim/i);
+});
+
+test('STAGED reclaim — complete-when-done still GATHERS while she is actively adding (no premature reflect)', () => {
+  const atReclaim: ConvState = {
+    stage: 'reclaim',
+    collected: { athleticPast: 'a runner', identityNoun: 'Runner', gap: 'a'.repeat(60), reclaimList: ['running', 'sleep', 'friends'] },
+  };
+  // She adds a 4th item (model tags it) — still below the aim → keep gathering, do NOT reflect yet.
+  const turn = applyStagedTurn(atReclaim, [], 'oh and painting too', { text: 'Good.', record: { reclaimList: ['painting'] } });
+  assert.equal(turn.state.collected.reclaimList?.length, 4);
+  assert.equal(turn.state.awaitingConfirm ?? false, false, 'still gathering toward the aim while she adds');
+});
+
 test('STAGED gap — a short dispute re-opens but NEVER wipes the gap or Doors (never drop what they gave)', () => {
   const atConfirm: ConvState = {
     stage: 'gap', awaitingConfirm: true,

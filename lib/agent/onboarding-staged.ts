@@ -54,6 +54,8 @@ function nextStagedStage(s: StagedStage): StagedStage {
 const IDENTITY_SKIP_OFFER_AFTER = 2;
 // Hard never-strand escape: after this many, skip identity outright and move on (recovered at Excavation).
 const IDENTITY_MAX_TURNS = 5;
+// Gap never-strand: after this many gap turns with nothing captured, grab the accumulated story so we advance.
+const GAP_MAX_TURNS = 4;
 
 // --- copy (engine-owned forwards; the model leads when it asks a real question) -------------------------
 // v2.0 FINAL copy — docs/handoffs/2026-06-26-v2.0-final-copy-and-floor.md §3–§6. Voice: warm, direct,
@@ -435,6 +437,15 @@ export function applyStagedTurn(
     }
     if (!collected.gap && !noFade) gapTurns += 1; // count gather turns only while no real fade is in hand
 
+    // NEVER-STRAND the gap stage (run-2 fix): after several gap turns with NOTHING captured — a progressive
+    // revealer whose short turns each fell under the per-message bar AND the model never tagged — capture the
+    // accumulated gap-stage story so we advance instead of looping the opening question for 24 turns. The Doors
+    // still come from the whole corpus below; this just rescues the gap TEXT so the stage can close.
+    if (!collected.gap && !noFade && gapTurns >= GAP_MAX_TURNS && !isForwardAmbition(memberMessage)) {
+      const corpus = gapStageCorpus(history, memberMessage).trim();
+      if (corpus.length >= 40 && !memberDeflecting(memberMessage)) collected.gap = corpus;
+    }
+
     if (noFade || (!collected.gap && isForwardAmbition(memberMessage) && gapTurns >= 2)) {
       // FLOOR (Jay+Greg, Jun 26): no real Fade → ADMIT at baseline, never decline. Keep a light, TRUTHFUL gap
       // (their own no-loss words), clear any incidental Door match ("marriage is good"), and move straight into
@@ -478,8 +489,17 @@ export function applyStagedTurn(
       finalReply = reflectReclaim(collected);
       awaitingConfirm = true;
     } else if (count >= RECLAIM_LIST_MIN) {
-      // At/above the floor but still offering and not at the aim — keep gently gathering toward ~7.
-      finalReply = modelText && /\?/.test(modelText) ? modelText : RECLAIM_MORE;
+      // At/above the minimum, below the aim, not explicitly closing. COMPLETE-WHEN-DONE (never force-close):
+      // only keep gathering toward ~7 while she's actively ADDING items (grewThisTurn). The moment a turn adds
+      // nothing new, she's finished offering — reflect the list and await her confirm (she can still correct or
+      // extend; the card is the final seatbelt). This kills the 24-turn loop where a member at 3–6 items never
+      // hits an explicit "that's the list" phrasing. It can't over-fire: it requires ≥3 real captured items.
+      if (grewThisTurn && count < RECLAIM_LIST_TARGET) {
+        finalReply = modelText && /\?/.test(modelText) ? modelText : RECLAIM_MORE;
+      } else {
+        finalReply = reflectReclaim(collected);
+        awaitingConfirm = true;
+      }
     } else if (closing && !reclaimNudged) {
       // Soft-close below the minimum → nudge ONCE: lower the bar (small things count), draw out more. This is
       // the moment a genuine multi-want member names the rest; it fires HERE (not a bare "what else?") because
