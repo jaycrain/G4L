@@ -161,3 +161,85 @@ test('STAGED gap — a reclaim item volunteered in-stage PARKS to the list, neve
   assert.equal(turns[0]!.state.collected.gap, undefined, 'NOT captured as the gap — staging makes contamination impossible');
   assert.equal(turns[0]!.state.stage, 'gap', 'stays in the gap stage, still gathering the fade story');
 });
+
+// --- slice c: the RECLAIM stage + end-to-end --------------------------------------------------------
+test('STAGED reclaim — gather to the minimum → reflect the list → confirm → complete (hands off to the card)', () => {
+  const atReclaim: ConvState = {
+    stage: 'reclaim',
+    collected: { athleticPast: 'a cyclist', identityNoun: 'Athlete', gap: 'It opened slowly over years of caring for my dad until I lost myself in it entirely.' },
+  };
+  const { turns, finalState } = replayStaged(
+    [
+      { member: 'I want to ride again', model: { text: 'Good.', record: { reclaimList: ['riding again'] } } },
+      { member: 'and have my mornings back', model: { text: 'Yes.', record: { reclaimList: ['my mornings back'] } } },
+      { member: 'and see my friends', model: { text: 'Got it.', record: { reclaimList: ['seeing my friends'] } } },
+      { member: 'yes, that’s it', model: { text: 'Okay.' } },
+    ],
+    atReclaim,
+  );
+  // third item meets the minimum → reflect-confirm
+  assert.equal(turns[2]!.state.awaitingConfirm, true, 'reflects the list once the minimum is met');
+  assert.match(turns[2]!.reply, /Reclaim List/i);
+  assert.match(turns[2]!.reply, /riding again/);
+  // confirm → complete + handoff to the card
+  assert.equal(finalState.stage, 'complete');
+  assert.equal(turns[3]!.complete, true, 'completes — the card renders from collected');
+  assert.equal(finalState.collected.reclaimList?.length, 3);
+  assert.match(turns[3]!.reply, /show you what I captured|tell me if/i);
+});
+
+test('STAGED reclaim — re-surfaces a parked front-loader item at stage entry (the trust moment)', () => {
+  // Member parked "writing again" back in the identity stage; we enter reclaim by confirming the gap.
+  const atGapConfirm: ConvState = {
+    stage: 'gap', awaitingConfirm: true,
+    collected: { athleticPast: 'a writer', identityNoun: 'Writer', gap: 'Work slowly took everything I had.', reclaimList: ['writing again'] },
+  };
+  const turn = applyStagedTurn(atGapConfirm, [], 'yes, that’s how it went', { text: 'Okay.' });
+  assert.equal(turn.state.stage, 'reclaim', 'advanced into reclaim');
+  assert.match(turn.reply, /earlier you told me/i, 'reads the parked item back');
+  assert.match(turn.reply, /writing again/, 'names the exact parked want — nothing dropped');
+});
+
+test('STAGED reclaim — never-trap: a wrap below the minimum nudges ONCE, then does not loop or complete', () => {
+  const atReclaim: ConvState = {
+    stage: 'reclaim',
+    collected: { athleticPast: 'a runner', identityNoun: 'Runner', gap: 'It faded over a long slow decade of putting everyone else first.', reclaimList: ['running'] },
+  };
+  // member gives a 2nd, then says "that's all" while still at 2 (below the min of 3)
+  const { turns } = replayStaged(
+    [
+      { member: 'and getting outside', model: { text: 'Good.', record: { reclaimList: ['getting outside'] } } },
+      { member: 'honestly that’s all I’ve got', model: { text: 'Okay.' } },
+      { member: 'no really, I’m done', model: { text: 'Okay.' } },
+    ],
+    atReclaim,
+  );
+  // turn 2: wrap below min → nudge ONCE, do not complete
+  assert.equal(turns[1]!.state.reclaimNudged, true, 'nudged once');
+  assert.equal(turns[1]!.complete, false, 'never completes below the frozen floor');
+  assert.match(turns[1]!.reply, /even one or two more|small/i, 'lowers the bar rather than re-asking');
+  // turn 3: wraps again — must NOT nudge a second time (no loop) and still must not complete
+  assert.equal(/even one or two more/i.test(turns[2]!.reply), false, 'does not repeat the nudge — no loop');
+  assert.equal(turns[2]!.complete, false, 'still cannot complete below the minimum');
+});
+
+test('STAGED end-to-end — opening → identity → gap → reclaim → complete, full contract met', () => {
+  const { turns, finalState } = replayStaged([
+    { member: 'I used to be a competitive swimmer, up at 5am every day for the pool', model: { text: 'That dedication shows.', record: { athleticPast: 'a competitive swimmer up at 5am every day' } } },
+    { member: 'The Swimmer', model: { text: 'The Swimmer.', record: { identityNoun: 'Swimmer' } } },
+    { member: 'yes that’s right', model: { text: 'Good.' } },
+    { member: 'After my divorce I just stopped. The early mornings went, then everything else, and I never found my way back to the water or to myself.', model: { text: 'That kind of unraveling is so common after a marriage ends.', record: { gap: 'After my divorce I stopped — the early mornings went, then everything else, and I never found my way back to the water or to myself.', doors: ['marriage'] } } },
+    { member: 'yes, exactly', model: { text: 'Thank you.' } },
+    { member: 'I want to swim again', model: { text: 'Good.', record: { reclaimList: ['swimming again'] } } },
+    { member: 'my early mornings', model: { text: 'Yes.', record: { reclaimList: ['my early mornings'] } } },
+    { member: 'and feeling strong in my body', model: { text: 'Got it.', record: { reclaimList: ['feeling strong in my body'] } } },
+    { member: 'that’s the heart of it', model: { text: 'Okay.' } },
+  ]);
+  assert.equal(finalState.stage, 'complete');
+  assert.equal(turns.at(-1)!.complete, true);
+  const c = finalState.collected;
+  assert.equal(c.identityNoun, 'Swimmer');
+  assert.ok(c.gap && c.gap.length > 20);
+  assert.deepEqual(c.doors, ['marriage']);
+  assert.equal(c.reclaimList?.length, 3);
+});

@@ -44,6 +44,7 @@ export type ConvState = {
   declinedDoors?: DoorSlug[]; // Doors the member set aside when asked — never re-surfaced
   awaitingMore?: boolean; // the member said the fade story isn't finished — hold (no complete) until they close it
   awaitingConfirm?: boolean; // v2.0 staged engine: the current stage's capture has been reflected; awaiting confirm
+  reclaimNudged?: boolean; // v2.0 staged engine: we've nudged once for more reclaim items below the minimum (never-trap: nudge once, never loop)
 };
 export type ConvMessage = { role: 'agent' | 'member'; text: string };
 export type Ctx = { name: string; email: string };

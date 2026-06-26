@@ -11,13 +11,17 @@
 //
 // SLICE a built: the stage machine (authoritative `stage` + `awaitingConfirm`), the confirmed-transition
 // engine, and the IDENTITY stage in full (gather → reflect-confirm → advance; skip path; correction re-opens).
-// SLICE b builds: the GAP stage — set_gap/note_door tools, lighter Door posture (receive, don't excavate;
+// SLICE b built: the GAP stage — set_gap/note_door tools, lighter Door posture (receive, don't excavate;
 // 0/1/several Doors all valid, never gated on count), the Doors-session forecast, and the stage-scoped gap
 // backstop (capture the member's own message as the gap only in-stage when the model failed to tag it).
-// reclaim is still a stub — slice c.
+// SLICE c builds: the RECLAIM stage — add_reclaim_item gather to RECLAIM_LIST_MIN, re-surfacing of parked
+// front-loader items at stage entry ("earlier you said X — let's start there"), the never-trap nudge
+// (nudge once below the minimum, never loop, never complete below the frozen floor), and the handoff into
+// the confirmation card. The flow is now END-TO-END behind the flag — the first live-eval gate.
 
 import { cleanIdentityNoun, displayIdentityNoun, identityLabel } from '../member/identity.ts';
 import { isDoorSlug, type DoorSlug } from '../doors.ts';
+import { RECLAIM_LIST_MIN } from '../member/reclaim.ts';
 import { gapIsNarrative } from './onboarding-contract.ts';
 import { MEMBER_AGENT_SYSTEM_PROMPT } from './system-prompt.ts';
 import {
@@ -78,10 +82,23 @@ const GAP_FORECAST_CONFIRM =
   'further on. For now: did I understand the shape of how it went?';
 const REOPEN_GAP = "I want to get this right — tell me how it really went, in your own words.";
 
-// The reframe into Stage 3 (reclaim) — the conversation turns toward hope (capture lands in slice c).
+// The reframe into Stage 3 (reclaim) — the conversation turns toward hope.
 const RECLAIM_OPEN =
   'Now the good part — the reason any of this matters. When you picture closing that distance, what do you ' +
   'want back? The things that were yours. Name whatever comes — big or small, there are no wrong answers.';
+
+const RECLAIM_MORE = 'What else? Anything that comes — big or small.';
+
+// Never-trap nudge: said ONCE when the member signals done below the minimum. It does not re-ask the same
+// way — it lowers the bar (small things count) to unlock one more, then the engine stops nudging.
+const RECLAIM_NUDGE =
+  "Even one or two more — and they can be small: sleeping through the night, an old hobby, a friend you've " +
+  'lost touch with, ten quiet minutes that are yours. What comes to mind?';
+
+// The handoff into the confirmation card (the card itself is rendered client-side from `collected`).
+const COMPLETE_HANDOFF =
+  "That's everything I need to get you started. Let me show you what I captured — take a look and tell me if " +
+  "it's right. Nothing's saved yet.";
 
 function reflectIdentity(c: Collected): string {
   const label = capFirst(identityLabel(c.identityNoun) || 'that person');
@@ -93,6 +110,25 @@ function reflectIdentity(c: Collected): string {
 function reflectGap(modelText: string): string {
   const lead = modelText && !modelText.includes('?') ? modelText.trim() : GAP_REFLECT_LEAD;
   return `${lead}\n\n${GAP_FORECAST_CONFIRM}`;
+}
+
+// The reclaim-stage opener. If the member ALREADY parked wants earlier (front-loader), read them back —
+// "earlier you said X — let's start there." True by construction, and the single best trust moment in the
+// flow: it proves nothing was dropped. With nothing parked, it's the clean RECLAIM_OPEN.
+function reclaimOpening(c: Collected): string {
+  const parked = c.reclaimList ?? [];
+  if (parked.length === 0) return RECLAIM_OPEN;
+  const items = parked.map((x) => `“${x.trim()}”`).join(parked.length === 2 ? ' and ' : ', ');
+  return (
+    `Now the good part — and you've already started. Earlier you told me you want ${items} back, so ` +
+    `${parked.length === 1 ? "that's" : "those are"} on your list. What else? Big or small, there are no wrong answers.`
+  );
+}
+
+// Reflect the Reclaim List back before the card — the member hears their own list, one confirm question.
+function reflectReclaim(c: Collected): string {
+  const items = (c.reclaimList ?? []).map((x) => `• ${x.trim()}`).join('\n');
+  return `So here's your Reclaim List — what you want back:\n\n${items}\n\nIs that the heart of it, or is there something we're still missing?`;
 }
 
 // --- confirmed-transition detection --------------------------------------------------------------------
@@ -159,6 +195,7 @@ export function applyStagedTurn(
   let stage = (state.stage ?? 'identity') as StagedStage;
   let awaitingConfirm = state.awaitingConfirm ?? false;
   let identityTurns = state.identityTurns ?? 0;
+  let reclaimNudged = state.reclaimNudged ?? false;
   const modelText = stripLeadingDisclosure(model.text).trim();
 
   let finalReply: string;
@@ -177,12 +214,19 @@ export function applyStagedTurn(
         collected.doors = [];
         finalReply = REOPEN_GAP;
       } else {
-        finalReply = modelText || 'Tell me more.';
+        // Reclaim correction — they want to change the list; stay in reclaim and keep gathering.
+        finalReply = modelText && /\?/.test(modelText) ? modelText : RECLAIM_MORE;
       }
     } else {
       stage = nextStagedStage(stage);
       awaitingConfirm = false;
-      finalReply = stage === 'gap' ? GAP_OPEN : stage === 'reclaim' ? RECLAIM_OPEN : `(${stage} stage — slice c)`;
+      if (stage === 'gap') finalReply = GAP_OPEN;
+      else if (stage === 'reclaim') finalReply = reclaimOpening(collected);
+      else {
+        // reclaim → complete: hand off to the confirmation card (rendered client-side from `collected`).
+        finalReply = COMPLETE_HANDOFF;
+        complete = true;
+      }
     }
   } else if (stage === 'identity') {
     if (collected.identitySkipped) {
@@ -218,15 +262,31 @@ export function applyStagedTurn(
       finalReply = modelText && /\?/.test(modelText) ? modelText : GAP_OPEN;
     }
   } else if (stage === 'reclaim') {
-    finalReply = modelText || '(reclaim stage — slice c)';
+    const count = collected.reclaimList?.length ?? 0;
+    if (count >= RECLAIM_LIST_MIN) {
+      // Target met — reflect the whole list back and await the member's confirm (the transition to the card).
+      finalReply = reflectReclaim(collected);
+      awaitingConfirm = true;
+    } else if (memberWantsToWrap(memberMessage) && !reclaimNudged) {
+      // Below the minimum AND they're signalling done: nudge ONCE (lower the bar, small things count), then
+      // never nudge again. Never-trap: we don't loop, and we don't complete below the floor (RECLAIM_LIST_MIN
+      // is the frozen data contract — a sub-minimum list can't finalize, so we keep the conversation moving
+      // warmly rather than re-asking the same question or stranding them).
+      reclaimNudged = true;
+      finalReply = RECLAIM_NUDGE;
+    } else {
+      // Gather: keep the model's question if it asked one; otherwise invite the next item.
+      finalReply = modelText && /\?/.test(modelText) ? modelText : RECLAIM_MORE;
+    }
   } else {
-    finalReply = '(complete — card handoff, slice d)';
+    // Already complete (e.g. a resumed terminal state) — the card stands.
+    finalReply = modelText || COMPLETE_HANDOFF;
     complete = true;
   }
 
   return {
     reply: finalReply,
-    state: { stage, collected, awaitingConfirm, identityTurns },
+    state: { stage, collected, awaitingConfirm, identityTurns, reclaimNudged },
     complete,
   };
 }
@@ -347,7 +407,12 @@ function stageInstruction(stage?: Stage): string {
       '\n\nCURRENT STAGE: how the gap opened. Ask once, then receive their fade story and call set_gap; ' +
       'note_door for any Door that surfaces (none is valid). Do not excavate or re-ask for more Doors.'
     );
-  if (stage === 'reclaim') return '\n\nCURRENT STAGE: what they want back. (Stage-3 capture tools unlock in a later build.)';
+  if (stage === 'reclaim')
+    return (
+      '\n\nCURRENT STAGE: what they want back. Invite the things they want to reclaim and call add_reclaim_item ' +
+      'once per item (big or small — there are no wrong answers). If they already named some earlier, build on ' +
+      "those, don't re-ask. Aim for a few; never pressure or interrogate — small things count."
+    );
   return '\n\nCURRENT STAGE: identity — who they were at their best, and the one-word handle (or skip).';
 }
 
