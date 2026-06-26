@@ -1,32 +1,98 @@
-// Live-model onboarding eval — plays a scripted "member" (a second model in persona) through the REAL
-// onboarding model + engine, then reports what got captured. Spares a human tester and exercises the live
-// model the replay fixtures can't. No DB writes (onboardingNextTurn doesn't persist). Needs ANTHROPIC_API_KEY.
+// Live-model onboarding eval SUITE — plays scripted "members" (a second model in persona) through the
+// REAL onboarding model + engine and reports capture quality per persona. This is the safety net that
+// catches model-behavior bugs the deterministic replay tests can't (new shapes only show up live). No DB
+// writes — onboardingNextTurn doesn't persist. Needs ANTHROPIC_API_KEY (e.g. in .env.local).
 //
-// Run: node --env-file-if-exists=.env.local --experimental-strip-types scripts/onboarding-eval.ts
+// Run:  node --experimental-strip-types scripts/onboarding-eval.ts            (all personas)
+//       node --experimental-strip-types scripts/onboarding-eval.ts rita       (one persona by name)
 //
-// The persona is Rita/Donna's multi-Door fade — the case that exposed the "Doors dropped" bug — so the
-// Door check at the end tells us whether the real model + the accumulate fix now land all of them.
+// It's a REPORT, not a CI gate (cost + nondeterminism) — a ⚠ is "look at this run," not a hard failure.
 
-import { onboardingNextTurn, INITIAL_STATE, type ConvState, type ConvMessage } from '../lib/agent/onboarding.ts';
+import { onboardingNextTurn, INITIAL_STATE, type ConvState, type ConvMessage, type Collected } from '../lib/agent/onboarding.ts';
 
 if (!process.env.ANTHROPIC_API_KEY) {
   console.error('Set ANTHROPIC_API_KEY (e.g. add it to .env.local) — this eval drives the real model.');
   process.exit(1);
 }
 
-const RITA = `You are role-playing "Rita", a 57-year-old woman in an onboarding conversation with a guide.
-Respond ONLY as Rita — 1-3 short, honest sentences, one thought at a time. Reveal your story progressively;
-do not dump it all at once. Your story:
-- Laid off at 57 after 12 years, right before a promotion that would have secured your family's future. You'd felt at the top of your game; suddenly you were treated as having no value.
-- You've been the sole breadwinner for years while your husband has been out of work — you funded his bikes and European cycling trips, always expecting he'd return to work. When you were laid off you needed him to step up; he didn't. Savings are gone; the house (20 years, 7 blocks from your daughter who will soon have kids) is at risk — he'd sell it without trying.
-- Around the same time your father fell into a coma twice and nearly died, and back in your hometown you saw how much your mother's health and independence had declined — you're becoming the one who cares for them.
-- Who you were at your best: energetic, optimistic, led big teams, mentored people, supported friends and family, fun and funny, healthy.
-- If asked to name that person in ONE word, you're not sure yet — you'd rather find it later through the work.
-- What you want back (reclaim list): more paid design and writing work, finish the podcast you're developing, direct and produce another short documentary, lose 20 pounds, feel at ease in your own home without walking on eggshells.
-- If asked how the gap opened, tell the layered story: the job loss, carrying the household alone, AND your parents' decline.
-Answer the guide's latest message as Rita. If asked whether there's more, share another true piece until your whole story is out, then say that's the full picture.`;
+type Persona = { name: string; system: string; expect: (c: Collected, complete: boolean) => string[] };
 
-async function rita(history: ConvMessage[]): Promise<string> {
+const PERSONAS: Persona[] = [
+  {
+    name: 'rita',
+    // Multi-Door fade: layoff + carrying the household + parents declining, all at once. The case that
+    // exposed the dropped-Doors and premature-completion bugs. Expect all three Doors + a full gap.
+    system: `You are role-playing "Rita", a 57-year-old woman in an onboarding conversation with a guide.
+Respond ONLY as Rita — 1-3 short, honest sentences, one thought at a time. Reveal your story progressively.
+- Laid off at 57 after 12 years, right before a promotion that would have secured your family's future.
+- Sole breadwinner for years while your husband was out of work; when you were laid off he didn't step up; savings gone; the house is at risk.
+- Around the same time your father nearly died (coma, twice) and your mother's health/independence is declining — you're becoming their caretaker.
+- At your best: energetic, led teams, mentored people, fun and funny, healthy.
+- If asked to name that person in ONE word: you're not ready, you'd rather find it later.
+- Want back: paid creative work, finish your podcast, direct a documentary, lose 20 lbs, feel at ease at home.
+If asked how the gap opened, tell ALL of it (job, husband/household, parents) — and if it hasn't all come out yet, say "there's more, it wasn't just the layoff." When it's all out, say that's the whole picture.`,
+    expect: (c, done) => {
+      const out: string[] = [];
+      const d = new Set(c.doors ?? []);
+      for (const w of ['career_cliff', 'load_bearer', 'aging_parents']) if (!d.has(w)) out.push(`missing Door: ${w}`);
+      if (!done) out.push('did not complete');
+      if ((c.gap ?? '').length < 120) out.push('gap is thin (should be the full multi-event story)');
+      return out;
+    },
+  },
+  {
+    name: 'no-fade',
+    // A thriving optimizer — explicitly NOT our member (scope decision). Correct behavior: the engine does
+    // NOT fabricate a fade to force completion. Not completing / no Door is the RIGHT outcome here.
+    system: `You are role-playing "Theo", a 52-year-old man who is genuinely THRIVING and just wants MORE.
+Respond ONLY as Theo — 1-3 short sentences. There is NO loss or drift in your life: career's strong, marriage's
+good, kids are great, you're fit and healthy. You're here to optimize and chase bigger challenges — a faster
+marathon, a startup idea, peak experiences. You have NO fade story. If the guide asks what you lost or how a
+gap opened, say honestly that nothing went wrong — you haven't drifted, you just want to keep leveling up. Do
+NOT invent a loss or a hard chapter to please the guide; gently insist you're doing well.`,
+    expect: (c, done) => {
+      const out: string[] = [];
+      // Forcing a Door + completing on a no-Fade member = inventing a fade. Stalling / no Door is correct.
+      if (done && (c.doors?.length ?? 0) > 0) out.push('forced a Door onto a no-Fade member (should decline, not invent a fade)');
+      if (done && (c.gap ?? '').length > 140) out.push('completed with a long gap — check it is not a fabricated loss');
+      return out;
+    },
+  },
+  {
+    name: 'terse',
+    // Minimal, guarded answers. Tests that the engine captures only what's given (no fabricated elaboration)
+    // and never loops the same question.
+    system: `You are role-playing "Sam", who answers in the FEWEST possible words — often 2-5 words, never more
+than one short sentence. You're not hostile, just terse and guarded. Your truth, given only if asked and only
+in fragments: you were a runner; you stopped after a knee injury; then a divorce. What you want back: "Run
+again." "Sleep." "Feel like myself." Do not elaborate. If pushed, give one more fragment, still short.`,
+    expect: (c, done) => {
+      const out: string[] = [];
+      const g = (c.gap ?? '').toLowerCase();
+      if (done && g.length > 0 && !/knee|injur|run|divorce|marriage|split/.test(g)) out.push("gap may be fabricated — doesn't reflect Sam's words (knee/divorce)");
+      return out;
+    },
+  },
+  {
+    name: 'front-loader',
+    // Dumps the whole story up front. Tests that a flood of info is captured without racing/dropping.
+    system: `You are role-playing "Dana", who pours her whole story out at once. Your FIRST message should
+include all of: who you were (a touring musician — playing live was your whole identity), what you want back
+(play live shows again, write songs weekly, tour, and sleep on a normal schedule), AND how it opened (a vocal
+cord diagnosis ended touring, then your band broke up, then you moved cities and lost your whole music
+community). After that, answer follow-ups with more detail, but you've essentially told the whole thing.
+Respond as Dana, warm and a little breathless, a few sentences at a time.`,
+    expect: (c, done) => {
+      const out: string[] = [];
+      if (!done) out.push('did not complete a fully front-loaded story');
+      if ((c.reclaimList?.length ?? 0) < 3) out.push('dropped reclaim items from the front-loaded dump');
+      if ((c.doors?.length ?? 0) === 0) out.push('no Door captured from a clear multi-event story');
+      return out;
+    },
+  },
+];
+
+async function member(system: string, history: ConvMessage[]): Promise<string> {
   const { default: Anthropic } = await import('@anthropic-ai/sdk');
   const client = new Anthropic({
     apiKey: process.env.ANTHROPIC_API_KEY,
@@ -40,43 +106,51 @@ async function rita(history: ConvMessage[]): Promise<string> {
   const res = await client.messages.create({
     model: process.env.ANTHROPIC_MODEL ?? 'claude-sonnet-4-6',
     max_tokens: 300,
-    system: RITA,
+    system,
     messages: messages.length ? messages : [{ role: 'user', content: '(the guide is ready for you)' }],
   });
-  return (res.content as Array<{ type: string; text?: string }>)
-    .filter((b) => b.type === 'text')
-    .map((b) => b.text ?? '')
-    .join(' ')
-    .trim();
+  return (res.content as Array<{ type: string; text?: string }>).filter((b) => b.type === 'text').map((b) => b.text ?? '').join(' ').trim();
 }
 
-const ctx = { name: 'Rita', email: 'rita-eval@example.test' };
-let state: ConvState = INITIAL_STATE;
-const history: ConvMessage[] = [];
+const ctx = { name: 'Eval Member', email: 'eval@example.test' };
 
-let turn = await onboardingNextTurn({ ctx, state, history, memberMessage: null });
-console.log('GUIDE:', turn.reply.replace(/\n+/g, ' ').slice(0, 220), '…\n');
-history.push({ role: 'agent', text: turn.reply });
-state = turn.state;
-
-for (let i = 0; i < 30 && !turn.complete; i++) {
-  const memberMsg = await rita(history);
-  console.log('RITA :', memberMsg, '\n');
-  history.push({ role: 'member', text: memberMsg });
-  turn = await onboardingNextTurn({ ctx, state, history, memberMessage: memberMsg });
-  console.log('GUIDE:', turn.reply.replace(/\n+/g, ' '), '\n');
+async function runPersona(p: Persona): Promise<boolean> {
+  let state: ConvState = INITIAL_STATE;
+  const history: ConvMessage[] = [];
+  let turn = await onboardingNextTurn({ ctx, state, history, memberMessage: null });
   history.push({ role: 'agent', text: turn.reply });
   state = turn.state;
+  for (let i = 0; i < 24 && !turn.complete; i++) {
+    const m = await member(p.system, history);
+    history.push({ role: 'member', text: m });
+    turn = await onboardingNextTurn({ ctx, state, history, memberMessage: m });
+    history.push({ role: 'agent', text: turn.reply });
+    state = turn.state;
+  }
+  const c = state.collected;
+  const issues = p.expect(c, turn.complete);
+  const turns = history.filter((h) => h.role === 'member').length;
+  console.log(`\n### ${p.name} — ${issues.length ? '⚠ ' + issues.length + ' concern(s)' : '✓ clean'}  (member turns: ${turns}, complete: ${turn.complete})`);
+  console.log('   doors  :', JSON.stringify(c.doors ?? []));
+  console.log('   ident  :', c.identitySkipped ? '(skipped)' : (c.identityNoun ?? '(none)'));
+  console.log('   reclaim:', (c.reclaimList ?? []).length, 'items');
+  console.log('   gap    :', (c.gap ?? '(none)').slice(0, 280));
+  for (const iss of issues) console.log('   ⚠ ', iss);
+  return issues.length === 0;
 }
 
-const c = state.collected;
-console.log('\n========= CAPTURED =========');
-console.log('complete     :', turn.complete);
-console.log('doors        :', c.doors ?? []);
-console.log('identity     :', c.identitySkipped ? '(skipped)' : (c.identityNoun ?? '(none)'));
-console.log('reclaim items:', (c.reclaimList ?? []).length);
-console.log('gap          :', (c.gap ?? '').slice(0, 500));
-const want = ['career_cliff', 'load_bearer', 'aging_parents'];
-const got = new Set(c.doors ?? []);
-console.log('\nDoor check   :', want.map((d) => `${d}:${got.has(d) ? '✓' : '✗ MISSING'}`).join('   '));
-console.log('(career_cliff = job loss · load_bearer = carrying the household · aging_parents = her parents)');
+const only = process.argv[2];
+const toRun = only ? PERSONAS.filter((p) => p.name === only) : PERSONAS;
+if (toRun.length === 0) {
+  console.error(`no persona named "${only}". available: ${PERSONAS.map((p) => p.name).join(', ')}`);
+  process.exit(1);
+}
+let clean = 0;
+for (const p of toRun) {
+  try {
+    if (await runPersona(p)) clean++;
+  } catch (e) {
+    console.log(`\n### ${p.name} — ✗ errored: ${(e as Error)?.message}`);
+  }
+}
+console.log(`\n========= ${clean}/${toRun.length} personas clean =========`);
