@@ -291,6 +291,34 @@ test('REPLAY — member signals "there is more" → engine must NOT complete (ho
   assert.match(turn.reply, /tell me|listening|how it (opened|happened)/i, 'invites the rest of the story');
 });
 
+test('REPLAY — "there is more" hold is STICKY: stays open until the member explicitly closes the story', () => {
+  // The eval-suite slip: Rita signaled "there's more", got held that turn, then completed a couple turns
+  // later when she happened not to re-signal — dropping the Doors. The hold must persist until she closes.
+  const atDoor: ConvState = {
+    stage: 'door', doorAsked: true, doorBeatFromIndex: 0, doorTurns: 2,
+    collected: {
+      athleticPast: 'a leader',
+      identitySkipped: true,
+      reclaimList: ['creative work', 'the podcast', 'lead again', 'lose 20 lbs'],
+      gap: 'Laid off at 57 right before a promotion that would have secured the family.',
+      doors: ['career_cliff'],
+    },
+  };
+  const { turns } = replay(
+    [
+      { member: 'There’s more to it — it wasn’t just the layoff.', model: { text: 'Tell me the rest.' } },
+      // She doesn't re-signal and gives nothing the matcher catches, and the model tries to wrap — the
+      // STICKY hold must keep it open (the per-turn hold would have completed here).
+      { member: 'It was a brutal couple of years, honestly.', model: { text: 'I hear that.', record: { complete: true } } },
+      // Only when she explicitly closes does it complete.
+      { member: 'That’s the whole of it.', model: { text: 'Okay.', record: { complete: true } } },
+    ],
+    atDoor,
+  );
+  assert.equal(turns[1]!.complete, false, 'a later wrap attempt must NOT complete while she still has more to tell');
+  assert.equal(turns[turns.length - 1]!.complete, true, 'completes once she explicitly closes the story');
+});
+
 test('REPLAY — Leg 3 reconciliation: a declined Door is set aside (never recorded) and the intake still completes', () => {
   const { turns, finalState } = replay(
     [

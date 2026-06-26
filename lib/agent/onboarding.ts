@@ -40,6 +40,7 @@ export type ConvState = {
   doorBeatFromIndex?: number; // history index where the Door beat began — bounds the reconciliation scan
   pendingDoorConfirm?: DoorSlug | null; // a Door the engine surfaced for confirmation, awaiting the member's answer
   declinedDoors?: DoorSlug[]; // Doors the member set aside when asked — never re-surfaced
+  awaitingMore?: boolean; // the member said the fade story isn't finished — hold (no complete) until they close it
 };
 export type ConvMessage = { role: 'agent' | 'member'; text: string };
 export type Ctx = { name: string; email: string };
@@ -798,16 +799,22 @@ export function applyModelTurn(
   // Guarantee). A dispute is the one thing that still holds (they're correcting, not finishing).
   // "I'm done" OR "those are the main ones" both close the beat (once the contract is met) — the
   // latter answers the widen question, so re-asking it is the bug we're fixing.
-  // The member saying the fade story isn't finished ("there's more, it wasn't just the layoff") HOLDS the
-  // beat open — never complete on it, never read it as "done". The mirror of a dispute.
+  // STICKY "there's more" hold: once the member says the fade story isn't finished ("there's more, it
+  // wasn't just the layoff"), stay open until they EXPLICITLY close it — so a thin gap can't complete a
+  // couple of turns later when they happen not to re-signal (the per-turn hold let Rita's run slip). The
+  // member ending the beat ("that's the whole of it" / "I'm done") clears it; the DOOR_MAX_TURNS cap is
+  // the safety valve so it can never trap. The mirror of a dispute.
   const signalsMore = memberSignalsMore(memberMessage);
+  const closesStory = confirmsWhole(memberMessage) || memberWantsToWrap(memberMessage);
+  const awaitingMore = ((state.awaitingMore ?? false) || signalsMore) && !closesStory;
+  const atDoorCap = doorTurns >= DOOR_MAX_TURNS;
   const memberDone = (memberWantsToWrap(memberMessage) || confirmsWhole(memberMessage)) && !disputed && !signalsMore;
   let { complete, stage, exploringDoor } = resolveCompletion(
     collected,
     wantsComplete && !disputed,
     doorTurns,
     isAffirmation(memberMessage) && !disputed,
-    disputed || signalsMore, // a Door dispute OR "there's more" both block the wrap and keep the beat open
+    disputed || (awaitingMore && !atDoorCap), // a dispute OR an unresolved "there's more" blocks the wrap
     memberDone,
   );
 
@@ -829,7 +836,7 @@ export function applyModelTurn(
       doorConfirmReply = doorConfirmPrompt(missed[0]!.slug, missed[0]!.phrase);
       complete = false;
       stage = 'door'; // still in the Door beat — we're asking a confirm, not handing off
-    } else if (wasResolvingConfirm && missed.length === 0 && !disputed && contractMet(collected)) {
+    } else if (wasResolvingConfirm && missed.length === 0 && !disputed && !awaitingMore && contractMet(collected)) {
       complete = true; // last reconciliation confirm answered, nothing else dropped → wrap now
     }
   }
@@ -857,7 +864,7 @@ export function applyModelTurn(
     // bug), and escalate toward closing rather than circling.
     const forward = needGap
       ? 'Help me understand how that opened — when did you first feel the drift, and what did it quietly cost you?'
-      : signalsMore
+      : signalsMore || awaitingMore
         ? 'I’m listening — tell me the rest of how it opened.'
         : doorTurns <= 1
           ? 'That rarely opens all at once. Was that the whole of it, or did something else pile on around the same time?'
@@ -924,7 +931,7 @@ export function applyModelTurn(
 
   return {
     reply: finalReply,
-    state: { stage, collected, doorTurns, identityTurns, doorAsked, doorBeatFromIndex, pendingDoorConfirm, declinedDoors },
+    state: { stage, collected, doorTurns, identityTurns, doorAsked, doorBeatFromIndex, pendingDoorConfirm, declinedDoors, awaitingMore },
     complete,
   };
 }
