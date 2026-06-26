@@ -5,17 +5,21 @@ import {
   validateDoors,
   validateReconnectOutput,
   RECLAIM_LIST_MIN,
+  RECLAIM_LIST_FLOOR,
 } from '../lib/member/reclaim.ts';
 import { DOOR_SLUGS, matchDoors, correctDoors } from '../lib/doors.ts';
 
 const five = ['a', 'b', 'c', 'd', 'e'];
 
-test('reclaim list needs at least the minimum non-empty items, with no maximum', () => {
-  assert.equal(RECLAIM_LIST_MIN, 3);
-  assert.equal(validateReclaimList(['a', 'b', 'c']).ok, true); // exactly the floor
-  assert.equal(validateReclaimList(['a', 'b']).ok, false); // below the floor
+test('reclaim list finalize floor is >=1 (Gate-1 decision); >=3 stays the soft aim', () => {
+  assert.equal(RECLAIM_LIST_MIN, 3); // the AIM (drives the agent's nudge), not the hard finalize floor
+  assert.equal(RECLAIM_LIST_FLOOR, 1); // hard floor — card carries any shortfall below the aim
+  assert.equal(validateReclaimList(['a', 'b', 'c']).ok, true);
+  assert.equal(validateReclaimList(['a', 'b']).ok, true); // sub-aim now finalizes (card carries the shortfall)
+  assert.equal(validateReclaimList(['a']).ok, true); // at the floor
+  assert.equal(validateReclaimList([]).ok, false); // below the floor — no real want given
   assert.equal(validateReclaimList(['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j']).ok, true); // no max
-  assert.equal(validateReclaimList(['a', 'b', '  ']).ok, false); // empty item rejected
+  assert.equal(validateReclaimList(['a', '  ']).ok, false); // empty item rejected
 });
 
 test('canonical doors validate; unknown do not; empty is valid (null routing, Taxonomy Spec §1)', () => {
@@ -72,10 +76,11 @@ test('full Reconnect output validates the contract together', () => {
     validateReconnectOutput({ reclaimList: five, doors: ['vanishing', 'body'], baselineIdScore: 42.5 }).ok,
     true,
   );
-  // Empty doors is NOT an error (null routing valid); the two real failures are list + score.
-  const bad = validateReconnectOutput({ reclaimList: ['only', 'two'], doors: [], baselineIdScore: 130 });
+  // Empty doors is NOT an error (null routing valid); the two real failures are list (empty → below the
+  // >=1 floor) + score. (A 2-item list now validates — sub-aim finalizes, card carries the shortfall.)
+  const bad = validateReconnectOutput({ reclaimList: [], doors: [], baselineIdScore: 130 });
   assert.equal(bad.ok, false);
-  if (!bad.ok) assert.equal(bad.errors.length, 2); // list (too few) + score (out of range)
+  if (!bad.ok) assert.equal(bad.errors.length, 2); // list (empty) + score (out of range)
   // An UNKNOWN door slug is still rejected even though empty is allowed.
   assert.equal(validateReconnectOutput({ reclaimList: five, doors: ['not_a_door'], baselineIdScore: 42 }).ok, false);
 });

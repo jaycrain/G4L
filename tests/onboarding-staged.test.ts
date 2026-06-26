@@ -173,19 +173,20 @@ test('STAGED reclaim — gather to the minimum → reflect the list → confirm 
       { member: 'I want to ride again', model: { text: 'Good.', record: { reclaimList: ['riding again'] } } },
       { member: 'and have my mornings back', model: { text: 'Yes.', record: { reclaimList: ['my mornings back'] } } },
       { member: 'and see my friends', model: { text: 'Got it.', record: { reclaimList: ['seeing my friends'] } } },
-      { member: 'yes, that’s it', model: { text: 'Okay.' } },
+      { member: 'yes, that’s the whole list', model: { text: 'Okay.' } }, // closes at the minimum → reflect
+      { member: 'yes, that’s right', model: { text: 'Okay.' } }, // confirm → complete
     ],
     atReclaim,
   );
-  // third item meets the minimum → reflect-confirm
-  assert.equal(turns[2]!.state.awaitingConfirm, true, 'reflects the list once the minimum is met');
-  assert.match(turns[2]!.reply, /Reclaim List/i);
-  assert.match(turns[2]!.reply, /riding again/);
+  // at/above the minimum the engine gathers toward the aim; the member's CLOSE triggers the reflect-confirm
+  assert.equal(turns[3]!.state.awaitingConfirm, true, 'closing at the minimum reflects the list');
+  assert.match(turns[3]!.reply, /Reclaim List/i);
+  assert.match(turns[3]!.reply, /riding again/);
   // confirm → complete + handoff to the card
   assert.equal(finalState.stage, 'complete');
-  assert.equal(turns[3]!.complete, true, 'completes — the card renders from collected');
+  assert.equal(turns[4]!.complete, true, 'completes — the card renders from collected');
   assert.equal(finalState.collected.reclaimList?.length, 3);
-  assert.match(turns[3]!.reply, /show you what I captured|tell me if/i);
+  assert.match(turns[4]!.reply, /show you what I captured|tell me if/i);
 });
 
 test('STAGED reclaim — re-surfaces a parked front-loader item at stage entry (the trust moment)', () => {
@@ -234,7 +235,8 @@ test('STAGED reclaim — backstop: model converses WITHOUT add_reclaim_item; eng
       { member: 'I want paid creative work — writing, something that uses that part of my mind again', model: { text: 'That sounds important to you.' } },
       { member: 'and I want my financial independence back', model: { text: 'Of course.' } },
       { member: 'and to feel like myself in a room again', model: { text: 'I hear that.' } },
-      { member: 'yes, that’s the heart of it', model: { text: 'Okay.' } },
+      { member: 'that’s everything', model: { text: 'Okay.' } }, // closes → reflect
+      { member: 'yes', model: { text: 'Okay.' } }, // confirm → complete
     ],
     atReclaim,
   );
@@ -247,6 +249,70 @@ test('STAGED reclaim — backstop: model converses WITHOUT add_reclaim_item; eng
   assert.equal(w.state.collected.reclaimList?.length, 1, 'a wrap line never becomes a reclaim item');
 });
 
+// --- slice d: the fade gate (no-fade DECLINE) -------------------------------------------------------
+test('STAGED fade gate — a no-fade optimizer is DECLINED, never force-completed (no gap, no Door)', () => {
+  const atGap: ConvState = { stage: 'gap', collected: { athleticPast: 'a founder', identitySkipped: true } };
+  // Theo-shaped: no loss, only forward ambition. The model (correctly) does not tag set_gap.
+  const { turns, finalState } = replayStaged(
+    [
+      { member: 'Honestly nothing went wrong — I’m thriving and I just want to optimize and level up further', model: { text: 'It sounds like things are good.' } },
+      { member: 'Right, no loss or drift here. I want to scale my startup and run a faster marathon', model: { text: 'Got it.' } },
+      { member: 'Exactly, I just want more — bigger challenges, keep pushing', model: { text: 'Understood.' } },
+    ],
+    atGap,
+  );
+  assert.equal(finalState.collected.gap ?? undefined, undefined, 'no fade fabricated');
+  assert.deepEqual(finalState.collected.doors ?? [], [], 'no Door forced');
+  assert.equal(finalState.noFade, true, 'recognized as no-fade');
+  assert.equal(turns.at(-1)!.complete, false, 'never force-completes a non-member');
+  assert.match(turns.at(-1)!.reply, /good place|distance from who|not be where you are/i, 'honest, non-pathologizing decline');
+});
+
+test('STAGED fade gate — does NOT misfire on a real fade that also mentions wanting more', () => {
+  const atGap: ConvState = { stage: 'gap', collected: { athleticPast: 'a runner', identityNoun: 'Runner' } };
+  // Has a real loss AND forward language — the loss signal must win (isForwardAmbition is false when loss present).
+  const story = 'After my divorce I lost myself and stopped running; now I want more from life again, to level up and feel alive.';
+  const { turns } = replayStaged([{ member: story, model: { text: 'That makes sense.', record: { gap: story } } }], atGap);
+  assert.equal(turns[0]!.state.collected.gap, story, 'a real fade with forward language is still captured');
+  assert.equal(turns[0]!.state.noFade ?? false, false, 'not misread as no-fade');
+  assert.equal(turns[0]!.state.awaitingConfirm, true, 'proceeds to reflect-confirm');
+});
+
+test('STAGED reclaim — sub-3 completion (Gate-1 decision): two items + done → completes, card carries shortfall', () => {
+  const atReclaim: ConvState = {
+    stage: 'reclaim',
+    collected: { athleticPast: 'a writer', identityNoun: 'Writer', gap: 'Work slowly took everything over a long decade until I lost the thread of myself.', reclaimList: ['writing again'] },
+  };
+  const { turns, finalState } = replayStaged(
+    [
+      { member: 'and time to read', model: { text: 'Good.', record: { reclaimList: ['time to read'] } } }, // count 2
+      { member: 'honestly that’s all', model: { text: 'Okay.' } }, // close below 3 → nudge once
+      { member: 'no, that’s really it for me', model: { text: 'Okay.' } }, // still closing → accept (sub-3) → reflect
+      { member: 'yes', model: { text: 'Okay.' } }, // confirm → complete
+    ],
+    atReclaim,
+  );
+  assert.equal(turns[1]!.state.reclaimNudged, true, 'nudged once below the aim');
+  assert.match(turns[2]!.reply, /Reclaim List/i, 'accepts the sub-3 list and reflects (never fabricates a 3rd)');
+  assert.equal(finalState.stage, 'complete', 'completes below the old ≥3 floor — card carries the shortfall');
+  assert.equal(finalState.collected.reclaimList?.length, 2);
+});
+
+test('STAGED reclaim — caps runaway capture at the soft aim (no 17-item ballooning)', () => {
+  const atReclaim: ConvState = {
+    stage: 'reclaim',
+    collected: { athleticPast: 'x', identityNoun: 'X', gap: 'a real fade that unfolded slowly after a hard loss and a long drift'.padEnd(70, '.') },
+  };
+  // Seven genuine offered wants — the 7th hits the aim and triggers reflect-confirm (no endless "what else?").
+  const wants = ['one thing', 'another thing', 'a third', 'a fourth', 'a fifth', 'a sixth', 'a seventh', 'an eighth'];
+  const { turns } = replayStaged(
+    wants.map((w) => ({ member: `I want ${w} back`, model: { text: 'Good.', record: { reclaimList: [w] } } })),
+    atReclaim,
+  );
+  const reflected = turns.findIndex((t) => t.state.awaitingConfirm);
+  assert.ok(reflected >= 0 && reflected <= 6, 'reflects by the time the aim (~7) is hit, not after ballooning');
+});
+
 test('STAGED end-to-end — opening → identity → gap → reclaim → complete, full contract met', () => {
   const { turns, finalState } = replayStaged([
     { member: 'I used to be a competitive swimmer, up at 5am every day for the pool', model: { text: 'That dedication shows.', record: { athleticPast: 'a competitive swimmer up at 5am every day' } } },
@@ -257,7 +323,8 @@ test('STAGED end-to-end — opening → identity → gap → reclaim → complet
     { member: 'I want to swim again', model: { text: 'Good.', record: { reclaimList: ['swimming again'] } } },
     { member: 'my early mornings', model: { text: 'Yes.', record: { reclaimList: ['my early mornings'] } } },
     { member: 'and feeling strong in my body', model: { text: 'Got it.', record: { reclaimList: ['feeling strong in my body'] } } },
-    { member: 'that’s the heart of it', model: { text: 'Okay.' } },
+    { member: 'that’s everything', model: { text: 'Okay.' } }, // closes → reflect
+    { member: 'yes, that’s right', model: { text: 'Okay.' } }, // confirm → complete
   ]);
   assert.equal(finalState.stage, 'complete');
   assert.equal(turns.at(-1)!.complete, true);

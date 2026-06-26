@@ -45,6 +45,8 @@ export type ConvState = {
   awaitingMore?: boolean; // the member said the fade story isn't finished — hold (no complete) until they close it
   awaitingConfirm?: boolean; // v2.0 staged engine: the current stage's capture has been reflected; awaiting confirm
   reclaimNudged?: boolean; // v2.0 staged engine: we've nudged once for more reclaim items below the minimum (never-trap: nudge once, never loop)
+  gapTurns?: number; // v2.0 staged engine: exchanges spent in the gap stage without a real fade (drives the no-fade gate)
+  noFade?: boolean; // v2.0 staged engine: recognized no real Fade (forward-only optimizer) — declined, never force-completed
 };
 export type ConvMessage = { role: 'agent' | 'member'; text: string };
 export type Ctx = { name: string; email: string };
