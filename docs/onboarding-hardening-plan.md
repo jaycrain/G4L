@@ -166,16 +166,47 @@ fixture was updated to the corrected flow (the Door question is now its own beat
 fixture carries `doorAsked: true` (it represents a beat already entered). tsc clean; onboarding 29/0,
 replay 6/0.
 
-### Parts B + C — still open (the rest of Leg 3)
+### Part C — reconciliation backstop (the Door catch-net) *(shipped Jun 26)*
 
-- **B — structured capture tools.** Replace the monolithic `record_progress` with `set_identity` /
+**Why now:** a clean re-run (ree@ree.com) confirmed the say/do gap live — Donna raised caring for her
+aging mother *during* onboarding, but the model's lossy gap summary dropped it (no `aging_parents` Door),
+recovered only later in the Doors session. Second occurrence of the shape (Joanne's "Clair" was the first)
+→ the trigger to fix the abstraction.
+
+**What shipped:** a deterministic reconciliation pass in `applyModelTurn`. Before the Door beat hands off,
+the engine scans the member's OWN Door-beat words (bounded by `doorBeatFromIndex`, set at Door-beat entry,
+so it reads "how the gap opened" answers and never Reclaim-list goals) via `uncapturedDoorSignals` for any
+Door they raised that wasn't recorded. If one is found, it does NOT complete — it asks one warm confirm
+that **reflects the member's own sentence back** (`doorConfirmPrompt`), e.g. *"you also mentioned: '…taking
+care of my mother as her health failed…'. That can be its own Door — the role reversal that made you the
+one doing the caring. Is that part of how the gap opened, or more the background?"* Confirm → record it;
+"no / just background" → set aside (`declinedDoors`), never re-asked; then it wraps cleanly.
+
+**Ask, never auto-add** is the load-bearing property: scanning the member's full account would *over-tag*
+if it asserted Doors (Empty Nest from "retired/granddaughter", The Body from "lose weight" — why door
+inference is gap-only), but a false match is just a question they decline, so scanning is safe.
+
+**Refinement from the written plan:** the plan said flag drift "for the review step [card] to surface";
+per Jay's direction (Jun 26) we catch it as a **conversational confirm in the Door beat** instead — the MI
+move, in-flow, in the member's words. Same mechanism, warmer surface.
+
+**Files:** `lib/agent/onboarding.ts` (`uncapturedDoorSignals` / `memberConfirmsDoor` / `doorConfirmPrompt`;
+`ConvState.doorBeatFromIndex|pendingDoorConfirm|declinedDoors`; the reconciliation block in `applyModelTurn`).
+Pure + replay-testable. **Proof:** `tests/onboarding-replay.test.ts` — a confirm fixture (Door dropped →
+caught → confirmed in her words → recorded) and a decline fixture (set aside, never recorded, still
+completes). Reconstructed synthetically (her real transcript is deleted on completion — see dev-todo).
+tsc clean; replay 8/0, onboarding 29/0.
+
+### Part B — still open (the last Leg-3 piece)
+
+- **Structured capture tools.** Replace the monolithic `record_progress` with `set_identity` /
   `add_reclaim_item` / `set_gap` / `set_doors` so capture is deliberate per field and `collected` is the
-  single source of truth (read back from it when summarizing — "added to your list" true by
-  construction). `parseModelTurn` can merge the calls into the same record shape, so the engine and every
-  fixture stay unchanged; the win is reduced model fabrication pressure upstream.
-- **C — reconciliation backstop.** Post-turn deterministic drift check: an item acknowledged in prose
-  but not captured (the "Clair" say/do gap), a Door not grounded in the gap (reuse `doorsToConfirm`).
-  Surfaces on the confirmation card / blocks completion.
+  single source of truth (read back when summarizing — "added to your list" true by construction).
+  `parseModelTurn` merges the calls into the same record shape, so the engine and every fixture stay
+  unchanged; the win is reduced model fabrication pressure upstream. Pairs with the **gap-voice /
+  faithful-capture** fix (record the gap in the member's own voice, not a lossy third-person summary —
+  the *source-side* half of what Part C now catches downstream). See dev-todo.
 
-Part A makes the engine refuse to be fooled (deterministic); B + C reduce how often the model misbehaves
-and close the say/do gap. Lower urgency now that A holds.
+Part A makes the engine refuse to be fooled (no premature/fabricated gap); Part C catches a Door the model
+dropped, in the member's own words; Part B (open) would reduce how often the model drops/mis-voices in the
+first place.

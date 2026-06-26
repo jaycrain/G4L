@@ -204,3 +204,59 @@ test('REPLAY — Donna: confirming the Reclaim List must not complete or fabrica
   assert.match(last.reply, /gap began to open|first felt the drift|how it went for you/i, 'must pose the Door question next');
   assertInvariants(turns);
 });
+
+// A member already in the Door beat (the boundary set), used by the reconciliation fixtures below.
+const inDoorBeatRee: ConvState = {
+  stage: 'door',
+  doorAsked: true,
+  doorBeatFromIndex: 0,
+  collected: {
+    athleticPast: 'a leader who carried people and made things',
+    identitySkipped: true,
+    reclaimList: ['paid design and writing work', 'finish the podcast', 'lose 20 lbs'],
+  },
+};
+
+test('REPLAY — Leg 3 reconciliation: a Door the member raised but the model dropped is caught and confirmed in their words', () => {
+  // Ree/Donna's real run: she raised caring for her aging mother DURING onboarding, but the model's gap
+  // SUMMARY dropped it (no aging_parents Door). Before completing, the engine must catch the Door signal
+  // in her OWN words and ask one confirm — and on her yes, record it.
+  const { turns, finalState } = replay(
+    [
+      // The fade story — job loss AND caring for her mother. The model records the gap + one Door but
+      // DROPS the mother (no aging_parents), exactly as it did live.
+      { member: 'I lost my job at 57 after they dangled a promotion. And these past two years I’ve been taking care of my mother as her health failed — I’m the one driving up every week.',
+        model: { text: 'That’s a lot landing at once.', record: { gap: 'Lost her job at 57 right after a promotion was dangled.', doors: ['career_cliff'] } } },
+      // She signals the story is complete — the engine is about to hand off.
+      { member: 'That’s the whole of it.', model: { text: 'Okay — that’s the picture.', record: { complete: true } } },
+      // Reconciliation must have intercepted with a confirm in HER words; she confirms → record it.
+      { member: 'Yes, I’m her main caregiver.', model: { text: 'Thank you for telling me.' } },
+    ],
+    inDoorBeatRee,
+  );
+  assert.equal(turns[1]!.complete, false, 'did not hand off while a Door she raised was unrecorded');
+  assert.match(turns[1]!.reply, /its own Door|the background/i, 'asked whether the dropped thread is a Door');
+  assert.match(turns[1]!.reply, /mother/i, 'reflected her OWN words (caring for her mother) back');
+  assert.ok((finalState.collected.doors ?? []).includes('aging_parents'), 'the confirmed Door is recorded');
+  assert.equal(turns[turns.length - 1]!.complete, true, 'completes once the dropped Door is confirmed');
+  assertInvariants(turns);
+});
+
+test('REPLAY — Leg 3 reconciliation: a declined Door is set aside (never recorded) and the intake still completes', () => {
+  const { turns, finalState } = replay(
+    [
+      { member: 'I lost my job at 57, and around then I was also taking care of my mother for a stretch.',
+        model: { text: 'That’s real weight.', record: { gap: 'Lost her job at 57 after a promotion was dangled.', doors: ['career_cliff'] } } },
+      { member: 'That’s the whole of it.', model: { text: 'Okay.', record: { complete: true } } },
+      // She sets the surfaced Door aside — it must NOT be recorded, and we wrap without it (ask-never-assert).
+      { member: 'No — that was temporary, just background. The job was the thing.', model: { text: 'Got it.' } },
+    ],
+    inDoorBeatRee,
+  );
+  assert.equal(turns[1]!.complete, false, 'held to ask the confirm');
+  assert.match(turns[1]!.reply, /its own Door|the background/i);
+  assert.ok(!(finalState.collected.doors ?? []).includes('aging_parents'), 'a declined Door is never recorded');
+  assert.deepEqual(finalState.collected.doors, ['career_cliff'], 'only the real Door remains');
+  assert.equal(turns[turns.length - 1]!.complete, true, 'still completes after the member sets it aside');
+  assertInvariants(turns);
+});

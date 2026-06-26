@@ -16,11 +16,14 @@ as the cosmetic half of the same root. Why the engine missed it: door inference 
 ONLY the gap narrative (deliberately — whole-transcript matching over-tagged Doors from reclaim items), so
 once the summary dropped parents, nothing recovered it. **Fixture blocked:** the onboarding transcript is
 deleted on completion, so we can't replay her actual run (see the transcript-retention item below).
-**Fix direction (one root, two parts):** (a) record `gap` as the member's *faithful account in their own
-voice* (second person), not a lossy paraphrase — fixes the dropping AND the voice at the source; (b) Part C
-reconciliation — after the Door beat, FLAG on the confirmation card any Door signal in the member's OWN
-words that wasn't captured ("you mentioned caring for a parent — is that a Door too?"); flag, never
-auto-add. Original voice-only symptoms kept for reference below.
+**Fix direction (one root, two parts):** (a) **STILL OPEN** — record `gap` as the member's *faithful
+account in their own voice* (second person), not a lossy paraphrase — fixes the dropping AND the voice at
+the source (the Leg-3 Part B / structured-capture work); (b) **DONE (Jun 26, Leg 3 Part C)** — the
+downstream catch-net: a deterministic reconciliation in `applyModelTurn` scans the member's own Door-beat
+words and, before completing, asks a conversational confirm (reflecting their words) about any Door they
+raised but the model dropped — confirm → record, decline → set aside. So the *Door-drop* half is now
+caught even when the summary is lossy; the *voice* half + reducing how often it drops at all is (a), open.
+Original voice-only symptoms kept for reference below.
 
 ### (original framing — third-person voice, the cosmetic half)
 **Symptom:** the captured fade story renders in third person — confirmation card **HOW THE GAP OPENED**:

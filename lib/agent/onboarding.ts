@@ -37,6 +37,9 @@ export type ConvState = {
   doorAsked?: boolean; // has the Door beat actually been ENTERED (the "how did the gap open?" question posed)?
   // Until then a gap can't be captured and the intake can't complete — "list hit the minimum" is NOT
   // "we're in the Door beat" (the list has no max). The fix for capturing/completing before the ask.
+  doorBeatFromIndex?: number; // history index where the Door beat began — bounds the reconciliation scan
+  pendingDoorConfirm?: DoorSlug | null; // a Door the engine surfaced for confirmation, awaiting the member's answer
+  declinedDoors?: DoorSlug[]; // Doors the member set aside when asked — never re-surfaced
 };
 export type ConvMessage = { role: 'agent' | 'member'; text: string };
 export type Ctx = { name: string; email: string };
@@ -233,6 +236,65 @@ const WHOLE_RE =
   /\b(those are (the )?(biggest|main|primary|major|ones|two|three)|that'?s (the )?(whole|main|biggest|it|everything|gist)|the whole of it|that covers it|that'?s (the )?(full )?picture|(biggest|main|primary|major) (one|ones|contributor|contributors|factor|factors|thing|things))\b/i;
 export function confirmsWhole(message: string): boolean {
   return WHOLE_RE.test((message ?? '').replace(/[‘’]/g, "'"));
+}
+
+// --- Leg 3 reconciliation: catch a Door the member RAISED but the model didn't record -----------------
+// The model writes a lossy summary of the fade story and sometimes drops a Door the member clearly named
+// (Donna raised caring for her aging parents during onboarding; it never made the gap summary, so no
+// aging_parents Door — she only got it later by re-raising it). Before the Door beat closes, the engine
+// scans the member's OWN words for Door signals it hasn't recorded and asks ONE warm confirm, reflecting
+// their words back (the MI move, not a bare label). ASK, never auto-add: a false match is a question they
+// decline, not a wrong Door — which is exactly what makes scanning the member's full account safe here,
+// where auto-tagging it would over-tag (see the gap-only inference note in applyModelTurn).
+const DOOR_CONFIRM_RE =
+  /\b(yes|yeah|yep|yup|for sure|absolutely|definitely|totally|it is|that'?s right|sort of|kind of|i guess|true|exactly|correct|sure|a door|its own door|part of (it|how|the))\b/i;
+const DOOR_DECLINE_RE =
+  /\b(no|nope|not (really|a door|it|sure)|just (background|context|part of|something)|background|separate|unrelated|don'?t (think|know)|unsure|maybe not)\b/i;
+// Did the member affirm the Door we asked about? An explicit decline always wins; otherwise an explicit
+// yes OR a substantive engagement with what THEY raised reads as confirming (governed: a Door is only
+// recorded on affirmation — we never assert one).
+export function memberConfirmsDoor(message: string): boolean {
+  const m = (message ?? '').trim().replace(/[‘’]/g, "'");
+  if (!m) return false;
+  if (DOOR_DECLINE_RE.test(m)) return false;
+  return DOOR_CONFIRM_RE.test(m) || m.split(/\s+/).length >= 6;
+}
+
+// Door signals present in the member's OWN messages but not yet recorded (or already set aside). Returns
+// the candidate slug AND the member's phrase that surfaced it, so the confirm can reflect their words.
+export function uncapturedDoorSignals(
+  memberMessages: string[],
+  captured: DoorSlug[],
+  declined: DoorSlug[] = [],
+): Array<{ slug: DoorSlug; phrase: string }> {
+  const have = new Set<string>([...captured, ...declined]);
+  const seen = new Set<string>();
+  const out: Array<{ slug: DoorSlug; phrase: string }> = [];
+  for (const msg of memberMessages) {
+    const sentences = msg.split(/(?<=[.!?])\s+/);
+    for (const slug of matchDoors(msg)) {
+      if (have.has(slug) || seen.has(slug)) continue;
+      seen.add(slug);
+      // reflect the SPECIFIC sentence that carries this Door, so the confirm quotes their actual words
+      // about it (not an unrelated clause from the same message).
+      const sentence = sentences.find((s) => matchDoors(s).includes(slug)) ?? msg;
+      out.push({ slug, phrase: sentence.trim() });
+    }
+  }
+  return out;
+}
+
+function doorSnippet(phrase: string): string {
+  const s = phrase.trim().replace(/\s+/g, ' ');
+  if (s.length <= 160) return s;
+  const first = s.split(/(?<=[.!?])\s/)[0] ?? s;
+  return first.length <= 200 ? first : `${s.slice(0, 157)}…`;
+}
+function doorConfirmPrompt(slug: DoorSlug, phrase: string): string {
+  const door = DOORS.find((d) => d.slug === slug)!;
+  const snippet = doorSnippet(phrase).replace(/[.!?,;:\s]+$/, ''); // trim trailing punctuation for clean quoting
+  const meaning = door.descriptor.replace(/\.\s*$/, ''); // drop the descriptor's trailing period
+  return `Before we move on — you also mentioned: “${snippet}.” That can be its own Door — ${meaning}. Is that part of how the gap opened too, or more the background?`;
 }
 
 // At the naming step, a member may genuinely not know yet — honor it, don't force a label.
@@ -627,6 +689,9 @@ export function applyModelTurn(
   const enteringDoorBeat = !inDoorBeat && identityCaptured && listAtMin && !listGrew;
   const doorActive = inDoorBeat || enteringDoorBeat;
   const doorAsked = doorActive;
+  // Where the Door beat began in the transcript — the boundary for the reconciliation scan below, so it
+  // reads the member's "how the gap opened" answers (where Doors live), never their Reclaim-list answers.
+  const doorBeatFromIndex = state.doorBeatFromIndex ?? (enteringDoorBeat ? history.length : undefined);
 
   // The model's gap/doors are trusted only once we're ALREADY in the Door beat (a prior turn asked the
   // question). On the entry turn the gap can come only from the member's OWN words (the backstop below) —
@@ -679,6 +744,21 @@ export function applyModelTurn(
     collected = { ...collected, doors: correctDoors(collected.doors!, fadeNarrative) };
   }
 
+  // LEG 3 RECONCILIATION — resolve a Door confirmation the engine asked for last turn (reflecting the
+  // member's own words). Confirm (or substantive engagement) → record it; an explicit "no / just
+  // background" → set it aside and never re-ask. Governed: a Door is recorded only once the member affirms.
+  let declinedDoors: DoorSlug[] = [...(state.declinedDoors ?? [])];
+  let pendingDoorConfirm: DoorSlug | null = state.pendingDoorConfirm ?? null;
+  if (pendingDoorConfirm) {
+    const slug = pendingDoorConfirm;
+    if (memberConfirmsDoor(memberMessage)) {
+      if (!(collected.doors ?? []).includes(slug)) collected = { ...collected, doors: [...(collected.doors ?? []), slug] };
+    } else {
+      declinedDoors = [...declinedDoors, slug];
+    }
+    pendingDoorConfirm = null;
+  }
+
   // Count exchanges spent in the Door beat — only once the gap/Door is actually being discussed, NOT
   // the moment the Reclaim List fills (nextStage flips to 'door' then, even while the model is still
   // drawing out Reclaim items — counting those would wrap the beat on the first real gap answer).
@@ -687,13 +767,14 @@ export function applyModelTurn(
 
   // The member disputing the Door read must REOPEN the beat: never wrap, never replay the same label —
   // let the model's reply (which reconsiders / re-maps) through instead of the canned handoff.
-  const disputed = isDoorDispute(memberMessage) && ((state.collected.doors?.length ?? 0) >= 1 || !!state.collected.gap);
+  // (A reply to a reconciliation confirm is about that one candidate Door — not a dispute of the read.)
+  const disputed = isDoorDispute(memberMessage) && !state.pendingDoorConfirm && ((state.collected.doors?.length ?? 0) >= 1 || !!state.collected.gap);
   // The member explicitly ending the beat wraps it — even below the explore-minimum (Independence
   // Guarantee). A dispute is the one thing that still holds (they're correcting, not finishing).
   // "I'm done" OR "those are the main ones" both close the beat (once the contract is met) — the
   // latter answers the widen question, so re-asking it is the bug we're fixing.
   const memberDone = (memberWantsToWrap(memberMessage) || confirmsWhole(memberMessage)) && !disputed;
-  const { complete, stage, exploringDoor } = resolveCompletion(
+  let { complete, stage, exploringDoor } = resolveCompletion(
     collected,
     wantsComplete && !disputed,
     doorTurns,
@@ -701,6 +782,29 @@ export function applyModelTurn(
     disputed,
     memberDone,
   );
+
+  // LEG 3 RECONCILIATION (the catch-net): before handing off, make sure no Door the member RAISED in the
+  // Door beat got dropped by the model's lossy summary. Scan their OWN Door-beat words; if one isn't
+  // recorded (and wasn't already set aside), DON'T complete — reflect it back and ask once whether it's a
+  // Door or just background. Ask-never-assert keeps scanning their full account safe. Also wraps cleanly:
+  // once they've answered the last confirm and nothing else was dropped, complete.
+  let doorConfirmReply: string | null = null;
+  const wasResolvingConfirm = !!state.pendingDoorConfirm; // this turn answered a confirm we posed last turn
+  if (doorBeatFromIndex !== undefined && !pendingDoorConfirm) {
+    const beatMessages = [
+      ...history.slice(doorBeatFromIndex).filter((mm) => mm.role === 'member').map((mm) => mm.text),
+      memberMessage,
+    ];
+    const missed = uncapturedDoorSignals(beatMessages, collected.doors ?? [], declinedDoors);
+    if (missed.length > 0 && (complete || wasResolvingConfirm)) {
+      pendingDoorConfirm = missed[0]!.slug;
+      doorConfirmReply = doorConfirmPrompt(missed[0]!.slug, missed[0]!.phrase);
+      complete = false;
+      stage = 'door'; // still in the Door beat — we're asking a confirm, not handing off
+    } else if (wasResolvingConfirm && missed.length === 0 && !disputed && contractMet(collected)) {
+      complete = true; // last reconciliation confirm answered, nothing else dropped → wrap now
+    }
+  }
 
   let finalReply: string;
   if (complete) {
@@ -772,6 +876,9 @@ export function applyModelTurn(
     finalReply = withForwardPrompt(reply, stage);
   }
 
+  // If reconciliation intervened, the confirm question (in the member's own words) replaces the forward.
+  if (doorConfirmReply) finalReply = doorConfirmReply;
+
   // ANTI-REPEAT (the "you're hung up" guard): when the model returns a degraded turn (no usable text or
   // tool call — e.g. an API wobble mid-conversation), the forced-forward can land on the SAME canned
   // prompt we just sent. Donna got the identical gap question four times in a row, even after "it seems
@@ -785,5 +892,9 @@ export function applyModelTurn(
       'If there’s more to how the gap opened, tell me in a line — otherwise say “that’s everything” and I’ll take us straight to what’s next.';
   }
 
-  return { reply: finalReply, state: { stage, collected, doorTurns, identityTurns, doorAsked }, complete };
+  return {
+    reply: finalReply,
+    state: { stage, collected, doorTurns, identityTurns, doorAsked, doorBeatFromIndex, pendingDoorConfirm, declinedDoors },
+    complete,
+  };
 }
