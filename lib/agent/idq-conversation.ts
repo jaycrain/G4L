@@ -60,19 +60,22 @@ export function parseLikert(message: string): number | null {
 }
 
 export function idqOpening(): IdqTurn {
-  const intro =
-    'Alright — before we do anything else together, let’s get a clear picture of where you’re starting from — ' +
-    'as honest as you can stand. That’s the whole game today.\n\n' +
-    'Here’s how it goes. I’ll put twenty-four things in front of you — about your body, about who you are, about ' +
-    'the people around you, and about where you’re headed. For each one, you tell me how true it feels right now: ' +
-    '1 if it’s not landing at all, 5 if it’s dead-on.\n\n' +
-    'Nothing to study for. No right answers to find. A few of these are going to sting a little — and when one does, ' +
-    'that sting is the point. It means we found something real.\n\n' +
-    'Think of the whole thing as a mirror. You hold it up, you look, and you see the distance between who you are ' +
-    'today and who you know you still are underneath. We’ve got a name for that distance around here: the Fade. ' +
-    'Seeing it clearly is how you start closing it.\n\n' +
-    'No clock. No score to pass. Go when you’re ready.\n\n';
-  return { reply: intro + frame(0) + presentItem(0), state: INITIAL_IDQ_STATE, complete: false };
+  // v2.0 §8 — the IDQ now lives in Reconnect, after the generative work. Two priming doses: the safe-haven
+  // priming beat, then Donna's IDQ lead-in.
+  const priming =
+    'Before the questions — one thing. What’s coming is a mirror, and it only helps if you let it be accurate. ' +
+    'No one sees this but you. There’s no score to pass, and nothing here makes you a failure. You’ve probably ' +
+    'gotten good at telling people you’re fine — most of us have. This is the one place you don’t have to. A soft ' +
+    'answer only cheats you out of the thing you came for; the truer you are now, the more clearly this points at ' +
+    'the life you want back. Some of these will sting — when one does, that’s the mirror finding something real, ' +
+    'not a wrong answer. Stay with it. Take a breath. It’s just you. Go when you’re ready.\n\n';
+  const leadIn =
+    'Now it’s time to get a clear picture of the distance between where you are today and where you want to be. ' +
+    'We’ll ask some simple (but possibly hard) questions — answer as honest as you can stand. It’ll calculate an ' +
+    'ID Score: more a measurement than a true score, showing where you are right now, and what you check back ' +
+    'against as you close the gap. We’ll start with the body — it’s keeping score whether or not we choose to pay ' +
+    'attention. Go when you’re ready.\n\n';
+  return { reply: priming + leadIn + frame(0) + presentItem(0), state: INITIAL_IDQ_STATE, complete: false };
 }
 
 export function idqRespond(state: IdqConvState, message: string): IdqTurn {
