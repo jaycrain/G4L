@@ -200,6 +200,21 @@ gate, everyone enters identity→gap→reclaim and the backstops fill slots for 
 
   Only then flip the flag default on and remove the old path.
 
+### Gate 2 findings (Jun 26 2026) — slice-d core, staged engine **3/4 clean** (up from 2/4)
+
+| Persona | Result | Note |
+|---|---|---|
+| **no-fade** | ✅ **DECLINES** | complete:false, no gap, no Door, 0 items. The fade gate fixed the scope guardrail. |
+| terse | ✓ | Runner, marriage Door, sub-3 completion (1 item) clean. |
+| front-loader | ✓ | Multi-event gap + Doors tagged; **no refusal-as-gap**. (Reclaim 16 items — over-aim but real, not fabricated; the parking cap should bound this — minor follow-up.) |
+| **rita** | ✗ | **Door recall only** — rich multi-Door gap (layoff/household/coma) but `doors: []`. Model under-tagged `note_door` AND `matchDoors` missed the natural phrasing. |
+
+**Remaining blocker = Door recall** (slice-d item 4), now isolated. Fix options: (a) strengthen the `note_door`
+tool prompt with concrete phrase→slug cues; (b) raise `matchDoors` recall on natural fade language
+("laid off"→career_cliff, "carrying everyone/the bills"→load_bearer, "dad in a coma/caring for mom"→
+aging_parents); (c) surface inferred Doors on the confirmation card for member confirm. Likely (a)+(b).
+Minor follow-ups: bound front-loader parking to the aim; the no-fade decline UX/copy (Jay+Greg, Issue 2).
+
 ---
 
 ## 10. Eval re-run plan vs. the 50% baseline
