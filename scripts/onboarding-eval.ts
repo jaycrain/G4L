@@ -9,13 +9,14 @@
 // It's a REPORT, not a CI gate (cost + nondeterminism) — a ⚠ is "look at this run," not a hard failure.
 
 import { onboardingNextTurn, INITIAL_STATE, type ConvState, type ConvMessage, type Collected } from '../lib/agent/onboarding.ts';
+import { ritaDoorConcerns, ritaRaisedDoors } from './rita-criterion.ts';
 
 if (!process.env.ANTHROPIC_API_KEY) {
   console.error('Set ANTHROPIC_API_KEY (e.g. add it to .env.local) — this eval drives the real model.');
   process.exit(1);
 }
 
-type Persona = { name: string; system: string; expect: (c: Collected, complete: boolean) => string[] };
+type Persona = { name: string; system: string; expect: (c: Collected, complete: boolean, memberText: string) => string[] };
 
 const PERSONAS: Persona[] = [
   {
@@ -31,12 +32,16 @@ Respond ONLY as Rita — 1-3 short, honest sentences, one thought at a time. Rev
 - If asked to name that person in ONE word: you're not ready, you'd rather find it later.
 - Want back: paid creative work, finish your podcast, direct a documentary, lose 20 lbs, feel at ease at home.
 If asked how the gap opened, tell ALL of it (job, husband/household, parents) — and if it hasn't all come out yet, say "there's more, it wasn't just the layoff." When it's all out, say that's the whole picture.`,
-    expect: (c, done) => {
+    expect: (c, done, memberText) => {
       const out: string[] = [];
-      const d = new Set(c.doors ?? []);
-      for (const w of ['career_cliff', 'load_bearer', 'aging_parents']) if (!d.has(w)) out.push(`missing Door: ${w}`);
+      // "Raised-but-dropped" criterion: only a Door rita ACTUALLY raised (per the independent script-based
+      // detector) that the engine then dropped is a miss — never a thread she didn't fully surface. This
+      // measures true capture fidelity, not the persona's stochasticity (validated in
+      // tests/onboarding-eval-criterion.test.ts against a planted drop + a matcher-missed-but-caught Door).
+      out.push(...ritaDoorConcerns(c.doors ?? [], memberText));
       if (!done) out.push('did not complete');
-      if ((c.gap ?? '').length < 120) out.push('gap is thin (should be the full multi-event story)');
+      // Gap-thin only counts when she raised >1 thread (a genuinely multi-event story we then under-captured).
+      if (ritaRaisedDoors(memberText).size >= 2 && (c.gap ?? '').length < 120) out.push('gap is thin (multi-event story under-captured)');
       return out;
     },
   },
@@ -141,7 +146,8 @@ async function runPersona(p: Persona): Promise<boolean> {
     }
   }
   const c = state.collected;
-  const issues = p.expect(c, turn.complete);
+  const memberText = history.filter((h) => h.role === 'member').map((h) => h.text).join(' \n ');
+  const issues = p.expect(c, turn.complete, memberText);
   const turns = history.filter((h) => h.role === 'member').length;
   console.log(`\n### ${p.name} — ${issues.length ? '⚠ ' + issues.length + ' concern(s)' : '✓ clean'}  (member turns: ${turns}, complete: ${turn.complete})`);
   console.log('   doors  :', JSON.stringify(c.doors ?? []));
