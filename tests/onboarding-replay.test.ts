@@ -267,6 +267,30 @@ test('REPLAY — Leg 3 / Part B: a Door recognized earlier in the beat survives 
   assert.ok(doors.includes('aging_parents'), 'a recognized Door is NOT dropped by a later record');
 });
 
+test('REPLAY — member signals "there is more" → engine must NOT complete (holds the Door beat open)', () => {
+  // Rita's live-eval failure: she said "there's more to how I got here… it wasn't just the layoff" and the
+  // engine handed off anyway, dropping the load_bearer + aging_parents Doors she was about to name.
+  // "There's more" is the opposite of a close — it must hold the beat, like a dispute does.
+  const atDoor: ConvState = {
+    stage: 'door', doorAsked: true, doorBeatFromIndex: 0, doorTurns: 3,
+    collected: {
+      athleticPast: 'a leader who mentored and led teams',
+      identitySkipped: true,
+      reclaimList: ['paid creative work', 'finish the podcast', 'lead and mentor again', 'lose 20 lbs'],
+      gap: 'Was about to get a promotion that would have secured her family’s future after twelve years — then laid off overnight.',
+      doors: ['career_cliff'],
+    },
+  };
+  const turn = applyModelTurn(
+    atDoor,
+    [{ role: 'agent', text: 'Was that the whole of it?' }],
+    'There’s more to how I got here, if that matters. It wasn’t just the layoff.',
+    { text: 'It matters. Tell me how it actually happened.', record: { complete: true } } as any,
+  );
+  assert.equal(turn.complete, false, 'must NOT complete while the member says there is more to tell');
+  assert.match(turn.reply, /tell me|listening|how it (opened|happened)/i, 'invites the rest of the story');
+});
+
 test('REPLAY — Leg 3 reconciliation: a declined Door is set aside (never recorded) and the intake still completes', () => {
   const { turns, finalState } = replay(
     [

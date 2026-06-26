@@ -238,6 +238,17 @@ export function confirmsWhole(message: string): boolean {
   return WHOLE_RE.test((message ?? '').replace(/[‘’]/g, "'"));
 }
 
+// The member signaling the fade story ISN'T finished ("there's more", "it wasn't just the layoff",
+// "there's also…"). The opposite of a close — it must HOLD the Door beat open and never complete, the
+// mirror of a dispute. (Rita, live eval: she said "there's more to how I got here, it wasn't just the
+// layoff" and the engine handed off anyway, dropping the Doors she was about to name.) Per the bar:
+// never assume past what they said.
+const SIGNALS_MORE_RE =
+  /\b(there'?s more|there is more|it wasn'?t just|it wasn'?t only|not just the|not only the|there'?s also|there was also|more to (it|the|how|that|this)|i haven'?t (told|said|gotten)|one more thing|that'?s not all|there'?s another|another (door|thing|part|piece|layer)|still more|isn'?t the whole|wasn'?t the whole)\b/i;
+export function memberSignalsMore(message: string): boolean {
+  return SIGNALS_MORE_RE.test((message ?? '').replace(/[‘’]/g, "'"));
+}
+
 // --- Leg 3 reconciliation: catch a Door the member RAISED but the model didn't record -----------------
 // The model writes a lossy summary of the fade story and sometimes drops a Door the member clearly named
 // (Donna raised caring for her aging parents during onboarding; it never made the gap summary, so no
@@ -787,13 +798,16 @@ export function applyModelTurn(
   // Guarantee). A dispute is the one thing that still holds (they're correcting, not finishing).
   // "I'm done" OR "those are the main ones" both close the beat (once the contract is met) — the
   // latter answers the widen question, so re-asking it is the bug we're fixing.
-  const memberDone = (memberWantsToWrap(memberMessage) || confirmsWhole(memberMessage)) && !disputed;
+  // The member saying the fade story isn't finished ("there's more, it wasn't just the layoff") HOLDS the
+  // beat open — never complete on it, never read it as "done". The mirror of a dispute.
+  const signalsMore = memberSignalsMore(memberMessage);
+  const memberDone = (memberWantsToWrap(memberMessage) || confirmsWhole(memberMessage)) && !disputed && !signalsMore;
   let { complete, stage, exploringDoor } = resolveCompletion(
     collected,
     wantsComplete && !disputed,
     doorTurns,
     isAffirmation(memberMessage) && !disputed,
-    disputed,
+    disputed || signalsMore, // a Door dispute OR "there's more" both block the wrap and keep the beat open
     memberDone,
   );
 
@@ -843,11 +857,13 @@ export function applyModelTurn(
     // bug), and escalate toward closing rather than circling.
     const forward = needGap
       ? 'Help me understand how that opened — when did you first feel the drift, and what did it quietly cost you?'
-      : doorTurns <= 1
-        ? 'That rarely opens all at once. Was that the whole of it, or did something else pile on around the same time?'
-        : doorTurns === 2
-          ? 'Got it. Anything else from that stretch worth naming — or is that the heart of it?'
-          : 'That sounds like the full picture. Ready to move on whenever you are — unless there’s one more piece.';
+      : signalsMore
+        ? 'I’m listening — tell me the rest of how it opened.'
+        : doorTurns <= 1
+          ? 'That rarely opens all at once. Was that the whole of it, or did something else pile on around the same time?'
+          : doorTurns === 2
+            ? 'Got it. Anything else from that stretch worth naming — or is that the heart of it?'
+            : 'That sounds like the full picture. Ready to move on whenever you are — unless there’s one more piece.';
     // The model sometimes jumps to a wrap ("Ready when you are.") before the engine will let the
     // beat close. Don't stack the forward question onto a contradictory handoff — just ask it.
     const prematureHandoff = /ready when you are/i.test(r);
