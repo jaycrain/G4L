@@ -6,10 +6,23 @@ context to resume cold. Add to the top; move to "Done" or delete when shipped.
 
 ---
 
-## Onboarding — the captured gap is in third person, not the member's voice
-**Status:** small voice-polish bug, surfaced in a clean test run (ford@ford.com, Jun 25 2026). Not the
-capture-correctness bug (that's fixed by Leg 3 / Part A) — the gap is captured *faithfully*, just phrased
-wrong.
+## Onboarding — the captured gap is a lossy model SUMMARY (mis-voiced AND drops content)
+**Status:** UPGRADED — not just voice. Confirmed (ree@ree.com, Jun 26) that the same lossy third-person
+*summary* also **drops content**: Donna raised her aging parents DURING onboarding and it was never
+captured (no `aging_parents` Door at intake, nothing about parents in `intake_gap`) — recovered only when
+she re-raised it ~16 min later in the Doors session. So this is a say/do **under-capture** (Leg 3 / Part C
+territory; **2nd occurrence** after Joanne's "Clair" → earns a structural fix), with the third-person voice
+as the cosmetic half of the same root. Why the engine missed it: door inference (`augmentDoors`) reads
+ONLY the gap narrative (deliberately — whole-transcript matching over-tagged Doors from reclaim items), so
+once the summary dropped parents, nothing recovered it. **Fixture blocked:** the onboarding transcript is
+deleted on completion, so we can't replay her actual run (see the transcript-retention item below).
+**Fix direction (one root, two parts):** (a) record `gap` as the member's *faithful account in their own
+voice* (second person), not a lossy paraphrase — fixes the dropping AND the voice at the source; (b) Part C
+reconciliation — after the Door beat, FLAG on the confirmation card any Door signal in the member's OWN
+words that wasn't captured ("you mentioned caring for a parent — is that a Door too?"); flag, never
+auto-add. Original voice-only symptoms kept for reference below.
+
+### (original framing — third-person voice, the cosmetic half)
 **Symptom:** the captured fade story renders in third person — confirmation card **HOW THE GAP OPENED**:
 *"the schedule expanded, most of it falling to **him** without **his wife** sharing the load."* Confirmed
 on a second run (ree@ree.com): `intake_gap` = *"Lost **her** job… **her** husband was semi-retired"*, AND
@@ -23,6 +36,25 @@ backstop path captures the member's verbatim message (first person), so the thir
 second person ("you…") — not a third-person narration. Cheapest at capture time; alternatively normalize
 on render, but capture-time is cleaner since `gap` is reused. Add a replay/contract assertion if practical.
 **Definition of done:** a captured gap reads back to the member in their own voice on the card.
+
+---
+
+## Onboarding — retain completed transcripts for QI (governance decision, Jay's call)
+**Status:** open question, **needs Jay's privacy green-light** — not a build-first item.
+**Problem:** `onboarding_session` (state + the full transcript) is **deleted on completion** — it's
+transient save/resume state. So once a member finishes, we can't audit *what they actually said* vs. what
+got captured, and we **can't turn a real capture failure into a replay fixture**. The whole capture-quality
+discipline ("real runs become regression fixtures," CLAUDE.md) depends on having the transcript — and we
+throw it away exactly when a bug like the aging-parents drop (above) needs it. We're blind on every
+completed run.
+**The move:** retain the onboarding transcript for QI — **consented, behind the wall, separate from
+research, senior-reviewed before scaling** (the governance posture in CLAUDE.md), *not* blanket retention.
+Then "the member thinks they said X" becomes "here's the transcript," and these become debuggable + fixturable.
+**Why it's a decision, not a quick build:** it's member-vulnerable data; consent + storage + access scope
+must be designed to the governance bar first. Pairs with the lossy-gap item above (that fix is fixture-blocked
+without this).
+**Definition of done:** a governance-approved path that retains completed onboarding transcripts for QI,
+behind the wall, with consent — enough to replay a real run.
 
 ---
 
