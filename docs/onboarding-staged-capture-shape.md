@@ -215,6 +215,30 @@ tool prompt with concrete phrase→slug cues; (b) raise `matchDoors` recall on n
 aging_parents); (c) surface inferred Doors on the confirmation card for member confirm. Likely (a)+(b).
 Minor follow-ups: bound front-loader parking to the aim; the no-fade decline UX/copy (Jay+Greg, Issue 2).
 
+### Gate 3 findings (Jun 26 2026) — **rita 87.5% (7/8) — CLEARS the cut-over bar**
+
+Door recall is fixed. Two changes did it: (a)/(b) above (model phrase→slug cues + alias recall), and the
+decisive one — **the gap stage now RECEIVES the whole multi-event story before reflecting** (gather until the
+member signals it's whole; Doors accumulate across every chapter via a corpus scan). Before, the engine
+reflected after chapter one (the layoff) and advanced, so rita's later Doors never came out.
+
+Trajectory on the standing gauge: **v1 ~50% → 57% → 87.5%.**
+
+| Persona | Latest | Confirmed |
+|---|---|---|
+| **rita** | **7/8 = 87.5%** clean; every clean run captured all 3 Doors | Gate-3 batch ✓ |
+| **no-fade** | **DECLINES** (complete:false, no gap, no Door, 0 items) | Gate-3 suite ✓ |
+| terse | clean | Gate-2 suite ✓ (Gate-3 live re-confirm blocked by API cap) |
+| front-loader | clean (multi-Door, no refusal-as-gap) | Gate-2 suite ✓ (Gate-3 live re-confirm blocked by API cap) |
+
+**Before the flag flips (all must hold):**
+1. **Live re-confirm terse + front-loader on the current build** — BLOCKED: the eval API key hit its monthly
+   usage limit (regain 2026-07-01, or raise the cap). Both passed pre-gap-change; the change is offline-fixture-
+   covered but not yet live-re-confirmed.
+2. **no-fade decline UX/copy** — the Jay+Greg decision (Issue 2); the engine currently holds with placeholder
+   `NO_FADE_REFLECTION` copy and never force-completes.
+3. Then flip `ONBOARDING_ENGINE` default to `staged`, tag `onboarding-v2.0`, retire the v1 path.
+
 ---
 
 ## 10. Eval re-run plan vs. the 50% baseline
