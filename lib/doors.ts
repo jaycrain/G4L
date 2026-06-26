@@ -29,6 +29,12 @@ export function isDoorSlug(value: unknown): value is DoorSlug {
 
 const shortName = (displayName: string) => displayName.toLowerCase().replace(/^the\s+/, ''); // "career cliff"
 
+// Match a Door NAME word-bounded, so a name never fires inside a larger word ("body" in "anybody",
+// "loss" in "job loss"). Names contain no regex-special chars in practice, but escape defensively.
+const RE_ESCAPE = /[.*+?^${}()|[\]\\]/g;
+const wordInText = (needle: string, haystack: string) =>
+  new RegExp(`\\b${needle.replace(RE_ESCAPE, '\\$&')}\\b`).test(haystack);
+
 // Plain-language phrases that map to a Door when the member describes it in their own words (the
 // safety-net matcher; the live agent maps richer stories itself). Keyed only where the Door's title
 // isn't itself likely to appear — e.g. someone says "had kids", never "the full house".
@@ -75,11 +81,18 @@ export function matchDoors(message: string): DoorSlug[] {
     }
   }
   for (const d of DOORS) {
-    const short = shortName(d.displayName);
     const aliases = DOOR_ALIASES[d.slug] ?? [];
-    if (m.includes(d.slug.replace(/_/g, ' ')) || m.includes(short) || m.includes(d.displayName.toLowerCase()) || aliases.some((a) => m.includes(a))) {
+    if (aliases.some((a) => m.includes(a))) {
       found.add(d.slug);
+      continue;
     }
+    // The Loss is recognized ONLY by its death-specific aliases — the bare word "loss" / "the loss" is
+    // too ambiguous in English ("job loss", "weight loss", "the loss of…") and over-tagged the Door.
+    if (d.slug === 'loss') continue;
+    // Otherwise match the Door's name (slug / short / full title), WORD-BOUNDED so "body" never fires
+    // inside "anybody" and a name never matches mid-word.
+    const names = [d.slug.replace(/_/g, ' '), shortName(d.displayName), d.displayName.toLowerCase()];
+    if (names.some((n) => wordInText(n, m))) found.add(d.slug);
   }
   // Precedence among LOAD doors (taxonomy spec §4): Aging Parents (parent care) and Full House
   // (active-family season) own their load; The Load-Bearer is the catch-all for OTHER load, so it

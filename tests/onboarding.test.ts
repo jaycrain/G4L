@@ -256,7 +256,9 @@ test('withForwardPrompt never leaves a non-final turn without a question', () =>
 test('member names the Door(s) in free text; one or more map; unclear input re-prompts', () => {
   const doorState: ConvState = { stage: 'door', collected: {} };
   assert.deepEqual(scriptedTurn(doorState, 'the empty nest').state.collected.doors, ['empty_nest']);
-  assert.deepEqual(scriptedTurn(doorState, 'The Loss').state.collected.doors, ['loss']);
+  // The Loss is deliberately alias-only (death-specific) — the bare word "loss" over-tagged "job loss" /
+  // "weight loss", so it maps from a real loss signal, not the ambiguous word.
+  assert.deepEqual(scriptedTurn(doorState, 'my husband passed away').state.collected.doors, ['loss']);
   assert.deepEqual(scriptedTurn(doorState, 'aging parents and the marriage').state.collected.doors, [
     'aging_parents',
     'marriage',
