@@ -56,10 +56,22 @@ const IDENTITY_SKIP_OFFER_AFTER = 2;
 const IDENTITY_MAX_TURNS = 5;
 
 // --- copy (engine-owned forwards; the model leads when it asks a real question) -------------------------
+// v2.0 FINAL copy — docs/handoffs/2026-06-26-v2.0-final-copy-and-floor.md §3–§6. Voice: warm, direct,
+// declarative; "Companion" not "Member Agent"; Grinta mixed-case; no "Gateway".
+
+// Personalize with the member's identity handle ("the Cheerleader") in NATURAL CASE (brand: never all-caps,
+// lowercase "the" mid-sentence), with a graceful fallback when they chose to name it later (skipped).
+function identityRef(c: Collected): string {
+  return identityLabel(c.identityNoun) || 'who you used to be';
+}
+
+// §3 — Stage 1 (who you are): the opener (the AI disclosure + primer live on the Stage-0 start page).
 export const STAGED_OPENING =
-  "Before we get to any numbers or plans, I want to understand who I'm helping you reclaim — the fullest version of you. " +
-  "Let's start by taking a minute to think about who you were back when you felt most like yourself — not the job title, " +
-  'the version underneath all that.';
+  "Let's start by thinking about when you felt most like yourself. Maybe it was twelve, riding your bike fearlessly. " +
+  'Twenty, going door-to-door for something you believed in. College? Your first marathon? Fishing with your grandfather? ' +
+  "Not the job title, not the role everyone knows you for — even if that's mom or dad, partner or child. The version " +
+  "underneath all that — the one you've drifted from and want to be again. Who were they? What were they doing? How did " +
+  'you feel? Tell me about them.';
 
 const NAME_PROMPT =
   'If you put that person in a single word — the Runner, the Writer, the Builder, the Friend — what would it be? ' +
@@ -73,18 +85,23 @@ const SKIP_ACK = "That's completely fine — you'll find her through the work, n
 
 const REOPEN_IDENTITY = "My mistake — let's get it right. What word feels truer for who she was?";
 
-// The reframe into Stage 2 (gap), used the moment we advance out of identity.
-const GAP_OPEN =
-  'Now, the harder part — and it might matter most. Somewhere, the distance started to open. Sometimes it’s one clear ' +
-  'thing — a loss, a diagnosis, a move, a job that swallowed you. More often it’s slower. Tell me how it went for you.';
+// §4 — Stage 2 (how the gap opened): introduces "Doors" at first use, personalized to their handle.
+function gapOpen(c: Collected): string {
+  return (
+    `Somewhere, the distance between you and ${identityRef(c)} started to open. Sometimes it's one clear thing — a loss, ` +
+    'a diagnosis, a move, a job that swallowed you. More often it’s slower: an accumulation of what we call Doors — moments ' +
+    'and seasons you walk through and barely notice, each one widening the gap. What’s been happening that caused that ' +
+    'version of you to Fade? Tell me how it went for you.'
+  );
+}
 
 // Reflect-confirm copy for the gap. We lead with the model's OWN warm reflection of what they just told us
-// (it just heard the whole story); the forecast sets the expectation that the specific Doors get a dedicated
-// session later (lighter Door posture — receive, don't excavate); one confirm question, never a Y/N gate.
+// (it just heard the whole story); the forecast sets the lighter-Door expectation (receive, don't excavate)
+// that the specific Doors get a dedicated session later; one confirm question, never a Y/N gate. (§4)
 const GAP_REFLECT_LEAD = "Thank you for trusting me with that — that kind of distance rarely opens all at once.";
 const GAP_FORECAST_CONFIRM =
-  "We'll come back to the specific doors that opened it — there's a session built for exactly that a little " +
-  'further on. For now: did I understand the shape of how it went?';
+  'Most people find there’s more than one thread here; we’ll go deeper in the Doors session later, when you’re ready. ' +
+  'For now, this is plenty — did I understand the shape of how it went?';
 const REOPEN_GAP = "I want to get this right — tell me how it really went, in your own words.";
 
 // Invite the REST of the story (a fade is often several things at once — job, then the household, then a
@@ -104,10 +121,14 @@ const FLOOR_REFLECT =
 // The truthful light gap recorded when a no-fade member gives nothing loss-shaped to capture in their words.
 const NO_FADE_GAP = 'No significant gap — in a good place, looking to keep building.';
 
-// The reframe into Stage 3 (reclaim) — the conversation turns toward hope.
-const RECLAIM_OPEN =
-  'Now the good part — the reason any of this matters. When you picture closing that distance, what do you ' +
-  'want back? The things that were yours. Name whatever comes — big or small, there are no wrong answers.';
+// §5 — Stage 3 (what you want back): the reframe into hope, personalized to their handle.
+function reclaimOpen(c: Collected): string {
+  return (
+    `Now, the good part — let's talk about what you want back. We'll build out your Reclaim List from the things you want ` +
+    `back from ${identityRef(c)}'s life — concrete, in your own words. The whole program measures against this list. Three ` +
+    'to start, more if they keep coming — and you can edit or add to it any time. What’s the first thing that comes to mind?'
+  );
+}
 
 const RECLAIM_MORE = 'What else? Anything that comes — big or small.';
 
@@ -117,10 +138,11 @@ const RECLAIM_NUDGE =
   "Even one or two more — and they can be small: sleeping through the night, an old hobby, a friend you've " +
   'lost touch with, ten quiet minutes that are yours. What comes to mind?';
 
-// The handoff into the confirmation card (the card itself is rendered client-side from `collected`).
+// §6 — the whole-picture commit gate: the handoff into the confirmation card (the card itself is rendered
+// client-side from `collected`; nothing saves until the member confirms).
 const COMPLETE_HANDOFF =
-  "That's everything I need to get you started. Let me show you what I captured — take a look and tell me if " +
-  "it's right. Nothing's saved yet.";
+  'Great job getting here. Here’s what I’ve captured from our conversation — take a look. Does this look like you? ' +
+  'Nothing’s saved yet, so if anything’s missing or off, we’ll fix it.';
 
 // Said when the member has been nudged once and is still closing BELOW the minimum: honor them (Independence
 // Guarantee) — never fabricate, never re-ask identically. A warm, non-looping hold that leaves the door open
@@ -130,9 +152,11 @@ const RECLAIM_SOFT_HOLD =
   "That's a real start, and there's no rush — your list is never locked, and you can add to it any time as " +
   'more comes back to you. If even one more surfaces right now, tell me; if not, that\'s completely okay.';
 
+// §3 — identity transition (reflect + correct-opening): "So — the Cheerleader is who we're bringing back…"
+// Natural case for the handle (brand), reading naturally after the dash.
 function reflectIdentity(c: Collected): string {
-  const label = capFirst(identityLabel(c.identityNoun) || 'that person');
-  return `So — ${label} is who we're bringing back, the one who felt most like you. Did I get her right?`;
+  const label = identityLabel(c.identityNoun) || 'that person';
+  return `So — ${label} is who we're bringing back, the version that feels most like you. Did I get her right?`;
 }
 
 // The model's same-turn text is its natural reflection of the story it just heard — use it as the lead when
@@ -147,18 +171,19 @@ function reflectGap(modelText: string): string {
 // flow: it proves nothing was dropped. With nothing parked, it's the clean RECLAIM_OPEN.
 function reclaimOpening(c: Collected): string {
   const parked = c.reclaimList ?? [];
-  if (parked.length === 0) return RECLAIM_OPEN;
+  if (parked.length === 0) return reclaimOpen(c);
   const items = parked.map((x) => `“${x.trim()}”`).join(parked.length === 2 ? ' and ' : ', ');
+  // §5 re-surface — read the parked want(s) back. The single best trust moment: it proves nothing was dropped.
   return (
-    `Now the good part — and you've already started. Earlier you told me you want ${items} back, so ` +
+    `Now, the good part — and you've already started. Earlier you said you want ${items} back, so ` +
     `${parked.length === 1 ? "that's" : "those are"} on your list. What else? Big or small, there are no wrong answers.`
   );
 }
 
-// Reflect the Reclaim List back before the card — the member hears their own list, one confirm question.
+// §5 — reflect the Reclaim List back before the card; the member hears their own list, one confirm question.
 function reflectReclaim(c: Collected): string {
   const items = (c.reclaimList ?? []).map((x) => `• ${x.trim()}`).join('\n');
-  return `So here's your Reclaim List — what you want back:\n\n${items}\n\nIs that the heart of it, or is there something we're still missing?`;
+  return `Here’s what you want to reclaim:\n\n${items}\n\nAnything missing before we move on?`;
 }
 
 // --- confirmed-transition detection --------------------------------------------------------------------
@@ -355,7 +380,7 @@ export function applyStagedTurn(
     } else {
       stage = nextStagedStage(stage);
       awaitingConfirm = false;
-      if (stage === 'gap') finalReply = GAP_OPEN;
+      if (stage === 'gap') finalReply = gapOpen(collected);
       else if (stage === 'reclaim') finalReply = reclaimOpening(collected);
       else {
         // reclaim → complete: hand off to the confirmation card (rendered client-side from `collected`).
@@ -367,7 +392,7 @@ export function applyStagedTurn(
     if (collected.identitySkipped) {
       // Skipped — nothing to confirm; acknowledge and advance straight into the gap stage.
       stage = 'gap';
-      finalReply = `${SKIP_ACK}\n\n${GAP_OPEN}`;
+      finalReply = `${SKIP_ACK}\n\n${gapOpen(collected)}`;
     } else if (collected.identityNoun) {
       // Named — reflect it back warmly and wait for the member's confirm (the transition).
       finalReply = reflectIdentity(collected);
@@ -383,7 +408,7 @@ export function applyStagedTurn(
       if (identityTurns >= IDENTITY_MAX_TURNS && !collected.athleticPast && !collected.identityNoun) {
         collected.identitySkipped = true;
         stage = 'gap';
-        finalReply = `${SKIP_ACK}\n\n${GAP_OPEN}`;
+        finalReply = `${SKIP_ACK}\n\n${gapOpen(collected)}`;
       } else if (modelText && /\?/.test(modelText)) {
         finalReply = modelText;
       } else if (!collected.athleticPast) {
@@ -419,7 +444,7 @@ export function applyStagedTurn(
       collected.gap = collected.gap || memberMessage.trim() || NO_FADE_GAP;
       collected.doors = [];
       stage = 'reclaim';
-      finalReply = `${FLOOR_REFLECT}\n\n${RECLAIM_OPEN}`;
+      finalReply = `${FLOOR_REFLECT}\n\n${reclaimOpen(collected)}`;
     } else if (collected.gap) {
       // Real fade. Accumulate Doors across the WHOLE corpus (rita reveals them progressively), and RECEIVE the
       // whole story before reflecting — invite the rest (GAP_MORE) until the member signals it's whole.
@@ -433,7 +458,7 @@ export function applyStagedTurn(
       }
     } else {
       // Still gathering a real fade (no ambition signal yet) — keep the model's question, else hold the gap open.
-      finalReply = modelText && /\?/.test(modelText) ? modelText : GAP_OPEN;
+      finalReply = modelText && /\?/.test(modelText) ? modelText : gapOpen(collected);
     }
   } else if (stage === 'reclaim') {
     const closing = memberClosingReclaim(memberMessage);

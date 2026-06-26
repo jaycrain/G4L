@@ -230,13 +230,13 @@ test('STAGED reclaim — gather to the minimum → reflect the list → confirm 
   );
   // at/above the minimum the engine gathers toward the aim; the member's CLOSE triggers the reflect-confirm
   assert.equal(turns[3]!.state.awaitingConfirm, true, 'closing at the minimum reflects the list');
-  assert.match(turns[3]!.reply, /Reclaim List/i);
+  assert.match(turns[3]!.reply, /want to reclaim/i);
   assert.match(turns[3]!.reply, /riding again/);
   // confirm → complete + handoff to the card
   assert.equal(finalState.stage, 'complete');
   assert.equal(turns[4]!.complete, true, 'completes — the card renders from collected');
   assert.equal(finalState.collected.reclaimList?.length, 3);
-  assert.match(turns[4]!.reply, /show you what I captured|tell me if/i);
+  assert.match(turns[4]!.reply, /captured|look like you/i);
 });
 
 test('STAGED reclaim — re-surfaces a parked front-loader item at stage entry (the trust moment)', () => {
@@ -247,7 +247,7 @@ test('STAGED reclaim — re-surfaces a parked front-loader item at stage entry (
   };
   const turn = applyStagedTurn(atGapConfirm, [], 'yes, that’s how it went', { text: 'Okay.' });
   assert.equal(turn.state.stage, 'reclaim', 'advanced into reclaim');
-  assert.match(turn.reply, /earlier you told me/i, 'reads the parked item back');
+  assert.match(turn.reply, /earlier you said/i, 'reads the parked item back');
   assert.match(turn.reply, /writing again/, 'names the exact parked want — nothing dropped');
 });
 
@@ -386,7 +386,7 @@ test('STAGED reclaim — sub-3 completion (Gate-1 decision): two items + done �
     atReclaim,
   );
   assert.equal(turns[1]!.state.reclaimNudged, true, 'nudged once below the aim');
-  assert.match(turns[2]!.reply, /Reclaim List/i, 'accepts the sub-3 list and reflects (never fabricates a 3rd)');
+  assert.match(turns[2]!.reply, /want to reclaim/i, 'accepts the sub-3 list and reflects (never fabricates a 3rd)');
   assert.equal(finalState.stage, 'complete', 'completes below the old ≥3 floor — card carries the shortfall');
   assert.equal(finalState.collected.reclaimList?.length, 2);
 });
