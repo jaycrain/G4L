@@ -615,7 +615,14 @@ async function liveTurn(
 ): Promise<Turn> {
   const { default: Anthropic } = await import('@anthropic-ai/sdk');
   // Deep-in-conversation turns carry a large context; give it room and retry transient blips.
-  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, timeout: 25000, maxRetries: 2 });
+  // accept-encoding: identity disables response gzip — sidesteps a node-fetch + gzip stream bug
+  // ("Premature close") that breaks on newer Node runtimes; transport-only, no effect on capture.
+  const client = new Anthropic({
+    apiKey: process.env.ANTHROPIC_API_KEY,
+    timeout: 25000,
+    maxRetries: 2,
+    defaultHeaders: { 'accept-encoding': 'identity' },
+  });
   const messages = [
     ...history.map((m) => ({ role: (m.role === 'agent' ? 'assistant' : 'user') as 'assistant' | 'user', content: m.text })),
     { role: 'user' as const, content: memberMessage },

@@ -28,7 +28,11 @@ Answer the guide's latest message as Rita. If asked whether there's more, share 
 
 async function rita(history: ConvMessage[]): Promise<string> {
   const { default: Anthropic } = await import('@anthropic-ai/sdk');
-  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  const client = new Anthropic({
+    apiKey: process.env.ANTHROPIC_API_KEY,
+    maxRetries: 3,
+    defaultHeaders: { 'accept-encoding': 'identity' }, // sidestep node-fetch gzip bug on newer Node
+  });
   const messages = history.map((m) => ({
     role: (m.role === 'agent' ? 'user' : 'assistant') as 'user' | 'assistant',
     content: m.text,
