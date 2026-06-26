@@ -9,14 +9,21 @@
 //
 // Arc:  Stage 0 gate → identity → gap (how it opened) → reclaim → confirmation card.  Ends on hope.
 //
-// SLICE a builds: the stage machine (authoritative `stage` + `awaitingConfirm`), the confirmed-transition
-// engine, and the IDENTITY stage in full (gather → reflect-confirm → advance; skip path; correction
-// re-opens). gap/reclaim are stubs here — slices b/c.
+// SLICE a built: the stage machine (authoritative `stage` + `awaitingConfirm`), the confirmed-transition
+// engine, and the IDENTITY stage in full (gather → reflect-confirm → advance; skip path; correction re-opens).
+// SLICE b builds: the GAP stage — set_gap/note_door tools, lighter Door posture (receive, don't excavate;
+// 0/1/several Doors all valid, never gated on count), the Doors-session forecast, and the stage-scoped gap
+// backstop (capture the member's own message as the gap only in-stage when the model failed to tag it).
+// reclaim is still a stub — slice c.
 
 import { cleanIdentityNoun, displayIdentityNoun, identityLabel } from '../member/identity.ts';
+import { isDoorSlug, type DoorSlug } from '../doors.ts';
+import { gapIsNarrative } from './onboarding-contract.ts';
 import { MEMBER_AGENT_SYSTEM_PROMPT } from './system-prompt.ts';
 import {
+  augmentDoors,
   isAffirmation,
+  memberWantsToWrap,
   stripLeadingDisclosure,
   type Collected,
   type ConvMessage,
@@ -57,14 +64,35 @@ const SKIP_ACK = "That's completely fine — you'll find her through the work, n
 
 const REOPEN_IDENTITY = "My mistake — let's get it right. What word feels truer for who she was?";
 
-// The reframe into Stage 2, used the moment we advance out of identity (slice b implements its capture).
+// The reframe into Stage 2 (gap), used the moment we advance out of identity.
 const GAP_OPEN =
   'Now, the harder part — and it might matter most. Somewhere, the distance started to open. Sometimes it’s one clear ' +
   'thing — a loss, a diagnosis, a move, a job that swallowed you. More often it’s slower. Tell me how it went for you.';
 
+// Reflect-confirm copy for the gap. We lead with the model's OWN warm reflection of what they just told us
+// (it just heard the whole story); the forecast sets the expectation that the specific Doors get a dedicated
+// session later (lighter Door posture — receive, don't excavate); one confirm question, never a Y/N gate.
+const GAP_REFLECT_LEAD = "Thank you for trusting me with that — that kind of distance rarely opens all at once.";
+const GAP_FORECAST_CONFIRM =
+  "We'll come back to the specific doors that opened it — there's a session built for exactly that a little " +
+  'further on. For now: did I understand the shape of how it went?';
+const REOPEN_GAP = "I want to get this right — tell me how it really went, in your own words.";
+
+// The reframe into Stage 3 (reclaim) — the conversation turns toward hope (capture lands in slice c).
+const RECLAIM_OPEN =
+  'Now the good part — the reason any of this matters. When you picture closing that distance, what do you ' +
+  'want back? The things that were yours. Name whatever comes — big or small, there are no wrong answers.';
+
 function reflectIdentity(c: Collected): string {
   const label = capFirst(identityLabel(c.identityNoun) || 'that person');
   return `So — ${label} is who we're bringing back, the one who felt most like you. Did I get her right?`;
+}
+
+// The model's same-turn text is its natural reflection of the story it just heard — use it as the lead when
+// it isn't itself a question (one-question-per-turn); otherwise fall back to the warm canned lead.
+function reflectGap(modelText: string): string {
+  const lead = modelText && !modelText.includes('?') ? modelText.trim() : GAP_REFLECT_LEAD;
+  return `${lead}\n\n${GAP_FORECAST_CONFIRM}`;
 }
 
 // --- confirmed-transition detection --------------------------------------------------------------------
@@ -93,7 +121,31 @@ function mergeStaged(prev: Collected, rec?: Partial<Collected>): Collected {
     ...(rec.athleticPast !== undefined && { athleticPast: rec.athleticPast }),
     ...(rec.identityNoun !== undefined && rec.identityNoun !== '' && { identityNoun: displayIdentityNoun(rec.identityNoun) }),
     ...(rec.identitySkipped === true && { identitySkipped: true }),
+    ...(rec.gap !== undefined && rec.gap !== '' && { gap: rec.gap }),
+    // Doors accumulate — one note_door call per Door; union with what we already have (never drop one).
+    ...(rec.doors !== undefined && { doors: Array.from(new Set<DoorSlug>([...(prev.doors ?? []), ...rec.doors])) }),
+    // Reclaim items accumulate in lockstep with their categories. Tools are stage-agnostic for CAPTURE, so an
+    // item volunteered early (front-loader) parks here in the moment — never lost, re-surfaced at its stage.
+    ...(rec.reclaimList !== undefined && {
+      reclaimList: [...(prev.reclaimList ?? []), ...rec.reclaimList],
+      reclaimCategories: [
+        ...(prev.reclaimCategories ?? []),
+        ...rec.reclaimList.map((_, i) => rec.reclaimCategories?.[i] ?? ''),
+      ],
+    }),
   };
+}
+
+// Stage-scoped gap backstop: if the model conversed but never called set_gap, capture the member's OWN
+// gap-stage message as the gap — but ONLY while we're in the gap stage and ONLY if it reads as a real fade
+// narrative (not a wrap/affirm or a one-liner). Safe by construction: in the gap stage there is no reclaim
+// list being collected, so the v1 reclaim-as-gap contamination simply cannot occur here.
+const STAGED_GAP_MIN_CHARS = 80;
+function shouldCaptureStagedGap(message: string): boolean {
+  const m = (message ?? '').trim();
+  if (memberWantsToWrap(m) || isAffirmation(m)) return false;
+  if (m.length < STAGED_GAP_MIN_CHARS) return false;
+  return gapIsNarrative(m, []);
 }
 
 // --- THE STAGED ENGINE (pure, replayable) --------------------------------------------------------------
@@ -116,11 +168,21 @@ export function applyStagedTurn(
     // Resolving a reflect-confirm: a correction re-opens the stage; anything else advances.
     if (correctsReflection(memberMessage)) {
       awaitingConfirm = false;
-      finalReply = stage === 'identity' ? REOPEN_IDENTITY : modelText || 'Tell me more.';
+      if (stage === 'identity') {
+        finalReply = REOPEN_IDENTITY;
+      } else if (stage === 'gap') {
+        // Re-open the gap: clear the captured story (and the Doors derived from it) so the next gather
+        // re-captures the corrected account. Non-trapping — they retell, the card is the final seatbelt.
+        collected.gap = undefined;
+        collected.doors = [];
+        finalReply = REOPEN_GAP;
+      } else {
+        finalReply = modelText || 'Tell me more.';
+      }
     } else {
       stage = nextStagedStage(stage);
       awaitingConfirm = false;
-      finalReply = stage === 'gap' ? GAP_OPEN : `(${stage} stage — slice b/c)`; // gap/reclaim opens land in b/c
+      finalReply = stage === 'gap' ? GAP_OPEN : stage === 'reclaim' ? RECLAIM_OPEN : `(${stage} stage — slice c)`;
     }
   } else if (stage === 'identity') {
     if (collected.identitySkipped) {
@@ -140,8 +202,21 @@ export function applyStagedTurn(
       else finalReply = identityTurns >= IDENTITY_SKIP_OFFER_AFTER ? SKIP_OFFER : NAME_PROMPT;
     }
   } else if (stage === 'gap') {
-    // STUB (slice a): hold the gap open; capture + Doors + confirm land in slice b.
-    finalReply = modelText && /\?/.test(modelText) ? modelText : GAP_OPEN;
+    // Backstop: model conversed without tagging set_gap — capture their own message as the gap if it's a
+    // real fade narrative (safe in-stage; see shouldCaptureStagedGap).
+    if (!collected.gap && shouldCaptureStagedGap(memberMessage)) collected.gap = memberMessage.trim();
+    if (collected.gap) {
+      // Door quality (lighter posture — receive, don't excavate): read any Doors out of the captured gap.
+      // 0/1/several are all valid; the stage NEVER gates on Door count. augmentDoors unions, never invents
+      // off an empty gap.
+      collected.doors = augmentDoors(collected.doors ?? [], collected.gap);
+      // Reflect the story back + forecast the dedicated Doors session, then await the member's confirm.
+      finalReply = reflectGap(modelText);
+      awaitingConfirm = true;
+    } else {
+      // Gather: keep the model's question if it asked one; otherwise hold the gap open.
+      finalReply = modelText && /\?/.test(modelText) ? modelText : GAP_OPEN;
+    }
   } else if (stage === 'reclaim') {
     finalReply = modelText || '(reclaim stage — slice c)';
   } else {
@@ -179,6 +254,30 @@ export const STAGED_TOOLS = [
     description: 'Record that the member chose NOT to name an identity yet (they will find it at Identity Excavation).',
     input_schema: { type: 'object' as const, properties: {}, required: [] },
   },
+  {
+    name: 'set_gap',
+    description: "Record how the distance opened — the member's own account of the fade story (the gap). Call this once they've told you how it went, in their words.",
+    input_schema: { type: 'object' as const, properties: { text: { type: 'string' } }, required: ['text'] },
+  },
+  {
+    name: 'note_door',
+    description:
+      'Record a Door that surfaces in the fade story — the life event that opened the distance. Call once per Door (it accumulates). Slugs: ' +
+      'career_cliff, aging_parents, empty_nest, vanishing, body, diagnosis, marriage, loss, full_house, grind, load_bearer. ' +
+      'Only note a Door the member actually describes — none is a valid outcome; never force one.',
+    input_schema: { type: 'object' as const, properties: { slug: { type: 'string' } }, required: ['slug'] },
+  },
+  {
+    name: 'add_reclaim_item',
+    description:
+      'Record one thing the member wants back (a Reclaim-List item), in their words. Call once per item; it accumulates. ' +
+      "If they volunteer one EARLY (before the reclaim stage), capture it here anyway so it's never lost — you'll bring it back at its stage.",
+    input_schema: {
+      type: 'object' as const,
+      properties: { text: { type: 'string' }, category: { type: 'string' } },
+      required: ['text'],
+    },
+  },
 ];
 
 // Parse a staged model response (per-field tool calls) into the merged Partial<Collected> the engine reads.
@@ -191,6 +290,14 @@ export function parseStagedTurn(content: readonly unknown[]): ModelTurn {
       if (b.name === 'set_past_self' && typeof b.input?.text === 'string') rec.athleticPast = b.input.text;
       if (b.name === 'name_identity' && typeof b.input?.noun === 'string') rec.identityNoun = cleanIdentityNoun(b.input.noun);
       if (b.name === 'skip_identity') rec.identitySkipped = true;
+      if (b.name === 'set_gap' && typeof b.input?.text === 'string') rec.gap = b.input.text;
+      if (b.name === 'note_door' && typeof b.input?.slug === 'string' && isDoorSlug(b.input.slug)) {
+        (rec.doors ??= []).push(b.input.slug);
+      }
+      if (b.name === 'add_reclaim_item' && typeof b.input?.text === 'string') {
+        (rec.reclaimList ??= []).push(b.input.text);
+        (rec.reclaimCategories ??= []).push(typeof b.input.category === 'string' ? b.input.category : '');
+      }
     }
   }
   return { text, record: rec };
@@ -213,7 +320,8 @@ CAPTURE WITH TOOLS, never in prose — and never narrate that you saved somethin
 - set_past_self(text): who they were at their best, in their own words.
 - name_identity(noun): the reclaimed-identity word, natural case (e.g. "Athlete"), once they choose or coin it.
 - skip_identity(): they chose not to name one yet.
-(More tools unlock in later stages.)
+- set_gap(text): how the distance opened — their fade story, in their words.
+- note_door(slug): a life event that opened the distance (one call per Door; none is valid — never force one).
 If the member volunteers something for a LATER stage (e.g. names what they want back while you're still on
 identity), capture it with its tool anyway — never lose it — but keep asking only about the CURRENT stage;
 you'll bring it back at its stage.
@@ -224,11 +332,21 @@ LANGUAGE and invite them to choose or coin one — framed as a changeable HANDLE
 word. If they're genuinely not ready, reassure them and call skip_identity — never pressure a name. Record
 the word with name_identity in natural case ("Athlete", never "the Athlete").
 
+GAP STAGE ("how it opened"): ask, once, how the distance opened, then RECEIVE — do not excavate. Let them
+tell it their way; when they've given you the account, call set_gap(their story) and note_door for any Door
+that genuinely surfaces (zero is fine — recognition, not routing). Do NOT keep digging for more Doors or
+re-ask "any others?"; the specific Doors get a dedicated session later, and you may say so warmly. One Door,
+several, or none are all complete.
+
 The AI disclosure was shown on the start page — never repeat it. Reflect first, then exactly ONE warm
 question per turn. No meta-narration about the program's mechanics.`;
 
 function stageInstruction(stage?: Stage): string {
-  if (stage === 'gap') return '\n\nCURRENT STAGE: how the gap opened — receive their fade story. (Stage-2 capture tools unlock in a later build.)';
+  if (stage === 'gap')
+    return (
+      '\n\nCURRENT STAGE: how the gap opened. Ask once, then receive their fade story and call set_gap; ' +
+      'note_door for any Door that surfaces (none is valid). Do not excavate or re-ask for more Doors.'
+    );
   if (stage === 'reclaim') return '\n\nCURRENT STAGE: what they want back. (Stage-3 capture tools unlock in a later build.)';
   return '\n\nCURRENT STAGE: identity — who they were at their best, and the one-word handle (or skip).';
 }

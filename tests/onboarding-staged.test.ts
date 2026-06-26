@@ -81,3 +81,83 @@ test('correctsReflection — catches a real correction, not an affirmation', () 
   assert.equal(correctsReflection('yeah no, that’s her'), false); // colloquial yes (affirmation guard)
   assert.equal(correctsReflection('perfect'), false);
 });
+
+// --- slice b: the GAP stage --------------------------------------------------------------------------
+const GAP_STORY =
+  'It was slow. My dad got sick and I became his caregiver, and somewhere in those years of appointments and ' +
+  'worry I just stopped being anyone but the person who showed up for him. I never got back to my own life.';
+
+test('STAGED gap — set_gap captures the story, derives the Door, reflect-confirm awaits, advances to reclaim', () => {
+  const atGap: ConvState = { stage: 'gap', collected: { athleticPast: 'a cyclist', identityNoun: 'Athlete' } };
+  const { turns, finalState } = replayStaged(
+    [
+      { member: GAP_STORY, model: { text: 'That sounds like it took everything you had.', record: { gap: GAP_STORY, doors: ['aging_parents'] } } },
+      { member: 'Yes, that’s how it went', model: { text: 'Okay.' } },
+    ],
+    atGap,
+  );
+  // turn 1: gap captured + Door derived + reflect-confirm
+  assert.equal(turns[0]!.state.awaitingConfirm, true, 'reflects the gap and awaits confirm');
+  assert.equal(turns[0]!.state.collected.gap, GAP_STORY);
+  assert.deepEqual(turns[0]!.state.collected.doors, ['aging_parents'], 'Door tagged by the model is kept');
+  assert.match(turns[0]!.reply, /come back to the specific doors|shape of how it went/i, 'forecasts the Doors session');
+  // turn 2: affirm → advance to reclaim, ends on hope
+  assert.equal(finalState.stage, 'reclaim', 'advances to the reclaim stage on confirm');
+  assert.equal(finalState.awaitingConfirm, false);
+  assert.match(turns[1]!.reply, /want back|good part/i, 'reframes into what they want back');
+});
+
+test('STAGED gap — no Door tagged is a complete capture (recognition over routing, never forced)', () => {
+  const atGap: ConvState = { stage: 'gap', collected: { athleticPast: 'a writer', identityNoun: 'Writer' } };
+  // Pure drift, no nameable event — matchDoors finds nothing, the model tags nothing. A null Door is valid.
+  const story =
+    'I honestly cannot point to anything. There was no event, no crisis. I just slowly stopped doing the ' +
+    'things I loved, a little at a time, and one day I looked up and they were gone. Nothing happened, exactly.';
+  const { turns } = replayStaged([{ member: story, model: { text: 'I hear that.', record: { gap: story } } }], atGap);
+  assert.equal(turns[0]!.state.awaitingConfirm, true, 'a gap with zero Doors still reflects + advances');
+  assert.deepEqual(turns[0]!.state.collected.doors ?? [], [], 'no Door invented when none was described');
+});
+
+test('STAGED gap — backstop: model converses WITHOUT set_gap; engine captures the message in-stage', () => {
+  const atGap: ConvState = { stage: 'gap', collected: { athleticPast: 'a runner', identityNoun: 'Runner' } };
+  // The most common real failure: the model reflects warmly but never calls the tool (record undefined).
+  const story =
+    'It was slow. I became the one caring for my aging mother — the role reversal where I was suddenly the ' +
+    'parent to my own parent — and somewhere in those years I stopped being anyone but the person who showed up.';
+  const { turns } = replayStaged([{ member: story, model: { text: 'That must have been so hard.' } }], atGap);
+  assert.equal(turns[0]!.state.collected.gap, story, 'backstop captured the member’s own gap message');
+  assert.equal(turns[0]!.state.awaitingConfirm, true, 'and moved to reflect-confirm — no loop on the opening question');
+  assert.deepEqual(turns[0]!.state.collected.doors, ['aging_parents'], 'Door still derived from the captured gap');
+});
+
+test('STAGED gap — a correction re-opens the stage and clears the mis-captured story (never traps)', () => {
+  const atConfirm: ConvState = {
+    stage: 'gap', awaitingConfirm: true,
+    collected: { athleticPast: 'a cyclist', identityNoun: 'Athlete', gap: GAP_STORY, doors: ['aging_parents'] },
+  };
+  const turn = applyStagedTurn(atConfirm, [], 'no, that’s not really how it went', { text: 'Okay.' });
+  assert.equal(turn.state.stage, 'gap', 'stays in the gap stage on a correction');
+  assert.equal(turn.state.awaitingConfirm, false, 'clears the pending confirm');
+  assert.equal(turn.state.collected.gap, undefined, 're-gathers the corrected account');
+  assert.deepEqual(turn.state.collected.doors, [], 'drops Doors derived from the wrong story');
+  assert.match(turn.reply, /get this right|how it really went/i);
+});
+
+test('STAGED gap — a short wrap/affirm message does NOT get grabbed as the gap (backstop guard)', () => {
+  const atGap: ConvState = { stage: 'gap', collected: { athleticPast: 'a runner', identityNoun: 'Runner' } };
+  const { turns } = replayStaged([{ member: 'yeah, let’s move on', model: { text: 'Take your time — how did it open?' } }], atGap);
+  assert.equal(turns[0]!.state.collected.gap, undefined, 'a wrap line is never captured as the fade story');
+  assert.equal(turns[0]!.state.awaitingConfirm ?? false, false, 'stays gathering — no false reflect-confirm');
+});
+
+test('STAGED gap — a reclaim item volunteered in-stage PARKS to the list, never the gap (the 37% killer)', () => {
+  const atGap: ConvState = { stage: 'gap', collected: { athleticPast: 'a runner', identityNoun: 'Runner' } };
+  // Member drifts into a want while we're still on the gap; the model tags it add_reclaim_item, NOT set_gap.
+  const { turns } = replayStaged(
+    [{ member: 'I just really want to be running trails again on weekends', model: { text: "I'll hold onto that. But back to how the distance opened —", record: { reclaimList: ['running trails on weekends'] } } }],
+    atGap,
+  );
+  assert.deepEqual(turns[0]!.state.collected.reclaimList, ['running trails on weekends'], 'parked to the Reclaim List');
+  assert.equal(turns[0]!.state.collected.gap, undefined, 'NOT captured as the gap — staging makes contamination impossible');
+  assert.equal(turns[0]!.state.stage, 'gap', 'stays in the gap stage, still gathering the fade story');
+});
