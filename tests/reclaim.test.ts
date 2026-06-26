@@ -55,6 +55,18 @@ test('matchDoors maps free text to one or more Doors in canonical order', () => 
   // Grind (not Career Cliff = the role that ENDED — Taxonomy Spec §4 direction split), alongside the
   // parent-care Door.
   assert.deepEqual(matchDoors('bigger job, more responsibility, crazy hours — and caring for my 95 year old mom took over'), ['aging_parents', 'grind']);
+  // Gate-2 Door-recall lift (rita's missed Doors): natural phrasing the aliases now catch.
+  assert.ok(matchDoors('I got a layoff after twelve years').includes('career_cliff')); // "layoff" (was only "laid off")
+  assert.ok(matchDoors('I was the sole breadwinner and he never stepped up').includes('load_bearer'));
+  assert.ok(matchDoors('then my father went into a coma twice').includes('aging_parents'));
+  assert.ok(matchDoors('around the same time my mother got sick').includes('aging_parents'));
+  // rita's whole multi-Door story surfaces all three (canonical order).
+  assert.deepEqual(
+    matchDoors('a layoff right before my promotion, I was the sole breadwinner and he didn’t step up, and my father went into a coma'),
+    ['career_cliff', 'aging_parents', 'load_bearer'],
+  );
+  // Guard: the new parent-health aliases stay parent-anchored — a passing "my father's birthday" must NOT tag.
+  assert.equal(matchDoors('I want more time for my father’s birthday party').includes('aging_parents'), false);
 });
 
 test('correctDoors fixes the marriage/young-kids mis-tag (Full House, not Empty Nest / Aging Parents)', () => {

@@ -346,10 +346,12 @@ export function applyStagedTurn(
     // a real fade with a loss signal (shouldCaptureStagedGap; rejects ambition and refusals).
     if (!collected.gap && shouldCaptureStagedGap(memberMessage)) collected.gap = memberMessage.trim();
     if (collected.gap) {
-      // Door quality (lighter posture — receive, don't excavate): read any Doors out of the captured gap.
-      // 0/1/several are all valid; the stage NEVER gates on Door count. augmentDoors unions, never invents
-      // off an empty gap.
-      collected.doors = augmentDoors(collected.doors ?? [], collected.gap);
+      // Door quality (lighter posture — receive, don't excavate): read any Doors out of the captured gap AND
+      // the member's own message. Their first-person words ("I was laid off", "my dad's health") match the
+      // aliases better than the model's third-person gap summary ("Her father…"), so scanning both lifts
+      // recall. 0/1/several are all valid; the stage NEVER gates on Door count; augmentDoors unions and never
+      // invents off empty text.
+      collected.doors = augmentDoors(collected.doors ?? [], `${collected.gap} ${memberMessage}`);
       // Reflect the story back + forecast the dedicated Doors session, then await the member's confirm.
       finalReply = reflectGap(modelText);
       awaitingConfirm = true;
@@ -524,10 +526,21 @@ word. If they're genuinely not ready, reassure them and call skip_identity — n
 the word with name_identity in natural case ("Athlete", never "the Athlete").
 
 GAP STAGE ("how it opened"): ask, once, how the distance opened, then RECEIVE — do not excavate. Let them
-tell it their way; when they've given you the account, call set_gap(their story) and note_door for any Door
-that genuinely surfaces (zero is fine — recognition, not routing). Do NOT keep digging for more Doors or
-re-ask "any others?"; the specific Doors get a dedicated session later, and you may say so warmly. One Door,
-several, or none are all complete.
+tell it their way; when they've given you the account, call set_gap(their story).
+TAGGING DOORS — do this silently as the story comes out, NOT by interrogating: call note_door ONCE for EACH
+distinct life event you recognize in what they ALREADY told you. A story can carry several. Map by meaning,
+in their own words:
+  • a job ending / being laid off / a layoff / forced out / a role hollowing out → career_cliff
+  • work/ambition that GREW until it crowded out the self → grind
+  • being the one carrying the household / the bills / the breadwinner / a partner who didn't step up → load_bearer
+  • caring for a parent / a parent's health crisis or decline (a coma, getting sick, declining) → aging_parents
+  • kids leaving / the house going quiet → empty_nest;  young kids + marriage, no room for you → full_house
+  • a diagnosis / health scare → diagnosis;  the body saying no → body
+  • a divorce or a marriage drifting into coexisting → marriage
+  • losing someone close (death) → loss;  friendships/social world fading → vanishing
+Tag what's THERE — zero is fine (recognition, not routing), and never force one. But do not let a clearly-
+named event go un-tagged. Do NOT keep digging or re-ask "any others?"; the specific Doors get a dedicated
+session later, and you may say so warmly. One Door, several, or none are all complete.
 CRITICAL — DO NOT FABRICATE A FADE: this program is for people feeling a real distance from who they were
 (a loss, a decline, a slow drift). If the member describes NO loss and NO drift — they're thriving and simply
 want MORE (optimize, level up, the next challenge) — that person is NOT yours to capture. Do NOT call set_gap,

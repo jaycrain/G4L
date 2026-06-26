@@ -48,9 +48,14 @@ const DOOR_ALIASES: Partial<Record<DoorSlug, string[]>> = {
     'taking care of my dad', 'taking care of my father', 'taking care of my parent', 'take care of my mom', 'take care of my mother',
     'look after my mom', 'look after my mother', 'aging parent', 'aging mother', 'aging father', 'elderly parent', 'elderly mother',
     'elderly father', 'my mother took over', 'my mom took over', 'year old mom', 'year old mother', 'year old dad', 'year old father',
+    // A parent's health crisis / decline (parent-anchored so a passing "my mom" doesn't trip it).
+    'father went into a coma', 'mother went into a coma', 'dad went into a coma', 'mom went into a coma', 'parent went into a coma',
+    "father's health", "mother's health", "dad's health", "mom's health", "parent's health", "parents' health",
+    'father is declining', 'mother is declining', 'parent is declining', 'parents are declining', "father's decline", "mother's decline",
+    'my father got sick', 'my mother got sick', 'my dad got sick', 'my mom got sick', 'father in the hospital', 'mother in the hospital',
   ],
   // Career Cliff = the role ENDED or shrank (subtraction). The role that GREW over you is The Grind.
-  career_cliff: ['laid off', 'lost my job', 'got let go', 'forced out', 'stepped down', 'the role ended', 'plateaued', 'retirement', 'restructure', 'pushed out'],
+  career_cliff: ['laid off', 'layoff', 'lay-off', 'lost my job', 'got let go', 'forced out', 'stepped down', 'the role ended', 'plateaued', 'retirement', 'restructure', 'pushed out'],
   empty_nest: ['empty nest', 'kids moved out', 'kids left home', 'kids are grown', 'last one left', 'off to college', 'house got quiet'],
   loss: ['passed away', 'lost my husband', 'lost my wife', 'lost my partner', 'death of', 'when he died', 'when she died'],
   diagnosis: ['diagnosed', 'the diagnosis', 'my diagnosis'],
@@ -60,7 +65,7 @@ const DOOR_ALIASES: Partial<Record<DoorSlug, string[]>> = {
   grind: ['work took over', 'took over my life', 'crazy hours', 'longer hours', 'bigger job', 'more responsibility', 'grew bigger', 'global team', 'consumed me', 'all-consuming', 'work became everything', 'no room left for', 'ate everything', 'the grind'],
   // The Load-Bearer = carrying everyone's load (household/money/needs), outside parent-care or the
   // active-family season — incl. a partner's abdicated share.
-  load_bearer: ['carrying everyone', 'carry everyone', 'carry the load', 'carrying the load', 'held the financial', 'hold everything together', 'holding everything together', 'everyone leans on me', 'everyone needs me', 'on my shoulders', 'fell on me', 'more than my fair share', 'carry more than', 'left me holding', 'the one holding everything', 'carrying the household', 'do it all'],
+  load_bearer: ['carrying everyone', 'carry everyone', 'carry the load', 'carrying the load', 'held the financial', 'hold everything together', 'holding everything together', 'everyone leans on me', 'everyone needs me', 'on my shoulders', 'fell on me', 'more than my fair share', 'carry more than', 'left me holding', 'the one holding everything', 'carrying the household', 'do it all', 'sole breadwinner', 'breadwinner', 'sole earner', 'the only earner', 'paying all the bills', 'all the bills fell', 'carried us financially', 'kept us afloat', "didn't step up"],
 };
 
 // Map a member's free-text answer to one or more Doors (voice rewrite v1: members answer in their
@@ -98,7 +103,11 @@ export function matchDoors(message: string): DoorSlug[] {
   // (active-family season) own their load; The Load-Bearer is the catch-all for OTHER load, so it
   // yields to them — it never redundantly re-tags a load a specific Door already owns. (Genuine
   // multi-load is the model's call via record_progress; this is only the gap-only backstop matcher.)
-  if (found.has('load_bearer') && (found.has('aging_parents') || found.has('full_house'))) {
+  // EXCEPTION: an explicit FINANCIAL/breadwinner load is a load those Doors do NOT own — keep it even
+  // alongside them (rita: caring for a parent AND being the sole breadwinner are two distinct loads).
+  const STRONG_FINANCIAL_LOAD =
+    /\b(breadwinner|sole earner|the only earner|all the bills|paying all the bills|carried us financially|kept us afloat|held the financial)\b/.test(m);
+  if (found.has('load_bearer') && (found.has('aging_parents') || found.has('full_house')) && !STRONG_FINANCIAL_LOAD) {
     found.delete('load_bearer');
   }
   return DOORS.filter((d) => found.has(d.slug)).map((d) => d.slug);
