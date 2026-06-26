@@ -157,15 +157,46 @@ integration points (when the flow is end-to-end runnable).
   correction re-opens.
 - **b — gap stage + lighter Door posture.** `set_gap`/`note_door`, the forecast, the stage-scoped backstop.
   Replay fixtures: gap captured, Doors received (0/1/several), reclaim mentioned here → parked not gap.
-- **c — reclaim stage + re-surfacing.** `add_reclaim_item`, read-back of parked items. **Flow now end-to-end
-  → first live-eval gate** (full persona suite + 8× rita vs 50%).
-- **d — front-loader parking hardening + reconciliation backstop + the lighter holistic card.** **Second
-  live-eval gate.** **Cut-over criteria (all must hold):**
-  - **rita ≥ 7/8 (≥87%) clean** with the reclaim-as-gap category at **~0**;
-  - **front-loader persona passes a real parking bar (refinement 1)** — volunteered out-of-stage content
-    *parks AND re-surfaces, nothing dropped.* This is the one new model-reliability mechanism, so it's
-    **verified explicitly, never assumed under "suite clean";**
-  - `no-fade` still declines-or-honest, `terse` still clean.
+- **c — reclaim stage + re-surfacing.** `add_reclaim_item`, read-back of parked items, the stage-scoped
+  reclaim backstop (load-bearing — the eval proved the model under-tags wants). **Flow now end-to-end →
+  first live-eval gate.** **DONE (Jun 26).**
+
+### Gate 1 findings (Jun 26 2026) — staged engine **2/4 clean**, NOT ready to cut over
+
+The first live gate caught two scope-critical failures the offline fixtures cannot:
+
+| Persona | Result | Finding |
+|---|---|---|
+| rita | ✓ (stochastic) | 3 Doors + full gap + reclaim — when the model cooperates. Varies run-to-run. |
+| terse | ✓ | Clean — Runner, marriage Door, gap from his words. |
+| **no-fade** | ✗ | **Force-completed**: gap backstop grabbed ambition as a fade, reclaim backstop captured **21** goal-items. The decline guardrail is destroyed — *worse than v1 on the dimension that matters most.* |
+| **front-loader** | ✗ | **17** reclaim items; a **refusal** ("I'm not going to answer that again") captured as the gap. The fabrication bug returned in a new shape. |
+
+**Root cause:** the **`Stage 0` fade gate (§1) was never built** in a–c, and the backstops are **too greedy**
+(no cap, not close/refusal-aware on the gap side, accept forward-looking ambition as a fade). Without the
+gate, everyone enters identity→gap→reclaim and the backstops fill slots for people with nothing to fill them.
+
+### Decisions taken at Gate 1
+- **Sub-3 Reclaim completion — APPROVED (Jay, Jun 26):** a member who names <3 and signals done is **accepted**
+  (nudge once, then complete); the **card carries the shortfall**, post-onboarding/MA editing reaches the ~7
+  aim. This **relaxes the frozen ≥3 `runOnboarding` validation for the completion gate** (the aim stays ~7).
+  Supersedes the "hold ≥3 firm" reading. Record in the Decision Log.
+
+- **d (RESHAPED) — fade gate + backstop discipline + sub-3 completion + lighter holistic card.** **Second
+  live-eval gate.**
+  1. **Stage-0 fade gate** — the missing decline mechanism. The gap stage must capture a *real* fade; a
+     member with no loss/drift (ambition only) does **not** force through (no fabricated gap, no Door). The
+     member-facing decline copy/UX is the flagged **Jay+Greg** decision (`onboarding-open-issues.md` Issue 2);
+     the engine first just stops forcing completion.
+  2. **Backstop discipline** — cap list growth; make the **gap backstop offering-only** (it grabbed a
+     refusal); reject forward-looking ambition as a gap (`gapIsNarrative`/a new `isForwardAmbition`).
+  3. **Sub-3 completion** — per the decision above (soft-hold completes after the single nudge; relax the
+     validator).
+  4. **Door recall** — model under-tags `note_door` + `matchDoors` misses natural phrasing → Doors drop;
+     improve prompting and/or surface Doors on the card for confirmation.
+  - **Cut-over criteria (all must hold):** **no-fade DECLINES** (does not complete, no Door); **front-loader
+    parks + re-surfaces, no over-capture, no refusal-as-gap**; **rita ≥ 7/8 clean**; **terse clean**; reclaim-
+    as-gap ~0.
 
   Only then flip the flag default on and remove the old path.
 
