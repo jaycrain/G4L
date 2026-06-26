@@ -274,10 +274,17 @@ function memberClosingReclaim(message: string): boolean {
   return memberDeflecting(m) || confirmsWhole(m) || RECLAIM_CLOSE_RE.test(m);
 }
 
+// Every member message so far + the current one — the corpus we scan for Doors. rita reveals her Doors
+// PROGRESSIVELY (layoff one turn, the household load another, the parent's illness a third), so scanning only
+// the latest message drops the earlier ones. Identity-stage answers don't false-match (matchDoors is specific).
+function gapStageCorpus(history: ConvMessage[], current: string): string {
+  return [...history.filter((h) => h.role === 'member').map((h) => h.text), current].join(' ');
+}
+
 // --- THE STAGED ENGINE (pure, replayable) --------------------------------------------------------------
 export function applyStagedTurn(
   state: ConvState,
-  _history: ConvMessage[],
+  history: ConvMessage[],
   memberMessage: string,
   model: ModelTurn,
 ): Turn {
@@ -300,11 +307,19 @@ export function applyStagedTurn(
       if (stage === 'identity') {
         finalReply = REOPEN_IDENTITY;
       } else if (stage === 'gap') {
-        // Re-open the gap: clear the captured story (and the Doors derived from it) so the next gather
-        // re-captures the corrected account. Non-trapping — they retell, the card is the final seatbelt.
-        collected.gap = undefined;
-        collected.doors = [];
-        finalReply = REOPEN_GAP;
+        // "No, there's MORE" is the common case here, not "you got it wrong" — rita reveals progressively and
+        // says "not just the layoff." NEVER wipe what she gave: if this message is itself more fade narrative,
+        // APPEND it and re-derive Doors from the whole corpus, then re-reflect the fuller story. Only a short,
+        // pure dispute re-opens — and even then we keep the gap + Doors (the card is the final correction point).
+        const modelTaggedGap = model.record?.gap !== undefined && model.record.gap !== '';
+        if (modelTaggedGap || shouldCaptureStagedGap(memberMessage)) {
+          if (!modelTaggedGap) collected.gap = collected.gap ? `${collected.gap} ${memberMessage.trim()}` : memberMessage.trim();
+          collected.doors = augmentDoors(collected.doors ?? [], gapStageCorpus(history, memberMessage));
+          finalReply = reflectGap(modelText);
+          awaitingConfirm = true; // stay in confirm — they're still telling it
+        } else {
+          finalReply = REOPEN_GAP; // a short dispute — re-open, but keep the gap + Doors (never drop them)
+        }
       } else {
         // Reclaim correction — they want to change the list; stay in reclaim and keep gathering.
         finalReply = modelText && /\?/.test(modelText) ? modelText : RECLAIM_MORE;
@@ -342,16 +357,19 @@ export function applyStagedTurn(
     // reject it so a no-fade optimizer can't be force-completed (the model is instructed not to tag, but we
     // never trust the tag over the contract).
     if (collected.gap && !isRealFade(collected.gap)) collected.gap = undefined;
-    // Backstop: model conversed without tagging set_gap — capture their own message as the gap only if it's
-    // a real fade with a loss signal (shouldCaptureStagedGap; rejects ambition and refusals).
-    if (!collected.gap && shouldCaptureStagedGap(memberMessage)) collected.gap = memberMessage.trim();
+    // Backstop: when the model did NOT tag set_gap this turn, capture the member's own message as the gap if
+    // it's a real fade with a loss signal — and ACCUMULATE (append), so a progressive revealer's later chapters
+    // are never lost. (When the model DID tag, mergeStaged already holds its summary — don't double-append.)
+    const modelTaggedGap = model.record?.gap !== undefined && model.record.gap !== '';
+    if (!modelTaggedGap && shouldCaptureStagedGap(memberMessage)) {
+      collected.gap = collected.gap ? `${collected.gap} ${memberMessage.trim()}` : memberMessage.trim();
+    }
     if (collected.gap) {
-      // Door quality (lighter posture — receive, don't excavate): read any Doors out of the captured gap AND
-      // the member's own message. Their first-person words ("I was laid off", "my dad's health") match the
-      // aliases better than the model's third-person gap summary ("Her father…"), so scanning both lifts
-      // recall. 0/1/several are all valid; the stage NEVER gates on Door count; augmentDoors unions and never
-      // invents off empty text.
-      collected.doors = augmentDoors(collected.doors ?? [], `${collected.gap} ${memberMessage}`);
+      // Door quality (lighter posture — receive, don't excavate): scan the WHOLE gap-stage corpus (every
+      // member message so far), not just the latest — rita reveals her Doors across turns, and her first-person
+      // words match the aliases better than the model's third-person summary. augmentDoors unions and never
+      // invents off empty text; 0/1/several are all valid; the stage NEVER gates on Door count.
+      collected.doors = augmentDoors(collected.doors ?? [], gapStageCorpus(history, memberMessage));
       // Reflect the story back + forecast the dedicated Doors session, then await the member's confirm.
       finalReply = reflectGap(modelText);
       awaitingConfirm = true;

@@ -130,17 +130,37 @@ test('STAGED gap — backstop: model converses WITHOUT set_gap; engine captures 
   assert.deepEqual(turns[0]!.state.collected.doors, ['aging_parents'], 'Door still derived from the captured gap');
 });
 
-test('STAGED gap — a correction re-opens the stage and clears the mis-captured story (never traps)', () => {
+test('STAGED gap — a short dispute re-opens but NEVER wipes the gap or Doors (never drop what they gave)', () => {
   const atConfirm: ConvState = {
     stage: 'gap', awaitingConfirm: true,
     collected: { athleticPast: 'a cyclist', identityNoun: 'Athlete', gap: GAP_STORY, doors: ['aging_parents'] },
   };
-  const turn = applyStagedTurn(atConfirm, [], 'no, that’s not really how it went', { text: 'Okay.' });
-  assert.equal(turn.state.stage, 'gap', 'stays in the gap stage on a correction');
+  const turn = applyStagedTurn(atConfirm, [], 'no, that’s not quite right', { text: 'Okay.' });
+  assert.equal(turn.state.stage, 'gap', 'stays in the gap stage on a dispute');
   assert.equal(turn.state.awaitingConfirm, false, 'clears the pending confirm');
-  assert.equal(turn.state.collected.gap, undefined, 're-gathers the corrected account');
-  assert.deepEqual(turn.state.collected.doors, [], 'drops Doors derived from the wrong story');
+  assert.equal(turn.state.collected.gap, GAP_STORY, 'KEEPS the gap (the card is the correction point, not a wipe)');
+  assert.deepEqual(turn.state.collected.doors, ['aging_parents'], 'keeps the Doors too');
   assert.match(turn.reply, /get this right|how it really went/i);
+});
+
+test('STAGED gap — "there’s more" APPENDS the next chapter + accumulates Doors across turns (no wipe, no loop)', () => {
+  // Progressive revelation (rita): layoff captured, reflected; she says "there's more" and adds the parent-care
+  // chapter. It must APPEND and pick up aging_parents — not wipe the layoff or loop the opening question.
+  const atConfirm: ConvState = {
+    stage: 'gap', awaitingConfirm: true,
+    collected: { athleticPast: 'a leader', identitySkipped: true, gap: 'I was laid off after twelve years right before a promotion.', doors: ['career_cliff'] },
+  };
+  const history: ConvMessage[] = [
+    { role: 'member', text: 'I was laid off after twelve years right before a promotion.' },
+    { role: 'agent', text: 'reflected the layoff…' },
+  ];
+  const more = 'No, there’s more — around the same time my father went into a coma and I became his caregiver, and my mother got sick too.';
+  const turn = applyStagedTurn(atConfirm, history, more, { text: 'Thank you for telling me the rest.' });
+  assert.match(turn.state.collected.gap!, /laid off/, 'kept the layoff chapter');
+  assert.match(turn.state.collected.gap!, /coma|caregiver/, 'appended the parent-care chapter');
+  assert.ok(turn.state.collected.doors!.includes('career_cliff'), 'kept career_cliff');
+  assert.ok(turn.state.collected.doors!.includes('aging_parents'), 'picked up aging_parents from the new chapter');
+  assert.equal(turn.state.awaitingConfirm, true, 're-reflects the fuller story — no loop on the opening question');
 });
 
 test('STAGED gap — a short wrap/affirm message does NOT get grabbed as the gap (backstop guard)', () => {
