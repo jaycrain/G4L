@@ -60,6 +60,9 @@ to engineer around. (See `docs/onboarding-open-issues.md` Issue 2.)
 
 The conversational surfaces (onboarding capture, the agents) are fuzzy by nature — the model will
 always get some captures wrong. What keeps them reliable over time is **discipline, not vigilance**.
+**Start at `docs/onboarding.md`** — the canonical map (the load-bearing "why," the architecture, the
+invariants, the failure-shapes, the runbook). The bar every onboarding decision traces back to:
+**never drop what they gave you · never assume past what they said · always be correctable.**
 Hold these, especially as we scale (Charter → ~1,000 members):
 
 - **Fix the pattern, not the symptom.** When a capture bug appears, ask: is this a *new* shape or
