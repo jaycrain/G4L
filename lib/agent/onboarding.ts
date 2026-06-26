@@ -17,7 +17,9 @@ import { cleanIdentityNoun, displayIdentityNoun, identityLabel } from '../member
 import { RECLAIM_LIST_MIN, RECLAIM_LIST_TARGET } from '../member/reclaim.ts';
 import { contractMet, gapIsNarrative } from './onboarding-contract.ts';
 
-export type Stage = 'identity' | 'identity_name' | 'reclaim' | 'door' | 'complete';
+export type Stage = 'identity' | 'identity_name' | 'reclaim' | 'door' | 'complete'
+  // v2.0 staged-capture engine (lib/agent/onboarding-staged.ts) uses 'gap' for the "how it opened" stage.
+  | 'gap';
 
 export type Collected = {
   athleticPast?: string; // Step 1: the past self, in the member's own words
@@ -41,6 +43,7 @@ export type ConvState = {
   pendingDoorConfirm?: DoorSlug | null; // a Door the engine surfaced for confirmation, awaiting the member's answer
   declinedDoors?: DoorSlug[]; // Doors the member set aside when asked — never re-surfaced
   awaitingMore?: boolean; // the member said the fade story isn't finished — hold (no complete) until they close it
+  awaitingConfirm?: boolean; // v2.0 staged engine: the current stage's capture has been reflected; awaiting confirm
 };
 export type ConvMessage = { role: 'agent' | 'member'; text: string };
 export type Ctx = { name: string; email: string };
@@ -385,6 +388,7 @@ const STAGE_PROMPT: Record<Stage, string> = {
   identity_name: 'If you put that person in a single word — the Runner, the Writer, the Builder — what is the word?',
   reclaim: `What are a few things you want back? Three to start, more if they keep coming.`,
   door: doorPrompt(),
+  gap: doorPrompt(), // v1 never sets 'gap' (that's the v2.0 staged engine) — present only for type completeness
   complete: "That's everything we need. Let's look at where you're starting from next.",
 };
 
@@ -404,8 +408,13 @@ export async function onboardingNextTurn(args: {
   history: ConvMessage[];
   memberMessage: string | null;
 }): Promise<Turn> {
+  // v2.0 staged-capture engine — selected by ONBOARDING_ENGINE=staged (off by default; v1 serves prod until
+  // cut-over). Dynamically imported so onboarding-staged.ts can statically import this module without a cycle.
+  const staged = process.env.ONBOARDING_ENGINE === 'staged';
+
   // Opening turn: the AI disclosure (verbatim) + the first question, always engine-owned.
   if (args.memberMessage === null) {
+    if (staged) return (await import('./onboarding-staged.ts')).stagedOpening();
     return { reply: OPENING_REPLY, state: INITIAL_STATE, complete: false };
   }
   // Governance first, every member turn.
@@ -418,6 +427,15 @@ export async function onboardingNextTurn(args: {
     // that can't read the live context and just re-asks its stage prompt — which stranded the Door
     // beat in a "won't take yes for an answer" loop. Surface the failure instead; the client rolls
     // back and lets the member resend, state preserved, and the next attempt hits the live engine.
+    if (staged) {
+      const s = await import('./onboarding-staged.ts');
+      try {
+        return await s.liveTurnStaged(args.ctx, args.history, args.state, args.memberMessage);
+      } catch (e) {
+        console.warn('onboarding(staged): live turn failed —', (e as Error).message);
+        throw e;
+      }
+    }
     try {
       return await liveTurn(args.ctx, args.history, args.state, args.memberMessage);
     } catch (e) {
