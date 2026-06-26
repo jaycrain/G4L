@@ -148,11 +148,13 @@ test('conversational onboarding drives to completion and persists end-to-end', a
   assert.ok((dash?.reclaimList.length ?? 0) >= 3);
 });
 
-test('onboarding rejects a Reclaim List below the minimum', async () => {
+test('onboarding completes a sub-3 Reclaim List (Gate-1 floor decision: card carries the shortfall)', async () => {
+  // FLOOR (Jay+Greg, Jun 26): >=3 is the soft AIM, not the hard finalize floor. A two-item list now
+  // completes — the confirmation card carries the shortfall; post-onboarding/MA editing reaches the aim.
   const db = await freshDb();
-  const res = await runOnboarding(db, scriptedProvider, {
-    ...validOnboarding,
-    reclaimList: ['only', 'two'],
-  });
-  assert.equal(res.ok, false);
+  const ok2 = await runOnboarding(db, scriptedProvider, { ...validOnboarding, reclaimList: ['only', 'two'] });
+  assert.equal(ok2.ok, true);
+  // An EMPTY list is still rejected — at least one real, member-stated want (RECLAIM_LIST_FLOOR = 1).
+  const empty = await runOnboarding(db, scriptedProvider, { ...validOnboarding, email: 'empty@example.com', reclaimList: [] });
+  assert.equal(empty.ok, false);
 });
