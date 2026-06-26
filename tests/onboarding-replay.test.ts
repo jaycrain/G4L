@@ -242,6 +242,31 @@ test('REPLAY — Leg 3 reconciliation: a Door the member raised but the model dr
   assertInvariants(turns);
 });
 
+test('REPLAY — Leg 3 / Part B: a Door recognized earlier in the beat survives a later fumbled record (accumulate, not replace)', () => {
+  // Ree's run: the model recognized THREE Doors out loud (Career Cliff, Load-Bearer, Aging Parents), then
+  // its final record carried a different two — and a replace-merge dropped the recognized ones, so the card
+  // showed fewer Doors than the conversation established. Doors must ACCUMULATE: a later record may add a
+  // (wrong) Door, but can never silently drop one already recognized.
+  const atDoor: ConvState = {
+    stage: 'door', doorAsked: true, doorBeatFromIndex: 0,
+    collected: { athleticPast: 'a leader', identitySkipped: true, reclaimList: ['design work', 'the podcast', 'lose 20 lbs'] },
+  };
+  const { finalState } = replay(
+    [
+      // Turn 1: the model recognizes and records all three real Doors.
+      { member: 'I was laid off at 57. I’d carried us financially for years while my husband was out of work, and around then I was also caring for my aging mother.',
+        model: { text: 'Three Doors stacked here.', record: { gap: 'Laid off at 57 after carrying the household financially for years while her husband was out of work, around the same time her mother’s health declined.', doors: ['career_cliff', 'load_bearer', 'aging_parents'] } } },
+      // Turn 2: the final record FUMBLES — drops two recognized Doors, adds a wrong one.
+      { member: 'That’s the whole of it.', model: { text: 'Okay.', record: { doors: ['career_cliff', 'loss'], complete: true } } },
+    ],
+    atDoor,
+  );
+  const doors = finalState.collected.doors ?? [];
+  assert.ok(doors.includes('career_cliff'), 'kept');
+  assert.ok(doors.includes('load_bearer'), 'a recognized Door is NOT dropped by a later record');
+  assert.ok(doors.includes('aging_parents'), 'a recognized Door is NOT dropped by a later record');
+});
+
 test('REPLAY — Leg 3 reconciliation: a declined Door is set aside (never recorded) and the intake still completes', () => {
   const { turns, finalState } = replay(
     [

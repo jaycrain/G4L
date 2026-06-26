@@ -197,9 +197,22 @@ caught → confirmed in her words → recorded) and a decline fixture (set aside
 completes). Reconstructed synthetically (her real transcript is deleted on completion — see dev-todo).
 tsc clean; replay 8/0, onboarding 29/0.
 
-### Part B — still open (the last Leg-3 piece)
+### Part B — partly shipped (the last Leg-3 piece)
 
-- **Structured capture tools.** Replace the monolithic `record_progress` with `set_identity` /
+**Shipped Jun 26 — Doors accumulate, never replace.** ree/rita's run exposed it: the model recognized
+three Doors out loud (Career Cliff, Load-Bearer, Aging Parents) and the member affirmed them, then its
+final `record_progress` carried a different two — and the door merge **replaced** `collected.doors` with
+the model's latest set, dropping the recognized ones (the card showed fewer Doors than the conversation).
+Fix: the merge now UNIONs each turn's recorded Doors with what's already there (`applyModelTurn`), so a
+later record can add but can't silently drop a recognized Door; removal only happens on an explicit member
+dispute/decline; `correctDoors` still fixes mislabels; the card backstops. Engine-side + replay-tested
+(fixture: a Door recognized in turn 1 survives a fumbled turn-2 record). This is the lowest-risk slice of
+Part B's intent — no live tool-schema change.
+*Caveat:* this fixes "recognized then dropped." If a future run shows the model SPEAK a Door it never
+recorded at all, the next layer is reconciling the agent's own spoken-and-affirmed Doors into `collected`.
+And "The Loss" on rita's card is a separate *accuracy* mis-tag (her dad nearly died, didn't) — not this.
+
+**Still open — structured capture tools.** Replace the monolithic `record_progress` with `set_identity` /
   `add_reclaim_item` / `set_gap` / `set_doors` so capture is deliberate per field and `collected` is the
   single source of truth (read back when summarizing — "added to your list" true by construction).
   `parseModelTurn` merges the calls into the same record shape, so the engine and every fixture stay

@@ -697,7 +697,14 @@ export function applyModelTurn(
   // question). On the entry turn the gap can come only from the member's OWN words (the backstop below) —
   // never the model — so a paraphrased Reclaim item can never be promoted to the fade story.
   if (inDoorBeat && modelGap !== undefined) collected = { ...collected, gap: modelGap };
-  if (inDoorBeat && modelDoors && modelDoors.length > 0) collected = { ...collected, doors: modelDoors };
+  // Doors ACCUMULATE, never replace: a Door the model recognized earlier in the beat must survive a later
+  // (fumbled) record. Ree's run — the model named three Doors out loud (Career Cliff, Load-Bearer, Aging
+  // Parents), then its final record carried a different two, and a replace dropped the recognized ones.
+  // A later record may ADD; a Door only LEAVES on an explicit member dispute/decline (handled below).
+  // correctDoors still fixes mislabels; the confirmation card is the member's final backstop.
+  if (inDoorBeat && modelDoors && modelDoors.length > 0) {
+    collected = { ...collected, doors: Array.from(new Set<DoorSlug>([...(collected.doors ?? []), ...modelDoors])) };
+  }
 
   // GAP-CAPTURE BACKSTOP: the model is the primary recorder, but it sometimes CONVERSES and reflects the
   // fade without ever persisting it via record_progress. Donna told her whole story across several turns,
