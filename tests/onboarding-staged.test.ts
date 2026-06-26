@@ -178,6 +178,21 @@ test('STAGED gap — "there’s more" APPENDS the next chapter + accumulates Doo
   assert.equal(turn.state.awaitingConfirm, true, 're-reflects the fuller story — no loop on the opening question');
 });
 
+test('STAGED gap — a terse fragment with a clear Door IS captured (never strand a terse member)', () => {
+  const atGap: ConvState = { stage: 'gap', collected: { athleticPast: 'a runner', identityNoun: 'Runner' } };
+  // terse: the whole fade is "Knee. Then divorce." (19 chars — below the narrative floor) but it names a Door.
+  const { turns } = replayStaged(
+    [
+      { member: 'Knee. Then divorce.', model: { text: 'That’s a lot to carry.' } }, // no set_gap tag → backstop
+      { member: 'That’s it.', model: { text: 'Okay.' } }, // whole → reflect
+    ],
+    atGap,
+  );
+  assert.equal(turns[0]!.state.collected.gap, 'Knee. Then divorce.', 'captured the terse fragment via its Door signal');
+  assert.ok(turns[0]!.state.collected.doors!.includes('marriage'), 'divorce → The Marriage');
+  assert.equal(turns[1]!.state.awaitingConfirm, true, 'reflects once whole — does not strand on the opening question');
+});
+
 test('STAGED gap — a short wrap/affirm message does NOT get grabbed as the gap (backstop guard)', () => {
   const atGap: ConvState = { stage: 'gap', collected: { athleticPast: 'a runner', identityNoun: 'Runner' } };
   const { turns } = replayStaged([{ member: 'yeah, let’s move on', model: { text: 'Take your time — how did it open?' } }], atGap);

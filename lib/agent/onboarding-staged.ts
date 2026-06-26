@@ -246,10 +246,14 @@ function mergeStaged(prev: Collected, rec?: Partial<Collected>): Collected {
 const STAGED_GAP_MIN_CHARS = 80;
 function shouldCaptureStagedGap(message: string): boolean {
   const m = (message ?? '').trim();
-  if (memberDeflecting(m) || isAffirmation(m)) return false; // never grab a wrap OR a refusal as the gap
+  if (memberDeflecting(m) || isAffirmation(m) || isForwardAmbition(m)) return false; // never grab a wrap/refusal/ambition
+  // A clear Door signal IS a fade even in a terse fragment ("Knee. Then divorce." → The Marriage). Capture it
+  // regardless of length — otherwise a terse member's whole story (under the char floor) is never captured and
+  // they strand. matchDoors is specific, so this fires only on a real recognized event, not noise.
+  if (matchDoors(m).length > 0) return true;
+  // Otherwise an inferred gap must be a substantial real-fade narrative WITH a loss signal — this is what stops
+  // a no-fade optimizer's ambition ("pressure-test my SaaS idea") from being backstopped as a fade.
   if (m.length < STAGED_GAP_MIN_CHARS) return false;
-  // Stricter than the model's tag: an inferred gap must read as a real fade AND carry a loss signal. This is
-  // what stops a no-fade optimizer's ambition ("pressure-test my SaaS idea") from being backstopped as a fade.
   return isRealFade(m) && hasLossSignal(m);
 }
 
@@ -370,10 +374,10 @@ export function applyStagedTurn(
       else finalReply = identityTurns >= IDENTITY_SKIP_OFFER_AFTER ? SKIP_OFFER : NAME_PROMPT;
     }
   } else if (stage === 'gap') {
-    // FADE GATE. A model-tagged gap that is actually forward-looking ambition (no loss) is NOT a fade —
-    // reject it so a no-fade optimizer can't be force-completed (the model is instructed not to tag, but we
-    // never trust the tag over the contract).
-    if (collected.gap && !isRealFade(collected.gap)) collected.gap = undefined;
+    // FADE GATE. A captured gap that is actually forward-looking ambition (no loss) is NOT a fade — reject it
+    // so a no-fade optimizer can't be force-completed (we never trust the tag over the contract). Reject on
+    // AMBITION specifically, not on shortness — a terse but real fade ("Knee. Then divorce.") must survive.
+    if (collected.gap && isForwardAmbition(collected.gap)) collected.gap = undefined;
     // Backstop: when the model did NOT tag set_gap this turn, capture the member's own message as the gap if
     // it's a real fade with a loss signal — and ACCUMULATE (append), so a progressive revealer's later chapters
     // are never lost. (When the model DID tag, mergeStaged already holds its summary — don't double-append.)
