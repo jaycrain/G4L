@@ -95,7 +95,10 @@ const meta = (
 export const CURRICULUM: Asset[] = [
   // ── Reconnect ── (Sessions authored from the framework; the IDQ is a measurement; the Checkpoint is the firm gate)
   ...RECONNECT_SESSIONS,
-  meta('RCN-IDQ', 'The IDQ', 'reconnect', 'Recognition', 'measurement', 2, 'The mirror — your starting read across four dimensions. Retakes every 60 days.', { produces: 'your ID Score (baseline measurement)' }),
+  // v2.0: the baseline IDQ sits immediately BEFORE the Reconnect Checkpoint (order 7.5, after the generative
+  // sessions) — earned after the work and primed, not taken cold at the door. The Checkpoint already gates on
+  // it (readiness `reconnect_core_complete` requires idqDone).
+  meta('RCN-IDQ', 'The IDQ', 'reconnect', 'Recognition', 'measurement', 7.5, 'The mirror — your starting read across four dimensions, right before your first Checkpoint. Retakes every 60 days.', { produces: 'your ID Score (baseline measurement)' }),
   IDENTITY_EXCAVATION,
   meta('RCN-CHK', 'The Reconnect Checkpoint', 'reconnect', 'Checkpoint', 'checkpoint', 8, 'The reconnection milestone — have you found yourself? Firm gate; opens Rewire.', { close_type: 'milestone', earns: 'reconnect-milestone', gating: 'reconnect_core_complete' }),
   // ── Rewire ── (Sessions authored from the framework; the Checkpoint is a soft gate)

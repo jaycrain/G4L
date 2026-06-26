@@ -204,12 +204,12 @@ export default function OnboardingChat() {
       // onboarding (refresh / returning device) re-enters straight into the conversation and skips the
       // gate, so `password` is empty here. Account creation must NOT depend on that in-memory value
       // surviving a resume: only attempt inline setup when we actually hold a valid password; otherwise
-      // hand off to the dedicated set-password step, which creates the credential, starts the session,
-      // and continues to the IDQ. (Empty-password inline setup is what stranded a completed member at
-      // "log in again.")
+      // hand off to the dedicated set-password step, which creates the credential and starts the session.
+      // v2.0: land on the DASHBOARD (the Threshold Ceremony, no score yet) — the IDQ is now taken inside
+      // Reconnect, right before the first Checkpoint, not at the door.
       if (password.length >= 8) {
         const saved = await setupAction(r.memberId, password);
-        router.push(saved.ok ? `/idq?member=${r.memberId}` : `/account/setup?member=${r.memberId}`);
+        router.push(saved.ok ? `/dashboard/${r.memberId}` : `/account/setup?member=${r.memberId}`);
       } else {
         router.push(`/account/setup?member=${r.memberId}`);
       }

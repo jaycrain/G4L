@@ -19,13 +19,15 @@ export default function ProgramMap({ memberId, phases }: { memberId: string; pha
           {ph.items.map((it) =>
             it.state === 'current' ? (
               <div className="litrow" key={it.id}>
-                <div className="littag">{it.kind === 'checkpoint' ? '⚑ Checkpoint' : '▶ Next Session'}</div>
+                <div className="littag">{it.kind === 'checkpoint' ? '⚑ Checkpoint' : it.id === 'RCN-IDQ' ? '◉ Questionnaire' : '▶ Next Session'}</div>
                 <div className="littitle">{it.title}</div>
                 {it.hook && <div className="lithook">{it.hook}</div>}
                 {!it.openable ? (
                   <span className="open open-soon">Coming soon</span>
                 ) : it.kind === 'checkpoint' ? (
                   <Link className="open" href={`/checkpoint/${memberId}/${it.id}`} prefetch={false}>Cross this Checkpoint →</Link>
+                ) : it.id === 'RCN-IDQ' ? (
+                  <Link className="open" href={`/idq?member=${memberId}`} prefetch={false}>Take the IDQ →</Link>
                 ) : (
                   <Link className="open" href={`/session/${memberId}/${it.id}`} prefetch={false}>Open this Session →</Link>
                 )}

@@ -257,7 +257,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
         ) : (
           <div className="card metric id-card" data-tour="idscore">
             <h3>ID Score</h3>
-            <div className="metric-body"><p className="muted">Your Identity Distance Questionnaire (IDQ) baseline isn&apos;t in yet.</p></div>
+            <div className="metric-body"><p className="muted">Your ID Score appears after your first questionnaire — coming before your first checkpoint.</p></div>
             <Link href={`/score/${memberId}`} className="see-more">See more →</Link>
           </div>
         )}

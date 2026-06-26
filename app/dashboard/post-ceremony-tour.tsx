@@ -44,7 +44,7 @@ export default function PostCeremonyTour({
         : `Your path — Reconnect, Rewire, Rebuild, Reclaim. Your next step lights up here.`,
     },
     { target: 'daily', line: 'Your Daily Beat — the heartbeat between Sessions. One thought, one small move, every day.' },
-    { target: 'idscore', line: 'Your ID Score — the mirror. How far the gap runs, and the climb back.' },
+    { target: 'idscore', line: 'Your ID Score — the mirror. You’ll get your first read a bit further in, from a short questionnaire, right before your first checkpoint. After that, it shows how far the gap runs and the climb back.' },
     { target: 'reclaim', line: "Your Reclaim List — what you're bringing back. The goals the work points at." },
     { target: 'doors', line: doorsLine },
   ];

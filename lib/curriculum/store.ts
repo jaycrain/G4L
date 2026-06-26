@@ -133,3 +133,10 @@ export async function hasGate(db: Db, memberId: string, gate: string): Promise<b
   const { rows } = await db.query<{ one: number }>('select 1 as one from phase_gate where member_id=$1 and gate=$2', [memberId, gate]);
   return rows.length > 0;
 }
+
+// Has the member taken the IDQ at least once (a baseline ID Score exists)? Drives the IDQ's done-state in the
+// curriculum forecast (v2.0: the IDQ sits before the Reconnect Checkpoint instead of being taken at the door).
+export async function hasIdqBaseline(db: Db, memberId: string): Promise<boolean> {
+  const { rows } = await db.query<{ one: number }>('select 1 as one from idq_retake where member_id=$1 and cycle_indicator=1 limit 1', [memberId]);
+  return rows.length > 0;
+}

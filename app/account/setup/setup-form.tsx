@@ -21,7 +21,7 @@ export default function SetupForm({ memberId, email }: { memberId: string; email
     setPending(true);
     setError(null);
     const r = await setupAction(memberId, password);
-    if (r.ok) router.push(`/idq?member=${memberId}`);
+    if (r.ok) router.push(`/dashboard/${memberId}`); // v2.0: land on the dashboard (Ceremony); IDQ is in Reconnect now
     else if (r.code === 'exists') router.push('/login'); // already has a password — send them to log in, don't strand
     else {
       setError(r.error ?? 'Could not save your password.');

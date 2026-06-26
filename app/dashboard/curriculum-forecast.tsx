@@ -29,13 +29,15 @@ export default function CurriculumForecast({ memberId, forecast }: { memberId: s
 
       {cur ? (
         <div className="litrow" data-tour="next-step">
-          <div className="littag">{cur.kind === 'checkpoint' ? '⚑ Checkpoint' : '▶ Next Session'}</div>
+          <div className="littag">{cur.kind === 'checkpoint' ? '⚑ Checkpoint' : cur.id === 'RCN-IDQ' ? '◉ Questionnaire' : '▶ Next Session'}</div>
           <div className="littitle">{cur.title}</div>
           {cur.summary && <div className="lithook">{cur.summary}</div>}
           {!cur.openable ? (
             <span className="open open-soon">Coming soon</span>
           ) : cur.kind === 'checkpoint' ? (
             <Link className="open" href={`/checkpoint/${memberId}/${cur.id}`} prefetch={false}>Cross this Checkpoint →</Link>
+          ) : cur.id === 'RCN-IDQ' ? (
+            <Link className="open" href={`/idq?member=${memberId}`} prefetch={false}>Take the IDQ →</Link>
           ) : (
             <Link className="open" href={`/session/${memberId}/${cur.id}`} prefetch={false}>Open this Session →</Link>
           )}
