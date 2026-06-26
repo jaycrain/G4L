@@ -6,6 +6,24 @@ context to resume cold. Add to the top; move to "Done" or delete when shipped.
 
 ---
 
+## Onboarding — the captured gap is in third person, not the member's voice
+**Status:** small voice-polish bug, surfaced in a clean test run (ford@ford.com, Jun 25 2026). Not the
+capture-correctness bug (that's fixed by Leg 3 / Part A) — the gap is captured *faithfully*, just phrased
+wrong.
+**Symptom:** the confirmation card's **HOW THE GAP OPENED** rendered the fade story in third person —
+*"the schedule expanded, most of it falling to **him** without **his wife** sharing the load… **his mom's**
+health started declining."* It should be in the member's own voice (second person — "you / your wife / your
+mom"), since the card reads it back to the member and the agent reuses `collected.gap` elsewhere.
+**Where / likely source:** the live model records `gap` as a third-person *summary* of the member's story
+(`record_progress` in `lib/agent/onboarding.ts`). The backstop path captures the member's verbatim message
+(first person), so the third person is specifically the model paraphrasing.
+**Fix direction:** instruct the model (in `ONBOARDING_SYSTEM`) to record `gap` in the member's own voice —
+second person ("you…") — not a third-person narration. Cheapest at capture time; alternatively normalize
+on render, but capture-time is cleaner since `gap` is reused. Add a replay/contract assertion if practical.
+**Definition of done:** a captured gap reads back to the member in their own voice on the card.
+
+---
+
 ## Connect — complete the "Your Accountability" loop
 **Status:** scaffolded, not a finished feature. Display + check-in recording work; the loop doesn't.
 **Where:** `lib/connect/store.ts` (`getAccountability`), `lib/connect/write.ts` (`checkInPact`),
