@@ -548,10 +548,13 @@ function answeredLabel(closeType: CloseType, response: string): string {
 export async function getBeatHistory(db: Db, memberId: string, limit = 30): Promise<PastBeat[]> {
   const rows = (
     await db.query<{ beat_id: string; close_type: CloseType; close_response: string | null; completed_at: unknown }>(
+      // ctid desc breaks ties on completed_at (two Beats closed in the same instant would otherwise sort
+      // non-deterministically). beat_completion is append-only, so ctid = insertion order = "most recent
+      // first," matching the display intent.
       `select beat_id, close_type, close_response, completed_at
        from beat_completion
        where member_id=$1 and coalesce(close_response,'') not in ('onboarding','self_marked')
-       order by completed_at desc limit $2`,
+       order by completed_at desc, ctid desc limit $2`,
       [memberId, limit],
     )
   ).rows;
