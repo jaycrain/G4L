@@ -285,6 +285,15 @@ test('STAGED gap — the "was there more?" nudge NEVER repeats verbatim across c
   assert.match(turns[0]!.reply, /more|heart of/i, 'still a real "is there more?" gather prompt');
 });
 
+test('STAGED — general no-verbatim-repeat guard: a static opener/nudge is never emitted twice in a row', () => {
+  // The eval's repeat-detector caught STAGED_OPENING (identity) and gapOpen re-emitting verbatim when a member
+  // stalls. The engine-level guard must vary ANY line that would equal the last agent reply.
+  const opener = stagedOpening().reply;
+  const t = applyStagedTurn({ stage: 'identity', collected: {} }, [{ role: 'agent', text: opener }], 'hmm, not sure', { text: 'Mm.' });
+  assert.notEqual(t.reply, opener, 'does not repeat the opener verbatim');
+  assert.match(t.reply, /most like yourself/i, 'still carries the identity prompt (varied, not lost)');
+});
+
 test('STAGED gap — a short dispute re-opens but NEVER wipes the gap or Doors (never drop what they gave)', () => {
   const atConfirm: ConvState = {
     stage: 'gap', awaitingConfirm: true,

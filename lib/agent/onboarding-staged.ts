@@ -583,11 +583,28 @@ export function applyStagedTurn(
     complete = true;
   }
 
+  // GENERAL no-verbatim-repeat guard (the abstraction, not the instance): never emit the exact line we just
+  // said. A static opener/nudge falling through twice — STAGED_OPENING after the opening, gapOpen while
+  // gathering, GAP_MORE/RECLAIM_MORE — reads as a broken loop and breaks the bar's "never repeat verbatim".
+  // GAP_MORE already rotates; this catches every other static fallback in one place. We prepend a short
+  // rotating, warm lead so it varies without losing the line's intent. (Only mid-conversation, never on
+  // completion or a confirm.)
+  if (!complete && !awaitingConfirm && finalReply === lastAgentReply(history)) {
+    const leads = ['Take whatever time you need.', 'No rush at all.', "Whenever you're ready.", "There's no wrong way in."];
+    finalReply = `${leads[history.length % leads.length]} ${finalReply}`;
+  }
+
   return {
     reply: finalReply,
     state: { stage, collected, awaitingConfirm, identityTurns, reclaimNudged, gapTurns, noFade },
     complete,
   };
+}
+
+// The most recent thing the agent said — for the no-verbatim-repeat guard.
+function lastAgentReply(history: ConvMessage[]): string | undefined {
+  for (let i = history.length - 1; i >= 0; i--) if (history[i]!.role === 'agent') return history[i]!.text;
+  return undefined;
 }
 
 // --- the public staged turn (opening + governance handled by onboardingNextTurn) -----------------------

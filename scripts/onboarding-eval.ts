@@ -104,6 +104,28 @@ Respond as Dana, warm and a little breathless, a few sentences at a time.`,
       return out;
     },
   },
+  {
+    name: 'follow-on',
+    // Reproduces the live-walk bug (Jun 26): a member who answers the "was there more?" gather with BRIEF,
+    // PARTIAL new threads ("my marriage too", "my marriage") — the pattern that made the static gather line
+    // loop verbatim. Tests: rotated nudge (no verbatim repeat — the general guard), the brief threads get
+    // captured (their Doors), and it completes.
+    system: `You are role-playing "Marcus", a 55-year-old who answers in SHORT, partial follow-ons — never a
+full paragraph. Reveal your story in fragments, one at a time, and when the guide asks "was there more?",
+add ONE more brief thread (2-6 words), sometimes just repeating/trimming the last one.
+- At your best: a triathlete — disciplined, up before dawn, "the Ironman". If asked for one word: "Ironman."
+- How it opened, given only in fragments across several "was there more?" turns: a back injury stopped training;
+  then "my marriage got stressed too"; then just "my marriage"; then "work got heavy"; then "that's about it."
+- Want back (brief): "train again", "my mornings", "feel strong".
+Keep every message short. Do not elaborate or summarize.`,
+    expect: (c, done) => {
+      const out: string[] = [];
+      if (!done) out.push('follow-on stranded — did not complete (brief-thread gather looped)');
+      // He clearly raised the body/injury + marriage threads; capturing nothing is a real miss (sub-min is fine).
+      if (done && (c.doors?.length ?? 0) === 0 && (c.gap ?? '').length < 20) out.push('captured no Door and only a thin gap from his threads');
+      return out;
+    },
+  },
 ];
 
 async function member(system: string, history: ConvMessage[]): Promise<string> {
@@ -151,6 +173,16 @@ async function runPersona(p: Persona): Promise<boolean> {
   const c = state.collected;
   const memberText = history.filter((h) => h.role === 'member').map((h) => h.text).join(' \n ');
   const issues = p.expect(c, turn.complete, memberText);
+  // GENERAL GUARD (all personas): the agent must never repeat a reply VERBATIM — a canned gather line looping
+  // word-for-word is the bug the `follow-on` persona reproduces (live walk, Jun 26). Catch it for everyone so
+  // this whole class can't hide from the eval again.
+  const agentReplies = history.filter((h) => h.role === 'agent').map((h) => h.text);
+  for (let i = 1; i < agentReplies.length; i++) {
+    if (agentReplies[i] && agentReplies[i] === agentReplies[i - 1]) {
+      issues.push(`agent repeated a reply VERBATIM: "${agentReplies[i]!.slice(0, 60)}…"`);
+      break;
+    }
+  }
   const turns = history.filter((h) => h.role === 'member').length;
   console.log(`\n### ${p.name} — ${issues.length ? '⚠ ' + issues.length + ' concern(s)' : '✓ clean'}  (member turns: ${turns}, complete: ${turn.complete})`);
   console.log('   doors  :', JSON.stringify(c.doors ?? []));
