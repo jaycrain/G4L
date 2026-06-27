@@ -72,7 +72,10 @@ const DOOR_ALIASES: Partial<Record<DoorSlug, string[]>> = {
 // own words; the agent maps silently). Matches by slug, full/short display name, or a 1–8 number;
 // returns canonical-ordered, de-duplicated slugs. Empty array means nothing recognized → re-ask.
 export function matchDoors(message: string): DoorSlug[] {
-  const m = (message || '').toLowerCase();
+  // Normalize curly apostrophes → straight, so aliases written with ' ("didn't step up") match the model's
+  // curly output ("didn’t step up"). This silently dropped load_bearer for rita (her financial-load phrasing
+  // never matched, so the precedence rule deleted it alongside aging_parents).
+  const m = (message || '').toLowerCase().replace(/[‘’]/g, "'");
   const found = new Set<DoorSlug>();
   // Numbered selection ("5", "1 and 3") maps to a Door by position — but ONLY when the whole message
   // IS a numeric pick. Otherwise an incidental number in prose ("3 walks a week", "lose 30 lbs") gets
@@ -105,8 +108,10 @@ export function matchDoors(message: string): DoorSlug[] {
   // multi-load is the model's call via record_progress; this is only the gap-only backstop matcher.)
   // EXCEPTION: an explicit FINANCIAL/breadwinner load is a load those Doors do NOT own — keep it even
   // alongside them (rita: caring for a parent AND being the sole breadwinner are two distinct loads).
+  // A financial/spousal load is one Aging Parents / Full House do NOT own. Includes the explicit breadwinner
+  // language AND a partner abdicating the share (the load fell to me) — both clearly distinct from parent-care.
   const STRONG_FINANCIAL_LOAD =
-    /\b(breadwinner|sole earner|the only earner|all the bills|paying all the bills|carried us financially|kept us afloat|held the financial)\b/.test(m);
+    /\b(breadwinner|sole (earner|provider)|the only earner|all the bills|paying all the bills|carried us financially|kept us afloat|held the financial|did(n'?t| not) step up|wouldn'?t step up|savings (are |were |is )?(gone|going|wiped)|house (is |was )?at risk|lose the house|losing the house)\b/.test(m);
   if (found.has('load_bearer') && (found.has('aging_parents') || found.has('full_house')) && !STRONG_FINANCIAL_LOAD) {
     found.delete('load_bearer');
   }

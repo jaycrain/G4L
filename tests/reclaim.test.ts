@@ -66,7 +66,13 @@ test('matchDoors maps free text to one or more Doors in canonical order', () => 
     ['career_cliff', 'aging_parents', 'load_bearer'],
   );
   // Guard: the new parent-health aliases stay parent-anchored — a passing "my father's birthday" must NOT tag.
-  assert.equal(matchDoors('I want more time for my father’s birthday party').includes('aging_parents'), false);
+  assert.equal(matchDoors('I want more time for my father birthday party').includes('aging_parents'), false);
+  // rita's DISTINCT dual load: parent-care AND a financial/spousal load ("husband didnt step up, savings gone")
+  // — both Doors must survive the precedence rule even without the literal word "breadwinner".
+  assert.deepEqual(
+    matchDoors('my husband didn’t step up, the savings are gone and the house is at risk, and my mother is declining so I’m her caretaker'),
+    ['aging_parents', 'load_bearer'],
+  );
 });
 
 test('correctDoors fixes the marriage/young-kids mis-tag (Full House, not Empty Nest / Aging Parents)', () => {
