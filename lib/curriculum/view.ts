@@ -4,7 +4,7 @@
 import type { Db } from '../db/schema.ts';
 import type { Asset, Badge } from './types.ts';
 import { phaseColumns, dailyLayer, listBadges, PHASE_ORDER } from './registry.ts';
-import { closedSessionIds, listGates, earnedBadgeIds, listFacets, earnBadge, hasIdqBaseline } from './store.ts';
+import { closedSessionIds, listGates, earnedBadgeIds, listFacets, earnBadge } from './store.ts';
 
 const PHASE_LABEL: Record<string, string> = { reconnect: 'Reconnect', rewire: 'Rewire', rebuild: 'Rebuild', reclaim: 'Reclaim' };
 
@@ -26,12 +26,10 @@ export type Forecast = {
   daily: { id: string; title: string; kind: Asset['kind'] }[];
 };
 
-// An asset is "openable" when it's actually built: an authored Session (has steps), ANY Checkpoint (every
-// phase resolves to its own crossable Checkpoint — page + actions are phase-generic), or the baseline IDQ
-// (RCN-IDQ — a live instrument at /idq; v2.0 places it before the Reconnect Checkpoint). Other measurement
-// kinds (the 60-day retake, pulses, trackers) stay content-pending until the daily-layer pass.
-const isBuilt = (a: Asset): boolean =>
-  (a.kind === 'session' && !!a.steps?.length) || a.kind === 'checkpoint' || a.id === 'RCN-IDQ';
+// An asset is "openable" when it's actually built: an authored Session (has steps) or ANY Checkpoint
+// (every phase resolves to its own crossable Checkpoint — the page + actions are phase-generic). Other
+// kinds (measurement/pulse/tracker) are content-pending and render greyed until the daily-layer pass.
+const isBuilt = (a: Asset): boolean => (a.kind === 'session' && !!a.steps?.length) || a.kind === 'checkpoint';
 
 function activePhaseIndex(gates: Set<string>): number {
   let i = 0;
@@ -42,21 +40,15 @@ function activePhaseIndex(gates: Set<string>): number {
 }
 
 export async function getForecast(db: Db, memberId: string): Promise<Forecast> {
-  const [closedArr, gatesArr, idqDone] = await Promise.all([
-    closedSessionIds(db, memberId),
-    listGates(db, memberId),
-    hasIdqBaseline(db, memberId),
-  ]);
+  const [closedArr, gatesArr] = await Promise.all([closedSessionIds(db, memberId), listGates(db, memberId)]);
   const closed = new Set(closedArr);
   const gates = new Set(gatesArr);
   const activeIdx = activePhaseIndex(gates);
 
-  // An asset is done if its Session is closed, the baseline IDQ has been taken (RCN-IDQ → a score exists),
-  // its Checkpoint's phase gate has passed, or its whole phase is already behind the member (a phase you've
-  // crossed reads fully done — no pulling back).
+  // An asset is done if its Session is closed, its Checkpoint's phase gate has passed, or its whole
+  // phase is already behind the member (a phase you've crossed reads fully done — no pulling back).
   const isDone = (a: Asset): boolean =>
     closed.has(a.id) ||
-    (a.id === 'RCN-IDQ' && idqDone) ||
     PHASE_ORDER.indexOf(a.phase) < activeIdx ||
     (a.kind === 'checkpoint' && gates.has(`${a.phase}_checkpoint_passed`));
 

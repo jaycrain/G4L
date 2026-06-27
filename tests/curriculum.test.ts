@@ -58,12 +58,10 @@ test('the Reconnect phase is fully authored — every Session has steps; key art
 test('the forecast is derived purely from registry rows — every non-daily asset, order-sorted', () => {
   const cols = phaseColumns();
   assert.deepEqual(cols.map((c) => c.phase), ['reconnect', 'rewire', 'rebuild', 'reclaim']);
-  // reconnect column: 7 items in order, ending in the Checkpoint. v2.0: the IDQ moved to 7.5 — after the
-  // generative sessions (3–7), immediately before the Checkpoint (8).
+  // reconnect column: 7 items in order, ending in the Checkpoint (Book Quiz retired → order 1 gone)
   const recon = cols[0]!.items;
   assert.equal(recon.length, 7);
-  assert.deepEqual(recon.map((a) => a.order), [3, 4, 5, 6, 7, 7.5, 8]);
-  assert.equal(recon[recon.length - 2]!.id, 'RCN-IDQ'); // the IDQ sits just before the Checkpoint
+  assert.deepEqual(recon.map((a) => a.order), [2, 3, 4, 5, 6, 7, 8]);
   assert.equal(recon[recon.length - 1]!.kind, 'checkpoint');
   // every non-daily asset appears exactly once across the columns (proves no hardcoding)
   const inColumns = cols.flatMap((c) => c.items).length;
@@ -258,21 +256,13 @@ test('forecast progression: Identity Excavation → Checkpoint → Rewire unlock
   assert.equal(f.phases.find((p) => p.phase === 'reconnect')!.status, "You're here");
   assert.equal(f.current!.id, 'RCN-FDR'); // Book Quiz retired; the Doors lead Reconnect now
 
-  // Close every built Reconnect Session → v2.0: the IDQ is now the lit asset (it sits before the Checkpoint).
+  // Close every built Reconnect Session → the Checkpoint becomes the lit asset (the IDQ measurement is skipped).
   for (const id of ['RCN-FDR', 'RCN-EXC', 'RCN-DFT', 'RCN-WIN', 'RCN-WIN-LIST']) {
     await saveAnswer(db, memberId, id, 1, 'x', 1);
     await closeSession(db, memberId, id);
   }
   f = await getForecast(db, memberId);
-  assert.equal(f.current!.id, 'RCN-IDQ'); // the IDQ is taken here, right before the Checkpoint
-  assert.equal(f.current!.openable, true);
-
-  // Take the IDQ (baseline score persists) → NOW the Checkpoint becomes the lit asset.
-  const { submitIdq } = await import('../lib/gateway/flow.ts');
-  await submitIdq(db, memberId, Array.from({ length: 24 }, () => 4));
-  f = await getForecast(db, memberId);
   assert.equal(f.current!.id, 'RCN-CHK');
-  assert.equal(f.phases[0]!.items.find((i) => i.id === 'RCN-IDQ')!.state, 'done');
   assert.equal(f.phases[0]!.items.find((i) => i.id === 'RCN-EXC')!.state, 'done');
 
   // Pass the Checkpoint → Reconnect Complete, Rewire active, the checkpoint reads done.
