@@ -25,25 +25,22 @@ export type ThresholdData = {
 // Edit freely; the structure (which beats carry a data reveal, and the final clip-in) is what's
 // load-bearing. Mirrors docs/threshold-copy.md 1:1. {…} marks where the member's own data renders.
 // ─────────────────────────────────────────────────────────────────────────────────────
-// v2.0 (§7): NO ID-Score reveal (the score is earned later, in Reconnect) and no "distance runs widest" line.
-// The ceremony is crossing-into-the-work: identity · Door(s) · Reclaim List · the 4R path.
 export const THRESHOLD_COPY = {
   // 1 — lands alone, dashboard dimmed behind
-  stop: 'Stop for a second and take a moment to reflect.',
+  stop: 'Stop for a second.',
   // 2 — honor the work just done
   honor: 'Most people never do that kind of excavation in a lifetime — and you just did it in one sitting.',
-  // 3 — reveal: the Reclaimed Identity, Door(s), N things on your Reclaim List (NO ID Score)
+  // 3 — reveal: the Reclaimed Identity, Door(s), "N to win back", baseline ID Score
   uncovered: "Here's what you uncovered:",
   // 4a — reveal: 2–3 harvested Playbook lines (when the onboarding harvest produced seeds)
-  playbookSeeded:
-    "That's deep thinking on your part — it fills the first pages of your Playbook, the journal that documents your work in G4L.",
+  playbookSeeded: "These aren't answers to a form. They're the first pages of your Playbook.",
   // 4b — fallback when there are no seeds yet (no empty Playbook frame)
   playbookNoSeeds:
-    "That's the start of your Playbook — the journal of your work in G4L, the record of what's working, which fills as you go.",
+    "These aren't answers to a form. They're the start of your Playbook — the record of what's working, which fills as you go.",
   // 5 — reveal: the 4Rs Journey, Reconnect lit
-  journey: "Here's what's next — the path ahead, your Journey.",
+  journey: "Here's the path ahead — your Journey.",
   // 6 — the Playbook is the thing you keep; glosses Grinta on first use
-  lasts: 'Your Playbook fills in with what works for you as you do the work — the thing you keep. It’s what builds your Grinta: the grit that keeps you going when motivation runs out. (It’s Italian for grit — you’ll see the word a lot around here.)',
+  lasts: 'Your Playbook fills with what works for you as we go — the thing you keep. It’s what builds your Grinta: the grit that keeps you going when motivation runs out. (It’s Italian for grit — you’ll see the word a lot around here.)',
   // 7 — the hand-off; this beat carries the clip-in (glossed on first use). {firstMove} renders only when known.
   clipIn: 'Ready to begin? We call it clipping in — like locking into a pedal before a ride: you commit, and the work carries you from there. Your first move’s a small one.',
   clipInWithMove: (firstMove: string) => `Ready to begin? We call it clipping in — like locking into a pedal before a ride: you commit, and the work carries you from there. Your first move’s a small one — ${firstMove}.`,
@@ -54,9 +51,7 @@ export function buildThresholdBeats(d: ThresholdData): CeremonyBeat[] {
   return [
     { text: c.stop },
     { text: c.honor, small: true },
-    // v2.0 (§7): force the ID Score OUT of the Threshold reveal — it's earned later in Reconnect. Passing
-    // null (not d.idScore) guarantees no score chip and no "distance runs widest" read ever fires here.
-    { text: c.uncovered, reveal: { kind: 'uncovered', identity: d.identityNoun, doors: d.doors, winCount: d.winCount, idScore: null, dimensions: null } },
+    { text: c.uncovered, reveal: { kind: 'uncovered', identity: d.identityNoun, doors: d.doors, winCount: d.winCount, idScore: d.idScore, dimensions: d.dimensions } },
     // Beat 4 — seeds reveal only if the harvest produced any; otherwise the softer no-seeds line.
     d.seeds.length > 0
       ? { text: c.playbookSeeded, reveal: { kind: 'seeds', seeds: d.seeds.slice(0, 3) } }

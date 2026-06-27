@@ -10,11 +10,9 @@ export default async function Home() {
     <>
       <h1>Grinta for Life</h1>
       <p className="muted">
-        Hi. We&apos;re glad you found G4L. We expect you came here because, like the people who built
-        this, you&apos;re a midlifer who&apos;s lost a dimension of your identity. Somewhere along the way,
-        who you know you are has Faded — diminished by life and others&apos; needs — and you&apos;re
-        curious how to find that person again. Maybe even improve the whole rest of your life. It
-        starts here, with a short but honest conversation.
+        Somewhere along the way, who you know you are gets diminished by life and others&apos;
+        needs. This is where we start: a short conversation, the Identity Distance
+        Questionnaire (IDQ), and your first ID Score — so reclaiming your identity isn&apos;t abstract.
       </p>
       <p>
         <Link className="btn" href="/onboarding">
@@ -22,7 +20,7 @@ export default async function Home() {
         </Link>
       </p>
       <p className="muted">
-        Already started? <Link href="/login">Create an account</Link>.
+        Already started? <Link href="/login">Log in</Link>.
       </p>
     </>
   );

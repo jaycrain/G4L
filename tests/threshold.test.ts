@@ -12,10 +12,10 @@ const base: ThresholdData = {
   firstMoveTitle: 'The Seven Minutes',
 };
 
-test('builds the seven-beat Threshold with the uncovered reveal carrying the member’s data (v2.0: NO ID Score)', () => {
+test('builds the seven-beat Threshold with the uncovered reveal carrying the member’s data', () => {
   const beats = buildThresholdBeats(base);
   assert.equal(beats.length, 7);
-  assert.equal(beats[0]!.text, 'Stop for a second and take a moment to reflect.');
+  assert.equal(beats[0]!.text, 'Stop for a second.');
 
   const uncovered = beats[2]!.reveal;
   assert.equal(uncovered?.kind, 'uncovered');
@@ -23,10 +23,8 @@ test('builds the seven-beat Threshold with the uncovered reveal carrying the mem
     assert.equal(uncovered.identity, 'Athlete');
     assert.deepEqual(uncovered.doors, ['The Career Cliff', 'The Body']);
     assert.equal(uncovered.winCount, 5);
-    // v2.0 (§7): the ID Score is NOT revealed at the Threshold — it's earned later in Reconnect. Forced null
-    // even when the data carries one, so no score chip and no "distance runs widest" read can fire here.
-    assert.equal(uncovered.idScore, null);
-    assert.equal(uncovered.dimensions, null);
+    assert.equal(uncovered.idScore, 34);
+    assert.equal(uncovered.dimensions?.physical, 12); // the dimensions ride along for the cluster read
   }
 
   // Beat 5 is the Journey reveal; the last beat carries the first move + is the resolve (clip-in) beat.
@@ -50,6 +48,6 @@ test('seedless member: beat 4 softens to no reveal (no empty Playbook frame)', (
 test('no first-move title: beat 7 uses the generic line, still the clip-in beat', () => {
   const beats = buildThresholdBeats({ ...base, firstMoveTitle: null });
   assert.equal(beats.length, 7);
-  assert.doesNotMatch(beats[6]!.text, /small one —/); // generic line has no "— {firstMove}" tail
-  assert.match(beats[6]!.text, /clip/i);
+  assert.doesNotMatch(beats[6]!.text, /—/); // generic line has no em-dash tail
+  assert.match(beats[6]!.text, /clip in/i);
 });
