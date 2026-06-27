@@ -164,6 +164,24 @@ test('STAGED gap — never-strand (run-2 fix): short progressive turns the match
   assert.equal(turns[4]!.state.awaitingConfirm, true, 'and the stage advances to reflect-confirm when she signals whole');
 });
 
+test('STAGED gap — never-strand fires even when her LATEST turn is a frustrated deflection (run-5 fix)', () => {
+  // The story is in earlier turns; by the time the never-strand window opens she's gotten frustrated and is
+  // deflecting. We must still capture what she told us — not strand her because the current turn is a refusal.
+  const atGap: ConvState = { stage: 'gap', collected: { athleticPast: 'a leader', identitySkipped: true } };
+  const { turns } = replayStaged(
+    [
+      { member: 'It started when I lost my job after years there.', model: { text: 'Mm.' } },
+      { member: 'Then the money got tight and things at home unravelled.', model: { text: 'I see.' } },
+      { member: 'I already told you this.', model: { text: 'Sorry.' } }, // frustration begins
+      { member: 'We did this already, can we move on?', model: { text: 'Of course.' } }, // deflecting now
+    ],
+    atGap,
+  );
+  const last = turns.at(-1)!;
+  assert.ok((last.state.collected.gap ?? '').length > 0, 'captured the earlier story despite the current deflection');
+  assert.match(last.state.collected.gap!, /lost my job/, 'the accumulated corpus holds her real account');
+});
+
 test('STAGED reclaim — complete-when-done (run-6 fix): ≥3 items then a non-adding turn reflects, never loops', () => {
   // She has 3 items and then says something that adds NO new item and isn't an explicit "that's the list".
   // The engine must reflect (she's done offering), not loop "what else?" forever. Never force-closes — she

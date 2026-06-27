@@ -441,9 +441,13 @@ export function applyStagedTurn(
     // revealer whose short turns each fell under the per-message bar AND the model never tagged — capture the
     // accumulated gap-stage story so we advance instead of looping the opening question for 24 turns. The Doors
     // still come from the whole corpus below; this just rescues the gap TEXT so the stage can close.
-    if (!collected.gap && !noFade && gapTurns >= GAP_MAX_TURNS && !isForwardAmbition(memberMessage)) {
+    if (!collected.gap && !noFade && gapTurns >= GAP_MAX_TURNS) {
       const corpus = gapStageCorpus(history, memberMessage).trim();
-      if (corpus.length >= 40 && !memberDeflecting(memberMessage)) collected.gap = corpus;
+      // Capture the accumulated story even if her LATEST turn is a frustrated deflection ("we already did this,
+      // move on") — the earlier turns hold the story; gating on the current message being non-deflecting is what
+      // stranded run 5. The !isForwardAmbition(corpus) guard keeps a no-fade ambition corpus out (no-fade is
+      // floor-admitted before this anyway).
+      if (corpus.length >= 40 && !isForwardAmbition(corpus)) collected.gap = corpus;
     }
 
     if (noFade || (!collected.gap && isForwardAmbition(memberMessage) && gapTurns >= 2)) {
