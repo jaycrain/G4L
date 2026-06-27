@@ -2,10 +2,10 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { idqOpening, idqRespond, parseLikert, type IdqConvState } from '../lib/agent/idq-conversation.ts';
 
-test('opening presents the v2.0 §8 priming + lead-in, body transition, and item 1 with anchors', () => {
+test('opening presents the Fade-framed intro, body transition, and item 1 with anchors', () => {
   const t = idqOpening();
-  assert.match(t.reply, /distance between where you are today/); // §8 lead-in (Donna's copy)
-  assert.match(t.reply, /mirror/); // §8 priming beat (the Fade is named earlier, in onboarding/Reconnect)
+  assert.match(t.reply, /twenty-four things/);
+  assert.match(t.reply, /the Fade/); // identity-distance framing, not lab-coat language
   assert.match(t.reply, /keeping score/); // Physical (body) transition line
   assert.match(t.reply, /^.*1\. /ms);
   assert.match(t.reply, /not landing at all/);
