@@ -164,6 +164,43 @@ test('STAGED gap — never-strand (run-2 fix): short progressive turns the match
   assert.equal(turns[4]!.state.awaitingConfirm, true, 'and the stage advances to reflect-confirm when she signals whole');
 });
 
+test('STAGED — systemic gather-cap: a runaway gather loop is forced to the card once card-ready (no unbounded loop)', () => {
+  // A verbose member (front-loader shape) whose data is all captured but who keeps elaborating, so no stage
+  // ever recognizes "done". Past the turn budget, the engine must route to the card — not loop forever.
+  const history: ConvMessage[] = [];
+  for (let i = 0; i < 19; i++) history.push({ role: 'member', text: `elaboration ${i}` }, { role: 'agent', text: 'go on' });
+  const cardReadyState: ConvState = {
+    stage: 'reclaim',
+    collected: {
+      identityNoun: 'Performer',
+      gap: 'A diagnosis ended touring, then the band dissolved, then a move wiped out the whole music community.',
+      doors: ['diagnosis', 'vanishing'],
+      reclaimList: ['play live again', 'write weekly', 'sleep normally'],
+    },
+  };
+  // turn 20 (history has 19 prior member turns + this one), still "offering" but really just looping.
+  const turn = applyStagedTurn(cardReadyState, history, 'and another thing I keep thinking about', { text: 'Mm.' });
+  assert.equal(turn.complete, true, 'forced to the card past the budget — the loop is bounded');
+  assert.equal(turn.state.stage, 'complete');
+  assert.match(turn.reply, /look like you|captured/i);
+});
+
+test('STAGED — systemic gather-cap NEVER fires early or on a thin capture (no premature completion)', () => {
+  // Same long history, but NOT card-ready (no gap yet) → must NOT force-complete; keeps gathering.
+  const history: ConvMessage[] = [];
+  for (let i = 0; i < 19; i++) history.push({ role: 'member', text: `x ${i}` }, { role: 'agent', text: 'go on' });
+  const notReady: ConvState = { stage: 'gap', collected: { identitySkipped: true } }; // no gap, no reclaim
+  const turn = applyStagedTurn(notReady, history, 'hmm', { text: 'Mm.' });
+  assert.equal(turn.complete, false, 'never completes without the full finalize floor, even past the budget');
+  // And the cap is well above normal completion: an early card-ready turn does NOT trigger it.
+  const earlyReady: ConvState = {
+    stage: 'reclaim',
+    collected: { identityNoun: 'Runner', gap: 'a real fade over a long slow decade of putting everyone else first', reclaimList: ['run', 'sleep', 'friends'] },
+  };
+  const early = applyStagedTurn(earlyReady, [{ role: 'member', text: 'one' }, { role: 'agent', text: 'two' }], 'and painting', { text: 'Good.', record: { reclaimList: ['painting'] } });
+  assert.equal(early.complete, false, 'at turn ~2 it gathers normally — the cap is a backstop, not the path');
+});
+
 test('STAGED gap — never-strand fires even when her LATEST turn is a frustrated deflection (run-5 fix)', () => {
   // The story is in earlier turns; by the time the never-strand window opens she's gotten frustrated and is
   // deflecting. We must still capture what she told us — not strand her because the current turn is a refusal.

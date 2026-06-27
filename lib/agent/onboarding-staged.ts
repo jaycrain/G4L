@@ -23,8 +23,8 @@
 
 import { cleanIdentityNoun, displayIdentityNoun, identityLabel } from '../member/identity.ts';
 import { isDoorSlug, matchDoors, type DoorSlug } from '../doors.ts';
-import { RECLAIM_LIST_MIN, RECLAIM_LIST_TARGET } from '../member/reclaim.ts';
-import { gapIsNarrative } from './onboarding-contract.ts';
+import { RECLAIM_LIST_FLOOR, RECLAIM_LIST_MIN, RECLAIM_LIST_TARGET } from '../member/reclaim.ts';
+import { gapIsNarrative, hasIdentity } from './onboarding-contract.ts';
 import { MEMBER_AGENT_SYSTEM_PROMPT } from './system-prompt.ts';
 import {
   augmentDoors,
@@ -56,6 +56,11 @@ const IDENTITY_SKIP_OFFER_AFTER = 2;
 const IDENTITY_MAX_TURNS = 5;
 // Gap never-strand: after this many gap turns with nothing captured, grab the accumulated story so we advance.
 const GAP_MAX_TURNS = 4;
+// SYSTEMIC INVARIANT — no gather stage loops unbounded. Past this many member turns, the conversation is FORCED
+// to the confirmation card (the seatbelt) as soon as there's a usable capture. A member genuinely engaged
+// finishes well under this (rita 10–18); it only catches runaway gather loops, and the card still lets them
+// keep talking. Set above normal completion, below the eval's hard cap (24).
+const ONBOARDING_FORCE_TURNS = 20;
 
 // --- copy (engine-owned forwards; the model leads when it asks a real question) -------------------------
 // v2.0 FINAL copy — docs/handoffs/2026-06-26-v2.0-final-copy-and-floor.md §3–§6. Voice: warm, direct,
@@ -351,6 +356,25 @@ export function applyStagedTurn(
   let gapTurns = state.gapTurns ?? 0;
   let noFade = state.noFade ?? false;
   const modelText = stripLeadingDisclosure(model.text).trim();
+
+  // SYSTEMIC INVARIANT (the gather-cap): no gather/elaboration stage loops forever. Once we're past the turn
+  // budget AND there's a card-ready capture (identity-or-skip + a real gap + ≥1 want), route straight to the
+  // card — whatever stage we're "in", whatever the member just said. The card carries any thinness and still
+  // offers "keep talking". This is the single forced-progress exit for the whole class (gap "was there more?",
+  // reclaim "anything else?", the frustrated-deflection case) — replacing four per-stage patches. The
+  // never-strands ensure a real conversation BECOMES card-ready (gap captured) before this fires; a thinner one
+  // keeps gathering until it does or the eval's hard cap ends it. Tightrope: it requires the full finalize floor
+  // (never completes on a guess) and only at turn 20 (never premature) — the early-completion fixtures stay green.
+  const memberTurns = history.filter((h) => h.role === 'member').length + 1;
+  const cardReady =
+    hasIdentity(collected) && gapIsNarrative(collected.gap, collected.reclaimList ?? []) && (collected.reclaimList?.length ?? 0) >= RECLAIM_LIST_FLOOR;
+  if (!awaitingConfirm && memberTurns >= ONBOARDING_FORCE_TURNS && cardReady) {
+    return {
+      reply: COMPLETE_HANDOFF,
+      state: { stage: 'complete', collected, awaitingConfirm: false, identityTurns, reclaimNudged, gapTurns, noFade },
+      complete: true,
+    };
+  }
 
   let finalReply: string;
   let complete = false;
