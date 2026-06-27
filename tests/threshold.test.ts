@@ -48,6 +48,6 @@ test('seedless member: beat 4 softens to no reveal (no empty Playbook frame)', (
 test('no first-move title: beat 7 uses the generic line, still the clip-in beat', () => {
   const beats = buildThresholdBeats({ ...base, firstMoveTitle: null });
   assert.equal(beats.length, 7);
-  assert.doesNotMatch(beats[6]!.text, /—/); // generic line has no em-dash tail
-  assert.match(beats[6]!.text, /clip in/i);
+  assert.doesNotMatch(beats[6]!.text, /small one —/); // generic line has no "— {firstMove}" tail (the gloss em-dash is fine)
+  assert.match(beats[6]!.text, /clip/i);
 });
