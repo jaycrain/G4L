@@ -185,6 +185,25 @@ test('STAGED — systemic gather-cap: a runaway gather loop is forced to the car
   assert.match(turn.reply, /look like you|captured/i);
 });
 
+test('STAGED — systemic gather-cap: a gap-elaboration loop is force-advanced to Reclaim (front-loader stall)', () => {
+  // A verbose member with a real gap captured, but she keeps elaborating so the gap stage never advances and
+  // reclaim stays 0. Past the budget, the engine must move her on to Reclaim, not loop "was there more?".
+  const history: ConvMessage[] = [];
+  for (let i = 0; i < 19; i++) history.push({ role: 'member', text: `more gap detail ${i}` }, { role: 'agent', text: 'go on' });
+  const stuckInGap: ConvState = {
+    stage: 'gap',
+    collected: {
+      identityNoun: 'Performer',
+      gap: 'A vocal-cord diagnosis ended touring, then the band dissolved, then a move wiped out the music community.',
+      doors: ['diagnosis', 'vanishing'],
+    },
+  };
+  const turn = applyStagedTurn(stuckInGap, history, 'and one more thing about how it felt', { text: 'Mm.' });
+  assert.equal(turn.state.stage, 'reclaim', 'force-advanced out of the gap-elaboration loop into Reclaim');
+  assert.equal(turn.complete, false, 'not completed yet — she still names what she wants back');
+  assert.match(turn.reply, /want back|reclaim/i);
+});
+
 test('STAGED — systemic gather-cap NEVER fires early or on a thin capture (no premature completion)', () => {
   // Same long history, but NOT card-ready (no gap yet) → must NOT force-complete; keeps gathering.
   const history: ConvMessage[] = [];

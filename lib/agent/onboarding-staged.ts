@@ -357,23 +357,37 @@ export function applyStagedTurn(
   let noFade = state.noFade ?? false;
   const modelText = stripLeadingDisclosure(model.text).trim();
 
-  // SYSTEMIC INVARIANT (the gather-cap): no gather/elaboration stage loops forever. Once we're past the turn
-  // budget AND there's a card-ready capture (identity-or-skip + a real gap + ≥1 want), route straight to the
-  // card — whatever stage we're "in", whatever the member just said. The card carries any thinness and still
-  // offers "keep talking". This is the single forced-progress exit for the whole class (gap "was there more?",
-  // reclaim "anything else?", the frustrated-deflection case) — replacing four per-stage patches. The
-  // never-strands ensure a real conversation BECOMES card-ready (gap captured) before this fires; a thinner one
-  // keeps gathering until it does or the eval's hard cap ends it. Tightrope: it requires the full finalize floor
-  // (never completes on a guess) and only at turn 20 (never premature) — the early-completion fixtures stay green.
+  // SYSTEMIC INVARIANT (the gather-cap): no gather/elaboration stage loops forever. Past the turn budget, FORCE
+  // PROGRESS THROUGH THE STAGE MACHINE — bound every gather loop, not just the last. One block for the whole
+  // class (gap "was there more?", reclaim "anything else?", the frustrated-deflection loop), replacing the
+  // per-stage patches. The card is the seatbelt and still offers "keep talking". Tightrope: it never fabricates
+  // (gap-advance needs a real non-ambition gap; completion needs the full finalize floor) and only at turn 20
+  // (a member genuinely engaged finishes well under it) — the early-completion / never-trap fixtures stay green.
   const memberTurns = history.filter((h) => h.role === 'member').length + 1;
-  const cardReady =
-    hasIdentity(collected) && gapIsNarrative(collected.gap, collected.reclaimList ?? []) && (collected.reclaimList?.length ?? 0) >= RECLAIM_LIST_FLOOR;
-  if (!awaitingConfirm && memberTurns >= ONBOARDING_FORCE_TURNS && cardReady) {
-    return {
-      reply: COMPLETE_HANDOFF,
-      state: { stage: 'complete', collected, awaitingConfirm: false, identityTurns, reclaimNudged, gapTurns, noFade },
-      complete: true,
-    };
+  if (!awaitingConfirm && memberTurns >= ONBOARDING_FORCE_TURNS) {
+    const realGap = gapIsNarrative(collected.gap, collected.reclaimList ?? []) && !isForwardAmbition(collected.gap ?? '');
+    // Bound the gap-elaboration loop: a real gap is captured but she keeps elaborating → move on to Reclaim.
+    if (stage === 'gap' && realGap) {
+      return {
+        reply: reclaimOpen(collected),
+        state: { stage: 'reclaim', collected, awaitingConfirm: false, identityTurns, reclaimNudged, gapTurns, noFade },
+        complete: false,
+      };
+    }
+    // Bound the reclaim loop: capture a want if none has landed yet, then route to the card once card-ready.
+    if (stage === 'reclaim') {
+      if ((collected.reclaimList?.length ?? 0) < RECLAIM_LIST_FLOOR && shouldCaptureStagedReclaim(memberMessage)) {
+        collected.reclaimList = [...(collected.reclaimList ?? []), memberMessage.trim()];
+        collected.reclaimCategories = [...(collected.reclaimCategories ?? []), ''];
+      }
+      if (hasIdentity(collected) && realGap && (collected.reclaimList?.length ?? 0) >= RECLAIM_LIST_FLOOR) {
+        return {
+          reply: COMPLETE_HANDOFF,
+          state: { stage: 'complete', collected, awaitingConfirm: false, identityTurns, reclaimNudged, gapTurns, noFade },
+          complete: true,
+        };
+      }
+    }
   }
 
   let finalReply: string;

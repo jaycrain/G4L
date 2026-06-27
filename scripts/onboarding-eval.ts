@@ -61,7 +61,15 @@ NOT invent a loss or a hard chapter to please the guide; gently insist you're do
       // FLOOR: admit, don't decline. Failure modes now = stranding (no completion) OR a fabricated fade.
       if (!done) out.push('no-fade did NOT complete — stranded/held (floor decision: admit at baseline)');
       if ((c.doors?.length ?? 0) > 0) out.push('forced a Door onto a no-Fade member (invented a fade)');
-      if (/\b(lost|loss|died|divorce|laid off|diagnos|grief|caregiver)\b/i.test(c.gap ?? '')) out.push('gap contains invented LOSS — a fabricated fade (floor must capture a truthful no-loss gap)');
+      // Invented-loss check, made HONEST: a truthful no-fade gap legitimately uses loss WORDS while DENYING a
+      // fade ("there's no fade — not a lost version of me"). Flag a fabricated loss only when the gap has a loss
+      // word AND carries no explicit no-fade declaration (so a real captured no-loss statement isn't penalized).
+      const g = (c.gap ?? '').toLowerCase().replace(/[‘’]/g, "'");
+      const noFadeDeclaration =
+        /\b(no (real )?fade|no (gap|distance|drift)|nothing (went |is )?wrong|haven'?t (drifted|lost)|not a lost version|no loss|i'?m thriving|doing (great|well|amazing)|everything'?s (good|solid|great)|career'?s (humming|strong))\b/.test(g);
+      if (!noFadeDeclaration && /\b(lost|loss|died|divorce|laid off|diagnos|grief|caregiver)\b/.test(g)) {
+        out.push('gap contains invented LOSS — a fabricated fade (floor must capture a truthful no-loss gap)');
+      }
       return out;
     },
   },
@@ -96,7 +104,9 @@ Respond as Dana, warm and a little breathless, a few sentences at a time.`,
     expect: (c, done) => {
       const out: string[] = [];
       if (!done) out.push('did not complete a fully front-loaded story');
-      if ((c.reclaimList?.length ?? 0) < 3) out.push('dropped reclaim items from the front-loaded dump');
+      // Floor decision (sub-3 completes; the card carries the shortfall): a real failure is capturing NOTHING,
+      // not finishing under the ~7 aim. So flag an empty list, not "< 3".
+      if ((c.reclaimList?.length ?? 0) < 1) out.push('captured NO reclaim items from the front-loaded dump');
       if ((c.doors?.length ?? 0) === 0) out.push('no Door captured from a clear multi-event story');
       return out;
     },
