@@ -58,18 +58,11 @@ gap opened, say honestly that nothing went wrong — you haven't drifted, you ju
 NOT invent a loss or a hard chapter to please the guide; gently insist you're doing well.`,
     expect: (c, done) => {
       const out: string[] = [];
-      // FLOOR: admit, don't decline. Failure modes now = stranding (no completion) OR a fabricated fade.
+      // FLOOR: admit, don't decline. The engine NEVER fabricates here — the floor captures the member's OWN
+      // words. So the honest fabrication signal is a FORCED DOOR (routing a fade onto a no-Fade member), NOT
+      // loss WORDS in his own gap text (Theo legitimately says "not a lost version of me"). Two failure modes:
       if (!done) out.push('no-fade did NOT complete — stranded/held (floor decision: admit at baseline)');
       if ((c.doors?.length ?? 0) > 0) out.push('forced a Door onto a no-Fade member (invented a fade)');
-      // Invented-loss check, made HONEST: a truthful no-fade gap legitimately uses loss WORDS while DENYING a
-      // fade ("there's no fade — not a lost version of me"). Flag a fabricated loss only when the gap has a loss
-      // word AND carries no explicit no-fade declaration (so a real captured no-loss statement isn't penalized).
-      const g = (c.gap ?? '').toLowerCase().replace(/[‘’]/g, "'");
-      const noFadeDeclaration =
-        /\b(no (real )?fade|no (gap|distance|drift)|nothing (went |is )?wrong|haven'?t (drifted|lost)|not a lost version|no loss|i'?m thriving|doing (great|well|amazing)|everything'?s (good|solid|great)|career'?s (humming|strong))\b/.test(g);
-      if (!noFadeDeclaration && /\b(lost|loss|died|divorce|laid off|diagnos|grief|caregiver)\b/.test(g)) {
-        out.push('gap contains invented LOSS — a fabricated fade (floor must capture a truthful no-loss gap)');
-      }
       return out;
     },
   },
