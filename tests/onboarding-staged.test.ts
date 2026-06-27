@@ -267,6 +267,24 @@ test('STAGED reclaim — complete-when-done still GATHERS while she is actively 
   assert.equal(turn.state.awaitingConfirm ?? false, false, 'still gathering toward the aim while she adds');
 });
 
+test('STAGED gap — the "was there more?" nudge NEVER repeats verbatim across chapters (live-walk bug)', () => {
+  // The live fresh-signup walk showed the static GAP_MORE repeated word-for-word across work → marriage →
+  // "my marriage". The gather must rotate the nudge and never emit the identical line twice in a row.
+  const atGap: ConvState = { stage: 'gap', collected: { athleticPast: 'an athlete', identityNoun: 'Ironman', gap: 'I was laid off after a long run there.' } };
+  // Each chapter names a Door (so it appends + grows the gap → the engine nudges each turn). The model gives no
+  // question, forcing the engine's fallback — which must rotate, never repeat the identical line.
+  const { turns } = replayStaged(
+    [
+      { member: 'my marriage drifted into just coexisting', model: { text: 'I hear that.' } },
+      { member: 'then came a diagnosis I couldn’t look away from', model: { text: 'Mm.' } },
+    ],
+    atGap,
+  );
+  assert.notEqual(turns[0]!.reply, turns[1]!.reply, 'two consecutive gather nudges are NOT identical (no verbatim loop)');
+  for (const t of turns) assert.equal(/most like yourself/i.test(t.reply), false, 'never loops the opening question');
+  assert.match(turns[0]!.reply, /more|heart of/i, 'still a real "is there more?" gather prompt');
+});
+
 test('STAGED gap — a short dispute re-opens but NEVER wipes the gap or Doors (never drop what they gave)', () => {
   const atConfirm: ConvState = {
     stage: 'gap', awaitingConfirm: true,

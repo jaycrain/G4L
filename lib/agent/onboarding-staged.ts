@@ -112,11 +112,23 @@ const GAP_FORECAST_CONFIRM =
 const REOPEN_GAP = "I want to get this right — tell me how it really went, in your own words.";
 
 // Invite the REST of the story (a fade is often several things at once — job, then the household, then a
-// parent) WITHOUT excavating Door-by-Door. Asked after each chapter until the member signals the story whole;
-// this is what lets a progressive revealer's later Doors surface before we reflect and move on.
-const GAP_MORE =
-  'Thank you for that. Was there more around that same stretch — other things that landed at the same time — ' +
-  'or is that the heart of how it opened?';
+// parent) WITHOUT excavating Door-by-Door. Asked after each chapter until the member signals the story whole.
+// ROTATED so it NEVER repeats verbatim as the story unfolds (a static line read as a broken loop on the live
+// walk — work → marriage → "my marriage" each got the identical question). Capped at GAP_MORE_MAX asks, then
+// we reflect and move on (the reflect-confirm is still correctable — she can add more there).
+const GAP_MORE_VARIANTS = [
+  'Thank you for that. Was there more around that same stretch — other things that landed at the same time — or is that the heart of how it opened?',
+  'I hear you. Was anything else tangled up in that same period, or does that capture the shape of how the distance opened?',
+  'That helps me understand. Did anything else pile on around then — or do we have the heart of it now?',
+];
+const GAP_MORE_MAX = GAP_MORE_VARIANTS.length; // after this many "was there more?" asks, reflect instead of re-asking
+// How many times we've already asked for more in this gap stage (by the variants' shared signature in history).
+function gapMoreAsks(history: ConvMessage[]): number {
+  return history.filter((h) => h.role === 'agent' && /\b(was there (more|anything)|anything else|pile on|tangled up)\b/i.test(h.text)).length;
+}
+function gapMore(history: ConvMessage[]): string {
+  return GAP_MORE_VARIANTS[gapMoreAsks(history) % GAP_MORE_VARIANTS.length]!;
+}
 
 // FLOOR (Jay+Greg, Jun 26): when there's no real Fade, ADMIT at baseline — don't decline. Honest reflection
 // (they're reaching forward, not back), no fabricated fade, then straight into Reclaim. Their ID Score (earned
@@ -503,8 +515,11 @@ export function applyStagedTurn(
       // whole story before reflecting — invite the rest (GAP_MORE) until the member signals it's whole.
       collected.doors = augmentDoors(collected.doors ?? [], gapStageCorpus(history, memberMessage));
       const gapGrew = modelTaggedGap || collected.gap.length > (state.collected.gap?.length ?? 0);
-      if (gapGrew && !memberSignalsGapComplete(memberMessage)) {
-        finalReply = modelText && /\?/.test(modelText) ? modelText : GAP_MORE;
+      // Keep gathering only while she's adding AND we haven't already asked for more GAP_MORE_MAX times. Prefer
+      // the model's own (varied) question; otherwise a ROTATED nudge (never the same line twice); once we've
+      // nudged enough, reflect and move on — the confirm is still correctable.
+      if (gapGrew && !memberSignalsGapComplete(memberMessage) && gapMoreAsks(history) < GAP_MORE_MAX) {
+        finalReply = modelText && /\?/.test(modelText) ? modelText : gapMore(history);
       } else {
         finalReply = reflectGap(modelText);
         awaitingConfirm = true;
