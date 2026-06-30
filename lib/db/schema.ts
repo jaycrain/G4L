@@ -82,6 +82,7 @@ const MIGRATIONS: Array<{ file: string; sentinel: Sentinel }> = [
   { file: 'migrations/0039_enable_rls_sweep.sql', sentinel: '_rls_sweep_0039' },
   { file: 'migrations/0040_reclaim_item_removed.sql', sentinel: { table: 'reclaim_item', column: 'removed_at' } },
   { file: 'migrations/0041_reclaim_item_audit.sql', sentinel: { table: 'member_profile_audit', column: 'source' } },
+  { file: 'migrations/0042_enable_rls_sweep.sql', sentinel: '_rls_sweep_0042' },
 ];
 export const SEED_SQL = () => sqlFile('seed/0001_reference_data.sql');
 
