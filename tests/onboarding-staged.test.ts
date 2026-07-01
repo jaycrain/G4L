@@ -26,21 +26,46 @@ test('STAGED opening — opens on the identity question, stage = identity', () =
   assert.match(t.reply, /most like yourself/i);
 });
 
-test('STAGED identity — gather → reflect-confirm → advance to the gap stage', () => {
+test('STAGED identity — breathe floor (1a): gather → PROBE the person → reflect-confirm → advance', () => {
   const { turns, finalState } = replayStaged([
     { member: 'I was a competitive cyclist who raced every weekend', model: { text: 'That comes through.', record: { athleticPast: 'a competitive cyclist who raced every weekend' } } },
     { member: 'The Athlete', model: { text: 'The Athlete.', record: { identityNoun: 'Athlete' } } },
+    { member: 'It felt like flying — free and strong, most myself out on the road at dawn', model: { text: 'I can feel that.' } },
     { member: 'Yes, that’s her', model: { text: 'Good.' } },
   ]);
-  // turn 2: named → reflect-confirm + await confirm
-  assert.equal(turns[1]!.state.awaitingConfirm, true, 'reflects the named identity and awaits confirm');
-  assert.match(turns[1]!.reply, /Athlete/);
-  assert.match(turns[1]!.reply, /did I get|right\?/i);
-  // turn 3: affirm → advance + reframe
+  // turn 2: the name lands, but the FLOOR HOLDS — draw the person out; never race to confirm (Scott's "rushed").
+  assert.equal(turns[1]!.state.awaitingConfirm, false, 'floor holds — a bare noun does not race to reflect-confirm');
+  assert.match(turns[1]!.reply, /feel|most true|being the Athlete/i, 'it probes the person instead');
+  // turn 3: now the person is drawn out → reflect-confirm + await.
+  assert.equal(turns[2]!.state.awaitingConfirm, true, 'after a real probe turn, reflects and awaits confirm');
+  assert.match(turns[2]!.reply, /Athlete/);
+  assert.match(turns[2]!.reply, /did I get|right\?/i);
+  // turn 4: affirm → advance + reframe into how-it-opened.
   assert.equal(finalState.stage, 'gap', 'advances to the gap stage on confirm');
-  assert.equal(finalState.awaitingConfirm, false);
-  assert.match(turns[2]!.reply, /how it went|distance started to open/i, 'reframes into how-it-opened');
+  assert.match(turns[3]!.reply, /how it went|distance started to open/i, 'reframes into how-it-opened');
   assert.equal(finalState.collected.identityNoun, 'Athlete');
+});
+
+test('STAGED identity — front-loader ESCAPE (1a): a rich one-pass identity reflects immediately, no extra probe', () => {
+  const rich =
+    'I was the one up at 5am to train before work, racing every weekend, completely alive on the bike — friends literally called me the engine of the group';
+  const { turns } = replayStaged([
+    { member: rich, model: { text: 'That’s vivid.', record: { athleticPast: rich, identityNoun: 'Athlete' } } },
+  ]);
+  // rich story + a name in ONE pass → the already-satisfied escape fires → reflect-confirm now (don't trap the ready).
+  assert.equal(turns[0]!.state.awaitingConfirm, true, 'front-loader escape: reflects immediately on rich material');
+  assert.match(turns[0]!.reply, /Athlete/);
+});
+
+test('STAGED identity — pushed-past ESCAPE (1a): the terse member is not trapped by the floor', () => {
+  const { turns } = replayStaged([
+    { member: 'I guess a runner', model: { text: 'A runner.', record: { athleticPast: 'a runner', identityNoun: 'Runner' } } },
+    { member: 'that’s really it, can we move on', model: { text: 'Of course.' } },
+  ]);
+  // turn 1: a thin one-word identity → floor holds → probe (don't race).
+  assert.equal(turns[0]!.state.awaitingConfirm, false, 'floor holds on the thin answer');
+  // turn 2: the member pushes past the invitation → member-pushed-past escape → advance to confirm, never looped.
+  assert.equal(turns[1]!.state.awaitingConfirm, true, 'pushed-past escape: honors the terse member, never loops');
 });
 
 test('STAGED identity — skip path advances straight to the gap stage (nothing to confirm)', () => {

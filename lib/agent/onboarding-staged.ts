@@ -92,6 +92,13 @@ const SKIP_ACK = "That's completely fine — you'll find her through the work, n
 
 const REOPEN_IDENTITY = "My mistake — let's get it right. What word feels truer for who she was?";
 
+// The breathe-floor probe (Increment 1a): when a name lands but the person hasn't been drawn out yet,
+// draw them out once before reflecting it back. (Directional voice — 1b refines the conduct/wording.)
+function identityProbe(c: Collected): string {
+  const label = identityLabel(c.identityNoun) || 'that person';
+  return `Before we hold onto that word — take me back into being ${label}. What did it actually feel like, and when did it feel most true?`;
+}
+
 // §4 — Stage 2 (how the gap opened): introduces "Doors" at first use, personalized to their handle.
 function gapOpen(c: Collected): string {
   return (
@@ -353,6 +360,47 @@ function gapStageCorpus(history: ConvMessage[], current: string): string {
   return [...history.filter((h) => h.role === 'member').map((h) => h.text), current].join(' ');
 }
 
+// --- The per-stage BREATHE FLOOR (Increment 1a) --------------------------------------------------------
+// Generalizes v1's DOOR_MIN_TURNS (the Door-beat "breathe" floor, onboarding.ts:158) across identity/gap/
+// reclaim: a stage may advance to its reflect-confirm only once it has BREATHED — the Companion drew the
+// member out past their first answer — UNLESS an escape fires. Per §7a-flag-1 the ESCAPES are the load-
+// bearing part (naive floors re-create the stalls the caps were built to kill), and they are keyed to
+// MATERIAL RICHNESS, never a turn clock — so the floor never traps the front-loader (gives everything in
+// one pass) or the terse member (won't give more after honest invitation). Pure + replayable.
+
+// How rich a one-pass answer must be to count as "already drawn out" (the front-loader escape). Length is a
+// deliberately crude proxy for 1a's mechanics; 1b refines what "rich" means (named specifics, not chars).
+const IDENTITY_RICH_CHARS = 90;
+const GAP_RICH_CHARS = 240; // mirrors v1's storyIsRich threshold exactly (resolveCompletion, onboarding.ts)
+
+// ESCAPE 1 — ALREADY-SATISFIED (the front-loader): the material is already rich enough that another probe
+// would trap someone who's ready. "Rich" is MORE than merely present.
+function stageMaterialRich(stage: StagedStage, c: Collected): boolean {
+  if (stage === 'identity') return !!c.identityNoun && (c.athleticPast ?? '').trim().length >= IDENTITY_RICH_CHARS;
+  if (stage === 'gap')
+    return gapIsNarrative(c.gap, c.reclaimList ?? []) && ((c.doors?.length ?? 0) >= 2 || (c.gap ?? '').length >= GAP_RICH_CHARS);
+  return (c.reclaimList?.length ?? 0) >= RECLAIM_LIST_MIN; // several wants already on the table
+}
+
+// ESCAPE 2 — MEMBER-PUSHED-PAST (the terse member): after an honest invitation they decline / signal done /
+// won't add more. Advancing here honors them instead of trapping — the analog of v1's `memberDone`.
+function memberPushedPast(stage: StagedStage, message: string, c: Collected): boolean {
+  if (stage === 'identity') return c.identitySkipped === true || memberDeflecting(message);
+  if (stage === 'gap') return memberSignalsGapComplete(message) || memberDeflecting(message);
+  return memberClosingReclaim(message);
+}
+
+// THE FLOOR GATE — may this stage advance to reflect-confirm this turn? True when either escape fires, or the
+// stage has genuinely breathed: the qualifying material was in hand BEFORE this turn (so a probe turn passed),
+// not just landed on it. `prev` is last turn's collected; the "just landed this turn" case is what holds.
+function stageFloorMet(stage: StagedStage, prev: Collected, c: Collected, message: string): boolean {
+  if (stageMaterialRich(stage, c)) return true; // front-loader escape
+  if (memberPushedPast(stage, message, c)) return true; // terse escape
+  if (stage === 'identity') return !!prev.identityNoun; // the name persisted a turn → a real probe happened
+  if (stage === 'gap') return !!prev.gap; // the gap story persisted a turn
+  return (prev.reclaimList?.length ?? 0) >= RECLAIM_LIST_FLOOR; // a want persisted a turn
+}
+
 // --- THE STAGED ENGINE (pure, replayable) --------------------------------------------------------------
 export function applyStagedTurn(
   state: ConvState,
@@ -446,9 +494,17 @@ export function applyStagedTurn(
       stage = 'gap';
       finalReply = `${SKIP_ACK}\n\n${gapOpen(collected)}`;
     } else if (collected.identityNoun) {
-      // Named — reflect it back warmly and wait for the member's confirm (the transition).
-      finalReply = reflectIdentity(collected);
-      awaitingConfirm = true;
+      // Named — but the BREATHE FLOOR (1a) gates the reflect-confirm: don't advance on the turn the name
+      // lands (Scott's "identity was rushed"). Draw the PERSON out once first — UNLESS an escape fires (the
+      // front-loader gave a rich story in one pass, or the member is pushing past). Prefer the model's own
+      // question when it's drawing them out; else a minimal probe (1b voices it).
+      if (stageFloorMet('identity', state.collected, collected, memberMessage)) {
+        finalReply = reflectIdentity(collected);
+        awaitingConfirm = true;
+      } else {
+        identityTurns += 1;
+        finalReply = modelText && /\?/.test(modelText) ? modelText : identityProbe(collected);
+      }
     } else {
       // Gather. Never-strand: a member who won't name a PAST self (a thriving no-fade optimizer, or just a
       // guarded one) must not loop the opening question forever. Offer the "find it later" skip after a couple
