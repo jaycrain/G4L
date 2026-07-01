@@ -82,6 +82,10 @@ test('matchDoors maps free text to one or more Doors in canonical order', () => 
   assert.deepEqual(matchDoors('my body is just slowing down, downhill from here'), ['acceptance']);
   // …and an explicit "settled" framing keeps The Acceptance even when a concrete event is also named.
   assert.deepEqual(matchDoors('my body — the knees went, the back aches — but I’ve made peace with it, it is what it is'), ['acceptance']);
+  // `settled` is tightened to the surrender phrasing (v2.1 orientation) — a life that "settled down" no
+  // longer false-fires The Acceptance; "settled for less/this" still does.
+  assert.equal(matchDoors('we finally settled down and had kids').includes('acceptance'), false);
+  assert.ok(matchDoors("honestly I've just settled for less these days").includes('acceptance'));
 });
 
 test('correctDoors fixes the marriage/young-kids mis-tag (Full House, not Empty Nest / Aging Parents)', () => {

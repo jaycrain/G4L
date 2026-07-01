@@ -72,7 +72,7 @@ const DOOR_ALIASES: Partial<Record<DoorSlug, string[]>> = {
   load_bearer: ['carrying everyone', 'carry everyone', 'carry the load', 'carrying the load', 'held the financial', 'hold everything together', 'holding everything together', 'everyone leans on me', 'everyone needs me', 'on my shoulders', 'fell on me', 'more than my fair share', 'carry more than', 'left me holding', 'the one holding everything', 'carrying the household', 'do it all', 'sole breadwinner', 'breadwinner', 'sole earner', 'the only earner', 'paying all the bills', 'all the bills fell', 'carried us financially', 'kept us afloat', "didn't step up"],
   // The Acceptance = resigning to age-related decline AS DESTINY — the one Door the member chose. The
   // stance, not an event (see the Body-vs-Acceptance precedence below). Triggers per taxonomy spec v2.0.
-  acceptance: ['getting older', 'at my age', 'just my age', 'past my prime', 'not as young as i used to be', 'not as capable', 'slowing down', 'downhill from here', 'it is what it is', 'made peace with', 'accepted that', 'this is just who i am now', 'my best years are behind me', 'what do you expect at my age', 'these things happen when you get older', 'resigned myself', 'settled'],
+  acceptance: ['getting older', 'at my age', 'just my age', 'past my prime', 'not as young as i used to be', 'not as capable', 'slowing down', 'downhill from here', 'it is what it is', 'made peace with', 'accepted that', 'this is just who i am now', 'my best years are behind me', 'what do you expect at my age', 'these things happen when you get older', 'resigned myself', 'settled for less', 'settled for this'],
 };
 
 // Map a member's free-text answer to one or more Doors (voice rewrite v1: members answer in their
@@ -132,7 +132,7 @@ export function matchDoors(message: string): DoorSlug[] {
     const CONCRETE_PHYSICAL_EVENT =
       /\b(knees?|hips?|shoulders?|joints?|my back|bad (knee|back|hip|shoulder)|injur(y|ed|ies)|blew out|gave out|went out|surgery|torn|tore|sprained|can'?t (run|lift|walk|climb|play|keep up)|quit the sport)\b/.test(m);
     const EXPLICIT_SETTLED =
-      /\b(made peace with|it is what it is|resigned myself|these things happen|what do you expect at my age|my best years are behind|this is just who i am now)\b/.test(m);
+      /\b(made peace with|it is what it is|resigned myself|these things happen|what do you expect at my age|my best years are behind|this is just who i am now|settled for)\b/.test(m);
     if (CONCRETE_PHYSICAL_EVENT && !EXPLICIT_SETTLED) found.delete('acceptance'); // named event → The Body
     else found.delete('body'); // surrender / settled stance → The Acceptance
   }
