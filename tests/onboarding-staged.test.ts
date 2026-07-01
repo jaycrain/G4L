@@ -533,6 +533,23 @@ test('STAGED reclaim — gather to the minimum → reflect the list → confirm 
   assert.match(turns[4]!.reply, /captured|look like you/i);
 });
 
+test('STAGED reclaim — a want captured twice lands ONCE (Jay walk: "Ride my bike more" ×2 on the card)', () => {
+  const atReclaim: ConvState = { stage: 'reclaim', collected: { athleticPast: 'a cyclist', identityNoun: 'Player', gap: 'The grind slowly took it over fifteen years.' } };
+  const { finalState } = replayStaged(
+    [
+      { member: 'Ride my bike more', model: { text: 'Got it. What else comes to mind?', record: { reclaimList: ['Ride my bike more'] } } },
+      { member: 'Lose 25 lbs', model: { text: 'Good. Anything else?', record: { reclaimList: ['Lose 25 lbs'] } } },
+      { member: 'Ride my bike more', model: { text: 'Yes.', record: { reclaimList: ['Ride my bike more'] } } }, // model re-tags an identical want
+      { member: 'spend more time with friends and travel', model: { text: 'Got it.', record: {} } }, // model under-tags → backstop captures once
+    ],
+    atReclaim,
+  );
+  const list = finalState.collected.reclaimList ?? [];
+  assert.equal(list.filter((x) => /^ride my bike more$/i.test(x.trim())).length, 1, 'the re-said want is deduped — no second "Ride my bike more"');
+  assert.ok(list.some((x) => /friends and travel/i.test(x)), 'the backstop-captured want still lands');
+  assert.equal(list.length, 3, 'three distinct wants — no duplicate on the card');
+});
+
 test('STAGED reclaim — re-surfaces a parked front-loader item at stage entry (the trust moment)', () => {
   // Member parked "writing again" back in the identity stage; we enter reclaim by confirming the gap.
   const atGapConfirm: ConvState = {

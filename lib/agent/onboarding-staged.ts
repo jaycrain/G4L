@@ -146,7 +146,7 @@ const GAP_REFLECT_LEAD = "Thank you for trusting me with that — that kind of d
 // Warm, clear, invites correction — replaces the old "for now this is plenty / we'll go deeper later / did I
 // understand the shape of how it went?" which read as dismissive AND generic on Jay's walk (he replied "the
 // shape of what?"). Under the model-judged flow the LEAD is the model's own drawn-out reflection in their words.
-const GAP_FORECAST_CONFIRM = 'Did I get how that went for you — does it land, or is there more to it?';
+const GAP_FORECAST_CONFIRM = 'Have we got a good handle on how it all happened — or is there more to it?';
 const REOPEN_GAP = "I want to get this right — tell me how it really went, in your own words.";
 
 // Invite the REST of the story (a fade is often several things at once — job, then the household, then a
@@ -337,12 +337,30 @@ function memberDeflecting(message: string): boolean {
   return memberWantsToWrap(m) || DEFLECT_RE.test(m);
 }
 
+// --- reclaim de-duplication (Jay's walk: "Ride my bike more" ×2, "lose 25 lbs" twice) -------------------
+// Two capture paths run per turn — the model's add_reclaim_item AND the engine's backstop / confirm late-add —
+// and a re-tag of an already-listed want double-adds it. A single normalized key (case/punctuation-insensitive)
+// is the one place we decide "same want," so every append point stays deduped. It keeps the FIRST phrasing.
+function reclaimKey(s: string): string {
+  return (s ?? '').trim().toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+}
+// Append a want to `c` only if it isn't already on the list (normalized). Returns whether it actually landed —
+// so the gather stage can tell a real new offer from a duplicate and NOT read the dup as a "done" signal.
+function appendReclaim(c: Collected, item: string, category = ''): boolean {
+  const key = reclaimKey(item);
+  if (!key) return false;
+  if ((c.reclaimList ?? []).some((x) => reclaimKey(x) === key)) return false;
+  c.reclaimList = [...(c.reclaimList ?? []), item.trim()];
+  c.reclaimCategories = [...(c.reclaimCategories ?? []), category];
+  return true;
+}
+
 // --- capture merge (the per-field tools' result, merged into Collected) ---------------------------------
 // The model's turn carries the per-field captures already merged into a Partial<Collected> (parseStagedTurn
 // does this on the live path; fixtures provide it directly). Only the early-beat fields exist in slice a.
 function mergeStaged(prev: Collected, rec?: Partial<Collected>): Collected {
   if (!rec) return prev;
-  return {
+  const next: Collected = {
     ...prev,
     ...(rec.athleticPast !== undefined && { athleticPast: rec.athleticPast }),
     ...(rec.identityNoun !== undefined && rec.identityNoun !== '' && { identityNoun: displayIdentityNoun(rec.identityNoun) }),
@@ -350,16 +368,13 @@ function mergeStaged(prev: Collected, rec?: Partial<Collected>): Collected {
     ...(rec.gap !== undefined && rec.gap !== '' && { gap: rec.gap }),
     // Doors accumulate — one note_door call per Door; union with what we already have (never drop one).
     ...(rec.doors !== undefined && { doors: Array.from(new Set<DoorSlug>([...(prev.doors ?? []), ...rec.doors])) }),
-    // Reclaim items accumulate in lockstep with their categories. Tools are stage-agnostic for CAPTURE, so an
-    // item volunteered early (front-loader) parks here in the moment — never lost, re-surfaced at its stage.
-    ...(rec.reclaimList !== undefined && {
-      reclaimList: [...(prev.reclaimList ?? []), ...rec.reclaimList],
-      reclaimCategories: [
-        ...(prev.reclaimCategories ?? []),
-        ...rec.reclaimList.map((_, i) => rec.reclaimCategories?.[i] ?? ''),
-      ],
-    }),
   };
+  // Reclaim items accumulate in lockstep with their categories, DEDUPED — an item volunteered early (front-loader)
+  // parks here in the moment (never lost, re-surfaced at its stage), and a model re-tag of a listed want is a no-op.
+  if (rec.reclaimList !== undefined) {
+    rec.reclaimList.forEach((item, i) => appendReclaim(next, item, rec.reclaimCategories?.[i] ?? ''));
+  }
+  return next;
 }
 
 // Stage-scoped gap backstop: if the model conversed but never called set_gap, capture the member's OWN
@@ -528,8 +543,7 @@ export function applyStagedTurn(
     // Bound the reclaim loop: capture a want if none has landed yet, then route to the card once card-ready.
     if (stage === 'reclaim') {
       if ((collected.reclaimList?.length ?? 0) < RECLAIM_LIST_FLOOR && shouldCaptureStagedReclaim(memberMessage)) {
-        collected.reclaimList = [...(collected.reclaimList ?? []), memberMessage.trim()];
-        collected.reclaimCategories = [...(collected.reclaimCategories ?? []), ''];
+        appendReclaim(collected, memberMessage);
       }
       if (hasIdentity(collected) && realGap && (collected.reclaimList?.length ?? 0) >= RECLAIM_LIST_FLOOR) {
         return {
@@ -553,10 +567,9 @@ export function applyStagedTurn(
       stage === 'reclaim' &&
       !correctsReflection(memberMessage) &&
       !memberClosingReclaim(memberMessage) &&
-      shouldCaptureStagedReclaim(memberMessage)
+      shouldCaptureStagedReclaim(memberMessage) &&
+      appendReclaim(collected, memberMessage) // only a genuinely NEW want re-opens the confirm (deduped)
     ) {
-      collected.reclaimList = [...(collected.reclaimList ?? []), memberMessage.trim()];
-      collected.reclaimCategories = [...(collected.reclaimCategories ?? []), ''];
       finalReply = reflectReclaim(collected);
       awaitingConfirm = true; // stay in confirm — re-reflect with the just-added want included
       // fall through to the shared return
@@ -731,15 +744,17 @@ export function applyStagedTurn(
     // shared ones — ALREADY-SATISFIED = stageMaterialRich('reclaim') (≥ the min wants on the table) and
     // MEMBER-PUSHED-PAST = memberPushedPast('reclaim') (the member is closing). Same predicates as identity/gap.
     const closing = memberPushedPast('reclaim', memberMessage, collected);
-    // Backstop: capture an untagged want ONLY when the member is OFFERING (not closing/refusing). The live
-    // eval proved the model under-tags wants (stranding the list at 0); the close-guard proves it never
-    // fabricates a list item from a "that's my list" / frustrated refusal. Offering → capture; closing → never.
-    const grewThisTurn = (collected.reclaimList?.length ?? 0) > (state.collected.reclaimList?.length ?? 0);
-    if (!grewThisTurn && !closing && shouldCaptureStagedReclaim(memberMessage)) {
-      collected.reclaimList = [...(collected.reclaimList ?? []), memberMessage.trim()];
-      collected.reclaimCategories = [...(collected.reclaimCategories ?? []), ''];
-    }
+    // The member put a want FORWARD this turn (new or a restatement) — distinct from closing/refusing. This is
+    // the "still in flow" signal, separate from whether the list actually grew (a dup offer keeps them in flow).
+    const offered = !closing && shouldCaptureStagedReclaim(memberMessage);
+    const priorLen = state.collected.reclaimList?.length ?? 0;
+    const modelCaptured = (collected.reclaimList?.length ?? 0) > priorLen; // the model's add_reclaim_item already landed
+    // Backstop: capture an untagged want ONLY when the member offered AND the model did NOT already tag it — else
+    // we'd double-add the same want in two phrasings ("riding again" + "I want to ride again"). appendReclaim also
+    // dedupes exact restatements across turns, so a re-said want is a safe no-op — never a second "Ride my bike more".
+    if (offered && !modelCaptured) appendReclaim(collected, memberMessage);
     const count = collected.reclaimList?.length ?? 0;
+    const grewThisTurn = count > priorLen; // a NEW unique want landed this turn (model or backstop)
     // Cap runaway capture: once at the soft aim (~7), stop asking "what else?" and move to confirm — this is
     // what kept a verbose persona from ballooning to 17–21 items.
     if (count >= RECLAIM_LIST_TARGET || (count >= RECLAIM_LIST_MIN && closing)) {
@@ -748,11 +763,11 @@ export function applyStagedTurn(
       awaitingConfirm = true;
     } else if (count >= RECLAIM_LIST_MIN) {
       // At/above the minimum, below the aim, not explicitly closing. COMPLETE-WHEN-DONE (never force-close):
-      // only keep gathering toward ~7 while she's actively ADDING items (grewThisTurn). The moment a turn adds
-      // nothing new, she's finished offering — reflect the list and await her confirm (she can still correct or
-      // extend; the card is the final seatbelt). This kills the 24-turn loop where a member at 3–6 items never
-      // hits an explicit "that's the list" phrasing. It can't over-fire: it requires ≥3 real captured items.
-      if (grewThisTurn && count < RECLAIM_LIST_TARGET) {
+      // keep gathering toward ~7 while she's still OFFERING — a new item OR a restatement (a dup must NOT pull
+      // the list up short; Jay's walk). Only when a turn brings nothing at all (not offering, not growing) is
+      // she finished — reflect the list and await her confirm (she can still correct or extend; card is the
+      // seatbelt). This kills the 24-turn loop where a member at 3–6 items never says "that's the list".
+      if ((grewThisTurn || offered) && count < RECLAIM_LIST_TARGET) {
         finalReply = withQuestion(modelText, RECLAIM_MORE);
       } else {
         finalReply = reflectReclaim(collected);
