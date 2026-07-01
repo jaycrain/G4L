@@ -1,12 +1,28 @@
+import { getDb } from '../../../lib/db/index.ts';
+import type { Db } from '../../../lib/db/schema.ts';
 import OnboardingCeremony from '../ceremony.tsx';
 
-// Standalone route for the onboarding ceremony (§2d/§2e). Increment 6 wires it into the post-commit arc with
-// the real member's data; for now it reads ?name= / ?member= so the screen is reviewable on its own.
+// The onboarding ceremony route (§2d/§2e), reached post-account-setup under v2.1 (the flag-gated hand-off from
+// setupAction). Fetches the member's real first name by id; falls back to ?name= / 'friend' so it stays
+// reviewable standalone. Increment 6 wiring: welcome → conversation → card → account/setup → HERE → dashboard.
 export default async function Page({
   searchParams,
 }: {
   searchParams: Promise<{ name?: string; member?: string }>;
 }) {
   const sp = await searchParams;
-  return <OnboardingCeremony firstName={sp.name || 'friend'} memberId={sp.member} />;
+  let firstName = sp.name || 'friend';
+  if (sp.member) {
+    try {
+      const db = (await getDb()) as unknown as Db;
+      const m = (
+        await db.query<{ display_name: string }>('select display_name from member_profile where member_id = $1', [sp.member])
+      ).rows[0];
+      const first = m?.display_name?.trim().split(/\s+/)[0];
+      if (first) firstName = first;
+    } catch {
+      /* fall back to the query param / default */
+    }
+  }
+  return <OnboardingCeremony firstName={firstName} memberId={sp.member} />;
 }
