@@ -95,10 +95,18 @@ const SKIP_ACK = "That's completely fine — you'll find her through the work, n
 const REOPEN_IDENTITY = "My mistake — let's get it right. What word feels truer for who she was?";
 
 // The breathe-floor probe (Increment 1a): when a name lands but the person hasn't been drawn out yet,
-// draw them out once before reflecting it back. (Directional voice — 1b refines the conduct/wording.)
+// draw them out once before reflecting it back. (Directional voice — refined in 1b.)
 function identityProbe(c: Collected): string {
   const label = identityLabel(c.identityNoun) || 'that person';
   return `Before we hold onto that word — take me back into being ${label}. What did it actually feel like, and when did it feel most true?`;
+}
+
+// The conditional SECOND probe (1b tuning / Decision S — "the net"): fires ONLY when the material is still
+// thin after probe 1. It goes smaller and more concrete — a single ordinary moment, a sensory detail, a
+// contrast — never re-asking probe 1, warm and low-pressure. At most one; then the terse-escape moves on.
+function identityProbe2(c: Collected): string {
+  const label = identityLabel(c.identityNoun) || 'that person';
+  return `Even one small moment is enough — a specific morning, a feeling in your body — when you were most ${label}. What did being ${label} give you that you don't feel now? Even a little thing; there's no wrong answer.`;
 }
 
 // §4 — Stage 2 (how the gap opened): introduces "Doors" at first use, personalized to their handle.
@@ -208,11 +216,12 @@ function reflectIdentity(c: Collected): string {
   // Substantive reflection (1b): name the SPECIFICS the member gave, in their own words — not a hollow restate
   // ("so, the Athlete, got it"), which is a race in the floor's clothing. Thin capture → visibly thin
   // reflection → the member sees it's off and corrects: the quality is self-policing, not an extra gate.
+  // De-gendered (1b): reference the identity by name, never a guessed pronoun ("her" was wrong for a male member).
   const specifics = (c.athleticPast ?? '').trim();
   if (specifics) {
-    return `So — ${label} is who we're bringing back — “${specifics}.” That's the version that feels most like you. Did I get her right?`;
+    return `So — ${label} is who we're bringing back — “${specifics}.” That's the version that feels most like you. Did I get ${label} right?`;
   }
-  return `So — ${label} is who we're bringing back, the version that feels most like you. Did I get her right?`;
+  return `So — ${label} is who we're bringing back, the version that feels most like you. Did I get ${label} right?`;
 }
 
 // The model's same-turn text is its natural reflection of the story it just heard — use it as the lead when
@@ -422,16 +431,11 @@ function memberPushedPast(stage: StagedStage, message: string, c: Collected): bo
   return memberClosingReclaim(message);
 }
 
-// THE FLOOR GATE — may this stage advance to reflect-confirm this turn? True when either escape fires, or the
-// stage has genuinely breathed: the qualifying material was in hand BEFORE this turn (so a probe turn passed),
-// not just landed on it. `prev` is last turn's collected; the "just landed this turn" case is what holds.
-function stageFloorMet(stage: StagedStage, prev: Collected, c: Collected, message: string): boolean {
-  if (stageMaterialRich(stage, c)) return true; // front-loader escape
-  if (memberPushedPast(stage, message, c)) return true; // terse escape
-  if (stage === 'identity') return !!prev.identityNoun; // the name persisted a turn → a real probe happened
-  if (stage === 'gap') return !!prev.gap; // the gap story persisted a turn
-  return (prev.reclaimList?.length ?? 0) >= RECLAIM_LIST_FLOOR; // a want persisted a turn
-}
+// The two ESCAPE predicates above (`stageMaterialRich` + `memberPushedPast`) are the shared, uniform contract
+// across all three stages — every stage advances the moment either fires, so the floor never traps the front-
+// loader or the terse member. The FLOOR itself (how long a stage draws out before those escapes) is per-stage:
+// identity = up to two probes (Decision S "the net"); gap = invite-until-whole (GAP_MORE); reclaim = gather to
+// the aim (MIN/nudge/complete-when-done). Same escapes, stage-appropriate drawing-out.
 
 // --- THE STAGED ENGINE (pure, replayable) --------------------------------------------------------------
 export function applyStagedTurn(
@@ -447,6 +451,7 @@ export function applyStagedTurn(
   let reclaimNudged = state.reclaimNudged ?? false;
   let gapTurns = state.gapTurns ?? 0;
   let noFade = state.noFade ?? false;
+  let identityProbes = state.identityProbes ?? 0;
   const modelText = stripLeadingDisclosure(model.text).trim();
 
   // SYSTEMIC INVARIANT (the gather-cap): no gather/elaboration stage loops forever. Past the turn budget, FORCE
@@ -526,16 +531,21 @@ export function applyStagedTurn(
       stage = 'gap';
       finalReply = `${SKIP_ACK}\n\n${gapOpen(collected)}`;
     } else if (collected.identityNoun) {
-      // Named — but the BREATHE FLOOR (1a) gates the reflect-confirm: don't advance on the turn the name
-      // lands (Scott's "identity was rushed"). Draw the PERSON out once first — UNLESS an escape fires (the
-      // front-loader gave a rich story in one pass, or the member is pushing past). Prefer the model's own
-      // question when it's drawing them out; else a minimal probe (1b voices it).
-      if (stageFloorMet('identity', state.collected, collected, memberMessage)) {
+      // BREATHE FLOOR (1a) + the conditional second probe (1b / Decision S). Reflect once the material is RICH
+      // (front-loader escape), the member PUSHES PAST (terse escape), or we've drawn out enough: a general probe,
+      // then ONE smaller/concrete probe if STILL thin — capped at 2 so it never loops or re-asks. This is the
+      // expanded drawing-out identity gets (Scott's "rushed"); the escapes keep it off the front-loader/terse.
+      const rich = stageMaterialRich('identity', collected);
+      const pushed = memberPushedPast('identity', memberMessage, collected);
+      if (rich || pushed || identityProbes >= 2) {
         finalReply = reflectIdentity(collected);
         awaitingConfirm = true;
       } else {
-        identityTurns += 1;
-        finalReply = modelText && /\?/.test(modelText) ? modelText : identityProbe(collected);
+        identityProbes += 1;
+        // probe 1 = the general draw; probe 2 = smaller + concrete (never re-asking probe 1). Prefer the model's
+        // own drawing-out question when it asked one.
+        const probe = identityProbes === 1 ? identityProbe(collected) : identityProbe2(collected);
+        finalReply = modelText && /\?/.test(modelText) ? modelText : probe;
       }
     } else {
       // Gather. Never-strand: a member who won't name a PAST self (a thriving no-fade optimizer, or just a
@@ -705,7 +715,7 @@ export function applyStagedTurn(
 
   return {
     reply: finalReply,
-    state: { stage, collected, awaitingConfirm, identityTurns, reclaimNudged, gapTurns, noFade },
+    state: { stage, collected, awaitingConfirm, identityTurns, identityProbes, reclaimNudged, gapTurns, noFade },
     complete,
   };
 }

@@ -38,6 +38,7 @@ export type ConvState = {
   collected: Collected;
   doorTurns?: number; // how many exchanges the Door beat has had (gates completion — see resolveCompletion)
   identityTurns?: number; // how many exchanges spent at the naming beat (drives the identity gate — see liveTurn)
+  identityProbes?: number; // v2.1 (1b): how many breathe-floor probes the identity beat has asked (caps the second-probe net)
   doorAsked?: boolean; // has the Door beat actually been ENTERED (the "how did the gap open?" question posed)?
   // Until then a gap can't be captured and the intake can't complete — "list hit the minimum" is NOT
   // "we're in the Door beat" (the list has no max). The fix for capturing/completing before the ask.

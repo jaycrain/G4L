@@ -30,16 +30,16 @@ test('STAGED identity — breathe floor (1a): gather → PROBE the person → re
   const { turns, finalState } = replayStaged([
     { member: 'I was a competitive cyclist who raced every weekend', model: { text: 'That comes through.', record: { athleticPast: 'a competitive cyclist who raced every weekend' } } },
     { member: 'The Athlete', model: { text: 'The Athlete.', record: { identityNoun: 'Athlete' } } },
-    { member: 'It felt like flying — free and strong, most myself out on the road at dawn', model: { text: 'I can feel that.' } },
+    { member: 'It felt like flying — free and strong, the road mine before anyone else was up', model: { text: 'I can feel that.', record: { athleticPast: 'the Athlete — raced every weekend, felt like flying, free and strong, the road hers before dawn' } } },
     { member: 'Yes, that’s her', model: { text: 'Good.' } },
   ]);
   // turn 2: the name lands, but the FLOOR HOLDS — draw the person out; never race to confirm (Scott's "rushed").
   assert.equal(turns[1]!.state.awaitingConfirm, false, 'floor holds — a bare noun does not race to reflect-confirm');
   assert.match(turns[1]!.reply, /feel|most true|being the Athlete/i, 'it probes the person instead');
-  // turn 3: now the person is drawn out → reflect-confirm, quoting the member's OWN specifics (1b substantive).
-  assert.equal(turns[2]!.state.awaitingConfirm, true, 'after a real probe turn, reflects and awaits confirm');
+  // turn 3: the probe answer enriched the material → reflect-confirm, quoting the member's OWN specifics (1b substantive).
+  assert.equal(turns[2]!.state.awaitingConfirm, true, 'once rich, reflects and awaits confirm (no needless 2nd probe)');
   assert.match(turns[2]!.reply, /Athlete/);
-  assert.match(turns[2]!.reply, /competitive cyclist who raced every weekend/, 'reflection names the member’s own specifics');
+  assert.match(turns[2]!.reply, /felt like flying|free and strong/, 'reflection names the member’s own specifics');
   assert.match(turns[2]!.reply, /did I get|right\?/i);
   // turn 4: affirm → advance, BRIDGING from the named identity into how the gap opened (not a cold switch).
   assert.equal(finalState.stage, 'gap', 'advances to the gap stage on confirm');
@@ -78,6 +78,22 @@ test('STAGED identity — pushed-past ESCAPE (1a): the terse member is not trapp
   assert.equal(turns[0]!.state.awaitingConfirm, false, 'floor holds on the thin answer');
   // turn 2: the member pushes past the invitation → member-pushed-past escape → advance to confirm, never looped.
   assert.equal(turns[1]!.state.awaitingConfirm, true, 'pushed-past escape: honors the terse member, never loops');
+});
+
+test('STAGED identity — conditional 2nd probe (1b/Decision S): a shrug persona gets ONE concrete second draw, then caps (never loops)', () => {
+  const { turns } = replayStaged([
+    { member: 'I dunno, a dad I guess', model: { text: 'Okay.', record: { athleticPast: 'a dad', identityNoun: 'Dad' } } },
+    { member: 'it was just normal, nothing special', model: { text: 'Mm.' } }, // still thin after probe 1
+    { member: 'honestly I can’t really think of anything', model: { text: 'That’s okay.' } }, // still thin after probe 2
+  ]);
+  // turn 1: name lands thin → probe 1 (the general draw).
+  assert.equal(turns[0]!.state.awaitingConfirm, false, 'probe 1 fires (thin)');
+  assert.match(turns[0]!.reply, /take me back into being/i, 'the general first probe');
+  // turn 2: STILL thin → probe 2 (smaller + concrete — "the net"), never re-asking probe 1.
+  assert.equal(turns[1]!.state.awaitingConfirm, false, 'probe 2 fires because still thin');
+  assert.match(turns[1]!.reply, /one small moment|little thing|no wrong answer/i, 'goes concrete, does not re-ask probe 1');
+  // turn 3: still thin after two probes → CAP: reflect and move on, never a third probe / loop.
+  assert.equal(turns[2]!.state.awaitingConfirm, true, 'capped at two probes → reflect, never loops');
 });
 
 test('STAGED gap — front-loader ESCAPE (1b): a rich multi-Door gap in one pass reflects immediately (no extra "was there more?")', () => {
