@@ -83,6 +83,12 @@ const MIGRATIONS: Array<{ file: string; sentinel: Sentinel }> = [
   { file: 'migrations/0040_reclaim_item_removed.sql', sentinel: { table: 'reclaim_item', column: 'removed_at' } },
   { file: 'migrations/0041_reclaim_item_audit.sql', sentinel: { table: 'member_profile_audit', column: 'source' } },
   { file: 'migrations/0042_enable_rls_sweep.sql', sentinel: '_rls_sweep_0042' },
+  { file: 'migrations/0043_member_door_crud_audit.sql', sentinel: { table: 'member_door', column: 'removed_at' } },
+  { file: 'migrations/0044_instrument_tier.sql', sentinel: { table: 'atlas_asset', column: 'administration_tier' } },
+  {
+    file: 'migrations/0045_reclaim_list_floor.sql',
+    sentinel: { sql: "select exists (select 1 from pg_constraint where conname = 'reclaim_list_min_1') as e" },
+  },
 ];
 export const SEED_SQL = () => sqlFile('seed/0001_reference_data.sql');
 

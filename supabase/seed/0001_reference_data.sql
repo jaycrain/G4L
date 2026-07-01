@@ -53,3 +53,8 @@ on conflict (code) do update
   set name = excluded.name, r_group = excluded.r_group, layer = excluded.layer,
       is_gated = excluded.is_gated, supports_variants = excluded.supports_variants,
       sort_order = excluded.sort_order;
+
+-- Instrument administration tier (0044) — governed in config, set here so it lands on fresh apply + every boot
+-- (the seed always runs after migrations, so the column exists). Only the IDQ is an instrument in the current
+-- catalog: a validated, scored scale. v2.2 assigns the rest (Doors = exploratory, audits = formative).
+update atlas_asset set administration_tier = 'validated' where code = 'R-1';

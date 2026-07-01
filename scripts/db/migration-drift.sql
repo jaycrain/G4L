@@ -85,6 +85,12 @@ from (
   select '0041' as migration, coalesce(exists(select 1 from information_schema.columns where table_schema='public' and table_name='member_profile_audit' and column_name='source'), false) as applied
   union all
   select '0042' as migration, coalesce(to_regclass('public._rls_sweep_0042') is not null, false) as applied
+  union all
+  select '0043' as migration, coalesce(exists(select 1 from information_schema.columns where table_schema='public' and table_name='member_door' and column_name='removed_at'), false) as applied
+  union all
+  select '0044' as migration, coalesce(exists(select 1 from information_schema.columns where table_schema='public' and table_name='atlas_asset' and column_name='administration_tier'), false) as applied
+  union all
+  select '0045' as migration, coalesce((exists(select 1 from pg_constraint where conname='reclaim_list_min_1')), false) as applied
 ) t
-where applied = false   -- show ONLY the gaps; delete this line to see all 42
+where applied = false   -- show ONLY the gaps; delete this line to see all 45
 order by migration;
