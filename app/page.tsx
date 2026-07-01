@@ -9,10 +9,12 @@ export default async function Home() {
   return (
     <>
       <h1>Grinta for Life</h1>
+      {/* Number-free + no front-loaded jargon (Donna's rule): terms are introduced at first use inside the
+          conversation, not here — and v2.1 onboarding has no scores yet. DIRECTIONAL copy for wordsmithing. */}
       <p className="muted">
-        Somewhere along the way, who you know you are gets diminished by life and others&apos;
-        needs. This is where we start: a short conversation, the Identity Distance
-        Questionnaire (IDQ), and your first ID Score — so reclaiming your identity isn&apos;t abstract.
+        Somewhere along the way, the person you know you are gets quiet — worn down by life, by
+        everyone else&apos;s needs, by a hundred reasonable decisions. This is where you start turning
+        that around: a real conversation, and a companion built for this one thing.
       </p>
       <p>
         <Link className="btn" href="/onboarding">
