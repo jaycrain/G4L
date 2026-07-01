@@ -109,6 +109,20 @@ function gapOpen(c: Collected): string {
   );
 }
 
+// §4 bridge (Increment 1b): when identity was NAMED and drawn out, the gap emerges FROM that conversation on
+// its own momentum (Scott's "natural connection") — turn the person they just painted into the how-did-you-
+// lose-her question, not a cold topic switch. Still introduces "Doors" at first use (terminology governance).
+// Falls back to the standalone gapOpen when identity was skipped (no name to bridge from).
+function gapBridge(c: Collected): string {
+  if (!c.identityNoun) return gapOpen(c);
+  const label = identityLabel(c.identityNoun) || 'that person';
+  return (
+    `Then let's find out what happened to ${label}. The distance from ${label} rarely opens all at once — more often ` +
+    `it's an accumulation of what we call Doors: moments and seasons you walk through and barely notice, each one ` +
+    `widening the gap. So how did it go — what pulled you away from ${label}? Take me through it.`
+  );
+}
+
 // Reflect-confirm copy for the gap. We lead with the model's OWN warm reflection of what they just told us
 // (it just heard the whole story); the forecast sets the lighter-Door expectation (receive, don't excavate)
 // that the specific Doors get a dedicated session later; one confirm question, never a Y/N gate. (§4)
@@ -182,6 +196,13 @@ const RECLAIM_SOFT_HOLD =
 // Natural case for the handle (brand), reading naturally after the dash.
 function reflectIdentity(c: Collected): string {
   const label = identityLabel(c.identityNoun) || 'that person';
+  // Substantive reflection (1b): name the SPECIFICS the member gave, in their own words — not a hollow restate
+  // ("so, the Athlete, got it"), which is a race in the floor's clothing. Thin capture → visibly thin
+  // reflection → the member sees it's off and corrects: the quality is self-policing, not an extra gate.
+  const specifics = (c.athleticPast ?? '').trim();
+  if (specifics) {
+    return `So — ${label} is who we're bringing back — “${specifics}.” That's the version that feels most like you. Did I get her right?`;
+  }
   return `So — ${label} is who we're bringing back, the version that feels most like you. Did I get her right?`;
 }
 
@@ -480,7 +501,7 @@ export function applyStagedTurn(
     } else {
       stage = nextStagedStage(stage);
       awaitingConfirm = false;
-      if (stage === 'gap') finalReply = gapOpen(collected);
+      if (stage === 'gap') finalReply = gapBridge(collected); // 1b: bridge from the named identity, not a cold switch
       else if (stage === 'reclaim') finalReply = reclaimOpening(collected);
       else {
         // reclaim → complete: hand off to the confirmation card (rendered client-side from `collected`).
@@ -571,10 +592,13 @@ export function applyStagedTurn(
       // whole story before reflecting — invite the rest (GAP_MORE) until the member signals it's whole.
       collected.doors = augmentDoors(collected.doors ?? [], gapStageCorpus(history, memberMessage));
       const gapGrew = modelTaggedGap || collected.gap.length > (state.collected.gap?.length ?? 0);
-      // Keep gathering only while she's adding AND we haven't already asked for more GAP_MORE_MAX times. Prefer
-      // the model's own (varied) question; otherwise a ROTATED nudge (never the same line twice); once we've
-      // nudged enough, reflect and move on — the confirm is still correctable.
-      if (gapGrew && !memberSignalsGapComplete(memberMessage) && gapMoreAsks(history) < GAP_MORE_MAX) {
+      // Uniform floor+escape (1b): the gap's drawing-out is "invite until the story is whole." REFLECT once an
+      // ESCAPE fires — the story is already RICH (front-loader, e.g. Donna's multi-Door pass) or the member
+      // PUSHED PAST (signals whole / deflects) — or the invite is exhausted (nothing new / cap). Otherwise keep
+      // receiving the story. Same shared predicates as identity, so all three stages breathe the same way.
+      const gapEscape = stageMaterialRich('gap', collected) || memberPushedPast('gap', memberMessage, collected);
+      const stillReceiving = gapGrew && gapMoreAsks(history) < GAP_MORE_MAX;
+      if (!gapEscape && stillReceiving) {
         finalReply = modelText && /\?/.test(modelText) ? modelText : gapMore(history);
       } else {
         finalReply = reflectGap(modelText);
@@ -585,7 +609,10 @@ export function applyStagedTurn(
       finalReply = modelText && /\?/.test(modelText) ? modelText : gapOpen(collected);
     }
   } else if (stage === 'reclaim') {
-    const closing = memberClosingReclaim(memberMessage);
+    // Uniform floor+escape (1b): reclaim's drawing-out is "gather toward the aim." Its two escapes are the
+    // shared ones — ALREADY-SATISFIED = stageMaterialRich('reclaim') (≥ the min wants on the table) and
+    // MEMBER-PUSHED-PAST = memberPushedPast('reclaim') (the member is closing). Same predicates as identity/gap.
+    const closing = memberPushedPast('reclaim', memberMessage, collected);
     // Backstop: capture an untagged want ONLY when the member is OFFERING (not closing/refusing). The live
     // eval proved the model under-tags wants (stranding the list at 0); the close-guard proves it never
     // fabricates a list item from a "that's my list" / frustrated refusal. Offering → capture; closing → never.

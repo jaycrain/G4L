@@ -36,14 +36,26 @@ test('STAGED identity — breathe floor (1a): gather → PROBE the person → re
   // turn 2: the name lands, but the FLOOR HOLDS — draw the person out; never race to confirm (Scott's "rushed").
   assert.equal(turns[1]!.state.awaitingConfirm, false, 'floor holds — a bare noun does not race to reflect-confirm');
   assert.match(turns[1]!.reply, /feel|most true|being the Athlete/i, 'it probes the person instead');
-  // turn 3: now the person is drawn out → reflect-confirm + await.
+  // turn 3: now the person is drawn out → reflect-confirm, quoting the member's OWN specifics (1b substantive).
   assert.equal(turns[2]!.state.awaitingConfirm, true, 'after a real probe turn, reflects and awaits confirm');
   assert.match(turns[2]!.reply, /Athlete/);
+  assert.match(turns[2]!.reply, /competitive cyclist who raced every weekend/, 'reflection names the member’s own specifics');
   assert.match(turns[2]!.reply, /did I get|right\?/i);
-  // turn 4: affirm → advance + reframe into how-it-opened.
+  // turn 4: affirm → advance, BRIDGING from the named identity into how the gap opened (not a cold switch).
   assert.equal(finalState.stage, 'gap', 'advances to the gap stage on confirm');
-  assert.match(turns[3]!.reply, /how it went|distance started to open/i, 'reframes into how-it-opened');
+  assert.match(turns[3]!.reply, /what happened to the Athlete|pulled you away from the Athlete/i, 'bridges from the named identity');
+  assert.match(turns[3]!.reply, /Doors/, 'introduces Doors at first use');
   assert.equal(finalState.collected.identityNoun, 'Athlete');
+});
+
+test('STAGED identity→gap bridge (1b): skipped identity falls back to the standalone gap opener (no name to bridge)', () => {
+  const { turns } = replayStaged([
+    { member: 'I chased every new idea', model: { text: 'I hear that.', record: { athleticPast: 'someone who chased every new idea' } } },
+    { member: 'I can’t name it yet', model: { text: 'That’s okay.', record: { identitySkipped: true } } },
+  ]);
+  // skip → SKIP_ACK + the standalone gapOpen (can't bridge from a name that was never given), still warm + Doors.
+  assert.match(turns[1]!.reply, /find her through the work/i, 'acknowledges the skip');
+  assert.match(turns[1]!.reply, /Doors/, 'still opens the gap thread with the Door frame');
 });
 
 test('STAGED identity — front-loader ESCAPE (1a): a rich one-pass identity reflects immediately, no extra probe', () => {
@@ -66,6 +78,17 @@ test('STAGED identity — pushed-past ESCAPE (1a): the terse member is not trapp
   assert.equal(turns[0]!.state.awaitingConfirm, false, 'floor holds on the thin answer');
   // turn 2: the member pushes past the invitation → member-pushed-past escape → advance to confirm, never looped.
   assert.equal(turns[1]!.state.awaitingConfirm, true, 'pushed-past escape: honors the terse member, never loops');
+});
+
+test('STAGED gap — front-loader ESCAPE (1b): a rich multi-Door gap in one pass reflects immediately (no extra "was there more?")', () => {
+  const story = 'I got laid off after twenty years, and then my mother’s health collapsed and I became her caretaker overnight';
+  const { turns } = replayStaged(
+    [{ member: story, model: { text: 'That’s a lot at once.', record: { gap: story } } }],
+    { stage: 'gap', collected: { athleticPast: 'a cyclist', identityNoun: 'Athlete' } },
+  );
+  // rich (2 Doors) in one pass → the gap already-satisfied escape fires → reflect-confirm now, no invite round.
+  assert.equal(turns[0]!.state.awaitingConfirm, true, 'front-loader gap escape: reflects immediately on a rich pass');
+  assert.ok((turns[0]!.state.collected.doors ?? []).length >= 2, 'both Doors captured from the one pass');
 });
 
 test('STAGED identity — skip path advances straight to the gap stage (nothing to confirm)', () => {
