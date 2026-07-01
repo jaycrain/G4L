@@ -226,7 +226,7 @@ export default function OnboardingChat() {
         {/* AI disclosure — woven in, its own quiet beat (governance): they always know they're talking with AI. */}
         <p className="ai-disclosure" role="note">
           From here it’s you and your G4L companion — an AI built for this and nothing else. It remembers what
-          you share so you never start over, and what you tell it shapes everything that follows. It’s held with care.
+          you share so you never start over, and what you tell it shapes everything that follows.
         </p>
         <form onSubmit={begin}>
           <label htmlFor="name">Your name</label>
@@ -258,7 +258,7 @@ export default function OnboardingChat() {
         // already in the conversation above (the engine's decline reply); this is the terminal frame that
         // genuinely leaves the door open. No card, no member created.
         <div className="onboard-decline" role="note">
-          <p>That’s where we’ll leave it for now — and honestly, it’s a good place to be. Nothing here gets created, and there’s nothing you need to do.</p>
+          <p>That’s where we’ll leave it for now — and it’s a good place to be. Nothing here gets created, and there’s nothing you need to do.</p>
           <p>If a day comes when something real pulls you away from who you are, and you feel that distance, this door stays open. Come back and we’ll pick it up together.</p>
         </div>
       ) : savedForLater ? (

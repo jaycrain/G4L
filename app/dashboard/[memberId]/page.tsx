@@ -257,7 +257,8 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
         ) : (
           <div className="card metric id-card" data-tour="idscore">
             <h3>ID Score</h3>
-            <div className="metric-body"><p className="muted">Your Identity Distance Questionnaire (IDQ) baseline isn&apos;t in yet.</p></div>
+            {/* §3.6 no-score-yet — an ANTICIPATORY blank, never an error. Fills the moment they start Reconnect. */}
+            <div className="metric-body"><p className="muted">Blank for now — it fills the moment you start, and it’s where you’ll watch the distance close.</p></div>
             <Link href={`/score/${memberId}`} className="see-more">See more →</Link>
           </div>
         )}

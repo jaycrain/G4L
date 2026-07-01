@@ -975,3 +975,20 @@ html:has(.companion-hero), body:has(.companion-hero) { overflow-anchor: none; }
 .health-bad { background: var(--deep-red); }
 .health-card.health-down { border-color: var(--deep-red); }
 .health-card.health-down h3 { color: var(--deep-red); }
+
+/* §2d/§2e onboarding ceremony — the light threshold handoff + Route Card. */
+.onboard-ceremony { max-width: 40rem; }
+.onboard-ceremony h1 { margin-top: 0.5rem; }
+.route-card {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.6rem;
+  margin: 1.25rem 0; padding: 1rem 1.15rem; border: 1px solid var(--panel-line, rgba(55,79,99,0.38));
+  border-radius: 12px; background: rgba(55,79,99,0.03);
+}
+.route-step { display: inline-flex; align-items: center; gap: 0.4rem 0.6rem; }
+.route-r { font-weight: 600; color: var(--navy); }
+.route-step:nth-child(2) .route-r { color: var(--teal); }
+.route-step:nth-child(3) .route-r { color: var(--olive); }
+.route-step:nth-child(4) .route-r { color: var(--orange); }
+.route-arrow { color: var(--navy); opacity: 0.5; }
+.route-loop { flex-basis: 100%; margin-top: 0.5rem; font-size: 0.85rem; color: var(--navy); opacity: 0.7; }
+.tour-progress { font-size: 0.8rem; letter-spacing: 0.02em; }
