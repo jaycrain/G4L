@@ -75,6 +75,13 @@ const DOOR_ALIASES: Partial<Record<DoorSlug, string[]>> = {
   acceptance: ['getting older', 'at my age', 'just my age', 'past my prime', 'not as young as i used to be', 'not as capable', 'slowing down', 'downhill from here', 'it is what it is', 'made peace with', 'accepted that', 'this is just who i am now', 'my best years are behind me', 'what do you expect at my age', 'these things happen when you get older', 'resigned myself', 'settled for less', 'settled for this'],
 };
 
+// Bereavement pattern for The Loss (used in matchDoors) — losing a parent/family member/loved one, or a
+// summary of stacking losses. A loved-one object (not "job"/"weight") keeps it specific enough that "lost my
+// job" / "weight loss" never trip it, which is why the bare word "loss" itself stays alias-only. Tested against
+// the already-lowercased, apostrophe-normalized message, so no /i needed.
+const BEREAVEMENT_LOSS =
+  /\blost (my|his|her|their|our) (dad|mom|mum|mother|father|parent|parents|son|daughter|child|children|kid|brother|sister|sibling|husband|wife|partner|spouse|grandmother|grandfather|grandma|grandpa|best friend|friend)\b|\b(a )?(decade|year|years|lifetime) of (stacking )?loss(es)?\b|\bstacking losses\b/;
+
 // Map a member's free-text answer to one or more Doors (voice rewrite v1: members answer in their
 // own words; the agent maps silently). Matches by slug, full/short display name, or a 1–8 number;
 // returns canonical-ordered, de-duplicated slugs. Empty array means nothing recognized → re-ask.
@@ -101,14 +108,20 @@ export function matchDoors(message: string): DoorSlug[] {
       found.add(d.slug);
       continue;
     }
-    // The Loss is recognized ONLY by its death-specific aliases — the bare word "loss" / "the loss" is
-    // too ambiguous in English ("job loss", "weight loss", "the loss of…") and over-tagged the Door.
+    // The Loss is recognized ONLY by its death-specific aliases + the bereavement pattern below — the bare
+    // word "loss" / "the loss" is too ambiguous in English ("job loss", "weight loss", "the loss of…").
     if (d.slug === 'loss') continue;
     // Otherwise match the Door's name (slug / short / full title), WORD-BOUNDED so "body" never fires
     // inside "anybody" and a name never matches mid-word.
     const names = [d.slug.replace(/_/g, ' '), shortName(d.displayName), d.displayName.toLowerCase()];
     if (names.some((n) => wordInText(n, m))) found.add(d.slug);
   }
+  // The Loss, recognized from BEREAVEMENT language in the member's own words ("lost my dad", "lost her mom",
+  // "a decade of stacking losses") — the death-specific aliases above miss losing a parent/family member, the
+  // most common bereavement. Kept SPECIFIC to a loved-one object so it never over-tags "lost my job" / "weight
+  // loss" (which is exactly why the bare word "loss" stays alias-only). First- and third-person (a summary of
+  // the member's story can read "his"). This closed a real matcher gap (the Blake doorsToConfirm case).
+  if (BEREAVEMENT_LOSS.test(m)) found.add('loss');
   // Precedence among LOAD doors (taxonomy spec §4): Aging Parents (parent care) and Full House
   // (active-family season) own their load; The Load-Bearer is the catch-all for OTHER load, so it
   // yields to them — it never redundantly re-tags a load a specific Door already owns. (Genuine

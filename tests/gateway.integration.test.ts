@@ -120,7 +120,9 @@ test('conversational onboarding drives to completion and persists end-to-end', a
 
   // opening (scripted path, no key in test env) — opens on the question; disclosure is on the start page
   const open = await onboardingNextTurn({ ctx, state: INITIAL_STATE, history: [], memberMessage: null });
-  assert.match(open.reply, /who were you/i);
+  // Anchor on the stable opener phrase ("most like yourself") rather than exact word order — the copy evolved
+  // from "who were you" to "who you were" (1b), and pinning to the old wording was the stale assertion.
+  assert.match(open.reply, /most like yourself/i);
   let state = open.state;
   const history: ConvMessage[] = [{ role: 'agent', text: open.reply }];
   async function say(text: string) {
