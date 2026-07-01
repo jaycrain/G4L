@@ -188,9 +188,9 @@ function isAcceptanceFade(text: string): boolean {
 // §5 — Stage 3 (what you want back): the reframe into hope, personalized to their handle.
 function reclaimOpen(c: Collected): string {
   return (
-    `Now, the good part — let's talk about what you want back. We'll build out your Reclaim List from the things you want ` +
-    `back from ${identityRef(c)}'s life — concrete, in your own words. The whole program measures against this list. Three ` +
-    'to start, more if they keep coming — and you can edit or add to it any time. What’s the first thing that comes to mind?'
+    `Now, the good part — let's talk about what you want back. We'll build your Reclaim List from the things you want ` +
+    `back from ${identityRef(c)}'s life — concrete, in your own words. The whole program measures against this list, and ` +
+    'you can add to it or edit it any time. What’s the first thing you want back?'
   );
 }
 
@@ -231,18 +231,28 @@ function reflectIdentity(c: Collected): string {
   return `So — ${label} is who we're bringing back, the version that feels most like you. Did I get ${label} right?`;
 }
 
-// The model's same-turn text is its natural reflection of the story it just heard — use it as the lead when
-// it isn't itself a question (one-question-per-turn); otherwise fall back to the warm canned lead.
-function reflectGap(modelText: string, c?: Collected): string {
-  // Substantive reflection (v2.1): prefer the model's OWN drawn-out reflection (its reflect_gap turn reflects
-  // the whole story in the member's words). If it left only a question, anchor on a fragment of their OWN gap
-  // words — never the generic canned lead (Jay's walk hit the generic version and it didn't land).
-  const modelReflection = modelText && !modelText.includes('?') ? modelText.trim() : '';
-  const gap = (c?.gap ?? '').trim();
-  const lead =
-    modelReflection ||
-    (gap ? `Here’s what I’m holding of it: ${gap.length > 220 ? gap.slice(0, 220).trimEnd() + '…' : gap}` : GAP_REFLECT_LEAD);
-  return `${lead}\n\n${GAP_FORECAST_CONFIRM}`;
+// Ensure a turn ENDS on a real forward question (bar: always be correctable / keep the conversation going).
+// The old `/\?/.test(modelText)` guard passed a rhetorical mid-sentence "…were they?" and then let the reply
+// trail off into a statement with nothing to answer (Jay's walk: the reflection dead-ended). This keeps the
+// model's reflection AND guarantees a closing question: model ends on a question → use it; model reflected but
+// trailed into a statement → keep it, append the stage probe; nothing usable → the probe alone.
+function withQuestion(modelText: string, probe: string): string {
+  const t = (modelText ?? '').trim();
+  if (!t) return probe;
+  if (/\?\s*$/.test(t)) return t; // already ends on a question — the model led the turn
+  return `${t}\n\n${probe}`; // a reflection with no forward question — add one
+}
+
+// The model's reflect_gap turn IS the reflection: the prompt tells it to reflect the WHOLE story back in the
+// member's words and ask a correctable question on that same turn. So TRUST it — don't overwrite it with an
+// engine-built lead. (Jay's walk: the engine threw away the model's rich reflection because it contained a "?"
+// and read back the stalest early gap fragment — "Well, I got married and had kids" — dropping everything just
+// drawn out. Never read a stale fragment back as "here's what I'm holding.")
+function reflectGap(modelText: string): string {
+  const t = (modelText ?? '').trim();
+  if (t && /\?\s*$/.test(t)) return t; // reflected AND invited correction — use the whole turn
+  if (t) return `${t}\n\n${GAP_FORECAST_CONFIRM}`; // reflected but didn't invite correction — add the confirm
+  return `${GAP_REFLECT_LEAD}\n\n${GAP_FORECAST_CONFIRM}`; // no usable reflection — warm canned lead, not a fragment
 }
 
 // The reclaim-stage opener. If the member ALREADY parked wants earlier (front-loader), read them back —
@@ -408,6 +418,35 @@ function memberSignalsGapComplete(message: string): boolean {
   return confirmsWhole(m) || memberWantsToWrap(m) || GAP_DONE_RE.test(m);
 }
 
+// At the gap reflect-confirm we ask "…does it land, or is there more to it?" — so an answer that ADDS material
+// ("yeah, there was work too") is a MORE signal, NOT a move-on. The old engine advanced on anything that wasn't
+// a textual CORRECTION, so this invited-more got read as confirmation → premature jump to Reclaim → the model
+// backtracked to explore the thread while the engine thought it was in Reclaim → gap answers polluted the list
+// (Jay's walk points 3/5/6). Detect it and STAY: not a clean close, not a bare acknowledgement, and the residual
+// after stripping the leading "yeah/yes" is substantive (and not a short "that lands"-style confirmation). Bias
+// to stay — drawing out one more thread is cheap (bounded by GAP_MAX_DEPTH); advancing early is the harm.
+// Detection = strip the acknowledgement, see what's LEFT. A confirmation ("yes, you've got it", "that lands",
+// "exactly right") is nothing but affirmation + a meta-acknowledgement — stripping both leaves no content word.
+// An addition ("yeah, there was work too", "and my mom got sick") leaves a real topic behind. This is more
+// robust than a length threshold (a short confirm and a short addition are the same length) and doesn't need a
+// growing list of "more"-phrases — it recognises the closed set of confirmations and treats everything else as
+// still-telling-it. (bias to STAY: a false stay costs one bounded draw-out turn; a false advance desyncs.)
+const AFFIRM_PREFIX_RE =
+  /^(yeah|yes|yep|yup|sure|ok(ay)?|right|true|correct|exactly|totally|definitely|absolutely|for sure|i guess|kind of|sort of|mm+|uh[ -]?huh)[\s,.!—–-]*/i;
+const GAP_CONFIRM_WORDS_RE =
+  /\b(you'?(ve|d| have)?\s*(got|nailed)\s*(it|that)|that'?s (it|right|me|correct|the one|spot on)|(it|that) (lands|fits|works|tracks)|spot on|exactly( right)?|absolutely|totally|definitely|perfect(ly)?|precisely|nailed it|got it|makes sense|understood)\b/gi;
+function memberAddingMoreGap(message: string): boolean {
+  const m = (message ?? '').replace(/[‘’]/g, "'").trim();
+  if (!m) return false;
+  if (memberSignalsGapComplete(m)) return false; // "that's it / no more / that's the whole of it" → advance
+  const residual = m
+    .replace(AFFIRM_PREFIX_RE, '')
+    .replace(GAP_CONFIRM_WORDS_RE, ' ')
+    .replace(/[^a-z]+/gi, ' ')
+    .trim();
+  return residual.split(/\s+/).some((w) => w.length >= 3); // a real content word remains → still telling it → STAY
+}
+
 // Every member message so far + the current one — the corpus we scan for Doors. rita reveals her Doors
 // PROGRESSIVELY (layoff one turn, the household load another, the parent's illness a third), so scanning only
 // the latest message drops the earlier ones. Identity-stage answers don't false-match (matchDoors is specific).
@@ -521,6 +560,16 @@ export function applyStagedTurn(
       finalReply = reflectReclaim(collected);
       awaitingConfirm = true; // stay in confirm — re-reflect with the just-added want included
       // fall through to the shared return
+    } else if (stage === 'gap' && !correctsReflection(memberMessage) && memberAddingMoreGap(memberMessage)) {
+      // GAP late-add (v2.1 fix — Jay's walk points 3/5/6): the confirm invited "is there more?" and they gave
+      // more ("yeah, there was work too"). NEVER advance on invited more — append it, re-derive Doors from the
+      // whole corpus, and go back to DRAWING IT OUT (not straight to re-reflect: we haven't explored the new
+      // thread yet). The model's own follow-up carries the beat; the engine only nudges if it gave no question.
+      const modelTaggedGap = model.record?.gap !== undefined && model.record.gap !== '';
+      if (!modelTaggedGap) collected.gap = collected.gap ? `${collected.gap} ${memberMessage.trim()}` : memberMessage.trim();
+      collected.doors = augmentDoors(collected.doors ?? [], gapStageCorpus(history, memberMessage));
+      awaitingConfirm = false; // re-open the gap draw for the new thread
+      finalReply = withQuestion(modelText, gapMore(history));
     } else if (correctsReflection(memberMessage)) {
       awaitingConfirm = false;
       if (stage === 'identity') {
@@ -534,14 +583,14 @@ export function applyStagedTurn(
         if (modelTaggedGap || shouldCaptureStagedGap(memberMessage)) {
           if (!modelTaggedGap) collected.gap = collected.gap ? `${collected.gap} ${memberMessage.trim()}` : memberMessage.trim();
           collected.doors = augmentDoors(collected.doors ?? [], gapStageCorpus(history, memberMessage));
-          finalReply = reflectGap(modelText, collected);
+          finalReply = reflectGap(modelText);
           awaitingConfirm = true; // stay in confirm — they're still telling it
         } else {
           finalReply = REOPEN_GAP; // a short dispute — re-open, but keep the gap + Doors (never drop them)
         }
       } else {
         // Reclaim correction — they want to change the list; stay in reclaim and keep gathering.
-        finalReply = modelText && /\?/.test(modelText) ? modelText : RECLAIM_MORE;
+        finalReply = withQuestion(modelText, RECLAIM_MORE);
       }
     } else {
       stage = nextStagedStage(stage);
@@ -574,7 +623,7 @@ export function applyStagedTurn(
         // probe 1 = the general draw; probe 2 = smaller + concrete (never re-asking probe 1). Prefer the model's
         // own drawing-out question when it asked one.
         const probe = identityProbes === 1 ? identityProbe(collected) : identityProbe2(collected);
-        finalReply = modelText && /\?/.test(modelText) ? modelText : probe;
+        finalReply = withQuestion(modelText, probe);
       }
     } else {
       // Gather. Never-strand: a member who won't name a PAST self (a thriving no-fade optimizer, or just a
@@ -588,12 +637,12 @@ export function applyStagedTurn(
         collected.identitySkipped = true;
         stage = 'gap';
         finalReply = `${SKIP_ACK}\n\n${gapOpen(collected)}`;
-      } else if (modelText && /\?/.test(modelText)) {
-        finalReply = modelText;
-      } else if (!collected.athleticPast) {
-        finalReply = skipOfferable ? SKIP_OFFER : STAGED_OPENING;
       } else {
-        finalReply = skipOfferable ? SKIP_OFFER : NAME_PROMPT;
+        // Keep the model's reflection and guarantee a closing question (withQuestion). The probe it falls back to
+        // depends on what's still missing: the past self (opening) or the handle (name prompt), softened to the
+        // "find it later" skip offer once we've asked a couple of times.
+        const probe = !collected.athleticPast ? (skipOfferable ? SKIP_OFFER : STAGED_OPENING) : skipOfferable ? SKIP_OFFER : NAME_PROMPT;
+        finalReply = withQuestion(modelText, probe);
       }
     }
   } else if (stage === 'gap') {
@@ -666,16 +715,16 @@ export function applyStagedTurn(
       const modelJudgedDone = model.gapReady && gapDepth >= GAP_MIN_DEPTH;
       const advance = modelJudgedDone || memberPushedPast('gap', memberMessage, collected) || gapDepth >= GAP_MAX_DEPTH;
       if (!advance) {
-        // Keep drawing out — follow the model's depth question (it's exploring HOW it opened). Its own question
-        // carries the beat; the engine only nudges if the model gave no question.
-        finalReply = modelText && /\?/.test(modelText) ? modelText : gapMore(history);
+        // Keep drawing out — follow the model's depth question (it's exploring HOW it opened). Its own reflection
+        // carries the beat; withQuestion guarantees it ends on a forward question, nudging with gapMore if not.
+        finalReply = withQuestion(modelText, gapMore(history));
       } else {
-        finalReply = reflectGap(modelText, collected);
+        finalReply = reflectGap(modelText);
         awaitingConfirm = true;
       }
     } else {
       // Still gathering a real fade (no ambition signal yet) — keep the model's question, else hold the gap open.
-      finalReply = modelText && /\?/.test(modelText) ? modelText : gapOpen(collected);
+      finalReply = withQuestion(modelText, gapOpen(collected));
     }
   } else if (stage === 'reclaim') {
     // Uniform floor+escape (1b): reclaim's drawing-out is "gather toward the aim." Its two escapes are the
@@ -704,7 +753,7 @@ export function applyStagedTurn(
       // extend; the card is the final seatbelt). This kills the 24-turn loop where a member at 3–6 items never
       // hits an explicit "that's the list" phrasing. It can't over-fire: it requires ≥3 real captured items.
       if (grewThisTurn && count < RECLAIM_LIST_TARGET) {
-        finalReply = modelText && /\?/.test(modelText) ? modelText : RECLAIM_MORE;
+        finalReply = withQuestion(modelText, RECLAIM_MORE);
       } else {
         finalReply = reflectReclaim(collected);
         awaitingConfirm = true;
@@ -726,8 +775,8 @@ export function applyStagedTurn(
         finalReply = RECLAIM_SOFT_HOLD;
       }
     } else {
-      // Still offering — keep the model's question if it asked one; otherwise invite the next item.
-      finalReply = modelText && /\?/.test(modelText) ? modelText : RECLAIM_MORE;
+      // Still offering — keep the model's reflection and guarantee a closing question; else invite the next item.
+      finalReply = withQuestion(modelText, RECLAIM_MORE);
     }
   } else {
     // Already complete (e.g. a resumed terminal state) — the card stands.
@@ -888,7 +937,10 @@ Open with a real question about how the distance opened, then have a CONVERSATIO
 understand HOW it unfolded — the sequence, when they first felt it, what it quietly cost them — reflecting
 their own words back. DEPTH is the goal, not moving on. Naming several things briefly ("married, kids, work")
 is BREADTH, not depth — keep pulling into ONE thread until it's particular and real: a specific moment, what
-it felt like, what it took from them. Stay with their story for two or three exchanges; don't rush to wrap it.
+it felt like, what it took from them. Draw out the thread THEY lean into, in THEIR words — never invent a
+connecting thread or add a detail they didn't give (if they named travel, friends, and competing, don't
+quietly collapse it to one and pin "the body" on them). Stay with their story for two or three exchanges;
+don't rush to wrap it.
 The Fade is usually more than one Door — once you understand the first, check ONCE whether another stacked on
 ("was that the whole of it, or did something else pile on around then?"), then let it be. Capture the story
 with set_gap as it grows.

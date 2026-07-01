@@ -20,8 +20,9 @@ export async function setupAction(
   if (!m) return { ok: false, error: 'We could not find that account.' };
   await createCredential(db, memberId, m.email, await hashPassword(password));
   await startSession(memberId);
-  // v2.1 (flag on) is number-free — hand off to the light onboarding ceremony → dashboard. v1 keeps the
-  // IDQ hop. The routing is flag-gated so the branch is safe to merge before the flip (flag off = v1 arc).
-  const next = stagedEngineEnabled() ? `/onboarding/ceremony?member=${memberId}` : `/idq?member=${memberId}`;
+  // v2.1 (flag on) is number-free — hand off STRAIGHT to the dashboard, where the settled Threshold overlay +
+  // Post-Ceremony Tour do the honest, personalized handoff (a standalone /onboarding/ceremony page duplicated
+  // that and double-ran the whole ceremony — removed). v1 keeps the IDQ hop. Flag-gated so it's safe pre-flip.
+  const next = stagedEngineEnabled() ? `/dashboard/${memberId}` : `/idq?member=${memberId}`;
   return { ok: true, next };
 }

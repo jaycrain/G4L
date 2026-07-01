@@ -128,6 +128,36 @@ test('STAGED gap — model-judged advance (v2.1): drawn out over exchanges, THEN
   assert.equal(finalState.stage, 'reclaim', 'advances to the reclaim stage on confirm');
 });
 
+test('STAGED gap — "there was work too" at the confirm is heard as MORE, not a move-on (Jay walk 3/5/6)', () => {
+  // The reflect-confirm asks "…does it land, or is there more to it?" An answer that ADDS a thread ("yeah,
+  // there was work too") used to read as confirmation → premature jump to Reclaim → the model backtracked and
+  // gap-answers polluted the list. It must STAY in gap, append the thread, and draw it out.
+  const atGap: ConvState = { stage: 'gap', collected: { athleticPast: 'a competitor', identityNoun: 'Player' } };
+  const { turns, finalState } = replayStaged(
+    [
+      { member: 'I got married and had kids and just stopped competing', model: { text: 'When did you first feel that version of you getting further away?', record: { gap: 'Married, had kids, stopped competing.', doors: ['full_house'] } } },
+      { member: 'Around 45 — I looked in the mirror and didn’t recognize the guy who used to win', model: { text: 'That’s a real loss — the one who showed up and won, gone quiet.', record: { gap: 'Married, kids, stopped competing; by 45 didn’t recognize the guy who used to win.' }, gapReady: true } },
+      { member: 'Yeah, there was work too — it piled on and crowded everything out', model: { text: 'Tell me how the work fit in — did it crowd out the competitor, or hit differently?', record: {} } },
+    ],
+    atGap,
+  );
+  assert.equal(turns[1]!.state.awaitingConfirm, true, 'reflects once the model judges it drawn out');
+  assert.equal(finalState.stage, 'gap', 'invited more KEEPS the beat in gap — never jumps to Reclaim');
+  assert.equal(finalState.awaitingConfirm, false, 're-opens the draw for the new thread');
+  assert.match(finalState.collected.gap ?? '', /work too/i, 'the new thread is appended — never dropped');
+  assert.equal(finalState.collected.reclaimList?.length ?? 0, 0, 'no gap-answer leaks onto the reclaim list');
+  assert.match(turns[2]!.reply, /\?\s*$/, 'the turn ends on a forward question — the conversation keeps going');
+});
+
+test('STAGED gap — a plain confirm ("yes, you’ve got it" / "exactly") still ADVANCES (not misread as more)', () => {
+  // The flip side of the fixture above: the addition-detector must NOT trap a bare confirmation.
+  const atConfirm: ConvState = { stage: 'gap', awaitingConfirm: true, gapDepth: 2, collected: { athleticPast: 'a runner', identityNoun: 'Runner', gap: 'The caregiving years took it.', doors: ['aging_parents'] } };
+  for (const msg of ['yes, you’ve got it', 'exactly', 'yeah that’s right', 'that lands']) {
+    const turn = applyStagedTurn(atConfirm, [], msg, { text: 'Okay.' });
+    assert.equal(turn.state.stage, 'reclaim', `"${msg}" is a confirmation → advances to reclaim`);
+  }
+});
+
 test('STAGED gap — CAP (v2.1): a member who keeps giving is never looped forever — the beat closes by GAP_MAX_DEPTH', () => {
   const atGap: ConvState = { stage: 'gap', collected: { athleticPast: 'a cyclist', identityNoun: 'Athlete' } };
   // The model never calls reflect_gap; the member keeps adding. The engine must close it by the cap, not loop.
