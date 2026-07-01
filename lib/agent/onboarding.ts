@@ -19,7 +19,9 @@ import { contractMet, gapIsNarrative } from './onboarding-contract.ts';
 
 export type Stage = 'identity' | 'identity_name' | 'reclaim' | 'door' | 'complete'
   // v2.0 staged-capture engine (lib/agent/onboarding-staged.ts) uses 'gap' for the "how it opened" stage.
-  | 'gap';
+  | 'gap'
+  // v2.1 (Decision E): 'declined' is the terminal off-ramp for a genuinely-thriving no-fade member.
+  | 'declined';
 
 export type Collected = {
   athleticPast?: string; // Step 1: the past self, in the member's own words
@@ -47,11 +49,12 @@ export type ConvState = {
   reclaimNudged?: boolean; // v2.0 staged engine: we've nudged once for more reclaim items below the minimum (never-trap: nudge once, never loop)
   gapTurns?: number; // v2.0 staged engine: exchanges spent in the gap stage without a real fade (drives the no-fade gate)
   noFade?: boolean; // v2.0 staged engine: recognized no real Fade (forward-only optimizer) — declined, never force-completed
+  declined?: boolean; // v2.1 (Decision E): a genuinely-thriving no-fade member was gracefully declined (out of scope) — terminal
 };
 export type ConvMessage = { role: 'agent' | 'member'; text: string };
 export type Ctx = { name: string; email: string };
 
-export type Turn = { reply: string; state: ConvState; complete: boolean; crisis?: boolean };
+export type Turn = { reply: string; state: ConvState; complete: boolean; crisis?: boolean; declined?: boolean };
 
 export const INITIAL_STATE: ConvState = { stage: 'identity', collected: {} };
 
@@ -393,6 +396,8 @@ const STAGE_PROMPT: Record<Stage, string> = {
   door: doorPrompt(),
   gap: doorPrompt(), // v1 never sets 'gap' (that's the v2.0 staged engine) — present only for type completeness
   complete: "That's everything we need. Let's look at where you're starting from next.",
+  declined: 'This may not be your season for it — and the door stays open whenever that changes.', // terminal; never appended
+
 };
 
 // Guarantee a non-final turn ends with a forward question, so the member is never stranded.

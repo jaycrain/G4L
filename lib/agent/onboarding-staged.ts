@@ -44,7 +44,9 @@ import {
 const capFirst = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
 
 // --- stage sequencing ----------------------------------------------------------------------------------
-type StagedStage = 'identity' | 'gap' | 'reclaim' | 'complete';
+// 'declined' is a terminal OFF-RAMP (not in the sequential order): a genuinely-thriving no-fade member is
+// gracefully declined (Decision E), out of scope, no card. It is never a `nextStagedStage` target.
+type StagedStage = 'identity' | 'gap' | 'reclaim' | 'complete' | 'declined';
 const STAGE_ORDER: StagedStage[] = ['identity', 'gap', 'reclaim', 'complete'];
 function nextStagedStage(s: StagedStage): StagedStage {
   return STAGE_ORDER[Math.min(STAGE_ORDER.indexOf(s) + 1, STAGE_ORDER.length - 1)]!;
@@ -151,15 +153,22 @@ function gapMore(history: ConvMessage[]): string {
   return GAP_MORE_VARIANTS[gapMoreAsks(history) % GAP_MORE_VARIANTS.length]!;
 }
 
-// FLOOR (Jay+Greg, Jun 26): when there's no real Fade, ADMIT at baseline — don't decline. Honest reflection
-// (they're reaching forward, not back), no fabricated fade, then straight into Reclaim. Their ID Score (earned
-// later in Reconnect) comes back high; the score tells the truth. Copy is light/tunable, not a release gate.
-const FLOOR_REFLECT =
-  "It sounds like you're in a genuinely good place — reaching forward more than reaching back, and that's worth " +
-  "saying plainly. We'll still map what you want, and your first check-in down the line will show you where " +
-  'you’re starting from.';
-// The truthful light gap recorded when a no-fade member gives nothing loss-shaped to capture in their words.
-const NO_FADE_GAP = 'No significant gap — in a good place, looking to keep building.';
+// DECISION E FORK (v2.1, Increment 2) — supersedes the Jun-26 admit-at-floor + `note_no_fade`. A "no obvious
+// fade event" member is TWO cases: RESIGNED to age-decline ("this is just who I am now", "at my age") → The
+// Acceptance Door, a real quiet Fade served via the normal path; GENUINELY THRIVING (forward optimizer, no loss,
+// no resignation) → gracefully DECLINED, out of scope, door left open. We never fabricate a fade to admit a
+// thriving member — the honest, non-pathologizing move is to say this isn't their season yet.
+const DECLINE_REPLY =
+  "Honestly? From everything you've shared, you're not carrying the kind of distance this program is built for — " +
+  "you're reaching forward, not trying to find your way back to someone you've lost. That's a genuinely good place " +
+  "to be, and it would be dishonest of me to manufacture a problem you don't have. G4L is for the season when that " +
+  'changes — when something real has pulled you away from who you were. If that day comes, this door stays open ' +
+  "and I'll be right here. Until then — keep building.";
+
+// Decision E fork signals, read from the whole gap-stage corpus (resignation can reveal progressively).
+function isAcceptanceFade(text: string): boolean {
+  return matchDoors(text ?? '').includes('acceptance'); // resignation to age-decline = The Acceptance (a REAL Fade)
+}
 
 // §5 — Stage 3 (what you want back): the reframe into hope, personalized to their handle.
 function reclaimOpen(c: Collected): string {
@@ -265,7 +274,9 @@ const LOSS_RE =
 // VERBS/events (LOSS_RE), NOT on a Door-name match — "marriage is genuinely good" mentions the word "marriage"
 // but is not a loss, and must not read as The Marriage Door / a fade.
 function hasGenuineLoss(text: string): boolean {
-  return LOSS_RE.test((text ?? '').replace(NO_LOSS_RE, ' '));
+  // Strip ALL "no loss / no drift" declarations (global), not just the first — a corpus can repeat them
+  // ("nothing went wrong … no loss or drift here"), and a leftover "no loss" would trip LOSS_RE below.
+  return LOSS_RE.test((text ?? '').replace(new RegExp(NO_LOSS_RE.source, NO_LOSS_RE.flags + 'g'), ' '));
 }
 function isForwardAmbition(text: string): boolean {
   const t = text ?? '';
@@ -577,17 +588,32 @@ export function applyStagedTurn(
       if (corpus.length >= 40 && !isForwardAmbition(corpus)) collected.gap = corpus;
     }
 
-    if (noFade || (!collected.gap && isForwardAmbition(memberMessage) && gapTurns >= 2)) {
-      // FLOOR (Jay+Greg, Jun 26): no real Fade → ADMIT at baseline, never decline. Keep a light, TRUTHFUL gap
-      // (their own no-loss words), clear any incidental Door match ("marriage is good"), and move straight into
-      // Reclaim — never fabricate a fade, never strand. The (later) ID Score comes back high; the score tells
-      // the truth, we don't.
-      noFade = true;
-      collected.gap = collected.gap || memberMessage.trim() || NO_FADE_GAP;
-      collected.doors = [];
-      stage = 'reclaim';
-      finalReply = `${FLOOR_REFLECT}\n\n${reclaimOpen(collected)}`;
-    } else if (collected.gap) {
+    // DECISION E FORK (Increment 2): resolve a "no obvious fade event" member from the whole gap-stage corpus.
+    const gapCorpus = gapStageCorpus(history, memberMessage);
+    if (isAcceptanceFade(gapCorpus)) {
+      // RESIGNED to age-decline → The Acceptance Door: a real, quiet Fade. NOT no-fade — clear the flag, make
+      // sure their own words are captured as the gap, and fall through to the normal real-fade reflect/advance
+      // below (augmentDoors tags 'acceptance'). Never decline, never admit-at-floor.
+      noFade = false;
+      if (!collected.gap) collected.gap = memberMessage.trim() || gapCorpus.trim();
+    }
+    // GENUINELY THRIVING → graceful DECLINE (Decision E supersedes the Jun-26 admit-at-floor). Fires when there's
+    // NO real-fade signal anywhere (no genuine loss, no resignation/Acceptance) AND either the model judged no-fade
+    // (trusted even over an incidentally-tagged prose "gap" like "career/marriage/kids are great"), or the member's
+    // own words are pure forward-ambition with nothing captured after a couple turns (the conservative path).
+    const noRealFadeSignal = !isAcceptanceFade(gapCorpus) && !hasGenuineLoss(gapCorpus);
+    const thrivingDecline =
+      noRealFadeSignal && (noFade || (isForwardAmbition(memberMessage) && !collected.gap && gapTurns >= 2));
+    if (thrivingDecline) {
+      // Out of scope; the door stays open. Terminal — no card, no reclaim. We never fabricate a fade to admit them.
+      return {
+        reply: DECLINE_REPLY,
+        state: { stage: 'declined', collected, awaitingConfirm: false, identityTurns, reclaimNudged, gapTurns, noFade, declined: true },
+        complete: false,
+        declined: true,
+      };
+    }
+    if (collected.gap) {
       // Real fade. Accumulate Doors across the WHOLE corpus (rita reveals them progressively), and RECEIVE the
       // whole story before reflecting — invite the rest (GAP_MORE) until the member signals it's whole.
       collected.doors = augmentDoors(collected.doors ?? [], gapStageCorpus(history, memberMessage));

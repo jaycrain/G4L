@@ -496,10 +496,10 @@ test('STAGED reclaim — backstop: model converses WITHOUT add_reclaim_item; eng
   assert.equal(w.state.collected.reclaimList?.length, 1, 'a wrap line never becomes a reclaim item');
 });
 
-// --- slice d: the fade gate (no-fade FLOOR — admit at baseline, never decline, never fabricate) ------
-test('STAGED fade gate — a no-fade optimizer is ADMITTED at the FLOOR (light truthful gap, no fabricated fade, into Reclaim)', () => {
+// --- Increment 2: the decline-vs-Acceptance fork (Decision E — supersedes the Jun-26 admit-at-floor) --------
+test('STAGED fade gate — a genuinely-thriving no-fade optimizer is gracefully DECLINED (out of scope, never admitted)', () => {
   const atGap: ConvState = { stage: 'gap', collected: { athleticPast: 'a founder', identitySkipped: true } };
-  // Theo-shaped: no loss, only forward ambition. The model (correctly) does not tag set_gap.
+  // Theo-shaped: no loss, only forward ambition — the no-deficit member we don't serve.
   const { turns } = replayStaged(
     [
       { member: 'Honestly nothing went wrong — I’m thriving and I just want to optimize and level up further', model: { text: 'It sounds like things are good.' } },
@@ -508,48 +508,40 @@ test('STAGED fade gate — a no-fade optimizer is ADMITTED at the FLOOR (light t
     atGap,
   );
   const last = turns.at(-1)!;
-  assert.equal(last.state.noFade, true, 'recognized as no-fade');
-  assert.equal(last.state.stage, 'reclaim', 'admitted — proceeds into Reclaim, never held/stranded');
-  assert.ok((last.state.collected.gap ?? '').length > 0, 'a light, truthful gap is captured (their own words / NO_FADE_GAP)');
-  assert.equal(/lost|divorce|died|laid off/i.test(last.state.collected.gap ?? ''), false, 'NOT a fabricated fade — no invented loss');
-  assert.deepEqual(last.state.collected.doors ?? [], [], 'no Door forced');
-  assert.match(last.reply, /good place|reaching forward|what you want/i, 'honest floor reflection, then into Reclaim');
+  assert.equal(last.declined, true, 'genuinely thriving → gracefully declined');
+  assert.equal(last.state.stage, 'declined', 'terminal off-ramp, not admitted into Reclaim');
+  assert.equal(last.complete, false, 'a decline is not a completion');
+  assert.match(last.reply, /door stays open|kind of distance|keep building/i, 'warm, honest, non-pathologizing decline');
+  assert.ok(!last.state.collected.gap, 'no fabricated fade captured into their record');
 });
 
-test('STAGED fade gate — the model’s note_no_fade signal admits at the floor immediately (no regex needed)', () => {
+test('STAGED fade gate — note_no_fade → DECLINE even over an incidentally-tagged prose "gap"', () => {
   const atGap: ConvState = { stage: 'gap', collected: { athleticPast: 'a founder', identitySkipped: true } };
-  // Even if the model unhelpfully tags a gap with the word "marriage", note_no_fade routes to the floor and the
-  // incidental Door is cleared.
   const turn = applyStagedTurn(atGap, [], "There's no distance at all — career, marriage, kids are all genuinely great, I just want more.", {
     text: "Sounds like you're thriving.",
     record: { gap: 'career, marriage, kids all genuinely great' },
     noFade: true,
   });
-  assert.equal(turn.state.noFade, true);
-  assert.equal(turn.state.stage, 'reclaim', 'admitted straight into Reclaim');
-  assert.deepEqual(turn.state.collected.doors ?? [], [], 'incidental "marriage" Door cleared — no fabricated fade');
-  assert.match(turn.reply, /good place|reaching forward|what you want/i);
+  assert.equal(turn.declined, true, 'the model’s no-fade judgement declines, even with a prose gap tagged');
+  assert.equal(turn.state.stage, 'declined');
+  assert.equal(turn.complete, false);
 });
 
-test('STAGED fade gate — a no-fade member COMPLETES at the floor (does not strand)', () => {
-  // From the floor reflection onward: they name what they want and finish like anyone else.
-  const atReclaim: ConvState = {
-    stage: 'reclaim', noFade: true,
-    collected: { athleticPast: 'a founder', identitySkipped: true, gap: 'No significant gap — in a good place, looking to keep building.' },
-  };
-  const { finalState, turns } = replayStaged(
+test('STAGED fade gate — RESIGNED (Acceptance) is NOT declined: routes to The Acceptance Door as a real Fade', () => {
+  const atGap: ConvState = { stage: 'gap', collected: { athleticPast: 'a runner', identityNoun: 'Runner' } };
+  // No dramatic event — the fade is the surrender itself. Decision E: a REAL Fade, entered through The Acceptance.
+  const resigned = 'Nothing really happened. I just got older, slowed down, and made peace with it — this is just who I am now, at my age.';
+  const { turns } = replayStaged(
     [
-      { member: 'A faster marathon time', model: { text: 'Good.', record: { reclaimList: ['a faster marathon'] } } },
-      { member: 'and to ship my startup', model: { text: 'Yes.', record: { reclaimList: ['ship my startup'] } } },
-      { member: 'and more deep-work mornings', model: { text: 'Got it.', record: { reclaimList: ['deep-work mornings'] } } },
-      { member: 'that’s everything', model: { text: 'Okay.' } },
-      { member: 'yes', model: { text: 'Okay.' } },
+      { member: resigned, model: { text: 'I hear that.', record: { gap: resigned } } },
+      { member: 'that’s the whole of it', model: { text: 'Okay.' } },
     ],
-    atReclaim,
+    atGap,
   );
-  assert.equal(finalState.stage, 'complete', 'a no-fade member completes onboarding normally');
-  assert.equal(turns.at(-1)!.complete, true);
-  assert.equal(finalState.collected.reclaimList?.length, 3);
+  assert.notEqual(turns.at(-1)!.declined, true, 'a resigned member is NOT declined');
+  assert.equal(turns[0]!.state.noFade ?? false, false, 'reclassified as a real Fade, not no-fade');
+  assert.ok((turns[0]!.state.collected.doors ?? []).includes('acceptance'), 'routed to The Acceptance Door');
+  assert.equal(turns[1]!.state.awaitingConfirm, true, 'proceeds to reflect-confirm like any real fade');
 });
 
 test('STAGED fade gate — does NOT misfire on a real fade that also mentions wanting more', () => {
