@@ -992,3 +992,4 @@ html:has(.companion-hero), body:has(.companion-hero) { overflow-anchor: none; }
 .route-arrow { color: var(--navy); opacity: 0.5; }
 .route-loop { flex-basis: 100%; margin-top: 0.5rem; font-size: 0.85rem; color: var(--navy); opacity: 0.7; }
 .tour-progress { font-size: 0.8rem; letter-spacing: 0.02em; }
+.route-r.route-now { text-decoration: underline; text-underline-offset: 4px; text-decoration-color: var(--orange); }

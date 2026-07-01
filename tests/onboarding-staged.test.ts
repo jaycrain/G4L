@@ -96,15 +96,47 @@ test('STAGED identity — conditional 2nd probe (1b/Decision S): a shrug persona
   assert.equal(turns[2]!.state.awaitingConfirm, true, 'capped at two probes → reflect, never loops');
 });
 
-test('STAGED gap — front-loader ESCAPE (1b): a rich multi-Door gap in one pass reflects immediately (no extra "was there more?")', () => {
+test('STAGED gap — depth FLOOR (v2.1): the engine holds the beat open even if the model rushes reflect_gap on turn 1', () => {
+  // The v2.0/v2.1 rush was an engine heuristic (door-count) advancing on two brief mentions. Now the floor holds
+  // the beat open until it has genuinely breathed — even with 2 Doors AND the model signalling ready on turn 1.
   const story = 'I got laid off after twenty years, and then my mother’s health collapsed and I became her caretaker overnight';
   const { turns } = replayStaged(
-    [{ member: story, model: { text: 'That’s a lot at once.', record: { gap: story } } }],
+    [{ member: story, model: { text: 'What did that first year feel like?', record: { gap: story, doors: ['career_cliff', 'aging_parents'] }, gapReady: true } }],
     { stage: 'gap', collected: { athleticPast: 'a cyclist', identityNoun: 'Athlete' } },
   );
-  // rich (2 Doors) in one pass → the gap already-satisfied escape fires → reflect-confirm now, no invite round.
-  assert.equal(turns[0]!.state.awaitingConfirm, true, 'front-loader gap escape: reflects immediately on a rich pass');
-  assert.ok((turns[0]!.state.collected.doors ?? []).length >= 2, 'both Doors captured from the one pass');
+  assert.equal(turns[0]!.state.awaitingConfirm ?? false, false, 'floor holds — no reflect on turn 1, even on a rich multi-Door pass with reflect_gap');
+  assert.ok((turns[0]!.state.collected.doors ?? []).length >= 2, 'Doors still captured');
+});
+
+test('STAGED gap — model-judged advance (v2.1): drawn out over exchanges, THEN reflect_gap → reflect-confirm → reclaim', () => {
+  const atGap: ConvState = { stage: 'gap', collected: { athleticPast: 'a cyclist', identityNoun: 'Athlete' } };
+  const { turns, finalState } = replayStaged(
+    [
+      { member: GAP_STORY, model: { text: 'When did you first feel yourself disappearing into it?', record: { gap: GAP_STORY, doors: ['aging_parents'] } } },
+      { member: 'Around the third year — I looked up and had no friends left, nothing that was mine', model: { text: 'That’s the cost of it — everything that was yours, gone quiet.', record: { gap: GAP_STORY + ' Around the third year, no friends left, nothing mine.' }, gapReady: true } },
+      { member: 'Yes, you’ve got it', model: { text: 'Okay.' } },
+    ],
+    atGap,
+  );
+  // turn 1: gap + Door captured, but the engine keeps DRAWING OUT (a depth question, no reflect_gap yet).
+  assert.equal(turns[0]!.state.awaitingConfirm ?? false, false, 'draws out — does not reflect on the first pass');
+  assert.deepEqual(turns[0]!.state.collected.doors, ['aging_parents'], 'Door tagged by the model is kept');
+  // turn 2: floor met + the model judges it drawn out (reflect_gap) → reflect-confirm.
+  assert.equal(turns[1]!.state.awaitingConfirm, true, 'reflects once the model judges it drawn out (floor met)');
+  assert.match(turns[1]!.reply, /does it land|is there more/i, 'a clear, non-generic confirm');
+  // turn 3: affirm → advance to reclaim.
+  assert.equal(finalState.stage, 'reclaim', 'advances to the reclaim stage on confirm');
+});
+
+test('STAGED gap — CAP (v2.1): a member who keeps giving is never looped forever — the beat closes by GAP_MAX_DEPTH', () => {
+  const atGap: ConvState = { stage: 'gap', collected: { athleticPast: 'a cyclist', identityNoun: 'Athlete' } };
+  // The model never calls reflect_gap; the member keeps adding. The engine must close it by the cap, not loop.
+  const steps = Array.from({ length: 6 }, (_, i) => ({
+    member: `chapter ${i}: another thing that piled on that year`,
+    model: { text: 'Tell me more.', record: { gap: `${GAP_STORY} (${i})`, doors: ['aging_parents'] } },
+  }));
+  const { turns } = replayStaged(steps, atGap);
+  assert.ok(turns.some((t) => t.state.awaitingConfirm), 'the cap closes the beat — never an unbounded loop');
 });
 
 test('STAGED identity — skip path advances straight to the gap stage (nothing to confirm)', () => {
@@ -165,9 +197,9 @@ test('STAGED gap — set_gap captures the story, derives the Door, reflect-confi
   assert.equal(turns[0]!.state.collected.gap, GAP_STORY);
   assert.deepEqual(turns[0]!.state.collected.doors, ['aging_parents'], 'Door tagged by the model is kept');
   assert.equal(turns[0]!.state.awaitingConfirm ?? false, false, 'gathers the whole story before reflecting');
-  // turn 2: story signalled whole → reflect-confirm + forecast the Doors session
-  assert.equal(turns[1]!.state.awaitingConfirm, true, 'reflects once the story is whole');
-  assert.match(turns[1]!.reply, /come back to the specific doors|shape of how it went/i, 'forecasts the Doors session');
+  // turn 2: member signals the story whole ("that's the whole of it") → pushed-past → reflect-confirm.
+  assert.equal(turns[1]!.state.awaitingConfirm, true, 'reflects once the member signals the story is whole');
+  assert.match(turns[1]!.reply, /does it land|is there more/i, 'a clear confirm (no dismissive "Doors session later")');
   // turn 3: affirm → advance to reclaim, ends on hope
   assert.equal(finalState.stage, 'reclaim', 'advances to the reclaim stage on confirm');
   assert.equal(finalState.awaitingConfirm, false);
@@ -318,6 +350,25 @@ test('STAGED reclaim — complete-when-done (run-6 fix): ≥3 items then a non-a
   assert.equal(turn.state.awaitingConfirm, true, 'reflects the list once she stops adding — no infinite "what else?"');
   assert.equal(turn.complete, false, 'reflect is not completion — she still confirms the card (never force-closed)');
   assert.match(turn.reply, /want to reclaim/i);
+});
+
+test('STAGED reclaim — late-add (v2.1 fix): a want volunteered AT the confirm is captured, not dropped (Jay’s "play golf")', () => {
+  // At the reclaim reflect-confirm ("anything missing?"), the member volunteers a NEW want. It must be captured
+  // before advancing — the bug on Jay's walk dropped it. A bare affirmation still advances.
+  const atConfirm: ConvState = {
+    stage: 'reclaim', awaitingConfirm: true,
+    collected: {
+      athleticPast: 'x', identityNoun: 'Athlete', gap: 'a real fade over a long decade', doors: ['marriage'],
+      reclaimList: ['work out more', 'see friends', 'ride my bike'], reclaimCategories: ['', '', ''],
+    },
+  };
+  const added = applyStagedTurn(atConfirm, [], 'play golf on weekends', { text: 'Love it.' });
+  assert.ok((added.state.collected.reclaimList ?? []).includes('play golf on weekends'), 'the volunteered want is captured, not dropped');
+  assert.equal(added.state.awaitingConfirm, true, 're-reflects the fuller list — does not skip to the card');
+  // a bare affirmation is NOT captured as a want — it advances to the card.
+  const done = applyStagedTurn(atConfirm, [], 'yes, that’s it', { text: 'Great.' });
+  assert.equal((done.state.collected.reclaimList ?? []).length, 3, 'an affirmation is not captured as a want');
+  assert.equal(done.state.stage, 'complete', 'affirmation advances to the card');
 });
 
 test('STAGED reclaim — complete-when-done still GATHERS while she is actively adding (no premature reflect)', () => {
@@ -613,10 +664,11 @@ test('STAGED reclaim — caps runaway capture at the soft aim (no 17-item balloo
 
 test('STAGED end-to-end — opening → identity → gap → reclaim → complete, full contract met', () => {
   const { turns, finalState } = replayStaged([
-    { member: 'I used to be a competitive swimmer, up at 5am every day for the pool', model: { text: 'That dedication shows.', record: { athleticPast: 'a competitive swimmer up at 5am every day' } } },
+    { member: 'I was a competitive swimmer — up at 5am every day for the pool, the black line the one place my mind ever went quiet, and I felt unbreakable out there', model: { text: 'That dedication shows.', record: { athleticPast: 'a competitive swimmer, up at 5am every day for the pool, the black line the one place her mind went quiet, felt unbreakable out there' } } },
     { member: 'The Swimmer', model: { text: 'The Swimmer.', record: { identityNoun: 'Swimmer' } } },
     { member: 'yes that’s right', model: { text: 'Good.' } },
-    { member: 'After my divorce I just stopped. The early mornings went, then everything else, and I never found my way back to the water or to myself.', model: { text: 'That kind of unraveling is so common after a marriage ends.', record: { gap: 'After my divorce I stopped — the early mornings went, then everything else, and I never found my way back to the water or to myself.', doors: ['marriage'] } } },
+    { member: 'After my divorce I just stopped. The early mornings went, then everything else, and I never found my way back to the water or to myself.', model: { text: 'When did you first feel yourself slipping from the water?', record: { gap: 'After my divorce I stopped — the early mornings went, then everything else, and I never found my way back to the water or to myself.', doors: ['marriage'] } } },
+    { member: 'Within a year the pool felt like someone else’s life — really I’d lost the person who got up for it.', model: { text: 'That’s the quiet cost of it — losing the one who got up for it.', record: { gap: 'After my divorce I stopped swimming; within a year the pool felt like someone else’s life, and I’d lost the person who got up for it.' }, gapReady: true } },
     { member: 'yes, exactly', model: { text: 'Thank you.' } },
     { member: 'I want to swim again', model: { text: 'Good.', record: { reclaimList: ['swimming again'] } } },
     { member: 'my early mornings', model: { text: 'Yes.', record: { reclaimList: ['my early mornings'] } } },

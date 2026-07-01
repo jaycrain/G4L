@@ -49,6 +49,7 @@ export type ConvState = {
   awaitingConfirm?: boolean; // v2.0 staged engine: the current stage's capture has been reflected; awaiting confirm
   reclaimNudged?: boolean; // v2.0 staged engine: we've nudged once for more reclaim items below the minimum (never-trap: nudge once, never loop)
   gapTurns?: number; // v2.0 staged engine: exchanges spent in the gap stage without a real fade (drives the no-fade gate)
+  gapDepth?: number; // v2.1: drawing-out exchanges once the gap story is in hand (the model-judged depth floor/cap)
   noFade?: boolean; // v2.0 staged engine: recognized no real Fade (forward-only optimizer) — declined, never force-completed
   declined?: boolean; // v2.1 (Decision E): a genuinely-thriving no-fade member was gracefully declined (out of scope) — terminal
 };
@@ -626,7 +627,7 @@ const RECORD_PROGRESS_TOOL = {
 // A single model turn, decoupled from the live API so the engine can be replayed deterministically from
 // recorded transcripts (tests/onboarding-replay.test.ts). `record` is the record_progress input the model
 // emitted that turn, or undefined when the model conversed WITHOUT recording (the Donna failure mode).
-export type ModelTurn = { text: string; record?: Partial<Collected> & { complete?: boolean }; noFade?: boolean };
+export type ModelTurn = { text: string; record?: Partial<Collected> & { complete?: boolean }; noFade?: boolean; gapReady?: boolean };
 
 // Parse an Anthropic response into a ModelTurn (prose + the record_progress tool input, if any).
 function parseModelTurn(content: readonly unknown[]): ModelTurn {

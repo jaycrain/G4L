@@ -58,6 +58,12 @@ const IDENTITY_SKIP_OFFER_AFTER = 2;
 const IDENTITY_MAX_TURNS = 5;
 // Gap never-strand: after this many gap turns with nothing captured, grab the accumulated story so we advance.
 const GAP_MAX_TURNS = 4;
+// v2.1 model-judged gap depth (bring back v1's drawing-out). Once the gap story is in hand, the MODEL owns when
+// it's drawn out enough (it calls reflect_gap), bounded by the engine: a FLOOR — never close before this many
+// drawing-out exchanges even if the model rushes — and a CAP — always close by this many (anti-loop). No
+// richness proxy (door-count / length): depth is judgment, the floor/cap bound the error, the card corrects.
+const GAP_MIN_DEPTH = 2;
+const GAP_MAX_DEPTH = 5;
 // SYSTEMIC INVARIANT — no gather stage loops unbounded. Past this many member turns, the conversation is FORCED
 // to the confirmation card (the seatbelt) as soon as there's a usable capture. A member genuinely engaged
 // finishes well under this (rita 10–18); it only catches runaway gather loops, and the card still lets them
@@ -137,9 +143,10 @@ function gapBridge(c: Collected): string {
 // (it just heard the whole story); the forecast sets the lighter-Door expectation (receive, don't excavate)
 // that the specific Doors get a dedicated session later; one confirm question, never a Y/N gate. (§4)
 const GAP_REFLECT_LEAD = "Thank you for trusting me with that — that kind of distance rarely opens all at once.";
-const GAP_FORECAST_CONFIRM =
-  'Most people find there’s more than one thread here; we’ll go deeper in the Doors session later, when you’re ready. ' +
-  'For now, this is plenty — did I understand the shape of how it went?';
+// Warm, clear, invites correction — replaces the old "for now this is plenty / we'll go deeper later / did I
+// understand the shape of how it went?" which read as dismissive AND generic on Jay's walk (he replied "the
+// shape of what?"). Under the model-judged flow the LEAD is the model's own drawn-out reflection in their words.
+const GAP_FORECAST_CONFIRM = 'Did I get how that went for you — does it land, or is there more to it?';
 const REOPEN_GAP = "I want to get this right — tell me how it really went, in your own words.";
 
 // Invite the REST of the story (a fade is often several things at once — job, then the household, then a
@@ -226,8 +233,15 @@ function reflectIdentity(c: Collected): string {
 
 // The model's same-turn text is its natural reflection of the story it just heard — use it as the lead when
 // it isn't itself a question (one-question-per-turn); otherwise fall back to the warm canned lead.
-function reflectGap(modelText: string): string {
-  const lead = modelText && !modelText.includes('?') ? modelText.trim() : GAP_REFLECT_LEAD;
+function reflectGap(modelText: string, c?: Collected): string {
+  // Substantive reflection (v2.1): prefer the model's OWN drawn-out reflection (its reflect_gap turn reflects
+  // the whole story in the member's words). If it left only a question, anchor on a fragment of their OWN gap
+  // words — never the generic canned lead (Jay's walk hit the generic version and it didn't land).
+  const modelReflection = modelText && !modelText.includes('?') ? modelText.trim() : '';
+  const gap = (c?.gap ?? '').trim();
+  const lead =
+    modelReflection ||
+    (gap ? `Here’s what I’m holding of it: ${gap.length > 220 ? gap.slice(0, 220).trimEnd() + '…' : gap}` : GAP_REFLECT_LEAD);
   return `${lead}\n\n${GAP_FORECAST_CONFIRM}`;
 }
 
@@ -452,6 +466,7 @@ export function applyStagedTurn(
   let gapTurns = state.gapTurns ?? 0;
   let noFade = state.noFade ?? false;
   let identityProbes = state.identityProbes ?? 0;
+  let gapDepth = state.gapDepth ?? 0;
   const modelText = stripLeadingDisclosure(model.text).trim();
 
   // SYSTEMIC INVARIANT (the gather-cap): no gather/elaboration stage loops forever. Past the turn budget, FORCE
@@ -491,8 +506,22 @@ export function applyStagedTurn(
   let complete = false;
 
   if (awaitingConfirm) {
-    // Resolving a reflect-confirm: a correction re-opens the stage; anything else advances.
-    if (correctsReflection(memberMessage)) {
+    // RECLAIM late-add (v2.1 fix): a want volunteered AT the confirm — Jay's "play golf on weekends" — is
+    // neither a correction nor an affirmation, so it used to be dropped as the beat advanced to the card.
+    // Capture it and re-reflect the fuller list. Only when genuinely OFFERING (not closing / affirming /
+    // correcting) — the same offering guard the gather stage uses, so "yes, that's it" still advances.
+    if (
+      stage === 'reclaim' &&
+      !correctsReflection(memberMessage) &&
+      !memberClosingReclaim(memberMessage) &&
+      shouldCaptureStagedReclaim(memberMessage)
+    ) {
+      collected.reclaimList = [...(collected.reclaimList ?? []), memberMessage.trim()];
+      collected.reclaimCategories = [...(collected.reclaimCategories ?? []), ''];
+      finalReply = reflectReclaim(collected);
+      awaitingConfirm = true; // stay in confirm — re-reflect with the just-added want included
+      // fall through to the shared return
+    } else if (correctsReflection(memberMessage)) {
       awaitingConfirm = false;
       if (stage === 'identity') {
         finalReply = REOPEN_IDENTITY;
@@ -505,7 +534,7 @@ export function applyStagedTurn(
         if (modelTaggedGap || shouldCaptureStagedGap(memberMessage)) {
           if (!modelTaggedGap) collected.gap = collected.gap ? `${collected.gap} ${memberMessage.trim()}` : memberMessage.trim();
           collected.doors = augmentDoors(collected.doors ?? [], gapStageCorpus(history, memberMessage));
-          finalReply = reflectGap(modelText);
+          finalReply = reflectGap(modelText, collected);
           awaitingConfirm = true; // stay in confirm — they're still telling it
         } else {
           finalReply = REOPEN_GAP; // a short dispute — re-open, but keep the gap + Doors (never drop them)
@@ -627,17 +656,21 @@ export function applyStagedTurn(
       // Real fade. Accumulate Doors across the WHOLE corpus (rita reveals them progressively), and RECEIVE the
       // whole story before reflecting — invite the rest (GAP_MORE) until the member signals it's whole.
       collected.doors = augmentDoors(collected.doors ?? [], gapStageCorpus(history, memberMessage));
-      const gapGrew = modelTaggedGap || collected.gap.length > (state.collected.gap?.length ?? 0);
-      // Uniform floor+escape (1b): the gap's drawing-out is "invite until the story is whole." REFLECT once an
-      // ESCAPE fires — the story is already RICH (front-loader, e.g. Donna's multi-Door pass) or the member
-      // PUSHED PAST (signals whole / deflects) — or the invite is exhausted (nothing new / cap). Otherwise keep
-      // receiving the story. Same shared predicates as identity, so all three stages breathe the same way.
-      const gapEscape = stageMaterialRich('gap', collected) || memberPushedPast('gap', memberMessage, collected);
-      const stillReceiving = gapGrew && gapMoreAsks(history) < GAP_MORE_MAX;
-      if (!gapEscape && stillReceiving) {
+      gapDepth += 1; // one more drawing-out exchange with the story in hand
+      // MODEL-JUDGED advance (v2.1 — bring back v1's drawing-out). The MODEL decides when the story is genuinely
+      // drawn out (it calls reflect_gap), NOT an engine richness heuristic — door-count and length are proxies,
+      // and proxies leak (the whole lesson of v2.0's field-count and v2.1's door-count). The engine only BOUNDS
+      // the judgment: a FLOOR (never close before GAP_MIN_DEPTH real exchanges, so a rushing model can't wrap on
+      // two brief mentions) and a CAP (close by GAP_MAX_DEPTH — anti-loop). A member close overrides; the
+      // substantive reflection quotes their words, and the card is the correction backstop.
+      const modelJudgedDone = model.gapReady && gapDepth >= GAP_MIN_DEPTH;
+      const advance = modelJudgedDone || memberPushedPast('gap', memberMessage, collected) || gapDepth >= GAP_MAX_DEPTH;
+      if (!advance) {
+        // Keep drawing out — follow the model's depth question (it's exploring HOW it opened). Its own question
+        // carries the beat; the engine only nudges if the model gave no question.
         finalReply = modelText && /\?/.test(modelText) ? modelText : gapMore(history);
       } else {
-        finalReply = reflectGap(modelText);
+        finalReply = reflectGap(modelText, collected);
         awaitingConfirm = true;
       }
     } else {
@@ -715,7 +748,7 @@ export function applyStagedTurn(
 
   return {
     reply: finalReply,
-    state: { stage, collected, awaitingConfirm, identityTurns, identityProbes, reclaimNudged, gapTurns, noFade },
+    state: { stage, collected, awaitingConfirm, identityTurns, identityProbes, reclaimNudged, gapTurns, gapDepth, noFade },
     complete,
   };
 }
@@ -755,6 +788,17 @@ export const STAGED_TOOLS = [
     input_schema: { type: 'object' as const, properties: { text: { type: 'string' } }, required: ['text'] },
   },
   {
+    name: 'reflect_gap',
+    description:
+      "Call this ONLY once you have genuinely DRAWN OUT the fade story — never on the first mention of what happened. " +
+      "It means: you explored HOW the distance opened (the sequence, when they first felt it, what it quietly cost " +
+      "them), stayed with one thread until it's particular and real, and checked whether more than one Door stacked " +
+      "on. It signals you're ready to reflect their WHOLE story back in their own words and move on. Naming several " +
+      "things briefly ('married, kids, work') is BREADTH, not depth — do NOT call this until you have something " +
+      "specific and true to reflect. (The system won't let you close the beat before it has genuinely breathed.)",
+    input_schema: { type: 'object' as const, properties: {}, required: [] },
+  },
+  {
     name: 'note_door',
     description:
       'Record a Door that surfaces in the fade story — the life event that opened the distance. Call once per Door (it accumulates). Slugs: ' +
@@ -787,6 +831,7 @@ export const STAGED_TOOLS = [
 export function parseStagedTurn(content: readonly unknown[]): ModelTurn {
   let text = '';
   let noFade = false;
+  let gapReady = false;
   const rec: Partial<Collected> = {};
   for (const b of content as Array<{ type: string; text?: string; name?: string; input?: Record<string, unknown> }>) {
     if (b.type === 'text' && typeof b.text === 'string') text += b.text;
@@ -803,9 +848,10 @@ export function parseStagedTurn(content: readonly unknown[]): ModelTurn {
         (rec.reclaimCategories ??= []).push(typeof b.input.category === 'string' ? b.input.category : '');
       }
       if (b.name === 'note_no_fade') noFade = true;
+      if (b.name === 'reflect_gap') gapReady = true;
     }
   }
-  return { text, record: rec, noFade };
+  return { text, record: rec, noFade, gapReady };
 }
 
 // Is the staged engine selected? Flag only — defaults OFF, so v1 serves prod until cut-over.
@@ -837,11 +883,21 @@ LANGUAGE and invite them to choose or coin one — framed as a changeable HANDLE
 word. If they're genuinely not ready, reassure them and call skip_identity — never pressure a name. Record
 the word with name_identity in natural case ("Athlete", never "the Athlete").
 
-GAP STAGE ("how it opened"): ask, once, how the distance opened, then RECEIVE — do not excavate. Let them
-tell it their way; when they've given you the account, call set_gap(their story).
+GAP STAGE ("how it opened") — the most important, most vulnerable beat. EXPLORE it; do not just receive it.
+Open with a real question about how the distance opened, then have a CONVERSATION, not a form: follow up to
+understand HOW it unfolded — the sequence, when they first felt it, what it quietly cost them — reflecting
+their own words back. DEPTH is the goal, not moving on. Naming several things briefly ("married, kids, work")
+is BREADTH, not depth — keep pulling into ONE thread until it's particular and real: a specific moment, what
+it felt like, what it took from them. Stay with their story for two or three exchanges; don't rush to wrap it.
+The Fade is usually more than one Door — once you understand the first, check ONCE whether another stacked on
+("was that the whole of it, or did something else pile on around then?"), then let it be. Capture the story
+with set_gap as it grows.
+ONLY when you have GENUINELY drawn it out — something specific and true you can reflect back in their own words —
+call reflect_gap to close the beat, and on that same turn reflect their WHOLE story back in two or three
+sentences, in their words. NEVER call reflect_gap on the first mention of what happened. (The engine holds the
+beat open until it has breathed and caps it so it never drags — you own the depth call between those bounds.)
 TAGGING DOORS — do this silently as the story comes out, NOT by interrogating: call note_door ONCE for EACH
-distinct life event you recognize in what they ALREADY told you. A story can carry several. Map by meaning,
-in their own words:
+distinct life event you recognize. A story can carry several. Map by meaning, in their own words:
   • a job ending / being laid off / a layoff / forced out / a role hollowing out → career_cliff
   • work/ambition that GREW until it crowded out the self → grind
   • being the one carrying the household / the bills / the breadwinner / a partner who didn't step up → load_bearer
@@ -851,8 +907,8 @@ in their own words:
   • a divorce or a marriage drifting into coexisting → marriage
   • losing someone close (death) → loss;  friendships/social world fading → vanishing
 Tag what's THERE — zero is fine (recognition, not routing), and never force one. But do not let a clearly-
-named event go un-tagged. Do NOT keep digging or re-ask "any others?"; the specific Doors get a dedicated
-session later, and you may say so warmly. One Door, several, or none are all complete.
+named event go un-tagged. Depth means going deeper into the story they gave, NOT interrogating for more Doors —
+don't turn it into a checklist. One Door, several, or none are all complete.
 CRITICAL — DO NOT FABRICATE A FADE: this program is for people feeling a real distance from who they were
 (a loss, a decline, a slow drift). If the member describes NO loss and NO drift — they're thriving and simply
 want MORE (optimize, level up, the next challenge) — do NOT call set_gap and do NOT invent a hardship. Instead
@@ -865,8 +921,10 @@ question per turn. No meta-narration about the program's mechanics.`;
 function stageInstruction(stage?: Stage): string {
   if (stage === 'gap')
     return (
-      '\n\nCURRENT STAGE: how the gap opened. Ask once, then receive their fade story and call set_gap; ' +
-      'note_door for any Door that surfaces (none is valid). Do not excavate or re-ask for more Doors.'
+      '\n\nCURRENT STAGE: how the gap opened. EXPLORE — draw out the story over a few exchanges (the sequence, ' +
+      'when they first felt it, what it cost); pull into one thread until it\'s particular, not a list of labels. ' +
+      'Capture with set_gap as it grows, note_door silently (none is valid). Call reflect_gap ONLY once it\'s ' +
+      'genuinely drawn out, and reflect their whole story back in their words on that turn.'
     );
   if (stage === 'reclaim')
     return (
