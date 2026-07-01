@@ -23,7 +23,7 @@ test('reclaim list finalize floor is >=1 (Gate-1 decision); >=3 stays the soft a
 });
 
 test('canonical doors validate; unknown do not; empty is valid (null routing, Taxonomy Spec §1)', () => {
-  assert.equal(DOOR_SLUGS.length, 11); // 8 original + Full House + Grind + Load-Bearer (Jun 2026 taxonomy)
+  assert.equal(DOOR_SLUGS.length, 12); // 8 original + Full House + Grind + Load-Bearer (taxonomy v1.0) + The Acceptance (v2.0)
   assert.equal(validateDoors(['full_house']).ok, true);
   assert.equal(validateDoors(['grind']).ok, true);
   assert.equal(validateDoors(['load_bearer']).ok, true);
@@ -73,6 +73,15 @@ test('matchDoors maps free text to one or more Doors in canonical order', () => 
     matchDoors('my husband didn’t step up, the savings are gone and the house is at risk, and my mother is declining so I’m her caretaker'),
     ['aging_parents', 'load_bearer'],
   );
+  // The Acceptance (taxonomy v2.0) — the surrender-to-age STANCE, in the member's own words.
+  assert.ok(matchDoors("honestly it is what it is, I'm not as young as I used to be").includes('acceptance'));
+  assert.ok(matchDoors("I've made peace with slowing down at my age").includes('acceptance'));
+  // Body vs Acceptance = EVENT vs STANCE. A named concrete physical event is The Body (deletes the stance)…
+  assert.deepEqual(matchDoors('getting older I guess, but really my knees went and my body can’t keep up'), ['body']);
+  // …a general aging-body surrender with NO event is The Acceptance (Body's literal word yields to the stance)…
+  assert.deepEqual(matchDoors('my body is just slowing down, downhill from here'), ['acceptance']);
+  // …and an explicit "settled" framing keeps The Acceptance even when a concrete event is also named.
+  assert.deepEqual(matchDoors('my body — the knees went, the back aches — but I’ve made peace with it, it is what it is'), ['acceptance']);
 });
 
 test('correctDoors fixes the marriage/young-kids mis-tag (Full House, not Empty Nest / Aging Parents)', () => {

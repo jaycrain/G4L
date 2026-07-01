@@ -1,5 +1,8 @@
-// The Doors — canonical set, locked to the pitch deck (docs/CONTRACTS.md §3) + the Jun 2026 taxonomy
-// spec (G4L_Doors_Taxonomy_Spec_v1.0): The Grind and The Load-Bearer added; The Vanishing tightened.
+// The Doors — canonical set, locked to the pitch deck (docs/CONTRACTS.md §3) + the taxonomy spec.
+// v1.0 (Jun 2026): The Grind and The Load-Bearer added; The Vanishing tightened.
+// v2.0 (Jun 30 2026): The Acceptance added (#12) — the one door the member *chose*: resigning to
+// age-related decline as destiny. Crosses The Body on aging-body language; the line is event vs stance
+// (see the Body-vs-Acceptance precedence in matchDoors).
 // Shared source of truth for the app and for validation. Mirrors the DB seed
 // (supabase/seed/0001_reference_data.sql); the DB `door` table is the runtime source,
 // this constant is for type-safety, validation, and seeding parity.
@@ -17,6 +20,7 @@ export const DOORS = [
   { slug: 'full_house',    displayName: 'The Full House',    descriptor: 'The active-family season — marriage, young kids, everyone needing you — and no space left for yourself.' },
   { slug: 'grind',         displayName: 'The Grind',         descriptor: 'The work or ambition that grew until it crowded out the person underneath.' },
   { slug: 'load_bearer',   displayName: 'The Load-Bearer',   descriptor: 'Becoming the one who carries everyone — the household, the money, the needs — until there’s no room left for you.' },
+  { slug: 'acceptance',    displayName: 'The Acceptance',    descriptor: 'The quiet surrender to age — deciding that slower, softer, and less capable is simply how it goes now, and expecting nothing else.' },
 ] as const;
 
 export type DoorSlug = (typeof DOORS)[number]['slug'];
@@ -66,6 +70,9 @@ const DOOR_ALIASES: Partial<Record<DoorSlug, string[]>> = {
   // The Load-Bearer = carrying everyone's load (household/money/needs), outside parent-care or the
   // active-family season — incl. a partner's abdicated share.
   load_bearer: ['carrying everyone', 'carry everyone', 'carry the load', 'carrying the load', 'held the financial', 'hold everything together', 'holding everything together', 'everyone leans on me', 'everyone needs me', 'on my shoulders', 'fell on me', 'more than my fair share', 'carry more than', 'left me holding', 'the one holding everything', 'carrying the household', 'do it all', 'sole breadwinner', 'breadwinner', 'sole earner', 'the only earner', 'paying all the bills', 'all the bills fell', 'carried us financially', 'kept us afloat', "didn't step up"],
+  // The Acceptance = resigning to age-related decline AS DESTINY — the one Door the member chose. The
+  // stance, not an event (see the Body-vs-Acceptance precedence below). Triggers per taxonomy spec v2.0.
+  acceptance: ['getting older', 'at my age', 'just my age', 'past my prime', 'not as young as i used to be', 'not as capable', 'slowing down', 'downhill from here', 'it is what it is', 'made peace with', 'accepted that', 'this is just who i am now', 'my best years are behind me', 'what do you expect at my age', 'these things happen when you get older', 'resigned myself', 'settled'],
 };
 
 // Map a member's free-text answer to one or more Doors (voice rewrite v1: members answer in their
@@ -114,6 +121,20 @@ export function matchDoors(message: string): DoorSlug[] {
     /\b(breadwinner|sole (earner|provider)|the only earner|all the bills|paying all the bills|carried us financially|kept us afloat|held the financial|did(n'?t| not) step up|wouldn'?t step up|savings (are |were |is )?(gone|going|wiped)|house (is |was )?at risk|lose the house|losing the house)\b/.test(m);
   if (found.has('load_bearer') && (found.has('aging_parents') || found.has('full_house')) && !STRONG_FINANCIAL_LOAD) {
     found.delete('load_bearer');
+  }
+  // Precedence — The Body vs The Acceptance (taxonomy spec v2.0): aging-body language crosses them, and
+  // the line is EVENT vs STANCE. A named concrete physical event/change is The Body — more specific
+  // (knees went, bad back, an injury, can't do X, quit the sport). The bare surrender — no event named,
+  // or an explicit "settled" framing — is The Acceptance (the fade is the choosing, not a change). Only
+  // resolves when both literally fired (Body fires on the word "body"); the live agent maps richer
+  // stories itself.
+  if (found.has('acceptance') && found.has('body')) {
+    const CONCRETE_PHYSICAL_EVENT =
+      /\b(knees?|hips?|shoulders?|joints?|my back|bad (knee|back|hip|shoulder)|injur(y|ed|ies)|blew out|gave out|went out|surgery|torn|tore|sprained|can'?t (run|lift|walk|climb|play|keep up)|quit the sport)\b/.test(m);
+    const EXPLICIT_SETTLED =
+      /\b(made peace with|it is what it is|resigned myself|these things happen|what do you expect at my age|my best years are behind|this is just who i am now)\b/.test(m);
+    if (CONCRETE_PHYSICAL_EVENT && !EXPLICIT_SETTLED) found.delete('acceptance'); // named event → The Body
+    else found.delete('body'); // surrender / settled stance → The Acceptance
   }
   return DOORS.filter((d) => found.has(d.slug)).map((d) => d.slug);
 }

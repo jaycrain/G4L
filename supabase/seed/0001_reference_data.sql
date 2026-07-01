@@ -1,11 +1,11 @@
 -- ============================================================================
 -- G4L Platform — Seed 0001: reference / config data
--- The 8 Doors, the 4 IDQ dimensions, and the 12 gated Atlas assets.
+-- The 12 Doors, the 4 IDQ dimensions, and the 12 gated Atlas assets.
 -- All values are locked — see docs/CONTRACTS.md §3, §1, §5.
 -- Idempotent: safe to re-run.
 -- ============================================================================
 
--- The 8 Doors — CONTRACTS §3 (locked to the pitch deck) -----------------------
+-- The 12 Doors — CONTRACTS §3 (pitch-deck 8 + taxonomy spec v1.0/v2.0 additions) ----
 insert into door (slug, display_name, descriptor, sort_order) values
   ('career_cliff', 'The Career Cliff', 'The role that ended, plateaued, or hollowed out — a retirement that became a freefall.', 1),
   ('aging_parents','The Aging Parents','The role reversal that made you the one doing the caring — for a parent.', 2),
@@ -17,7 +17,8 @@ insert into door (slug, display_name, descriptor, sort_order) values
   ('loss',         'The Loss',        'Losing someone close, and everything changing after.', 8),
   ('full_house',   'The Full House',  'The active-family season — marriage, young kids, everyone needing you — and no space left for yourself.', 9),
   ('grind',        'The Grind',       'The work or ambition that grew until it crowded out the person underneath.', 10),
-  ('load_bearer',  'The Load-Bearer', 'Becoming the one who carries everyone — the household, the money, the needs — until there''s no room left for you.', 11)
+  ('load_bearer',  'The Load-Bearer', 'Becoming the one who carries everyone — the household, the money, the needs — until there''s no room left for you.', 11),
+  ('acceptance',   'The Acceptance',  'The quiet surrender to age — deciding that slower, softer, and less capable is simply how it goes now, and expecting nothing else.', 12)
 on conflict (slug) do update
   set display_name = excluded.display_name,
       descriptor   = excluded.descriptor,
