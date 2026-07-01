@@ -51,6 +51,9 @@ export type TurnOutput = {
   state: ConvState;
   complete: boolean;
   crisis?: boolean;
+  // Set when the fade gate gracefully declines a genuinely-thriving no-fade member (Decision E). Terminal:
+  // the client shows the decline screen — no card, no member created. Only fires under the staged engine.
+  declined?: boolean;
   // Set when the live AI turn failed on our side (usage cap, key, outage) rather than the member's
   // input. The client shows `outageMessage` and leaves their draft + state intact to resend. Thrown
   // errors are masked by Next in prod, so we surface this as a returned value, not an exception.
@@ -106,7 +109,7 @@ export async function onboardingTurn(input: TurnInput): Promise<TurnOutput> {
     }
   }
 
-  return { reply: turn.reply, state: turn.state, complete: turn.complete, crisis: turn.crisis };
+  return { reply: turn.reply, state: turn.state, complete: turn.complete, crisis: turn.crisis, declined: turn.declined };
 }
 
 export type FinalizeInput = { ctx: Ctx; state: ConvState; token: string; cardReturns?: number };

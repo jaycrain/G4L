@@ -3,8 +3,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { onboardingTurn, finalizeOnboardingAction, loadOnboardingSessionAction } from './actions.ts';
-import { setupAction } from '../account/setup/actions.ts';
-import PasswordField from '../password-field.tsx';
 import type { ConvState, ConvMessage } from '../../lib/agent/onboarding.ts';
 import { buildSummaryCard } from '../../lib/agent/onboarding-contract.ts';
 import FeedbackWidget from '../feedback-widget.tsx';
@@ -24,14 +22,14 @@ export default function OnboardingChat() {
   const [phase, setPhase] = useState<'gate' | 'chat'>('gate');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirm, setConfirm] = useState('');
   const [messages, setMessages] = useState<ConvMessage[]>([]);
   const [state, setState] = useState<ConvState | null>(null);
   const [input, setInput] = useState('');
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [ready, setReady] = useState(false); // conversation has everything; offer the handoff (reversible)
+  const [declined, setDeclined] = useState(false); // fade gate gracefully declined (Decision E) — terminal, no card
+  const [savedForLater, setSavedForLater] = useState(false); // §2c save-and-return: left at the card, place kept
   const [cardReturns, setCardReturns] = useState(0); // times the member sent the card back ("keep talking") — capture-quality signal
   const taRef = useRef<HTMLTextAreaElement>(null);
   const tokenRef = useRef<string>(''); // per-device onboarding resume token
@@ -85,8 +83,8 @@ export default function OnboardingChat() {
   function startFresh() {
     clearOnboardingStorage();
     tokenRef.current = '';
-    setMessages([]); setState(null); setInput(''); setReady(false); setError(null); setCardReturns(0);
-    setName(''); setEmail(''); setPassword(''); setConfirm('');
+    setMessages([]); setState(null); setInput(''); setReady(false); setDeclined(false); setError(null); setCardReturns(0);
+    setName(''); setEmail('');
     setPhase('gate');
   }
 
@@ -95,14 +93,8 @@ export default function OnboardingChat() {
     if (!ctx.name || !ctx.email) return;
     ls.set(LS.name, ctx.name); // remember so a return visit pre-fills (and can auto-resume)
     ls.set(LS.email, ctx.email);
-    if (password.length < 8) {
-      setError('Choose a password of at least 8 characters.');
-      return;
-    }
-    if (password !== confirm) {
-      setError('Those passwords don’t match.');
-      return;
-    }
+    // No password here (§3.5 / Decision R): one password, once, at the post-card save. Name + email are all
+    // we need to open the conversation and to save-and-return; the account is created only if they stay.
     setError(null);
     setPhase('chat');
     setPending(true);
@@ -173,6 +165,9 @@ export default function OnboardingChat() {
       }
       setMessages([...prior, { role: 'member', text }, { role: 'agent', text: r.reply }]);
       setState(r.state);
+      // Graceful decline (Decision E): a genuinely-thriving no-fade member is out of scope — show the terminal
+      // decline (no card, no member created). The reply itself carries the warm, door-stays-open message.
+      if (r.declined) { setDeclined(true); return; }
       // Reaching "complete" is a READY state, not a commit: show the handoff with the option to
       // proceed or keep talking. The member is only created when they choose to proceed.
       if (r.complete) setReady(true);
@@ -200,19 +195,9 @@ export default function OnboardingChat() {
       }
       // Committed — the saved onboarding (token, name/email, draft) can go.
       clearOnboardingStorage();
-      // Secure the account, then go to the IDQ. The password is captured at the gate — but a RESUMED
-      // onboarding (refresh / returning device) re-enters straight into the conversation and skips the
-      // gate, so `password` is empty here. Account creation must NOT depend on that in-memory value
-      // surviving a resume: only attempt inline setup when we actually hold a valid password; otherwise
-      // hand off to the dedicated set-password step, which creates the credential, starts the session,
-      // and continues to the IDQ. (Empty-password inline setup is what stranded a completed member at
-      // "log in again.")
-      if (password.length >= 8) {
-        const saved = await setupAction(r.memberId, password);
-        router.push(saved.ok ? `/idq?member=${r.memberId}` : `/account/setup?member=${r.memberId}`);
-      } else {
-        router.push(`/account/setup?member=${r.memberId}`);
-      }
+      // ONE PASSWORD, ONCE (§3.5 / Decision R): the account is created at the dedicated post-card save step,
+      // which sets the password, starts the session, and continues to the IDQ. No upfront password anymore.
+      router.push(`/account/setup?member=${r.memberId}`);
     } catch {
       setError('That didn’t go through — please try again.');
       setPending(false);
@@ -230,35 +215,27 @@ export default function OnboardingChat() {
   if (phase === 'gate') {
     return (
       <>
-        <h1>Let’s find your starting line</h1>
-        {/* AI disclosure — explicit + upfront, its own beat before the first question (governance/compliance). */}
-        <p className="ai-disclosure" role="note">
-          A quick note before we start: you’ll be talking with your Companion — an AI built for this one
-          thing, helping you find your way back to yourself. It remembers what you share, so you never have
-          to repeat yourself or start over. It’s here whenever you want it, and you can stop any time.
-        </p>
+        {/* §2a Welcome / front matter — DIRECTIONAL copy (for Jay's wordsmithing). Affirm → container → light
+            frame → AI disclosure. Number-free (no ID Score promise — that's a Reconnect thing, Decision D). */}
+        <h1>You’re in the right place.</h1>
         <div className="onboard-intro">
-          <p>The person you know you are can get quiet — worn down by life, by a hundred reasonable decisions, by everyone else’s needs. This is where you start turning that around.</p>
-          <p>We start by finding your starting line: a short conversation, a quick questionnaire, and your first ID Score — so reclaiming who you are isn’t a vague idea but a number you can watch move.</p>
-          <p>Everything you share shapes your experience and is handled with real care, the way you’d want a trusted person to hold it. No rush, no wrong answers, and you can stop anytime.</p>
+          <p>However you found your way here — a newsletter, a post, someone who thought of you — something in it landed, or you wouldn’t be reading this. That’s worth trusting.</p>
+          <p>Here’s what this is: a chance to reclaim the version of you that’s gotten quiet under everyone else’s needs and a hundred reasonable decisions. We start with a real conversation — no forms, no scores yet, just you and a companion built for this one thing.</p>
+          <p>It takes about twenty minutes, and it’s better unhurried — find a comfortable place before you start. If life interrupts, your place is saved; come back when you can.</p>
         </div>
-        {/* Primer — practical orientation before the first conversation (time, comfort, how it goes). */}
-        <div className="onboard-primer">
-          <h2>Before we start</h2>
-          <p>This is the foundation for everything that follows, so give it room. Set aside about <strong>15–20 minutes</strong>, get comfortable, and treat it like a conversation — not a form. There are no wrong answers, nothing is timed, and you can stop and pick up where you left off any time.</p>
-          <p>Here’s how it goes: first we talk for a few minutes about who you are and what’s pulled you off course. Then a short questionnaire. Then your first <strong>ID Score</strong> — a real number for how far you’ve drifted from yourself, and the starting line you’ll watch move.</p>
-        </div>
+        {/* AI disclosure — woven in, its own quiet beat (governance): they always know they're talking with AI. */}
+        <p className="ai-disclosure" role="note">
+          From here it’s you and your G4L companion — an AI built for this and nothing else. It remembers what
+          you share so you never start over, and what you tell it shapes everything that follows. It’s held with care.
+        </p>
         <form onSubmit={begin}>
           <label htmlFor="name">Your name</label>
           <input id="name" type="text" value={name} onChange={(e) => setName(e.target.value)} required />
           <label htmlFor="email">Email</label>
           <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-          <label htmlFor="password">Password</label>
-          <PasswordField id="password" value={password} onChange={setPassword} required minLength={8} autoComplete="new-password" />
-          <label htmlFor="confirm">Confirm password</label>
-          <PasswordField id="confirm" value={confirm} onChange={setConfirm} required minLength={8} autoComplete="new-password" />
+          {/* One password, once — created later at the post-card save (§3.5 / Decision R). Nothing to set up to begin. */}
           {error && <p className="error">{error}</p>}
-          <button type="submit">Begin →</button>
+          <button type="submit">Let’s begin →</button>
         </form>
       </>
     );
@@ -276,23 +253,39 @@ export default function OnboardingChat() {
         {pending && <div className="typing">Thinking…</div>}
       </div>
       {error && <p className="error">{error}</p>}
-      {ready && state ? (
+      {declined ? (
+        // §Decline (Decision E) — DIRECTIONAL, high-stakes copy for Jay's wordsmithing. The warm message is
+        // already in the conversation above (the engine's decline reply); this is the terminal frame that
+        // genuinely leaves the door open. No card, no member created.
+        <div className="onboard-decline" role="note">
+          <p>That’s where we’ll leave it for now — and honestly, it’s a good place to be. Nothing here gets created, and there’s nothing you need to do.</p>
+          <p>If a day comes when something real pulls you away from who you are, and you feel that distance, this door stays open. Come back and we’ll pick it up together.</p>
+        </div>
+      ) : savedForLater ? (
+        // §2c save-and-return — DIRECTIONAL. The session is already saved server-side; the emailed resume link
+        // is the durable path (Decision R — wiring follow-on).
+        <div className="onboard-saved" role="note">
+          <h2>Your place is saved.</h2>
+          <p>Come back whenever you’re ready — you’ll pick up exactly where we left off, nothing lost. Take the time you need.</p>
+        </div>
+      ) : ready && state ? (
         (() => {
-          // The confirmation card — built from what was actually captured. The member is the final
-          // check before a member row is created: they catch a dropped item or a wrong Door here.
+          // §2c Confirmation card — DIRECTIONAL copy for wordsmithing. Holistic reflect-back, number-free,
+          // verbatim where it matters, correctable; nothing commits until "this is me". The member is the
+          // final check before a member row is created — they catch a dropped item or a wrong Door here.
           const card = buildSummaryCard(state.collected);
           return (
             <div className="onboard-summary">
-              <h2>Before your first ID Score — does this look right?</h2>
-              <p className="muted">This is what I captured. If anything’s missing or off, we’ll fix it — nothing’s saved yet.</p>
+              <h2>Here’s what I heard — does this look like you?</h2>
+              <p className="muted">Nothing’s saved yet. If anything’s missing or off, tell me and we’ll fix it together.</p>
               <dl className="summary-list">
                 <dt>Who you’re reclaiming</dt>
-                <dd>{card.identityLabel ?? 'You’ll name this through the work (Identity Excavation comes soon).'}</dd>
+                <dd>{card.identityLabel ?? 'You’ll name this through the work — that part comes soon.'}</dd>
                 <dt>How the gap opened</dt>
                 <dd>{card.gap}</dd>
                 <dt>Door{card.doors.length === 1 ? '' : 's'}</dt>
                 <dd>{card.doors.map((d) => d.displayName).join(', ') || '—'}</dd>
-                <dt>Your Reclaim List</dt>
+                <dt>What you want back</dt>
                 <dd>
                   <ul className="summary-reclaim">
                     {card.reclaimList.map((it, i) => (<li key={i}>{it}</li>))}
@@ -301,10 +294,13 @@ export default function OnboardingChat() {
               </dl>
               <div className="chat-continue">
                 <button type="button" onClick={proceed} disabled={pending}>
-                  {pending ? 'Saving…' : 'Looks right — continue to the IDQ →'}
+                  {pending ? 'Saving…' : 'This is me — I’m ready →'}
                 </button>
                 <button type="button" className="btn-secondary" onClick={keepTalking} disabled={pending} style={{ marginTop: '0.5rem' }}>
-                  Something’s missing or wrong — keep talking
+                  Close, but something’s off — let’s fix it
+                </button>
+                <button type="button" className="btn-secondary" onClick={() => setSavedForLater(true)} disabled={pending} style={{ marginTop: '0.5rem' }}>
+                  Save my place — I’ll come back
                 </button>
               </div>
             </div>
