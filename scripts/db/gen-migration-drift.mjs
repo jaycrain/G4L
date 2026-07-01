@@ -24,10 +24,11 @@ const M = [
   ["0042", { t: "_rls_sweep_0042" }],
   ["0043", { c: ["member_door", "removed_at"] }], ["0044", { c: ["atlas_asset", "administration_tier"] }],
   ["0045", { s: `exists(select 1 from pg_constraint where conname=${Q}reclaim_list_min_1${Q})` }],
+  ["0046", { c: ["playbook_entry", "keeper_type"] }],
 ];
 const expr = (x) =>
   x.t ? `to_regclass(${Q}public.${x.t}${Q}) is not null`
   : x.c ? `exists(select 1 from information_schema.columns where table_schema=${Q}public${Q} and table_name=${Q}${x.c[0]}${Q} and column_name=${Q}${x.c[1]}${Q})`
   : `(${x.s})`;
 const rows = M.map(([n, x]) => `  select ${Q}${n}${Q} as migration, coalesce(${expr(x)}, false) as applied`).join("\n  union all\n");
-console.log(`-- Migration drift: which repo migrations are applied on this database?\n-- 'applied=false' rows are MISSING from this DB (run them, in order).\nselect migration, applied\nfrom (\n${rows}\n) t\nwhere applied = false   -- show ONLY the gaps; delete this line to see all 45\norder by migration;`);
+console.log(`-- Migration drift: which repo migrations are applied on this database?\n-- 'applied=false' rows are MISSING from this DB (run them, in order).\nselect migration, applied\nfrom (\n${rows}\n) t\nwhere applied = false   -- show ONLY the gaps; delete this line to see all 46\norder by migration;`);

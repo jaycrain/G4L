@@ -10,6 +10,7 @@ import { validateReconnectOutput } from '../member/reclaim.ts';
 import { detectCrisis, CRISIS_RESPONSE_US, presentScore, type ScorePresentation } from '../agent/governance.ts';
 import { cleanIdentityNoun, displayIdentityNoun } from '../member/identity.ts';
 import { addReclaimItems, seedOnboardingBeats } from '../beats/store.ts';
+import { harvestIdentityKeeper } from '../agent/harvest.ts';
 import { inferCategory } from '../beats/category.ts';
 import { isCategory } from '../beats/registry.ts';
 import { scoreIdq, computeMovement, type DimensionScores } from '../idq/scoring.ts';
@@ -104,6 +105,17 @@ export async function runOnboarding(
         return { text, category: isCategory(agentCat) ? agentCat : inferCategory(text) };
       }),
     );
+    // Harvest the confirmed identity as a seed 'definition' keeper (v2.1 Increment 4 — light, opportunistic).
+    // Best-effort: a harvest failure must never fail the signup; the captures above are already persisted.
+    try {
+      await harvestIdentityKeeper(db, memberId, {
+        identityNoun: input.identityNoun,
+        identitySkipped: f.identitySkipped,
+        athleticPast: input.athleticPast,
+      });
+    } catch (e) {
+      console.warn('onboarding harvest (identity keeper) failed — non-fatal:', (e as Error).message);
+    }
     return { ok: true, memberId };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);

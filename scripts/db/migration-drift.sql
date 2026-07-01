@@ -91,6 +91,8 @@ from (
   select '0044' as migration, coalesce(exists(select 1 from information_schema.columns where table_schema='public' and table_name='atlas_asset' and column_name='administration_tier'), false) as applied
   union all
   select '0045' as migration, coalesce((exists(select 1 from pg_constraint where conname='reclaim_list_min_1')), false) as applied
+  union all
+  select '0046' as migration, coalesce(exists(select 1 from information_schema.columns where table_schema='public' and table_name='playbook_entry' and column_name='keeper_type'), false) as applied
 ) t
-where applied = false   -- show ONLY the gaps; delete this line to see all 45
+where applied = false   -- show ONLY the gaps; delete this line to see all 46
 order by migration;
