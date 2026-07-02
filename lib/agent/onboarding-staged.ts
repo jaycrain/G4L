@@ -400,9 +400,17 @@ function memberPushedPast(stage: StagedStage, message: string, c: Collected): bo
 type StageId = string;
 type StageMode = 'drawout' | 'administered';
 
-// The mutable per-turn working state handed to every stage handler. Carries the merged captures, the flat
-// scratch counters (Phase 0), and the control fields a handler sets. A handler mutates it in place OR returns a
-// terminal Turn (an early return — the decline off-ramp and the runaway force-progress use this).
+// A stage's private counter bag — a loose key/value map. Each stage reads/writes its OWN keys through a typed
+// view (IdentityScratch/GapScratch/ReclaimScratch below), so ConvState carries ONE `stageScratch` map instead of
+// a flat field per counter that would sprawl as arcs multiply (Phase 1 step 0).
+type StageScratch = Record<string, number | boolean | undefined>;
+interface IdentityScratch { identityTurns?: number; identityProbes?: number }
+interface GapScratch { gapTurns?: number; gapDepth?: number; noFade?: boolean }
+interface ReclaimScratch { reclaimNudged?: boolean }
+
+// The mutable per-turn working state handed to every stage handler: the merged captures, the CURRENT stage's
+// scratch bag, and the control fields a handler sets. A handler mutates it in place OR returns a terminal Turn
+// (the decline off-ramp and the runaway force-progress use the early return).
 interface Beat {
   readonly history: ConvMessage[];
   readonly memberMessage: string;
@@ -417,14 +425,10 @@ interface Beat {
   reply: string;
   complete: boolean;
   declined: boolean;
-  // flat per-stage scratch (Phase 0 — migrates to per-stage scratch in Phase 1 step 0):
-  identityTurns: number;
-  identityProbes: number;
-  gapTurns: number;
-  gapDepth: number;
-  reclaimNudged: boolean;
-  noFade: boolean;
-  idleTurns: number;
+  idleTurns: number; // the cross-stage runaway counter (kernel-level, not per-stage)
+  scratch: StageScratch; // the CURRENT stage's counter bag (mutated in place by the handler)
+  readonly baseScratch: Record<string, StageScratch>; // the incoming full map, so OTHER stages' scratch is preserved
+  readonly stageAtEntry: StageId; // the stage whose scratch `scratch` belongs to — where it persists (handlers may advance b.stage)
 }
 
 // A stage handler mutates the Beat (sets b.reply etc.) or returns a terminal Turn. `resolveConfirm`'s CONTRACT
@@ -450,19 +454,16 @@ interface ArcConfig {
   onComplete: (c: Collected) => string; // the completion reply (the card / the earned ceremony)
 }
 
-// Build the persisted ConvState from a Beat — the single place the turn's state shape is assembled.
+// Build the persisted ConvState from a Beat — the single place the turn's state shape is assembled. The current
+// stage's scratch persists under the stage it BELONGS to (stageAtEntry), since a handler may have advanced b.stage
+// this turn; every other stage's scratch is carried through unchanged from baseScratch.
 function beatState(b: Beat): ConvState {
   return {
     stage: b.stage as StagedStage,
     collected: b.collected,
     awaitingConfirm: b.awaitingConfirm,
-    identityTurns: b.identityTurns,
-    identityProbes: b.identityProbes,
-    reclaimNudged: b.reclaimNudged,
-    gapTurns: b.gapTurns,
-    gapDepth: b.gapDepth,
     idleTurns: b.idleTurns,
-    noFade: b.noFade,
+    stageScratch: { ...b.baseScratch, [b.stageAtEntry]: b.scratch },
   };
 }
 
@@ -474,6 +475,7 @@ const identityStage: StageDef = {
   opener: () => STAGED_OPENING, // stage 0 — never advanced-into; opener unused (the arc opening lives in stagedOpening())
   offersSubstance: (message) => message.trim().length >= 15,
   gather(b) {
+    const s = b.scratch as IdentityScratch;
     if (b.collected.identitySkipped) {
       // Skipped — nothing to confirm; acknowledge and advance straight into the gap stage.
       b.stage = 'gap';
@@ -483,21 +485,21 @@ const identityStage: StageDef = {
       // (front-loader escape), the member PUSHES PAST (terse escape), or we've drawn out enough (2 probes).
       const rich = stageMaterialRich('identity', b.collected);
       const pushed = memberPushedPast('identity', b.memberMessage, b.collected);
-      if (rich || pushed || b.identityProbes >= 2) {
+      if (rich || pushed || (s.identityProbes ?? 0) >= 2) {
         b.reply = reflectIdentity(b.collected);
         b.awaitingConfirm = true;
       } else {
-        b.identityProbes += 1;
+        s.identityProbes = (s.identityProbes ?? 0) + 1;
         // probe 1 = the general draw; probe 2 = smaller + concrete. Prefer the model's own drawing-out question.
-        const probe = b.identityProbes === 1 ? identityProbe(b.collected) : identityProbe2(b.collected);
+        const probe = s.identityProbes === 1 ? identityProbe(b.collected) : identityProbe2(b.collected);
         b.reply = withQuestion(b.modelText, probe);
       }
     } else {
       // Gather. Never-strand a member who won't name a PAST self: offer the "find it later" skip after a couple
       // of tries, HARD-ESCAPE after a few (recovered at Identity Excavation in Reconnect).
-      b.identityTurns += 1;
-      const skipOfferable = b.identityTurns >= IDENTITY_SKIP_OFFER_AFTER;
-      if (b.identityTurns >= IDENTITY_MAX_TURNS && !b.collected.athleticPast && !b.collected.identityNoun) {
+      s.identityTurns = (s.identityTurns ?? 0) + 1;
+      const skipOfferable = s.identityTurns >= IDENTITY_SKIP_OFFER_AFTER;
+      if (s.identityTurns >= IDENTITY_MAX_TURNS && !b.collected.athleticPast && !b.collected.identityNoun) {
         b.collected.identitySkipped = true;
         b.stage = 'gap';
         b.reply = `${SKIP_ACK}\n\n${gapOpen(b.collected)}`;
@@ -537,23 +539,24 @@ const gapStage: StageDef = {
     // no real gap yet → nothing to force; fall through to normal gather
   },
   gather(b) {
+    const s = b.scratch as GapScratch;
     // The model's explicit no-fade judgement (note_no_fade) is the PRIMARY signal. Sticky once set.
-    if (b.model.noFade) b.noFade = true;
+    if (b.model.noFade) s.noFade = true;
     // FADE GATE. Reject a model-tagged gap that is forward-looking ambition (never FABRICATE a fade). Reject on
     // AMBITION specifically, not shortness — a terse real fade ("Knee. Then divorce.") must survive.
-    if (b.collected.gap && isForwardAmbition(b.collected.gap) && !b.noFade) b.collected.gap = undefined;
+    if (b.collected.gap && isForwardAmbition(b.collected.gap) && !s.noFade) b.collected.gap = undefined;
     // Backstop: when the model did NOT tag a (real-fade) set_gap this turn, capture the member's own message as
     // the gap if it reads as a real fade — ACCUMULATE (append) so a progressive revealer's chapters aren't lost.
     const modelTaggedGap = b.model.record?.gap !== undefined && b.model.record.gap !== '' && !isForwardAmbition(b.model.record.gap);
-    if (!b.collected.gap && !b.noFade && shouldCaptureStagedGap(b.memberMessage)) {
+    if (!b.collected.gap && !s.noFade && shouldCaptureStagedGap(b.memberMessage)) {
       b.collected.gap = b.memberMessage.trim();
-    } else if (b.collected.gap && !b.noFade && !modelTaggedGap && shouldCaptureStagedGap(b.memberMessage)) {
+    } else if (b.collected.gap && !s.noFade && !modelTaggedGap && shouldCaptureStagedGap(b.memberMessage)) {
       b.collected.gap = `${b.collected.gap} ${b.memberMessage.trim()}`;
     }
-    if (!b.collected.gap && !b.noFade) b.gapTurns += 1; // count gather turns only while no real fade is in hand
+    if (!b.collected.gap && !s.noFade) s.gapTurns = (s.gapTurns ?? 0) + 1; // count gather turns only while no real fade is in hand
     // NEVER-STRAND the gap stage: after several gap turns with NOTHING captured, grab the accumulated gap-stage
     // story so we advance instead of looping the opening question.
-    if (!b.collected.gap && !b.noFade && b.gapTurns >= GAP_MAX_TURNS) {
+    if (!b.collected.gap && !s.noFade && (s.gapTurns ?? 0) >= GAP_MAX_TURNS) {
       const corpus = gapStageCorpus(b.history, b.memberMessage).trim();
       if (corpus.length >= 40 && !isForwardAmbition(corpus)) b.collected.gap = corpus;
     }
@@ -562,14 +565,14 @@ const gapStage: StageDef = {
     if (isAcceptanceFade(gapCorpus)) {
       // RESIGNED to age-decline → The Acceptance Door: a real, quiet Fade. NOT no-fade — clear the flag, capture
       // their own words as the gap, and fall through to the normal real-fade reflect/advance below.
-      b.noFade = false;
+      s.noFade = false;
       if (!b.collected.gap) b.collected.gap = b.memberMessage.trim() || gapCorpus.trim();
     }
     // GENUINELY THRIVING → graceful DECLINE. Fires when there's NO real-fade signal anywhere AND either the model
     // judged no-fade, or the member's own words are pure forward-ambition with nothing captured after a couple turns.
     const noRealFadeSignal = !isAcceptanceFade(gapCorpus) && !hasGenuineLoss(gapCorpus);
     const thrivingDecline =
-      noRealFadeSignal && (b.noFade || (isForwardAmbition(b.memberMessage) && !b.collected.gap && b.gapTurns >= 2));
+      noRealFadeSignal && (s.noFade || (isForwardAmbition(b.memberMessage) && !b.collected.gap && (s.gapTurns ?? 0) >= 2));
     if (thrivingDecline) {
       // Out of scope; the door stays open. Terminal — no card, no reclaim. We never fabricate a fade to admit them.
       b.stage = 'declined';
@@ -580,11 +583,11 @@ const gapStage: StageDef = {
     if (b.collected.gap) {
       // Real fade. Accumulate Doors across the WHOLE corpus, and RECEIVE the whole story before reflecting.
       b.collected.doors = augmentDoors(b.collected.doors ?? [], gapStageCorpus(b.history, b.memberMessage));
-      b.gapDepth += 1; // one more drawing-out exchange with the story in hand
+      s.gapDepth = (s.gapDepth ?? 0) + 1; // one more drawing-out exchange with the story in hand
       // MODEL-JUDGED advance: the MODEL decides when the story is drawn out (reflect_gap), bounded by the engine —
       // a FLOOR (GAP_MIN_DEPTH) and a CAP (GAP_MAX_DEPTH). A member close overrides; the card is the backstop.
-      const modelJudgedDone = b.model.gapReady && b.gapDepth >= GAP_MIN_DEPTH;
-      const advance = modelJudgedDone || memberPushedPast('gap', b.memberMessage, b.collected) || b.gapDepth >= GAP_MAX_DEPTH;
+      const modelJudgedDone = b.model.gapReady && (s.gapDepth ?? 0) >= GAP_MIN_DEPTH;
+      const advance = modelJudgedDone || memberPushedPast('gap', b.memberMessage, b.collected) || (s.gapDepth ?? 0) >= GAP_MAX_DEPTH;
       if (!advance) {
         b.reply = withQuestion(b.modelText, gapMore(b.history));
       } else {
@@ -639,6 +642,7 @@ const reclaimStage: StageDef = {
     // not card-ready → mutation kept, fall through to normal gather
   },
   gather(b) {
+    const s = b.scratch as ReclaimScratch;
     // Uniform floor+escape (1b): reclaim's drawing-out is "gather toward the aim."
     const closing = memberPushedPast('reclaim', b.memberMessage, b.collected);
     // The member put a want FORWARD this turn (new or a restatement) — the "still in flow" signal, distinct from
@@ -664,11 +668,11 @@ const reclaimStage: StageDef = {
         b.reply = reflectReclaim(b.collected);
         b.awaitingConfirm = true;
       }
-    } else if (closing && !b.reclaimNudged) {
+    } else if (closing && !s.reclaimNudged) {
       // Soft-close below the minimum → nudge ONCE (small things count), draw out more.
-      b.reclaimNudged = true;
+      s.reclaimNudged = true;
       b.reply = RECLAIM_NUDGE;
-    } else if (closing && b.reclaimNudged) {
+    } else if (closing && s.reclaimNudged) {
       // Already nudged, still closing below the floor. Gate-1 (sub-3): with ≥1 real want, ACCEPT and complete —
       // the card carries the shortfall. Never fabricate. Only a truly empty list holds.
       if (count >= 1) {
@@ -745,6 +749,8 @@ export function runArcTurn(
     collected.reclaimCategories = keptCats;
   }
 
+  const stageAtEntry = (state.stage ?? arc.stageOrder[0]) as StageId;
+  const baseScratch: Record<string, StageScratch> = { ...(state.stageScratch ?? {}) };
   const b: Beat = {
     history,
     memberMessage,
@@ -754,18 +760,15 @@ export function runArcTurn(
     priorReclaimLen: state.collected.reclaimList?.length ?? 0,
     arc,
     collected,
-    stage: (state.stage ?? arc.stageOrder[0]) as StageId,
+    stage: stageAtEntry,
     awaitingConfirm: state.awaitingConfirm ?? false,
     reply: '',
     complete: false,
     declined: false,
-    identityTurns: state.identityTurns ?? 0,
-    identityProbes: state.identityProbes ?? 0,
-    gapTurns: state.gapTurns ?? 0,
-    gapDepth: state.gapDepth ?? 0,
-    reclaimNudged: state.reclaimNudged ?? false,
-    noFade: state.noFade ?? false,
     idleTurns: state.idleTurns ?? 0,
+    stageAtEntry,
+    baseScratch,
+    scratch: { ...(baseScratch[stageAtEntry] ?? {}) }, // the current stage's bag, copied so mutations are isolated
   };
   const stageDef = arc.stages[b.stage];
 

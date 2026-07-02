@@ -38,7 +38,6 @@ export type ConvState = {
   collected: Collected;
   doorTurns?: number; // how many exchanges the Door beat has had (gates completion — see resolveCompletion)
   identityTurns?: number; // how many exchanges spent at the naming beat (drives the identity gate — see liveTurn)
-  identityProbes?: number; // v2.1 (1b): how many breathe-floor probes the identity beat has asked (caps the second-probe net)
   doorAsked?: boolean; // has the Door beat actually been ENTERED (the "how did the gap open?" question posed)?
   // Until then a gap can't be captured and the intake can't complete — "list hit the minimum" is NOT
   // "we're in the Door beat" (the list has no max). The fix for capturing/completing before the ask.
@@ -47,12 +46,11 @@ export type ConvState = {
   declinedDoors?: DoorSlug[]; // Doors the member set aside when asked — never re-surfaced
   awaitingMore?: boolean; // the member said the fade story isn't finished — hold (no complete) until they close it
   awaitingConfirm?: boolean; // v2.0 staged engine: the current stage's capture has been reflected; awaiting confirm
-  reclaimNudged?: boolean; // v2.0 staged engine: we've nudged once for more reclaim items below the minimum (never-trap: nudge once, never loop)
-  gapTurns?: number; // v2.0 staged engine: exchanges spent in the gap stage without a real fade (drives the no-fade gate)
-  gapDepth?: number; // v2.1: drawing-out exchanges once the gap story is in hand (the model-judged depth floor/cap)
-  idleTurns?: number; // v2.1: consecutive turns the member added NOTHING new — the runaway signal. Resets to 0 the moment
-  // they contribute again, so a verbose ENGAGED member is never force-completed for being long; only a genuine STALL is.
-  noFade?: boolean; // v2.0 staged engine: recognized no real Fade (forward-only optimizer) — declined, never force-completed
+  idleTurns?: number; // v2.1 kernel: consecutive turns the member added NOTHING new — the runaway signal (cross-stage, so
+  // it lives here, not in stageScratch). Resets to 0 the moment they contribute; a verbose ENGAGED member never trips the cap.
+  // v2.1 kernel (Phase 1 step 0): per-stage scratch counters — each stage of each arc owns its own bag (identity: turns/probes;
+  // gap: gapTurns/gapDepth/noFade; reclaim: reclaimNudged), so ConvState never sprawls with a new flat field per arc.
+  stageScratch?: Record<string, Record<string, number | boolean | undefined>>;
   declined?: boolean; // v2.1 (Decision E): a genuinely-thriving no-fade member was gracefully declined (out of scope) — terminal
 };
 export type ConvMessage = { role: 'agent' | 'member'; text: string };

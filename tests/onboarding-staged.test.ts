@@ -151,7 +151,7 @@ test('STAGED gap — "there was work too" at the confirm is heard as MORE, not a
 
 test('STAGED gap — a plain confirm ("yes, you’ve got it" / "exactly") still ADVANCES (not misread as more)', () => {
   // The flip side of the fixture above: the addition-detector must NOT trap a bare confirmation.
-  const atConfirm: ConvState = { stage: 'gap', awaitingConfirm: true, gapDepth: 2, collected: { athleticPast: 'a runner', identityNoun: 'Runner', gap: 'The caregiving years took it.', doors: ['aging_parents'] } };
+  const atConfirm: ConvState = { stage: 'gap', awaitingConfirm: true, stageScratch: { gap: { gapDepth: 2 } }, collected: { athleticPast: 'a runner', identityNoun: 'Runner', gap: 'The caregiving years took it.', doors: ['aging_parents'] } };
   for (const msg of ['yes, you’ve got it', 'exactly', 'yeah that’s right', 'that lands']) {
     const turn = applyStagedTurn(atConfirm, [], msg, { text: 'Okay.' });
     assert.equal(turn.state.stage, 'reclaim', `"${msg}" is a confirmation → advances to reclaim`);
@@ -160,7 +160,7 @@ test('STAGED gap — a plain confirm ("yes, you’ve got it" / "exactly") still 
 
 test('STAGED gap confirm — done-signals ADVANCE, never loop (Jay walk: "won\'t take yes for an answer")', () => {
   const atConfirm = (): ConvState => ({
-    stage: 'gap', awaitingConfirm: true, gapDepth: 3,
+    stage: 'gap', awaitingConfirm: true, stageScratch: { gap: { gapDepth: 3 } },
     collected: { athleticPast: 'a cyclist', identityNoun: 'Free Spirit', gap: 'Kids and work crowded it out over fifteen years.', doors: ['full_house', 'grind'] },
   });
   // Every one of these answers "…or is there more to it?" with NO MORE — they must ADVANCE, not loop.
@@ -203,7 +203,7 @@ test('STAGED identity — skip path advances straight to the gap stage (nothing 
 
 test('STAGED identity — a correction re-opens the stage (never advances on "no")', () => {
   const atReflect: ConvState = {
-    stage: 'identity', awaitingConfirm: true, identityTurns: 1,
+    stage: 'identity', awaitingConfirm: true, stageScratch: { identity: { identityTurns: 1 } },
     collected: { athleticPast: 'a cyclist', identityNoun: 'Athlete' },
   };
   const turn = applyStagedTurn(atReflect, [], 'no, that’s not quite her — more the Builder', { text: 'Got it.' });
@@ -215,7 +215,7 @@ test('STAGED identity — a correction re-opens the stage (never advances on "no
 
 test('STAGED identity — an ambiguous reply at confirm advances (never traps)', () => {
   const atReflect: ConvState = {
-    stage: 'identity', awaitingConfirm: true, identityTurns: 1,
+    stage: 'identity', awaitingConfirm: true, stageScratch: { identity: { identityTurns: 1 } },
     collected: { athleticPast: 'a cyclist', identityNoun: 'Athlete' },
   };
   const turn = applyStagedTurn(atReflect, [], 'hmm, I think so', { text: 'Okay.' });
@@ -693,7 +693,7 @@ test('STAGED reclaim — never-trap: a wrap below the minimum nudges ONCE, then 
     atReclaim,
   );
   // turn 2: wrap below min → nudge ONCE, do not complete
-  assert.equal(turns[1]!.state.reclaimNudged, true, 'nudged once');
+  assert.equal(turns[1]!.state.stageScratch?.reclaim?.reclaimNudged, true, 'nudged once');
   assert.equal(turns[1]!.complete, false, 'never completes below the frozen floor');
   assert.match(turns[1]!.reply, /even one or two more|small/i, 'lowers the bar rather than re-asking');
   // turn 3: wraps again — must NOT nudge a second time (no loop) and still must not complete
@@ -769,7 +769,7 @@ test('STAGED fade gate — RESIGNED (Acceptance) is NOT declined: routes to The 
     atGap,
   );
   assert.notEqual(turns.at(-1)!.declined, true, 'a resigned member is NOT declined');
-  assert.equal(turns[0]!.state.noFade ?? false, false, 'reclassified as a real Fade, not no-fade');
+  assert.equal(turns[0]!.state.stageScratch?.gap?.noFade ?? false, false, 'reclassified as a real Fade, not no-fade');
   assert.ok((turns[0]!.state.collected.doors ?? []).includes('acceptance'), 'routed to The Acceptance Door');
   assert.equal(turns[1]!.state.awaitingConfirm, true, 'proceeds to reflect-confirm like any real fade');
 });
@@ -786,7 +786,7 @@ test('STAGED fade gate — does NOT misfire on a real fade that also mentions wa
     atGap,
   );
   assert.equal(turns[0]!.state.collected.gap, story, 'a real fade with forward language is still captured');
-  assert.equal(turns[0]!.state.noFade ?? false, false, 'not misread as no-fade');
+  assert.equal(turns[0]!.state.stageScratch?.gap?.noFade ?? false, false, 'not misread as no-fade');
   assert.equal(turns[1]!.state.awaitingConfirm, true, 'proceeds to reflect-confirm once the story is whole');
 });
 
@@ -804,7 +804,7 @@ test('STAGED reclaim — sub-3 completion (Gate-1 decision): two items + done �
     ],
     atReclaim,
   );
-  assert.equal(turns[1]!.state.reclaimNudged, true, 'nudged once below the aim');
+  assert.equal(turns[1]!.state.stageScratch?.reclaim?.reclaimNudged, true, 'nudged once below the aim');
   assert.match(turns[2]!.reply, /want to reclaim/i, 'accepts the sub-3 list and reflects (never fabricates a 3rd)');
   assert.equal(finalState.stage, 'complete', 'completes below the old ≥3 floor — card carries the shortfall');
   assert.equal(finalState.collected.reclaimList?.length, 2);
