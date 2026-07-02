@@ -550,6 +550,20 @@ test('STAGED reclaim — a want captured twice lands ONCE (Jay walk: "Ride my bi
   assert.equal(list.length, 3, 'three distinct wants — no duplicate on the card');
 });
 
+test('STAGED reclaim — light-touch sharpening REPLACES a vague want in place, never duplicates (measurable list)', () => {
+  const atReclaim: ConvState = { stage: 'reclaim', collected: { athleticPast: 'a cyclist', identityNoun: 'Player', gap: 'The grind took it over the years.' } };
+  const { finalState } = replayStaged(
+    [
+      { member: 'Ride my bike more', model: { text: 'What would that look like — a couple rides a week?', record: { reclaimList: ['Ride my bike more'] } } },
+      { member: 'Yeah, like 3 times a week', model: { text: 'Got it. What else comes to mind?', refineReclaim: 'Ride my bike 3 times a week' } },
+      { member: 'Lose 25 lbs', model: { text: 'Good. Anything else?', record: { reclaimList: ['Lose 25 lbs'] } } },
+    ],
+    atReclaim,
+  );
+  const list = finalState.collected.reclaimList ?? [];
+  assert.deepEqual(list, ['Ride my bike 3 times a week', 'Lose 25 lbs'], 'the vague want is sharpened in place — no "Ride my bike more" left, no duplicate');
+});
+
 test('STAGED reclaim — soft-close phrases are NOT captured as wants (Jay walk: "Pretty solid start" / "sums it up")', () => {
   const base: ConvState = {
     stage: 'reclaim',

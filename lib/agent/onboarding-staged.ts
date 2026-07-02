@@ -513,6 +513,25 @@ export function applyStagedTurn(
   model: ModelTurn,
 ): Turn {
   const collected = mergeStaged({ ...state.collected }, model.record);
+  // Light-touch measurability (Decision: reclaim items should land concrete/trackable). The model sharpens a
+  // vague want by REPLACING its most-recent item in place — never a second entry. Dedupe after, in case the
+  // sharpened text collides with an earlier want.
+  const refinedThisTurn = !!model.refineReclaim && (collected.reclaimList?.length ?? 0) > 0;
+  if (refinedThisTurn) {
+    const list = [...collected.reclaimList!];
+    list[list.length - 1] = model.refineReclaim!.trim();
+    const seen = new Set<string>();
+    const cats = collected.reclaimCategories ?? [];
+    const keptCats: string[] = [];
+    collected.reclaimList = list.filter((item, i) => {
+      const k = reclaimKey(item);
+      if (seen.has(k)) return false;
+      seen.add(k);
+      keptCats.push(cats[i] ?? '');
+      return true;
+    });
+    collected.reclaimCategories = keptCats;
+  }
   let stage = (state.stage ?? 'identity') as StagedStage;
   let awaitingConfirm = state.awaitingConfirm ?? false;
   let identityTurns = state.identityTurns ?? 0;
@@ -565,6 +584,7 @@ export function applyStagedTurn(
     // correcting) — the same offering guard the gather stage uses, so "yes, that's it" still advances.
     if (
       stage === 'reclaim' &&
+      !refinedThisTurn && // a sharpening answer isn't a new want
       !correctsReflection(memberMessage) &&
       !memberClosingReclaim(memberMessage) &&
       shouldCaptureStagedReclaim(memberMessage) &&
@@ -752,7 +772,8 @@ export function applyStagedTurn(
     // Backstop: capture an untagged want ONLY when the member offered AND the model did NOT already tag it — else
     // we'd double-add the same want in two phrasings ("riding again" + "I want to ride again"). appendReclaim also
     // dedupes exact restatements across turns, so a re-said want is a safe no-op — never a second "Ride my bike more".
-    if (offered && !modelCaptured) appendReclaim(collected, memberMessage);
+    // Skip when the turn REFINED a want (the member's message was the sharpening answer, already folded in).
+    if (offered && !modelCaptured && !refinedThisTurn) appendReclaim(collected, memberMessage);
     const count = collected.reclaimList?.length ?? 0;
     const grewThisTurn = count > priorLen; // a NEW unique want landed this turn (model or backstop)
     // Cap runaway capture: once at the soft aim (~7), stop asking "what else?" and move to confirm — this is
@@ -889,6 +910,16 @@ export const STAGED_TOOLS = [
       required: ['text'],
     },
   },
+  {
+    name: 'refine_reclaim_item',
+    description:
+      "REPLACE the reclaim item you MOST RECENTLY added with a sharper, more concrete version — use this after you " +
+      "gently drew the member toward something they could actually notice progress on (a cadence, a number, a specific " +
+      "anchor: 'ride my bike more' → 'ride my bike a couple times a week'). Pass the WHOLE new phrasing in `text`, in " +
+      "their words. This updates the item in place — it does NOT add a second one. Only use it to sharpen the last " +
+      "item; use add_reclaim_item for a genuinely new want.",
+    input_schema: { type: 'object' as const, properties: { text: { type: 'string' } }, required: ['text'] },
+  },
 ];
 
 // Parse a staged model response (per-field tool calls) into the merged Partial<Collected> the engine reads.
@@ -896,6 +927,7 @@ export function parseStagedTurn(content: readonly unknown[]): ModelTurn {
   let text = '';
   let noFade = false;
   let gapReady = false;
+  let refineReclaim: string | undefined;
   const rec: Partial<Collected> = {};
   for (const b of content as Array<{ type: string; text?: string; name?: string; input?: Record<string, unknown> }>) {
     if (b.type === 'text' && typeof b.text === 'string') text += b.text;
@@ -911,11 +943,12 @@ export function parseStagedTurn(content: readonly unknown[]): ModelTurn {
         (rec.reclaimList ??= []).push(b.input.text);
         (rec.reclaimCategories ??= []).push(typeof b.input.category === 'string' ? b.input.category : '');
       }
+      if (b.name === 'refine_reclaim_item' && typeof b.input?.text === 'string') refineReclaim = b.input.text;
       if (b.name === 'note_no_fade') noFade = true;
       if (b.name === 'reflect_gap') gapReady = true;
     }
   }
-  return { text, record: rec, noFade, gapReady };
+  return { text, record: rec, noFade, gapReady, refineReclaim };
 }
 
 // Is the staged engine selected? Flag only — defaults OFF, so v1 serves prod until cut-over.
@@ -997,7 +1030,14 @@ function stageInstruction(stage?: Stage): string {
     return (
       '\n\nCURRENT STAGE: what they want back. Invite the things they want to reclaim and call add_reclaim_item ' +
       'once per item (big or small — there are no wrong answers). If they already named some earlier, build on ' +
-      "those, don't re-ask. Aim for a few; never pressure or interrogate — small things count."
+      "those, don't re-ask. Aim for a few; never pressure or interrogate — small things count.\n" +
+      'MAKE EACH WANT CONCRETE (light touch): a Reclaim item should be something they could actually notice ' +
+      'progress on. When a want is vague ("ride my bike more", "get in shape"), reflect it and ask ONE gentle ' +
+      'question toward something trackable — a rough cadence, a number, a specific anchor ("what would that look ' +
+      'like — a couple rides a week? weekends?"). Then call refine_reclaim_item with the sharper phrasing IN ' +
+      'THEIR WORDS to replace the vague one (do NOT add a second item). Take whatever they give — if they stay ' +
+      "general, that's fine; never force a metric, never turn it into a form, at most ONE sharpening per want. " +
+      'Already-concrete wants ("lose 25 lbs") need no sharpening — leave them.'
     );
   return '\n\nCURRENT STAGE: identity — who they were at their best, and the one-word handle (or skip).';
 }
