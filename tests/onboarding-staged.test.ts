@@ -550,6 +550,21 @@ test('STAGED reclaim — a want captured twice lands ONCE (Jay walk: "Ride my bi
   assert.equal(list.length, 3, 'three distinct wants — no duplicate on the card');
 });
 
+test('STAGED reclaim — soft-close phrases are NOT captured as wants (Jay walk: "Pretty solid start" / "sums it up")', () => {
+  const base: ConvState = {
+    stage: 'reclaim',
+    collected: { athleticPast: 'a cyclist', identityNoun: 'Player', gap: 'The grind took it over the years.', reclaimList: ['My body, lose 25 lbs', 'Ride my bike more', 'Travel on weekends with friends'] },
+  };
+  // gather turn: an acknowledgement of the reflection, not a want → not captured; at ≥min it reflects the list.
+  const t1 = applyStagedTurn(base, [], 'Pretty solid start', { text: 'Okay.' });
+  assert.ok(!(t1.state.collected.reclaimList ?? []).some((x) => /solid start/i.test(x)), '"Pretty solid start" is not a want');
+  assert.equal(t1.state.awaitingConfirm, true, 'a soft close at ≥min reflects the list, does not add an item');
+  // at the confirm: "That about sums it up for now" advances to the card — never captured as another list item.
+  const t2 = applyStagedTurn({ ...base, awaitingConfirm: true }, [], 'That about sums it up for now', { text: 'Okay.' });
+  assert.ok(!(t2.state.collected.reclaimList ?? []).some((x) => /sums it up/i.test(x)), '"That about sums it up" is not a want');
+  assert.equal(t2.state.stage, 'complete', 'the close advances to the card');
+});
+
 test('STAGED reclaim — re-surfaces a parked front-loader item at stage entry (the trust moment)', () => {
   // Member parked "writing again" back in the identity stage; we enter reclaim by confirming the gap.
   const atGapConfirm: ConvState = {

@@ -417,7 +417,7 @@ function shouldCaptureStagedReclaim(message: string): boolean {
 // a bare "what else?" that reads as not-listening — and it keeps the backstop from grabbing a close/refusal
 // as a fabricated item.
 const RECLAIM_CLOSE_RE =
-  /\b(that'?s (actually |really |pretty much |honestly )?(it|all|everything|the list)|those are (the )?(real|only|main|biggest) ones|that'?s (my|the) (real )?list|the (real )?list( is)?( complete| done| it)?|i'?m (good|done|ready)|i'?ve (answered|said|told you)|(let'?s |can we )?(move on|moving on|move forward|keep going)|i'?m (stepping away|not answering|done answering))\b/i;
+  /\b(that'?s (actually |really |pretty much |honestly )?(it|all|everything|the list)|those are (the )?(real|only|main|biggest) ones|that'?s (my|the) (real )?list|the (real )?list( is)?( complete| done| it)?|i'?m (good|done|ready)|i'?ve (answered|said|told you)|(let'?s |can we )?(move on|moving on|move forward|keep going)|i'?m (stepping away|not answering|done answering)|(that )?(about )?sums it up|that'?ll do|that covers it|(that'?s )?(a )?(pretty |fairly )?(solid|good|decent|fair|great) (start|list)|good enough)\b/i;
 function memberClosingReclaim(message: string): boolean {
   const m = (message ?? '').replace(/[‘’]/g, "'");
   return memberDeflecting(m) || confirmsWhole(m) || RECLAIM_CLOSE_RE.test(m);
