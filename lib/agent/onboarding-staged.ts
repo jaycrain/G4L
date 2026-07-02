@@ -78,11 +78,14 @@ const GAP_MAX_TURNS = 4;
 // richness proxy (door-count / length): depth is judgment, the floor/cap bound the error, the card corrects.
 const GAP_MIN_DEPTH = 2;
 const GAP_MAX_DEPTH = 5;
-// SYSTEMIC INVARIANT — no gather stage loops unbounded. Past this many member turns, the conversation is FORCED
-// to the confirmation card (the seatbelt) as soon as there's a usable capture. A member genuinely engaged
-// finishes well under this (rita 10–18); it only catches runaway gather loops, and the card still lets them
-// keep talking. Set above normal completion, below the eval's hard cap (24).
-const ONBOARDING_FORCE_TURNS = 20;
+// SYSTEMIC INVARIANT — no gather stage loops unbounded. But the trigger is STALL, not length: a verbose, engaged
+// member (Scott, Blake — getting real value from a long conversation) must NOT be force-completed just for being
+// long. So we force progress to the card only when the member has actually gone quiet — IDLE_LIMIT consecutive
+// turns adding nothing new — OR at a high absolute ceiling that only a pathological loop / abuse would reach. The
+// idle counter resets to 0 the moment they contribute again, so engagement is never punished; the card still
+// lets them keep talking. (Replaces the blunt fixed turn-cap, which cut off exactly the members we want.)
+const ONBOARDING_IDLE_LIMIT = 3; // consecutive no-progress turns = a genuine stall (not a pause — they gave nothing usable)
+const ONBOARDING_HARD_CEILING = 30; // absolute backstop against a true runaway/abuse loop, regardless of progress
 
 // --- copy (engine-owned forwards; the model leads when it asks a real question) -------------------------
 // v2.0 FINAL copy — docs/handoffs/2026-06-26-v2.0-final-copy-and-floor.md §3–§6. Voice: warm, direct,
@@ -425,20 +428,38 @@ export function applyStagedTurn(
   let gapDepth = state.gapDepth ?? 0;
   const modelText = stripLeadingDisclosure(model.text).trim();
 
-  // SYSTEMIC INVARIANT (the gather-cap): no gather/elaboration stage loops forever. Past the turn budget, FORCE
-  // PROGRESS THROUGH THE STAGE MACHINE — bound every gather loop, not just the last. One block for the whole
-  // class (gap "was there more?", reclaim "anything else?", the frustrated-deflection loop), replacing the
-  // per-stage patches. The card is the seatbelt and still offers "keep talking". Tightrope: it never fabricates
-  // (gap-advance needs a real non-ambition gap; completion needs the full finalize floor) and only at turn 20
-  // (a member genuinely engaged finishes well under it) — the early-completion / never-trap fixtures stay green.
+  // PROGRESS vs STALL (v2.1): the member CONTRIBUTED this turn if a captured field grew, OR they offered usable
+  // substance the model may not have tagged yet (a want in reclaim, fade material in gap, any real message in
+  // identity) and weren't deflecting. Biased toward "engaged" on purpose — a verbose member (Scott/Blake) resets
+  // the idle counter every turn they give something, so length never triggers the cap; only a true STALL does.
+  const grew =
+    (collected.gap?.length ?? 0) > (state.collected.gap?.length ?? 0) ||
+    (collected.doors?.length ?? 0) > (state.collected.doors?.length ?? 0) ||
+    (collected.reclaimList?.length ?? 0) > (state.collected.reclaimList?.length ?? 0) ||
+    (!!collected.identityNoun && !state.collected.identityNoun) ||
+    (!!collected.athleticPast && !state.collected.athleticPast);
+  const offeredSubstance =
+    !memberDeflecting(memberMessage) &&
+    (stage === 'reclaim'
+      ? shouldCaptureStagedReclaim(memberMessage)
+      : stage === 'gap'
+        ? shouldCaptureStagedGap(memberMessage) || memberMessage.trim().length >= 20
+        : memberMessage.trim().length >= 15);
+  let idleTurns = grew || offeredSubstance ? 0 : (state.idleTurns ?? 0) + 1;
+
+  // SYSTEMIC INVARIANT (the runaway backstop): no gather/elaboration loop runs forever. But it fires on STALL,
+  // not length — ONBOARDING_IDLE_LIMIT consecutive turns adding nothing new (a real loop / frustrated deflection),
+  // or the absolute ONBOARDING_HARD_CEILING (pathological). A verbose engaged member never trips it. When it does
+  // fire it FORCES PROGRESS through the stage machine to the card (the seatbelt still offers "keep talking"). It
+  // never fabricates: gap-advance needs a real non-ambition gap; completion needs the full finalize floor.
   const memberTurns = history.filter((h) => h.role === 'member').length + 1;
-  if (!awaitingConfirm && memberTurns >= ONBOARDING_FORCE_TURNS) {
+  if (!awaitingConfirm && (idleTurns >= ONBOARDING_IDLE_LIMIT || memberTurns >= ONBOARDING_HARD_CEILING)) {
     const realGap = gapIsNarrative(collected.gap, collected.reclaimList ?? []) && !isForwardAmbition(collected.gap ?? '');
     // Bound the gap-elaboration loop: a real gap is captured but she keeps elaborating → move on to Reclaim.
     if (stage === 'gap' && realGap) {
       return {
         reply: reclaimOpen(collected),
-        state: { stage: 'reclaim', collected, awaitingConfirm: false, identityTurns, reclaimNudged, gapTurns, noFade },
+        state: { stage: 'reclaim', collected, awaitingConfirm: false, identityTurns, reclaimNudged, gapTurns, noFade, idleTurns: 0 },
         complete: false,
       };
     }
@@ -452,7 +473,7 @@ export function applyStagedTurn(
       if (hasIdentity(collected) && realGap && (collected.reclaimList?.length ?? 0) >= RECLAIM_LIST_FLOOR) {
         return {
           reply: COMPLETE_HANDOFF,
-          state: { stage: 'complete', collected, awaitingConfirm: false, identityTurns, reclaimNudged, gapTurns, noFade },
+          state: { stage: 'complete', collected, awaitingConfirm: false, identityTurns, reclaimNudged, gapTurns, noFade, idleTurns },
           complete: true,
         };
       }
@@ -728,7 +749,7 @@ export function applyStagedTurn(
 
   return {
     reply: finalReply,
-    state: { stage, collected, awaitingConfirm, identityTurns, identityProbes, reclaimNudged, gapTurns, gapDepth, noFade },
+    state: { stage, collected, awaitingConfirm, identityTurns, identityProbes, reclaimNudged, gapTurns, gapDepth, idleTurns, noFade },
     complete,
   };
 }

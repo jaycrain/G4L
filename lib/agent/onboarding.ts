@@ -50,6 +50,8 @@ export type ConvState = {
   reclaimNudged?: boolean; // v2.0 staged engine: we've nudged once for more reclaim items below the minimum (never-trap: nudge once, never loop)
   gapTurns?: number; // v2.0 staged engine: exchanges spent in the gap stage without a real fade (drives the no-fade gate)
   gapDepth?: number; // v2.1: drawing-out exchanges once the gap story is in hand (the model-judged depth floor/cap)
+  idleTurns?: number; // v2.1: consecutive turns the member added NOTHING new — the runaway signal. Resets to 0 the moment
+  // they contribute again, so a verbose ENGAGED member is never force-completed for being long; only a genuine STALL is.
   noFade?: boolean; // v2.0 staged engine: recognized no real Fade (forward-only optimizer) — declined, never force-completed
   declined?: boolean; // v2.1 (Decision E): a genuinely-thriving no-fade member was gracefully declined (out of scope) — terminal
 };

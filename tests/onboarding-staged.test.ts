@@ -312,13 +312,12 @@ test('STAGED gap — never-strand (run-2 fix): short progressive turns the match
   assert.equal(turns[4]!.state.awaitingConfirm, true, 'and the stage advances to reflect-confirm when she signals whole');
 });
 
-test('STAGED — systemic gather-cap: a runaway gather loop is forced to the card once card-ready (no unbounded loop)', () => {
-  // A verbose member (front-loader shape) whose data is all captured but who keeps elaborating, so no stage
-  // ever recognizes "done". Past the turn budget, the engine must route to the card — not loop forever.
-  const history: ConvMessage[] = [];
-  for (let i = 0; i < 19; i++) history.push({ role: 'member', text: `elaboration ${i}` }, { role: 'agent', text: 'go on' });
-  const cardReadyState: ConvState = {
+test('STAGED — runaway backstop fires on STALL, not length: a genuine stall (nothing new) is bounded to the card', () => {
+  // A member whose data is all captured but who has now gone quiet — several turns adding nothing usable. The
+  // backstop routes to the card. (Trigger is the idle counter, NOT turn count — a verbose member never trips it.)
+  const stalled: ConvState = {
     stage: 'reclaim',
+    idleTurns: 2, // already two no-progress turns
     collected: {
       identityNoun: 'Performer',
       gap: 'A diagnosis ended touring, then the band dissolved, then a move wiped out the whole music community.',
@@ -326,30 +325,53 @@ test('STAGED — systemic gather-cap: a runaway gather loop is forced to the car
       reclaimList: ['play live again', 'write weekly', 'sleep normally'],
     },
   };
-  // turn 20 (history has 19 prior member turns + this one), still "offering" but really just looping.
-  const turn = applyStagedTurn(cardReadyState, history, 'and another thing I keep thinking about', { text: 'Mm.' });
-  assert.equal(turn.complete, true, 'forced to the card past the budget — the loop is bounded');
+  const turn = applyStagedTurn(stalled, [], 'meh, i dunno', { text: 'Mm.' }); // a third empty turn tips the idle limit
+  assert.equal(turn.complete, true, 'a genuine stall past the idle limit is bounded to the card');
   assert.equal(turn.state.stage, 'complete');
   assert.match(turn.reply, /look like you|captured/i);
 });
 
-test('STAGED — systemic gather-cap: a gap-elaboration loop is force-advanced to Reclaim (front-loader stall)', () => {
-  // A verbose member with a real gap captured, but she keeps elaborating so the gap stage never advances and
-  // reclaim stays 0. Past the budget, the engine must move her on to Reclaim, not loop "was there more?".
-  const history: ConvMessage[] = [];
-  for (let i = 0; i < 19; i++) history.push({ role: 'member', text: `more gap detail ${i}` }, { role: 'agent', text: 'go on' });
+test('STAGED — runaway backstop: a STALLED gap (real gap in hand, nothing new) is force-advanced to Reclaim', () => {
   const stuckInGap: ConvState = {
     stage: 'gap',
+    idleTurns: 2,
     collected: {
       identityNoun: 'Performer',
       gap: 'A vocal-cord diagnosis ended touring, then the band dissolved, then a move wiped out the music community.',
       doors: ['diagnosis', 'vanishing'],
     },
   };
-  const turn = applyStagedTurn(stuckInGap, history, 'and one more thing about how it felt', { text: 'Mm.' });
-  assert.equal(turn.state.stage, 'reclaim', 'force-advanced out of the gap-elaboration loop into Reclaim');
+  const turn = applyStagedTurn(stuckInGap, [], 'idk', { text: 'Mm.' }); // nothing new → tips the idle limit
+  assert.equal(turn.state.stage, 'reclaim', 'a stalled gap is moved on to Reclaim, not looping "was there more?"');
   assert.equal(turn.complete, false, 'not completed yet — she still names what she wants back');
   assert.match(turn.reply, /want back|reclaim/i);
+});
+
+test('STAGED — a verbose ENGAGED member is NOT force-completed for LENGTH (Scott/Blake): only a stall or ceiling ends it', () => {
+  // Well past the OLD 20-turn cap, still actively offering new wants. Must keep going — this is the whole point.
+  const history: ConvMessage[] = [];
+  for (let i = 0; i < 21; i++) history.push({ role: 'member', text: `earlier ${i}` }, { role: 'agent', text: 'go on' });
+  const engaged: ConvState = {
+    stage: 'reclaim',
+    idleTurns: 0,
+    collected: { athleticPast: 'a triathlete', identityNoun: 'Ironman Triathlete', gap: 'It opened slowly over years — the grind grew and the family needed more, and he lost the fitness and outlet that held him together.', reclaimList: ['My fitness', 'Get down to 190 lbs', 'See friends more'] },
+  };
+  const turn = applyStagedTurn(engaged, history, 'Get back on my bike 3-4 days a week', { text: 'Nice. What else?', record: { reclaimList: ['Get back on my bike 3-4 days a week'] } });
+  assert.equal(turn.complete ?? false, false, 'still engaged (offering a new want) at turn 22 → NOT cut off');
+  assert.match(turn.reply, /what else|comes/i, 'keeps gathering');
+  assert.ok((turn.state.collected.reclaimList ?? []).some((x) => /bike/i.test(x)), 'the new want is captured');
+});
+
+test('STAGED — the ABSOLUTE ceiling still bounds a true runaway, and captures the last want before completing', () => {
+  const history: ConvMessage[] = [];
+  for (let i = 0; i < 29; i++) history.push({ role: 'member', text: `turn ${i}` });
+  const state: ConvState = {
+    stage: 'reclaim',
+    collected: { athleticPast: 'a triathlete', identityNoun: 'Ironman Triathlete', gap: 'It opened slowly over years — the grind grew, the family needed more, and he lost the fitness and outlet that held him together.', reclaimList: ['My fitness', 'Get down to 190 lbs', 'See friends more'] },
+  };
+  const turn = applyStagedTurn(state, history, 'Write the second edition of my book', { text: 'Great, noted.' });
+  assert.equal(turn.complete, true, 'the absolute ceiling ends even an engaged conversation');
+  assert.ok((turn.state.collected.reclaimList ?? []).some((x) => /second edition/i.test(x)), 'the just-offered want is captured before completing, not dropped');
 });
 
 test('STAGED — systemic gather-cap NEVER fires early or on a thin capture (no premature completion)', () => {
@@ -596,18 +618,6 @@ test('STAGED reclaim — a REPHRASED want collapses to one (Jay walk: "Getting d
   const list = finalState.collected.reclaimList ?? [];
   assert.equal(list.filter((x) => /190/.test(x)).length, 1, 'the 190 lbs want appears once — the content-token key catches the rephrase');
   assert.equal(list.length, 2, 'two distinct wants, no near-dup');
-});
-
-test('STAGED reclaim — the 20-turn force-cap still captures the want the member JUST offered (never drop)', () => {
-  const history: ConvMessage[] = [];
-  for (let i = 0; i < 19; i++) history.push({ role: 'member', text: `earlier turn ${i}` });
-  const atReclaim: ConvState = {
-    stage: 'reclaim',
-    collected: { athleticPast: 'a triathlete', identityNoun: 'Ironman Triathlete', gap: 'It opened slowly over years — the grind at work grew, the family needed more, and he lost the fitness and the outlet that used to hold him together.', reclaimList: ['My fitness', 'Get down to 190 lbs', 'See friends more'] },
-  };
-  const turn = applyStagedTurn(atReclaim, history, 'Write the second edition of my book', { text: 'Great, noted.' });
-  assert.equal(turn.complete, true, 'the anti-runaway cap completes at turn 20');
-  assert.ok((turn.state.collected.reclaimList ?? []).some((x) => /second edition/i.test(x)), 'the just-offered want is captured before completing, not dropped');
 });
 
 test('STAGED reclaim — a want captured twice lands ONCE (Jay walk: "Ride my bike more" ×2 on the card)', () => {
