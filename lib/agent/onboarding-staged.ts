@@ -57,14 +57,11 @@ export { correctsReflection };
 
 const capFirst = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
 
-// --- stage sequencing ----------------------------------------------------------------------------------
-// 'declined' is a terminal OFF-RAMP (not in the sequential order): a genuinely-thriving no-fade member is
-// gracefully declined (Decision E), out of scope, no card. It is never a `nextStagedStage` target.
+// --- stage identifiers ---------------------------------------------------------------------------------
+// The onboarding arc's stages. 'declined' is a terminal OFF-RAMP (a genuinely-thriving no-fade member is
+// gracefully declined, Decision E — out of scope, no card). Advancement is now owned by the stage handlers
+// (each sets the next stage explicitly via its opener), so there's no central STAGE_ORDER walker any more.
 type StagedStage = 'identity' | 'gap' | 'reclaim' | 'complete' | 'declined';
-const STAGE_ORDER: StagedStage[] = ['identity', 'gap', 'reclaim', 'complete'];
-function nextStagedStage(s: StagedStage): StagedStage {
-  return STAGE_ORDER[Math.min(STAGE_ORDER.indexOf(s) + 1, STAGE_ORDER.length - 1)]!;
-}
 
 // After this many identity gather-turns, offer the explicit "find it later" skip (even with no past-self yet).
 const IDENTITY_SKIP_OFFER_AFTER = 2;
@@ -391,17 +388,346 @@ function memberPushedPast(stage: StagedStage, message: string, c: Collected): bo
 // identity = up to two probes (Decision S "the net"); gap = invite-until-whole (GAP_MORE); reclaim = gather to
 // the aim (MIN/nudge/complete-when-done). Same escapes, stage-appropriate drawing-out.
 
-// --- THE STAGED ENGINE (pure, replayable) --------------------------------------------------------------
-export function applyStagedTurn(
+// --- THE ARC KERNEL (Phase 0 seam) — a generic, replayable staged-conversation engine ------------------
+// Design of record: docs/handoffs/2026-07-02-v2.2-kernel-seam-and-sequenced-plan.md. The engine is now
+// arc-AGNOSTIC (`runArcTurn`), driven by an ArcConfig: an ordered list of StageDefs. Onboarding is config #1
+// (ONBOARDING_ARC). A second arc (Reconnect) plugs in as another ArcConfig — NO fork of the spine.
+// PHASE 0 SCOPE: the per-stage COUNTERS still live as flat ConvState fields (identityProbes/gapDepth/…),
+// threaded through `Beat`. Migrating them into per-stage scratch is Phase 1 step 0 — kept OUT of here so the 53
+// fixtures prove this extraction bit-for-bit behavior-identical without editing the safety net. TWO-MODE:
+// every onboarding stage is 'drawout'; the 'administered' path (IDQ/Grinta, no depth kernel) lands with §2c.
+
+type StageId = string;
+type StageMode = 'drawout' | 'administered';
+
+// The mutable per-turn working state handed to every stage handler. Carries the merged captures, the flat
+// scratch counters (Phase 0), and the control fields a handler sets. A handler mutates it in place OR returns a
+// terminal Turn (an early return — the decline off-ramp and the runaway force-progress use this).
+interface Beat {
+  readonly history: ConvMessage[];
+  readonly memberMessage: string;
+  readonly model: ModelTurn;
+  readonly modelText: string;
+  readonly refinedThisTurn: boolean;
+  readonly priorReclaimLen: number; // reclaim-list length BEFORE this turn's merge (for the backstop's grew-check)
+  readonly arc: ArcConfig;
+  collected: Collected;
+  stage: StageId;
+  awaitingConfirm: boolean;
+  reply: string;
+  complete: boolean;
+  declined: boolean;
+  // flat per-stage scratch (Phase 0 — migrates to per-stage scratch in Phase 1 step 0):
+  identityTurns: number;
+  identityProbes: number;
+  gapTurns: number;
+  gapDepth: number;
+  reclaimNudged: boolean;
+  noFade: boolean;
+  idleTurns: number;
+}
+
+// A stage handler mutates the Beat (sets b.reply etc.) or returns a terminal Turn. `resolveConfirm`'s CONTRACT
+// (its use inside a stage's confirm handler) carries the VERBATIM-REFLECTION GATE: a draw-out beat advances only
+// on a substantive reflection quoting the member's own words (today via the reflect_gap prompt + reflectGap) —
+// preserved as a contract so the Phase 2 regex→model-signaled swap keeps it.
+type StageHandler = (b: Beat) => Turn | void;
+
+interface StageDef {
+  id: StageId;
+  mode: StageMode;
+  opener: (c: Collected) => string; // the reply when the machine ADVANCES into this stage
+  offersSubstance: (message: string, c: Collected) => boolean; // did the member contribute this turn? (idle counter)
+  gather: StageHandler; // not awaitingConfirm, in this stage
+  confirm: StageHandler; // awaitingConfirm in this stage
+  forceProgress?: StageHandler; // the runaway backstop's per-stage action (early-return Turn, or mutate + fall through)
+}
+
+interface ArcConfig {
+  id: string;
+  stageOrder: StageId[];
+  stages: Record<StageId, StageDef>;
+  onComplete: (c: Collected) => string; // the completion reply (the card / the earned ceremony)
+}
+
+// Build the persisted ConvState from a Beat — the single place the turn's state shape is assembled.
+function beatState(b: Beat): ConvState {
+  return {
+    stage: b.stage as StagedStage,
+    collected: b.collected,
+    awaitingConfirm: b.awaitingConfirm,
+    identityTurns: b.identityTurns,
+    identityProbes: b.identityProbes,
+    reclaimNudged: b.reclaimNudged,
+    gapTurns: b.gapTurns,
+    gapDepth: b.gapDepth,
+    idleTurns: b.idleTurns,
+    noFade: b.noFade,
+  };
+}
+
+// --- ONBOARDING_ARC (config #1) — the three draw-out stages, logic moved verbatim from the old monolith -----
+
+const identityStage: StageDef = {
+  id: 'identity',
+  mode: 'drawout',
+  opener: () => STAGED_OPENING, // stage 0 — never advanced-into; opener unused (the arc opening lives in stagedOpening())
+  offersSubstance: (message) => message.trim().length >= 15,
+  gather(b) {
+    if (b.collected.identitySkipped) {
+      // Skipped — nothing to confirm; acknowledge and advance straight into the gap stage.
+      b.stage = 'gap';
+      b.reply = `${SKIP_ACK}\n\n${gapOpen(b.collected)}`;
+    } else if (b.collected.identityNoun) {
+      // BREATHE FLOOR (1a) + the conditional second probe (1b / Decision S). Reflect once the material is RICH
+      // (front-loader escape), the member PUSHES PAST (terse escape), or we've drawn out enough (2 probes).
+      const rich = stageMaterialRich('identity', b.collected);
+      const pushed = memberPushedPast('identity', b.memberMessage, b.collected);
+      if (rich || pushed || b.identityProbes >= 2) {
+        b.reply = reflectIdentity(b.collected);
+        b.awaitingConfirm = true;
+      } else {
+        b.identityProbes += 1;
+        // probe 1 = the general draw; probe 2 = smaller + concrete. Prefer the model's own drawing-out question.
+        const probe = b.identityProbes === 1 ? identityProbe(b.collected) : identityProbe2(b.collected);
+        b.reply = withQuestion(b.modelText, probe);
+      }
+    } else {
+      // Gather. Never-strand a member who won't name a PAST self: offer the "find it later" skip after a couple
+      // of tries, HARD-ESCAPE after a few (recovered at Identity Excavation in Reconnect).
+      b.identityTurns += 1;
+      const skipOfferable = b.identityTurns >= IDENTITY_SKIP_OFFER_AFTER;
+      if (b.identityTurns >= IDENTITY_MAX_TURNS && !b.collected.athleticPast && !b.collected.identityNoun) {
+        b.collected.identitySkipped = true;
+        b.stage = 'gap';
+        b.reply = `${SKIP_ACK}\n\n${gapOpen(b.collected)}`;
+      } else {
+        const probe = !b.collected.athleticPast ? (skipOfferable ? SKIP_OFFER : STAGED_OPENING) : skipOfferable ? SKIP_OFFER : NAME_PROMPT;
+        b.reply = withQuestion(b.modelText, probe);
+      }
+    }
+  },
+  confirm(b) {
+    if (correctsReflection(b.memberMessage)) {
+      b.awaitingConfirm = false;
+      b.reply = REOPEN_IDENTITY;
+    } else {
+      // Not a correction → advance into the gap stage (bridge from the named identity, not a cold switch).
+      b.stage = 'gap';
+      b.awaitingConfirm = false;
+      b.reply = gapBridge(b.collected);
+    }
+  },
+};
+
+const gapStage: StageDef = {
+  id: 'gap',
+  mode: 'drawout',
+  opener: (c) => gapBridge(c),
+  offersSubstance: (message) => shouldCaptureStagedGap(message) || message.trim().length >= 20,
+  forceProgress(b) {
+    // Bound the gap-elaboration loop: a real gap is captured but she keeps elaborating → move on to Reclaim.
+    const realGap = gapIsNarrative(b.collected.gap, b.collected.reclaimList ?? []) && !isForwardAmbition(b.collected.gap ?? '');
+    if (realGap) {
+      b.stage = 'reclaim';
+      b.awaitingConfirm = false;
+      b.idleTurns = 0;
+      return { reply: reclaimOpen(b.collected), state: beatState(b), complete: false };
+    }
+    // no real gap yet → nothing to force; fall through to normal gather
+  },
+  gather(b) {
+    // The model's explicit no-fade judgement (note_no_fade) is the PRIMARY signal. Sticky once set.
+    if (b.model.noFade) b.noFade = true;
+    // FADE GATE. Reject a model-tagged gap that is forward-looking ambition (never FABRICATE a fade). Reject on
+    // AMBITION specifically, not shortness — a terse real fade ("Knee. Then divorce.") must survive.
+    if (b.collected.gap && isForwardAmbition(b.collected.gap) && !b.noFade) b.collected.gap = undefined;
+    // Backstop: when the model did NOT tag a (real-fade) set_gap this turn, capture the member's own message as
+    // the gap if it reads as a real fade — ACCUMULATE (append) so a progressive revealer's chapters aren't lost.
+    const modelTaggedGap = b.model.record?.gap !== undefined && b.model.record.gap !== '' && !isForwardAmbition(b.model.record.gap);
+    if (!b.collected.gap && !b.noFade && shouldCaptureStagedGap(b.memberMessage)) {
+      b.collected.gap = b.memberMessage.trim();
+    } else if (b.collected.gap && !b.noFade && !modelTaggedGap && shouldCaptureStagedGap(b.memberMessage)) {
+      b.collected.gap = `${b.collected.gap} ${b.memberMessage.trim()}`;
+    }
+    if (!b.collected.gap && !b.noFade) b.gapTurns += 1; // count gather turns only while no real fade is in hand
+    // NEVER-STRAND the gap stage: after several gap turns with NOTHING captured, grab the accumulated gap-stage
+    // story so we advance instead of looping the opening question.
+    if (!b.collected.gap && !b.noFade && b.gapTurns >= GAP_MAX_TURNS) {
+      const corpus = gapStageCorpus(b.history, b.memberMessage).trim();
+      if (corpus.length >= 40 && !isForwardAmbition(corpus)) b.collected.gap = corpus;
+    }
+    // DECISION E FORK: resolve a "no obvious fade event" member from the whole gap-stage corpus.
+    const gapCorpus = gapStageCorpus(b.history, b.memberMessage);
+    if (isAcceptanceFade(gapCorpus)) {
+      // RESIGNED to age-decline → The Acceptance Door: a real, quiet Fade. NOT no-fade — clear the flag, capture
+      // their own words as the gap, and fall through to the normal real-fade reflect/advance below.
+      b.noFade = false;
+      if (!b.collected.gap) b.collected.gap = b.memberMessage.trim() || gapCorpus.trim();
+    }
+    // GENUINELY THRIVING → graceful DECLINE. Fires when there's NO real-fade signal anywhere AND either the model
+    // judged no-fade, or the member's own words are pure forward-ambition with nothing captured after a couple turns.
+    const noRealFadeSignal = !isAcceptanceFade(gapCorpus) && !hasGenuineLoss(gapCorpus);
+    const thrivingDecline =
+      noRealFadeSignal && (b.noFade || (isForwardAmbition(b.memberMessage) && !b.collected.gap && b.gapTurns >= 2));
+    if (thrivingDecline) {
+      // Out of scope; the door stays open. Terminal — no card, no reclaim. We never fabricate a fade to admit them.
+      b.stage = 'declined';
+      b.awaitingConfirm = false;
+      b.declined = true;
+      return { reply: DECLINE_REPLY, state: { ...beatState(b), declined: true }, complete: false, declined: true };
+    }
+    if (b.collected.gap) {
+      // Real fade. Accumulate Doors across the WHOLE corpus, and RECEIVE the whole story before reflecting.
+      b.collected.doors = augmentDoors(b.collected.doors ?? [], gapStageCorpus(b.history, b.memberMessage));
+      b.gapDepth += 1; // one more drawing-out exchange with the story in hand
+      // MODEL-JUDGED advance: the MODEL decides when the story is drawn out (reflect_gap), bounded by the engine —
+      // a FLOOR (GAP_MIN_DEPTH) and a CAP (GAP_MAX_DEPTH). A member close overrides; the card is the backstop.
+      const modelJudgedDone = b.model.gapReady && b.gapDepth >= GAP_MIN_DEPTH;
+      const advance = modelJudgedDone || memberPushedPast('gap', b.memberMessage, b.collected) || b.gapDepth >= GAP_MAX_DEPTH;
+      if (!advance) {
+        b.reply = withQuestion(b.modelText, gapMore(b.history));
+      } else {
+        b.reply = reflectGap(b.modelText);
+        b.awaitingConfirm = true;
+      }
+    } else {
+      // Still gathering a real fade — keep the model's question, else hold the gap open.
+      b.reply = withQuestion(b.modelText, gapOpen(b.collected));
+    }
+  },
+  confirm(b) {
+    // GAP CONFIRM — "…or is there more to it?" A bare "no / nope / that's it / more or less it for now" means NO
+    // MORE = DONE → ADVANCE. resolveGapConfirm owns the meaning (dispute / addition / done); the engine acts on it.
+    const intent = resolveGapConfirm(b.memberMessage);
+    if (intent === 'dispute') {
+      // wrong, no new content → reopen, but KEEP the gap + Doors (never wipe).
+      b.awaitingConfirm = false;
+      b.reply = REOPEN_GAP;
+    } else if (intent === 'addition') {
+      // a new chapter (or a correction WITH content) → append it, re-derive Doors, and DRAW IT OUT.
+      const modelTaggedGap = b.model.record?.gap !== undefined && b.model.record.gap !== '';
+      if (!modelTaggedGap) b.collected.gap = b.collected.gap ? `${b.collected.gap} ${b.memberMessage.trim()}` : b.memberMessage.trim();
+      b.collected.doors = augmentDoors(b.collected.doors ?? [], gapStageCorpus(b.history, b.memberMessage));
+      b.awaitingConfirm = false;
+      b.reply = withQuestion(b.modelText, gapMore(b.history));
+    } else {
+      // done / affirm / bare "no more" → advance into reclaim (re-surfacing any parked wants).
+      b.stage = 'reclaim';
+      b.awaitingConfirm = false;
+      b.reply = reclaimOpening(b.collected);
+    }
+  },
+};
+
+const reclaimStage: StageDef = {
+  id: 'reclaim',
+  mode: 'drawout',
+  opener: (c) => reclaimOpening(c),
+  offersSubstance: (message) => shouldCaptureStagedReclaim(message),
+  forceProgress(b) {
+    // Bound the reclaim loop → the card once card-ready. NEVER drop the want they JUST offered at the cap.
+    if (!memberClosingReclaim(b.memberMessage) && shouldCaptureStagedReclaim(b.memberMessage)) {
+      appendReclaim(b.collected, b.memberMessage);
+    }
+    const realGap = gapIsNarrative(b.collected.gap, b.collected.reclaimList ?? []) && !isForwardAmbition(b.collected.gap ?? '');
+    if (hasIdentity(b.collected) && realGap && (b.collected.reclaimList?.length ?? 0) >= RECLAIM_LIST_FLOOR) {
+      b.stage = 'complete';
+      b.awaitingConfirm = false;
+      return { reply: b.arc.onComplete(b.collected), state: beatState(b), complete: true };
+    }
+    // not card-ready → mutation kept, fall through to normal gather
+  },
+  gather(b) {
+    // Uniform floor+escape (1b): reclaim's drawing-out is "gather toward the aim."
+    const closing = memberPushedPast('reclaim', b.memberMessage, b.collected);
+    // The member put a want FORWARD this turn (new or a restatement) — the "still in flow" signal, distinct from
+    // whether the list actually grew (a dup offer keeps them in flow).
+    const offered = !closing && shouldCaptureStagedReclaim(b.memberMessage);
+    const modelCaptured = (b.collected.reclaimList?.length ?? 0) > b.priorReclaimLen; // model's add_reclaim_item landed
+    // Backstop: capture an untagged want ONLY when offered AND the model did NOT already tag it. appendReclaim
+    // dedupes restatements. Skip when the turn REFINED a want (the sharpening answer, already folded in).
+    if (offered && !modelCaptured && !b.refinedThisTurn) appendReclaim(b.collected, b.memberMessage);
+    const count = b.collected.reclaimList?.length ?? 0;
+    const grewThisTurn = count > b.priorReclaimLen; // a NEW unique want landed this turn (model or backstop)
+    if (count >= RECLAIM_LIST_TARGET || (count >= RECLAIM_LIST_MIN && closing)) {
+      // Aim reached, OR at the minimum and closing — reflect the whole list and confirm.
+      b.reply = reflectReclaim(b.collected);
+      b.awaitingConfirm = true;
+    } else if (count >= RECLAIM_LIST_MIN) {
+      // At/above the minimum, below the aim, not explicitly closing. COMPLETE-WHEN-DONE: keep gathering while
+      // she's still OFFERING (new item OR a restatement — a dup must NOT pull the list up short). Only when a
+      // turn brings nothing at all is she finished — reflect and await her confirm.
+      if ((grewThisTurn || offered) && count < RECLAIM_LIST_TARGET) {
+        b.reply = withQuestion(b.modelText, RECLAIM_MORE);
+      } else {
+        b.reply = reflectReclaim(b.collected);
+        b.awaitingConfirm = true;
+      }
+    } else if (closing && !b.reclaimNudged) {
+      // Soft-close below the minimum → nudge ONCE (small things count), draw out more.
+      b.reclaimNudged = true;
+      b.reply = RECLAIM_NUDGE;
+    } else if (closing && b.reclaimNudged) {
+      // Already nudged, still closing below the floor. Gate-1 (sub-3): with ≥1 real want, ACCEPT and complete —
+      // the card carries the shortfall. Never fabricate. Only a truly empty list holds.
+      if (count >= 1) {
+        b.reply = reflectReclaim(b.collected);
+        b.awaitingConfirm = true;
+      } else {
+        b.reply = RECLAIM_SOFT_HOLD;
+      }
+    } else {
+      // Still offering — keep the model's reflection with a guaranteed closing question; else invite the next item.
+      b.reply = withQuestion(b.modelText, RECLAIM_MORE);
+    }
+  },
+  confirm(b) {
+    // RECLAIM late-add: a want volunteered AT the confirm — neither a correction nor an affirmation — used to be
+    // dropped as the beat advanced. Capture it and re-reflect. Only a genuinely NEW want re-opens (deduped).
+    if (
+      !b.refinedThisTurn && // a sharpening answer isn't a new want
+      !correctsReflection(b.memberMessage) &&
+      !memberClosingReclaim(b.memberMessage) &&
+      shouldCaptureStagedReclaim(b.memberMessage) &&
+      appendReclaim(b.collected, b.memberMessage)
+    ) {
+      b.reply = reflectReclaim(b.collected);
+      b.awaitingConfirm = true; // stay in confirm — re-reflect with the just-added want included
+      return;
+    }
+    // RECLAIM CONFIRM — "Anything missing?" A bare "no / nope / that's a good list" = nothing missing = DONE →
+    // the card. Only an explicit CHANGE request reopens the gather. resolveReclaimConfirm owns the meaning.
+    if (resolveReclaimConfirm(b.memberMessage) === 'change') {
+      b.awaitingConfirm = false;
+      b.reply = withQuestion(b.modelText, RECLAIM_MORE);
+    } else {
+      b.stage = 'complete';
+      b.awaitingConfirm = false;
+      b.reply = b.arc.onComplete(b.collected);
+      b.complete = true;
+    }
+  },
+};
+
+const ONBOARDING_ARC: ArcConfig = {
+  id: 'onboarding',
+  stageOrder: ['identity', 'gap', 'reclaim'],
+  stages: { identity: identityStage, gap: gapStage, reclaim: reclaimStage },
+  onComplete: () => COMPLETE_HANDOFF,
+};
+
+// --- the generic kernel: run one turn of ANY arc -------------------------------------------------------
+export function runArcTurn(
+  arc: ArcConfig,
   state: ConvState,
   history: ConvMessage[],
   memberMessage: string,
   model: ModelTurn,
 ): Turn {
   const collected = mergeStaged({ ...state.collected }, model.record);
-  // Light-touch measurability (Decision: reclaim items should land concrete/trackable). The model sharpens a
-  // vague want by REPLACING its most-recent item in place — never a second entry. Dedupe after, in case the
-  // sharpened text collides with an earlier want.
+  // Light-touch measurability: the model sharpens a vague want by REPLACING its most-recent item in place —
+  // never a second entry. Dedupe after, in case the sharpened text collides with an earlier want.
   const refinedThisTurn = !!model.refineReclaim && (collected.reclaimList?.length ?? 0) > 0;
   if (refinedThisTurn) {
     const list = [...collected.reclaimList!];
@@ -418,19 +744,33 @@ export function applyStagedTurn(
     });
     collected.reclaimCategories = keptCats;
   }
-  let stage = (state.stage ?? 'identity') as StagedStage;
-  let awaitingConfirm = state.awaitingConfirm ?? false;
-  let identityTurns = state.identityTurns ?? 0;
-  let reclaimNudged = state.reclaimNudged ?? false;
-  let gapTurns = state.gapTurns ?? 0;
-  let noFade = state.noFade ?? false;
-  let identityProbes = state.identityProbes ?? 0;
-  let gapDepth = state.gapDepth ?? 0;
-  const modelText = stripLeadingDisclosure(model.text).trim();
 
-  // PROGRESS vs STALL (v2.1): the member CONTRIBUTED this turn if a captured field grew, OR they offered usable
-  // substance the model may not have tagged yet (a want in reclaim, fade material in gap, any real message in
-  // identity) and weren't deflecting. Biased toward "engaged" on purpose — a verbose member (Scott/Blake) resets
+  const b: Beat = {
+    history,
+    memberMessage,
+    model,
+    modelText: stripLeadingDisclosure(model.text).trim(),
+    refinedThisTurn,
+    priorReclaimLen: state.collected.reclaimList?.length ?? 0,
+    arc,
+    collected,
+    stage: (state.stage ?? arc.stageOrder[0]) as StageId,
+    awaitingConfirm: state.awaitingConfirm ?? false,
+    reply: '',
+    complete: false,
+    declined: false,
+    identityTurns: state.identityTurns ?? 0,
+    identityProbes: state.identityProbes ?? 0,
+    gapTurns: state.gapTurns ?? 0,
+    gapDepth: state.gapDepth ?? 0,
+    reclaimNudged: state.reclaimNudged ?? false,
+    noFade: state.noFade ?? false,
+    idleTurns: state.idleTurns ?? 0,
+  };
+  const stageDef = arc.stages[b.stage];
+
+  // PROGRESS vs STALL: the member CONTRIBUTED this turn if a captured field grew, OR they offered usable
+  // substance (per the current stage) and weren't deflecting. Biased toward "engaged" — a verbose member resets
   // the idle counter every turn they give something, so length never triggers the cap; only a true STALL does.
   const grew =
     (collected.gap?.length ?? 0) > (state.collected.gap?.length ?? 0) ||
@@ -438,320 +778,46 @@ export function applyStagedTurn(
     (collected.reclaimList?.length ?? 0) > (state.collected.reclaimList?.length ?? 0) ||
     (!!collected.identityNoun && !state.collected.identityNoun) ||
     (!!collected.athleticPast && !state.collected.athleticPast);
-  const offeredSubstance =
-    !memberDeflecting(memberMessage) &&
-    (stage === 'reclaim'
-      ? shouldCaptureStagedReclaim(memberMessage)
-      : stage === 'gap'
-        ? shouldCaptureStagedGap(memberMessage) || memberMessage.trim().length >= 20
-        : memberMessage.trim().length >= 15);
-  let idleTurns = grew || offeredSubstance ? 0 : (state.idleTurns ?? 0) + 1;
+  const offeredSubstance = !memberDeflecting(memberMessage) && (stageDef?.offersSubstance(memberMessage, collected) ?? false);
+  b.idleTurns = grew || offeredSubstance ? 0 : (state.idleTurns ?? 0) + 1;
 
-  // SYSTEMIC INVARIANT (the runaway backstop): no gather/elaboration loop runs forever. But it fires on STALL,
-  // not length — ONBOARDING_IDLE_LIMIT consecutive turns adding nothing new (a real loop / frustrated deflection),
-  // or the absolute ONBOARDING_HARD_CEILING (pathological). A verbose engaged member never trips it. When it does
-  // fire it FORCES PROGRESS through the stage machine to the card (the seatbelt still offers "keep talking"). It
-  // never fabricates: gap-advance needs a real non-ambition gap; completion needs the full finalize floor.
+  // SYSTEMIC INVARIANT (the runaway backstop): fires on STALL (ONBOARDING_IDLE_LIMIT consecutive no-progress
+  // turns) or the absolute ONBOARDING_HARD_CEILING — never on length alone. It delegates to the CURRENT stage's
+  // forceProgress, which either returns a terminal Turn or mutates + falls through.
   const memberTurns = history.filter((h) => h.role === 'member').length + 1;
-  if (!awaitingConfirm && (idleTurns >= ONBOARDING_IDLE_LIMIT || memberTurns >= ONBOARDING_HARD_CEILING)) {
-    const realGap = gapIsNarrative(collected.gap, collected.reclaimList ?? []) && !isForwardAmbition(collected.gap ?? '');
-    // Bound the gap-elaboration loop: a real gap is captured but she keeps elaborating → move on to Reclaim.
-    if (stage === 'gap' && realGap) {
-      return {
-        reply: reclaimOpen(collected),
-        state: { stage: 'reclaim', collected, awaitingConfirm: false, identityTurns, reclaimNudged, gapTurns, noFade, idleTurns: 0 },
-        complete: false,
-      };
-    }
-    // Bound the reclaim loop, then route to the card once card-ready. NEVER drop the want they JUST offered at
-    // the cap (Jay's walk: a late "write the second edition of my book" vanished because capture was gated on
-    // the list being below the floor). Capture any offered want (deduped) before completing.
-    if (stage === 'reclaim') {
-      if (!memberClosingReclaim(memberMessage) && shouldCaptureStagedReclaim(memberMessage)) {
-        appendReclaim(collected, memberMessage);
-      }
-      if (hasIdentity(collected) && realGap && (collected.reclaimList?.length ?? 0) >= RECLAIM_LIST_FLOOR) {
-        return {
-          reply: COMPLETE_HANDOFF,
-          state: { stage: 'complete', collected, awaitingConfirm: false, identityTurns, reclaimNudged, gapTurns, noFade, idleTurns },
-          complete: true,
-        };
-      }
-    }
+  if (!b.awaitingConfirm && (b.idleTurns >= ONBOARDING_IDLE_LIMIT || memberTurns >= ONBOARDING_HARD_CEILING)) {
+    const forced = stageDef?.forceProgress?.(b);
+    if (forced) return forced;
   }
 
-  let finalReply: string;
-  let complete = false;
-
-  if (awaitingConfirm) {
-    // RECLAIM late-add (v2.1 fix): a want volunteered AT the confirm — Jay's "play golf on weekends" — is
-    // neither a correction nor an affirmation, so it used to be dropped as the beat advanced to the card.
-    // Capture it and re-reflect the fuller list. Only when genuinely OFFERING (not closing / affirming /
-    // correcting) — the same offering guard the gather stage uses, so "yes, that's it" still advances.
-    if (
-      stage === 'reclaim' &&
-      !refinedThisTurn && // a sharpening answer isn't a new want
-      !correctsReflection(memberMessage) &&
-      !memberClosingReclaim(memberMessage) &&
-      shouldCaptureStagedReclaim(memberMessage) &&
-      appendReclaim(collected, memberMessage) // only a genuinely NEW want re-opens the confirm (deduped)
-    ) {
-      finalReply = reflectReclaim(collected);
-      awaitingConfirm = true; // stay in confirm — re-reflect with the just-added want included
-      // fall through to the shared return
-    } else if (stage === 'gap') {
-      // GAP CONFIRM — the confirm asks "…or is there more to it?", so a bare "no / nope / that's it / more or
-      // less it for now" means NO MORE = DONE → ADVANCE (NOT "you got it wrong"). resolveGapConfirm owns that
-      // meaning (dispute / addition / done); the engine just acts on it. This is what stopped the beat looping
-      // when the member is plainly finished (Jay's walk: "won't take yes for an answer").
-      const intent = resolveGapConfirm(memberMessage);
-      if (intent === 'dispute') {
-        // "no, that's not quite right" — wrong, no new content → reopen, but KEEP the gap + Doors (never wipe).
-        awaitingConfirm = false;
-        finalReply = REOPEN_GAP;
-      } else if (intent === 'addition') {
-        // a new chapter (or a correction WITH content) → append it, re-derive Doors, and DRAW IT OUT (the model's
-        // own follow-up carries the beat; withQuestion nudges with gapMore if it didn't ask). Never wipe what's there.
-        const modelTaggedGap = model.record?.gap !== undefined && model.record.gap !== '';
-        if (!modelTaggedGap) collected.gap = collected.gap ? `${collected.gap} ${memberMessage.trim()}` : memberMessage.trim();
-        collected.doors = augmentDoors(collected.doors ?? [], gapStageCorpus(history, memberMessage));
-        awaitingConfirm = false;
-        finalReply = withQuestion(modelText, gapMore(history));
-      } else {
-        // done / affirm / bare "no more" → advance into reclaim (re-surfacing any parked wants).
-        stage = 'reclaim';
-        awaitingConfirm = false;
-        finalReply = reclaimOpening(collected);
-      }
-    } else if (stage === 'reclaim') {
-      // RECLAIM CONFIRM — "Anything missing?" A bare "no / nope / that's a good list" answers the question =
-      // nothing missing = DONE → the card. Only an explicit CHANGE request reopens the gather. resolveReclaimConfirm
-      // owns that meaning. (Jay's walk: "Nope, that's a good list" was read as a correction → reopened → re-captured
-      // dupes and the model volunteered an IDQ pitch. This is the "won't take yes" fix, mirroring the gap confirm.)
-      if (resolveReclaimConfirm(memberMessage) === 'change') {
-        awaitingConfirm = false;
-        finalReply = withQuestion(modelText, RECLAIM_MORE);
-      } else {
-        stage = 'complete';
-        awaitingConfirm = false;
-        finalReply = COMPLETE_HANDOFF;
-        complete = true;
-      }
-    } else if (correctsReflection(memberMessage)) {
-      // Identity confirm correction (reclaim is handled above; gap has its own branch).
-      awaitingConfirm = false;
-      finalReply = REOPEN_IDENTITY;
-    } else {
-      stage = nextStagedStage(stage);
-      awaitingConfirm = false;
-      if (stage === 'gap') finalReply = gapBridge(collected); // 1b: bridge from the named identity, not a cold switch
-      else if (stage === 'reclaim') finalReply = reclaimOpening(collected);
-      else {
-        // reclaim → complete: hand off to the confirmation card (rendered client-side from `collected`).
-        finalReply = COMPLETE_HANDOFF;
-        complete = true;
-      }
-    }
-  } else if (stage === 'identity') {
-    if (collected.identitySkipped) {
-      // Skipped — nothing to confirm; acknowledge and advance straight into the gap stage.
-      stage = 'gap';
-      finalReply = `${SKIP_ACK}\n\n${gapOpen(collected)}`;
-    } else if (collected.identityNoun) {
-      // BREATHE FLOOR (1a) + the conditional second probe (1b / Decision S). Reflect once the material is RICH
-      // (front-loader escape), the member PUSHES PAST (terse escape), or we've drawn out enough: a general probe,
-      // then ONE smaller/concrete probe if STILL thin — capped at 2 so it never loops or re-asks. This is the
-      // expanded drawing-out identity gets (Scott's "rushed"); the escapes keep it off the front-loader/terse.
-      const rich = stageMaterialRich('identity', collected);
-      const pushed = memberPushedPast('identity', memberMessage, collected);
-      if (rich || pushed || identityProbes >= 2) {
-        finalReply = reflectIdentity(collected);
-        awaitingConfirm = true;
-      } else {
-        identityProbes += 1;
-        // probe 1 = the general draw; probe 2 = smaller + concrete (never re-asking probe 1). Prefer the model's
-        // own drawing-out question when it asked one.
-        const probe = identityProbes === 1 ? identityProbe(collected) : identityProbe2(collected);
-        finalReply = withQuestion(modelText, probe);
-      }
-    } else {
-      // Gather. Never-strand: a member who won't name a PAST self (a thriving no-fade optimizer, or just a
-      // guarded one) must not loop the opening question forever. Offer the "find it later" skip after a couple
-      // of tries even if no past-self was captured, and HARD-ESCAPE after a few — skip identity and move on (it's
-      // recovered at Identity Excavation in Reconnect). This is what lets a no-fade member reach the gap-stage
-      // floor instead of stalling at the door.
-      identityTurns += 1;
-      const skipOfferable = identityTurns >= IDENTITY_SKIP_OFFER_AFTER;
-      if (identityTurns >= IDENTITY_MAX_TURNS && !collected.athleticPast && !collected.identityNoun) {
-        collected.identitySkipped = true;
-        stage = 'gap';
-        finalReply = `${SKIP_ACK}\n\n${gapOpen(collected)}`;
-      } else {
-        // Keep the model's reflection and guarantee a closing question (withQuestion). The probe it falls back to
-        // depends on what's still missing: the past self (opening) or the handle (name prompt), softened to the
-        // "find it later" skip offer once we've asked a couple of times.
-        const probe = !collected.athleticPast ? (skipOfferable ? SKIP_OFFER : STAGED_OPENING) : skipOfferable ? SKIP_OFFER : NAME_PROMPT;
-        finalReply = withQuestion(modelText, probe);
-      }
-    }
-  } else if (stage === 'gap') {
-    // The model's explicit no-fade judgement (note_no_fade) is the PRIMARY signal — it reads "this person has
-    // no Fade" far more reliably than any regex. Sticky once set.
-    if (model.noFade) noFade = true;
-    // FADE GATE. Reject a model-tagged gap that is forward-looking ambition so we never FABRICATE a fade —
-    // unless we're admitting at the floor (below), where the member's honest light gap is kept. Reject on
-    // AMBITION specifically, not shortness — a terse real fade ("Knee. Then divorce.") must survive.
-    if (collected.gap && isForwardAmbition(collected.gap) && !noFade) collected.gap = undefined;
-    // Backstop: when the model did NOT tag a (real-fade) set_gap this turn, capture the member's own message as
-    // the gap if it reads as a real fade — ACCUMULATE (append) so a progressive revealer's chapters aren't lost.
-    const modelTaggedGap = model.record?.gap !== undefined && model.record.gap !== '' && !isForwardAmbition(model.record.gap);
-    if (!collected.gap && !noFade && shouldCaptureStagedGap(memberMessage)) {
-      collected.gap = memberMessage.trim();
-    } else if (collected.gap && !noFade && !modelTaggedGap && shouldCaptureStagedGap(memberMessage)) {
-      collected.gap = `${collected.gap} ${memberMessage.trim()}`;
-    }
-    if (!collected.gap && !noFade) gapTurns += 1; // count gather turns only while no real fade is in hand
-
-    // NEVER-STRAND the gap stage (run-2 fix): after several gap turns with NOTHING captured — a progressive
-    // revealer whose short turns each fell under the per-message bar AND the model never tagged — capture the
-    // accumulated gap-stage story so we advance instead of looping the opening question for 24 turns. The Doors
-    // still come from the whole corpus below; this just rescues the gap TEXT so the stage can close.
-    if (!collected.gap && !noFade && gapTurns >= GAP_MAX_TURNS) {
-      const corpus = gapStageCorpus(history, memberMessage).trim();
-      // Capture the accumulated story even if her LATEST turn is a frustrated deflection ("we already did this,
-      // move on") — the earlier turns hold the story; gating on the current message being non-deflecting is what
-      // stranded run 5. The !isForwardAmbition(corpus) guard keeps a no-fade ambition corpus out (no-fade is
-      // floor-admitted before this anyway).
-      if (corpus.length >= 40 && !isForwardAmbition(corpus)) collected.gap = corpus;
-    }
-
-    // DECISION E FORK (Increment 2): resolve a "no obvious fade event" member from the whole gap-stage corpus.
-    const gapCorpus = gapStageCorpus(history, memberMessage);
-    if (isAcceptanceFade(gapCorpus)) {
-      // RESIGNED to age-decline → The Acceptance Door: a real, quiet Fade. NOT no-fade — clear the flag, make
-      // sure their own words are captured as the gap, and fall through to the normal real-fade reflect/advance
-      // below (augmentDoors tags 'acceptance'). Never decline, never admit-at-floor.
-      noFade = false;
-      if (!collected.gap) collected.gap = memberMessage.trim() || gapCorpus.trim();
-    }
-    // GENUINELY THRIVING → graceful DECLINE (Decision E supersedes the Jun-26 admit-at-floor). Fires when there's
-    // NO real-fade signal anywhere (no genuine loss, no resignation/Acceptance) AND either the model judged no-fade
-    // (trusted even over an incidentally-tagged prose "gap" like "career/marriage/kids are great"), or the member's
-    // own words are pure forward-ambition with nothing captured after a couple turns (the conservative path).
-    const noRealFadeSignal = !isAcceptanceFade(gapCorpus) && !hasGenuineLoss(gapCorpus);
-    const thrivingDecline =
-      noRealFadeSignal && (noFade || (isForwardAmbition(memberMessage) && !collected.gap && gapTurns >= 2));
-    if (thrivingDecline) {
-      // Out of scope; the door stays open. Terminal — no card, no reclaim. We never fabricate a fade to admit them.
-      return {
-        reply: DECLINE_REPLY,
-        state: { stage: 'declined', collected, awaitingConfirm: false, identityTurns, reclaimNudged, gapTurns, noFade, declined: true },
-        complete: false,
-        declined: true,
-      };
-    }
-    if (collected.gap) {
-      // Real fade. Accumulate Doors across the WHOLE corpus (rita reveals them progressively), and RECEIVE the
-      // whole story before reflecting — invite the rest (GAP_MORE) until the member signals it's whole.
-      collected.doors = augmentDoors(collected.doors ?? [], gapStageCorpus(history, memberMessage));
-      gapDepth += 1; // one more drawing-out exchange with the story in hand
-      // MODEL-JUDGED advance (v2.1 — bring back v1's drawing-out). The MODEL decides when the story is genuinely
-      // drawn out (it calls reflect_gap), NOT an engine richness heuristic — door-count and length are proxies,
-      // and proxies leak (the whole lesson of v2.0's field-count and v2.1's door-count). The engine only BOUNDS
-      // the judgment: a FLOOR (never close before GAP_MIN_DEPTH real exchanges, so a rushing model can't wrap on
-      // two brief mentions) and a CAP (close by GAP_MAX_DEPTH — anti-loop). A member close overrides; the
-      // substantive reflection quotes their words, and the card is the correction backstop.
-      const modelJudgedDone = model.gapReady && gapDepth >= GAP_MIN_DEPTH;
-      const advance = modelJudgedDone || memberPushedPast('gap', memberMessage, collected) || gapDepth >= GAP_MAX_DEPTH;
-      if (!advance) {
-        // Keep drawing out — follow the model's depth question (it's exploring HOW it opened). Its own reflection
-        // carries the beat; withQuestion guarantees it ends on a forward question, nudging with gapMore if not.
-        finalReply = withQuestion(modelText, gapMore(history));
-      } else {
-        finalReply = reflectGap(modelText);
-        awaitingConfirm = true;
-      }
-    } else {
-      // Still gathering a real fade (no ambition signal yet) — keep the model's question, else hold the gap open.
-      finalReply = withQuestion(modelText, gapOpen(collected));
-    }
-  } else if (stage === 'reclaim') {
-    // Uniform floor+escape (1b): reclaim's drawing-out is "gather toward the aim." Its two escapes are the
-    // shared ones — ALREADY-SATISFIED = stageMaterialRich('reclaim') (≥ the min wants on the table) and
-    // MEMBER-PUSHED-PAST = memberPushedPast('reclaim') (the member is closing). Same predicates as identity/gap.
-    const closing = memberPushedPast('reclaim', memberMessage, collected);
-    // The member put a want FORWARD this turn (new or a restatement) — distinct from closing/refusing. This is
-    // the "still in flow" signal, separate from whether the list actually grew (a dup offer keeps them in flow).
-    const offered = !closing && shouldCaptureStagedReclaim(memberMessage);
-    const priorLen = state.collected.reclaimList?.length ?? 0;
-    const modelCaptured = (collected.reclaimList?.length ?? 0) > priorLen; // the model's add_reclaim_item already landed
-    // Backstop: capture an untagged want ONLY when the member offered AND the model did NOT already tag it — else
-    // we'd double-add the same want in two phrasings ("riding again" + "I want to ride again"). appendReclaim also
-    // dedupes exact restatements across turns, so a re-said want is a safe no-op — never a second "Ride my bike more".
-    // Skip when the turn REFINED a want (the member's message was the sharpening answer, already folded in).
-    if (offered && !modelCaptured && !refinedThisTurn) appendReclaim(collected, memberMessage);
-    const count = collected.reclaimList?.length ?? 0;
-    const grewThisTurn = count > priorLen; // a NEW unique want landed this turn (model or backstop)
-    // Cap runaway capture: once at the soft aim (~7), stop asking "what else?" and move to confirm — this is
-    // what kept a verbose persona from ballooning to 17–21 items.
-    if (count >= RECLAIM_LIST_TARGET || (count >= RECLAIM_LIST_MIN && closing)) {
-      // Aim reached, OR the member has met the minimum and is closing — reflect the whole list and confirm.
-      finalReply = reflectReclaim(collected);
-      awaitingConfirm = true;
-    } else if (count >= RECLAIM_LIST_MIN) {
-      // At/above the minimum, below the aim, not explicitly closing. COMPLETE-WHEN-DONE (never force-close):
-      // keep gathering toward ~7 while she's still OFFERING — a new item OR a restatement (a dup must NOT pull
-      // the list up short; Jay's walk). Only when a turn brings nothing at all (not offering, not growing) is
-      // she finished — reflect the list and await her confirm (she can still correct or extend; card is the
-      // seatbelt). This kills the 24-turn loop where a member at 3–6 items never says "that's the list".
-      if ((grewThisTurn || offered) && count < RECLAIM_LIST_TARGET) {
-        finalReply = withQuestion(modelText, RECLAIM_MORE);
-      } else {
-        finalReply = reflectReclaim(collected);
-        awaitingConfirm = true;
-      }
-    } else if (closing && !reclaimNudged) {
-      // Soft-close below the minimum → nudge ONCE: lower the bar (small things count), draw out more. This is
-      // the moment a genuine multi-want member names the rest; it fires HERE (not a bare "what else?") because
-      // memberClosingReclaim catches the soft "that's the list" closings, not just explicit wraps.
-      reclaimNudged = true;
-      finalReply = RECLAIM_NUDGE;
-    } else if (closing && reclaimNudged) {
-      // Already nudged, still closing below the floor. Per Jay's Gate-1 decision (sub-3 completion): if they
-      // gave at least one real want, ACCEPT and complete — the card carries the shortfall, post-onboarding /
-      // MA editing reaches the ~7 aim. Never fabricate to reach 3. Only a truly empty list holds.
-      if (count >= 1) {
-        finalReply = reflectReclaim(collected);
-        awaitingConfirm = true;
-      } else {
-        finalReply = RECLAIM_SOFT_HOLD;
-      }
-    } else {
-      // Still offering — keep the model's reflection and guarantee a closing question; else invite the next item.
-      finalReply = withQuestion(modelText, RECLAIM_MORE);
-    }
+  if (stageDef) {
+    const early = b.awaitingConfirm ? stageDef.confirm(b) : stageDef.gather(b);
+    if (early) return early;
   } else {
-    // Already complete (e.g. a resumed terminal state) — the card stands.
-    finalReply = modelText || COMPLETE_HANDOFF;
-    complete = true;
+    // Already complete/declined (a resumed terminal state) — the card / reveal stands.
+    b.reply = b.modelText || arc.onComplete(b.collected);
+    b.complete = true;
   }
 
-  // GENERAL no-verbatim-repeat guard (the abstraction, not the instance): never emit the exact line we just
-  // said. A static opener/nudge falling through twice — STAGED_OPENING after the opening, gapOpen while
-  // gathering, GAP_MORE/RECLAIM_MORE — reads as a broken loop and breaks the bar's "never repeat verbatim".
-  // GAP_MORE already rotates; this catches every other static fallback in one place. We prepend a short
-  // rotating, warm lead so it varies without losing the line's intent. (Only mid-conversation, never on
-  // completion or a confirm.)
-  if (!complete && !awaitingConfirm && finalReply === lastAgentReply(history)) {
+  // GENERAL no-verbatim-repeat guard: never emit the exact line we just said. A static opener/nudge falling
+  // through twice reads as a broken loop. Prepend a short rotating warm lead. (Mid-conversation only.)
+  if (!b.complete && !b.awaitingConfirm && b.reply === lastAgentReply(history)) {
     const leads = ['Take whatever time you need.', 'No rush at all.', "Whenever you're ready.", "There's no wrong way in."];
-    finalReply = `${leads[history.length % leads.length]} ${finalReply}`;
+    b.reply = `${leads[history.length % leads.length]} ${b.reply}`;
   }
 
-  return {
-    reply: finalReply,
-    state: { stage, collected, awaitingConfirm, identityTurns, identityProbes, reclaimNudged, gapTurns, gapDepth, idleTurns, noFade },
-    complete,
-  };
+  return { reply: b.reply, state: beatState(b), complete: b.complete, ...(b.declined ? { declined: true } : {}) };
+}
+
+// The onboarding turn — config #1 on the generic kernel. The public signature is unchanged (callers/fixtures
+// keep calling applyStagedTurn); it now just binds ONBOARDING_ARC.
+export function applyStagedTurn(
+  state: ConvState,
+  history: ConvMessage[],
+  memberMessage: string,
+  model: ModelTurn,
+): Turn {
+  return runArcTurn(ONBOARDING_ARC, state, history, memberMessage, model);
 }
 
 // The most recent thing the agent said — for the no-verbatim-repeat guard.
