@@ -158,7 +158,12 @@ export function matchDoors(message: string): DoorSlug[] {
 // their own, correct them. Conservative: it only ever fires on a clear Full House story.
 export function correctDoors(doors: DoorSlug[], narrative: string): DoorSlug[] {
   const m = (narrative || '').toLowerCase();
+  // Full House is present if it's ALREADY tagged (the model called note_door), or the narrative signals it.
+  // Including the already-tagged set is what lets us correct the model's most common mix-up even when the
+  // narrative words don't themselves carry a full-house keyword (Jay's walk: kids getting older/busier at home
+  // got tagged BOTH full_house AND empty_nest — contradictory; empty_nest is the mis-tag).
   const fullHouseSignal =
+    doors.includes('full_house') ||
     matchDoors(m).includes('full_house') ||
     /\b(had kids|having kids|when we had|after (we )?had kids|after kids|young kids|small kids|little kids|new baby|babies|a toddler|raising (the |our )?kids)\b/.test(m);
   const agingParentsSignal = /\b(aging parent|elderly|my (mom|dad|mother|father|parents)|caring for (my|a|an|his|her|aging) ?(mom|dad|mother|father|parent|parents)?)\b/.test(m);

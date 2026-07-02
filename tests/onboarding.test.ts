@@ -206,6 +206,15 @@ test('augmentDoors infers Door(s) from the GAP narrative — incl. the first —
   // gap yields no spurious The Body.
   const joanneGap = 'Working too many hours, caring for my 95 year old mom with an inconsistent sister — the better part of 5 years';
   assert.deepEqual(augmentDoors(['career_cliff', 'aging_parents'], joanneGap), ['career_cliff', 'aging_parents']);
+  // Jay's walk: the model tagged contradictory siblings — full_house AND empty_nest — for a kids-still-home
+  // story (a daughter's struggles, marriage tension, the grind). Empty Nest is the mis-tag; the disambiguation
+  // drops it (Full House present, no "kids left/moved out" signal) while keeping the real Doors.
+  assert.deepEqual(
+    augmentDoors(['marriage', 'full_house', 'grind', 'empty_nest'], 'Years of carrying my daughter’s struggles, a marriage under tension, and a company demanding everything.'),
+    ['marriage', 'full_house', 'grind'],
+  );
+  // A genuine empty-nest story is untouched (kids actually left).
+  assert.deepEqual(augmentDoors(['empty_nest'], 'the kids moved out and the house went quiet'), ['empty_nest']);
 });
 
 test('isAffirmation recognizes short confirmations (incl. "for sure"), not longer add-ons', () => {

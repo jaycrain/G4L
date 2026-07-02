@@ -879,7 +879,9 @@ distinct life event you recognize. A story can carry several. Map by meaning, in
   • work/ambition that GREW until it crowded out the self → grind
   • being the one carrying the household / the bills / the breadwinner / a partner who didn't step up → load_bearer
   • caring for a parent / a parent's health crisis or decline (a coma, getting sick, declining) → aging_parents
-  • kids leaving / the house going quiet → empty_nest;  young kids + marriage, no room for you → full_house
+  • kids at home taking your time/energy — young, or older-but-still-here (busy, needing you) → full_house
+  • ONLY once the kids have actually LEFT and the house went quiet → empty_nest (mutually exclusive with full_house —
+    never tag both; kids getting older/busier while still at home is full_house, not empty_nest)
   • a diagnosis / health scare → diagnosis;  the body saying no → body
   • a divorce or a marriage drifting into coexisting → marriage
   • losing someone close (death) → loss;  friendships/social world fading → vanishing

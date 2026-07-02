@@ -196,7 +196,11 @@ export function doorEngaged(prev: Collected, next: Collected): boolean {
 // gap → matchDoors('') → [] → nothing invented. A door drawn from the fade story is reading their
 // account, not fabricating one.
 export function augmentDoors(recorded: DoorSlug[], gap: string): DoorSlug[] {
-  return Array.from(new Set<DoorSlug>([...recorded, ...matchDoors(gap ?? '')]));
+  const merged = Array.from(new Set<DoorSlug>([...recorded, ...matchDoors(gap ?? '')]));
+  // Apply the Door disambiguation (Full House vs Empty Nest / Aging Parents; idempotent) so the staged engine
+  // gets the same accuracy v1 does — the model occasionally tags contradictory siblings (Jay's walk: full_house
+  // AND empty_nest for kids-still-home). correctDoors is a no-op when there's nothing to reconcile.
+  return correctDoors(merged, gap ?? '');
 }
 
 // Live-path backstop for a model that CONVERSES without recording: should the engine capture the
