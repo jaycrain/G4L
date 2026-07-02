@@ -583,6 +583,33 @@ test('STAGED reclaim — gather to the minimum → reflect the list → confirm 
   assert.match(turns[4]!.reply, /captured|look like you/i);
 });
 
+test('STAGED reclaim — a REPHRASED want collapses to one (Jay walk: "Getting down to 190 lbs" / "Get down to 190 lbs")', () => {
+  const atReclaim: ConvState = { stage: 'reclaim', collected: { athleticPast: 'a triathlete', identityNoun: 'Ironman Triathlete', gap: 'The grind and family slowly suffocated it over years.' } };
+  const { finalState } = replayStaged(
+    [
+      { member: 'Getting down to 190 lbs', model: { text: 'Good. What else?', record: { reclaimList: ['Getting down to 190 lbs'] } } },
+      { member: 'Get down to 190 lbs', model: { text: 'Got it. What else?', record: { reclaimList: ['Get down to 190 lbs'] } } }, // same want, "get" vs "getting"
+      { member: 'Get back on my bike 3-4 days a week', model: { text: 'Nice.', record: { reclaimList: ['Get back on my bike 3-4 days a week'] } } },
+    ],
+    atReclaim,
+  );
+  const list = finalState.collected.reclaimList ?? [];
+  assert.equal(list.filter((x) => /190/.test(x)).length, 1, 'the 190 lbs want appears once — the content-token key catches the rephrase');
+  assert.equal(list.length, 2, 'two distinct wants, no near-dup');
+});
+
+test('STAGED reclaim — the 20-turn force-cap still captures the want the member JUST offered (never drop)', () => {
+  const history: ConvMessage[] = [];
+  for (let i = 0; i < 19; i++) history.push({ role: 'member', text: `earlier turn ${i}` });
+  const atReclaim: ConvState = {
+    stage: 'reclaim',
+    collected: { athleticPast: 'a triathlete', identityNoun: 'Ironman Triathlete', gap: 'It opened slowly over years — the grind at work grew, the family needed more, and he lost the fitness and the outlet that used to hold him together.', reclaimList: ['My fitness', 'Get down to 190 lbs', 'See friends more'] },
+  };
+  const turn = applyStagedTurn(atReclaim, history, 'Write the second edition of my book', { text: 'Great, noted.' });
+  assert.equal(turn.complete, true, 'the anti-runaway cap completes at turn 20');
+  assert.ok((turn.state.collected.reclaimList ?? []).some((x) => /second edition/i.test(x)), 'the just-offered want is captured before completing, not dropped');
+});
+
 test('STAGED reclaim — a want captured twice lands ONCE (Jay walk: "Ride my bike more" ×2 on the card)', () => {
   const atReclaim: ConvState = { stage: 'reclaim', collected: { athleticPast: 'a cyclist', identityNoun: 'Player', gap: 'The grind slowly took it over fifteen years.' } };
   const { finalState } = replayStaged(

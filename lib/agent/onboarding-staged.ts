@@ -293,8 +293,24 @@ function identityTargetMet(c: Collected): boolean {
 // Two capture paths run per turn — the model's add_reclaim_item AND the engine's backstop / confirm late-add —
 // and a re-tag of an already-listed want double-adds it. A single normalized key (case/punctuation-insensitive)
 // is the one place we decide "same want," so every append point stays deduped. It keeps the FIRST phrasing.
+// A want's identity is its CONTENT tokens, order-independent — filler words and phrasing verbs dropped — so
+// "Getting down to 190 lbs" and "Get down to 190 lbs" collapse to the same key (Jay's walk: the exact-string key
+// missed that near-dup). Kept conservative: only true filler + the get/want/need inflections are dropped, so
+// content words (nouns/verbs) still distinguish genuinely different wants. Sorted so word order doesn't matter.
+const RECLAIM_STOPWORDS = new Set([
+  'the', 'a', 'an', 'my', 'our', 'your', 'his', 'her', 'their', 'its',
+  'to', 'of', 'for', 'and', 'or', 'some', 'just', 'more',
+  'get', 'getting', 'got', 'gets', 'want', 'wants', 'wanting', 'wanna', 'need', 'needs', 'needing',
+  'i', 'im', 'be', 'being',
+]);
 function reclaimKey(s: string): string {
-  return (s ?? '').trim().toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  return (s ?? '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .split(' ')
+    .filter((w) => w && !RECLAIM_STOPWORDS.has(w))
+    .sort()
+    .join(' ');
 }
 // Append a want to `c` only if it isn't already on the list (normalized). Returns whether it actually landed —
 // so the gather stage can tell a real new offer from a duplicate and NOT read the dup as a "done" signal.
@@ -426,9 +442,11 @@ export function applyStagedTurn(
         complete: false,
       };
     }
-    // Bound the reclaim loop: capture a want if none has landed yet, then route to the card once card-ready.
+    // Bound the reclaim loop, then route to the card once card-ready. NEVER drop the want they JUST offered at
+    // the cap (Jay's walk: a late "write the second edition of my book" vanished because capture was gated on
+    // the list being below the floor). Capture any offered want (deduped) before completing.
     if (stage === 'reclaim') {
-      if ((collected.reclaimList?.length ?? 0) < RECLAIM_LIST_FLOOR && shouldCaptureStagedReclaim(memberMessage)) {
+      if (!memberClosingReclaim(memberMessage) && shouldCaptureStagedReclaim(memberMessage)) {
         appendReclaim(collected, memberMessage);
       }
       if (hasIdentity(collected) && realGap && (collected.reclaimList?.length ?? 0) >= RECLAIM_LIST_FLOOR) {
