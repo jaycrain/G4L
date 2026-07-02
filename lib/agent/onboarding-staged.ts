@@ -427,7 +427,7 @@ function memberClosingReclaim(message: string): boolean {
 // Until this fires (or a turn adds nothing new), the gap stage keeps RECEIVING — so a multi-event story fully
 // surfaces (and its Doors with it) before we reflect and advance.
 const GAP_DONE_RE =
-  /\b(that'?s (the )?(whole|all|it|everything|gist|story|picture|heart)|the (whole|full) (story|picture|thing|of it)|no(thing)? (more|else)|no more|that'?s how it (went|happened|unfolded)|that covers it|that'?s about it|that'?s most of it|pretty much it|that'?s the heart)\b/i;
+  /\b(that'?s (the )?(whole|all|it|everything|gist|story|picture|heart)|the (whole|full) (story|picture|thing|of it)|no(thing)? (more|else)|no more|that'?s how it (went|happened|unfolded)|that covers it|that'?s (about|more or less|pretty much|roughly|basically) it|that was (about|more or less|pretty much) it|more or less it|it for now|(that )?(about )?sums it up|that'?s most of it|pretty much it|that'?s the heart)\b/i;
 function memberSignalsGapComplete(message: string): boolean {
   const m = (message ?? '').replace(/[‘’]/g, "'");
   return confirmsWhole(m) || memberWantsToWrap(m) || GAP_DONE_RE.test(m);
@@ -453,13 +453,23 @@ const GAP_CONFIRM_WORDS_RE =
 function memberAddingMoreGap(message: string): boolean {
   const m = (message ?? '').replace(/[‘’]/g, "'").trim();
   if (!m) return false;
-  if (memberSignalsGapComplete(m)) return false; // "that's it / no more / that's the whole of it" → advance
-  const residual = m
-    .replace(AFFIRM_PREFIX_RE, '')
-    .replace(GAP_CONFIRM_WORDS_RE, ' ')
-    .replace(/[^a-z]+/gi, ' ')
-    .trim();
-  return residual.split(/\s+/).some((w) => w.length >= 3); // a real content word remains → still telling it → STAY
+  if (memberSignalsGapComplete(m)) return false; // "that's it / no more / more or less it for now" → advance
+  const residual = m.replace(AFFIRM_PREFIX_RE, '').replace(GAP_CONFIRM_WORDS_RE, ' ').replace(/[^a-z]+/gi, ' ').trim();
+  const contentWords = residual.split(/\s+/).filter((w) => w.length >= 3);
+  if (contentWords.length === 0) return false; // bare acknowledgement/negation → advance
+  if (hasLossSignal(m)) return true; // a new loss / Door signal → clearly more fade material, keep drawing out
+  // Otherwise require a FRESH CHAPTER's worth of content — not a short meta reply ("I just did", "not really").
+  // Bias to ADVANCE: a false "more" loops the beat (Jay: "won't take yes"); a missed terse add is caught by the card.
+  return m.length >= 25 && contentWords.length >= 4;
+}
+
+// A DISPUTE at the gap confirm ("no, that's not quite right") — the member says the reflection is WRONG, with no
+// new content to append. Distinct from a bare "no/nope" (which answers "…or is there more?" = no more = done) and
+// from an ADDITION (new material). Keyed on explicit wrongness so a plain negation never reopens the beat.
+const GAP_DISPUTE_RE =
+  /\b(that'?s not (it|right|how|quite)|that wasn'?t (it|right|how)|not (quite|really) (it|right|how)|you'?ve got it wrong|that'?s wrong|you'?re wrong|not what i (said|meant)|doesn'?t (fit|sound|feel) right)\b/i;
+function memberDisputesGap(message: string): boolean {
+  return GAP_DISPUTE_RE.test((message ?? '').replace(/[‘’]/g, "'"));
 }
 
 // Every member message so far + the current one — the corpus we scan for Doors. rita reveals her Doors
@@ -593,38 +603,34 @@ export function applyStagedTurn(
       finalReply = reflectReclaim(collected);
       awaitingConfirm = true; // stay in confirm — re-reflect with the just-added want included
       // fall through to the shared return
-    } else if (stage === 'gap' && !correctsReflection(memberMessage) && memberAddingMoreGap(memberMessage)) {
-      // GAP late-add (v2.1 fix — Jay's walk points 3/5/6): the confirm invited "is there more?" and they gave
-      // more ("yeah, there was work too"). NEVER advance on invited more — append it, re-derive Doors from the
-      // whole corpus, and go back to DRAWING IT OUT (not straight to re-reflect: we haven't explored the new
-      // thread yet). The model's own follow-up carries the beat; the engine only nudges if it gave no question.
-      const modelTaggedGap = model.record?.gap !== undefined && model.record.gap !== '';
-      if (!modelTaggedGap) collected.gap = collected.gap ? `${collected.gap} ${memberMessage.trim()}` : memberMessage.trim();
-      collected.doors = augmentDoors(collected.doors ?? [], gapStageCorpus(history, memberMessage));
-      awaitingConfirm = false; // re-open the gap draw for the new thread
-      finalReply = withQuestion(modelText, gapMore(history));
+    } else if (stage === 'gap') {
+      // GAP CONFIRM — resolved here, in its OWN logic, because the confirm asks "…or is there more to it?", so a
+      // bare "no / nope / that's it / more or less it for now" means NO MORE = DONE → ADVANCE (NOT "you got it
+      // wrong"). This is what stops the beat looping when the member is plainly finished (Jay's walk: "won't take
+      // yes for an answer"). Only a real DISPUTE reopens; only substantive NEW material keeps drawing out.
+      if (memberDisputesGap(memberMessage)) {
+        // "no, that's not quite right" — wrong, no new content → reopen, but KEEP the gap + Doors (never wipe).
+        awaitingConfirm = false;
+        finalReply = REOPEN_GAP;
+      } else if (memberAddingMoreGap(memberMessage)) {
+        // a new chapter (or a correction WITH content) → append it, re-derive Doors, and DRAW IT OUT (the model's
+        // own follow-up carries the beat; withQuestion nudges with gapMore if it didn't ask). Never wipe what's there.
+        const modelTaggedGap = model.record?.gap !== undefined && model.record.gap !== '';
+        if (!modelTaggedGap) collected.gap = collected.gap ? `${collected.gap} ${memberMessage.trim()}` : memberMessage.trim();
+        collected.doors = augmentDoors(collected.doors ?? [], gapStageCorpus(history, memberMessage));
+        awaitingConfirm = false;
+        finalReply = withQuestion(modelText, gapMore(history));
+      } else {
+        // done / affirm / bare "no more" → advance into reclaim (re-surfacing any parked wants).
+        stage = 'reclaim';
+        awaitingConfirm = false;
+        finalReply = reclaimOpening(collected);
+      }
     } else if (correctsReflection(memberMessage)) {
       awaitingConfirm = false;
-      if (stage === 'identity') {
-        finalReply = REOPEN_IDENTITY;
-      } else if (stage === 'gap') {
-        // "No, there's MORE" is the common case here, not "you got it wrong" — rita reveals progressively and
-        // says "not just the layoff." NEVER wipe what she gave: if this message is itself more fade narrative,
-        // APPEND it and re-derive Doors from the whole corpus, then re-reflect the fuller story. Only a short,
-        // pure dispute re-opens — and even then we keep the gap + Doors (the card is the final correction point).
-        const modelTaggedGap = model.record?.gap !== undefined && model.record.gap !== '';
-        if (modelTaggedGap || shouldCaptureStagedGap(memberMessage)) {
-          if (!modelTaggedGap) collected.gap = collected.gap ? `${collected.gap} ${memberMessage.trim()}` : memberMessage.trim();
-          collected.doors = augmentDoors(collected.doors ?? [], gapStageCorpus(history, memberMessage));
-          finalReply = reflectGap(modelText);
-          awaitingConfirm = true; // stay in confirm — they're still telling it
-        } else {
-          finalReply = REOPEN_GAP; // a short dispute — re-open, but keep the gap + Doors (never drop them)
-        }
-      } else {
-        // Reclaim correction — they want to change the list; stay in reclaim and keep gathering.
-        finalReply = withQuestion(modelText, RECLAIM_MORE);
-      }
+      if (stage === 'identity') finalReply = REOPEN_IDENTITY;
+      // Reclaim correction — they want to change the list; stay in reclaim and keep gathering.
+      else finalReply = withQuestion(modelText, RECLAIM_MORE);
     } else {
       stage = nextStagedStage(stage);
       awaitingConfirm = false;

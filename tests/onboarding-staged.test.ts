@@ -158,6 +158,28 @@ test('STAGED gap — a plain confirm ("yes, you’ve got it" / "exactly") still 
   }
 });
 
+test('STAGED gap confirm — done-signals ADVANCE, never loop (Jay walk: "won\'t take yes for an answer")', () => {
+  const atConfirm = (): ConvState => ({
+    stage: 'gap', awaitingConfirm: true, gapDepth: 3,
+    collected: { athleticPast: 'a cyclist', identityNoun: 'Free Spirit', gap: 'Kids and work crowded it out over fifteen years.', doors: ['full_house', 'grind'] },
+  });
+  // Every one of these answers "…or is there more to it?" with NO MORE — they must ADVANCE, not loop.
+  for (const msg of ["That's more or less it for now", "That's it", 'Nope', 'No more', 'Yeah, that about sums it up', 'I just did']) {
+    const turn = applyStagedTurn(atConfirm(), [], msg, { text: 'Got it.' });
+    assert.equal(turn.state.stage, 'reclaim', `"${msg}" at the gap confirm advances to reclaim (no loop)`);
+  }
+  // A real DISPUTE still reopens — and keeps the gap + Doors.
+  const disp = applyStagedTurn(atConfirm(), [], "No, that's not quite right", { text: 'Okay.' });
+  assert.equal(disp.state.stage, 'gap', 'a dispute stays in gap');
+  assert.match(disp.reply, /get this right|how it really went/i, 'reopens to get it right');
+  assert.match(disp.state.collected.gap ?? '', /crowded it out/, 'keeps the gap on a dispute (never wipe)');
+  // Substantive NEW material still draws out (never advances past invited more).
+  const more = applyStagedTurn(atConfirm(), [], 'Actually there was also my divorce that year — it wrecked me', { text: 'Tell me about that.' });
+  assert.equal(more.state.stage, 'gap', 'new material keeps drawing out in gap');
+  assert.equal(more.state.awaitingConfirm, false, 'draws out the new thread');
+  assert.match(more.state.collected.gap ?? '', /divorce/i, 'appends the new material — never dropped');
+});
+
 test('STAGED gap — CAP (v2.1): a member who keeps giving is never looped forever — the beat closes by GAP_MAX_DEPTH', () => {
   const atGap: ConvState = { stage: 'gap', collected: { athleticPast: 'a cyclist', identityNoun: 'Athlete' } };
   // The model never calls reflect_gap; the member keeps adding. The engine must close it by the cap, not loop.
@@ -469,7 +491,8 @@ test('STAGED gap — "there’s more" APPENDS the next chapter + accumulates Doo
   assert.match(turn.state.collected.gap!, /coma|caregiver/, 'appended the parent-care chapter');
   assert.ok(turn.state.collected.doors!.includes('career_cliff'), 'kept career_cliff');
   assert.ok(turn.state.collected.doors!.includes('aging_parents'), 'picked up aging_parents from the new chapter');
-  assert.equal(turn.state.awaitingConfirm, true, 're-reflects the fuller story — no loop on the opening question');
+  assert.equal(turn.state.awaitingConfirm, false, 'DRAWS OUT the new chapter (v2.1: explore the thread, not an instant re-reflect)');
+  assert.match(turn.reply, /\?\s*$/, 'ends on a question — keeps exploring, never a loop on the opening line');
 });
 
 test('STAGED gap — a terse fragment with a clear Door IS captured (never strand a terse member)', () => {
