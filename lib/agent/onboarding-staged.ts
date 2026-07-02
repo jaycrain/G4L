@@ -28,9 +28,6 @@ import { gapIsNarrative, hasIdentity } from './onboarding-contract.ts';
 import { MEMBER_AGENT_SYSTEM_PROMPT } from './system-prompt.ts';
 import {
   augmentDoors,
-  confirmsWhole,
-  isAffirmation,
-  memberWantsToWrap,
   stripLeadingDisclosure,
   type Collected,
   type ConvMessage,
@@ -40,6 +37,22 @@ import {
   type Stage,
   type Turn,
 } from './onboarding.ts';
+// The intent layer — the one place that decides what a member's utterance MEANS (see onboarding-intent.ts).
+import {
+  correctsReflection,
+  hasGenuineLoss,
+  isAcceptanceFade,
+  isForwardAmbition,
+  memberClosingReclaim,
+  memberDeflecting,
+  memberSignalsGapComplete,
+  resolveGapConfirm,
+  shouldCaptureStagedGap,
+  shouldCaptureStagedReclaim,
+} from './onboarding-intent.ts';
+
+// Re-exported so existing callers/tests can keep importing it from the engine surface.
+export { correctsReflection };
 
 const capFirst = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
 
@@ -180,11 +193,6 @@ const DECLINE_REPLY =
   'changes — when something real has pulled you away from who you were. If that day comes, this door stays open ' +
   "and I'll be right here. Until then — keep building.";
 
-// Decision E fork signals, read from the whole gap-stage corpus (resignation can reveal progressively).
-function isAcceptanceFade(text: string): boolean {
-  return matchDoors(text ?? '').includes('acceptance'); // resignation to age-decline = The Acceptance (a REAL Fade)
-}
-
 // §5 — Stage 3 (what you want back): the reframe into hope, personalized to their handle.
 function reclaimOpen(c: Collected): string {
   return (
@@ -275,66 +283,9 @@ function reflectReclaim(c: Collected): string {
   return `Here’s what you want to reclaim:\n\n${items}\n\nAnything missing before we move on?`;
 }
 
-// --- confirmed-transition detection --------------------------------------------------------------------
-// The ONLY signal we need: did the member CORRECT the reflection? Everything else (an affirmation, or an
-// ambiguous reply) advances — a reflection with no dispute moves on, so the transition can never trap.
-const CORRECTION_RE =
-  /\b(no|nope|not (quite|really|it|her|him|that|right)|that'?s not|that wasn'?t|wrong|isn'?t (it|her|right)|actually|what do you mean|doesn'?t (fit|feel|sound|seem))\b/i;
-// A correction re-opens the stage. The isAffirmation guard lets the colloquial "yeah no, that's her" (a yes)
-// through as NOT a correction, so it advances.
-export function correctsReflection(message: string): boolean {
-  const m = (message ?? '').replace(/[‘’]/g, "'");
-  return CORRECTION_RE.test(m) && !isAffirmation(m);
-}
-
+// --- stage predicate ------------------------------------------------------------------------------------
 function identityTargetMet(c: Collected): boolean {
   return !!c.athleticPast && (!!c.identityNoun || !!c.identitySkipped);
-}
-
-// --- fade recognition (the Stage-0 gate, enforced in the gap stage) -------------------------------------
-// Our member feels a REAL Fade — a felt distance from who they were (loss/decline/drift). A forward-looking
-// optimizer with no loss ("nothing went wrong, I just want more") is NOT our member; the system must DECLINE
-// them, never fabricate a fade to force completion (locked scope, Jun 2026; onboarding-open-issues Issue 2).
-const AMBITION_RE =
-  /\b(optimi[sz]e|level[ -]?up|next (level|challenge|chapter|thing)|bigger|faster|scale|start[- ]?up|peak|keep (leveling|growing|building|pushing)|doing (great|well|amazing)|thriving|just want more|want to keep)\b/i;
-// EXPLICIT no-fade declarations. These contain loss WORDS ("no loss", "no drift") but assert the OPPOSITE —
-// so we test them first and strip them before reading LOSS_RE, or the negation flips the result.
-const NO_LOSS_RE =
-  /\b(no (real )?(loss|drift|regret|hardship|crisis)( or (loss|drift|regret|hardship))?|nothing (ever |really )?(went |is )?wrong|haven'?t (drifted|lost|fallen)|don'?t feel (a |any )?(loss|drift|gap))\b/i;
-const LOSS_RE =
-  /\b(lost|loss|losing|died|death|passed|sick|illness|diagnos|divorce|laid off|layoff|let go|left me|gone|stopped|gave up|drift|faded|fading|disappear|alone|lonely|empty|caregiver|caring for|injur|grief|grieving|miss(ed|ing)?|used to|no longer|slipped away|fell apart|burned out|breakdown)\b/i;
-// Real loss LANGUAGE, ignoring explicit "no loss / nothing wrong" declarations. Deliberately keyed on loss
-// VERBS/events (LOSS_RE), NOT on a Door-name match — "marriage is genuinely good" mentions the word "marriage"
-// but is not a loss, and must not read as The Marriage Door / a fade.
-function hasGenuineLoss(text: string): boolean {
-  // Strip ALL "no loss / no drift" declarations (global), not just the first — a corpus can repeat them
-  // ("nothing went wrong … no loss or drift here"), and a leftover "no loss" would trip LOSS_RE below.
-  return LOSS_RE.test((text ?? '').replace(new RegExp(NO_LOSS_RE.source, NO_LOSS_RE.flags + 'g'), ' '));
-}
-function isForwardAmbition(text: string): boolean {
-  const t = text ?? '';
-  if (hasGenuineLoss(t)) return false; // a genuine loss verb wins — a real fade can still say "no crisis"
-  return NO_LOSS_RE.test(t) || AMBITION_RE.test(t); // explicit no-fade declaration, or pure forward ambition
-}
-// For the gap backstop's "is this substantial enough to be a fade" check, a Door match still counts as a loss
-// signal (a terse "Knee. Then divorce." names The Marriage) — but only alongside the length/ambition guards
-// already in shouldCaptureStagedGap, so a positive Door-name mention can't sneak a gap in on its own.
-function hasLossSignal(text: string): boolean {
-  return hasGenuineLoss(text) || matchDoors(text ?? '').length > 0;
-}
-// A captured gap is a REAL fade (not ambition). The model's explicit set_gap is trusted unless it's clearly
-// ambition; the BACKSTOP is stricter (requires a loss signal) since it's inferring from an untagged message.
-function isRealFade(text: string): boolean {
-  return gapIsNarrative(text, []) && !isForwardAmbition(text);
-}
-
-// One shared "member is deflecting / closing / refusing" signal, used by BOTH backstops so neither captures a
-// refusal as content (front-loader's "I'm not going to answer that again" became the gap — this kills that).
-const DEFLECT_RE =
-  /\b(i'?m not (going to |gonna )?(answer|engage|doing this)|not answering|i'?ve (answered|already)|already (said|told|answered)|stop asking|we'?re (good|done|fine)|that'?s (all|it|enough)|let'?s (move|keep going|proceed)|move (on|forward|along)|moving on)\b/i;
-function memberDeflecting(message: string): boolean {
-  const m = (message ?? '').replace(/[‘’]/g, "'");
-  return memberWantsToWrap(m) || DEFLECT_RE.test(m);
 }
 
 // --- reclaim de-duplication (Jay's walk: "Ride my bike more" ×2, "lose 25 lbs" twice) -------------------
@@ -375,101 +326,6 @@ function mergeStaged(prev: Collected, rec?: Partial<Collected>): Collected {
     rec.reclaimList.forEach((item, i) => appendReclaim(next, item, rec.reclaimCategories?.[i] ?? ''));
   }
   return next;
-}
-
-// Stage-scoped gap backstop: if the model conversed but never called set_gap, capture the member's OWN
-// gap-stage message as the gap — but ONLY while we're in the gap stage and ONLY if it reads as a real fade
-// narrative (not a wrap/affirm or a one-liner). Safe by construction: in the gap stage there is no reclaim
-// list being collected, so the v1 reclaim-as-gap contamination simply cannot occur here.
-const STAGED_GAP_MIN_CHARS = 80;
-function shouldCaptureStagedGap(message: string): boolean {
-  const m = (message ?? '').trim();
-  if (memberDeflecting(m) || isAffirmation(m) || isForwardAmbition(m)) return false; // never grab a wrap/refusal/ambition
-  // A clear Door signal IS a fade even in a terse fragment ("Knee. Then divorce." → The Marriage). Capture it
-  // regardless of length — otherwise a terse member's whole story (under the char floor) is never captured and
-  // they strand. matchDoors is specific, so this fires only on a real recognized event, not noise.
-  if (matchDoors(m).length > 0) return true;
-  // Otherwise an inferred gap must be a substantial real-fade narrative WITH a loss signal — this is what stops
-  // a no-fade optimizer's ambition ("pressure-test my SaaS idea") from being backstopped as a fade.
-  if (m.length < STAGED_GAP_MIN_CHARS) return false;
-  return isRealFade(m) && hasLossSignal(m);
-}
-
-// Stage-scoped RECLAIM backstop. Same discipline as the gap backstop, and just as load-bearing: the live
-// model frequently reflects a member's wants WITHOUT calling add_reclaim_item (the #1 real failure), which
-// would strand the list at 0 forever. In the reclaim stage every substantive member message IS a want, so
-// capturing it is safe — there's no other field to contaminate. We reject wraps/affirms/uncertainty/stage-
-// directions so refusals and "that's all" don't become list items. Lossy-but-recoverable: the card is the
-// seatbelt for any mis-grab.
-const UNCERTAIN_RE = /\b(i (don'?t|do not) know|not sure|no idea|i'?m not sure|dunno|can'?t think of)\b/i;
-function shouldCaptureStagedReclaim(message: string): boolean {
-  const m = (message ?? '').replace(/\*[^*]*\*/g, '').replace(/[‘’]/g, "'").trim(); // drop *stage directions*
-  if (m.length < 6) return false;
-  if (memberWantsToWrap(m) || isAffirmation(m) || correctsReflection(m)) return false;
-  if (UNCERTAIN_RE.test(m) && m.length < 40) return false;
-  return true;
-}
-
-// ONE "the member is closing the Reclaim List" signal — consolidates the three close shapes (wrap, whole,
-// and the reclaim-specific "that's the list / those are the real ones" closings) per the capture-quality
-// rule: when a close-detection shape recurs, unify the detectors rather than widen a regex elsewhere. This
-// is what makes the warm nudge fire at the RIGHT moment (when they soft-close below the minimum) instead of
-// a bare "what else?" that reads as not-listening — and it keeps the backstop from grabbing a close/refusal
-// as a fabricated item.
-const RECLAIM_CLOSE_RE =
-  /\b(that'?s (actually |really |pretty much |honestly )?(it|all|everything|the list)|those are (the )?(real|only|main|biggest) ones|that'?s (my|the) (real )?list|the (real )?list( is)?( complete| done| it)?|i'?m (good|done|ready)|i'?ve (answered|said|told you)|(let'?s |can we )?(move on|moving on|move forward|keep going)|i'?m (stepping away|not answering|done answering)|(that )?(about )?sums it up|that'?ll do|that covers it|(that'?s )?(a )?(pretty |fairly )?(solid|good|decent|fair|great) (start|list)|good enough)\b/i;
-function memberClosingReclaim(message: string): boolean {
-  const m = (message ?? '').replace(/[‘’]/g, "'");
-  return memberDeflecting(m) || confirmsWhole(m) || RECLAIM_CLOSE_RE.test(m);
-}
-
-// The member signalling the fade story is WHOLE ("that's the whole of it", "no more", "that's how it went").
-// Until this fires (or a turn adds nothing new), the gap stage keeps RECEIVING — so a multi-event story fully
-// surfaces (and its Doors with it) before we reflect and advance.
-const GAP_DONE_RE =
-  /\b(that'?s (the )?(whole|all|it|everything|gist|story|picture|heart)|the (whole|full) (story|picture|thing|of it)|no(thing)? (more|else)|no more|that'?s how it (went|happened|unfolded)|that covers it|that'?s (about|more or less|pretty much|roughly|basically) it|that was (about|more or less|pretty much) it|more or less it|it for now|(that )?(about )?sums it up|that'?s most of it|pretty much it|that'?s the heart)\b/i;
-function memberSignalsGapComplete(message: string): boolean {
-  const m = (message ?? '').replace(/[‘’]/g, "'");
-  return confirmsWhole(m) || memberWantsToWrap(m) || GAP_DONE_RE.test(m);
-}
-
-// At the gap reflect-confirm we ask "…does it land, or is there more to it?" — so an answer that ADDS material
-// ("yeah, there was work too") is a MORE signal, NOT a move-on. The old engine advanced on anything that wasn't
-// a textual CORRECTION, so this invited-more got read as confirmation → premature jump to Reclaim → the model
-// backtracked to explore the thread while the engine thought it was in Reclaim → gap answers polluted the list
-// (Jay's walk points 3/5/6). Detect it and STAY: not a clean close, not a bare acknowledgement, and the residual
-// after stripping the leading "yeah/yes" is substantive (and not a short "that lands"-style confirmation). Bias
-// to stay — drawing out one more thread is cheap (bounded by GAP_MAX_DEPTH); advancing early is the harm.
-// Detection = strip the acknowledgement, see what's LEFT. A confirmation ("yes, you've got it", "that lands",
-// "exactly right") is nothing but affirmation + a meta-acknowledgement — stripping both leaves no content word.
-// An addition ("yeah, there was work too", "and my mom got sick") leaves a real topic behind. This is more
-// robust than a length threshold (a short confirm and a short addition are the same length) and doesn't need a
-// growing list of "more"-phrases — it recognises the closed set of confirmations and treats everything else as
-// still-telling-it. (bias to STAY: a false stay costs one bounded draw-out turn; a false advance desyncs.)
-const AFFIRM_PREFIX_RE =
-  /^(yeah|yes|yep|yup|sure|ok(ay)?|right|true|correct|exactly|totally|definitely|absolutely|for sure|i guess|kind of|sort of|mm+|uh[ -]?huh)[\s,.!—–-]*/i;
-const GAP_CONFIRM_WORDS_RE =
-  /\b(you'?(ve|d| have)?\s*(got|nailed)\s*(it|that)|that'?s (it|right|me|correct|the one|spot on)|(it|that) (lands|fits|works|tracks)|spot on|exactly( right)?|absolutely|totally|definitely|perfect(ly)?|precisely|nailed it|got it|makes sense|understood)\b/gi;
-function memberAddingMoreGap(message: string): boolean {
-  const m = (message ?? '').replace(/[‘’]/g, "'").trim();
-  if (!m) return false;
-  if (memberSignalsGapComplete(m)) return false; // "that's it / no more / more or less it for now" → advance
-  const residual = m.replace(AFFIRM_PREFIX_RE, '').replace(GAP_CONFIRM_WORDS_RE, ' ').replace(/[^a-z]+/gi, ' ').trim();
-  const contentWords = residual.split(/\s+/).filter((w) => w.length >= 3);
-  if (contentWords.length === 0) return false; // bare acknowledgement/negation → advance
-  if (hasLossSignal(m)) return true; // a new loss / Door signal → clearly more fade material, keep drawing out
-  // Otherwise require a FRESH CHAPTER's worth of content — not a short meta reply ("I just did", "not really").
-  // Bias to ADVANCE: a false "more" loops the beat (Jay: "won't take yes"); a missed terse add is caught by the card.
-  return m.length >= 25 && contentWords.length >= 4;
-}
-
-// A DISPUTE at the gap confirm ("no, that's not quite right") — the member says the reflection is WRONG, with no
-// new content to append. Distinct from a bare "no/nope" (which answers "…or is there more?" = no more = done) and
-// from an ADDITION (new material). Keyed on explicit wrongness so a plain negation never reopens the beat.
-const GAP_DISPUTE_RE =
-  /\b(that'?s not (it|right|how|quite)|that wasn'?t (it|right|how)|not (quite|really) (it|right|how)|you'?ve got it wrong|that'?s wrong|you'?re wrong|not what i (said|meant)|doesn'?t (fit|sound|feel) right)\b/i;
-function memberDisputesGap(message: string): boolean {
-  return GAP_DISPUTE_RE.test((message ?? '').replace(/[‘’]/g, "'"));
 }
 
 // Every member message so far + the current one — the corpus we scan for Doors. rita reveals her Doors
@@ -604,15 +460,16 @@ export function applyStagedTurn(
       awaitingConfirm = true; // stay in confirm — re-reflect with the just-added want included
       // fall through to the shared return
     } else if (stage === 'gap') {
-      // GAP CONFIRM — resolved here, in its OWN logic, because the confirm asks "…or is there more to it?", so a
-      // bare "no / nope / that's it / more or less it for now" means NO MORE = DONE → ADVANCE (NOT "you got it
-      // wrong"). This is what stops the beat looping when the member is plainly finished (Jay's walk: "won't take
-      // yes for an answer"). Only a real DISPUTE reopens; only substantive NEW material keeps drawing out.
-      if (memberDisputesGap(memberMessage)) {
+      // GAP CONFIRM — the confirm asks "…or is there more to it?", so a bare "no / nope / that's it / more or
+      // less it for now" means NO MORE = DONE → ADVANCE (NOT "you got it wrong"). resolveGapConfirm owns that
+      // meaning (dispute / addition / done); the engine just acts on it. This is what stopped the beat looping
+      // when the member is plainly finished (Jay's walk: "won't take yes for an answer").
+      const intent = resolveGapConfirm(memberMessage);
+      if (intent === 'dispute') {
         // "no, that's not quite right" — wrong, no new content → reopen, but KEEP the gap + Doors (never wipe).
         awaitingConfirm = false;
         finalReply = REOPEN_GAP;
-      } else if (memberAddingMoreGap(memberMessage)) {
+      } else if (intent === 'addition') {
         // a new chapter (or a correction WITH content) → append it, re-derive Doors, and DRAW IT OUT (the model's
         // own follow-up carries the beat; withQuestion nudges with gapMore if it didn't ask). Never wipe what's there.
         const modelTaggedGap = model.record?.gap !== undefined && model.record.gap !== '';
