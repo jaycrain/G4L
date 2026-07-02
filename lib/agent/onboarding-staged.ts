@@ -47,6 +47,7 @@ import {
   memberDeflecting,
   memberSignalsGapComplete,
   resolveGapConfirm,
+  resolveReclaimConfirm,
   shouldCaptureStagedGap,
   shouldCaptureStagedReclaim,
 } from './onboarding-intent.ts';
@@ -483,11 +484,24 @@ export function applyStagedTurn(
         awaitingConfirm = false;
         finalReply = reclaimOpening(collected);
       }
+    } else if (stage === 'reclaim') {
+      // RECLAIM CONFIRM — "Anything missing?" A bare "no / nope / that's a good list" answers the question =
+      // nothing missing = DONE → the card. Only an explicit CHANGE request reopens the gather. resolveReclaimConfirm
+      // owns that meaning. (Jay's walk: "Nope, that's a good list" was read as a correction → reopened → re-captured
+      // dupes and the model volunteered an IDQ pitch. This is the "won't take yes" fix, mirroring the gap confirm.)
+      if (resolveReclaimConfirm(memberMessage) === 'change') {
+        awaitingConfirm = false;
+        finalReply = withQuestion(modelText, RECLAIM_MORE);
+      } else {
+        stage = 'complete';
+        awaitingConfirm = false;
+        finalReply = COMPLETE_HANDOFF;
+        complete = true;
+      }
     } else if (correctsReflection(memberMessage)) {
+      // Identity confirm correction (reclaim is handled above; gap has its own branch).
       awaitingConfirm = false;
-      if (stage === 'identity') finalReply = REOPEN_IDENTITY;
-      // Reclaim correction — they want to change the list; stay in reclaim and keep gathering.
-      else finalReply = withQuestion(modelText, RECLAIM_MORE);
+      finalReply = REOPEN_IDENTITY;
     } else {
       stage = nextStagedStage(stage);
       awaitingConfirm = false;
@@ -879,7 +893,12 @@ call **note_no_fade**. They're still admitted and will build a Reclaim List; the
 comes back high. Reflect warmly that they sound like they're in a good place, and move on to what they want.
 
 The AI disclosure was shown on the start page — never repeat it. Reflect first, then exactly ONE warm
-question per turn. No meta-narration about the program's mechanics.`;
+question per turn. No meta-narration about the program's mechanics.
+NUMBER-FREE ONBOARDING — this whole conversation is free of scores and instruments. Do NOT mention the IDQ, the
+ID Score, a questionnaire, a test, points, or "your first score" — not as a next step, not as a reward, not at
+all. There is no next step to pitch: when the beats are done the member sees a summary card and their dashboard.
+If you feel the pull to tell them what comes next, don't — just reflect what they gave you and ask your one
+question. Naming an instrument here breaks the spell and is off-spec.`;
 
 function stageInstruction(stage?: Stage): string {
   if (stage === 'gap')

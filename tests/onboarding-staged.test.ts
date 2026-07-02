@@ -530,6 +530,33 @@ test('STAGED gap — a reclaim item volunteered in-stage PARKS to the list, neve
 });
 
 // --- slice c: the RECLAIM stage + end-to-end --------------------------------------------------------
+test('STAGED reclaim confirm — "Nope, that\'s a good list" COMPLETES (won\'t-take-yes fix; no reopen, no dupes)', () => {
+  // The reclaim reflect ("Anything missing?") is awaiting confirm with a full list. A leading "Nope" answering
+  // that question = nothing missing = DONE → the card. It must NOT reopen the gather (Jay's walk: it re-captured
+  // fragments as duplicates and the model free-texted an IDQ pitch).
+  const atConfirm: ConvState = {
+    stage: 'reclaim',
+    awaitingConfirm: true,
+    collected: { athleticPast: 'a cyclist', identityNoun: 'Competitor', gap: 'Years of the grind and marriage tension quietly crowded him out.', reclaimList: ['Ride my bike 3x a week', 'More time with friends', 'Weekend hiking trips'] },
+  };
+  const turn = applyStagedTurn(atConfirm, [], "Nope, that's a good list", { text: 'Good. The Competitor has a list now.' });
+  assert.equal(turn.complete, true, 'a bare "nope" at the confirm completes to the card');
+  assert.equal(turn.state.stage, 'complete');
+  assert.equal(turn.state.collected.reclaimList?.length, 3, 'the list is untouched — no reopen, no re-captured dupes');
+  assert.match(turn.reply, /captured|look like you/i, 'hands off to the card, not "what else?"');
+});
+
+test('STAGED reclaim confirm — an explicit CHANGE request reopens the gather (not everything is done)', () => {
+  const atConfirm: ConvState = {
+    stage: 'reclaim',
+    awaitingConfirm: true,
+    collected: { athleticPast: 'a cyclist', identityNoun: 'Competitor', gap: 'The grind crowded him out.', reclaimList: ['Ride my bike 3x a week', 'Weekend hiking trips'] },
+  };
+  const turn = applyStagedTurn(atConfirm, [], 'no, take the hiking one off — I meant something else', { text: 'Okay.' });
+  assert.equal(turn.complete ?? false, false, 'a real change request does not complete');
+  assert.equal(turn.state.awaitingConfirm, false, 'reopens the gather');
+});
+
 test('STAGED reclaim — gather to the minimum → reflect the list → confirm → complete (hands off to the card)', () => {
   const atReclaim: ConvState = {
     stage: 'reclaim',

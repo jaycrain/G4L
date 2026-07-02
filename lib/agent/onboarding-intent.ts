@@ -185,3 +185,19 @@ export function resolveGapConfirm(message: string): GapConfirmIntent {
   if (memberAddingMoreGap(message)) return 'addition';
   return 'done';
 }
+
+// The reclaim reflect-confirm asks "Anything missing before we move on?". A bare "no / nope / that's a good list /
+// that's the list" ANSWERS that question — nothing missing = DONE → the card. Only an explicit request to CHANGE
+// the list ("no, take the hiking one off", "actually I meant…") reopens. (New OFFERS — another want — are handled
+// by the engine's late-add before this is consulted.) Without this, correctsReflection read the leading "nope" as
+// a correction and reopened, re-capturing fragments as duplicates and letting the model free-text an IDQ pitch
+// (Jay's walk). Mirrors resolveGapConfirm: a plain negation answering the question is DONE, not a dispute.
+const NEGATION_PREFIX_RE = /^(no|nope|nah|not really|not quite)[\s,.!—–-]*/i;
+export type ReclaimConfirmIntent = 'change' | 'done';
+export function resolveReclaimConfirm(message: string): ReclaimConfirmIntent {
+  const m = (message ?? '').replace(/[‘’]/g, "'").trim();
+  if (!correctsReflection(m) || memberClosingReclaim(m)) return 'done'; // affirm / bare-no / close → done
+  // A correction — reopen only if there's real substance to change (not a bare "no/nope").
+  const residual = m.replace(NEGATION_PREFIX_RE, '').replace(AFFIRM_PREFIX_RE, '').replace(/[^a-z]+/gi, ' ').trim();
+  return residual.split(/\s+/).filter((w) => w.length >= 3).length >= 3 ? 'change' : 'done';
+}

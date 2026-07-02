@@ -271,8 +271,11 @@ export default function OnboardingChat() {
       ) : ready && state ? (
         (() => {
           // §2c Confirmation card — DIRECTIONAL copy for wordsmithing. Holistic reflect-back, number-free,
-          // verbatim where it matters, correctable; nothing commits until "this is me". The member is the
-          // final check before a member row is created — they catch a dropped item or a wrong Door here.
+          // verbatim where it matters, correctable; nothing commits until "this is me". The member is the final
+          // check before a member row is created — they catch a dropped item here. NOTE: Doors are captured
+          // SILENTLY for routing but are NOT shown here — they're never discussed at intake ("receive, don't
+          // excavate"), so surfacing an inferred/occasionally-wrong Door the member never named erodes trust.
+          // Doors get drawn out and confirmed in their dedicated session in Reconnect.
           const card = buildSummaryCard(state.collected);
           return (
             <div className="onboard-summary">
@@ -283,8 +286,6 @@ export default function OnboardingChat() {
                 <dd>{card.identityLabel ?? 'You’ll name this through the work — that part comes soon.'}</dd>
                 <dt>How the gap opened</dt>
                 <dd>{card.gap}</dd>
-                <dt>Door{card.doors.length === 1 ? '' : 's'}</dt>
-                <dd>{card.doors.map((d) => d.displayName).join(', ') || '—'}</dd>
                 <dt>What you want back</dt>
                 <dd>
                   <ul className="summary-reclaim">

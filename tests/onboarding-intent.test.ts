@@ -8,9 +8,11 @@ import {
   memberClosingReclaim,
   memberDeflecting,
   resolveGapConfirm,
+  resolveReclaimConfirm,
   shouldCaptureStagedGap,
   shouldCaptureStagedReclaim,
   type GapConfirmIntent,
+  type ReclaimConfirmIntent,
 } from '../lib/agent/onboarding-intent.ts';
 
 // ============================================================================================================
@@ -52,6 +54,23 @@ test('intent · resolveGapConfirm — done / dispute / addition across the walk 
   for (const [msg, expected] of GAP_CONFIRM) {
     assert.equal(resolveGapConfirm(msg), expected, `"${msg}" → ${expected}`);
   }
+});
+
+// --- resolveReclaimConfirm: the reclaim reflect-confirm ("Anything missing?") -------------------------------
+// done = go to the card · change = reopen the gather. A bare "no/nope/that's a good list" is DONE, not a change.
+const RECLAIM_CONFIRM: [string, ReclaimConfirmIntent][] = [
+  ["Nope, that's a good list", 'done'], // Jay's walk — was wrongly reopening + re-capturing dupes
+  ['No', 'done'],
+  ['Nope', 'done'],
+  ["that's the list", 'done'],
+  ['looks right', 'done'],
+  ['yeah that’s everything', 'done'],
+  ["no, take the hiking one off", 'change'],
+  ['actually I meant paid creative work, not just any writing', 'change'],
+  ["that's not right — swap the last two", 'change'],
+];
+test('intent · resolveReclaimConfirm — bare "no" is done, only a real change reopens', () => {
+  for (const [msg, expected] of RECLAIM_CONFIRM) assert.equal(resolveReclaimConfirm(msg), expected, `"${msg}"`);
 });
 
 // --- correctsReflection: identity / reclaim confirm --------------------------------------------------------
