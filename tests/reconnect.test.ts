@@ -25,6 +25,18 @@ test('reconnect callback · a named Door → the revisable check lands on it by 
   assert.match(reply, /deeper/i, 'signals the deeper work');
 });
 
+test('reconnect callback · MULTIPLE recognized Doors → primary named, the second acknowledged (never dropped)', () => {
+  const committed: Collected = { identityNoun: 'Player', doors: ['grind', 'marriage'], gap: 'x' };
+  const reply = reconnectCallback(committed);
+  assert.match(reply, /The Grind/, 'the primary Door is named');
+  assert.match(reply, /The Marriage/, 'the second recognized Door is acknowledged, not silently dropped');
+  assert.match(reply, /tangled up/i, 'lightly links them rather than listing');
+  // three+ doors: primary named, the rest acknowledged as a group
+  const many = reconnectCallback({ identityNoun: 'Player', doors: ['grind', 'marriage', 'body'], gap: 'x' });
+  assert.match(many, /The Grind/, 'primary named even with several');
+  assert.match(many, /couple of others|stacked/i, 'the rest are acknowledged, not enumerated');
+});
+
 test('reconnect callback · GRACEFUL DEGRADE — no Door tagged → opens on the gap story, still revisable', () => {
   const committed: Collected = { identityNoun: 'Runner', doors: [], gap: 'It opened slowly when caregiving took all my time.' };
   const reply = reconnectCallback(committed);

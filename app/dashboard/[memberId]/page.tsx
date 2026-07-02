@@ -17,6 +17,7 @@ import CompanionHero from '../companion-hero.tsx';
 import IdentityStrip from '../identity-strip.tsx';
 import PostCeremonyTour from '../post-ceremony-tour.tsx';
 import Threshold from '../threshold.tsx';
+import { reconnectEnabled } from '../../../lib/agent/reconnect.ts';
 import MeasureCard from '../measure-card.tsx';
 import DashboardSync from '../dashboard-sync.tsx';
 import TrackThis from '../track-this.tsx';
@@ -177,6 +178,16 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
           nextSessionTitle={litCurrent?.title ?? null}
           autoStart={!tourCompleted}
         />
+      )}
+
+      {/* v2.2 Reconnect entry — flag-gated (off in prod until the coupled v2.1+v2.2 flip). The dashboard is where
+          a member launches the deeper session; the callback (§2a) picks up from their committed captures. */}
+      {reconnectEnabled() && (
+        <div className="reconnect-entry">
+          <Link href={`/reconnect/${memberId}`} className="reconnect-cta">
+            Begin Reconnect — go deeper →
+          </Link>
+        </div>
       )}
 
       <div className="member-greeting">

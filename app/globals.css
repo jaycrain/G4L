@@ -310,6 +310,15 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .chat-continue { margin-top: 0.75rem; }
 .chat-continue button { margin: 0; width: 100%; }
 
+/* v2.2 Reconnect (skeleton): the dashboard entry CTA + the session surface. Reuses .chat/.bubble/.chat-input. */
+.reconnect-entry { margin: 0 0 1rem; }
+.reconnect-cta {
+  display: inline-block; background: var(--teal); color: var(--white);
+  padding: 0.7rem 1.15rem; border-radius: 10px; font-weight: 600; text-decoration: none;
+}
+.reconnect-cta:hover { filter: brightness(0.95); }
+.reconnect-page { max-width: 720px; margin: 0 auto; padding: 2rem 1.25rem; }
+
 /* Onboarding confirmation card — the member's final check before the IDQ (a Door into the product). */
 .onboard-summary { border: 1px solid var(--panel-line); border-radius: 12px; padding: 1.1rem 1.2rem; background: #fff; box-shadow: 0 2px 12px rgba(42, 42, 42, 0.08); }
 .onboard-summary h2 { margin: 0 0 0.3rem; font-size: 1.15rem; color: var(--navy); }

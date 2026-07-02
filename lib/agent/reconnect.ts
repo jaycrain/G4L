@@ -11,8 +11,9 @@
 //    conversation. Any door/identity REVISION happens later in the Doors excavation (§2b/§3.3), member-confirmed
 //    and versioned — so this increment is purely additive: it writes nothing.
 
-import { DOORS } from '../doors.ts';
+import { DOORS, isDoorSlug, type DoorSlug } from '../doors.ts';
 import { identityLabel } from '../member/identity.ts';
+import type { Db } from '../db/schema.ts';
 import { runArcTurn, type ArcConfig, type StageDef } from './onboarding-staged.ts';
 import type { Collected, ConvMessage, ConvState, ModelTurn, Turn } from './onboarding.ts';
 
@@ -28,16 +29,27 @@ export function reconnectEnabled(): boolean {
 // then hands into the deeper work. Graceful degrade: thin/null captures never fake continuity.
 export function reconnectCallback(c: Collected): string {
   const identity = identityLabel(c.identityNoun); // "the Player", or '' if skipped
-  const primaryDoor = (c.doors ?? [])[0];
-  const doorName = primaryDoor ? (DOORS.find((d) => d.slug === primaryDoor)?.displayName ?? null) : null;
+  // Onboarding captures the PRIMARY door(s) — one, several, or null (recognition, not routing; the full
+  // 12-relevance SET is §2b's output, which doesn't exist yet). `c.doors` arrives primary-first. Reference the
+  // primary by name; when a second was recognized, lightly acknowledge it — never silently drop one.
+  const doorNames = (c.doors ?? [])
+    .map((slug) => DOORS.find((d) => d.slug === slug)?.displayName)
+    .filter((n): n is NonNullable<typeof n> => !!n);
   const gap = (c.gap ?? '').trim();
 
-  if (doorName) {
+  if (doorNames.length > 0) {
+    const [primary, ...others] = doorNames;
+    const doorPhrase =
+      others.length === 0
+        ? primary
+        : others.length === 1
+          ? `${primary} — with ${others[0]} tangled up in it`
+          : `${primary}, with a couple of others stacked on top`;
     // Richest path: a named Door → the revisable check lands on it by name.
     return (
       `${identity ? `Last time, we found who you're reclaiming — ${identity} — and it` : 'When we last talked, it'} ` +
-      `felt like the distance started with ${doorName}. Still where it feels like it began, or has something shifted ` +
-      `since? Either way — this time we go deeper into it.`
+      `felt like the distance started with ${doorPhrase}. Still where it feels like it began, or has something shifted ` +
+      `since? Either way — this time, we go deeper.`
     );
   }
   if (gap) {
@@ -55,10 +67,41 @@ export function reconnectCallback(c: Collected): string {
 }
 
 // The Reconnect opening turn (parallels stagedOpening): the callback message + the arc's initial state, with the
-// COMMITTED captures pre-loaded into `collected` (the live wrapper reads member_profile to build them — not built
-// this increment). Stage 'entry' handles the member's response to the callback.
+// COMMITTED captures pre-loaded into `collected`. Stage 'entry' handles the member's response to the callback.
 export function reconnectOpening(committed: Collected): Turn {
   return { reply: reconnectCallback(committed), state: { stage: 'entry', collected: committed }, complete: false };
+}
+
+// --- the live read: reconstruct the COMMITTED captures from member_profile (never the transcript) -----------
+// Reads exactly what onboarding committed: the identity, the gap story (intake_gap), the primary Door(s) — the
+// full recognized set from member_door, primary-first, falling back to named_door for legacy members — and the
+// reclaim list (not used in the opener, but part of the captures the deeper beats will read). Read-only.
+export async function loadReconnectCaptures(db: Db, memberId: string): Promise<Collected | null> {
+  const m = (
+    await db.query<{ identity_noun: string | null; named_door: string | null; intake_gap: string | null; reclaim_list: string[] | null }>(
+      'select identity_noun, named_door, intake_gap, reclaim_list from member_profile where member_id = $1',
+      [memberId],
+    )
+  ).rows[0];
+  if (!m) return null;
+
+  // The full recognized Door set, PRIMARY FIRST (recognition, not a routing set). Fall back to named_door.
+  const doorRows = (
+    await db.query<{ door_slug: string; is_primary: boolean }>(
+      'select door_slug, is_primary from member_door where member_id = $1 order by is_primary desc, sort_order',
+      [memberId],
+    )
+  ).rows;
+  let doors: DoorSlug[] = doorRows.filter((r) => isDoorSlug(r.door_slug)).map((r) => r.door_slug as DoorSlug);
+  if (doors.length === 0 && isDoorSlug(m.named_door)) doors = [m.named_door as DoorSlug];
+
+  return {
+    identityNoun: m.identity_noun ?? undefined,
+    identitySkipped: !m.identity_noun, // no committed noun → named later at Identity Excavation
+    doors,
+    gap: m.intake_gap ?? '',
+    reclaimList: Array.isArray(m.reclaim_list) ? m.reclaim_list : [],
+  };
 }
 
 // --- RECONNECT_ARC (config #2) — entry/callback built; the rest declared as stubs -----------------------------
