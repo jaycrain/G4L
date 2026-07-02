@@ -21,7 +21,14 @@ export type Stage = 'identity' | 'identity_name' | 'reclaim' | 'door' | 'complet
   // v2.0 staged-capture engine (lib/agent/onboarding-staged.ts) uses 'gap' for the "how it opened" stage.
   | 'gap'
   // v2.1 (Decision E): 'declined' is the terminal off-ramp for a genuinely-thriving no-fade member.
-  | 'declined';
+  | 'declined'
+  // v2.2 Reconnect arc (config #2 on the shared kernel): its stage ids. 'entry' = the callback (§2a).
+  | 'entry'
+  | 'doors'
+  | 'measurement'
+  | 'visioning'
+  | 'checkpoint'
+  | 'ceremony';
 
 export type Collected = {
   athleticPast?: string; // Step 1: the past self, in the member's own words
@@ -403,7 +410,14 @@ const STAGE_PROMPT: Record<Stage, string> = {
   gap: doorPrompt(), // v1 never sets 'gap' (that's the v2.0 staged engine) — present only for type completeness
   complete: "That's everything we need. Let's look at where you're starting from next.",
   declined: 'This may not be your season for it — and the door stays open whenever that changes.', // terminal; never appended
-
+  // v2.2 Reconnect stages are present only for type completeness — v1 never routes here, and the Reconnect
+  // engine (lib/agent/reconnect.ts) supplies its own openers. A neutral fallback keeps the safety net honest.
+  entry: 'Where would you like to pick things up?',
+  doors: 'What feels like it opened the distance — take me into it.',
+  measurement: 'Ready to take a clear read of where things stand?',
+  visioning: 'What do you want to be true again?',
+  checkpoint: 'How are you doing with the work right now?',
+  ceremony: "Let's look at how far you've come.",
 };
 
 // Guarantee a non-final turn ends with a forward question, so the member is never stranded.

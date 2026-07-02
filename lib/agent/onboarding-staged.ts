@@ -397,8 +397,8 @@ function memberPushedPast(stage: StagedStage, message: string, c: Collected): bo
 // fixtures prove this extraction bit-for-bit behavior-identical without editing the safety net. TWO-MODE:
 // every onboarding stage is 'drawout'; the 'administered' path (IDQ/Grinta, no depth kernel) lands with §2c.
 
-type StageId = string;
-type StageMode = 'drawout' | 'administered';
+export type StageId = string;
+export type StageMode = 'drawout' | 'administered';
 
 // A stage's private counter bag — a loose key/value map. Each stage reads/writes its OWN keys through a typed
 // view (IdentityScratch/GapScratch/ReclaimScratch below), so ConvState carries ONE `stageScratch` map instead of
@@ -437,7 +437,7 @@ interface Beat {
 // preserved as a contract so the Phase 2 regex→model-signaled swap keeps it.
 type StageHandler = (b: Beat) => Turn | void;
 
-interface StageDef {
+export interface StageDef {
   id: StageId;
   mode: StageMode;
   opener: (c: Collected) => string; // the reply when the machine ADVANCES into this stage
@@ -447,7 +447,7 @@ interface StageDef {
   forceProgress?: StageHandler; // the runaway backstop's per-stage action (early-return Turn, or mutate + fall through)
 }
 
-interface ArcConfig {
+export interface ArcConfig {
   id: string;
   stageOrder: StageId[];
   stages: Record<StageId, StageDef>;
