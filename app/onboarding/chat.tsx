@@ -22,6 +22,9 @@ export default function OnboardingChat() {
   const [phase, setPhase] = useState<'gate' | 'chat'>('gate');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  // Decision Z: the password is collected UPFRONT at the gate (one clean signup moment) but held only in memory —
+  // the account is still created at the "This is me" commit, and the password is never persisted client-side.
+  const [password, setPassword] = useState('');
   const [messages, setMessages] = useState<ConvMessage[]>([]);
   const [state, setState] = useState<ConvState | null>(null);
   const [input, setInput] = useState('');
@@ -91,10 +94,15 @@ export default function OnboardingChat() {
   async function begin(e: React.FormEvent) {
     e.preventDefault();
     if (!ctx.name || !ctx.email) return;
-    ls.set(LS.name, ctx.name); // remember so a return visit pre-fills (and can auto-resume)
+    if (password.length < 8) {
+      setError('Please choose a password of at least 8 characters.');
+      return;
+    }
+    ls.set(LS.name, ctx.name); // remember so a return visit pre-fills name + email (Decision Z) — never the password
     ls.set(LS.email, ctx.email);
-    // No password here (§3.5 / Decision R): one password, once, at the post-card save. Name + email are all
-    // we need to open the conversation and to save-and-return; the account is created only if they stay.
+    // Decision Z: password collected here (one signup moment) and held in memory only. The account is still created
+    // at the "This is me" commit — nobody who abandons leaves a half-account — so the card flows straight to the
+    // Ceremony with no password interruption. A returner re-types just the password (name + email pre-fill).
     setError(null);
     setPhase('chat');
     setPending(true);
@@ -187,17 +195,24 @@ export default function OnboardingChat() {
     setPending(true);
     setError(null);
     try {
-      const r = await finalizeOnboardingAction({ ctx, state, token: tokenRef.current, cardReturns });
+      const r = await finalizeOnboardingAction({ ctx, state, token: tokenRef.current, cardReturns, password });
       if (!r.ok) {
-        setError('crisis' in r && r.crisis ? r.message : r.errors.join('; '));
+        if ('code' in r) {
+          // A returner whose account already exists — send them to log in, not into a second account.
+          clearOnboardingStorage();
+          router.push('/login');
+          return;
+        }
+        setError('message' in r ? r.message : r.errors.join('; '));
         setPending(false);
         return;
       }
       // Committed — the saved onboarding (token, name/email, draft) can go.
       clearOnboardingStorage();
-      // ONE PASSWORD, ONCE (§3.5 / Decision R): the account is created at the dedicated post-card save step,
-      // which sets the password, starts the session, and continues to the IDQ. No upfront password anymore.
-      router.push(`/account/setup?member=${r.memberId}`);
+      // Decision Z: the "This is me" commit creates the account (member + credential from the upfront password),
+      // starts the session, and hands STRAIGHT to what's next — the light Ceremony (v2.1) or the IDQ (v1). No
+      // /account/setup step; the Ceremony is never interrupted by a password form.
+      router.push(r.next ?? `/dashboard/${r.memberId}`);
     } catch {
       setError('That didn’t go through — please try again.');
       setPending(false);
@@ -233,7 +248,18 @@ export default function OnboardingChat() {
           <input id="name" type="text" value={name} onChange={(e) => setName(e.target.value)} required />
           <label htmlFor="email">Email</label>
           <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-          {/* One password, once — created later at the post-card save (§3.5 / Decision R). Nothing to set up to begin. */}
+          {/* Decision Z: password set once, here — held in memory, the account is created only when they confirm
+              the card, so the Ceremony is never interrupted by a signup step. */}
+          <label htmlFor="password">Choose a password</label>
+          <input
+            id="password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            autoComplete="new-password"
+            minLength={8}
+            required
+          />
           {error && <p className="error">{error}</p>}
           <button type="submit">Let’s begin →</button>
         </form>

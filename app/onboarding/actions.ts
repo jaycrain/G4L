@@ -22,6 +22,10 @@ import { buildSummaryCard } from '../../lib/agent/onboarding-contract.ts';
 import { logEvent } from '../../lib/telemetry/store.ts';
 import { proposeEntry } from '../../lib/playbook/store.ts';
 import { addFacet } from '../../lib/curriculum/store.ts';
+import { createCredential, hasCredential } from '../../lib/auth/store.ts';
+import { hashPassword } from '../../lib/auth/password.ts';
+import { startSession } from '../auth.ts';
+import { stagedEngineEnabled } from '../../lib/agent/onboarding-staged.ts';
 import type { Db } from '../../lib/db/schema.ts';
 
 export type TurnInput = {
@@ -112,10 +116,11 @@ export async function onboardingTurn(input: TurnInput): Promise<TurnOutput> {
   return { reply: turn.reply, state: turn.state, complete: turn.complete, crisis: turn.crisis, declined: turn.declined };
 }
 
-export type FinalizeInput = { ctx: Ctx; state: ConvState; token: string; cardReturns?: number };
+export type FinalizeInput = { ctx: Ctx; state: ConvState; token: string; cardReturns?: number; password: string };
 export type FinalizeOutput =
-  | { ok: true; memberId: string }
+  | { ok: true; memberId: string; next: string }
   | { ok: false; crisis: true; message: string }
+  | { ok: false; code: 'exists'; error: string }
   | { ok: false; crisis?: false; errors: string[] };
 
 /**
@@ -125,12 +130,22 @@ export type FinalizeOutput =
  */
 export async function finalizeOnboardingAction(input: FinalizeInput): Promise<FinalizeOutput> {
   const db = (await getDb()) as unknown as Db;
+  if (!input.password || input.password.length < 8) return { ok: false, errors: ['Please choose a password of at least 8 characters.'] };
   const res = await runOnboarding(db, getProvider(), collectedToFields(input.ctx, input.state.collected));
   if (!res.ok) {
     if ('crisis' in res && res.crisis) return { ok: false, crisis: true, message: res.message };
     const errors = 'errors' in res ? res.errors : ['Could not save your intake — please try again.'];
     return { ok: false, errors };
   }
+  // Decision Z: create the ACCOUNT here, at the commit — the credential from the password collected upfront at the
+  // gate — and start the session, so the card hands straight to the Ceremony with no /account/setup interruption.
+  // A returner whose account already exists is routed to /login instead of getting a second account (email-unique).
+  if (await hasCredential(db, res.memberId)) {
+    return { ok: false, code: 'exists', error: 'That email already has an account — please log in.' };
+  }
+  await createCredential(db, res.memberId, input.ctx.email.trim(), await hashPassword(input.password));
+  await startSession(res.memberId);
+  const next = stagedEngineEnabled() ? `/dashboard/${res.memberId}` : `/idq?member=${res.memberId}`;
   // Seed the named identity as the member's first facet (the identity strip). A member who chose
   // "not sure yet" has no identityNoun — their first facet comes from Identity Excavation instead.
   const namedIdentity = input.state.collected.identityNoun?.trim();
@@ -179,5 +194,5 @@ export async function finalizeOnboardingAction(input: FinalizeInput): Promise<Fi
   } catch {
     /* telemetry is best-effort — never fail the commit over it */
   }
-  return { ok: true, memberId: res.memberId };
+  return { ok: true, memberId: res.memberId, next };
 }
