@@ -4,6 +4,7 @@ import { getDb } from '../../../../lib/db/index.ts';
 import { authorizeMember } from '../../../authz.ts';
 import { getSession } from '../../../../lib/curriculum/registry.ts';
 import { getSessionProgress } from '../../../../lib/curriculum/store.ts';
+import { reconnectEnabled } from '../../../../lib/agent/reconnect.ts';
 import type { Db } from '../../../../lib/db/schema.ts';
 import SessionRunner from './session-runner.tsx';
 import { frameForStep } from './session-actions.ts';
@@ -16,6 +17,11 @@ export default async function SessionPage({ params }: { params: Promise<{ member
   const { memberId, sessionId } = await params;
   if (!(await authorizeMember(memberId))) redirect('/login');
   const session = getSession(sessionId);
+  // v2.2 route-gate (Cowork E): when the new arc-based Reconnect is ON, the OLD Reconnect Sessions are
+  // UNREACHABLE — any entry to a phase:'reconnect' Session routes to the new arc (the callback that actually
+  // reads the committed captures). Non-Reconnect Sessions (Rewire/Rebuild/Reclaim) are untouched. With the flag
+  // OFF (prod), nothing changes. This is the single reliable gate — it catches every entry, however reached.
+  if (session?.phase === 'reconnect' && reconnectEnabled()) redirect(`/reconnect/${memberId}`);
 
   const crumb = (
     <div className="crumb">
