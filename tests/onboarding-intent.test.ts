@@ -112,6 +112,9 @@ const CLOSES: [string, boolean][] = [
   ["I'm good", true],
   ['those are the real ones', true],
   ['Pretty solid start', true], // soft close / acknowledgement (Jay's walk — was captured as a want)
+  ['That looks great', true], // a positive confirmation (Jay walk — was captured as "• That looks great")
+  ['that sounds perfect', true],
+  ['love it', true],
   ['that about sums it up', true],
   ['good enough', true],
   ["let's move on", true],

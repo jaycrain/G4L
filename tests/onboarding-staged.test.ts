@@ -593,6 +593,18 @@ test('STAGED gap→reclaim — a WARM bridge off the gap, not a cold pivot (Phas
   assert.match(turn.reply, /want back|first thing/i, 'still opens the reclaim ask');
 });
 
+test('STAGED reclaim confirm — "That looks great" is NOT captured as a want (Jay walk); it completes', () => {
+  const atConfirm: ConvState = { stage: 'reclaim', awaitingConfirm: true, collected: { athleticPast: 'a runner', identityNoun: 'Runner', gap: 'The caregiving years took it.', reclaimList: ['My running', '2-3 runs per week', 'a local 5k'] } };
+  // No model signal → the positive-ack regex must catch it (not append the confirmation as a list item).
+  const noSig = applyStagedTurn(atConfirm, [], 'That looks great', { text: 'Great.' });
+  assert.equal(noSig.complete, true, 'a positive confirmation completes to the card');
+  assert.equal(noSig.state.collected.reclaimList?.length, 3, 'the confirmation is NOT appended as a want');
+  // With the model's 'done' signal → the intent guard skips the late-add too.
+  const sig = applyStagedTurn(atConfirm, [], 'That looks great', { text: 'Great.', replyIntent: 'done' });
+  assert.equal(sig.complete, true);
+  assert.equal(sig.state.collected.reclaimList?.length, 3, 'no want captured on a done signal');
+});
+
 // --- slice c: the RECLAIM stage + end-to-end --------------------------------------------------------
 test('STAGED reclaim confirm — "Nope, that\'s a good list" COMPLETES (won\'t-take-yes fix; no reopen, no dupes)', () => {
   // The reclaim reflect ("Anything missing?") is awaiting confirm with a full list. A leading "Nope" answering

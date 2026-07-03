@@ -728,7 +728,11 @@ const reclaimStage: StageDef = {
   confirm(b) {
     // RECLAIM late-add: a want volunteered AT the confirm — neither a correction nor an affirmation — used to be
     // dropped as the beat advanced. Capture it and re-reflect. Only a genuinely NEW want re-opens (deduped).
+    // Phase 2.1 guard (Jay's "That looks great" bug): if the model signaled the reply is 'done' or 'dispute', it's
+    // NOT a new want — never capture a confirmation/dispute as a list item. Only 'more' (or no signal) can offer one.
     if (
+      b.model.replyIntent !== 'done' &&
+      b.model.replyIntent !== 'dispute' &&
       !b.refinedThisTurn && // a sharpening answer isn't a new want
       !correctsReflection(b.memberMessage) &&
       !memberClosingReclaim(b.memberMessage) &&
