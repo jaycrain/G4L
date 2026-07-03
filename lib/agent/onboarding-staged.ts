@@ -290,6 +290,16 @@ function reflectReclaim(c: Collected): string {
   return `Here’s what you want to reclaim:\n\n${items}\n\nAnything missing before we move on?`;
 }
 
+// The recite-mismatch guard's detector (Phase 2.2): is the model's turn RECITING/wrapping the Reclaim List in
+// prose? Two+ bulleted lines, or an explicit "your reclaim list" / "here's what you want to reclaim". When it is,
+// the engine reflects from the TAGS instead of letting that (possibly-untagged) phantom stand. Deliberately
+// narrow so a normal one-line reflection isn't caught.
+function modelRecitesList(text: string): boolean {
+  const t = text ?? '';
+  const bulletLines = (t.match(/\n\s*[-•*]\s/g) ?? []).length;
+  return bulletLines >= 2 || /\byour reclaim list\b|\bhere'?s what you want to reclaim\b/i.test(t);
+}
+
 // --- stage predicate ------------------------------------------------------------------------------------
 function identityTargetMet(c: Collected): boolean {
   return !!c.athleticPast && (!!c.identityNoun || !!c.identitySkipped);
@@ -663,6 +673,20 @@ const reclaimStage: StageDef = {
     if (offered && !modelCaptured && !b.refinedThisTurn) appendReclaim(b.collected, b.memberMessage);
     const count = b.collected.reclaimList?.length ?? 0;
     const grewThisTurn = count > b.priorReclaimLen; // a NEW unique want landed this turn (model or backstop)
+    // RECITE-MISMATCH GUARD (Phase 2.2): the Reclaim List is built ONLY from tags. If the model RECITES/wraps the
+    // list in prose (the phantom-list shape that silently dropped Joanne's items), NEVER let that prose stand —
+    // reflect from the TAGS so the member confirms what's actually captured. Under-tagging surfaces right here at
+    // the seatbelt instead of vanishing off the card. (If nothing's tagged yet, keep gathering rather than reflect
+    // an empty list.)
+    if (modelRecitesList(b.modelText)) {
+      if (count >= RECLAIM_LIST_FLOOR) {
+        b.reply = reflectReclaim(b.collected);
+        b.awaitingConfirm = true;
+      } else {
+        b.reply = RECLAIM_MORE;
+      }
+      return;
+    }
     if (count >= RECLAIM_LIST_TARGET || (count >= RECLAIM_LIST_MIN && closing)) {
       // Aim reached, OR at the minimum and closing — reflect the whole list and confirm.
       b.reply = reflectReclaim(b.collected);
@@ -1069,9 +1093,12 @@ function stageInstruction(stage?: Stage): string {
       'progress on. When a want is vague ("ride my bike more", "get in shape"), reflect it and ask ONE gentle ' +
       'question toward something trackable — a rough cadence, a number, a specific anchor ("what would that look ' +
       'like — a couple rides a week? weekends?"). Then call refine_reclaim_item with the sharper phrasing IN ' +
-      'THEIR WORDS to replace the vague one (do NOT add a second item). Take whatever they give — if they stay ' +
-      "general, that's fine; never force a metric, never turn it into a form, at most ONE sharpening per want. " +
-      'Already-concrete wants ("lose 25 lbs") need no sharpening — leave them.'
+      'THEIR WORDS to replace the vague one (do NOT add a second item). When they answer with the cadence/number/' +
+      'anchor ("2-3 times a week"), THAT drilled version IS the want — refine the tag to it ("run 2-3x a week"), ' +
+      'never leave the vague "My running" on the list. The captured item must be the concrete one, because the ' +
+      'whole program measures against this list. Take whatever they give — if they stay general, that\'s fine; ' +
+      'never force a metric, never turn it into a form, at most ONE sharpening per want. Already-concrete wants ' +
+      '("lose 25 lbs") need no sharpening — leave them.'
     );
   return '\n\nCURRENT STAGE: identity — who they were at their best, and the one-word handle (or skip).';
 }

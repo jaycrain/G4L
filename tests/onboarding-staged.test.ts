@@ -571,6 +571,18 @@ test('STAGED confirm — the model replyIntent drives the branch through the eng
   assert.equal(rdone.complete, true, 'done signal completes even on an ambiguous message');
 });
 
+test('STAGED reclaim — RECITE-MISMATCH guard (Phase 2.2): a prose list-recital never stands; the member confirms the TAGS', () => {
+  const atReclaim: ConvState = { stage: 'reclaim', collected: { athleticPast: 'a runner', identityNoun: 'Runner', gap: 'The caregiving years took it.', reclaimList: ['run 3x a week'] } };
+  // The model recites a FULLER list in prose but only "run 3x a week" is actually tagged (no record this turn).
+  const recital = "Here's what you want to reclaim:\n- Run 3x a week\n- Find a local 5k\n- Visit family in Italy\n\nAnything else?";
+  const turn = applyStagedTurn(atReclaim, [], 'yep', { text: recital });
+  assert.equal(turn.state.awaitingConfirm, true, 'the guard routes to the tag-derived confirm');
+  assert.match(turn.reply, /want to reclaim/i, 'the ENGINE reflect is shown, not the model prose');
+  assert.match(turn.reply, /run 3x a week/i, 'the tagged item is present');
+  assert.doesNotMatch(turn.reply, /local 5k|Italy/i, 'the UN-tagged phantom items are NOT presented as captured');
+  assert.equal(turn.state.collected.reclaimList?.length, 1, 'under-tagging surfaces at the seatbelt — no phantom list commits');
+});
+
 // --- slice c: the RECLAIM stage + end-to-end --------------------------------------------------------
 test('STAGED reclaim confirm — "Nope, that\'s a good list" COMPLETES (won\'t-take-yes fix; no reopen, no dupes)', () => {
   // The reclaim reflect ("Anything missing?") is awaiting confirm with a full list. A leading "Nope" answering
