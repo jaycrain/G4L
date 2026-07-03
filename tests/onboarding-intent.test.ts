@@ -73,6 +73,25 @@ test('intent · resolveReclaimConfirm — bare "no" is done, only a real change 
   for (const [msg, expected] of RECLAIM_CONFIRM) assert.equal(resolveReclaimConfirm(msg), expected, `"${msg}"`);
 });
 
+// --- Phase 2.1: the MODEL SIGNAL wins over the regex (model proposes, engine bounds) ------------------------
+test('intent · resolveGapConfirm — a model replyIntent OVERRIDES the regex fallback', () => {
+  // The model reads the reply better than a regex: a bare "no" (regex → done) tagged 'dispute' → dispute;
+  // a new-chapter message (regex → addition) tagged 'done' → done. And 'more' → addition.
+  assert.equal(resolveGapConfirm('no', 'dispute'), 'dispute');
+  assert.equal(resolveGapConfirm('and my divorce that year wrecked me', 'done'), 'done');
+  assert.equal(resolveGapConfirm('anything at all', 'more'), 'addition');
+  // No signal → the regex fallback is unchanged (the corpus still holds).
+  assert.equal(resolveGapConfirm("that's it"), 'done');
+  assert.equal(resolveGapConfirm("no, that's not right"), 'dispute');
+});
+
+test('intent · resolveReclaimConfirm — a model replyIntent OVERRIDES the regex fallback', () => {
+  assert.equal(resolveReclaimConfirm("nope that's a good list", 'done'), 'done');
+  assert.equal(resolveReclaimConfirm('looks right', 'more'), 'change'); // model says there's more → reopen
+  assert.equal(resolveReclaimConfirm('looks right', 'dispute'), 'change');
+  assert.equal(resolveReclaimConfirm('no'), 'done'); // fallback unchanged
+});
+
 // --- correctsReflection: identity / reclaim confirm --------------------------------------------------------
 const CORRECTS: [string, boolean][] = [
   ['no, that’s not it', true],

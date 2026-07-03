@@ -34,6 +34,7 @@ import {
   type ConvState,
   type Ctx,
   type ModelTurn,
+  type ReplyIntent,
   type Stage,
   type Turn,
 } from './onboarding.ts';
@@ -515,7 +516,10 @@ const identityStage: StageDef = {
     }
   },
   confirm(b) {
-    if (correctsReflection(b.memberMessage)) {
+    // Model-signaled (Phase 2.1): a 'dispute' reopens the naming; anything else advances. Regex fallback when the
+    // model didn't tag the reply.
+    const disputes = b.model.replyIntent ? b.model.replyIntent === 'dispute' : correctsReflection(b.memberMessage);
+    if (disputes) {
       b.awaitingConfirm = false;
       b.reply = REOPEN_IDENTITY;
     } else {
@@ -607,7 +611,7 @@ const gapStage: StageDef = {
   confirm(b) {
     // GAP CONFIRM — "…or is there more to it?" A bare "no / nope / that's it / more or less it for now" means NO
     // MORE = DONE → ADVANCE. resolveGapConfirm owns the meaning (dispute / addition / done); the engine acts on it.
-    const intent = resolveGapConfirm(b.memberMessage);
+    const intent = resolveGapConfirm(b.memberMessage, b.model.replyIntent);
     if (intent === 'dispute') {
       // wrong, no new content → reopen, but KEEP the gap + Doors (never wipe).
       b.awaitingConfirm = false;
@@ -707,7 +711,7 @@ const reclaimStage: StageDef = {
     }
     // RECLAIM CONFIRM — "Anything missing?" A bare "no / nope / that's a good list" = nothing missing = DONE →
     // the card. Only an explicit CHANGE request reopens the gather. resolveReclaimConfirm owns the meaning.
-    if (resolveReclaimConfirm(b.memberMessage) === 'change') {
+    if (resolveReclaimConfirm(b.memberMessage, b.model.replyIntent) === 'change') {
       b.awaitingConfirm = false;
       b.reply = withQuestion(b.modelText, RECLAIM_MORE);
     } else {
@@ -910,6 +914,21 @@ export const STAGED_TOOLS = [
       "item; use add_reclaim_item for a genuinely new want.",
     input_schema: { type: 'object' as const, properties: { text: { type: 'string' } }, required: ['text'] },
   },
+  {
+    name: 'member_reply',
+    description:
+      "At a reflect-confirm beat (right after you reflected something back — their past self, their gap story, or " +
+      "their Reclaim List — and asked whether it lands or if there's more), classify what the member's reply MEANS, " +
+      "so the conversation moves the right way. Call it once with `intent`: 'done' = they're satisfied / nothing to " +
+      "add / a plain 'nope, that's right' answering 'anything missing?'; 'more' = they're adding new material or want " +
+      "to change/extend it; 'dispute' = they say the reflection is WRONG. When unsure, omit it — a plain-language " +
+      "fallback covers you. This is ONLY for the reply to a reflection, not for normal gathering turns.",
+    input_schema: {
+      type: 'object' as const,
+      properties: { intent: { type: 'string', enum: ['done', 'more', 'dispute'] } },
+      required: ['intent'],
+    },
+  },
 ];
 
 // Parse a staged model response (per-field tool calls) into the merged Partial<Collected> the engine reads.
@@ -918,6 +937,7 @@ export function parseStagedTurn(content: readonly unknown[]): ModelTurn {
   let noFade = false;
   let gapReady = false;
   let refineReclaim: string | undefined;
+  let replyIntent: ReplyIntent | undefined;
   const rec: Partial<Collected> = {};
   for (const b of content as Array<{ type: string; text?: string; name?: string; input?: Record<string, unknown> }>) {
     if (b.type === 'text' && typeof b.text === 'string') text += b.text;
@@ -934,11 +954,14 @@ export function parseStagedTurn(content: readonly unknown[]): ModelTurn {
         (rec.reclaimCategories ??= []).push(typeof b.input.category === 'string' ? b.input.category : '');
       }
       if (b.name === 'refine_reclaim_item' && typeof b.input?.text === 'string') refineReclaim = b.input.text;
+      if (b.name === 'member_reply' && (b.input?.intent === 'done' || b.input?.intent === 'more' || b.input?.intent === 'dispute')) {
+        replyIntent = b.input.intent;
+      }
       if (b.name === 'note_no_fade') noFade = true;
       if (b.name === 'reflect_gap') gapReady = true;
     }
   }
-  return { text, record: rec, noFade, gapReady, refineReclaim };
+  return { text, record: rec, noFade, gapReady, refineReclaim, replyIntent };
 }
 
 // Is the staged engine selected? Flag only — defaults OFF, so v1 serves prod until cut-over.
@@ -1009,6 +1032,11 @@ comes back high. Reflect warmly that they sound like they're in a good place, an
 
 The AI disclosure was shown on the start page — never repeat it. Reflect first, then exactly ONE warm
 question per turn. No meta-narration about the program's mechanics.
+READING THEIR REPLY (at a confirm) — right after you've reflected something back (their past self, their gap
+story, or their Reclaim List) and asked whether it lands, the member's next message is answering THAT. Call
+member_reply to tag what it means: 'done' (they're satisfied / a plain "nope, that's right"), 'more' (they're
+adding or changing something), or 'dispute' (they say you got it wrong). This is how the conversation moves the
+right way — a bare "no" answering "anything missing?" is 'done', not a dispute. If you're unsure, omit it.
 NEVER ASSUME GENDER — this is a hard rule. You do NOT know the member's gender, and the reclaimed identity
 ("the Racer", "the Player", "the Writer") has NO gender. Never write "he/him" or "she/her" about the member or
 their past self unless THEY used that pronoun about themselves first. Refer to the past self by its handle

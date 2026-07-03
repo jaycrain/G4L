@@ -551,6 +551,26 @@ test('STAGED gap — a reclaim item volunteered in-stage PARKS to the list, neve
   assert.equal(turns[0]!.state.stage, 'gap', 'stays in the gap stage, still gathering the fade story');
 });
 
+// --- Phase 2.1: the engine acts on the model's replyIntent SIGNAL end-to-end ------------------------------
+test('STAGED confirm — the model replyIntent drives the branch through the engine (signal over regex)', () => {
+  const atGapConfirm: ConvState = { stage: 'gap', awaitingConfirm: true, collected: { athleticPast: 'a runner', identityNoun: 'Runner', gap: 'The caregiving years took it.', doors: ['aging_parents'] } };
+  // model tags a bare "sure" as a DISPUTE → the engine reopens the gap (regex would have advanced).
+  const disp = applyStagedTurn(atGapConfirm, [], 'sure', { text: 'Let me get it right.', replyIntent: 'dispute' });
+  assert.equal(disp.state.awaitingConfirm ?? false, false, 'dispute signal reopens the beat');
+  assert.match(disp.reply, /get this right|how it really went/i);
+  // model tags a chapter-sounding message as DONE → the engine advances to reclaim (regex might read "addition").
+  const done = applyStagedTurn(atGapConfirm, [], 'well, and there was the move too', { text: 'Okay.', replyIntent: 'done' });
+  assert.equal(done.state.stage, 'reclaim', 'done signal advances even on an addition-sounding message');
+
+  const atReclaimConfirm: ConvState = { stage: 'reclaim', awaitingConfirm: true, collected: { athleticPast: 'a cyclist', identityNoun: 'Player', gap: 'The grind took over.', reclaimList: ['ride 3x a week', 'see friends', 'weekend hikes'] } };
+  // model tags "looks right" as MORE → reopen the gather, do NOT complete.
+  const more = applyStagedTurn(atReclaimConfirm, [], 'looks right', { text: 'Okay.', replyIntent: 'more' });
+  assert.equal(more.complete ?? false, false, 'more signal reopens the reclaim gather');
+  // model tags an ambiguous "hmm, actually" as DONE → complete to the card.
+  const rdone = applyStagedTurn(atReclaimConfirm, [], 'hmm, actually', { text: 'Okay.', replyIntent: 'done' });
+  assert.equal(rdone.complete, true, 'done signal completes even on an ambiguous message');
+});
+
 // --- slice c: the RECLAIM stage + end-to-end --------------------------------------------------------
 test('STAGED reclaim confirm — "Nope, that\'s a good list" COMPLETES (won\'t-take-yes fix; no reopen, no dupes)', () => {
   // The reclaim reflect ("Anything missing?") is awaiting confirm with a full list. A leading "Nope" answering

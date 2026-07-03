@@ -645,7 +645,11 @@ const RECORD_PROGRESS_TOOL = {
 // A single model turn, decoupled from the live API so the engine can be replayed deterministically from
 // recorded transcripts (tests/onboarding-replay.test.ts). `record` is the record_progress input the model
 // emitted that turn, or undefined when the model conversed WITHOUT recording (the Donna failure mode).
-export type ModelTurn = { text: string; record?: Partial<Collected> & { complete?: boolean }; noFade?: boolean; gapReady?: boolean; refineReclaim?: string };
+// replyIntent (v2.2 Phase 2.1): the model's read of the member's reply to a reflect-confirm — the intent layer
+// goes model-SIGNALED (the model understands "nope, that's a good list" = done far better than a regex), the
+// engine still DISPOSES (bounds it; the regex resolvers remain the fallback when the model doesn't signal).
+export type ReplyIntent = 'done' | 'more' | 'dispute';
+export type ModelTurn = { text: string; record?: Partial<Collected> & { complete?: boolean }; noFade?: boolean; gapReady?: boolean; refineReclaim?: string; replyIntent?: ReplyIntent };
 
 // Parse an Anthropic response into a ModelTurn (prose + the record_progress tool input, if any).
 function parseModelTurn(content: readonly unknown[]): ModelTurn {

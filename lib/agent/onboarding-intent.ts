@@ -21,7 +21,7 @@
 
 import { matchDoors } from '../doors.ts';
 import { gapIsNarrative } from './onboarding-contract.ts';
-import { confirmsWhole, isAffirmation, memberWantsToWrap } from './onboarding.ts';
+import { confirmsWhole, isAffirmation, memberWantsToWrap, type ReplyIntent } from './onboarding.ts';
 
 // =======================================================================================================
 // A. REPLY INTENT — what a member's reply to a reflection/question means
@@ -179,8 +179,15 @@ export function isAcceptanceFade(text: string): boolean {
 //   • done     — everything else, incl. a bare "no/nope/that's it/more or less it" → advance to reclaim.
 // A plain negation is DONE, not a dispute (it answers "…or is there more?" = no more). This ordering is what
 // stopped the beat looping when a member is plainly finished (Jay's walk: "won't take yes for an answer").
+//
+// v2.2 Phase 2.1 — MODEL-SIGNALED: when the model tags the member's reply (replyIntent), we USE it (the model
+// reads "nope, that's a good list" far more reliably than a regex). The regex remains the FALLBACK for when the
+// model doesn't signal — so the phrase corpus still holds, and a mis-signal is still caught by the card seatbelt.
+// This is the intent half of "model proposes, engine disposes": the engine bounds it (the confirm only exists
+// AFTER a floor/cap-bounded, verbatim-quoting reflect), so a signal can't skip the draw-out.
 export type GapConfirmIntent = 'dispute' | 'addition' | 'done';
-export function resolveGapConfirm(message: string): GapConfirmIntent {
+export function resolveGapConfirm(message: string, replyIntent?: ReplyIntent): GapConfirmIntent {
+  if (replyIntent) return replyIntent === 'dispute' ? 'dispute' : replyIntent === 'more' ? 'addition' : 'done';
   if (memberDisputesGap(message)) return 'dispute';
   if (memberAddingMoreGap(message)) return 'addition';
   return 'done';
@@ -194,7 +201,10 @@ export function resolveGapConfirm(message: string): GapConfirmIntent {
 // (Jay's walk). Mirrors resolveGapConfirm: a plain negation answering the question is DONE, not a dispute.
 const NEGATION_PREFIX_RE = /^(no|nope|nah|not really|not quite)[\s,.!—–-]*/i;
 export type ReclaimConfirmIntent = 'change' | 'done';
-export function resolveReclaimConfirm(message: string): ReclaimConfirmIntent {
+export function resolveReclaimConfirm(message: string, replyIntent?: ReplyIntent): ReclaimConfirmIntent {
+  // Model-signaled (Phase 2.1): 'done' → the card; 'more'/'dispute' → reopen the gather to change/add. Regex below
+  // is the fallback. (A brand-new want at the confirm is captured by the engine's late-add BEFORE this is consulted.)
+  if (replyIntent) return replyIntent === 'done' ? 'done' : 'change';
   const m = (message ?? '').replace(/[‘’]/g, "'").trim();
   if (!correctsReflection(m) || memberClosingReclaim(m)) return 'done'; // affirm / bare-no / close → done
   // A correction — reopen only if there's real substance to change (not a bare "no/nope").
