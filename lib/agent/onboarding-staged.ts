@@ -249,6 +249,11 @@ function withQuestion(modelText: string, probe: string): string {
   const t = (modelText ?? '').trim();
   if (!t) return probe;
   if (/\?\s*$/.test(t)) return t; // already ends on a question — the model led the turn
+  // The model may have asked a real question then added a short coda ("…what did it cost you? Even if you
+  // couldn't have named it then."). That's still a forward question — don't bolt a SECOND one on (Jay's walk:
+  // two questions in one panel). Only append when there's no question anywhere near the end.
+  const lastQ = t.lastIndexOf('?');
+  if (lastQ !== -1 && t.length - lastQ <= 60) return t;
   return `${t}\n\n${probe}`; // a reflection with no forward question — add one
 }
 
@@ -1004,6 +1009,11 @@ comes back high. Reflect warmly that they sound like they're in a good place, an
 
 The AI disclosure was shown on the start page — never repeat it. Reflect first, then exactly ONE warm
 question per turn. No meta-narration about the program's mechanics.
+NEVER ASSUME GENDER — this is a hard rule. You do NOT know the member's gender, and the reclaimed identity
+("the Racer", "the Player", "the Writer") has NO gender. Never write "he/him" or "she/her" about the member or
+their past self unless THEY used that pronoun about themselves first. Refer to the past self by its handle
+("the Racer"), by "you/your" ("who you were", "you stopped running"), or by "that version of you" — never a
+guessed pronoun. Getting this wrong ("the Racer… he faded") is a real harm; when in doubt, use the handle or "you".
 NUMBER-FREE ONBOARDING — this whole conversation is free of scores and instruments. Do NOT mention the IDQ, the
 ID Score, a questionnaire, a test, points, or "your first score" — not as a next step, not as a reward, not at
 all. There is no next step to pitch: when the beats are done the member sees a summary card and their dashboard.
@@ -1023,6 +1033,10 @@ function stageInstruction(stage?: Stage): string {
       '\n\nCURRENT STAGE: what they want back. Invite the things they want to reclaim and call add_reclaim_item ' +
       'once per item (big or small — there are no wrong answers). If they already named some earlier, build on ' +
       "those, don't re-ask. Aim for a few; never pressure or interrogate — small things count.\n" +
+      'TAG EVERY WANT — this is load-bearing. Call add_reclaim_item the MOMENT a want is named, including any they ' +
+      'volunteered earlier in the conversation (the gap beat). The Reclaim List is built ONLY from your tool calls, ' +
+      'never from your prose — so if you reflect or list wants back to the member, EVERY item you name must already ' +
+      'be an add_reclaim_item call. Never recite a list you have not tagged, or it silently vanishes from their card.\n' +
       'MAKE EACH WANT CONCRETE (light touch): a Reclaim item should be something they could actually notice ' +
       'progress on. When a want is vague ("ride my bike more", "get in shape"), reflect it and ask ONE gentle ' +
       'question toward something trackable — a rough cadence, a number, a specific anchor ("what would that look ' +
