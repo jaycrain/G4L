@@ -196,11 +196,17 @@ const DECLINE_REPLY =
   "and I'll be right here. Until then — keep building.";
 
 // §5 — Stage 3 (what you want back): the reframe into hope, personalized to their handle.
+// A warm BRIDGE from the gap into reclaim (Phase 2.3 / Cowork #5) — the gap beat is heavy, so we don't cold-pivot
+// to "Now, the good part." We land on the weight they just named, then turn it toward hope, referencing the
+// identity. Directional copy (Jay reacts on the walk).
 function reclaimOpen(c: Collected): string {
+  const identity = identityLabel(c.identityNoun);
   return (
-    `Now, the good part — let's talk about what you want back. We'll build your Reclaim List from the things you want ` +
-    `back from ${identityRef(c)}'s life — concrete, in your own words. The whole program measures against this list, and ` +
-    'you can add to it or edit it any time. What’s the first thing you want back?'
+    `That's a lot to have been carrying${identity ? ` — no wonder ${identity} got quiet under all of it` : ''}. ` +
+    `Here's the turn, though: none of it is gone. It's been waiting for you. So let's name what you want back` +
+    `${identity ? `, the pieces of ${identity}'s life you miss most` : ''} — in your own words. This becomes your ` +
+    `Reclaim List, the thing the whole program works toward, and it's yours to add to or change anytime. ` +
+    `What's the first thing you'd want back?`
   );
 }
 
@@ -1084,6 +1090,9 @@ function stageInstruction(stage?: Stage): string {
     return (
       '\n\nCURRENT STAGE: what they want back. Invite the things they want to reclaim and call add_reclaim_item ' +
       'once per item (big or small — there are no wrong answers). If they already named some earlier, build on ' +
+      'BREATHE — draw out each want the way you drew out the gap, do NOT rush to collect a list. When they name ' +
+      'one, RECEIVE it: reflect it back, feel what it means to them, and (if vague) drill it concrete — then, and ' +
+      'only then, invite the next. One want at a time, with care; never a rote "what else?" march. ' +
       "those, don't re-ask. Aim for a few; never pressure or interrogate — small things count.\n" +
       'TAG EVERY WANT — this is load-bearing. Call add_reclaim_item the MOMENT a want is named, including any they ' +
       'volunteered earlier in the conversation (the gap beat). The Reclaim List is built ONLY from your tool calls, ' +

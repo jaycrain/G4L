@@ -583,6 +583,16 @@ test('STAGED reclaim — RECITE-MISMATCH guard (Phase 2.2): a prose list-recital
   assert.equal(turn.state.collected.reclaimList?.length, 1, 'under-tagging surfaces at the seatbelt — no phantom list commits');
 });
 
+test('STAGED gap→reclaim — a WARM bridge off the gap, not a cold pivot (Phase 2.3 / Cowork #5)', () => {
+  const atGapConfirm: ConvState = { stage: 'gap', awaitingConfirm: true, collected: { athleticPast: 'a runner', identityNoun: 'Racer', gap: 'The caregiving years slowly took it.', doors: ['aging_parents'] } };
+  const turn = applyStagedTurn(atGapConfirm, [], "that's the whole of it", { text: 'Okay.' });
+  assert.equal(turn.state.stage, 'reclaim', 'advances into reclaim');
+  assert.match(turn.reply, /carrying|been waiting|the turn/i, 'bridges FROM the weight of the gap');
+  assert.match(turn.reply, /the Racer/, 'references the identity');
+  assert.doesNotMatch(turn.reply, /Now, the good part/i, 'no cold pivot');
+  assert.match(turn.reply, /want back|first thing/i, 'still opens the reclaim ask');
+});
+
 // --- slice c: the RECLAIM stage + end-to-end --------------------------------------------------------
 test('STAGED reclaim confirm — "Nope, that\'s a good list" COMPLETES (won\'t-take-yes fix; no reopen, no dupes)', () => {
   // The reclaim reflect ("Anything missing?") is awaiting confirm with a full list. A leading "Nope" answering
