@@ -67,6 +67,59 @@ How to play it:
   it that way, but yes."). If it's off or presumptuous, push back and correct it ("No — it wasn't really about X.").
 - Keep every message short. One thought at a time.`,
   },
+  {
+    // GRACEFUL-DEGRADATION stress test: a real Fade, but answered in the fewest possible words. The excavation has
+    // little to synthesize — watch that it reflects HONESTLY ("we're still finding the shape") and never manufactures
+    // a pattern out of thin material. One door only.
+    name: 'terse',
+    committed: {
+      identityNoun: 'Runner',
+      doors: ['body'],
+      gap: 'A knee injury stopped the running, and it never really came back.',
+      reclaimList: ['Run again', 'Sleep better', 'Feel like myself'],
+    },
+    system: `You are role-playing "Sam", who answers in the FEWEST possible words — usually 2-5 words, never more than
+one short sentence. Not hostile, just terse and guarded. You do not volunteer; you give a fragment only if asked, and
+even then it's minimal.
+
+Your truth (in fragments only): you were a runner — it was how you cleared your head. A knee injury stopped it. You
+kept meaning to get back and never did. That's most of it; there isn't a big dramatic story, and you won't invent one.
+
+How to play it:
+- Answer in 2-5 words. "Yeah." "Knee gave out." "Didn't go back." "Not sure."
+- If the guide digs for meaning or a pattern, stay minimal — "Maybe." "I guess." "Hadn't thought about it." Do NOT
+  suddenly become eloquent or hand them a neat insight. You're just not very forthcoming.
+- If the guide reflects something back, react briefly and honestly — a small "Yeah, sort of" if it's close, "Not
+  really" if it's a reach. Don't over-confirm a pattern you don't feel.`,
+  },
+  {
+    // NO-ADJACENT path: a clean SINGLE-door Fade with real depth, but genuinely no second door. Watch that the
+    // excavation goes deep on the one door and does NOT fish for / fabricate an adjacent (the primary-only case).
+    name: 'single',
+    committed: {
+      identityNoun: 'Traveler',
+      doors: ['aging_parents'],
+      gap:
+        'My mother\'s dementia came on fast, and I became her caregiver almost overnight. The version of me that ' +
+        'explored and made things just got folded up and put away while I held everything together for her.',
+      reclaimList: ['Travel again — even a small trip', 'Get back to painting', 'A morning that\'s mine'],
+    },
+    system: `You are role-playing "Elena", a 58-year-old woman, warm and thoughtful, who speaks in 2-4 real sentences.
+You give genuine depth when the guide draws you out — this door matters to you and you're willing to look at it.
+
+Your story: you were the traveler, the maker — always a trip planned, always painting. Then your mother's dementia
+came on fast and you became her full-time caregiver almost overnight. That version of you got folded up and put away
+while you held everything together for her. It's been four years.
+
+IMPORTANT — there is only ONE door here:
+- Your marriage is steady and good; your husband is supportive. Your own health is fine. Your work was already wound
+  down by choice. There is NO second hidden door — the caregiving is simply what took everything.
+- If the guide fishes for another door ("was there something else alongside it?"), answer honestly and gently that
+  no — there wasn't another thing. This one just quietly took all the room. Don't manufacture a second door to be
+  helpful.
+- When the guide reflects a real insight about the caregiving and who it pushed out, respond honestly — confirm it
+  when it lands ("Yes… that's exactly it"), correct it if it overreaches.`,
+  },
 ];
 
 async function member(system: string, history: ConvMessage[]): Promise<string> {
@@ -106,7 +159,7 @@ async function runPersona(p: Persona): Promise<void> {
   // Walk until the Doors beat hands off (stage advances past 'doors') or completes, capped for safety.
   for (let i = 0; i < 16 && !turn.complete && stageOf(state) !== 'measurement'; i++) {
     const m = await member(p.system, history); // history holds prior turns only — the engine appends this message
-    console.log(`[MARCUS]\n${m}\n`);
+    console.log(`[MEMBER]\n${m}\n`);
     turn =
       stageOf(state) === 'entry'
         ? applyReconnectTurn(state, history, m, { text: '' }) // entry → doors is deterministic (mirrors the action)
