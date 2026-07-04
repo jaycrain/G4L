@@ -68,12 +68,16 @@ export async function replyToStep(
   try {
     const db = (await getDb()) as unknown as Db;
     await saveAnswer(db, memberId, sessionId, stepN, answer.trim(), stepN); // persist at this step (no advance)
-    const [progress, meta] = await Promise.all([getSessionProgress(db, memberId, sessionId), memberMeta(db, memberId)]);
+    const [progress, meta, doorNames] = await Promise.all([
+      getSessionProgress(db, memberId, sessionId),
+      memberMeta(db, memberId),
+      getMemberDoorNames(db, memberId), // so a mid-step "what were my Doors?" is answered, not "no record" (B4)
+    ]);
     const answers = progress?.answers ?? {};
     const priorAnswers: PriorAnswer[] = (session.steps ?? [])
       .filter((s) => s.n < stepN && (answers[String(s.n)] ?? '').trim())
       .map((s) => ({ title: s.title, prompt: s.prompt, answer: answers[String(s.n)]! }));
-    const r = await respondToStep({ sessionTitle: session.title, step, priorAnswers, answer, displayName: meta.displayName, memory: meta.memory });
+    const r = await respondToStep({ sessionTitle: session.title, step, priorAnswers, answer, displayName: meta.displayName, memory: meta.memory, existingDoors: doorNames });
     return { ok: true, reply: r.reply, ready: r.ready };
   } catch {
     return { ok: true, reply: step.probe || 'Tell me a little more about that.', ready: answer.trim().length >= 40 };

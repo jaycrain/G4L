@@ -84,6 +84,7 @@ export async function respondToStep(input: {
   answer: string;
   displayName: string;
   memory?: string | null;
+  existingDoors?: string[]; // the member's committed Doors — so a mid-step "what were my Doors?" is ANSWERED, not deflected
 }): Promise<StepResponse> {
   const answer = (input.answer ?? '').trim();
   const fallback: StepResponse = {
@@ -101,6 +102,9 @@ export async function respondToStep(input: {
     const user =
       `Session: ${input.sessionTitle}\nMember: ${input.displayName}\n` +
       (input.memory ? `What you remember: ${input.memory}\n` : '') +
+      (input.existingDoors?.length
+        ? `Their committed Doors (named at onboarding): ${input.existingDoors.join(', ')}. If they ask what their Doors were, or seem to have lost the thread, STATE them plainly — you DO remember. Never say you have "no record" or that they're "starting fresh".\n`
+        : '') +
       `Earlier in this Session:\n${prior}\n\n` +
       `CURRENT step — "${input.step.title}"\nThe question: ${input.step.prompt}\nDepth-probe (use if you press): ${input.step.probe}\n\n` +
       `They just wrote: ${answer}\n\nRespond, and set ready.`;
