@@ -20,6 +20,54 @@ export const RECLAIM_LIST_MIN = 3; // soft aim — drives the agent's nudge; NOT
 export const RECLAIM_LIST_FLOOR = 1; // hard floor to finalize — at least one real, member-stated want
 export const RECLAIM_LIST_TARGET = 7; // soft aim — guides the agent, not enforced
 
+// --- Reclaim List consolidation (Jay's walk: repetitive/sloppy lists) -----------------------------------
+// Clean a Reclaim List into tidy, non-redundant wants — applied at every USER-FACING point (the confirm reflect,
+// the card, the commit) so a list stored sloppily (a live model that under-refined, OR a session RESUMED from
+// before per-item cleanup) still comes out clean. Pure + order-preserving. Three rules:
+//   • drop a bare close/confirmation ("that's about it", "looks great") that got captured as a want;
+//   • fold a bare cadence fragment ("every day", "2-3 times a week") into the PREVIOUS want (it's a drill of it);
+//   • collapse a token-SUBSET near-dup ("Lose 50 lbs" ⊆ "My body, lose 50 lbs") to the more complete phrasing.
+const RECLAIM_FILLER = new Set([
+  'the', 'a', 'an', 'my', 'our', 'your', 'his', 'her', 'their', 'its', 'to', 'of', 'for', 'and', 'or', 'some',
+  'just', 'more', 'get', 'getting', 'got', 'gets', 'want', 'wants', 'wanting', 'wanna', 'need', 'needs', 'needing',
+  'i', 'im', 'be', 'being',
+]);
+function reclaimContentTokens(s: string): string[] {
+  return (s ?? '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').split(' ').filter((w) => w && !RECLAIM_FILLER.has(w));
+}
+const BARE_CADENCE_RE =
+  /^(every\s+(day|morning|evening|night|week|weekend)s?|daily|weekly|nightly|on\s+weekends?|most\s+(days|mornings)|(a\s+few|once|twice|[1-9][0-9]?(\s*[-–to]+\s*[1-9][0-9]?)?)\s*(times?|x|days?)?\s*(a|per|each|\/)?\s*(day|week|morning|month)?)$/i;
+const RECLAIM_CLOSE_RE =
+  /^(that'?s (about )?(it|all|everything|the list)( for now)?|that'?s a (good|solid|great|decent) (start|list)|(that|this) (looks|sounds) (great|good|right|perfect|spot on)|love (it|that)|perfect|good enough|sounds good|(i think )?that'?s (about )?(it|everything))$/i;
+
+export function consolidateReclaimList(items: string[]): string[] {
+  const kept: string[] = [];
+  const keptTokens: Set<string>[] = [];
+  for (const raw of items ?? []) {
+    const item = (raw ?? '').trim();
+    const bare = item.replace(/[.,!?]+$/, '');
+    if (!item) continue;
+    if (RECLAIM_CLOSE_RE.test(bare)) continue; // a close/confirmation, not a want
+    if (BARE_CADENCE_RE.test(bare) && kept.length > 0) {
+      kept[kept.length - 1] = `${kept[kept.length - 1]}, ${item}`; // fold the cadence into the previous want
+      reclaimContentTokens(item).forEach((t) => keptTokens[keptTokens.length - 1]!.add(t));
+      continue;
+    }
+    const toks = reclaimContentTokens(item);
+    const tokSet = new Set(toks);
+    let dup = false;
+    for (let i = 0; i < kept.length; i++) {
+      const ex = keptTokens[i]!;
+      if (toks.length > 0 && toks.every((t) => ex.has(t))) { dup = true; break; } // new ⊆ existing → skip
+      if (ex.size > 0 && [...ex].every((t) => tokSet.has(t))) { kept[i] = item; keptTokens[i] = tokSet; dup = true; break; } // existing ⊆ new → replace
+    }
+    if (dup) continue;
+    kept.push(item);
+    keptTokens.push(tokSet);
+  }
+  return kept;
+}
+
 export type ValidationResult = { ok: true } | { ok: false; errors: string[] };
 
 /** A Reclaim List is valid with at least RECLAIM_LIST_FLOOR non-empty, member-stated items (no max). */

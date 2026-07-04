@@ -23,7 +23,7 @@
 
 import { cleanIdentityNoun, displayIdentityNoun, identityLabel } from '../member/identity.ts';
 import { isDoorSlug, matchDoors, type DoorSlug } from '../doors.ts';
-import { RECLAIM_LIST_FLOOR, RECLAIM_LIST_MIN, RECLAIM_LIST_TARGET } from '../member/reclaim.ts';
+import { RECLAIM_LIST_FLOOR, RECLAIM_LIST_MIN, RECLAIM_LIST_TARGET, consolidateReclaimList } from '../member/reclaim.ts';
 import { gapIsNarrative, hasIdentity } from './onboarding-contract.ts';
 import { MEMBER_AGENT_SYSTEM_PROMPT } from './system-prompt.ts';
 import {
@@ -292,7 +292,9 @@ function reclaimOpening(c: Collected): string {
 
 // §5 — reflect the Reclaim List back before the card; the member hears their own list, one confirm question.
 function reflectReclaim(c: Collected): string {
-  const items = (c.reclaimList ?? []).map((x) => `• ${x.trim()}`).join('\n');
+  // Reflect the CONSOLIDATED list (folds cadences, collapses near-dups, drops closes) so the member confirms a
+  // clean list — even on a resumed session whose stored list predates per-item cleanup.
+  const items = consolidateReclaimList(c.reclaimList ?? []).map((x) => `• ${x.trim()}`).join('\n');
   return `Here’s what you want to reclaim:\n\n${items}\n\nAnything missing before we move on?`;
 }
 

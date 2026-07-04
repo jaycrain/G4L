@@ -7,7 +7,7 @@
 
 import { DOORS, matchDoors, type DoorSlug } from '../doors.ts';
 import { identityLabel } from '../member/identity.ts';
-import { RECLAIM_LIST_MIN } from '../member/reclaim.ts';
+import { RECLAIM_LIST_MIN, consolidateReclaimList } from '../member/reclaim.ts';
 import type { Collected } from './onboarding.ts';
 
 // Recorded Doors NOT evidenced in the fade story (the gap narrative). If a Door isn't traceable to
@@ -84,7 +84,7 @@ export function buildSummaryCard(c: Collected): SummaryCard {
     missing,
     identityLabel: c.identityNoun ? identityLabel(c.identityNoun) : null,
     doors: (c.doors ?? []).map((slug) => ({ slug, displayName: DOORS.find((d) => d.slug === slug)?.displayName ?? slug })),
-    reclaimList: c.reclaimList ?? [],
+    reclaimList: consolidateReclaimList(c.reclaimList ?? []), // clean the card even for a sloppily-stored/resumed list
     gap: c.gap ?? '',
   };
 }

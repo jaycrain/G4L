@@ -6,10 +6,34 @@ import {
   validateReconnectOutput,
   RECLAIM_LIST_MIN,
   RECLAIM_LIST_FLOOR,
+  consolidateReclaimList,
 } from '../lib/member/reclaim.ts';
 import { DOOR_SLUGS, matchDoors, correctDoors } from '../lib/doors.ts';
 
 const five = ['a', 'b', 'c', 'd', 'e'];
+
+test('consolidateReclaimList — cleans a sloppy/resumed list (Jay walk: the Triathlete card)', () => {
+  const sloppy = [
+    'My body, I need to lose about 50 lbs',
+    'Lose about 50 lbs', // near-dup (subset) → collapses
+    'Start walking every morning',
+    'Every day', // bare cadence → folds in
+    'Start riding my bike again, maybe an e-bike',
+    '2-3 times a week', // bare cadence → folds in
+    'Invite friends over to cook out on Saturdays',
+    "That's about it", // a close → dropped
+  ];
+  assert.deepEqual(consolidateReclaimList(sloppy), [
+    'My body, I need to lose about 50 lbs',
+    'Start walking every morning, Every day',
+    'Start riding my bike again, maybe an e-bike, 2-3 times a week',
+    'Invite friends over to cook out on Saturdays',
+  ]);
+  // idempotent — running it again changes nothing
+  assert.deepEqual(consolidateReclaimList(consolidateReclaimList(sloppy)), consolidateReclaimList(sloppy));
+  // never drops genuinely distinct wants
+  assert.deepEqual(consolidateReclaimList(['run', 'swim', 'bike']), ['run', 'swim', 'bike']);
+});
 
 test('reclaim list finalize floor is >=1 (Gate-1 decision); >=3 stays the soft aim', () => {
   assert.equal(RECLAIM_LIST_MIN, 3); // the AIM (drives the agent's nudge), not the hard finalize floor

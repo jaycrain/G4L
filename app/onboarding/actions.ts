@@ -22,6 +22,7 @@ import { buildSummaryCard } from '../../lib/agent/onboarding-contract.ts';
 import { logEvent } from '../../lib/telemetry/store.ts';
 import { proposeEntry } from '../../lib/playbook/store.ts';
 import { addFacet } from '../../lib/curriculum/store.ts';
+import { consolidateReclaimList } from '../../lib/member/reclaim.ts';
 import { createCredential, hasCredential } from '../../lib/auth/store.ts';
 import { hashPassword } from '../../lib/auth/password.ts';
 import { startSession } from '../auth.ts';
@@ -131,7 +132,10 @@ export type FinalizeOutput =
 export async function finalizeOnboardingAction(input: FinalizeInput): Promise<FinalizeOutput> {
   const db = (await getDb()) as unknown as Db;
   if (!input.password || input.password.length < 8) return { ok: false, errors: ['Please choose a password of at least 8 characters.'] };
-  const res = await runOnboarding(db, getProvider(), collectedToFields(input.ctx, input.state.collected));
+  // Consolidate the Reclaim List before it's committed — the dashboard reads what we persist here, so a sloppy or
+  // resumed-from-before-cleanup list is cleaned once, at the commit, not just on the card.
+  const collected = { ...input.state.collected, reclaimList: consolidateReclaimList(input.state.collected.reclaimList ?? []) };
+  const res = await runOnboarding(db, getProvider(), collectedToFields(input.ctx, collected));
   if (!res.ok) {
     if ('crisis' in res && res.crisis) return { ok: false, crisis: true, message: res.message };
     const errors = 'errors' in res ? res.errors : ['Could not save your intake — please try again.'];
