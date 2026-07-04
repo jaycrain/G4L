@@ -47,27 +47,19 @@ export default function OnboardingChat() {
     }
   }, [input]);
 
-  // On first load: pre-fill name/email and DETECT a resumable session — but do NOT auto-skip into the
-  // conversation. Decision Z: the password is never persisted, so a returner must re-enter it; we keep them on
-  // the gate (name + email pre-filled, a "welcome back" note) to collect the password. Submitting resumes exactly
-  // where they left off (begin() loads the saved session). This is what prevents the finalize "no password" error.
+  // On first load: pre-fill name/email and, if an onboarding is IN PROGRESS, show the "welcome back" gate. Decision
+  // Z: the password is never persisted, so a returner must re-enter it — we do NOT auto-skip into the conversation.
+  // The reliable in-progress signal is a saved email (set the moment they start the gate, cleared on the commit),
+  // so we read it synchronously — no fragile server round-trip. Submitting the gate resumes exactly where they left
+  // off (begin() loads the saved session, or starts fresh if it's gone). This is what fixes the finalize "no
+  // password" error a resumed member used to hit.
   useEffect(() => {
-    const savedName = ls.get(LS.name), savedEmail = ls.get(LS.email), token = ls.get(LS.token);
+    const savedName = ls.get(LS.name), savedEmail = ls.get(LS.email);
     if (savedName) setName(savedName);
-    if (savedEmail) setEmail(savedEmail);
-    if (!savedEmail) return;
-    let cancelled = false;
-    (async () => {
-      try {
-        const resumed = await loadOnboardingSessionAction(savedEmail, token);
-        if (cancelled || !resumed || !resumed.messages.length) return;
-        setResumable(true); // show the "welcome back" gate; begin() does the actual resume on submit
-      } catch {
-        /* no resume — the fresh gate stands */
-      }
-    })();
-    return () => { cancelled = true; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (savedEmail) {
+      setEmail(savedEmail);
+      setResumable(true);
+    }
   }, []);
 
   // Keep the unsent draft so a half-written reply survives leaving the page.
