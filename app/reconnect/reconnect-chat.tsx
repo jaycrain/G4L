@@ -3,6 +3,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { startReconnectAction, reconnectTurnAction } from './actions.ts';
 import type { ConvMessage, ConvState } from '../../lib/agent/onboarding.ts';
+import { DOORS } from '../../lib/doors.ts';
+
+const doorName = (slug?: string) => DOORS.find((d) => d.slug === slug)?.displayName ?? null;
 
 // v2.2 Reconnect SKELETON chat — minimal on purpose. Shows the callback (§2a) and lets the member reply once to
 // reach the Doors stub. State is held client-side for the walk (the session store + live model turn arrive with
@@ -43,8 +46,21 @@ export default function ReconnectChat({ memberId }: { memberId: string }) {
     setState(r.state);
   }
 
+  const primary = doorName(state?.collected.doors?.[0]);
+  const lastReseen = state?.reseeingTells?.[state.reseeingTells.length - 1];
+
   return (
     <div className="reconnect-chat">
+      {primary && (
+        <div className="reconnect-doorbar" style={{ marginBottom: '0.75rem', fontSize: '0.85rem', color: 'var(--navy, #374F63)' }}>
+          Your door: <strong>{primary}</strong>
+          {lastReseen && (
+            <span style={{ color: 'var(--teal, #3B9495)', marginLeft: '0.5rem' }}>
+              ✓ re-seen from {doorName(lastReseen.fromSlug)}
+            </span>
+          )}
+        </div>
+      )}
       <div className="chat">
         {messages.map((m, i) => (
           <div key={i} className={`bubble ${m.role}`}>
