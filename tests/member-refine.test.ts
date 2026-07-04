@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import { PGlite } from '@electric-sql/pglite';
 import { applySchema, type Db } from '../lib/db/schema.ts';
 import { getReclaimItems } from '../lib/beats/store.ts';
-import { addReclaimItemForMember, addDoorForMember, getMemberDoors, setMemberDoors, reconcileDoors } from '../lib/member/refine.ts';
+import { addReclaimItemForMember, addDoorForMember, getMemberDoors, setMemberDoors, softSetMemberDoors, reconcileDoors } from '../lib/member/refine.ts';
+import { emitHarvestMoment } from '../lib/agent/harvest.ts';
 
 async function seedMember(): Promise<{ db: Db; memberId: string }> {
   const db = new PGlite() as unknown as Db;
@@ -87,6 +88,53 @@ test('setMemberDoors writes the canonical set — adds new, drops removed, first
   // an empty set is refused (≥1 Door contract) — the existing set stands
   await setMemberDoors(db, memberId, []);
   assert.deepEqual(await getMemberDoors(db, memberId), ['full_house', 'career_cliff']);
+});
+
+// ============================================================================================================
+// §2b revision (Decision L) persistence — the 0043 soft-delete substrate + the correct-pair harvest tell (R5).
+// ============================================================================================================
+
+test('softSetMemberDoors soft-removes the old Door (never destroys) and reactivates on return — §2b revision', async () => {
+  const { db, memberId } = await seedMember(); // seeded 'body' primary
+  await softSetMemberDoors(db, memberId, ['load_bearer']); // correct body → load_bearer
+  assert.deepEqual(await getMemberDoors(db, memberId), ['load_bearer'], 'active set is the corrected Door');
+  // the old Door is PRESERVED, just soft-removed (removed_at set) — never hard-deleted
+  const body = (await db.query<{ removed_at: string | null }>("select removed_at from member_door where member_id=$1 and door_slug='body'", [memberId])).rows[0];
+  assert.ok(body, 'the old Door row still exists (recoverable)');
+  assert.ok(body!.removed_at, 'it is soft-removed, not deleted');
+  const named = (await db.query<{ named_door: string }>('select named_door from member_profile where member_id=$1', [memberId])).rows[0]!.named_door;
+  assert.equal(named, 'load_bearer', 'named_door follows the new primary');
+  // returning to the old Door reactivates the SAME row (removed_at → null) — no duplicate
+  await softSetMemberDoors(db, memberId, ['body']);
+  assert.deepEqual(await getMemberDoors(db, memberId), ['body']);
+  const n = (await db.query<{ n: number }>("select count(*)::int n from member_door where member_id=$1 and door_slug='body'", [memberId])).rows[0]!.n;
+  assert.equal(n, 1, 'reactivated in place — no duplicate row');
+});
+
+test('softSetMemberDoors keeps the untouched primary and swaps only the secondary — §2b revision', async () => {
+  const { db, memberId } = await seedMember();
+  await setMemberDoors(db, memberId, ['grind', 'marriage']); // grind primary, marriage secondary
+  await softSetMemberDoors(db, memberId, ['grind', 'load_bearer']); // correct marriage → load_bearer; grind untouched
+  assert.deepEqual(await getMemberDoors(db, memberId), ['grind', 'load_bearer']);
+  const marriage = (await db.query<{ removed_at: string | null }>("select removed_at from member_door where member_id=$1 and door_slug='marriage'", [memberId])).rows[0];
+  assert.ok(marriage!.removed_at, 'the corrected-away Door is soft-removed, not gone');
+});
+
+test('emitHarvestMoment carries the re-seeing pair + reconnect surface (§2b R5 correct-pair link)', async () => {
+  const { db, memberId } = await seedMember();
+  const momentId = await emitHarvestMoment(db, memberId, {
+    destinationIntent: 'keeper', keeperType: 'tell', surface: 'reconnect',
+    sourceRef: { kind: 'reconnect', ref: 'doors', label: 'Re-seeing · The Marriage → The Load-Bearer' },
+    payloadRef: 'The Marriage → The Load-Bearer',
+    pair: { fromSlug: 'marriage', toSlug: 'load_bearer' },
+  });
+  assert.ok(momentId, 'returns the correlation id');
+  const row = (await db.query<{ surface: string; kind: string; meta: unknown }>('select surface, kind, meta from member_event where member_id=$1', [memberId])).rows[0]!;
+  const meta = (typeof row.meta === 'string' ? JSON.parse(row.meta) : row.meta) as { pair?: unknown; keeperType?: string };
+  assert.equal(row.kind, 'harvest_moment');
+  assert.equal(row.surface, 'reconnect', 'tagged as a reconnect-surface event');
+  assert.equal(meta.keeperType, 'tell');
+  assert.deepEqual(meta.pair, { fromSlug: 'marriage', toSlug: 'load_bearer' }, 'the from→to correct-pair link rides in meta');
 });
 
 test('reconcileDoors (no-API fallback) keeps current + adds what the conversation surfaced', async () => {

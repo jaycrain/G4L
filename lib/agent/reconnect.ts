@@ -90,7 +90,8 @@ export async function loadReconnectCaptures(db: Db, memberId: string): Promise<C
   // The full recognized Door set, PRIMARY FIRST (recognition, not a routing set). Fall back to named_door.
   const doorRows = (
     await db.query<{ door_slug: string; is_primary: boolean }>(
-      'select door_slug, is_primary from member_door where member_id = $1 order by is_primary desc, sort_order',
+      // ACTIVE Doors only — a re-seeing soft-removes the old Door (removed_at), so it must not reload as current.
+      'select door_slug, is_primary from member_door where member_id = $1 and removed_at is null order by is_primary desc, sort_order',
       [memberId],
     )
   ).rows;

@@ -16,7 +16,8 @@ const doorDisplay = (slug: DoorSlug) => DOORS.find((d) => d.slug === slug)?.disp
  * Doors Session refines it. */
 export async function getMemberDoors(db: Db, memberId: string): Promise<DoorSlug[]> {
   const { rows } = await db.query<{ door_slug: string }>(
-    'select door_slug from member_door where member_id=$1 order by is_primary desc, sort_order',
+    // ACTIVE Doors only — a soft-removed Door (removed_at set, §2b revision) is preserved but no longer routes.
+    'select door_slug from member_door where member_id=$1 and removed_at is null order by is_primary desc, sort_order',
     [memberId],
   );
   return rows.map((r) => r.door_slug).filter(isDoorSlug);
@@ -43,6 +44,32 @@ export async function setMemberDoors(db: Db, memberId: string, slugs: DoorSlug[]
   await writeAsActor(db, 'member_agent', (tx) =>
     tx.query('update member_profile set named_door=$2 where member_id=$1', [memberId, valid[0]]),
   );
+  return valid.map(doorDisplay);
+}
+
+/** SOFT-set the canonical Door set (§2b revision / Decision L, on the 0043 substrate): soft-remove (stamp
+ * removed_at — never destroy) any active Door no longer present, reactivate/insert the present ones, first =
+ * primary, and sync named_door. All writes run as an audited actor so the shift is recorded (0043 trigger). This
+ * is the recovery-first revision writer; the legacy hard-delete setMemberDoors is the old Doors-Session path. */
+export async function softSetMemberDoors(db: Db, memberId: string, slugs: DoorSlug[]): Promise<string[]> {
+  const valid = slugs.filter(isDoorSlug);
+  if (valid.length === 0) return getMemberDoors(db, memberId).then((d) => d.map(doorDisplay)); // refuse empty (≥1 contract)
+  await writeAsActor(db, 'member_agent', async (tx) => {
+    // Soft-remove any ACTIVE Door not in the new set — stamped, recoverable, audited (never a raw delete).
+    await tx.query(
+      'update member_door set removed_at = now() where member_id=$1 and removed_at is null and door_slug <> all($2::text[])',
+      [memberId, valid],
+    );
+    // Upsert the present set; reactivate a previously soft-removed row (removed_at → null), set primary/order.
+    for (let i = 0; i < valid.length; i++) {
+      await tx.query(
+        `insert into member_door (member_id, door_slug, is_primary, sort_order) values ($1,$2,$3,$4)
+         on conflict (member_id, door_slug) do update set removed_at = null, is_primary = excluded.is_primary, sort_order = excluded.sort_order`,
+        [memberId, valid[i], i === 0, i],
+      );
+    }
+    await tx.query('update member_profile set named_door=$2 where member_id=$1', [memberId, valid[0]]);
+  });
   return valid.map(doorDisplay);
 }
 

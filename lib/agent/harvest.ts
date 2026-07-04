@@ -21,6 +21,8 @@ export type HarvestMoment = {
   sourceRef: { kind: string; ref?: string; label?: string }; // reuses playbook_entry's source_kind/ref/label trio
   payloadRef: string; // the member's committed verbatim words — NEVER the transcript
   private?: boolean; // a private-by-default source (e.g. Legacy Letter) → the event carries a reference, not the body
+  surface?: string; // which operating surface emitted it (default 'onboarding'; 'reconnect' for a Doors re-seeing)
+  pair?: { fromSlug: string; toSlug: string }; // §2b R5: the correct-pair link for a re-seeing tell (from→to)
 };
 
 /** Emit the immutable harvest_moment event → member_event. Returns the momentId (the correlation id). */
@@ -30,16 +32,17 @@ export async function emitHarvestMoment(db: Db, memberId: string, m: HarvestMome
     keeperType: m.keeperType ?? null,
     shareCategory: m.shareCategory ?? null,
     sourceRef: m.sourceRef,
+    pair: m.pair ?? null, // §2b R5: the from→to link a re-seeing tell carries; null for every other harvest
     schemaVersion: SCHEMA_VERSION,
     // Private sources never put the body in the QI log — a reference/flag instead.
     payloadRef: m.private ? `[private:${m.sourceRef.kind}]` : m.payloadRef,
   };
   const { rows } = await db.query<{ moment_id: string }>(
     `insert into member_event (member_id, kind, surface, ref, meta)
-     values ($1, 'harvest_moment', 'onboarding', $2,
+     values ($1, 'harvest_moment', $4, $2,
              jsonb_set($3::jsonb, '{momentId}', to_jsonb(gen_random_uuid()::text)))
      returning meta->>'momentId' as moment_id`,
-    [memberId, m.sourceRef.ref ?? null, JSON.stringify(meta)],
+    [memberId, m.sourceRef.ref ?? null, JSON.stringify(meta), m.surface ?? 'onboarding'],
   );
   return rows[0]!.moment_id;
 }
