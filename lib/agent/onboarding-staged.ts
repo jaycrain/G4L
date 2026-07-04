@@ -972,7 +972,11 @@ export const STAGED_TOOLS = [
     name: 'add_reclaim_item',
     description:
       'Record one thing the member wants back (a Reclaim-List item), in their words. Call once per item; it accumulates. ' +
-      "If they volunteer one EARLY (before the reclaim stage), capture it here anyway so it's never lost — you'll bring it back at its stage.",
+      "If they volunteer one EARLY (before the reclaim stage), capture it here anyway so it's never lost — you'll bring it back at its stage. " +
+      'Call add ONLY for a genuinely NEW, distinct want. Do NOT call add for an amount, number, cadence, or detail that ' +
+      "ELABORATES the want you most recently added — that is the SAME want getting sharper ('about 25 lbs' after " +
+      "'lose weight'; '2-3 rides a week' after 'ride my bike'; 'a few days a week there too' after 'core work'). Fold " +
+      'those into the existing item with refine_reclaim_item — NEVER as a second item, or the card reads repetitive and sloppy.',
     input_schema: {
       type: 'object' as const,
       properties: { text: { type: 'string' }, category: { type: 'string' } },
@@ -982,11 +986,12 @@ export const STAGED_TOOLS = [
   {
     name: 'refine_reclaim_item',
     description:
-      "REPLACE the reclaim item you MOST RECENTLY added with a sharper, more concrete version — use this after you " +
-      "gently drew the member toward something they could actually notice progress on (a cadence, a number, a specific " +
-      "anchor: 'ride my bike more' → 'ride my bike a couple times a week'). Pass the WHOLE new phrasing in `text`, in " +
-      "their words. This updates the item in place — it does NOT add a second one. Only use it to sharpen the last " +
-      "item; use add_reclaim_item for a genuinely new want.",
+      "REPLACE the reclaim item you MOST RECENTLY added with a sharper, more complete version — pass the WHOLE new " +
+      "phrasing in `text`, in their words. Two triggers: (1) after you gently drew them toward something trackable " +
+      "('ride my bike more' → 'ride my bike a couple times a week'); (2) whenever their reply just adds an amount, " +
+      "number, cadence, or detail to the want you most recently added — FOLD it in ('lose weight' + 'about 25 lbs' → " +
+      "'lose about 25 lbs'; 'core work' + '2-3 days a week' → 'core work, 2-3 days a week'). This updates the item in " +
+      "place — it does NOT add a second one. Use add_reclaim_item ONLY for a genuinely new, distinct want.",
     input_schema: { type: 'object' as const, properties: { text: { type: 'string' } }, required: ['text'] },
   },
   {
@@ -1147,8 +1152,9 @@ function stageInstruction(stage?: Stage): string {
       'progress on. When a want is vague ("ride my bike more", "get in shape"), reflect it and ask ONE gentle ' +
       'question toward something trackable — a rough cadence, a number, a specific anchor ("what would that look ' +
       'like — a couple rides a week? weekends?"). Then call refine_reclaim_item with the sharper phrasing IN ' +
-      'THEIR WORDS to replace the vague one (do NOT add a second item). When they answer with the cadence/number/' +
-      'anchor ("2-3 times a week"), THAT drilled version IS the want — refine the tag to it ("run 2-3x a week"), ' +
+      'THEIR WORDS to replace the vague one (do NOT add a second item). When they answer with a cadence, number, ' +
+      'amount, or detail ("2-3 times a week", "about 25 lbs"), THAT is the SAME want getting sharper — refine the tag ' +
+      'to fold it in ("run 2-3x a week", "lose about 25 lbs"), NEVER add_reclaim_item a second bullet for it, and ' +
       'never leave the vague "My running" on the list. The captured item must be the concrete one, because the ' +
       'whole program measures against this list. Take whatever they give — if they stay general, that\'s fine; ' +
       'never force a metric, never turn it into a form, at most ONE sharpening per want. Already-concrete wants ' +
