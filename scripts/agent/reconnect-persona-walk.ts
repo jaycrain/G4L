@@ -188,9 +188,18 @@ function revOf(s: ConvState): string {
   return parts.join('');
 }
 
-async function runPersona(p: Persona): Promise<void> {
-  console.log(`\n══════════ persona: ${p.name} ══════════`);
-  console.log(`seeded doors: ${JSON.stringify(p.committed.doors)}  identity: ${p.committed.identityNoun ?? '(skipped)'}\n`);
+// Interactive mode (`--me`): YOU are the member — type each reply, the real arc replies live. Same engine, no
+// persona model. Seeds the committed captures from the named persona (default 'grind') so the callback has doors.
+async function askYou(rl: { question: (q: string) => Promise<string> }): Promise<string> {
+  const ans = await rl.question('[YOU] › ').catch(() => 'quit'); // EOF (piped input) → treat as quit
+  return (ans ?? 'quit').trim();
+}
+
+async function runPersona(p: Persona, rl?: { question: (q: string) => Promise<string> }): Promise<void> {
+  console.log(`\n══════════ ${rl ? 'interactive walk (you are the member)' : `persona: ${p.name}`} ══════════`);
+  console.log(`seeded doors: ${JSON.stringify(p.committed.doors)}  identity: ${p.committed.identityNoun ?? '(skipped)'}`);
+  if (rl) console.log(`(you named "${p.committed.doors?.[0]}" at intake — to feel the re-seeing, tell a story that actually points at a DIFFERENT door; type "quit" to stop)`);
+  console.log('');
 
   let turn: Turn = reconnectOpening(p.committed); // stage 'entry', reply = the callback
   let state = turn.state;
@@ -199,8 +208,9 @@ async function runPersona(p: Persona): Promise<void> {
 
   // Walk until the Doors beat hands off (stage advances past 'doors') or completes, capped for safety.
   for (let i = 0; i < 16 && !turn.complete && stageOf(state) !== 'measurement'; i++) {
-    const m = await member(p.system, history); // history holds prior turns only — the engine appends this message
-    console.log(`[MEMBER]\n${m}\n`);
+    const m = rl ? await askYou(rl) : await member(p.system, history); // history holds prior turns; the engine appends this
+    if (rl && (m === '' || m.toLowerCase() === 'quit')) { console.log('\n(ended early)'); break; }
+    if (!rl) console.log(`[MEMBER]\n${m}\n`);
     turn =
       stageOf(state) === 'entry'
         ? applyReconnectTurn(state, history, m, { text: '' }) // entry → doors is deterministic (mirrors the action)
@@ -208,23 +218,38 @@ async function runPersona(p: Persona): Promise<void> {
     history.push({ role: 'member', text: m });
     history.push({ role: 'agent', text: turn.reply });
     state = turn.state;
-    console.log(`[COMPANION | ${stageOf(state)} · doors:${JSON.stringify(state.collected.doors ?? [])}]${confOf(state)}${revOf(state)}\n${turn.reply}\n`);
+    console.log(`\n[COMPANION | ${stageOf(state)} · doors:${JSON.stringify(state.collected.doors ?? [])}]${confOf(state)}${revOf(state)}\n${turn.reply}\n`);
   }
 
   console.log('──────────');
   console.log(`ended at stage: ${stageOf(state)}  ${stageOf(state) === 'measurement' ? '(Doors beat handed off ✓)' : '(did not hand off — read why above)'}`);
 }
 
-const only = process.argv[2];
-const toRun = only ? PERSONAS.filter((p) => p.name === only) : PERSONAS;
-if (toRun.length === 0) {
-  console.error(`no persona named "${only}". available: ${PERSONAS.map((p) => p.name).join(', ')}`);
-  process.exit(1);
-}
-for (const p of toRun) {
+const args = process.argv.slice(2);
+const interactive = args.includes('--me');
+const only = args.find((a) => a !== '--me');
+
+if (interactive) {
+  const seed = PERSONAS.find((p) => p.name === only) ?? PERSONAS[0]!;
+  const readline = await import('node:readline/promises');
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
   try {
-    await runPersona(p);
-  } catch (e) {
-    console.log(`\n### ${p.name} — ✗ errored: ${(e as Error)?.message}`);
+    await runPersona(seed, rl);
+  } finally {
+    rl.close();
+  }
+  process.exit(0); // clean exit — don't wait on a dangling stdin handle
+} else {
+  const toRun = only ? PERSONAS.filter((p) => p.name === only) : PERSONAS;
+  if (toRun.length === 0) {
+    console.error(`no persona named "${only}". available: ${PERSONAS.map((p) => p.name).join(', ')}`);
+    process.exit(1);
+  }
+  for (const p of toRun) {
+    try {
+      await runPersona(p);
+    } catch (e) {
+      console.log(`\n### ${p.name} — ✗ errored: ${(e as Error)?.message}`);
+    }
   }
 }
