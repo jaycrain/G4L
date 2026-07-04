@@ -326,21 +326,58 @@ const RECLAIM_STOPWORDS = new Set([
   'i', 'im', 'be', 'being',
 ]);
 function reclaimKey(s: string): string {
+  return reclaimTokens(s).sort().join(' ');
+}
+function reclaimTokens(s: string): string[] {
   return (s ?? '')
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, ' ')
     .split(' ')
-    .filter((w) => w && !RECLAIM_STOPWORDS.has(w))
-    .sort()
-    .join(' ');
+    .filter((w) => w && !RECLAIM_STOPWORDS.has(w));
 }
-// Append a want to `c` only if it isn't already on the list (normalized). Returns whether it actually landed —
-// so the gather stage can tell a real new offer from a duplicate and NOT read the dup as a "done" signal.
+// A bare cadence/frequency fragment ("every day", "2-3 times a week", "twice a week") — NOT a standalone want but
+// a DRILL of the previous one (Jay's walk: "Start walking every morning" + "Every day" landed as two sloppy
+// items). When one is captured, the engine folds it into the last want instead of a standalone.
+const BARE_MODIFIER_RE =
+  /^(every\s+(day|morning|evening|night|week|weekend)s?|daily|weekly|nightly|on\s+weekends?|most\s+(days|mornings)|(a\s+few|once|twice|[1-9][0-9]?(\s*[-–to]+\s*[1-9][0-9]?)?)\s*(times?|x|days?)?\s*(a|per|each|\/)?\s*(day|week|morning|month)?)$/i;
+function isBareModifier(s: string): boolean {
+  return BARE_MODIFIER_RE.test((s ?? '').trim().replace(/[.,!?]+$/, ''));
+}
+function isTokenSubset(a: string[], b: Set<string>): boolean {
+  return a.length > 0 && a.every((x) => b.has(x));
+}
+// Append a want to `c`, keeping the list CLEAN (Jay's walk: repetitive + sloppy). Returns whether a genuinely NEW
+// item landed (so the gather stage can tell a real offer from a dup/merge). Four cases, in order:
+//   1. exact-token dup → skip;  2. bare cadence fragment → fold into the last want;  3. token-subset of / superset
+//   of an existing want (a shorter/longer phrasing of the SAME want, e.g. "Lose 50 lbs" vs "My body, lose 50 lbs")
+//   → keep the more complete one, never a second;  4. otherwise → a new item.
 function appendReclaim(c: Collected, item: string, category = ''): boolean {
-  const key = reclaimKey(item);
+  const trimmed = item.trim();
+  const key = reclaimKey(trimmed);
   if (!key) return false;
-  if ((c.reclaimList ?? []).some((x) => reclaimKey(x) === key)) return false;
-  c.reclaimList = [...(c.reclaimList ?? []), item.trim()];
+  const list = c.reclaimList ?? [];
+  if (list.some((x) => reclaimKey(x) === key)) return false; // 1. exact-token dup
+  if (isBareModifier(trimmed) && list.length > 0) {
+    // 2. drill fragment → fold into the previous want, don't stand alone.
+    const merged = [...list];
+    merged[merged.length - 1] = `${merged[merged.length - 1]}, ${trimmed}`;
+    c.reclaimList = merged;
+    return false;
+  }
+  const newTokens = reclaimTokens(trimmed);
+  const newSet = new Set(newTokens);
+  for (let i = 0; i < list.length; i++) {
+    const exTokens = reclaimTokens(list[i]!);
+    if (isTokenSubset(newTokens, new Set(exTokens))) return false; // 3a. existing already covers the new one
+    if (isTokenSubset(exTokens, newSet)) {
+      // 3b. new is the more complete phrasing → replace in place (list length unchanged, categories stay aligned).
+      const replaced = [...list];
+      replaced[i] = trimmed;
+      c.reclaimList = replaced;
+      return false;
+    }
+  }
+  c.reclaimList = [...list, trimmed]; // 4. a genuinely new want
   c.reclaimCategories = [...(c.reclaimCategories ?? []), category];
   return true;
 }
@@ -673,10 +710,12 @@ const reclaimStage: StageDef = {
     // The member put a want FORWARD this turn (new or a restatement) — the "still in flow" signal, distinct from
     // whether the list actually grew (a dup offer keeps them in flow).
     const offered = !closing && shouldCaptureStagedReclaim(b.memberMessage);
-    const modelCaptured = (b.collected.reclaimList?.length ?? 0) > b.priorReclaimLen; // model's add_reclaim_item landed
-    // Backstop: capture an untagged want ONLY when offered AND the model did NOT already tag it. appendReclaim
-    // dedupes restatements. Skip when the turn REFINED a want (the sharpening answer, already folded in).
-    if (offered && !modelCaptured && !b.refinedThisTurn) appendReclaim(b.collected, b.memberMessage);
+    // The model ATTEMPTED to tag a want this turn (record carried one) — trust it even if appendReclaim folded or
+    // deduped it (so the list didn't grow). This is what stops the backstop from re-folding a bare cadence the
+    // model already tagged ("Every day" folded once by the model, then again by the backstop). Only backstop when
+    // the model tagged NOTHING and the member is offering.
+    const modelTagged = (b.model.record?.reclaimList?.length ?? 0) > 0;
+    if (offered && !modelTagged && !b.refinedThisTurn) appendReclaim(b.collected, b.memberMessage);
     const count = b.collected.reclaimList?.length ?? 0;
     const grewThisTurn = count > b.priorReclaimLen; // a NEW unique want landed this turn (model or backstop)
     // RECITE-MISMATCH GUARD (Phase 2.2): the Reclaim List is built ONLY from tags. If the model RECITES/wraps the

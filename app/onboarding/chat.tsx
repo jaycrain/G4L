@@ -25,6 +25,7 @@ export default function OnboardingChat() {
   // Decision Z: the password is collected UPFRONT at the gate (one clean signup moment) but held only in memory —
   // the account is still created at the "This is me" commit, and the password is never persisted client-side.
   const [password, setPassword] = useState('');
+  const [resumable, setResumable] = useState(false); // a saved session exists → show the "welcome back" gate
   const [messages, setMessages] = useState<ConvMessage[]>([]);
   const [state, setState] = useState<ConvState | null>(null);
   const [input, setInput] = useState('');
@@ -46,8 +47,10 @@ export default function OnboardingChat() {
     }
   }, [input]);
 
-  // On first load: pre-fill name/email, and auto-resume straight into the conversation if one's saved —
-  // so a returning member never has to re-enter the gate or start over.
+  // On first load: pre-fill name/email and DETECT a resumable session — but do NOT auto-skip into the
+  // conversation. Decision Z: the password is never persisted, so a returner must re-enter it; we keep them on
+  // the gate (name + email pre-filled, a "welcome back" note) to collect the password. Submitting resumes exactly
+  // where they left off (begin() loads the saved session). This is what prevents the finalize "no password" error.
   useEffect(() => {
     const savedName = ls.get(LS.name), savedEmail = ls.get(LS.email), token = ls.get(LS.token);
     if (savedName) setName(savedName);
@@ -58,15 +61,9 @@ export default function OnboardingChat() {
       try {
         const resumed = await loadOnboardingSessionAction(savedEmail, token);
         if (cancelled || !resumed || !resumed.messages.length) return;
-        tokenRef.current = resumed.token;
-        ls.set(LS.token, resumed.token);
-        setMessages(resumed.messages);
-        setState(resumed.state);
-        setInput(ls.get(LS.draft));
-        if (resumed.state.stage === 'complete') setReady(true);
-        setPhase('chat'); // pick up exactly where they left off
+        setResumable(true); // show the "welcome back" gate; begin() does the actual resume on submit
       } catch {
-        /* no resume — fall back to the gate */
+        /* no resume — the fresh gate stands */
       }
     })();
     return () => { cancelled = true; };
@@ -230,19 +227,30 @@ export default function OnboardingChat() {
   if (phase === 'gate') {
     return (
       <>
-        {/* §2a Welcome / front matter — DIRECTIONAL copy (for Jay's wordsmithing). Affirm → container → light
-            frame → AI disclosure. Number-free (no ID Score promise — that's a Reconnect thing, Decision D). */}
-        <h1>You’re in the right place.</h1>
-        <div className="onboard-intro">
-          <p>However you found your way here — a newsletter, a post, someone who thought of you — something in it landed, or you wouldn’t be reading this. That’s worth trusting.</p>
-          <p>Here’s what this is: a chance to reclaim the version of you that’s gotten quiet under everyone else’s needs and a hundred reasonable decisions. We start with a real conversation — no forms, no scores yet, just you and a companion built for this one thing.</p>
-          <p>It takes about twenty minutes, and it’s better unhurried — find a comfortable place before you start. If life interrupts, your place is saved; come back when you can.</p>
-        </div>
-        {/* AI disclosure — woven in, its own quiet beat (governance): they always know they're talking with AI. */}
-        <p className="ai-disclosure" role="note">
-          From here it’s you and your G4L companion — an AI built for this and nothing else. It remembers what
-          you share so you never start over, and what you tell it shapes everything that follows.
-        </p>
+        {/* §2a Welcome / front matter — DIRECTIONAL copy (for Jay's wordsmithing). A returner (resumable) gets a
+            short "welcome back" instead of the full intro; they just re-enter their password (Decision Z). */}
+        {resumable ? (
+          <>
+            <h1>Welcome back.</h1>
+            <div className="onboard-intro">
+              <p>Your conversation is right where you left it. Enter your password and we’ll pick up together — nothing’s lost.</p>
+            </div>
+          </>
+        ) : (
+          <>
+            <h1>You’re in the right place.</h1>
+            <div className="onboard-intro">
+              <p>However you found your way here — a newsletter, a post, someone who thought of you — something in it landed, or you wouldn’t be reading this. That’s worth trusting.</p>
+              <p>Here’s what this is: a chance to reclaim the version of you that’s gotten quiet under everyone else’s needs and a hundred reasonable decisions. We start with a real conversation — no forms, no scores yet, just you and a companion built for this one thing.</p>
+              <p>It takes about twenty minutes, and it’s better unhurried — find a comfortable place before you start. If life interrupts, your place is saved; come back when you can.</p>
+            </div>
+            {/* AI disclosure — woven in, its own quiet beat (governance): they always know they're talking with AI. */}
+            <p className="ai-disclosure" role="note">
+              From here it’s you and your G4L companion — an AI built for this and nothing else. It remembers what
+              you share so you never start over, and what you tell it shapes everything that follows.
+            </p>
+          </>
+        )}
         <form onSubmit={begin}>
           <label htmlFor="name">Your name</label>
           <input id="name" type="text" value={name} onChange={(e) => setName(e.target.value)} required />
@@ -250,18 +258,18 @@ export default function OnboardingChat() {
           <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
           {/* Decision Z: password set once, here — held in memory, the account is created only when they confirm
               the card, so the Ceremony is never interrupted by a signup step. */}
-          <label htmlFor="password">Choose a password</label>
+          <label htmlFor="password">{resumable ? 'Your password' : 'Choose a password'}</label>
           <input
             id="password"
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            autoComplete="new-password"
+            autoComplete={resumable ? 'current-password' : 'new-password'}
             minLength={8}
             required
           />
           {error && <p className="error">{error}</p>}
-          <button type="submit">Let’s begin →</button>
+          <button type="submit">{resumable ? 'Pick up where I left off →' : 'Let’s begin →'}</button>
         </form>
       </>
     );

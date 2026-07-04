@@ -593,6 +593,35 @@ test('STAGED gap→reclaim — a WARM bridge off the gap, not a cold pivot (Phas
   assert.match(turn.reply, /want back|first thing/i, 'still opens the reclaim ask');
 });
 
+test('STAGED reclaim — the list stays CLEAN: drill fragments fold in, near-dups collapse (Jay walk: sloppy list)', () => {
+  const atReclaim: ConvState = { stage: 'reclaim', collected: { athleticPast: 'a triathlete', identityNoun: 'Triathlete', gap: 'A bad divorce took the time and the fitness.' } };
+  const { finalState } = replayStaged(
+    [
+      { member: 'My body, I need to lose about 50 lbs', model: { text: 'Good. What else?', record: { reclaimList: ['My body, I need to lose about 50 lbs'] } } },
+      { member: 'Lose about 50 lbs', model: { text: 'Got it.', record: { reclaimList: ['Lose about 50 lbs'] } } }, // near-dup (subset) → collapses
+      { member: 'Start walking every morning', model: { text: 'How often?', record: { reclaimList: ['Start walking every morning'] } } },
+      { member: 'Every day', model: { text: 'Nice.', record: { reclaimList: ['Every day'] } } }, // bare cadence → folds in
+      { member: 'Start riding my bike again, maybe an e-bike', model: { text: 'How often?', record: { reclaimList: ['Start riding my bike again, maybe an e-bike'] } } },
+      { member: '2-3 times a week', model: { text: 'Good.', record: { reclaimList: ['2-3 times a week'] } } }, // bare cadence → folds in
+    ],
+    atReclaim,
+  );
+  const list = finalState.collected.reclaimList ?? [];
+  assert.equal(list.filter((x) => /50 lbs/i.test(x)).length, 1, 'the 50-lbs want appears once (near-dup collapsed)');
+  assert.ok(!list.some((x) => /^every day$/i.test(x.trim())), '"Every day" is not a standalone item');
+  assert.ok(!list.some((x) => /^2-3 times a week$/i.test(x.trim())), '"2-3 times a week" is not a standalone item');
+  assert.match(list.join(' | '), /walking every morning, Every day/i, 'the cadence folded into the walking want');
+  assert.match(list.join(' | '), /bike.*, 2-3 times a week/i, 'the cadence folded into the bike want');
+  assert.equal(list.length, 3, 'three clean wants, not seven sloppy fragments');
+});
+
+test('STAGED reclaim confirm — "That\'s about it" wraps up cleanly (not captured; completes)', () => {
+  const atConfirm: ConvState = { stage: 'reclaim', awaitingConfirm: true, collected: { athleticPast: 'a runner', identityNoun: 'Runner', gap: 'The years took it.', reclaimList: ['run again', 'walk daily', 'see friends'] } };
+  const turn = applyStagedTurn(atConfirm, [], "That's about it", { text: 'Good.' });
+  assert.equal(turn.complete, true, 'a wrap-up phrase completes to the card');
+  assert.ok(!(turn.state.collected.reclaimList ?? []).some((x) => /about it/i.test(x)), '"That\'s about it" is not captured as a want');
+});
+
 test('STAGED reclaim confirm — "That looks great" is NOT captured as a want (Jay walk); it completes', () => {
   const atConfirm: ConvState = { stage: 'reclaim', awaitingConfirm: true, collected: { athleticPast: 'a runner', identityNoun: 'Runner', gap: 'The caregiving years took it.', reclaimList: ['My running', '2-3 runs per week', 'a local 5k'] } };
   // No model signal → the positive-ack regex must catch it (not append the confirmation as a list item).
