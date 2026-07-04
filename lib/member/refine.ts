@@ -55,9 +55,10 @@ export async function softSetMemberDoors(db: Db, memberId: string, slugs: DoorSl
   const valid = slugs.filter(isDoorSlug);
   if (valid.length === 0) return getMemberDoors(db, memberId).then((d) => d.map(doorDisplay)); // refuse empty (≥1 contract)
   await writeAsActor(db, 'member_agent', async (tx) => {
-    // Soft-remove any ACTIVE Door not in the new set — stamped, recoverable, audited (never a raw delete).
+    // Soft-remove any ACTIVE Door not in the new set — stamped, recoverable, audited (never a raw delete). Also drop
+    // its is_primary so a removed row never lingers as a second "primary" (readers filter removed_at, but keep it tidy).
     await tx.query(
-      'update member_door set removed_at = now() where member_id=$1 and removed_at is null and door_slug <> all($2::text[])',
+      'update member_door set removed_at = now(), is_primary = false where member_id=$1 and removed_at is null and door_slug <> all($2::text[])',
       [memberId, valid],
     );
     // Upsert the present set; reactivate a previously soft-removed row (removed_at → null), set primary/order.
