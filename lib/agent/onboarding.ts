@@ -649,7 +649,7 @@ const RECORD_PROGRESS_TOOL = {
 // goes model-SIGNALED (the model understands "nope, that's a good list" = done far better than a regex), the
 // engine still DISPOSES (bounds it; the regex resolvers remain the fallback when the model doesn't signal).
 export type ReplyIntent = 'done' | 'more' | 'dispute';
-export type ModelTurn = { text: string; record?: Partial<Collected> & { complete?: boolean }; noFade?: boolean; gapReady?: boolean; refineReclaim?: string; replyIntent?: ReplyIntent };
+export type ModelTurn = { text: string; record?: Partial<Collected> & { complete?: boolean }; noFade?: boolean; gapReady?: boolean; refineReclaim?: string; replyIntent?: ReplyIntent; depthReady?: boolean };
 
 // Parse an Anthropic response into a ModelTurn (prose + the record_progress tool input, if any).
 function parseModelTurn(content: readonly unknown[]): ModelTurn {
