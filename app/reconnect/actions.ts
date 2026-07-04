@@ -27,13 +27,15 @@ async function persistRevision(db: Db, memberId: string, prev: ConvState, turn: 
     const priorTells = prev.reseeingTells?.length ?? 0;
     for (const t of (turn.state.reseeingTells ?? []).slice(priorTells)) {
       const name = (s: string) => DOORS.find((d) => d.slug === s)?.displayName ?? s;
+      // A correct carries from→to (a re-seeing pair); a widen/name carries just the surfaced Door.
+      const desc = t.fromSlug ? `${name(t.fromSlug)} → ${name(t.toSlug)}` : `+ ${name(t.toSlug)}`;
       await emitHarvestMoment(db, memberId, {
         destinationIntent: 'keeper',
         keeperType: 'tell',
         surface: 'reconnect',
-        sourceRef: { kind: 'reconnect', ref: 'doors', label: `Re-seeing · ${name(t.fromSlug)} → ${name(t.toSlug)}` },
-        payloadRef: `${name(t.fromSlug)} → ${name(t.toSlug)}`,
-        pair: { fromSlug: t.fromSlug, toSlug: t.toSlug },
+        sourceRef: { kind: 'reconnect', ref: 'doors', label: `Re-seeing · ${desc}` },
+        payloadRef: desc,
+        pair: t.fromSlug ? { fromSlug: t.fromSlug, toSlug: t.toSlug } : { toSlug: t.toSlug },
       });
     }
   } catch {

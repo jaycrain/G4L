@@ -179,18 +179,25 @@ function reflectReseeing(modelText: string): string {
   // Graceful: a swap was signaled but no words came — do NOT assert it. Ask, so it stays offered-not-asserted.
   return "Something you said makes me wonder if the door you named isn't quite the one — can you say more, so I get it right?";
 }
-function reseeingLanded(toSlug: DoorSlug): string {
+function reseeingLanded(toSlug: DoorSlug, kind: DoorRevision['kind']): string {
   const name = DOORS.find((d) => d.slug === toSlug)?.displayName ?? 'that';
-  return `${name}, then — that's the one. That changes the shape of it. Let me sit with what it means, and we'll keep going from there.`;
+  if (kind === 'correct') return `${name}, then — that's the one. That changes the shape of it. Let me sit with what it means, and we'll keep going from there.`;
+  // widen / name ADD a Door rather than replace — acknowledge it as also true, not a correction of the first.
+  return `${name}, too — I'll hold that alongside the one you named. Both are part of it. Let's keep going.`;
 }
-// Pure: apply a confirmed correction to the door set — swap from→to, PRESERVE primary position (index 0), dedup.
-// If the named door wasn't in the set, the corrected one becomes primary.
-function applyCorrection(doors: DoorSlug[], rev: DoorRevision): DoorSlug[] {
+// Pure: apply a confirmed CORRECT — swap from→to, PRESERVE primary position (index 0), dedup. If the named Door
+// wasn't in the set, the corrected one becomes primary.
+function applyCorrection(doors: DoorSlug[], fromSlug: DoorSlug, toSlug: DoorSlug): DoorSlug[] {
   const next = [...doors];
-  const i = next.indexOf(rev.fromSlug);
-  if (i !== -1) next[i] = rev.toSlug;
-  else if (!next.includes(rev.toSlug)) next.unshift(rev.toSlug);
+  const i = next.indexOf(fromSlug);
+  if (i !== -1) next[i] = toSlug;
+  else if (!next.includes(toSlug)) next.unshift(toSlug);
   return Array.from(new Set(next));
+}
+// Pure: apply a confirmed WIDEN/NAME — ADD the Door (secondary; primary is untouched), dedup. Retires nothing. If
+// the set was empty, the added Door becomes primary.
+function applyAddition(doors: DoorSlug[], toSlug: DoorSlug): DoorSlug[] {
+  return Array.from(new Set([...doors, toSlug]));
 }
 
 const doorsStage: StageDef = {
@@ -230,17 +237,23 @@ const doorsStage: StageDef = {
       const intent = resolveGapConfirm(b.memberMessage, b.model.replyIntent);
       b.pendingRevision = undefined;
       b.awaitingConfirm = false;
-      if (intent === 'dispute') { b.reply = REOPEN_RESEEING; return; } // rejected → keep their door, humbly
-      // Not disputed → they accepted. COMMIT the swap; never destroy the old Door (0043 soft-delete substrate).
-      if (rev.kind === 'correct' && isDoorSlug(rev.toSlug)) {
-        b.collected.doors = applyCorrection(b.collected.doors ?? [], rev);
-        // ENFORCEABLE DEFAULT-EMIT: the tell fires UNLESS the model flagged an unambiguous mislabel (R4).
-        if (!rev.flatMislabel) b.reseeingTells.push({ fromSlug: rev.fromSlug, toSlug: rev.toSlug });
+      if (intent === 'dispute') { b.reply = REOPEN_RESEEING; return; } // rejected → keep their door(s), humbly
+      // Not disputed → they accepted. COMMIT: a correct SWAPS (soft-delete substrate); widen/name ADD (retire nothing).
+      if (isDoorSlug(rev.toSlug)) {
+        b.collected.doors =
+          rev.kind === 'correct' && rev.fromSlug
+            ? applyCorrection(b.collected.doors ?? [], rev.fromSlug, rev.toSlug)
+            : applyAddition(b.collected.doors ?? [], rev.toSlug);
+        // ENFORCEABLE DEFAULT-EMIT (R4): the tell fires UNLESS the model flagged a routine change (flat mislabel for a
+        // correct, a mechanical add for widen/name). A correct carries the from→to pair; an add carries just the Door.
+        if (!rev.flatMislabel && !rev.mechanical) {
+          b.reseeingTells.push(rev.fromSlug ? { fromSlug: rev.fromSlug, toSlug: rev.toSlug } : { toSlug: rev.toSlug });
+        }
       }
       // R2: a correct RE-OPENS the insight — reset depth so a fresh one forms on the corrected door, never a stale one.
       (b.scratch as { doorDepth?: number }).doorDepth = 0;
-      // Accepted-and-added-more → keep drawing out on the corrected door; a clean acceptance → let it land.
-      b.reply = intent === 'addition' ? withQuestion(b.modelText, doorMore(b.history)) : reseeingLanded(rev.toSlug);
+      // Accepted-and-added-more → keep drawing out; a clean acceptance → let it land (copy differs correct vs add).
+      b.reply = intent === 'addition' ? withQuestion(b.modelText, doorMore(b.history)) : reseeingLanded(rev.toSlug, rev.kind);
       return;
     }
     // (2) A re-seeing may surface AT the insight confirm too (they dispute + the model proposes the truer door here).
@@ -357,6 +370,21 @@ export const RECONNECT_TOOLS = [
       required: ['from_slug', 'to_slug'],
     },
   },
+  {
+    name: 'propose_door_add',
+    description:
+      "Use when the drawn-out story surfaces an ADDITIONAL canonical Door alongside the one they named — the Fade went " +
+      "through more than one (kind='widen'), or a Door was quietly there all along and now gets named (kind='name'). " +
+      "This ADDS a Door; it does NOT replace the one they named (use propose_correction for a replacement). Propose it " +
+      "in THEIR words, OFFERED as a check they can reject, only when the material genuinely earns it. Pass slug (the " +
+      "canonical Door to add). Set mechanical=true ONLY for a routine add that carries no real new understanding — when " +
+      "it's a genuine re-seeing, leave it off.",
+    input_schema: {
+      type: 'object' as const,
+      properties: { slug: { type: 'string' }, kind: { type: 'string', enum: ['widen', 'name'] }, mechanical: { type: 'boolean' } },
+      required: ['slug', 'kind'],
+    },
+  },
 ];
 
 // Parse a Reconnect model response into the ModelTurn the kernel reads.
@@ -379,7 +407,15 @@ export function parseReconnectTurn(content: readonly unknown[]): ModelTurn {
         // Only a real, canonical, DISTINCT swap survives — a no-op or a bad slug is silently ignored (the model
         // can't force a revision on a non-Door; the engine disposes).
         if (isDoorSlug(from) && isDoorSlug(to) && from !== to) {
-          revision = { fromSlug: from, toSlug: to, kind: 'correct', flatMislabel: b.input?.flat_mislabel === true };
+          revision = { kind: 'correct', fromSlug: from, toSlug: to, flatMislabel: b.input?.flat_mislabel === true };
+        }
+      }
+      if (b.name === 'propose_door_add') {
+        const slug = b.input?.slug;
+        const kind = b.input?.kind;
+        // A widen/name ADDS a canonical Door (no from). Ignore a bad slug or a bad kind — the engine disposes.
+        if (isDoorSlug(slug) && (kind === 'widen' || kind === 'name')) {
+          revision = { kind, toSlug: slug, mechanical: b.input?.mechanical === true };
         }
       }
     }
@@ -442,7 +478,14 @@ never a verdict, same bar as any insight; only when the material genuinely earns
 thin material. It is THEIRS to confirm; if they say the Door they named is right, it is. Reserve flat_mislabel for the
 rare case where they simply misspoke the label (not a real re-seeing).
 
-THE DOORS (map the member's language to these; from_slug/to_slug must be one of these slugs):
+WIDEN / NAME (adding a Door, not replacing): sometimes the story doesn't REPLACE the Door they named — it reveals the
+Fade went through MORE than one. When a genuinely ADDITIONAL canonical Door surfaces (the marriage AND the load; the
+body AND the aging parent), call propose_door_add(slug, kind='widen') — offered as a check, same bar. When a Door was
+quietly there all along and now earns a name for the first time, use kind='name'. This ADDS alongside the one they
+named (it does not retire it) — use propose_correction only when the named Door was actually WRONG. Set mechanical=true
+only for a routine add with no real new understanding; a genuine surfacing is a re-seeing — leave it off.
+
+THE DOORS (map the member's language to these; from_slug/to_slug/slug must be one of these slugs):
 ${DOOR_CATALOG}
 
 IF THEY ASK "what were my Doors again?" — or seem to have lost the thread — STATE them plainly from MEMBER CONTEXT.

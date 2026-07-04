@@ -22,7 +22,7 @@ export type HarvestMoment = {
   payloadRef: string; // the member's committed verbatim words — NEVER the transcript
   private?: boolean; // a private-by-default source (e.g. Legacy Letter) → the event carries a reference, not the body
   surface?: string; // which operating surface emitted it (default 'onboarding'; 'reconnect' for a Doors re-seeing)
-  pair?: { fromSlug: string; toSlug: string }; // §2b R5: the correct-pair link for a re-seeing tell (from→to)
+  pair?: { fromSlug?: string; toSlug: string }; // §2b R5: a re-seeing tell — from→to for a correct; toSlug only for an add
 };
 
 /** Emit the immutable harvest_moment event → member_event. Returns the momentId (the correlation id). */

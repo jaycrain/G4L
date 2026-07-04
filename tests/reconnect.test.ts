@@ -193,3 +193,46 @@ test('reconnect revision · a non-canonical or no-op swap is ignored (the engine
   assert.notEqual(turn.state.awaitingConfirm, true, 'a non-canonical target does not open a revision confirm');
   assert.deepEqual(turn.state.collected.doors, ['marriage'], 'nothing swapped');
 });
+
+// --- WIDEN / NAME (Decision L, the ADD kinds — retire nothing; tell keyed to re-seeing, suppress on 'mechanical') ---
+
+test('reconnect revision · WIDEN is proposed, offered, and adds NOTHING until confirmed (R1)', () => {
+  const atDoors: ConvState = { stage: 'doors', stageScratch: { doors: { doorDepth: 2 } }, collected: { doors: ['marriage'] } };
+  const turn = applyReconnectTurn(atDoors, [], 'my father was failing right alongside all of it', {
+    text: 'The Marriage — and it sounds like The Aging Parents was open right beside it. Both at once?',
+    revision: { kind: 'widen', toSlug: 'aging_parents' },
+  });
+  assert.equal(turn.state.awaitingConfirm, true, 'offered as a check');
+  assert.deepEqual(turn.state.pendingRevision, { kind: 'widen', toSlug: 'aging_parents' });
+  assert.deepEqual(turn.state.collected.doors, ['marriage'], 'nothing added until they confirm');
+});
+
+test('reconnect revision · confirming a WIDEN adds the Door (keeps primary) + emits a tell (an add, no pair)', () => {
+  const pending: ConvState = { stage: 'doors', awaitingConfirm: true, pendingRevision: { kind: 'widen', toSlug: 'aging_parents' }, collected: { doors: ['marriage'] } };
+  const turn = applyReconnectTurn(pending, [], 'yeah, both were happening at the same time', { text: '', replyIntent: 'done' });
+  assert.deepEqual(turn.state.collected.doors, ['marriage', 'aging_parents'], 'added as secondary; the primary is untouched');
+  assert.deepEqual(turn.state.reseeingTells, [{ toSlug: 'aging_parents' }], 'a genuine surfacing emits a tell — an add carries no from-pair');
+  assert.equal(turn.state.pendingRevision, undefined);
+  assert.equal(turn.state.stage, 'doors');
+  assert.match(turn.reply, /Aging Parents/, 'acknowledges the added Door');
+});
+
+test('reconnect revision · NAME adds a quiet Door; a MECHANICAL add commits but emits NO tell', () => {
+  const named: ConvState = { stage: 'doors', awaitingConfirm: true, pendingRevision: { kind: 'name', toSlug: 'acceptance' }, collected: { doors: ['body'] } };
+  const t1 = applyReconnectTurn(named, [], "yeah — that's the quiet one, I never named it", { text: '', replyIntent: 'done' });
+  assert.deepEqual(t1.state.collected.doors, ['body', 'acceptance'], 'the quiet Door is named and added');
+  assert.deepEqual(t1.state.reseeingTells, [{ toSlug: 'acceptance' }], 'a genuine naming is a re-seeing → tell');
+
+  const mech: ConvState = { stage: 'doors', awaitingConfirm: true, pendingRevision: { kind: 'widen', toSlug: 'full_house', mechanical: true }, collected: { doors: ['grind'] } };
+  const t2 = applyReconnectTurn(mech, [], 'sure, add it', { text: '', replyIntent: 'done' });
+  assert.deepEqual(t2.state.collected.doors, ['grind', 'full_house'], 'the add still applies');
+  assert.equal(t2.state.reseeingTells, undefined, 'a mechanical add is not a keeper — no tell (suppress-on-explicit)');
+});
+
+test('reconnect revision · a disputed add is dropped, humbly — the named set stands', () => {
+  const pending: ConvState = { stage: 'doors', awaitingConfirm: true, pendingRevision: { kind: 'widen', toSlug: 'aging_parents' }, collected: { doors: ['marriage'] } };
+  const turn = applyReconnectTurn(pending, [], 'no, it was really just the marriage', { text: '', replyIntent: 'dispute' });
+  assert.deepEqual(turn.state.collected.doors, ['marriage'], 'nothing added on a dispute');
+  assert.equal(turn.state.reseeingTells, undefined, 'no tell');
+  assert.match(turn.reply, /door you named is the door|see it your way|got it wrong/i, 'humble, no defense');
+});

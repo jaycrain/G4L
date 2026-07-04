@@ -70,11 +70,13 @@ export type ConvState = {
 export type ConvMessage = { role: 'agent' | 'member'; text: string };
 export type Ctx = { name: string; email: string };
 
-// A door revision (Decision L). Slice 1 handles `correct` (the primary was really a different Door). `widen`/`name`
-// (add a Door / name a quiet one) land in a later slice — the kind rides here so the tool contract is stable.
+// A door revision (Decision L). `correct` = the primary was really a different Door (from→to, retires the old).
+// `widen` = the Fade went through an ADDITIONAL Door the story surfaced; `name` = a quiet Door made explicit — both
+// ADD (no fromSlug, nothing retired). Tell suppression: `flatMislabel` (correct) / `mechanical` (widen/name) — both
+// mean "a routine change, not a re-seeing", so default-emit / suppress-only-on-explicit holds across all kinds (R4).
 export type RevisionKind = 'correct' | 'widen' | 'name';
-export type DoorRevision = { fromSlug: DoorSlug; toSlug: DoorSlug; kind: RevisionKind; flatMislabel?: boolean };
-export type ReseeingTell = { fromSlug: DoorSlug; toSlug: DoorSlug };
+export type DoorRevision = { kind: RevisionKind; toSlug: DoorSlug; fromSlug?: DoorSlug; flatMislabel?: boolean; mechanical?: boolean };
+export type ReseeingTell = { toSlug: DoorSlug; fromSlug?: DoorSlug }; // fromSlug set for a correct (a pair); absent for an add
 
 export type Turn = { reply: string; state: ConvState; complete: boolean; crisis?: boolean; declined?: boolean };
 
