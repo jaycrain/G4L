@@ -120,6 +120,38 @@ IMPORTANT — there is only ONE door here:
 - When the guide reflects a real insight about the caregiving and who it pushed out, respond honestly — confirm it
   when it lands ("Yes… that's exactly it"), correct it if it overreaches.`,
   },
+  {
+    // REVISION (Decision L, slice 1) Gate-3 walk: comes in having named The Marriage, but the drawn-out story is
+    // really about carrying everyone — so the excavation should PROPOSE a re-seeing to The Load-Bearer (offered, not
+    // asserted), and on confirm swap the primary door + emit the tell. The felt read: does the shift land as "heard
+    // more precisely," not "re-interviewed"?
+    name: 'revision',
+    committed: {
+      identityNoun: 'Builder',
+      doors: ['marriage'],
+      gap: 'My marriage went flat, and somewhere in there the version of me that built things and took chances just went quiet.',
+      reclaimList: ['Start making things again', 'One real risk this year', "A weekend that's actually mine"],
+    },
+    system: `You are role-playing "Dan", 56, measured and honest, 2-4 sentences at a time. When onboarding asked where
+the distance started, you reached for THE MARRIAGE — that's the label you named. But as you actually tell the story,
+it becomes clear it was never really the marriage as a relationship: you became the one who carried EVERYONE — the
+household, the money, your aging father, the business — and there was no room left for you. The marriage is just where
+you first noticed the quiet.
+
+Your story (in fragments, as the guide draws it out — don't dump it):
+- You were the builder — the one who made things and took chances.
+- Over years you became the load-bearer for everyone. You "just handled it." You stopped making things because there
+  was no room. You carried the money, the household, your father's care, the business.
+- The marriage went flat mostly because you were too depleted to be present — not really the other way around.
+
+How to play it:
+- Answer in character, a few sentences at a time. Let the real shape (carrying everyone) come out gradually.
+- Do NOT volunteer "load-bearer" yourself early — let the guide earn it from what you say.
+- When the guide PROPOSES that the truer door isn't The Marriage but something like carrying-the-load / The
+  Load-Bearer, react honestly: if it rings truer than the label you came in with, confirm it plainly ("...yeah. That's
+  actually truer. It was never really about her — it was that I was holding all of it."). If it overreaches or feels
+  put in your mouth, push back and correct it.`,
+  },
 ];
 
 async function member(system: string, history: ConvMessage[]): Promise<string> {
@@ -146,6 +178,15 @@ async function member(system: string, history: ConvMessage[]): Promise<string> {
 
 const stageOf = (s: ConvState) => (s as { stage?: string }).stage ?? '-';
 const confOf = (s: ConvState) => ((s as { awaitingConfirm?: boolean }).awaitingConfirm ? ' ⟵ INSIGHT REFLECT (awaiting confirm)' : '');
+// Make the revision (§2b Decision L) legible in the walk: a pending proposed re-seeing, and any tell it earned.
+function revOf(s: ConvState): string {
+  const pr = (s as { pendingRevision?: { fromSlug: string; toSlug: string } }).pendingRevision;
+  const tells = (s as { reseeingTells?: Array<{ fromSlug: string; toSlug: string }> }).reseeingTells ?? [];
+  const parts: string[] = [];
+  if (pr) parts.push(` ⟵ RE-SEEING PROPOSED: ${pr.fromSlug}→${pr.toSlug} (offered, awaiting confirm)`);
+  if (tells.length) parts.push(` ✓ TELL EMITTED: ${tells.map((t) => `${t.fromSlug}→${t.toSlug}`).join(', ')}`);
+  return parts.join('');
+}
 
 async function runPersona(p: Persona): Promise<void> {
   console.log(`\n══════════ persona: ${p.name} ══════════`);
@@ -167,7 +208,7 @@ async function runPersona(p: Persona): Promise<void> {
     history.push({ role: 'member', text: m });
     history.push({ role: 'agent', text: turn.reply });
     state = turn.state;
-    console.log(`[COMPANION | ${stageOf(state)}]${confOf(state)}\n${turn.reply}\n`);
+    console.log(`[COMPANION | ${stageOf(state)} · doors:${JSON.stringify(state.collected.doors ?? [])}]${confOf(state)}${revOf(state)}\n${turn.reply}\n`);
   }
 
   console.log('──────────');

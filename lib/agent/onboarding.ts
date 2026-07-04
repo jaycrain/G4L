@@ -59,9 +59,22 @@ export type ConvState = {
   // gap: gapTurns/gapDepth/noFade; reclaim: reclaimNudged), so ConvState never sprawls with a new flat field per arc.
   stageScratch?: Record<string, Record<string, number | boolean | undefined>>;
   declined?: boolean; // v2.1 (Decision E): a genuinely-thriving no-fade member was gracefully declined (out of scope) — terminal
+  // §2b Reconnect revision (Decision L): a re-seeing the Companion PROPOSED, awaiting the member's confirm (offered,
+  // never asserted). Threaded across the propose→confirm turns; cleared on resolve. Slugs are canonical DoorSlugs.
+  pendingRevision?: DoorRevision;
+  // The re-seeing "tells" this session has EARNED (R4/R5): a confirmed correct that was a real re-seeing (not a flat
+  // mislabel) emits one. Slice 1 records the intent here; the persistence layer (later slice) reads it to emit the
+  // member_event harvest_moment (from→to in meta). Default-emit: present unless the model flagged flatMislabel.
+  reseeingTells?: ReseeingTell[];
 };
 export type ConvMessage = { role: 'agent' | 'member'; text: string };
 export type Ctx = { name: string; email: string };
+
+// A door revision (Decision L). Slice 1 handles `correct` (the primary was really a different Door). `widen`/`name`
+// (add a Door / name a quiet one) land in a later slice — the kind rides here so the tool contract is stable.
+export type RevisionKind = 'correct' | 'widen' | 'name';
+export type DoorRevision = { fromSlug: DoorSlug; toSlug: DoorSlug; kind: RevisionKind; flatMislabel?: boolean };
+export type ReseeingTell = { fromSlug: DoorSlug; toSlug: DoorSlug };
 
 export type Turn = { reply: string; state: ConvState; complete: boolean; crisis?: boolean; declined?: boolean };
 
@@ -649,7 +662,7 @@ const RECORD_PROGRESS_TOOL = {
 // goes model-SIGNALED (the model understands "nope, that's a good list" = done far better than a regex), the
 // engine still DISPOSES (bounds it; the regex resolvers remain the fallback when the model doesn't signal).
 export type ReplyIntent = 'done' | 'more' | 'dispute';
-export type ModelTurn = { text: string; record?: Partial<Collected> & { complete?: boolean }; noFade?: boolean; gapReady?: boolean; refineReclaim?: string; replyIntent?: ReplyIntent; depthReady?: boolean };
+export type ModelTurn = { text: string; record?: Partial<Collected> & { complete?: boolean }; noFade?: boolean; gapReady?: boolean; refineReclaim?: string; replyIntent?: ReplyIntent; depthReady?: boolean; revision?: DoorRevision };
 
 // Parse an Anthropic response into a ModelTurn (prose + the record_progress tool input, if any).
 function parseModelTurn(content: readonly unknown[]): ModelTurn {

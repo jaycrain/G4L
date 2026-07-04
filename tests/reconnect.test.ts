@@ -130,3 +130,66 @@ test('reconnect doors · confirm — "that\'s it" advances; a DISPUTE takes the 
   assert.equal(dispute.state.stage, 'doors', 'stays in the Doors beat');
   assert.match(dispute.reply, /get this right|help me see it|what did I miss/i, 'takes the correction humbly, no defense');
 });
+
+// ============================================================================================================
+// §2b Revision (Decision L, slice 1) — the primary CORRECT (re-seeing). Propose ≠ commit (R1); a confirmed correct
+// swaps the primary Door in place (R3) and re-opens the insight (R2); the tell fires by the ENFORCEABLE DEFAULT —
+// emit UNLESS the model flagged an explicit flat mislabel (R4 + default-emit). No DB this slice (in-memory).
+// ============================================================================================================
+
+test('reconnect revision · PROPOSE ≠ COMMIT — a proposed re-seeing is offered, changes nothing until confirmed (R1)', () => {
+  const atDoors: ConvState = { stage: 'doors', stageScratch: { doors: { doorDepth: 2 } }, collected: { identityNoun: 'Racer', doors: ['marriage'] } };
+  const turn = applyReconnectTurn(atDoors, [], 'it was all about carrying everyone', {
+    text: 'You came in on The Marriage — but everything you just said is about carrying the load. Truer as The Load-Bearer?',
+    revision: { fromSlug: 'marriage', toSlug: 'load_bearer', kind: 'correct' },
+  });
+  assert.equal(turn.state.awaitingConfirm, true, 'offered as a check — awaits the member');
+  assert.deepEqual(turn.state.pendingRevision, { fromSlug: 'marriage', toSlug: 'load_bearer', kind: 'correct' }, 'the proposal is held for the confirm turn');
+  assert.deepEqual(turn.state.collected.doors, ['marriage'], 'NOTHING changes until they confirm (offered, not asserted)');
+  assert.equal((turn.state.reseeingTells ?? []).length, 0, 'no tell before commit');
+});
+
+test('reconnect revision · CONFIRM commits the swap in place + emits the tell by default (R2/R3/R4)', () => {
+  const pending: ConvState = { stage: 'doors', awaitingConfirm: true, pendingRevision: { fromSlug: 'marriage', toSlug: 'load_bearer', kind: 'correct' }, collected: { identityNoun: 'Racer', doors: ['grind', 'marriage'] } };
+  const turn = applyReconnectTurn(pending, [], "yeah — that's the one. The Load-Bearer.", { text: '', replyIntent: 'done' });
+  assert.deepEqual(turn.state.collected.doors, ['grind', 'load_bearer'], 'swaps in place — primary (grind) untouched, marriage→load_bearer');
+  assert.deepEqual(turn.state.reseeingTells, [{ fromSlug: 'marriage', toSlug: 'load_bearer' }], 'a real re-seeing emits a tell (default-emit)');
+  assert.equal(turn.state.pendingRevision, undefined, 'pending cleared');
+  assert.equal(turn.state.stage, 'doors', 'R2: re-opens on the corrected door, does NOT hand off with a stale insight');
+  assert.match(turn.reply, /Load-Bearer/, 'names the corrected door back');
+});
+
+test('reconnect revision · an AFFIRMATION WITH added color still commits (default-to-commit-unless-disputed)', () => {
+  // The live-walk bug: "yeah, that's truer — it was really the carrying…" reads as 'addition', not 'done'. A re-seeing
+  // is a yes/no offer, so anything that isn't a DISPUTE commits (and keeps drawing out) — never a re-proposal loop.
+  const pending: ConvState = { stage: 'doors', awaitingConfirm: true, pendingRevision: { fromSlug: 'marriage', toSlug: 'load_bearer', kind: 'correct' }, collected: { doors: ['marriage'] } };
+  const turn = applyReconnectTurn(pending, [], "yeah, that's truer — it was really the carrying, all of it landing on me", { text: 'go on', replyIntent: 'more' });
+  assert.deepEqual(turn.state.collected.doors, ['load_bearer'], 'accepted-with-color still commits the swap');
+  assert.deepEqual(turn.state.reseeingTells, [{ fromSlug: 'marriage', toSlug: 'load_bearer' }], 'and emits the tell');
+  assert.equal(turn.state.pendingRevision, undefined, 'no re-proposal loop — the offer resolved');
+  assert.match(turn.reply, /\?\s*$/, 'keeps drawing out on the corrected door');
+});
+
+test('reconnect revision · a FLAT MISLABEL swaps but emits NO tell (suppress-on-explicit — the only no-harvest case)', () => {
+  const pending: ConvState = { stage: 'doors', awaitingConfirm: true, pendingRevision: { fromSlug: 'marriage', toSlug: 'load_bearer', kind: 'correct', flatMislabel: true }, collected: { doors: ['marriage'] } };
+  const turn = applyReconnectTurn(pending, [], 'yeah I just said the wrong name', { text: '', replyIntent: 'done' });
+  assert.deepEqual(turn.state.collected.doors, ['load_bearer'], 'the correction still applies');
+  assert.equal(turn.state.reseeingTells, undefined, 'an explicit flat mislabel is NOT a keeper — no tell');
+});
+
+test('reconnect revision · a REJECTED re-seeing keeps their door, humbly, and emits nothing', () => {
+  const pending: ConvState = { stage: 'doors', awaitingConfirm: true, pendingRevision: { fromSlug: 'marriage', toSlug: 'load_bearer', kind: 'correct' }, collected: { doors: ['marriage'] } };
+  const turn = applyReconnectTurn(pending, [], 'no — it really is the marriage', { text: '', replyIntent: 'dispute' });
+  assert.deepEqual(turn.state.collected.doors, ['marriage'], 'their named door stands');
+  assert.equal(turn.state.pendingRevision, undefined, 'pending cleared on dispute');
+  assert.equal(turn.state.reseeingTells, undefined, 'no tell on a rejected re-seeing');
+  assert.equal(turn.state.stage, 'doors', 'stays in the beat');
+  assert.match(turn.reply, /door you named is the door|see it your way|got it wrong/i, 'takes it humbly, no defense');
+});
+
+test('reconnect revision · a non-canonical or no-op swap is ignored (the engine disposes; the model cannot force it)', () => {
+  const atDoors: ConvState = { stage: 'doors', stageScratch: { doors: { doorDepth: 2 } }, collected: { doors: ['marriage'] } };
+  const turn = applyReconnectTurn(atDoors, [], 'hmm', { text: 'go on', revision: { fromSlug: 'marriage', toSlug: 'not_a_door' as never, kind: 'correct' } });
+  assert.notEqual(turn.state.awaitingConfirm, true, 'a non-canonical target does not open a revision confirm');
+  assert.deepEqual(turn.state.collected.doors, ['marriage'], 'nothing swapped');
+});

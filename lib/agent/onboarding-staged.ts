@@ -33,8 +33,10 @@ import {
   type ConvMessage,
   type ConvState,
   type Ctx,
+  type DoorRevision,
   type ModelTurn,
   type ReplyIntent,
+  type ReseeingTell,
   type Stage,
   type Turn,
 } from './onboarding.ts';
@@ -490,6 +492,10 @@ interface Beat {
   scratch: StageScratch; // the CURRENT stage's counter bag (mutated in place by the handler)
   readonly baseScratch: Record<string, StageScratch>; // the incoming full map, so OTHER stages' scratch is preserved
   readonly stageAtEntry: StageId; // the stage whose scratch `scratch` belongs to — where it persists (handlers may advance b.stage)
+  // §2b Reconnect revision (Decision L) — threaded across the propose→confirm turns; arc-specific, optional (only the
+  // Reconnect doors beat sets them). pendingRevision is cleared on resolve; reseeingTells accumulates confirmed tells.
+  pendingRevision?: DoorRevision;
+  reseeingTells: ReseeingTell[];
 }
 
 // A stage handler mutates the Beat (sets b.reply etc.) or returns a terminal Turn. `resolveConfirm`'s CONTRACT
@@ -525,6 +531,8 @@ function beatState(b: Beat): ConvState {
     awaitingConfirm: b.awaitingConfirm,
     idleTurns: b.idleTurns,
     stageScratch: { ...b.baseScratch, [b.stageAtEntry]: b.scratch },
+    ...(b.pendingRevision && { pendingRevision: b.pendingRevision }),
+    ...(b.reseeingTells.length > 0 && { reseeingTells: b.reseeingTells }),
   };
 }
 
@@ -853,6 +861,8 @@ export function runArcTurn(
     stageAtEntry,
     baseScratch,
     scratch: { ...(baseScratch[stageAtEntry] ?? {}) }, // the current stage's bag, copied so mutations are isolated
+    pendingRevision: state.pendingRevision, // §2b revision, threaded across the propose→confirm turns
+    reseeingTells: [...(state.reseeingTells ?? [])],
   };
   const stageDef = arc.stages[b.stage];
 

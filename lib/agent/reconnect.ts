@@ -17,7 +17,7 @@ import type { Db } from '../db/schema.ts';
 import { MEMBER_AGENT_SYSTEM_PROMPT } from './system-prompt.ts';
 import { resolveGapConfirm } from './onboarding-intent.ts';
 import { runArcTurn, type ArcConfig, type StageDef } from './onboarding-staged.ts';
-import type { Collected, ConvMessage, ConvState, ModelTurn, ReplyIntent, Turn, Stage } from './onboarding.ts';
+import type { Collected, ConvMessage, ConvState, DoorRevision, ModelTurn, ReplyIntent, Turn, Stage } from './onboarding.ts';
 
 // Is the Reconnect arc selected? Own flag — defaults OFF, so it never runs in prod until the coupled v2.1+v2.2
 // flip. (v2.1's ONBOARDING_ENGINE=staged is a separate flag; both go on together at cut-over.)
@@ -162,12 +162,50 @@ function reflectDoor(modelText: string): string {
 }
 const REOPEN_DOOR = "My mistake — I'd rather get this right than sound clever. Help me see it the way you do — what did I miss?";
 
+// --- §2b RE-SEEING (Decision L, slice 1: the primary CORRECT) --------------------------------------------------
+// The deepest insight move: as the door is drawn out, the story can point to a DIFFERENT canonical Door than the one
+// they named ("you came in on The Marriage, but everything you said is about carrying the load — The Load-Bearer?").
+// The Companion PROPOSES it, offered as a check (R1: propose ≠ commit); the member confirms before anything changes.
+// A confirmed correct swaps the primary Door in place — never destroys the old (persistence is 0043 soft-delete +
+// audit, a later slice) — and EMITS a harvest tell by the ENFORCEABLE DEFAULT: emit unless the model flagged an
+// explicit flat mislabel (R4 + the default-emit rule). So uncertainty resolves to emit, never to a dropped keeper.
+const RESEEING_CONFIRM = 'Does that feel truer — or is the one you named still the right one?';
+const REOPEN_RESEEING = "Then I've got it wrong — the door you named is the door. Help me see it your way; what did I miss?";
+function reflectReseeing(modelText: string): string {
+  const t = (modelText ?? '').trim();
+  if (t && /\?\s*$/.test(t)) return t;
+  if (t) return `${t}\n\n${RESEEING_CONFIRM}`;
+  // Graceful: a swap was signaled but no words came — do NOT assert it. Ask, so it stays offered-not-asserted.
+  return "Something you said makes me wonder if the door you named isn't quite the one — can you say more, so I get it right?";
+}
+function reseeingLanded(toSlug: DoorSlug): string {
+  const name = DOORS.find((d) => d.slug === toSlug)?.displayName ?? 'that';
+  return `${name}, then — that's the one. That changes the shape of it. Let me sit with what it means, and we'll keep going from there.`;
+}
+// Pure: apply a confirmed correction to the door set — swap from→to, PRESERVE primary position (index 0), dedup.
+// If the named door wasn't in the set, the corrected one becomes primary.
+function applyCorrection(doors: DoorSlug[], rev: DoorRevision): DoorSlug[] {
+  const next = [...doors];
+  const i = next.indexOf(rev.fromSlug);
+  if (i !== -1) next[i] = rev.toSlug;
+  else if (!next.includes(rev.toSlug)) next.unshift(rev.toSlug);
+  return Array.from(new Set(next));
+}
+
 const doorsStage: StageDef = {
   id: 'doors',
   mode: 'drawout',
   opener: (c) => doorOpen(c),
   offersSubstance: (message) => message.trim().length >= 12,
   gather(b) {
+    // Mid-draw-out RE-SEEING: the model proposes the primary Door is really a different one → offer it as a check
+    // (never asserted). Holds until the member confirms next turn.
+    if (b.model.revision && isDoorSlug(b.model.revision.toSlug)) {
+      b.pendingRevision = b.model.revision;
+      b.awaitingConfirm = true;
+      b.reply = reflectReseeing(b.modelText);
+      return;
+    }
     const sc = b.scratch as { doorDepth?: number };
     sc.doorDepth = (sc.doorDepth ?? 0) + 1;
     // MODEL-JUDGED depth (Decision T): the model calls reflect_door when the door is genuinely excavated — NOT a
@@ -181,7 +219,37 @@ const doorsStage: StageDef = {
     }
   },
   confirm(b) {
-    // The insight was OFFERED as a check they can reject (precise-and-humble). Model-signaled intent, regex fallback.
+    // (1) Resolving a RE-SEEING the Companion proposed last turn (offered → the member's confirm decides — R1).
+    // DEFAULT-TO-COMMIT-UNLESS-DISPUTED: a re-seeing is a yes/no offer, not a draw-out beat. Only an explicit dispute
+    // keeps the old Door; an affirmation WITH added color ("yeah, that's truer — it was really the carrying…") reads as
+    // 'addition' but is still an acceptance, so it commits (and we keep drawing out). Same asymmetry as default-emit:
+    // a swap they can wave off is cheap; a re-seeing they accepted but we failed to commit is the expensive miss.
+    if (b.pendingRevision) {
+      const rev = b.pendingRevision;
+      const intent = resolveGapConfirm(b.memberMessage, b.model.replyIntent);
+      b.pendingRevision = undefined;
+      b.awaitingConfirm = false;
+      if (intent === 'dispute') { b.reply = REOPEN_RESEEING; return; } // rejected → keep their door, humbly
+      // Not disputed → they accepted. COMMIT the swap; never destroy the old Door (0043 soft-delete substrate).
+      if (rev.kind === 'correct' && isDoorSlug(rev.toSlug)) {
+        b.collected.doors = applyCorrection(b.collected.doors ?? [], rev);
+        // ENFORCEABLE DEFAULT-EMIT: the tell fires UNLESS the model flagged an unambiguous mislabel (R4).
+        if (!rev.flatMislabel) b.reseeingTells.push({ fromSlug: rev.fromSlug, toSlug: rev.toSlug });
+      }
+      // R2: a correct RE-OPENS the insight — reset depth so a fresh one forms on the corrected door, never a stale one.
+      (b.scratch as { doorDepth?: number }).doorDepth = 0;
+      // Accepted-and-added-more → keep drawing out on the corrected door; a clean acceptance → let it land.
+      b.reply = intent === 'addition' ? withQuestion(b.modelText, doorMore(b.history)) : reseeingLanded(rev.toSlug);
+      return;
+    }
+    // (2) A re-seeing may surface AT the insight confirm too (they dispute + the model proposes the truer door here).
+    if (b.model.revision && isDoorSlug(b.model.revision.toSlug)) {
+      b.pendingRevision = b.model.revision;
+      b.awaitingConfirm = true;
+      b.reply = reflectReseeing(b.modelText);
+      return;
+    }
+    // (3) Normal insight confirm. The insight was OFFERED as a check (precise-and-humble). Model-signaled, regex fallback.
     const intent = resolveGapConfirm(b.memberMessage, b.model.replyIntent); // dispute | addition | done
     if (intent === 'dispute') {
       b.awaitingConfirm = false;
@@ -273,6 +341,21 @@ export const RECONNECT_TOOLS = [
       "(there's more, or they're adding), 'dispute' (the insight was off — they're correcting it).",
     input_schema: { type: 'object' as const, properties: { intent: { type: 'string', enum: ['done', 'more', 'dispute'] } }, required: ['intent'] },
   },
+  {
+    name: 'propose_correction',
+    description:
+      "Use ONLY when the drawn-out story genuinely points to a DIFFERENT canonical Door than the one they named as " +
+      "primary — a real RE-SEEING, not a synonym or a second door. Propose it in THEIR words, OFFERED as a check they " +
+      "can reject (never asserted): name the shift and why the story fits the truer door, then let them decide. Pass " +
+      "from_slug (the Door they named) and to_slug (the truer one), both canonical Door slugs. Set flat_mislabel=true " +
+      "ONLY if it's an unambiguous tag-fix — they simply misspoke the label — NOT a genuine re-seeing; when in any " +
+      "doubt, leave it off.",
+    input_schema: {
+      type: 'object' as const,
+      properties: { from_slug: { type: 'string' }, to_slug: { type: 'string' }, flat_mislabel: { type: 'boolean' } },
+      required: ['from_slug', 'to_slug'],
+    },
+  },
 ];
 
 // Parse a Reconnect model response into the ModelTurn the kernel reads.
@@ -280,6 +363,7 @@ export function parseReconnectTurn(content: readonly unknown[]): ModelTurn {
   let text = '';
   let depthReady = false;
   let replyIntent: ReplyIntent | undefined;
+  let revision: DoorRevision | undefined;
   for (const b of content as Array<{ type: string; text?: string; name?: string; input?: Record<string, unknown> }>) {
     if (b.type === 'text' && typeof b.text === 'string') text += b.text;
     if (b.type === 'tool_use') {
@@ -288,9 +372,18 @@ export function parseReconnectTurn(content: readonly unknown[]): ModelTurn {
         const i = b.input.intent;
         if (i === 'done' || i === 'more' || i === 'dispute') replyIntent = i;
       }
+      if (b.name === 'propose_correction') {
+        const from = b.input?.from_slug;
+        const to = b.input?.to_slug;
+        // Only a real, canonical, DISTINCT swap survives — a no-op or a bad slug is silently ignored (the model
+        // can't force a revision on a non-Door; the engine disposes).
+        if (isDoorSlug(from) && isDoorSlug(to) && from !== to) {
+          revision = { fromSlug: from, toSlug: to, kind: 'correct', flatMislabel: b.input?.flat_mislabel === true };
+        }
+      }
     }
   }
-  return { text, depthReady, replyIntent };
+  return { text, depthReady, replyIntent, revision };
 }
 
 // What the model already KNOWS about the member (committed captures, loaded at arc entry) — so recall is precise
@@ -305,6 +398,10 @@ function reconnectContext(c: Collected): string {
   ].filter(Boolean);
   return lines.length ? `\n\nMEMBER CONTEXT (what you already know — never say you don't):\n${lines.join('\n')}` : '';
 }
+
+// The canonical Door catalog (slug + descriptor) — given to the model so it can map the member's OWN language to a
+// canonical Door and propose a re-seeing with a valid to_slug (the engine only commits canonical, distinct swaps).
+const DOOR_CATALOG = DOORS.map((d) => `  - ${d.displayName} (${d.slug}): ${d.descriptor}`).join('\n');
 
 const RECONNECT_SYSTEM = `${MEMBER_AGENT_SYSTEM_PROMPT}
 
@@ -329,6 +426,24 @@ GRACEFUL DEGRADATION (hard rule): if there isn't enough material to see a real p
 a smaller, honest reflection, or say plainly you're still finding the shape of it, and keep drawing out. A
 manufactured insight breaks trust worse than none.
 
+RE-SEEING THE DOOR (the deepest insight — Decision L): as you draw the door out, the story sometimes points to a
+DIFFERENT Door than the one they named — the label they came in with isn't quite it ("you came in calling it The
+Marriage, but everything you've said is about carrying the load — I wonder if the real door is The Load-Bearer").
+DECIDE BEFORE YOU REFLECT: once the door is drawn out, first ask — does the story actually fit the Door they named, or
+does a DIFFERENT one below fit it better? Map what they describe against THE DOORS. If a different Door clearly fits
+better — ESPECIALLY if the member themselves says some version of "it was really about X" / "that's the truer one" —
+then reflect it as a RE-SEEING: call propose_correction(from_slug, to_slug) INSTEAD of reflect_door. Do not reflect a
+load/marriage/body insight while leaving the record on a Door that no longer fits — that stale record is the exact
+failure to avoid. The asymmetry is deliberate: a re-seeing they can simply wave off ("no, it really is the marriage")
+costs nothing; silently reflecting around a Door that stopped fitting, and never proposing the truer one, is the real
+miss. When the story clearly fits another Door better, propose it. Propose it in THEIR words, OFFERED as a check they can reject —
+never a verdict, same bar as any insight; only when the material genuinely earns it, never to seem clever, never on
+thin material. It is THEIRS to confirm; if they say the Door they named is right, it is. Reserve flat_mislabel for the
+rare case where they simply misspoke the label (not a real re-seeing).
+
+THE DOORS (map the member's language to these; from_slug/to_slug must be one of these slugs):
+${DOOR_CATALOG}
+
 IF THEY ASK "what were my Doors again?" — or seem to have lost the thread — STATE them plainly from MEMBER CONTEXT.
 Never say "no record" or "starting fresh". You remember them.
 
@@ -344,7 +459,9 @@ function stageInstructionReconnect(stage?: Stage): string {
     return (
       '\n\nCURRENT STAGE: the Doors excavation. Draw out the primary Door over a few exchanges, then reflect an ' +
       'INSIGHT (the normalized cost / how it targeted who they were / the sequence) IN THEIR WORDS, offered as a ' +
-      'check they can reject. Call reflect_door ONLY once it is genuinely drawn out and the insight is earned.'
+      'check they can reject. Call reflect_door ONLY once it is genuinely drawn out and the insight is earned. If the ' +
+      'story points to a truer Door than the one they named, you may propose that re-seeing (propose_correction), ' +
+      'offered — never asserted — and only when the material earns it.'
     );
   return '\n\nCURRENT STAGE: entry — pick up from onboarding; the callback opened; receive their reply warmly.';
 }
