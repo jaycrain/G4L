@@ -16,6 +16,7 @@ export default function CurriculumForecast({ memberId, forecast }: { memberId: s
   return (
     <div className="card curric curric-slim" data-tour="program">
       <h3>The Program</h3>
+      <p className="card-subtitle">What&apos;s next in your work — and how far you&apos;ve come.</p>
 
       {here && (
         <div className="curric-progress">

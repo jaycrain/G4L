@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { keepDailyBeatAction } from './daily-beat-actions.ts';
+import ResiliencePulse from './resilience-pulse.tsx';
 
 // "Your Daily Beat" — one rotating reflection a day. The one panel that asks nothing: a read, not a
 // task (no close, no score, no streak). The only quiet action is "keep this," which tucks it into the
@@ -35,8 +36,8 @@ export default function DailyBeatPanel({
 
   return (
     <div className="card daily-beat-panel" data-tour="daily">
-      <h3>Daily Beat</h3>
-      <p className="muted db-hook">One thought to carry today.</p>
+      <h3>Daily Call</h3>
+      <p className="card-subtitle">Your daily rep: today&apos;s call, and the momentum it builds.</p>
       <p className="db-text">{text}</p>
       {keepable && (
         <div className="db-foot">
@@ -49,6 +50,8 @@ export default function DailyBeatPanel({
           )}
         </div>
       )}
+      {/* the momentum visual — grouped UNDER the Daily Call, no separate headline */}
+      <ResiliencePulse bare />
     </div>
   );
 }

@@ -25,7 +25,9 @@ const H = 188;
 const dotColor = (k: PulseKind) => (k === 'false_start' ? RED : k === 'quiet' ? QUIET : TEAL);
 const toneColor = (t: PulseTone) => (t === 'today' ? ORANGE : t === 'bad' ? RED : t === 'quiet' ? QUIET : TEAL);
 
-export default function ResiliencePulse({ beats = [] }: { beats?: PulseBeat[] }) {
+// `bare`: render just the graphic (no card wrapper, no headline) — used when it's grouped UNDER the Daily Call panel
+// as its momentum visual, rather than standing alone.
+export default function ResiliencePulse({ beats = [], bare = false }: { beats?: PulseBeat[]; bare?: boolean }) {
   const points = buildPulsePoints(beats, g);
   const path = buildPulsePath(points, g);
   const empty = points.length === 0;
@@ -34,10 +36,12 @@ export default function ResiliencePulse({ beats = [] }: { beats?: PulseBeat[] })
   const annotations = buildPulseAnnotations(points, g); // capped, sparse; empty state falls back to the early copy below
 
   return (
-    <div className="card resilience-pulse">
-      <h3 style={{ marginBottom: '0.25rem' }}>
-        Your daily momentum <span style={{ color: 'var(--muted, #6b7683)', fontWeight: 400 }}>· the Resilience Pulse</span>
-      </h3>
+    <div className={bare ? 'resilience-pulse resilience-pulse-bare' : 'card resilience-pulse'}>
+      {!bare && (
+        <h3 style={{ marginBottom: '0.25rem' }}>
+          Your daily momentum <span style={{ color: 'var(--muted, #6b7683)', fontWeight: 400 }}>· the Resilience Pulse</span>
+        </h3>
+      )}
       <svg
         width="100%"
         viewBox={`0 0 ${g.width} ${H}`}

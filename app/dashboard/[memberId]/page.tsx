@@ -5,7 +5,7 @@ import { timeSignals, topNudge } from '../../../lib/agent/nudge.ts';
 import { getActivityPanel } from '../../../lib/activity/store.ts';
 import { stravaConfigured } from '../../../lib/activity/strava.ts';
 import StravaConnect from '../../account/strava-connect.tsx';
-import { getGrinta, grintaComponents } from '../../../lib/grinta/index.ts';
+import { getGrinta } from '../../../lib/grinta/index.ts';
 import { getJourney } from '../../../lib/beats/store.ts';
 import JourneyRings from '../journey-rings.tsx';
 import IdqRadar from '../idq-radar.tsx';
@@ -66,8 +66,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
     getActivityPanel(db, memberId, dash.identityNoun),
   ]);
 
-  // The three GRINTA components (sliders) + the next scheduled IDQ (last retake + 60 days).
-  const grintaComps = grintaComponents(grinta, journey.reclaim.moving);
+  // Next scheduled IDQ (last retake + 60 days). (The member-facing Grinta 3-C breakdown is retired — Decision V.)
   const lastIdq = (await db.query<{ t: string | null }>('select max(taken_at) t from idq_retake where member_id=$1', [memberId])).rows[0]?.t;
   const nextIdq = lastIdq
     ? new Date(new Date(lastIdq).getTime() + 60 * 24 * 3600 * 1000).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
@@ -229,7 +228,12 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
         {dailyBeat ? (
           <DailyBeatPanel memberId={memberId} reflectionId={dailyBeat.id} text={dailyBeat.text} keepable={dailyBeat.keepable} kept={dailyBeatKept} />
         ) : (
-          <div className="card daily-empty"><h3>Daily Beat</h3><p className="muted">Today&apos;s reflection lands here.</p></div>
+          <div className="card daily-empty">
+            <h3>Daily Call</h3>
+            <p className="card-subtitle">Your daily rep: today&apos;s call, and the momentum it builds.</p>
+            <p className="muted">Today&apos;s reflection lands here.</p>
+            <ResiliencePulse bare />
+          </div>
         )}
       </div>
 
@@ -238,6 +242,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
         {dash.score ? (
           <div className="card metric id-card" data-tour="idscore">
             <h3>ID Score</h3>
+            <p className="card-subtitle">How close you are to yourself — and how that grows over time.</p>
             <div className="metric-body">
               <div className="score">
                 <span className="num">{Math.round(dash.score.score)}</span>
@@ -269,6 +274,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
         ) : (
           <div className="card metric id-card" data-tour="idscore">
             <h3>ID Score</h3>
+            <p className="card-subtitle">How close you are to yourself — and how that grows over time.</p>
             {/* §3.6 no-score-yet — an ANTICIPATORY blank, never an error. Fills the moment they start Reconnect. */}
             <div className="metric-body"><p className="muted">Blank for now — it fills the moment you start, and it’s where you’ll watch the distance close.</p></div>
             <Link href={`/score/${memberId}`} className="see-more">See more →</Link>
@@ -277,7 +283,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
 
         <div className="card metric journey-card">
           <h3>Journey</h3>
-          <p className="journey-intro">This is your Journey — the whole path, and where you are on it right now.</p>
+          <p className="card-subtitle">The whole path — the four Rs — and where you stand right now.</p>
           <div className="metric-body metric-center">
             <JourneyRings states={ringStates} />
             {journey.reclaim.total > 0 && (
@@ -300,6 +306,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
 
         <div className="card metric grinta">
           <h3>Grinta Index</h3>
+          <p className="card-subtitle">The resilience you&apos;re building, stronger with each R.</p>
           <div className="metric-body">
             <div className="score">
               <span className="num">{grinta.score}</span>
@@ -308,28 +315,14 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
                 {grinta.delta !== 0 ? ` ${grinta.delta > 0 ? '+' : ''}${grinta.delta}` : ''}
               </span>
             </div>
-            <div className="gcomps">
-              {grintaComps.map((c) => (
-                <div className="gcomp" key={c.key}>
-                  <div className="gcomp-top">
-                    <span className="gcomp-name">{c.label}</span>
-                    <span className={c.passed ? 'gcomp-pass' : 'gcomp-build'}>{c.passed ? 'passed ✓' : 'building'}</span>
-                  </div>
-                  <div className="gbar">
-                    <div className="gfill" style={{ width: `${c.fill}%` }} />
-                    <div className="gthr" style={{ left: `${c.threshold}%` }} />
-                  </div>
-                  {c.gloss && <p className="gcomp-gloss">{c.gloss}</p>}
-                </div>
-              ))}
-            </div>
+            {/* Member-facing 3-C breakdown removed (Decision V: never Commitment/Control/Challenge). The R-named
+                subscales land with §2e, fed from the Checkpoint hardiness — not re-pointed before it exists. */}
           </div>
           <Link href={`/grinta/${memberId}`} className="see-more">See more →</Link>
         </div>
       </div>
 
-      {/* Resilience Pulse — the daily-momentum register (early state until Rewire's daily calls start filling it). */}
-      <ResiliencePulse />
+      {/* The Resilience Pulse now lives UNDER the Daily Call panel (its momentum visual) — see the priority pair above. */}
 
       {/* Connect — the community surface, slotted right under the metrics strip */}
       <ConnectPanel memberId={memberId} />
