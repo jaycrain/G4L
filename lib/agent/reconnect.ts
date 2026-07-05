@@ -12,6 +12,7 @@
 //    and versioned — so this increment is purely additive: it writes nothing.
 
 import { DOORS, isDoorSlug, type DoorSlug } from '../doors.ts';
+import { TOTAL_ITEMS, itemStem } from '../idq/instrument.ts';
 import { identityLabel } from '../member/identity.ts';
 import type { Db } from '../db/schema.ts';
 import { MEMBER_AGENT_SYSTEM_PROMPT } from './system-prompt.ts';
@@ -281,7 +282,73 @@ const doorsStage: StageDef = {
 
 // --- RECONNECT_ARC (config #2) — entry/callback + doors (increment 1); the rest still stubs --------------------
 
-const RECONNECT_STUB_STAGES = ['measurement', 'visioning', 'checkpoint', 'ceremony'] as const;
+const RECONNECT_STUB_STAGES = ['visioning', 'checkpoint', 'ceremony'] as const;
+
+// --- §2c MEASUREMENT (the administered beat, slice 1: IDQ delivery) --------------------------------------------
+// The FIRST beat OFF the depth kernel. The IDQ is a validated instrument — 24 fixed items, a 1–5 scale, deterministic
+// scoring. Items are delivered VERBATIM (never drawn out or rephrased); the warmth is the Companion's AUTHORED frame,
+// threaded from the Doors excavation so it reads as "a check-in with someone who knows me", not a survey. Deterministic
+// (no model call per item). Scoring + the baseline write (submitIdq) happen in the ACTION when the 24 land. The score
+// is a mirror — movement, never a bare number/verdict (governance).
+const IDQ_SCALE_HINT = '1 to 5 — 1 for not at all, 5 for completely';
+function idqOpen(): string {
+  return (
+    "We've been deep in how the distance opened. Let's shift to something lighter for a bit — a quick check-in, the " +
+    "kind we'll come back to now and then to see how you're actually doing. I'll read a few short statements; just " +
+    `tell me how true each feels right now, ${IDQ_SCALE_HINT}. No right answers, and nothing here is a test.\n\n` +
+    `First, a few about your body.\n\n${itemStem(0)}`
+  );
+}
+// Authored cluster transitions at the four dimension boundaries (items 6/12/18) — the only warmth between items, so it
+// stays a check-in, not a form. Non-boundary items deliver the verbatim stem alone.
+const IDQ_CLUSTER_LEAD: Record<number, string> = {
+  6: "That's the body. Now a few about how you see yourself.\n\n",
+  12: 'Good. Now the people around you.\n\n',
+  18: "Last stretch — how you're looking at what's ahead.\n\n",
+};
+const deliverIdqItem = (i: number): string => `${IDQ_CLUSTER_LEAD[i] ?? ''}${itemStem(i)}`;
+const IDQ_REPROMPT = `Just a number for this one, ${IDQ_SCALE_HINT} — how true does it feel?`;
+function idqClose(): string {
+  return (
+    "That's the whole check-in — thank you for staying with it. I've got your baseline now. You'll see it take shape " +
+    "on your dashboard, and it's something we'll watch move together over time — never a grade."
+  );
+}
+// Parse a 1–5 from the member's reply (digit or number-word), tolerant of "a 4", "4, mostly", "three". null = unclear.
+const IDQ_NUM_WORDS: Record<string, number> = { one: 1, two: 2, three: 3, four: 4, five: 5 };
+function parseLikert(msg: string): number | null {
+  const m = (msg ?? '').toLowerCase();
+  const digit = m.match(/\b([1-5])\b/);
+  if (digit) return Number(digit[1]);
+  for (const [w, n] of Object.entries(IDQ_NUM_WORDS)) if (new RegExp(`\\b${w}\\b`).test(m)) return n;
+  return null;
+}
+
+const measurementStage: StageDef = {
+  id: 'measurement',
+  mode: 'administered',
+  opener: () => idqOpen(), // the warm open + item 0, delivered when Doors hands in
+  offersSubstance: () => true,
+  gather() {}, // unused — administered stages dispatch to administer() (the kernel branches on mode)
+  confirm() {},
+  administer(b) {
+    const val = parseLikert(b.memberMessage);
+    if (val == null) {
+      // Unclear answer → gently re-prompt the CURRENT item; do NOT advance or record.
+      b.reply = `${IDQ_REPROMPT}\n\n${itemStem(b.administeredResponses.length)}`;
+      return;
+    }
+    b.administeredResponses = [...b.administeredResponses, val];
+    const n = b.administeredResponses.length;
+    if (n >= TOTAL_ITEMS) {
+      // The 24 are in. Hand into Visioning; the ACTION scores + writes the baseline (submitIdq) on this crossing.
+      b.stage = 'visioning';
+      b.reply = `${idqClose()}\n\n${b.arc.stages.visioning!.opener(b.collected)}`;
+    } else {
+      b.reply = deliverIdqItem(n);
+    }
+  },
+};
 
 // A declared-but-unbuilt stage: it holds with a clear placeholder so a walk shows exactly where the built arc
 // ends. Replaced beat-by-beat in later increments (Doors is next — §2b).
@@ -322,10 +389,11 @@ const reconnectEntryStage: StageDef = {
 
 export const RECONNECT_ARC: ArcConfig = {
   id: 'reconnect',
-  stageOrder: ['entry', 'doors', ...RECONNECT_STUB_STAGES],
+  stageOrder: ['entry', 'doors', 'measurement', ...RECONNECT_STUB_STAGES],
   stages: {
     entry: reconnectEntryStage,
     doors: doorsStage,
+    measurement: measurementStage,
     ...Object.fromEntries(RECONNECT_STUB_STAGES.map((id) => [id, stubStage(id)])),
   },
   onComplete: () => '[Reconnect complete — the earned Threshold Ceremony lands in §2f]',

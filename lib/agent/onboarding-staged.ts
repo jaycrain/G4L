@@ -496,6 +496,7 @@ interface Beat {
   // Reconnect doors beat sets them). pendingRevision is cleared on resolve; reseeingTells accumulates confirmed tells.
   pendingRevision?: DoorRevision;
   reseeingTells: ReseeingTell[];
+  administeredResponses: number[]; // §2c: fixed-scale responses accumulated by an administered stage (IDQ/Grit)
 }
 
 // A stage handler mutates the Beat (sets b.reply etc.) or returns a terminal Turn. `resolveConfirm`'s CONTRACT
@@ -509,9 +510,10 @@ export interface StageDef {
   mode: StageMode;
   opener: (c: Collected) => string; // the reply when the machine ADVANCES into this stage
   offersSubstance: (message: string, c: Collected) => boolean; // did the member contribute this turn? (idle counter)
-  gather: StageHandler; // not awaitingConfirm, in this stage
-  confirm: StageHandler; // awaitingConfirm in this stage
+  gather: StageHandler; // not awaitingConfirm, in this stage (DRAW-OUT stages)
+  confirm: StageHandler; // awaitingConfirm in this stage (DRAW-OUT stages)
   forceProgress?: StageHandler; // the runaway backstop's per-stage action (early-return Turn, or mutate + fall through)
+  administer?: StageHandler; // ADMINISTERED stages (§2c: validated instruments) — runs OFF the depth kernel (below)
 }
 
 export interface ArcConfig {
@@ -533,6 +535,7 @@ function beatState(b: Beat): ConvState {
     stageScratch: { ...b.baseScratch, [b.stageAtEntry]: b.scratch },
     ...(b.pendingRevision && { pendingRevision: b.pendingRevision }),
     ...(b.reseeingTells.length > 0 && { reseeingTells: b.reseeingTells }),
+    ...(b.administeredResponses.length > 0 && { administeredResponses: b.administeredResponses }),
   };
 }
 
@@ -863,8 +866,19 @@ export function runArcTurn(
     scratch: { ...(baseScratch[stageAtEntry] ?? {}) }, // the current stage's bag, copied so mutations are isolated
     pendingRevision: state.pendingRevision, // §2b revision, threaded across the propose→confirm turns
     reseeingTells: [...(state.reseeingTells ?? [])],
+    administeredResponses: [...(state.administeredResponses ?? [])], // §2c administered responses, accumulated
   };
   const stageDef = arc.stages[b.stage];
+
+  // ADMINISTERED stages (§2c — validated instruments: IDQ, Grit) run entirely OFF the depth kernel: no idle/runaway
+  // backstop, no gather/confirm draw-out loop, no floor/verbatim gate, no no-repeat lead. Just deliver the fixed item
+  // and capture the fixed-scale response. This is the WALL — a validated construct is never "drawn out".
+  if (stageDef?.mode === 'administered' && stageDef.administer) {
+    b.awaitingConfirm = false; // administered stages have no reflect-confirm loop
+    const early = stageDef.administer(b);
+    if (early) return early;
+    return { reply: b.reply, state: beatState(b), complete: b.complete, ...(b.declined ? { declined: true } : {}) };
+  }
 
   // PROGRESS vs STALL: the member CONTRIBUTED this turn if a captured field grew, OR they offered usable
   // substance (per the current stage) and weren't deflecting. Biased toward "engaged" — a verbose member resets

@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { reconnectCallback, reconnectOpening, applyReconnectTurn, reconnectEnabled } from '../lib/agent/reconnect.ts';
 import type { Collected, ConvMessage, ConvState } from '../lib/agent/onboarding.ts';
+import { TOTAL_ITEMS } from '../lib/idq/instrument.ts';
 
 // ============================================================================================================
 // v2.2 Reconnect — SKELETON + callback (§2a). The callback READS the committed captures (never the transcript)
@@ -235,4 +236,48 @@ test('reconnect revision · a disputed add is dropped, humbly — the named set 
   assert.deepEqual(turn.state.collected.doors, ['marriage'], 'nothing added on a dispute');
   assert.equal(turn.state.reseeingTells, undefined, 'no tell');
   assert.match(turn.reply, /door you named is the door|see it your way|got it wrong/i, 'humble, no defense');
+});
+
+// ============================================================================================================
+// §2c Measurement (administered, slice 1) — the WALL: IDQ items delivered verbatim OFF the depth kernel; fixed-scale
+// capture; authored cluster transitions; the 24th completes the baseline (the ACTION writes it) and hands on.
+// ============================================================================================================
+
+test('reconnect measurement · Doors done hands into the administered check-in (warm open + scale, not a survey wall)', () => {
+  const atDoors: ConvState = { stage: 'doors', awaitingConfirm: true, collected: { identityNoun: 'Racer', doors: ['grind'] } };
+  const turn = applyReconnectTurn(atDoors, [], "yeah, that's it", { text: '', replyIntent: 'done' });
+  assert.equal(turn.state.stage, 'measurement', 'Doors hands into measurement');
+  assert.match(turn.reply, /check-in/i, 'framed as a check-in, not a test');
+  assert.match(turn.reply, /1 to 5|not at all/i, 'gives the 1–5 scale');
+});
+
+test('reconnect measurement · a 1–5 answer records in order and delivers the next item, OFF the depth kernel', () => {
+  const atM: ConvState = { stage: 'measurement', collected: { doors: ['grind'] } };
+  const turn = applyReconnectTurn(atM, [], '3', { text: '', depthReady: true }); // depthReady MUST have no effect here
+  assert.deepEqual(turn.state.administeredResponses, [3], 'the fixed-scale response is recorded in item order');
+  assert.equal(turn.state.awaitingConfirm ?? false, false, 'no reflect-confirm loop in an administered beat');
+  assert.ok(turn.reply.length > 0, 'delivers the next item');
+});
+
+test('reconnect measurement · a dimension boundary carries an authored cluster transition', () => {
+  const five: ConvState = { stage: 'measurement', administeredResponses: [3, 3, 3, 3, 3], collected: { doors: ['grind'] } };
+  const turn = applyReconnectTurn(five, [], '4', { text: '' }); // the 6th answer → deliver item 6 (first of Self)
+  assert.equal((turn.state.administeredResponses ?? []).length, 6);
+  assert.match(turn.reply, /how you see yourself/i, 'a warm cluster transition into the Self items');
+});
+
+test('reconnect measurement · an unclear answer re-prompts and records nothing (stays on the item)', () => {
+  const atM: ConvState = { stage: 'measurement', administeredResponses: [3, 3], collected: { doors: ['grind'] } };
+  const turn = applyReconnectTurn(atM, [], 'hard to put a number on it', { text: '' });
+  assert.deepEqual(turn.state.administeredResponses, [3, 3], 'no response recorded on an unclear reply');
+  assert.match(turn.reply, /number/i, 'gently asks for a 1–5');
+  assert.equal(turn.state.stage, 'measurement', 'stays on the current item');
+});
+
+test('reconnect measurement · the 24th response completes the baseline and hands into Visioning', () => {
+  const almost: ConvState = { stage: 'measurement', administeredResponses: Array(TOTAL_ITEMS - 1).fill(3), collected: { doors: ['grind'] } };
+  const turn = applyReconnectTurn(almost, [], '5', { text: '' });
+  assert.equal((turn.state.administeredResponses ?? []).length, TOTAL_ITEMS, 'all 24 captured');
+  assert.equal(turn.state.stage, 'visioning', 'hands into the next beat');
+  assert.match(turn.reply, /baseline/i, 'the close names the baseline (never a bare number; the ACTION writes it)');
 });

@@ -8,6 +8,8 @@ import { applyReconnectTurn, liveTurnReconnect, loadReconnectCaptures, reconnect
 import { softSetMemberDoors } from '../../lib/member/refine.ts';
 import { emitHarvestMoment } from '../../lib/agent/harvest.ts';
 import { DOORS } from '../../lib/doors.ts';
+import { submitIdq } from '../../lib/gateway/flow.ts';
+import { TOTAL_ITEMS } from '../../lib/idq/instrument.ts';
 
 // v2.2 Reconnect server actions. Flag-gated. The callback (entry) READS committed captures and opens; the DOORS
 // excavation (§2b) is a live model turn (draw-out + insight + the re-seeing revision). Conversation state is
@@ -43,6 +45,21 @@ async function persistRevision(db: Db, memberId: string, prev: ConvState, turn: 
   }
 }
 
+// §2c measurement persistence: when the administered IDQ beat COMPLETES this turn (the 24th response lands), score +
+// write the baseline via the frozen submitIdq (sequence_no=0). Fires exactly once — on the turn the count crosses
+// TOTAL_ITEMS. Best-effort (a write failure never breaks the turn; the responses stay in state to retry).
+async function persistMeasurement(db: Db, memberId: string, prev: ConvState, turn: Turn): Promise<void> {
+  try {
+    const before = prev.administeredResponses?.length ?? 0;
+    const after = turn.state.administeredResponses ?? [];
+    if (before < TOTAL_ITEMS && after.length >= TOTAL_ITEMS) {
+      await submitIdq(db, memberId, after.slice(0, TOTAL_ITEMS)); // frozen instrument: validate + score + baseline row
+    }
+  } catch {
+    // swallow — best-effort; the conversation turn already succeeded.
+  }
+}
+
 export async function startReconnectAction(memberId: string): Promise<{ ok: boolean; reply?: string; state?: ConvState; error?: string }> {
   if (!reconnectEnabled()) return { ok: false, error: 'Reconnect is not enabled.' };
   if (!(await authorizeMember(memberId))) return { ok: false, error: 'Not authorized.' };
@@ -68,9 +85,10 @@ export async function reconnectTurnAction(
       state.stage === 'entry'
         ? applyReconnectTurn(state, history, message, { text: '' })
         : await liveTurnReconnect(state, history, message);
-    // A committed re-seeing this turn persists to the DB (soft-delete substrate + the tell). Best-effort.
+    // Committed side-effects this turn persist to the DB (best-effort): a re-seeing (§2b) + a completed IDQ (§2c).
     const db = (await getDb()) as unknown as Db;
     await persistRevision(db, memberId, state, turn);
+    await persistMeasurement(db, memberId, state, turn);
     return { ok: true, reply: turn.reply, state: turn.state };
   } catch {
     return { ok: false, error: 'Something went wrong — please try again.' };

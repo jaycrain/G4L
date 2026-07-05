@@ -66,6 +66,10 @@ export type ConvState = {
   // mislabel) emits one. Slice 1 records the intent here; the persistence layer (later slice) reads it to emit the
   // member_event harvest_moment (from→to in meta). Default-emit: present unless the model flagged flatMislabel.
   reseeingTells?: ReseeingTell[];
+  // §2c Measurement (administered mode): the fixed-scale responses accumulated across the administered beat, in item
+  // order. The engine gathers them off the depth kernel; the action submits the baseline (submitIdq) when the set is
+  // complete. Reusable for any administered instrument (IDQ now; Grit later).
+  administeredResponses?: number[];
 };
 export type ConvMessage = { role: 'agent' | 'member'; text: string };
 export type Ctx = { name: string; email: string };
