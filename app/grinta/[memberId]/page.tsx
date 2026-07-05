@@ -1,18 +1,25 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getDb } from '../../../lib/db/index.ts';
-import { getDashboard } from '../../../lib/gateway/flow.ts';
-import { getGrinta } from '../../../lib/grinta/index.ts';
+import { latestGrintaReading } from '../../../lib/grinta/survey/store.ts';
 import { authorizeMember } from '../../authz.ts';
 import type { Db } from '../../../lib/db/schema.ts';
 
-// "More about your Grinta Index" — the copy moved off the dashboard panel + how the three components read.
+// "More about your Grinta Index" — the origin, what it measures, and how it grows. Data re-pointed to the SURVEY
+// grinta (grinta_reading), NOT the activity register. The old 3-C (Commitment/Control/Challenge) copy is retired.
+const R_RING: Record<string, string> = { reconnect: '#374f63', rewire: '#3b9495', rebuild: '#919536', reclaim: '#ec6233' };
+const STRANDS = [
+  { key: 'reconnect', label: 'Reconnect' },
+  { key: 'rewire', label: 'Rewire' },
+  { key: 'rebuild', label: 'Rebuild' },
+  { key: 'reclaim', label: 'Reclaim' },
+] as const;
+
 export default async function GrintaMorePage({ params }: { params: Promise<{ memberId: string }> }) {
   const { memberId } = await params;
   if (!(await authorizeMember(memberId))) redirect('/login');
   const db = (await getDb()) as unknown as Db;
-  const dash = await getDashboard(db, memberId);
-  const grinta = await getGrinta(db, memberId, dash?.identityNoun ?? null);
+  const reading = await latestGrintaReading(db, memberId);
 
   return (
     <>
@@ -20,26 +27,55 @@ export default async function GrintaMorePage({ params }: { params: Promise<{ mem
         <Link href={`/dashboard/${memberId}`} className="back-link">← Dashboard</Link>
       </div>
       <div className="hero"><h1>More about your Grinta Index</h1></div>
+
+      {reading && (
+        <div className="card metric grinta">
+          <div className="score">
+            <span className="num">{reading.composite}</span>
+            <span className="grinta-scale">/ 5</span>
+          </div>
+          <div className="dims grinta-strands">
+            {STRANDS.map((r) => {
+              const v = reading.strands[r.key];
+              return (
+                <div className="dim" key={r.key}>
+                  <span><span className="r-dot" style={{ background: R_RING[r.key] }} />{r.label}</span>
+                  <span>{v != null ? `${v} / 5` : '—'}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       <div className="card sub-copy">
-        {grinta.line && <p className="sub-personal">{grinta.line}</p>}
-        <p>Your ID Score tells you where you are. Your Grinta Index is your grit — the part that keeps you going when motivation runs out. Grinta is Italian for grit, and this is yours. It’s the engine of the whole thing.</p>
+        <h3>Where the name comes from</h3>
+        <blockquote className="grinta-origin-quote">
+          “Grinta means grit. Never give up. There’s a moment in the race, everybody struggling, but the one with
+          more grinta, keep going… he gonna win.”
+          <cite>— Eros Poli, GRINTA!</cite>
+        </blockquote>
+        <p>
+          Grinta is the Italian word for grit — there’s no tidy English translation. It’s what keeps you going when
+          every reasonable voice says stop. That’s the whole idea behind this number. Your grinta isn’t luck or a good
+          mood — it’s built, one strand at a time. Reconnect, Rewire, Rebuild, Reclaim each add to it. Finish a strand
+          and the number climbs; close the loop and you’ve built something that holds.
+        </p>
 
-        <h3>Three ways grit shows up</h3>
-        <p>Grinta is built from three habits of a hardy person. You build them by doing the work; they’re scored at your Checkpoints.</p>
-        <ul className="sub-list">
-          <li><strong>Commitment</strong> — you have a reason, and you show up for it.</li>
-          <li><strong>Control</strong> — you run your life and your choices, instead of them running you.</li>
-          <li><strong>Challenge</strong> — you move toward the hard, growthful thing on purpose, instead of away from it.</li>
-        </ul>
+        <h3>What it measures</h3>
+        <p>
+          Your Grinta Index is one number for your grit — built across the whole journey, one R at a time. Four
+          strands, one per R: Reconnect (reconnecting with who you are), Rewire (retraining your mind), Rebuild
+          (rebuilding your body), Reclaim (reclaiming your future). Each strand starts with the reading you gave at the
+          very beginning; as you finish each R, that strand gets fuller and truer — and your Index moves.
+        </p>
 
-        <h3>How it’s built, and how it’s measured</h3>
-        <p>Every Session you finish and every day you log is a rep — that’s the work that builds grit. You’ll feel that daily effort as your own pulse: showing up, and clipping back in after a miss, always counts. A slip you notice and recover from is the muscle working, not a mark against you.</p>
-        <p>The score itself updates at each Checkpoint — the look-back at the end of every R. Each of the three habits has a level you’re building, and a line you’re working to cross. Cross it, and you’ve earned that stretch of grit — sometimes a badge with it. The Checkpoint is where the reps you’ve banked get counted.</p>
-
-        <h3>Grit and the mirror, side by side</h3>
-        <p>Watch your Grinta and your ID Score move together over time. They’re two true pictures of the same comeback — grit is how hard you’re working, the ID Score is how reconnected you feel. We don’t claim one mechanically drives the other; we just keep both honest, and let you see them rise alongside each other.</p>
-        <p>It’s the slightly tough-love number. It won’t pretend you’re further along than you are, and it won’t let you coast. But it’s also the most rewarding one to watch, because it answers to one thing only: the work you put in.</p>
-        <p>Nobody reclaims themselves by waiting to feel ready. You build the grit; the grit does the work. That’s the whole engine.</p>
+        <h3>How it grows</h3>
+        <p>
+          It isn’t a daily score and it isn’t a grade. It’s summative — it moves when you complete an R’s checkpoint,
+          not day to day. Finish a strand and the number climbs; close the whole loop and you’ve built something that
+          holds. It’s yours alone — your own scale, not a curve, not a comparison.
+        </p>
       </div>
     </>
   );

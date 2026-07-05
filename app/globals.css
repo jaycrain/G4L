@@ -136,6 +136,9 @@ button:hover, .btn:hover { background: var(--navy); }
 .sub-personal { border-left: 4px solid var(--navy); padding: 0.3rem 0 0.3rem 0.85rem; margin: 0 0 1.15rem; color: var(--navy); font-size: 1.05rem; font-weight: 600; line-height: 1.5; }
 .sub-personal strong { color: var(--navy); }
 /* Detail-page subheads + lists (ID Score / Grinta / Journey copy refresh) */
+/* The Grinta origin pull-quote (Eros Poli) on the /grinta See-more page. */
+.grinta-origin-quote { margin: 0 0 1rem; padding: 0.5rem 0 0.5rem 1.1rem; border-left: 4px solid var(--olive); color: var(--navy); font-size: 1.1rem; font-style: italic; line-height: 1.5; }
+.grinta-origin-quote cite { display: block; margin-top: 0.5rem; font-size: 0.9rem; font-style: normal; font-weight: 600; color: var(--muted, #6B7680); }
 .sub-copy h3 { color: var(--navy); font-size: 1.08rem; margin: 1.6rem 0 0.55rem; }
 .sub-copy h3:first-of-type { margin-top: 0.5rem; }
 .sub-copy ul.sub-list { margin: 0 0 0.9rem; padding-left: 1.1rem; }
@@ -681,10 +684,10 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .bite-body { white-space: pre-wrap; }
 .bite-by { font-style: italic; color: var(--navy); opacity: 0.8; font-size: 0.9rem; margin: 0.4rem 0 0; }
 
-/* GRINTA! Index — the daily process metric. Subservient to the ID Score: ~half the number size,
-   olive (vs. the ID's teal), lighter card. The ID Score stays the hero. */
-.grinta .num { color: var(--olive); font-size: 1.5rem; }
-.grinta .score { align-items: center; }
+/* Grinta Index — a PEER to the ID Score (Jul 2026): the number matches the ID Score's size, but keeps its own
+   accent (olive vs the ID's teal) and its own /5 scale, so it still reads as a distinct instrument. */
+.grinta .num { color: var(--olive); font-size: 3rem; }
+.grinta .score { align-items: baseline; }
 .grinta-bridge { font-size: 0.85rem; margin-top: 0.45rem; }
 
 /* Activity panel (Strava) — reflective, not gamified */
