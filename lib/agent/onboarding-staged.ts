@@ -526,6 +526,54 @@ export interface ArcConfig {
   onComplete: (c: Collected) => string; // the completion reply (the card / the earned ceremony)
 }
 
+// --- The SHARED administered-beat component (lifted so ANY arc reuses it: reconnect IDQ §2c, onboarding Grinta,
+// the §2e Checkpoint grit items). A validated instrument runs OFF the depth kernel — the generic loop is
+// parse a 1–5 → accumulate → deliver the next framed item → on the LAST item, hand off (the arc's onComplete
+// closure sets the reply + next stage; the ACTION scores + persists). Everything instrument-specific (opener,
+// items, count, frames, completion) lives in the config; the loop lives here, once.
+const LIKERT_NUM_WORDS: Record<string, number> = { one: 1, two: 2, three: 3, four: 4, five: 5 };
+export function parseLikert(msg: string): number | null {
+  const m = (msg ?? '').toLowerCase();
+  const digit = m.match(/\b([1-5])\b/);
+  if (digit) return Number(digit[1]);
+  for (const [w, n] of Object.entries(LIKERT_NUM_WORDS)) if (new RegExp(`\\b${w}\\b`).test(m)) return n;
+  return null;
+}
+
+export type AdministeredConfig = {
+  id: StageId;
+  itemCount: number;
+  opener: (c: Collected) => string; // the warm open + item 0, delivered when the prior stage hands in
+  deliverItem: (index: number) => string; // the framed item at 0-based index (cluster transitions etc.)
+  reprompt: (index: number) => string; // a gentle re-prompt of the current item on an unclear (non 1–5) answer
+  onComplete: (b: Beat) => void; // all items in — the config sets b.stage + b.reply (advance + close)
+};
+
+// Build an administered StageDef from an instrument config. gather/confirm are unused (the kernel dispatches to
+// administer() on mode==='administered'); they're present only to satisfy the StageDef contract.
+export function administeredStage(cfg: AdministeredConfig): StageDef {
+  return {
+    id: cfg.id,
+    mode: 'administered',
+    opener: cfg.opener,
+    offersSubstance: () => true,
+    gather() {},
+    confirm() {},
+    administer(b) {
+      const val = parseLikert(b.memberMessage);
+      if (val == null) {
+        // Unclear answer → re-prompt the CURRENT item; do NOT advance or record.
+        b.reply = cfg.reprompt(b.administeredResponses.length);
+        return;
+      }
+      b.administeredResponses = [...b.administeredResponses, val];
+      const n = b.administeredResponses.length;
+      if (n >= cfg.itemCount) cfg.onComplete(b);
+      else b.reply = cfg.deliverItem(n);
+    },
+  };
+}
+
 // Build the persisted ConvState from a Beat — the single place the turn's state shape is assembled. The current
 // stage's scratch persists under the stage it BELONGS to (stageAtEntry), since a handler may have advanced b.stage
 // this turn; every other stage's scratch is carried through unchanged from baseScratch.

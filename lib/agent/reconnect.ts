@@ -18,7 +18,7 @@ import { identityLabel } from '../member/identity.ts';
 import type { Db } from '../db/schema.ts';
 import { MEMBER_AGENT_SYSTEM_PROMPT } from './system-prompt.ts';
 import { resolveGapConfirm } from './onboarding-intent.ts';
-import { runArcTurn, type ArcConfig, type StageDef } from './onboarding-staged.ts';
+import { runArcTurn, administeredStage, type ArcConfig, type StageDef } from './onboarding-staged.ts';
 import type { Collected, ConvMessage, ConvState, DoorRevision, ModelTurn, ReplyIntent, Turn, Stage } from './onboarding.ts';
 
 // Is the Reconnect arc selected? Own flag — defaults OFF, so it never runs in prod until the coupled v2.1+v2.2
@@ -493,16 +493,6 @@ function idqClose(): string {
     "on your dashboard, and it's something we'll watch move together over time — never a grade."
   );
 }
-// Parse a 1–5 from the member's reply (digit or number-word), tolerant of "a 4", "4, mostly", "three". null = unclear.
-const IDQ_NUM_WORDS: Record<string, number> = { one: 1, two: 2, three: 3, four: 4, five: 5 };
-function parseLikert(msg: string): number | null {
-  const m = (msg ?? '').toLowerCase();
-  const digit = m.match(/\b([1-5])\b/);
-  if (digit) return Number(digit[1]);
-  for (const [w, n] of Object.entries(IDQ_NUM_WORDS)) if (new RegExp(`\\b${w}\\b`).test(m)) return n;
-  return null;
-}
-
 // M3 — the personalized close. Ties the baseline SHAPE (relative highs/lows, NEVER the raw number) back to the Door(s)
 // they named. The mirror posture: a beginning, not a grade; graceful if the lowest area doesn't obviously map to a
 // door (never manufacture the link). Best-effort — returns null on no-key/failure/number-leak, so the engine's generic
@@ -559,32 +549,21 @@ but it NEVER grades or pathologizes. Hard rules:
   }
 }
 
-const measurementStage: StageDef = {
+// §2c IDQ — the reconnect baseline instrument, built on the SHARED administered-beat factory. Everything here is
+// instrument config; the parse→accumulate→deliver→complete loop lives in administeredStage(). On the last item it
+// hands into Visioning's first beat (Drift); the ACTION scores + writes the baseline (submitIdq) on that crossing,
+// and may UPGRADE this generic close to a personalized one (M3) — appending the Drift opener.
+const measurementStage: StageDef = administeredStage({
   id: 'measurement',
-  mode: 'administered',
+  itemCount: TOTAL_ITEMS,
   opener: () => idqOpen(), // the warm open + item 0, delivered when Doors hands in
-  offersSubstance: () => true,
-  gather() {}, // unused — administered stages dispatch to administer() (the kernel branches on mode)
-  confirm() {},
-  administer(b) {
-    const val = parseLikert(b.memberMessage);
-    if (val == null) {
-      // Unclear answer → gently re-prompt the CURRENT item; do NOT advance or record.
-      b.reply = `${IDQ_REPROMPT}\n\n${itemStem(b.administeredResponses.length)}`;
-      return;
-    }
-    b.administeredResponses = [...b.administeredResponses, val];
-    const n = b.administeredResponses.length;
-    if (n >= TOTAL_ITEMS) {
-      // The 24 are in. Hand into Visioning's first beat (Drift); the ACTION scores + writes the baseline (submitIdq)
-      // on this crossing, and may UPGRADE this generic close to a personalized one (M3) — appending the Drift opener.
-      b.stage = 'drift';
-      b.reply = `${idqClose()}\n\n${driftOpen(b.collected)}`;
-    } else {
-      b.reply = deliverIdqItem(n);
-    }
+  deliverItem: (n) => deliverIdqItem(n),
+  reprompt: (n) => `${IDQ_REPROMPT}\n\n${itemStem(n)}`,
+  onComplete: (b) => {
+    b.stage = 'drift';
+    b.reply = `${idqClose()}\n\n${driftOpen(b.collected)}`;
   },
-};
+});
 
 // §2e CHECKPOINT — PARKED on Greg (the Hardiness measure + its unsettled naming). Until it lands, a graceful one-turn
 // PASS-THROUGH keeps the arc flowing Window → Ceremony — no broken stub, and Greg's real Checkpoint drops in HERE later
