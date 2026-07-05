@@ -14,7 +14,9 @@ test('§2f ceremony · reveals the score radar, the Grinta movement, the Playboo
   assert.deepEqual(kinds, ['score', 'grinta', 'playbook', 'doors', 'journey_rewire'], 'the five reveals, in order');
   const score = beats.find((b) => b.reveal?.kind === 'score')!.reveal as { idScore: number };
   assert.equal(score.idScore, 62, 'the baseline ID Score rides the radar reveal');
-  const grinta = beats.find((b) => b.reveal?.kind === 'grinta')!.reveal as { composite: number; changePct: number; strands: { reconnect: number } };
+  const grintaBeat = beats.find((b) => b.reveal?.kind === 'grinta')!;
+  assert.equal(grintaBeat.text, 'And this one you earned just now — your Grinta, your grit. You did the work, and it already moved.', 'Jay’s verbatim reveal line');
+  const grinta = grintaBeat.reveal as { composite: number; changePct: number; strands: { reconnect: number } };
   assert.equal(grinta.composite, 3.33);
   assert.equal(grinta.changePct, 11, 'the first movement rides the reveal');
   assert.equal(grinta.strands.reconnect, 4.33, 'grit stepped up');

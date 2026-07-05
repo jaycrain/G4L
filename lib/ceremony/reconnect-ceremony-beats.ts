@@ -42,9 +42,8 @@ export const RECONNECT_CEREMONY_COPY = {
   measured: 'You measured the distance to reclaim yourself, and you took the first step toward closing it.',
   // 3 — reveal: the ID Score radar (the starting line)
   score: 'Here it is, by the numbers — your starting line.',
-  // 3b — reveal: the Grinta movement (§2e). The FIRST time grit moves — because they did the work. DIRECTIONAL copy.
-  grinta:
-    "And this one you earned just now: your Grinta — your grit. It already moved, because you showed up for the hard part. It answers to one thing only: the work you put in.",
+  // 3b — reveal: the Grinta movement (§2e). The FIRST time grit moves — because they did the work. Jay's line, verbatim.
+  grinta: 'And this one you earned just now — your Grinta, your grit. You did the work, and it already moved.',
   // 4 — reveal: the Playbook keepers (their own words)
   playbook: 'And these are your words — the ones that begin to frame the way forward.',
   // 4b — fallback if nothing was kept (voice-matched; edge case, not part of the approved verbatim)

@@ -52,12 +52,12 @@ export default async function GrintaMorePage({ params }: { params: Promise<{ mem
         <h3>Where the name comes from</h3>
         <blockquote className="grinta-origin-quote">
           “Grinta means grit. Never give up. There’s a moment in the race, everybody struggling, but the one with
-          more grinta, keep going… he gonna win.”
+          more Grinta, keep going… he gonna win.”
           <cite>— Eros Poli, GRINTA!</cite>
         </blockquote>
         <p>
           Grinta is the Italian word for grit — there’s no tidy English translation. It’s what keeps you going when
-          every reasonable voice says stop. That’s the whole idea behind this number. Your grinta isn’t luck or a good
+          every reasonable voice says stop. That’s the whole idea behind this number. Your Grinta isn’t luck or a good
           mood — it’s built, one strand at a time. Reconnect, Rewire, Rebuild, Reclaim each add to it. Finish a strand
           and the number climbs; close the loop and you’ve built something that holds.
         </p>

@@ -342,7 +342,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
                   );
                 })}
               </div>
-              <p className="metric-foot muted">Each R you finish adds to its strand — grinta climbs as you close the loop.</p>
+              <p className="metric-foot muted">Each R you finish adds to its strand — Grinta climbs as you close the loop.</p>
             </div>
           ) : (
             // Anticipatory blank — the baseline lands the moment they finish the intro survey, then grows each R.
