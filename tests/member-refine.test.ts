@@ -4,7 +4,7 @@ import { PGlite } from '@electric-sql/pglite';
 import { applySchema, type Db } from '../lib/db/schema.ts';
 import { getReclaimItems } from '../lib/beats/store.ts';
 import { addReclaimItemForMember, addDoorForMember, getMemberDoors, setMemberDoors, softSetMemberDoors, reconcileDoors } from '../lib/member/refine.ts';
-import { emitHarvestMoment } from '../lib/agent/harvest.ts';
+import { emitHarvestMoment, commitKeeper } from '../lib/agent/harvest.ts';
 
 async function seedMember(): Promise<{ db: Db; memberId: string }> {
   const db = new PGlite() as unknown as Db;
@@ -135,6 +135,26 @@ test('emitHarvestMoment carries the re-seeing pair + reconnect surface (§2b R5 
   assert.equal(row.surface, 'reconnect', 'tagged as a reconnect-surface event');
   assert.equal(meta.keeperType, 'tell');
   assert.deepEqual(meta.pair, { fromSlug: 'marriage', toSlug: 'load_bearer' }, 'the from→to correct-pair link rides in meta');
+});
+
+test('§2d drift keeper COMMITS a visible Playbook entry (own_words, kept, the member\'s words)', async () => {
+  const { db, memberId } = await seedMember();
+  const body = 'I stopped riding, stopped seeing friends, stopped feeling at home in my body — each went quiet';
+  const momentId = await emitHarvestMoment(db, memberId, {
+    destinationIntent: 'keeper', keeperType: 'tell', surface: 'reconnect',
+    sourceRef: { kind: 'drift', ref: 'drift', label: 'The drift' }, payloadRef: body,
+  });
+  await commitKeeper(db, memberId, {
+    momentId, keeperType: 'tell', section: 'own_words', body, state: 'kept',
+    source: { kind: 'own', ref: 'drift', label: 'The drift' },
+  });
+  const rows = (await db.query<{ section: string; body: string; state: string; keeper_type: string }>(
+    'select section, body, state, keeper_type from playbook_entry where member_id=$1', [memberId])).rows;
+  assert.equal(rows.length, 1, 'one Playbook entry is committed');
+  assert.equal(rows[0]!.section, 'own_words');
+  assert.equal(rows[0]!.state, 'kept', "the bridge says 'I've kept it for you' — so it's kept, not just proposed");
+  assert.equal(rows[0]!.keeper_type, 'tell');
+  assert.match(rows[0]!.body, /stopped riding/, "the member's own words are preserved verbatim");
 });
 
 test('reconcileDoors (no-API fallback) keeps current + adds what the conversation surfaced', async () => {

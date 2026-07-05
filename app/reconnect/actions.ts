@@ -6,7 +6,7 @@ import type { Db } from '../../lib/db/schema.ts';
 import type { ConvMessage, ConvState, Turn } from '../../lib/agent/onboarding.ts';
 import { applyReconnectTurn, liveTurnReconnect, loadReconnectCaptures, reconnectEnabled, reconnectOpening, reconnectMeasurementClose, driftOpen } from '../../lib/agent/reconnect.ts';
 import { softSetMemberDoors } from '../../lib/member/refine.ts';
-import { emitHarvestMoment, type KeeperType } from '../../lib/agent/harvest.ts';
+import { emitHarvestMoment, commitKeeper, type KeeperType } from '../../lib/agent/harvest.ts';
 import { DOORS } from '../../lib/doors.ts';
 import { submitIdq } from '../../lib/gateway/flow.ts';
 import { TOTAL_ITEMS } from '../../lib/idq/instrument.ts';
@@ -73,7 +73,7 @@ async function persistHarvest(db: Db, memberId: string, prev: ConvState, turn: T
   try {
     const priorN = prev.pendingHarvest?.length ?? 0;
     for (const s of (turn.state.pendingHarvest ?? []).slice(priorN)) {
-      await emitHarvestMoment(db, memberId, {
+      const momentId = await emitHarvestMoment(db, memberId, {
         destinationIntent: s.destinationIntent,
         keeperType: s.keeperType as KeeperType,
         surface: 'reconnect',
@@ -81,6 +81,18 @@ async function persistHarvest(db: Db, memberId: string, prev: ConvState, turn: T
         payloadRef: s.payloadRef,
         private: s.private,
       });
+      // A keeper-intent signal COMMITS a Playbook entry so it's actually visible (the drift bridge says "I've kept it
+      // for you"). A share-only or private signal does NOT — the letter body never lands as a stored keeper.
+      if (s.destinationIntent !== 'share' && !s.private) {
+        await commitKeeper(db, memberId, {
+          momentId,
+          keeperType: s.keeperType as KeeperType,
+          section: 'own_words', // the member's own words (preserve declarations)
+          body: s.payloadRef,
+          state: 'kept',
+          source: { kind: 'own', ref: s.kind, label: s.label ?? s.kind }, // member-authored (constrained source_kind)
+        });
+      }
     }
   } catch {
     // swallow — best-effort; the conversation turn already succeeded.
