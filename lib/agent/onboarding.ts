@@ -16,10 +16,15 @@ import { DOORS, DOOR_SLUGS, isDoorSlug, matchDoors, correctDoors, type DoorSlug 
 import { cleanIdentityNoun, displayIdentityNoun, identityLabel } from '../member/identity.ts';
 import { RECLAIM_LIST_MIN, RECLAIM_LIST_TARGET } from '../member/reclaim.ts';
 import { contractMet, gapIsNarrative } from './onboarding-contract.ts';
+import type { GrintaScore } from '../grinta/survey/scoring.ts';
 
 export type Stage = 'identity' | 'identity_name' | 'reclaim' | 'door' | 'complete'
   // v2.0 staged-capture engine (lib/agent/onboarding-staged.ts) uses 'gap' for the "how it opened" stage.
   | 'gap'
+  // The Grinta baseline — "Introduction to Grinta," an administered 12-item survey at the END of onboarding
+  // (after reclaim confirms, before completion). Administered mode, off the depth kernel; establishes the
+  // GRINTA baseline (the 4-strand resilience the member builds by closing each R). No ID Score here.
+  | 'grinta'
   // v2.1 (Decision E): 'declined' is the terminal off-ramp for a genuinely-thriving no-fade member.
   | 'declined'
   // v2.2 Reconnect arc (config #2 on the shared kernel): its stage ids. 'entry' = the callback (§2a).
@@ -43,6 +48,9 @@ export type Collected = {
   reclaimCategories?: string[]; // IDQ-dimension category per item, same order (agent-inferred)
   gap?: string; // Step 3 free-text: how the gap opened (member's words)
   doors?: DoorSlug[]; // one or more
+  // The Grinta baseline — set when the "Introduction to Grinta" survey completes (composite + the 4 strand means).
+  // Stashed here so the completion card can render the number and the action can persist it without re-scoring.
+  grintaBaseline?: GrintaScore;
 };
 
 export type ConvState = {
@@ -449,6 +457,9 @@ const STAGE_PROMPT: Record<Stage, string> = {
   reclaim: `What are a few things you want back? Three to start, more if they keep coming.`,
   door: doorPrompt(),
   gap: doorPrompt(), // v1 never sets 'gap' (that's the v2.0 staged engine) — present only for type completeness
+  // Administered (staged only) — off the depth kernel, so this fallback prompt is never actually used; present
+  // for type completeness. A number-based re-ask, matching the survey's own reprompt.
+  grinta: 'On a scale of 1 (not at all) to 5 (completely), how true does that feel today?',
   complete: "That's everything we need. Let's look at where you're starting from next.",
   declined: 'This may not be your season for it — and the door stays open whenever that changes.', // terminal; never appended
   // v2.2 Reconnect stages are present only for type completeness — v1 never routes here, and the Reconnect

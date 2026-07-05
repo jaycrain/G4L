@@ -25,6 +25,8 @@ import { cleanIdentityNoun, displayIdentityNoun, identityLabel } from '../member
 import { isDoorSlug, matchDoors, type DoorSlug } from '../doors.ts';
 import { RECLAIM_LIST_FLOOR, RECLAIM_LIST_MIN, RECLAIM_LIST_TARGET, consolidateReclaimList } from '../member/reclaim.ts';
 import { gapIsNarrative, hasIdentity } from './onboarding-contract.ts';
+import { ONBOARDING_BASELINE_ITEMS, grintaStem } from '../grinta/survey/instrument.ts';
+import { scoreGrinta } from '../grinta/survey/scoring.ts';
 import { MEMBER_AGENT_SYSTEM_PROMPT } from './system-prompt.ts';
 import {
   augmentDoors,
@@ -763,9 +765,8 @@ const reclaimStage: StageDef = {
     }
     const realGap = gapIsNarrative(b.collected.gap, b.collected.reclaimList ?? []) && !isForwardAmbition(b.collected.gap ?? '');
     if (hasIdentity(b.collected) && realGap && (b.collected.reclaimList?.length ?? 0) >= RECLAIM_LIST_FLOOR) {
-      b.stage = 'complete';
-      b.awaitingConfirm = false;
-      return { reply: b.arc.onComplete(b.collected), state: beatState(b), complete: true };
+      // Capture is card-ready → hand into the Grinta baseline survey (it completes onboarding, not this crossing).
+      return enterGrintaSurvey(b);
     }
     // not card-ready → mutation kept, fall through to normal gather
   },
@@ -854,18 +855,74 @@ const reclaimStage: StageDef = {
       b.awaitingConfirm = false;
       b.reply = withQuestion(b.modelText, RECLAIM_MORE);
     } else {
-      b.stage = 'complete';
-      b.awaitingConfirm = false;
-      b.reply = b.arc.onComplete(b.collected);
-      b.complete = true;
+      // Seatbelt confirmed → don't complete yet; hand into the Grinta baseline survey (the new end of onboarding).
+      enterGrintaSurvey(b);
     }
   },
 };
 
+// --- The Grinta baseline — "Introduction to Grinta." An administered 12-item survey that runs AFTER the member
+// confirms their Reclaim List (the seatbelt above is untouched) and BEFORE onboarding completes. Off the depth
+// kernel (administered mode). It establishes the GRINTA baseline (grit across four strands, one per R). NO ID
+// Score here — that's earned in Reconnect. Built on the shared administeredStage() factory; copy lives here.
+const GRINTA_OPEN =
+  'One last thing before we’re done, and it’s quick. Twelve short statements about where you’re standing right ' +
+  'now — for each, just tell me how true it feels today, from 1 (not at all) to 5 (completely). There are no ' +
+  'right answers, and nothing here is a test. This is your starting line, so we can watch it move together.';
+
+// A member answered with something that isn't a 1–5 → re-ask the CURRENT item, gently.
+function grintaReprompt(index: number): string {
+  return `A number from 1 to 5 is all I need here — 1 is “not at all,” 5 is “completely.”\n\n${grintaDeliver(index)}`;
+}
+
+// Deliver the item at 0-based `index`, with a light "n of 12" progress cue.
+function grintaDeliver(index: number): string {
+  return `${index + 1} of 12\n\n“${grintaStem(ONBOARDING_BASELINE_ITEMS[index]!)}”`;
+}
+
+// The completion beat — folds the whole-picture commit handoff (the confirmation card is rendered client-side from
+// `collected`; nothing saves until the member confirms) WITH the light Grinta reveal: the baseline number + the
+// four Rs, Reconnect lit next. Governed: a starting line, never a grade; no ID Score.
+function grintaClose(composite: number): string {
+  return (
+    `That’s the whole check-in — thank you for staying with it.\n\n` +
+    `Your starting Grinta is ${composite} out of 5. Grinta is grit: the resilience you build by closing each R, one ` +
+    `strand at a time. This is just where you’re standing today — nothing to grade, everything to build on.\n\n` +
+    `Take a look at what I’ve captured from our whole conversation below. Nothing’s saved yet, so if anything’s ` +
+    `off, we’ll fix it. Reconnect is first — and it’s already lit.`
+  );
+}
+
+const grintaStage: StageDef = administeredStage({
+  id: 'grinta',
+  itemCount: ONBOARDING_BASELINE_ITEMS.length, // 12
+  opener: () => `${GRINTA_OPEN}\n\n${grintaDeliver(0)}`, // the warm frame + item 0, delivered when Reclaim hands in
+  deliverItem: (n) => grintaDeliver(n),
+  reprompt: (n) => grintaReprompt(n),
+  onComplete: (b) => {
+    // Score the 12, stash the baseline (composite + the 4 strand means) for the card + the action, and COMPLETE.
+    const score = scoreGrinta(ONBOARDING_BASELINE_ITEMS, b.administeredResponses);
+    b.collected.grintaBaseline = score;
+    b.stage = 'complete';
+    b.complete = true;
+    b.reply = grintaClose(score.composite);
+  },
+});
+
+// The seam from Reclaim into the Grinta baseline. Called from BOTH of Reclaim's terminal crossings (the confirm
+// seatbelt and the runaway backstop) in place of completing: the capture is settled, so instead of finishing we
+// hand into the administered survey. complete stays false — the opener renders as a normal turn, not the card.
+function enterGrintaSurvey(b: Beat): Turn {
+  b.stage = 'grinta';
+  b.awaitingConfirm = false;
+  b.reply = `${GRINTA_OPEN}\n\n${grintaDeliver(0)}`;
+  return { reply: b.reply, state: beatState(b), complete: false };
+}
+
 const ONBOARDING_ARC: ArcConfig = {
   id: 'onboarding',
-  stageOrder: ['identity', 'gap', 'reclaim'],
-  stages: { identity: identityStage, gap: gapStage, reclaim: reclaimStage },
+  stageOrder: ['identity', 'gap', 'reclaim', 'grinta'],
+  stages: { identity: identityStage, gap: gapStage, reclaim: reclaimStage, grinta: grintaStage },
   onComplete: () => COMPLETE_HANDOFF,
 };
 
