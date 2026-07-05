@@ -23,6 +23,7 @@ import DashboardSync from '../dashboard-sync.tsx';
 import TrackThis from '../track-this.tsx';
 import BadgePassport from '../badge-passport.tsx';
 import CurriculumForecast from '../curriculum-forecast.tsx';
+import ResiliencePulse from '../resilience-pulse.tsx';
 import ConnectPanel from '../connect-panel.tsx';
 import PhaseCrossing from '../phase-crossing.tsx';
 import { crossingToShow } from '../../../lib/curriculum/crossing.ts';
@@ -326,6 +327,9 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
           <Link href={`/grinta/${memberId}`} className="see-more">See more →</Link>
         </div>
       </div>
+
+      {/* Resilience Pulse — the daily-momentum register (early state until Rewire's daily calls start filling it). */}
+      <ResiliencePulse />
 
       {/* Connect — the community surface, slotted right under the metrics strip */}
       <ConnectPanel memberId={memberId} />

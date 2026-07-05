@@ -3,11 +3,13 @@
 import {
   buildPulsePoints,
   buildPulsePath,
+  buildPulseAnnotations,
   pulseTodayX,
   DEFAULT_PULSE_GEOM,
   type PulseBeat,
   type PulseKind,
   type PulsePoint,
+  type PulseTone,
 } from '../../lib/dashboard/resilience-pulse.ts';
 
 // The Resilience Pulse dashboard card. ONE component, two states: EARLY (no beats → a flat baseline + one pulsing
@@ -21,6 +23,7 @@ const g = DEFAULT_PULSE_GEOM;
 const H = 188;
 
 const dotColor = (k: PulseKind) => (k === 'false_start' ? RED : k === 'quiet' ? QUIET : TEAL);
+const toneColor = (t: PulseTone) => (t === 'today' ? ORANGE : t === 'bad' ? RED : t === 'quiet' ? QUIET : TEAL);
 
 export default function ResiliencePulse({ beats = [] }: { beats?: PulseBeat[] }) {
   const points = buildPulsePoints(beats, g);
@@ -28,6 +31,7 @@ export default function ResiliencePulse({ beats = [] }: { beats?: PulseBeat[] })
   const empty = points.length === 0;
   const today: PulsePoint =
     points[points.length - 1] ?? { x: pulseTodayX(g), y: g.baselineY, kind: 'quiet', today: true };
+  const annotations = buildPulseAnnotations(points, g); // capped, sparse; empty state falls back to the early copy below
 
   return (
     <div className="card resilience-pulse">
@@ -68,9 +72,12 @@ export default function ResiliencePulse({ beats = [] }: { beats?: PulseBeat[] })
         <circle cx={today.x} cy={today.y} r="5.5" fill={ORANGE}>
           <animate attributeName="r" values="5.5;7;5.5" dur="1.8s" repeatCount="indefinite" />
         </circle>
-        <text x={today.x} y={today.y - 16} textAnchor="middle" fontSize="12" fontWeight="500" fill={ORANGE}>
-          today
-        </text>
+        {/* auto-placed labels (today + up to 2 notable moments); the early state has no beats → renders just "today" */}
+        {(empty ? [{ text: 'today', x: today.x, y: today.y - 16, tone: 'today' as PulseTone }] : annotations).map((a, i) => (
+          <text key={i} x={a.x} y={a.y} textAnchor="middle" fontSize="12" fontWeight={a.tone === 'quiet' ? 400 : 500} fill={toneColor(a.tone)}>
+            {a.text}
+          </text>
+        ))}
       </svg>
 
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px 18px', fontSize: '12.5px', color: 'var(--muted, #6b7683)', margin: '0.5rem 0 0.25rem' }}>

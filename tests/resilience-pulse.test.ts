@@ -33,3 +33,30 @@ test('resilience pulse · NEVER a rising trajectory — a flat run stays flat (r
   const ys = new Set(buildPulsePoints(Array<{ kind: 'quiet' }>(8).fill({ kind: 'quiet' })).map((p) => p.y));
   assert.equal(ys.size, 1, 'every quiet day shares the baseline y — no upward drift / accumulation');
 });
+
+// --- auto-placed labels (sparse, capped) ---------------------------------------------------------------------
+import { buildPulseAnnotations } from '../lib/dashboard/resilience-pulse.ts';
+const G = (kinds) => buildPulseAnnotations(buildPulsePoints(kinds.map((k) => ({ kind: k }))));
+
+test('resilience pulse labels · today is ALWAYS present', () => {
+  assert.ok(G(['good']).some((a) => a.text === 'today'));
+  assert.ok(G(['good', 'quiet', 'good']).some((a) => a.text === 'today'));
+});
+
+test('resilience pulse labels · RECOVERY is the hero — a dip then rising beats gets "back in rhythm"', () => {
+  const anns = G(['good', 'good', 'false_start', 'good', 'good', 'good']);
+  assert.ok(anns.some((a) => a.text === 'back in rhythm ↑'), 'the bounce is labelled');
+  assert.ok(anns.some((a) => a.text === 'today'));
+  // the adjacent "False Start" is dropped so the two don't crowd — recovery wins
+  assert.ok(!anns.some((a) => a.text === 'False Start'), 'the crowding False Start yields to the higher-priority bounce');
+});
+
+test('resilience pulse labels · a lone dip (no recovery) shows "False Start"; a quiet run shows "quiet days"', () => {
+  assert.ok(G(['good', 'false_start', 'quiet', 'quiet']).some((a) => a.text === 'False Start'));
+  assert.ok(G(['good', 'quiet', 'quiet', 'quiet', 'quiet', 'good']).some((a) => a.text === 'quiet days'));
+});
+
+test('resilience pulse labels · CAPPED — never more than today + 2 events, however busy', () => {
+  const busy = ['good', 'good', 'good', 'quiet', 'quiet', 'quiet', 'false_start', 'good', 'good', 'good', 'quiet', 'good'];
+  assert.ok(G(busy).length <= 3, 'today + at most 2 notable labels — never crowds');
+});

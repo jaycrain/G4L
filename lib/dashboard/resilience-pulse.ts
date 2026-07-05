@@ -62,3 +62,65 @@ export function buildPulsePath(points: PulsePoint[], g: PulseGeom = DEFAULT_PULS
 
 // The right-edge x where the live "today" point always sits (early or populated).
 export const pulseTodayX = (g: PulseGeom = DEFAULT_PULSE_GEOM): number => g.width - g.padX;
+
+// --- Auto-placed labels (kept SPARSE so the graphic never crowds) ---------------------------------------------
+export type PulseTone = 'good' | 'bad' | 'quiet' | 'today';
+export type PulseAnnotation = { text: string; x: number; y: number; tone: PulseTone };
+
+// Consecutive runs of one kind, length ≥ min — returned as {start,end} index spans.
+function runsOf(points: PulsePoint[], kind: PulseKind, min: number): { start: number; end: number }[] {
+  const runs: { start: number; end: number }[] = [];
+  let s = -1;
+  for (let i = 0; i <= points.length; i++) {
+    if (i < points.length && points[i]!.kind === kind) {
+      if (s === -1) s = i;
+    } else if (s !== -1) {
+      if (i - s >= min) runs.push({ start: s, end: i - 1 });
+      s = -1;
+    }
+  }
+  return runs;
+}
+
+// Notable moments become floating labels — but CAPPED at "today" + the 2 most notable events, so a busy window never
+// crowds. Priority: a RECOVERY ("back in rhythm") is the hero (Recovery is the point) > a False Start > a quiet run /
+// a roll. Ties break by recency (rightmost). Overlapping labels drop the lower-priority one.
+export function buildPulseAnnotations(points: PulsePoint[], g: PulseGeom = DEFAULT_PULSE_GEOM): PulseAnnotation[] {
+  const n = points.length;
+  if (n === 0) return [];
+  const today = points[n - 1]!;
+  const events: (PulseAnnotation & { priority: number })[] = [];
+
+  for (let i = 0; i < n; i++) {
+    const p = points[i]!;
+    if (p.today) continue;
+    if (p.kind === 'false_start') {
+      events.push({ text: 'False Start', x: p.x, y: p.y + 20, tone: 'bad', priority: 2 });
+      // recovery: the dip is followed by ≥2 good beats — label the first good beat (the bounce)
+      if (points[i + 1]?.kind === 'good' && points[i + 2]?.kind === 'good') {
+        const r = points[i + 1]!;
+        events.push({ text: 'back in rhythm ↑', x: r.x, y: r.y - 16, tone: 'good', priority: 3 });
+      }
+    }
+  }
+  for (const run of runsOf(points, 'quiet', 3)) {
+    const mid = points[Math.floor((run.start + run.end) / 2)]!;
+    if (!mid.today) events.push({ text: 'quiet days', x: mid.x, y: g.baselineY - 12, tone: 'quiet', priority: 1 });
+  }
+  for (const run of runsOf(points, 'good', 3)) {
+    if (points[run.start - 1]?.kind === 'false_start') continue; // that's the recovery — already labelled
+    const mid = points[Math.floor((run.start + run.end) / 2)]!;
+    if (!mid.today) events.push({ text: 'on a roll ↑', x: mid.x, y: mid.y - 16, tone: 'good', priority: 1 });
+  }
+
+  events.sort((a, b) => b.priority - a.priority || b.x - a.x);
+  const chosen: PulseAnnotation[] = [];
+  for (const { priority: _p, ...e } of events) {
+    if (chosen.length >= 2) break;
+    if (Math.abs(e.x - today.x) < 70) continue; // don't crowd "today"
+    if (chosen.some((c) => Math.abs(c.x - e.x) < 80)) continue; // don't crowd another chosen label
+    chosen.push(e);
+  }
+  chosen.push({ text: 'today', x: today.x, y: today.y - 16, tone: 'today' });
+  return chosen;
+}
