@@ -128,6 +128,21 @@ function withQuestion(modelText: string, probe: string): string {
   return `${t}\n\n${probe}`;
 }
 
+// SHARED draw-out advance rule (fixes the systematic "reflect but re-ask" tic across every draw-out beat — Doors,
+// Drift, Window, and the future Rs). A draw-out beat advances to its reflect-confirm when:
+//   • the model SIGNALS depth (reflect_x) past the floor — the explicit path; OR
+//   • the model has WRAPPED UP with a declarative reflection past the floor — a substantive statement that does NOT
+//     end on a question. When the model is still drawing out it asks a probe (ends on "?"); when it reflects, it
+//     STATES. So a statement-without-a-question past the floor IS the reflection — recognize it from the text instead
+//     of appending a redundant draw-out probe and re-asking; OR
+//   • the CAP is hit (anti-loop).
+// This means the engine stops circling once the Companion has reflected, whether or not it remembered the tool call.
+function drawoutShouldReflect(modelText: string, depthReady: boolean | undefined, depth: number, min: number, max: number): boolean {
+  const t = (modelText ?? '').trim();
+  const wrappedUp = depth >= min && t.length >= 40 && !/\?\s*$/.test(t); // a declarative reflection, not another probe
+  return (depthReady === true && depth >= min) || wrappedUp || depth >= max;
+}
+
 // The excavation opener — from the committed PRIMARY door (loaded at arc entry). Not the label, the real thing.
 function doorOpen(c: Collected): string {
   const identity = identityLabel(c.identityNoun);
@@ -220,7 +235,7 @@ const doorsStage: StageDef = {
     sc.doorDepth = (sc.doorDepth ?? 0) + 1;
     // MODEL-JUDGED depth (Decision T): the model calls reflect_door when the door is genuinely excavated — NOT a
     // door-count or length proxy. The engine only BOUNDS it: a FLOOR (no insight without material) and a CAP.
-    const advance = (b.model.depthReady && sc.doorDepth >= DOOR_MIN_DEPTH) || sc.doorDepth >= DOOR_MAX_DEPTH;
+    const advance = drawoutShouldReflect(b.modelText, b.model.depthReady, sc.doorDepth, DOOR_MIN_DEPTH, DOOR_MAX_DEPTH);
     if (!advance) {
       b.reply = withQuestion(b.modelText, doorMore(b.history));
     } else {
@@ -333,7 +348,7 @@ const driftStage: StageDef = {
     const sc = b.scratch as { driftDepth?: number };
     sc.driftDepth = (sc.driftDepth ?? 0) + 1;
     // Model-judged depth (reflect_drift → depthReady), bounded by a FLOOR (no pattern on thin material) and CAP.
-    const advance = (b.model.depthReady && sc.driftDepth >= DRIFT_MIN_DEPTH) || sc.driftDepth >= DRIFT_MAX_DEPTH;
+    const advance = drawoutShouldReflect(b.modelText, b.model.depthReady, sc.driftDepth, DRIFT_MIN_DEPTH, DRIFT_MAX_DEPTH);
     if (!advance) {
       b.reply = withQuestion(b.modelText, driftMore(b.history));
     } else {
@@ -413,7 +428,7 @@ const windowStage: StageDef = {
   gather(b) {
     const sc = b.scratch as { windowDepth?: number };
     sc.windowDepth = (sc.windowDepth ?? 0) + 1;
-    const advance = (b.model.depthReady && sc.windowDepth >= WINDOW_MIN_DEPTH) || sc.windowDepth >= WINDOW_MAX_DEPTH;
+    const advance = drawoutShouldReflect(b.modelText, b.model.depthReady, sc.windowDepth, WINDOW_MIN_DEPTH, WINDOW_MAX_DEPTH);
     if (!advance) {
       b.reply = withQuestion(b.modelText, windowMore(b.history));
     } else {

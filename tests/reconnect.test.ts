@@ -372,3 +372,20 @@ test('reconnect measurement · the personalized close FALLS BACK to null with no
   assert.equal(out, null, 'no key → null, so the deterministic generic close is used (safe by default)');
   if (prev !== undefined) process.env.ANTHROPIC_API_KEY = prev;
 });
+
+// --- the SHARED draw-out tic fix (Doors + Drift + Window): a declarative reflection past the floor advances to the
+// confirm instead of re-asking — "stop circling once the Companion has reflected", even without the reflect_x tool.
+test('reconnect drawout · TIC FIX — a declarative reflection past the floor advances to the check (no redundant re-ask)', () => {
+  // The model reflected in TEXT (a substantive statement, no trailing question) but did NOT call reflect_drift. Past
+  // the floor, that IS the reflection — advance to the confirm rather than append a draw-out probe.
+  const atDrift: ConvState = { stage: 'drift', stageScratch: { drift: { driftDepth: 2 } }, collected: { doors: ['grind'] } };
+  const turn = applyReconnectTurn(atDrift, [], 'yeah, all of it went quiet', { text: 'The drift kept taking the things that were just yours, one reasonable decision at a time.' });
+  assert.equal(turn.state.awaitingConfirm, true, 'recognizes the declarative reflection and moves to the check');
+  assert.match(turn.reply, /name the shape|is it different/i, 'appends the confirm question, not another draw-out probe');
+});
+
+test('reconnect drawout · TIC FIX still respects the floor — a declarative statement on turn 1 does NOT advance', () => {
+  const atWindow: ConvState = { stage: 'window', collected: { doors: ['grind'] } }; // windowDepth 0 → 1 (below floor)
+  const turn = applyReconnectTurn(atWindow, [], 'if nothing changes I just keep grinding', { text: 'That Tuesday is real. You named it plainly.' });
+  assert.equal(turn.state.awaitingConfirm ?? false, false, 'the FLOOR still holds — one exchange is not a reflection');
+});
