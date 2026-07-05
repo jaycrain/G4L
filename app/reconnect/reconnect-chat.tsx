@@ -1,9 +1,11 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { startReconnectAction, reconnectTurnAction } from './actions.ts';
+import { startReconnectAction, reconnectTurnAction, reconnectCeremonyDataAction } from './actions.ts';
 import type { ConvMessage, ConvState } from '../../lib/agent/onboarding.ts';
 import { DOORS } from '../../lib/doors.ts';
+import ReconnectCeremony from './reconnect-ceremony.tsx';
+import type { ReconnectCeremonyData } from '../../lib/ceremony/reconnect-ceremony-beats.ts';
 
 const doorName = (slug?: string) => DOORS.find((d) => d.slug === slug)?.displayName ?? null;
 
@@ -16,6 +18,7 @@ export default function ReconnectChat({ memberId }: { memberId: string }) {
   const [input, setInput] = useState('');
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [ceremony, setCeremony] = useState<ReconnectCeremonyData | null>(null); // §2f: set when the arc reaches 'ceremony'
   const started = useRef(false);
 
   useEffect(() => {
@@ -44,10 +47,18 @@ export default function ReconnectChat({ memberId }: { memberId: string }) {
     if (!r.ok || !r.reply || !r.state) return setError(r.error ?? 'Something went wrong.');
     setMessages((m) => [...m, { role: 'agent', text: r.reply! }]);
     setState(r.state);
+    // §2f — the arc reached the Ceremony: load the reveal data and fire the full-screen overlay.
+    if (r.state.stage === 'ceremony') {
+      const c = await reconnectCeremonyDataAction(memberId);
+      if (c.ok && c.data) setCeremony(c.data);
+    }
   }
 
   const primary = doorName(state?.collected.doors?.[0]);
   const lastReseen = state?.reseeingTells?.[state.reseeingTells.length - 1];
+
+  // §2f — once the arc reaches the Ceremony, the overlay takes over the whole surface.
+  if (ceremony) return <ReconnectCeremony memberId={memberId} data={ceremony} />;
 
   return (
     <div className="reconnect-chat">

@@ -5,7 +5,8 @@ import { authorizeMember } from '../authz.ts';
 import type { Db } from '../../lib/db/schema.ts';
 import type { ConvMessage, ConvState, Turn } from '../../lib/agent/onboarding.ts';
 import { applyReconnectTurn, liveTurnReconnect, loadReconnectCaptures, reconnectEnabled, reconnectOpening, reconnectMeasurementClose, driftOpen } from '../../lib/agent/reconnect.ts';
-import { softSetMemberDoors } from '../../lib/member/refine.ts';
+import { softSetMemberDoors, getMemberDoorNames } from '../../lib/member/refine.ts';
+import type { ReconnectCeremonyData } from '../../lib/ceremony/reconnect-ceremony-beats.ts';
 import { emitHarvestMoment, commitKeeper, type KeeperType } from '../../lib/agent/harvest.ts';
 import { DOORS } from '../../lib/doors.ts';
 import { submitIdq } from '../../lib/gateway/flow.ts';
@@ -107,6 +108,40 @@ export async function startReconnectAction(memberId: string): Promise<{ ok: bool
   if (!committed) return { ok: false, error: 'We could not find your intake.' };
   const turn = reconnectOpening(committed);
   return { ok: true, reply: turn.reply, state: turn.state };
+}
+
+// §2f — assemble the Ceremony reveal data from the DB when the arc reaches stage 'ceremony': the baseline ID Score +
+// dimensions (§2c), the §2d Playbook keepers (drift + spark, in the member's words), and the Door(s) as they stand.
+export async function reconnectCeremonyDataAction(memberId: string): Promise<{ ok: boolean; data?: ReconnectCeremonyData; error?: string }> {
+  if (!reconnectEnabled()) return { ok: false, error: 'Reconnect is not enabled.' };
+  if (!(await authorizeMember(memberId))) return { ok: false, error: 'Not authorized.' };
+  try {
+    const db = (await getDb()) as unknown as Db;
+    const s = (
+      await db.query<{ id_score: string; physical_score: string; self_score: string; social_score: string; outlook_score: string }>(
+        'select id_score, physical_score, self_score, social_score, outlook_score from idq_retake where member_id=$1 and cycle_indicator=1 order by sequence_no desc limit 1',
+        [memberId],
+      )
+    ).rows[0];
+    const keepers = (
+      await db.query<{ body: string }>(
+        "select body from playbook_entry where member_id=$1 and source_ref in ('drift','window') and state='kept' order by sort_order",
+        [memberId],
+      )
+    ).rows.map((r) => r.body);
+    const doors = await getMemberDoorNames(db, memberId);
+    return {
+      ok: true,
+      data: {
+        idScore: s ? Number(s.id_score) : null,
+        dimensions: s ? { physical: Number(s.physical_score), self: Number(s.self_score), social: Number(s.social_score), outlook: Number(s.outlook_score) } : null,
+        keepers,
+        doors,
+      },
+    };
+  } catch {
+    return { ok: false, error: 'Could not load the ceremony.' };
+  }
 }
 
 export async function reconnectTurnAction(
