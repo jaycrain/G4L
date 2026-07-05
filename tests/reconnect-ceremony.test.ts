@@ -32,7 +32,7 @@ test('§2f ceremony · graceful — no keepers → no empty Playbook frame; no D
   assert.equal(beats.some((b) => b.reveal?.kind === 'playbook'), false, 'no playbook reveal when nothing was kept');
   assert.equal(beats.some((b) => b.reveal?.kind === 'doors'), false, 'no doors reveal when none tagged (null Door is valid)');
   assert.match(beats.map((b) => b.text).join(' '), /fills from here/, 'the softer empty-Playbook line');
-  assert.match(beats.map((b) => b.text).join(' '), /in your words, not a label/, 'the no-Door honor line');
+  assert.match(beats.map((b) => b.text).join(' '), /no label needed/, 'the no-Door honor line');
 });
 
 test('§2f ceremony · the Journey beat lights REWIRE (Reconnect done → next), not Reconnect', () => {

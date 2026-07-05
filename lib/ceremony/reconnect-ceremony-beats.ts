@@ -31,33 +31,35 @@ export type ReconnectCeremonyData = {
 // RECONNECT CEREMONY COPY — the only place to wordsmith the spoken lines. The structure (which beats carry a data
 // reveal) is load-bearing; the copy interpolates the member's own data. NO Grinta/Hardiness language (deferred).
 // ─────────────────────────────────────────────────────────────────────────────────────
+// Jay's voice, APPROVED — use verbatim. Still Grinta-free (deferred).
 export const RECONNECT_CEREMONY_COPY = {
-  // 1 — lands alone
-  stop: 'Stop for a second.',
-  // 2 — honor the whole of the Reconnect work just done
-  honor:
-    'You just did the real work of Reconnect — you looked at the doors that opened the distance, took an honest read of where you stand, named what the drift cost, and found the version of you still worth chasing.',
-  // 3 — reveal: the ID Score radar (the mirror, a starting point — never a grade)
-  score: "Here's the mirror — where you're starting from. Not a grade. A place to push off from.",
-  // 4 — reveal: the Playbook keepers (the member's own words)
-  playbook: "And here's what you're keeping — in your own words, not a form's.",
-  // 4b — fallback if nothing was kept (should be rare — the drift + spark usually land)
-  playbookEmpty: 'Your Playbook is the record of what you find — and it fills from here.',
-  // 5 — reveal: the Door(s), as they stand
-  doors: 'These are the doors you named — and the ones you re-saw as the truer shape of it.',
+  // 1 — honor the work
+  honor: 'Way to step up. Most people spend a lifetime avoiding looking that closely at themselves.',
+  // 2 — name what they just did
+  measured: 'You measured the distance to reclaim yourself, and you took the first step toward closing it.',
+  // 3 — reveal: the ID Score radar (the starting line)
+  score: 'Here it is, by the numbers — your starting line.',
+  // 4 — reveal: the Playbook keepers (their own words)
+  playbook: 'And these are your words — the ones that begin to frame the way forward.',
+  // 4b — fallback if nothing was kept (voice-matched; edge case, not part of the approved verbatim)
+  playbookEmpty: 'Your words will begin to frame the way forward — your Playbook fills from here.',
+  // 5 — reveal: the Door(s)
+  doors:
+    "These are the doors you came through — the ones you first named, and what you saw when you dug deeper. They don't get to play in the dark anymore.",
   // 5b — fallback when no Door was ever tagged (a real-Fade member can route to none)
-  doorsNone: 'You told the story of how the distance opened — in your words, not a label.',
+  doorsNone: 'You told the story of how the distance opened — in your words, no label needed.',
   // 6 — reveal: the Journey, Rewire lit
-  journey: "Here's the path ahead — your Journey. Reconnect is behind you now. Rewire and Rebuild light up next.",
-  // 7 — the hand-off (no Grinta gloss here — that lives elsewhere, later)
-  handoff: "That's the turn — from seeing it to changing it. Your first move ahead is a small one.",
+  journey: "And this is the road. Reconnect — the seeing — is behind you. Rewire is next: it's where seeing turns into changing.",
+  // 7 — the hand-off (no Grinta gloss — deferred)
+  handoff:
+    "You've done the hard part — the brutal honesty. Now comes the part where you start taking back the real you. A new way of thinking and believing that leads to that change. Rewiring your brain.",
 } as const;
 
 export function buildReconnectCeremonyBeats(d: ReconnectCeremonyData): ReconnectCeremonyBeat[] {
   const c = RECONNECT_CEREMONY_COPY;
   const beats: ReconnectCeremonyBeat[] = [
-    { text: c.stop },
-    { text: c.honor, small: true },
+    { text: c.honor },
+    { text: c.measured, small: true },
     { text: c.score, reveal: { kind: 'score', idScore: d.idScore, dimensions: d.dimensions } },
   ];
   // The Playbook keepers — the reveal only when something was actually kept (never an empty frame).
@@ -77,4 +79,4 @@ export function buildReconnectCeremonyBeats(d: ReconnectCeremonyData): Reconnect
   return beats;
 }
 
-export const RECONNECT_CEREMONY_RESOLVE_LABEL = 'Begin Rewire →';
+export const RECONNECT_CEREMONY_RESOLVE_LABEL = 'Get Rewired →';
