@@ -302,13 +302,49 @@ test('reconnect drift · past the floor, reflect_drift reflects the pattern + ca
   assert.equal(turn.state.driftPayload, decl, "captures the member's drift declaration (their words) for the keeper");
 });
 
-test('reconnect drift · confirm queues the drift KEEPER (tell) and BRIDGES toward hope into Legacy', () => {
+test('reconnect drift · confirm queues the drift KEEPER (tell) and BRIDGES toward hope into The Window', () => {
   const pending: ConvState = { stage: 'drift', awaitingConfirm: true, driftPayload: 'I stopped riding and stopped noticing', collected: { doors: ['grind'] } };
   const turn = applyReconnectTurn(pending, [], "yeah, that's the shape of it", { text: '', replyIntent: 'done' });
-  assert.equal(turn.state.stage, 'legacy', 'hands into the Legacy beat');
-  assert.match(turn.reply, /other side|reclaim|look the other way/i, 'the turn-toward-hope bridge (LIFT at the seam)');
+  assert.equal(turn.state.stage, 'window', 'hands into The Window (beat 2)');
+  assert.match(turn.reply, /look the other way/i, 'the turn-toward-hope bridge (LIFT at the seam)');
+  assert.match(turn.reply, /Tuesday|window/i, 'and hands straight into The Window opener');
   assert.deepEqual(turn.state.pendingHarvest, [{ kind: 'drift', keeperType: 'tell', destinationIntent: 'keeper', payloadRef: 'I stopped riding and stopped noticing', label: 'The drift' }], 'a drift-recognition keeper is queued (default-emit)');
   assert.equal(turn.state.driftPayload, undefined, 'payload cleared after queueing');
+});
+
+// ============================================================================================================
+// §2d VISIONING · beat 2: THE WINDOW (slice 2) — the two Tuesdays, the spark, the LIFT. Draw-out; on confirm the
+// VISION is a keeper ('lights_you_up'); hands into the Checkpoint (§2e stub).
+// ============================================================================================================
+
+test('reconnect window · DEPTH FLOOR holds — reflect_window before both Tuesdays keeps drawing out', () => {
+  const atWindow: ConvState = { stage: 'window', collected: { doors: ['grind'] } };
+  const turn = applyReconnectTurn(atWindow, [], 'if nothing changes I just keep grinding', { text: 'And the other Tuesday?', depthReady: true });
+  assert.equal(turn.state.awaitingConfirm ?? false, false, 'the FLOOR keeps it drawing out the second Tuesday');
+});
+
+test('reconnect window · past the floor, reflect_window reflects the SPARK + captures the vision', () => {
+  const atWindow: ConvState = { stage: 'window', stageScratch: { window: { windowDepth: 2 } }, collected: { doors: ['grind'] } };
+  const vision = "I'd be up at six, out on the bike before the house wakes, home strong instead of dreading the day";
+  const turn = applyReconnectTurn(atWindow, [], vision, { text: 'That morning — the ride before the house wakes — that\'s the spark. Is that the one worth chasing?', depthReady: true });
+  assert.equal(turn.state.awaitingConfirm, true, 'reflects the spark, awaits the check');
+  assert.equal(turn.state.driftPayload, vision, "captures the member's second-Tuesday vision (their words) for the keeper");
+});
+
+test('reconnect window · confirm queues the VISION keeper (lights_you_up) and hands into the Checkpoint', () => {
+  const pending: ConvState = { stage: 'window', awaitingConfirm: true, driftPayload: 'the ride before the house wakes, home strong', collected: { doors: ['grind'] } };
+  const turn = applyReconnectTurn(pending, [], "yeah — that's the one", { text: '', replyIntent: 'done' });
+  assert.equal(turn.state.stage, 'checkpoint', 'hands into the Checkpoint (§2e stub)');
+  assert.match(turn.reply, /spark/i, 'the close names the spark (ends on hope)');
+  assert.deepEqual(turn.state.pendingHarvest, [{ kind: 'window', keeperType: 'lights_you_up', destinationIntent: 'keeper', payloadRef: 'the ride before the house wakes, home strong', label: 'The spark' }], 'the vision is queued as a lights_you_up keeper');
+});
+
+test('reconnect window · a DISPUTE reopens and queues NO keeper', () => {
+  const pending: ConvState = { stage: 'window', awaitingConfirm: true, driftPayload: 'x', collected: { doors: ['grind'] } };
+  const turn = applyReconnectTurn(pending, [], "no, that's not really it", { text: '', replyIntent: 'dispute' });
+  assert.equal(turn.state.stage, 'window', 'stays in The Window');
+  assert.equal(turn.state.pendingHarvest, undefined, 'no keeper on a rejected vision');
+  assert.match(turn.reply, /not quite the one|say more|worth chasing/i, 'keeps looking, no force');
 });
 
 test('reconnect drift · a DISPUTE reopens and queues NO keeper', () => {

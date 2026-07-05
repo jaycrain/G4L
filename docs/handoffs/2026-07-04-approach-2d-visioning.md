@@ -1,5 +1,14 @@
 # Approach — §2d Visioning (the turn toward hope) — for sign-off
 
+> **CORRECTION (V5, 2026-07-04 — Jay):** §2d Visioning = **Drift (`RCN-DFT`) + The Window (`RCN-WIN`)** — NOT the Legacy
+> Letter. Grounding against the repo showed the Reconnect **Spark-layer** vision beat is Greg's **`RCN-WIN` "The
+> Window"** (the two Tuesdays — *"that second Tuesday is the spark"*), which fits the LIFT bar exactly and is authored
+> FOR Reconnect. `RCL-LEG` (Legacy Letter) stays where Greg authored it — the **Reclaim-phase capstone** ("name the
+> Loop, Grinta for Life"), the whole-cycle close, not the Reconnect turn. Wire The Window's VISION only; **skip
+> `RCN-WIN-LIST`** (the Reclaim List already exists from onboarding). Harvest: The Window → a keeper (the vision/spark);
+> the big SHARE stays with the Legacy Letter in Reclaim. So references to "Legacy Letter" as beat 2 below are
+> superseded by "The Window."
+
 **Status:** Draft for sign-off · design-first · **no build** until approved · prod stays v1 · flag-gated (`RECONNECT`)
 **Date:** 2026-07-04
 **Arc / config:** Reconnect (config #2) — the `visioning` stage (currently a stub), after §2c measurement, before §2e Checkpoint.

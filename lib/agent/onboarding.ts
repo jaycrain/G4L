@@ -26,11 +26,12 @@ export type Stage = 'identity' | 'identity_name' | 'reclaim' | 'door' | 'complet
   | 'entry'
   | 'doors'
   | 'measurement'
-  // §2d Visioning is TWO draw-out beats (V3): 'drift' (the Drift Quiz) then 'legacy' (the Legacy Letter), with the
-  // turn-toward-hope BRIDGE at the drift→legacy seam. 'visioning' is retained as an alias but the arc uses the two.
+  // §2d Visioning is TWO draw-out beats (V3): 'drift' (the Drift Quiz, RCN-DFT) then 'window' (The Window, RCN-WIN —
+  // the two-Tuesdays vision), with the turn-toward-hope BRIDGE at the drift→window seam. (The Legacy Letter is a
+  // Reclaim-phase capstone, NOT this beat.) 'visioning' is retained as an alias but the arc uses the two.
   | 'visioning'
   | 'drift'
-  | 'legacy'
+  | 'window'
   | 'checkpoint'
   | 'ceremony';
 
@@ -457,7 +458,7 @@ const STAGE_PROMPT: Record<Stage, string> = {
   measurement: 'Ready to take a clear read of where things stand?',
   visioning: 'What do you want to be true again?',
   drift: 'What did the Fade cost you — and how far are you from that version of you?',
-  legacy: "Picture the version of you that's still in there, reclaimed — what would you want them to know?",
+  window: 'Picture an ordinary Tuesday a year out if nothing changes — then the one where you did the work.',
   checkpoint: 'How are you doing with the work right now?',
   ceremony: "Let's look at how far you've come.",
 };

@@ -314,12 +314,13 @@ function reflectDrift(modelText: string): string {
   return "I don't want to put a shape on this before it's yours — tell me more about what it cost, and how far it's run.";
 }
 const REOPEN_DRIFT = "Then I've not got it yet — say it your way. What's the real shape of what the drift cost you?";
-// The BRIDGE (V3): the turn toward hope, at the drift→legacy seam. LIFT starts HERE, not at Legacy.
-function driftToLegacyBridge(): string {
+// The BRIDGE (V3): the turn toward hope, at the drift→window seam. LIFT starts HERE — the bridge hands straight into
+// The Window's opener (so it's one motion: push off from the drift, look through the window).
+function driftToWindowBridge(c: Collected): string {
   return (
     "That's your inventory — what it cost, how far the drift ran. Not to sit in — to push off from; I've kept it for " +
-    "you.\n\nAnd here's the turn: you've spent this whole time looking at what the Fade took. Now we look the other " +
-    'way — at the version of you that\'s still in there, and the life you\'d reclaim. Ready to see what\'s on the other side?'
+    "you.\n\nNow we look the other way — at the version of you that's still in there.\n\n" +
+    windowOpen(c)
   );
 }
 
@@ -358,15 +359,94 @@ const driftStage: StageDef = {
         b.pendingHarvest.push({ kind: 'drift', keeperType: 'tell', destinationIntent: 'keeper', payloadRef: payload, label: 'The drift' });
       }
       b.driftPayload = undefined;
-      b.stage = 'legacy'; // hand into the Legacy Letter (a stub until slice 2) via the turn-toward-hope BRIDGE
-      b.reply = driftToLegacyBridge();
+      b.stage = 'window'; // hand into The Window (beat 2) via the turn-toward-hope BRIDGE (which opens the window)
+      b.reply = driftToWindowBridge(b.collected);
     }
   },
 };
 
-// --- RECONNECT_ARC (config #2) — entry/callback + doors + measurement + drift; legacy/checkpoint/ceremony stubs ---
+// --- §2d VISIONING · beat 2: THE WINDOW (draw-out) — the two Tuesdays, the spark, the LIFT ---------------------
+// Greg's authored RCN-WIN "The Window": picture an ordinary Tuesday a year out if nothing changes, then the one where
+// you did the work. The SECOND Tuesday is the spark — the reclaimed ordinary day. Draw-out (reuses the machinery),
+// ends on HOPE. On confirm, the vision is a KEEPER (keeperType 'lights_you_up' — what lights them up). Copy reused
+// from RCN-WIN. (WIN-LIST is skipped — the Reclaim List already exists from onboarding.)
+const WINDOW_MIN_DEPTH = 2;
+const WINDOW_MAX_DEPTH = 4;
+// The opener — RCN-WIN step-1 frame + prompt (hoisted so the drift bridge can hand straight into it).
+function windowOpen(_c: Collected): string {
+  return (
+    "There's a window between who you are today and who you keep saying you'll be — most people never look through " +
+    'it. Today you look. Picture an ordinary Tuesday a year from now if NOTHING changes: how do you wake up, what do ' +
+    "you reach for? Not the disaster version — the ordinary one. Sit with that Tuesday for a second, and tell me what you see."
+  );
+}
+const WINDOW_MORE_VARIANTS = [
+  "Now the OTHER Tuesday — same year out, but you've been doing the work. What's different by 7am? Not the highlight reel — the ordinary stuff: how you wake, what you reach for, how you move.",
+  'Make it ordinary and real — not the medal, the morning. What does that day actually feel like?',
+  "What's the smallest piece of that second Tuesday you'd feel if it were already here?",
+];
+function windowMore(history: ConvMessage[]): string {
+  const asked = history.filter((h) => h.role === 'agent' && /\?/.test(h.text)).length;
+  return WINDOW_MORE_VARIANTS[asked % WINDOW_MORE_VARIANTS.length]!;
+}
+const WINDOW_CONFIRM = 'Is that the one worth chasing — or not quite it yet?';
+function reflectWindow(modelText: string): string {
+  const t = (modelText ?? '').trim();
+  if (t && /\?\s*$/.test(t)) return t;
+  if (t) return `${t}\n\n${WINDOW_CONFIRM}`;
+  return "Stay with that second Tuesday a moment — tell me more about what's different, and we'll find the spark in it.";
+}
+const REOPEN_WINDOW = "Then it's not quite the one yet — say more. What would the Tuesday worth chasing actually look like?";
+// The close — RCN-WIN's: name the second Tuesday as the spark, and hold onto it. Ends on HOPE; hands to the Checkpoint.
+function windowClose(): string {
+  return (
+    'That second Tuesday — that\'s the spark. Hold onto it; everything from here is about making it the real one. ' +
+    "I've kept it for you."
+  );
+}
 
-const RECONNECT_STUB_STAGES = ['legacy', 'checkpoint', 'ceremony'] as const;
+const windowStage: StageDef = {
+  id: 'window',
+  mode: 'drawout',
+  opener: (c) => windowOpen(c),
+  offersSubstance: (message) => message.trim().length >= 12,
+  gather(b) {
+    const sc = b.scratch as { windowDepth?: number };
+    sc.windowDepth = (sc.windowDepth ?? 0) + 1;
+    const advance = (b.model.depthReady && sc.windowDepth >= WINDOW_MIN_DEPTH) || sc.windowDepth >= WINDOW_MAX_DEPTH;
+    if (!advance) {
+      b.reply = withQuestion(b.modelText, windowMore(b.history));
+    } else {
+      // Capture the member's SECOND-Tuesday vision (their words) for the keeper; carry it to the confirm turn.
+      if (b.memberMessage.trim()) b.driftPayload = b.memberMessage.trim();
+      b.reply = reflectWindow(b.modelText);
+      b.awaitingConfirm = true;
+    }
+  },
+  confirm(b) {
+    const intent = resolveGapConfirm(b.memberMessage, b.model.replyIntent);
+    if (intent === 'dispute') {
+      b.awaitingConfirm = false;
+      b.reply = REOPEN_WINDOW; // not the right vision yet — keep looking, don't force it
+    } else if (intent === 'addition') {
+      b.awaitingConfirm = false;
+      b.reply = withQuestion(b.modelText, windowMore(b.history));
+    } else {
+      // done → the VISION (the spark) is a KEEPER (V-harvest: 'lights_you_up'). Queue it (default-emit); action commits.
+      const payload = (b.driftPayload ?? '').trim();
+      if (payload) {
+        b.pendingHarvest.push({ kind: 'window', keeperType: 'lights_you_up', destinationIntent: 'keeper', payloadRef: payload, label: 'The spark' });
+      }
+      b.driftPayload = undefined;
+      b.stage = 'checkpoint'; // hand into the Checkpoint (a stub — §2e, parked on Greg)
+      b.reply = windowClose();
+    }
+  },
+};
+
+// --- RECONNECT_ARC (config #2) — entry/callback + doors + measurement + drift + window; checkpoint/ceremony stubs ---
+
+const RECONNECT_STUB_STAGES = ['checkpoint', 'ceremony'] as const;
 
 // --- §2c MEASUREMENT (the administered beat, slice 1: IDQ delivery) --------------------------------------------
 // The FIRST beat OFF the depth kernel. The IDQ is a validated instrument — 24 fixed items, a 1–5 scale, deterministic
@@ -530,12 +610,13 @@ const reconnectEntryStage: StageDef = {
 
 export const RECONNECT_ARC: ArcConfig = {
   id: 'reconnect',
-  stageOrder: ['entry', 'doors', 'measurement', 'drift', ...RECONNECT_STUB_STAGES],
+  stageOrder: ['entry', 'doors', 'measurement', 'drift', 'window', ...RECONNECT_STUB_STAGES],
   stages: {
     entry: reconnectEntryStage,
     doors: doorsStage,
     measurement: measurementStage,
     drift: driftStage,
+    window: windowStage,
     ...Object.fromEntries(RECONNECT_STUB_STAGES.map((id) => [id, stubStage(id)])),
   },
   onComplete: () => '[Reconnect complete — the earned Threshold Ceremony lands in §2f]',
@@ -565,6 +646,15 @@ export const RECONNECT_TOOLS = [
       "it has run — and you can reflect the PATTERN of it (the recurring shape, the quiet thing they've stopped " +
       "noticing is gone), offered as a check they can reject. NEVER on the first mention; if it's still thin, keep " +
       "drawing out. On the same turn you call it, reflect that pattern in THEIR words. (Same depth signal as reflect_door.)",
+    input_schema: { type: 'object' as const, properties: {}, required: [] },
+  },
+  {
+    name: 'reflect_window',
+    description:
+      "§2d The Window beat: call ONLY once the member has pictured BOTH Tuesdays — the one if nothing changes, and the " +
+      "one where they did the work — and you can reflect the SPARK (the ordinary, reclaimed second Tuesday) back in " +
+      "THEIR words, offered as a check. NEVER before both are drawn out; if thin, keep drawing out. This beat LIFTS — " +
+      "the spark is the reclaimed ordinary day worth chasing. (Same depth signal as reflect_door.)",
     input_schema: { type: 'object' as const, properties: {}, required: [] },
   },
   {
@@ -615,7 +705,7 @@ export function parseReconnectTurn(content: readonly unknown[]): ModelTurn {
   for (const b of content as Array<{ type: string; text?: string; name?: string; input?: Record<string, unknown> }>) {
     if (b.type === 'text' && typeof b.text === 'string') text += b.text;
     if (b.type === 'tool_use') {
-      if (b.name === 'reflect_door' || b.name === 'reflect_drift') depthReady = true; // shared depth signal (drawout)
+      if (b.name === 'reflect_door' || b.name === 'reflect_drift' || b.name === 'reflect_window') depthReady = true; // shared depth signal (drawout)
       if (b.name === 'member_reply' && typeof b.input?.intent === 'string') {
         const i = b.input.intent;
         if (i === 'done' || i === 'more' || i === 'dispute') replyIntent = i;
@@ -733,6 +823,14 @@ function stageInstructionReconnect(stage?: Stage): string {
       'the PATTERN of the drift (the recurring shape, the quiet thing they stopped noticing) IN THEIR WORDS, offered as ' +
       'a check — call reflect_drift ONLY once it is genuinely drawn out; if thin, keep drawing out (never manufacture a ' +
       'pattern). Name it to push OFF from, not to sit in. Do not diagnose.'
+    );
+  if (stage === 'window')
+    return (
+      '\n\nCURRENT STAGE: The Window (§2d Visioning, beat 2) — the turn toward HOPE. Draw out the TWO Tuesdays: the ' +
+      'ordinary day a year out if nothing changes, then the day where they did the work (ordinary and real — the ' +
+      'morning, not the medal). Then reflect the SPARK — that second Tuesday, the reclaimed ordinary day — IN THEIR ' +
+      'WORDS, offered as a check; call reflect_window ONLY once both Tuesdays are drawn out. This beat should LIFT: ' +
+      'leave them feeling the reclaimed day is reachable. Grounded in their real life, never over-promised fantasy.'
     );
   return '\n\nCURRENT STAGE: entry — pick up from onboarding; the callback opened; receive their reply warmly.';
 }
