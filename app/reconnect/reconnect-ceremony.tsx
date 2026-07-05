@@ -13,6 +13,8 @@ import {
 } from '../../lib/ceremony/reconnect-ceremony-beats.ts';
 
 const RS = ['Reconnect', 'Rewire', 'Rebuild', 'Reclaim'];
+const R_RING: Record<string, string> = { reconnect: '#374f63', rewire: '#3b9495', rebuild: '#919536', reclaim: '#ec6233' };
+const MOVE_ARROW: Record<string, string> = { up: '↑', down: '↓', flat: '→' };
 
 // §2f — the Reconnect Ceremony overlay. Fired by the reconnect-chat when the arc reaches stage 'ceremony'. Reuses the
 // generic CeremonySurface; renders the four Reconnect reveals; "Get Rewired →" hands to the dashboard, where the
@@ -31,6 +33,33 @@ export default function ReconnectCeremony({ memberId, data }: { memberId: string
         <div className="cer-score">
           {r.dimensions && <IdqRadar current={r.dimensions} size={160} withLabels />}
           {r.idScore !== null && <span className="cer-chip score">ID Score {Math.round(r.idScore)}</span>}
+        </div>
+      );
+    }
+    if (r.kind === 'grinta') {
+      // §2e — the Grinta Index, and the FIRST movement. Its own /5 scale (never compared to the ID Score's 0–100).
+      const strands = ['reconnect', 'rewire', 'rebuild', 'reclaim'] as const;
+      return (
+        <div className="cer-grinta">
+          <div className="cer-grinta-head">
+            <span className="cgn-val">{r.composite}</span>
+            <span className="cgn-scale">/ 5</span>
+            {r.changePct !== null && r.direction && (
+              <span className={`cgn-move dir-${r.direction}`}>{MOVE_ARROW[r.direction]} {r.changePct > 0 ? '+' : ''}{r.changePct}%</span>
+            )}
+            <span className="cer-chip">Grinta Index</span>
+          </div>
+          <div className="cer-grinta-strands">
+            {strands.map((k) =>
+              r.strands[k] != null ? (
+                <div key={k} className="cgs-row">
+                  <span className="cgs-dot" style={{ background: R_RING[k] }} />
+                  <span className="cgs-label">{k[0]!.toUpperCase() + k.slice(1)}</span>
+                  <span className="cgs-val">{r.strands[k]}{k === 'reconnect' ? ' ↑' : ''}</span>
+                </div>
+              ) : null,
+            )}
+          </div>
         </div>
       );
     }

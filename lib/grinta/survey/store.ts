@@ -3,7 +3,7 @@
 
 import type { Db } from '../../db/schema.ts';
 import { writeAsActor } from '../../db/actor.ts';
-import { ONBOARDING_BASELINE_ITEMS, type Strand } from './instrument.ts';
+import { ONBOARDING_BASELINE_ITEMS, CHECKPOINT_GRIT_ITEMS, type Strand } from './instrument.ts';
 import { grintaChangePct, directionOf, type GrintaScore } from './scoring.ts';
 
 export type GrintaReadingInput = {
@@ -23,13 +23,37 @@ export type GrintaReadingView = {
 
 const num = (v: unknown): number | null => (v == null ? null : Number(v));
 
-/** Pair the ordered onboarding responses with their item codes → the self-describing responses map. */
-export function baselineResponsesMap(responses: number[]): Record<string, number> {
+/** Pair an ordered response array with its item codes → the self-describing responses map. */
+function responsesMap(codes: readonly string[], responses: number[]): Record<string, number> {
   const map: Record<string, number> = {};
-  ONBOARDING_BASELINE_ITEMS.forEach((code, i) => {
+  codes.forEach((code, i) => {
     if (responses[i] != null) map[code] = responses[i]!;
   });
   return map;
+}
+export const baselineResponsesMap = (responses: number[]) => responsesMap(ONBOARDING_BASELINE_ITEMS, responses);
+export const checkpointResponsesMap = (responses: number[]) => responsesMap(CHECKPOINT_GRIT_ITEMS, responses);
+
+/** The onboarding baseline reading's raw responses + strand means — the source for the §2e Checkpoint recompute
+ *  (the 3 baseline grit items + the carried-forward non-grit strands). Null if no baseline was ever captured. */
+export async function getGrintaBaselineReading(
+  db: Db,
+  memberId: string,
+): Promise<{ responses: Record<string, number>; strands: Partial<Record<Strand, number>> } | null> {
+  const { rows } = await db.query<Record<string, unknown>>(
+    `select responses, reconnect_score, rewire_score, rebuild_score, reclaim_score
+       from grinta_reading where member_id = $1 and source = 'onboarding' order by sequence_no limit 1`,
+    [memberId],
+  );
+  const r = rows[0];
+  if (!r) return null;
+  const strands: Partial<Record<Strand, number>> = {};
+  const rc = num(r.reconnect_score); if (rc != null) strands.reconnect = rc;
+  const rw = num(r.rewire_score); if (rw != null) strands.rewire = rw;
+  const rb = num(r.rebuild_score); if (rb != null) strands.rebuild = rb;
+  const rl = num(r.reclaim_score); if (rl != null) strands.reclaim = rl;
+  const responses = (typeof r.responses === 'string' ? JSON.parse(r.responses) : r.responses) as Record<string, number>;
+  return { responses: responses ?? {}, strands };
 }
 
 /**

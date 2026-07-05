@@ -431,6 +431,21 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .cer-badge-name { font-size: 1.05rem; font-weight: 700; color: #fff; }
 .cer-seed-tag { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted, #6B7680); margin: 0 0 8px; }
 .cer-seed { border-left: 3px solid var(--teal); padding: 6px 0 6px 14px; margin: 8px 0; font-size: 0.95rem; font-style: italic; color: var(--navy); line-height: 1.45; }
+/* §2e Grinta movement reveal — the Grinta Index on its own /5 scale (olive, distinct from the teal ID Score), the
+   first movement, and the four strands with grit stepped up. */
+.cer-grinta { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.cer-grinta-head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; justify-content: center; }
+.cgn-val { font-size: 2.4rem; font-weight: 700; color: var(--olive); line-height: 1; }
+.cgn-scale { font-size: 1rem; color: var(--muted, #6B7680); font-weight: 600; }
+.cgn-move { font-size: 1rem; font-weight: 700; }
+.cgn-move.dir-up { color: var(--olive); }
+.cgn-move.dir-down { color: var(--deep-red); }
+.cgn-move.dir-flat { color: var(--navy); }
+.cer-grinta-strands { display: grid; gap: 6px; min-width: 220px; }
+.cgs-row { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 8px; }
+.cgs-dot { width: 10px; height: 10px; border-radius: 50%; }
+.cgs-label { font-size: 0.9rem; color: var(--navy); }
+.cgs-val { font-size: 0.9rem; font-weight: 700; color: var(--navy); }
 .cer-journey { display: flex; gap: 18px; }
 .cer-rstep { display: flex; flex-direction: column; align-items: center; gap: 6px; }
 .cer-rdot { width: 13px; height: 13px; border-radius: 50%; background: var(--grey); }

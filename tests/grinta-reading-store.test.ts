@@ -2,9 +2,9 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { PGlite } from '@electric-sql/pglite';
 import { applySchema, type Db } from '../lib/db/schema.ts';
-import { persistGrintaReading, latestGrintaReading, baselineResponsesMap } from '../lib/grinta/survey/store.ts';
-import { scoreGrinta } from '../lib/grinta/survey/scoring.ts';
-import { ONBOARDING_BASELINE_ITEMS } from '../lib/grinta/survey/instrument.ts';
+import { persistGrintaReading, latestGrintaReading, baselineResponsesMap, checkpointResponsesMap, getGrintaBaselineReading } from '../lib/grinta/survey/store.ts';
+import { scoreGrinta, scoreCheckpointGrit } from '../lib/grinta/survey/scoring.ts';
+import { ONBOARDING_BASELINE_ITEMS, BASELINE_GRIT_ITEMS } from '../lib/grinta/survey/instrument.ts';
 
 async function seedMember(): Promise<{ db: Db; memberId: string }> {
   const db = new PGlite() as unknown as Db;
@@ -56,6 +56,37 @@ test('grinta reading · a second reading auto-increments the sequence and comput
   assert.equal(latest.composite, 5);
   assert.equal(latest.changePct, 25, '(5 − 4) / 4 × 100 = 25%');
   assert.equal(latest.direction, 'up');
+});
+
+test('grinta §2e · baseline → Checkpoint end-to-end: grit strand steps up, composite climbs, first movement recorded', async () => {
+  const { db, memberId } = await seedMember();
+  // onboarding baseline: grit (Reconnect) all 3s, others all 3s → composite 3, grit Ave1 = 3
+  const baseResp = [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3];
+  await persistGrintaReading(db, memberId, { source: 'onboarding', responses: baselineResponsesMap(baseResp), score: scoreGrinta(ONBOARDING_BASELINE_ITEMS, baseResp) });
+
+  // the Checkpoint recompute, exactly as the action composes it: read the baseline, score the 6 new grit @5
+  const base = (await getGrintaBaselineReading(db, memberId))!;
+  const baselineGritValues = BASELINE_GRIT_ITEMS.map((c) => base.responses[c]!);
+  const newGrit = [5, 5, 5, 5, 5, 5];
+  const cp = scoreCheckpointGrit({
+    baselineGritValues,
+    newGritValues: newGrit,
+    carriedStrands: { rewire: base.strands.rewire, rebuild: base.strands.rebuild, reclaim: base.strands.reclaim },
+  });
+  await persistGrintaReading(db, memberId, { source: 'checkpoint', responses: checkpointResponsesMap(newGrit), score: cp.score });
+
+  const latest = (await latestGrintaReading(db, memberId))!;
+  assert.equal(latest.sequenceNo, 1);
+  assert.equal(latest.source, 'checkpoint');
+  assert.equal(latest.strands.reconnect, 4.33, 'grit strand steps up (9-item mean of 3,3,3,5,5,5,5,5,5)');
+  assert.equal(latest.strands.rewire, 3, 'the other strands carry forward unchanged');
+  assert.equal(latest.composite, 3.33, 'composite climbs from 3');
+  assert.equal(latest.changePct, 11, '(3.33 − 3) / 3 × 100 = 11% — the first grinta movement');
+  assert.equal(latest.direction, 'up');
+  // the six grit items round-trip self-describing (a future reading can recompute)
+  const { rows } = await db.query<{ responses: Record<string, number> }>(`select responses from grinta_reading where member_id=$1 and sequence_no=1`, [memberId]);
+  assert.equal(rows[0]!.responses.G1Q2, 5);
+  assert.equal(rows[0]!.responses.G3Q3, 5);
 });
 
 test('grinta reading · re-persisting the same sequence is idempotent (no duplicate row)', async () => {

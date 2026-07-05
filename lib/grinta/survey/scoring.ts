@@ -73,6 +73,33 @@ export function scoreGrinta(codes: readonly string[], responses: readonly number
   return { strands, composite };
 }
 
+// §2e Checkpoint scoring — the FIRST time grinta moves. Grit is re-read from NINE items (the 3 baseline + the 6
+// Checkpoint items); the other three strands are carried forward from the baseline unchanged; the composite is the
+// mean of the four. Returns the new score plus the grit-strand movement (Jay: grit change = (Ave2 − Ave1)/Ave1 × 100).
+export type CheckpointScore = {
+  score: GrintaScore; // the new composite + all four strand means (grit updated, others carried)
+  gritBaseline: number; // grit Ave1 (the 3 baseline grit items)
+  gritNow: number; // grit Ave2 (all 9 grit items)
+  gritChangePct: number | null; // signed up-positive; null if the baseline grit is unknown
+};
+
+export function scoreCheckpointGrit(params: {
+  baselineGritValues: number[]; // the 3 baseline grit item values (G1Q1, G2Q1, G3Q1)
+  newGritValues: number[]; // the 6 Checkpoint grit item values, in CHECKPOINT_GRIT_ITEMS order
+  carriedStrands: { rewire?: number; rebuild?: number; reclaim?: number }; // the baseline non-grit strand means
+}): CheckpointScore {
+  const { baselineGritValues, newGritValues, carriedStrands } = params;
+  const gritBaseline = baselineGritValues.length ? round2(mean(baselineGritValues)) : 0;
+  const gritNow = round2(mean([...baselineGritValues, ...newGritValues]));
+  const strands: StrandScores = { reconnect: gritNow };
+  if (carriedStrands.rewire != null) strands.rewire = carriedStrands.rewire;
+  if (carriedStrands.rebuild != null) strands.rebuild = carriedStrands.rebuild;
+  if (carriedStrands.reclaim != null) strands.reclaim = carriedStrands.reclaim;
+  const present = STRANDS.map((s) => strands[s]).filter((x): x is number => x != null);
+  const composite = present.length ? round2(mean(present)) : 0;
+  return { score: { strands, composite }, gritBaseline, gritNow, gritChangePct: grintaChangePct(gritNow, baselineGritValues.length ? gritBaseline : null) };
+}
+
 export type Direction = 'up' | 'down' | 'flat';
 
 /**

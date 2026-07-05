@@ -331,11 +331,14 @@ test('reconnect window · past the floor, reflect_window reflects the SPARK + ca
   assert.equal(turn.state.driftPayload, vision, "captures the member's second-Tuesday vision (their words) for the keeper");
 });
 
-test('reconnect window · confirm queues the VISION keeper (lights_you_up) and hands into the Checkpoint', () => {
-  const pending: ConvState = { stage: 'window', awaitingConfirm: true, driftPayload: 'the ride before the house wakes, home strong', collected: { doors: ['grind'] } };
+test('reconnect window · confirm queues the VISION keeper (lights_you_up) and hands into the §2e Checkpoint', () => {
+  // seed a stale IDQ accumulator (the 24 from §2c) to prove the Checkpoint resets it for the grit instrument
+  const pending: ConvState = { stage: 'window', awaitingConfirm: true, driftPayload: 'the ride before the house wakes, home strong', collected: { doors: ['grind'] }, administeredResponses: [1, 2, 3] };
   const turn = applyReconnectTurn(pending, [], "yeah — that's the one", { text: '', replyIntent: 'done' });
-  assert.equal(turn.state.stage, 'checkpoint', 'hands into the Checkpoint (§2e stub)');
+  assert.equal(turn.state.stage, 'checkpoint', 'hands into the §2e Checkpoint');
   assert.match(turn.reply, /spark/i, 'the close names the spark (ends on hope)');
+  assert.match(turn.reply, /1 \(not at all\)/i, 'the Checkpoint opener + first grit item are delivered');
+  assert.equal(turn.state.administeredResponses?.length ?? 0, 0, 'the accumulator is reset from the IDQ responses for the grit instrument');
   assert.deepEqual(turn.state.pendingHarvest, [{ kind: 'window', keeperType: 'lights_you_up', destinationIntent: 'keeper', payloadRef: 'the ride before the house wakes, home strong', label: 'The spark' }], 'the vision is queued as a lights_you_up keeper');
 });
 
@@ -390,11 +393,23 @@ test('reconnect drawout · TIC FIX still respects the floor — a declarative st
   assert.equal(turn.state.awaitingConfirm ?? false, false, 'the FLOOR still holds — one exchange is not a reflection');
 });
 
-// --- §2e Checkpoint PASS-THROUGH (parked on Greg) + §2f Ceremony terminal --------------------------------------
-test('reconnect checkpoint · graceful PASS-THROUGH: Checkpoint → Ceremony, Grinta-free (§2e parked)', () => {
-  const atCheckpoint: ConvState = { stage: 'checkpoint', collected: { doors: ['grind'] } };
-  const turn = applyReconnectTurn(atCheckpoint, [], 'ok', { text: '' });
-  assert.equal(turn.state.stage, 'ceremony', 'passes through to the Ceremony terminal');
-  assert.match(turn.reply, /deep part|another kind of check-in/i, 'shows the parked-checkpoint line');
-  assert.doesNotMatch(turn.reply, /grinta|hardiness/i, '§2e Hardiness is deferred — never named');
+// --- §2e Checkpoint (administered grit beat) + §2f Ceremony terminal --------------------------------------------
+test('reconnect §2e Checkpoint · administers the 6 grit items → Ceremony; grinta is NOT named to the member', () => {
+  let s: ConvState = { stage: 'checkpoint', collected: { doors: ['grind'] }, administeredResponses: [] };
+  // an unclear answer re-asks the current item, records nothing, does not advance
+  const bad = applyReconnectTurn(s, [], 'not sure', { text: '' });
+  assert.equal(bad.state.stage, 'checkpoint');
+  assert.equal(bad.state.administeredResponses?.length ?? 0, 0, 'nothing recorded on an unclear answer');
+  assert.match(bad.reply, /number, 1 to 5/i, 'gently re-asks with the scale');
+  // walk the six grit items
+  let reply = '';
+  for (let i = 0; i < 6; i++) {
+    const t = applyReconnectTurn(s, [], '5', { text: '' });
+    s = t.state;
+    reply = t.reply;
+  }
+  assert.equal(s.stage, 'ceremony', 'the 6th grit answer hands into the Ceremony');
+  assert.deepEqual(s.administeredResponses, [5, 5, 5, 5, 5, 5], 'the six grit responses are captured');
+  assert.match(reply, /don’t go anywhere|show you what you just did/i, 'the close hands into the Ceremony lead');
+  assert.doesNotMatch(reply, /grinta|hardiness/i, 'grinta is never named to the member here — it surfaces in the Ceremony');
 });

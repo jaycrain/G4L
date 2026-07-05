@@ -19,6 +19,7 @@ import type { Db } from '../db/schema.ts';
 import { MEMBER_AGENT_SYSTEM_PROMPT } from './system-prompt.ts';
 import { resolveGapConfirm } from './onboarding-intent.ts';
 import { runArcTurn, administeredStage, type ArcConfig, type StageDef } from './onboarding-staged.ts';
+import { CHECKPOINT_GRIT_ITEMS, grintaStem } from '../grinta/survey/instrument.ts';
 import type { Collected, ConvMessage, ConvState, DoorRevision, ModelTurn, ReplyIntent, Turn, Stage } from './onboarding.ts';
 
 // Is the Reconnect arc selected? Own flag — defaults OFF, so it never runs in prod until the coupled v2.1+v2.2
@@ -453,8 +454,9 @@ const windowStage: StageDef = {
         b.pendingHarvest.push({ kind: 'window', keeperType: 'lights_you_up', destinationIntent: 'keeper', payloadRef: payload, label: 'The spark' });
       }
       b.driftPayload = undefined;
-      b.stage = 'checkpoint'; // hand into the Checkpoint (a stub — §2e, parked on Greg)
-      b.reply = windowClose();
+      b.stage = 'checkpoint'; // hand into the §2e Checkpoint (the administered grit beat)
+      b.administeredResponses = []; // reset the accumulator (held the 24 IDQ responses) for the Checkpoint instrument
+      b.reply = `${windowClose()}\n\n${checkpointOpener()}`;
     }
   },
 };
@@ -565,27 +567,39 @@ const measurementStage: StageDef = administeredStage({
   },
 });
 
-// §2e CHECKPOINT — PARKED on Greg (the Hardiness measure + its unsettled naming). Until it lands, a graceful one-turn
-// PASS-THROUGH keeps the arc flowing Window → Ceremony — no broken stub, and Greg's real Checkpoint drops in HERE later
-// without disturbing the rest. Grinta/Hardiness is NOT named (deferred).
-const CHECKPOINT_PASS =
-  "There's another kind of check-in ahead — on how you show up when the work gets hard — but that comes later, once " +
-  "you've got some road behind you. For now, you've done the deep part: the seeing.";
-const checkpointStage: StageDef = {
+// §2e CHECKPOINT — an administered beat (six GRIT items) at the end of the Reconnect arc. The items map to the three
+// beats they just walked (Recognition→the Doors, Excavation→the Drift, Spark→the Window), so this reads their grit AS
+// BUILT BY the work. Combined with the three onboarding baseline grit items, it's a 9-item grit read — the FIRST time
+// grinta moves (the ACTION scores + persists the Checkpoint reading, then the Ceremony reveals the movement). Off the
+// depth kernel (administered mode), on the SHARED factory. Grinta is NOT named to the member here — this reads as a
+// check-in; the number surfaces in the Ceremony. DIRECTIONAL copy (for Jay's wordsmithing).
+const CHECKPOINT_OPEN =
+  "One last check-in before we close — and this one's about you. Six short statements about what this work has stirred " +
+  "in you. Same as before: just tell me how true each feels right now, 1 (not at all) to 5 (completely).";
+function checkpointDeliver(index: number): string {
+  return grintaStem(CHECKPOINT_GRIT_ITEMS[index]!);
+}
+function checkpointReprompt(index: number): string {
+  return `Just a number, 1 to 5 — how true does that feel right now?\n\n${checkpointDeliver(index)}`;
+}
+function checkpointOpener(): string {
+  return `${CHECKPOINT_OPEN}\n\n${checkpointDeliver(0)}`;
+}
+const CHECKPOINT_CLOSE =
+  "That's it — you named what this stirred in you. Hold on, don't go anywhere yet.";
+const checkpointStage: StageDef = administeredStage({
   id: 'checkpoint',
-  mode: 'drawout',
-  opener: () => CHECKPOINT_PASS,
-  offersSubstance: () => true,
-  // One turn: acknowledge the parked check-in, then hand into the Ceremony (the chat fires the overlay on 'ceremony').
-  gather(b) {
+  itemCount: CHECKPOINT_GRIT_ITEMS.length, // 6
+  opener: () => checkpointOpener(),
+  deliverItem: (n) => checkpointDeliver(n),
+  reprompt: (n) => checkpointReprompt(n),
+  onComplete: (b) => {
+    // The six grit items are in (b.administeredResponses). Hand into the Ceremony; the ACTION reads the baseline
+    // reading, recomputes the 9-item grit + composite, and writes the Checkpoint reading (grinta_reading seq 1).
     b.stage = 'ceremony';
-    b.reply = `${CHECKPOINT_PASS}\n\n${CEREMONY_LEAD}`;
+    b.reply = `${CHECKPOINT_CLOSE}\n\n${CEREMONY_LEAD}`;
   },
-  confirm(b) {
-    b.stage = 'ceremony';
-    b.reply = `${CHECKPOINT_PASS}\n\n${CEREMONY_LEAD}`;
-  },
-};
+});
 
 // §2f CEREMONY — the terminal. The conversational engine only LANDS here; the reveal itself is a full-screen overlay
 // (ReconnectCeremony), which the reconnect-chat fires when it sees stage === 'ceremony'. This stage just carries the

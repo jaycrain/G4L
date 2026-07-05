@@ -11,6 +11,9 @@ import { emitHarvestMoment, commitKeeper, type KeeperType } from '../../lib/agen
 import { DOORS } from '../../lib/doors.ts';
 import { submitIdq } from '../../lib/gateway/flow.ts';
 import { TOTAL_ITEMS } from '../../lib/idq/instrument.ts';
+import { BASELINE_GRIT_ITEMS, CHECKPOINT_GRIT_ITEMS } from '../../lib/grinta/survey/instrument.ts';
+import { scoreCheckpointGrit } from '../../lib/grinta/survey/scoring.ts';
+import { persistGrintaReading, checkpointResponsesMap, getGrintaBaselineReading, latestGrintaReading } from '../../lib/grinta/survey/store.ts';
 
 // v2.2 Reconnect server actions. Flag-gated. The callback (entry) READS committed captures and opens; the DOORS
 // excavation (§2b) is a live model turn (draw-out + insight + the re-seeing revision). Conversation state is
@@ -66,6 +69,30 @@ async function persistMeasurement(db: Db, memberId: string, prev: ConvState, tur
     // swallow — best-effort; the conversation turn already succeeded.
   }
   return null;
+}
+
+// §2e Checkpoint persistence: when the administered grit beat COMPLETES this turn (the 6th grit response lands and the
+// arc hands checkpoint → ceremony), recompute grit from NINE items (the 3 onboarding baseline + these 6), carry the
+// other strands forward, and write the Checkpoint reading (grinta_reading, source 'checkpoint'). This is the FIRST time
+// grinta moves. Fires exactly once — on the crossing. Best-effort (a write failure never breaks the turn/ceremony).
+async function persistCheckpoint(db: Db, memberId: string, prev: ConvState, turn: Turn): Promise<void> {
+  try {
+    if (prev.stage !== 'checkpoint' || turn.state.stage !== 'ceremony') return; // only on the completion crossing
+    const grit = (turn.state.administeredResponses ?? []).slice(0, CHECKPOINT_GRIT_ITEMS.length);
+    if (grit.length < CHECKPOINT_GRIT_ITEMS.length) return;
+    const base = await getGrintaBaselineReading(db, memberId);
+    const baselineGritValues = base
+      ? BASELINE_GRIT_ITEMS.map((c) => base.responses[c]).filter((v): v is number => v != null)
+      : [];
+    const cp = scoreCheckpointGrit({
+      baselineGritValues,
+      newGritValues: grit,
+      carriedStrands: { rewire: base?.strands.rewire, rebuild: base?.strands.rebuild, reclaim: base?.strands.reclaim },
+    });
+    await persistGrintaReading(db, memberId, { source: 'checkpoint', responses: checkpointResponsesMap(grit), score: cp.score });
+  } catch {
+    // swallow — best-effort; the conversation turn already succeeded.
+  }
 }
 
 // §2d harvest: drain any NEW harvest candidates the engine queued this turn (drift keeper now; legacy share later) via
@@ -130,11 +157,17 @@ export async function reconnectCeremonyDataAction(memberId: string): Promise<{ o
       )
     ).rows.map((r) => r.body);
     const doors = await getMemberDoorNames(db, memberId);
+    // §2e — the Grinta movement, revealed only when the Checkpoint captured it (latest reading is a checkpoint).
+    const g = await latestGrintaReading(db, memberId);
+    const grinta = g && g.source === 'checkpoint'
+      ? { composite: g.composite, changePct: g.changePct, direction: g.direction, strands: g.strands }
+      : null;
     return {
       ok: true,
       data: {
         idScore: s ? Number(s.id_score) : null,
         dimensions: s ? { physical: Number(s.physical_score), self: Number(s.self_score), social: Number(s.social_score), outlook: Number(s.outlook_score) } : null,
+        grinta,
         keepers,
         doors,
       },
@@ -163,6 +196,7 @@ export async function reconnectTurnAction(
     const db = (await getDb()) as unknown as Db;
     await persistRevision(db, memberId, state, turn);
     await persistHarvest(db, memberId, state, turn); // §2d drift keeper (and later legacy share)
+    await persistCheckpoint(db, memberId, state, turn); // §2e Checkpoint — the first grinta movement
     // On IDQ completion this may return a personalized close (M3) that ties the baseline shape to their doors —
     // UPGRADING the engine's generic close; null → the generic close stands.
     const closeOverride = await persistMeasurement(db, memberId, state, turn);

@@ -54,7 +54,26 @@ export const GRINTA_ITEMS: Record<string, GrintaItem> = {
   C1Q1: { code: 'C1Q1', strand: 'reclaim', subscale: 'C1', stem: 'I value learning new things and striving to get better' },
   C2Q1: { code: 'C2Q1', strand: 'reclaim', subscale: 'C2', stem: 'I enjoy exploring what is possible for me in the future' },
   C3Q1: { code: 'C3Q1', strand: 'reclaim', subscale: 'C3', stem: 'I see challenges as opportunities to grow and improve' },
+
+  // §2e Reconnect Checkpoint — six MORE grit items (grit → Reconnect), one pair per Reconnect beat. These are
+  // administered at the end of the Reconnect arc; combined with the three baseline grit items they give a 9-item
+  // grit read — the FIRST time grinta moves.
+  // Recognition (the Doors)
+  G1Q2: { code: 'G1Q2', strand: 'reconnect', subscale: 'G1', stem: "I am aware of what constructs and dimensions make up my 'identity'" },
+  G1Q3: { code: 'G1Q3', strand: 'reconnect', subscale: 'G1', stem: "I am aware of the notion of an 'identity gap' between my idealized self and my actual self" },
+  // Excavation (the Drift)
+  G2Q2: { code: 'G2Q2', strand: 'reconnect', subscale: 'G2', stem: 'I appreciate how life circumstances shaped my past lifestyle (and how they influence my current one)' },
+  G2Q3: { code: 'G2Q3', strand: 'reconnect', subscale: 'G2', stem: 'I appreciate that I have agency and control over how these doors affect me' },
+  // Spark (the Window)
+  G3Q2: { code: 'G3Q2', strand: 'reconnect', subscale: 'G3', stem: 'I recognize how small daily choices may contribute to my fade' },
+  G3Q3: { code: 'G3Q3', strand: 'reconnect', subscale: 'G3', stem: 'I recognize various attributions and justifications that may contribute to my fade' },
 };
+
+// The three baseline GRIT items (administered at onboarding) — needed to recompute the 9-item grit mean at the Checkpoint.
+export const BASELINE_GRIT_ITEMS: readonly string[] = ['G1Q1', 'G2Q1', 'G3Q1'];
+
+// The §2e Checkpoint reading — the six additional grit items, administered in beat order (Recognition→Excavation→Spark).
+export const CHECKPOINT_GRIT_ITEMS: readonly string[] = ['G1Q2', 'G1Q3', 'G2Q2', 'G2Q3', 'G3Q2', 'G3Q3'];
 
 // The onboarding BASELINE reading — the twelve "*Q1" items, administered in R order (grit→commitment→control→
 // challenge = Reconnect→Rewire→Rebuild→Reclaim). Item index in the administered array maps to this list.
