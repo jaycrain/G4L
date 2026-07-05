@@ -1,0 +1,35 @@
+import assert from 'node:assert/strict';
+import { test } from 'node:test';
+import { buildPulsePoints, buildPulsePath, DEFAULT_PULSE_GEOM, pulseTodayX } from '../lib/dashboard/resilience-pulse.ts';
+
+const g = DEFAULT_PULSE_GEOM;
+
+test('resilience pulse · EMPTY state — no beats → a flat baseline path, no points', () => {
+  assert.deepEqual(buildPulsePoints([]), []);
+  assert.equal(buildPulsePath([]), `M${g.padX},${g.baselineY} L${g.width - g.padX},${g.baselineY}`);
+});
+
+test('resilience pulse · beat encoding — good is UP, false_start is DOWN, quiet is ON the baseline', () => {
+  const [good, fs, quiet] = buildPulsePoints([{ kind: 'good' }, { kind: 'false_start' }, { kind: 'quiet' }]);
+  assert.ok(good!.y < g.baselineY, 'good call is a peak (above the line)');
+  assert.ok(fs!.y > g.baselineY, 'false start dips below the line');
+  assert.equal(quiet!.y, g.baselineY, 'quiet day is flat on the line');
+  // recovery reads as the win: the up-beat rises FARTHER than the dip drops (a miss-then-return still looks good)
+  assert.ok(g.baselineY - good!.y > fs!.y - g.baselineY, 'the up-beat is taller than the dip is deep');
+});
+
+test('resilience pulse · TODAY is always the last beat at the right edge (early + populated = same component)', () => {
+  const one = buildPulsePoints([{ kind: 'quiet' }]);
+  assert.equal(one.length, 1);
+  assert.equal(one[0]!.today, true);
+  assert.equal(one[0]!.x, pulseTodayX(g), 'day-1 today sits at the right edge');
+  const many = buildPulsePoints(Array<{ kind: 'good' }>(10).fill({ kind: 'good' }));
+  assert.equal(many[many.length - 1]!.today, true);
+  assert.equal(many[many.length - 1]!.x, pulseTodayX(g), 'today is always the right edge');
+  assert.ok(many[0]!.x < many[many.length - 1]!.x, 'earlier beats step left across the rolling window');
+});
+
+test('resilience pulse · NEVER a rising trajectory — a flat run stays flat (rhythm, not a score)', () => {
+  const ys = new Set(buildPulsePoints(Array<{ kind: 'quiet' }>(8).fill({ kind: 'quiet' })).map((p) => p.y));
+  assert.equal(ys.size, 1, 'every quiet day shares the baseline y — no upward drift / accumulation');
+});
