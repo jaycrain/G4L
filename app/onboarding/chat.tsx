@@ -321,6 +321,27 @@ export default function OnboardingChat() {
                   </ul>
                 </dd>
               </dl>
+              {state.collected.grintaBaseline && (
+                // The Grinta baseline — the ONE number on the card, framed as a starting line (never a grade). Plus
+                // the light ceremony: the four Rs with Reconnect lit next. NO ID Score here — that's earned in Reconnect.
+                <div className="onboard-grinta">
+                  <div className="og-score">
+                    <span className="og-num">{state.collected.grintaBaseline.composite}</span>
+                    <span className="og-scale">/ 5</span>
+                    <span className="og-label">your starting Grinta</span>
+                  </div>
+                  <p className="og-sub">Grit — the resilience you build by closing each R. A starting line, not a grade.</p>
+                  <div className="cer-journey og-journey">
+                    {['Reconnect', 'Rewire', 'Rebuild', 'Reclaim'].map((r) => (
+                      <div key={r} className={`cer-rstep${r === 'Reconnect' ? ' lit' : ''}`}>
+                        <span className="cer-rdot" />
+                        <span className="cer-rname">{r}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="og-next">Reconnect is first — and it’s already lit.</p>
+                </div>
+              )}
               <div className="chat-continue">
                 <button type="button" onClick={proceed} disabled={pending}>
                   {pending ? 'Saving…' : 'This is me — I’m ready →'}

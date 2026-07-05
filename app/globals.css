@@ -329,6 +329,15 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .summary-list dd { margin: 0.15rem 0 0; color: var(--charcoal); line-height: 1.5; }
 .summary-reclaim { margin: 0.2rem 0 0; padding-left: 1.2rem; }
 .summary-reclaim li { margin: 0.15rem 0; }
+/* The Grinta baseline block on the confirmation card — the one number (a starting line) + the 4-Rs light ceremony. */
+.onboard-grinta { margin: 0 0 1rem; padding: 0.9rem 1rem; border-radius: 10px; background: rgba(55, 79, 99, 0.05); border: 1px solid var(--panel-line); }
+.og-score { display: flex; align-items: baseline; gap: 0.35rem; }
+.og-num { font-size: 2rem; font-weight: 700; color: var(--navy); line-height: 1; }
+.og-scale { font-size: 0.95rem; color: var(--muted, #6B7680); }
+.og-label { margin-left: 0.4rem; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--teal); }
+.og-sub { margin: 0.4rem 0 0.9rem; font-size: 0.85rem; color: var(--charcoal); line-height: 1.45; }
+.og-journey { justify-content: space-between; max-width: 320px; }
+.og-next { margin: 0.8rem 0 0; font-size: 0.85rem; font-weight: 600; color: var(--navy); }
 
 /* Your next Beat — the work surface */
 .beat-card { border-left: 4px solid var(--olive); }
