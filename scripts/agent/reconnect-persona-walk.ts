@@ -15,6 +15,7 @@
 
 import { reconnectOpening, applyReconnectTurn, liveTurnReconnect } from '../../lib/agent/reconnect.ts';
 import type { Collected, ConvMessage, ConvState, Turn } from '../../lib/agent/onboarding.ts';
+import { TOTAL_ITEMS } from '../../lib/idq/instrument.ts';
 
 if (!process.env.ANTHROPIC_API_KEY) {
   console.error('Set ANTHROPIC_API_KEY (e.g. add it to .env.local) — this walk drives the real model.');
@@ -169,7 +170,8 @@ async function member(system: string, history: ConvMessage[]): Promise<string> {
   const res = await client.messages.create({
     model: process.env.ANTHROPIC_MODEL ?? 'claude-sonnet-4-6',
     max_tokens: 250,
-    system,
+    // The §2c measurement beat reads 1–5 statements; a persona must answer with a bare number so the arc can score.
+    system: `${system}\n\nIf the guide reads you a short statement and asks how true it feels on a 1–5 scale, reply with JUST a single number (1–5) that honestly fits you — nothing else.`,
     messages: messages.length ? messages : [{ role: 'user', content: '(the guide is ready for you)' }],
   });
   return (res.content as Array<{ type: string; text?: string }>)
@@ -177,7 +179,12 @@ async function member(system: string, history: ConvMessage[]): Promise<string> {
 }
 
 const stageOf = (s: ConvState) => (s as { stage?: string }).stage ?? '-';
-const confOf = (s: ConvState) => ((s as { awaitingConfirm?: boolean }).awaitingConfirm ? ' ⟵ INSIGHT REFLECT (awaiting confirm)' : '');
+const confOf = (s: ConvState) => ((s as { awaitingConfirm?: boolean }).awaitingConfirm ? ' ⟵ REFLECT (awaiting confirm)' : '');
+// Show §2d keepers as they land (drift/tell, window/lights_you_up) — the harvest of the Visioning beats.
+function keeperOf(s: ConvState): string {
+  const h = (s as { pendingHarvest?: Array<{ kind: string; keeperType: string }> }).pendingHarvest ?? [];
+  return h.length ? ` ✓ KEEPERS: ${h.map((k) => `${k.kind}/${k.keeperType}`).join(', ')}` : '';
+}
 // Make the revision (§2b Decision L) legible in the walk: a pending proposed re-seeing, and any tell it earned.
 function revOf(s: ConvState): string {
   const pr = (s as { pendingRevision?: { fromSlug: string; toSlug: string } }).pendingRevision;
@@ -206,23 +213,32 @@ async function runPersona(p: Persona, rl?: { question: (q: string) => Promise<st
   const history: ConvMessage[] = [{ role: 'agent', text: turn.reply }];
   console.log(`[COMPANION | ${stageOf(state)}]\n${turn.reply}\n`);
 
-  // Walk until the Doors beat hands off (stage advances past 'doors') or completes, capped for safety.
-  for (let i = 0; i < 16 && !turn.complete && stageOf(state) !== 'measurement'; i++) {
-    const m = rl ? await askYou(rl) : await member(p.system, history); // history holds prior turns; the engine appends this
+  // Walk the WHOLE arc — entry → doors → measurement → drift → window — until it hands into the Checkpoint (§2e stub)
+  // or completes. The administered measurement runs deterministically (no wasted model call); the draw-out beats are
+  // live. Capped generously for the 24 IDQ items + the four beats.
+  for (let i = 0; i < 60 && !turn.complete && stageOf(state) !== 'checkpoint'; i++) {
+    const stageBefore = stageOf(state);
+    const administered = stageBefore === 'entry' || stageBefore === 'measurement';
+    const m = rl ? await askYou(rl) : await member(p.system, history);
     if (rl && (m === '' || m.toLowerCase() === 'quit')) { console.log('\n(ended early)'); break; }
-    if (!rl) console.log(`[MEMBER]\n${m}\n`);
-    turn =
-      stageOf(state) === 'entry'
-        ? applyReconnectTurn(state, history, m, { text: '' }) // entry → doors is deterministic (mirrors the action)
-        : await liveTurnReconnect(state, history, m);
+    // entry + administered measurement are deterministic (mirror the action); the draw-out beats call the live model.
+    turn = administered ? applyReconnectTurn(state, history, m, { text: '' }) : await liveTurnReconnect(state, history, m);
     history.push({ role: 'member', text: m });
     history.push({ role: 'agent', text: turn.reply });
     state = turn.state;
-    console.log(`\n[COMPANION | ${stageOf(state)} · doors:${JSON.stringify(state.collected.doors ?? [])}]${confOf(state)}${revOf(state)}\n${turn.reply}\n`);
+    const answered = (state as { administeredResponses?: number[] }).administeredResponses?.length ?? 0;
+    if (stageOf(state) === 'measurement') {
+      // Condense the IDQ items so the LIFT reads clean — one compact line per rating, not 24 full item blocks.
+      console.log(`[measurement · ${answered}/${TOTAL_ITEMS}] rated ${m}`);
+    } else {
+      if (!rl) console.log(`[MEMBER]\n${m}\n`);
+      console.log(`[COMPANION | ${stageOf(state)}]${confOf(state)}${revOf(state)}${keeperOf(state)}\n${turn.reply}\n`);
+    }
   }
 
   console.log('──────────');
-  console.log(`ended at stage: ${stageOf(state)}  ${stageOf(state) === 'measurement' ? '(Doors beat handed off ✓)' : '(did not hand off — read why above)'}`);
+  console.log(`ended at stage: ${stageOf(state)}  ${stageOf(state) === 'checkpoint' ? '(whole §2d arc walked ✓ — handed into the Checkpoint stub)' : '(did not reach the Checkpoint — read why above)'}`);
+  console.log(`keepers: ${keeperOf(state) || '(none)'}`);
 }
 
 const args = process.argv.slice(2);
