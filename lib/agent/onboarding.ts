@@ -26,7 +26,11 @@ export type Stage = 'identity' | 'identity_name' | 'reclaim' | 'door' | 'complet
   | 'entry'
   | 'doors'
   | 'measurement'
+  // §2d Visioning is TWO draw-out beats (V3): 'drift' (the Drift Quiz) then 'legacy' (the Legacy Letter), with the
+  // turn-toward-hope BRIDGE at the drift→legacy seam. 'visioning' is retained as an alias but the arc uses the two.
   | 'visioning'
+  | 'drift'
+  | 'legacy'
   | 'checkpoint'
   | 'ceremony';
 
@@ -70,6 +74,23 @@ export type ConvState = {
   // order. The engine gathers them off the depth kernel; the action submits the baseline (submitIdq) when the set is
   // complete. Reusable for any administered instrument (IDQ now; Grit later).
   administeredResponses?: number[];
+  // §2d Visioning — the general HARVEST queue (keeper/share candidates the engine confirmed this arc). The action
+  // drains NEW ones via emitHarvestMoment (same seam + default-emit discipline as the §2b re-seeing tell). Drift → a
+  // keeper; Legacy line → a share candidate (slice 2). driftPayload carries the member's drift declaration (their own
+  // words — the "preserve declarations" wall) from the reflect turn to the confirm turn, where the keeper is queued.
+  pendingHarvest?: HarvestSignal[];
+  driftPayload?: string;
+};
+
+// A harvest candidate the engine queued (drained by the action → emitHarvestMoment). keeperType is a plain string to
+// avoid a cycle with harvest.ts (which imports Collected from here); the action maps it to the KeeperType enum.
+export type HarvestSignal = {
+  kind: string; // sourceRef.kind — e.g. 'drift', 'legacy'
+  keeperType: string; // 'tell' for a named drift pattern (V4); a keeper enum value
+  destinationIntent: 'keeper' | 'share' | 'both';
+  payloadRef: string; // the member's verbatim words (preserve declarations); NEVER the transcript
+  private?: boolean; // e.g. the Legacy Letter body — the event carries a reference, not the text
+  label?: string;
 };
 export type ConvMessage = { role: 'agent' | 'member'; text: string };
 export type Ctx = { name: string; email: string };
@@ -435,6 +456,8 @@ const STAGE_PROMPT: Record<Stage, string> = {
   doors: 'What feels like it opened the distance — take me into it.',
   measurement: 'Ready to take a clear read of where things stand?',
   visioning: 'What do you want to be true again?',
+  drift: 'What did the Fade cost you — and how far are you from that version of you?',
+  legacy: "Picture the version of you that's still in there, reclaimed — what would you want them to know?",
   checkpoint: 'How are you doing with the work right now?',
   ceremony: "Let's look at how far you've come.",
 };

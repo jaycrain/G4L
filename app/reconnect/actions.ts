@@ -4,9 +4,9 @@ import { getDb } from '../../lib/db/index.ts';
 import { authorizeMember } from '../authz.ts';
 import type { Db } from '../../lib/db/schema.ts';
 import type { ConvMessage, ConvState, Turn } from '../../lib/agent/onboarding.ts';
-import { applyReconnectTurn, liveTurnReconnect, loadReconnectCaptures, reconnectEnabled, reconnectOpening, reconnectMeasurementClose } from '../../lib/agent/reconnect.ts';
+import { applyReconnectTurn, liveTurnReconnect, loadReconnectCaptures, reconnectEnabled, reconnectOpening, reconnectMeasurementClose, driftOpen } from '../../lib/agent/reconnect.ts';
 import { softSetMemberDoors } from '../../lib/member/refine.ts';
-import { emitHarvestMoment } from '../../lib/agent/harvest.ts';
+import { emitHarvestMoment, type KeeperType } from '../../lib/agent/harvest.ts';
 import { DOORS } from '../../lib/doors.ts';
 import { submitIdq } from '../../lib/gateway/flow.ts';
 import { TOTAL_ITEMS } from '../../lib/idq/instrument.ts';
@@ -57,12 +57,34 @@ async function persistMeasurement(db: Db, memberId: string, prev: ConvState, tur
     if (before < TOTAL_ITEMS && after.length >= TOTAL_ITEMS) {
       const responses = after.slice(0, TOTAL_ITEMS);
       await submitIdq(db, memberId, responses); // frozen instrument: validate + score + baseline row (sequence_no=0)
-      return await reconnectMeasurementClose(turn.state.collected, responses); // ties the shape to their doors, or null
+      const close = await reconnectMeasurementClose(turn.state.collected, responses); // ties the shape to their doors
+      // Append the Drift opener so the personalized close hands into §2d exactly like the engine's generic close does.
+      return close ? `${close}\n\n${driftOpen(turn.state.collected)}` : null;
     }
   } catch {
     // swallow — best-effort; the conversation turn already succeeded.
   }
   return null;
+}
+
+// §2d harvest: drain any NEW harvest candidates the engine queued this turn (drift keeper now; legacy share later) via
+// the existing member_event/emitHarvestMoment seam — same default-emit discipline as the §2b tell. Best-effort.
+async function persistHarvest(db: Db, memberId: string, prev: ConvState, turn: Turn): Promise<void> {
+  try {
+    const priorN = prev.pendingHarvest?.length ?? 0;
+    for (const s of (turn.state.pendingHarvest ?? []).slice(priorN)) {
+      await emitHarvestMoment(db, memberId, {
+        destinationIntent: s.destinationIntent,
+        keeperType: s.keeperType as KeeperType,
+        surface: 'reconnect',
+        sourceRef: { kind: s.kind, ref: s.kind, label: s.label ?? s.kind },
+        payloadRef: s.payloadRef,
+        private: s.private,
+      });
+    }
+  } catch {
+    // swallow — best-effort; the conversation turn already succeeded.
+  }
 }
 
 export async function startReconnectAction(memberId: string): Promise<{ ok: boolean; reply?: string; state?: ConvState; error?: string }> {
@@ -93,6 +115,7 @@ export async function reconnectTurnAction(
     // Committed side-effects this turn persist to the DB (best-effort): a re-seeing (§2b) + a completed IDQ (§2c).
     const db = (await getDb()) as unknown as Db;
     await persistRevision(db, memberId, state, turn);
+    await persistHarvest(db, memberId, state, turn); // §2d drift keeper (and later legacy share)
     // On IDQ completion this may return a personalized close (M3) that ties the baseline shape to their doors —
     // UPGRADING the engine's generic close; null → the generic close stands.
     const closeOverride = await persistMeasurement(db, memberId, state, turn);

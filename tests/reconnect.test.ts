@@ -274,12 +274,50 @@ test('reconnect measurement · an unclear answer re-prompts and records nothing 
   assert.equal(turn.state.stage, 'measurement', 'stays on the current item');
 });
 
-test('reconnect measurement · the 24th response completes the baseline and hands into Visioning', () => {
+test('reconnect measurement · the 24th response completes the baseline and hands into the Drift beat', () => {
   const almost: ConvState = { stage: 'measurement', administeredResponses: Array(TOTAL_ITEMS - 1).fill(3), collected: { doors: ['grind'] } };
   const turn = applyReconnectTurn(almost, [], '5', { text: '' });
   assert.equal((turn.state.administeredResponses ?? []).length, TOTAL_ITEMS, 'all 24 captured');
-  assert.equal(turn.state.stage, 'visioning', 'hands into the next beat');
+  assert.equal(turn.state.stage, 'drift', 'hands into §2d Visioning — the Drift beat');
   assert.match(turn.reply, /baseline/i, 'the close names the baseline (never a bare number; the ACTION writes it)');
+  assert.match(turn.reply, /inventory|cost/i, 'and opens the Drift beat (the generic close appends the drift opener)');
+});
+
+// ============================================================================================================
+// §2d VISIONING · the DRIFT beat (slice 1) — draw-out back on the depth kernel; drift-recognition KEEPER (tell);
+// the turn-toward-hope BRIDGE into Legacy. (The insight QUALITY / LIFT is a felt walk; these pin the structure.)
+// ============================================================================================================
+
+test('reconnect drift · DEPTH FLOOR holds — reflect_drift on the first exchange keeps drawing out (no pattern w/o material)', () => {
+  const atDrift: ConvState = { stage: 'drift', collected: { doors: ['grind'] } };
+  const turn = applyReconnectTurn(atDrift, [], 'it cost me my mornings', { text: 'When did that start?', depthReady: true });
+  assert.equal(turn.state.awaitingConfirm ?? false, false, 'the FLOOR overrides an early reflect_drift');
+});
+
+test('reconnect drift · past the floor, reflect_drift reflects the pattern + captures the drift declaration', () => {
+  const atDrift: ConvState = { stage: 'drift', stageScratch: { drift: { driftDepth: 2 } }, collected: { doors: ['grind'] } };
+  const decl = 'I stopped riding, then I stopped seeing friends, then I stopped noticing I had';
+  const turn = applyReconnectTurn(atDrift, [], decl, { text: 'The drift kept taking the things that were just yours. Does that name the shape?', depthReady: true });
+  assert.equal(turn.state.awaitingConfirm, true, 'reflects the pattern, awaits the check');
+  assert.equal(turn.state.driftPayload, decl, "captures the member's drift declaration (their words) for the keeper");
+});
+
+test('reconnect drift · confirm queues the drift KEEPER (tell) and BRIDGES toward hope into Legacy', () => {
+  const pending: ConvState = { stage: 'drift', awaitingConfirm: true, driftPayload: 'I stopped riding and stopped noticing', collected: { doors: ['grind'] } };
+  const turn = applyReconnectTurn(pending, [], "yeah, that's the shape of it", { text: '', replyIntent: 'done' });
+  assert.equal(turn.state.stage, 'legacy', 'hands into the Legacy beat');
+  assert.match(turn.reply, /other side|reclaim|look the other way/i, 'the turn-toward-hope bridge (LIFT at the seam)');
+  assert.deepEqual(turn.state.pendingHarvest, [{ kind: 'drift', keeperType: 'tell', destinationIntent: 'keeper', payloadRef: 'I stopped riding and stopped noticing', label: 'The drift' }], 'a drift-recognition keeper is queued (default-emit)');
+  assert.equal(turn.state.driftPayload, undefined, 'payload cleared after queueing');
+});
+
+test('reconnect drift · a DISPUTE reopens and queues NO keeper', () => {
+  const pending: ConvState = { stage: 'drift', awaitingConfirm: true, driftPayload: 'x', collected: { doors: ['grind'] } };
+  const turn = applyReconnectTurn(pending, [], "no, that's not it", { text: '', replyIntent: 'dispute' });
+  assert.equal(turn.state.stage, 'drift', 'stays in the Drift beat');
+  assert.equal(turn.state.awaitingConfirm ?? false, false, 'reopens');
+  assert.equal(turn.state.pendingHarvest, undefined, 'no keeper on a rejected pattern');
+  assert.match(turn.reply, /say it your way|not got it yet|real shape/i, 'takes the correction, no defense');
 });
 
 // --- §2c slice 2: the personalized close (M3) — the SHAPE helper + the governance-safe fallback ---------------

@@ -281,9 +281,92 @@ const doorsStage: StageDef = {
   },
 };
 
-// --- RECONNECT_ARC (config #2) — entry/callback + doors (increment 1); the rest still stubs --------------------
+// --- §2d VISIONING · beat 1: the DRIFT beat (draw-out, back on the depth kernel) ------------------------------
+// After the administered §2c detour, Visioning RETURNS to draw-out. The Drift beat surfaces the PATTERN of the drift
+// (what the Fade cost, how far it ran) — reflective, formative (stored not scored). Reuses the doorsStage machinery
+// (floor/cap + model-judged depth + graceful degradation). On confirm, the drift RECOGNITION is a KEEPER (V4:
+// keeperType 'tell' — a self-recognition/warning-sign, not a positive rule), queued for the action to emit. Copy is
+// reused from the authored RCN-DFT asset. The beat ENDS on the turn-toward-hope BRIDGE into Legacy (V3).
+const DRIFT_MIN_DEPTH = 2;
+const DRIFT_MAX_DEPTH = 4;
+// The opener — the RCN-DFT step-1 frame + prompt (a hoisted fn so the measurement close can append it on hand-in).
+export function driftOpen(_c: Collected): string {
+  return (
+    'Every life you build costs something. I want you to name what this one cost — be specific about what you traded ' +
+    'away to get here: the morning rides, the deep friendships, the feeling of being in your body instead of trapped ' +
+    "in your head.\n\nName a few things the Fade cost you. This isn't regret — it's inventory."
+  );
+}
+const DRIFT_MORE_VARIANTS = [
+  "Past the obvious — what's the quiet one you don't usually let yourself miss?",
+  'And how far are you from that version of you right now — a little dusty, or a stranger? Don\'t soften it to feel better.',
+  "What did the drift take that you've stopped even noticing is gone?",
+];
+function driftMore(history: ConvMessage[]): string {
+  const asked = history.filter((h) => h.role === 'agent' && /\?/.test(h.text)).length;
+  return DRIFT_MORE_VARIANTS[asked % DRIFT_MORE_VARIANTS.length]!;
+}
+const DRIFT_CONFIRM = 'Does that name the shape of it — or is it different?';
+function reflectDrift(modelText: string): string {
+  const t = (modelText ?? '').trim();
+  if (t && /\?\s*$/.test(t)) return t;
+  if (t) return `${t}\n\n${DRIFT_CONFIRM}`;
+  return "I don't want to put a shape on this before it's yours — tell me more about what it cost, and how far it's run.";
+}
+const REOPEN_DRIFT = "Then I've not got it yet — say it your way. What's the real shape of what the drift cost you?";
+// The BRIDGE (V3): the turn toward hope, at the drift→legacy seam. LIFT starts HERE, not at Legacy.
+function driftToLegacyBridge(): string {
+  return (
+    "That's your inventory — what it cost, how far the drift ran. Not to sit in — to push off from; I've kept it for " +
+    "you.\n\nAnd here's the turn: you've spent this whole time looking at what the Fade took. Now we look the other " +
+    'way — at the version of you that\'s still in there, and the life you\'d reclaim. Ready to see what\'s on the other side?'
+  );
+}
 
-const RECONNECT_STUB_STAGES = ['visioning', 'checkpoint', 'ceremony'] as const;
+const driftStage: StageDef = {
+  id: 'drift',
+  mode: 'drawout',
+  opener: (c) => driftOpen(c),
+  offersSubstance: (message) => message.trim().length >= 12,
+  gather(b) {
+    const sc = b.scratch as { driftDepth?: number };
+    sc.driftDepth = (sc.driftDepth ?? 0) + 1;
+    // Model-judged depth (reflect_drift → depthReady), bounded by a FLOOR (no pattern on thin material) and CAP.
+    const advance = (b.model.depthReady && sc.driftDepth >= DRIFT_MIN_DEPTH) || sc.driftDepth >= DRIFT_MAX_DEPTH;
+    if (!advance) {
+      b.reply = withQuestion(b.modelText, driftMore(b.history));
+    } else {
+      // Capture the member's drift DECLARATION (their own words — preserve declarations) for the keeper; carry it to
+      // the confirm turn, where the keeper is queued once they affirm the pattern.
+      if (b.memberMessage.trim()) b.driftPayload = b.memberMessage.trim();
+      b.reply = reflectDrift(b.modelText);
+      b.awaitingConfirm = true;
+    }
+  },
+  confirm(b) {
+    const intent = resolveGapConfirm(b.memberMessage, b.model.replyIntent);
+    if (intent === 'dispute') {
+      b.awaitingConfirm = false;
+      b.reply = REOPEN_DRIFT; // they rejected the pattern — take it, don't defend
+    } else if (intent === 'addition') {
+      b.awaitingConfirm = false;
+      b.reply = withQuestion(b.modelText, driftMore(b.history)); // more inventory first
+    } else {
+      // done → the drift RECOGNITION is a KEEPER (default-emit; the action drains pendingHarvest → emitHarvestMoment).
+      const payload = (b.driftPayload ?? '').trim();
+      if (payload) {
+        b.pendingHarvest.push({ kind: 'drift', keeperType: 'tell', destinationIntent: 'keeper', payloadRef: payload, label: 'The drift' });
+      }
+      b.driftPayload = undefined;
+      b.stage = 'legacy'; // hand into the Legacy Letter (a stub until slice 2) via the turn-toward-hope BRIDGE
+      b.reply = driftToLegacyBridge();
+    }
+  },
+};
+
+// --- RECONNECT_ARC (config #2) — entry/callback + doors + measurement + drift; legacy/checkpoint/ceremony stubs ---
+
+const RECONNECT_STUB_STAGES = ['legacy', 'checkpoint', 'ceremony'] as const;
 
 // --- §2c MEASUREMENT (the administered beat, slice 1: IDQ delivery) --------------------------------------------
 // The FIRST beat OFF the depth kernel. The IDQ is a validated instrument — 24 fixed items, a 1–5 scale, deterministic
@@ -398,10 +481,10 @@ const measurementStage: StageDef = {
     b.administeredResponses = [...b.administeredResponses, val];
     const n = b.administeredResponses.length;
     if (n >= TOTAL_ITEMS) {
-      // The 24 are in. Hand into Visioning; the ACTION scores + writes the baseline (submitIdq) on this crossing, and
-      // may UPGRADE this generic close to a personalized one (M3) that ties the score-shape back to their doors.
-      b.stage = 'visioning';
-      b.reply = idqClose();
+      // The 24 are in. Hand into Visioning's first beat (Drift); the ACTION scores + writes the baseline (submitIdq)
+      // on this crossing, and may UPGRADE this generic close to a personalized one (M3) — appending the Drift opener.
+      b.stage = 'drift';
+      b.reply = `${idqClose()}\n\n${driftOpen(b.collected)}`;
     } else {
       b.reply = deliverIdqItem(n);
     }
@@ -447,11 +530,12 @@ const reconnectEntryStage: StageDef = {
 
 export const RECONNECT_ARC: ArcConfig = {
   id: 'reconnect',
-  stageOrder: ['entry', 'doors', 'measurement', ...RECONNECT_STUB_STAGES],
+  stageOrder: ['entry', 'doors', 'measurement', 'drift', ...RECONNECT_STUB_STAGES],
   stages: {
     entry: reconnectEntryStage,
     doors: doorsStage,
     measurement: measurementStage,
+    drift: driftStage,
     ...Object.fromEntries(RECONNECT_STUB_STAGES.map((id) => [id, stubStage(id)])),
   },
   onComplete: () => '[Reconnect complete — the earned Threshold Ceremony lands in §2f]',
@@ -472,6 +556,15 @@ export const RECONNECT_TOOLS = [
       "sequence). NEVER on the first mention. If the material is still thin, do NOT call it — keep drawing out; a " +
       "manufactured insight is worse than none. On the same turn you call it, reflect that insight in THEIR words, " +
       "offered as a check they can reject.",
+    input_schema: { type: 'object' as const, properties: {}, required: [] },
+  },
+  {
+    name: 'reflect_drift',
+    description:
+      "§2d Drift beat: call ONLY once the member has genuinely drawn out the DRIFT — what the Fade cost, and how far " +
+      "it has run — and you can reflect the PATTERN of it (the recurring shape, the quiet thing they've stopped " +
+      "noticing is gone), offered as a check they can reject. NEVER on the first mention; if it's still thin, keep " +
+      "drawing out. On the same turn you call it, reflect that pattern in THEIR words. (Same depth signal as reflect_door.)",
     input_schema: { type: 'object' as const, properties: {}, required: [] },
   },
   {
@@ -522,7 +615,7 @@ export function parseReconnectTurn(content: readonly unknown[]): ModelTurn {
   for (const b of content as Array<{ type: string; text?: string; name?: string; input?: Record<string, unknown> }>) {
     if (b.type === 'text' && typeof b.text === 'string') text += b.text;
     if (b.type === 'tool_use') {
-      if (b.name === 'reflect_door') depthReady = true;
+      if (b.name === 'reflect_door' || b.name === 'reflect_drift') depthReady = true; // shared depth signal (drawout)
       if (b.name === 'member_reply' && typeof b.input?.intent === 'string') {
         const i = b.input.intent;
         if (i === 'done' || i === 'more' || i === 'dispute') replyIntent = i;
@@ -632,6 +725,14 @@ function stageInstructionReconnect(stage?: Stage): string {
       'check they can reject. Call reflect_door ONLY once it is genuinely drawn out and the insight is earned. If the ' +
       'story points to a truer Door than the one they named, you may propose that re-seeing (propose_correction), ' +
       'offered — never asserted — and only when the material earns it.'
+    );
+  if (stage === 'drift')
+    return (
+      '\n\nCURRENT STAGE: the Drift beat (§2d Visioning). Draw out what the Fade COST and how far it has run — their ' +
+      'inventory, in their words. This is formative and reflective, never scored. After a couple of exchanges, reflect ' +
+      'the PATTERN of the drift (the recurring shape, the quiet thing they stopped noticing) IN THEIR WORDS, offered as ' +
+      'a check — call reflect_drift ONLY once it is genuinely drawn out; if thin, keep drawing out (never manufacture a ' +
+      'pattern). Name it to push OFF from, not to sit in. Do not diagnose.'
     );
   return '\n\nCURRENT STAGE: entry — pick up from onboarding; the callback opened; receive their reply warmly.';
 }

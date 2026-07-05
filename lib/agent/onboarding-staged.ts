@@ -34,6 +34,7 @@ import {
   type ConvState,
   type Ctx,
   type DoorRevision,
+  type HarvestSignal,
   type ModelTurn,
   type ReplyIntent,
   type ReseeingTell,
@@ -497,6 +498,8 @@ interface Beat {
   pendingRevision?: DoorRevision;
   reseeingTells: ReseeingTell[];
   administeredResponses: number[]; // §2c: fixed-scale responses accumulated by an administered stage (IDQ/Grit)
+  pendingHarvest: HarvestSignal[]; // §2d: keeper/share candidates queued for the action to emit
+  driftPayload?: string; // §2d: the member's drift declaration, carried reflect→confirm
 }
 
 // A stage handler mutates the Beat (sets b.reply etc.) or returns a terminal Turn. `resolveConfirm`'s CONTRACT
@@ -536,6 +539,8 @@ function beatState(b: Beat): ConvState {
     ...(b.pendingRevision && { pendingRevision: b.pendingRevision }),
     ...(b.reseeingTells.length > 0 && { reseeingTells: b.reseeingTells }),
     ...(b.administeredResponses.length > 0 && { administeredResponses: b.administeredResponses }),
+    ...(b.pendingHarvest.length > 0 && { pendingHarvest: b.pendingHarvest }),
+    ...(b.driftPayload !== undefined && { driftPayload: b.driftPayload }),
   };
 }
 
@@ -867,6 +872,8 @@ export function runArcTurn(
     pendingRevision: state.pendingRevision, // §2b revision, threaded across the propose→confirm turns
     reseeingTells: [...(state.reseeingTells ?? [])],
     administeredResponses: [...(state.administeredResponses ?? [])], // §2c administered responses, accumulated
+    pendingHarvest: [...(state.pendingHarvest ?? [])], // §2d harvest queue, drained by the action
+    driftPayload: state.driftPayload,
   };
   const stageDef = arc.stages[b.stage];
 
