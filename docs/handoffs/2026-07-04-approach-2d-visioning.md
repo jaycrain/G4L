@@ -3,7 +3,8 @@
 **Status:** Draft for sign-off · design-first · **no build** until approved · prod stays v1 · flag-gated (`RECONNECT`)
 **Date:** 2026-07-04
 **Arc / config:** Reconnect (config #2) — the `visioning` stage (currently a stub), after §2c measurement, before §2e Checkpoint.
-**Follows:** §2c measurement slices 1+2 done (IDQ delivery + personalized close + radar fill). Grit/§2e parked on Greg.
+**Follows:** §2c measurement done (IDQ delivery + personalized close + radar fill) — IDQ ONLY, complete (Decision DD:
+there is no §2c Grit baseline). The Hardiness measure (Greg's Grinta Index — the 3 Cs) is **§2e Checkpoint**, parked on Greg (Monday).
 
 The one-line bar: after the heavy beats (Doors, measurement), Visioning **turns toward possibility and must LIFT** — the
 member should leave feeling the reclaimed future is *reachable*. Distinct from §2b's "insight" and §2c's "check-in":
@@ -100,7 +101,8 @@ costs nothing; rephrased-and-drifted costs trust).
    that preserves the member's words, ends on **hope**, and emits the **share-candidate signal** (invited, never pressured;
    no Connect commit). Felt-walk the LIFT bar directly.
 
-**Out (later / parked):** Grit/§2c-slice-3 + §2e Checkpoint (Greg, Monday); §2f Ceremony; the Community/Connect **share
+**Out (later / parked):** §2e Checkpoint — the Hardiness Survey (the 3 Cs: Commitment / Control / Challenge; Grit
+supplemental), Greg Monday; §2f Ceremony; the Community/Connect **share
 commit** (v2.2 Phase 4 — §2d only emits the signal).
 
 ## Felt bar (the §2d acceptance test)

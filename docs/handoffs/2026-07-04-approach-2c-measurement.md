@@ -1,5 +1,12 @@
 # Approach — §2c Measurement (the administered beat) — for sign-off
 
+> **CORRECTION (Decision DD, 2026-07-04):** §2c = **IDQ only, and it is COMPLETE** (slices 1+2 shipped). There is **no
+> §2c Grit baseline** — that was our extrapolation, not Greg's. The **Grinta / Hardiness measurement (the 3 Cs —
+> Commitment / Control / Challenge; Grit supplemental) is the §2e Reconnect CHECKPOINT, not §2c.** So **§5 "Grit
+> baseline" and open-question M2 below are SUPERSEDED — do not build them here.** Also: `lib/grinta/index.ts`
+> (activity-derived, daily) is the behavioral register, **NOT** "the Grinta Index." See
+> `G4L_Greg_Docs_Reconciliation_Measurement_v1.0.md`.
+
 **Status:** Draft for sign-off · design-first · **no build** until approved · prod stays v1 · flag-gated (`RECONNECT`)
 **Date:** 2026-07-04
 **Arc / config:** Reconnect (config #2) — the `measurement` stage (currently a stub), after Doors, before Visioning.
