@@ -461,7 +461,7 @@ const windowStage: StageDef = {
 
 // --- RECONNECT_ARC (config #2) — entry/callback + doors + measurement + drift + window; checkpoint/ceremony stubs ---
 
-const RECONNECT_STUB_STAGES = ['checkpoint', 'ceremony'] as const;
+// All Reconnect stages are built now (checkpoint is a parked pass-through; ceremony is the terminal overlay).
 
 // --- §2c MEASUREMENT (the administered beat, slice 1: IDQ delivery) --------------------------------------------
 // The FIRST beat OFF the depth kernel. The IDQ is a validated instrument — 24 fixed items, a 1–5 scale, deterministic
@@ -586,23 +586,44 @@ const measurementStage: StageDef = {
   },
 };
 
-// A declared-but-unbuilt stage: it holds with a clear placeholder so a walk shows exactly where the built arc
-// ends. Replaced beat-by-beat in later increments (Doors is next — §2b).
-function stubStage(id: string): StageDef {
-  const placeholder = `[Reconnect · ${id} — coming in a later increment]`;
-  return {
-    id,
-    mode: 'drawout',
-    opener: () => placeholder,
-    offersSubstance: () => true,
-    gather(b) {
-      b.reply = placeholder;
-    },
-    confirm(b) {
-      b.reply = placeholder;
-    },
-  };
-}
+// §2e CHECKPOINT — PARKED on Greg (the Hardiness measure + its unsettled naming). Until it lands, a graceful one-turn
+// PASS-THROUGH keeps the arc flowing Window → Ceremony — no broken stub, and Greg's real Checkpoint drops in HERE later
+// without disturbing the rest. Grinta/Hardiness is NOT named (deferred).
+const CHECKPOINT_PASS =
+  "There's another kind of check-in ahead — on how you show up when the work gets hard — but that comes later, once " +
+  "you've got some road behind you. For now, you've done the deep part: the seeing.";
+const checkpointStage: StageDef = {
+  id: 'checkpoint',
+  mode: 'drawout',
+  opener: () => CHECKPOINT_PASS,
+  offersSubstance: () => true,
+  // One turn: acknowledge the parked check-in, then hand into the Ceremony (the chat fires the overlay on 'ceremony').
+  gather(b) {
+    b.stage = 'ceremony';
+    b.reply = `${CHECKPOINT_PASS}\n\n${CEREMONY_LEAD}`;
+  },
+  confirm(b) {
+    b.stage = 'ceremony';
+    b.reply = `${CHECKPOINT_PASS}\n\n${CEREMONY_LEAD}`;
+  },
+};
+
+// §2f CEREMONY — the terminal. The conversational engine only LANDS here; the reveal itself is a full-screen overlay
+// (ReconnectCeremony), which the reconnect-chat fires when it sees stage === 'ceremony'. This stage just carries the
+// warm lead-in and holds (defensive) if anything sends another turn.
+const CEREMONY_LEAD = 'Before you go anywhere — stop for a second. I want to show you what you just did.';
+const reconnectCeremonyStage: StageDef = {
+  id: 'ceremony',
+  mode: 'drawout',
+  opener: () => CEREMONY_LEAD,
+  offersSubstance: () => true,
+  gather(b) {
+    b.reply = CEREMONY_LEAD;
+  },
+  confirm(b) {
+    b.reply = CEREMONY_LEAD;
+  },
+};
 
 // The callback stage. READ-ONLY: it acknowledges the member's response and hands into the Doors excavation. It
 // writes nothing and never revises a capture — revision is owned by §2b, member-confirmed + versioned.
@@ -625,16 +646,17 @@ const reconnectEntryStage: StageDef = {
 
 export const RECONNECT_ARC: ArcConfig = {
   id: 'reconnect',
-  stageOrder: ['entry', 'doors', 'measurement', 'drift', 'window', ...RECONNECT_STUB_STAGES],
+  stageOrder: ['entry', 'doors', 'measurement', 'drift', 'window', 'checkpoint', 'ceremony'],
   stages: {
     entry: reconnectEntryStage,
     doors: doorsStage,
     measurement: measurementStage,
     drift: driftStage,
     window: windowStage,
-    ...Object.fromEntries(RECONNECT_STUB_STAGES.map((id) => [id, stubStage(id)])),
+    checkpoint: checkpointStage,
+    ceremony: reconnectCeremonyStage,
   },
-  onComplete: () => '[Reconnect complete — the earned Threshold Ceremony lands in §2f]',
+  onComplete: () => CEREMONY_LEAD,
 };
 
 // The Reconnect turn — config #2 on the generic kernel. Public signature mirrors applyStagedTurn.

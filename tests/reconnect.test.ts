@@ -389,3 +389,12 @@ test('reconnect drawout · TIC FIX still respects the floor — a declarative st
   const turn = applyReconnectTurn(atWindow, [], 'if nothing changes I just keep grinding', { text: 'That Tuesday is real. You named it plainly.' });
   assert.equal(turn.state.awaitingConfirm ?? false, false, 'the FLOOR still holds — one exchange is not a reflection');
 });
+
+// --- §2e Checkpoint PASS-THROUGH (parked on Greg) + §2f Ceremony terminal --------------------------------------
+test('reconnect checkpoint · graceful PASS-THROUGH: Checkpoint → Ceremony, Grinta-free (§2e parked)', () => {
+  const atCheckpoint: ConvState = { stage: 'checkpoint', collected: { doors: ['grind'] } };
+  const turn = applyReconnectTurn(atCheckpoint, [], 'ok', { text: '' });
+  assert.equal(turn.state.stage, 'ceremony', 'passes through to the Ceremony terminal');
+  assert.match(turn.reply, /deep part|another kind of check-in/i, 'shows the parked-checkpoint line');
+  assert.doesNotMatch(turn.reply, /grinta|hardiness/i, '§2e Hardiness is deferred — never named');
+});
