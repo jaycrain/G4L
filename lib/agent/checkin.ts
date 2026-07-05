@@ -24,8 +24,15 @@ export type CheckinContext = {
   currentFocus: string | null;
   lastCompletedAsset: string | null;
   reclaimList: string[];
-  grintaScore?: number | null; // the daily Grinta Index — for awareness, not to pitch
+  grintaScore?: number | null; // the daily activity register (the Daily Call) — for awareness, not to pitch
   grintaTrend?: 'up' | 'down' | 'flat' | null;
+  // The SURVEY Grinta Index (Decision DD) — the member's grit baseline (onboarding) → Checkpoints, on a 1–5
+  // scale (kept distinct from the ID Score's 0–100 on purpose). When present it is the real "Grinta Index" the
+  // member sees on the dashboard; the activity register above is then the Daily Call rhythm. Null on prod v1.
+  grintaIndex?: number | null; // composite, 1–5
+  grintaStrands?: { reconnect?: number; rewire?: number; rebuild?: number; reclaim?: number } | null; // per-R means, 1–5
+  grintaIndexTrend?: 'up' | 'down' | 'flat' | null; // movement vs the prior reading (null until a Checkpoint moves it)
+  grintaIndexChangePct?: number | null; // signed up-positive percent vs the prior reading (null on the baseline)
   consumedBites?: string[]; // titles of recently read bites
   pastSelf?: string | null; // their own words on who they were (from onboarding)
   gapStory?: string | null; // their own words on how the gap opened (from onboarding)
@@ -66,6 +73,15 @@ export type CheckinMessage = { role: 'agent' | 'member'; text: string };
 export type CheckinTurn = { reply: string; crisis?: boolean };
 
 const firstName = (n: string) => (n || '').trim().split(/\s+/)[0] ?? '';
+
+// The four Grinta strands, spelled out for the agent's context (one per R). Empty when none are present.
+function grintaStrandsLine(s: CheckinContext['grintaStrands']): string {
+  if (!s) return '';
+  const parts = (['reconnect', 'rewire', 'rebuild', 'reclaim'] as const)
+    .filter((k) => s[k] != null)
+    .map((k) => `${k[0]!.toUpperCase()}${k.slice(1)} ${s[k]}`);
+  return parts.length ? ` — strands ${parts.join(', ')}` : '';
+}
 
 export function contextBlock(c: CheckinContext): string {
   const dims = c.dimensions
@@ -109,7 +125,13 @@ export function contextBlock(c: CheckinContext): string {
     dims,
     trend,
     c.currentFocus ? `Current focus: ${c.currentFocus}` : null,
-    c.grintaScore != null ? `Grinta Index: ${c.grintaScore}${c.grintaTrend ? ` (${c.grintaTrend} lately)` : ''}` : null,
+    // Grinta Index: when the SURVEY reading exists (staged) it owns the name — the grit baseline on a 1–5 scale,
+    // with the four R-strands. The activity register then reads as the Daily Call rhythm. On prod v1 (no survey
+    // reading) the activity register keeps the "Grinta Index" name, so nothing about the live agent changes.
+    c.grintaIndex != null
+      ? `Grinta Index (their grit, on a 1–5 scale — a different measure from the ID Score, never to be compared to it): ${c.grintaIndex}${grintaStrandsLine(c.grintaStrands)}${c.grintaIndexChangePct != null && c.grintaIndexTrend ? ` (${c.grintaIndexTrend} ${c.grintaIndexChangePct > 0 ? '+' : ''}${c.grintaIndexChangePct}% since last Checkpoint)` : ' (baseline — it moves at Checkpoints)'}`
+      : c.grintaScore != null ? `Grinta Index: ${c.grintaScore}${c.grintaTrend ? ` (${c.grintaTrend} lately)` : ''}` : null,
+    c.grintaIndex != null && c.grintaScore != null ? `Daily Call rhythm (their day-to-day momentum, not the Index): ${c.grintaScore}${c.grintaTrend ? ` (${c.grintaTrend} lately)` : ''}` : null,
     c.beatsDone != null ? `Beats worked so far: ${c.beatsDone}` : null,
     c.experienceSummary && c.experienceSummary.trim()
       ? `How they've moved through the program lately (for awareness — gently notice a stall or a return, e.g. "you opened Visualization a couple times — want to pick it back up?"; NEVER grade or guilt): ${c.experienceSummary.trim()}`

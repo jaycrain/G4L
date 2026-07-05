@@ -328,7 +328,7 @@ export default function OnboardingChat() {
                   <div className="og-score">
                     <span className="og-num">{state.collected.grintaBaseline.composite}</span>
                     <span className="og-scale">/ 5</span>
-                    <span className="og-label">your starting Grinta</span>
+                    <span className="og-label">your starting Grinta Index</span>
                   </div>
                   <p className="og-sub">Grit — the resilience you build by closing each R. A starting line, not a grade.</p>
                   <div className="cer-journey og-journey">

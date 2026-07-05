@@ -5,7 +5,7 @@ import { timeSignals, topNudge } from '../../../lib/agent/nudge.ts';
 import { getActivityPanel } from '../../../lib/activity/store.ts';
 import { stravaConfigured } from '../../../lib/activity/strava.ts';
 import StravaConnect from '../../account/strava-connect.tsx';
-import { getGrinta } from '../../../lib/grinta/index.ts';
+import { latestGrintaReading } from '../../../lib/grinta/survey/store.ts';
 import { getJourney } from '../../../lib/beats/store.ts';
 import JourneyRings from '../journey-rings.tsx';
 import IdqRadar from '../idq-radar.tsx';
@@ -41,6 +41,13 @@ import { redirect } from 'next/navigation';
 export const maxDuration = 30;
 
 const R_RING_COLOR: Record<string, string> = { reconnect: '#374f63', rewire: '#3b9495', rebuild: '#919536', reclaim: '#ec6233' };
+// The four Grinta strands, in R order — the Grinta Index card lays them out like the ID Score's dimension rows.
+const R_STRANDS = [
+  { key: 'reconnect', label: 'Reconnect' },
+  { key: 'rewire', label: 'Rewire' },
+  { key: 'rebuild', label: 'Rebuild' },
+  { key: 'reclaim', label: 'Reclaim' },
+] as const;
 const DIM_LABEL: Record<string, string> = { physical: 'Physical', self: 'Self', social: 'Social', outlook: 'Outlook' };
 const ARROW: Record<string, string> = { up: '↑', down: '↓', flat: '→' };
 const HERO_VERB: Record<string, string> = { reconnect: 'Reconnecting', rewire: 'Rewiring', rebuild: 'Rebuilding', reclaim: 'Reclaiming' };
@@ -57,11 +64,11 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
   await ensureOnboardingBadge(db, memberId);
 
   // v0.4 zones, all from the registry + member state.
-  const [facets, forecast, passport, grinta, journey, activity] = await Promise.all([
+  const [facets, forecast, passport, grintaReading, journey, activity] = await Promise.all([
     getFacets(db, memberId),
     getForecast(db, memberId),
     getPassport(db, memberId),
-    getGrinta(db, memberId, dash.identityNoun),
+    latestGrintaReading(db, memberId), // the SURVEY Grinta Index (baseline → Checkpoints), not the activity register
     getJourney(db, memberId),
     getActivityPanel(db, memberId, dash.identityNoun),
   ]);
@@ -306,18 +313,41 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
 
         <div className="card metric grinta">
           <h3>Grinta Index</h3>
-          <p className="card-subtitle">The resilience you&apos;re building, stronger with each R.</p>
-          <div className="metric-body">
-            <div className="score">
-              <span className="num">{grinta.score}</span>
-              <span className={`dir-${grinta.direction}`}>
-                {ARROW[grinta.direction]}
-                {grinta.delta !== 0 ? ` ${grinta.delta > 0 ? '+' : ''}${grinta.delta}` : ''}
-              </span>
+          <p className="card-subtitle">Grit. Never give up. Stronger with each R.</p>
+          {grintaReading ? (
+            <div className="metric-body">
+              <div className="score">
+                <span className="num">{grintaReading.composite}</span>
+                <span className="grinta-scale">/ 5</span>
+                {/* Delta only AFTER a Checkpoint moves it — the baseline stands alone, no arrow (signed up-positive %). */}
+                {grintaReading.changePct !== null && grintaReading.direction && (
+                  <span className={`dir-${grintaReading.direction}`}>
+                    {ARROW[grintaReading.direction]}
+                    {grintaReading.changePct !== 0 ? ` ${grintaReading.changePct > 0 ? '+' : ''}${grintaReading.changePct}%` : ''}
+                  </span>
+                )}
+              </div>
+              {/* The four strands — one per R, in the R-ring colors, like the ID Score's dimension rows. */}
+              <div className="dims grinta-strands">
+                {R_STRANDS.map((r) => {
+                  const v = grintaReading.strands[r.key];
+                  return (
+                    <div className="dim" key={r.key}>
+                      <span><span className="r-dot" style={{ background: R_RING_COLOR[r.key] }} />{r.label}</span>
+                      <span>
+                        {v != null ? `${v} / 5` : '—'}
+                        {r.key === 'reconnect' && <em className="strand-cue"> · next to grow</em>}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+              <p className="metric-foot muted">Each R you finish adds to its strand — grinta climbs as you close the loop.</p>
             </div>
-            {/* Member-facing 3-C breakdown removed (Decision V: never Commitment/Control/Challenge). The R-named
-                subscales land with §2e, fed from the Checkpoint hardiness — not re-pointed before it exists. */}
-          </div>
+          ) : (
+            // Anticipatory blank — the baseline lands the moment they finish the intro survey, then grows each R.
+            <div className="metric-body"><p className="muted">Blank for now — your grit baseline lands when you finish the intro, then climbs with each R you close.</p></div>
+          )}
           <Link href={`/grinta/${memberId}`} className="see-more">See more →</Link>
         </div>
       </div>
