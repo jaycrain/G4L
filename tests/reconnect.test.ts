@@ -281,3 +281,20 @@ test('reconnect measurement · the 24th response completes the baseline and hand
   assert.equal(turn.state.stage, 'visioning', 'hands into the next beat');
   assert.match(turn.reply, /baseline/i, 'the close names the baseline (never a bare number; the ACTION writes it)');
 });
+
+// --- §2c slice 2: the personalized close (M3) — the SHAPE helper + the governance-safe fallback ---------------
+test('reconnect measurement · idqShape ranks the lowest + highest dimension (grounds the close, never a raw number)', async () => {
+  const { idqShape } = await import('../lib/agent/reconnect.ts');
+  // physical all 1 (lowest), self all 5 (highest), social 3, outlook 4
+  const responses = [1,1,1,1,1,1, 5,5,5,5,5,5, 3,3,3,3,3,3, 4,4,4,4,4,4];
+  assert.deepEqual(idqShape(responses), { lowest: 'physical', highest: 'self' });
+});
+
+test('reconnect measurement · the personalized close FALLS BACK to null with no API key (generic close stands)', async () => {
+  const { reconnectMeasurementClose } = await import('../lib/agent/reconnect.ts');
+  const prev = process.env.ANTHROPIC_API_KEY;
+  delete process.env.ANTHROPIC_API_KEY;
+  const out = await reconnectMeasurementClose({ identityNoun: 'Racer', doors: ['body'] }, Array(24).fill(3));
+  assert.equal(out, null, 'no key → null, so the deterministic generic close is used (safe by default)');
+  if (prev !== undefined) process.env.ANTHROPIC_API_KEY = prev;
+});

@@ -12,7 +12,8 @@
 //    and versioned — so this increment is purely additive: it writes nothing.
 
 import { DOORS, isDoorSlug, type DoorSlug } from '../doors.ts';
-import { TOTAL_ITEMS, itemStem } from '../idq/instrument.ts';
+import { TOTAL_ITEMS, itemStem, DIMENSIONS, type Dimension } from '../idq/instrument.ts';
+import { scoreIdq } from '../idq/scoring.ts';
 import { identityLabel } from '../member/identity.ts';
 import type { Db } from '../db/schema.ts';
 import { MEMBER_AGENT_SYSTEM_PROMPT } from './system-prompt.ts';
@@ -324,6 +325,62 @@ function parseLikert(msg: string): number | null {
   return null;
 }
 
+// M3 — the personalized close. Ties the baseline SHAPE (relative highs/lows, NEVER the raw number) back to the Door(s)
+// they named. The mirror posture: a beginning, not a grade; graceful if the lowest area doesn't obviously map to a
+// door (never manufacture the link). Best-effort — returns null on no-key/failure/number-leak, so the engine's generic
+// close stands.
+const DIM_FRIENDLY: Record<Dimension, string> = {
+  physical: 'the physical — body, movement, sleep',
+  self: 'the self — who you are',
+  social: 'the social — the people around you',
+  outlook: 'the outlook — how you see what lies ahead',
+};
+export function idqShape(responses: number[]): { lowest: Dimension; highest: Dimension } {
+  const { dimensions } = scoreIdq(responses);
+  const ranked = [...DIMENSIONS].sort((a, b) => dimensions[a] - dimensions[b]);
+  return { lowest: ranked[0]!, highest: ranked[ranked.length - 1]! };
+}
+export async function reconnectMeasurementClose(c: Collected, responses: number[]): Promise<string | null> {
+  if (!process.env.ANTHROPIC_API_KEY) return null;
+  try {
+    const shape = idqShape(responses);
+    const identity = identityLabel(c.identityNoun);
+    const doorNames = (c.doors ?? []).map((s) => DOORS.find((d) => d.slug === s)?.displayName).filter(Boolean);
+    const { default: Anthropic } = await import('@anthropic-ai/sdk');
+    const client = new Anthropic({
+      apiKey: process.env.ANTHROPIC_API_KEY,
+      timeout: 16000,
+      maxRetries: 1,
+      defaultHeaders: { 'accept-encoding': 'identity' }, // sidestep the node-fetch gzip "Premature close" bug
+    });
+    const sys = `${MEMBER_AGENT_SYSTEM_PROMPT}
+
+OPERATING MOMENT: Reconnect — the CLOSE of the baseline check-in (the IDQ just completed, right after the Doors work).
+You are reflecting their BASELINE back — the starting picture. This is the mirror: it won't flatter and it won't lie,
+but it NEVER grades or pathologizes. Hard rules:
+- NEVER state a number, a band, or "low/high". Reflect the SHAPE in plain words only.
+- Reflect where they're STARTING FROM, a beginning — not a verdict. IF the area sitting lowest connects to a Door they
+  named, name that gently (the Fade had a target — that's meaningful, not a failing). If it does NOT obviously connect,
+  do NOT force a link — just reflect the starting shape warmly.
+- Warm, brief (2–3 sentences), one thought. Never diagnose. It is safe for them to be honest with themselves.`;
+    const idLine = identity ? `Who they're reclaiming: ${identity}.` : '';
+    const doorLine = doorNames.length ? `Door(s) they named: ${doorNames.join(', ')}.` : 'They named no specific Door.';
+    const user = `${idLine}\n${doorLine}\nBaseline shape: lowest area is ${DIM_FRIENDLY[shape.lowest]}; highest is ${DIM_FRIENDLY[shape.highest]}. Reflect this as their starting picture, tie the lowest to their Door(s) ONLY if it genuinely fits, and close warmly. No numbers, no grades.`;
+    const res = await client.messages.create({
+      model: process.env.ANTHROPIC_MODEL ?? 'claude-sonnet-4-6',
+      max_tokens: 220,
+      system: sys,
+      messages: [{ role: 'user', content: user }],
+    });
+    const text = (res.content as Array<{ type: string; text?: string }>).filter((b) => b.type === 'text').map((b) => b.text ?? '').join(' ').trim();
+    // Structural governance guard: a baseline close has NO reason to contain a digit — a number leak → fall back.
+    if (!text || /\d/.test(text)) return null;
+    return text;
+  } catch {
+    return null;
+  }
+}
+
 const measurementStage: StageDef = {
   id: 'measurement',
   mode: 'administered',
@@ -341,9 +398,10 @@ const measurementStage: StageDef = {
     b.administeredResponses = [...b.administeredResponses, val];
     const n = b.administeredResponses.length;
     if (n >= TOTAL_ITEMS) {
-      // The 24 are in. Hand into Visioning; the ACTION scores + writes the baseline (submitIdq) on this crossing.
+      // The 24 are in. Hand into Visioning; the ACTION scores + writes the baseline (submitIdq) on this crossing, and
+      // may UPGRADE this generic close to a personalized one (M3) that ties the score-shape back to their doors.
       b.stage = 'visioning';
-      b.reply = `${idqClose()}\n\n${b.arc.stages.visioning!.opener(b.collected)}`;
+      b.reply = idqClose();
     } else {
       b.reply = deliverIdqItem(n);
     }
