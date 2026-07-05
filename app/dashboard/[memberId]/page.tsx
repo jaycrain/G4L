@@ -229,16 +229,16 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
       {/* §3 · companion hero — the lead block (greeting + proactive message + CTA) */}
       <CompanionHero message={heroMessage} />
 
-      {/* §1 · priority pair — Your Program (next Session) + the Daily Beat, side by side */}
+      {/* §1 · priority pair — Your Program (next Session) + the Momentum panel, side by side */}
       <div className="priority-pair">
         <CurriculumForecast memberId={memberId} forecast={forecast} />
         {dailyBeat ? (
           <DailyBeatPanel memberId={memberId} reflectionId={dailyBeat.id} text={dailyBeat.text} keepable={dailyBeat.keepable} kept={dailyBeatKept} />
         ) : (
           <div className="card daily-empty">
-            <h3>Daily Call</h3>
-            <p className="card-subtitle">Your daily rep: today&apos;s call, and the momentum it builds.</p>
-            <p className="muted">Today&apos;s reflection lands here.</p>
+            <h3>Momentum</h3>
+            <p className="card-subtitle">The calls you make, one at a time — and how they add up.</p>
+            <p className="muted">Your next reflection lands here.</p>
             <ResiliencePulse bare />
           </div>
         )}
@@ -352,7 +352,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
         </div>
       </div>
 
-      {/* The Resilience Pulse now lives UNDER the Daily Call panel (its momentum visual) — see the priority pair above. */}
+      {/* The Resilience Pulse now lives UNDER the Momentum panel (its visual) — see the priority pair above. */}
 
       {/* Connect — the community surface, slotted right under the metrics strip */}
       <ConnectPanel memberId={memberId} />

@@ -36,8 +36,8 @@ export default function DailyBeatPanel({
 
   return (
     <div className="card daily-beat-panel" data-tour="daily">
-      <h3>Daily Call</h3>
-      <p className="card-subtitle">Your daily rep: today&apos;s call, and the momentum it builds.</p>
+      <h3>Momentum</h3>
+      <p className="card-subtitle">The calls you make, one at a time — and how they add up.</p>
       <p className="db-text">{text}</p>
       {keepable && (
         <div className="db-foot">
@@ -50,7 +50,7 @@ export default function DailyBeatPanel({
           )}
         </div>
       )}
-      {/* the momentum visual — grouped UNDER the Daily Call, no separate headline */}
+      {/* the momentum visual — grouped UNDER the Momentum panel, no separate headline */}
       <ResiliencePulse bare />
     </div>
   );
