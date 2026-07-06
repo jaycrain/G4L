@@ -94,6 +94,24 @@ closest item; ambiguous → returns `candidates` and the agent asks which one (a
    (`needsConfirm`), and the commit only fires with `confirm:true`. The system prompt instructs the agent to
    **never** set `confirm:true` without an explicit member yes in the transcript. (Hardening for v2: the preview
    returns a short token the commit must echo — deferred, since soft-delete already makes a slip reversible.)
+
+### 4a. The engine backstop — generalize the DETECTOR, BRANCH the response (built for add; the rule for the rest)
+
+Tools existing isn't the feature; the agent reliably *invoking* them is. The rail relies on the model choosing to
+call the tool — when it acknowledges in prose instead ("that's a good one — anything else?"), the intent is
+silently lost. So every member-intent tool needs an **engine guard** that catches the unfulfilled intent. The
+DETECTION generalizes (an explicit-cue intent detector per op); the RESPONSE **must split by op**:
+
+- **Additive (add):** backstop-**CAPTURE** — commit through the same validated primitive (fog rejected, dups
+  folded), then add the confirmation the model omitted. Safe because add is low-stakes + validated. *(Built:
+  `reclaimAddIntent` + `backstopReclaimAdd`.)*
+- **Destructive (remove, overwrite-edit):** backstop **SURFACES THE CONFIRM the model skipped — NEVER auto-commit.**
+  Auto-firing a remove off intent-detection would break confirm-before-destructive (gate 2) and could soft-delete
+  a want the member merely *mentioned*. So: detect the unfulfilled remove/edit-intent → have the Companion ask
+  ("Want me to take X off?") → commit only on the member's yes. The guard restores the *confirm beat*, not the
+  delete.
+
+This is the pattern for extending the guard to remove/edit/reorder as those slices land.
 2. **Crisis routing stays on.** Any free-text the member gives runs `detectCrisis` before a write — same as
    everywhere. A distress signal routes to 988 and never becomes a silent list edit.
 3. **Validation reuses `refine.ts`.** Fog ("be happier") is refused (the Beat engine could never bind it), dupes
