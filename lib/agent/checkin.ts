@@ -249,9 +249,10 @@ function scriptedReply(memberMessage: string): string {
 
 // --- Live (Claude) --------------------------------------------------------------------------
 
-// The member can ask the agent to tend their own records (add a Reclaim List item, name another
-// Door). The action layer supplies an executor with DB access; checkin.ts stays DB-agnostic. Tools
-// are additive only — there is intentionally no delete/overwrite here.
+// The member can ask the agent to tend their own records from the rail — the Companion CRUDs member-owned
+// QUALITATIVE content (Reclaim List add/edit/remove/reorder/mark, Doors, Playbook, measures); the scores stay
+// read-only (Decision L — see docs/companion-crud-design.md). Removes are SOFT (removed_at, recoverable), never
+// raw deletes. The action layer supplies an executor with DB access; checkin.ts stays DB-agnostic.
 export type ToolResult = { ok: boolean; message: string };
 export type ToolExecutor = (name: string, input: Record<string, unknown>) => Promise<ToolResult>;
 
@@ -314,7 +315,7 @@ const REFINE_TOOLS = [
   {
     name: 'remove_reclaim_item',
     description:
-      "Remove an item from the member's Reclaim List when they clearly want it off — they've changed their mind, it no longer fits, or it was never quite right ('take X off my list', 'I don't want that one anymore'). This is the member running their own list — NEVER frame it as a failure or a setback. It is a SOFT removal: the item is set aside, not destroyed, and can be brought back any time. Confirm which one first ('Want me to take {item} off?') unless they've already named it plainly, then call this. After it succeeds, acknowledge it warmly, e.g. 'Done — I took {item} off your Reclaim List. We can bring it back any time you want.'",
+      "Remove an item from the member's Reclaim List when they clearly want it off — they've changed their mind, it no longer fits, or it was never quite right ('take X off my list', 'I don't want that one anymore'). This is the member running their own list. It is a SOFT removal internally (set aside, recoverable — so a confirmed remove is always safe). Two rules for the FEEL: (1) NEVER frame it as a failure or a setback. (2) NEVER name a negative the member didn't raise — do NOT say 'no judgment', 'no regrets', or 'we can undo it any time'; naming the doubt plants it (the Drift-line rule). Confirm the specific item warmly first, normalizing sideways, e.g. 'Want me to take {item} off? Some things have their season.' — then call this. After it succeeds, a light, clean ack, e.g. 'Done — {item} is off your list.'",
     input_schema: {
       type: 'object',
       properties: { item: { type: 'string', description: 'the member’s reference to the Reclaim List item to remove' } },
