@@ -124,3 +124,33 @@ export function validateReconnectOutput(o: {
   }
   return errors.length ? { ok: false, errors } : { ok: true };
 }
+
+// The RAIL engine-guard (#6): does the member CLEARLY ask to ADD a want to their Reclaim List — and if so, what's
+// the want, with the add-request wrapper stripped? Returns the want, or null. The rail (check-in) relies on the
+// model calling add_reclaim_item; when the model chit-chats the ack instead ("that's a good one — anything else?"),
+// the add is silently lost. This lets the engine catch that unfulfilled add-intent and backstop-capture it.
+// CONSERVATIVE ON PURPOSE — only an EXPLICIT add cue fires, so a want merely mentioned in conversation is never
+// auto-captured ("never assume past what they said"). The downstream addReclaimItemForMember still validates (fog
+// rejected, dups folded), so a borderline match can't write junk. Positional "put X at the top" is a reorder, not
+// an add — excluded. Pure + testable.
+const RECLAIM_ADD_PREAMBLE_RE =
+  /^\s*(?:i(?:['’]d| would)?\s+(?:like|want|love|need)\s+to\s+add\b[^.!?]*|(?:can|could|would)\s+you\s+(?:please\s+)?add\b[^.!?]*|please\s+add\b[^.!?]*)\s*[.!?]\s+/i;
+const RECLAIM_ADD_LEAD_RE =
+  /^\s*(?:i(?:['’]d| would)?\s+(?:want|like|love|need)\s+to\s+add|(?:can|could|would)\s+you\s+(?:please\s+)?add|please\s+add|add|put)\s+(.+?)(?:\s+(?:to|on|onto)\s+(?:my|the)\s+(?:reclaim\s+)?list)?\s*[.!?]*$/i;
+export function reclaimAddIntent(message: string): string | null {
+  const raw = (message ?? '').trim();
+  if (!raw) return null;
+  // A) "I'd like to add to the list. <want>" — the request is its own sentence; the want follows.
+  const afterPreamble = raw.replace(RECLAIM_ADD_PREAMBLE_RE, '').trim();
+  if (afterPreamble !== raw && afterPreamble.length >= 3) return afterPreamble;
+  // B) "add <want> [to my list]" / "put <want> on my list" / "I want to add <want>".
+  const m = raw.match(RECLAIM_ADD_LEAD_RE);
+  if (m?.[1]) {
+    const want = m[1].trim();
+    // "put X at the top / first / up" is a REORDER, not an add — never treat it as one.
+    if (want.length >= 3 && !/\b(?:at the top|to the top|first|last|up|down|above|below|before|after)\b/i.test(want)) {
+      return want;
+    }
+  }
+  return null;
+}

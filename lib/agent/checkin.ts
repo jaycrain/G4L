@@ -7,6 +7,7 @@
 
 import { MEMBER_AGENT_SYSTEM_PROMPT } from './system-prompt.ts';
 import { detectCrisis, CRISIS_RESPONSE_US } from './governance.ts';
+import { reclaimAddIntent } from '../member/reclaim.ts';
 import { connectContextLines, type ConnectAgentSummary } from '../connect/agent.ts';
 import type { Direction } from '../idq/scoring.ts';
 
@@ -260,7 +261,7 @@ const REFINE_TOOLS = [
   {
     name: 'add_reclaim_item',
     description:
-      "Add ONE new item to the member's Reclaim List — only when they clearly want to add something they want back. ANY goal that matters to them belongs here, not just identity work. The text must be SPECIFIC and OBSERVABLE (something you could both witness — 'raise $250k' is observable; 'be more successful' is not). Confirm the wording first; if they give a feeling, sharpen it with them before calling this.",
+      "Add ONE new item to the member's Reclaim List — only when they clearly want to add something they want back. ANY goal that matters to them belongs here, not just identity work. The text must be SPECIFIC and OBSERVABLE (something you could both witness — 'raise $250k' is observable; 'be more successful' is not). Confirm the wording first; if they give a feeling, sharpen it with them before calling this. IMPORTANT: acknowledging in words does NOT save it — when the member asks to add an item (even wrapped in 'I'd like to add to the list…'), you MUST call this tool that same turn, or it is lost.",
     input_schema: {
       type: 'object',
       properties: {
@@ -397,7 +398,8 @@ async function liveReply(
   history: CheckinMessage[],
   userText: string,
   executor?: ToolExecutor,
-): Promise<string> {
+): Promise<{ reply: string; toolNames: string[] }> {
+  const called: string[] = []; // client tools the model actually invoked this turn (for the engine backstop)
   const { default: Anthropic } = await import('@anthropic-ai/sdk');
   // One bounded attempt with a single quick retry — never the 40–60s retry stack that made turns
   // feel like the companion stalled. Stays within the route's 30s maxDuration.
@@ -448,11 +450,12 @@ async function liveReply(
     }
     const toolUses = res.content.filter((b) => b.type === 'tool_use'); // our client tools only
     if (!executor || res.stop_reason !== 'tool_use' || toolUses.length === 0) {
-      return textOf(res.content);
+      return { reply: textOf(res.content), toolNames: called };
     }
     messages.push({ role: 'assistant', content: res.content });
     const results = [];
     for (const tu of toolUses) {
+      called.push((tu as any).name);
       const out = await executor((tu as any).name, ((tu as any).input ?? {}) as Record<string, unknown>);
       results.push({ type: 'tool_result', tool_use_id: (tu as any).id, content: out.message });
     }
@@ -460,13 +463,13 @@ async function liveReply(
   }
   // Loop exhausted: one final text-only turn so we never return empty.
   const fin = await client.messages.create({ model, max_tokens: 400, system, messages });
-  return textOf(fin.content);
+  return { reply: textOf(fin.content), toolNames: called };
 }
 
 export async function checkinOpening(c: CheckinContext): Promise<string> {
   if (process.env.ANTHROPIC_API_KEY) {
     try {
-      return await liveReply(
+      return (await liveReply(
         checkinSystem(c),
         [],
         'This is the member\'s VERY FIRST conversation with you — moments after a personal onboarding, now looking at a dashboard full of new numbers and panels for the first time. In your own warm voice (a short paragraph, never a script or a bulleted list), do three things:\n' +
@@ -475,12 +478,36 @@ export async function checkinOpening(c: CheckinContext): Promise<string> {
           '2) EASE THEM IN — let them know the dashboard is their program made specific to them, and that you\'ll help those cold numbers make sense and work the Reclaim List together, a step at a time. Do NOT explain each panel (the Field Guide does that) — just reassure them you\'ll make sense of it WITH them.\n' +
           '3) SET THE COMPACT, lightly — you\'re here and listening, this space is confidential, the more honest they can be with themselves the better and faster this tends to go, and you\'ll both keep refining as you learn what\'s really going on. You care, and you\'re here to help.\n' +
           'Keep it human and unhurried, end with one gentle open invitation, and never promise outcomes or imply you\'ll do the work for them — they do the work; you guide, witness, and stay beside them.',
-      );
+      )).reply;
     } catch (e) {
       console.warn('check-in opening: live agent unavailable, using scripted —', (e as Error).message);
     }
   }
   return scriptedOpening(c);
+}
+
+// The engine backstop for an unfulfilled reclaim add-intent (#6). Pure detection lives in reclaimAddIntent; this
+// commits it via the executor (the SAME validated add path) when the model didn't, and — since the model failed
+// to confirm the save — ensures the reply tells the member it landed. Returns the (possibly-augmented) reply.
+export async function backstopReclaimAdd(
+  memberMessage: string,
+  reply: string,
+  toolNames: string[],
+  executor?: ToolExecutor,
+): Promise<string> {
+  if (!executor || toolNames.includes('add_reclaim_item')) return reply; // the model added it, or no DB access
+  const want = reclaimAddIntent(memberMessage);
+  if (!want) return reply; // no explicit add-intent
+  try {
+    const out = await executor('add_reclaim_item', { text: want });
+    if (!out.ok) return reply; // fog/dup rejected downstream — leave the model's reply (it may sharpen/draw it out)
+    // The model didn't confirm the save (that's the bug). If its reply already names the want, trust it; otherwise
+    // add a light, in-voice confirmation so the member knows it landed. (Copy directional — shaped in the felt-walk.)
+    const namesIt = reply.toLowerCase().includes(want.toLowerCase().slice(0, Math.min(want.length, 14)));
+    return namesIt ? reply : `${reply}\n\nDone — I added “${want}” to your Reclaim List.`.trim();
+  } catch {
+    return reply; // best-effort — a backstop failure never breaks the turn
+  }
 }
 
 export async function checkinReply(
@@ -492,9 +519,14 @@ export async function checkinReply(
   if (detectCrisis(memberMessage).flagged) return { reply: CRISIS_RESPONSE_US, crisis: true };
   if (process.env.ANTHROPIC_API_KEY) {
     try {
-      const reply = await liveReply(checkinSystem(c), history, memberMessage, executor);
+      const { reply, toolNames } = await liveReply(checkinSystem(c), history, memberMessage, executor);
+      // ENGINE GUARD (#6): the member clearly asked to ADD a want but the model didn't call add_reclaim_item —
+      // it acknowledged in prose and moved on ("that's a good one — anything else?"), silently losing the add.
+      // Backstop-capture through the SAME validated primitive (fog rejected, dups folded), so an add-intent is
+      // never dropped. "The Companion couldn't do X is a bug, not a boundary."
+      const guarded = await backstopReclaimAdd(memberMessage, reply, toolNames, executor);
       // Never render an empty bubble — a rare empty turn degrades to a soft, in-voice nudge.
-      if (reply.trim()) return { reply };
+      if (guarded.trim()) return { reply: guarded };
       return { reply: "I'm with you — say a little more?" };
     } catch (e) {
       console.warn('check-in reply: live agent unavailable, using scripted —', (e as Error).message);
