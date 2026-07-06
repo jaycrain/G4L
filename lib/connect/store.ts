@@ -39,7 +39,18 @@ export type AccountabilityItem = {
 export type ConnectProfile = { handle: string; revealDefault: boolean };
 
 /** The global feed: visible posts, most-recently-active first. `viewerId` powers the "I cheered" flag. */
-export async function getFeed(db: Db, limit = 50, viewerId: string | null = null): Promise<FeedPost[]> {
+export async function getFeed(
+  db: Db,
+  limit = 50,
+  viewerId: string | null = null,
+  opts: { excludeFlagged?: boolean } = {},
+): Promise<FeedPost[]> {
+  // Crisis-flagged posts are NEVER censored (help-not-silence — they stay in the full feed so the community can
+  // respond). But they must not be FEATURED — surfacing "…worth living" as the dashboard's Trending highlight to
+  // a fresh member is harmful. `excludeFlagged` (dashboard panel only) drops posts with a concern-for-safety report.
+  const flaggedClause = opts.excludeFlagged
+    ? `and not exists (select 1 from connect_report cr where cr.subject_kind = 'post' and cr.subject_id = p.id and cr.concern_for_safety = true)`
+    : '';
   const { rows } = await db.query<{
     id: string;
     title: string | null;
@@ -68,6 +79,7 @@ export async function getFeed(db: Db, limit = 50, viewerId: string | null = null
        left join reclaim_item ri on ri.id = p.reclaim_item_id
       where p.status = 'visible'
         and p.author_id not in (select blocked_member_id from connect_block where member_id = $2)
+        ${flaggedClause}
       order by p.last_activity_at desc
       limit $1`,
     [limit, viewerId],
