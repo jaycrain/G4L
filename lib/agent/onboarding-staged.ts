@@ -23,7 +23,7 @@
 
 import { cleanIdentityNoun, displayIdentityNoun, identityLabel } from '../member/identity.ts';
 import { isDoorSlug, matchDoors, type DoorSlug } from '../doors.ts';
-import { RECLAIM_LIST_FLOOR, RECLAIM_LIST_MIN, RECLAIM_LIST_TARGET, consolidateReclaimList } from '../member/reclaim.ts';
+import { RECLAIM_LIST_FLOOR, RECLAIM_LIST_MIN, RECLAIM_LIST_TARGET } from '../member/reclaim.ts';
 import { gapIsNarrative, hasIdentity } from './onboarding-contract.ts';
 import { ONBOARDING_BASELINE_ITEMS, grintaStem } from '../grinta/survey/instrument.ts';
 import { scoreGrinta } from '../grinta/survey/scoring.ts';
@@ -296,11 +296,11 @@ function reclaimOpening(c: Collected): string {
 }
 
 // §5 — reflect the Reclaim List back before the card; the member hears their own list, one confirm question.
-function reflectReclaim(c: Collected): string {
-  // Reflect the CONSOLIDATED list (folds cadences, collapses near-dups, drops closes) so the member confirms a
-  // clean list — even on a resumed session whose stored list predates per-item cleanup.
-  const items = consolidateReclaimList(c.reclaimList ?? []).map((x) => `• ${x.trim()}`).join('\n');
-  return `Here’s what you want to reclaim:\n\n${items}\n\nAnything missing before we move on?`;
+// LIGHT acknowledgement — no re-listing. The final confirmation card is the single authoritative list view (it
+// renders the consolidated list from `collected`), so the mid-conversation reflect only acknowledges + invites a
+// last add. This kills the doubled list (reflect + card) and keeps the card as the one place under-tagging surfaces.
+function reflectReclaim(_c: Collected): string {
+  return `Got it — that’s a strong list to build from. Anything missing before we move on?`;
 }
 
 // The recite-mismatch guard's detector (Phase 2.2): is the model's turn RECITING/wrapping the Reclaim List in
@@ -358,6 +358,18 @@ function isTokenSubset(a: string[], b: Set<string>): boolean {
 //   1. exact-token dup → skip;  2. bare cadence fragment → fold into the last want;  3. token-subset of / superset
 //   of an existing want (a shorter/longer phrasing of the SAME want, e.g. "Lose 50 lbs" vs "My body, lose 50 lbs")
 //   → keep the more complete one, never a second;  4. otherwise → a new item.
+// A member sometimes WRAPS a want in a meta-request: "I'd like to add to the list. Have more energy…" / "can you add
+// golf. Play golf weekends". The leading clause trips the reclaim detector AND mangles dedup (it stored the whole
+// meta-sentence, so the real want was dropped — Jay's kids'-lives walk). Strip a leading add-request clause that ends
+// at a sentence boundary, so CAPTURE sees the actual want. Narrow: only fires with a trailing . ! ? so bare wants
+// like "add painting" are untouched. Pure + testable.
+const RECLAIM_PREAMBLE_RE =
+  /^\s*(?:i(?:['’]d| would)?\s+(?:like|want|love|need)\s+to\s+add\b[^.!?]*|(?:can|could|would)\s+you\s+(?:please\s+)?add\b[^.!?]*|please\s+add\b[^.!?]*)\s*[.!?]\s+/i;
+export function stripReclaimPreamble(msg: string): string {
+  const stripped = (msg ?? '').replace(RECLAIM_PREAMBLE_RE, '').trim();
+  return stripped.length >= 3 ? stripped : (msg ?? '').trim(); // never strip down to nothing
+}
+
 function appendReclaim(c: Collected, item: string, category = ''): boolean {
   const trimmed = item.trim();
   const key = reclaimKey(trimmed);
@@ -761,7 +773,7 @@ const reclaimStage: StageDef = {
   forceProgress(b) {
     // Bound the reclaim loop → the card once card-ready. NEVER drop the want they JUST offered at the cap.
     if (!memberClosingReclaim(b.memberMessage) && shouldCaptureStagedReclaim(b.memberMessage)) {
-      appendReclaim(b.collected, b.memberMessage);
+      appendReclaim(b.collected, stripReclaimPreamble(b.memberMessage));
     }
     const realGap = gapIsNarrative(b.collected.gap, b.collected.reclaimList ?? []) && !isForwardAmbition(b.collected.gap ?? '');
     if (hasIdentity(b.collected) && realGap && (b.collected.reclaimList?.length ?? 0) >= RECLAIM_LIST_FLOOR) {
@@ -782,7 +794,7 @@ const reclaimStage: StageDef = {
     // model already tagged ("Every day" folded once by the model, then again by the backstop). Only backstop when
     // the model tagged NOTHING and the member is offering.
     const modelTagged = (b.model.record?.reclaimList?.length ?? 0) > 0;
-    if (offered && !modelTagged && !b.refinedThisTurn) appendReclaim(b.collected, b.memberMessage);
+    if (offered && !modelTagged && !b.refinedThisTurn) appendReclaim(b.collected, stripReclaimPreamble(b.memberMessage));
     const count = b.collected.reclaimList?.length ?? 0;
     const grewThisTurn = count > b.priorReclaimLen; // a NEW unique want landed this turn (model or backstop)
     // RECITE-MISMATCH GUARD (Phase 2.2): the Reclaim List is built ONLY from tags. If the model RECITES/wraps the
@@ -836,14 +848,17 @@ const reclaimStage: StageDef = {
     // dropped as the beat advanced. Capture it and re-reflect. Only a genuinely NEW want re-opens (deduped).
     // Phase 2.1 guard (Jay's "That looks great" bug): if the model signaled the reply is 'done' or 'dispute', it's
     // NOT a new want — never capture a confirmation/dispute as a list item. Only 'more' (or no signal) can offer one.
+    // Strip any "I'd like to add to the list." preamble so the ACTUAL want is what's evaluated + stored (the meta
+    // wrapper otherwise fails the detector / mangles dedup and the want vanishes).
+    const lateWant = stripReclaimPreamble(b.memberMessage);
     if (
       b.model.replyIntent !== 'done' &&
       b.model.replyIntent !== 'dispute' &&
       !b.refinedThisTurn && // a sharpening answer isn't a new want
       !correctsReflection(b.memberMessage) &&
-      !memberClosingReclaim(b.memberMessage) &&
-      shouldCaptureStagedReclaim(b.memberMessage) &&
-      appendReclaim(b.collected, b.memberMessage)
+      !memberClosingReclaim(lateWant) &&
+      shouldCaptureStagedReclaim(lateWant) &&
+      appendReclaim(b.collected, lateWant)
     ) {
       b.reply = reflectReclaim(b.collected);
       b.awaitingConfirm = true; // stay in confirm — re-reflect with the just-added want included
@@ -865,10 +880,18 @@ const reclaimStage: StageDef = {
 // confirms their Reclaim List (the seatbelt above is untouched) and BEFORE onboarding completes. Off the depth
 // kernel (administered mode). It establishes the GRINTA baseline (grit across four strands, one per R). NO ID
 // Score here — that's earned in Reconnect. Built on the shared administeredStage() factory; copy lives here.
+// Introduce the four Rs HERE — the first time the member meets the framework — right before the baseline survey
+// (Greg's intro). Without this, the reveal's "each R"/"Reconnect is first" reads out of context. Copy: Jay/Greg, verbatim.
 const GRINTA_OPEN =
-  'One last thing before we’re done, and it’s quick. Twelve short statements about where you’re standing right ' +
-  'now — for each, just tell me how true it feels today, from 1 (not at all) to 5 (completely). There are no ' +
-  'right answers, and nothing here is a test. This is your starting line, so we can watch it move together.';
+  'The Grinta for Life process is a self-guided journey to help you discover what’s possible — and reach it. It ' +
+  'isn’t easy; it takes perseverance. That’s where Grinta comes in. There are four steps: Reconnect, Rewire, ' +
+  'Rebuild, and Reclaim. A short survey now gives you a baseline to build from — answer as your actual self, not ' +
+  'your ideal one.';
+const GRINTA_SCALE = 'For each statement, tell me how true it feels today — 1 (not at all) to 5 (completely).';
+// The full survey opener: the 4Rs intro + the scale + the first item. Shared by the stage opener and the Reclaim seam.
+function grintaSurveyOpener(): string {
+  return `${GRINTA_OPEN}\n\n${GRINTA_SCALE}\n\n${grintaDeliver(0)}`;
+}
 
 // A member answered with something that isn't a 1–5 → re-ask the CURRENT item, gently.
 function grintaReprompt(index: number): string {
@@ -886,17 +909,16 @@ function grintaDeliver(index: number): string {
 function grintaClose(composite: number): string {
   return (
     `That’s the whole check-in — thank you for staying with it.\n\n` +
-    `Your starting Grinta is ${composite} out of 5. Grinta is grit: the resilience you build by closing each R, one ` +
-    `strand at a time. This is just where you’re standing today — nothing to grade, everything to build on.\n\n` +
-    `Take a look at what I’ve captured from our whole conversation below. Nothing’s saved yet, so if anything’s ` +
-    `off, we’ll fix it. Reconnect is first — and it’s already lit.`
+    `Your starting Grinta Index is ${composite} out of 5. Grinta is grit — never give up. You build it by closing ` +
+    `each R, one strand at a time. This is just where you’re standing today: nothing to grade, everything to build on.\n\n` +
+    `Take a look at what I’ve captured from our whole conversation below. Reconnect is first — and it’s already lit.`
   );
 }
 
 const grintaStage: StageDef = administeredStage({
   id: 'grinta',
   itemCount: ONBOARDING_BASELINE_ITEMS.length, // 12
-  opener: () => `${GRINTA_OPEN}\n\n${grintaDeliver(0)}`, // the warm frame + item 0, delivered when Reclaim hands in
+  opener: () => grintaSurveyOpener(), // the 4Rs intro + scale + item 0, delivered when Reclaim hands in
   deliverItem: (n) => grintaDeliver(n),
   reprompt: (n) => grintaReprompt(n),
   onComplete: (b) => {
@@ -915,7 +937,7 @@ const grintaStage: StageDef = administeredStage({
 function enterGrintaSurvey(b: Beat): Turn {
   b.stage = 'grinta';
   b.awaitingConfirm = false;
-  b.reply = `${GRINTA_OPEN}\n\n${grintaDeliver(0)}`;
+  b.reply = grintaSurveyOpener();
   return { reply: b.reply, state: beatState(b), complete: false };
 }
 

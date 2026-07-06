@@ -444,7 +444,7 @@ test('STAGED reclaim — complete-when-done (run-6 fix): ≥3 items then a non-a
   assert.equal(turn.state.collected.reclaimList?.length, 3, 'a non-item reply is not captured as an item');
   assert.equal(turn.state.awaitingConfirm, true, 'reflects the list once she stops adding — no infinite "what else?"');
   assert.equal(turn.complete, false, 'reflect is not completion — she still confirms the card (never force-closed)');
-  assert.match(turn.reply, /want to reclaim/i);
+  assert.match(turn.reply, /strong list to build from|Anything missing/i, 'the light reflect (no re-listing — the card is the list)');
 });
 
 test('STAGED reclaim — late-add (v2.1 fix): a want volunteered AT the confirm is captured, not dropped (Jay’s "play golf")', () => {
@@ -464,6 +464,21 @@ test('STAGED reclaim — late-add (v2.1 fix): a want volunteered AT the confirm 
   const done = applyStagedTurn(atConfirm, [], 'yes, that’s it', { text: 'Great.' });
   assert.equal((done.state.collected.reclaimList ?? []).length, 3, 'an affirmation is not captured as a want');
   assert.equal(done.state.stage, 'grinta', 'affirmation advances past Reclaim — into the Grinta survey');
+});
+
+test('STAGED reclaim — late-add wrapped in a META-preamble is captured cleanly (Jay walk: "I\'d like to add to the list…")', () => {
+  // The model conversed WITHOUT tagging (the common failure). The engine backstop must strip the "I'd like to add
+  // to the list." wrapper and store the ACTUAL want — not drop it (the kids'-lives bug) and not store the meta-sentence.
+  const atConfirm: ConvState = {
+    stage: 'reclaim', awaitingConfirm: true,
+    collected: { athleticPast: 'x', identityNoun: 'Player', gap: 'a real fade over a long decade', reclaimList: ['My fitness', 'Get back on my bike', 'Travel to Europe'] },
+  };
+  const added = applyStagedTurn(atConfirm, [], "I'd like to add to the list. Have more energy to be involved in my kids' lives", { text: "That's a good one. Anything else?", replyIntent: 'more' });
+  const list = added.state.collected.reclaimList ?? [];
+  assert.equal(list.length, 4, 'the want is captured (not dropped)');
+  assert.ok(list.some((x) => /^Have more energy to be involved in my kids' lives$/.test(x)), 'stored as the clean want, without the meta-preamble');
+  assert.ok(!list.some((x) => /add to the list/i.test(x)), 'the meta wrapper never lands on the list');
+  assert.equal(added.state.awaitingConfirm, true, 're-reflects, does not skip the card');
 });
 
 test('STAGED reclaim — complete-when-done still GATHERS while she is actively adding (no premature reflect)', () => {
@@ -597,11 +612,10 @@ test('STAGED reclaim — RECITE-MISMATCH guard (Phase 2.2): a prose list-recital
   // The model recites a FULLER list in prose but only "run 3x a week" is actually tagged (no record this turn).
   const recital = "Here's what you want to reclaim:\n- Run 3x a week\n- Find a local 5k\n- Visit family in Italy\n\nAnything else?";
   const turn = applyStagedTurn(atReclaim, [], 'yep', { text: recital });
-  assert.equal(turn.state.awaitingConfirm, true, 'the guard routes to the tag-derived confirm');
-  assert.match(turn.reply, /want to reclaim/i, 'the ENGINE reflect is shown, not the model prose');
-  assert.match(turn.reply, /run 3x a week/i, 'the tagged item is present');
-  assert.doesNotMatch(turn.reply, /local 5k|Italy/i, 'the UN-tagged phantom items are NOT presented as captured');
-  assert.equal(turn.state.collected.reclaimList?.length, 1, 'under-tagging surfaces at the seatbelt — no phantom list commits');
+  assert.equal(turn.state.awaitingConfirm, true, 'the guard routes to the light engine reflect, not the model prose');
+  assert.match(turn.reply, /strong list to build from|Anything missing/i, 'the ENGINE reflect is shown, not the model prose');
+  assert.doesNotMatch(turn.reply, /local 5k|Italy/i, 'the UN-tagged phantom items never appear (the card shows only the tags)');
+  assert.deepEqual(turn.state.collected.reclaimList, ['run 3x a week'], 'under-tagging surfaces at the card — no phantom list commits');
 });
 
 test('STAGED gap→reclaim — a WARM bridge off the gap, not a cold pivot (Phase 2.3 / Cowork #5)', () => {
@@ -697,9 +711,9 @@ test('STAGED reclaim — gather to the minimum → reflect the list → confirm 
     atReclaim,
   );
   // at/above the minimum the engine gathers toward the aim; the member's CLOSE triggers the reflect-confirm
-  assert.equal(turns[3]!.state.awaitingConfirm, true, 'closing at the minimum reflects the list');
-  assert.match(turns[3]!.reply, /want to reclaim/i);
-  assert.match(turns[3]!.reply, /riding again/);
+  assert.equal(turns[3]!.state.awaitingConfirm, true, 'closing at the minimum reflects (lightly) and awaits confirm');
+  assert.match(turns[3]!.reply, /strong list to build from|Anything missing/i, 'the light reflect — no re-listing');
+  assert.ok((turns[3]!.state.collected.reclaimList ?? []).some((x) => /riding again/i.test(x)), 'the item is captured (shown on the card, not the reflect)');
   // confirm → hands into the survey; walking it completes to the card
   assertHandsToGrinta(turns[4]!);
   assert.equal(finalState.collected.reclaimList?.length, 3);
@@ -909,7 +923,7 @@ test('STAGED reclaim — sub-3 completion (Gate-1 decision): two items + done �
     atReclaim,
   );
   assert.equal(turns[1]!.state.stageScratch?.reclaim?.reclaimNudged, true, 'nudged once below the aim');
-  assert.match(turns[2]!.reply, /want to reclaim/i, 'accepts the sub-3 list and reflects (never fabricates a 3rd)');
+  assert.match(turns[2]!.reply, /strong list to build from|Anything missing/i, 'accepts the sub-3 list and reflects lightly (never fabricates a 3rd)');
   assert.equal(finalState.collected.reclaimList?.length, 2);
   assertHandsToGrinta(turns.at(-1)!); // the sub-3 confirm settles Reclaim → the survey (the card carries the shortfall)
   assert.equal(walkSurvey(finalState).complete, true, 'completes below the old ≥3 floor after the survey');
@@ -956,5 +970,5 @@ test('STAGED end-to-end — opening → identity → gap → reclaim → complet
   assert.equal(done.complete, true, 'the survey completes the full arc');
   assert.equal(done.state.stage, 'complete');
   assert.equal(done.state.collected.grintaBaseline?.composite, 4, 'all-4s → composite 4');
-  assert.match(done.reply, /starting Grinta is 4|Reconnect is first/i, 'the light reveal names the baseline + Reconnect');
+  assert.match(done.reply, /starting Grinta Index is 4|Reconnect is first/i, 'the light reveal names the baseline + Reconnect');
 });
