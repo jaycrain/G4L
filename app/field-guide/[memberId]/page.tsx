@@ -32,7 +32,7 @@ export default async function FieldGuidePage({ params }: { params: Promise<{ mem
 
         <section>
           <h3>How the work moves — the 4Rs</h3>
-          <p>The work runs through four movements, as a loop. You clip back into them again and again, because identity slips and life keeps moving. That’s why it’s Grinta for Life.</p>
+          <p>The work runs through four Phases, as a loop. You clip back into them again and again, because identity slips and life keeps moving. That’s why it’s Grinta for Life.</p>
           <ul className="fg-rs">
             <li><strong>Reconnect</strong> — your north star. See where you are, remember who you were before life talked you out of it, and find the spark worth chasing.</li>
             <li><strong>Rewire</strong> — the engine. Take apart the old stories your mind tells to keep you comfortable, and build new ones you can act on.</li>

@@ -15,18 +15,17 @@ test('the library is 70 reflections, each phase-tagged + keepable', () => {
   }
 });
 
-test('selectReflection prefers the current R (+ universal) and is deterministic per seed', () => {
+test('selectReflection serves the phase-agnostic CALL pool (universal) only, deterministic per seed', () => {
   const a = selectReflection(REFLECTIONS, 'reconnect', 'm|2026-06-14');
   const b = selectReflection(REFLECTIONS, 'reconnect', 'm|2026-06-14');
   assert.ok(a && b && a.id === b.id); // stable for a given seed (so refresh is stable)
-  assert.ok(a!.phase === 'reconnect' || a!.phase === 'universal');
+  assert.equal(a!.phase, 'universal', 'the Momentum daily call is a phase-agnostic rep — never phase/Session content');
 });
 
-test('selectReflection falls back to the full pool when nothing matches the phase', () => {
-  const onlyRewire = REFLECTIONS.filter((r) => r.phase === 'rewire');
-  const pick = selectReflection(onlyRewire, 'reconnect', 'seed'); // no reconnect/universal available
-  assert.ok(pick && pick.phase === 'rewire');
-  assert.equal(selectReflection([], 'reconnect', 'seed'), null);
+test('selectReflection NEVER serves phase CONTENT — reshuffles the call pool instead of showing a Session reflection', () => {
+  const onlyRewire = REFLECTIONS.filter((r) => r.phase === 'rewire'); // only phase-content unspent (no universal)
+  const pick = selectReflection(onlyRewire, 'reconnect', 'seed');
+  assert.ok(pick && pick.phase === 'universal', 'falls back to the universal call pool, not the phase content');
 });
 
 async function seedMember(): Promise<{ db: Db; id: string }> {
@@ -51,16 +50,17 @@ test('one reflection per day, stable on refresh', async () => {
   assert.ok(first && refresh && first.id === refresh.id);
 });
 
-test('hard no-repeat until all 70 are spent, then it reshuffles', async () => {
+test('daily call: no-repeat within the call pool, every pick is a rep (never phase content), then reshuffles', async () => {
   const { db, id } = await seedMember();
+  const CALL = REFLECTIONS.filter((r) => r.phase === 'universal');
   const picks: string[] = [];
-  for (let d = 0; d < 70; d++) {
+  for (let d = 0; d < CALL.length; d++) {
     const r = await getDailyBeat(db, id, 'reconnect', day(d));
-    assert.ok(r);
+    assert.ok(r && r.phase === 'universal', 'every daily call is a phase-agnostic rep, never an identity/Session prompt');
     picks.push(r!.id);
   }
-  assert.equal(new Set(picks).size, 70, 'every reflection appears exactly once across the 70-day cycle');
-  // Day 71 starts a fresh cycle — a repeat is now allowed (resurfacing is a feature).
-  const reshuffled = await getDailyBeat(db, id, 'reconnect', day(70));
-  assert.ok(reshuffled && REFLECTIONS.some((x) => x.id === reshuffled!.id));
+  assert.equal(new Set(picks).size, CALL.length, 'all call reps appear once before any repeat');
+  // Next day reshuffles the call pool — a repeat is now allowed (resurfacing is fine); still never phase content.
+  const reshuffled = await getDailyBeat(db, id, 'reconnect', day(CALL.length));
+  assert.ok(reshuffled && reshuffled.phase === 'universal');
 });

@@ -29,7 +29,7 @@ export default async function JourneyMorePage({ params }: { params: Promise<{ me
         <p>If the ID Score is the mirror, the Journey is the map — the whole arc of the comeback, and the dot that says you are here.</p>
 
         <h3>How to read it</h3>
-        <p>The rings are the four movements — Reconnect, Rewire, Rebuild, Reclaim — nested from the outside in. The lit ring is where you’re standing right now. At the very center is the reclaimed you — the person on the other side of the work. Beneath the rings, a plain tally of your Reclaim List: what you’ve already won back, what’s moving, and what’s still out ahead.</p>
+        <p>The rings are the four Phases — Reconnect, Rewire, Rebuild, Reclaim — nested from the outside in. The lit ring is where you’re standing right now. At the very center is the reclaimed you — the person on the other side of the work. Beneath the rings, a plain tally of your Reclaim List: what you’ve already won back, what’s moving, and what’s still out ahead.</p>
         <p>The center is the reclaimed you — the same north star Reconnect helps you see. Reconnect (the outer ring) is where you first glimpse that person and find the spark; Rewire, Rebuild, and Reclaim are how you close the distance to them; Reclaim is living as them, out in the world. So you’re moving toward Reconnect’s star, not away from it.</p>
 
         <h3>How it fills</h3>

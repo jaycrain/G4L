@@ -884,7 +884,7 @@ const reclaimStage: StageDef = {
 // (Greg's intro). Without this, the reveal's "each R"/"Reconnect is first" reads out of context. Copy: Jay/Greg, verbatim.
 const GRINTA_OPEN =
   'The Grinta for Life process is a self-guided journey to help you discover what’s possible — and reach it. It ' +
-  'isn’t easy; it takes perseverance. That’s where Grinta comes in. There are four steps: Reconnect, Rewire, ' +
+  'isn’t easy; it takes perseverance. That’s where Grinta comes in. There are four Phases: Reconnect, Rewire, ' +
   'Rebuild, and Reclaim. A short survey now gives you a baseline to build from — answer as your actual self, not ' +
   'your ideal one.';
 const GRINTA_SCALE = 'For each statement, tell me how true it feels today — 1 (not at all) to 5 (completely).';

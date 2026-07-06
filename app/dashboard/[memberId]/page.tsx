@@ -6,7 +6,7 @@ import { getActivityPanel } from '../../../lib/activity/store.ts';
 import { stravaConfigured } from '../../../lib/activity/strava.ts';
 import StravaConnect from '../../account/strava-connect.tsx';
 import { latestGrintaReading } from '../../../lib/grinta/survey/store.ts';
-import { getJourney } from '../../../lib/beats/store.ts';
+import { Fragment } from 'react';
 import JourneyRings from '../journey-rings.tsx';
 import IdqRadar from '../idq-radar.tsx';
 import { formatDistance, formatDuration, typeLabel, relativeDay } from '../../../lib/activity/summary.ts';
@@ -64,12 +64,11 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
   await ensureOnboardingBadge(db, memberId);
 
   // v0.4 zones, all from the registry + member state.
-  const [facets, forecast, passport, grintaReading, journey, activity] = await Promise.all([
+  const [facets, forecast, passport, grintaReading, activity] = await Promise.all([
     getFacets(db, memberId),
     getForecast(db, memberId),
     getPassport(db, memberId),
     latestGrintaReading(db, memberId), // the SURVEY Grinta Index (baseline → Checkpoints), not the activity register
-    getJourney(db, memberId),
     getActivityPanel(db, memberId, dash.identityNoun),
   ]);
 
@@ -81,6 +80,10 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
 
   // The active phase (the one the forecast marks "You're here") — drives the Daily Beat + crossing.
   const activePhase = forecast.phases.find((p) => p.status === "You're here")?.phase ?? 'reconnect';
+  // The Journey story: which Phase you're on + its ordinal (for "the Nth of four Phases").
+  const currentPhaseIdx = Math.max(0, R_STRANDS.findIndex((r) => r.key === activePhase));
+  const currentPhaseLabel = R_STRANDS[currentPhaseIdx]!.label;
+  const PHASE_ORDINAL = ['first', 'second', 'third', 'fourth'];
 
   // Journey rings, gate-driven from the forecast: a finished R stays darkened (reinforcing completion),
   // the active R is the lit one, the rest sit dimmed.
@@ -282,32 +285,38 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
           <div className="card metric id-card" data-tour="idscore">
             <h3>ID Score</h3>
             <p className="card-subtitle">How close you are to yourself — and how that grows over time.</p>
-            {/* §3.6 no-score-yet — an ANTICIPATORY blank, never an error. Fills the moment they start Reconnect. */}
-            <div className="metric-body"><p className="muted">Blank for now — it fills the moment you start, and it’s where you’ll watch the distance close.</p></div>
+            {/* §3.6 no-score-yet — an ANTICIPATORY blank, never an error. A faint radar ghost hints at the shape
+                that's coming; the copy sits over it. Fills the moment they start Reconnect. */}
+            <div className="metric-body id-blank">
+              <div className="id-ghost" aria-hidden="true">
+                <IdqRadar current={{ physical: 15, self: 15, social: 15, outlook: 15 }} size={132} withLabels={false} />
+              </div>
+              <p className="muted">Blank for now — it fills the moment you start, and it’s where you’ll watch the distance close.</p>
+            </div>
             <Link href={`/score/${memberId}`} className="see-more">See more →</Link>
           </div>
         )}
 
         <div className="card metric journey-card">
           <h3>Journey</h3>
-          <p className="card-subtitle">The whole path — the four Rs — and where you stand right now.</p>
+          <p className="card-subtitle">The whole path — the four Phases — and where you stand right now.</p>
           <div className="metric-body metric-center">
             <JourneyRings states={ringStates} />
-            {journey.reclaim.total > 0 && (
-              <div className="journey-reclaim">
-                <span><strong>{journey.reclaim.reclaimed}</strong> reclaimed</span>
-                <span><strong>{journey.reclaim.moving}</strong> moving</span>
-                <span><strong>{journey.reclaim.notYet}</strong> to go</span>
-              </div>
-            )}
           </div>
-          <p className="journey-lead">The path runs through four movements, as a loop:</p>
-          <ol className="journey-4rs">
-            <li>Reconnect</li>
-            <li>Rewire</li>
-            <li>Rebuild</li>
-            <li>Reclaim</li>
-          </ol>
+          {/* One clear story: where you are, no cryptic counter (that lives on See more). */}
+          <p className="journey-here">You&apos;re on <strong>{currentPhaseLabel}</strong> — the {PHASE_ORDINAL[currentPhaseIdx]} of four Phases.</p>
+          {/* The loop stepper: each Phase its R-ring dot; current bold + marked, upcoming faint. */}
+          <div className="journey-stepper" aria-label="The four Phases; you are on the highlighted one.">
+            {R_STRANDS.map((r, i) => (
+              <Fragment key={r.key}>
+                <span className={`jstep${i === currentPhaseIdx ? ' current' : ''}${i > currentPhaseIdx ? ' ahead' : ''}`}>
+                  <span className="jdot" style={{ background: R_RING_COLOR[r.key] }} />
+                  <span className="jname">{r.label}</span>
+                </span>
+                {i < R_STRANDS.length - 1 && <span className="jarrow" aria-hidden="true">→</span>}
+              </Fragment>
+            ))}
+          </div>
           <Link href={`/journey/${memberId}`} className="see-more">See more →</Link>
         </div>
 

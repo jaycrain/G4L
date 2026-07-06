@@ -158,6 +158,10 @@ button:hover, .btn:hover { background: var(--navy); }
 .dim-legend .dim-max { color: var(--navy); opacity: 0.5; font-weight: 400; font-size: 0.85em; }
 /* Dashboard ID Score card — compact radar */
 .metric-radar { margin: 0.25rem auto 0.55rem; max-width: 140px; }
+/* ID Score no-score-yet: a faint radar ghost of the shape that's coming, with the anticipatory copy over it. */
+.id-blank { position: relative; display: flex; align-items: center; justify-content: center; min-height: 148px; text-align: center; }
+.id-ghost { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; opacity: 0.1; pointer-events: none; }
+.id-blank > .muted { position: relative; max-width: 24ch; }
 /* Field Guide — the pieces list */
 .fg-pieces { margin: 0.2rem 0 0; padding-left: 1.1rem; }
 .fg-pieces li { line-height: 1.6; margin-bottom: 0.7rem; }
@@ -221,6 +225,9 @@ button:hover, .btn:hover { background: var(--navy); }
 .grinta-scale { font-size: 1rem; color: var(--navy); opacity: 0.55; font-weight: 600; }
 .grinta-strands { grid-template-columns: 1fr; margin-top: 0.7rem; }
 .grinta-strands .r-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 0.5rem; vertical-align: middle; }
+/* Keep the value+cue as ONE right-aligned unit so "2.67 / 5 · next to grow" can't wrap mid-cue and interleave
+   with the "Reconnect" label (the jumbled-row bug). */
+.grinta-strands .dim > span:last-child { white-space: nowrap; }
 .strand-cue { font-style: normal; color: var(--navy); opacity: 0.5; font-size: 0.82em; }
 .focus-chip { display: inline-block; background: var(--teal); color: var(--white); border-radius: 999px; padding: 0.25rem 0.8rem; font-weight: 600; }
 
@@ -536,13 +543,14 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .pb-content { margin: 0.5rem 0 0.4rem; color: var(--charcoal); white-space: pre-wrap; }
 .pb-answered { margin: 0; font-size: 0.85rem; color: var(--navy); opacity: 0.85; }
 .journey-intro { font-size: 0.84rem; line-height: 1.5; color: var(--charcoal); opacity: 0.85; margin: 0.1rem 0 0; }
-.journey-lead { font-size: 0.82rem; color: var(--navy); margin: 0.8rem 0 0.45rem; }
-.journey-4rs { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem 0.45rem; font-size: 0.82rem; font-weight: 600; color: var(--navy); }
-.journey-4rs li { display: inline-flex; align-items: center; }
-.journey-4rs li:not(:last-child)::after { content: '→'; margin-left: 0.45rem; font-weight: 400; color: var(--teal); opacity: 0.8; }
-.journey-reclaim { display: flex; gap: 0.9rem; margin-top: 0.6rem; }
-.journey-reclaim span { font-size: 0.82rem; color: var(--navy); opacity: 0.85; white-space: nowrap; }
-.journey-reclaim strong { font-size: 1.05rem; color: var(--teal); opacity: 1; }
+/* Journey panel — one clear story (where you are) + the Phase stepper; the reclaimed/moving/to-go tally moved to See more. */
+.journey-here { font-size: 0.92rem; color: var(--navy); text-align: center; margin: 0.7rem 0 0.6rem; line-height: 1.4; }
+.journey-stepper { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 0.25rem 0.35rem; }
+.jstep { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.82rem; font-weight: 600; color: var(--navy); padding: 0.2rem 0.1rem; }
+.jstep.current { background: var(--grey); border-radius: 999px; padding: 0.2rem 0.7rem; } /* "you are here" — the bold pill */
+.jstep.ahead { opacity: 0.42; } /* upcoming Phases sit faint */
+.jdot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+.jarrow { color: var(--teal); opacity: 0.65; font-weight: 400; }
 
 /* Founder Agent admin */
 .admin-search { display: flex; gap: 0.5rem; margin: 0.5rem 0 1rem; }
@@ -686,7 +694,8 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 
 /* Grinta Index — a PEER to the ID Score (Jul 2026): the number matches the ID Score's size, but keeps its own
    accent (olive vs the ID's teal) and its own /5 scale, so it still reads as a distinct instrument. */
-.grinta .num { color: var(--olive); font-size: 3rem; }
+/* The Grinta Index headline is NAVY — its own color, so it doesn't read as a strand (olive was the Rebuild dot). */
+.grinta .num { color: var(--navy); font-size: 3rem; }
 .grinta .score { align-items: baseline; }
 .grinta-bridge { font-size: 0.85rem; margin-top: 0.45rem; }
 
