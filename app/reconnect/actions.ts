@@ -14,6 +14,7 @@ import { TOTAL_ITEMS } from '../../lib/idq/instrument.ts';
 import { BASELINE_GRIT_ITEMS, CHECKPOINT_GRIT_ITEMS } from '../../lib/grinta/survey/instrument.ts';
 import { scoreCheckpointGrit } from '../../lib/grinta/survey/scoring.ts';
 import { persistGrintaReading, checkpointResponsesMap, getGrintaBaselineReading, latestGrintaReading } from '../../lib/grinta/survey/store.ts';
+import { setGate } from '../../lib/curriculum/store.ts';
 
 // v2.2 Reconnect server actions. Flag-gated. The callback (entry) READS committed captures and opens; the DOORS
 // excavation (§2b) is a live model turn (draw-out + insight + the re-seeing revision). Conversation state is
@@ -90,6 +91,18 @@ async function persistCheckpoint(db: Db, memberId: string, prev: ConvState, turn
       carriedStrands: { rewire: base?.strands.rewire, rebuild: base?.strands.rebuild, reclaim: base?.strands.reclaim },
     });
     await persistGrintaReading(db, memberId, { source: 'checkpoint', responses: checkpointResponsesMap(grit), score: cp.score });
+  } catch {
+    // swallow — best-effort; the conversation turn already succeeded.
+  }
+}
+
+// §2f completion: when the arc crosses INTO the Ceremony, Reconnect's work is done — set the phase gate so the
+// dashboard advances (Journey shows Reconnect complete / Rewire lit, the forecast lights the next Rewire Session).
+// Without this the dashboard stayed on Reconnect after the ceremony (Jay's walk). Idempotent; best-effort.
+async function persistReconnectComplete(db: Db, memberId: string, prev: ConvState, turn: Turn): Promise<void> {
+  try {
+    if (turn.state.stage !== 'ceremony' || prev.stage === 'ceremony') return; // only on the crossing into the Ceremony
+    await setGate(db, memberId, 'reconnect_checkpoint_passed'); // → activePhaseIndex 1 (Rewire is now "You're here")
   } catch {
     // swallow — best-effort; the conversation turn already succeeded.
   }
@@ -197,6 +210,7 @@ export async function reconnectTurnAction(
     await persistRevision(db, memberId, state, turn);
     await persistHarvest(db, memberId, state, turn); // §2d drift keeper (and later legacy share)
     await persistCheckpoint(db, memberId, state, turn); // §2e Checkpoint — the first grinta movement
+    await persistReconnectComplete(db, memberId, state, turn); // §2f — advance the dashboard phase (Reconnect → Rewire)
     // On IDQ completion this may return a personalized close (M3) that ties the baseline shape to their doors —
     // UPGRADING the engine's generic close; null → the generic close stands.
     const closeOverride = await persistMeasurement(db, memberId, state, turn);

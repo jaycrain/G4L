@@ -1,6 +1,6 @@
 'use client';
 
-import type { ReactNode } from 'react';
+import { useMemo, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import CeremonySurface from '../dashboard/ceremony-surface.tsx';
 import IdqRadar from '../dashboard/idq-radar.tsx';
@@ -21,7 +21,9 @@ const MOVE_ARROW: Record<string, string> = { up: '↑', down: '↓', flat: '→'
 // Journey shows Rewire lit and the forecast lights the next (Rewire) Session.
 export default function ReconnectCeremony({ memberId, data }: { memberId: string; data: ReconnectCeremonyData }) {
   const router = useRouter();
-  const beats = buildReconnectCeremonyBeats(data);
+  // Memoize so the beats array is referentially STABLE across re-renders (the typewriter reads beat text from it;
+  // rebuilding it every render fed a fluctuating target and stranded the typewriter).
+  const beats = useMemo(() => buildReconnectCeremonyBeats(data), [data]);
 
   function resolve() {
     router.push(`/dashboard/${memberId}`);

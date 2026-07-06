@@ -29,7 +29,6 @@ export default function CeremonySurface<R>({
   const full = beat.text;
   const done = shown >= full.length;
   const isLast = i >= beats.length - 1;
-  const timer = useRef<ReturnType<typeof setInterval> | null>(null);
   // A brief hold after a reveal lands (e.g. the ID Score on beat 3) so it can't be tapped past
   // instantly — "the pacing is the product."
   const [held, setHeld] = useState(false);
@@ -43,26 +42,36 @@ export default function CeremonySurface<R>({
     return undefined;
   }, [done, beat.reveal, i]);
 
-  // Typewriter: type the current beat; reset on advance. "The pacing is the product."
+  // Typewriter: ONE interval for the component's whole life, driven by refs (always current). Every tick it either
+  // resets on a beat change or types one more char toward the LIVE text length. Why not a per-beat effect: in this
+  // app the parent rebuilds `beats` every render and dev (StrictMode/Fast-Refresh) churns per-beat effects, which
+  // stranded the card at just the caret (the "stuck, never typed out" bug). A single ref-driven loop can't be
+  // stranded by effect churn or a transiently-short text read. "The pacing is the product."
+  const iRef = useRef(i);
+  iRef.current = i;
+  const fullRef = useRef(full);
+  fullRef.current = full;
+  const shownRef = useRef(0);
+  const seenIRef = useRef(i);
   useEffect(() => {
-    setShown(0);
-    if (timer.current) clearInterval(timer.current);
-    timer.current = setInterval(() => {
-      setShown((s) => {
-        if (s >= full.length) {
-          if (timer.current) clearInterval(timer.current);
-          return s;
-        }
-        return s + 1;
-      });
+    const t = setInterval(() => {
+      if (seenIRef.current !== iRef.current) {
+        seenIRef.current = iRef.current; // a new beat → restart typing
+        shownRef.current = 0;
+        setShown(0);
+        return;
+      }
+      if (shownRef.current < fullRef.current.length) {
+        shownRef.current += 1;
+        setShown(shownRef.current);
+      }
     }, 24);
-    return () => {
-      if (timer.current) clearInterval(timer.current);
-    };
-  }, [i, full]);
+    return () => clearInterval(t);
+  }, []);
 
   function advance() {
     if (!done) {
+      shownRef.current = full.length; // keep the loop's ref in sync
       setShown(full.length); // tap to finish typing
       return;
     }
