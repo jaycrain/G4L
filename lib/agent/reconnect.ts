@@ -22,6 +22,11 @@ import { runArcTurn, administeredStage, type ArcConfig, type StageDef } from './
 import { CHECKPOINT_GRIT_ITEMS, grintaStem } from '../grinta/survey/instrument.ts';
 import type { Collected, ConvMessage, ConvState, DoorRevision, ModelTurn, ReplyIntent, Turn, Stage } from './onboarding.ts';
 
+// Beat separator — when a single turn hands over MORE THAN ONE beat (e.g. the score-read close + the drift ask),
+// join them with this (invisible RS control char) instead of "\n\n" so the chat renders them as SEPARATE bubbles,
+// one job each — never a single crammed bubble. Structural fix for multi-beat bunching.
+export const BEAT_SEP = '\u001E';
+
 // Is the Reconnect arc selected? Own flag — defaults OFF, so it never runs in prod until the coupled v2.1+v2.2
 // flip. (v2.1's ONBOARDING_ENGINE=staged is a separate flag; both go on together at cut-over.)
 export function reconnectEnabled(): boolean {
@@ -307,10 +312,11 @@ const DRIFT_MIN_DEPTH = 2;
 const DRIFT_MAX_DEPTH = 4;
 // The opener — the RCN-DFT step-1 frame + prompt (a hoisted fn so the measurement close can append it on hand-in).
 export function driftOpen(_c: Collected): string {
+  // ONE job: the take-stock ask. No "not regret" (names the negative — the Drift-line rule), no reclaim-motivation
+  // question (that's a different beat). Jay's locked copy.
   return (
-    'Every life you build costs something. I want you to name what this one cost — be specific about what you traded ' +
-    'away to get here: the morning rides, the deep friendships, the feeling of being in your body instead of trapped ' +
-    "in your head.\n\nName a few things the Fade cost you. This isn't regret — it's inventory."
+    "So let's take stock — a look at what got left behind. Name a few things the Fade cost you: the morning rides, " +
+    'the deep friendships, the feeling of being in your body instead of trapped in your head.'
   );
 }
 const DRIFT_MORE_VARIANTS = [
@@ -532,7 +538,8 @@ but it NEVER grades or pathologizes. Hard rules:
 - Reflect where they're STARTING FROM, a beginning — not a verdict. IF the area sitting lowest connects to a Door they
   named, name that gently (the Fade had a target — that's meaningful, not a failing). If it does NOT obviously connect,
   do NOT force a link — just reflect the starting shape warmly.
-- Warm, brief (2–3 sentences), one thought. Never diagnose. It is safe for them to be honest with themselves.`;
+- Warm, brief (2–3 sentences), one thought. Never diagnose. It is safe for them to be honest with themselves.
+- Do NOT end with a question, and do NOT editorialize about what the number means or that it "matters more than it might feel." Reflect the starting shape, then STOP — a separate beat asks the next question. This beat has ONE job: the mirror.`;
     const idLine = identity ? `Who they're reclaiming: ${identity}.` : '';
     const doorLine = doorNames.length ? `Door(s) they named: ${doorNames.join(', ')}.` : 'They named no specific Door.';
     const user = `${idLine}\n${doorLine}\nBaseline shape: lowest area is ${DIM_FRIENDLY[shape.lowest]}; highest is ${DIM_FRIENDLY[shape.highest]}. Reflect this as their starting picture, tie the lowest to their Door(s) ONLY if it genuinely fits, and close warmly. No numbers, no grades.`;
@@ -563,7 +570,7 @@ const measurementStage: StageDef = administeredStage({
   reprompt: (n) => `${IDQ_REPROMPT}\n\n${itemStem(n)}`,
   onComplete: (b) => {
     b.stage = 'drift';
-    b.reply = `${idqClose()}\n\n${driftOpen(b.collected)}`;
+    b.reply = `${idqClose()}${BEAT_SEP}${driftOpen(b.collected)}`; // two beats → two bubbles (score read | take-stock ask)
   },
 });
 

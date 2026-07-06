@@ -32,7 +32,7 @@ export type IdqResponses = number[]; // length 24, each LIKERT_MIN..LIKERT_MAX
 export const ITEM_STEMS: Record<Dimension, readonly string[]> = {
   physical: [
     'Your body feels like it belongs to you — you know it, you trust it, you’re at home in it.', // item 1
-    'If you wanted to ask something real of your body today — something demanding — you could, without bracing for it to hurt.', // item 2
+    'You could ask something hard of your body today without bracing for it to hurt.', // item 2
     'You know your numbers — weight, blood pressure, resting heart rate — and you can look at them without looking away.', // item 3
     'You’re as physically capable today as you were five years ago.', // item 4
     'The way you eat is something you actually decide — not something running on autopilot.', // item 5
@@ -42,7 +42,7 @@ export const ITEM_STEMS: Record<Dimension, readonly string[]> = {
     'If your twenty-five-year-old self walked in right now, they’d recognize the person you’ve become.', // item 7
     'You regularly make time for things you care about that have nothing to do with work or anyone else’s needs.', // item 8
     'Asked “who are you?”, you’ve got an answer that isn’t your job title or your role in the family.', // item 9
-    'You haven’t quietly traded away something you loved to make room for something you don’t.', // item 10
+    'You’ve held onto what you love — not quietly traded it away for something you don’t.', // item 10
     'The life you’re in right now is one you chose, on purpose — eyes open.', // item 11
     'You’re the main character in your own story, not the supporting cast in everyone else’s.', // item 12
   ],

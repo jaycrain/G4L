@@ -12,7 +12,7 @@ import type { Dimensions } from './threshold-beats.ts';
 
 export type ReconnectCeremonyReveal =
   | { kind: 'score'; idScore: number | null; dimensions: Dimensions | null } // the ID Score radar (the mirror)
-  | { kind: 'grinta'; composite: number; changePct: number | null; direction: 'up' | 'down' | 'flat' | null; strands: GrintaStrands } // §2e — grit moved
+  | { kind: 'grinta'; composite: number; changePct: number | null; direction: 'up' | 'down' | 'flat' | null; reconnect: number; reconnectChangePct: number | null } // §2e — the Index (headline) moved BY Reconnect (the driver)
   | { kind: 'playbook'; keepers: string[] } // the §2d keepers (the drift recognition + the spark)
   | { kind: 'doors'; doors: string[] } // the member's Door(s), as they stand after any re-seeing
   | { kind: 'journey_rewire' }; // the 4Rs Journey — Reconnect complete, Rewire lit
@@ -25,7 +25,7 @@ export type ReconnectCeremonyBeat = { text: string; small?: boolean; reveal?: Re
 export type ReconnectCeremonyData = {
   idScore: number | null; // baseline ID Score (§2c) — the mirror; null if somehow uncaptured
   dimensions: Dimensions | null; // the four subscores (/30) for the radar shape
-  grinta: { composite: number; changePct: number | null; direction: 'up' | 'down' | 'flat' | null; strands: GrintaStrands } | null; // §2e — null until a Checkpoint moves it
+  grinta: { composite: number; changePct: number | null; direction: 'up' | 'down' | 'flat' | null; reconnect: number; reconnectChangePct: number | null } | null; // §2e — null until a Checkpoint moves it
   keepers: string[]; // the §2d Playbook keepers, in the member's own words (drift recognition, the spark)
   doors: string[]; // display names, primary first (post-revision)
 };
@@ -43,7 +43,7 @@ export const RECONNECT_CEREMONY_COPY = {
   // 3 — reveal: the ID Score radar (the starting line)
   score: 'Here it is, by the numbers — your starting line.',
   // 3b — reveal: the Grinta movement (§2e). The FIRST time grit moves — because they did the work. Jay's line, verbatim.
-  grinta: 'And this one you earned just now — your Grinta, your grit. You did the work, and it already moved.',
+  grinta: 'You just did the work in Reconnect — and your Grinta, your grit, went up because of it.',
   // 4 — reveal: the Playbook keepers (their own words)
   playbook: 'And these are your words — the ones that begin to frame the way forward.',
   // 4b — fallback if nothing was kept (voice-matched; edge case, not part of the approved verbatim)
@@ -69,7 +69,7 @@ export function buildReconnectCeremonyBeats(d: ReconnectCeremonyData): Reconnect
   ];
   // The Grinta movement — revealed ONLY when a Checkpoint captured it (the first movement actually happened).
   if (d.grinta) {
-    beats.push({ text: c.grinta, reveal: { kind: 'grinta', composite: d.grinta.composite, changePct: d.grinta.changePct, direction: d.grinta.direction, strands: d.grinta.strands } });
+    beats.push({ text: c.grinta, reveal: { kind: 'grinta', composite: d.grinta.composite, changePct: d.grinta.changePct, direction: d.grinta.direction, reconnect: d.grinta.reconnect, reconnectChangePct: d.grinta.reconnectChangePct } });
   }
   // The Playbook keepers — the reveal only when something was actually kept (never an empty frame).
   beats.push(

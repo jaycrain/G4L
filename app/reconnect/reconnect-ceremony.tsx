@@ -39,8 +39,10 @@ export default function ReconnectCeremony({ memberId, data }: { memberId: string
       );
     }
     if (r.kind === 'grinta') {
-      // §2e — the Grinta Index, and the FIRST movement. Its own /5 scale (never compared to the ID Score's 0–100).
-      const strands = ['reconnect', 'rewire', 'rebuild', 'reclaim'] as const;
+      // §2e — the Grinta Index (headline, its own /5 scale) + the DRIVER beneath: Reconnect, the Phase they just
+      // finished. Only these two, each with its delta — so the smaller Index % reads as "you moved the Index BY
+      // moving Reconnect," not "it barely moved." (Rewire/Rebuild/Reclaim haven't moved yet — not shown here.)
+      const rcnDir = r.reconnectChangePct == null ? null : r.reconnectChangePct > 0 ? 'up' : r.reconnectChangePct < 0 ? 'down' : 'flat';
       return (
         <div className="cer-grinta">
           <div className="cer-grinta-head">
@@ -52,15 +54,16 @@ export default function ReconnectCeremony({ memberId, data }: { memberId: string
             <span className="cer-chip">Grinta Index</span>
           </div>
           <div className="cer-grinta-strands">
-            {strands.map((k) =>
-              r.strands[k] != null ? (
-                <div key={k} className="cgs-row">
-                  <span className="cgs-dot" style={{ background: R_RING[k] }} />
-                  <span className="cgs-label">{k[0]!.toUpperCase() + k.slice(1)}</span>
-                  <span className="cgs-val">{r.strands[k]}{k === 'reconnect' ? ' ↑' : ''}</span>
-                </div>
-              ) : null,
-            )}
+            <div className="cgs-row">
+              <span className="cgs-dot" style={{ background: R_RING.reconnect }} />
+              <span className="cgs-label">Reconnect</span>
+              <span className="cgs-val">
+                {r.reconnect}
+                {r.reconnectChangePct != null && rcnDir && (
+                  <em className={`cgs-move dir-${rcnDir}`}> {MOVE_ARROW[rcnDir]} {r.reconnectChangePct > 0 ? '+' : ''}{r.reconnectChangePct}%</em>
+                )}
+              </span>
+            </div>
           </div>
         </div>
       );

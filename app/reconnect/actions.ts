@@ -4,7 +4,7 @@ import { getDb } from '../../lib/db/index.ts';
 import { authorizeMember } from '../authz.ts';
 import type { Db } from '../../lib/db/schema.ts';
 import type { ConvMessage, ConvState, Turn } from '../../lib/agent/onboarding.ts';
-import { applyReconnectTurn, liveTurnReconnect, loadReconnectCaptures, reconnectEnabled, reconnectOpening, reconnectMeasurementClose, driftOpen } from '../../lib/agent/reconnect.ts';
+import { applyReconnectTurn, liveTurnReconnect, loadReconnectCaptures, reconnectEnabled, reconnectOpening, reconnectMeasurementClose, driftOpen, BEAT_SEP } from '../../lib/agent/reconnect.ts';
 import { softSetMemberDoors, getMemberDoorNames } from '../../lib/member/refine.ts';
 import type { ReconnectCeremonyData } from '../../lib/ceremony/reconnect-ceremony-beats.ts';
 import { emitHarvestMoment, commitKeeper, type KeeperType } from '../../lib/agent/harvest.ts';
@@ -12,7 +12,7 @@ import { DOORS } from '../../lib/doors.ts';
 import { submitIdq } from '../../lib/gateway/flow.ts';
 import { TOTAL_ITEMS } from '../../lib/idq/instrument.ts';
 import { BASELINE_GRIT_ITEMS, CHECKPOINT_GRIT_ITEMS } from '../../lib/grinta/survey/instrument.ts';
-import { scoreCheckpointGrit } from '../../lib/grinta/survey/scoring.ts';
+import { scoreCheckpointGrit, grintaChangePct } from '../../lib/grinta/survey/scoring.ts';
 import { persistGrintaReading, checkpointResponsesMap, getGrintaBaselineReading, latestGrintaReading } from '../../lib/grinta/survey/store.ts';
 import { setGate } from '../../lib/curriculum/store.ts';
 
@@ -63,8 +63,8 @@ async function persistMeasurement(db: Db, memberId: string, prev: ConvState, tur
       const responses = after.slice(0, TOTAL_ITEMS);
       await submitIdq(db, memberId, responses); // frozen instrument: validate + score + baseline row (sequence_no=0)
       const close = await reconnectMeasurementClose(turn.state.collected, responses); // ties the shape to their doors
-      // Append the Drift opener so the personalized close hands into §2d exactly like the engine's generic close does.
-      return close ? `${close}\n\n${driftOpen(turn.state.collected)}` : null;
+      // Hand into §2d as its OWN bubble (BEAT_SEP) — the score read and the take-stock ask are separate beats.
+      return close ? `${close}${BEAT_SEP}${driftOpen(turn.state.collected)}` : null;
     }
   } catch {
     // swallow — best-effort; the conversation turn already succeeded.
@@ -170,11 +170,21 @@ export async function reconnectCeremonyDataAction(memberId: string): Promise<{ o
       )
     ).rows.map((r) => r.body);
     const doors = await getMemberDoorNames(db, memberId);
-    // §2e — the Grinta movement, revealed only when the Checkpoint captured it (latest reading is a checkpoint).
+    // §2e — the Grinta movement, revealed only when the Checkpoint captured it (latest reading is a checkpoint). The
+    // reveal shows the Index (headline) + Reconnect (the driver): Reconnect's OWN delta vs the baseline grit, so the
+    // smaller composite % reads as "you moved the Index by moving Reconnect."
     const g = await latestGrintaReading(db, memberId);
-    const grinta = g && g.source === 'checkpoint'
-      ? { composite: g.composite, changePct: g.changePct, direction: g.direction, strands: g.strands }
-      : null;
+    let grinta: ReconnectCeremonyData['grinta'] = null;
+    if (g && g.source === 'checkpoint' && g.strands.reconnect != null) {
+      const base = await getGrintaBaselineReading(db, memberId);
+      grinta = {
+        composite: g.composite,
+        changePct: g.changePct,
+        direction: g.direction,
+        reconnect: g.strands.reconnect,
+        reconnectChangePct: grintaChangePct(g.strands.reconnect, base?.strands.reconnect ?? null),
+      };
+    }
     return {
       ok: true,
       data: {

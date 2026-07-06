@@ -7,7 +7,7 @@ import { buildReconnectCeremonyBeats } from '../lib/ceremony/reconnect-ceremony-
 test('§2f ceremony · reveals the score radar, the Grinta movement, the Playbook keepers, the Doors, and the Rewire-lit Journey', () => {
   const beats = buildReconnectCeremonyBeats({
     idScore: 62, dimensions: { physical: 18, self: 20, social: 16, outlook: 22 },
-    grinta: { composite: 3.33, changePct: 11, direction: 'up', strands: { reconnect: 4.33, rewire: 3, rebuild: 3, reclaim: 3 } },
+    grinta: { composite: 3.33, changePct: 11, direction: 'up', reconnect: 4.33, reconnectChangePct: 33 },
     keepers: ['the drift took it quietly', 'the ride before the house wakes'], doors: ['The Grind', 'The Body'],
   });
   const kinds = beats.map((b) => b.reveal?.kind).filter(Boolean);
@@ -15,17 +15,18 @@ test('§2f ceremony · reveals the score radar, the Grinta movement, the Playboo
   const score = beats.find((b) => b.reveal?.kind === 'score')!.reveal as { idScore: number };
   assert.equal(score.idScore, 62, 'the baseline ID Score rides the radar reveal');
   const grintaBeat = beats.find((b) => b.reveal?.kind === 'grinta')!;
-  assert.equal(grintaBeat.text, 'And this one you earned just now — your Grinta, your grit. You did the work, and it already moved.', 'Jay’s verbatim reveal line');
-  const grinta = grintaBeat.reveal as { composite: number; changePct: number; strands: { reconnect: number } };
+  assert.equal(grintaBeat.text, 'You just did the work in Reconnect — and your Grinta, your grit, went up because of it.', 'Jay’s verbatim reveal line');
+  const grinta = grintaBeat.reveal as { composite: number; changePct: number; reconnect: number; reconnectChangePct: number };
   assert.equal(grinta.composite, 3.33);
-  assert.equal(grinta.changePct, 11, 'the first movement rides the reveal');
-  assert.equal(grinta.strands.reconnect, 4.33, 'grit stepped up');
+  assert.equal(grinta.changePct, 11, 'the Index delta (headline) rides the reveal');
+  assert.equal(grinta.reconnect, 4.33, 'Reconnect (the driver) stepped up');
+  assert.equal(grinta.reconnectChangePct, 33, 'Reconnect carries its OWN, bigger delta — the driver of the Index move');
   const doors = beats.find((b) => b.reveal?.kind === 'doors')!.reveal as { doors: string[] };
   assert.deepEqual(doors.doors, ['The Grind', 'The Body'], 'the Door(s) as they stand (post-revision)');
 });
 
 test('§2f ceremony · the Grinta reveal appears ONLY when a Checkpoint captured it (null → no beat, no empty frame)', () => {
-  const withGrinta = buildReconnectCeremonyBeats({ idScore: 60, dimensions: null, grinta: { composite: 3.4, changePct: 8, direction: 'up', strands: { reconnect: 4 } }, keepers: ['x'], doors: ['The Grind'] });
+  const withGrinta = buildReconnectCeremonyBeats({ idScore: 60, dimensions: null, grinta: { composite: 3.4, changePct: 8, direction: 'up', reconnect: 4, reconnectChangePct: 20 }, keepers: ['x'], doors: ['The Grind'] });
   assert.ok(withGrinta.some((b) => b.reveal?.kind === 'grinta'), 'revealed when the movement exists');
   assert.match(withGrinta.map((b) => b.text).join(' '), /Grinta/, 'and named in the copy (no longer deferred)');
   const noGrinta = buildReconnectCeremonyBeats({ idScore: 60, dimensions: null, grinta: null, keepers: ['x'], doors: ['The Grind'] });
