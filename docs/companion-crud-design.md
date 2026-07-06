@@ -31,10 +31,15 @@ warmly, in the conversation — not have to hunt for a form. The rail is the pro
 | Identity / facets | add · rename · remove a facet | 2 |
 | Trackers / measures | start tracking · edit target · stop | 3 |
 | **Playbook keepers** | edit · remove · (add = the existing keeper flow) | 4 (roadmap) |
+| **Legacy Letter / visioning captures** (drift, The Window) | edit · remove | 5 (roadmap) |
 | ID Score · Grinta Index · Journey | **read-only** | — |
 
-Reclaim first: it's the thing Jay hit, it's the highest-traffic list, and it exercises every gate (validation,
-dedup, confirm-before-destructive, reflect-back). Playbook is on the roadmap — same CRUD-except-scores rule.
+**FF's "ANY member-owned object" must not quietly narrow to these rows** (note 3). The list above is the *known*
+qualitative surfaces; the rule is the invariant — any member-owned qualitative content is CRUD-able, scores are
+read-only. New captures inherit CRUD by default; if a future surface should be exempt, that's an explicit decision.
+
+Reclaim first: it's the thing Jay hit, the highest-traffic list, and it exercises every gate (validation, dedup,
+confirm-before-destructive, reflect-back). Playbook + the visioning captures are on the roadmap — same rule.
 
 ---
 
@@ -47,20 +52,27 @@ rules. Each tool returns a **structured result** the agent reflects in its own v
 Reclaim slice tool schemas (illustrative):
 
 ```ts
-// ADD — low friction. Validates (fog rejected), categorizes, appends. No confirm needed.
+// ADD — low friction. Validates, categorizes, appends. No confirm needed.
+// A VAGUE add is NOT bounced back as "vague" — the tool signals `draw_out` and the agent runs the onboarding
+// draw-to-measurable move WITH the member ("what would that look like on a Tuesday?") until it's bindable, then
+// adds the sharpened want (note 4). A dup folds. Fog only truly fails after the member declines to sharpen.
 reclaim_add(text: string)
   -> { ok: true, item: {id, text, category} }
-   | { ok: false, reason: 'vague' | 'duplicate', note: string }
+   | { draw_out: true, heard: string }                 // too vague to bind — draw it out, don't reject
+   | { ok: false, reason: 'duplicate', note: string }
 
 // EDIT — replace one item's wording in place (measurable-sharpen, typo, rephrase).
 reclaim_edit(match: string /* id or fuzzy text */, newText: string)
   -> { ok: true, before: string, after: string }
    | { ok: false, reason: 'not_found' | 'vague', candidates?: string[] }
 
-// REMOVE — DESTRUCTIVE → two-step. Default call returns a PREVIEW; commit requires confirm:true.
+// REMOVE — SOFT-delete (sets reclaim_item.removed_at, migration 0040 — the row is never destroyed), audited,
+// two-step. Default call returns a PREVIEW; commit requires confirm:true. Because the remove is RECOVERABLE, a
+// premature confirm:true is reversible — which is what makes prompt-instructed confirm safe for v1 (note 1).
+// Decision L: NO raw deletes on member content. (Doors already soft via softSetMemberDoors; reclaim matches.)
 reclaim_remove(match: string, confirm?: boolean)
   -> { needsConfirm: true, item: string }              // default: nothing changed yet
-   | { ok: true, removed: string }                     // only when confirm:true
+   | { ok: true, removed: string }                     // only when confirm:true — SOFT (removed_at set, recoverable)
    | { ok: false, reason: 'not_found', candidates?: string[] }
 
 // REORDER — optional; low friction.
@@ -74,10 +86,14 @@ closest item; ambiguous → returns `candidates` and the agent asks which one (a
 
 ## 4. Governance gates — baked into the layer, not left to the model
 
-1. **Confirm-before-destructive.** `remove` (and any replace/clear) is two-call: the first returns a preview
+1. **Soft-delete only — NO raw deletes on member content (Decision L, load-bearing).** `remove` sets
+   `reclaim_item.removed_at` (migration 0040); the row is never destroyed and is recoverable. This is what makes
+   the confirm safe: a premature `confirm:true` is *reversible*, so prompt-instructed confirm (not an echo-token)
+   is acceptable for v1. Doors already work this way (`softSetMemberDoors`); reclaim matches.
+2. **Confirm-before-destructive.** `remove` (and any replace/clear) is two-call: the first returns a preview
    (`needsConfirm`), and the commit only fires with `confirm:true`. The system prompt instructs the agent to
-   **never** set `confirm:true` without an explicit member yes in the transcript. (Hardening option for v2: the
-   preview returns a short token the commit must echo, so a premature confirm can't slip through.)
+   **never** set `confirm:true` without an explicit member yes in the transcript. (Hardening for v2: the preview
+   returns a short token the commit must echo — deferred, since soft-delete already makes a slip reversible.)
 2. **Crisis routing stays on.** Any free-text the member gives runs `detectCrisis` before a write — same as
    everywhere. A distress signal routes to 988 and never becomes a silent list edit.
 3. **Validation reuses `refine.ts`.** Fog ("be happier") is refused (the Beat engine could never bind it), dupes
@@ -98,8 +114,10 @@ as **the Companion warmly double-checking**, in its own voice, one thing at a ti
 Shape:
 - **Reflect the specific thing, in their words.** *"Want me to take 'race Moab' off your list?"* — names the exact
   item, so they catch a wrong match before it commits (the seatbelt, in-conversation).
-- **Normalize the change.** Removing a want isn't failure — priorities move. *"No problem — that one's had its
-  season."* Never "Are you sure?" (which implies doubt/judgment).
+- **Normalize the change — but NEVER name the negative it might carry (note 2, a beat rule, not just a line).**
+  Saying "no judgment" plants judgment the same way "not regret" planted regret (the Drift-line fix). The confirm
+  never reassures against a worry the member didn't raise. Normalize *sideways*: *"Some things have their season."*
+  — warm, no rope named. And never "Are you sure?" (implies doubt).
 - **One at a time; member sets the pace.** If they ask to drop three, confirm the set once and reflect all three,
   not three separate interrogations.
 - **Additive edits need no gate** — *"Done — 'ride the Alps with my brother' is on there."* Only remove/replace
@@ -109,7 +127,7 @@ Shape:
 
 Draft copy (directional — Jay's wordsmith):
 > Member: "drop race Moab, I'm not chasing that anymore"
-> Companion: "Want me to take **race Moab** off the list? No judgment — some things have their season."
+> Companion: "Want me to take **race Moab** off the list? Some things have their season."
 > Member: "yeah"
 > Companion: "Done. It's off. Anything you'd put in its place, or just lighter for now?"
 
@@ -124,6 +142,10 @@ Whatever the agent CRUDs, it must immediately **know** — no data the member ch
 the next turn. After a write, the check-in context refreshes (it already reads the Reclaim List, Doors, facets,
 Playbook), so the Companion reflects the change and the dashboard (same surface) shows it on refresh.
 
+**A meaning-CHANGING edit reflects back the new wording** (note 4) — *"so that's now 'ride the Alps with my
+brother' — got it"* — so word-drift is catchable in-conversation (the same seatbelt as the card). A pure
+typo/format edit doesn't need the echo.
+
 ---
 
 ## 7. Slices (each independently shippable + verifiable)
@@ -136,14 +158,21 @@ Playbook), so the Companion reflects the change and the dashboard (same surface)
 
 ---
 
-## 8. Open questions for sign-off
+## 8. Resolutions (signed off)
 
-- **Confirm hardening:** is the prompt-instructed `confirm:true` enough for v1, or do you want the echo-token
-  hardening from the start? (Lean: prompt-instructed for v1, token later — matches how the onboarding seatbelt
-  trusts the model within engine bounds.)
-- **Fuzzy-match ambiguity:** when "the Moab one" matches two items, confirm-which is a natural clarify — agreed?
-- **Rail vs. dashboard parity:** should the dashboard's inline reclaim edit (the "+ Track this" / edit affordances)
-  route through the SAME tool layer, so there's one governed path? (Lean: yes — one write path, audited once.)
-- **Confirm copy:** the beat in §5 is directional — do you want to lock the phrasing before slice 1, or shape it
-  against real transcripts during the build?
+- **Confirm hardening:** prompt-instructed `confirm:true` for v1 — approved, *conditional on removes being SOFT*
+  (note 1: a reversible slip is a survivable slip). Echo-token deferred to later.
+- **Fuzzy-match ambiguity:** yes — "the Moab one" matching two items is a natural confirm-which clarify. And the
+  reflect-back on the confirm is what makes fuzzy matching *safe on removes* (the member catches a wrong match
+  before it commits).
+- **Rail ↔ dashboard parity:** yes — **ONE governed write path, audited once.** The dashboard's inline reclaim
+  affordances route through the same tool layer. Do not build two.
+- **Confirm copy:** don't lock the phrasing now — shape it against real transcripts during the build. But the
+  **"never name the negative"** principle (note 2) applies from the start.
+
+## 9. Slice-1 exit bar
+
+Reclaim CRUD (add/edit/remove-soft/reorder) through the governed layer, wired to the rail, with the confirm beat
+and the draw-out. **Not "done" until a felt-walk with Jay** — the confirm-UX has to *feel* like the Companion, not
+a form. Replay fixtures for the destructive-confirm + the vague-add-draw-out paths. Flag-gated; prod stays v1.
 ```
