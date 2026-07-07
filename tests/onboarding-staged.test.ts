@@ -566,10 +566,12 @@ test('STAGED terminal — CONFIRM-ONLY card: the Reclaim List is FROZEN, no post
   // and not even one the model re-records — because the earlier "add at the card" path was buggy (silent loss +
   // no room to answer). Wants are added later in Reconnect + the companion rail.
   const base = { athleticPast: 'a player', identityNoun: 'Player', gap: 'a real fade over a long hard decade', reclaimList: ['My fitness', 'See friends on weekends'] };
-  // A bare want the model only acknowledged in prose → not captured.
+  // A bare want the model only acknowledged in prose → not captured, AND the reply never claims it was "Added".
   const bare = applyStagedTurn({ stage: 'complete', collected: { ...base } }, [], 'Buy a new road bike', { text: 'Added to the list. Any particular kind of bike in mind?' });
   assert.equal(bare.state.collected.reclaimList?.length, 2, 'a want stated at the card does not grow the list');
   assert.equal(bare.complete, true, 'the card stands (confirm-only)');
+  assert.equal(/\badded\b/i.test(bare.reply), false, 'never falsely claims the want was added');
+  assert.match(bare.reply, /set for now|first session/i, 'says the list is set + points to where adding works');
   // Even a model-RECORDED add is frozen out at the terminal — the list is set by here.
   const recorded = applyStagedTurn({ stage: 'complete', collected: { ...base } }, [], 'add running shoes', { text: 'Added.', record: { reclaimList: ['My fitness', 'See friends on weekends', 'running shoes'] } });
   assert.equal(recorded.state.collected.reclaimList?.length, 2, 'a model-recorded add is frozen out at the card');

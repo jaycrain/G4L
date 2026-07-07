@@ -23,7 +23,7 @@
 
 import { cleanIdentityNoun, displayIdentityNoun, identityLabel } from '../member/identity.ts';
 import { isDoorSlug, matchDoors, type DoorSlug } from '../doors.ts';
-import { RECLAIM_LIST_FLOOR, RECLAIM_LIST_MIN, RECLAIM_LIST_TARGET } from '../member/reclaim.ts';
+import { RECLAIM_LIST_FLOOR, RECLAIM_LIST_MIN, RECLAIM_LIST_TARGET, reclaimAddIntent } from '../member/reclaim.ts';
 import { gapIsNarrative, hasIdentity } from './onboarding-contract.ts';
 import { ONBOARDING_BASELINE_ITEMS, grintaStem } from '../grinta/survey/instrument.ts';
 import { scoreGrinta } from '../grinta/survey/scoring.ts';
@@ -225,6 +225,11 @@ function reclaimOpen(c: Collected): string {
 }
 
 const RECLAIM_MORE = 'What else? Anything that comes — big or small.';
+
+// The confirm-only card reply when a member tries to add a want AFTER the summary card. Nothing lands here — so we
+// say that plainly, and point them to where adding DOES work (the first session + the companion rail). Never "Added".
+const CARD_LIST_SET =
+  "Your Reclaim List is set for now — no need to add more here. You'll be able to add to it and change it in your first session, or anytime just by talking with your companion. Take a look at the summary below whenever you're ready.";
 
 // Never-trap nudge: said ONCE when the member signals done below the minimum. It does not re-ask the same
 // way — it lowers the bar (small things count) to unlock one more, then the engine stops nudging.
@@ -1166,8 +1171,12 @@ export function runArcTurn(
     // no room to answer), and Reconnect (which revisits the whole list) + the companion rail (Decision L CRUD)
     // are where wants are added from here. So FREEZE the Reclaim List against any growth this turn (the model may
     // have re-recorded it) — the card is a gate, not an editor. Corrections to identity/doors/gap still merge above.
+    // If the member TRIES to add a want here, nothing lands — so the reply must NEVER claim it did. A false "Added"
+    // dents trust the same way the silent loss did, just relocated (Jay). Deterministic override: say the list is set,
+    // add more in the first session or the rail. Detected engine-side so it never depends on the model behaving.
+    const addAttempt = arc.id === 'onboarding' && (reclaimAddIntent(memberMessage) || shouldCaptureStagedReclaim(memberMessage));
     if (arc.id === 'onboarding') b.collected.reclaimList = state.collected.reclaimList;
-    b.reply = b.modelText || arc.onComplete(b.collected);
+    b.reply = addAttempt ? CARD_LIST_SET : b.modelText || arc.onComplete(b.collected);
     b.complete = true;
   }
 
