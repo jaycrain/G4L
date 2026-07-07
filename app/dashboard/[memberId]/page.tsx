@@ -18,6 +18,7 @@ import IdentityStrip from '../identity-strip.tsx';
 import PostCeremonyTour from '../post-ceremony-tour.tsx';
 import Threshold from '../threshold.tsx';
 import { reconnectEnabled } from '../../../lib/agent/reconnect.ts';
+import { rewireEnabled } from '../../../lib/agent/rewire.ts';
 import MeasureCard from '../measure-card.tsx';
 import DashboardSync from '../dashboard-sync.tsx';
 import TrackThis from '../track-this.tsx';
@@ -197,6 +198,15 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
         <div className="reconnect-entry">
           <Link href={`/reconnect/${memberId}`} className="reconnect-cta">
             Begin Reconnect — go deeper →
+          </Link>
+        </div>
+      )}
+      {/* v2.3 Rewire entry — flag-gated (REWIRE, off in prod until the v2.3 flip). ONLY while the member is on
+          Rewire. W1 = the Disinformation Audit. */}
+      {rewireEnabled() && activePhase === 'rewire' && (
+        <div className="reconnect-entry">
+          <Link href={`/rewire/${memberId}`} className="reconnect-cta">
+            Begin Rewire — the Disinformation Audit →
           </Link>
         </div>
       )}

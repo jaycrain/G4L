@@ -136,8 +136,53 @@ export function applyRewireTurn(state: ConvState, history: ConvMessage[], member
   return runArcTurn(REWIRE_ARC, state, history, memberMessage, model);
 }
 
-// The opening beat (W1 story · frame · first domain). The live wrapper (liveTurnRewire) + the dashboard entry live
-// alongside; this is enough to replay + felt-walk the W1 structure offline.
+// The opening beat (W1 story · frame · first domain).
 export function rewireOpening(): Turn {
   return { reply: w1Opening(), state: { stage: 'domains', collected: {} }, complete: false };
+}
+
+// ── the live surface — the model REFLECTS; the engine sequences + harvests (tool-free, simpler than Reconnect) ──
+const REWIRE_W1_SYSTEM =
+  "You are the G4L Companion running W1, the Disinformation Audit, in Rewire (Phase 2). The member is naming the " +
+  "comfortable LIES they tell themselves across five life domains (body, habits, time, who they are, what's still " +
+  "possible). YOUR ONLY JOB each turn: reflect the lie they just named back to them — warmly, in 1–2 sentences, so " +
+  "they feel HEARD and see the real story under it. Never judge, grade, praise, or diagnose; a self-lie is a hundred " +
+  "reasonable decisions, not a failing — normalize it. Do NOT solve it, argue it, or write the counter-line (that's " +
+  "the member's own work at the turn that follows). Do NOT ask a new question and do NOT introduce the next domain — " +
+  "the app poses the next one; you only reflect. At the affirmation turn, briefly and warmly acknowledge the true " +
+  "line they wrote. Plain, measured, no hype. If a distress or crisis signal appears, drop the exercise and route to " +
+  "support (988 US / local) and a human — always on.";
+
+function rewireStageNote(stage: string): string {
+  if (stage === 'affirm')
+    return "\n\nRIGHT NOW: the member is writing a TRUE LINE (their honest counter to a lie). Acknowledge it warmly in one sentence — do not rewrite it or add your own.";
+  return "\n\nRIGHT NOW: the member just named a self-lie in one domain. Reflect it back in 1–2 sentences — heard, un-judged, the real story under it. No question, no next domain, no counter-line.";
+}
+
+// The live Rewire turn — the model supplies the per-domain reflection (b.modelText); the kernel sequences the domains
+// and harvests the true lines. Tool-free.
+export async function liveTurnRewire(state: ConvState, history: ConvMessage[], memberMessage: string): Promise<Turn> {
+  const { default: Anthropic } = await import('@anthropic-ai/sdk');
+  const client = new Anthropic({
+    apiKey: process.env.ANTHROPIC_API_KEY,
+    timeout: 25000,
+    maxRetries: 2,
+    defaultHeaders: { 'accept-encoding': 'identity' },
+  });
+  const messages = [
+    ...history.map((m) => ({ role: (m.role === 'agent' ? 'assistant' : 'user') as 'assistant' | 'user', content: m.text })),
+    { role: 'user' as const, content: memberMessage },
+  ];
+  const res = await client.messages.create({
+    model: process.env.ANTHROPIC_MODEL ?? 'claude-sonnet-4-6',
+    max_tokens: 300,
+    system: REWIRE_W1_SYSTEM + rewireStageNote(state.stage),
+    messages,
+  });
+  const text = (res.content as Array<{ type: string; text?: string }>)
+    .filter((b) => b.type === 'text')
+    .map((b) => b.text ?? '')
+    .join('')
+    .trim();
+  return applyRewireTurn(state, history, memberMessage, { text });
 }
