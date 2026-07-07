@@ -342,11 +342,9 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
                   const v = grintaReading.strands[r.key];
                   return (
                     <div className="dim" key={r.key}>
-                      <span><span className="r-dot" style={{ background: R_RING_COLOR[r.key] }} />{r.label}</span>
-                      <span>
-                        {v != null ? `${v} / 5` : '—'}
-                        {r.key === 'reconnect' && <em className="strand-cue"> · next to grow</em>}
-                      </span>
+                      <span className="strand-label"><span className="r-dot" style={{ background: R_RING_COLOR[r.key] }} />{r.label}</span>
+                      <span className="strand-val">{v != null ? `${v} / 5` : '—'}</span>
+                      {r.key === 'reconnect' && <em className="strand-cue">next to grow</em>}
                     </div>
                   );
                 })}

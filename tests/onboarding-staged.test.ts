@@ -524,6 +524,42 @@ test('STAGED — general no-verbatim-repeat guard: a static opener/nudge is neve
   assert.match(t.reply, /most like yourself/i, 'still carries the identity prompt (varied, not lost)');
 });
 
+test('STAGED identity — a model that asks its own question (long coda) never re-appends the cold-open (Donna walk)', () => {
+  // Donna's walk: she described her past self; the model reflected it and asked a real follow-up, THEN added a
+  // longer invitation coda ("…what did that look like for you? Give me a glimpse of what that version of you was
+  // actually doing.") without yet tagging set_athletic_past. The old char-window heuristic missed the mid-paragraph
+  // '?' and bolted the ENTIRE STAGED_OPENING underneath — a verbatim repeat of the opening, two questions in one
+  // bubble. When the model already led with a question, the engine must append NOTHING.
+  const opener = stagedOpening().reply;
+  const modelText =
+    "That's a real picture — creative, funny, free, optimistic. I want to make sure I hold that right — when you " +
+    'say creative, what did that look like for you? Give me a glimpse of what that version of you was actually doing.';
+  const t = applyStagedTurn(
+    { stage: 'identity', collected: {} },
+    [{ role: 'agent', text: opener }],
+    'I was creative, funny, free, optimistic — someone who moved through the world with a lightness',
+    { text: modelText },
+  );
+  assert.equal(t.reply, modelText, 'the model already asked — the engine appends nothing (no second question, no opening)');
+  assert.equal(/Tell me about them\./.test(t.reply), false, 'the cold-open is never re-emitted');
+  assert.equal(t.state.stage, 'identity', 'still gathering the past self');
+});
+
+test('STAGED identity — with NO model question, the re-draw is SHORT, never the whole cold-open', () => {
+  // Same stage, but the model just acknowledged with no forward question. The engine adds a probe — which must be
+  // the short re-pose, not the multi-paragraph cold-open (on turn 2+ she has already answered the opening).
+  const opener = stagedOpening().reply;
+  const t = applyStagedTurn(
+    { stage: 'identity', collected: {} },
+    [{ role: 'agent', text: opener }],
+    'I was creative and free back then',
+    { text: 'Mm.' },
+  );
+  assert.match(t.reply, /most like yourself/i, 're-poses the past-self question');
+  assert.equal(/Tell me about them\./.test(t.reply), false, 'never the whole cold-open');
+  assert.ok(t.reply.length < opener.length, 'the re-draw is materially shorter than the cold-open');
+});
+
 test('STAGED gap — a short dispute re-opens but NEVER wipes the gap or Doors (never drop what they gave)', () => {
   const atConfirm: ConvState = {
     stage: 'gap', awaitingConfirm: true,

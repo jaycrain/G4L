@@ -109,6 +109,12 @@ export const STAGED_OPENING =
   "underneath all of it. The one you've drifted from and want to be again.\n\n" +
   'Who were they? What were they doing? How did it feel to be them?\n\nTell me about them.';
 
+// The short re-draw when the member has spoken but we haven't yet caught a PAST self. NEVER re-emit the full
+// STAGED_OPENING here — on turn 2+ they've already answered it, so the whole cold-open reads as a verbatim
+// repeat (the invariant we most protect). A single warm re-pose is enough; the model usually carries the thread.
+const IDENTITY_REDRAW =
+  'Take your time — no rush. When did you feel most like yourself, and who was that version of you?';
+
 const NAME_PROMPT =
   'If you put that person in a single word — the Runner, the Writer, the Builder, the Friend — what would it be? ' +
   "It's a handle to hold onto, not a label set in stone, and we can change it.";
@@ -261,13 +267,15 @@ function reflectIdentity(c: Collected): string {
 function withQuestion(modelText: string, probe: string): string {
   const t = (modelText ?? '').trim();
   if (!t) return probe;
-  if (/\?\s*$/.test(t)) return t; // already ends on a question — the model led the turn
-  // The model may have asked a real question then added a short coda ("…what did it cost you? Even if you
-  // couldn't have named it then."). That's still a forward question — don't bolt a SECOND one on (Jay's walk:
-  // two questions in one panel). Only append when there's no question anywhere near the end.
-  const lastQ = t.lastIndexOf('?');
-  if (lastQ !== -1 && t.length - lastQ <= 60) return t;
-  return `${t}\n\n${probe}`; // a reflection with no forward question — add one
+  // Did the model already lead the turn with a forward question? Look at the whole LAST PARAGRAPH, not just the
+  // last N characters. The model routinely asks its question and then adds an invitation coda in the same breath
+  // ("…what did that look like for you? Give me a glimpse of what that version of you was doing."). A char-window
+  // heuristic misses that when the coda runs long and re-appends a SECOND question — or, worse, the whole opening.
+  // Two of Jay's walks hit this exact shape; a paragraph-scoped check is the robust contract. (The confirmation
+  // card remains the seatbelt if a rhetorical '?' ever suppresses a probe we wanted.)
+  const lastPara = t.split(/\n\s*\n/).pop() ?? t;
+  if (lastPara.includes('?')) return t;
+  return `${t}\n\n${probe}`; // a reflection with no forward question anywhere — add one
 }
 
 // The model's reflect_gap turn IS the reflection: the prompt tells it to reflect the WHOLE story back in the
@@ -644,7 +652,7 @@ const identityStage: StageDef = {
         b.stage = 'gap';
         b.reply = `${SKIP_ACK}\n\n${gapOpen(b.collected)}`;
       } else {
-        const probe = !b.collected.athleticPast ? (skipOfferable ? SKIP_OFFER : STAGED_OPENING) : skipOfferable ? SKIP_OFFER : NAME_PROMPT;
+        const probe = !b.collected.athleticPast ? (skipOfferable ? SKIP_OFFER : IDENTITY_REDRAW) : skipOfferable ? SKIP_OFFER : NAME_PROMPT;
         b.reply = withQuestion(b.modelText, probe);
       }
     }
