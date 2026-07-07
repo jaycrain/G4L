@@ -40,6 +40,11 @@ export type Stage = 'identity' | 'identity_name' | 'reclaim' | 'door' | 'complet
   | 'checkpoint'
   | 'ceremony';
 
+// Beat separator — when ONE turn hands over more than one beat (e.g. the Phases intro + the pre-survey framing, or
+// the score-read close + the drift ask), join them with this (invisible RS control char) instead of "\n\n" so the
+// chat renders them as SEPARATE bubbles, one job each — never a single crammed bubble. Shared by both arcs' chats.
+export const BEAT_SEP = '\u001E';
+
 export type Collected = {
   athleticPast?: string; // Step 1: the past self, in the member's own words
   identityNoun?: string; // the reclaimed identity, natural case (e.g. "Athlete")

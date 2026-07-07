@@ -22,10 +22,8 @@ import { runArcTurn, administeredStage, type ArcConfig, type StageDef } from './
 import { CHECKPOINT_GRIT_ITEMS, grintaStem } from '../grinta/survey/instrument.ts';
 import type { Collected, ConvMessage, ConvState, DoorRevision, ModelTurn, ReplyIntent, Turn, Stage } from './onboarding.ts';
 
-// Beat separator — when a single turn hands over MORE THAN ONE beat (e.g. the score-read close + the drift ask),
-// join them with this (invisible RS control char) instead of "\n\n" so the chat renders them as SEPARATE bubbles,
-// one job each — never a single crammed bubble. Structural fix for multi-beat bunching.
-export const BEAT_SEP = '\u001E';
+import { BEAT_SEP } from './onboarding.ts';
+export { BEAT_SEP }; // re-export so the reconnect action + chat keep importing it from here
 
 // Is the Reconnect arc selected? Own flag — defaults OFF, so it never runs in prod until the coupled v2.1+v2.2
 // flip. (v2.1's ONBOARDING_ENGINE=staged is a separate flag; both go on together at cut-over.)

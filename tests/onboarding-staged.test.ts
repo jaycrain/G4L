@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { applyStagedTurn, stagedOpening, correctsReflection } from '../lib/agent/onboarding-staged.ts';
-import type { ConvMessage, ConvState, ModelTurn, Turn } from '../lib/agent/onboarding.ts';
+import { BEAT_SEP, type ConvMessage, type ConvState, type ModelTurn, type Turn } from '../lib/agent/onboarding.ts';
 
 // Replay through the PURE staged engine (no API), the same discipline as tests/onboarding-replay.test.ts.
 type Step = { member: string; model: ModelTurn };
@@ -27,6 +27,11 @@ function assertHandsToGrinta(turn: Turn) {
   assert.equal(turn.complete ?? false, false, 'Reclaim hands into the Grinta survey, not straight to the card');
   assert.equal(turn.state.stage, 'grinta');
   assert.match(turn.reply, /1 \(not at all\) to 5|1 of 12/i, 'the survey opener + first item are delivered');
+  // Copy v2: the Phases intro and the pre-survey framing are TWO beats (two bubbles), split on BEAT_SEP.
+  const bubbles = turn.reply.split(BEAT_SEP);
+  assert.equal(bubbles.length, 2, 'the opener is two beats — the Phases intro | the pre-survey framing + first item');
+  assert.match(bubbles[0]!, /Four Phases/i, 'bubble 1 = the Phases intro');
+  assert.match(bubbles[1]!, /1 \(not at all\) to 5[\s\S]*1 of 12/i, 'bubble 2 = the pre-survey framing + the first item');
 }
 // Answer the 12-item survey with `val` (default 3); returns the final (completing) turn.
 function walkSurvey(state: ConvState, history: ConvMessage[] = [], val = 3): Turn {

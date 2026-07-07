@@ -31,6 +31,7 @@ import { MEMBER_AGENT_SYSTEM_PROMPT } from './system-prompt.ts';
 import {
   augmentDoors,
   stripLeadingDisclosure,
+  BEAT_SEP,
   type Collected,
   type ConvMessage,
   type ConvState,
@@ -894,9 +895,10 @@ const GRINTA_SCALE =
   'number you’ll watch climb as you do the work. That’s the point: not to score you, but to give you something real ' +
   'to measure the comeback against.\n\nAnswer as the person you actually are today, not the one you wish you were. ' +
   'For each one, tell me how true it feels — 1 (not at all) to 5 (completely).';
-// The full survey opener: the 4Rs intro + the scale + the first item. Shared by the stage opener and the Reclaim seam.
+// The full survey opener as TWO beats (two bubbles): the Phases intro (orientation), then the pre-survey framing +
+// the first item (the survey instruction). Two jobs — let each breathe (same reason as the drift-beat split).
 function grintaSurveyOpener(): string {
-  return `${GRINTA_OPEN}\n\n${GRINTA_SCALE}\n\n${grintaDeliver(0)}`;
+  return `${GRINTA_OPEN}${BEAT_SEP}${GRINTA_SCALE}\n\n${grintaDeliver(0)}`;
 }
 
 // A member answered with something that isn't a 1–5 → re-ask the CURRENT item, gently.

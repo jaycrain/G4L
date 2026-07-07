@@ -4,6 +4,12 @@ import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { onboardingTurn, finalizeOnboardingAction, loadOnboardingSessionAction } from './actions.ts';
 import type { ConvState, ConvMessage } from '../../lib/agent/onboarding.ts';
+import { BEAT_SEP } from '../../lib/agent/onboarding.ts';
+
+// A turn may hand over more than one beat (e.g. the Phases intro + the pre-survey framing), joined by BEAT_SEP —
+// render each as its OWN bubble, one job each, never a single crammed bubble.
+const agentBubbles = (text: string): ConvMessage[] =>
+  text.split(BEAT_SEP).map((t) => t.trim()).filter(Boolean).map((t) => ({ role: 'agent' as const, text: t }));
 import { buildSummaryCard } from '../../lib/agent/onboarding-contract.ts';
 import FeedbackWidget from '../feedback-widget.tsx';
 
@@ -132,7 +138,7 @@ export default function OnboardingChat() {
       }
       tokenRef.current = token;
       const r = await onboardingTurn({ ctx, state: null, history: [], memberMessage: null, token });
-      setMessages([{ role: 'agent', text: r.reply }]);
+      setMessages(agentBubbles(r.reply));
       setState(r.state);
     } catch {
       setError('Couldn’t start the conversation — please try again.');
@@ -161,7 +167,7 @@ export default function OnboardingChat() {
         setError(r.outageMessage ?? 'We’re having a brief technical hiccup on our end — try again in a minute.');
         return;
       }
-      setMessages([...prior, { role: 'member', text }, { role: 'agent', text: r.reply }]);
+      setMessages([...prior, { role: 'member', text }, ...agentBubbles(r.reply)]);
       setState(r.state);
       // Graceful decline (Decision E): a genuinely-thriving no-fade member is out of scope — show the terminal
       // decline (no card, no member created). The reply itself carries the warm, door-stays-open message.
@@ -235,7 +241,7 @@ export default function OnboardingChat() {
             <h1>You’re in the right place.</h1>
             <div className="onboard-intro">
               <p>However you got here — a newsletter, a post, someone who thought of you — something landed, or you wouldn’t be reading this. Trust that.</p>
-              <p>Here’s how it works: we start with a real conversation. No forms, no scores yet — just you and a companion built for this one thing. It takes about twenty minutes, and it goes better slow, so find a quiet spot before you start. If life interrupts, your place is saved — come back when you can.</p>
+              <p>Here’s how it works: we start with a real conversation. No forms, nothing to pass or fail — just you and a companion built for this one thing. It takes about twenty minutes, and it goes better slow, so find a quiet spot before you start. If life interrupts, your place is saved — come back when you can.</p>
               <p>One thing the rest of us learned the hard way: the more honest you’re willing to be here, the more this can do for you. Nobody’s grading you. This is you, helping you.</p>
             </div>
             {/* AI disclosure — woven in, its own quiet beat (governance): they always know they're talking with AI. */}
