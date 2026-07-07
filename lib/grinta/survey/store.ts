@@ -40,20 +40,27 @@ export async function getGrintaBaselineReading(
   db: Db,
   memberId: string,
 ): Promise<{ responses: Record<string, number>; strands: Partial<Record<Strand, number>> } | null> {
-  const { rows } = await db.query<Record<string, unknown>>(
-    `select responses, reconnect_score, rewire_score, rebuild_score, reclaim_score
-       from grinta_reading where member_id = $1 and source = 'onboarding' order by sequence_no limit 1`,
-    [memberId],
-  );
-  const r = rows[0];
-  if (!r) return null;
-  const strands: Partial<Record<Strand, number>> = {};
-  const rc = num(r.reconnect_score); if (rc != null) strands.reconnect = rc;
-  const rw = num(r.rewire_score); if (rw != null) strands.rewire = rw;
-  const rb = num(r.rebuild_score); if (rb != null) strands.rebuild = rb;
-  const rl = num(r.reclaim_score); if (rl != null) strands.reclaim = rl;
-  const responses = (typeof r.responses === 'string' ? JSON.parse(r.responses) : r.responses) as Record<string, number>;
-  return { responses: responses ?? {}, strands };
+  try {
+    const { rows } = await db.query<Record<string, unknown>>(
+      `select responses, reconnect_score, rewire_score, rebuild_score, reclaim_score
+         from grinta_reading where member_id = $1 and source = 'onboarding' order by sequence_no limit 1`,
+      [memberId],
+    );
+    const r = rows[0];
+    if (!r) return null;
+    const strands: Partial<Record<Strand, number>> = {};
+    const rc = num(r.reconnect_score); if (rc != null) strands.reconnect = rc;
+    const rw = num(r.rewire_score); if (rw != null) strands.rewire = rw;
+    const rb = num(r.rebuild_score); if (rb != null) strands.rebuild = rb;
+    const rl = num(r.reclaim_score); if (rl != null) strands.reclaim = rl;
+    const responses = (typeof r.responses === 'string' ? JSON.parse(r.responses) : r.responses) as Record<string, number>;
+    return { responses: responses ?? {}, strands };
+  } catch (e) {
+    // Degrade gracefully — a read failure (most likely: migration 0047 not applied to this DB) must never crash the
+    // page that reads it. Treat as "no baseline yet."
+    console.warn('grinta baseline read failed (grinta_reading missing / migration 0047 unapplied?):', (e as Error).message);
+    return null;
+  }
 }
 
 /**
@@ -88,27 +95,33 @@ export async function persistGrintaReading(db: Db, memberId: string, input: Grin
   );
 }
 
-/** The most recent reading for the dashboard Grinta card (null if none yet). */
+/** The most recent reading for the dashboard Grinta card (null if none yet). Degrades to null on a read failure
+ *  (most likely: migration 0047 not applied to this DB) so it can NEVER crash the dashboard/rail/ceremony. */
 export async function latestGrintaReading(db: Db, memberId: string): Promise<GrintaReadingView | null> {
-  const { rows } = await db.query<Record<string, unknown>>(
-    `select sequence_no, source, composite, reconnect_score, rewire_score, rebuild_score, reclaim_score,
-            change_pct, direction
-       from grinta_reading where member_id = $1 order by sequence_no desc limit 1`,
-    [memberId],
-  );
-  const r = rows[0];
-  if (!r) return null;
-  const strands: Partial<Record<Strand, number>> = {};
-  const rc = num(r.reconnect_score); if (rc != null) strands.reconnect = rc;
-  const rw = num(r.rewire_score); if (rw != null) strands.rewire = rw;
-  const rb = num(r.rebuild_score); if (rb != null) strands.rebuild = rb;
-  const rl = num(r.reclaim_score); if (rl != null) strands.reclaim = rl;
-  return {
-    sequenceNo: r.sequence_no as number,
-    source: r.source as string,
-    composite: num(r.composite)!,
-    strands,
-    changePct: num(r.change_pct),
-    direction: (r.direction as 'up' | 'down' | 'flat' | null) ?? null,
-  };
+  try {
+    const { rows } = await db.query<Record<string, unknown>>(
+      `select sequence_no, source, composite, reconnect_score, rewire_score, rebuild_score, reclaim_score,
+              change_pct, direction
+         from grinta_reading where member_id = $1 order by sequence_no desc limit 1`,
+      [memberId],
+    );
+    const r = rows[0];
+    if (!r) return null;
+    const strands: Partial<Record<Strand, number>> = {};
+    const rc = num(r.reconnect_score); if (rc != null) strands.reconnect = rc;
+    const rw = num(r.rewire_score); if (rw != null) strands.rewire = rw;
+    const rb = num(r.rebuild_score); if (rb != null) strands.rebuild = rb;
+    const rl = num(r.reclaim_score); if (rl != null) strands.reclaim = rl;
+    return {
+      sequenceNo: r.sequence_no as number,
+      source: r.source as string,
+      composite: num(r.composite)!,
+      strands,
+      changePct: num(r.change_pct),
+      direction: (r.direction as 'up' | 'down' | 'flat' | null) ?? null,
+    };
+  } catch (e) {
+    console.warn('grinta reading read failed (grinta_reading missing / migration 0047 unapplied?):', (e as Error).message);
+    return null;
+  }
 }
