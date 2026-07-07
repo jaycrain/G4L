@@ -146,7 +146,10 @@ test('syncMember refreshes an expired token, then fetches and saves', async () =
     }
     if (u.includes('/athlete/activities')) {
       assert.match(init?.headers ? JSON.stringify(init.headers) : '', /AT2/); // used the refreshed token
-      return new Response(JSON.stringify([{ id: 55, sport_type: 'Run', name: 'Evening', start_date: '2026-06-16T18:00:00Z', distance: 5000, moving_time: 1800 }]), { status: 200 });
+      // start_date is RELATIVE to now so the activity stays inside the sinceDays window as real time passes
+      // (a hardcoded date silently ages out of listRecentActivities and empties the result).
+      const startDate = new Date(Date.now() - 2 * 86400 * 1000).toISOString();
+      return new Response(JSON.stringify([{ id: 55, sport_type: 'Run', name: 'Evening', start_date: startDate, distance: 5000, moving_time: 1800 }]), { status: 200 });
     }
     return new Response('not found', { status: 404 });
   }) as typeof fetch;
