@@ -40,9 +40,9 @@ export type Stage = 'identity' | 'identity_name' | 'reclaim' | 'door' | 'complet
   | 'checkpoint'
   | 'ceremony'
   // v2.3 Rewire arc (config #3 on the shared kernel): its stage ids. Slice 1 = W1 Disinformation Audit —
-  // 'audit' (surface + cross-examine the comfortable lie) then 'affirm' (write the true line → harvested keeper).
-  // W2/W3/R4 add their stage ids in later slices.
-  | 'audit'
+  // 'domains' (walk the five domains, surfacing a self-lie in each) then 'affirm' (write the true lines for the ones
+  // that hit hardest → harvested keepers). W2/W3/R4 add their stage ids in later slices.
+  | 'domains'
   | 'affirm';
 
 // Beat separator — when ONE turn hands over more than one beat (e.g. the Phases intro + the pre-survey framing, or
@@ -496,8 +496,8 @@ const STAGE_PROMPT: Record<Stage, string> = {
   checkpoint: 'How are you doing with the work right now?',
   ceremony: "Let's look at how far you've come.",
   // v2.3 Rewire stages — the Rewire engine (lib/agent/rewire.ts) supplies its own openers; neutral fallbacks here.
-  audit: "What's the lie you tell yourself most — in its own words?",
-  affirm: "Write your true line: one sentence, true enough that you'd say it out loud.",
+  domains: "What's the story you tell yourself here — the real one, not the one you're supposed to say?",
+  affirm: "Write your true line: one honest sentence you'd say back to the lie.",
 };
 
 // Guarantee a non-final turn ends with a forward question, so the member is never stranded.

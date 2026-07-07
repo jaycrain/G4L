@@ -1,127 +1,133 @@
 // Rewire (v2.3, Phase 2 — Commitment/Mindfulness). Config #3 on the shared arc kernel (runArcTurn). Spec of record:
 // G4L_Rewire_Build_Approach_v0.1.md (Jay-approved). Builds on the Reconnect engine (two-mode kernel, callback,
-// administered checkpoint, earned ceremony, recalibration HH). THIS INCREMENT = SLICE 1: W1 (the Disinformation
-// Audit) as a draw-out Session, harvesting the member's "true line" (affirmation) as a Playbook keeper. W2 / W3 / R4
-// are later slices (they extend the arc the way Reconnect's beats did). Flag-gated by REWIRE (Decision JJ) — OFF by
-// default; prod keeps the v1 static Rewire Sessions until the coupled v2.3 flip.
+// administered checkpoint, earned ceremony, recalibration HH). THIS INCREMENT = SLICE 1: W1 — The Disinformation
+// Audit, a draw-out Session. Structure (approved): opening story (Jay, third-person) → the frame → the FIVE domains
+// walked one at a time (body · habits · time · who-you-are · what's-still-possible), surfacing a self-lie in each →
+// the turn (each lie → its "true line") → close. The member writes true lines for "the ones that hit hardest" (a
+// member-picked subset, not all five — lighter, right for Cycle 1). Each true line → a Playbook keeper. W2/W3/R4 are
+// later slices. Flag-gated by REWIRE (Decision JJ) — OFF by default; prod keeps the v1 static Rewire until the flip.
 //
-// PLACEHOLDER COPY: the member-facing lines below are Greg's V4 draft (lib/curriculum/content/rewire.ts · RWR-DIS),
-// used as SCAFFOLDING. The plain-language voice pass (Decision B) is Cowork + Jay's lane; the polished copy replaces
-// these constants without changing the beat structure or the harvest wiring.
+// COPY: final, Jay-approved (G4L_Rewire_W1_Copy_v0.1.md). "Jay" stays third-person, named (founder presence).
 
-import { resolveGapConfirm } from './onboarding-intent.ts';
-import { runArcTurn, drawoutShouldReflect, withQuestion, type ArcConfig, type StageDef } from './onboarding-staged.ts';
-import type { ConvMessage, ConvState, ModelTurn, Turn } from './onboarding.ts';
+import { runArcTurn, type ArcConfig, type StageDef } from './onboarding-staged.ts';
+import { memberClosingReclaim } from './onboarding-intent.ts';
+import { BEAT_SEP, type ConvMessage, type ConvState, type ModelTurn, type Turn } from './onboarding.ts';
 
 // Is the Rewire arc selected? Own flag (Decision JJ) — defaults OFF, so prod keeps v1 static Rewire until the v2.3
-// flip. Mirrors reconnectEnabled() / stagedEngineEnabled(); ONBOARDING_ENGINE + RECONNECT + REWIRE flip in sequence.
+// flip (ONBOARDING_ENGINE + RECONNECT + REWIRE flip in sequence). Mirrors reconnectEnabled()/stagedEngineEnabled().
 export function rewireEnabled(): boolean {
   return process.env.REWIRE === 'staged';
 }
 
-// ── W1 · The Disinformation Audit ────────────────────────────────────────────────────────────────────────────
-// PLACEHOLDER COPY (Greg V4 / RWR-DIS) — replaced by Jay's voice pass; structure is stable.
-const W1_AUDIT_OPEN =
-  "Your mind runs a quiet campaign to keep you comfortable — and comfortable, right now, means stuck. It tells you " +
-  "things that sound like facts: 'too late for me,' 'I don't have the time,' 'this is just what fifty looks like.' " +
-  "Let's catch the loudest one — write the lie you tell yourself most, in its own words, the way your head says it.";
-const W1_AUDIT_PROBES = [
-  "That's the cleaned-up version. What does it sound like at 6am when the alarm goes off? Say it rawer.",
-  'And when it runs loudest — what does it talk you out of?',
+// ── W1 · The Disinformation Audit — final approved copy ──────────────────────────────────────────────────────
+const W1_STORY =
+  `Jay ran a disinformation campaign on himself for eight years.\n\n` +
+  `The lies didn't sound like lies. They sounded like reason. "I'm alright." "It's not that bad." "I'll deal with ` +
+  `it next month." The whole time his body was telling the truth — the weight, the hives, the blood markers, three ` +
+  `doctor's warnings — and his brain kept overriding the signal with the same comfortable story.\n\n` +
+  `Everybody runs one. It's how the Fade keeps its hold — not with one big lie, but a hundred reasonable ones. So ` +
+  `before we build anything in Rewire, let's catch yours.`;
+const W1_FRAME =
+  `I'm going to walk you through five places the lies like to hide. In each one, tell me the stories you actually ` +
+  `tell yourself — the real ones, not the ones you think you're supposed to say. Nobody's grading them. We can't ` +
+  `disarm a lie we won't say out loud.`;
+// The five domains, walked one at a time (draw-out). Each surfaces a self-lie.
+const W1_DOMAINS = [
+  `Start here — your body. What do you tell yourself about your weight, your energy, how you feel in your body day ` +
+    `to day? ("I eat pretty healthy." "I'll clean it up when things settle." "It's just age.") What's your version?`,
+  `Now your habits — the patterns you already know aren't working: the extra drink, the skipped walk, the mindless ` +
+    `eating after a hard day. What's the story that makes those feel okay in the moment?`,
+  `Your time. What do you tell yourself about why there's no room for you? ("I'm too busy." "When work calms down." ` +
+    `"The kids need me.") What's the reason you give?`,
+  `Who you are. What do you tell yourself about who you are now versus who you used to be? ("That was a long time ` +
+    `ago." "I'm not that person anymore." "It's too late.")`,
+  `Last one — what's still possible. What do you tell yourself about whether any of this can actually change? ("This ` +
+    `is just who I am now." "It probably wouldn't work." "I've tried before.")`,
 ];
-// The reflection at enough depth IS the cross-examination — put the lie on trial (Greg's step 2).
-const W1_CROSS_EXAMINE =
-  "Now we put it on trial. A lie survives because no one ever asks it for evidence. What's the actual proof FOR it — " +
-  "and what's the proof against?";
-const W1_REOPEN = "Then I've not caught it yet — say it your way. What's the lie, in your own words?";
-// Beat 2 — write the true line (the affirmation).
-const W1_AFFIRM_OPEN =
-  "A lie you've disproven still needs something to stand in its place. Not a slogan — something true you can stand " +
-  "behind on a bad day. Write your true line: one sentence, true enough that you'd say it out loud.";
-const W1_AFFIRM_PROBE = "If it sounds like a motivational poster, it won't hold — make it sound like you.";
+const W1_DOMAIN_NUDGE = "No wrong answer here — just the story you actually run. What's the version in your head?";
+// The turn — lie → true line (delivered when the five domains are walked).
+const W1_TURN =
+  `Look at what you just said. That's the campaign — the script that's kept you where you are.\n\n` +
+  `Now we answer it. For each lie, write the true line — the honest counter.\n` +
+  `- "It's just age" → "My body responds to what I ask of it — at any age."\n` +
+  `- "I've tried before" → "I've started before. This time I'm not doing it alone."\n\n` +
+  `Take the ones that hit hardest and write their true lines. These are yours to keep.`;
+const W1_AFFIRM_ACK = "That's a true one — kept. Any others that hit hard, or is that your set?";
+const W1_AFFIRM_NUDGE = "Even one is enough — take the lie that stung most and write the honest line back.";
 const W1_CLOSE =
-  "That's the audit. The lie won't vanish — but now you've got a line to answer it with, and I've kept your true " +
-  "line in your Playbook. Next time the old line shows up, you've got this one to meet it with.";
-// ── end placeholder copy ──
+  `They're the first thing you'll reach for when the old voice gets loud. I've saved them to your Playbook.\n\n` +
+  `Catching your own lies is the whole game in Rewire, and you just did the hard part: you said them out loud. ` +
+  `That's grinta in its quietest, most useful form.`;
 
-const AUDIT_MIN_DEPTH = 2;
-const AUDIT_MAX_DEPTH = 4;
-
-function auditMore(history: ConvMessage[]): string {
-  const asked = history.filter((h) => h.role === 'agent' && /\?/.test(h.text)).length;
-  return W1_AUDIT_PROBES[asked % W1_AUDIT_PROBES.length]!;
-}
-function reflectAudit(modelText: string): string {
-  const t = (modelText ?? '').trim();
-  if (t && /\?\s*$/.test(t)) return t; // the model already asked its own cross-examination
-  if (t) return `${t}\n\n${W1_CROSS_EXAMINE}`;
-  return W1_CROSS_EXAMINE;
+// The full arc opener (story · frame · first domain), as three bubbles.
+function w1Opening(): string {
+  return `${W1_STORY}${BEAT_SEP}${W1_FRAME}${BEAT_SEP}${W1_DOMAINS[0]}`;
 }
 
-// Beat 1 — surface the comfortable lie + cross-examine it (draw-out on the depth kernel).
-const auditStage: StageDef = {
-  id: 'audit',
+// Beat 1 — walk the five domains as a guided sequence (draw-out, not a form): the model reflects each lie, the engine
+// poses the next domain. Advances on the member's answer (a self-lie), one gentle nudge for a blank.
+const domainsStage: StageDef = {
+  id: 'domains',
   mode: 'drawout',
-  opener: () => W1_AUDIT_OPEN,
-  offersSubstance: (message) => message.trim().length >= 8,
+  opener: () => w1Opening(),
+  offersSubstance: (message) => message.trim().length >= 4,
   gather(b) {
-    const sc = b.scratch as { auditDepth?: number };
-    sc.auditDepth = (sc.auditDepth ?? 0) + 1;
-    const advance = drawoutShouldReflect(b.modelText, b.model.depthReady, sc.auditDepth, AUDIT_MIN_DEPTH, AUDIT_MAX_DEPTH);
-    if (!advance) {
-      b.reply = withQuestion(b.modelText, auditMore(b.history));
+    const sc = b.scratch as { domainIdx?: number };
+    const idx = sc.domainIdx ?? 0;
+    if (b.memberMessage.trim().length < 4) {
+      b.reply = W1_DOMAIN_NUDGE; // a blank/deflection — invite the real story once, don't advance
+      return;
+    }
+    const reflected = (b.modelText ?? '').trim();
+    const next = idx + 1;
+    if (next < W1_DOMAINS.length) {
+      sc.domainIdx = next;
+      // reflection (one bubble) → the next domain ask (a separate bubble)
+      b.reply = reflected ? `${reflected}${BEAT_SEP}${W1_DOMAINS[next]}` : W1_DOMAINS[next]!;
     } else {
-      b.reply = reflectAudit(b.modelText);
-      b.awaitingConfirm = true;
+      // all five walked → the TURN (reflect the last lie, then the turn copy as its own bubble)
+      b.stage = 'affirm';
+      b.reply = reflected ? `${reflected}${BEAT_SEP}${W1_TURN}` : W1_TURN;
     }
   },
   confirm(b) {
-    const intent = resolveGapConfirm(b.memberMessage, b.model.replyIntent); // dispute | addition | done
-    if (intent === 'dispute') {
-      b.awaitingConfirm = false;
-      b.reply = W1_REOPEN;
-    } else if (intent === 'addition') {
-      b.awaitingConfirm = false;
-      b.reply = withQuestion(b.modelText, auditMore(b.history)); // more evidence first
-    } else {
-      // The lie is caught and cross-examined → hand into writing the true line (the affirmation).
-      b.awaitingConfirm = false;
-      b.stage = 'affirm';
-      b.reply = W1_AFFIRM_OPEN;
-    }
+    domainsStage.gather(b); // the walk is a sequence, not a reflect-confirm loop
   },
 };
 
-// Beat 2 — the true line (affirmation) → harvested as a Playbook keeper. A single-line capture, not a deep draw-out.
+// Beat 2 — the turn: the member writes the true line for each lie that hit hardest (a picked subset). Each is
+// harvested as a Playbook keeper ('principle', default-emit, member-owned — propose/confirm on the Playbook).
 const affirmStage: StageDef = {
   id: 'affirm',
   mode: 'drawout',
-  opener: () => W1_AFFIRM_OPEN,
+  opener: () => W1_TURN,
   offersSubstance: (message) => message.trim().length >= 6,
   gather(b) {
     const line = b.memberMessage.trim();
-    if (line.length < 6) {
-      b.reply = W1_AFFIRM_PROBE; // too thin / sloganish — draw it out once
+    const wroteAny = (b.pendingHarvest ?? []).some((h) => h.kind === 'affirmation');
+    if (memberClosingReclaim(b.memberMessage) || line.length < 3) {
+      if (wroteAny) {
+        b.reply = W1_CLOSE;
+        b.complete = true; // SLICE 1 terminal — W1 done; W2 (Visualization) is the next slice
+      } else {
+        b.reply = W1_AFFIRM_NUDGE; // nothing written yet — one nudge for at least one true line
+      }
       return;
     }
-    // Harvest the affirmation (default-emit; the action drains pendingHarvest → emitHarvestMoment). keeperType
-    // 'principle' — a positive rule/true-line the member commits to (KeeperType enum, harvest.ts). Member-owned;
-    // propose/confirm on the Playbook per the frozen harvest contract (Decision O).
     b.pendingHarvest.push({ kind: 'affirmation', keeperType: 'principle', destinationIntent: 'keeper', payloadRef: line, label: 'Your true line' });
-    b.reply = W1_CLOSE;
-    b.complete = true; // SLICE 1 terminal — W1 done; W2 (Visualization) is the next slice.
+    b.reply = W1_AFFIRM_ACK;
   },
   confirm(b) {
-    affirmStage.gather(b); // no confirm loop for the single-line capture — treat any turn here as the line
+    affirmStage.gather(b);
   },
 };
 
-// The Rewire arc — config #3 on the generic kernel. SLICE 1 = W1 only (audit → affirm → complete). Later slices add
+// The Rewire arc — config #3 on the generic kernel. SLICE 1 = W1 (domains → affirm → complete). Later slices add
 // W2/W3/R4 to stageOrder + stages + a real ceremony onComplete, exactly as Reconnect's beats were added.
 export const REWIRE_ARC: ArcConfig = {
   id: 'rewire',
-  stageOrder: ['audit', 'affirm'],
-  stages: { audit: auditStage, affirm: affirmStage },
+  stageOrder: ['domains', 'affirm'],
+  stages: { domains: domainsStage, affirm: affirmStage },
   onComplete: () => W1_CLOSE,
 };
 
@@ -130,8 +136,8 @@ export function applyRewireTurn(state: ConvState, history: ConvMessage[], member
   return runArcTurn(REWIRE_ARC, state, history, memberMessage, model);
 }
 
-// The opening beat (W1 audit). The live wrapper (liveTurnRewire) + the model tool-surface + the dashboard entry land
-// in a later slice; this is enough to replay + felt-walk the W1 structure offline.
+// The opening beat (W1 story · frame · first domain). The live wrapper (liveTurnRewire) + the dashboard entry live
+// alongside; this is enough to replay + felt-walk the W1 structure offline.
 export function rewireOpening(): Turn {
-  return { reply: W1_AUDIT_OPEN, state: { stage: 'audit', collected: {} }, complete: false };
+  return { reply: w1Opening(), state: { stage: 'domains', collected: {} }, complete: false };
 }

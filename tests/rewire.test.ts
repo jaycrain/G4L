@@ -1,11 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { rewireEnabled, rewireOpening, applyRewireTurn } from '../lib/agent/rewire.ts';
-import type { ConvState, ModelTurn } from '../lib/agent/onboarding.ts';
+import type { ConvState } from '../lib/agent/onboarding.ts';
 
-// Rewire (v2.3) SLICE 1 — W1 the Disinformation Audit. Scaffolding replay: the arc walks (audit → cross-examine →
-// affirm → complete) and harvests the affirmation as a Playbook keeper. Copy is Greg's V4 placeholder — these
-// assertions key on STRUCTURE (stages, harvest, completion), not the member voice (which drops in later).
+// Rewire (v2.3) SLICE 1 — W1 the Disinformation Audit. Final approved copy; the arc walks the FIVE domains one at a
+// time → the turn → harvests each true line as a Playbook keeper. Assertions key on STRUCTURE + harvest.
 
 test('rewire · flag defaults OFF (prod keeps v1 static Rewire until the v2.3 flip)', () => {
   const prev = process.env.REWIRE;
@@ -17,46 +16,54 @@ test('rewire · flag defaults OFF (prod keeps v1 static Rewire until the v2.3 fl
   else process.env.REWIRE = prev;
 });
 
-// drive the audit to the cross-examine, then confirm → affirm, then write the true line.
-function walkToAffirm(): ConvState {
+const FIVE_LIES = [
+  "it's just age",
+  'the extra drink helps me unwind',
+  "no room for me, work's crazy",
+  "I'm not that person anymore",
+  "I've tried before and it didn't take",
+];
+
+// Walk the opener + the five domains; returns the state at the turn (affirm stage).
+function walkDomains(): ConvState {
   let t = rewireOpening();
-  assert.equal(t.state.stage, 'audit');
-  // turn 1 — the lie (still gathering)
-  t = applyRewireTurn(t.state, [], "I'm too old to start over", { text: 'I hear that.' });
-  assert.equal(t.state.stage, 'audit');
-  // turn 2 — deeper; model signals depth → the reflection cross-examines, awaiting confirm
-  t = applyRewireTurn(t.state, [], 'at 6am it says you already failed, why bother', { text: 'That is the rawer version.', depthReady: true });
-  assert.equal(t.state.awaitingConfirm, true);
-  assert.match(t.reply, /on trial|evidence/i, 'the reflection puts the lie on trial (cross-examine)');
-  // turn 3 — respond, done → hand into writing the true line
-  t = applyRewireTurn(t.state, [], 'the evidence against it is stronger', { text: 'So why treat it as a verdict?', replyIntent: 'done' } as ModelTurn);
-  assert.equal(t.state.stage, 'affirm', 'advances to the affirmation beat');
+  assert.equal(t.state.stage, 'domains');
+  assert.match(t.reply, /disinformation campaign/i, 'opens on Jay’s story (third person)');
+  for (const lie of FIVE_LIES) {
+    assert.equal(t.state.stage, 'domains', 'still walking the domains');
+    t = applyRewireTurn(t.state, [], lie, { text: 'That’s the story.' });
+  }
+  assert.equal(t.state.stage, 'affirm', 'after the fifth domain, hands into the turn');
+  assert.match(t.reply, /true line/i, 'delivers the lie→true-line turn');
   return t.state;
 }
 
-test('W1 · walks audit → cross-examine → affirm, and HARVESTS the true line as a keeper', () => {
-  const atAffirm = walkToAffirm();
-  const t = applyRewireTurn(atAffirm, [], "I'm out of shape, and I'm starting anyway", { text: 'Good.' });
-  assert.equal(t.complete, true, 'W1 completes after the true line (slice-1 terminal)');
-  const harvest = t.state.pendingHarvest ?? [];
-  assert.equal(harvest.length, 1, 'exactly one keeper queued');
-  assert.equal(harvest[0]!.keeperType, 'principle', 'an affirmation is a principle keeper');
-  assert.equal(harvest[0]!.destinationIntent, 'keeper');
-  assert.match(harvest[0]!.payloadRef, /starting anyway/, 'the keeper carries the member\'s verbatim true line');
+test('W1 · walks all five domains, then the turn HARVESTS each true line as a keeper; closing completes', () => {
+  let state = walkDomains();
+  // write two true lines (the ones that hit hardest — a member-picked subset)
+  let t = applyRewireTurn(state, [], 'My body responds to what I ask of it — at any age', { text: 'ok' });
+  assert.equal((t.state.pendingHarvest ?? []).length, 1, 'first true line harvested');
+  t = applyRewireTurn(t.state, [], "I've started before — this time I'm not alone", { text: 'ok' });
+  assert.equal((t.state.pendingHarvest ?? []).length, 2, 'second true line harvested');
+  const k = (t.state.pendingHarvest ?? [])[0]!;
+  assert.equal(k.keeperType, 'principle', 'a true line is a principle keeper');
+  assert.equal(k.destinationIntent, 'keeper');
+  assert.match(k.payloadRef, /at any age/, 'the keeper carries the member’s verbatim true line');
+  // closing → W1 completes
+  t = applyRewireTurn(t.state, [], "that's it", { text: 'ok' });
+  assert.equal(t.complete, true, 'W1 completes when the member closes the set');
+  assert.equal((t.state.pendingHarvest ?? []).length, 2, 'no phantom keeper on close');
 });
 
-test('W1 · a too-thin true line is drawn out, not captured; a dispute reopens the audit', () => {
-  // thin line → probe, no capture yet
-  const atAffirm = walkToAffirm();
-  const thin = applyRewireTurn(atAffirm, [], 'idk', { text: '' });
-  assert.equal(thin.complete ?? false, false, 'a two-char non-line does not complete');
-  assert.equal((thin.state.pendingHarvest ?? []).length, 0, 'nothing harvested from a non-line');
-  assert.match(thin.reply, /make it sound like you/i, 'draws the real line out');
-
-  // dispute at the cross-examine reopens the audit (never defend the pattern)
+test('W1 · a blank domain answer is nudged (not skipped); no true line yet → nudged, not completed', () => {
+  // blank at a domain → nudge, stay on the domain
   let t = rewireOpening();
-  t = applyRewireTurn(t.state, [], 'I never have time', { text: 'Mm.', depthReady: true });
-  t = applyRewireTurn(t.state, [], "no, that's not really it", { text: 'Okay.', replyIntent: 'dispute' } as ModelTurn);
-  assert.equal(t.state.stage, 'audit', 'a dispute stays in the audit');
-  assert.equal(t.state.awaitingConfirm ?? false, false, 'and reopens for the real lie');
+  const blank = applyRewireTurn(t.state, [], '...', { text: '' });
+  assert.equal(blank.state.stage, 'domains', 'a blank does not advance the domain walk');
+  assert.match(blank.reply, /no wrong answer/i, 'invites the real story');
+  // at the turn with nothing written → nudge, not complete
+  const atTurn = walkDomains();
+  const early = applyRewireTurn(atTurn, [], "that's it", { text: 'ok' });
+  assert.equal(early.complete ?? false, false, 'closing before any true line does not complete');
+  assert.match(early.reply, /even one is enough/i, 'nudges for at least one true line');
 });
