@@ -101,12 +101,12 @@ function identityRef(c: Collected): string {
 }
 
 // §3 — Stage 1 (who you are): the opener (the AI disclosure + primer live on the Stage-0 start page).
+// Onboarding Copy v2 (Jay's voice pass): the corny example run is cut; the prompt is tightened + de-gendered.
 export const STAGED_OPENING =
-  "Let's start by thinking about when you felt most like yourself. Maybe it was twelve, riding your bike fearlessly. " +
-  'Twenty, going door-to-door for something you believed in. College? Your first marathon? Fishing with your grandfather? ' +
-  "Not the job title, not the role everyone knows you for — even if that's mom or dad, partner or child. The version " +
-  "underneath all that — the one you've drifted from and want to be again. Who were they? What were they doing? How did " +
-  'you feel? Tell me about them.';
+  "Let's start with a simple question — but take your time with it. When did you feel most like yourself?\n\n" +
+  "Not the job title. Not the role everyone knows you for — even if that's mom or dad, partner or child. The version " +
+  "underneath all of it. The one you've drifted from and want to be again.\n\n" +
+  'Who were they? What were they doing? How did it feel to be them?\n\nTell me about them.';
 
 const NAME_PROMPT =
   'If you put that person in a single word — the Runner, the Writer, the Builder, the Friend — what would it be? ' +
@@ -880,14 +880,20 @@ const reclaimStage: StageDef = {
 // confirms their Reclaim List (the seatbelt above is untouched) and BEFORE onboarding completes. Off the depth
 // kernel (administered mode). It establishes the GRINTA baseline (grit across four strands, one per R). NO ID
 // Score here — that's earned in Reconnect. Built on the shared administeredStage() factory; copy lives here.
-// Introduce the four Rs HERE — the first time the member meets the framework — right before the baseline survey
-// (Greg's intro). Without this, the reveal's "each R"/"Reconnect is first" reads out of context. Copy: Jay/Greg, verbatim.
+// Introduce the four Phases HERE — the first time the member meets the framework — right before the baseline
+// survey, so the Card's "each Phase"/"first Phase" has a referent. Onboarding Copy v2 (Jay's voice pass, verbatim).
 const GRINTA_OPEN =
-  'The Grinta for Life process is a self-guided journey to help you discover what’s possible — and reach it. It ' +
-  'isn’t easy; it takes perseverance. That’s where Grinta comes in. There are four Phases: Reconnect, Rewire, ' +
-  'Rebuild, and Reclaim. A short survey now gives you a baseline to build from — answer as your actual self, not ' +
-  'your ideal one.';
-const GRINTA_SCALE = 'For each statement, tell me how true it feels today — 1 (not at all) to 5 (completely).';
+  'Here’s the road ahead. Four Phases, each building on the last: Reconnect — find who you are again. Rewire — get ' +
+  'your head right. Rebuild — get your body back. Reclaim — step all the way into it. It takes grit to walk it, ' +
+  'which is the whole point: Grinta is Italian for grit, and it’s exactly what we’re going to build in you, one ' +
+  'Phase at a time.';
+// The WHY before the scale (a mirror; sets the starting Grinta to watch climb), then how to answer + the 1–5 scale.
+const GRINTA_SCALE =
+  'But first, a quick read on where you’re starting. These next twelve aren’t a test — think of them as a mirror. ' +
+  'Each one touches a different part of what it takes to reclaim yourself. Your answers set your starting Grinta — a ' +
+  'number you’ll watch climb as you do the work. That’s the point: not to score you, but to give you something real ' +
+  'to measure the comeback against.\n\nAnswer as the person you actually are today, not the one you wish you were. ' +
+  'For each one, tell me how true it feels — 1 (not at all) to 5 (completely).';
 // The full survey opener: the 4Rs intro + the scale + the first item. Shared by the stage opener and the Reclaim seam.
 function grintaSurveyOpener(): string {
   return `${GRINTA_OPEN}\n\n${GRINTA_SCALE}\n\n${grintaDeliver(0)}`;
@@ -907,11 +913,14 @@ function grintaDeliver(index: number): string {
 // `collected`; nothing saves until the member confirms) WITH the light Grinta reveal: the baseline number + the
 // four Rs, Reconnect lit next. Governed: a starting line, never a grade; no ID Score.
 function grintaClose(composite: number): string {
+  // Onboarding Copy v2 (Jay's voice pass): "working through the four Phases, one at a time" (was "closing each R…");
+  // "ready for you now" (was "already lit").
   return (
-    `That’s the whole check-in — thank you for staying with it.\n\n` +
-    `Your starting Grinta Index is ${composite} out of 5. Grinta is grit — never give up. You build it by closing ` +
-    `each R, one strand at a time. This is just where you’re standing today: nothing to grade, everything to build on.\n\n` +
-    `Take a look at what I’ve captured from our whole conversation below. Reconnect is first — and it’s already lit.`
+    `That’s the whole check-in — thanks for staying with it.\n\n` +
+    `Your starting Grinta Index is ${composite} out of 5. Grinta is grit — never give up — and you build it by ` +
+    `working through the four Phases, one at a time. This is just where you stand today: nothing to grade, ` +
+    `everything to build on.\n\n` +
+    `Take a look at what I captured from our conversation below. Reconnect is your first Phase, and it’s ready for you now.`
   );
 }
 

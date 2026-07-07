@@ -169,6 +169,11 @@ button:hover, .btn:hover { background: var(--navy); }
 
 .onboard-intro { margin: 0 0 1.4rem; }
 .onboard-intro p { line-height: 1.6; margin: 0 0 0.85rem; color: var(--charcoal); }
+/* Password field with a show/hide eye toggle (the toggle sits inside the field, right-aligned). */
+.pw-field { position: relative; display: flex; align-items: center; }
+.pw-field input { flex: 1; padding-right: 4rem; }
+.pw-toggle { position: absolute; right: 10px; background: none; border: none; color: var(--teal); font-weight: 600; font-size: 0.85rem; cursor: pointer; padding: 4px 6px; }
+.pw-toggle:hover { text-decoration: underline; }
 /* AI disclosure — its own framed beat at the top of the gate (governance: members always know it's AI). */
 .ai-disclosure { margin: 0 0 1.3rem; padding: 0.85rem 1rem; border-left: 4px solid var(--teal); border-radius: 8px; background: rgba(59, 148, 149, 0.07); color: var(--navy); line-height: 1.55; font-size: 0.95rem; }
 /* Onboarding primer — practical "before we start" orientation box on the gate. */
@@ -345,6 +350,10 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .summary-list dd { margin: 0.15rem 0 0; color: var(--charcoal); line-height: 1.5; }
 .summary-reclaim { margin: 0.2rem 0 0; padding-left: 1.2rem; }
 .summary-reclaim li { margin: 0.15rem 0; }
+/* Doors on the card — each with its one-line gloss (Onboarding Copy v2), not just the label. */
+.summary-doors { margin: 0.2rem 0 0; padding-left: 1.2rem; }
+.summary-doors li { margin: 0.35rem 0; line-height: 1.5; color: var(--charcoal); }
+.summary-doors strong { color: var(--navy); }
 /* The Grinta baseline block on the confirmation card — the one number (a starting line) + the 4-Rs light ceremony. */
 .onboard-grinta { margin: 0 0 1rem; padding: 0.9rem 1rem; border-radius: 10px; background: rgba(55, 79, 99, 0.05); border: 1px solid var(--panel-line); }
 .og-score { display: flex; align-items: baseline; gap: 0.35rem; }

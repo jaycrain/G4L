@@ -48,6 +48,6 @@ test('grinta stage · the 12-item walk completes, scores per strand, and reveals
   assert.equal(g.strands.reclaim, 4);
   assert.equal(g.composite, 3.25);
   assert.match(turn.reply, /starting Grinta Index is 3.25/, 'the reveal shows the number');
-  assert.match(turn.reply, /Reconnect is first/i, 'the light ceremony lights Reconnect next');
+  assert.match(turn.reply, /Reconnect is your first Phase/i, 'the light ceremony names Reconnect as the first Phase');
   assert.doesNotMatch(turn.reply, /ID Score|out of 100/i, 'NO ID Score at onboarding — earned in Reconnect');
 });

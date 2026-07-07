@@ -970,5 +970,5 @@ test('STAGED end-to-end — opening → identity → gap → reclaim → complet
   assert.equal(done.complete, true, 'the survey completes the full arc');
   assert.equal(done.state.stage, 'complete');
   assert.equal(done.state.collected.grintaBaseline?.composite, 4, 'all-4s → composite 4');
-  assert.match(done.reply, /starting Grinta Index is 4|Reconnect is first/i, 'the light reveal names the baseline + Reconnect');
+  assert.match(done.reply, /starting Grinta Index is 4|Reconnect is your first Phase/i, 'the light reveal names the baseline + Reconnect');
 });

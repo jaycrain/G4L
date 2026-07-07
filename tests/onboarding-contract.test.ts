@@ -102,7 +102,10 @@ test('buildSummaryCard renders the confirmable card from collected state', () =>
   const card = buildSummaryCard(c);
   assert.equal(card.ready, true);
   assert.equal(card.identityLabel, 'the Connector');
-  assert.deepEqual(card.doors, [{ slug: 'aging_parents', displayName: 'The Aging Parents' }]);
+  assert.equal(card.doors.length, 1);
+  assert.equal(card.doors[0]!.slug, 'aging_parents');
+  assert.equal(card.doors[0]!.displayName, 'The Aging Parents');
+  assert.ok(card.doors[0]!.descriptor.length > 0, 'the door carries its one-line gloss for the card (Copy v2)');
   assert.equal(card.reclaimList.length, 3);
   assert.match(card.gap, /full-time care/);
 });

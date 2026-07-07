@@ -25,6 +25,7 @@ export default function OnboardingChat() {
   // Decision Z: the password is collected UPFRONT at the gate (one clean signup moment) but held only in memory —
   // the account is still created at the "This is me" commit, and the password is never persisted client-side.
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false); // eye toggle on the password field
   const [resumable, setResumable] = useState(false); // a saved session exists → show the "welcome back" gate
   const [messages, setMessages] = useState<ConvMessage[]>([]);
   const [state, setState] = useState<ConvState | null>(null);
@@ -230,16 +231,17 @@ export default function OnboardingChat() {
           </>
         ) : (
           <>
+            {/* Sign Up — Onboarding Copy v2 (Jay's voice pass): warmer, peer-voiced, with the honesty-helps note. */}
             <h1>You’re in the right place.</h1>
             <div className="onboard-intro">
-              <p>However you found your way here — a newsletter, a post, someone who thought of you — something in it landed, or you wouldn’t be reading this. That’s worth trusting.</p>
-              <p>Here’s what this is: a chance to reclaim the version of you that’s gotten quiet under everyone else’s needs and a hundred reasonable decisions. We start with a real conversation — no forms, no scores yet, just you and a companion built for this one thing.</p>
-              <p>It takes about twenty minutes, and it’s better unhurried — find a comfortable place before you start. If life interrupts, your place is saved; come back when you can.</p>
+              <p>However you got here — a newsletter, a post, someone who thought of you — something landed, or you wouldn’t be reading this. Trust that.</p>
+              <p>Here’s how it works: we start with a real conversation. No forms, no scores yet — just you and a companion built for this one thing. It takes about twenty minutes, and it goes better slow, so find a quiet spot before you start. If life interrupts, your place is saved — come back when you can.</p>
+              <p>One thing the rest of us learned the hard way: the more honest you’re willing to be here, the more this can do for you. Nobody’s grading you. This is you, helping you.</p>
             </div>
             {/* AI disclosure — woven in, its own quiet beat (governance): they always know they're talking with AI. */}
             <p className="ai-disclosure" role="note">
               From here it’s you and your G4L companion — an AI built for this and nothing else. It remembers what
-              you share so you never start over, and what you tell it shapes everything that follows.
+              you share, so you never start over, and everything you tell it shapes what comes next.
             </p>
           </>
         )}
@@ -251,15 +253,26 @@ export default function OnboardingChat() {
           {/* Decision Z: password set once, here — held in memory, the account is created only when they confirm
               the card, so the Ceremony is never interrupted by a signup step. */}
           <label htmlFor="password">{resumable ? 'Your password' : 'Choose a password'}</label>
-          <input
-            id="password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            autoComplete={resumable ? 'current-password' : 'new-password'}
-            minLength={8}
-            required
-          />
+          <div className="pw-field">
+            <input
+              id="password"
+              type={showPassword ? 'text' : 'password'}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoComplete={resumable ? 'current-password' : 'new-password'}
+              minLength={8}
+              required
+            />
+            <button
+              type="button"
+              className="pw-toggle"
+              onClick={() => setShowPassword((v) => !v)}
+              aria-label={showPassword ? 'Hide password' : 'Show password'}
+              aria-pressed={showPassword}
+            >
+              {showPassword ? 'Hide' : 'Show'}
+            </button>
+          </div>
           {error && <p className="error">{error}</p>}
           <button type="submit">{resumable ? 'Pick up where I left off →' : 'Let’s begin →'}</button>
         </form>
@@ -312,8 +325,18 @@ export default function OnboardingChat() {
                 <dd>{card.identityLabel ?? 'You’ll name this through the work — that part comes soon.'}</dd>
                 <dt>How the gap opened</dt>
                 <dd>{card.gap}</dd>
-                <dt>Door{card.doors.length === 1 ? '' : 's'}</dt>
-                <dd>{card.doors.map((d) => d.displayName).join(', ') || '—'}</dd>
+                <dt>The door{card.doors.length === 1 ? '' : 's'} you came through — the way{card.doors.length === 1 ? '' : 's'} the fade got in</dt>
+                <dd>
+                  {card.doors.length ? (
+                    <ul className="summary-doors">
+                      {card.doors.map((d) => (
+                        <li key={d.slug}><strong>{d.displayName}</strong> — {d.descriptor}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    '—'
+                  )}
+                </dd>
                 <dt>What you want back</dt>
                 <dd>
                   <ul className="summary-reclaim">

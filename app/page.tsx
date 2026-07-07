@@ -8,14 +8,22 @@ export default async function Home() {
 
   return (
     <>
-      <h1>Grinta for Life</h1>
-      {/* Number-free + no front-loaded jargon (Donna's rule): terms are introduced at first use inside the
-          conversation, not here — and v2.1 onboarding has no scores yet. DIRECTIONAL copy for wordsmithing. */}
-      <p className="muted">
-        Somewhere along the way, the person you know you are gets quiet — worn down by life, by
-        everyone else&apos;s needs, by a hundred reasonable decisions. This is where you start turning
-        that around: a real conversation, and a companion built for this one thing.
-      </p>
+      {/* Begin — Onboarding Copy v2 (Jay's voice pass): the opener paints the whole arc (lost identity → the
+          doors → what to reclaim → the build). Number-free, de-gendered. */}
+      <h1>You’re still in there.</h1>
+      <div className="onboard-intro">
+        <p>
+          The person you were before life got loud — before the job, the obligations, the hundred reasonable
+          trade-offs that added up to someone you don’t quite recognize. That person didn’t disappear. They got
+          crowded out.
+        </p>
+        <p>
+          Grinta for Life is how you find your way back. Together we’ll name who you’ve drifted from, look at how it
+          happened — everyone walks through a door or two into the fade — and get clear on who you want to reclaim.
+          Then we build the way back.
+        </p>
+        <p>It starts with a real conversation. Just you and a companion built for this one thing, and nothing else.</p>
+      </div>
       <p>
         <Link className="btn" href="/onboarding">
           Begin
