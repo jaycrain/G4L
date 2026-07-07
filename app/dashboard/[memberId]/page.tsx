@@ -399,7 +399,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
             </div>
           ) : null;
         })()}
-        <p className="muted refine-hint">To add or refine, just talk to Your G4L Companion</p>
+        <p className="muted refine-hint">To add or refine, just talk to your G4L Companion</p>
       </div>
 
       {/* Your Badges — the proof, sitting just below the work it rewards. */}

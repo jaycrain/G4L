@@ -50,6 +50,7 @@ export type TrackerSuggestion = {
   unit: string;
   direction: MeasureDirection;
   target: number | null;
+  delta: number | null; // a "lose/gain N" amount — the finish line is current ∓ delta, derived once Current is entered
   accumulation: boolean; // a "raise/save toward N" goal — baseline at 0 so the amount logged is progress
 };
 
@@ -58,24 +59,36 @@ export function suggestTracker(text: string): TrackerSuggestion {
   const t = (text ?? '').trim();
   const low = t.toLowerCase();
 
-  // target: $ amount (k/m suffix) → "to/under/…" N → N% → N+ → N <unit>
+  // DELTA goal: "lose/gain N <weight unit>" — the finish line depends on where they START (target = current ∓ N),
+  // so we carry N as `delta` and derive the target from their Current value at entry. This is how people actually
+  // track weight, and it's distinct from an ABSOLUTE target ("down to 190", "under 200" — keeps its explicit
+  // number) and from an ACCUMULATION goal ("save/raise $N" — counts up from 0).
+  const deltaM = low.match(/\b(lose|losing|lost|drop|shed|cut|gain|gaining|gained|add|put on)\s+([\d,.]+)\s*(?:lbs?|kg|kgs|pounds?)\b/);
+  const absoluteCue = /\b(?:to|under|below|above|over|reach|hit|down to)\s+\$?\d/.test(low) || /\$/.test(t);
+  let delta: number | null = deltaM && !absoluteCue ? parseFloat(deltaM[2]!.replace(/,/g, '')) : null;
+  if (delta != null && !Number.isFinite(delta)) delta = null;
+
+  // target: absolute only ($ amount → "to/under/…" N → N% → N+ → N <unit>). A delta goal has NO absolute target
+  // yet — it's derived from Current at entry, so we leave it null here.
   let target: number | null = null;
-  let m = low.match(/\$\s?([\d,.]+)\s?(k|m)?/);
-  if (m) {
-    let n = parseFloat(m[1]!.replace(/,/g, ''));
-    if (/k/.test(m[2] ?? '')) n *= 1000;
-    if (/m/.test(m[2] ?? '')) n *= 1_000_000;
-    target = n;
-  } else if ((m = low.match(/\b(?:to|under|below|above|over|reach|hit)\s+([\d,.]+)/))) {
-    target = parseFloat(m[1]!.replace(/,/g, ''));
-  } else if ((m = low.match(/([\d,.]+)\s?%/))) {
-    target = parseFloat(m[1]!);
-  } else if ((m = low.match(/([\d,.]+)\s?\+/))) {
-    target = parseFloat(m[1]!.replace(/,/g, ''));
-  } else if ((m = low.match(/\b([\d,.]+)\s?(?:lbs?|kg|miles?|mi|km|bpm)\b/))) {
-    target = parseFloat(m[1]!.replace(/,/g, ''));
+  if (delta == null) {
+    let m = low.match(/\$\s?([\d,.]+)\s?(k|m)?/);
+    if (m) {
+      let n = parseFloat(m[1]!.replace(/,/g, ''));
+      if (/k/.test(m[2] ?? '')) n *= 1000;
+      if (/m/.test(m[2] ?? '')) n *= 1_000_000;
+      target = n;
+    } else if ((m = low.match(/\b(?:to|under|below|above|over|reach|hit)\s+([\d,.]+)/))) {
+      target = parseFloat(m[1]!.replace(/,/g, ''));
+    } else if ((m = low.match(/([\d,.]+)\s?%/))) {
+      target = parseFloat(m[1]!);
+    } else if ((m = low.match(/([\d,.]+)\s?\+/))) {
+      target = parseFloat(m[1]!.replace(/,/g, ''));
+    } else if ((m = low.match(/\b([\d,.]+)\s?(?:lbs?|kg|miles?|mi|km|bpm)\b/))) {
+      target = parseFloat(m[1]!.replace(/,/g, ''));
+    }
+    if (target != null && !Number.isFinite(target)) target = null;
   }
-  if (target != null && !Number.isFinite(target)) target = null;
 
   const unit = /\$/.test(t)
     ? '$'
@@ -92,7 +105,9 @@ export function suggestTracker(text: string): TrackerSuggestion {
   // direction: lower-is-better cues vs higher-is-better cues; sensible defaults by topic
   const downCues = /\b(?:lose|drop|down to|under|below|cut|reduce|lower)\b/.test(low) || /\bweight\b/.test(low);
   const upCues = /\b(?:raise|save|saving|reach|up to|grow|increase|more|hit|\+)\b/.test(low) || /\b(?:miles?|mi)\b/.test(low);
-  const direction: MeasureDirection = downCues && !/\braise\b/.test(low) ? 'down' : upCues ? 'up' : 'up';
+  let direction: MeasureDirection = downCues && !/\braise\b/.test(low) ? 'down' : upCues ? 'up' : 'up';
+  // A delta goal's direction is unambiguous from its verb — gain/add = up, lose/drop/shed/cut = down.
+  if (delta != null) direction = /\b(?:gain|gaining|gained|add|put on)\b/.test(low) ? 'up' : 'down';
 
   const label = /\bweight\b/.test(low)
     ? 'Weight'
@@ -108,9 +123,10 @@ export function suggestTracker(text: string): TrackerSuggestion {
 
   // Accumulation goals (raise/save a dollar amount toward a target) start at 0, so any amount logged
   // reads as progress — unlike a rate/level goal (weight, weekly miles) where the first entry IS the baseline.
-  const accumulation = direction === 'up' && (/\$/.test(t) || /\b(?:raise|save|saving|savings|fundrais|retirement)\b/.test(low));
+  // Accumulation is reserved for money goals (save/raise $N); a "gain N lbs" delta is a LEVEL goal, not 0→N.
+  const accumulation = delta == null && direction === 'up' && (/\$/.test(t) || /\b(?:raise|save|saving|savings|fundrais|retirement)\b/.test(low));
 
-  return { label, unit, direction, target, accumulation };
+  return { label, unit, direction, target, delta, accumulation };
 }
 
 /** Resolve a reclaim item the member references, by exact-ish text match. Returns its id or null. */

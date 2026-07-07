@@ -301,6 +301,7 @@ ul.reclaim li.reclaimed { color: var(--navy); }
 .tt-num { width: 5rem; }
 .tt-arrow { color: var(--charcoal); opacity: 0.6; }
 .tt-dir { flex: 1; }
+.tt-hint { font-size: 0.78rem; margin: 0 0 0.5rem; }
 .tt-actions { display: flex; gap: 0.4rem; }
 .tt-create {
   padding: 0.3rem 0.8rem; font-size: 0.82rem; font-weight: 600; cursor: pointer;
