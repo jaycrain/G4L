@@ -322,14 +322,16 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
 
         <div className="card metric grinta">
           <h3>Grinta Index</h3>
-          <p className="card-subtitle">Grit. Never give up. Stronger with each R.</p>
+          <p className="card-subtitle">Grit. Never give up. Stronger with each Phase.</p>
           {grintaReading ? (
             <div className="metric-body">
               <div className="score">
                 <span className="num">{grintaReading.composite}</span>
                 <span className="grinta-scale">/ 5</span>
                 {/* Delta only AFTER a Checkpoint moves it — the baseline stands alone, no arrow (signed up-positive %). */}
-                {grintaReading.changePct !== null && grintaReading.direction && (
+                {/* Delta rule (§3): up = positive; down = NEUTRAL grey, small, never red (a dip is honest
+                    recalibration, not a loss — per Greg); flat = no arrow at all. */}
+                {grintaReading.changePct !== null && grintaReading.direction && grintaReading.direction !== 'flat' && (
                   <span className={`dir-${grintaReading.direction}`}>
                     {ARROW[grintaReading.direction]}
                     {grintaReading.changePct !== 0 ? ` ${grintaReading.changePct > 0 ? '+' : ''}${grintaReading.changePct}%` : ''}
@@ -344,12 +346,14 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
                     <div className="dim" key={r.key}>
                       <span className="strand-label"><span className="r-dot" style={{ background: R_RING_COLOR[r.key] }} />{r.label}</span>
                       <span className="strand-val">{v != null ? `${v} / 5` : '—'}</span>
-                      {r.key === 'reconnect' && <em className="strand-cue">next to grow</em>}
+                      {/* The cue follows the CURRENT Phase (§5) — not frozen on Reconnect. On Rewire, Rewire is
+                          "next to grow" and Reconnect drops back into the normal list. */}
+                      {r.key === activePhase && <em className="strand-cue">next to grow</em>}
                     </div>
                   );
                 })}
               </div>
-              <p className="metric-foot muted">Each R you finish adds to its strand — Grinta climbs as you close the loop.</p>
+              <p className="metric-foot muted">Each Phase you finish adds to it — Grinta grows as you close the loop.</p>
             </div>
           ) : (
             // Anticipatory blank — the baseline lands the moment they finish the intro survey, then grows each R.

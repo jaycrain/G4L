@@ -48,7 +48,8 @@ export default function ReconnectCeremony({ memberId, data }: { memberId: string
           <div className="cer-grinta-head">
             <span className="cgn-val">{r.composite}</span>
             <span className="cgn-scale">/ 5</span>
-            {r.changePct !== null && r.direction && (
+            {/* Delta rule (§3): down renders NEUTRAL (never red); flat shows no arrow. */}
+            {r.changePct !== null && r.direction && r.direction !== 'flat' && (
               <span className={`cgn-move dir-${r.direction}`}>{MOVE_ARROW[r.direction]} {r.changePct > 0 ? '+' : ''}{r.changePct}%</span>
             )}
             <span className="cer-chip">Grinta Index</span>
@@ -59,7 +60,7 @@ export default function ReconnectCeremony({ memberId, data }: { memberId: string
               <span className="cgs-label">Reconnect</span>
               <span className="cgs-val">
                 {r.reconnect}
-                {r.reconnectChangePct != null && rcnDir && (
+                {r.reconnectChangePct != null && rcnDir && rcnDir !== 'flat' && (
                   <em className={`cgs-move dir-${rcnDir}`}> {MOVE_ARROW[rcnDir]} {r.reconnectChangePct > 0 ? '+' : ''}{r.reconnectChangePct}%</em>
                 )}
               </span>

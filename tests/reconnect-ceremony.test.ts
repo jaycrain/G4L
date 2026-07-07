@@ -25,6 +25,29 @@ test('§2f ceremony · reveals the score radar, the Grinta movement, the Playboo
   assert.deepEqual(doors.doors, ['The Grind', 'The Body'], 'the Door(s) as they stand (post-revision)');
 });
 
+test('§2f ceremony · a DOWN checkpoint move reveals the clearer-seeing line, NEVER a failure line (§3 recalibration)', () => {
+  const beats = buildReconnectCeremonyBeats({
+    idScore: 60, dimensions: null,
+    grinta: { composite: 3.25, changePct: -3, direction: 'down', reconnect: 3, reconnectChangePct: -10 },
+    keepers: ['x'], doors: ['The Grind'],
+  });
+  const grintaBeat = beats.find((b) => b.reveal?.kind === 'grinta')!;
+  assert.match(grintaBeat.text, /seeing yourself more clearly|not a step back/i, 'a dip reads as honest recalibration');
+  assert.doesNotMatch(grintaBeat.text, /went up because of it/i, 'never the up-line on a down move');
+  assert.doesNotMatch(grintaBeat.text, /\bfail|\bloss|\bbackward\b|worse/i, 'never framed as failure');
+});
+
+test('§2f ceremony · a FLAT checkpoint move reveals the held-steady line (§3)', () => {
+  const beats = buildReconnectCeremonyBeats({
+    idScore: 60, dimensions: null,
+    grinta: { composite: 3.3, changePct: 0, direction: 'flat', reconnect: 3.3, reconnectChangePct: 0 },
+    keepers: ['x'], doors: ['The Grind'],
+  });
+  const grintaBeat = beats.find((b) => b.reveal?.kind === 'grinta')!;
+  assert.match(grintaBeat.text, /held steady|solid line/i, 'flat = a solid line to build from');
+  assert.doesNotMatch(grintaBeat.text, /went up because of it/i, 'not the up-line');
+});
+
 test('§2f ceremony · the Grinta reveal appears ONLY when a Checkpoint captured it (null → no beat, no empty frame)', () => {
   const withGrinta = buildReconnectCeremonyBeats({ idScore: 60, dimensions: null, grinta: { composite: 3.4, changePct: 8, direction: 'up', reconnect: 4, reconnectChangePct: 20 }, keepers: ['x'], doors: ['The Grind'] });
   assert.ok(withGrinta.some((b) => b.reveal?.kind === 'grinta'), 'revealed when the movement exists');
