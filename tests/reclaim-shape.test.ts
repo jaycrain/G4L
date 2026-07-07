@@ -42,6 +42,12 @@ test('semantic overlap — the two "lose 35 lbs" items are the same want; distin
   assert.equal(semanticOverlap('Buy some new clothes', DONNA_LIST), null);
   assert.equal(semanticOverlap('Hang out with friends on weekends', ['My fitness', 'Lose about 35 lbs']), null);
   assert.equal(semanticOverlap('My fitness', ['Lose about 35 lbs', 'Buy some new clothes']), null);
+
+  // Explorer walk: same-intent SYNONYMS ("drop"/"lose") are the same want even though the words differ.
+  assert.equal(semanticOverlap('Lose 40 lbs', ['Drop 40 lbs']), 'Drop 40 lbs');
+  assert.equal(semanticOverlap('Shed 40 pounds', ['Lose 40 lbs']), 'Lose 40 lbs');
+  // …but a different "cut" want must NOT false-merge into weight loss (the 0.6 threshold still guards).
+  assert.equal(semanticOverlap('Cut back on alcohol', ['Lose 40 lbs']), null);
 });
 
 test('reconcile — finds Donna\'s overlap first, then reports clean once resolved', () => {

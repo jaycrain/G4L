@@ -15,13 +15,14 @@ const FILLER = new Set([
   'again', 'bit', 'little', 'least', 'at', 'in', 'on', 'so', 'that', 'this', 'it', 'be', 'is', 'am', 'do',
 ]);
 
-// light stem so "losing"/"lose"/"lost" and plurals collapse to a shared token
+// light stem so tense/plural forms AND same-intent synonyms collapse to a shared token. The synonym map matters for
+// overlap: "drop 40 lbs" and "lose 40 lbs" are the same want in different words — without it they scored only 0.5.
+// (The 0.6 Jaccard threshold still protects against over-merge — "cut alcohol" vs "lose 40 lbs" shares only "lose".)
 function stem(w: string): string {
-  let s = w.toLowerCase().replace(/[^a-z0-9$]/g, '');
-  if (s === 'losing' || s === 'lost' || s === 'loses') s = 'lose';
-  if (s === 'gaining' || s === 'gained' || s === 'gains') s = 'gain';
-  s = s.replace(/ing$/, '').replace(/e?s$/, '').replace(/ed$/, '');
-  return s;
+  const s = w.toLowerCase().replace(/[^a-z0-9$]/g, '');
+  if (/^(los(e|ing|es|t)|drop(ping|ped|s)?|shed(ding|s)?|cut(ting|s)?|trim(ming|s)?|shave|shaving)$/.test(s)) return 'lose';
+  if (/^(gain(ing|ed|s)?|add(ing|ed|s)?|puts?|building?)$/.test(s)) return 'gain';
+  return s.replace(/ing$/, '').replace(/e?s$/, '').replace(/ed$/, '');
 }
 
 /** The CONTENT tokens of a phrase — the want itself, with filler/stopwords removed and light stemming applied. */
