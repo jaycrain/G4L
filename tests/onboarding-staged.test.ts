@@ -561,27 +561,18 @@ test('STAGED identity — with NO model question, the re-draw is SHORT, never th
   assert.ok(t.reply.length < opener.length, 'the re-draw is materially shorter than the cold-open');
 });
 
-test('STAGED terminal (#2) — an add AT the card lands even when the model only SAID "Added" (silent-loss backstop)', () => {
-  // Donna's walk: at the confirmation card the member asks to add a want; the model acknowledges in prose ("Added.")
-  // but never records it. The card sits at the terminal 'complete' stage, past the reclaim stage's own late-add
-  // handler — so without a terminal backstop the want is silently lost. It must be captured onto the card.
-  const done: ConvState = {
-    stage: 'complete',
-    collected: { athleticPast: 'a player', identityNoun: 'Player', gap: 'a real fade over a long hard decade', reclaimList: ['My fitness', 'See friends on weekends'] },
-  };
-  const t = applyStagedTurn(done, [], 'add buy some new clothes to my list', { text: 'Added. Anything else, or are you ready to move into Reconnect?' });
-  assert.ok(t.state.collected.reclaimList?.some((x) => /new clothes/i.test(x)), 'the unfulfilled add is backstop-captured onto the card');
-  assert.equal(t.complete, true, 'stays complete — the card re-renders with the new item');
-});
-
-test('STAGED terminal (#2) — no double-add when the model DID record the want, and no capture without an add-cue', () => {
-  const base = { athleticPast: 'x', identityNoun: 'Runner', gap: 'a real fade over a long hard decade', reclaimList: ['My fitness'] };
-  // The model recorded it → the backstop must not add a second copy.
-  const recorded = applyStagedTurn({ stage: 'complete', collected: { ...base } }, [], 'add running shoes', { text: 'Added.', record: { reclaimList: ['My fitness', 'running shoes'] } });
-  assert.equal(recorded.state.collected.reclaimList?.filter((x) => /running shoes/i.test(x)).length, 1, 'model-recorded want is not double-added');
-  // A bare confirmation with no add-cue never captures a list item (never assume past what they said).
-  const affirm = applyStagedTurn({ stage: 'complete', collected: { ...base } }, [], 'looks great, ready to go', { text: 'Wonderful — into Reconnect.' });
-  assert.equal(affirm.state.collected.reclaimList?.length, 1, 'a confirmation is not captured as a want');
+test('STAGED terminal — CONFIRM-ONLY card: the Reclaim List is FROZEN, no post-card adds (Jay\'s call)', () => {
+  // The card is a gate, not an editor. New wants at the terminal 'complete' stage do NOT land — not a bare want,
+  // and not even one the model re-records — because the earlier "add at the card" path was buggy (silent loss +
+  // no room to answer). Wants are added later in Reconnect + the companion rail.
+  const base = { athleticPast: 'a player', identityNoun: 'Player', gap: 'a real fade over a long hard decade', reclaimList: ['My fitness', 'See friends on weekends'] };
+  // A bare want the model only acknowledged in prose → not captured.
+  const bare = applyStagedTurn({ stage: 'complete', collected: { ...base } }, [], 'Buy a new road bike', { text: 'Added to the list. Any particular kind of bike in mind?' });
+  assert.equal(bare.state.collected.reclaimList?.length, 2, 'a want stated at the card does not grow the list');
+  assert.equal(bare.complete, true, 'the card stands (confirm-only)');
+  // Even a model-RECORDED add is frozen out at the terminal — the list is set by here.
+  const recorded = applyStagedTurn({ stage: 'complete', collected: { ...base } }, [], 'add running shoes', { text: 'Added.', record: { reclaimList: ['My fitness', 'See friends on weekends', 'running shoes'] } });
+  assert.equal(recorded.state.collected.reclaimList?.length, 2, 'a model-recorded add is frozen out at the card');
 });
 
 // ── Decision II: the shape gate wired into the reclaim confirm (propose/confirm, never a silent rewrite) ──
@@ -629,11 +620,13 @@ test('Decision II — a VISION is offered to the Playbook; "yes" moves it out of
 test('gather hygiene (Elite Cyclist walk) — a "shape of it" close is not captured; an "N rides a week" cadence folds', () => {
   // "That's about the shape of it" is the member closing the list, not a want (RECLAIM_CLOSE_RE missed "shape of it").
   assert.equal(memberClosingReclaim("That's about the shape of it"), true);
-  // "2-3 rides a week to begin with" is a cadence fragment — folds into its parent want (Rule 4, generic activity noun).
-  const s: ConvState = { stage: 'complete', collected: { athleticPast: 'x', identityNoun: 'Elite Cyclist', gap: 'a real fade over a long hard decade', reclaimList: ['Riding my bike'] } };
-  const t = applyStagedTurn(s, [], 'add 2-3 rides a week to begin with', { text: 'Added.' });
-  assert.equal((t.state.collected.reclaimList ?? []).length, 1, 'the cadence folds into "Riding my bike", not a standalone item');
-  assert.match(t.state.collected.reclaimList![0]!, /Riding my bike.*rides a week/i);
+  // "2-3 rides a week to begin with" is a cadence fragment — captured during the reclaim GATHER, it folds into its
+  // parent want (Rule 4, generic activity noun) rather than standing alone.
+  const s: ConvState = { stage: 'reclaim', collected: { athleticPast: 'x', identityNoun: 'Elite Cyclist', gap: 'a real fade over a long hard decade', reclaimList: ['Riding my bike'] } };
+  const t = applyStagedTurn(s, [], '2-3 rides a week to begin with', { text: 'Noted.', record: { reclaimList: ['Riding my bike', '2-3 rides a week to begin with'] } });
+  const list = t.state.collected.reclaimList ?? [];
+  assert.equal(list.length, 1, 'the cadence folds into "Riding my bike", not a standalone item');
+  assert.match(list[0]!, /Riding my bike.*rides a week/i);
 });
 
 test('Decision II — a MULTI-WANT paragraph is drawn out; the member\'s pick replaces the paragraph', () => {
