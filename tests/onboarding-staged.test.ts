@@ -631,6 +631,19 @@ test('gather hygiene (Elite Cyclist walk) — a "shape of it" close is not captu
   assert.match(list[0]!, /Riding my bike.*rides a week/i);
 });
 
+test('Decision II — the shape gate is UNBYPASSABLE: even the forceProgress/runaway path surfaces a shape (Explorer walk)', () => {
+  // The bug behind Jay's Explorer walk: the gate lived only in the reclaim CONFIRM handler, but the reclaim stage
+  // also hands off to the survey via forceProgress (the stall/runaway backstop) — which skipped the gate, so a
+  // duplicate reached the card. The gate now lives at the enterGrintaSurvey CHOKEPOINT, so no path bypasses it.
+  const stalled: ConvState = {
+    stage: 'reclaim', awaitingConfirm: false, idleTurns: 3, // a stall → forceProgress fires
+    collected: { athleticPast: 'x', identityNoun: 'Explorer', gap: 'a real fade over a long hard decade', reclaimList: ['My fitness', 'Drop 40 lbs', 'Lose 40 lbs', 'Buy new clothes'] },
+  };
+  const t = applyStagedTurn(stalled, [], '...', { text: 'ok' });
+  assert.equal(t.state.stage, 'reclaim', 'the runaway handoff is held back to resolve the shape, not advanced to the survey');
+  assert.equal(t.state.pendingReclaimShape?.kind, 'overlap', 'the "drop/lose 40 lbs" duplicate is surfaced');
+});
+
 test('Decision II — a MULTI-WANT paragraph is drawn out; the member\'s pick replaces the paragraph', () => {
   const para = 'Regular income that covers our baseline needs. Freelance and creative projects and funding for my role.';
   const atConfirm: ConvState = { stage: 'reclaim', awaitingConfirm: true, collected: { ...DII_BASE, reclaimList: ['My fitness', para] } };

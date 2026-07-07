@@ -1060,6 +1060,17 @@ const grintaStage: StageDef = administeredStage({
 // seatbelt and the runaway backstop) in place of completing: the capture is settled, so instead of finishing we
 // hand into the administered survey. complete stays false — the opener renders as a normal turn, not the card.
 function enterGrintaSurvey(b: Beat): Turn {
+  // DECISION II CHOKEPOINT: every path from reclaim to the survey/card runs through here (the confirm handler AND
+  // the forceProgress/runaway backstop). Before advancing, surface any unaddressed shape (overlap/vision/multiwant)
+  // so a sloppy list can NEVER reach the card ungated. If one exists, HOLD in reclaim-confirm and propose it; only a
+  // clean list advances. (The confirm handler also proposes shapes, so on the normal path this is already null.)
+  const proposal = gateNextShape(b);
+  if (proposal) {
+    b.stage = 'reclaim';
+    b.awaitingConfirm = true;
+    b.reply = proposal;
+    return { reply: b.reply, state: beatState(b), complete: false };
+  }
   b.stage = 'grinta';
   b.awaitingConfirm = false;
   b.reply = grintaSurveyOpener();
