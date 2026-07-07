@@ -93,6 +93,8 @@ from (
   select '0045' as migration, coalesce((exists(select 1 from pg_constraint where conname='reclaim_list_min_1')), false) as applied
   union all
   select '0046' as migration, coalesce(exists(select 1 from information_schema.columns where table_schema='public' and table_name='playbook_entry' and column_name='keeper_type'), false) as applied
+  union all
+  select '0047' as migration, coalesce(to_regclass('public.grinta_reading') is not null, false) as applied
 ) t
-where applied = false   -- show ONLY the gaps; delete this line to see all 46
+where applied = false   -- show ONLY the gaps; delete this line to see all 47
 order by migration;

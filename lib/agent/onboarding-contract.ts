@@ -72,7 +72,7 @@ export type SummaryCard = {
   ready: boolean; // contract satisfied — safe to offer the handoff
   missing: ContractGap[]; // unmet slots (drives "let's get the rest" when not ready)
   identityLabel: string | null; // "the Connector", or null if they chose to name it later
-  doors: { slug: DoorSlug; displayName: string }[];
+  doors: { slug: DoorSlug; displayName: string; descriptor: string }[]; // descriptor = the one-line gloss for the card
   reclaimList: string[];
   gap: string;
 };
@@ -83,7 +83,10 @@ export function buildSummaryCard(c: Collected): SummaryCard {
     ready: missing.length === 0,
     missing,
     identityLabel: c.identityNoun ? identityLabel(c.identityNoun) : null,
-    doors: (c.doors ?? []).map((slug) => ({ slug, displayName: DOORS.find((d) => d.slug === slug)?.displayName ?? slug })),
+    doors: (c.doors ?? []).map((slug) => {
+      const d = DOORS.find((x) => x.slug === slug);
+      return { slug, displayName: d?.displayName ?? slug, descriptor: d?.descriptor ?? '' };
+    }),
     reclaimList: consolidateReclaimList(c.reclaimList ?? []), // clean the card even for a sloppily-stored/resumed list
     gap: c.gap ?? '',
   };

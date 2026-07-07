@@ -23,6 +23,16 @@ export default function TrackThis({
   const [direction, setDirection] = useState(suggestion.direction);
   const [start, setStart] = useState('');
   const [target, setTarget] = useState(suggestion.target != null ? String(suggestion.target) : '');
+  const delta = suggestion.delta;
+
+  // For a "lose/gain N" delta goal the finish line is current ∓ N — so derive the target the moment the member
+  // enters (or changes the direction of) their Current value. Still fully editable afterward.
+  function deriveTarget(currentStr: string, dir: 'down' | 'up') {
+    if (delta == null) return;
+    const c = currentStr.trim();
+    if (c === '' || !Number.isFinite(Number(c))) return;
+    setTarget(String(dir === 'down' ? Number(c) - delta : Number(c) + delta));
+  }
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const router = useRouter();
@@ -70,14 +80,17 @@ export default function TrackThis({
         <input className="tt-unit" value={unit} onChange={(e) => setUnit(e.target.value)} placeholder="unit" aria-label="Unit" disabled={pending} />
       </div>
       <div className="tt-row">
-        <input className="tt-num" type="number" inputMode="decimal" step="any" value={start} onChange={(e) => setStart(e.target.value)} placeholder={suggestion.accumulation ? 'So far' : 'Current'} aria-label={suggestion.accumulation ? 'Amount so far' : 'Current value'} disabled={pending} />
+        <input className="tt-num" type="number" inputMode="decimal" step="any" value={start} onChange={(e) => { setStart(e.target.value); deriveTarget(e.target.value, direction); }} placeholder={suggestion.accumulation ? 'So far' : 'Current'} aria-label={suggestion.accumulation ? 'Amount so far' : 'Current value'} disabled={pending} />
         <span className="tt-arrow">→</span>
         <input className="tt-num" type="number" inputMode="decimal" step="any" value={target} onChange={(e) => setTarget(e.target.value)} placeholder="Target" aria-label="Target value" disabled={pending} />
-        <select className="tt-dir" value={direction} onChange={(e) => setDirection(e.target.value === 'down' ? 'down' : 'up')} aria-label="Better when" disabled={pending}>
+        <select className="tt-dir" value={direction} onChange={(e) => { const d = e.target.value === 'down' ? 'down' : 'up'; setDirection(d); deriveTarget(start, d); }} aria-label="Better when" disabled={pending}>
           <option value="down">lower is better</option>
           <option value="up">higher is better</option>
         </select>
       </div>
+      {delta != null && (
+        <p className="tt-hint muted">Enter where you are now — the target fills in automatically ({direction === 'down' ? 'lose' : 'gain'} {delta}{unit ? ` ${unit}` : ''}).</p>
+      )}
       <div className="tt-actions">
         <button type="button" className="tt-create" onClick={submit} disabled={pending}>
           {pending ? '…' : 'Start tracking'}

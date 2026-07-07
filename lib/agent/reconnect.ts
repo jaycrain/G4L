@@ -18,8 +18,12 @@ import { identityLabel } from '../member/identity.ts';
 import type { Db } from '../db/schema.ts';
 import { MEMBER_AGENT_SYSTEM_PROMPT } from './system-prompt.ts';
 import { resolveGapConfirm } from './onboarding-intent.ts';
-import { runArcTurn, type ArcConfig, type StageDef } from './onboarding-staged.ts';
+import { runArcTurn, administeredStage, type ArcConfig, type StageDef } from './onboarding-staged.ts';
+import { CHECKPOINT_GRIT_ITEMS, grintaStem } from '../grinta/survey/instrument.ts';
 import type { Collected, ConvMessage, ConvState, DoorRevision, ModelTurn, ReplyIntent, Turn, Stage } from './onboarding.ts';
+
+import { BEAT_SEP } from './onboarding.ts';
+export { BEAT_SEP }; // re-export so the reconnect action + chat keep importing it from here
 
 // Is the Reconnect arc selected? Own flag — defaults OFF, so it never runs in prod until the coupled v2.1+v2.2
 // flip. (v2.1's ONBOARDING_ENGINE=staged is a separate flag; both go on together at cut-over.)
@@ -306,10 +310,11 @@ const DRIFT_MIN_DEPTH = 2;
 const DRIFT_MAX_DEPTH = 4;
 // The opener — the RCN-DFT step-1 frame + prompt (a hoisted fn so the measurement close can append it on hand-in).
 export function driftOpen(_c: Collected): string {
+  // ONE job: the take-stock ask. No "not regret" (names the negative — the Drift-line rule), no reclaim-motivation
+  // question (that's a different beat). Jay's locked copy.
   return (
-    'Every life you build costs something. I want you to name what this one cost — be specific about what you traded ' +
-    'away to get here: the morning rides, the deep friendships, the feeling of being in your body instead of trapped ' +
-    "in your head.\n\nName a few things the Fade cost you. This isn't regret — it's inventory."
+    "So let's take stock — a look at what got left behind. Name a few things the Fade cost you: the morning rides, " +
+    'the deep friendships, the feeling of being in your body instead of trapped in your head.'
   );
 }
 const DRIFT_MORE_VARIANTS = [
@@ -453,8 +458,9 @@ const windowStage: StageDef = {
         b.pendingHarvest.push({ kind: 'window', keeperType: 'lights_you_up', destinationIntent: 'keeper', payloadRef: payload, label: 'The spark' });
       }
       b.driftPayload = undefined;
-      b.stage = 'checkpoint'; // hand into the Checkpoint (a stub — §2e, parked on Greg)
-      b.reply = windowClose();
+      b.stage = 'checkpoint'; // hand into the §2e Checkpoint (the administered grit beat)
+      b.administeredResponses = []; // reset the accumulator (held the 24 IDQ responses) for the Checkpoint instrument
+      b.reply = `${windowClose()}\n\n${checkpointOpener()}`;
     }
   },
 };
@@ -493,16 +499,6 @@ function idqClose(): string {
     "on your dashboard, and it's something we'll watch move together over time — never a grade."
   );
 }
-// Parse a 1–5 from the member's reply (digit or number-word), tolerant of "a 4", "4, mostly", "three". null = unclear.
-const IDQ_NUM_WORDS: Record<string, number> = { one: 1, two: 2, three: 3, four: 4, five: 5 };
-function parseLikert(msg: string): number | null {
-  const m = (msg ?? '').toLowerCase();
-  const digit = m.match(/\b([1-5])\b/);
-  if (digit) return Number(digit[1]);
-  for (const [w, n] of Object.entries(IDQ_NUM_WORDS)) if (new RegExp(`\\b${w}\\b`).test(m)) return n;
-  return null;
-}
-
 // M3 — the personalized close. Ties the baseline SHAPE (relative highs/lows, NEVER the raw number) back to the Door(s)
 // they named. The mirror posture: a beginning, not a grade; graceful if the lowest area doesn't obviously map to a
 // door (never manufacture the link). Best-effort — returns null on no-key/failure/number-leak, so the engine's generic
@@ -540,7 +536,8 @@ but it NEVER grades or pathologizes. Hard rules:
 - Reflect where they're STARTING FROM, a beginning — not a verdict. IF the area sitting lowest connects to a Door they
   named, name that gently (the Fade had a target — that's meaningful, not a failing). If it does NOT obviously connect,
   do NOT force a link — just reflect the starting shape warmly.
-- Warm, brief (2–3 sentences), one thought. Never diagnose. It is safe for them to be honest with themselves.`;
+- Warm, brief (2–3 sentences), one thought. Never diagnose. It is safe for them to be honest with themselves.
+- Do NOT end with a question, and do NOT editorialize about what the number means or that it "matters more than it might feel." Reflect the starting shape, then STOP — a separate beat asks the next question. This beat has ONE job: the mirror.`;
     const idLine = identity ? `Who they're reclaiming: ${identity}.` : '';
     const doorLine = doorNames.length ? `Door(s) they named: ${doorNames.join(', ')}.` : 'They named no specific Door.';
     const user = `${idLine}\n${doorLine}\nBaseline shape: lowest area is ${DIM_FRIENDLY[shape.lowest]}; highest is ${DIM_FRIENDLY[shape.highest]}. Reflect this as their starting picture, tie the lowest to their Door(s) ONLY if it genuinely fits, and close warmly. No numbers, no grades.`;
@@ -559,54 +556,55 @@ but it NEVER grades or pathologizes. Hard rules:
   }
 }
 
-const measurementStage: StageDef = {
+// §2c IDQ — the reconnect baseline instrument, built on the SHARED administered-beat factory. Everything here is
+// instrument config; the parse→accumulate→deliver→complete loop lives in administeredStage(). On the last item it
+// hands into Visioning's first beat (Drift); the ACTION scores + writes the baseline (submitIdq) on that crossing,
+// and may UPGRADE this generic close to a personalized one (M3) — appending the Drift opener.
+const measurementStage: StageDef = administeredStage({
   id: 'measurement',
-  mode: 'administered',
+  itemCount: TOTAL_ITEMS,
   opener: () => idqOpen(), // the warm open + item 0, delivered when Doors hands in
-  offersSubstance: () => true,
-  gather() {}, // unused — administered stages dispatch to administer() (the kernel branches on mode)
-  confirm() {},
-  administer(b) {
-    const val = parseLikert(b.memberMessage);
-    if (val == null) {
-      // Unclear answer → gently re-prompt the CURRENT item; do NOT advance or record.
-      b.reply = `${IDQ_REPROMPT}\n\n${itemStem(b.administeredResponses.length)}`;
-      return;
-    }
-    b.administeredResponses = [...b.administeredResponses, val];
-    const n = b.administeredResponses.length;
-    if (n >= TOTAL_ITEMS) {
-      // The 24 are in. Hand into Visioning's first beat (Drift); the ACTION scores + writes the baseline (submitIdq)
-      // on this crossing, and may UPGRADE this generic close to a personalized one (M3) — appending the Drift opener.
-      b.stage = 'drift';
-      b.reply = `${idqClose()}\n\n${driftOpen(b.collected)}`;
-    } else {
-      b.reply = deliverIdqItem(n);
-    }
+  deliverItem: (n) => deliverIdqItem(n),
+  reprompt: (n) => `${IDQ_REPROMPT}\n\n${itemStem(n)}`,
+  onComplete: (b) => {
+    b.stage = 'drift';
+    b.reply = `${idqClose()}${BEAT_SEP}${driftOpen(b.collected)}`; // two beats → two bubbles (score read | take-stock ask)
   },
-};
+});
 
-// §2e CHECKPOINT — PARKED on Greg (the Hardiness measure + its unsettled naming). Until it lands, a graceful one-turn
-// PASS-THROUGH keeps the arc flowing Window → Ceremony — no broken stub, and Greg's real Checkpoint drops in HERE later
-// without disturbing the rest. Grinta/Hardiness is NOT named (deferred).
-const CHECKPOINT_PASS =
-  "There's another kind of check-in ahead — on how you show up when the work gets hard — but that comes later, once " +
-  "you've got some road behind you. For now, you've done the deep part: the seeing.";
-const checkpointStage: StageDef = {
+// §2e CHECKPOINT — an administered beat (six GRIT items) at the end of the Reconnect arc. The items map to the three
+// beats they just walked (Recognition→the Doors, Excavation→the Drift, Spark→the Window), so this reads their grit AS
+// BUILT BY the work. Combined with the three onboarding baseline grit items, it's a 9-item grit read — the FIRST time
+// grinta moves (the ACTION scores + persists the Checkpoint reading, then the Ceremony reveals the movement). Off the
+// depth kernel (administered mode), on the SHARED factory. Grinta is NOT named to the member here — this reads as a
+// check-in; the number surfaces in the Ceremony. DIRECTIONAL copy (for Jay's wordsmithing).
+const CHECKPOINT_OPEN =
+  "One last check-in before we close — and this one's about you. Six short statements about what this work has stirred " +
+  "in you. Same as before: just tell me how true each feels right now, 1 (not at all) to 5 (completely).";
+function checkpointDeliver(index: number): string {
+  return grintaStem(CHECKPOINT_GRIT_ITEMS[index]!);
+}
+function checkpointReprompt(index: number): string {
+  return `Just a number, 1 to 5 — how true does that feel right now?\n\n${checkpointDeliver(index)}`;
+}
+function checkpointOpener(): string {
+  return `${CHECKPOINT_OPEN}\n\n${checkpointDeliver(0)}`;
+}
+const CHECKPOINT_CLOSE =
+  "That's it — you named what this stirred in you. Hold on, don't go anywhere yet.";
+const checkpointStage: StageDef = administeredStage({
   id: 'checkpoint',
-  mode: 'drawout',
-  opener: () => CHECKPOINT_PASS,
-  offersSubstance: () => true,
-  // One turn: acknowledge the parked check-in, then hand into the Ceremony (the chat fires the overlay on 'ceremony').
-  gather(b) {
+  itemCount: CHECKPOINT_GRIT_ITEMS.length, // 6
+  opener: () => checkpointOpener(),
+  deliverItem: (n) => checkpointDeliver(n),
+  reprompt: (n) => checkpointReprompt(n),
+  onComplete: (b) => {
+    // The six grit items are in (b.administeredResponses). Hand into the Ceremony; the ACTION reads the baseline
+    // reading, recomputes the 9-item grit + composite, and writes the Checkpoint reading (grinta_reading seq 1).
     b.stage = 'ceremony';
-    b.reply = `${CHECKPOINT_PASS}\n\n${CEREMONY_LEAD}`;
+    b.reply = `${CHECKPOINT_CLOSE}\n\n${CEREMONY_LEAD}`;
   },
-  confirm(b) {
-    b.stage = 'ceremony';
-    b.reply = `${CHECKPOINT_PASS}\n\n${CEREMONY_LEAD}`;
-  },
-};
+});
 
 // §2f CEREMONY — the terminal. The conversational engine only LANDS here; the reveal itself is a full-screen overlay
 // (ReconnectCeremony), which the reconnect-chat fires when it sees stage === 'ceremony'. This stage just carries the

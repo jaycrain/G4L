@@ -45,6 +45,14 @@ test('create a measure, dedupe by label', async () => {
   assert.equal(none.ok, false);
 });
 
+test('createMeasure strips a leading quantity that leaks into the unit ("35lbs" → "lbs")', async () => {
+  // Donna's walk: a tracker rendered "222 35lbs" because the agent's create_measure passed "35 lbs" as the unit.
+  const { db, memberId } = await seed();
+  await createMeasure(db, memberId, { label: 'Start with losing', unit: '35lbs', direction: 'down', startValue: 222, targetValue: 187 });
+  const [m] = await listMeasures(db, memberId);
+  assert.equal(m!.unit, 'lbs', 'the leading number is stripped from the unit');
+});
+
 test('log readings; same-day re-log updates (upsert)', async () => {
   const { db, memberId } = await seed();
   await createMeasure(db, memberId, { label: 'Weight', unit: 'lbs', direction: 'down', startValue: 213.4, targetValue: 190 });
@@ -187,4 +195,45 @@ test('suggestTracker parses sensible defaults from goal wording', () => {
   assert.equal(suggestTracker('Raise at least $250k for G4L').accumulation, true);
   assert.equal(suggestTracker('$10k per month into retirement savings').accumulation, true);
   assert.equal(suggestTracker('Weight down to 190').accumulation, false);
+
+  // an absolute goal has no delta; a delta goal has no absolute target
+  assert.equal(w.delta, null, 'an absolute "down to 190" goal carries no delta');
+});
+
+test('suggestTracker treats "lose/gain N <unit>" as a DELTA level goal, not an absolute target of N', () => {
+  // The Donna walk: "Lose 20 lbs." pre-filled target=20 (a 20-lb goal weight). It's a DELTA — target is
+  // current − 20, derived once the member enters where they are now. Never an absolute 20.
+  const lose = suggestTracker('Lose 20 lbs.');
+  assert.equal(lose.delta, 20, 'carries the amount to lose as a delta');
+  assert.equal(lose.target, null, 'no absolute target — it depends on the starting value');
+  assert.equal(lose.direction, 'down');
+  assert.equal(lose.unit, 'lbs');
+  assert.equal(lose.accumulation, false, 'a weight delta is a level goal, never a 0→N accumulation');
+
+  const gain = suggestTracker('Gain 10 lbs of muscle');
+  assert.equal(gain.delta, 10);
+  assert.equal(gain.target, null);
+  assert.equal(gain.direction, 'up', 'gain = higher is better');
+  assert.equal(gain.accumulation, false);
+
+  // "shed" also reads as a down delta (verb-driven, not just "lose")
+  assert.equal(suggestTracker('Shed 15 lbs').direction, 'down');
+
+  // an ABSOLUTE phrasing keeps its explicit target and stays delta-free
+  const abs = suggestTracker('Drop to 190 lbs');
+  assert.equal(abs.delta, null, '"to 190" is absolute, not a delta');
+  assert.equal(abs.target, 190);
+
+  // money goals remain 0→N accumulation, never deltas
+  assert.equal(suggestTracker('Raise $250k for G4L').delta, null);
+
+  // Donna's walk: filler words ("about"/"around") between the verb and the number must NOT defeat the delta,
+  // and "-ing" verb forms ("losing") must read as down, not default up.
+  const about = suggestTracker('Lose about 35 lbs');
+  assert.equal(about.delta, 35, '"about" does not break the delta');
+  assert.equal(about.direction, 'down');
+  const losing = suggestTracker('Start with losing about 35 lbs');
+  assert.equal(losing.delta, 35, '"losing about N" reads as a delta');
+  assert.equal(losing.direction, 'down', '"losing" is down, not the default up');
+  assert.equal(suggestTracker('Losing around 20 pounds').delta, 20);
 });

@@ -18,9 +18,10 @@ import {
   type OnboardingSession,
 } from '../../lib/agent/onboarding-session.ts';
 import { curateKeepersFromOnboarding } from '../../lib/agent/onboarding-harvest.ts';
+import { persistGrintaReading, baselineResponsesMap } from '../../lib/grinta/survey/store.ts';
 import { buildSummaryCard } from '../../lib/agent/onboarding-contract.ts';
 import { logEvent } from '../../lib/telemetry/store.ts';
-import { proposeEntry } from '../../lib/playbook/store.ts';
+import { proposeEntry, addOwnEntry } from '../../lib/playbook/store.ts';
 import { addFacet } from '../../lib/curriculum/store.ts';
 import { consolidateReclaimList } from '../../lib/member/reclaim.ts';
 import { createCredential, hasCredential } from '../../lib/auth/store.ts';
@@ -144,6 +145,21 @@ export async function finalizeOnboardingAction(input: FinalizeInput): Promise<Fi
   // Decision Z: create the ACCOUNT here, at the commit — the credential from the password collected upfront at the
   // gate — and start the session, so the card hands straight to the Ceremony with no /account/setup interruption.
   // A returner whose account already exists is routed to /login instead of getting a second account (email-unique).
+  // Persist the GRINTA baseline (staged flow only — it's set on collected.grintaBaseline by the survey stage).
+  // Best-effort: the member + captures are already committed, so a reading write must never fail the signup.
+  const g = collected.grintaBaseline;
+  const gResponses = input.state.administeredResponses;
+  if (g && gResponses?.length) {
+    try {
+      await persistGrintaReading(db, res.memberId, {
+        source: 'onboarding',
+        responses: baselineResponsesMap(gResponses),
+        score: g,
+      });
+    } catch (e) {
+      console.warn('onboarding grinta baseline write failed — non-fatal:', (e as Error).message);
+    }
+  }
   if (await hasCredential(db, res.memberId)) {
     return { ok: false, code: 'exists', error: 'That email already has an account — please log in.' };
   }
@@ -158,6 +174,16 @@ export async function finalizeOnboardingAction(input: FinalizeInput): Promise<Fi
       await addFacet(db, res.memberId, `the ${namedIdentity}`);
     } catch {
       /* non-fatal — the strip falls back to its prompt */
+    }
+  }
+
+  // Decision II: whole-life VISION statements the member moved OUT of the Reclaim List (member-confirmed) are
+  // preserved to the Playbook in their own words — the Window/Legacy work reads from here — never discarded.
+  for (const vision of input.state.collected.visionKeepers ?? []) {
+    try {
+      await addOwnEntry(db, res.memberId, vision, 'own_words');
+    } catch (e) {
+      console.warn('vision keeper write failed (non-fatal):', (e as Error).message);
     }
   }
 

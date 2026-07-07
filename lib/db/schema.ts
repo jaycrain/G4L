@@ -90,6 +90,7 @@ const MIGRATIONS: Array<{ file: string; sentinel: Sentinel }> = [
     sentinel: { sql: "select exists (select 1 from pg_constraint where conname = 'reclaim_list_min_1') as e" },
   },
   { file: 'migrations/0046_harvest_keeper.sql', sentinel: { table: 'playbook_entry', column: 'keeper_type' } },
+  { file: 'migrations/0047_grinta_reading.sql', sentinel: 'grinta_reading' },
 ];
 export const SEED_SQL = () => sqlFile('seed/0001_reference_data.sql');
 

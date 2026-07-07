@@ -71,14 +71,21 @@ Hold these, especially as we scale (Charter → ~1,000 members):
   pattern — "a guess promoted to committed truth"; the structural fix killed all three.) Never let a
   bug-shape reach its fourth patch — that's where brittleness is born. Adding another regex/branch is
   a smell; prefer a pure, testable function and a contract.
-- **The confirmation card is the seatbelt.** A deterministic completion contract gates the handoff,
-  and the member confirms a summary card before anything commits. This is what makes imperfect capture
-  *survivable*: the member sees the wrong door / missing item and fixes it. Protect this property —
-  capture will never be perfect; recoverability is the point.
-- **The "keep talking" rate is the health metric.** Every time a member corrects the card, that's a
-  free, member-labeled "capture got this wrong" signal with the transcript attached. Watch it. At
-  scale, this replaces eyeballs-in-prod — a rising rate means capture quality is degrading *before*
-  it's a crisis. Surfaced on `/admin`.
+- **Recoverability is the point — and as of Jul 2026 it lives DOWNSTREAM, not in a card-return.**
+  (This supersedes the old "the confirmation card is the seatbelt.") A deterministic completion contract
+  still gates the handoff, but the summary card is now a **confident CONFIRM-ONLY gate** — "This is me" /
+  "Save my place," no correction button, the Reclaim List frozen post-card. What makes imperfect capture
+  survivable now: (1) the **Decision II shape gate** makes the list arrive CLEAN — member-confirmed
+  merge / vision-route / draw-out proposals run at the reclaim→survey **chokepoint** (`enterGrintaSurvey`),
+  so nothing sloppy can reach the card; and (2) any correction AFTER the card routes to **Reconnect's
+  callback** (identity / door / gap, immediate) + the **companion rail** (the Reclaim List, anytime).
+  Still protect recoverability — just don't reach for a card-return to provide it. See
+  `docs/onboarding.md` and the Decision II implementation (`lib/agent/reclaim-shape.ts`).
+- **Capture-quality signal (the old "keep talking" rate is now dormant).** With the correction button
+  removed, the card-return metric no longer fires (the `/admin` counter stays wired but reads ~0). Read
+  capture quality instead from the **shape-gate proposals** (how often overlaps / visions / multi-want
+  paragraphs get caught, and how members rule on them) and from **rail edits** to the Reclaim List —
+  those are the new member-labeled "capture got this wrong" signals.
 - **Capture edge cases as replayable fixtures.** Edge cases are raw material for robustness, not a
   liability — *if* they're written down. Real runs become regression fixtures so a pattern fix can be
   proven not to break the others, and bug discovery moves from "a human finds it in prod" to CI. The

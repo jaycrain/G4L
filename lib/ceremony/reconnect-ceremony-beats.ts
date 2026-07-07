@@ -3,19 +3,21 @@
 // culminating reveal at the END of the Reconnect arc — the awareness moment made whole: the doors seen, the baseline
 // taken, the drift named, the spark found.
 //
-// REVEALS (Jay, §2f): the ID Score radar (baseline, §2c) · the Playbook (the §2d keepers) · the Door(s) (§2b) · the
-// 4Rs Journey with REWIRE lit (Reconnect done → Rewire/Rebuild next).
-// DEFERRED (hard): the Grinta / Hardiness reveal. §2e (the Checkpoint) hasn't captured it and the "Grinta Index"
-// naming is unsettled (Jay + Greg, post-Monday) — so it is NOT revealed and NOT named anywhere in this copy. (Unlike
-// the onboarding Threshold ceremony, which glosses Grinta — that line is deliberately absent here.)
+// REVEALS (Jay, §2f): the ID Score radar (baseline, §2c) · the GRINTA MOVEMENT (§2e — the first time grit moves) · the
+// Playbook (the §2d keepers) · the Door(s) (§2b) · the 4Rs Journey with REWIRE lit (Reconnect done → Rewire/Rebuild).
+// The Grinta reveal appears ONLY when a Checkpoint reading exists (the movement actually happened); otherwise the beat
+// is skipped (a v1-onboarded member with no baseline, or a skipped Checkpoint, never sees an empty frame).
 
 import type { Dimensions } from './threshold-beats.ts';
 
 export type ReconnectCeremonyReveal =
   | { kind: 'score'; idScore: number | null; dimensions: Dimensions | null } // the ID Score radar (the mirror)
+  | { kind: 'grinta'; composite: number; changePct: number | null; direction: 'up' | 'down' | 'flat' | null; reconnect: number; reconnectChangePct: number | null } // §2e — the Index (headline) moved BY Reconnect (the driver)
   | { kind: 'playbook'; keepers: string[] } // the §2d keepers (the drift recognition + the spark)
   | { kind: 'doors'; doors: string[] } // the member's Door(s), as they stand after any re-seeing
   | { kind: 'journey_rewire' }; // the 4Rs Journey — Reconnect complete, Rewire lit
+
+export type GrintaStrands = { reconnect?: number; rewire?: number; rebuild?: number; reclaim?: number };
 
 // This ceremony's own beat type — same shape as the Threshold's, but carrying the Reconnect reveals.
 export type ReconnectCeremonyBeat = { text: string; small?: boolean; reveal?: ReconnectCeremonyReveal };
@@ -23,6 +25,7 @@ export type ReconnectCeremonyBeat = { text: string; small?: boolean; reveal?: Re
 export type ReconnectCeremonyData = {
   idScore: number | null; // baseline ID Score (§2c) — the mirror; null if somehow uncaptured
   dimensions: Dimensions | null; // the four subscores (/30) for the radar shape
+  grinta: { composite: number; changePct: number | null; direction: 'up' | 'down' | 'flat' | null; reconnect: number; reconnectChangePct: number | null } | null; // §2e — null until a Checkpoint moves it
   keepers: string[]; // the §2d Playbook keepers, in the member's own words (drift recognition, the spark)
   doors: string[]; // display names, primary first (post-revision)
 };
@@ -39,6 +42,14 @@ export const RECONNECT_CEREMONY_COPY = {
   measured: 'You measured the distance to reclaim yourself, and you took the first step toward closing it.',
   // 3 — reveal: the ID Score radar (the starting line)
   score: 'Here it is, by the numbers — your starting line.',
+  // 3b — reveal: the Grinta movement (§2e). Branches on the Checkpoint delta — a DOWN-move is expected and healthy
+  // (per Greg: a more realistic self-appraisal often reads LOWER; the reflection matters more than the number), so it
+  // must never read as failure. Jay's lines, approved.
+  grinta: 'You just did the work in Reconnect — and your Grinta, your grit, went up because of it.',
+  grintaDown:
+    "You just did the work in Reconnect — the kind of excavation most people never do. Your Grinta reads a little lower than your starting line, and that's not a step back: it means you're seeing yourself more clearly now. That honesty is the foundation everything builds on.",
+  grintaFlat:
+    'You just did the work in Reconnect. Your Grinta held steady — a solid line to build from. The real move was the excavation itself; the climb comes as you keep going.',
   // 4 — reveal: the Playbook keepers (their own words)
   playbook: 'And these are your words — the ones that begin to frame the way forward.',
   // 4b — fallback if nothing was kept (voice-matched; edge case, not part of the approved verbatim)
@@ -62,6 +73,12 @@ export function buildReconnectCeremonyBeats(d: ReconnectCeremonyData): Reconnect
     { text: c.measured, small: true },
     { text: c.score, reveal: { kind: 'score', idScore: d.idScore, dimensions: d.dimensions } },
   ];
+  // The Grinta movement — revealed ONLY when a Checkpoint captured it (the first movement actually happened).
+  if (d.grinta) {
+    // Branch the spoken line on the delta sign: up = grew, down = clearer-seeing (never failure), flat/null = held.
+    const grintaText = d.grinta.direction === 'down' ? c.grintaDown : d.grinta.direction === 'up' ? c.grinta : c.grintaFlat;
+    beats.push({ text: grintaText, reveal: { kind: 'grinta', composite: d.grinta.composite, changePct: d.grinta.changePct, direction: d.grinta.direction, reconnect: d.grinta.reconnect, reconnectChangePct: d.grinta.reconnectChangePct } });
+  }
   // The Playbook keepers — the reveal only when something was actually kept (never an empty frame).
   beats.push(
     d.keepers.length > 0

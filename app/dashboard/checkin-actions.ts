@@ -19,6 +19,7 @@ import { createMeasure, logReadingByLabel, measuresForAgent, findReclaimItemId, 
 import { maybeFoldMemory } from '../../lib/agent/memory.ts';
 import { asSnapshot, diffSnapshot, type DashboardSnapshot } from '../../lib/agent/changes.ts';
 import { getGrinta } from '../../lib/grinta/index.ts';
+import { latestGrintaReading } from '../../lib/grinta/survey/store.ts';
 import { listFacets, closedSessionIds } from '../../lib/curriculum/store.ts';
 import { getForecast } from '../../lib/curriculum/view.ts';
 import { getAsset } from '../../lib/curriculum/registry.ts';
@@ -35,8 +36,10 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
   const dash = await getDashboard(db, memberId);
   if (!dash) return null;
   await maybeFoldMemory(db, memberId); // distill anything that has aged out of recall (best-effort, no-op until due)
-  const [grinta, consumedBites, profRows, idqRows, reclaimItems, beatRows, playbook, measures, linkedMeasureRows, facets, closedIds, lastClosedRows, forecast, experience] = await Promise.all([
+  const [grinta, grintaReading, consumedBites, profRows, idqRows, reclaimItems, beatRows, playbook, measures, linkedMeasureRows, facets, closedIds, lastClosedRows, forecast, experience] = await Promise.all([
     getGrinta(db, memberId, dash.identityNoun),
+    latestGrintaReading(db, memberId), // the SURVEY Grinta Index (Decision DD) — the grit baseline the member sees
+
     recentConsumedTitles(db, memberId),
     db.query<{ intake_athletic_past: string | null; intake_gap: string | null; agent_memory: string | null; dashboard_snapshot: unknown }>(
       'select intake_athletic_past, intake_gap, agent_memory, dashboard_snapshot from member_profile where member_id=$1',
@@ -137,6 +140,12 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
     reclaimList: dash.reclaimList,
     grintaScore: grinta.score,
     grintaTrend: grinta.direction,
+    // The SURVEY Grinta Index (grit baseline → Checkpoints) — the number the member sees on the dashboard card,
+    // so the companion knows it too (CLAUDE.md: nothing the member sees is invisible to the MA). Null on prod v1.
+    grintaIndex: grintaReading?.composite ?? null,
+    grintaStrands: grintaReading?.strands ?? null,
+    grintaIndexTrend: grintaReading?.direction ?? null,
+    grintaIndexChangePct: grintaReading?.changePct ?? null,
     consumedBites,
     // The narrative from onboarding — so the agent can reference what the member actually shared,
     // not just the dashboard facts. This is what makes the first interaction feel "it knows me."

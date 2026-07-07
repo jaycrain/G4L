@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import CeremonySurface from './ceremony-surface.tsx';
 import { markThresholdCrossedAction } from './threshold-actions.ts';
@@ -25,9 +25,8 @@ function widestDimension(dims: { physical: number; self: number; social: number;
 export default function Threshold({ memberId, data }: { memberId: string; data: ThresholdData }) {
   const router = useRouter();
   const [crossed, setCrossed] = useState(false);
+  const beats = useMemo(() => buildThresholdBeats(data), [data]); // stable target for the typewriter (before any early return)
   if (crossed) return null;
-
-  const beats = buildThresholdBeats(data);
 
   async function resolve() {
     await markThresholdCrossedAction(memberId);

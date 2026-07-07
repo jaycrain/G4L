@@ -25,7 +25,7 @@ const H = 188;
 const dotColor = (k: PulseKind) => (k === 'false_start' ? RED : k === 'quiet' ? QUIET : TEAL);
 const toneColor = (t: PulseTone) => (t === 'today' ? ORANGE : t === 'bad' ? RED : t === 'quiet' ? QUIET : TEAL);
 
-// `bare`: render just the graphic (no card wrapper, no headline) — used when it's grouped UNDER the Daily Call panel
+// `bare`: render just the graphic (no card wrapper, no headline) — used when it's grouped UNDER the Momentum panel
 // as its momentum visual, rather than standing alone.
 export default function ResiliencePulse({ beats = [], bare = false }: { beats?: PulseBeat[]; bare?: boolean }) {
   const points = buildPulsePoints(beats, g);
@@ -92,7 +92,7 @@ export default function ResiliencePulse({ beats = [], bare = false }: { beats?: 
       </div>
       <p style={{ fontSize: '14px', lineHeight: 1.55, color: 'var(--navy, #374F63)', margin: '0.4rem 0 0' }}>
         {empty
-          ? "It's already beating. Every call you make moves the line — starting with today's."
+          ? 'Every call you make moves the line — starting with your first.'
           : 'Recovery is the point — the bounce after the dip is what "momentum, not streaks" looks like. Rolling window; it never accumulates into a score.'}
       </p>
     </div>

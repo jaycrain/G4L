@@ -23,12 +23,15 @@
 
 import { cleanIdentityNoun, displayIdentityNoun, identityLabel } from '../member/identity.ts';
 import { isDoorSlug, matchDoors, type DoorSlug } from '../doors.ts';
-import { RECLAIM_LIST_FLOOR, RECLAIM_LIST_MIN, RECLAIM_LIST_TARGET, consolidateReclaimList } from '../member/reclaim.ts';
+import { RECLAIM_LIST_FLOOR, RECLAIM_LIST_MIN, RECLAIM_LIST_TARGET, reclaimAddIntent } from '../member/reclaim.ts';
 import { gapIsNarrative, hasIdentity } from './onboarding-contract.ts';
+import { ONBOARDING_BASELINE_ITEMS, grintaStem } from '../grinta/survey/instrument.ts';
+import { scoreGrinta } from '../grinta/survey/scoring.ts';
 import { MEMBER_AGENT_SYSTEM_PROMPT } from './system-prompt.ts';
 import {
   augmentDoors,
   stripLeadingDisclosure,
+  BEAT_SEP,
   type Collected,
   type ConvMessage,
   type ConvState,
@@ -36,11 +39,13 @@ import {
   type DoorRevision,
   type HarvestSignal,
   type ModelTurn,
+  type PendingReclaimShape,
   type ReplyIntent,
   type ReseeingTell,
   type Stage,
   type Turn,
 } from './onboarding.ts';
+import { reconcileReclaimShapes, shapeKey } from './reclaim-shape.ts';
 // The intent layer — the one place that decides what a member's utterance MEANS (see onboarding-intent.ts).
 import {
   correctsReflection,
@@ -99,12 +104,18 @@ function identityRef(c: Collected): string {
 }
 
 // §3 — Stage 1 (who you are): the opener (the AI disclosure + primer live on the Stage-0 start page).
+// Onboarding Copy v2 (Jay's voice pass): the corny example run is cut; the prompt is tightened + de-gendered.
 export const STAGED_OPENING =
-  "Let's start by thinking about when you felt most like yourself. Maybe it was twelve, riding your bike fearlessly. " +
-  'Twenty, going door-to-door for something you believed in. College? Your first marathon? Fishing with your grandfather? ' +
-  "Not the job title, not the role everyone knows you for — even if that's mom or dad, partner or child. The version " +
-  "underneath all that — the one you've drifted from and want to be again. Who were they? What were they doing? How did " +
-  'you feel? Tell me about them.';
+  "Let's start with a simple question — but take your time with it. When did you feel most like yourself?\n\n" +
+  "Not the job title. Not the role everyone knows you for — even if that's mom or dad, partner or child. The version " +
+  "underneath all of it. The one you've drifted from and want to be again.\n\n" +
+  'Who were they? What were they doing? How did it feel to be them?\n\nTell me about them.';
+
+// The short re-draw when the member has spoken but we haven't yet caught a PAST self. NEVER re-emit the full
+// STAGED_OPENING here — on turn 2+ they've already answered it, so the whole cold-open reads as a verbatim
+// repeat (the invariant we most protect). A single warm re-pose is enough; the model usually carries the thread.
+const IDENTITY_REDRAW =
+  'Take your time — no rush. When did you feel most like yourself, and who was that version of you?';
 
 const NAME_PROMPT =
   'If you put that person in a single word — the Runner, the Writer, the Builder, the Friend — what would it be? ' +
@@ -215,6 +226,11 @@ function reclaimOpen(c: Collected): string {
 
 const RECLAIM_MORE = 'What else? Anything that comes — big or small.';
 
+// The confirm-only card reply when a member tries to add a want AFTER the summary card. Nothing lands here — so we
+// say that plainly, and point them to where adding DOES work (the first session + the companion rail). Never "Added".
+const CARD_LIST_SET =
+  "Your Reclaim List is set for now — no need to add more here. You'll be able to add to it and change it in your first session, or anytime just by talking with your companion. Take a look at the summary below whenever you're ready.";
+
 // Never-trap nudge: said ONCE when the member signals done below the minimum. It does not re-ask the same
 // way — it lowers the bar (small things count) to unlock one more, then the engine stops nudging.
 const RECLAIM_NUDGE =
@@ -258,13 +274,15 @@ function reflectIdentity(c: Collected): string {
 function withQuestion(modelText: string, probe: string): string {
   const t = (modelText ?? '').trim();
   if (!t) return probe;
-  if (/\?\s*$/.test(t)) return t; // already ends on a question — the model led the turn
-  // The model may have asked a real question then added a short coda ("…what did it cost you? Even if you
-  // couldn't have named it then."). That's still a forward question — don't bolt a SECOND one on (Jay's walk:
-  // two questions in one panel). Only append when there's no question anywhere near the end.
-  const lastQ = t.lastIndexOf('?');
-  if (lastQ !== -1 && t.length - lastQ <= 60) return t;
-  return `${t}\n\n${probe}`; // a reflection with no forward question — add one
+  // Did the model already lead the turn with a forward question? Look at the whole LAST PARAGRAPH, not just the
+  // last N characters. The model routinely asks its question and then adds an invitation coda in the same breath
+  // ("…what did that look like for you? Give me a glimpse of what that version of you was doing."). A char-window
+  // heuristic misses that when the coda runs long and re-appends a SECOND question — or, worse, the whole opening.
+  // Two of Jay's walks hit this exact shape; a paragraph-scoped check is the robust contract. (The confirmation
+  // card remains the seatbelt if a rhetorical '?' ever suppresses a probe we wanted.)
+  const lastPara = t.split(/\n\s*\n/).pop() ?? t;
+  if (lastPara.includes('?')) return t;
+  return `${t}\n\n${probe}`; // a reflection with no forward question anywhere — add one
 }
 
 // The model's reflect_gap turn IS the reflection: the prompt tells it to reflect the WHOLE story back in the
@@ -294,11 +312,11 @@ function reclaimOpening(c: Collected): string {
 }
 
 // §5 — reflect the Reclaim List back before the card; the member hears their own list, one confirm question.
-function reflectReclaim(c: Collected): string {
-  // Reflect the CONSOLIDATED list (folds cadences, collapses near-dups, drops closes) so the member confirms a
-  // clean list — even on a resumed session whose stored list predates per-item cleanup.
-  const items = consolidateReclaimList(c.reclaimList ?? []).map((x) => `• ${x.trim()}`).join('\n');
-  return `Here’s what you want to reclaim:\n\n${items}\n\nAnything missing before we move on?`;
+// LIGHT acknowledgement — no re-listing. The final confirmation card is the single authoritative list view (it
+// renders the consolidated list from `collected`), so the mid-conversation reflect only acknowledges + invites a
+// last add. This kills the doubled list (reflect + card) and keeps the card as the one place under-tagging surfaces.
+function reflectReclaim(_c: Collected): string {
+  return `Got it — that’s a strong list to build from. Anything missing before we move on?`;
 }
 
 // The recite-mismatch guard's detector (Phase 2.2): is the model's turn RECITING/wrapping the Reclaim List in
@@ -344,9 +362,13 @@ function reclaimTokens(s: string): string[] {
 // a DRILL of the previous one (Jay's walk: "Start walking every morning" + "Every day" landed as two sloppy
 // items). When one is captured, the engine folds it into the last want instead of a standalone.
 const BARE_MODIFIER_RE =
-  /^(every\s+(day|morning|evening|night|week|weekend)s?|daily|weekly|nightly|on\s+weekends?|most\s+(days|mornings)|(a\s+few|once|twice|[1-9][0-9]?(\s*[-–to]+\s*[1-9][0-9]?)?)\s*(times?|x|days?)?\s*(a|per|each|\/)?\s*(day|week|morning|month)?)$/i;
+  /^(every\s+(day|morning|evening|night|week|weekend)s?|daily|weekly|nightly|on\s+weekends?|most\s+(days|mornings)|(a\s+few|once|twice|[1-9][0-9]?(\s*[-–to]+\s*[1-9][0-9]?)?)\s*(times?|x|days?|rides?|runs?|walks?|workouts?|sessions?|swims?|lifts?|classes?|rounds?)?\s*(a|per|each|\/)?\s*(day|week|morning|month)?)$/i;
+// Rule 4 (Decision II): a bare cadence folds into its parent want. Tolerate trailing FILLER so "2-3 times a week
+// to start with" folds too (Donna's walk — it was anchored too tightly before and survived standalone).
+const CADENCE_FILLER_RE = /\s+(?:to (?:start|begin)(?:\s+with)?|to start off|for (?:now|a start)|at first|these days|initially)$/i;
 function isBareModifier(s: string): boolean {
-  return BARE_MODIFIER_RE.test((s ?? '').trim().replace(/[.,!?]+$/, ''));
+  const t = (s ?? '').trim().replace(/[.,!?]+$/, '').replace(CADENCE_FILLER_RE, '').trim();
+  return BARE_MODIFIER_RE.test(t);
 }
 function isTokenSubset(a: string[], b: Set<string>): boolean {
   return a.length > 0 && a.every((x) => b.has(x));
@@ -356,6 +378,92 @@ function isTokenSubset(a: string[], b: Set<string>): boolean {
 //   1. exact-token dup → skip;  2. bare cadence fragment → fold into the last want;  3. token-subset of / superset
 //   of an existing want (a shorter/longer phrasing of the SAME want, e.g. "Lose 50 lbs" vs "My body, lose 50 lbs")
 //   → keep the more complete one, never a second;  4. otherwise → a new item.
+// A member sometimes WRAPS a want in a meta-request: "I'd like to add to the list. Have more energy…" / "can you add
+// golf. Play golf weekends". The leading clause trips the reclaim detector AND mangles dedup (it stored the whole
+// meta-sentence, so the real want was dropped — Jay's kids'-lives walk). Strip a leading add-request clause that ends
+// at a sentence boundary, so CAPTURE sees the actual want. Narrow: only fires with a trailing . ! ? so bare wants
+// like "add painting" are untouched. Pure + testable.
+const RECLAIM_PREAMBLE_RE =
+  /^\s*(?:i(?:['’]d| would)?\s+(?:like|want|love|need)\s+to\s+add\b[^.!?]*|(?:can|could|would)\s+you\s+(?:please\s+)?add\b[^.!?]*|please\s+add\b[^.!?]*)\s*[.!?]\s+/i;
+export function stripReclaimPreamble(msg: string): string {
+  const stripped = (msg ?? '').replace(RECLAIM_PREAMBLE_RE, '').trim();
+  return stripped.length >= 3 ? stripped : (msg ?? '').trim(); // never strip down to nothing
+}
+
+// ── Decision II: the reclaim shape gate (propose/confirm, no silent rewrites) ─────────────────────────────────
+const SHAPE_YES_RE = /\b(yes|yeah|yep|yup|sure|ok|okay|please|go ahead|do it|sounds?\s+(good|right)|that'?s?\s+right|correct|merge|combine|same|as one|one goal|move it)\b/i;
+const SHAPE_NO_RE = /\b(no|nope|nah|different|separate|distinct|two goals?|keep both|leave (it|them|both)|it'?s a goal|keep it|not the same)\b/i;
+function saysYes(msg: string): boolean { const m = (msg ?? '').toLowerCase(); return SHAPE_YES_RE.test(m) && !SHAPE_NO_RE.test(m); }
+
+// Remove the first item matching `item` (and its parallel category), returning true if one was removed.
+function removeReclaimItem(c: Collected, item: string): boolean {
+  const list = c.reclaimList ?? [];
+  const i = list.findIndex((x) => x === item);
+  if (i < 0) return false;
+  c.reclaimList = [...list.slice(0, i), ...list.slice(i + 1)];
+  const cats = c.reclaimCategories;
+  if (cats && cats.length === list.length) c.reclaimCategories = [...cats.slice(0, i), ...cats.slice(i + 1)];
+  return true;
+}
+
+const SHAPE_PROPOSAL = {
+  overlap: (keep: string, drop: string) =>
+    `“${drop}” and “${keep}” sound like the same thing to me — want me to keep them as one, or are they different?`,
+  vision: (item: string) =>
+    `“${item}” reads more like the bigger picture of the life you’re reclaiming than a single goal. I’d keep it in your Playbook for that work and leave the goal list for the concrete steps — want me to do that?`,
+  multiwant: (item: string) =>
+    `You named a few things in “${item}.” Which one do you most want back? We’ll start there — the rest aren’t going anywhere.`,
+} as const;
+
+// Run the reconciliation over the assembled list; if an unaddressed shape exists, set it pending + return the
+// member-facing proposal. Otherwise null (the list is clean — proceed to the normal confirm).
+function gateNextShape(b: Beat): string | null {
+  const issue = reconcileReclaimShapes(b.collected.reclaimList, new Set(b.reclaimShapesResolved));
+  if (!issue) return null;
+  if (issue.kind === 'overlap') {
+    b.pendingReclaimShape = { kind: 'overlap', keep: issue.keep, drop: issue.drop };
+    return SHAPE_PROPOSAL.overlap(issue.keep, issue.drop);
+  }
+  if (issue.kind === 'vision') {
+    b.pendingReclaimShape = { kind: 'vision', item: issue.item };
+    return SHAPE_PROPOSAL.vision(issue.item);
+  }
+  b.pendingReclaimShape = { kind: 'multiwant', item: issue.item };
+  return SHAPE_PROPOSAL.multiwant(issue.item);
+}
+
+// Apply the member's answer to a pending shape. Conservative by default: a want is NEVER lost — an ambiguous
+// answer keeps both / keeps the item. Marks the shape resolved so it's never re-proposed. Returns the ack line.
+function resolvePendingShape(b: Beat, pending: PendingReclaimShape): string {
+  b.pendingReclaimShape = undefined;
+  const yes = saysYes(b.memberMessage);
+  const markResolved = (key: string) => { if (!b.reclaimShapesResolved.includes(key)) b.reclaimShapesResolved.push(key); };
+  if (pending.kind === 'overlap') {
+    markResolved(shapeKey({ kind: 'overlap', keepIndex: 0, dropIndex: 0, keep: pending.keep, drop: pending.drop }));
+    if (yes) { removeReclaimItem(b.collected, pending.drop); return 'Good — I’ll keep them as one.'; }
+    return 'Got it — I’ll keep both.';
+  }
+  if (pending.kind === 'vision') {
+    markResolved(shapeKey({ kind: 'vision', index: 0, item: pending.item }));
+    if (yes) {
+      removeReclaimItem(b.collected, pending.item);
+      b.collected.visionKeepers = [...(b.collected.visionKeepers ?? []), pending.item];
+      return 'Kept — it’s in your Playbook for the bigger-picture work.';
+    }
+    return 'Okay — I’ll leave it on your list.';
+  }
+  // multiwant: the member's message IS their distilled want (draw-out answer). Replace the paragraph with it when
+  // it reads as a real want; otherwise leave the paragraph (they can edit on the card).
+  markResolved(shapeKey({ kind: 'multiwant', index: 0, item: pending.item }));
+  const distilled = stripReclaimPreamble(b.memberMessage);
+  if (shouldCaptureStagedReclaim(distilled) && !correctsReflection(b.memberMessage)) {
+    removeReclaimItem(b.collected, pending.item);
+    appendReclaim(b.collected, distilled);
+    return `Perfect — “${distilled}” it is.`;
+  }
+  return 'No rush — we can shape that one together anytime.';
+}
+
 function appendReclaim(c: Collected, item: string, category = ''): boolean {
   const trimmed = item.trim();
   const key = reclaimKey(trimmed);
@@ -500,6 +608,8 @@ interface Beat {
   administeredResponses: number[]; // §2c: fixed-scale responses accumulated by an administered stage (IDQ/Grit)
   pendingHarvest: HarvestSignal[]; // §2d: keeper/share candidates queued for the action to emit
   driftPayload?: string; // §2d: the member's drift declaration, carried reflect→confirm
+  pendingReclaimShape?: PendingReclaimShape; // Decision II: a shape awaiting the member's confirm (merge/move/draw-out)
+  reclaimShapesResolved: string[]; // Decision II: keys of shapes already ruled on — never re-proposed
 }
 
 // A stage handler mutates the Beat (sets b.reply etc.) or returns a terminal Turn. `resolveConfirm`'s CONTRACT
@@ -526,6 +636,54 @@ export interface ArcConfig {
   onComplete: (c: Collected) => string; // the completion reply (the card / the earned ceremony)
 }
 
+// --- The SHARED administered-beat component (lifted so ANY arc reuses it: reconnect IDQ §2c, onboarding Grinta,
+// the §2e Checkpoint grit items). A validated instrument runs OFF the depth kernel — the generic loop is
+// parse a 1–5 → accumulate → deliver the next framed item → on the LAST item, hand off (the arc's onComplete
+// closure sets the reply + next stage; the ACTION scores + persists). Everything instrument-specific (opener,
+// items, count, frames, completion) lives in the config; the loop lives here, once.
+const LIKERT_NUM_WORDS: Record<string, number> = { one: 1, two: 2, three: 3, four: 4, five: 5 };
+export function parseLikert(msg: string): number | null {
+  const m = (msg ?? '').toLowerCase();
+  const digit = m.match(/\b([1-5])\b/);
+  if (digit) return Number(digit[1]);
+  for (const [w, n] of Object.entries(LIKERT_NUM_WORDS)) if (new RegExp(`\\b${w}\\b`).test(m)) return n;
+  return null;
+}
+
+export type AdministeredConfig = {
+  id: StageId;
+  itemCount: number;
+  opener: (c: Collected) => string; // the warm open + item 0, delivered when the prior stage hands in
+  deliverItem: (index: number) => string; // the framed item at 0-based index (cluster transitions etc.)
+  reprompt: (index: number) => string; // a gentle re-prompt of the current item on an unclear (non 1–5) answer
+  onComplete: (b: Beat) => void; // all items in — the config sets b.stage + b.reply (advance + close)
+};
+
+// Build an administered StageDef from an instrument config. gather/confirm are unused (the kernel dispatches to
+// administer() on mode==='administered'); they're present only to satisfy the StageDef contract.
+export function administeredStage(cfg: AdministeredConfig): StageDef {
+  return {
+    id: cfg.id,
+    mode: 'administered',
+    opener: cfg.opener,
+    offersSubstance: () => true,
+    gather() {},
+    confirm() {},
+    administer(b) {
+      const val = parseLikert(b.memberMessage);
+      if (val == null) {
+        // Unclear answer → re-prompt the CURRENT item; do NOT advance or record.
+        b.reply = cfg.reprompt(b.administeredResponses.length);
+        return;
+      }
+      b.administeredResponses = [...b.administeredResponses, val];
+      const n = b.administeredResponses.length;
+      if (n >= cfg.itemCount) cfg.onComplete(b);
+      else b.reply = cfg.deliverItem(n);
+    },
+  };
+}
+
 // Build the persisted ConvState from a Beat — the single place the turn's state shape is assembled. The current
 // stage's scratch persists under the stage it BELONGS to (stageAtEntry), since a handler may have advanced b.stage
 // this turn; every other stage's scratch is carried through unchanged from baseScratch.
@@ -541,6 +699,8 @@ function beatState(b: Beat): ConvState {
     ...(b.administeredResponses.length > 0 && { administeredResponses: b.administeredResponses }),
     ...(b.pendingHarvest.length > 0 && { pendingHarvest: b.pendingHarvest }),
     ...(b.driftPayload !== undefined && { driftPayload: b.driftPayload }),
+    ...(b.pendingReclaimShape && { pendingReclaimShape: b.pendingReclaimShape }),
+    ...(b.reclaimShapesResolved.length > 0 && { reclaimShapesResolved: b.reclaimShapesResolved }),
   };
 }
 
@@ -581,7 +741,7 @@ const identityStage: StageDef = {
         b.stage = 'gap';
         b.reply = `${SKIP_ACK}\n\n${gapOpen(b.collected)}`;
       } else {
-        const probe = !b.collected.athleticPast ? (skipOfferable ? SKIP_OFFER : STAGED_OPENING) : skipOfferable ? SKIP_OFFER : NAME_PROMPT;
+        const probe = !b.collected.athleticPast ? (skipOfferable ? SKIP_OFFER : IDENTITY_REDRAW) : skipOfferable ? SKIP_OFFER : NAME_PROMPT;
         b.reply = withQuestion(b.modelText, probe);
       }
     }
@@ -711,13 +871,12 @@ const reclaimStage: StageDef = {
   forceProgress(b) {
     // Bound the reclaim loop → the card once card-ready. NEVER drop the want they JUST offered at the cap.
     if (!memberClosingReclaim(b.memberMessage) && shouldCaptureStagedReclaim(b.memberMessage)) {
-      appendReclaim(b.collected, b.memberMessage);
+      appendReclaim(b.collected, stripReclaimPreamble(b.memberMessage));
     }
     const realGap = gapIsNarrative(b.collected.gap, b.collected.reclaimList ?? []) && !isForwardAmbition(b.collected.gap ?? '');
     if (hasIdentity(b.collected) && realGap && (b.collected.reclaimList?.length ?? 0) >= RECLAIM_LIST_FLOOR) {
-      b.stage = 'complete';
-      b.awaitingConfirm = false;
-      return { reply: b.arc.onComplete(b.collected), state: beatState(b), complete: true };
+      // Capture is card-ready → hand into the Grinta baseline survey (it completes onboarding, not this crossing).
+      return enterGrintaSurvey(b);
     }
     // not card-ready → mutation kept, fall through to normal gather
   },
@@ -733,7 +892,7 @@ const reclaimStage: StageDef = {
     // model already tagged ("Every day" folded once by the model, then again by the backstop). Only backstop when
     // the model tagged NOTHING and the member is offering.
     const modelTagged = (b.model.record?.reclaimList?.length ?? 0) > 0;
-    if (offered && !modelTagged && !b.refinedThisTurn) appendReclaim(b.collected, b.memberMessage);
+    if (offered && !modelTagged && !b.refinedThisTurn) appendReclaim(b.collected, stripReclaimPreamble(b.memberMessage));
     const count = b.collected.reclaimList?.length ?? 0;
     const grewThisTurn = count > b.priorReclaimLen; // a NEW unique want landed this turn (model or backstop)
     // RECITE-MISMATCH GUARD (Phase 2.2): the Reclaim List is built ONLY from tags. If the model RECITES/wraps the
@@ -783,21 +942,41 @@ const reclaimStage: StageDef = {
     }
   },
   confirm(b) {
+    // DECISION II — a shape proposal is pending the member's yes/no. Resolve it from their answer (merge / move to
+    // Playbook / draw-out), then surface the NEXT shape or re-reflect the cleaned list. Never a silent rewrite.
+    if (b.pendingReclaimShape) {
+      const ack = resolvePendingShape(b, b.pendingReclaimShape);
+      const next = gateNextShape(b);
+      b.reply = next ? `${ack}\n\n${next}` : `${ack}\n\n${reflectReclaim(b.collected)}`;
+      b.awaitingConfirm = true;
+      return;
+    }
     // RECLAIM late-add: a want volunteered AT the confirm — neither a correction nor an affirmation — used to be
     // dropped as the beat advanced. Capture it and re-reflect. Only a genuinely NEW want re-opens (deduped).
     // Phase 2.1 guard (Jay's "That looks great" bug): if the model signaled the reply is 'done' or 'dispute', it's
     // NOT a new want — never capture a confirmation/dispute as a list item. Only 'more' (or no signal) can offer one.
+    // Strip any "I'd like to add to the list." preamble so the ACTUAL want is what's evaluated + stored (the meta
+    // wrapper otherwise fails the detector / mangles dedup and the want vanishes).
+    const lateWant = stripReclaimPreamble(b.memberMessage);
     if (
       b.model.replyIntent !== 'done' &&
       b.model.replyIntent !== 'dispute' &&
       !b.refinedThisTurn && // a sharpening answer isn't a new want
       !correctsReflection(b.memberMessage) &&
-      !memberClosingReclaim(b.memberMessage) &&
-      shouldCaptureStagedReclaim(b.memberMessage) &&
-      appendReclaim(b.collected, b.memberMessage)
+      !memberClosingReclaim(lateWant) &&
+      shouldCaptureStagedReclaim(lateWant) &&
+      appendReclaim(b.collected, lateWant)
     ) {
       b.reply = reflectReclaim(b.collected);
       b.awaitingConfirm = true; // stay in confirm — re-reflect with the just-added want included
+      return;
+    }
+    // DECISION II — before treating this as a final confirm, surface any unaddressed shape in the assembled list
+    // (an overlap to merge, a vision to move, a paragraph to draw out). One at a time; the member confirms each.
+    const proposal = gateNextShape(b);
+    if (proposal) {
+      b.reply = proposal;
+      b.awaitingConfirm = true;
       return;
     }
     // RECLAIM CONFIRM — "Anything missing?" A bare "no / nope / that's a good list" = nothing missing = DONE →
@@ -806,18 +985,102 @@ const reclaimStage: StageDef = {
       b.awaitingConfirm = false;
       b.reply = withQuestion(b.modelText, RECLAIM_MORE);
     } else {
-      b.stage = 'complete';
-      b.awaitingConfirm = false;
-      b.reply = b.arc.onComplete(b.collected);
-      b.complete = true;
+      // Seatbelt confirmed → don't complete yet; hand into the Grinta baseline survey (the new end of onboarding).
+      enterGrintaSurvey(b);
     }
   },
 };
 
+// --- The Grinta baseline — "Introduction to Grinta." An administered 12-item survey that runs AFTER the member
+// confirms their Reclaim List (the seatbelt above is untouched) and BEFORE onboarding completes. Off the depth
+// kernel (administered mode). It establishes the GRINTA baseline (grit across four strands, one per R). NO ID
+// Score here — that's earned in Reconnect. Built on the shared administeredStage() factory; copy lives here.
+// Introduce the four Phases HERE — the first time the member meets the framework — right before the baseline
+// survey, so the Card's "each Phase"/"first Phase" has a referent. Onboarding Copy v2 (Jay's voice pass, verbatim).
+const GRINTA_OPEN =
+  'Here’s the road ahead. Four Phases, each building on the last: Reconnect — find who you are again. Rewire — get ' +
+  'your head right. Rebuild — get your body back. Reclaim — step all the way into it. It takes grit to walk it, ' +
+  'which is the whole point: Grinta is Italian for grit, and it’s exactly what we’re going to build in you, one ' +
+  'Phase at a time.';
+// The WHY before the scale (a mirror; sets the starting Grinta to watch climb), then how to answer + the 1–5 scale.
+const GRINTA_SCALE =
+  'But first, a quick read on where you’re starting. These next twelve aren’t a test — think of them as a mirror. ' +
+  'Each one touches a different part of what it takes to reclaim yourself. Your answers set your starting Grinta — a ' +
+  'number you’ll watch climb as you do the work. That’s the point: not to score you, but to give you something real ' +
+  'to measure the comeback against.\n\nAnswer as the person you actually are today, not the one you wish you were. ' +
+  'For each one, tell me how true it feels — 1 (not at all) to 5 (completely).';
+// The full survey opener as TWO beats (two bubbles): the Phases intro (orientation), then the pre-survey framing +
+// the first item (the survey instruction). Two jobs — let each breathe (same reason as the drift-beat split).
+function grintaSurveyOpener(): string {
+  return `${GRINTA_OPEN}${BEAT_SEP}${GRINTA_SCALE}\n\n${grintaDeliver(0)}`;
+}
+
+// A member answered with something that isn't a 1–5 → re-ask the CURRENT item, gently.
+function grintaReprompt(index: number): string {
+  return `A number from 1 to 5 is all I need here — 1 is “not at all,” 5 is “completely.”\n\n${grintaDeliver(index)}`;
+}
+
+// Deliver the item at 0-based `index`, with a light "n of 12" progress cue.
+function grintaDeliver(index: number): string {
+  return `${index + 1} of 12\n\n“${grintaStem(ONBOARDING_BASELINE_ITEMS[index]!)}”`;
+}
+
+// The completion beat — folds the whole-picture commit handoff (the confirmation card is rendered client-side from
+// `collected`; nothing saves until the member confirms) WITH the light Grinta reveal: the baseline number + the
+// four Rs, Reconnect lit next. Governed: a starting line, never a grade; no ID Score.
+function grintaClose(composite: number): string {
+  // Onboarding Copy v2 (Jay's voice pass): "working through the four Phases, one at a time" (was "closing each R…");
+  // "ready for you now" (was "already lit").
+  return (
+    `That’s the whole check-in — thanks for staying with it.\n\n` +
+    `Your starting Grinta Index is ${composite} out of 5. Grinta means grit — never give up — and you build it by ` +
+    `working through the four Phases, one at a time. This is just where you stand today: nothing to grade, ` +
+    `everything to build on.\n\n` +
+    `Take a look at what I captured from our conversation below. Reconnect is your first Phase, and it’s ready for you now.`
+  );
+}
+
+const grintaStage: StageDef = administeredStage({
+  id: 'grinta',
+  itemCount: ONBOARDING_BASELINE_ITEMS.length, // 12
+  opener: () => grintaSurveyOpener(), // the 4Rs intro + scale + item 0, delivered when Reclaim hands in
+  deliverItem: (n) => grintaDeliver(n),
+  reprompt: (n) => grintaReprompt(n),
+  onComplete: (b) => {
+    // Score the 12, stash the baseline (composite + the 4 strand means) for the card + the action, and COMPLETE.
+    const score = scoreGrinta(ONBOARDING_BASELINE_ITEMS, b.administeredResponses);
+    b.collected.grintaBaseline = score;
+    b.stage = 'complete';
+    b.complete = true;
+    b.reply = grintaClose(score.composite);
+  },
+});
+
+// The seam from Reclaim into the Grinta baseline. Called from BOTH of Reclaim's terminal crossings (the confirm
+// seatbelt and the runaway backstop) in place of completing: the capture is settled, so instead of finishing we
+// hand into the administered survey. complete stays false — the opener renders as a normal turn, not the card.
+function enterGrintaSurvey(b: Beat): Turn {
+  // DECISION II CHOKEPOINT: every path from reclaim to the survey/card runs through here (the confirm handler AND
+  // the forceProgress/runaway backstop). Before advancing, surface any unaddressed shape (overlap/vision/multiwant)
+  // so a sloppy list can NEVER reach the card ungated. If one exists, HOLD in reclaim-confirm and propose it; only a
+  // clean list advances. (The confirm handler also proposes shapes, so on the normal path this is already null.)
+  const proposal = gateNextShape(b);
+  if (proposal) {
+    b.stage = 'reclaim';
+    b.awaitingConfirm = true;
+    b.reply = proposal;
+    return { reply: b.reply, state: beatState(b), complete: false };
+  }
+  b.stage = 'grinta';
+  b.awaitingConfirm = false;
+  b.reply = grintaSurveyOpener();
+  return { reply: b.reply, state: beatState(b), complete: false };
+}
+
 const ONBOARDING_ARC: ArcConfig = {
   id: 'onboarding',
-  stageOrder: ['identity', 'gap', 'reclaim'],
-  stages: { identity: identityStage, gap: gapStage, reclaim: reclaimStage },
+  stageOrder: ['identity', 'gap', 'reclaim', 'grinta'],
+  stages: { identity: identityStage, gap: gapStage, reclaim: reclaimStage, grinta: grintaStage },
   onComplete: () => COMPLETE_HANDOFF,
 };
 
@@ -874,6 +1137,8 @@ export function runArcTurn(
     administeredResponses: [...(state.administeredResponses ?? [])], // §2c administered responses, accumulated
     pendingHarvest: [...(state.pendingHarvest ?? [])], // §2d harvest queue, drained by the action
     driftPayload: state.driftPayload,
+    pendingReclaimShape: state.pendingReclaimShape, // Decision II, threaded across the propose→confirm turns
+    reclaimShapesResolved: [...(state.reclaimShapesResolved ?? [])],
   };
   const stageDef = arc.stages[b.stage];
 
@@ -912,8 +1177,17 @@ export function runArcTurn(
     const early = b.awaitingConfirm ? stageDef.confirm(b) : stageDef.gather(b);
     if (early) return early;
   } else {
-    // Already complete/declined (a resumed terminal state) — the card / reveal stands.
-    b.reply = b.modelText || arc.onComplete(b.collected);
+    // CONFIRM-ONLY CARD (Jay's call): the card sits at the terminal 'complete' stage, and the reclaim work is DONE
+    // by here. New wants are NOT captured post-card — the earlier "add at the card" path was buggy (silent loss +
+    // no room to answer), and Reconnect (which revisits the whole list) + the companion rail (Decision L CRUD)
+    // are where wants are added from here. So FREEZE the Reclaim List against any growth this turn (the model may
+    // have re-recorded it) — the card is a gate, not an editor. Corrections to identity/doors/gap still merge above.
+    // If the member TRIES to add a want here, nothing lands — so the reply must NEVER claim it did. A false "Added"
+    // dents trust the same way the silent loss did, just relocated (Jay). Deterministic override: say the list is set,
+    // add more in the first session or the rail. Detected engine-side so it never depends on the model behaving.
+    const addAttempt = arc.id === 'onboarding' && (reclaimAddIntent(memberMessage) || shouldCaptureStagedReclaim(memberMessage));
+    if (arc.id === 'onboarding') b.collected.reclaimList = state.collected.reclaimList;
+    b.reply = addAttempt ? CARD_LIST_SET : b.modelText || arc.onComplete(b.collected);
     b.complete = true;
   }
 

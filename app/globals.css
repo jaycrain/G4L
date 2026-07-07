@@ -134,8 +134,31 @@ button:hover, .btn:hover { background: var(--navy); }
 .sub-copy p.muted { margin-top: 1rem; }
 /* The personalized "your read" line — up top, distinct from the explainer beneath it. */
 .sub-personal { border-left: 4px solid var(--navy); padding: 0.3rem 0 0.3rem 0.85rem; margin: 0 0 1.15rem; color: var(--navy); font-size: 1.05rem; font-weight: 600; line-height: 1.5; }
+
+/* The Program Route Card (/program) — the whole four-Phase path, one Phase per block, ring-colored, with a
+   "you're here" marker on the active Phase and a muted "coming" treatment for the previewed Phases. */
+.route { margin: 1.2rem 0 0.6rem; }
+.route-phase { border-left: 4px solid var(--ring, var(--navy)); padding: 0.5rem 0 0.6rem 0.95rem; margin: 0 0 1.1rem; }
+.route-phase.here { background: rgba(55, 79, 99, 0.05); border-radius: 0 8px 8px 0; }
+.route-phase.coming { opacity: 0.72; }
+.route-phase-head { display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.35rem; }
+.route-dot { width: 11px; height: 11px; border-radius: 50%; flex: none; }
+.route-phase-head h4 { margin: 0; color: var(--navy); font-size: 1.02rem; }
+.route-tag { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; padding: 0.15rem 0.5rem; border-radius: 999px; }
+.here-tag { background: var(--teal); color: #fff; }
+.done-tag { background: var(--light-grey, #E8E6E6); color: var(--navy); }
+.coming-tag { background: transparent; color: var(--navy); opacity: 0.55; border: 1px solid var(--panel-line); }
+.route-blurb { font-style: italic; color: var(--navy); opacity: 0.75; margin: 0 0 0.5rem; font-size: 0.92rem; }
+.route-sessions { margin: 0 0 0.4rem; padding-left: 1.1rem; }
+.route-sessions li { line-height: 1.5; margin: 0 0 0.3rem; }
+.route-reveal { font-size: 0.9rem; color: var(--navy); opacity: 0.7; font-style: italic; margin: 0.2rem 0 0; }
+.route-loop { font-size: 0.95rem; color: var(--navy); font-weight: 600; font-style: italic; margin: 0.2rem 0 0; }
+.route-foot { font-size: 0.82rem; }
 .sub-personal strong { color: var(--navy); }
 /* Detail-page subheads + lists (ID Score / Grinta / Journey copy refresh) */
+/* The Grinta origin pull-quote (Eros Poli) on the /grinta See-more page. */
+.grinta-origin-quote { margin: 0 0 1rem; padding: 0.5rem 0 0.5rem 1.1rem; border-left: 4px solid var(--olive); color: var(--navy); font-size: 1.1rem; font-style: italic; line-height: 1.5; }
+.grinta-origin-quote cite { display: block; margin-top: 0.5rem; font-size: 0.9rem; font-style: normal; font-weight: 600; color: var(--muted, #6B7680); }
 .sub-copy h3 { color: var(--navy); font-size: 1.08rem; margin: 1.6rem 0 0.55rem; }
 .sub-copy h3:first-of-type { margin-top: 0.5rem; }
 .sub-copy ul.sub-list { margin: 0 0 0.9rem; padding-left: 1.1rem; }
@@ -155,6 +178,10 @@ button:hover, .btn:hover { background: var(--navy); }
 .dim-legend .dim-max { color: var(--navy); opacity: 0.5; font-weight: 400; font-size: 0.85em; }
 /* Dashboard ID Score card — compact radar */
 .metric-radar { margin: 0.25rem auto 0.55rem; max-width: 140px; }
+/* ID Score no-score-yet: a faint radar ghost of the shape that's coming, with the anticipatory copy over it. */
+.id-blank { position: relative; display: flex; align-items: center; justify-content: center; min-height: 148px; text-align: center; }
+.id-ghost { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; opacity: 0.1; pointer-events: none; }
+.id-blank > .muted { position: relative; max-width: 24ch; }
 /* Field Guide — the pieces list */
 .fg-pieces { margin: 0.2rem 0 0; padding-left: 1.1rem; }
 .fg-pieces li { line-height: 1.6; margin-bottom: 0.7rem; }
@@ -162,6 +189,11 @@ button:hover, .btn:hover { background: var(--navy); }
 
 .onboard-intro { margin: 0 0 1.4rem; }
 .onboard-intro p { line-height: 1.6; margin: 0 0 0.85rem; color: var(--charcoal); }
+/* Password field with a show/hide eye toggle (the toggle sits inside the field, right-aligned). */
+.pw-field { position: relative; display: flex; align-items: center; }
+.pw-field input { flex: 1; padding-right: 4rem; }
+.pw-toggle { position: absolute; right: 10px; background: none; border: none; color: var(--teal); font-weight: 600; font-size: 0.85rem; cursor: pointer; padding: 4px 6px; }
+.pw-toggle:hover { text-decoration: underline; }
 /* AI disclosure — its own framed beat at the top of the gate (governance: members always know it's AI). */
 .ai-disclosure { margin: 0 0 1.3rem; padding: 0.85rem 1rem; border-left: 4px solid var(--teal); border-radius: 8px; background: rgba(59, 148, 149, 0.07); color: var(--navy); line-height: 1.55; font-size: 0.95rem; }
 /* Onboarding primer — practical "before we start" orientation box on the gate. */
@@ -205,14 +237,31 @@ button:hover, .btn:hover { background: var(--navy); }
 .score { display: flex; align-items: baseline; gap: 0.6rem; }
 .score .num { font-size: 3rem; font-weight: 700; color: var(--teal); }
 .score .dir-up { color: var(--olive); font-weight: 700; }
-.score .dir-down { color: var(--deep-red); font-weight: 700; }
+/* No validated-score down-delta renders in alarm-red, anywhere (Decision HH, extended to the ID Score). A dip is
+   never a verdict on the dashboard — the color stays NEUTRAL and any honest nudge is the Companion's job, not a
+   red number. This is the ID Score's treatment (color only — keeps its weight/size). */
+.score .dir-down { color: var(--navy); opacity: 0.5; font-weight: 700; }
 .score .dir-flat { color: var(--navy); font-weight: 700; }
+/* The Grinta down-move goes further: NEUTRAL grey AND small (§3). More specific, so it wins for the Grinta card. */
+.grinta .score .dir-down { color: var(--navy); opacity: 0.5; font-weight: 600; font-size: 0.85em; }
 
 .card { border: 1.25px solid var(--panel-line); border-radius: 10px; padding: 0.85rem 1.25rem 1rem; margin: 1rem 0; }
 .card > h3:first-child { margin-top: 0; }
 .card h3 { margin-bottom: 0.6rem; }
 .dims { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.4rem 0.7rem; }
 .dim { display: flex; justify-content: space-between; border-bottom: 1px solid var(--grey); padding: 0.3rem 0; }
+/* Grinta Index card — survey grinta on its OWN /5 scale (kept distinct from the ID Score's 0–100 on purpose). The
+   four strands read as full-width rows (one per R) in the R-ring colors, Reconnect cued as the one about to grow. */
+.grinta-scale { font-size: 1rem; color: var(--navy); opacity: 0.55; font-weight: 600; }
+.grinta-strands { grid-template-columns: 1fr; margin-top: 0.7rem; }
+.grinta-strands .r-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 0.5rem; vertical-align: middle; }
+/* The Reconnect row carries a "next to grow" cue. In the narrow 3-across column it can't share the line with the
+   label + value, so let the row WRAP and drop the cue to its own full-width line — label and value never squeeze
+   each other (the jumbled-row bug: forcing value+cue nowrap just wrapped the "Reconnect" label instead). */
+.grinta-strands .dim { flex-wrap: wrap; align-items: baseline; }
+.grinta-strands .strand-label, .grinta-strands .strand-val { white-space: nowrap; }
+.grinta-strands .strand-cue { flex-basis: 100%; text-align: right; margin-top: 0.05rem; }
+.strand-cue { font-style: normal; color: var(--navy); opacity: 0.5; font-size: 0.82em; }
 .focus-chip { display: inline-block; background: var(--teal); color: var(--white); border-radius: 999px; padding: 0.25rem 0.8rem; font-weight: 600; }
 
 ul.reclaim { padding-left: 1.1rem; }
@@ -274,6 +323,7 @@ ul.reclaim li.reclaimed { color: var(--navy); }
 .tt-num { width: 5rem; }
 .tt-arrow { color: var(--charcoal); opacity: 0.6; }
 .tt-dir { flex: 1; }
+.tt-hint { font-size: 0.78rem; margin: 0 0 0.5rem; }
 .tt-actions { display: flex; gap: 0.4rem; }
 .tt-create {
   padding: 0.3rem 0.8rem; font-size: 0.82rem; font-weight: 600; cursor: pointer;
@@ -329,6 +379,19 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .summary-list dd { margin: 0.15rem 0 0; color: var(--charcoal); line-height: 1.5; }
 .summary-reclaim { margin: 0.2rem 0 0; padding-left: 1.2rem; }
 .summary-reclaim li { margin: 0.15rem 0; }
+/* Doors on the card — each with its one-line gloss (Onboarding Copy v2), not just the label. */
+.summary-doors { margin: 0.2rem 0 0; padding-left: 1.2rem; }
+.summary-doors li { margin: 0.35rem 0; line-height: 1.5; color: var(--charcoal); }
+.summary-doors strong { color: var(--navy); }
+/* The Grinta baseline block on the confirmation card — the one number (a starting line) + the 4-Rs light ceremony. */
+.onboard-grinta { margin: 0 0 1rem; padding: 0.9rem 1rem; border-radius: 10px; background: rgba(55, 79, 99, 0.05); border: 1px solid var(--panel-line); }
+.og-score { display: flex; align-items: baseline; gap: 0.35rem; }
+.og-num { font-size: 2rem; font-weight: 700; color: var(--navy); line-height: 1; }
+.og-scale { font-size: 0.95rem; color: var(--muted, #6B7680); }
+.og-label { margin-left: 0.4rem; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--teal); }
+.og-sub { margin: 0.4rem 0 0.9rem; font-size: 0.85rem; color: var(--charcoal); line-height: 1.45; }
+.og-journey { justify-content: space-between; max-width: 320px; }
+.og-next { margin: 0.8rem 0 0; font-size: 0.85rem; font-weight: 600; color: var(--navy); }
 
 /* Your next Beat — the work surface */
 .beat-card { border-left: 4px solid var(--olive); }
@@ -416,6 +479,25 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .cer-badge-name { font-size: 1.05rem; font-weight: 700; color: #fff; }
 .cer-seed-tag { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted, #6B7680); margin: 0 0 8px; }
 .cer-seed { border-left: 3px solid var(--teal); padding: 6px 0 6px 14px; margin: 8px 0; font-size: 0.95rem; font-style: italic; color: var(--navy); line-height: 1.45; }
+/* §2e Grinta movement reveal — the Grinta Index on its own /5 scale (olive, distinct from the teal ID Score), the
+   first movement, and the four strands with grit stepped up. */
+.cer-grinta { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.cer-grinta-head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; justify-content: center; }
+.cgn-val { font-size: 2.4rem; font-weight: 700; color: var(--olive); line-height: 1; }
+.cgn-scale { font-size: 1rem; color: var(--muted, #6B7680); font-weight: 600; }
+.cgn-move { font-size: 1rem; font-weight: 700; }
+.cgn-move.dir-up { color: var(--olive); }
+.cgn-move.dir-down { color: var(--navy); opacity: 0.5; font-weight: 600; font-size: 0.85em; } /* §3: dip = neutral, never red */
+.cgn-move.dir-flat { color: var(--navy); }
+.cer-grinta-strands { display: grid; gap: 6px; min-width: 220px; }
+.cgs-row { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 8px; }
+.cgs-dot { width: 10px; height: 10px; border-radius: 50%; }
+.cgs-label { font-size: 0.9rem; color: var(--navy); }
+.cgs-val { font-size: 0.9rem; font-weight: 700; color: var(--navy); white-space: nowrap; }
+.cgs-move { font-style: normal; font-size: 0.85em; margin-left: 0.15rem; }
+.cgs-move.dir-up { color: var(--olive); }
+.cgs-move.dir-down { color: var(--navy); opacity: 0.5; } /* §3: dip = neutral, never red */
+.cgs-move.dir-flat { color: var(--navy); }
 .cer-journey { display: flex; gap: 18px; }
 .cer-rstep { display: flex; flex-direction: column; align-items: center; gap: 6px; }
 .cer-rdot { width: 13px; height: 13px; border-radius: 50%; background: var(--grey); }
@@ -503,13 +585,14 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .pb-content { margin: 0.5rem 0 0.4rem; color: var(--charcoal); white-space: pre-wrap; }
 .pb-answered { margin: 0; font-size: 0.85rem; color: var(--navy); opacity: 0.85; }
 .journey-intro { font-size: 0.84rem; line-height: 1.5; color: var(--charcoal); opacity: 0.85; margin: 0.1rem 0 0; }
-.journey-lead { font-size: 0.82rem; color: var(--navy); margin: 0.8rem 0 0.45rem; }
-.journey-4rs { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem 0.45rem; font-size: 0.82rem; font-weight: 600; color: var(--navy); }
-.journey-4rs li { display: inline-flex; align-items: center; }
-.journey-4rs li:not(:last-child)::after { content: '→'; margin-left: 0.45rem; font-weight: 400; color: var(--teal); opacity: 0.8; }
-.journey-reclaim { display: flex; gap: 0.9rem; margin-top: 0.6rem; }
-.journey-reclaim span { font-size: 0.82rem; color: var(--navy); opacity: 0.85; white-space: nowrap; }
-.journey-reclaim strong { font-size: 1.05rem; color: var(--teal); opacity: 1; }
+/* Journey panel — one clear story (where you are) + the Phase stepper; the reclaimed/moving/to-go tally moved to See more. */
+.journey-here { font-size: 0.92rem; color: var(--navy); text-align: center; margin: 0.7rem 0 0.6rem; line-height: 1.4; }
+.journey-stepper { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 0.25rem 0.35rem; }
+.jstep { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.82rem; font-weight: 600; color: var(--navy); padding: 0.2rem 0.1rem; }
+.jstep.current { background: var(--grey); border-radius: 999px; padding: 0.2rem 0.7rem; } /* "you are here" — the bold pill */
+.jstep.ahead { opacity: 0.42; } /* upcoming Phases sit faint */
+.jdot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+.jarrow { color: var(--teal); opacity: 0.65; font-weight: 400; }
 
 /* Founder Agent admin */
 .admin-search { display: flex; gap: 0.5rem; margin: 0.5rem 0 1rem; }
@@ -651,10 +734,11 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .bite-body { white-space: pre-wrap; }
 .bite-by { font-style: italic; color: var(--navy); opacity: 0.8; font-size: 0.9rem; margin: 0.4rem 0 0; }
 
-/* GRINTA! Index — the daily process metric. Subservient to the ID Score: ~half the number size,
-   olive (vs. the ID's teal), lighter card. The ID Score stays the hero. */
-.grinta .num { color: var(--olive); font-size: 1.5rem; }
-.grinta .score { align-items: center; }
+/* Grinta Index — a PEER to the ID Score (Jul 2026): the number matches the ID Score's size, but keeps its own
+   accent (olive vs the ID's teal) and its own /5 scale, so it still reads as a distinct instrument. */
+/* The Grinta Index headline is NAVY — its own color, so it doesn't read as a strand (olive was the Rebuild dot). */
+.grinta .num { color: var(--navy); font-size: 3rem; }
+.grinta .score { align-items: baseline; }
 .grinta-bridge { font-size: 0.85rem; margin-top: 0.45rem; }
 
 /* Activity panel (Strava) — reflective, not gamified */

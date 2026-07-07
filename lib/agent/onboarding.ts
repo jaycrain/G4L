@@ -16,10 +16,15 @@ import { DOORS, DOOR_SLUGS, isDoorSlug, matchDoors, correctDoors, type DoorSlug 
 import { cleanIdentityNoun, displayIdentityNoun, identityLabel } from '../member/identity.ts';
 import { RECLAIM_LIST_MIN, RECLAIM_LIST_TARGET } from '../member/reclaim.ts';
 import { contractMet, gapIsNarrative } from './onboarding-contract.ts';
+import type { GrintaScore } from '../grinta/survey/scoring.ts';
 
 export type Stage = 'identity' | 'identity_name' | 'reclaim' | 'door' | 'complete'
   // v2.0 staged-capture engine (lib/agent/onboarding-staged.ts) uses 'gap' for the "how it opened" stage.
   | 'gap'
+  // The Grinta baseline — "Introduction to Grinta," an administered 12-item survey at the END of onboarding
+  // (after reclaim confirms, before completion). Administered mode, off the depth kernel; establishes the
+  // GRINTA baseline (the 4-strand resilience the member builds by closing each R). No ID Score here.
+  | 'grinta'
   // v2.1 (Decision E): 'declined' is the terminal off-ramp for a genuinely-thriving no-fade member.
   | 'declined'
   // v2.2 Reconnect arc (config #2 on the shared kernel): its stage ids. 'entry' = the callback (§2a).
@@ -35,14 +40,25 @@ export type Stage = 'identity' | 'identity_name' | 'reclaim' | 'door' | 'complet
   | 'checkpoint'
   | 'ceremony';
 
+// Beat separator — when ONE turn hands over more than one beat (e.g. the Phases intro + the pre-survey framing, or
+// the score-read close + the drift ask), join them with this (invisible RS control char) instead of "\n\n" so the
+// chat renders them as SEPARATE bubbles, one job each — never a single crammed bubble. Shared by both arcs' chats.
+export const BEAT_SEP = '\u001E';
+
 export type Collected = {
   athleticPast?: string; // Step 1: the past self, in the member's own words
   identityNoun?: string; // the reclaimed identity, natural case (e.g. "Athlete")
   identitySkipped?: boolean; // the member chose not to name an identity yet (they'll find it at Identity Excavation)
   reclaimList?: string[]; // >= RECLAIM_LIST_MIN
   reclaimCategories?: string[]; // IDQ-dimension category per item, same order (agent-inferred)
+  // Decision II: whole-life VISION statements drawn out of the Reclaim List — preserved (never discarded), written
+  // to the Playbook (Window/Legacy work) at finalize rather than living as a goal. Member-confirmed before the move.
+  visionKeepers?: string[];
   gap?: string; // Step 3 free-text: how the gap opened (member's words)
   doors?: DoorSlug[]; // one or more
+  // The Grinta baseline — set when the "Introduction to Grinta" survey completes (composite + the 4 strand means).
+  // Stashed here so the completion card can render the number and the action can persist it without re-scoring.
+  grintaBaseline?: GrintaScore;
 };
 
 export type ConvState = {
@@ -81,7 +97,17 @@ export type ConvState = {
   // words — the "preserve declarations" wall) from the reflect turn to the confirm turn, where the keeper is queued.
   pendingHarvest?: HarvestSignal[];
   driftPayload?: string;
+  // Decision II capture discipline: a reclaim-list SHAPE the engine surfaced for the member to confirm (an overlap
+  // to merge, a vision to move to the Playbook, a paragraph to draw out), threaded across the propose→confirm turns.
+  // reclaimShapesResolved carries the keys of shapes already addressed, so a "no, keep both" is never re-proposed.
+  pendingReclaimShape?: PendingReclaimShape;
+  reclaimShapesResolved?: string[];
 };
+
+export type PendingReclaimShape =
+  | { kind: 'overlap'; keep: string; drop: string }
+  | { kind: 'vision'; item: string }
+  | { kind: 'multiwant'; item: string };
 
 // A harvest candidate the engine queued (drained by the action → emitHarvestMoment). keeperType is a plain string to
 // avoid a cycle with harvest.ts (which imports Collected from here); the action maps it to the KeeperType enum.
@@ -449,6 +475,9 @@ const STAGE_PROMPT: Record<Stage, string> = {
   reclaim: `What are a few things you want back? Three to start, more if they keep coming.`,
   door: doorPrompt(),
   gap: doorPrompt(), // v1 never sets 'gap' (that's the v2.0 staged engine) — present only for type completeness
+  // Administered (staged only) — off the depth kernel, so this fallback prompt is never actually used; present
+  // for type completeness. A number-based re-ask, matching the survey's own reprompt.
+  grinta: 'On a scale of 1 (not at all) to 5 (completely), how true does that feel today?',
   complete: "That's everything we need. Let's look at where you're starting from next.",
   declined: 'This may not be your season for it — and the door stays open whenever that changes.', // terminal; never appended
   // v2.2 Reconnect stages are present only for type completeness — v1 never routes here, and the Reconnect

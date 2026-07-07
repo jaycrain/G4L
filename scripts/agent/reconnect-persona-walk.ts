@@ -213,12 +213,12 @@ async function runPersona(p: Persona, rl?: { question: (q: string) => Promise<st
   const history: ConvMessage[] = [{ role: 'agent', text: turn.reply }];
   console.log(`[COMPANION | ${stageOf(state)}]\n${turn.reply}\n`);
 
-  // Walk the WHOLE arc — entry → doors → measurement → drift → window — until it hands into the Checkpoint (§2e stub)
-  // or completes. The administered measurement runs deterministically (no wasted model call); the draw-out beats are
-  // live. Capped generously for the 24 IDQ items + the four beats.
-  for (let i = 0; i < 60 && !turn.complete && stageOf(state) !== 'checkpoint'; i++) {
+  // Walk the WHOLE arc — entry → doors → measurement → drift → window → CHECKPOINT (§2e, the 6 grit items) — until it
+  // hands into the Ceremony (§2f) or completes. The administered beats (IDQ + the Checkpoint grit) run through the
+  // deterministic path; the draw-out beats are live. Capped generously for the 24 IDQ + 6 grit items + the four beats.
+  for (let i = 0; i < 80 && !turn.complete && stageOf(state) !== 'ceremony'; i++) {
     const stageBefore = stageOf(state);
-    const administered = stageBefore === 'entry' || stageBefore === 'measurement';
+    const administered = stageBefore === 'entry' || stageBefore === 'measurement' || stageBefore === 'checkpoint';
     const m = rl ? await askYou(rl) : await member(p.system, history);
     if (rl && (m === '' || m.toLowerCase() === 'quit')) { console.log('\n(ended early)'); break; }
     // entry + administered measurement are deterministic (mirror the action); the draw-out beats call the live model.
@@ -230,6 +230,8 @@ async function runPersona(p: Persona, rl?: { question: (q: string) => Promise<st
     if (stageOf(state) === 'measurement') {
       // Condense the IDQ items so the LIFT reads clean — one compact line per rating, not 24 full item blocks.
       console.log(`[measurement · ${answered}/${TOTAL_ITEMS}] rated ${m}`);
+    } else if (stageOf(state) === 'checkpoint') {
+      console.log(`[checkpoint · ${answered}/6 grit] rated ${m}`);
     } else {
       if (!rl) console.log(`[MEMBER]\n${m}\n`);
       console.log(`[COMPANION | ${stageOf(state)}]${confOf(state)}${revOf(state)}${keeperOf(state)}\n${turn.reply}\n`);
@@ -237,7 +239,7 @@ async function runPersona(p: Persona, rl?: { question: (q: string) => Promise<st
   }
 
   console.log('──────────');
-  console.log(`ended at stage: ${stageOf(state)}  ${stageOf(state) === 'checkpoint' ? '(whole §2d arc walked ✓ — handed into the Checkpoint stub)' : '(did not reach the Checkpoint — read why above)'}`);
+  console.log(`ended at stage: ${stageOf(state)}  ${stageOf(state) === 'ceremony' ? '(whole arc walked ✓ — §2c IDQ + §2d beats + §2e Checkpoint → handed into the §2f Ceremony)' : '(did not reach the Ceremony — read why above)'}`);
   console.log(`keepers: ${keeperOf(state) || '(none)'}`);
 }
 

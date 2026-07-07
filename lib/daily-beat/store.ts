@@ -17,12 +17,17 @@ function seededIndex(seed: string, n: number): number {
   return n > 0 ? (h >>> 0) % n : 0;
 }
 
-/** Pure: pick one reflection from the unspent pool, preferring the member's current R (plus the
- * phase-agnostic universal lines), seeded so it's stable for a given member+day. */
-export function selectReflection(unspent: Reflection[], currentR: string | null, seed: string): Reflection | null {
-  if (!unspent.length) return null;
-  const preferred = unspent.filter((r) => r.phase === currentR || r.phase === 'universal');
-  const pool = preferred.length ? preferred : unspent;
+const CALL_POOL = REFLECTIONS.filter((r) => r.phase === 'universal'); // the phase-agnostic daily-CALL reps
+
+/** Pure: pick one reflection for the Momentum daily CALL — the phase-agnostic reps ONLY. The phase-specific
+ * reflections are Session CONTENT (identity/excavation/doors/vision), not daily calls — a Reconnect member must
+ * not get an identity prompt in the Momentum slot (Jay's walk). The no-repeat runs WITHIN the call pool; when it's
+ * exhausted this cycle, reshuffle the call pool — never fall back to phase content. Seeded, stable per member+day.
+ * (currentR is retained for signature stability but no longer weights the pick — the daily call is phase-agnostic.) */
+export function selectReflection(unspent: Reflection[], _currentR: string | null, seed: string): Reflection | null {
+  const unspentCall = unspent.filter((r) => r.phase === 'universal');
+  const pool = unspentCall.length ? unspentCall : CALL_POOL;
+  if (!pool.length) return null;
   const sorted = [...pool].sort((a, b) => a.id.localeCompare(b.id)); // stable order for the seed
   return sorted[seededIndex(seed, sorted.length)]!;
 }

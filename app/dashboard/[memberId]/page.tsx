@@ -5,8 +5,8 @@ import { timeSignals, topNudge } from '../../../lib/agent/nudge.ts';
 import { getActivityPanel } from '../../../lib/activity/store.ts';
 import { stravaConfigured } from '../../../lib/activity/strava.ts';
 import StravaConnect from '../../account/strava-connect.tsx';
-import { getGrinta } from '../../../lib/grinta/index.ts';
-import { getJourney } from '../../../lib/beats/store.ts';
+import { latestGrintaReading } from '../../../lib/grinta/survey/store.ts';
+import { Fragment } from 'react';
 import JourneyRings from '../journey-rings.tsx';
 import IdqRadar from '../idq-radar.tsx';
 import { formatDistance, formatDuration, typeLabel, relativeDay } from '../../../lib/activity/summary.ts';
@@ -41,6 +41,13 @@ import { redirect } from 'next/navigation';
 export const maxDuration = 30;
 
 const R_RING_COLOR: Record<string, string> = { reconnect: '#374f63', rewire: '#3b9495', rebuild: '#919536', reclaim: '#ec6233' };
+// The four Grinta strands, in R order — the Grinta Index card lays them out like the ID Score's dimension rows.
+const R_STRANDS = [
+  { key: 'reconnect', label: 'Reconnect' },
+  { key: 'rewire', label: 'Rewire' },
+  { key: 'rebuild', label: 'Rebuild' },
+  { key: 'reclaim', label: 'Reclaim' },
+] as const;
 const DIM_LABEL: Record<string, string> = { physical: 'Physical', self: 'Self', social: 'Social', outlook: 'Outlook' };
 const ARROW: Record<string, string> = { up: '↑', down: '↓', flat: '→' };
 const HERO_VERB: Record<string, string> = { reconnect: 'Reconnecting', rewire: 'Rewiring', rebuild: 'Rebuilding', reclaim: 'Reclaiming' };
@@ -57,12 +64,11 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
   await ensureOnboardingBadge(db, memberId);
 
   // v0.4 zones, all from the registry + member state.
-  const [facets, forecast, passport, grinta, journey, activity] = await Promise.all([
+  const [facets, forecast, passport, grintaReading, activity] = await Promise.all([
     getFacets(db, memberId),
     getForecast(db, memberId),
     getPassport(db, memberId),
-    getGrinta(db, memberId, dash.identityNoun),
-    getJourney(db, memberId),
+    latestGrintaReading(db, memberId), // the SURVEY Grinta Index (baseline → Checkpoints), not the activity register
     getActivityPanel(db, memberId, dash.identityNoun),
   ]);
 
@@ -74,6 +80,10 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
 
   // The active phase (the one the forecast marks "You're here") — drives the Daily Beat + crossing.
   const activePhase = forecast.phases.find((p) => p.status === "You're here")?.phase ?? 'reconnect';
+  // The Journey story: which Phase you're on + its ordinal (for "the Nth of four Phases").
+  const currentPhaseIdx = Math.max(0, R_STRANDS.findIndex((r) => r.key === activePhase));
+  const currentPhaseLabel = R_STRANDS[currentPhaseIdx]!.label;
+  const PHASE_ORDINAL = ['first', 'second', 'third', 'fourth'];
 
   // Journey rings, gate-driven from the forecast: a finished R stays darkened (reinforcing completion),
   // the active R is the lit one, the rest sit dimmed.
@@ -180,9 +190,10 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
         />
       )}
 
-      {/* v2.2 Reconnect entry — flag-gated (off in prod until the coupled v2.1+v2.2 flip). The dashboard is where
-          a member launches the deeper session; the callback (§2a) picks up from their committed captures. */}
-      {reconnectEnabled() && (
+      {/* v2.2 Reconnect entry — flag-gated (off in prod until the coupled v2.1+v2.2 flip). ONLY while the member is
+          actually on Reconnect — once they've crossed into Rewire+, this stale "Begin Reconnect" CTA must disappear
+          (the Program panel + Companion drive the next Phase from there). */}
+      {reconnectEnabled() && activePhase === 'reconnect' && (
         <div className="reconnect-entry">
           <Link href={`/reconnect/${memberId}`} className="reconnect-cta">
             Begin Reconnect — go deeper →
@@ -222,16 +233,16 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
       {/* §3 · companion hero — the lead block (greeting + proactive message + CTA) */}
       <CompanionHero message={heroMessage} />
 
-      {/* §1 · priority pair — Your Program (next Session) + the Daily Beat, side by side */}
+      {/* §1 · priority pair — Your Program (next Session) + the Momentum panel, side by side */}
       <div className="priority-pair">
         <CurriculumForecast memberId={memberId} forecast={forecast} />
         {dailyBeat ? (
           <DailyBeatPanel memberId={memberId} reflectionId={dailyBeat.id} text={dailyBeat.text} keepable={dailyBeat.keepable} kept={dailyBeatKept} />
         ) : (
           <div className="card daily-empty">
-            <h3>Daily Call</h3>
-            <p className="card-subtitle">Your daily rep: today&apos;s call, and the momentum it builds.</p>
-            <p className="muted">Today&apos;s reflection lands here.</p>
+            <h3>Momentum</h3>
+            <p className="card-subtitle">The calls you make, one at a time — and how they add up.</p>
+            <p className="muted">Your next reflection lands here.</p>
             <ResiliencePulse bare />
           </div>
         )}
@@ -275,54 +286,85 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
           <div className="card metric id-card" data-tour="idscore">
             <h3>ID Score</h3>
             <p className="card-subtitle">How close you are to yourself — and how that grows over time.</p>
-            {/* §3.6 no-score-yet — an ANTICIPATORY blank, never an error. Fills the moment they start Reconnect. */}
-            <div className="metric-body"><p className="muted">Blank for now — it fills the moment you start, and it’s where you’ll watch the distance close.</p></div>
+            {/* §3.6 no-score-yet — an ANTICIPATORY blank, never an error. A faint radar ghost hints at the shape
+                that's coming; the copy sits over it. Fills the moment they start Reconnect. */}
+            <div className="metric-body id-blank">
+              <div className="id-ghost" aria-hidden="true">
+                <IdqRadar current={{ physical: 15, self: 15, social: 15, outlook: 15 }} size={132} withLabels={false} />
+              </div>
+              <p className="muted">Blank for now — it fills the moment you start, and it’s where you’ll watch the distance close.</p>
+            </div>
             <Link href={`/score/${memberId}`} className="see-more">See more →</Link>
           </div>
         )}
 
         <div className="card metric journey-card">
           <h3>Journey</h3>
-          <p className="card-subtitle">The whole path — the four Rs — and where you stand right now.</p>
+          <p className="card-subtitle">The whole path — the four Phases — and where you stand right now.</p>
           <div className="metric-body metric-center">
             <JourneyRings states={ringStates} />
-            {journey.reclaim.total > 0 && (
-              <div className="journey-reclaim">
-                <span><strong>{journey.reclaim.reclaimed}</strong> reclaimed</span>
-                <span><strong>{journey.reclaim.moving}</strong> moving</span>
-                <span><strong>{journey.reclaim.notYet}</strong> to go</span>
-              </div>
-            )}
           </div>
-          <p className="journey-lead">The path runs through four movements, as a loop:</p>
-          <ol className="journey-4rs">
-            <li>Reconnect</li>
-            <li>Rewire</li>
-            <li>Rebuild</li>
-            <li>Reclaim</li>
-          </ol>
+          {/* One clear story: where you are, no cryptic counter (that lives on See more). */}
+          <p className="journey-here">You&apos;re on <strong>{currentPhaseLabel}</strong> — the {PHASE_ORDINAL[currentPhaseIdx]} of four Phases.</p>
+          {/* The loop stepper: each Phase its R-ring dot; current bold + marked, upcoming faint. */}
+          <div className="journey-stepper" aria-label="The four Phases; you are on the highlighted one.">
+            {R_STRANDS.map((r, i) => (
+              <Fragment key={r.key}>
+                <span className={`jstep${i === currentPhaseIdx ? ' current' : ''}${i > currentPhaseIdx ? ' ahead' : ''}`}>
+                  <span className="jdot" style={{ background: R_RING_COLOR[r.key] }} />
+                  <span className="jname">{r.label}</span>
+                </span>
+                {i < R_STRANDS.length - 1 && <span className="jarrow" aria-hidden="true">→</span>}
+              </Fragment>
+            ))}
+          </div>
           <Link href={`/journey/${memberId}`} className="see-more">See more →</Link>
         </div>
 
         <div className="card metric grinta">
           <h3>Grinta Index</h3>
-          <p className="card-subtitle">The resilience you&apos;re building, stronger with each R.</p>
-          <div className="metric-body">
-            <div className="score">
-              <span className="num">{grinta.score}</span>
-              <span className={`dir-${grinta.direction}`}>
-                {ARROW[grinta.direction]}
-                {grinta.delta !== 0 ? ` ${grinta.delta > 0 ? '+' : ''}${grinta.delta}` : ''}
-              </span>
+          <p className="card-subtitle">Grit. Never give up. Stronger with each Phase.</p>
+          {grintaReading ? (
+            <div className="metric-body">
+              <div className="score">
+                <span className="num">{grintaReading.composite}</span>
+                <span className="grinta-scale">/ 5</span>
+                {/* Delta only AFTER a Checkpoint moves it — the baseline stands alone, no arrow (signed up-positive %). */}
+                {/* Delta rule (§3): up = positive; down = NEUTRAL grey, small, never red (a dip is honest
+                    recalibration, not a loss — per Greg); flat = no arrow at all. */}
+                {grintaReading.changePct !== null && grintaReading.direction && grintaReading.direction !== 'flat' && (
+                  <span className={`dir-${grintaReading.direction}`}>
+                    {ARROW[grintaReading.direction]}
+                    {grintaReading.changePct !== 0 ? ` ${grintaReading.changePct > 0 ? '+' : ''}${grintaReading.changePct}%` : ''}
+                  </span>
+                )}
+              </div>
+              {/* The four strands — one per R, in the R-ring colors, like the ID Score's dimension rows. */}
+              <div className="dims grinta-strands">
+                {R_STRANDS.map((r) => {
+                  const v = grintaReading.strands[r.key];
+                  return (
+                    <div className="dim" key={r.key}>
+                      <span className="strand-label"><span className="r-dot" style={{ background: R_RING_COLOR[r.key] }} />{r.label}</span>
+                      <span className="strand-val">{v != null ? `${v} / 5` : '—'}</span>
+                      {/* The cue follows the CURRENT Phase (§5) — not frozen on Reconnect. On Rewire, Rewire is
+                          "next to grow" and Reconnect drops back into the normal list. */}
+                      {r.key === activePhase && <em className="strand-cue">next to grow</em>}
+                    </div>
+                  );
+                })}
+              </div>
+              <p className="metric-foot muted">Each Phase you finish adds to it — Grinta grows as you close the loop.</p>
             </div>
-            {/* Member-facing 3-C breakdown removed (Decision V: never Commitment/Control/Challenge). The R-named
-                subscales land with §2e, fed from the Checkpoint hardiness — not re-pointed before it exists. */}
-          </div>
+          ) : (
+            // Anticipatory blank — the baseline lands the moment they finish the intro survey, then grows each R.
+            <div className="metric-body"><p className="muted">Blank for now — your grit baseline lands when you finish the intro, then climbs with each R you close.</p></div>
+          )}
           <Link href={`/grinta/${memberId}`} className="see-more">See more →</Link>
         </div>
       </div>
 
-      {/* The Resilience Pulse now lives UNDER the Daily Call panel (its momentum visual) — see the priority pair above. */}
+      {/* The Resilience Pulse now lives UNDER the Momentum panel (its visual) — see the priority pair above. */}
 
       {/* Connect — the community surface, slotted right under the metrics strip */}
       <ConnectPanel memberId={memberId} />
@@ -358,7 +400,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
             </div>
           ) : null;
         })()}
-        <p className="muted refine-hint">To add or refine, just talk to Your G4L Companion</p>
+        <p className="muted refine-hint">To add or refine, just talk to your G4L Companion</p>
       </div>
 
       {/* Your Badges — the proof, sitting just below the work it rewards. */}

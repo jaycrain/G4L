@@ -11,7 +11,7 @@ import type { Db } from '../../lib/db/schema.ts';
 export default async function ConnectPanel({ memberId }: { memberId: string }) {
   const db = (await getDb()) as unknown as Db;
   const [feed, pacts, unread, rooms] = await Promise.all([
-    getFeed(db, 1),
+    getFeed(db, 1, memberId, { excludeFlagged: true }), // never FEATURE a crisis-flagged post on the dashboard (safety)
     getAccountability(db, memberId),
     unreadNotificationCount(db, memberId),
     listOpenRooms(db),

@@ -3,7 +3,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { startReconnectAction, reconnectTurnAction, reconnectCeremonyDataAction } from './actions.ts';
 import type { ConvMessage, ConvState } from '../../lib/agent/onboarding.ts';
+import { BEAT_SEP } from '../../lib/agent/reconnect.ts';
 import { DOORS } from '../../lib/doors.ts';
+
+// A turn may hand over more than one beat (score-read close + drift ask), joined by BEAT_SEP — render each as its
+// OWN bubble, one job each, never a single crammed bubble.
+const agentBubbles = (text: string): ConvMessage[] =>
+  text.split(BEAT_SEP).map((t) => t.trim()).filter(Boolean).map((t) => ({ role: 'agent' as const, text: t }));
 import ReconnectCeremony from './reconnect-ceremony.tsx';
 import type { ReconnectCeremonyData } from '../../lib/ceremony/reconnect-ceremony-beats.ts';
 
@@ -29,7 +35,7 @@ export default function ReconnectChat({ memberId }: { memberId: string }) {
       const r = await startReconnectAction(memberId);
       setPending(false);
       if (!r.ok || !r.reply || !r.state) return setError(r.error ?? 'Could not start Reconnect.');
-      setMessages([{ role: 'agent', text: r.reply }]);
+      setMessages(agentBubbles(r.reply));
       setState(r.state);
     })();
   }, [memberId]);
@@ -45,7 +51,7 @@ export default function ReconnectChat({ memberId }: { memberId: string }) {
     const r = await reconnectTurnAction(memberId, state, history, text);
     setPending(false);
     if (!r.ok || !r.reply || !r.state) return setError(r.error ?? 'Something went wrong.');
-    setMessages((m) => [...m, { role: 'agent', text: r.reply! }]);
+    setMessages((m) => [...m, ...agentBubbles(r.reply!)]);
     setState(r.state);
     // §2f — the arc reached the Ceremony: load the reveal data and fire the full-screen overlay.
     if (r.state.stage === 'ceremony') {

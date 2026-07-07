@@ -7,6 +7,7 @@
 
 import { MEMBER_AGENT_SYSTEM_PROMPT } from './system-prompt.ts';
 import { detectCrisis, CRISIS_RESPONSE_US } from './governance.ts';
+import { reclaimAddIntent } from '../member/reclaim.ts';
 import { connectContextLines, type ConnectAgentSummary } from '../connect/agent.ts';
 import type { Direction } from '../idq/scoring.ts';
 
@@ -24,8 +25,15 @@ export type CheckinContext = {
   currentFocus: string | null;
   lastCompletedAsset: string | null;
   reclaimList: string[];
-  grintaScore?: number | null; // the daily Grinta Index — for awareness, not to pitch
+  grintaScore?: number | null; // the daily activity register (the Daily Call) — for awareness, not to pitch
   grintaTrend?: 'up' | 'down' | 'flat' | null;
+  // The SURVEY Grinta Index (Decision DD) — the member's grit baseline (onboarding) → Checkpoints, on a 1–5
+  // scale (kept distinct from the ID Score's 0–100 on purpose). When present it is the real "Grinta Index" the
+  // member sees on the dashboard; the activity register above is then the Daily Call rhythm. Null on prod v1.
+  grintaIndex?: number | null; // composite, 1–5
+  grintaStrands?: { reconnect?: number; rewire?: number; rebuild?: number; reclaim?: number } | null; // per-R means, 1–5
+  grintaIndexTrend?: 'up' | 'down' | 'flat' | null; // movement vs the prior reading (null until a Checkpoint moves it)
+  grintaIndexChangePct?: number | null; // signed up-positive percent vs the prior reading (null on the baseline)
   consumedBites?: string[]; // titles of recently read bites
   pastSelf?: string | null; // their own words on who they were (from onboarding)
   gapStory?: string | null; // their own words on how the gap opened (from onboarding)
@@ -66,6 +74,15 @@ export type CheckinMessage = { role: 'agent' | 'member'; text: string };
 export type CheckinTurn = { reply: string; crisis?: boolean };
 
 const firstName = (n: string) => (n || '').trim().split(/\s+/)[0] ?? '';
+
+// The four Grinta strands, spelled out for the agent's context (one per R). Empty when none are present.
+function grintaStrandsLine(s: CheckinContext['grintaStrands']): string {
+  if (!s) return '';
+  const parts = (['reconnect', 'rewire', 'rebuild', 'reclaim'] as const)
+    .filter((k) => s[k] != null)
+    .map((k) => `${k[0]!.toUpperCase()}${k.slice(1)} ${s[k]}`);
+  return parts.length ? ` — strands ${parts.join(', ')}` : '';
+}
 
 export function contextBlock(c: CheckinContext): string {
   const dims = c.dimensions
@@ -109,7 +126,13 @@ export function contextBlock(c: CheckinContext): string {
     dims,
     trend,
     c.currentFocus ? `Current focus: ${c.currentFocus}` : null,
-    c.grintaScore != null ? `Grinta Index: ${c.grintaScore}${c.grintaTrend ? ` (${c.grintaTrend} lately)` : ''}` : null,
+    // Grinta Index: when the SURVEY reading exists (staged) it owns the name — the grit baseline on a 1–5 scale,
+    // with the four R-strands. The activity register then reads as the Daily Call rhythm. On prod v1 (no survey
+    // reading) the activity register keeps the "Grinta Index" name, so nothing about the live agent changes.
+    c.grintaIndex != null
+      ? `Grinta Index (their grit, on a 1–5 scale — a different measure from the ID Score, never to be compared to it): ${c.grintaIndex}${grintaStrandsLine(c.grintaStrands)}${c.grintaIndexChangePct != null && c.grintaIndexTrend ? ` (${c.grintaIndexTrend} ${c.grintaIndexChangePct > 0 ? '+' : ''}${c.grintaIndexChangePct}% since last Checkpoint)` : ' (baseline — it moves at Checkpoints)'}`
+      : c.grintaScore != null ? `Grinta Index: ${c.grintaScore}${c.grintaTrend ? ` (${c.grintaTrend} lately)` : ''}` : null,
+    c.grintaIndex != null && c.grintaScore != null ? `Daily Call rhythm (their day-to-day momentum, not the Index): ${c.grintaScore}${c.grintaTrend ? ` (${c.grintaTrend} lately)` : ''}` : null,
     c.beatsDone != null ? `Beats worked so far: ${c.beatsDone}` : null,
     c.experienceSummary && c.experienceSummary.trim()
       ? `How they've moved through the program lately (for awareness — gently notice a stall or a return, e.g. "you opened Visualization a couple times — want to pick it back up?"; NEVER grade or guilt): ${c.experienceSummary.trim()}`
@@ -158,7 +181,7 @@ function checkinSystem(c: CheckinContext): string {
 OPERATING MOMENT: Ongoing Check-in.
 The member opened the companion to check in — maybe to share a win, vent, or think out loud, maybe because there is no one else to talk to right now. Be present. Open warmly and, when natural, reference their most recent moment. Listen and reflect more than you advise. One question at a time.
 Your quiet north star is their human connectedness: when it fits, gently bridge them toward people — the G4L community, a friend, a coach, or Jay — rather than keeping the conversation only with you. Be comfortable letting a short conversation end. Never pull for engagement or screen time.
-You are aware of their Grinta Index (their daily showing-up), its trend, and what they have recently read — reference these naturally if they help the conversation (e.g. "your Grinta has been climbing"). Do NOT pitch content or hand out tasks; the daily bite lives on their dashboard, not in this chat.
+You are aware of their Grinta Index (their grit, built across the four Phases), its trend, and what they have recently read — reference these naturally if they help the conversation (e.g. "your Grinta Index has been climbing"). NAMING: Grinta MEANS grit (never "Grinta is grit"), and when you state the number always name it the Grinta Index (or their Grinta score) — never a bare "Grinta" number. Do NOT pitch content or hand out tasks; the daily bite lives on their dashboard, not in this chat.
 
 POINT THEM TO THEIR NEXT STEP ON THE PATH. This is different from the daily bite — the program's structural steps (a Session, and especially a Checkpoint, which is a gateway between the Rs) are the spine of the work, and part of guiding is making sure they know where to go next. MEMBER CONTEXT tells you "Their next step on the path" when one is ready. When it fits — most of all right after they've finished a Session, or when they're wondering what's next — NAME that step and send them there in plain words ("Your Reconnect Checkpoint is ready — it's the ⚑ in your Program panel; want to cross it now?"). A Checkpoint especially should never be something they have to go hunting for: if they've just done the work that unlocks one, point them to it. Offer it once, warmly — never nag, never gate the conversation behind it, and if no next step is listed as ready, don't invent one. When they cross a Checkpoint into a new R (MEMBER CONTEXT will show "Crossed into …"), mark the moment — it's real progress.
 
@@ -227,9 +250,10 @@ function scriptedReply(memberMessage: string): string {
 
 // --- Live (Claude) --------------------------------------------------------------------------
 
-// The member can ask the agent to tend their own records (add a Reclaim List item, name another
-// Door). The action layer supplies an executor with DB access; checkin.ts stays DB-agnostic. Tools
-// are additive only — there is intentionally no delete/overwrite here.
+// The member can ask the agent to tend their own records from the rail — the Companion CRUDs member-owned
+// QUALITATIVE content (Reclaim List add/edit/remove/reorder/mark, Doors, Playbook, measures); the scores stay
+// read-only (Decision L — see docs/companion-crud-design.md). Removes are SOFT (removed_at, recoverable), never
+// raw deletes. The action layer supplies an executor with DB access; checkin.ts stays DB-agnostic.
 export type ToolResult = { ok: boolean; message: string };
 export type ToolExecutor = (name: string, input: Record<string, unknown>) => Promise<ToolResult>;
 
@@ -237,7 +261,7 @@ const REFINE_TOOLS = [
   {
     name: 'add_reclaim_item',
     description:
-      "Add ONE new item to the member's Reclaim List — only when they clearly want to add something they want back. ANY goal that matters to them belongs here, not just identity work. The text must be SPECIFIC and OBSERVABLE (something you could both witness — 'raise $250k' is observable; 'be more successful' is not). Confirm the wording first; if they give a feeling, sharpen it with them before calling this.",
+      "Add ONE new item to the member's Reclaim List — only when they clearly want to add something they want back. ANY goal that matters to them belongs here, not just identity work. The text must be SPECIFIC and OBSERVABLE (something you could both witness — 'raise $250k' is observable; 'be more successful' is not). Confirm the wording first; if they give a feeling, sharpen it with them before calling this. IMPORTANT: acknowledging in words does NOT save it — when the member asks to add an item (even wrapped in 'I'd like to add to the list…'), you MUST call this tool that same turn, or it is lost.",
     input_schema: {
       type: 'object',
       properties: {
@@ -292,7 +316,7 @@ const REFINE_TOOLS = [
   {
     name: 'remove_reclaim_item',
     description:
-      "Remove an item from the member's Reclaim List when they clearly want it off — they've changed their mind, it no longer fits, or it was never quite right ('take X off my list', 'I don't want that one anymore'). This is the member running their own list — NEVER frame it as a failure or a setback. It is a SOFT removal: the item is set aside, not destroyed, and can be brought back any time. Confirm which one first ('Want me to take {item} off?') unless they've already named it plainly, then call this. After it succeeds, acknowledge it warmly, e.g. 'Done — I took {item} off your Reclaim List. We can bring it back any time you want.'",
+      "Remove an item from the member's Reclaim List when they clearly want it off — they've changed their mind, it no longer fits, or it was never quite right ('take X off my list', 'I don't want that one anymore'). This is the member running their own list. It is a SOFT removal internally (set aside, recoverable — so a confirmed remove is always safe). Two rules for the FEEL: (1) NEVER frame it as a failure or a setback. (2) NEVER name a negative the member didn't raise — do NOT say 'no judgment', 'no regrets', or 'we can undo it any time'; naming the doubt plants it (the Drift-line rule). Confirm the specific item warmly first, normalizing sideways, e.g. 'Want me to take {item} off? Some things have their season.' — then call this. After it succeeds, a light, clean ack, e.g. 'Done — {item} is off your list.'",
     input_schema: {
       type: 'object',
       properties: { item: { type: 'string', description: 'the member’s reference to the Reclaim List item to remove' } },
@@ -374,7 +398,8 @@ async function liveReply(
   history: CheckinMessage[],
   userText: string,
   executor?: ToolExecutor,
-): Promise<string> {
+): Promise<{ reply: string; toolNames: string[] }> {
+  const called: string[] = []; // client tools the model actually invoked this turn (for the engine backstop)
   const { default: Anthropic } = await import('@anthropic-ai/sdk');
   // One bounded attempt with a single quick retry — never the 40–60s retry stack that made turns
   // feel like the companion stalled. Stays within the route's 30s maxDuration.
@@ -425,11 +450,12 @@ async function liveReply(
     }
     const toolUses = res.content.filter((b) => b.type === 'tool_use'); // our client tools only
     if (!executor || res.stop_reason !== 'tool_use' || toolUses.length === 0) {
-      return textOf(res.content);
+      return { reply: textOf(res.content), toolNames: called };
     }
     messages.push({ role: 'assistant', content: res.content });
     const results = [];
     for (const tu of toolUses) {
+      called.push((tu as any).name);
       const out = await executor((tu as any).name, ((tu as any).input ?? {}) as Record<string, unknown>);
       results.push({ type: 'tool_result', tool_use_id: (tu as any).id, content: out.message });
     }
@@ -437,13 +463,13 @@ async function liveReply(
   }
   // Loop exhausted: one final text-only turn so we never return empty.
   const fin = await client.messages.create({ model, max_tokens: 400, system, messages });
-  return textOf(fin.content);
+  return { reply: textOf(fin.content), toolNames: called };
 }
 
 export async function checkinOpening(c: CheckinContext): Promise<string> {
   if (process.env.ANTHROPIC_API_KEY) {
     try {
-      return await liveReply(
+      return (await liveReply(
         checkinSystem(c),
         [],
         'This is the member\'s VERY FIRST conversation with you — moments after a personal onboarding, now looking at a dashboard full of new numbers and panels for the first time. In your own warm voice (a short paragraph, never a script or a bulleted list), do three things:\n' +
@@ -452,12 +478,36 @@ export async function checkinOpening(c: CheckinContext): Promise<string> {
           '2) EASE THEM IN — let them know the dashboard is their program made specific to them, and that you\'ll help those cold numbers make sense and work the Reclaim List together, a step at a time. Do NOT explain each panel (the Field Guide does that) — just reassure them you\'ll make sense of it WITH them.\n' +
           '3) SET THE COMPACT, lightly — you\'re here and listening, this space is confidential, the more honest they can be with themselves the better and faster this tends to go, and you\'ll both keep refining as you learn what\'s really going on. You care, and you\'re here to help.\n' +
           'Keep it human and unhurried, end with one gentle open invitation, and never promise outcomes or imply you\'ll do the work for them — they do the work; you guide, witness, and stay beside them.',
-      );
+      )).reply;
     } catch (e) {
       console.warn('check-in opening: live agent unavailable, using scripted —', (e as Error).message);
     }
   }
   return scriptedOpening(c);
+}
+
+// The engine backstop for an unfulfilled reclaim add-intent (#6). Pure detection lives in reclaimAddIntent; this
+// commits it via the executor (the SAME validated add path) when the model didn't, and — since the model failed
+// to confirm the save — ensures the reply tells the member it landed. Returns the (possibly-augmented) reply.
+export async function backstopReclaimAdd(
+  memberMessage: string,
+  reply: string,
+  toolNames: string[],
+  executor?: ToolExecutor,
+): Promise<string> {
+  if (!executor || toolNames.includes('add_reclaim_item')) return reply; // the model added it, or no DB access
+  const want = reclaimAddIntent(memberMessage);
+  if (!want) return reply; // no explicit add-intent
+  try {
+    const out = await executor('add_reclaim_item', { text: want });
+    if (!out.ok) return reply; // fog/dup rejected downstream — leave the model's reply (it may sharpen/draw it out)
+    // The model didn't confirm the save (that's the bug). If its reply already names the want, trust it; otherwise
+    // add a light, in-voice confirmation so the member knows it landed. (Copy directional — shaped in the felt-walk.)
+    const namesIt = reply.toLowerCase().includes(want.toLowerCase().slice(0, Math.min(want.length, 14)));
+    return namesIt ? reply : `${reply}\n\nDone — I added “${want}” to your Reclaim List.`.trim();
+  } catch {
+    return reply; // best-effort — a backstop failure never breaks the turn
+  }
 }
 
 export async function checkinReply(
@@ -469,9 +519,14 @@ export async function checkinReply(
   if (detectCrisis(memberMessage).flagged) return { reply: CRISIS_RESPONSE_US, crisis: true };
   if (process.env.ANTHROPIC_API_KEY) {
     try {
-      const reply = await liveReply(checkinSystem(c), history, memberMessage, executor);
+      const { reply, toolNames } = await liveReply(checkinSystem(c), history, memberMessage, executor);
+      // ENGINE GUARD (#6): the member clearly asked to ADD a want but the model didn't call add_reclaim_item —
+      // it acknowledged in prose and moved on ("that's a good one — anything else?"), silently losing the add.
+      // Backstop-capture through the SAME validated primitive (fog rejected, dups folded), so an add-intent is
+      // never dropped. "The Companion couldn't do X is a bug, not a boundary."
+      const guarded = await backstopReclaimAdd(memberMessage, reply, toolNames, executor);
       // Never render an empty bubble — a rare empty turn degrades to a soft, in-voice nudge.
-      if (reply.trim()) return { reply };
+      if (guarded.trim()) return { reply: guarded };
       return { reply: "I'm with you — say a little more?" };
     } catch (e) {
       console.warn('check-in reply: live agent unavailable, using scripted —', (e as Error).message);

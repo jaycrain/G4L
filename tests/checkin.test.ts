@@ -40,6 +40,32 @@ test('scripted replies are reflective, brand-safe, and bridge wins toward people
   assert.ok(clean(vent.reply));
 });
 
+test('contextBlock · the SURVEY Grinta Index owns the name + relabels the activity register as the Daily Call', () => {
+  const block = contextBlock({
+    ...base,
+    grintaScore: 62, grintaTrend: 'up', // the activity register (Daily Call)
+    grintaIndex: 3.42, grintaStrands: { reconnect: 3.33, rewire: 2.67, rebuild: 4, reclaim: 3.67 },
+    grintaIndexTrend: null, grintaIndexChangePct: null, // baseline
+  });
+  assert.match(block, /Grinta Index \(their grit, on a 1–5 scale/);
+  assert.match(block, /3\.42/);
+  assert.match(block, /strands Reconnect 3\.33, Rewire 2\.67, Rebuild 4, Reclaim 3\.67/);
+  assert.match(block, /baseline — it moves at Checkpoints/, 'no delta shown on the baseline');
+  assert.match(block, /Daily Call rhythm.*62/, 'the activity register is relabeled, not double-named "Grinta Index"');
+  assert.doesNotMatch(block, /Grinta Index: 62/, 'the activity score never keeps the Index name when the survey exists');
+});
+
+test('contextBlock · post-Checkpoint the Grinta Index shows a signed, up-positive delta', () => {
+  const block = contextBlock({ ...base, grintaIndex: 3.6, grintaStrands: { reconnect: 3.9 }, grintaIndexTrend: 'up', grintaIndexChangePct: 12.5 });
+  assert.match(block, /up \+12\.5% since last Checkpoint/);
+});
+
+test('contextBlock · prod v1 (no survey reading) keeps the legacy activity "Grinta Index" — agent unchanged', () => {
+  const block = contextBlock({ ...base, grintaScore: 62, grintaTrend: 'up' }); // no grintaIndex
+  assert.match(block, /Grinta Index: 62 \(up lately\)/);
+  assert.doesNotMatch(block, /Daily Call rhythm/);
+});
+
 test('contextBlock surfaces the full member data the MA can speak to', () => {
   const block = contextBlock({
     ...base,
