@@ -927,7 +927,7 @@ function grintaClose(composite: number): string {
   // "ready for you now" (was "already lit").
   return (
     `That’s the whole check-in — thanks for staying with it.\n\n` +
-    `Your starting Grinta Index is ${composite} out of 5. Grinta is grit — never give up — and you build it by ` +
+    `Your starting Grinta Index is ${composite} out of 5. Grinta means grit — never give up — and you build it by ` +
     `working through the four Phases, one at a time. This is just where you stand today: nothing to grade, ` +
     `everything to build on.\n\n` +
     `Take a look at what I captured from our conversation below. Reconnect is your first Phase, and it’s ready for you now.`

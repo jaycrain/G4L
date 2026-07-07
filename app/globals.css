@@ -134,6 +134,26 @@ button:hover, .btn:hover { background: var(--navy); }
 .sub-copy p.muted { margin-top: 1rem; }
 /* The personalized "your read" line — up top, distinct from the explainer beneath it. */
 .sub-personal { border-left: 4px solid var(--navy); padding: 0.3rem 0 0.3rem 0.85rem; margin: 0 0 1.15rem; color: var(--navy); font-size: 1.05rem; font-weight: 600; line-height: 1.5; }
+
+/* The Program Route Card (/program) — the whole four-Phase path, one Phase per block, ring-colored, with a
+   "you're here" marker on the active Phase and a muted "coming" treatment for the previewed Phases. */
+.route { margin: 1.2rem 0 0.6rem; }
+.route-phase { border-left: 4px solid var(--ring, var(--navy)); padding: 0.5rem 0 0.6rem 0.95rem; margin: 0 0 1.1rem; }
+.route-phase.here { background: rgba(55, 79, 99, 0.05); border-radius: 0 8px 8px 0; }
+.route-phase.coming { opacity: 0.72; }
+.route-phase-head { display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.35rem; }
+.route-dot { width: 11px; height: 11px; border-radius: 50%; flex: none; }
+.route-phase-head h4 { margin: 0; color: var(--navy); font-size: 1.02rem; }
+.route-tag { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; padding: 0.15rem 0.5rem; border-radius: 999px; }
+.here-tag { background: var(--teal); color: #fff; }
+.done-tag { background: var(--light-grey, #E8E6E6); color: var(--navy); }
+.coming-tag { background: transparent; color: var(--navy); opacity: 0.55; border: 1px solid var(--panel-line); }
+.route-blurb { font-style: italic; color: var(--navy); opacity: 0.75; margin: 0 0 0.5rem; font-size: 0.92rem; }
+.route-sessions { margin: 0 0 0.4rem; padding-left: 1.1rem; }
+.route-sessions li { line-height: 1.5; margin: 0 0 0.3rem; }
+.route-reveal { font-size: 0.9rem; color: var(--navy); opacity: 0.7; font-style: italic; margin: 0.2rem 0 0; }
+.route-loop { font-size: 0.95rem; color: var(--navy); font-weight: 600; font-style: italic; margin: 0.2rem 0 0; }
+.route-foot { font-size: 0.82rem; }
 .sub-personal strong { color: var(--navy); }
 /* Detail-page subheads + lists (ID Score / Grinta / Journey copy refresh) */
 /* The Grinta origin pull-quote (Eros Poli) on the /grinta See-more page. */
