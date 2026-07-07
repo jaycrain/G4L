@@ -45,6 +45,14 @@ test('create a measure, dedupe by label', async () => {
   assert.equal(none.ok, false);
 });
 
+test('createMeasure strips a leading quantity that leaks into the unit ("35lbs" → "lbs")', async () => {
+  // Donna's walk: a tracker rendered "222 35lbs" because the agent's create_measure passed "35 lbs" as the unit.
+  const { db, memberId } = await seed();
+  await createMeasure(db, memberId, { label: 'Start with losing', unit: '35lbs', direction: 'down', startValue: 222, targetValue: 187 });
+  const [m] = await listMeasures(db, memberId);
+  assert.equal(m!.unit, 'lbs', 'the leading number is stripped from the unit');
+});
+
 test('log readings; same-day re-log updates (upsert)', async () => {
   const { db, memberId } = await seed();
   await createMeasure(db, memberId, { label: 'Weight', unit: 'lbs', direction: 'down', startValue: 213.4, targetValue: 190 });
@@ -218,4 +226,14 @@ test('suggestTracker treats "lose/gain N <unit>" as a DELTA level goal, not an a
 
   // money goals remain 0→N accumulation, never deltas
   assert.equal(suggestTracker('Raise $250k for G4L').delta, null);
+
+  // Donna's walk: filler words ("about"/"around") between the verb and the number must NOT defeat the delta,
+  // and "-ing" verb forms ("losing") must read as down, not default up.
+  const about = suggestTracker('Lose about 35 lbs');
+  assert.equal(about.delta, 35, '"about" does not break the delta');
+  assert.equal(about.direction, 'down');
+  const losing = suggestTracker('Start with losing about 35 lbs');
+  assert.equal(losing.delta, 35, '"losing about N" reads as a delta');
+  assert.equal(losing.direction, 'down', '"losing" is down, not the default up');
+  assert.equal(suggestTracker('Losing around 20 pounds').delta, 20);
 });

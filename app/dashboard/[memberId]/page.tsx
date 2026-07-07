@@ -190,9 +190,10 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
         />
       )}
 
-      {/* v2.2 Reconnect entry — flag-gated (off in prod until the coupled v2.1+v2.2 flip). The dashboard is where
-          a member launches the deeper session; the callback (§2a) picks up from their committed captures. */}
-      {reconnectEnabled() && (
+      {/* v2.2 Reconnect entry — flag-gated (off in prod until the coupled v2.1+v2.2 flip). ONLY while the member is
+          actually on Reconnect — once they've crossed into Rewire+, this stale "Begin Reconnect" CTA must disappear
+          (the Program panel + Companion drive the next Phase from there). */}
+      {reconnectEnabled() && activePhase === 'reconnect' && (
         <div className="reconnect-entry">
           <Link href={`/reconnect/${memberId}`} className="reconnect-cta">
             Begin Reconnect — go deeper →

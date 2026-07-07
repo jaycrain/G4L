@@ -63,7 +63,9 @@ export function suggestTracker(text: string): TrackerSuggestion {
   // so we carry N as `delta` and derive the target from their Current value at entry. This is how people actually
   // track weight, and it's distinct from an ABSOLUTE target ("down to 190", "under 200" — keeps its explicit
   // number) and from an ACCUMULATION goal ("save/raise $N" — counts up from 0).
-  const deltaM = low.match(/\b(lose|losing|lost|drop|shed|cut|gain|gaining|gained|add|put on)\s+([\d,.]+)\s*(?:lbs?|kg|kgs|pounds?)\b/);
+  // Allow a filler word between the verb and the number — "lose ABOUT 35 lbs", "losing AROUND 35 lbs" — which
+  // members write naturally and which otherwise defeats the delta match (dropping it to an absolute target of N).
+  const deltaM = low.match(/\b(lose|losing|lost|drop|dropping|shed|shedding|cut|cutting|gain|gaining|gained|add|put on)\s+(?:about|around|roughly|approximately|approx|some|~)?\s*([\d,.]+)\s*(?:lbs?|kg|kgs|pounds?)\b/);
   const absoluteCue = /\b(?:to|under|below|above|over|reach|hit|down to)\s+\$?\d/.test(low) || /\$/.test(t);
   let delta: number | null = deltaM && !absoluteCue ? parseFloat(deltaM[2]!.replace(/,/g, '')) : null;
   if (delta != null && !Number.isFinite(delta)) delta = null;
@@ -103,7 +105,7 @@ export function suggestTracker(text: string): TrackerSuggestion {
             : '';
 
   // direction: lower-is-better cues vs higher-is-better cues; sensible defaults by topic
-  const downCues = /\b(?:lose|drop|down to|under|below|cut|reduce|lower)\b/.test(low) || /\bweight\b/.test(low);
+  const downCues = /\b(?:lose|losing|lost|drop|dropping|shed|shedding|down to|under|below|cut|cutting|reduce|reducing|lower)\b/.test(low) || /\bweight\b/.test(low);
   const upCues = /\b(?:raise|save|saving|reach|up to|grow|increase|more|hit|\+)\b/.test(low) || /\b(?:miles?|mi)\b/.test(low);
   let direction: MeasureDirection = downCues && !/\braise\b/.test(low) ? 'down' : upCues ? 'up' : 'up';
   // A delta goal's direction is unambiguous from its verb — gain/add = up, lose/drop/shed/cut = down.
@@ -158,6 +160,12 @@ async function matchMeasure(db: Db, memberId: string, ref: string): Promise<{ id
   return part ?? null;
 }
 
+// Guard the unit against a leading quantity leaking in ("35lbs", "35 lbs" → "lbs") — the agent's create_measure
+// sometimes hands the whole "35 lbs" phrase as the unit, which then renders as "222 35lbs" on the card.
+function cleanUnit(unit: string | undefined): string {
+  return (unit ?? '').trim().replace(/^[\d.,]+\s*/, '').trim();
+}
+
 export type CreateMeasureInput = {
   label: string;
   unit?: string;
@@ -185,7 +193,7 @@ export async function createMeasure(
       memberId,
       input.reclaimItemId ?? null,
       label,
-      (input.unit ?? '').trim(),
+      cleanUnit(input.unit),
       direction,
       input.startValue ?? null,
       input.targetValue ?? null,
