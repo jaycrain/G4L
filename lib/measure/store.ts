@@ -280,24 +280,30 @@ function computeView(row: any, readings: MeasureReading[]): MeasureView {
   };
 }
 
-/** All active measures for a member, each with a recent slice of readings (oldest→newest). */
+/** All active measures for a member, each with a recent slice of readings (oldest→newest). Degrades to [] if the
+ *  measure/measure_reading tables aren't present (migration 0020 unapplied) — a drifted DB never crashes the page. */
 export async function listMeasures(db: Db, memberId: string): Promise<MeasureView[]> {
-  const { rows } = await db.query<any>(
-    `select id, reclaim_item_id, label, unit, direction, start_value, target_value
-     from measure where member_id=$1 and archived_at is null order by created_at`,
-    [memberId],
-  );
-  const out: MeasureView[] = [];
-  for (const row of rows) {
-    const r = await db.query<{ value: string; noted_on: string }>(
-      `select value, to_char(noted_on,'YYYY-MM-DD') as noted_on from measure_reading
-       where measure_id=$1 order by noted_on desc limit $2`,
-      [row.id, RECENT],
+  try {
+    const { rows } = await db.query<any>(
+      `select id, reclaim_item_id, label, unit, direction, start_value, target_value
+       from measure where member_id=$1 and archived_at is null order by created_at`,
+      [memberId],
     );
-    const readings = r.rows.map((x) => ({ value: Number(x.value), notedOn: x.noted_on })).reverse(); // oldest→newest
-    out.push(computeView(row, readings));
+    const out: MeasureView[] = [];
+    for (const row of rows) {
+      const r = await db.query<{ value: string; noted_on: string }>(
+        `select value, to_char(noted_on,'YYYY-MM-DD') as noted_on from measure_reading
+         where measure_id=$1 order by noted_on desc limit $2`,
+        [row.id, RECENT],
+      );
+      const readings = r.rows.map((x) => ({ value: Number(x.value), notedOn: x.noted_on })).reverse(); // oldest→newest
+      out.push(computeView(row, readings));
+    }
+    return out;
+  } catch (e) {
+    console.warn('listMeasures failed — measure tables missing / migration 0020 unapplied?', (e as Error).message);
+    return [];
   }
-  return out;
 }
 
 /** True when a measure has moved in its desired direction (or hit target) — i.e. real movement. */

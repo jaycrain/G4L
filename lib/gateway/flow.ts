@@ -219,13 +219,19 @@ export async function getDashboard(db: Db, memberId: string): Promise<Dashboard 
   }
   const primary = doors.find((d) => d.isPrimary) ?? doors[0] ?? null;
 
-  // Reclaim List now lives as categorized rows (reclaim_item); fall back to the legacy jsonb.
-  const riRows = (
-    await db.query<{ id: string; text: string; state: string }>(
+  // Reclaim List now lives as categorized rows (reclaim_item); fall back to the legacy jsonb. Guarded: the
+  // removed_at column is migration 0040 — if a drifted DB lacks it (or the table), degrade to the jsonb list
+  // instead of crashing the whole dashboard.
+  const riRows = await db
+    .query<{ id: string; text: string; state: string }>(
       'select id, text, state from reclaim_item where member_id=$1 and removed_at is null order by sort_order, created_at',
       [memberId],
     )
-  ).rows;
+    .then((r) => r.rows)
+    .catch((e) => {
+      console.warn('reclaim_item read failed — migration 0040 (removed_at) unapplied?', (e as Error).message);
+      return [] as { id: string; text: string; state: string }[];
+    });
   const reclaimItems = riRows.length
     ? riRows.map((r) => ({ id: r.id, text: r.text, reclaimed: r.state === 'reclaimed' }))
     : (Array.isArray(m.reclaim_list) ? (m.reclaim_list as string[]) : []).map((text) => ({ id: null, text, reclaimed: false }));
