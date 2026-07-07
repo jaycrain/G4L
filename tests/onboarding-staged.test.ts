@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { applyStagedTurn, stagedOpening, correctsReflection } from '../lib/agent/onboarding-staged.ts';
+import { memberClosingReclaim } from '../lib/agent/onboarding-intent.ts';
 import { BEAT_SEP, type ConvMessage, type ConvState, type ModelTurn, type Turn } from '../lib/agent/onboarding.ts';
 
 // Replay through the PURE staged engine (no API), the same discipline as tests/onboarding-replay.test.ts.
@@ -623,6 +624,16 @@ test('Decision II — a VISION is offered to the Playbook; "yes" moves it out of
   const t2 = applyStagedTurn(t1.state, [], 'yes please', { text: 'Okay.' });
   assert.equal((t2.state.collected.reclaimList ?? []).includes(vision), false, 'the vision leaves the goal list');
   assert.equal((t2.state.collected.visionKeepers ?? []).includes(vision), true, 'preserved to visionKeepers for the Playbook (never discarded)');
+});
+
+test('gather hygiene (Elite Cyclist walk) — a "shape of it" close is not captured; an "N rides a week" cadence folds', () => {
+  // "That's about the shape of it" is the member closing the list, not a want (RECLAIM_CLOSE_RE missed "shape of it").
+  assert.equal(memberClosingReclaim("That's about the shape of it"), true);
+  // "2-3 rides a week to begin with" is a cadence fragment — folds into its parent want (Rule 4, generic activity noun).
+  const s: ConvState = { stage: 'complete', collected: { athleticPast: 'x', identityNoun: 'Elite Cyclist', gap: 'a real fade over a long hard decade', reclaimList: ['Riding my bike'] } };
+  const t = applyStagedTurn(s, [], 'add 2-3 rides a week to begin with', { text: 'Added.' });
+  assert.equal((t.state.collected.reclaimList ?? []).length, 1, 'the cadence folds into "Riding my bike", not a standalone item');
+  assert.match(t.state.collected.reclaimList![0]!, /Riding my bike.*rides a week/i);
 });
 
 test('Decision II — a MULTI-WANT paragraph is drawn out; the member\'s pick replaces the paragraph', () => {

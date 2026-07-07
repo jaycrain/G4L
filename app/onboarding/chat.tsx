@@ -359,7 +359,7 @@ export default function OnboardingChat() {
                     <span className="og-scale">/ 5</span>
                     <span className="og-label">your starting Grinta Index</span>
                   </div>
-                  <p className="og-sub">Grit — the resilience you build by closing each R. A starting line, not a grade.</p>
+                  <p className="og-sub">Grit — what you build by closing each Phase. A starting line, not a grade.</p>
                   <div className="cer-journey og-journey">
                     {['Reconnect', 'Rewire', 'Rebuild', 'Reclaim'].map((r) => (
                       <div key={r} className={`cer-rstep${r === 'Reconnect' ? ' lit' : ''}`}>

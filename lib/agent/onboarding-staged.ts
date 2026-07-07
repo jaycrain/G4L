@@ -357,7 +357,7 @@ function reclaimTokens(s: string): string[] {
 // a DRILL of the previous one (Jay's walk: "Start walking every morning" + "Every day" landed as two sloppy
 // items). When one is captured, the engine folds it into the last want instead of a standalone.
 const BARE_MODIFIER_RE =
-  /^(every\s+(day|morning|evening|night|week|weekend)s?|daily|weekly|nightly|on\s+weekends?|most\s+(days|mornings)|(a\s+few|once|twice|[1-9][0-9]?(\s*[-–to]+\s*[1-9][0-9]?)?)\s*(times?|x|days?)?\s*(a|per|each|\/)?\s*(day|week|morning|month)?)$/i;
+  /^(every\s+(day|morning|evening|night|week|weekend)s?|daily|weekly|nightly|on\s+weekends?|most\s+(days|mornings)|(a\s+few|once|twice|[1-9][0-9]?(\s*[-–to]+\s*[1-9][0-9]?)?)\s*(times?|x|days?|rides?|runs?|walks?|workouts?|sessions?|swims?|lifts?|classes?|rounds?)?\s*(a|per|each|\/)?\s*(day|week|morning|month)?)$/i;
 // Rule 4 (Decision II): a bare cadence folds into its parent want. Tolerate trailing FILLER so "2-3 times a week
 // to start with" folds too (Donna's walk — it was anchored too tightly before and survived standalone).
 const CADENCE_FILLER_RE = /\s+(?:to (?:start|begin)(?:\s+with)?|to start off|for (?:now|a start)|at first|these days|initially)$/i;
