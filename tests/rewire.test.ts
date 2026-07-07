@@ -45,9 +45,11 @@ function walkDomains(): ConvState {
 
 test('W1 · walks all five domains, then the turn HARVESTS each true line as a keeper; closing completes', () => {
   let state = walkDomains();
-  // write two true lines (the ones that hit hardest — a member-picked subset)
-  let t = applyRewireTurn(state, [], 'My body responds to what I ask of it — at any age', { text: 'ok' });
+  // first true line → harvested; the Companion SERVES UP the next heaviest lie (guided, not passive)
+  const NEXT_ASK = "Kept. The one about your time weighed heavy too — what's the true line there?";
+  let t = applyRewireTurn(state, [], 'My body responds to what I ask of it — at any age', { text: NEXT_ASK });
   assert.equal((t.state.pendingHarvest ?? []).length, 1, 'first true line harvested');
+  assert.equal(t.reply, NEXT_ASK, 'the ack serves up the next lie (model-driven), not a passive prompt');
   t = applyRewireTurn(t.state, [], "I've started before — this time I'm not alone", { text: 'ok' });
   assert.equal((t.state.pendingHarvest ?? []).length, 2, 'second true line harvested');
   const k = (t.state.pendingHarvest ?? [])[0]!;

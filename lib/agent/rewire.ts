@@ -53,7 +53,9 @@ const W1_CAMPAIGN =
 // the model returns nothing — a clear single ask, still member-picked.
 const W1_TURN_ASK_FALLBACK =
   "Let's answer them — start with the one that hit you hardest. What's the honest line you'd put in its place?";
-const W1_AFFIRM_ACK = "Kept — that's yours. Any other lie you want to answer? Write its true line, or tell me that's your set.";
+// Fallback ack — the model normally SERVES UP the next-heaviest lie here (guided, one at a time). This runs only if
+// the model returns nothing.
+const W1_AFFIRM_ACK = "Kept — that's yours. Here's another that stood out — what's the true line you'd put in its place? Or tell me that's your set.";
 const W1_AFFIRM_NUDGE = "Even one is enough — take the lie that stung most and write the honest line back.";
 const W1_CLOSE =
   `They're the first thing you'll reach for when the old voice gets loud. I've saved them to your Playbook.\n\n` +
@@ -123,7 +125,8 @@ const affirmStage: StageDef = {
       return;
     }
     b.pendingHarvest.push({ kind: 'affirmation', keeperType: 'principle', destinationIntent: 'keeper', payloadRef: line, label: 'Your true line' });
-    b.reply = W1_AFFIRM_ACK;
+    // stay guided: the model acknowledges + serves up the NEXT heaviest lie. Fallback if the model returns nothing.
+    b.reply = (b.modelText ?? '').trim() || W1_AFFIRM_ACK;
   },
   confirm(b) {
     affirmStage.gather(b);
@@ -156,7 +159,13 @@ const REWIRE_W1_SYSTEM =
 
 function rewireStageNote(state: ConvState): string {
   if (state.stage === 'affirm')
-    return "\n\nRIGHT NOW: the member is writing a TRUE LINE (their honest counter to a lie). Acknowledge it warmly in one sentence — do not rewrite it or add your own.";
+    return (
+      "\n\nRIGHT NOW: the member just wrote a TRUE LINE (their honest counter to a lie). In ONE turn: (1) acknowledge " +
+      "it warmly in a few words — do not rewrite it or add your own; then (2) SERVE UP the next heaviest lie they " +
+      "named earlier that they haven't answered yet — name it back in their words and ask for its true line, one at " +
+      "a time. Don't make them go find the next one. Once they've put lines to two or three (or answered them all), " +
+      "add a gentle out — 'or is that your set?' — but keep offering the next one until they close."
+    );
   if (isLastDomainTurn(state))
     return (
       "\n\nRIGHT NOW: the member just named their FIFTH and last self-lie. Do NOT reflect it separately and do NOT " +
