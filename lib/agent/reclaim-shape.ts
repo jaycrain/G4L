@@ -107,13 +107,28 @@ export type ReclaimShapeIssue =
   | { kind: 'overlap'; keepIndex: number; dropIndex: number; keep: string; drop: string }
   | { kind: 'multiwant'; index: number; item: string };
 
-export function reconcileReclaimShapes(list: string[] | undefined): ReclaimShapeIssue | null {
+/** A stable key for an issue, so a shape the member already ruled on ("no, keep both") is never re-proposed. */
+export function shapeKey(issue: ReclaimShapeIssue): string {
+  if (issue.kind === 'overlap') return `overlap:${[issue.keep, issue.drop].sort().join('::')}`;
+  return `${issue.kind}:${issue.item}`;
+}
+
+export function reconcileReclaimShapes(list: string[] | undefined, resolved?: ReadonlySet<string>): ReclaimShapeIssue | null {
   const items = list ?? [];
-  for (let i = 0; i < items.length; i++) if (isLifeVision(items[i]!)) return { kind: 'vision', index: i, item: items[i]! };
+  const open = (issue: ReclaimShapeIssue) => (resolved ? !resolved.has(shapeKey(issue)) : true);
+  for (let i = 0; i < items.length; i++) {
+    const issue: ReclaimShapeIssue = { kind: 'vision', index: i, item: items[i]! };
+    if (isLifeVision(items[i]!) && open(issue)) return issue;
+  }
   for (let i = 1; i < items.length; i++) {
     const ov = semanticOverlap(items[i]!, items.slice(0, i));
-    if (ov) return { kind: 'overlap', keepIndex: items.indexOf(ov), dropIndex: i, keep: ov, drop: items[i]! };
+    if (!ov) continue;
+    const issue: ReclaimShapeIssue = { kind: 'overlap', keepIndex: items.indexOf(ov), dropIndex: i, keep: ov, drop: items[i]! };
+    if (open(issue)) return issue;
   }
-  for (let i = 0; i < items.length; i++) if (isMultiWantParagraph(items[i]!)) return { kind: 'multiwant', index: i, item: items[i]! };
+  for (let i = 0; i < items.length; i++) {
+    const issue: ReclaimShapeIssue = { kind: 'multiwant', index: i, item: items[i]! };
+    if (isMultiWantParagraph(items[i]!) && open(issue)) return issue;
+  }
   return null;
 }

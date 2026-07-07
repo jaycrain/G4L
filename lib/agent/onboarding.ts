@@ -51,6 +51,9 @@ export type Collected = {
   identitySkipped?: boolean; // the member chose not to name an identity yet (they'll find it at Identity Excavation)
   reclaimList?: string[]; // >= RECLAIM_LIST_MIN
   reclaimCategories?: string[]; // IDQ-dimension category per item, same order (agent-inferred)
+  // Decision II: whole-life VISION statements drawn out of the Reclaim List — preserved (never discarded), written
+  // to the Playbook (Window/Legacy work) at finalize rather than living as a goal. Member-confirmed before the move.
+  visionKeepers?: string[];
   gap?: string; // Step 3 free-text: how the gap opened (member's words)
   doors?: DoorSlug[]; // one or more
   // The Grinta baseline — set when the "Introduction to Grinta" survey completes (composite + the 4 strand means).
@@ -94,7 +97,17 @@ export type ConvState = {
   // words — the "preserve declarations" wall) from the reflect turn to the confirm turn, where the keeper is queued.
   pendingHarvest?: HarvestSignal[];
   driftPayload?: string;
+  // Decision II capture discipline: a reclaim-list SHAPE the engine surfaced for the member to confirm (an overlap
+  // to merge, a vision to move to the Playbook, a paragraph to draw out), threaded across the propose→confirm turns.
+  // reclaimShapesResolved carries the keys of shapes already addressed, so a "no, keep both" is never re-proposed.
+  pendingReclaimShape?: PendingReclaimShape;
+  reclaimShapesResolved?: string[];
 };
+
+export type PendingReclaimShape =
+  | { kind: 'overlap'; keep: string; drop: string }
+  | { kind: 'vision'; item: string }
+  | { kind: 'multiwant'; item: string };
 
 // A harvest candidate the engine queued (drained by the action → emitHarvestMoment). keeperType is a plain string to
 // avoid a cycle with harvest.ts (which imports Collected from here); the action maps it to the KeeperType enum.

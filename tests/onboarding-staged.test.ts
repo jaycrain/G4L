@@ -583,6 +583,60 @@ test('STAGED terminal (#2) — no double-add when the model DID record the want,
   assert.equal(affirm.state.collected.reclaimList?.length, 1, 'a confirmation is not captured as a want');
 });
 
+// ── Decision II: the shape gate wired into the reclaim confirm (propose/confirm, never a silent rewrite) ──
+const DII_BASE = { athleticPast: 'a player', identityNoun: 'Player', gap: 'a real fade over a long hard decade' };
+
+test('Decision II — an OVERLAP is surfaced for a member-confirmed merge; "yes" removes the duplicate (Donna\'s pair)', () => {
+  const atConfirm: ConvState = {
+    stage: 'reclaim', awaitingConfirm: true,
+    collected: { ...DII_BASE, reclaimList: ['My fitness', 'Start with losing about 35 lbs', 'Lose about 35 lbs', 'Buy some new clothes'] },
+  };
+  // The member confirms the list — the engine surfaces the overlap FIRST instead of advancing.
+  const t1 = applyStagedTurn(atConfirm, [], 'looks good', { text: 'Great.', replyIntent: 'done' });
+  assert.equal(t1.state.stage, 'reclaim', 'stays in reclaim to resolve the shape; does not advance to the survey');
+  assert.match(t1.reply, /same thing|keep them as one|are they different/i, 'proposes the merge');
+  assert.equal(t1.state.pendingReclaimShape?.kind, 'overlap');
+  // "yes, same" → the duplicate is merged away, list re-reflected, pending cleared.
+  const t2 = applyStagedTurn(t1.state, [], 'yes, same thing', { text: 'Okay.' });
+  assert.equal((t2.state.collected.reclaimList ?? []).filter((x) => /35 lbs/i.test(x)).length, 1, 'the duplicate "lose 35 lbs" is merged away');
+  assert.equal(t2.state.pendingReclaimShape, undefined, 'pending cleared');
+});
+
+test('Decision II — "no, they\'re different" keeps BOTH wants (no data loss) and never re-proposes', () => {
+  const atConfirm: ConvState = { stage: 'reclaim', awaitingConfirm: true, collected: { ...DII_BASE, reclaimList: ['Start with losing about 35 lbs', 'Lose about 35 lbs'] } };
+  const t1 = applyStagedTurn(atConfirm, [], 'looks good', { text: 'Great.', replyIntent: 'done' });
+  assert.equal(t1.state.pendingReclaimShape?.kind, 'overlap');
+  const t2 = applyStagedTurn(t1.state, [], 'no, they are different', { text: 'Okay.' });
+  assert.equal((t2.state.collected.reclaimList ?? []).length, 2, 'both wants kept — a distinct want is never dropped');
+  // Confirm again → the ruled-on overlap is NOT re-proposed; the flow advances into the Grinta survey.
+  const t3 = applyStagedTurn(t2.state, [], "that's the list", { text: 'Great.', replyIntent: 'done' });
+  assert.equal(/same thing|keep them as one/i.test(t3.reply), false, 'the resolved overlap is not re-proposed');
+  assert.equal(t3.state.stage, 'grinta', 'advances once shapes are clean');
+});
+
+test('Decision II — a VISION is offered to the Playbook; "yes" moves it out of the goal list into visionKeepers', () => {
+  const vision = "I'll be 60 in a month; I want to spend the rest of my days at peace and be myself everywhere I go";
+  const atConfirm: ConvState = { stage: 'reclaim', awaitingConfirm: true, collected: { ...DII_BASE, reclaimList: ['My fitness', vision, 'Buy some new clothes'] } };
+  const t1 = applyStagedTurn(atConfirm, [], 'looks good', { text: 'Great.', replyIntent: 'done' });
+  assert.equal(t1.state.pendingReclaimShape?.kind, 'vision');
+  assert.match(t1.reply, /Playbook|bigger picture/i, 'offers to move the vision, not silently drop it');
+  const t2 = applyStagedTurn(t1.state, [], 'yes please', { text: 'Okay.' });
+  assert.equal((t2.state.collected.reclaimList ?? []).includes(vision), false, 'the vision leaves the goal list');
+  assert.equal((t2.state.collected.visionKeepers ?? []).includes(vision), true, 'preserved to visionKeepers for the Playbook (never discarded)');
+});
+
+test('Decision II — a MULTI-WANT paragraph is drawn out; the member\'s pick replaces the paragraph', () => {
+  const para = 'Regular income that covers our baseline needs. Freelance and creative projects and funding for my role.';
+  const atConfirm: ConvState = { stage: 'reclaim', awaitingConfirm: true, collected: { ...DII_BASE, reclaimList: ['My fitness', para] } };
+  const t1 = applyStagedTurn(atConfirm, [], 'looks good', { text: 'Great.', replyIntent: 'done' });
+  assert.equal(t1.state.pendingReclaimShape?.kind, 'multiwant');
+  assert.match(t1.reply, /which one|most want back/i, 'draws the real want out');
+  const t2 = applyStagedTurn(t1.state, [], 'Steady freelance income', { text: 'Okay.' });
+  const list = t2.state.collected.reclaimList ?? [];
+  assert.equal(list.includes(para), false, 'the paragraph is replaced');
+  assert.equal(list.some((x) => /freelance income/i.test(x)), true, 'with the distilled want');
+});
+
 test('STAGED gap — a short dispute re-opens but NEVER wipes the gap or Doors (never drop what they gave)', () => {
   const atConfirm: ConvState = {
     stage: 'gap', awaitingConfirm: true,

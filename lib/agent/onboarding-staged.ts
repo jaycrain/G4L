@@ -39,11 +39,13 @@ import {
   type DoorRevision,
   type HarvestSignal,
   type ModelTurn,
+  type PendingReclaimShape,
   type ReplyIntent,
   type ReseeingTell,
   type Stage,
   type Turn,
 } from './onboarding.ts';
+import { reconcileReclaimShapes, shapeKey } from './reclaim-shape.ts';
 // The intent layer — the one place that decides what a member's utterance MEANS (see onboarding-intent.ts).
 import {
   correctsReflection,
@@ -383,6 +385,80 @@ export function stripReclaimPreamble(msg: string): string {
   return stripped.length >= 3 ? stripped : (msg ?? '').trim(); // never strip down to nothing
 }
 
+// ── Decision II: the reclaim shape gate (propose/confirm, no silent rewrites) ─────────────────────────────────
+const SHAPE_YES_RE = /\b(yes|yeah|yep|yup|sure|ok|okay|please|go ahead|do it|sounds?\s+(good|right)|that'?s?\s+right|correct|merge|combine|same|as one|one goal|move it)\b/i;
+const SHAPE_NO_RE = /\b(no|nope|nah|different|separate|distinct|two goals?|keep both|leave (it|them|both)|it'?s a goal|keep it|not the same)\b/i;
+function saysYes(msg: string): boolean { const m = (msg ?? '').toLowerCase(); return SHAPE_YES_RE.test(m) && !SHAPE_NO_RE.test(m); }
+
+// Remove the first item matching `item` (and its parallel category), returning true if one was removed.
+function removeReclaimItem(c: Collected, item: string): boolean {
+  const list = c.reclaimList ?? [];
+  const i = list.findIndex((x) => x === item);
+  if (i < 0) return false;
+  c.reclaimList = [...list.slice(0, i), ...list.slice(i + 1)];
+  const cats = c.reclaimCategories;
+  if (cats && cats.length === list.length) c.reclaimCategories = [...cats.slice(0, i), ...cats.slice(i + 1)];
+  return true;
+}
+
+const SHAPE_PROPOSAL = {
+  overlap: (keep: string, drop: string) =>
+    `“${drop}” and “${keep}” sound like the same thing to me — want me to keep them as one, or are they different?`,
+  vision: (item: string) =>
+    `“${item}” reads more like the bigger picture of the life you’re reclaiming than a single goal. I’d keep it in your Playbook for that work and leave the goal list for the concrete steps — want me to do that?`,
+  multiwant: (item: string) =>
+    `You named a few things in “${item}.” Which one do you most want back? We’ll start there — the rest aren’t going anywhere.`,
+} as const;
+
+// Run the reconciliation over the assembled list; if an unaddressed shape exists, set it pending + return the
+// member-facing proposal. Otherwise null (the list is clean — proceed to the normal confirm).
+function gateNextShape(b: Beat): string | null {
+  const issue = reconcileReclaimShapes(b.collected.reclaimList, new Set(b.reclaimShapesResolved));
+  if (!issue) return null;
+  if (issue.kind === 'overlap') {
+    b.pendingReclaimShape = { kind: 'overlap', keep: issue.keep, drop: issue.drop };
+    return SHAPE_PROPOSAL.overlap(issue.keep, issue.drop);
+  }
+  if (issue.kind === 'vision') {
+    b.pendingReclaimShape = { kind: 'vision', item: issue.item };
+    return SHAPE_PROPOSAL.vision(issue.item);
+  }
+  b.pendingReclaimShape = { kind: 'multiwant', item: issue.item };
+  return SHAPE_PROPOSAL.multiwant(issue.item);
+}
+
+// Apply the member's answer to a pending shape. Conservative by default: a want is NEVER lost — an ambiguous
+// answer keeps both / keeps the item. Marks the shape resolved so it's never re-proposed. Returns the ack line.
+function resolvePendingShape(b: Beat, pending: PendingReclaimShape): string {
+  b.pendingReclaimShape = undefined;
+  const yes = saysYes(b.memberMessage);
+  const markResolved = (key: string) => { if (!b.reclaimShapesResolved.includes(key)) b.reclaimShapesResolved.push(key); };
+  if (pending.kind === 'overlap') {
+    markResolved(shapeKey({ kind: 'overlap', keepIndex: 0, dropIndex: 0, keep: pending.keep, drop: pending.drop }));
+    if (yes) { removeReclaimItem(b.collected, pending.drop); return 'Good — I’ll keep them as one.'; }
+    return 'Got it — I’ll keep both.';
+  }
+  if (pending.kind === 'vision') {
+    markResolved(shapeKey({ kind: 'vision', index: 0, item: pending.item }));
+    if (yes) {
+      removeReclaimItem(b.collected, pending.item);
+      b.collected.visionKeepers = [...(b.collected.visionKeepers ?? []), pending.item];
+      return 'Kept — it’s in your Playbook for the bigger-picture work.';
+    }
+    return 'Okay — I’ll leave it on your list.';
+  }
+  // multiwant: the member's message IS their distilled want (draw-out answer). Replace the paragraph with it when
+  // it reads as a real want; otherwise leave the paragraph (they can edit on the card).
+  markResolved(shapeKey({ kind: 'multiwant', index: 0, item: pending.item }));
+  const distilled = stripReclaimPreamble(b.memberMessage);
+  if (shouldCaptureStagedReclaim(distilled) && !correctsReflection(b.memberMessage)) {
+    removeReclaimItem(b.collected, pending.item);
+    appendReclaim(b.collected, distilled);
+    return `Perfect — “${distilled}” it is.`;
+  }
+  return 'No rush — we can shape that one together anytime.';
+}
+
 function appendReclaim(c: Collected, item: string, category = ''): boolean {
   const trimmed = item.trim();
   const key = reclaimKey(trimmed);
@@ -527,6 +603,8 @@ interface Beat {
   administeredResponses: number[]; // §2c: fixed-scale responses accumulated by an administered stage (IDQ/Grit)
   pendingHarvest: HarvestSignal[]; // §2d: keeper/share candidates queued for the action to emit
   driftPayload?: string; // §2d: the member's drift declaration, carried reflect→confirm
+  pendingReclaimShape?: PendingReclaimShape; // Decision II: a shape awaiting the member's confirm (merge/move/draw-out)
+  reclaimShapesResolved: string[]; // Decision II: keys of shapes already ruled on — never re-proposed
 }
 
 // A stage handler mutates the Beat (sets b.reply etc.) or returns a terminal Turn. `resolveConfirm`'s CONTRACT
@@ -616,6 +694,8 @@ function beatState(b: Beat): ConvState {
     ...(b.administeredResponses.length > 0 && { administeredResponses: b.administeredResponses }),
     ...(b.pendingHarvest.length > 0 && { pendingHarvest: b.pendingHarvest }),
     ...(b.driftPayload !== undefined && { driftPayload: b.driftPayload }),
+    ...(b.pendingReclaimShape && { pendingReclaimShape: b.pendingReclaimShape }),
+    ...(b.reclaimShapesResolved.length > 0 && { reclaimShapesResolved: b.reclaimShapesResolved }),
   };
 }
 
@@ -857,6 +937,15 @@ const reclaimStage: StageDef = {
     }
   },
   confirm(b) {
+    // DECISION II — a shape proposal is pending the member's yes/no. Resolve it from their answer (merge / move to
+    // Playbook / draw-out), then surface the NEXT shape or re-reflect the cleaned list. Never a silent rewrite.
+    if (b.pendingReclaimShape) {
+      const ack = resolvePendingShape(b, b.pendingReclaimShape);
+      const next = gateNextShape(b);
+      b.reply = next ? `${ack}\n\n${next}` : `${ack}\n\n${reflectReclaim(b.collected)}`;
+      b.awaitingConfirm = true;
+      return;
+    }
     // RECLAIM late-add: a want volunteered AT the confirm — neither a correction nor an affirmation — used to be
     // dropped as the beat advanced. Capture it and re-reflect. Only a genuinely NEW want re-opens (deduped).
     // Phase 2.1 guard (Jay's "That looks great" bug): if the model signaled the reply is 'done' or 'dispute', it's
@@ -875,6 +964,14 @@ const reclaimStage: StageDef = {
     ) {
       b.reply = reflectReclaim(b.collected);
       b.awaitingConfirm = true; // stay in confirm — re-reflect with the just-added want included
+      return;
+    }
+    // DECISION II — before treating this as a final confirm, surface any unaddressed shape in the assembled list
+    // (an overlap to merge, a vision to move, a paragraph to draw out). One at a time; the member confirms each.
+    const proposal = gateNextShape(b);
+    if (proposal) {
+      b.reply = proposal;
+      b.awaitingConfirm = true;
       return;
     }
     // RECLAIM CONFIRM — "Anything missing?" A bare "no / nope / that's a good list" = nothing missing = DONE →
@@ -1024,6 +1121,8 @@ export function runArcTurn(
     administeredResponses: [...(state.administeredResponses ?? [])], // §2c administered responses, accumulated
     pendingHarvest: [...(state.pendingHarvest ?? [])], // §2d harvest queue, drained by the action
     driftPayload: state.driftPayload,
+    pendingReclaimShape: state.pendingReclaimShape, // Decision II, threaded across the propose→confirm turns
+    reclaimShapesResolved: [...(state.reclaimShapesResolved ?? [])],
   };
   const stageDef = arc.stages[b.stage];
 
