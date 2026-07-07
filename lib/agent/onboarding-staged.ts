@@ -266,12 +266,23 @@ function reflectIdentity(c: Collected): string {
   return `So — ${label} is who we're bringing back, the version that feels most like you. Did I get ${label} right?`;
 }
 
+// SHARED draw-out primitive (kernel-level): when has a draw-out beat gathered ENOUGH to reflect? Model-judged depth
+// (depthReady) bounded by a FLOOR (never pattern on thin material) and CAP (never trap the member). Also advances when
+// the model already WRAPPED UP (a declarative reflection past the floor, not another probe). Used by every draw-out
+// stage across the arcs (Reconnect Doors/Drift/Window; Rewire W1…). Lives here, in the kernel, not any one arc.
+export function drawoutShouldReflect(modelText: string, depthReady: boolean | undefined, depth: number, min: number, max: number): boolean {
+  const t = (modelText ?? '').trim();
+  const wrappedUp = depth >= min && t.length >= 40 && !/\?\s*$/.test(t); // a declarative reflection, not another probe
+  return (depthReady === true && depth >= min) || wrappedUp || depth >= max;
+}
+
 // Ensure a turn ENDS on a real forward question (bar: always be correctable / keep the conversation going).
 // The old `/\?/.test(modelText)` guard passed a rhetorical mid-sentence "…were they?" and then let the reply
 // trail off into a statement with nothing to answer (Jay's walk: the reflection dead-ended). This keeps the
 // model's reflection AND guarantees a closing question: model ends on a question → use it; model reflected but
 // trailed into a statement → keep it, append the stage probe; nothing usable → the probe alone.
-function withQuestion(modelText: string, probe: string): string {
+// Exported: a shared draw-out primitive the arcs reuse (Reconnect has its own copy; Rewire imports this one).
+export function withQuestion(modelText: string, probe: string): string {
   const t = (modelText ?? '').trim();
   if (!t) return probe;
   // Did the model already lead the turn with a forward question? Look at the whole LAST PARAGRAPH, not just the
