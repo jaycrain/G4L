@@ -217,10 +217,12 @@ button:hover, .btn:hover { background: var(--navy); }
 .score { display: flex; align-items: baseline; gap: 0.6rem; }
 .score .num { font-size: 3rem; font-weight: 700; color: var(--teal); }
 .score .dir-up { color: var(--olive); font-weight: 700; }
-.score .dir-down { color: var(--deep-red); font-weight: 700; }
+/* No validated-score down-delta renders in alarm-red, anywhere (Decision HH, extended to the ID Score). A dip is
+   never a verdict on the dashboard — the color stays NEUTRAL and any honest nudge is the Companion's job, not a
+   red number. This is the ID Score's treatment (color only — keeps its weight/size). */
+.score .dir-down { color: var(--navy); opacity: 0.5; font-weight: 700; }
 .score .dir-flat { color: var(--navy); font-weight: 700; }
-/* Grinta down-move (§3): a dip is honest recalibration, not a loss — render NEUTRAL grey + small, never the
-   alarm-red the ID Score uses. Scoped to the Grinta card so the ID Score delta is untouched. */
+/* The Grinta down-move goes further: NEUTRAL grey AND small (§3). More specific, so it wins for the Grinta card. */
 .grinta .score .dir-down { color: var(--navy); opacity: 0.5; font-weight: 600; font-size: 0.85em; }
 
 .card { border: 1.25px solid var(--panel-line); border-radius: 10px; padding: 0.85rem 1.25rem 1rem; margin: 1rem 0; }
