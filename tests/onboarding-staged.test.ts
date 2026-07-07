@@ -560,6 +560,29 @@ test('STAGED identity — with NO model question, the re-draw is SHORT, never th
   assert.ok(t.reply.length < opener.length, 'the re-draw is materially shorter than the cold-open');
 });
 
+test('STAGED terminal (#2) — an add AT the card lands even when the model only SAID "Added" (silent-loss backstop)', () => {
+  // Donna's walk: at the confirmation card the member asks to add a want; the model acknowledges in prose ("Added.")
+  // but never records it. The card sits at the terminal 'complete' stage, past the reclaim stage's own late-add
+  // handler — so without a terminal backstop the want is silently lost. It must be captured onto the card.
+  const done: ConvState = {
+    stage: 'complete',
+    collected: { athleticPast: 'a player', identityNoun: 'Player', gap: 'a real fade over a long hard decade', reclaimList: ['My fitness', 'See friends on weekends'] },
+  };
+  const t = applyStagedTurn(done, [], 'add buy some new clothes to my list', { text: 'Added. Anything else, or are you ready to move into Reconnect?' });
+  assert.ok(t.state.collected.reclaimList?.some((x) => /new clothes/i.test(x)), 'the unfulfilled add is backstop-captured onto the card');
+  assert.equal(t.complete, true, 'stays complete — the card re-renders with the new item');
+});
+
+test('STAGED terminal (#2) — no double-add when the model DID record the want, and no capture without an add-cue', () => {
+  const base = { athleticPast: 'x', identityNoun: 'Runner', gap: 'a real fade over a long hard decade', reclaimList: ['My fitness'] };
+  // The model recorded it → the backstop must not add a second copy.
+  const recorded = applyStagedTurn({ stage: 'complete', collected: { ...base } }, [], 'add running shoes', { text: 'Added.', record: { reclaimList: ['My fitness', 'running shoes'] } });
+  assert.equal(recorded.state.collected.reclaimList?.filter((x) => /running shoes/i.test(x)).length, 1, 'model-recorded want is not double-added');
+  // A bare confirmation with no add-cue never captures a list item (never assume past what they said).
+  const affirm = applyStagedTurn({ stage: 'complete', collected: { ...base } }, [], 'looks great, ready to go', { text: 'Wonderful — into Reconnect.' });
+  assert.equal(affirm.state.collected.reclaimList?.length, 1, 'a confirmation is not captured as a want');
+});
+
 test('STAGED gap — a short dispute re-opens but NEVER wipes the gap or Doors (never drop what they gave)', () => {
   const atConfirm: ConvState = {
     stage: 'gap', awaitingConfirm: true,

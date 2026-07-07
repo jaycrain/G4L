@@ -23,7 +23,7 @@
 
 import { cleanIdentityNoun, displayIdentityNoun, identityLabel } from '../member/identity.ts';
 import { isDoorSlug, matchDoors, type DoorSlug } from '../doors.ts';
-import { RECLAIM_LIST_FLOOR, RECLAIM_LIST_MIN, RECLAIM_LIST_TARGET } from '../member/reclaim.ts';
+import { RECLAIM_LIST_FLOOR, RECLAIM_LIST_MIN, RECLAIM_LIST_TARGET, reclaimAddIntent } from '../member/reclaim.ts';
 import { gapIsNarrative, hasIdentity } from './onboarding-contract.ts';
 import { ONBOARDING_BASELINE_ITEMS, grintaStem } from '../grinta/survey/instrument.ts';
 import { scoreGrinta } from '../grinta/survey/scoring.ts';
@@ -1059,6 +1059,14 @@ export function runArcTurn(
     if (early) return early;
   } else {
     // Already complete/declined (a resumed terminal state) — the card / reveal stands.
+    // CAPTURE-INTEGRITY BACKSTOP (#2, onboarding only): a member can still add a want AT the card ("actually, add
+    // X"). The card sits at the terminal 'complete' stage, PAST the reclaim stage's own late-add handler — so if the
+    // model only SAID "Added" without recording it, the want was silently lost (Jay's walk). Catch an EXPLICIT
+    // unfulfilled add-intent and capture it through the validated primitive (appendReclaim) so the card re-renders
+    // with it. Never fires when the model DID record it (no double-add), and never on the reconnect ceremony.
+    const modelAddedReclaim = (b.collected.reclaimList?.length ?? 0) > (state.collected.reclaimList?.length ?? 0);
+    const want = arc.id === 'onboarding' && !modelAddedReclaim ? reclaimAddIntent(memberMessage) : null;
+    if (want) appendReclaim(b.collected, want); // append is deduped/validated; a dup or fog simply doesn't grow the list
     b.reply = b.modelText || arc.onComplete(b.collected);
     b.complete = true;
   }
