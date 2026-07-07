@@ -215,13 +215,6 @@ export default function OnboardingChat() {
     }
   }
 
-  // "I'm not finished" — drop back into the conversation. Nothing to undo (no member was created);
-  // the session is still saved, so they can add another Door and reach the handoff again.
-  function keepTalking() {
-    setCardReturns((c) => c + 1); // they sent the card back to fix/add — a capture-quality signal
-    setReady(false);
-    setError(null);
-  }
 
   if (phase === 'gate') {
     return (
@@ -324,8 +317,8 @@ export default function OnboardingChat() {
           const card = buildSummaryCard(state.collected);
           return (
             <div className="onboard-summary">
-              <h2>Here’s what I heard — does this look like you?</h2>
-              <p className="muted">Nothing’s saved yet. If anything’s missing or off, tell me and we’ll fix it together.</p>
+              <h2>Here’s what you shared.</h2>
+              <p className="muted">This is your starting point — Reconnect is where we go deeper on all of it. You can shape your list anytime, just by talking with your companion.</p>
               <dl className="summary-list">
                 <dt>Who you’re reclaiming</dt>
                 <dd>{card.identityLabel ?? 'You’ll name this through the work — that part comes soon.'}</dd>
@@ -368,15 +361,14 @@ export default function OnboardingChat() {
                       </div>
                     ))}
                   </div>
-                  <p className="og-next">Reconnect is first — and it’s already lit.</p>
+                  <p className="og-next">Reconnect is first — and it’s ready for you now.</p>
                 </div>
               )}
               <div className="chat-continue">
+                {/* Confirm-only gate (Decision: no correction button). The card presents; corrections happen in
+                    Reconnect's callback (identity/door/gap) + the companion rail (the list) — not here. */}
                 <button type="button" onClick={proceed} disabled={pending}>
                   {pending ? 'Saving…' : 'This is me — I’m ready →'}
-                </button>
-                <button type="button" className="btn-secondary" onClick={keepTalking} disabled={pending} style={{ marginTop: '0.5rem' }}>
-                  Close, but something’s off — let’s fix it
                 </button>
                 <button type="button" className="btn-secondary" onClick={() => setSavedForLater(true)} disabled={pending} style={{ marginTop: '0.5rem' }}>
                   Save my place — I’ll come back
