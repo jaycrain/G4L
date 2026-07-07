@@ -57,7 +57,7 @@ const W1_AFFIRM_NUDGE = "Even one is enough — take the lie that stung most and
 const W1_CLOSE =
   `They're the first thing you'll reach for when the old voice gets loud. I've saved them to your Playbook.\n\n` +
   `Catching your own lies is the whole game in Rewire, and you just did the hard part: you said them out loud. ` +
-  `That's grinta in its quietest, most useful form.`;
+  `That's Grinta in its quietest, most useful form.`;
 
 // The full arc opener (story · frame · first domain), as three bubbles.
 function w1Opening(): string {
