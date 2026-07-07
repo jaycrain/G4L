@@ -21,7 +21,9 @@ const FILLER = new Set([
 function stem(w: string): string {
   const s = w.toLowerCase().replace(/[^a-z0-9$]/g, '');
   if (/^(los(e|ing|es|t)|drop(ping|ped|s)?|shed(ding|s)?|cut(ting|s)?|trim(ming|s)?|shave|shaving)$/.test(s)) return 'lose';
-  if (/^(gain(ing|ed|s)?|add(ing|ed|s)?|puts?|building?)$/.test(s)) return 'gain';
+  if (/^(gain(ing|ed|s)?|add(ing|ed|s)?|puts?|build(ing)?)$/.test(s)) return 'gain';
+  if (/^(lbs?|pounds?)$/.test(s)) return 'lb'; // same unit, different word
+  if (/^(kgs?|kilos?|kilograms?)$/.test(s)) return 'kg';
   return s.replace(/ing$/, '').replace(/e?s$/, '').replace(/ed$/, '');
 }
 
