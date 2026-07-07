@@ -24,17 +24,22 @@ const FIVE_LIES = [
   "I've tried before and it didn't take",
 ];
 
+// The guided turn ask the model produces on the last domain (offline stand-in for the live last-domain note).
+const TURN_ASK = "The one about your body sounded like it holds the most weight — what's the honest line you'd put in its place?";
+
 // Walk the opener + the five domains; returns the state at the turn (affirm stage).
 function walkDomains(): ConvState {
   let t = rewireOpening();
   assert.equal(t.state.stage, 'domains');
   assert.match(t.reply, /disinformation campaign/i, 'opens on Jay’s story (third person)');
-  for (const lie of FIVE_LIES) {
+  FIVE_LIES.forEach((lie, i) => {
     assert.equal(t.state.stage, 'domains', 'still walking the domains');
-    t = applyRewireTurn(t.state, [], lie, { text: 'That’s the story.' });
-  }
+    const last = i === FIVE_LIES.length - 1;
+    t = applyRewireTurn(t.state, [], lie, { text: last ? TURN_ASK : 'That’s the story.' });
+  });
   assert.equal(t.state.stage, 'affirm', 'after the fifth domain, hands into the turn');
-  assert.match(t.reply, /true line/i, 'delivers the lie→true-line turn');
+  assert.match(t.reply, /campaign/i, 'NAMES THE CAMPAIGN as the reveal before the turn');
+  assert.match(t.reply, /honest line/i, 'then poses the guided, one-at-a-time turn ask');
   return t.state;
 }
 
