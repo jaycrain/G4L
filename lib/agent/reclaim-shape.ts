@@ -97,3 +97,23 @@ export function semanticOverlap(newItem: string, existing: string[]): string | n
   }
   return best?.item ?? null;
 }
+
+// ── the reconciliation checkpoint ────────────────────────────────────────────────────────────────────────────
+// One assembled Reclaim List can carry several shape problems. This finds the FIRST unaddressed one so the engine
+// can propose/confirm it, ONE at a time (never a bulk silent rewrite). Priority: a vision (route it out) before an
+// overlap (merge) before a multi-want split — a vision often also reads multi-want, so it must win.
+export type ReclaimShapeIssue =
+  | { kind: 'vision'; index: number; item: string }
+  | { kind: 'overlap'; keepIndex: number; dropIndex: number; keep: string; drop: string }
+  | { kind: 'multiwant'; index: number; item: string };
+
+export function reconcileReclaimShapes(list: string[] | undefined): ReclaimShapeIssue | null {
+  const items = list ?? [];
+  for (let i = 0; i < items.length; i++) if (isLifeVision(items[i]!)) return { kind: 'vision', index: i, item: items[i]! };
+  for (let i = 1; i < items.length; i++) {
+    const ov = semanticOverlap(items[i]!, items.slice(0, i));
+    if (ov) return { kind: 'overlap', keepIndex: items.indexOf(ov), dropIndex: i, keep: ov, drop: items[i]! };
+  }
+  for (let i = 0; i < items.length; i++) if (isMultiWantParagraph(items[i]!)) return { kind: 'multiwant', index: i, item: items[i]! };
+  return null;
+}

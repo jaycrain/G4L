@@ -356,8 +356,12 @@ function reclaimTokens(s: string): string[] {
 // items). When one is captured, the engine folds it into the last want instead of a standalone.
 const BARE_MODIFIER_RE =
   /^(every\s+(day|morning|evening|night|week|weekend)s?|daily|weekly|nightly|on\s+weekends?|most\s+(days|mornings)|(a\s+few|once|twice|[1-9][0-9]?(\s*[-–to]+\s*[1-9][0-9]?)?)\s*(times?|x|days?)?\s*(a|per|each|\/)?\s*(day|week|morning|month)?)$/i;
+// Rule 4 (Decision II): a bare cadence folds into its parent want. Tolerate trailing FILLER so "2-3 times a week
+// to start with" folds too (Donna's walk — it was anchored too tightly before and survived standalone).
+const CADENCE_FILLER_RE = /\s+(?:to (?:start|begin)(?:\s+with)?|to start off|for (?:now|a start)|at first|these days|initially)$/i;
 function isBareModifier(s: string): boolean {
-  return BARE_MODIFIER_RE.test((s ?? '').trim().replace(/[.,!?]+$/, ''));
+  const t = (s ?? '').trim().replace(/[.,!?]+$/, '').replace(CADENCE_FILLER_RE, '').trim();
+  return BARE_MODIFIER_RE.test(t);
 }
 function isTokenSubset(a: string[], b: Set<string>): boolean {
   return a.length > 0 && a.every((x) => b.has(x));

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { isMultiWantParagraph, isLifeVision, semanticOverlap } from '../lib/agent/reclaim-shape.ts';
+import { isMultiWantParagraph, isLifeVision, semanticOverlap, reconcileReclaimShapes } from '../lib/agent/reclaim-shape.ts';
 
 // Decision II — the Reclaim Capture Discipline shape detectors. The fixture set is DONNA'S EXACT walk inputs (the
 // messy real capture that motivated the decision), plus the discrete wants that must NOT trip a detector.
@@ -42,4 +42,23 @@ test('semantic overlap — the two "lose 35 lbs" items are the same want; distin
   assert.equal(semanticOverlap('Buy some new clothes', DONNA_LIST), null);
   assert.equal(semanticOverlap('Hang out with friends on weekends', ['My fitness', 'Lose about 35 lbs']), null);
   assert.equal(semanticOverlap('My fitness', ['Lose about 35 lbs', 'Buy some new clothes']), null);
+});
+
+test('reconcile — finds Donna\'s overlap first, then reports clean once resolved', () => {
+  // The whole 6-item list: the first issue is the "lose 35 lbs" overlap (no vision in this list).
+  const issue = reconcileReclaimShapes(DONNA_LIST);
+  assert.equal(issue?.kind, 'overlap');
+  if (issue?.kind === 'overlap') {
+    assert.equal(issue.keep, 'Start with losing about 35 lbs');
+    assert.equal(issue.drop, 'Lose about 35 lbs');
+  }
+  // Drop the overlapping item → the list reconciles clean (nothing else to address).
+  const resolved = DONNA_LIST.filter((x) => x !== 'Lose about 35 lbs');
+  assert.equal(reconcileReclaimShapes(resolved), null);
+});
+
+test('reconcile — a vision in the list is addressed BEFORE an overlap (route-out wins)', () => {
+  const withVision = ['Lose about 35 lbs', 'Start with losing about 35 lbs', "I'll be 60 in a month; I want to spend the rest of my days at peace and be myself everywhere I go"];
+  const issue = reconcileReclaimShapes(withVision);
+  assert.equal(issue?.kind, 'vision', 'the vision is pulled out first, even though an overlap also exists');
 });
