@@ -201,9 +201,10 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
           </Link>
         </div>
       )}
-      {/* v2.3 Rewire entry — flag-gated (REWIRE, off in prod until the v2.3 flip). ONLY while the member is on
-          Rewire. W1 = the Disinformation Audit. */}
-      {rewireEnabled() && activePhase === 'rewire' && (
+      {/* v2.3 Rewire entry — flag-gated (REWIRE, off in prod until the v2.3 flip). During the W1 felt-walk it shows
+          whenever REWIRE is staged (any phase) for easy one-click access; the activePhase==='rewire' gate returns
+          once W1 is wired into the phase flow. W1 = the Disinformation Audit. */}
+      {rewireEnabled() && (
         <div className="reconnect-entry">
           <Link href={`/rewire/${memberId}`} className="reconnect-cta">
             Begin Rewire — the Disinformation Audit →
