@@ -461,3 +461,261 @@ export async function liveTurnRewireW2(state: ConvState, history: ConvMessage[],
     .trim();
   return applyRewireW2Turn(state, history, memberMessage, { text });
 }
+
+// ══ W3 · The False Start Protocol ═════════════════════════════════════════════════════════════════════════════
+// Third Rewire session — the day it goes sideways. Carries the W1/W2 lessons AND pulls both prior tools FORWARD (the
+// toolkit clicking together): the Reframe builds a W1-style true line, the Restart reaches for the W2 image. Read via
+// the callback (loadReconnectCaptures + the Playbook true lines/image), graceful degrade if the member skipped them.
+// Structure: opening value → the reframe (a false start is NOT failure — the weight/permission) → STEP 1 'triggers'
+// (name the four, guided one at a time: situations · feelings · lies · danger hour) → STEP 2 'protocol' (Redirect ·
+// Reframe · Restart, guided) → close. HARVEST: the Reframe line as a 'principle' keeper + the whole protocol as a
+// 'recovery_move' keeper (so Rebuild can recall it on a slip — plugs into the keeper-recall pattern for free). The
+// good-call/false-start LOGGING (Step 3, Momentum) is a SEPARATE slice — this session opens the dormant w3_logging
+// window and delivers Step 3's copy; the log_call mechanic lands with Momentum. COPY: final, Jay-approved (W3 doc).
+
+// ── Opening — the value (the through-line; why prepare for failure) ──
+const W3_OPEN_1 =
+  `In W1 you caught the lies you tell yourself. In W2 you built the picture of where you're headed. This one's about ` +
+  `the day it all goes sideways — because it will.`;
+const W3_OPEN_2 =
+  `Here's what nobody tells you: everybody slips. The people who make it aren't the ones with more willpower — ` +
+  `they're the ones who had a plan for the slip before it happened. So we build yours now, while things are calm. ` +
+  `When the hard day comes, you won't be deciding what to do. You'll already know.`;
+// ── The reframe — the weight (a false start is NOT failure) ──
+const W3_REFRAME =
+  `And get this straight, because it's the whole game: a false start is not failure. It's the expected cost of ` +
+  `changing a pattern you've run for decades. Expect it. Plan for it. Then a slip stops being the thing that ends ` +
+  `your comeback and becomes just another day — something you recover from by dinner.`;
+// ── Step 1 — Name the triggers (guided; each a single ask) ──
+const W3_TRIGGERS_LEAD = `Slips aren't random — they have triggers. Let's find yours.`;
+const W3_TRIGGERS = [
+  `When are you most likely to not follow through? (Travel, a brutal week, late nights, the holidays.)`,
+  `What state pulls you back into the old pattern? (Wiped out, frustrated, bored, celebrating.)`,
+  `What does your brain say to make the slip feel fine? ("It's just one day." "I'll start Monday." "I earned this.") ` +
+    `You already know this voice — it's the campaign from W1.`,
+  `When's your weak spot? (The 3pm slump, the evening collapse.)`,
+];
+const W3_TRIGGER_NUDGE = `No wrong answer — just the real pattern. When does it tend to get you?`;
+// ── Step 2 — Build the protocol (guided; reuses W1 + W2) ──
+const W3_PROTOCOL_INTRO = `Now we write the plan — for the trigger that gets you most. Three moves.`;
+const W3_REDIRECT =
+  `First, Redirect — the thing you do instead. When you don't want to do the work, the rule is five minutes: start, ` +
+  `and if you still want to quit after five, quit. (Usually you won't.) When it's food, name the specific swap — walk ` +
+  `the block, call someone, leave the room. What's yours?`;
+const W3_REFRAME_PROMPT =
+  `Now Reframe — the true line for a bad day. Remember W1, where you wrote lines that answer the lies. Here's the one ` +
+  `for a slip: "A false start is the cost of changing, not proof I can't." Say it your way.`;
+const W3_RESTART =
+  `And Restart — when the old voice gets loud, you go back to the image: the one from W2, you standing in the goal ` +
+  `you named. The campaign can't compete with a picture that real.`;
+// ── Step 3 — The week of noticing (Momentum turns on — the LOGGING mechanic is the Momentum slice) ──
+const W3_STEP3_1 =
+  `Here's your work this week, and it's not what you'd think: don't try to change anything yet. Just notice. Each ` +
+  `day, log your good calls and your false starts — the movement, the eating, the choices. Not to grade yourself — ` +
+  `to see your own patterns, out loud.`;
+const W3_STEP3_2 =
+  `That's what starts filling in your Momentum — the line that tracks the calls you make, one at a time. And when a ` +
+  `false start happens this week — it will — run your protocol. Redirect, Reframe, Restart. That's the rep. That's ` +
+  `the whole skill.`;
+// ── Close — harvest + hand-off ──
+const W3_CLOSE_1 =
+  `Grit isn't never falling. It's getting back on — now, today, the next meal, the next ride, the next morning. ` +
+  `That's Grinta, and it's the most important thing you build in here.`;
+const W3_CLOSE_2 =
+  `You've got the full kit now: the true lines that answer the lies, the image that outlasts them, and the protocol ` +
+  `that turns a slip into a comeback. That's Rewire. Next, we put it into the body.`;
+
+function w3Opening(): string {
+  return `${W3_OPEN_1}${BEAT_SEP}${W3_OPEN_2}${BEAT_SEP}${W3_REFRAME}${BEAT_SEP}${W3_TRIGGERS_LEAD}${BEAT_SEP}${W3_TRIGGERS[0]}`;
+}
+function triggerIdxOf(state: ConvState): number {
+  const s = state.stageScratch?.triggers as { triggerIdx?: number } | undefined;
+  return s?.triggerIdx ?? 0;
+}
+export function isLastTriggerTurn(state: ConvState): boolean {
+  return state.stage === 'triggers' && triggerIdxOf(state) >= W3_TRIGGERS.length - 1;
+}
+// The three protocol moves, in order (the protocol stage walks them by scratch index).
+const PROTOCOL_MOVES = ['redirect', 'reframe', 'restart'] as const;
+function protocolIdxOf(state: ConvState): number {
+  const s = state.stageScratch?.protocol as { moveIdx?: number } | undefined;
+  return s?.moveIdx ?? 0;
+}
+export function protocolMove(state: ConvState): (typeof PROTOCOL_MOVES)[number] {
+  return PROTOCOL_MOVES[Math.min(protocolIdxOf(state), PROTOCOL_MOVES.length - 1)]!;
+}
+// The finished protocol → one recovery_move keeper: the trigger(s) + Redirect + Reframe + Restart, their own words.
+function composeProtocol(c: Collected): string {
+  const triggers = (c.w3Triggers ?? []).map((s) => (s ?? '').trim()).filter(Boolean);
+  const parts = [
+    triggers.length ? `Triggers: ${triggers.join('; ')}` : '',
+    (c.w3Redirect ?? '').trim() ? `Redirect — ${c.w3Redirect!.trim()}` : '',
+    (c.w3Reframe ?? '').trim() ? `Reframe — “${c.w3Reframe!.trim()}”` : '',
+    `Restart — go back to your picture, standing in the goal you named.`,
+  ];
+  return parts.filter(Boolean).join('\n');
+}
+
+// Step 1 — walk the four triggers (draw-out sequence). On the fourth → the model reflects the set + names the one or
+// two that trip them most, then the engine hands into Step 2 with the protocol intro + the Redirect ask.
+const triggersStage: StageDef = {
+  id: 'triggers',
+  mode: 'drawout',
+  opener: () => w3Opening(),
+  offersSubstance: (message) => message.trim().length >= 3,
+  gather(b) {
+    const sc = b.scratch as { triggerIdx?: number };
+    const idx = sc.triggerIdx ?? 0;
+    if (b.memberMessage.trim().length < 3) {
+      b.reply = W3_TRIGGER_NUDGE;
+      return;
+    }
+    (b.collected.w3Triggers ??= []).push(b.memberMessage.trim());
+    const reflected = (b.modelText ?? '').trim();
+    const next = idx + 1;
+    if (next < W3_TRIGGERS.length) {
+      sc.triggerIdx = next;
+      b.reply = reflected ? `${reflected}${BEAT_SEP}${W3_TRIGGERS[next]}` : W3_TRIGGERS[next]!;
+    } else {
+      // all four named → focus the heaviest (model) + hand into the protocol build (Redirect first).
+      b.stage = 'protocol';
+      b.reply = `${reflected ? `${reflected}${BEAT_SEP}` : ''}${W3_PROTOCOL_INTRO}${BEAT_SEP}${W3_REDIRECT}`;
+    }
+  },
+  confirm(b) {
+    triggersStage.gather(b);
+  },
+};
+
+// Step 2 — build the protocol, one move at a time (Redirect → Reframe → Restart). Reframe harvests a 'principle'
+// keeper (the true line); the close harvests the whole protocol as a 'recovery_move' keeper.
+const protocolStage: StageDef = {
+  id: 'protocol',
+  mode: 'drawout',
+  opener: () => W3_REDIRECT,
+  offersSubstance: (message) => message.trim().length >= 3,
+  gather(b) {
+    const sc = b.scratch as { moveIdx?: number };
+    const idx = sc.moveIdx ?? 0;
+    const msg = b.memberMessage.trim();
+    const reflected = (b.modelText ?? '').trim();
+    if (idx === 0) {
+      // Redirect answered → pose Reframe.
+      if (msg.length < 3) {
+        b.reply = W3_TRIGGER_NUDGE;
+        return;
+      }
+      b.collected.w3Redirect = msg;
+      sc.moveIdx = 1;
+      b.reply = `${reflected ? `${reflected}${BEAT_SEP}` : ''}${W3_REFRAME_PROMPT}`;
+      return;
+    }
+    if (idx === 1) {
+      // Reframe answered → harvest the true line (principle), pose Restart (reaches for the W2 image).
+      if (msg.length < 3) {
+        b.reply = W3_TRIGGER_NUDGE;
+        return;
+      }
+      b.collected.w3Reframe = msg;
+      b.pendingHarvest.push({ kind: 'affirmation', keeperType: 'principle', destinationIntent: 'keeper', payloadRef: msg, label: 'Your true line for a bad day' });
+      sc.moveIdx = 2;
+      b.reply = `${reflected ? `${reflected}${BEAT_SEP}` : ''}${W3_RESTART}`;
+      return;
+    }
+    // Restart acknowledged → harvest the whole protocol (recovery_move), deliver Step 3 + the close, complete.
+    b.pendingHarvest.push({ kind: 'protocol', keeperType: 'recovery_move', destinationIntent: 'keeper', payloadRef: composeProtocol(b.collected), label: 'Your False Start Protocol' });
+    b.reply = `${reflected ? `${reflected}${BEAT_SEP}` : ''}${W3_STEP3_1}${BEAT_SEP}${W3_STEP3_2}${BEAT_SEP}${W3_CLOSE_1}${BEAT_SEP}${W3_CLOSE_2}`;
+    b.stage = 'complete';
+    b.complete = true;
+  },
+  confirm(b) {
+    protocolStage.gather(b);
+  },
+};
+
+export const REWIRE_W3_ARC: ArcConfig = {
+  id: 'rewire-w3',
+  stageOrder: ['triggers', 'protocol'],
+  stages: { triggers: triggersStage, protocol: protocolStage },
+  onComplete: () => W3_CLOSE_2,
+};
+
+export function applyRewireW3Turn(state: ConvState, history: ConvMessage[], memberMessage: string, model: ModelTurn): Turn {
+  return runArcTurn(REWIRE_W3_ARC, state, history, memberMessage, model);
+}
+
+// The callback the W3 opening carries — the prior tools pulled forward (true lines + image), plus grounding.
+export type W3Callback = { trueLines?: string[]; image?: string; reclaimList?: string[]; identityNoun?: string };
+export function rewireW3Opening(cb: W3Callback | null): Turn {
+  const collected: Collected = {
+    w3TrueLines: cb?.trueLines ?? [],
+    w3Image: cb?.image ?? undefined,
+    reclaimList: cb?.reclaimList ?? [],
+    identityNoun: cb?.identityNoun,
+  };
+  return { reply: w3Opening(), state: { stage: 'triggers', collected }, complete: false };
+}
+
+// ── the live surface — reflect each trigger/move, focus the heaviest, ack the true line; reaches for prior tools ──
+const REWIRE_W3_SYSTEM =
+  "You are the G4L Companion running W3, the False Start Protocol, in Rewire (Phase 2). You already know this member " +
+  "(see MEMBER CONTEXT). You are helping them build a plan for the day they slip — BEFORE it happens. Core posture: a " +
+  "false start is NOT failure; it's the expected cost of change — normalize it, never judge, grade, or scold. Plain, " +
+  "warm, measured. Reflect in THEIR words, one thing at a time. This session PULLS THEIR PRIOR TOOLS FORWARD: at the " +
+  "Reframe, connect it to the true lines they wrote in W1; at the Restart, point them to the picture they built in W2 " +
+  "(both in MEMBER CONTEXT). If they skipped W1/W2 and a tool isn't there, adapt gracefully — never reference a tool " +
+  "they don't have. If a distress or crisis signal appears, drop the exercise and route to support (988 US / local) " +
+  "and a human — always on.";
+
+function w3Context(c: Collected): string {
+  const identity = identityLabel(c.identityNoun);
+  const lines = (c.w3TrueLines ?? []).map((s) => (s ?? '').trim()).filter(Boolean);
+  const image = (c.w3Image ?? '').trim();
+  const ctx = [
+    identity ? `Who they're reclaiming: ${identity}` : '',
+    lines.length ? `Their W1 true lines (reach for these at the Reframe): ${lines.map((x) => `“${x}”`).join(' · ')}` : '',
+    image ? `Their W2 picture (point them here at the Restart):\n${image}` : '',
+  ].filter(Boolean);
+  return ctx.length ? `\n\nMEMBER CONTEXT (what you already know — never say you don't):\n${ctx.join('\n')}` : '';
+}
+
+function rewireW3StageNote(state: ConvState): string {
+  if (state.stage === 'protocol') {
+    const move = protocolMove(state);
+    if (move === 'redirect') return "\n\nRIGHT NOW: the member just named their REDIRECT (what they'll do instead). Acknowledge it warmly in one line — no rewrite, no advice.";
+    if (move === 'reframe') return "\n\nRIGHT NOW: the member just wrote their REFRAME — a true line for a bad day. Acknowledge it warmly in one line; do NOT rewrite it. If it echoes a W1 true line of theirs, you may note the connection.";
+    return "\n\nRIGHT NOW: the member is sitting with the RESTART (going back to their W2 picture). Receive their reaction in ONE warm line — no advice, no new question.";
+  }
+  if (isLastTriggerTurn(state))
+    return (
+      "\n\nRIGHT NOW: the member just named their FOURTH trigger. Reflect the whole set back briefly and name the ONE " +
+      "or TWO that seem to trip them up most — in their words — so we build the protocol for that one. No new question."
+    );
+  return "\n\nRIGHT NOW: the member just named one trigger. Reflect it back in 1–2 sentences, in their words — heard, un-judged. No question, no next trigger, no advice.";
+}
+
+export async function liveTurnRewireW3(state: ConvState, history: ConvMessage[], memberMessage: string): Promise<Turn> {
+  const { default: Anthropic } = await import('@anthropic-ai/sdk');
+  const client = new Anthropic({
+    apiKey: process.env.ANTHROPIC_API_KEY,
+    timeout: 25000,
+    maxRetries: 2,
+    defaultHeaders: { 'accept-encoding': 'identity' },
+  });
+  const messages = [
+    ...history.map((m) => ({ role: (m.role === 'agent' ? 'assistant' : 'user') as 'assistant' | 'user', content: m.text })),
+    { role: 'user' as const, content: memberMessage },
+  ];
+  const res = await client.messages.create({
+    model: process.env.ANTHROPIC_MODEL ?? 'claude-sonnet-4-6',
+    max_tokens: 400,
+    system: REWIRE_W3_SYSTEM + w3Context(state.collected) + rewireW3StageNote(state),
+    messages,
+  });
+  const text = (res.content as Array<{ type: string; text?: string }>)
+    .filter((b) => b.type === 'text')
+    .map((b) => b.text ?? '')
+    .join('')
+    .trim();
+  return applyRewireW3Turn(state, history, memberMessage, { text });
+}

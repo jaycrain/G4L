@@ -6,7 +6,7 @@
 
 import type { Db } from '../db/schema.ts';
 
-export type PracticeKind = 'w2_image'; // 'w3_logging' joins with the Momentum slice
+export type PracticeKind = 'w2_image' | 'w3_logging'; // W3 opens the logging window; its hero payload lands with the Momentum slice
 export const PRACTICE_WINDOW_DAYS = 7;
 
 export type ActivePractice = { kind: PracticeKind; startedAt: string; day: number }; // day = 1..PRACTICE_WINDOW_DAYS

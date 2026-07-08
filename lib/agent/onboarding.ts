@@ -49,7 +49,11 @@ export type Stage = 'identity' | 'identity_name' | 'reclaim' | 'door' | 'complet
   // 'hold' (the recognition reveal, then the week's 5-min practice + the close/harvest).
   | 'anchor'
   | 'image'
-  | 'hold';
+  | 'hold'
+  // v2.3 Rewire W3 — the False Start Protocol. 'triggers' (name the four: situations · feelings · lies · danger
+  // hour) → 'protocol' (build Redirect · Reframe · Restart, pulling W1's true line + the W2 image forward) → close.
+  | 'triggers'
+  | 'protocol';
 
 // Beat separator — when ONE turn hands over more than one beat (e.g. the Phases intro + the pre-survey framing, or
 // the score-read close + the drift ask), join them with this (invisible RS control char) instead of "\n\n" so the
@@ -75,6 +79,14 @@ export type Collected = {
   // member chose to stand inside; w2Image = the scene they built, piece by piece (place · self · people · feeling).
   w2Anchor?: string;
   w2Image?: string[];
+  // Rewire W3 (the False Start Protocol). Callback inputs pulled forward at opening (the toolkit clicking together):
+  // w3TrueLines = the W1 true lines, w3Image = the composed W2 image. Session working data: the triggers they named,
+  // and the Redirect/Reframe moves they wrote — composed into the recovery-move protocol keeper at the close.
+  w3TrueLines?: string[];
+  w3Image?: string;
+  w3Triggers?: string[];
+  w3Redirect?: string;
+  w3Reframe?: string;
 };
 
 export type ConvState = {
@@ -513,6 +525,8 @@ const STAGE_PROMPT: Record<Stage, string> = {
   anchor: 'Which of the things you want back would you most want to stand inside?',
   image: 'Picture it — where are you, and what does it feel like to be there?',
   hold: 'Sit with that image a moment — what comes up?',
+  triggers: "When are you most likely to slip — and what's going on when it happens?",
+  protocol: "What's the plan for that moment — what do you do instead?",
 };
 
 // Guarantee a non-final turn ends with a forward question, so the member is never stranded.

@@ -218,6 +218,9 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
           <Link href={`/rewire/${memberId}/w2`} className="reconnect-cta">
             Rewire W2 — the Visualization Workshop →
           </Link>
+          <Link href={`/rewire/${memberId}/w3`} className="reconnect-cta">
+            Rewire W3 — the False Start Protocol →
+          </Link>
         </div>
       )}
 
