@@ -52,16 +52,23 @@ export async function latestImageKeeper(db: Db, memberId: string): Promise<strin
   return row?.body ?? null;
 }
 
-// The hero nudge for an active practice window — PURE + testable. W2 surfaces the saved image (mostly the member's
-// own words). Returns null when there's nothing to surface (graceful degrade → the hero keeps its normal message).
-// MICROCOPY is placeholder — the daily-nudge voice is the wordsmith's lane; shaped in the felt-walk.
-export function practicePrompt(kind: PracticeKind, payload: { image?: string | null }): string | null {
+// The member's W2 GOAL — the "hook" of their image (its first line = the named destination, verbatim). The daily
+// nudge surfaces this short pull, NOT the full scene (Decision NN): a sharp hook drops them into the picture they
+// already built better than reciting it, and stays fresh across the week.
+export function imageHook(imageBody: string | null): string | null {
+  return (imageBody ?? '').split('\n').map((s) => s.trim()).filter(Boolean)[0] ?? null;
+}
+
+// The hero nudge for an active practice window — PURE + testable. Returns null when there's nothing to surface
+// (graceful degrade → the hero keeps its normal message). COPY: W2 nudge locked (Decision NN) — plays the member's
+// own destination back and echoes W2's close ("the image is real — the lie is a story").
+export function practicePrompt(kind: PracticeKind, payload: { goal?: string | null }): string | null {
   if (kind === 'w2_image') {
-    const img = (payload.image ?? '').trim();
-    if (!img) return null;
-    return `Five minutes with your picture today — close your eyes and step into it:\n\n“${img}”`;
+    const goal = (payload.goal ?? '').trim();
+    if (!goal) return null;
+    return `Your five minutes: ${goal}. Close your eyes and stand in it. The picture's real — the lie isn't.`;
   }
-  return null;
+  return null; // w3_logging nudge is the Momentum slice's payload (Slice 4)
 }
 
 // The full hero message for an active practice window, or null (no window / nothing to surface / a read hiccup).
@@ -70,8 +77,8 @@ export async function practiceHeroMessage(db: Db, memberId: string): Promise<str
   try {
     const pw = await activePracticeWeek(db, memberId);
     if (!pw) return null;
-    const image = pw.kind === 'w2_image' ? await latestImageKeeper(db, memberId) : null;
-    return practicePrompt(pw.kind, { image });
+    const goal = pw.kind === 'w2_image' ? imageHook(await latestImageKeeper(db, memberId)) : null;
+    return practicePrompt(pw.kind, { goal });
   } catch {
     return null; // table not applied yet / read hiccup → no practice nudge, dashboard renders normally
   }

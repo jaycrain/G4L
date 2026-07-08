@@ -8,6 +8,7 @@ import {
   latestImageKeeper,
   practicePrompt,
   practiceHeroMessage,
+  imageHook,
   PRACTICE_WINDOW_DAYS,
 } from '../lib/practice/store.ts';
 
@@ -15,12 +16,19 @@ import {
 // completes, surfaced on the hero. W2 payload = the saved image. Window is derived (started_at + N days); most-recent
 // wins when two are active; productive-default, never a gate.
 
-test('practicePrompt · W2 surfaces the saved image; nothing to surface → null (graceful degrade)', () => {
-  const p = practicePrompt('w2_image', { image: 'Me at the finish line, my kids at the rail' });
-  assert.match(p!, /finish line/, 'the member’s own image is what they step into');
+test('practicePrompt · W2 nudge (Decision NN) plays the member’s GOAL hook back; nothing → null (graceful degrade)', () => {
+  const p = practicePrompt('w2_image', { goal: 'The half-marathon finish line' });
+  assert.match(p!, /The half-marathon finish line/, 'the member’s own destination, verbatim');
   assert.match(p!, /five minutes/i, 'the daily practice framing');
-  assert.equal(practicePrompt('w2_image', { image: '' }), null, 'no image → no prompt');
-  assert.equal(practicePrompt('w2_image', { image: null }), null);
+  assert.match(p!, /picture's real — the lie isn't/i, 'echoes W2’s close');
+  assert.equal(practicePrompt('w2_image', { goal: '' }), null, 'no goal → no prompt');
+  assert.equal(practicePrompt('w2_image', { goal: null }), null);
+});
+
+test('imageHook · pulls the first line (the goal) out of the composed image keeper', () => {
+  assert.equal(imageHook('The half-marathon finish line\nA cool morning\nMy kids at the rail'), 'The half-marathon finish line');
+  assert.equal(imageHook(''), null);
+  assert.equal(imageHook(null), null);
 });
 
 let seq = 0;

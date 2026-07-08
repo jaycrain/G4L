@@ -27,6 +27,7 @@ const M = [
   ["0046", { c: ["playbook_entry", "keeper_type"] }],
   ["0047", { t: "grinta_reading" }],
   ["0048", { t: "practice_week" }],
+  ["0049", { t: "momentum_call" }],
 ];
 const expr = (x) =>
   x.t ? `to_regclass(${Q}public.${x.t}${Q}) is not null`

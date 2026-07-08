@@ -9,6 +9,7 @@ import { MEMBER_AGENT_SYSTEM_PROMPT } from './system-prompt.ts';
 import { detectCrisis, CRISIS_RESPONSE_US } from './governance.ts';
 import { reclaimAddIntent } from '../member/reclaim.ts';
 import { rewireEnabled } from './rewire.ts';
+import { logCallIntent } from '../momentum/store.ts';
 import { connectContextLines, type ConnectAgentSummary } from '../connect/agent.ts';
 import type { Direction } from '../idq/scoring.ts';
 
@@ -465,6 +466,26 @@ const REFINE_TOOLS = [
   },
 ];
 
+// Momentum logging (Rewire W3 · Step 3) — offered ONLY when REWIRE is staged (see toolsFor), so prod's companion is
+// unchanged until the v2.3 flip. A "call" is self-monitoring, never scored; a false start logs as HONEST, not a mark.
+const LOG_CALL_TOOL = {
+  name: 'log_call',
+  description:
+    "Log a Momentum 'call' when the member reports how a moment or a day went — a good_call (they showed up / made " +
+    "the call they wanted), a false_start (they slipped — logged as honest, NEVER a failure), or a quiet_day (a rest " +
+    "or uneventful day). Examples: 'rode this morning, good call' → good_call; 'skipped the walk again, that was a " +
+    "false start' → false_start; 'pretty quiet today' → quiet_day. Warm, never judgmental. Call it the same turn the " +
+    "member reports it; words alone don't log it — you MUST call this tool, then reflect it back once it succeeds.",
+  input_schema: {
+    type: 'object',
+    properties: {
+      type: { type: 'string', enum: ['good_call', 'false_start', 'quiet_day'], description: 'the kind of call' },
+      note: { type: 'string', description: 'optional short note in the member’s words (what the call was)' },
+    },
+    required: ['type'],
+  },
+};
+
 async function liveReply(
   system: string,
   history: CheckinMessage[],
@@ -487,7 +508,9 @@ async function liveReply(
   // turn WITHOUT it, so a tool-spec incompatibility degrades to normal chat — never a broken companion.
   const WEB_FETCH_TOOL = { type: 'web_fetch_20260209', name: 'web_fetch', max_uses: 3 };
   let useFetch = executor !== undefined;
-  const toolsFor = () => (executor ? (useFetch ? [...REFINE_TOOLS, WEB_FETCH_TOOL] : REFINE_TOOLS) : undefined);
+  // Momentum's log_call rides in only when REWIRE is staged — prod's tool set is unchanged until the v2.3 flip.
+  const clientTools = rewireEnabled() ? [...REFINE_TOOLS, LOG_CALL_TOOL] : REFINE_TOOLS;
+  const toolsFor = () => (executor ? (useFetch ? [...clientTools, WEB_FETCH_TOOL] : clientTools) : undefined);
   const model = process.env.ANTHROPIC_MODEL ?? 'claude-sonnet-4-6';
   // Join ALL text blocks. With a server tool (web_fetch), the model emits a preamble text block,
   // then the fetch, then the real reflection in a LATER text block — taking only the first would
@@ -582,6 +605,34 @@ export async function backstopReclaimAdd(
   }
 }
 
+// The engine backstop for an unfulfilled log_call (FF — "couldn't do X is a bug"). Gated by REWIRE. If the member
+// plainly reported a call and the model didn't log it, commit it through the SAME validated primitive. A false start
+// stays honest (never a scold); the confirmation copy is light + directional (shaped in the felt-walk).
+export async function backstopLogCall(
+  memberMessage: string,
+  reply: string,
+  toolNames: string[],
+  executor?: ToolExecutor,
+): Promise<string> {
+  if (!rewireEnabled() || !executor || toolNames.includes('log_call')) return reply;
+  const type = logCallIntent(memberMessage);
+  if (!type) return reply;
+  try {
+    const out = await executor('log_call', { type });
+    if (!out.ok) return reply;
+    if (/\b(logged|got it|marked|noted)\b/i.test(reply)) return reply; // the model already acknowledged
+    const line =
+      type === 'false_start'
+        ? 'Logged — that one counts as honest, not a failure.'
+        : type === 'good_call'
+          ? 'Logged that as a good call.'
+          : 'Logged — a quiet day counts too.';
+    return `${reply}\n\n${line}`.trim();
+  } catch {
+    return reply; // best-effort — a backstop failure never breaks the turn
+  }
+}
+
 export async function checkinReply(
   c: CheckinContext,
   history: CheckinMessage[],
@@ -597,8 +648,10 @@ export async function checkinReply(
       // Backstop-capture through the SAME validated primitive (fog rejected, dups folded), so an add-intent is
       // never dropped. "The Companion couldn't do X is a bug, not a boundary."
       const guarded = await backstopReclaimAdd(memberMessage, reply, toolNames, executor);
+      // Momentum backstop (REWIRE): a plainly-reported call the model didn't log gets captured through the primitive.
+      const guarded2 = await backstopLogCall(memberMessage, guarded, toolNames, executor);
       // Never render an empty bubble — a rare empty turn degrades to a soft, in-voice nudge.
-      if (guarded.trim()) return { reply: guarded };
+      if (guarded2.trim()) return { reply: guarded2 };
       return { reply: "I'm with you — say a little more?" };
     } catch (e) {
       console.warn('check-in reply: live agent unavailable, using scripted —', (e as Error).message);

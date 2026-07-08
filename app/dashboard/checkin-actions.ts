@@ -16,6 +16,8 @@ import { addReclaimItemForMember, addDoorForMember } from '../../lib/member/refi
 import { markReclaimReclaimedByText, unmarkReclaimReclaimedByText, refineReclaimItemByText, removeReclaimItemByText, reorderReclaimList } from '../../lib/beats/store.ts';
 import { proposeEntry, playbookForAgent, isPlaybookSection } from '../../lib/playbook/store.ts';
 import { createMeasure, logReadingByLabel, measuresForAgent, findReclaimItemId, looksTrackable } from '../../lib/measure/store.ts';
+import { logCall, isCallType } from '../../lib/momentum/store.ts';
+import { rewireEnabled } from '../../lib/agent/rewire.ts';
 import { maybeFoldMemory } from '../../lib/agent/memory.ts';
 import { asSnapshot, diffSnapshot, type DashboardSnapshot } from '../../lib/agent/changes.ts';
 import { getGrinta } from '../../lib/grinta/index.ts';
@@ -371,6 +373,22 @@ export async function sendCheckin(memberId: string, memberMessage: string): Prom
           return { ok: false, message: "Couldn't find a measure by that name. If they want to start tracking it, use create_measure first." };
         }
         return { ok: false, message: 'Not logged — that reading was not a number.' };
+      }
+      if (name === 'log_call') {
+        // Momentum logging (REWIRE-gated). A call is self-monitoring, never scored; a false start is honest data.
+        if (!rewireEnabled()) return { ok: false, message: 'Not available.' };
+        const type = input.type;
+        if (!isCallType(type)) return { ok: false, message: 'Not logged — that was not a recognizable call type.' };
+        const note = typeof input.note === 'string' ? input.note : undefined;
+        await logCall(db, memberId, { type, note, source: 'rail' });
+        mutated = true;
+        const ack =
+          type === 'false_start'
+            ? "Logged as a false start — that's honest data, not a mark against them. Meet it warmly."
+            : type === 'good_call'
+              ? "Logged as a good call. Mark it lightly — it's on their Momentum now."
+              : "Logged as a quiet day. No pressure — quiet counts too.";
+        return { ok: true, message: ack };
       }
       return { ok: false, message: 'Unknown tool.' };
     };
