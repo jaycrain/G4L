@@ -491,7 +491,8 @@ const W3_REFRAME =
 // enumerated to the member): the situations, the internal states, the excuse the brain makes, the risky setting. ──
 const W3_TRIGGERS_LEAD = `Slips aren't random — they have triggers. Let's find yours.`;
 const W3_TRIGGER_OPEN =
-  `So — when are you most likely to slip? Think of the moments the old pattern wins: what's usually going on when it happens?`;
+  `So — when are you most likely to slip? Think of the moments the old pattern wins — a brutal week, travel, late ` +
+  `nights, the holidays. What's usually going on when it happens?`;
 const W3_TRIGGER_MORE = `What else tends to trip you up — a mood, a time of day, a place?`; // fallback follow-up (the model usually leads)
 const W3_TRIGGER_NUDGE = `No wrong answer — just the real pattern. When does it tend to get you?`;
 // The internal areas the draw-out MAY cover — guidance for the model, NEVER a checklist shown or counted to the member:
@@ -720,9 +721,10 @@ function rewireW3StageNote(state: ConvState): string {
     );
   return (
     "\n\nRIGHT NOW: the member just named a trigger. Reflect it briefly and specifically (their words, the real cost) " +
-    "— sparingly, no validation tic — then ask ONE open follow-up to widen into an area that hasn't come up yet " +
-    `(possible areas, for YOUR guidance only, never listed to them: ${W3_TRIGGER_AREAS}). One question. Do NOT ` +
-    "enumerate or count."
+    "— sparingly, no validation tic — then ask ONE open follow-up to widen into an area that hasn't come up yet. " +
+    `OFFER a couple of concrete examples in the question to help them answer, drawn from these areas: ${W3_TRIGGER_AREAS} ` +
+    "— examples are HELP, not a checklist: give two or three to prime them, never a list to work through, never " +
+    "numbered, never 'the second/third one'. One question."
   );
 }
 
