@@ -269,6 +269,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
             <h3>Momentum</h3>
             <p className="card-subtitle">The calls you make, one at a time — and how they add up.</p>
             <ResiliencePulse beats={pulseData} />
+            <Link href={`/momentum/${memberId}`} className="see-more">Log a call →</Link>
           </div>
         ) : dailyBeat ? (
           <DailyBeatPanel memberId={memberId} reflectionId={dailyBeat.id} text={dailyBeat.text} keepable={dailyBeat.keepable} kept={dailyBeatKept} />

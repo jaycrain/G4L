@@ -384,7 +384,10 @@ export async function sendCheckin(memberId: string, memberMessage: string): Prom
         mutated = true;
         const ack =
           type === 'false_start'
-            ? "Logged as a false start — that's honest data, not a mark against them. Meet it warmly."
+            ? // Slice 3 — the false-start → protocol loop (the marquee): meet the slip with their OWN protocol.
+              "Logged as a false start — that's honest data, not a mark against them. Meet it warmly, then OFFER (never " +
+              "force) to run their protocol: their recovery move / False Start Protocol keeper (in MEMBER CONTEXT), in " +
+              "their own words — Redirect, Reframe, Restart. If they have no such keeper, just a warm ack, no phantom protocol."
             : type === 'good_call'
               ? "Logged as a good call. Mark it lightly — it's on their Momentum now."
               : "Logged as a quiet day. No pressure — quiet counts too.";

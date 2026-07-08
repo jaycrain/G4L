@@ -98,3 +98,12 @@ test('practiceHeroMessage · active W2 window + a saved image → the step-into-
   assert.equal(await practiceHeroMessage(db, m2), null, 'no image → no practice nudge, dashboard renders normally');
   assert.equal(await latestImageKeeper(db, m2), null);
 });
+
+test('practiceHeroMessage · a w3_logging window surfaces the Momentum log nudge (Slice 4)', async () => {
+  const db = new PGlite() as unknown as Db;
+  await applySchema(db);
+  const m = await seedMember(db);
+  await startPracticeWeek(db, m, 'w3_logging');
+  const msg = await practiceHeroMessage(db, m);
+  assert.match(msg!, /good call, a false start, or a quiet one/i, 'the daily log nudge, one ask, no pressure');
+});

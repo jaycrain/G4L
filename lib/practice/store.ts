@@ -68,7 +68,11 @@ export function practicePrompt(kind: PracticeKind, payload: { goal?: string | nu
     if (!goal) return null;
     return `Your five minutes: ${goal}. Close your eyes and stand in it. The picture's real — the lie isn't.`;
   }
-  return null; // w3_logging nudge is the Momentum slice's payload (Slice 4)
+  if (kind === 'w3_logging') {
+    // The Momentum log nudge (Slice 4) — one ask, no pressure, no "you missed" (MM/R1 productive-default, EE cadence).
+    return `How'd today go — a good call, a false start, or a quiet one?`;
+  }
+  return null;
 }
 
 // The full hero message for an active practice window, or null (no window / nothing to surface / a read hiccup).
