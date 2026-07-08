@@ -7,6 +7,7 @@ import type { ConvMessage, ConvState, Turn } from '../../lib/agent/onboarding.ts
 import { rewireEnabled, rewireOpening, liveTurnRewire, rewireW2Opening, liveTurnRewireW2 } from '../../lib/agent/rewire.ts';
 import { loadReconnectCaptures } from '../../lib/agent/reconnect.ts';
 import { emitHarvestMoment, commitKeeper, type KeeperType } from '../../lib/agent/harvest.ts';
+import { startPracticeWeek } from '../../lib/practice/store.ts';
 
 // Which Rewire session — W1 (the Disinformation Audit) or W2 (the Visualization Workshop). Both ride the same flag,
 // surface, and harvest seam; W2 additionally READS the member's Reconnect captures (the Reclaim List) to open.
@@ -76,7 +77,16 @@ export async function rewireTurnAction(
     // Every turn is a live model turn — the model supplies the reflection; the kernel sequences + harvests.
     const turn = session === 'w2' ? await liveTurnRewireW2(state, history, message) : await liveTurnRewire(state, history, message);
     const db = (await getDb()) as unknown as Db;
-    await persistRewireHarvest(db, memberId, state, turn); // W1 true lines → Playbook keepers
+    await persistRewireHarvest(db, memberId, state, turn); // W1 true lines / the W2 image → Playbook keepers
+    // W2 completing OPENS the practice week (Decision MM R4) — the daily "step into your picture" nudge on the hero.
+    // Best-effort: a scaffold hiccup never fails the conversation turn.
+    if (session === 'w2' && turn.complete) {
+      try {
+        await startPracticeWeek(db, memberId, 'w2_image');
+      } catch {
+        /* swallow — the session still completed; the nudge is a bonus, not load-bearing */
+      }
+    }
     return { ok: true, reply: turn.reply, state: turn.state };
   } catch {
     return { ok: false, error: 'Something went wrong — please try again.' };

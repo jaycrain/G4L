@@ -19,6 +19,7 @@ import PostCeremonyTour from '../post-ceremony-tour.tsx';
 import Threshold from '../threshold.tsx';
 import { reconnectEnabled } from '../../../lib/agent/reconnect.ts';
 import { rewireEnabled } from '../../../lib/agent/rewire.ts';
+import { practiceHeroMessage } from '../../../lib/practice/store.ts';
 import MeasureCard from '../measure-card.tsx';
 import DashboardSync from '../dashboard-sync.tsx';
 import TrackThis from '../track-this.tsx';
@@ -162,9 +163,14 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
     ? `${heroVerb} ${facets.join(' · ')}`
     : 'Who you’re reclaiming lands here once you name it at Identity Excavation.';
   const litCurrent = forecast.current?.openable ? forecast.current : null;
-  const heroMessage = litCurrent
-    ? `Your next step is ready — ${litCurrent.title}.${litCurrent.summary ? ` ${litCurrent.summary}` : ''}`
-    : 'Whenever you’re ready, tell me what’s on your mind — or one thing you want to move toward today.';
+  // During an active practice week (Decision MM R4), the daily practice LEADS the hero — "step into your picture"
+  // (W2). Flag-gated (REWIRE) + drift-hardened (null on a missing 0048), so prod is untouched and never crashes.
+  const practiceMessage = rewireEnabled() ? await practiceHeroMessage(db, memberId) : null;
+  const heroMessage =
+    practiceMessage ??
+    (litCurrent
+      ? `Your next step is ready — ${litCurrent.title}.${litCurrent.summary ? ` ${litCurrent.summary}` : ''}`
+      : 'Whenever you’re ready, tell me what’s on your mind — or one thing you want to move toward today.');
 
   // Post-Ceremony Tour copy — the Doors spotlight line, named back from their own onboarding (§7: declare
   // what it is). Falls back to a generic line if doors weren't captured (the foot line won't render then).

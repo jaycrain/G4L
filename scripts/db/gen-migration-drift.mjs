@@ -26,6 +26,7 @@ const M = [
   ["0045", { s: `exists(select 1 from pg_constraint where conname=${Q}reclaim_list_min_1${Q})` }],
   ["0046", { c: ["playbook_entry", "keeper_type"] }],
   ["0047", { t: "grinta_reading" }],
+  ["0048", { t: "practice_week" }],
 ];
 const expr = (x) =>
   x.t ? `to_regclass(${Q}public.${x.t}${Q}) is not null`
