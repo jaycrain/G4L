@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { rewireEnabled, rewireOpening, applyRewireTurn } from '../lib/agent/rewire.ts';
-import type { ConvState } from '../lib/agent/onboarding.ts';
+import { rewireEnabled, rewireOpening, applyRewireTurn, rewireW2Opening, applyRewireW2Turn, memberPickedAnchor } from '../lib/agent/rewire.ts';
+import type { Collected, ConvState } from '../lib/agent/onboarding.ts';
 
 // Rewire (v2.3) SLICE 1 — W1 the Disinformation Audit. Final approved copy; the arc walks the FIVE domains one at a
 // time → the turn → harvests each true line as a Playbook keeper. Assertions key on STRUCTURE + harvest.
@@ -73,4 +73,86 @@ test('W1 · a blank domain answer is nudged (not skipped); no true line yet → 
   const early = applyRewireTurn(atTurn, [], "that's it", { text: 'ok' });
   assert.equal(early.complete ?? false, false, 'closing before any true line does not complete');
   assert.match(early.reply, /even one is enough/i, 'nudges for at least one true line');
+});
+
+test('W1 · the close moves to stage "complete" so the chat hides the input', () => {
+  let state = walkDomains();
+  let t = applyRewireTurn(state, [], 'My body responds to what I ask of it', { text: 'ok' });
+  t = applyRewireTurn(t.state, [], "that's my set", { text: 'ok' });
+  assert.equal(t.complete, true);
+  assert.equal(t.state.stage, 'complete', 'terminal turn advances stage to complete');
+});
+
+// ── Rewire (v2.3) SLICE 2 — W2 the Visualization Workshop ──────────────────────────────────────────────────────
+// Reads the Reclaim List (callback seam) → anchor a vivid goal → build the scene ONE PIECE at a time → the reveal →
+// practice + close, harvesting the finished image as ONE keeper. Assertions key on STRUCTURE, the callback, + harvest.
+
+const CAPTURES: Collected = {
+  identityNoun: 'Runner',
+  reclaimList: ['Run the half-marathon again', 'Trip to the coast with the guys', 'Feel strong in my body'],
+  doors: [],
+  gap: 'work swallowed everything',
+};
+
+// Walk the opener → pick the anchor → build the 4 image pieces; returns the state at hold (the reveal delivered).
+function walkImage(committed: Collected | null = CAPTURES): { state: ConvState; recognitionReply: string } {
+  let t = rewireW2Opening(committed);
+  assert.equal(t.state.stage, 'anchor');
+  assert.match(t.reply, /clear picture of the person you're becoming/i, 'opens on the value (through-line from W1)');
+  // pick the anchor goal → advances into the image build with the first scene prompt
+  t = applyRewireW2Turn(t.state, [], 'The half-marathon finish line', { text: "The half-marathon — let's stand you there." });
+  assert.equal(t.state.stage, 'image', 'a picked goal advances to the image build');
+  assert.equal(t.state.collected.w2Anchor, 'The half-marathon finish line', 'the chosen goal is stashed');
+  const PIECES = ['A cool morning, the finish chute', 'Lighter, steadier, proud', 'My kids at the rail', 'Like I came back'];
+  PIECES.forEach((piece, i) => {
+    assert.equal(t.state.stage, 'image', 'still building the scene');
+    const last = i === PIECES.length - 1;
+    t = applyRewireW2Turn(t.state, [], piece, { text: last ? 'That whole picture — you, back.' : 'I can see it.' });
+  });
+  assert.equal(t.state.stage, 'hold', 'after the fourth piece, hands into the reveal');
+  assert.match(t.reply, /that's not a wish/i, 'delivers the recognition reveal');
+  return { state: t.state, recognitionReply: t.reply };
+}
+
+test('W2 · flag OFF hides the arc; the anchor pulls from the Reclaim List; the scene builds one piece at a time', () => {
+  const { state } = walkImage();
+  assert.equal((state.collected.w2Image ?? []).length, 4, 'all four scene pieces captured, in order');
+  assert.deepEqual(state.collected.w2Image, ['A cool morning, the finish chute', 'Lighter, steadier, proud', 'My kids at the rail', 'Like I came back']);
+});
+
+test('W2 · the reveal → practice + close, harvesting the finished image as ONE keeper; completes at stage complete', () => {
+  const { state } = walkImage();
+  const t = applyRewireW2Turn(state, [], 'that lands', { text: 'Hold onto it.' });
+  assert.equal(t.complete, true, 'W2 completes after the member sits with the reveal');
+  assert.equal(t.state.stage, 'complete', 'terminal stage so the chat hides the input');
+  assert.match(t.reply, /saved your picture to your Playbook/i, 'the close names the keeper');
+  const harvest = t.state.pendingHarvest ?? [];
+  assert.equal(harvest.length, 1, 'the finished image is ONE keeper (not four)');
+  assert.equal(harvest[0]!.keeperType, 'lights_you_up', 'the image is a lights-you-up keeper');
+  assert.equal(harvest[0]!.destinationIntent, 'keeper');
+  assert.match(harvest[0]!.payloadRef, /finish line/, 'the keeper carries the goal + the scene, the member’s words');
+  assert.match(harvest[0]!.payloadRef, /My kids at the rail/, 'the keeper carries every scene piece');
+});
+
+test('W2 · graceful degrade — thin captures still open and walk (the model offers from context)', () => {
+  const t = rewireW2Opening(null);
+  assert.equal(t.state.stage, 'anchor');
+  assert.match(t.reply, /pick the one that pulls hardest/i, 'falls back to the approved generic pick copy');
+});
+
+test('W2 · "not sure" holds at the anchor (the model offers candidates); a real pick advances', () => {
+  let t = rewireW2Opening(CAPTURES);
+  const unsure = applyRewireW2Turn(t.state, [], "I'm not sure", { text: 'From your list: the half, the coast trip, feeling strong — which pulls hardest?' });
+  assert.equal(unsure.state.stage, 'anchor', 'an unsure reply keeps helping at the anchor');
+  assert.match(unsure.reply, /which pulls hardest/i, 'the model offers candidates from their list');
+  const picked = applyRewireW2Turn(unsure.state, [], 'the coast trip', { text: 'The coast it is.' });
+  assert.equal(picked.state.stage, 'image', 'a real pick advances to the build');
+});
+
+test('memberPickedAnchor · unsure vs. a real pick', () => {
+  assert.equal(memberPickedAnchor("I'm not sure"), false);
+  assert.equal(memberPickedAnchor('idk'), false);
+  assert.equal(memberPickedAnchor('you pick'), false);
+  assert.equal(memberPickedAnchor('the half-marathon'), true);
+  assert.equal(memberPickedAnchor('getting my marriage back on track'), true);
 });

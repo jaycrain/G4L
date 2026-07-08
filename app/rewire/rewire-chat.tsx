@@ -1,18 +1,18 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { startRewireAction, rewireTurnAction } from './actions.ts';
+import { startRewireAction, rewireTurnAction, type RewireSession } from './actions.ts';
 import type { ConvMessage, ConvState } from '../../lib/agent/onboarding.ts';
 import { BEAT_SEP } from '../../lib/agent/onboarding.ts';
 
-// A turn may hand over more than one beat (a reflection + the next domain ask), joined by BEAT_SEP — render each as
-// its OWN bubble, one job each. Reuses the onboarding/reconnect chat classes so it looks native.
+// A turn may hand over more than one beat (a reflection + the next ask), joined by BEAT_SEP — render each as its OWN
+// bubble, one job each. Reuses the onboarding/reconnect chat classes so it looks native.
 const agentBubbles = (text: string): ConvMessage[] =>
   text.split(BEAT_SEP).map((t) => t.trim()).filter(Boolean).map((t) => ({ role: 'agent' as const, text: t }));
 
-// v2.3 Rewire W1 chat — the Disinformation Audit. Mirrors the Reconnect chat: start → walk the five domains → the
-// turn → the true lines. State is held client-side for the walk.
-export default function RewireChat({ memberId }: { memberId: string }) {
+// v2.3 Rewire chat — W1 (the Disinformation Audit) or W2 (the Visualization Workshop), by `session`. Mirrors the
+// Reconnect chat: start → the guided one-at-a-time walk → the close. State is held client-side for the walk.
+export default function RewireChat({ memberId, session = 'w1' }: { memberId: string; session?: RewireSession }) {
   const [messages, setMessages] = useState<ConvMessage[]>([]);
   const [state, setState] = useState<ConvState | null>(null);
   const [input, setInput] = useState('');
@@ -26,13 +26,13 @@ export default function RewireChat({ memberId }: { memberId: string }) {
     started.current = true;
     (async () => {
       setPending(true);
-      const r = await startRewireAction(memberId);
+      const r = await startRewireAction(memberId, session);
       setPending(false);
       if (!r.ok || !r.reply || !r.state) return setError(r.error ?? 'Could not start Rewire.');
       setMessages(agentBubbles(r.reply));
       setState(r.state);
     })();
-  }, [memberId]);
+  }, [memberId, session]);
 
   async function send(e: React.FormEvent) {
     e.preventDefault();
@@ -42,12 +42,12 @@ export default function RewireChat({ memberId }: { memberId: string }) {
     setMessages((m) => [...m, { role: 'member', text }]);
     setInput('');
     setPending(true);
-    const r = await rewireTurnAction(memberId, state, history, text);
+    const r = await rewireTurnAction(memberId, state, history, text, session);
     setPending(false);
     if (!r.ok || !r.reply || !r.state) return setError(r.error ?? 'Something went wrong.');
     setMessages((m) => [...m, ...agentBubbles(r.reply!)]);
     setState(r.state);
-    if (r.state.stage === 'complete') setDone(true); // W1 done — the true lines are in the Playbook
+    if (r.state.stage === 'complete') setDone(true); // session done — the keeper(s) are in the Playbook
   }
 
   return (

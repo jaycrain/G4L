@@ -4,16 +4,31 @@ import { getDb } from '../../lib/db/index.ts';
 import { authorizeMember } from '../authz.ts';
 import type { Db } from '../../lib/db/schema.ts';
 import type { ConvMessage, ConvState, Turn } from '../../lib/agent/onboarding.ts';
-import { rewireEnabled, rewireOpening, liveTurnRewire } from '../../lib/agent/rewire.ts';
+import { rewireEnabled, rewireOpening, liveTurnRewire, rewireW2Opening, liveTurnRewireW2 } from '../../lib/agent/rewire.ts';
+import { loadReconnectCaptures } from '../../lib/agent/reconnect.ts';
 import { emitHarvestMoment, commitKeeper, type KeeperType } from '../../lib/agent/harvest.ts';
+
+// Which Rewire session — W1 (the Disinformation Audit) or W2 (the Visualization Workshop). Both ride the same flag,
+// surface, and harvest seam; W2 additionally READS the member's Reconnect captures (the Reclaim List) to open.
+export type RewireSession = 'w1' | 'w2';
 
 // v2.3 Rewire server actions (W1 · the Disinformation Audit). Flag-gated (REWIRE). Conversation state is held
 // client-side for the walk; the true lines the member writes are harvested to the Playbook (default-emit,
 // member-owned) as they land. No captures are read for W1 (W2's callback to the Reconnect Spark arrives later).
 
-export async function startRewireAction(memberId: string): Promise<{ ok: boolean; reply?: string; state?: ConvState; error?: string }> {
+export async function startRewireAction(
+  memberId: string,
+  session: RewireSession = 'w1',
+): Promise<{ ok: boolean; reply?: string; state?: ConvState; error?: string }> {
   if (!rewireEnabled()) return { ok: false, error: 'Rewire is not enabled.' };
   if (!(await authorizeMember(memberId))) return { ok: false, error: 'Not authorized.' };
+  if (session === 'w2') {
+    // W2 opens on the Reclaim List (the callback seam) — read the committed captures; graceful degrade if null/thin.
+    const db = (await getDb()) as unknown as Db;
+    const committed = await loadReconnectCaptures(db, memberId);
+    const turn = rewireW2Opening(committed);
+    return { ok: true, reply: turn.reply, state: turn.state };
+  }
   const turn = rewireOpening();
   return { ok: true, reply: turn.reply, state: turn.state };
 }
@@ -53,12 +68,13 @@ export async function rewireTurnAction(
   state: ConvState,
   history: ConvMessage[],
   message: string,
+  session: RewireSession = 'w1',
 ): Promise<{ ok: boolean; reply?: string; state?: ConvState; error?: string }> {
   if (!rewireEnabled()) return { ok: false, error: 'Rewire is not enabled.' };
   if (!(await authorizeMember(memberId))) return { ok: false, error: 'Not authorized.' };
   try {
-    // Every turn is a live model turn — the model supplies the per-domain reflection; the kernel sequences + harvests.
-    const turn = await liveTurnRewire(state, history, message);
+    // Every turn is a live model turn — the model supplies the reflection; the kernel sequences + harvests.
+    const turn = session === 'w2' ? await liveTurnRewireW2(state, history, message) : await liveTurnRewire(state, history, message);
     const db = (await getDb()) as unknown as Db;
     await persistRewireHarvest(db, memberId, state, turn); // W1 true lines → Playbook keepers
     return { ok: true, reply: turn.reply, state: turn.state };

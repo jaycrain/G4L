@@ -43,7 +43,13 @@ export type Stage = 'identity' | 'identity_name' | 'reclaim' | 'door' | 'complet
   // 'domains' (walk the five domains, surfacing a self-lie in each) then 'affirm' (write the true lines for the ones
   // that hit hardest → harvested keepers). W2/W3/R4 add their stage ids in later slices.
   | 'domains'
-  | 'affirm';
+  | 'affirm'
+  // v2.3 Rewire W2 — the Visualization Workshop. 'anchor' (pick a vivid, aspirational goal to stand inside, pulled
+  // from the Reclaim List) → 'image' (build the scene one piece at a time: place · self · people · feeling) →
+  // 'hold' (the recognition reveal, then the week's 5-min practice + the close/harvest).
+  | 'anchor'
+  | 'image'
+  | 'hold';
 
 // Beat separator — when ONE turn hands over more than one beat (e.g. the Phases intro + the pre-survey framing, or
 // the score-read close + the drift ask), join them with this (invisible RS control char) instead of "\n\n" so the
@@ -64,6 +70,11 @@ export type Collected = {
   // The Grinta baseline — set when the "Introduction to Grinta" survey completes (composite + the 4 strand means).
   // Stashed here so the completion card can render the number and the action can persist it without re-scoring.
   grintaBaseline?: GrintaScore;
+  // Rewire W2 (the Visualization Workshop) outputs — stashed here (same as grintaBaseline: arc output, not onboarding
+  // core) so the arc can thread them and compose one Playbook keeper at the close. w2Anchor = the vivid goal the
+  // member chose to stand inside; w2Image = the scene they built, piece by piece (place · self · people · feeling).
+  w2Anchor?: string;
+  w2Image?: string[];
 };
 
 export type ConvState = {
@@ -498,6 +509,10 @@ const STAGE_PROMPT: Record<Stage, string> = {
   // v2.3 Rewire stages — the Rewire engine (lib/agent/rewire.ts) supplies its own openers; neutral fallbacks here.
   domains: "What's the story you tell yourself here — the real one, not the one you're supposed to say?",
   affirm: "Write your true line: one honest sentence you'd say back to the lie.",
+  // v2.3 Rewire W2 — the Rewire engine supplies its own openers; neutral fallbacks here for type completeness.
+  anchor: 'Which of the things you want back would you most want to stand inside?',
+  image: 'Picture it — where are you, and what does it feel like to be there?',
+  hold: 'Sit with that image a moment — what comes up?',
 };
 
 // Guarantee a non-final turn ends with a forward question, so the member is never stranded.
