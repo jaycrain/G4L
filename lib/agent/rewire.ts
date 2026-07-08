@@ -729,9 +729,10 @@ function rewireW3StageNote(state: ConvState): string {
       const line = firstTrueLine(c);
       return (
         "\n\nRIGHT NOW: the member just gave their REDIRECT (what they'll do instead). Acknowledge it warmly and " +
-        "specifically in a line, then pose the Reframe as your single question: " +
+        "specifically in a line, then pose the second move — NAME IT, open with 'Reframe —' so they see the step — as " +
+        "your single question: " +
         (line
-          ? `offer THIS line they already wrote, verbatim — "here's a line you wrote: '${line}' — want that as your bad-day line, or write your own?"`
+          ? `offer THIS line they already wrote, verbatim — "Reframe: here's a line you wrote: '${line}' — want that as your bad-day line, or write your own?"`
           : "ask for a true line for a bad day — a slip is the cost of changing, not proof they can't; invite them to write it their way.")
       );
     }
@@ -739,9 +740,9 @@ function rewireW3StageNote(state: ConvState): string {
       const img = w3ImageOf(c);
       return (
         "\n\nRIGHT NOW: the member just gave their bad-day line. Acknowledge it warmly in a line (don't rewrite it), " +
-        "then pose the Restart — " +
+        "then pose the third move — NAME IT, open with 'Restart —' so they see the step: " +
         (img
-          ? `point them to the picture they built, quoting it: "when the old voice gets loud, go back to this — '${img}'." Then invite them to sit with it (a gentle question so it's not a dead end — e.g. does it feel like enough to reach for?).`
+          ? `point them to the picture they built, quoting it: "Restart: when the old voice gets loud, go back to this — '${img}'." Then invite them to sit with it (a gentle question so it's not a dead end — e.g. does it feel like enough to reach for?).`
           : "remind them to go back to the picture they built of where they're headed, and invite them to sit with it (a gentle question so it's not a dead end).")
       );
     }
@@ -750,9 +751,10 @@ function rewireW3StageNote(state: ConvState): string {
   if (isTriggerHandoffTurn(state))
     return (
       "\n\nRIGHT NOW: you've drawn out enough triggers — do NOT ask for another. Reflect briefly, name the ONE or TWO " +
-      "that seem heaviest (their words), then move into building the plan: pose the Redirect as your single question " +
-      "— what do you do INSTEAD when that moment hits (the five-minute rule: start, and if you still want to quit " +
-      "after five, quit; or a specific swap — walk the block, call someone, leave the room)."
+      "that seem heaviest (their words), then move into building THEIR PROTOCOL. Tell them it's THREE MOVES — Redirect, " +
+      "Reframe, Restart — so they see the shape, then pose the first: NAME IT, open with 'Redirect —' — what do you do " +
+      "INSTEAD when that moment hits (the five-minute rule: start, and if you still want to quit after five, quit; or a " +
+      "specific swap — walk the block, call someone, leave the room)."
     );
   return (
     "\n\nRIGHT NOW: the member just named a trigger. Reflect it warmly and specifically (their words, the real cost), " +
