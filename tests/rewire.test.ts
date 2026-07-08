@@ -257,3 +257,12 @@ test('W3 · a blank trigger is nudged (not advanced)', () => {
   assert.equal(blank.state.stage, 'triggers');
   assert.match(blank.reply, /no wrong answer/i);
 });
+
+test('W3 · protocol is model-driven for warmth — the model’s ack+ask is used when present', () => {
+  const state = walkTriggers();
+  // model returns a warm acknowledgment + the single Reframe ask → the engine uses it verbatim (not a cold fallback)
+  const warm = 'The food — bad carbs, sugar, volume. That’s the hard one to hold. Here’s a line you wrote: use it, or write your own?';
+  const t = applyRewireW3Turn(state, [], 'The food. Bad carbs, sugar, too much volume', { text: warm });
+  assert.equal(t.reply, warm, 'the warm model turn leads (no abrupt deterministic jump)');
+  assert.equal(t.state.collected.w3Redirect, 'The food. Bad carbs, sugar, too much volume', 'still captured');
+});

@@ -570,6 +570,17 @@ function triggerTurnsOf(state: ConvState): number {
 export function isTriggerHandoffTurn(state: ConvState): boolean {
   return state.stage === 'triggers' && triggerTurnsOf(state) >= DRAWOUT_MIN_TRIGGERS - 1;
 }
+// The protocol move the member is answering this turn (redirect → reframe → restart), from the scratch index.
+const PROTOCOL_MOVES = ['redirect', 'reframe', 'restart'] as const;
+function protocolIdxOf(state: ConvState): number {
+  const s = state.stageScratch?.protocol as { moveIdx?: number } | undefined;
+  return s?.moveIdx ?? 0;
+}
+export function protocolMove(state: ConvState): (typeof PROTOCOL_MOVES)[number] {
+  return PROTOCOL_MOVES[Math.min(protocolIdxOf(state), PROTOCOL_MOVES.length - 1)]!;
+}
+const firstTrueLine = (c: Collected): string => (c.w3TrueLines ?? []).map((s) => (s ?? '').trim()).filter(Boolean)[0] ?? '';
+const w3ImageOf = (c: Collected): string => (c.w3Image ?? '').trim();
 // The finished protocol → one recovery_move keeper: the trigger(s) + Redirect + Reframe + Restart, their own words.
 function composeProtocol(c: Collected): string {
   const triggers = (c.w3Triggers ?? []).map((s) => (s ?? '').trim()).filter(Boolean);
@@ -614,11 +625,12 @@ const triggersStage: StageDef = {
   },
 };
 
-// Step 2 — the protocol, ONE move per turn, ONE bubble each. These asks are DETERMINISTIC (no model reflection
-// appended — that was the double-bubble + the validation tic) so the member's REAL keepers surface reliably: Reframe
-// offers their actual true line (propose-confirm), Restart points to their actual picture. Reframe harvests a
-// 'principle' keeper (new lines only — a reused one is already kept); the close harvests the whole protocol as a
-// 'recovery_move' keeper. The live turn skips the model here, so `reflected` is empty by design.
+// Step 2 — the protocol, ONE move per turn. Model-driven for WARMTH (the first-version rhythm Jay liked): the model
+// ACKNOWLEDGES what the member just said, then poses the single next move — Reframe offering their REAL true line
+// (propose-confirm), Restart pointing to their REAL picture. The engine falls back to the deterministic real-keeper
+// ask when the model returns nothing, so the keeper always surfaces. ONE question per turn (never two). Reframe
+// harvests a 'principle' keeper (new lines only — a reused one is already kept); the close harvests the whole
+// protocol as a 'recovery_move' keeper.
 const protocolStage: StageDef = {
   id: 'protocol',
   mode: 'drawout',
@@ -628,6 +640,7 @@ const protocolStage: StageDef = {
     const sc = b.scratch as { moveIdx?: number };
     const idx = sc.moveIdx ?? 0;
     const msg = b.memberMessage.trim();
+    const reflected = (b.modelText ?? '').trim();
     // Redirect + Reframe need real substance; the Restart ack (idx 2) accepts any short "ok/got it" to close.
     if (idx < 2 && msg.length < 3) {
       b.reply = W3_TRIGGER_NUDGE;
@@ -636,7 +649,7 @@ const protocolStage: StageDef = {
     if (idx === 0) {
       b.collected.w3Redirect = msg;
       sc.moveIdx = 1;
-      b.reply = reframeAsk(b.collected); // one bubble — their REAL true line, propose-confirm
+      b.reply = reflected || reframeAsk(b.collected); // model: warm ack + the Reframe (their REAL line); else fallback
       return;
     }
     if (idx === 1) {
@@ -646,12 +659,12 @@ const protocolStage: StageDef = {
         b.pendingHarvest.push({ kind: 'affirmation', keeperType: 'principle', destinationIntent: 'keeper', payloadRef: r.line, label: 'Your true line for a bad day' });
       }
       sc.moveIdx = 2;
-      b.reply = restartLine(b.collected); // one bubble — their REAL picture
+      b.reply = reflected || restartLine(b.collected); // model: warm ack + the Restart (their REAL picture); else fallback
       return;
     }
-    // Restart acknowledged → harvest the whole protocol (recovery_move), deliver Step 3 + the close, complete.
+    // Restart acknowledged → a warm receipt (model), then harvest the protocol (recovery_move) + Step 3 + close.
     b.pendingHarvest.push({ kind: 'protocol', keeperType: 'recovery_move', destinationIntent: 'keeper', payloadRef: composeProtocol(b.collected), label: 'Your False Start Protocol' });
-    b.reply = `${W3_STEP3_1}${BEAT_SEP}${W3_STEP3_2}${BEAT_SEP}${W3_CLOSE_1}${BEAT_SEP}${W3_CLOSE_2}`;
+    b.reply = `${reflected ? `${reflected}${BEAT_SEP}` : ''}${W3_STEP3_1}${BEAT_SEP}${W3_STEP3_2}${BEAT_SEP}${W3_CLOSE_1}${BEAT_SEP}${W3_CLOSE_2}`;
     b.stage = 'complete';
     b.complete = true;
   },
@@ -710,7 +723,35 @@ function w3Context(c: Collected): string {
 }
 
 function rewireW3StageNote(state: ConvState): string {
-  // The protocol stage runs WITHOUT the model (deterministic asks) — this note only serves the triggers draw-out.
+  // Protocol turns are model-driven for warmth: acknowledge what they just said, then pose the SINGLE next move —
+  // weaving in their REAL keeper (given verbatim below). Always exactly one question (or, at Restart, a close).
+  if (state.stage === 'protocol') {
+    const move = protocolMove(state);
+    const c = state.collected;
+    if (move === 'redirect') {
+      const line = firstTrueLine(c);
+      return (
+        "\n\nRIGHT NOW: the member just gave their Redirect (what they'll do instead). Acknowledge it warmly and " +
+        "specifically in ONE short line (no cliché), then pose the Reframe as your single ask: " +
+        (line
+          ? `offer THIS line they already wrote, verbatim — "here's a line you wrote: '${line}' — want that as your bad-day line, or write a new one?"`
+          : `ask for a true line for a bad day — a slip is the cost of changing, not proof they can't; invite them to write it their way.`) +
+        " ONE question."
+      );
+    }
+    if (move === 'reframe') {
+      const img = w3ImageOf(c);
+      return (
+        "\n\nRIGHT NOW: the member just gave their bad-day line. Acknowledge it warmly in ONE short line (don't " +
+        "rewrite it), then pose the Restart — " +
+        (img
+          ? `point them to the picture they built, quoting it: "when the old voice gets loud, go back to this — '${img}'. The lie can't compete with a picture that real."`
+          : `remind them to go back to the picture they built of where they're headed; the lie can't compete with a picture that real.`) +
+        " This is a close, not a question — no question."
+      );
+    }
+    return "\n\nRIGHT NOW: the member is sitting with the Restart. Receive their reaction in ONE warm line — no advice, no question.";
+  }
   if (isTriggerHandoffTurn(state))
     return (
       "\n\nRIGHT NOW: you've heard enough triggers — do NOT ask for another. In ONE message: reflect briefly the one " +
@@ -729,9 +770,6 @@ function rewireW3StageNote(state: ConvState): string {
 }
 
 export async function liveTurnRewireW3(state: ConvState, history: ConvMessage[], memberMessage: string): Promise<Turn> {
-  // The protocol stage's asks are DETERMINISTIC (real-keeper Reframe/Restart, one bubble) — skip the model entirely
-  // there: no reflection to generate, no risk of a second question, and a faster turn.
-  if (state.stage === 'protocol') return applyRewireW3Turn(state, history, memberMessage, { text: '' });
   const { default: Anthropic } = await import('@anthropic-ai/sdk');
   const client = new Anthropic({
     apiKey: process.env.ANTHROPIC_API_KEY,
