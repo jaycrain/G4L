@@ -9,6 +9,7 @@ import {
   memberPickedAnchor,
   rewireW3Opening,
   applyRewireW3Turn,
+  stripTrailingQuestion,
 } from '../lib/agent/rewire.ts';
 import type { Collected, ConvState } from '../lib/agent/onboarding.ts';
 import { BEAT_SEP } from '../lib/agent/onboarding.ts';
@@ -168,10 +169,8 @@ test('memberPickedAnchor · unsure vs. a real pick', () => {
 });
 
 // ── Rewire (v2.3) SLICE 3 — W3 the False Start Protocol ────────────────────────────────────────────────────────
-// DRAW OUT ~2 triggers (one bubble/turn) → protocol (deterministic one-bubble asks) surfacing the member's REAL
-// keepers → harvests the Reframe line (principle) + the whole protocol (recovery_move). Cowork rework: no march, no
-// enumeration, one ask per turn.
-const oneBubble = (s: string) => !s.includes(BEAT_SEP);
+// Pulls W1's true lines + the W2 image FORWARD; names 4 triggers → builds Redirect/Reframe/Restart → harvests the
+// Reframe line (principle) + the whole protocol (recovery_move). Assertions key on STRUCTURE, callback, + harvest.
 
 const W3_CB = {
   trueLines: ["I won't know what I'm capable of until I try"],
@@ -179,90 +178,89 @@ const W3_CB = {
   reclaimList: ['Run the half again'],
   identityNoun: 'Runner',
 };
+const FOUR_TRIGGERS = ['Travel weeks', 'When I’m wiped out', "\"I’ll start Monday\"", 'The evening collapse'];
 
-// Draw out two triggers → returns state at the protocol stage (Redirect posed via the model's hand-off turn).
+// Walk opener → 4 triggers; returns state at the protocol stage (Redirect posed).
 function walkTriggers(cb = W3_CB): ConvState {
   let t = rewireW3Opening(cb);
   assert.equal(t.state.stage, 'triggers');
-  assert.match(t.reply, /not failure/i, 'opens with the reframe — permission');
-  // draw-out turn 1: one trigger → the model reflects + asks ONE more (still triggers)
-  t = applyRewireW3Turn(t.state, [], 'Brutal weeks when everything is demanding', { text: 'That drains the tank. What else tends to trip you up?' });
-  assert.equal(t.state.stage, 'triggers', 'still drawing out after one trigger');
-  assert.ok(oneBubble(t.reply), 'draw-out turn is ONE bubble');
-  // draw-out turn 2 = the hand-off: model reflects the set + poses the Redirect → protocol
-  t = applyRewireW3Turn(t.state, [], 'And late at night when I am wiped', { text: 'Those two are the heaviest. So — what do you do instead when the evening hits? The five-minute rule…' });
-  assert.equal(t.state.stage, 'protocol', 'after ~2 triggers, hands into the protocol');
+  assert.match(t.reply, /not failure/i, 'opens with the reframe — a false start is not failure (permission)');
+  FOUR_TRIGGERS.forEach((trig, i) => {
+    assert.equal(t.state.stage, 'triggers', 'still naming triggers');
+    const last = i === FOUR_TRIGGERS.length - 1;
+    t = applyRewireW3Turn(t.state, [], trig, { text: last ? 'Those are the ones that get you.' : 'Heard.' });
+  });
+  assert.equal(t.state.stage, 'protocol', 'after the fourth trigger, hands into the protocol build');
+  assert.match(t.reply, /Redirect/i, 'poses the first protocol move');
   return t.state;
 }
 
-test('W3 · draws out ~2 triggers (one bubble/turn), then deterministic protocol surfaces REAL keepers', () => {
-  const state = walkTriggers();
-  // Redirect answered → Reframe ask offers THEIR actual line, ONE bubble
-  let t = applyRewireW3Turn(state, [], 'Walk the block', { text: '' }); // model skipped on protocol
-  assert.ok(oneBubble(t.reply), 'the Reframe ask is one bubble');
-  assert.match(t.reply, /I won't know what I'm capable of/, 'offers the member’s real true line, not a template');
-  assert.match(t.reply, /write a new one/i, 'propose-confirm');
-  // Reframe (new line) → harvest principle; Restart points to their REAL picture, one bubble
-  t = applyRewireW3Turn(t.state, [], 'My comeback runs on small choices', { text: '' });
-  assert.equal((t.state.pendingHarvest ?? []).length, 1, 'the new bad-day line is harvested');
+test('W3 · walks the four triggers, then builds the protocol; harvests the Reframe line + the whole protocol', () => {
+  let state = walkTriggers();
+  assert.deepEqual(state.collected.w3Triggers, FOUR_TRIGGERS, 'the four triggers are captured in order');
+  // Redirect
+  let t = applyRewireW3Turn(state, [], 'Walk the block and text my brother', { text: 'Good — that’s your redirect.' });
+  assert.equal(t.state.collected.w3Redirect, 'Walk the block and text my brother');
+  assert.match(t.reply, /Reframe/i, 'poses the Reframe move next');
+  assert.equal((t.state.pendingHarvest ?? []).length, 0, 'nothing harvested yet');
+  // Reframe → the true line is harvested as a principle keeper
+  t = applyRewireW3Turn(t.state, [], "A slip is the toll for changing, not proof I can't", { text: 'That’s yours.' });
+  assert.equal((t.state.pendingHarvest ?? []).length, 1, 'the reframe line is harvested');
   assert.equal((t.state.pendingHarvest ?? [])[0]!.keeperType, 'principle');
-  assert.ok(oneBubble(t.reply), 'the Restart is one bubble');
-  assert.match(t.reply, /finish line, my kids at the rail/, 'points to the member’s real picture');
-  // Restart ack → protocol harvested (recovery_move), completes
-  t = applyRewireW3Turn(t.state, [], 'got it', { text: '' });
-  assert.equal(t.complete, true);
+  assert.match(t.reply, /Restart/i, 'poses the Restart move (reaches for the W2 image)');
+  // Restart ack → the whole protocol is harvested as a recovery_move; close completes
+  t = applyRewireW3Turn(t.state, [], 'Got it', { text: 'That’s the kit.' });
+  assert.equal(t.complete, true, 'W3 completes after the Restart is received');
   assert.equal(t.state.stage, 'complete', 'terminal stage hides the input');
-  const protocol = (t.state.pendingHarvest ?? []).find((h) => h.keeperType === 'recovery_move');
-  assert.match(protocol!.payloadRef, /Walk the block/, 'protocol carries their Redirect');
-  assert.match(protocol!.payloadRef, /small choices/, 'and their Reframe line');
+  const harvest = t.state.pendingHarvest ?? [];
+  assert.equal(harvest.length, 2, 'two keepers: the reframe line + the protocol');
+  const protocol = harvest.find((h) => h.keeperType === 'recovery_move');
+  assert.ok(protocol, 'the protocol is a recovery_move keeper (so Rebuild can recall it on a slip)');
+  assert.match(protocol!.payloadRef, /Walk the block/, 'the protocol carries their Redirect, in their words');
+  assert.match(protocol!.payloadRef, /toll for changing/, 'and their Reframe line');
+  assert.match(t.reply, /full kit now/i, 'the close names the assembled toolkit');
+  assert.match(t.reply, /into the body/i, 'and teases Rebuild');
 });
 
-test('W3 · no codenames anywhere the member sees', () => {
-  const NO_CODENAME = /\bW[123]\b/;
-  const state = walkTriggers();
-  assert.doesNotMatch(rewireW3Opening(W3_CB).reply, NO_CODENAME);
-  let t = applyRewireW3Turn(state, [], 'Walk the block', { text: '' });
-  assert.doesNotMatch(t.reply, NO_CODENAME, 'Reframe ask has no codename');
-  t = applyRewireW3Turn(t.state, [], 'A fresh line', { text: '' });
-  assert.doesNotMatch(t.reply, NO_CODENAME, 'Restart has no codename');
-});
-
-test('W3 · Reframe reuse (propose-confirm) — confirming the offered line adds NO duplicate keeper', () => {
-  const state = walkTriggers();
-  let t = applyRewireW3Turn(state, [], 'Leave the room', { text: '' });
-  t = applyRewireW3Turn(t.state, [], 'use that one', { text: '' }); // confirm the offered line
-  assert.equal((t.state.pendingHarvest ?? []).length, 0, 'a reused line is already kept — no duplicate');
-  assert.equal(t.state.collected.w3Reframe, "I won't know what I'm capable of until I try");
-  t = applyRewireW3Turn(t.state, [], 'ok', { text: '' });
-  const protocol = (t.state.pendingHarvest ?? []).find((h) => h.keeperType === 'recovery_move');
-  assert.match(protocol!.payloadRef, /capable of/, 'the reused line rides in the protocol');
-  assert.equal((t.state.pendingHarvest ?? []).filter((h) => h.keeperType === 'principle').length, 0);
-});
-
-test('W3 · graceful degrade — no prior tools: fallbacks (no codenames) still walk to completion', () => {
+test('W3 · graceful degrade — a member who skipped W1/W2 still walks (no prior tools to pull forward)', () => {
   const state = walkTriggers({ trueLines: [], image: undefined, reclaimList: [], identityNoun: undefined });
-  let t = applyRewireW3Turn(state, [], 'Leave the room', { text: '' });
-  assert.match(t.reply, /Reframe/i, 'Reframe fallback');
-  assert.doesNotMatch(t.reply, /\bW[123]\b/);
-  t = applyRewireW3Turn(t.state, [], "One bad day isn't the story", { text: '' });
-  assert.match(t.reply, /Restart/i, 'Restart fallback');
-  t = applyRewireW3Turn(t.state, [], 'ok', { text: '' });
-  assert.equal(t.complete, true);
+  let t = applyRewireW3Turn(state, [], 'Leave the room', { text: 'ok' });
+  t = applyRewireW3Turn(t.state, [], "One bad day isn't the story", { text: 'ok' });
+  t = applyRewireW3Turn(t.state, [], 'ok', { text: 'ok' });
+  assert.equal(t.complete, true, 'the protocol still completes without prior tools');
   assert.equal((t.state.pendingHarvest ?? []).filter((h) => h.keeperType === 'recovery_move').length, 1);
 });
 
-test('W3 · a blank trigger is nudged (not advanced)', () => {
+test('W3 · a blank trigger is nudged (not skipped)', () => {
   const t = rewireW3Opening(W3_CB);
   const blank = applyRewireW3Turn(t.state, [], '', { text: '' });
-  assert.equal(blank.state.stage, 'triggers');
+  assert.equal(blank.state.stage, 'triggers', 'a blank does not advance the walk');
   assert.match(blank.reply, /no wrong answer/i);
 });
 
-test('W3 · protocol is model-driven for warmth — the model’s ack+ask is used when present', () => {
+// The one surgical fix over the original W3 rhythm (Jay): the model's reflection must not tack on its own extra,
+// unanswerable question — strip any TRAILING question so the static prompt is the single ask.
+test('stripTrailingQuestion · keeps the warm reflection, drops the trailing question', () => {
+  assert.equal(
+    stripTrailingQuestion("Sparkling water — simple. That's a solid redirect. What makes that feel doable for you?"),
+    "Sparkling water — simple. That's a solid redirect.",
+  );
+  assert.equal(
+    stripTrailingQuestion("That's the scene. That's the moment we build around. What does the slip look like?"),
+    "That's the scene. That's the moment we build around.",
+  );
+  assert.equal(stripTrailingQuestion('That line has teeth — you have felt that regret before.'), 'That line has teeth — you have felt that regret before.');
+  assert.equal(stripTrailingQuestion('What is the first move?'), '', 'an all-question reflection is dropped entirely');
+  assert.equal(stripTrailingQuestion(''), '');
+});
+
+test('W3 · a model reflection that ends in a question is stripped before the single static ask (no double question)', () => {
   const state = walkTriggers();
-  // model returns a warm acknowledgment + the single Reframe ask → the engine uses it verbatim (not a cold fallback)
-  const warm = 'The food — bad carbs, sugar, volume. That’s the hard one to hold. Here’s a line you wrote: use it, or write your own?';
-  const t = applyRewireW3Turn(state, [], 'The food. Bad carbs, sugar, too much volume', { text: warm });
-  assert.equal(t.reply, warm, 'the warm model turn leads (no abrupt deterministic jump)');
-  assert.equal(t.state.collected.w3Redirect, 'The food. Bad carbs, sugar, too much volume', 'still captured');
+  // model tacks on its own question after the acknowledgment — the engine strips it; the Reframe prompt is the one ask.
+  const t = applyRewireW3Turn(state, [], 'Walk the block', { text: 'A solid redirect. What makes that work for you?' });
+  const bubbles = t.reply.split(BEAT_SEP);
+  assert.equal(bubbles.length, 2, 'exactly two bubbles: the acknowledgment + the single ask');
+  assert.equal(bubbles[0]!.trim(), 'A solid redirect.', 'the acknowledgment keeps its statement, drops the question');
+  assert.doesNotMatch(bubbles[0]!, /\?/, 'no question in the reflection bubble');
+  assert.match(bubbles[1]!, /Reframe/i, 'the single ask is the Reframe move');
 });
