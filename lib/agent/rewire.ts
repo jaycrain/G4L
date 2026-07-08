@@ -230,7 +230,7 @@ const W2_OPEN_1 =
 const W2_OPEN_2 =
   `And this isn't soft. Every athlete who's done anything hard rehearsed it in their head first — not because it's ` +
   `magic, but because your brain moves toward what it can see clearly. "I want to be healthier" has nothing to aim ` +
-  `at. A specific picture of you, on an ordinary Tuesday, does. So let's build one you can actually step into.`;
+  `at. A specific picture of you, on an ordinary day, does. So let's build one you can actually step into.`;
 // ── The anchor — a goal, made vivid (pull from their Reclaim List) ──
 const W2_ANCHOR_LEAD =
   `You named two things in Reconnect: who you'd drifted from, and what you want back. Let's put them together — you, ` +
