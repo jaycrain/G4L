@@ -486,16 +486,22 @@ const W3_REFRAME =
   `And get this straight, because it's the whole game: a false start is not failure. It's the expected cost of ` +
   `changing a pattern you've run for decades. Expect it. Plan for it. Then a slip stops being the thing that ends ` +
   `your comeback and becomes just another day — something you recover from by dinner.`;
-// ── Step 1 — Name the triggers (guided; each a single ask) ──
+// ── Step 1 — DRAW OUT the triggers. The MODEL owns the questioning: one open question, then it digs into what the
+// member said (deepen or widen) for a few real exchanges, then names the heaviest and moves to the plan. The engine
+// NEVER appends a question — the model's turn IS the reply. The four AREAS below only guide the model's follow-ups;
+// they are never listed to the member or "covered" as a checklist. ──
 const W3_TRIGGERS_LEAD = `Slips aren't random — they have triggers. Let's find yours.`;
-const W3_TRIGGERS = [
-  `When are you most likely to not follow through? (Travel, a brutal week, late nights, the holidays.)`,
-  `What state pulls you back into the old pattern? (Wiped out, frustrated, bored, celebrating.)`,
-  `What does your brain say to make the slip feel fine? ("It's just one day." "I'll start Monday." "I earned this.") ` +
-    `You already know this voice — it's the same campaign of reasonable-sounding lies you audited before.`,
-  `When's your weak spot? (The 3pm slump, the evening collapse.)`,
-];
+const W3_TRIGGER_OPEN =
+  `So — when are you most likely to slip? A brutal week, travel, the holidays, late nights — what's usually going on ` +
+  `when it happens?`;
+const W3_TRIGGER_MORE = `Say more about that — what's underneath it?`; // fallback follow-up (the model normally leads)
 const W3_TRIGGER_NUDGE = `No wrong answer — just the real pattern. When does it tend to get you?`;
+// Areas the draw-out MAY explore — guidance for the model's follow-ups, NEVER listed or counted to the member:
+const W3_TRIGGER_AREAS =
+  `the situations (travel, a brutal week, late nights, the holidays); the internal states (wiped out, frustrated, ` +
+  `bored, celebrating); the excuse the brain makes ("just one day", "I'll start Monday", "I earned this" — the ` +
+  `reasonable-sounding lies they audited before); the risky time or place (the 3pm slump, the evening collapse).`;
+const TRIGGER_DRAWOUT_TURNS = 3; // draw out over ~2–3 exchanges, then hand into the protocol (never march a checklist)
 // ── Step 2 — Build the protocol (guided; reuses W1 + W2) ──
 const W3_PROTOCOL_INTRO = `Now we write the plan — for the trigger that gets you most. Three moves.`;
 const W3_REDIRECT =
@@ -526,14 +532,16 @@ const W3_CLOSE_2 =
   `that turns a slip into a comeback. That's Rewire. Next, we put it into the body.`;
 
 function w3Opening(): string {
-  return `${W3_OPEN_1}${BEAT_SEP}${W3_OPEN_2}${BEAT_SEP}${W3_REFRAME}${BEAT_SEP}${W3_TRIGGERS_LEAD}${BEAT_SEP}${W3_TRIGGERS[0]}`;
+  // value → the reframe (permission) → ONE open trigger question. The model draws out from here.
+  return `${W3_OPEN_1}${BEAT_SEP}${W3_OPEN_2}${BEAT_SEP}${W3_REFRAME}${BEAT_SEP}${W3_TRIGGERS_LEAD} ${W3_TRIGGER_OPEN}`;
 }
-function triggerIdxOf(state: ConvState): number {
-  const s = state.stageScratch?.triggers as { triggerIdx?: number } | undefined;
-  return s?.triggerIdx ?? 0;
+// How many draw-out exchanges Step 1 has had (pre-state) — gates the hand-off into the protocol.
+function triggerTurnsOf(state: ConvState): number {
+  const s = state.stageScratch?.triggers as { triggerTurns?: number } | undefined;
+  return s?.triggerTurns ?? 0;
 }
-export function isLastTriggerTurn(state: ConvState): boolean {
-  return state.stage === 'triggers' && triggerIdxOf(state) >= W3_TRIGGERS.length - 1;
+export function isTriggerHandoffTurn(state: ConvState): boolean {
+  return state.stage === 'triggers' && triggerTurnsOf(state) >= TRIGGER_DRAWOUT_TURNS - 1;
 }
 // The three protocol moves, in order (the protocol stage walks them by scratch index).
 const PROTOCOL_MOVES = ['redirect', 'reframe', 'restart'] as const;
@@ -543,6 +551,18 @@ function protocolIdxOf(state: ConvState): number {
 }
 export function protocolMove(state: ConvState): (typeof PROTOCOL_MOVES)[number] {
   return PROTOCOL_MOVES[Math.min(protocolIdxOf(state), PROTOCOL_MOVES.length - 1)]!;
+}
+const firstTrueLine = (c: Collected): string => (c.w3TrueLines ?? []).map((s) => (s ?? '').trim()).filter(Boolean)[0] ?? '';
+const w3ImageOf = (c: Collected): string => (c.w3Image ?? '').trim();
+// At the Reframe the model offers the member's real true line, propose-confirm. A short confirmation ("use it" / "that
+// one") means reuse THAT line (already kept — no new keeper); anything substantial is a NEW bad-day line (harvested).
+const W3_CONFIRM_OFFER_RE =
+  /^(use (it|that( one)?)|that one|that works|that'?s (the one|it)|yes|yeah|yep|keep (it|that)|the first one|perfect|good|sounds good|i'?ll (use|take) (it|that)|let'?s use it)\b/i;
+function resolveReframe(msg: string, c: Collected): { line: string; reused: boolean } {
+  const line0 = firstTrueLine(c);
+  const m = msg.trim().replace(/[.,!?]+$/, '');
+  if (line0 && W3_CONFIRM_OFFER_RE.test(m)) return { line: line0, reused: true };
+  return { line: msg.trim(), reused: false };
 }
 // The finished protocol → one recovery_move keeper: the trigger(s) + Redirect + Reframe + Restart, their own words.
 function composeProtocol(c: Collected): string {
@@ -556,43 +576,32 @@ function composeProtocol(c: Collected): string {
   return parts.filter(Boolean).join('\n');
 }
 
-// The one surgical fix over the original rhythm (Jay's read): the model's reflection kept tacking on its OWN extra
-// question — unnecessary, and never answerable because the engine's real ask (the next static prompt) supersedes it.
-// So strip any TRAILING question sentence(s) from the reflection: keep the warm acknowledgment, let the static prompt
-// be the single question. If the whole reflection was a question, drop it entirely (the static prompt stands alone).
-export function stripTrailingQuestion(text: string): string {
-  const t = (text ?? '').trim();
-  if (!t) return '';
-  const sentences = t.match(/[^.!?]*[.!?]+["')\]]*\s*|[^.!?]+$/g) ?? [t];
-  let end = sentences.length;
-  while (end > 0 && /\?["')\]]*\s*$/.test(sentences[end - 1]!.trimEnd())) end--;
-  return sentences.slice(0, end).join('').trim();
-}
-
-// Step 1 — walk the four triggers (draw-out sequence). On the fourth → the model reflects the set + names the one or
-// two that trip them most, then the engine hands into Step 2 with the protocol intro + the Redirect ask.
+// Step 1 — DRAW OUT the triggers. The MODEL owns the questioning (reflect + ONE dig-in/widen follow-up); the engine
+// NEVER appends its own question. Its reply IS the turn. After ~TRIGGER_DRAWOUT_TURNS exchanges, the (model's) turn
+// names the heaviest + poses the Redirect, and the engine advances to the protocol. Fallbacks only if the model is
+// empty. One question per turn — always the model's.
 const triggersStage: StageDef = {
   id: 'triggers',
   mode: 'drawout',
   opener: () => w3Opening(),
   offersSubstance: (message) => message.trim().length >= 3,
   gather(b) {
-    const sc = b.scratch as { triggerIdx?: number };
-    const idx = sc.triggerIdx ?? 0;
+    const sc = b.scratch as { triggerTurns?: number };
     if (b.memberMessage.trim().length < 3) {
       b.reply = W3_TRIGGER_NUDGE;
       return;
     }
     (b.collected.w3Triggers ??= []).push(b.memberMessage.trim());
-    const ack = stripTrailingQuestion(b.modelText ?? ''); // warm reflection ONLY — no trailing question
-    const next = idx + 1;
-    if (next < W3_TRIGGERS.length) {
-      sc.triggerIdx = next;
-      b.reply = ack ? `${ack}${BEAT_SEP}${W3_TRIGGERS[next]}` : W3_TRIGGERS[next]!;
-    } else {
-      // all four named → focus the heaviest (model) + hand into the protocol build (Redirect first).
+    const turns = (sc.triggerTurns ?? 0) + 1;
+    sc.triggerTurns = turns;
+    const reply = (b.modelText ?? '').trim();
+    if (turns >= TRIGGER_DRAWOUT_TURNS) {
+      // enough drawn out → the model (per the hand-off note) named the heaviest + posed the Redirect. Into the protocol.
       b.stage = 'protocol';
-      b.reply = `${ack ? `${ack}${BEAT_SEP}` : ''}${W3_PROTOCOL_INTRO}${BEAT_SEP}${W3_REDIRECT}`;
+      b.reply = reply || W3_REDIRECT;
+    } else {
+      // keep drawing out — the model reflected + dug in with ONE follow-up. Its turn is the reply; nothing appended.
+      b.reply = reply || W3_TRIGGER_MORE;
     }
   },
   confirm(b) {
@@ -600,8 +609,11 @@ const triggersStage: StageDef = {
   },
 };
 
-// Step 2 — build the protocol, one move at a time (Redirect → Reframe → Restart). Reframe harvests a 'principle'
-// keeper (the true line); the close harvests the whole protocol as a 'recovery_move' keeper.
+// Step 2 — the protocol, ONE move per turn, MODEL-DRIVEN for warmth: the model acknowledges what the member just said,
+// then poses the single move — Redirect, then Reframe (offering their REAL true line), then Restart (pointing to their
+// REAL picture + a gentle look-forward, so it isn't a dead end). The engine sequences + captures + harvests; it never
+// appends a question. Fallbacks (with the real keeper) only if the model is empty. Reframe harvests a 'principle'
+// keeper (new lines only — a reused one is already kept); the close harvests the whole protocol as a 'recovery_move'.
 const protocolStage: StageDef = {
   id: 'protocol',
   mode: 'drawout',
@@ -611,33 +623,31 @@ const protocolStage: StageDef = {
     const sc = b.scratch as { moveIdx?: number };
     const idx = sc.moveIdx ?? 0;
     const msg = b.memberMessage.trim();
-    const ack = stripTrailingQuestion(b.modelText ?? ''); // warm reflection ONLY — no trailing question
+    const reply = (b.modelText ?? '').trim();
+    // Redirect + Reframe need real substance; the Restart response (idx 2) accepts a short "ok/that helps" to close.
+    if (idx < 2 && msg.length < 3) {
+      b.reply = W3_TRIGGER_NUDGE;
+      return;
+    }
     if (idx === 0) {
-      // Redirect answered → pose Reframe.
-      if (msg.length < 3) {
-        b.reply = W3_TRIGGER_NUDGE;
-        return;
-      }
       b.collected.w3Redirect = msg;
       sc.moveIdx = 1;
-      b.reply = `${ack ? `${ack}${BEAT_SEP}` : ''}${W3_REFRAME_PROMPT}`;
+      b.reply = reply || reframeFallback(b.collected); // model: ack + Reframe (their real line); else fallback
       return;
     }
     if (idx === 1) {
-      // Reframe answered → harvest the true line (principle), pose Restart (reaches for the W2 image).
-      if (msg.length < 3) {
-        b.reply = W3_TRIGGER_NUDGE;
-        return;
+      const r = resolveReframe(msg, b.collected);
+      b.collected.w3Reframe = r.line;
+      if (!r.reused) {
+        b.pendingHarvest.push({ kind: 'affirmation', keeperType: 'principle', destinationIntent: 'keeper', payloadRef: r.line, label: 'Your true line for a bad day' });
       }
-      b.collected.w3Reframe = msg;
-      b.pendingHarvest.push({ kind: 'affirmation', keeperType: 'principle', destinationIntent: 'keeper', payloadRef: msg, label: 'Your true line for a bad day' });
       sc.moveIdx = 2;
-      b.reply = `${ack ? `${ack}${BEAT_SEP}` : ''}${W3_RESTART}`;
+      b.reply = reply || restartFallback(b.collected); // model: ack + Restart (their real picture); else fallback
       return;
     }
-    // Restart acknowledged → harvest the whole protocol (recovery_move), deliver Step 3 + the close, complete.
+    // Restart answered → a warm receipt (model), then harvest the protocol (recovery_move) + Step 3 + the close.
     b.pendingHarvest.push({ kind: 'protocol', keeperType: 'recovery_move', destinationIntent: 'keeper', payloadRef: composeProtocol(b.collected), label: 'Your False Start Protocol' });
-    b.reply = `${ack ? `${ack}${BEAT_SEP}` : ''}${W3_STEP3_1}${BEAT_SEP}${W3_STEP3_2}${BEAT_SEP}${W3_CLOSE_1}${BEAT_SEP}${W3_CLOSE_2}`;
+    b.reply = `${reply ? `${reply}${BEAT_SEP}` : ''}${W3_STEP3_1}${BEAT_SEP}${W3_STEP3_2}${BEAT_SEP}${W3_CLOSE_1}${BEAT_SEP}${W3_CLOSE_2}`;
     b.stage = 'complete';
     b.complete = true;
   },
@@ -645,6 +655,20 @@ const protocolStage: StageDef = {
     protocolStage.gather(b);
   },
 };
+
+// Deterministic fallbacks (used only when the model returns nothing) — still surface the member's REAL keeper.
+function reframeFallback(c: Collected): string {
+  const line = firstTrueLine(c);
+  return line
+    ? `Now Reframe — your true line for a bad day. Here's one you already wrote: “${line}” — want that as your bad-day line, or write a new one?`
+    : W3_REFRAME_PROMPT;
+}
+function restartFallback(c: Collected): string {
+  const img = w3ImageOf(c);
+  return img
+    ? `And Restart — when the old voice gets loud, go back to the picture you built:\n\n“${img}”\n\nSit with it a second — does it feel like enough to reach for on the hard day?`
+    : `${W3_RESTART} When you picture it — does it feel like enough to reach for on the hard day?`;
+}
 
 export const REWIRE_W3_ARC: ArcConfig = {
   id: 'rewire-w3',
@@ -669,17 +693,20 @@ export function rewireW3Opening(cb: W3Callback | null): Turn {
   return { reply: w3Opening(), state: { stage: 'triggers', collected }, complete: false };
 }
 
-// ── the live surface — reflect each trigger/move, focus the heaviest, ack the true line; reaches for prior tools ──
+// ── the live surface — the model draws out (its OWN one question per turn); the engine sequences + never appends ──
 const REWIRE_W3_SYSTEM =
-  "You are the G4L Companion running W3, the False Start Protocol, in Rewire (Phase 2). You already know this member " +
-  "(see MEMBER CONTEXT). You are helping them build a plan for the day they slip — BEFORE it happens. Core posture: a " +
-  "false start is NOT failure; it's the expected cost of change — normalize it, never judge, grade, or scold. Plain, " +
-  "warm, measured. Reflect in THEIR words, one thing at a time. This session PULLS THEIR PRIOR TOOLS FORWARD: at the " +
-  "Reframe, connect it to the true lines they wrote before; at the Restart, point them to the picture they built of " +
-  "where they're headed (both in MEMBER CONTEXT). If a tool isn't there, adapt gracefully — never reference a tool " +
-  "they don't have. NAMES: never say 'W1'/'W2'/'W3' — refer to earlier work descriptively (the lies they audited; " +
-  "the picture they built). If a distress or crisis signal appears, drop the exercise and route to support (988 US / " +
-  "local) and a human — always on.";
+  "You are the G4L Companion running the False Start Protocol, in Rewire (Phase 2). You already know this member (see " +
+  "MEMBER CONTEXT). You are helping them build a plan for the day they slip — BEFORE it happens. Core posture: a false " +
+  "start is NOT failure; it's the expected cost of change — normalize it, never judge, grade, or scold. Plain, warm, " +
+  "measured — a real conversation, not a form. HOW YOU TALK (hard rules): (1) ONE question per turn — your reply ends " +
+  "with a single question; never stack two. (2) DRAW THEM OUT — reflect what they just said, specifically and in their " +
+  "words, then DIG IN: your one question goes DEEPER into what they raised, or opens a genuinely new angle — you are " +
+  "curious about THEM, not covering a checklist. (3) DON'T ENUMERATE OR COUNT — never 'the second/third one', never a " +
+  "list to work through. (4) Reflect SPARINGLY — don't open every turn with the same validation tic ('makes complete " +
+  "sense', 'completely heard'); vary it. This session PULLS THEIR PRIOR TOOLS FORWARD: at the Reframe, offer the true " +
+  "lines they wrote before; at the Restart, point them to the picture they built (both in MEMBER CONTEXT) — adapt " +
+  "gracefully if a tool isn't there. NAMES: never say 'W1'/'W2'/'W3' — refer to earlier work descriptively. If a " +
+  "distress or crisis signal appears, drop the exercise and route to support (988 US / local) and a human — always on.";
 
 function w3Context(c: Collected): string {
   const identity = identityLabel(c.identityNoun);
@@ -694,20 +721,45 @@ function w3Context(c: Collected): string {
 }
 
 function rewireW3StageNote(state: ConvState): string {
-  // Every reflection ACKNOWLEDGES only and ENDS ON A STATEMENT — the single next question is posed by the engine.
-  const NO_Q = " End on a statement; do NOT ask a question of your own — the next step is posed for you.";
+  const c = state.collected;
   if (state.stage === 'protocol') {
     const move = protocolMove(state);
-    if (move === 'redirect') return "\n\nRIGHT NOW: the member just named their REDIRECT (what they'll do instead). Acknowledge it warmly in one line — no rewrite, no advice." + NO_Q;
-    if (move === 'reframe') return "\n\nRIGHT NOW: the member just wrote their REFRAME — a true line for a bad day. Acknowledge it warmly in one line; do NOT rewrite it. If it echoes a true line they wrote before, you may note the connection." + NO_Q;
-    return "\n\nRIGHT NOW: the member is sitting with the RESTART (going back to the picture they built). Receive their reaction in ONE warm line — no advice, no question.";
+    // move === 'redirect' means the member just ANSWERED the Redirect → acknowledge + pose the Reframe. Etc.
+    if (move === 'redirect') {
+      const line = firstTrueLine(c);
+      return (
+        "\n\nRIGHT NOW: the member just gave their REDIRECT (what they'll do instead). Acknowledge it warmly and " +
+        "specifically in a line, then pose the Reframe as your single question: " +
+        (line
+          ? `offer THIS line they already wrote, verbatim — "here's a line you wrote: '${line}' — want that as your bad-day line, or write your own?"`
+          : "ask for a true line for a bad day — a slip is the cost of changing, not proof they can't; invite them to write it their way.")
+      );
+    }
+    if (move === 'reframe') {
+      const img = w3ImageOf(c);
+      return (
+        "\n\nRIGHT NOW: the member just gave their bad-day line. Acknowledge it warmly in a line (don't rewrite it), " +
+        "then pose the Restart — " +
+        (img
+          ? `point them to the picture they built, quoting it: "when the old voice gets loud, go back to this — '${img}'." Then invite them to sit with it (a gentle question so it's not a dead end — e.g. does it feel like enough to reach for?).`
+          : "remind them to go back to the picture they built of where they're headed, and invite them to sit with it (a gentle question so it's not a dead end).")
+      );
+    }
+    return "\n\nRIGHT NOW: the member is responding to the Restart. Receive their reaction warmly in ONE line — no new question; you're about to close.";
   }
-  if (isLastTriggerTurn(state))
+  if (isTriggerHandoffTurn(state))
     return (
-      "\n\nRIGHT NOW: the member just named their FOURTH trigger. Reflect the whole set back briefly and name the ONE " +
-      "or TWO that seem to trip them up most — in their words — so we build the protocol for that one." + NO_Q
+      "\n\nRIGHT NOW: you've drawn out enough triggers — do NOT ask for another. Reflect briefly, name the ONE or TWO " +
+      "that seem heaviest (their words), then move into building the plan: pose the Redirect as your single question " +
+      "— what do you do INSTEAD when that moment hits (the five-minute rule: start, and if you still want to quit " +
+      "after five, quit; or a specific swap — walk the block, call someone, leave the room)."
     );
-  return "\n\nRIGHT NOW: the member just named one trigger. Reflect it back in 1–2 sentences, in their words — heard, un-judged. No advice." + NO_Q;
+  return (
+    "\n\nRIGHT NOW: the member just named a trigger. Reflect it warmly and specifically (their words, the real cost), " +
+    "then DIG IN with your single question — go DEEPER into what they just raised, or open a genuinely new angle that " +
+    `hasn't come up. Areas for YOUR guidance only (never list or count them to the member): ${W3_TRIGGER_AREAS} Offer ` +
+    "a couple of concrete examples in the question if it helps them answer."
+  );
 }
 
 export async function liveTurnRewireW3(state: ConvState, history: ConvMessage[], memberMessage: string): Promise<Turn> {
