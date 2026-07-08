@@ -235,3 +235,34 @@ test('W3 · a blank trigger is nudged (not skipped)', () => {
   assert.equal(blank.state.stage, 'triggers', 'a blank does not advance the walk');
   assert.match(blank.reply, /no wrong answer/i);
 });
+
+test('W3 · Cowork fixes — no codenames, real keepers offered at Reframe/Restart, one ask per turn', () => {
+  const state = walkTriggers(); // W3_CB has a real true line + image
+  const NO_CODENAME = /\bW[123]\b/;
+  // opener + first turns carry no "W1/W2/W3"
+  const opener = rewireW3Opening(W3_CB).reply;
+  assert.doesNotMatch(opener, NO_CODENAME, 'opening uses descriptive callbacks, not codenames');
+  // Redirect answered → the Reframe ask offers THEIR actual line (not a generic example)
+  let t = applyRewireW3Turn(state, [], 'Walk the block', { text: 'Good.' });
+  assert.match(t.reply, /I won't know what I'm capable of/, 'Reframe offers the member’s real true line');
+  assert.match(t.reply, /write a new one/i, 'propose-confirm: use it, or write a new one');
+  assert.doesNotMatch(t.reply, NO_CODENAME);
+  // Reframe answered → Restart points to THEIR actual picture
+  t = applyRewireW3Turn(t.state, [], 'My comeback runs on small choices', { text: 'That’s yours.' });
+  assert.match(t.reply, /finish line, my kids at the rail/, 'Restart points to the member’s real picture');
+  assert.doesNotMatch(t.reply, NO_CODENAME);
+});
+
+test('W3 · Reframe reuse (Decision L propose-confirm) — confirming the offered line adds NO duplicate keeper', () => {
+  const state = walkTriggers();
+  let t = applyRewireW3Turn(state, [], 'Leave the room', { text: 'Good.' });
+  // member CONFIRMS the offered W1 line instead of writing a new one
+  t = applyRewireW3Turn(t.state, [], 'use that one', { text: 'Done.' });
+  assert.equal((t.state.pendingHarvest ?? []).length, 0, 'a reused line is already in the Playbook — no duplicate principle keeper');
+  assert.equal(t.state.collected.w3Reframe, "I won't know what I'm capable of until I try", 'the reused line becomes their bad-day line');
+  // the protocol still carries it
+  t = applyRewireW3Turn(t.state, [], 'ok', { text: 'That’s the kit.' });
+  const protocol = (t.state.pendingHarvest ?? []).find((h) => h.keeperType === 'recovery_move');
+  assert.match(protocol!.payloadRef, /capable of/, 'the protocol keeper carries the reused line');
+  assert.equal((t.state.pendingHarvest ?? []).filter((h) => h.keeperType === 'principle').length, 0, 'no principle keeper from a reuse');
+});
