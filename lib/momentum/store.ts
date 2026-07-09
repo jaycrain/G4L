@@ -9,15 +9,20 @@ import type { PulseBeat, PulseKind } from '../dashboard/resilience-pulse.ts';
 
 export type CallType = 'good_call' | 'false_start' | 'quiet_day';
 export type CallSource = 'rail' | 'momentum_page';
+// The behavior domain a call is about (Decision OO — goes live in Rebuild B3's Lifestyle Pilot: one activity change +
+// one diet change). Optional: a call may be untagged (a general call, or logging outside the pilot). Matches the
+// SkillDomain vocabulary + the coaching_plan payload keys (activityChange/dietChange).
+export type CallDomain = 'activity' | 'diet';
 export const MOMENTUM_WINDOW_DAYS = 14; // M-1: rolling 14 days — a pattern without demanding daily density
 export const isCallType = (t: unknown): t is CallType => t === 'good_call' || t === 'false_start' || t === 'quiet_day';
+export const isCallDomain = (d: unknown): d is CallDomain => d === 'activity' || d === 'diet';
 
 // Log a call — a discrete event. Multiple rows per (member, day) are valid; nothing is one-per-day. logged_on
 // defaults to today. The ability to log is ALWAYS on (the practice window governs the NUDGE, not the primitive).
 export async function logCall(
   db: Db,
   memberId: string,
-  c: { type: CallType; note?: string; domain?: string; source: CallSource; loggedOn?: string },
+  c: { type: CallType; note?: string; domain?: CallDomain; source: CallSource; loggedOn?: string },
 ): Promise<{ ok: boolean; type: CallType }> {
   await db.query(
     `insert into momentum_call (member_id, type, logged_on, note, domain, source)
@@ -48,6 +53,30 @@ export async function pulseBeats(db: Db, memberId: string, days = MOMENTUM_WINDO
     )
   ).rows;
   return rows.map((r) => ({ kind: netKind(r.has_false, r.has_good) }));
+}
+
+// Per-domain call tallies over the window (Decision OO) — how the two pilot changes are actually going, for the
+// COMPANION to reflect (evidence-based, non-judgmental). Only tagged calls count toward a domain; quiet days and
+// untagged calls are ignored here. Returns good/false counts per domain. Drift-hardened by the caller.
+export type DomainTally = { activity: { good: number; false: number }; diet: { good: number; false: number } };
+export async function domainTally(db: Db, memberId: string, days = MOMENTUM_WINDOW_DAYS): Promise<DomainTally> {
+  const rows = (
+    await db.query<{ domain: string; type: string; n: number }>(
+      `select domain, type, count(*)::int as n
+         from momentum_call
+        where member_id = $1 and logged_on >= current_date - ($2::int - 1)
+          and domain in ('activity', 'diet') and type in ('good_call', 'false_start')
+        group by domain, type`,
+      [memberId, days],
+    )
+  ).rows;
+  const t: DomainTally = { activity: { good: 0, false: 0 }, diet: { good: 0, false: 0 } };
+  for (const r of rows) {
+    const d = r.domain as CallDomain;
+    if (r.type === 'good_call') t[d].good = r.n;
+    else if (r.type === 'false_start') t[d].false = r.n;
+  }
+  return t;
 }
 
 // Detect an EXPLICIT call in a member message (the backstop for the rail — "couldn't do X is a bug", FF). Conservative:

@@ -58,6 +58,10 @@ export type CheckinContext = {
   // it can support the pilot week: plan-aware check-ins, non-judgmental slip-recovery (their W3 protocol), never
   // grading. It's their plan — CRUD-able, never silently rewritten.
   pilotPlan?: { activityChange: string; dietChange: string } | null;
+  // Rebuild pilot calls, split by domain (Decision OO) — how movement vs. eating is actually going this window, so the
+  // companion can reflect the pattern (evidence-based, Pillar 3). Present only during an active pilot; false starts are
+  // honest data, never a mark.
+  pilotCalls?: { activity: { good: number; false: number }; diet: { good: number; false: number } } | null;
   beatsDone?: number; // Beats worked so far
   // The Playbook (the two-way loop): kept keepers + recent journal notes. Used to help — never
   // quoted back coldly or weaponized. Capped/summarized upstream. keeperType (0046) lets the recall
@@ -204,6 +208,9 @@ export function contextBlock(c: CheckinContext): string {
       : null,
     c.pilotPlan
       ? `Their Lifestyle Pilot this week (Rebuild B3) — Movement: ${c.pilotPlan.activityChange}. Eating: ${c.pilotPlan.dietChange}. Support it: ask how the calls are going, warmly and plan-aware, never grading. A false start is met, not marked (HH) — offer their own recovery move if they slip. It's THEIR plan; if they want to change it, help them, never rewrite it silently.`
+      : null,
+    c.pilotCalls && (c.pilotCalls.activity.good + c.pilotCalls.activity.false + c.pilotCalls.diet.good + c.pilotCalls.diet.false) > 0
+      ? `How the pilot's actually going (last two weeks, their own logged calls) — Movement: ${c.pilotCalls.activity.good} good, ${c.pilotCalls.activity.false} false starts. Eating: ${c.pilotCalls.diet.good} good, ${c.pilotCalls.diet.false} false starts. If it helps them see the pattern, reflect it warmly ("movement's been landing; eating's been the tougher one") — never a scoreboard, never a grade; a false start is honest data. Only raise it if it's useful to them.`
       : null,
     c.experienceSummary && c.experienceSummary.trim()
       ? `How they've moved through the program lately (for awareness — gently notice a stall or a return, e.g. "you opened Visualization a couple times — want to pick it back up?"; NEVER grade or guilt): ${c.experienceSummary.trim()}`
@@ -497,12 +504,15 @@ const LOG_CALL_TOOL = {
     "the call they wanted), a false_start (they slipped — logged as honest, NEVER a failure), or a quiet_day (a rest " +
     "or uneventful day). Examples: 'rode this morning, good call' → good_call; 'skipped the walk again, that was a " +
     "false start' → false_start; 'pretty quiet today' → quiet_day. Warm, never judgmental. Call it the same turn the " +
-    "member reports it; words alone don't log it — you MUST call this tool, then reflect it back once it succeeds.",
+    "member reports it; words alone don't log it — you MUST call this tool, then reflect it back once it succeeds. " +
+    "If they're in the Rebuild pilot and the call is clearly about one of their two changes, pass `domain` " +
+    "(activity for movement, diet for eating); leave it off if it's general or unclear — never force the tag.",
   input_schema: {
     type: 'object',
     properties: {
       type: { type: 'string', enum: ['good_call', 'false_start', 'quiet_day'], description: 'the kind of call' },
       note: { type: 'string', description: 'optional short note in the member’s words (what the call was)' },
+      domain: { type: 'string', enum: ['activity', 'diet'], description: 'optional — during the Rebuild pilot, which change this call is about (activity = movement, diet = eating)' },
     },
     required: ['type'],
   },

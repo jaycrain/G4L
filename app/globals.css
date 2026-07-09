@@ -1104,6 +1104,19 @@ html:has(.companion-hero), body:has(.companion-hero) { overflow-anchor: none; }
 }
 .momentum-log-done { margin-top: 0.6rem; color: var(--teal); font-weight: 600; font-size: 0.9rem; }
 
+/* B3 pilot — the OPTIONAL activity/diet tag (Decision OO). Neutral pills, teal when chosen; never required. */
+.momentum-log-domain { margin: 0.25rem 0 0.4rem; }
+.momentum-log-domain-label { font-size: 0.8rem; color: var(--navy); opacity: 0.7; }
+.momentum-log-domain-opts { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.35rem; }
+.momentum-domain-btn {
+  font-family: inherit; font-size: 0.82rem; font-weight: 600; color: var(--navy);
+  background: transparent; border: 1.5px solid var(--light-grey, #e8e6e6); border-radius: 999px;
+  padding: 0.35rem 0.85rem; cursor: pointer; transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+}
+.momentum-domain-btn:hover:not(:disabled) { border-color: var(--teal); }
+.momentum-domain-btn.is-on { background: var(--teal); border-color: var(--teal); color: #fff; }
+.momentum-domain-btn:disabled { opacity: 0.5; cursor: default; }
+
 /* R4 Rewire ceremony — the component is the hero; these two lines are quiet context (the starting line + the overall
    composite), so the moment leans on the component move, not the diluted composite. */
 .cer-grinta-from { margin-top: 0.3rem; font-size: 0.85rem; color: var(--navy); opacity: 0.7; }

@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { PGlite } from '@electric-sql/pglite';
 import { applySchema, type Db } from '../lib/db/schema.ts';
-import { logCall, pulseBeats, netKind, logCallIntent, isCallType } from '../lib/momentum/store.ts';
+import { logCall, pulseBeats, netKind, logCallIntent, isCallType, isCallDomain, domainTally } from '../lib/momentum/store.ts';
 
 // Momentum logging (Rewire W3 · Step 3). A call is a discrete event (multiple/day valid); the pulse reads the last
 // 14 days → ONE net beat per day (M-5: honest not rosy). Self-monitoring only. Assertions key on the primitive, the
@@ -66,4 +66,35 @@ test('pulseBeats · calls older than the 14-day window fall off', async () => {
   await logCall(db, m, { type: 'good_call', source: 'rail' });
   await db.query(`update momentum_call set logged_on = current_date - 20 where member_id = $1`, [m]);
   assert.deepEqual(await pulseBeats(db, m), [], 'a 20-day-old call is outside the rolling 14-day window');
+});
+test('isCallDomain · only activity/diet are valid domains (Decision OO)', () => {
+  assert.equal(isCallDomain('activity'), true);
+  assert.equal(isCallDomain('diet'), true);
+  assert.equal(isCallDomain('movement'), false);
+  assert.equal(isCallDomain(undefined), false);
+});
+
+test('logCall + domainTally · per-domain good/false counts; quiet + untagged calls ignored', async () => {
+  const db = new PGlite() as unknown as Db;
+  await applySchema(db);
+  const m = await seedMember(db, 'pat-momentum-domain@x.com');
+  await logCall(db, m, { type: 'good_call', domain: 'activity', source: 'momentum_page' });
+  await logCall(db, m, { type: 'good_call', domain: 'activity', source: 'rail' });
+  await logCall(db, m, { type: 'false_start', domain: 'activity', source: 'rail' });
+  await logCall(db, m, { type: 'false_start', domain: 'diet', source: 'momentum_page' });
+  await logCall(db, m, { type: 'good_call', source: 'rail' }); // untagged → ignored by the tally
+  await logCall(db, m, { type: 'quiet_day', domain: 'diet', source: 'rail' }); // quiet → not good/false, ignored
+
+  const t = await domainTally(db, m);
+  assert.deepEqual(t.activity, { good: 2, false: 1 }, 'movement: two good, one false');
+  assert.deepEqual(t.diet, { good: 0, false: 1 }, 'eating: one false, no good');
+});
+
+test('domainTally · a tagged call outside the 14-day window falls off', async () => {
+  const db = new PGlite() as unknown as Db;
+  await applySchema(db);
+  const m = await seedMember(db, 'pat-momentum-domain-window@x.com');
+  await logCall(db, m, { type: 'good_call', domain: 'activity', source: 'rail' });
+  await db.query(`update momentum_call set logged_on = current_date - 20 where member_id = $1`, [m]);
+  assert.deepEqual((await domainTally(db, m)).activity, { good: 0, false: 0 }, 'a 20-day-old tag is outside the window');
 });

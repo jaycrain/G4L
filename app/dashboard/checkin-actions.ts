@@ -16,7 +16,7 @@ import { addReclaimItemForMember, addDoorForMember } from '../../lib/member/refi
 import { markReclaimReclaimedByText, unmarkReclaimReclaimedByText, refineReclaimItemByText, removeReclaimItemByText, reorderReclaimList } from '../../lib/beats/store.ts';
 import { proposeEntry, playbookForAgent, isPlaybookSection } from '../../lib/playbook/store.ts';
 import { createMeasure, logReadingByLabel, measuresForAgent, findReclaimItemId, looksTrackable } from '../../lib/measure/store.ts';
-import { logCall, isCallType } from '../../lib/momentum/store.ts';
+import { logCall, isCallType, isCallDomain, domainTally } from '../../lib/momentum/store.ts';
 import { rewireEnabled } from '../../lib/agent/rewire.ts';
 import { maybeFoldMemory } from '../../lib/agent/memory.ts';
 import { asSnapshot, diffSnapshot, type DashboardSnapshot } from '../../lib/agent/changes.ts';
@@ -41,12 +41,13 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
   const dash = await getDashboard(db, memberId);
   if (!dash) return null;
   await maybeFoldMemory(db, memberId); // distill anything that has aged out of recall (best-effort, no-op until due)
-  const [grinta, grintaReading, whyReading, skillsReading, pilotPlan, consumedBites, profRows, idqRows, reclaimItems, beatRows, playbook, measures, linkedMeasureRows, facets, closedIds, lastClosedRows, forecast, experience] = await Promise.all([
+  const [grinta, grintaReading, whyReading, skillsReading, pilotPlan, pilotTally, consumedBites, profRows, idqRows, reclaimItems, beatRows, playbook, measures, linkedMeasureRows, facets, closedIds, lastClosedRows, forecast, experience] = await Promise.all([
     getGrinta(db, memberId, dash.identityNoun),
     latestGrintaReading(db, memberId), // the SURVEY Grinta Index (Decision DD) — the grit baseline the member sees
     latestWhyReading(db, memberId), // Rebuild B1 — the agent must KNOW they named their why (RB-1: stored, not shown)
     latestSkillsReading(db, memberId), // Rebuild B2 — the self-management profile the agent reflects (plain language)
     activeCoachingPlan<RebuildPilotPayload>(db, memberId, 'rebuild'), // Rebuild B3 — the active Lifestyle Pilot plan
+    domainTally(db, memberId).catch(() => null), // Rebuild B3 — per-domain call tally (movement vs eating), OO
 
     recentConsumedTitles(db, memberId),
     db.query<{ intake_athletic_past: string | null; intake_gap: string | null; agent_memory: string | null; dashboard_snapshot: unknown }>(
@@ -157,6 +158,7 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
     whyNamed: whyReading != null, // Rebuild B1 done — the agent knows it, never shows the number (RB-1)
     skillProfile: skillsReading ? skillHighlights(skillsReading.scores) : null, // Rebuild B2 — strongest + growth edge (plain language)
     pilotPlan: pilotPlan?.payload ?? null, // Rebuild B3 — the active Lifestyle Pilot (their two committed changes)
+    pilotCalls: pilotPlan ? pilotTally : null, // per-domain call tally, only while a pilot is active (OO)
     consumedBites,
     // The narrative from onboarding — so the agent can reference what the member actually shared,
     // not just the dashboard facts. This is what makes the first interaction feel "it knows me."
@@ -389,7 +391,9 @@ export async function sendCheckin(memberId: string, memberMessage: string): Prom
         const type = input.type;
         if (!isCallType(type)) return { ok: false, message: 'Not logged — that was not a recognizable call type.' };
         const note = typeof input.note === 'string' ? input.note : undefined;
-        await logCall(db, memberId, { type, note, source: 'rail' });
+        // Optional activity/diet tag (Decision OO) — only during the Rebuild pilot; quiet days are never domain-tagged.
+        const domain = type !== 'quiet_day' && isCallDomain(input.domain) ? input.domain : undefined;
+        await logCall(db, memberId, { type, note, domain, source: 'rail' });
         mutated = true;
         const ack =
           type === 'false_start'
