@@ -170,3 +170,29 @@ export const REBUILD_SESSIONS: Asset[] = [
     },
   },
 ];
+
+// v2.4 CONVERSATIONAL Rebuild — the guided Phase flow (B1→B2→B3→B4 Checkpoint; the old Atlas Rebuild Sessions above
+// are parked). Route-backed (no step player) → the forecast links to /rebuild/… and treats them as built. B1 unlocks
+// after the Rewire ceremony; B2→B3→B4 follow in order. Mirrors REWIRE_V23.
+export const REBUILD_V24: Asset[] = [
+  {
+    id: 'RBLD-B1', title: 'What Is Your Why?', phase: 'rebuild', layer: 'Foundation', kind: 'session', order: 1,
+    summary: 'Name the reasons for movement and eating that are actually yours — your starting why.',
+    close_type: 'reflect', produces: "the member's motivation baseline (stored, not scored)", route: '/rebuild/{memberId}/b1', gating: 'rewire_checkpoint_passed',
+  },
+  {
+    id: 'RBLD-B2', title: 'Strengths & Weaknesses', phase: 'rebuild', layer: 'Structure', kind: 'session', order: 2,
+    summary: 'Take honest stock of your self-management skills — then watch them show up in your week.',
+    close_type: 'reflect', produces: "the member's self-management profile", route: '/rebuild/{memberId}/b2',
+  },
+  {
+    id: 'RBLD-B3', title: 'The Lifestyle Pilot', phase: 'rebuild', layer: 'Elevation', kind: 'session', order: 3,
+    summary: 'Build one small movement change and one small eating change — and run them for a week.',
+    close_type: 'goal', produces: "the member's pilot plan (their two small changes)", route: '/rebuild/{memberId}/b3',
+  },
+  {
+    id: 'RBLD-B4', title: 'The Rebuild Checkpoint', phase: 'rebuild', layer: 'Checkpoint', kind: 'checkpoint', order: 4,
+    summary: 'A read on the control you built — the close of the Phase, and the door to Reclaim.',
+    close_type: 'milestone', earns: 'rebuild-milestone', route: '/rebuild/{memberId}/b4',
+  },
+];

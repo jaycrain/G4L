@@ -6,13 +6,16 @@
 import type { Asset, Badge, BadgeCategory, Kind, KindProfile } from './types.ts';
 import { RECONNECT_SESSIONS } from './content/reconnect.ts';
 import { REWIRE_SESSIONS, REWIRE_V23 } from './content/rewire.ts';
-import { REBUILD_SESSIONS } from './content/rebuild.ts';
+import { REBUILD_SESSIONS, REBUILD_V24 } from './content/rebuild.ts';
 import { RECLAIM_SESSIONS } from './content/reclaim.ts';
 
 // v2.3 flip: with REWIRE staged, the Rewire Phase is the guided CONVERSATIONAL flow (W1→W2→W3→Checkpoint, route-
 // backed); otherwise the old Atlas Rewire Sessions (prod v2, untouched until the flip). Env is per-deploy, so this
 // resolves once at module load. Local check to avoid pulling the agent module into the registry.
 const rewireStaged = process.env.REWIRE === 'staged';
+// v2.4 flip: same pattern for Rebuild — with REBUILD staged, the guided conversational flow (B1→B2→B3→B4 Checkpoint,
+// route-backed); otherwise the old Atlas Rebuild Sessions (prod, untouched until the flip).
+const rebuildStaged = process.env.REBUILD === 'staged';
 
 export const CATEGORY_COLOR: Record<BadgeCategory, string> = {
   milestone: '#374F63', // navy
@@ -110,9 +113,13 @@ export const CURRICULUM: Asset[] = [
         ...REWIRE_SESSIONS,
         meta('RWR-CHK', 'The Rewire Checkpoint', 'rewire', 'Checkpoint', 'checkpoint', 7, 'Has the frame moved? Opens the deeper Rebuild work.', { close_type: 'milestone', earns: 'rewire-milestone' }),
       ]),
-  // ── Rebuild ── (Sessions authored from the framework; the Checkpoint is a soft gate)
-  ...REBUILD_SESSIONS,
-  meta('RBD-CHK', 'The Rebuild Checkpoint', 'rebuild', 'Checkpoint', 'checkpoint', 6, 'The numbers begin to move — pull them against your baseline.', { close_type: 'milestone', earns: 'rebuild-milestone' }),
+  // ── Rebuild ── v2.4 conversational flow when staged (B1→B2→B3→B4 Checkpoint), else the old Atlas Sessions + soft gate.
+  ...(rebuildStaged
+    ? REBUILD_V24
+    : [
+        ...REBUILD_SESSIONS,
+        meta('RBD-CHK', 'The Rebuild Checkpoint', 'rebuild', 'Checkpoint', 'checkpoint', 6, 'The numbers begin to move — pull them against your baseline.', { close_type: 'milestone', earns: 'rebuild-milestone' }),
+      ]),
   // ── Reclaim ── (Sessions authored from the framework; the Checkpoint is the capstone)
   ...RECLAIM_SESSIONS,
   meta('RCL-CHK', 'The Reclaim Checkpoint', 'reclaim', 'Checkpoint', 'checkpoint', 8, 'Carrying it outward — the capstone, and the Loop clips you back in.', { close_type: 'milestone', earns: 'reclaim-capstone' }),

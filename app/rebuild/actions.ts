@@ -25,7 +25,7 @@ import { emitHarvestMoment, commitKeeper } from '../../lib/agent/harvest.ts';
 import { getGrintaBaselineReading, latestGrintaReading, persistGrintaReading, controlCheckpointResponsesMap } from '../../lib/grinta/survey/store.ts';
 import { scoreCheckpointStrand, grintaChangePct, directionOf } from '../../lib/grinta/survey/scoring.ts';
 import { BASELINE_CONTROL_ITEMS, CHECKPOINT_CONTROL_ITEMS, pairwiseAverage } from '../../lib/grinta/survey/instrument.ts';
-import { setGate } from '../../lib/curriculum/store.ts';
+import { setGate, markSessionClosed } from '../../lib/curriculum/store.ts';
 import type { RebuildCeremonyData } from '../../lib/ceremony/rebuild-ceremony-beats.ts';
 
 // v2.4 Rebuild server actions. B1 (SDT) + B2 (self-management) are ADMINISTERED reads; B3 · "The Lifestyle Pilot" is
@@ -178,6 +178,12 @@ export async function rebuildTurnAction(
         } catch {
           /* swallow — the logging nudge is a bonus, not load-bearing */
         }
+        // Mark B3 closed so the v2.4 forecast advances the member B3 → B4 (best-effort).
+        try {
+          await markSessionClosed(db, memberId, 'RBLD-B3');
+        } catch {
+          /* swallow — the session still completed; the forecast advance is best-effort */
+        }
       }
       return { ok: true, reply: turn.reply, state: turn.state };
     }
@@ -212,6 +218,12 @@ export async function rebuildTurnAction(
             /* swallow — the member still completed B1; the stored reading is best-effort */
           }
         }
+      }
+      // Mark the Session closed so the v2.4 forecast advances the member (B1 → B2 → B3). Best-effort.
+      try {
+        await markSessionClosed(db, memberId, session === 'b2' ? 'RBLD-B2' : 'RBLD-B1');
+      } catch {
+        /* swallow — the session still completed; the forecast advance is best-effort */
       }
     }
     return { ok: true, reply: turn.reply, state: turn.state };
