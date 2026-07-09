@@ -40,32 +40,45 @@ const BARE_CADENCE_RE =
 const RECLAIM_CLOSE_RE =
   /^(that'?s (about )?(it|all|everything|the list)( for now)?|that'?s a (good|solid|great|decent) (start|list)|(that|this) (looks|sounds) (great|good|right|perfect|spot on)|love (it|that)|perfect|good enough|sounds good|(i think )?that'?s (about )?(it|everything))$/i;
 
-export function consolidateReclaimList(items: string[]): string[] {
+// Consolidate the Reclaim List AND its parallel categories in LOCKSTEP, so the two arrays never drift out of
+// alignment when items are dropped/folded/merged. This is the single source of truth for consolidation; the
+// items-only `consolidateReclaimList` below delegates to it. Category rule follows the item's fate: a close/dup
+// that's dropped drops its category too; a cadence fold keeps the previous item's category; an "existing ⊆ new"
+// replace adopts the more-complete new item's category. (Fixes: finalize consolidated the list but index-matched the
+// STALE categories → an item could inherit the wrong category, which drives its coaching path — persisted at commit.)
+export function consolidateReclaim(items: string[], categories: string[] = []): { items: string[]; categories: string[] } {
   const kept: string[] = [];
   const keptTokens: Set<string>[] = [];
-  for (const raw of items ?? []) {
+  const keptCats: string[] = [];
+  (items ?? []).forEach((raw, idx) => {
     const item = (raw ?? '').trim();
+    const cat = categories[idx] ?? '';
     const bare = item.replace(/[.,!?]+$/, '');
-    if (!item) continue;
-    if (RECLAIM_CLOSE_RE.test(bare)) continue; // a close/confirmation, not a want
+    if (!item) return;
+    if (RECLAIM_CLOSE_RE.test(bare)) return; // a close/confirmation, not a want (category dropped with it)
     if (BARE_CADENCE_RE.test(bare) && kept.length > 0) {
-      kept[kept.length - 1] = `${kept[kept.length - 1]}, ${item}`; // fold the cadence into the previous want
+      kept[kept.length - 1] = `${kept[kept.length - 1]}, ${item}`; // fold the cadence into the previous want (its category stays)
       reclaimContentTokens(item).forEach((t) => keptTokens[keptTokens.length - 1]!.add(t));
-      continue;
+      return;
     }
     const toks = reclaimContentTokens(item);
     const tokSet = new Set(toks);
     let dup = false;
     for (let i = 0; i < kept.length; i++) {
       const ex = keptTokens[i]!;
-      if (toks.length > 0 && toks.every((t) => ex.has(t))) { dup = true; break; } // new ⊆ existing → skip
-      if (ex.size > 0 && [...ex].every((t) => tokSet.has(t))) { kept[i] = item; keptTokens[i] = tokSet; dup = true; break; } // existing ⊆ new → replace
+      if (toks.length > 0 && toks.every((t) => ex.has(t))) { dup = true; break; } // new ⊆ existing → skip (drop this category)
+      if (ex.size > 0 && [...ex].every((t) => tokSet.has(t))) { kept[i] = item; keptTokens[i] = tokSet; keptCats[i] = cat; dup = true; break; } // existing ⊆ new → replace (adopt the new item's category)
     }
-    if (dup) continue;
+    if (dup) return;
     kept.push(item);
     keptTokens.push(tokSet);
-  }
-  return kept;
+    keptCats.push(cat);
+  });
+  return { items: kept, categories: keptCats };
+}
+
+export function consolidateReclaimList(items: string[]): string[] {
+  return consolidateReclaim(items).items;
 }
 
 export type ValidationResult = { ok: true } | { ok: false; errors: string[] };

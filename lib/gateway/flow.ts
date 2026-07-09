@@ -82,7 +82,9 @@ export async function runOnboarding(
           intake_athletic_past, intake_gap, intake_right_now, reclaim_list, ai_consent_granted_at)
        values ($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb, now())
        returning member_id`,
-        [input.displayName, f.email.trim(), primaryDoor, displayIdentityNoun(input.identityNoun), identityParagraph,
+        // A SKIPPED identity persists as NULL (genuinely absent → recovered at Identity Excavation), never '' — so a
+        // "never named" is distinguishable from a lost capture, and downstream reads treat it as absent cleanly.
+        [input.displayName, f.email.trim(), primaryDoor, input.identityNoun ? displayIdentityNoun(input.identityNoun) : null, identityParagraph,
          input.athleticPast, input.gap, '', f.reclaimList],
       ),
     );

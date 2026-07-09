@@ -80,7 +80,7 @@ test('STAGED identity→gap bridge (1b): skipped identity falls back to the stan
     { member: 'I can’t name it yet', model: { text: 'That’s okay.', record: { identitySkipped: true } } },
   ]);
   // skip → SKIP_ACK + the standalone gapOpen (can't bridge from a name that was never given), still warm + Doors.
-  assert.match(turns[1]!.reply, /find her through the work/i, 'acknowledges the skip');
+  assert.match(turns[1]!.reply, /find your way back to them/i, 'acknowledges the skip');
   assert.match(turns[1]!.reply, /Doors/, 'still opens the gap thread with the Door frame');
 });
 
@@ -224,7 +224,7 @@ test('STAGED identity — skip path advances straight to the gap stage (nothing 
   ]);
   assert.equal(finalState.collected.identitySkipped, true);
   assert.equal(finalState.stage, 'gap', 'skip advances straight to the gap stage');
-  assert.match(turns[1]!.reply, /find her through the work/i, 'acknowledges the skip warmly');
+  assert.match(turns[1]!.reply, /find your way back to them/i, 'acknowledges the skip warmly');
 });
 
 test('STAGED identity — a correction re-opens the stage (never advances on "no")', () => {
