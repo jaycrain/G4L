@@ -1,0 +1,69 @@
+// §R4 — The Rewire Ceremony content (mirrors reconnect-ceremony-beats.ts). Pure + deterministic: builds the beat list
+// from the member's own Rewire close data, so it's testable and the CeremonySurface just renders + interpolates. The
+// culminating reveal at the END of Rewire: the Grinta move (the COMMITMENT COMPONENT, foregrounded — Jay's call, so
+// the moment lands even when the composite barely twitches), the three Playbook tools revealed together, and Rebuild lit.
+
+// The grinta reveal FOREGROUNDS the component (the commitment strand the member just built): its before→after + the
+// component %. The composite is carried as a quiet "overall" — present, but not the number the moment leans on.
+export type RewireCeremonyReveal =
+  | {
+      kind: 'grinta';
+      componentNow: number; // the commitment component's Ave2 (the 9-item mean) — the hero number
+      componentBaseline: number | null; // Ave1 (the starting line)
+      componentChangePct: number | null; // the COMPONENT movement, signed up-positive (grey on down, HH)
+      direction: 'up' | 'down' | 'flat' | null;
+      composite: number; // the overall Grinta Index — background/context
+    }
+  | { kind: 'playbook'; keepers: string[] } // the three tools (true lines · picture · protocol), already keepers
+  | { kind: 'journey_rebuild' }; // the 4Rs Journey — Rewire complete, Rebuild lit
+
+export type RewireCeremonyBeat = { text: string; small?: boolean; reveal?: RewireCeremonyReveal };
+
+export type RewireCeremonyData = {
+  grinta: {
+    componentNow: number;
+    componentBaseline: number | null;
+    componentChangePct: number | null;
+    direction: 'up' | 'down' | 'flat' | null;
+    composite: number;
+  } | null; // null until the Checkpoint moves it (no baseline / skipped → the flat framing, no number)
+  keepers: string[]; // the W1 true line, the W2 image, the W3 protocol — in the member's own words
+};
+
+// ─────────────────────────────────────────────────────────────────────────────────────
+// REWIRE CEREMONY COPY — Jay-approved (R4 doc), verbatim. The moving number is "your Grinta Index" member-facing; the
+// science labels (Commitment/strand/component) stay basement. Down renders grey, never red (HH).
+// ─────────────────────────────────────────────────────────────────────────────────────
+export const REWIRE_CEREMONY_COPY = {
+  up: "Look at that — your Grinta Index moved. The commitment you just built in Rewire is part of it now, and it reads higher than the line you started on. The lies you caught, the picture you built, the protocol you wrote — that's them, in the number.",
+  down: "Your Grinta Index reads a little lower than your starting line — and that's Rewire doing exactly what it should. You just named your mental traps and your false starts out loud; before, they ran in the dark, and now you see them. A number that dips right here means you're looking clearly. That's the ground the next Phase builds on.",
+  flat: "Your Grinta Index held steady — a solid line to build from. The real move was Rewire itself — the tools you built. The climb comes as you use them.",
+  playbook:
+    "Here's what you're taking with you. Everything you built is in your Playbook: the true lines that answer your lies, the picture of where you're headed, and the protocol that turns a slip into a comeback. That's your kit — reach for it anytime.",
+  // Fallback if somehow nothing was kept (edge case; voice-matched, not part of the approved verbatim).
+  playbookEmpty: "Everything you build in Rewire lives in your Playbook — your kit, ready to reach for.",
+  rebuild: 'Rewire was the mind. Rebuild is the body — where you take all of this and put it to work. When you’re ready.',
+} as const;
+
+export function buildRewireCeremonyBeats(d: RewireCeremonyData): RewireCeremonyBeat[] {
+  const c = REWIRE_CEREMONY_COPY;
+  const beats: RewireCeremonyBeat[] = [];
+  // The Grinta move — branch on the COMPONENT delta (up/down/flat); revealed only when the Checkpoint captured it.
+  if (d.grinta) {
+    const text = d.grinta.direction === 'down' ? c.down : d.grinta.direction === 'up' ? c.up : c.flat;
+    beats.push({ text, reveal: { kind: 'grinta', ...d.grinta } });
+  } else {
+    beats.push({ text: c.flat }); // no reading → the steady framing, no number to show
+  }
+  // The three tools, revealed together (already keepers — this just reveals them).
+  beats.push(
+    d.keepers.length > 0
+      ? { text: c.playbook, reveal: { kind: 'playbook', keepers: d.keepers.slice(0, 3) } }
+      : { text: c.playbookEmpty, small: true },
+  );
+  // Light Rebuild + the CTA.
+  beats.push({ text: c.rebuild, reveal: { kind: 'journey_rebuild' } });
+  return beats;
+}
+
+export const REWIRE_CEREMONY_RESOLVE_LABEL = 'Get Rebuilt →';

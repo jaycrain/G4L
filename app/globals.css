@@ -1086,3 +1086,25 @@ html:has(.companion-hero), body:has(.companion-hero) { overflow-anchor: none; }
 .route-loop { flex-basis: 100%; margin-top: 0.5rem; font-size: 0.85rem; color: var(--navy); opacity: 0.7; }
 .tour-progress { font-size: 0.8rem; letter-spacing: 0.02em; }
 .route-r.route-now { text-decoration: underline; text-underline-offset: 4px; text-decoration-color: var(--orange); }
+
+/* Momentum quick-log (Rewire W3 · Step 3). Buttons are UNIFORM + neutral on purpose — a false start must never read
+   as an alarm/red (self-monitoring, not scored; Decision HH/EE). Barlow + palette only. */
+.momentum-log { margin-top: 1rem; }
+.momentum-log-options { display: flex; flex-wrap: wrap; gap: 0.6rem; margin: 0.5rem 0 0.75rem; }
+.momentum-log-btn {
+  font-family: inherit; font-size: 0.9rem; font-weight: 600; color: var(--navy);
+  background: transparent; border: 1.5px solid var(--navy); border-radius: 999px;
+  padding: 0.5rem 1.05rem; cursor: pointer; transition: background 0.12s ease, color 0.12s ease;
+}
+.momentum-log-btn:hover:not(:disabled) { background: var(--navy); color: #fff; }
+.momentum-log-btn:disabled { opacity: 0.5; cursor: default; }
+.momentum-log-note {
+  width: 100%; box-sizing: border-box; font-family: inherit; font-size: 0.9rem; color: var(--charcoal);
+  border: 1px solid var(--light-grey, #e8e6e6); border-radius: 8px; padding: 0.55rem 0.7rem; resize: vertical;
+}
+.momentum-log-done { margin-top: 0.6rem; color: var(--teal); font-weight: 600; font-size: 0.9rem; }
+
+/* R4 Rewire ceremony — the component is the hero; these two lines are quiet context (the starting line + the overall
+   composite), so the moment leans on the component move, not the diluted composite. */
+.cer-grinta-from { margin-top: 0.3rem; font-size: 0.85rem; color: var(--navy); opacity: 0.7; }
+.cer-grinta-overall { margin-top: 0.5rem; font-size: 0.8rem; color: var(--navy); opacity: 0.6; }

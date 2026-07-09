@@ -1,7 +1,10 @@
 # CLAUDE.md — Grinta for Life (G4L) Platform
 
 Standing instructions for Claude Code on this project. Read this first, every session.
-Owner: Jay Crain. Status: pre-build, starter file — expand as the stack is chosen.
+Owner: Jay Crain. Status: **LIVE in production** — the coupled **v2.1 staged onboarding + v2.2 Reconnect**
+flip shipped to prod on 2026-07-07 (`ONBOARDING_ENGINE=staged` + `RECONNECT=staged` on Production; all
+migrations through 0047 applied). Onboarding v1 and the pre-flip "flag-gated / prod stays v1" framing are
+retired. New member-facing changes now affect real prod — verify live after deploy.
 
 ---
 

@@ -91,6 +91,8 @@ const MIGRATIONS: Array<{ file: string; sentinel: Sentinel }> = [
   },
   { file: 'migrations/0046_harvest_keeper.sql', sentinel: { table: 'playbook_entry', column: 'keeper_type' } },
   { file: 'migrations/0047_grinta_reading.sql', sentinel: 'grinta_reading' },
+  { file: 'migrations/0048_practice_week.sql', sentinel: 'practice_week' },
+  { file: 'migrations/0049_momentum_call.sql', sentinel: 'momentum_call' },
 ];
 export const SEED_SQL = () => sqlFile('seed/0001_reference_data.sql');
 

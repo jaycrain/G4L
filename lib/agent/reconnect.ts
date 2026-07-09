@@ -18,7 +18,7 @@ import { identityLabel } from '../member/identity.ts';
 import type { Db } from '../db/schema.ts';
 import { MEMBER_AGENT_SYSTEM_PROMPT } from './system-prompt.ts';
 import { resolveGapConfirm } from './onboarding-intent.ts';
-import { runArcTurn, administeredStage, type ArcConfig, type StageDef } from './onboarding-staged.ts';
+import { runArcTurn, administeredStage, drawoutShouldReflect, type ArcConfig, type StageDef } from './onboarding-staged.ts';
 import { CHECKPOINT_GRIT_ITEMS, grintaStem } from '../grinta/survey/instrument.ts';
 import type { Collected, ConvMessage, ConvState, DoorRevision, ModelTurn, ReplyIntent, Turn, Stage } from './onboarding.ts';
 
@@ -141,11 +141,6 @@ function withQuestion(modelText: string, probe: string): string {
 //     of appending a redundant draw-out probe and re-asking; OR
 //   • the CAP is hit (anti-loop).
 // This means the engine stops circling once the Companion has reflected, whether or not it remembered the tool call.
-function drawoutShouldReflect(modelText: string, depthReady: boolean | undefined, depth: number, min: number, max: number): boolean {
-  const t = (modelText ?? '').trim();
-  const wrappedUp = depth >= min && t.length >= 40 && !/\?\s*$/.test(t); // a declarative reflection, not another probe
-  return (depthReady === true && depth >= min) || wrappedUp || depth >= max;
-}
 
 // The excavation opener — from the committed PRIMARY door (loaded at arc entry). Not the label, the real thing.
 function doorOpen(c: Collected): string {

@@ -61,6 +61,10 @@ export type Asset = {
   produces?: string; // the artifact this Session yields (for the close + Playbook)
   close?: Close; // the authored close frame (Sessions)
   earns?: string; // badge id this asset's close earns, if any
+  // The exact route for the forecast CTA, overriding the kind-default (/session/… or /checkpoint/…). Used by the
+  // v2.3 conversational Rewire — a route-backed asset is a real, built surface even without registry `steps`.
+  // `{memberId}` is interpolated by the forecast renderer. e.g. '/rewire/{memberId}/w1'.
+  route?: string;
 };
 
 export type BadgeCategory = 'milestone' | 'hardiness' | 'goal' | 'comeback' | 'capstone';

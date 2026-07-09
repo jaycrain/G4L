@@ -8,6 +8,8 @@
 import { MEMBER_AGENT_SYSTEM_PROMPT } from './system-prompt.ts';
 import { detectCrisis, CRISIS_RESPONSE_US } from './governance.ts';
 import { reclaimAddIntent } from '../member/reclaim.ts';
+import { rewireEnabled } from './rewire.ts';
+import { logCallIntent } from '../momentum/store.ts';
 import { connectContextLines, type ConnectAgentSummary } from '../connect/agent.ts';
 import type { Direction } from '../idq/scoring.ts';
 
@@ -46,8 +48,9 @@ export type CheckinContext = {
   reclaimDetail?: { text: string; category: string; state: string; tracked: boolean }[]; // Reclaim items + progress + whether a tracker exists
   beatsDone?: number; // Beats worked so far
   // The Playbook (the two-way loop): kept keepers + recent journal notes. Used to help — never
-  // quoted back coldly or weaponized. Capped/summarized upstream.
-  playbookKeepers?: { section: string; body: string }[];
+  // quoted back coldly or weaponized. Capped/summarized upstream. keeperType (0046) lets the recall
+  // pattern reach for the RIGHT tool (a true line vs. the image vs. a recovery move) — Decision MM #2.
+  playbookKeepers?: { section: string; body: string; keeperType?: string }[];
   playbookNotes?: string[];
   // Measures — numbers the member watches move (weight, miles, etc.). The agent can create one and
   // log readings, and reflects on real movement here (never a verdict, never clinical).
@@ -74,6 +77,52 @@ export type CheckinMessage = { role: 'agent' | 'member'; text: string };
 export type CheckinTurn = { reply: string; crisis?: boolean };
 
 const firstName = (n: string) => (n || '').trim().split(/\s+/)[0] ?? '';
+
+// ── The keeper-recall pattern (Decision MM #2) ────────────────────────────────────────────────────────────────
+// The tools a member builds (W1 true lines, the W2 image, later a W3 recovery protocol) are meant to be USED, not
+// filed. When the OLD VOICE shows up in what they say, the companion reaches for the MATCHING tool and reflects it
+// back in their own words. Two halves: (a) the live model is INSTRUCTED to do this (earned, not trigger-happy) with
+// keepers tagged by function in its context; (b) the offline scripted agent uses the pure recallKeeper below, so the
+// "earned vs. neutral" bar is deterministic and testable. Flag-gated (REWIRE) so prod's live companion is unchanged
+// until the v2.3 flip. keeperType → what the tool is FOR:
+export type RecallKeeper = { section?: string; body: string; keeperType?: string };
+export function keeperFunctionLabel(keeperType?: string): string {
+  switch (keeperType) {
+    case 'principle': return 'true line — a line they wrote to answer a specific lie';
+    case 'lights_you_up': return 'the picture — the image they built of who they’re becoming';
+    case 'recovery_move': return 'recovery move — their protocol for a slip';
+    case 'definition': return 'a reframe that landed for them';
+    case 'tell': return 'a pattern they named in themselves';
+    default: return 'something they’re keeping';
+  }
+}
+// The old voice, in three shapes — a resurfacing LIE, the vision going DIM (hopelessness), a SLIP they’re beating
+// themselves up over. Conservative on purpose (the "precise & humble" bar): a neutral / logistical message matches
+// nothing and gets no keeper. Used by the offline scripted agent; the live model judges via the prompt instruction.
+const OLD_VOICE_LIE = /\b(too old|too late|not that person( anymore)?|i'?m not (an? |that)|can'?t change|who am i kidding|never really|not cut out|not the type)\b/i;
+const OLD_VOICE_DIM = /\b(never (work|happen|change|get there)|not going to happen|what'?s the point|pointless|why bother|no use|hopeless|give up|never going to|impossible|can'?t do (this|it))\b/i;
+const OLD_VOICE_SLIP = /\b(blew it|screwed up|slipped( up)?|fell off|failed again|messed up|back to (square|zero)|off the wagon|ruined it)\b/i;
+export type Recalled = { body: string; keeperType?: string; reason: 'lie' | 'dim' | 'slip' };
+/** Reach for the keeper that answers the old voice in `message`, or null if the old voice isn't there (earned, not
+ *  trigger-happy). Prefers the tool built for that shape (lie→true line, dim→image, slip→recovery move), else any. */
+export function recallKeeper(message: string, keepers: RecallKeeper[] = []): Recalled | null {
+  if (!keepers.length) return null;
+  const m = (message || '').toLowerCase();
+  const byType = (t: string) => keepers.find((k) => k.keeperType === t);
+  if (OLD_VOICE_DIM.test(m)) {
+    const k = byType('lights_you_up') ?? byType('principle') ?? keepers[0]!;
+    return { body: k.body, keeperType: k.keeperType, reason: 'dim' };
+  }
+  if (OLD_VOICE_LIE.test(m)) {
+    const k = byType('principle') ?? keepers[0]!;
+    return { body: k.body, keeperType: k.keeperType, reason: 'lie' };
+  }
+  if (OLD_VOICE_SLIP.test(m)) {
+    const k = byType('recovery_move') ?? byType('principle') ?? keepers[0]!;
+    return { body: k.body, keeperType: k.keeperType, reason: 'slip' };
+  }
+  return null;
+}
 
 // The four Grinta strands, spelled out for the agent's context (one per R). Empty when none are present.
 function grintaStrandsLine(s: CheckinContext['grintaStrands']): string {
@@ -148,7 +197,9 @@ export function contextBlock(c: CheckinContext): string {
       : null,
     idq,
     c.playbookKeepers && c.playbookKeepers.length
-      ? `Their Playbook — what's working for them (kept):\n${c.playbookKeepers.map((k) => `  • [${k.section}] ${k.body}`).join('\n')}`
+      ? `Their Playbook — what's working for them (kept)${rewireEnabled() ? ' [tag = what each tool is FOR; reach for the right one when the old voice shows]' : ''}:\n${c.playbookKeepers
+          .map((k) => (rewireEnabled() ? `  • [${keeperFunctionLabel(k.keeperType)}] ${k.body}` : `  • [${k.section}] ${k.body}`))
+          .join('\n')}`
       : null,
     c.playbookNotes && c.playbookNotes.length
       ? `Recent Playbook journal entries (their own private writing):\n${c.playbookNotes.map((n) => `  • ${n}`).join('\n')}`
@@ -174,6 +225,14 @@ export function contextBlock(c: CheckinContext): string {
     c.connect ? connectContextLines(c.connect) : null,
   ].filter(Boolean).join('\n');
 }
+
+// The recall-pattern instruction (Decision MM #2) — only when REWIRE is staged, so prod's live companion is byte-for-
+// byte unchanged until the v2.3 flip. Teaches the model to reach for the matching Playbook tool when the old voice
+// shows, on the precise-and-humble bar (earned, never trigger-happy).
+const RECALL_INSTRUCTION = `
+
+REACHING FOR THEIR TOOLS (the recall pattern). The member has BUILT things meant to be used, not filed: true lines that answer a specific lie, the picture of who they're becoming, and (later) a recovery move for a slip. They're in their Playbook in MEMBER CONTEXT, each tagged with what it's FOR. When the OLD VOICE shows up in what they say — a lie resurfacing ("I'm too old", "it's too late", "I'm not that person"), the picture going dim ("this'll never happen", "what's the point"), or a slip they're beating themselves up over — REACH FOR the matching tool and reflect it back to them IN THEIR OWN WORDS: the true line against the lie, the picture against the hopelessness, the recovery move against the slip. Offer it the way you'd remind a friend of something true they already know — warm, not a lecture.
+EARNED, NOT TRIGGER-HAPPY (the precise-and-humble bar): do this ONLY when the old voice is genuinely there AND a tool genuinely fits. A neutral, logistical, or upbeat message gets no keeper — forcing one is worse than none. At most one per turn, and never to guilt them ("but you wrote…"). It's theirs; hand it back, don't wield it.`;
 
 function checkinSystem(c: CheckinContext): string {
   return `${MEMBER_AGENT_SYSTEM_PROMPT}
@@ -219,6 +278,7 @@ YOU NOTICE WHAT MOVED. MEMBER CONTEXT may open with "Since they last talked with
 
 CONNECT — THEIR BRIDGE TO REAL PEOPLE. Connect is the community, and quietly pointing them toward it is your north star: the program's real aim is human connection, and because you carry no social stake you are the safe place that nudges them OUT toward people — never the substitute for them. MEMBER CONTEXT shows their Connect life: engagement they received (someone replied to or cheered a post), what they've shared, and their accountability pacts (each tied to a Reclaim item). USE IT gently, only when it fits — if someone replied to or cheered what they shared, surface it warmly ("someone replied to what you posted about the hard week — want to go see?"); tie a pact back to the goal it serves and NOTICE, never scold, a commitment they've gone quiet on; and when a Reclaim item is one other people would help with, you may invite them to share it or find others on Connect. POSTURE: encourage reaching out, never pressure; ONE gentle invitation, never a campaign; their anonymity is theirs — don't push them to reveal their name. HARD LIMIT: you NEVER post, reply, or cheer for them — you point them to Connect and let them act. If they have no Connect activity yet, you may gently invite them once toward a goal real people would help with — never as a task or a guilt.
 
+${rewireEnabled() ? `${RECALL_INSTRUCTION}\n` : ''}
 MEMBER CONTEXT (facts — do not invent beyond these):
 ${contextBlock(c)}`;
 }
@@ -237,7 +297,20 @@ function scriptedOpening(c: CheckinContext): string {
   return `${knew}\n\n${compact}\n\nWhere do you want to start?`;
 }
 
-function scriptedReply(memberMessage: string): string {
+function scriptedReply(c: CheckinContext, memberMessage: string): string {
+  // The recall pattern (gated): when the old voice shows AND a matching tool exists, hand it back in their words.
+  if (rewireEnabled()) {
+    const r = recallKeeper(memberMessage, c.playbookKeepers ?? []);
+    if (r) {
+      const lead =
+        r.reason === 'dim'
+          ? 'When it goes dim, this is the one you built to hold onto:'
+          : r.reason === 'slip'
+            ? "Before you're hard on yourself — here's what you set down for exactly this:"
+            : "That's the old voice. Here's the line you wrote back to it:";
+      return `${lead}\n\n“${r.body}”\n\nSit with that a second — does it still hold?`;
+    }
+  }
   const m = memberMessage.toLowerCase();
   if (/(win|did it|finished|proud|good day|great|achieved|hit|nailed)/.test(m)) {
     return `That's worth marking. Who else in your life would want to hear it?`;
@@ -393,6 +466,26 @@ const REFINE_TOOLS = [
   },
 ];
 
+// Momentum logging (Rewire W3 · Step 3) — offered ONLY when REWIRE is staged (see toolsFor), so prod's companion is
+// unchanged until the v2.3 flip. A "call" is self-monitoring, never scored; a false start logs as HONEST, not a mark.
+const LOG_CALL_TOOL = {
+  name: 'log_call',
+  description:
+    "Log a Momentum 'call' when the member reports how a moment or a day went — a good_call (they showed up / made " +
+    "the call they wanted), a false_start (they slipped — logged as honest, NEVER a failure), or a quiet_day (a rest " +
+    "or uneventful day). Examples: 'rode this morning, good call' → good_call; 'skipped the walk again, that was a " +
+    "false start' → false_start; 'pretty quiet today' → quiet_day. Warm, never judgmental. Call it the same turn the " +
+    "member reports it; words alone don't log it — you MUST call this tool, then reflect it back once it succeeds.",
+  input_schema: {
+    type: 'object',
+    properties: {
+      type: { type: 'string', enum: ['good_call', 'false_start', 'quiet_day'], description: 'the kind of call' },
+      note: { type: 'string', description: 'optional short note in the member’s words (what the call was)' },
+    },
+    required: ['type'],
+  },
+};
+
 async function liveReply(
   system: string,
   history: CheckinMessage[],
@@ -415,7 +508,9 @@ async function liveReply(
   // turn WITHOUT it, so a tool-spec incompatibility degrades to normal chat — never a broken companion.
   const WEB_FETCH_TOOL = { type: 'web_fetch_20260209', name: 'web_fetch', max_uses: 3 };
   let useFetch = executor !== undefined;
-  const toolsFor = () => (executor ? (useFetch ? [...REFINE_TOOLS, WEB_FETCH_TOOL] : REFINE_TOOLS) : undefined);
+  // Momentum's log_call rides in only when REWIRE is staged — prod's tool set is unchanged until the v2.3 flip.
+  const clientTools = rewireEnabled() ? [...REFINE_TOOLS, LOG_CALL_TOOL] : REFINE_TOOLS;
+  const toolsFor = () => (executor ? (useFetch ? [...clientTools, WEB_FETCH_TOOL] : clientTools) : undefined);
   const model = process.env.ANTHROPIC_MODEL ?? 'claude-sonnet-4-6';
   // Join ALL text blocks. With a server tool (web_fetch), the model emits a preamble text block,
   // then the fetch, then the real reflection in a LATER text block — taking only the first would
@@ -510,6 +605,34 @@ export async function backstopReclaimAdd(
   }
 }
 
+// The engine backstop for an unfulfilled log_call (FF — "couldn't do X is a bug"). Gated by REWIRE. If the member
+// plainly reported a call and the model didn't log it, commit it through the SAME validated primitive. A false start
+// stays honest (never a scold); the confirmation copy is light + directional (shaped in the felt-walk).
+export async function backstopLogCall(
+  memberMessage: string,
+  reply: string,
+  toolNames: string[],
+  executor?: ToolExecutor,
+): Promise<string> {
+  if (!rewireEnabled() || !executor || toolNames.includes('log_call')) return reply;
+  const type = logCallIntent(memberMessage);
+  if (!type) return reply;
+  try {
+    const out = await executor('log_call', { type });
+    if (!out.ok) return reply;
+    if (/\b(logged|got it|marked|noted)\b/i.test(reply)) return reply; // the model already acknowledged
+    const line =
+      type === 'false_start'
+        ? 'Logged — that one counts as honest, not a failure.'
+        : type === 'good_call'
+          ? 'Logged that as a good call.'
+          : 'Logged — a quiet day counts too.';
+    return `${reply}\n\n${line}`.trim();
+  } catch {
+    return reply; // best-effort — a backstop failure never breaks the turn
+  }
+}
+
 export async function checkinReply(
   c: CheckinContext,
   history: CheckinMessage[],
@@ -525,14 +648,16 @@ export async function checkinReply(
       // Backstop-capture through the SAME validated primitive (fog rejected, dups folded), so an add-intent is
       // never dropped. "The Companion couldn't do X is a bug, not a boundary."
       const guarded = await backstopReclaimAdd(memberMessage, reply, toolNames, executor);
+      // Momentum backstop (REWIRE): a plainly-reported call the model didn't log gets captured through the primitive.
+      const guarded2 = await backstopLogCall(memberMessage, guarded, toolNames, executor);
       // Never render an empty bubble — a rare empty turn degrades to a soft, in-voice nudge.
-      if (guarded.trim()) return { reply: guarded };
+      if (guarded2.trim()) return { reply: guarded2 };
       return { reply: "I'm with you — say a little more?" };
     } catch (e) {
       console.warn('check-in reply: live agent unavailable, using scripted —', (e as Error).message);
     }
   }
-  return { reply: scriptedReply(memberMessage) };
+  return { reply: scriptedReply(c, memberMessage) };
 }
 
 /** A short, dismissible proactive teaser for the resting bubble (or null). Signal-driven. */

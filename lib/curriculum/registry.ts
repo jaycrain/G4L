@@ -5,9 +5,14 @@
 // other 23 Sessions get written — pure content work, no engineering.
 import type { Asset, Badge, BadgeCategory, Kind, KindProfile } from './types.ts';
 import { RECONNECT_SESSIONS } from './content/reconnect.ts';
-import { REWIRE_SESSIONS } from './content/rewire.ts';
+import { REWIRE_SESSIONS, REWIRE_V23 } from './content/rewire.ts';
 import { REBUILD_SESSIONS } from './content/rebuild.ts';
 import { RECLAIM_SESSIONS } from './content/reclaim.ts';
+
+// v2.3 flip: with REWIRE staged, the Rewire Phase is the guided CONVERSATIONAL flow (W1→W2→W3→Checkpoint, route-
+// backed); otherwise the old Atlas Rewire Sessions (prod v2, untouched until the flip). Env is per-deploy, so this
+// resolves once at module load. Local check to avoid pulling the agent module into the registry.
+const rewireStaged = process.env.REWIRE === 'staged';
 
 export const CATEGORY_COLOR: Record<BadgeCategory, string> = {
   milestone: '#374F63', // navy
@@ -98,9 +103,13 @@ export const CURRICULUM: Asset[] = [
   meta('RCN-IDQ', 'The IDQ', 'reconnect', 'Recognition', 'measurement', 2, 'The mirror — your starting read across four dimensions. Retakes every 60 days.', { produces: 'your ID Score (baseline measurement)' }),
   IDENTITY_EXCAVATION,
   meta('RCN-CHK', 'The Reconnect Checkpoint', 'reconnect', 'Checkpoint', 'checkpoint', 8, 'The reconnection milestone — have you found yourself? Firm gate; opens Rewire.', { close_type: 'milestone', earns: 'reconnect-milestone', gating: 'reconnect_core_complete' }),
-  // ── Rewire ── (Sessions authored from the framework; the Checkpoint is a soft gate)
-  ...REWIRE_SESSIONS,
-  meta('RWR-CHK', 'The Rewire Checkpoint', 'rewire', 'Checkpoint', 'checkpoint', 7, 'Has the frame moved? Opens the deeper Rebuild work.', { close_type: 'milestone', earns: 'rewire-milestone' }),
+  // ── Rewire ── v2.3 conversational flow when staged (W1→W2→W3→Checkpoint), else the old Atlas Sessions + soft gate.
+  ...(rewireStaged
+    ? REWIRE_V23
+    : [
+        ...REWIRE_SESSIONS,
+        meta('RWR-CHK', 'The Rewire Checkpoint', 'rewire', 'Checkpoint', 'checkpoint', 7, 'Has the frame moved? Opens the deeper Rebuild work.', { close_type: 'milestone', earns: 'rewire-milestone' }),
+      ]),
   // ── Rebuild ── (Sessions authored from the framework; the Checkpoint is a soft gate)
   ...REBUILD_SESSIONS,
   meta('RBD-CHK', 'The Rebuild Checkpoint', 'rebuild', 'Checkpoint', 'checkpoint', 6, 'The numbers begin to move — pull them against your baseline.', { close_type: 'milestone', earns: 'rebuild-milestone' }),

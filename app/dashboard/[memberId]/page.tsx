@@ -18,6 +18,9 @@ import IdentityStrip from '../identity-strip.tsx';
 import PostCeremonyTour from '../post-ceremony-tour.tsx';
 import Threshold from '../threshold.tsx';
 import { reconnectEnabled } from '../../../lib/agent/reconnect.ts';
+import { rewireEnabled } from '../../../lib/agent/rewire.ts';
+import { practiceHeroMessage } from '../../../lib/practice/store.ts';
+import { pulseBeats } from '../../../lib/momentum/store.ts';
 import MeasureCard from '../measure-card.tsx';
 import DashboardSync from '../dashboard-sync.tsx';
 import TrackThis from '../track-this.tsx';
@@ -122,7 +125,9 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
   const crossingCta =
     crossing && forecast.current?.openable
       ? {
-          href: `/${forecast.current.kind === 'checkpoint' ? 'checkpoint' : 'session'}/${memberId}/${forecast.current.id}`,
+          href: forecast.current.route
+            ? forecast.current.route.replace('{memberId}', memberId) // v2.3 conversational Rewire
+            : `/${forecast.current.kind === 'checkpoint' ? 'checkpoint' : 'session'}/${memberId}/${forecast.current.id}`,
           label: forecast.current.kind === 'checkpoint' ? 'Cross this Checkpoint' : 'Open this Session',
         }
       : null;
@@ -161,9 +166,17 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
     ? `${heroVerb} ${facets.join(' · ')}`
     : 'Who you’re reclaiming lands here once you name it at Identity Excavation.';
   const litCurrent = forecast.current?.openable ? forecast.current : null;
-  const heroMessage = litCurrent
-    ? `Your next step is ready — ${litCurrent.title}.${litCurrent.summary ? ` ${litCurrent.summary}` : ''}`
-    : 'Whenever you’re ready, tell me what’s on your mind — or one thing you want to move toward today.';
+  // During an active practice week (Decision MM R4), the daily practice LEADS the hero — "step into your picture"
+  // (W2). Flag-gated (REWIRE) + drift-hardened (null on a missing 0048), so prod is untouched and never crashes.
+  const practiceMessage = rewireEnabled() ? await practiceHeroMessage(db, memberId) : null;
+  // Momentum pulse data (Slice 1) — the last 14 days of logged calls → beats. Flag-gated + drift-hardened (empty on a
+  // missing 0049), so prod is untouched and never crashes.
+  const pulseData = rewireEnabled() ? await pulseBeats(db, memberId).catch(() => []) : [];
+  const heroMessage =
+    practiceMessage ??
+    (litCurrent
+      ? `Your next step is ready — ${litCurrent.title}.${litCurrent.summary ? ` ${litCurrent.summary}` : ''}`
+      : 'Whenever you’re ready, tell me what’s on your mind — or one thing you want to move toward today.');
 
   // Post-Ceremony Tour copy — the Doors spotlight line, named back from their own onboarding (§7: declare
   // what it is). Falls back to a generic line if doors weren't captured (the foot line won't render then).
@@ -200,6 +213,9 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
           </Link>
         </div>
       )}
+      {/* v2.3 Rewire is now driven by the curriculum forecast (W1→W2→W3→Checkpoint at /rewire/…, route-backed) once
+          REWIRE is staged — the member is guided by their "next step," not raw CTAs. The felt-walk shortcuts (/w2,
+          /w3, /checkpoint, /momentum) remain for dev access. */}
 
       <div className="member-greeting">
         {/* The avatar + name is the account entry — tapping it opens /account (no separate link). */}
@@ -236,7 +252,15 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
       {/* §1 · priority pair — Your Program (next Session) + the Momentum panel, side by side */}
       <div className="priority-pair">
         <CurriculumForecast memberId={memberId} forecast={forecast} />
-        {dailyBeat ? (
+        {pulseData.length ? (
+          // Momentum is LIVE for this member (REWIRE + logged calls) → the pulse takes the slot, fed real data.
+          <div className="card daily-empty">
+            <h3>Momentum</h3>
+            <p className="card-subtitle">The calls you make, one at a time — and how they add up.</p>
+            <ResiliencePulse beats={pulseData} />
+            <Link href={`/momentum/${memberId}`} className="see-more">Log a call →</Link>
+          </div>
+        ) : dailyBeat ? (
           <DailyBeatPanel memberId={memberId} reflectionId={dailyBeat.id} text={dailyBeat.text} keepable={dailyBeat.keepable} kept={dailyBeatKept} />
         ) : (
           <div className="card daily-empty">

@@ -67,6 +67,19 @@ export const GRINTA_ITEMS: Record<string, GrintaItem> = {
   // Spark (the Window)
   G3Q2: { code: 'G3Q2', strand: 'reconnect', subscale: 'G3', stem: 'I recognize how small daily choices may contribute to my fade' },
   G3Q3: { code: 'G3Q3', strand: 'reconnect', subscale: 'G3', stem: 'I recognize various attributions and justifications that may contribute to my fade' },
+
+  // §R4 Rewire Checkpoint — six MORE commitment items (commitment → Rewire), one pair per Rewire session. VERBATIM
+  // from Greg's Measurement Canvas V4b (Decision EE) — a validated instrument; do NOT reword. With the three
+  // baseline commitment items (W1Q1/W2Q1/W3Q1) they give a 9-item commitment read at the Rewire close.
+  // Affirmation (from W1)
+  W1Q2: { code: 'W1Q2', strand: 'rewire', subscale: 'W1', stem: 'I am aware of mental traps that make it hard to stick to my goals' },
+  W1Q3: { code: 'W1Q3', strand: 'rewire', subscale: 'W1', stem: 'I can counter negative thoughts with positive affirmations' },
+  // Visualization (from W2)
+  W2Q2: { code: 'W2Q2', strand: 'rewire', subscale: 'W2', stem: 'I can create a positive mindset to enhance my personal motivation' },
+  W2Q3: { code: 'W2Q3', strand: 'rewire', subscale: 'W2', stem: 'I can visualize what I want to accomplish' },
+  // Focus (from W3)
+  W3Q2: { code: 'W3Q2', strand: 'rewire', subscale: 'W3', stem: 'I can counter triggers that challenge my behavior change efforts' },
+  W3Q3: { code: 'W3Q3', strand: 'rewire', subscale: 'W3', stem: 'I am confident that I can maintain physical activity habits and healthy eating patterns over time' },
 };
 
 // The three baseline GRIT items (administered at onboarding) — needed to recompute the 9-item grit mean at the Checkpoint.
@@ -74,6 +87,11 @@ export const BASELINE_GRIT_ITEMS: readonly string[] = ['G1Q1', 'G2Q1', 'G3Q1'];
 
 // The §2e Checkpoint reading — the six additional grit items, administered in beat order (Recognition→Excavation→Spark).
 export const CHECKPOINT_GRIT_ITEMS: readonly string[] = ['G1Q2', 'G1Q3', 'G2Q2', 'G2Q3', 'G3Q2', 'G3Q3'];
+
+// The three baseline COMMITMENT items (administered at onboarding) — the Rewire strand's Ave1 at the R4 Checkpoint.
+export const BASELINE_COMMITMENT_ITEMS: readonly string[] = ['W1Q1', 'W2Q1', 'W3Q1'];
+// The §R4 Rewire Checkpoint reading — the six additional commitment items, in session order (W1→W2→W3, Q2 then Q3).
+export const CHECKPOINT_COMMITMENT_ITEMS: readonly string[] = ['W1Q2', 'W1Q3', 'W2Q2', 'W2Q3', 'W3Q2', 'W3Q3'];
 
 // The onboarding BASELINE reading — the twelve "*Q1" items, administered in R order (grit→commitment→control→
 // challenge = Reconnect→Rewire→Rebuild→Reclaim). Item index in the administered array maps to this list.

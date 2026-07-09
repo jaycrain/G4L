@@ -16,20 +16,22 @@ export type ForecastItem = {
   state: 'done' | 'current' | 'up';
   openable: boolean; // is the asset actually built (authored Session / live Checkpoint)?
   hook?: string; // shown on the lit row
+  route?: string; // an exact CTA route (v2.3 conversational Rewire) — overrides the kind-default; '{memberId}' token
 };
 export type ForecastPhase = { phase: string; label: string; status: 'Complete' | "You're here" | 'Ahead'; items: ForecastItem[] };
 export type Forecast = {
   phases: ForecastPhase[];
   // the lit step (the Open-this-Session / Cross-this-Checkpoint CTA). openable=false means it's the
   // next stop but not yet built ("coming soon") — so the companion knows not to send them to it.
-  current: { id: string; title: string; summary: string; kind: Asset['kind']; openable: boolean } | null;
+  current: { id: string; title: string; summary: string; kind: Asset['kind']; openable: boolean; route?: string } | null;
   daily: { id: string; title: string; kind: Asset['kind'] }[];
 };
 
 // An asset is "openable" when it's actually built: an authored Session (has steps) or ANY Checkpoint
 // (every phase resolves to its own crossable Checkpoint — the page + actions are phase-generic). Other
 // kinds (measurement/pulse/tracker) are content-pending and render greyed until the daily-layer pass.
-const isBuilt = (a: Asset): boolean => (a.kind === 'session' && !!a.steps?.length) || a.kind === 'checkpoint';
+// ...or a route-backed conversational asset (v2.3 Rewire) — a real, reachable surface even without registry steps.
+const isBuilt = (a: Asset): boolean => (a.kind === 'session' && !!a.steps?.length) || a.kind === 'checkpoint' || !!a.route;
 
 function activePhaseIndex(gates: Set<string>): number {
   let i = 0;
@@ -72,6 +74,7 @@ export async function getForecast(db: Db, memberId: string): Promise<Forecast> {
         summary: a.summary,
         state,
         openable: isBuilt(a),
+        ...(a.route ? { route: a.route } : {}),
         ...(state === 'current' ? { hook: a.summary } : {}),
       };
     });
@@ -84,7 +87,7 @@ export async function getForecast(db: Db, memberId: string): Promise<Forecast> {
   return {
     phases,
     current: currentAsset
-      ? { id: currentAsset.id, title: currentAsset.title, summary: currentAsset.summary, kind: currentAsset.kind, openable: isBuilt(currentAsset) }
+      ? { id: currentAsset.id, title: currentAsset.title, summary: currentAsset.summary, kind: currentAsset.kind, openable: isBuilt(currentAsset), ...(currentAsset.route ? { route: currentAsset.route } : {}) }
       : null,
     daily: dailyLayer().map((a) => ({ id: a.id, title: a.title, kind: a.kind })),
   };

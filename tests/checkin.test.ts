@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { checkinOpening, checkinReply, proactiveTeaser, contextBlock, type CheckinContext } from '../lib/agent/checkin.ts';
+import { checkinOpening, checkinReply, proactiveTeaser, contextBlock, recallKeeper, type CheckinContext } from '../lib/agent/checkin.ts';
 
 const base: CheckinContext = {
   displayName: 'Tom Miller',
@@ -101,6 +101,70 @@ test('contextBlock surfaces a ready next step (so the MA can send them there)', 
   // A not-yet-built step is NOT surfaced (don't route them to "coming soon").
   const soon = contextBlock({ ...base, nextStep: { title: 'Body Inventory', kind: 'session', openable: false } });
   assert.doesNotMatch(soon, /next step on the path/);
+});
+
+// ── The keeper-recall pattern (Decision MM #2) — flag-gated (REWIRE); prod's live companion unchanged until flip ──
+const KEEPERS = [
+  { section: 'own_words', body: "I won't know what I'm capable of until I try", keeperType: 'principle' },
+  { section: 'own_words', body: 'Me at the finish line, my kids at the rail', keeperType: 'lights_you_up' },
+];
+const withKeepers: CheckinContext = { ...base, playbookKeepers: KEEPERS };
+
+async function withRewire<T>(on: boolean, fn: () => Promise<T> | T): Promise<T> {
+  const prev = process.env.REWIRE;
+  if (on) process.env.REWIRE = 'staged';
+  else delete process.env.REWIRE;
+  try {
+    return await fn();
+  } finally {
+    if (prev === undefined) delete process.env.REWIRE;
+    else process.env.REWIRE = prev;
+  }
+}
+
+test('recallKeeper · reaches for the tool that answers the old voice — lie→true line, dim→picture', () => {
+  const lie = recallKeeper("I'm too old for this, I'm not that person anymore", KEEPERS);
+  assert.equal(lie?.reason, 'lie');
+  assert.match(lie!.body, /capable of/, 'a resurfacing lie pulls the true line');
+  const dim = recallKeeper("honestly this is never going to happen for me", KEEPERS);
+  assert.equal(dim?.reason, 'dim');
+  assert.match(dim!.body, /finish line/, 'the picture going dim pulls the image');
+});
+
+test('recallKeeper · EARNED, not trigger-happy — a neutral message surfaces NOTHING (the negative case)', () => {
+  assert.equal(recallKeeper('had an ok day, ran some errands and made dinner', KEEPERS), null);
+  assert.equal(recallKeeper("looking forward to the weekend", KEEPERS), null);
+  assert.equal(recallKeeper("it'll never happen", []), null, 'no keepers → nothing to reach for');
+});
+
+test('scriptedReply recall · with REWIRE on, the old voice gets its tool back; a neutral turn does not', async () => {
+  await withRewire(true, async () => {
+    const dim = await checkinReply(withKeepers, [], 'this is never going to happen, what is the point');
+    assert.match(dim.reply, /finish line/, 'reflects the image against the hopelessness');
+    assert.match(dim.reply, /goes dim/i, 'the recall lead, not a generic reflection');
+    const neutral = await checkinReply(withKeepers, [], 'had an ok day, ran some errands');
+    assert.doesNotMatch(neutral.reply, /finish line|capable of/, 'neutral turn does not force a keeper');
+    assert.match(neutral.reply, /most true|telling me/i, 'falls through to the normal reflective reply');
+  });
+});
+
+test('recall is REWIRE-gated · flag off → the live companion is unchanged (no keeper reached, legacy section tag)', async () => {
+  await withRewire(false, async () => {
+    const r = await checkinReply(withKeepers, [], "I'm too old, this is never going to happen");
+    assert.doesNotMatch(r.reply, /finish line|capable of/, 'flag off: no recall');
+    const block = contextBlock(withKeepers);
+    assert.match(block, /\[own_words\]/, 'flag off: keepers keep the legacy section tag');
+    assert.doesNotMatch(block, /true line|the picture/, 'flag off: no function labels, no recall steer');
+  });
+});
+
+test('contextBlock · with REWIRE on, keepers are tagged by FUNCTION so the model reaches for the right one', () => {
+  withRewire(true, () => {
+    const block = contextBlock(withKeepers);
+    assert.match(block, /true line/, 'the principle keeper is tagged as a true line');
+    assert.match(block, /the picture/, 'the lights_you_up keeper is tagged as the picture');
+    assert.match(block, /reach for the right one when the old voice shows/, 'the steer is present');
+  });
 });
 
 test('proactiveTeaser is signal-driven', () => {

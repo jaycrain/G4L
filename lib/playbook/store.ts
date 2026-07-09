@@ -163,17 +163,19 @@ export async function playbookForAgent(
   db: Db,
   memberId: string,
   opts: { keptMax?: number; journalMax?: number } = {},
-): Promise<{ keepers: { section: PlaybookSection; body: string }[]; recentNotes: string[] }> {
+): Promise<{ keepers: { section: PlaybookSection; body: string; keeperType?: string }[]; recentNotes: string[] }> {
   const keptMax = opts.keptMax ?? 12;
   const journalMax = opts.journalMax ?? 5;
   const kept = (
     await db.query<any>(
-      `select section, body from playbook_entry
+      // keeper_type (0046) rides along so the companion can tell a true line from an image from a recovery move —
+      // the recall pattern reaches for the RIGHT tool when the old voice shows up (Decision MM #2).
+      `select section, body, keeper_type from playbook_entry
        where member_id=$1 and state='kept' and section in ('what_works','why_works','own_words')
        order by pinned desc, sort_order, created_at limit $2`,
       [memberId, keptMax],
     )
-  ).rows.map((r) => ({ section: r.section as PlaybookSection, body: r.body as string }));
+  ).rows.map((r) => ({ section: r.section as PlaybookSection, body: r.body as string, keeperType: r.keeper_type ?? undefined }));
   const recentNotes = (
     await db.query<{ body: string }>(
       `select body from playbook_entry

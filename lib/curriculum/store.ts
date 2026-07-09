@@ -55,6 +55,17 @@ export async function closeSession(db: Db, memberId: string, sessionId: string):
   return rows.length > 0;
 }
 
+// Force a session CLOSED even when no in-flight progress row exists — for the v2.3 conversational Rewire Sessions,
+// which complete via the kernel (turn.complete), not the step player. Idempotent; drives the forecast's isDone.
+export async function markSessionClosed(db: Db, memberId: string, sessionId: string): Promise<void> {
+  await db.query(
+    `insert into session_progress (member_id, session_id, status, closed_at)
+     values ($1, $2, 'closed', now())
+     on conflict (member_id, session_id) do update set status = 'closed', closed_at = now(), updated_at = now()`,
+    [memberId, sessionId],
+  );
+}
+
 export async function isSessionClosed(db: Db, memberId: string, sessionId: string): Promise<boolean> {
   const { rows } = await db.query<{ status: string }>(
     'select status from session_progress where member_id=$1 and session_id=$2',
