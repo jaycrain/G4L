@@ -657,13 +657,15 @@ export interface ArcConfig {
 // parse a 1–5 → accumulate → deliver the next framed item → on the LAST item, hand off (the arc's onComplete
 // closure sets the reply + next stage; the ACTION scores + persists). Everything instrument-specific (opener,
 // items, count, frames, completion) lives in the config; the loop lives here, once.
-const LIKERT_NUM_WORDS: Record<string, number> = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7 };
+const LIKERT_NUM_WORDS: Record<string, number> = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10 };
 // Parse a Likert reply to an integer in [1, max]. `max` defaults to 5 (the IDQ / Grinta scale — every existing caller
-// is unchanged); Rebuild's B1 SDT instrument passes 7. A digit outside the range (or a spelled word above the scale)
-// returns null so the administered loop RE-PROMPTS the current item rather than recording a bad value.
+// is unchanged); B1's SDT instrument passes 7, and Reclaim's C2/C3 pass 10. Matches a 1–2 digit number (so "10" reads
+// as ten, not "1") and clamps to [1, max]; a value outside the range (or a spelled word above the scale) returns null
+// so the administered loop RE-PROMPTS the current item rather than recording a bad value. (Existing 1–5/1–7 callers are
+// unaffected: "10"/"12" were already out-of-range → null.)
 export function parseLikert(msg: string, max = 5): number | null {
   const m = (msg ?? '').toLowerCase();
-  const digit = m.match(/\b([1-9])\b/);
+  const digit = m.match(/\b(\d{1,2})\b/);
   if (digit) {
     const n = Number(digit[1]);
     return n >= 1 && n <= max ? n : null;

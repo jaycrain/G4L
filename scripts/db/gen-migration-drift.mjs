@@ -32,6 +32,7 @@ const M = [
   ["0051", { t: "self_management_reading" }],
   ["0052", { t: "coaching_plan" }],
   ["0053", { c: ["reclaim_item", "tier"] }],
+  ["0054", { t: "bigger_world_reading" }],
 ];
 const expr = (x) =>
   x.t ? `to_regclass(${Q}public.${x.t}${Q}) is not null`

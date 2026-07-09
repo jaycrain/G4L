@@ -62,6 +62,9 @@ export type CheckinContext = {
   // companion can reflect the pattern (evidence-based, Pillar 3). Present only during an active pilot; false starts are
   // honest data, never a mark.
   pilotCalls?: { activity: { good: number; false: number }; diet: { good: number; false: number } } | null;
+  // Reclaim C2 Bigger World Audit — the member's chosen priorities: the primary focus area + the momentum lever. The
+  // agent knows these so it can support their chosen priority (never a ranking to grade or weaponize).
+  reclaimPriorities?: { primary: string; momentumLever: string } | null;
   beatsDone?: number; // Beats worked so far
   // The Playbook (the two-way loop): kept keepers + recent journal notes. Used to help — never
   // quoted back coldly or weaponized. Capped/summarized upstream. keeperType (0046) lets the recall
@@ -211,6 +214,9 @@ export function contextBlock(c: CheckinContext): string {
       : null,
     c.pilotCalls && (c.pilotCalls.activity.good + c.pilotCalls.activity.false + c.pilotCalls.diet.good + c.pilotCalls.diet.false) > 0
       ? `How the pilot's actually going (last two weeks, their own logged calls) — Movement: ${c.pilotCalls.activity.good} good, ${c.pilotCalls.activity.false} false starts. Eating: ${c.pilotCalls.diet.good} good, ${c.pilotCalls.diet.false} false starts. If it helps them see the pattern, reflect it warmly ("movement's been landing; eating's been the tougher one") — never a scoreboard, never a grade; a false start is honest data. Only raise it if it's useful to them.`
+      : null,
+    c.reclaimPriorities
+      ? `Their Bigger World priorities (Reclaim C2) — the area they chose to focus on is their ${c.reclaimPriorities.primary.toLowerCase()} life; the easiest place to build momentum is their ${c.reclaimPriorities.momentumLever.toLowerCase()} life. Support that chosen focus warmly; it's their priority, not a ranking to grade.`
       : null,
     c.experienceSummary && c.experienceSummary.trim()
       ? `How they've moved through the program lately (for awareness — gently notice a stall or a return, e.g. "you opened Visualization a couple times — want to pick it back up?"; NEVER grade or guilt): ${c.experienceSummary.trim()}`

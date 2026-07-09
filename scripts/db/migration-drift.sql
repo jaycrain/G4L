@@ -107,6 +107,8 @@ from (
   select '0052' as migration, coalesce(to_regclass('public.coaching_plan') is not null, false) as applied
   union all
   select '0053' as migration, coalesce(exists(select 1 from information_schema.columns where table_schema='public' and table_name='reclaim_item' and column_name='tier'), false) as applied
+  union all
+  select '0054' as migration, coalesce(to_regclass('public.bigger_world_reading') is not null, false) as applied
 ) t
-where applied = false   -- show ONLY the gaps; delete this line to see all 53
+where applied = false   -- show ONLY the gaps; delete this line to see all 54
 order by migration;

@@ -4,26 +4,39 @@ import { getDb } from '../../lib/db/index.ts';
 import { authorizeMember } from '../authz.ts';
 import type { Db } from '../../lib/db/schema.ts';
 import type { ConvMessage, ConvState } from '../../lib/agent/onboarding.ts';
-import { reclaimEnabled, reclaimC1Opening, applyReclaimC1Turn, liveTurnReclaimRefine } from '../../lib/agent/reclaim.ts';
+import {
+  reclaimEnabled,
+  reclaimC1Opening,
+  applyReclaimC1Turn,
+  liveTurnReclaimRefine,
+  reclaimC2Opening,
+  applyReclaimC2Turn,
+} from '../../lib/agent/reclaim.ts';
 import { getReclaimItems } from '../../lib/beats/store.ts';
 import { commitRefinement, isTier, type Tier } from '../../lib/reclaim/refinement-store.ts';
+import { persistBiggerWorldReading } from '../../lib/reclaim/bigger-world-store.ts';
+import { AUDIT_ITEM_COUNT } from '../../lib/reclaim/bigger-world-instrument.ts';
 
-// v2.5 Reclaim server actions. SLICE 1 = C1 · Readiness Assessment. Step 1 (evidence) is administered + FORMATIVE
-// (deterministic, nothing persisted); Step 2 (refine) is the LIVE coaching turn → on the member's confirm, the
-// refined list is COMMITTED back to the live Reclaim List (member-authorized, propose→confirm→commit). Flag-gated (RECLAIM).
-export type ReclaimSession = 'c1';
+// v2.5 Reclaim server actions. C1 · Readiness (Step 1 evidence administered+formative; Step 2 refine coach →
+// member-confirmed commit to the live list) + C2 · Bigger World Audit (administered 20-item 1–10 priority audit →
+// RC-1 classification, persisted durably). Flag-gated (RECLAIM).
+export type ReclaimSession = 'c1' | 'c2';
 
 export async function startReclaimAction(
   memberId: string,
-  _session: ReclaimSession = 'c1',
+  session: ReclaimSession = 'c1',
 ): Promise<{ ok: boolean; reply?: string; state?: ConvState; error?: string }> {
   if (!reclaimEnabled()) return { ok: false, error: 'Reclaim is not enabled.' };
   if (!(await authorizeMember(memberId))) return { ok: false, error: 'Not authorized.' };
-  // Seed the member's CURRENT Reclaim List so Step 2 can present it for the re-read. Graceful degrade to empty.
+  if (session === 'c2') return { ok: true, ...openTurn(reclaimC2Opening()) };
+  // C1: seed the member's CURRENT Reclaim List so Step 2 can present it for the re-read. Graceful degrade to empty.
   const db = (await getDb()) as unknown as Db;
   const items = (await getReclaimItems(db, memberId).catch(() => [])).map((i) => i.text);
-  const turn = reclaimC1Opening(items);
-  return { ok: true, reply: turn.reply, state: turn.state };
+  return { ok: true, ...openTurn(reclaimC1Opening(items)) };
+}
+
+function openTurn(turn: { reply: string; state: ConvState }): { reply: string; state: ConvState } {
+  return { reply: turn.reply, state: turn.state };
 }
 
 export async function reclaimTurnAction(
@@ -31,12 +44,28 @@ export async function reclaimTurnAction(
   state: ConvState,
   history: ConvMessage[],
   message: string,
-  _session: ReclaimSession = 'c1',
+  session: ReclaimSession = 'c1',
 ): Promise<{ ok: boolean; reply?: string; state?: ConvState; error?: string }> {
   if (!reclaimEnabled()) return { ok: false, error: 'Reclaim is not enabled.' };
   if (!(await authorizeMember(memberId))) return { ok: false, error: 'Not authorized.' };
   try {
-    // Step 1 (evidence) is administered (deterministic); Step 2 (refine) is the live coaching turn.
+    // C2 · Bigger World Audit — administered (deterministic 1–10). On completion, persist the durable priorities (RC-4).
+    if (session === 'c2') {
+      const turn = applyReclaimC2Turn(state, history, message);
+      if (turn.complete) {
+        const responses = (turn.state.administeredResponses ?? []).slice(0, AUDIT_ITEM_COUNT);
+        if (responses.length === AUDIT_ITEM_COUNT) {
+          try {
+            const db = (await getDb()) as unknown as Db;
+            await persistBiggerWorldReading(db, memberId, responses);
+          } catch {
+            /* swallow — the member saw the summary; the durable reading is best-effort */
+          }
+        }
+      }
+      return { ok: true, reply: turn.reply, state: turn.state };
+    }
+    // C1 · Step 1 (evidence) is administered (deterministic); Step 2 (refine) is the live coaching turn.
     const turn = state.stage === 'refine' ? await liveTurnReclaimRefine(state, history, message) : applyReclaimC1Turn(state, history, message);
 
     // On completion (the member confirmed the refinement) → COMMIT the snapshot to the live Reclaim List. Best-effort:

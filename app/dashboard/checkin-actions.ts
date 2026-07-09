@@ -25,6 +25,8 @@ import { latestGrintaReading } from '../../lib/grinta/survey/store.ts';
 import { latestWhyReading, latestSkillsReading } from '../../lib/rebuild/store.ts';
 import { skillHighlights } from '../../lib/rebuild/skills-instrument.ts';
 import { activeCoachingPlan, type RebuildPilotPayload } from '../../lib/rebuild/plan-store.ts';
+import { latestBiggerWorldReading } from '../../lib/reclaim/bigger-world-store.ts';
+import { AUDIT_DOMAIN_LABEL } from '../../lib/reclaim/bigger-world-instrument.ts';
 import { listFacets, closedSessionIds } from '../../lib/curriculum/store.ts';
 import { getForecast } from '../../lib/curriculum/view.ts';
 import { getAsset } from '../../lib/curriculum/registry.ts';
@@ -41,13 +43,14 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
   const dash = await getDashboard(db, memberId);
   if (!dash) return null;
   await maybeFoldMemory(db, memberId); // distill anything that has aged out of recall (best-effort, no-op until due)
-  const [grinta, grintaReading, whyReading, skillsReading, pilotPlan, pilotTally, consumedBites, profRows, idqRows, reclaimItems, beatRows, playbook, measures, linkedMeasureRows, facets, closedIds, lastClosedRows, forecast, experience] = await Promise.all([
+  const [grinta, grintaReading, whyReading, skillsReading, pilotPlan, pilotTally, biggerWorld, consumedBites, profRows, idqRows, reclaimItems, beatRows, playbook, measures, linkedMeasureRows, facets, closedIds, lastClosedRows, forecast, experience] = await Promise.all([
     getGrinta(db, memberId, dash.identityNoun),
     latestGrintaReading(db, memberId), // the SURVEY Grinta Index (Decision DD) — the grit baseline the member sees
     latestWhyReading(db, memberId), // Rebuild B1 — the agent must KNOW they named their why (RB-1: stored, not shown)
     latestSkillsReading(db, memberId), // Rebuild B2 — the self-management profile the agent reflects (plain language)
     activeCoachingPlan<RebuildPilotPayload>(db, memberId, 'rebuild'), // Rebuild B3 — the active Lifestyle Pilot plan
     domainTally(db, memberId).catch(() => null), // Rebuild B3 — per-domain call tally (movement vs eating), OO
+    latestBiggerWorldReading(db, memberId), // Reclaim C2 — the member's chosen priorities (primary + momentum lever)
 
     recentConsumedTitles(db, memberId),
     db.query<{ intake_athletic_past: string | null; intake_gap: string | null; agent_memory: string | null; dashboard_snapshot: unknown }>(
@@ -159,6 +162,9 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
     skillProfile: skillsReading ? skillHighlights(skillsReading.scores) : null, // Rebuild B2 — strongest + growth edge (plain language)
     pilotPlan: pilotPlan?.payload ?? null, // Rebuild B3 — the active Lifestyle Pilot (their two committed changes)
     pilotCalls: pilotPlan ? pilotTally : null, // per-domain call tally, only while a pilot is active (OO)
+    reclaimPriorities: biggerWorld
+      ? { primary: AUDIT_DOMAIN_LABEL[biggerWorld.priorities.primary], momentumLever: AUDIT_DOMAIN_LABEL[biggerWorld.priorities.momentumLever] }
+      : null, // Reclaim C2 — the member's chosen priority + momentum lever (plain language)
     consumedBites,
     // The narrative from onboarding — so the agent can reference what the member actually shared,
     // not just the dashboard facts. This is what makes the first interaction feel "it knows me."

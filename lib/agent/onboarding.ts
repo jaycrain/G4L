@@ -61,9 +61,11 @@ export type Stage = 'identity' | 'identity_name' | 'reclaim' | 'door' | 'complet
   | 'skills'
   | 'pilot'
   // v2.5 Reclaim arc (config #5 on the shared kernel). C1 · Readiness — 'evidence' (the administered 15-item evidence
-  // self-check, formative) → 'refine' (coach mode: refine the Reclaim List → confirm → commit). C2/C3/C4 add theirs later.
+  // self-check, formative) → 'refine' (coach mode: refine the Reclaim List → confirm → commit). C2 · Bigger World —
+  // 'audit' (the administered 20-item, 1–10 four-domain priority audit). C3/C4 add theirs later.
   | 'evidence'
-  | 'refine';
+  | 'refine'
+  | 'audit';
 
 // Beat separator — when ONE turn hands over more than one beat (e.g. the Phases intro + the pre-survey framing, or
 // the score-read close + the drift ask), join them with this (invisible RS control char) instead of "\n\n" so the
@@ -554,6 +556,8 @@ const STAGE_PROMPT: Record<Stage, string> = {
   evidence: 'A number from 1 (strongly disagree) to 5 (strongly agree) — how true does that feel?',
   // v2.5 Reclaim C1 Step 2 — coach mode supplies its own coaching text; a neutral fallback for type completeness.
   refine: 'Looking at your list with clearer eyes — what still feels true, and what feels different now?',
+  // v2.5 Reclaim C2 — administered (off the depth kernel), never actually used; a 1–10 re-ask for type completeness.
+  audit: 'A number from 1 to 10 — where would you put it?',
 };
 
 // Guarantee a non-final turn ends with a forward question, so the member is never stranded.

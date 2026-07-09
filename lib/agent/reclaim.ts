@@ -11,6 +11,8 @@ import { runArcTurn, administeredStage, type ArcConfig, type StageDef } from './
 import { BEAT_SEP, type Collected, type ConvMessage, type ConvState, type ModelTurn, type Turn } from './onboarding.ts';
 import { EVIDENCE_ITEMS, EVIDENCE_ITEM_COUNT, EVIDENCE_PART_STARTS, EVIDENCE_PART_LABEL } from '../reclaim/evidence-instrument.ts';
 import { TIER_LABEL, REFINE_TIERS, isTier, type Tier } from '../reclaim/refinement-store.ts';
+import { AUDIT_ITEMS, AUDIT_ITEM_COUNT, AUDIT_SCALE_MAX, AUDIT_DOMAIN_STARTS, AUDIT_DOMAIN_LABEL, AUDIT_DOMAIN_INTRO } from '../reclaim/bigger-world-instrument.ts';
+import { scoreAudit } from '../reclaim/bigger-world-scoring.ts';
 
 export function reclaimEnabled(): boolean {
   return process.env.RECLAIM === 'staged';
@@ -259,4 +261,78 @@ export async function liveTurnReclaimRefine(state: ConvState, history: ConvMessa
     messages,
   });
   return applyReclaimC1Turn(state, history, memberMessage, parseRefineModel(res.content));
+}
+
+// ══ C2 · The Bigger World Audit ═══════════════════════════════════════════════════════════════════════════════
+// An administered four-domain interview (Physical/Self/Social/Outlook × 5 ratings, 1–10 — the scale-param). Greg's
+// verbatim rating prompts, domain by domain. On complete: RC-1 priority scoring (computed gap × importance + readiness
+// + ripple) → the Primary Priority + Momentum Lever summary. The ACTION persists the reading (RC-4 durable). The
+// per-domain free-text reflections (obstacle / early action) are deferred — v1 uses the ratings.
+const C2_OPEN =
+  "In Reconnect, the IDQ showed how far you'd drifted across four areas of life. This is the other side of it — where " +
+  "you want your world to get BIGGER, and which area to push on first. I'll walk you through four areas — Physical, " +
+  "Self, Social, Outlook — and for each, a few quick reads, 1 to 10: where you are, where you want to be, how much it " +
+  "matters, how ready you feel, and how much progress there would lift the rest of your life. No wrong answers — this " +
+  "is about finding priorities, not judging yourself.";
+
+function auditDeliver(index: number): string {
+  const item = AUDIT_ITEMS[index]!;
+  const domainStart = AUDIT_DOMAIN_STARTS[index];
+  if (domainStart) return `${AUDIT_DOMAIN_LABEL[domainStart]} — ${AUDIT_DOMAIN_INTRO[domainStart]}\n\n${item.prompt}`;
+  return item.prompt;
+}
+function auditOpener(): string {
+  return `${C2_OPEN}\n\n${auditDeliver(0)}`;
+}
+
+// The RC-1 classification summary (member-facing, non-judgmental) — names the Primary focus + the Momentum Lever.
+function auditSummary(responses: number[]): string {
+  const s = scoreAudit(responses);
+  const primary = AUDIT_DOMAIN_LABEL[s.primary];
+  const lever = AUDIT_DOMAIN_LABEL[s.momentumLever];
+  const leverLine =
+    s.momentumLever === s.primary
+      ? ` It's also where you feel most ready to move — a strong place to start.`
+      : ` And if you want an easier place to build momentum first, ${lever} is where you're most ready.`;
+  return (
+    `Here's what stands out. Your best next focus looks like your ${primary} life — not just because there's distance ` +
+    `there, but because it matters to you and progress there would ripple into the rest of your life.${leverLine}` +
+    `${BEAT_SEP}This was about finding the priority, not judging any of it. It's saved — you can come back to it anytime.`
+  );
+}
+
+const auditStage: StageDef = administeredStage({
+  id: 'audit',
+  itemCount: AUDIT_ITEM_COUNT, // 20
+  scaleMax: AUDIT_SCALE_MAX, // 10 (the scale-param)
+  opener: () => auditOpener(),
+  deliverItem: (n) => auditDeliver(n),
+  reprompt: (n) => `A number from 1 to 10 — where would you put it?\n\n${auditDeliver(n)}`,
+  onComplete: (b) => {
+    // All 20 ratings are in b.administeredResponses. Summarize the RC-1 priorities in-engine (pure); the ACTION scores
+    // + persists the durable reading (RC-4).
+    b.stage = 'complete';
+    b.complete = true;
+    b.reply = auditSummary(b.administeredResponses.slice(0, AUDIT_ITEM_COUNT));
+  },
+});
+
+export const RECLAIM_C2_ARC: ArcConfig = {
+  id: 'reclaim-c2',
+  stageOrder: ['audit'],
+  stages: { audit: auditStage },
+  onComplete: () => 'Here’s what stands out from the audit.',
+};
+
+export function applyReclaimC2Turn(state: ConvState, history: ConvMessage[], memberMessage: string): Turn {
+  // C2 is ADMINISTERED (deterministic 1–10 parse) — no model call needed; the action passes empty text.
+  return runArcTurn(RECLAIM_C2_ARC, state, history, memberMessage, { text: '' });
+}
+
+export function reclaimC2Opening(): Turn {
+  return { reply: auditOpener(), state: { stage: 'audit', collected: {} }, complete: false };
+}
+
+export function liveTurnReclaimC2(state: ConvState, history: ConvMessage[], memberMessage: string): Turn {
+  return applyReclaimC2Turn(state, history, memberMessage);
 }
