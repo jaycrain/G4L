@@ -63,10 +63,23 @@ export default function OnboardingChat() {
   useEffect(() => {
     const savedName = ls.get(LS.name), savedEmail = ls.get(LS.email);
     if (savedName) setName(savedName);
-    if (savedEmail) {
-      setEmail(savedEmail);
-      setResumable(true);
-    }
+    if (!savedEmail) return;
+    setEmail(savedEmail);
+    setResumable(true); // optimistic — instant "welcome back" for the common returner
+    // …but VERIFY the server still has a session to resume. If it doesn't — an account wipe, an expired session, or
+    // stale storage on a foreign device — then "welcome back / nothing's lost" would be a lie. Demote to the fresh
+    // gate and clear the stale device storage so the copy can never over-promise. (Optimistic-then-reconciled: the
+    // common case stays instant; only the empty case corrects itself.)
+    let cancelled = false;
+    void (async () => {
+      const session = await loadOnboardingSessionAction(savedEmail, ls.get(LS.token));
+      if (cancelled || (session && session.messages.length > 0)) return;
+      clearOnboardingStorage();
+      setResumable(false);
+      setName('');
+      setEmail('');
+    })();
+    return () => { cancelled = true; };
   }, []);
 
   // Keep the unsent draft so a half-written reply survives leaving the page.
