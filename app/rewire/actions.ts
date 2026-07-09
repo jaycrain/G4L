@@ -22,7 +22,7 @@ import { startPracticeWeek, latestImageKeeper } from '../../lib/practice/store.t
 import { getGrintaBaselineReading, latestGrintaReading, persistGrintaReading, commitmentCheckpointResponsesMap } from '../../lib/grinta/survey/store.ts';
 import { scoreCheckpointStrand, grintaChangePct, directionOf } from '../../lib/grinta/survey/scoring.ts';
 import { BASELINE_COMMITMENT_ITEMS, CHECKPOINT_COMMITMENT_ITEMS } from '../../lib/grinta/survey/instrument.ts';
-import { setGate } from '../../lib/curriculum/store.ts';
+import { setGate, markSessionClosed } from '../../lib/curriculum/store.ts';
 import type { RewireCeremonyData } from '../../lib/ceremony/rewire-ceremony-beats.ts';
 
 // Which Rewire session — W1/W2/W3 (the three Sessions) or the R4 'checkpoint' (the administered Commitment read →
@@ -203,13 +203,24 @@ export async function rewireTurnAction(
           : await liveTurnRewire(state, history, message);
     const db = (await getDb()) as unknown as Db;
     await persistRewireHarvest(db, memberId, state, turn); // true lines / image / protocol → Playbook keepers
-    // Completing a session OPENS its practice week (Decision MM R4). W2 → the "step into your picture" nudge; W3 →
-    // the (dormant until Momentum) logging window. Best-effort: a scaffold hiccup never fails the conversation turn.
-    if (turn.complete && (session === 'w2' || session === 'w3')) {
-      try {
-        await startPracticeWeek(db, memberId, session === 'w3' ? 'w3_logging' : 'w2_image');
-      } catch {
-        /* swallow — the session still completed; the nudge is a bonus, not load-bearing */
+    // On completion: (1) mark the Session CLOSED so the curriculum forecast advances the member W1→W2→W3→Checkpoint
+    // (the v2.3 conversational sessions complete via the kernel, not the step player); (2) open the practice week
+    // (Decision MM R4). Both best-effort — a hiccup never fails the conversation turn.
+    if (turn.complete) {
+      const assetId = session === 'w1' ? 'RWR-W1' : session === 'w2' ? 'RWR-W2' : session === 'w3' ? 'RWR-W3' : null;
+      if (assetId) {
+        try {
+          await markSessionClosed(db, memberId, assetId);
+        } catch {
+          /* swallow — the session still completed for the member; the forecast advance is best-effort */
+        }
+      }
+      if (session === 'w2' || session === 'w3') {
+        try {
+          await startPracticeWeek(db, memberId, session === 'w3' ? 'w3_logging' : 'w2_image');
+        } catch {
+          /* swallow — the session still completed; the nudge is a bonus, not load-bearing */
+        }
       }
     }
     return { ok: true, reply: turn.reply, state: turn.state };

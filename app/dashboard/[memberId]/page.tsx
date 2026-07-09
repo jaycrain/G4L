@@ -125,7 +125,9 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
   const crossingCta =
     crossing && forecast.current?.openable
       ? {
-          href: `/${forecast.current.kind === 'checkpoint' ? 'checkpoint' : 'session'}/${memberId}/${forecast.current.id}`,
+          href: forecast.current.route
+            ? forecast.current.route.replace('{memberId}', memberId) // v2.3 conversational Rewire
+            : `/${forecast.current.kind === 'checkpoint' ? 'checkpoint' : 'session'}/${memberId}/${forecast.current.id}`,
           label: forecast.current.kind === 'checkpoint' ? 'Cross this Checkpoint' : 'Open this Session',
         }
       : null;
@@ -211,25 +213,9 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
           </Link>
         </div>
       )}
-      {/* v2.3 Rewire entry — flag-gated (REWIRE, off in prod until the v2.3 flip). During the W1 felt-walk it shows
-          whenever REWIRE is staged (any phase) for easy one-click access; the activePhase==='rewire' gate returns
-          once W1 is wired into the phase flow. W1 = the Disinformation Audit. */}
-      {rewireEnabled() && (
-        <div className="reconnect-entry">
-          <Link href={`/rewire/${memberId}`} className="reconnect-cta">
-            Begin Rewire — the Disinformation Audit →
-          </Link>
-          <Link href={`/rewire/${memberId}/w2`} className="reconnect-cta">
-            Rewire W2 — the Visualization Workshop →
-          </Link>
-          <Link href={`/rewire/${memberId}/w3`} className="reconnect-cta">
-            Rewire W3 — the False Start Protocol →
-          </Link>
-          <Link href={`/rewire/${memberId}/checkpoint`} className="reconnect-cta">
-            Rewire Checkpoint — close the Phase →
-          </Link>
-        </div>
-      )}
+      {/* v2.3 Rewire is now driven by the curriculum forecast (W1→W2→W3→Checkpoint at /rewire/…, route-backed) once
+          REWIRE is staged — the member is guided by their "next step," not raw CTAs. The felt-walk shortcuts (/w2,
+          /w3, /checkpoint, /momentum) remain for dev access. */}
 
       <div className="member-greeting">
         {/* The avatar + name is the account entry — tapping it opens /account (no separate link). */}

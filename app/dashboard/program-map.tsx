@@ -24,6 +24,10 @@ export default function ProgramMap({ memberId, phases }: { memberId: string; pha
                 {it.hook && <div className="lithook">{it.hook}</div>}
                 {!it.openable ? (
                   <span className="open open-soon">Coming soon</span>
+                ) : it.route ? (
+                  <Link className="open" href={it.route.replace('{memberId}', memberId)} prefetch={false}>
+                    {it.kind === 'checkpoint' ? 'Cross this Checkpoint →' : 'Open this Session →'}
+                  </Link>
                 ) : it.kind === 'checkpoint' ? (
                   <Link className="open" href={`/checkpoint/${memberId}/${it.id}`} prefetch={false}>Cross this Checkpoint →</Link>
                 ) : (

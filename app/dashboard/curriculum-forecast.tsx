@@ -35,6 +35,11 @@ export default function CurriculumForecast({ memberId, forecast }: { memberId: s
           {cur.summary && <div className="lithook">{cur.summary}</div>}
           {!cur.openable ? (
             <span className="open open-soon">Coming soon</span>
+          ) : cur.route ? (
+            // v2.3 conversational Rewire — the asset carries its exact route.
+            <Link className="open" href={cur.route.replace('{memberId}', memberId)} prefetch={false}>
+              {cur.kind === 'checkpoint' ? 'Cross this Checkpoint →' : 'Open this Session →'}
+            </Link>
           ) : cur.kind === 'checkpoint' ? (
             <Link className="open" href={`/checkpoint/${memberId}/${cur.id}`} prefetch={false}>Cross this Checkpoint →</Link>
           ) : (
