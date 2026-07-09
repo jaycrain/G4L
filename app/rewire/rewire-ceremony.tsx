@@ -43,7 +43,7 @@ export default function RewireCeremony({ memberId, data }: { memberId: string; d
           </div>
           {r.componentBaseline != null && <p className="cer-grinta-from">from your starting line of {r.componentBaseline} / 5</p>}
           {/* composite = quiet background context, not the number the moment leans on. */}
-          <p className="cer-grinta-overall">Across all four Phases, your Grinta reads {r.composite} / 5.</p>
+          <p className="cer-grinta-overall">Your overall Grinta reads {r.composite} / 5.</p>
         </div>
       );
     }

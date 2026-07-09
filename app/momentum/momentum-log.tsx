@@ -9,7 +9,7 @@ import type { CallType } from '../../lib/momentum/store.ts';
 // log_call (no wrong door, FF). Warm + non-judgmental: a false start logs as honest, never a scold (Decision HH/EE).
 const OPTIONS: { type: CallType; label: string; done: string }[] = [
   { type: 'good_call', label: 'Good call', done: "Logged — nice one." },
-  { type: 'false_start', label: 'False start', done: "Logged — that's honest, not a failure. Your protocol's there when you want it." },
+  { type: 'false_start', label: 'False start', done: "Logged — that's an honest call. Your protocol's there when you want it." },
   { type: 'quiet_day', label: 'Quiet day', done: 'Logged — quiet counts too.' },
 ];
 

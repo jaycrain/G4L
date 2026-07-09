@@ -623,7 +623,7 @@ export async function backstopLogCall(
     if (/\b(logged|got it|marked|noted)\b/i.test(reply)) return reply; // the model already acknowledged
     const line =
       type === 'false_start'
-        ? 'Logged — that one counts as honest, not a failure.'
+        ? "Logged — that one's an honest call."
         : type === 'good_call'
           ? 'Logged that as a good call.'
           : 'Logged — a quiet day counts too.';
