@@ -8,8 +8,8 @@ import type { Db } from '../db/schema.ts';
 import { activeCoachingPlan, type RebuildPilotPayload } from '../rebuild/plan-store.ts';
 
 // W3 opens the logging window (payload lands with the Momentum slice); b2_noticing is Rebuild B2's skill-noticing
-// week; b3_pilot is Rebuild B3's daily health-decision logging against the committed plan.
-export type PracticeKind = 'w2_image' | 'w3_logging' | 'b2_noticing' | 'b3_pilot';
+// week; b3_pilot is Rebuild B3's daily health-decision logging; c3_quality is Reclaim C3's Quality-Day logging week.
+export type PracticeKind = 'w2_image' | 'w3_logging' | 'b2_noticing' | 'b3_pilot' | 'c3_quality';
 export const PRACTICE_WINDOW_DAYS = 7;
 
 export type ActivePractice = { kind: PracticeKind; startedAt: string; day: number }; // day = 1..PRACTICE_WINDOW_DAYS
@@ -91,6 +91,11 @@ export function practicePrompt(
       return `How'd the pilot go today — ${plan.activityChange.toLowerCase()}, and ${plan.dietChange.toLowerCase()}? A good call, a false start, or a quiet one?`;
     }
     return `How'd your two changes go today — a good call, a false start, or a quiet one?`;
+  }
+  if (kind === 'c3_quality') {
+    // Reclaim C3 — the daily Quality-Day check-in. Observational, non-judgmental (MM/R1); the point is noticing what
+    // made a day feel like a quality day, not scoring compliance.
+    return `How much did today feel like a quality day — and what made it that way (or what was missing)?`;
   }
   return null;
 }

@@ -65,7 +65,9 @@ export type Stage = 'identity' | 'identity_name' | 'reclaim' | 'door' | 'complet
   // 'audit' (the administered 20-item, 1–10 four-domain priority audit). C3/C4 add theirs later.
   | 'evidence'
   | 'refine'
-  | 'audit';
+  | 'audit'
+  // C3 · Quality Days — 'quality' (coach mode: define the Quality Day → confirm → store + open the logging week).
+  | 'quality';
 
 // Beat separator — when ONE turn hands over more than one beat (e.g. the Phases intro + the pre-survey framing, or
 // the score-read close + the drift ask), join them with this (invisible RS control char) instead of "\n\n" so the
@@ -106,6 +108,9 @@ export type Collected = {
   // Reclaim C1 Step 2 (coach mode). The refined Reclaim List awaiting the member's confirm — the snapshot. Set by the
   // ENGINE from the model's record_refinement; the action commits it to the live list on confirm (never before).
   pendingRefinement?: { items: { original: string; text: string; tier: string }[]; top3: string[] };
+  // Reclaim C3 (coach mode). The Quality-Day definition awaiting the member's confirm. Set by the ENGINE from the
+  // model's record_quality_day; the action stores it + opens the logging week on confirm.
+  pendingQualityDay?: { nonNegotiables: string[]; contributors: string[]; disruptors: string[] };
 };
 
 export type ConvState = {
@@ -558,6 +563,8 @@ const STAGE_PROMPT: Record<Stage, string> = {
   refine: 'Looking at your list with clearer eyes — what still feels true, and what feels different now?',
   // v2.5 Reclaim C2 — administered (off the depth kernel), never actually used; a 1–10 re-ask for type completeness.
   audit: 'A number from 1 to 10 — where would you put it?',
+  // v2.5 Reclaim C3 — coach mode supplies its own coaching text; a neutral fallback for type completeness.
+  quality: 'When a day feels genuinely good to you, what tends to be present?',
 };
 
 // Guarantee a non-final turn ends with a forward question, so the member is never stranded.
@@ -798,6 +805,9 @@ export type ModelTurn = { text: string; record?: Partial<Collected> & { complete
   // record_refinement tool): each item's original + refined text + tier, plus the top-3. Coached in a snapshot; the
   // engine proposes it, and only the member's confirm commits it back to the live list (propose→confirm→commit).
   refinement?: { items: { original: string; text: string; tier: string }[]; top3: string[] };
+  // v2.5 Reclaim C3 (coach mode) — the member's Quality-Day definition (from record_quality_day): top-3
+  // non-negotiables / next-3 contributors / top-2 disruptors. Coached, proposed, and committed on confirm.
+  qualityDay?: { nonNegotiables: string[]; contributors: string[]; disruptors: string[] };
 };
 
 // Parse an Anthropic response into a ModelTurn (prose + the record_progress tool input, if any).

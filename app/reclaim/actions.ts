@@ -11,16 +11,20 @@ import {
   liveTurnReclaimRefine,
   reclaimC2Opening,
   applyReclaimC2Turn,
+  reclaimC3Opening,
+  liveTurnReclaimC3,
 } from '../../lib/agent/reclaim.ts';
 import { getReclaimItems } from '../../lib/beats/store.ts';
 import { commitRefinement, isTier, type Tier } from '../../lib/reclaim/refinement-store.ts';
 import { persistBiggerWorldReading } from '../../lib/reclaim/bigger-world-store.ts';
 import { AUDIT_ITEM_COUNT } from '../../lib/reclaim/bigger-world-instrument.ts';
+import { persistQualityDayProfile } from '../../lib/reclaim/quality-day-store.ts';
+import { startPracticeWeek } from '../../lib/practice/store.ts';
 
-// v2.5 Reclaim server actions. C1 · Readiness (Step 1 evidence administered+formative; Step 2 refine coach →
-// member-confirmed commit to the live list) + C2 · Bigger World Audit (administered 20-item 1–10 priority audit →
-// RC-1 classification, persisted durably). Flag-gated (RECLAIM).
-export type ReclaimSession = 'c1' | 'c2';
+// v2.5 Reclaim server actions. C1 · Readiness (evidence + refine→commit) + C2 · Bigger World Audit (administered →
+// RC-1, persisted) + C3 · Quality Days (coach-define the profile → confirm → store + open the logging week).
+// Flag-gated (RECLAIM).
+export type ReclaimSession = 'c1' | 'c2' | 'c3';
 
 export async function startReclaimAction(
   memberId: string,
@@ -29,6 +33,7 @@ export async function startReclaimAction(
   if (!reclaimEnabled()) return { ok: false, error: 'Reclaim is not enabled.' };
   if (!(await authorizeMember(memberId))) return { ok: false, error: 'Not authorized.' };
   if (session === 'c2') return { ok: true, ...openTurn(reclaimC2Opening()) };
+  if (session === 'c3') return { ok: true, ...openTurn(reclaimC3Opening()) };
   // C1: seed the member's CURRENT Reclaim List so Step 2 can present it for the re-read. Graceful degrade to empty.
   const db = (await getDb()) as unknown as Db;
   const items = (await getReclaimItems(db, memberId).catch(() => [])).map((i) => i.text);
@@ -60,6 +65,27 @@ export async function reclaimTurnAction(
             await persistBiggerWorldReading(db, memberId, responses);
           } catch {
             /* swallow — the member saw the summary; the durable reading is best-effort */
+          }
+        }
+      }
+      return { ok: true, reply: turn.reply, state: turn.state };
+    }
+    // C3 · Quality Days — a LIVE coaching turn. On confirm, store the Quality-Day profile + open the logging week.
+    if (session === 'c3') {
+      const turn = await liveTurnReclaimC3(state, history, message);
+      if (turn.complete && turn.state.collected?.pendingQualityDay) {
+        const qd = turn.state.collected.pendingQualityDay;
+        if (qd.nonNegotiables.length) {
+          const db = (await getDb()) as unknown as Db;
+          try {
+            await persistQualityDayProfile(db, memberId, qd);
+          } catch {
+            /* swallow — the member saw the confirm; the stored profile is best-effort */
+          }
+          try {
+            await startPracticeWeek(db, memberId, 'c3_quality');
+          } catch {
+            /* swallow — the logging nudge is a bonus */
           }
         }
       }

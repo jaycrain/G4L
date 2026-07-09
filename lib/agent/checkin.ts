@@ -65,6 +65,9 @@ export type CheckinContext = {
   // Reclaim C2 Bigger World Audit — the member's chosen priorities: the primary focus area + the momentum lever. The
   // agent knows these so it can support their chosen priority (never a ranking to grade or weaponize).
   reclaimPriorities?: { primary: string; momentumLever: string } | null;
+  // Reclaim C3 Quality Days — the member's Quality-Day non-negotiables + recent logged scores. The agent supports the
+  // practice: help them notice what makes a day theirs; never a compliance score.
+  qualityDay?: { nonNegotiables: string[]; recentAvg: number | null; days: number } | null;
   beatsDone?: number; // Beats worked so far
   // The Playbook (the two-way loop): kept keepers + recent journal notes. Used to help — never
   // quoted back coldly or weaponized. Capped/summarized upstream. keeperType (0046) lets the recall
@@ -217,6 +220,9 @@ export function contextBlock(c: CheckinContext): string {
       : null,
     c.reclaimPriorities
       ? `Their Bigger World priorities (Reclaim C2) — the area they chose to focus on is their ${c.reclaimPriorities.primary.toLowerCase()} life; the easiest place to build momentum is their ${c.reclaimPriorities.momentumLever.toLowerCase()} life. Support that chosen focus warmly; it's their priority, not a ranking to grade.`
+      : null,
+    c.qualityDay && c.qualityDay.nonNegotiables.length
+      ? `Their Quality Day (Reclaim C3) — the non-negotiables they named: ${c.qualityDay.nonNegotiables.join(', ')}.${c.qualityDay.days ? ` They've logged ${c.qualityDay.days} day${c.qualityDay.days === 1 ? '' : 's'} lately, averaging ${c.qualityDay.recentAvg}/10.` : ''} Support the practice — help them notice what actually makes a day theirs; a Quality-Day score is self-monitoring, never a grade.`
       : null,
     c.experienceSummary && c.experienceSummary.trim()
       ? `How they've moved through the program lately (for awareness — gently notice a stall or a return, e.g. "you opened Visualization a couple times — want to pick it back up?"; NEVER grade or guilt): ${c.experienceSummary.trim()}`

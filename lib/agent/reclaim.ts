@@ -336,3 +336,155 @@ export function reclaimC2Opening(): Turn {
 export function liveTurnReclaimC2(state: ConvState, history: ConvMessage[], memberMessage: string): Turn {
   return applyReclaimC2Turn(state, history, memberMessage);
 }
+
+// ══ C3 · Quality Days Practice · Step 1 — Defining a Quality Day (COACH mode) ═════════════════════════════════
+// The model coaches the member to define what makes a day a "quality day," sorted into Greg's simple ranking — top-3
+// non-negotiables / next-3 contributors / top-2 disruptors. The engine proposes it; on the member's confirm the ACTION
+// stores the Quality-Day profile + opens the week of logging (c3_quality practice week). Step 2 (the daily log) is the
+// /quality-day surface. COPY: directional placeholder (Cowork wordsmiths), built from Greg's setup script.
+const C3_OPEN_1 =
+  "The last piece of Reclaim is a small, powerful one: Quality Days. The idea is simple — quality days lead to a " +
+  "quality life, and a quality life makes more quality days possible.";
+const C3_OPEN_2 =
+  "We're going to define what a quality day actually looks like for YOU — then track it for a week. Not to chase a " +
+  "perfect score, but to notice what makes a day feel like yours. Let's start with the definition.";
+const C3_OPEN_3 =
+  "When a day feels genuinely good to you — not perfect, but solid, healthy, meaningful, aligned — what tends to be present?";
+function c3Opening(): string {
+  return `${C3_OPEN_1}${BEAT_SEP}${C3_OPEN_2}${BEAT_SEP}${C3_OPEN_3}`;
+}
+
+const C3_REVISE_NUDGE = "No problem — tell me what you'd change, and we'll adjust it.";
+const C3_NUDGE = "Take your time — what makes a day feel healthy, meaningful, and worth it to you? We'll sort it into what's essential, what helps, and what pulls a day down.";
+const C3_COMMITTED_1 = "Done — that's your Quality Day. For the next week, each day I'll ask how much the day felt like a quality one, and which of these showed up.";
+const C3_COMMITTED_2 = "It's not about a perfect score — it's about noticing what actually makes your days yours. You can log any day from your dashboard.";
+
+type QDCapture = NonNullable<Collected['pendingQualityDay']>;
+function sanitizeQualityDay(q: ModelTurn['qualityDay']): QDCapture | undefined {
+  if (!q) return undefined;
+  const clean = (a: unknown): string[] => (Array.isArray(a) ? a.filter((s): s is string => typeof s === 'string' && !!s.trim()).map((s) => s.trim()) : []);
+  const nonNegotiables = clean(q.nonNegotiables);
+  if (!nonNegotiables.length) return undefined; // the non-negotiables are the floor — nothing to propose without them
+  return { nonNegotiables, contributors: clean(q.contributors), disruptors: clean(q.disruptors) };
+}
+function proposeQualityDay(q: QDCapture): string {
+  const list = (xs: string[]) => xs.map((x) => `  • ${x}`).join('\n');
+  const parts = [
+    `Non-negotiables — a day's hard to call quality without these:\n${list(q.nonNegotiables)}`,
+    q.contributors.length ? `Strong contributors:\n${list(q.contributors)}` : '',
+    q.disruptors.length ? `And what tends to pull a day down for you:\n${list(q.disruptors)}` : '',
+  ].filter(Boolean).join('\n\n');
+  return `Here's your Quality Day:\n\n${parts}${BEAT_SEP}Want me to save this and start your week of tracking, or adjust it first?`;
+}
+const C3_CONFIRM_RE =
+  /^(yes|yeah|yep|yup|save it|save that|start|let'?s go|that'?s it|that works|perfect|good|sounds good|do it|looks good|keep it|confirm(ed)?)\b/i;
+function c3Confirms(msg: string): boolean {
+  return C3_CONFIRM_RE.test(msg.trim().replace(/[.,!?]+$/, ''));
+}
+
+const qualityStage: StageDef = {
+  id: 'quality',
+  mode: 'coach',
+  opener: () => c3Opening(),
+  offersSubstance: () => true,
+  gather() {},
+  confirm() {},
+  coach(b) {
+    const sc = b.scratch as { proposed?: boolean };
+    const captured = sanitizeQualityDay(b.model.qualityDay);
+    if (captured) b.collected.pendingQualityDay = captured;
+    const qd = b.collected.pendingQualityDay;
+    const ready = !!qd && qd.nonNegotiables.length > 0;
+
+    if (sc.proposed) {
+      if (c3Confirms(b.memberMessage)) {
+        b.stage = 'complete';
+        b.complete = true;
+        b.reply = `${C3_COMMITTED_1}${BEAT_SEP}${C3_COMMITTED_2}`;
+        return;
+      }
+      sc.proposed = false;
+      b.reply = (b.modelText || C3_REVISE_NUDGE).trim();
+      return;
+    }
+    if (ready) {
+      sc.proposed = true;
+      b.reply = proposeQualityDay(qd!);
+      return;
+    }
+    b.reply = (b.modelText || C3_NUDGE).trim();
+  },
+};
+
+export const RECLAIM_C3_ARC: ArcConfig = {
+  id: 'reclaim-c3',
+  stageOrder: ['quality'],
+  stages: { quality: qualityStage },
+  onComplete: () => C3_COMMITTED_1,
+};
+
+export function applyReclaimC3Turn(state: ConvState, history: ConvMessage[], memberMessage: string, model: ModelTurn = { text: '' }): Turn {
+  return runArcTurn(RECLAIM_C3_ARC, state, history, memberMessage, model);
+}
+export function reclaimC3Opening(): Turn {
+  return { reply: c3Opening(), state: { stage: 'quality', collected: {} }, complete: false };
+}
+
+const C3_SYSTEM =
+  "You are the G4L Companion running C3, Quality Days, in Reclaim (Phase 4). You help the member DEFINE what makes a " +
+  "day a 'quality day' for them — a warm, member-owned coaching conversation (not a survey). Walk them: (1) elicit " +
+  "what's present when a day feels genuinely good — solid, healthy, meaningful, aligned (offer examples only if they're " +
+  "stuck — movement, eating well, rest, connection, calm, focus, time outside, creativity, progress); (2) help them " +
+  "sort it into Greg's simple ranking — the TOP 3 non-negotiables (a day is hard to call quality without these), the " +
+  "NEXT 3 contributors (they strongly help), and the TOP 2 disruptors (what most often pulls a day down); (3) play " +
+  "their own words back. Anchor elements (movement, eating, rest) usually belong in the non-negotiables, but it's " +
+  "theirs to decide — never impose.\n\n" +
+  "RECORDING: once the definition is settled, call record_quality_day with nonNegotiables (up to 3), contributors (up " +
+  "to 3), and disruptors (up to 2) — the member's own words. Only call it when it's settled; the app then shows them " +
+  "the profile to confirm before saving. If a distress or crisis signal appears, drop the exercise and route to support " +
+  "(988 US / local) and a human — always on.";
+
+const RECORD_QUALITY_DAY_TOOL = {
+  name: 'record_quality_day',
+  description: "Record the member's settled Quality-Day definition so the app can show it back to confirm. Their own words.",
+  input_schema: {
+    type: 'object' as const,
+    properties: {
+      nonNegotiables: { type: 'array', items: { type: 'string' }, description: 'top 3 — a day is hard to call quality without these' },
+      contributors: { type: 'array', items: { type: 'string' }, description: 'next 3 — strongly improve the day' },
+      disruptors: { type: 'array', items: { type: 'string' }, description: 'top 2 — most often pull the day down' },
+    },
+    required: ['nonNegotiables'],
+  },
+};
+
+function parseQualityDayModel(content: readonly unknown[]): ModelTurn {
+  let text = '';
+  let qualityDay: ModelTurn['qualityDay'];
+  for (const raw of content) {
+    const bl = raw as { type: string; text?: string; name?: string; input?: { nonNegotiables?: unknown; contributors?: unknown; disruptors?: unknown } };
+    if (bl.type === 'text') text += bl.text ?? '';
+    if (bl.type === 'tool_use' && bl.name === 'record_quality_day') {
+      const arr = (a: unknown): string[] => (Array.isArray(a) ? a.map((s) => String(s ?? '')) : []);
+      qualityDay = { nonNegotiables: arr(bl.input?.nonNegotiables), contributors: arr(bl.input?.contributors), disruptors: arr(bl.input?.disruptors) };
+    }
+  }
+  return { text: text.trim(), ...(qualityDay ? { qualityDay } : {}) };
+}
+
+export async function liveTurnReclaimC3(state: ConvState, history: ConvMessage[], memberMessage: string): Promise<Turn> {
+  const { default: Anthropic } = await import('@anthropic-ai/sdk');
+  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, timeout: 25000, maxRetries: 2, defaultHeaders: { 'accept-encoding': 'identity' } });
+  const messages = [
+    ...history.map((mm) => ({ role: (mm.role === 'agent' ? 'assistant' : 'user') as 'assistant' | 'user', content: mm.text })),
+    { role: 'user' as const, content: memberMessage },
+  ];
+  const res = await client.messages.create({
+    model: process.env.ANTHROPIC_MODEL ?? 'claude-sonnet-4-6',
+    max_tokens: 600,
+    system: C3_SYSTEM,
+    tools: [RECORD_QUALITY_DAY_TOOL],
+    messages,
+  });
+  return applyReclaimC3Turn(state, history, memberMessage, parseQualityDayModel(res.content));
+}

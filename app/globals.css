@@ -1117,6 +1117,30 @@ html:has(.companion-hero), body:has(.companion-hero) { overflow-anchor: none; }
 .momentum-domain-btn.is-on { background: var(--teal); border-color: var(--teal); color: #fff; }
 .momentum-domain-btn:disabled { opacity: 0.5; cursor: default; }
 
+/* Reclaim C3 · Quality-Day daily log — a 1–10 score, element toggles, two reflections. Neutral pills, teal on select
+   (never a compliance scoreboard; the point is noticing). Barlow + palette only. */
+.qd-log { margin-top: 0.5rem; }
+.qd-score { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.4rem 0 0.8rem; }
+.qd-score-btn {
+  font-family: inherit; font-size: 0.9rem; font-weight: 600; color: var(--navy);
+  background: transparent; border: 1.5px solid var(--light-grey, #e8e6e6); border-radius: 999px;
+  width: 2.1rem; height: 2.1rem; cursor: pointer; transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+}
+.qd-score-btn:hover:not(:disabled) { border-color: var(--teal); }
+.qd-score-btn.is-on { background: var(--teal); border-color: var(--teal); color: #fff; }
+.qd-score-btn:disabled { opacity: 0.5; cursor: default; }
+.qd-elements { margin: 0.3rem 0 0.6rem; }
+.qd-elements-label { font-size: 0.82rem; color: var(--navy); opacity: 0.7; }
+.qd-elements-opts { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.35rem; }
+.qd-el-btn {
+  font-family: inherit; font-size: 0.82rem; font-weight: 600; color: var(--navy);
+  background: transparent; border: 1.5px solid var(--light-grey, #e8e6e6); border-radius: 999px;
+  padding: 0.35rem 0.85rem; cursor: pointer; transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+}
+.qd-el-btn:hover:not(:disabled) { border-color: var(--teal); }
+.qd-el-btn.is-on { background: var(--teal); border-color: var(--teal); color: #fff; }
+.qd-el-btn:disabled { opacity: 0.5; cursor: default; }
+
 /* R4 Rewire ceremony — the component is the hero; these two lines are quiet context (the starting line + the overall
    composite), so the moment leans on the component move, not the diluted composite. */
 .cer-grinta-from { margin-top: 0.3rem; font-size: 0.85rem; color: var(--navy); opacity: 0.7; }
