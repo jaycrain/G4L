@@ -61,8 +61,9 @@ export type Stage = 'identity' | 'identity_name' | 'reclaim' | 'door' | 'complet
   | 'skills'
   | 'pilot'
   // v2.5 Reclaim arc (config #5 on the shared kernel). C1 · Readiness — 'evidence' (the administered 15-item evidence
-  // self-check, formative). C2/C3/C4 add their stage ids in later slices.
-  | 'evidence';
+  // self-check, formative) → 'refine' (coach mode: refine the Reclaim List → confirm → commit). C2/C3/C4 add theirs later.
+  | 'evidence'
+  | 'refine';
 
 // Beat separator — when ONE turn hands over more than one beat (e.g. the Phases intro + the pre-survey framing, or
 // the score-read close + the drift ask), join them with this (invisible RS control char) instead of "\n\n" so the
@@ -100,6 +101,9 @@ export type Collected = {
   // set by the ENGINE from the model's record_plan locks (not mergeStaged), then persisted to the coaching_plan artifact.
   pilotActivity?: string;
   pilotDiet?: string;
+  // Reclaim C1 Step 2 (coach mode). The refined Reclaim List awaiting the member's confirm — the snapshot. Set by the
+  // ENGINE from the model's record_refinement; the action commits it to the live list on confirm (never before).
+  pendingRefinement?: { items: { original: string; text: string; tier: string }[]; top3: string[] };
 };
 
 export type ConvState = {
@@ -548,6 +552,8 @@ const STAGE_PROMPT: Record<Stage, string> = {
   pilot: "What's one small change you could try this week?",
   // v2.5 Reclaim C1 — administered (off the depth kernel), never actually used; a 1–5 re-ask for type completeness.
   evidence: 'A number from 1 (strongly disagree) to 5 (strongly agree) — how true does that feel?',
+  // v2.5 Reclaim C1 Step 2 — coach mode supplies its own coaching text; a neutral fallback for type completeness.
+  refine: 'Looking at your list with clearer eyes — what still feels true, and what feels different now?',
 };
 
 // Guarantee a non-final turn ends with a forward question, so the member is never stranded.
@@ -784,6 +790,10 @@ export type ModelTurn = { text: string; record?: Partial<Collected> & { complete
   // A field appears only once the model judges it specific + right-sized + member-affirmed; the engine gates completion
   // on both being present. A separate channel from `record` (which is onboarding-Collected-shaped, merged by mergeStaged).
   plan?: { activityChange?: string; dietChange?: string };
+  // v2.5 Reclaim C1 Step 2 (coach mode) — the member's CONFIRMED-in-conversation refined Reclaim List (from the
+  // record_refinement tool): each item's original + refined text + tier, plus the top-3. Coached in a snapshot; the
+  // engine proposes it, and only the member's confirm commits it back to the live list (propose→confirm→commit).
+  refinement?: { items: { original: string; text: string; tier: string }[]; top3: string[] };
 };
 
 // Parse an Anthropic response into a ModelTurn (prose + the record_progress tool input, if any).
