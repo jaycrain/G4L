@@ -1,7 +1,9 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { startRebuildAction, rebuildTurnAction, type RebuildSession } from './actions.ts';
+import { startRebuildAction, rebuildTurnAction, rebuildCeremonyDataAction, type RebuildSession } from './actions.ts';
+import RebuildCeremony from './rebuild-ceremony.tsx';
+import type { RebuildCeremonyData } from '../../lib/ceremony/rebuild-ceremony-beats.ts';
 import type { ConvMessage, ConvState } from '../../lib/agent/onboarding.ts';
 import { BEAT_SEP } from '../../lib/agent/onboarding.ts';
 
@@ -18,6 +20,7 @@ export default function RebuildChat({ memberId, session = 'b1' }: { memberId: st
   const [input, setInput] = useState('');
   const [pending, setPending] = useState(false);
   const [done, setDone] = useState(false);
+  const [ceremony, setCeremony] = useState<RebuildCeremonyData | null>(null); // B4: set when the checkpoint reaches 'ceremony'
   const [error, setError] = useState<string | null>(null);
   const started = useRef(false);
 
@@ -47,8 +50,16 @@ export default function RebuildChat({ memberId, session = 'b1' }: { memberId: st
     if (!r.ok || !r.reply || !r.state) return setError(r.error ?? 'Something went wrong.');
     setMessages((m) => [...m, ...agentBubbles(r.reply!)]);
     setState(r.state);
-    if (r.state.stage === 'complete') setDone(true); // B1 done — the SDT reading is stored (not shown)
+    if (r.state.stage === 'complete') setDone(true); // an administered/coach session done — its artifact is stored
+    // B4 — the checkpoint reached the ceremony: load the reveal data and fire the full-screen overlay.
+    if (r.state.stage === 'ceremony') {
+      const c = await rebuildCeremonyDataAction(memberId);
+      if (c.ok && c.data) setCeremony(c.data);
+    }
   }
+
+  // B4 — once the checkpoint reaches the ceremony, the overlay takes over the whole surface.
+  if (ceremony) return <RebuildCeremony memberId={memberId} data={ceremony} />;
 
   return (
     <div className="reconnect-chat">

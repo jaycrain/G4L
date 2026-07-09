@@ -17,6 +17,7 @@ import {
   scoreSkills,
   skillHighlights,
 } from '../rebuild/skills-instrument.ts';
+import { grintaStem, CHECKPOINT_CONTROL_ITEMS } from '../grinta/survey/instrument.ts';
 
 export function rebuildEnabled(): boolean {
   return process.env.REBUILD === 'staged';
@@ -353,4 +354,69 @@ export async function liveTurnRebuildB3(state: ConvState, history: ConvMessage[]
 // Compose the pilot plan into one Playbook keeper (the two small changes, the member's own words). §5 keeper candidate.
 export function composePilotPlan(activity: string, diet: string): string {
   return `Movement — ${activity}\nEating — ${diet}`;
+}
+
+// ══ B4 · The Rebuild Checkpoint ═══════════════════════════════════════════════════════════════════════════════
+// The Phase-3 close: an ADMINISTERED beat (12 current-state Control items, 1–5, deterministic — same factory as the
+// IDQ/§2e/R4 read) → a hold into the ceremony (the reveal overlay fires from the chat). The ACTION pairwise-averages
+// the 12 → 6, scores the Control component (Ave1→Ave2), writes the Checkpoint grinta_reading, and sets the
+// rebuild_checkpoint_passed gate (→ Reclaim lit). Items VERBATIM (CHECKPOINT_CONTROL_ITEMS, RB-2 resolved). Copy: B4 doc.
+const B4_CHECKPOINT_OPEN =
+  "You did the real work of Rebuild — you found your why, took honest stock of your skills, and ran the pilot in your " +
+  "own life. Before we close the Phase, a quick read on where your control sits now. A dozen of these, one to five. No " +
+  "passing score — just an honest gauge of what you've built.";
+const B4_CHECKPOINT_CLOSE = "That's the read. Hold on — let me show you what you just built.";
+function rebuildCheckpointDeliver(index: number): string {
+  return grintaStem(CHECKPOINT_CONTROL_ITEMS[index]!);
+}
+function rebuildCheckpointOpener(): string {
+  return `${B4_CHECKPOINT_OPEN}\n\n${rebuildCheckpointDeliver(0)}`;
+}
+
+const rebuildCheckpointStage: StageDef = administeredStage({
+  id: 'checkpoint',
+  itemCount: CHECKPOINT_CONTROL_ITEMS.length, // 12 (scaleMax defaults to 5)
+  opener: () => rebuildCheckpointOpener(),
+  deliverItem: (n) => rebuildCheckpointDeliver(n),
+  reprompt: (n) => `Just a number, 1 to 5 — how true does that feel right now?\n\n${rebuildCheckpointDeliver(n)}`,
+  onComplete: (b) => {
+    // The 12 control responses are in b.administeredResponses. Hand into the ceremony; the ACTION averages 12→6,
+    // scores the Control component (Ave1→Ave2), persists the Checkpoint reading, and sets the phase gate.
+    b.stage = 'ceremony';
+    b.reply = B4_CHECKPOINT_CLOSE;
+  },
+});
+
+const REBUILD_CEREMONY_LEAD = 'Hold on — let me show you what you just built.';
+const rebuildCeremonyStage: StageDef = {
+  id: 'ceremony',
+  mode: 'drawout',
+  opener: () => REBUILD_CEREMONY_LEAD,
+  offersSubstance: () => true,
+  gather(b) {
+    b.reply = REBUILD_CEREMONY_LEAD;
+  },
+  confirm(b) {
+    b.reply = REBUILD_CEREMONY_LEAD;
+  },
+};
+
+export const REBUILD_CHECKPOINT_ARC: ArcConfig = {
+  id: 'rebuild-checkpoint',
+  stageOrder: ['checkpoint', 'ceremony'],
+  stages: { checkpoint: rebuildCheckpointStage, ceremony: rebuildCeremonyStage },
+  onComplete: () => REBUILD_CEREMONY_LEAD,
+};
+
+export function applyRebuildCheckpointTurn(state: ConvState, history: ConvMessage[], memberMessage: string, model: ModelTurn): Turn {
+  return runArcTurn(REBUILD_CHECKPOINT_ARC, state, history, memberMessage, model);
+}
+
+export function rebuildCheckpointOpening(): Turn {
+  return { reply: rebuildCheckpointOpener(), state: { stage: 'checkpoint', collected: {} }, complete: false };
+}
+
+// The Checkpoint is ADMINISTERED (deterministic Likert parse) — no model call needed. The action passes empty text.
+export function liveTurnRebuildCheckpoint(state: ConvState, history: ConvMessage[], memberMessage: string): Turn {
+  return applyRebuildCheckpointTurn(state, history, memberMessage, { text: '' });
 }

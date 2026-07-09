@@ -80,6 +80,27 @@ export const GRINTA_ITEMS: Record<string, GrintaItem> = {
   // Focus (from W3)
   W3Q2: { code: 'W3Q2', strand: 'rewire', subscale: 'W3', stem: 'I can counter triggers that challenge my behavior change efforts' },
   W3Q3: { code: 'W3Q3', strand: 'rewire', subscale: 'W3', stem: 'I am confident that I can maintain physical activity habits and healthy eating patterns over time' },
+
+  // §B4 Rebuild Checkpoint — twelve MORE control items (control → Rebuild), an activity/diet PAIR per layer question.
+  // VERBATIM current-state items from Greg's Measurement Canvas V4b (RB-2 RESOLVED, 7/9 — use these, NOT the "I am
+  // more…" phrasing in the Gated Assets doc); do NOT reword. The 'a'/'b' halves average pairwise to 6 scored items
+  // (B1Q2, B1Q3, B2Q2, B2Q3, B3Q2, B3Q3) which, with the three baseline control items (B1Q1/B2Q1/B3Q1), give the
+  // 9-item control read at the Rebuild close.
+  // Foundation (from B1)
+  B1Q2a: { code: 'B1Q2a', strand: 'rebuild', subscale: 'B1', stem: 'I am aware of my physical activity behaviors and how they relate to recommended guidelines' },
+  B1Q2b: { code: 'B1Q2b', strand: 'rebuild', subscale: 'B1', stem: 'I am aware of my dietary habits and how they relate to recommended guidelines' },
+  B1Q3a: { code: 'B1Q3a', strand: 'rebuild', subscale: 'B1', stem: 'I am aware of how sleep and stress can influence my lifestyle choices and my mood' },
+  B1Q3b: { code: 'B1Q3b', strand: 'rebuild', subscale: 'B1', stem: 'I am aware of how my lifestyles influence various health indicators' },
+  // Structure (from B2)
+  B2Q2a: { code: 'B2Q2a', strand: 'rebuild', subscale: 'B2', stem: 'I am skilled at self-monitoring my lifestyle behaviors' },
+  B2Q2b: { code: 'B2Q2b', strand: 'rebuild', subscale: 'B2', stem: 'I am skilled at using self-planning and time management skills to manage my behaviors' },
+  B2Q3a: { code: 'B2Q3a', strand: 'rebuild', subscale: 'B2', stem: 'I am skilled at overcoming barriers and recovering from short relapses' },
+  B2Q3b: { code: 'B2Q3b', strand: 'rebuild', subscale: 'B2', stem: 'I am skilled at managing my attitudes and staying motivated on healthy living' },
+  // Elevation (from B3)
+  B3Q2a: { code: 'B3Q2a', strand: 'rebuild', subscale: 'B3', stem: 'I have a consistent movement practice' },
+  B3Q2b: { code: 'B3Q2b', strand: 'rebuild', subscale: 'B3', stem: 'I eat intentionally more often than I eat reactively' },
+  B3Q3a: { code: 'B3Q3a', strand: 'rebuild', subscale: 'B3', stem: 'I can appreciate how physical activity, dietary behaviors and sleep patterns interact together' },
+  B3Q3b: { code: 'B3Q3b', strand: 'rebuild', subscale: 'B3', stem: 'I can see how lifestyle behaviors influence my health, function, and quality of life' },
 };
 
 // The three baseline GRIT items (administered at onboarding) — needed to recompute the 9-item grit mean at the Checkpoint.
@@ -92,6 +113,30 @@ export const CHECKPOINT_GRIT_ITEMS: readonly string[] = ['G1Q2', 'G1Q3', 'G2Q2',
 export const BASELINE_COMMITMENT_ITEMS: readonly string[] = ['W1Q1', 'W2Q1', 'W3Q1'];
 // The §R4 Rewire Checkpoint reading — the six additional commitment items, in session order (W1→W2→W3, Q2 then Q3).
 export const CHECKPOINT_COMMITMENT_ITEMS: readonly string[] = ['W1Q2', 'W1Q3', 'W2Q2', 'W2Q3', 'W3Q2', 'W3Q3'];
+
+// The three baseline CONTROL items (administered at onboarding) — the Rebuild strand's Ave1 at the B4 Checkpoint.
+export const BASELINE_CONTROL_ITEMS: readonly string[] = ['B1Q1', 'B2Q1', 'B3Q1'];
+// The §B4 Rebuild Checkpoint reading — the TWELVE current-state control items, in administration order (Foundation →
+// Structure → Elevation, each Q2 then Q3, activity 'a' then diet 'b'). These average PAIRWISE (12 → 6) before scoring.
+export const CHECKPOINT_CONTROL_ITEMS: readonly string[] = [
+  'B1Q2a', 'B1Q2b', 'B1Q3a', 'B1Q3b', // Foundation
+  'B2Q2a', 'B2Q2b', 'B2Q3a', 'B2Q3b', // Structure
+  'B3Q2a', 'B3Q2b', 'B3Q3a', 'B3Q3b', // Elevation
+];
+// The six SCORED control items after pairwise averaging (Q2 = mean(a,b), Q3 = mean(a,b) per layer). Order matches the
+// pairwise reduction of CHECKPOINT_CONTROL_ITEMS.
+export const CHECKPOINT_CONTROL_SCORED: readonly string[] = ['B1Q2', 'B1Q3', 'B2Q2', 'B2Q3', 'B3Q2', 'B3Q3'];
+
+// Pairwise-average an even-length response array into consecutive pairs → half the length. B4's one genuine factory
+// addition (Greg 7/9: "average the pair to retain the meaning of the summary construct"): the 12 activity/diet halves
+// collapse to 6 scored items before the standard checkpoint scoring runs. Result values are non-integer means (valid —
+// scoreCheckpointStrand only means them, it doesn't re-validate the Likert integer constraint).
+export function pairwiseAverage(responses: readonly number[]): number[] {
+  if (responses.length % 2 !== 0) throw new Error(`pairwiseAverage expects an even count, got ${responses.length}`);
+  const out: number[] = [];
+  for (let i = 0; i < responses.length; i += 2) out.push(Math.round(((responses[i]! + responses[i + 1]!) / 2) * 100) / 100);
+  return out;
+}
 
 // The onboarding BASELINE reading — the twelve "*Q1" items, administered in R order (grit→commitment→control→
 // challenge = Reconnect→Rewire→Rebuild→Reclaim). Item index in the administered array maps to this list.
