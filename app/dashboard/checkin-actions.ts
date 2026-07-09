@@ -46,12 +46,16 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
   await maybeFoldMemory(db, memberId); // distill anything that has aged out of recall (best-effort, no-op until due)
   const [grinta, grintaReading, whyReading, skillsReading, pilotPlan, pilotTally, biggerWorld, qdProfile, qdRecent, consumedBites, profRows, idqRows, reclaimItems, beatRows, playbook, measures, linkedMeasureRows, facets, closedIds, lastClosedRows, forecast, experience] = await Promise.all([
     getGrinta(db, memberId, dash.identityNoun),
-    latestGrintaReading(db, memberId), // the SURVEY Grinta Index (Decision DD) — the grit baseline the member sees
-    latestWhyReading(db, memberId), // Rebuild B1 — the agent must KNOW they named their why (RB-1: stored, not shown)
-    latestSkillsReading(db, memberId), // Rebuild B2 — the self-management profile the agent reflects (plain language)
-    activeCoachingPlan<RebuildPilotPayload>(db, memberId, 'rebuild'), // Rebuild B3 — the active Lifestyle Pilot plan
+    // Rebuild/Reclaim REGISTERS — all SUPPLEMENTARY context ("the agent knows X"), each null-safe downstream. Guard
+    // EVERY one with .catch: a single missing/drifted register table (prod migrations don't auto-apply) must NEVER
+    // take down the cornerstone companion. Degrade to null → the agent just doesn't know that one signal yet. Empty
+    // for a brand-new account anyway, so null == "no data yet." (Matches the QD reads, which were already guarded.)
+    latestGrintaReading(db, memberId).catch(() => null), // the SURVEY Grinta Index (Decision DD) — the grit baseline the member sees
+    latestWhyReading(db, memberId).catch(() => null), // Rebuild B1 — the agent must KNOW they named their why (RB-1: stored, not shown)
+    latestSkillsReading(db, memberId).catch(() => null), // Rebuild B2 — the self-management profile the agent reflects (plain language)
+    activeCoachingPlan<RebuildPilotPayload>(db, memberId, 'rebuild').catch(() => null), // Rebuild B3 — the active Lifestyle Pilot plan
     domainTally(db, memberId).catch(() => null), // Rebuild B3 — per-domain call tally (movement vs eating), OO
-    latestBiggerWorldReading(db, memberId), // Reclaim C2 — the member's chosen priorities (primary + momentum lever)
+    latestBiggerWorldReading(db, memberId).catch(() => null), // Reclaim C2 — the member's chosen priorities (primary + momentum lever)
     activeQualityDayProfile(db, memberId).catch(() => null), // Reclaim C3 — the Quality-Day profile
     recentQualityDays(db, memberId).catch(() => []), // Reclaim C3 — recent Quality-Day logs
 
