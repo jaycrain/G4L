@@ -1,7 +1,9 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { startRewireAction, rewireTurnAction, type RewireSession } from './actions.ts';
+import { startRewireAction, rewireTurnAction, rewireCeremonyDataAction, type RewireSession } from './actions.ts';
+import RewireCeremony from './rewire-ceremony.tsx';
+import type { RewireCeremonyData } from '../../lib/ceremony/rewire-ceremony-beats.ts';
 import type { ConvMessage, ConvState } from '../../lib/agent/onboarding.ts';
 import { BEAT_SEP } from '../../lib/agent/onboarding.ts';
 
@@ -18,6 +20,7 @@ export default function RewireChat({ memberId, session = 'w1' }: { memberId: str
   const [input, setInput] = useState('');
   const [pending, setPending] = useState(false);
   const [done, setDone] = useState(false);
+  const [ceremony, setCeremony] = useState<RewireCeremonyData | null>(null); // R4: set when the checkpoint reaches 'ceremony'
   const [error, setError] = useState<string | null>(null);
   const started = useRef(false);
 
@@ -48,7 +51,15 @@ export default function RewireChat({ memberId, session = 'w1' }: { memberId: str
     setMessages((m) => [...m, ...agentBubbles(r.reply!)]);
     setState(r.state);
     if (r.state.stage === 'complete') setDone(true); // session done — the keeper(s) are in the Playbook
+    // R4 — the checkpoint reached the ceremony: load the reveal data and fire the full-screen overlay.
+    if (r.state.stage === 'ceremony') {
+      const c = await rewireCeremonyDataAction(memberId);
+      if (c.ok && c.data) setCeremony(c.data);
+    }
   }
+
+  // R4 — once the checkpoint reaches the ceremony, the overlay takes over the whole surface.
+  if (ceremony) return <RewireCeremony memberId={memberId} data={ceremony} />;
 
   return (
     <div className="reconnect-chat">

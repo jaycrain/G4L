@@ -1103,3 +1103,8 @@ html:has(.companion-hero), body:has(.companion-hero) { overflow-anchor: none; }
   border: 1px solid var(--light-grey, #e8e6e6); border-radius: 8px; padding: 0.55rem 0.7rem; resize: vertical;
 }
 .momentum-log-done { margin-top: 0.6rem; color: var(--teal); font-weight: 600; font-size: 0.9rem; }
+
+/* R4 Rewire ceremony — the component is the hero; these two lines are quiet context (the starting line + the overall
+   composite), so the moment leans on the component move, not the diluted composite. */
+.cer-grinta-from { margin-top: 0.3rem; font-size: 0.85rem; color: var(--navy); opacity: 0.7; }
+.cer-grinta-overall { margin-top: 0.5rem; font-size: 0.8rem; color: var(--navy); opacity: 0.6; }

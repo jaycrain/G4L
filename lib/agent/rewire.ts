@@ -8,10 +8,11 @@
 // Flag-gated by REWIRE (Decision JJ) — OFF by default; prod keeps the v1 static Rewire until the v2.3 flip.
 // COPY: final, Jay-approved. "Jay" stays third-person, named (founder presence).
 
-import { runArcTurn, type ArcConfig, type StageDef } from './onboarding-staged.ts';
+import { runArcTurn, administeredStage, type ArcConfig, type StageDef } from './onboarding-staged.ts';
 import { memberClosingReclaim } from './onboarding-intent.ts';
 import { identityLabel } from '../member/identity.ts';
 import { consolidateReclaimList } from '../member/reclaim.ts';
+import { grintaStem, CHECKPOINT_COMMITMENT_ITEMS } from '../grinta/survey/instrument.ts';
 import { BEAT_SEP, type Collected, type ConvMessage, type ConvState, type ModelTurn, type Turn } from './onboarding.ts';
 
 export function rewireEnabled(): boolean {
@@ -788,4 +789,71 @@ export async function liveTurnRewireW3(state: ConvState, history: ConvMessage[],
     .join('')
     .trim();
   return applyRewireW3Turn(state, history, memberMessage, { text });
+}
+
+// ══ R4 · The Rewire Checkpoint ════════════════════════════════════════════════════════════════════════════════
+// The Phase-2 close: an ADMINISTERED beat (6 Commitment items, 1–5, deterministic — instrument fidelity, same as the
+// IDQ/§2e read) on the shared administeredStage() factory, then a hold into the ceremony (the reveal overlay fires
+// from the chat). The ACTION scores the Commitment component (Ave1→Ave2) + writes the Checkpoint grinta_reading + sets
+// the rewire_checkpoint_passed gate. Items VERBATIM (CHECKPOINT_COMMITMENT_ITEMS). Copy: R4 doc (frame is ours).
+const W3_CHECKPOINT_OPEN =
+  "You just did the real work of Rewire — you caught the lies, built the picture, wrote the protocol. Before we close " +
+  "the Phase, a quick read on where your commitment sits now. Six of these, one to five. No passing score — just an " +
+  "honest gauge of what you're building.";
+const W3_CHECKPOINT_CLOSE = "That's the read. Hold on — let me show you what it means.";
+function rewireCheckpointDeliver(index: number): string {
+  return grintaStem(CHECKPOINT_COMMITMENT_ITEMS[index]!);
+}
+function rewireCheckpointOpener(): string {
+  return `${W3_CHECKPOINT_OPEN}\n\n${rewireCheckpointDeliver(0)}`;
+}
+
+const rewireCheckpointStage: StageDef = administeredStage({
+  id: 'checkpoint',
+  itemCount: CHECKPOINT_COMMITMENT_ITEMS.length, // 6
+  opener: () => rewireCheckpointOpener(),
+  deliverItem: (n) => rewireCheckpointDeliver(n),
+  reprompt: (n) => `Just a number, 1 to 5 — how true does that feel right now?\n\n${rewireCheckpointDeliver(n)}`,
+  onComplete: (b) => {
+    // The 6 commitment items are in b.administeredResponses. Hand into the ceremony; the ACTION scores + persists the
+    // Checkpoint reading (Commitment component Ave1→Ave2) and sets the phase gate.
+    b.stage = 'ceremony';
+    b.reply = W3_CHECKPOINT_CLOSE;
+  },
+});
+
+// The ceremony terminal — the conversational engine only LANDS here; the reveal is a full-screen overlay the chat
+// fires on stage === 'ceremony'. This stage just holds (defensive).
+const REWIRE_CEREMONY_LEAD = 'Hold on — let me show you what you just built.';
+const rewireCeremonyStage: StageDef = {
+  id: 'ceremony',
+  mode: 'drawout',
+  opener: () => REWIRE_CEREMONY_LEAD,
+  offersSubstance: () => true,
+  gather(b) {
+    b.reply = REWIRE_CEREMONY_LEAD;
+  },
+  confirm(b) {
+    b.reply = REWIRE_CEREMONY_LEAD;
+  },
+};
+
+export const REWIRE_CHECKPOINT_ARC: ArcConfig = {
+  id: 'rewire-checkpoint',
+  stageOrder: ['checkpoint', 'ceremony'],
+  stages: { checkpoint: rewireCheckpointStage, ceremony: rewireCeremonyStage },
+  onComplete: () => REWIRE_CEREMONY_LEAD,
+};
+
+export function applyRewireCheckpointTurn(state: ConvState, history: ConvMessage[], memberMessage: string, model: ModelTurn): Turn {
+  return runArcTurn(REWIRE_CHECKPOINT_ARC, state, history, memberMessage, model);
+}
+
+export function rewireCheckpointOpening(): Turn {
+  return { reply: rewireCheckpointOpener(), state: { stage: 'checkpoint', collected: {} }, complete: false };
+}
+
+// The Checkpoint is ADMINISTERED (deterministic Likert parse) — no model call needed. The action passes empty text.
+export function liveTurnRewireCheckpoint(state: ConvState, history: ConvMessage[], memberMessage: string): Turn {
+  return applyRewireCheckpointTurn(state, history, memberMessage, { text: '' });
 }

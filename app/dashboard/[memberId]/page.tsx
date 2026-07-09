@@ -225,6 +225,9 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
           <Link href={`/rewire/${memberId}/w3`} className="reconnect-cta">
             Rewire W3 — the False Start Protocol →
           </Link>
+          <Link href={`/rewire/${memberId}/checkpoint`} className="reconnect-cta">
+            Rewire Checkpoint — close the Phase →
+          </Link>
         </div>
       )}
 
