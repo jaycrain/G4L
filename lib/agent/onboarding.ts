@@ -59,7 +59,10 @@ export type Stage = 'identity' | 'identity_name' | 'reclaim' | 'door' | 'complet
   // 'pilot' (COACH mode: coach the two small changes → a confirmed plan). B4 adds its stage later.
   | 'why'
   | 'skills'
-  | 'pilot';
+  | 'pilot'
+  // v2.5 Reclaim arc (config #5 on the shared kernel). C1 · Readiness — 'evidence' (the administered 15-item evidence
+  // self-check, formative). C2/C3/C4 add their stage ids in later slices.
+  | 'evidence';
 
 // Beat separator — when ONE turn hands over more than one beat (e.g. the Phases intro + the pre-survey framing, or
 // the score-read close + the drift ask), join them with this (invisible RS control char) instead of "\n\n" so the
@@ -543,6 +546,8 @@ const STAGE_PROMPT: Record<Stage, string> = {
   skills: 'A number from 1 (strongly disagree) to 4 (strongly agree) — how true does that feel?',
   // v2.4 Rebuild B3 — coach mode supplies its own coaching text; a neutral fallback for type completeness.
   pilot: "What's one small change you could try this week?",
+  // v2.5 Reclaim C1 — administered (off the depth kernel), never actually used; a 1–5 re-ask for type completeness.
+  evidence: 'A number from 1 (strongly disagree) to 5 (strongly agree) — how true does that feel?',
 };
 
 // Guarantee a non-final turn ends with a forward question, so the member is never stranded.
