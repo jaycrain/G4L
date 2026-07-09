@@ -3,6 +3,7 @@
 // and pushes — warmly — for honest depth. Live Claude when available; the registry's authored
 // companion_frame is the reliable fallback (never a broken or empty frame).
 import type { Step } from '../curriculum/types.ts';
+import { detectCrisis, CRISIS_RESPONSE_US } from './governance.ts';
 
 export type PriorAnswer = { title: string; prompt: string; answer: string };
 
@@ -87,6 +88,9 @@ export async function respondToStep(input: {
   existingDoors?: string[]; // the member's committed Doors — so a mid-step "what were my Doors?" is ANSWERED, not deflected
 }): Promise<StepResponse> {
   const answer = (input.answer ?? '').trim();
+  // GOVERNANCE — crisis routing is always on: a distress signal in a Session step routes to 988 (never a conversational
+  // reply, never advance). Deterministic backstop beneath the model, same as the phase arcs + onboarding + check-in.
+  if (detectCrisis(answer).flagged) return { reply: CRISIS_RESPONSE_US, ready: false };
   const fallback: StepResponse = {
     reply: input.step.probe || 'Tell me a little more about that — what’s underneath it?',
     ready: answer.length >= 40,

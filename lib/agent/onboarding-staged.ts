@@ -46,6 +46,7 @@ import {
   type Turn,
 } from './onboarding.ts';
 import { reconcileReclaimShapes, shapeKey } from './reclaim-shape.ts';
+import { detectCrisis, CRISIS_RESPONSE_US } from './governance.ts';
 // The intent layer — the one place that decides what a member's utterance MEANS (see onboarding-intent.ts).
 import {
   correctsReflection,
@@ -1117,6 +1118,13 @@ export function runArcTurn(
   memberMessage: string,
   model: ModelTurn,
 ): Turn {
+  // GOVERNANCE — crisis routing is always on (CLAUDE.md hard rule). A distress signal in ANY arc turn — Reconnect,
+  // Rewire, Rebuild, Reclaim; administered, draw-out, or coach — short-circuits to the 988 protocol before the engine
+  // processes it. The deterministic backstop beneath the model's own instruction; every arc on this kernel inherits it,
+  // so a future arc can't forget it. (Onboarding handles its own crisis upstream in onboardingNextTurn.)
+  if (detectCrisis(memberMessage).flagged) {
+    return { reply: CRISIS_RESPONSE_US, state, complete: false, crisis: true };
+  }
   const collected = mergeStaged({ ...state.collected }, model.record);
   // Light-touch measurability: the model sharpens a vague want by REPLACING its most-recent item in place —
   // never a second entry. Dedupe after, in case the sharpened text collides with an earlier want.
