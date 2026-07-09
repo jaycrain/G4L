@@ -921,6 +921,25 @@ test('STAGED reclaim — soft-close phrases are NOT captured as wants (Jay walk:
   assert.equal(t2.state.stage, 'grinta', 'the close settles Reclaim → the Grinta survey');
 });
 
+test('STAGED reclaim — "Those are the highlights" is a CLOSE, not a want (W-08: never captured, moves to confirm)', () => {
+  // The founder's live walk: after a full list, the member wrapped with "Those are the highlights." Before the
+  // close-vocab fix, that phrase wasn't recognized as a close → the engine re-asked AND captured it as a bogus
+  // want that persisted onto the summary card. It must now reflect + confirm, and never land as an item.
+  const base: ConvState = {
+    stage: 'reclaim',
+    collected: {
+      athleticPast: 'a cyclist', identityNoun: 'Cyclist', gap: 'The grind took it over the years.',
+      reclaimList: ['Fitness back — riding up to Brainard Lake', 'Losing 25 more lbs', 'Show up ready to Big Sugar gravel race'],
+    },
+  };
+  const t = applyStagedTurn(base, [], 'Those are the highlights', { text: 'Okay.' });
+  assert.ok(
+    !(t.state.collected.reclaimList ?? []).some((x) => /highlights/i.test(x)),
+    '"Those are the highlights" is never captured as a want',
+  );
+  assert.equal(t.state.awaitingConfirm, true, 'a close at ≥min reflects the list and moves to confirm — no bare re-ask');
+});
+
 test('STAGED reclaim — re-surfaces a parked front-loader item at stage entry (the trust moment)', () => {
   // Member parked "writing again" back in the identity stage; we enter reclaim by confirming the gap.
   const atGapConfirm: ConvState = {

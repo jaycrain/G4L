@@ -37,8 +37,12 @@ function reclaimContentTokens(s: string): string[] {
 }
 const BARE_CADENCE_RE =
   /^(every\s+(day|morning|evening|night|week|weekend)s?|daily|weekly|nightly|on\s+weekends?|most\s+(days|mornings)|(a\s+few|once|twice|[1-9][0-9]?(\s*[-–to]+\s*[1-9][0-9]?)?)\s*(times?|x|days?)?\s*(a|per|each|\/)?\s*(day|week|morning|month)?)$/i;
+// Anchored (^…$) whole-item drop: the ENTIRE item must BE a close phrase to drop it — strict on purpose so a real
+// want that merely CONTAINS a close word is never dropped. Its vocabulary is locked to agree with the capture-side
+// memberClosingReclaim via tests/reclaim-close-vocab.test.ts, so a close like "those are the highlights" can't slip
+// capture AND survive consolidation onto the card / into the committed list.
 const RECLAIM_CLOSE_RE =
-  /^(that'?s (about )?(it|all|everything|the list)( for now)?|that'?s a (good|solid|great|decent) (start|list)|(that|this) (looks|sounds) (great|good|right|perfect|spot on)|love (it|that)|perfect|good enough|sounds good|(i think )?that'?s (about )?(it|everything))$/i;
+  /^(that'?s (about )?(it|all|everything|the list)( for now)?|that'?s a (good|solid|great|decent) (start|list)|those are (the )?(real|only|main|biggest|big|top) ones|those are (the )?highlights|the highlights|(that|this) (looks|sounds) (great|good|right|perfect|spot on)|love (it|that)|perfect|good enough|sounds good|(i think )?that'?s (about )?(it|everything))$/i;
 
 // Consolidate the Reclaim List AND its parallel categories in LOCKSTEP, so the two arrays never drift out of
 // alignment when items are dropped/folded/merged. This is the single source of truth for consolidation; the

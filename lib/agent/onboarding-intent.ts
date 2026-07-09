@@ -57,11 +57,14 @@ export function memberSignalsGapComplete(message: string): boolean {
 }
 
 // ONE "the member is closing the Reclaim List" signal — consolidates the close shapes (wrap, whole, and the
-// reclaim-specific "that's the list / those are the real ones / solid start" closings). This is what makes the
-// warm nudge fire at the RIGHT moment (a soft-close below the minimum) instead of a bare "what else?", and keeps
-// the backstop from grabbing a close/refusal as a fabricated item.
+// reclaim-specific "that's the list / those are the real ones / those are the highlights / solid start" closings).
+// This is what makes the warm nudge fire at the RIGHT moment (a soft-close below the minimum) instead of a bare
+// "what else?", and keeps the backstop from grabbing a close/refusal as a fabricated item. The canonical corpus
+// this MUST satisfy is locked with consolidateReclaim's drop-vocab in tests/reclaim-close-vocab.test.ts (the two
+// detectors serve different jobs — unanchored intent here vs anchored whole-item drop there — but must AGREE on
+// what counts as a close, so a phrase like "those are the highlights" can never be re-asked here yet persisted there).
 const RECLAIM_CLOSE_RE =
-  /\b(that'?s (actually |really |pretty much |honestly )?(it|all|everything|the list)|those are (the )?(real|only|main|biggest) ones|that'?s (my|the) (real )?list|the (real )?list( is)?( complete| done| it)?|i'?m (good|done|ready)|i'?ve (answered|said|told you)|(let'?s |can we )?(move on|moving on|move forward|keep going)|i'?m (stepping away|not answering|done answering)|(that )?(about )?sums it up|that'?ll do|that covers it|(that'?s )?(a )?(pretty |fairly )?(solid|good|decent|fair|great) (start|list)|good enough|(that|this) (looks|sounds) (great|good|right|perfect|spot on)|that'?s (great|perfect|it exactly|the one)|love (it|that)|perfect|looks great|that'?s about it|that'?s (about |pretty much )?(the )?shape of it|(that'?s )?the shape of it|that'?s (it|everything|all)( for now)?|(i think )?that'?s about (it|everything))\b/i;
+  /\b(that'?s (actually |really |pretty much |honestly )?(it|all|everything|the list)|those are (the )?(real|only|main|biggest|big|top) ones|those are (the )?highlights|the highlights|that'?s (my|the) (real )?list|the (real )?list( is)?( complete| done| it)?|i'?m (good|done|ready)|i'?ve (answered|said|told you)|(let'?s |can we )?(move on|moving on|move forward|keep going)|i'?m (stepping away|not answering|done answering)|(that )?(about )?sums it up|that'?ll do|that covers it|(that'?s )?(a )?(pretty |fairly )?(solid|good|decent|fair|great) (start|list)|good enough|(that|this) (looks|sounds) (great|good|right|perfect|spot on)|that'?s (great|perfect|it exactly|the one)|love (it|that)|perfect|looks great|that'?s about it|that'?s (about |pretty much )?(the )?shape of it|(that'?s )?the shape of it|that'?s (it|everything|all)( for now)?|(i think )?that'?s about (it|everything))\b/i;
 export function memberClosingReclaim(message: string): boolean {
   const m = (message ?? '').replace(/[‘’]/g, "'");
   return memberDeflecting(m) || confirmsWhole(m) || RECLAIM_CLOSE_RE.test(m);

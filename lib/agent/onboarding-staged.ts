@@ -444,6 +444,20 @@ function gateNextShape(b: Beat): string | null {
   return SHAPE_PROPOSAL.multiwant(issue.item);
 }
 
+// When two overlapping wants merge (member said "keep as one"), keep the CLEANER phrasing — not whichever was
+// captured first. Before this, keep/drop were assigned purely by list position, so the model's "Theme — concrete"
+// composition ("Fitness back — riding up to Brainard Lake") survived over the plain "Riding up to Brainard Lake"
+// just because it came first. "Adorned" = a short leading clause + em/en dash preamble. Ties (both or neither
+// adorned) keep `a`, the earlier item — preserving the prior conservative default. Pure + testable.
+const THEME_PREAMBLE_RE = /^\s*[^—–]{1,32}\s+[—–]\s+\S/;
+export function cleanerReclaimText(a: string, b: string): string {
+  const aAdorned = THEME_PREAMBLE_RE.test(a ?? '');
+  const bAdorned = THEME_PREAMBLE_RE.test(b ?? '');
+  if (aAdorned && !bAdorned) return b; // a carries a "Theme —" preamble, b is clean → keep b
+  if (bAdorned && !aAdorned) return a;
+  return a; // tie → keep the earlier item (prior behavior)
+}
+
 // Apply the member's answer to a pending shape. Conservative by default: a want is NEVER lost — an ambiguous
 // answer keeps both / keeps the item. Marks the shape resolved so it's never re-proposed. Returns the ack line.
 function resolvePendingShape(b: Beat, pending: PendingReclaimShape): string {
@@ -452,7 +466,12 @@ function resolvePendingShape(b: Beat, pending: PendingReclaimShape): string {
   const markResolved = (key: string) => { if (!b.reclaimShapesResolved.includes(key)) b.reclaimShapesResolved.push(key); };
   if (pending.kind === 'overlap') {
     markResolved(shapeKey({ kind: 'overlap', keepIndex: 0, dropIndex: 0, keep: pending.keep, drop: pending.drop }));
-    if (yes) { removeReclaimItem(b.collected, pending.drop); return 'Good — I’ll keep them as one.'; }
+    if (yes) {
+      // Keep the CLEANER of the two texts, not whichever came first — then drop the other.
+      const keepText = cleanerReclaimText(pending.keep, pending.drop);
+      removeReclaimItem(b.collected, keepText === pending.keep ? pending.drop : pending.keep);
+      return 'Good — I’ll keep them as one.';
+    }
     return 'Got it — I’ll keep both.';
   }
   if (pending.kind === 'vision') {
@@ -1285,7 +1304,13 @@ export const STAGED_TOOLS = [
   },
   {
     name: 'set_gap',
-    description: "Record how the distance opened — the member's own account of the fade story (the gap). Call this once they've told you how it went, in their words.",
+    description:
+      "Record how the distance opened — the fade story (the gap) — in the member's OWN FIRST-PERSON voice, keeping " +
+      "their words and specifics as they told it ('I stopped training but kept riding, then lost the level'; 'my wife " +
+      "got laid off, which hit her hard'). This exact text is shown back to them on their summary card ('Here's what " +
+      "you shared') and dashboard ('in your own words'), so it must read as their OWN account. The one thing to avoid: " +
+      "NEVER rewrite it into the THIRD person about them ('they/their', or a guessed 'he/she') — that distances them " +
+      "from their own story. Keep it first person, as they said it. Call this once they've told you how it went.",
     input_schema: { type: 'object' as const, properties: { text: { type: 'string' } }, required: ['text'] },
   },
   {
@@ -1318,7 +1343,9 @@ export const STAGED_TOOLS = [
   {
     name: 'add_reclaim_item',
     description:
-      'Record one thing the member wants back (a Reclaim-List item), in their words. Call once per item; it accumulates. ' +
+      'Record one thing the member wants back (a Reclaim-List item), in their words — the CONCRETE want itself, plainly. ' +
+      'Do NOT prepend a theme/category or compose a "Theme — the want" phrasing: write "riding up to Brainard Lake", NOT ' +
+      '"Fitness back — riding up to Brainard Lake". Call once per item; it accumulates. ' +
       "If they volunteer one EARLY (before the reclaim stage), capture it here anyway so it's never lost — you'll bring it back at its stage. " +
       'Call add ONLY for a genuinely NEW, distinct want. Do NOT call add for an amount, number, cadence, or detail that ' +
       "ELABORATES the want you most recently added — that is the SAME want getting sharper ('about 25 lbs' after " +
@@ -1481,7 +1508,11 @@ function stageInstruction(stage?: Stage): string {
       '\n\nCURRENT STAGE: how the gap opened. EXPLORE — draw out the story over a few exchanges (the sequence, ' +
       'when they first felt it, what it cost); pull into one thread until it\'s particular, not a list of labels. ' +
       'Capture with set_gap as it grows, note_door silently (none is valid). Call reflect_gap ONLY once it\'s ' +
-      'genuinely drawn out, and reflect their whole story back in their words on that turn.'
+      'genuinely drawn out, and reflect their whole story back in their words on that turn. ' +
+      'ALWAYS end your turn with your single forward question — your drawing-out ask while gathering ("was there ' +
+      'more around then, or is that the heart of how it opened?"), or your correctable check on the reflect turn ' +
+      '("does that land, or is there more to it?"). NEVER end on a bare reflection or wrap-up coda with no ' +
+      'question ("let me make sure I have it right"), or the engine appends its own and the member sees a jumbled double-ask.'
     );
   if (stage === 'reclaim')
     return (
@@ -1505,7 +1536,10 @@ function stageInstruction(stage?: Stage): string {
       'never leave the vague "My running" on the list. The captured item must be the concrete one, because the ' +
       'whole program measures against this list. Take whatever they give — if they stay general, that\'s fine; ' +
       'never force a metric, never turn it into a form, at most ONE sharpening per want. Already-concrete wants ' +
-      '("lose 25 lbs") need no sharpening — leave them.'
+      '("lose 25 lbs") need no sharpening — leave them.\n' +
+      'ALWAYS end your turn with your single forward question in your own words ("what else?" / "anything else ' +
+      'you\'d want back?"). NEVER end on a bare wrap-up coda with no question ("let me make sure I have all of ' +
+      'that captured"), or the engine stacks a second ask on top and it reads pushy.'
     );
   return '\n\nCURRENT STAGE: identity — who they were at their best, and the one-word handle (or skip).';
 }
