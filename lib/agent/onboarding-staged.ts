@@ -126,7 +126,7 @@ const SKIP_OFFER =
   "No rush on the perfect word — and you don't have to land it today. If one comes — the Runner, the Builder, the " +
   "Friend — say it. If not, that's completely fine; we'll find it together as you go. Want to leave it for now?";
 
-const SKIP_ACK = "That's completely fine — you'll find her through the work, no rush.";
+const SKIP_ACK = "That's completely fine — you'll find your way back to them through the work, no rush.";
 
 const REOPEN_IDENTITY = "My mistake — let's get it right. What word feels truer for who she was?";
 
