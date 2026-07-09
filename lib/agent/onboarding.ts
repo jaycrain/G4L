@@ -55,9 +55,11 @@ export type Stage = 'identity' | 'identity_name' | 'reclaim' | 'door' | 'complet
   | 'triggers'
   | 'protocol'
   // v2.4 Rebuild arc (config #4 on the shared kernel). B1 · What is Your Why? — 'why' (administered 12-item SDT read).
-  // B2 · Strengths & Weaknesses — 'skills' (administered 24-item self-management assessment). B3/B4 add theirs later.
+  // B2 · Strengths & Weaknesses — 'skills' (administered 24-item self-management assessment). B3 · The Lifestyle Pilot —
+  // 'pilot' (COACH mode: coach the two small changes → a confirmed plan). B4 adds its stage later.
   | 'why'
-  | 'skills';
+  | 'skills'
+  | 'pilot';
 
 // Beat separator — when ONE turn hands over more than one beat (e.g. the Phases intro + the pre-survey framing, or
 // the score-read close + the drift ask), join them with this (invisible RS control char) instead of "\n\n" so the
@@ -91,6 +93,10 @@ export type Collected = {
   w3Triggers?: string[];
   w3Redirect?: string;
   w3Reframe?: string;
+  // Rebuild B3 (the Lifestyle Pilot, coach mode). The two small changes the member commits to for the pilot week —
+  // set by the ENGINE from the model's record_plan locks (not mergeStaged), then persisted to the coaching_plan artifact.
+  pilotActivity?: string;
+  pilotDiet?: string;
 };
 
 export type ConvState = {
@@ -535,6 +541,8 @@ const STAGE_PROMPT: Record<Stage, string> = {
   // for type completeness (B1 = 1–7 SDT, B2 = 1–4 self-management).
   why: 'On a scale of 1 (not at all true for you) to 7 (very true for you), how true does that feel?',
   skills: 'A number from 1 (strongly disagree) to 4 (strongly agree) — how true does that feel?',
+  // v2.4 Rebuild B3 — coach mode supplies its own coaching text; a neutral fallback for type completeness.
+  pilot: "What's one small change you could try this week?",
 };
 
 // Guarantee a non-final turn ends with a forward question, so the member is never stranded.
@@ -766,7 +774,12 @@ const RECORD_PROGRESS_TOOL = {
 // goes model-SIGNALED (the model understands "nope, that's a good list" = done far better than a regex), the
 // engine still DISPOSES (bounds it; the regex resolvers remain the fallback when the model doesn't signal).
 export type ReplyIntent = 'done' | 'more' | 'dispute';
-export type ModelTurn = { text: string; record?: Partial<Collected> & { complete?: boolean }; noFade?: boolean; gapReady?: boolean; refineReclaim?: string; replyIntent?: ReplyIntent; depthReady?: boolean; revision?: DoorRevision };
+export type ModelTurn = { text: string; record?: Partial<Collected> & { complete?: boolean }; noFade?: boolean; gapReady?: boolean; refineReclaim?: string; replyIntent?: ReplyIntent; depthReady?: boolean; revision?: DoorRevision;
+  // v2.4 Rebuild B3 (coach mode, Decision PP) — the model's LOCKED plan fields this turn (from the record_plan tool).
+  // A field appears only once the model judges it specific + right-sized + member-affirmed; the engine gates completion
+  // on both being present. A separate channel from `record` (which is onboarding-Collected-shaped, merged by mergeStaged).
+  plan?: { activityChange?: string; dietChange?: string };
+};
 
 // Parse an Anthropic response into a ModelTurn (prose + the record_progress tool input, if any).
 function parseModelTurn(content: readonly unknown[]): ModelTurn {

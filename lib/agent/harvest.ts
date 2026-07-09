@@ -9,7 +9,7 @@ import { identityLabel } from '../member/identity.ts';
 
 // The keeper taxonomy lives in CONFIG here (never a DB check-constraint — the 0019/0024 tax); the artifact's
 // keeper_type is authoritative, the event's meta.keeperType is intent-at-capture.
-export const KEEPER_TYPES = ['lights_you_up', 'tell', 'recovery_move', 'definition', 'principle'] as const;
+export const KEEPER_TYPES = ['lights_you_up', 'tell', 'recovery_move', 'definition', 'principle', 'plan'] as const;
 export type KeeperType = (typeof KEEPER_TYPES)[number];
 
 const SCHEMA_VERSION = 1;

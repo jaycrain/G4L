@@ -24,6 +24,7 @@ import { getGrinta } from '../../lib/grinta/index.ts';
 import { latestGrintaReading } from '../../lib/grinta/survey/store.ts';
 import { latestWhyReading, latestSkillsReading } from '../../lib/rebuild/store.ts';
 import { skillHighlights } from '../../lib/rebuild/skills-instrument.ts';
+import { activeCoachingPlan, type RebuildPilotPayload } from '../../lib/rebuild/plan-store.ts';
 import { listFacets, closedSessionIds } from '../../lib/curriculum/store.ts';
 import { getForecast } from '../../lib/curriculum/view.ts';
 import { getAsset } from '../../lib/curriculum/registry.ts';
@@ -40,11 +41,12 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
   const dash = await getDashboard(db, memberId);
   if (!dash) return null;
   await maybeFoldMemory(db, memberId); // distill anything that has aged out of recall (best-effort, no-op until due)
-  const [grinta, grintaReading, whyReading, skillsReading, consumedBites, profRows, idqRows, reclaimItems, beatRows, playbook, measures, linkedMeasureRows, facets, closedIds, lastClosedRows, forecast, experience] = await Promise.all([
+  const [grinta, grintaReading, whyReading, skillsReading, pilotPlan, consumedBites, profRows, idqRows, reclaimItems, beatRows, playbook, measures, linkedMeasureRows, facets, closedIds, lastClosedRows, forecast, experience] = await Promise.all([
     getGrinta(db, memberId, dash.identityNoun),
     latestGrintaReading(db, memberId), // the SURVEY Grinta Index (Decision DD) — the grit baseline the member sees
     latestWhyReading(db, memberId), // Rebuild B1 — the agent must KNOW they named their why (RB-1: stored, not shown)
     latestSkillsReading(db, memberId), // Rebuild B2 — the self-management profile the agent reflects (plain language)
+    activeCoachingPlan<RebuildPilotPayload>(db, memberId, 'rebuild'), // Rebuild B3 — the active Lifestyle Pilot plan
 
     recentConsumedTitles(db, memberId),
     db.query<{ intake_athletic_past: string | null; intake_gap: string | null; agent_memory: string | null; dashboard_snapshot: unknown }>(
@@ -154,6 +156,7 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
     grintaIndexChangePct: grintaReading?.changePct ?? null,
     whyNamed: whyReading != null, // Rebuild B1 done — the agent knows it, never shows the number (RB-1)
     skillProfile: skillsReading ? skillHighlights(skillsReading.scores) : null, // Rebuild B2 — strongest + growth edge (plain language)
+    pilotPlan: pilotPlan?.payload ?? null, // Rebuild B3 — the active Lifestyle Pilot (their two committed changes)
     consumedBites,
     // The narrative from onboarding — so the agent can reference what the member actually shared,
     // not just the dashboard facts. This is what makes the first interaction feel "it knows me."

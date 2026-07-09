@@ -7,7 +7,7 @@
 // Flag-gated by REBUILD (Decision JJ — additive per-Phase) — OFF by default; prod stays v2.3 until the v2.4 flip.
 
 import { runArcTurn, administeredStage, type ArcConfig, type StageDef } from './onboarding-staged.ts';
-import type { ConvMessage, ConvState, Turn } from './onboarding.ts';
+import { BEAT_SEP, type ConvMessage, type ConvState, type ModelTurn, type Turn } from './onboarding.ts';
 import { WHY_ITEMS, WHY_PROMPTS, WHY_SCALE_MAX, WHY_ITEM_COUNT, WHY_DOMAIN_SPLIT } from '../rebuild/why-instrument.ts';
 import {
   SKILL_ITEMS,
@@ -157,4 +157,200 @@ export function rebuildB2Opening(): Turn {
 
 export function liveTurnRebuildB2(state: ConvState, history: ConvMessage[], memberMessage: string): Turn {
   return applyRebuildB2Turn(state, history, memberMessage);
+}
+
+// ══ B3 · The Lifestyle Pilot (the marquee — COACH mode, Decision PP) ═══════════════════════════════════════════
+// The Elevation asset: the member commits to ONE small activity change + ONE small diet change, the Companion COACHES
+// them to a doable plan, then a week of daily logging + journaling (Part B). This is the first use of the third
+// Companion mode: the MODEL owns the coaching turn (elicit → make specific → right-size, one at a time); the ENGINE
+// holds the plan-COMPLETENESS contract — it never completes until BOTH changes are locked (the model's judgment,
+// via record_plan) and the member CONFIRMS the whole plan (propose-confirm, Decision L). Reusable — Reclaim +
+// Cycle 2 run on this same mode. COPY: directional placeholder (Cowork wordsmiths), built from Greg's B3 setup script.
+const B3_OPEN_1 =
+  "You've named your why, and you've taken honest stock of your skills. Now you put a little of it into practice — a " +
+  "Lifestyle Pilot.";
+const B3_OPEN_2 =
+  "Here's the whole move: one small new movement change, and one small new eating change, for a week. Not an overhaul — " +
+  "two small things you're not already doing, small enough to actually stick on a normal week. The point isn't to " +
+  "prove discipline; it's to watch how healthier calls actually happen in your life, and how movement and eating pull " +
+  "on each other.";
+const B3_OPEN_3 = "Let's build it. We'll start with movement — what's one small change you could try this week?";
+function b3Opening(): string {
+  return `${B3_OPEN_1}${BEAT_SEP}${B3_OPEN_2}${BEAT_SEP}${B3_OPEN_3}`;
+}
+
+const B3_PLAN_CONFIRMED_1 =
+  "Locked in. That's your Lifestyle Pilot — one small change in movement, one in eating, for the week.";
+const B3_PLAN_CONFIRMED_2 =
+  "Each day I'll check in — not to grade you, just to notice how the calls go. A good call, a false start, a quiet " +
+  "day: they're all information. Your plan's on your dashboard.";
+const PILOT_REVISE_NUDGE = "No problem — tell me what you'd change, and we'll adjust it.";
+
+// The engine-owned plan reflection (propose-confirm) — reflects BOTH changes back in the member's words, then the
+// confirm gate. Not the model's text: the plan is shown consistently, from what was locked.
+function proposePlan(activity: string, diet: string): string {
+  return (
+    `Here's your week, then — small and yours:\n\nMovement: ${activity}\nEating: ${diet}\n\n` +
+    `Both are things you can practice on a normal week, not just your best one. Want to lock it in, or tweak one?`
+  );
+}
+// Fallback coaching nudge (used only if the model returns nothing) — asks for whichever change is still missing.
+function pilotCoachNudge(activity: string, diet: string): string {
+  if (!activity)
+    return (
+      "Let's start with movement. One small physical thing you could add this week — something you're not already " +
+      "doing. A 10-minute walk after dinner, five minutes of stretching, one short strength session. Small and real."
+    );
+  return (
+    "Good. Now one small change to how you eat — an upgrade, not an overhaul. A vegetable at dinner, swapping one " +
+    "sugary drink for water, a fruit with breakfast. What feels doable?"
+  );
+}
+const PILOT_CONFIRM_RE =
+  /^(yes|yeah|yep|yup|lock it in|lock it|that'?s it|that works|that'?s good|perfect|good|sounds good|do it|let'?s do it|i'?m in|ready|confirm(ed)?|keep it)\b/i;
+function pilotConfirms(msg: string): boolean {
+  return PILOT_CONFIRM_RE.test(msg.trim().replace(/[.,!?]+$/, ''));
+}
+
+// The coach stage — the model coaches; the engine accumulates the locked fields, proposes the whole plan when both
+// are in, and completes only on the member's confirm. Specificity + right-sizing are the MODEL's job; existence +
+// both-present + confirm are the engine's contract (the completion-contract lesson — a member never leaves without a plan).
+const pilotStage: StageDef = {
+  id: 'pilot',
+  mode: 'coach',
+  opener: () => b3Opening(),
+  offersSubstance: () => true,
+  gather() {},
+  confirm() {},
+  coach(b) {
+    const sc = b.scratch as { proposed?: boolean };
+    // Accumulate the model's locked fields (a field appears only once the model judged it specific + right-sized).
+    if (b.model.plan?.activityChange) b.collected.pilotActivity = b.model.plan.activityChange.trim();
+    if (b.model.plan?.dietChange) b.collected.pilotDiet = b.model.plan.dietChange.trim();
+    const activity = (b.collected.pilotActivity ?? '').trim();
+    const diet = (b.collected.pilotDiet ?? '').trim();
+
+    if (sc.proposed) {
+      // Awaiting the member's confirm on the whole plan.
+      if (pilotConfirms(b.memberMessage)) {
+        b.stage = 'complete';
+        b.complete = true;
+        b.reply = `${B3_PLAN_CONFIRMED_1}${BEAT_SEP}${B3_PLAN_CONFIRMED_2}`;
+        return;
+      }
+      // Not a confirm → the member is tweaking. Re-open coaching; the model re-locks the changed field next turn.
+      sc.proposed = false;
+      b.reply = (b.modelText || PILOT_REVISE_NUDGE).trim();
+      return;
+    }
+
+    if (activity && diet) {
+      // Both changes locked → PROPOSE the whole plan (engine-owned reflection).
+      sc.proposed = true;
+      b.reply = proposePlan(activity, diet);
+      return;
+    }
+
+    // Still coaching — the model's turn IS the reply (its next question / examples). Fallback only if the model is empty.
+    b.reply = (b.modelText || pilotCoachNudge(activity, diet)).trim();
+  },
+};
+
+export const REBUILD_B3_ARC: ArcConfig = {
+  id: 'rebuild-b3',
+  stageOrder: ['pilot'],
+  stages: { pilot: pilotStage },
+  onComplete: () => B3_PLAN_CONFIRMED_1,
+};
+
+export function applyRebuildB3Turn(state: ConvState, history: ConvMessage[], memberMessage: string, model: ModelTurn): Turn {
+  return runArcTurn(REBUILD_B3_ARC, state, history, memberMessage, model);
+}
+
+export function rebuildB3Opening(): Turn {
+  return { reply: b3Opening(), state: { stage: 'pilot', collected: {} }, complete: false };
+}
+
+// ── the live surface — the model COACHES to a plan and LOCKS each change via record_plan (specific + right-sized) ──
+const B3_SYSTEM =
+  "You are the G4L Companion running B3, the Lifestyle Pilot, in Rebuild (Phase 3). Your job is to COACH the member to " +
+  "a small, doable, member-owned plan: ONE small new physical-activity change and ONE small new dietary change for the " +
+  "coming week. This is coaching, not therapy and not a survey — help them make a plan; don't excavate feelings or " +
+  "grade them. Plain, measured, warm, no hype.\n\n" +
+  "HOW TO COACH: one change at a time — movement first, then eating. One question per turn. Elicit their idea; if it's " +
+  "vague ('exercise more', 'eat better'), sharpen it WITH them into something specific and trackable ('a 10-minute walk " +
+  "after dinner, 3 days'). If they have nothing to reach for, OFFER concrete examples (a 10-minute walk after dinner; " +
+  "five minutes of morning stretching; adding a vegetable at dinner; swapping one sugary drink for water). RIGHT-SIZE: " +
+  "if they over-commit ('run every day', 'cut out all sugar'), gently dial it back — small and new beats ambitious and " +
+  "abandoned. Play their own words back; never impose a plan.\n\n" +
+  "LOCKING A CHANGE: the moment a change is specific, right-sized, AND the member has affirmed it, call record_plan for " +
+  "that field (activityChange for movement, dietChange for eating) — the change in their own words. Do NOT call " +
+  "record_plan for a vague or oversized change; keep coaching until it's real. Once both are locked, stop and give a " +
+  "brief warm acknowledgment — the app shows the member their plan to confirm. If a distress or crisis signal appears, " +
+  "drop the exercise and route to support (988 US / local) and a human — always on.";
+
+const RECORD_PLAN_TOOL = {
+  name: 'record_plan',
+  description:
+    "Lock a plan field once it is specific, right-sized, and the member has affirmed it. Pass activityChange for the " +
+    "movement change and/or dietChange for the eating change, each in the member's own words.",
+  input_schema: {
+    type: 'object' as const,
+    properties: {
+      activityChange: { type: 'string', description: "The member's committed small movement change — specific + trackable." },
+      dietChange: { type: 'string', description: "The member's committed small eating change — specific + trackable." },
+    },
+  },
+};
+
+function b3StageNote(state: ConvState): string {
+  const activity = (state.collected?.pilotActivity ?? '').trim();
+  const diet = (state.collected?.pilotDiet ?? '').trim();
+  if (!activity)
+    return "\n\nRIGHT NOW: coach the MOVEMENT change — one small, specific, trackable thing they're not already doing. When it's real and they've affirmed it, call record_plan(activityChange).";
+  if (!diet)
+    return "\n\nRIGHT NOW: the movement change is locked. Now coach the EATING change — one small upgrade. When it's real and affirmed, call record_plan(dietChange).";
+  return "\n\nRIGHT NOW: both changes are locked. Give a brief warm acknowledgment; the app will show the plan to confirm.";
+}
+
+// Parse an Anthropic response into a ModelTurn (prose + any record_plan locks). Pure below this line lives in the arc.
+function parseB3Model(content: readonly unknown[]): ModelTurn {
+  let text = '';
+  const plan: { activityChange?: string; dietChange?: string } = {};
+  for (const raw of content) {
+    const bl = raw as { type: string; text?: string; name?: string; input?: { activityChange?: unknown; dietChange?: unknown } };
+    if (bl.type === 'text') text += bl.text ?? '';
+    if (bl.type === 'tool_use' && bl.name === 'record_plan') {
+      if (typeof bl.input?.activityChange === 'string') plan.activityChange = bl.input.activityChange;
+      if (typeof bl.input?.dietChange === 'string') plan.dietChange = bl.input.dietChange;
+    }
+  }
+  return { text: text.trim(), ...(plan.activityChange || plan.dietChange ? { plan } : {}) };
+}
+
+export async function liveTurnRebuildB3(state: ConvState, history: ConvMessage[], memberMessage: string): Promise<Turn> {
+  const { default: Anthropic } = await import('@anthropic-ai/sdk');
+  const client = new Anthropic({
+    apiKey: process.env.ANTHROPIC_API_KEY,
+    timeout: 25000,
+    maxRetries: 2,
+    defaultHeaders: { 'accept-encoding': 'identity' },
+  });
+  const messages = [
+    ...history.map((m) => ({ role: (m.role === 'agent' ? 'assistant' : 'user') as 'assistant' | 'user', content: m.text })),
+    { role: 'user' as const, content: memberMessage },
+  ];
+  const res = await client.messages.create({
+    model: process.env.ANTHROPIC_MODEL ?? 'claude-sonnet-4-6',
+    max_tokens: 400,
+    system: B3_SYSTEM + b3StageNote(state),
+    tools: [RECORD_PLAN_TOOL],
+    messages,
+  });
+  return applyRebuildB3Turn(state, history, memberMessage, parseB3Model(res.content));
+}
+
+// Compose the pilot plan into one Playbook keeper (the two small changes, the member's own words). §5 keeper candidate.
+export function composePilotPlan(activity: string, diet: string): string {
+  return `Movement — ${activity}\nEating — ${diet}`;
 }

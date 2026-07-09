@@ -30,6 +30,7 @@ const M = [
   ["0049", { t: "momentum_call" }],
   ["0050", { t: "motivation_reading" }],
   ["0051", { t: "self_management_reading" }],
+  ["0052", { t: "coaching_plan" }],
 ];
 const expr = (x) =>
   x.t ? `to_regclass(${Q}public.${x.t}${Q}) is not null`

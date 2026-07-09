@@ -581,7 +581,11 @@ function memberPushedPast(stage: StagedStage, message: string, c: Collected): bo
 // every onboarding stage is 'drawout'; the 'administered' path (IDQ/Grinta, no depth kernel) lands with §2c.
 
 export type StageId = string;
-export type StageMode = 'drawout' | 'administered';
+// 'coach' (v2.4 Rebuild B3, Decision PP) — a THIRD mode alongside draw-out + administered. The model owns the
+// coaching conversation (elicit → make specific → right-size, one move per turn); the engine holds a plan-COMPLETENESS
+// contract (never completes until the plan's fields are present + the member confirms). Runs off the depth kernel,
+// like administered. Reusable — Reclaim (quality-days) + Cycle 2 (deepening) run on it too.
+export type StageMode = 'drawout' | 'administered' | 'coach';
 
 // A stage's private counter bag — a loose key/value map. Each stage reads/writes its OWN keys through a typed
 // view (IdentityScratch/GapScratch/ReclaimScratch below), so ConvState carries ONE `stageScratch` map instead of
@@ -638,6 +642,7 @@ export interface StageDef {
   confirm: StageHandler; // awaitingConfirm in this stage (DRAW-OUT stages)
   forceProgress?: StageHandler; // the runaway backstop's per-stage action (early-return Turn, or mutate + fall through)
   administer?: StageHandler; // ADMINISTERED stages (§2c: validated instruments) — runs OFF the depth kernel (below)
+  coach?: StageHandler; // COACH stages (B3, Decision PP) — model coaches, engine holds the completeness contract; OFF the kernel
 }
 
 export interface ArcConfig {
@@ -1166,6 +1171,15 @@ export function runArcTurn(
   if (stageDef?.mode === 'administered' && stageDef.administer) {
     b.awaitingConfirm = false; // administered stages have no reflect-confirm loop
     const early = stageDef.administer(b);
+    if (early) return early;
+    return { reply: b.reply, state: beatState(b), complete: b.complete, ...(b.declined ? { declined: true } : {}) };
+  }
+
+  // COACH stages (§B3, Decision PP) also run OFF the depth kernel: the model owns the coaching conversation and the
+  // engine holds the plan-COMPLETENESS contract (accumulate the model's locked fields via model.plan → propose the
+  // whole plan → confirm → complete). No idle/runaway/floor/no-repeat machinery — the contract is the only gate.
+  if (stageDef?.mode === 'coach' && stageDef.coach) {
+    const early = stageDef.coach(b);
     if (early) return early;
     return { reply: b.reply, state: beatState(b), complete: b.complete, ...(b.declined ? { declined: true } : {}) };
   }

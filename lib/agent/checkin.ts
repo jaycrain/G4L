@@ -54,6 +54,10 @@ export type CheckinContext = {
   // their apparent strongest skill + growth edge (in plain language, never a number), so it can reflect the profile
   // and connect it to the week's noticing — never re-administers, never grades.
   skillProfile?: { strongest: string; growthEdge: string } | null;
+  // Rebuild B3 "The Lifestyle Pilot" — the member's committed plan (their two small changes). The agent knows it so
+  // it can support the pilot week: plan-aware check-ins, non-judgmental slip-recovery (their W3 protocol), never
+  // grading. It's their plan — CRUD-able, never silently rewritten.
+  pilotPlan?: { activityChange: string; dietChange: string } | null;
   beatsDone?: number; // Beats worked so far
   // The Playbook (the two-way loop): kept keepers + recent journal notes. Used to help — never
   // quoted back coldly or weaponized. Capped/summarized upstream. keeperType (0046) lets the recall
@@ -101,6 +105,7 @@ export function keeperFunctionLabel(keeperType?: string): string {
     case 'recovery_move': return 'recovery move — their protocol for a slip';
     case 'definition': return 'a reframe that landed for them';
     case 'tell': return 'a pattern they named in themselves';
+    case 'plan': return 'their Lifestyle Pilot — the two small changes they committed to';
     default: return 'something they’re keeping';
   }
 }
@@ -196,6 +201,9 @@ export function contextBlock(c: CheckinContext): string {
       : null,
     c.skillProfile
       ? `They've assessed their self-management skills (Rebuild B2). Their apparent strongest is ${c.skillProfile.strongest.toLowerCase()}; the one with the most room is ${c.skillProfile.growthEdge.toLowerCase()}. Use this to help them SEE themselves and connect skills to their week — never as a grade or a number. A "weak" skill is just one to practice, never a failing. Don't re-administer.`
+      : null,
+    c.pilotPlan
+      ? `Their Lifestyle Pilot this week (Rebuild B3) — Movement: ${c.pilotPlan.activityChange}. Eating: ${c.pilotPlan.dietChange}. Support it: ask how the calls are going, warmly and plan-aware, never grading. A false start is met, not marked (HH) — offer their own recovery move if they slip. It's THEIR plan; if they want to change it, help them, never rewrite it silently.`
       : null,
     c.experienceSummary && c.experienceSummary.trim()
       ? `How they've moved through the program lately (for awareness — gently notice a stall or a return, e.g. "you opened Visualization a couple times — want to pick it back up?"; NEVER grade or guilt): ${c.experienceSummary.trim()}`

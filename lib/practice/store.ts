@@ -5,9 +5,11 @@
 // it is a productive-default NUDGE, never a gate (R1). Flag-gated (REWIRE) at the caller; staged-only on prod.
 
 import type { Db } from '../db/schema.ts';
+import { activeCoachingPlan, type RebuildPilotPayload } from '../rebuild/plan-store.ts';
 
-// W3 opens the logging window (payload lands with the Momentum slice); b2_noticing is Rebuild B2's skill-noticing week.
-export type PracticeKind = 'w2_image' | 'w3_logging' | 'b2_noticing';
+// W3 opens the logging window (payload lands with the Momentum slice); b2_noticing is Rebuild B2's skill-noticing
+// week; b3_pilot is Rebuild B3's daily health-decision logging against the committed plan.
+export type PracticeKind = 'w2_image' | 'w3_logging' | 'b2_noticing' | 'b3_pilot';
 export const PRACTICE_WINDOW_DAYS = 7;
 
 export type ActivePractice = { kind: PracticeKind; startedAt: string; day: number }; // day = 1..PRACTICE_WINDOW_DAYS
@@ -63,7 +65,10 @@ export function imageHook(imageBody: string | null): string | null {
 // The hero nudge for an active practice window — PURE + testable. Returns null when there's nothing to surface
 // (graceful degrade → the hero keeps its normal message). COPY: W2 nudge locked (Decision NN) — plays the member's
 // own destination back and echoes W2's close ("the image is real — the lie is a story").
-export function practicePrompt(kind: PracticeKind, payload: { goal?: string | null }): string | null {
+export function practicePrompt(
+  kind: PracticeKind,
+  payload: { goal?: string | null; plan?: RebuildPilotPayload | null },
+): string | null {
   if (kind === 'w2_image') {
     const goal = (payload.goal ?? '').trim();
     if (!goal) return null;
@@ -78,6 +83,15 @@ export function practicePrompt(kind: PracticeKind, payload: { goal?: string | nu
     // Productive-default, never a gate (MM/R1); observational, non-judgmental.
     return `Notice today: which of your skills showed up — and where did one you're still building get in the way?`;
   }
+  if (kind === 'b3_pilot') {
+    // Rebuild B3 Part B — the daily health-decision log, PLAN-AWARE: the nudge names their two committed changes.
+    // Degrades to a generic ask if the plan isn't loaded. Productive-default, non-judgmental (MM/R1, HH).
+    const plan = payload.plan;
+    if (plan?.activityChange && plan?.dietChange) {
+      return `How'd the pilot go today — ${plan.activityChange.toLowerCase()}, and ${plan.dietChange.toLowerCase()}? A good call, a false start, or a quiet one?`;
+    }
+    return `How'd your two changes go today — a good call, a false start, or a quiet one?`;
+  }
   return null;
 }
 
@@ -88,7 +102,8 @@ export async function practiceHeroMessage(db: Db, memberId: string): Promise<str
     const pw = await activePracticeWeek(db, memberId);
     if (!pw) return null;
     const goal = pw.kind === 'w2_image' ? imageHook(await latestImageKeeper(db, memberId)) : null;
-    return practicePrompt(pw.kind, { goal });
+    const plan = pw.kind === 'b3_pilot' ? (await activeCoachingPlan<RebuildPilotPayload>(db, memberId, 'rebuild'))?.payload ?? null : null;
+    return practicePrompt(pw.kind, { goal, plan });
   } catch {
     return null; // table not applied yet / read hiccup → no practice nudge, dashboard renders normally
   }

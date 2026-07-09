@@ -103,6 +103,8 @@ from (
   select '0050' as migration, coalesce(to_regclass('public.motivation_reading') is not null, false) as applied
   union all
   select '0051' as migration, coalesce(to_regclass('public.self_management_reading') is not null, false) as applied
+  union all
+  select '0052' as migration, coalesce(to_regclass('public.coaching_plan') is not null, false) as applied
 ) t
-where applied = false   -- show ONLY the gaps; delete this line to see all 51
+where applied = false   -- show ONLY the gaps; delete this line to see all 52
 order by migration;
