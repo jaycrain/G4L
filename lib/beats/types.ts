@@ -16,6 +16,7 @@ export type ReclaimItem = {
   closerCount: number;
   sortOrder: number;
   lastServedAt: string | null; // ISO; null = never served
+  tier?: string | null; // Reclaim C1 Step 2 refinement tier (top|important|emerging|no_longer_central); null = untiered (0053)
 };
 
 export type MemberBeatState = {

@@ -1,0 +1,11 @@
+-- 0053: reclaim_item.tier — the Reclaim List tier attribute (Reclaim C1 Step 2 / RC-5). When a member refines their
+-- Reclaim List "through a changed self," each item is sorted into a tier (Greg's four: Top Priorities Now / Important
+-- but Not First / Emerging Priorities / No Longer Central). Per the C1 Step-2 data-contract decision, the refinement
+-- is coached in a snapshot then COMMITTED back to the live list on the member's confirm (propose→confirm→commit,
+-- Decision L) — so the tier is a real attribute on the member's own items, not a parallel record. "No Longer Central"
+-- is the LOWEST tier (an attribute), NOT a removal — releasing an item stays a separate explicit member action.
+--
+-- Free text governed in config (top | important | emerging | no_longer_central), same posture as other governed
+-- string columns. Nullable + defaults null → every existing item is simply "untiered" until a refinement sets it;
+-- prod is untouched. Additive + idempotent. No RLS change (reclaim_item's policy is unchanged).
+alter table reclaim_item add column if not exists tier text;

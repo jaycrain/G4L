@@ -21,7 +21,7 @@ const toIso = (v: unknown): string | null => {
 
 export async function getReclaimItems(db: Db, memberId: string): Promise<ReclaimItem[]> {
   const { rows } = await db.query<any>(
-    `select id, text, category, rhythm, state, closer_count, sort_order, last_served_at
+    `select id, text, category, rhythm, state, closer_count, sort_order, last_served_at, tier
      from reclaim_item where member_id=$1 and removed_at is null order by sort_order, created_at`,
     [memberId],
   );
@@ -34,6 +34,7 @@ export async function getReclaimItems(db: Db, memberId: string): Promise<Reclaim
     closerCount: Number(r.closer_count ?? 0),
     sortOrder: Number(r.sort_order ?? 0),
     lastServedAt: toIso(r.last_served_at),
+    tier: (r.tier as string | null) ?? null,
   }));
 }
 
