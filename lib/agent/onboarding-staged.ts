@@ -652,21 +652,28 @@ export interface ArcConfig {
 // parse a 1–5 → accumulate → deliver the next framed item → on the LAST item, hand off (the arc's onComplete
 // closure sets the reply + next stage; the ACTION scores + persists). Everything instrument-specific (opener,
 // items, count, frames, completion) lives in the config; the loop lives here, once.
-const LIKERT_NUM_WORDS: Record<string, number> = { one: 1, two: 2, three: 3, four: 4, five: 5 };
-export function parseLikert(msg: string): number | null {
+const LIKERT_NUM_WORDS: Record<string, number> = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7 };
+// Parse a Likert reply to an integer in [1, max]. `max` defaults to 5 (the IDQ / Grinta scale — every existing caller
+// is unchanged); Rebuild's B1 SDT instrument passes 7. A digit outside the range (or a spelled word above the scale)
+// returns null so the administered loop RE-PROMPTS the current item rather than recording a bad value.
+export function parseLikert(msg: string, max = 5): number | null {
   const m = (msg ?? '').toLowerCase();
-  const digit = m.match(/\b([1-5])\b/);
-  if (digit) return Number(digit[1]);
-  for (const [w, n] of Object.entries(LIKERT_NUM_WORDS)) if (new RegExp(`\\b${w}\\b`).test(m)) return n;
+  const digit = m.match(/\b([1-9])\b/);
+  if (digit) {
+    const n = Number(digit[1]);
+    return n >= 1 && n <= max ? n : null;
+  }
+  for (const [w, n] of Object.entries(LIKERT_NUM_WORDS)) if (n <= max && new RegExp(`\\b${w}\\b`).test(m)) return n;
   return null;
 }
 
 export type AdministeredConfig = {
   id: StageId;
   itemCount: number;
+  scaleMax?: number; // the Likert ceiling — defaults to 5 (IDQ/Grinta); B1's SDT instrument passes 7
   opener: (c: Collected) => string; // the warm open + item 0, delivered when the prior stage hands in
   deliverItem: (index: number) => string; // the framed item at 0-based index (cluster transitions etc.)
-  reprompt: (index: number) => string; // a gentle re-prompt of the current item on an unclear (non 1–5) answer
+  reprompt: (index: number) => string; // a gentle re-prompt of the current item on an unclear (out-of-scale) answer
   onComplete: (b: Beat) => void; // all items in — the config sets b.stage + b.reply (advance + close)
 };
 
@@ -681,7 +688,7 @@ export function administeredStage(cfg: AdministeredConfig): StageDef {
     gather() {},
     confirm() {},
     administer(b) {
-      const val = parseLikert(b.memberMessage);
+      const val = parseLikert(b.memberMessage, cfg.scaleMax ?? 5);
       if (val == null) {
         // Unclear answer → re-prompt the CURRENT item; do NOT advance or record.
         b.reply = cfg.reprompt(b.administeredResponses.length);

@@ -46,6 +46,10 @@ export type CheckinContext = {
   idScoreHistory?: number[]; // ID Score across retakes, oldest→newest (the trend)
   idqAnswers?: { dimension: string; stem: string; score: number }[]; // the 24 answers, 1–5
   reclaimDetail?: { text: string; category: string; state: string; tracked: boolean }[]; // Reclaim items + progress + whether a tracker exists
+  // Rebuild B1 "What is Your Why?" — true once the member has named their motivation for movement + eating. The
+  // SDT profile is stored but NEVER shown as a number (Decision RB-1); the agent only KNOWS they've done it, so it
+  // references it as shared history and never re-asks. No score, no verdict — a starting point, by design.
+  whyNamed?: boolean;
   beatsDone?: number; // Beats worked so far
   // The Playbook (the two-way loop): kept keepers + recent journal notes. Used to help — never
   // quoted back coldly or weaponized. Capped/summarized upstream. keeperType (0046) lets the recall
@@ -183,6 +187,9 @@ export function contextBlock(c: CheckinContext): string {
       : c.grintaScore != null ? `Grinta Index: ${c.grintaScore}${c.grintaTrend ? ` (${c.grintaTrend} lately)` : ''}` : null,
     c.grintaIndex != null && c.grintaScore != null ? `Daily Call rhythm (their day-to-day momentum, not the Index): ${c.grintaScore}${c.grintaTrend ? ` (${c.grintaTrend} lately)` : ''}` : null,
     c.beatsDone != null ? `Beats worked so far: ${c.beatsDone}` : null,
+    c.whyNamed
+      ? `They've named their "why" for movement and eating (Rebuild B1) — stored as a starting point, deliberately NOT scored or shown as a number. You KNOW they've done this: treat it as shared history and never re-ask it; if it comes up, reflect it as their own words about why this matters, never as a motivation "type" or a verdict.`
+      : null,
     c.experienceSummary && c.experienceSummary.trim()
       ? `How they've moved through the program lately (for awareness — gently notice a stall or a return, e.g. "you opened Visualization a couple times — want to pick it back up?"; NEVER grade or guilt): ${c.experienceSummary.trim()}`
       : null,

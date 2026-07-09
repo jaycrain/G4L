@@ -53,7 +53,10 @@ export type Stage = 'identity' | 'identity_name' | 'reclaim' | 'door' | 'complet
   // v2.3 Rewire W3 — the False Start Protocol. 'triggers' (name the four: situations · feelings · lies · danger
   // hour) → 'protocol' (build Redirect · Reframe · Restart, pulling W1's true line + the W2 image forward) → close.
   | 'triggers'
-  | 'protocol';
+  | 'protocol'
+  // v2.4 Rebuild arc (config #4 on the shared kernel). Slice 1 = B1 · What is Your Why? — 'why' (the administered
+  // 12-item SDT read, activity then eating) → 'complete'. B2/B3/B4 add their stage ids in later slices.
+  | 'why';
 
 // Beat separator — when ONE turn hands over more than one beat (e.g. the Phases intro + the pre-survey framing, or
 // the score-read close + the drift ask), join them with this (invisible RS control char) instead of "\n\n" so the
@@ -527,6 +530,9 @@ const STAGE_PROMPT: Record<Stage, string> = {
   hold: 'Sit with that image a moment — what comes up?',
   triggers: "When are you most likely to slip — and what's going on when it happens?",
   protocol: "What's the plan for that moment — what do you do instead?",
+  // v2.4 Rebuild B1 — administered (off the depth kernel), so this is never actually used; a 1–7 re-ask for type
+  // completeness, matching the SDT scale.
+  why: 'On a scale of 1 (not at all true for you) to 7 (very true for you), how true does that feel?',
 };
 
 // Guarantee a non-final turn ends with a forward question, so the member is never stranded.
