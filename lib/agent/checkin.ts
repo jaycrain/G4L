@@ -50,6 +50,10 @@ export type CheckinContext = {
   // SDT profile is stored but NEVER shown as a number (Decision RB-1); the agent only KNOWS they've done it, so it
   // references it as shared history and never re-asks. No score, no verdict — a starting point, by design.
   whyNamed?: boolean;
+  // Rebuild B2 "Strengths & Weaknesses" — the member's self-management skill profile, once assessed. The agent knows
+  // their apparent strongest skill + growth edge (in plain language, never a number), so it can reflect the profile
+  // and connect it to the week's noticing — never re-administers, never grades.
+  skillProfile?: { strongest: string; growthEdge: string } | null;
   beatsDone?: number; // Beats worked so far
   // The Playbook (the two-way loop): kept keepers + recent journal notes. Used to help — never
   // quoted back coldly or weaponized. Capped/summarized upstream. keeperType (0046) lets the recall
@@ -189,6 +193,9 @@ export function contextBlock(c: CheckinContext): string {
     c.beatsDone != null ? `Beats worked so far: ${c.beatsDone}` : null,
     c.whyNamed
       ? `They've named their "why" for movement and eating (Rebuild B1) — stored as a starting point, deliberately NOT scored or shown as a number. You KNOW they've done this: treat it as shared history and never re-ask it; if it comes up, reflect it as their own words about why this matters, never as a motivation "type" or a verdict.`
+      : null,
+    c.skillProfile
+      ? `They've assessed their self-management skills (Rebuild B2). Their apparent strongest is ${c.skillProfile.strongest.toLowerCase()}; the one with the most room is ${c.skillProfile.growthEdge.toLowerCase()}. Use this to help them SEE themselves and connect skills to their week — never as a grade or a number. A "weak" skill is just one to practice, never a failing. Don't re-administer.`
       : null,
     c.experienceSummary && c.experienceSummary.trim()
       ? `How they've moved through the program lately (for awareness — gently notice a stall or a return, e.g. "you opened Visualization a couple times — want to pick it back up?"; NEVER grade or guilt): ${c.experienceSummary.trim()}`

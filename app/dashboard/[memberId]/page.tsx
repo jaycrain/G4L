@@ -19,6 +19,7 @@ import PostCeremonyTour from '../post-ceremony-tour.tsx';
 import Threshold from '../threshold.tsx';
 import { reconnectEnabled } from '../../../lib/agent/reconnect.ts';
 import { rewireEnabled } from '../../../lib/agent/rewire.ts';
+import { rebuildEnabled } from '../../../lib/agent/rebuild.ts';
 import { practiceHeroMessage } from '../../../lib/practice/store.ts';
 import { pulseBeats } from '../../../lib/momentum/store.ts';
 import MeasureCard from '../measure-card.tsx';
@@ -167,8 +168,9 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
     : 'Who you’re reclaiming lands here once you name it at Identity Excavation.';
   const litCurrent = forecast.current?.openable ? forecast.current : null;
   // During an active practice week (Decision MM R4), the daily practice LEADS the hero — "step into your picture"
-  // (W2). Flag-gated (REWIRE) + drift-hardened (null on a missing 0048), so prod is untouched and never crashes.
-  const practiceMessage = rewireEnabled() ? await practiceHeroMessage(db, memberId) : null;
+  // (W2), the momentum log (W3), or the B2 skill-noticing week (Rebuild). Flag-gated (REWIRE or REBUILD) +
+  // drift-hardened (null on a missing 0048), so prod is untouched and never crashes.
+  const practiceMessage = rewireEnabled() || rebuildEnabled() ? await practiceHeroMessage(db, memberId) : null;
   // Momentum pulse data (Slice 1) — the last 14 days of logged calls → beats. Flag-gated + drift-hardened (empty on a
   // missing 0049), so prod is untouched and never crashes.
   const pulseData = rewireEnabled() ? await pulseBeats(db, memberId).catch(() => []) : [];

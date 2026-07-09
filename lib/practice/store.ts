@@ -6,7 +6,8 @@
 
 import type { Db } from '../db/schema.ts';
 
-export type PracticeKind = 'w2_image' | 'w3_logging'; // W3 opens the logging window; its hero payload lands with the Momentum slice
+// W3 opens the logging window (payload lands with the Momentum slice); b2_noticing is Rebuild B2's skill-noticing week.
+export type PracticeKind = 'w2_image' | 'w3_logging' | 'b2_noticing';
 export const PRACTICE_WINDOW_DAYS = 7;
 
 export type ActivePractice = { kind: PracticeKind; startedAt: string; day: number }; // day = 1..PRACTICE_WINDOW_DAYS
@@ -71,6 +72,11 @@ export function practicePrompt(kind: PracticeKind, payload: { goal?: string | nu
   if (kind === 'w3_logging') {
     // The Momentum log nudge (Slice 4) — one ask, no pressure, no "you missed" (MM/R1 productive-default, EE cadence).
     return `How'd today go — a good call, a false start, or a quiet one?`;
+  }
+  if (kind === 'b2_noticing') {
+    // Rebuild B2 Part B — a week of NOTICING which self-management skills helped or hindered (not changing behavior).
+    // Productive-default, never a gate (MM/R1); observational, non-judgmental.
+    return `Notice today: which of your skills showed up — and where did one you're still building get in the way?`;
   }
   return null;
 }
