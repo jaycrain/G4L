@@ -25,7 +25,7 @@ import { startPracticeWeek } from '../../lib/practice/store.ts';
 import { getGrintaBaselineReading, latestGrintaReading, persistGrintaReading, challengeCheckpointResponsesMap } from '../../lib/grinta/survey/store.ts';
 import { scoreCheckpointStrand, grintaChangePct, directionOf } from '../../lib/grinta/survey/scoring.ts';
 import { BASELINE_CHALLENGE_ITEMS, CHECKPOINT_CHALLENGE_ITEMS } from '../../lib/grinta/survey/instrument.ts';
-import { setGate } from '../../lib/curriculum/store.ts';
+import { setGate, markSessionClosed } from '../../lib/curriculum/store.ts';
 import type { ReclaimCeremonyData } from '../../lib/ceremony/reclaim-ceremony-beats.ts';
 
 // v2.5 Reclaim server actions. C1 · Readiness (evidence + refine→commit) + C2 · Bigger World Audit (administered →
@@ -74,14 +74,19 @@ export async function reclaimTurnAction(
     if (session === 'c2') {
       const turn = applyReclaimC2Turn(state, history, message);
       if (turn.complete) {
+        const db = (await getDb()) as unknown as Db;
         const responses = (turn.state.administeredResponses ?? []).slice(0, AUDIT_ITEM_COUNT);
         if (responses.length === AUDIT_ITEM_COUNT) {
           try {
-            const db = (await getDb()) as unknown as Db;
             await persistBiggerWorldReading(db, memberId, responses);
           } catch {
             /* swallow — the member saw the summary; the durable reading is best-effort */
           }
+        }
+        try {
+          await markSessionClosed(db, memberId, 'RCL-C2');
+        } catch {
+          /* swallow — the forecast advance is best-effort */
         }
       }
       return { ok: true, reply: turn.reply, state: turn.state };
@@ -103,6 +108,11 @@ export async function reclaimTurnAction(
           } catch {
             /* swallow — the logging nudge is a bonus */
           }
+          try {
+            await markSessionClosed(db, memberId, 'RCL-C3');
+          } catch {
+            /* swallow — the forecast advance is best-effort */
+          }
         }
       }
       return { ok: true, reply: turn.reply, state: turn.state };
@@ -112,18 +122,23 @@ export async function reclaimTurnAction(
 
     // On completion (the member confirmed the refinement) → COMMIT the snapshot to the live Reclaim List. Best-effort:
     // the member already saw the confirmation; a write hiccup never breaks the close.
-    if (turn.complete && turn.state.collected?.pendingRefinement) {
-      const p = turn.state.collected.pendingRefinement;
-      const items = p.items
+    if (turn.complete) {
+      const db = (await getDb()) as unknown as Db;
+      const p = turn.state.collected?.pendingRefinement;
+      const items = (p?.items ?? [])
         .filter((i) => isTier(i.tier))
         .map((i) => ({ original: i.original, text: i.text, tier: i.tier as Tier }));
-      if (items.length) {
+      if (items.length && p) {
         try {
-          const db = (await getDb()) as unknown as Db;
           await commitRefinement(db, memberId, { items, top3: p.top3 });
         } catch {
           /* swallow — the member saw the confirm; the commit is best-effort */
         }
+      }
+      try {
+        await markSessionClosed(db, memberId, 'RCL-C1');
+      } catch {
+        /* swallow — the forecast advance is best-effort */
       }
     }
     return { ok: true, reply: turn.reply, state: turn.state };

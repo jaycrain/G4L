@@ -235,3 +235,29 @@ export const RECLAIM_SESSIONS: Asset[] = [
     },
   },
 ];
+
+// v2.5 CONVERSATIONAL Reclaim — the guided Phase flow (C1→C2→C3→C4 Checkpoint; the old Atlas Reclaim Sessions above
+// are parked). Route-backed (no step player) → the forecast links to /reclaim/… and treats them as built. C1 unlocks
+// after the Rebuild ceremony; C2→C3→C4 follow in order. Mirrors REBUILD_V24. C4 is the CAPSTONE (closes Cycle 1).
+export const RECLAIM_V25: Asset[] = [
+  {
+    id: 'RCL-C1', title: 'Readiness Assessment', phase: 'reclaim', layer: 'Readiness', kind: 'session', order: 1,
+    summary: 'See the evidence that you’ve changed — then revisit your Reclaim List with clearer eyes.',
+    close_type: 'reflect', produces: "the member's refined Reclaim List (re-tiered, member-confirmed)", route: '/reclaim/{memberId}/c1', gating: 'rebuild_checkpoint_passed',
+  },
+  {
+    id: 'RCL-C2', title: 'The Bigger World Audit', phase: 'reclaim', layer: 'Emergence', kind: 'session', order: 2,
+    summary: 'Map where your world can get bigger across four areas — and find where to push first.',
+    close_type: 'reflect', produces: "the member's Reclaim priorities (primary + momentum lever)", route: '/reclaim/{memberId}/c2',
+  },
+  {
+    id: 'RCL-C3', title: 'Quality Days Practice', phase: 'reclaim', layer: 'Extension', kind: 'session', order: 3,
+    summary: 'Define what makes a day yours — then track it for a week.',
+    close_type: 'goal', produces: "the member's Quality Day profile + a week of logs", route: '/reclaim/{memberId}/c3',
+  },
+  {
+    id: 'RCL-C4', title: 'The Reclaim Checkpoint', phase: 'reclaim', layer: 'Checkpoint', kind: 'checkpoint', order: 4,
+    summary: 'A read on the challenge you built — the close of the cycle, and the door to the Loop.',
+    close_type: 'milestone', earns: 'reclaim-capstone', route: '/reclaim/{memberId}/c4',
+  },
+];

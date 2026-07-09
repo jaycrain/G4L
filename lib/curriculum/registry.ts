@@ -7,7 +7,7 @@ import type { Asset, Badge, BadgeCategory, Kind, KindProfile } from './types.ts'
 import { RECONNECT_SESSIONS } from './content/reconnect.ts';
 import { REWIRE_SESSIONS, REWIRE_V23 } from './content/rewire.ts';
 import { REBUILD_SESSIONS, REBUILD_V24 } from './content/rebuild.ts';
-import { RECLAIM_SESSIONS } from './content/reclaim.ts';
+import { RECLAIM_SESSIONS, RECLAIM_V25 } from './content/reclaim.ts';
 
 // v2.3 flip: with REWIRE staged, the Rewire Phase is the guided CONVERSATIONAL flow (W1→W2→W3→Checkpoint, route-
 // backed); otherwise the old Atlas Rewire Sessions (prod v2, untouched until the flip). Env is per-deploy, so this
@@ -16,6 +16,9 @@ const rewireStaged = process.env.REWIRE === 'staged';
 // v2.4 flip: same pattern for Rebuild — with REBUILD staged, the guided conversational flow (B1→B2→B3→B4 Checkpoint,
 // route-backed); otherwise the old Atlas Rebuild Sessions (prod, untouched until the flip).
 const rebuildStaged = process.env.REBUILD === 'staged';
+// v2.5 flip: same pattern for Reclaim — with RECLAIM staged, the guided conversational flow (C1→C2→C3→C4 Checkpoint,
+// route-backed, the capstone); otherwise the old Atlas Reclaim Sessions (untouched until the flip).
+const reclaimStaged = process.env.RECLAIM === 'staged';
 
 export const CATEGORY_COLOR: Record<BadgeCategory, string> = {
   milestone: '#374F63', // navy
@@ -120,9 +123,13 @@ export const CURRICULUM: Asset[] = [
         ...REBUILD_SESSIONS,
         meta('RBD-CHK', 'The Rebuild Checkpoint', 'rebuild', 'Checkpoint', 'checkpoint', 6, 'The numbers begin to move — pull them against your baseline.', { close_type: 'milestone', earns: 'rebuild-milestone' }),
       ]),
-  // ── Reclaim ── (Sessions authored from the framework; the Checkpoint is the capstone)
-  ...RECLAIM_SESSIONS,
-  meta('RCL-CHK', 'The Reclaim Checkpoint', 'reclaim', 'Checkpoint', 'checkpoint', 8, 'Carrying it outward — the capstone, and the Loop clips you back in.', { close_type: 'milestone', earns: 'reclaim-capstone' }),
+  // ── Reclaim ── v2.5 conversational flow when staged (C1→C2→C3→C4 Checkpoint), else the old Atlas Sessions + capstone.
+  ...(reclaimStaged
+    ? RECLAIM_V25
+    : [
+        ...RECLAIM_SESSIONS,
+        meta('RCL-CHK', 'The Reclaim Checkpoint', 'reclaim', 'Checkpoint', 'checkpoint', 8, 'Carrying it outward — the capstone, and the Loop clips you back in.', { close_type: 'milestone', earns: 'reclaim-capstone' }),
+      ]),
   // ── The daily layer (runs across the path; layer='Daily' routes it to the forecast's across-row) ──
   meta('DLY-SEVEN', 'The Seven Minutes', 'reconnect', 'Daily', 'pulse', 1, 'A daily short rep to keep your grit warm.'),
   meta('DLY-CLIPIN', 'Daily clip-in', 'reconnect', 'Daily', 'pulse', 2, 'The daily rep — plus the Hardiness reps.'),
