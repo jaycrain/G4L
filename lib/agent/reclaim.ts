@@ -13,6 +13,7 @@ import { EVIDENCE_ITEMS, EVIDENCE_ITEM_COUNT, EVIDENCE_PART_STARTS, EVIDENCE_PAR
 import { TIER_LABEL, REFINE_TIERS, isTier, type Tier } from '../reclaim/refinement-store.ts';
 import { AUDIT_ITEMS, AUDIT_ITEM_COUNT, AUDIT_SCALE_MAX, AUDIT_DOMAIN_STARTS, AUDIT_DOMAIN_LABEL, AUDIT_DOMAIN_INTRO } from '../reclaim/bigger-world-instrument.ts';
 import { scoreAudit } from '../reclaim/bigger-world-scoring.ts';
+import { grintaStem, CHECKPOINT_CHALLENGE_ITEMS } from '../grinta/survey/instrument.ts';
 
 export function reclaimEnabled(): boolean {
   return process.env.RECLAIM === 'staged';
@@ -487,4 +488,67 @@ export async function liveTurnReclaimC3(state: ConvState, history: ConvMessage[]
     messages,
   });
   return applyReclaimC3Turn(state, history, memberMessage, parseQualityDayModel(res.content));
+}
+
+// ══ C4 · The Reclaim Checkpoint (the capstone — closes Cycle 1) ═══════════════════════════════════════════════
+// The Phase-4 close: an ADMINISTERED beat (6 current-state Challenge items, 1–5, deterministic — a clean 6, no
+// pairwise) → a hold into the ceremony. The ACTION scores the Challenge component (Ave1→Ave2), writes the Checkpoint
+// grinta_reading, and sets reclaim_checkpoint_passed. The ceremony revisits the Legacy + invites the Community Success
+// Story → closes Cycle 1 (the Loop). No new migration — reuses grinta_reading. Items VERBATIM (RC-7 C-labels).
+const C4_CHECKPOINT_OPEN =
+  "You did the real work of Reclaim — you revisited your list with clearer eyes, mapped where your world can get " +
+  "bigger, and defined what makes a day yours. Before we close the cycle, a quick read on where your challenge sits " +
+  "now — the pull toward what's possible. Six of these, one to five. No passing score — just an honest gauge.";
+const C4_CHECKPOINT_CLOSE = "That's the read. Hold on — let me show you what you just built.";
+function reclaimCheckpointDeliver(index: number): string {
+  return grintaStem(CHECKPOINT_CHALLENGE_ITEMS[index]!);
+}
+function reclaimCheckpointOpener(): string {
+  return `${C4_CHECKPOINT_OPEN}\n\n${reclaimCheckpointDeliver(0)}`;
+}
+
+const reclaimCheckpointStage: StageDef = administeredStage({
+  id: 'checkpoint',
+  itemCount: CHECKPOINT_CHALLENGE_ITEMS.length, // 6 (scaleMax defaults to 5)
+  opener: () => reclaimCheckpointOpener(),
+  deliverItem: (n) => reclaimCheckpointDeliver(n),
+  reprompt: (n) => `Just a number, 1 to 5 — how true does that feel right now?\n\n${reclaimCheckpointDeliver(n)}`,
+  onComplete: (b) => {
+    // The 6 challenge responses are in b.administeredResponses. Hand into the ceremony; the ACTION scores the Challenge
+    // component (Ave1→Ave2), persists the Checkpoint reading, and sets the capstone gate.
+    b.stage = 'ceremony';
+    b.reply = C4_CHECKPOINT_CLOSE;
+  },
+});
+
+const RECLAIM_CEREMONY_LEAD = 'Hold on — let me show you what you just built.';
+const reclaimCeremonyStage: StageDef = {
+  id: 'ceremony',
+  mode: 'drawout',
+  opener: () => RECLAIM_CEREMONY_LEAD,
+  offersSubstance: () => true,
+  gather(b) {
+    b.reply = RECLAIM_CEREMONY_LEAD;
+  },
+  confirm(b) {
+    b.reply = RECLAIM_CEREMONY_LEAD;
+  },
+};
+
+export const RECLAIM_CHECKPOINT_ARC: ArcConfig = {
+  id: 'reclaim-checkpoint',
+  stageOrder: ['checkpoint', 'ceremony'],
+  stages: { checkpoint: reclaimCheckpointStage, ceremony: reclaimCeremonyStage },
+  onComplete: () => RECLAIM_CEREMONY_LEAD,
+};
+
+export function applyReclaimCheckpointTurn(state: ConvState, history: ConvMessage[], memberMessage: string, model: ModelTurn = { text: '' }): Turn {
+  return runArcTurn(RECLAIM_CHECKPOINT_ARC, state, history, memberMessage, model);
+}
+export function reclaimCheckpointOpening(): Turn {
+  return { reply: reclaimCheckpointOpener(), state: { stage: 'checkpoint', collected: {} }, complete: false };
+}
+// The Checkpoint is ADMINISTERED (deterministic Likert) — no model call needed; the action passes empty text.
+export function liveTurnReclaimCheckpoint(state: ConvState, history: ConvMessage[], memberMessage: string): Turn {
+  return applyReclaimCheckpointTurn(state, history, memberMessage, { text: '' });
 }

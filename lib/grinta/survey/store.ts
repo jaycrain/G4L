@@ -3,7 +3,7 @@
 
 import type { Db } from '../../db/schema.ts';
 import { writeAsActor } from '../../db/actor.ts';
-import { ONBOARDING_BASELINE_ITEMS, CHECKPOINT_GRIT_ITEMS, CHECKPOINT_COMMITMENT_ITEMS, CHECKPOINT_CONTROL_ITEMS, type Strand } from './instrument.ts';
+import { ONBOARDING_BASELINE_ITEMS, CHECKPOINT_GRIT_ITEMS, CHECKPOINT_COMMITMENT_ITEMS, CHECKPOINT_CONTROL_ITEMS, CHECKPOINT_CHALLENGE_ITEMS, type Strand } from './instrument.ts';
 import { grintaChangePct, directionOf, type GrintaScore } from './scoring.ts';
 
 export type GrintaReadingInput = {
@@ -36,6 +36,8 @@ export const checkpointResponsesMap = (responses: number[]) => responsesMap(CHEC
 export const commitmentCheckpointResponsesMap = (responses: number[]) => responsesMap(CHECKPOINT_COMMITMENT_ITEMS, responses);
 // B4: store the TWELVE raw control responses keyed by their a/b codes (re-scorable; the pairwise average is derived).
 export const controlCheckpointResponsesMap = (responses: number[]) => responsesMap(CHECKPOINT_CONTROL_ITEMS, responses);
+// C4: the six challenge responses keyed by code (a clean 6 — no pairwise).
+export const challengeCheckpointResponsesMap = (responses: number[]) => responsesMap(CHECKPOINT_CHALLENGE_ITEMS, responses);
 
 /** The onboarding baseline reading's raw responses + strand means — the source for the §2e Checkpoint recompute
  *  (the 3 baseline grit items + the carried-forward non-grit strands). Null if no baseline was ever captured. */

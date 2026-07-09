@@ -101,6 +101,20 @@ export const GRINTA_ITEMS: Record<string, GrintaItem> = {
   B3Q2b: { code: 'B3Q2b', strand: 'rebuild', subscale: 'B3', stem: 'I eat intentionally more often than I eat reactively' },
   B3Q3a: { code: 'B3Q3a', strand: 'rebuild', subscale: 'B3', stem: 'I can appreciate how physical activity, dietary behaviors and sleep patterns interact together' },
   B3Q3b: { code: 'B3Q3b', strand: 'rebuild', subscale: 'B3', stem: 'I can see how lifestyle behaviors influence my health, function, and quality of life' },
+
+  // §C4 Reclaim Checkpoint — six MORE challenge items (challenge → Reclaim), two per layer. VERBATIM current-state
+  // items from Greg's RECLAIM Gated Assets V4 (RC-7: the doc mislabels these "Based on B1/B2/B3" — they are C1/C2/C3,
+  // the Challenge subscales; use the C-labels). A clean 6 (no pairwise averaging, unlike Rebuild's 12). With the three
+  // baseline challenge items (C1Q1/C2Q1/C3Q1) they give the 9-item challenge read at the Reclaim close.
+  // Readiness (from C1)
+  C1Q2: { code: 'C1Q2', strand: 'reclaim', subscale: 'C1', stem: 'I am aware of what I want to work towards in the future' },
+  C1Q3: { code: 'C1Q3', strand: 'reclaim', subscale: 'C1', stem: 'I am aware of the importance of focusing to achieve my goals' },
+  // Emergence (from C2)
+  C2Q2: { code: 'C2Q2', strand: 'reclaim', subscale: 'C2', stem: 'I have an optimistic view of the future and what it holds for me' },
+  C2Q3: { code: 'C2Q3', strand: 'reclaim', subscale: 'C2', stem: 'I can prioritize aspects of my life that matter to me' },
+  // Extension (from C3)
+  C3Q2: { code: 'C3Q2', strand: 'reclaim', subscale: 'C3', stem: 'I am able to determine elements in my daily life that have the strongest impact on my quality of life' },
+  C3Q3: { code: 'C3Q3', strand: 'reclaim', subscale: 'C3', stem: 'I am able to monitor and prioritize elements in my daily life that are important to me' },
 };
 
 // The three baseline GRIT items (administered at onboarding) — needed to recompute the 9-item grit mean at the Checkpoint.
@@ -126,6 +140,12 @@ export const CHECKPOINT_CONTROL_ITEMS: readonly string[] = [
 // The six SCORED control items after pairwise averaging (Q2 = mean(a,b), Q3 = mean(a,b) per layer). Order matches the
 // pairwise reduction of CHECKPOINT_CONTROL_ITEMS.
 export const CHECKPOINT_CONTROL_SCORED: readonly string[] = ['B1Q2', 'B1Q3', 'B2Q2', 'B2Q3', 'B3Q2', 'B3Q3'];
+
+// The three baseline CHALLENGE items (administered at onboarding) — the Reclaim strand's Ave1 at the C4 Checkpoint.
+export const BASELINE_CHALLENGE_ITEMS: readonly string[] = ['C1Q1', 'C2Q1', 'C3Q1'];
+// The §C4 Reclaim Checkpoint reading — the six challenge items, in layer order (Readiness → Emergence → Extension,
+// Q2 then Q3). A CLEAN 6 — no pairwise averaging (unlike Rebuild's 12).
+export const CHECKPOINT_CHALLENGE_ITEMS: readonly string[] = ['C1Q2', 'C1Q3', 'C2Q2', 'C2Q3', 'C3Q2', 'C3Q3'];
 
 // Pairwise-average an even-length response array into consecutive pairs → half the length. B4's one genuine factory
 // addition (Greg 7/9: "average the pair to retain the meaning of the summary construct"): the 12 activity/diet halves

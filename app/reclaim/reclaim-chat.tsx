@@ -1,7 +1,9 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { startReclaimAction, reclaimTurnAction, type ReclaimSession } from './actions.ts';
+import { startReclaimAction, reclaimTurnAction, reclaimCeremonyDataAction, type ReclaimSession } from './actions.ts';
+import ReclaimCeremony from './reclaim-ceremony.tsx';
+import type { ReclaimCeremonyData } from '../../lib/ceremony/reclaim-ceremony-beats.ts';
 import type { ConvMessage, ConvState } from '../../lib/agent/onboarding.ts';
 import { BEAT_SEP } from '../../lib/agent/onboarding.ts';
 
@@ -18,6 +20,7 @@ export default function ReclaimChat({ memberId, session = 'c1' }: { memberId: st
   const [input, setInput] = useState('');
   const [pending, setPending] = useState(false);
   const [done, setDone] = useState(false);
+  const [ceremony, setCeremony] = useState<ReclaimCeremonyData | null>(null); // C4: set when the checkpoint reaches 'ceremony'
   const [error, setError] = useState<string | null>(null);
   const started = useRef(false);
 
@@ -48,7 +51,15 @@ export default function ReclaimChat({ memberId, session = 'c1' }: { memberId: st
     setMessages((m) => [...m, ...agentBubbles(r.reply!)]);
     setState(r.state);
     if (r.state.stage === 'complete') setDone(true);
+    // C4 — the checkpoint reached the ceremony: load the reveal data and fire the full-screen overlay.
+    if (r.state.stage === 'ceremony') {
+      const c = await reclaimCeremonyDataAction(memberId);
+      if (c.ok && c.data) setCeremony(c.data);
+    }
   }
+
+  // C4 — once the checkpoint reaches the ceremony, the capstone overlay takes over the whole surface.
+  if (ceremony) return <ReclaimCeremony memberId={memberId} data={ceremony} />;
 
   return (
     <div className="reconnect-chat">
