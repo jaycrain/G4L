@@ -43,6 +43,22 @@ import type { Db } from '../../lib/db/schema.ts';
 async function buildContext(db: Db, memberId: string): Promise<CheckinContext | null> {
   const dash = await getDashboard(db, memberId);
   if (!dash) return null;
+  // Degrade-not-crash (W-13): the companion is the cornerstone. `dash` is the ESSENTIAL read; everything below is
+  // SUPPLEMENTARY context ("the agent knows X"). If ANY supplementary read rejects — e.g. a prod-drifted table, since
+  // migrations don't auto-apply — fall back to this minimal-but-valid context instead of throwing. The rail then opens
+  // with name + identity + doors + reclaim list (a real opening), NEVER the "something hiccupped" error greeting. Only
+  // the 8 CheckinContext fields are required; the rest are optional, so the agent simply doesn't know the extras yet.
+  const minimal: CheckinContext = {
+    displayName: dash.displayName,
+    identityNoun: dash.identityNoun,
+    doorDisplayNames: dash.doors.map((d) => d.displayName),
+    idScore: dash.score?.score ?? null,
+    direction: dash.score?.direction ?? null,
+    currentFocus: dash.currentFocus?.label ?? null,
+    lastCompletedAsset: null,
+    reclaimList: dash.reclaimList,
+  };
+  try {
   await maybeFoldMemory(db, memberId); // distill anything that has aged out of recall (best-effort, no-op until due)
   const [grinta, grintaReading, whyReading, skillsReading, pilotPlan, pilotTally, biggerWorld, qdProfile, qdRecent, consumedBites, profRows, idqRows, reclaimItems, beatRows, playbook, measures, linkedMeasureRows, facets, closedIds, lastClosedRows, forecast, experience] = await Promise.all([
     getGrinta(db, memberId, dash.identityNoun),
@@ -199,6 +215,11 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
     experienceSummary: experience.summary || null,
     connect,
   };
+  } catch (e) {
+    // A supplementary read threw (prod drift / transient). Serve the minimal context so the cornerstone never 500s.
+    console.warn('buildContext degraded to minimal — a supplementary read failed:', (e as Error).message);
+    return minimal;
+  }
 }
 
 /** Open the companion: the saved thread, or generate + persist a first opening. */
