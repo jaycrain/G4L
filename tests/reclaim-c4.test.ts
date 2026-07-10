@@ -54,7 +54,7 @@ const withGrinta = (dir: 'up' | 'down' | 'flat', now: number, baseline: number, 
 
 test('C4 ceremony · branches on the Challenge delta; Legacy revisit; closes Cycle 1; Share your story →', () => {
   const up = buildReclaimCeremonyBeats(withGrinta('up', 3.67, 3.0, 22));
-  assert.match(up[0]!.text, /Grinta Index moved/i, 'UP copy');
+  assert.match(up[0]!.text, /Reclaim just climbed/i, 'UP copy');
   assert.equal((up[0]!.reveal as { componentNow: number }).componentNow, 3.67, 'hero = the challenge component Ave2');
 
   const down = buildReclaimCeremonyBeats(withGrinta('down', 2.8, 3.2, -12.5));

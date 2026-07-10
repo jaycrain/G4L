@@ -34,9 +34,9 @@ export type ReclaimCeremonyData = {
 // the science labels (Challenge/strand/component) stay basement. Down renders grey, never red (HH). Names the Phase.
 // ─────────────────────────────────────────────────────────────────────────────────────
 export const RECLAIM_CEREMONY_COPY = {
-  up: "Look at that — your Grinta Index moved. The challenge you built in Reclaim is part of it now — the pull toward what's possible, reading higher than the line you started on. The list you clarified, the priorities you named, the days you learned to shape — that's them, in the number.",
-  down: "Your Grinta Index reads a little lower than your starting line — and that's Reclaim doing its work. You looked clearly at the gap between where you are and where you want to be; naming it honestly is how it closes. A dip here means you're seeing the whole picture. That's the ground the next cycle builds on.",
-  flat: "Your Grinta Index held steady — a solid line to build from. The real move was Reclaim itself — watching your world get bigger. The climb comes as you keep reaching.",
+  up: "Look at that — your Reclaim just climbed. The challenge you built this Phase is part of it now — the pull toward what's possible, reading higher than the line you started on. The list you clarified, the priorities you named, the days you learned to shape — that's them, in the number.",
+  down: "Your Reclaim reads a little lower than your starting line — and that's Reclaim doing its work. You looked clearly at the gap between where you are and where you want to be; naming it honestly is how it closes. A dip here means you're seeing the whole picture. That's the ground the next cycle builds on.",
+  flat: "Your Reclaim held steady — a solid line to build from. The real move was Reclaim itself — watching your world get bigger. The climb comes as you keep reaching.",
   playbook:
     "Here's what you're taking with you, saved to your Playbook: the priorities you clarified, the quality day you defined, the bigger world you mapped. That's your kit for what comes next.",
   playbookEmpty: 'Everything you clarified in Reclaim lives in your Playbook — your kit, ready to reach for.',

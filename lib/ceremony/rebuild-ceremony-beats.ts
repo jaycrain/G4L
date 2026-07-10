@@ -34,9 +34,9 @@ export type RebuildCeremonyData = {
 // labels (Control/strand/component) stay basement. Down renders grey, never red (HH). Names the Phase in every branch.
 // ─────────────────────────────────────────────────────────────────────────────────────
 export const REBUILD_CEREMONY_COPY = {
-  up: "Look at that — your Grinta Index moved. The control you built in Rebuild is part of it now, and it reads higher than the line you started on. The why you found, the skills you named, the pilot you ran — that's them, in the number.",
-  down: "Your Grinta Index reads a little lower than your starting line — and that's Rebuild doing exactly what it should. You looked honestly at your habits and your health decisions; before, they ran on autopilot, and now you see them. A number that dips right here means you're looking clearly. That's the ground the next Phase builds on.",
-  flat: "Your Grinta Index held steady — a solid line to build from. The real move was Rebuild itself — the habits you started. The climb comes as you keep them.",
+  up: "Look at that — your Rebuild just climbed. The control you built this Phase moved it up from where you started. The why you found, the skills you named, the pilot you ran — that's them, in the number.",
+  down: "Your Rebuild reads a little lower than your starting line — and that's Rebuild doing exactly what it should. You looked honestly at your habits and your health decisions; before, they ran on autopilot, and now you see them. A number that dips right here means you're looking clearly. That's the ground the next Phase builds on.",
+  flat: "Your Rebuild held steady — a solid line to build from. The real move was Rebuild itself — the habits you started. The climb comes as you keep them.",
   playbook:
     "Here's what you're taking with you. It's saved to your Playbook: your why (the reason under the work), and the plan you're running — the small changes you're building into real habits. That's your kit — reach for it anytime.",
   // Fallback if somehow nothing was kept (edge case; voice-matched, not part of the approved verbatim).

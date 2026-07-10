@@ -41,7 +41,7 @@ const withGrinta = (dir: 'up' | 'down' | 'flat', now: number, baseline: number, 
 
 test('ceremony beats · branch on the COMPONENT delta; the reveal carries the component move (composite is background)', () => {
   const up = buildRewireCeremonyBeats(withGrinta('up', 3.78, 3.0, 26));
-  assert.match(up[0]!.text, /Grinta Index moved/i, 'UP copy');
+  assert.match(up[0]!.text, /Rewire just climbed/i, 'UP copy');
   const g = up[0]!.reveal;
   assert.equal(g?.kind, 'grinta');
   assert.equal((g as any).componentNow, 3.78, 'the hero number is the component Ave2');

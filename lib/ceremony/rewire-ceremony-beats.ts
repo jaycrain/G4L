@@ -35,9 +35,9 @@ export type RewireCeremonyData = {
 // science labels (Commitment/strand/component) stay basement. Down renders grey, never red (HH).
 // ─────────────────────────────────────────────────────────────────────────────────────
 export const REWIRE_CEREMONY_COPY = {
-  up: "Look at that — your Grinta Index moved. The commitment you just built in Rewire is part of it now, and it reads higher than the line you started on. The lies you caught, the picture you built, the protocol you wrote — that's them, in the number.",
-  down: "Your Grinta Index reads a little lower than your starting line — and that's Rewire doing exactly what it should. You just named your mental traps and your false starts out loud; before, they ran in the dark, and now you see them. A number that dips right here means you're looking clearly. That's the ground the next Phase builds on.",
-  flat: "Your Grinta Index held steady — a solid line to build from. The real move was Rewire itself — the tools you built. The climb comes as you use them.",
+  up: "Look at that — your Rewire just climbed. The commitment you built this Phase moved it up from where you started. The lies you caught, the picture you built, the protocol you wrote — that's them, in the number.",
+  down: "Your Rewire reads a little lower than your starting line — and that's Rewire doing exactly what it should. You just named your mental traps and your false starts out loud; before, they ran in the dark, and now you see them. A number that dips right here means you're looking clearly. That's the ground the next Phase builds on.",
+  flat: "Your Rewire held steady — a solid line to build from. The real move was Rewire itself — the tools you built. The climb comes as you use them.",
   playbook:
     "Here's what you're taking with you. Everything you built is in your Playbook: the true lines that answer your lies, the picture of where you're headed, and the protocol that turns a slip into a comeback. That's your kit — reach for it anytime.",
   // Fallback if somehow nothing was kept (edge case; voice-matched, not part of the approved verbatim).

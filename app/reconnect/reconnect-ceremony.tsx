@@ -45,27 +45,25 @@ export default function ReconnectCeremony({ memberId, data }: { memberId: string
       const rcnDir = r.reconnectChangePct == null ? null : r.reconnectChangePct > 0 ? 'up' : r.reconnectChangePct < 0 ? 'down' : 'flat';
       return (
         <div className="cer-grinta">
+          {/* W-16: HERO = the phase's own move (the Reconnect strand — the honest proof of what they just did); the
+              composite is the quiet secondary line. The composite averages in Rewire/Rebuild/Reclaim still at baseline,
+              so it understates the work. (Matches the Rebuild ceremony.) */}
           <div className="cer-grinta-head">
-            <span className="cgn-val">{r.composite}</span>
+            <span className="cgn-dot" style={{ background: R_RING.reconnect }} />
+            <span className="cgn-val">{r.reconnect}</span>
             <span className="cgn-scale">/ 5</span>
             {/* Delta rule (§3): down renders NEUTRAL (never red); flat shows no arrow. */}
-            {r.changePct !== null && r.direction && r.direction !== 'flat' && (
-              <span className={`cgn-move dir-${r.direction}`}>{MOVE_ARROW[r.direction]} {r.changePct > 0 ? '+' : ''}{r.changePct}%</span>
+            {r.reconnectChangePct != null && rcnDir && rcnDir !== 'flat' && (
+              <span className={`cgn-move dir-${rcnDir}`}>{MOVE_ARROW[rcnDir]} {r.reconnectChangePct > 0 ? '+' : ''}{r.reconnectChangePct}%</span>
             )}
-            <span className="cer-chip">Grinta Index</span>
+            <span className="cer-chip">Reconnect</span>
           </div>
-          <div className="cer-grinta-strands">
-            <div className="cgs-row">
-              <span className="cgs-dot" style={{ background: R_RING.reconnect }} />
-              <span className="cgs-label">Reconnect</span>
-              <span className="cgs-val">
-                {r.reconnect}
-                {r.reconnectChangePct != null && rcnDir && rcnDir !== 'flat' && (
-                  <em className={`cgs-move dir-${rcnDir}`}> {MOVE_ARROW[rcnDir]} {r.reconnectChangePct > 0 ? '+' : ''}{r.reconnectChangePct}%</em>
-                )}
-              </span>
-            </div>
-          </div>
+          <p className="cer-grinta-overall">
+            Your overall Grinta Index reads {r.composite} / 5
+            {r.changePct !== null && r.direction && r.direction !== 'flat'
+              ? ` (${r.direction === 'up' ? '+' : ''}${r.changePct}% — it keeps rising as the other Phases catch up).`
+              : ' — it keeps rising as the other Phases catch up.'}
+          </p>
         </div>
       );
     }

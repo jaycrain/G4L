@@ -37,10 +37,10 @@ export default function ReclaimCeremony({ memberId, data }: { memberId: string; 
             {r.componentChangePct !== null && dir && dir !== 'flat' && (
               <span className={`cgn-move dir-${dir}`}>{MOVE_ARROW[dir]} {r.componentChangePct > 0 ? '+' : ''}{r.componentChangePct}%</span>
             )}
-            <span className="cer-chip">Grinta Index</span>
+            <span className="cer-chip">Reclaim</span>
           </div>
           {r.componentBaseline != null && <p className="cer-grinta-from">from your starting line of {r.componentBaseline} / 5</p>}
-          <p className="cer-grinta-overall">Your overall Grinta reads {r.composite} / 5.</p>
+          <p className="cer-grinta-overall">Your overall Grinta Index reads {r.composite} / 5.</p>
         </div>
       );
     }
