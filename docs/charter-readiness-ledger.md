@@ -299,8 +299,9 @@ a generic "back to dashboard."_
   live list, never empty). _CONFIRMED on prod: `select tier from reclaim_item` → "column tier does not exist" → migration
   0053 (tier) unapplied in prod (0040 removed_at almost certainly too — the dashboard jsonb fallback masks it). Prod's
   `reclaim_item` is behind on migrations — the Reclaim data layer partially broke in prod when v2.5 flipped without
-  applying 0040/0053. Map the full drift + apply the missing reclaim migrations._ **Open — data-integrity; fix before
-  charter (a member could overwrite their real list).**
+  applying 0040/0053. Map the full drift + apply the missing reclaim migrations._ **CLOSED — migrations 0040/0053
+  applied to prod (both columns verified present) + `liveReclaimTexts` jsonb fallback deployed (2 unit tests, suite 618
+  green) + LIVE-CONFIRMED: the founder re-opened C1 and his 7 items showed instead of "empty."**
 - **W-28 🔴 STRATEGIC (mechanism): the 4Rs run as a LINEAR pipeline, contradicting the program model** — founder,
   walking it: "no one goes through all the Rs linearly like I am; Rebuild shouldn't default straight into Reclaim — you
   reach Reclaim later, in a different cycle." Correct, and it's the SPEC (CLAUDE.md program model): the 4Rs are NOT a
