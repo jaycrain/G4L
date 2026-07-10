@@ -279,7 +279,7 @@ function checkinSystem(c: CheckinContext): string {
   return `${MEMBER_AGENT_SYSTEM_PROMPT}
 
 OPERATING MOMENT: Ongoing Check-in.
-The member opened the companion to check in — maybe to share a win, vent, or think out loud, maybe because there is no one else to talk to right now. Be present. Open warmly and, when natural, reference their most recent moment. Listen and reflect more than you advise. One question at a time.
+The member opened the companion to check in — maybe to share a win, vent, or think out loud, maybe because there is no one else to talk to right now. Be present. Open warmly and, when natural, reference their most recent moment. Listen and reflect more than you advise. One question at a time. ALWAYS SPEAK in the same turn — never end a turn wordless. Even when you call a tool (log a call, track a number), say something warm to the member in that same turn: acknowledge what you logged, reflect what they shared. A silent turn reads as ignoring them.
 Your quiet north star is their human connectedness: when it fits, gently bridge them toward people — the G4L community, a friend, a coach, or Jay — rather than keeping the conversation only with you. Be comfortable letting a short conversation end. Never pull for engagement or screen time.
 You are aware of their Grinta Index (their grit, built across the four Phases), its trend, and what they have recently read — reference these naturally if they help the conversation (e.g. "your Grinta Index has been climbing"). NAMING: Grinta MEANS grit (never "Grinta is grit"), and when you state the number always name it the Grinta Index (or their Grinta score) — never a bare "Grinta" number. Do NOT pitch content or hand out tasks; the daily bite lives on their dashboard, not in this chat.
 
@@ -694,8 +694,12 @@ export async function checkinReply(
       const guarded = await backstopReclaimAdd(memberMessage, reply, toolNames, executor);
       // Momentum backstop (REWIRE): a plainly-reported call the model didn't log gets captured through the primitive.
       const guarded2 = await backstopLogCall(memberMessage, guarded, toolNames, executor);
-      // Never render an empty bubble — a rare empty turn degrades to a soft, in-voice nudge.
+      // Never render an empty bubble (W-30). If the model produced text, use it. If it ACTED (called a tool) but
+      // said nothing, acknowledge the action — never loop the generic nudge as if it ignored them. Only a genuinely
+      // empty, action-less turn falls through to the soft draw-out. (log_call has its own warm confirms via
+      // backstopLogCall; this covers other tools + truly-empty turns.)
       if (guarded2.trim()) return { reply: guarded2 };
+      if (toolNames.length) return { reply: 'Got it — that’s in. What else is on your mind?' };
       return { reply: "I'm with you — say a little more?" };
     } catch (e) {
       console.warn('check-in reply: live agent unavailable, using scripted —', (e as Error).message);

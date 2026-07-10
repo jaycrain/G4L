@@ -62,7 +62,7 @@ test('ceremony beats · reveals the three tools together, then lights Rebuild', 
   assert.equal((pb!.reveal as any).keepers.length, 3, 'the true line, the picture, the protocol');
   const jr = beats.find((b) => b.reveal?.kind === 'journey_rebuild');
   assert.match(jr!.text, /Rebuild is the body/i);
-  assert.equal(REWIRE_CEREMONY_RESOLVE_LABEL, 'Get Rebuilt →');
+  assert.equal(REWIRE_CEREMONY_RESOLVE_LABEL, 'Start Rebuilding →');
 });
 
 test('ceremony beats · no reading (no baseline / skipped) → steady framing, no number, still walks', () => {

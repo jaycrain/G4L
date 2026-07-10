@@ -96,4 +96,4 @@ export function buildReconnectCeremonyBeats(d: ReconnectCeremonyData): Reconnect
   return beats;
 }
 
-export const RECONNECT_CEREMONY_RESOLVE_LABEL = 'Get Rewired →';
+export const RECONNECT_CEREMONY_RESOLVE_LABEL = 'Start Rewiring →';

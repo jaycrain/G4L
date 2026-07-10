@@ -66,4 +66,4 @@ export function buildRewireCeremonyBeats(d: RewireCeremonyData): RewireCeremonyB
   return beats;
 }
 
-export const REWIRE_CEREMONY_RESOLVE_LABEL = 'Get Rebuilt →';
+export const REWIRE_CEREMONY_RESOLVE_LABEL = 'Start Rebuilding →';
