@@ -19,11 +19,11 @@ Status legend: 🟢 closed (fixed + deployed + testing bar met) · 🟡 fixed/de
 
 | Tier | Total | 🟢 closed | 🟡 minor gap | 🔴 open |
 | :--- | :---: | :---: | :---: | :---: |
-| T1 · copy | 6 | 1 | 0 | 5 |
+| T1 · copy | 6 | 5 | 0 | 1 |
 | T2 · flow | 14 | 6 | 1 | 7 |
 | T3 · data | 6 | 2 | 1 | 3 |
 | T4 · gov/design | 4 | 1 | 0 | 3 |
-| **Total** | **30** | **10** | **2** | **18** |
+| **Total** | **30** | **14** | **2** | **14** |
 
 **CROSS-ARC PATTERN (the batch's biggest theme):** "engine + model both contribute a question/beat → stacking" now
 spans onboarding (W-02/W-08, CLOSED), Reconnect (W-14), and Rewire (W-18/W-19). One structural discipline — *the model
@@ -40,14 +40,13 @@ founder's live account.
 
 ### T1 · Copy / cosmetic
 - **W-01 🟢 SKIP_ACK gendered pronoun** — `onboarding-staged.ts:129` "you'll find her" → "…your way back to them". Deployed. Fixtures updated (`onboarding-staged.test.ts`). _Data impact: none._
-- **W-07 🔴 Other gendered-pronoun hits (audit)** — ~12 `her/she/he` hits in `onboarding-staged.ts` (131,160,177,186,262,358,532,797,944-945,1468…). Most are code comments / system-prompt persona *examples* (adapt per member) / the founder's third-person story — NOT bugs. _Testing:_ triage each; fix only true hardcoded member-facing ones (T1). **Open.**
-- **A-05 🔴 `G4L_DEMO_OPEN_REBUILD` legacy demo bypass** — `lib/assets/gating.ts:43` gate-bypass flag in live code. **Inert on prod** (not set). _Testing:_ remove the flag (T1); confirm gating tests still pass. **Open, low.**
+- **W-07 🟢 Other gendered-pronoun hits (audit)** — ~12 `her/she/he` hits in `onboarding-staged.ts` (131,160,177,186,262,358,532,797,944-945,1468…). Most are code comments / system-prompt persona *examples* (adapt per member) / the founder's third-person story — NOT bugs. _Testing:_ triage each; fix only true hardcoded member-facing ones (T1). **CLOSED — triaged: 0 true member-facing hits (rest are comments / persona examples / founder story); the one real one was W-01.**
+- **A-05 🟢 `G4L_DEMO_OPEN_REBUILD` legacy demo bypass** — `lib/assets/gating.ts:43` gate-bypass flag in live code. **Inert on prod** (not set). _Testing:_ remove the flag (T1); confirm gating tests still pass. **CLOSED — flag removed from gating.ts; suite 621 green; deployed.**
 
-- **W-12 🔴 Gap sentence-joins drop periods** — on the founder's committed card the gap ran two sentences together
+- **W-12 🟢 Gap sentence-joins drop periods** — on the founder's committed card the gap ran two sentences together
   without a period ("gotten me there **It** went deeper"; "our future **There** was a financial impact"). `set_gap`
   accumulates across turns and concatenates without a separator. Pre-existing (NOT a batch regression); content fully
-  intact, purely readability. _Testing (T1):_ join accumulated gap segments with a period/space; eyeball. **Open, low —
-  founder to decide (rail-editable meanwhile).**
+  intact, purely readability. _Testing (T1):_ join accumulated gap segments with a period/space. **CLOSED — joinGapChapters() + unit test; deployed.**
 
 - **W-16 🔴 Reconnect ceremony features the wrong Grinta number** — the §2f Grinta reveal leads with the COMPOSITE Grinta
   Index (3.42, +5.23%) as headline and shows the Reconnect strand (3.33, +24.72%) beneath as "the driver"
@@ -62,11 +61,11 @@ founder's live account.
   composite-forward reveal): NOT Reconnect-only. It's EVERY phase ceremony's Grinta reveal (Reconnect + Rewire now;
   Rebuild + Reclaim downstream). One shared fix across the ceremony-beats family, not a per-ceremony patch._
 
-- **W-26 🔴 Rebuild ceremony button copy: "Get Reclaimed" → "Start Reclaiming"** — the Rebuild ceremony's terminal
+- **W-26 🟢 Rebuild ceremony button copy: "Get Reclaimed" → "Start Reclaiming"** — the Rebuild ceremony's terminal
   button (the Rebuild→Reclaim hand-off) reads "Get Reclaimed →". Founder: "Start Reclaiming" is more appropriate as an
   ONGOING effort. On-model — Reclaim is a recurring outcome state ("the Loop"), not a one-time achievement; "Get
   Reclaimed" reads as a finished transaction. _Fix (T1):_ change the label (rebuild-ceremony-beats resolve label);
-  audit for any other "Get Reclaimed" instances. _Data impact: none (copy)._ **Open — batched.**
+  audit for any other "Get Reclaimed" instances. _Data impact: none (copy)._ **CLOSED — "Start Reclaiming →"; pinned test updated; deployed.**
 
 ### T2 · Conversational flow / capture loop
 - **W-02 🟢 Jumbled gap reflection** — the engine appends a static `GAP_MORE` widening question (`onboarding-staged.ts:189`) on top of a model turn that already wrapped ("let me make sure I have it right") → stacked transitions. Same anti-pattern as the W3 rhythm fix, still in the onboarding gap stage. _Data impact: none (display/flow)._ _Testing (T2):_ replay fixture for the stacked-transition case + a Joanne clean run + diff vs last-good. **CLOSED — root confirmed (`withQuestion` only suppressed on a literal "?"); fixed prompt-side (gather turns always end with the model's one question, never a bare wrap-coda) — no `withQuestion` code change (revert-over-patch); deployed; founder's walk smooth.**
