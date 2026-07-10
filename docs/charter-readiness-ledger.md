@@ -19,11 +19,11 @@ Status legend: 🟢 closed (fixed + deployed + testing bar met) · 🟡 fixed/de
 
 | Tier | Total | 🟢 closed | 🟡 minor gap | 🔴 open |
 | :--- | :---: | :---: | :---: | :---: |
-| T1 · copy | 6 | 5 | 0 | 1 |
-| T2 · flow | 15 | 10 | 1 | 4 |
+| T1 · copy | 6 | 6 | 0 | 0 |
+| T2 · flow | 15 | 11 | 1 | 3 |
 | T3 · data | 6 | 2 | 1 | 3 |
 | T4 · gov/design | 4 | 1 | 0 | 3 |
-| **Total** | **31** | **18** | **2** | **11** |
+| **Total** | **31** | **20** | **2** | **9** |
 
 **CROSS-ARC PATTERN (the batch's biggest theme):** "engine + model both contribute a question/beat → stacking" now
 spans onboarding (W-02/W-08, CLOSED), Reconnect (W-14), and Rewire (W-18/W-19). One structural discipline — *the model
@@ -48,7 +48,7 @@ founder's live account.
   accumulates across turns and concatenates without a separator. Pre-existing (NOT a batch regression); content fully
   intact, purely readability. _Testing (T1):_ join accumulated gap segments with a period/space. **CLOSED — joinGapChapters() + unit test; deployed.**
 
-- **W-16 🔴 Reconnect ceremony features the wrong Grinta number** — the §2f Grinta reveal leads with the COMPOSITE Grinta
+- **W-16 🟢 Ceremonies feature the wrong Grinta number (composite, not the phase strand)** — the §2f Grinta reveal leads with the COMPOSITE Grinta
   Index (3.42, +5.23%) as headline and shows the Reconnect strand (3.33, +24.72%) beneath as "the driver"
   ([reconnect-ceremony-beats.ts:15](lib/ceremony/reconnect-ceremony-beats.ts)). But the composite is diluted — it
   averages in Rewire/Rebuild/Reclaim strands still at baseline — so it UNDERSTATES the work just done. Founder's call
@@ -121,7 +121,7 @@ founder's live account.
   off the bike… MY wife had been laid off"), zero third person. Decision captured in [[gap-voice-first-person]].**
 - **A-02 🟡 "Welcome back" resume gate false-promise** — `app/onboarding/chat.tsx` now verifies a server session exists before showing "nothing's lost"; clears stale storage otherwise. Deployed. _Testing:_ tsc + onboarding suite green; a dedicated automated test is hard (client effect) — verified by logic + the founder's live walk. **Minor gap: add a server-verify unit test if feasible.**
 
-- **W-14 🔴 Doors session asks "has it shifted?" then ignores the answer** — Reconnect Doors session: the entry opener
+- **W-14 🟢 Doors session asks "has it shifted?" then ignores the answer** — Reconnect Doors session: the entry opener
   ([reconnect.ts:59](lib/agent/reconnect.ts:59)) invites a redirect ("still where it began, or has something shifted?"),
   but the next turn `doorOpen` ([reconnect.ts:146](lib/agent/reconnect.ts:146)) is a PURE function of the committed
   PRIMARY door — it opens Career Cliff regardless. Founder answered "the issues in my marriage have caused a tailspin"
