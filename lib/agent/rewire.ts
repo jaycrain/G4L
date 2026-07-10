@@ -19,6 +19,17 @@ export function rewireEnabled(): boolean {
   return process.env.REWIRE === 'staged';
 }
 
+// W-18: the arc appends its scripted question beat AFTER the model's reflection. But when the model ran ahead and
+// already asked its own question, appending ours double-bubbles (both asking). Suppress the scripted beat when the
+// model's reflection already ends its last paragraph with a question — the same "model reflects, engine asks, never
+// both" discipline as onboarding's withQuestion, BEAT_SEP-aware. Pure + testable.
+export function withScriptedBeat(reflected: string, scripted: string): string {
+  const t = (reflected ?? '').trim();
+  if (!t) return scripted;
+  const lastPara = t.split(/\n\s*\n/).pop() ?? t;
+  return lastPara.includes('?') ? t : `${t}${BEAT_SEP}${scripted}`;
+}
+
 // ── W1 · The Disinformation Audit — final approved copy ──────────────────────────────────────────────────────
 const W1_STORY =
   `Jay ran a disinformation campaign on himself for eight years.\n\n` +
@@ -103,7 +114,7 @@ const domainsStage: StageDef = {
     const next = idx + 1;
     if (next < W1_DOMAINS.length) {
       sc.domainIdx = next;
-      b.reply = reflected ? `${reflected}${BEAT_SEP}${W1_DOMAINS[next]}` : W1_DOMAINS[next]!;
+      b.reply = withScriptedBeat(reflected, W1_DOMAINS[next]!);
     } else {
       // all five walked → NAME THE CAMPAIGN (fixed reveal) + the guided turn ask (model text, or the fallback ask).
       b.stage = 'affirm';
@@ -254,7 +265,7 @@ const W2_IMAGE_NUDGE = `No rush — just picture it and tell me what you see. Ev
 // ── The recognition — the reveal (the weight) ──
 const W2_RECOGNITION =
   `That's not a wish. It's a goal you already named, with you standing in it, on the far side of the work. Look at ` +
-  `it for a second — that's what the work is for. Hold onto that.`;
+  `it for a second — that's what the work is for. Hold onto that. When you're ready, tell me what comes up.`;
 // ── The practice — the week + the W1 connection ──
 const W2_PRACTICE_1 =
   `Here's your work this week, and it's small: five minutes each morning, sit with that image. Close your eyes, make ` +
@@ -312,7 +323,7 @@ const anchorStage: StageDef = {
     }
     b.collected.w2Anchor = b.memberMessage.trim();
     b.stage = 'image';
-    b.reply = reflected ? `${reflected}${BEAT_SEP}${W2_IMAGE[0]}` : W2_IMAGE[0]!;
+    b.reply = withScriptedBeat(reflected, W2_IMAGE[0]!);
   },
   confirm(b) {
     anchorStage.gather(b);
@@ -338,7 +349,7 @@ const imageStage: StageDef = {
     const next = idx + 1;
     if (next < W2_IMAGE.length) {
       sc.imageIdx = next;
-      b.reply = reflected ? `${reflected}${BEAT_SEP}${W2_IMAGE[next]}` : W2_IMAGE[next]!;
+      b.reply = withScriptedBeat(reflected, W2_IMAGE[next]!);
     } else {
       // whole scene built → the model's full-image reflection + the recognition reveal, then sit with it (hold).
       b.stage = 'hold';
