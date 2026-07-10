@@ -1,12 +1,18 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { startRewireAction, rewireTurnAction, rewireCeremonyDataAction, type RewireSession } from './actions.ts';
 import RewireCeremony from './rewire-ceremony.tsx';
 import ScaleChips from '../components/scale-chips.tsx';
 import type { RewireCeremonyData } from '../../lib/ceremony/rewire-ceremony-beats.ts';
 import type { ConvMessage, ConvState, ScaleExpectation } from '../../lib/agent/onboarding.ts';
 import { BEAT_SEP } from '../../lib/agent/onboarding.ts';
+
+// W-21 — the conversational hand-home. A completed session used to hide the input and render nothing (a hard dead-end).
+// Now the companion speaks one last parting line (its own voice, in the thread) and hands the member back to their
+// companion-home, where the next step is lit. Copy: Cowork Copy Pack v0.2.
+const REWIRE_HAND_HOME = "Head back whenever you’re ready — I’m right here in the rail if you want to keep going.";
 
 // A turn may hand over more than one beat (a reflection + the next ask), joined by BEAT_SEP — render each as its OWN
 // bubble, one job each. Reuses the onboarding/reconnect chat classes so it looks native.
@@ -16,6 +22,7 @@ const agentBubbles = (text: string): ConvMessage[] =>
 // v2.3 Rewire chat — W1 (the Disinformation Audit) or W2 (the Visualization Workshop), by `session`. Mirrors the
 // Reconnect chat: start → the guided one-at-a-time walk → the close. State is held client-side for the walk.
 export default function RewireChat({ memberId, session = 'w1' }: { memberId: string; session?: RewireSession }) {
+  const router = useRouter();
   const [messages, setMessages] = useState<ConvMessage[]>([]);
   const [state, setState] = useState<ConvState | null>(null);
   const [input, setInput] = useState('');
@@ -52,10 +59,15 @@ export default function RewireChat({ memberId, session = 'w1' }: { memberId: str
       setExpects(null);
       return setError(r.error ?? 'Something went wrong.');
     }
-    setMessages((m) => [...m, ...agentBubbles(r.reply!)]);
     setState(r.state);
     setExpects(r.expects ?? null);
-    if (r.state.stage === 'complete') setDone(true); // session done — the keeper(s) are in the Playbook
+    if (r.state.stage === 'complete') {
+      // W-21 — hand the member home in the companion's voice, then show the Continue → CTA (no more dead-end).
+      setMessages((m) => [...m, ...agentBubbles(r.reply!), { role: 'agent', text: REWIRE_HAND_HOME }]);
+      setDone(true); // session done — the keeper(s) are in the Playbook
+    } else {
+      setMessages((m) => [...m, ...agentBubbles(r.reply!)]);
+    }
     // R4 — the checkpoint reached the ceremony: load the reveal data and fire the full-screen overlay.
     if (r.state.stage === 'ceremony') {
       const c = await rewireCeremonyDataAction(memberId);
@@ -105,6 +117,14 @@ export default function RewireChat({ memberId, session = 'w1' }: { memberId: str
             </button>
           </form>
         </>
+      )}
+      {/* W-21 — the hand-home CTA: the session is saved; return the member to their companion-home (next step lit). */}
+      {done && (
+        <div className="chat-continue">
+          <button type="button" onClick={() => router.push(`/dashboard/${memberId}`)}>
+            Continue →
+          </button>
+        </div>
       )}
     </div>
   );

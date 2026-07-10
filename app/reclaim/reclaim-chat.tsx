@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { startReclaimAction, reclaimTurnAction, reclaimCeremonyDataAction, type ReclaimSession } from './actions.ts';
 import ReclaimCeremony from './reclaim-ceremony.tsx';
 import ScaleChips from '../components/scale-chips.tsx';
@@ -13,9 +14,15 @@ import { BEAT_SEP } from '../../lib/agent/onboarding.ts';
 const agentBubbles = (text: string): ConvMessage[] =>
   text.split(BEAT_SEP).map((t) => t.trim()).filter(Boolean).map((t) => ({ role: 'agent' as const, text: t }));
 
+// W-21 — the conversational hand-home on completion (no more dead-end). C3 · Quality Days routes into its logging week;
+// C1/C2 hand back to the companion-home. Copy: Cowork Copy Pack v0.2 (generic + practice-week variant).
+const RECLAIM_HAND_HOME = "Head back whenever you’re ready — I’m right here in the rail if you want to keep going.";
+const RECLAIM_C3_HAND_HOME = "Your Quality Days are set. This week you live them — I’ll be here as you go.";
+
 // v2.5 Reclaim chat — C1 (Readiness Assessment). Mirrors the Rebuild chat; the C4 ceremony overlay is added in a
 // later slice. State is held client-side for the walk.
 export default function ReclaimChat({ memberId, session = 'c1' }: { memberId: string; session?: ReclaimSession }) {
+  const router = useRouter();
   const [messages, setMessages] = useState<ConvMessage[]>([]);
   const [state, setState] = useState<ConvState | null>(null);
   const [input, setInput] = useState('');
@@ -52,10 +59,16 @@ export default function ReclaimChat({ memberId, session = 'c1' }: { memberId: st
       setExpects(null);
       return setError(r.error ?? 'Something went wrong.');
     }
-    setMessages((m) => [...m, ...agentBubbles(r.reply!)]);
     setState(r.state);
     setExpects(r.expects ?? null);
-    if (r.state.stage === 'complete') setDone(true);
+    if (r.state.stage === 'complete') {
+      // W-21 — hand the member home in the companion's voice, then show the CTA (C3 → its week; else → home).
+      const handHome = session === 'c3' ? RECLAIM_C3_HAND_HOME : RECLAIM_HAND_HOME;
+      setMessages((m) => [...m, ...agentBubbles(r.reply!), { role: 'agent', text: handHome }]);
+      setDone(true);
+    } else {
+      setMessages((m) => [...m, ...agentBubbles(r.reply!)]);
+    }
     // C4 — the checkpoint reached the ceremony: load the reveal data and fire the full-screen overlay.
     if (r.state.stage === 'ceremony') {
       const c = await reclaimCeremonyDataAction(memberId);
@@ -105,6 +118,14 @@ export default function ReclaimChat({ memberId, session = 'c1' }: { memberId: st
             </button>
           </form>
         </>
+      )}
+      {/* W-21 — the hand-home CTA: C3 routes into its logging week; C1/C2 hand back to the companion-home. */}
+      {done && (
+        <div className="chat-continue">
+          <button type="button" onClick={() => router.push(`/dashboard/${memberId}`)}>
+            {session === 'c3' ? 'Start the week →' : 'Continue →'}
+          </button>
+        </div>
       )}
     </div>
   );

@@ -707,7 +707,7 @@ export function rewireW3Opening(cb: W3Callback | null): Turn {
 }
 
 // ── the live surface — the model draws out (its OWN one question per turn); the engine sequences + never appends ──
-const REWIRE_W3_SYSTEM =
+export const REWIRE_W3_SYSTEM =
   "You are the G4L Companion running the False Start Protocol, in Rewire (Phase 2). You already know this member (see " +
   "MEMBER CONTEXT). You are helping them build a plan for the day they slip — BEFORE it happens. Core posture: a false " +
   "start is NOT failure; it's the expected cost of change — normalize it, never judge, grade, or scold. Plain, warm, " +
@@ -718,10 +718,14 @@ const REWIRE_W3_SYSTEM =
   "list to work through. (4) Reflect SPARINGLY — don't open every turn with the same validation tic ('makes complete " +
   "sense', 'completely heard'); vary it. This session PULLS THEIR PRIOR TOOLS FORWARD: at the Reframe, offer the true " +
   "lines they wrote before; at the Restart, point them to the picture they built (both in MEMBER CONTEXT) — adapt " +
-  "gracefully if a tool isn't there. NAMES: never say 'W1'/'W2'/'W3' — refer to earlier work descriptively. If a " +
+  "gracefully if a tool isn't there. (5) RECALL VERBATIM (W-23): when you surface a prior tool, QUOTE THEIR EXACT " +
+  "WORDS from MEMBER CONTEXT — never paraphrase or generalize ('the picture you built', 'that line you wrote'). Say " +
+  "the actual words back, in quotes, in their own first-person voice — 'go back to the line you wrote: \"[their exact " +
+  "line]\"'. Hearing their OWN words at the moment of a slip is the whole point. NAMES: never say 'W1'/'W2'/'W3' — refer to earlier work descriptively. If a " +
   "distress or crisis signal appears, drop the exercise and route to support (988 US / local) and a human — always on.";
 
-function w3Context(c: Collected): string {
+// Exported for the W-23 regression test — proves the member's prior-session keepers reach the model VERBATIM.
+export function w3Context(c: Collected): string {
   const identity = identityLabel(c.identityNoun);
   const lines = (c.w3TrueLines ?? []).map((s) => (s ?? '').trim()).filter(Boolean);
   const image = (c.w3Image ?? '').trim();

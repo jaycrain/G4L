@@ -979,6 +979,11 @@ html:has(.companion-hero), body:has(.companion-hero) { overflow-anchor: none; }
 .priority-pair .see-more, .priority-pair .db-foot { margin-top: auto; padding-top: 1.1rem; align-self: flex-start; }
 @media (max-width: 760px) { .priority-pair { grid-template-columns: 1fr; } }
 .witness-row { margin-bottom: 1rem; }
+/* W-25: the active practice week's compact "this week" line on the Momentum panel (relocated off the hero) -- a quiet
+   teal-tinted strip, present enough to be inviting, small enough that it no longer owns the surface. */
+.practice-strip { margin: 0 0 0.75rem; padding: 0.6rem 0.8rem; background: rgba(59, 148, 149, 0.15); border-radius: 8px; font-size: 0.92rem; line-height: 1.45; color: var(--navy); font-weight: 600; }
+.see-more-inline { color: var(--teal); font-weight: 700; text-decoration: none; white-space: nowrap; }
+.see-more-inline:hover { text-decoration: underline; }
 .gcomp-gloss { font-size: 0.72rem; color: var(--charcoal); opacity: 0.7; margin: 0.2rem 0 0; }
 
 /* Below the 2-pane width, the companion opens as a full-screen overlay (no side dock) — centered and

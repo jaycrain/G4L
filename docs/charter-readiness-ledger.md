@@ -20,10 +20,10 @@ Status legend: 🟢 closed (fixed + deployed + testing bar met) · 🟡 fixed/de
 | Tier | Total | 🟢 closed | 🟡 minor gap | 🔴 open |
 | :--- | :---: | :---: | :---: | :---: |
 | T1 · copy | 6 | 6 | 0 | 0 |
-| T2 · flow | 15 | 11 | 1 | 3 |
+| T2 · flow | 15 | 13 | 1 | 1 |
 | T3 · data | 6 | 3 | 1 | 2 |
-| T4 · gov/design | 4 | 1 | 0 | 3 |
-| **Total** | **31** | **21** | **2** | **8** |
+| T4 · gov/design | 4 | 2 | 0 | 2 |
+| **Total** | **31** | **24** | **2** | **5** |
 
 **CROSS-ARC PATTERN (the batch's biggest theme):** "engine + model both contribute a question/beat → stacking" now
 spans onboarding (W-02/W-08, CLOSED), Reconnect (W-14), and Rewire (W-18/W-19). One structural discipline — *the model
@@ -175,7 +175,13 @@ founder's live account.
   one true line" beat → a long, multi-topic, jumbled message. _Data impact: none (coherence)._ _Fix (T2):_ folds into
   the same "model reflects, engine asks — not both" discipline as W-18. **Open — batched.**
 
-- **W-21 🔴 Rewire session completion is a DEAD END — no onward CTA** — when a Rewire session (W1/W2/W3) closes it
+- **W-21 🟢 Rewire session completion is a DEAD END — no onward CTA** — **CLOSED (2026-07-10):** on completion the
+  companion now speaks a parting hand-home line (its own voice, appended as a final bubble) and the surface shows a
+  `Continue →` CTA that routes to the dashboard (companion-home, next step lit) — no more hidden-input dead-end. Applied
+  to ALL session arcs, not just Rewire: Rewire W1/W2/W3, Rebuild B1/B2/B3, Reclaim C1/C2/C3. The practice-week sessions
+  (B3 / C3) route in with `Start the week →` + a pilot/quality-day hand-home line; the rest use `Continue →`. Copy: Cowork
+  Copy Pack v0.2. Client-only (engine/closes untouched — zero risk to the capture loop); tsc + 632 green; deployed.
+  _Original finding below._ — when a Rewire session (W1/W2/W3) closes it
   sets `stage='complete'` ([rewire.ts:131](lib/agent/rewire.ts)) → rewire-chat sets `done=true` and HIDES the input
   (`{!done && …}`, [rewire-chat.tsx:75](app/rewire/rewire-chat.tsx)) — but renders nothing in its place. The member
   finishes, sees the close message + footer, and has NO way forward (no "back to dashboard", no "next session"). Must
@@ -200,7 +206,13 @@ a generic "back to dashboard."_
   member knows they can respond without guessing — part of the arc-flow ("open → flow → hand-home") design pass.
   **Open — batched with the arc family (W-14/18/19/20/21).**
 
-- **W-23 🔴 ENHANCEMENT: arcs don't recall the member's own prior-session lines verbatim** — the member's W1 true lines
+- **W-23 🟢 ENHANCEMENT: arcs don't recall the member's own prior-session lines verbatim** — **CLOSED (2026-07-10):**
+  the W3 plumbing already loaded the W1 true lines + W2 image and injected them verbatim into context — the gap was the
+  system prompt said "offer the true lines / point them to the picture" but never said *quote their exact words*, so the
+  model paraphrased ("the picture you built") — the founder's exact symptom. Added an explicit VERBATIM-RECALL rule to
+  `REWIRE_W3_SYSTEM` ("QUOTE THEIR EXACT WORDS… never paraphrase or generalize"; first-person stays first person) +
+  a regression test (`tests/rewire-keeper-recall.test.ts`, 4 cases) locking the verbatim context injection + the prompt
+  rule. Copy: Cowork Copy Pack v0.2. tsc + 632 green; deployed. _Original finding below._ — the member's W1 true lines
   ('principle' keepers "Your true line", [rewire.ts:138](lib/agent/rewire.ts)) + W2 image ARE saved as Playbook keepers,
   and the companion RAIL context already carries `playbookKeepers` w/ `keeperType` ([[practice-week-and-keeper-recall-rails]]).
   But the arc SESSIONS inject only identity + reclaim list + current anchor ([rewire.ts:405](lib/agent/rewire.ts)) — NOT
@@ -211,7 +223,14 @@ a generic "back to dashboard."_
   the arcs the same keeper-recall the rail has (load prior keepers + instruct verbatim serve at the right beat); existing
   plumbing. **Open — enhancement, batched with the arc-flow pass (W-14/18/19/20/21/22).**
 
-- **W-25 🔴 DESIGN: practice week monopolizes the hero — relocate to Momentum** — an active practice week PREEMPTS the
+- **W-25 🟢 DESIGN: practice week monopolizes the hero — relocate to Momentum** — **CLOSED (2026-07-10):** the practice
+  week no longer owns the hero. New `practicePanelLine()` (drift-hardened, per-kind compact copy) surfaces a quiet
+  teal-tinted "This week: [the plan] — logging as you go." strip on the **Momentum panel** (all 3 dashboard states +
+  the Momentum subpage, with a `Log →` inline link); the hero (`heroMessage`) returns to greeting + next step
+  (`practiceMessage ??` dropped). Copy: Cowork Copy Pack v0.2. Prod-build-verified the `.practice-strip` CSS compiles
+  (dev Turbopack flakily drops it; `next build` includes it correctly). tsc + 632 green; deployed. _The separate
+  "requires login → out-of-app SMS/push nudge" gap stays open (notifications lane, [[marketing-via-cowork]])._
+  _Original finding below._ — an active practice week PREEMPTS the
   companion hero (`practiceMessage ?? litCurrent`, [dashboard:178](app/dashboard/[memberId]/page.tsx); Decision MM R4).
   Founder: it's passive, requires login, and (the load-bearing point) **owns the hero so it can't be used for anything
   else** — and with two practices active (b2_noticing + b3_pilot) the hero can only show one. _Founder's direction

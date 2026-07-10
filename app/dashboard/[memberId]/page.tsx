@@ -20,7 +20,7 @@ import Threshold from '../threshold.tsx';
 import { reconnectEnabled } from '../../../lib/agent/reconnect.ts';
 import { rewireEnabled } from '../../../lib/agent/rewire.ts';
 import { rebuildEnabled } from '../../../lib/agent/rebuild.ts';
-import { practiceHeroMessage } from '../../../lib/practice/store.ts';
+import { practicePanelLine } from '../../../lib/practice/store.ts';
 import { pulseBeats } from '../../../lib/momentum/store.ts';
 import MeasureCard from '../measure-card.tsx';
 import DashboardSync from '../dashboard-sync.tsx';
@@ -167,18 +167,16 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
     ? `${heroVerb} ${facets.join(' · ')}`
     : 'Who you’re reclaiming lands here once you name it at Identity Excavation.';
   const litCurrent = forecast.current?.openable ? forecast.current : null;
-  // During an active practice week (Decision MM R4), the daily practice LEADS the hero — "step into your picture"
-  // (W2), the momentum log (W3), or the B2 skill-noticing week (Rebuild). Flag-gated (REWIRE or REBUILD) +
-  // drift-hardened (null on a missing 0048), so prod is untouched and never crashes.
-  const practiceMessage = rewireEnabled() || rebuildEnabled() ? await practiceHeroMessage(db, memberId) : null;
+  // W-25 (revises Decision MM R4): an active practice week NO LONGER owns the hero — it surfaces as a compact "this
+  // week" line on the Momentum panel (its natural home, where the logging lives), freeing the hero for greeting + next
+  // step. Flag-gated (REWIRE or REBUILD) + drift-hardened (null on a missing table), so prod is untouched and safe.
+  const practiceLine = rewireEnabled() || rebuildEnabled() ? await practicePanelLine(db, memberId) : null;
   // Momentum pulse data (Slice 1) — the last 14 days of logged calls → beats. Flag-gated + drift-hardened (empty on a
   // missing 0049), so prod is untouched and never crashes.
   const pulseData = rewireEnabled() ? await pulseBeats(db, memberId).catch(() => []) : [];
-  const heroMessage =
-    practiceMessage ??
-    (litCurrent
-      ? `Your next step is ready — ${litCurrent.title}.${litCurrent.summary ? ` ${litCurrent.summary}` : ''}`
-      : 'Whenever you’re ready, tell me what’s on your mind — or one thing you want to move toward today.');
+  const heroMessage = litCurrent
+    ? `Your next step is ready — ${litCurrent.title}.${litCurrent.summary ? ` ${litCurrent.summary}` : ''}`
+    : 'Whenever you’re ready, tell me what’s on your mind — or one thing you want to move toward today.';
 
   // Post-Ceremony Tour copy — the Doors spotlight line, named back from their own onboarding (§7: declare
   // what it is). Falls back to a generic line if doors weren't captured (the foot line won't render then).
@@ -259,16 +257,23 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
           <div className="card daily-empty">
             <h3>Momentum</h3>
             <p className="card-subtitle">The calls you make, one at a time — and how they add up.</p>
+            {/* W-25 — the active practice week's "this week" line, on Momentum (its home) instead of owning the hero. */}
+            {practiceLine && <p className="practice-strip">{practiceLine}</p>}
             <ResiliencePulse beats={pulseData} />
             <Link href={`/momentum/${memberId}`} className="see-more">Log a call →</Link>
           </div>
         ) : dailyBeat ? (
-          <DailyBeatPanel memberId={memberId} reflectionId={dailyBeat.id} text={dailyBeat.text} keepable={dailyBeat.keepable} kept={dailyBeatKept} />
+          <DailyBeatPanel memberId={memberId} reflectionId={dailyBeat.id} text={dailyBeat.text} keepable={dailyBeat.keepable} kept={dailyBeatKept} practiceLine={practiceLine} />
         ) : (
           <div className="card daily-empty">
             <h3>Momentum</h3>
             <p className="card-subtitle">The calls you make, one at a time — and how they add up.</p>
-            <p className="muted">Your next reflection lands here.</p>
+            {/* W-25 — practice week surfaces here (not the hero). */}
+            {practiceLine ? (
+              <p className="practice-strip">{practiceLine} <Link href={`/momentum/${memberId}`} className="see-more-inline">Log →</Link></p>
+            ) : (
+              <p className="muted">Your next reflection lands here.</p>
+            )}
             <ResiliencePulse bare />
           </div>
         )}

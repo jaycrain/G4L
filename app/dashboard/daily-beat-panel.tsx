@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { keepDailyBeatAction } from './daily-beat-actions.ts';
 import ResiliencePulse from './resilience-pulse.tsx';
 
@@ -13,12 +14,14 @@ export default function DailyBeatPanel({
   text,
   keepable,
   kept: initialKept,
+  practiceLine = null,
 }: {
   memberId: string;
   reflectionId: string;
   text: string;
   keepable: boolean;
   kept: boolean;
+  practiceLine?: string | null; // W-25: an active practice week's "this week" line, surfaced on Momentum (not the hero)
 }) {
   const [kept, setKept] = useState(initialKept);
   const [busy, setBusy] = useState(false);
@@ -38,6 +41,10 @@ export default function DailyBeatPanel({
     <div className="card daily-beat-panel" data-tour="daily">
       <h3>Momentum</h3>
       <p className="card-subtitle">The calls you make, one at a time — and how they add up.</p>
+      {/* W-25 — the active practice week's "this week" line, on Momentum (its home) instead of owning the hero. */}
+      {practiceLine && (
+        <p className="practice-strip">{practiceLine} <Link href={`/momentum/${memberId}`} className="see-more-inline">Log →</Link></p>
+      )}
       <p className="db-text">{text}</p>
       {keepable && (
         <div className="db-foot">

@@ -113,3 +113,28 @@ export async function practiceHeroMessage(db: Db, memberId: string): Promise<str
     return null; // table not applied yet / read hiccup → no practice nudge, dashboard renders normally
   }
 }
+
+// W-25 — the COMPACT "this week" line for the Momentum panel + subpage. The practice week no longer OWNS the hero
+// (Decision MM R4 revised): the hero returns to greeting + next step, and the active practice surfaces here, on
+// Momentum — its natural home (the logging lives there). Short by design: "This week: [the plan] — logging as you
+// go." Drift-hardened exactly like practiceHeroMessage, so a missing table degrades to null (no strip), never crashes.
+export async function practicePanelLine(db: Db, memberId: string): Promise<string | null> {
+  try {
+    const pw = await activePracticeWeek(db, memberId);
+    if (!pw) return null;
+    if (pw.kind === 'w2_image') return 'This week: step into your picture — five minutes a day.';
+    if (pw.kind === 'w3_logging') return 'This week: log your calls as they come.';
+    if (pw.kind === 'b2_noticing') return 'This week: notice which skills carry you — and where a gap trips you.';
+    if (pw.kind === 'b3_pilot') {
+      const plan = (await activeCoachingPlan<RebuildPilotPayload>(db, memberId, 'rebuild'))?.payload ?? null;
+      if (plan?.activityChange && plan?.dietChange) {
+        return `This week: ${plan.activityChange.toLowerCase()} · ${plan.dietChange.toLowerCase()} — logging as you go.`;
+      }
+      return 'This week: your two changes — logging as you go.';
+    }
+    if (pw.kind === 'c3_quality') return 'This week: living your Quality Days — logging as you go.';
+    return null;
+  } catch {
+    return null;
+  }
+}
