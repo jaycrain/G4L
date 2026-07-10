@@ -21,9 +21,9 @@ Status legend: 🟢 closed (fixed + deployed + testing bar met) · 🟡 fixed/de
 | :--- | :---: | :---: | :---: | :---: |
 | T1 · copy | 6 | 1 | 0 | 5 |
 | T2 · flow | 14 | 6 | 1 | 7 |
-| T3 · data | 6 | 1 | 1 | 4 |
+| T3 · data | 6 | 2 | 1 | 3 |
 | T4 · gov/design | 4 | 1 | 0 | 3 |
-| **Total** | **30** | **9** | **2** | **19** |
+| **Total** | **30** | **10** | **2** | **18** |
 
 **CROSS-ARC PATTERN (the batch's biggest theme):** "engine + model both contribute a question/beat → stacking" now
 spans onboarding (W-02/W-08, CLOSED), Reconnect (W-14), and Rewire (W-18/W-19). One structural discipline — *the model
@@ -288,7 +288,7 @@ a generic "back to dashboard."_
   ground under you"* instead of "your dip means you're looking clearly" — honest and energizing, independent of whether
   the number rose. **Open — the highest-value strategic finding of the walk; owner = Jay + Greg.**
 
-- **W-29 🔴 C1 reads the Reclaim List as EMPTY — no jsonb fallback + likely migration 0040 drift (DATA-adjacent)** — C1
+- **W-29 🟢 C1 read the Reclaim List as EMPTY — reclaim_item drift + no jsonb fallback (FIXED)** — C1
   loads via `getReclaimItems` = `reclaim_item where removed_at is null` ([beats/store.ts:22](lib/beats/store.ts)). If
   migration 0040 (removed_at) is unapplied in prod the query throws; the DASHBOARD catches → falls back to the legacy
   jsonb list (shows the founder's 7 items), but C1 catches → EMPTY ([reclaim/actions.ts:47](app/reclaim/actions.ts))
