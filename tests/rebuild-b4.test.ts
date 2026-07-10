@@ -71,7 +71,7 @@ const withGrinta = (dir: 'up' | 'down' | 'flat', now: number, baseline: number, 
   keepers: ['Movement — a 10-minute walk after dinner\nEating — a vegetable at dinner'],
 });
 
-test('B4 ceremony · branches on the Control delta; foregrounds the component; lights Reclaim; Get Reclaimed →', () => {
+test('B4 ceremony · branches on the Control delta; foregrounds the component; lights Reclaim; Start Reclaiming →', () => {
   const up = buildRebuildCeremonyBeats(withGrinta('up', 3.67, 3.0, 22));
   assert.match(up[0]!.text, /Grinta Index moved/i, 'UP copy');
   assert.equal((up[0]!.reveal as { componentNow: number }).componentNow, 3.67, 'hero = the control component Ave2');
@@ -86,7 +86,7 @@ test('B4 ceremony · branches on the Control delta; foregrounds the component; l
   assert.match(pb!.text, /your why.*plan|plan you're running/i, 'Playbook seeds = why + plan');
   const jr = up.find((b) => b.reveal?.kind === 'journey_reclaim');
   assert.match(jr!.text, /Reclaim is the bigger world/i, 'lights Reclaim');
-  assert.equal(REBUILD_CEREMONY_RESOLVE_LABEL, 'Get Reclaimed →');
+  assert.equal(REBUILD_CEREMONY_RESOLVE_LABEL, 'Start Reclaiming →');
 });
 
 test('B4 ceremony · no reading → steady framing, no number, still walks', () => {

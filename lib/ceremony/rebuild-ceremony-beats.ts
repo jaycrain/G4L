@@ -65,4 +65,4 @@ export function buildRebuildCeremonyBeats(d: RebuildCeremonyData): RebuildCeremo
   return beats;
 }
 
-export const REBUILD_CEREMONY_RESOLVE_LABEL = 'Get Reclaimed →';
+export const REBUILD_CEREMONY_RESOLVE_LABEL = 'Start Reclaiming →';

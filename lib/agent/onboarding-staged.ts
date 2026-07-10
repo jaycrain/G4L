@@ -309,6 +309,17 @@ function reflectGap(modelText: string): string {
   return `${GAP_REFLECT_LEAD}\n\n${GAP_FORECAST_CONFIRM}`; // no usable reflection — warm canned lead, not a fragment
 }
 
+// W-12: join accumulated gap chapters with a sentence boundary. When a member adds a chapter at the gap confirm, we
+// append it to the stored gap — but a bare space ran the sentences together ("gotten me there It went deeper"). Add a
+// period when the prior chapter doesn't already end in terminal punctuation. Pure + testable.
+export function joinGapChapters(prev: string, next: string): string {
+  const p = (prev ?? '').trim();
+  const n = (next ?? '').trim();
+  if (!p) return n;
+  if (!n) return p;
+  return /[.!?]$/.test(p) ? `${p} ${n}` : `${p}. ${n}`;
+}
+
 // The reclaim-stage opener. If the member ALREADY parked wants earlier (front-loader), read them back —
 // "earlier you said X — let's start there." True by construction, and the single best trust moment in the
 // flow: it proves nothing was dropped. With nothing parked, it's the clean RECLAIM_OPEN.
@@ -895,7 +906,7 @@ const gapStage: StageDef = {
     } else if (intent === 'addition') {
       // a new chapter (or a correction WITH content) → append it, re-derive Doors, and DRAW IT OUT.
       const modelTaggedGap = b.model.record?.gap !== undefined && b.model.record.gap !== '';
-      if (!modelTaggedGap) b.collected.gap = b.collected.gap ? `${b.collected.gap} ${b.memberMessage.trim()}` : b.memberMessage.trim();
+      if (!modelTaggedGap) b.collected.gap = joinGapChapters(b.collected.gap ?? '', b.memberMessage);
       b.collected.doors = augmentDoors(b.collected.doors ?? [], gapStageCorpus(b.history, b.memberMessage));
       b.awaitingConfirm = false;
       b.reply = withQuestion(b.modelText, gapMore(b.history));
