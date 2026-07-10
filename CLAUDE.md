@@ -1,14 +1,15 @@
 # CLAUDE.md — Grinta for Life (G4L) Platform
 
 Standing instructions for Claude Code on this project. Read this first, every session.
-Owner: Jay Crain. Status: **LIVE in production — v2.4.1.** The phase flips: v2.1 staged onboarding + v2.2 Reconnect
-(2026-07-07, `ONBOARDING_ENGINE=staged` + `RECONNECT=staged`), v2.3 Rewire (2026-07-08, `REWIRE=staged`), v2.4
-Rebuild (2026-07-09, `REBUILD=staged`) — Reconnect/Rewire/Rebuild all conversational. **v2.4.1 "Charter Readiness"**
-(2026-07-10) is a cross-cutting quality pass closing the founder-walk code lane (chips, hand-home, keeper-recall,
-Momentum, Reconnect resume; migrations through 0056 applied). **Version scheme: each `.N` = a PHASE flip; a `.N.x` =
-a readiness/quality pass.** Reclaim (**v2.5**) is BUILT behind the `RECLAIM` flag but NOT yet on Production.
-Onboarding v1 and the pre-flip "flag-gated / prod stays v1" framing are retired. New member-facing changes now
-affect real prod — verify live after deploy.
+Owner: Jay Crain. Status: **LIVE in production — v2.5 (all four Rs).** The phase flips: v2.1 staged onboarding + v2.2
+Reconnect (2026-07-07, `ONBOARDING_ENGINE=staged` + `RECONNECT=staged`), v2.3 Rewire (2026-07-08, `REWIRE=staged`),
+v2.4 Rebuild (2026-07-09, `REBUILD=staged`), **v2.5 Reclaim** (2026-07-10, `RECLAIM=staged`) — all four Rs now
+conversational + live. Between v2.4 and v2.5, **v2.4.1 "Charter Readiness"** (2026-07-10) was a cross-cutting quality
+pass closing the founder-walk code lane (chips, hand-home, keeper-recall, Momentum, Reconnect resume). Migrations
+through 0056 applied. **Version scheme: each `.N` = a PHASE flip; a `.N.x` = a readiness/quality pass.** NOTE: v2.5
+Reclaim was flipped "as is" for shared team context — it is known-rough (the W-28 Rebuild→Reclaim entry/exit + the
+"how to get out of Reclaim" Loop questions are OPEN, Jay+Greg); changes are expected. Onboarding v1 and the pre-flip
+"flag-gated / prod stays v1" framing are retired. New member-facing changes now affect real prod — verify live after deploy.
 
 ---
 
