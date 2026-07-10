@@ -20,10 +20,10 @@ Status legend: 🟢 closed (fixed + deployed + testing bar met) · 🟡 fixed/de
 | Tier | Total | 🟢 closed | 🟡 minor gap | 🔴 open |
 | :--- | :---: | :---: | :---: | :---: |
 | T1 · copy | 6 | 5 | 0 | 1 |
-| T2 · flow | 15 | 7 | 1 | 7 |
+| T2 · flow | 15 | 10 | 1 | 4 |
 | T3 · data | 6 | 2 | 1 | 3 |
 | T4 · gov/design | 4 | 1 | 0 | 3 |
-| **Total** | **31** | **15** | **2** | **14** |
+| **Total** | **31** | **18** | **2** | **11** |
 
 **CROSS-ARC PATTERN (the batch's biggest theme):** "engine + model both contribute a question/beat → stacking" now
 spans onboarding (W-02/W-08, CLOSED), Reconnect (W-14), and Rewire (W-18/W-19). One structural discipline — *the model
@@ -163,14 +163,14 @@ founder's live account.
   full-build-only fields — so the crash was a TRANSIENT fan-out failure, NOT a drifted table. No drift-check needed;
   CLOSED clean, not merely degrade-safe.**
 
-- **W-18 🔴 Rewire W1 double-bubble — model + engine both ask the domain question** — the W1 arc builds each turn as
+- **W-18 🟢 Rewire W1 double-bubble — model + engine both ask the domain question** — the W1 arc builds each turn as
   `[model reflection]${BEAT_SEP}[scripted W1_DOMAINS[next]]` ([rewire.ts:106](lib/agent/rewire.ts)). The model is told
   to reflect ONLY ("No question, no next domain", [rewire.ts:187](lib/agent/rewire.ts)) but ran ahead and asked the
   domain-4 question itself; the engine then appended its scripted domain-4 question → TWO bubbles both asking "what's
   still possible." No guard suppresses the engine's question when the model already asked (the guard onboarding got in
   W-02 was never applied to this arc). _Data impact: none (flow)._ _Fix (T2):_ strip the model's ran-ahead question
   before appending the scripted beat, or a `withQuestion`-style guard. Rewire arc suite + fixture. **Open — batched.**
-- **W-19 🔴 Rewire W1 incoherent stacked message** — same root as W-18: the model's reflection wandered to answer the
+- **W-19 🟢 Rewire W1 incoherent stacked message** — same root as W-18: the model's reflection wandered to answer the
   member's off-topic side-question ("That one we'll get into…") and stacked with the scripted "finish the audit / write
   one true line" beat → a long, multi-topic, jumbled message. _Data impact: none (coherence)._ _Fix (T2):_ folds into
   the same "model reflects, engine asks — not both" discipline as W-18. **Open — batched.**
@@ -191,7 +191,7 @@ that in." (ambiguous — is it over or keep typing? — arguably worse). B3's ha
 WEEK (name it, send home to the dashboard/companion where the pilot's active + calls log via the Momentum pulse), not
 a generic "back to dashboard."_
 
-- **W-22 🔴 W2 "hold" beat pauses with no clear prompt — member unsure whether to respond** — the W2 image "hold"
+- **W-22 🟢 W2 "hold" beat pauses with no clear prompt — member unsure whether to respond** — the W2 image "hold"
   stage is INTENTIONALLY question-less (design: "Receive their reaction in ONE warm sentence — no advice, no new
   question", [rewire.ts:437](lib/agent/rewire.ts)) — a contemplative pause after the vivid image. But a beat with no
   question leaves the member unsure whether to type or wait (founder chimed in "Got it!" at an ambiguous moment; it
