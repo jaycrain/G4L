@@ -5,7 +5,7 @@
 // administered + FORMATIVE (RC-2: not scored, not persisted). Step 2 = the Reclaim List refinement, COACH mode: the
 // model coaches the re-read/reflect/refine/re-prioritize, the engine proposes the refined list, and only the member's
 // confirm commits it back to the live list (propose→confirm→commit, Decision L — never silent mutation). Flag-gated by
-// RECLAIM (Decision JJ) — OFF by default; prod stays v2.4.
+// RECLAIM (Decision JJ) — gated; flipped to Production 2026-07-10 (v2.5, all four Rs live).
 
 import { runArcTurn, administeredStage, scaleExpects, type ArcConfig, type StageDef } from './onboarding-staged.ts';
 import { BEAT_SEP, type Collected, type ConvMessage, type ConvState, type ModelTurn, type Turn } from './onboarding.ts';
@@ -16,7 +16,7 @@ import { scoreAudit } from '../reclaim/bigger-world-scoring.ts';
 import { grintaStem, CHECKPOINT_CHALLENGE_ITEMS } from '../grinta/survey/instrument.ts';
 
 export function reclaimEnabled(): boolean {
-  return process.env.RECLAIM === 'staged';
+  return process.env.RECLAIM?.trim() === 'staged';
 }
 
 // ══ C1 · Readiness Assessment · Step 1 — Reflecting on Progress ═══════════════════════════════════════════════
