@@ -864,7 +864,9 @@ const gapStage: StageDef = {
     if (!b.collected.gap && !s.noFade && shouldCaptureStagedGap(b.memberMessage)) {
       b.collected.gap = b.memberMessage.trim();
     } else if (b.collected.gap && !s.noFade && !modelTaggedGap && shouldCaptureStagedGap(b.memberMessage)) {
-      b.collected.gap = `${b.collected.gap} ${b.memberMessage.trim()}`;
+      // W-33: join with a sentence boundary (joinGapChapters, W-12) — a raw space ran the member's sentences together
+      // ("consumed me It also…"). Same helper the confirm-append path uses; boundary-only, no internal/proper-noun risk.
+      b.collected.gap = joinGapChapters(b.collected.gap, b.memberMessage);
     }
     if (!b.collected.gap && !s.noFade) s.gapTurns = (s.gapTurns ?? 0) + 1; // count gather turns only while no real fade is in hand
     // NEVER-STRAND the gap stage: after several gap turns with NOTHING captured, grab the accumulated gap-stage
@@ -1342,7 +1344,9 @@ export const STAGED_TOOLS = [
       "got laid off, which hit her hard'). This exact text is shown back to them on their summary card ('Here's what " +
       "you shared') and dashboard ('in your own words'), so it must read as their OWN account. The one thing to avoid: " +
       "NEVER rewrite it into the THIRD person about them ('they/their', or a guessed 'he/she') — that distances them " +
-      "from their own story. Keep it first person, as they said it. Call this once they've told you how it went.",
+      "from their own story. Keep it first person, as they said it. W-33: write it as clean, correctly-spelled and " +
+      "-punctuated prose (whole sentences, proper periods) — but ONLY fix mechanics; preserve their exact words, " +
+      "phrasing, and voice. Never paraphrase, reorder, smooth, or add. Call this once they've told you how it went.",
     input_schema: { type: 'object' as const, properties: { text: { type: 'string' } }, required: ['text'] },
   },
   {

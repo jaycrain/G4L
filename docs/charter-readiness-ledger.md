@@ -372,3 +372,141 @@ a generic "back to dashboard."_
   the second.
 
 _Updated as the walk continues. Every new observation gets an ID, a tier, and a status; this table is the charter-readiness gate._
+
+---
+
+## v2.5 Re-walk (2026-07-10, all four Rs live)
+
+- **W-31 🟡 Idiomatic "yes" not caught by the excavation→Reclaim confirm gate** — member answered the door-excavation
+  completion check ("do we have the heart of it now?") with *"That's about the size of it"* (a colloquial yes); the
+  confirm gate didn't recognize it → re-asked the completion question ("have we got a good handle… or is there more?").
+  A plain "Yes" then advanced correctly into Reclaim-List naming. _Data impact: NONE — nothing dropped/mis-captured; the
+  gate degraded gracefully (a re-ask, the safe failure mode)._ _Class: flow roughness, capture-loop-adjacent._ _Fix
+  (T2, low, revert-over-patch): broaden the idiomatic-affirmation set in the excavation→reclaim confirm gate ("that's
+  about the size of it", "pretty much", "you got it", "that's it"). PATTERN fix — do only if it RECURS (first occurrence
+  = track, per capture discipline). **Open — watching for more colloquial-confirm misses during the walk.**_
+
+- **W-32 🟢 On chip (administered) turns, drop the text box + Send — chips already autosend** — the scale chips (W-24)
+  already submit on tap (`onPick → submit`); no Send needed. But the free-text box + Send button still render beneath
+  them, which (a) makes autosend look unnecessary/ambiguous and (b) leaves the mis-scaling hole open (a member can still
+  hand-type a wrong-scale number, the exact W-24 bug). _Founder (v2.5 re-walk): "Do we need the text entry field? …just
+  have the buttons autosend?"_ _Fix (T2, client-only, low risk): when the turn `expects` a scale, render ONLY the chips
+  — hide the `<form>` text box + Send. Keep the box on conversational (draw-out) turns. Fully closes the mis-scaling
+  bug + makes the autosend obvious. Touches the 6 chat clients' render only (no engine)._ **Open — ready to ship;
+  founder holding deploy until a walk stopping point.**
+
+- **W-34 🔴 Redirect-railroad RECURS despite the W-14 prompt fix — model ignored the honor-redirect rule (2nd occurrence → structural)** —
+  in the Reconnect DEEPENING arc (returning member), companion opened on The Diagnosis; member redirected —
+  *"It was really the job before the diagnosis. The job lead to the sickness"* (= The Grind is the real origin) — and
+  the companion railroaded straight into The Diagnosis anyway ("the one you named as where it started"). The W-14
+  redirect-honor rule IS present in the prompt (`reconnect.ts:809`, used by this arc) → this is a **model miss**, not a
+  missing fix. _Data impact: YES (contained) — a missed door-PRIMACY redirect / Decision L §2b revision: the member
+  corrected the origin door (Grind, not Diagnosis) and it wasn't honored or captured; all doors still stored, but the
+  origin focus + deepening target are now wrong._ _By capture discipline (CLAUDE.md), the 2nd occurrence of a shape
+  despite a prompt patch = stop patching the prompt, fix the abstraction._ _Fix (T2/T3, structural, focused session —
+  NOT a mid-walk patch): a deterministic REDIRECT DETECTOR — when the member names a different door than the excavation
+  target (`matchDoors`), the ENGINE proposes the switch (member-confirmed, propose→confirm per Decision L/II) instead of
+  trusting the model to notice; routes the primacy correction through the revision path so the data is fixed too._
+  **Open — HIGHEST-VALUE capture finding of the v2.5 re-walk (repeat shape + data relevance); above W-31/32/33.**
+
+- **W-35 🟡 Excavation→IDQ handoff clobbers the member's final answer (posture miss)** — member answered a weighty
+  deepening question ("How many years did that story hold?") with *"12 years"*; the companion fired the scripted IDQ
+  transition frame ("We've been deep… let's shift to something lighter… first, a few about your body") with **no
+  acknowledgment** of the answer. The Doors-excavation → IDQ (§2c) handoff is a DETERMINISTIC scripted opener (administered
+  stages run off the depth kernel), so it overwrites any reflection of the member's last turn. _Data impact: NONE ("12
+  years" is an excavation detail, not a dropped field) — purely posture/warmth, but HIGH north-star weight (reflect
+  before moving on; receive, don't extract — posture IS the product). Feels transactional: the answer became a stage
+  trigger._ _Same FAMILY as W-21: arc transitions that don't honor the member's last input before the next frame (2nd
+  instance)._ _Fix (T2, posture): reuse the `withScriptedBeat` reflect-then-frame pattern — land a brief in-voice
+  acknowledgment of the member's final answer BEFORE the scripted IDQ opener._ **Open — posture-weighted; pair with the
+  W-21 transition family.**
+
+- **W-36 🔴 Drift beat FABRICATES a loss the member never named ("deep friendships")** — post-IDQ Reconnect drift beat
+  ("name a few things the Fade cost you: the morning rides, the deep friendships, the feeling of being in your body…")
+  offered *deep friendships* as an example loss; the member never mentioned friendships/social loss (story was cycling,
+  work, marriage, health). Founder confirmed: "didn't mention that." Likely inferred from a low Social IDQ subscore then
+  stated as fact. _Same family as W-34: the model states things the member didn't say (assume-past-what-they-said
+  violation)._ _Data impact: low-persistence (a conversational prompt, not a stored field) but a real GOVERNANCE/posture
+  breach — it puts a specific loss in the member's mouth._ _Fix (T2): the drift beat's examples must be grounded ONLY in
+  the member's actual story / Reclaim List / doors — never invent a loss category. Reflect back, don't fabricate._
+  **Open — governance; pair with W-34 (model-states-what-wasn't-said family).**
+
+- **W-37 🔴 Reconnect drift beat RE-COLLECTS the Reclaim List instead of RECALLING it — "no new framing" (founder's biggest concern)** —
+  after the "this time we go deeper" promise, the post-IDQ beat asks cold: "name a few things the Fade cost you" —
+  duplicating the onboarding Reclaim List (what you want back) with no new angle. Founder: "this is my biggest concern,
+  seems repetitive, no new framing." Re-asking a list the member already built reads as the system having NO MEMORY of
+  what they told it — the opposite of "deeper." _Data impact: risk of a parallel/duplicate list; mainly a DESIGN +
+  posture defect._ _Fix (T2, arc design + copy): SERVE the member's own prior Reclaim List back and deepen from it
+  (prioritize / sequence / connect to the doors — "if one came back first and made the rest possible, which?") — reuse,
+  don't re-collect. Ties to W-23 keeper-recall._ **Open — HIGH (founder's biggest re-walk concern).**
+
+- **THEME (v2.5 re-walk) — arcs behave STATELESSLY, don't build on prior captures.** W-23 (arcs don't recall prior keeper
+  lines), W-35 (transition ignores the member's last answer), W-37 (re-collects the Reclaim List instead of recalling).
+  ONE architectural direction, not three patches: **arcs must recall + deepen from what's already captured, never
+  re-collect cold.** The design session's through-line.
+
+- **W-38 🟡 Reconnect Visioning beat gives no clear handle + muddled two-Tuesday frame ("what's the member supposed to say?")** —
+  after member's future-Tuesday answer ("energetic, a short ride"), companion: "Now the OTHER Tuesday — same year out,
+  but you've been doing the work. What's different by 7am? …how you wake, what you reach for, how you move." TWO issues:
+  (a) the question is ABSTRACT + COMPOUND (imagine a future morning; three sub-prompts) with no concrete anchor — the
+  "no clear handle" shape; (b) the two-Tuesday contrast (drift-future vs work-future) reads COLLAPSED — the member just
+  described the good future, so "the OTHER Tuesday you've been doing the work, what's different" seems to re-ask the same
+  thing. Founder: "Still doing these dead-end statements, what's the member supposed to say?" _RECURRENCE of the W-22
+  clear-handle family ("still doing these") → past a copy tweak, structural._ _Data impact: none (prompt clarity)._ _Fix
+  (T2): every draw-out beat ends on ONE concrete answerable question; the vision exercise's two scenarios must be
+  unambiguously distinct (bleak-drift vs done-the-work). Pending founder's read on which lands harder (vagueness vs
+  confusion)._ **Open — clear-handle family (W-22); "still doing these" = recurring shape.**
+
+  - **W-38 RESOLVED-IN-DESIGN (founder, 2026-07-10):** collapse the two-Tuesday "Window" (Greg's RCN-WIN, `reconnect.ts:383`)
+    to a SINGLE "ordinary day" vision — "picture an ordinary day a year out, after you've done the work: how you wake,
+    what you reach for, how you move." One concrete answerable picture; drops the drift-Tuesday contrast. SAME data
+    (the reclaimed-ordinary-day `lights_you_up` keeper), cleaner elicitation. _NOTE: "The Window" is Greg's authored
+    science content → build now, Greg-heads-up to ratify the reframe (his lane, not a build gate)._ Fold into the batch
+    (load-bearing draw-out beat), not a mid-walk hotfix.
+
+- **W-39 🟡 Rewire W1 audit leads with ANALYSIS before receiving the member's admission (W-35 variant) + interpretive-label edge** —
+  member answered "Don't have time to even imagine such things"; companion led with the audit summary ("Now look at what
+  you just laid out… that's the trick… the campaign on autopilot") BEFORE receiving the vulnerable admission, then (beat 2)
+  centered it heavily. Founder: "Same thing here, didn't acknowledge last comment." _Distinct from W-35: the comment WASN'T
+  ignored (beat 2 built its whole reflection on it) — the gap is analysis-FIRST: it explains the mechanism before simply
+  receiving. Same ROOT (receive before you move/interpret) → reinforces W-35's posture fix._ _GOVERNANCE edge: "That's a
+  man who stopped believing he's allowed to want anything for himself" = a strong interpretation of WHO the member is,
+  stated as fact — brushes "never label/diagnose without confirmation." Reflect words back, don't assign an identity._
+  _Data impact: none (posture + governance texture)._ _Fix (T2): receive-before-analyze at the audit summary beat; soften
+  interpretive labels to member-confirmable reflections._ **Open — W-35 posture family (2nd instance) + governance watch.**
+
+- **W-40 🔴 The "true line" is introduced as a COLD generative ask — should seed from the member's OWN prior honest lines (stateless-arcs, highest-leverage instance)** —
+  Rewire W1 introduces the reframe ("What's the true line? One honest sentence — yours — that tells the real story")
+  as a from-scratch demand, ignoring that the member has been giving honest first-person lines for two sessions
+  (onboarding gap, Reclaim List, Reconnect `lights_you_up` vision keeper) + prior W1 true lines on a return. Founder:
+  "When 'true line' gets introduced, we need to bring some the member actually gave us in the earlier session." _Fix
+  (T2, stateless-arcs theme): seed the true-line INTRODUCTION with a recalled member honest-line ("You already told me
+  true things — '[their line]'. That's a true line. Now against this belief, what's yours?"). Grounds the concept in
+  their words + makes it feel like one continuous relationship. Same keeper-recall plumbing as W-23._ _Data impact:
+  none (elicitation quality)._ **Open — stateless-arcs theme; HIGHEST-LEVERAGE instance (true line = the central Rewire
+  mechanic). Pairs with W-23/35/37/39.**
+
+- **W-41 🟡 Rewire W1 (Disinformation Audit) close has no sign-off + no "saved to your Playbook" + ambiguous-open dead-end** —
+  the audit close presents the "full set" of true lines and says "That's the audit done…" but (a) leaves the INPUT BOX
+  OPEN (no resolution — the ambiguous-open W-21 dead-end variant, like B3; the Continue→ hand-home only fires when a
+  session HIDES the input, so this slips through), and (b) never tells the member the lines are SAVED to the Playbook.
+  Founder: "needs a sign off and a 'this is in your playbook' or something." _Fix (T2, W-21 hand-home family): sign-off
+  → "these five are in your Playbook, reach for them anytime" → Continue home. The Playbook acknowledgment also makes the
+  recall promise (W-40/W-23) concrete._ **Open — W-21 family (ambiguous-open variant on the audit W1).**
+
+- **W-42 🟡 Mis-captured "true lines" promoted into the audit set (durable-data risk)** — the saved 5-line set includes
+  *"Then do something more constructive for yourself."* (SECOND-person imperative — not a first-person member true line;
+  looks like a stray fragment promoted in) and *"I'm not fine."* (a raw admission, not a constructive true-line reframe).
+  The set should be clean, first-person, member-authored true lines only. _Data impact: YES — the audit saves these to the
+  Playbook (keepers), so a mis-captured line becomes durable wrong data + gets recalled later (W-40)._ _Fix (T2/T3): the
+  true-line capture needs a shape check (first-person, constructive reframe) before a line joins the set; add a replay
+  fixture for the 2nd-person / raw-admission shapes._ **Open — capture-quality; pairs with W-40 (Playbook recall makes
+  mis-captures durable).**
+
+  - **W-41 REFINED (founder saw the full close):** the pieces ALL EXIST and the W-21 hand-home is CONFIRMED LIVE here
+    ("Head back whenever you're ready — I'm right here in the rail" + Continue → = the exact W-21 copy/button), plus the
+    sign-off ("Good work today… yours to keep") + Playbook mention ("I've saved them to your Playbook"). The REAL defect:
+    the terminal close UNSPOOLS across 2–3 member turns — "that's the audit done" (no resolution) → member prods "Great"
+    → sign-off → member prods "ok" → Playbook + Continue →. The member has to type filler to walk themselves out.
+    _Fix (T2): fire the FULL resolution (sign-off → Playbook → Continue) when the audit COMPLETES, in one clean landing —
+    don't spread the terminal close across follow-up turns._ **Refined — not "missing," but "arrives 2–3 turns late."**

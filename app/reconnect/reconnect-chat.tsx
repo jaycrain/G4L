@@ -107,26 +107,30 @@ export default function ReconnectChat({ memberId }: { memberId: string }) {
         {pending && <div className="typing">Thinking…</div>}
       </div>
       {error && <p className="error">{error}</p>}
-      {/* W-24: an administered turn (IDQ / §2e grit) expects a fixed-scale pick — offer the chips (text box stays below). */}
-      {expects && <ScaleChips expects={expects} disabled={pending || !state} onPick={(n) => void submit(String(n))} />}
-      <form className="chat-input" onSubmit={send}>
-        <textarea
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-              e.preventDefault();
-              void submit(input.trim());
-            }
-          }}
-          placeholder="Type your reply… (Enter to send, Shift+Enter for a new line)"
-          rows={2}
-          disabled={pending || !state}
-        />
-        <button type="submit" disabled={pending || !state || !input.trim()}>
-          Send
-        </button>
-      </form>
+      {/* W-32: an administered turn (IDQ / §2e grit) → the chips ARE the input (autosend); drop the text box (closes the
+          mis-scaling hole). The box returns on conversational turns. */}
+      {expects ? (
+        <ScaleChips expects={expects} disabled={pending || !state} onPick={(n) => void submit(String(n))} />
+      ) : (
+        <form className="chat-input" onSubmit={send}>
+          <textarea
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                void submit(input.trim());
+              }
+            }}
+            placeholder="Type your reply… (Enter to send, Shift+Enter for a new line)"
+            rows={2}
+            disabled={pending || !state}
+          />
+          <button type="submit" disabled={pending || !state || !input.trim()}>
+            Send
+          </button>
+        </form>
+      )}
     </div>
   );
 }

@@ -18,3 +18,12 @@ test('joinGapChapters · degrades cleanly on empty inputs', () => {
   assert.equal(joinGapChapters('', 'first chapter'), 'first chapter');
   assert.equal(joinGapChapters('only chapter', ''), 'only chapter');
 });
+
+// W-33: the STAGED backstop-append path (onboarding-staged.ts) joined chapters with a bare space, bypassing this
+// helper — so a progressive revealer's gap ran together ("consumed me It also…", "as well It kept…"). It now routes
+// through joinGapChapters like the confirm-append path. This asserts the founder's exact re-walk shape is boundaried.
+test('joinGapChapters · handles the founder re-walk shape (no run-on across appended chapters)', () => {
+  const gap = joinGapChapters('Work consumed me', 'It also caused stress in my marriage');
+  assert.equal(gap, 'Work consumed me. It also caused stress in my marriage');
+  assert.ok(!/me It/.test(gap), 'no bare-space run-on');
+});

@@ -100,26 +100,30 @@ export default function RebuildChat({ memberId, session = 'b1' }: { memberId: st
       {error && <p className="error">{error}</p>}
       {!done && (
         <>
-          {/* W-24: an administered turn expects a fixed-scale pick — offer the chips (the text box stays below). */}
-          {expects && <ScaleChips expects={expects} disabled={pending || !state} onPick={(n) => void submit(String(n))} />}
-          <form className="chat-input" onSubmit={send}>
-            <textarea
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  void submit(input.trim());
-                }
-              }}
-              placeholder="Type your reply… (Enter to send, Shift+Enter for a new line)"
-              rows={2}
-              disabled={pending || !state}
-            />
-            <button type="submit" disabled={pending || !state || !input.trim()}>
-              Send
-            </button>
-          </form>
+          {/* W-32: an administered turn → the chips ARE the input (autosend); drop the text box (closes the mis-scaling
+              hole). The box returns on conversational turns. */}
+          {expects ? (
+            <ScaleChips expects={expects} disabled={pending || !state} onPick={(n) => void submit(String(n))} />
+          ) : (
+            <form className="chat-input" onSubmit={send}>
+              <textarea
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    void submit(input.trim());
+                  }
+                }}
+                placeholder="Type your reply… (Enter to send, Shift+Enter for a new line)"
+                rows={2}
+                disabled={pending || !state}
+              />
+              <button type="submit" disabled={pending || !state || !input.trim()}>
+                Send
+              </button>
+            </form>
+          )}
         </>
       )}
       {/* W-21 — the hand-home CTA: B3 routes into the pilot week (active on the dashboard); B1/B2 hand back home. */}

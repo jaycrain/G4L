@@ -96,8 +96,11 @@ export default function RewireChat({ memberId, session = 'w1' }: { memberId: str
       {error && <p className="error">{error}</p>}
       {!done && (
         <>
-          {/* W-24: an administered turn expects a fixed-scale pick — offer the chips (the text box stays below). */}
-          {expects && <ScaleChips expects={expects} disabled={pending || !state} onPick={(n) => void submit(String(n))} />}
+          {/* W-32: an administered turn → the chips ARE the input (they autosend); drop the text box entirely (closes the
+              mis-scaling hole — no way to hand-type a wrong-scale number). The box returns on conversational turns. */}
+          {expects ? (
+            <ScaleChips expects={expects} disabled={pending || !state} onPick={(n) => void submit(String(n))} />
+          ) : (
           <form className="chat-input" onSubmit={send}>
             <textarea
               value={input}
@@ -116,6 +119,7 @@ export default function RewireChat({ memberId, session = 'w1' }: { memberId: str
               Send
             </button>
           </form>
+          )}
         </>
       )}
       {/* W-21 — the hand-home CTA: the session is saved; return the member to their companion-home (next step lit). */}

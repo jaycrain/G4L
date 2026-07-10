@@ -398,28 +398,32 @@ export default function OnboardingChat() {
         })()
       ) : (
         <>
-          {/* W-24: the Grinta baseline items expect a fixed-scale pick — offer the chips (the text box stays below). */}
-          {expects && <ScaleChips expects={expects} disabled={pending} onPick={(n) => void submit(String(n))} />}
-          <form className="chat-input" onSubmit={send}>
-            <textarea
-              ref={taRef}
-              rows={1}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  void submit(input.trim());
-                }
-              }}
-              placeholder="Type your reply…  (Enter to send, Shift+Enter for a new line)"
-              autoFocus
-              disabled={pending}
-            />
-            <button type="submit" disabled={pending || !input.trim()}>
-              Send
-            </button>
-          </form>
+          {/* W-32: the Grinta baseline items → the chips ARE the input (autosend); drop the text box (closes the
+              mis-scaling hole). The box returns on conversational turns. */}
+          {expects ? (
+            <ScaleChips expects={expects} disabled={pending} onPick={(n) => void submit(String(n))} />
+          ) : (
+            <form className="chat-input" onSubmit={send}>
+              <textarea
+                ref={taRef}
+                rows={1}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    void submit(input.trim());
+                  }
+                }}
+                placeholder="Type your reply…  (Enter to send, Shift+Enter for a new line)"
+                autoFocus
+                disabled={pending}
+              />
+              <button type="submit" disabled={pending || !input.trim()}>
+                Send
+              </button>
+            </form>
+          )}
         </>
       )}
       <p className="muted onboard-fresh">

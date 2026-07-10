@@ -52,11 +52,6 @@ export default function IdqChat({ memberId }: { memberId: string }) {
     }
   }
 
-  function send(e: React.FormEvent) {
-    e.preventDefault();
-    void submit(input.trim());
-  }
-
   return (
     <>
       <h1>Identity Distance Questionnaire (IDQ)</h1>
@@ -76,24 +71,8 @@ export default function IdqChat({ memberId }: { memberId: string }) {
           </button>
         </div>
       ) : (
-        <>
-          {/* W-24: every IDQ turn is a 1–5 item — offer the chips (the text box stays below). */}
-          <ScaleChips expects={IDQ_EXPECTS} disabled={pending} onPick={(n) => void submit(String(n))} />
-          <form className="chat-input" onSubmit={send}>
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="1–5…"
-              autoFocus
-              disabled={pending}
-              inputMode="numeric"
-            />
-            <button type="submit" disabled={pending || !input.trim()}>
-              Send
-            </button>
-          </form>
-        </>
+        /* W-32: every IDQ turn is a 1–5 item — the chips ARE the input (autosend); no text box (closes the mis-scaling hole). */
+        <ScaleChips expects={IDQ_EXPECTS} disabled={pending} onPick={(n) => void submit(String(n))} />
       )}
     </>
   );
