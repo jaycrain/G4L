@@ -510,3 +510,11 @@ _Updated as the walk continues. Every new observation gets an ID, a tier, and a 
     → sign-off → member prods "ok" → Playbook + Continue →. The member has to type filler to walk themselves out.
     _Fix (T2): fire the FULL resolution (sign-off → Playbook → Continue) when the audit COMPLETES, in one clean landing —
     don't spread the terminal close across follow-up turns._ **Refined — not "missing," but "arrives 2–3 turns late."**
+
+### v2.5 re-walk — SHIPPED batch (2026-07-10, deploy `g4l-ajhborc7v` = commit 6786df3)
+- **W-32 🟢 CLOSED — deployed.** Chips-only on administered turns across all 6 chat clients; text box hidden on scale
+  turns (returns on conversational turns), idq chips-only. Autosend now unambiguous + mis-scaling hole closed. tsc + 644 green.
+- **W-33 🟢 CLOSED — deployed.** Staged gap backstop-append now routes through `joinGapChapters` (was a bare-space join
+  → run-on sentences); `set_gap` instructed to compose clean mechanics, voice preserved. Test on the founder's exact shape.
+- _Still OPEN (design session / watch): W-31, W-34, W-35, W-36, W-37, W-38(resolved-in-design), W-39, W-40, W-41, W-42;
+  themes = stateless-arcs + honor-the-member/clear-handle + interpretive-label ceiling._
