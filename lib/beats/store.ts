@@ -38,6 +38,22 @@ export async function getReclaimItems(db: Db, memberId: string): Promise<Reclaim
   }));
 }
 
+/** The member's LIVE Reclaim List as text[], resilient to reclaim_item drift (W-29): try the categorized rows, and if
+ *  they're empty OR unreadable (e.g. a prod-drifted DB missing the `tier`/`removed_at` columns → getReclaimItems
+ *  throws), fall back to the legacy `member_profile.reclaim_list` jsonb — the SAME degrade the dashboard does. So the
+ *  member's committed list is NEVER shown as empty when items actually exist. This is the single LIVE source C1's Step-2
+ *  refinement reads + writes back to — never a parallel/stale/empty list (the reclaim-c1-step2 data contract). */
+export async function liveReclaimTexts(db: Db, memberId: string): Promise<string[]> {
+  const rows = await getReclaimItems(db, memberId).catch(() => [] as ReclaimItem[]);
+  const fromRows = rows.map((i) => (i.text ?? '').trim()).filter(Boolean);
+  if (fromRows.length) return fromRows;
+  const jsonb = await db
+    .query<{ reclaim_list: unknown }>('select reclaim_list from member_profile where member_id=$1', [memberId])
+    .then((r) => r.rows[0]?.reclaim_list)
+    .catch(() => null);
+  return Array.isArray(jsonb) ? (jsonb as unknown[]).map((s) => String(s ?? '').trim()).filter(Boolean) : [];
+}
+
 // Reconnect Beats whose work the onboarding conversation + IDQ already do (the gateway is the
 // compressed Reconnect). Seeded as completed on IDQ baseline so the dashboard Beat surface opens at
 // genuinely-next work instead of re-asking the member to name their identity or rebuild their list.

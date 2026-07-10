@@ -16,7 +16,7 @@ import {
   reclaimCheckpointOpening,
   liveTurnReclaimCheckpoint,
 } from '../../lib/agent/reclaim.ts';
-import { getReclaimItems } from '../../lib/beats/store.ts';
+import { getReclaimItems, liveReclaimTexts } from '../../lib/beats/store.ts';
 import { commitRefinement, isTier, type Tier } from '../../lib/reclaim/refinement-store.ts';
 import { persistBiggerWorldReading } from '../../lib/reclaim/bigger-world-store.ts';
 import { AUDIT_ITEM_COUNT } from '../../lib/reclaim/bigger-world-instrument.ts';
@@ -42,9 +42,11 @@ export async function startReclaimAction(
   if (session === 'c2') return { ok: true, ...openTurn(reclaimC2Opening()) };
   if (session === 'c3') return { ok: true, ...openTurn(reclaimC3Opening()) };
   if (session === 'checkpoint') return { ok: true, ...openTurn(reclaimCheckpointOpening()) };
-  // C1: seed the member's CURRENT Reclaim List so Step 2 can present it for the re-read. Graceful degrade to empty.
+  // C1: seed the member's LIVE Reclaim List so Step 2 can present it for the re-read. Resilient (W-29): reads the
+  // categorized rows and falls back to the committed jsonb list on reclaim_item drift — so the member NEVER sees
+  // "your list is empty" when items actually exist (which would invite building a parallel list).
   const db = (await getDb()) as unknown as Db;
-  const items = (await getReclaimItems(db, memberId).catch(() => [])).map((i) => i.text);
+  const items = await liveReclaimTexts(db, memberId);
   return { ok: true, ...openTurn(reclaimC1Opening(items)) };
 }
 
