@@ -20,10 +20,10 @@ Status legend: 🟢 closed (fixed + deployed + testing bar met) · 🟡 fixed/de
 | Tier | Total | 🟢 closed | 🟡 minor gap | 🔴 open |
 | :--- | :---: | :---: | :---: | :---: |
 | T1 · copy | 6 | 5 | 0 | 1 |
-| T2 · flow | 14 | 6 | 1 | 7 |
+| T2 · flow | 15 | 7 | 1 | 7 |
 | T3 · data | 6 | 2 | 1 | 3 |
 | T4 · gov/design | 4 | 1 | 0 | 3 |
-| **Total** | **30** | **14** | **2** | **14** |
+| **Total** | **31** | **15** | **2** | **14** |
 
 **CROSS-ARC PATTERN (the batch's biggest theme):** "engine + model both contribute a question/beat → stacking" now
 spans onboarding (W-02/W-08, CLOSED), Reconnect (W-14), and Rewire (W-18/W-19). One structural discipline — *the model
@@ -223,6 +223,15 @@ a generic "back to dashboard."_
   out-of-app nudge — a **text/SMS or push notification** (more likely to land than email for a daily-practice reminder),
   or HubSpot lifecycle email — Cowork/HubSpot + notifications lane [[marketing-via-cowork]]._ _Data impact: none
   (surface design)._ **Open — revisits Decision MM R4; design item.**
+- **W-30 🟢 Companion loops the empty-reply fallback ("I'm with you — say a little more?")** — on repeated cycling-
+  telemetry messages the companion returned the SAME fallback verbatim 3×, ignoring the member. Root:
+  [checkin.ts:699](lib/agent/checkin.ts) — the live model call SUCCEEDS (not a crash/outage → that's a different
+  fallback) but returns EMPTY TEXT, so the "never render an empty bubble" guard fires. Most likely the model treats the
+  telemetry as log-only (calls log_call/momentum, returns no prose) → empty → static nudge, looped. Two bugs: (1) the
+  model must always SPEAK when it acts (prompt); (2) the empty-fallback must not repeat one fixed line — if a tool WAS
+  called (toolNames non-empty), acknowledge it ("logged that — what else?"), else vary. Pairs with W-20 (companion
+  behavior on domain/telemetry input). _Data impact: none (it logs fine; only the reply degrades)._ _Fix (T2,
+  cornerstone):_ system-prompt "always speak" + a smarter empty-degrade in checkinReply. **CLOSED — checkinReply acknowledges a tool-only turn (no more identical loop) + system-prompt "always speak"; deployed; suite 621 green. Built from Cowork Copy Pack v0.2.**
 
 ### T3 · Data / persistence
 - **A-03 🟢 Reclaim List ↔ categories lockstep** — finalize consolidated the list but index-matched stale categories → an item could inherit a neighbour's category (drives its coaching path). Fixed (`consolidateReclaim` lockstep), deployed, tested (`reclaim-consolidate-categories.test.ts`, 4 cases). _The one real data bug found — closed._
