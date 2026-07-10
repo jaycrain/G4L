@@ -17,14 +17,18 @@ alias; data fixes deploy before charter distribution.
 
 ## 1 · W-24 — Administered scale chips  [T3 data · #1 priority · before charter]
 
-**Problem.** Administered instruments use different *validated native scales* — IDQ **1–5**, B1/TSRQ **1–7**, Reclaim
-C2/C3 **1–10**, grit **/5** — used verbatim (rescaling breaks validity; frozen per CLAUDE.md). The scale is stated
+**Problem.** Administered instruments use **five** different *validated native scales* — IDQ **1–5**, B1/TSRQ **1–7**,
+B2 self-management **1–4**, Reclaim C2/C3 **1–10**, grit **/5** — used verbatim (rescaling breaks validity; frozen per CLAUDE.md). The scale is stated
 once at the instrument's start, but the ingrained 1–5 mental model reasserts during the item run. The **founder
 answered B1's 1–7 items as if 1–5, immediately after reading "1–7" and typing it.** Every charter member will do the
 same → invalid instrument scores. This is an *input-side* data-integrity bug.
 
 **Decision (founder).** Replace the free-text number box with **tappable scale chips** across **all** administered
 instruments. Mis-scaling becomes structurally impossible, the scale self-documents on every item, and typing is removed.
+
+**Layout — CONFIRMED (founder): Option A.** A single horizontal **number row** (chips `1..max`) with the two **pole
+anchors labelled at the ends** (e.g. "not at all true" … "very true"). One component, identical across every scale
+(1–4 → 1–10; chips shrink as N grows), poles always visible. Shipped styling: G4L palette (Teal selected state, Barlow).
 
 **Design — one reusable component.**
 - The **administered turn** must signal to the client that it expects a scale pick. Add to the turn/action payload an
@@ -101,6 +105,11 @@ chrome. The checkpoint ceremony's **"Continue →"** is proof the mechanical han
 sessions want the conversational version. Ideal: thread the completed session into the persistent rail thread so the
 companion *remembers* it ("one surface, one thread").
 **Scope note.** Only the *sessions* dead-end; the *checkpoint ceremony* already hands off cleanly (Continue →).
+**Two dead-end shapes (both need the hand-home):** (a) W1/W2/W3 **hide** the input → hard dead-end; (b) B3 (Lifestyle
+Pilot) **leaves the input open** after a terminal line ("Great, locking that in.") → *ambiguous* dead-end (is it over,
+or keep typing?) — arguably worse, it invites typing into a finished session. **B3's hand-off has real content:** it
+must route into the **pilot week** — name it and send the member home to the dashboard/companion where the pilot is
+active and they log calls (the Momentum/Resilience Pulse flow, already working) — not a generic "back to dashboard."
 
 ### 2e · Ceremony Grinta reveal — strand-forward  (W-16)
 **Problem.** Every phase ceremony's Grinta reveal leads with the **composite** Grinta Index (diluted — it averages in

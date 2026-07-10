@@ -19,11 +19,11 @@ Status legend: 🟢 closed (fixed + deployed + testing bar met) · 🟡 fixed/de
 
 | Tier | Total | 🟢 closed | 🟡 minor gap | 🔴 open |
 | :--- | :---: | :---: | :---: | :---: |
-| T1 · copy | 5 | 1 | 0 | 4 |
-| T2 · flow | 13 | 6 | 1 | 6 |
-| T3 · data | 5 | 1 | 1 | 3 |
-| T4 · governance | 2 | 1 | 0 | 1 |
-| **Total** | **25** | **9** | **2** | **14** |
+| T1 · copy | 6 | 1 | 0 | 5 |
+| T2 · flow | 14 | 6 | 1 | 7 |
+| T3 · data | 6 | 1 | 1 | 4 |
+| T4 · gov/design | 4 | 1 | 0 | 3 |
+| **Total** | **30** | **9** | **2** | **19** |
 
 **CROSS-ARC PATTERN (the batch's biggest theme):** "engine + model both contribute a question/beat → stacking" now
 spans onboarding (W-02/W-08, CLOSED), Reconnect (W-14), and Rewire (W-18/W-19). One structural discipline — *the model
@@ -61,6 +61,12 @@ founder's live account.
   **Open — batched (founder may pull forward).** _SCOPE WIDENED (confirmed at the Rewire Checkpoint ceremony — same
   composite-forward reveal): NOT Reconnect-only. It's EVERY phase ceremony's Grinta reveal (Reconnect + Rewire now;
   Rebuild + Reclaim downstream). One shared fix across the ceremony-beats family, not a per-ceremony patch._
+
+- **W-26 🔴 Rebuild ceremony button copy: "Get Reclaimed" → "Start Reclaiming"** — the Rebuild ceremony's terminal
+  button (the Rebuild→Reclaim hand-off) reads "Get Reclaimed →". Founder: "Start Reclaiming" is more appropriate as an
+  ONGOING effort. On-model — Reclaim is a recurring outcome state ("the Loop"), not a one-time achievement; "Get
+  Reclaimed" reads as a finished transaction. _Fix (T1):_ change the label (rebuild-ceremony-beats resolve label);
+  audit for any other "Get Reclaimed" instances. _Data impact: none (copy)._ **Open — batched.**
 
 ### T2 · Conversational flow / capture loop
 - **W-02 🟢 Jumbled gap reflection** — the engine appends a static `GAP_MORE` widening question (`onboarding-staged.ts:189`) on top of a model turn that already wrapped ("let me make sure I have it right") → stacked transitions. Same anti-pattern as the W3 rhythm fix, still in the onboarding gap stage. _Data impact: none (display/flow)._ _Testing (T2):_ replay fixture for the stacked-transition case + a Joanne clean run + diff vs last-good. **CLOSED — root confirmed (`withQuestion` only suppressed on a literal "?"); fixed prompt-side (gather turns always end with the model's one question, never a bare wrap-coda) — no `withQuestion` code change (revert-over-patch); deployed; founder's walk smooth.**
@@ -180,7 +186,11 @@ founder's live account.
   One small block, one file, fixes W1/W2/W3. **Open — small + contained; founder deciding fix-now vs batch.** _SCOPED
   (confirmed): the CHECKPOINT ceremony does NOT dead-end — it has a "Continue →" that hands off cleanly. Only the W1/W2/W3
   SESSION completions dead-end. The ceremony's Continue → is the exact pattern the sessions lack — use it as the model
-  (though the desired session resolution is conversational per W-21, not a bare button)._
+  (though the desired session resolution is conversational per W-21, not a bare button)._ _TWO dead-end shapes (both need
+the hand-home): W1/W2/W3 HIDE the input (hard dead-end); B3 Lifestyle Pilot LEAVES the input OPEN after "Great, locking
+that in." (ambiguous — is it over or keep typing? — arguably worse). B3's hand-off has content: route into the PILOT
+WEEK (name it, send home to the dashboard/companion where the pilot's active + calls log via the Momentum pulse), not
+a generic "back to dashboard."_
 
 - **W-22 🔴 W2 "hold" beat pauses with no clear prompt — member unsure whether to respond** — the W2 image "hold"
   stage is INTENTIONALLY question-less (design: "Receive their reaction in ONE warm sentence — no advice, no new
@@ -202,20 +212,38 @@ founder's live account.
   the arcs the same keeper-recall the rail has (load prior keepers + instruct verbatim serve at the right beat); existing
   plumbing. **Open — enhancement, batched with the arc-flow pass (W-14/18/19/20/21/22).**
 
+- **W-25 🔴 DESIGN: practice week monopolizes the hero — relocate to Momentum** — an active practice week PREEMPTS the
+  companion hero (`practiceMessage ?? litCurrent`, [dashboard:178](app/dashboard/[memberId]/page.tsx); Decision MM R4).
+  Founder: it's passive, requires login, and (the load-bearing point) **owns the hero so it can't be used for anything
+  else** — and with two practices active (b2_noticing + b3_pilot) the hero can only show one. _Founder's direction
+  (agreed):_ (a) a compact "changes" indication in the **Momentum panel** (dashboard) + (b) a real **logging surface on
+  the Momentum subpage** (already reads `activePracticeWeek`, [momentum page:25](app/momentum/[memberId]/page.tsx) — the
+  natural owner; Resilience Pulse already lives there); (c) **free the hero** back to greeting + next step, maybe a light
+  pointer only. _Hold: prominence tradeoff — the hero-lead made the practice unmissable; the Momentum indication must be
+  genuinely inviting or the practice gets ignored._ _Separate gap (noted, not this UI): "requires login" wants an
+  out-of-app nudge — a **text/SMS or push notification** (more likely to land than email for a daily-practice reminder),
+  or HubSpot lifecycle email — Cowork/HubSpot + notifications lane [[marketing-via-cowork]]._ _Data impact: none
+  (surface design)._ **Open — revisits Decision MM R4; design item.**
+
 ### T3 · Data / persistence
 - **A-03 🟢 Reclaim List ↔ categories lockstep** — finalize consolidated the list but index-matched stale categories → an item could inherit a neighbour's category (drives its coaching path). Fixed (`consolidateReclaim` lockstep), deployed, tested (`reclaim-consolidate-categories.test.ts`, 4 cases). _The one real data bug found — closed._
 - **A-01 🟡 Skipped identity → NULL not `''`** — `lib/gateway/flow.ts` now stores NULL when identity is skipped (distinguishes never-named from lost). Deployed. _Testing:_ logic-verified; **minor gap: a pglite assert that a skipped-identity commit stores NULL would fully close it.**
 - **A-04 🔴 Checkpoint/session deep-link gate-bypass** — a member can navigate straight to a later checkpoint URL (`/c4`, `/b4`, etc.) and complete it, setting the gate without earning it. No UI path leads there (forecast guides correctly), so it doesn't bite a normal walk. _Testing (T3):_ add prerequisite route-guards + a test proving the guard blocks the bypass AND doesn't break the happy path. **Open (spun into a background task).**
+  _CONFIRMED LIVE on the founder's walk: he URL-navigated to B3 with B2 unfinished and COMPLETED + COMMITTED a pilot
+  plan (not just viewed) → the bypass fully works end-to-end, and B3's coaching ran with no B2 skill profile (B2 never
+  scored) — a hollow, out-of-order commit. Still not a normal-walk path (the forecast guides correctly), but the hole
+  lets a later session be earned-without-prerequisite. Founder cleanup: finish B2 then re-do B3 in order._
 - **W-24 🔴 Administered scales carry over → mis-scaled answers corrupt scores (DATA INTEGRITY)** — instruments use
-  different VALIDATED native scales (IDQ 1–5, B1/TSRQ 1–7, Reclaim C2/C3 1–10, grit /5 — correct, verbatim, can't
-  rescale without breaking validity). But the scale is stated only ONCE at the instrument's start, and the ingrained
+  different VALIDATED native scales (FIVE so far: IDQ 1–5, B1/TSRQ 1–7, B2 self-management 1–4, Reclaim C2/C3 1–10,
+  grit /5 — correct, verbatim, can't rescale without breaking validity). But the scale is stated only ONCE at the instrument's start, and the ingrained
   1–5 mental model reasserts during the item run: **the FOUNDER answered B1's 1–7 items as if 1–5, right after reading
   "1–7" and typing it.** Every charter member will do the same → invalid instrument scores. _Data impact: REAL — the
   founder's B1 "why" baseline is mis-scaled (stored-not-shown per RB-1, so low-stakes + nothing visible wrong, but it
   colors the agent's motivation read; recommend re-doing B1 after the fix)._ _Fix (T3), applies to ALL administered
   instruments:_ (min) repeat the scale anchors under EVERY item; (better, recommended) replace the free-text number box
   with tappable scale buttons (1–N chips) → mis-scaling becomes IMPOSSIBLE, self-documents the scale, removes typing.
-  **DECIDED (founder): tappable scale CHIPS across ALL administered instruments** — one reusable administered-input
+  **DECIDED (founder): tappable scale CHIPS (Option A — a single number row 1..max with the two pole anchors labelled
+  at the ends) across ALL administered instruments** — one reusable administered-input
   component: N chips (1..max) WITH anchor labels (e.g. "1 Not at all … 7 Very true") so it's fully self-documenting,
   the engine already knows each instrument's scale (parameterized administered factory), the chat just needs to signal
   "this turn expects a 1..N scale pick" so the client renders chips instead of the text box. Covers IDQ, B1, B2,
@@ -238,6 +266,49 @@ founder's live account.
 - **A-06 🟢 Crisis routing on every phase arc** — `detectCrisis` was only in onboarding/check-in/IDQ; the four phase arcs relied on the model's instruction alone. Fixed (deterministic guard at the top of `runArcTurn` + `respondToStep`), deployed, tested (`crisis-arcs.test.ts`). _Closed._
 
 ---
+
+- **W-27 🔴 STRATEGIC (content/experience): Rebuild underdelivers vs Rewire — "assess" without "reveal"** — founder,
+  unprompted, at the B4 ceremony: *"underwhelming Checkpoint; I scored lower because I genuinely didn't feel there was
+  something to be learned like in Rewire."* The pattern: **Rewire REVEALS** (insight lands in-session — catch the lies,
+  build the image, write true lines; every beat has a reveal), **Rebuild ASSESSES + PLANS** (measure motivation B1 →
+  measure skills B2 → commit plan B3 → re-measure B4) — and B1/B2 are STORED-NOT-SHOWN, so the member never even sees
+  what their answers revealed → it reads as homework, and grit honestly dips because nothing moved them. Compounders:
+  (1) Rebuild's real payoff is LONGITUDINAL (living the pilot over weeks) not in-session, so a one-sitting walk always
+  feels thin — structural; (2) the checkpoint down-branch reframe ("a dip means you're looking clearly") can't tell a
+  clarity-dip from a disengagement-dip and defaults to spinning it positive — when the real signal is "this
+  underdelivered," that reframe rings hollow and brushes the posture line (don't reframe genuine low-value as "doing
+  great"). _Directions for JAY + GREG (science/content, not code):_ give Rebuild a genuine in-session REVEAL (surface the
+  B1/B2 profile in the governance-safe "help you understand yourself" way — an aha, not a black box); reconsider whether
+  the checkpoint reframe should assume every dip is clarity. _Data impact: none (design)._
+  _FOUNDER'S PROPOSED DIRECTION (for the Greg consideration):_ Rebuild's takeaway shouldn't imitate Rewire's
+  hidden-truth reveal — its payoff is **felt AGENCY / momentum**. Reflect the member's own **change initiatives** (their
+  B3 pilot / committed changes) back so they FEEL forward progress: *"you're taking action, you have a plan to build
+  on."* That's the register of the body/habits R (reward = capability + motion, not insight). It also fixes the hollow
+  reframe: the checkpoint foregrounds *"you named your why, faced your habits, built a plan you're in motion on — real
+  ground under you"* instead of "your dip means you're looking clearly" — honest and energizing, independent of whether
+  the number rose. **Open — the highest-value strategic finding of the walk; owner = Jay + Greg.**
+
+- **W-29 🔴 C1 reads the Reclaim List as EMPTY — no jsonb fallback + likely migration 0040 drift (DATA-adjacent)** — C1
+  loads via `getReclaimItems` = `reclaim_item where removed_at is null` ([beats/store.ts:22](lib/beats/store.ts)). If
+  migration 0040 (removed_at) is unapplied in prod the query throws; the DASHBOARD catches → falls back to the legacy
+  jsonb list (shows the founder's 7 items), but C1 catches → EMPTY ([reclaim/actions.ts:47](app/reclaim/actions.ts))
+  and invites the member to "build it here" → a PARALLEL list, violating [[reclaim-c1-step2-data-contract]] (touch the
+  LIVE list, never a parallel/stale one). Same prod-migration-drift class as W-13. _Data impact: NO loss — the founder's
+  items are in reclaim_item + jsonb (dashboard shows them); C1 just can't read them. Risk is only if a member BUILDS on
+  the empty list._ _Fix (T3):_ apply 0040 in prod AND give C1 the same jsonb fallback the dashboard has (degrade to the
+  live list, never empty). _CONFIRMED on prod: `select tier from reclaim_item` → "column tier does not exist" → migration
+  0053 (tier) unapplied in prod (0040 removed_at almost certainly too — the dashboard jsonb fallback masks it). Prod's
+  `reclaim_item` is behind on migrations — the Reclaim data layer partially broke in prod when v2.5 flipped without
+  applying 0040/0053. Map the full drift + apply the missing reclaim migrations._ **Open — data-integrity; fix before
+  charter (a member could overwrite their real list).**
+- **W-28 🔴 STRATEGIC (mechanism): the 4Rs run as a LINEAR pipeline, contradicting the program model** — founder,
+  walking it: "no one goes through all the Rs linearly like I am; Rebuild shouldn't default straight into Reclaim — you
+  reach Reclaim later, in a different cycle." Correct, and it's the SPEC (CLAUDE.md program model): the 4Rs are NOT a
+  linear pipeline — Rewire + Rebuild run in PARALLEL, dosed per member by IDQ subscores; **Reclaim is an outcome STATE
+  reached when ready** (IDQ signal or member-declared), "the Loop," no fixed cycle. The current forecast marches
+  Reconnect→Rewire→Rebuild→Reclaim in fixed order, which contradicts that. _Data impact: none (sequencing/mechanism)._
+  _Directions for JAY + GREG (design, not code): dosing/parallel Rewire+Rebuild, Reclaim gated on readiness not order,
+  the Loop._ **Open — strategic; owner = Jay + Greg. Pairs with W-27 (does each phase deliver).**
 
 ### T4 · Governance (cont.)
 - **W-20 🔴 MA oversteps its lane — deep out-of-domain coaching (role boundary)** — inside the W1 audit the companion
