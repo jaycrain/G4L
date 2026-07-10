@@ -85,3 +85,40 @@ test('clear removes the session (completion)', async () => {
   await clearOnboardingSession(d, 'jay@x.com');
   assert.equal(await loadOnboardingSession(d, 'jay@x.com', 'tok-1'), null);
 });
+
+// A-02 — the "welcome back / nothing's lost" resume gate's SERVER-VERIFY predicate. The client (app/onboarding/chat.tsx)
+// shows the gate optimistically, then demotes to the fresh gate + clears stale storage unless the server returns a
+// session WITH messages: `if (session && session.messages.length > 0) return; clearOnboardingStorage(); …`. This encodes
+// that exact decision so the copy can never over-promise (an account-wipe, expired session, or foreign-device storage).
+const gateWouldResume = (s: Awaited<ReturnType<typeof loadOnboardingSession>>): boolean => !!(s && s.messages.length > 0);
+
+test('A-02 · resume gate demotes when NO server session exists (never a false "welcome back")', async () => {
+  const d = await db();
+  const s = await loadOnboardingSession(d, 'wiped@x.com', '');
+  assert.equal(s, null);
+  assert.equal(gateWouldResume(s), false, 'no session → fresh gate');
+});
+
+test('A-02 · resume gate demotes when a session row exists but has NO messages yet', async () => {
+  const d = await db();
+  await saveOnboardingSession(d, 'jay@x.com', 'tok-1', state, []); // opened the gate, no turns taken
+  const s = await loadOnboardingSession(d, 'jay@x.com', 'tok-1');
+  assert.ok(s, 'the row exists');
+  assert.equal(s!.messages.length, 0);
+  assert.equal(gateWouldResume(s), false, 'empty transcript → nothing to resume → fresh gate');
+});
+
+test('A-02 · resume gate resumes truthfully when a session WITH messages exists', async () => {
+  const d = await db();
+  await saveOnboardingSession(d, 'jay@x.com', 'tok-1', state, messages);
+  const s = await loadOnboardingSession(d, 'jay@x.com', 'tok-1');
+  assert.equal(gateWouldResume(s), true, 'real in-flight work → "welcome back" is honest');
+});
+
+test('A-02 · a completed/wiped session demotes (the exact account-wipe false-promise the gate guards)', async () => {
+  const d = await db();
+  await saveOnboardingSession(d, 'jay@x.com', 'tok-1', state, messages);
+  await clearOnboardingSession(d, 'jay@x.com'); // finished onboarding, or the account was wiped
+  const s = await loadOnboardingSession(d, 'jay@x.com', 'tok-1');
+  assert.equal(gateWouldResume(s), false);
+});

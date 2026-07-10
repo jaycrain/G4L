@@ -4,7 +4,9 @@ import { getDb } from '../../lib/db/index.ts';
 import { authorizeMember } from '../authz.ts';
 import type { Db } from '../../lib/db/schema.ts';
 import type { ConvMessage, ConvState, ScaleExpectation, Turn } from '../../lib/agent/onboarding.ts';
-import { applyReconnectTurn, liveTurnReconnect, loadReconnectCaptures, reconnectEnabled, reconnectOpening, reconnectMeasurementClose, driftOpen, BEAT_SEP } from '../../lib/agent/reconnect.ts';
+import { applyReconnectTurn, liveTurnReconnect, loadReconnectCaptures, reconnectEnabled, reconnectOpening, reconnectMeasurementClose, driftOpen, RECONNECT_ARC, BEAT_SEP } from '../../lib/agent/reconnect.ts';
+import { scaleExpects } from '../../lib/agent/onboarding-staged.ts';
+import { saveArcSession, loadArcSession, clearArcSession } from '../../lib/agent/arc-session.ts';
 import { softSetMemberDoors, getMemberDoorNames } from '../../lib/member/refine.ts';
 import type { ReconnectCeremonyData } from '../../lib/ceremony/reconnect-ceremony-beats.ts';
 import { emitHarvestMoment, commitKeeper, type KeeperType } from '../../lib/agent/harvest.ts';
@@ -203,6 +205,44 @@ export async function reconnectCeremonyDataAction(memberId: string): Promise<{ o
   }
 }
 
+// W-15 — per-turn save/resume. Reconnect (esp. the Doors excavation) was client-held only, so a refresh/crash lost the
+// in-progress work. After each turn we persist the working state + the full transcript keyed by (member, 'reconnect'),
+// and CLEAR it once the arc reaches the ceremony (done). Best-effort: a save hiccup never breaks the member's turn.
+const beatBubbles = (text: string): ConvMessage[] =>
+  text.split(BEAT_SEP).map((t) => t.trim()).filter(Boolean).map((t) => ({ role: 'agent' as const, text: t }));
+
+async function persistArcSession(db: Db, memberId: string, history: ConvMessage[], message: string, reply: string, turn: Turn): Promise<void> {
+  try {
+    if (turn.state.stage === 'ceremony') {
+      await clearArcSession(db, memberId, 'reconnect'); // completed — the committed artifacts persist on their own
+      return;
+    }
+    // Reconstruct the transcript exactly as the client renders it: prior bubbles + this member turn + the reply's beats.
+    const messages: ConvMessage[] = [...history, { role: 'member', text: message }, ...beatBubbles(reply)];
+    await saveArcSession(db, memberId, 'reconnect', turn.state, messages);
+  } catch {
+    // swallow — resume is best-effort; the turn already succeeded for the member.
+  }
+}
+
+// W-15 — resume the in-flight Reconnect on mount. Returns the saved transcript + state (and recomputes the chip signal
+// from the resumed stage, so a refresh mid-IDQ restores the scale chips), or null when there's nothing to resume.
+export async function loadReconnectSessionAction(
+  memberId: string,
+): Promise<{ ok: boolean; session?: { state: ConvState; messages: ConvMessage[]; expects?: ScaleExpectation }; error?: string }> {
+  if (!reconnectEnabled()) return { ok: false, error: 'Reconnect is not enabled.' };
+  if (!(await authorizeMember(memberId))) return { ok: false, error: 'Not authorized.' };
+  try {
+    const db = (await getDb()) as unknown as Db;
+    const saved = await loadArcSession(db, memberId, 'reconnect');
+    if (!saved || saved.messages.length === 0) return { ok: true }; // nothing to resume → the client starts fresh
+    const expects = scaleExpects(RECONNECT_ARC, saved.state.stage as never, false);
+    return { ok: true, session: { state: saved.state, messages: saved.messages, expects } };
+  } catch {
+    return { ok: false, error: 'Could not load your session.' };
+  }
+}
+
 export async function reconnectTurnAction(
   memberId: string,
   state: ConvState,
@@ -227,7 +267,9 @@ export async function reconnectTurnAction(
     // On IDQ completion this may return a personalized close (M3) that ties the baseline shape to their doors —
     // UPGRADING the engine's generic close; null → the generic close stands.
     const closeOverride = await persistMeasurement(db, memberId, state, turn);
-    return { ok: true, reply: closeOverride ?? turn.reply, state: turn.state, expects: turn.expects };
+    const finalReply = closeOverride ?? turn.reply;
+    await persistArcSession(db, memberId, history, message, finalReply, turn); // W-15 — save the transcript for resume (or clear at ceremony)
+    return { ok: true, reply: finalReply, state: turn.state, expects: turn.expects };
   } catch {
     return { ok: false, error: 'Something went wrong — please try again.' };
   }

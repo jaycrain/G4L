@@ -20,10 +20,12 @@ Status legend: 🟢 closed (fixed + deployed + testing bar met) · 🟡 fixed/de
 | Tier | Total | 🟢 closed | 🟡 minor gap | 🔴 open |
 | :--- | :---: | :---: | :---: | :---: |
 | T1 · copy | 6 | 6 | 0 | 0 |
-| T2 · flow | 15 | 13 | 1 | 1 |
-| T3 · data | 6 | 3 | 1 | 2 |
+| T2 · flow | 15 | 14 | 0 | 1 |
+| T3 · data | 6 | 5 | 0 | 1 |
 | T4 · gov/design | 4 | 2 | 0 | 2 |
-| **Total** | **31** | **24** | **2** | **5** |
+| **Total** | **31** | **27** | **0** | **4** |
+
+_The 4 remaining 🔴 are all OFF the code lane — W-20 (posture ceiling wording, Greg ratifies), W-27 + W-28 (strategy, Jay+Greg), A-04 (deep-link route guards, spun to a background task). Every code finding from the founder walk is closed. The 🟡 minor-gap column is now empty._
 
 **CROSS-ARC PATTERN (the batch's biggest theme):** "engine + model both contribute a question/beat → stacking" now
 spans onboarding (W-02/W-08, CLOSED), Reconnect (W-14), and Rewire (W-18/W-19). One structural discipline — *the model
@@ -119,7 +121,7 @@ founder's live account.
   The hold-and-rebuild plan re-does the whole walk on fixed code, so the gap re-voices itself._ **CLOSED — set_gap holds
   the member's own first-person voice; deployed; the founder's committed gap read fully first-person ("It didn't pull ME
   off the bike… MY wife had been laid off"), zero third person. Decision captured in [[gap-voice-first-person]].**
-- **A-02 🟡 "Welcome back" resume gate false-promise** — `app/onboarding/chat.tsx` now verifies a server session exists before showing "nothing's lost"; clears stale storage otherwise. Deployed. _Testing:_ tsc + onboarding suite green; a dedicated automated test is hard (client effect) — verified by logic + the founder's live walk. **Minor gap: add a server-verify unit test if feasible.**
+- **A-02 🟢 "Welcome back" resume gate false-promise** — `app/onboarding/chat.tsx` now verifies a server session exists before showing "nothing's lost"; clears stale storage otherwise. Deployed. _Testing:_ tsc + onboarding suite green; a dedicated automated test is hard (client effect) — verified by logic + the founder's live walk. **CLOSED — 4 server-verify tests in `onboarding-session.test.ts` encode the gate predicate (`session && messages.length > 0`): absent session, empty-messages session, and a completed/wiped session all demote to fresh; only a session-with-messages resumes. Suite 643 green.**
 
 - **W-14 🟢 Doors session asks "has it shifted?" then ignores the answer** — Reconnect Doors session: the entry opener
   ([reconnect.ts:59](lib/agent/reconnect.ts:59)) invites a redirect ("still where it began, or has something shifted?"),
@@ -254,7 +256,7 @@ a generic "back to dashboard."_
 
 ### T3 · Data / persistence
 - **A-03 🟢 Reclaim List ↔ categories lockstep** — finalize consolidated the list but index-matched stale categories → an item could inherit a neighbour's category (drives its coaching path). Fixed (`consolidateReclaim` lockstep), deployed, tested (`reclaim-consolidate-categories.test.ts`, 4 cases). _The one real data bug found — closed._
-- **A-01 🟡 Skipped identity → NULL not `''`** — `lib/gateway/flow.ts` now stores NULL when identity is skipped (distinguishes never-named from lost). Deployed. _Testing:_ logic-verified; **minor gap: a pglite assert that a skipped-identity commit stores NULL would fully close it.**
+- **A-01 🟢 Skipped identity → NULL not `''`** — `lib/gateway/flow.ts` now stores NULL when identity is skipped (distinguishes never-named from lost). Deployed. _Testing:_ logic-verified. **CLOSED — pglite round-trip in `gateway.integration.test.ts`: a skipped identity (`identitySkipped`, empty noun) commits `identity_noun IS NULL`, and a named identity commits the noun (natural case) — proving the NULL is meaningful. Suite 643 green.**
 - **A-04 🔴 Checkpoint/session deep-link gate-bypass** — a member can navigate straight to a later checkpoint URL (`/c4`, `/b4`, etc.) and complete it, setting the gate without earning it. No UI path leads there (forecast guides correctly), so it doesn't bite a normal walk. _Testing (T3):_ add prerequisite route-guards + a test proving the guard blocks the bypass AND doesn't break the happy path. **Open (spun into a background task).**
   _CONFIRMED LIVE on the founder's walk: he URL-navigated to B3 with B2 unfinished and COMPLETED + COMMITTED a pilot
   plan (not just viewed) → the bypass fully works end-to-end, and B3's coaching ran with no B2 skill profile (B2 never
@@ -294,7 +296,13 @@ a generic "back to dashboard."_
   client-held," [reconnect/actions.ts:20](app/reconnect/actions.ts)). _Data impact: in-session work LOSS on
   navigation/refresh (not corruption of committed data); the founder's account is safe if he finishes Doors in one
   sitting._ _Fix (T3):_ give the Reconnect arc the same per-turn session persistence + resume onboarding has (save
-  state+messages each turn, load on mount). **Open — flagged from the founder's "can I wait on the dashboard?" question.**
+  state+messages each turn, load on mount). **CLOSED — new `arc_session` table (migration 0056, keyed by (member, arc) —
+  reusable for Rewire/Rebuild/Reclaim later) + `lib/agent/arc-session.ts` store; `reconnectTurnAction` saves the
+  transcript each turn and clears it at the ceremony; `loadReconnectSessionAction` resumes on mount (recomputing the chip
+  signal so a refresh mid-IDQ restores the scale chips). Best-effort/degrade-not-crash: without the table it silently
+  falls back to today's no-resume behavior (no regression). Tested: 6-case pglite round-trip (`arc-session.test.ts`) +
+  tsc + suite 643 green. Deploy: code is safe pre-migration; migration 0056 handed to Jay for the Supabase SQL Editor to
+  ACTIVATE resume on prod.**
 
 ### T4 · Governance
 - **A-06 🟢 Crisis routing on every phase arc** — `detectCrisis` was only in onboarding/check-in/IDQ; the four phase arcs relied on the model's instruction alone. Fixed (deterministic guard at the top of `runArcTurn` + `respondToStep`), deployed, tested (`crisis-arcs.test.ts`). _Closed._

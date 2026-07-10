@@ -160,3 +160,30 @@ test('onboarding completes a sub-3 Reclaim List (Gate-1 floor decision: card car
   const empty = await runOnboarding(db, scriptedProvider, { ...validOnboarding, email: 'empty@example.com', reclaimList: [] });
   assert.equal(empty.ok, false);
 });
+
+test('A-01 · a SKIPPED identity commits identity_noun as NULL (never empty string)', async () => {
+  // Distinguish "never named" (recovered at Identity Excavation) from a lost capture: a skipped identity must land as
+  // NULL, not ''. Downstream reads treat NULL as cleanly absent; '' would masquerade as a (blank) captured value.
+  const db = await freshDb();
+  const skipped = await runOnboarding(db, scriptedProvider, {
+    ...validOnboarding,
+    email: 'skipped@example.com',
+    identityNoun: '', // named later, at Excavation
+    identitySkipped: true,
+  });
+  assert.equal(skipped.ok, true);
+  if (!skipped.ok) return;
+  const row = (
+    await db.query<{ identity_noun: string | null }>(`select identity_noun from member_profile where member_id=$1`, [skipped.memberId])
+  ).rows[0]!;
+  assert.equal(row.identity_noun, null, 'skipped identity persists as NULL');
+
+  // Guard the distinction: a NAMED identity stores the noun (natural case), proving the NULL above is meaningful.
+  const named = await runOnboarding(db, scriptedProvider, { ...validOnboarding, email: 'named@example.com' });
+  assert.equal(named.ok, true);
+  if (!named.ok) return;
+  const namedRow = (
+    await db.query<{ identity_noun: string | null }>(`select identity_noun from member_profile where member_id=$1`, [named.memberId])
+  ).rows[0]!;
+  assert.equal(namedRow.identity_noun, 'Athlete');
+});

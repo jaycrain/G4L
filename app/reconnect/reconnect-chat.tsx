@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { startReconnectAction, reconnectTurnAction, reconnectCeremonyDataAction } from './actions.ts';
+import { startReconnectAction, reconnectTurnAction, reconnectCeremonyDataAction, loadReconnectSessionAction } from './actions.ts';
 import ScaleChips from '../components/scale-chips.tsx';
 import type { ConvMessage, ConvState, ScaleExpectation } from '../../lib/agent/onboarding.ts';
 import { BEAT_SEP } from '../../lib/agent/reconnect.ts';
@@ -34,6 +34,16 @@ export default function ReconnectChat({ memberId }: { memberId: string }) {
     started.current = true;
     (async () => {
       setPending(true);
+      // W-15 — resume an in-flight session first (a refresh/crash mid-excavation no longer loses the work); only start
+      // fresh when there's nothing saved.
+      const resumed = await loadReconnectSessionAction(memberId);
+      if (resumed.ok && resumed.session && resumed.session.messages.length > 0) {
+        setMessages(resumed.session.messages);
+        setState(resumed.session.state);
+        setExpects(resumed.session.expects ?? null);
+        setPending(false);
+        return;
+      }
       const r = await startReconnectAction(memberId);
       setPending(false);
       if (!r.ok || !r.reply || !r.state) return setError(r.error ?? 'Could not start Reconnect.');
