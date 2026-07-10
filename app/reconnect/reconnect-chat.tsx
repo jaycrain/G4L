@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { startReconnectAction, reconnectTurnAction, reconnectCeremonyDataAction } from './actions.ts';
-import type { ConvMessage, ConvState } from '../../lib/agent/onboarding.ts';
+import ScaleChips from '../components/scale-chips.tsx';
+import type { ConvMessage, ConvState, ScaleExpectation } from '../../lib/agent/onboarding.ts';
 import { BEAT_SEP } from '../../lib/agent/reconnect.ts';
 import { DOORS } from '../../lib/doors.ts';
 
@@ -23,6 +24,7 @@ export default function ReconnectChat({ memberId }: { memberId: string }) {
   const [state, setState] = useState<ConvState | null>(null);
   const [input, setInput] = useState('');
   const [pending, setPending] = useState(false);
+  const [expects, setExpects] = useState<ScaleExpectation | null>(null); // W-24: administered turn (IDQ / §2e grit) → render the scale chips
   const [error, setError] = useState<string | null>(null);
   const [ceremony, setCeremony] = useState<ReconnectCeremonyData | null>(null); // §2f: set when the arc reaches 'ceremony'
   const started = useRef(false);
@@ -37,12 +39,11 @@ export default function ReconnectChat({ memberId }: { memberId: string }) {
       if (!r.ok || !r.reply || !r.state) return setError(r.error ?? 'Could not start Reconnect.');
       setMessages(agentBubbles(r.reply));
       setState(r.state);
+      setExpects(r.expects ?? null);
     })();
   }, [memberId]);
 
-  async function send(e: React.FormEvent) {
-    e.preventDefault();
-    const text = input.trim();
+  async function submit(text: string) {
     if (!text || !state || pending) return;
     const history = messages;
     setMessages((m) => [...m, { role: 'member', text }]);
@@ -50,14 +51,23 @@ export default function ReconnectChat({ memberId }: { memberId: string }) {
     setPending(true);
     const r = await reconnectTurnAction(memberId, state, history, text);
     setPending(false);
-    if (!r.ok || !r.reply || !r.state) return setError(r.error ?? 'Something went wrong.');
+    if (!r.ok || !r.reply || !r.state) {
+      setExpects(null);
+      return setError(r.error ?? 'Something went wrong.');
+    }
     setMessages((m) => [...m, ...agentBubbles(r.reply!)]);
     setState(r.state);
+    setExpects(r.expects ?? null);
     // §2f — the arc reached the Ceremony: load the reveal data and fire the full-screen overlay.
     if (r.state.stage === 'ceremony') {
       const c = await reconnectCeremonyDataAction(memberId);
       if (c.ok && c.data) setCeremony(c.data);
     }
+  }
+
+  function send(e: React.FormEvent) {
+    e.preventDefault();
+    void submit(input.trim());
   }
 
   const primary = doorName(state?.collected.doors?.[0]);
@@ -87,6 +97,8 @@ export default function ReconnectChat({ memberId }: { memberId: string }) {
         {pending && <div className="typing">Thinking…</div>}
       </div>
       {error && <p className="error">{error}</p>}
+      {/* W-24: an administered turn (IDQ / §2e grit) expects a fixed-scale pick — offer the chips (text box stays below). */}
+      {expects && <ScaleChips expects={expects} disabled={pending || !state} onPick={(n) => void submit(String(n))} />}
       <form className="chat-input" onSubmit={send}>
         <textarea
           value={input}
@@ -94,7 +106,7 @@ export default function ReconnectChat({ memberId }: { memberId: string }) {
           onKeyDown={(e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
               e.preventDefault();
-              void send(e as unknown as React.FormEvent);
+              void submit(input.trim());
             }
           }}
           placeholder="Type your reply… (Enter to send, Shift+Enter for a new line)"

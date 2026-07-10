@@ -3,7 +3,7 @@
 import { getDb } from '../../lib/db/index.ts';
 import { authorizeMember } from '../authz.ts';
 import type { Db } from '../../lib/db/schema.ts';
-import type { ConvMessage, ConvState, Turn } from '../../lib/agent/onboarding.ts';
+import type { ConvMessage, ConvState, ScaleExpectation, Turn } from '../../lib/agent/onboarding.ts';
 import {
   rebuildEnabled,
   rebuildB1Opening,
@@ -36,7 +36,7 @@ export type RebuildSession = 'b1' | 'b2' | 'b3' | 'checkpoint';
 export async function startRebuildAction(
   memberId: string,
   session: RebuildSession = 'b1',
-): Promise<{ ok: boolean; reply?: string; state?: ConvState; error?: string }> {
+): Promise<{ ok: boolean; reply?: string; state?: ConvState; expects?: ScaleExpectation; error?: string }> {
   if (!rebuildEnabled()) return { ok: false, error: 'Rebuild is not enabled.' };
   if (!(await authorizeMember(memberId))) return { ok: false, error: 'Not authorized.' };
   const turn =
@@ -47,7 +47,7 @@ export async function startRebuildAction(
         : session === 'b2'
           ? rebuildB2Opening()
           : rebuildB1Opening();
-  return { ok: true, reply: turn.reply, state: turn.state };
+  return { ok: true, reply: turn.reply, state: turn.state, expects: turn.expects };
 }
 
 // B4 — pairwise-average the 12 control responses → 6, score the Control component (Ave1→Ave2), persist the Checkpoint
@@ -124,7 +124,7 @@ export async function rebuildTurnAction(
   history: ConvMessage[],
   message: string,
   session: RebuildSession = 'b1',
-): Promise<{ ok: boolean; reply?: string; state?: ConvState; error?: string }> {
+): Promise<{ ok: boolean; reply?: string; state?: ConvState; expects?: ScaleExpectation; error?: string }> {
   if (!rebuildEnabled()) return { ok: false, error: 'Rebuild is not enabled.' };
   if (!(await authorizeMember(memberId))) return { ok: false, error: 'Not authorized.' };
   try {
@@ -134,7 +134,7 @@ export async function rebuildTurnAction(
       const turn = liveTurnRebuildCheckpoint(state, history, message);
       const db = (await getDb()) as unknown as Db;
       await persistRebuildCheckpoint(db, memberId, state, turn);
-      return { ok: true, reply: turn.reply, state: turn.state };
+      return { ok: true, reply: turn.reply, state: turn.state, expects: turn.expects };
     }
     // B3 is a LIVE coaching turn (COACH mode — the model coaches, the engine holds the completeness contract).
     if (session === 'b3') {
@@ -185,7 +185,7 @@ export async function rebuildTurnAction(
           /* swallow — the session still completed; the forecast advance is best-effort */
         }
       }
-      return { ok: true, reply: turn.reply, state: turn.state };
+      return { ok: true, reply: turn.reply, state: turn.state, expects: turn.expects };
     }
     // Both B1 and B2 are ADMINISTERED (deterministic Likert parse) — no model call needed.
     const turn = session === 'b2' ? liveTurnRebuildB2(state, history, message) : liveTurnRebuildB1(state, history, message);
@@ -226,7 +226,7 @@ export async function rebuildTurnAction(
         /* swallow — the session still completed; the forecast advance is best-effort */
       }
     }
-    return { ok: true, reply: turn.reply, state: turn.state };
+    return { ok: true, reply: turn.reply, state: turn.state, expects: turn.expects };
   } catch {
     return { ok: false, error: 'Something went wrong — please try again.' };
   }

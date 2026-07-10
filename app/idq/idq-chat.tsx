@@ -4,8 +4,14 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { idqOpening, idqRespond, type IdqConvState } from '../../lib/agent/idq-conversation.ts';
 import { submitIdqResponses } from './actions.ts';
+import ScaleChips from '../components/scale-chips.tsx';
+import type { ScaleExpectation } from '../../lib/agent/onboarding.ts';
 
 type Msg = { role: 'agent' | 'member'; text: string };
+
+// W-24 — the IDQ administers a 1–5 item every turn until it completes, so the scale is constant. Match the surface's
+// own anchor copy ("1 if it's not landing at all, 5 if it's dead-on").
+const IDQ_EXPECTS: ScaleExpectation = { kind: 'scale', min: 1, max: 5, minLabel: 'not landing at all', maxLabel: 'dead-on' };
 
 export default function IdqChat({ memberId }: { memberId: string }) {
   const router = useRouter();
@@ -17,9 +23,7 @@ export default function IdqChat({ memberId }: { memberId: string }) {
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false); // scored; member clicks to see their starting point
 
-  async function send(e: React.FormEvent) {
-    e.preventDefault();
-    const text = input.trim();
+  async function submit(text: string) {
     if (!text || pending) return;
     const prior: Msg[] = [...messages, { role: 'member', text }];
     setInput('');
@@ -48,6 +52,11 @@ export default function IdqChat({ memberId }: { memberId: string }) {
     }
   }
 
+  function send(e: React.FormEvent) {
+    e.preventDefault();
+    void submit(input.trim());
+  }
+
   return (
     <>
       <h1>Identity Distance Questionnaire (IDQ)</h1>
@@ -67,20 +76,24 @@ export default function IdqChat({ memberId }: { memberId: string }) {
           </button>
         </div>
       ) : (
-        <form className="chat-input" onSubmit={send}>
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="1–5…"
-            autoFocus
-            disabled={pending}
-            inputMode="numeric"
-          />
-          <button type="submit" disabled={pending || !input.trim()}>
-            Send
-          </button>
-        </form>
+        <>
+          {/* W-24: every IDQ turn is a 1–5 item — offer the chips (the text box stays below). */}
+          <ScaleChips expects={IDQ_EXPECTS} disabled={pending} onPick={(n) => void submit(String(n))} />
+          <form className="chat-input" onSubmit={send}>
+            <input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="1–5…"
+              autoFocus
+              disabled={pending}
+              inputMode="numeric"
+            />
+            <button type="submit" disabled={pending || !input.trim()}>
+              Send
+            </button>
+          </form>
+        </>
       )}
     </>
   );

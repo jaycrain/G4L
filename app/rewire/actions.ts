@@ -3,7 +3,7 @@
 import { getDb } from '../../lib/db/index.ts';
 import { authorizeMember } from '../authz.ts';
 import type { Db } from '../../lib/db/schema.ts';
-import type { ConvMessage, ConvState, Turn } from '../../lib/agent/onboarding.ts';
+import type { ConvMessage, ConvState, ScaleExpectation, Turn } from '../../lib/agent/onboarding.ts';
 import {
   rewireEnabled,
   rewireOpening,
@@ -51,7 +51,7 @@ async function loadTrueLines(db: Db, memberId: string): Promise<string[]> {
 export async function startRewireAction(
   memberId: string,
   session: RewireSession = 'w1',
-): Promise<{ ok: boolean; reply?: string; state?: ConvState; error?: string }> {
+): Promise<{ ok: boolean; reply?: string; state?: ConvState; expects?: ScaleExpectation; error?: string }> {
   if (!rewireEnabled()) return { ok: false, error: 'Rewire is not enabled.' };
   if (!(await authorizeMember(memberId))) return { ok: false, error: 'Not authorized.' };
   if (session === 'w2') {
@@ -59,7 +59,7 @@ export async function startRewireAction(
     const db = (await getDb()) as unknown as Db;
     const committed = await loadReconnectCaptures(db, memberId);
     const turn = rewireW2Opening(committed);
-    return { ok: true, reply: turn.reply, state: turn.state };
+    return { ok: true, reply: turn.reply, state: turn.state, expects: turn.expects };
   }
   if (session === 'w3') {
     // W3 pulls the prior tools FORWARD — the W1 true lines + the W2 image — plus grounding. Graceful degrade to [].
@@ -76,14 +76,14 @@ export async function startRewireAction(
       identityNoun: committed?.identityNoun,
     };
     const turn = rewireW3Opening(cb);
-    return { ok: true, reply: turn.reply, state: turn.state };
+    return { ok: true, reply: turn.reply, state: turn.state, expects: turn.expects };
   }
   if (session === 'checkpoint') {
     const turn = rewireCheckpointOpening();
-    return { ok: true, reply: turn.reply, state: turn.state };
+    return { ok: true, reply: turn.reply, state: turn.state, expects: turn.expects };
   }
   const turn = rewireOpening();
-  return { ok: true, reply: turn.reply, state: turn.state };
+  return { ok: true, reply: turn.reply, state: turn.state, expects: turn.expects };
 }
 
 // R4 — score the Commitment component (Ave1→Ave2) + persist the Checkpoint grinta_reading + light Rebuild. Fires once,
@@ -182,7 +182,7 @@ export async function rewireTurnAction(
   history: ConvMessage[],
   message: string,
   session: RewireSession = 'w1',
-): Promise<{ ok: boolean; reply?: string; state?: ConvState; error?: string }> {
+): Promise<{ ok: boolean; reply?: string; state?: ConvState; expects?: ScaleExpectation; error?: string }> {
   if (!rewireEnabled()) return { ok: false, error: 'Rewire is not enabled.' };
   if (!(await authorizeMember(memberId))) return { ok: false, error: 'Not authorized.' };
   try {
@@ -192,7 +192,7 @@ export async function rewireTurnAction(
       const turn = liveTurnRewireCheckpoint(state, history, message);
       const db = (await getDb()) as unknown as Db;
       await persistRewireCheckpoint(db, memberId, state, turn);
-      return { ok: true, reply: turn.reply, state: turn.state };
+      return { ok: true, reply: turn.reply, state: turn.state, expects: turn.expects };
     }
     // Every session turn is a live model turn — the model supplies the reflection; the kernel sequences + harvests.
     const turn =
@@ -223,7 +223,7 @@ export async function rewireTurnAction(
         }
       }
     }
-    return { ok: true, reply: turn.reply, state: turn.state };
+    return { ok: true, reply: turn.reply, state: turn.state, expects: turn.expects };
   } catch {
     return { ok: false, error: 'Something went wrong — please try again.' };
   }

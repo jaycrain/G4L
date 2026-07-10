@@ -10,6 +10,7 @@ import {
   type ConvState,
   type ConvMessage,
   type Ctx,
+  type ScaleExpectation,
 } from '../../lib/agent/onboarding.ts';
 import {
   saveOnboardingSession,
@@ -56,6 +57,9 @@ export type TurnOutput = {
   reply: string;
   state: ConvState;
   complete: boolean;
+  // W-24: set when the turn just delivered an administered item (the Grinta baseline at the end of onboarding) — the
+  // client renders the scale chips instead of the free-text box. Absent on every draw-out turn.
+  expects?: ScaleExpectation;
   crisis?: boolean;
   // Set when the fade gate gracefully declines a genuinely-thriving no-fade member (Decision E). Terminal:
   // the client shows the decline screen — no card, no member created. Only fires under the staged engine.
@@ -115,7 +119,7 @@ export async function onboardingTurn(input: TurnInput): Promise<TurnOutput> {
     }
   }
 
-  return { reply: turn.reply, state: turn.state, complete: turn.complete, crisis: turn.crisis, declined: turn.declined };
+  return { reply: turn.reply, state: turn.state, complete: turn.complete, expects: turn.expects, crisis: turn.crisis, declined: turn.declined };
 }
 
 export type FinalizeInput = { ctx: Ctx; state: ConvState; token: string; cardReturns?: number; password: string };

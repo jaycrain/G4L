@@ -7,7 +7,7 @@
 // confirm commits it back to the live list (propose→confirm→commit, Decision L — never silent mutation). Flag-gated by
 // RECLAIM (Decision JJ) — OFF by default; prod stays v2.4.
 
-import { runArcTurn, administeredStage, type ArcConfig, type StageDef } from './onboarding-staged.ts';
+import { runArcTurn, administeredStage, scaleExpects, type ArcConfig, type StageDef } from './onboarding-staged.ts';
 import { BEAT_SEP, type Collected, type ConvMessage, type ConvState, type ModelTurn, type Turn } from './onboarding.ts';
 import { EVIDENCE_ITEMS, EVIDENCE_ITEM_COUNT, EVIDENCE_PART_STARTS, EVIDENCE_PART_LABEL } from '../reclaim/evidence-instrument.ts';
 import { TIER_LABEL, REFINE_TIERS, isTier, type Tier } from '../reclaim/refinement-store.ts';
@@ -45,6 +45,8 @@ function evidenceOpener(): string {
 const evidenceStage: StageDef = administeredStage({
   id: 'evidence',
   itemCount: EVIDENCE_ITEM_COUNT, // 15 (scaleMax defaults to 5)
+  minLabel: 'not at all', // W-24: chip anchors — the frozen Grinta 1–5 poles
+  maxLabel: 'completely',
   opener: () => evidenceOpener(),
   deliverItem: (n) => evidenceDeliver(n),
   reprompt: (n) => `Just a number, 1 to 5 — how true does that feel?\n\n${evidenceDeliver(n)}`,
@@ -164,7 +166,7 @@ export function applyReclaimC1Turn(state: ConvState, history: ConvMessage[], mem
 
 // The opening seeds the member's CURRENT Reclaim List into collected (loaded by the action) so Step 2 can present it.
 export function reclaimC1Opening(listTexts: string[] = []): Turn {
-  return { reply: evidenceOpener(), state: { stage: 'evidence', collected: { reclaimList: listTexts.filter(Boolean) } }, complete: false };
+  return { reply: evidenceOpener(), state: { stage: 'evidence', collected: { reclaimList: listTexts.filter(Boolean) } }, complete: false, expects: scaleExpects(RECLAIM_C1_ARC, 'evidence', false) };
 }
 
 // Step 1 (evidence) is administered → deterministic, no model call.
@@ -306,6 +308,8 @@ const auditStage: StageDef = administeredStage({
   id: 'audit',
   itemCount: AUDIT_ITEM_COUNT, // 20
   scaleMax: AUDIT_SCALE_MAX, // 10 (the scale-param)
+  minLabel: 'low', // W-24: chip anchors — a 1–10 rating whose meaning shifts per item (standing / importance / readiness / ripple), so neutral poles
+  maxLabel: 'high',
   opener: () => auditOpener(),
   deliverItem: (n) => auditDeliver(n),
   reprompt: (n) => `A number from 1 to 10 — where would you put it?\n\n${auditDeliver(n)}`,
@@ -331,7 +335,7 @@ export function applyReclaimC2Turn(state: ConvState, history: ConvMessage[], mem
 }
 
 export function reclaimC2Opening(): Turn {
-  return { reply: auditOpener(), state: { stage: 'audit', collected: {} }, complete: false };
+  return { reply: auditOpener(), state: { stage: 'audit', collected: {} }, complete: false, expects: scaleExpects(RECLAIM_C2_ARC, 'audit', false) };
 }
 
 export function liveTurnReclaimC2(state: ConvState, history: ConvMessage[], memberMessage: string): Turn {
@@ -510,6 +514,8 @@ function reclaimCheckpointOpener(): string {
 const reclaimCheckpointStage: StageDef = administeredStage({
   id: 'checkpoint',
   itemCount: CHECKPOINT_CHALLENGE_ITEMS.length, // 6 (scaleMax defaults to 5)
+  minLabel: 'not at all', // W-24: chip anchors — the frozen Grinta 1–5 poles
+  maxLabel: 'completely',
   opener: () => reclaimCheckpointOpener(),
   deliverItem: (n) => reclaimCheckpointDeliver(n),
   reprompt: (n) => `Just a number, 1 to 5 — how true does that feel right now?\n\n${reclaimCheckpointDeliver(n)}`,
@@ -546,7 +552,7 @@ export function applyReclaimCheckpointTurn(state: ConvState, history: ConvMessag
   return runArcTurn(RECLAIM_CHECKPOINT_ARC, state, history, memberMessage, model);
 }
 export function reclaimCheckpointOpening(): Turn {
-  return { reply: reclaimCheckpointOpener(), state: { stage: 'checkpoint', collected: {} }, complete: false };
+  return { reply: reclaimCheckpointOpener(), state: { stage: 'checkpoint', collected: {} }, complete: false, expects: scaleExpects(RECLAIM_CHECKPOINT_ARC, 'checkpoint', false) };
 }
 // The Checkpoint is ADMINISTERED (deterministic Likert) — no model call needed; the action passes empty text.
 export function liveTurnReclaimCheckpoint(state: ConvState, history: ConvMessage[], memberMessage: string): Turn {

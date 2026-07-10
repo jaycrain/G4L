@@ -3,7 +3,7 @@
 import { getDb } from '../../lib/db/index.ts';
 import { authorizeMember } from '../authz.ts';
 import type { Db } from '../../lib/db/schema.ts';
-import type { ConvMessage, ConvState, Turn } from '../../lib/agent/onboarding.ts';
+import type { ConvMessage, ConvState, ScaleExpectation, Turn } from '../../lib/agent/onboarding.ts';
 import {
   reclaimEnabled,
   reclaimC1Opening,
@@ -36,7 +36,7 @@ export type ReclaimSession = 'c1' | 'c2' | 'c3' | 'checkpoint';
 export async function startReclaimAction(
   memberId: string,
   session: ReclaimSession = 'c1',
-): Promise<{ ok: boolean; reply?: string; state?: ConvState; error?: string }> {
+): Promise<{ ok: boolean; reply?: string; state?: ConvState; expects?: ScaleExpectation; error?: string }> {
   if (!reclaimEnabled()) return { ok: false, error: 'Reclaim is not enabled.' };
   if (!(await authorizeMember(memberId))) return { ok: false, error: 'Not authorized.' };
   if (session === 'c2') return { ok: true, ...openTurn(reclaimC2Opening()) };
@@ -50,8 +50,8 @@ export async function startReclaimAction(
   return { ok: true, ...openTurn(reclaimC1Opening(items)) };
 }
 
-function openTurn(turn: { reply: string; state: ConvState }): { reply: string; state: ConvState } {
-  return { reply: turn.reply, state: turn.state };
+function openTurn(turn: Turn): { reply: string; state: ConvState; expects?: ScaleExpectation } {
+  return { reply: turn.reply, state: turn.state, expects: turn.expects };
 }
 
 export async function reclaimTurnAction(
@@ -60,7 +60,7 @@ export async function reclaimTurnAction(
   history: ConvMessage[],
   message: string,
   session: ReclaimSession = 'c1',
-): Promise<{ ok: boolean; reply?: string; state?: ConvState; error?: string }> {
+): Promise<{ ok: boolean; reply?: string; state?: ConvState; expects?: ScaleExpectation; error?: string }> {
   if (!reclaimEnabled()) return { ok: false, error: 'Reclaim is not enabled.' };
   if (!(await authorizeMember(memberId))) return { ok: false, error: 'Not authorized.' };
   try {
@@ -70,7 +70,7 @@ export async function reclaimTurnAction(
       const turn = liveTurnReclaimCheckpoint(state, history, message);
       const db = (await getDb()) as unknown as Db;
       await persistReclaimCheckpoint(db, memberId, state, turn);
-      return { ok: true, reply: turn.reply, state: turn.state };
+      return { ok: true, reply: turn.reply, state: turn.state, expects: turn.expects };
     }
     // C2 · Bigger World Audit — administered (deterministic 1–10). On completion, persist the durable priorities (RC-4).
     if (session === 'c2') {
@@ -91,7 +91,7 @@ export async function reclaimTurnAction(
           /* swallow — the forecast advance is best-effort */
         }
       }
-      return { ok: true, reply: turn.reply, state: turn.state };
+      return { ok: true, reply: turn.reply, state: turn.state, expects: turn.expects };
     }
     // C3 · Quality Days — a LIVE coaching turn. On confirm, store the Quality-Day profile + open the logging week.
     if (session === 'c3') {
@@ -117,7 +117,7 @@ export async function reclaimTurnAction(
           }
         }
       }
-      return { ok: true, reply: turn.reply, state: turn.state };
+      return { ok: true, reply: turn.reply, state: turn.state, expects: turn.expects };
     }
     // C1 · Step 1 (evidence) is administered (deterministic); Step 2 (refine) is the live coaching turn.
     const turn = state.stage === 'refine' ? await liveTurnReclaimRefine(state, history, message) : applyReclaimC1Turn(state, history, message);
@@ -143,7 +143,7 @@ export async function reclaimTurnAction(
         /* swallow — the forecast advance is best-effort */
       }
     }
-    return { ok: true, reply: turn.reply, state: turn.state };
+    return { ok: true, reply: turn.reply, state: turn.state, expects: turn.expects };
   } catch {
     return { ok: false, error: 'Something went wrong — please try again.' };
   }

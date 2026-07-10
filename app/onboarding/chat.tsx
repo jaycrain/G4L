@@ -3,7 +3,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { onboardingTurn, finalizeOnboardingAction, loadOnboardingSessionAction } from './actions.ts';
-import type { ConvState, ConvMessage } from '../../lib/agent/onboarding.ts';
+import ScaleChips from '../components/scale-chips.tsx';
+import type { ConvState, ConvMessage, ScaleExpectation } from '../../lib/agent/onboarding.ts';
 import { BEAT_SEP } from '../../lib/agent/onboarding.ts';
 
 // A turn may hand over more than one beat (e.g. the Phases intro + the pre-survey framing), joined by BEAT_SEP —
@@ -37,6 +38,7 @@ export default function OnboardingChat() {
   const [state, setState] = useState<ConvState | null>(null);
   const [input, setInput] = useState('');
   const [pending, setPending] = useState(false);
+  const [expects, setExpects] = useState<ScaleExpectation | null>(null); // W-24: administered turn (the Grinta baseline) → render the scale chips
   const [error, setError] = useState<string | null>(null);
   const [ready, setReady] = useState(false); // conversation has everything; offer the handoff (reversible)
   const [declined, setDeclined] = useState(false); // fade gate gracefully declined (Decision E) — terminal, no card
@@ -95,7 +97,7 @@ export default function OnboardingChat() {
   function startFresh() {
     clearOnboardingStorage();
     tokenRef.current = '';
-    setMessages([]); setState(null); setInput(''); setReady(false); setDeclined(false); setError(null); setCardReturns(0);
+    setMessages([]); setState(null); setInput(''); setReady(false); setDeclined(false); setError(null); setCardReturns(0); setExpects(null);
     setName(''); setEmail('');
     setPhase('gate');
   }
@@ -161,9 +163,7 @@ export default function OnboardingChat() {
     }
   }
 
-  async function send(e?: React.FormEvent) {
-    e?.preventDefault();
-    const text = input.trim();
+  async function submit(text: string) {
     if (!text || pending) return;
     const prior = messages;
     setMessages([...prior, { role: 'member', text }]);
@@ -182,6 +182,7 @@ export default function OnboardingChat() {
       }
       setMessages([...prior, { role: 'member', text }, ...agentBubbles(r.reply)]);
       setState(r.state);
+      setExpects(r.expects ?? null); // W-24: the Grinta baseline items expect a fixed-scale pick → show the chips
       // Graceful decline (Decision E): a genuinely-thriving no-fade member is out of scope — show the terminal
       // decline (no card, no member created). The reply itself carries the warm, door-stays-open message.
       if (r.declined) { setDeclined(true); return; }
@@ -196,6 +197,11 @@ export default function OnboardingChat() {
     } finally {
       setPending(false);
     }
+  }
+
+  function send(e?: React.FormEvent) {
+    e?.preventDefault();
+    void submit(input.trim());
   }
 
   // Commit the conversation and move to the IDQ. This is the only path that creates the member.
@@ -391,26 +397,30 @@ export default function OnboardingChat() {
           );
         })()
       ) : (
-        <form className="chat-input" onSubmit={send}>
-          <textarea
-            ref={taRef}
-            rows={1}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                void send();
-              }
-            }}
-            placeholder="Type your reply…  (Enter to send, Shift+Enter for a new line)"
-            autoFocus
-            disabled={pending}
-          />
-          <button type="submit" disabled={pending || !input.trim()}>
-            Send
-          </button>
-        </form>
+        <>
+          {/* W-24: the Grinta baseline items expect a fixed-scale pick — offer the chips (the text box stays below). */}
+          {expects && <ScaleChips expects={expects} disabled={pending} onPick={(n) => void submit(String(n))} />}
+          <form className="chat-input" onSubmit={send}>
+            <textarea
+              ref={taRef}
+              rows={1}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  void submit(input.trim());
+                }
+              }}
+              placeholder="Type your reply…  (Enter to send, Shift+Enter for a new line)"
+              autoFocus
+              disabled={pending}
+            />
+            <button type="submit" disabled={pending || !input.trim()}>
+              Send
+            </button>
+          </form>
+        </>
       )}
       <p className="muted onboard-fresh">
         Saved automatically — take your time, you can leave and pick this up anytime.{' '}

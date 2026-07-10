@@ -6,7 +6,7 @@
 // This is a parallel motivation register — NEVER folded into Grinta (that's B4's Control component, a later slice).
 // Flag-gated by REBUILD (Decision JJ — additive per-Phase) — OFF by default; prod stays v2.3 until the v2.4 flip.
 
-import { runArcTurn, administeredStage, type ArcConfig, type StageDef } from './onboarding-staged.ts';
+import { runArcTurn, administeredStage, scaleExpects, type ArcConfig, type StageDef } from './onboarding-staged.ts';
 import { BEAT_SEP, type ConvMessage, type ConvState, type ModelTurn, type Turn } from './onboarding.ts';
 import { WHY_ITEMS, WHY_PROMPTS, WHY_SCALE_MAX, WHY_ITEM_COUNT, WHY_DOMAIN_SPLIT } from '../rebuild/why-instrument.ts';
 import {
@@ -56,6 +56,8 @@ const whyStage: StageDef = administeredStage({
   id: 'why',
   itemCount: WHY_ITEM_COUNT, // 12
   scaleMax: WHY_SCALE_MAX, // 7 — the SDT scale (parameterized; every Grinta/IDQ caller stays 1–5)
+  minLabel: 'not at all true', // W-24: chip anchors — match the re-prompt copy
+  maxLabel: 'very true',
   opener: () => whyOpener(),
   deliverItem: (n) => whyDeliver(n),
   reprompt: (n) => `A number from 1 to 7 — 1 is “not at all true for you,” 7 is “very true for you.”\n\n${whyDeliver(n)}`,
@@ -81,7 +83,7 @@ export function applyRebuildB1Turn(state: ConvState, history: ConvMessage[], mem
 }
 
 export function rebuildB1Opening(): Turn {
-  return { reply: whyOpener(), state: { stage: 'why', collected: {} }, complete: false };
+  return { reply: whyOpener(), state: { stage: 'why', collected: {} }, complete: false, expects: scaleExpects(REBUILD_B1_ARC, 'why', false) };
 }
 
 export function liveTurnRebuildB1(state: ConvState, history: ConvMessage[], memberMessage: string): Turn {
@@ -126,6 +128,8 @@ const skillsStage: StageDef = administeredStage({
   id: 'skills',
   itemCount: SKILLS_ITEM_COUNT, // 24
   scaleMax: SKILLS_SCALE_MAX, // 4 (strongly disagree → strongly agree)
+  minLabel: 'strongly disagree', // W-24: chip anchors
+  maxLabel: 'strongly agree',
   opener: () => skillsOpener(),
   deliverItem: (n) => skillsDeliver(n),
   reprompt: (n) => `A number from 1 to 4 — 1 is strongly disagree, 4 is strongly agree.\n\n${skillsDeliver(n)}`,
@@ -153,7 +157,7 @@ export function applyRebuildB2Turn(state: ConvState, history: ConvMessage[], mem
 }
 
 export function rebuildB2Opening(): Turn {
-  return { reply: skillsOpener(), state: { stage: 'skills', collected: {} }, complete: false };
+  return { reply: skillsOpener(), state: { stage: 'skills', collected: {} }, complete: false, expects: scaleExpects(REBUILD_B2_ARC, 'skills', false) };
 }
 
 export function liveTurnRebuildB2(state: ConvState, history: ConvMessage[], memberMessage: string): Turn {
@@ -376,6 +380,8 @@ function rebuildCheckpointOpener(): string {
 const rebuildCheckpointStage: StageDef = administeredStage({
   id: 'checkpoint',
   itemCount: CHECKPOINT_CONTROL_ITEMS.length, // 12 (scaleMax defaults to 5)
+  minLabel: 'not at all', // W-24: chip anchors — the frozen Grinta 1–5 poles
+  maxLabel: 'completely',
   opener: () => rebuildCheckpointOpener(),
   deliverItem: (n) => rebuildCheckpointDeliver(n),
   reprompt: (n) => `Just a number, 1 to 5 — how true does that feel right now?\n\n${rebuildCheckpointDeliver(n)}`,
@@ -413,7 +419,7 @@ export function applyRebuildCheckpointTurn(state: ConvState, history: ConvMessag
 }
 
 export function rebuildCheckpointOpening(): Turn {
-  return { reply: rebuildCheckpointOpener(), state: { stage: 'checkpoint', collected: {} }, complete: false };
+  return { reply: rebuildCheckpointOpener(), state: { stage: 'checkpoint', collected: {} }, complete: false, expects: scaleExpects(REBUILD_CHECKPOINT_ARC, 'checkpoint', false) };
 }
 
 // The Checkpoint is ADMINISTERED (deterministic Likert parse) — no model call needed. The action passes empty text.

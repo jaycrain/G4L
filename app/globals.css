@@ -360,6 +360,26 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .chat-continue { margin-top: 0.75rem; }
 .chat-continue button { margin: 0; width: 100%; }
 
+/* W-24 — administered-scale chips. The fixed-scale answer surface for validated instruments (IDQ, Grinta, SDT,
+   self-management, control/challenge checkpoints): the member PICKS on the scale instead of holding it in their head
+   (the mis-scaling fix). Rounded squares, teal outline; hover tints, the picked chip fills teal; the instrument's own
+   pole anchors sit under the two ends. Reused across every arc's chat surface. */
+.scale-chips { margin-top: 0.65rem; }
+.scale-chips-row { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+.scale-chip {
+  flex: 1 1 0; min-width: 42px; padding: 0.6rem 0; margin: 0;
+  border: 1.5px solid var(--teal); border-radius: 8px; background: #fff;
+  color: var(--teal); font-family: inherit; font-weight: 700; font-size: 1.05rem; line-height: 1;
+  cursor: pointer; transition: background 0.12s ease, color 0.12s ease;
+}
+.scale-chip:hover:not(:disabled) { background: rgba(59, 148, 149, 0.12); }
+.scale-chip.selected { background: var(--teal); color: #fff; }
+.scale-chip:disabled { cursor: default; }
+.scale-chip:disabled:not(.selected) { opacity: 0.5; }
+.scale-chips-anchors { display: flex; justify-content: space-between; gap: 0.75rem; margin-top: 0.4rem; }
+.scale-chips-anchors span { font-size: 0.78rem; color: var(--navy); opacity: 0.72; max-width: 46%; }
+.scale-chips-anchors span:last-child { text-align: right; }
+
 /* v2.2 Reconnect (skeleton): the dashboard entry CTA + the session surface. Reuses .chat/.bubble/.chat-input. */
 .reconnect-entry { margin: 0 0 1rem; }
 .reconnect-cta {

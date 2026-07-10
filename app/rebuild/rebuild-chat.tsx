@@ -3,8 +3,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { startRebuildAction, rebuildTurnAction, rebuildCeremonyDataAction, type RebuildSession } from './actions.ts';
 import RebuildCeremony from './rebuild-ceremony.tsx';
+import ScaleChips from '../components/scale-chips.tsx';
 import type { RebuildCeremonyData } from '../../lib/ceremony/rebuild-ceremony-beats.ts';
-import type { ConvMessage, ConvState } from '../../lib/agent/onboarding.ts';
+import type { ConvMessage, ConvState, ScaleExpectation } from '../../lib/agent/onboarding.ts';
 import { BEAT_SEP } from '../../lib/agent/onboarding.ts';
 
 // A turn may hand over more than one beat (a frame + the next item), joined by BEAT_SEP — render each as its OWN
@@ -20,6 +21,7 @@ export default function RebuildChat({ memberId, session = 'b1' }: { memberId: st
   const [input, setInput] = useState('');
   const [pending, setPending] = useState(false);
   const [done, setDone] = useState(false);
+  const [expects, setExpects] = useState<ScaleExpectation | null>(null); // W-24: administered turn → render the scale chips
   const [ceremony, setCeremony] = useState<RebuildCeremonyData | null>(null); // B4: set when the checkpoint reaches 'ceremony'
   const [error, setError] = useState<string | null>(null);
   const started = useRef(false);
@@ -34,28 +36,38 @@ export default function RebuildChat({ memberId, session = 'b1' }: { memberId: st
       if (!r.ok || !r.reply || !r.state) return setError(r.error ?? 'Could not start Rebuild.');
       setMessages(agentBubbles(r.reply));
       setState(r.state);
+      setExpects(r.expects ?? null);
     })();
   }, [memberId, session]);
 
-  async function send(e: React.FormEvent) {
-    e.preventDefault();
-    const text = input.trim();
+  async function submit(text: string) {
     if (!text || !state || pending || done) return;
     const history = messages;
     setMessages((m) => [...m, { role: 'member', text }]);
     setInput('');
+    // Leave the chips mounted while the turn is in flight: ScaleChips fills the picked chip teal and locks the row
+    // (disabled={pending}) — the member sees their answer register. The reply swaps in the next item's scale (or null).
     setPending(true);
     const r = await rebuildTurnAction(memberId, state, history, text, session);
     setPending(false);
-    if (!r.ok || !r.reply || !r.state) return setError(r.error ?? 'Something went wrong.');
+    if (!r.ok || !r.reply || !r.state) {
+      setExpects(null); // unlock — an error shouldn't leave a dead, locked scale row
+      return setError(r.error ?? 'Something went wrong.');
+    }
     setMessages((m) => [...m, ...agentBubbles(r.reply!)]);
     setState(r.state);
+    setExpects(r.expects ?? null);
     if (r.state.stage === 'complete') setDone(true); // an administered/coach session done — its artifact is stored
     // B4 — the checkpoint reached the ceremony: load the reveal data and fire the full-screen overlay.
     if (r.state.stage === 'ceremony') {
       const c = await rebuildCeremonyDataAction(memberId);
       if (c.ok && c.data) setCeremony(c.data);
     }
+  }
+
+  function send(e: React.FormEvent) {
+    e.preventDefault();
+    void submit(input.trim());
   }
 
   // B4 — once the checkpoint reaches the ceremony, the overlay takes over the whole surface.
@@ -73,24 +85,28 @@ export default function RebuildChat({ memberId, session = 'b1' }: { memberId: st
       </div>
       {error && <p className="error">{error}</p>}
       {!done && (
-        <form className="chat-input" onSubmit={send}>
-          <textarea
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                void send(e as unknown as React.FormEvent);
-              }
-            }}
-            placeholder="Type your reply… (Enter to send, Shift+Enter for a new line)"
-            rows={2}
-            disabled={pending || !state}
-          />
-          <button type="submit" disabled={pending || !state || !input.trim()}>
-            Send
-          </button>
-        </form>
+        <>
+          {/* W-24: an administered turn expects a fixed-scale pick — offer the chips (the text box stays below). */}
+          {expects && <ScaleChips expects={expects} disabled={pending || !state} onPick={(n) => void submit(String(n))} />}
+          <form className="chat-input" onSubmit={send}>
+            <textarea
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  void submit(input.trim());
+                }
+              }}
+              placeholder="Type your reply… (Enter to send, Shift+Enter for a new line)"
+              rows={2}
+              disabled={pending || !state}
+            />
+            <button type="submit" disabled={pending || !state || !input.trim()}>
+              Send
+            </button>
+          </form>
+        </>
       )}
     </div>
   );

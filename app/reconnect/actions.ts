@@ -3,7 +3,7 @@
 import { getDb } from '../../lib/db/index.ts';
 import { authorizeMember } from '../authz.ts';
 import type { Db } from '../../lib/db/schema.ts';
-import type { ConvMessage, ConvState, Turn } from '../../lib/agent/onboarding.ts';
+import type { ConvMessage, ConvState, ScaleExpectation, Turn } from '../../lib/agent/onboarding.ts';
 import { applyReconnectTurn, liveTurnReconnect, loadReconnectCaptures, reconnectEnabled, reconnectOpening, reconnectMeasurementClose, driftOpen, BEAT_SEP } from '../../lib/agent/reconnect.ts';
 import { softSetMemberDoors, getMemberDoorNames } from '../../lib/member/refine.ts';
 import type { ReconnectCeremonyData } from '../../lib/ceremony/reconnect-ceremony-beats.ts';
@@ -143,14 +143,14 @@ async function persistHarvest(db: Db, memberId: string, prev: ConvState, turn: T
   }
 }
 
-export async function startReconnectAction(memberId: string): Promise<{ ok: boolean; reply?: string; state?: ConvState; error?: string }> {
+export async function startReconnectAction(memberId: string): Promise<{ ok: boolean; reply?: string; state?: ConvState; expects?: ScaleExpectation; error?: string }> {
   if (!reconnectEnabled()) return { ok: false, error: 'Reconnect is not enabled.' };
   if (!(await authorizeMember(memberId))) return { ok: false, error: 'Not authorized.' };
   const db = (await getDb()) as unknown as Db;
   const committed = await loadReconnectCaptures(db, memberId);
   if (!committed) return { ok: false, error: 'We could not find your intake.' };
   const turn = reconnectOpening(committed);
-  return { ok: true, reply: turn.reply, state: turn.state };
+  return { ok: true, reply: turn.reply, state: turn.state, expects: turn.expects };
 }
 
 // §2f — assemble the Ceremony reveal data from the DB when the arc reaches stage 'ceremony': the baseline ID Score +
@@ -208,7 +208,7 @@ export async function reconnectTurnAction(
   state: ConvState,
   history: ConvMessage[],
   message: string,
-): Promise<{ ok: boolean; reply?: string; state?: ConvState; error?: string }> {
+): Promise<{ ok: boolean; reply?: string; state?: ConvState; expects?: ScaleExpectation; error?: string }> {
   if (!reconnectEnabled()) return { ok: false, error: 'Reconnect is not enabled.' };
   if (!(await authorizeMember(memberId))) return { ok: false, error: 'Not authorized.' };
   try {
@@ -227,7 +227,7 @@ export async function reconnectTurnAction(
     // On IDQ completion this may return a personalized close (M3) that ties the baseline shape to their doors —
     // UPGRADING the engine's generic close; null → the generic close stands.
     const closeOverride = await persistMeasurement(db, memberId, state, turn);
-    return { ok: true, reply: closeOverride ?? turn.reply, state: turn.state };
+    return { ok: true, reply: closeOverride ?? turn.reply, state: turn.state, expects: turn.expects };
   } catch {
     return { ok: false, error: 'Something went wrong — please try again.' };
   }

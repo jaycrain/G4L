@@ -42,6 +42,7 @@ import {
   type PendingReclaimShape,
   type ReplyIntent,
   type ReseeingTell,
+  type ScaleExpectation,
   type Stage,
   type Turn,
 } from './onboarding.ts';
@@ -674,6 +675,7 @@ export interface StageDef {
   forceProgress?: StageHandler; // the runaway backstop's per-stage action (early-return Turn, or mutate + fall through)
   administer?: StageHandler; // ADMINISTERED stages (§2c: validated instruments) — runs OFF the depth kernel (below)
   coach?: StageHandler; // COACH stages (B3, Decision PP) — model coaches, engine holds the completeness contract; OFF the kernel
+  scale?: { max: number; minLabel: string; maxLabel: string }; // W-24: an administered stage's fixed Likert scale + its pole anchors, so the kernel can emit a ScaleExpectation for the chip surface
 }
 
 export interface ArcConfig {
@@ -709,6 +711,8 @@ export type AdministeredConfig = {
   id: StageId;
   itemCount: number;
   scaleMax?: number; // the Likert ceiling — defaults to 5 (IDQ/Grinta); B1's SDT instrument passes 7
+  minLabel?: string; // W-24: the low-pole anchor shown under the "1" chip (e.g. "not at all true"); defaults to "1"
+  maxLabel?: string; // W-24: the high-pole anchor shown under the top chip (e.g. "very true"); defaults to the number
   opener: (c: Collected) => string; // the warm open + item 0, delivered when the prior stage hands in
   deliverItem: (index: number) => string; // the framed item at 0-based index (cluster transitions etc.)
   reprompt: (index: number) => string; // a gentle re-prompt of the current item on an unclear (out-of-scale) answer
@@ -718,9 +722,11 @@ export type AdministeredConfig = {
 // Build an administered StageDef from an instrument config. gather/confirm are unused (the kernel dispatches to
 // administer() on mode==='administered'); they're present only to satisfy the StageDef contract.
 export function administeredStage(cfg: AdministeredConfig): StageDef {
+  const max = cfg.scaleMax ?? 5;
   return {
     id: cfg.id,
     mode: 'administered',
+    scale: { max, minLabel: cfg.minLabel ?? '1', maxLabel: cfg.maxLabel ?? String(max) }, // W-24: the chip surface's scale + anchors
     opener: cfg.opener,
     offersSubstance: () => true,
     gather() {},
@@ -738,6 +744,17 @@ export function administeredStage(cfg: AdministeredConfig): StageDef {
       else b.reply = cfg.deliverItem(n);
     },
   };
+}
+
+// W-24 — the chip signal for a turn, derived from the RESULTING active stage. One rule covers every administered ask:
+// the opener (item 0), each delivered item, and a re-prompt all leave b.stage on the administered stage → emit its
+// scale; completion advances b.stage off it (or sets complete) → no chips (the close is prose). This is why the signal
+// is computed from state, not per-reply-path: it can't miss an ask or leak onto a close.
+export function scaleExpects(arc: ArcConfig, stageId: StageId, complete: boolean): ScaleExpectation | undefined {
+  if (complete) return undefined;
+  const s = arc.stages[stageId];
+  if (s?.mode !== 'administered' || !s.scale) return undefined;
+  return { kind: 'scale', min: 1, max: s.scale.max, minLabel: s.scale.minLabel, maxLabel: s.scale.maxLabel };
 }
 
 // Build the persisted ConvState from a Beat — the single place the turn's state shape is assembled. The current
@@ -1099,6 +1116,8 @@ function grintaClose(composite: number): string {
 const grintaStage: StageDef = administeredStage({
   id: 'grinta',
   itemCount: ONBOARDING_BASELINE_ITEMS.length, // 12
+  minLabel: 'not at all', // W-24: chip anchors — the frozen Grinta 1–5 poles
+  maxLabel: 'completely',
   opener: () => grintaSurveyOpener(), // the 4Rs intro + scale + item 0, delivered when Reclaim hands in
   deliverItem: (n) => grintaDeliver(n),
   reprompt: (n) => grintaReprompt(n),
@@ -1212,7 +1231,8 @@ export function runArcTurn(
     b.awaitingConfirm = false; // administered stages have no reflect-confirm loop
     const early = stageDef.administer(b);
     if (early) return early;
-    return { reply: b.reply, state: beatState(b), complete: b.complete, ...(b.declined ? { declined: true } : {}) };
+    const expects = scaleExpects(arc, b.stage, b.complete); // W-24: still on the instrument (next item) → chips; completed → prose close
+    return { reply: b.reply, state: beatState(b), complete: b.complete, ...(b.declined ? { declined: true } : {}), ...(expects && { expects }) };
   }
 
   // COACH stages (§B3, Decision PP) also run OFF the depth kernel: the model owns the coaching conversation and the
@@ -1270,7 +1290,8 @@ export function runArcTurn(
     b.reply = `${leads[history.length % leads.length]} ${b.reply}`;
   }
 
-  return { reply: b.reply, state: beatState(b), complete: b.complete, ...(b.declined ? { declined: true } : {}) };
+  const expects = scaleExpects(arc, b.stage, b.complete); // W-24: a draw-out stage that just handed INTO an administered stage delivers item 0 → chips
+  return { reply: b.reply, state: beatState(b), complete: b.complete, ...(b.declined ? { declined: true } : {}), ...(expects && { expects }) };
 }
 
 // The onboarding turn — config #1 on the generic kernel. The public signature is unchanged (callers/fixtures

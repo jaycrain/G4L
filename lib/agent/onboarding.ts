@@ -182,7 +182,13 @@ export type RevisionKind = 'correct' | 'widen' | 'name';
 export type DoorRevision = { kind: RevisionKind; toSlug: DoorSlug; fromSlug?: DoorSlug; flatMislabel?: boolean; mechanical?: boolean };
 export type ReseeingTell = { toSlug: DoorSlug; fromSlug?: DoorSlug }; // fromSlug set for a correct (a pair); absent for an add
 
-export type Turn = { reply: string; state: ConvState; complete: boolean; crisis?: boolean; declined?: boolean };
+// W-24 — an administered turn tells the client the member's next answer is a fixed-scale pick, so the surface can offer
+// tappable chips instead of a free-text number box (the mis-scaling fix: a member can't answer a 1–7 item on a 1–5
+// mental model when the scale is on the buttons). Set on every administered ask (opener / item / re-prompt), absent once
+// the instrument completes. The two labels are the instrument's own pole anchors (e.g. "not at all true" → "very true").
+export type ScaleExpectation = { kind: 'scale'; min: number; max: number; minLabel: string; maxLabel: string };
+
+export type Turn = { reply: string; state: ConvState; complete: boolean; crisis?: boolean; declined?: boolean; expects?: ScaleExpectation };
 
 export const INITIAL_STATE: ConvState = { stage: 'identity', collected: {} };
 

@@ -8,7 +8,7 @@
 // Flag-gated by REWIRE (Decision JJ) — OFF by default; prod keeps the v1 static Rewire until the v2.3 flip.
 // COPY: final, Jay-approved. "Jay" stays third-person, named (founder presence).
 
-import { runArcTurn, administeredStage, type ArcConfig, type StageDef } from './onboarding-staged.ts';
+import { runArcTurn, administeredStage, scaleExpects, type ArcConfig, type StageDef } from './onboarding-staged.ts';
 import { memberClosingReclaim } from './onboarding-intent.ts';
 import { identityLabel } from '../member/identity.ts';
 import { consolidateReclaimList } from '../member/reclaim.ts';
@@ -823,6 +823,8 @@ function rewireCheckpointOpener(): string {
 const rewireCheckpointStage: StageDef = administeredStage({
   id: 'checkpoint',
   itemCount: CHECKPOINT_COMMITMENT_ITEMS.length, // 6
+  minLabel: 'not at all', // W-24: chip anchors — the frozen Grinta 1–5 poles
+  maxLabel: 'completely',
   opener: () => rewireCheckpointOpener(),
   deliverItem: (n) => rewireCheckpointDeliver(n),
   reprompt: (n) => `Just a number, 1 to 5 — how true does that feel right now?\n\n${rewireCheckpointDeliver(n)}`,
@@ -862,7 +864,7 @@ export function applyRewireCheckpointTurn(state: ConvState, history: ConvMessage
 }
 
 export function rewireCheckpointOpening(): Turn {
-  return { reply: rewireCheckpointOpener(), state: { stage: 'checkpoint', collected: {} }, complete: false };
+  return { reply: rewireCheckpointOpener(), state: { stage: 'checkpoint', collected: {} }, complete: false, expects: scaleExpects(REWIRE_CHECKPOINT_ARC, 'checkpoint', false) };
 }
 
 // The Checkpoint is ADMINISTERED (deterministic Likert parse) — no model call needed. The action passes empty text.

@@ -558,6 +558,8 @@ but it NEVER grades or pathologizes. Hard rules:
 const measurementStage: StageDef = administeredStage({
   id: 'measurement',
   itemCount: TOTAL_ITEMS,
+  minLabel: 'not at all', // W-24: chip anchors — the frozen IDQ 1–5 poles (IDQ_SCALE_HINT)
+  maxLabel: 'completely',
   opener: () => idqOpen(), // the warm open + item 0, delivered when Doors hands in
   deliverItem: (n) => deliverIdqItem(n),
   reprompt: (n) => `${IDQ_REPROMPT}\n\n${itemStem(n)}`,
@@ -590,6 +592,8 @@ const CHECKPOINT_CLOSE =
 const checkpointStage: StageDef = administeredStage({
   id: 'checkpoint',
   itemCount: CHECKPOINT_GRIT_ITEMS.length, // 6
+  minLabel: 'not at all', // W-24: chip anchors — the frozen Grinta 1–5 poles
+  maxLabel: 'completely',
   opener: () => checkpointOpener(),
   deliverItem: (n) => checkpointDeliver(n),
   reprompt: (n) => checkpointReprompt(n),

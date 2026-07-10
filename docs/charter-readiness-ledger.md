@@ -21,9 +21,9 @@ Status legend: 🟢 closed (fixed + deployed + testing bar met) · 🟡 fixed/de
 | :--- | :---: | :---: | :---: | :---: |
 | T1 · copy | 6 | 6 | 0 | 0 |
 | T2 · flow | 15 | 11 | 1 | 3 |
-| T3 · data | 6 | 2 | 1 | 3 |
+| T3 · data | 6 | 3 | 1 | 2 |
 | T4 · gov/design | 4 | 1 | 0 | 3 |
-| **Total** | **31** | **20** | **2** | **9** |
+| **Total** | **31** | **21** | **2** | **8** |
 
 **CROSS-ARC PATTERN (the batch's biggest theme):** "engine + model both contribute a question/beat → stacking" now
 spans onboarding (W-02/W-08, CLOSED), Reconnect (W-14), and Rewire (W-18/W-19). One structural discipline — *the model
@@ -255,8 +255,15 @@ a generic "back to dashboard."_
   component: N chips (1..max) WITH anchor labels (e.g. "1 Not at all … 7 Very true") so it's fully self-documenting,
   the engine already knows each instrument's scale (parameterized administered factory), the chat just needs to signal
   "this turn expects a 1..N scale pick" so the client renders chips instead of the text box. Covers IDQ, B1, B2,
-  Reconnect measurement, C2/C3, grit checkpoints. **Open — FIX-BEFORE-CHARTER priority (#1, above the flow-polish batch
-  — it corrupts real scores).**
+  Reconnect measurement, C2/C3, grit checkpoints. **✅ CLOSED (2026-07-10) — BUILT + tsc/628-green + component render
+  proven live.** The engine emits a `ScaleExpectation` (`{kind:'scale',min,max,minLabel,maxLabel}`) from a single kernel
+  point in `runArcTurn` (derived from the resulting administered stage — covers opener / item / re-prompt, absent on the
+  prose close), plus each arc's opening fn; anchors live per-instrument on the `administeredStage` config. Shared
+  `app/components/scale-chips.tsx` (Option A: rounded-square number row 1..max, teal-fill on pick, pole anchors under the
+  ends, Barlow) renders on EVERY administered surface — onboarding (Grinta), Reconnect (IDQ + §2e grit), Rewire
+  checkpoint, Rebuild B1/B2/B4, Reclaim C1/C2/C4, and the standalone IDQ retake. The free-text box stays beneath (nothing
+  lost). Test: `tests/scale-expects.test.ts`. _Recommend the founder re-do B1 after this deploys so the "why" baseline is
+  scored on the right scale._
 
 - **W-15 🔴 Reconnect Doors session has NO resume — a refresh/navigation loses the excavation** — the Doors (and the
   rest of the Reconnect arc) conversation is CLIENT-HELD only: [reconnect-chat.tsx:22-23](app/reconnect/reconnect-chat.tsx)
