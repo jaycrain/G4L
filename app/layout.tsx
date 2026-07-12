@@ -35,11 +35,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <main>
           <div className="brand-bar">
-            {/* W-47a: the logo is the home button — '/' redirects an authed member to their dashboard, so this is a
-                universal "way out" of any instrument/session on every page. */}
+            {/* W-47a: the logo is the home button — '/' redirects an authed member to their dashboard. Two SEPARATE
+                links keep the brand-bar's space-between layout (wordmark left, bullseye right) while both stay tappable. */}
             <Link href="/" className="brand-home" aria-label="Go to your G4L home">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img className="brand-wordmark" src="/brand/g4l-wordmark.svg" alt="Grinta for Life" />
+            </Link>
+            <Link href="/" className="brand-home" aria-hidden="true" tabIndex={-1}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img className="brand-mark" src="/brand/g4l-rings.svg" alt="" aria-hidden="true" />
             </Link>
