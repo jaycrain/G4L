@@ -27,12 +27,15 @@ function replayStaged(steps: Step[], from: ConvState = { stage: 'identity', coll
 function assertHandsToGrinta(turn: Turn) {
   assert.equal(turn.complete ?? false, false, 'Reclaim hands into the Grinta survey, not straight to the card');
   assert.equal(turn.state.stage, 'grinta');
-  assert.match(turn.reply, /1 \(not at all\) to 5|1 of 12/i, 'the survey opener + first item are delivered');
+  assert.match(turn.reply, /1 \(not at all\) to 5/i, 'the survey opener + first item are delivered');
+  // W-48: the "n of 12" cue moved from the bubble to the chip signal — the opener is the first item (Question 1 of 12).
+  assert.equal(turn.expects?.index, 1, 'chip signal: first item');
+  assert.equal(turn.expects?.total, 12, 'chip signal: 12-item length');
   // Copy v2: the Phases intro and the pre-survey framing are TWO beats (two bubbles), split on BEAT_SEP.
   const bubbles = turn.reply.split(BEAT_SEP);
   assert.equal(bubbles.length, 2, 'the opener is two beats — the Phases intro | the pre-survey framing + first item');
   assert.match(bubbles[0]!, /Four Phases/i, 'bubble 1 = the Phases intro');
-  assert.match(bubbles[1]!, /1 \(not at all\) to 5[\s\S]*1 of 12/i, 'bubble 2 = the pre-survey framing + the first item');
+  assert.match(bubbles[1]!, /1 \(not at all\) to 5/i, 'bubble 2 = the pre-survey framing + the first item');
 }
 // Answer the 12-item survey with `val` (default 3); returns the final (completing) turn.
 function walkSurvey(state: ConvState, history: ConvMessage[] = [], val = 3): Turn {

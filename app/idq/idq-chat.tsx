@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { idqOpening, idqRespond, type IdqConvState } from '../../lib/agent/idq-conversation.ts';
+import { TOTAL_ITEMS } from '../../lib/idq/instrument.ts';
 import { submitIdqResponses } from './actions.ts';
 import ScaleChips from '../components/scale-chips.tsx';
 import type { ScaleExpectation } from '../../lib/agent/onboarding.ts';
@@ -10,7 +11,7 @@ import type { ScaleExpectation } from '../../lib/agent/onboarding.ts';
 type Msg = { role: 'agent' | 'member'; text: string };
 
 // W-24 — the IDQ administers a 1–5 item every turn until it completes, so the scale is constant. Match the surface's
-// own anchor copy ("1 if it's not landing at all, 5 if it's dead-on").
+// own anchor copy ("1 if it's not landing at all, 5 if it's dead-on"). W-48: index/total added per-render from state.
 const IDQ_EXPECTS: ScaleExpectation = { kind: 'scale', min: 1, max: 5, minLabel: 'not landing at all', maxLabel: 'dead-on' };
 
 export default function IdqChat({ memberId }: { memberId: string }) {
@@ -71,8 +72,12 @@ export default function IdqChat({ memberId }: { memberId: string }) {
           </button>
         </div>
       ) : (
-        /* W-32: every IDQ turn is a 1–5 item — the chips ARE the input (autosend); no text box (closes the mis-scaling hole). */
-        <ScaleChips expects={IDQ_EXPECTS} disabled={pending} onPick={(n) => void submit(String(n))} />
+        /* W-32/W-48: chips ARE the input (autosend, no text box) + a live "Question n of 24" cue from the answered count. */
+        <ScaleChips
+          expects={{ ...IDQ_EXPECTS, index: state.responses.length + 1, total: TOTAL_ITEMS }}
+          disabled={pending}
+          onPick={(n) => void submit(String(n))}
+        />
       )}
     </>
   );

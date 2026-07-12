@@ -35,6 +35,8 @@ main:has(.dock-open) { max-width: 1240px; }
 
 /* Brand lockup — quiet, persistent product identity at the top of every page */
 .brand-bar { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-bottom: 1.15rem; }
+/* W-47a: the logo lockup is a home link — keep the wordmark + mark together, no link styling. */
+.brand-home { display: inline-flex; align-items: center; gap: 0.5rem; text-decoration: none; }
 .brand-wordmark { height: 2.45rem; width: auto; display: block; flex: none; }
 .brand-mark { width: 39px; height: 39px; border-radius: 50%; display: block; flex: none; }
 
@@ -365,6 +367,8 @@ ul.program { list-style: none; padding: 0; margin: 0; }
    (the mis-scaling fix). Rounded squares, teal outline; hover tints, the picked chip fills teal; the instrument's own
    pole anchors sit under the two ends. Reused across every arc's chat surface. */
 .scale-chips { margin-top: 0.65rem; }
+/* W-48: the universal "Question n of y" length cue above the chips. */
+.scale-chips-progress { margin: 0 0 0.4rem; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; color: var(--navy); opacity: 0.6; }
 .scale-chips-row { display: flex; gap: 0.4rem; flex-wrap: wrap; }
 .scale-chip {
   flex: 1 1 0; min-width: 42px; padding: 0.6rem 0; margin: 0;

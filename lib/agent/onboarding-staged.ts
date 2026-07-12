@@ -675,7 +675,7 @@ export interface StageDef {
   forceProgress?: StageHandler; // the runaway backstop's per-stage action (early-return Turn, or mutate + fall through)
   administer?: StageHandler; // ADMINISTERED stages (§2c: validated instruments) — runs OFF the depth kernel (below)
   coach?: StageHandler; // COACH stages (B3, Decision PP) — model coaches, engine holds the completeness contract; OFF the kernel
-  scale?: { max: number; minLabel: string; maxLabel: string }; // W-24: an administered stage's fixed Likert scale + its pole anchors, so the kernel can emit a ScaleExpectation for the chip surface
+  scale?: { max: number; minLabel: string; maxLabel: string; itemCount: number }; // W-24/W-48: an administered stage's fixed Likert scale + anchors + length, so the kernel emits a ScaleExpectation (incl. "n of total") for the chip surface
 }
 
 export interface ArcConfig {
@@ -726,7 +726,7 @@ export function administeredStage(cfg: AdministeredConfig): StageDef {
   return {
     id: cfg.id,
     mode: 'administered',
-    scale: { max, minLabel: cfg.minLabel ?? '1', maxLabel: cfg.maxLabel ?? String(max) }, // W-24: the chip surface's scale + anchors
+    scale: { max, minLabel: cfg.minLabel ?? '1', maxLabel: cfg.maxLabel ?? String(max), itemCount: cfg.itemCount }, // W-24/W-48: the chip surface's scale + anchors + length
     opener: cfg.opener,
     offersSubstance: () => true,
     gather() {},
@@ -750,11 +750,12 @@ export function administeredStage(cfg: AdministeredConfig): StageDef {
 // the opener (item 0), each delivered item, and a re-prompt all leave b.stage on the administered stage → emit its
 // scale; completion advances b.stage off it (or sets complete) → no chips (the close is prose). This is why the signal
 // is computed from state, not per-reply-path: it can't miss an ask or leak onto a close.
-export function scaleExpects(arc: ArcConfig, stageId: StageId, complete: boolean): ScaleExpectation | undefined {
+export function scaleExpects(arc: ArcConfig, stageId: StageId, complete: boolean, answered = 0): ScaleExpectation | undefined {
   if (complete) return undefined;
   const s = arc.stages[stageId];
   if (s?.mode !== 'administered' || !s.scale) return undefined;
-  return { kind: 'scale', min: 1, max: s.scale.max, minLabel: s.scale.minLabel, maxLabel: s.scale.maxLabel };
+  // W-48: the item being ASKED is the (answered+1)th of the instrument's length — the universal "Question n of y" cue.
+  return { kind: 'scale', min: 1, max: s.scale.max, minLabel: s.scale.minLabel, maxLabel: s.scale.maxLabel, index: answered + 1, total: s.scale.itemCount };
 }
 
 // Build the persisted ConvState from a Beat — the single place the turn's state shape is assembled. The current
@@ -1095,9 +1096,10 @@ function grintaReprompt(index: number): string {
   return `A number from 1 to 5 is all I need here — 1 is “not at all,” 5 is “completely.”\n\n${grintaDeliver(index)}`;
 }
 
-// Deliver the item at 0-based `index`, with a light "n of 12" progress cue.
+// Deliver the item at 0-based `index`. W-48: the "n of 12" progress cue moved to the chip surface (universal across
+// all instruments via the ScaleExpectation index/total), so it's no longer prefixed here — it would double up.
 function grintaDeliver(index: number): string {
-  return `${index + 1} of 12\n\n“${grintaStem(ONBOARDING_BASELINE_ITEMS[index]!)}”`;
+  return `“${grintaStem(ONBOARDING_BASELINE_ITEMS[index]!)}”`;
 }
 
 // The completion beat — folds the whole-picture commit handoff (the confirmation card is rendered client-side from
@@ -1151,7 +1153,10 @@ function enterGrintaSurvey(b: Beat): Turn {
   b.stage = 'grinta';
   b.awaitingConfirm = false;
   b.reply = grintaSurveyOpener();
-  return { reply: b.reply, state: beatState(b), complete: false };
+  // W-24/W-48: this is the ONLY path into the grinta survey (natural confirm AND the runaway/ceiling backstop), so emit
+  // the chip signal (+ "Question 1 of 12") here — otherwise a force-progressed member gets the text box for item 1.
+  const expects = scaleExpects(b.arc, b.stage, false, b.administeredResponses.length);
+  return { reply: b.reply, state: beatState(b), complete: false, ...(expects && { expects }) };
 }
 
 const ONBOARDING_ARC: ArcConfig = {
@@ -1233,7 +1238,7 @@ export function runArcTurn(
     b.awaitingConfirm = false; // administered stages have no reflect-confirm loop
     const early = stageDef.administer(b);
     if (early) return early;
-    const expects = scaleExpects(arc, b.stage, b.complete); // W-24: still on the instrument (next item) → chips; completed → prose close
+    const expects = scaleExpects(arc, b.stage, b.complete, b.administeredResponses.length); // W-24/W-48: next item → chips (+ "n of y"); completed → prose close
     return { reply: b.reply, state: beatState(b), complete: b.complete, ...(b.declined ? { declined: true } : {}), ...(expects && { expects }) };
   }
 
@@ -1292,7 +1297,7 @@ export function runArcTurn(
     b.reply = `${leads[history.length % leads.length]} ${b.reply}`;
   }
 
-  const expects = scaleExpects(arc, b.stage, b.complete); // W-24: a draw-out stage that just handed INTO an administered stage delivers item 0 → chips
+  const expects = scaleExpects(arc, b.stage, b.complete, b.administeredResponses.length); // W-24/W-48: a draw-out stage handing INTO an administered stage delivers item 0 → chips (+ "n of y")
   return { reply: b.reply, state: beatState(b), complete: b.complete, ...(b.declined ? { declined: true } : {}), ...(expects && { expects }) };
 }
 

@@ -186,7 +186,8 @@ export type ReseeingTell = { toSlug: DoorSlug; fromSlug?: DoorSlug }; // fromSlu
 // tappable chips instead of a free-text number box (the mis-scaling fix: a member can't answer a 1–7 item on a 1–5
 // mental model when the scale is on the buttons). Set on every administered ask (opener / item / re-prompt), absent once
 // the instrument completes. The two labels are the instrument's own pole anchors (e.g. "not at all true" → "very true").
-export type ScaleExpectation = { kind: 'scale'; min: number; max: number; minLabel: string; maxLabel: string };
+// W-48: `index`/`total` let the chip surface show a universal "Question n of y" length cue (optional — shown only when both are set).
+export type ScaleExpectation = { kind: 'scale'; min: number; max: number; minLabel: string; maxLabel: string; index?: number; total?: number };
 
 export type Turn = { reply: string; state: ConvState; complete: boolean; crisis?: boolean; declined?: boolean; expects?: ScaleExpectation };
 

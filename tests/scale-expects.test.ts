@@ -15,6 +15,19 @@ test('B1 opener carries the scale chips signal — full scale + the instrument�
   assert.equal(t.expects!.max, WHY_SCALE_MAX, 'the SDT 1–7 ceiling — NOT the default 5 (the exact bug Jay hit)');
   assert.equal(t.expects!.minLabel, 'not at all true');
   assert.equal(t.expects!.maxLabel, 'very true');
+  // W-48: the universal "Question n of y" cue rides the same signal — the opener is item 1 of the instrument's length.
+  assert.equal(t.expects!.index, 1, 'opener is Question 1');
+  assert.equal(t.expects!.total, WHY_ITEM_COUNT, 'total = the instrument length (12)');
+});
+
+test('B1 progress · the chip signal advances index as items are answered', () => {
+  let t = rebuildB1Opening();
+  assert.equal(t.expects!.index, 1);
+  t = applyRebuildB1Turn(t.state, [], '5');
+  assert.equal(t.expects!.index, 2, 'after answering item 1, the cue reads Question 2');
+  assert.equal(t.expects!.total, WHY_ITEM_COUNT);
+  t = applyRebuildB1Turn(t.state, [], 'gibberish'); // re-prompt: same item, same index
+  assert.equal(t.expects!.index, 2, 're-prompt holds the same question number');
 });
 
 test('B1 mid-instrument · each answered item hands the NEXT item’s chips; the final item drops them', () => {

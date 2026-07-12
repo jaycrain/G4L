@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { Barlow } from 'next/font/google';
+import Link from 'next/link';
 import './globals.css';
 import PwaClient from './pwa-client.tsx';
 import FeedbackLauncher from './feedback-launcher.tsx';
@@ -34,10 +35,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <main>
           <div className="brand-bar">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img className="brand-wordmark" src="/brand/g4l-wordmark.svg" alt="Grinta for Life" />
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img className="brand-mark" src="/brand/g4l-rings.svg" alt="" aria-hidden="true" />
+            {/* W-47a: the logo is the home button — '/' redirects an authed member to their dashboard, so this is a
+                universal "way out" of any instrument/session on every page. */}
+            <Link href="/" className="brand-home" aria-label="Go to your G4L home">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img className="brand-wordmark" src="/brand/g4l-wordmark.svg" alt="Grinta for Life" />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img className="brand-mark" src="/brand/g4l-rings.svg" alt="" aria-hidden="true" />
+            </Link>
           </div>
           {children}
         </main>

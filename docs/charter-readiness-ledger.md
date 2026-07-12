@@ -593,3 +593,12 @@ fns + replay fixtures + pglite finalize asserts) — the more mechanically fixab
   measurement instrument. _Fix (clean, single point): add item position to the `expects`/`ScaleExpectation` signal (W-24
   engine already emits it from one kernel spot; administeredStage knows itemCount + responses.length) and render "Question
   n of y" in the shared `ScaleChips` — covers ALL instruments at once._ **Open — quick win.**
+
+- **W-47a 🟢 SHIPPED — logo is the home button.** `app/layout.tsx` brand-bar logo wrapped in `<Link href="/">` (‘/’
+  redirects an authed member to their dashboard) → universal "way out" on every page/instrument. (W-47b per-turn resume
+  for the administered arcs remains the deeper follow-up.)
+- **W-48 🟢 SHIPPED — universal "Question n of y" on every instrument.** Added `index`/`total` (optional) to the
+  `ScaleExpectation`; `administeredStage` carries `itemCount`; `scaleExpects(…, answered)` computes position; the shared
+  `ScaleChips` renders the cue. Grinta's ad-hoc bubble "n of 12" removed (now single-sourced on the chips). IDQ (separate
+  flow) computes it per-render from `responses.length` + `TOTAL_ITEMS`. Also set `expects` in `enterGrintaSurvey` (the
+  sole grinta entry) — fixed a latent gap where a force-progressed member got the text box for item 1. tsc + 648 green.

@@ -15,13 +15,16 @@ test('grinta stage · an unclear (non 1–5) answer RE-ASKS the current item, re
   assert.equal(turn.state.stage, 'grinta');
   assert.deepEqual(turn.state.administeredResponses, [3, 4], 'nothing recorded on an unclear answer');
   assert.match(turn.reply, /number from 1 to 5/i, 'gently re-asks with the 1–5 scale');
-  assert.match(turn.reply, /3 of 12/, 're-delivers the CURRENT item (index 2 → "3 of 12")');
+  // W-48: the "n of y" cue moved from the bubble to the chip signal — re-ask is still the CURRENT item (index 2 → 3 of 12).
+  assert.equal(turn.expects?.index, 3, 're-delivers the CURRENT item as "Question 3 of 12"');
+  assert.equal(turn.expects?.total, 12);
 });
 
 test('grinta stage · a valid 1–5 records and advances to the next item', () => {
   const turn = applyStagedTurn(midSurvey(), [], '5', { text: '' });
   assert.deepEqual(turn.state.administeredResponses, [3, 4, 5]);
-  assert.match(turn.reply, /4 of 12/, 'delivers the next item');
+  assert.equal(turn.expects?.index, 4, 'the chip signal advances to "Question 4 of 12"');
+  assert.equal(turn.expects?.total, 12);
 });
 
 // Walk all 12 items with a per-strand pattern and assert the baseline scores correctly THROUGH the engine.

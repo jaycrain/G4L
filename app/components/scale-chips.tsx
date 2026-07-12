@@ -32,6 +32,10 @@ export default function ScaleChips({
 
   return (
     <div className="scale-chips" role="group" aria-label="Pick a number on the scale">
+      {/* W-48: universal length cue — "Question n of y" on every measurement instrument (when the engine supplies it). */}
+      {expects.index != null && expects.total != null && (
+        <p className="scale-chips-progress">Question {expects.index} of {expects.total}</p>
+      )}
       <div className="scale-chips-row">
         {nums.map((n) => (
           <button
