@@ -1,9 +1,11 @@
 import type { Metadata, Viewport } from 'next';
 import { Barlow } from 'next/font/google';
 import Link from 'next/link';
+import { Suspense } from 'react';
 import './globals.css';
 import PwaClient from './pwa-client.tsx';
 import FeedbackLauncher from './feedback-launcher.tsx';
+import BackToDashboard from './components/back-to-dashboard.tsx';
 
 const barlow = Barlow({
   subsets: ['latin'],
@@ -46,6 +48,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <img className="brand-mark" src="/brand/g4l-rings.svg" alt="" aria-hidden="true" />
             </Link>
           </div>
+          {/* W-47: universal "← Dashboard" on every member subpage + Session (Suspense for the IDQ's ?member= query read). */}
+          <Suspense fallback={null}>
+            <BackToDashboard />
+          </Suspense>
           {children}
         </main>
         <footer className="confidential-footer">

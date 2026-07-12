@@ -617,3 +617,10 @@ fns + replay fixtures + pglite finalize asserts) — the more mechanically fixab
   toward the floor) + W-46 (gap seeding surfaces more REAL wants). Remaining: an explicit "offer resume on a bail-out
   intent" affordance — a smaller optional follow-up (onboarding already persists + resumes). Not blocking.
 - tsc + 653 green.
+
+- **W-47a EXTENDED — universal "← Dashboard" back affordance (subpages + Sessions).** One global client component
+  `app/components/back-to-dashboard.tsx` in the root layout (Suspense-wrapped for the IDQ's `?member=` query read):
+  extracts the member UUID from the path (all `/[memberId]/…` routes) OR the query (IDQ), renders "← Dashboard" →
+  `/dashboard/{id}` on every member page, and nothing on the dashboard itself / login / onboarding / admin. Verified in
+  dev: present on a Session (reclaim C1 → correct dashboard href), absent on /login. tsc + 653 green. Covers every
+  subpage + Session automatically (incl. future routes). **Shipped.**
