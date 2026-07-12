@@ -27,3 +27,15 @@ test('joinGapChapters · handles the founder re-walk shape (no run-on across app
   assert.equal(gap, 'Work consumed me. It also caused stress in my marriage');
   assert.ok(!/me It/.test(gap), 'no bare-space run-on');
 });
+
+// W-45: a progressive revealer's gap should GROW, not repeat. An exact re-paste of an already-captured chapter is
+// dropped; a DISTINCT new chapter is always appended (never dropped).
+test('joinGapChapters · drops an exact re-paste, keeps distinct chapters', () => {
+  const prev = 'The layoff hit first. Then the household load piled on.';
+  assert.equal(joinGapChapters(prev, 'Then the household load piled on.'), prev, 'exact re-paste is not re-appended');
+  assert.equal(
+    joinGapChapters(prev, "My mother's illness was the last straw"),
+    `${prev} My mother's illness was the last straw`,
+    'a distinct new chapter is appended',
+  );
+});

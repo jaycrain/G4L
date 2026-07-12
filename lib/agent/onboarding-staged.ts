@@ -318,6 +318,10 @@ export function joinGapChapters(prev: string, next: string): string {
   const n = (next ?? '').trim();
   if (!p) return n;
   if (!n) return p;
+  // W-45: a progressive revealer's gap should GROW, not repeat — if the new chapter is already present verbatim
+  // (an exact re-paste of what was captured), don't append it again. Conservative: exact-substring only, so distinct
+  // new chapters (layoff → household → illness) are never dropped.
+  if (p.includes(n)) return p;
   return /[.!?]$/.test(p) ? `${p} ${n}` : `${p}. ${n}`;
 }
 
@@ -507,8 +511,28 @@ function resolvePendingShape(b: Beat, pending: PendingReclaimShape): string {
   return 'No rush — we can shape that one together anytime.';
 }
 
+// W-42 — the reclaim SHAPE GATE. Scott's cold walk committed his exit line "that's the end can i continue later?" as a
+// Reclaim item. Members STATE life-wants; they don't ask the agent questions or type navigation/assent. This rejects
+// SESSION-meta (pause/continue-later/how-long), bare assent/dissent, and agent-directed questions — WITHOUT touching real
+// behavior-change wants ("stop drinking", "quit smoking" have an object, so they pass). Pure + testable.
+const RECLAIM_ASSENT_RE = /^(ok(ay)?|yes|yeah|yep|yup|no|nope|nah|sure|fine|done|next|maybe|idk|dunno|i don'?t know|nothing( else)?|that'?s it|thanks?|thank you)[.!?]*$/i;
+const RECLAIM_META_EXIT_RE = /\b(continue (this )?later|come back (to (this|it) )?later|can (i|we) (continue|stop|pause|finish|do (this|the rest)) (later|another time|now)?|that'?s (the end|it for now|all for now|enough( for now)?)|i'?m done( (for now|for today|here))?|stop (here|now|for now|there|for today)|pause (here|for now)|(finish|do) (this|the rest) later|quit (for now|this)|take a break|are we (done|finished|almost done)|how (long|much longer|many more)|what'?s next|not right now)\b/i;
+
+// True if `text` is session-meta / assent / an agent-directed question — never a real Reclaim want.
+export function isProcessMetaOrAssent(text: string): boolean {
+  const t = (text ?? '').trim();
+  if (!t) return true;
+  if (RECLAIM_ASSENT_RE.test(t)) return true;
+  if (RECLAIM_META_EXIT_RE.test(t)) return true;
+  // A question aimed at the agent: starts with a question/modal word AND ends with '?'. (A real want is declarative;
+  // "riding again?" starts with a noun so it's spared.)
+  if (/\?\s*$/.test(t) && /^(can|could|should|would|will|do|does|did|is|are|am|how|what|when|where|why|may|shall)\b/i.test(t)) return true;
+  return false;
+}
+
 function appendReclaim(c: Collected, item: string, category = ''): boolean {
   const trimmed = item.trim();
+  if (isProcessMetaOrAssent(trimmed)) return false; // W-42: session-meta / assent / agent-question never joins the list
   const key = reclaimKey(trimmed);
   if (!key) return false;
   const list = c.reclaimList ?? [];
@@ -1351,7 +1375,9 @@ export const STAGED_TOOLS = [
       "NEVER rewrite it into the THIRD person about them ('they/their', or a guessed 'he/she') — that distances them " +
       "from their own story. Keep it first person, as they said it. W-33: write it as clean, correctly-spelled and " +
       "-punctuated prose (whole sentences, proper periods) — but ONLY fix mechanics; preserve their exact words, " +
-      "phrasing, and voice. Never paraphrase, reorder, smooth, or add. Call this once they've told you how it went.",
+      "phrasing, and voice. Never paraphrase, reorder, smooth, or add. W-45: compose the story ONCE — each part of it " +
+      "appears a SINGLE time; never re-tell or restate what you've already captured. As a member reveals more, the gap " +
+      "GROWS with the new part; it does not repeat the whole arc again. Call this once they've told you how it went.",
     input_schema: { type: 'object' as const, properties: { text: { type: 'string' } }, required: ['text'] },
   },
   {

@@ -602,3 +602,18 @@ fns + replay fixtures + pglite finalize asserts) — the more mechanically fixab
   `ScaleChips` renders the cue. Grinta's ad-hoc bubble "n of 12" removed (now single-sourced on the chips). IDQ (separate
   flow) computes it per-render from `responses.length` + `TOTAL_ITEMS`. Also set `expects` in `enterGrintaSurvey` (the
   sole grinta entry) — fixed a latent gap where a force-progressed member got the text box for item 1. tsc + 648 green.
+
+## Bucket B build (2026-07-11) — onboarding capture-quality
+- **W-42 🟢 BUILT+tested — reclaim SHAPE GATE.** `isProcessMetaOrAssent(text)` (pure, exported) rejects session-meta /
+  exit lines (Scott's "that's the end can i continue later?"), bare assent/dissent, and agent-directed questions —
+  gated at the TOP of `appendReclaim`, the single choke every add path funnels through (model tag, distill, late-add,
+  AND the under-tag BACKSTOP that force-captures the member message — exactly how Scott's junk got in). Tightly scoped:
+  behavior-change wants with an object ("stop drinking", "quit smoking") are KEPT. `tests/reclaim-shape-gate.test.ts`.
+- **W-45 🟢 BUILT — gap concision + dedup.** `set_gap` instructed to compose the story ONCE (each part a single time,
+  never re-tell — the gap GROWS with new parts, doesn't repeat the arc); + a deterministic exact-re-paste guard in
+  `joinGapChapters` (drops a verbatim-duplicate chapter, keeps distinct ones). Test added. _The concision prompt's
+  effect on model-composed bloat wants a re-walk eyeball; the dedup guard is deterministic._
+- **W-44 🟢 substantially COVERED** — the permissive/thin finalize's data core is fixed by W-42 (junk no longer counts
+  toward the floor) + W-46 (gap seeding surfaces more REAL wants). Remaining: an explicit "offer resume on a bail-out
+  intent" affordance — a smaller optional follow-up (onboarding already persists + resumes). Not blocking.
+- tsc + 653 green.
