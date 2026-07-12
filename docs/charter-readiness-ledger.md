@@ -567,3 +567,14 @@ fns + replay fixtures + pglite finalize asserts) — the more mechanically fixab
   REPLACE-with-latest-full-composition, not blindly append re-compositions; dedupe recurring beats. Distinct from W-33
   (which fixed join PUNCTUATION, not bloat)._ **Open — Bucket B (onboarding capture-quality).**
 - **W-33 mechanics CONFIRMED HOLDING** — Scott's full gap has clean sentences/periods, no run-ons. The fix works in the wild.
+
+- **W-46 🔴 FIXED (deployed) — reclaim capture now SEEDS from the gap + a garbled prompt repaired** — Scott named his
+  wants inside his gap ("lifting again, creating art, writing…") but the Reclaim List captured one item. ROOT (two parts):
+  (1) the reclaim stage instruction was **garbled** — a bad edit crossed sentence fragments ("build on BREATHE…",
+  "march. those, don't re-ask") → the model got incoherent guidance; (2) no directive to mine the gap for wants. _Fix:
+  rewrote the reclaim instruction — repaired the garble + added SEED-FROM-THE-GAP-FIRST (surface the wants the gap already
+  names, propose→confirm→add_reclaim_item, never start from zero). Exported `stageInstruction`; test
+  `reclaim-gap-seeding.test.ts` locks the seeding + garble-gone + preserved tag/concrete/end-question rules. tsc + 647
+  green._ _Bridges Bucket A (recall/build-from-prior) × Bucket B (capture)._ **Deployed — effect on live capture wants a
+  persona re-walk eyeball (the garble repair is an unambiguous win regardless).** _Still open in Bucket B: W-42 (reclaim
+  shape gate for junk/exit lines), W-44 (permissive finalize), W-45 (gap bloat/dedup)._

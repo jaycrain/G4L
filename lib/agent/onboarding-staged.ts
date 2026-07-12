@@ -1538,7 +1538,7 @@ all. There is no next step to pitch: when the beats are done the member sees a s
 If you feel the pull to tell them what comes next, don't — just reflect what they gave you and ask your one
 question. Naming an instrument here breaks the spell and is off-spec.`;
 
-function stageInstruction(stage?: Stage): string {
+export function stageInstruction(stage?: Stage): string {
   if (stage === 'gap')
     return (
       '\n\nCURRENT STAGE: how the gap opened. EXPLORE — draw out the story over a few exchanges (the sequence, ' +
@@ -1552,12 +1552,18 @@ function stageInstruction(stage?: Stage): string {
     );
   if (stage === 'reclaim')
     return (
-      '\n\nCURRENT STAGE: what they want back. Invite the things they want to reclaim and call add_reclaim_item ' +
-      'once per item (big or small — there are no wrong answers). If they already named some earlier, build on ' +
-      'BREATHE — draw out each want the way you drew out the gap, do NOT rush to collect a list. When they name ' +
-      'one, RECEIVE it: reflect it back, feel what it means to them, and (if vague) drill it concrete — then, and ' +
-      'only then, invite the next. One want at a time, with care; never a rote "what else?" march. ' +
-      "those, don't re-ask. Aim for a few; never pressure or interrogate — small things count.\n" +
+      '\n\nCURRENT STAGE: what they want back — the Reclaim List (what the whole program measures against; big or ' +
+      'small, there are no wrong answers).\n' +
+      'SEED FROM THE GAP FIRST (W-46, load-bearing): the fade story you just captured almost always NAMES what they ' +
+      'want back — the activities, roles, creative work, relationships, or the body they said they lost, miss, or are ' +
+      '"getting back to". Before inviting anything new, SURFACE those: reflect them and propose them as candidate items ' +
+      '("you named getting back to lifting, to creating, to writing — do those belong on your list?"), calling ' +
+      'add_reclaim_item for each one they affirm. If they already named some earlier, build on those — don\'t re-ask. ' +
+      'NEVER start the list from zero when the gap already holds their wants.\n' +
+      'THEN draw out what else, the way you drew out the gap — do NOT rush to collect a list. When they name one, ' +
+      'RECEIVE it: reflect it back, feel what it means to them, and (if vague) drill it concrete — then, and only then, ' +
+      'invite the next. One want at a time, with care; never a rote "what else?" march. Aim for a few; never pressure ' +
+      'or interrogate — small things count.\n' +
       'TAG EVERY WANT — this is load-bearing. Call add_reclaim_item the MOMENT a want is named, including any they ' +
       'volunteered earlier in the conversation (the gap beat). The Reclaim List is built ONLY from your tool calls, ' +
       'never from your prose — so if you reflect or list wants back to the member, EVERY item you name must already ' +
