@@ -518,3 +518,39 @@ _Updated as the walk continues. Every new observation gets an ID, a tier, and a 
   → run-on sentences); `set_gap` instructed to compose clean mechanics, voice preserved. Test on the founder's exact shape.
 - _Still OPEN (design session / watch): W-31, W-34, W-35, W-36, W-37, W-38(resolved-in-design), W-39, W-40, W-41, W-42;
   themes = stateless-arcs + honor-the-member/clear-handle + interpretive-label ceiling._
+
+## Scott Runkel cold walk (2026-07-11, post-W-33 deploy — first outside-expert account)
+- **W-43 🔴 `identity_paragraph` holds DOOR content in 2nd person (field conflation / off-target composition)** —
+  Scott's identity_paragraph = "The Door that opened the Fade was your marriage — not the ending alone…" (matches
+  primary_door=marriage). The identity-narrative field is describing his DOOR, not who "the Catalyst" is, and in second
+  person. _Data impact: YES — the stored/shown identity narrative is wrong content._ _Fix: verify what identity_paragraph
+  is meant to hold; ensure the identity composition centers the IDENTITY (natural-case, the member's own sense), not the
+  door/fade description. Check for a swap/conflation at finalize (flow.ts identityParagraph)._ **Open — new, from cold walk.**
+- **W-42 CONFIRMED 🔴 (was 🟡) — mis-captured list item in the wild.** Scott's Reclaim List committed his EXIT line
+  "that's the end can i continue later?" [self] as a want. No longer hypothetical — independent first walk. Reinforces:
+  the reclaim capture needs a shape check (member-stated WANT vs meta/exit/fragment) before an item joins the list.
+- **W-44 🔴 Finalize accepted a BAIL-OUT + a thin list — completion contract too permissive** — Scott tried to leave
+  ("that's the end, can I continue later?"); onboarding (a) captured that as a reclaim item and (b) FINALIZED him with
+  effectively ONE real want ("waking up… building a life I'm excited about"). A cold user who bailed mid-Reclaim got
+  committed with junk + a thin list (floor=1 passed, but soft aim ~7). _Data impact: YES — thin/dirty finalize._ _Fix:
+  the completion path should recognize a pause/exit intent (offer resume, not finalize) + not count meta/exit lines toward
+  the floor. Pairs with W-42 (shape check) + the resume gate (A-02)._ **Open — finalize-quality; from cold walk.**
+
+## DESIGN-SESSION SCOPE — two buckets (v2.5 re-walk + Scott cold walk)
+
+**Bucket A · Arc conversational texture** (from Jay's re-walk — how the arcs *talk*):
+- *Stateless arcs* (recall + build on prior captures, never re-collect cold): W-23, W-35, W-37, W-39, W-40.
+- *Honor-the-member / clear-handle* (don't railroad, fabricate, or leave no answerable handle): W-14, W-22, W-34, W-36, W-38.
+- *Interpretive-label ceiling* (reflect words back, don't declare who they are): W-39, W-20 (Greg ratifies wording).
+- W-38 resolved-in-design (single "ordinary day" reframe; Greg heads-up on his Window content).
+
+**Bucket B · Onboarding capture-quality** (from Scott's cold walk — what the intake *stores*):
+- W-42 🔴 reclaim shape check (member-stated WANT vs meta/exit/fragment) — CONFIRMED in the wild.
+- W-43 🔴 identity_paragraph holding Door content / off-target composition.
+- W-44 🔴 finalize too permissive (accepted a bail-out + a thin list; should offer resume, not commit).
+- Shared root: the onboarding capture commits almost anything typed near the end. One shape-gate + a stricter completion
+  contract closes W-42 + W-44 together; W-43 is a separate finalize-composition check. Pairs with the existing reclaim
+  shape gate (Decision II / reclaim-shape.ts) and the resume gate (A-02).
+
+_Bucket A = conversational design (needs Greg on posture/Window). Bucket B = capture engineering (testable: pure shape
+fns + replay fixtures + pglite finalize asserts) — the more mechanically fixable of the two._
