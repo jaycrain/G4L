@@ -554,3 +554,16 @@ _Updated as the walk continues. Every new observation gets an ID, a tier, and a 
 
 _Bucket A = conversational design (needs Greg on posture/Window). Bucket B = capture engineering (testable: pure shape
 fns + replay fixtures + pglite finalize asserts) — the more mechanically fixable of the two._
+
+- **W-43 RETRACTED (false alarm).** Full identity_paragraph is well-composed: opens with Door context, LANDS on the
+  identity ("The Catalyst is still there: the creator who comes alive when building toward something difficult…
+  That's the identity you're here to reclaim"). Second-person agent voice = intended format. NOT a mis-capture — the
+  earlier flag was a premature read of a truncated cell. No fix needed.
+- **W-45 🔴 Gap accumulation BLOAT/REPETITION — progressive revealer's gap re-tells the same arc 3–4×** — Scott's stored
+  intake_gap (~1500 words, shown on card + "Your full story") repeats the same beats multiple times ("responsibility
+  replaced intention" 3×, "solved problems for teams" 3×, "marriage ended after eighteen years" 3×, "stopped choosing
+  myself" 3×). The gap-accumulation appended each full re-telling instead of merging/replacing. _Data impact: YES —
+  bloated, redundant stored narrative the member reads back._ _Fix (T2, Bucket B): the gap accumulation should MERGE or
+  REPLACE-with-latest-full-composition, not blindly append re-compositions; dedupe recurring beats. Distinct from W-33
+  (which fixed join PUNCTUATION, not bloat)._ **Open — Bucket B (onboarding capture-quality).**
+- **W-33 mechanics CONFIRMED HOLDING** — Scott's full gap has clean sentences/periods, no run-ons. The fix works in the wild.
