@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getDb } from '../../../lib/db/index.ts';
 import { authorizeMember } from '../../authz.ts';
@@ -14,9 +13,6 @@ export default async function BadgesMorePage({ params }: { params: Promise<{ mem
 
   return (
     <>
-      <div className="crumb">
-        <Link href={`/dashboard/${memberId}`} className="back-link">← Dashboard</Link>
-      </div>
       <div className="hero"><h1>More about your Badges</h1></div>
       <div className="card sub-copy">
         <p className="sub-personal">You’ve earned <strong>{passport.earned} of {passport.total}</strong> so far.</p>

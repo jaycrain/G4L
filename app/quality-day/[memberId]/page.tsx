@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { getDb } from '../../../lib/db/index.ts';
 import { authorizeMember } from '../../authz.ts';
@@ -21,9 +20,6 @@ export default async function QualityDayPage({ params }: { params: Promise<{ mem
 
   return (
     <>
-      <div className="crumb">
-        <Link href={`/dashboard/${memberId}`} className="back-link">← Dashboard</Link>
-      </div>
       <div className="hero"><h1>Quality Days</h1></div>
       <div className="card">
         <p className="card-subtitle">

@@ -61,9 +61,6 @@ export default async function ConnectPage({
 
   return (
     <>
-      <div className="crumb">
-        <Link href={`/dashboard/${memberId}`} className="back-link">← Dashboard</Link>
-      </div>
       <div className="hero">
         <h1>G4L Community</h1>
         <p className="heromore">Reach out. Share the wins and the hard parts. Keep each other honest.</p>

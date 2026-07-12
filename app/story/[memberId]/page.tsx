@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getDb } from '../../../lib/db/index.ts';
 import { getDashboard } from '../../../lib/gateway/flow.ts';
@@ -18,9 +17,6 @@ export default async function StoryPage({ params }: { params: Promise<{ memberId
 
   return (
     <>
-      <div className="crumb">
-        <Link href={`/dashboard/${memberId}`} className="back-link">← Dashboard</Link>
-      </div>
       <div className="hero"><h1>Your full story</h1></div>
       <div className="card sub-copy">
         {dash?.identityParagraph ? (

@@ -18,9 +18,6 @@ export default async function FieldGuidePage({ params }: { params: Promise<{ mem
 
   return (
     <>
-      <div className="crumb">
-        <Link href={`/dashboard/${memberId}`} className="back-link">← Dashboard</Link>
-      </div>
       <div className="hero"><h1>Field Guide</h1></div>
 
       <div className="card">

@@ -74,9 +74,6 @@ export default async function ProgramPage({ params }: { params: Promise<{ member
 
   return (
     <>
-      <div className="crumb">
-        <Link href={`/dashboard/${memberId}`} className="back-link">← Dashboard</Link>
-      </div>
       <div className="hero"><h1>The Program</h1></div>
 
       <div className="card sub-copy">

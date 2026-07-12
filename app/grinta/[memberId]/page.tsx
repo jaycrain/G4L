@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getDb } from '../../../lib/db/index.ts';
 import { latestGrintaReading } from '../../../lib/grinta/survey/store.ts';
@@ -25,9 +24,6 @@ export default async function GrintaMorePage({ params }: { params: Promise<{ mem
 
   return (
     <>
-      <div className="crumb">
-        <Link href={`/dashboard/${memberId}`} className="back-link">← Dashboard</Link>
-      </div>
       <div className="hero"><h1>More about your Grinta Index</h1></div>
 
       {reading && (

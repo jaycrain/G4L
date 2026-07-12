@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getDb } from '../../lib/db/index.ts';
 import { currentMemberId } from '../auth.ts';
@@ -36,9 +35,6 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
 
   return (
     <>
-      <div className="crumb">
-        <Link href={`/dashboard/${memberId}`} className="back-link">← Dashboard</Link>
-      </div>
       <div className="member-greeting">
         {m.avatar_url ? (
           // eslint-disable-next-line @next/next/no-img-element

@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
 import type { PlaybookEntry, PlaybookSection } from '../../../lib/playbook/store.ts';
 import {
   loadPlaybookAction,
@@ -184,7 +183,6 @@ export default function PlaybookView({
 
   return (
     <>
-      <Link href={`/dashboard/${memberId}`} className="pb-back">← Dashboard</Link>
       <h1 className="pb-page-title">Your G4L Playbook</h1>
       <p className="pb-sub">The story you’re telling about yourself — and the plays that back it up</p>
       <p className="pb-intro">
