@@ -578,3 +578,18 @@ fns + replay fixtures + pglite finalize asserts) — the more mechanically fixab
   green._ _Bridges Bucket A (recall/build-from-prior) × Bucket B (capture)._ **Deployed — effect on live capture wants a
   persona re-walk eyeball (the garble repair is an unambiguous win regardless).** _Still open in Bucket B: W-42 (reclaim
   shape gate for junk/exit lines), W-44 (permissive finalize), W-45 (gap bloat/dedup)._
+
+## Scott Runkel iPad review (2026-07-11)
+- **W-47 🟡 No way OUT of a measurement instrument — no home/back affordance** — on the administered chat surfaces there's
+  no "← Dashboard" and the logos aren't clickable home; W-32 (chips-only, text box gone) made the locked-in feel more
+  acute. Scott: "no way out if you don't want to finish it in one sitting." _Two layers:_ **(a) W-47a quick win** — the
+  logo is global (`app/layout.tsx`) but a plain `<img>`; wrap it in `<Link href="/">` (‘/’ redirects an authed member to
+  their dashboard) → instant universal home button, one file. **(b) W-47b deeper** — leaving mid-instrument LOSES progress
+  on Rewire/Rebuild/Reclaim arcs (only onboarding + Reconnect persist per-turn, W-15); true "finish later" = extend the
+  `arc_session` persistence to those arcs (T3, DB). Instruments are short (~2-3 min) so the EXIT (a) matters more than
+  mid-instrument resume (b). **Open — ship (a) now; (b) lower-priority follow-up.**
+- **W-48 🟡 Progress "(question x of y)" not universal across instruments** — grinta baseline shows "n of 12"
+  (onboarding-staged.ts:1098 progress cue) but it's inconsistent across IDQ/B1-B4/C1-C4. Scott: signal length on EVERY
+  measurement instrument. _Fix (clean, single point): add item position to the `expects`/`ScaleExpectation` signal (W-24
+  engine already emits it from one kernel spot; administeredStage knows itemCount + responses.length) and render "Question
+  n of y" in the shared `ScaleChips` — covers ALL instruments at once._ **Open — quick win.**
