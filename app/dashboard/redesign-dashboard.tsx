@@ -21,6 +21,9 @@ import MeasureCard from './measure-card.tsx';
 import TrackThis from './track-this.tsx';
 import ConnectPanel from './connect-panel.tsx';
 import StravaConnect from '../account/strava-connect.tsx';
+import Threshold from './threshold.tsx';
+import PostCeremonyTour from './post-ceremony-tour.tsx';
+import { listPlaybook } from '../../lib/playbook/store.ts';
 
 // Redesign Layer 2 — the DASHBOARD CANVAS (build spec §2, v4c IA). Renders only behind REDESIGN. A parallel path: the
 // live dashboard is untouched. Wires Layer 1 (resolveHero + deriveRingState) into the stateful resume hero + merged
@@ -90,9 +93,47 @@ export default async function RedesignDashboard({ db, memberId, dash }: { db: Db
   const identitySelves = facets.length ? facets.join(' · ') : dash.identityNoun ? `the ${dash.identityNoun}` : null;
   const identityTitle = identitySelves ? `${HERO_VERB[activePhase] ?? 'Reconnecting'} ${identitySelves}` : 'Who you’re reclaiming lands here once you name it.';
 
+  // First-arrival THRESHOLD ceremony + the POST-CEREMONY TOUR — parity with the live dashboard (the redesign path
+  // returns early from page.tsx, so it must render these itself, or a new member lands with no ceremony/tour).
+  const pf = (
+    await db.query<{ threshold_crossed_at: unknown; tour_completed_at: unknown }>(
+      'select threshold_crossed_at, tour_completed_at from member_profile where member_id=$1',
+      [memberId],
+    )
+  ).rows[0];
+  const thresholdCrossed = !!pf?.threshold_crossed_at;
+  const tourCompleted = !!pf?.tour_completed_at;
+  const namedDoors =
+    doorNames.length <= 1 ? doorNames[0] ?? '' : `${doorNames.slice(0, -1).join(', ')} and ${doorNames[doorNames.length - 1]}`;
+  const doorsLine = doorNames.length
+    ? `Your Door${doorNames.length > 1 ? 's' : ''} — how the gap opened. You named ${namedDoors}.`
+    : 'Your Doors — how the gap opened, in your own words.';
+  const playbookSeeds = thresholdCrossed
+    ? []
+    : (await listPlaybook(db, memberId)).filter((e) => e.authorship === 'gathered').slice(0, 3).map((e) => e.body);
+  const thresholdData = {
+    identityNoun: dash.identityNoun,
+    doors: doorNames,
+    winCount: dash.reclaimList.length,
+    idScore: dash.score?.score ?? null,
+    dimensions: dash.score?.dimensions ?? null,
+    seeds: playbookSeeds,
+    firstMoveTitle: null,
+  };
+
   return (
     <>
       <RedesignChrome />
+      {!thresholdCrossed && <Threshold memberId={memberId} data={thresholdData} />}
+      {thresholdCrossed && (
+        <PostCeremonyTour
+          memberId={memberId}
+          firstName={firstName(dash.displayName)}
+          doorsLine={doorsLine}
+          nextSessionTitle={forecast.current?.openable ? forecast.current.title : null}
+          autoStart={!tourCompleted}
+        />
+      )}
       {/* Top bar — brand left, member + nav right (build spec §3 #1–2, carried over). */}
       <div className="redesign-topbar">
         <Link href="/" className="rt-brand" aria-label="Go to your G4L home">
@@ -121,7 +162,7 @@ export default async function RedesignDashboard({ db, memberId, dash }: { db: Db
 
       <RedesignShell memberId={memberId}>
         {/* Identity strip */}
-        <div className="rcard r-identity">
+        <div className="rcard r-identity" data-tour="doors">
           <div>
             <div className="ri-title">{identityTitle}</div>
             {doorNames.length > 0 && (
@@ -136,7 +177,7 @@ export default async function RedesignDashboard({ db, memberId, dash }: { db: Db
         </div>
 
         {/* Resume hero + merged ring (Layer 1 made visible) */}
-        <div className="r-hero">
+        <div className="r-hero" data-tour="program">
           <div className="rh-body">
             <div className="rh-eyebrow">{hero.eyebrow}</div>
             <h1 className="rh-title">{hero.title}</h1>
@@ -149,7 +190,7 @@ export default async function RedesignDashboard({ db, memberId, dash }: { db: Db
         </div>
 
         {/* Reclaim List — the fuel the program works toward */}
-        <div className="rcard r-reclaim">
+        <div className="rcard r-reclaim" data-tour="reclaim">
           <div className="rc-h">Your Reclaim List</div>
           <div className="rc-sub">What you’re taking back.</div>
           <ul className="r-reclaim-list">
@@ -209,7 +250,7 @@ export default async function RedesignDashboard({ db, memberId, dash }: { db: Db
 
         {/* The three registers — distinct instruments, compact summaries with See more → */}
         <div className="r-registers">
-          <div className="rcard r-reg">
+          <div className="rcard r-reg" data-tour="idscore">
             <div className="rreg-eyebrow">ID Score</div>
             <div className="rc-sub">How close you are to yourself.</div>
             {dash.score ? (

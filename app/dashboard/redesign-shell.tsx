@@ -114,7 +114,7 @@ export default function RedesignShell({ memberId, children }: { memberId: string
     <CompanionCtx.Provider value={{ open: focusComposer, showBadge: false }}>
       <div className="redesign-app">
         <div className="redesign-canvas">{children}</div>
-        <aside className="redesign-rail" aria-label="Your G4L Companion">
+        <aside className="redesign-rail" data-tour="companion" aria-label="Your G4L Companion">
           <div className="rrail-head">
             <div className="rrail-id">
               <span className="rrail-title">Your G4L Companion</span>

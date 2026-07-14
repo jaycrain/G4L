@@ -36,7 +36,7 @@ export default function PostCeremonyTour({
   // The spotlight walk — fixed sequence, words filled from the member's data. §7 voice (declare what it
   // is; no definitional negation). Ordered top-to-bottom by the shipped dashboard, ending near the foot
   // so the settle rises back up to the companion's home.
-  const stops: Stop[] = [
+  const allStops: Stop[] = [
     {
       target: 'program',
       line: nextSessionTitle
@@ -48,6 +48,9 @@ export default function PostCeremonyTour({
     { target: 'reclaim', line: "Your Reclaim List — what you're bringing back. The goals the work points at." },
     { target: 'doors', line: doorsLine },
   ];
+  // Only walk stops whose anchor exists on THIS dashboard — so the redesign (no Daily Beat panel) skips that stop
+  // instead of dimming to a spotlight-less line. The live dashboard has every anchor, so its walk is unchanged.
+  const stops: Stop[] = typeof document !== 'undefined' ? allStops.filter((s) => document.querySelector(`[data-tour="${s.target}"]`)) : allStops;
 
   // Run on first post-Threshold landing (autoStart) or a Field-Guide replay (?tour=1).
   useEffect(() => {
