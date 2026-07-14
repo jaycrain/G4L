@@ -50,7 +50,7 @@ export function memberDeflecting(message: string): boolean {
 // Until this fires (or a turn adds nothing new), the gap stage keeps RECEIVING so a multi-event story fully
 // surfaces (and its Doors with it) before we reflect and advance.
 const GAP_DONE_RE =
-  /\b(that'?s (the )?(whole|all|it|everything|gist|story|picture|heart)|the (whole|full) (story|picture|thing|of it)|no(thing)? (more|else)|no more|that'?s how it (went|happened|unfolded)|that covers it|that'?s (about|more or less|pretty much|roughly|basically) it|that was (about|more or less|pretty much) it|more or less it|it for now|(that )?(about )?sums it up|that'?s most of it|pretty much it|that'?s the heart)\b/i;
+  /\b(that'?s (the )?(whole|all|it|everything|gist|story|picture|heart)|the (whole|full) (story|picture|thing|of it)|no(thing)? (more|else)|no more|that'?s how it (went|happened|unfolded)|that covers it|that'?s (about|more or less|pretty much|roughly|basically) it|that was (about|more or less|pretty much) it|more or less it|it for now|(that )?(about )?sums it up|that'?s most of it|pretty much it|that'?s the heart|that'?s (about |pretty much |roughly )?(the )?(size|shape) of it|(that'?s |that is )?the (size|shape) of it|that'?s the shape)\b/i;
 export function memberSignalsGapComplete(message: string): boolean {
   const m = (message ?? '').replace(/[‘’]/g, "'");
   return confirmsWhole(m) || memberWantsToWrap(m) || GAP_DONE_RE.test(m);

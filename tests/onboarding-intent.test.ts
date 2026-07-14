@@ -7,6 +7,7 @@ import {
   isForwardAmbition,
   memberClosingReclaim,
   memberDeflecting,
+  memberSignalsGapComplete,
   resolveGapConfirm,
   resolveReclaimConfirm,
   shouldCaptureStagedGap,
@@ -154,6 +155,18 @@ test('intent · fade & scope classification', () => {
 });
 
 // --- deflection -------------------------------------------------------------------------------------------
+test('intent · memberSignalsGapComplete — colloquial "that\'s the whole story" closes (founder walk 2026-07-14)', () => {
+  // Jay's re-walk: after the Doors drew out, "That's about the size of it" / "That's the shape" weren't read as a
+  // close, so the gap stage asked "was there more?" one time too many. These colloquial closes must advance.
+  for (const s of ["That's about the size of it", "That's the shape", 'the shape of it', 'that is the size of it', "that's about it"]) {
+    assert.equal(memberSignalsGapComplete(s), true, `close: ${s}`);
+  }
+  // But a substantive story fragment is NOT a close — the multi-Door draw-out must keep receiving.
+  for (const s of ['the kids came and work got busier', 'my group rides went first', 'I stopped working out']) {
+    assert.equal(memberSignalsGapComplete(s), false, `story: ${s}`);
+  }
+});
+
 test('intent · memberDeflecting — refusals and wraps', () => {
   assert.equal(memberDeflecting("I'm not answering that again"), true);
   assert.equal(memberDeflecting("let's move on"), true);
