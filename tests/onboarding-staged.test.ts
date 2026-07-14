@@ -52,7 +52,7 @@ test('STAGED opening — opens on the identity question, stage = identity', () =
   const t = stagedOpening();
   assert.equal(t.state.stage, 'identity');
   assert.equal(t.complete, false);
-  assert.match(t.reply, /most like yourself/i);
+  assert.match(t.reply, /feel like yourself/i);
 });
 
 test('STAGED identity — breathe floor (1a): gather → PROBE the person → reflect-confirm → advance', () => {
@@ -337,7 +337,7 @@ test('STAGED gap — never-strand (run-2 fix): short progressive turns the match
     atGap,
   );
   assert.ok((turns[3]!.state.collected.gap ?? '').length > 0, 'by turn 4 the accumulated story is captured — no 24-turn stall');
-  assert.equal(/most like yourself/i.test(turns[3]!.reply), false); // not looping the opening question
+  assert.equal(/feel like yourself/i.test(turns[3]!.reply), false); // not looping the opening question
   assert.equal(turns[4]!.state.awaitingConfirm, true, 'and the stage advances to reflect-confirm when she signals whole');
 });
 
@@ -515,7 +515,7 @@ test('STAGED gap — the "was there more?" nudge NEVER repeats verbatim across c
     atGap,
   );
   assert.notEqual(turns[0]!.reply, turns[1]!.reply, 'two consecutive gather nudges are NOT identical (no verbatim loop)');
-  for (const t of turns) assert.equal(/most like yourself/i.test(t.reply), false, 'never loops the opening question');
+  for (const t of turns) assert.equal(/feel like yourself/i.test(t.reply), false, 'never loops the opening question');
   assert.match(turns[0]!.reply, /more|heart of/i, 'still a real "is there more?" gather prompt');
 });
 
@@ -525,7 +525,7 @@ test('STAGED — general no-verbatim-repeat guard: a static opener/nudge is neve
   const opener = stagedOpening().reply;
   const t = applyStagedTurn({ stage: 'identity', collected: {} }, [{ role: 'agent', text: opener }], 'hmm, not sure', { text: 'Mm.' });
   assert.notEqual(t.reply, opener, 'does not repeat the opener verbatim');
-  assert.match(t.reply, /most like yourself/i, 'still carries the identity prompt (varied, not lost)');
+  assert.match(t.reply, /feel like yourself/i, 'still carries the identity prompt (varied, not lost)');
 });
 
 test('STAGED identity — a model that asks its own question (long coda) never re-appends the cold-open (Donna walk)', () => {
@@ -559,7 +559,7 @@ test('STAGED identity — with NO model question, the re-draw is SHORT, never th
     'I was creative and free back then',
     { text: 'Mm.' },
   );
-  assert.match(t.reply, /most like yourself/i, 're-poses the past-self question');
+  assert.match(t.reply, /feel like yourself/i, 're-poses the past-self question');
   assert.equal(/Tell me about them\./.test(t.reply), false, 'never the whole cold-open');
   assert.ok(t.reply.length < opener.length, 'the re-draw is materially shorter than the cold-open');
 });

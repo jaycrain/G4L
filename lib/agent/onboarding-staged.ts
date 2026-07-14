@@ -108,7 +108,8 @@ function identityRef(c: Collected): string {
 // §3 — Stage 1 (who you are): the opener (the AI disclosure + primer live on the Stage-0 start page).
 // Onboarding Copy v2 (Jay's voice pass): the corny example run is cut; the prompt is tightened + de-gendered.
 export const STAGED_OPENING =
-  "Let's start with a simple question — but take your time with it. When did you feel most like yourself?\n\n" +
+  "Let's start with a simple question — but take your time with it.\n\n" +
+  'When did you last feel like yourself?\n\n' +
   "Not the job title. Not the role everyone knows you for — even if that's mom or dad, partner or child. The version " +
   "underneath all of it. The one you've drifted from and want to be again.\n\n" +
   'Who were they? What were they doing? How did it feel to be them?\n\nTell me about them.';
@@ -117,7 +118,7 @@ export const STAGED_OPENING =
 // STAGED_OPENING here — on turn 2+ they've already answered it, so the whole cold-open reads as a verbatim
 // repeat (the invariant we most protect). A single warm re-pose is enough; the model usually carries the thread.
 const IDENTITY_REDRAW =
-  'Take your time — no rush. When did you feel most like yourself, and who was that version of you?';
+  'Take your time — no rush. When did you last feel like yourself, and who was that version of you?';
 
 const NAME_PROMPT =
   'If you put that person in a single word — the Runner, the Writer, the Builder, the Friend — what would it be? ' +
@@ -226,7 +227,22 @@ function reclaimOpen(c: Collected): string {
   );
 }
 
-const RECLAIM_MORE = 'What else? Anything that comes — big or small.';
+// ROTATED so the "what else?" backstop NEVER repeats verbatim as the list grows (the same static line, appended by
+// the engine turn after turn, read as a broken loop on the live walk — the gap stage already rotates its GAP_MORE for
+// exactly this reason; reclaim now matches). After these, the turn logic reflects the list instead of re-asking.
+const RECLAIM_MORE_VARIANTS = [
+  'What else? Anything that comes — big or small.',
+  'What else would you want back? No wrong answers here — small things count.',
+  'Anything else on your mind — even something small you miss?',
+];
+const RECLAIM_MORE = RECLAIM_MORE_VARIANTS[0]!; // the soft-close / recite-mismatch nudge (a single ask, not a loop)
+// How many times the "what else?" backstop has already been appended this stage — by the variants' shared signature.
+function reclaimMoreAsks(history: ConvMessage[]): number {
+  return history.filter((h) => h.role === 'agent' && /\b(what else|anything else|want back|something small you miss)\b/i.test(h.text)).length;
+}
+function reclaimMore(history: ConvMessage[]): string {
+  return RECLAIM_MORE_VARIANTS[reclaimMoreAsks(history) % RECLAIM_MORE_VARIANTS.length]!;
+}
 
 // The confirm-only card reply when a member tries to add a want AFTER the summary card. Nothing lands here — so we
 // say that plainly, and point them to where adding DOES work (the first session + the companion rail). Never "Added".
@@ -608,8 +624,12 @@ const GAP_RICH_CHARS = 240; // mirrors v1's storyIsRich threshold exactly (resol
 // would trap someone who's ready. "Rich" is MORE than merely present.
 function stageMaterialRich(stage: StagedStage, c: Collected): boolean {
   if (stage === 'identity') return !!c.identityNoun && (c.athleticPast ?? '').trim().length >= IDENTITY_RICH_CHARS;
+  // The Door conversation earns its time (Jay + Greg, 2026-07-14): it is rare for ONE door to be the whole story, so
+  // the "already rich, don't trap" escape needs a FULLER picture — two or more doors named — not a single long answer.
+  // A genuine one-door member still advances the moment they signal done (memberPushedPast); the very-long-narrative
+  // fallback (2× the rich-char floor) is only a safety valve so an exhausted member is never trapped mid-story.
   if (stage === 'gap')
-    return gapIsNarrative(c.gap, c.reclaimList ?? []) && ((c.doors?.length ?? 0) >= 2 || (c.gap ?? '').length >= GAP_RICH_CHARS);
+    return gapIsNarrative(c.gap, c.reclaimList ?? []) && ((c.doors?.length ?? 0) >= 2 || (c.gap ?? '').length >= GAP_RICH_CHARS * 2);
   return (c.reclaimList?.length ?? 0) >= RECLAIM_LIST_MIN; // several wants already on the table
 }
 
@@ -1018,7 +1038,7 @@ const reclaimStage: StageDef = {
       // she's still OFFERING (new item OR a restatement — a dup must NOT pull the list up short). Only when a
       // turn brings nothing at all is she finished — reflect and await her confirm.
       if ((grewThisTurn || offered) && count < RECLAIM_LIST_TARGET) {
-        b.reply = withQuestion(b.modelText, RECLAIM_MORE);
+        b.reply = withQuestion(b.modelText, reclaimMore(b.history));
       } else {
         b.reply = reflectReclaim(b.collected);
         b.awaitingConfirm = true;
@@ -1038,7 +1058,7 @@ const reclaimStage: StageDef = {
       }
     } else {
       // Still offering — keep the model's reflection with a guaranteed closing question; else invite the next item.
-      b.reply = withQuestion(b.modelText, RECLAIM_MORE);
+      b.reply = withQuestion(b.modelText, reclaimMore(b.history));
     }
   },
   confirm(b) {
@@ -1083,7 +1103,7 @@ const reclaimStage: StageDef = {
     // the card. Only an explicit CHANGE request reopens the gather. resolveReclaimConfirm owns the meaning.
     if (resolveReclaimConfirm(b.memberMessage, b.model.replyIntent) === 'change') {
       b.awaitingConfirm = false;
-      b.reply = withQuestion(b.modelText, RECLAIM_MORE);
+      b.reply = withQuestion(b.modelText, reclaimMore(b.history));
     } else {
       // Seatbelt confirmed → don't complete yet; hand into the Grinta baseline survey (the new end of onboarding).
       enterGrintaSurvey(b);
@@ -1572,12 +1592,16 @@ question. Naming an instrument here breaks the spell and is off-spec.`;
 export function stageInstruction(stage?: Stage): string {
   if (stage === 'gap')
     return (
-      '\n\nCURRENT STAGE: how the gap opened. EXPLORE — draw out the story over a few exchanges (the sequence, ' +
-      'when they first felt it, what it cost); pull into one thread until it\'s particular, not a list of labels. ' +
-      'Capture with set_gap as it grows, note_door silently (none is valid). Call reflect_gap ONLY once it\'s ' +
-      'genuinely drawn out, and reflect their whole story back in their words on that turn. ' +
-      'ALWAYS end your turn with your single forward question — your drawing-out ask while gathering ("was there ' +
-      'more around then, or is that the heart of how it opened?"), or your correctable check on the reflect turn ' +
+      '\n\nCURRENT STAGE: how the gap opened — the Door(s). EXPLORE, and EXPECT MORE THAN ONE: it is rare for a single ' +
+      'thing to be the whole story — usually several pile up over time (a job, a move, an injury, a loss, kids, slow ' +
+      'drift). Draw the story out over SEVERAL exchanges — the sequence, when they first felt it, what it cost. After ' +
+      'they name one door, RECEIVE it (reflect it back so they feel heard) and then ask what ELSE was going on around ' +
+      'then — do NOT collapse it to one thread, and do NOT rush on to what they want back. This conversation earns its ' +
+      'time; do not compress it. Capture with set_gap as it grows, note_door for EACH door named (none is valid). Call ' +
+      'reflect_gap ONLY once the FULLER picture is genuinely drawn out — usually after they have named more than one ' +
+      'door or clearly told you that is the whole of it — and reflect their whole story back in their words on that turn. ' +
+      'ALWAYS end your turn with your single forward question — your drawing-out ask while gathering ("was there more ' +
+      'around then — other things that landed at the same time?"), or your correctable check on the reflect turn ' +
       '("does that land, or is there more to it?"). NEVER end on a bare reflection or wrap-up coda with no ' +
       'question ("let me make sure I have it right"), or the engine appends its own and the member sees a jumbled double-ask.'
     );
@@ -1612,7 +1636,9 @@ export function stageInstruction(stage?: Stage): string {
       '("lose 25 lbs") need no sharpening — leave them.\n' +
       'ALWAYS end your turn with your single forward question in your own words ("what else?" / "anything else ' +
       'you\'d want back?"). NEVER end on a bare wrap-up coda with no question ("let me make sure I have all of ' +
-      'that captured"), or the engine stacks a second ask on top and it reads pushy.'
+      'that captured"), or the engine stacks a second ask on top and it reads pushy. And do NOT ANNOUNCE the ' +
+      'mechanics — never say "let me make that concrete" or "before I capture that": just DO it (reflect + one ' +
+      'sharpening question, or acknowledge their answer and invite the next), in-line and in plain language.'
     );
   return '\n\nCURRENT STAGE: identity — who they were at their best, and the one-word handle (or skip).';
 }
