@@ -1,0 +1,58 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { heroView } from '../lib/dashboard/hero-copy.ts';
+
+// Redesign Layer 2 (D-02): heroView turns a resolved HeroState into member-facing hero text. Pure — asserts each state
+// produces the right shape, uses the member's real position, and never fabricates beyond what the state carries.
+
+const ctx = { phaseLabel: 'Rewire', phaseOrdinal: 2, sessionPosition: 'Session 2 of 3' };
+
+test('resume — names the session, offers to pick up where you left off', () => {
+  const v = heroView({ kind: 'resume', session: { id: 'w2', label: 'The Visualization Workshop' } }, ctx);
+  assert.equal(v.title, 'The Visualization Workshop');
+  assert.match(v.eyebrow, /Phase 2 · Rewire · Session 2 of 3/);
+  assert.equal(v.ctaLabel, 'Resume this Session');
+});
+
+test('just-finished — congratulates, points to next when there is one', () => {
+  const v = heroView(
+    { kind: 'just-finished', session: { id: 'w1', label: 'the Disinformation Audit' }, next: { id: 'w2', label: 'The Visualization Workshop' } },
+    ctx,
+  );
+  assert.match(v.title, /Nice work — the Disinformation Audit/);
+  assert.match(v.copy, /The Visualization Workshop is next/);
+  assert.equal(v.ctaLabel, 'Start the next Session');
+});
+
+test('just-finished with no next — no fabricated next step', () => {
+  const v = heroView({ kind: 'just-finished', session: { id: 'c4', label: 'the Transition' }, next: null }, ctx);
+  assert.doesNotMatch(v.copy, /next Session|is next/);
+  assert.equal(v.ctaLabel, 'Back to your path');
+});
+
+test('checkpoint-ready — the Grinta-moves framing, phase-named', () => {
+  const v = heroView({ kind: 'checkpoint-ready', checkpoint: { phase: 'rewire', label: 'Rewire Checkpoint' } }, ctx);
+  assert.match(v.title, /Your Rewire Checkpoint/);
+  assert.match(v.eyebrow, /Checkpoint ready/);
+  assert.equal(v.ctaLabel, 'Take the Checkpoint');
+});
+
+test('mid-week-practice — day N of total, log-today CTA', () => {
+  const v = heroView({ kind: 'mid-week-practice', practice: { kind: 'w3_logging', label: 'Log your calls', day: 3, total: 7 } }, ctx);
+  assert.match(v.eyebrow, /Day 3 of 7/);
+  assert.equal(v.title, 'Log your calls');
+  assert.equal(v.ctaLabel, 'Log today with me');
+});
+
+test('next-step — the lit session, no-rush framing', () => {
+  const v = heroView({ kind: 'next-step', session: { id: 'w2', label: 'The Visualization Workshop' } }, ctx);
+  assert.equal(v.title, 'The Visualization Workshop');
+  assert.equal(v.ctaLabel, 'Open this Session');
+});
+
+test('fresh — the front door into Reconnect', () => {
+  const v = heroView({ kind: 'fresh' }, ctx);
+  assert.equal(v.title, 'Reconnect');
+  assert.match(v.copy, /where it starts/);
+  assert.equal(v.ctaLabel, 'Begin');
+});

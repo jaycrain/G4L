@@ -40,6 +40,8 @@ import { logoutAction } from '../../login/actions.ts';
 import { authorizeMember } from '../../authz.ts';
 import { logEvent } from '../../../lib/telemetry/store.ts';
 import { redirect } from 'next/navigation';
+import { redesignEnabled } from '../../../lib/dashboard/redesign.ts';
+import RedesignDashboard from '../redesign-dashboard.tsx';
 
 // Give the companion's live turns room to finish (the Member Agent call is the long pole).
 export const maxDuration = 30;
@@ -66,6 +68,9 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
   await logEvent(db, memberId, 'page_view', { surface: 'dashboard' });
   // Reaching the dashboard means onboarding was completed — seed the passport's first badge.
   await ensureOnboardingBadge(db, memberId);
+
+  // Redesign (Layer 2) — flag-gated parallel render. Off in prod → everything below is the untouched live dashboard.
+  if (redesignEnabled()) return <RedesignDashboard db={db} memberId={memberId} dash={dash} />;
 
   // v0.4 zones, all from the registry + member state.
   const [facets, forecast, passport, grintaReading, activity] = await Promise.all([

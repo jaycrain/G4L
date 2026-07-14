@@ -1,0 +1,67 @@
+// Redesign Layer 2 (D-02) — the HERO COPY composer. Turns the resolved HeroState (Layer 1) into the member-facing hero
+// text: eyebrow (where you are), title, one warm line, and the CTA label. PURE + testable — no data access, no routing
+// (the server component computes the href). Voice: plain, measured, normalizing (brand standards) — a doorway, never a
+// pep-talk. The copy leans on the member's real position but never fabricates: every branch reads only what the state
+// carries.
+
+import type { HeroState } from './resume-hero.ts';
+
+export type HeroView = { eyebrow: string; title: string; copy: string; ctaLabel: string };
+
+export interface HeroContext {
+  phaseLabel: string; // "Rewire"
+  phaseOrdinal: number; // 1-based phase number (1..4)
+  sessionPosition?: string | null; // "Session 2 of 3", when known
+}
+
+export function heroView(state: HeroState, ctx: HeroContext): HeroView {
+  const where = (extra?: string | null) =>
+    `Phase ${ctx.phaseOrdinal} · ${ctx.phaseLabel}${extra ? ` · ${extra}` : ''}`;
+
+  switch (state.kind) {
+    case 'resume':
+      return {
+        eyebrow: where(ctx.sessionPosition),
+        title: state.session.label,
+        copy: "You're partway into this one. Pick up where you left off — nothing's lost, we start from your last answer.",
+        ctaLabel: 'Resume this Session',
+      };
+    case 'just-finished':
+      return {
+        eyebrow: `${ctx.phaseLabel} · You just finished`,
+        title: `Nice work — ${state.session.label}`,
+        copy: state.next
+          ? `That's ${state.session.label} done. ${state.next.label} is next, whenever you're ready.`
+          : `That's ${state.session.label} done. Take a breath — the next step will be here when you are.`,
+        ctaLabel: state.next ? 'Start the next Session' : 'Back to your path',
+      };
+    case 'checkpoint-ready':
+      return {
+        eyebrow: `${ctx.phaseLabel} · Checkpoint ready`,
+        title: `Your ${ctx.phaseLabel} Checkpoint`,
+        copy: "You've walked the whole phase. This is where your Grinta moves — no studying, just an honest read.",
+        ctaLabel: 'Take the Checkpoint',
+      };
+    case 'mid-week-practice':
+      return {
+        eyebrow: `${ctx.phaseLabel} · Day ${state.practice.day} of ${state.practice.total}`,
+        title: state.practice.label,
+        copy: 'A week of noticing — no grade, just catching what happened. How did today go?',
+        ctaLabel: 'Log today with me',
+      };
+    case 'next-step':
+      return {
+        eyebrow: where(ctx.sessionPosition),
+        title: state.session.label,
+        copy: "Here's your next step. It's ready whenever you are — no rush.",
+        ctaLabel: 'Open this Session',
+      };
+    case 'fresh':
+      return {
+        eyebrow: 'Reconnect · Start here',
+        title: 'Reconnect',
+        copy: 'This is where it starts — a short first conversation to see yourself clearly. No prep, just honesty.',
+        ctaLabel: 'Begin',
+      };
+  }
+}
