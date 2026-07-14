@@ -122,7 +122,6 @@ export default function RedesignShell({ memberId, children }: { memberId: string
                 <span className="rrail-dot" aria-hidden="true" /> here with you
               </span>
             </div>
-            <p className="rrail-discl">Guided by AI — everything you share shapes your experience, handled with care. Stop any time.</p>
           </div>
           <div ref={chatRef} className="rrail-stream">
             {messages.map((m, i) => (

@@ -6,7 +6,7 @@
 // Live Claude when ANTHROPIC_API_KEY is set; deterministic scripted fallback otherwise.
 
 import { MEMBER_AGENT_SYSTEM_PROMPT } from './system-prompt.ts';
-import { detectCrisis, CRISIS_RESPONSE_US } from './governance.ts';
+import { detectCrisis, CRISIS_RESPONSE_US, AI_DISCLOSURE } from './governance.ts';
 import { reclaimAddIntent } from '../member/reclaim.ts';
 import { rewireEnabled } from './rewire.ts';
 import { logCallIntent } from '../momentum/store.ts';
@@ -606,12 +606,20 @@ async function liveReply(
 }
 
 export async function checkinOpening(c: CheckinContext): Promise<string> {
+  // The AI disclosure is prepended DETERMINISTICALLY (governance is code-enforced, not model-trusted) so the model
+  // never has to include it — and can never garble the system-prompt directive into a leaked instruction (the
+  // "This is the first AI disclosure — include it now, verbatim… —-" bug). Member sees a clean disclosure, then the welcome.
+  const greeting = (await checkinGreeting(c)).trim();
+  return `${AI_DISCLOSURE}\n\n${greeting}`;
+}
+
+async function checkinGreeting(c: CheckinContext): Promise<string> {
   if (process.env.ANTHROPIC_API_KEY) {
     try {
       return (await liveReply(
         checkinSystem(c),
         [],
-        'This is the member\'s VERY FIRST conversation with you — moments after a personal onboarding, now looking at a dashboard full of new numbers and panels for the first time. In your own warm voice (a short paragraph, never a script or a bulleted list), do three things:\n' +
+        'This is the member\'s VERY FIRST conversation with you — moments after a personal onboarding, now looking at a dashboard full of new numbers and panels for the first time. Write ONLY your warm welcome — begin DIRECTLY with your greeting to the member. Do NOT write, quote, or narrate the AI disclosure or ANY instruction to yourself (never a line like "This is the first AI disclosure — include it now, verbatim…", never "—-" delimiters) — the disclosure is added for you automatically as the clean first line above your message. In your own warm voice (a short paragraph, never a script or a bulleted list), do three things:\n' +
           'NEVER open with a number, score, or metric — "your Grinta went up", "your ID Score is 62" is exactly the wrong first thing; a stat is not a welcome, and on day one the numbers are meaningless to them. Lead with the person. (Their data is for later, when they ask.)\n' +
           '1) SHOW YOU KNOW THEM — reflect back something specific they told you (their reclaimed identity, a concrete Reclaim List item, or how their Door opened), in their own words and spirit, so they feel heard. Do not restate the dashboard at them.\n' +
           '2) EASE THEM IN — let them know the dashboard is their program made specific to them, and that you\'ll help those cold numbers make sense and work the Reclaim List together, a step at a time. Do NOT explain each panel (the Field Guide does that) — just reassure them you\'ll make sense of it WITH them.\n' +

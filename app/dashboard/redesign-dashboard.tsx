@@ -143,35 +143,33 @@ export default async function RedesignDashboard({ db, memberId, dash }: { db: Db
           <img className="rt-wordmark" src="/brand/g4l-wordmark.svg" alt="Grinta for Life" />
         </Link>
         <div className="rt-who">
-          <Link href="/account" className="rt-account" aria-label="Your account">
-            {dash.avatarUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img className="rt-av" src={dash.avatarUrl} alt={dash.displayName} />
-            ) : (
-              <span className="rt-av rt-av-initials" aria-hidden="true">{initials(dash.displayName)}</span>
-            )}
-            <span className="rt-hi">Hi, {firstName(dash.displayName)}</span>
-          </Link>
           <span className="rt-nav">
             <Link href={`/field-guide/${memberId}`} prefetch={false}>Field Guide</Link>
             <Link href={`/playbook/${memberId}`} prefetch={false}>Playbook</Link>
           </span>
-          <form action={logoutAction} className="rt-logout"><button type="submit">Log out</button></form>
+          {/* Avatar + greeting + Log out as one coupled group, right-aligned (like the prior dashboard). */}
+          <span className="rt-account-group">
+            <Link href="/account" className="rt-account" aria-label="Your account">
+              {dash.avatarUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img className="rt-av" src={dash.avatarUrl} alt={dash.displayName} />
+              ) : (
+                <span className="rt-av rt-av-initials" aria-hidden="true">{initials(dash.displayName)}</span>
+              )}
+              <span className="rt-hi">Hi, {firstName(dash.displayName)}</span>
+            </Link>
+            <form action={logoutAction} className="rt-logout"><button type="submit">Log out</button></form>
+          </span>
         </div>
       </div>
 
       <RedesignShell memberId={memberId}>
-        {/* Identity strip */}
+        {/* Identity strip — the Doors are NOT shown here (privacy: sensitive if someone's looking over the member's
+            shoulder); they live inside the member's full story (build spec §3 #19). */}
         <div className="rcard r-identity" data-tour="doors">
           <div>
             <div className="ri-title">{identityTitle}</div>
-            {doorNames.length > 0 && (
-              <div className="ri-doors">
-                Your Door{doorNames.length > 1 ? 's' : ''}: {doorNames.map((d, i) => (
-                  <span key={i}><b>{d}</b>{i < doorNames.length - 1 ? ' · ' : ''}</span>
-                ))} — kept in your story
-              </div>
-            )}
+            <div className="ri-doors-note">How the gap opened — your Door{doorNames.length > 1 ? 's' : ''} — is kept in your story.</div>
           </div>
           {dash.identityParagraph && <Link href={`/story/${memberId}`} className="ri-story">Your full story →</Link>}
         </div>
