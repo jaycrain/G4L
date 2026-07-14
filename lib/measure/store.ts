@@ -111,7 +111,7 @@ export function suggestTracker(text: string): TrackerSuggestion {
   // A delta goal's direction is unambiguous from its verb — gain/add = up, lose/drop/shed/cut = down.
   if (delta != null) direction = /\b(?:gain|gaining|gained|add|put on)\b/.test(low) ? 'up' : 'down';
 
-  const label = /\bweight\b/.test(low)
+  const label = /\b(?:weight|lbs?|pounds?|kgs?)\b/.test(low) // a weight goal is "Weight" even when phrased "lose 30 lbs"
     ? 'Weight'
     : /\b(?:raise|fundrais|\$\s?\d)/.test(low) && /\b(?:raise|fund)/.test(low)
       ? 'Funds raised'
@@ -121,7 +121,12 @@ export function suggestTracker(text: string): TrackerSuggestion {
           ? 'Weekly miles'
           : /\b(?:bpm|heart rate)\b/.test(low)
             ? 'Resting HR'
-            : t.split(/\s+/).slice(0, 3).join(' '); // fall back to the opening words
+            // Fallback = the opening words, but strip a goal PREAMBLE first so the label is never "I'd like to" /
+            // "I want to" (the bug from "I'd like to lose 30 lbs" — the preamble became the tracker name).
+            : (t.replace(/^\s*(?:i'?d (?:like|love|want) to|i (?:want|wish|hope|need|plan|intend|aim|would like) to|i'?m (?:trying|hoping|planning|working) to|(?:get|getting) back to|start(?:ing)? to|let'?s)\s+/i, '').trim() || t)
+                .split(/\s+/)
+                .slice(0, 3)
+                .join(' ');
 
   // Accumulation goals (raise/save a dollar amount toward a target) start at 0, so any amount logged
   // reads as progress — unlike a rate/level goal (weight, weekly miles) where the first entry IS the baseline.

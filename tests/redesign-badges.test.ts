@@ -34,7 +34,7 @@ test('closed sessions + gates → the mapped badges earn (idempotently)', async 
   await markSessionClosed(db, m, 'RWR-W1'); // → turned-voice
   await markSessionClosed(db, m, 'RBLD-B1'); // → found-why
   await markSessionClosed(db, m, 'RCL-C2'); // → widened-world
-  await setGate(db, m, 'reconnect_checkpoint_passed'); // → named-yourself
+  await db.query("insert into member_door (member_id, door_slug, is_primary, sort_order) values ($1,'career_cliff',true,0)", [m]); // named a Door → named-yourself (earned at onboarding, not the checkpoint)
   await setGate(db, m, 'reclaim_checkpoint_passed'); // → wrote-story
 
   await reconcileRedesignBadges(db, m);

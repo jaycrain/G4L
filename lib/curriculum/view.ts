@@ -146,7 +146,12 @@ export async function reconcileRedesignBadges(db: Db, memberId: string): Promise
     const gates = new Set(gatesArr);
     const earn = (id: string) => earnBadge(db, memberId, id).catch(() => {});
     for (const [sid, bid] of Object.entries(SESSION_BADGE)) if (closed.has(sid)) await earn(bid);
-    if (gates.has('reconnect_checkpoint_passed')) await earn('named-yourself'); // "You named the Doors"
+    // "You named the Doors" is earned at ONBOARDING, where the Doors are named (Jay's walk) — not the Reconnect
+    // checkpoint. Any member on the dashboard has finished onboarding; earn it once they've named at least one Door.
+    const hasDoors =
+      (await db.query('select 1 from member_door where member_id=$1 and removed_at is null limit 1', [memberId])).rows.length > 0 ||
+      !!(await db.query<{ named_door: string | null }>('select named_door from member_profile where member_id=$1', [memberId])).rows[0]?.named_door;
+    if (hasDoors) await earn('named-yourself'); // "You named the Doors"
     if (gates.has('reclaim_checkpoint_passed')) await earn('wrote-story'); // "You wrote your story" (the Transition)
     const idq = await db.query<{ one: number }>('select 1 as one from idq_retake where member_id=$1 limit 1', [memberId]);
     if (idq.rows.length) await earn('starting-line'); // "You met your starting line" — the first ID Score landed

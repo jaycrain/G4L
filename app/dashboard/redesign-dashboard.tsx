@@ -184,6 +184,18 @@ export default async function RedesignDashboard({ db, memberId, dash }: { db: Db
           </div>
           <div className="rh-ring">
             <RedesignRing rings={rings} centerTop={phaseLabel} centerSub={ringSub} />
+            <details className="rh-ring-legend">
+              <summary>What’s the ring?</summary>
+              <p>Four rings — one per phase — from the center out. Each fills as you finish its sessions, and goes solid when you cross its checkpoint. Your whole path, at a glance.</p>
+              <ul>
+                {R_STRANDS.map((r) => (
+                  <li key={r.key}>
+                    <span className="rh-leg-dot" style={{ background: R_RING_COLOR[r.key] }} aria-hidden="true" />
+                    {r.label}
+                  </li>
+                ))}
+              </ul>
+            </details>
           </div>
         </div>
 
