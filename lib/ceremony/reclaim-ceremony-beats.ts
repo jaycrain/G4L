@@ -4,6 +4,8 @@
 // placeholder (Cowork wordsmiths), following the R4/B4 ceremony conventions (Decision EE modifiers, names the Phase,
 // down renders grey / never red per HH).
 
+import { BADGE_BEAT_COPY, type BadgeRevealData } from './badge-reveal.ts';
+
 export type ReclaimCeremonyReveal =
   | {
       kind: 'grinta';
@@ -14,7 +16,8 @@ export type ReclaimCeremonyReveal =
       composite: number; // the overall Grinta Index — background/context
     }
   | { kind: 'playbook'; keepers: string[] } // what they clarified in Reclaim (their top priorities), in their words
-  | { kind: 'cycle_complete' }; // the 4Rs Journey — all four complete, the Loop begins again
+  | { kind: 'cycle_complete' } // the 4Rs Journey — all four complete, the Loop begins again
+  | { kind: 'badge'; name: string }; // the earned milestone medal (redesign; Decision WW)
 
 export type ReclaimCeremonyBeat = { text: string; small?: boolean; reveal?: ReclaimCeremonyReveal };
 
@@ -27,6 +30,7 @@ export type ReclaimCeremonyData = {
     composite: number;
   } | null; // null until the Checkpoint moves it (no baseline → the flat framing, no number)
   keepers: string[]; // the priorities they clarified in Reclaim (top-tier Reclaim List items), in their own words
+  badge?: BadgeRevealData | null; // the earned milestone medal — redesign only (Decision WW)
 };
 
 // ─────────────────────────────────────────────────────────────────────────────────────
@@ -66,6 +70,7 @@ export function buildReclaimCeremonyBeats(d: ReclaimCeremonyData): ReclaimCeremo
   beats.push({ text: c.legacy });
   // Cycle complete + the Community Success Story invite + the CTA.
   beats.push({ text: c.cycle, reveal: { kind: 'cycle_complete' } });
+  if (d.badge) beats.push({ text: BADGE_BEAT_COPY, reveal: { kind: 'badge', name: d.badge.name } });
   return beats;
 }
 

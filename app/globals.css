@@ -1388,3 +1388,11 @@ body.redesign-on .back-dash { display: none; }
 .mv-src-chip { font-size: 11px; font-weight: 700; color: #2f6b6b; background: #dcecec; padding: 2px 9px; border-radius: 100px; }
 .mv-entry-meta { font-size: 13.5px; color: #6b7680; margin-top: 2px; }
 @media (max-width: 700px) { .mv-source-grid { grid-template-columns: 1fr; } }
+
+/* Ceremonial badge reveal (Decision WW) — the earned medal popping in as the ceremony climax. */
+.cer-badge { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 6px 0; }
+.cer-badge-medal { width: 58px; height: 58px; border-radius: 15px; display: grid; place-items: center; font-size: 30px;
+  background: var(--navy); color: #fff; animation: cerBadgePop .6s ease; }
+.cer-badge-eyebrow { font-weight: 800; text-transform: uppercase; letter-spacing: .06em; font-size: 11px; color: var(--olive); }
+.cer-badge-name { font-weight: 800; font-size: 18px; color: var(--navy); text-align: center; }
+@keyframes cerBadgePop { 0% { transform: scale(.5); opacity: 0; } 45% { transform: scale(1.25); box-shadow: 0 0 0 8px rgba(145,149,54,.22); } 100% { transform: scale(1); opacity: 1; } }

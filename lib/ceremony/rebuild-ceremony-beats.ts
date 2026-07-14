@@ -4,6 +4,8 @@
 
 // The grinta reveal FOREGROUNDS the control component (the strand the member just built): before→after + the
 // component %. The composite is carried as a quiet "overall". Identical shape to the Rewire reveal — down renders grey.
+import { BADGE_BEAT_COPY, type BadgeRevealData } from './badge-reveal.ts';
+
 export type RebuildCeremonyReveal =
   | {
       kind: 'grinta';
@@ -14,7 +16,8 @@ export type RebuildCeremonyReveal =
       composite: number; // the overall Grinta Index — background/context
     }
   | { kind: 'playbook'; keepers: string[] } // their why + their plan, in their own words
-  | { kind: 'journey_reclaim' }; // the 4Rs Journey — Rebuild complete, Reclaim lit
+  | { kind: 'journey_reclaim' } // the 4Rs Journey — Rebuild complete, Reclaim lit
+  | { kind: 'badge'; name: string }; // the earned milestone medal (redesign; Decision WW)
 
 export type RebuildCeremonyBeat = { text: string; small?: boolean; reveal?: RebuildCeremonyReveal };
 
@@ -27,6 +30,7 @@ export type RebuildCeremonyData = {
     composite: number;
   } | null; // null until the Checkpoint moves it (no baseline → the flat framing, no number)
   keepers: string[]; // the pilot plan (and any why keeper) — in the member's own words
+  badge?: BadgeRevealData | null; // the earned milestone medal — redesign only (Decision WW)
 };
 
 // ─────────────────────────────────────────────────────────────────────────────────────
@@ -62,6 +66,7 @@ export function buildRebuildCeremonyBeats(d: RebuildCeremonyData): RebuildCeremo
   );
   // Light Reclaim + the CTA.
   beats.push({ text: c.reclaim, reveal: { kind: 'journey_reclaim' } });
+  if (d.badge) beats.push({ text: BADGE_BEAT_COPY, reveal: { kind: 'badge', name: d.badge.name } });
   return beats;
 }
 

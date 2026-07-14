@@ -9,13 +9,15 @@
 // is skipped (a v1-onboarded member with no baseline, or a skipped Checkpoint, never sees an empty frame).
 
 import type { Dimensions } from './threshold-beats.ts';
+import { BADGE_BEAT_COPY, type BadgeRevealData } from './badge-reveal.ts';
 
 export type ReconnectCeremonyReveal =
   | { kind: 'score'; idScore: number | null; dimensions: Dimensions | null } // the ID Score radar (the mirror)
   | { kind: 'grinta'; composite: number; changePct: number | null; direction: 'up' | 'down' | 'flat' | null; reconnect: number; reconnectChangePct: number | null } // §2e — the Index (headline) moved BY Reconnect (the driver)
   | { kind: 'playbook'; keepers: string[] } // the §2d keepers (the drift recognition + the spark)
   | { kind: 'doors'; doors: string[] } // the member's Door(s), as they stand after any re-seeing
-  | { kind: 'journey_rewire' }; // the 4Rs Journey — Reconnect complete, Rewire lit
+  | { kind: 'journey_rewire' } // the 4Rs Journey — Reconnect complete, Rewire lit
+  | { kind: 'badge'; name: string }; // the earned milestone medal (redesign; Decision WW)
 
 export type GrintaStrands = { reconnect?: number; rewire?: number; rebuild?: number; reclaim?: number };
 
@@ -28,6 +30,7 @@ export type ReconnectCeremonyData = {
   grinta: { composite: number; changePct: number | null; direction: 'up' | 'down' | 'flat' | null; reconnect: number; reconnectChangePct: number | null } | null; // §2e — null until a Checkpoint moves it
   keepers: string[]; // the §2d Playbook keepers, in the member's own words (drift recognition, the spark)
   doors: string[]; // display names, primary first (post-revision)
+  badge?: BadgeRevealData | null; // the earned milestone medal — set only in the redesign (Decision WW)
 };
 
 // ─────────────────────────────────────────────────────────────────────────────────────
@@ -92,6 +95,8 @@ export function buildReconnectCeremonyBeats(d: ReconnectCeremonyData): Reconnect
       : { text: c.doorsNone, small: true },
   );
   beats.push({ text: c.journey, reveal: { kind: 'journey_rewire' } });
+  // The climax (redesign): the earned milestone medal, right before the hand-off.
+  if (d.badge) beats.push({ text: BADGE_BEAT_COPY, reveal: { kind: 'badge', name: d.badge.name } });
   beats.push({ text: c.handoff });
   return beats;
 }

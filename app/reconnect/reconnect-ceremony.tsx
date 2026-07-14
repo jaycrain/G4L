@@ -3,6 +3,7 @@
 import { useMemo, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import CeremonySurface from '../dashboard/ceremony-surface.tsx';
+import BadgeReveal from '../dashboard/badge-reveal.tsx';
 import IdqRadar from '../dashboard/idq-radar.tsx';
 import { COMPANION_LABEL } from '../../lib/ceremony/threshold-beats.ts';
 import {
@@ -86,6 +87,7 @@ export default function ReconnectCeremony({ memberId, data }: { memberId: string
         </div>
       );
     }
+    if (r.kind === 'badge') return <BadgeReveal name={r.name} />;
     // journey_rewire — Reconnect is behind them (done), Rewire is lit (next).
     return (
       <div className="cer-journey">

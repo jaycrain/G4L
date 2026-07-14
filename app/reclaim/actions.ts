@@ -27,6 +27,7 @@ import { scoreCheckpointStrand, grintaChangePct, directionOf } from '../../lib/g
 import { BASELINE_CHALLENGE_ITEMS, CHECKPOINT_CHALLENGE_ITEMS } from '../../lib/grinta/survey/instrument.ts';
 import { setGate, markSessionClosed } from '../../lib/curriculum/store.ts';
 import type { ReclaimCeremonyData } from '../../lib/ceremony/reclaim-ceremony-beats.ts';
+import { earnedBadgeReveal } from '../../lib/ceremony/badge-reveal.ts';
 
 // v2.5 Reclaim server actions. C1 · Readiness (evidence + refine→commit) + C2 · Bigger World Audit (administered →
 // RC-1, persisted) + C3 · Quality Days (coach-define → store + open the logging week) + C4 · The Reclaim Checkpoint
@@ -194,7 +195,7 @@ export async function reclaimCeremonyDataAction(memberId: string): Promise<{ ok:
       const changePct = grintaChangePct(now, baseline);
       grinta = { componentNow: now, componentBaseline: baseline, componentChangePct: changePct, direction: changePct == null ? null : directionOf(changePct), composite: latest.composite };
     }
-    return { ok: true, data: { grinta, keepers } };
+    return { ok: true, data: { grinta, keepers, badge: earnedBadgeReveal('reclaim') } };
   } catch {
     return { ok: false, error: 'Could not load the ceremony.' };
   }

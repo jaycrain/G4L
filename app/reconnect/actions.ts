@@ -9,6 +9,7 @@ import { scaleExpects } from '../../lib/agent/onboarding-staged.ts';
 import { saveArcSession, loadArcSession, clearArcSession } from '../../lib/agent/arc-session.ts';
 import { softSetMemberDoors, getMemberDoorNames } from '../../lib/member/refine.ts';
 import type { ReconnectCeremonyData } from '../../lib/ceremony/reconnect-ceremony-beats.ts';
+import { earnedBadgeReveal } from '../../lib/ceremony/badge-reveal.ts';
 import { emitHarvestMoment, commitKeeper, type KeeperType } from '../../lib/agent/harvest.ts';
 import { DOORS } from '../../lib/doors.ts';
 import { submitIdq } from '../../lib/gateway/flow.ts';
@@ -198,6 +199,7 @@ export async function reconnectCeremonyDataAction(memberId: string): Promise<{ o
         grinta,
         keepers,
         doors,
+        badge: earnedBadgeReveal('reconnect'),
       },
     };
   } catch {

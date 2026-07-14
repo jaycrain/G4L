@@ -5,6 +5,8 @@
 
 // The grinta reveal FOREGROUNDS the component (the commitment strand the member just built): its before→after + the
 // component %. The composite is carried as a quiet "overall" — present, but not the number the moment leans on.
+import { BADGE_BEAT_COPY, type BadgeRevealData } from './badge-reveal.ts';
+
 export type RewireCeremonyReveal =
   | {
       kind: 'grinta';
@@ -15,7 +17,8 @@ export type RewireCeremonyReveal =
       composite: number; // the overall Grinta Index — background/context
     }
   | { kind: 'playbook'; keepers: string[] } // the three tools (true lines · picture · protocol), already keepers
-  | { kind: 'journey_rebuild' }; // the 4Rs Journey — Rewire complete, Rebuild lit
+  | { kind: 'journey_rebuild' } // the 4Rs Journey — Rewire complete, Rebuild lit
+  | { kind: 'badge'; name: string }; // the earned milestone medal (redesign; Decision WW)
 
 export type RewireCeremonyBeat = { text: string; small?: boolean; reveal?: RewireCeremonyReveal };
 
@@ -28,6 +31,7 @@ export type RewireCeremonyData = {
     composite: number;
   } | null; // null until the Checkpoint moves it (no baseline / skipped → the flat framing, no number)
   keepers: string[]; // the W1 true line, the W2 image, the W3 protocol — in the member's own words
+  badge?: BadgeRevealData | null; // the earned milestone medal — redesign only (Decision WW)
 };
 
 // ─────────────────────────────────────────────────────────────────────────────────────
@@ -63,6 +67,7 @@ export function buildRewireCeremonyBeats(d: RewireCeremonyData): RewireCeremonyB
   );
   // Light Rebuild + the CTA.
   beats.push({ text: c.rebuild, reveal: { kind: 'journey_rebuild' } });
+  if (d.badge) beats.push({ text: BADGE_BEAT_COPY, reveal: { kind: 'badge', name: d.badge.name } });
   return beats;
 }
 

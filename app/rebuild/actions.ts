@@ -27,6 +27,7 @@ import { scoreCheckpointStrand, grintaChangePct, directionOf } from '../../lib/g
 import { BASELINE_CONTROL_ITEMS, CHECKPOINT_CONTROL_ITEMS, pairwiseAverage } from '../../lib/grinta/survey/instrument.ts';
 import { setGate, markSessionClosed } from '../../lib/curriculum/store.ts';
 import type { RebuildCeremonyData } from '../../lib/ceremony/rebuild-ceremony-beats.ts';
+import { earnedBadgeReveal } from '../../lib/ceremony/badge-reveal.ts';
 
 // v2.4 Rebuild server actions. B1 (SDT) + B2 (self-management) are ADMINISTERED reads; B3 · "The Lifestyle Pilot" is
 // the LIVE coaching turn (COACH mode) → a confirmed plan; B4 · "The Rebuild Checkpoint" is the administered Control
@@ -96,7 +97,7 @@ export async function rebuildCeremonyDataAction(memberId: string): Promise<{ ok:
       const changePct = grintaChangePct(now, baseline);
       grinta = { componentNow: now, componentBaseline: baseline, componentChangePct: changePct, direction: changePct == null ? null : directionOf(changePct), composite: latest.composite };
     }
-    return { ok: true, data: { grinta, keepers } };
+    return { ok: true, data: { grinta, keepers, badge: earnedBadgeReveal('rebuild') } };
   } catch {
     return { ok: false, error: 'Could not load the ceremony.' };
   }

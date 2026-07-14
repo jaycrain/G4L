@@ -3,6 +3,7 @@
 import { useMemo, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import CeremonySurface from '../dashboard/ceremony-surface.tsx';
+import BadgeReveal from '../dashboard/badge-reveal.tsx';
 import { COMPANION_LABEL } from '../../lib/ceremony/threshold-beats.ts';
 import {
   buildRewireCeremonyBeats,
@@ -27,6 +28,7 @@ export default function RewireCeremony({ memberId, data }: { memberId: string; d
   }
 
   function renderReveal(r: RewireCeremonyReveal): ReactNode {
+    if (r.kind === 'badge') return <BadgeReveal name={r.name} />;
     if (r.kind === 'grinta') {
       const dir = r.direction;
       return (

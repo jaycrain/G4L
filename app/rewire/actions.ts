@@ -24,6 +24,7 @@ import { scoreCheckpointStrand, grintaChangePct, directionOf } from '../../lib/g
 import { BASELINE_COMMITMENT_ITEMS, CHECKPOINT_COMMITMENT_ITEMS } from '../../lib/grinta/survey/instrument.ts';
 import { setGate, markSessionClosed } from '../../lib/curriculum/store.ts';
 import type { RewireCeremonyData } from '../../lib/ceremony/rewire-ceremony-beats.ts';
+import { earnedBadgeReveal } from '../../lib/ceremony/badge-reveal.ts';
 
 // Which Rewire session — W1/W2/W3 (the three Sessions) or the R4 'checkpoint' (the administered Commitment read →
 // ceremony). All ride the same flag + surface; W2 reads the Reclaim List, W3 pulls W1/W2 keepers forward, the
@@ -127,7 +128,7 @@ export async function rewireCeremonyDataAction(memberId: string): Promise<{ ok: 
       const changePct = grintaChangePct(now, baseline);
       grinta = { componentNow: now, componentBaseline: baseline, componentChangePct: changePct, direction: changePct == null ? null : directionOf(changePct), composite: latest.composite };
     }
-    return { ok: true, data: { grinta, keepers } };
+    return { ok: true, data: { grinta, keepers, badge: earnedBadgeReveal('rewire') } };
   } catch {
     return { ok: false, error: 'Could not load the ceremony.' };
   }
