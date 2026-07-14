@@ -1,0 +1,116 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { readArtifactAction } from './actions.ts';
+import { chatDispatch, type SessionKey } from '../../lib/workspace/session-key.ts';
+import type { Artifact } from '../../lib/workspace/artifact.ts';
+import type { RingPhaseState } from '../../lib/workspace/ring-state.ts';
+import RedesignChrome from '../dashboard/redesign-chrome.tsx';
+import RedesignRing from '../dashboard/redesign-ring.tsx';
+import ReconnectChat from '../reconnect/reconnect-chat.tsx';
+import RewireChat from '../rewire/rewire-chat.tsx';
+import RebuildChat from '../rebuild/rebuild-chat.tsx';
+import ReclaimChat from '../reclaim/reclaim-chat.tsx';
+
+// Redesign Layer 3 (D-05, build spec §4) — the PROGRAM WORKSPACE. One shell, every session: the CANVAS carries a slim
+// wayfinding header (ring + position + progress + Full route) over the artifact the session builds; the RAIL runs the
+// session as a guided conversation. The rail reuses the EXISTING arc chat client unchanged (no arc-engine touch); the
+// canvas polls the committed artifact so it fills as the conversation commits. Flag-gated upstream (REDESIGN).
+
+export interface Wayfinding {
+  phaseLabel: string;
+  phaseOrdinal: number;
+  positionLabel: string; // "The Visualization Workshop · Session 2 of 3"
+  progressPct: number; // 0..100 within the phase
+  rings: RingPhaseState[];
+  ringCenter: string; // phase label for the ring center
+  ringSub: string | null;
+}
+
+function SessionRail({ memberId, sessionKey }: { memberId: string; sessionKey: SessionKey }) {
+  const { arc, session } = chatDispatch(sessionKey);
+  if (arc === 'reconnect') return <ReconnectChat memberId={memberId} />;
+  if (arc === 'rewire') return <RewireChat memberId={memberId} session={session as 'w1' | 'w2' | 'w3' | 'checkpoint'} />;
+  if (arc === 'rebuild') return <RebuildChat memberId={memberId} session={session as 'b1' | 'b2' | 'b3' | 'checkpoint'} />;
+  return <ReclaimChat memberId={memberId} session={session as 'c1' | 'c2' | 'c3' | 'checkpoint'} />;
+}
+
+export default function WorkspaceSession({
+  memberId,
+  sessionKey,
+  artifact: initial,
+  wayfinding,
+}: {
+  memberId: string;
+  sessionKey: SessionKey;
+  artifact: Artifact;
+  wayfinding: Wayfinding;
+}) {
+  const [artifact, setArtifact] = useState<Artifact>(initial);
+
+  // Poll the committed artifact so the canvas fills as the conversation lands (no arc-engine coupling).
+  useEffect(() => {
+    let cancelled = false;
+    const id = setInterval(async () => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
+      const next = await readArtifactAction(memberId, sessionKey);
+      if (!cancelled && next) setArtifact(next);
+    }, 5000);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, [memberId, sessionKey]);
+
+  return (
+    <>
+      <RedesignChrome />
+      <div className="redesign-topbar">
+        <Link href="/" className="rt-brand" aria-label="Home">
+          <span className="rt-bull" aria-hidden="true" />
+          <span className="rt-mark">GRINTA FOR LIFE.</span>
+        </Link>
+        <Link href={`/dashboard/${memberId}`} className="ws-back">← Dashboard</Link>
+      </div>
+
+      <div className="redesign-app ws-app">
+        <div className="redesign-canvas">
+          {/* Wayfinding: ring + where you are + progress + full route */}
+          <div className="ws-wayfind">
+            <div className="ws-way-ring">
+              <RedesignRing rings={wayfinding.rings} centerTop={wayfinding.ringCenter} centerSub={wayfinding.ringSub} size={72} />
+            </div>
+            <div className="ws-way-pos">
+              <div className="ws-way-ph">Phase {wayfinding.phaseOrdinal} · {wayfinding.phaseLabel}</div>
+              <div className="ws-way-ss">{wayfinding.positionLabel}</div>
+              <div className="ws-way-bar"><span className="ws-way-fill" style={{ width: `${wayfinding.progressPct}%` }} /></div>
+            </div>
+            <Link href={`/program/${memberId}`} className="ws-way-route">Full route →</Link>
+          </div>
+
+          {/* Artifact — the work made visible, filling as the conversation commits */}
+          <div className="ws-artifact">
+            <h1 className="ws-art-title">{artifact.title}</h1>
+            <p className="ws-art-lede">{artifact.lede}</p>
+            {artifact.slots.length > 0 && (
+              <div className="ws-slots">
+                {artifact.slots.map((s, i) => (
+                  <div key={i} className={`ws-slot${s.value ? ' filled' : ''}`}>
+                    <div className="ws-slot-lab">{s.label}</div>
+                    <div className="ws-slot-val">{s.value ? s.value : '…the Companion will draw this out'}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+            <p className="ws-art-foot">{artifact.foot}</p>
+          </div>
+        </div>
+
+        <aside className="redesign-rail ws-rail" aria-label="Your G4L Companion — guided session">
+          <SessionRail memberId={memberId} sessionKey={sessionKey} />
+        </aside>
+      </div>
+    </>
+  );
+}

@@ -5,6 +5,7 @@ import { getForecast, getPassport, getFacets } from '../../lib/curriculum/view.t
 import { resolveHero } from '../../lib/dashboard/hero-signals.ts';
 import { deriveRingState } from '../../lib/workspace/ring-state.ts';
 import { heroView } from '../../lib/dashboard/hero-copy.ts';
+import { keyFromForecast } from '../../lib/workspace/session-key.ts';
 import { latestGrintaReading } from '../../lib/grinta/survey/store.ts';
 import { getActivityPanel } from '../../lib/activity/store.ts';
 import { stravaConfigured } from '../../lib/activity/strava.ts';
@@ -62,13 +63,15 @@ export default async function RedesignDashboard({ db, memberId, dash }: { db: Db
 
   const hero = heroView(heroState, { phaseLabel, phaseOrdinal, sessionPosition });
 
-  // The CTA destination. Reuses the same route logic as the live dashboard; practice → the log surface; fresh → Reconnect.
+  // The CTA destination. In the redesign the session runs in the WORKSPACE (Layer 3) when the lit step maps to a
+  // workspace key; practice → the log surface; otherwise fall back to the legacy route so a walk never dead-ends.
   const cur = forecast.current;
+  const wsKey = keyFromForecast(activePhase, cur ? { id: cur.id, route: cur.route, kind: cur.kind } : null);
   const ctaHref =
     heroState.kind === 'mid-week-practice'
       ? `/momentum/${memberId}`
-      : heroState.kind === 'fresh'
-        ? `/reconnect/${memberId}`
+      : wsKey
+        ? `/workspace/${memberId}/${wsKey}`
         : cur?.openable
           ? cur.route
             ? cur.route.replace('{memberId}', memberId)

@@ -1314,3 +1314,39 @@ body.redesign-on .back-dash { display: none; }
   .r-hero { flex-direction: column; align-items: flex-start; }
   .rh-ring { align-self: center; }
 }
+
+/* ---- REDESIGN Layer 3 · Program Workspace (build spec §4). Reuses the two-pane .redesign-app; the rail holds the
+   existing arc chat client, the canvas holds wayfinding + the artifact. ---- */
+.ws-back { font-weight: 700; color: var(--navy); text-decoration: none; }
+.ws-back:hover { text-decoration: underline; }
+.ws-app { min-height: calc(100vh - 64px); }
+
+.ws-wayfind { display: flex; align-items: center; gap: 18px; background: var(--white); border: 1px solid #e3e2df; border-radius: 14px; padding: 16px 20px; }
+.ws-way-ring { width: 72px; height: 72px; flex: 0 0 auto; }
+.ws-way-pos { flex: 1; min-width: 0; }
+.ws-way-ph { font-weight: 800; color: var(--navy); font-size: 15px; }
+.ws-way-ss { color: #6b7680; font-size: 13px; margin-top: 1px; }
+.ws-way-bar { height: 6px; background: #f5f4f1; border-radius: 99px; margin-top: 9px; overflow: hidden; }
+.ws-way-fill { display: block; height: 100%; background: var(--olive); border-radius: 99px; transition: width .5s ease; }
+.ws-way-route { font-size: 13px; white-space: nowrap; color: var(--teal); font-weight: 600; text-decoration: none; }
+
+.ws-artifact { margin-top: 20px; background: var(--white); border: 1px solid #e3e2df; border-radius: 16px; padding: 28px 30px; }
+.ws-art-title { font-weight: 800; font-size: 26px; color: var(--navy); margin: 0; }
+.ws-art-lede { color: #6b7680; font-size: 15px; margin-top: 6px; font-style: italic; }
+.ws-slots { margin-top: 22px; display: flex; flex-direction: column; gap: 14px; }
+.ws-slot { border: 1px solid #e3e2df; border-left: 4px solid #e3e2df; border-radius: 12px; padding: 16px 18px; background: #f5f4f1; transition: .3s; }
+.ws-slot-lab { font-weight: 800; text-transform: uppercase; letter-spacing: .05em; font-size: 11.5px; color: #6b7680; }
+.ws-slot-val { font-size: 17px; line-height: 1.4; margin-top: 6px; color: #b7b5af; white-space: pre-line; }
+.ws-slot.filled { background: var(--white); border-left-color: var(--olive); }
+.ws-slot.filled .ws-slot-val { color: var(--charcoal); font-weight: 500; }
+.ws-art-foot { margin-top: 20px; font-size: 13px; color: #6b7680; }
+
+/* The rail hosts the existing arc chat client — make it fill the sticky rail and scroll internally. */
+.ws-rail { padding: 0; }
+.ws-rail > div { display: flex; flex-direction: column; flex: 1; min-height: 0; padding: 16px 18px; overflow: hidden; }
+.ws-rail .chat { flex: 1; min-height: 0; overflow-y: auto; }
+.ws-rail .chat-input { margin-top: 12px; }
+
+@media (max-width: 1000px) {
+  .ws-rail { min-height: 70vh; }
+}
