@@ -6,6 +6,8 @@ import { getPlaybookSynthesis } from '../../../lib/agent/playbook-synthesis.ts';
 import { logEvent } from '../../../lib/telemetry/store.ts';
 import type { Db } from '../../../lib/db/schema.ts';
 import PlaybookView from './playbook-view.tsx';
+import RedesignPlaybookView from './redesign-playbook-view.tsx';
+import { redesignEnabled } from '../../../lib/dashboard/redesign.ts';
 
 export const metadata = { title: 'Your G4L Playbook — Grinta for Life' };
 // The "Gather from your work" action runs a live curation pass; give the function room.
@@ -24,5 +26,6 @@ export default async function PlaybookPage({ params }: { params: Promise<{ membe
   );
   const hasHistory = (hist.rows[0]?.n ?? 0) > 0;
   const synthesis = await getPlaybookSynthesis(db, memberId);
-  return <PlaybookView memberId={memberId} initial={entries} hasHistory={hasHistory} synthesis={synthesis} />;
+  const props = { memberId, initial: entries, hasHistory, synthesis };
+  return redesignEnabled() ? <RedesignPlaybookView {...props} /> : <PlaybookView {...props} />;
 }

@@ -1,0 +1,242 @@
+'use client';
+
+import { useState } from 'react';
+import type { PlaybookEntry } from '../../../lib/playbook/store.ts';
+import {
+  loadPlaybookAction,
+  addOwnEntryAction,
+  keepEntryAction,
+  dismissEntryAction,
+  pinEntryAction,
+  editEntryAction,
+  removeEntryAction,
+  gatherFromHistoryAction,
+} from './actions.ts';
+
+// Redesign Playbook (Decision ZZ) — the same data + CRUD as the live PlaybookView, reorganized by what each line is FOR:
+// five keeper-type chapters, a pinned "short version" front matter, one intake tray for the Companion's flags, and the
+// journal as free-write intake. Flag-gated at the page → prod keeps the section-based view. Every action is reused
+// unchanged; this is a presentation refactor over the same stateful data.
+
+type ChapterKey = 'who' | 'lights' | 'tells' | 'plays' | 'why';
+const CHAPTERS: { key: ChapterKey; title: string; sub: string; empty: string }[] = [
+  { key: 'who', title: 'Who you are', sub: 'The selves you’re reclaiming — named in your words.', empty: 'The identities you reclaim land here as you name them.' },
+  { key: 'lights', title: 'What lights you up', sub: 'The fuel — what’s still alive in you.', empty: 'What still moves you gets kept here — your spark, in your words.' },
+  { key: 'tells', title: 'Your tells', sub: 'The patterns worth catching early.', empty: 'The signs you’re drifting land here, so you can catch them sooner.' },
+  { key: 'plays', title: 'Your plays', sub: 'Your true lines and recovery moves — reach for them when it’s hard.', empty: 'Your reframes and comeback moves get kept here — your go-to plays.' },
+  { key: 'why', title: 'Why it works', sub: 'The science that convinced you — in plain language, not the whole textbook.', empty: 'The few facts that actually land for you get kept here, plainly.' },
+];
+const CHAPTER_LABEL: Record<ChapterKey, string> = { who: 'Who you are', lights: 'Lights you up', tells: 'Your tells', plays: 'Your plays', why: 'Why it works' };
+
+// What a kept line IS → its chapter. Keeper-type is authoritative; section is the fallback for older entries with none.
+function chapterKey(e: PlaybookEntry): ChapterKey | null {
+  if (e.section === 'journal') return null; // journal is intake, not a chapter
+  switch (e.keeperType) {
+    case 'definition':
+      return 'who';
+    case 'lights_you_up':
+      return 'lights';
+    case 'tell':
+      return 'tells';
+    case 'principle':
+    case 'recovery_move':
+    case 'plan':
+      return 'plays';
+  }
+  if (e.section === 'why_works') return 'why';
+  if (e.section === 'what_works') return 'plays';
+  return 'who';
+}
+
+export default function RedesignPlaybookView({
+  memberId,
+  initial,
+  hasHistory,
+  synthesis,
+}: {
+  memberId: string;
+  initial: PlaybookEntry[];
+  hasHistory: boolean;
+  synthesis?: string | null;
+}) {
+  const [entries, setEntries] = useState<PlaybookEntry[]>(initial);
+  const [busy, setBusy] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [draft, setDraft] = useState('');
+  const [note, setNote] = useState('');
+  const [gathering, setGathering] = useState(false);
+  const [gatherMsg, setGatherMsg] = useState<string | null>(null);
+
+  async function refresh() {
+    setEntries(await loadPlaybookAction(memberId));
+  }
+  async function run(fn: () => Promise<unknown>) {
+    if (busy) return;
+    setBusy(true);
+    try {
+      await fn();
+      await refresh();
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function gather() {
+    if (gathering || busy) return;
+    setGathering(true);
+    setGatherMsg(null);
+    try {
+      const r = await gatherFromHistoryAction(memberId);
+      await refresh();
+      setGatherMsg(r.proposed > 0 ? `Gathered ${r.proposed} from your work — keep what rings true below.` : 'Nothing new to gather yet — keep working, and there’ll be more to pull from.');
+    } finally {
+      setGathering(false);
+    }
+  }
+  async function saveEdit(id: string) {
+    const body = draft.trim();
+    if (!body) return;
+    await run(() => editEntryAction(memberId, id, body));
+    setEditingId(null);
+    setDraft('');
+  }
+  async function addNote() {
+    const body = note.trim();
+    if (!body) return;
+    await run(() => addOwnEntryAction(memberId, body));
+    setNote('');
+  }
+
+  function entryCard(e: PlaybookEntry) {
+    const editing = editingId === e.id;
+    const tag = e.section === 'journal' ? null : e.source.kind === 'science' ? 'Science' : e.source.label ?? null;
+    return (
+      <div key={e.id} className="pb-entry">
+        {editing ? (
+          <div className="pb-edit">
+            <textarea value={draft} onChange={(ev) => setDraft(ev.target.value)} rows={3} autoFocus />
+            <div className="pb-actions">
+              <button type="button" className="pb-btn keep" disabled={busy || !draft.trim()} onClick={() => saveEdit(e.id)}>Save</button>
+              <button type="button" className="pb-btn ghost" onClick={() => { setEditingId(null); setDraft(''); }}>Cancel</button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <p className="pb-line">{e.pinned && <span className="pb-pin-dot" aria-label="pinned" title="Pinned">📌</span>}{e.body}</p>
+            <div className="pb-meta">
+              {e.section === 'journal' ? (
+                <span className="pb-date">{new Date(e.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+              ) : (
+                tag && <span className={`pb-chip${e.source.kind === 'science' ? ' sci' : ''}`}>{tag}</span>
+              )}
+              <span className="pb-tools">
+                <button type="button" onClick={() => run(() => pinEntryAction(memberId, e.id, !e.pinned))} disabled={busy}>{e.pinned ? 'Unpin' : 'Pin'}</button>
+                <button type="button" onClick={() => { setEditingId(e.id); setDraft(e.body); }} disabled={busy}>Edit</button>
+                <button type="button" onClick={() => run(() => removeEntryAction(memberId, e.id))} disabled={busy}>Remove</button>
+              </span>
+            </div>
+          </>
+        )}
+      </div>
+    );
+  }
+
+  function proposedCard(e: PlaybookEntry) {
+    const ck = chapterKey(e);
+    return (
+      <div key={e.id} className="pb-proposed">
+        <div className="pb-prop-head">Your companion flagged this{ck ? ` · files under ${CHAPTER_LABEL[ck]}` : ''} — keep it?</div>
+        <p className="pb-line">{e.body}</p>
+        <div className="pb-actions">
+          <button type="button" className="pb-btn keep" disabled={busy} onClick={() => run(() => keepEntryAction(memberId, e.id))}>Keep it</button>
+          <button type="button" className="pb-btn ghost" disabled={busy} onClick={() => run(() => dismissEntryAction(memberId, e.id))}>Not now</button>
+        </div>
+      </div>
+    );
+  }
+
+  const kept = entries.filter((e) => e.state === 'kept');
+  const proposed = entries.filter((e) => e.state === 'proposed');
+  const pinned = kept.filter((e) => e.pinned).slice(0, 3);
+  const journal = kept.filter((e) => e.section === 'journal');
+  const chapters = CHAPTERS.map((c) => ({ ...c, items: kept.filter((e) => e.section !== 'journal' && chapterKey(e) === c.key) }));
+
+  return (
+    <>
+      <h1 className="pb-page-title">Your G4L Playbook</h1>
+      <p className="pb-sub">Everything you’ve kept — sorted by what it’s for, so you can reach for the right thing fast.</p>
+
+      {gathering ? (
+        <div className="pb-gather"><span className="typing">Gathering from your work…</span></div>
+      ) : entries.length === 0 && hasHistory ? (
+        <div className="pb-gather-cta">
+          <p>You’ve already built real material. Let’s gather it into your Playbook.</p>
+          <button type="button" className="pb-btn keep" onClick={gather}>Gather from your work →</button>
+        </div>
+      ) : null}
+      {gatherMsg && <p className="pb-gather-msg">{gatherMsg}</p>}
+
+      {/* FRONT MATTER — the short version: the pinned lines you reach for most. */}
+      {pinned.length > 0 && (
+        <section className="pb-frontmatter">
+          <div className="pb-fm-title">The short version</div>
+          <div className="pb-fm-items">
+            {pinned.map((e) => {
+              const ck = chapterKey(e);
+              return (
+                <div key={e.id} className="pb-fm-item">
+                  {ck && <span className="pb-fm-tag">{CHAPTER_LABEL[ck]}</span>}
+                  <span className="pb-fm-line">{e.body}</span>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
+      {/* STORY SO FAR — the living synthesis. */}
+      {synthesis && (
+        <section className="pb-card pb-hero">
+          <div className="pb-sec">Your story so far</div>
+          <div className="pb-sec-d">A living read your companion re-weaves each time you close a Session.</div>
+          <div className="pb-narr">
+            {synthesis.split(/\n\n+/).map((p) => p.trim()).filter(Boolean).map((para, k) => (<p key={k}>{para}</p>))}
+          </div>
+        </section>
+      )}
+
+      {/* INTAKE TRAY — everything the Companion flagged, in one place, files under a chapter on keep. */}
+      {proposed.length > 0 && (
+        <section className="pb-tray">
+          <div className="pb-sec">To review</div>
+          <div className="pb-sec-d">Your companion noticed these. Keep what rings true — it files itself under the right chapter.</div>
+          {proposed.map(proposedCard)}
+        </section>
+      )}
+
+      {/* THE FIVE CHAPTERS — by what each line is for. */}
+      {chapters.map((c) => (
+        <section key={c.key} className="pb-card pb-chapter">
+          <div className="pb-sec">{c.title}</div>
+          <div className="pb-sec-d">{c.sub}</div>
+          {c.items.length > 0 ? c.items.map(entryCard) : <p className="pb-empty">{c.empty}</p>}
+        </section>
+      ))}
+
+      {/* JOURNAL — free-write intake; the Companion harvests keepers up into the chapters. */}
+      <section className="pb-card pb-journal">
+        <div className="pb-sec">Your journal</div>
+        <div className="pb-sec-d">Write a little or a lot, anytime. Your companion reads it and pulls keepers up — it only replies if you ask.</div>
+        {journal.map(entryCard)}
+        <div className="pb-add">
+          <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2} placeholder="Write your own entry…" disabled={busy} />
+          <button type="button" className="pb-btn keep" disabled={busy || !note.trim()} onClick={addNote}>Add note</button>
+        </div>
+      </section>
+
+      {entries.length > 0 && hasHistory && !gathering && (
+        <p className="pb-gather-link"><button type="button" className="pb-linkbtn" onClick={gather}>Gather from recent work →</button></p>
+      )}
+      <p className="pb-foot">Your companion gathers these as you go and flags keepers — you decide what stays. Edit, pin, or remove anything. Over time this becomes the raw material for your Legacy Letter and Success Story.</p>
+    </>
+  );
+}

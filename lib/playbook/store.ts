@@ -24,6 +24,7 @@ export type PlaybookEntry = {
   sortOrder: number;
   createdAt: string;
   updatedAt: string;
+  keeperType?: string | null; // what the line IS (definition/lights_you_up/tell/principle/recovery_move…) — 0046; the redesign groups by it
 };
 
 const SECTIONS: PlaybookSection[] = ['what_works', 'why_works', 'own_words', 'journal'];
@@ -42,6 +43,7 @@ function rowToEntry(r: any): PlaybookEntry {
     sortOrder: Number(r.sort_order ?? 0),
     createdAt: typeof r.created_at === 'string' ? r.created_at : new Date(r.created_at).toISOString(),
     updatedAt: typeof r.updated_at === 'string' ? r.updated_at : new Date(r.updated_at).toISOString(),
+    keeperType: r.keeper_type ?? null,
   };
 }
 
