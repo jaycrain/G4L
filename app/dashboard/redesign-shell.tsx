@@ -19,11 +19,20 @@ export default function RedesignShell({ memberId, children }: { memberId: string
   const [input, setInput] = useState('');
   const [pending, setPending] = useState(false);
   const chatRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const pendingRef = useRef(false);
   useEffect(() => {
     pendingRef.current = pending;
   }, [pending]);
+
+  // Auto-grow the composer to fit multiple rows (capped), like the dock's composer.
+  useEffect(() => {
+    const el = inputRef.current;
+    if (el) {
+      el.style.height = 'auto';
+      el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
+    }
+  }, [input]);
 
   // Always open → load the persisted thread once on mount.
   const loadedRef = useRef(false);
@@ -124,12 +133,18 @@ export default function RedesignShell({ memberId, children }: { memberId: string
             {pending && <div className="rmsg typing">Thinking…</div>}
           </div>
           <form className="rrail-composer" onSubmit={send}>
-            <input
+            <textarea
               ref={inputRef}
+              rows={1}
               value={input}
               onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  void send();
+                }
+              }}
               placeholder="Tell me what's going on…"
-              autoComplete="off"
               disabled={pending}
             />
             <button type="submit" className="rrail-send" disabled={pending || !input.trim()}>

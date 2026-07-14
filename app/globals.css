@@ -1304,9 +1304,10 @@ body.redesign-on .back-dash { display: none; }
 .rmsg.agent { align-self: flex-start; background: #fff; border: 1px solid #e3e2df; border-radius: 4px 13px 13px 13px; }
 .rmsg.member { align-self: flex-end; background: var(--navy); color: #fff; border-radius: 13px 13px 4px 13px; }
 .rmsg.typing { align-self: flex-start; background: #fff; border: 1px solid #e3e2df; border-radius: 13px; color: #8b949b; font-style: italic; }
-.rrail-composer { border-top: 1px solid #e3e2df; padding: 14px 18px 18px; display: flex; gap: 9px; }
-.rrail-composer input { flex: 1; border: 1px solid #e3e2df; border-radius: 100px; padding: 11px 15px; font-family: inherit; font-size: 14.5px; outline: none; }
-.rrail-send { background: var(--teal); color: #fff; font-weight: 700; border: none; border-radius: 100px; padding: 11px 18px; font-size: 14px; cursor: pointer; }
+.rrail-composer { border-top: 1px solid #e3e2df; padding: 14px 18px 18px; display: flex; gap: 9px; align-items: flex-end; }
+/* Squared-off corners + a multi-row auto-growing textarea, matching the dock's composer. */
+.rrail-composer textarea { flex: 1; border: 1px solid #e3e2df; border-radius: 10px; padding: 11px 15px; font-family: inherit; font-size: 14.5px; line-height: 1.4; outline: none; resize: none; overflow-y: auto; min-height: 44px; max-height: 160px; }
+.rrail-send { background: var(--teal); color: #fff; font-weight: 700; border: none; border-radius: 10px; padding: 11px 18px; font-size: 14px; cursor: pointer; flex: none; }
 .rrail-send:disabled { opacity: .5; cursor: default; }
 
 /* Below 1000px: the rail drops beneath the canvas (dashboard-ui-standards). */
