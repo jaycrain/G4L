@@ -1,0 +1,121 @@
+import Link from 'next/link';
+import { redirect } from 'next/navigation';
+import { getDb } from '../../../lib/db/index.ts';
+import type { Db } from '../../../lib/db/schema.ts';
+import { authorizeMember } from '../../authz.ts';
+import { redesignEnabled } from '../../../lib/dashboard/redesign.ts';
+import { getActivityPanel } from '../../../lib/activity/store.ts';
+import { stravaConfigured } from '../../../lib/activity/strava.ts';
+import { formatDistance, formatDuration, typeLabel, relativeDay } from '../../../lib/activity/summary.ts';
+import RedesignChrome from '../../dashboard/redesign-chrome.tsx';
+import StravaConnect from '../../account/strava-connect.tsx';
+
+// Redesign Layer 3 — the MOVEMENT subpage (Decision YY): a first-class evidence surface. Connect the apps you already
+// use → one unified view, read against who you're reclaiming, never left as raw numbers. Flag-gated (REDESIGN). Cycle 1
+// = Strava direct; the aggregator sources (Fitbit/Garmin/…) + the Companion-logged history + Apple Health arrive with the
+// app / ROOK (labeled honestly here, not faked).
+
+// Extra sources beyond Strava — reachable via the aggregator (Cycle 2), shown as an honest forward-map, not fake buttons.
+const SOON = [
+  { name: 'Fitbit', what: 'Steps · heart rate · sleep' },
+  { name: 'Garmin', what: 'Rides · runs · training' },
+  { name: 'Withings', what: 'Weight · blood pressure' },
+  { name: 'Peloton', what: 'Via your other apps' },
+];
+
+export default async function MovementPage({ params }: { params: Promise<{ memberId: string }> }) {
+  const { memberId } = await params;
+  if (!redesignEnabled()) redirect(`/dashboard/${memberId}`);
+  if (!(await authorizeMember(memberId))) redirect('/login');
+  const db = (await getDb()) as unknown as Db;
+
+  const noun = (await db.query<{ identity_noun: string | null }>('select identity_noun from member_profile where member_id=$1', [memberId])).rows[0]?.identity_noun ?? null;
+  const activity = await getActivityPanel(db, memberId, noun).catch(() => null);
+  const connected = activity?.connected ?? false;
+  const recent = activity?.recent ?? [];
+  const thisWeek = activity?.thisWeek ?? { count: 0, distanceM: 0, movingTimeS: 0 };
+
+  const activeDays = new Set(recent.map((a) => a.daysAgo)).size;
+  // Group synced history by day label, newest first.
+  const groups: { label: string; items: typeof recent }[] = [];
+  for (const a of recent) {
+    const label = relativeDay(a.daysAgo) || `${a.daysAgo}d ago`;
+    const g = groups.find((x) => x.label === label) ?? (groups.push({ label, items: [] }), groups[groups.length - 1]!);
+    g.items.push(a);
+  }
+
+  return (
+    <>
+      <RedesignChrome />
+      <div className="redesign-topbar">
+        <Link href="/" className="rt-brand" aria-label="Go to your G4L home">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img className="rt-logo-mark" src="/brand/g4l-rings.svg" alt="" aria-hidden="true" />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img className="rt-wordmark" src="/brand/g4l-wordmark.svg" alt="Grinta for Life" />
+        </Link>
+        <Link href={`/dashboard/${memberId}`} className="ws-back">← Dashboard</Link>
+      </div>
+
+      <div className="mv-wrap">
+        <div className="mv-eyebrow">Movement</div>
+        <h1 className="mv-title">Everything you’re doing, in one place</h1>
+        <p className="mv-lede">Connect the apps you already use, and the Companion adds what you tell it along the way. Read against who you’re reclaiming — never left as raw numbers.</p>
+
+        {/* Connect sources */}
+        <div className="mv-sources">
+          <div className="mv-sources-h">Connect your sources</div>
+          <div className="mv-source-grid">
+            <div className="mv-source on">
+              <div><div className="mv-source-name">Strava</div><div className="mv-source-what">Rides · runs · activities</div></div>
+              {connected ? <span className="mv-badge on">Connected</span> : <span className="mv-connect"><StravaConnect connected={false} configured={stravaConfigured()} /></span>}
+            </div>
+            <div className="mv-source">
+              <div><div className="mv-source-name">Apple Health</div><div className="mv-source-what">Weight · sleep · steps</div></div>
+              <span className="mv-badge">Needs the app</span>
+            </div>
+            {SOON.map((s) => (
+              <div className="mv-source" key={s.name}>
+                <div><div className="mv-source-name">{s.name}</div><div className="mv-source-what">{s.what}</div></div>
+                <span className="mv-badge">Soon</span>
+              </div>
+            ))}
+          </div>
+          <p className="mv-sources-foot">Oura, Whoop, Google Health &amp; 400 more — one connection covers them all, with the app.</p>
+        </div>
+
+        {/* This week */}
+        <div className="mv-week">
+          <span><b>{thisWeek.count}</b>this week</span>
+          {formatDistance(thisWeek.distanceM) && <span><b>{formatDistance(thisWeek.distanceM)}</b>distance</span>}
+          {formatDuration(thisWeek.movingTimeS) && <span><b>{formatDuration(thisWeek.movingTimeS)}</b>moving</span>}
+          <span><b>{activeDays}</b>active days</span>
+        </div>
+
+        {/* History */}
+        <div className="mv-history">
+          <div className="mv-history-h">Your history</div>
+          <p className="mv-history-lede">Everything you’ve done and everything you’ve told me — kept in order, so the story of your movement stays whole.</p>
+          {groups.length === 0 ? (
+            <p className="muted">Once you connect a source or tell your Companion about a walk, it lands here — in order.</p>
+          ) : (
+            groups.map((g) => (
+              <div className="mv-day" key={g.label}>
+                <div className="mv-day-label">{g.label}</div>
+                <div className="mv-day-items">
+                  {g.items.map((a, i) => (
+                    <div className="mv-entry" key={i}>
+                      <span className="mv-dot synced" aria-hidden="true" />
+                      <div className="mv-entry-head"><span className="mv-entry-type">{typeLabel(a.type)}</span><span className="mv-src-chip">Strava</span></div>
+                      {formatDistance(a.distanceM) && <div className="mv-entry-meta">{formatDistance(a.distanceM)}</div>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+    </>
+  );
+}

@@ -1354,3 +1354,37 @@ body.redesign-on .back-dash { display: none; }
 @media (max-width: 1000px) {
   .ws-rail { min-height: 70vh; }
 }
+
+/* ---- REDESIGN Layer 3 · Movement subpage (Decision YY) ---- */
+.mv-wrap { max-width: 860px; margin: 0 auto; padding: 28px 28px 70px; }
+.mv-eyebrow { font-weight: 800; text-transform: uppercase; letter-spacing: .07em; font-size: 12px; color: var(--teal); }
+.mv-title { font-weight: 800; font-size: 30px; color: var(--navy); margin: 6px 0 4px; }
+.mv-lede { font-size: 15px; color: #6b7680; line-height: 1.5; max-width: 60ch; }
+.mv-sources { margin-top: 24px; background: var(--charcoal); border-radius: 16px; padding: 22px 24px; }
+.mv-sources-h { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: #9aa0a5; font-weight: 800; }
+.mv-source-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+.mv-source { display: flex; align-items: center; justify-content: space-between; gap: 10px; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.14); border-radius: 12px; padding: 13px 15px; }
+.mv-source.on { background: rgba(145,149,54,.22); border-color: rgba(145,149,54,.5); }
+.mv-source-name { font-weight: 700; font-size: 15px; color: #fff; }
+.mv-source-what { font-size: 11.5px; color: #9aa0a5; }
+.mv-badge { background: rgba(255,255,255,.16); color: #fff; font-weight: 700; font-size: 12px; padding: 6px 13px; border-radius: 100px; white-space: nowrap; }
+.mv-badge.on { background: var(--olive); }
+.mv-connect :is(a, button) { font-size: 12px; padding: 6px 12px; }
+.mv-sources-foot { margin-top: 12px; font-size: 12px; color: #9aa0a5; }
+.mv-week { display: flex; gap: 26px; margin-top: 22px; padding: 18px 4px; border-bottom: 1px solid #e3e2df; flex-wrap: wrap; }
+.mv-week span { font-size: 12px; color: #6b7680; }
+.mv-week b { display: block; font-size: 24px; color: var(--navy); }
+.mv-history { margin-top: 24px; }
+.mv-history-h { font-weight: 800; font-size: 18px; color: var(--navy); margin-bottom: 4px; }
+.mv-history-lede { font-size: 13px; color: #6b7680; margin-bottom: 18px; }
+.mv-day-label { font-weight: 700; text-transform: uppercase; letter-spacing: .05em; font-size: 11.5px; color: #8b949b; margin: 0 0 10px; }
+.mv-day-items { border-left: 2px solid #e3e2df; padding-left: 18px; margin-left: 6px; display: flex; flex-direction: column; gap: 16px; padding-bottom: 22px; }
+.mv-entry { position: relative; }
+.mv-dot { position: absolute; left: -25px; top: 2px; width: 16px; height: 16px; border-radius: 50%; box-shadow: 0 0 0 3px var(--white); }
+.mv-dot.synced { background: var(--teal); }
+.mv-dot.logged { background: radial-gradient(circle, var(--orange) 0 22%, var(--olive) 22% 44%, var(--teal) 44% 66%, var(--navy) 66% 100%); }
+.mv-entry-head { display: flex; align-items: center; gap: 8px; }
+.mv-entry-type { font-size: 15px; font-weight: 600; color: var(--charcoal); }
+.mv-src-chip { font-size: 11px; font-weight: 700; color: #2f6b6b; background: #dcecec; padding: 2px 9px; border-radius: 100px; }
+.mv-entry-meta { font-size: 13.5px; color: #6b7680; margin-top: 2px; }
+@media (max-width: 700px) { .mv-source-grid { grid-template-columns: 1fr; } }
