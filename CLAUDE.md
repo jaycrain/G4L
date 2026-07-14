@@ -6,7 +6,14 @@ Reconnect (2026-07-07, `ONBOARDING_ENGINE=staged` + `RECONNECT=staged`), v2.3 Re
 v2.4 Rebuild (2026-07-09, `REBUILD=staged`), **v2.5 Reclaim** (2026-07-10, `RECLAIM=staged`) — all four Rs now
 conversational + live. Between v2.4 and v2.5, **v2.4.1 "Charter Readiness"** (2026-07-10) was a cross-cutting quality
 pass closing the founder-walk code lane (chips, hand-home, keeper-recall, Momentum, Reconnect resume). Migrations
-through 0056 applied. **Version scheme: each `.N` = a PHASE flip; a `.N.x` = a readiness/quality pass.** NOTE: v2.5
+through 0056 applied. **Version scheme: each `.N` = a PHASE flip; a `.N.x` = a readiness/quality pass; a MAJOR bump
+(v3.0) = a whole-experience redesign, not a phase.** **v3.0 — the Desktop Redesign** (2026-07-14, Jay): the entire
+member surface rebuilt — persistent Companion rail, stateful resume hero + merged ring, the Program **workspace**
+(sessions run two-pane, canvas artifact beside the conversation), first-class **Movement** subpage, the real
+16-milestone **badges** + ceremony badge-reveal, and the keeper-chapter **Playbook** restructure. **BUILT + flag-gated
+behind `REDESIGN`, walkable on a Vercel preview, prod untouched — NOT yet flipped.** Like the v2.x line, the number is
+stamped at the prod flip (set `REDESIGN=staged` on Production after Jay's full-account walk); until then prod stays v2.5.
+See [[desktop-redesign-build-state]]. NOTE: v2.5
 Reclaim was flipped "as is" for shared team context — it is known-rough (the W-28 Rebuild→Reclaim entry/exit + the
 "how to get out of Reclaim" Loop questions are OPEN, Jay+Greg); changes are expected. Onboarding v1 and the pre-flip
 "flag-gated / prod stays v1" framing are retired. New member-facing changes now affect real prod — verify live after deploy.
