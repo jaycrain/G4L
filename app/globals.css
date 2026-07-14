@@ -1396,3 +1396,24 @@ body.redesign-on .back-dash { display: none; }
 .cer-badge-eyebrow { font-weight: 800; text-transform: uppercase; letter-spacing: .06em; font-size: 11px; color: var(--olive); }
 .cer-badge-name { font-weight: 800; font-size: 18px; color: var(--navy); text-align: center; }
 @keyframes cerBadgePop { 0% { transform: scale(.5); opacity: 0; } 45% { transform: scale(1.25); box-shadow: 0 0 0 8px rgba(145,149,54,.22); } 100% { transform: scale(1); opacity: 1; } }
+
+/* REDESIGN · phone widths — tighten the topbar + canvas so nothing overflows the viewport. */
+@media (max-width: 640px) {
+  .redesign-app { overflow-x: clip; }
+  .redesign-topbar { padding: 0 14px; gap: 8px; }
+  .redesign-canvas { padding: 20px 14px 48px; }
+  .rt-wordmark { height: 22px; }
+  .rt-logo-mark { width: 28px; height: 28px; }
+  .rt-who { gap: 10px; }
+  .rt-hi { display: none; } /* keep the avatar as the account tap target; drop the name to save width */
+  .rt-nav { gap: 12px; }
+  .rt-nav a { font-size: 13px; }
+  .rt-logout button { font-size: 13px; }
+  .r-hero { padding: 22px 20px; }
+  .rh-title { font-size: 24px; }
+  .ri-title { font-size: 19px; }
+  .rreg-big { font-size: 36px; }
+  /* Movement subpage + workspace: keep within the viewport too. */
+  .mv-wrap { padding: 20px 14px 56px; }
+  .ws-wayfind { flex-wrap: wrap; }
+}

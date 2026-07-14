@@ -8,7 +8,7 @@
 
 import type { Db } from '../db/schema.ts';
 import { getForecast, type Forecast } from '../curriculum/view.ts';
-import { closedSessionIds, getSessionProgress, recentlyClosedSession } from '../curriculum/store.ts';
+import { closedSessionIds, getSessionProgress, recentlyClosedSession, listGates } from '../curriculum/store.ts';
 import { latestArcSession } from '../agent/arc-session.ts';
 import { activePracticeWeek, PRACTICE_WINDOW_DAYS, type PracticeKind } from '../practice/store.ts';
 import { resolveHeroState, type HeroSignals, type HeroState } from './resume-hero.ts';
@@ -77,7 +77,10 @@ export async function gatherHeroSignals(db: Db, memberId: string): Promise<HeroS
     : null;
 
   const closed = await closedSessionIds(db, memberId).catch(() => [] as string[]);
-  const hasStarted = closed.length > 0 || inflightArc != null || inProgressSession != null;
+  // "Started" = any closed session, an in-flight arc, OR a crossed checkpoint (a gate) — a member past Reconnect must
+  // never read as "fresh / Start here."
+  const gates = await listGates(db, memberId).catch(() => [] as string[]);
+  const hasStarted = closed.length > 0 || inflightArc != null || inProgressSession != null || gates.length > 0;
 
   return { hasStarted, inProgressSession, justFinishedSession, checkpointReady, activePractice, nextSession };
 }
