@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { startReconnectAction, reconnectTurnAction, reconnectCeremonyDataAction, loadReconnectSessionAction } from './actions.ts';
 import ScaleChips from '../components/scale-chips.tsx';
+import { useChatAutoscroll } from '../components/use-chat-autoscroll.ts';
 import type { ConvMessage, ConvState, ScaleExpectation } from '../../lib/agent/onboarding.ts';
 import { BEAT_SEP } from '../../lib/agent/reconnect.ts';
 import { DOORS } from '../../lib/doors.ts';
@@ -28,6 +29,7 @@ export default function ReconnectChat({ memberId }: { memberId: string }) {
   const [error, setError] = useState<string | null>(null);
   const [ceremony, setCeremony] = useState<ReconnectCeremonyData | null>(null); // §2f: set when the arc reaches 'ceremony'
   const started = useRef(false);
+  const chatRef = useChatAutoscroll([messages.length, pending, expects]);
 
   useEffect(() => {
     if (started.current) return;
@@ -99,7 +101,7 @@ export default function ReconnectChat({ memberId }: { memberId: string }) {
           )}
         </div>
       )}
-      <div className="chat">
+      <div className="chat" ref={chatRef}>
         {messages.map((m, i) => (
           <div key={i} className={`bubble ${m.role}`}>
             {m.text}

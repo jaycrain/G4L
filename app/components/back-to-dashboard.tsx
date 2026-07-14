@@ -22,9 +22,22 @@ export default function BackToDashboard() {
   const dashboard = `/dashboard/${memberId}`;
   if (pathname === dashboard) return null; // already home
 
+  // When a subpage was reached FROM a workspace session (e.g. Full route → carries ?from=<sessionKey>), also offer a
+  // "← Session" hop back to that session, so the member doesn't have to route Dashboard → back into the session. Same
+  // styling as the Dashboard link; sits just ahead of it.
+  const from = search?.get('from') ?? '';
+  const sessionBack = /^[a-z0-9-]{1,24}$/.test(from) ? `/workspace/${memberId}/${from}` : null;
+
   return (
-    <Link href={dashboard} className="back-dash" aria-label="Back to your dashboard">
-      ← Dashboard
-    </Link>
+    <>
+      {sessionBack && (
+        <Link href={sessionBack} className="back-dash" aria-label="Back to your session">
+          ← Session
+        </Link>
+      )}
+      <Link href={dashboard} className="back-dash" aria-label="Back to your dashboard">
+        ← Dashboard
+      </Link>
+    </>
   );
 }

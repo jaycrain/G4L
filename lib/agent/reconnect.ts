@@ -53,27 +53,38 @@ export function reconnectCallback(c: Collected): string {
         : others.length === 1
           ? `${primary} — with ${others[0]} tangled up in it`
           : `${primary}, with a couple of others stacked on top`;
-    // Richest path: a named Door → the revisable check lands on it by name. End on the guiding question (the
-    // "we go deeper" framing comes first, so the member's turn is handed a clear question, not a coda).
-    return (
+    // Richest path: a named Door → the revisable check lands on it by name. Warm reframe → the forecast (what this
+    // session will do) → the guiding question. Three beats so the member sees the shape before diving in.
+    return [
       `${identity ? `Last time, we found who you're reclaiming — ${identity} — and it` : 'When we last talked, it'} ` +
-      `felt like the distance started with ${doorPhrase}. This time, we go deeper into all of it. ` +
-      `Does that still feel like where it began — or has something shifted since?`
-    );
+        `felt like the distance started with ${doorPhrase}. This time, we go deeper into all of it.`,
+      RECONNECT_FORECAST,
+      `Does that still feel like where it began — or has something shifted since?`,
+    ].join(BEAT_SEP);
   }
   if (gap) {
     // No Door tagged, but the gap story is in hand → open on the story, still revisable.
-    return (
-      `Last time, you started to tell me how the distance opened${identity ? ` from ${identity}` : ''}. ` +
-      `I've been holding it. I want to go deeper into it with you now — does it still feel the way it did, or has it moved?`
-    );
+    return [
+      `Last time, you started to tell me how the distance opened${identity ? ` from ${identity}` : ''}. I've been holding it, and I want to go deeper into it with you now.`,
+      RECONNECT_FORECAST,
+      `Does it still feel the way it did — or has it moved?`,
+    ].join(BEAT_SEP);
   }
   // Thin/null: don't fake continuity. A warm, honest cold-ish open into the deeper work.
-  return (
-    `Let's pick up where we left off${identity ? ` — ${identity} is who we're bringing back` : ''}. ` +
-    `This time we go deeper into how the distance opened. No rush — start wherever it feels true.`
-  );
+  return [
+    `Let's pick up where we left off${identity ? ` — ${identity} is who we're bringing back` : ''}. This time we go deeper into how the distance opened.`,
+    RECONNECT_FORECAST,
+    `No rush — start wherever it feels true.`,
+  ].join(BEAT_SEP);
 }
+
+// The forecast beat (Jay + Greg): the first Reconnect session must tell the member the SHAPE of the work up front —
+// without it, the drawing-out feels pointless and endless. Maps honestly to the arc: Doors → a fresh measure (IDQ) →
+// the cost + the future you're reclaiming (Drift/Window) → the Checkpoint that opens the next phase. Plain, no hype.
+const RECONNECT_FORECAST =
+  "Here's the shape of it: we'll walk back through the Door — or Doors — the distance came in through, take a fresh " +
+  'measure of where you are now, then look at what it quietly cost and the life you\'re reclaiming. It ends where your ' +
+  'next phase begins. One thing at a time, at your pace — you set the depth, and you can stop whenever you want.';
 
 // The Reconnect opening turn (parallels stagedOpening): the callback message + the arc's initial state, with the
 // COMMITTED captures pre-loaded into `collected`. Stage 'entry' handles the member's response to the callback.

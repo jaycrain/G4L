@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { startRewireAction, rewireTurnAction, rewireCeremonyDataAction, type RewireSession } from './actions.ts';
 import RewireCeremony from './rewire-ceremony.tsx';
 import ScaleChips from '../components/scale-chips.tsx';
+import { useChatAutoscroll } from '../components/use-chat-autoscroll.ts';
 import type { RewireCeremonyData } from '../../lib/ceremony/rewire-ceremony-beats.ts';
 import type { ConvMessage, ConvState, ScaleExpectation } from '../../lib/agent/onboarding.ts';
 import { BEAT_SEP } from '../../lib/agent/onboarding.ts';
@@ -32,6 +33,7 @@ export default function RewireChat({ memberId, session = 'w1' }: { memberId: str
   const [ceremony, setCeremony] = useState<RewireCeremonyData | null>(null); // R4: set when the checkpoint reaches 'ceremony'
   const [error, setError] = useState<string | null>(null);
   const started = useRef(false);
+  const chatRef = useChatAutoscroll([messages.length, pending, expects, done]);
 
   useEffect(() => {
     if (started.current) return;
@@ -85,7 +87,7 @@ export default function RewireChat({ memberId, session = 'w1' }: { memberId: str
 
   return (
     <div className="reconnect-chat">
-      <div className="chat">
+      <div className="chat" ref={chatRef}>
         {messages.map((m, i) => (
           <div key={i} className={`bubble ${m.role}`}>
             {m.text}

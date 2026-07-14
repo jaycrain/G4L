@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { startRebuildAction, rebuildTurnAction, rebuildCeremonyDataAction, type RebuildSession } from './actions.ts';
 import RebuildCeremony from './rebuild-ceremony.tsx';
 import ScaleChips from '../components/scale-chips.tsx';
+import { useChatAutoscroll } from '../components/use-chat-autoscroll.ts';
 import type { RebuildCeremonyData } from '../../lib/ceremony/rebuild-ceremony-beats.ts';
 import type { ConvMessage, ConvState, ScaleExpectation } from '../../lib/agent/onboarding.ts';
 import { BEAT_SEP } from '../../lib/agent/onboarding.ts';
@@ -33,6 +34,7 @@ export default function RebuildChat({ memberId, session = 'b1' }: { memberId: st
   const [ceremony, setCeremony] = useState<RebuildCeremonyData | null>(null); // B4: set when the checkpoint reaches 'ceremony'
   const [error, setError] = useState<string | null>(null);
   const started = useRef(false);
+  const chatRef = useChatAutoscroll([messages.length, pending, expects, done]);
 
   useEffect(() => {
     if (started.current) return;
@@ -89,7 +91,7 @@ export default function RebuildChat({ memberId, session = 'b1' }: { memberId: st
 
   return (
     <div className="reconnect-chat">
-      <div className="chat">
+      <div className="chat" ref={chatRef}>
         {messages.map((m, i) => (
           <div key={i} className={`bubble ${m.role}`}>
             {m.text}
