@@ -32,6 +32,21 @@ export async function logCall(
   return { ok: true, type: c.type };
 }
 
+// The member's own log — recent calls, newest first, for the Momentum history ("where does this get saved?", Jay).
+// Each row is exactly what they logged: the call, its note, any domain tag, and the day. Self-monitoring, never scored.
+export type CallLogEntry = { type: CallType; note: string | null; domain: CallDomain | null; loggedOn: string; at: string };
+export async function recentCalls(db: Db, memberId: string, limit = 30): Promise<CallLogEntry[]> {
+  const { rows } = await db.query<{ type: string; note: string | null; domain: string | null; logged_on: string; created_at: string }>(
+    `select type, note, domain, logged_on::text as logged_on, created_at::text as created_at
+       from momentum_call
+      where member_id = $1
+      order by logged_on desc, created_at desc
+      limit $2`,
+    [memberId, limit],
+  );
+  return rows.map((r) => ({ type: r.type as CallType, note: r.note, domain: (r.domain as CallDomain | null), loggedOn: r.logged_on, at: r.created_at }));
+}
+
 // A day's NET shape (M-5: honest, not rosy) — any false start on a day keeps it from rendering as a clean up-beat.
 export function netKind(hasFalse: boolean, hasGood: boolean): PulseKind {
   if (hasFalse) return 'false_start';

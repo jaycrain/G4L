@@ -41,6 +41,19 @@ test('hero · just-finished outranks checkpoint/practice and carries the next st
   });
   assert.equal(st.kind, 'just-finished');
   assert.equal(st.kind === 'just-finished' && st.next?.id, 'w2');
+  assert.equal(st.kind === 'just-finished' && st.next?.isCheckpoint, false);
+});
+
+test('hero · just-finished after the LAST session names the Checkpoint as next (no unnamed dead end)', () => {
+  const st = resolveHeroState({
+    hasStarted: true,
+    justFinishedSession: { id: 'w3', label: 'False Start Protocol' },
+    checkpointReady: { phase: 'rewire', label: 'The Rewire Checkpoint' },
+    nextSession: null, // the last session is done → nothing lit but the Checkpoint
+  });
+  assert.equal(st.kind, 'just-finished');
+  assert.equal(st.kind === 'just-finished' && st.next?.label, 'The Rewire Checkpoint');
+  assert.equal(st.kind === 'just-finished' && st.next?.isCheckpoint, true);
 });
 
 test('hero · an in-progress session wins over everything (finish what you started)', () => {

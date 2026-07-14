@@ -14,7 +14,7 @@ export interface HeroSignals {
 
 export type HeroState =
   | { kind: 'resume'; session: { id: string; label: string } } // finish what you started (highest priority)
-  | { kind: 'just-finished'; session: { id: string; label: string }; next: { id: string; label: string } | null }
+  | { kind: 'just-finished'; session: { id: string; label: string }; next: { id: string; label: string; isCheckpoint: boolean } | null }
   | { kind: 'checkpoint-ready'; checkpoint: { phase: string; label: string } }
   | { kind: 'mid-week-practice'; practice: { kind: string; label: string; day: number; total: number } }
   | { kind: 'next-step'; session: { id: string; label: string } }
@@ -24,7 +24,16 @@ export type HeroState =
 //   resume → just-finished → checkpoint-ready → mid-week-practice → next-step → fresh
 export function resolveHeroState(s: HeroSignals): HeroState {
   if (s.inProgressSession) return { kind: 'resume', session: s.inProgressSession };
-  if (s.justFinishedSession) return { kind: 'just-finished', session: s.justFinishedSession, next: s.nextSession ?? null };
+  if (s.justFinishedSession) {
+    // Name what's actually next — a session if one's lit, otherwise the phase Checkpoint (finishing the last session
+    // hands into the Checkpoint, so "the next step will be here" read as a dead end). Never leave it unnamed.
+    const next = s.nextSession
+      ? { id: s.nextSession.id, label: s.nextSession.label, isCheckpoint: false }
+      : s.checkpointReady
+        ? { id: s.checkpointReady.phase, label: s.checkpointReady.label, isCheckpoint: true }
+        : null;
+    return { kind: 'just-finished', session: s.justFinishedSession, next };
+  }
   if (s.checkpointReady) return { kind: 'checkpoint-ready', checkpoint: s.checkpointReady };
   if (s.activePractice) return { kind: 'mid-week-practice', practice: s.activePractice };
   if (s.hasStarted && s.nextSession) return { kind: 'next-step', session: s.nextSession };

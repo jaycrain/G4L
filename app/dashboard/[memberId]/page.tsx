@@ -45,6 +45,10 @@ import RedesignDashboard from '../redesign-dashboard.tsx';
 
 // Give the companion's live turns room to finish (the Member Agent call is the long pole).
 export const maxDuration = 30;
+// Always render fresh on navigation — re-entry is the dashboard's job (resume hero, ring, just-finished all read
+// live state). Without this a return from a session could serve a cached RSC and read a beat behind (Jay's "timing
+// on return"). The page is per-member + auth-gated, so there's nothing to statically cache anyway.
+export const dynamic = 'force-dynamic';
 
 const R_RING_COLOR: Record<string, string> = { reconnect: '#374f63', rewire: '#3b9495', rebuild: '#919536', reclaim: '#ec6233' };
 // The four Grinta strands, in R order — the Grinta Index card lays them out like the ID Score's dimension rows.

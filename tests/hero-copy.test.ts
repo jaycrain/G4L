@@ -14,19 +14,28 @@ test('resume — names the session, offers to pick up where you left off', () =>
   assert.equal(v.ctaLabel, 'Resume this Session');
 });
 
-test('just-finished — congratulates, points to next when there is one', () => {
+test('just-finished — congratulates, NAMES the next session', () => {
   const v = heroView(
-    { kind: 'just-finished', session: { id: 'w1', label: 'the Disinformation Audit' }, next: { id: 'w2', label: 'The Visualization Workshop' } },
+    { kind: 'just-finished', session: { id: 'w1', label: 'the Disinformation Audit' }, next: { id: 'w2', label: 'The Visualization Workshop', isCheckpoint: false } },
     ctx,
   );
   assert.match(v.title, /Nice work — the Disinformation Audit/);
-  assert.match(v.copy, /The Visualization Workshop is next/);
+  assert.match(v.copy, /Next up: The Visualization Workshop/);
   assert.equal(v.ctaLabel, 'Start the next Session');
+});
+
+test('just-finished — after the LAST session, names + routes to the Checkpoint (no dead end)', () => {
+  const v = heroView(
+    { kind: 'just-finished', session: { id: 'w3', label: 'The False Start Protocol' }, next: { id: 'rewire', label: 'The Rewire Checkpoint', isCheckpoint: true } },
+    ctx,
+  );
+  assert.match(v.copy, /Next up: The Rewire Checkpoint/);
+  assert.equal(v.ctaLabel, 'Take the Checkpoint');
 });
 
 test('just-finished with no next — no fabricated next step', () => {
   const v = heroView({ kind: 'just-finished', session: { id: 'c4', label: 'the Transition' }, next: null }, ctx);
-  assert.doesNotMatch(v.copy, /next Session|is next/);
+  assert.doesNotMatch(v.copy, /next Session|Next up/);
   assert.equal(v.ctaLabel, 'Back to your path');
 });
 

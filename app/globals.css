@@ -1136,6 +1136,27 @@ html:has(.companion-hero), body:has(.companion-hero) { overflow-anchor: none; }
 }
 .momentum-log-done { margin-top: 0.6rem; color: var(--teal); font-weight: 600; font-size: 0.9rem; }
 
+/* Momentum history — the member's own saved log (a call has a visible home, never a dead end). */
+.momentum-history h3 { margin: 0 0 0.6rem; }
+.mlog-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; }
+.mlog-row { display: flex; gap: 0.65rem; align-items: flex-start; padding: 0.6rem 0.7rem; border: 1px solid var(--light-grey, #e8e6e6); border-radius: 10px; }
+.mlog-dot { width: 9px; height: 9px; border-radius: 50%; margin-top: 0.35rem; flex: none; background: #b7b5af; }
+.mlog-row.is-good_call .mlog-dot { background: var(--teal); }
+.mlog-row.is-false_start .mlog-dot { background: var(--deep-red, #bb2127); }
+.mlog-row.is-quiet_day .mlog-dot { background: #b7b5af; }
+.mlog-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.5rem; }
+.mlog-type { font-weight: 700; color: var(--navy); font-size: 0.95rem; }
+.mlog-domain { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--olive); border: 1px solid var(--light-grey, #e8e6e6); border-radius: 999px; padding: 0 0.45rem; }
+.mlog-day { font-size: 0.82rem; color: #8b949b; margin-left: auto; }
+.mlog-note { margin-top: 0.2rem; font-size: 0.92rem; color: var(--charcoal); line-height: 1.4; }
+
+/* Momentum nav — clear ways back into the program after logging (not a dead end). */
+.momentum-nav { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; margin: 0.5rem 0 1.5rem; }
+.momentum-nav-primary { display: inline-block; padding: 0.6rem 1.1rem; background: var(--teal); color: #fff; border-radius: 999px; font-weight: 700; font-size: 0.95rem; text-decoration: none; }
+.momentum-nav-primary:hover { background: var(--navy); }
+.momentum-nav-secondary { color: var(--teal); font-weight: 600; font-size: 0.9rem; text-decoration: none; }
+.momentum-nav-secondary:hover { text-decoration: underline; }
+
 /* B3 pilot — the OPTIONAL activity/diet tag (Decision OO). Neutral pills, teal when chosen; never required. */
 .momentum-log-domain { margin: 0.25rem 0 0.4rem; }
 .momentum-log-domain-label { font-size: 0.8rem; color: var(--navy); opacity: 0.7; }
