@@ -82,6 +82,25 @@ export async function closedSessionIds(db: Db, memberId: string): Promise<string
   return rows.map((r) => r.session_id);
 }
 
+// The session closed most recently, if within the given window (minutes). Powers the resume-hero's "you just finished X"
+// state on the very next dashboard view, which then gives way to the next step. Returns the id only; the caller maps it
+// to a label off the forecast (so the hero and the path never disagree).
+export async function recentlyClosedSession(
+  db: Db,
+  memberId: string,
+  withinMinutes: number,
+): Promise<{ sessionId: string; closedAt: string } | null> {
+  const { rows } = await db.query<{ session_id: string; closed_at: string }>(
+    `select session_id, closed_at from session_progress
+      where member_id=$1 and status='closed' and closed_at is not null
+        and closed_at > now() - ($2 || ' minutes')::interval
+      order by closed_at desc limit 1`,
+    [memberId, String(withinMinutes)],
+  );
+  const r = rows[0];
+  return r ? { sessionId: r.session_id, closedAt: r.closed_at } : null;
+}
+
 // --- Facets (the identity strip) ---
 export type Facet = { text: string; sourceSession: string | null };
 

@@ -43,3 +43,14 @@ export async function loadArcSession(db: Db, memberId: string, arc: ArcName): Pr
 export async function clearArcSession(db: Db, memberId: string, arc: ArcName): Promise<void> {
   await db.query('delete from arc_session where member_id=$1 and arc=$2', [memberId, arc]);
 }
+
+/** The member's in-flight arc (most-recently-updated), or null. A non-null result means a session is mid-way and
+ *  resumable — the arc_session row is cleared on completion. Powers the resume-hero's top-priority "pick up where you
+ *  left off" state. Framework-free (pglite-testable). */
+export async function latestArcSession(db: Db, memberId: string): Promise<ArcName | null> {
+  const { rows } = await db.query<{ arc: string }>(
+    'select arc from arc_session where member_id=$1 order by updated_at desc limit 1',
+    [memberId],
+  );
+  return (rows[0]?.arc as ArcName) ?? null;
+}
