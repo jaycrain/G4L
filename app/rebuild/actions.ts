@@ -26,6 +26,7 @@ import { getGrintaBaselineReading, latestGrintaReading, persistGrintaReading, co
 import { scoreCheckpointStrand, grintaChangePct, directionOf } from '../../lib/grinta/survey/scoring.ts';
 import { BASELINE_CONTROL_ITEMS, CHECKPOINT_CONTROL_ITEMS, pairwiseAverage } from '../../lib/grinta/survey/instrument.ts';
 import { setGate, markSessionClosed } from '../../lib/curriculum/store.ts';
+import { acknowledgeSessionBadge } from '../../lib/curriculum/view.ts';
 import type { RebuildCeremonyData } from '../../lib/ceremony/rebuild-ceremony-beats.ts';
 import { earnedBadgeReveal } from '../../lib/ceremony/badge-reveal.ts';
 
@@ -125,7 +126,7 @@ export async function rebuildTurnAction(
   history: ConvMessage[],
   message: string,
   session: RebuildSession = 'b1',
-): Promise<{ ok: boolean; reply?: string; state?: ConvState; expects?: ScaleExpectation; error?: string }> {
+): Promise<{ ok: boolean; reply?: string; state?: ConvState; expects?: ScaleExpectation; error?: string; earnedBadge?: { id: string; name: string } | null }> {
   if (!rebuildEnabled()) return { ok: false, error: 'Rebuild is not enabled.' };
   if (!(await authorizeMember(memberId))) return { ok: false, error: 'Not authorized.' };
   try {
@@ -140,6 +141,7 @@ export async function rebuildTurnAction(
     // B3 is a LIVE coaching turn (COACH mode — the model coaches, the engine holds the completeness contract).
     if (session === 'b3') {
       const turn = await liveTurnRebuildB3(state, history, message);
+      let b3Badge: { id: string; name: string } | null = null;
       if (turn.complete) {
         const activity = (turn.state.collected?.pilotActivity ?? '').trim();
         const diet = (turn.state.collected?.pilotDiet ?? '').trim();
@@ -182,14 +184,16 @@ export async function rebuildTurnAction(
         // Mark B3 closed so the v2.4 forecast advances the member B3 → B4 (best-effort).
         try {
           await markSessionClosed(db, memberId, 'RBLD-B3');
+          b3Badge = await acknowledgeSessionBadge(db, memberId, 'RBLD-B3'); // newly-earned milestone → named at the close
         } catch {
           /* swallow — the session still completed; the forecast advance is best-effort */
         }
       }
-      return { ok: true, reply: turn.reply, state: turn.state, expects: turn.expects };
+      return { ok: true, reply: turn.reply, state: turn.state, expects: turn.expects, earnedBadge: b3Badge };
     }
     // Both B1 and B2 are ADMINISTERED (deterministic Likert parse) — no model call needed.
     const turn = session === 'b2' ? liveTurnRebuildB2(state, history, message) : liveTurnRebuildB1(state, history, message);
+    let earnedBadge: { id: string; name: string } | null = null;
     if (turn.complete) {
       const responses = turn.state.administeredResponses ?? [];
       const db = (await getDb()) as unknown as Db;
@@ -222,12 +226,14 @@ export async function rebuildTurnAction(
       }
       // Mark the Session closed so the v2.4 forecast advances the member (B1 → B2 → B3). Best-effort.
       try {
-        await markSessionClosed(db, memberId, session === 'b2' ? 'RBLD-B2' : 'RBLD-B1');
+        const assetId = session === 'b2' ? 'RBLD-B2' : 'RBLD-B1';
+        await markSessionClosed(db, memberId, assetId);
+        earnedBadge = await acknowledgeSessionBadge(db, memberId, assetId); // newly-earned milestone → named at the close
       } catch {
         /* swallow — the session still completed; the forecast advance is best-effort */
       }
     }
-    return { ok: true, reply: turn.reply, state: turn.state, expects: turn.expects };
+    return { ok: true, reply: turn.reply, state: turn.state, expects: turn.expects, earnedBadge };
   } catch {
     return { ok: false, error: 'Something went wrong — please try again.' };
   }

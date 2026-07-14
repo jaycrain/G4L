@@ -23,6 +23,7 @@ import { getGrintaBaselineReading, latestGrintaReading, persistGrintaReading, co
 import { scoreCheckpointStrand, grintaChangePct, directionOf } from '../../lib/grinta/survey/scoring.ts';
 import { BASELINE_COMMITMENT_ITEMS, CHECKPOINT_COMMITMENT_ITEMS } from '../../lib/grinta/survey/instrument.ts';
 import { setGate, markSessionClosed } from '../../lib/curriculum/store.ts';
+import { acknowledgeSessionBadge } from '../../lib/curriculum/view.ts';
 import type { RewireCeremonyData } from '../../lib/ceremony/rewire-ceremony-beats.ts';
 import { earnedBadgeReveal } from '../../lib/ceremony/badge-reveal.ts';
 
@@ -183,7 +184,7 @@ export async function rewireTurnAction(
   history: ConvMessage[],
   message: string,
   session: RewireSession = 'w1',
-): Promise<{ ok: boolean; reply?: string; state?: ConvState; expects?: ScaleExpectation; error?: string }> {
+): Promise<{ ok: boolean; reply?: string; state?: ConvState; expects?: ScaleExpectation; error?: string; earnedBadge?: { id: string; name: string } | null }> {
   if (!rewireEnabled()) return { ok: false, error: 'Rewire is not enabled.' };
   if (!(await authorizeMember(memberId))) return { ok: false, error: 'Not authorized.' };
   try {
@@ -207,11 +208,13 @@ export async function rewireTurnAction(
     // On completion: (1) mark the Session CLOSED so the curriculum forecast advances the member W1→W2→W3→Checkpoint
     // (the v2.3 conversational sessions complete via the kernel, not the step player); (2) open the practice week
     // (Decision MM R4). Both best-effort — a hiccup never fails the conversation turn.
+    let earnedBadge: { id: string; name: string } | null = null;
     if (turn.complete) {
       const assetId = session === 'w1' ? 'RWR-W1' : session === 'w2' ? 'RWR-W2' : session === 'w3' ? 'RWR-W3' : null;
       if (assetId) {
         try {
           await markSessionClosed(db, memberId, assetId);
+          earnedBadge = await acknowledgeSessionBadge(db, memberId, assetId); // newly-earned milestone → the Companion names it at the close
         } catch {
           /* swallow — the session still completed for the member; the forecast advance is best-effort */
         }
@@ -224,7 +227,7 @@ export async function rewireTurnAction(
         }
       }
     }
-    return { ok: true, reply: turn.reply, state: turn.state, expects: turn.expects };
+    return { ok: true, reply: turn.reply, state: turn.state, expects: turn.expects, earnedBadge };
   } catch {
     return { ok: false, error: 'Something went wrong — please try again.' };
   }

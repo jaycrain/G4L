@@ -67,7 +67,9 @@ export default function RewireChat({ memberId, session = 'w1' }: { memberId: str
     notifyArtifactCommitted(); // push the workspace canvas to re-read now — a confirmed line lands on the left immediately
     if (r.state.stage === 'complete') {
       // W-21 — hand the member home in the companion's voice, then show the Continue → CTA (no more dead-end).
-      setMessages((m) => [...m, ...agentBubbles(r.reply!), { role: 'agent', text: REWIRE_HAND_HOME }]);
+      // Badge acknowledgment (Jay's call): if this session just earned a milestone, the Companion names it at the close.
+      const badgeBeat = r.earnedBadge ? [{ role: 'agent' as const, text: `That’s a badge earned: “${r.earnedBadge.name}.” It’s in your collection now.` }] : [];
+      setMessages((m) => [...m, ...agentBubbles(r.reply!), ...badgeBeat, { role: 'agent', text: REWIRE_HAND_HOME }]);
       setDone(true); // session done — the keeper(s) are in the Playbook
     } else {
       setMessages((m) => [...m, ...agentBubbles(r.reply!)]);

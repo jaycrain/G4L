@@ -26,6 +26,7 @@ import { getGrintaBaselineReading, latestGrintaReading, persistGrintaReading, ch
 import { scoreCheckpointStrand, grintaChangePct, directionOf } from '../../lib/grinta/survey/scoring.ts';
 import { BASELINE_CHALLENGE_ITEMS, CHECKPOINT_CHALLENGE_ITEMS } from '../../lib/grinta/survey/instrument.ts';
 import { setGate, markSessionClosed } from '../../lib/curriculum/store.ts';
+import { acknowledgeSessionBadge } from '../../lib/curriculum/view.ts';
 import type { ReclaimCeremonyData } from '../../lib/ceremony/reclaim-ceremony-beats.ts';
 import { earnedBadgeReveal } from '../../lib/ceremony/badge-reveal.ts';
 
@@ -61,7 +62,7 @@ export async function reclaimTurnAction(
   history: ConvMessage[],
   message: string,
   session: ReclaimSession = 'c1',
-): Promise<{ ok: boolean; reply?: string; state?: ConvState; expects?: ScaleExpectation; error?: string }> {
+): Promise<{ ok: boolean; reply?: string; state?: ConvState; expects?: ScaleExpectation; error?: string; earnedBadge?: { id: string; name: string } | null }> {
   if (!reclaimEnabled()) return { ok: false, error: 'Reclaim is not enabled.' };
   if (!(await authorizeMember(memberId))) return { ok: false, error: 'Not authorized.' };
   try {
@@ -76,6 +77,7 @@ export async function reclaimTurnAction(
     // C2 · Bigger World Audit — administered (deterministic 1–10). On completion, persist the durable priorities (RC-4).
     if (session === 'c2') {
       const turn = applyReclaimC2Turn(state, history, message);
+      let c2Badge: { id: string; name: string } | null = null;
       if (turn.complete) {
         const db = (await getDb()) as unknown as Db;
         const responses = (turn.state.administeredResponses ?? []).slice(0, AUDIT_ITEM_COUNT);
@@ -88,15 +90,17 @@ export async function reclaimTurnAction(
         }
         try {
           await markSessionClosed(db, memberId, 'RCL-C2');
+          c2Badge = await acknowledgeSessionBadge(db, memberId, 'RCL-C2'); // newly-earned milestone → named at the close
         } catch {
           /* swallow — the forecast advance is best-effort */
         }
       }
-      return { ok: true, reply: turn.reply, state: turn.state, expects: turn.expects };
+      return { ok: true, reply: turn.reply, state: turn.state, expects: turn.expects, earnedBadge: c2Badge };
     }
     // C3 · Quality Days — a LIVE coaching turn. On confirm, store the Quality-Day profile + open the logging week.
     if (session === 'c3') {
       const turn = await liveTurnReclaimC3(state, history, message);
+      let c3Badge: { id: string; name: string } | null = null;
       if (turn.complete && turn.state.collected?.pendingQualityDay) {
         const qd = turn.state.collected.pendingQualityDay;
         if (qd.nonNegotiables.length) {
@@ -113,12 +117,13 @@ export async function reclaimTurnAction(
           }
           try {
             await markSessionClosed(db, memberId, 'RCL-C3');
+            c3Badge = await acknowledgeSessionBadge(db, memberId, 'RCL-C3'); // newly-earned milestone → named at the close
           } catch {
             /* swallow — the forecast advance is best-effort */
           }
         }
       }
-      return { ok: true, reply: turn.reply, state: turn.state, expects: turn.expects };
+      return { ok: true, reply: turn.reply, state: turn.state, expects: turn.expects, earnedBadge: c3Badge };
     }
     // C1 · Step 1 (evidence) is administered (deterministic); Step 2 (refine) is the live coaching turn.
     const turn = state.stage === 'refine' ? await liveTurnReclaimRefine(state, history, message) : applyReclaimC1Turn(state, history, message);

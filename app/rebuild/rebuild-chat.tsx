@@ -71,7 +71,8 @@ export default function RebuildChat({ memberId, session = 'b1' }: { memberId: st
     if (r.state.stage === 'complete') {
       // W-21 — hand the member home in the companion's voice, then show the CTA (B3 → the pilot week; else → home).
       const handHome = session === 'b3' ? REBUILD_B3_HAND_HOME : REBUILD_HAND_HOME;
-      setMessages((m) => [...m, ...agentBubbles(r.reply!), { role: 'agent', text: handHome }]);
+      const badgeBeat = r.earnedBadge ? [{ role: 'agent' as const, text: `That’s a badge earned: “${r.earnedBadge.name}.” It’s in your collection now.` }] : [];
+      setMessages((m) => [...m, ...agentBubbles(r.reply!), ...badgeBeat, { role: 'agent', text: handHome }]);
       setDone(true); // an administered/coach session done — its artifact is stored
     } else {
       setMessages((m) => [...m, ...agentBubbles(r.reply!)]);

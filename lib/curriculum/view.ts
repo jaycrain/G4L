@@ -3,7 +3,7 @@
 // Session is a registry row that flows through here with zero renderer change.
 import type { Db } from '../db/schema.ts';
 import type { Asset, Badge } from './types.ts';
-import { phaseColumns, dailyLayer, listBadges, PHASE_ORDER } from './registry.ts';
+import { phaseColumns, dailyLayer, listBadges, getBadge, PHASE_ORDER } from './registry.ts';
 import { closedSessionIds, listGates, earnedBadgeIds, listFacets, earnBadge } from './store.ts';
 
 const PHASE_LABEL: Record<string, string> = { reconnect: 'Reconnect', rewire: 'Rewire', rebuild: 'Rebuild', reclaim: 'Reclaim' };
@@ -158,6 +158,19 @@ export async function reconcileRedesignBadges(db: Db, memberId: string): Promise
   } catch {
     /* best-effort — a reconcile hiccup never blocks the dashboard */
   }
+}
+
+// Session-close badge acknowledgment (Jay's call): when a session that maps to a milestone completes, earn its badge
+// and — ONLY if it was newly earned this moment — return its member-facing name so the Companion can name it in the
+// hand-home ("And you just earned a badge: …"). Returns null when the session earns nothing, the badge isn't in the
+// active set (legacy build), or it was already earned (no double-acknowledgment). Idempotent + best-effort by the caller.
+export async function acknowledgeSessionBadge(db: Db, memberId: string, sessionId: string): Promise<{ id: string; name: string } | null> {
+  const badgeId = SESSION_BADGE[sessionId];
+  if (!badgeId) return null;
+  const badge = getBadge(badgeId);
+  if (!badge) return null; // not in the active (redesign) set → nothing to acknowledge
+  const newlyEarned = await earnBadge(db, memberId, badgeId);
+  return newlyEarned ? { id: badge.id, name: badge.name } : null;
 }
 
 export { PHASE_ORDER };
