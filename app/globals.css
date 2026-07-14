@@ -1262,7 +1262,10 @@ body.redesign-on .back-dash { display: none; }
 .rm-line { margin-top: 12px; color: #6b7680; font-size: 14px; }
 
 /* The three registers */
-.r-registers { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+.r-registers { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; align-items: stretch; }
+/* Each register is a flex column so its "See more" foot link anchors to the card bottom (standard placement) —
+   the three cards are equal height (grid stretch), so the three See-mores line up across the row. */
+.r-reg { display: flex; flex-direction: column; }
 .rreg-eyebrow { font-weight: 800; text-transform: uppercase; letter-spacing: .07em; font-size: 12px; color: var(--teal); }
 .rreg-big { font-weight: 800; font-size: 44px; color: var(--navy); line-height: .95; margin-top: 8px; }
 .rreg-unit { font-size: 17px; color: #6b7680; font-weight: 600; }
@@ -1279,7 +1282,7 @@ body.redesign-on .back-dash { display: none; }
 .rreg-mom-line { height: 2px; flex: 1; background: var(--teal); }
 .rreg-mom-dot { position: absolute; right: 0; width: 11px; height: 11px; border-radius: 50%; background: #fff; border: 2px solid var(--orange); }
 .rreg-mom-cap { font-size: 12px; color: #8b949b; margin-top: 12px; }
-.rreg-more { display: inline-block; margin-top: 12px; color: var(--teal); font-weight: 600; font-size: 13px; text-decoration: none; }
+.rreg-more { display: inline-block; margin-top: auto; padding-top: 16px; align-self: flex-start; color: var(--teal); font-weight: 600; font-size: 13px; text-decoration: none; }
 
 /* Badges shelf */
 .rb-head { display: flex; justify-content: space-between; align-items: baseline; }
