@@ -126,4 +126,33 @@ export async function ensureOnboardingBadge(db: Db, memberId: string): Promise<v
   await earnBadge(db, memberId, 'onboarding-courage');
 }
 
+// The redesign's 16-milestone badges (Decision WW). Six earn via the existing wiring (checkpoints / reclaim-keep /
+// RCN-EXC); the other ten earn HERE, reconciled idempotently from committed state so no arc-completion code is touched.
+// Called at redesign dashboard load (behind REDESIGN → prod never runs it). earnBadge is idempotent (fires once).
+const SESSION_BADGE: Record<string, string> = {
+  'RWR-W1': 'turned-voice',
+  'RWR-W2': 'built-picture',
+  'RWR-W3': 'caught-real-time',
+  'RBLD-B1': 'found-why',
+  'RBLD-B2': 'honest-read',
+  'RBLD-B3': 'week-noticing',
+  'RCL-C2': 'widened-world',
+  'RCL-C3': 'quality-days',
+};
+export async function reconcileRedesignBadges(db: Db, memberId: string): Promise<void> {
+  try {
+    const [closedArr, gatesArr] = await Promise.all([closedSessionIds(db, memberId), listGates(db, memberId)]);
+    const closed = new Set(closedArr);
+    const gates = new Set(gatesArr);
+    const earn = (id: string) => earnBadge(db, memberId, id).catch(() => {});
+    for (const [sid, bid] of Object.entries(SESSION_BADGE)) if (closed.has(sid)) await earn(bid);
+    if (gates.has('reconnect_checkpoint_passed')) await earn('named-yourself'); // "You named the Doors"
+    if (gates.has('reclaim_checkpoint_passed')) await earn('wrote-story'); // "You wrote your story" (the Transition)
+    const idq = await db.query<{ one: number }>('select 1 as one from idq_retake where member_id=$1 limit 1', [memberId]);
+    if (idq.rows.length) await earn('starting-line'); // "You met your starting line" — the first ID Score landed
+  } catch {
+    /* best-effort — a reconcile hiccup never blocks the dashboard */
+  }
+}
+
 export { PHASE_ORDER };

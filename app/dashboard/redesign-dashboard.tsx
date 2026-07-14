@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import type { Db } from '../../lib/db/schema.ts';
 import type { Dashboard } from '../../lib/gateway/flow.ts';
-import { getForecast, getPassport, getFacets } from '../../lib/curriculum/view.ts';
+import { getForecast, getPassport, getFacets, reconcileRedesignBadges } from '../../lib/curriculum/view.ts';
 import { resolveHero } from '../../lib/dashboard/hero-signals.ts';
 import { deriveRingState } from '../../lib/workspace/ring-state.ts';
 import { heroView } from '../../lib/dashboard/hero-copy.ts';
@@ -40,6 +40,7 @@ const R_STRANDS = [
 ] as const;
 
 export default async function RedesignDashboard({ db, memberId, dash }: { db: Db; memberId: string; dash: Dashboard }) {
+  await reconcileRedesignBadges(db, memberId); // earn the 10 event-driven milestone badges from committed state (idempotent)
   const [forecast, { state: heroState }, grinta, activity, passport, facets] = await Promise.all([
     getForecast(db, memberId),
     resolveHero(db, memberId),
