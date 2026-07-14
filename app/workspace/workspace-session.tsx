@@ -67,9 +67,11 @@ export default function WorkspaceSession({
     <>
       <RedesignChrome />
       <div className="redesign-topbar">
-        <Link href="/" className="rt-brand" aria-label="Home">
-          <span className="rt-bull" aria-hidden="true" />
-          <span className="rt-mark">GRINTA FOR LIFE.</span>
+        <Link href="/" className="rt-brand" aria-label="Go to your G4L home">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img className="rt-logo-mark" src="/brand/g4l-rings.svg" alt="" aria-hidden="true" />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img className="rt-wordmark" src="/brand/g4l-wordmark.svg" alt="Grinta for Life" />
         </Link>
         <Link href={`/dashboard/${memberId}`} className="ws-back">← Dashboard</Link>
       </div>

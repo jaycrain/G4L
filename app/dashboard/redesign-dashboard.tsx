@@ -94,9 +94,11 @@ export default async function RedesignDashboard({ db, memberId, dash }: { db: Db
       <RedesignChrome />
       {/* Top bar — brand left, member + nav right (build spec §3 #1–2, carried over). */}
       <div className="redesign-topbar">
-        <Link href="/" className="rt-brand" aria-label="Home">
-          <span className="rt-bull" aria-hidden="true" />
-          <span className="rt-mark">GRINTA FOR LIFE.</span>
+        <Link href="/" className="rt-brand" aria-label="Go to your G4L home">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img className="rt-logo-mark" src="/brand/g4l-rings.svg" alt="" aria-hidden="true" />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img className="rt-wordmark" src="/brand/g4l-wordmark.svg" alt="Grinta for Life" />
         </Link>
         <div className="rt-who">
           <Link href="/account" className="rt-account" aria-label="Your account">

@@ -1194,10 +1194,10 @@ body.redesign-on .back-dash { display: none; }
   display: flex; align-items: center; justify-content: space-between;
   padding: 0 32px; border-bottom: 1px solid #e3e2df; background: var(--white);
 }
-.rt-brand { display: flex; align-items: center; gap: 10px; text-decoration: none; }
-.rt-bull { width: 26px; height: 26px; border-radius: 50%;
-  background: radial-gradient(circle, var(--orange) 0 20%, var(--olive) 20% 42%, var(--teal) 42% 64%, var(--navy) 64% 100%); }
-.rt-mark { font-weight: 800; font-size: 18px; color: var(--navy); letter-spacing: .01em; }
+.rt-brand { display: flex; align-items: center; gap: 11px; text-decoration: none; }
+/* Real brand assets (the same SVGs as the global header), sized to the 64px topbar. */
+.rt-logo-mark { width: 34px; height: 34px; display: block; flex: none; }
+.rt-wordmark { height: 30px; width: auto; display: block; flex: none; }
 .rt-who { display: flex; align-items: center; gap: 18px; }
 .rt-account { display: flex; align-items: center; gap: 10px; text-decoration: none; }
 .rt-av { width: 34px; height: 34px; border-radius: 50%; object-fit: cover; }
