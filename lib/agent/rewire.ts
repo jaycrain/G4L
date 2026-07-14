@@ -147,8 +147,21 @@ const affirmStage: StageDef = {
       return;
     }
     b.pendingHarvest.push({ kind: 'affirmation', keeperType: 'principle', destinationIntent: 'keeper', payloadRef: line, label: 'Your true line' });
+    const ack = (b.modelText ?? '').trim();
+    const linesSoFar = (b.pendingHarvest ?? []).filter((h) => h.kind === 'affirmation').length;
+    // If the model WRAPPED instead of serving the next lie (a declarative ack — no question) once they've put down a
+    // couple of lines, take that as the close: deliver the model's wrap + W1_CLOSE on THIS turn, rather than stranding
+    // a dead "ok" the member has to send to get the summary. Mirrors the draw-out "declarative past the floor advances"
+    // rule. When the model ends on a question (offering the next lie), stay guided and keep going.
+    const modelWrapped = ack.length > 0 && !/\?\s*$/.test(ack);
+    if (modelWrapped && linesSoFar >= 2) {
+      b.reply = `${ack}${BEAT_SEP}${W1_CLOSE}`;
+      b.stage = 'complete';
+      b.complete = true;
+      return;
+    }
     // stay guided: the model acknowledges + serves up the NEXT heaviest lie. Fallback if the model returns nothing.
-    b.reply = (b.modelText ?? '').trim() || W1_AFFIRM_ACK;
+    b.reply = ack || W1_AFFIRM_ACK;
   },
   confirm(b) {
     affirmStage.gather(b);

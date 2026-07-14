@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { startReconnectAction, reconnectTurnAction, reconnectCeremonyDataAction, loadReconnectSessionAction } from './actions.ts';
 import ScaleChips from '../components/scale-chips.tsx';
 import { useChatAutoscroll } from '../components/use-chat-autoscroll.ts';
+import { notifyArtifactCommitted } from '../components/artifact-refresh.ts';
 import type { ConvMessage, ConvState, ScaleExpectation } from '../../lib/agent/onboarding.ts';
 import { BEAT_SEP } from '../../lib/agent/reconnect.ts';
 import { DOORS } from '../../lib/doors.ts';
@@ -70,6 +71,7 @@ export default function ReconnectChat({ memberId }: { memberId: string }) {
     setMessages((m) => [...m, ...agentBubbles(r.reply!)]);
     setState(r.state);
     setExpects(r.expects ?? null);
+    notifyArtifactCommitted(); // push the workspace canvas to re-read now (identity/doors/list land on the left)
     // §2f — the arc reached the Ceremony: load the reveal data and fire the full-screen overlay.
     if (r.state.stage === 'ceremony') {
       const c = await reconnectCeremonyDataAction(memberId);

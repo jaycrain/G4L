@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { readArtifactAction } from './actions.ts';
+import { ARTIFACT_REFRESH_EVENT } from '../components/artifact-refresh.ts';
 import { chatDispatch, type SessionKey } from '../../lib/workspace/session-key.ts';
 import type { Artifact } from '../../lib/workspace/artifact.ts';
 import type { RingPhaseState } from '../../lib/workspace/ring-state.ts';
@@ -49,17 +50,25 @@ export default function WorkspaceSession({
 }) {
   const [artifact, setArtifact] = useState<Artifact>(initial);
 
-  // Poll the committed artifact so the canvas fills as the conversation lands (no arc-engine coupling).
+  // Fill the canvas from committed state. Two triggers: an immediate PUSH after each conversation turn (the chat client
+  // fires ARTIFACT_REFRESH_EVENT once its turn — including any keeper commit — has landed, so a confirmed line shows on
+  // the left right away, not up to 5s later), plus a slow POLL as a backstop for anything committed out of band.
   useEffect(() => {
     let cancelled = false;
-    const id = setInterval(async () => {
-      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
+    const refresh = async () => {
       const next = await readArtifactAction(memberId, sessionKey);
       if (!cancelled && next) setArtifact(next);
+    };
+    const onCommitted = () => void refresh();
+    if (typeof window !== 'undefined') window.addEventListener(ARTIFACT_REFRESH_EVENT, onCommitted);
+    const id = setInterval(() => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
+      void refresh();
     }, 5000);
     return () => {
       cancelled = true;
       clearInterval(id);
+      if (typeof window !== 'undefined') window.removeEventListener(ARTIFACT_REFRESH_EVENT, onCommitted);
     };
   }, [memberId, sessionKey]);
 

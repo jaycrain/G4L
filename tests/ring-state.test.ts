@@ -48,8 +48,8 @@ test('active phase fills by its share of done items (thirds)', () => {
     ]),
   );
   assert.equal(rings[0]!.done, 2);
-  assert.equal(rings[0]!.total, 4);
-  assert.equal(rings[0]!.fill, 0.5, '2 of 4 items done → half-filled active ring');
+  assert.equal(rings[0]!.total, 3, 'counts the 3 SESSIONS, not the checkpoint (the member thinks "3 sessions then a Checkpoint")');
+  assert.ok(Math.abs(rings[0]!.fill - 2 / 3) < 1e-9, '2 of 3 sessions done → two-thirds-filled active ring');
 });
 
 test('completed phases read solid (1), later current phase fractional', () => {
@@ -64,7 +64,7 @@ test('completed phases read solid (1), later current phase fractional', () => {
   assert.equal(rings[0]!.state, 'done');
   assert.equal(rings[0]!.fill, 1, 'a crossed phase reads solid');
   assert.equal(rings[1]!.state, 'current');
-  assert.equal(rings[1]!.fill, 0.25, '1 of 4 done in the active phase');
+  assert.ok(Math.abs(rings[1]!.fill - 1 / 3) < 1e-9, '1 of 3 sessions done in the active phase');
 });
 
 test('all four complete — every ring solid (the Cycle boundary; Cycle 2 re-run is a later pass)', () => {

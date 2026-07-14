@@ -82,11 +82,14 @@ export default async function RedesignDashboard({ db, memberId, dash }: { db: Db
             : `/${cur.kind === 'checkpoint' ? 'checkpoint' : 'session'}/${memberId}/${cur.id}`
           : `/reconnect/${memberId}`;
 
+  // Ring center reads PROGRESS (sessions done of total), not the next-session pointer — so finishing the 2nd of 3
+  // shows "2 of 3", never "3 of 3". Uses the same session-based tally deriveRingState fills the arc from, so the number
+  // and the arc always agree.
   const ringSub =
     heroState.kind === 'checkpoint-ready'
       ? 'checkpoint'
-      : curIdx >= 0 && sessions.length > 1
-        ? `${curIdx + 1} of ${sessions.length}`
+      : activeRing.total > 1
+        ? `${activeRing.done} of ${activeRing.total}`
         : null;
 
   const doorNames = dash.doors.map((d) => d.displayName);

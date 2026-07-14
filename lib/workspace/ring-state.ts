@@ -33,8 +33,13 @@ export function deriveRingState(forecast: Forecast, _cycle = 1): RingPhaseState[
   return PHASES.map((phase) => {
     const fp = byPhase.get(phase);
     const items = fp?.items ?? [];
-    const total = items.length;
-    const done = items.filter((i) => i.state === 'done').length;
+    // Count by SESSIONS, not sessions+checkpoint — the member's model of a phase is "3 sessions, then a Checkpoint",
+    // so finishing 2 of 3 should read (and fill to) 2/3, and the Checkpoint is the crossing that seals it to solid.
+    // Fall back to all items for a phase with no sessions (nothing but a checkpoint), so the ring never divides by zero.
+    const sessions = items.filter((i) => i.kind === 'session');
+    const counted = sessions.length > 0 ? sessions : items;
+    const total = counted.length;
+    const done = counted.filter((i) => i.state === 'done').length;
     const state: RingPhaseState['state'] =
       fp?.status === 'Complete' ? 'done' : fp?.status === "You're here" ? 'current' : 'ahead';
     // Done rings read solid and ahead rings empty regardless of item bookkeeping; only the active ring shows fraction.

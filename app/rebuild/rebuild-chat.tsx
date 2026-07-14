@@ -6,6 +6,7 @@ import { startRebuildAction, rebuildTurnAction, rebuildCeremonyDataAction, type 
 import RebuildCeremony from './rebuild-ceremony.tsx';
 import ScaleChips from '../components/scale-chips.tsx';
 import { useChatAutoscroll } from '../components/use-chat-autoscroll.ts';
+import { notifyArtifactCommitted } from '../components/artifact-refresh.ts';
 import type { RebuildCeremonyData } from '../../lib/ceremony/rebuild-ceremony-beats.ts';
 import type { ConvMessage, ConvState, ScaleExpectation } from '../../lib/agent/onboarding.ts';
 import { BEAT_SEP } from '../../lib/agent/onboarding.ts';
@@ -66,6 +67,7 @@ export default function RebuildChat({ memberId, session = 'b1' }: { memberId: st
     }
     setState(r.state);
     setExpects(r.expects ?? null);
+    notifyArtifactCommitted(); // push the workspace canvas to re-read now
     if (r.state.stage === 'complete') {
       // W-21 — hand the member home in the companion's voice, then show the CTA (B3 → the pilot week; else → home).
       const handHome = session === 'b3' ? REBUILD_B3_HAND_HOME : REBUILD_HAND_HOME;

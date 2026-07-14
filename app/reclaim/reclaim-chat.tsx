@@ -6,6 +6,7 @@ import { startReclaimAction, reclaimTurnAction, reclaimCeremonyDataAction, type 
 import ReclaimCeremony from './reclaim-ceremony.tsx';
 import ScaleChips from '../components/scale-chips.tsx';
 import { useChatAutoscroll } from '../components/use-chat-autoscroll.ts';
+import { notifyArtifactCommitted } from '../components/artifact-refresh.ts';
 import type { ReclaimCeremonyData } from '../../lib/ceremony/reclaim-ceremony-beats.ts';
 import type { ConvMessage, ConvState, ScaleExpectation } from '../../lib/agent/onboarding.ts';
 import { BEAT_SEP } from '../../lib/agent/onboarding.ts';
@@ -63,6 +64,7 @@ export default function ReclaimChat({ memberId, session = 'c1' }: { memberId: st
     }
     setState(r.state);
     setExpects(r.expects ?? null);
+    notifyArtifactCommitted(); // push the workspace canvas to re-read now
     if (r.state.stage === 'complete') {
       // W-21 — hand the member home in the companion's voice, then show the CTA (C3 → its week; else → home).
       const handHome = session === 'c3' ? RECLAIM_C3_HAND_HOME : RECLAIM_HAND_HOME;
