@@ -19,6 +19,9 @@ const rebuildStaged = process.env.REBUILD === 'staged';
 // v2.5 flip: same pattern for Reclaim — with RECLAIM staged, the guided conversational flow (C1→C2→C3→C4 Checkpoint,
 // route-backed, the capstone); otherwise the old Atlas Reclaim Sessions (untouched until the flip).
 const reclaimStaged = process.env.RECLAIM === 'staged';
+// Redesign flip: with REDESIGN staged, the badge shelf is the real 16-milestone identity-framed set (Decision WW);
+// otherwise the current set (prod, untouched until the redesign flip). Keeps the redesign from changing prod's badges.
+const redesignStaged = process.env.REDESIGN === 'staged';
 
 export const CATEGORY_COLOR: Record<BadgeCategory, string> = {
   milestone: '#374F63', // navy
@@ -150,7 +153,8 @@ const badge = (id: string, name: string, category: BadgeCategory, icon: string, 
   ceremony,
 });
 
-export const BADGES: Badge[] = [
+// The current (pre-redesign) badge set — prod, untouched until the redesign flip.
+const LEGACY_BADGES: Badge[] = [
   badge('onboarding-courage', 'Onboarding Courage', 'milestone', 'door', 'onboarding_complete', false),
   badge('named-yourself', 'Named Yourself', 'milestone', 'spark', 'session:RCN-EXC:closed', true),
   badge('reconnect-milestone', 'Reconnected', 'milestone', 'bullseye', 'checkpoint:reconnect:passed', true),
@@ -159,6 +163,31 @@ export const BADGES: Badge[] = [
   badge('goal-reclaimed', 'Goal Reclaimed', 'goal', 'check', 'reclaim:item:reclaimed', false),
   badge('reclaim-capstone', 'Reclaimed — a full cycle', 'capstone', 'sun', 'checkpoint:reclaim:passed', true),
 ];
+
+// The redesign's real 16-milestone set (Decision WW) — identity-framed, greyed until earned, ceremonial reveal at the
+// beat. Each marks a TRUE accomplishment, never participation. The 6 ids with existing earn-wiring are REUSED (so
+// checkpoints / reclaim-keeps / RCN-EXC keep firing under their new identity-framed names); the other 10 are the honest
+// forward-map — greyed until their earn event lands (wired progressively; event-driven ones fire where the event exists).
+const REDESIGN_BADGES: Badge[] = [
+  badge('named-yourself', 'You named the Doors', 'milestone', 'door', 'reconnect:doors', true), // wired: RCN-EXC close
+  badge('starting-line', 'You met your starting line', 'milestone', 'bullseye', 'reconnect:idq', false),
+  badge('reconnect-milestone', 'You crossed the Threshold', 'milestone', 'bullseye', 'checkpoint:reconnect:passed', true), // wired
+  badge('turned-voice', 'You turned the voice', 'milestone', 'bolt', 'rewire:w1', false),
+  badge('built-picture', 'You built the picture', 'milestone', 'spark', 'rewire:w2', false),
+  badge('caught-real-time', 'You caught it in real time', 'comeback', 'spark', 'rewire:w3', false),
+  badge('rewire-milestone', 'You retrained the mind', 'milestone', 'bolt', 'checkpoint:rewire:passed', true), // wired
+  badge('found-why', 'You found your why', 'milestone', 'spark', 'rebuild:b1', false),
+  badge('honest-read', 'You took an honest read', 'milestone', 'mountain', 'rebuild:b2', false),
+  badge('week-noticing', 'You lived a week of noticing', 'hardiness', 'mountain', 'rebuild:b3', false),
+  badge('rebuild-milestone', 'You rebuilt the body', 'milestone', 'mountain', 'checkpoint:rebuild:passed', true), // wired
+  badge('goal-reclaimed', 'You kept a want', 'goal', 'check', 'reclaim:item:reclaimed', false), // wired
+  badge('widened-world', 'You widened the world', 'milestone', 'sun', 'reclaim:c2', false),
+  badge('quality-days', 'You lived quality days', 'hardiness', 'sun', 'reclaim:c3', false),
+  badge('wrote-story', 'You wrote your story', 'milestone', 'spark', 'reclaim:transition', true),
+  badge('reclaim-capstone', 'You closed the loop', 'capstone', 'sun', 'checkpoint:reclaim:passed', true), // wired
+];
+
+export const BADGES: Badge[] = redesignStaged ? REDESIGN_BADGES : LEGACY_BADGES;
 
 // --- Accessors (the renderer reads only through these) ---
 export const PHASE_ORDER: Asset['phase'][] = ['reconnect', 'rewire', 'rebuild', 'reclaim'];
