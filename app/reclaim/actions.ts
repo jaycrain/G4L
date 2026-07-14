@@ -15,7 +15,14 @@ import {
   liveTurnReclaimC3,
   reclaimCheckpointOpening,
   liveTurnReclaimCheckpoint,
+  RECLAIM_C1_ARC,
+  RECLAIM_C2_ARC,
+  RECLAIM_C3_ARC,
+  RECLAIM_CHECKPOINT_ARC,
 } from '../../lib/agent/reclaim.ts';
+import { BEAT_SEP } from '../../lib/agent/onboarding.ts';
+import { scaleExpects, type ArcConfig } from '../../lib/agent/onboarding-staged.ts';
+import { saveArcSession, loadArcSession, clearArcSession } from '../../lib/agent/arc-session.ts';
 import { getReclaimItems, liveReclaimTexts } from '../../lib/beats/store.ts';
 import { commitRefinement, isTier, type Tier } from '../../lib/reclaim/refinement-store.ts';
 import { persistBiggerWorldReading } from '../../lib/reclaim/bigger-world-store.ts';
@@ -56,6 +63,44 @@ function openTurn(turn: Turn): { reply: string; state: ConvState; expects?: Scal
   return { reply: turn.reply, state: turn.state, expects: turn.expects };
 }
 
+// Per-turn save/resume (W-15 pattern, per Reclaim session). Keyed by (member, 'reclaim', session). Cleared on completion.
+const beatBubbles = (text: string): ConvMessage[] =>
+  text.split(BEAT_SEP).map((t) => t.trim()).filter(Boolean).map((t) => ({ role: 'agent' as const, text: t }));
+
+const reclaimArcFor = (session: ReclaimSession): ArcConfig =>
+  session === 'c2' ? RECLAIM_C2_ARC : session === 'c3' ? RECLAIM_C3_ARC : session === 'checkpoint' ? RECLAIM_CHECKPOINT_ARC : RECLAIM_C1_ARC;
+
+async function persistReclaimArcSession(db: Db, memberId: string, session: ReclaimSession, history: ConvMessage[], message: string, reply: string, turn: Turn): Promise<void> {
+  try {
+    if (turn.complete || turn.state.stage === 'ceremony') {
+      await clearArcSession(db, memberId, 'reclaim', session);
+      return;
+    }
+    const messages: ConvMessage[] = [...history, { role: 'member', text: message }, ...beatBubbles(reply)];
+    await saveArcSession(db, memberId, 'reclaim', turn.state, messages, session);
+  } catch {
+    // swallow — resume is best-effort; the turn already succeeded for the member.
+  }
+}
+
+export async function loadReclaimSessionAction(
+  memberId: string,
+  session: ReclaimSession = 'c1',
+): Promise<{ ok: boolean; session?: { state: ConvState; messages: ConvMessage[]; expects?: ScaleExpectation }; error?: string }> {
+  if (!reclaimEnabled()) return { ok: false, error: 'Reclaim is not enabled.' };
+  if (!(await authorizeMember(memberId))) return { ok: false, error: 'Not authorized.' };
+  try {
+    const db = (await getDb()) as unknown as Db;
+    const saved = await loadArcSession(db, memberId, 'reclaim', session);
+    if (!saved || saved.messages.length === 0) return { ok: true };
+    const answered = saved.state.administeredResponses?.length ?? 0;
+    const expects = scaleExpects(reclaimArcFor(session), saved.state.stage as never, false, answered);
+    return { ok: true, session: { state: saved.state, messages: saved.messages, expects } };
+  } catch {
+    return { ok: false, error: 'Could not load your session.' };
+  }
+}
+
 export async function reclaimTurnAction(
   memberId: string,
   state: ConvState,
@@ -72,14 +117,15 @@ export async function reclaimTurnAction(
       const turn = liveTurnReclaimCheckpoint(state, history, message);
       const db = (await getDb()) as unknown as Db;
       await persistReclaimCheckpoint(db, memberId, state, turn);
+      await persistReclaimArcSession(db, memberId, session, history, message, turn.reply, turn);
       return { ok: true, reply: turn.reply, state: turn.state, expects: turn.expects };
     }
     // C2 · Bigger World Audit — administered (deterministic 1–10). On completion, persist the durable priorities (RC-4).
     if (session === 'c2') {
       const turn = applyReclaimC2Turn(state, history, message);
+      const db = (await getDb()) as unknown as Db;
       let c2Badge: { id: string; name: string } | null = null;
       if (turn.complete) {
-        const db = (await getDb()) as unknown as Db;
         const responses = (turn.state.administeredResponses ?? []).slice(0, AUDIT_ITEM_COUNT);
         if (responses.length === AUDIT_ITEM_COUNT) {
           try {
@@ -95,16 +141,17 @@ export async function reclaimTurnAction(
           /* swallow — the forecast advance is best-effort */
         }
       }
+      await persistReclaimArcSession(db, memberId, session, history, message, turn.reply, turn);
       return { ok: true, reply: turn.reply, state: turn.state, expects: turn.expects, earnedBadge: c2Badge };
     }
     // C3 · Quality Days — a LIVE coaching turn. On confirm, store the Quality-Day profile + open the logging week.
     if (session === 'c3') {
       const turn = await liveTurnReclaimC3(state, history, message);
+      const db = (await getDb()) as unknown as Db;
       let c3Badge: { id: string; name: string } | null = null;
       if (turn.complete && turn.state.collected?.pendingQualityDay) {
         const qd = turn.state.collected.pendingQualityDay;
         if (qd.nonNegotiables.length) {
-          const db = (await getDb()) as unknown as Db;
           try {
             await persistQualityDayProfile(db, memberId, qd);
           } catch {
@@ -123,15 +170,16 @@ export async function reclaimTurnAction(
           }
         }
       }
+      await persistReclaimArcSession(db, memberId, session, history, message, turn.reply, turn);
       return { ok: true, reply: turn.reply, state: turn.state, expects: turn.expects, earnedBadge: c3Badge };
     }
     // C1 · Step 1 (evidence) is administered (deterministic); Step 2 (refine) is the live coaching turn.
     const turn = state.stage === 'refine' ? await liveTurnReclaimRefine(state, history, message) : applyReclaimC1Turn(state, history, message);
+    const db = (await getDb()) as unknown as Db;
 
     // On completion (the member confirmed the refinement) → COMMIT the snapshot to the live Reclaim List. Best-effort:
     // the member already saw the confirmation; a write hiccup never breaks the close.
     if (turn.complete) {
-      const db = (await getDb()) as unknown as Db;
       const p = turn.state.collected?.pendingRefinement;
       const items = (p?.items ?? [])
         .filter((i) => isTier(i.tier))
@@ -149,6 +197,7 @@ export async function reclaimTurnAction(
         /* swallow — the forecast advance is best-effort */
       }
     }
+    await persistReclaimArcSession(db, memberId, session, history, message, turn.reply, turn);
     return { ok: true, reply: turn.reply, state: turn.state, expects: turn.expects };
   } catch {
     return { ok: false, error: 'Something went wrong — please try again.' };

@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { PGlite } from '@electric-sql/pglite';
 import { applySchema, type Db } from '../lib/db/schema.ts';
-import { saveArcSession, loadArcSession, clearArcSession } from '../lib/agent/arc-session.ts';
+import { saveArcSession, loadArcSession, clearArcSession, latestArcSession } from '../lib/agent/arc-session.ts';
 import type { ConvState, ConvMessage } from '../lib/agent/onboarding.ts';
 
 // W-15 — the phase-arc save/resume store. A refresh/crash mid-Reconnect used to lose the excavation (client-held only);
@@ -79,4 +79,28 @@ test('clear removes the session (arc completed at the ceremony)', async () => {
   await saveArcSession(db, memberId, 'reconnect', state, messages);
   await clearArcSession(db, memberId, 'reconnect');
   assert.equal(await loadArcSession(db, memberId, 'reconnect'), null);
+});
+
+// Multi-session arcs (rewire/rebuild/reclaim have W1/W2/W3/Checkpoint) key by SESSION so two sessions in one phase
+// never clobber each other, and completing/clearing one leaves the other intact.
+test('sessions within an arc are isolated by the session key', async () => {
+  const { db, memberId } = await seedMember();
+  const w1: ConvState = { stage: 'domains', collected: {} };
+  const w2: ConvState = { stage: 'image', collected: {} };
+  await saveArcSession(db, memberId, 'rewire', w1, [{ role: 'agent', text: 'w1 opener' }], 'w1');
+  await saveArcSession(db, memberId, 'rewire', w2, [{ role: 'agent', text: 'w2 opener' }], 'w2');
+
+  assert.equal((await loadArcSession(db, memberId, 'rewire', 'w1'))!.messages[0]!.text, 'w1 opener');
+  assert.equal((await loadArcSession(db, memberId, 'rewire', 'w2'))!.messages[0]!.text, 'w2 opener');
+
+  // clearing w1 leaves w2 resumable
+  await clearArcSession(db, memberId, 'rewire', 'w1');
+  assert.equal(await loadArcSession(db, memberId, 'rewire', 'w1'), null);
+  assert.ok(await loadArcSession(db, memberId, 'rewire', 'w2'));
+});
+
+test('latestArcSession returns the PHASE (strips the :session suffix) for the resume hero', async () => {
+  const { db, memberId } = await seedMember();
+  await saveArcSession(db, memberId, 'rebuild', { stage: 'b2', collected: {} }, [{ role: 'agent', text: 'b2' }], 'b2');
+  assert.equal(await latestArcSession(db, memberId), 'rebuild');
 });

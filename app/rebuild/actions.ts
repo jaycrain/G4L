@@ -15,7 +15,14 @@ import {
   composePilotPlan,
   rebuildCheckpointOpening,
   liveTurnRebuildCheckpoint,
+  REBUILD_B1_ARC,
+  REBUILD_B2_ARC,
+  REBUILD_B3_ARC,
+  REBUILD_CHECKPOINT_ARC,
 } from '../../lib/agent/rebuild.ts';
+import { BEAT_SEP } from '../../lib/agent/onboarding.ts';
+import { scaleExpects, type ArcConfig } from '../../lib/agent/onboarding-staged.ts';
+import { saveArcSession, loadArcSession, clearArcSession } from '../../lib/agent/arc-session.ts';
 import { persistWhyReading, persistSkillsReading } from '../../lib/rebuild/store.ts';
 import { persistCoachingPlan } from '../../lib/rebuild/plan-store.ts';
 import { WHY_ITEM_COUNT } from '../../lib/rebuild/why-instrument.ts';
@@ -120,6 +127,44 @@ async function loadRebuildCeremonyKeepers(db: Db, memberId: string): Promise<str
   }
 }
 
+// Per-turn save/resume (W-15 pattern, per Rebuild session). Keyed by (member, 'rebuild', session). Cleared on completion.
+const beatBubbles = (text: string): ConvMessage[] =>
+  text.split(BEAT_SEP).map((t) => t.trim()).filter(Boolean).map((t) => ({ role: 'agent' as const, text: t }));
+
+const rebuildArcFor = (session: RebuildSession): ArcConfig =>
+  session === 'b2' ? REBUILD_B2_ARC : session === 'b3' ? REBUILD_B3_ARC : session === 'checkpoint' ? REBUILD_CHECKPOINT_ARC : REBUILD_B1_ARC;
+
+async function persistRebuildArcSession(db: Db, memberId: string, session: RebuildSession, history: ConvMessage[], message: string, reply: string, turn: Turn): Promise<void> {
+  try {
+    if (turn.complete || turn.state.stage === 'ceremony') {
+      await clearArcSession(db, memberId, 'rebuild', session);
+      return;
+    }
+    const messages: ConvMessage[] = [...history, { role: 'member', text: message }, ...beatBubbles(reply)];
+    await saveArcSession(db, memberId, 'rebuild', turn.state, messages, session);
+  } catch {
+    // swallow — resume is best-effort; the turn already succeeded for the member.
+  }
+}
+
+export async function loadRebuildSessionAction(
+  memberId: string,
+  session: RebuildSession = 'b1',
+): Promise<{ ok: boolean; session?: { state: ConvState; messages: ConvMessage[]; expects?: ScaleExpectation }; error?: string }> {
+  if (!rebuildEnabled()) return { ok: false, error: 'Rebuild is not enabled.' };
+  if (!(await authorizeMember(memberId))) return { ok: false, error: 'Not authorized.' };
+  try {
+    const db = (await getDb()) as unknown as Db;
+    const saved = await loadArcSession(db, memberId, 'rebuild', session);
+    if (!saved || saved.messages.length === 0) return { ok: true };
+    const answered = saved.state.administeredResponses?.length ?? 0;
+    const expects = scaleExpects(rebuildArcFor(session), saved.state.stage as never, false, answered);
+    return { ok: true, session: { state: saved.state, messages: saved.messages, expects } };
+  } catch {
+    return { ok: false, error: 'Could not load your session.' };
+  }
+}
+
 export async function rebuildTurnAction(
   memberId: string,
   state: ConvState,
@@ -136,16 +181,17 @@ export async function rebuildTurnAction(
       const turn = liveTurnRebuildCheckpoint(state, history, message);
       const db = (await getDb()) as unknown as Db;
       await persistRebuildCheckpoint(db, memberId, state, turn);
+      await persistRebuildArcSession(db, memberId, session, history, message, turn.reply, turn);
       return { ok: true, reply: turn.reply, state: turn.state, expects: turn.expects };
     }
     // B3 is a LIVE coaching turn (COACH mode — the model coaches, the engine holds the completeness contract).
     if (session === 'b3') {
       const turn = await liveTurnRebuildB3(state, history, message);
+      const db = (await getDb()) as unknown as Db;
       let b3Badge: { id: string; name: string } | null = null;
       if (turn.complete) {
         const activity = (turn.state.collected?.pilotActivity ?? '').trim();
         const diet = (turn.state.collected?.pilotDiet ?? '').trim();
-        const db = (await getDb()) as unknown as Db;
         if (activity && diet) {
           // Persist the plan artifact (coaching_plan) + a Playbook keeper (§5 — the two small changes, their words).
           try {
@@ -189,14 +235,15 @@ export async function rebuildTurnAction(
           /* swallow — the session still completed; the forecast advance is best-effort */
         }
       }
+      await persistRebuildArcSession(db, memberId, session, history, message, turn.reply, turn);
       return { ok: true, reply: turn.reply, state: turn.state, expects: turn.expects, earnedBadge: b3Badge };
     }
     // Both B1 and B2 are ADMINISTERED (deterministic Likert parse) — no model call needed.
     const turn = session === 'b2' ? liveTurnRebuildB2(state, history, message) : liveTurnRebuildB1(state, history, message);
+    const db = (await getDb()) as unknown as Db;
     let earnedBadge: { id: string; name: string } | null = null;
     if (turn.complete) {
       const responses = turn.state.administeredResponses ?? [];
-      const db = (await getDb()) as unknown as Db;
       if (session === 'b2') {
         // Score the 24 responses → the self-management profile → store it. Then open the skill-noticing practice week
         // (Part B). Both best-effort — a write hiccup never breaks the member's close.
@@ -233,6 +280,7 @@ export async function rebuildTurnAction(
         /* swallow — the session still completed; the forecast advance is best-effort */
       }
     }
+    await persistRebuildArcSession(db, memberId, session, history, message, turn.reply, turn);
     return { ok: true, reply: turn.reply, state: turn.state, expects: turn.expects, earnedBadge };
   } catch {
     return { ok: false, error: 'Something went wrong — please try again.' };

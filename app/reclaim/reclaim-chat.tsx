@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { startReclaimAction, reclaimTurnAction, reclaimCeremonyDataAction, type ReclaimSession } from './actions.ts';
+import { startReclaimAction, reclaimTurnAction, reclaimCeremonyDataAction, loadReclaimSessionAction, type ReclaimSession } from './actions.ts';
 import ReclaimCeremony from './reclaim-ceremony.tsx';
 import ScaleChips from '../components/scale-chips.tsx';
 import { useChatAutoscroll } from '../components/use-chat-autoscroll.ts';
@@ -41,6 +41,15 @@ export default function ReclaimChat({ memberId, session = 'c1' }: { memberId: st
     started.current = true;
     (async () => {
       setPending(true);
+      // Resume an in-flight session first (a refresh mid-session no longer restarts it); start fresh only if none saved.
+      const resumed = await loadReclaimSessionAction(memberId, session);
+      if (resumed.ok && resumed.session && resumed.session.messages.length > 0) {
+        setMessages(resumed.session.messages);
+        setState(resumed.session.state);
+        setExpects(resumed.session.expects ?? null);
+        setPending(false);
+        return;
+      }
       const r = await startReclaimAction(memberId, session);
       setPending(false);
       if (!r.ok || !r.reply || !r.state) return setError(r.error ?? 'Could not start Reclaim.');

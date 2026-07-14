@@ -14,8 +14,15 @@ import {
   liveTurnRewireW3,
   rewireCheckpointOpening,
   liveTurnRewireCheckpoint,
+  REWIRE_ARC,
+  REWIRE_W2_ARC,
+  REWIRE_W3_ARC,
+  REWIRE_CHECKPOINT_ARC,
   type W3Callback,
 } from '../../lib/agent/rewire.ts';
+import { BEAT_SEP } from '../../lib/agent/onboarding.ts';
+import { scaleExpects, type ArcConfig } from '../../lib/agent/onboarding-staged.ts';
+import { saveArcSession, loadArcSession, clearArcSession } from '../../lib/agent/arc-session.ts';
 import { loadReconnectCaptures } from '../../lib/agent/reconnect.ts';
 import { emitHarvestMoment, commitKeeper, type KeeperType } from '../../lib/agent/harvest.ts';
 import { startPracticeWeek, latestImageKeeper } from '../../lib/practice/store.ts';
@@ -178,6 +185,48 @@ async function persistRewireHarvest(db: Db, memberId: string, prev: ConvState, t
   }
 }
 
+// Per-turn save/resume (the same W-15 pattern Reconnect uses, now per Rewire session). Keyed by (member, 'rewire', session)
+// so a refresh mid-W1 resumes W1 exactly, not W2. Cleared once the session completes — its keepers/scores persist on
+// their own. Best-effort: a save hiccup never breaks the member's turn.
+const beatBubbles = (text: string): ConvMessage[] =>
+  text.split(BEAT_SEP).map((t) => t.trim()).filter(Boolean).map((t) => ({ role: 'agent' as const, text: t }));
+
+const rewireArcFor = (session: RewireSession): ArcConfig =>
+  session === 'w2' ? REWIRE_W2_ARC : session === 'w3' ? REWIRE_W3_ARC : session === 'checkpoint' ? REWIRE_CHECKPOINT_ARC : REWIRE_ARC;
+
+async function persistRewireArcSession(db: Db, memberId: string, session: RewireSession, history: ConvMessage[], message: string, reply: string, turn: Turn): Promise<void> {
+  try {
+    if (turn.complete || turn.state.stage === 'ceremony') {
+      await clearArcSession(db, memberId, 'rewire', session); // completed — the keepers/scores persist on their own
+      return;
+    }
+    const messages: ConvMessage[] = [...history, { role: 'member', text: message }, ...beatBubbles(reply)];
+    await saveArcSession(db, memberId, 'rewire', turn.state, messages, session);
+  } catch {
+    // swallow — resume is best-effort; the turn already succeeded for the member.
+  }
+}
+
+// Resume the in-flight Rewire session on mount (or null). Recomputes the scale chips from the resumed stage so a refresh
+// mid-checkpoint restores the chip row on the right item.
+export async function loadRewireSessionAction(
+  memberId: string,
+  session: RewireSession = 'w1',
+): Promise<{ ok: boolean; session?: { state: ConvState; messages: ConvMessage[]; expects?: ScaleExpectation }; error?: string }> {
+  if (!rewireEnabled()) return { ok: false, error: 'Rewire is not enabled.' };
+  if (!(await authorizeMember(memberId))) return { ok: false, error: 'Not authorized.' };
+  try {
+    const db = (await getDb()) as unknown as Db;
+    const saved = await loadArcSession(db, memberId, 'rewire', session);
+    if (!saved || saved.messages.length === 0) return { ok: true }; // nothing to resume → the client starts fresh
+    const answered = saved.state.administeredResponses?.length ?? 0;
+    const expects = scaleExpects(rewireArcFor(session), saved.state.stage as never, false, answered);
+    return { ok: true, session: { state: saved.state, messages: saved.messages, expects } };
+  } catch {
+    return { ok: false, error: 'Could not load your session.' };
+  }
+}
+
 export async function rewireTurnAction(
   memberId: string,
   state: ConvState,
@@ -194,6 +243,7 @@ export async function rewireTurnAction(
       const turn = liveTurnRewireCheckpoint(state, history, message);
       const db = (await getDb()) as unknown as Db;
       await persistRewireCheckpoint(db, memberId, state, turn);
+      await persistRewireArcSession(db, memberId, session, history, message, turn.reply, turn);
       return { ok: true, reply: turn.reply, state: turn.state, expects: turn.expects };
     }
     // Every session turn is a live model turn — the model supplies the reflection; the kernel sequences + harvests.
@@ -227,6 +277,7 @@ export async function rewireTurnAction(
         }
       }
     }
+    await persistRewireArcSession(db, memberId, session, history, message, turn.reply, turn); // save transcript for resume (or clear on completion)
     return { ok: true, reply: turn.reply, state: turn.state, expects: turn.expects, earnedBadge };
   } catch {
     return { ok: false, error: 'Something went wrong — please try again.' };

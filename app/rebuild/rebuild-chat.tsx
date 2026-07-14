@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { startRebuildAction, rebuildTurnAction, rebuildCeremonyDataAction, type RebuildSession } from './actions.ts';
+import { startRebuildAction, rebuildTurnAction, rebuildCeremonyDataAction, loadRebuildSessionAction, type RebuildSession } from './actions.ts';
 import RebuildCeremony from './rebuild-ceremony.tsx';
 import ScaleChips from '../components/scale-chips.tsx';
 import { useChatAutoscroll } from '../components/use-chat-autoscroll.ts';
@@ -42,6 +42,15 @@ export default function RebuildChat({ memberId, session = 'b1' }: { memberId: st
     started.current = true;
     (async () => {
       setPending(true);
+      // Resume an in-flight session first (a refresh mid-session no longer restarts it); start fresh only if none saved.
+      const resumed = await loadRebuildSessionAction(memberId, session);
+      if (resumed.ok && resumed.session && resumed.session.messages.length > 0) {
+        setMessages(resumed.session.messages);
+        setState(resumed.session.state);
+        setExpects(resumed.session.expects ?? null);
+        setPending(false);
+        return;
+      }
       const r = await startRebuildAction(memberId, session);
       setPending(false);
       if (!r.ok || !r.reply || !r.state) return setError(r.error ?? 'Could not start Rebuild.');

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { startRewireAction, rewireTurnAction, rewireCeremonyDataAction, type RewireSession } from './actions.ts';
+import { startRewireAction, rewireTurnAction, rewireCeremonyDataAction, loadRewireSessionAction, type RewireSession } from './actions.ts';
 import RewireCeremony from './rewire-ceremony.tsx';
 import ScaleChips from '../components/scale-chips.tsx';
 import { useChatAutoscroll } from '../components/use-chat-autoscroll.ts';
@@ -41,6 +41,16 @@ export default function RewireChat({ memberId, session = 'w1' }: { memberId: str
     started.current = true;
     (async () => {
       setPending(true);
+      // Resume an in-flight session first (a refresh/crash mid-session no longer restarts it); only start fresh when
+      // there's nothing saved.
+      const resumed = await loadRewireSessionAction(memberId, session);
+      if (resumed.ok && resumed.session && resumed.session.messages.length > 0) {
+        setMessages(resumed.session.messages);
+        setState(resumed.session.state);
+        setExpects(resumed.session.expects ?? null);
+        setPending(false);
+        return;
+      }
       const r = await startRewireAction(memberId, session);
       setPending(false);
       if (!r.ok || !r.reply || !r.state) return setError(r.error ?? 'Could not start Rewire.');
