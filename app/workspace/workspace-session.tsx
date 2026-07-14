@@ -107,12 +107,24 @@ export default function WorkspaceSession({
             <p className="ws-art-lede">{artifact.lede}</p>
             {artifact.slots.length > 0 && (
               <div className="ws-slots">
-                {artifact.slots.map((s, i) => (
-                  <div key={i} className={`ws-slot${s.value ? ' filled' : ''}`}>
-                    <div className="ws-slot-lab">{s.label}</div>
-                    <div className="ws-slot-val">{s.value ? s.value : '…the Companion will draw this out'}</div>
-                  </div>
-                ))}
+                {artifact.slots.map((s, i) => {
+                  const lines = (s.value ?? '').split('\n').map((l) => l.trim()).filter(Boolean);
+                  return (
+                    <div key={i} className={`ws-slot${s.value ? ' filled' : ''}`}>
+                      <div className="ws-slot-lab">{s.label}</div>
+                      {lines.length > 0 ? (
+                        // Each committed line reads as KEPT — the member watches their own words get immortalized here.
+                        <ul className="ws-slot-list">
+                          {lines.map((ln, j) => (
+                            <li key={j} className="ws-slot-line"><span className="ws-slot-tick" aria-hidden="true">✓</span>{ln}</li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <div className="ws-slot-val empty">Your own words land here as you name them — and they’re kept.</div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
             <p className="ws-art-foot">{artifact.foot}</p>
