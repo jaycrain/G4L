@@ -337,6 +337,7 @@ export default async function RedesignDashboard({ db, memberId, dash }: { db: Db
             ))}
           </div>
           <p className="rb-cap">Locked badges show what’s ahead — never a scold.</p>
+          <Link href={`/badges/${memberId}`} className="rreg-more">See more →</Link>
         </div>
       </RedesignShell>
     </>

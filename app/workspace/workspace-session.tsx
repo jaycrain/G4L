@@ -73,11 +73,12 @@ export default function WorkspaceSession({
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img className="rt-wordmark" src="/brand/g4l-wordmark.svg" alt="Grinta for Life" />
         </Link>
-        <Link href={`/dashboard/${memberId}`} className="ws-back">← Dashboard</Link>
       </div>
 
       <div className="redesign-app ws-app">
         <div className="redesign-canvas">
+          {/* Back nav — standard place (top-left of content) + color (teal), matching .back-dash elsewhere */}
+          <Link href={`/dashboard/${memberId}`} className="ws-back">← Dashboard</Link>
           {/* Wayfinding: ring + where you are + progress + full route */}
           <div className="ws-wayfind">
             <div className="ws-way-ring">

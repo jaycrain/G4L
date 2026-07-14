@@ -1,16 +1,137 @@
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getDb } from '../../../lib/db/index.ts';
 import { authorizeMember } from '../../authz.ts';
-import { getPassport } from '../../../lib/curriculum/view.ts';
+import { getPassport, reconcileRedesignBadges, type PassportView } from '../../../lib/curriculum/view.ts';
+import { redesignEnabled } from '../../../lib/dashboard/redesign.ts';
+import RedesignChrome from '../../dashboard/redesign-chrome.tsx';
 import type { Db } from '../../../lib/db/schema.ts';
 
-// "More about your Badges" — the passport copy moved off the dashboard panel.
+// The Badges detail subpage ("See More →" from the dashboard shelf). Two renders:
+//  • Redesign (REDESIGN staged): the honest forward-map in full — each milestone, what it marks, earned or ahead.
+//  • Legacy (prod): the original passport explainer copy, untouched.
+
 export default async function BadgesMorePage({ params }: { params: Promise<{ memberId: string }> }) {
   const { memberId } = await params;
   if (!(await authorizeMember(memberId))) redirect('/login');
   const db = (await getDb()) as unknown as Db;
+  if (redesignEnabled()) await reconcileRedesignBadges(db, memberId).catch(() => {}); // agree with the dashboard shelf
   const passport = await getPassport(db, memberId);
 
+  return redesignEnabled() ? redesignView(memberId, passport) : legacyView(passport);
+}
+
+// ---- Redesign: the milestone map, grouped by the 4Rs -----------------------------------------------------------
+
+// Which R each badge belongs to (grouping only — the registry order is already phase-ordered).
+const BADGE_PHASE: Record<string, 'reconnect' | 'rewire' | 'rebuild' | 'reclaim'> = {
+  'named-yourself': 'reconnect',
+  'starting-line': 'reconnect',
+  'reconnect-milestone': 'reconnect',
+  'turned-voice': 'rewire',
+  'built-picture': 'rewire',
+  'caught-real-time': 'rewire',
+  'rewire-milestone': 'rewire',
+  'found-why': 'rebuild',
+  'honest-read': 'rebuild',
+  'week-noticing': 'rebuild',
+  'rebuild-milestone': 'rebuild',
+  'goal-reclaimed': 'reclaim',
+  'widened-world': 'reclaim',
+  'quality-days': 'reclaim',
+  'wrote-story': 'reclaim',
+  'reclaim-capstone': 'reclaim',
+};
+
+// Member-facing meaning of each milestone — plain, normalizing, no pep. What it marks, honestly.
+const BADGE_MEANING: Record<string, string> = {
+  'named-yourself': 'You sat with the Doors — the life events that opened the distance — and named them out loud. That’s where the work starts.',
+  'starting-line': 'You took the first ID read. Not a grade — a starting line, so you can see how far you’ve come from here.',
+  'reconnect-milestone': 'You crossed the Threshold: you saw the Fade clearly and decided to do something about it.',
+  'turned-voice': 'You caught the inner voice that narrates you short — and practiced turning it.',
+  'built-picture': 'You built a fuller, truer picture of yourself than the one the Fade was running.',
+  'caught-real-time': 'You caught a distortion as it happened, not hours later. That’s the reflex starting to change.',
+  'rewire-milestone': 'You retrained the mind — the Rewire work moved the frame, and it held.',
+  'found-why': 'You found the why underneath the movement — the reason that’s yours, not borrowed.',
+  'honest-read': 'You took an honest read of where the body actually is — no flattering, no flinching.',
+  'week-noticing': 'You lived a full week paying attention. Noticing is the rep that makes the rest possible.',
+  'rebuild-milestone': 'You rebuilt the body — the numbers moved against your own baseline.',
+  'goal-reclaimed': 'You took back something you’d named as lost — a want, returned to your life.',
+  'widened-world': 'You widened the world — you looked past the narrow room the Fade had you living in.',
+  'quality-days': 'You strung together days that felt like yours. Not perfect — quality, on your terms.',
+  'wrote-story': 'You wrote your story in your own words — the Transition, told by you.',
+  'reclaim-capstone': 'You closed the loop — a full cycle of the work. It fades again, and you clip back in. That’s the Loop.',
+};
+
+const PHASES: { key: 'reconnect' | 'rewire' | 'rebuild' | 'reclaim'; label: string }[] = [
+  { key: 'reconnect', label: 'Reconnect' },
+  { key: 'rewire', label: 'Rewire' },
+  { key: 'rebuild', label: 'Rebuild' },
+  { key: 'reclaim', label: 'Reclaim' },
+];
+
+function redesignView(memberId: string, passport: PassportView) {
+  const byPhase = PHASES.map((p) => ({
+    ...p,
+    badges: passport.badges.filter((b) => BADGE_PHASE[b.id] === p.key),
+  })).filter((g) => g.badges.length > 0);
+
+  return (
+    <>
+      <RedesignChrome />
+      <div className="redesign-topbar">
+        <Link href="/" className="rt-brand" aria-label="Go to your G4L home">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img className="rt-logo-mark" src="/brand/g4l-rings.svg" alt="" aria-hidden="true" />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img className="rt-wordmark" src="/brand/g4l-wordmark.svg" alt="Grinta for Life" />
+        </Link>
+      </div>
+
+      <div className="bd-wrap">
+        <Link href={`/dashboard/${memberId}`} className="ws-back">← Dashboard</Link>
+        <div className="bd-eyebrow">Your Badges</div>
+        <h1 className="bd-title">Earned for real accomplishments — never participation</h1>
+        <p className="bd-lede">
+          Each badge marks something you actually did. The ones ahead stay greyed until you get there — an honest map of
+          the road, never a scold.
+        </p>
+        <div className="bd-count"><b>{passport.earned}</b> of {passport.total} earned</div>
+
+        {byPhase.map((g) => (
+          <section className="bd-phase" key={g.key}>
+            <h2 className={`bd-phase-h ${g.key}`}>{g.label}</h2>
+            <div className="bd-list">
+              {g.badges.map((b) => (
+                <div className={`bd-badge${b.earned ? ' earned' : ''}`} key={b.id}>
+                  <span className="bd-mark" aria-hidden="true">{b.earned ? '◉' : '◦'}</span>
+                  <div className="bd-body">
+                    <div className="bd-name">
+                      {b.name}
+                      {b.earned ? <span className="bd-tag earned">Earned</span> : <span className="bd-tag">Ahead</span>}
+                    </div>
+                    <p className="bd-meaning">{BADGE_MEANING[b.id] ?? b.earn_rule}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        ))}
+
+        {passport.placeholders > 0 && (
+          <p className="bd-more">
+            + {passport.placeholders} more milestone{passport.placeholders > 1 ? 's' : ''} revealed when you reach{' '}
+            {passport.placeholders > 1 ? 'them' : 'it'}.
+          </p>
+        )}
+      </div>
+    </>
+  );
+}
+
+// ---- Legacy (prod): the original passport explainer copy, untouched -------------------------------------------
+
+function legacyView(passport: PassportView) {
   return (
     <>
       <div className="hero"><h1>More about your Badges</h1></div>

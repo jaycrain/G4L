@@ -1324,7 +1324,7 @@ body.redesign-on .back-dash { display: none; }
 
 /* ---- REDESIGN Layer 3 · Program Workspace (build spec §4). Reuses the two-pane .redesign-app; the rail holds the
    existing arc chat client, the canvas holds wayfinding + the artifact. ---- */
-.ws-back { font-weight: 700; color: var(--navy); text-decoration: none; }
+.ws-back { display: inline-block; margin: 0 0 1rem; color: var(--teal); font-weight: 600; font-size: 0.9rem; text-decoration: none; }
 .ws-back:hover { text-decoration: underline; }
 .ws-app { min-height: calc(100vh - 64px); }
 
@@ -1359,6 +1359,32 @@ body.redesign-on .back-dash { display: none; }
 }
 
 /* ---- REDESIGN Layer 3 · Movement subpage (Decision YY) ---- */
+/* Badges detail subpage (redesign) — the milestone map in full, grouped by the 4Rs. */
+.bd-wrap { max-width: 780px; margin: 0 auto; padding: 28px 28px 70px; }
+.bd-eyebrow { font-weight: 800; text-transform: uppercase; letter-spacing: .07em; font-size: 12px; color: var(--teal); }
+.bd-title { font-weight: 800; font-size: 28px; color: var(--navy); margin: 6px 0 4px; line-height: 1.2; }
+.bd-lede { font-size: 15px; color: #6b7680; line-height: 1.5; max-width: 62ch; }
+.bd-count { margin-top: 14px; font-size: 13px; color: #6b7680; }
+.bd-count b { color: var(--navy); font-size: 16px; }
+.bd-phase { margin-top: 30px; }
+.bd-phase-h { font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; margin: 0 0 12px; padding-bottom: 7px; border-bottom: 1px solid #e3e2df; }
+.bd-phase-h.reconnect { color: #3B9495; }
+.bd-phase-h.rewire { color: #EC6233; }
+.bd-phase-h.rebuild { color: #919536; }
+.bd-phase-h.reclaim { color: #101045; }
+.bd-list { display: flex; flex-direction: column; gap: 10px; }
+.bd-badge { display: flex; gap: 14px; align-items: flex-start; background: #fff; border: 1px solid #e8e6e6; border-radius: 14px; padding: 15px 17px; opacity: .62; }
+.bd-badge.earned { opacity: 1; border-color: #d6d4d4; box-shadow: 0 1px 2px rgba(42,42,42,.05); }
+.bd-mark { font-size: 20px; line-height: 1.2; color: #b9bdc1; flex: none; }
+.bd-badge.earned .bd-mark { color: var(--teal); }
+.bd-body { min-width: 0; }
+.bd-name { font-weight: 700; font-size: 15.5px; color: var(--navy); display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
+.bd-tag { font-size: 10.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: #9aa0a5; border: 1px solid #dcdad9; border-radius: 999px; padding: 1px 8px; }
+.bd-tag.earned { color: #fff; background: var(--teal); border-color: var(--teal); }
+.bd-meaning { font-size: 14px; color: #5f6a73; line-height: 1.5; margin: 5px 0 0; }
+.bd-more { margin-top: 26px; font-size: 13.5px; color: #8b949b; font-style: italic; }
+@media (max-width: 640px) { .bd-wrap { padding: 20px 14px 56px; } .bd-title { font-size: 24px; } }
+
 .mv-wrap { max-width: 860px; margin: 0 auto; padding: 28px 28px 70px; }
 .mv-eyebrow { font-weight: 800; text-transform: uppercase; letter-spacing: .07em; font-size: 12px; color: var(--teal); }
 .mv-title { font-weight: 800; font-size: 30px; color: var(--navy); margin: 6px 0 4px; }

@@ -53,11 +53,12 @@ export function reconnectCallback(c: Collected): string {
         : others.length === 1
           ? `${primary} — with ${others[0]} tangled up in it`
           : `${primary}, with a couple of others stacked on top`;
-    // Richest path: a named Door → the revisable check lands on it by name.
+    // Richest path: a named Door → the revisable check lands on it by name. End on the guiding question (the
+    // "we go deeper" framing comes first, so the member's turn is handed a clear question, not a coda).
     return (
       `${identity ? `Last time, we found who you're reclaiming — ${identity} — and it` : 'When we last talked, it'} ` +
-      `felt like the distance started with ${doorPhrase}. Still where it feels like it began, or has something shifted ` +
-      `since? Either way — this time, we go deeper.`
+      `felt like the distance started with ${doorPhrase}. This time, we go deeper into all of it. ` +
+      `Does that still feel like where it began — or has something shifted since?`
     );
   }
   if (gap) {
@@ -145,11 +146,15 @@ function withQuestion(modelText: string, probe: string): string {
 // The excavation opener — from the committed PRIMARY door (loaded at arc entry). Not the label, the real thing.
 function doorOpen(c: Collected): string {
   const identity = identityLabel(c.identityNoun);
-  const primary = (c.doors ?? [])[0];
+  const doors = c.doors ?? [];
+  const primary = doors[0];
   const doorName = primary ? DOORS.find((d) => d.slug === primary)?.displayName ?? null : null;
+  const others = Math.max(0, doors.length - 1);
   if (doorName) {
+    // Start with one Door, but HOLD the others (Jay + Greg: rarely one Door — never imply it was the only one).
+    const held = others > 0 ? ` We'll get to the other${others > 1 ? 's' : ''} — this is just where we start.` : '';
     return (
-      `Let's go into ${doorName} — the one you named as where it started. Not the label, the real thing: take me ` +
+      `Let's start with ${doorName} — ${others > 0 ? 'one of the ones you named' : 'the one you named'}.${held} Not the label, the real thing: take me ` +
       `back to how it actually happened${identity ? `, and what it quietly cost ${identity}` : ''}. Start wherever it's most vivid.`
     );
   }
@@ -630,16 +635,25 @@ const reconnectEntryStage: StageDef = {
   opener: (c) => reconnectCallback(c),
   offersSubstance: (message) => message.trim().length >= 3,
   gather(b) {
-    // The member answered the revisable check. This increment does not act on a revision (deferred to §2b) — it
-    // acknowledges and hands into the Doors excavation (stubbed for now).
+    // The member answered the revisable check. LISTEN FIRST: the model's warm acknowledgment of what they just said
+    // is the first beat; only THEN do we open the Doors excavation (second beat). Never discard their reply and jump
+    // straight to the Door work — that reads as not listening. (Revision is still deferred to §2b, member-confirmed.)
     b.stage = 'doors';
-    b.reply = b.arc.stages.doors!.opener(b.collected);
+    b.reply = handIntoDoors(b.modelText, b.collected);
   },
   confirm(b) {
     b.stage = 'doors';
-    b.reply = b.arc.stages.doors!.opener(b.collected);
+    b.reply = handIntoDoors(b.modelText, b.collected);
   },
 };
+
+// Acknowledge the member's opener answer (the model's warm receive), THEN open the Doors excavation as its own beat.
+// Falls back to the door opener alone if the model returned nothing usable.
+function handIntoDoors(modelText: string | undefined, c: Collected): string {
+  const ack = (modelText ?? '').trim();
+  const open = doorOpen(c);
+  return ack ? `${ack}${BEAT_SEP}${open}` : open;
+}
 
 export const RECONNECT_ARC: ArcConfig = {
   id: 'reconnect',
@@ -873,7 +887,12 @@ function stageInstructionReconnect(stage?: Stage): string {
       'WORDS, offered as a check; call reflect_window ONLY once both Tuesdays are drawn out. This beat should LIFT: ' +
       'leave them feeling the reclaimed day is reachable. Grounded in their real life, never over-promised fantasy.'
     );
-  return '\n\nCURRENT STAGE: entry — pick up from onboarding; the callback opened; receive their reply warmly.';
+  return (
+    '\n\nCURRENT STAGE: entry — the callback asked whether the distance still feels like it began where they named, ' +
+    'or whether something has shifted. RECEIVE their answer: in one or two sentences, reflect back specifically what ' +
+    'they just said — if they named a shift, name it; if they confirmed, affirm it. Do NOT ask a question and do NOT ' +
+    'start excavating a Door — the next beat opens that work. Just land their answer so they feel heard.'
+  );
 }
 
 // The live Reconnect turn — the model draws out the door + signals depth/intent; the kernel disposes.

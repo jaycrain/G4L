@@ -80,7 +80,8 @@ export default function ReconnectChat({ memberId }: { memberId: string }) {
     void submit(input.trim());
   }
 
-  const primary = doorName(state?.collected.doors?.[0]);
+  // Show ALL the Doors the member named — not just the primary (they rarely came through one, Jay + Greg).
+  const doorList = (state?.collected.doors ?? []).map((s) => doorName(s)).filter(Boolean) as string[];
   const lastReseen = state?.reseeingTells?.[state.reseeingTells.length - 1];
 
   // §2f — once the arc reaches the Ceremony, the overlay takes over the whole surface.
@@ -88,9 +89,9 @@ export default function ReconnectChat({ memberId }: { memberId: string }) {
 
   return (
     <div className="reconnect-chat">
-      {primary && (
+      {doorList.length > 0 && (
         <div className="reconnect-doorbar" style={{ marginBottom: '0.75rem', fontSize: '0.85rem', color: 'var(--navy, #374F63)' }}>
-          Your door: <strong>{primary}</strong>
+          Your door{doorList.length > 1 ? 's' : ''}: <strong>{doorList.join(' · ')}</strong>
           {lastReseen && (
             <span style={{ color: 'var(--teal, #3B9495)', marginLeft: '0.5rem' }}>
               ✓ re-seen from {doorName(lastReseen.fromSlug)}
@@ -122,7 +123,7 @@ export default function ReconnectChat({ memberId }: { memberId: string }) {
                 void submit(input.trim());
               }
             }}
-            placeholder="Type your reply… (Enter to send, Shift+Enter for a new line)"
+            placeholder="Type your reply here…"
             rows={2}
             disabled={pending || !state}
           />

@@ -112,7 +112,7 @@ export default function ReclaimChat({ memberId, session = 'c1' }: { memberId: st
                     void submit(input.trim());
                   }
                 }}
-                placeholder="Type your reply… (Enter to send, Shift+Enter for a new line)"
+                placeholder="Type your reply here…"
                 rows={2}
                 disabled={pending || !state}
               />

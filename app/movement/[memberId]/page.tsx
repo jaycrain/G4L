@@ -54,10 +54,10 @@ export default async function MovementPage({ params }: { params: Promise<{ membe
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img className="rt-wordmark" src="/brand/g4l-wordmark.svg" alt="Grinta for Life" />
         </Link>
-        <Link href={`/dashboard/${memberId}`} className="ws-back">← Dashboard</Link>
       </div>
 
       <div className="mv-wrap">
+        <Link href={`/dashboard/${memberId}`} className="ws-back">← Dashboard</Link>
         <div className="mv-eyebrow">Movement</div>
         <h1 className="mv-title">Everything you’re doing, in one place</h1>
         <p className="mv-lede">Connect the apps you already use, and the Companion adds what you tell it along the way. Read against who you’re reclaiming — never left as raw numbers.</p>
