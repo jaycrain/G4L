@@ -27,6 +27,29 @@ const PRACTICE_LABEL: Record<PracticeKind, string> = {
   c3_quality: 'Living your Quality Days',
 };
 
+// The phase each practice week belongs to — so a week goes stale once that phase's Checkpoint is crossed.
+const PRACTICE_PHASE: Record<PracticeKind, string> = {
+  w2_image: 'rewire',
+  w3_logging: 'rewire',
+  b2_noticing: 'rebuild',
+  b3_pilot: 'rebuild',
+  c3_quality: 'reclaim',
+};
+
+// Did onboarding produce real captures? A named identity, a Door, or a committed Reclaim List all mean intake is done —
+// so the member is past "brand new" even before their first Reconnect session. Drift-hardened by the caller.
+async function hasOnboardingCaptures(db: Db, memberId: string): Promise<boolean> {
+  const p = await db.query<{ one: number }>(
+    `select 1 as one from member_profile where member_id=$1 and (identity_noun is not null or named_door is not null) limit 1`,
+    [memberId],
+  );
+  if (p.rows.length) return true;
+  const d = await db.query<{ one: number }>('select 1 as one from member_door where member_id=$1 and removed_at is null limit 1', [memberId]);
+  if (d.rows.length) return true;
+  const r = await db.query<{ one: number }>('select 1 as one from reclaim_item where member_id=$1 and removed_at is null limit 1', [memberId]);
+  return r.rows.length > 0;
+}
+
 // Find an item (title, phase, kind) anywhere in the forecast by id. Labels + phase come from the forecast the dashboard
 // already computed — the single source of truth for what things are called and where they sit.
 function findItem(forecast: Forecast, id: string): { title: string; phase: string; kind: string } | null {
@@ -71,16 +94,24 @@ export async function gatherHeroSignals(db: Db, memberId: string): Promise<HeroS
   const nextSession =
     current?.openable && currentInfo?.kind === 'session' ? { id: current.id, label: current.title } : null;
 
-  const pw = await activePracticeWeek(db, memberId).catch(() => null);
-  const activePractice = pw
-    ? { kind: pw.kind, label: PRACTICE_LABEL[pw.kind] ?? "This week's practice", day: pw.day, total: PRACTICE_WINDOW_DAYS }
-    : null;
-
   const closed = await closedSessionIds(db, memberId).catch(() => [] as string[]);
-  // "Started" = any closed session, an in-flight arc, OR a crossed checkpoint (a gate) — a member past Reconnect must
-  // never read as "fresh / Start here."
   const gates = await listGates(db, memberId).catch(() => [] as string[]);
-  const hasStarted = closed.length > 0 || inflightArc != null || inProgressSession != null || gates.length > 0;
+  const gateSet = new Set(gates);
+
+  // A practice week belongs to a phase's Part B. Once that phase's Checkpoint is crossed the week is STALE — it can
+  // linger inside its 7-day window and strand the hero on "Log today" while the member has already moved to the next
+  // phase. Ignore it for the hero (it stays loggable on the Momentum page); only surface a week for the CURRENT phase.
+  const pw = await activePracticeWeek(db, memberId).catch(() => null);
+  const pwStale = pw ? gateSet.has(`${PRACTICE_PHASE[pw.kind]}_checkpoint_passed`) : false;
+  const activePractice =
+    pw && !pwStale
+      ? { kind: pw.kind, label: PRACTICE_LABEL[pw.kind] ?? "This week's practice", day: pw.day, total: PRACTICE_WINDOW_DAYS }
+      : null;
+
+  // "Started" = any closed session, an in-flight arc, a crossed checkpoint (a gate), OR completed onboarding (a named
+  // identity / Door / Reclaim List). A member who finished intake must never read as "brand new / Start here."
+  const onboardingDone = await hasOnboardingCaptures(db, memberId).catch(() => false);
+  const hasStarted = closed.length > 0 || inflightArc != null || inProgressSession != null || gates.length > 0 || onboardingDone;
 
   return { hasStarted, inProgressSession, justFinishedSession, checkpointReady, activePractice, nextSession };
 }

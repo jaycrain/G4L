@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { PGlite } from '@electric-sql/pglite';
 import { applySchema, type Db } from '../lib/db/schema.ts';
 import { getForecast } from '../lib/curriculum/view.ts';
-import { markSessionClosed } from '../lib/curriculum/store.ts';
+import { markSessionClosed, setGate } from '../lib/curriculum/store.ts';
 import { startPracticeWeek } from '../lib/practice/store.ts';
 import { gatherHeroSignals, resolveHero } from '../lib/dashboard/hero-signals.ts';
 
@@ -85,6 +85,25 @@ test('an active practice week (nothing else pending) → mid-week-practice', asy
   assert.equal(signals.activePractice?.kind, 'w2_image');
   assert.equal(signals.activePractice?.day, 1);
   assert.equal(signals.activePractice?.total, 7);
+});
+
+test('onboarding captures alone count as started → next-step, not "brand new / fresh"', async () => {
+  const { db, m } = await fresh();
+  // A member who finished intake (named an identity) but hasn't done any session yet — no closes, no gates.
+  await db.query(`update member_profile set identity_noun = 'Runner' where member_id=$1`, [m]);
+  const sig = await gatherHeroSignals(db, m);
+  assert.equal(sig.hasStarted, true, 'a named identity from onboarding means the member has started');
+  const { state } = await resolveHero(db, m);
+  assert.equal(state.kind, 'next-step', 'post-onboarding member is offered their first session, not "Begin"');
+});
+
+test('a practice week whose phase Checkpoint is crossed is STALE → not mid-week-practice (no strand)', async () => {
+  const { db, m } = await fresh();
+  await startPracticeWeek(db, m, 'w2_image'); // a Rewire practice week
+  await setGate(db, m, 'rewire_checkpoint_passed'); // Rewire is now complete → the week is behind the member
+  const { state, signals } = await resolveHero(db, m);
+  assert.equal(signals.activePractice, null, 'the completed phase’s practice week is ignored for the hero');
+  assert.notEqual(state.kind, 'mid-week-practice', 'the member is not stranded on "Log today"');
 });
 
 test('started (a stale close) with a session still lit, nothing in flight → next-step', async () => {
