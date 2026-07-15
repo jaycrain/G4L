@@ -4,7 +4,8 @@ import { readFileSync } from 'node:fs';
 import { PGlite } from '@electric-sql/pglite';
 import { applySchema, type Db } from '../lib/db/schema.ts';
 
-const SEED_ID = '13526e58-1ab1-43b3-925f-5fbd53d1884e';
+// The email the seed resolves the member by (ids differ per environment).
+const SEED_EMAIL = 'demo-reshma@grintaforlife.test';
 
 // Proves scripts/db/seed-far-along.sql executes cleanly against the real schema AND lands the demo member in the
 // intended mid-Rebuild state — so a paste into the Supabase SQL Editor won't fail and the walk reaches the late-stage
@@ -21,8 +22,11 @@ test('seed-far-along.sql runs cleanly and lands the demo member mid-Rebuild', as
 
   const db = new PGlite() as unknown as Db;
   await applySchema(db);
-  // The member the seed targets, with an onboarding capture (identity) so it doesn't read as brand-new.
-  await db.query(`insert into member_profile (member_id, display_name, email, identity_noun) values ($1,'Reshma','reshma-seed@x.com','Runner')`, [SEED_ID]);
+  // The member the seed targets, resolved by email (its id is env-specific), with an identity capture so it doesn't
+  // read as brand-new.
+  const mid = (
+    await db.query<{ member_id: string }>(`insert into member_profile (display_name, email, identity_noun) values ('Reshma', $1, 'Runner') returning member_id`, [SEED_EMAIL])
+  ).rows[0]!.member_id;
 
   // Run the ACTUAL seed file, statement by statement (strip the -- comment lines, incl. the commented RESET block).
   const sql = readFileSync(new URL('../scripts/db/seed-far-along.sql', import.meta.url), 'utf8');
@@ -36,14 +40,14 @@ test('seed-far-along.sql runs cleanly and lands the demo member mid-Rebuild', as
   for (const s of stmts) await db.query(s);
 
   // Forecast: Reconnect + Rewire complete, Rebuild is where you are.
-  const fc = await getForecast(db, SEED_ID);
+  const fc = await getForecast(db, mid);
   const status = (p: string) => fc.phases.find((x) => x.phase === p)?.status;
   assert.equal(status('reconnect'), 'Complete');
   assert.equal(status('rewire'), 'Complete');
   assert.equal(status('rebuild'), "You're here");
 
   // Hero: the active practice week (not stranded, not a stale "just finished").
-  const { state } = await resolveHero(db, SEED_ID);
+  const { state } = await resolveHero(db, mid);
   assert.equal(state.kind, 'mid-week-practice');
   assert.equal(state.kind === 'mid-week-practice' && state.practice.kind, 'b2_noticing');
 
@@ -60,6 +64,6 @@ test('seed-far-along.sql runs cleanly and lands the demo member mid-Rebuild', as
   for (const k of ['reconnect', 'w1', 'w2', 'w3', 'b1', 'b2']) assert.ok(keys.includes(k), `${k} reviewable`);
 
   // The W1 review has the seeded true lines.
-  const w1 = await readArtifact(db, SEED_ID, 'w1');
+  const w1 = await readArtifact(db, mid, 'w1');
   assert.match(w1.slots[0]!.value ?? '', /still a runner/);
 });

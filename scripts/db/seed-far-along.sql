@@ -1,48 +1,73 @@
 -- Seed a FAR-ALONG demo account for walking the redesign's late-stage states.
 -- Run in the Supabase SQL Editor (prod DB — the Vercel Preview reads it). Idempotent + reversible.
 --
--- Target: the demo member (Reshma) lands mid-REBUILD —
+-- Resolves the member by EMAIL (ids differ per environment), so set the email below to the demo account you walk as.
+-- If the final SELECT returns 0 rows, the email is wrong — run:  select member_id, email, display_name from member_profile;
+-- ...find your demo account, and swap the email everywhere below.
+--
+-- Target: the member lands mid-REBUILD —
 --   • Reconnect + Rewire COMPLETE (gates) → both rings solid on the navy hero
 --   • Rewire W1/W2/W3 + Rebuild B1/B2 CLOSED → milestone badges earned; ring reads Rebuild 2 of 3
---   • an active B2 "noticing" practice week → the practice-week hero + "Or move on to The Lifestyle Pilot" link (no strand)
---   • a populated "Revisit a session" list: Reconnect / W1 / W2 / W3 / B1 / B2, with real kept artifacts for W1–W3
---
--- Assumes the member already has their onboarding captures (identity "the Runner", Door "The Diagnosis", Reclaim List).
--- Scoped to ONE member id; safe to re-run. See the RESET block at the bottom to return the account to pre-seed.
+--   • an active B2 "noticing" practice week → the practice-week hero + "Or move on to The Lifestyle Pilot" link
+--   • a populated "Revisit a session" list: Reconnect / W1 / W2 / W3 / B1 / B2, with kept artifacts for W1–W3
+-- Assumes the account already has its onboarding captures (identity / Door / Reclaim List).
 
--- 1) Phase gates → Reconnect + Rewire complete; Rebuild becomes "You're here" (activePhaseIndex = 2).
-insert into phase_gate (member_id, gate) values
-  ('13526e58-1ab1-43b3-925f-5fbd53d1884e', 'reconnect_checkpoint_passed'),
-  ('13526e58-1ab1-43b3-925f-5fbd53d1884e', 'rewire_checkpoint_passed')
+-- 1) Phase gates → Reconnect + Rewire complete; Rebuild becomes "You're here".
+insert into phase_gate (member_id, gate)
+select mp.member_id, g.gate
+from member_profile mp
+cross join (values ('reconnect_checkpoint_passed'), ('rewire_checkpoint_passed')) as g(gate)
+where mp.email = 'demo-reshma@grintaforlife.test'
 on conflict do nothing;
 
 -- 2) Close sessions — AGED past the 10-min "just finished" window so the hero shows the practice week (not a
 --    completion beat). Closing these also earns the milestone badges (turned-voice … honest-read).
-insert into session_progress (member_id, session_id, status, closed_at) values
-  ('13526e58-1ab1-43b3-925f-5fbd53d1884e', 'RWR-W1',  'closed', now() - interval '6 days'),
-  ('13526e58-1ab1-43b3-925f-5fbd53d1884e', 'RWR-W2',  'closed', now() - interval '5 days'),
-  ('13526e58-1ab1-43b3-925f-5fbd53d1884e', 'RWR-W3',  'closed', now() - interval '4 days'),
-  ('13526e58-1ab1-43b3-925f-5fbd53d1884e', 'RBLD-B1', 'closed', now() - interval '3 days'),
-  ('13526e58-1ab1-43b3-925f-5fbd53d1884e', 'RBLD-B2', 'closed', now() - interval '2 days')
+insert into session_progress (member_id, session_id, status, closed_at)
+select mp.member_id, s.session_id, 'closed', now() - s.age
+from member_profile mp
+cross join (values
+  ('RWR-W1', interval '6 days'), ('RWR-W2', interval '5 days'), ('RWR-W3', interval '4 days'),
+  ('RBLD-B1', interval '3 days'), ('RBLD-B2', interval '2 days')
+) as s(session_id, age)
+where mp.email = 'demo-reshma@grintaforlife.test'
 on conflict (member_id, session_id) do update set status = 'closed', closed_at = excluded.closed_at, updated_at = now();
 
 -- 3) The active B2 "noticing" practice week (Rebuild Part B) → the practice-week hero, B3 still the lit next step.
-insert into practice_week (member_id, kind, started_at) values
-  ('13526e58-1ab1-43b3-925f-5fbd53d1884e', 'b2_noticing', now() - interval '2 days')
+insert into practice_week (member_id, kind, started_at)
+select mp.member_id, 'b2_noticing', now() - interval '2 days'
+from member_profile mp
+where mp.email = 'demo-reshma@grintaforlife.test'
 on conflict (member_id, kind) do update set started_at = excluded.started_at;
 
 -- 4) Kept artifacts for the Rewire session reviews (idempotent: clear prior seed keepers first, by their marker).
-delete from playbook_entry where member_id = '13526e58-1ab1-43b3-925f-5fbd53d1884e' and source_ref = 'seed-far-along';
-insert into playbook_entry (member_id, section, body, authorship, state, keeper_type, source_kind, source_ref, source_label, sort_order) values
-  ('13526e58-1ab1-43b3-925f-5fbd53d1884e', 'own_words', 'The diagnosis changed my body, not who I am.',                              'gathered', 'kept', 'principle',     'own', 'seed-far-along', 'Your true line',           0),
-  ('13526e58-1ab1-43b3-925f-5fbd53d1884e', 'own_words', 'One slow mile is still a mile — I''m still a runner.',                       'gathered', 'kept', 'principle',     'own', 'seed-far-along', 'Your true line',           1),
-  ('13526e58-1ab1-43b3-925f-5fbd53d1884e', 'own_words', 'A year out: back on the trail at dawn, breathing easy, my daughter riding alongside me.', 'gathered', 'kept', 'lights_you_up', 'own', 'seed-far-along', 'The picture',              2),
-  ('13526e58-1ab1-43b3-925f-5fbd53d1884e', 'own_words', 'When I miss a week: no guilt, no story — I lace up the next morning and run one easy mile.', 'gathered', 'kept', 'recovery_move', 'own', 'seed-far-along', 'Your clip-back-in move',   3);
+delete from playbook_entry
+where source_ref = 'seed-far-along'
+  and member_id = (select member_id from member_profile where email = 'demo-reshma@grintaforlife.test');
+
+insert into playbook_entry (member_id, section, body, authorship, state, keeper_type, source_kind, source_ref, source_label, sort_order)
+select mp.member_id, 'own_words', k.body, 'gathered', 'kept', k.keeper_type, 'own', 'seed-far-along', k.label, k.ord
+from member_profile mp
+cross join (values
+  ('The diagnosis changed my body, not who I am.',                                              'principle',     'Your true line',         0),
+  ('One slow mile is still a mile — I''m still a runner.',                                       'principle',     'Your true line',         1),
+  ('A year out: back on the trail at dawn, breathing easy, my daughter riding alongside me.',    'lights_you_up', 'The picture',            2),
+  ('When I miss a week: no guilt, no story — I lace up the next morning and run one easy mile.', 'recovery_move', 'Your clip-back-in move', 3)
+) as k(body, keeper_type, label, ord)
+where mp.email = 'demo-reshma@grintaforlife.test';
+
+-- CONFIRM it landed (expect: gates 2, closed 5, practice_weeks 1, seed_keepers 4). 0 rows here = wrong email above.
+select mp.display_name, mp.email,
+  (select count(*) from phase_gate where member_id = mp.member_id) as gates,
+  (select count(*) from session_progress where member_id = mp.member_id and status = 'closed') as closed,
+  (select count(*) from practice_week where member_id = mp.member_id) as practice_weeks,
+  (select count(*) from playbook_entry where member_id = mp.member_id and source_ref = 'seed-far-along') as seed_keepers
+from member_profile mp
+where mp.email = 'demo-reshma@grintaforlife.test';
 
 -- ─────────────────────────────────────────────────────────────────────────────────────────────────────────────
 -- RESET (undo the seed) — run this block to return the demo member to its pre-seed state:
 --
--- delete from phase_gate       where member_id = '13526e58-1ab1-43b3-925f-5fbd53d1884e' and gate in ('reconnect_checkpoint_passed','rewire_checkpoint_passed');
--- delete from session_progress where member_id = '13526e58-1ab1-43b3-925f-5fbd53d1884e' and session_id in ('RWR-W1','RWR-W2','RWR-W3','RBLD-B1','RBLD-B2');
--- delete from practice_week    where member_id = '13526e58-1ab1-43b3-925f-5fbd53d1884e' and kind = 'b2_noticing';
--- delete from playbook_entry   where member_id = '13526e58-1ab1-43b3-925f-5fbd53d1884e' and source_ref = 'seed-far-along';
+-- delete from phase_gate       where gate in ('reconnect_checkpoint_passed','rewire_checkpoint_passed') and member_id = (select member_id from member_profile where email = 'demo-reshma@grintaforlife.test');
+-- delete from session_progress where session_id in ('RWR-W1','RWR-W2','RWR-W3','RBLD-B1','RBLD-B2')       and member_id = (select member_id from member_profile where email = 'demo-reshma@grintaforlife.test');
+-- delete from practice_week    where kind = 'b2_noticing'                                                 and member_id = (select member_id from member_profile where email = 'demo-reshma@grintaforlife.test');
+-- delete from playbook_entry   where source_ref = 'seed-far-along'                                        and member_id = (select member_id from member_profile where email = 'demo-reshma@grintaforlife.test');
