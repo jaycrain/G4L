@@ -18,8 +18,15 @@ const PHASE_LABEL: Record<Phase, string> = { reconnect: 'Reconnect', rewire: 'Re
 // Redesign Layer 3 — the workspace route. Flag-gated: without REDESIGN the session runs on its legacy route, so prod is
 // untouched. The rail reuses the existing arc chat client (no arc-engine change); the canvas shows the wayfinding + the
 // artifact-so-far.
-export default async function WorkspacePage({ params }: { params: Promise<{ memberId: string; sessionKey: string }> }) {
+export default async function WorkspacePage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ memberId: string; sessionKey: string }>;
+  searchParams: Promise<{ review?: string }>;
+}) {
   const { memberId, sessionKey } = await params;
+  const review = (await searchParams).review === '1'; // read-only revisit of a completed session
   if (!redesignEnabled()) redirect(`/dashboard/${memberId}`);
   if (!(await authorizeMember(memberId))) redirect('/login');
   if (!isSessionKey(sessionKey)) redirect(`/dashboard/${memberId}`);
@@ -53,6 +60,7 @@ export default async function WorkspacePage({ params }: { params: Promise<{ memb
       sessionKey={sessionKey}
       artifact={artifact}
       wayfinding={{ phaseLabel, phaseOrdinal, positionLabel, progressPct, rings, ringCenter: phaseLabel, ringSub }}
+      review={review}
     />
   );
 }

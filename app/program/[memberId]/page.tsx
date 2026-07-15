@@ -4,7 +4,11 @@ import { getDb } from '../../../lib/db/index.ts';
 import { authorizeMember } from '../../authz.ts';
 import { getForecast } from '../../../lib/curriculum/view.ts';
 import { logEvent } from '../../../lib/telemetry/store.ts';
+import { redesignEnabled } from '../../../lib/dashboard/redesign.ts';
+import { completedReviewSessions } from '../../../lib/workspace/review.ts';
 import type { Db } from '../../../lib/db/schema.ts';
+
+const REVIEW_PHASE_LABEL: Record<string, string> = { reconnect: 'Reconnect', rewire: 'Rewire', rebuild: 'Rebuild', reclaim: 'Reclaim' };
 
 // The Program — the whole four-Phase route (Program Page v1.0, verbatim from G4L_Program_Page_v1.0.md). Greg's
 // "Route Card": a member sees the whole path they're headed down. Built one Phase at a time — Reconnect is live,
@@ -71,10 +75,30 @@ export default async function ProgramPage({ params }: { params: Promise<{ member
 
   const activePhase = forecast.phases.find((p) => p.status === "You're here")?.phase ?? 'reconnect';
   const completed = new Set(forecast.phases.filter((p) => p.status === 'Complete').map((p) => p.phase));
+  // The member's completed sessions, revisitable read-only (redesign only — the review surface is the workspace).
+  const reviewable = redesignEnabled() ? completedReviewSessions(forecast) : [];
 
   return (
     <>
       <div className="hero"><h1>The Program</h1></div>
+
+      {reviewable.length > 0 && (
+        <div className="card program-revisit">
+          <h3>Revisit a session</h3>
+          <p className="muted">Look back at any session you’ve finished — the final state you kept, read-only. Nothing changes.</p>
+          <ul className="revisit-list">
+            {reviewable.map((s) => (
+              <li key={s.key}>
+                <Link href={`/workspace/${memberId}/${s.key}?review=1`} className="revisit-link">
+                  <span className="revisit-name">{s.label}</span>
+                  <span className="revisit-phase">{REVIEW_PHASE_LABEL[s.phase] ?? s.phase}</span>
+                  <span className="revisit-arrow" aria-hidden="true">→</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       <div className="card sub-copy">
         <h3>The whole route</h3>

@@ -42,18 +42,22 @@ export default function WorkspaceSession({
   sessionKey,
   artifact: initial,
   wayfinding,
+  review = false,
 }: {
   memberId: string;
   sessionKey: SessionKey;
   artifact: Artifact;
   wayfinding: Wayfinding;
+  review?: boolean; // read-only revisit of a COMPLETED session — final artifact, no live rail (Cycle-2 review too)
 }) {
   const [artifact, setArtifact] = useState<Artifact>(initial);
 
   // Fill the canvas from committed state. Two triggers: an immediate PUSH after each conversation turn (the chat client
   // fires ARTIFACT_REFRESH_EVENT once its turn — including any keeper commit — has landed, so a confirmed line shows on
   // the left right away, not up to 5s later), plus a slow POLL as a backstop for anything committed out of band.
+  // In REVIEW mode the artifact is final — nothing's being written — so there's nothing to poll.
   useEffect(() => {
+    if (review) return;
     let cancelled = false;
     const refresh = async () => {
       const next = await readArtifactAction(memberId, sessionKey);
@@ -70,7 +74,7 @@ export default function WorkspaceSession({
       clearInterval(id);
       if (typeof window !== 'undefined') window.removeEventListener(ARTIFACT_REFRESH_EVENT, onCommitted);
     };
-  }, [memberId, sessionKey]);
+  }, [memberId, sessionKey, review]);
 
   return (
     <>
@@ -84,22 +88,35 @@ export default function WorkspaceSession({
         </Link>
       </div>
 
-      <div className="redesign-app ws-app">
+      <div className={`redesign-app ws-app${review ? ' ws-review' : ''}`}>
         <div className="redesign-canvas">
-          {/* Back nav — standard place (top-left of content) + color (teal), matching .back-dash elsewhere */}
-          <Link href={`/dashboard/${memberId}`} className="ws-back">← Dashboard</Link>
-          {/* Wayfinding: ring + where you are + progress + full route */}
-          <div className="ws-wayfind">
-            <div className="ws-way-ring">
-              <RedesignRing rings={wayfinding.rings} centerTop={wayfinding.ringCenter} centerSub={wayfinding.ringSub} size={72} />
-            </div>
-            <div className="ws-way-pos">
-              <div className="ws-way-ph">Phase {wayfinding.phaseOrdinal} · {wayfinding.phaseLabel}</div>
-              <div className="ws-way-ss">{wayfinding.positionLabel}</div>
-              <div className="ws-way-bar"><span className="ws-way-fill" style={{ width: `${wayfinding.progressPct}%` }} /></div>
-            </div>
-            <Link href={`/program/${memberId}?from=${sessionKey}`} className="ws-way-route">Full route →</Link>
-          </div>
+          {review ? (
+            <>
+              {/* Read-only revisit — back to the Journey, and a "Completed" banner instead of live progress. */}
+              <Link href={`/program/${memberId}`} className="ws-back">← Your Journey</Link>
+              <div className="ws-review-banner">
+                <span className="ws-review-eyebrow">Phase {wayfinding.phaseOrdinal} · {wayfinding.phaseLabel} · Completed</span>
+                <span className="ws-review-note">You’re looking back at this one — the final state you kept. Nothing here changes.</span>
+              </div>
+            </>
+          ) : (
+            <>
+              {/* Back nav — standard place (top-left of content) + color (teal), matching .back-dash elsewhere */}
+              <Link href={`/dashboard/${memberId}`} className="ws-back">← Dashboard</Link>
+              {/* Wayfinding: ring + where you are + progress + full route */}
+              <div className="ws-wayfind">
+                <div className="ws-way-ring">
+                  <RedesignRing rings={wayfinding.rings} centerTop={wayfinding.ringCenter} centerSub={wayfinding.ringSub} size={72} />
+                </div>
+                <div className="ws-way-pos">
+                  <div className="ws-way-ph">Phase {wayfinding.phaseOrdinal} · {wayfinding.phaseLabel}</div>
+                  <div className="ws-way-ss">{wayfinding.positionLabel}</div>
+                  <div className="ws-way-bar"><span className="ws-way-fill" style={{ width: `${wayfinding.progressPct}%` }} /></div>
+                </div>
+                <Link href={`/program/${memberId}?from=${sessionKey}`} className="ws-way-route">Full route →</Link>
+              </div>
+            </>
+          )}
 
           {/* Artifact — the work made visible, filling as the conversation commits */}
           <div className="ws-artifact">
@@ -127,13 +144,15 @@ export default function WorkspaceSession({
                 })}
               </div>
             )}
-            <p className="ws-art-foot">{artifact.foot}</p>
+            <p className="ws-art-foot">{review ? 'Saved in your Playbook — yours to return to anytime.' : artifact.foot}</p>
           </div>
         </div>
 
-        <aside className="redesign-rail ws-rail" aria-label="Your G4L Companion — guided session">
-          <SessionRail memberId={memberId} sessionKey={sessionKey} />
-        </aside>
+        {!review && (
+          <aside className="redesign-rail ws-rail" aria-label="Your G4L Companion — guided session">
+            <SessionRail memberId={memberId} sessionKey={sessionKey} />
+          </aside>
+        )}
       </div>
     </>
   );
