@@ -157,6 +157,7 @@ export default async function RedesignDashboard({ db, memberId, dash }: { db: Db
         </Link>
         <div className="rt-who">
           <span className="rt-nav">
+            <Link href={`/program/${memberId}`} prefetch={false}>Program</Link>
             <Link href={`/field-guide/${memberId}`} prefetch={false}>Field Guide</Link>
             <Link href={`/playbook/${memberId}`} prefetch={false}>Playbook</Link>
           </span>
