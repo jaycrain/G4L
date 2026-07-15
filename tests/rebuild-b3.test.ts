@@ -43,7 +43,7 @@ test('B3 · the completeness contract — no complete until BOTH changes locked 
   assert.equal(t.complete, false, 'proposing is not completing');
   assert.match(t.reply, /a 10-minute walk after dinner/i, 'the proposal reflects the activity change');
   assert.match(t.reply, /a vegetable at dinner/i, 'and the diet change');
-  assert.match(t.reply, /lock it in|tweak/i, 'the confirm gate');
+  assert.match(t.reply, /lock them in|tweak/i, 'the confirm gate');
 
   // Turn 4: member CONFIRMS → complete.
   t = step(t.state, 'yes, lock it in', m(''));
@@ -52,6 +52,17 @@ test('B3 · the completeness contract — no complete until BOTH changes locked 
   assert.match(t.reply, /Locked in/i);
   assert.equal(t.state.collected?.pilotActivity, 'a 10-minute walk after dinner, 3 days');
   assert.equal(t.state.collected?.pilotDiet, 'a vegetable at dinner, 5 days');
+});
+
+test('B3 · "Lock them in" (the chip for two changes) confirms — not treated as a tweak', () => {
+  let t = rebuildB3Opening();
+  t = step(t.state, 'a 10-minute walk after dinner, 3 days', m('And one small change to how you eat?', { activityChange: 'a 10-minute walk after dinner, 3 days' }));
+  t = step(t.state, 'a vegetable at dinner', m('', { dietChange: 'a vegetable at dinner, 5 days' })); // → proposal
+  assert.equal(t.complete, false);
+  // The exact reply the UI sends for two changes — must complete, not re-open coaching.
+  t = step(t.state, 'Lock them in', m(''));
+  assert.equal(t.complete, true, '"Lock them in" is a confirm');
+  assert.equal(t.state.stage, 'complete');
 });
 
 test('B3 · revising after the proposal re-opens coaching, then confirm completes', () => {

@@ -13,6 +13,7 @@ import { sessionById } from './session-registry.ts';
 import { getDashboard } from '../gateway/flow.ts';
 import { latestImageKeeper } from '../practice/store.ts';
 import { activeCoachingPlan, type RebuildPilotPayload } from '../rebuild/plan-store.ts';
+import { loadArcSession } from '../agent/arc-session.ts';
 import { getReclaimItems } from '../beats/store.ts';
 import { activeQualityDayProfile } from '../reclaim/quality-day-store.ts';
 
@@ -90,9 +91,12 @@ async function build(db: Db, memberId: string, key: SessionKey): Promise<Artifac
     }
     case 'b3': {
       const plan = (await activeCoachingPlan<RebuildPilotPayload>(db, memberId, 'rebuild'))?.payload ?? null;
+      // Before the plan COMMITS (on the member's confirm), show what the coach has already LOCKED, read from the live
+      // session (arc_session) — so the two changes land on the canvas as they're named, not only after the final confirm.
+      const pending = plan ? null : (await loadArcSession(db, memberId, 'rebuild', 'b3').catch(() => null))?.state.collected ?? null;
       return base([
-        { label: 'Your movement change', value: plan?.activityChange ?? null },
-        { label: 'Your nutrition change', value: plan?.dietChange ?? null },
+        { label: 'Your movement change', value: plan?.activityChange ?? pending?.pilotActivity ?? null },
+        { label: 'Your nutrition change', value: plan?.dietChange ?? pending?.pilotDiet ?? null },
       ]);
     }
     case 'c1': {

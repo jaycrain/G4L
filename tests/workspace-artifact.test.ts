@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { PGlite } from '@electric-sql/pglite';
 import { applySchema, type Db } from '../lib/db/schema.ts';
 import { emitHarvestMoment, commitKeeper } from '../lib/agent/harvest.ts';
+import { saveArcSession } from '../lib/agent/arc-session.ts';
 import { readArtifact } from '../lib/workspace/artifact.ts';
 
 // Redesign Layer 3: the workspace canvas plays back the member's COMMITTED words. This proves the write→read contract
@@ -38,4 +39,20 @@ test('w1 canvas is empty until a line commits, then plays back the true lines ve
   const value = after.slots[0]!.value ?? '';
   assert.match(value, /room in my life to be myself/, 'first true line plays back on the left');
   assert.match(value, /next decision, make it a good one/, 'second true line plays back on the left');
+});
+
+test('b3 canvas shows the coach-locked plan from the live session, before the final commit', async () => {
+  const db = new PGlite() as unknown as Db;
+  await applySchema(db);
+  const m = await seedMember(db);
+
+  // Nothing committed, nothing in flight → the frame stands alone.
+  assert.equal((await readArtifact(db, m, 'b3')).slots[0]!.value, null);
+
+  // The coach has LOCKED both changes this turn (persisted to arc_session by the per-turn save) — not yet confirmed.
+  await saveArcSession(db, m, 'rebuild', { stage: 'pilot', collected: { pilotActivity: 'a 10-minute walk after dinner, 3 days', pilotDiet: 'a vegetable at dinner, 5 days' } }, [{ role: 'agent', text: '…' }], 'b3');
+
+  const art = await readArtifact(db, m, 'b3');
+  assert.match(art.slots[0]!.value ?? '', /10-minute walk/, 'movement change shows before confirm');
+  assert.match(art.slots[1]!.value ?? '', /vegetable at dinner/, 'nutrition change shows before confirm');
 });

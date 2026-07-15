@@ -196,7 +196,7 @@ const PILOT_REVISE_NUDGE = "No problem — tell me what you'd change, and we'll 
 function proposePlan(activity: string, diet: string): string {
   return (
     `Here's your week, then — small and yours:\n\nMovement: ${activity}\nEating: ${diet}\n\n` +
-    `Both are things you can practice on a normal week, not just your best one. Want to lock it in, or tweak one?`
+    `Both are things you can practice on a normal week, not just your best one. Want to lock them in, or tweak one?`
   );
 }
 // Fallback coaching nudge (used only if the model returns nothing) — asks for whichever change is still missing.
@@ -211,8 +211,9 @@ function pilotCoachNudge(activity: string, diet: string): string {
     "sugary drink for water, a fruit with breakfast. What feels doable?"
   );
 }
+// "lock them in" is the natural reply to TWO changes (and the chip the UI offers) — match it, not just "lock it".
 const PILOT_CONFIRM_RE =
-  /^(yes|yeah|yep|yup|lock it in|lock it|that'?s it|that works|that'?s good|perfect|good|sounds good|do it|let'?s do it|i'?m in|ready|confirm(ed)?|keep it)\b/i;
+  /^(yes|yeah|yep|yup|lock (?:it|them|'?em)(?: in)?|that'?s it|that works|that'?s good|perfect|good|sounds good|do it|let'?s do it|i'?m in|ready|confirm(ed)?|keep it)\b/i;
 function pilotConfirms(msg: string): boolean {
   return PILOT_CONFIRM_RE.test(msg.trim().replace(/[.,!?]+$/, ''));
 }
