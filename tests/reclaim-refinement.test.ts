@@ -97,3 +97,35 @@ test('latestRefinement · keeps the pre-refinement state as history (RC-4 retrie
   assert.equal(hist!.preRefinement[0]!.text, 'be healthier', 'the ORIGINAL wording is retained as history');
   assert.equal(hist!.refinement.items[0]!.text, 'feel physically capable again', 'the refined result is stored too');
 });
+
+test('a MERGE (two originals refined to the same text) releases the duplicate — never renders twice', async () => {
+  const db = new PGlite() as unknown as Db;
+  await applySchema(db);
+  const m = await seedMember(db, 'merge@x.com');
+  await addItem(db, m, 'Lose 30 lbs', 0);
+  await addItem(db, m, 'My fitness', 1);
+  await addItem(db, m, 'Ride my bike', 2);
+
+  await commitRefinement(db, m, {
+    items: [
+      { original: 'Lose 30 lbs', text: 'Reach 190 lbs by Oct 15', tier: 'top' },
+      { original: 'My fitness', text: 'Reach 190 lbs by Oct 15', tier: 'top' }, // the merge
+      { original: 'Ride my bike', text: 'Ride my bike, 2-3x a week', tier: 'important' },
+    ],
+    top3: ['Reach 190 lbs by Oct 15'],
+  });
+
+  const active = (await getReclaimItems(db, m)).filter((i) => i.tier !== 'no_longer_central').map((i) => i.text);
+  assert.equal(active.filter((t) => /Reach 190 lbs/.test(t)).length, 1, 'the merged item shows exactly once');
+  assert.equal(new Set(active.map((t) => t.toLowerCase())).size, active.length, 'no exact-text duplicates on the active list');
+});
+
+test('getReclaimItems collapses pre-existing exact-text duplicate rows (defense for already-dirty data)', async () => {
+  const db = new PGlite() as unknown as Db;
+  await applySchema(db);
+  const m = await seedMember(db, 'dupe@x.com');
+  await addItem(db, m, 'Eat more vegetables, drink less wine', 0);
+  await addItem(db, m, 'Eat more vegetables, drink less wine', 1); // a duplicate row already in the table
+  const items = await getReclaimItems(db, m);
+  assert.equal(items.length, 1, 'exact-text duplicate rows collapse to one');
+});

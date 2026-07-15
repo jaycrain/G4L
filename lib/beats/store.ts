@@ -25,17 +25,28 @@ export async function getReclaimItems(db: Db, memberId: string): Promise<Reclaim
      from reclaim_item where member_id=$1 and removed_at is null order by sort_order, created_at`,
     [memberId],
   );
-  return rows.map((r) => ({
-    id: r.id,
-    text: r.text,
-    category: r.category as Category,
-    rhythm: r.rhythm as Rhythm,
-    state: r.state,
-    closerCount: Number(r.closer_count ?? 0),
-    sortOrder: Number(r.sort_order ?? 0),
-    lastServedAt: toIso(r.last_served_at),
-    tier: (r.tier as string | null) ?? null,
-  }));
+  const seen = new Set<string>();
+  return rows
+    .map((r) => ({
+      id: r.id,
+      text: r.text,
+      category: r.category as Category,
+      rhythm: r.rhythm as Rhythm,
+      state: r.state,
+      closerCount: Number(r.closer_count ?? 0),
+      sortOrder: Number(r.sort_order ?? 0),
+      lastServedAt: toIso(r.last_served_at),
+      tier: (r.tier as string | null) ?? null,
+    }))
+    // Collapse exact-text duplicates (e.g. a C1 refinement that merged two items into the same wording) — keep the
+    // first (lowest sort_order), so no surface ever renders the same item twice. Data isn't mutated; the row lingers
+    // harmlessly, just not shown twice.
+    .filter((i) => {
+      const key = (i.text ?? '').trim().toLowerCase();
+      if (!key || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
 }
 
 /** The member's LIVE Reclaim List as text[], resilient to reclaim_item drift (W-29): try the categorized rows, and if

@@ -58,13 +58,27 @@ export async function commitRefinement(db: Db, memberId: string, result: Refinem
   // (which references the REFINED wording) resolves even though `live` holds the pre-refinement text.
   const idTier: Record<string, Tier> = {};
   const textToId: Record<string, string> = {};
+  const usedText = new Set<string>(); // guard against a MERGE producing two identical-text items
   let applied = 0;
   for (const it of result.items) {
     const id = matchId(it.original);
-    if (!id || !isTier(it.tier)) continue;
+    if (!id || !isTier(it.tier) || idTier[id] !== undefined) continue; // one refined line per live item — a second match is a dupe
     const text = (it.text ?? '').trim();
-    if (text) await db.query('update reclaim_item set text=$3, tier=$4 where member_id=$1 and id=$2', [memberId, id, text, it.tier]);
-    else await db.query('update reclaim_item set tier=$3 where member_id=$1 and id=$2', [memberId, id, it.tier]);
+    const key = norm(text);
+    if (text && usedText.has(key)) {
+      // Two originals refined to the SAME text = a merge. Release this one to the lowest tier (never a delete, per the
+      // contract) rather than writing a duplicate row — so the list can't render the same item twice.
+      await db.query('update reclaim_item set tier=$3 where member_id=$1 and id=$2', [memberId, id, 'no_longer_central']);
+      idTier[id] = 'no_longer_central';
+      applied += 1;
+      continue;
+    }
+    if (text) {
+      usedText.add(key);
+      await db.query('update reclaim_item set text=$3, tier=$4 where member_id=$1 and id=$2', [memberId, id, text, it.tier]);
+    } else {
+      await db.query('update reclaim_item set tier=$3 where member_id=$1 and id=$2', [memberId, id, it.tier]);
+    }
     idTier[id] = it.tier;
     textToId[norm(it.original)] = id;
     if (text) textToId[norm(text)] = id;
