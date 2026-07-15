@@ -5,7 +5,7 @@ import { PGlite } from '@electric-sql/pglite';
 import { applySchema, type Db } from '../lib/db/schema.ts';
 
 // The email the seed resolves the member by (ids differ per environment).
-const SEED_EMAIL = 'demo-reshma@grintaforlife.test';
+const SEED_EMAIL = 'jay@jay.com';
 
 // Proves scripts/db/seed-far-along.sql executes cleanly against the real schema AND lands the demo member in the
 // intended mid-Rebuild state — so a paste into the Supabase SQL Editor won't fail and the walk reaches the late-stage
@@ -65,5 +65,5 @@ test('seed-far-along.sql runs cleanly and lands the demo member mid-Rebuild', as
 
   // The W1 review has the seeded true lines.
   const w1 = await readArtifact(db, mid, 'w1');
-  assert.match(w1.slots[0]!.value ?? '', /still a runner/);
+  assert.match(w1.slots[0]!.value ?? '', /still in this/);
 });
