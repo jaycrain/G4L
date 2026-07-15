@@ -13,7 +13,6 @@ import { stravaConfigured } from '../../lib/activity/strava.ts';
 import { looksTrackable, suggestTracker } from '../../lib/measure/store.ts';
 import { formatDistance, formatDuration, typeLabel, relativeDay } from '../../lib/activity/summary.ts';
 import { firstName, initials } from '../../lib/member/avatar.ts';
-import { logoutAction } from '../login/actions.ts';
 import RedesignShell from './redesign-shell.tsx';
 import RedesignChrome from './redesign-chrome.tsx';
 import RedesignRing from './redesign-ring.tsx';
@@ -161,7 +160,7 @@ export default async function RedesignDashboard({ db, memberId, dash }: { db: Db
             <Link href={`/field-guide/${memberId}`} prefetch={false}>Field Guide</Link>
             <Link href={`/playbook/${memberId}`} prefetch={false}>Playbook</Link>
           </span>
-          {/* Avatar + greeting + Log out as one coupled group, right-aligned (like the prior dashboard). */}
+          {/* Avatar + greeting → Your Account (which holds Log out — no need to duplicate it in the header). */}
           <span className="rt-account-group">
             <Link href="/account" className="rt-account" aria-label="Your account">
               {dash.avatarUrl ? (
@@ -172,7 +171,6 @@ export default async function RedesignDashboard({ db, memberId, dash }: { db: Db
               )}
               <span className="rt-hi">Hi, {firstName(dash.displayName)}</span>
             </Link>
-            <form action={logoutAction} className="rt-logout"><button type="submit">Log out</button></form>
           </span>
         </div>
       </div>
