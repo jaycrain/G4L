@@ -56,6 +56,9 @@ export default function PostCeremonyTour({
   useEffect(() => {
     const force = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('tour') === '1';
     if (autoStart || force) setPhase('transition');
+    // Mark it SEEN the moment the first-run tour appears — so navigating away mid-tour (e.g. to "Your full story")
+    // doesn't re-fire it on return. finish() marks it too (idempotent); a ?tour=1 replay never re-marks.
+    if (autoStart) void completeTourAction(memberId);
   }, [autoStart]);
 
   const measure = useCallback((key: string) => {

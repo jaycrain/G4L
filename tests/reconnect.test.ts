@@ -75,10 +75,13 @@ test('reconnect · the callback is READ-ONLY — a first response hands into Doo
   const atEntry: ConvState = { stage: 'entry', collected: committed };
   // Even an explicit correction at the callback does not mutate captures at the entry beat — revision lives inside
   // the excavation (a later §2b increment), member-confirmed + versioned. The entry just hands in.
-  const turn = applyReconnectTurn(atEntry, [], "actually it was really my divorce, not the grind", { text: 'Okay.' });
+  const turn = applyReconnectTurn(atEntry, [], "actually it was really my divorce, not the grind", { text: 'That’s a real thread.' });
   assert.equal(turn.state.stage, 'doors', 'hands into the Doors excavation');
   assert.deepEqual(turn.state.collected.doors, ['grind'], 'no revision committed at entry — captures untouched');
-  assert.match(turn.reply, /The Grind/, 'opens the real excavation on the primary door (not a stub anymore)');
+  // Listen-first: the model's acknowledgment of what they just said LEADS, then the Door excavation opens as its own
+  // beat (the action now feeds a live model turn here, so this is no longer empty → it never jumps straight to the Door).
+  assert.match(turn.reply, /That’s a real thread\./, 'the model ack leads');
+  assert.match(turn.reply, /The Grind/, 'then opens the real excavation on the primary door');
 });
 
 // ============================================================================================================

@@ -4,7 +4,7 @@ import { getDb } from '../../lib/db/index.ts';
 import { authorizeMember } from '../authz.ts';
 import type { Db } from '../../lib/db/schema.ts';
 import type { ConvMessage, ConvState, ScaleExpectation, Turn } from '../../lib/agent/onboarding.ts';
-import { applyReconnectTurn, liveTurnReconnect, loadReconnectCaptures, reconnectEnabled, reconnectOpening, reconnectMeasurementClose, driftOpen, RECONNECT_ARC, BEAT_SEP } from '../../lib/agent/reconnect.ts';
+import { liveTurnReconnect, loadReconnectCaptures, reconnectEnabled, reconnectOpening, reconnectMeasurementClose, driftOpen, RECONNECT_ARC, BEAT_SEP } from '../../lib/agent/reconnect.ts';
 import { scaleExpects } from '../../lib/agent/onboarding-staged.ts';
 import { saveArcSession, loadArcSession, clearArcSession } from '../../lib/agent/arc-session.ts';
 import { softSetMemberDoors, getMemberDoorNames } from '../../lib/member/refine.ts';
@@ -254,12 +254,10 @@ export async function reconnectTurnAction(
   if (!reconnectEnabled()) return { ok: false, error: 'Reconnect is not enabled.' };
   if (!(await authorizeMember(memberId))) return { ok: false, error: 'Not authorized.' };
   try {
-    // The entry (callback) stage is deterministic — it acknowledges and advances to Doors, no model needed. From
-    // Doors on, it's a live model turn (draw-out + the insight reflect + the re-seeing revision).
-    const turn =
-      state.stage === 'entry'
-        ? applyReconnectTurn(state, history, message, { text: '' })
-        : await liveTurnReconnect(state, history, message);
+    // Every turn (INCLUDING entry) is a live model turn — the entry stage RECEIVES the member's answer to the callback
+    // in the model's voice (listen-first), then the engine hands into the Doors excavation as a second beat. (Was
+    // deterministic with empty model text, which is why the acknowledgment never appeared and it jumped to the Door.)
+    const turn = await liveTurnReconnect(state, history, message);
     // Committed side-effects this turn persist to the DB (best-effort): a re-seeing (§2b) + a completed IDQ (§2c).
     const db = (await getDb()) as unknown as Db;
     await persistRevision(db, memberId, state, turn);
