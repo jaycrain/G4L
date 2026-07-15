@@ -107,10 +107,16 @@ async function build(db: Db, memberId: string, key: SessionKey): Promise<Artifac
     }
     case 'c3': {
       const p = await activeQualityDayProfile(db, memberId);
+      // Before the profile COMMITS (on confirm), show what the coach has named so far, from the live session — so the
+      // Quality Day fills on the canvas as it takes shape, not only after the final confirm (same as B3's pilot plan).
+      const pending = p ? null : (await loadArcSession(db, memberId, 'reclaim', 'c3').catch(() => null))?.state.collected?.pendingQualityDay ?? null;
+      const nn = p?.nonNegotiables ?? pending?.nonNegotiables ?? [];
+      const lifts = p?.contributors ?? pending?.contributors ?? [];
+      const drains = p?.disruptors ?? pending?.disruptors ?? [];
       return base([
-        { label: 'Non-negotiables', value: p?.nonNegotiables.length ? p.nonNegotiables.join('\n') : null },
-        { label: 'What lifts a day', value: p?.contributors.length ? p.contributors.join('\n') : null },
-        { label: 'What drains one', value: p?.disruptors.length ? p.disruptors.join('\n') : null },
+        { label: 'Non-negotiables', value: nn.length ? nn.join('\n') : null },
+        { label: 'What lifts a day', value: lifts.length ? lifts.join('\n') : null },
+        { label: 'What drains one', value: drains.length ? drains.join('\n') : null },
       ]);
     }
     // Administered instruments + checkpoints (B/E): a qualitative frame — never a bare score (governance).

@@ -96,7 +96,7 @@ function proposeRefinement(ref: NonNullable<Collected['pendingRefinement']>): st
 }
 
 const REFINE_CONFIRM_RE =
-  /^(yes|yeah|yep|yup|save it|save that|lock it in|lock it|that'?s it|that works|perfect|good|sounds good|do it|looks good|keep it|commit|confirm(ed)?)\b/i;
+  /^(yes|yeah|yep|yup|please(?: do)?|go ahead|sure|ok(?:ay)?|save it|save that|lock it in|lock it|that'?s it|that works|perfect|good|sounds good|do it|looks good|keep it|commit|confirm(ed)?)\b/i;
 function refineConfirms(msg: string): boolean {
   return REFINE_CONFIRM_RE.test(msg.trim().replace(/[.,!?]+$/, ''));
 }
@@ -382,7 +382,7 @@ function proposeQualityDay(q: QDCapture): string {
   return `Here's your Quality Day:\n\n${parts}${BEAT_SEP}Want me to save this and start your week of tracking, or adjust it first?`;
 }
 const C3_CONFIRM_RE =
-  /^(yes|yeah|yep|yup|save it|save that|start|let'?s go|that'?s it|that works|perfect|good|sounds good|do it|looks good|keep it|confirm(ed)?)\b/i;
+  /^(yes|yeah|yep|yup|please(?: do)?|go ahead|sure|ok(?:ay)?|save it|save that|start|let'?s go|that'?s it|that works|perfect|good|sounds good|do it|looks good|keep it|confirm(ed)?)\b/i;
 function c3Confirms(msg: string): boolean {
   return C3_CONFIRM_RE.test(msg.trim().replace(/[.,!?]+$/, ''));
 }

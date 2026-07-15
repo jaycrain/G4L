@@ -56,3 +56,17 @@ test('b3 canvas shows the coach-locked plan from the live session, before the fi
   assert.match(art.slots[0]!.value ?? '', /10-minute walk/, 'movement change shows before confirm');
   assert.match(art.slots[1]!.value ?? '', /vegetable at dinner/, 'nutrition change shows before confirm');
 });
+
+test('c3 canvas shows the coach-named Quality Day from the live session, before the final commit', async () => {
+  const db = new PGlite() as unknown as Db;
+  await applySchema(db);
+  const m = await seedMember(db);
+  assert.equal((await readArtifact(db, m, 'c3')).slots[0]!.value, null);
+
+  await saveArcSession(db, m, 'reclaim', { stage: 'quality', collected: { pendingQualityDay: { nonNegotiables: ['moved my body', 'some calm'], contributors: ['real connection'], disruptors: ['poor sleep'] } } }, [{ role: 'agent', text: '…' }], 'c3');
+
+  const art = await readArtifact(db, m, 'c3');
+  assert.match(art.slots[0]!.value ?? '', /moved my body/, 'non-negotiables show before confirm');
+  assert.match(art.slots[1]!.value ?? '', /real connection/, 'what lifts a day shows');
+  assert.match(art.slots[2]!.value ?? '', /poor sleep/, 'what drains one shows');
+});

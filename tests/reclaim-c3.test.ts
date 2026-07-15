@@ -41,6 +41,17 @@ test('C3 Step 1 · coach → propose → confirm; the profile lands in the snaps
   assert.match(t.reply, /that's your Quality Day/i, 'the committed close');
 });
 
+test('C3 Step 1 · "Please do" confirms the profile — not treated as an adjustment', () => {
+  let t = reclaimC3Opening();
+  t = applyReclaimC3Turn(t.state, [], 'a good day has movement and connection', m('Which feel non-negotiable?'));
+  t = applyReclaimC3Turn(t.state, [], 'those', m('', { nonNegotiables: ['moved my body', 'some calm'], contributors: ['real connection'], disruptors: ['poor sleep'] })); // → proposal
+  assert.equal(t.complete, false);
+  // The natural reply to "Want me to save this…?" — must complete, not re-open coaching.
+  t = applyReclaimC3Turn(t.state, [], 'Please do', m(''));
+  assert.equal(t.complete, true, '"Please do" is a confirm');
+  assert.match(t.reply, /that's your Quality Day/i);
+});
+
 test('C3 Step 1 · a profile with no non-negotiables never proposes (they are the floor)', () => {
   const t = reclaimC3Opening();
   const t2 = applyReclaimC3Turn(t.state, [], 'not sure', m('', { nonNegotiables: [], contributors: ['x'], disruptors: [] }));

@@ -213,7 +213,7 @@ function pilotCoachNudge(activity: string, diet: string): string {
 }
 // "lock them in" is the natural reply to TWO changes (and the chip the UI offers) — match it, not just "lock it".
 const PILOT_CONFIRM_RE =
-  /^(yes|yeah|yep|yup|lock (?:it|them|'?em)(?: in)?|that'?s it|that works|that'?s good|perfect|good|sounds good|do it|let'?s do it|i'?m in|ready|confirm(ed)?|keep it)\b/i;
+  /^(yes|yeah|yep|yup|please(?: do)?|go ahead|sure|ok(?:ay)?|lock (?:it|them|'?em)(?: in)?|that'?s it|that works|that'?s good|perfect|good|sounds good|do it|let'?s do it|i'?m in|ready|confirm(ed)?|keep it)\b/i;
 function pilotConfirms(msg: string): boolean {
   return PILOT_CONFIRM_RE.test(msg.trim().replace(/[.,!?]+$/, ''));
 }
