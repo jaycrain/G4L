@@ -1261,6 +1261,9 @@ body.redesign-on .back-dash { display: none; }
 .rh-copy { font-size: 16px; line-height: 1.5; color: rgba(255,255,255,.86); max-width: 52ch; }
 .rh-cta { margin-top: 18px; display: inline-flex; align-items: center; gap: 8px;
   background: var(--teal); color: #fff; font-weight: 700; font-size: 16px; padding: 13px 22px; border-radius: 100px; text-decoration: none; }
+/* Secondary "move on to the next step" link during a practice week — a nudge, never a trap. */
+.rh-cta-next { display: flex; width: fit-content; align-items: center; gap: 6px; margin-top: 12px; margin-left: 4px; color: rgba(255,255,255,.82); font-weight: 600; font-size: 14px; text-decoration: none; }
+.rh-cta-next:hover { color: #fff; text-decoration: underline; }
 .rh-ring { flex: 0 0 200px; width: 200px; height: 200px; }
 .redesign-ring { display: block; }
 

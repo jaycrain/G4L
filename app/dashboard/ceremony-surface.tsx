@@ -69,12 +69,7 @@ export default function CeremonySurface<R>({
     return () => clearInterval(t);
   }, []);
 
-  function advance() {
-    if (!done) {
-      shownRef.current = full.length; // keep the loop's ref in sync
-      setShown(full.length); // tap to finish typing
-      return;
-    }
+  function goNext() {
     if (held) return; // let the reveal land before moving on
     if (isLast) {
       if (resolving) return;
@@ -83,6 +78,28 @@ export default function CeremonySurface<R>({
       return;
     }
     setI((n) => n + 1);
+  }
+
+  // Tapping the CARD body: finish the typing on the first tap (natural "skip the typewriter"), advance on the next.
+  function advance() {
+    if (!done) {
+      shownRef.current = full.length; // keep the loop's ref in sync
+      setShown(full.length); // tap to finish typing
+      return;
+    }
+    goNext();
+  }
+
+  // Clicking the explicit Continue BUTTON should PROGRESS on a single click — finishing the typewriter and advancing
+  // in one press (the double-tap was: first tap finished typing, second advanced). A reveal beat still holds so the
+  // reveal can land — one deliberate tap past it — but everyday beats move on immediately.
+  function advanceFromButton() {
+    if (!done) {
+      shownRef.current = full.length;
+      setShown(full.length);
+      if (beat.reveal !== undefined) return; // reveal beat: let it land (hold) before moving on
+    }
+    goNext();
   }
 
   return (
@@ -109,7 +126,7 @@ export default function CeremonySurface<R>({
             disabled={resolving}
             onClick={(e) => {
               e.stopPropagation();
-              advance();
+              advanceFromButton();
             }}
           >
             {!done ? 'Continue →' : isLast ? (resolving ? '…' : resolveLabel) : 'Continue →'}

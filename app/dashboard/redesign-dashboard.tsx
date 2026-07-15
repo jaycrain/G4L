@@ -34,7 +34,9 @@ import { listPlaybook } from '../../lib/playbook/store.ts';
 const HERO_VERB: Record<string, string> = { reconnect: 'Reconnecting', rewire: 'Rewiring', rebuild: 'Rebuilding', reclaim: 'Reclaiming' };
 const ARROW: Record<string, string> = { up: '↑', down: '↓', flat: '→' };
 const DIM_LABEL: Record<string, string> = { physical: 'Physical', self: 'Self', social: 'Social', outlook: 'Outlook' };
-const R_RING_COLOR: Record<string, string> = { reconnect: '#374f63', rewire: '#3b9495', rebuild: '#919536', reclaim: '#ec6233' };
+// The legend sits inside the NAVY hero — use the same contrasting variants as the ring's onDark palette (plain navy
+// would be invisible against the card, the same bug the ring had).
+const R_RING_COLOR: Record<string, string> = { reconnect: '#93a9ba', rewire: '#4fb3b4', rebuild: '#b7bb55', reclaim: '#f07a4e' };
 const R_STRANDS = [
   { key: 'reconnect', label: 'Reconnect' },
   { key: 'rewire', label: 'Rewire' },
@@ -71,16 +73,22 @@ export default async function RedesignDashboard({ db, memberId, dash }: { db: Db
   // workspace key; practice → the log surface; otherwise fall back to the legacy route so a walk never dead-ends.
   const cur = forecast.current;
   const wsKey = keyFromForecast(activePhase, cur ? { id: cur.id, route: cur.route, kind: cur.kind } : null);
-  const ctaHref =
-    heroState.kind === 'mid-week-practice'
-      ? `/momentum/${memberId}`
-      : wsKey
-        ? `/workspace/${memberId}/${wsKey}`
-        : cur?.openable
-          ? cur.route
-            ? cur.route.replace('{memberId}', memberId)
-            : `/${cur.kind === 'checkpoint' ? 'checkpoint' : 'session'}/${memberId}/${cur.id}`
-          : `/reconnect/${memberId}`;
+  // The next-step destination (the lit forecast asset), independent of the practice-week override.
+  const pathHref = wsKey
+    ? `/workspace/${memberId}/${wsKey}`
+    : cur?.openable
+      ? cur.route
+        ? cur.route.replace('{memberId}', memberId)
+        : `/${cur.kind === 'checkpoint' ? 'checkpoint' : 'session'}/${memberId}/${cur.id}`
+      : `/reconnect/${memberId}`;
+  const ctaHref = heroState.kind === 'mid-week-practice' ? `/momentum/${memberId}` : pathHref;
+  // A practice week is a NUDGE, not a trap: the log is the primary CTA, but the next real step (the lit session or
+  // checkpoint) stays reachable so the member is never stranded waiting out the week (Jay: "can't access a new Rebuild
+  // session"). Null unless there's an openable next step to move on to.
+  const practiceNext =
+    heroState.kind === 'mid-week-practice' && cur?.openable
+      ? { href: pathHref, label: cur.title, isCheckpoint: cur.kind === 'checkpoint' }
+      : null;
 
   // Ring center reads PROGRESS (sessions done of total), not the next-session pointer — so finishing the 2nd of 3
   // shows "2 of 3", never "3 of 3". Uses the same session-based tally deriveRingState fills the arc from, so the number
@@ -184,9 +192,14 @@ export default async function RedesignDashboard({ db, memberId, dash }: { db: Db
             <h1 className="rh-title">{hero.title}</h1>
             <p className="rh-copy">{hero.copy}</p>
             <Link href={ctaHref} className="rh-cta">{hero.ctaLabel} <span aria-hidden="true">→</span></Link>
+            {practiceNext && (
+              <Link href={practiceNext.href} className="rh-cta-next">
+                {practiceNext.isCheckpoint ? 'Or take the Checkpoint' : `Or move on to ${practiceNext.label}`} <span aria-hidden="true">→</span>
+              </Link>
+            )}
           </div>
           <div className="rh-ring">
-            <RedesignRing rings={rings} centerTop={phaseLabel} centerSub={ringSub} />
+            <RedesignRing rings={rings} centerTop={phaseLabel} centerSub={ringSub} onDark />
             <details className="rh-ring-legend">
               <summary>What’s the ring?</summary>
               <p>Four rings — one per phase — from the center out. Each fills as you finish its sessions, and goes solid when you cross its checkpoint. Your whole path, at a glance.</p>
