@@ -12,6 +12,7 @@ import { closedSessionIds, getSessionProgress, recentlyClosedSession, listGates 
 import { latestArcSession } from '../agent/arc-session.ts';
 import { activePracticeWeek, PRACTICE_WINDOW_DAYS, type PracticeKind } from '../practice/store.ts';
 import { resolveHeroState, type HeroSignals, type HeroState } from './resume-hero.ts';
+import { reclaimReadiness } from '../reclaim/readiness.ts';
 
 // "Just finished" is scoped to the current visit — a short window after close so the completion beat shows once, then
 // gives way to the next step on later views. (When the visual hero lands in Layer 2, a client-side 'seen' marker can
@@ -113,7 +114,16 @@ export async function gatherHeroSignals(db: Db, memberId: string): Promise<HeroS
   const onboardingDone = await hasOnboardingCaptures(db, memberId).catch(() => false);
   const hasStarted = closed.length > 0 || inflightArc != null || inProgressSession != null || gates.length > 0 || onboardingDone;
 
-  return { hasStarted, inProgressSession, justFinishedSession, checkpointReady, activePractice, nextSession };
+  // The Loop gate — at the Reclaim boundary (Rebuild checkpoint crossed) but no Reclaim session yet started: consult
+  // the readiness predicate. Not ready → the hero reads "Reclaim is coming" instead of offering C1.
+  const atReclaimBoundary = gateSet.has('rebuild_checkpoint_passed') && !gateSet.has('reclaim_checkpoint_passed') && !closed.some((id) => id.startsWith('RCL')) && inflightArc !== 'reclaim';
+  let reclaimLocked: HeroSignals['reclaimLocked'] = null;
+  if (atReclaimBoundary) {
+    const r = await reclaimReadiness(db, memberId).catch(() => null);
+    if (r && !r.ready) reclaimLocked = { reason: r.reason, opensOn: r.opensOn };
+  }
+
+  return { hasStarted, inProgressSession, justFinishedSession, checkpointReady, activePractice, nextSession, reclaimLocked };
 }
 
 // One call the redesign hero makes: gather → resolve. Returns the winning state plus the raw signals (for

@@ -37,6 +37,14 @@ export function heroView(state: HeroState, ctx: HeroContext): HeroView {
           : `That's ${state.session.label} done. Take a breath — the next step will be here when you are.`,
         ctaLabel: state.next ? (state.next.isCheckpoint ? 'Take the Checkpoint' : 'Start the next Session') : 'Back to your path',
       };
+    case 'reclaim-locked':
+      return {
+        eyebrow: 'Reclaim · Coming',
+        title: 'Reclaim is coming',
+        copy: state.reason,
+        // Not a link — the dashboard renders this as a muted "opens" marker (no start button). The Loop opens it later.
+        ctaLabel: state.opensOn ? `Opens ${state.opensOn}` : 'Opens when you’re ready',
+      };
     case 'checkpoint-ready':
       return {
         eyebrow: `${ctx.phaseLabel} · Checkpoint ready`,

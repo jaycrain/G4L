@@ -55,8 +55,9 @@ export default async function RedesignDashboard({ db, memberId, dash }: { db: Db
     getFacets(db, memberId),
   ]);
 
-  const rings = deriveRingState(forecast);
-  const activeRing = rings.find((r) => r.state === 'current') ?? rings[0]!;
+  // When Reclaim is gated (the Loop), render its ring 'locked' (dim) rather than the bright 'current' — matches the hero.
+  const rings = deriveRingState(forecast, heroState.kind === 'reclaim-locked' ? 'reclaim' : undefined);
+  const activeRing = rings.find((r) => r.state === 'current') ?? rings.find((r) => r.state === 'locked') ?? rings[0]!;
   const activePhase = activeRing.phase;
   const phaseOrdinal = R_STRANDS.findIndex((r) => r.key === activePhase) + 1 || 1;
   const phaseLabel = R_STRANDS[phaseOrdinal - 1]!.label;
@@ -98,9 +99,11 @@ export default async function RedesignDashboard({ db, memberId, dash }: { db: Db
   const ringSub =
     heroState.kind === 'checkpoint-ready'
       ? 'checkpoint'
-      : phaseSessions.length > 1
-        ? `${Math.min(activeRing.done, phaseSessions.length)} of ${phaseSessions.length}`
-        : null;
+      : heroState.kind === 'reclaim-locked'
+        ? 'coming' // a gated phase reads "coming", not a "0 of 3" progress count
+        : phaseSessions.length > 1
+          ? `${Math.min(activeRing.done, phaseSessions.length)} of ${phaseSessions.length}`
+          : null;
 
   const doorNames = dash.doors.map((d) => d.displayName);
   const identitySelves = facets.length ? facets.join(' · ') : dash.identityNoun ? `the ${dash.identityNoun}` : null;
@@ -193,7 +196,12 @@ export default async function RedesignDashboard({ db, memberId, dash }: { db: Db
             <div className="rh-eyebrow">{hero.eyebrow}</div>
             <h1 className="rh-title">{hero.title}</h1>
             <p className="rh-copy">{hero.copy}</p>
-            <Link href={ctaHref} className="rh-cta">{hero.ctaLabel} <span aria-hidden="true">→</span></Link>
+            {heroState.kind === 'reclaim-locked' ? (
+              // The Loop gate — a muted "opens" marker, NOT a start button (the member can't roll straight into Reclaim).
+              <span className="rh-locked"><span aria-hidden="true">🔒</span> {hero.ctaLabel}</span>
+            ) : (
+              <Link href={ctaHref} className="rh-cta">{hero.ctaLabel} <span aria-hidden="true">→</span></Link>
+            )}
             {practiceNext && (
               <Link href={practiceNext.href} className="rh-cta-next">
                 {practiceNext.isCheckpoint ? 'Or take the Checkpoint' : `Or move on to ${practiceNext.label}`} <span aria-hidden="true">→</span>

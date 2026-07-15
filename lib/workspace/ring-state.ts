@@ -14,8 +14,8 @@ import type { Forecast } from '../curriculum/view.ts';
 export type RingPhaseState = {
   phase: Phase;
   label: string;
-  state: 'done' | 'current' | 'ahead';
-  fill: number; // 0..1 — solid (1) when done, fractional in the active phase, 0 when ahead
+  state: 'done' | 'current' | 'ahead' | 'locked';
+  fill: number; // 0..1 — solid (1) when done, fractional in the active phase, 0 when ahead/locked
   done: number; // items completed in the phase
   total: number; // items in the phase (sessions + checkpoint)
 };
@@ -28,7 +28,9 @@ const PHASE_LABEL: Record<Phase, string> = {
 };
 
 // Returned in center-out order (reconnect first) — the renderer maps index → ring radius.
-export function deriveRingState(forecast: Forecast, _cycle = 1): RingPhaseState[] {
+// lockedPhase: a phase that's the active boundary but GATED (the Loop, e.g. Reclaim not yet open) — it renders 'locked'
+// (dim, empty) instead of the bright 'current' treatment, so the ring agrees with the "coming, not active" hero.
+export function deriveRingState(forecast: Forecast, lockedPhase?: Phase, _cycle = 1): RingPhaseState[] {
   const byPhase = new Map(forecast.phases.map((p) => [p.phase, p]));
   return PHASES.map((phase) => {
     const fp = byPhase.get(phase);
@@ -41,9 +43,9 @@ export function deriveRingState(forecast: Forecast, _cycle = 1): RingPhaseState[
     const total = counted.length;
     const done = counted.filter((i) => i.state === 'done').length;
     const state: RingPhaseState['state'] =
-      fp?.status === 'Complete' ? 'done' : fp?.status === "You're here" ? 'current' : 'ahead';
-    // Done rings read solid and ahead rings empty regardless of item bookkeeping; only the active ring shows fraction.
-    const fill = state === 'done' ? 1 : state === 'ahead' ? 0 : total > 0 ? done / total : 0;
+      phase === lockedPhase ? 'locked' : fp?.status === 'Complete' ? 'done' : fp?.status === "You're here" ? 'current' : 'ahead';
+    // Done rings read solid; ahead/locked rings empty; only the active ring shows fraction.
+    const fill = state === 'done' ? 1 : state === 'current' ? (total > 0 ? done / total : 0) : 0;
     return { phase, label: PHASE_LABEL[phase], state, fill, done, total };
   });
 }

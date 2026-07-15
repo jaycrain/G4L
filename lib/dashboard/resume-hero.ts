@@ -10,11 +10,13 @@ export interface HeroSignals {
   checkpointReady?: { phase: string; label: string } | null; // a phase Checkpoint is unlocked and unstarted
   activePractice?: { kind: string; label: string; day: number; total: number } | null; // a practice week in flight
   nextSession?: { id: string; label: string } | null; // the lit next step from the forecast
+  reclaimLocked?: { reason: string; opensOn: string | null } | null; // at the Reclaim boundary but not yet ready (the Loop gate)
 }
 
 export type HeroState =
   | { kind: 'resume'; session: { id: string; label: string } } // finish what you started (highest priority)
   | { kind: 'just-finished'; session: { id: string; label: string }; next: { id: string; label: string; isCheckpoint: boolean } | null }
+  | { kind: 'reclaim-locked'; reason: string; opensOn: string | null } // Reclaim is next but gated (the Loop) — coming, not active
   | { kind: 'checkpoint-ready'; checkpoint: { phase: string; label: string } }
   | { kind: 'mid-week-practice'; practice: { kind: string; label: string; day: number; total: number } }
   | { kind: 'next-step'; session: { id: string; label: string } }
@@ -34,6 +36,9 @@ export function resolveHeroState(s: HeroSignals): HeroState {
         : null;
     return { kind: 'just-finished', session: s.justFinishedSession, next };
   }
+  // The Loop gate: at the Reclaim boundary but not yet ready → "coming, not active" (never offers C1). Outranks the
+  // next-step it would otherwise be.
+  if (s.reclaimLocked) return { kind: 'reclaim-locked', reason: s.reclaimLocked.reason, opensOn: s.reclaimLocked.opensOn };
   if (s.checkpointReady) return { kind: 'checkpoint-ready', checkpoint: s.checkpointReady };
   if (s.activePractice) return { kind: 'mid-week-practice', practice: s.activePractice };
   if (s.hasStarted && s.nextSession) return { kind: 'next-step', session: s.nextSession };

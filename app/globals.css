@@ -1274,6 +1274,8 @@ body.redesign-on .back-dash { display: none; }
 /* Secondary "move on to the next step" link during a practice week — a nudge, never a trap. */
 .rh-cta-next { display: flex; width: fit-content; align-items: center; gap: 6px; margin-top: 12px; margin-left: 4px; color: rgba(255,255,255,.82); font-weight: 600; font-size: 14px; text-decoration: none; }
 .rh-cta-next:hover { color: #fff; text-decoration: underline; }
+/* Loop gate — a muted "opens" marker on the navy hero (not a button; Reclaim isn't active yet). */
+.rh-locked { margin-top: 18px; display: inline-flex; align-items: center; gap: 8px; background: rgba(255,255,255,.1); color: rgba(255,255,255,.78); font-weight: 700; font-size: 14.5px; padding: 11px 18px; border-radius: 100px; border: 1px solid rgba(255,255,255,.18); }
 .rh-ring { flex: 0 0 200px; width: 200px; height: 200px; }
 .redesign-ring { display: block; }
 

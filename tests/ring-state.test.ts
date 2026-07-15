@@ -75,3 +75,18 @@ test('all four complete — every ring solid (the Cycle boundary; Cycle 2 re-run
   );
   assert.ok(rings.every((r) => r.state === 'done' && r.fill === 1));
 });
+
+test('a lockedPhase renders "locked" (dim, empty), not the bright "current" — the Loop gate', () => {
+  const rings = deriveRingState(
+    forecast([
+      phase('reconnect', 'Complete', [item('a', 'done')]),
+      phase('rewire', 'Complete', [item('b', 'done')]),
+      phase('rebuild', 'Complete', [item('c', 'done')]),
+      phase('reclaim', "You're here", [item('c1', 'up'), item('c2', 'up'), item('c3', 'up')]),
+    ]),
+    'reclaim',
+  );
+  const rc = rings.find((r) => r.phase === 'reclaim')!;
+  assert.equal(rc.state, 'locked', 'the gated active phase reads locked, not current');
+  assert.equal(rc.fill, 0);
+});

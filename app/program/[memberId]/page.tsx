@@ -6,6 +6,7 @@ import { getForecast } from '../../../lib/curriculum/view.ts';
 import { logEvent } from '../../../lib/telemetry/store.ts';
 import { redesignEnabled } from '../../../lib/dashboard/redesign.ts';
 import { completedReviewSessions } from '../../../lib/workspace/review.ts';
+import { reclaimReadiness } from '../../../lib/reclaim/readiness.ts';
 import type { Db } from '../../../lib/db/schema.ts';
 
 const REVIEW_PHASE_LABEL: Record<string, string> = { reconnect: 'Reconnect', rewire: 'Rewire', rebuild: 'Rebuild', reclaim: 'Reclaim' };
@@ -75,6 +76,8 @@ export default async function ProgramPage({ params }: { params: Promise<{ member
 
   const activePhase = forecast.phases.find((p) => p.status === "You're here")?.phase ?? 'reconnect';
   const completed = new Set(forecast.phases.filter((p) => p.status === 'Complete').map((p) => p.phase));
+  // The Loop gate — when Reclaim is at the boundary but not yet ready, mark it "Opens …" instead of "Coming".
+  const reclaimReady = await reclaimReadiness(db, memberId);
   // The member's completed sessions, revisitable read-only (redesign only — the review surface is the workspace).
   const reviewable = redesignEnabled() ? completedReviewSessions(forecast) : [];
 
@@ -116,7 +119,11 @@ export default async function ProgramPage({ params }: { params: Promise<{ member
                   <h4>Phase {p.num} · {p.name} — {p.tagline}</h4>
                   {here && <span className="route-tag here-tag">You’re here</span>}
                   {done && !here && <span className="route-tag done-tag">Done</span>}
-                  {p.coming && !here && <span className="route-tag coming-tag">Coming</span>}
+                  {p.key === 'reclaim' && !reclaimReady.ready && !here && !done ? (
+                    <span className="route-tag coming-tag">🔒 {reclaimReady.opensOn ? `Opens ${reclaimReady.opensOn}` : 'Opens when you’re ready'}</span>
+                  ) : (
+                    p.coming && !here && <span className="route-tag coming-tag">Coming</span>
+                  )}
                 </div>
                 <p className="route-blurb">{p.blurb}</p>
                 <ul className="route-sessions">

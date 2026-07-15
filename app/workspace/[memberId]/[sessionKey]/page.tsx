@@ -8,6 +8,7 @@ import { deriveRingState } from '../../../../lib/workspace/ring-state.ts';
 import { readArtifact } from '../../../../lib/workspace/artifact.ts';
 import { isSessionKey } from '../../../../lib/workspace/session-key.ts';
 import { sessionById, sessionsForPhase, PHASES, type Phase } from '../../../../lib/workspace/session-registry.ts';
+import { reclaimReadiness } from '../../../../lib/reclaim/readiness.ts';
 import WorkspaceSession from '../../workspace-session.tsx';
 
 // Give the arc's live turns room to finish (the Member Agent call is the long pole).
@@ -33,6 +34,9 @@ export default async function WorkspacePage({
 
   const db = (await getDb()) as unknown as Db;
   const def = sessionById(sessionKey)!;
+  // The Loop gate — no side door into Reclaim before it opens (readiness stays true once reached, so this only blocks
+  // the genuinely-not-yet). Review mode is exempt (it reads committed state, not a live session).
+  if (def.phase === 'reclaim' && !review && !(await reclaimReadiness(db, memberId)).ready) redirect(`/dashboard/${memberId}`);
   const forecast = await getForecast(db, memberId);
   const rings = deriveRingState(forecast);
 
