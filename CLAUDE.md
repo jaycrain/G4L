@@ -10,9 +10,11 @@ through 0056 applied. **Version scheme: each `.N` = a PHASE flip; a `.N.x` = a r
 (v3.0) = a whole-experience redesign, not a phase.** **v3.0 — the Desktop Redesign** (2026-07-14, Jay): the entire
 member surface rebuilt — persistent Companion rail, stateful resume hero + merged ring, the Program **workspace**
 (sessions run two-pane, canvas artifact beside the conversation), first-class **Movement** subpage, the real
-16-milestone **badges** + ceremony badge-reveal, and the keeper-chapter **Playbook** restructure. **BUILT + flag-gated
-behind `REDESIGN`, walkable on a Vercel preview, prod untouched — NOT yet flipped.** Like the v2.x line, the number is
-stamped at the prod flip (set `REDESIGN=staged` on Production after Jay's full-account walk); until then prod stays v2.5.
+16-milestone **badges** + ceremony badge-reveal, and the keeper-chapter **Playbook** restructure. **FLIPPED LIVE on
+prod 2026-07-15** (Jay's full-program Preview walk → "Merge it all" → "Flip it": branch fast-forwarded to `main`,
+`REDESIGN=staged` set on the Production env, empty commit `631fed4` pushed to trigger the flag-picking rebuild). **Prod
+is now v3.0.** Shipped with the **Loop gate OFF** (`RECLAIM_GATE` unset — the 60-day rule is a Greg+Jay placeholder) and
+**Strava hidden** (`STRAVA_*` unset), both intentional. Revert = remove `REDESIGN` from Production + redeploy → v2.5.
 See [[desktop-redesign-build-state]]. NOTE: v2.5
 Reclaim was flipped "as is" for shared team context — it is known-rough (the W-28 Rebuild→Reclaim entry/exit + the
 "how to get out of Reclaim" Loop questions are OPEN, Jay+Greg); changes are expected. Onboarding v1 and the pre-flip
