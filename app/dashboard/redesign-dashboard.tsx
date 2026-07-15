@@ -6,6 +6,7 @@ import { resolveHero } from '../../lib/dashboard/hero-signals.ts';
 import { deriveRingState } from '../../lib/workspace/ring-state.ts';
 import { heroView } from '../../lib/dashboard/hero-copy.ts';
 import { keyFromForecast } from '../../lib/workspace/session-key.ts';
+import { sessionsForPhase } from '../../lib/workspace/session-registry.ts';
 import { latestGrintaReading } from '../../lib/grinta/survey/store.ts';
 import { getActivityPanel } from '../../lib/activity/store.ts';
 import { stravaConfigured } from '../../lib/activity/strava.ts';
@@ -61,18 +62,20 @@ export default async function RedesignDashboard({ db, memberId, dash }: { db: Db
   const phaseOrdinal = R_STRANDS.findIndex((r) => r.key === activePhase) + 1 || 1;
   const phaseLabel = R_STRANDS[phaseOrdinal - 1]!.label;
 
-  // Session position within the active phase (for the eyebrow + ring center), when the member's on a session.
-  const activeItems = forecast.phases.find((p) => p.phase === activePhase)?.items ?? [];
-  const sessions = activeItems.filter((i) => i.kind === 'session');
-  const curIdx = sessions.findIndex((s) => s.id === forecast.current?.id);
-  const sessionPosition = curIdx >= 0 && sessions.length > 1 ? `Session ${curIdx + 1} of ${sessions.length}` : null;
-
-  const hero = heroView(heroState, { phaseLabel, phaseOrdinal, sessionPosition });
-
   // The CTA destination. In the redesign the session runs in the WORKSPACE (Layer 3) when the lit step maps to a
   // workspace key; practice → the log surface; otherwise fall back to the legacy route so a walk never dead-ends.
   const cur = forecast.current;
   const wsKey = keyFromForecast(activePhase, cur ? { id: cur.id, route: cur.route, kind: cur.kind } : null);
+
+  // Session position by the REDESIGN session model — Reconnect is ONE session, not the curriculum's granular Atlas
+  // assets, so the eyebrow/ring never read "Session 1 of 5". Position from the workspace key; the count is omitted for
+  // single-session phases (i.e. Reconnect). The other phases (W1/W2/W3, B1/B2/B3, C1/C2/C3) match the forecast.
+  const phaseSessions = sessionsForPhase(activePhase).filter((s) => s.kind === 'session');
+  const curSessionIdx = wsKey ? phaseSessions.findIndex((s) => s.id === wsKey) : -1;
+  const sessionPosition =
+    phaseSessions.length > 1 && curSessionIdx >= 0 ? `Session ${curSessionIdx + 1} of ${phaseSessions.length}` : null;
+
+  const hero = heroView(heroState, { phaseLabel, phaseOrdinal, sessionPosition });
   // The next-step destination (the lit forecast asset), independent of the practice-week override.
   const pathHref = wsKey
     ? `/workspace/${memberId}/${wsKey}`
@@ -91,13 +94,13 @@ export default async function RedesignDashboard({ db, memberId, dash }: { db: Db
       : null;
 
   // Ring center reads PROGRESS (sessions done of total), not the next-session pointer — so finishing the 2nd of 3
-  // shows "2 of 3", never "3 of 3". Uses the same session-based tally deriveRingState fills the arc from, so the number
-  // and the arc always agree.
+  // shows "2 of 3", never "3 of 3". Counts by the REDESIGN session model (phaseSessions), so a single-session phase
+  // (Reconnect) shows no "X of Y" rather than the curriculum's stray "of 5".
   const ringSub =
     heroState.kind === 'checkpoint-ready'
       ? 'checkpoint'
-      : activeRing.total > 1
-        ? `${activeRing.done} of ${activeRing.total}`
+      : phaseSessions.length > 1
+        ? `${Math.min(activeRing.done, phaseSessions.length)} of ${phaseSessions.length}`
         : null;
 
   const doorNames = dash.doors.map((d) => d.displayName);
