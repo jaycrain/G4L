@@ -4,8 +4,10 @@ import { PGlite } from '@electric-sql/pglite';
 import { applySchema, type Db } from '../lib/db/schema.ts';
 import { reclaimReadiness, RECLAIM_UNLOCK_DAYS } from '../lib/reclaim/readiness.ts';
 
-// The Loop gate — Reclaim opens N days after the Rebuild checkpoint (v1 rule). The readiness predicate is the ONE place
-// the policy lives; here it's proven in isolation, then (below) that it flips the hero to the "coming, not active" state.
+// The Loop gate — Reclaim opens N days after the Rebuild checkpoint (v1 rule). The predicate is the ONE place the policy
+// lives; here it's proven in isolation + that it flips the hero to "coming, not active". The gate is OFF by default
+// (RECLAIM_GATE unset), so the tests that exercise LOCKING turn it on; the last test proves the shipping default is open.
+process.env.RECLAIM_GATE = 'on';
 
 let seq = 0;
 async function member(db: Db): Promise<string> {
@@ -55,4 +57,13 @@ test('at the Reclaim boundary but not ready → the hero reads reclaim-locked (n
 
   const { state } = await resolveHero(db, m);
   assert.equal(state.kind, 'reclaim-locked', 'gated → coming, not active');
+});
+
+test('gate OFF by default (RECLAIM_GATE unset) → Reclaim is always ready, even right after the Rebuild checkpoint', async () => {
+  delete process.env.RECLAIM_GATE; // the shipping default — the flip goes out with the gate off
+  const db = new PGlite() as unknown as Db;
+  await applySchema(db);
+  const m = await member(db);
+  await setGateAt(db, m, 0); // just crossed — would be locked IF the gate were on
+  assert.equal((await reclaimReadiness(db, m)).ready, true, 'no RECLAIM_GATE → open');
 });

@@ -14,7 +14,13 @@ export type ReclaimReadiness = { ready: boolean; reason: string; opensOn: string
 const READY: ReclaimReadiness = { ready: true, reason: '', opensOn: null, daysLeft: 0 };
 const LOCK_REASON = 'Reclaim reflects on the stretch you’ve lived — it opens once you’ve had real time to look back on.';
 
+// The gate is OFF by default (Reclaim always open) — the v1 60-day rule is a placeholder for the Greg+Jay "how the Loop
+// opens" decision, so we don't block real members on a guessed rule. Turn it ON with env RECLAIM_GATE=on (no deploy);
+// the whole mechanism (hero / ring / Program / route guard) is built + tested and lights up the moment it's set.
+const gateOn = (): boolean => process.env.RECLAIM_GATE === 'on';
+
 export async function reclaimReadiness(db: Db, memberId: string): Promise<ReclaimReadiness> {
+  if (!gateOn()) return READY;
   try {
     const { rows } = await db.query<{ days: number; opens_on: string }>(
       `select extract(day from now() - set_at)::int as days,
