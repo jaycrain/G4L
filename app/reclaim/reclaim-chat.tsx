@@ -140,7 +140,7 @@ export default function ReclaimChat({ memberId, session = 'c1' }: { memberId: st
       {/* W-21 — the hand-home CTA: C3 routes into its logging week; C1/C2 hand back to the companion-home. */}
       {done && (
         <div className="chat-continue">
-          <button type="button" onClick={() => router.push(`/dashboard/${memberId}`)}>
+          <button type="button" onClick={() => { router.refresh(); router.push(`/dashboard/${memberId}`); }}>
             {session === 'c3' ? 'Start the week →' : 'Continue →'}
           </button>
         </div>

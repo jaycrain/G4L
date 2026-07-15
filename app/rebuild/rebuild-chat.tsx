@@ -143,7 +143,7 @@ export default function RebuildChat({ memberId, session = 'b1' }: { memberId: st
       {/* W-21 — the hand-home CTA: B3 routes into the pilot week (active on the dashboard); B1/B2 hand back home. */}
       {done && (
         <div className="chat-continue">
-          <button type="button" onClick={() => router.push(`/dashboard/${memberId}`)}>
+          <button type="button" onClick={() => { router.refresh(); router.push(`/dashboard/${memberId}`); }}>
             {session === 'b3' ? 'Start the week →' : 'Continue →'}
           </button>
         </div>

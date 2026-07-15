@@ -27,6 +27,7 @@ export default function ReconnectCeremony({ memberId, data }: { memberId: string
   const beats = useMemo(() => buildReconnectCeremonyBeats(data), [data]);
 
   function resolve() {
+    router.refresh(); // pull fresh dashboard state (new phase lit, ring advanced) so it is not a beat behind
     router.push(`/dashboard/${memberId}`);
   }
 

@@ -141,7 +141,7 @@ export default function RewireChat({ memberId, session = 'w1' }: { memberId: str
       {/* W-21 — the hand-home CTA: the session is saved; return the member to their companion-home (next step lit). */}
       {done && (
         <div className="chat-continue">
-          <button type="button" onClick={() => router.push(`/dashboard/${memberId}`)}>
+          <button type="button" onClick={() => { router.refresh(); router.push(`/dashboard/${memberId}`); }}>
             Continue →
           </button>
         </div>

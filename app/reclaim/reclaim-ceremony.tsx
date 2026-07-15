@@ -24,6 +24,7 @@ export default function ReclaimCeremony({ memberId, data }: { memberId: string; 
   const beats = useMemo(() => buildReclaimCeremonyBeats(data), [data]);
 
   function resolve() {
+    router.refresh(); // pull fresh dashboard state (new phase lit, ring advanced) so it is not a beat behind
     router.push(`/dashboard/${memberId}`);
   }
 
