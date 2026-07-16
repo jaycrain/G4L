@@ -278,8 +278,18 @@ export default async function RedesignDashboard({ db, memberId, dash }: { db: Db
           </div>
         ) : (
           <div className="rcard r-movement">
-            <div className="rc-h">Movement</div>
-            <div className="rc-sub">Connect your activity — evidence of the identity coming back.</div>
+            <div className="rm-head">
+              <div>
+                <div className="rc-h">Movement</div>
+                <div className="rc-sub">Connect your activity — evidence of the identity coming back.</div>
+              </div>
+              <Link href={`/movement/${memberId}`} className="rm-seeall">See all →</Link>
+            </div>
+            <div className="rm-sources">
+              <span className="rm-chip">Strava <b className="muted">Connect</b></span>
+              <span className="rm-chip">Apple Health <b className="muted">Needs the app</b></span>
+              <span className="rm-chip muted">+ 400 more</span>
+            </div>
             <StravaConnect connected={false} configured={stravaConfigured()} />
           </div>
         )}

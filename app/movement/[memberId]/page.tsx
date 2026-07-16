@@ -47,20 +47,10 @@ export default async function MovementPage({ params }: { params: Promise<{ membe
   return (
     <>
       <RedesignChrome />
-      <div className="redesign-topbar">
-        <Link href="/" className="rt-brand" aria-label="Go to your G4L home">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img className="rt-logo-mark" src="/brand/g4l-rings.svg" alt="" aria-hidden="true" />
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img className="rt-wordmark" src="/brand/g4l-wordmark.svg" alt="Grinta for Life" />
-        </Link>
-      </div>
-
       <div className="mv-wrap">
         <Link href={`/dashboard/${memberId}`} className="ws-back">← Dashboard</Link>
-        <div className="mv-eyebrow">Movement</div>
-        <h1 className="mv-title">Everything you’re doing, in one place</h1>
-        <p className="mv-lede">Connect the apps you already use, and the Companion adds what you tell it along the way. Read against who you’re reclaiming — never left as raw numbers.</p>
+        <div className="hero"><h1>Movement</h1></div>
+        <p className="mv-lede">Everything you’re doing, in one place. Connect the apps you already use, and the Companion adds what you tell it along the way. Read against who you’re reclaiming — never left as raw numbers.</p>
 
         {/* Connect sources */}
         <div className="mv-sources">
