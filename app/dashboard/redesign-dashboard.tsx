@@ -2,6 +2,7 @@ import Link from 'next/link';
 import type { Db } from '../../lib/db/schema.ts';
 import type { Dashboard } from '../../lib/gateway/flow.ts';
 import { getForecast, getPassport, getFacets, reconcileRedesignBadges } from '../../lib/curriculum/view.ts';
+import BadgeStamp, { BadgeStampPlaceholder } from './badge-stamp.tsx';
 import { resolveHero } from '../../lib/dashboard/hero-signals.ts';
 import { deriveRingState } from '../../lib/workspace/ring-state.ts';
 import { heroView } from '../../lib/dashboard/hero-copy.ts';
@@ -356,12 +357,10 @@ export default async function RedesignDashboard({ db, memberId, dash }: { db: Db
           <div className="rc-sub">Earned for real accomplishments — revealed when you get there.</div>
           <div className="rb-shelf">
             {passport.badges.map((b) => (
-              <span key={b.id} className={`rbadge${b.earned ? ' earned' : ''}`} title={b.earned ? b.name : `Locked — ${b.name}`}>
-                {b.earned ? '◉' : '◦'}
-              </span>
+              <BadgeStamp key={b.id} badge={b} />
             ))}
             {Array.from({ length: passport.placeholders }).map((_, i) => (
-              <span key={`ph-${i}`} className="rbadge" title="Locked — a milestone ahead">◦</span>
+              <BadgeStampPlaceholder key={`ph-${i}`} />
             ))}
           </div>
           <p className="rb-cap">Locked badges show what’s ahead — never a scold.</p>

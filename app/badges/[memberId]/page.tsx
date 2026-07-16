@@ -3,8 +3,10 @@ import { redirect } from 'next/navigation';
 import { getDb } from '../../../lib/db/index.ts';
 import { authorizeMember } from '../../authz.ts';
 import { getPassport, reconcileRedesignBadges, type PassportView } from '../../../lib/curriculum/view.ts';
+import { badgePhase, type BadgePhase } from '../../../lib/curriculum/registry.ts';
 import { redesignEnabled } from '../../../lib/dashboard/redesign.ts';
 import RedesignChrome from '../../dashboard/redesign-chrome.tsx';
+import BadgeStamp from '../../dashboard/badge-stamp.tsx';
 import type { Db } from '../../../lib/db/schema.ts';
 
 // The Badges detail subpage ("See More →" from the dashboard shelf). Two renders:
@@ -23,25 +25,8 @@ export default async function BadgesMorePage({ params }: { params: Promise<{ mem
 
 // ---- Redesign: the milestone map, grouped by the 4Rs -----------------------------------------------------------
 
-// Which R each badge belongs to (grouping only — the registry order is already phase-ordered).
-const BADGE_PHASE: Record<string, 'reconnect' | 'rewire' | 'rebuild' | 'reclaim'> = {
-  'named-yourself': 'reconnect',
-  'starting-line': 'reconnect',
-  'reconnect-milestone': 'reconnect',
-  'turned-voice': 'rewire',
-  'built-picture': 'rewire',
-  'caught-real-time': 'rewire',
-  'rewire-milestone': 'rewire',
-  'found-why': 'rebuild',
-  'honest-read': 'rebuild',
-  'week-noticing': 'rebuild',
-  'rebuild-milestone': 'rebuild',
-  'goal-reclaimed': 'reclaim',
-  'widened-world': 'reclaim',
-  'quality-days': 'reclaim',
-  'wrote-story': 'reclaim',
-  'reclaim-capstone': 'reclaim',
-};
+// Badge → phase grouping comes from the registry's badgePhase() (the same source that colors the stamps),
+// so the two cross-cutting keeps ("kept a want", "closed the loop") group under Journey, not Reclaim.
 
 // Member-facing meaning of each milestone — plain, normalizing, no pep. What it marks, honestly.
 const BADGE_MEANING: Record<string, string> = {
@@ -63,17 +48,18 @@ const BADGE_MEANING: Record<string, string> = {
   'reclaim-capstone': 'You closed the loop — a full cycle of the work. It fades again, and you clip back in. That’s the Loop.',
 };
 
-const PHASES: { key: 'reconnect' | 'rewire' | 'rebuild' | 'reclaim'; label: string }[] = [
+const PHASES: { key: BadgePhase; label: string }[] = [
   { key: 'reconnect', label: 'Reconnect' },
   { key: 'rewire', label: 'Rewire' },
   { key: 'rebuild', label: 'Rebuild' },
   { key: 'reclaim', label: 'Reclaim' },
+  { key: 'journey', label: 'The Journey' },
 ];
 
 function redesignView(memberId: string, passport: PassportView) {
   const byPhase = PHASES.map((p) => ({
     ...p,
-    badges: passport.badges.filter((b) => BADGE_PHASE[b.id] === p.key),
+    badges: passport.badges.filter((b) => badgePhase(b) === p.key),
   })).filter((g) => g.badges.length > 0);
 
   return (
@@ -104,7 +90,7 @@ function redesignView(memberId: string, passport: PassportView) {
             <div className="bd-list">
               {g.badges.map((b) => (
                 <div className={`bd-badge${b.earned ? ' earned' : ''}`} key={b.id}>
-                  <span className="bd-mark" aria-hidden="true">{b.earned ? '◉' : '◦'}</span>
+                  <BadgeStamp badge={b} />
                   <div className="bd-body">
                     <div className="bd-name">
                       {b.name}

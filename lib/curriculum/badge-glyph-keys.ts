@@ -16,4 +16,6 @@ export const BADGE_GLYPH_KEYS = [
   'sunrise',
   'trend',
   'spark',
+  'eye',
+  'pen',
 ] as const;

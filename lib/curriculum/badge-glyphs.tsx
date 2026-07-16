@@ -74,4 +74,16 @@ export const BADGE_GLYPHS: Record<string, ReactNode> = {
     </>
   ),
   spark: <path d="M12 3l1.6 6L20 11l-6.4 1.6L12 19l-1.6-6.4L4 11l6.4-1.6z" />,
+  eye: (
+    <>
+      <path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z" />
+      <circle cx="12" cy="12" r="2.6" />
+    </>
+  ),
+  pen: (
+    <>
+      <path d="M4 20l1-4L16 5a1.8 1.8 0 012.6 2.6L7.5 18.5z" />
+      <path d="M14 7l3 3" />
+    </>
+  ),
 };

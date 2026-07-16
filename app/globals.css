@@ -1335,9 +1335,16 @@ body.redesign-on .back-dash { display: none; }
 .rb-head { display: flex; justify-content: space-between; align-items: baseline; }
 .rb-count { font-weight: 700; color: var(--navy); font-size: 14px; }
 .rb-shelf { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
-.rbadge { width: 50px; height: 50px; border-radius: 12px; display: grid; place-items: center; font-size: 20px;
-  border: 1px dashed #e3e2df; color: #c3c1bb; background: #f5f4f1; }
-.rbadge.earned { background: var(--navy); color: #fff; border: 1px solid var(--navy); }
+
+/* Badge stamp (Decision WW styling) — color = phase (the ring palette), so the shelf reads as a map of the
+   journey. Earned: phase color (or bullseye gradient) + white glyph + a soft lift. Locked: grey + dashed
+   border + faint glyph — an invitation, never a scold. Icons are placeholders; Scott swaps the art later. */
+.bstamp { flex: none; display: grid; place-items: center; border-radius: 12px; color: #fff; }
+.bstamp-md { width: 48px; height: 48px; }
+.bstamp-lg { width: 58px; height: 58px; border-radius: 14px; }
+.bstamp svg { width: 54%; height: 54%; }
+.bstamp.earned { box-shadow: 0 2px 7px rgba(42, 42, 42, 0.17); }
+.bstamp.locked { background: #f4f3f0; border: 1.6px dashed #d8d6d1; color: #c3c1bb; box-shadow: none; }
 
 /* The persistent rail */
 .rrail-head { padding: 20px 22px 12px; border-bottom: 1px solid #e3e2df; }
@@ -1422,10 +1429,11 @@ body.redesign-on .back-dash { display: none; }
 .bd-count b { color: var(--navy); font-size: 16px; }
 .bd-phase { margin-top: 30px; }
 .bd-phase-h { font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; margin: 0 0 12px; padding-bottom: 7px; border-bottom: 1px solid #e3e2df; }
-.bd-phase-h.reconnect { color: #3B9495; }
-.bd-phase-h.rewire { color: #EC6233; }
-.bd-phase-h.rebuild { color: #919536; }
-.bd-phase-h.reclaim { color: #101045; }
+.bd-phase-h.reconnect { color: #EC6233; }
+.bd-phase-h.rewire { color: #919536; }
+.bd-phase-h.rebuild { color: #3B9495; }
+.bd-phase-h.reclaim { color: #374F63; }
+.bd-phase-h.journey { color: #101045; }
 .bd-list { display: flex; flex-direction: column; gap: 10px; }
 .bd-badge { display: flex; gap: 14px; align-items: flex-start; background: #fff; border: 1px solid #e8e6e6; border-radius: 14px; padding: 15px 17px; opacity: .62; }
 .bd-badge.earned { opacity: 1; border-color: #d6d4d4; box-shadow: 0 1px 2px rgba(42,42,42,.05); }

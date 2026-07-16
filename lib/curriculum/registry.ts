@@ -168,26 +168,63 @@ const LEGACY_BADGES: Badge[] = [
 // beat. Each marks a TRUE accomplishment, never participation. The 6 ids with existing earn-wiring are REUSED (so
 // checkpoints / reclaim-keeps / RCN-EXC keep firing under their new identity-framed names); the other 10 are the honest
 // forward-map — greyed until their earn event lands (wired progressively; event-driven ones fire where the event exists).
+// icon = a distinct placeholder glyph per badge so no two collide within a phase (Scott swaps the final art later,
+// anchored to the badge id). color is now driven by PHASE, not category — see badgePhase()/badgeTile() below.
 const REDESIGN_BADGES: Badge[] = [
   badge('named-yourself', 'You named the Doors', 'milestone', 'door', 'reconnect:doors', true), // wired: RCN-EXC close
-  badge('starting-line', 'You met your starting line', 'milestone', 'bullseye', 'reconnect:idq', false),
-  badge('reconnect-milestone', 'You crossed the Threshold', 'milestone', 'bullseye', 'checkpoint:reconnect:passed', true), // wired
-  badge('turned-voice', 'You turned the voice', 'milestone', 'bolt', 'rewire:w1', false),
+  badge('starting-line', 'You met your starting line', 'milestone', 'cflag', 'reconnect:idq', false),
+  badge('reconnect-milestone', 'You crossed the Threshold', 'milestone', 'up', 'checkpoint:reconnect:passed', true), // wired
+  badge('turned-voice', 'You turned the voice', 'milestone', 'rtn', 'rewire:w1', false),
   badge('built-picture', 'You built the picture', 'milestone', 'spark', 'rewire:w2', false),
-  badge('caught-real-time', 'You caught it in real time', 'comeback', 'spark', 'rewire:w3', false),
+  badge('caught-real-time', 'You caught it in real time', 'comeback', 'eye', 'rewire:w3', false),
   badge('rewire-milestone', 'You retrained the mind', 'milestone', 'bolt', 'checkpoint:rewire:passed', true), // wired
-  badge('found-why', 'You found your why', 'milestone', 'spark', 'rebuild:b1', false),
-  badge('honest-read', 'You took an honest read', 'milestone', 'mountain', 'rebuild:b2', false),
-  badge('week-noticing', 'You lived a week of noticing', 'hardiness', 'mountain', 'rebuild:b3', false),
+  badge('found-why', 'You found your why', 'milestone', 'flame', 'rebuild:b1', false),
+  badge('honest-read', 'You took an honest read', 'milestone', 'trend', 'rebuild:b2', false),
+  badge('week-noticing', 'You lived a week of noticing', 'hardiness', 'wheel', 'rebuild:b3', false),
   badge('rebuild-milestone', 'You rebuilt the body', 'milestone', 'mountain', 'checkpoint:rebuild:passed', true), // wired
-  badge('goal-reclaimed', 'You kept a want', 'goal', 'check', 'reclaim:item:reclaimed', false), // wired
-  badge('widened-world', 'You widened the world', 'milestone', 'sun', 'reclaim:c2', false),
+  badge('goal-reclaimed', 'You kept a want', 'goal', 'check', 'reclaim:item:reclaimed', false), // wired · Journey/bullseye
+  badge('widened-world', 'You widened the world', 'milestone', 'sunrise', 'reclaim:c2', false),
   badge('quality-days', 'You lived quality days', 'hardiness', 'sun', 'reclaim:c3', false),
-  badge('wrote-story', 'You wrote your story', 'milestone', 'spark', 'reclaim:transition', true),
-  badge('reclaim-capstone', 'You closed the loop', 'capstone', 'sun', 'checkpoint:reclaim:passed', true), // wired
+  badge('wrote-story', 'You wrote your story', 'milestone', 'pen', 'reclaim:transition', true),
+  badge('reclaim-capstone', 'You closed the loop', 'capstone', 'bullseye', 'checkpoint:reclaim:passed', true), // wired · Journey/bullseye
 ];
 
 export const BADGES: Badge[] = redesignStaged ? REDESIGN_BADGES : LEGACY_BADGES;
+
+// --- Badge visual identity (Decision WW styling pass) -------------------------------------------------------
+// The redesign shelf reads as a MAP OF THE JOURNEY: each badge is colored by its PHASE (the ring palette), not
+// its category. Phase derives from the earn_rule prefix; the two cross-cutting keeps ("kept a want", "closed the
+// loop") are the Journey/bullseye group. Scott's final icon art + earned-reveal animation are a later pass.
+export type BadgePhase = 'reconnect' | 'rewire' | 'rebuild' | 'reclaim' | 'journey';
+
+export const PHASE_BADGE_COLOR: Record<Exclude<BadgePhase, 'journey'>, string> = {
+  reconnect: '#EC6233', // orange
+  rewire: '#919536', // olive
+  rebuild: '#3B9495', // teal
+  reclaim: '#374F63', // navy
+};
+// Journey / cross-cutting = the bullseye: a radial gradient of all four phases (same as the ring).
+export const BULLSEYE_GRADIENT =
+  'radial-gradient(circle, #EC6233 0 28%, #919536 28% 52%, #3B9495 52% 76%, #374F63 76% 100%)';
+
+// The two cross-cutting keeps live outside a single phase — they carry the whole Journey.
+const JOURNEY_BADGE_IDS = new Set(['goal-reclaimed', 'reclaim-capstone']);
+
+/** The phase a badge belongs to — drives its color. Journey overrides first, else the earn_rule prefix. */
+export function badgePhase(b: Pick<Badge, 'id' | 'earn_rule'>): BadgePhase {
+  if (JOURNEY_BADGE_IDS.has(b.id)) return 'journey';
+  const r = b.earn_rule;
+  if (r.startsWith('reconnect') || r.includes(':reconnect:') || r === 'onboarding_complete') return 'reconnect';
+  if (r.startsWith('rewire') || r.includes(':rewire:')) return 'rewire';
+  if (r.startsWith('rebuild') || r.includes(':rebuild:')) return 'rebuild';
+  return 'reclaim';
+}
+
+/** The CSS background for a badge tile (phase color, or the bullseye gradient for Journey badges). */
+export function badgeTileBackground(b: Pick<Badge, 'id' | 'earn_rule'>): string {
+  const p = badgePhase(b);
+  return p === 'journey' ? BULLSEYE_GRADIENT : PHASE_BADGE_COLOR[p];
+}
 
 // --- Accessors (the renderer reads only through these) ---
 export const PHASE_ORDER: Asset['phase'][] = ['reconnect', 'rewire', 'rebuild', 'reclaim'];
