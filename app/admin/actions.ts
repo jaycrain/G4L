@@ -9,8 +9,13 @@ import { sendEmail } from '../../lib/email/send.ts';
 import { buildNudge } from '../../lib/agent/nudge.ts';
 import { sendPushToMember } from '../../lib/push/send.ts';
 import { buildNudgePayload } from '../../lib/push/payload.ts';
-import { isAdmin } from '../authz.ts';
+import { isAdmin, renewAdminSession } from '../authz.ts';
 import type { Db } from '../../lib/db/schema.ts';
+
+/** Console heartbeat: slide the admin session forward so an active operator stays signed in. */
+export async function renewAdminSessionAction(): Promise<void> {
+  await renewAdminSession();
+}
 
 export async function generateDraftAction(memberId: string, moment: OperatingMoment): Promise<void> {
   if (!(await isAdmin())) return;

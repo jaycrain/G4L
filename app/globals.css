@@ -631,6 +631,14 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .jarrow { color: var(--teal); opacity: 0.65; font-weight: 400; }
 
 /* Founder Agent admin */
+.admin-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+.admin-live { display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.82rem; color: var(--muted, #5f7180); }
+.admin-live-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--olive); box-shadow: 0 0 0 0 rgba(145, 149, 54, 0.5); animation: admin-live-pulse 2s infinite; }
+.admin-live-dot.paused { background: #b9bec2; animation: none; box-shadow: none; }
+@keyframes admin-live-pulse { 0% { box-shadow: 0 0 0 0 rgba(145,149,54,0.45); } 70% { box-shadow: 0 0 0 6px rgba(145,149,54,0); } 100% { box-shadow: 0 0 0 0 rgba(145,149,54,0); } }
+.admin-live-label { font-variant-numeric: tabular-nums; }
+.admin-live-toggle { margin: 0; padding: 0.2rem 0.6rem; font-size: 0.78rem; background: transparent; color: var(--teal); border: 1px solid var(--grey); border-radius: 6px; cursor: pointer; }
+.admin-live-toggle:hover { border-color: var(--teal); }
 .admin-search { display: flex; gap: 0.5rem; margin: 0.5rem 0 1rem; }
 .admin-search input { flex: 1; margin: 0; }
 .admin-search button { margin: 0; }

@@ -5,8 +5,22 @@ import { currentMemberId } from './auth.ts';
 import { signAdminToken, verifyAdminToken } from '../lib/auth/admin-token.ts';
 
 const ADMIN_COOKIE = 'g4l_admin';
-const ADMIN_TTL_MS = 12 * 60 * 60 * 1000;
+// Sliding 30-day session: renewed on every active console visit (see renewAdminSession), so it only
+// lapses after ~a month of NOT opening /admin. Single-operator, password-gated, httpOnly+secure cookie.
+const ADMIN_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 const adminSecret = () => process.env.ADMIN_PASSWORD ?? '';
+
+/** Issue/refresh the signed admin cookie with a fresh full-length expiry. */
+async function setAdminCookie(secret: string): Promise<void> {
+  const token = signAdminToken(secret, Date.now() + ADMIN_TTL_MS);
+  (await cookies()).set(ADMIN_COOKIE, token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    path: '/',
+    maxAge: ADMIN_TTL_MS / 1000,
+  });
+}
 
 export async function isAdmin(): Promise<boolean> {
   const token = (await cookies()).get(ADMIN_COOKIE)?.value;
@@ -17,15 +31,15 @@ export async function isAdmin(): Promise<boolean> {
 export async function adminLogin(password: string): Promise<boolean> {
   const secret = adminSecret();
   if (!secret || password !== secret) return false;
-  const token = signAdminToken(secret, Date.now() + ADMIN_TTL_MS);
-  (await cookies()).set(ADMIN_COOKIE, token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    path: '/',
-    maxAge: ADMIN_TTL_MS / 1000,
-  });
+  await setAdminCookie(secret);
   return true;
+}
+
+/** Slide the session forward: re-issue a full-length cookie if the caller is already an admin.
+ *  Called on the console's auto-refresh tick so an active operator effectively stays signed in. */
+export async function renewAdminSession(): Promise<void> {
+  if (!(await isAdmin())) return;
+  await setAdminCookie(adminSecret());
 }
 
 export async function adminLogout(): Promise<void> {
