@@ -65,22 +65,12 @@ function redesignView(memberId: string, passport: PassportView) {
   return (
     <>
       <RedesignChrome />
-      <div className="redesign-topbar">
-        <Link href="/" className="rt-brand" aria-label="Go to your G4L home">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img className="rt-logo-mark" src="/brand/g4l-rings.svg" alt="" aria-hidden="true" />
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img className="rt-wordmark" src="/brand/g4l-wordmark.svg" alt="Grinta for Life" />
-        </Link>
-      </div>
-
       <div className="bd-wrap">
         <Link href={`/dashboard/${memberId}`} className="ws-back">← Dashboard</Link>
-        <div className="bd-eyebrow">Your Badges</div>
-        <h1 className="bd-title">Earned for real accomplishments — never participation</h1>
+        <div className="hero"><h1>Your Badges</h1></div>
         <p className="bd-lede">
-          Each badge marks something you actually did. The ones ahead stay greyed until you get there — an honest map of
-          the road, never a scold.
+          Earned for real accomplishments — never participation. Each badge marks something you actually did; the ones
+          ahead stay greyed until you get there — an honest map of the road, never a scold.
         </p>
         <div className="bd-count"><b>{passport.earned}</b> of {passport.total} earned</div>
 
