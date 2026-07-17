@@ -79,3 +79,28 @@ clean **disconnect/delete** for every connected source. Consent-gated, governed 
 - **Which sources first** — Strava/Garmin (endurance) or broad Apple-Health coverage (needs native).
 - This is a primary **trigger for committing to the native app**.
 - How activity surfaces in the agents' proactive nudges (witnessing, not nagging).
+
+## Aggregator pricing snapshot — ROOK vs. Terra (captured 2026-07-17)
+
+The two aggregators the build scaffold narrowed to (`lib/movement/movement.ts`, `vendor: 'rook' | 'terra'`):
+**ROOK = Cycle-1 primary, Terra = back-pocket.** Public marketing prices as of 2026-07-17 — a real quote
+(esp. Enterprise + a BAA for health data) comes from their sales teams; "active user" is defined slightly
+differently by each (ROOK per-user tier vs. Terra ~200 credits/user/mo).
+
+**ROOK — flat tiers by active users** ([tryrook.io/pricing](https://www.tryrook.io/pricing))
+- **Core — $399/mo**, up to **750** active users; all integrations, sandbox, basic SLAs. (No free tier.)
+- **Core+ — $999/mo**, up to 5,000; + 3 free add-ons.
+- **Business — $1,999/mo**, up to 15,000; webhooks, white-label auth, ROOKScore, SDK, advanced SLAs.
+- **Enterprise — custom**, unlimited; dedicated servers, FHIR-compliant data, enterprise contracting.
+- Core add-ons à la carte, $99–$499/mo each (webhooks $99, data-source ingestion $149, ROOKScore $249, end-user app $499).
+
+**Terra — credit-based** ([tryterra.co/pricing](https://tryterra.co/pricing))
+- **Quick Start — $499/mo** ($399/mo billed annually); **100,000 credits/mo**, ~**200 credits/active user/mo**
+  (≈ 500 users on the base). Overage $0.005/credit, tiered to $0.003 above 1M. 30-day money-back. (Entry tier; no free tier.)
+- **Enterprise — custom**; 24/7 eng, dedicated server, **signed BAA**.
+- Add-ons: Health Scores $499/mo, Streaming API $99/mo + usage, Planned Workouts $99/mo + usage.
+
+**Read for G4L:** the cost driver is *connected* users, not total members. At charter scale (hundreds connected),
+both land ~**$400–500/mo**: **ROOK Core** ($399/750 users) is the cheapest, most *predictable* flat entry; **Terra
+Quick Start** ($399–499) is comparable but **credit-metered** (cost creeps with connected users + data volume).
+Health-data posture: both put **BAA / FHIR** at the Enterprise tier — relevant for this Path-B data under security review.
