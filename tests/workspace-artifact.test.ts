@@ -70,3 +70,37 @@ test('c3 canvas shows the coach-named Quality Day from the live session, before 
   assert.match(art.slots[1]!.value ?? '', /real connection/, 'what lifts a day shows');
   assert.match(art.slots[2]!.value ?? '', /poor sleep/, 'what drains one shows');
 });
+
+test('w2 canvas fills piece-by-piece from the live session, then plays back the committed picture', async () => {
+  const db = new PGlite() as unknown as Db;
+  await applySchema(db);
+  const m = await seedMember(db);
+  assert.equal((await readArtifact(db, m, 'w2')).slots[0]!.value, null, 'empty until the member names something');
+
+  // Mid-build: the goal + the scene pieces named so far live in arc_session — they should land on the canvas now,
+  // not only after the final reveal. (This is the fix — the picture was blank the whole build before.)
+  await saveArcSession(
+    db,
+    m,
+    'rewire',
+    { stage: 'image', collected: { w2Anchor: 'The half-marathon finish line', w2Image: ['A cool morning, the chute', 'Lighter, proud'] } },
+    [{ role: 'agent', text: '…' }],
+    'w2',
+  );
+  const mid = (await readArtifact(db, m, 'w2')).slots[0]!.value ?? '';
+  assert.match(mid, /half-marathon finish line/, 'the goal shows mid-build');
+  assert.match(mid, /Lighter, proud/, 'each named piece shows as it lands');
+
+  // Committed (session complete): the finished image keeper takes precedence — this is what review shows.
+  const momentId = await emitHarvestMoment(db, m, {
+    destinationIntent: 'keeper',
+    keeperType: 'lights_you_up',
+    surface: 'rewire',
+    sourceRef: { kind: 'image', ref: 'image', label: 'Your picture' },
+    payloadRef: 'The half-marathon finish line\nA cool morning, the chute\nLighter, proud\nMy kids at the rail',
+  });
+  await commitKeeper(db, m, { momentId, keeperType: 'lights_you_up', section: 'own_words', body: 'The half-marathon finish line\nA cool morning, the chute\nLighter, proud\nMy kids at the rail', state: 'kept', source: { kind: 'own', ref: 'image', label: 'Your picture' } });
+
+  const done = (await readArtifact(db, m, 'w2')).slots[0]!.value ?? '';
+  assert.match(done, /My kids at the rail/, 'the committed picture plays back in review');
+});

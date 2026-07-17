@@ -83,7 +83,13 @@ async function build(db: Db, memberId: string, key: SessionKey): Promise<Artifac
     }
     case 'w2': {
       const image = await latestImageKeeper(db, memberId);
-      return base([{ label: 'The picture, in your words', value: image ?? null }]);
+      // Before the image COMMITS (one keeper, at the reveal), show what the member has named so far — the goal + each
+      // scene piece — read live from the session, so the picture fills on the canvas as they build it (same as B3/C3).
+      const pending = image ? null : (await loadArcSession(db, memberId, 'rewire', 'w2').catch(() => null))?.state.collected ?? null;
+      const built = pending
+        ? [pending.w2Anchor, ...(pending.w2Image ?? [])].map((s) => (s ?? '').trim()).filter(Boolean).join('\n')
+        : '';
+      return base([{ label: 'The picture, in your words', value: image ?? (built || null) }]);
     }
     case 'w3': {
       const moves = await keeperBodies(db, memberId, 'recovery_move');
