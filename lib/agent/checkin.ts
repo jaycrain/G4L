@@ -10,6 +10,7 @@ import { detectCrisis, CRISIS_RESPONSE_US, AI_DISCLOSURE } from './governance.ts
 import { reclaimAddIntent } from '../member/reclaim.ts';
 import { rewireEnabled } from './rewire.ts';
 import { logCallIntent } from '../momentum/store.ts';
+import { redesignEnabled } from '../dashboard/redesign.ts';
 import { connectContextLines, type ConnectAgentSummary } from '../connect/agent.ts';
 import type { Direction } from '../idq/scoring.ts';
 
@@ -46,6 +47,7 @@ export type CheckinContext = {
   idScoreHistory?: number[]; // ID Score across retakes, oldest→newest (the trend)
   idqAnswers?: { dimension: string; stem: string; score: number }[]; // the 24 answers, 1–5
   reclaimDetail?: { text: string; category: string; state: string; tracked: boolean }[]; // Reclaim items + progress + whether a tracker exists
+  movementLog?: string; // recent OFF-device activity the member logged (Movement page or Companion) — so the MA knows their movement, per governance (the dashboard + agent are one surface)
   // Rebuild B1 "What is Your Why?" — true once the member has named their motivation for movement + eating. The
   // SDT profile is stored but NEVER shown as a number (Decision RB-1); the agent only KNOWS they've done it, so it
   // references it as shared history and never re-asks. No score, no verdict — a starting point, by design.
@@ -217,6 +219,9 @@ export function contextBlock(c: CheckinContext): string {
       : null,
     c.pilotCalls && (c.pilotCalls.activity.good + c.pilotCalls.activity.false + c.pilotCalls.diet.good + c.pilotCalls.diet.false) > 0
       ? `How the pilot's actually going (last two weeks, their own logged calls) — Movement: ${c.pilotCalls.activity.good} good, ${c.pilotCalls.activity.false} false starts. Eating: ${c.pilotCalls.diet.good} good, ${c.pilotCalls.diet.false} false starts. If it helps them see the pattern, reflect it warmly ("movement's been landing; eating's been the tougher one") — never a scoreboard, never a grade; a false start is honest data. Only raise it if it's useful to them.`
+      : '',
+    c.movementLog
+      ? `Off-device movement they've logged (Movement page or told you) — ${c.movementLog}. It's real evidence of the identity coming back; reflect it warmly when relevant, never as a number or a target. If they mention doing an activity off-device that isn't here, log it with the log_movement tool.`
       : null,
     c.reclaimPriorities
       ? `Their Bigger World priorities (Reclaim C2) — the area they chose to focus on is their ${c.reclaimPriorities.primary.toLowerCase()} life; the easiest place to build momentum is their ${c.reclaimPriorities.momentumLever.toLowerCase()} life. Support that chosen focus warmly; it's their priority, not a ranking to grade.`
@@ -530,6 +535,28 @@ const LOG_CALL_TOOL = {
   },
 };
 
+// Movement logging — an activity the member did OFF any connected device, told to the companion in conversation. Lands
+// in their Movement history (source 'companion'). Offered only when REDESIGN is staged (that's where Movement lives).
+const LOG_MOVEMENT_TOOL = {
+  name: 'log_movement',
+  description:
+    "Log an activity the member did OFF any connected device when they mention it ('went for a 3-mile walk this " +
+    "morning', 'swam laps yesterday', 'took a spin class'). It lands in their Movement history. Use activity_type = " +
+    "walk|ride|run|hike|swim|workout|other; put their own words in note ('easy loop by the river'); pass date only " +
+    "if it wasn't today (YYYY-MM-DD). Words alone don't log it — you MUST call this tool, then reflect it back warmly. " +
+    "Don't use it for a device-synced activity (Strava handles that) or for something they only PLAN to do — only " +
+    "something they actually did.",
+  input_schema: {
+    type: 'object',
+    properties: {
+      activity_type: { type: 'string', enum: ['walk', 'ride', 'run', 'hike', 'swim', 'workout', 'other'], description: 'the kind of activity' },
+      note: { type: 'string', description: 'optional short note in the member’s words (what they did)' },
+      date: { type: 'string', description: 'YYYY-MM-DD, only if not today' },
+    },
+    required: ['activity_type'],
+  },
+};
+
 async function liveReply(
   system: string,
   history: CheckinMessage[],
@@ -552,8 +579,13 @@ async function liveReply(
   // turn WITHOUT it, so a tool-spec incompatibility degrades to normal chat — never a broken companion.
   const WEB_FETCH_TOOL = { type: 'web_fetch_20260209', name: 'web_fetch', max_uses: 3 };
   let useFetch = executor !== undefined;
-  // Momentum's log_call rides in only when REWIRE is staged — prod's tool set is unchanged until the v2.3 flip.
-  const clientTools = rewireEnabled() ? [...REFINE_TOOLS, LOG_CALL_TOOL] : REFINE_TOOLS;
+  // Momentum's log_call rides in only when REWIRE is staged; Movement's log_movement only when REDESIGN is staged —
+  // each phase's tools stay gated so prod's tool set matches what's actually live.
+  const clientTools = [
+    ...REFINE_TOOLS,
+    ...(rewireEnabled() ? [LOG_CALL_TOOL] : []),
+    ...(redesignEnabled() ? [LOG_MOVEMENT_TOOL] : []),
+  ];
   const toolsFor = () => (executor ? (useFetch ? [...clientTools, WEB_FETCH_TOOL] : clientTools) : undefined);
   const model = process.env.ANTHROPIC_MODEL ?? 'claude-sonnet-4-6';
   // Join ALL text blocks. With a server tool (web_fetch), the model emits a preamble text block,

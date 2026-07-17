@@ -1476,7 +1476,18 @@ body.redesign-on .back-dash { display: none; }
 .mv-entry-type { font-size: 15px; font-weight: 600; color: var(--charcoal); }
 .mv-src-chip { font-size: 11px; font-weight: 700; color: #2f6b6b; background: #dcecec; padding: 2px 9px; border-radius: 100px; }
 .mv-entry-meta { font-size: 13.5px; color: #6b7680; margin-top: 2px; }
-@media (max-width: 700px) { .mv-source-grid { grid-template-columns: 1fr; } }
+.mv-entry-note { font-style: italic; }
+/* Log an off-device activity — the member's own entry, lands in the history as 'logged'. */
+.mv-log { margin-top: 26px; padding: 16px 18px; background: #f6f7f8; border: 1px solid #e6eaed; border-radius: 12px; }
+.mv-log-h { font-weight: 800; font-size: 15px; color: var(--navy); }
+.mv-log-lede { font-size: 12.5px; color: #6b7680; margin: 2px 0 12px; }
+.mv-log-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.mv-log-type, .mv-log-date { margin: 0; flex: 0 0 auto; }
+.mv-log-note { margin: 0; flex: 1 1 200px; min-width: 160px; }
+.mv-log-btn { margin: 0; flex: 0 0 auto; background: var(--teal); color: #fff; border: none; font-weight: 700; padding: 0.5rem 1.1rem; border-radius: 8px; cursor: pointer; }
+.mv-log-btn:hover { background: #327f80; }
+.mv-log-btn:disabled { opacity: 0.6; cursor: default; }
+@media (max-width: 700px) { .mv-source-grid { grid-template-columns: 1fr; } .mv-log-note { flex-basis: 100%; } }
 
 /* Ceremonial badge reveal (Decision WW) — the earned medal popping in as the ceremony climax. */
 .cer-badge { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 6px 0; }

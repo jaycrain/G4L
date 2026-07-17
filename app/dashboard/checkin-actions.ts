@@ -17,6 +17,8 @@ import { markReclaimReclaimedByText, unmarkReclaimReclaimedByText, refineReclaim
 import { proposeEntry, playbookForAgent, isPlaybookSection } from '../../lib/playbook/store.ts';
 import { createMeasure, logReadingByLabel, measuresForAgent, findReclaimItemId, looksTrackable } from '../../lib/measure/store.ts';
 import { logCall, isCallType, isCallDomain, domainTally } from '../../lib/momentum/store.ts';
+import { logMovement, isMovementKind, movementLogSummary } from '../../lib/movement/store.ts';
+import { redesignEnabled } from '../../lib/dashboard/redesign.ts';
 import { rewireEnabled } from '../../lib/agent/rewire.ts';
 import { maybeFoldMemory } from '../../lib/agent/memory.ts';
 import { asSnapshot, diffSnapshot, type DashboardSnapshot } from '../../lib/agent/changes.ts';
@@ -159,6 +161,7 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
     ? responses.map((score: number, i: number) => ({ dimension: dimensionForIndex(i), stem: itemStem(i), score }))
     : [];
   const connect = await getConnectSummaryForAgent(db, memberId);
+  const movementLog = redesignEnabled() ? await movementLogSummary(db, memberId).catch(() => '') : '';
   return {
     today: new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }),
     displayName: dash.displayName,
@@ -205,6 +208,7 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
     idScoreHistory,
     idqAnswers,
     reclaimDetail: reclaimItems.map((r) => ({ text: r.text, category: r.category, state: r.state, tracked: linkedIds.has(r.id) })),
+    movementLog: movementLog || undefined,
     beatsDone: beatRows.rows[0]?.n ?? 0,
     playbookKeepers: playbook.keepers,
     playbookNotes: playbook.recentNotes,
@@ -446,6 +450,17 @@ export async function sendCheckin(memberId: string, memberMessage: string): Prom
               ? "Logged as a good call. Mark it lightly — it's on their Momentum now."
               : "Logged as a quiet day. No pressure — quiet counts too.";
         return { ok: true, message: ack };
+      }
+      if (name === 'log_movement') {
+        // Movement logging (REDESIGN-gated) — an off-device activity the member did, from conversation. Source 'companion'.
+        if (!redesignEnabled()) return { ok: false, message: 'Not available.' };
+        const kind = input.activity_type;
+        if (!isMovementKind(kind)) return { ok: false, message: 'Not logged — that was not a recognizable activity type.' };
+        const note = typeof input.note === 'string' ? input.note : undefined;
+        const on = typeof input.date === 'string' ? input.date : undefined;
+        await logMovement(db, memberId, { activityType: kind, note, occurredOn: on, source: 'companion' });
+        mutated = true;
+        return { ok: true, message: `Logged their ${kind} to their Movement history. Reflect it back warmly — name what they did and what it says about who they're becoming; never a bare number or a grade.` };
       }
       return { ok: false, message: 'Unknown tool.' };
     };

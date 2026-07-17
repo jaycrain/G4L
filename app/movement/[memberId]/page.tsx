@@ -7,8 +7,12 @@ import { redesignEnabled } from '../../../lib/dashboard/redesign.ts';
 import { getActivityPanel } from '../../../lib/activity/store.ts';
 import { stravaConfigured } from '../../../lib/activity/strava.ts';
 import { formatDistance, formatDuration, typeLabel, relativeDay } from '../../../lib/activity/summary.ts';
+import { listMovementLog } from '../../../lib/movement/store.ts';
 import RedesignChrome from '../../dashboard/redesign-chrome.tsx';
 import StravaConnect from '../../account/strava-connect.tsx';
+import LogActivity from '../log-activity.tsx';
+
+const KIND_LABEL: Record<string, string> = { walk: 'Walk', ride: 'Ride', run: 'Run', hike: 'Hike', swim: 'Swim', workout: 'Workout', other: 'Other' };
 
 // Redesign Layer 3 — the MOVEMENT subpage (Decision YY): a first-class evidence surface. Connect the apps you already
 // use → one unified view, read against who you're reclaiming, never left as raw numbers. Flag-gated (REDESIGN). Cycle 1
@@ -35,13 +39,21 @@ export default async function MovementPage({ params }: { params: Promise<{ membe
   const recent = activity?.recent ?? [];
   const thisWeek = activity?.thisWeek ?? { count: 0, distanceM: 0, movingTimeS: 0 };
 
-  const activeDays = new Set(recent.map((a) => a.daysAgo)).size;
-  // Group synced history by day label, newest first.
-  const groups: { label: string; items: typeof recent }[] = [];
-  for (const a of recent) {
-    const label = relativeDay(a.daysAgo) || `${a.daysAgo}d ago`;
+  // Member-logged activity (off-device) merges with the synced Strava history — one honest timeline, tagged by
+  // provenance (teal = synced, bullseye = logged). Independent of a Strava connection, so it shows even when nothing
+  // is connected.
+  const logged = await listMovementLog(db, memberId).catch(() => []);
+  type MvEntry = { provenance: 'synced' | 'logged'; daysAgo: number; label: string; meta: string | null; note: string | null; source: 'strava' | 'self' | 'companion' };
+  const entries: MvEntry[] = [
+    ...recent.map((a): MvEntry => ({ provenance: 'synced', daysAgo: a.daysAgo, label: typeLabel(a.type), meta: formatDistance(a.distanceM) || null, note: null, source: 'strava' })),
+    ...logged.map((l): MvEntry => ({ provenance: 'logged', daysAgo: l.daysAgo, label: KIND_LABEL[l.activityType] ?? l.activityType, meta: null, note: l.note, source: l.source })),
+  ].sort((a, b) => a.daysAgo - b.daysAgo); // newest first
+  const activeDays = new Set(entries.map((e) => e.daysAgo)).size;
+  const groups: { label: string; items: MvEntry[] }[] = [];
+  for (const e of entries) {
+    const label = relativeDay(e.daysAgo) || `${e.daysAgo}d ago`;
     const g = groups.find((x) => x.label === label) ?? (groups.push({ label, items: [] }), groups[groups.length - 1]!);
-    g.items.push(a);
+    g.items.push(e);
   }
 
   return (
@@ -82,22 +94,29 @@ export default async function MovementPage({ params }: { params: Promise<{ membe
           <span><b>{activeDays}</b>active days</span>
         </div>
 
-        {/* History */}
+        {/* Log an activity done off-device */}
+        <LogActivity memberId={memberId} />
+
+        {/* History — synced + self-logged, merged */}
         <div className="mv-history">
           <div className="mv-history-h">Your history</div>
           <p className="mv-history-lede">Everything you’ve done and everything you’ve told me — kept in order, so the story of your movement stays whole.</p>
           {groups.length === 0 ? (
-            <p className="muted">Once you connect a source or tell your Companion about a walk, it lands here — in order.</p>
+            <p className="muted">Once you connect a source, log an activity above, or tell your Companion about a walk, it lands here — in order.</p>
           ) : (
             groups.map((g) => (
               <div className="mv-day" key={g.label}>
                 <div className="mv-day-label">{g.label}</div>
                 <div className="mv-day-items">
-                  {g.items.map((a, i) => (
+                  {g.items.map((e, i) => (
                     <div className="mv-entry" key={i}>
-                      <span className="mv-dot synced" aria-hidden="true" />
-                      <div className="mv-entry-head"><span className="mv-entry-type">{typeLabel(a.type)}</span><span className="mv-src-chip">Strava</span></div>
-                      {formatDistance(a.distanceM) && <div className="mv-entry-meta">{formatDistance(a.distanceM)}</div>}
+                      <span className={`mv-dot ${e.provenance}`} aria-hidden="true" />
+                      <div className="mv-entry-head">
+                        <span className="mv-entry-type">{e.label}</span>
+                        <span className="mv-src-chip">{e.source === 'strava' ? 'Strava' : e.source === 'companion' ? 'Companion' : 'You'}</span>
+                      </div>
+                      {e.meta && <div className="mv-entry-meta">{e.meta}</div>}
+                      {e.note && <div className="mv-entry-meta mv-entry-note">{e.note}</div>}
                     </div>
                   ))}
                 </div>

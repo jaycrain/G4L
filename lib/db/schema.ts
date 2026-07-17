@@ -100,6 +100,7 @@ const MIGRATIONS: Array<{ file: string; sentinel: Sentinel }> = [
   { file: 'migrations/0054_bigger_world_reading.sql', sentinel: 'bigger_world_reading' },
   { file: 'migrations/0055_quality_day_log.sql', sentinel: 'quality_day_log' },
   { file: 'migrations/0056_arc_session.sql', sentinel: 'arc_session' },
+  { file: 'migrations/0057_movement_log.sql', sentinel: 'movement_log' },
 ];
 export const SEED_SQL = () => sqlFile('seed/0001_reference_data.sql');
 
