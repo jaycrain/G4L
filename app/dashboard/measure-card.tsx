@@ -99,7 +99,7 @@ export default function MeasureCard({ memberId, measure }: { memberId: string; m
           type="number"
           inputMode="decimal"
           step="any"
-          placeholder={`Log ${measure.label.toLowerCase()}…`}
+          placeholder={`Log a reading${measure.unit ? ` (${measure.unit})` : ''}…`}
           value={value}
           onChange={(e) => {
             setValue(e.target.value);

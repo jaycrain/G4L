@@ -245,7 +245,7 @@ export default async function RedesignDashboard({ db, memberId, dash }: { db: Db
                   {linked.map((m) => (
                     <MeasureCard key={m.id} memberId={memberId} measure={m} />
                   ))}
-                  {offerTrack && <TrackThis memberId={memberId} reclaimItemId={item.id!} suggestion={suggestTracker(item.text)} />}
+                  {offerTrack && <TrackThis memberId={memberId} reclaimItemId={item.id!} itemText={item.text} suggestion={suggestTracker(item.text)} />}
                 </li>
               );
             })}

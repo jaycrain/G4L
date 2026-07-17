@@ -423,7 +423,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
                 {linked.map((m) => (
                   <MeasureCard key={m.id} memberId={memberId} measure={m} />
                 ))}
-                {offerTrack && <TrackThis memberId={memberId} reclaimItemId={item.id!} suggestion={suggestTracker(item.text)} />}
+                {offerTrack && <TrackThis memberId={memberId} reclaimItemId={item.id!} itemText={item.text} suggestion={suggestTracker(item.text)} />}
               </li>
             );
           })}

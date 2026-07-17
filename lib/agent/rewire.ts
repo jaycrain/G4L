@@ -264,7 +264,7 @@ const W2_ANCHOR_LEAD =
 const W2_ANCHOR_PICK =
   `Pick the one that pulls hardest. A race you've put on the calendar. A trip with friends you've been putting off. ` +
   `A day, in the clothes you want to be wearing, that's felt out of reach. Your brain rehearses a real destination ` +
-  `far better than a vague "someday" — so let's stand you in it.`;
+  `far better than a vague "someday." So — which one do you want to stand in?`;
 const W2_ANCHOR_HELP =
   `Take your pick from what you want back — the one you'd most want to actually live. Or tell me you're not sure, and ` +
   `we'll find it together.`;

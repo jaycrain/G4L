@@ -11,14 +11,18 @@ import type { TrackerSuggestion } from '../../lib/measure/store.ts';
 export default function TrackThis({
   memberId,
   reclaimItemId,
+  itemText,
   suggestion,
 }: {
   memberId: string;
   reclaimItemId: string;
+  itemText: string;
   suggestion: TrackerSuggestion;
 }) {
   const [open, setOpen] = useState(false);
-  const [label, setLabel] = useState(suggestion.label);
+  // The tracker is named after the Reclaim goal it tracks, auto-populated (still editable) — so the member
+  // never mistakes the Name box for a "log your number" field and names it after a reading.
+  const [label, setLabel] = useState(itemText.trim() || suggestion.label);
   const [unit, setUnit] = useState(suggestion.unit);
   const [direction, setDirection] = useState(suggestion.direction);
   const [start, setStart] = useState('');
