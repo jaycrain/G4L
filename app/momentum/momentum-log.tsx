@@ -8,9 +8,9 @@ import type { CallType, CallDomain } from '../../lib/momentum/store.ts';
 // The /momentum quick-log — tap Good Call / False Start / Quiet day (+ optional note). Same record as the rail's
 // log_call (no wrong door, FF). Warm + non-judgmental: a false start logs as honest, never a scold (Decision HH/EE).
 const OPTIONS: { type: CallType; label: string; done: string }[] = [
-  { type: 'good_call', label: 'Good call', done: "Logged — nice one." },
-  { type: 'false_start', label: 'False start', done: "Logged — that's an honest call. Your protocol's there when you want it." },
-  { type: 'quiet_day', label: 'Quiet day', done: 'Logged — quiet counts too.' },
+  { type: 'good_call', label: 'Good Call', done: "Logged — nice one." },
+  { type: 'false_start', label: 'False Start', done: "Logged — that's an honest call. Your protocol's there when you want it." },
+  { type: 'quiet_day', label: 'Quiet Day', done: 'Logged — quiet counts too.' },
 ];
 
 // The two pilot changes (Decision OO) — passed only during an active B3 pilot week. When present, the member can

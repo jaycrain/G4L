@@ -11,7 +11,7 @@ import ResiliencePulse from '../../dashboard/resilience-pulse.tsx';
 import MomentumLog, { type PilotDomains } from '../momentum-log.tsx';
 import type { Db } from '../../../lib/db/schema.ts';
 
-const CALL_LABEL: Record<CallType, string> = { good_call: 'Good call', false_start: 'False start', quiet_day: 'Quiet day' };
+const CALL_LABEL: Record<CallType, string> = { good_call: 'Good Call', false_start: 'False Start', quiet_day: 'Quiet Day' };
 const DOMAIN_LABEL: Record<CallDomain, string> = { activity: 'Movement', diet: 'Eating' };
 
 // "Today" / "Yesterday" / a short date — a friendly day label for the history, from a YYYY-MM-DD string vs. today.

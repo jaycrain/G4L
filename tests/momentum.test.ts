@@ -2,17 +2,11 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { PGlite } from '@electric-sql/pglite';
 import { applySchema, type Db } from '../lib/db/schema.ts';
-import { logCall, pulseBeats, netKind, logCallIntent, isCallType, isCallDomain, domainTally } from '../lib/momentum/store.ts';
+import { logCall, pulseBeats, logCallIntent, isCallType, isCallDomain, domainTally } from '../lib/momentum/store.ts';
 
-// Momentum logging (Rewire W3 · Step 3). A call is a discrete event (multiple/day valid); the pulse reads the last
-// 14 days → ONE net beat per day (M-5: honest not rosy). Self-monitoring only. Assertions key on the primitive, the
-// net-per-day derivation, and the conservative rail intent detector.
-
-test('netKind · a day with any false start is honest, not a clean up-beat (M-5)', () => {
-  assert.equal(netKind(true, true), 'false_start', 'false start present → the day reads honest, not rosy');
-  assert.equal(netKind(false, true), 'good');
-  assert.equal(netKind(false, false), 'quiet');
-});
+// Momentum logging (Rewire W3 · Step 3). A call is a discrete event (multiple/day valid); the pulse now reads the last
+// 14 days CALL-BY-CALL — every call its own beat (Jay + Greg, Jul 2026), superseding the old per-day net. Self-
+// monitoring only. Assertions key on the primitive, the call-by-call derivation, and the conservative rail detector.
 
 test('logCallIntent · only explicit call labels fire (conservative backstop); false start wins a mixed message', () => {
   assert.equal(logCallIntent('rode this morning, good call'), 'good_call');
@@ -33,7 +27,7 @@ async function seedMember(db: Db, email: string): Promise<string> {
   ).rows[0]!.member_id;
 }
 
-test('logCall + pulseBeats · a logged call moves the pulse; multiple calls/day aggregate to the day net', async () => {
+test('logCall + pulseBeats · EVERY call is its own beat — multiple calls in one day all show (call-by-call)', async () => {
   const db = new PGlite() as unknown as Db;
   await applySchema(db);
   const m = await seedMember(db, 'pat-momentum-1@x.com');
@@ -43,20 +37,27 @@ test('logCall + pulseBeats · a logged call moves the pulse; multiple calls/day 
   await logCall(db, m, { type: 'good_call', source: 'rail' });
   assert.deepEqual(await pulseBeats(db, m), [{ kind: 'good' }]);
 
-  // a false start SAME DAY → the day's net becomes honest (false_start), still ONE beat (multiple rows/day valid)
+  // a false start, then a good call — all SAME DAY → three distinct beats (the good calls are NOT swallowed by the
+  // slip). Same-second inserts have no guaranteed order, so assert the composition: three beats, 2 good + 1 false.
   await logCall(db, m, { type: 'false_start', source: 'momentum_page', note: 'skipped the ride' });
-  assert.deepEqual(await pulseBeats(db, m), [{ kind: 'false_start' }], 'M-5: any false start keeps the day honest');
+  await logCall(db, m, { type: 'good_call', source: 'rail' });
+  const beats = await pulseBeats(db, m);
+  assert.equal(beats.length, 3, 'three calls → three beats (not one net) — the good calls survive the slip');
+  assert.equal(beats.filter((b) => b.kind === 'good').length, 2);
+  assert.equal(beats.filter((b) => b.kind === 'false_start').length, 1);
 });
 
-test('pulseBeats · a prior good day + today’s slip render as two beats, oldest→newest (recovery reads as the bounce)', async () => {
+test('pulseBeats · calls order oldest→newest across days (a prior good day, then today’s slip then recovery)', async () => {
   const db = new PGlite() as unknown as Db;
   await applySchema(db);
   const m = await seedMember(db, 'pat-momentum-2@x.com');
-  await logCall(db, m, { type: 'good_call', source: 'rail', loggedOn: undefined });
-  await db.query(`update momentum_call set logged_on = current_date - 2 where member_id = $1`, [m]); // age it back
-  await logCall(db, m, { type: 'false_start', source: 'rail' }); // today
+  await logCall(db, m, { type: 'good_call', source: 'rail' });
+  await db.query(`update momentum_call set logged_on = current_date - 2 where member_id = $1`, [m]); // 2 days ago
+  await logCall(db, m, { type: 'false_start', source: 'rail' });
+  await db.query(`update momentum_call set logged_on = current_date - 1 where member_id = $1 and type='false_start'`, [m]); // yesterday
+  await logCall(db, m, { type: 'good_call', source: 'rail' }); // today, the recovery
   const beats = await pulseBeats(db, m);
-  assert.deepEqual(beats, [{ kind: 'good' }, { kind: 'false_start' }], 'oldest→newest');
+  assert.deepEqual(beats, [{ kind: 'good' }, { kind: 'false_start' }, { kind: 'good' }], 'oldest→newest, call by call');
 });
 
 test('pulseBeats · calls older than the 14-day window fall off', async () => {

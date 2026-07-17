@@ -48,8 +48,8 @@ export default function ResiliencePulse({ beats = [], bare = false }: { beats?: 
         role="img"
         aria-label={
           empty
-            ? "The Resilience Pulse: a flat baseline with one live, pulsing point at today. It fills as you make daily calls."
-            : "The Resilience Pulse: a rolling two-week rhythm of daily calls — up-beats for good calls, a dip for a false start, flat for quiet days, ending on today's live point."
+            ? "The Resilience Pulse: a flat baseline with one live, pulsing point at today. It fills as you log your calls."
+            : "The Resilience Pulse: a rolling two-week rhythm, call by call — an up-beat for a good call, a dip for a false start, flat for a quiet day, ending on today's live point."
         }
       >
         <line x1={g.padX} y1={g.baselineY} x2={g.width - g.padX} y2={g.baselineY} stroke={QUIET} strokeWidth="1" strokeDasharray="2 5" opacity="0.5" />
@@ -77,7 +77,7 @@ export default function ResiliencePulse({ beats = [], bare = false }: { beats?: 
           <animate attributeName="r" values="5.5;7;5.5" dur="1.8s" repeatCount="indefinite" />
         </circle>
         {/* auto-placed labels (today + up to 2 notable moments); the early state has no beats → renders just "today" */}
-        {(empty ? [{ text: 'today', x: today.x, y: today.y - 16, tone: 'today' as PulseTone }] : annotations).map((a, i) => (
+        {(empty ? [{ text: 'Today', x: today.x, y: today.y - 16, tone: 'today' as PulseTone }] : annotations).map((a, i) => (
           <text key={i} x={a.x} y={a.y} textAnchor="middle" fontSize="12" fontWeight={a.tone === 'quiet' ? 400 : 500} fill={toneColor(a.tone)}>
             {a.text}
           </text>
@@ -85,14 +85,14 @@ export default function ResiliencePulse({ beats = [], bare = false }: { beats?: 
       </svg>
 
       {/* Legend + the explanatory detail live only on the full (subpage) variant — the compact dashboard panel is
-          just the graphic, and carries its own "Good calls · false starts · quiet days" caption. */}
+          just the graphic, and carries its own "Good Calls · False Starts · Quiet Days" caption. */}
       {!bare && (
         <>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px 18px', fontSize: '12.5px', color: 'var(--muted, #6b7683)', margin: '0.5rem 0 0.25rem' }}>
             <LegendDot color={TEAL} label="Good Call — up-beat" />
             <LegendDot color={RED} label="False Start — dip" />
-            <LegendDot color={QUIET} label="quiet day — flat" />
-            <LegendDot color={ORANGE} label="today — live" />
+            <LegendDot color={QUIET} label="Quiet Day — flat" />
+            <LegendDot color={ORANGE} label="Today — live" />
           </div>
           <p style={{ fontSize: '14px', lineHeight: 1.55, color: 'var(--navy, #374F63)', margin: '0.4rem 0 0' }}>
             {empty

@@ -348,7 +348,7 @@ export default async function RedesignDashboard({ db, memberId, dash }: { db: Db
             <div className="rreg-eyebrow">Momentum</div>
             <div className="rc-sub">The calls you make, one at a time.</div>
             <div className="rreg-mom-viz"><ResiliencePulse beats={pulse} bare /></div>
-            <p className="rreg-mom-cap">Good calls · false starts · quiet days</p>
+            <p className="rreg-mom-cap">Good Calls · False Starts · Quiet Days</p>
             <Link href={`/momentum/${memberId}`} className="rreg-more">See more →</Link>
           </div>
         </div>

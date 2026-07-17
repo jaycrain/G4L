@@ -47,27 +47,24 @@ export async function recentCalls(db: Db, memberId: string, limit = 30): Promise
   return rows.map((r) => ({ type: r.type as CallType, note: r.note, domain: (r.domain as CallDomain | null), loggedOn: r.logged_on, at: r.created_at }));
 }
 
-// A day's NET shape (M-5: honest, not rosy) — any false start on a day keeps it from rendering as a clean up-beat.
-export function netKind(hasFalse: boolean, hasGood: boolean): PulseKind {
-  if (hasFalse) return 'false_start';
-  if (hasGood) return 'good';
-  return 'quiet';
-}
+// One momentum call → one pulse beat kind. good = up-beat, false start = dip, quiet = flat.
+const callKind = (t: CallType): PulseKind => (t === 'false_start' ? 'false_start' : t === 'quiet_day' ? 'quiet' : 'good');
 
-// The last N days of calls → ONE net beat per day-with-activity, oldest→newest for the pulse geometry. A day with no
-// call yields no beat (absence renders flat — no "you missed" state, Decision EE). Drift-hardened by the caller.
+// CALL-BY-CALL (Jay + Greg, Jul 2026): the pulse plots EVERY call in the window, not a daily net — "the hundreds of
+// decisions that shape you", each its own beat, oldest→newest. This supersedes the old per-day netting (M-5): a good
+// call, then a false start, then a good call now reads up · dip · up (the bounce is visible), not one net dip.
+// Rolling window (last N days); still never accumulates into a score. Drift-hardened by the caller.
 export async function pulseBeats(db: Db, memberId: string, days = MOMENTUM_WINDOW_DAYS): Promise<PulseBeat[]> {
   const rows = (
-    await db.query<{ has_false: boolean; has_good: boolean }>(
-      `select bool_or(type = 'false_start') as has_false, bool_or(type = 'good_call') as has_good
+    await db.query<{ type: CallType }>(
+      `select type
          from momentum_call
         where member_id = $1 and logged_on >= current_date - ($2::int - 1)
-        group by logged_on
-        order by logged_on asc`,
+        order by logged_on asc, created_at asc`,
       [memberId, days],
     )
   ).rows;
-  return rows.map((r) => ({ kind: netKind(r.has_false, r.has_good) }));
+  return rows.map((r) => ({ kind: callKind(r.type) }));
 }
 
 // Per-domain call tallies over the window (Decision OO) — how the two pilot changes are actually going, for the

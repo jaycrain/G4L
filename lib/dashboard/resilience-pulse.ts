@@ -37,7 +37,9 @@ export function buildPulsePoints(beats: PulseBeat[], g: PulseGeom = DEFAULT_PULS
   if (n === 0) return [];
   const xRight = g.width - g.padX;
   const xLeft = g.padX;
-  const dx = (xRight - xLeft) / (g.slots - 1);
+  // Call-by-call: with few beats, step in from the right by one slot (the window "fills as you go"); once there are
+  // more calls than slots, spread ALL of them across the full width so a busy window never overflows the left edge.
+  const dx = (xRight - xLeft) / (Math.max(g.slots, n) - 1);
   return beats.map((b, i) => ({
     x: Math.max(xLeft, xRight - (n - 1 - i) * dx),
     y: beatY(b.kind, g),
@@ -105,7 +107,7 @@ export function buildPulseAnnotations(points: PulsePoint[], g: PulseGeom = DEFAU
   }
   for (const run of runsOf(points, 'quiet', 3)) {
     const mid = points[Math.floor((run.start + run.end) / 2)]!;
-    if (!mid.today) events.push({ text: 'quiet days', x: mid.x, y: g.baselineY - 12, tone: 'quiet', priority: 1 });
+    if (!mid.today) events.push({ text: 'Quiet Days', x: mid.x, y: g.baselineY - 12, tone: 'quiet', priority: 1 });
   }
   for (const run of runsOf(points, 'good', 3)) {
     if (points[run.start - 1]?.kind === 'false_start') continue; // that's the recovery — already labelled
@@ -121,6 +123,6 @@ export function buildPulseAnnotations(points: PulsePoint[], g: PulseGeom = DEFAU
     if (chosen.some((c) => Math.abs(c.x - e.x) < 80)) continue; // don't crowd another chosen label
     chosen.push(e);
   }
-  chosen.push({ text: 'today', x: today.x, y: today.y - 16, tone: 'today' });
+  chosen.push({ text: 'Today', x: today.x, y: today.y - 16, tone: 'today' });
   return chosen;
 }
