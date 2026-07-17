@@ -84,17 +84,23 @@ export default function ResiliencePulse({ beats = [], bare = false }: { beats?: 
         ))}
       </svg>
 
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px 18px', fontSize: '12.5px', color: 'var(--muted, #6b7683)', margin: '0.5rem 0 0.25rem' }}>
-        <LegendDot color={TEAL} label="Good Call — up-beat" />
-        <LegendDot color={RED} label="False Start — dip" />
-        <LegendDot color={QUIET} label="quiet day — flat" />
-        <LegendDot color={ORANGE} label="today — live" />
-      </div>
-      <p style={{ fontSize: '14px', lineHeight: 1.55, color: 'var(--navy, #374F63)', margin: '0.4rem 0 0' }}>
-        {empty
-          ? 'Every call you make moves the line — starting with your first.'
-          : 'Recovery is the point — the bounce after the dip is what "momentum, not streaks" looks like. Rolling window; it never accumulates into a score.'}
-      </p>
+      {/* Legend + the explanatory detail live only on the full (subpage) variant — the compact dashboard panel is
+          just the graphic, and carries its own "Good calls · false starts · quiet days" caption. */}
+      {!bare && (
+        <>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px 18px', fontSize: '12.5px', color: 'var(--muted, #6b7683)', margin: '0.5rem 0 0.25rem' }}>
+            <LegendDot color={TEAL} label="Good Call — up-beat" />
+            <LegendDot color={RED} label="False Start — dip" />
+            <LegendDot color={QUIET} label="quiet day — flat" />
+            <LegendDot color={ORANGE} label="today — live" />
+          </div>
+          <p style={{ fontSize: '14px', lineHeight: 1.55, color: 'var(--navy, #374F63)', margin: '0.4rem 0 0' }}>
+            {empty
+              ? 'Every call you make moves the line — starting with your first.'
+              : 'Recovery is the point — the bounce after the dip is what "momentum, not streaks" looks like. Rolling window; it never accumulates into a score.'}
+          </p>
+        </>
+      )}
     </div>
   );
 }
