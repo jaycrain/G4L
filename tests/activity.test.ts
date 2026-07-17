@@ -73,8 +73,9 @@ test('panel buckets this week vs last and frames by identity', async () => {
 test('framing + format helpers', () => {
   assert.equal(framingLine('cyclist', { count: 0, distanceM: 0, movingTimeS: 0 }), 'A quiet week — that is part of it too.');
   assert.equal(framingLine(null, { count: 2, distanceM: 1, movingTimeS: 1 }), 'You has been showing up.');
-  assert.equal(formatDistance(47200), '47.2 km');
-  assert.equal(formatDistance(800), '800 m');
+  assert.equal(formatDistance(47200), '29.3 mi'); // imperial (US)
+  assert.equal(formatDistance(800), '0.5 mi');
+  assert.equal(formatDistance(120), '394 ft'); // under a tenth of a mile → feet
   assert.equal(formatDistance(null), null);
   assert.equal(typeLabel('ride'), 'Ride');
   assert.equal(relativeDay(0), 'today');
