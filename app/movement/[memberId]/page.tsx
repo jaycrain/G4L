@@ -6,7 +6,8 @@ import { authorizeMember } from '../../authz.ts';
 import { redesignEnabled } from '../../../lib/dashboard/redesign.ts';
 import { getActivityPanel } from '../../../lib/activity/store.ts';
 import { stravaConfigured } from '../../../lib/activity/strava.ts';
-import { formatDistance, formatDuration, typeLabel, relativeDay, weekTrend } from '../../../lib/activity/summary.ts';
+import { formatDistance, formatDuration, typeLabel, relativeDay, weekTrend, weeklyMileageGoalMiles, weeklyGoalLine } from '../../../lib/activity/summary.ts';
+import { getReclaimItems } from '../../../lib/beats/store.ts';
 import { listMovementLog } from '../../../lib/movement/store.ts';
 import RedesignChrome from '../../dashboard/redesign-chrome.tsx';
 import StravaConnect from '../../account/strava-connect.tsx';
@@ -40,6 +41,11 @@ export default async function MovementPage({ params }: { params: Promise<{ membe
   const thisWeek = activity?.thisWeek ?? { count: 0, distanceM: 0, movingTimeS: 0 };
   const lastWeek = activity?.lastWeek ?? { count: 0, distanceM: 0, movingTimeS: 0 };
   const trend = connected ? weekTrend(thisWeek, lastWeek) : null;
+  // C-1 — a weekly-mileage goal from the Reclaim List ("Ride 115 miles per week") makes the synced miles mean
+  // something against the member's own words. No tracker needed here — Strava is the meter.
+  const weeklyGoalMi = connected
+    ? weeklyMileageGoalMiles((await getReclaimItems(db, memberId).catch(() => [])).map((i) => i.text))
+    : null;
 
   // Member-logged activity (off-device) merges with the synced Strava history — one honest timeline, tagged by
   // provenance (teal = synced, bullseye = logged). Independent of a Strava connection, so it shows even when nothing
@@ -101,6 +107,9 @@ export default async function MovementPage({ params }: { params: Promise<{ membe
               {formatDistance(thisWeek.distanceM) && <span><b>{formatDistance(thisWeek.distanceM)}</b>distance</span>}
               {formatDuration(thisWeek.movingTimeS) && <span><b>{formatDuration(thisWeek.movingTimeS)}</b>moving</span>}
             </div>
+            {weeklyGoalMi != null && thisWeek.distanceM > 0 && (
+              <p className="mv-strava-goal">{weeklyGoalLine(thisWeek.distanceM, weeklyGoalMi)}</p>
+            )}
             {trend && <p className="mv-strava-line">{trend}</p>}
             <p className="mv-strava-foot">This week = Monday–Sunday, same as Strava.</p>
           </div>

@@ -4,7 +4,7 @@ import { PGlite } from '@electric-sql/pglite';
 import { applySchema, type Db } from '../lib/db/schema.ts';
 import { normalizeStravaActivity } from '../lib/activity/strava.ts';
 import { saveActivities, listRecentActivities, setConnection, getActivityPanel } from '../lib/activity/store.ts';
-import { framingLine, formatDistance, typeLabel, relativeDay, weekTrend } from '../lib/activity/summary.ts';
+import { framingLine, formatDistance, typeLabel, relativeDay, weekTrend, weeklyMileageGoalMiles, weeklyGoalLine } from '../lib/activity/summary.ts';
 import { computeNudges, topNudge } from '../lib/agent/nudge.ts';
 import type { Activity } from '../lib/activity/types.ts';
 
@@ -90,6 +90,14 @@ test('framing + format helpers', () => {
   assert.equal(weekTrend(wk(90), wk(131)), '41 mi less than last week.');
   assert.equal(weekTrend(wk(100), wk(100)), 'About the same as last week.');
   assert.equal(weekTrend(wk(50), { count: 0, distanceM: 0, movingTimeS: 0 }), null, 'no prior week → no trend');
+  // C-1 — weekly-mileage goal parsed from the Reclaim List
+  assert.equal(weeklyMileageGoalMiles(['Get off all meds', 'Ride 115 miles per week']), 115);
+  assert.equal(weeklyMileageGoalMiles(['100 mi/week']), 100);
+  assert.equal(weeklyMileageGoalMiles(['50 miles a week']), 50);
+  assert.equal(weeklyMileageGoalMiles(['30 miles']), null, 'no "per week" → not a weekly goal');
+  assert.equal(weeklyMileageGoalMiles(['ride more', 'get stronger']), null);
+  assert.equal(weeklyGoalLine(90 * 1609.344, 115), '90 of your 115 mi this week.');
+  assert.equal(weeklyGoalLine(131 * 1609.344, 115), '131 mi this week — past your 115.');
   assert.equal(typeLabel('ride'), 'Ride');
   assert.equal(relativeDay(0), 'today');
   assert.equal(relativeDay(1), 'yesterday');

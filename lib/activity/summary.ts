@@ -28,6 +28,29 @@ export function weekTrend(thisWeek: WeekStats, lastWeek: WeekStats): string | nu
     : `${diffMi.toFixed(0)} mi less than last week.`;
 }
 
+// C-1 — read a weekly-mileage goal straight from the member's Reclaim List ("Ride 115 miles per week"), so the
+// synced Strava distance means something against their own words. No tracker needed — Strava IS the meter here.
+// Matches "N miles per week", "N mi/week", "N miles a week", "N mi each week". Returns the miles, or null.
+export function weeklyMileageGoalMiles(reclaimTexts: string[]): number | null {
+  const re = /(\d+(?:\.\d+)?)\s*(?:mi|miles?)\s*(?:\/|per|a|each)\s*week/i;
+  for (const t of reclaimTexts) {
+    const m = (t ?? '').match(re);
+    if (m) {
+      const n = parseFloat(m[1]!);
+      if (Number.isFinite(n) && n > 0) return n;
+    }
+  }
+  return null;
+}
+
+/** The reflective progress line: this week's synced miles against the weekly goal — witnessed, never graded. */
+export function weeklyGoalLine(distanceM: number, goalMi: number): string {
+  const twMi = distanceM / 1609.344;
+  return twMi >= goalMi
+    ? `${twMi.toFixed(0)} mi this week — past your ${goalMi}.`
+    : `${twMi.toFixed(0)} of your ${goalMi} mi this week.`;
+}
+
 export function formatDuration(s: number): string | null {
   if (!s || s <= 0) return null;
   const mins = Math.round(s / 60);
