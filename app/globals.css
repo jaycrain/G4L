@@ -1460,6 +1460,9 @@ body.redesign-on .back-dash { display: none; }
 .mv-badge.on { background: var(--olive); }
 .mv-connect :is(a, button) { font-size: 12px; padding: 6px 12px; }
 .mv-sources-foot { margin-top: 12px; font-size: 12px; color: #9aa0a5; }
+/* The panel is dark (charcoal) — the default .muted (navy @ 75%) is unreadable on it. Any muted text inside
+   (the Strava connect description + consent label, before connecting) must render light. */
+.mv-sources .muted { color: #c9cdd1; opacity: 1; }
 .mv-week { display: flex; gap: 26px; margin-top: 22px; padding: 18px 4px; border-bottom: 1px solid #e3e2df; flex-wrap: wrap; }
 .mv-week span { font-size: 12px; color: #6b7680; }
 .mv-week b { display: block; font-size: 24px; color: var(--navy); }
