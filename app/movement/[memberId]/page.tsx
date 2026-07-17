@@ -48,7 +48,7 @@ export default async function MovementPage({ params }: { params: Promise<{ membe
     ...recent.map((a): MvEntry => ({ provenance: 'synced', daysAgo: a.daysAgo, label: typeLabel(a.type), meta: formatDistance(a.distanceM) || null, note: null, source: 'strava' })),
     ...logged.map((l): MvEntry => ({ provenance: 'logged', daysAgo: l.daysAgo, label: KIND_LABEL[l.activityType] ?? l.activityType, meta: null, note: l.note, source: l.source })),
   ].sort((a, b) => a.daysAgo - b.daysAgo); // newest first
-  const activeDays = new Set(entries.map((e) => e.daysAgo)).size;
+  const stravaDays = new Set(recent.map((a) => a.daysAgo)).size; // active days from synced Strava activity (for its card)
   const groups: { label: string; items: MvEntry[] }[] = [];
   for (const e of entries) {
     const label = relativeDay(e.daysAgo) || `${e.daysAgo}d ago`;
@@ -86,13 +86,22 @@ export default async function MovementPage({ params }: { params: Promise<{ membe
           <p className="mv-sources-foot">Oura, Whoop, Google Health &amp; 400 more — one connection covers them all, with the app.</p>
         </div>
 
-        {/* This week */}
-        <div className="mv-week">
-          <span><b>{thisWeek.count}</b>this week</span>
-          {formatDistance(thisWeek.distanceM) && <span><b>{formatDistance(thisWeek.distanceM)}</b>distance</span>}
-          {formatDuration(thisWeek.movingTimeS) && <span><b>{formatDuration(thisWeek.movingTimeS)}</b>moving</span>}
-          <span><b>{activeDays}</b>active days</span>
-        </div>
+        {/* Strava — its own titled card, floating, with the synced summary (only when connected) */}
+        {connected && (
+          <div className="mv-strava">
+            <div className="mv-strava-head">
+              <h2 className="mv-strava-title">Strava</h2>
+              <span className="mv-badge on">Connected</span>
+            </div>
+            <div className="mv-week">
+              <span><b>{thisWeek.count}</b>this week</span>
+              {formatDistance(thisWeek.distanceM) && <span><b>{formatDistance(thisWeek.distanceM)}</b>distance</span>}
+              {formatDuration(thisWeek.movingTimeS) && <span><b>{formatDuration(thisWeek.movingTimeS)}</b>moving</span>}
+              <span><b>{stravaDays}</b>active days</span>
+            </div>
+            {activity?.line && <p className="mv-strava-line">{activity.line}</p>}
+          </div>
+        )}
 
         {/* Log an activity done off-device */}
         <LogActivity memberId={memberId} />

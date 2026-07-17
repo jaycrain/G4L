@@ -1464,6 +1464,12 @@ body.redesign-on .back-dash { display: none; }
    (the Strava connect description + consent label, before connecting) must render light. */
 .mv-sources .muted { color: #c9cdd1; opacity: 1; }
 .mv-week { display: flex; gap: 26px; margin-top: 22px; padding: 18px 4px; border-bottom: 1px solid #e3e2df; flex-wrap: wrap; }
+/* Strava — its own titled card (floats on its own) with the synced summary, once connected. */
+.mv-strava { margin-top: 24px; background: #fff; border: 1px solid #e6eaed; border-radius: 14px; padding: 18px 20px; box-shadow: 0 1px 3px rgba(42, 42, 42, 0.05); }
+.mv-strava-head { display: flex; align-items: center; gap: 10px; }
+.mv-strava-title { font-size: 18px; font-weight: 800; color: var(--navy); margin: 0; }
+.mv-strava .mv-week { border-bottom: none; margin-top: 12px; padding: 0; }
+.mv-strava-line { font-size: 14px; color: #6b7680; margin: 10px 0 0; }
 .mv-week span { font-size: 12px; color: #6b7680; }
 .mv-week b { display: block; font-size: 24px; color: var(--navy); }
 .mv-history { margin-top: 24px; }
