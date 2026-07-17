@@ -25,6 +25,8 @@ import StravaConnect from '../account/strava-connect.tsx';
 import Threshold from './threshold.tsx';
 import PostCeremonyTour from './post-ceremony-tour.tsx';
 import { listPlaybook } from '../../lib/playbook/store.ts';
+import ResiliencePulse from './resilience-pulse.tsx';
+import { pulseBeats } from '../../lib/momentum/store.ts';
 
 // Redesign Layer 2 — the DASHBOARD CANVAS (build spec §2, v4c IA). Renders only behind REDESIGN. A parallel path: the
 // live dashboard is untouched. Wires Layer 1 (resolveHero + deriveRingState) into the stateful resume hero + merged
@@ -47,13 +49,14 @@ const R_STRANDS = [
 
 export default async function RedesignDashboard({ db, memberId, dash }: { db: Db; memberId: string; dash: Dashboard }) {
   await reconcileRedesignBadges(db, memberId); // earn the 10 event-driven milestone badges from committed state (idempotent)
-  const [forecast, { state: heroState }, grinta, activity, passport, facets] = await Promise.all([
+  const [forecast, { state: heroState }, grinta, activity, passport, facets, pulse] = await Promise.all([
     getForecast(db, memberId),
     resolveHero(db, memberId),
     latestGrintaReading(db, memberId),
     getActivityPanel(db, memberId, dash.identityNoun),
     getPassport(db, memberId),
     getFacets(db, memberId),
+    pulseBeats(db, memberId).catch(() => []),
   ]);
 
   // When Reclaim is gated (the Loop), render its ring 'locked' (dim) rather than the bright 'current' — matches the hero.
@@ -344,7 +347,7 @@ export default async function RedesignDashboard({ db, memberId, dash }: { db: Db
           <div className="rcard r-reg">
             <div className="rreg-eyebrow">Momentum</div>
             <div className="rc-sub">The calls you make, one at a time.</div>
-            <div className="rreg-mom" aria-hidden="true"><span className="rreg-mom-line" /><span className="rreg-mom-dot" /></div>
+            <div className="rreg-mom-viz"><ResiliencePulse beats={pulse} bare /></div>
             <p className="rreg-mom-cap">Good calls · false starts · quiet days</p>
             <Link href={`/momentum/${memberId}`} className="rreg-more">See more →</Link>
           </div>
