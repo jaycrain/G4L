@@ -17,6 +17,17 @@ export function formatDistance(m: number | null): string | null {
   return m >= 160 ? `${(m / METERS_PER_MILE).toFixed(1)} mi` : `${Math.round(m * 3.28084)} ft`;
 }
 
+// Week-over-week direction (this Mon–Sun vs last), on distance — reflective, never a grade. Null when there's no
+// prior week to compare or nothing this week yet. "More/less than last week", not "ahead/behind".
+export function weekTrend(thisWeek: WeekStats, lastWeek: WeekStats): string | null {
+  if (thisWeek.distanceM <= 0 || lastWeek.distanceM <= 0) return null;
+  const diffMi = Math.abs(thisWeek.distanceM - lastWeek.distanceM) / 1609.344;
+  if (diffMi < 1) return 'About the same as last week.';
+  return thisWeek.distanceM > lastWeek.distanceM
+    ? `${diffMi.toFixed(0)} mi more than last week.`
+    : `${diffMi.toFixed(0)} mi less than last week.`;
+}
+
 export function formatDuration(s: number): string | null {
   if (!s || s <= 0) return null;
   const mins = Math.round(s / 60);

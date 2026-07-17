@@ -1469,7 +1469,9 @@ body.redesign-on .back-dash { display: none; }
 .mv-strava-head { display: flex; align-items: center; gap: 10px; }
 .mv-strava-title { font-size: 18px; font-weight: 800; color: var(--navy); margin: 0; }
 .mv-strava .mv-week { border-bottom: none; margin-top: 12px; padding: 0; }
-.mv-strava-line { font-size: 14px; color: #6b7680; margin: 10px 0 0; }
+.mv-strava-lead { font-size: 17px; font-weight: 600; color: var(--navy); margin: 10px 0 0; line-height: 1.35; } /* meaning first (B) */
+.mv-strava-line { font-size: 14px; color: #6b7680; margin: 10px 0 0; } /* week-over-week (A) */
+.mv-strava-foot { font-size: 12px; color: #9aa0a5; margin: 8px 0 0; }
 .mv-week span { font-size: 12px; color: #6b7680; }
 .mv-week b { display: block; font-size: 24px; color: var(--navy); }
 .mv-history { margin-top: 24px; }

@@ -6,7 +6,7 @@ import { authorizeMember } from '../../authz.ts';
 import { redesignEnabled } from '../../../lib/dashboard/redesign.ts';
 import { getActivityPanel } from '../../../lib/activity/store.ts';
 import { stravaConfigured } from '../../../lib/activity/strava.ts';
-import { formatDistance, formatDuration, typeLabel, relativeDay } from '../../../lib/activity/summary.ts';
+import { formatDistance, formatDuration, typeLabel, relativeDay, weekTrend } from '../../../lib/activity/summary.ts';
 import { listMovementLog } from '../../../lib/movement/store.ts';
 import RedesignChrome from '../../dashboard/redesign-chrome.tsx';
 import StravaConnect from '../../account/strava-connect.tsx';
@@ -38,6 +38,8 @@ export default async function MovementPage({ params }: { params: Promise<{ membe
   const connected = activity?.connected ?? false;
   const recent = activity?.recent ?? [];
   const thisWeek = activity?.thisWeek ?? { count: 0, distanceM: 0, movingTimeS: 0 };
+  const lastWeek = activity?.lastWeek ?? { count: 0, distanceM: 0, movingTimeS: 0 };
+  const trend = connected ? weekTrend(thisWeek, lastWeek) : null;
 
   // Member-logged activity (off-device) merges with the synced Strava history — one honest timeline, tagged by
   // provenance (teal = synced, bullseye = logged). Independent of a Strava connection, so it shows even when nothing
@@ -48,7 +50,6 @@ export default async function MovementPage({ params }: { params: Promise<{ membe
     ...recent.map((a): MvEntry => ({ provenance: 'synced', daysAgo: a.daysAgo, label: typeLabel(a.type), meta: formatDistance(a.distanceM) || null, note: null, source: 'strava' })),
     ...logged.map((l): MvEntry => ({ provenance: 'logged', daysAgo: l.daysAgo, label: KIND_LABEL[l.activityType] ?? l.activityType, meta: null, note: l.note, source: l.source })),
   ].sort((a, b) => a.daysAgo - b.daysAgo); // newest first
-  const stravaDays = new Set(recent.map((a) => a.daysAgo)).size; // active days from synced Strava activity (for its card)
   const groups: { label: string; items: MvEntry[] }[] = [];
   for (const e of entries) {
     const label = relativeDay(e.daysAgo) || `${e.daysAgo}d ago`;
@@ -86,20 +87,22 @@ export default async function MovementPage({ params }: { params: Promise<{ membe
           <p className="mv-sources-foot">Oura, Whoop, Google Health &amp; 400 more — one connection covers them all, with the app.</p>
         </div>
 
-        {/* Strava — its own titled card, floating, with the synced summary (only when connected) */}
+        {/* Strava — its own titled card, floating. Leads with the identity read (meaning first), the week's numbers as
+            the evidence beneath it, then a gentle week-over-week direction. Mon–Sun week. Only when connected. */}
         {connected && (
           <div className="mv-strava">
             <div className="mv-strava-head">
               <h2 className="mv-strava-title">Strava</h2>
               <span className="mv-badge on">Connected</span>
             </div>
+            {activity?.line && <p className="mv-strava-lead">{activity.line}</p>}
             <div className="mv-week">
               <span><b>{thisWeek.count}</b>this week</span>
               {formatDistance(thisWeek.distanceM) && <span><b>{formatDistance(thisWeek.distanceM)}</b>distance</span>}
               {formatDuration(thisWeek.movingTimeS) && <span><b>{formatDuration(thisWeek.movingTimeS)}</b>moving</span>}
-              <span><b>{stravaDays}</b>active days</span>
             </div>
-            {activity?.line && <p className="mv-strava-line">{activity.line}</p>}
+            {trend && <p className="mv-strava-line">{trend}</p>}
+            <p className="mv-strava-foot">This week = Monday–Sunday, same as Strava.</p>
           </div>
         )}
 

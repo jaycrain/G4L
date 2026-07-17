@@ -231,13 +231,16 @@ export async function getActivityPanel(
   }
   const recent = await listRecentActivities(db, memberId, 14);
   const { rows } = await db.query<Record<string, number | string>>(
+    // "This week" = the CALENDAR week (Mon–Sun), matching Strava's weekly view + how members set weekly goals
+    // ("ride 115 mi/week"). date_trunc('week', …) is Monday 00:00 (ISO). Last week is the prior Mon–Sun.
+    // (TZ note: computed in the server session TZ; a member-local week is a later refinement.)
     `select
-       count(*) filter (where started_at >= now() - interval '7 days') as tw_c,
-       coalesce(sum(distance_m) filter (where started_at >= now() - interval '7 days'),0) as tw_d,
-       coalesce(sum(moving_time_s) filter (where started_at >= now() - interval '7 days'),0) as tw_t,
-       count(*) filter (where started_at >= now() - interval '14 days' and started_at < now() - interval '7 days') as lw_c,
-       coalesce(sum(distance_m) filter (where started_at >= now() - interval '14 days' and started_at < now() - interval '7 days'),0) as lw_d,
-       coalesce(sum(moving_time_s) filter (where started_at >= now() - interval '14 days' and started_at < now() - interval '7 days'),0) as lw_t
+       count(*) filter (where started_at >= date_trunc('week', now())) as tw_c,
+       coalesce(sum(distance_m) filter (where started_at >= date_trunc('week', now())),0) as tw_d,
+       coalesce(sum(moving_time_s) filter (where started_at >= date_trunc('week', now())),0) as tw_t,
+       count(*) filter (where started_at >= date_trunc('week', now()) - interval '7 days' and started_at < date_trunc('week', now())) as lw_c,
+       coalesce(sum(distance_m) filter (where started_at >= date_trunc('week', now()) - interval '7 days' and started_at < date_trunc('week', now())),0) as lw_d,
+       coalesce(sum(moving_time_s) filter (where started_at >= date_trunc('week', now()) - interval '7 days' and started_at < date_trunc('week', now())),0) as lw_t
      from activity_event where member_id=$1`,
     [memberId],
   );
