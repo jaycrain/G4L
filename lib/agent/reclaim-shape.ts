@@ -99,6 +99,14 @@ export function isIdentityStatement(text: string): boolean {
   return IDENTITY_STMT_RE.test(t);
 }
 
+/** The bare identity from an "I'm a/an/the <noun…>" statement, in the member's own words — for seeding a
+ *  member who stated who they are but had no identity noun captured. "I'm a director and creative producer"
+ *  → "director and creative producer". Falls back to the whole text if the prefix isn't present. */
+export function extractIdentityNoun(text: string): string {
+  const m = (text ?? '').trim().match(/^i\s?(?:['’]m|\s?am)\s+(?:an?|the)\s+(.+)$/i);
+  return (m ? m[1]! : (text ?? '')).trim().replace(/[.!?]+$/, '');
+}
+
 // ── 3) SEMANTIC OVERLAP ──────────────────────────────────────────────────────────────────────────────────────
 /** Returns the EXISTING item this new want means the same as (for a member-confirmed merge), or null. Beyond the
  *  text-fragment dedup — catches "Start with losing about 35 lbs" vs "Lose about 35 lbs" (same want, different words). */

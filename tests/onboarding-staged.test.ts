@@ -633,6 +633,20 @@ test('Decision II — an IDENTITY statement is routed off the goal list and PRES
   assert.equal((t2.state.collected.visionKeepers ?? []).includes(identity), true, 'preserved (never discarded — never drop what they gave you)');
 });
 
+test('Decision II — when NO identity was named, an identity statement SEEDS the identity noun (Donna: identity_noun was null)', () => {
+  const identity = "I'm a director and creative producer";
+  // A member who skipped naming, then stated who they are at the reclaim stage (exactly Donna's shape).
+  const base = { athleticPast: 'a player', identitySkipped: true, gap: 'a real fade over a long hard decade' };
+  const atConfirm: ConvState = { stage: 'reclaim', awaitingConfirm: true, collected: { ...base, reclaimList: ['Creative outlet, do more films', identity, 'Autonomy'] } };
+  const t1 = applyStagedTurn(atConfirm, [], 'looks good', { text: 'Great.', replyIntent: 'done' });
+  assert.equal(t1.state.pendingReclaimShape?.kind, 'identity');
+  const t2 = applyStagedTurn(t1.state, [], 'yes', { text: 'Okay.' });
+  assert.equal((t2.state.collected.reclaimList ?? []).includes(identity), false, 'off the goal list');
+  assert.equal(t2.state.collected.identityNoun, 'director and creative producer', 'captured as their identity, not lost');
+  assert.equal(t2.state.collected.identitySkipped, false, 'the skip is cleared — they named themselves after all');
+  assert.equal((t2.state.collected.visionKeepers ?? []).includes(identity), false, 'not double-stored to the Playbook');
+});
+
 test('gather hygiene (Elite Cyclist walk) — a "shape of it" close is not captured; an "N rides a week" cadence folds', () => {
   // "That's about the shape of it" is the member closing the list, not a want (RECLAIM_CLOSE_RE missed "shape of it").
   assert.equal(memberClosingReclaim("That's about the shape of it"), true);

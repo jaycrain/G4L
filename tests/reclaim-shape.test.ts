@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { isMultiWantParagraph, isLifeVision, isIdentityStatement, semanticOverlap, reconcileReclaimShapes } from '../lib/agent/reclaim-shape.ts';
+import { isMultiWantParagraph, isLifeVision, isIdentityStatement, extractIdentityNoun, semanticOverlap, reconcileReclaimShapes } from '../lib/agent/reclaim-shape.ts';
 
 // Decision II — the Reclaim Capture Discipline shape detectors. The fixture set is DONNA'S EXACT walk inputs (the
 // messy real capture that motivated the decision), plus the discrete wants that must NOT trip a detector.
@@ -87,6 +87,12 @@ test('reconcile — a vision in the list is addressed BEFORE an overlap (route-o
   const withVision = ['Lose about 35 lbs', 'Start with losing about 35 lbs', "I'll be 60 in a month; I want to spend the rest of my days at peace and be myself everywhere I go"];
   const issue = reconcileReclaimShapes(withVision);
   assert.equal(issue?.kind, 'vision', 'the vision is pulled out first, even though an overlap also exists');
+});
+
+test('extractIdentityNoun — pulls the bare identity from the statement (Donna walk)', () => {
+  assert.equal(extractIdentityNoun("I'm a director and creative producer"), 'director and creative producer');
+  assert.equal(extractIdentityNoun('I am the caretaker.'), 'caretaker');
+  assert.equal(extractIdentityNoun("I'm a runner"), 'runner');
 });
 
 test('reconcile — an identity statement is addressed FIRST (it is not a want at all)', () => {

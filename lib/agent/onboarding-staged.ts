@@ -46,7 +46,7 @@ import {
   type Stage,
   type Turn,
 } from './onboarding.ts';
-import { reconcileReclaimShapes, shapeKey } from './reclaim-shape.ts';
+import { reconcileReclaimShapes, shapeKey, extractIdentityNoun } from './reclaim-shape.ts';
 import { detectCrisis, CRISIS_RESPONSE_US } from './governance.ts';
 // The intent layer — the one place that decides what a member's utterance MEANS (see onboarding-intent.ts).
 import {
@@ -524,8 +524,15 @@ function resolvePendingShape(b: Beat, pending: PendingReclaimShape): string {
   if (pending.kind === 'identity') {
     markResolved(shapeKey({ kind: 'identity', index: 0, item: pending.item }));
     if (yes) {
-      // Route out but PRESERVE (never drop what they gave you) — same Playbook keeper as a vision.
       removeReclaimItem(b.collected, pending.item);
+      if (!b.collected.identityNoun?.trim()) {
+        // They stated WHO they are but no identity was captured (named later / skipped, then said it here) — seed it
+        // as their identity so the strip isn't left blank and it isn't lost. This is the naming signal, recovered.
+        b.collected.identityNoun = extractIdentityNoun(pending.item);
+        b.collected.identitySkipped = false;
+        return 'Got it — I’ll hold onto that as who you are.';
+      }
+      // Already named an identity → preserve this statement to the Playbook (never drop what they gave you).
       b.collected.visionKeepers = [...(b.collected.visionKeepers ?? []), pending.item];
       return 'Kept — it’s part of who you are, held in your Playbook.';
     }
