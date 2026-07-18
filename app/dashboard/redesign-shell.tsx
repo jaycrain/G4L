@@ -91,10 +91,16 @@ export default function RedesignShell({ memberId, children }: { memberId: string
     inputRef.current?.focus();
     inputRef.current?.scrollIntoView({ block: 'nearest' });
   }, []);
-  // On phone the pill opens the overlay; on desktop/iPad setPhoneOpen is inert (no CSS effect) and this just focuses.
+  // On phone the pill folds the overlay up; on desktop/iPad-landscape setPhoneOpen is inert (no CSS effect).
+  // Only focus the composer when the rail is ALREADY visible (>1000px) — a "jump to type" affordance. On
+  // phone/portrait, focusing raises the iOS keyboard mid-glide, and iOS shoves the fixed panel up to clear it,
+  // which reads as a jarring bottom-sheet rising instead of the clean left-glide. So there we open, don't focus
+  // (matches the old dock exactly — the member taps the composer to type).
   const openCompanion = useCallback(() => {
     setPhoneOpen(true);
-    inputRef.current?.focus();
+    if (typeof window !== 'undefined' && window.matchMedia('(min-width: 1001px)').matches) {
+      inputRef.current?.focus();
+    }
   }, []);
 
   async function send(e?: React.FormEvent) {
