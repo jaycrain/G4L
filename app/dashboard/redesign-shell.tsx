@@ -18,6 +18,9 @@ export default function RedesignShell({ memberId, children }: { memberId: string
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState('');
   const [pending, setPending] = useState(false);
+  // Phone-only (≤767px): the docked rail is hidden; a "Talk to me" pill folds the Companion up as a full-screen
+  // overlay. This state has NO effect above phone width — the .phone-open class only carries CSS inside that breakpoint.
+  const [phoneOpen, setPhoneOpen] = useState(false);
   const chatRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const pendingRef = useRef(false);
@@ -88,6 +91,11 @@ export default function RedesignShell({ memberId, children }: { memberId: string
     inputRef.current?.focus();
     inputRef.current?.scrollIntoView({ block: 'nearest' });
   }, []);
+  // On phone the pill opens the overlay; on desktop/iPad setPhoneOpen is inert (no CSS effect) and this just focuses.
+  const openCompanion = useCallback(() => {
+    setPhoneOpen(true);
+    inputRef.current?.focus();
+  }, []);
 
   async function send(e?: React.FormEvent) {
     e?.preventDefault();
@@ -111,10 +119,10 @@ export default function RedesignShell({ memberId, children }: { memberId: string
 
   return (
     // Any reused child that calls useCompanion() gets a working open() (focuses the always-present composer).
-    <CompanionCtx.Provider value={{ open: focusComposer, showBadge: false }}>
+    <CompanionCtx.Provider value={{ open: openCompanion, showBadge: false }}>
       <div className="redesign-app">
         <div className="redesign-canvas">{children}</div>
-        <aside className="redesign-rail" data-tour="companion" aria-label="Your G4L Companion">
+        <aside className={`redesign-rail${phoneOpen ? ' phone-open' : ''}`} data-tour="companion" aria-label="Your G4L Companion">
           <div className="rrail-head">
             <div className="rrail-id">
               <span className="rrail-title">Your G4L Companion</span>
@@ -122,6 +130,8 @@ export default function RedesignShell({ memberId, children }: { memberId: string
                 <span className="rrail-dot" aria-hidden="true" /> here with you
               </span>
             </div>
+            {/* phone-only close (CSS-hidden above 767px) — folds the overlay back down */}
+            <button type="button" className="rrail-close" onClick={() => setPhoneOpen(false)} aria-label="Close your Companion">✕</button>
           </div>
           <div ref={chatRef} className="rrail-stream">
             {messages.map((m, i) => (
@@ -151,6 +161,12 @@ export default function RedesignShell({ memberId, children }: { memberId: string
             </button>
           </form>
         </aside>
+        {/* phone-only "Talk to me" pill (CSS-hidden above 767px) — folds the Companion up as a full-screen overlay */}
+        {!phoneOpen && (
+          <button type="button" className="rrail-fab" onClick={openCompanion} aria-label="Talk to your Companion">
+            <span className="rrail-fab-dot" aria-hidden="true" /> Talk to me
+          </button>
+        )}
       </div>
     </CompanionCtx.Provider>
   );
