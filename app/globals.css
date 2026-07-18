@@ -1380,7 +1380,9 @@ body.redesign-on .back-dash { display: none; }
    Desktop + iPad LANDSCAPE (>1000px) keep the docked two-pane, untouched. */
 @media (max-width: 1000px) {
   .redesign-rail:not(.ws-rail) {
-    position: fixed; inset: 0; top: 0; z-index: 1200; width: auto; height: 100dvh; min-height: 0;
+    /* Full-screen, EXPLICIT width/height (not inset:auto) — position:fixed + transform + width:auto renders
+       off-center/floaty on iOS Safari; the old dock avoided it the same way. */
+    position: fixed; top: 0; left: 0; z-index: 1200; width: 100%; height: 100dvh; min-height: 0;
     margin: 0; border: none; border-radius: 0; background: #f5f4f1;
     /* glides IN FROM THE RIGHT, moving left to take over the screen (a side panel, not a bottom sheet) */
     transform: translateX(100%); transition: transform 0.34s cubic-bezier(0.32, 0.72, 0, 1); box-shadow: -8px 0 34px rgba(16, 16, 69, 0.2);
