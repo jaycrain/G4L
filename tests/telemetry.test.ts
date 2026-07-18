@@ -177,3 +177,17 @@ test('logEvent never throws on a bad write (telemetry must not break the app)', 
     logEvent(db, '00000000-0000-0000-0000-000000000000', 'page_view', { surface: 'dashboard' }),
   );
 });
+
+test('markSessionClosed emits session_close ONCE (completed once, not on an idempotent re-close)', async () => {
+  const db = new PGlite() as unknown as Db;
+  await applySchema(db);
+  const { markSessionClosed } = await import('../lib/curriculum/store.ts');
+  const { rows } = await db.query<{ member_id: string }>(
+    `insert into member_profile (display_name, email) values ('Donna','donna.tele@x.com') returning member_id`,
+  );
+  const id = rows[0]!.member_id;
+  await markSessionClosed(db, id, 'RWR-W1');
+  await markSessionClosed(db, id, 'RWR-W1'); // re-close (idempotent) must NOT double-count
+  const closes = (await getMemberEvents(db, id)).filter((e) => e.kind === 'session_close' && e.ref === 'RWR-W1');
+  assert.equal(closes.length, 1, 'exactly one completion event for the session');
+});

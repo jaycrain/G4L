@@ -3,6 +3,7 @@ import { getDb } from '../../../../lib/db/index.ts';
 import type { Db } from '../../../../lib/db/schema.ts';
 import { authorizeMember } from '../../../authz.ts';
 import { redesignEnabled } from '../../../../lib/dashboard/redesign.ts';
+import { logEvent } from '../../../../lib/telemetry/store.ts';
 import { getForecast } from '../../../../lib/curriculum/view.ts';
 import { deriveRingState } from '../../../../lib/workspace/ring-state.ts';
 import { readArtifact } from '../../../../lib/workspace/artifact.ts';
@@ -37,6 +38,17 @@ export default async function WorkspacePage({
   // The Loop gate — no side door into Reclaim before it opens (readiness stays true once reached, so this only blocks
   // the genuinely-not-yet). Review mode is exempt (it reads committed state, not a live session).
   if (def.phase === 'reclaim' && !review && !(await reclaimReadiness(db, memberId)).ready) redirect(`/dashboard/${memberId}`);
+
+  // Telemetry (data contract: asset started / time-on-asset / drop-off). The v3.0 workspace never emitted the
+  // session lifecycle the legacy /session + /checkpoint pages did — so redesign sessions were invisible to QI. A live
+  // open (not a read-only review) starts the time-on-asset window; session_close (in markSessionClosed) ends it.
+  if (!review) {
+    await logEvent(db, memberId, def.kind === 'checkpoint' ? 'checkpoint_open' : 'session_open', {
+      surface: def.kind === 'checkpoint' ? 'checkpoint' : 'session',
+      ref: def.id,
+    });
+  }
+
   const forecast = await getForecast(db, memberId);
   const rings = deriveRingState(forecast);
 

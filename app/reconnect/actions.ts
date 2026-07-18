@@ -2,6 +2,7 @@
 
 import { getDb } from '../../lib/db/index.ts';
 import { authorizeMember } from '../authz.ts';
+import { logEvent } from '../../lib/telemetry/store.ts';
 import type { Db } from '../../lib/db/schema.ts';
 import type { ConvMessage, ConvState, ScaleExpectation, Turn } from '../../lib/agent/onboarding.ts';
 import { liveTurnReconnect, loadReconnectCaptures, reconnectEnabled, reconnectOpening, reconnectMeasurementClose, driftOpen, RECONNECT_ARC, BEAT_SEP } from '../../lib/agent/reconnect.ts';
@@ -106,6 +107,7 @@ async function persistReconnectComplete(db: Db, memberId: string, prev: ConvStat
   try {
     if (turn.state.stage !== 'ceremony' || prev.stage === 'ceremony') return; // only on the crossing into the Ceremony
     await setGate(db, memberId, 'reconnect_checkpoint_passed'); // → activePhaseIndex 1 (Rewire is now "You're here")
+    await logEvent(db, memberId, 'checkpoint_cross', { surface: 'checkpoint', ref: 'RCN-CHK', meta: { phase: 'reconnect' } });
     // Finishing the REAL arc must earn the same milestone the old RCN-CHK checkpoint awarded (registry: RCN-CHK
     // earns 'reconnect-milestone'). The v2.2 arc bypasses the checkpoint action, so award it here on the crossing.
     await earnBadge(db, memberId, 'reconnect-milestone');

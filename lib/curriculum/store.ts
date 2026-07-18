@@ -1,6 +1,7 @@
 // Member-state store for the curriculum slice. Framework-free (takes a Db). Writes session progress,
 // facets, earned badges, and phase gates. The curriculum/badge definitions live in registry.ts (data).
 import type { Db } from '../db/schema.ts';
+import { logEvent } from '../telemetry/store.ts';
 
 export type SessionStatus = 'locked' | 'in_progress' | 'closed';
 export type SessionProgress = {
@@ -58,12 +59,20 @@ export async function closeSession(db: Db, memberId: string, sessionId: string):
 // Force a session CLOSED even when no in-flight progress row exists — for the v2.3 conversational Rewire Sessions,
 // which complete via the kernel (turn.complete), not the step player. Idempotent; drives the forecast's isDone.
 export async function markSessionClosed(db: Db, memberId: string, sessionId: string): Promise<void> {
+  // Emit session_close only on the FIRST close (completed once) — an idempotent re-close must not double-count.
+  const prior = await db.query<{ status: string }>(
+    `select status from session_progress where member_id = $1 and session_id = $2`,
+    [memberId, sessionId],
+  );
+  const alreadyClosed = prior.rows[0]?.status === 'closed';
   await db.query(
     `insert into session_progress (member_id, session_id, status, closed_at)
      values ($1, $2, 'closed', now())
      on conflict (member_id, session_id) do update set status = 'closed', closed_at = now(), updated_at = now()`,
     [memberId, sessionId],
   );
+  // Central completion signal (data contract) — covers every phase's close site in one place. Fire-safe.
+  if (!alreadyClosed) await logEvent(db, memberId, 'session_close', { surface: 'session', ref: sessionId });
 }
 
 export async function isSessionClosed(db: Db, memberId: string, sessionId: string): Promise<boolean> {

@@ -2,6 +2,7 @@
 
 import { getDb } from '../../lib/db/index.ts';
 import { authorizeMember } from '../authz.ts';
+import { logEvent } from '../../lib/telemetry/store.ts';
 import type { Db } from '../../lib/db/schema.ts';
 import type { ConvMessage, ConvState, ScaleExpectation, Turn } from '../../lib/agent/onboarding.ts';
 import {
@@ -112,6 +113,7 @@ async function persistRewireCheckpoint(db: Db, memberId: string, prev: ConvState
     const cp = scoreCheckpointStrand({ target: 'rewire', baselineValues, newValues: commitment, carriedStrands: carried });
     await persistGrintaReading(db, memberId, { source: 'checkpoint', responses: commitmentCheckpointResponsesMap(commitment), score: cp.score });
     await setGate(db, memberId, 'rewire_checkpoint_passed'); // → activePhaseIndex 2 (Rebuild is now "You're here")
+    await logEvent(db, memberId, 'checkpoint_cross', { surface: 'checkpoint', ref: 'RWR-CHK', meta: { phase: 'rewire' } });
   } catch {
     // swallow — best-effort; the conversation turn already succeeded.
   }
