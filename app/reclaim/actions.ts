@@ -3,6 +3,7 @@
 import { getDb } from '../../lib/db/index.ts';
 import { authorizeMember } from '../authz.ts';
 import { logEvent } from '../../lib/telemetry/store.ts';
+import { maybeTriggerDraft } from '../../lib/founder/triggers.ts';
 import type { Db } from '../../lib/db/schema.ts';
 import type { ConvMessage, ConvState, ScaleExpectation, Turn } from '../../lib/agent/onboarding.ts';
 import {
@@ -227,6 +228,7 @@ async function persistReclaimCheckpoint(db: Db, memberId: string, prev: ConvStat
     await persistGrintaReading(db, memberId, { source: 'checkpoint', responses: challengeCheckpointResponsesMap(challenge), score: cp.score });
     await setGate(db, memberId, 'reclaim_checkpoint_passed'); // the capstone — closes Cycle 1 (the Loop)
     await logEvent(db, memberId, 'checkpoint_cross', { surface: 'checkpoint', ref: 'RCL-CHK', meta: { phase: 'reclaim' } });
+    await maybeTriggerDraft(db, memberId, { kind: 'milestone', assetCode: 'RCL-CHK', assetName: 'The Reclaim Checkpoint' });
   } catch {
     // swallow — best-effort; the conversation turn already succeeded.
   }

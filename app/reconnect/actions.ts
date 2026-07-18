@@ -3,6 +3,7 @@
 import { getDb } from '../../lib/db/index.ts';
 import { authorizeMember } from '../authz.ts';
 import { logEvent } from '../../lib/telemetry/store.ts';
+import { maybeTriggerDraft } from '../../lib/founder/triggers.ts';
 import type { Db } from '../../lib/db/schema.ts';
 import type { ConvMessage, ConvState, ScaleExpectation, Turn } from '../../lib/agent/onboarding.ts';
 import { liveTurnReconnect, loadReconnectCaptures, reconnectEnabled, reconnectOpening, reconnectMeasurementClose, driftOpen, RECONNECT_ARC, BEAT_SEP } from '../../lib/agent/reconnect.ts';
@@ -65,7 +66,10 @@ async function persistMeasurement(db: Db, memberId: string, prev: ConvState, tur
     const after = turn.state.administeredResponses ?? [];
     if (before < TOTAL_ITEMS && after.length >= TOTAL_ITEMS) {
       const responses = after.slice(0, TOTAL_ITEMS);
-      await submitIdq(db, memberId, responses); // frozen instrument: validate + score + baseline row (sequence_no=0)
+      const idq = await submitIdq(db, memberId, responses); // frozen instrument: validate + score + baseline row (sequence_no=0)
+      // Founder Agent auto-trigger — the baseline welcome note into Jay's review queue. The v3.0 baseline is written
+      // HERE (not the legacy /idq action), so without this the redesign never queued a draft. Draft-only, graceful.
+      if (idq.ok) await maybeTriggerDraft(db, memberId, { kind: 'idq', sequenceNo: idq.sequenceNo });
       const close = await reconnectMeasurementClose(turn.state.collected, responses); // ties the shape to their doors
       // Hand into §2d as its OWN bubble (BEAT_SEP) — the score read and the take-stock ask are separate beats.
       return close ? `${close}${BEAT_SEP}${driftOpen(turn.state.collected)}` : null;

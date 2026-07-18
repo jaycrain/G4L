@@ -3,6 +3,7 @@
 import { getDb } from '../../lib/db/index.ts';
 import { authorizeMember } from '../authz.ts';
 import { logEvent } from '../../lib/telemetry/store.ts';
+import { maybeTriggerDraft } from '../../lib/founder/triggers.ts';
 import type { Db } from '../../lib/db/schema.ts';
 import type { ConvMessage, ConvState, ScaleExpectation, Turn } from '../../lib/agent/onboarding.ts';
 import {
@@ -83,6 +84,7 @@ async function persistRebuildCheckpoint(db: Db, memberId: string, prev: ConvStat
     await persistGrintaReading(db, memberId, { source: 'checkpoint', responses: controlCheckpointResponsesMap(control), score: cp.score });
     await setGate(db, memberId, 'rebuild_checkpoint_passed'); // → activePhaseIndex 3 (Reclaim is now "You're here")
     await logEvent(db, memberId, 'checkpoint_cross', { surface: 'checkpoint', ref: 'RBD-CHK', meta: { phase: 'rebuild' } });
+    await maybeTriggerDraft(db, memberId, { kind: 'milestone', assetCode: 'RBD-CHK', assetName: 'The Rebuild Checkpoint' });
   } catch {
     // swallow — best-effort; the conversation turn already succeeded.
   }
