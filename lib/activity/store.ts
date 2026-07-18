@@ -169,6 +169,46 @@ export async function syncMember(db: Db, memberId: string, provider = 'strava', 
   return n;
 }
 
+/**
+ * Sync-on-open: pull fresh activity at page render if this member's connection is STALE (never synced,
+ * or last synced longer ago than the throttle window) — so a just-posted ride shows immediately instead
+ * of waiting for the nightly cron. Members who connect an activity app expect that instant gratification.
+ *
+ * Best-effort by contract: it NEVER throws (a slow/failed sync must not break the Movement view). On a
+ * hard auth failure it marks the member disconnected — same reconnect behaviour as the cron. Throttled
+ * so repeated page loads don't hammer the provider's rate limit; the network calls are timeout-bounded
+ * in strava.ts so this can't wedge render. Returns true only if a sync actually ran and wrote something.
+ */
+const DEFAULT_SYNC_THROTTLE_MS = 5 * 60_000; // 5 min — the nightly-cron gap always exceeds this, so a post-ride open always refreshes
+export async function syncIfStale(
+  db: Db,
+  memberId: string,
+  provider = 'strava',
+  opts: { throttleMs?: number; sinceDays?: number } = {},
+): Promise<boolean> {
+  const throttleMs = opts.throttleMs ?? DEFAULT_SYNC_THROTTLE_MS;
+  const { rows } = await db.query<{ status: string; last_synced_at: string | null }>(
+    `select status, last_synced_at from activity_connection where member_id=$1 and provider=$2`,
+    [memberId, provider],
+  );
+  const r = rows[0];
+  if (!r || r.status !== 'connected') return false;
+  const lastMs = r.last_synced_at ? new Date(r.last_synced_at).getTime() : 0;
+  if (Date.now() - lastMs < throttleMs) return false;
+  try {
+    const n = await syncMember(db, memberId, provider, opts.sinceDays ?? 30);
+    return n > 0;
+  } catch {
+    // Revoked grant / unrefreshable token: surface a reconnect, exactly like the cron's per-member path.
+    try {
+      await markDisconnected(db, memberId, provider);
+    } catch {
+      /* leave it; the next open (or the cron) retries */
+    }
+    return false;
+  }
+}
+
 export async function saveActivities(db: Db, memberId: string, acts: Activity[]): Promise<number> {
   for (const a of acts) {
     await db.query(

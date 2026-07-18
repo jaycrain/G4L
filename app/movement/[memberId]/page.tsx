@@ -4,7 +4,7 @@ import { getDb } from '../../../lib/db/index.ts';
 import type { Db } from '../../../lib/db/schema.ts';
 import { authorizeMember } from '../../authz.ts';
 import { redesignEnabled } from '../../../lib/dashboard/redesign.ts';
-import { getActivityPanel } from '../../../lib/activity/store.ts';
+import { getActivityPanel, syncIfStale } from '../../../lib/activity/store.ts';
 import { stravaConfigured } from '../../../lib/activity/strava.ts';
 import { formatDistance, formatDuration, typeLabel, relativeDay, weekTrend, weeklyMileageGoalMiles, weeklyGoalLine } from '../../../lib/activity/summary.ts';
 import { getReclaimItems } from '../../../lib/beats/store.ts';
@@ -33,6 +33,10 @@ export default async function MovementPage({ params }: { params: Promise<{ membe
   if (!redesignEnabled()) redirect(`/dashboard/${memberId}`);
   if (!(await authorizeMember(memberId))) redirect('/login');
   const db = (await getDb()) as unknown as Db;
+
+  // Sync-on-open: refresh from the provider before rendering so a just-posted ride is here now, not at
+  // the nightly cron. Throttled + timeout-bounded + never-throws, so it can't slow or break this page.
+  if (stravaConfigured()) await syncIfStale(db, memberId);
 
   const noun = (await db.query<{ identity_noun: string | null }>('select identity_noun from member_profile where member_id=$1', [memberId])).rows[0]?.identity_noun ?? null;
   const activity = await getActivityPanel(db, memberId, noun).catch(() => null);

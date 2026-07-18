@@ -85,6 +85,10 @@ export async function exchangeCode(code: string, redirectUri: string): Promise<S
   return toTokens((await res.json()) as StravaTokenResponse, SCOPE);
 }
 
+// Bound every network call so an on-open sync (which now runs inside page render) can never wedge
+// the response on a slow/hung Strava endpoint — it fails fast and the page falls back to cached data.
+const FETCH_TIMEOUT_MS = 8000;
+
 /** Refresh an expired access token. Strava rotates the refresh token, so persist what comes back. */
 export async function refreshTokens(refreshToken: string, scope: string | null): Promise<StravaTokens> {
   const res = await fetch(TOKEN_URL, {
@@ -96,6 +100,7 @@ export async function refreshTokens(refreshToken: string, scope: string | null):
       refresh_token: refreshToken,
       grant_type: 'refresh_token',
     }),
+    signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
   });
   if (!res.ok) throw new Error(`Strava token refresh failed (${res.status})`);
   // The refresh response has no athlete object; carry the prior scope forward.
@@ -120,6 +125,7 @@ export async function fetchRecent(accessToken: string, sinceDays: number): Promi
   const p = new URLSearchParams({ after: String(afterSec), per_page: '100' });
   const res = await fetch(`${ACTIVITIES_URL}?${p.toString()}`, {
     headers: { authorization: `Bearer ${accessToken}` },
+    signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
   });
   if (!res.ok) throw new Error(`Strava activities fetch failed (${res.status})`);
   const list = (await res.json()) as unknown;

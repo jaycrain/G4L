@@ -14,7 +14,7 @@ const { encryptToken, decryptToken, signState, verifyState } = await import('../
 const strava = await import('../lib/activity/strava.ts');
 const store = await import('../lib/activity/store.ts');
 const { runActivitySync } = await import('../lib/activity/cron.ts');
-const { getActivityPanel, getConnection, connectWithTokens, getConnectionTokens, syncMember, listRecentActivities } = store;
+const { getActivityPanel, getConnection, connectWithTokens, getConnectionTokens, syncMember, syncIfStale, listRecentActivities } = store;
 
 async function dbWithMember(): Promise<{ db: Db; memberId: string }> {
   const db = new PGlite() as unknown as Db;
@@ -164,6 +164,73 @@ test('syncMember refreshes an expired token, then fetches and saves', async () =
     const dec = await getConnectionTokens(db, memberId, 'strava');
     assert.equal(dec?.refreshToken, 'RT2');
     assert.equal(dec?.accessToken, 'AT2');
+  } finally {
+    globalThis.fetch = orig;
+  }
+});
+
+// --- syncIfStale (sync-on-open) -------------------------------------------------------------
+
+test('syncIfStale skips when the member has no connection', async () => {
+  const { db, memberId } = await dbWithMember();
+  let called = false;
+  const orig = globalThis.fetch;
+  globalThis.fetch = (async () => { called = true; return new Response('[]', { status: 200 }); }) as typeof fetch;
+  try {
+    assert.equal(await syncIfStale(db, memberId), false);
+    assert.equal(called, false); // never touched the network
+  } finally {
+    globalThis.fetch = orig;
+  }
+});
+
+test('syncIfStale skips when synced within the throttle window', async () => {
+  const { db, memberId } = await dbWithMember();
+  await connectWithTokens(db, memberId, 'strava', tokens(), '2026-06-17T00:00:00Z');
+  await store.touchLastSynced(db, memberId, 'strava'); // last_synced_at = now
+  let called = false;
+  const orig = globalThis.fetch;
+  globalThis.fetch = (async () => { called = true; return new Response('[]', { status: 200 }); }) as typeof fetch;
+  try {
+    assert.equal(await syncIfStale(db, memberId), false); // default 5-min throttle → skip
+    assert.equal(called, false);
+  } finally {
+    globalThis.fetch = orig;
+  }
+});
+
+test('syncIfStale pulls fresh activity when the connection is stale (never synced)', async () => {
+  const { db, memberId } = await dbWithMember();
+  await connectWithTokens(db, memberId, 'strava', tokens(), '2026-06-17T00:00:00Z'); // last_synced_at null → stale
+  const orig = globalThis.fetch;
+  globalThis.fetch = (async (input: string | URL | Request) => {
+    if (String(input).includes('/athlete/activities')) {
+      const startDate = new Date(Date.now() - 1 * 86400 * 1000).toISOString();
+      return new Response(JSON.stringify([{ id: 77, sport_type: 'Ride', name: 'Morning', start_date: startDate, distance: 40000, moving_time: 5400 }]), { status: 200 });
+    }
+    return new Response('not found', { status: 404 });
+  }) as typeof fetch;
+  try {
+    assert.equal(await syncIfStale(db, memberId), true);
+    const recent = await listRecentActivities(db, memberId, 14);
+    assert.equal(recent[0]!.type, 'ride'); // the just-posted ride is here now
+  } finally {
+    globalThis.fetch = orig;
+  }
+});
+
+test('syncIfStale never throws and marks disconnected on a hard auth failure', async () => {
+  const { db, memberId } = await dbWithMember();
+  // Expired token forces the refresh path; make the refresh fail (revoked grant).
+  await connectWithTokens(db, memberId, 'strava', tokens({ expiresAt: Math.floor(Date.now() / 1000) - 100 }), '2026-06-17T00:00:00Z');
+  const orig = globalThis.fetch;
+  globalThis.fetch = (async (input: string | URL | Request) => {
+    if (String(input).includes('/oauth/token')) return new Response('unauthorized', { status: 401 });
+    return new Response('not found', { status: 404 });
+  }) as typeof fetch;
+  try {
+    assert.equal(await syncIfStale(db, memberId), false); // swallowed, did not throw
+    assert.equal((await getConnection(db, memberId, 'strava'))?.status, 'disconnected'); // surfaced a reconnect
   } finally {
     globalThis.fetch = orig;
   }

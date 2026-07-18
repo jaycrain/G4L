@@ -9,7 +9,7 @@ import { heroView } from '../../lib/dashboard/hero-copy.ts';
 import { keyFromForecast } from '../../lib/workspace/session-key.ts';
 import { sessionsForPhase } from '../../lib/workspace/session-registry.ts';
 import { latestGrintaReading } from '../../lib/grinta/survey/store.ts';
-import { getActivityPanel } from '../../lib/activity/store.ts';
+import { getActivityPanel, syncIfStale } from '../../lib/activity/store.ts';
 import { stravaConfigured } from '../../lib/activity/strava.ts';
 import { looksTrackable, suggestTracker } from '../../lib/measure/store.ts';
 import { formatDistance, formatDuration, typeLabel, relativeDay } from '../../lib/activity/summary.ts';
@@ -49,6 +49,9 @@ const R_STRANDS = [
 
 export default async function RedesignDashboard({ db, memberId, dash }: { db: Db; memberId: string; dash: Dashboard }) {
   await reconcileRedesignBadges(db, memberId); // earn the 10 event-driven milestone badges from committed state (idempotent)
+  // Sync-on-open so the Movement card reflects a just-posted ride now, not at the nightly cron. Throttled +
+  // timeout-bounded + never-throws (see syncIfStale), so it adds no latency on a warm connection and can't break render.
+  if (stravaConfigured()) await syncIfStale(db, memberId);
   const [forecast, { state: heroState }, grinta, activity, passport, facets, pulse] = await Promise.all([
     getForecast(db, memberId),
     resolveHero(db, memberId),

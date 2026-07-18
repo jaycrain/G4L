@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { getDb } from '../../../lib/db/index.ts';
 import { getDashboard } from '../../../lib/gateway/flow.ts';
 import { timeSignals, topNudge } from '../../../lib/agent/nudge.ts';
-import { getActivityPanel } from '../../../lib/activity/store.ts';
+import { getActivityPanel, syncIfStale } from '../../../lib/activity/store.ts';
 import { stravaConfigured } from '../../../lib/activity/strava.ts';
 import StravaConnect from '../../account/strava-connect.tsx';
 import { latestGrintaReading } from '../../../lib/grinta/survey/store.ts';
@@ -76,6 +76,8 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
   // Redesign (Layer 2) — flag-gated parallel render. Off in prod → everything below is the untouched live dashboard.
   if (redesignEnabled()) return <RedesignDashboard db={db} memberId={memberId} dash={dash} />;
 
+  // Sync-on-open so the Movement panel shows a just-posted ride now, not at the nightly cron (throttled, best-effort).
+  if (stravaConfigured()) await syncIfStale(db, memberId);
   // v0.4 zones, all from the registry + member state.
   const [facets, forecast, passport, grintaReading, activity] = await Promise.all([
     getFacets(db, memberId),
