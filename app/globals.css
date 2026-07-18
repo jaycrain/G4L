@@ -1389,6 +1389,10 @@ body.redesign-on .back-dash { display: none; }
   }
   .redesign-rail:not(.ws-rail).phone-open { transform: translateX(0); }
   .redesign-rail:not(.ws-rail) .rrail-close { display: block; }
+  /* iPhone Safari auto-ZOOMS the page when you focus an input under 16px, which shoves the fixed panel
+     wider than the (zoomed) visible viewport — bubbles + Send clip off the right, everything looks floaty.
+     16px is the zoom threshold. (iPad doesn't auto-zoom on focus, which is why it was already fine.) */
+  .redesign-rail:not(.ws-rail) .rrail-composer textarea { font-size: 16px; }
   .rrail-fab {
     display: inline-flex; align-items: center; gap: 7px; position: fixed; right: 16px; bottom: 16px; z-index: 1100;
     background: var(--teal); color: #fff; font-weight: 700; font-size: 15px; border: none; border-radius: 100px;
