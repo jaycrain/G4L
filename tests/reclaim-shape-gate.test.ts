@@ -35,6 +35,26 @@ test('shape gate · REJECTS bare assent / dissent', () => {
   }
 });
 
+test('shape gate · REJECTS confusion / meta-repair fragments (Donna walk: "This isn\'t making sense")', () => {
+  for (const junk of [
+    "This isn't making sense",
+    "that doesn't make sense",
+    'makes no sense',
+    "I don't understand",
+    "I don't get it",
+    'wait',
+    'what',
+    'never mind',
+    "I'm confused",
+  ]) {
+    assert.equal(isProcessMetaOrAssent(junk), true, `should reject: "${junk}"`);
+  }
+  // The dangerous false-reject: real wants that merely CONTAIN these words stay wants.
+  for (const want of ['Make sense of my finances', 'Understand my body better', 'Get back to what makes sense for me']) {
+    assert.equal(isProcessMetaOrAssent(want), false, `should keep: "${want}"`);
+  }
+});
+
 test('shape gate · KEEPS real life-wants — including behavior-change with an object (the dangerous false-reject)', () => {
   for (const want of [
     'get back on my bike, 2-3 rides a week',

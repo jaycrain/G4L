@@ -44,6 +44,22 @@ const BARE_CADENCE_RE =
 const RECLAIM_CLOSE_RE =
   /^(that'?s (about )?(it|all|everything|the list)( for now)?|that'?s a (good|solid|great|decent) (start|list)|those are (the )?(real|only|main|biggest|big|top) ones|those are (the )?highlights|the highlights|(that|this) (looks|sounds) (great|good|right|perfect|spot on)|love (it|that)|perfect|good enough|sounds good|(i think )?that'?s (about )?(it|everything))$/i;
 
+// A whole-item META / conversational-repair fragment the model sometimes mis-captures as a want — confusion,
+// "I don't understand", "wait/what", "never mind". Same family as a bare close: zero want-content, so it's dropped
+// deterministically (never a correction of member intent — there's nothing to correct). Anchored ^…$ + whole-item
+// ONLY, strict on purpose: a real want that merely CONTAINS one of these words (e.g. "Make sense of my finances")
+// must never match. (Donna's walk: "This isn't making sense" landed on her list. Identity statements are handled
+// separately — they carry real content, so they route out via the propose-confirm shape gate, never a silent drop.)
+const RECLAIM_META_RE =
+  /^(?:(?:this|that|it|none of (?:this|that|it))\s+(?:is\s?n['’]?t|does\s?n['’]?t|do(?:es)? not)\s+(?:really\s+)?(?:mak(?:e|ing))\s+sense|makes?\s+no\s+sense|i\s+(?:do\s?n['’]?t|do not)\s+(?:understand|get\s+(?:it|this)|know what (?:you|this|that) mean(?:s)?)|(?:wait|hmm+|huh|um+|uh+|what|sorry)|never\s?mind|nvm|not\s+sure(?:\s+(?:what|i\s+understand))?|(?:i'?m\s+)?confused)$/i;
+
+/** True if the whole item is a confusion/meta-repair fragment, never a want. Shared by the capture guard (reject
+ *  before it's appended) and consolidation (backstop for a resumed/legacy sloppy list) — one source of truth. */
+export function isReclaimMetaFragment(item: string): boolean {
+  const bare = (item ?? '').trim().replace(/[.,!?]+$/, '');
+  return !!bare && RECLAIM_META_RE.test(bare);
+}
+
 // Consolidate the Reclaim List AND its parallel categories in LOCKSTEP, so the two arrays never drift out of
 // alignment when items are dropped/folded/merged. This is the single source of truth for consolidation; the
 // items-only `consolidateReclaimList` below delegates to it. Category rule follows the item's fate: a close/dup
@@ -60,6 +76,7 @@ export function consolidateReclaim(items: string[], categories: string[] = []): 
     const bare = item.replace(/[.,!?]+$/, '');
     if (!item) return;
     if (RECLAIM_CLOSE_RE.test(bare)) return; // a close/confirmation, not a want (category dropped with it)
+    if (RECLAIM_META_RE.test(bare)) return; // a confusion/meta fragment ("this isn't making sense"), not a want
     if (BARE_CADENCE_RE.test(bare) && kept.length > 0) {
       kept[kept.length - 1] = `${kept[kept.length - 1]}, ${item}`; // fold the cadence into the previous want (its category stays)
       reclaimContentTokens(item).forEach((t) => keptTokens[keptTokens.length - 1]!.add(t));

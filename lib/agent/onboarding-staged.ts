@@ -23,7 +23,7 @@
 
 import { cleanIdentityNoun, displayIdentityNoun, identityLabel } from '../member/identity.ts';
 import { isDoorSlug, matchDoors, type DoorSlug } from '../doors.ts';
-import { RECLAIM_LIST_FLOOR, RECLAIM_LIST_MIN, RECLAIM_LIST_TARGET, reclaimAddIntent } from '../member/reclaim.ts';
+import { RECLAIM_LIST_FLOOR, RECLAIM_LIST_MIN, RECLAIM_LIST_TARGET, reclaimAddIntent, isReclaimMetaFragment } from '../member/reclaim.ts';
 import { gapIsNarrative, hasIdentity } from './onboarding-contract.ts';
 import { ONBOARDING_BASELINE_ITEMS, grintaStem } from '../grinta/survey/instrument.ts';
 import { scoreGrinta } from '../grinta/survey/scoring.ts';
@@ -455,6 +455,8 @@ const SHAPE_PROPOSAL = {
     `“${drop}” and “${keep}” sound like the same thing to me — want me to keep them as one, or are they different?`,
   vision: (item: string) =>
     `“${item}” reads more like the bigger picture of the life you’re reclaiming than a single goal. I’d keep it in your Playbook for that work and leave the goal list for the concrete steps — want me to do that?`,
+  identity: (item: string) =>
+    `“${item}” sounds like who you are, not one goal on a list. I’d hold onto it as part of your identity and keep the list for the concrete things you’re taking back — want me to do that?`,
   multiwant: (item: string) =>
     `You named a few things in “${item}.” Which one do you most want back? We’ll start there — the rest aren’t going anywhere.`,
 } as const;
@@ -471,6 +473,10 @@ function gateNextShape(b: Beat): string | null {
   if (issue.kind === 'vision') {
     b.pendingReclaimShape = { kind: 'vision', item: issue.item };
     return SHAPE_PROPOSAL.vision(issue.item);
+  }
+  if (issue.kind === 'identity') {
+    b.pendingReclaimShape = { kind: 'identity', item: issue.item };
+    return SHAPE_PROPOSAL.identity(issue.item);
   }
   b.pendingReclaimShape = { kind: 'multiwant', item: issue.item };
   return SHAPE_PROPOSAL.multiwant(issue.item);
@@ -515,6 +521,16 @@ function resolvePendingShape(b: Beat, pending: PendingReclaimShape): string {
     }
     return 'Okay — I’ll leave it on your list.';
   }
+  if (pending.kind === 'identity') {
+    markResolved(shapeKey({ kind: 'identity', index: 0, item: pending.item }));
+    if (yes) {
+      // Route out but PRESERVE (never drop what they gave you) — same Playbook keeper as a vision.
+      removeReclaimItem(b.collected, pending.item);
+      b.collected.visionKeepers = [...(b.collected.visionKeepers ?? []), pending.item];
+      return 'Kept — it’s part of who you are, held in your Playbook.';
+    }
+    return 'Okay — I’ll leave it on your list.';
+  }
   // multiwant: the member's message IS their distilled want (draw-out answer). Replace the paragraph with it when
   // it reads as a real want; otherwise leave the paragraph (they can edit on the card).
   markResolved(shapeKey({ kind: 'multiwant', index: 0, item: pending.item }));
@@ -540,6 +556,7 @@ export function isProcessMetaOrAssent(text: string): boolean {
   if (!t) return true;
   if (RECLAIM_ASSENT_RE.test(t)) return true;
   if (RECLAIM_META_EXIT_RE.test(t)) return true;
+  if (isReclaimMetaFragment(t)) return true; // confusion / "this isn't making sense" — never a want
   // A question aimed at the agent: starts with a question/modal word AND ends with '?'. (A real want is declarative;
   // "riding again?" starts with a noun so it's spared.)
   if (/\?\s*$/.test(t) && /^(can|could|should|would|will|do|does|did|is|are|am|how|what|when|where|why|may|shall)\b/i.test(t)) return true;
@@ -1437,7 +1454,10 @@ export const STAGED_TOOLS = [
       'Call add ONLY for a genuinely NEW, distinct want. Do NOT call add for an amount, number, cadence, or detail that ' +
       "ELABORATES the want you most recently added — that is the SAME want getting sharper ('about 25 lbs' after " +
       "'lose weight'; '2-3 rides a week' after 'ride my bike'; 'a few days a week there too' after 'core work'). Fold " +
-      'those into the existing item with refine_reclaim_item — NEVER as a second item, or the card reads repetitive and sloppy.',
+      'those into the existing item with refine_reclaim_item — NEVER as a second item, or the card reads repetitive and sloppy. ' +
+      'ONLY record a concrete want. Do NOT record a passing aside, a moment of confusion ("this isn\'t making sense"), ' +
+      'a logistics remark, or an identity statement of WHO they are ("I\'m a director") — an identity belongs to who ' +
+      'they are, not the goal list; reflect it back and hold it, but do not add it as a reclaim item.',
     input_schema: {
       type: 'object' as const,
       properties: { text: { type: 'string' }, category: { type: 'string' } },

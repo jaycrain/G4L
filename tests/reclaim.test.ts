@@ -7,10 +7,21 @@ import {
   RECLAIM_LIST_MIN,
   RECLAIM_LIST_FLOOR,
   consolidateReclaimList,
+  isReclaimMetaFragment,
 } from '../lib/member/reclaim.ts';
 import { DOOR_SLUGS, matchDoors, correctDoors } from '../lib/doors.ts';
 
 const five = ['a', 'b', 'c', 'd', 'e'];
+
+test('consolidation drops a confusion/meta fragment but keeps the real wants (Donna walk)', () => {
+  const raw = ['Creative outlet, do more films', "This isn't making sense", 'Autonomy'];
+  const out = consolidateReclaimList(raw);
+  assert.deepEqual(out, ['Creative outlet, do more films', 'Autonomy']);
+  assert.equal(isReclaimMetaFragment("This isn't making sense"), true);
+  assert.equal(isReclaimMetaFragment('This isn’t making sense.'), true, 'curly apostrophe + trailing period');
+  // A real want that merely contains "sense" is never a meta fragment.
+  assert.equal(isReclaimMetaFragment('Make sense of my finances'), false);
+});
 
 test('consolidateReclaimList — cleans a sloppy/resumed list (Jay walk: the Triathlete card)', () => {
   const sloppy = [

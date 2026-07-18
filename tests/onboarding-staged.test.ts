@@ -622,6 +622,17 @@ test('Decision II — a VISION is offered to the Playbook; "yes" moves it out of
   assert.equal((t2.state.collected.visionKeepers ?? []).includes(vision), true, 'preserved to visionKeepers for the Playbook (never discarded)');
 });
 
+test('Decision II — an IDENTITY statement is routed off the goal list and PRESERVED (Donna walk: "I\'m a director…")', () => {
+  const identity = "I'm a director and creative producer";
+  const atConfirm: ConvState = { stage: 'reclaim', awaitingConfirm: true, collected: { ...DII_BASE, reclaimList: ['Creative outlet, do more films', identity, 'Autonomy'] } };
+  const t1 = applyStagedTurn(atConfirm, [], 'looks good', { text: 'Great.', replyIntent: 'done' });
+  assert.equal(t1.state.pendingReclaimShape?.kind, 'identity');
+  assert.match(t1.reply, /who you are|part of your identity/i, 'offers to hold it as identity, not silently drop it');
+  const t2 = applyStagedTurn(t1.state, [], 'yes please', { text: 'Okay.' });
+  assert.equal((t2.state.collected.reclaimList ?? []).includes(identity), false, 'the identity leaves the goal list');
+  assert.equal((t2.state.collected.visionKeepers ?? []).includes(identity), true, 'preserved (never discarded — never drop what they gave you)');
+});
+
 test('gather hygiene (Elite Cyclist walk) — a "shape of it" close is not captured; an "N rides a week" cadence folds', () => {
   // "That's about the shape of it" is the member closing the list, not a want (RECLAIM_CLOSE_RE missed "shape of it").
   assert.equal(memberClosingReclaim("That's about the shape of it"), true);

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { isMultiWantParagraph, isLifeVision, semanticOverlap, reconcileReclaimShapes } from '../lib/agent/reclaim-shape.ts';
+import { isMultiWantParagraph, isLifeVision, isIdentityStatement, semanticOverlap, reconcileReclaimShapes } from '../lib/agent/reclaim-shape.ts';
 
 // Decision II — the Reclaim Capture Discipline shape detectors. The fixture set is DONNA'S EXACT walk inputs (the
 // messy real capture that motivated the decision), plus the discrete wants that must NOT trip a detector.
@@ -31,6 +31,26 @@ test('life-vision — Donna\'s "I\'ll be 60…" vision is caught; concrete wants
   );
   for (const item of ['Lose about 35 lbs', 'Buy some new clothes', 'My fitness', 'Hang out with friends on weekends']) {
     assert.equal(isLifeVision(item), false, `concrete want is not a vision: ${item}`);
+  }
+});
+
+test('identity — an "I\'m a/the <noun>" statement is a WHO, not a want (Donna walk)', () => {
+  for (const id of [
+    "I'm a director and creative producer", // Donna's exact list item
+    'I am the caretaker for everyone',
+    "I'm a runner at heart",
+  ]) {
+    assert.equal(isIdentityStatement(id), true, `identity statement: ${id}`);
+  }
+  // Real wants that OPEN with "I'm/I am" but aren't identity declarations must NOT be caught.
+  for (const want of [
+    "I'm getting back on my bike", // verb, not "a/an/the"
+    "I'm a bit tired of sitting around", // adverbial "a bit", not an identity noun
+    'I want to give back and help other people.',
+    'Lose about 35 lbs',
+    'Buy some new clothes',
+  ]) {
+    assert.equal(isIdentityStatement(want), false, `not an identity: ${want}`);
   }
 });
 
@@ -67,4 +87,11 @@ test('reconcile — a vision in the list is addressed BEFORE an overlap (route-o
   const withVision = ['Lose about 35 lbs', 'Start with losing about 35 lbs', "I'll be 60 in a month; I want to spend the rest of my days at peace and be myself everywhere I go"];
   const issue = reconcileReclaimShapes(withVision);
   assert.equal(issue?.kind, 'vision', 'the vision is pulled out first, even though an overlap also exists');
+});
+
+test('reconcile — an identity statement is addressed FIRST (it is not a want at all)', () => {
+  const list = ['Creative outlet, do more films', "I'm a director and creative producer", 'Autonomy'];
+  const issue = reconcileReclaimShapes(list);
+  assert.equal(issue?.kind, 'identity');
+  if (issue?.kind === 'identity') assert.equal(issue.item, "I'm a director and creative producer");
 });

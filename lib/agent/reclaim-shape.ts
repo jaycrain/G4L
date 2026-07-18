@@ -86,6 +86,19 @@ export function isLifeVision(text: string): boolean {
   return hits >= 1 && t.split(/\s+/).length >= 12;
 }
 
+// ── 2b) IDENTITY STATEMENT ───────────────────────────────────────────────────────────────────────────────────
+// "I'm a director and creative producer" is WHO the member is, not a discrete want — it belongs to their identity,
+// not the goal list. High precision: only the "I'm / I am a|an|the <noun>" declaration, and NOT the adverbial
+// "I'm a bit / a little / a lot …" hedges (those aren't identities). Routed out + PRESERVED (never dropped —
+// "never drop what they gave you"); it's the naming signal the reclaim stage should have caught.
+const IDENTITY_STMT_RE =
+  /^i\s?(?:['’]m|\s?am)\s+(?:an?|the)\s+(?!(?:bit|little|lot|few|couple|bunch|while|moment|second|touch)\b)[a-z][\w'’-]*/i;
+export function isIdentityStatement(text: string): boolean {
+  const t = (text ?? '').trim();
+  if (!t) return false;
+  return IDENTITY_STMT_RE.test(t);
+}
+
 // ── 3) SEMANTIC OVERLAP ──────────────────────────────────────────────────────────────────────────────────────
 /** Returns the EXISTING item this new want means the same as (for a member-confirmed merge), or null. Beyond the
  *  text-fragment dedup — catches "Start with losing about 35 lbs" vs "Lose about 35 lbs" (same want, different words). */
@@ -106,6 +119,7 @@ export function semanticOverlap(newItem: string, existing: string[]): string | n
 // can propose/confirm it, ONE at a time (never a bulk silent rewrite). Priority: a vision (route it out) before an
 // overlap (merge) before a multi-want split — a vision often also reads multi-want, so it must win.
 export type ReclaimShapeIssue =
+  | { kind: 'identity'; index: number; item: string }
   | { kind: 'vision'; index: number; item: string }
   | { kind: 'overlap'; keepIndex: number; dropIndex: number; keep: string; drop: string }
   | { kind: 'multiwant'; index: number; item: string };
@@ -119,6 +133,12 @@ export function shapeKey(issue: ReclaimShapeIssue): string {
 export function reconcileReclaimShapes(list: string[] | undefined, resolved?: ReadonlySet<string>): ReclaimShapeIssue | null {
   const items = list ?? [];
   const open = (issue: ReclaimShapeIssue) => (resolved ? !resolved.has(shapeKey(issue)) : true);
+  // Identity first: an "I'm a …" statement isn't a want at all, so route it out before merge/split reasoning
+  // (it can also read multi-want — "director and creative producer" — so, like a vision, it must win).
+  for (let i = 0; i < items.length; i++) {
+    const issue: ReclaimShapeIssue = { kind: 'identity', index: i, item: items[i]! };
+    if (isIdentityStatement(items[i]!) && open(issue)) return issue;
+  }
   for (let i = 0; i < items.length; i++) {
     const issue: ReclaimShapeIssue = { kind: 'vision', index: i, item: items[i]! };
     if (isLifeVision(items[i]!) && open(issue)) return issue;

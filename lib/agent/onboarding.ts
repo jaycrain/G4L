@@ -159,6 +159,7 @@ export type ConvState = {
 export type PendingReclaimShape =
   | { kind: 'overlap'; keep: string; drop: string }
   | { kind: 'vision'; item: string }
+  | { kind: 'identity'; item: string }
   | { kind: 'multiwant'; item: string };
 
 // A harvest candidate the engine queued (drained by the action → emitHarvestMoment). keeperType is a plain string to
