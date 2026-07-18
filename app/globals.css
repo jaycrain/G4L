@@ -1252,7 +1252,7 @@ body.redesign-on .back-dash { display: none; }
 .redesign-canvas { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 20px; padding: 28px 32px 60px; }
 .redesign-rail {
   width: 404px; flex: 0 0 404px; border-left: 1px solid #e3e2df; background: #f5f4f1;
-  position: sticky; top: 64px; height: calc(100vh - 64px); align-self: flex-start;
+  position: sticky; top: 64px; height: calc(100dvh - 64px); align-self: flex-start;
   display: flex; flex-direction: column;
 }
 
@@ -1356,7 +1356,7 @@ body.redesign-on .back-dash { display: none; }
 .rmsg.agent { align-self: flex-start; background: #fff; border: 1px solid #e3e2df; border-radius: 4px 13px 13px 13px; }
 .rmsg.member { align-self: flex-end; background: var(--navy); color: #fff; border-radius: 13px 13px 4px 13px; }
 .rmsg.typing { align-self: flex-start; background: #fff; border: 1px solid #e3e2df; border-radius: 13px; color: #8b949b; font-style: italic; }
-.rrail-composer { border-top: 1px solid #e3e2df; padding: 14px 18px 18px; display: flex; gap: 9px; align-items: flex-end; }
+.rrail-composer { border-top: 1px solid #e3e2df; padding: 14px 18px max(18px, env(safe-area-inset-bottom)); display: flex; gap: 9px; align-items: flex-end; }
 /* Squared-off corners + a multi-row auto-growing textarea, matching the dock's composer. */
 .rrail-composer textarea { flex: 1; border: 1px solid #e3e2df; border-radius: 10px; padding: 11px 15px; font-family: inherit; font-size: 14.5px; line-height: 1.4; outline: none; resize: none; overflow-y: auto; min-height: 44px; max-height: 160px; }
 .rrail-send { background: var(--teal); color: #fff; font-weight: 700; border: none; border-radius: 10px; padding: 11px 18px; font-size: 14px; cursor: pointer; flex: none; }
@@ -1374,12 +1374,13 @@ body.redesign-on .back-dash { display: none; }
   .rh-ring { align-self: center; }
 }
 
-/* Phone (≤767px, below any iPad): the DASHBOARD Companion is never docked at the bottom — a "Talk to me" pill folds
-   it up as a full-screen overlay (the pre-redesign pattern). Scoped to the dashboard rail via :not(.ws-rail) so the
-   Program workspace's rail keeps the stacked layout from the block above. Desktop + iPad are untouched. */
-@media (max-width: 767px) {
+/* Phone + iPad PORTRAIT (≤1000px, i.e. below the two-pane docked threshold): the DASHBOARD Companion is never docked
+   at the bottom — a "Talk to me" pill folds it up as a full-screen overlay (the pre-redesign pattern). Scoped to the
+   dashboard rail via :not(.ws-rail) so the Program workspace's rail keeps the stacked layout from the block above.
+   Desktop + iPad LANDSCAPE (>1000px) keep the docked two-pane, untouched. */
+@media (max-width: 1000px) {
   .redesign-rail:not(.ws-rail) {
-    position: fixed; inset: 0; top: 0; z-index: 1200; width: auto; height: 100%; min-height: 0;
+    position: fixed; inset: 0; top: 0; z-index: 1200; width: auto; height: 100dvh; min-height: 0;
     margin: 0; border: none; border-radius: 0; background: #f5f4f1;
     transform: translateY(100%); transition: transform 0.28s ease; box-shadow: 0 -8px 30px rgba(16, 16, 69, 0.18);
   }
