@@ -1538,9 +1538,14 @@ body.redesign-on .back-dash { display: none; }
 /* REDESIGN · phone widths — tighten the topbar + canvas so nothing overflows the viewport. */
 @media (max-width: 640px) {
   .redesign-app { overflow-x: clip; }
-  .redesign-topbar { padding: 0 14px; gap: 8px; }
+  /* Insurance: with the canvas (.redesign-app) already clipped, clip the topbar too — the only other page-level
+     sibling — so NOTHING can stretch the layout viewport and push fixed elements (pill, overlay) off-screen. */
+  .redesign-topbar { padding: 0 14px; gap: 8px; overflow-x: clip; }
   .redesign-canvas { padding: 20px 14px 48px; }
-  .rt-wordmark { height: 22px; }
+  /* Icon-only brand on phone — the wordmark + 3 nav links + avatar overflow a ~390px topbar and don't wrap,
+     which stretches the layout viewport and clips every fixed element (the pill, the Companion overlay) off
+     the right edge. Dropping the text wordmark (logo mark stays as the home link) reclaims the width. */
+  .rt-wordmark { display: none; }
   .rt-logo-mark { width: 28px; height: 28px; }
   .rt-who { gap: 10px; }
   .rt-hi { display: none; } /* keep the avatar as the account tap target; drop the name to save width */
