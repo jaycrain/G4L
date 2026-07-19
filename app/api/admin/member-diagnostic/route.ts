@@ -3,6 +3,7 @@ import { timingSafeEqual } from 'node:crypto';
 import { getDb } from '../../../../lib/db/index.ts';
 import type { Db } from '../../../../lib/db/schema.ts';
 import { searchMembers, runMemberDiagnostic } from '../../../../lib/admin/diagnostic.ts';
+import { logEvent, getMemberEvents } from '../../../../lib/telemetry/store.ts';
 
 // Read-only operator diagnostic: returns a member's cross-phase backend state + an anomaly FLAGS block,
 // so a member's walk (onboarding → Rebuild → …) can be inspected for data issues without hand-run SQL.
@@ -32,6 +33,17 @@ export async function GET(req: Request): Promise<Response> {
   const db = (await getDb()) as unknown as Db;
   const matches = await searchMembers(db, q);
   if (matches.length === 0) return NextResponse.json({ query: q, matches: [], report: null });
+
+  // TEMPORARY self-test (?selftest=1): emit one event via the SAME logEvent path the workspace/actions use, then
+  // read it back — proves whether telemetry writes land in THIS prod runtime, independent of a member walk. The
+  // marker ref is DIAG-SELFTEST so it's identifiable; remove this branch (and the marker rows) once diagnosed.
+  if (new URL(req.url).searchParams.get('selftest') === '1') {
+    const m = matches[0]!;
+    const before = (await getMemberEvents(db, m.memberId)).filter((e) => e.kind === 'session_open' && e.ref === 'DIAG-SELFTEST').length;
+    await logEvent(db, m.memberId, 'session_open', { surface: 'session', ref: 'DIAG-SELFTEST' });
+    const after = (await getMemberEvents(db, m.memberId)).filter((e) => e.kind === 'session_open' && e.ref === 'DIAG-SELFTEST').length;
+    return NextResponse.json({ selftest: true, member: m.displayName, before, after, landed: after > before });
+  }
 
   // Report the best (first) match; surface the rest so the operator can disambiguate a common name.
   const report = await runMemberDiagnostic(db, matches[0]!.memberId);
