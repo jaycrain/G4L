@@ -3,8 +3,6 @@ import { timingSafeEqual } from 'node:crypto';
 import { getDb } from '../../../../lib/db/index.ts';
 import type { Db } from '../../../../lib/db/schema.ts';
 import { searchMembers, runMemberDiagnostic } from '../../../../lib/admin/diagnostic.ts';
-import { getMemberEvents } from '../../../../lib/telemetry/store.ts';
-import { markSessionClosed } from '../../../../lib/curriculum/store.ts';
 
 // Read-only operator diagnostic: returns a member's cross-phase backend state + an anomaly FLAGS block,
 // so a member's walk (onboarding → Rebuild → …) can be inspected for data issues without hand-run SQL.
@@ -34,32 +32,6 @@ export async function GET(req: Request): Promise<Response> {
   const db = (await getDb()) as unknown as Db;
   const matches = await searchMembers(db, q);
   if (matches.length === 0) return NextResponse.json({ query: q, matches: [], report: null });
-
-  // TEMPORARY self-test (?selftest=1): exercise markSessionClosed's emit + alreadyClosed guard on a FRESH throwaway
-  // session id, in THIS prod runtime, then self-clean (also removes the earlier DIAG-SELFTEST marker). Remove once done.
-  if (new URL(req.url).searchParams.get('selftest') === '1') {
-    const m = matches[0]!;
-    const SID = 'DIAG-SELFTEST-SESS';
-    const clean = async () => {
-      await db.query(`delete from member_event where member_id=$1 and ref like 'DIAG-SELFTEST%'`, [m.memberId]);
-      await db.query(`delete from session_progress where member_id=$1 and session_id=$2`, [m.memberId, SID]);
-    };
-    await clean(); // fresh slate
-    const closesFor = async () =>
-      (await getMemberEvents(db, m.memberId)).filter((e) => e.kind === 'session_close' && e.ref === SID).length;
-    await markSessionClosed(db, m.memberId, SID); // FRESH close → should emit session_close
-    const afterFirst = await closesFor();
-    await markSessionClosed(db, m.memberId, SID); // re-close (already closed) → should NOT double-emit
-    const afterSecond = await closesFor();
-    await clean(); // remove all DIAG rows
-    return NextResponse.json({
-      selftest: 'markSessionClosed',
-      member: m.displayName,
-      emitAfterFreshClose: afterFirst,
-      emitAfterReClose: afterSecond,
-      verdict: afterFirst === 1 ? 'markSessionClosed emits on a fresh close (works)' : 'markSessionClosed did NOT emit on a fresh close (BUG)',
-    });
-  }
 
   // Report the best (first) match; surface the rest so the operator can disambiguate a common name.
   const report = await runMemberDiagnostic(db, matches[0]!.memberId);
