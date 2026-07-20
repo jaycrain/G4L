@@ -13,6 +13,7 @@ import type { Db } from '../db/schema.ts';
 import type { HeroState } from './resume-hero.ts';
 import type { OutreachTrigger } from '../outreach/config.ts';
 import { getOpenOutreach, getPref } from '../outreach/store.ts';
+import { getBadge } from '../curriculum/registry.ts';
 import { firstName } from '../member/avatar.ts';
 
 export type Phase = 'reconnect' | 'rewire' | 'rebuild' | 'reclaim';
@@ -111,18 +112,37 @@ function localHour(timezone: string | null, now: Date): number {
   }
 }
 
-/** The thin loader — assembles the two signals the page doesn't already have (a ready outreach nudge + the member's
- *  timezone) and resolves the home state. Everything else (hero, name, phase, ctaHref, milestone) is passed by the
- *  page from data it already fetched, so this adds no duplicate reads. Degrades to quiet-safe defaults, never throws. */
+// A just-earned CEREMONIAL badge → the milestone state. No "seen" flag on badge_earned, so a short recency window
+// (earned within ~20h) stands in — the celebration greets them a few times, then fades (a warm over-show, not a nag).
+async function loadMilestone(db: Db, memberId: string): Promise<{ badgeName: string; href: string } | null> {
+  try {
+    const { rows } = await db.query<{ badge_id: string }>(
+      "select badge_id from badge_earned where member_id = $1 and earned_at >= now() - interval '20 hours' order by earned_at desc",
+      [memberId],
+    );
+    for (const r of rows) {
+      const b = getBadge(r.badge_id);
+      if (b?.ceremony) return { badgeName: b.name, href: `/badges/${memberId}` };
+    }
+  } catch {
+    /* degrade — no milestone */
+  }
+  return null;
+}
+
+/** The thin loader — assembles the signals the page doesn't already have (a ready outreach nudge · the member's
+ *  timezone · a just-earned ceremonial badge) and resolves the home state. Everything else (hero, name, phase,
+ *  ctaHref) is passed by the page from data it already fetched. Degrades to quiet-safe defaults, never throws. */
 export async function loadHomeState(
   db: Db,
   memberId: string,
   now: Date,
-  page: { hero: HeroState; firstName: string; phase: Phase; phaseLabel: string; ctaHref: string; milestone: { badgeName: string; href: string } | null },
+  page: { hero: HeroState; firstName: string; phase: Phase; phaseLabel: string; ctaHref: string },
 ): Promise<HomeState> {
-  const [open, pref] = await Promise.all([
+  const [open, pref, milestone] = await Promise.all([
     getOpenOutreach(db, memberId).catch(() => null),
     getPref(db, memberId).catch(() => null),
+    loadMilestone(db, memberId),
   ]);
   return resolveHomeState({
     firstName: page.firstName,
@@ -131,7 +151,7 @@ export async function loadHomeState(
     hero: page.hero,
     ctaHref: page.ctaHref,
     openOutreach: open ? { trigger: open.trigger, message: open.message } : null,
-    milestone: page.milestone,
+    milestone,
     hourLocal: localHour(pref?.timezone ?? null, now),
   });
 }

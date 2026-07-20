@@ -44,6 +44,7 @@ export default function WorkspaceSession({
   wayfinding,
   review = false,
   mobile = false,
+  tense = 'practice',
 }: {
   memberId: string;
   sessionKey: SessionKey;
@@ -51,6 +52,7 @@ export default function WorkspaceSession({
   wayfinding: Wayfinding;
   review?: boolean; // read-only revisit of a COMPLETED session — final artifact, no live rail (Cycle-2 review too)
   mobile?: boolean; // Mobile slice 3: the phone bottom-sheet layout (canvas fills; the conversation rises as a sheet)
+  tense?: 'present' | 'practice' | 'reclaim'; // §5c phase accent — reinforce, don't reskin (mobile only)
 }) {
   const [artifact, setArtifact] = useState<Artifact>(initial);
   // Mobile slice 3 — the Companion is a bottom-sheet over the canvas: closed by default so the member is ORIENTED by
@@ -94,7 +96,7 @@ export default function WorkspaceSession({
         </Link>
       </div>
 
-      <div className={`redesign-app ws-app${review ? ' ws-review' : ''}${mobile ? ' ws-mobile' : ''}${sheetOpen ? ' sheet-open' : ''}`}>
+      <div className={`redesign-app ws-app${review ? ' ws-review' : ''}${mobile ? ' ws-mobile' : ''}${mobile ? ` tense-${tense}` : ''}${sheetOpen ? ' sheet-open' : ''}`}>
         <div className="redesign-canvas">
           {review ? (
             <>

@@ -113,7 +113,6 @@ export default async function RedesignDashboard({ db, memberId, dash }: { db: Db
         phase: activePhase as Phase,
         phaseLabel,
         ctaHref,
-        milestone: null, // auto-trigger from an unrevealed ceremonial badge is a follow-up
       })
     : null;
 

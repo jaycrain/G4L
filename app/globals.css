@@ -1723,4 +1723,41 @@ body.redesign-on .back-dash { display: none; }
     0%, 100% { box-shadow: 0 8px 24px rgba(59, 148, 149, 0.5), 0 0 0 0 rgba(59, 148, 149, 0.45); }
     50% { box-shadow: 0 8px 24px rgba(59, 148, 149, 0.5), 0 0 0 14px rgba(59, 148, 149, 0); }
   }
+  /* §5c tense register in sessions — reclaim's warm accent (the FAB is a sibling after .ws-app, hence ~). Practice
+     (Rewire/Rebuild) keeps the teal default; Reconnect draw-out rarely runs in this workspace. */
+  .ws-app.ws-mobile.tense-reclaim ~ .ws-sheet-fab { background: var(--orange); animation-name: ws-fab-pulse-orange; }
+  @keyframes ws-fab-pulse-orange {
+    0%, 100% { box-shadow: 0 8px 24px rgba(236, 98, 51, 0.5), 0 0 0 0 rgba(236, 98, 51, 0.45); }
+    50% { box-shadow: 0 8px 24px rgba(236, 98, 51, 0.5), 0 0 0 14px rgba(236, 98, 51, 0); }
+  }
 }
+
+/* ============ Mobile — the RHYTHM-SETTING beat (Decision EEE, guided moment) ============ */
+.rhythm { min-height: 100dvh; background: radial-gradient(120% 55% at 80% 4%, rgba(59, 148, 149, 0.22), transparent 55%), linear-gradient(180deg, #3d566b, var(--navy) 34%, #2c4152); }
+.rhythm-wrap { max-width: 460px; margin: 0 auto; padding: calc(env(safe-area-inset-top, 0px) + 44px) 24px calc(env(safe-area-inset-bottom, 0px) + 28px); }
+.rhythm-kick { color: #8fd0d1; font-size: 12px; font-weight: 700; letter-spacing: 1.8px; text-transform: uppercase; margin-bottom: 12px; }
+.rhythm-head { font-family: var(--font-condensed), var(--font-barlow), sans-serif; font-weight: 900; color: #fff; text-transform: uppercase; font-size: 40px; line-height: 0.92; letter-spacing: 0.5px; margin: 0; }
+.rhythm-sub { color: rgba(255, 255, 255, 0.72); font-size: 15px; line-height: 1.45; margin-top: 16px; }
+.rhythm-road { margin: 26px 0 8px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 16px; padding: 16px 16px 14px; }
+.rhythm-road-h { color: rgba(255, 255, 255, 0.55); font-size: 11px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; margin-bottom: 16px; }
+.rhythm-steps { display: flex; justify-content: space-between; position: relative; padding: 0 4px; }
+.rhythm-steps::before { content: ""; position: absolute; top: 6px; left: 14px; right: 14px; height: 2px; background: rgba(255, 255, 255, 0.16); }
+.rhythm-step { display: flex; flex-direction: column; align-items: center; gap: 8px; z-index: 2; }
+.rhythm-step-n { width: 13px; height: 13px; border-radius: 50%; border: 2px solid; }
+.rhythm-step-l { font-size: 11px; color: rgba(255, 255, 255, 0.55); font-weight: 600; }
+.rhythm-step.cur .rhythm-step-l { color: #fff; }
+.rhythm-step.cur .rhythm-step-n { box-shadow: 0 0 0 5px rgba(255, 255, 255, 0.12); }
+.rhythm-ask { color: #fff; font-weight: 700; font-size: 18px; margin: 26px 0 14px; }
+.rhythm-opt { display: flex; width: 100%; text-align: left; align-items: center; gap: 14px; background: rgba(255, 255, 255, 0.05); border: 1.5px solid rgba(255, 255, 255, 0.13); border-radius: 16px; padding: 15px 16px; margin-bottom: 11px; cursor: pointer; transition: 0.15s; font-family: inherit; }
+.rhythm-opt.sel { background: rgba(59, 148, 149, 0.18); border-color: var(--teal); }
+.rhythm-radio { width: 24px; height: 24px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, 0.35); flex: 0 0 auto; display: flex; align-items: center; justify-content: center; transition: 0.15s; }
+.rhythm-opt.sel .rhythm-radio { background: var(--teal); border-color: var(--teal); }
+.rhythm-radio svg { width: 13px; height: 13px; stroke: #fff; fill: none; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; opacity: 0; }
+.rhythm-opt.sel .rhythm-radio svg { opacity: 1; }
+.rhythm-optlabel { display: flex; flex-direction: column; }
+.rhythm-ti { color: #fff; font-size: 16px; font-weight: 600; }
+.rhythm-de { color: rgba(255, 255, 255, 0.6); font-size: 13px; margin-top: 2px; line-height: 1.35; }
+.rhythm-sugg { color: #8fd0d1; }
+.rhythm-reassure { color: rgba(255, 255, 255, 0.55); font-size: 13px; line-height: 1.5; margin: 16px 2px 22px; }
+.rhythm-confirm { width: 100%; min-height: 52px; border: none; border-radius: 28px; background: var(--teal); color: #fff; font-family: inherit; font-weight: 700; font-size: 17px; cursor: pointer; box-shadow: 0 10px 26px rgba(59, 148, 149, 0.35); }
+.rhythm-confirm:disabled { opacity: 0.6; cursor: default; }
