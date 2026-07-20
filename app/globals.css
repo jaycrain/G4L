@@ -1687,3 +1687,40 @@ body.redesign-on .back-dash { display: none; }
 .noti-dash { color: #8A929A; }
 .noti-edit { color: var(--teal); font-weight: 700; font-size: 14px; cursor: pointer; background: none; border: none; padding: 6px; font-family: inherit; }
 .noti-antinag { color: #8A929A; font-size: 12.5px; line-height: 1.5; margin-top: 14px; font-style: italic; }
+
+/* ============ Mobile slice 3 — the session workspace as canvas + a rising Companion bottom-sheet ============ */
+/* Only when MOBILE is on (.ws-mobile) and at the phone/portrait breakpoint. Desktop + the current mobile stack are
+   untouched. The canvas fills + orients; the sheet is hidden until the pulsing FAB raises it (the mock's begin beat).
+   When a session has no artifact slots (pure draw-out), the canvas is just wayfinding and the raised sheet is the
+   whole session — a plain threaded conversation, per Jay's draw-out call. */
+.ws-sheet-handle, .ws-sheet-fab { display: none; }
+@media (max-width: 1000px) {
+  .ws-app.ws-mobile { display: block; min-height: 0; }
+  .ws-app.ws-mobile .redesign-canvas { padding-bottom: 92px; } /* clear the FAB */
+  .ws-app.ws-mobile .ws-rail {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 1250; width: 100%;
+    height: 88dvh; max-height: 88dvh; min-height: 0; margin: 0;
+    background: #f5f4f1; border: none; border-top: 1px solid #e3e2df; border-radius: 20px 20px 0 0;
+    box-shadow: 0 -10px 34px rgba(16, 16, 69, 0.18);
+    transform: translateY(100%); transition: transform 0.36s cubic-bezier(0.32, 0.72, 0, 1);
+    display: flex; flex-direction: column;
+  }
+  .ws-app.ws-mobile.sheet-open .ws-rail { transform: translateY(0); }
+  .ws-app.ws-mobile .ws-rail > div { padding: 4px 16px 16px; }
+  /* iOS 16px composer (never zoom-clip the fixed sheet) */
+  .ws-app.ws-mobile .ws-rail textarea, .ws-app.ws-mobile .ws-rail input:not([type=checkbox]):not([type=radio]) { font-size: 16px; }
+  /* the grabber — tap to lower the sheet and read the canvas */
+  .ws-app.ws-mobile .ws-sheet-handle { display: flex; align-items: center; justify-content: center; padding: 9px 0 5px; background: none; border: none; cursor: pointer; flex: 0 0 auto; }
+  .ws-sheet-grip { width: 40px; height: 5px; border-radius: 3px; background: #c7ccd1; }
+  /* the pulsing FAB — raises the conversation (canvas orients first) */
+  .ws-sheet-fab {
+    display: inline-flex; align-items: center; gap: 8px; position: fixed; right: 16px; bottom: 18px; z-index: 1200;
+    background: var(--teal); color: #fff; font-family: inherit; font-weight: 700; font-size: 16px; border: none; border-radius: 100px;
+    padding: 14px 22px; box-shadow: 0 8px 24px rgba(59, 148, 149, 0.5); cursor: pointer; animation: ws-fab-pulse 2.2s ease-in-out infinite;
+  }
+  .ws-sheet-fab-dot { width: 9px; height: 9px; border-radius: 50%; background: #fff; }
+  @keyframes ws-fab-pulse {
+    0%, 100% { box-shadow: 0 8px 24px rgba(59, 148, 149, 0.5), 0 0 0 0 rgba(59, 148, 149, 0.45); }
+    50% { box-shadow: 0 8px 24px rgba(59, 148, 149, 0.5), 0 0 0 14px rgba(59, 148, 149, 0); }
+  }
+}

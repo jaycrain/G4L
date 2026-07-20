@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import { getDb } from '../../../../lib/db/index.ts';
 import type { Db } from '../../../../lib/db/schema.ts';
 import { authorizeMember } from '../../../authz.ts';
-import { redesignEnabled } from '../../../../lib/dashboard/redesign.ts';
+import { redesignEnabled, mobileEnabled } from '../../../../lib/dashboard/redesign.ts';
 import { logEvent } from '../../../../lib/telemetry/store.ts';
 import { getForecast } from '../../../../lib/curriculum/view.ts';
 import { deriveRingState } from '../../../../lib/workspace/ring-state.ts';
@@ -77,6 +77,7 @@ export default async function WorkspacePage({
       artifact={artifact}
       wayfinding={{ phaseLabel, phaseOrdinal, positionLabel, progressPct, rings, ringCenter: phaseLabel, ringSub }}
       review={review}
+      mobile={mobileEnabled()}
     />
   );
 }

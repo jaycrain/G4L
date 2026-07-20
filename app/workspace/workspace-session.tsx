@@ -43,14 +43,20 @@ export default function WorkspaceSession({
   artifact: initial,
   wayfinding,
   review = false,
+  mobile = false,
 }: {
   memberId: string;
   sessionKey: SessionKey;
   artifact: Artifact;
   wayfinding: Wayfinding;
   review?: boolean; // read-only revisit of a COMPLETED session — final artifact, no live rail (Cycle-2 review too)
+  mobile?: boolean; // Mobile slice 3: the phone bottom-sheet layout (canvas fills; the conversation rises as a sheet)
 }) {
   const [artifact, setArtifact] = useState<Artifact>(initial);
+  // Mobile slice 3 — the Companion is a bottom-sheet over the canvas: closed by default so the member is ORIENTED by
+  // the canvas first (the mock's "session summary" threshold), then a pulsing FAB rises the sheet to begin. Inert on
+  // desktop (the CSS only reads .ws-mobile at the phone breakpoint).
+  const [sheetOpen, setSheetOpen] = useState(false);
 
   // Fill the canvas from committed state. Two triggers: an immediate PUSH after each conversation turn (the chat client
   // fires ARTIFACT_REFRESH_EVENT once its turn — including any keeper commit — has landed, so a confirmed line shows on
@@ -88,7 +94,7 @@ export default function WorkspaceSession({
         </Link>
       </div>
 
-      <div className={`redesign-app ws-app${review ? ' ws-review' : ''}`}>
+      <div className={`redesign-app ws-app${review ? ' ws-review' : ''}${mobile ? ' ws-mobile' : ''}${sheetOpen ? ' sheet-open' : ''}`}>
         <div className="redesign-canvas">
           {review ? (
             <>
@@ -150,10 +156,23 @@ export default function WorkspaceSession({
 
         {!review && (
           <aside className="redesign-rail ws-rail" aria-label="Your G4L Companion — guided session">
+            {/* Mobile bottom-sheet grabber — tap to lower the sheet and see the canvas (CSS-shown only on ws-mobile). */}
+            {mobile && (
+              <button type="button" className="ws-sheet-handle" onClick={() => setSheetOpen(false)} aria-label="Lower the conversation to see your work">
+                <span className="ws-sheet-grip" aria-hidden="true" />
+              </button>
+            )}
             <SessionRail memberId={memberId} sessionKey={sessionKey} />
           </aside>
         )}
       </div>
+
+      {/* Mobile slice 3 — the pulsing FAB that raises the conversation sheet (canvas orients first). Phone-only via CSS. */}
+      {mobile && !review && !sheetOpen && (
+        <button type="button" className="ws-sheet-fab" onClick={() => setSheetOpen(true)} aria-label="Open the guided conversation">
+          <span className="ws-sheet-fab-dot" aria-hidden="true" /> Talk to me
+        </button>
+      )}
     </>
   );
 }
