@@ -29,6 +29,8 @@ import ResiliencePulse from './resilience-pulse.tsx';
 import { pulseBeats } from '../../lib/momentum/store.ts';
 import OutreachCard from './outreach-card.tsx';
 import { outreachEnabled } from '../../lib/outreach/config.ts';
+import { mobileEnabled } from '../../lib/dashboard/redesign.ts';
+import { loadHomeState, type HomeState, type Phase } from '../../lib/dashboard/home-state.ts';
 
 // Redesign Layer 2 — the DASHBOARD CANVAS (build spec §2, v4c IA). Renders only behind REDESIGN. A parallel path: the
 // live dashboard is untouched. Wires Layer 1 (resolveHero + deriveRingState) into the stateful resume hero + merged
@@ -101,6 +103,19 @@ export default async function RedesignDashboard({ db, memberId, dash }: { db: Db
     heroState.kind === 'mid-week-practice' && cur?.openable
       ? { href: pathHref, label: cur.title, isCheckpoint: cur.kind === 'checkpoint' }
       : null;
+
+  // Mobile slice 1 — the conversation-first home state (navy billboard + 8 states). Computed only behind MOBILE; the
+  // shell renders it at the mobile breakpoint and leaves desktop untouched. Reuses the hero/name/phase/ctaHref above.
+  const homeState: HomeState | null = mobileEnabled()
+    ? await loadHomeState(db, memberId, new Date(), {
+        hero: heroState,
+        firstName: dash.displayName,
+        phase: activePhase as Phase,
+        phaseLabel,
+        ctaHref,
+        milestone: null, // auto-trigger from an unrevealed ceremonial badge is a follow-up
+      })
+    : null;
 
   // Ring center reads PROGRESS (sessions done of total), not the next-session pointer — so finishing the 2nd of 3
   // shows "2 of 3", never "3 of 3". Counts by the REDESIGN session model (phaseSessions), so a single-session phase
@@ -188,7 +203,7 @@ export default async function RedesignDashboard({ db, memberId, dash }: { db: Db
         </div>
       </div>
 
-      <RedesignShell memberId={memberId}>
+      <RedesignShell memberId={memberId} homeState={homeState}>
         {/* Identity strip — the Doors are NOT shown here (privacy: sensitive if someone's looking over the member's
             shoulder); they live inside the member's full story (build spec §3 #19). */}
         <div className="rcard r-identity" data-tour="doors">

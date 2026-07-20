@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { openCheckin, sendCheckin, loadCheckin } from './checkin-actions.ts';
 import { CompanionCtx } from './companion-context.tsx';
+import type { HomeState } from '../../lib/dashboard/home-state.ts';
 
 // Redesign Layer 2 (D-01) — the PERSISTENT Companion rail + two-pane shell. Unlike the dock (spring-open, closeable),
 // the redesign rail is ALWAYS OPEN, docked right, never floating (build spec §1). It reuses the exact same persisted
@@ -13,7 +14,7 @@ import { CompanionCtx } from './companion-context.tsx';
 
 type Msg = { role: 'agent' | 'member'; text: string };
 
-export default function RedesignShell({ memberId, children }: { memberId: string; children: React.ReactNode }) {
+export default function RedesignShell({ memberId, homeState, children }: { memberId: string; homeState?: HomeState | null; children: React.ReactNode }) {
   const router = useRouter();
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState('');
@@ -21,6 +22,10 @@ export default function RedesignShell({ memberId, children }: { memberId: string
   // Phone-only (≤767px): the docked rail is hidden; a "Talk to me" pill folds the Companion up as a full-screen
   // overlay. This state has NO effect above phone width — the .phone-open class only carries CSS inside that breakpoint.
   const [phoneOpen, setPhoneOpen] = useState(false);
+  // Mobile slice 1: the conversation-first HOME cover (navy billboard) is visible by default on phones; "Go to
+  // Dashboard" dismisses it (slides up) to reveal the dashboard; the "Talk to me" pill brings it back.
+  const [homeDismissed, setHomeDismissed] = useState(false);
+  const homeChatRef = useRef<HTMLDivElement>(null);
   const chatRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const pendingRef = useRef(false);
@@ -46,7 +51,8 @@ export default function RedesignShell({ memberId, children }: { memberId: string
       setPending(true);
       try {
         const t = await openCheckin(memberId);
-        setMessages(t.length ? t : [{ role: 'agent', text: 'I’m here. What’s on your mind?' }]);
+        // The opener is state-aware on mobile: a ready outreach nudge / the resume prompt / the quiet line (slice 1).
+        setMessages(t.length ? t : [{ role: 'agent', text: homeState?.seed ?? 'I’m here. What’s on your mind?' }]);
       } catch {
         setMessages([{ role: 'agent', text: 'I’m here. Something hiccupped loading our thread — send a message and we’ll go.' }]);
       } finally {
@@ -59,6 +65,8 @@ export default function RedesignShell({ memberId, children }: { memberId: string
   useEffect(() => {
     const el = chatRef.current;
     if (el) el.scrollTop = el.scrollHeight;
+    const eh = homeChatRef.current;
+    if (eh) eh.scrollTop = eh.scrollHeight;
   }, [messages, pending]);
 
   // Keep the persisted thread in sync across devices (poll + on focus); never clobber a send.
@@ -97,6 +105,7 @@ export default function RedesignShell({ memberId, children }: { memberId: string
   // which reads as a jarring bottom-sheet rising instead of the clean left-glide. So there we open, don't focus
   // (matches the old dock exactly — the member taps the composer to type).
   const openCompanion = useCallback(() => {
+    setHomeDismissed(false); // mobile: bring the conversation-home cover back if it was dismissed
     setPhoneOpen(true);
     if (typeof window !== 'undefined' && window.matchMedia('(min-width: 1001px)').matches) {
       inputRef.current?.focus();
@@ -167,9 +176,50 @@ export default function RedesignShell({ memberId, children }: { memberId: string
             </button>
           </form>
         </aside>
-        {/* phone-only "Talk to me" pill (CSS-hidden above 767px) — folds the Companion up as a full-screen overlay */}
-        {!phoneOpen && (
-          <button type="button" className="rrail-fab" onClick={openCompanion} aria-label="Talk to your Companion">
+        {/* Mobile slice 1 — the conversation-first HOME cover (navy billboard). Renders only with a home state and only
+            at the phone breakpoint (CSS); "Go to Dashboard ↓" slides it up to reveal the dashboard beneath. Same thread
+            + composer as the rail (one conversation) — a phone layout, not a second store. */}
+        {homeState && (
+          <aside className={`rhome tense-${homeState.tense}${homeState.kind === 'milestone' ? ' milestone' : ''}${homeDismissed ? ' dismissed' : ''}`} aria-label="Your G4L Companion">
+            <div className="rhome-billboard">
+              {homeState.kicker && <div className="rhome-kick">{homeState.kicker}</div>}
+              {homeState.badge && (
+                <div className="rhome-badge" aria-hidden="true">
+                  <svg viewBox="0 0 24 24"><polyline points="5 13 10 18 19 6" /></svg>
+                </div>
+              )}
+              <h1 className="rhome-head">
+                {homeState.headline}
+                {homeState.sub && <span className="rhome-sub">{homeState.sub}</span>}
+              </h1>
+              {homeState.cta && (
+                <div className="rhome-ctarow">
+                  <a href={homeState.cta.href} className="rhome-pill">{homeState.cta.label}</a>
+                </div>
+              )}
+            </div>
+            <div ref={homeChatRef} className="rhome-thread">
+              {messages.map((m, i) => (
+                <div key={i} className={`rmsg ${m.role}`}>{m.text}</div>
+              ))}
+              {pending && <div className="rmsg typing">Thinking…</div>}
+            </div>
+            <form className="rhome-composer" onSubmit={send}>
+              <input
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder="Tell me what's going on…"
+                disabled={pending}
+                aria-label="Message your Companion"
+              />
+              <button type="submit" className="rrail-send" disabled={pending || !input.trim()}>Send</button>
+            </form>
+            <button type="button" className="rhome-godash" onClick={() => setHomeDismissed(true)}>Go to Dashboard ↓</button>
+          </aside>
+        )}
+        {/* phone-only "Talk to me" pill — brings the Companion (or the dismissed home cover) back. */}
+        {(homeState ? homeDismissed : !phoneOpen) && (
+          <button type="button" className="rrail-fab" onClick={homeState ? () => setHomeDismissed(false) : openCompanion} aria-label="Talk to your Companion">
             <span className="rrail-fab-dot" aria-hidden="true" /> Talk to me
           </button>
         )}

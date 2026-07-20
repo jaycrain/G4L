@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { Barlow } from 'next/font/google';
+import { Barlow, Barlow_Condensed } from 'next/font/google';
 import Link from 'next/link';
 import { Suspense } from 'react';
 import './globals.css';
@@ -11,6 +11,13 @@ const barlow = Barlow({
   subsets: ['latin'],
   weight: ['400', '600', '700', '800'],
   variable: '--font-barlow',
+});
+
+// The mobile home billboard's all-caps signature style (Mobile slice 1). Loaded but unused until the mobile home renders.
+const barlowCondensed = Barlow_Condensed({
+  subsets: ['latin'],
+  weight: ['800', '900'],
+  variable: '--font-condensed',
 });
 
 export const metadata: Metadata = {
@@ -33,7 +40,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={barlow.variable}>
+    <html lang="en" className={`${barlow.variable} ${barlowCondensed.variable}`}>
       <body>
         <main>
           <div className="brand-bar">

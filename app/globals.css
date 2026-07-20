@@ -1603,3 +1603,55 @@ body.redesign-on .back-dash { display: none; }
 .outreach-card-actions .outreach-reply:hover { background: var(--navy); }
 .outreach-card-actions .outreach-dismiss { background: none; border: none; color: var(--navy); opacity: 0.6; font-weight: 600; font-size: 0.9rem; cursor: pointer; padding: 0.4rem 0.5rem; }
 .outreach-card-actions .outreach-dismiss:hover { opacity: 1; color: var(--teal); background: none; }
+
+/* ============ Mobile slice 1 — the conversation-first HOME cover (navy billboard + 8 states) ============ */
+/* Desktop: never shown (the docked rail is the companion). Only the ≤1000px portrait breakpoint — the same one the
+   phone companion overlay + FAB already use — makes the home the default landing. Content stays the engine's. */
+.rhome { display: none; }
+@media (max-width: 1000px) {
+  .rhome {
+    position: fixed; inset: 0; z-index: 1250; display: flex; flex-direction: column;
+    background: linear-gradient(180deg, #3d566b, var(--navy) 34%, #2c4152);
+    transition: transform 0.5s cubic-bezier(0.22, 0.61, 0.24, 1);
+  }
+  .rhome.dismissed { transform: translateY(-104%); pointer-events: none; }
+
+  /* billboard — the all-caps signature (Barlow Condensed Black), pinned; the thread scrolls under it with a soft fade */
+  .rhome-billboard { flex: 0 0 auto; position: relative; background: #2c4152; padding: calc(env(safe-area-inset-top, 0px) + 40px) 22px 16px; }
+  .rhome-billboard::after { content: ""; position: absolute; left: 0; right: 0; bottom: -22px; height: 22px; background: linear-gradient(180deg, #2c4152, transparent); pointer-events: none; }
+  .rhome-kick { color: #8fd0d1; font-size: 12px; font-weight: 700; letter-spacing: 1.8px; text-transform: uppercase; margin-bottom: 12px; }
+  .rhome-badge { width: 56px; height: 56px; border-radius: 16px; display: flex; align-items: center; justify-content: center; margin-bottom: 12px;
+    background: linear-gradient(145deg, #4bb0b1, #2f7d7e); box-shadow: 0 0 0 6px rgba(59, 148, 149, 0.18), 0 10px 24px rgba(0, 0, 0, 0.3); }
+  .rhome-badge svg { width: 28px; height: 28px; stroke: #fff; fill: none; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+  .rhome-head { font-family: var(--font-condensed), var(--font-barlow), sans-serif; font-weight: 900; color: #fff; text-transform: uppercase;
+    font-size: 40px; line-height: 0.92; letter-spacing: 0.5px; margin: 0; }
+  .rhome-sub { display: block; font-family: var(--font-barlow), sans-serif; font-weight: 500; font-size: 17px; letter-spacing: 0; text-transform: none; color: rgba(255, 255, 255, 0.62); margin-top: 10px; }
+  .rhome-ctarow { display: flex; justify-content: flex-end; margin-top: 16px; }
+  .rhome-pill { display: inline-flex; align-items: center; min-height: 44px; background: var(--teal); color: #fff; border-radius: 26px;
+    font-weight: 700; font-size: 15px; padding: 0 20px; text-decoration: none; box-shadow: 0 6px 18px rgba(59, 148, 149, 0.35); }
+
+  /* thread — same messages as the rail, restyled for the navy ground (member bubbles lift off it) */
+  .rhome-thread { flex: 1 1 auto; overflow-y: auto; padding: 30px 18px 12px; display: flex; flex-direction: column; gap: 11px; -webkit-overflow-scrolling: touch; }
+  .rhome-thread .rmsg { max-width: 82%; font-size: 15px; line-height: 1.4; padding: 12px 15px; border-radius: 19px; white-space: pre-wrap; border: none; }
+  .rhome-thread .rmsg.agent { align-self: flex-start; background: #fff; color: #22303a; border-radius: 19px 19px 19px 7px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.14); }
+  .rhome-thread .rmsg.member { align-self: flex-end; background: #46617a; color: #fff; border: 1px solid rgba(255, 255, 255, 0.16); border-radius: 19px 19px 7px 19px; }
+  .rhome-thread .rmsg.typing { align-self: flex-start; background: none; color: rgba(255, 255, 255, 0.6); font-style: italic; }
+
+  /* composer — input MUST be ≥16px (iOS Safari auto-zooms + clips the fixed panel below that) */
+  .rhome-composer { flex: 0 0 auto; display: flex; align-items: center; gap: 10px; padding: 12px 16px; background: #2c4152; border-top: 1px solid rgba(255, 255, 255, 0.08); }
+  .rhome-composer input { flex: 1; height: 46px; border-radius: 24px; border: 1px solid rgba(255, 255, 255, 0.18); background: rgba(255, 255, 255, 0.08);
+    color: #fff; font-family: inherit; font-size: 16px; padding: 0 18px; outline: none; }
+  .rhome-composer input::placeholder { color: rgba(255, 255, 255, 0.5); }
+  .rhome-composer .rrail-send { border-radius: 24px; height: 46px; padding: 0 18px; }
+  .rhome-godash { flex: 0 0 auto; display: flex; align-items: center; justify-content: center; gap: 6px; border: none; cursor: pointer;
+    height: 48px; padding-bottom: env(safe-area-inset-bottom, 0px); background: #2c4152; color: #8fd0d1; font-family: inherit; font-size: 14px; font-weight: 600; letter-spacing: 0.4px; }
+
+  /* tense register (§5c) — accent only; the voice carries the rest */
+  .rhome.tense-present .rhome-kick { color: #9aa4ad; }
+  .rhome.tense-reclaim .rhome-kick { color: #f0a488; }
+  .rhome.tense-reclaim .rhome-pill { background: var(--orange); box-shadow: 0 6px 18px rgba(236, 98, 51, 0.35); }
+
+  /* milestone — the one "up" beat: a warm olive celebratory glow */
+  .rhome.milestone { background: radial-gradient(130% 58% at 76% 4%, rgba(145, 149, 54, 0.34), transparent 55%), linear-gradient(180deg, #3d566b, var(--navy) 34%, #2c4152); }
+  .rhome.milestone .rhome-billboard, .rhome.milestone .rhome-billboard::after { background: transparent; }
+}
