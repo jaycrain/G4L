@@ -1705,7 +1705,13 @@ body.redesign-on .back-dash { display: none; }
     transform: translateY(100%); transition: transform 0.36s cubic-bezier(0.32, 0.72, 0, 1);
     display: flex; flex-direction: column;
   }
+  /* Three detents (JS snaps between them; an active drag sets an inline transform that overrides these). PEEK keeps
+     150px on screen so the canvas — the member's words landing — is admirable without losing their place; KEEP the
+     150px in sync with PEEK_VISIBLE in workspace-session.tsx. */
   .ws-app.ws-mobile.sheet-open .ws-rail { transform: translateY(0); }
+  .ws-app.ws-mobile.sheet-peek .ws-rail { transform: translateY(calc(100% - 150px)); }
+  .ws-app.ws-mobile.sheet-closed .ws-rail { transform: translateY(100%); }
+  .ws-app.ws-mobile.sheet-dragging .ws-rail { transition: none; } /* finger-follow: no easing while dragging */
   .ws-app.ws-mobile .ws-rail > div { padding: 4px 16px 16px; }
   /* iOS 16px composer (never zoom-clip the fixed sheet) */
   .ws-app.ws-mobile .ws-rail textarea, .ws-app.ws-mobile .ws-rail input:not([type=checkbox]):not([type=radio]) { font-size: 16px; }

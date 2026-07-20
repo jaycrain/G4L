@@ -56,11 +56,13 @@ test('milestone outranks everything and carries the badge + shelf pill', () => {
     ...base,
     hero: { kind: 'checkpoint-ready', checkpoint: { phase: 'rewire', label: 'x' } }, // present but outranked
     openOutreach: { trigger: 'morning_presence', message: 'x' },
-    milestone: { badgeName: 'You turned the voice', href: '/badges/m1' },
+    milestone: { badgeName: 'You turned the voice', href: '/badges/m1', badgeId: 'voice_turned' },
   });
   assert.equal(s.kind, 'milestone');
   assert.equal(s.badge, true);
   assert.deepEqual(s.cta, { label: 'See your badges →', href: '/badges/m1' });
+  // one-shot: the badge_id rides through as the dismiss key so the FIRST engagement retires the celebration.
+  assert.equal(s.dismissKey, 'voice_turned');
 });
 
 test('hero action states outrank a reflective nudge (a concrete next thing wins)', () => {

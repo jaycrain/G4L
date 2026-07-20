@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { openCheckin, sendCheckin, loadCheckin } from './checkin-actions.ts';
+import { markMilestoneSeenAction } from './home-actions.ts';
 import { CompanionCtx } from './companion-context.tsx';
 import type { HomeState } from '../../lib/dashboard/home-state.ts';
 
@@ -25,6 +26,14 @@ export default function RedesignShell({ memberId, homeState, children }: { membe
   // Mobile slice 1: the conversation-first HOME cover (navy billboard) is visible by default on phones; "Go to
   // Dashboard" dismisses it (slides up) to reveal the dashboard; the "Talk to me" pill brings it back.
   const [homeDismissed, setHomeDismissed] = useState(false);
+  // One-shot the milestone celebration: the FIRST engagement (dismiss or tap-through) retires it server-side so it
+  // never re-greets on later loads. Guarded by a ref so a dismiss + a CTA tap don't double-write.
+  const milestoneMarked = useRef(false);
+  const retireMilestone = useCallback(() => {
+    if (milestoneMarked.current || homeState?.kind !== 'milestone' || !homeState.dismissKey) return;
+    milestoneMarked.current = true;
+    void markMilestoneSeenAction(memberId, homeState.dismissKey);
+  }, [homeState, memberId]);
   const homeChatRef = useRef<HTMLDivElement>(null);
   const chatRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -194,7 +203,7 @@ export default function RedesignShell({ memberId, homeState, children }: { membe
               </h1>
               {homeState.cta && (
                 <div className="rhome-ctarow">
-                  <a href={homeState.cta.href} className="rhome-pill">{homeState.cta.label}</a>
+                  <a href={homeState.cta.href} className="rhome-pill" onClick={retireMilestone}>{homeState.cta.label}</a>
                 </div>
               )}
             </div>
@@ -214,7 +223,7 @@ export default function RedesignShell({ memberId, homeState, children }: { membe
               />
               <button type="submit" className="rrail-send" disabled={pending || !input.trim()}>Send</button>
             </form>
-            <button type="button" className="rhome-godash" onClick={() => setHomeDismissed(true)}>Go to Dashboard ↓</button>
+            <button type="button" className="rhome-godash" onClick={() => { retireMilestone(); setHomeDismissed(true); }}>Go to Dashboard ↓</button>
           </aside>
         )}
         {/* phone-only "Talk to me" pill — brings the Companion (or the dismissed home cover) back. */}

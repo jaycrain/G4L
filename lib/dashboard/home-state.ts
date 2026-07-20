@@ -29,6 +29,7 @@ export type HomeState = {
   badge: boolean; // milestone medallion
   tense: Tense;
   seed: string | null; // the opening Companion thread line (engine-grounded when it's a nudge)
+  dismissKey?: string | null; // milestone only: the badge_id → mark-seen on dismissal (one-shot, no re-greet)
 };
 
 export type HomeInputs = {
@@ -38,7 +39,7 @@ export type HomeInputs = {
   hero: HeroState;
   ctaHref: string; // the next-action route, computed once by the page (reused, not recomputed here)
   openOutreach: { trigger: OutreachTrigger; message: string } | null;
-  milestone: { badgeName: string; href: string } | null;
+  milestone: { badgeName: string; href: string; badgeId: string } | null;
   hourLocal: number; // 0–23, for the greeting
 };
 
@@ -60,6 +61,7 @@ export function resolveHomeState(i: HomeInputs): HomeState {
       kind: 'milestone', kicker: `A real one · ${i.phaseLabel}`, headline: 'You kept your word.',
       sub: `${i.milestone.badgeName} — earned.`, cta: { label: 'See your badges →', href: i.milestone.href },
       badge: true, tense, seed: "That's not a streak to protect — just proof it's becoming who you are.",
+      dismissKey: i.milestone.badgeId,
     };
   }
   if (i.hero.kind === 'checkpoint-ready') {
@@ -112,22 +114,43 @@ function localHour(timezone: string | null, now: Date): number {
   }
 }
 
-// A just-earned CEREMONIAL badge → the milestone state. No "seen" flag on badge_earned, so a short recency window
-// (earned within ~20h) stands in — the celebration greets them a few times, then fades (a warm over-show, not a nag).
-async function loadMilestone(db: Db, memberId: string): Promise<{ badgeName: string; href: string } | null> {
+// A just-earned CEREMONIAL badge → the milestone state. The celebration is ONE-SHOT: a short recency window (earned
+// within ~20h) makes it eligible, and a `home_milestone_shown` marker retires it the moment the member engages with
+// it once (dismiss or tap-through). The marker — not render — retires it, so a Next prefetch of the home can't quietly
+// burn the celebration before the member ever sees it.
+async function loadMilestone(db: Db, memberId: string): Promise<{ badgeName: string; href: string; badgeId: string } | null> {
   try {
     const { rows } = await db.query<{ badge_id: string }>(
-      "select badge_id from badge_earned where member_id = $1 and earned_at >= now() - interval '20 hours' order by earned_at desc",
+      `select be.badge_id from badge_earned be
+        where be.member_id = $1 and be.earned_at >= now() - interval '20 hours'
+          and not exists (
+            select 1 from member_event me
+             where me.member_id = $1 and me.kind = 'home_milestone_shown' and me.ref = be.badge_id)
+        order by be.earned_at desc`,
       [memberId],
     );
     for (const r of rows) {
       const b = getBadge(r.badge_id);
-      if (b?.ceremony) return { badgeName: b.name, href: `/badges/${memberId}` };
+      if (b?.ceremony) return { badgeName: b.name, href: `/badges/${memberId}`, badgeId: r.badge_id };
     }
   } catch {
     /* degrade — no milestone */
   }
   return null;
+}
+
+/** Retire a milestone celebration — written when the member ENGAGES with the milestone home once (dismiss or
+ *  tap-through), so it never re-greets. Idempotent by intent (a duplicate row is harmless; loadMilestone tests only
+ *  existence). Degrades silently — a failed marker just means the celebration greets once more, never a crash. */
+export async function markMilestoneSeen(db: Db, memberId: string, badgeId: string): Promise<void> {
+  try {
+    await db.query(
+      "insert into member_event (member_id, kind, surface, ref) values ($1, 'home_milestone_shown', 'home', $2)",
+      [memberId, badgeId],
+    );
+  } catch {
+    /* degrade — the celebration simply greets once more */
+  }
 }
 
 /** The thin loader — assembles the signals the page doesn't already have (a ready outreach nudge · the member's

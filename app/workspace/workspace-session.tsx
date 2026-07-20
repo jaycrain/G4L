@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { readArtifactAction } from './actions.ts';
 import { ARTIFACT_REFRESH_EVENT } from '../components/artifact-refresh.ts';
@@ -55,10 +55,47 @@ export default function WorkspaceSession({
   tense?: 'present' | 'practice' | 'reclaim'; // §5c phase accent — reinforce, don't reskin (mobile only)
 }) {
   const [artifact, setArtifact] = useState<Artifact>(initial);
-  // Mobile slice 3 — the Companion is a bottom-sheet over the canvas: closed by default so the member is ORIENTED by
-  // the canvas first (the mock's "session summary" threshold), then a pulsing FAB rises the sheet to begin. Inert on
-  // desktop (the CSS only reads .ws-mobile at the phone breakpoint).
-  const [sheetOpen, setSheetOpen] = useState(false);
+  // Mobile slice 3 — the Companion is a bottom-sheet over the canvas: CLOSED by default so the member is ORIENTED by
+  // the canvas first (the mock's "session summary" threshold), then a pulsing FAB rises the sheet to begin. A third
+  // 'peek' detent lets them drag the open sheet down to admire the canvas (their words landing) without losing their
+  // place, then raise it back. Inert on desktop (the CSS only reads .ws-mobile at the phone breakpoint).
+  type SheetPos = 'closed' | 'peek' | 'open';
+  const [sheetPos, setSheetPos] = useState<SheetPos>('closed');
+  const railRef = useRef<HTMLElement>(null);
+  const drag = useRef<{ startY: number; baseY: number; moved: boolean } | null>(null);
+  const [dragY, setDragY] = useState<number | null>(null); // live px translate WHILE dragging (null = CSS class drives)
+  const PEEK_VISIBLE = 150; // px of sheet left on screen at the 'peek' detent — KEEP IN SYNC with .sheet-peek in globals.css
+
+  // translateY (px, downward) for a resting detent — measured from the live sheet height so it tracks any viewport.
+  const posY = (pos: SheetPos): number => {
+    const h = railRef.current?.offsetHeight ?? 0;
+    return pos === 'open' ? 0 : pos === 'peek' ? Math.max(0, h - PEEK_VISIBLE) : h;
+  };
+  const cycle = () => setSheetPos((p) => (p === 'open' ? 'peek' : p === 'peek' ? 'closed' : 'open'));
+  // Pointer drag (unifies touch + mouse, so it's live-followable in the preview too). Small movement = a tap → cycle.
+  const gripDown = (clientY: number, el: HTMLElement, pointerId: number) => {
+    el.setPointerCapture?.(pointerId);
+    drag.current = { startY: clientY, baseY: posY(sheetPos), moved: false };
+    setDragY(posY(sheetPos));
+  };
+  const gripMove = (clientY: number) => {
+    if (!drag.current) return;
+    const dy = clientY - drag.current.startY;
+    if (Math.abs(dy) > 5) drag.current.moved = true;
+    const h = railRef.current?.offsetHeight ?? 0;
+    setDragY(Math.min(Math.max(drag.current.baseY + dy, 0), h));
+  };
+  const gripUp = () => {
+    const d = drag.current;
+    drag.current = null;
+    if (!d) return;
+    const cur = dragY;
+    setDragY(null);
+    if (!d.moved || cur == null) return cycle(); // a tap, not a drag
+    const snaps: Array<[SheetPos, number]> = [['open', posY('open')], ['peek', posY('peek')], ['closed', posY('closed')]];
+    const best = snaps.reduce((a, b) => (Math.abs(b[1] - cur) < Math.abs(a[1] - cur) ? b : a));
+    setSheetPos(best[0]);
+  };
 
   // Fill the canvas from committed state. Two triggers: an immediate PUSH after each conversation turn (the chat client
   // fires ARTIFACT_REFRESH_EVENT once its turn — including any keeper commit — has landed, so a confirmed line shows on
@@ -96,7 +133,7 @@ export default function WorkspaceSession({
         </Link>
       </div>
 
-      <div className={`redesign-app ws-app${review ? ' ws-review' : ''}${mobile ? ' ws-mobile' : ''}${mobile ? ` tense-${tense}` : ''}${sheetOpen ? ' sheet-open' : ''}`}>
+      <div className={`redesign-app ws-app${review ? ' ws-review' : ''}${mobile ? ' ws-mobile' : ''}${mobile ? ` tense-${tense}` : ''}${mobile ? ` sheet-${sheetPos}` : ''}${dragY != null ? ' sheet-dragging' : ''}`}>
         <div className="redesign-canvas">
           {review ? (
             <>
@@ -157,10 +194,24 @@ export default function WorkspaceSession({
         </div>
 
         {!review && (
-          <aside className="redesign-rail ws-rail" aria-label="Your G4L Companion — guided session">
-            {/* Mobile bottom-sheet grabber — tap to lower the sheet and see the canvas (CSS-shown only on ws-mobile). */}
+          <aside
+            ref={railRef}
+            className="redesign-rail ws-rail"
+            aria-label="Your G4L Companion — guided session"
+            style={mobile && dragY != null ? { transform: `translateY(${dragY}px)`, transition: 'none' } : undefined}
+          >
+            {/* Mobile bottom-sheet grabber — DRAG to admire the canvas (peek) or lower it; a tap cycles the detents.
+                Pointer events so it live-follows a mouse in the preview too (CSS-shown only on ws-mobile). */}
             {mobile && (
-              <button type="button" className="ws-sheet-handle" onClick={() => setSheetOpen(false)} aria-label="Lower the conversation to see your work">
+              <button
+                type="button"
+                className="ws-sheet-handle"
+                onPointerDown={(e) => gripDown(e.clientY, e.currentTarget, e.pointerId)}
+                onPointerMove={(e) => gripMove(e.clientY)}
+                onPointerUp={gripUp}
+                onPointerCancel={gripUp}
+                aria-label="Drag or tap to raise, peek at your work, or lower the conversation"
+              >
                 <span className="ws-sheet-grip" aria-hidden="true" />
               </button>
             )}
@@ -170,8 +221,8 @@ export default function WorkspaceSession({
       </div>
 
       {/* Mobile slice 3 — the pulsing FAB that raises the conversation sheet (canvas orients first). Phone-only via CSS. */}
-      {mobile && !review && !sheetOpen && (
-        <button type="button" className="ws-sheet-fab" onClick={() => setSheetOpen(true)} aria-label="Open the guided conversation">
+      {mobile && !review && sheetPos === 'closed' && (
+        <button type="button" className="ws-sheet-fab" onClick={() => setSheetPos('open')} aria-label="Open the guided conversation">
           <span className="ws-sheet-fab-dot" aria-hidden="true" /> Talk to me
         </button>
       )}
