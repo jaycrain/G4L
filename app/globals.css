@@ -1655,3 +1655,35 @@ body.redesign-on .back-dash { display: none; }
   .rhome.milestone { background: radial-gradient(130% 58% at 76% 4%, rgba(145, 149, 54, 0.34), transparent 55%), linear-gradient(180deg, #3d566b, var(--navy) 34%, #2c4152); }
   .rhome.milestone .rhome-billboard, .rhome.milestone .rhome-billboard::after { background: transparent; }
 }
+
+/* ============ Mobile slice 2 — the Notifications DIAL (inline on Your Account; light card) ============ */
+.noti-card { position: relative; }
+.noti-dial { margin-top: 2px; }
+.noti-savebar { position: absolute; top: 16px; right: 18px; color: var(--olive); font-size: 12px; font-weight: 700; letter-spacing: 0.3px; min-height: 16px; }
+.noti-subhead { color: #8A929A; font-size: 11px; font-weight: 700; letter-spacing: 1.3px; text-transform: uppercase; margin: 20px 2px 10px; }
+.noti-dial .noti-subhead:first-of-type { margin-top: 4px; }
+.noti-group { border: 1px solid var(--panel-line, #E8E6E6); border-radius: 13px; overflow: hidden; }
+.noti-opt { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; padding: 13px 14px; cursor: pointer; border: none; border-bottom: 1px solid var(--panel-line, #E8E6E6); background: #fff; font-family: inherit; }
+.noti-opt:last-child { border-bottom: none; }
+.noti-radio { width: 21px; height: 21px; border-radius: 50%; border: 2px solid #c7ccd1; flex: 0 0 auto; display: flex; align-items: center; justify-content: center; }
+.noti-opt.sel .noti-radio { background: var(--teal); border-color: var(--teal); }
+.noti-radio svg { width: 11px; height: 11px; stroke: #fff; fill: none; stroke-width: 3.4; stroke-linecap: round; stroke-linejoin: round; opacity: 0; }
+.noti-opt.sel .noti-radio svg { opacity: 1; }
+.noti-optlabel { display: flex; flex-direction: column; }
+.noti-ti { color: var(--charcoal, #2A2A2A); font-size: 15px; font-weight: 600; }
+.noti-opt.sel .noti-ti { color: var(--navy); }
+.noti-de { color: #8A929A; font-size: 12px; margin-top: 1px; }
+.noti-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 13px 14px; border-bottom: 1px solid var(--panel-line, #E8E6E6); }
+.noti-row:last-child { border-bottom: none; }
+.noti-always { color: var(--olive); font-size: 12.5px; font-weight: 700; flex: 0 0 auto; }
+.noti-sw { width: 46px; height: 28px; border-radius: 15px; background: #d3d7db; position: relative; cursor: pointer; transition: 0.18s; flex: 0 0 auto; border: none; padding: 0; }
+.noti-sw::after { content: ""; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25); transition: 0.18s; }
+.noti-sw.on { background: var(--teal); }
+.noti-sw.on::after { left: 21px; }
+.noti-quiet { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 13px 14px; }
+.noti-quiet-time { color: var(--navy); font-weight: 800; font-size: 18px; }
+.noti-quiet-edit { display: flex; align-items: center; gap: 8px; }
+.noti-quiet-edit select { font-family: inherit; font-size: 15px; font-weight: 600; color: var(--navy); border: 1px solid var(--panel-line, #E8E6E6); border-radius: 8px; padding: 6px 8px; background: #fff; }
+.noti-dash { color: #8A929A; }
+.noti-edit { color: var(--teal); font-weight: 700; font-size: 14px; cursor: pointer; background: none; border: none; padding: 6px; font-family: inherit; }
+.noti-antinag { color: #8A929A; font-size: 12.5px; line-height: 1.5; margin-top: 14px; font-style: italic; }

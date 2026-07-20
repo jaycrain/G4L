@@ -11,6 +11,23 @@ import { getConnectionTokens, markDisconnected, deleteActivityData } from '../..
 import { deauthorize } from '../../lib/activity/strava.ts';
 import type { Db } from '../../lib/db/schema.ts';
 import { writeAsActor } from '../../lib/db/actor.ts';
+import { setPref } from '../../lib/outreach/store.ts';
+import { sanitizeNotificationPatch, type NotificationPatch } from '../../lib/outreach/prefs-input.ts';
+
+// The member's Notifications dial (rhythm · channels · quiet hours). Acts on the logged-in member; the patch is
+// sanitized (known rhythm/channels, in-app forced on, 0–23 hours) before it reaches setPref.
+export async function saveNotificationPrefs(patch: NotificationPatch): Promise<{ ok: boolean; error?: string }> {
+  const memberId = await currentMemberId();
+  if (!memberId) return { ok: false, error: 'You’re not signed in.' };
+  try {
+    const db = (await getDb()) as unknown as Db;
+    await setPref(db, memberId, sanitizeNotificationPatch(patch));
+    return { ok: true };
+  } catch (e) {
+    console.error('saveNotificationPrefs failed:', (e as Error).message);
+    return { ok: false, error: 'Could not save that — try again.' };
+  }
+}
 
 // All settings act on the LOGGED-IN member (from the session), never a passed id.
 

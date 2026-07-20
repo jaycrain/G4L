@@ -5,6 +5,9 @@ import { logoutAction } from '../login/actions.ts';
 import { logoutEverywhereAction } from './actions.ts';
 import { initials } from '../../lib/member/avatar.ts';
 import EnableNotifications from '../dashboard/enable-notifications.tsx';
+import NotificationPrefs from './notification-prefs.tsx';
+import { outreachEnabled } from '../../lib/outreach/config.ts';
+import { getPref } from '../../lib/outreach/store.ts';
 import AvatarUpload from './avatar-upload.tsx';
 import ProfileForm from './profile-form.tsx';
 import PasswordForm from './password-form.tsx';
@@ -32,6 +35,8 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
   const stravaConn = await getConnection(db, memberId, 'strava');
   const connectProfile = await getConnectProfile(db, memberId);
   const connectMsg = (await searchParams).connect;
+  // Mobile slice 2 — the Notifications dial (OUTREACH-gated): the member's outreach cadence, read from outreach_pref.
+  const notiPref = outreachEnabled() ? await getPref(db, memberId).catch(() => null) : null;
 
   return (
     <>
@@ -82,6 +87,14 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
       </div>
 
       <EnableNotifications memberId={memberId} />
+
+      {notiPref && (
+        <div className="card noti-card">
+          <NotificationPrefs
+            initial={{ rhythm: notiPref.rhythm, channels: notiPref.channels, quietStart: notiPref.quietStart, quietEnd: notiPref.quietEnd, timezone: notiPref.timezone }}
+          />
+        </div>
+      )}
 
       <div className="card">
         <h3>Sessions</h3>
