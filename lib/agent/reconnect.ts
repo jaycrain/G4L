@@ -11,7 +11,7 @@
 //    conversation. Any door/identity REVISION happens later in the Doors excavation (§2b/§3.3), member-confirmed
 //    and versioned — so this increment is purely additive: it writes nothing.
 
-import { DOORS, isDoorSlug, type DoorSlug } from '../doors.ts';
+import { DOORS, matchDoors, isDoorSlug, type DoorSlug } from '../doors.ts';
 import { TOTAL_ITEMS, itemStem, DIMENSIONS, type Dimension } from '../idq/instrument.ts';
 import { scoreIdq } from '../idq/scoring.ts';
 import { identityLabel } from '../member/identity.ts';
@@ -232,6 +232,40 @@ function applyAddition(doors: DoorSlug[], toSlug: DoorSlug): DoorSlug[] {
   return Array.from(new Set([...doors, toSlug]));
 }
 
+// --- W-34 DETERMINISTIC REDIRECT DETECTOR (2nd occurrence → fix the abstraction, not the prompt) ----------------
+// The redirect-honor rule lives in the prompt (FOLLOW A REDIRECT), but the model can railroad past it — it opened on
+// the primary Door, the member pivoted to a DIFFERENT one of their OWN doors as the real origin, and the model walked
+// on into the first door anyway (the founder's live symptom). So the ENGINE detects the redirect deterministically
+// and PROPOSES the primacy correction (offered as a check, propose→confirm via the same §2b path) instead of trusting
+// the model to notice. Scope, kept tight because a false swap-proposal mid-excavation would itself be a capture bug:
+//   • OPENER-ANCHORED — only the first excavation reply, where a redirect semantically lands; a later Door mention is
+//     context/sequence, not a redirect, and stays the model's call.
+//   • COMMITTED-ONLY — the member pivots among the doors they already named (a primacy correction). A brand-new Door
+//     surfacing stays the model's job (propose_door_add / propose_correction).
+//   • REQUIRES AN ORIGIN CUE — a passing "the marriage got hard around the diagnosis" (sequence) never trips it; only
+//     "really / it goes back to / before the / led to" (reassignment) does.
+//   • PROPOSE-NOT-COMMIT + ONCE per excavation — an over-read costs one waved-off check, never a data change or a loop.
+// NOTE: this fires only when matchDoors RECOGNIZES the member's word for the door (canonical name or a mapped alias);
+// an un-aliased redirect (e.g. a bare "the job" for The Grind) still falls to the model — a deliberate matcher-precision
+// tradeoff (forcing "job"→grind would collide with career_cliff's "lost my job"), not an oversight.
+const REDIRECT_CUE =
+  /\b(really|actually|the real|goes back to|led to|lead to|started (with|it)|came (first|before)|before (the|that|my|his|her|our|it|any)|it was (the|really)|more than the)\b/;
+
+export function detectDoorRedirect(message: string, doors: DoorSlug[]): { from: DoorSlug; to: DoorSlug } | null {
+  const from = doors[0];
+  if (!from) return null;
+  if (!REDIRECT_CUE.test((message || '').toLowerCase())) return null;
+  // A committed Door named in this message that ISN'T the one we opened on = the redirect target.
+  const to = matchDoors(message).find((d) => d !== from && doors.includes(d));
+  return to ? { from, to } : null;
+}
+
+function proposeRedirect(fromSlug: DoorSlug, toSlug: DoorSlug): string {
+  const from = DOORS.find((d) => d.slug === fromSlug)?.displayName ?? 'that';
+  const to = DOORS.find((d) => d.slug === toSlug)?.displayName ?? 'that';
+  return `Hold on — it sounds like you're taking me to ${to}, more than ${from}. Should we start there instead — is ${to} closer to where it really began?`;
+}
+
 const doorsStage: StageDef = {
   id: 'doors',
   mode: 'drawout',
@@ -246,7 +280,19 @@ const doorsStage: StageDef = {
       b.reply = reflectReseeing(b.modelText);
       return;
     }
-    const sc = b.scratch as { doorDepth?: number };
+    const sc = b.scratch as { doorDepth?: number; redirectChecked?: boolean };
+    // W-34: the model didn't propose a re-seeing — check the OPENER RESPONSE ourselves (once). If the member pivoted
+    // to a different committed Door as the origin, propose the primacy correction through the same §2b confirm path.
+    if (!sc.redirectChecked && (sc.doorDepth ?? 0) === 0) {
+      sc.redirectChecked = true; // one engine redirect-check per excavation → a dispute can't loop it
+      const rd = detectDoorRedirect(b.memberMessage, b.collected.doors ?? []);
+      if (rd) {
+        b.pendingRevision = { kind: 'correct', fromSlug: rd.from, toSlug: rd.to };
+        b.awaitingConfirm = true;
+        b.reply = proposeRedirect(rd.from, rd.to);
+        return;
+      }
+    }
     sc.doorDepth = (sc.doorDepth ?? 0) + 1;
     // MODEL-JUDGED depth (Decision T): the model calls reflect_door when the door is genuinely excavated — NOT a
     // door-count or length proxy. The engine only BOUNDS it: a FLOOR (no insight without material) and a CAP.
@@ -304,9 +350,13 @@ const doorsStage: StageDef = {
       b.awaitingConfirm = false;
       b.reply = withQuestion(b.modelText, doorMore(b.history)); // there's more — keep drawing out
     } else {
-      // done → hand into the measurement block (§2c, still a stub this increment).
+      // done → hand into the measurement block. W-35 (receive-before-you-move): lead with the model's in-voice
+      // acknowledgment of the member's final answer BEFORE the scripted IDQ frame — the deterministic opener must not
+      // clobber what they just said (the founder answered a weighty question and got the cold "let's shift" frame).
       b.stage = 'measurement';
-      b.reply = b.arc.stages.measurement!.opener(b.collected);
+      const idqOpener = b.arc.stages.measurement!.opener(b.collected);
+      const ack = (b.modelText ?? '').trim();
+      b.reply = ack ? `${ack}${BEAT_SEP}${idqOpener}` : idqOpener;
     }
   },
 };
@@ -319,13 +369,30 @@ const doorsStage: StageDef = {
 // reused from the authored RCN-DFT asset. The beat ENDS on the turn-toward-hope BRIDGE into Legacy (V3).
 const DRIFT_MIN_DEPTH = 2;
 const DRIFT_MAX_DEPTH = 4;
+// Serve a short list back in the member's own words: "a", "a and b", "a, b, and c".
+function serveReclaim(items: string[]): string {
+  const xs = items.map((s) => s.trim()).filter(Boolean).slice(0, 3);
+  if (xs.length <= 1) return xs[0] ?? '';
+  if (xs.length === 2) return `${xs[0]} and ${xs[1]}`;
+  return `${xs.slice(0, -1).join(', ')}, and ${xs[xs.length - 1]}`;
+}
 // The opener — the RCN-DFT step-1 frame + prompt (a hoisted fn so the measurement close can append it on hand-in).
-export function driftOpen(_c: Collected): string {
-  // ONE job: the take-stock ask. No "not regret" (names the negative — the Drift-line rule), no reclaim-motivation
-  // question (that's a different beat). Jay's locked copy.
+// W-37 + W-36 (stateless-arcs / honor-the-member): RECALL, don't re-collect. The member already named what they want
+// back (their Reclaim List) at onboarding — so serve it BACK and DEEPEN (which loss do they feel most), instead of
+// asking cold for "a few things the Fade cost you" with INVENTED examples ("the deep friendships" — a loss the member
+// never named, W-36). Grounds every example in their own words; never fabricates a loss category, even on the degrade.
+export function driftOpen(c: Collected): string {
+  const wants = (c.reclaimList ?? []).map((s) => s.trim()).filter(Boolean);
+  if (wants.length >= 2) {
+    return (
+      `Back at the start, you named what you want back — ${serveReclaim(wants)}. Let's stay with those a moment — ` +
+      `not a new list, the real weight of it. Of the things you named, which do you feel the distance from most right now?`
+    );
+  }
+  // Graceful degrade — nothing to recall: a grounded take-stock that STILL never invents a specific loss (W-36).
   return (
-    "So let's take stock — a look at what got left behind. Name a few things the Fade cost you: the morning rides, " +
-    'the deep friendships, the feeling of being in your body instead of trapped in your head.'
+    "So let's take stock — what has the Fade quietly cost you? Not a checklist — the ones you actually feel. " +
+    "Start wherever it's heaviest."
   );
 }
 const DRIFT_MORE_VARIANTS = [

@@ -116,9 +116,12 @@ const domainsStage: StageDef = {
       sc.domainIdx = next;
       b.reply = withScriptedBeat(reflected, W1_DOMAINS[next]!);
     } else {
-      // all five walked → NAME THE CAMPAIGN (fixed reveal) + the guided turn ask (model text, or the fallback ask).
+      // all five walked. W-39: the model owns this beat in ONE flowing turn (receive first → make the campaign visible
+      // → seed the true line from their own prior honest lines → ask), so it never leads with analysis AND never
+      // double-beats a scripted reveal onto a full model turn (the persona walk caught exactly that). The scripted
+      // reveal + ask remain only as the fallback when the model returns nothing.
       b.stage = 'affirm';
-      b.reply = `${W1_CAMPAIGN}${BEAT_SEP}${reflected || W1_TURN_ASK_FALLBACK}`;
+      b.reply = (reflected || '').trim() || `${W1_CAMPAIGN}${BEAT_SEP}${W1_TURN_ASK_FALLBACK}`;
     }
   },
   confirm(b) {
@@ -179,8 +182,11 @@ export function applyRewireTurn(state: ConvState, history: ConvMessage[], member
   return runArcTurn(REWIRE_ARC, state, history, memberMessage, model);
 }
 
-export function rewireOpening(): Turn {
-  return { reply: w1Opening(), state: { stage: 'domains', collected: {} }, complete: false };
+// W-40 (stateless-arcs): W1 now carries the member's committed captures (their first-person gap story + Reclaim List)
+// so the TRUE-LINE work is SEEDED from honest lines they've already spoken, not introduced cold. Degrade to {} when
+// there's nothing to recall.
+export function rewireOpening(committed?: Collected | null): Turn {
+  return { reply: w1Opening(), state: { stage: 'domains', collected: committed ?? {} }, complete: false };
 }
 
 // ── the live surface — the model REFLECTS each lie, NAMES the heaviest at the turn, and ACKS true lines (tool-free) ──
@@ -188,7 +194,9 @@ const REWIRE_W1_SYSTEM =
   "You are the G4L Companion running W1, the Disinformation Audit, in Rewire (Phase 2). The member is naming the " +
   "comfortable LIES they tell themselves across five life domains (body, habits, time, who they are, what's still " +
   "possible). Never judge, grade, praise, or diagnose; a self-lie is a hundred reasonable decisions, not a failing — " +
-  "normalize it. Plain, measured, no hype. Do NOT write the member's counter-line for them (that's their work at the " +
+  "normalize it. Reflect their WORDS back; never state who they ARE as a fact (no identity verdicts like 'that's a " +
+  "man who stopped believing he's allowed to want anything' — W-39) — if you name a pattern, offer it as a check " +
+  "they can reject, in their own words. Plain, measured, no hype. Do NOT write the member's counter-line for them (that's their work at the " +
   "turn). STAY ON THIS SESSION'S JOB — it catches self-lies, nothing else. If the member veers into domain detail (training specifics, work logistics), acknowledge it in ONE line, then steer back: \"That's real — and worth its own ride sometime. Right now, let's stay with the story you tell yourself — that's the one we're here to catch.\" Never turn the session into domain coaching or technical analysis. " +
   "If a distress or crisis signal appears, drop the exercise and route to support (988 US / local) and a " +
   "human — always on.";
@@ -204,12 +212,30 @@ function rewireStageNote(state: ConvState): string {
     );
   if (isLastDomainTurn(state))
     return (
-      "\n\nRIGHT NOW: the member just named their FIFTH and last self-lie. Do NOT reflect it separately and do NOT " +
-      "list all five. Pick the ONE lie from everything they named that seemed to carry the MOST weight, name it back " +
-      "in their own words, and ask for its TRUE LINE — one honest sentence they'd put in its place. Just that one; " +
-      "warm; a single clear ask."
+      "\n\nRIGHT NOW: the member just named their FIFTH and last self-lie — often the most vulnerable. Respond in ONE " +
+      "flowing turn, IN THIS ORDER: (1) RECEIVE it first (W-39) — reflect what they just admitted, in their OWN words; " +
+      "never lead with analysis. (2) Make the campaign visible: all five sounded reasonable, and every one keeps them " +
+      "where they are — not weakness, the campaign on autopilot; naming it is the first real move. (3) SEED the true " +
+      "line (W-40): they've been speaking honest, first-person lines all session (their story, their Reclaim List — see " +
+      "MEMBER CONTEXT; echo a few of their OWN words), so it lands as 'you already do this.' (4) Ask for the true line " +
+      "to the ONE lie that costs the most. Warm; use only their real words; no identity verdicts (reflect what they " +
+      "said, don't declare who they are)."
     );
   return "\n\nRIGHT NOW: the member just named a self-lie in one domain. Reflect it back in 1–2 sentences — heard, un-judged, the real story under it. No question, no next domain, no counter-line.";
+}
+
+// W-40: what W1 already knows about the member — surfaced so the true-line ask can be SEEDED from lines they've
+// already spoken (their first-person gap story + their Reclaim List), never introduced cold. Mirrors w2Context/w3Context.
+export function w1Context(c: Collected): string {
+  const identity = identityLabel(c.identityNoun);
+  const list = consolidateReclaimList(c.reclaimList ?? []);
+  const gap = (c.gap ?? '').trim();
+  const lines = [
+    identity ? `Who they're reclaiming: ${identity}` : '',
+    gap ? `Their own first-person account of how the distance opened (honest lines they ALREADY spoke — seed the true-line work from these): ${gap}` : '',
+    list.length ? `What they said they want back, in their words: ${list.map((x) => `"${x}"`).join(', ')}` : '',
+  ].filter(Boolean);
+  return lines.length ? `\n\nMEMBER CONTEXT (what you already know — never say you don't):\n${lines.join('\n')}` : '';
 }
 
 export async function liveTurnRewire(state: ConvState, history: ConvMessage[], memberMessage: string): Promise<Turn> {
@@ -227,7 +253,7 @@ export async function liveTurnRewire(state: ConvState, history: ConvMessage[], m
   const res = await client.messages.create({
     model: process.env.ANTHROPIC_MODEL ?? 'claude-sonnet-4-6',
     max_tokens: 300,
-    system: REWIRE_W1_SYSTEM + rewireStageNote(state),
+    system: REWIRE_W1_SYSTEM + w1Context(state.collected) + rewireStageNote(state),
     messages,
   });
   const text = (res.content as Array<{ type: string; text?: string }>)

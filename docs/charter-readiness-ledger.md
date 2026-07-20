@@ -36,6 +36,23 @@ the whole T2 flow column is now closed. The founder committed a pristine account
 no "Theme —" composition, smooth rhythm. **Gap to charter = the 🔴 open + 🟡 minor items below.** None compromise the
 founder's live account.
 
+**STATELESS-ARCS / HONOR-THE-MEMBER batch — BUILT + persona-verified 2026-07-20 (suite green 800; pending prod deploy).**
+The v2.5 re-walk's biggest theme (also what Greg's engineering memos specify: `prior_module_context` threading). Six items:
+- **W-34** deterministic redirect detector — engine proposes the primacy correction when the member pivots to another
+  committed Door (opener-anchored · committed-only · origin-cue · propose→confirm · once). `reconnect.ts` +
+  `tests/reconnect-redirect.test.ts`. Live-verified: fired on the redirect, swapped Diagnosis→Grind. Limit (documented):
+  an un-aliased word like "the job"→Grind falls to the model (forcing it collides with career_cliff's "lost my job").
+- **W-37 + W-36** drift beat RECALLS the Reclaim List + never fabricates a loss (killed the hardcoded "deep friendships").
+  `driftOpen(c)` pure + `tests/reconnect-drift-recall.test.ts`. Live-verified.
+- **W-40** W1 true-line SEEDED from the member's own prior honest lines (gap + Reclaim List now loaded into W1;
+  `w1Context`) + `tests/rewire-true-line-seed.test.ts`. Live-verified: quoted the member's gap + list verbatim.
+- **W-35** Doors→IDQ handoff leads with the model's acknowledgment of the member's final answer (receive-before-move).
+  `tests/reconnect-receive-handoff.test.ts`.
+- **W-39** W1 campaign beat is receive→reveal→seed→ask (the model owns the flowing turn; scripted `W1_CAMPAIGN` is now the
+  FALLBACK — the persona walk caught a double-beat when both fired) + a governance guard (no identity verdicts).
+  _NOTE: this made `W1_CAMPAIGN` a fallback rather than a verbatim scripted beat — the live model's seeded version was
+  better; revertible if the exact copy is preferred._ Greg ratifies the label wording (build-now, not a gate).
+
 ---
 
 ## Ledger

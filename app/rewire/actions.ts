@@ -57,7 +57,8 @@ async function loadTrueLines(db: Db, memberId: string): Promise<string[]> {
 
 // v2.3 Rewire server actions (W1 · the Disinformation Audit). Flag-gated (REWIRE). Conversation state is held
 // client-side for the walk; the true lines the member writes are harvested to the Playbook (default-emit,
-// member-owned) as they land. No captures are read for W1 (W2's callback to the Reconnect Spark arrives later).
+// member-owned) as they land. W1 reads the committed captures (gap + Reclaim List) to SEED the true-line work from
+// the member's own prior honest lines (W-40) — never introduce the true line cold.
 
 export async function startRewireAction(
   memberId: string,
@@ -93,7 +94,10 @@ export async function startRewireAction(
     const turn = rewireCheckpointOpening();
     return { ok: true, reply: turn.reply, state: turn.state, expects: turn.expects };
   }
-  const turn = rewireOpening();
+  // W1 (W-40): seed the true-line work from the member's own prior honest lines — load their gap story + Reclaim List.
+  const db = (await getDb()) as unknown as Db;
+  const committed = await loadReconnectCaptures(db, memberId);
+  const turn = rewireOpening(committed);
   return { ok: true, reply: turn.reply, state: turn.state, expects: turn.expects };
 }
 

@@ -34,8 +34,12 @@ const FIVE_LIES = [
   "I've tried before and it didn't take",
 ];
 
-// The guided turn ask the model produces on the last domain (offline stand-in for the live last-domain note).
-const TURN_ASK = "The one about your body sounded like it holds the most weight — what's the honest line you'd put in its place?";
+// W-39: on the last domain the model owns ONE flowing turn — receive → reveal → seed → ask. Offline stand-in.
+const LAST_DOMAIN_BEAT =
+  "That last one — that it’s too late — is a heavy thing to carry, and you said it plainly. " +
+  "Look at all five together: each sounds reasonable, and each keeps you where you are — that’s the campaign on autopilot, and you just made it visible. " +
+  "You’ve been speaking true lines all session, in your own words. " +
+  "What’s the honest line you’d put in place of “it’s too late”?";
 
 // Walk the opener + the five domains; returns the state at the turn (affirm stage).
 function walkDomains(): ConvState {
@@ -45,13 +49,29 @@ function walkDomains(): ConvState {
   FIVE_LIES.forEach((lie, i) => {
     assert.equal(t.state.stage, 'domains', 'still walking the domains');
     const last = i === FIVE_LIES.length - 1;
-    t = applyRewireTurn(t.state, [], lie, { text: last ? TURN_ASK : 'That’s the story.' });
+    t = applyRewireTurn(t.state, [], lie, { text: last ? LAST_DOMAIN_BEAT : 'That’s the story.' });
   });
   assert.equal(t.state.stage, 'affirm', 'after the fifth domain, hands into the turn');
-  assert.match(t.reply, /campaign/i, 'NAMES THE CAMPAIGN as the reveal before the turn');
-  assert.match(t.reply, /honest line/i, 'then poses the guided, one-at-a-time turn ask');
+  // W-39: the model's full beat passes through (no scripted double), receive FIRST, then reveal, then ask.
+  assert.match(t.reply, /heavy thing to carry/, 'receives the member’s fifth admission first');
+  assert.match(t.reply, /campaign/i, 'names the campaign as the reveal');
+  assert.match(t.reply, /honest line/i, 'poses the turn ask');
+  assert.ok(t.reply.indexOf('carry') < t.reply.indexOf('campaign'), 'the receive lands BEFORE the analysis (W-39)');
+  // No double-beat: the scripted campaign copy must NOT be appended onto the model's own full turn.
+  assert.doesNotMatch(t.reply, /running on autopilot/, 'the scripted W1_CAMPAIGN is not doubled onto the model beat');
   return t.state;
 }
+
+// The fallback path: model returns nothing at the last domain → the scripted reveal + ask stand in.
+test('W1 last-domain FALLBACK — empty model turn → scripted campaign reveal + ask (never blank)', () => {
+  let t = rewireOpening();
+  FIVE_LIES.forEach((lie, i) => {
+    t = applyRewireTurn(t.state, [], lie, { text: i === FIVE_LIES.length - 1 ? '' : 'noted' });
+  });
+  assert.equal(t.state.stage, 'affirm');
+  assert.match(t.reply, /running on autopilot/, 'falls back to the scripted campaign reveal');
+  assert.match(t.reply, /honest line/i, 'and the scripted ask');
+});
 
 test('W1 · walks all five domains, then the turn HARVESTS each true line as a keeper; closing completes', () => {
   let state = walkDomains();
