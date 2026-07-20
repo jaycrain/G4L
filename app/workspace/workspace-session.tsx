@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { readArtifactAction } from './actions.ts';
 import { ARTIFACT_REFRESH_EVENT } from '../components/artifact-refresh.ts';
 import { chatDispatch, type SessionKey } from '../../lib/workspace/session-key.ts';
+import { sessionSummary } from '../../lib/content/summaries.ts';
 import type { Artifact } from '../../lib/workspace/artifact.ts';
 import type { RingPhaseState } from '../../lib/workspace/ring-state.ts';
 import RedesignChrome from '../dashboard/redesign-chrome.tsx';
@@ -61,6 +62,10 @@ export default function WorkspaceSession({
   // place, then raise it back. Inert on desktop (the CSS only reads .ws-mobile at the phone breakpoint).
   type SheetPos = 'closed' | 'peek' | 'open';
   const [sheetPos, setSheetPos] = useState<SheetPos>('closed');
+  // The session's "why this matters" (Session Summary): the short line reads at the threshold, the full sits behind a
+  // tap. Same content module + surface on desktop and the mobile pre-start canvas. Null for checkpoints (a gate, no why).
+  const summary = sessionSummary(sessionKey);
+  const [whyOpen, setWhyOpen] = useState(false);
   const railRef = useRef<HTMLElement>(null);
   const drag = useRef<{ startY: number; baseY: number; moved: boolean } | null>(null);
   const [dragY, setDragY] = useState<number | null>(null); // live px translate WHILE dragging (null = CSS class drives)
@@ -167,6 +172,22 @@ export default function WorkspaceSession({
           <div className="ws-artifact">
             <h1 className="ws-art-title">{artifact.title}</h1>
             <p className="ws-art-lede">{artifact.lede}</p>
+            {/* Session Summary — the "why this matters" for this asset: short line always visible, full behind the tap.
+                Threshold copy; harmless in review. Sweep-provisional labels live inside the strings only. */}
+            {summary && (
+              <div className={`ws-why${whyOpen ? ' open' : ''}`}>
+                <p className="ws-why-short">{summary.short}</p>
+                <button
+                  type="button"
+                  className="ws-why-toggle"
+                  onClick={() => setWhyOpen((v) => !v)}
+                  aria-expanded={whyOpen}
+                >
+                  Why this matters <span className="ws-why-caret" aria-hidden="true">{whyOpen ? '▾' : '▸'}</span>
+                </button>
+                {whyOpen && <p className="ws-why-full">{summary.full}</p>}
+              </div>
+            )}
             {artifact.slots.length > 0 && (
               <div className="ws-slots">
                 {artifact.slots.map((s, i) => {

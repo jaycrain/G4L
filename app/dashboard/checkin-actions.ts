@@ -19,6 +19,10 @@ import { createMeasure, logReadingByLabel, measuresForAgent, findReclaimItemId, 
 import { logCall, isCallType, isCallDomain, domainTally } from '../../lib/momentum/store.ts';
 import { logMovement, isMovementKind, movementLogSummary } from '../../lib/movement/store.ts';
 import { redesignEnabled } from '../../lib/dashboard/redesign.ts';
+import { phaseSummary, type PhaseKey } from '../../lib/content/summaries.ts';
+
+const isPhaseKey = (k: string | null): k is PhaseKey =>
+  k === 'reconnect' || k === 'rewire' || k === 'rebuild' || k === 'reclaim';
 import { rewireEnabled } from '../../lib/agent/rewire.ts';
 import { maybeFoldMemory } from '../../lib/agent/memory.ts';
 import { asSnapshot, diffSnapshot, type DashboardSnapshot } from '../../lib/agent/changes.ts';
@@ -174,6 +178,9 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
     idScore: dash.score?.score ?? null,
     direction: dash.score?.direction ?? null,
     currentFocus: dash.currentFocus?.label ?? null,
+    // The active phase's "why this matters", in the exact words the member sees on the canvas — so the MA shares the
+    // framing (CLAUDE.md: nothing the member sees is invisible to the agent). Guarded to the 4 real phase keys.
+    currentPhaseWhy: isPhaseKey(activePhaseKey) ? phaseSummary(activePhaseKey).short : null,
     lastCompletedAsset, // most-recently completed curriculum Session (Identity Excavation, …)
     reclaimList: dash.reclaimList,
     grintaScore: grinta.score,

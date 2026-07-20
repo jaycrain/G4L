@@ -26,6 +26,7 @@ export type CheckinContext = {
   idScore: number | null;
   direction: Direction | null;
   currentFocus: string | null;
+  currentPhaseWhy?: string | null; // the "why this matters" for the active phase, in the exact words the member sees on the canvas
   lastCompletedAsset: string | null;
   reclaimList: string[];
   grintaScore?: number | null; // the daily activity register (the Daily Call) — for awareness, not to pitch
@@ -200,6 +201,10 @@ export function contextBlock(c: CheckinContext): string {
     dims,
     trend,
     c.currentFocus ? `Current focus: ${c.currentFocus}` : null,
+    // The member sees this "why this matters" framing for their current phase on the canvas — so you know it too
+    // (nothing they see is invisible to you). If they ask "why am I doing this," reflect THIS, in their own terms;
+    // never invent a different rationale, never quote it back verbatim like a brochure.
+    c.currentPhaseWhy ? `Why this phase matters (what the member sees): "${c.currentPhaseWhy}"` : null,
     // Grinta Index: when the SURVEY reading exists (staged) it owns the name — the grit baseline on a 1–5 scale,
     // with the four R-strands. The activity register then reads as the Daily Call rhythm. On prod v1 (no survey
     // reading) the activity register keeps the "Grinta Index" name, so nothing about the live agent changes.

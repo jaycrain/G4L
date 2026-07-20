@@ -55,6 +55,14 @@ test('contextBlock · the SURVEY Grinta Index owns the name + relabels the activ
   assert.doesNotMatch(block, /Grinta Index: 62/, 'the activity score never keeps the Index name when the survey exists');
 });
 
+test('contextBlock · the phase "why this matters" reaches the MA in the words the member sees', () => {
+  const withWhy = contextBlock({ ...base, currentPhaseWhy: 'Put focused effort into the body — small, real, repeatable.' });
+  assert.match(withWhy, /Why this phase matters \(what the member sees\)/);
+  assert.match(withWhy, /Put focused effort into the body/);
+  // absent when there's no active phase — never a stray empty line
+  assert.doesNotMatch(contextBlock({ ...base, currentPhaseWhy: null }), /Why this phase matters/);
+});
+
 test('contextBlock · post-Checkpoint the Grinta Index shows a signed, up-positive delta', () => {
   const block = contextBlock({ ...base, grintaIndex: 3.6, grintaStrands: { reconnect: 3.9 }, grintaIndexTrend: 'up', grintaIndexChangePct: 12.5 });
   assert.match(block, /up \+12\.5% since last Checkpoint/);
