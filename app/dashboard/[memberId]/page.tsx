@@ -14,6 +14,8 @@ import { firstName, initials } from '../../../lib/member/avatar.ts';
 import type { Db } from '../../../lib/db/schema.ts';
 import CompanionDock from '../companion-dock.tsx';
 import CompanionHero from '../companion-hero.tsx';
+import OutreachCard from '../outreach-card.tsx';
+import { outreachEnabled } from '../../../lib/outreach/config.ts';
 import IdentityStrip from '../identity-strip.tsx';
 import PostCeremonyTour from '../post-ceremony-tour.tsx';
 import Threshold from '../threshold.tsx';
@@ -259,6 +261,9 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
 
       {/* §3 · companion hero — the lead block (greeting + proactive message + CTA) */}
       <CompanionHero message={heroMessage} />
+
+      {/* Proactive outreach card — a governed, grounded nudge (OUTREACH-flagged; dark on prod). */}
+      {outreachEnabled() && <OutreachCard memberId={memberId} />}
 
       {/* §1 · priority pair — Your Program (next Session) + the Momentum panel, side by side */}
       <div className="priority-pair">

@@ -27,6 +27,8 @@ import PostCeremonyTour from './post-ceremony-tour.tsx';
 import { listPlaybook } from '../../lib/playbook/store.ts';
 import ResiliencePulse from './resilience-pulse.tsx';
 import { pulseBeats } from '../../lib/momentum/store.ts';
+import OutreachCard from './outreach-card.tsx';
+import { outreachEnabled } from '../../lib/outreach/config.ts';
 
 // Redesign Layer 2 — the DASHBOARD CANVAS (build spec §2, v4c IA). Renders only behind REDESIGN. A parallel path: the
 // live dashboard is untouched. Wires Layer 1 (resolveHero + deriveRingState) into the stateful resume hero + merged
@@ -233,6 +235,9 @@ export default async function RedesignDashboard({ db, memberId, dash }: { db: Db
             </details>
           </div>
         </div>
+
+        {/* Proactive outreach card — a governed, grounded nudge (OUTREACH-flagged; dark on prod). */}
+        {outreachEnabled() && <OutreachCard memberId={memberId} />}
 
         {/* Reclaim List — the fuel the program works toward */}
         <div className="rcard r-reclaim" data-tour="reclaim">

@@ -1591,3 +1591,15 @@ body.redesign-on .back-dash { display: none; }
 .rh-legend-body ul { list-style: none; margin: 10px 0 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 5px 10px; }
 .rh-legend-body li { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: rgba(255,255,255,.9); }
 .rh-leg-dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+
+/* Proactive outreach card — a governed note from the Companion (OUTREACH slice). Teal accent = the Companion voice. */
+.outreach-card { background: var(--white); border: 1px solid var(--panel-line); border-left: 4px solid var(--teal); border-radius: 12px; padding: 1rem 1.15rem; margin: 0 0 1rem; }
+.outreach-card-head { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; }
+.outreach-card-avatar { width: 22px; height: 22px; border-radius: 50%; flex: none; }
+.outreach-card-from { font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--teal); font-weight: 700; }
+.outreach-card-body { margin: 0 0 0.85rem; color: var(--navy); font-size: 1.05rem; line-height: 1.5; }
+.outreach-card-actions { display: flex; gap: 0.5rem; }
+.outreach-card-actions .outreach-reply { background: var(--teal); color: #fff; border: none; border-radius: 8px; padding: 0.4rem 1rem; font-weight: 700; font-size: 0.9rem; cursor: pointer; }
+.outreach-card-actions .outreach-reply:hover { background: var(--navy); }
+.outreach-card-actions .outreach-dismiss { background: none; border: none; color: var(--navy); opacity: 0.6; font-weight: 600; font-size: 0.9rem; cursor: pointer; padding: 0.4rem 0.5rem; }
+.outreach-card-actions .outreach-dismiss:hover { opacity: 1; color: var(--teal); background: none; }
