@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import { reconnectEnabled } from '../../../lib/agent/reconnect.ts';
+import { mobileEnabled } from '../../../lib/dashboard/redesign.ts';
 import ReconnectChat from '../reconnect-chat.tsx';
 
 // v2.2 Reconnect — the session surface (SKELETON: callback §2a → Doors stub). Flag-gated: with RECONNECT off
@@ -9,7 +10,7 @@ export default async function Page({ params }: { params: Promise<{ memberId: str
   const { memberId } = await params;
   return (
     <main className="reconnect-page">
-      <ReconnectChat memberId={memberId} />
+      <ReconnectChat memberId={memberId} mobile={mobileEnabled()} />
     </main>
   );
 }

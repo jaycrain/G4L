@@ -29,9 +29,9 @@ export interface Wayfinding {
   ringSub: string | null;
 }
 
-function SessionRail({ memberId, sessionKey }: { memberId: string; sessionKey: SessionKey }) {
+function SessionRail({ memberId, sessionKey, mobile = false }: { memberId: string; sessionKey: SessionKey; mobile?: boolean }) {
   const { arc, session } = chatDispatch(sessionKey);
-  if (arc === 'reconnect') return <ReconnectChat memberId={memberId} />;
+  if (arc === 'reconnect') return <ReconnectChat memberId={memberId} mobile={mobile} />;
   if (arc === 'rewire') return <RewireChat memberId={memberId} session={session as 'w1' | 'w2' | 'w3' | 'checkpoint'} />;
   if (arc === 'rebuild') return <RebuildChat memberId={memberId} session={session as 'b1' | 'b2' | 'b3' | 'checkpoint'} />;
   return <ReclaimChat memberId={memberId} session={session as 'c1' | 'c2' | 'c3' | 'checkpoint'} />;
@@ -164,7 +164,7 @@ export default function WorkspaceSession({
                 <span className="ws-sheet-grip" aria-hidden="true" />
               </button>
             )}
-            <SessionRail memberId={memberId} sessionKey={sessionKey} />
+            <SessionRail memberId={memberId} sessionKey={sessionKey} mobile={mobile} />
           </aside>
         )}
       </div>

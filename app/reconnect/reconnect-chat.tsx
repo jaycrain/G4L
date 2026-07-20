@@ -21,7 +21,7 @@ const doorName = (slug?: string) => DOORS.find((d) => d.slug === slug)?.displayN
 // v2.2 Reconnect SKELETON chat — minimal on purpose. Shows the callback (§2a) and lets the member reply once to
 // reach the Doors stub. State is held client-side for the walk (the session store + live model turn arrive with
 // §2b). Reuses the onboarding chat's classes so it looks native.
-export default function ReconnectChat({ memberId }: { memberId: string }) {
+export default function ReconnectChat({ memberId, mobile = false }: { memberId: string; mobile?: boolean }) {
   const [messages, setMessages] = useState<ConvMessage[]>([]);
   const [state, setState] = useState<ConvState | null>(null);
   const [input, setInput] = useState('');
@@ -89,7 +89,7 @@ export default function ReconnectChat({ memberId }: { memberId: string }) {
   const lastReseen = state?.reseeingTells?.[state.reseeingTells.length - 1];
 
   // §2f — once the arc reaches the Ceremony, the overlay takes over the whole surface.
-  if (ceremony) return <ReconnectCeremony memberId={memberId} data={ceremony} />;
+  if (ceremony) return <ReconnectCeremony memberId={memberId} data={ceremony} mobile={mobile} />;
 
   return (
     <div className="reconnect-chat">

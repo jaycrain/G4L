@@ -20,7 +20,7 @@ const MOVE_ARROW: Record<string, string> = { up: '↑', down: '↓', flat: '→'
 // §2f — the Reconnect Ceremony overlay. Fired by the reconnect-chat when the arc reaches stage 'ceremony'. Reuses the
 // generic CeremonySurface; renders the four Reconnect reveals; "Get Rewired →" hands to the dashboard, where the
 // Journey shows Rewire lit and the forecast lights the next (Rewire) Session.
-export default function ReconnectCeremony({ memberId, data }: { memberId: string; data: ReconnectCeremonyData }) {
+export default function ReconnectCeremony({ memberId, data, mobile = false }: { memberId: string; data: ReconnectCeremonyData; mobile?: boolean }) {
   const router = useRouter();
   // Memoize so the beats array is referentially STABLE across re-renders (the typewriter reads beat text from it;
   // rebuilding it every render fed a fluctuating target and stranded the typewriter).
@@ -28,7 +28,9 @@ export default function ReconnectCeremony({ memberId, data }: { memberId: string
 
   function resolve() {
     router.refresh(); // pull fresh dashboard state (new phase lit, ring advanced) so it is not a beat behind
-    router.push(`/dashboard/${memberId}`);
+    // End of R1: on mobile, the Companion sets the rhythm together (Decision EEE) before handing to the dashboard;
+    // /rhythm bounces anyone ineligible straight to the dashboard, so this is a no-op off-mobile.
+    router.push(mobile ? `/rhythm/${memberId}` : `/dashboard/${memberId}`);
   }
 
   function renderReveal(r: ReconnectCeremonyReveal): ReactNode {
