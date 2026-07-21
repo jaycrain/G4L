@@ -7,7 +7,28 @@ import { logEvent } from '../../../lib/telemetry/store.ts';
 import { redesignEnabled } from '../../../lib/dashboard/redesign.ts';
 import { completedReviewSessions } from '../../../lib/workspace/review.ts';
 import { reclaimReadiness } from '../../../lib/reclaim/readiness.ts';
+import { ASSET_SUMMARIES, phaseSummary, type AssetId, type PhaseKey } from '../../../lib/content/summaries.ts';
 import type { Db } from '../../../lib/db/schema.ts';
+
+// The route derives from the canon summaries (lib/content/summaries.ts) so the "whole route" and the session threshold
+// say the SAME thing — one canonical line each. We keep the asset NAMES + the closing beat/reveal as literals (those
+// aren't in the summaries); the per-session descriptor is the asset's canon short, and the phase blurb is the phase short.
+const NAMED_SESSIONS: Record<PhaseKey, Array<[string, AssetId]>> = {
+  reconnect: [['The Doors', 'r2'], ['The IDQ', 'r1'], ['Visioning', 'r3']],
+  rewire: [['The Disinformation Audit', 'w1'], ['The Visualization Workshop', 'w2'], ['The False Start Protocol', 'w3']],
+  rebuild: [['What’s Your Why?', 'b1'], ['Strengths & Starting Points', 'b2'], ['Watching Your Choices', 'b3']],
+  reclaim: [['The Readiness Assessment', 'c1'], ['The Bigger World Audit', 'c2'], ['Quality Days', 'c3']],
+};
+const CLOSING_BEAT: Record<PhaseKey, string> = {
+  reconnect: 'The Checkpoint — where your Grinta moves for the first time.',
+  rewire: 'The Checkpoint.',
+  rebuild: 'The Checkpoint.',
+  reclaim: 'The Transition — your Success Story, and the door into Community.',
+};
+const routeSessions = (key: PhaseKey): string[] => [
+  ...NAMED_SESSIONS[key].map(([name, asset]) => `${name} — ${ASSET_SUMMARIES[asset].short}`),
+  CLOSING_BEAT[key],
+];
 
 const REVIEW_PHASE_LABEL: Record<string, string> = { reconnect: 'Reconnect', rewire: 'Rewire', rebuild: 'Rebuild', reclaim: 'Reclaim' };
 
@@ -22,47 +43,27 @@ type PhaseRow = { key: string; num: number; name: string; tagline: string; blurb
 const PHASES: PhaseRow[] = [
   {
     key: 'reconnect', num: 1, name: 'Reconnect', tagline: 'find who you are again',
-    blurb: 'Identity. See where you are, remember who you were before life talked you out of it, and find the spark worth chasing.',
-    sessions: [
-      'The Doors — name the doors the Fade came in through.',
-      'The IDQ — measure the distance to yourself; this is where your ID Score begins.',
-      'Visioning — name what the Fade cost, then picture the future you’re reclaiming.',
-      'The Checkpoint — where your Grinta moves for the first time.',
-    ],
+    blurb: phaseSummary('reconnect').short,
+    sessions: routeSessions('reconnect'),
     reveal: 'the Threshold Ceremony — the earned reveal, and Rewire lights up.',
     coming: false,
   },
   {
     key: 'rewire', num: 2, name: 'Rewire', tagline: 'retrain your mind',
-    blurb: 'Mindfulness. Take apart the old stories your mind tells to keep you comfortable, and build ones you can act on.',
-    sessions: [
-      'The Disinformation Audit — catch the excuses and lies you tell yourself, and turn each into an affirmation.',
-      'The Visualization Workshop — build a vivid picture of who you’re becoming, and practice it for a week.',
-      'The False Start Protocol — expect the setbacks and plan your recovery; a week of paying attention to your good calls and false starts.',
-      'The Checkpoint.',
-    ],
+    blurb: phaseSummary('rewire').short,
+    sessions: routeSessions('rewire'),
     coming: false,
   },
   {
     key: 'rebuild', num: 3, name: 'Rebuild', tagline: 'rebuild your body',
-    blurb: 'Fitness & health. Put the work into how you move, eat, sleep, and recover — one small decision at a time.',
-    sessions: [
-      'What’s Your Why? — the reason underneath the goal.',
-      'Strengths & Starting Points — an honest read on where your body is.',
-      'Watching Your Choices — a week of noticing your movement and eating decisions.',
-      'The Checkpoint.',
-    ],
+    blurb: phaseSummary('rebuild').short,
+    sessions: routeSessions('rebuild'),
     coming: true,
   },
   {
     key: 'reclaim', num: 4, name: 'Reclaim', tagline: 'reclaim your life',
-    blurb: 'Wellness. Go after the things that make you feel like you again — on purpose, out in the world.',
-    sessions: [
-      'The Readiness Assessment — revisit your Reclaim List through the person you’ve become.',
-      'The Bigger World Audit — see how your world can expand, across the four parts of identity.',
-      'Quality Days — define what a quality day is for you, then live a week of them.',
-      'The Transition — your Success Story, and the door into Community.',
-    ],
+    blurb: phaseSummary('reclaim').short,
+    sessions: routeSessions('reclaim'),
     coming: true,
   },
 ];
