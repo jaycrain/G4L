@@ -27,7 +27,10 @@ const clearOnboardingStorage = () => { ls.del(LS.token); ls.del(LS.email); ls.de
 
 export default function OnboardingChat({ welcomeEnabled = false }: { welcomeEnabled?: boolean }) {
   const router = useRouter();
-  const [phase, setPhase] = useState<'gate' | 'welcome' | 'chat'>('gate');
+  // The welcome comes BEFORE the gate (forecast + safety first, so signing up reads as a good decision). A fresh
+  // visitor with the flag on opens on 'welcome'; a returner is bumped to the gate in the mount effect (they've met the
+  // Companion already); flag-off prod opens on the gate exactly as before.
+  const [phase, setPhase] = useState<'welcome' | 'gate' | 'chat'>(welcomeEnabled ? 'welcome' : 'gate');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   // Decision Z: the password is collected UPFRONT at the gate (one clean signup moment) but held only in memory —
@@ -69,6 +72,7 @@ export default function OnboardingChat({ welcomeEnabled = false }: { welcomeEnab
     if (!savedEmail) return;
     setEmail(savedEmail);
     setResumable(true); // optimistic — instant "welcome back" for the common returner
+    setPhase('gate'); // a returner has met the Companion already — skip the welcome, straight to "welcome back"
     // …but VERIFY the server still has a session to resume. If it doesn't — an account wipe, an expired session, or
     // stale storage on a foreign device — then "welcome back / nothing's lost" would be a lie. Demote to the fresh
     // gate and clear the stale device storage so the copy can never over-promise. (Optimistic-then-reconciled: the
@@ -115,11 +119,7 @@ export default function OnboardingChat({ welcomeEnabled = false }: { welcomeEnab
     ls.set(LS.name, ctx.name); // remember so a return visit pre-fills name + email (Decision Z) — never the password
     ls.set(LS.email, ctx.email);
     setError(null);
-    if (welcomeEnabled && !resumable) {
-      setPhase('welcome'); // the welcome's final CTA calls startChat()
-      return;
-    }
-    void startChat();
+    void startChat(); // the welcome (if any) already ran before the gate; the gate goes straight into the conversation
   }
 
   // Start (or resume) the live onboarding conversation. Reached straight from the gate (flag off / returner) or from
@@ -249,8 +249,8 @@ export default function OnboardingChat({ welcomeEnabled = false }: { welcomeEnab
 
 
   if (phase === 'welcome') {
-    // The meet-the-Companion welcome (flag-gated, fresh members only). Its final CTA starts the live chat.
-    return <OnboardingWelcome firstName={ctx.name.trim().split(/\s+/)[0] ?? ''} onBegin={() => void startChat()} />;
+    // The meet-the-Companion welcome (flag-gated, fresh members only), BEFORE the gate. Its final CTA opens the gate.
+    return <OnboardingWelcome onBegin={() => setPhase('gate')} />;
   }
 
   if (phase === 'gate') {

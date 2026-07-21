@@ -2,18 +2,22 @@
 
 import { useState } from 'react';
 
-// Onboarding welcome (Slice B) — the first-run "meet the Companion" screen. Sits AFTER the sign-up gate (so the name is
-// known) and BEFORE the live onboarding work. Four beats carry the relationship's opening terms: meet the Companion
-// (mirror-not-grade), name the Fade, orient + reassure (the four R's, ~7–8 weeks, your pace), then hand into the real
-// work. Navy billboard aesthetic (Barlow Condensed all-caps head), one component for desktop + mobile. Copy is
-// illustrative from the mock; sweep-provisional labels ("the Fade") live only as prose. Flag-gated (ONBOARDING_WELCOME).
+// Onboarding welcome (Slice B) — the first-run "meet the Companion" flow. Comes BEFORE the sign-up gate (Jay): forecast
+// what to expect + establish safety FIRST, so identifying yourself reads as a good decision, not a risk. Two openings:
+//   • DESKTOP → the landing-page hero image ("Let's begin your comeback") THEN the four navy billboard beats.
+//   • MOBILE  → straight into the four navy billboard beats.
+// The four beats: meet the Companion (mirror-not-grade) → name the Fade → orient + reassure (the four R's, ~7–8 weeks,
+// your pace) → hand off to the gate. No name yet — the gate is still ahead — so the greeting is generic; the Companion
+// uses their name only AFTER they choose to give it. Rendered as two CSS-toggled tracks (≤1000px = mobile) so there's
+// no hydration flash. Copy illustrative from the mocks; sweep-provisional labels ("the Fade") live only as prose.
+// Flag-gated (ONBOARDING_WELCOME). onBegin hands to the gate.
 
 type Seg = string | { b: string };
 type Beat = { kick: string; head: string[]; body: Seg[]; road?: boolean; cta: string };
 
 const BEATS: Beat[] = [
   {
-    kick: '', // beat 1 kicker is the personalized "Welcome, {name}" — filled at render
+    kick: '',
     head: ['You’re here.', 'That’s the', 'hard part.'],
     body: ['I’m your Companion. I’m not here to fix you or grade you — I’m here to help you find your way back to yourself.'],
     cta: 'Go on →',
@@ -51,13 +55,12 @@ const ROAD = ['Reconnect', 'Rewire', 'Rebuild', 'Reclaim'];
 const renderBody = (segs: Seg[]) =>
   segs.map((s, i) => (typeof s === 'string' ? <span key={i}>{s}</span> : <strong key={i}>{s.b}</strong>));
 
-export default function OnboardingWelcome({ firstName, onBegin }: { firstName: string; onBegin: () => void }) {
+// The four navy billboard beats — shared by both platforms (desktop reaches them after the hero, mobile opens on them).
+function NavyBeats({ onDone }: { onDone: () => void }) {
   const [i, setI] = useState(0);
   const beat = BEATS[i]!;
   const last = i === BEATS.length - 1;
-  const kicker = i === 0 ? (firstName ? `Welcome, ${firstName}` : 'Welcome') : beat.kick;
-
-  const advance = () => (last ? onBegin() : setI((n) => n + 1));
+  const advance = () => (last ? onDone() : setI((n) => n + 1));
 
   return (
     <div className="onbwel">
@@ -68,7 +71,7 @@ export default function OnboardingWelcome({ firstName, onBegin }: { firstName: s
           ))}
         </div>
         <div className="onbwel-heart">
-          {kicker && <div className="onbwel-kick">{kicker}</div>}
+          {beat.kick && <div className="onbwel-kick">{beat.kick}</div>}
           <h1 className="onbwel-head">
             {beat.head.map((line, x) => (
               <span key={x} className="onbwel-head-line">{line}</span>
@@ -90,5 +93,37 @@ export default function OnboardingWelcome({ firstName, onBegin }: { firstName: s
         </div>
       </div>
     </div>
+  );
+}
+
+// DESKTOP hero — the landing-page image, continuous with grintaforlife.com. The warm gradient stands in for the hero
+// photograph (cool daylight left → warm olive right) until a real image drops in.
+function DesktopHero({ onNext }: { onNext: () => void }) {
+  return (
+    <div className="onbwel-d-hero">
+      <div className="onbwel-d-photo-note">warm human photo drops in here</div>
+      <div className="onbwel-d-heart">
+        <h1 className="onbwel-d-head">Let’s begin<br />your comeback.</h1>
+        <p className="onbwel-d-sub">You’ve carried a lot to get here. I’m your Companion — I’ll walk the whole way with you, at your pace.</p>
+        <button type="button" className="onbwel-d-cta" onClick={onNext}>Let’s get started →</button>
+        <p className="onbwel-d-reassure">Takes about 10 minutes. No grades, no wrong answers.</p>
+      </div>
+    </div>
+  );
+}
+
+export default function OnboardingWelcome({ onBegin }: { onBegin: () => void }) {
+  // Desktop track: hero → beats. Mobile track: beats. Both mounted; CSS shows the right one per breakpoint so there's
+  // no viewport-detection flash. Each track holds its own state; the hidden one is inert.
+  const [desktopStage, setDesktopStage] = useState<'hero' | 'beats'>('hero');
+  return (
+    <>
+      <div className="onbwel-track onbwel-track-d">
+        {desktopStage === 'hero' ? <DesktopHero onNext={() => setDesktopStage('beats')} /> : <NavyBeats onDone={onBegin} />}
+      </div>
+      <div className="onbwel-track onbwel-track-m">
+        <NavyBeats onDone={onBegin} />
+      </div>
+    </>
   );
 }

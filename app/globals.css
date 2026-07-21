@@ -1793,3 +1793,24 @@ body.redesign-on .back-dash { display: none; }
 .onbwel-cta { margin-top: 30px; display: inline-flex; align-items: center; background: var(--teal); color: #fff; font-family: inherit; font-weight: 700; font-size: 18px; padding: 16px 32px; border: none; border-radius: 8px; cursor: pointer; box-shadow: 0 12px 30px rgba(59, 148, 149, 0.4); transition: 0.15s; }
 .onbwel-cta:hover { background: var(--teal-d, #2f7a7b); }
 .onbwel-reassure { margin-top: 18px; color: rgba(255, 255, 255, 0.55); font-size: 14px; }
+
+/* Two opening tracks, one shown per breakpoint (no viewport-detection flash): DESKTOP = hero → the four navy beats;
+   MOBILE = straight into the four navy beats. The warm hero gradient stands in for the photo (cool daylight → warm olive). */
+.onbwel-track-d { display: none; }
+@media (min-width: 1001px) {
+  .onbwel-track-d { display: block; }
+  .onbwel-track-m { display: none; }
+}
+.onbwel-d-hero { min-height: 100dvh; display: flex; flex-direction: column; justify-content: center; position: relative; padding: 0 8vw;
+  background:
+    linear-gradient(100deg, rgba(22, 31, 40, 0.9) 0%, rgba(40, 54, 66, 0.52) 44%, rgba(120, 124, 92, 0.16) 72%, transparent 100%),
+    radial-gradient(130% 120% at 94% 34%, rgba(176, 180, 132, 0.34) 0%, transparent 55%),
+    linear-gradient(150deg, #26333f 0%, #4f6668 46%, #9aa06a 100%); }
+.onbwel-d-photo-note { position: absolute; right: 26px; top: 22px; color: rgba(255, 255, 255, 0.4); font-size: 11px; font-style: italic; letter-spacing: 0.3px; }
+.onbwel-d-heart { max-width: 640px; }
+.onbwel-d-kick { color: #f2c9a0; font-size: 15px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 16px; }
+.onbwel-d-head { font-family: var(--font-condensed), var(--font-barlow), sans-serif; font-weight: 900; color: #fff; text-transform: uppercase; font-size: clamp(56px, 6vw, 82px); line-height: 0.9; letter-spacing: 0.5px; margin: 0; text-shadow: 0 2px 20px rgba(0, 0, 0, 0.25); }
+.onbwel-d-sub { color: rgba(255, 255, 255, 0.9); font-size: 20px; line-height: 1.5; margin-top: 24px; max-width: 560px; }
+.onbwel-d-cta { margin-top: 34px; display: inline-flex; align-items: center; background: var(--teal); color: #fff; font-family: inherit; font-weight: 700; font-size: 18px; padding: 18px 34px; border: none; border-radius: 8px; cursor: pointer; box-shadow: 0 12px 30px rgba(59, 148, 149, 0.4); transition: 0.15s; }
+.onbwel-d-cta:hover { background: var(--teal-d, #2f7a7b); }
+.onbwel-d-reassure { margin-top: 20px; color: rgba(255, 255, 255, 0.6); font-size: 14px; }
