@@ -11,3 +11,10 @@ export function redesignEnabled(): boolean {
 export function mobileEnabled(): boolean {
   return process.env.MOBILE === 'staged';
 }
+
+// Onboarding welcome (Slice B) — the first-run meet-the-Companion screen that sits AFTER the sign-up gate and BEFORE
+// the live onboarding work. Gates the whole welcome (desktop billboard + mobile 4-beat). Off by default so the live
+// signup funnel is byte-for-byte untouched until Jay flips it. Flip with ONBOARDING_WELCOME === 'staged'.
+export function onboardingWelcomeEnabled(): boolean {
+  return process.env.ONBOARDING_WELCOME === 'staged';
+}

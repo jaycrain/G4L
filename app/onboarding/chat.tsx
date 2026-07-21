@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { onboardingTurn, finalizeOnboardingAction, loadOnboardingSessionAction } from './actions.ts';
 import ScaleChips from '../components/scale-chips.tsx';
+import OnboardingWelcome from './welcome.tsx';
 import type { ConvState, ConvMessage, ScaleExpectation } from '../../lib/agent/onboarding.ts';
 import { BEAT_SEP } from '../../lib/agent/onboarding.ts';
 
@@ -24,9 +25,9 @@ const ls = {
 };
 const clearOnboardingStorage = () => { ls.del(LS.token); ls.del(LS.email); ls.del(LS.name); ls.del(LS.draft); };
 
-export default function OnboardingChat() {
+export default function OnboardingChat({ welcomeEnabled = false }: { welcomeEnabled?: boolean }) {
   const router = useRouter();
-  const [phase, setPhase] = useState<'gate' | 'chat'>('gate');
+  const [phase, setPhase] = useState<'gate' | 'welcome' | 'chat'>('gate');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   // Decision Z: the password is collected UPFRONT at the gate (one clean signup moment) but held only in memory —
@@ -102,7 +103,9 @@ export default function OnboardingChat() {
     setPhase('gate');
   }
 
-  async function begin(e: React.FormEvent) {
+  // The sign-up gate submit: validate + remember, then route. A FRESH member (no saved session) meets the Companion
+  // welcome first when the flag is on; a returner or the flag-off funnel goes straight into the chat as before.
+  function begin(e: React.FormEvent) {
     e.preventDefault();
     if (!ctx.name || !ctx.email) return;
     if (password.length < 8) {
@@ -111,10 +114,20 @@ export default function OnboardingChat() {
     }
     ls.set(LS.name, ctx.name); // remember so a return visit pre-fills name + email (Decision Z) — never the password
     ls.set(LS.email, ctx.email);
+    setError(null);
+    if (welcomeEnabled && !resumable) {
+      setPhase('welcome'); // the welcome's final CTA calls startChat()
+      return;
+    }
+    void startChat();
+  }
+
+  // Start (or resume) the live onboarding conversation. Reached straight from the gate (flag off / returner) or from
+  // the welcome's "Let's begin".
+  async function startChat() {
     // Decision Z: password collected here (one signup moment) and held in memory only. The account is still created
     // at the "This is me" commit — nobody who abandons leaves a half-account — so the card flows straight to the
     // Ceremony with no password interruption. A returner re-types just the password (name + email pre-fill).
-    setError(null);
     setPhase('chat');
     setPending(true);
     try {
@@ -234,6 +247,11 @@ export default function OnboardingChat() {
     }
   }
 
+
+  if (phase === 'welcome') {
+    // The meet-the-Companion welcome (flag-gated, fresh members only). Its final CTA starts the live chat.
+    return <OnboardingWelcome firstName={ctx.name.trim().split(/\s+/)[0] ?? ''} onBegin={() => void startChat()} />;
+  }
 
   if (phase === 'gate') {
     return (
