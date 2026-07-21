@@ -1798,15 +1798,20 @@ body.redesign-on .back-dash { display: none; }
    MOBILE = straight into the four navy beats. The warm hero gradient stands in for the photo (cool daylight → warm olive). */
 .onbwel-track-d { display: none; }
 @media (min-width: 1001px) {
-  .onbwel-track-d { display: block; }
+  /* Full-bleed: break the desktop opening out of the app's 720px `main` column so the landscape hero photo can breathe
+     (phone on the right, headline over the darker left) and the navy beats fill the whole screen. */
+  .onbwel-track-d { display: block; width: 100vw; margin-left: calc(50% - 50vw); }
   .onbwel-track-m { display: none; }
 }
 .onbwel-d-hero { min-height: 100dvh; display: flex; flex-direction: column; justify-content: center; position: relative; padding: 0 8vw;
+  /* Layers, top→bottom: the dark-left→clear-right OVERLAY (keeps the headline legible over the photo) · a warm radial
+     lift on the subject side · the HERO PHOTO (public/brand/onboarding-hero.jpg — person holding the app) · a fallback
+     gradient that stands in if the file isn't present. Photo positioned right so the phone stays on the subject side. */
   background:
     linear-gradient(100deg, rgba(22, 31, 40, 0.9) 0%, rgba(40, 54, 66, 0.52) 44%, rgba(120, 124, 92, 0.16) 72%, transparent 100%),
     radial-gradient(130% 120% at 94% 34%, rgba(176, 180, 132, 0.34) 0%, transparent 55%),
+    url('/brand/onboarding-hero.jpg') right center / cover no-repeat,
     linear-gradient(150deg, #26333f 0%, #4f6668 46%, #9aa06a 100%); }
-.onbwel-d-photo-note { position: absolute; right: 26px; top: 22px; color: rgba(255, 255, 255, 0.4); font-size: 11px; font-style: italic; letter-spacing: 0.3px; }
 .onbwel-d-heart { max-width: 640px; }
 .onbwel-d-kick { color: #f2c9a0; font-size: 15px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 16px; }
 .onbwel-d-head { font-family: var(--font-condensed), var(--font-barlow), sans-serif; font-weight: 900; color: #fff; text-transform: uppercase; font-size: clamp(56px, 6vw, 82px); line-height: 0.9; letter-spacing: 0.5px; margin: 0; text-shadow: 0 2px 20px rgba(0, 0, 0, 0.25); }

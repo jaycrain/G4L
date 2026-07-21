@@ -101,7 +101,6 @@ function NavyBeats({ onDone }: { onDone: () => void }) {
 function DesktopHero({ onNext }: { onNext: () => void }) {
   return (
     <div className="onbwel-d-hero">
-      <div className="onbwel-d-photo-note">warm human photo drops in here</div>
       <div className="onbwel-d-heart">
         <h1 className="onbwel-d-head">Let’s begin<br />your comeback.</h1>
         <p className="onbwel-d-sub">You’ve carried a lot to get here. I’m your Companion — I’ll walk the whole way with you, at your pace.</p>
