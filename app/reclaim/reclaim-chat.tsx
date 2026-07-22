@@ -6,7 +6,7 @@ import { startReclaimAction, reclaimTurnAction, reclaimCeremonyDataAction, loadR
 import ReclaimCeremony from './reclaim-ceremony.tsx';
 import ScaleChips from '../components/scale-chips.tsx';
 import { useChatAutoscroll } from '../components/use-chat-autoscroll.ts';
-import { notifyArtifactCommitted } from '../components/artifact-refresh.ts';
+import { notifyArtifactCommitted, notifySessionComplete } from '../components/artifact-refresh.ts';
 import type { ReclaimCeremonyData } from '../../lib/ceremony/reclaim-ceremony-beats.ts';
 import type { ConvMessage, ConvState, ScaleExpectation } from '../../lib/agent/onboarding.ts';
 import { BEAT_SEP } from '../../lib/agent/onboarding.ts';
@@ -80,6 +80,7 @@ export default function ReclaimChat({ memberId, session = 'c1' }: { memberId: st
       const badgeBeat = r.earnedBadge ? [{ role: 'agent' as const, text: `That’s a badge earned: “${r.earnedBadge.name}.” It’s in your collection now.` }] : [];
       setMessages((m) => [...m, ...agentBubbles(r.reply!), ...badgeBeat, { role: 'agent', text: handHome }]);
       setDone(true);
+      notifySessionComplete(); // → the workspace shows the "here's what you built" card before the hand-home
     } else {
       setMessages((m) => [...m, ...agentBubbles(r.reply!)]);
     }

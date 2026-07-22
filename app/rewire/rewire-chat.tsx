@@ -6,7 +6,7 @@ import { startRewireAction, rewireTurnAction, rewireCeremonyDataAction, loadRewi
 import RewireCeremony from './rewire-ceremony.tsx';
 import ScaleChips from '../components/scale-chips.tsx';
 import { useChatAutoscroll } from '../components/use-chat-autoscroll.ts';
-import { notifyArtifactCommitted } from '../components/artifact-refresh.ts';
+import { notifyArtifactCommitted, notifySessionComplete } from '../components/artifact-refresh.ts';
 import type { RewireCeremonyData } from '../../lib/ceremony/rewire-ceremony-beats.ts';
 import type { ConvMessage, ConvState, ScaleExpectation } from '../../lib/agent/onboarding.ts';
 import { BEAT_SEP } from '../../lib/agent/onboarding.ts';
@@ -81,6 +81,7 @@ export default function RewireChat({ memberId, session = 'w1' }: { memberId: str
       const badgeBeat = r.earnedBadge ? [{ role: 'agent' as const, text: `That’s a badge earned: “${r.earnedBadge.name}.” It’s in your collection now.` }] : [];
       setMessages((m) => [...m, ...agentBubbles(r.reply!), ...badgeBeat, { role: 'agent', text: REWIRE_HAND_HOME }]);
       setDone(true); // session done — the keeper(s) are in the Playbook
+      notifySessionComplete(); // → the workspace shows the "here's what you built" card before the hand-home
     } else {
       setMessages((m) => [...m, ...agentBubbles(r.reply!)]);
     }

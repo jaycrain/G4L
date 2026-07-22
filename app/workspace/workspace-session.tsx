@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { readArtifactAction } from './actions.ts';
-import { ARTIFACT_REFRESH_EVENT } from '../components/artifact-refresh.ts';
+import { ARTIFACT_REFRESH_EVENT, SESSION_COMPLETE_EVENT } from '../components/artifact-refresh.ts';
 import { chatDispatch, type SessionKey } from '../../lib/workspace/session-key.ts';
 import { sessionSummary } from '../../lib/content/summaries.ts';
 import type { Artifact } from '../../lib/workspace/artifact.ts';
@@ -56,6 +56,9 @@ export default function WorkspaceSession({
   const [artifact, setArtifact] = useState<Artifact>(initial);
   const summary = sessionSummary(sessionKey);
   const [whyOpen, setWhyOpen] = useState(false);
+  // The "here's what you built" card — shown when the conversation reaches its close (SESSION_COMPLETE_EVENT), over the
+  // hand-home beat. "Continue →" dismisses it, revealing the hand-home/next-step underneath. Not the close itself.
+  const [endCard, setEndCard] = useState(false);
 
   // Fill from committed state: an immediate PUSH after each turn (the chat fires ARTIFACT_REFRESH_EVENT once its turn —
   // including any keeper commit — has landed) + a slow POLL backstop. In REVIEW the artifact is final, so nothing polls.
@@ -67,7 +70,17 @@ export default function WorkspaceSession({
       if (!cancelled && next) setArtifact(next);
     };
     const onCommitted = () => void refresh();
-    if (typeof window !== 'undefined') window.addEventListener(ARTIFACT_REFRESH_EVENT, onCommitted);
+    // Session close: read the final artifact, then raise the summary card over the hand-home.
+    const onComplete = async () => {
+      const next = await readArtifactAction(memberId, sessionKey);
+      if (cancelled) return;
+      if (next) setArtifact(next);
+      setEndCard(true);
+    };
+    if (typeof window !== 'undefined') {
+      window.addEventListener(ARTIFACT_REFRESH_EVENT, onCommitted);
+      window.addEventListener(SESSION_COMPLETE_EVENT, onComplete);
+    }
     const id = setInterval(() => {
       if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
       void refresh();
@@ -75,7 +88,10 @@ export default function WorkspaceSession({
     return () => {
       cancelled = true;
       clearInterval(id);
-      if (typeof window !== 'undefined') window.removeEventListener(ARTIFACT_REFRESH_EVENT, onCommitted);
+      if (typeof window !== 'undefined') {
+        window.removeEventListener(ARTIFACT_REFRESH_EVENT, onCommitted);
+        window.removeEventListener(SESSION_COMPLETE_EVENT, onComplete);
+      }
     };
   }, [memberId, sessionKey, review]);
 
@@ -171,6 +187,30 @@ export default function WorkspaceSession({
           )}
         </div>
       </div>
+
+      {/* End card — raised over the hand-home at the session's close: every answer the member built, in one place.
+          "Continue →" dismisses it, revealing the conversation's hand-home / next-step underneath. Not the close. */}
+      {endCard && !review && filled.length > 0 && (
+        <div className="ws-endcard-scrim" role="dialog" aria-modal="true" aria-label="What you built">
+          <div className="ws-endcard">
+            <div className="ws-endcard-eyebrow">Session complete</div>
+            <h2 className="ws-endcard-title">Here’s what you built</h2>
+            <div className="ws-built-slots">
+              {filled.map((s, i) => (
+                <div key={i} className="ws-built-slot">
+                  <div className="ws-slot-lab">{s.label}</div>
+                  <ul className="ws-slot-list">
+                    {(s.value ?? '').split('\n').map((l) => l.trim()).filter(Boolean).map((ln, j) => (
+                      <li key={j} className="ws-slot-line"><span className="ws-slot-tick" aria-hidden="true">✓</span>{ln}</li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+            <button type="button" className="ws-endcard-cta" onClick={() => setEndCard(false)}>Continue →</button>
+          </div>
+        </div>
+      )}
     </>
   );
 }

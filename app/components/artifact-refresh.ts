@@ -8,3 +8,11 @@ export const ARTIFACT_REFRESH_EVENT = 'g4l:artifact-refresh';
 export function notifyArtifactCommitted() {
   if (typeof window !== 'undefined') window.dispatchEvent(new Event(ARTIFACT_REFRESH_EVENT));
 }
+
+// Fired when a session's conversation reaches its close (stage === 'complete') — the workspace shows the "here's what
+// you built" summary card before the hand-home. Fire-and-forget like the refresh event; standalone pages ignore it.
+export const SESSION_COMPLETE_EVENT = 'g4l:session-complete';
+
+export function notifySessionComplete() {
+  if (typeof window !== 'undefined') window.dispatchEvent(new Event(SESSION_COMPLETE_EVENT));
+}
