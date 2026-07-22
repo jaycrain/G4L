@@ -1448,6 +1448,30 @@ body.redesign-on .back-dash { display: none; }
 .ws-slot.filled .ws-slot-val { color: var(--charcoal); font-weight: 500; }
 .ws-art-foot { margin-top: 20px; font-size: 13px; color: #6b7680; }
 
+/* ============ Single-column Session (2026-07-21, direction A) — one conversation column, no two-pane ============ */
+.ws-col { max-width: 800px; margin: 0 auto; min-height: calc(100dvh - 56px); display: flex; flex-direction: column; padding: 0 22px; }
+.ws-col-head { flex: 0 0 auto; padding-top: 14px; }
+.ws-col-way { display: flex; align-items: center; gap: 14px; margin: 8px 0 4px; }
+.ws-col-way .ws-way-ring { flex: 0 0 auto; }
+.ws-col-way .ws-way-pos { flex: 1 1 auto; min-width: 0; }
+.ws-col-way .ws-way-route { flex: 0 0 auto; }
+/* Kept chips — the running "here's what you've accomplished" row, grows as the conversation commits answers. */
+.ws-kept { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 12px 0 6px; }
+.ws-kept-lab { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.07em; color: #6b7680; }
+.ws-kept-chip { display: inline-flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 600; color: var(--navy); background: #eef4f2; border: 1px solid #d5e5e0; border-radius: 100px; padding: 4px 12px; }
+.ws-kept-tick { color: var(--teal); font-weight: 800; }
+/* The conversation fills the rest of the column; the chat scrolls, the composer stays at the foot. */
+.ws-col-body { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; padding: 6px 0 10px; }
+.ws-col-body > * { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+.ws-col-body .chat { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+.ws-col-body .chat-input, .ws-col-body form { flex: 0 0 auto; }
+/* Review / end summary card — every kept answer in one place. */
+.ws-built { background: var(--white); border: 1px solid #e3e2df; border-radius: 16px; padding: 26px 28px; margin-top: 6px; }
+.ws-built-title { font-weight: 800; font-size: 24px; color: var(--navy); margin: 0; }
+.ws-built-lede { color: #6b7680; font-size: 15px; margin-top: 6px; font-style: italic; }
+.ws-built-slots { margin-top: 20px; display: flex; flex-direction: column; gap: 16px; }
+.ws-built-foot { margin-top: 22px; font-size: 13px; color: #6b7680; }
+
 /* The rail hosts the existing arc chat client — make it fill the sticky rail and scroll internally. */
 .ws-rail { padding: 0; }
 .ws-rail > div { display: flex; flex-direction: column; flex: 1; min-height: 0; padding: 16px 18px; overflow: hidden; }

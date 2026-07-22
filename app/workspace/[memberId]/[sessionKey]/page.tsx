@@ -77,8 +77,6 @@ export default async function WorkspacePage({
       artifact={artifact}
       wayfinding={{ phaseLabel, phaseOrdinal, positionLabel, progressPct, rings, ringCenter: phaseLabel, ringSub }}
       review={review}
-      mobile={mobileEnabled()}
-      tense={def.phase === 'reconnect' ? 'present' : def.phase === 'reclaim' ? 'reclaim' : 'practice'}
     />
   );
 }
