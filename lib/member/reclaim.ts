@@ -42,7 +42,7 @@ const BARE_CADENCE_RE =
 // memberClosingReclaim via tests/reclaim-close-vocab.test.ts, so a close like "those are the highlights" can't slip
 // capture AND survive consolidation onto the card / into the committed list.
 const RECLAIM_CLOSE_RE =
-  /^(that'?s (about )?(it|all|everything|the list)( for now)?|that'?s a (good|solid|great|decent) (start|list)|those are (the )?(real|only|main|biggest|big|top) ones|those are (the )?highlights|the highlights|(that|this) (looks|sounds) (great|good|right|perfect|spot on)|love (it|that)|perfect|good enough|sounds good|(i think )?that'?s (about )?(it|everything))$/i;
+  /^(that'?s (about )?(it|all|everything|the list)( for now)?|that'?s a (good|solid|great|decent) (start|list)|those are (the )?(real|only|main|biggest|big|top) ones|those are (the )?highlights|the highlights|(that|this) (looks|sounds) (great|good|right|perfect|spot on)|love (it|that)|perfect|good enough|sounds good|(i think )?that'?s (about )?(it|everything)|(i )?do(n'?t| not) think so|not that i can think of)$/i;
 
 // A whole-item META / conversational-repair fragment the model sometimes mis-captures as a want — confusion,
 // "I don't understand", "wait/what", "never mind". Same family as a bare close: zero want-content, so it's dropped

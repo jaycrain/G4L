@@ -41,6 +41,15 @@ test('MILESTONE one-shot — greets once, then the mark-seen marker retires it (
   assert.equal(second.kind, 'quiet');
 });
 
+test('MILESTONE — an onboarding excavation badge (Doors) never billboards the home (member not oriented yet)', async () => {
+  const { db, memberId } = await freshDb();
+  // named-yourself "You named the Doors" (earn_rule reconnect:doors) is ceremony:true but earned DURING onboarding —
+  // it must not hijack the first home view (Jay's mobile walk). Phase-checkpoint badges still do.
+  await db.query(`insert into badge_earned (member_id, badge_id) values ($1, 'named-yourself')`, [memberId]);
+  const s = await loadHomeState(db, memberId, new Date(), page({ kind: 'fresh' }));
+  assert.notEqual(s.kind, 'milestone');
+});
+
 test('MILESTONE one-shot — a NON-ceremonial badge never triggers the celebration', async () => {
   const { db, memberId } = await freshDb();
   // Use a real non-ceremony badge id if present; an unknown id also resolves to no milestone (getBadge → null).

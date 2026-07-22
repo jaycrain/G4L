@@ -13,7 +13,7 @@ import type { Db } from '../db/schema.ts';
 import type { HeroState } from './resume-hero.ts';
 import type { OutreachTrigger } from '../outreach/config.ts';
 import { getOpenOutreach, getPref } from '../outreach/store.ts';
-import { getBadge } from '../curriculum/registry.ts';
+import { getBadge, homeMilestoneEligible } from '../curriculum/registry.ts';
 import { firstName } from '../member/avatar.ts';
 
 export type Phase = 'reconnect' | 'rewire' | 'rebuild' | 'reclaim';
@@ -131,7 +131,9 @@ async function loadMilestone(db: Db, memberId: string): Promise<{ badgeName: str
     );
     for (const r of rows) {
       const b = getBadge(r.badge_id);
-      if (b?.ceremony) return { badgeName: b.name, href: `/badges/${memberId}`, badgeId: r.badge_id };
+      // Only PHASE achievements billboard the home — never the onboarding excavation badges (Doors/IDQ), which are
+      // earned before the member is oriented (Jay's mobile walk: "You named the Doors" hijacked the first home view).
+      if (b && homeMilestoneEligible(b)) return { badgeName: b.name, href: `/badges/${memberId}`, badgeId: r.badge_id };
     }
   } catch {
     /* degrade — no milestone */

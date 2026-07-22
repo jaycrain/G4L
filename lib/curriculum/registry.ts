@@ -248,6 +248,13 @@ export function listBadges(): Badge[] {
 export function getBadge(id: string): Badge | null {
   return BADGES.find((b) => b.id === id) ?? null;
 }
+/** Does this badge earn a HOME milestone billboard ("You kept your word")? Only true phase achievements — a checkpoint
+ *  pass, or the Reclaim transition. NOT the onboarding excavation badges (naming the Doors / meeting the IDQ line): those
+ *  are earned before the member is oriented at all, so they must never billboard the home — they're recognized in the
+ *  onboarding flow and, downstream, by the Companion in conversation (Jay's mobile walk, 2026-07-21). */
+export function homeMilestoneEligible(badge: Badge): boolean {
+  return badge.ceremony && (badge.earn_rule.startsWith('checkpoint:') || badge.earn_rule === 'reclaim:transition');
+}
 /** The phase columns of the forecast (Sessions + Checkpoints + in-phase measurements), order-sorted. */
 export function phaseColumns(): { phase: Asset['phase']; items: Asset[] }[] {
   return PHASE_ORDER.map((phase) => ({

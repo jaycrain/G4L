@@ -48,12 +48,18 @@ function jaccard(a: Set<string>, b: Set<string>): number {
 }
 
 // ── 1) MULTI-WANT PARAGRAPH ────────────────────────────────────────────────────────────────────────────────────
+// A CADENCE segment ("one night a week", "twice a month", "every day") is a FREQUENCY qualifier for the want it trails,
+// not a discrete want of its own — so it must never make an item read as multi-want (Jay's mobile walk: "Hang out with
+// friends. One night a week." got split and re-asked "which one do you most want back?").
+const CADENCE_ONLY_RE =
+  /^(once|twice|a|one|two|three|four|five|a few|a couple( of)?|several|couple)?\s*(times?|nights?|days?|mornings?|evenings?|afternoons?|weekends?|hours?|sessions?)?\s*(a|per|every|each)\s+(day|week|weekday|weekend|month|year|morning|evening|night|afternoon)s?$/i;
 /** Does this read as several wants crammed into one item (needs drawing out), rather than one discrete want? */
 export function isMultiWantParagraph(text: string): boolean {
   const t = (text ?? '').trim();
   if (!t) return false;
-  // Substantive sentence-like segments (terminator- or semicolon-separated), each carrying real content.
-  const segments = t.split(/[.;\n]+|(?:\!|\?)+/).map((s) => s.trim()).filter((s) => s.split(/\s+/).length >= 4);
+  // Substantive sentence-like segments (terminator- or semicolon-separated), each carrying real content — but NOT a
+  // bare cadence phrase, which only qualifies the want beside it.
+  const segments = t.split(/[.;\n]+|(?:\!|\?)+/).map((s) => s.trim()).filter((s) => s.split(/\s+/).length >= 4 && !CADENCE_ONLY_RE.test(s));
   if (segments.length >= 2) return true;
   // A single run-on that enumerates 3+ distinct content chunks ("X, Y, and Z" where each is substantive).
   const commaChunks = t.split(/,| and /i).map((s) => s.trim()).filter((s) => contentTokens(s).size >= 1);

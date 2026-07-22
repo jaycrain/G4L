@@ -24,6 +24,12 @@ const CLOSE_CORPUS = [
   'good enough',
   'perfect',
   'that looks great',
+  // Colloquial no-answers to "anything missing?" — a close, not new material (Jay's mobile walk: "Don't think so"
+  // fell through, got captured as a want AND re-asked the beat).
+  "Don't think so",
+  "don't think so",
+  "I don't think so",
+  'not that I can think of',
 ];
 
 // NON-closes — real wants (or fragments of them) that share words with close phrases but must NEVER be read as a

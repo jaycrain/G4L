@@ -22,6 +22,11 @@ test('multi-want paragraph — Donna\'s "regular income…" splits into several 
   for (const item of ['My fitness', 'Lose about 35 lbs', 'Buy some new clothes', 'Hang out with friends on weekends']) {
     assert.equal(isMultiWantParagraph(item), false, `discrete want stays single: ${item}`);
   }
+  // A CADENCE trailing a want is a qualifier, NOT a second want (Jay's mobile walk: "Hang out with friends. One night
+  // a week." was split and re-asked "which one do you most want back?").
+  for (const item of ['Hang out with friends. One night a week.', 'Get to the gym. Twice a week.', 'Ride my bike. Every day.']) {
+    assert.equal(isMultiWantParagraph(item), false, `cadence isn't a second want: ${item}`);
+  }
 });
 
 test('life-vision — Donna\'s "I\'ll be 60…" vision is caught; concrete wants are not', () => {

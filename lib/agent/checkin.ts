@@ -646,7 +646,13 @@ export async function checkinOpening(c: CheckinContext): Promise<string> {
   // The AI disclosure is prepended DETERMINISTICALLY (governance is code-enforced, not model-trusted) so the model
   // never has to include it — and can never garble the system-prompt directive into a leaked instruction (the
   // "This is the first AI disclosure — include it now, verbatim… —-" bug). Member sees a clean disclosure, then the welcome.
-  const greeting = (await checkinGreeting(c)).trim();
+  // Belt-and-suspenders: the model is TOLD not to include the disclosure, but it sometimes leaks it anyway (with a
+  // stray "—-" delimiter) — Jay's mobile walk saw it printed twice. Strip any leaked leading disclosure + delimiter
+  // BEFORE the deterministic prepend, so the member always sees exactly one clean disclosure.
+  const greeting = (await checkinGreeting(c))
+    .replace(/^\s*this conversation is guided by ai\b[\s\S]*?stop at any time\.?\s*/i, '')
+    .replace(/^\s*[—–-]{2,}\s*/, '')
+    .trim();
   return `${AI_DISCLOSURE}\n\n${greeting}`;
 }
 
