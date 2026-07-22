@@ -250,7 +250,9 @@ export default async function RedesignDashboard({ db, memberId, dash }: { db: Db
           </div>
         </div>
 
-        {/* Proactive outreach card — a governed, grounded nudge (OUTREACH-flagged; dark on prod). */}
+        {/* Proactive outreach card — a governed, grounded nudge (OUTREACH-flagged). Shown on DESKTOP; hidden at the
+            mobile VIEWPORT (CSS, `.mobile-home .outreach-card`) where the nudge instead surfaces as the companion home
+            thread's opening line — never a mid-dashboard panel (2026-07-21 walk). */}
         {outreachEnabled() && <OutreachCard memberId={memberId} />}
 
         {/* Reclaim List — the fuel the program works toward */}

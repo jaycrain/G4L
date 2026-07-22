@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { openCheckin, sendCheckin, loadCheckin } from './checkin-actions.ts';
 import { markMilestoneSeenAction } from './home-actions.ts';
+import { fetchReadyOutreach, respondToOutreach } from './outreach-actions.ts';
 import { CompanionCtx } from './companion-context.tsx';
 import type { HomeState } from '../../lib/dashboard/home-state.ts';
 
@@ -20,12 +21,24 @@ export default function RedesignShell({ memberId, homeState, children }: { membe
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState('');
   const [pending, setPending] = useState(false);
-  // Phone-only (≤767px): the docked rail is hidden; a "Talk to me" pill folds the Companion up as a full-screen
-  // overlay. This state has NO effect above phone width — the .phone-open class only carries CSS inside that breakpoint.
-  const [phoneOpen, setPhoneOpen] = useState(false);
-  // Mobile slice 1: the conversation-first HOME cover (navy billboard) is visible by default on phones; "Go to
-  // Dashboard" dismisses it (slides up) to reveal the dashboard; the "Talk to me" pill brings it back.
+  // Mobile companion model (2026-07-21): the companion IS the mobile home — ONE surface. The member lands in the
+  // conversation-first home (the navy billboard + thread); "Your dashboard →" navigates to the dashboard; a return
+  // affordance brings the companion back. The old phone-overlay (a redundant SECOND companion surface summoned by a
+  // FAB) is gone — every "open the companion" now just returns to this home. Desktop keeps the always-docked rail.
   const [homeDismissed, setHomeDismissed] = useState(false);
+  // The proactive nudge surfaces HERE on mobile — the companion home thread's opening line — never a dashboard card.
+  // Fetched mobile-only (desktop keeps the OutreachCard); shows regardless of which billboard line won the home state,
+  // so it can't vanish. "Not now" feeds the cadence back-off; a reply marks it replied (in send()).
+  const [nudge, setNudge] = useState<{ id: string; text: string } | null>(null);
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia('(max-width: 1000px)').matches) return;
+    let cancelled = false;
+    void fetchReadyOutreach(memberId).then((n) => { if (!cancelled && n) setNudge(n); });
+    return () => { cancelled = true; };
+  }, [memberId]);
+  const dismissNudge = useCallback(() => {
+    setNudge((n) => { if (n) void respondToOutreach(memberId, n.id, 'dismissed'); return null; });
+  }, [memberId]);
   // One-shot the milestone celebration: the FIRST engagement (dismiss or tap-through) retires it server-side so it
   // never re-greets on later loads. Guarded by a ref so a dismiss + a CTA tap don't double-write.
   const milestoneMarked = useRef(false);
@@ -108,14 +121,12 @@ export default function RedesignShell({ memberId, homeState, children }: { membe
     inputRef.current?.focus();
     inputRef.current?.scrollIntoView({ block: 'nearest' });
   }, []);
-  // On phone the pill folds the overlay up; on desktop/iPad-landscape setPhoneOpen is inert (no CSS effect).
-  // Only focus the composer when the rail is ALREADY visible (>1000px) — a "jump to type" affordance. On
-  // phone/portrait, focusing raises the iOS keyboard mid-glide, and iOS shoves the fixed panel up to clear it,
-  // which reads as a jarring bottom-sheet rising instead of the clean left-glide. So there we open, don't focus
-  // (matches the old dock exactly — the member taps the composer to type).
+  // "Open the companion" from anywhere (a child's useCompanion().open(), the return affordance): on mobile this simply
+  // returns to the companion HOME (the one surface) — no overlay to summon. On desktop the rail is already docked, so
+  // we just focus the composer as a "jump to type" affordance. (Phone-portrait doesn't focus — that raises the iOS
+  // keyboard mid-transition; the member taps the composer to type.)
   const openCompanion = useCallback(() => {
-    setHomeDismissed(false); // mobile: bring the conversation-home cover back if it was dismissed
-    setPhoneOpen(true);
+    setHomeDismissed(false); // mobile: return to the companion home
     if (typeof window !== 'undefined' && window.matchMedia('(min-width: 1001px)').matches) {
       inputRef.current?.focus();
     }
@@ -129,6 +140,8 @@ export default function RedesignShell({ memberId, homeState, children }: { membe
     setMessages([...history, { role: 'member', text }]);
     setInput('');
     setPending(true);
+    // Replying to the companion IS engaging the open nudge — record it (resets cadence back-off) and clear it.
+    if (nudge) { void respondToOutreach(memberId, nudge.id, 'replied', text); setNudge(null); }
     try {
       const r = await sendCheckin(memberId, text);
       setMessages([...history, { role: 'member', text }, { role: 'agent', text: r.reply }]);
@@ -144,9 +157,10 @@ export default function RedesignShell({ memberId, homeState, children }: { membe
   return (
     // Any reused child that calls useCompanion() gets a working open() (focuses the always-present composer).
     <CompanionCtx.Provider value={{ open: openCompanion, showBadge: false }}>
-      <div className="redesign-app">
+      <div className={`redesign-app${homeState ? ' mobile-home' : ''}`}>
         <div className="redesign-canvas">{children}</div>
-        <aside className={`redesign-rail${phoneOpen ? ' phone-open' : ''}`} data-tour="companion" aria-label="Your G4L Companion">
+        {/* Desktop-only docked rail (hidden at the phone breakpoint, where the companion home below IS the companion). */}
+        <aside className="redesign-rail" data-tour="companion" aria-label="Your G4L Companion">
           <div className="rrail-head">
             <div className="rrail-id">
               <span className="rrail-title">Your G4L Companion</span>
@@ -154,8 +168,6 @@ export default function RedesignShell({ memberId, homeState, children }: { membe
                 <span className="rrail-dot" aria-hidden="true" /> here with you
               </span>
             </div>
-            {/* phone-only close (CSS-hidden above 767px) — folds the overlay back down */}
-            <button type="button" className="rrail-close" onClick={() => setPhoneOpen(false)} aria-label="Close your Companion">✕</button>
           </div>
           <div ref={chatRef} className="rrail-stream">
             {messages.map((m, i) => (
@@ -211,6 +223,13 @@ export default function RedesignShell({ memberId, homeState, children }: { membe
               {messages.map((m, i) => (
                 <div key={i} className={`rmsg ${m.role}`}>{m.text}</div>
               ))}
+              {/* The proactive nudge — the companion's fresh reach-out, as the latest line. Reply = just type below. */}
+              {nudge && (
+                <div className="rmsg agent rhome-nudge">
+                  {nudge.text}
+                  <button type="button" className="rhome-nudge-skip" onClick={dismissNudge}>Not now</button>
+                </div>
+              )}
               {pending && <div className="rmsg typing">Thinking…</div>}
             </div>
             <form className="rhome-composer" onSubmit={send}>
@@ -223,13 +242,14 @@ export default function RedesignShell({ memberId, homeState, children }: { membe
               />
               <button type="submit" className="rrail-send" disabled={pending || !input.trim()}>Send</button>
             </form>
-            <button type="button" className="rhome-godash" onClick={() => { retireMilestone(); setHomeDismissed(true); }}>Go to Dashboard ↓</button>
+            <button type="button" className="rhome-godash" onClick={() => { retireMilestone(); setHomeDismissed(true); }}>Your dashboard →</button>
           </aside>
         )}
-        {/* phone-only "Talk to me" pill — brings the Companion (or the dismissed home cover) back. */}
-        {(homeState ? homeDismissed : !phoneOpen) && (
-          <button type="button" className="rrail-fab" onClick={homeState ? () => setHomeDismissed(false) : openCompanion} aria-label="Talk to your Companion">
-            <span className="rrail-fab-dot" aria-hidden="true" /> Talk to me
+        {/* Phone-only return: when the member has navigated to the dashboard, this brings the companion home back. The
+            SOLE companion affordance on mobile now (the old overlay + its "Talk to me" summon are gone). */}
+        {homeState && homeDismissed && (
+          <button type="button" className="rrail-fab" onClick={() => setHomeDismissed(false)} aria-label="Back to your Companion">
+            <span className="rrail-fab-dot" aria-hidden="true" /> Your Companion
           </button>
         )}
       </div>
