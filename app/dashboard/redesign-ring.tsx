@@ -20,9 +20,12 @@ const PHASE_COLOR_DARK: Record<string, string> = {
   rebuild: '#B7BB55',
   reclaim: '#F07A4E',
 };
-// Center-out radii — index 0 (reconnect) innermost.
+// Center-out radii — index 0 (reconnect) innermost. These live in a FIXED 200-unit coordinate space; `size` only
+// scales the SVG via width/height. (Previously the viewBox was `0 0 size size` while the radii stayed absolute, so
+// any size ≠ 200 drew the outer rings outside the box and clipped — badly at the small workspace ring. 2026-07-22.)
 const RADII = [34, 56, 78, 96];
 const STROKE = 9;
+const VIEW = 206; // coordinate space; = 2·(96 + 9/2) + a couple units so the outer ring's stroke never touches the edge.
 
 export default function RedesignRing({
   rings,
@@ -37,11 +40,14 @@ export default function RedesignRing({
   size?: number;
   onDark?: boolean; // rendered on the navy hero → use contrasting stroke colors + light center text
 }) {
-  const cx = size / 2;
-  const cy = size / 2;
+  const cx = VIEW / 2;
+  const cy = VIEW / 2;
   const colors = onDark ? PHASE_COLOR_DARK : PHASE_COLOR;
+  // The center label can't render legibly on a small ring (it would be ~3px) and only duplicates the phase text beside
+  // it there — so show it only on the larger rings (hero/ceremony); small rings are just the bullseye.
+  const showLabel = size >= 90;
   return (
-    <svg viewBox={`0 0 ${size} ${size}`} width={size} height={size} className="redesign-ring" role="img" aria-label={`${centerTop}${centerSub ? `, ${centerSub}` : ''}`}>
+    <svg viewBox={`0 0 ${VIEW} ${VIEW}`} width={size} height={size} className="redesign-ring" role="img" aria-label={`${centerTop}${centerSub ? `, ${centerSub}` : ''}`}>
       {rings.map((r, i) => {
         const radius = RADII[i] ?? RADII[RADII.length - 1]!;
         const color = colors[r.phase] ?? colors.reconnect!;
@@ -67,10 +73,12 @@ export default function RedesignRing({
           </g>
         );
       })}
-      <text x={cx} y={cy - 2} textAnchor="middle" fill={onDark ? '#fff' : '#374F63'} fontSize="13" fontWeight="800" fontFamily="Barlow">
-        {centerTop.toUpperCase()}
-      </text>
-      {centerSub && (
+      {showLabel && (
+        <text x={cx} y={cy - 2} textAnchor="middle" fill={onDark ? '#fff' : '#374F63'} fontSize="13" fontWeight="800" fontFamily="Barlow">
+          {centerTop.toUpperCase()}
+        </text>
+      )}
+      {showLabel && centerSub && (
         <text x={cx} y={cy + 14} textAnchor="middle" fill={onDark ? 'rgba(255,255,255,.7)' : 'rgba(55,79,99,.65)'} fontSize="11" fontFamily="Barlow">
           {centerSub}
         </text>
