@@ -1229,7 +1229,8 @@ html:has(.companion-hero), body:has(.companion-hero) { overflow-anchor: none; }
    class is toggled on <body> by RedesignChrome (avoids :has(), which Turbopack's CSS target rejects). */
 body.redesign-on main { max-width: 100%; margin: 0; padding: 0; }
 body.redesign-on .brand-bar,
-body.redesign-on .back-dash { display: none; }
+body.redesign-on .back-dash,
+body.redesign-on .confidential-footer { display: none; } /* full-bleed app — no page-scroll under the fixed topbar */
 
 .redesign-topbar {
   position: sticky; top: 0; z-index: 5; height: 64px;
@@ -1449,8 +1450,10 @@ body.redesign-on .back-dash { display: none; }
 .ws-art-foot { margin-top: 20px; font-size: 13px; color: #6b7680; }
 
 /* ============ Single-column Session (2026-07-21, direction A) — one conversation column, no two-pane ============ */
-.ws-col { max-width: 800px; margin: 0 auto; min-height: calc(100dvh - 56px); display: flex; flex-direction: column; padding: 0 22px; }
-.ws-col-head { flex: 0 0 auto; padding-top: 14px; }
+/* Fixed to the viewport below the 64px sticky topbar, so the CHAT scrolls internally and the header stays PINNED
+   (min-height would let the column grow → the page scrolls → the header scrolls away). */
+.ws-col { max-width: 800px; margin: 0 auto; height: calc(100dvh - 64px); overflow: hidden; display: flex; flex-direction: column; padding: 0 22px; }
+.ws-col-head { flex: 0 0 auto; padding-top: 14px; border-bottom: 1px solid #ecebe8; }
 .ws-col-way { display: flex; align-items: center; gap: 14px; margin: 8px 0 4px; }
 .ws-col-way .ws-way-ring { flex: 0 0 auto; }
 .ws-col-way .ws-way-pos { flex: 1 1 auto; min-width: 0; }
