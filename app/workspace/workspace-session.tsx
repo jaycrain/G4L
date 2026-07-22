@@ -124,11 +124,12 @@ export default function WorkspaceSession({
             </>
           ) : (
             <>
-              <Link href={`/dashboard/${memberId}`} className="ws-back">← Dashboard</Link>
-              {/* Slim wayfinding: ring + where you are + progress + full route — so a single column still orients. */}
+              {/* Slim wayfinding — ONE row: back · ring · where-you-are + progress · full route. Compact so the pinned
+                  header doesn't eat the phone (Jay's walk). */}
               <div className="ws-col-way">
+                <Link href={`/dashboard/${memberId}`} className="ws-way-back" aria-label="Back to dashboard">←</Link>
                 <div className="ws-way-ring">
-                  <RedesignRing rings={wayfinding.rings} centerTop={wayfinding.ringCenter} centerSub={wayfinding.ringSub} size={52} />
+                  <RedesignRing rings={wayfinding.rings} centerTop={wayfinding.ringCenter} centerSub={wayfinding.ringSub} size={44} />
                 </div>
                 <div className="ws-way-pos">
                   <div className="ws-way-ph">Phase {wayfinding.phaseOrdinal} · {wayfinding.phaseLabel}</div>
@@ -140,10 +141,10 @@ export default function WorkspaceSession({
             </>
           )}
 
-          {/* "Why this matters" — the session's framing line, short by default, full behind the tap. */}
+          {/* "Why this matters" — compact: just the tap, the full expands inline. The short framing line is echoed in
+              the Companion's opening beat anyway, so it doesn't need to sit pinned. */}
           {summary && !review && (
             <div className={`ws-why${whyOpen ? ' open' : ''}`}>
-              <p className="ws-why-short">{summary.short}</p>
               <button type="button" className="ws-why-toggle" onClick={() => setWhyOpen((v) => !v)} aria-expanded={whyOpen}>
                 Why this matters <span className="ws-why-caret" aria-hidden="true">{whyOpen ? '▾' : '▸'}</span>
               </button>

@@ -1431,9 +1431,11 @@ body.redesign-on .confidential-footer { display: none; } /* full-bleed app — n
 .ws-art-lede { color: #6b7680; font-size: 15px; margin-top: 6px; font-style: italic; }
 /* Session Summary — the "why this matters" threshold block. A teal-edged callout so it reads as its own beat, not a
    second lede: the short line always shows, the full expands behind the tap. Same on desktop + the mobile canvas. */
-.ws-why { margin-top: 18px; padding: 14px 16px; background: #f0f6f6; border: 1px solid #d6e7e7; border-left: 4px solid var(--teal); border-radius: 12px; }
-.ws-why-short { margin: 0; font-size: 15px; line-height: 1.45; color: var(--navy); font-weight: 600; }
-.ws-why-toggle { margin-top: 8px; padding: 0; background: none; border: none; cursor: pointer; font-family: inherit; font-size: 12.5px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--teal-d, #2f7a7b); display: inline-flex; align-items: center; gap: 5px; }
+/* Compact by default — just the tap link; the box only appears when expanded (Jay's walk: the pinned header was eating
+   the phone). */
+.ws-why { margin-top: 8px; }
+.ws-why.open { padding: 12px 14px; background: #f0f6f6; border: 1px solid #d6e7e7; border-left: 4px solid var(--teal); border-radius: 12px; }
+.ws-why-toggle { padding: 0; background: none; border: none; cursor: pointer; font-family: inherit; font-size: 12.5px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--teal-d, #2f7a7b); display: inline-flex; align-items: center; gap: 5px; }
 .ws-why-caret { font-size: 10px; }
 .ws-why-full { margin: 10px 0 0; font-size: 14.5px; line-height: 1.6; color: #4a5560; }
 .ws-slots { margin-top: 22px; display: flex; flex-direction: column; gap: 14px; }
@@ -1454,14 +1456,18 @@ body.redesign-on .confidential-footer { display: none; } /* full-bleed app — n
    (min-height would let the column grow → the page scrolls → the header scrolls away). */
 .ws-col { max-width: 800px; margin: 0 auto; height: calc(100dvh - 64px); overflow: hidden; display: flex; flex-direction: column; padding: 0 22px; }
 .ws-col-head { flex: 0 0 auto; padding-top: 14px; border-bottom: 1px solid #ecebe8; }
-.ws-col-way { display: flex; align-items: center; gap: 14px; margin: 8px 0 4px; }
+.ws-col-way { display: flex; align-items: center; gap: 12px; margin: 6px 0 4px; }
+.ws-way-back { flex: 0 0 auto; color: var(--teal); font-weight: 800; font-size: 20px; line-height: 1; text-decoration: none; }
+.ws-way-back:hover { color: var(--teal-d, #2f7a7b); }
 .ws-col-way .ws-way-ring { flex: 0 0 auto; }
 .ws-col-way .ws-way-pos { flex: 1 1 auto; min-width: 0; }
 .ws-col-way .ws-way-route { flex: 0 0 auto; }
 /* Kept chips — the running "here's what you've accomplished" row, grows as the conversation commits answers. */
-.ws-kept { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 12px 0 6px; }
-.ws-kept-lab { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.07em; color: #6b7680; }
-.ws-kept-chip { display: inline-flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 600; color: var(--navy); background: #eef4f2; border: 1px solid #d5e5e0; border-radius: 100px; padding: 4px 12px; }
+/* One horizontal-scroll row (no wrap) so the running "kept" stays one line however many chips there are. */
+.ws-kept { display: flex; flex-wrap: nowrap; align-items: center; gap: 8px; margin: 10px 0 4px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+.ws-kept::-webkit-scrollbar { display: none; }
+.ws-kept-lab { flex: 0 0 auto; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.07em; color: #6b7680; }
+.ws-kept-chip { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 600; color: var(--navy); background: #eef4f2; border: 1px solid #d5e5e0; border-radius: 100px; padding: 4px 12px; }
 .ws-kept-tick { color: var(--teal); font-weight: 800; }
 /* The conversation fills the rest of the column; the chat scrolls, the composer stays at the foot. */
 .ws-col-body { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; padding: 6px 0 10px; }
