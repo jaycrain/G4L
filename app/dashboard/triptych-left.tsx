@@ -22,7 +22,20 @@ const R_RING_COLOR: Record<string, string> = { reconnect: '#374f63', rewire: '#3
 const ARROW: Record<string, string> = { up: '↑', down: '↓', flat: '→' };
 
 export default async function TriptychLeft({ db, memberId, dash }: { db: Db; memberId: string; dash: Dashboard }) {
-  const [grinta, passport] = await Promise.all([latestGrintaReading(db, memberId), getPassport(db, memberId)]);
+  const [grinta, passport, idqRows] = await Promise.all([
+    latestGrintaReading(db, memberId),
+    getPassport(db, memberId),
+    // Last completed IDQ → the next one is due 60 days on (the frozen cadence). Drift-hardened: any hiccup hides the line.
+    db
+      .query<{ last: unknown }>('select max(taken_at) as last from idq_retake where member_id=$1 and cycle_indicator=1', [memberId])
+      .catch(() => ({ rows: [] as { last: unknown }[] })),
+  ]);
+  const lastIdq = idqRows.rows[0]?.last ? new Date(idqRows.rows[0].last as string) : null;
+  const nextIdqLabel = lastIdq
+    ? new Date(lastIdq.getTime() + 60 * 86_400_000).getTime() <= Date.now()
+      ? 'ready now'
+      : new Date(lastIdq.getTime() + 60 * 86_400_000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+    : null;
 
   return (
     <div className="tri-stack">
@@ -46,6 +59,7 @@ export default async function TriptychLeft({ db, memberId, dash }: { db: Db; mem
             {dash.score.dimensions && (
               <div className="rreg-radar"><IdqRadar current={dash.score.dimensions} size={104} withLabels={false} /></div>
             )}
+            {nextIdqLabel && <div className="rreg-nextidq">Your next IDQ is {nextIdqLabel}</div>}
           </>
         ) : (
           <p className="muted rreg-blank">Blank for now — it fills the moment you start Reconnect.</p>
