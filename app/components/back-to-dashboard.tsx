@@ -26,7 +26,10 @@ export default function BackToDashboard() {
   // "← Session" hop back to that session, so the member doesn't have to route Dashboard → back into the session. Same
   // styling as the Dashboard link; sits just ahead of it.
   const from = search?.get('from') ?? '';
-  const sessionBack = /^[a-z0-9-]{1,24}$/.test(from) ? `/workspace/${memberId}/${from}` : null;
+  // On /program the "← Session" hop is rendered by the page itself, BELOW its header, so it doesn't crowd the top-of-page
+  // "← Dashboard" (Jay's iPad walk). Everywhere else it sits inline here, just ahead of Dashboard.
+  const onProgram = pathname.startsWith('/program/');
+  const sessionBack = !onProgram && /^[a-z0-9-]{1,24}$/.test(from) ? `/workspace/${memberId}/${from}` : null;
 
   return (
     <>

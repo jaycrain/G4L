@@ -1972,6 +1972,12 @@ body.redesign-on .confidential-footer { display: none; } /* full-bleed app — n
 .tri-stack .r-reclaim-list li:first-child { border-top: none; padding-top: 2px; }
 /* "Your next IDQ is …" — a quiet scheduling line under the ID Score radar (the 60-day cadence). */
 .rreg-nextidq { margin-top: 12px; font-size: 13px; color: #6b7680; }
+/* Community panel in the flank — a white fill + rounded to match the other .rcard panels (it's a .card, not .rcard),
+   and a bold CTA (Jay's iPad walk). Scoped to the triptych; the live dashboard's Connect panel is untouched. */
+.tri-stack .connect-panel { background: var(--white); border: 1px solid #e3e2df; border-radius: 14px; }
+.tri-stack .connect-cta { font-weight: 800; }
+/* "← Session" relocated below The Program header (Jay) — a little air under the hero. */
+.program-session-back { display: inline-block; margin-top: 14px; }
 /* Consistent, clearly-tappable See-more nav (subpages are premium) — a full-width footer action with a divider, not a
    faint inline link. Scoped to the triptych so the live dashboard's own .rreg-more is untouched. */
 .tri-stack .rreg-more { display: flex; align-items: center; gap: 5px; width: 100%; margin-top: 14px; padding: 11px 0 3px; border-top: 1px solid #eceae6; color: var(--teal); font-weight: 800; font-size: 13.5px; letter-spacing: 0.01em; text-decoration: none; }

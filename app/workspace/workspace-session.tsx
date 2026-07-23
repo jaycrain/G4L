@@ -131,7 +131,7 @@ export default function WorkspaceSession({
                   <div className="ws-way-ss">{wayfinding.positionLabel}</div>
                   <div className="ws-way-bar"><span className="ws-way-fill" style={{ width: `${wayfinding.progressPct}%` }} /></div>
                 </div>
-                <Link href={`/program/${memberId}?from=${sessionKey}`} className="ws-way-route">Full route →</Link>
+                <Link href={`/program/${memberId}?from=${sessionKey}`} className="ws-way-route">The Program →</Link>
               </div>
               <Link href={`/dashboard/${memberId}`} className="ws-back">← Dashboard</Link>
             </>

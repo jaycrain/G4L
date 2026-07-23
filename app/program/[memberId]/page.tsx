@@ -68,9 +68,19 @@ const PHASES: PhaseRow[] = [
   },
 ];
 
-export default async function ProgramPage({ params }: { params: Promise<{ memberId: string }> }) {
+export default async function ProgramPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ memberId: string }>;
+  searchParams: Promise<{ from?: string }>;
+}) {
   const { memberId } = await params;
   if (!(await authorizeMember(memberId))) redirect('/login');
+  // "← Session" hop (when arrived via a session's "The Program →") — rendered BELOW the header here, not up top with
+  // "← Dashboard" (Jay's iPad walk); BackToDashboard suppresses its own copy on /program.
+  const from = (await searchParams)?.from ?? '';
+  const sessionBack = /^[a-z0-9-]{1,24}$/.test(from) ? `/workspace/${memberId}/${from}` : null;
   const db = (await getDb()) as unknown as Db;
   const forecast = await getForecast(db, memberId);
   await logEvent(db, memberId, 'page_view', { surface: 'program' });
@@ -85,6 +95,9 @@ export default async function ProgramPage({ params }: { params: Promise<{ member
   return (
     <>
       <div className="hero"><h1>The Program</h1></div>
+      {sessionBack && (
+        <Link href={sessionBack} className="ws-back program-session-back">← Session</Link>
+      )}
 
       {reviewable.length > 0 && (
         <div className="card program-revisit">
