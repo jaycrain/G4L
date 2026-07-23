@@ -65,6 +65,28 @@ test('B3 · "Lock them in" (the chip for two changes) confirms — not treated a
   assert.equal(t.state.stage, 'complete');
 });
 
+test('B3 · locking the activity on a TERMINAL line does not dead-end — the eating change is carried forward', () => {
+  // Jay's walk (2026-07-23): the member affirmed the walk, the model locked it and said only "Great, locking that in."
+  // with no next question, and the thread just stopped — a dead end with the eating change still waiting. The engine
+  // must carry the turn forward to the open change.
+  let t = rebuildB3Opening();
+  t = step(t.state, '2-3 and about 30 minutes each', m('Great, locking that in.', { activityChange: 'a 30-minute morning walk, 2-3 days' }));
+  assert.equal(t.complete, false, 'one change is not a whole plan');
+  assert.equal(t.state.collected?.pilotActivity, 'a 30-minute morning walk, 2-3 days', 'activity locked');
+  assert.equal(t.state.collected?.pilotDiet, undefined, 'diet still open');
+  assert.match(t.reply, /how you eat/i, 'the turn pivots to the eating change instead of dead-ending');
+  assert.match(t.reply, /locking that in/i, "the model's acknowledgment is kept");
+});
+
+test('B3 · when the model already pivots to eating in its own line, the engine does not double-ask', () => {
+  let t = rebuildB3Opening();
+  // Model locks activity AND asks the eating question in the same reply — the scripted beat must be suppressed.
+  t = step(t.state, 'a 10-minute walk after dinner', m('Locked in. Now — what small change to how you eat feels doable?', { activityChange: 'a 10-minute walk after dinner' }));
+  assert.equal(t.complete, false);
+  assert.doesNotMatch(t.reply, /an upgrade rather than an overhaul/i, 'the scripted eating nudge is not appended on top of the model’s own question');
+  assert.match(t.reply, /how you eat/i, "the model's own pivot stands");
+});
+
 test('B3 · revising after the proposal re-opens coaching, then confirm completes', () => {
   let t = rebuildB3Opening();
   t = step(t.state, 'walk', m('', { activityChange: 'a 15-minute walk, 4 days' }));

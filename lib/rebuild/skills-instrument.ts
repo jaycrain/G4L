@@ -1,8 +1,8 @@
 // B2 · "Appreciating Your Strengths and Weaknesses" — the Rebuild Structure asset (Greg's Gated Assets V4). A
 // 12-skill self-management assessment, each skill rated SEPARATELY for physical activity and diet → 24 items on a
 // 4-point scale (1 = strongly disagree → 4 = strongly agree). Item stems are Greg's VERBATIM science — frozen, never
-// reworded EXCEPT bare transcription grammar typos, corrected member-facing (Jay's proof pass 2026-07-23; meaning
-// unchanged, pending Greg confirm): #5 "perform a physical activities" → "perform physical activities"; #6 activity
+// reworded EXCEPT bare transcription grammar typos, corrected member-facing (Jay's proof pass 2026-07-23, meaning
+// unchanged — Jay confirmed these ride without Greg sign-off): #5 "perform a physical activities" → "perform physical activities"; #6 activity
 // "efforts to being active" → "efforts to be active"; #11 diet "buy prepare nutritious food" → "buy and prepare …".
 //
 // Stored as a self-management skill profile (its own register, self_management_reading / 0051) — used later by the

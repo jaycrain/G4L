@@ -7,6 +7,7 @@
 // Flag-gated by REBUILD (Decision JJ — additive per-Phase) — OFF by default; prod stays v2.3 until the v2.4 flip.
 
 import { runArcTurn, administeredStage, scaleExpects, type ArcConfig, type StageDef } from './onboarding-staged.ts';
+import { withScriptedBeat } from './rewire.ts'; // "model reflects, engine carries the turn forward — never both, never a dead-end"
 import { BEAT_SEP, type ConvMessage, type ConvState, type ModelTurn, type Turn } from './onboarding.ts';
 import { WHY_ITEMS, WHY_PROMPTS, WHY_SCALE_MAX, WHY_ITEM_COUNT, WHY_DOMAIN_SPLIT } from '../rebuild/why-instrument.ts';
 import {
@@ -206,8 +207,10 @@ function pilotCoachNudge(activity: string, diet: string): string {
       "Let's start with movement. One small physical thing you could add this week — something you're not already " +
       "doing. A 10-minute walk after dinner, five minutes of stretching, one short strength session. Small and real."
     );
+  // No leading acknowledgment — this often follows the model's own "locked in" beat (see withScriptedBeat below); a
+  // second "Good." would double up. Reads clean both appended and standalone.
   return (
-    "Good. Now one small change to how you eat — an upgrade, not an overhaul. A vegetable at dinner, swapping one " +
+    "Now — one small change to how you eat, an upgrade rather than an overhaul. A vegetable at dinner, swapping one " +
     "sugary drink for water, a fruit with breakfast. What feels doable?"
   );
 }
@@ -257,8 +260,12 @@ const pilotStage: StageDef = {
       return;
     }
 
-    // Still coaching — the model's turn IS the reply (its next question / examples). Fallback only if the model is empty.
-    b.reply = (b.modelText || pilotCoachNudge(activity, diet)).trim();
+    // Still coaching — the model's turn IS the reply (its next question / examples). But the moment it LOCKS the first
+    // change it tends to end on a terminal "Locked in." with no next question (Jay's walk: "creates a dead end" — the
+    // eating change is waiting and the thread just stops). withScriptedBeat carries the turn forward to whichever change
+    // is still open UNLESS the model already asked its own question — the same "reflect / ask, never both" discipline as
+    // the Rewire beats. Empty model → the scripted nudge stands alone.
+    b.reply = withScriptedBeat((b.modelText ?? '').trim(), pilotCoachNudge(activity, diet));
   },
 };
 
@@ -291,7 +298,9 @@ const B3_SYSTEM =
   "abandoned. Play their own words back; never impose a plan.\n\n" +
   "LOCKING A CHANGE: the moment a change is specific, right-sized, AND the member has affirmed it, call record_plan for " +
   "that field (activityChange for movement, dietChange for eating) — the change in their own words. Do NOT call " +
-  "record_plan for a vague or oversized change; keep coaching until it's real. Once both are locked, stop and give a " +
+  "record_plan for a vague or oversized change; keep coaching until it's real. After you lock the FIRST change, keep " +
+  "the turn going in the same reply — acknowledge it in a few words and pivot straight to coaching the other change; " +
+  "never end your turn on just an acknowledgment while a change is still open. Once BOTH are locked, stop and give a " +
   "brief warm acknowledgment — the app shows the member their plan to confirm. If a distress or crisis signal appears, " +
   "drop the exercise and route to support (988 US / local) and a human — always on.";
 
@@ -313,7 +322,7 @@ function b3StageNote(state: ConvState): string {
   const activity = (state.collected?.pilotActivity ?? '').trim();
   const diet = (state.collected?.pilotDiet ?? '').trim();
   if (!activity)
-    return "\n\nRIGHT NOW: coach the MOVEMENT change — one small, specific, trackable thing they're not already doing. When it's real and they've affirmed it, call record_plan(activityChange).";
+    return "\n\nRIGHT NOW: coach the MOVEMENT change — one small, specific, trackable thing they're not already doing. When it's real and they've affirmed it, call record_plan(activityChange). Then DON'T STOP — in the same reply, briefly acknowledge it and move straight into coaching the EATING change (there are two; never end your turn on just an acknowledgment).";
   if (!diet)
     return "\n\nRIGHT NOW: the movement change is locked. Now coach the EATING change — one small upgrade. When it's real and affirmed, call record_plan(dietChange).";
   return "\n\nRIGHT NOW: both changes are locked. Give a brief warm acknowledgment; the app will show the plan to confirm.";
