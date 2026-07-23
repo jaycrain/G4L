@@ -110,13 +110,12 @@ export default function ReconnectChat({ memberId, mobile = false }: { memberId: 
           </div>
         ))}
         {pending && <div className="typing">Thinking…</div>}
+        {/* W-32 chips scroll WITH the thread (Jay's walk: not pinned to the bottom) — they answer the question above, autosend. */}
+        {expects && <ScaleChips expects={expects} disabled={pending || !state} onPick={(n) => void submit(String(n))} />}
       </div>
       {error && <p className="error">{error}</p>}
-      {/* W-32: an administered turn (IDQ / §2e grit) → the chips ARE the input (autosend); drop the text box (closes the
-          mis-scaling hole). The box returns on conversational turns. */}
-      {expects ? (
-        <ScaleChips expects={expects} disabled={pending || !state} onPick={(n) => void submit(String(n))} />
-      ) : (
+      {/* The text box is hidden on an administered turn (the chips above ARE the input); it returns on conversational turns. */}
+      {!expects && (
         <form className="chat-input" onSubmit={send}>
           <textarea
             value={input}

@@ -1408,7 +1408,7 @@ body.redesign-on .confidential-footer { display: none; } /* full-bleed app — n
 
 /* ---- REDESIGN Layer 3 · Program Workspace (build spec §4). Reuses the two-pane .redesign-app; the rail holds the
    existing arc chat client, the canvas holds wayfinding + the artifact. ---- */
-.ws-back { display: inline-block; margin: 0 0 1rem; color: var(--teal); font-weight: 600; font-size: 0.9rem; text-decoration: none; }
+.ws-back { display: inline-block; margin: 8px 0 2px; color: var(--teal); font-weight: 600; font-size: 0.9rem; text-decoration: none; }
 .ws-back:hover { text-decoration: underline; }
 .ws-app { min-height: calc(100vh - 64px); }
 /* Read-only review — no live rail, so the canvas gets the full width; a calm "completed" banner replaces the ring. */

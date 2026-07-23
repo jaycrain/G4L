@@ -9,7 +9,6 @@ import { sessionSummary } from '../../lib/content/summaries.ts';
 import type { Artifact } from '../../lib/workspace/artifact.ts';
 import type { RingPhaseState } from '../../lib/workspace/ring-state.ts';
 import RedesignChrome from '../dashboard/redesign-chrome.tsx';
-import RedesignRing from '../dashboard/redesign-ring.tsx';
 import ReconnectChat from '../reconnect/reconnect-chat.tsx';
 import RewireChat from '../rewire/rewire-chat.tsx';
 import RebuildChat from '../rebuild/rebuild-chat.tsx';
@@ -124,13 +123,9 @@ export default function WorkspaceSession({
             </>
           ) : (
             <>
-              {/* Slim wayfinding — ONE row: back · ring · where-you-are + progress · full route. Compact so the pinned
-                  header doesn't eat the phone (Jay's walk). */}
+              {/* Slim wayfinding — left-aligned phase + progress, full route on the right. No ring (redundant with the
+                  topbar bullseye, and its label can't render legibly small anyway). Back nav sits BELOW it. */}
               <div className="ws-col-way">
-                <Link href={`/dashboard/${memberId}`} className="ws-way-back" aria-label="Back to dashboard">←</Link>
-                <div className="ws-way-ring">
-                  <RedesignRing rings={wayfinding.rings} centerTop={wayfinding.ringCenter} centerSub={wayfinding.ringSub} size={44} />
-                </div>
                 <div className="ws-way-pos">
                   <div className="ws-way-ph">Phase {wayfinding.phaseOrdinal} · {wayfinding.phaseLabel}</div>
                   <div className="ws-way-ss">{wayfinding.positionLabel}</div>
@@ -138,6 +133,7 @@ export default function WorkspaceSession({
                 </div>
                 <Link href={`/program/${memberId}?from=${sessionKey}`} className="ws-way-route">Full route →</Link>
               </div>
+              <Link href={`/dashboard/${memberId}`} className="ws-back">← Dashboard</Link>
             </>
           )}
 

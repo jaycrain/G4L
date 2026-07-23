@@ -111,15 +111,15 @@ export default function RebuildChat({ memberId, session = 'b1' }: { memberId: st
           </div>
         ))}
         {pending && <div className="typing">Thinking…</div>}
+        {/* chips scroll WITH the thread (Jay's walk: not pinned) — they answer the question above, autosend. */}
+        {!done && expects && <ScaleChips expects={expects} disabled={pending || !state} onPick={(n) => void submit(String(n))} />}
       </div>
       {error && <p className="error">{error}</p>}
       {!done && (
         <>
-          {/* W-32: an administered turn → the chips ARE the input (autosend); drop the text box (closes the mis-scaling
-              hole). The box returns on conversational turns. */}
-          {expects ? (
-            <ScaleChips expects={expects} disabled={pending || !state} onPick={(n) => void submit(String(n))} />
-          ) : (
+          {/* The text box is hidden on an administered turn (the chips render inline in the thread above); it returns
+              on conversational turns. */}
+          {!expects && (
             <form className="chat-input" onSubmit={send}>
               <textarea
                 value={input}

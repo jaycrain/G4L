@@ -109,15 +109,15 @@ export default function RewireChat({ memberId, session = 'w1' }: { memberId: str
           </div>
         ))}
         {pending && <div className="typing">Thinking…</div>}
+        {/* chips scroll WITH the thread (Jay's walk: not pinned) — they answer the question above, autosend. */}
+        {!done && expects && <ScaleChips expects={expects} disabled={pending || !state} onPick={(n) => void submit(String(n))} />}
       </div>
       {error && <p className="error">{error}</p>}
       {!done && (
         <>
-          {/* W-32: an administered turn → the chips ARE the input (they autosend); drop the text box entirely (closes the
-              mis-scaling hole — no way to hand-type a wrong-scale number). The box returns on conversational turns. */}
-          {expects ? (
-            <ScaleChips expects={expects} disabled={pending || !state} onPick={(n) => void submit(String(n))} />
-          ) : (
+          {/* The text box is hidden on an administered turn (the chips render inline in the thread above); it returns
+              on conversational turns. */}
+          {!expects && (
           <form className="chat-input" onSubmit={send}>
             <textarea
               value={input}
