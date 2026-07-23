@@ -44,6 +44,7 @@ import { logEvent } from '../../../lib/telemetry/store.ts';
 import { redirect } from 'next/navigation';
 import { redesignEnabled, dashboardTriptychEnabled } from '../../../lib/dashboard/redesign.ts';
 import { heroCard } from '../../../lib/dashboard/hero-card.ts';
+import { centerKeeper } from '../../../lib/dashboard/center-keeper.ts';
 import RedesignDashboard from '../redesign-dashboard.tsx';
 import DashboardTriptych from '../dashboard-triptych.tsx';
 import TriptychLeft from '../triptych-left.tsx';
@@ -85,14 +86,15 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
     // docked-rail dashboard) and is flag-gated on top, so DASH_TRIPTYCH off → the current redesign dashboard is
     // untouched. PHASE 1: empty shell to prove the layout/fold on both breakpoints.
     if (dashboardTriptychEnabled()) {
-      const hero = await heroCard(db, memberId);
+      const [hero, keeper] = await Promise.all([heroCard(db, memberId), centerKeeper(db, memberId)]);
       return (
         <DashboardTriptych
           memberId={memberId}
           firstName={firstName(dash.displayName)}
           hero={hero}
+          keeper={keeper}
           left={<TriptychLeft db={db} memberId={memberId} dash={dash} />}
-          right={<TriptychRight db={db} memberId={memberId} dash={dash} />}
+          right={<TriptychRight db={db} memberId={memberId} dash={dash} momentumCta={hero.momentumCta} />}
         />
       );
     }

@@ -5,18 +5,41 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { openCheckin, sendCheckin, loadCheckin } from './checkin-actions.ts';
 import { fetchReadyOutreach, respondToOutreach } from './outreach-actions.ts';
+import RedesignRing from './redesign-ring.tsx';
 import type { HeroCard } from '../../lib/dashboard/hero-card.ts';
+import type { CenterKeeper } from '../../lib/dashboard/center-keeper.ts';
 
-// Triptych center — the Companion conversation, the dashboard's default landing (Jay: "the starting point every time you
-// open the app"). This is the SAME persisted check-in thread + actions as the docked rail (redesign-shell.tsx) — one
-// conversation, one store — rendered as the centered column instead of a right rail. The proactive nudge surfaces inline
-// as the latest agent line (desktop AND mobile here, unlike the rail's mobile-only nudge). No phone-overlay / billboard
-// modes — the triptych's mobile fold is the segmented control, so the center is just the thread. The docked rail stays
-// the live path until DASH_TRIPTYCH flips; this doesn't touch it.
+// Triptych center — the NAVY Companion hero, the dashboard's default landing (Jay: "the entire center panel navy, the
+// hero concept from the current design"). The current navy hero (headline + guiding line + CTA + the merged 4R ring,
+// which is the phase/progress indicator — same grammar as the bullseye logo) brought into the center and fused with the
+// Companion conversation: AI disclosure → hero+ring → a surfaced keeper (the member's own kept line) → the thread → the
+// composer, plus a "See the Program →" wayfinder. SAME persisted check-in thread + store as the docked rail. A practice
+// week is NOT the hero — the hero shows the next Session and "Log today" moves to the Momentum panel (see heroCard).
 
 type Msg = { role: 'agent' | 'member'; text: string };
 
-export default function TriptychCenter({ memberId, hero, seed }: { memberId: string; hero?: HeroCard | null; seed?: string | null }) {
+// keeperType → a SHORT display label for the "KEPT · …" eyebrow (the verbose keeperFunctionLabel is agent-context copy).
+const KEEPER_LABEL: Record<string, string> = {
+  principle: 'your true line',
+  lights_you_up: 'your picture',
+  recovery_move: 'your recovery move',
+  definition: 'a reframe that landed',
+  tell: 'a pattern you named',
+  plan: 'your Lifestyle Pilot',
+};
+const keeperLabel = (t?: string | null) => (t && KEEPER_LABEL[t]) || 'something you’re keeping';
+
+export default function TriptychCenter({
+  memberId,
+  hero,
+  keeper,
+  seed,
+}: {
+  memberId: string;
+  hero?: HeroCard | null;
+  keeper?: CenterKeeper | null;
+  seed?: string | null;
+}) {
   const router = useRouter();
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState('');
@@ -71,15 +94,17 @@ export default function TriptychCenter({ memberId, hero, seed }: { memberId: str
     if (el) el.scrollTop = el.scrollHeight;
   }, [messages, pending]);
 
-  // Auto-grow the composer (capped). Deferred to the next frame so the FIRST measure happens after the flex layout has
-  // settled — measuring during mount read a stale scrollHeight and pinned the empty box to the 160px cap.
+  // Auto-grow the composer (capped). Reset to 0 (NOT 'auto') before measuring — 'auto' read a stale/huge scrollHeight
+  // during the flex layout on the production build and pinned the empty box to the 160px cap; '0px' makes scrollHeight
+  // reflect content only, deterministically. rAF so the first measure lands after layout settles.
   useEffect(() => {
     const el = inputRef.current;
     if (!el) return;
     const grow = () => {
-      el.style.height = 'auto';
+      el.style.height = '0px';
       el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
     };
+    grow();
     const raf = requestAnimationFrame(grow);
     return () => cancelAnimationFrame(raf);
   }, [input]);
@@ -136,28 +161,51 @@ export default function TriptychCenter({ memberId, hero, seed }: { memberId: str
   }
 
   return (
-    <div className="tri-companion">
-      <div className="tri-comp-head">
-        <span className="tri-comp-title">Your G4L Companion</span>
-        <span className="tri-comp-status">
-          <span className="tri-comp-dot" aria-hidden="true" /> here with you
-        </span>
+    <div className="tri-companion tri-navy">
+      {/* AI disclosure — always-on (governance), and it names the Companion so no separate title is needed. */}
+      <div className="tri-disclose">
+        <span className="tri-comp-dot" aria-hidden="true" /> You’re talking with the G4L Companion — an AI that remembers your journey. It won’t grade you.
       </div>
-      {/* The hero strip — the Companion's lightly-guiding "start here." Pinned above the thread (not scrolling): where the
-          member begins each visit and feels the Companion orienting them, with a soft suggestion to the next step. */}
+
+      {/* The hero — the current navy hero brought into the center: headline + guiding line + CTA, with the merged 4R ring
+          (phase + progress, the bullseye's grammar) beside it. Pinned above the thread; where the member starts. */}
       {hero && (
         <div className="tri-hero">
-          <span className="tri-hero-eyebrow">{hero.eyebrow}</span>
-          <p className="tri-hero-copy">{hero.copy}</p>
-          {hero.ctaHref ? (
-            <Link href={hero.ctaHref} className="tri-hero-cta">
-              {hero.ctaLabel} →
-            </Link>
-          ) : (
-            <span className="tri-hero-cta muted">{hero.ctaLabel}</span>
+          <div className="tri-hero-text">
+            <span className="tri-hero-eyebrow">{hero.eyebrow}</span>
+            <h1 className="tri-hero-title">{hero.title}</h1>
+            <p className="tri-hero-copy">{hero.copy}</p>
+            <div className="tri-hero-ctarow">
+              {hero.ctaHref ? (
+                <Link href={hero.ctaHref} className="tri-hero-cta">
+                  {hero.ctaLabel} <span aria-hidden="true">→</span>
+                </Link>
+              ) : (
+                <span className="tri-hero-cta muted">{hero.ctaLabel}</span>
+              )}
+              <Link href={`/program/${memberId}`} className="tri-hero-program">See the Program →</Link>
+            </div>
+          </div>
+          {hero.rings.length > 0 && (
+            <div className="tri-hero-ring">
+              <RedesignRing rings={hero.rings} centerTop={hero.ringTop} centerSub={hero.ringSub} size={132} onDark />
+              <details className="tri-ring-legend">
+                <summary>What’s the ring?</summary>
+                <p>Four rings — one per phase, from the center out. Each fills as you finish its sessions and goes solid when you cross its checkpoint. Your whole path, at a glance.</p>
+              </details>
+            </div>
           )}
         </div>
       )}
+
+      {/* A surfaced keeper — the member's OWN kept line, held in the Companion's voice (Scott's "KEPT · your true line"). */}
+      {keeper && (
+        <div className="tri-keeper">
+          <span className="tri-keeper-eyebrow">Kept · {keeperLabel(keeper.keeperType)}</span>
+          <p className="tri-keeper-body">“{keeper.body}”</p>
+        </div>
+      )}
+
       <div ref={chatRef} className="tri-comp-stream">
         {messages.map((m, i) => (
           <div key={i} className={`rmsg ${m.role}`}>

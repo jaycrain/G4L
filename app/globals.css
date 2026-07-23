@@ -1876,7 +1876,7 @@ body.redesign-on .confidential-footer { display: none; } /* full-bleed app — n
 .tri-main { flex: 1 1 auto; min-height: 0; display: flex; gap: 20px; }
 .tri-flank { flex: 0 0 280px; width: 280px; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; -webkit-overflow-scrolling: touch; }
 /* The Companion is the elevated centerpiece — a white card lifted off the light ground. */
-.tri-center { flex: 1 1 auto; min-width: 0; background: var(--white); border: 1px solid #e3e2df; border-radius: 18px; box-shadow: 0 20px 55px rgba(16, 16, 69, 0.10); overflow: hidden; display: flex; flex-direction: column; }
+.tri-center { flex: 1 1 auto; min-width: 0; background: var(--navy); border: 1px solid #2a3f52; border-radius: 18px; box-shadow: 0 20px 55px rgba(16, 16, 69, 0.20); overflow: hidden; display: flex; flex-direction: column; }
 /* Phase-1 placeholder stubs (removed as the real regions land). */
 .tri-stub { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; text-align: center; min-height: 150px; background: var(--white); border: 1px dashed #d6d5d1; border-radius: 16px; padding: 24px; }
 .tri-center .tri-stub { border: none; background: transparent; }
@@ -1896,31 +1896,53 @@ body.redesign-on .confidential-footer { display: none; } /* full-bleed app — n
   .tri-app.pane-right .tri-left, .tri-app.pane-right .tri-center { display: none; }
 }
 
-/* Triptych center — the Companion conversation (reuses the rail's .rmsg bubbles + .rrail-send). */
-.tri-companion { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
-.tri-comp-head { padding: 18px 22px 12px; border-bottom: 1px solid #e3e2df; display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
-.tri-comp-title { font-weight: 800; font-size: 18px; color: var(--navy); }
-.tri-comp-status { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--olive); white-space: nowrap; }
-.tri-comp-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--olive); margin-right: 5px; vertical-align: 1px; }
-.tri-comp-stream { flex: 1; overflow-y: auto; padding: 18px 22px; display: flex; flex-direction: column; gap: 12px; }
-.tri-comp-composer { border-top: 1px solid #e3e2df; padding: 14px 18px; display: flex; gap: 9px; align-items: flex-end; }
-.tri-comp-composer textarea { flex: 1; border: 1px solid #e3e2df; border-radius: 10px; padding: 11px 15px; font-family: inherit; font-size: 14.5px; line-height: 1.4; outline: none; resize: none; overflow-y: auto; min-height: 44px; max-height: 160px; }
-/* Nudge styling — the mobile rules live inside a ≤1000px block, so restate them here for the (desktop) center thread. */
+/* Triptych center — the NAVY Companion hero. The center panel is navy (Jay: the hero concept from the current design);
+   the whole column reuses the rail's .rmsg bubbles + .rrail-send with navy overrides. */
+.tri-companion { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; color: #eaf0f4; }
+/* AI disclosure line (top) — small, muted-on-navy, names the Companion (no separate title). */
+.tri-disclose { padding: 14px 24px; border-bottom: 1px solid rgba(255, 255, 255, 0.10); font-size: 12.5px; line-height: 1.4; color: rgba(255, 255, 255, 0.62); }
+.tri-comp-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--olive); margin-right: 7px; vertical-align: 1px; }
+.tri-comp-stream { flex: 1; overflow-y: auto; padding: 18px 24px; display: flex; flex-direction: column; gap: 12px; }
+.tri-comp-composer { border-top: 1px solid rgba(255, 255, 255, 0.10); padding: 14px 20px; display: flex; gap: 9px; align-items: flex-end; }
+.tri-comp-composer textarea { flex: 1; border: 1px solid rgba(255, 255, 255, 0.22); border-radius: 10px; padding: 11px 15px; font-family: inherit; font-size: 14.5px; line-height: 1.4; outline: none; resize: none; overflow-y: auto; min-height: 44px; max-height: 160px; background: rgba(255, 255, 255, 0.06); color: #fff; }
+.tri-comp-composer textarea::placeholder { color: rgba(255, 255, 255, 0.5); }
+/* Navy bubble overrides — the shared .rmsg.member is navy-on-navy (invisible), so lift it; agent goes translucent. */
+.tri-navy .rmsg.agent { background: rgba(255, 255, 255, 0.09); border: 1px solid rgba(255, 255, 255, 0.12); color: #eaf0f4; border-radius: 4px 13px 13px 13px; }
+.tri-navy .rmsg.member { background: #46617a; color: #fff; border: 1px solid rgba(255, 255, 255, 0.16); border-radius: 13px 13px 4px 13px; }
+.tri-navy .rmsg.typing { background: none; border: none; color: rgba(255, 255, 255, 0.6); }
 .tri-comp-stream .rmsg.rhome-nudge { border-left: 3px solid var(--teal); }
-.tri-comp-stream .rhome-nudge-skip { display: block; margin-top: 9px; background: none; border: none; padding: 0; color: #6b7680; font: inherit; font-size: 13px; text-decoration: underline; cursor: pointer; }
+.tri-comp-stream .rhome-nudge-skip { display: block; margin-top: 9px; background: none; border: none; padding: 0; color: rgba(255, 255, 255, 0.7); font: inherit; font-size: 13px; text-decoration: underline; cursor: pointer; }
 @media (max-width: 1000px) {
   /* ≥16px composer so iOS Safari doesn't auto-zoom the pane (memory: ios-input-16px). */
   .tri-comp-composer textarea { font-size: 16px; }
+  /* Hero stacks on the phone: eyebrow/headline/copy/CTA, then the ring below-right. */
+  .tri-hero { flex-direction: column; align-items: stretch; gap: 14px; }
+  .tri-hero-ring { flex-direction: row; align-self: flex-start; gap: 14px; align-items: center; }
+  .tri-hero-title { font-size: 24px; }
 }
 
-/* Triptych center hero strip — the Companion's lightly-guiding "start here," pinned above the thread. Soft teal wash so
-   it reads as the Companion orienting the member, not a hard hero banner. */
-.tri-hero { padding: 15px 22px 17px; border-bottom: 1px solid #e3e2df; background: rgba(59, 148, 149, 0.06); display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
-.tri-hero-eyebrow { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: var(--teal); }
-.tri-hero-copy { margin: 0; font-size: 14.5px; line-height: 1.5; color: #2a3a45; max-width: 60ch; }
-.tri-hero-cta { display: inline-block; background: var(--teal); color: #fff; font-weight: 700; font-size: 13.5px; text-decoration: none; padding: 8px 16px; border-radius: 8px; }
-.tri-hero-cta:hover { filter: brightness(1.05); }
-.tri-hero-cta.muted { background: none; color: #8b949b; padding: 4px 0 0; }
+/* The navy hero — headline + guiding line + CTA, with the merged 4R ring beside it (phase + progress). */
+.tri-hero { padding: 20px 24px 22px; border-bottom: 1px solid rgba(255, 255, 255, 0.10); display: flex; gap: 20px; align-items: center; }
+.tri-hero-text { flex: 1; min-width: 0; }
+.tri-hero-eyebrow { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.07em; color: #4FB3B4; }
+.tri-hero-title { margin: 6px 0 0; font-size: 27px; line-height: 1.1; font-weight: 800; color: #fff; }
+.tri-hero-copy { margin: 10px 0 0; font-size: 14.5px; line-height: 1.5; color: rgba(255, 255, 255, 0.78); max-width: 52ch; }
+.tri-hero-ctarow { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; margin-top: 16px; }
+.tri-hero-cta { display: inline-block; background: var(--teal); color: #fff; font-weight: 700; font-size: 14px; text-decoration: none; padding: 10px 18px; border-radius: 10px; }
+.tri-hero-cta:hover { filter: brightness(1.06); }
+.tri-hero-cta.muted { background: rgba(255, 255, 255, 0.10); color: rgba(255, 255, 255, 0.85); }
+.tri-hero-program { color: rgba(255, 255, 255, 0.72); font-weight: 700; font-size: 13px; text-decoration: none; white-space: nowrap; }
+.tri-hero-program:hover { color: #fff; text-decoration: underline; }
+.tri-hero-ring { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.tri-ring-legend { color: rgba(255, 255, 255, 0.6); font-size: 12px; max-width: 160px; }
+.tri-ring-legend summary { cursor: pointer; font-weight: 700; color: #4FB3B4; list-style: none; }
+.tri-ring-legend summary::-webkit-details-marker { display: none; }
+.tri-ring-legend p { margin: 8px 0 0; line-height: 1.4; }
+
+/* The surfaced keeper — the member's own kept line, held in the Companion's voice (olive edge, translucent). */
+.tri-keeper { margin: 16px 24px 0; padding: 13px 16px; background: rgba(255, 255, 255, 0.05); border-left: 3px solid var(--olive); border-radius: 0 10px 10px 0; }
+.tri-keeper-eyebrow { font-size: 10.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: rgba(255, 255, 255, 0.55); }
+.tri-keeper-body { margin: 6px 0 0; font-size: 15px; line-height: 1.45; font-style: italic; color: #f0f3f6; }
 
 /* Triptych flank stacks — the panels moved as-is, stacked in the 280px column. */
 .tri-stack { display: flex; flex-direction: column; gap: 20px; }

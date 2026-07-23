@@ -1,10 +1,11 @@
-// The HERO CARD — the resolved resume/next-step, reduced to a small serializable object the Companion center renders as
-// its lightly-guiding "start here" line (Jay: the hero belongs in the Companion's voice, where the member begins each
-// session and feels the Companion). This centralizes the resolveHero → heroView → ctaHref derivation that the redesign
-// dashboard computes inline, so the triptych doesn't fork a second copy. Server-only (touches the db); returns a plain
+// The HERO CARD — the resolved resume/next-step reduced to a serializable object the navy Companion center renders as its
+// hero (Jay: the center IS the navy hero, the current design brought into the triptych — headline + guiding line + CTA +
+// the merged 4R ring, which is the phase/progress indicator, same grammar as the bullseye logo). Centralizes the
+// resolveHero → heroView → ctaHref + ring derivation the redesign dashboard computes inline. Server-only; returns a plain
 // object safe to pass to a client component.
 
 import type { Db } from '../db/schema.ts';
+import type { RingPhaseState } from '../workspace/ring-state.ts';
 import { getForecast } from '../curriculum/view.ts';
 import { resolveHero } from './hero-signals.ts';
 import { deriveRingState } from '../workspace/ring-state.ts';
@@ -12,7 +13,6 @@ import { heroView } from './hero-copy.ts';
 import { keyFromForecast } from '../workspace/session-key.ts';
 import { sessionsForPhase } from '../workspace/session-registry.ts';
 
-// The four Grinta strands, in R order (matches redesign-dashboard's R_STRANDS).
 const R_STRANDS = [
   { key: 'reconnect', label: 'Reconnect' },
   { key: 'rewire', label: 'Rewire' },
@@ -27,6 +27,13 @@ export type HeroCard = {
   ctaLabel: string;
   ctaHref: string | null; // null when the state is a non-link (reclaim-locked "opens…" marker)
   kind: string;
+  // The merged 4R ring — phase + progress (same grammar as the bullseye logo). Rendered onDark in the navy center.
+  rings: RingPhaseState[];
+  ringTop: string; // e.g. "Rewire"
+  ringSub: string | null; // e.g. "2 of 3" / "checkpoint" / "coming"
+  // A practice week is a Momentum action, not the hero — when one is active the hero shows the NEXT SESSION (above) and
+  // "Log today with me →" moves to the Momentum panel (Jay, 2026-07-22). null unless a practice week is active.
+  momentumCta: { label: string; href: string } | null;
 };
 
 export async function heroCard(db: Db, memberId: string): Promise<HeroCard> {
@@ -41,7 +48,6 @@ export async function heroCard(db: Db, memberId: string): Promise<HeroCard> {
   const phaseOrdinal = R_STRANDS.findIndex((r) => r.key === activePhase) + 1 || 1;
   const phaseLabel = R_STRANDS[phaseOrdinal - 1]!.label;
 
-  // Session position by the REDESIGN session model (see redesign-dashboard) — single-session phases omit the count.
   const cur = forecast.current;
   const wsKey = keyFromForecast(activePhase, cur ? { id: cur.id, route: cur.route, kind: cur.kind } : null);
   const phaseSessions = sessionsForPhase(activePhase).filter((s) => s.kind === 'session');
@@ -49,10 +55,8 @@ export async function heroCard(db: Db, memberId: string): Promise<HeroCard> {
   const sessionPosition =
     phaseSessions.length > 1 && curSessionIdx >= 0 ? `Session ${curSessionIdx + 1} of ${phaseSessions.length}` : null;
 
-  const hero = heroView(heroState, { phaseLabel, phaseOrdinal, sessionPosition });
-
-  // The CTA destination — the session runs in the workspace when the lit step maps to a key; practice → the log surface;
-  // else the legacy route so a walk never dead-ends. reclaim-locked is a non-link marker (the Loop opens it later).
+  // The CTA destination — session runs in the workspace when the lit step maps to a key; else the legacy route so a walk
+  // never dead-ends. reclaim-locked is a non-link marker (the Loop opens it later).
   const pathHref = wsKey
     ? `/workspace/${memberId}/${wsKey}`
     : cur?.openable
@@ -60,14 +64,61 @@ export async function heroCard(db: Db, memberId: string): Promise<HeroCard> {
         ? cur.route.replace('{memberId}', memberId)
         : `/${cur.kind === 'checkpoint' ? 'checkpoint' : 'session'}/${memberId}/${cur.id}`
       : `/reconnect/${memberId}`;
-  const ctaHref = heroState.kind === 'mid-week-practice' ? `/momentum/${memberId}` : pathHref;
 
+  // Ring center reads PROGRESS, not the pointer (finishing 2nd of 3 shows "2 of 3", never "3 of 3").
+  const ringSub =
+    heroState.kind === 'checkpoint-ready'
+      ? 'checkpoint'
+      : heroState.kind === 'reclaim-locked'
+        ? 'coming'
+        : phaseSessions.length > 1
+          ? `${Math.min(activeRing.done, phaseSessions.length)} of ${phaseSessions.length}`
+          : null;
+
+  // Practice-week split (Jay, 2026-07-22): the hero shows the next SESSION; the log becomes a Momentum-panel action.
+  if (heroState.kind === 'mid-week-practice') {
+    const momentumCta = { label: 'Log today with me →', href: `/momentum/${memberId}` };
+    if (cur?.openable) {
+      const isCheckpoint = cur.kind === 'checkpoint';
+      return {
+        eyebrow: `Phase ${phaseOrdinal} · ${phaseLabel}${sessionPosition ? ` · ${sessionPosition}` : ''}`,
+        title: cur.title,
+        copy: "Here's your next step, ready whenever you are. You're mid-week on your practice — keep logging as you go.",
+        ctaLabel: isCheckpoint ? 'Take the Checkpoint' : 'Open this Session',
+        ctaHref: pathHref,
+        kind: 'mid-week-practice',
+        rings,
+        ringTop: phaseLabel,
+        ringSub,
+        momentumCta,
+      };
+    }
+    // No openable next step yet (waiting out the week) — a soft forward line, log still on Momentum.
+    return {
+      eyebrow: `Phase ${phaseOrdinal} · ${phaseLabel}`,
+      title: 'Your week is running',
+      copy: 'Keep noticing what happens — no grade, just catching it. Your next step opens as the week completes.',
+      ctaLabel: 'See the Program',
+      ctaHref: `/program/${memberId}`,
+      kind: 'mid-week-practice',
+      rings,
+      ringTop: phaseLabel,
+      ringSub,
+      momentumCta,
+    };
+  }
+
+  const hero = heroView(heroState, { phaseLabel, phaseOrdinal, sessionPosition });
   return {
     eyebrow: hero.eyebrow,
     title: hero.title,
     copy: hero.copy,
     ctaLabel: hero.ctaLabel,
-    ctaHref: heroState.kind === 'reclaim-locked' ? null : ctaHref,
+    ctaHref: heroState.kind === 'reclaim-locked' ? null : pathHref,
     kind: heroState.kind,
+    rings,
+    ringTop: phaseLabel,
+    ringSub,
+    momentumCta: null,
   };
 }

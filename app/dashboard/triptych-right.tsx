@@ -15,7 +15,17 @@ import ConnectPanel from './connect-panel.tsx';
 // premium, so the nav must read as clearly tappable. The Reclaim List is Companion-edited (no subpage), so it keeps its
 // "talk to your Companion" foot line rather than a fake See-more. NOT next-Session — that's the center hero's CTA.
 
-export default async function TriptychRight({ db, memberId, dash }: { db: Db; memberId: string; dash: Dashboard }) {
+export default async function TriptychRight({
+  db,
+  memberId,
+  dash,
+  momentumCta,
+}: {
+  db: Db;
+  memberId: string;
+  dash: Dashboard;
+  momentumCta?: { label: string; href: string } | null;
+}) {
   const [pulse, activity] = await Promise.all([
     pulseBeats(db, memberId).catch(() => []),
     getActivityPanel(db, memberId, dash.identityNoun),
@@ -29,7 +39,10 @@ export default async function TriptychRight({ db, memberId, dash }: { db: Db; me
         <div className="rc-sub">The calls you make, one at a time.</div>
         <div className="rreg-mom-viz"><ResiliencePulse beats={pulse} bare /></div>
         <p className="rreg-mom-cap">Good Calls · False Starts · Quiet Days</p>
-        <Link href={`/momentum/${memberId}`} className="rreg-more">See more →</Link>
+        {/* During a practice week the log CTA lives HERE (Jay), not the hero — replacing the plain See-more. */}
+        <Link href={momentumCta?.href ?? `/momentum/${memberId}`} className="rreg-more">
+          {momentumCta?.label ?? 'See more →'}
+        </Link>
       </div>
 
       {/* Reclaim List — a COMPACT read of the intentions. The trackers (a linked measure + the "turn on a tracker" offer)
