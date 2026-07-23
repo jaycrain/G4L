@@ -90,7 +90,9 @@ export const GRINTA_ITEMS: Record<string, GrintaItem> = {
   B1Q2a: { code: 'B1Q2a', strand: 'rebuild', subscale: 'B1', stem: 'I am aware of my physical activity behaviors and how they relate to recommended guidelines' },
   B1Q2b: { code: 'B1Q2b', strand: 'rebuild', subscale: 'B1', stem: 'I am aware of my dietary habits and how they relate to recommended guidelines' },
   B1Q3a: { code: 'B1Q3a', strand: 'rebuild', subscale: 'B1', stem: 'I am aware of how sleep and stress can influence my lifestyle choices and my mood' },
-  B1Q3b: { code: 'B1Q3b', strand: 'rebuild', subscale: 'B1', stem: 'I am aware of how my lifestyles influence various health indicators' },
+  // Proof pass (Jay 2026-07-23): "my lifestyles influence" → "my lifestyle influences" (number agreement; a person has
+  // one lifestyle, and the sibling items 92/103 use singular). Member-facing grammar fix, meaning unchanged, pending Greg.
+  B1Q3b: { code: 'B1Q3b', strand: 'rebuild', subscale: 'B1', stem: 'I am aware of how my lifestyle influences various health indicators' },
   // Structure (from B2)
   B2Q2a: { code: 'B2Q2a', strand: 'rebuild', subscale: 'B2', stem: 'I am skilled at self-monitoring my lifestyle behaviors' },
   B2Q2b: { code: 'B2Q2b', strand: 'rebuild', subscale: 'B2', stem: 'I am skilled at using self-planning and time management skills to manage my behaviors' },
