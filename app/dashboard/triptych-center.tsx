@@ -165,11 +165,9 @@ export default function TriptychCenter({
 
   return (
     <div className={`tri-companion tri-navy${hasSent ? ' is-conversing' : ''}`} data-tour="companion">
-      {/* AI disclosure — always-on (governance), and it names the Companion so no separate title is needed. */}
-      <div className="tri-disclose">
-        <span className="tri-comp-dot" aria-hidden="true" /> You’re talking with the G4L Companion — an AI that remembers your journey. It won’t grade you.
-      </div>
-
+      {/* AI disclosure is NOT rendered here — it's the first line of the Companion's opening message in the thread
+          (checkinOpening prepends AI_DISCLOSURE, the single governance anchor shared across every surface). A pinned copy
+          here was a duplicate (Jay, 2026-07-23). */}
       {/* Session info (the hero) is PINNED at the top — it stays put as the thread scrolls beneath, so the member always
           sees which step they're on (Jay, 2026-07-23). On mobile it collapses to a strip once conversing so the thread
           still gets room; the composer stays pinned below. */}
