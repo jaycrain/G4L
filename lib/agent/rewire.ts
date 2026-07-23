@@ -30,6 +30,22 @@ export function withScriptedBeat(reflected: string, scripted: string): string {
   return lastPara.includes('?') ? t : `${t}${BEAT_SEP}${scripted}`;
 }
 
+// The inverse, for the CLOSE: the model's terminal line is a RECEIPT, not a prompt — strip a trailing question so it
+// can't pose one the engine then steamrolls past with the wrap beats (Jay's walk: "asked what I picture, then ran the
+// whole ending"). Drops trailing question segments (BEAT_SEP- or paragraph-separated), then a lingering trailing
+// question sentence. Pure + testable.
+export function dropTrailingQuestion(text: string): string {
+  const parts = (text ?? '').split(BEAT_SEP).flatMap((p) => p.split(/\n\s*\n/)).map((s) => s.trim()).filter(Boolean);
+  while (parts.length > 1 && parts[parts.length - 1]!.endsWith('?')) parts.pop();
+  let out = parts.join(BEAT_SEP).trim();
+  if (out.endsWith('?')) {
+    const sents = out.split(/(?<=[.!?])\s+/);
+    while (sents.length > 1 && sents[sents.length - 1]!.trim().endsWith('?')) sents.pop();
+    out = sents.join(' ').trim();
+  }
+  return out;
+}
+
 // ── W1 · The Disinformation Audit — final approved copy ──────────────────────────────────────────────────────
 const W1_STORY =
   `Jay ran a disinformation campaign on himself for eight years.\n\n` +
@@ -409,7 +425,8 @@ const holdStage: StageDef = {
   opener: () => W2_RECOGNITION,
   offersSubstance: () => true,
   gather(b) {
-    const reflected = (b.modelText ?? '').trim();
+    // Same close discipline as W3: the model's line is a receipt, so strip a trailing question before the wrap beats.
+    const reflected = dropTrailingQuestion(b.modelText ?? '');
     b.pendingHarvest.push({
       kind: 'image',
       keeperType: 'lights_you_up',
@@ -698,8 +715,10 @@ const protocolStage: StageDef = {
       return;
     }
     // Restart answered → a warm receipt (model), then harvest the protocol (recovery_move) + Step 3 + the close.
+    // The receipt is a RECEIPT, not a prompt — strip any trailing question so the close doesn't pose one it steamrolls.
     b.pendingHarvest.push({ kind: 'protocol', keeperType: 'recovery_move', destinationIntent: 'keeper', payloadRef: composeProtocol(b.collected), label: 'Your False Start Protocol' });
-    b.reply = `${reply ? `${reply}${BEAT_SEP}` : ''}${W3_STEP3_1}${BEAT_SEP}${W3_STEP3_2}${BEAT_SEP}${W3_CLOSE_1}${BEAT_SEP}${W3_CLOSE_2}`;
+    const receipt = dropTrailingQuestion(reply);
+    b.reply = `${receipt ? `${receipt}${BEAT_SEP}` : ''}${W3_STEP3_1}${BEAT_SEP}${W3_STEP3_2}${BEAT_SEP}${W3_CLOSE_1}${BEAT_SEP}${W3_CLOSE_2}`;
     b.stage = 'complete';
     b.complete = true;
   },
