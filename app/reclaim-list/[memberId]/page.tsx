@@ -1,0 +1,69 @@
+import Link from 'next/link';
+import { notFound, redirect } from 'next/navigation';
+import { getDb } from '../../../lib/db/index.ts';
+import { authorizeMember } from '../../authz.ts';
+import { logEvent } from '../../../lib/telemetry/store.ts';
+import { getDashboard } from '../../../lib/gateway/flow.ts';
+import { dashboardTriptychEnabled } from '../../../lib/dashboard/redesign.ts';
+import { looksTrackable, suggestTracker } from '../../../lib/measure/store.ts';
+import MeasureCard from '../../dashboard/measure-card.tsx';
+import TrackThis from '../../dashboard/track-this.tsx';
+import type { Db } from '../../../lib/db/schema.ts';
+
+// The Reclaim List subpage — the full list with ROOM for the trackers. On the dashboard flank the Reclaim List stays a
+// compact read (just the intentions); the trackers (a linked measure's progress + the "turn on a tracker" offer) take a
+// lot of vertical space, so they live HERE where each item can breathe (Jay, 2026-07-22). Editing the list itself stays
+// the Companion's job (propose→confirm→commit); this page is where you wire an item to your Movement and watch it — and
+// where the Companion will help manage the trackers (planned). Flag-gated with the triptych (the only place that links
+// here) so it's dark on prod until the triptych flips.
+export default async function ReclaimListPage({ params }: { params: Promise<{ memberId: string }> }) {
+  if (!dashboardTriptychEnabled()) notFound();
+  const { memberId } = await params;
+  if (!(await authorizeMember(memberId))) redirect('/login');
+  const db = (await getDb()) as unknown as Db;
+  const dash = await getDashboard(db, memberId);
+  if (!dash) return <p className="error">We couldn&apos;t find that member.</p>;
+  await logEvent(db, memberId, 'page_view', { surface: 'reclaim-list' });
+
+  return (
+    <>
+      <div className="hero"><h1>Your Reclaim List</h1></div>
+      <div className="card">
+        <p className="card-subtitle">
+          What you’re taking back. These are your intentions — turn on a tracker to tie one to your Movement and watch it
+          come back. To add or refine the list itself, talk to your Companion.
+        </p>
+        {dash.reclaimItems.length === 0 ? (
+          <p className="muted">Your list lands here once you name what you’re reclaiming with your Companion.</p>
+        ) : (
+          <ul className="reclaim-list-full">
+            {dash.reclaimItems.map((item, i) => {
+              const linked = item.id ? dash.measures.filter((m) => m.reclaimItemId === item.id) : [];
+              const offerTrack = item.id && !item.reclaimed && linked.length === 0 && looksTrackable(item.text);
+              return (
+                <li key={i} className={`reclaim-row${item.reclaimed ? ' reclaimed' : ''}`}>
+                  <div className="reclaim-row-text">
+                    {item.reclaimed && <span className="rr-check" aria-label="reclaimed" title="Reclaimed">✓</span>}
+                    {item.text}
+                  </div>
+                  {linked.map((m) => (
+                    <MeasureCard key={m.id} memberId={memberId} measure={m} />
+                  ))}
+                  {offerTrack && (
+                    <TrackThis memberId={memberId} reclaimItemId={item.id!} itemText={item.text} suggestion={suggestTracker(item.text)} />
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
+
+      {/* Not a dead end — clear ways back. */}
+      <div className="momentum-nav">
+        <Link href={`/dashboard/${memberId}`} className="momentum-nav-primary">← Back to your path</Link>
+        <Link href={`/movement/${memberId}`} className="momentum-nav-secondary">See your Movement →</Link>
+      </div>
+    </>
+  );
+}

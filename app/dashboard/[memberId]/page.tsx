@@ -42,8 +42,12 @@ import { logoutAction } from '../../login/actions.ts';
 import { authorizeMember } from '../../authz.ts';
 import { logEvent } from '../../../lib/telemetry/store.ts';
 import { redirect } from 'next/navigation';
-import { redesignEnabled } from '../../../lib/dashboard/redesign.ts';
+import { redesignEnabled, dashboardTriptychEnabled } from '../../../lib/dashboard/redesign.ts';
+import { heroCard } from '../../../lib/dashboard/hero-card.ts';
 import RedesignDashboard from '../redesign-dashboard.tsx';
+import DashboardTriptych from '../dashboard-triptych.tsx';
+import TriptychLeft from '../triptych-left.tsx';
+import TriptychRight from '../triptych-right.tsx';
 
 // Give the companion's live turns room to finish (the Member Agent call is the long pole).
 export const maxDuration = 30;
@@ -76,7 +80,24 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
   await ensureOnboardingBadge(db, memberId);
 
   // Redesign (Layer 2) — flag-gated parallel render. Off in prod → everything below is the untouched live dashboard.
-  if (redesignEnabled()) return <RedesignDashboard db={db} memberId={memberId} dash={dash} />;
+  if (redesignEnabled()) {
+    // Triptych (Layer 3) — the reflect ← Companion → act re-arrangement. Sits INSIDE the redesign (it replaces the
+    // docked-rail dashboard) and is flag-gated on top, so DASH_TRIPTYCH off → the current redesign dashboard is
+    // untouched. PHASE 1: empty shell to prove the layout/fold on both breakpoints.
+    if (dashboardTriptychEnabled()) {
+      const hero = await heroCard(db, memberId);
+      return (
+        <DashboardTriptych
+          memberId={memberId}
+          firstName={firstName(dash.displayName)}
+          hero={hero}
+          left={<TriptychLeft db={db} memberId={memberId} dash={dash} />}
+          right={<TriptychRight db={db} memberId={memberId} dash={dash} />}
+        />
+      );
+    }
+    return <RedesignDashboard db={db} memberId={memberId} dash={dash} />;
+  }
 
   // Sync-on-open so the Movement panel shows a just-posted ride now, not at the nightly cron (throttled, best-effort).
   if (stravaConfigured()) await syncIfStale(db, memberId);

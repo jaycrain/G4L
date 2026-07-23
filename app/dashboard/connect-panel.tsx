@@ -8,7 +8,7 @@ import type { Db } from '../../lib/db/schema.ts';
 // pulling the member toward other people: the most-active topic + their live accountability nudge,
 // with a CTA into the full Connect surface. Self-fetches so the dashboard page only renders one line.
 // Live now is Phase 2 (shown as a "soon" marker). Design: docs/connect-design.md.
-export default async function ConnectPanel({ memberId }: { memberId: string }) {
+export default async function ConnectPanel({ memberId, ctaLabel = 'Connect with others now →' }: { memberId: string; ctaLabel?: string }) {
   const db = (await getDb()) as unknown as Db;
   const [feed, pacts, unread, rooms] = await Promise.all([
     getFeed(db, 1, memberId, { excludeFlagged: true }), // never FEATURE a crisis-flagged post on the dashboard (safety)
@@ -78,7 +78,7 @@ export default async function ConnectPanel({ memberId }: { memberId: string }) {
 
       <div style={{ marginTop: '1rem' }}>
         <Link href={`/connect/${memberId}`} className="connect-cta">
-          Connect with others now →
+          {ctaLabel}
         </Link>
       </div>
     </div>

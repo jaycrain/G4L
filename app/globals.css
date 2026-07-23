@@ -1869,3 +1869,70 @@ body.redesign-on .confidential-footer { display: none; } /* full-bleed app — n
 .onbwel-d-cta { margin-top: 34px; display: inline-flex; align-items: center; background: var(--teal); color: #fff; font-family: inherit; font-weight: 700; font-size: 18px; padding: 18px 34px; border: none; border-radius: 8px; cursor: pointer; box-shadow: 0 12px 30px rgba(59, 148, 149, 0.4); transition: 0.15s; }
 .onbwel-d-cta:hover { background: var(--teal-d, #2f7a7b); }
 .onbwel-d-reassure { margin-top: 20px; color: rgba(255, 255, 255, 0.6); font-size: 14px; }
+
+/* ============ Dashboard triptych (reflect ← Companion → act) — light theme, docs/dashboard-triptych-spec.md ============ */
+.tri-app { height: calc(100dvh - 64px); overflow: hidden; display: flex; flex-direction: column; padding: 24px; gap: 16px; background: #f5f4f1; }
+.tri-seg { display: none; } /* mobile only */
+.tri-main { flex: 1 1 auto; min-height: 0; display: flex; gap: 20px; }
+.tri-flank { flex: 0 0 280px; width: 280px; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; -webkit-overflow-scrolling: touch; }
+/* The Companion is the elevated centerpiece — a white card lifted off the light ground. */
+.tri-center { flex: 1 1 auto; min-width: 0; background: var(--white); border: 1px solid #e3e2df; border-radius: 18px; box-shadow: 0 20px 55px rgba(16, 16, 69, 0.10); overflow: hidden; display: flex; flex-direction: column; }
+/* Phase-1 placeholder stubs (removed as the real regions land). */
+.tri-stub { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; text-align: center; min-height: 150px; background: var(--white); border: 1px dashed #d6d5d1; border-radius: 16px; padding: 24px; }
+.tri-center .tri-stub { border: none; background: transparent; }
+.tri-stub-h { font-weight: 800; font-size: 15px; color: #6b7680; text-transform: uppercase; letter-spacing: 0.05em; }
+.tri-stub-s { font-size: 13px; color: #9a9791; }
+
+@media (max-width: 1000px) {
+  .tri-app { padding: 12px; gap: 12px; }
+  .tri-seg { display: flex; gap: 4px; background: #eceae6; border-radius: 100px; padding: 4px; flex: 0 0 auto; }
+  .tri-seg-btn { flex: 1; border: none; background: none; font-family: inherit; font-size: 13px; font-weight: 700; color: #6b7680; padding: 9px 6px; border-radius: 100px; cursor: pointer; }
+  .tri-seg-btn.on { background: var(--white); color: var(--navy); box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12); }
+  .tri-main { flex-direction: column; gap: 0; }
+  .tri-flank, .tri-center { flex: 1 1 auto; width: auto; }
+  /* one pane at a time — hide the two the segmented control isn't showing */
+  .tri-app.pane-left .tri-center, .tri-app.pane-left .tri-right,
+  .tri-app.pane-center .tri-left, .tri-app.pane-center .tri-right,
+  .tri-app.pane-right .tri-left, .tri-app.pane-right .tri-center { display: none; }
+}
+
+/* Triptych center — the Companion conversation (reuses the rail's .rmsg bubbles + .rrail-send). */
+.tri-companion { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+.tri-comp-head { padding: 18px 22px 12px; border-bottom: 1px solid #e3e2df; display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.tri-comp-title { font-weight: 800; font-size: 18px; color: var(--navy); }
+.tri-comp-status { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--olive); white-space: nowrap; }
+.tri-comp-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--olive); margin-right: 5px; vertical-align: 1px; }
+.tri-comp-stream { flex: 1; overflow-y: auto; padding: 18px 22px; display: flex; flex-direction: column; gap: 12px; }
+.tri-comp-composer { border-top: 1px solid #e3e2df; padding: 14px 18px; display: flex; gap: 9px; align-items: flex-end; }
+.tri-comp-composer textarea { flex: 1; border: 1px solid #e3e2df; border-radius: 10px; padding: 11px 15px; font-family: inherit; font-size: 14.5px; line-height: 1.4; outline: none; resize: none; overflow-y: auto; min-height: 44px; max-height: 160px; }
+/* Nudge styling — the mobile rules live inside a ≤1000px block, so restate them here for the (desktop) center thread. */
+.tri-comp-stream .rmsg.rhome-nudge { border-left: 3px solid var(--teal); }
+.tri-comp-stream .rhome-nudge-skip { display: block; margin-top: 9px; background: none; border: none; padding: 0; color: #6b7680; font: inherit; font-size: 13px; text-decoration: underline; cursor: pointer; }
+@media (max-width: 1000px) {
+  /* ≥16px composer so iOS Safari doesn't auto-zoom the pane (memory: ios-input-16px). */
+  .tri-comp-composer textarea { font-size: 16px; }
+}
+
+/* Triptych center hero strip — the Companion's lightly-guiding "start here," pinned above the thread. Soft teal wash so
+   it reads as the Companion orienting the member, not a hard hero banner. */
+.tri-hero { padding: 15px 22px 17px; border-bottom: 1px solid #e3e2df; background: rgba(59, 148, 149, 0.06); display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+.tri-hero-eyebrow { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: var(--teal); }
+.tri-hero-copy { margin: 0; font-size: 14.5px; line-height: 1.5; color: #2a3a45; max-width: 60ch; }
+.tri-hero-cta { display: inline-block; background: var(--teal); color: #fff; font-weight: 700; font-size: 13.5px; text-decoration: none; padding: 8px 16px; border-radius: 8px; }
+.tri-hero-cta:hover { filter: brightness(1.05); }
+.tri-hero-cta.muted { background: none; color: #8b949b; padding: 4px 0 0; }
+
+/* Triptych flank stacks — the panels moved as-is, stacked in the 280px column. */
+.tri-stack { display: flex; flex-direction: column; gap: 20px; }
+/* Consistent, clearly-tappable See-more nav (subpages are premium) — a full-width footer action with a divider, not a
+   faint inline link. Scoped to the triptych so the live dashboard's own .rreg-more is untouched. */
+.tri-stack .rreg-more { display: flex; align-items: center; gap: 5px; width: 100%; margin-top: 14px; padding: 11px 0 3px; border-top: 1px solid #eceae6; color: var(--teal); font-weight: 800; font-size: 13.5px; letter-spacing: 0.01em; text-decoration: none; }
+.tri-stack .rreg-more:hover { text-decoration: underline; }
+
+/* Reclaim List subpage — the full list with room for trackers (dashboard flank stays a compact read). */
+.reclaim-list-full { list-style: none; padding: 0; margin: 14px 0 0; display: flex; flex-direction: column; }
+.reclaim-row { padding: 18px 0; border-top: 1px solid #e8e6e6; }
+.reclaim-row:first-child { border-top: none; padding-top: 6px; }
+.reclaim-row-text { font-size: 16px; font-weight: 600; color: var(--navy); margin-bottom: 10px; }
+.reclaim-row.reclaimed .reclaim-row-text { color: #6b7680; }
+.reclaim-row .rr-check { color: var(--teal); margin-right: 6px; font-weight: 800; }

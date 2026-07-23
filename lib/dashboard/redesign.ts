@@ -12,6 +12,13 @@ export function mobileEnabled(): boolean {
   return process.env.MOBILE === 'staged';
 }
 
+// Dashboard triptych (2026-07-22) — the reflect ← Companion → act layout (Companion centered, flanked by "Where You
+// Are" and "What's Next"). Replaces the docked-rail dashboard when on. Off by default so the current dashboard is
+// untouched until we flip it. Flip with DASH_TRIPTYCH === 'staged'. See docs/dashboard-triptych-spec.md.
+export function dashboardTriptychEnabled(): boolean {
+  return process.env.DASH_TRIPTYCH === 'staged';
+}
+
 // Onboarding welcome (Slice B) — the first-run meet-the-Companion screen that sits AFTER the sign-up gate and BEFORE
 // the live onboarding work. Gates the whole welcome (desktop billboard + mobile 4-beat). Off by default so the live
 // signup funnel is byte-for-byte untouched until Jay flips it. Flip with ONBOARDING_WELCOME === 'staged'.
