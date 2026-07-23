@@ -4,6 +4,7 @@ import { getDb } from '../../lib/db/index.ts';
 import { authorizeMember } from '../authz.ts';
 import { logEvent } from '../../lib/telemetry/store.ts';
 import { maybeTriggerDraft } from '../../lib/founder/triggers.ts';
+import { setCommitment } from '../../lib/commitments/store.ts';
 import type { Db } from '../../lib/db/schema.ts';
 import type { ConvMessage, ConvState, ScaleExpectation, Turn } from '../../lib/agent/onboarding.ts';
 import {
@@ -197,6 +198,16 @@ export async function rebuildTurnAction(
         const activity = (turn.state.collected?.pilotActivity ?? '').trim();
         const diet = (turn.state.collected?.pilotDiet ?? '').trim();
         if (activity && diet) {
+          // DURABLE first-class commitments (0060) — the real home for the two changes now, so they survive past the
+          // pilot week and every surface reads one source. This replaces relying on the coaching_plan artifact (which
+          // could vanish). Best-effort at the close so a write hiccup never blocks completion; the member can also set
+          // them directly (the reliable path).
+          try {
+            await setCommitment(db, memberId, 'activity', activity, 'b3');
+            await setCommitment(db, memberId, 'diet', diet, 'b3');
+          } catch {
+            /* swallow — best-effort at the close; the member can set/confirm them directly */
+          }
           // Persist the plan artifact (coaching_plan) + a Playbook keeper (§5 — the two small changes, their words).
           try {
             await persistCoachingPlan(db, memberId, 'rebuild', { activityChange: activity, dietChange: diet });
