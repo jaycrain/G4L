@@ -4,7 +4,7 @@ import { PGlite } from '@electric-sql/pglite';
 import { applySchema, type Db } from '../lib/db/schema.ts';
 import { normalizeStravaActivity } from '../lib/activity/strava.ts';
 import { saveActivities, listRecentActivities, setConnection, getActivityPanel } from '../lib/activity/store.ts';
-import { framingLine, formatDistance, typeLabel, relativeDay, weekTrend, weeklyMileageGoalMiles, weeklyGoalLine } from '../lib/activity/summary.ts';
+import { framingLine, formatDistance, typeLabel, relativeDay, weekTrend, weeklyMileageGoalMiles, weeklyGoalLine, syncedAgo } from '../lib/activity/summary.ts';
 import { computeNudges, topNudge } from '../lib/agent/nudge.ts';
 import type { Activity } from '../lib/activity/types.ts';
 
@@ -102,6 +102,15 @@ test('framing + format helpers', () => {
   assert.equal(relativeDay(0), 'today');
   assert.equal(relativeDay(1), 'yesterday');
   assert.equal(relativeDay(4), '4d ago');
+
+  // syncedAgo — the "last synced" label under the Sync-now button (now injectable for determinism)
+  const now = Date.UTC(2026, 6, 23, 12, 0, 0);
+  assert.equal(syncedAgo(null, now), null, 'never synced → null');
+  assert.equal(syncedAgo('not-a-date', now), null, 'bad timestamp → null');
+  assert.equal(syncedAgo(new Date(now - 20_000).toISOString(), now), 'just now');
+  assert.equal(syncedAgo(new Date(now - 8 * 60_000).toISOString(), now), '8m ago');
+  assert.equal(syncedAgo(new Date(now - 3 * 3_600_000).toISOString(), now), '3h ago');
+  assert.equal(syncedAgo(new Date(now - 2 * 86_400_000).toISOString(), now), '2d ago');
 });
 
 test('a recent workout becomes an activity-witness nudge, below a fresh asset', () => {

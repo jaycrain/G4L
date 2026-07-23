@@ -28,13 +28,13 @@ export async function getConnection(
   db: Db,
   memberId: string,
   provider = 'strava',
-): Promise<{ provider: string; status: string; athleteName: string | null } | null> {
-  const { rows } = await db.query<{ provider: string; status: string; athlete_name: string | null }>(
-    `select provider, status, athlete_name from activity_connection where member_id=$1 and provider=$2`,
+): Promise<{ provider: string; status: string; athleteName: string | null; scope: string | null; lastSyncedAt: string | null } | null> {
+  const { rows } = await db.query<{ provider: string; status: string; athlete_name: string | null; scope: string | null; last_synced_at: string | null }>(
+    `select provider, status, athlete_name, scope, last_synced_at::text as last_synced_at from activity_connection where member_id=$1 and provider=$2`,
     [memberId, provider],
   );
   const r = rows[0];
-  return r ? { provider: r.provider, status: r.status, athleteName: r.athlete_name } : null;
+  return r ? { provider: r.provider, status: r.status, athleteName: r.athlete_name, scope: r.scope, lastSyncedAt: r.last_synced_at } : null;
 }
 
 // --- OAuth connection lifecycle (Path B) ---------------------------------------------------
@@ -267,7 +267,7 @@ export async function getActivityPanel(
 ): Promise<ActivityPanel> {
   const conn = await getConnection(db, memberId);
   if (!conn || conn.status !== 'connected') {
-    return { connected: false, recent: [], thisWeek: ZERO, lastWeek: ZERO, line: '' };
+    return { connected: false, recent: [], thisWeek: ZERO, lastWeek: ZERO, line: '', lastSyncedAt: null };
   }
   const recent = await listRecentActivities(db, memberId, 14);
   const { rows } = await db.query<Record<string, number | string>>(
@@ -287,5 +287,5 @@ export async function getActivityPanel(
   const r = rows[0]!;
   const thisWeek: WeekStats = { count: Number(r.tw_c), distanceM: Number(r.tw_d), movingTimeS: Number(r.tw_t) };
   const lastWeek: WeekStats = { count: Number(r.lw_c), distanceM: Number(r.lw_d), movingTimeS: Number(r.lw_t) };
-  return { connected: true, recent, thisWeek, lastWeek, line: framingLine(identityNoun, thisWeek) };
+  return { connected: true, recent, thisWeek, lastWeek, line: framingLine(identityNoun, thisWeek), lastSyncedAt: conn.lastSyncedAt };
 }

@@ -1557,6 +1557,12 @@ body.redesign-on .confidential-footer { display: none; } /* full-bleed app — n
 .mv-strava-goal { font-size: 15px; font-weight: 600; color: var(--teal); margin: 12px 0 0; } /* progress vs the Reclaim goal (C-1) */
 .mv-strava-line { font-size: 14px; color: #6b7680; margin: 8px 0 0; } /* week-over-week (A) */
 .mv-strava-foot { font-size: 12px; color: #9aa0a5; margin: 8px 0 0; }
+/* Sync-now — manual provider pull + "last synced" line under the Strava card. */
+.mv-sync { display: flex; align-items: center; gap: 12px; margin-top: 14px; }
+.mv-sync-btn { margin: 0; font: inherit; font-size: 13px; font-weight: 700; color: var(--teal); background: #eef6f6; border: 1px solid #cfe3e3; border-radius: 100px; padding: 7px 16px; cursor: pointer; }
+.mv-sync-btn:hover:not(:disabled) { background: #e2f0f0; }
+.mv-sync-btn:disabled { opacity: 0.6; cursor: default; }
+.mv-sync-note { font-size: 12px; color: #9aa0a5; }
 .mv-week span { font-size: 12px; color: #6b7680; }
 .mv-week b { display: block; font-size: 24px; color: var(--navy); }
 .mv-history { margin-top: 24px; }

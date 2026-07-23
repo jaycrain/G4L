@@ -23,6 +23,7 @@ export type ActivityPanel = {
   thisWeek: WeekStats;
   lastWeek: WeekStats;
   line: string; // reflective, identity-framed — never a grade
+  lastSyncedAt: string | null; // ISO of the last provider pull — drives the "last synced" line + Sync-now affordance
 };
 
 // Implemented fully at Path B (OAuth connect + sync). Listed here so the seam is explicit.

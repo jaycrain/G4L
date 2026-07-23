@@ -69,3 +69,17 @@ export function relativeDay(daysAgo: number): string {
   if (daysAgo === 1) return 'yesterday';
   return `${daysAgo}d ago`;
 }
+
+// A short "how long ago did we last pull from the provider" label for the Sync-now line (e.g. "just now", "8m ago",
+// "3h ago", "2d ago"). Pure; `now` is injectable for tests. Returns null for a missing/invalid timestamp.
+export function syncedAgo(iso: string | null, now: number = Date.now()): string | null {
+  if (!iso) return null;
+  const t = new Date(iso).getTime();
+  if (Number.isNaN(t)) return null;
+  const mins = Math.max(0, Math.floor((now - t) / 60_000));
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
+}

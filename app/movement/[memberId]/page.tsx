@@ -6,12 +6,13 @@ import { authorizeMember } from '../../authz.ts';
 import { redesignEnabled } from '../../../lib/dashboard/redesign.ts';
 import { getActivityPanel, syncIfStale } from '../../../lib/activity/store.ts';
 import { stravaConfigured } from '../../../lib/activity/strava.ts';
-import { formatDistance, formatDuration, typeLabel, relativeDay, weekTrend, weeklyMileageGoalMiles, weeklyGoalLine } from '../../../lib/activity/summary.ts';
+import { formatDistance, formatDuration, typeLabel, relativeDay, weekTrend, weeklyMileageGoalMiles, weeklyGoalLine, syncedAgo } from '../../../lib/activity/summary.ts';
 import { getReclaimItems } from '../../../lib/beats/store.ts';
 import { listMovementLog } from '../../../lib/movement/store.ts';
 import RedesignChrome from '../../dashboard/redesign-chrome.tsx';
 import StravaConnect from '../../account/strava-connect.tsx';
 import LogActivity from '../log-activity.tsx';
+import SyncNow from '../sync-now.tsx';
 
 const KIND_LABEL: Record<string, string> = { walk: 'Walk', ride: 'Ride', run: 'Run', hike: 'Hike', swim: 'Swim', workout: 'Workout', other: 'Other' };
 
@@ -116,6 +117,8 @@ export default async function MovementPage({ params }: { params: Promise<{ membe
             )}
             {trend && <p className="mv-strava-line">{trend}</p>}
             <p className="mv-strava-foot">This week = Monday–Sunday, same as Strava.</p>
+            {/* Finished a ride and it's not here yet? Pull on demand — bypasses the on-open throttle + Strava upload lag. */}
+            <SyncNow memberId={memberId} syncedLabel={syncedAgo(activity?.lastSyncedAt ?? null)} />
           </div>
         )}
 

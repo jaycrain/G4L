@@ -43,7 +43,13 @@ const REPORT_SQL = `select jsonb_build_object(
      'coaching_plan',   (select coalesce(jsonb_agg(to_jsonb(x)), '[]') from coaching_plan x           where x.member_id = $1)),
   'movement', jsonb_build_object(
      'connection', (select to_jsonb(c) - 'access_token_enc' - 'refresh_token_enc' from activity_connection c where c.member_id = $1),
-     'event_count', (select count(*) from activity_event where member_id = $1)),
+     'event_count', (select count(*) from activity_event where member_id = $1),
+     -- the actual synced rows (newest 15) so "my ride didn't sync" is inspectable: is it in the DB? when did it land?
+     'recent_activities', (select coalesce(jsonb_agg(jsonb_build_object(
+        'external_id', a.external_id, 'type', a.activity_type, 'name', a.name,
+        'started_at', a.started_at, 'distance_m', a.distance_m, 'moving_time_s', a.moving_time_s, 'created_at', a.created_at
+      ) order by a.started_at desc), '[]')
+      from (select * from activity_event where member_id = $1 order by started_at desc limit 15) a)),
   'event_summary', (select coalesce(jsonb_object_agg(kind, n), '{}') from (select kind, count(*) n from member_event where member_id = $1 group by kind) t),
   'furthest_step_by_session', (select coalesce(jsonb_object_agg(ref, mx), '{}') from (select ref, max(step) mx from member_event where member_id = $1 and step is not null and ref is not null group by ref) t),
   'recent_events', (select coalesce(jsonb_agg(to_jsonb(e) order by e.created_at desc), '[]') from (select kind, surface, ref, step, created_at from member_event where member_id = $1 order by created_at desc limit 25) e),

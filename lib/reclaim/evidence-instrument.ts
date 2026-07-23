@@ -1,5 +1,9 @@
 // C1 · "Reflecting on Progress" — the Reclaim Readiness evidence self-check (Greg's Gated Assets V4). Fifteen items
-// across three kinds of evidence (Physical / Relational / Identity), 1–5. Item stems are Greg's VERBATIM wording.
+// across three kinds of evidence (Physical / Relational / Identity), 1–5. Item stems are Greg's VERBATIM wording,
+// except a member-facing tense fix (Jay's proof pass 2026-07-23, rides without Greg sign-off): the first physical item
+// read "I identify a physical task accomplishment in the last 90 days …" — present verb against a completed-past window
+// ("in the last 90 days") — corrected to "I identified …". Meaning unchanged; the sibling items are genuine present-
+// state statements, so this is consistent, not a divergence.
 //
 // RC-2 (Greg 7/9): this is FORMATIVE ONLY — "just a reflective exercise." The items are NOT scored and NOT persisted
 // as a measure; the member answers, sees the "are you in Reclaim" reflection, and moves on. So there's no register
@@ -16,7 +20,7 @@ export const EVIDENCE_PART_LABEL: Record<EvidencePart, string> = {
 
 // 15 items in administration order: Physical (5) → Relational (5) → Identity (5). Verbatim.
 export const EVIDENCE_ITEMS: EvidenceItem[] = [
-  { part: 'physical', stem: 'I identify a physical task accomplishment in the last 90 days that I could not have done a year ago.' },
+  { part: 'physical', stem: 'I identified a physical task accomplishment in the last 90 days that I could not have done a year ago.' }, // tense fix (see header)
   { part: 'physical', stem: 'I understand my health numbers (weight, blood pressure, bloodwork, resting heart rate) and know where I stand.' },
   { part: 'physical', stem: 'I can see a path to a physical practice (e.g. cycling, walking, strength training) that aligns with my identity.' },
   { part: 'physical', stem: "I can appreciate food as ‘fuel’ for my body and mind instead of just for taste and satisfaction." },
