@@ -19,7 +19,7 @@ const agentBubbles = (text: string): ConvMessage[] =>
 // W-21 — the conversational hand-home on completion (no more dead-end). B3 · the Lifestyle Pilot routes into the pilot
 // WEEK (name it, send home to where the pilot's active + calls log); B1/B2 hand back to the companion-home generically.
 // Copy: Cowork Copy Pack v0.2.
-const REBUILD_HAND_HOME = "Head back whenever you’re ready — I’m right here in the rail if you want to keep going.";
+const REBUILD_HAND_HOME = "Head back whenever you’re ready — I’m right here if you want to keep going.";
 const REBUILD_B3_HAND_HOME = "Your plan’s set. This week we live it — I’ll check in as you go.";
 
 // v2.4 Rebuild chat — B1 (What is Your Why?). Mirrors the Rewire/Reconnect chat, minus the ceremony: B1 is an

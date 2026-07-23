@@ -14,7 +14,7 @@ import { BEAT_SEP } from '../../lib/agent/onboarding.ts';
 // W-21 — the conversational hand-home. A completed session used to hide the input and render nothing (a hard dead-end).
 // Now the companion speaks one last parting line (its own voice, in the thread) and hands the member back to their
 // companion-home, where the next step is lit. Copy: Cowork Copy Pack v0.2.
-const REWIRE_HAND_HOME = "Head back whenever you’re ready — I’m right here in the rail if you want to keep going.";
+const REWIRE_HAND_HOME = "Head back whenever you’re ready — I’m right here if you want to keep going.";
 
 // A turn may hand over more than one beat (a reflection + the next ask), joined by BEAT_SEP — render each as its OWN
 // bubble, one job each. Reuses the onboarding/reconnect chat classes so it looks native.

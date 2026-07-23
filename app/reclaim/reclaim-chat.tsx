@@ -18,7 +18,7 @@ const agentBubbles = (text: string): ConvMessage[] =>
 
 // W-21 — the conversational hand-home on completion (no more dead-end). C3 · Quality Days routes into its logging week;
 // C1/C2 hand back to the companion-home. Copy: Cowork Copy Pack v0.2 (generic + practice-week variant).
-const RECLAIM_HAND_HOME = "Head back whenever you’re ready — I’m right here in the rail if you want to keep going.";
+const RECLAIM_HAND_HOME = "Head back whenever you’re ready — I’m right here if you want to keep going.";
 const RECLAIM_C3_HAND_HOME = "Your Quality Days are set. This week you live them — I’ll be here as you go.";
 
 // v2.5 Reclaim chat — C1 (Readiness Assessment). Mirrors the Rebuild chat; the C4 ceremony overlay is added in a
