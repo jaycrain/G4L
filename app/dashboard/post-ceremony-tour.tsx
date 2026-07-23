@@ -48,9 +48,17 @@ export default function PostCeremonyTour({
     { target: 'reclaim', line: "Your Reclaim List — what you're bringing back. The goals the work points at." },
     { target: 'doors', line: doorsLine },
   ];
-  // Only walk stops whose anchor exists on THIS dashboard — so the redesign (no Daily Beat panel) skips that stop
-  // instead of dimming to a spotlight-less line. The live dashboard has every anchor, so its walk is unchanged.
-  const stops: Stop[] = typeof document !== 'undefined' ? allStops.filter((s) => document.querySelector(`[data-tour="${s.target}"]`)) : allStops;
+  // Only walk stops whose anchor exists AND is VISIBLE on THIS dashboard — so the redesign (no Daily Beat panel) skips
+  // that stop, and the triptych's MOBILE fold skips the off-screen flank anchors (idscore/reclaim live in panes that are
+  // display:none), instead of dimming to a spotlight-less line or spotlighting a 0×0 box. The live dashboard has every
+  // anchor visible, so its walk is unchanged.
+  const stops: Stop[] =
+    typeof document !== 'undefined'
+      ? allStops.filter((s) => {
+          const el = document.querySelector(`[data-tour="${s.target}"]`) as HTMLElement | null;
+          return !!el && el.getBoundingClientRect().width > 0;
+        })
+      : allStops;
 
   // Run on first post-Threshold landing (autoStart) or a Field-Guide replay (?tour=1).
   useEffect(() => {

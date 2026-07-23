@@ -165,7 +165,7 @@ export default function TriptychCenter({
   }
 
   return (
-    <div className={`tri-companion tri-navy${hasSent ? ' is-conversing' : ''}`}>
+    <div className={`tri-companion tri-navy${hasSent ? ' is-conversing' : ''}`} data-tour="companion">
       {/* AI disclosure — always-on (governance), and it names the Companion so no separate title is needed. */}
       <div className="tri-disclose">
         <span className="tri-comp-dot" aria-hidden="true" /> You’re talking with the G4L Companion — an AI that remembers your journey. It won’t grade you.
@@ -178,7 +178,7 @@ export default function TriptychCenter({
       {/* The hero — the current navy hero brought into the center: headline + guiding line + CTA, with the merged 4R ring
           (phase + progress, the bullseye's grammar) beside it. */}
       {hero && (
-        <div className="tri-hero">
+        <div className="tri-hero" data-tour="program">
           <div className="tri-hero-text">
             <span className="tri-hero-eyebrow">{hero.eyebrow}</span>
             <h1 className="tri-hero-title">{hero.title}</h1>
