@@ -1919,10 +1919,23 @@ body.redesign-on .confidential-footer { display: none; } /* full-bleed app — n
 @media (max-width: 1000px) {
   /* ≥16px composer so iOS Safari doesn't auto-zoom the pane (memory: ios-input-16px). */
   .tri-comp-composer textarea { font-size: 16px; }
-  /* Hero stacks on the phone: eyebrow/headline/copy/CTA, then the ring below-right. */
-  .tri-hero { flex-direction: column; align-items: stretch; gap: 14px; }
-  .tri-hero-ring { flex-direction: row; align-self: flex-start; gap: 14px; align-items: center; }
-  .tri-hero-title { font-size: 24px; }
+  /* Compact hero: text + a SMALL ring side by side (the ring is reference, not the hero on a phone). The eyebrow already
+     names the phase, so drop the ring's center label at this size. */
+  .tri-hero { align-items: flex-start; gap: 14px; padding: 16px 20px; }
+  .tri-hero-title { font-size: 22px; }
+  .tri-hero-ring .redesign-ring { width: 84px !important; height: 84px !important; }
+  .tri-hero-ring .redesign-ring text { display: none; }
+  .tri-ring-legend { font-size: 11px; text-align: center; }
+  /* Collapse-after-first-message: once conversing, the hero is a one-line strip (eyebrow + CTA), keeper hidden — the
+     thread owns the screen. First visit (no member message yet) keeps the full hero. Desktop is unaffected. */
+  .tri-companion.is-conversing .tri-hero { align-items: center; padding: 12px 20px; gap: 12px; }
+  .tri-companion.is-conversing .tri-hero-title,
+  .tri-companion.is-conversing .tri-hero-copy,
+  .tri-companion.is-conversing .tri-hero-program,
+  .tri-companion.is-conversing .tri-hero-ring,
+  .tri-companion.is-conversing .tri-keeper { display: none; }
+  .tri-companion.is-conversing .tri-hero-ctarow { margin-top: 0; }
+  .tri-companion.is-conversing .tri-hero-eyebrow { margin-bottom: 4px; }
 }
 
 /* The navy hero — headline + guiding line + CTA, with the merged 4R ring beside it (phase + progress). */

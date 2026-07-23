@@ -163,8 +163,12 @@ export default function TriptychCenter({
     }
   }
 
+  // Once the member is in a conversation (any message of theirs in the thread), the MOBILE hero collapses to a one-line
+  // strip so the thread owns the small screen — first visit still gets the full "start here." Desktop always shows full.
+  const conversing = messages.some((m) => m.role === 'member');
+
   return (
-    <div className="tri-companion tri-navy">
+    <div className={`tri-companion tri-navy${conversing ? ' is-conversing' : ''}`}>
       {/* AI disclosure — always-on (governance), and it names the Companion so no separate title is needed. */}
       <div className="tri-disclose">
         <span className="tri-comp-dot" aria-hidden="true" /> You’re talking with the G4L Companion — an AI that remembers your journey. It won’t grade you.
