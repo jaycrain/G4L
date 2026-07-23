@@ -1,7 +1,9 @@
 // B2 · "Appreciating Your Strengths and Weaknesses" — the Rebuild Structure asset (Greg's Gated Assets V4). A
 // 12-skill self-management assessment, each skill rated SEPARATELY for physical activity and diet → 24 items on a
 // 4-point scale (1 = strongly disagree → 4 = strongly agree). Item stems are Greg's VERBATIM science — frozen, never
-// reworded (quirks like "perform a physical activities" and "buy prepare nutritious food" are kept as-authored).
+// reworded, EXCEPT bare grammar typos in transcription: item 5's "perform a physical activities" → "perform physical
+// activities" (member-facing fix, Jay 2026-07-23; meaning unchanged, pending Greg confirm). The "buy prepare nutritious
+// food" quirk is still as-authored — flag for the same pass if we clean it too.
 //
 // Stored as a self-management skill profile (its own register, self_management_reading / 0051) — used later by the
 // B4 Structure check and by future cycles. Unlike B1 (RB-1 no-display), B2's profile is reflective material the
@@ -29,7 +31,7 @@ const SKILLS: { no: number; skill: string; activity: string; diet: string }[] = 
   { no: 2, skill: 'Self-monitoring', activity: 'I can self-monitor physical activity behavior', diet: 'I can self-monitor dietary behavior' },
   { no: 3, skill: 'Goal setting', activity: 'I can set goals for physical activity behaviors', diet: 'I can set goals for dietary behaviors' },
   { no: 4, skill: 'Self-planning', activity: 'I can create a physical activity plan to address my needs.', diet: 'I can create a dietary plan to address my needs.' },
-  { no: 5, skill: 'Performance skills', activity: 'I possess skills needed to perform a physical activities I enjoy', diet: 'I possess skills needed to select and prepare healthy foods' },
+  { no: 5, skill: 'Performance skills', activity: 'I possess skills needed to perform physical activities I enjoy', diet: 'I possess skills needed to select and prepare healthy foods' },
   { no: 6, skill: 'Balancing attitudes', activity: 'I can stay positive about my efforts to being active', diet: 'I can stay positive about my ability to eat healthy' },
   { no: 7, skill: 'Overcoming barriers', activity: 'I can overcome barriers to being physically active', diet: 'I can overcome barriers to following a healthy diet' },
   { no: 8, skill: 'Consumer skills', activity: 'I know how to find and interpret information related to physical activity and fitness', diet: 'I know how to find and interpret information related to nutrition and health' },
