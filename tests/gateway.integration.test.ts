@@ -65,6 +65,32 @@ test('full Gateway: onboarding -> IDQ -> dashboard', async () => {
   assert.equal(dash!.currentFocus?.dimension, 'physical');
 });
 
+test('a released ("No Longer Central") item drops off the active dashboard list but stays on the subpage', async () => {
+  // Jay's walk: two items eliminated during the C1 refinement kept showing at the bottom of the dashboard Reclaim List.
+  // The refinement never deletes — it re-tiers to no_longer_central — so the dashboard must exclude released items from
+  // the ACTIVE surfaces while keeping them retrievable (releasedReclaimItems) for the subpage.
+  const db = await freshDb();
+  const ob = await runOnboarding(db, scriptedProvider, validOnboarding);
+  assert.ok(ob.ok);
+  if (!ob.ok) return;
+
+  const before = await getDashboard(db, ob.memberId);
+  assert.equal(before!.reclaimList.length, 7, 'all seven active to start');
+  assert.equal(before!.releasedReclaimItems.length, 0);
+
+  // Release two items the way the C1 refinement commit does — set the tier, never delete the row.
+  await db.query("update reclaim_item set tier='no_longer_central' where member_id=$1 and text = any($2)", [
+    ob.memberId,
+    ['feel strong', 'climb'],
+  ]);
+
+  const after = await getDashboard(db, ob.memberId);
+  assert.equal(after!.reclaimList.length, 5, 'the two released items leave the active list');
+  assert.ok(!after!.reclaimList.includes('feel strong') && !after!.reclaimList.includes('climb'), 'not among active priorities');
+  assert.ok(!after!.reclaimItems.some((i) => i.text === 'feel strong' || i.text === 'climb'), 'not in the panel items either');
+  assert.deepEqual(after!.releasedReclaimItems.map((i) => i.text).sort(), ['climb', 'feel strong'], 'kept + retrievable for the subpage');
+});
+
 test('a second IDQ shows upward movement vs baseline', async () => {
   const db = await freshDb();
   const ob = await runOnboarding(db, scriptedProvider, validOnboarding);

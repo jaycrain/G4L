@@ -59,6 +59,20 @@ export default async function ReclaimListPage({ params }: { params: Promise<{ me
         )}
       </div>
 
+      {/* No Longer Central — items the member released while refining (C1). Not deleted: kept here, quietly, and
+          restorable by asking the Companion. Never shown among active priorities (the dashboard bug Jay caught). */}
+      {dash.releasedReclaimItems.length > 0 && (
+        <div className="card reclaim-released">
+          <div className="rc-h">No Longer Central</div>
+          <p className="card-subtitle">You set these aside while refining your list. They’re kept here — tell your Companion if you want to bring one back.</p>
+          <ul className="reclaim-list-full">
+            {dash.releasedReclaimItems.map((item, i) => (
+              <li key={i} className="reclaim-row released"><div className="reclaim-row-text muted">{item.text}</div></li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {/* Not a dead end — clear ways back. */}
       <div className="momentum-nav">
         <Link href={`/dashboard/${memberId}`} className="momentum-nav-primary">← Back to your path</Link>

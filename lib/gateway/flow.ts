@@ -196,8 +196,9 @@ export type Dashboard = {
   identityParagraph: string | null;
   door: { slug: string; displayName: string } | null; // primary (back-compat single-value reads)
   doors: DoorRef[]; // the full set, primary first
-  reclaimList: string[]; // text only (back-compat for the agent context + legacy reads)
-  reclaimItems: { id: string | null; text: string; reclaimed: boolean }[]; // same items, with state — for the panel's check
+  reclaimList: string[]; // text only, ACTIVE items (back-compat for the agent context + legacy reads)
+  reclaimItems: { id: string | null; text: string; reclaimed: boolean }[]; // ACTIVE items (excludes "No Longer Central") — every dashboard/hero/MA surface reads this
+  releasedReclaimItems: { id: string | null; text: string; reclaimed: boolean }[]; // C1-refinement "No Longer Central" — kept + restorable, shown ONLY on the subpage, never among active priorities
   measures: MeasureView[]; // numbers the member watches; linked ones carry reclaimItemId
   score: (ScorePresentation & { dimensions: DimensionScores }) | null;
   currentFocus: { dimension: Dimension; label: string } | null;
@@ -225,18 +226,24 @@ export async function getDashboard(db: Db, memberId: string): Promise<Dashboard 
   // removed_at column is migration 0040 — if a drifted DB lacks it (or the table), degrade to the jsonb list
   // instead of crashing the whole dashboard.
   const riRows = await db
-    .query<{ id: string; text: string; state: string }>(
-      'select id, text, state from reclaim_item where member_id=$1 and removed_at is null order by sort_order, created_at',
+    .query<{ id: string; text: string; state: string; tier: string | null }>(
+      'select id, text, state, tier from reclaim_item where member_id=$1 and removed_at is null order by sort_order, created_at',
       [memberId],
     )
     .then((r) => r.rows)
     .catch((e) => {
       console.warn('reclaim_item read failed — migration 0040 (removed_at) unapplied?', (e as Error).message);
-      return [] as { id: string; text: string; state: string }[];
+      return [] as { id: string; text: string; state: string; tier: string | null }[];
     });
-  const reclaimItems = riRows.length
-    ? riRows.map((r) => ({ id: r.id, text: r.text, reclaimed: r.state === 'reclaimed' }))
-    : (Array.isArray(m.reclaim_list) ? (m.reclaim_list as string[]) : []).map((text) => ({ id: null, text, reclaimed: false }));
+  // Split ACTIVE from "No Longer Central" (the C1-refinement release tier). Releasing an item is never a delete — the
+  // row is kept + restorable — but a released item must NOT sit among active priorities on the dashboard (Jay's walk:
+  // "we eliminated these in the Session, they still showed at the bottom"). The Session's own summary already filters it
+  // out (workspace/artifact); this makes every dashboard/hero/MA surface match. The subpage surfaces the released set.
+  const allItems = riRows.length
+    ? riRows.map((r) => ({ id: r.id, text: r.text, reclaimed: r.state === 'reclaimed', released: r.tier === 'no_longer_central' }))
+    : (Array.isArray(m.reclaim_list) ? (m.reclaim_list as string[]) : []).map((text) => ({ id: null, text, reclaimed: false, released: false }));
+  const reclaimItems = allItems.filter((i) => !i.released).map(({ id, text, reclaimed }) => ({ id, text, reclaimed }));
+  const releasedReclaimItems = allItems.filter((i) => i.released).map(({ id, text, reclaimed }) => ({ id, text, reclaimed }));
   const reclaimList = reclaimItems.map((i) => i.text);
   const measures = await listMeasures(db, memberId);
 
@@ -270,6 +277,7 @@ export async function getDashboard(db: Db, memberId: string): Promise<Dashboard 
     doors,
     reclaimList,
     reclaimItems,
+    releasedReclaimItems,
     measures,
     score,
     currentFocus: focus,

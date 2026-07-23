@@ -2001,3 +2001,7 @@ body.redesign-on .confidential-footer { display: none; } /* full-bleed app — n
 .reclaim-row-text { font-size: 16px; font-weight: 600; color: var(--navy); margin-bottom: 10px; }
 .reclaim-row.reclaimed .reclaim-row-text { color: #6b7680; }
 .reclaim-row .rr-check { color: var(--teal); margin-right: 6px; font-weight: 800; }
+/* No Longer Central — released items, kept + restorable, rendered quietly below the active list. */
+.reclaim-released { margin-top: 18px; }
+.reclaim-released .rc-h { color: #6b7680; }
+.reclaim-released .reclaim-row-text.muted { font-weight: 500; color: #6b7680; margin-bottom: 0; }
