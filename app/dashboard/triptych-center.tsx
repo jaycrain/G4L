@@ -88,25 +88,27 @@ export default function TriptychCenter({
     });
   }, [memberId]);
 
-  // Keep pinned to the newest message.
+  // Autoscroll — only AFTER the member has engaged (sentRef). On first load we land at the TOP so the hero is the
+  // "start here" (Jay); scrolling to the bottom on load would bury it. Once they send, follow the newest message.
+  const sentRef = useRef(false);
   useEffect(() => {
+    if (!sentRef.current) return;
     const el = chatRef.current;
     if (el) el.scrollTop = el.scrollHeight;
   }, [messages, pending]);
 
-  // Auto-grow the composer (capped). Reset to 0 (NOT 'auto') before measuring — 'auto' read a stale/huge scrollHeight
-  // during the flex layout on the production build and pinned the empty box to the 160px cap; '0px' makes scrollHeight
-  // reflect content only, deterministically. rAF so the first measure lands after layout settles.
+  // Auto-grow the composer — bulletproof: EMPTY clears the inline height so the CSS fixed 44px applies (no mount-time
+  // scrollHeight measurement, which was unreliable with border-box + padding and pinned the empty box tall on prod).
+  // Growth runs ONLY when there's text — that measurement happens on real input, after layout has settled.
   useEffect(() => {
     const el = inputRef.current;
     if (!el) return;
-    const grow = () => {
-      el.style.height = '0px';
-      el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
-    };
-    grow();
-    const raf = requestAnimationFrame(grow);
-    return () => cancelAnimationFrame(raf);
+    if (!input) {
+      el.style.height = '';
+      return;
+    }
+    el.style.height = 'auto';
+    el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
   }, [input]);
 
   // Keep the persisted thread in sync across devices (poll + on focus); never clobber a send.
@@ -139,6 +141,7 @@ export default function TriptychCenter({
     e?.preventDefault();
     const text = input.trim();
     if (!text || pending) return;
+    sentRef.current = true; // from here on, follow the newest message (see the autoscroll effect)
     const history = messages;
     setMessages([...history, { role: 'member', text }]);
     setInput('');
@@ -167,8 +170,12 @@ export default function TriptychCenter({
         <span className="tri-comp-dot" aria-hidden="true" /> You’re talking with the G4L Companion — an AI that remembers your journey. It won’t grade you.
       </div>
 
+      {/* The hero + keeper + thread all live in ONE scroll area, so the thread has room and the composer (below) is
+          always reachable — the pinned-hero version squeezed the thread to a sliver and pushed the composer off-screen on
+          mobile. Land at the top (hero = "start here"); follow the newest message only after the member sends. */}
+      <div ref={chatRef} className="tri-comp-scroll">
       {/* The hero — the current navy hero brought into the center: headline + guiding line + CTA, with the merged 4R ring
-          (phase + progress, the bullseye's grammar) beside it. Pinned above the thread; where the member starts. */}
+          (phase + progress, the bullseye's grammar) beside it. */}
       {hero && (
         <div className="tri-hero">
           <div className="tri-hero-text">
@@ -206,7 +213,7 @@ export default function TriptychCenter({
         </div>
       )}
 
-      <div ref={chatRef} className="tri-comp-stream">
+      <div className="tri-comp-stream">
         {messages.map((m, i) => (
           <div key={i} className={`rmsg ${m.role}`}>
             {m.text}
@@ -221,6 +228,7 @@ export default function TriptychCenter({
           </div>
         )}
         {pending && <div className="rmsg typing">Thinking…</div>}
+      </div>
       </div>
       <form className="tri-comp-composer" onSubmit={send}>
         <textarea
