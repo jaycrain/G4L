@@ -1885,8 +1885,10 @@ body.redesign-on .confidential-footer { display: none; } /* full-bleed app — n
 
 @media (max-width: 1000px) {
   .tri-app { padding: 12px; gap: 12px; }
-  .tri-seg { display: flex; gap: 4px; background: #eceae6; border-radius: 100px; padding: 4px; flex: 0 0 auto; }
-  .tri-seg-btn { flex: 1; border: none; background: none; font-family: inherit; font-size: 13px; font-weight: 700; color: #6b7680; padding: 9px 6px; border-radius: 100px; cursor: pointer; }
+  /* Fixed compact height; buttons stretch to fill and center their text. The `margin: 0` is load-bearing — the global
+     `button,.btn` rule sets margin-top:1.5rem, which was pushing every tab ~24px down and inflating the bar. */
+  .tri-seg { display: flex; align-items: stretch; gap: 4px; background: #eceae6; border-radius: 100px; padding: 3px; flex: 0 0 auto; height: 42px; box-sizing: border-box; }
+  .tri-seg-btn { flex: 1; margin: 0; display: flex; align-items: center; justify-content: center; border: none; background: none; font-family: inherit; font-size: 13px; font-weight: 700; line-height: 1; color: #6b7680; padding: 0 6px; border-radius: 100px; cursor: pointer; white-space: nowrap; }
   .tri-seg-btn.on { background: var(--white); color: var(--navy); box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12); }
   .tri-main { flex-direction: column; gap: 0; }
   .tri-flank, .tri-center { flex: 1 1 auto; width: auto; }
