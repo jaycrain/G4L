@@ -8,7 +8,7 @@ import type { OutreachDraft, OutreachTrigger, Tense, Provenance } from './config
 import { EARNED_PLAN } from './config.ts';
 import { validateOutreach } from './validate.ts';
 import { cadenceCheck } from './cadence.ts';
-import { getPref, hasOpenThread, countOutbound7d, recordReady, recordHeld } from './store.ts';
+import { getPref, hasOpenThread, countOutbound7d, recordReady, recordHeld, lastInAppSurfacedAt } from './store.ts';
 
 export type Phase = 'reconnect' | 'rewire' | 'rebuild' | 'reclaim';
 export type OutreachContext = { phase: Phase; sessionsInPhase: number };
@@ -55,12 +55,14 @@ export async function nextOutreach(
   const pref = await getPref(db, memberId);
 
   // GATE — cadence (needs the member's phase for tense, but tense doesn't affect cadence, so gate first + cheap).
+  const surfacedAt = channel === 'in_app' ? await lastInAppSurfacedAt(db, memberId) : null;
   const cadence = cadenceCheck({
     channel,
     rhythm: pref.rhythm,
     ignoredStreak: pref.ignoredStreak,
     outboundLast7d: channel === 'in_app' ? 0 : await countOutbound7d(db, memberId),
     hasOpenThread: await hasOpenThread(db, memberId),
+    hoursSinceLastInApp: surfacedAt ? (now.getTime() - surfacedAt.getTime()) / 3_600_000 : null,
     localHour: localHour(pref.timezone, now),
     quiet: { startHour: pref.quietStart, endHour: pref.quietEnd },
   });

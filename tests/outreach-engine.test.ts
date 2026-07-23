@@ -79,6 +79,24 @@ test('dismiss feeds back-off (ignored_streak++); a reply resets it', async () =>
   assert.equal((await getPref(db, id)).ignoredStreak, 0);
 });
 
+test('in-app cooldown: a recently-surfaced (then dismissed) nudge cannot regenerate until the cooldown clears', async () => {
+  const { db, id } = await member();
+  // The treadmill scenario: a nudge was surfaced + DISMISSED 2h ago (so it's not an open thread anymore).
+  await db.query(
+    `insert into outreach_log (member_id, trigger, tense, channel, status, message, provenance, created_at)
+     values ($1,'morning_presence','present','in_app','dismissed',$2,$3, now() - interval '2 hours')`,
+    [id, goodDraft.text, JSON.stringify(goodDraft.provenance)],
+  );
+  const held = await nextOutreach(db, id, 'morning_presence', new Date(), deps());
+  assert.equal(held.status, 'held', 'within the cooldown → no regeneration');
+  assert.match((held as { reason: string }).reason, /cooldown/);
+
+  // Age the surfaced time past the 20h floor → the channel reopens, a fresh nudge generates.
+  await db.query(`update outreach_log set created_at = now() - interval '21 hours' where member_id=$1`, [id]);
+  const ready = await nextOutreach(db, id, 'morning_presence', new Date(), deps());
+  assert.equal(ready.status, 'ready', 'past the cooldown → clear');
+});
+
 test('pickTense encodes the voice-dial + earned-plan threshold', () => {
   assert.deepEqual(pickTense('reconnect', 5), { tense: 'present', planEarned: false });
   assert.deepEqual(pickTense('rewire', 0), { tense: 'present', planEarned: false }, 'not earned yet → reflective');

@@ -41,6 +41,10 @@ export const DEFAULT_RHYTHM: Rhythm = 'few_week'; // leans to presence; the memb
 export const RHYTHM_WEEKLY_MAX: Record<Rhythm, number> = { daily: 7, few_week: 4, weekly: 1, on_ask: 0 };
 export const BACKOFF_AFTER_IGNORED = 2; // consecutive ignored outreaches before the rhythm decays
 export const BACKOFF_FLOOR: Rhythm = 'weekly'; // decay never goes below this (still a quiet presence)
+// In-app is exempt from the weekly ceiling ("the member came to us"), but that left NO rate floor — a dismissed nudge
+// regenerated on the very next dashboard load (treadmill). This is the floor: once we've surfaced an in-app nudge, we
+// don't surface OR regenerate another for this many hours — at most ~one proactive in-app nudge a day.
+export const IN_APP_COOLDOWN_HOURS = 20;
 
 // ── Dial 2 · Quiet hours (timezone-aware; morning presence lands 7–9am) ──
 export const DEFAULT_QUIET = { startHour: 21, endHour: 7 }; // 9pm–7am local, member-adjustable

@@ -13,23 +13,29 @@ import { loadContext } from '../../lib/outreach/context.ts';
 import { gatherSources } from '../../lib/outreach/sources.ts';
 import { generateOutreach } from '../../lib/agent/outreach.ts';
 import { nextOutreach, type OutreachDeps } from '../../lib/outreach/engine.ts';
-import { getOpenOutreach, markResponded } from '../../lib/outreach/store.ts';
+import { getOpenOutreach, markResponded, markSurfaced } from '../../lib/outreach/store.ts';
 import type { Db } from '../../lib/db/schema.ts';
 
 export type ReadyOutreach = { id: string; text: string } | null;
 
 const DEPS: OutreachDeps = { loadContext, gatherSources, generate: generateOutreach };
 
-/** A governed, ready-to-show nudge for this member — or null. Idempotent: an unanswered nudge re-shows, never re-generates. */
+/** A governed, ready-to-show nudge for this member — or null. Surfaced ONCE per visit: shown, marked 'sent' so it
+ *  doesn't re-nag on every navigation; a new one can't generate until the in-app cooldown clears (see cadence). */
 export async function fetchReadyOutreach(memberId: string): Promise<ReadyOutreach> {
   if (!outreachEnabled()) return null;
   if (!(await authorizeMember(memberId))) return null;
   try {
     const db = (await getDb()) as unknown as Db;
-    const open = await getOpenOutreach(db, memberId);
-    if (open) return { id: open.id, text: open.message };
+    const open = await getOpenOutreach(db, memberId); // a never-surfaced 'ready' nudge (getOpenOutreach = 'ready' only)
+    if (open) {
+      await markSurfaced(db, memberId, open.id);
+      return { id: open.id, text: open.message };
+    }
     const r = await nextOutreach(db, memberId, 'morning_presence', new Date(), DEPS);
-    return r.status === 'ready' ? { id: r.id, text: r.draft.text } : null;
+    if (r.status !== 'ready') return null;
+    await markSurfaced(db, memberId, r.id);
+    return { id: r.id, text: r.draft.text };
   } catch (e) {
     console.error('fetchReadyOutreach failed:', (e as Error).message);
     return null;

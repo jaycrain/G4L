@@ -79,6 +79,24 @@ export async function getOpenOutreach(db: Db, memberId: string): Promise<OpenOut
   return r ? { id: r.id, trigger: r.trigger, tense: r.tense, message: r.message, provenance: r.provenance } : null;
 }
 
+/** When we last SURFACED an in-app nudge (any non-held state — ready/sent/dismissed/replied). Anchors the in-app
+ *  cooldown so a dismissed nudge can't regenerate on the next load. Null if we've never surfaced one. */
+export async function lastInAppSurfacedAt(db: Db, memberId: string): Promise<Date | null> {
+  const { rows } = await db.query<{ last: unknown }>(
+    `select max(created_at) as last from outreach_log
+      where member_id = $1 and channel = 'in_app' and status <> 'held'`,
+    [memberId],
+  );
+  const last = rows[0]?.last;
+  return last ? new Date(last as string) : null;
+}
+
+/** Mark a ready nudge as SURFACED (shown once). getOpenOutreach only returns 'ready', so this stops the same nudge
+ *  re-appearing on every dashboard load; 'sent'+unanswered still counts as the one open thread. */
+export async function markSurfaced(db: Db, memberId: string, id: string): Promise<void> {
+  await db.query(`update outreach_log set status='sent' where id=$1 and member_id=$2 and status='ready'`, [id, memberId]);
+}
+
 /** Outbound (non-in-app) touches in the rolling 7 days — the rhythm-ceiling read. In-app never counts. */
 export async function countOutbound7d(db: Db, memberId: string): Promise<number> {
   const { rows } = await db.query<{ n: string }>(

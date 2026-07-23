@@ -4,12 +4,25 @@ import { cadenceCheck, effectiveRhythm, inQuietHours, type CadenceInput } from '
 
 const base: CadenceInput = {
   channel: 'outbound', rhythm: 'few_week', ignoredStreak: 0, outboundLast7d: 0,
-  hasOpenThread: false, localHour: 10,
+  hasOpenThread: false, hoursSinceLastInApp: null, localHour: 10,
 };
 
 test('in-app is exempt from ceiling + quiet hours (member came to us), but still no double-nudge', () => {
   assert.equal(cadenceCheck({ ...base, channel: 'in_app', outboundLast7d: 99, localHour: 2 }).ok, true);
   assert.equal(cadenceCheck({ ...base, channel: 'in_app', hasOpenThread: true }).ok, false);
+});
+
+test('in-app cooldown: a nudge surfaced recently holds; past the cooldown it clears; never-surfaced is clear', () => {
+  // never surfaced → clear
+  assert.equal(cadenceCheck({ ...base, channel: 'in_app', hoursSinceLastInApp: null }).ok, true);
+  // surfaced 2h ago (< 20h floor) → held — this is what stops the dismiss→regenerate treadmill
+  const held = cadenceCheck({ ...base, channel: 'in_app', hoursSinceLastInApp: 2 });
+  assert.equal(held.ok, false);
+  assert.match(held.reason!, /cooldown/);
+  // surfaced 21h ago (> 20h floor) → clear again
+  assert.equal(cadenceCheck({ ...base, channel: 'in_app', hoursSinceLastInApp: 21 }).ok, true);
+  // the cooldown is in-app-only — it never gates outbound (outbound has its own ceiling)
+  assert.equal(cadenceCheck({ ...base, channel: 'outbound', hoursSinceLastInApp: 2 }).ok, true);
 });
 
 test('outbound honors the weekly rhythm ceiling', () => {
