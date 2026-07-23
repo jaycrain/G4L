@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { Suspense } from 'react';
 import './globals.css';
 import PwaClient from './pwa-client.tsx';
-import FeedbackLauncher from './feedback-launcher.tsx';
+// import FeedbackLauncher from './feedback-launcher.tsx'; // Send Feedback pill — dropped for now (reinstate with the render below)
 import BackToDashboard from './components/back-to-dashboard.tsx';
 
 const barlow = Barlow({
@@ -66,7 +66,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           without written permission.
         </footer>
         <PwaClient />
-        <FeedbackLauncher />
+        {/* Send Feedback pill dropped for now (Jay, 2026-07-23) — reinstate by uncommenting this + the import above. */}
+        {/* <FeedbackLauncher /> */}
       </body>
     </html>
   );
