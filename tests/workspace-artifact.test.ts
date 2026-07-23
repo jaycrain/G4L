@@ -57,6 +57,32 @@ test('b3 canvas shows the coach-locked plan from the live session, before the fi
   assert.match(art.slots[1]!.value ?? '', /vegetable at dinner/, 'nutrition change shows before confirm');
 });
 
+test('b3 recap recovers the two changes from the Playbook keeper when the coaching_plan is missing', async () => {
+  // Jay's walk: a completed B3 showed "Your two changes" BLANK — the coaching_plan row was absent, but the plan was
+  // also saved as a Playbook 'plan' keeper. The recap must recover from the keeper (composePilotPlan format) so the
+  // card is never empty when the data survived in either write.
+  const db = new PGlite() as unknown as Db;
+  await applySchema(db);
+  const m = await seedMember(db);
+
+  // No coaching_plan, no live session — but the Playbook keeper committed at close.
+  const momentId = await emitHarvestMoment(db, m, {
+    destinationIntent: 'keeper', keeperType: 'plan', surface: 'rebuild',
+    sourceRef: { kind: 'plan', ref: 'b3', label: 'Your Lifestyle Pilot' },
+    payloadRef: 'Movement — a 30-minute morning walk, 2-3 days\nEating — a vegetable at dinner',
+    private: false,
+  });
+  await commitKeeper(db, m, {
+    momentId, keeperType: 'plan', section: 'own_words',
+    body: 'Movement — a 30-minute morning walk, 2-3 days\nEating — a vegetable at dinner',
+    state: 'kept', source: { kind: 'own', ref: 'b3', label: 'Your Lifestyle Pilot' },
+  });
+
+  const art = await readArtifact(db, m, 'b3');
+  assert.match(art.slots[0]!.value ?? '', /30-minute morning walk/, 'movement recovered from the keeper');
+  assert.match(art.slots[1]!.value ?? '', /vegetable at dinner/, 'eating recovered from the keeper');
+});
+
 test('c3 canvas shows the coach-named Quality Day from the live session, before the final commit', async () => {
   const db = new PGlite() as unknown as Db;
   await applySchema(db);

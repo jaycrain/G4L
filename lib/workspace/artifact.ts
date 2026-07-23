@@ -49,6 +49,17 @@ async function keeperBodies(db: Db, memberId: string, keeperType: string): Promi
   return rows.map((r) => r.body).filter(Boolean);
 }
 
+// Recover the two B3 changes from a Playbook 'plan' keeper body (composePilotPlan format: "Movement — X\nEating — Y").
+// The fallback when the coaching_plan row is missing but the keeper survived. Exported for the test + the momentum read.
+export function parsePilotPlanKeeper(bodies: string[]): { activity: string | null; diet: string | null } {
+  for (const b of bodies) {
+    const activity = /Movement\s+—\s+(.+)/.exec(b)?.[1]?.trim() || null;
+    const diet = /Eating\s+—\s+(.+)/.exec(b)?.[1]?.trim() || null;
+    if (activity || diet) return { activity, diet };
+  }
+  return { activity: null, diet: null };
+}
+
 const frame = (key: SessionKey): Artifact => {
   const m = META[key];
   return { title: m.title, lede: m.lede, slots: [], foot: m.foot ?? FOOT };
@@ -100,9 +111,20 @@ async function build(db: Db, memberId: string, key: SessionKey): Promise<Artifac
       // Before the plan COMMITS (on the member's confirm), show what the coach has already LOCKED, read from the live
       // session (arc_session) — so the two changes land on the canvas as they're named, not only after the final confirm.
       const pending = plan ? null : (await loadArcSession(db, memberId, 'rebuild', 'b3').catch(() => null))?.state.collected ?? null;
+      let activity = plan?.activityChange ?? pending?.pilotActivity ?? null;
+      let diet = plan?.dietChange ?? pending?.pilotDiet ?? null;
+      // Defense-in-depth (Jay's walk: a completed B3 showed "Your two changes" BLANK). The B3 close persists the plan in
+      // TWO independent best-effort writes — the coaching_plan AND a Playbook 'plan' keeper. If the coaching_plan write
+      // is the one that failed, recover the changes from the keeper (composePilotPlan format) so the recap is never
+      // empty when the data survived anywhere.
+      if (!activity || !diet) {
+        const fromKeeper = parsePilotPlanKeeper(await keeperBodies(db, memberId, 'plan').catch(() => []));
+        activity = activity || fromKeeper.activity;
+        diet = diet || fromKeeper.diet;
+      }
       return base([
-        { label: 'Your movement change', value: plan?.activityChange ?? pending?.pilotActivity ?? null },
-        { label: 'Your nutrition change', value: plan?.dietChange ?? pending?.pilotDiet ?? null },
+        { label: 'Your movement change', value: activity },
+        { label: 'Your nutrition change', value: diet },
       ]);
     }
     case 'c1': {
