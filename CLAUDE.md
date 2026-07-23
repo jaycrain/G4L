@@ -15,7 +15,14 @@ prod 2026-07-15** (Jay's full-program Preview walk → "Merge it all" → "Flip 
 `REDESIGN=staged` set on the Production env, empty commit `631fed4` pushed to trigger the flag-picking rebuild). **Prod
 is now v3.0.** Shipped with the **Loop gate OFF** (`RECLAIM_GATE` unset — the 60-day rule is a Greg+Jay placeholder) and
 **Strava hidden** (`STRAVA_*` unset), both intentional. Revert = remove `REDESIGN` from Production + redeploy → v2.5.
-See [[desktop-redesign-build-state]]. NOTE: v2.5
+See [[desktop-redesign-build-state]]. **Then within v3: v3.1** (2026-07-21) = the conversation-first **mobile billboard**
+layer + onboarding welcome + proactive outreach flipped live; **v3.2 — the Companion Triptych** (2026-07-23, Jay
+"flip it, do it all") = the member dashboard re-architected around the **centered Companion** (reflect ← relate → act:
+ID Score/Grinta/Badges · the navy Companion hero+thread · Momentum/Reclaim/Movement/Community), a segmented-pane mobile
+fold (which SET ASIDE v3.1's mobile billboard), the Reclaim-Items subpage, and the ceremony+Opening-Tour carried onto
+the new surface. Flipped via `DASH_TRIPTYCH=staged` on Production (`main` @ `256baf7`). **Prod is now v3.2.** MOBILE
+intentionally unset (the triptych owns mobile via its responsive fold). Revert = remove `DASH_TRIPTYCH` from Production
++ redeploy → v3.0. See [[dashboard-triptych]]. NOTE: v2.5
 Reclaim was flipped "as is" for shared team context — it is known-rough (the W-28 Rebuild→Reclaim entry/exit + the
 "how to get out of Reclaim" Loop questions are OPEN, Jay+Greg); changes are expected. Onboarding v1 and the pre-flip
 "flag-gated / prod stays v1" framing are retired. New member-facing changes now affect real prod — verify live after deploy.
