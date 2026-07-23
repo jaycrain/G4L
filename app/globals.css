@@ -1965,6 +1965,11 @@ body.redesign-on .confidential-footer { display: none; } /* full-bleed app — n
 .tri-stack { display: flex; flex-direction: column; gap: 20px; }
 /* Unify every panel title to the "Your Reclaim List" style (.rc-h: 20px navy, not the small teal eyebrow) — Jay. */
 .tri-stack .rreg-eyebrow { font-weight: 700; font-size: 20px; color: var(--navy); text-transform: none; letter-spacing: 0; }
+/* Reclaim List items get a hairline separator (Jay) — structures the list without imposing order (numbers) or a
+   task-list feel (bullets); matches the /reclaim-list subpage's dividers. Scoped to the triptych; live panel untouched. */
+.tri-stack .r-reclaim-list { gap: 0; margin-top: 14px; }
+.tri-stack .r-reclaim-list li { padding: 12px 0; border-top: 1px solid #e8e6e6; }
+.tri-stack .r-reclaim-list li:first-child { border-top: none; padding-top: 2px; }
 /* Consistent, clearly-tappable See-more nav (subpages are premium) — a full-width footer action with a divider, not a
    faint inline link. Scoped to the triptych so the live dashboard's own .rreg-more is untouched. */
 .tri-stack .rreg-more { display: flex; align-items: center; gap: 5px; width: 100%; margin-top: 14px; padding: 11px 0 3px; border-top: 1px solid #eceae6; color: var(--teal); font-weight: 800; font-size: 13.5px; letter-spacing: 0.01em; text-decoration: none; }

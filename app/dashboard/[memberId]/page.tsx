@@ -91,6 +91,8 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
         <DashboardTriptych
           memberId={memberId}
           firstName={firstName(dash.displayName)}
+          displayName={dash.displayName}
+          avatarUrl={dash.avatarUrl}
           hero={hero}
           keeper={keeper}
           left={<TriptychLeft db={db} memberId={memberId} dash={dash} />}

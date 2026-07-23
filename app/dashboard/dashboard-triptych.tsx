@@ -1,8 +1,10 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import RedesignChrome from './redesign-chrome.tsx';
 import TriptychCenter from './triptych-center.tsx';
+import { initials } from '../../lib/member/avatar.ts';
 import type { HeroCard } from '../../lib/dashboard/hero-card.ts';
 import type { CenterKeeper } from '../../lib/dashboard/center-keeper.ts';
 
@@ -22,6 +24,8 @@ const PANES: { key: Pane; label: string }[] = [
 export default function DashboardTriptych({
   memberId,
   firstName,
+  displayName,
+  avatarUrl,
   hero,
   keeper,
   left,
@@ -29,6 +33,8 @@ export default function DashboardTriptych({
 }: {
   memberId: string;
   firstName: string;
+  displayName: string;
+  avatarUrl?: string | null;
   hero: HeroCard | null;
   keeper: CenterKeeper | null;
   left: React.ReactNode; // "Where You Are" — server-rendered panels passed in (same pattern as RedesignShell's children)
@@ -39,14 +45,32 @@ export default function DashboardTriptych({
   return (
     <>
       <RedesignChrome />
+      {/* Full topbar — matches redesign-dashboard: brand home + Program/Field Guide/Playbook nav + account. */}
       <div className="redesign-topbar">
-        <div className="rt-brand" aria-label="Grinta for Life">
+        <Link href="/" className="rt-brand" aria-label="Go to your G4L home">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img className="rt-logo-mark" src="/brand/g4l-rings.svg" alt="" aria-hidden="true" />
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img className="rt-wordmark" src="/brand/g4l-wordmark.svg" alt="Grinta for Life" />
+        </Link>
+        <div className="rt-who">
+          <span className="rt-nav">
+            <Link href={`/program/${memberId}`} prefetch={false}>Program</Link>
+            <Link href={`/field-guide/${memberId}`} prefetch={false}>Field Guide</Link>
+            <Link href={`/playbook/${memberId}`} prefetch={false}>Playbook</Link>
+          </span>
+          <span className="rt-account-group">
+            <Link href="/account" className="rt-account" aria-label="Your account">
+              {avatarUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img className="rt-av" src={avatarUrl} alt={displayName} />
+              ) : (
+                <span className="rt-av rt-av-initials" aria-hidden="true">{initials(displayName)}</span>
+              )}
+              <span className="rt-hi">Hi, {firstName}</span>
+            </Link>
+          </span>
         </div>
-        {firstName && <span className="rt-who">{firstName}</span>}
       </div>
 
       <div className={`tri-app pane-${pane}`}>

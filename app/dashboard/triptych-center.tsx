@@ -88,14 +88,15 @@ export default function TriptychCenter({
     });
   }, [memberId]);
 
-  // Autoscroll — only AFTER the member has engaged (sentRef). On first load we land at the TOP so the hero is the
-  // "start here" (Jay); scrolling to the bottom on load would bury it. Once they send, follow the newest message.
-  const sentRef = useRef(false);
+  // hasSent = the member has sent a message THIS visit. Drives two things: the autoscroll (land at the top on arrival so
+  // the hero is "start here"; follow the newest message once they engage) and the MOBILE hero collapse (per-visit, Jay:
+  // full hero every visit, tuck to a strip only after they start typing today — not history-based).
+  const [hasSent, setHasSent] = useState(false);
   useEffect(() => {
-    if (!sentRef.current) return;
+    if (!hasSent) return;
     const el = chatRef.current;
     if (el) el.scrollTop = el.scrollHeight;
-  }, [messages, pending]);
+  }, [messages, pending, hasSent]);
 
   // Auto-grow the composer — bulletproof: EMPTY clears the inline height so the CSS fixed 44px applies (no mount-time
   // scrollHeight measurement, which was unreliable with border-box + padding and pinned the empty box tall on prod).
@@ -141,7 +142,7 @@ export default function TriptychCenter({
     e?.preventDefault();
     const text = input.trim();
     if (!text || pending) return;
-    sentRef.current = true; // from here on, follow the newest message (see the autoscroll effect)
+    setHasSent(true); // from here on, follow the newest message + collapse the mobile hero (see the autoscroll effect)
     const history = messages;
     setMessages([...history, { role: 'member', text }]);
     setInput('');
@@ -163,12 +164,8 @@ export default function TriptychCenter({
     }
   }
 
-  // Once the member is in a conversation (any message of theirs in the thread), the MOBILE hero collapses to a one-line
-  // strip so the thread owns the small screen — first visit still gets the full "start here." Desktop always shows full.
-  const conversing = messages.some((m) => m.role === 'member');
-
   return (
-    <div className={`tri-companion tri-navy${conversing ? ' is-conversing' : ''}`}>
+    <div className={`tri-companion tri-navy${hasSent ? ' is-conversing' : ''}`}>
       {/* AI disclosure — always-on (governance), and it names the Companion so no separate title is needed. */}
       <div className="tri-disclose">
         <span className="tri-comp-dot" aria-hidden="true" /> You’re talking with the G4L Companion — an AI that remembers your journey. It won’t grade you.
