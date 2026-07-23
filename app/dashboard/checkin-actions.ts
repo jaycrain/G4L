@@ -16,7 +16,7 @@ import { addReclaimItemForMember, addDoorForMember } from '../../lib/member/refi
 import { markReclaimReclaimedByText, unmarkReclaimReclaimedByText, refineReclaimItemByText, removeReclaimItemByText, reorderReclaimList } from '../../lib/beats/store.ts';
 import { proposeEntry, playbookForAgent, isPlaybookSection } from '../../lib/playbook/store.ts';
 import { createMeasure, logReadingByLabel, measuresForAgent, findReclaimItemId, looksTrackable } from '../../lib/measure/store.ts';
-import { logCall, isCallType, isCallDomain, domainTally } from '../../lib/momentum/store.ts';
+import { logCall, isCallType, isCallDomain, domainTally, recentCalls } from '../../lib/momentum/store.ts';
 import { logMovement, isMovementKind, movementLogSummary } from '../../lib/movement/store.ts';
 import { redesignEnabled } from '../../lib/dashboard/redesign.ts';
 import { phaseSummary, type PhaseKey } from '../../lib/content/summaries.ts';
@@ -66,7 +66,7 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
   };
   try {
   await maybeFoldMemory(db, memberId); // distill anything that has aged out of recall (best-effort, no-op until due)
-  const [grinta, grintaReading, whyReading, skillsReading, pilotPlan, pilotTally, biggerWorld, qdProfile, qdRecent, consumedBites, profRows, idqRows, reclaimItems, beatRows, playbook, measures, linkedMeasureRows, facets, closedIds, lastClosedRows, forecast, experience] = await Promise.all([
+  const [grinta, grintaReading, whyReading, skillsReading, pilotPlan, pilotTally, pilotCallLog, biggerWorld, qdProfile, qdRecent, consumedBites, profRows, idqRows, reclaimItems, beatRows, playbook, measures, linkedMeasureRows, facets, closedIds, lastClosedRows, forecast, experience] = await Promise.all([
     getGrinta(db, memberId, dash.identityNoun),
     // Rebuild/Reclaim REGISTERS — all SUPPLEMENTARY context ("the agent knows X"), each null-safe downstream. Guard
     // EVERY one with .catch: a single missing/drifted register table (prod migrations don't auto-apply) must NEVER
@@ -77,6 +77,7 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
     latestSkillsReading(db, memberId).catch(() => null), // Rebuild B2 — the self-management profile the agent reflects (plain language)
     activeCoachingPlan<RebuildPilotPayload>(db, memberId, 'rebuild').catch(() => null), // Rebuild B3 — the active Lifestyle Pilot plan
     domainTally(db, memberId).catch(() => null), // Rebuild B3 — per-domain call tally (movement vs eating), OO
+    recentCalls(db, memberId, 12).catch(() => []), // the member's OWN logged entries — so the MA can notice a specific one
     latestBiggerWorldReading(db, memberId).catch(() => null), // Reclaim C2 — the member's chosen priorities (primary + momentum lever)
     activeQualityDayProfile(db, memberId).catch(() => null), // Reclaim C3 — the Quality-Day profile
     recentQualityDays(db, memberId).catch(() => []), // Reclaim C3 — recent Quality-Day logs
@@ -166,6 +167,18 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
     : [];
   const connect = await getConnectSummaryForAgent(db, memberId);
   const movementLog = redesignEnabled() ? await movementLogSummary(db, memberId).catch(() => '') : '';
+  // The member's own Momentum entries → made visible to the MA (CLAUDE.md: nothing the member sees is invisible to the
+  // agent). Give each a relative "when" so the companion can answer "did you notice my entry today?" precisely, and map
+  // the domain tag to the member's words (movement / eating). Includes untagged calls (the per-domain tally drops those).
+  const todayISO = new Date().toLocaleDateString('en-CA');
+  const yestISO = new Date(Date.now() - 86_400_000).toLocaleDateString('en-CA');
+  const whenLabel = (iso: string): string =>
+    iso === todayISO ? 'today' : iso === yestISO ? 'yesterday' : new Date(`${iso}T00:00:00`).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  const CALL_LABEL = { good_call: 'Good Call', false_start: 'False Start', quiet_day: 'Quiet Day' } as const;
+  const DOMAIN_WORD = { activity: 'movement', diet: 'eating' } as const;
+  const momentumLog = pilotCallLog.length
+    ? pilotCallLog.map((e) => ({ label: CALL_LABEL[e.type], domain: e.domain ? DOMAIN_WORD[e.domain] : null, note: e.note, when: whenLabel(e.loggedOn) }))
+    : null;
   return {
     today: new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }),
     displayName: dash.displayName,
@@ -195,6 +208,7 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
     skillProfile: skillsReading ? skillHighlights(skillsReading.scores) : null, // Rebuild B2 — strongest + growth edge (plain language)
     pilotPlan: pilotPlan?.payload ?? null, // Rebuild B3 — the active Lifestyle Pilot (their two committed changes)
     pilotCalls: pilotPlan ? pilotTally : null, // per-domain call tally, only while a pilot is active (OO)
+    momentumLog, // the member's OWN logged entries (with notes) — visible to the MA regardless of a pilot, incl. untagged
     reclaimPriorities: biggerWorld
       ? { primary: AUDIT_DOMAIN_LABEL[biggerWorld.priorities.primary], momentumLever: AUDIT_DOMAIN_LABEL[biggerWorld.priorities.momentumLever] }
       : null, // Reclaim C2 — the member's chosen priority + momentum lever (plain language)

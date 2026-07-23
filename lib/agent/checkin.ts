@@ -65,6 +65,12 @@ export type CheckinContext = {
   // companion can reflect the pattern (evidence-based, Pillar 3). Present only during an active pilot; false starts are
   // honest data, never a mark.
   pilotCalls?: { activity: { good: number; false: number }; diet: { good: number; false: number } } | null;
+  // Rebuild Momentum calls — the member's OWN logged entries (Good Call / False Start / Quiet Day + their free-text
+  // notes), newest first. The dashboard shows these in "Your log"; the companion MUST see them too (CLAUDE.md: nothing
+  // the member sees is invisible to the MA) so it can genuinely notice a specific entry ("did you see my ride?") and
+  // connect a call to the pilot commitments. Present regardless of an active pilot, and includes untagged calls (the
+  // tally above only counts tagged ones). Self-monitoring, never scored — a false start is honest data, never a mark.
+  momentumLog?: { label: string; domain: 'movement' | 'eating' | null; note: string | null; when: string }[] | null;
   // Reclaim C2 Bigger World Audit — the member's chosen priorities: the primary focus area + the momentum lever. The
   // agent knows these so it can support their chosen priority (never a ranking to grade or weaponize).
   reclaimPriorities?: { primary: string; momentumLever: string } | null;
@@ -159,6 +165,18 @@ function grintaStrandsLine(s: CheckinContext['grintaStrands']): string {
   return parts.length ? ` — strands ${parts.join(', ')}` : '';
 }
 
+// Render the member's own Momentum log entries into one compact line — the call, its domain (if tagged), the note (if
+// any), and when. So the companion can name a specific entry back, not just a count. Pure + testable.
+function momentumLogLine(log: NonNullable<CheckinContext['momentumLog']>): string {
+  return log
+    .map((e) => {
+      const tag = [e.domain, e.when].filter(Boolean).join(', ');
+      const head = tag ? `${e.label} (${tag})` : e.label;
+      return e.note ? `${head}: "${e.note}"` : head;
+    })
+    .join('; ');
+}
+
 export function contextBlock(c: CheckinContext): string {
   const dims = c.dimensions
     ? `ID Score dimensions (each out of 30): Physical ${c.dimensions.physical}, Self ${c.dimensions.self}, Social ${c.dimensions.social}, Outlook ${c.dimensions.outlook}`
@@ -225,6 +243,9 @@ export function contextBlock(c: CheckinContext): string {
     c.pilotCalls && (c.pilotCalls.activity.good + c.pilotCalls.activity.false + c.pilotCalls.diet.good + c.pilotCalls.diet.false) > 0
       ? `How the pilot's actually going (last two weeks, their own logged calls) — Movement: ${c.pilotCalls.activity.good} good, ${c.pilotCalls.activity.false} false starts. Eating: ${c.pilotCalls.diet.good} good, ${c.pilotCalls.diet.false} false starts. If it helps them see the pattern, reflect it warmly ("movement's been landing; eating's been the tougher one") — never a scoreboard, never a grade; a false start is honest data. Only raise it if it's useful to them.`
       : '',
+    c.momentumLog && c.momentumLog.length
+      ? `Their Momentum log — the exact entries they've logged on the dashboard ("Your log"), newest first. You SEE these; if they ask whether you noticed an entry, you did — reference the specific one, don't say you have no record of it: ${momentumLogLine(c.momentumLog)}. Self-monitoring, never scored — a false start is honest data, met not marked. ${c.pilotPlan ? "This is where they log their Lifestyle Pilot commitments (movement + eating). Tie a call to the relevant change, and gently encourage them to keep logging against their two commitments." : "When it fits, encourage the habit of logging calls — it's how they and you see the pattern together."}`
+      : null,
     c.movementLog
       ? `Off-device movement they've logged (Movement page or told you) — ${c.movementLog}. It's real evidence of the identity coming back; reflect it warmly when relevant, never as a number or a target. If they mention doing an activity off-device that isn't here, log it with the log_movement tool.`
       : null,

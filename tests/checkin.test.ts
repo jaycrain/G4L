@@ -55,6 +55,41 @@ test('contextBlock · the SURVEY Grinta Index owns the name + relabels the activ
   assert.doesNotMatch(block, /Grinta Index: 62/, 'the activity score never keeps the Index name when the survey exists');
 });
 
+test('contextBlock · the member\'s Momentum entries are visible to the MA (never "no record of it")', () => {
+  // Jay's walk: the member logged calls on the dashboard, then the companion said it had "no Momentum entry from you."
+  // The MA must SEE the actual entries — with their notes and when — so it can notice a specific one.
+  const block = contextBlock({
+    ...base,
+    pilotPlan: { activityChange: 'a 30-minute morning walk, 2-3 days', dietChange: 'a vegetable at dinner' },
+    momentumLog: [
+      { label: 'Good Call', domain: 'movement', note: 'Had a great VO2 Max 90 minute ride today', when: 'today' },
+      { label: 'False Start', domain: 'eating', note: 'Drank wine last night', when: 'today' },
+      { label: 'Quiet Day', domain: null, note: null, when: 'yesterday' },
+    ],
+  });
+  assert.match(block, /Momentum log/i, 'the log is surfaced');
+  assert.match(block, /VO2 Max 90 minute ride/i, 'the exact entry note reaches the agent');
+  assert.match(block, /Drank wine last night/i, 'a false start note too — honest data, not hidden');
+  assert.match(block, /movement, today/i, 'domain + recency so it can answer "did you notice my entry today"');
+  assert.match(block, /if they ask whether you noticed an entry, you did/i, 'explicitly forbids the "no record" deflection');
+  assert.match(block, /log their Lifestyle Pilot commitments/i, 'with a pilot active, it ties calls to the commitments');
+});
+
+test('contextBlock · Momentum entries surface even with NO active pilot (untagged calls included)', () => {
+  const block = contextBlock({
+    ...base,
+    pilotPlan: null,
+    momentumLog: [{ label: 'Good Call', domain: null, note: 'Followed up 64th birthday ride with a recovery ride', when: 'today' }],
+  });
+  assert.match(block, /64th birthday ride/i, 'visible without a pilot');
+  assert.match(block, /encourage the habit of logging/i, 'no-pilot framing nudges the logging habit, not pilot commitments');
+});
+
+test('contextBlock · no Momentum log → no momentum line (no phantom section)', () => {
+  assert.doesNotMatch(contextBlock({ ...base, momentumLog: null }), /Momentum log/i);
+  assert.doesNotMatch(contextBlock({ ...base, momentumLog: [] }), /Momentum log/i);
+});
+
 test('contextBlock · the phase "why this matters" reaches the MA in the words the member sees', () => {
   const withWhy = contextBlock({ ...base, currentPhaseWhy: 'Put focused effort into the body — small, real, repeatable.' });
   assert.match(withWhy, /Why this phase matters \(what the member sees\)/);
