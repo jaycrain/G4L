@@ -1939,7 +1939,7 @@ body.redesign-on .confidential-footer { display: none; } /* full-bleed app — n
 }
 
 /* The navy hero — headline + guiding line + CTA, with the merged 4R ring beside it (phase + progress). */
-.tri-hero { padding: 20px 24px 22px; border-bottom: 1px solid rgba(255, 255, 255, 0.10); display: flex; gap: 20px; align-items: center; }
+.tri-hero { flex: 0 0 auto; padding: 20px 24px 22px; border-bottom: 1px solid rgba(255, 255, 255, 0.10); display: flex; gap: 20px; align-items: center; }
 .tri-hero-text { flex: 1; min-width: 0; }
 .tri-hero-eyebrow { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.07em; color: #4FB3B4; }
 .tri-hero-title { margin: 6px 0 0; font-size: 27px; line-height: 1.1; font-weight: 800; color: #fff; }

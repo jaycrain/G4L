@@ -88,15 +88,14 @@ export default function TriptychCenter({
     });
   }, [memberId]);
 
-  // hasSent = the member has sent a message THIS visit. Drives two things: the autoscroll (land at the top on arrival so
-  // the hero is "start here"; follow the newest message once they engage) and the MOBILE hero collapse (per-visit, Jay:
-  // full hero every visit, tuck to a strip only after they start typing today — not history-based).
-  const [hasSent, setHasSent] = useState(false);
+  // The Session info (hero) is pinned, so the thread just always follows the newest message.
   useEffect(() => {
-    if (!hasSent) return;
     const el = chatRef.current;
     if (el) el.scrollTop = el.scrollHeight;
-  }, [messages, pending, hasSent]);
+  }, [messages, pending]);
+  // hasSent = the member has sent a message THIS visit — drives the MOBILE hero collapse (per-visit, Jay: full hero every
+  // visit, tuck to a strip only once they start typing today, so the thread gets the small screen).
+  const [hasSent, setHasSent] = useState(false);
 
   // Auto-grow the composer — bulletproof: EMPTY clears the inline height so the CSS fixed 44px applies (no mount-time
   // scrollHeight measurement, which was unreliable with border-box + padding and pinned the empty box tall on prod).
@@ -171,12 +170,9 @@ export default function TriptychCenter({
         <span className="tri-comp-dot" aria-hidden="true" /> You’re talking with the G4L Companion — an AI that remembers your journey. It won’t grade you.
       </div>
 
-      {/* The hero + keeper + thread all live in ONE scroll area, so the thread has room and the composer (below) is
-          always reachable — the pinned-hero version squeezed the thread to a sliver and pushed the composer off-screen on
-          mobile. Land at the top (hero = "start here"); follow the newest message only after the member sends. */}
-      <div ref={chatRef} className="tri-comp-scroll">
-      {/* The hero — the current navy hero brought into the center: headline + guiding line + CTA, with the merged 4R ring
-          (phase + progress, the bullseye's grammar) beside it. */}
+      {/* Session info (the hero) is PINNED at the top — it stays put as the thread scrolls beneath, so the member always
+          sees which step they're on (Jay, 2026-07-23). On mobile it collapses to a strip once conversing so the thread
+          still gets room; the composer stays pinned below. */}
       {hero && (
         <div className="tri-hero" data-tour="program">
           <div className="tri-hero-text">
@@ -206,6 +202,8 @@ export default function TriptychCenter({
         </div>
       )}
 
+      {/* Keeper + thread scroll beneath the pinned hero. */}
+      <div ref={chatRef} className="tri-comp-scroll">
       {/* A surfaced keeper — the member's OWN kept line, held in the Companion's voice (Scott's "KEPT · your true line"). */}
       {keeper && (
         <div className="tri-keeper">

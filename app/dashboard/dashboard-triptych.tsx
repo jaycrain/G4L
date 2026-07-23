@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import RedesignChrome from './redesign-chrome.tsx';
 import TriptychCenter from './triptych-center.tsx';
@@ -41,6 +41,24 @@ export default function DashboardTriptych({
   right: React.ReactNode; // "What's Next" — server-rendered panels
 }) {
   const [pane, setPane] = useState<Pane>('center'); // mobile: which pane is showing (desktop shows all three)
+  // Remember the last pane across a subpage round-trip (Jay): leave "What's Next" → tap a See-more → ← Dashboard should
+  // land you back on "What's Next", not reset to center. Restored AFTER mount (not the initial state) so SSR and the
+  // first client render both start on 'center' — no hydration mismatch. Session-scoped; a fresh tab starts at center.
+  useEffect(() => {
+    try {
+      const saved = sessionStorage.getItem('g4l-tri-pane');
+      if (saved === 'left' || saved === 'right' || saved === 'center') setPane(saved);
+    } catch {
+      /* sessionStorage unavailable (private mode) — just default to center */
+    }
+  }, []);
+  useEffect(() => {
+    try {
+      sessionStorage.setItem('g4l-tri-pane', pane);
+    } catch {
+      /* no-op */
+    }
+  }, [pane]);
 
   return (
     <>
