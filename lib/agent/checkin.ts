@@ -9,6 +9,7 @@ import { MEMBER_AGENT_SYSTEM_PROMPT } from './system-prompt.ts';
 import { detectCrisis, CRISIS_RESPONSE_US, AI_DISCLOSURE } from './governance.ts';
 import { reclaimAddIntent } from '../member/reclaim.ts';
 import { rewireEnabled } from './rewire.ts';
+import { rebuildEnabled } from './rebuild.ts';
 import { logCallIntent } from '../momentum/store.ts';
 import { redesignEnabled } from '../dashboard/redesign.ts';
 import { connectContextLines, type ConnectAgentSummary } from '../connect/agent.ts';
@@ -71,6 +72,10 @@ export type CheckinContext = {
   // connect a call to the pilot commitments. Present regardless of an active pilot, and includes untagged calls (the
   // tally above only counts tagged ones). Self-monitoring, never scored — a false start is honest data, never a mark.
   momentumLog?: { label: string; domain: 'movement' | 'eating' | null; note: string | null; when: string }[] | null;
+  // The member's standing COMMITMENTS (0060/0061) — the specific movement/eating changes they chose to hold themselves
+  // to, and the Reclaim outcome each serves (the ladder). This is the accountability spine: the agent holds them to
+  // THEIR OWN desired outcomes (never an external standard, never grading). Member-set + editable via set_commitment.
+  commitments?: { domain: 'movement' | 'eating'; text: string; serves: string | null }[] | null;
   // Reclaim C2 Bigger World Audit — the member's chosen priorities: the primary focus area + the momentum lever. The
   // agent knows these so it can support their chosen priority (never a ranking to grade or weaponize).
   reclaimPriorities?: { primary: string; momentumLever: string } | null;
@@ -243,6 +248,9 @@ export function contextBlock(c: CheckinContext): string {
     c.pilotCalls && (c.pilotCalls.activity.good + c.pilotCalls.activity.false + c.pilotCalls.diet.good + c.pilotCalls.diet.false) > 0
       ? `How the pilot's actually going (last two weeks, their own logged calls) — Movement: ${c.pilotCalls.activity.good} good, ${c.pilotCalls.activity.false} false starts. Eating: ${c.pilotCalls.diet.good} good, ${c.pilotCalls.diet.false} false starts. If it helps them see the pattern, reflect it warmly ("movement's been landing; eating's been the tougher one") — never a scoreboard, never a grade; a false start is honest data. Only raise it if it's useful to them.`
       : '',
+    c.commitments && c.commitments.length
+      ? `Their standing COMMITMENTS — the specific changes they chose to hold themselves to, and the Reclaim outcome each moves toward: ${c.commitments.map((x) => `${x.domain} — "${x.text}"${x.serves ? ` → toward "${x.serves}"` : ''}`).join('; ')}. This is the accountability spine, and it's to THEIR OWN goals, never an external standard. Hold them to it warmly: reflect follow-through as the identity coming back (normalize, NEVER praise or grade), meet a lapse with curiosity and an invitation (never a scold, never a compliance score), and tie it back to what they said they want. They can change or set aside a commitment anytime with you — it's theirs; use set_commitment when they do.`
+      : null,
     c.momentumLog && c.momentumLog.length
       ? `Their Momentum log — the exact entries they've logged on the dashboard ("Your log"), newest first. You SEE these; if they ask whether you noticed an entry, you did — reference the specific one, don't say you have no record of it: ${momentumLogLine(c.momentumLog)}. Self-monitoring, never scored — a false start is honest data, met not marked. ${c.pilotPlan ? "This is where they log their Lifestyle Pilot commitments (movement + eating). Tie a call to the relevant change, and gently encourage them to keep logging against their two commitments." : "When it fits, encourage the habit of logging calls — it's how they and you see the pattern together."}`
       : null,
@@ -583,6 +591,30 @@ const LOG_MOVEMENT_TOOL = {
   },
 };
 
+// Commitments (0060/0061) — the member's standing movement + eating changes, member-set + editable, laddered to the
+// Reclaim outcome each serves. Offered when REBUILD is staged (the phase that introduces the two changes). This is the
+// durable home the old B3-artifact write kept losing; the Companion is how a member names/updates one in conversation.
+const SET_COMMITMENT_TOOL = {
+  name: 'set_commitment',
+  description:
+    "Record or update the member's standing COMMITMENT — one small, specific movement change (domain=activity) or " +
+    "eating change (domain=diet) they're choosing to hold themselves to, in service of their Reclaim List. Call it when " +
+    "they NAME or CHANGE a commitment ('I'll walk three mornings a week', 'make my eating change two veg at dinner'). " +
+    "One active per domain — a new one replaces the old (the old is kept as history, never deleted). Words alone don't " +
+    "save it — you MUST call this tool, then reflect it back in their words. Pass `serves` with the Reclaim List outcome " +
+    "this moves toward (their wording, e.g. 'get off all meds') so it ladders to what they actually want. Only save a " +
+    "SPECIFIC, member-affirmed change — if it's vague ('exercise more'), keep coaching until it's real; don't save it.",
+  input_schema: {
+    type: 'object',
+    properties: {
+      domain: { type: 'string', enum: ['activity', 'diet'], description: 'activity = movement, diet = eating' },
+      text: { type: 'string', description: "the change, small + specific, in the member's own words" },
+      serves: { type: 'string', description: "optional — the Reclaim List outcome this commitment moves toward, in their words (the ladder)" },
+    },
+    required: ['domain', 'text'],
+  },
+};
+
 async function liveReply(
   system: string,
   history: CheckinMessage[],
@@ -611,6 +643,7 @@ async function liveReply(
     ...REFINE_TOOLS,
     ...(rewireEnabled() ? [LOG_CALL_TOOL] : []),
     ...(redesignEnabled() ? [LOG_MOVEMENT_TOOL] : []),
+    ...(rebuildEnabled() ? [SET_COMMITMENT_TOOL] : []),
   ];
   const toolsFor = () => (executor ? (useFetch ? [...clientTools, WEB_FETCH_TOOL] : clientTools) : undefined);
   const model = process.env.ANTHROPIC_MODEL ?? 'claude-sonnet-4-6';

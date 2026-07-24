@@ -10,7 +10,15 @@ import type { CallDomain } from '../momentum/store.ts';
 
 export type CommitmentDomain = CallDomain; // 'activity' | 'diet' — one vocabulary across momentum + commitments
 export type CommitmentSource = 'self' | 'b3' | 'companion';
-export type Commitment = { id: string; domain: CommitmentDomain; text: string; source: CommitmentSource; updatedAt: string };
+export type Commitment = {
+  id: string;
+  domain: CommitmentDomain;
+  text: string;
+  source: CommitmentSource;
+  updatedAt: string;
+  reclaimItemId: string | null; // the Reclaim outcome this commitment serves (the ladder), if linked
+  reclaimItemText: string | null; // resolved for display/context — null if unlinked or the item was removed
+};
 
 export const isCommitmentDomain = (d: unknown): d is CommitmentDomain => d === 'activity' || d === 'diet';
 export const DOMAIN_WORD: Record<CommitmentDomain, string> = { activity: 'movement', diet: 'eating' };
@@ -18,12 +26,18 @@ export const DOMAIN_WORD: Record<CommitmentDomain, string> = { activity: 'moveme
 // The member's ACTIVE commitments (0–2, one per domain), newest first. Drift-hardened by the caller (empty on a
 // pre-0060 DB). Released commitments are history — not returned here.
 export async function activeCommitments(db: Db, memberId: string): Promise<Commitment[]> {
-  const { rows } = await db.query<{ id: string; domain: string; text: string; source: string; updated_at: string }>(
-    `select id, domain, text, source, updated_at::text as updated_at
-       from commitment where member_id=$1 and status='active' order by updated_at desc`,
+  const { rows } = await db.query<{ id: string; domain: string; text: string; source: string; updated_at: string; reclaim_item_id: string | null; reclaim_item_text: string | null }>(
+    `select c.id, c.domain, c.text, c.source, c.updated_at::text as updated_at, c.reclaim_item_id,
+            r.text as reclaim_item_text
+       from commitment c
+       left join reclaim_item r on r.id = c.reclaim_item_id and r.removed_at is null
+      where c.member_id=$1 and c.status='active' order by c.updated_at desc`,
     [memberId],
   );
-  return rows.map((r) => ({ id: r.id, domain: r.domain as CommitmentDomain, text: r.text, source: r.source as CommitmentSource, updatedAt: r.updated_at }));
+  return rows.map((r) => ({
+    id: r.id, domain: r.domain as CommitmentDomain, text: r.text, source: r.source as CommitmentSource,
+    updatedAt: r.updated_at, reclaimItemId: r.reclaim_item_id, reclaimItemText: r.reclaim_item_text,
+  }));
 }
 
 // { activity?: text, diet?: text } — the shape the momentum log + Companion use to tag a call to a commitment.
@@ -42,17 +56,25 @@ export async function setCommitment(
   domain: CommitmentDomain,
   text: string,
   source: CommitmentSource = 'self',
+  reclaimItemId?: string | null,
 ): Promise<{ ok: true; changed: boolean }> {
   const clean = (text ?? '').trim();
   if (!clean) throw new Error('setCommitment: empty text');
   const current = (await activeCommitments(db, memberId)).find((c) => c.domain === domain);
-  if (current && current.text.trim() === clean) return { ok: true, changed: false }; // unchanged → no churn/history spam
+  // Unchanged text AND unchanged link → no churn/history spam. (Re-pointing the ladder counts as a change.)
+  if (current && current.text.trim() === clean && (reclaimItemId === undefined || current.reclaimItemId === reclaimItemId)) {
+    return { ok: true, changed: false };
+  }
   await db.query(`update commitment set status='released', updated_at=now() where member_id=$1 and domain=$2 and status='active'`, [memberId, domain]);
-  await db.query(`insert into commitment (member_id, domain, text, source) values ($1, $2, $3, $4)`, [memberId, domain, clean, source]);
+  await db.query(
+    `insert into commitment (member_id, domain, text, source, reclaim_item_id) values ($1, $2, $3, $4, $5)`,
+    [memberId, domain, clean, source, reclaimItemId ?? null],
+  );
   return { ok: true, changed: true };
 }
 
 // Release the active commitment for a domain (set aside, kept as history — never a hard delete). No-op if none active.
+// (The Reclaim-item ladder link is resolved from the member's words by findReclaimItemId in lib/measure/store.)
 export async function releaseCommitment(db: Db, memberId: string, domain: CommitmentDomain): Promise<void> {
   await db.query(`update commitment set status='released', updated_at=now() where member_id=$1 and domain=$2 and status='active'`, [memberId, domain]);
 }

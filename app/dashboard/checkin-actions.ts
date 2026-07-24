@@ -17,6 +17,7 @@ import { markReclaimReclaimedByText, unmarkReclaimReclaimedByText, refineReclaim
 import { proposeEntry, playbookForAgent, isPlaybookSection } from '../../lib/playbook/store.ts';
 import { createMeasure, logReadingByLabel, measuresForAgent, findReclaimItemId, looksTrackable } from '../../lib/measure/store.ts';
 import { logCall, isCallType, isCallDomain, domainTally, recentCalls } from '../../lib/momentum/store.ts';
+import { setCommitment, activeCommitments, isCommitmentDomain, DOMAIN_WORD } from '../../lib/commitments/store.ts';
 import { logMovement, isMovementKind, movementLogSummary } from '../../lib/movement/store.ts';
 import { redesignEnabled } from '../../lib/dashboard/redesign.ts';
 import { phaseSummary, type PhaseKey } from '../../lib/content/summaries.ts';
@@ -24,6 +25,7 @@ import { phaseSummary, type PhaseKey } from '../../lib/content/summaries.ts';
 const isPhaseKey = (k: string | null): k is PhaseKey =>
   k === 'reconnect' || k === 'rewire' || k === 'rebuild' || k === 'reclaim';
 import { rewireEnabled } from '../../lib/agent/rewire.ts';
+import { rebuildEnabled } from '../../lib/agent/rebuild.ts';
 import { maybeFoldMemory } from '../../lib/agent/memory.ts';
 import { asSnapshot, diffSnapshot, type DashboardSnapshot } from '../../lib/agent/changes.ts';
 import { getGrinta } from '../../lib/grinta/index.ts';
@@ -66,7 +68,7 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
   };
   try {
   await maybeFoldMemory(db, memberId); // distill anything that has aged out of recall (best-effort, no-op until due)
-  const [grinta, grintaReading, whyReading, skillsReading, pilotPlan, pilotTally, pilotCallLog, biggerWorld, qdProfile, qdRecent, consumedBites, profRows, idqRows, reclaimItems, beatRows, playbook, measures, linkedMeasureRows, facets, closedIds, lastClosedRows, forecast, experience] = await Promise.all([
+  const [grinta, grintaReading, whyReading, skillsReading, pilotPlan, pilotTally, pilotCallLog, memberCommitments, biggerWorld, qdProfile, qdRecent, consumedBites, profRows, idqRows, reclaimItems, beatRows, playbook, measures, linkedMeasureRows, facets, closedIds, lastClosedRows, forecast, experience] = await Promise.all([
     getGrinta(db, memberId, dash.identityNoun),
     // Rebuild/Reclaim REGISTERS — all SUPPLEMENTARY context ("the agent knows X"), each null-safe downstream. Guard
     // EVERY one with .catch: a single missing/drifted register table (prod migrations don't auto-apply) must NEVER
@@ -78,6 +80,7 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
     activeCoachingPlan<RebuildPilotPayload>(db, memberId, 'rebuild').catch(() => null), // Rebuild B3 — the active Lifestyle Pilot plan
     domainTally(db, memberId).catch(() => null), // Rebuild B3 — per-domain call tally (movement vs eating), OO
     recentCalls(db, memberId, 12).catch(() => []), // the member's OWN logged entries — so the MA can notice a specific one
+    activeCommitments(db, memberId).catch(() => []), // standing commitments (0060/0061) — the accountability spine, laddered to Reclaim
     latestBiggerWorldReading(db, memberId).catch(() => null), // Reclaim C2 — the member's chosen priorities (primary + momentum lever)
     activeQualityDayProfile(db, memberId).catch(() => null), // Reclaim C3 — the Quality-Day profile
     recentQualityDays(db, memberId).catch(() => []), // Reclaim C3 — recent Quality-Day logs
@@ -209,6 +212,10 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
     pilotPlan: pilotPlan?.payload ?? null, // Rebuild B3 — the active Lifestyle Pilot (their two committed changes)
     pilotCalls: pilotPlan ? pilotTally : null, // per-domain call tally, only while a pilot is active (OO)
     momentumLog, // the member's OWN logged entries (with notes) — visible to the MA regardless of a pilot, incl. untagged
+    // Standing commitments (the accountability spine) — mapped to member words + the Reclaim outcome each serves.
+    commitments: memberCommitments.length
+      ? memberCommitments.map((c) => ({ domain: DOMAIN_WORD[c.domain], text: c.text, serves: c.reclaimItemText }))
+      : null,
     reclaimPriorities: biggerWorld
       ? { primary: AUDIT_DOMAIN_LABEL[biggerWorld.priorities.primary], momentumLever: AUDIT_DOMAIN_LABEL[biggerWorld.priorities.momentumLever] }
       : null, // Reclaim C2 — the member's chosen priority + momentum lever (plain language)
@@ -482,6 +489,29 @@ export async function sendCheckin(memberId: string, memberMessage: string): Prom
         await logMovement(db, memberId, { activityType: kind, note, occurredOn: on, source: 'companion' });
         mutated = true;
         return { ok: true, message: `Logged their ${kind} to their Movement history. Reflect it back warmly — name what they did and what it says about who they're becoming; never a bare number or a grade.` };
+      }
+      if (name === 'set_commitment') {
+        // First-class commitments (REBUILD-gated) — the member names/updates a standing movement/eating change they
+        // hold themselves to, laddered to the Reclaim outcome it serves. This is the durable home the old B3 artifact
+        // kept losing; the SET path is not swallowed (setCommitment throws on empty).
+        if (!rebuildEnabled()) return { ok: false, message: 'Not available.' };
+        const domain = input.domain;
+        if (!isCommitmentDomain(domain)) return { ok: false, message: 'Not saved — a commitment must be activity (movement) or diet (eating).' };
+        const text = typeof input.text === 'string' ? input.text.trim() : '';
+        if (!text) return { ok: false, message: 'Not saved — keep coaching until the change is specific, then call it again.' };
+        // Optional ladder link: resolve the "serves" wording to one of their Reclaim items (fuzzy; null if no match).
+        const serves = typeof input.serves === 'string' ? input.serves.trim() : '';
+        const reclaimItemId = serves ? await findReclaimItemId(db, memberId, serves).catch(() => null) : null;
+        try {
+          await setCommitment(db, memberId, domain, text, 'companion', reclaimItemId);
+          mutated = true;
+          return {
+            ok: true,
+            message: `Saved their ${DOMAIN_WORD[domain]} commitment${reclaimItemId ? ', linked to the Reclaim outcome it serves' : ''}. Reflect it back in their OWN words as the thing they've chosen to hold themselves to${reclaimItemId ? ', and tie it to what they said they want' : ''} — never grade it, never praise; name it as theirs.`,
+          };
+        } catch {
+          return { ok: false, message: 'Something went wrong saving that — ask them to say it once more.' };
+        }
       }
       return { ok: false, message: 'Unknown tool.' };
     };

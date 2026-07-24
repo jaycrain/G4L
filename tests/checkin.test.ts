@@ -85,6 +85,23 @@ test('contextBlock · Momentum entries surface even with NO active pilot (untagg
   assert.match(block, /encourage the habit of logging/i, 'no-pilot framing nudges the logging habit, not pilot commitments');
 });
 
+test('contextBlock · standing commitments reach the MA as accountability to the member\'s OWN outcomes', () => {
+  const block = contextBlock({
+    ...base,
+    commitments: [
+      { domain: 'movement', text: 'a 30-minute morning walk, 3 days', serves: 'Ride 115 miles per week' },
+      { domain: 'eating', text: 'a vegetable at dinner', serves: null },
+    ],
+  });
+  assert.match(block, /standing COMMITMENTS/i, 'the commitments are surfaced');
+  assert.match(block, /30-minute morning walk/i, 'the movement commitment');
+  assert.match(block, /toward "Ride 115 miles per week"/i, 'laddered to the Reclaim outcome it serves');
+  assert.match(block, /THEIR OWN goals/i, 'framed as accountability to their own goals, not an external standard');
+  assert.match(block, /never praise or grade/i, 'holds the reflect-not-praise governance');
+  assert.match(block, /never a scold, never a compliance score/i, 'lapses met with curiosity, never surveillance');
+  assert.doesNotMatch(contextBlock({ ...base, commitments: null }), /standing COMMITMENTS/i, 'no phantom section when none');
+});
+
 test('contextBlock · no Momentum log → no momentum line (no phantom section)', () => {
   assert.doesNotMatch(contextBlock({ ...base, momentumLog: null }), /Momentum log/i);
   assert.doesNotMatch(contextBlock({ ...base, momentumLog: [] }), /Momentum log/i);

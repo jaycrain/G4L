@@ -78,3 +78,25 @@ test('setCommitment rejects empty text (never a silent no-op that loses the data
   const m = await member(db);
   await assert.rejects(() => setCommitment(db, m, 'activity', '   '), /empty/);
 });
+
+test('a commitment ladders to the Reclaim item it serves, resolved for display', async () => {
+  const db = new PGlite() as unknown as Db;
+  await applySchema(db);
+  const m = await member(db);
+  const { rows } = await db.query<{ id: string }>(
+    `insert into reclaim_item (member_id, text) values ($1, 'Ride 115 miles per week') returning id`,
+    [m],
+  );
+  const reclaimId = rows[0]!.id;
+
+  await setCommitment(db, m, 'activity', 'a 30-minute morning walk, 3 days', 'companion', reclaimId);
+  const [c] = await activeCommitments(db, m);
+  assert.equal(c!.reclaimItemId, reclaimId, 'the link is stored');
+  assert.equal(c!.reclaimItemText, 'Ride 115 miles per week', 'and resolved to the outcome text for the ladder');
+
+  // Removing the Reclaim item leaves the commitment standing, just unlinked in the read (left join + removed_at guard).
+  await db.query('update reclaim_item set removed_at=now() where id=$1', [reclaimId]);
+  const [c2] = await activeCommitments(db, m);
+  assert.equal(c2!.text, 'a 30-minute morning walk, 3 days', 'commitment survives');
+  assert.equal(c2!.reclaimItemText, null, 'the removed outcome no longer resolves');
+});
