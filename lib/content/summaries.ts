@@ -5,7 +5,7 @@
 //
 // Copy is VERBATIM from G4L_Session_Summaries_Finalized.md + G4L_Phase_Summaries.md (2026-07-20), voice-passed by Greg
 // with the causality discipline intact ("research suggests… can/may", never a guarantee) — do NOT re-voice or soften.
-// Member-facing LABELS are sweep-provisional (the Fade, the Spark space, Smart Choices/False Starts, Quality Days, the
+// Member-facing LABELS are sweep-provisional (the Fade, the Spark space, Good Calls/False Starts, Quality Days, the
 // Reclaim List): they live only as prose inside these strings, never as structural tokens — so the sweep edits words
 // here without touching any wiring. "The Spark space" in particular is a placeholder and may change.
 
@@ -52,7 +52,7 @@ export const ASSET_SUMMARIES: Record<AssetId, Summary> = {
   },
   b3: {
     short: 'Watch your everyday choices for a week and learn how your lifestyle actually works.',
-    full: 'You pick one small movement habit and one small eating habit, then watch how they actually play out over a week — the Smart Choices, the False Starts, the obstacles you didn’t see coming. It’s a week of noticing, with nothing graded. Research suggests self-monitoring sharpens your awareness and makes the next change more realistic. You end with a clearer picture of what helps, what gets in your way, and what to adjust.',
+    full: 'You pick one small movement habit and one small eating habit, then watch how they actually play out over a week — the Good Calls, the False Starts, the obstacles you didn’t see coming. It’s a week of noticing, with nothing graded. Research suggests self-monitoring sharpens your awareness and makes the next change more realistic. You end with a clearer picture of what helps, what gets in your way, and what to adjust.',
   },
   c1: {
     short: 'Revisit your Reclaim List now that you know yourself better.',
