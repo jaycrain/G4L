@@ -1900,8 +1900,19 @@ body.redesign-on .confidential-footer { display: none; } /* full-bleed app — n
 .tri-stub-h { font-weight: 800; font-size: 15px; color: #6b7680; text-transform: uppercase; letter-spacing: 0.05em; }
 .tri-stub-s { font-size: 13px; color: #9a9791; }
 
+/* The MEMBER strip — name · who they're reclaiming · Phase, with the My Story nav. Slim, above the columns. */
+.tri-member { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 4px; }
+.tri-member-id { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 12px; min-width: 0; }
+.tri-member-name { font-weight: 800; font-size: 18px; color: var(--navy); }
+.tri-member-reclaim { font-size: 14px; color: #6b7680; }
+.tri-member-phase { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; color: var(--teal); background: #e7f2f2; padding: 3px 9px; border-radius: 100px; align-self: center; }
+.tri-member-story { font-weight: 700; font-size: 14px; color: var(--teal); white-space: nowrap; text-decoration: none; }
+.tri-member-story:hover { text-decoration: underline; }
+
 @media (max-width: 1000px) {
   .tri-app { padding: 12px; gap: 12px; }
+  .tri-member-name { font-size: 16px; }
+  .tri-member-reclaim { font-size: 13px; }
   /* Fixed compact height; buttons stretch to fill and center their text. The `margin: 0` is load-bearing — the global
      `button,.btn` rule sets margin-top:1.5rem, which was pushing every tab ~24px down and inflating the bar. */
   .tri-seg { display: flex; align-items: stretch; gap: 4px; background: #eceae6; border-radius: 100px; padding: 3px; flex: 0 0 auto; height: 42px; box-sizing: border-box; }

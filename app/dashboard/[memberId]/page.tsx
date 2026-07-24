@@ -87,11 +87,19 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
     // docked-rail dashboard) and is flag-gated on top, so DASH_TRIPTYCH off → the current redesign dashboard is
     // untouched. PHASE 1: empty shell to prove the layout/fold on both breakpoints.
     if (dashboardTriptychEnabled()) {
-      const [hero, keeper, ct] = await Promise.all([
+      const [hero, keeper, ct, facets, forecast] = await Promise.all([
         heroCard(db, memberId),
         centerKeeper(db, memberId),
         ceremonyTourData(db, memberId, dash),
+        getFacets(db, memberId).catch(() => [] as string[]),
+        getForecast(db, memberId).catch(() => null),
       ]);
+      // The MEMBER strip (Jay: the one panel the triptych dropped) — who they are + what they're reclaiming + the Phase
+      // they're in, with the "My Story" nav. identitySelves prefers their named selves, else "the {identityNoun}".
+      const identitySelves = facets.length ? facets.join(' · ') : dash.identityNoun ? `the ${dash.identityNoun}` : null;
+      const activePhaseKey = forecast?.phases.find((p) => p.status === "You're here")?.phase ?? null;
+      const PHASE_LABEL: Record<string, string> = { reconnect: 'Reconnect', rewire: 'Rewire', rebuild: 'Rebuild', reclaim: 'Reclaim' };
+      const phaseLabel = activePhaseKey ? PHASE_LABEL[activePhaseKey] ?? null : null;
       return (
         <>
           {/* First-arrival ceremony + tour — the triptych returns early, so it renders these itself (parity with the
@@ -111,6 +119,9 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
             firstName={firstName(dash.displayName)}
             displayName={dash.displayName}
             avatarUrl={dash.avatarUrl}
+            identitySelves={identitySelves}
+            phaseLabel={phaseLabel}
+            hasStory={!!dash.identityParagraph}
             hero={hero}
             keeper={keeper}
             left={<TriptychLeft db={db} memberId={memberId} dash={dash} />}

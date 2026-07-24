@@ -26,6 +26,9 @@ export default function DashboardTriptych({
   firstName,
   displayName,
   avatarUrl,
+  identitySelves,
+  phaseLabel,
+  hasStory,
   hero,
   keeper,
   left,
@@ -35,6 +38,9 @@ export default function DashboardTriptych({
   firstName: string;
   displayName: string;
   avatarUrl?: string | null;
+  identitySelves?: string | null; // who they're reclaiming, e.g. "the Athlete" (or named selves joined)
+  phaseLabel?: string | null; // the R they're in now, e.g. "Rebuild"
+  hasStory?: boolean; // show the "My Story" nav only once their narrative exists
   hero: HeroCard | null;
   keeper: CenterKeeper | null;
   left: React.ReactNode; // "Where You Are" — server-rendered panels passed in (same pattern as RedesignShell's children)
@@ -92,6 +98,20 @@ export default function DashboardTriptych({
       </div>
 
       <div className={`tri-app pane-${pane}`}>
+        {/* The MEMBER strip — the one panel the triptych originally dropped (Jay): who they are + what they're
+            reclaiming + the Phase they're in, with the My Story nav. Full-width, always visible above the columns. */}
+        {(identitySelves || hasStory) && (
+          <div className="tri-member">
+            <div className="tri-member-id">
+              <span className="tri-member-name">{displayName}</span>
+              {identitySelves && <span className="tri-member-reclaim">Reclaiming {identitySelves}</span>}
+              {phaseLabel && <span className="tri-member-phase">{phaseLabel}</span>}
+            </div>
+            {hasStory && (
+              <Link href={`/story/${memberId}`} className="tri-member-story" prefetch={false}>My Story →</Link>
+            )}
+          </div>
+        )}
         {/* Mobile-only segmented control (CSS-shown ≤1000px). Composer lives at the foot of the center pane, so this
             wayfinding sits at the TOP, not a bottom tab bar. */}
         <div className="tri-seg" role="tablist" aria-label="Dashboard sections">
