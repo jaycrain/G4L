@@ -15,7 +15,7 @@ import { getReclaimItems } from '../../lib/beats/store.ts';
 import { addReclaimItemForMember, addDoorForMember } from '../../lib/member/refine.ts';
 import { markReclaimReclaimedByText, unmarkReclaimReclaimedByText, refineReclaimItemByText, removeReclaimItemByText, reorderReclaimList } from '../../lib/beats/store.ts';
 import { proposeEntry, playbookForAgent, isPlaybookSection } from '../../lib/playbook/store.ts';
-import { createMeasure, logReadingByLabel, measuresForAgent, findReclaimItemId, looksTrackable } from '../../lib/measure/store.ts';
+import { createMeasure, logReadingByLabel, updateMeasure, archiveMeasure, measuresForAgent, findReclaimItemId, looksTrackable } from '../../lib/measure/store.ts';
 import { logCall, isCallType, isCallDomain, domainTally, recentCalls } from '../../lib/momentum/store.ts';
 import { setCommitment, activeCommitments, isCommitmentDomain, DOMAIN_WORD } from '../../lib/commitments/store.ts';
 import { logMovement, isMovementKind, movementLogSummary } from '../../lib/movement/store.ts';
@@ -457,6 +457,29 @@ export async function sendCheckin(memberId: string, memberMessage: string): Prom
           return { ok: false, message: "Couldn't find a measure by that name. If they want to start tracking it, use create_measure first." };
         }
         return { ok: false, message: 'Not logged — that reading was not a number.' };
+      }
+      if (name === 'update_tracker') {
+        // #79 — member-confirmed edit to a tracker's target/direction. Their tracker; never a silent change.
+        const target = typeof input.target_value === 'number' ? input.target_value : Number(input.target_value);
+        const patch: { targetValue?: number | null; direction?: 'down' | 'up' } = {};
+        if (Number.isFinite(target)) patch.targetValue = target;
+        if (input.direction === 'up' || input.direction === 'down') patch.direction = input.direction;
+        const res = await updateMeasure(db, memberId, String(input.measure ?? ''), patch);
+        if (res.ok) {
+          mutated = true;
+          return { ok: true, message: `Updated "${res.label}". Reflect the change back in their words — it's their tracker, the new target is theirs.` };
+        }
+        if (res.reason === 'nochange') return { ok: false, message: 'Nothing to change — ask what they want the new target to be, then call it again.' };
+        return { ok: false, message: "Couldn't find a tracker by that name to update." };
+      }
+      if (name === 'retire_tracker') {
+        // #79 — retire (archive) a tracker: kept as history + restorable, NEVER a hard delete.
+        const res = await archiveMeasure(db, memberId, String(input.measure ?? ''));
+        if (res.ok) {
+          mutated = true;
+          return { ok: true, message: `Retired "${res.label}" — its history is kept and it can come back anytime. Acknowledge it warmly; retiring a tracker is never a failure.` };
+        }
+        return { ok: false, message: "Couldn't find a tracker by that name to retire." };
       }
       if (name === 'log_call') {
         // Momentum logging (REWIRE-gated). A call is self-monitoring, never scored; a false start is honest data.

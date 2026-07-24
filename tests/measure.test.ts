@@ -6,6 +6,8 @@ import {
   createMeasure,
   logReadingByLabel,
   logReadingById,
+  updateMeasure,
+  archiveMeasure,
   listMeasures,
   measuresForAgent,
   findReclaimItemId,
@@ -236,4 +238,30 @@ test('suggestTracker treats "lose/gain N <unit>" as a DELTA level goal, not an a
   assert.equal(losing.delta, 35, '"losing about N" reads as a delta');
   assert.equal(losing.direction, 'down', '"losing" is down, not the default up');
   assert.equal(suggestTracker('Losing around 20 pounds').delta, 20);
+});
+
+// #79 — the Companion manages the tracker's lifecycle: adjust the target, retire it (kept + restorable).
+test('updateMeasure adjusts the target (fuzzy label match); reflected in the view', async () => {
+  const { db, memberId } = await seed();
+  await createMeasure(db, memberId, { label: 'Weight', unit: 'lbs', direction: 'down', startValue: 222, targetValue: 190 });
+  const r = await updateMeasure(db, memberId, 'weight', { targetValue: 175 });
+  assert.equal(r.ok, true);
+  const [m] = await listMeasures(db, memberId);
+  assert.equal(m!.targetValue, 175, 'new target persisted');
+  assert.equal((await updateMeasure(db, memberId, 'nope', { targetValue: 1 })).ok, false, 'no match → not ok');
+  const noChange = await updateMeasure(db, memberId, 'Weight', {});
+  assert.equal(noChange.ok, false);
+  if (!noChange.ok) assert.equal(noChange.reason, 'nochange');
+});
+
+test('archiveMeasure retires a tracker — off the active list, never a hard delete', async () => {
+  const { db, memberId } = await seed();
+  await createMeasure(db, memberId, { label: 'Weekly miles', unit: 'mi', direction: 'up', startValue: 40, targetValue: 115 });
+  const r = await archiveMeasure(db, memberId, 'miles');
+  assert.equal(r.ok, true);
+  assert.equal((await listMeasures(db, memberId)).length, 0, 'retired tracker leaves the active list');
+  // The row survives (restorable) — archived_at is set, not deleted.
+  const { rows } = await db.query<{ n: string }>('select count(*)::text n from measure where member_id=$1 and archived_at is not null', [memberId]);
+  assert.equal(rows[0]!.n, '1', 'kept as history, not deleted');
+  assert.equal((await archiveMeasure(db, memberId, 'miles')).ok, false, 'already retired → no active match');
 });

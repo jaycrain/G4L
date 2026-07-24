@@ -240,6 +240,36 @@ export async function logReadingById(
   return { ok: true };
 }
 
+/** Adjust a tracker's target and/or direction (a member-confirmed edit). Fuzzy-matches by label. #79. */
+export async function updateMeasure(
+  db: Db,
+  memberId: string,
+  measureRef: string,
+  patch: { targetValue?: number | null; direction?: MeasureDirection },
+): Promise<{ ok: true; label: string } | { ok: false; reason: 'nomatch' | 'nochange' }> {
+  const m = await matchMeasure(db, memberId, measureRef);
+  if (!m) return { ok: false, reason: 'nomatch' };
+  const vals: unknown[] = [memberId, m.id];
+  const sets: string[] = [];
+  if (patch.targetValue !== undefined) { vals.push(patch.targetValue); sets.push(`target_value=$${vals.length}`); }
+  if (patch.direction !== undefined && isDir(patch.direction)) { vals.push(patch.direction); sets.push(`direction=$${vals.length}`); }
+  if (!sets.length) return { ok: false, reason: 'nochange' };
+  await db.query(`update measure set ${sets.join(', ')} where member_id=$1 and id=$2`, vals);
+  return { ok: true, label: m.label };
+}
+
+/** Retire a tracker — set archived_at (kept as history, restorable), NEVER a hard delete. Fuzzy-matches by label. #79. */
+export async function archiveMeasure(
+  db: Db,
+  memberId: string,
+  measureRef: string,
+): Promise<{ ok: true; label: string } | { ok: false; reason: 'nomatch' }> {
+  const m = await matchMeasure(db, memberId, measureRef);
+  if (!m) return { ok: false, reason: 'nomatch' };
+  await db.query('update measure set archived_at=now() where member_id=$1 and id=$2 and archived_at is null', [memberId, m.id]);
+  return { ok: true, label: m.label };
+}
+
 async function upsertReading(db: Db, memberId: string, measureId: string, value: number, notedOn?: string) {
   const day = notedOn && /^\d{4}-\d{2}-\d{2}$/.test(notedOn) ? notedOn : null;
   await db.query(
