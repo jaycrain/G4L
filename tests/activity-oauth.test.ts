@@ -65,9 +65,10 @@ test('signState/verifyState binds a member and expires', () => {
 
 // --- provider -------------------------------------------------------------------------------
 
-test('authorizeUrl carries the minimum-necessary scope and the redirect', () => {
+test('authorizeUrl requests read_all (to see private activities) + forces the consent screen', () => {
   const url = new URL(strava.authorizeUrl('the-state', 'https://app.example.com/api/activity/strava/callback'));
-  assert.equal(url.searchParams.get('scope'), 'read,activity:read');
+  assert.equal(url.searchParams.get('scope'), 'read,activity:read_all'); // read_all → activities marked "Only You" sync too
+  assert.equal(url.searchParams.get('approval_prompt'), 'force'); // always show consent so a scope UPGRADE actually grants
   assert.equal(url.searchParams.get('response_type'), 'code');
   assert.equal(url.searchParams.get('state'), 'the-state');
   assert.equal(url.searchParams.get('redirect_uri'), 'https://app.example.com/api/activity/strava/callback');

@@ -1,6 +1,9 @@
 // Strava → canonical Activity. The normalizer is pure; the OAuth connect/fetch wiring below is the
 // real Path-B integration. Secrets (STRAVA_CLIENT_ID/STRAVA_CLIENT_SECRET) are read from env only
-// and never logged. Minimum-necessary scope: read,activity:read (read activities, no write).
+// and never logged. Scope: read,activity:read_all — read-only, no write. read_all (vs. plain
+// activity:read) is REQUIRED to see activities the member marked "Only You" / Followers; without it a
+// private ride silently never syncs (Jay's walk, 2026-07-24). The member consents to it at the Strava
+// screen at connect; existing connections must RECONNECT to grant the wider scope.
 
 import type { Activity, ActivityType } from './types.ts';
 
@@ -8,7 +11,7 @@ const AUTHORIZE_URL = 'https://www.strava.com/oauth/authorize';
 const TOKEN_URL = 'https://www.strava.com/oauth/token';
 const DEAUTH_URL = 'https://www.strava.com/oauth/deauthorize';
 const ACTIVITIES_URL = 'https://www.strava.com/api/v3/athlete/activities';
-const SCOPE = 'read,activity:read';
+const SCOPE = 'read,activity:read_all';
 
 export type StravaTokens = {
   accessToken: string;
@@ -41,7 +44,10 @@ export function authorizeUrl(state: string, redirectUri: string): string {
     client_id: clientId(),
     redirect_uri: redirectUri,
     response_type: 'code',
-    approval_prompt: 'auto',
+    // 'force' (not 'auto'): always show Strava's consent screen. Required so an already-connected member re-granting
+    // the WIDER read_all scope actually upgrades (auto would skip the screen and hand back the old, narrower grant) —
+    // and it's the honest posture for asking to read private activities: the member sees exactly what they're sharing.
+    approval_prompt: 'force',
     scope: SCOPE,
     state,
   });

@@ -22,7 +22,7 @@ export default function SyncNow({ memberId, syncedLabel }: { memberId: string; s
       setResult(r.error ?? 'Could not sync.');
       return;
     }
-    setResult(r.synced ? `Added ${r.synced} new.` : 'Up to date.');
+    setResult(r.synced ? `Synced ${r.synced} activit${r.synced === 1 ? 'y' : 'ies'}.` : 'Up to date.');
     router.refresh(); // revalidatePath ran server-side; pull the fresh panel
   }
 
