@@ -226,9 +226,11 @@ export default function OnboardingChat({ welcomeEnabled = false }: { welcomeEnab
       const r = await finalizeOnboardingAction({ ctx, state, token: tokenRef.current, cardReturns, password });
       if (!r.ok) {
         if ('code' in r) {
-          // A returner whose account already exists — send them to log in, not into a second account.
+          // A returner whose account already exists — send them to log in (with a friendly reason), not into a second
+          // account, and NEVER a dead-end error at the finish line. Covers both the credential collision and a taken
+          // email caught by runOnboarding (Jay's walk).
           clearOnboardingStorage();
-          router.push('/login');
+          router.push('/login?exists=1');
           return;
         }
         setError('message' in r ? r.message : r.errors.join('; '));

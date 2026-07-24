@@ -146,6 +146,10 @@ export async function finalizeOnboardingAction(input: FinalizeInput): Promise<Fi
   const res = await runOnboarding(db, getProvider(), collectedToFields(input.ctx, collected));
   if (!res.ok) {
     if ('crisis' in res && res.crisis) return { ok: false, crisis: true, message: res.message };
+    // A taken email is NOT a dead end at the finish line (Jay's walk: "we'll lose prospective members"). It means
+    // they already have an account — hand it to the login-routing path (chat.tsx clears the draft + sends to /login),
+    // the same recovery the credential-collision below uses, instead of a red error with no way forward.
+    if ('code' in res && res.code === 'exists') return { ok: false, code: 'exists', error: 'That email already has an account — please log in.' };
     const errors = 'errors' in res ? res.errors : ['Could not save your intake — please try again.'];
     return { ok: false, errors };
   }

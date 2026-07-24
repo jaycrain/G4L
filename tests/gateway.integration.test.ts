@@ -134,6 +134,9 @@ test('re-onboarding the same email returns a friendly error, not a crash', async
   assert.equal(second.ok, false);
   if (second.ok) return;
   assert.match((second as { errors: string[] }).errors.join(' '), /already exists/i);
+  // The collision carries code='exists' so finalize routes the member to login (recoverable) instead of a dead-end
+  // error at the finish line (Jay's walk — "we'll lose prospective members").
+  assert.equal((second as { code?: string }).code, 'exists');
 
   // a different email still works
   const third = await runOnboarding(db, scriptedProvider, { ...validOnboarding, email: 'tom2@example.com' });

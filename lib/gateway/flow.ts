@@ -36,7 +36,7 @@ export type OnboardingFields = {
 export type OnboardingResult =
   | { ok: true; memberId: string }
   | { ok: false; crisis: true; message: string }
-  | { ok: false; crisis?: false; errors: string[] };
+  | { ok: false; crisis?: false; code?: 'exists'; errors: string[] }; // code='exists' → the email is taken (route to login, don't dead-end)
 
 export async function runOnboarding(
   db: Db,
@@ -122,7 +122,7 @@ export async function runOnboarding(
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     if ((e as { code?: string })?.code === '23505' || /duplicate key|member_profile_email_active/i.test(msg)) {
-      return { ok: false, errors: ['An account with that email already exists. Try a different email.'] };
+      return { ok: false, code: 'exists', errors: ['An account with that email already exists. Try a different email.'] };
     }
     throw e;
   }
