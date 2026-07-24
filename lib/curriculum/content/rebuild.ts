@@ -176,7 +176,7 @@ export const REBUILD_SESSIONS: Asset[] = [
 // after the Rewire ceremony; B2→B3→B4 follow in order. Mirrors REWIRE_V23.
 export const REBUILD_V24: Asset[] = [
   {
-    id: 'RBLD-B1', title: 'What Is Your Why?', phase: 'rebuild', layer: 'Foundation', kind: 'session', order: 1,
+    id: 'RBLD-B1', title: "What's Your Why?", phase: 'rebuild', layer: 'Foundation', kind: 'session', order: 1,
     summary: 'Name the reasons for movement and eating that are actually yours — your starting why.',
     close_type: 'reflect', produces: "the member's motivation baseline (stored, not scored)", route: '/rebuild/{memberId}/b1', gating: 'rewire_checkpoint_passed',
   },
@@ -191,7 +191,7 @@ export const REBUILD_V24: Asset[] = [
     close_type: 'goal', produces: "the member's pilot plan (their two small changes)", route: '/rebuild/{memberId}/b3',
   },
   {
-    id: 'RBLD-B4', title: 'The Rebuild Checkpoint', phase: 'rebuild', layer: 'Checkpoint', kind: 'checkpoint', order: 4,
+    id: 'RBLD-B4', title: 'Rebuild Checkpoint', phase: 'rebuild', layer: 'Checkpoint', kind: 'checkpoint', order: 4,
     summary: 'A read on the control you built — the close of the Phase, and the door to Reclaim.',
     close_type: 'milestone', earns: 'rebuild-milestone', route: '/rebuild/{memberId}/b4',
   },

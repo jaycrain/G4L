@@ -48,11 +48,11 @@ test('hero · just-finished after the LAST session names the Checkpoint as next 
   const st = resolveHeroState({
     hasStarted: true,
     justFinishedSession: { id: 'w3', label: 'False Start Protocol' },
-    checkpointReady: { phase: 'rewire', label: 'The Rewire Checkpoint' },
+    checkpointReady: { phase: 'rewire', label: 'Rewire Checkpoint' },
     nextSession: null, // the last session is done → nothing lit but the Checkpoint
   });
   assert.equal(st.kind, 'just-finished');
-  assert.equal(st.kind === 'just-finished' && st.next?.label, 'The Rewire Checkpoint');
+  assert.equal(st.kind === 'just-finished' && st.next?.label, 'Rewire Checkpoint');
   assert.equal(st.kind === 'just-finished' && st.next?.isCheckpoint, true);
 });
 

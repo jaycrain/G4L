@@ -246,17 +246,17 @@ export const RECLAIM_V25: Asset[] = [
     close_type: 'reflect', produces: "the member's refined Reclaim List (re-tiered, member-confirmed)", route: '/reclaim/{memberId}/c1', gating: 'rebuild_checkpoint_passed',
   },
   {
-    id: 'RCL-C2', title: 'The Bigger World Audit', phase: 'reclaim', layer: 'Emergence', kind: 'session', order: 2,
+    id: 'RCL-C2', title: 'Bigger World Audit', phase: 'reclaim', layer: 'Emergence', kind: 'session', order: 2,
     summary: 'Map where your world can get bigger across four areas — and find where to push first.',
     close_type: 'reflect', produces: "the member's Reclaim priorities (primary + momentum lever)", route: '/reclaim/{memberId}/c2',
   },
   {
-    id: 'RCL-C3', title: 'Quality Days Practice', phase: 'reclaim', layer: 'Extension', kind: 'session', order: 3,
+    id: 'RCL-C3', title: 'Quality Days', phase: 'reclaim', layer: 'Extension', kind: 'session', order: 3,
     summary: 'Define what makes a day yours — then track it for a week.',
     close_type: 'goal', produces: "the member's Quality Day profile + a week of logs", route: '/reclaim/{memberId}/c3',
   },
   {
-    id: 'RCL-C4', title: 'The Reclaim Checkpoint', phase: 'reclaim', layer: 'Checkpoint', kind: 'checkpoint', order: 4,
+    id: 'RCL-C4', title: 'Reclaim Checkpoint', phase: 'reclaim', layer: 'Checkpoint', kind: 'checkpoint', order: 4,
     summary: 'A read on the challenge you built — the close of the cycle, and the door to the Loop.',
     close_type: 'milestone', earns: 'reclaim-capstone', route: '/reclaim/{memberId}/c4',
   },

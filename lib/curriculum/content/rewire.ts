@@ -240,22 +240,22 @@ export const REWIRE_SESSIONS: Asset[] = [
 // /rewire/… and treats them as built. W1 unlocks after the Reconnect ceremony; W2/W3/Checkpoint follow in order.
 export const REWIRE_V23: Asset[] = [
   {
-    id: 'RWR-W1', title: 'The Disinformation Audit', phase: 'rewire', layer: 'Affirmation', kind: 'session', order: 1,
+    id: 'RWR-W1', title: 'Disinformation Audit', phase: 'rewire', layer: 'Affirmation', kind: 'session', order: 1,
     summary: 'Catch the comfortable lies your mind runs — and write the true lines that answer them.',
     close_type: 'rep', produces: "the member's true lines (in their words)", route: '/rewire/{memberId}/w1', gating: 'reconnect_checkpoint_passed',
   },
   {
-    id: 'RWR-W2', title: 'The Visualization Workshop', phase: 'rewire', layer: 'Visualization', kind: 'session', order: 2,
+    id: 'RWR-W2', title: 'Visualization Workshop', phase: 'rewire', layer: 'Visualization', kind: 'session', order: 2,
     summary: 'Build a vivid picture of where you’re headed — the one the old voice can’t compete with.',
     close_type: 'rep', produces: "the member's image (in their words)", route: '/rewire/{memberId}/w2',
   },
   {
-    id: 'RWR-W3', title: 'The False Start Protocol', phase: 'rewire', layer: 'Focus', kind: 'session', order: 3,
+    id: 'RWR-W3', title: 'False Start Protocol', phase: 'rewire', layer: 'Focus', kind: 'session', order: 3,
     summary: 'Build the plan for the day it goes sideways — Redirect, Reframe, Restart.',
     close_type: 'rep', produces: "the member's recovery protocol (in their words)", route: '/rewire/{memberId}/w3',
   },
   {
-    id: 'RWR-CHK', title: 'The Rewire Checkpoint', phase: 'rewire', layer: 'Checkpoint', kind: 'checkpoint', order: 4,
+    id: 'RWR-CHK', title: 'Rewire Checkpoint', phase: 'rewire', layer: 'Checkpoint', kind: 'checkpoint', order: 4,
     summary: 'A read on the commitment you built — and the close of the Phase.',
     close_type: 'milestone', earns: 'rewire-milestone', route: '/rewire/{memberId}/checkpoint',
   },

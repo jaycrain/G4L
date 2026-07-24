@@ -8,19 +8,19 @@ import { heroView } from '../lib/dashboard/hero-copy.ts';
 const ctx = { phaseLabel: 'Rewire', phaseOrdinal: 2, sessionPosition: 'Session 2 of 3' };
 
 test('resume — names the session, offers to pick up where you left off', () => {
-  const v = heroView({ kind: 'resume', session: { id: 'w2', label: 'The Visualization Workshop' } }, ctx);
-  assert.equal(v.title, 'The Visualization Workshop');
+  const v = heroView({ kind: 'resume', session: { id: 'w2', label: 'Visualization Workshop' } }, ctx);
+  assert.equal(v.title, 'Visualization Workshop');
   assert.match(v.eyebrow, /Phase 2 · Rewire · Session 2 of 3/);
   assert.equal(v.ctaLabel, 'Resume this Session');
 });
 
 test('just-finished — congratulates, NAMES the next session', () => {
   const v = heroView(
-    { kind: 'just-finished', session: { id: 'w1', label: 'the Disinformation Audit' }, next: { id: 'w2', label: 'The Visualization Workshop', isCheckpoint: false } },
+    { kind: 'just-finished', session: { id: 'w1', label: 'the Disinformation Audit' }, next: { id: 'w2', label: 'Visualization Workshop', isCheckpoint: false } },
     ctx,
   );
   assert.match(v.title, /Nice work — the Disinformation Audit/);
-  assert.match(v.copy, /Next up: The Visualization Workshop/);
+  assert.match(v.copy, /Next up: Visualization Workshop/);
   assert.equal(v.ctaLabel, 'Start the next Session');
 });
 
@@ -54,8 +54,8 @@ test('mid-week-practice — day N of total, log-today CTA', () => {
 });
 
 test('next-step — the lit session, no-rush framing', () => {
-  const v = heroView({ kind: 'next-step', session: { id: 'w2', label: 'The Visualization Workshop' } }, ctx);
-  assert.equal(v.title, 'The Visualization Workshop');
+  const v = heroView({ kind: 'next-step', session: { id: 'w2', label: 'Visualization Workshop' } }, ctx);
+  assert.equal(v.title, 'Visualization Workshop');
   assert.equal(v.ctaLabel, 'Open this Session');
 });
 

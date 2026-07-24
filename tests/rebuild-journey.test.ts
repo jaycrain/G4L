@@ -37,7 +37,7 @@ test('forecast · a Rewire-complete member is guided B1 → B2 → B3 → B4 at 
   await setGate(db, m, 'reconnect_checkpoint_passed');
   await setGate(db, m, 'rewire_checkpoint_passed');
   let f = await getForecast(db, m);
-  assert.equal(f.current?.id, 'RBLD-B1', 'the guided next step is What Is Your Why?');
+  assert.equal(f.current?.id, 'RBLD-B1', "the guided next step is What's Your Why?");
   assert.equal(f.current?.route, '/rebuild/{memberId}/b1', 'routed to the conversational surface');
   assert.equal(f.current?.openable, true, 'route-backed → built/openable');
   assert.equal(f.phases.find((p) => p.phase === 'rebuild')?.status, "You're here");
