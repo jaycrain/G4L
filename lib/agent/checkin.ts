@@ -249,7 +249,7 @@ export function contextBlock(c: CheckinContext): string {
       ? `How the pilot's actually going (last two weeks, their own logged calls) — Movement: ${c.pilotCalls.activity.good} good, ${c.pilotCalls.activity.false} false starts. Eating: ${c.pilotCalls.diet.good} good, ${c.pilotCalls.diet.false} false starts. If it helps them see the pattern, reflect it warmly ("movement's been landing; eating's been the tougher one") — never a scoreboard, never a grade; a false start is honest data. Only raise it if it's useful to them.`
       : '',
     c.commitments && c.commitments.length
-      ? `Their standing COMMITMENTS — the specific changes they chose to hold themselves to, and the Reclaim outcome each moves toward: ${c.commitments.map((x) => `${x.domain} — "${x.text}"${x.serves ? ` → toward "${x.serves}"` : ''}`).join('; ')}. This is the accountability spine, and it's to THEIR OWN goals, never an external standard. Hold them to it warmly: reflect follow-through as the identity coming back (normalize, NEVER praise or grade), meet a lapse with curiosity and an invitation (never a scold, never a compliance score), and tie it back to what they said they want. They can change or set aside a commitment anytime with you — it's theirs; use set_commitment when they do.`
+      ? `Their standing COMMITMENTS — the specific changes they chose to hold themselves to${c.commitments.some((x) => x.serves) ? ', and where one genuinely applies, the Reclaim outcome it moves toward' : ''}: ${c.commitments.map((x) => `${x.domain} — "${x.text}"${x.serves ? ` → serves "${x.serves}"` : ''}`).join('; ')}. This is the accountability spine, and it's to THEIR OWN goals, never an external standard. Not every commitment maps to a single outcome — some just serve their general health or who they're becoming, and that's fine; hold them to it either way, and never assert a ladder that doesn't hold (a walk isn't a mileage target). Reflect follow-through as the identity coming back (normalize, NEVER praise or grade), meet a lapse with curiosity and an invitation (never a scold, never a compliance score); when a real link exists, tie it back to what they said they want. They can change or set aside a commitment anytime with you — it's theirs; use set_commitment when they do.`
       : null,
     c.momentumLog && c.momentumLog.length
       ? `Their Momentum log — the exact entries they've logged on the dashboard ("Your log"), newest first. You SEE these; if they ask whether you noticed an entry, you did — reference the specific one, don't say you have no record of it: ${momentumLogLine(c.momentumLog)}. Self-monitoring, never scored — a false start is honest data, met not marked. ${c.pilotPlan ? "This is where they log their Lifestyle Pilot commitments (movement + eating). Tie a call to the relevant change, and gently encourage them to keep logging against their two commitments." : "When it fits, encourage the habit of logging calls — it's how they and you see the pattern together."}`
@@ -601,9 +601,13 @@ const SET_COMMITMENT_TOOL = {
     "eating change (domain=diet) they're choosing to hold themselves to, in service of their Reclaim List. Call it when " +
     "they NAME or CHANGE a commitment ('I'll walk three mornings a week', 'make my eating change two veg at dinner'). " +
     "One active per domain — a new one replaces the old (the old is kept as history, never deleted). Words alone don't " +
-    "save it — you MUST call this tool, then reflect it back in their words. Pass `serves` with the Reclaim List outcome " +
-    "this moves toward (their wording, e.g. 'get off all meds') so it ladders to what they actually want. Only save a " +
-    "SPECIFIC, member-affirmed change — if it's vague ('exercise more'), keep coaching until it's real; don't save it.",
+    "save it — you MUST call this tool, then reflect it back in their words. LADDER (`serves`) — pass it ONLY when the " +
+    "change GENUINELY moves a specific Reclaim List outcome: a morning walk serves 'get off my meds' or 'my health', but " +
+    "NOT a 115-miles-a-week cycling target it doesn't build toward. If no single outcome is truly served — or it just " +
+    "serves their general health / who they're becoming — LEAVE `serves` OFF; an unlinked commitment is completely fine, " +
+    "never force a ladder that doesn't hold. Better still, where it helps, coach them toward a commitment that actually " +
+    "serves what they're reclaiming (that's the whole point of it). Only save a SPECIFIC, member-affirmed change — if " +
+    "it's vague ('exercise more'), keep coaching until it's real; don't save it.",
   input_schema: {
     type: 'object',
     properties: {
