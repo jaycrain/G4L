@@ -6,6 +6,7 @@
 
 import type { Db } from '../db/schema.ts';
 import type { Provenance, OutreachTrigger } from './config.ts';
+import { activeCommitments } from '../commitments/store.ts';
 
 const MAX_SOURCES = 6; // enough for the generator to pick a fitting anchor; not a data dump
 
@@ -73,28 +74,58 @@ export async function momentumPattern(db: Db, memberId: string): Promise<Provena
   return [{ stream: 'pattern', ref: 'momentum:7d', quote }];
 }
 
-// Which stream leads, by trigger — the rest always follow (real data is never dropped, only reordered).
-const LEAD: Record<OutreachTrigger, ('reclaim' | 'words' | 'pattern')[]> = {
-  morning_presence: ['words', 'reclaim', 'pattern'],
-  post_log: ['pattern', 'words', 'reclaim'],
-  pattern: ['pattern', 'reclaim', 'words'],
-  reclaim_milestone: ['reclaim', 'words', 'pattern'],
-  checkpoint_due: ['reclaim', 'words', 'pattern'],
-  re_engagement: ['words', 'reclaim', 'pattern'],
-  community_share: ['words', 'reclaim', 'pattern'],
+// ── Stream: commitment — the CHECK-IN (Slice 4). The member's standing commitment(s) + a FACTUAL 7-day observation of
+// calls logged toward each (never words in their mouth). Grounds the accountability touch: reflect follow-through
+// (normalize) or notice a lapse (invite) — the generator holds the posture, this just supplies the real data. Empty
+// when the member has no active commitment → the engine falls through to the other streams (behavior unchanged).
+export async function commitmentSources(db: Db, memberId: string): Promise<Provenance[]> {
+  const commitments = await activeCommitments(db, memberId).catch(() => []);
+  if (!commitments.length) return [];
+  const { rows } = await db.query<{ domain: string; type: string; n: string }>(
+    `select domain, type, count(*)::text n from momentum_call
+      where member_id = $1 and logged_on >= current_date - 6 and domain in ('activity','diet') and type in ('good_call','false_start')
+      group by domain, type`,
+    [memberId],
+  );
+  const good: Record<string, number> = {}, bad: Record<string, number> = {};
+  for (const r of rows) (r.type === 'good_call' ? good : bad)[r.domain] = Number(r.n);
+  return commitments.map((c) => {
+    const g = good[c.domain] ?? 0, b = bad[c.domain] ?? 0;
+    const progress =
+      g === 0 && b === 0
+        ? 'nothing logged toward it this week'
+        : [g ? `${g} good call${g === 1 ? '' : 's'}` : '', b ? `${b} false start${b === 1 ? '' : 's'}` : ''].filter(Boolean).join(' and ') + ' this week';
+    const serves = c.reclaimItemText ? ` (toward ${c.reclaimItemText})` : '';
+    return { stream: 'commitment' as const, ref: `commitment:${c.domain}`, quote: `${c.text}${serves} — ${progress}` };
+  });
+}
+
+// Which stream leads, by trigger — the rest always follow (real data is never dropped, only reordered). The commitment
+// check-in LEADS morning-presence + the behavior triggers (post_log/pattern) so the daily touch reflects what the member
+// chose to hold themselves to; it falls through to nothing when they've set no commitment.
+const LEAD: Record<OutreachTrigger, SourceStreamKey[]> = {
+  morning_presence: ['commitment', 'words', 'reclaim', 'pattern'],
+  post_log: ['commitment', 'pattern', 'words', 'reclaim'],
+  pattern: ['commitment', 'pattern', 'reclaim', 'words'],
+  reclaim_milestone: ['reclaim', 'words', 'pattern', 'commitment'],
+  checkpoint_due: ['reclaim', 'words', 'pattern', 'commitment'],
+  re_engagement: ['commitment', 'words', 'reclaim', 'pattern'],
+  community_share: ['words', 'reclaim', 'pattern', 'commitment'],
 };
+type SourceStreamKey = 'reclaim' | 'words' | 'pattern' | 'commitment';
 
 /**
  * The engine's grounding dependency: gather every real source for this member, ordered for the trigger, capped.
  * Empty result → the engine holds ("no groundable source"): we never reach out with nothing to reflect back.
  */
 export async function gatherSources(db: Db, memberId: string, trigger: OutreachTrigger): Promise<Provenance[]> {
-  const [words, reclaim, pattern] = await Promise.all([
+  const [words, reclaim, pattern, commitment] = await Promise.all([
     memberWords(db, memberId),
     reclaimSources(db, memberId),
     momentumPattern(db, memberId),
+    commitmentSources(db, memberId),
   ]);
-  const byStream = { words, reclaim, pattern };
-  const order = LEAD[trigger] ?? ['words', 'reclaim', 'pattern'];
+  const byStream = { words, reclaim, pattern, commitment };
+  const order = LEAD[trigger] ?? ['commitment', 'words', 'reclaim', 'pattern'];
   return order.flatMap((s) => byStream[s]).slice(0, MAX_SOURCES);
 }

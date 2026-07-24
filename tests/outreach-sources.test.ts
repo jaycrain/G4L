@@ -2,7 +2,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { PGlite } from '@electric-sql/pglite';
 import { applySchema, type Db } from '../lib/db/schema.ts';
-import { gatherSources, memberWords, reclaimSources, momentumPattern } from '../lib/outreach/sources.ts';
+import { gatherSources, memberWords, reclaimSources, momentumPattern, commitmentSources } from '../lib/outreach/sources.ts';
+import { setCommitment } from '../lib/commitments/store.ts';
 
 async function member(): Promise<{ db: Db; id: string }> {
   const db = new PGlite() as unknown as Db;
@@ -63,6 +64,43 @@ test('pattern stream summarizes recent calls factually, with pluralization', asy
 test('no calls → no pattern source (nothing invented)', async () => {
   const { db, id } = await member();
   assert.deepEqual(await momentumPattern(db, id), []);
+});
+
+test('commitment stream reflects the standing commitment + a factual weekly progress note', async () => {
+  const { db, id } = await member();
+  await setCommitment(db, id, 'activity', 'a 30-minute morning walk, 3 days', 'b3');
+  await db.query(
+    `insert into momentum_call (member_id, type, domain, source) values ($1,'good_call','activity','rail'),($1,'good_call','activity','rail'),($1,'false_start','activity','rail')`,
+    [id],
+  );
+  const c = await commitmentSources(db, id);
+  assert.equal(c.length, 1);
+  assert.equal(c[0]!.stream, 'commitment');
+  assert.equal(c[0]!.ref, 'commitment:activity');
+  assert.match(c[0]!.quote!, /a 30-minute morning walk, 3 days/);
+  assert.match(c[0]!.quote!, /2 good calls and 1 false start this week/);
+});
+
+test('commitment stream notices a lapse (no calls) without inventing anything', async () => {
+  const { db, id } = await member();
+  await setCommitment(db, id, 'diet', 'a vegetable at dinner', 'b3');
+  const c = await commitmentSources(db, id);
+  assert.equal(c.length, 1);
+  assert.match(c[0]!.quote!, /a vegetable at dinner/);
+  assert.match(c[0]!.quote!, /nothing logged toward it this week/);
+});
+
+test('the check-in leads morning-presence when a commitment exists; falls through when none', async () => {
+  const { db, id } = await member();
+  await keeper(db, id, 'the athlete in me');
+  await setCommitment(db, id, 'activity', 'a 30-minute morning walk', 'b3');
+  const withC = await gatherSources(db, id, 'morning_presence');
+  assert.equal(withC[0]!.stream, 'commitment', 'the accountability check-in leads when a commitment exists');
+
+  const { db: db2, id: id2 } = await member();
+  await keeper(db2, id2, 'the athlete in me');
+  const withoutC = await gatherSources(db2, id2, 'morning_presence');
+  assert.equal(withoutC[0]!.stream, 'words', 'unchanged behavior when no commitment is set');
 });
 
 test('trigger biases the lead stream but never drops real data', async () => {

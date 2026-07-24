@@ -33,6 +33,10 @@ function scriptedText(a: Provenance, tense: Tense, trigger: OutreachTrigger): st
     base = `"${q}" is on your Reclaim List. What's alive in that for you right now?`;
   } else if (a.stream === 'pattern') {
     base = `You logged ${q}. Looking back, what do you notice?`;
+  } else if (a.stream === 'commitment') {
+    // The check-in — the quote carries the commitment + a factual 7-day progress note, so one reflective line works
+    // whether they've followed through OR lapsed. No grade, one open question; the live path handles the nuance.
+    base = `Checking in on what you told me you'd hold yourself to — ${q}. How's it landing?`;
   } else {
     // words — the member's own language; the tense sets where we meet them (§5), never a prescribed step.
     const tail =
@@ -80,8 +84,15 @@ async function composeLive(a: Provenance, tense: Tense, trigger: OutreachTrigger
         role: 'user',
         content:
           `${TENSE_NOTE[tense]}\n` +
-          `Source stream: ${a.stream}. The member's own material: "${a.quote ?? ''}".\n\n` +
-          'Compose the check-in now. Output ONLY the message text — no preamble, no heading, no labels, no markdown, ' +
+          `Source stream: ${a.stream}. The member's own material: "${a.quote ?? ''}".\n` +
+          (a.stream === 'commitment'
+            ? 'This is a COMMITMENT check-in: the member CHOSE to hold themselves to this change, and the note includes ' +
+              "how their logged calls toward it are going this week. If they've been showing up, reflect it as the identity " +
+              'coming back — normalize, do NOT praise or grade. If they lapsed ("nothing logged"), notice it with curiosity ' +
+              'and a gentle, no-pressure invitation to pick it back up — never a scold. Tie it to what they said they want ' +
+              'if named. One open question at most.\n'
+            : '') +
+          '\nCompose the check-in now. Output ONLY the message text — no preamble, no heading, no labels, no markdown, ' +
           'no surrounding quotation marks.',
       },
     ],

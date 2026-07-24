@@ -17,7 +17,7 @@ export type OutreachTrigger =
   | 'checkpoint_due'
   | 're_engagement'
   | 'community_share';
-export type SourceStream = 'words' | 'reclaim' | 'pattern'; // §4 — the three grounding streams
+export type SourceStream = 'words' | 'reclaim' | 'pattern' | 'commitment'; // §4 grounding streams (+commitment check-in)
 
 // §8 provenance — every reflective message carries an internal citation to the exact source it was built from.
 // No provenance = a generation error, blocked before send (validator GROUNDED check).
