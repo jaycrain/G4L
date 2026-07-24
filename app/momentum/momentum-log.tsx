@@ -13,11 +13,12 @@ const OPTIONS: { type: CallType; label: string; done: string }[] = [
   { type: 'quiet_day', label: 'Quiet Day', done: 'Logged — quiet counts too.' },
 ];
 
-// The two pilot changes (Decision OO) — passed only during an active B3 pilot week. When present, the member can
-// OPTIONALLY tag which change a call is about (movement or eating); untagged is always fine (never a gate, MM/R1).
-export type PilotDomains = { activity: string; diet: string };
+// The member's active COMMITMENTS (0060/0061) — the standing movement/eating changes, shown whenever they exist (NOT
+// gated on the one-week pilot anymore). When present, the member can OPTIONALLY tag which commitment a call is about;
+// untagged is always fine (never a gate, MM/R1). Either domain may be absent (a member can hold just one).
+export type Commitments = { activity?: string; diet?: string };
 
-export default function MomentumLog({ memberId, pilot }: { memberId: string; pilot?: PilotDomains | null }) {
+export default function MomentumLog({ memberId, commitments }: { memberId: string; commitments?: Commitments | null }) {
   const [note, setNote] = useState('');
   const [domain, setDomain] = useState<CallDomain | null>(null);
   const [done, setDone] = useState<CallType | null>(null);
@@ -44,16 +45,20 @@ export default function MomentumLog({ memberId, pilot }: { memberId: string; pil
   return (
     <div className="momentum-log">
       <p className="card-subtitle">How'd it go? Log a call — no pressure, and quiet days count.</p>
-      {pilot && (
+      {commitments && (commitments.activity || commitments.diet) && (
         <div className="momentum-log-domain">
-          <span className="momentum-log-domain-label">About which one? (optional)</span>
+          <span className="momentum-log-domain-label">Which commitment is this about? (optional)</span>
           <div className="momentum-log-domain-opts">
-            <button type="button" className={`momentum-domain-btn${domain === 'activity' ? ' is-on' : ''}`} disabled={pending} onClick={() => setDomain((d) => (d === 'activity' ? null : 'activity'))}>
-              Movement — {pilot.activity}
-            </button>
-            <button type="button" className={`momentum-domain-btn${domain === 'diet' ? ' is-on' : ''}`} disabled={pending} onClick={() => setDomain((d) => (d === 'diet' ? null : 'diet'))}>
-              Eating — {pilot.diet}
-            </button>
+            {commitments.activity && (
+              <button type="button" className={`momentum-domain-btn${domain === 'activity' ? ' is-on' : ''}`} disabled={pending} onClick={() => setDomain((d) => (d === 'activity' ? null : 'activity'))}>
+                Movement — {commitments.activity}
+              </button>
+            )}
+            {commitments.diet && (
+              <button type="button" className={`momentum-domain-btn${domain === 'diet' ? ' is-on' : ''}`} disabled={pending} onClick={() => setDomain((d) => (d === 'diet' ? null : 'diet'))}>
+                Eating — {commitments.diet}
+              </button>
+            )}
           </div>
         </div>
       )}

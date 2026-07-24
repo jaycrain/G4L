@@ -4,15 +4,26 @@ import { getDb } from '../../../lib/db/index.ts';
 import { authorizeMember } from '../../authz.ts';
 import { logEvent } from '../../../lib/telemetry/store.ts';
 import { rewireEnabled } from '../../../lib/agent/rewire.ts';
-import { pulseBeats, recentCalls, type CallType, type CallDomain } from '../../../lib/momentum/store.ts';
-import { activePracticeWeek, practicePanelLine } from '../../../lib/practice/store.ts';
-import { activeCoachingPlan, type RebuildPilotPayload } from '../../../lib/rebuild/plan-store.ts';
+import { pulseBeats, recentCalls, domainTally, type CallType, type CallDomain } from '../../../lib/momentum/store.ts';
+import { practicePanelLine } from '../../../lib/practice/store.ts';
+import { commitmentTexts } from '../../../lib/commitments/store.ts';
 import ResiliencePulse from '../../dashboard/resilience-pulse.tsx';
-import MomentumLog, { type PilotDomains } from '../momentum-log.tsx';
+import MomentumLog, { type Commitments } from '../momentum-log.tsx';
 import type { Db } from '../../../lib/db/schema.ts';
 
 const CALL_LABEL: Record<CallType, string> = { good_call: 'Good Call', false_start: 'False Start', quiet_day: 'Quiet Day' };
 const DOMAIN_LABEL: Record<CallDomain, string> = { activity: 'Movement', diet: 'Eating' };
+
+// A warm, non-scoreboard progress line for one commitment (last two weeks of tagged calls). Never a grade — a false
+// start is honest data; "nothing logged yet" is neutral, not a scold.
+function commitmentProgress(tally: { activity: { good: number; false: number }; diet: { good: number; false: number } } | null, domain: 'activity' | 'diet'): string {
+  const t = tally?.[domain];
+  if (!t || (t.good === 0 && t.false === 0)) return 'nothing logged yet';
+  const parts: string[] = [];
+  if (t.good) parts.push(`${t.good} good`);
+  if (t.false) parts.push(`${t.false} false start${t.false === 1 ? '' : 's'}`);
+  return parts.join(' · ');
+}
 
 // "Today" / "Yesterday" / a short date — a friendly day label for the history, from a YYYY-MM-DD string vs. today.
 function dayLabel(loggedOn: string, todayISO: string): string {
@@ -32,12 +43,12 @@ export default async function MomentumPage({ params }: { params: Promise<{ membe
   const db = (await getDb()) as unknown as Db;
   await logEvent(db, memberId, 'page_view', { surface: 'momentum' });
   const beats = await pulseBeats(db, memberId).catch(() => []);
-  // During an active B3 pilot week, offer the OPTIONAL activity/diet tag on each call (Decision OO), labelled from
-  // the member's own plan. Drift-hardened: any read hiccup simply omits the tag (the log still works untagged).
-  const pw = await activePracticeWeek(db, memberId).catch(() => null);
-  const plan = pw?.kind === 'b3_pilot' ? await activeCoachingPlan<RebuildPilotPayload>(db, memberId, 'rebuild').catch(() => null) : null;
-  const pilot: PilotDomains | null =
-    plan?.payload.activityChange && plan?.payload.dietChange ? { activity: plan.payload.activityChange, diet: plan.payload.dietChange } : null;
+  // Offer the OPTIONAL commitment tag on each call, labelled from the member's STANDING commitments (0060/0061) — shown
+  // whenever they exist, not just during the one-week pilot. Drift-hardened: a read hiccup simply omits the tag.
+  const commitmentsRaw = await commitmentTexts(db, memberId).catch(() => ({} as { activity?: string; diet?: string }));
+  const commitments: Commitments | null = commitmentsRaw.activity || commitmentsRaw.diet ? commitmentsRaw : null;
+  // Per-commitment progress (last two weeks) — how each is actually going, reflected warmly (never a scoreboard).
+  const tally = commitments ? await domainTally(db, memberId).catch(() => null) : null;
   // W-25 — the active practice week's "this week" line, shown here as context (Momentum is its home now, not the hero).
   const practiceLine = await practicePanelLine(db, memberId);
   // The member's own log — where every call they make gets saved (Jay: "where does this get placed?").
@@ -50,8 +61,24 @@ export default async function MomentumPage({ params }: { params: Promise<{ membe
       <div className="card">
         <p className="card-subtitle">The calls you make, one at a time — and how they add up. Self-monitoring, never scored — just yours to watch.</p>
         {practiceLine && <p className="practice-strip">{practiceLine}</p>}
+        {commitments && (
+          <div className="commitment-progress">
+            <div className="commitment-progress-h">What you’re holding yourself to</div>
+            <ul className="commitment-progress-list">
+              {(['activity', 'diet'] as const).map((d) =>
+                commitments[d] ? (
+                  <li key={d}>
+                    <span className="cp-domain">{d === 'activity' ? 'Movement' : 'Eating'}</span>
+                    <span className="cp-text">{commitments[d]}</span>
+                    <span className="cp-count">{commitmentProgress(tally, d)}</span>
+                  </li>
+                ) : null,
+              )}
+            </ul>
+          </div>
+        )}
         <ResiliencePulse beats={beats} />
-        <MomentumLog memberId={memberId} pilot={pilot} />
+        <MomentumLog memberId={memberId} commitments={commitments} />
       </div>
 
       {/* Your log — the saved history, so a logged call has a visible home, not a dead end. */}

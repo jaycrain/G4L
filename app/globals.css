@@ -1179,6 +1179,14 @@ html:has(.companion-hero), body:has(.companion-hero) { overflow-anchor: none; }
 .momentum-nav-secondary:hover { text-decoration: underline; }
 
 /* B3 pilot — the OPTIONAL activity/diet tag (Decision OO). Neutral pills, teal when chosen; never required. */
+/* Per-commitment progress — what they're holding themselves to + how it's going (last 2 weeks). Never a scoreboard. */
+.commitment-progress { margin: 0 0 0.9rem; padding: 0.7rem 0.85rem; background: #f4f8f8; border: 1px solid #e2eded; border-radius: 10px; }
+.commitment-progress-h { font-size: 0.8rem; font-weight: 800; letter-spacing: 0.02em; text-transform: uppercase; color: #6b7680; margin-bottom: 0.5rem; }
+.commitment-progress-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.5rem; }
+.commitment-progress-list li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.4rem 0.6rem; }
+.cp-domain { font-size: 0.72rem; font-weight: 800; text-transform: uppercase; color: var(--teal); min-width: 4.5rem; }
+.cp-text { font-size: 0.95rem; color: var(--navy); font-weight: 600; flex: 1 1 auto; }
+.cp-count { font-size: 0.8rem; color: #6b7680; }
 .momentum-log-domain { margin: 0.25rem 0 0.4rem; }
 .momentum-log-domain-label { font-size: 0.8rem; color: var(--navy); opacity: 0.7; }
 .momentum-log-domain-opts { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.35rem; }

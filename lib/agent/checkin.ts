@@ -556,8 +556,9 @@ const LOG_CALL_TOOL = {
     "or uneventful day). Examples: 'rode this morning, good call' → good_call; 'skipped the walk again, that was a " +
     "false start' → false_start; 'pretty quiet today' → quiet_day. Warm, never judgmental. Call it the same turn the " +
     "member reports it; words alone don't log it — you MUST call this tool, then reflect it back once it succeeds. " +
-    "If they're in the Rebuild pilot and the call is clearly about one of their two changes, pass `domain` " +
-    "(activity for movement, diet for eating); leave it off if it's general or unclear — never force the tag.",
+    "If the call is clearly about one of their standing commitments (movement/eating — in MEMBER CONTEXT), pass `domain` " +
+    "(activity for movement, diet for eating) so it counts toward that commitment; leave it off if it's general or " +
+    "unclear — never force the tag.",
   input_schema: {
     type: 'object',
     properties: {
