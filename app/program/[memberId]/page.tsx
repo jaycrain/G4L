@@ -14,10 +14,13 @@ import type { Db } from '../../../lib/db/schema.ts';
 // say the SAME thing — one canonical line each. We keep the asset NAMES + the closing beat/reveal as literals (those
 // aren't in the summaries); the per-session descriptor is the asset's canon short, and the phase blurb is the phase short.
 const NAMED_SESSIONS: Record<PhaseKey, Array<[string, AssetId]>> = {
+  // Names match the live session registry (lib/workspace/session-registry.ts) exactly — no invented "The" prefixes, no
+  // stale names. Reconnect is the onboarding gateway (not registry sessions), so its descriptors stay as-is; "The Doors"
+  // is the locked term.
   reconnect: [['The Doors', 'r2'], ['The IDQ', 'r1'], ['Visioning', 'r3']],
-  rewire: [['The Disinformation Audit', 'w1'], ['The Visualization Workshop', 'w2'], ['The False Start Protocol', 'w3']],
-  rebuild: [['What’s Your Why?', 'b1'], ['Strengths & Starting Points', 'b2'], ['Watching Your Choices', 'b3']],
-  reclaim: [['The Readiness Assessment', 'c1'], ['The Bigger World Audit', 'c2'], ['Quality Days', 'c3']],
+  rewire: [['Disinformation Audit', 'w1'], ['Visualization Workshop', 'w2'], ['False Start Protocol', 'w3']],
+  rebuild: [['What’s Your Why?', 'b1'], ['Strengths & Weaknesses', 'b2'], ['The Lifestyle Pilot', 'b3']],
+  reclaim: [['Readiness Assessment', 'c1'], ['Bigger World Audit', 'c2'], ['Quality Days', 'c3']],
 };
 const CLOSING_BEAT: Record<PhaseKey, string> = {
   reconnect: 'The Checkpoint — where your Grinta moves for the first time.',
@@ -32,10 +35,10 @@ const routeSessions = (key: PhaseKey): string[] => [
 
 const REVIEW_PHASE_LABEL: Record<string, string> = { reconnect: 'Reconnect', rewire: 'Rewire', rebuild: 'Rebuild', reclaim: 'Reclaim' };
 
-// The Program — the whole four-Phase route (Program Page v1.0, verbatim from G4L_Program_Page_v1.0.md). Greg's
-// "Route Card": a member sees the whole path they're headed down. Built one Phase at a time — Reconnect is live,
-// Rewire is spec'd, Rebuild + Reclaim are PREVIEWS (Session names finalize at each Phase's build) so they render
-// "coming." The "you're here" marker is wired to the member's active Phase from the forecast.
+// The Program — the whole four-Phase route (Program Page v1.0, from G4L_Program_Page_v1.0.md). Greg's "Route Card": a
+// member sees the whole path they're headed down. All four Phases are LIVE now (v3.2 — the four Rs shipped), so none
+// render as "coming"; the Session names match the live registry. The "you're here" marker is wired to the member's
+// active Phase from the forecast. (Reclaim can still show a Loop-gate "Opens…" when RECLAIM_GATE is on + not ready.)
 const RING: Record<string, string> = { reconnect: '#374f63', rewire: '#3b9495', rebuild: '#919536', reclaim: '#ec6233' };
 
 type PhaseRow = { key: string; num: number; name: string; tagline: string; blurb: string; sessions: string[]; reveal?: string; coming: boolean };
@@ -58,13 +61,13 @@ const PHASES: PhaseRow[] = [
     key: 'rebuild', num: 3, name: 'Rebuild', tagline: 'rebuild your body',
     blurb: phaseSummary('rebuild').short,
     sessions: routeSessions('rebuild'),
-    coming: true,
+    coming: false,
   },
   {
     key: 'reclaim', num: 4, name: 'Reclaim', tagline: 'reclaim your life',
     blurb: phaseSummary('reclaim').short,
     sessions: routeSessions('reclaim'),
-    coming: true,
+    coming: false,
   },
 ];
 
@@ -149,8 +152,6 @@ export default async function ProgramPage({
           })}
           <p className="route-loop">→ and the loop comes back around. Grinta for Life.</p>
         </div>
-
-        <p className="muted route-foot">Session names for Rebuild and Reclaim are previews — they finalize as each Phase is built.</p>
       </div>
     </>
   );
