@@ -1906,7 +1906,7 @@ body.redesign-on .confidential-footer { display: none; } /* full-bleed app — n
 .tri-member-name { font-weight: 800; font-size: 18px; color: var(--navy); }
 .tri-member-reclaim { font-size: 14px; color: #6b7680; }
 .tri-member-phase { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; color: var(--teal); background: #e7f2f2; padding: 3px 9px; border-radius: 100px; align-self: center; }
-.tri-member-story { font-weight: 700; font-size: 14px; color: var(--teal); white-space: nowrap; text-decoration: none; }
+.tri-member-story { font-weight: 600; font-size: 14px; color: var(--teal); white-space: nowrap; text-decoration: none; } /* matches .see-more / .rreg-more subpage-nav weight */
 .tri-member-story:hover { text-decoration: underline; }
 
 @media (max-width: 1000px) {
