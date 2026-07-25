@@ -25,7 +25,7 @@ export default async function ConnectPanel({ memberId, ctaLabel = 'Connect with 
     <div className="card connect-panel" data-tour="connect">
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
         <div>
-          <h3 style={{ margin: 0, color: '#374F63' }}>Community</h3>
+          <div className="rc-h">Community</div>
           <p className="muted" style={{ margin: '0.2rem 0 0' }}>Reach out. Share, inspire, keep each other honest.</p>
         </div>
         <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
