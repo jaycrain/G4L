@@ -39,3 +39,19 @@ export function rerunAsk(sessionId: string): string | null {
   const def = sessionById(sessionId);
   return def ? `Can we go back through my ${def.label} together?` : null;
 }
+
+// The SITUATION a play is for — the "when" that turns a kept line into a play you reach for (the situation→move card
+// shape). DERIVED from the forge label (no captured field, no harvest change, works for existing plays); a richer
+// member-specific situation would need capture at harvest time — a deliberate later slice.
+const PLAY_SITUATION: Record<string, string> = {
+  'Your true line': 'When the old story starts talking',
+  'Your true line for a bad day': 'When a bad day hits',
+  'Your False Start Protocol': 'When a slip starts to spiral',
+  'Your Lifestyle Pilot': 'Your week — one small change at a time',
+};
+
+/** The situation a play answers, or null (only plays have one → the eyebrow only shows on plays). */
+export function playSituation(entry: SourceLike): string | null {
+  const label = entry?.source?.label ?? undefined;
+  return (label && PLAY_SITUATION[label]) ?? null;
+}

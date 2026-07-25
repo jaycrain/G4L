@@ -17,6 +17,7 @@ export type EventKind =
   | 'idq_start'
   | 'idq_complete'
   | 'onboarding_confirmed' // member confirmed the summary card → IDQ; meta holds the card snapshot + cardReturns
+  | 'play_rerun' // member hit "Run it again" on a Playbook play; ref = the Session id the Companion re-runs
   | 'page_view';
 
 export type LogOpts = { surface?: string | null; ref?: string | null; step?: number | null; meta?: Record<string, unknown> };

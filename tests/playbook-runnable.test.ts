@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { runnablePlay, rerunAsk } from '../lib/playbook/runnable.ts';
+import { runnablePlay, rerunAsk, playSituation } from '../lib/playbook/runnable.ts';
 
 // The False Start Protocol play is forged in Session w3 — the flagship "Run it again" case.
 test('runnablePlay: resolves the False Start Protocol → w3 with a member-voiced ask', () => {
@@ -30,7 +30,21 @@ test('runnablePlay: null for a keeper with no known Session (graceful — no but
   assert.equal(runnablePlay(null), null);
 });
 
+test('runnablePlay: the Lifestyle Pilot carries a real source.ref (b3) → resolves natively, no map needed', () => {
+  const r = runnablePlay({ source: { kind: 'own', ref: 'b3', label: 'Your Lifestyle Pilot' } });
+  assert.ok(r);
+  assert.equal(r!.sessionId, 'b3');
+  assert.equal(r!.sessionLabel, 'The Lifestyle Pilot');
+});
+
 test('rerunAsk: known id → ask; unknown id → null', () => {
   assert.match(rerunAsk('w3')!, /False Start Protocol/);
   assert.equal(rerunAsk('nope'), null);
+});
+
+test('playSituation: a play gets its "when"; a non-play gets null', () => {
+  assert.equal(playSituation({ source: { label: 'Your False Start Protocol' } }), 'When a slip starts to spiral');
+  assert.equal(playSituation({ source: { label: 'Your true line' } }), 'When the old story starts talking');
+  assert.equal(playSituation({ source: { label: 'Describing the Cyclist' } }), null);
+  assert.equal(playSituation(null), null);
 });

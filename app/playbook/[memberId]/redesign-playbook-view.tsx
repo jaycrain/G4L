@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import type { PlaybookEntry } from '../../../lib/playbook/store.ts';
-import { runnablePlay } from '../../../lib/playbook/runnable.ts';
+import { runnablePlay, playSituation } from '../../../lib/playbook/runnable.ts';
 import {
   loadPlaybookAction,
   addOwnEntryAction,
@@ -56,11 +56,13 @@ export default function RedesignPlaybookView({
   initial,
   hasHistory,
   synthesis,
+  rerunStats,
 }: {
   memberId: string;
   initial: PlaybookEntry[];
   hasHistory: boolean;
   synthesis?: string | null;
+  rerunStats?: Record<string, { n: number; last: string }>;
 }) {
   const [entries, setEntries] = useState<PlaybookEntry[]>(initial);
   const [busy, setBusy] = useState(false);
@@ -114,6 +116,8 @@ export default function RedesignPlaybookView({
     const tag = e.section === 'journal' ? null : e.source.kind === 'science' ? 'Science' : e.source.label ?? null;
     // A play we can re-run → hand it to the Companion (never resets gates; it walks the member back through it).
     const rerunnable = runnablePlay(e);
+    const situation = playSituation(e); // the "when" this play is for (situation → move) — only set for plays
+    const stats = rerunnable ? rerunStats?.[rerunnable.sessionId] : undefined; // how often they've come back to it
     return (
       <div key={e.id} className="pb-entry">
         {editing ? (
@@ -126,6 +130,7 @@ export default function RedesignPlaybookView({
           </div>
         ) : (
           <>
+            {situation && <div className="pb-situation">{situation}</div>}
             <p className="pb-line">{e.pinned && <span className="pb-pin-dot" aria-label="pinned" title="Pinned">📌</span>}{e.body}</p>
             <div className="pb-meta">
               {e.section === 'journal' ? (
@@ -140,7 +145,15 @@ export default function RedesignPlaybookView({
               </span>
             </div>
             {rerunnable && (
-              <a className="pb-run" href={`/dashboard/${memberId}?rerun=${rerunnable.sessionId}`}>Run it again with your Companion →</a>
+              <div className="pb-runrow">
+                <a className="pb-run" href={`/dashboard/${memberId}?rerun=${rerunnable.sessionId}`}>Run it again with your Companion →</a>
+                {stats && stats.n > 0 && (
+                  <span className="pb-runstat">
+                    You’ve come back to this {stats.n} time{stats.n === 1 ? '' : 's'}
+                    {stats.last ? ` · last ${new Date(stats.last).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}` : ''}
+                  </span>
+                )}
+              </div>
             )}
           </>
         )}

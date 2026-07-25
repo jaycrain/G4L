@@ -27,10 +27,22 @@ export default async function PlaybookPage({ params }: { params: Promise<{ membe
   );
   const hasHistory = (hist.rows[0]?.n ?? 0) > 0;
   const synthesis = await getPlaybookSynthesis(db, memberId);
+  // Per-Session re-run counts (Phase 2B) — how often the member has hit "Run it again" on a play → the "come back N
+  // times" signal. Keyed by the Session id the play re-runs. Drift-hardened: any hiccup just hides the counts.
+  const rerunRows = (
+    await db
+      .query<{ ref: string; n: number; last: string }>(
+        "select ref, count(*)::int n, max(created_at)::text last from member_event where member_id=$1 and kind='play_rerun' and ref is not null group by ref",
+        [memberId],
+      )
+      .catch(() => ({ rows: [] as { ref: string; n: number; last: string }[] }))
+  ).rows;
+  const rerunStats: Record<string, { n: number; last: string }> = {};
+  for (const r of rerunRows) rerunStats[r.ref] = { n: r.n, last: r.last };
   const props = { memberId, initial: entries, hasHistory, synthesis };
   return redesignEnabled() ? (
     <SubpageShell memberId={memberId}>
-      <RedesignPlaybookView {...props} />
+      <RedesignPlaybookView {...props} rerunStats={rerunStats} />
     </SubpageShell>
   ) : <PlaybookView {...props} />;
 }

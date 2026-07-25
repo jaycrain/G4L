@@ -44,6 +44,7 @@ import { getMemberExperience } from '../../lib/telemetry/store.ts';
 import { itemStem, dimensionForIndex } from '../../lib/idq/instrument.ts';
 import { getConnectSummaryForAgent } from '../../lib/connect/agent.ts';
 import { authorizeMember } from '../authz.ts';
+import { logEvent } from '../../lib/telemetry/store.ts';
 import type { Db } from '../../lib/db/schema.ts';
 
 // Build the agent's context: dashboard facts + GRINTA! Index/trend + what they've recently read.
@@ -567,4 +568,12 @@ export async function sendCheckin(memberId: string, memberMessage: string): Prom
         "I'm having a moment on my end — try again shortly. If something feels urgent, please reach out to someone you trust, or call or text 988.",
     };
   }
+}
+
+/** "Run it again" from the Playbook → record the re-run, so a play can show how often the member reaches back for it
+ *  ("come back to this 3 times"). Auth-gated, fire-safe. ref = the Session id the Companion re-runs. */
+export async function logPlayRerun(memberId: string, sessionId: string): Promise<void> {
+  if (!(await authorizeMember(memberId))) return;
+  const db = (await getDb()) as unknown as Db;
+  await logEvent(db, memberId, 'play_rerun', { surface: 'playbook', ref: sessionId }).catch(() => {});
 }

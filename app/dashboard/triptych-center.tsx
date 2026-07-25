@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { openCheckin, sendCheckin, loadCheckin } from './checkin-actions.ts';
+import { openCheckin, sendCheckin, loadCheckin, logPlayRerun } from './checkin-actions.ts';
 import { fetchReadyOutreach, respondToOutreach } from './outreach-actions.ts';
 import { rerunAsk } from '../../lib/playbook/runnable.ts';
 import RedesignRing from './redesign-ring.tsx';
@@ -196,8 +196,11 @@ export default function TriptychCenter({
     url.searchParams.delete('rerun');
     window.history.replaceState({}, '', url.pathname + url.search + url.hash);
     const ask = rerunAsk(rerun);
-    if (ask) void runSend(ask);
-  }, [threadReady, runSend]);
+    if (ask) {
+      void logPlayRerun(memberId, rerun); // record the re-run → the play's "come back N times" signal
+      void runSend(ask);
+    }
+  }, [threadReady, runSend, memberId]);
 
   return (
     <div className={`tri-companion tri-navy${hasSent ? ' is-conversing' : ''}`} data-tour="companion">
