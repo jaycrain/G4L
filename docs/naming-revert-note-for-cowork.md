@@ -1,88 +1,84 @@
-# Naming note for Cowork — why we reverted "Activity" and "Identity Reading"
+# Naming note for Cowork — why we reverted "Activity" and "Identity Reading" (for now)
 
 **Date:** 2026-07-24 · **Author:** Claude Code (platform build) + Jay
-**Audience:** Cowork (marketing/comms workspace) + the team, so we all stay aligned on terminology.
+**Audience:** Cowork (terminology/comms) + the team.
+**Relates to:** `G4L_Terminology_Glossary_Canonical_v0.1` hot-list **#1** (ID Score → ID Reading) and
+**#3** (Momentum vs Movement); and the earlier **"HEADS-UP for CC — Movement naming collision"
+(Decision BBB, 7/16)**.
 
 ## TL;DR
 
-We briefly renamed two member-facing labels on the dashboard and then **reverted both back to
-their canonical names**:
+In the app we briefly renamed two member-facing dashboard labels, then **reverted both to the names
+the product currently ships**:
 
-- **"Movement" → "Activity"** — reverted. The health/evidence subpage is **Movement** again.
-- **"ID Score" → "Identity Reading"** — reverted. The mirror card is **ID Score** again.
+- **"Movement" → "Activity"** — reverted. On-screen it's **Movement** again.
+- **"ID Score" → "Identity Reading"** — reverted. On-screen it's **ID Score** again.
 
-Nothing about the underlying features changed. This note is about *why we backed out*, so the
-naming stays consistent across the app, the Member Agent, the marketing copy, and the docs.
+**This is not a rejection of the renames** — both are live open decisions in Cowork's glossary and
+we expect them to change. The revert is narrower: *a panel-first rename was the wrong instrument.*
+Read on for why, because it directly affects how we should land #1 and #3.
 
-## What kicked it off
+## What we tried, and what broke
 
-Cowork flagged — rightly — that **"Momentum"** (the daily Good Call / False Start / Quiet Day
-pulse) and **"Movement"** (the subpage where a member's activity/health data lands) are
-uncomfortably close as words. On the dashboard they even sit near each other. So we tried renaming
-the Movement subpage to **"Activity"** to remove the collision, and — separately — relabeled the
-**ID Score** card to **"Identity Reading"** because it reads a bit less like a scoreboard.
+Cowork's Momentum-vs-Movement flag (glossary #3, and BBB before it) is real, so we renamed the
+Movement subpage to "Activity" in the app. Separately we relabeled the ID Score card to "Identity
+Reading" (glossary #1's spirit — a mirror, not a grade). Both were done as **single-panel title
+swaps**.
 
-Both were done as *panel-title* changes. That's where the trouble started.
+That immediately exposed a problem: **these terms are load-bearing across the whole surface, not
+just one card.** "ID Score" is spoken by:
 
-## Why we reverted
+- the **Member Agent** in conversation ("your ID Score…"),
+- the **Reconnect ceremony**, the **Journey**, the **Field Guide**, the `/score` page,
+- the **frozen measurement contract** (the IDQ instrument → ID Score; scoring + cadence are locked).
 
-**The names turned out to be load-bearing, not cosmetic.** In this product a term like "ID Score"
-isn't just a label on one card — it's woven through:
+So after a one-panel rename, the dashboard card said "Identity Reading" while the Companion, the
+ceremony, and the Journey all still said "ID Score." Same for Activity/Movement — the Rebuild
+coaching language ("Movement first, then eating") and the agent kept saying "Movement." **The surface
+was speaking two languages at once** — which is worse than the original one-letter-apart problem it
+was meant to solve. Jay's call was to back both out, and we agree.
 
-- the **Member Agent's own vocabulary** (the Companion literally says "your ID Score" in
-  conversation),
-- the **Reconnect ceremony**, the **Journey**, the **Field Guide**, and the `/score` page,
-- the **science + data contract** (the IDQ instrument → ID Score is a frozen measurement:
-  24 items × 4 dimensions, retaken every 60 days),
-- the **canonical brand-names list** we hold in the project's standing instructions.
+## The real lesson (this is the part for #1 and #3)
 
-So the moment we renamed one panel, the surface started **speaking two languages**: the card said
-"Identity Reading" while the Companion, the ceremony, and the Journey still said "ID Score." Same
-story for Activity/Movement — the Rebuild coaching language ("Movement first, then eating") and the
-agent still said "Movement." A member would see one word in one place and a different word one click
-away. That inconsistency is **worse** than the original "two similar words" problem it was meant to
-fix.
+**A name in this product can't be changed one screen at a time.** When we land #1 (ID Score) and #3
+(Momentum/Movement), each has to be a **single deliberate pass that changes every surface at once:**
 
-Jay's read (and we agree): *"I don't like what these changes are unraveling."* The unraveling was
-the signal. When a rename can't stay contained to one screen, it's telling you the term is a real,
-system-wide name — and renaming it is a **brand decision**, not a UI tweak.
+1. Every member-facing surface together — dashboard, subpage, ceremony, Journey, Field Guide, `/score`.
+2. The **Member Agent's vocabulary** in lockstep, so the Companion never contradicts the UI.
+3. The **glossary + the platform's canonical-names list + the data-contract note** updated to match.
+4. For ID Score, an explicit note that the **scoring stays frozen** — only the *word* moves.
+5. Cowork's external copy (site nav, "10,000 Comebacks" campaign) aligned from the same day, since
+   BBB reserved "Movement" for the brand.
 
-## The bar for doing a rename like this "for real"
+Until that pass happens, the app deliberately sits on the current names so it stays internally
+consistent.
 
-If we ever *do* want to change one of these names, it has to be done **end-to-end in a single
-deliberate pass**, not panel-first:
+## Two things the experiment usefully surfaced for the glossary
 
-1. Every member-facing surface at once (dashboard, subpage, ceremony, Journey, Field Guide).
-2. The **Member Agent's vocabulary** updated in lockstep, so the Companion never contradicts the UI.
-3. The **canonical names list + data-contract note** in the project docs updated to match.
-4. The **science/measurement identity** ("ID Score" as the name of the frozen IDQ metric) considered
-   explicitly — the *scoring* is frozen regardless; only the *word* would move.
-5. Marketing/comms (Cowork) aligned so external copy and in-app copy stay in sync from day one.
+- **The target labels aren't locked yet** — which is exactly why panel-first was premature. For
+  Movement, the floated options are **"Your Proof" / "Your Activity"** (BBB) — I shipped a bare
+  "Activity", which pre-empted that open choice. For ID Score, the glossary floats **"ID Reading"**
+  while I shipped **"Identity Reading"** — three candidate labels, none decided. **Decisions #1 and
+  #3 should pick the exact word before any code changes**, and I'll wire it as a single label
+  constant so the whole-surface swap is one change.
+- **Note a downstream collision for #3:** the momentum log's own domain tags are "Movement" /
+  "Eating" (the Rebuild body vs food commitments), *and* the Rebuild coaching arc says "Movement
+  first, then eating." So "Momentum vs Movement" isn't just two page names — "Movement" also names
+  the body-domain inside the program content. Whatever #3 lands has to account for that, or it'll
+  leave a seam.
 
-That's a scoped project, and worth doing properly if the confusion is real — not a five-minute label
-swap.
+## What did NOT change (all live and good)
 
-## What did NOT change (all still true and live)
+- **The Companion can now see a member's Momentum calls.** A real bug we fixed the same day (logged
+  Good Calls were invisible to the agent because its context was silently degrading). Fixed — the
+  Companion now names specific calls back. Unrelated to any rename; it stays.
+- Momentum, Movement, and ID Score keep their **current** on-screen names and behavior until #1/#3
+  are decided.
+- Other recent fixes (Strava sync scope, the B3 dead-end) are untouched.
 
-- **The Companion can now see a member's Momentum calls.** This was a real bug we fixed in the same
-  sitting (unrelated to the renames): logged Good Calls were invisible to the agent because the
-  context was silently degrading. Fixed — the Companion now references specific calls back to the
-  member. This stays.
-- **Momentum, Movement, and ID Score** all keep their canonical names and behavior.
-- All the other recent walk fixes (Strava sync scope, the B3 dead-end, etc.) are untouched.
+## Ask / next step
 
-## Canonical member-facing names (for reference — please keep marketing copy consistent with these)
-
-The real, explainable feature names — use these, don't introduce synonyms:
-
-**4Rs** (Reconnect · Rewire · Rebuild · Reclaim) · **IDQ** / **ID Score** · **Grinta Index** ·
-**the Journey** · **the Atlas** · **the Beat** · **the Door** · **the Fade** · **the Reclaim List** ·
-**the Loop** · **Member Agent** (the Companion) · **Founder Agent** · **Momentum** (the daily pulse)
-· **Movement** (the activity/health subpage).
-
-## Still an open question
-
-The Momentum/Movement similarity Cowork raised is **legitimate and unresolved** — we just decided the
-panel-rename was the wrong instrument. If it keeps reading as confusing (in the app or in marketing),
-let's treat it as its own deliberate naming pass per the bar above. Flag it and we'll scope it
-properly.
+**#1 (ID Score → ?) and #3 (Momentum/Movement → ?) are yours to decide (Jay-owned, with CC input).**
+When you lock the exact words, hand them to platform and we'll do the whole-surface pass in one shot
+— UI + Member Agent + docs together — so a member never sees two names for one thing. Flag it and
+we'll scope it.
