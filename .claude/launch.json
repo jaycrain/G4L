@@ -6,12 +6,6 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev"],
       "port": 3100
-    },
-    {
-      "name": "g4l-outreach",
-      "runtimeExecutable": "sh",
-      "runtimeArgs": ["-c", "OUTREACH=staged npm run dev -- -p 3100"],
-      "port": 3100
     }
   ]
 }

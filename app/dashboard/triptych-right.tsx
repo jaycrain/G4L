@@ -67,7 +67,7 @@ export default async function TriptychRight({
       {/* Movement — first-class evidence surface (Cycle 1: Strava) */}
       {activity.connected ? (
         <div className="rcard r-movement">
-          <div className="rc-h">Activity</div>
+          <div className="rc-h">Movement</div>
           <div className="rc-sub">All your activity, in one place.</div>
           <div className="rm-sources">
             <span className="rm-chip on">Strava <b>Connected</b></span>
@@ -85,7 +85,7 @@ export default async function TriptychRight({
         </div>
       ) : (
         <div className="rcard r-movement">
-          <div className="rc-h">Activity</div>
+          <div className="rc-h">Movement</div>
           <div className="rc-sub">Connect your activity — evidence of the identity coming back.</div>
           <div className="rm-sources">
             <span className="rm-chip">Strava <b className="muted">Connect</b></span>
