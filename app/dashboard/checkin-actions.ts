@@ -51,11 +51,30 @@ import type { Db } from '../../lib/db/schema.ts';
 async function buildContext(db: Db, memberId: string): Promise<CheckinContext | null> {
   const dash = await getDashboard(db, memberId);
   if (!dash) return null;
+
+  // Momentum + commitments are computed UP FRONT and folded into BOTH the full context AND the `minimal` fallback below.
+  // The member's logged calls and standing commitments MUST reach the companion even if a supplementary read degrades
+  // the rest of the context — otherwise the companion insists it "can't see your Momentum calls" while they sit right
+  // there in the log (Jay's walk: 4 Good Calls logged, companion blind, because the context had collapsed to minimal).
+  const momentumCalls = await recentCalls(db, memberId, 12).catch(() => []);
+  const activeCmts = await activeCommitments(db, memberId).catch(() => []);
+  const todayISO = new Date().toLocaleDateString('en-CA');
+  const yestISO = new Date(Date.now() - 86_400_000).toLocaleDateString('en-CA');
+  const whenLabel = (iso: string): string =>
+    iso === todayISO ? 'today' : iso === yestISO ? 'yesterday' : new Date(`${iso}T00:00:00`).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  const CALL_LABEL = { good_call: 'Good Call', false_start: 'False Start', quiet_day: 'Quiet Day' } as const;
+  const momentumLog = momentumCalls.length
+    ? momentumCalls.map((e) => ({ label: CALL_LABEL[e.type], domain: e.domain ? (DOMAIN_WORD[e.domain] as 'movement' | 'eating') : null, note: e.note, when: whenLabel(e.loggedOn) }))
+    : null;
+  const commitments = activeCmts.length
+    ? activeCmts.map((c) => ({ domain: DOMAIN_WORD[c.domain] as 'movement' | 'eating', text: c.text, serves: c.reclaimItemText }))
+    : null;
+
   // Degrade-not-crash (W-13): the companion is the cornerstone. `dash` is the ESSENTIAL read; everything below is
   // SUPPLEMENTARY context ("the agent knows X"). If ANY supplementary read rejects — e.g. a prod-drifted table, since
   // migrations don't auto-apply — fall back to this minimal-but-valid context instead of throwing. The rail then opens
-  // with name + identity + doors + reclaim list (a real opening), NEVER the "something hiccupped" error greeting. Only
-  // the 8 CheckinContext fields are required; the rest are optional, so the agent simply doesn't know the extras yet.
+  // with name + identity + doors + reclaim list (a real opening), NEVER the "something hiccupped" error greeting. Momentum
+  // + commitments ride along here too, so the companion never goes blind to logged calls even on a degrade.
   const minimal: CheckinContext = {
     displayName: dash.displayName,
     identityNoun: dash.identityNoun,
@@ -65,12 +84,14 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
     currentFocus: dash.currentFocus?.label ?? null,
     lastCompletedAsset: null,
     reclaimList: dash.reclaimList,
+    momentumLog,
+    commitments,
   };
   try {
   // "best-effort" but was UNGUARDED — and it runs a memory-fold (API/query) BEFORE everything else, so if it threw it
   // sank the entire context to minimal (this is why the companion still couldn't see momentum after the first pass).
   await maybeFoldMemory(db, memberId).catch((e) => console.warn('maybeFoldMemory failed (non-fatal):', (e as Error).message));
-  const [grinta, grintaReading, whyReading, skillsReading, pilotPlan, pilotTally, pilotCallLog, memberCommitments, biggerWorld, qdProfile, qdRecent, consumedBites, profRows, idqRows, reclaimItems, beatRows, playbook, measures, linkedMeasureRows, facets, closedIds, lastClosedRows, forecast, experience] = await Promise.all([
+  const [grinta, grintaReading, whyReading, skillsReading, pilotPlan, pilotTally, biggerWorld, qdProfile, qdRecent, consumedBites, profRows, idqRows, reclaimItems, beatRows, playbook, measures, linkedMeasureRows, facets, closedIds, lastClosedRows, forecast, experience] = await Promise.all([
     getGrinta(db, memberId, dash.identityNoun).catch(() => ({ score: null, direction: null }) as unknown as Awaited<ReturnType<typeof getGrinta>>),
     // Rebuild/Reclaim REGISTERS — all SUPPLEMENTARY context ("the agent knows X"), each null-safe downstream. Guard
     // EVERY one with .catch: a single missing/drifted register table (prod migrations don't auto-apply) must NEVER
@@ -81,8 +102,6 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
     latestSkillsReading(db, memberId).catch(() => null), // Rebuild B2 — the self-management profile the agent reflects (plain language)
     activeCoachingPlan<RebuildPilotPayload>(db, memberId, 'rebuild').catch(() => null), // Rebuild B3 — the active Lifestyle Pilot plan
     domainTally(db, memberId).catch(() => null), // Rebuild B3 — per-domain call tally (movement vs eating), OO
-    recentCalls(db, memberId, 12).catch(() => []), // the member's OWN logged entries — so the MA can notice a specific one
-    activeCommitments(db, memberId).catch(() => []), // standing commitments (0060/0061) — the accountability spine, laddered to Reclaim
     latestBiggerWorldReading(db, memberId).catch(() => null), // Reclaim C2 — the member's chosen priorities (primary + momentum lever)
     activeQualityDayProfile(db, memberId).catch(() => null), // Reclaim C3 — the Quality-Day profile
     recentQualityDays(db, memberId).catch(() => []), // Reclaim C3 — recent Quality-Day logs
@@ -181,18 +200,7 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
     : [];
   const connect = await getConnectSummaryForAgent(db, memberId).catch(() => undefined);
   const movementLog = redesignEnabled() ? await movementLogSummary(db, memberId).catch(() => '') : '';
-  // The member's own Momentum entries → made visible to the MA (CLAUDE.md: nothing the member sees is invisible to the
-  // agent). Give each a relative "when" so the companion can answer "did you notice my entry today?" precisely, and map
-  // the domain tag to the member's words (movement / eating). Includes untagged calls (the per-domain tally drops those).
-  const todayISO = new Date().toLocaleDateString('en-CA');
-  const yestISO = new Date(Date.now() - 86_400_000).toLocaleDateString('en-CA');
-  const whenLabel = (iso: string): string =>
-    iso === todayISO ? 'today' : iso === yestISO ? 'yesterday' : new Date(`${iso}T00:00:00`).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  const CALL_LABEL = { good_call: 'Good Call', false_start: 'False Start', quiet_day: 'Quiet Day' } as const;
-  const DOMAIN_WORD = { activity: 'movement', diet: 'eating' } as const;
-  const momentumLog = pilotCallLog.length
-    ? pilotCallLog.map((e) => ({ label: CALL_LABEL[e.type], domain: e.domain ? DOMAIN_WORD[e.domain] : null, note: e.note, when: whenLabel(e.loggedOn) }))
-    : null;
+  // momentumLog + commitments were computed UP FRONT (folded into `minimal` too) — see the top of buildContext.
   return {
     today: new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }),
     displayName: dash.displayName,
@@ -222,11 +230,8 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
     skillProfile: skillsReading ? skillHighlights(skillsReading.scores) : null, // Rebuild B2 — strongest + growth edge (plain language)
     pilotPlan: pilotPlan?.payload ?? null, // Rebuild B3 — the active Lifestyle Pilot (their two committed changes)
     pilotCalls: pilotPlan ? pilotTally : null, // per-domain call tally, only while a pilot is active (OO)
-    momentumLog, // the member's OWN logged entries (with notes) — visible to the MA regardless of a pilot, incl. untagged
-    // Standing commitments (the accountability spine) — mapped to member words + the Reclaim outcome each serves.
-    commitments: memberCommitments.length
-      ? memberCommitments.map((c) => ({ domain: DOMAIN_WORD[c.domain], text: c.text, serves: c.reclaimItemText }))
-      : null,
+    momentumLog, // computed up front — present here AND in the minimal fallback, so the companion never goes blind to it
+    commitments, // ditto — the accountability spine survives a context degrade
     reclaimPriorities: biggerWorld
       ? { primary: AUDIT_DOMAIN_LABEL[biggerWorld.priorities.primary], momentumLever: AUDIT_DOMAIN_LABEL[biggerWorld.priorities.momentumLever] }
       : null, // Reclaim C2 — the member's chosen priority + momentum lever (plain language)
