@@ -69,7 +69,7 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
   try {
   await maybeFoldMemory(db, memberId); // distill anything that has aged out of recall (best-effort, no-op until due)
   const [grinta, grintaReading, whyReading, skillsReading, pilotPlan, pilotTally, pilotCallLog, memberCommitments, biggerWorld, qdProfile, qdRecent, consumedBites, profRows, idqRows, reclaimItems, beatRows, playbook, measures, linkedMeasureRows, facets, closedIds, lastClosedRows, forecast, experience] = await Promise.all([
-    getGrinta(db, memberId, dash.identityNoun),
+    getGrinta(db, memberId, dash.identityNoun).catch(() => ({ score: null, direction: null }) as unknown as Awaited<ReturnType<typeof getGrinta>>),
     // Rebuild/Reclaim REGISTERS — all SUPPLEMENTARY context ("the agent knows X"), each null-safe downstream. Guard
     // EVERY one with .catch: a single missing/drifted register table (prod migrations don't auto-apply) must NEVER
     // take down the cornerstone companion. Degrade to null → the agent just doesn't know that one signal yet. Empty
@@ -85,32 +85,36 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
     activeQualityDayProfile(db, memberId).catch(() => null), // Reclaim C3 — the Quality-Day profile
     recentQualityDays(db, memberId).catch(() => []), // Reclaim C3 — recent Quality-Day logs
 
-    recentConsumedTitles(db, memberId),
+    // These were UNGUARDED — and a single throw here collapsed the WHOLE context to `minimal` (Jay's walk: the
+    // companion said it could only see Reclaim List / ID Score / Doors — the minimal fields — because a supplementary
+    // read threw and buried momentum, commitments, playbook, everything). Guard EACH so one failure degrades one field,
+    // not all of them (CLAUDE.md: wrap dashboard reads to degrade not crash). Empty defaults are downstream-null-safe.
+    recentConsumedTitles(db, memberId).catch(() => [] as string[]),
     db.query<{ intake_athletic_past: string | null; intake_gap: string | null; agent_memory: string | null; dashboard_snapshot: unknown }>(
       'select intake_athletic_past, intake_gap, agent_memory, dashboard_snapshot from member_profile where member_id=$1',
       [memberId],
-    ),
+    ).catch(() => ({ rows: [] as never[] })),
     db.query<any>(
       `select sequence_no, id_score, physical_score, self_score, social_score, outlook_score, responses
        from idq_retake where member_id=$1 and cycle_indicator=1 order by sequence_no`,
       [memberId],
-    ),
-    getReclaimItems(db, memberId),
-    db.query<{ n: number }>('select count(*)::int n from beat_completion where member_id=$1', [memberId]),
-    playbookForAgent(db, memberId),
-    measuresForAgent(db, memberId),
+    ).catch(() => ({ rows: [] as never[] })),
+    getReclaimItems(db, memberId).catch(() => [] as Awaited<ReturnType<typeof getReclaimItems>>),
+    db.query<{ n: number }>('select count(*)::int n from beat_completion where member_id=$1', [memberId]).catch(() => ({ rows: [] as never[] })),
+    playbookForAgent(db, memberId).catch(() => ({ keepers: [], recentNotes: [] }) as Awaited<ReturnType<typeof playbookForAgent>>),
+    measuresForAgent(db, memberId).catch(() => [] as Awaited<ReturnType<typeof measuresForAgent>>),
     db.query<{ reclaim_item_id: string }>(
       'select distinct reclaim_item_id from measure where member_id=$1 and reclaim_item_id is not null and archived_at is null',
       [memberId],
-    ),
-    listFacets(db, memberId),
-    closedSessionIds(db, memberId),
+    ).catch(() => ({ rows: [] as never[] })),
+    listFacets(db, memberId).catch(() => [] as Awaited<ReturnType<typeof listFacets>>),
+    closedSessionIds(db, memberId).catch(() => [] as string[]),
     db.query<{ session_id: string }>(
       "select session_id from session_progress where member_id=$1 and status='closed' order by closed_at desc nulls last limit 1",
       [memberId],
-    ),
-    getForecast(db, memberId),
-    getMemberExperience(db, memberId, (id) => getAsset(id)?.title ?? id),
+    ).catch(() => ({ rows: [] as never[] })),
+    getForecast(db, memberId).catch(() => ({ phases: [], current: null }) as unknown as Awaited<ReturnType<typeof getForecast>>),
+    getMemberExperience(db, memberId, (id) => getAsset(id)?.title ?? id).catch(() => ({ summary: '' }) as Awaited<ReturnType<typeof getMemberExperience>>),
   ]);
   const prof = profRows.rows[0];
 
@@ -125,7 +129,7 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
   const activePhaseKey = forecast.phases.find((p) => p.status === "You're here")?.phase ?? null;
   const nextStep = forecast.current ? { title: forecast.current.title, kind: forecast.current.kind, openable: forecast.current.openable } : null;
   // Today's Daily Beat — so the companion knows the reflection on their dashboard if they bring it up.
-  const dailyBeat = (await getDailyBeat(db, memberId, activePhaseKey, new Date().toLocaleDateString('en-CA')))?.text ?? null;
+  const dailyBeat = (await getDailyBeat(db, memberId, activePhaseKey, new Date().toLocaleDateString('en-CA')).catch(() => null))?.text ?? null;
 
   // Pillar 2 — change-detection: diff the member's key signals against the last interaction's
   // snapshot, then persist the new snapshot for next time. So the companion notices what moved.
@@ -139,7 +143,12 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
     namedSelves,
     activePhase,
   };
-  const recentChanges = diffSnapshot(asSnapshot(prof?.dashboard_snapshot), currSnapshot);
+  let recentChanges: ReturnType<typeof diffSnapshot>;
+  try {
+    recentChanges = diffSnapshot(asSnapshot(prof?.dashboard_snapshot), currSnapshot);
+  } catch {
+    recentChanges = []; // a malformed stored snapshot must not sink the whole context
+  }
   await db
     .query('update member_profile set dashboard_snapshot=$1::jsonb, dashboard_snapshot_at=now() where member_id=$2', [
       JSON.stringify(currSnapshot),
@@ -168,7 +177,7 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
   const idqAnswers = Array.isArray(responses)
     ? responses.map((score: number, i: number) => ({ dimension: dimensionForIndex(i), stem: itemStem(i), score }))
     : [];
-  const connect = await getConnectSummaryForAgent(db, memberId);
+  const connect = await getConnectSummaryForAgent(db, memberId).catch(() => undefined);
   const movementLog = redesignEnabled() ? await movementLogSummary(db, memberId).catch(() => '') : '';
   // The member's own Momentum entries → made visible to the MA (CLAUDE.md: nothing the member sees is invisible to the
   // agent). Give each a relative "when" so the companion can answer "did you notice my entry today?" precisely, and map
