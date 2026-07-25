@@ -68,6 +68,27 @@ export { correctsReflection };
 
 const capFirst = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
 
+// ── Contract 1 — one question per turn (docs/arc-reliability-hardening.md) ─────────────────────────────────────────
+// When the engine hands into the next beat, it prepends the model's in-voice acknowledgment (receive-before-you-move).
+// But the model's turn often ENDS on its own drawing-out question — and stacking that on top of the scripted opener
+// gave the member two questions and no room to answer (Donna's #1 door double-opener, #4 door→IDQ). Since the engine
+// has already DECIDED to advance (on the model's own done-signal), it treats the model's turn as a RECEIPT: keep the
+// reflection, drop the trailing ask, so the scripted opener is the single question. Shared here so every arc handoff
+// uses one contract and no site can reintroduce the double-ask.
+
+/** Strip a trailing question sentence from the model's turn, keeping the receipt. '' if it was only a question. */
+export function receiptOnly(modelText: string | undefined): string {
+  const t = (modelText ?? '').trim();
+  if (!t || !/\?\s*$/.test(t)) return t; // nothing to strip
+  return t.replace(/\s*[^.!?]*\?\s*$/, '').trim();
+}
+
+/** Receive-then-open: the model's receipt (question stripped) + the single scripted opener. Opener alone if no receipt. */
+export function receiveThen(modelText: string | undefined, opener: string): string {
+  const receipt = receiptOnly(modelText);
+  return receipt ? `${receipt}${BEAT_SEP}${opener}` : opener;
+}
+
 // --- stage identifiers ---------------------------------------------------------------------------------
 // The onboarding arc's stages. 'declined' is a terminal OFF-RAMP (a genuinely-thriving no-fade member is
 // gracefully declined, Decision E — out of scope, no card). Advancement is now owned by the stage handlers

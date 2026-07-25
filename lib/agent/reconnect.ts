@@ -18,7 +18,7 @@ import { identityLabel } from '../member/identity.ts';
 import type { Db } from '../db/schema.ts';
 import { MEMBER_AGENT_SYSTEM_PROMPT } from './system-prompt.ts';
 import { resolveGapConfirm } from './onboarding-intent.ts';
-import { runArcTurn, administeredStage, drawoutShouldReflect, type ArcConfig, type StageDef } from './onboarding-staged.ts';
+import { runArcTurn, administeredStage, drawoutShouldReflect, receiveThen, type ArcConfig, type StageDef } from './onboarding-staged.ts';
 import { CHECKPOINT_GRIT_ITEMS, grintaStem } from '../grinta/survey/instrument.ts';
 import type { Collected, ConvMessage, ConvState, DoorRevision, ModelTurn, ReplyIntent, Turn, Stage } from './onboarding.ts';
 
@@ -355,8 +355,8 @@ const doorsStage: StageDef = {
       // clobber what they just said (the founder answered a weighty question and got the cold "let's shift" frame).
       b.stage = 'measurement';
       const idqOpener = b.arc.stages.measurement!.opener(b.collected);
-      const ack = (b.modelText ?? '').trim();
-      b.reply = ack ? `${ack}${BEAT_SEP}${idqOpener}` : idqOpener;
+      // Contract 1: receive (keep the reflection, drop the model's trailing question), then the single IDQ opener (#4).
+      b.reply = receiveThen(b.modelText, idqOpener);
     }
   },
 };
@@ -728,9 +728,8 @@ const reconnectEntryStage: StageDef = {
 // Acknowledge the member's opener answer (the model's warm receive), THEN open the Doors excavation as its own beat.
 // Falls back to the door opener alone if the model returned nothing usable.
 function handIntoDoors(modelText: string | undefined, c: Collected): string {
-  const ack = (modelText ?? '').trim();
-  const open = doorOpen(c);
-  return ack ? `${ack}${BEAT_SEP}${open}` : open;
+  // Contract 1: the model's warm receive (question stripped) + the single Doors opener — not two stacked asks (#1).
+  return receiveThen(modelText, doorOpen(c));
 }
 
 export const RECONNECT_ARC: ArcConfig = {
