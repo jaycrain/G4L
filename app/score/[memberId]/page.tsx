@@ -4,6 +4,7 @@ import { getDashboard } from '../../../lib/gateway/flow.ts';
 import { authorizeMember } from '../../authz.ts';
 import IdqRadar from '../../dashboard/idq-radar.tsx';
 import type { Db } from '../../../lib/db/schema.ts';
+import SubpageShell from '../../dashboard/subpage-shell.tsx';
 
 // "More about your ID Score" — the mirror explainer + the identity radar (handoff: Member-Facing
 // Refresh 2026-06-24, task #1). The radar is a display of the four PSSO sub-scores already computed;
@@ -37,7 +38,7 @@ export default async function ScoreMorePage({ params }: { params: Promise<{ memb
   }
 
   return (
-    <>
+    <SubpageShell memberId={memberId}>
       <div className="hero"><h1>More about your ID Score</h1></div>
       <div className="card sub-copy">
         {dash?.score && (
@@ -78,6 +79,6 @@ export default async function ScoreMorePage({ params }: { params: Promise<{ memb
         <p>Your ID Score moves slowly; your Grinta Index moves with the work. Watch them side by side: the grit is how hard you’re working, the mirror is how reconnected you feel. They’re two true pictures of the same comeback — we keep both honest and let you see them rise together.</p>
         <p>Sixty days from now, this number gets to tell a different story. The space in between is where you write it.</p>
       </div>
-    </>
+    </SubpageShell>
   );
 }

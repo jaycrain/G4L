@@ -3,6 +3,7 @@ import { getDb } from '../../../lib/db/index.ts';
 import { latestGrintaReading } from '../../../lib/grinta/survey/store.ts';
 import { authorizeMember } from '../../authz.ts';
 import type { Db } from '../../../lib/db/schema.ts';
+import SubpageShell from '../../dashboard/subpage-shell.tsx';
 
 // "More about your Grinta Index" — the origin, what it measures, and how it grows. Data re-pointed to the SURVEY
 // grinta (grinta_reading), NOT the activity register. Copy on the four Phases (GG), no "strand" (cut for
@@ -23,7 +24,7 @@ export default async function GrintaMorePage({ params }: { params: Promise<{ mem
   const reading = await latestGrintaReading(db, memberId);
 
   return (
-    <>
+    <SubpageShell memberId={memberId}>
       <div className="hero"><h1>More about your Grinta Index</h1></div>
 
       {reading && (
@@ -79,6 +80,6 @@ export default async function GrintaMorePage({ params }: { params: Promise<{ mem
           Checkpoint is just a truer snapshot.
         </p>
       </div>
-    </>
+    </SubpageShell>
   );
 }

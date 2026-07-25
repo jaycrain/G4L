@@ -7,6 +7,7 @@ import { getDashboard } from '../../../lib/gateway/flow.ts';
 import { dashboardTriptychEnabled } from '../../../lib/dashboard/redesign.ts';
 import { looksTrackable, suggestTracker } from '../../../lib/measure/store.ts';
 import MeasureCard from '../../dashboard/measure-card.tsx';
+import SubpageShell from '../../dashboard/subpage-shell.tsx';
 import TrackThis from '../../dashboard/track-this.tsx';
 import type { Db } from '../../../lib/db/schema.ts';
 
@@ -26,7 +27,7 @@ export default async function ReclaimListPage({ params }: { params: Promise<{ me
   await logEvent(db, memberId, 'page_view', { surface: 'reclaim-list' });
 
   return (
-    <>
+    <SubpageShell memberId={memberId}>
       <div className="hero"><h1>Your Reclaim List</h1></div>
       <div className="card">
         <p className="card-subtitle">
@@ -78,6 +79,6 @@ export default async function ReclaimListPage({ params }: { params: Promise<{ me
         <Link href={`/dashboard/${memberId}`} className="momentum-nav-primary">← Back to your path</Link>
         <Link href={`/movement/${memberId}`} className="momentum-nav-secondary">See your Movement →</Link>
       </div>
-    </>
+    </SubpageShell>
   );
 }

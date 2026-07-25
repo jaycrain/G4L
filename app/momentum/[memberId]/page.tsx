@@ -10,6 +10,7 @@ import { commitmentTexts } from '../../../lib/commitments/store.ts';
 import ResiliencePulse from '../../dashboard/resilience-pulse.tsx';
 import MomentumLog, { type Commitments } from '../momentum-log.tsx';
 import type { Db } from '../../../lib/db/schema.ts';
+import SubpageShell from '../../dashboard/subpage-shell.tsx';
 
 const CALL_LABEL: Record<CallType, string> = { good_call: 'Good Call', false_start: 'False Start', quiet_day: 'Quiet Day' };
 const DOMAIN_LABEL: Record<CallDomain, string> = { activity: 'Movement', diet: 'Eating' };
@@ -56,7 +57,7 @@ export default async function MomentumPage({ params }: { params: Promise<{ membe
   const todayISO = new Date().toISOString().slice(0, 10);
 
   return (
-    <>
+    <SubpageShell memberId={memberId}>
       <div className="hero"><h1>Momentum</h1></div>
       <div className="card">
         <p className="card-subtitle">The calls you make, one at a time — and how they add up. Self-monitoring, never scored — just yours to watch.</p>
@@ -110,6 +111,6 @@ export default async function MomentumPage({ params }: { params: Promise<{ membe
         <Link href={`/dashboard/${memberId}`} className="momentum-nav-primary">← Back to your path</Link>
         <Link href={`/program/${memberId}`} className="momentum-nav-secondary">See your Journey →</Link>
       </div>
-    </>
+    </SubpageShell>
   );
 }

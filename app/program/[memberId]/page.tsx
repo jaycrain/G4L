@@ -5,6 +5,7 @@ import { authorizeMember } from '../../authz.ts';
 import { getForecast } from '../../../lib/curriculum/view.ts';
 import { logEvent } from '../../../lib/telemetry/store.ts';
 import { redesignEnabled } from '../../../lib/dashboard/redesign.ts';
+import SubpageShell from '../../dashboard/subpage-shell.tsx';
 import { completedReviewSessions } from '../../../lib/workspace/review.ts';
 import { reclaimReadiness } from '../../../lib/reclaim/readiness.ts';
 import { ASSET_SUMMARIES, phaseSummary, type AssetId, type PhaseKey } from '../../../lib/content/summaries.ts';
@@ -96,7 +97,7 @@ export default async function ProgramPage({
   const reviewable = redesignEnabled() ? completedReviewSessions(forecast) : [];
 
   return (
-    <>
+    <SubpageShell memberId={memberId}>
       <div className="hero"><h1>The Program</h1></div>
       {sessionBack && (
         <Link href={sessionBack} className="ws-back program-session-back">← Session</Link>
@@ -153,6 +154,6 @@ export default async function ProgramPage({
           <p className="route-loop">→ and the loop comes back around. Grinta for Life.</p>
         </div>
       </div>
-    </>
+    </SubpageShell>
   );
 }

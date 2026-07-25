@@ -4,6 +4,7 @@ import { getJourney } from '../../../lib/beats/store.ts';
 import { authorizeMember } from '../../authz.ts';
 import { logEvent } from '../../../lib/telemetry/store.ts';
 import type { Db } from '../../../lib/db/schema.ts';
+import SubpageShell from '../../dashboard/subpage-shell.tsx';
 
 // "More about your Journey" — the map explainer (copy v1.0) + the member's place + Reclaim tally.
 export default async function JourneyMorePage({ params }: { params: Promise<{ memberId: string }> }) {
@@ -15,7 +16,7 @@ export default async function JourneyMorePage({ params }: { params: Promise<{ me
   const r = journey.reclaim;
 
   return (
-    <>
+    <SubpageShell memberId={memberId}>
       <div className="hero"><h1>More about your Journey</h1></div>
       <div className="card sub-copy">
         <p className="sub-personal">
@@ -39,6 +40,6 @@ export default async function JourneyMorePage({ params }: { params: Promise<{ me
         <p>It’s the “how far have I come, how far to go” view — equal parts orientation and fuel. Seeing the whole map is meant to do two things at once: reassure you that it’s finite, and remind you that it’s real.</p>
         <p>And when you reach the center, the map doesn’t end — it re-forms. That’s the Loop. That’s why it’s Grinta for Life.</p>
       </div>
-    </>
+    </SubpageShell>
   );
 }

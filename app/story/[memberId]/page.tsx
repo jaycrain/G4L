@@ -4,6 +4,7 @@ import { getDashboard } from '../../../lib/gateway/flow.ts';
 import { authorizeMember } from '../../authz.ts';
 import { logEvent } from '../../../lib/telemetry/store.ts';
 import type { Db } from '../../../lib/db/schema.ts';
+import SubpageShell from '../../dashboard/subpage-shell.tsx';
 
 // "Your full story" — the identity READ (who you are), the narrative that used to crowd the dashboard
 // hero (Dashboard Reshuffle §2). Distinct from the Playbook's arc (where you've been → where you're
@@ -16,7 +17,7 @@ export default async function StoryPage({ params }: { params: Promise<{ memberId
   await logEvent(db, memberId, 'page_view', { surface: 'story' });
 
   return (
-    <>
+    <SubpageShell memberId={memberId}>
       <div className="hero"><h1>Your full story</h1></div>
       <div className="card sub-copy">
         {dash?.identityParagraph ? (
@@ -34,6 +35,6 @@ export default async function StoryPage({ params }: { params: Promise<{ memberId
           <p className="muted">Your story takes shape as you go — you&apos;ll name who you&apos;re reclaiming at Identity Excavation, and it lands here.</p>
         )}
       </div>
-    </>
+    </SubpageShell>
   );
 }

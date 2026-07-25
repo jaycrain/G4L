@@ -4,6 +4,7 @@ import { getDb } from '../../../lib/db/index.ts';
 import { authorizeMember } from '../../authz.ts';
 import { logEvent } from '../../../lib/telemetry/store.ts';
 import type { Db } from '../../../lib/db/schema.ts';
+import SubpageShell from '../../dashboard/subpage-shell.tsx';
 
 // The Field Guide — in-product orientation. Copy is Field Guide v1.0 (verbatim from
 // G4L_Field_Guide_v1.0.md), superseding the June-23 Refresh v0.1. Reflects decisions through HH:
@@ -17,7 +18,7 @@ export default async function FieldGuidePage({ params }: { params: Promise<{ mem
   await logEvent(db, memberId, 'page_view', { surface: 'field_guide' });
 
   return (
-    <>
+    <SubpageShell memberId={memberId}>
       <div className="hero"><h1>Field Guide</h1></div>
 
       <div className="card">
@@ -71,6 +72,6 @@ export default async function FieldGuidePage({ params }: { params: Promise<{ mem
           </p>
         </section>
       </div>
-    </>
+    </SubpageShell>
   );
 }
