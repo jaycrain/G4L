@@ -67,7 +67,9 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
     reclaimList: dash.reclaimList,
   };
   try {
-  await maybeFoldMemory(db, memberId); // distill anything that has aged out of recall (best-effort, no-op until due)
+  // "best-effort" but was UNGUARDED — and it runs a memory-fold (API/query) BEFORE everything else, so if it threw it
+  // sank the entire context to minimal (this is why the companion still couldn't see momentum after the first pass).
+  await maybeFoldMemory(db, memberId).catch((e) => console.warn('maybeFoldMemory failed (non-fatal):', (e as Error).message));
   const [grinta, grintaReading, whyReading, skillsReading, pilotPlan, pilotTally, pilotCallLog, memberCommitments, biggerWorld, qdProfile, qdRecent, consumedBites, profRows, idqRows, reclaimItems, beatRows, playbook, measures, linkedMeasureRows, facets, closedIds, lastClosedRows, forecast, experience] = await Promise.all([
     getGrinta(db, memberId, dash.identityNoun).catch(() => ({ score: null, direction: null }) as unknown as Awaited<ReturnType<typeof getGrinta>>),
     // Rebuild/Reclaim REGISTERS — all SUPPLEMENTARY context ("the agent knows X"), each null-safe downstream. Guard
