@@ -36,6 +36,12 @@ const REPORT_SQL = `select jsonb_build_object(
        'arc', a.arc, 'state', a.state, 'msg_count', jsonb_array_length(a.messages), 'updated_at', a.updated_at) order by a.updated_at), '[]')
      from arc_session a where a.member_id = $1),
   'phase_gates', (select coalesce(jsonb_agg(to_jsonb(g) order by g.set_at), '[]') from phase_gate g where g.member_id = $1),
+  -- Playbook keepers — so a play's keeper_type/state/source_label is inspectable (e.g. "why no Run-it-again button?").
+  'playbook', (select coalesce(jsonb_agg(jsonb_build_object(
+       'section', p.section, 'keeper_type', p.keeper_type, 'state', p.state, 'pinned', p.pinned,
+       'source_kind', p.source_kind, 'source_ref', p.source_ref, 'source_label', p.source_label,
+       'body', left(p.body, 80)) order by p.section, p.sort_order), '[]')
+     from playbook_entry p where p.member_id = $1),
   'badges', (select coalesce(jsonb_agg(to_jsonb(b) order by b.earned_at), '[]') from badge_earned b where b.member_id = $1),
   'rebuild_readings', jsonb_build_object(
      'motivation',      (select coalesce(jsonb_agg(to_jsonb(x)), '[]') from motivation_reading x      where x.member_id = $1),
