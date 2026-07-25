@@ -319,7 +319,7 @@ export default async function RedesignDashboard({ db, memberId, dash }: { db: Db
         {/* The three registers — distinct instruments, compact summaries with See more → */}
         <div className="r-registers">
           <div className="rcard r-reg" data-tour="idscore">
-            <div className="rreg-eyebrow">Identity Reading</div>
+            <div className="rreg-eyebrow">ID Score</div>
             <div className="rc-sub">How close you are to yourself.</div>
             {dash.score ? (
               <>
