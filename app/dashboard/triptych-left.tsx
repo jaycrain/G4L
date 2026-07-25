@@ -3,7 +3,6 @@ import type { Db } from '../../lib/db/schema.ts';
 import type { Dashboard } from '../../lib/gateway/flow.ts';
 import { latestGrintaReading } from '../../lib/grinta/survey/store.ts';
 import { getPassport } from '../../lib/curriculum/view.ts';
-import IdqRadar from './idq-radar.tsx';
 import BadgeStamp, { BadgeStampPlaceholder } from './badge-stamp.tsx';
 
 // Triptych LEFT flank — "Where You Are" (reflect / the mirrors): ID Score · Grinta Index · Badges. Server component: the
@@ -20,6 +19,13 @@ const R_STRANDS = [
 ] as const;
 const R_RING_COLOR: Record<string, string> = { reconnect: '#374f63', rewire: '#3b9495', rebuild: '#919536', reclaim: '#ec6233' };
 const ARROW: Record<string, string> = { up: '↑', down: '↓', flat: '→' };
+// The four IDQ (PSSO) dimensions, each scored /30 — the numeric read behind the headline ID Score.
+const IDQ_DIMS = [
+  { key: 'physical', label: 'Physical' },
+  { key: 'self', label: 'Self' },
+  { key: 'social', label: 'Social' },
+  { key: 'outlook', label: 'Outlook' },
+] as const;
 
 export default async function TriptychLeft({ db, memberId, dash }: { db: Db; memberId: string; dash: Dashboard }) {
   const [grinta, passport, idqRows] = await Promise.all([
@@ -36,6 +42,10 @@ export default async function TriptychLeft({ db, memberId, dash }: { db: Db; mem
       ? 'ready now'
       : new Date(lastIdq.getTime() + 60 * 86_400_000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
     : null;
+  // The four PSSO dimensions + their raw sum (/120) — the numeric breakdown behind the headline, so the member can see
+  // the four don't add up to the big number: the sum scales to a 0–100 read.
+  const idqDims = dash.score?.dimensions ?? null;
+  const idqSum = idqDims ? idqDims.physical + idqDims.self + idqDims.social + idqDims.outlook : null;
 
   return (
     <div className="tri-stack">
@@ -46,7 +56,7 @@ export default async function TriptychLeft({ db, memberId, dash }: { db: Db; mem
         {dash.score ? (
           <>
             <div className="rreg-big">
-              {Math.round(dash.score.score)}
+              {Math.round(dash.score.score)}<span className="rreg-unit"> / 100</span>
               {dash.score.direction && dash.score.direction !== 'flat' && (
                 <span className={`rreg-dir dir-${dash.score.direction}`}>
                   {ARROW[dash.score.direction]}
@@ -56,8 +66,24 @@ export default async function TriptychLeft({ db, memberId, dash }: { db: Db; mem
                 </span>
               )}
             </div>
-            {dash.score.dimensions && (
-              <div className="rreg-radar"><IdqRadar current={dash.score.dimensions} size={104} withLabels={false} /></div>
+            {idqDims && idqSum !== null && (
+              <>
+                {/* The numeric read behind the headline — each dimension /30, then the raw sum /120, so the scaling is
+                    honest: the four don't add up to the big number; the sum scales to a 0–100 read. */}
+                <div className="rreg-strands">
+                  {IDQ_DIMS.map((dim) => (
+                    <div className="rreg-strand" key={dim.key}>
+                      <span>{dim.label}</span>
+                      <span className="rreg-dimv">{idqDims[dim.key]}<span className="rreg-dimmax">/30</span></span>
+                    </div>
+                  ))}
+                  <div className="rreg-strand rreg-strand-total">
+                    <span>All four</span>
+                    <span className="rreg-dimv">{idqSum}<span className="rreg-dimmax">/120</span></span>
+                  </div>
+                </div>
+                <p className="rreg-scalenote">They add up to {idqSum} of 120 — your ID Score scales that to a 0–100 read.</p>
+              </>
             )}
             {nextIdqLabel && <div className="rreg-nextidq">Your next IDQ is {nextIdqLabel}</div>}
           </>

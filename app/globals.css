@@ -1338,6 +1338,11 @@ body.redesign-on .confidential-footer { display: none; } /* full-bleed app — n
 .rreg-strand { display: flex; justify-content: space-between; font-size: 13px; padding: 5px 0; border-top: 1px solid #e3e2df; }
 .rreg-strand:first-child { border-top: none; }
 .rreg-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 7px; vertical-align: 1px; }
+/* ID Score dimension breakdown (reuses .rreg-strands rows): teal value + muted /max, and a bolded "All four" total. */
+.rreg-dimv { color: var(--teal); font-weight: 800; white-space: nowrap; }
+.rreg-dimmax { color: var(--navy); opacity: .45; font-weight: 600; font-size: .85em; margin-left: 1px; }
+.rreg-strand-total { border-top-width: 2px; padding-top: 7px; font-weight: 700; }
+.rreg-scalenote { margin-top: 10px; font-size: 12px; color: #6b7680; line-height: 1.45; }
 .rreg-mom-viz { margin-top: 16px; }
 .rreg-mom-cap { font-size: 12px; color: #8b949b; margin-top: 12px; }
 .rreg-more { display: inline-block; margin-top: auto; padding-top: 16px; align-self: flex-start; color: var(--teal); font-weight: 600; font-size: 13px; text-decoration: none; }
