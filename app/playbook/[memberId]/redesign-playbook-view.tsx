@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import type { PlaybookEntry } from '../../../lib/playbook/store.ts';
+import { runnablePlay } from '../../../lib/playbook/runnable.ts';
 import {
   loadPlaybookAction,
   addOwnEntryAction,
@@ -111,6 +112,8 @@ export default function RedesignPlaybookView({
   function entryCard(e: PlaybookEntry) {
     const editing = editingId === e.id;
     const tag = e.section === 'journal' ? null : e.source.kind === 'science' ? 'Science' : e.source.label ?? null;
+    // A play we can re-run → hand it to the Companion (never resets gates; it walks the member back through it).
+    const rerunnable = runnablePlay(e);
     return (
       <div key={e.id} className="pb-entry">
         {editing ? (
@@ -136,6 +139,9 @@ export default function RedesignPlaybookView({
                 <button type="button" onClick={() => run(() => removeEntryAction(memberId, e.id))} disabled={busy}>Remove</button>
               </span>
             </div>
+            {rerunnable && (
+              <a className="pb-run" href={`/dashboard/${memberId}?rerun=${rerunnable.sessionId}`}>Run it again with your Companion →</a>
+            )}
           </>
         )}
       </div>

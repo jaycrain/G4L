@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { openCheckin, sendCheckin, loadCheckin } from './checkin-actions.ts';
 import { fetchReadyOutreach, respondToOutreach } from './outreach-actions.ts';
+import { rerunAsk } from '../../lib/playbook/runnable.ts';
 import RedesignRing from './redesign-ring.tsx';
 import type { HeroCard } from '../../lib/dashboard/hero-card.ts';
 import type { CenterKeeper } from '../../lib/dashboard/center-keeper.ts';
@@ -51,6 +52,13 @@ export default function TriptychCenter({
   useEffect(() => {
     pendingRef.current = pending;
   }, [pending]);
+  // Mirror messages into a ref so the "run it again" auto-send (fired from an effect) appends to the CURRENT thread
+  // without a stale closure. threadReady flips once the persisted thread has loaded, so the auto-send lands after it.
+  const messagesRef = useRef<Msg[]>([]);
+  useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
+  const [threadReady, setThreadReady] = useState(false);
 
   // Load the persisted thread once on mount (same opener logic as the rail).
   const loadedRef = useRef(false);
@@ -66,6 +74,7 @@ export default function TriptychCenter({
         setMessages([{ role: 'agent', text: 'I’m here. Something hiccupped loading our thread — send a message and we’ll go.' }]);
       } finally {
         setPending(false);
+        setThreadReady(true);
       }
     })();
   }, [memberId, seed]);
@@ -137,31 +146,58 @@ export default function TriptychCenter({
     };
   }, [memberId]);
 
+  // The core send — shared by the composer and the "run it again" auto-send. Reads the live thread from the ref so
+  // either caller appends correctly. Purely conversational: it sends a member message; it never touches gates or flow.
+  const runSend = useCallback(
+    async (text: string) => {
+      if (!text || pendingRef.current) return;
+      setHasSent(true); // follow the newest message + collapse the mobile hero (see the autoscroll effect)
+      const history = messagesRef.current;
+      setMessages([...history, { role: 'member', text }]);
+      setPending(true);
+      // Replying to the companion IS engaging the open nudge — record it (resets cadence back-off) and clear it.
+      if (nudge) {
+        void respondToOutreach(memberId, nudge.id, 'replied', text);
+        setNudge(null);
+      }
+      try {
+        const r = await sendCheckin(memberId, text);
+        setMessages([...history, { role: 'member', text }, { role: 'agent', text: r.reply }]);
+        // The companion may have written to the member's records — refresh so the flanks re-read.
+        if (r.mutated) router.refresh();
+      } catch {
+        setMessages([...history, { role: 'member', text }, { role: 'agent', text: 'Sorry — that didn’t go through. Try again in a moment.' }]);
+      } finally {
+        setPending(false);
+      }
+    },
+    [memberId, nudge, router],
+  );
+
   async function send(e?: React.FormEvent) {
     e?.preventDefault();
     const text = input.trim();
     if (!text || pending) return;
-    setHasSent(true); // from here on, follow the newest message + collapse the mobile hero (see the autoscroll effect)
-    const history = messages;
-    setMessages([...history, { role: 'member', text }]);
     setInput('');
-    setPending(true);
-    // Replying to the companion IS engaging the open nudge — record it (resets cadence back-off) and clear it.
-    if (nudge) {
-      void respondToOutreach(memberId, nudge.id, 'replied', text);
-      setNudge(null);
-    }
-    try {
-      const r = await sendCheckin(memberId, text);
-      setMessages([...history, { role: 'member', text }, { role: 'agent', text: r.reply }]);
-      // The companion may have written to the member's records — refresh so the flanks re-read.
-      if (r.mutated) router.refresh();
-    } catch {
-      setMessages([...history, { role: 'member', text }, { role: 'agent', text: 'Sorry — that didn’t go through. Try again in a moment.' }]);
-    } finally {
-      setPending(false);
-    }
+    await runSend(text);
   }
+
+  // "Run it again" from the Playbook (?rerun=<sessionId>): once the thread has loaded, hand the play to the Companion
+  // as a member ask ("Can we go back through my …?") and let it walk them through it. Strip the param so a refresh
+  // doesn't re-fire. Fires exactly once. NEVER resets a gate or the Program flow — it's just a message.
+  const rerunFired = useRef(false);
+  useEffect(() => {
+    if (!threadReady || rerunFired.current || typeof window === 'undefined') return;
+    rerunFired.current = true;
+    const params = new URLSearchParams(window.location.search);
+    const rerun = params.get('rerun');
+    if (!rerun) return;
+    const url = new URL(window.location.href);
+    url.searchParams.delete('rerun');
+    window.history.replaceState({}, '', url.pathname + url.search + url.hash);
+    const ask = rerunAsk(rerun);
+    if (ask) void runSend(ask);
+  }, [threadReady, runSend]);
 
   return (
     <div className={`tri-companion tri-navy${hasSent ? ' is-conversing' : ''}`} data-tour="companion">

@@ -1,0 +1,29 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { runnablePlay, rerunAsk } from '../lib/playbook/runnable.ts';
+
+// The False Start Protocol play is forged in Session w3 — the flagship "Run it again" case.
+test('runnablePlay: resolves the False Start Protocol → w3 with a member-voiced ask', () => {
+  const r = runnablePlay({ source: { kind: 'own', ref: 'protocol', label: 'Your False Start Protocol' } });
+  assert.ok(r, 'should resolve');
+  assert.equal(r!.sessionId, 'w3');
+  assert.equal(r!.sessionLabel, 'False Start Protocol');
+  assert.match(r!.ask, /go back through my False Start Protocol/);
+});
+
+test('runnablePlay: prefers a real captured Session ref over the label map', () => {
+  const r = runnablePlay({ source: { kind: 'session', ref: 'w2', label: 'Your False Start Protocol' } });
+  assert.ok(r);
+  assert.equal(r!.sessionId, 'w2'); // the durable ref wins, so capture quietly retires the map
+});
+
+test('runnablePlay: null for a keeper with no known Session (graceful — no button)', () => {
+  assert.equal(runnablePlay({ source: { kind: 'own', label: 'Some other keeper' } }), null);
+  assert.equal(runnablePlay({ source: {} }), null);
+  assert.equal(runnablePlay(null), null);
+});
+
+test('rerunAsk: known id → ask; unknown id → null', () => {
+  assert.match(rerunAsk('w3')!, /False Start Protocol/);
+  assert.equal(rerunAsk('nope'), null);
+});

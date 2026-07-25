@@ -131,6 +131,23 @@ A confident reframe of the whole surface (the mock accompanies this doc):
 - **Tone at the Loop.** Re-entry has to be met as *the loop turning* (normalize — "this is the work,
   not a relapse"), never as "you're back at square one." Governance-critical copy.
 
+## "Run it again" = the Companion, never the gates (decided)
+
+Jay (2026-07-25): **Option A.** "Run it again" hands the play to the **Companion**, which walks the
+member back through it *conversationally* — it does **not** reset any gates or touch the Program flow.
+A completed Session can't be replayed as a screen (and shouldn't be); the re-run is the Companion doing
+it with you, seeded with what you did last time. No replay engine, no gate surgery — the cornerstone
+(the Companion) is the thing that runs the play.
+
+## Future: custom cycles (Greg + Jay, discussed, not yet designed)
+
+The play→Session map we build for "Run it again" is the **first tag in a bigger system**: once Sessions
+and assets are tagged, the Companion can **pull the right ones and assemble a *custom cycle*** for a
+member — a loop built from what we actually know about them (their assessments + their conversations),
+not the fixed 4R sequence. This is a real future direction Greg and Jay have talked about but not
+formally designed. We're not building it now — but the tagging groundwork here should be shaped so it
+*feeds* that later (tags are reusable metadata, not a one-off for the Playbook button).
+
 ## How this reconciles with the Member Agent
 
 This *deepens* the MA rather than adding a parallel surface: the Companion already reads the keepers
