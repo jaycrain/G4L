@@ -3,7 +3,6 @@ import { getDb } from '../../lib/db/index.ts';
 import { currentMemberId } from '../auth.ts';
 import { logoutAction } from '../login/actions.ts';
 import { logoutEverywhereAction } from './actions.ts';
-import { initials } from '../../lib/member/avatar.ts';
 import EnableNotifications from '../dashboard/enable-notifications.tsx';
 import NotificationPrefs from './notification-prefs.tsx';
 import { outreachEnabled } from '../../lib/outreach/config.ts';
@@ -41,15 +40,9 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
 
   return (
     <SubpageShell memberId={memberId}>
-      <div className="member-greeting">
-        {m.avatar_url ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img className="avatar" src={m.avatar_url} alt={m.display_name} />
-        ) : (
-          <span className="avatar-initials" aria-hidden="true">{initials(m.display_name)}</span>
-        )}
-        <span className="greeting">Your account</span>
-      </div>
+      {/* Navy hero banner — same treatment every other subpage carries (Jay's walk: Account was missing it).
+          The topbar already shows the avatar + "Hi, {name}", so the banner is the title, not a second greeting. */}
+      <div className="hero"><h1>Account Settings</h1></div>
 
       <div className="card">
         <h3>Profile</h3>
