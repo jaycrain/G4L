@@ -1418,6 +1418,10 @@ body.redesign-on .confidential-footer { display: none; } /* full-bleed app — n
    existing arc chat client, the canvas holds wayfinding + the artifact. ---- */
 .ws-back { display: inline-block; margin: 8px 0 2px; color: var(--teal); font-weight: 600; font-size: 0.9rem; text-decoration: none; }
 .ws-back:hover { text-decoration: underline; }
+/* Uniform "← Dashboard" spacing on every subpage: the wrap's top padding is the space ABOVE, a clean 1rem BELOW to the
+   hero — same on Movement, Badges, Account, and all SubpageShell pages. (Scoped to the subpage wraps; the workspace
+   back links keep their own spacing.) */
+.subpage-wrap > .ws-back, .mv-wrap > .ws-back, .bd-wrap > .ws-back { margin: 0 0 1rem; }
 .ws-app { min-height: calc(100vh - 64px); }
 /* Read-only review — no live rail, so the canvas gets the full width; a calm "completed" banner replaces the ring. */
 .ws-review .redesign-canvas { max-width: 820px; margin: 0 auto; }

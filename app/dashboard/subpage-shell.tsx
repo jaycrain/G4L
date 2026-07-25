@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import Link from 'next/link';
 import RedesignChrome from './redesign-chrome.tsx';
 import RedesignTopbar from './redesign-topbar.tsx';
 
@@ -12,7 +13,11 @@ export default function SubpageShell({ memberId, children }: { memberId: string;
     <>
       <RedesignChrome />
       <RedesignTopbar memberId={memberId} />
-      <div className="subpage-wrap">{children}</div>
+      <div className="subpage-wrap">
+        {/* Restores the "← Dashboard" link that RedesignChrome hides with the global chrome (the pages relied on it). */}
+        <Link href={`/dashboard/${memberId}`} className="ws-back">← Dashboard</Link>
+        {children}
+      </div>
     </>
   );
 }

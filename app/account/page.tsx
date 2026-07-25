@@ -11,6 +11,7 @@ import { getPref } from '../../lib/outreach/store.ts';
 import AvatarUpload from './avatar-upload.tsx';
 import ProfileForm from './profile-form.tsx';
 import PasswordForm from './password-form.tsx';
+import SubpageShell from '../dashboard/subpage-shell.tsx';
 import StravaConnect from './strava-connect.tsx';
 import ConnectSettings from './connect-settings.tsx';
 import { getConnection } from '../../lib/activity/store.ts';
@@ -39,7 +40,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
   const notiPref = outreachEnabled() ? await getPref(db, memberId).catch(() => null) : null;
 
   return (
-    <>
+    <SubpageShell memberId={memberId}>
       <div className="member-greeting">
         {m.avatar_url ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -108,6 +109,6 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
           </form>
         </div>
       </div>
-    </>
+    </SubpageShell>
   );
 }
