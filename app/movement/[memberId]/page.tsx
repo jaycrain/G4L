@@ -10,6 +10,7 @@ import { formatDistance, formatDuration, typeLabel, relativeDay, weekTrend, week
 import { getReclaimItems } from '../../../lib/beats/store.ts';
 import { listMovementLog } from '../../../lib/movement/store.ts';
 import RedesignChrome from '../../dashboard/redesign-chrome.tsx';
+import RedesignTopbar from '../../dashboard/redesign-topbar.tsx';
 import StravaConnect from '../../account/strava-connect.tsx';
 import LogActivity from '../log-activity.tsx';
 import SyncNow from '../sync-now.tsx';
@@ -71,6 +72,7 @@ export default async function MovementPage({ params }: { params: Promise<{ membe
   return (
     <>
       <RedesignChrome />
+      <RedesignTopbar memberId={memberId} />
       <div className="mv-wrap">
         <Link href={`/dashboard/${memberId}`} className="ws-back">← Dashboard</Link>
         <div className="hero"><h1>Movement</h1></div>

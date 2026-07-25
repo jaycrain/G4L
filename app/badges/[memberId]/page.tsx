@@ -6,6 +6,7 @@ import { getPassport, reconcileRedesignBadges, type PassportView } from '../../.
 import { badgePhase, type BadgePhase } from '../../../lib/curriculum/registry.ts';
 import { redesignEnabled } from '../../../lib/dashboard/redesign.ts';
 import RedesignChrome from '../../dashboard/redesign-chrome.tsx';
+import RedesignTopbar from '../../dashboard/redesign-topbar.tsx';
 import BadgeStamp from '../../dashboard/badge-stamp.tsx';
 import type { Db } from '../../../lib/db/schema.ts';
 
@@ -65,6 +66,7 @@ function redesignView(memberId: string, passport: PassportView) {
   return (
     <>
       <RedesignChrome />
+      <RedesignTopbar memberId={memberId} />
       <div className="bd-wrap">
         <Link href={`/dashboard/${memberId}`} className="ws-back">← Dashboard</Link>
         <div className="hero"><h1>Your Badges</h1></div>
