@@ -39,9 +39,9 @@ export default async function TriptychLeft({ db, memberId, dash }: { db: Db; mem
 
   return (
     <div className="tri-stack">
-      {/* ID Score — the mirror */}
+      {/* Identity Reading (the ID Score, member-facing label) — the mirror */}
       <div className="rcard r-reg" data-tour="idscore">
-        <div className="rreg-eyebrow">ID Score</div>
+        <div className="rreg-eyebrow">Identity Reading</div>
         <div className="rc-sub">How close you are to yourself.</div>
         {dash.score ? (
           <>
