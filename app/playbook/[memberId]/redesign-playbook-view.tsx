@@ -19,11 +19,13 @@ import {
 // unchanged; this is a presentation refactor over the same stateful data.
 
 type ChapterKey = 'who' | 'lights' | 'tells' | 'plays' | 'why';
+// Plays lead — they're the heart of an operating manual (Jay: the Playbook's real value is "how did I handle this
+// before?"). The rest follow: who you are, what lights you up, your tells, why it works.
 const CHAPTERS: { key: ChapterKey; title: string; sub: string; empty: string }[] = [
+  { key: 'plays', title: 'Your plays', sub: 'Your true lines and recovery moves — reach for them when it’s hard.', empty: 'Your reframes and comeback moves get kept here — your go-to plays.' },
   { key: 'who', title: 'Who you are', sub: 'The selves you’re reclaiming — named in your words.', empty: 'The identities you reclaim land here as you name them.' },
   { key: 'lights', title: 'What lights you up', sub: 'The fuel — what’s still alive in you.', empty: 'What still moves you gets kept here — your spark, in your words.' },
   { key: 'tells', title: 'Your tells', sub: 'The patterns worth catching early.', empty: 'The signs you’re drifting land here, so you can catch them sooner.' },
-  { key: 'plays', title: 'Your plays', sub: 'Your true lines and recovery moves — reach for them when it’s hard.', empty: 'Your reframes and comeback moves get kept here — your go-to plays.' },
   { key: 'why', title: 'Why it works', sub: 'The science that convinced you — in plain language, not the whole textbook.', empty: 'The few facts that actually land for you get kept here, plainly.' },
 ];
 const CHAPTER_LABEL: Record<ChapterKey, string> = { who: 'Who you are', lights: 'Lights you up', tells: 'Your tells', plays: 'Your plays', why: 'Why it works' };
@@ -164,7 +166,7 @@ export default function RedesignPlaybookView({
     <>
       {/* Navy hero banner — same treatment every other subpage carries (Jay's walk: Playbook was missing it). */}
       <div className="hero"><h1>G4L Playbook</h1></div>
-      <p className="pb-sub">Everything you’ve kept — sorted by what it’s for, so you can reach for the right thing fast.</p>
+      <p className="pb-sub">Everything that works for you, in one place — the plays you reach for when you need them.</p>
 
       {gathering ? (
         <div className="pb-gather"><span className="typing">Gathering from your work…</span></div>
@@ -223,10 +225,12 @@ export default function RedesignPlaybookView({
         </section>
       ))}
 
-      {/* JOURNAL — free-write intake; the Companion harvests keepers up into the chapters. */}
+      {/* JOURNAL — a first-class reflective tool, not a footnote (Jay): thoughts + feelings in the member's own words,
+          timestamped to where they are. Two respected jobs — it's feedstock (the Companion pulls keepers up into the
+          plays above) AND its own reward (the writing is the point, whether or not anything gets promoted). */}
       <section className="pb-card pb-journal">
         <div className="pb-sec">Your journal</div>
-        <div className="pb-sec-d">Write a little or a lot, anytime. Your companion reads it and pulls keepers up — it only replies if you ask.</div>
+        <div className="pb-sec-d">Thoughts and feelings in your own words, timestamped to where you are. For a lot of people this is the most freeing thing here — a place to think on the page and understand yourself. Your companion reads it and pulls keepers up into your plays, but the writing itself is the point — it only replies if you ask.</div>
         {journal.map(entryCard)}
         <div className="pb-add">
           <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2} placeholder="Write your own entry…" disabled={busy} />

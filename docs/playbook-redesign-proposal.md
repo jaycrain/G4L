@@ -50,13 +50,15 @@ games — it's the plays you call when a situation shows up on the field. Three 
 that:
 
 ### 1. Plays become runnable, not just readable
-Every play is a card with three parts:
+A play is a **structured template the member fills — passively, with the Companion doing the work.** As a
+member talks and finishes Sessions, the Companion drafts the play in the background; the member just
+confirms/edits. Three parts:
 - **the situation** it's for — in their words ("when I feel invisible at home")
 - **the move** — their own recovery line, verbatim
-- **→ Run this again** — a launch back into the exercise/Session that forged it, with a **run-count**
-  and **last-used** ("you've run this 3 times · last in May")
+- **→ Run it again** — relaunches the **Session** that forged it, with a **run-count** and **last-used**
+  ("you've run this 3 times · last in May")
 
-*What it needs:* when the Companion proposes a play from a Session, capture the **source asset id**
+*What it needs:* when the Companion proposes a play from a Session, capture the **source Session id**
 (the `source.ref` field already exists on `playbook_entry` — today it's a label, not a launch target).
 That one link turns text into a button.
 
@@ -68,13 +70,13 @@ Companion opens with a **Playbook-powered move**, not a blank Reconnect:
 > way back. Want to start there?"
 
 It pulls the relevant past plays / tells / recovery-moves by **Door-type or ID dimension**, and offers
-to **re-run the exercise**. This is keeper-recall graduating from a reactive keyword match to a
+to **re-run the Session**. This is keeper-recall graduating from a reactive keyword match to a
 **proactive, roadmap-level** surfacing at exactly the moment it's worth the most. *This is the "how did
 I handle this before?" → "oh yeah, let's go through that again" that Jay described.*
 
 ### 3. A "Right now" band — the forward dimension
 The Playbook gets a top section that faces *ahead*, not back: given where the member is (their lit
-Session, a low ID dimension, a fresh Door), the Companion surfaces **the one play or exercise that
+Session, a low ID dimension, a fresh Door), the Companion surfaces **the one play or Session that
 fits this moment**, with a Run button. The Playbook stops being a place you visit for nostalgia and
 becomes the place you go when you're stuck.
 
@@ -88,13 +90,21 @@ A confident reframe of the whole surface (the mock accompanies this doc):
   you, in one place."* It reads as an asset that's **growing in value**, not a filing cabinet.
 - **"Right now"** band at the very top — the contextual play/exercise for this moment (or, at a Loop,
   the "you've been here before" lead-in). One clear Run action.
-- **Your plays** — the heart of it. Cards: *situation → move → Run the exercise*, each with run-count
+- **Your plays** — the heart of it. Cards: *situation → move → Run the Session*, each with run-count
   and last-used. This is the roll-up of what works.
 - **Who you are** — named selves + the story-so-far synthesis. The identity roll-up — the wins, the
   reclaimed selves, the proof it's coming back.
 - **Your tells** — the early-warning patterns, so the member (and the Companion) catch a drift sooner.
 - **Why it works** — the handful of science that actually landed for them.
-- **Notes** — the journal, folded to a quieter role. It's *intake*, not the point.
+- **The Journal — a first-class reflective tool, not a footnote.** For members who naturally write, this
+  is one of the most productive things in the program: thoughts and feelings captured in their own words,
+  **time-stamped to the Session they just finished** — a real record of how they were thinking at that
+  moment. It's a place that "sets you free from time to time and helps you understand yourself" (Jay). Two
+  jobs, both respected: (a) it's *feedstock* — the Companion reads it and pulls keepers up into the plays
+  and chapters; and (b) it's *its own reward* — the writing itself is the value, whether or not anything
+  gets promoted. Give it real presence, timestamped to Sessions. **Down the road:** a lightweight, opt-in
+  *formal* journaling practice we could encourage for everyone (prompts, cadence) — a growth path, not a
+  v1 requirement. Do not demote it.
 - **At the Loop** — a distinct state: *"You've been here before."* The Playbook leads the re-entry
   instead of the member starting cold.
 
@@ -104,7 +114,8 @@ A confident reframe of the whole surface (the mock accompanies this doc):
 
 - **Phase 1 — reframe + surface (cheap, no new data model).** New IA + copy ("operating manual," not
   scrapbook); foreground plays + wins; add run-count / last-used; **promote keeper-recall to a visible
-  feature.** Mostly presentation over data we already have.
+  feature**; and **give the Journal a first-class, Session-timestamped home** (respected, not demoted).
+  Mostly presentation over data we already have.
 - **Phase 2 — make plays runnable (the unlock).** Capture the source asset id when a play is proposed;
   add "Run this again" that relaunches the exercise. Small data change, big feel change.
 - **Phase 3 — the Loop (the cornerstone).** Proactive Playbook surfacing at re-Reconnect / new Door —
@@ -115,7 +126,7 @@ A confident reframe of the whole surface (the mock accompanies this doc):
 - **Loop detection.** When does re-Reconnect fire — ID-fade signal, member-declared, or a new Door
   detected? The Playbook's Loop behavior is only as good as this trigger. (This is the "how to get out
   of / back into the Loop" W-28 item already open with Greg.)
-- **Play → exercise mapping.** Not every play maps cleanly to one re-runnable asset. Which plays are
+- **Play → Session mapping.** Not every play maps cleanly to one re-runnable Session. Which plays are
   "runnable," and what happens for the ones that are pure principle?
 - **Tone at the Loop.** Re-entry has to be met as *the loop turning* (normalize — "this is the work,
   not a relapse"), never as "you're back at square one." Governance-critical copy.
