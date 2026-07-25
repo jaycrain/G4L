@@ -13,7 +13,7 @@ import type { Db } from '../../../lib/db/schema.ts';
 import SubpageShell from '../../dashboard/subpage-shell.tsx';
 
 const CALL_LABEL: Record<CallType, string> = { good_call: 'Good Call', false_start: 'False Start', quiet_day: 'Quiet Day' };
-const DOMAIN_LABEL: Record<CallDomain, string> = { activity: 'Movement', diet: 'Eating' };
+const DOMAIN_LABEL: Record<CallDomain, string> = { activity: 'Activity', diet: 'Eating' };
 
 // A warm, non-scoreboard progress line for one commitment (last two weeks of tagged calls). Never a grade — a false
 // start is honest data; "nothing logged yet" is neutral, not a scold.
@@ -69,7 +69,7 @@ export default async function MomentumPage({ params }: { params: Promise<{ membe
               {(['activity', 'diet'] as const).map((d) =>
                 commitments[d] ? (
                   <li key={d}>
-                    <span className="cp-domain">{d === 'activity' ? 'Movement' : 'Eating'}</span>
+                    <span className="cp-domain">{d === 'activity' ? 'Activity' : 'Eating'}</span>
                     <span className="cp-text">{commitments[d]}</span>
                     <span className="cp-count">{commitmentProgress(tally, d)}</span>
                   </li>

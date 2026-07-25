@@ -511,7 +511,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
       {/* Movement — objective evidence of the identity coming back (kept; reflective, not graded) */}
       {activity.connected ? (
         <div className="card">
-          <h3>Movement</h3>
+          <h3>Activity</h3>
           <p className="muted">{activity.line}</p>
           <div className="activity-week">
             <span><strong>{activity.thisWeek.count}</strong> this week</span>
@@ -532,7 +532,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
         </div>
       ) : (
         <div className="card">
-          <h3>Movement</h3>
+          <h3>Activity</h3>
           <StravaConnect connected={false} configured={stravaConfigured()} />
         </div>
       )}

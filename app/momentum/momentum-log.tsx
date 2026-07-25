@@ -51,7 +51,7 @@ export default function MomentumLog({ memberId, commitments }: { memberId: strin
           <div className="momentum-log-domain-opts">
             {commitments.activity && (
               <button type="button" className={`momentum-domain-btn${domain === 'activity' ? ' is-on' : ''}`} disabled={pending} onClick={() => setDomain((d) => (d === 'activity' ? null : 'activity'))}>
-                Movement — {commitments.activity}
+                Activity — {commitments.activity}
               </button>
             )}
             {commitments.diet && (

@@ -277,13 +277,13 @@ export default async function RedesignDashboard({ db, memberId, dash }: { db: Db
               );
             })}
           </ul>
-          <p className="rc-foot">Just your intentions — turn on a tracker to tie one to your Movement. To add or refine, talk to your Companion.</p>
+          <p className="rc-foot">Just your intentions — turn on a tracker to tie one to your Activity. To add or refine, talk to your Companion.</p>
         </div>
 
         {/* Movement — first-class evidence surface (Cycle 1: Strava) */}
         {activity.connected ? (
           <div className="rcard r-movement">
-            <div className="rc-h">Movement</div>
+            <div className="rc-h">Activity</div>
             <div className="rc-sub">All your activity, in one place.</div>
             <div className="rm-sources">
               <span className="rm-chip on">Strava <b>Connected</b></span>
@@ -301,7 +301,7 @@ export default async function RedesignDashboard({ db, memberId, dash }: { db: Db
           </div>
         ) : (
           <div className="rcard r-movement">
-            <div className="rc-h">Movement</div>
+            <div className="rc-h">Activity</div>
             <div className="rc-sub">Connect your activity — evidence of the identity coming back.</div>
             <div className="rm-sources">
               <span className="rm-chip">Strava <b className="muted">Connect</b></span>

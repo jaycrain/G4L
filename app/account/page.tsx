@@ -68,7 +68,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
       </div>
 
       <div className="card">
-        <h3>Movement</h3>
+        <h3>Activity</h3>
         <StravaConnect
           connected={stravaConn?.status === 'connected'}
           athleteName={stravaConn?.athleteName ?? null}

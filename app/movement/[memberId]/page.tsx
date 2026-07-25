@@ -75,8 +75,8 @@ export default async function MovementPage({ params }: { params: Promise<{ membe
       <RedesignTopbar memberId={memberId} />
       <div className="mv-wrap">
         <Link href={`/dashboard/${memberId}`} className="ws-back">← Dashboard</Link>
-        <div className="hero"><h1>Movement</h1></div>
-        <p className="mv-lede">Everything you’re doing, in one place. Connect the apps you already use, and the Companion adds what you tell it along the way. Read against who you’re reclaiming — never left as raw numbers.</p>
+        <div className="hero"><h1>Activity</h1></div>
+        <p className="mv-lede">Everything you’re doing, in one place.</p>
 
         {/* Connect sources */}
         <div className="mv-sources">
