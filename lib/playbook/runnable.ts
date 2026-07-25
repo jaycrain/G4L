@@ -13,6 +13,7 @@ import { sessionById } from '../workspace/session-registry.ts';
 
 // forge label (from the arc harvest) → the Session id that produced the play. Extend as more plays are confirmed.
 const PLAY_SOURCE: Record<string, string> = {
+  'Your true line': 'w1', // Rewire W1 (Disinformation Audit) — the principle forged in the affirm stage
   'Your False Start Protocol': 'w3', // Rewire W3 — the recovery_move play
   'Your true line for a bad day': 'w3', // Rewire W3 — the principle forged alongside the protocol
 };

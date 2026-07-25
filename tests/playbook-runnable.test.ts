@@ -11,6 +11,13 @@ test('runnablePlay: resolves the False Start Protocol → w3 with a member-voice
   assert.match(r!.ask, /go back through my False Start Protocol/);
 });
 
+test('runnablePlay: the W1 "true line" principle → w1 (Disinformation Audit)', () => {
+  const r = runnablePlay({ source: { kind: 'own', ref: 'affirmation', label: 'Your true line' } });
+  assert.ok(r);
+  assert.equal(r!.sessionId, 'w1');
+  assert.equal(r!.sessionLabel, 'Disinformation Audit');
+});
+
 test('runnablePlay: prefers a real captured Session ref over the label map', () => {
   const r = runnablePlay({ source: { kind: 'session', ref: 'w2', label: 'Your False Start Protocol' } });
   assert.ok(r);
