@@ -78,11 +78,11 @@ export default async function TriptychLeft({ db, memberId, dash }: { db: Db; mem
                     </div>
                   ))}
                   <div className="rreg-strand rreg-strand-total">
-                    <span>All four</span>
+                    <span>Total</span>
                     <span className="rreg-dimv">{idqSum}<span className="rreg-dimmax">/120</span></span>
                   </div>
                 </div>
-                <p className="rreg-scalenote">They add up to {idqSum} of 120 — your ID Score scales that to a 0–100 read.</p>
+                <p className="rreg-scalenote">Your ID Score scales that total — {idqSum} of 120 — to a 0–100 read.</p>
               </>
             )}
             {nextIdqLabel && <div className="rreg-nextidq">Your next IDQ is {nextIdqLabel}</div>}
