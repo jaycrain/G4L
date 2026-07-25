@@ -309,7 +309,18 @@ function reflectIdentity(c: Collected): string {
 // (depthReady) bounded by a FLOOR (never pattern on thin material) and CAP (never trap the member). Also advances when
 // the model already WRAPPED UP (a declarative reflection past the floor, not another probe). Used by every draw-out
 // stage across the arcs (Reconnect Doors/Drift/Window; Rewire W1…). Lives here, in the kernel, not any one arc.
-export function drawoutShouldReflect(modelText: string, depthReady: boolean | undefined, depth: number, min: number, max: number): boolean {
+export function drawoutShouldReflect(
+  modelText: string,
+  depthReady: boolean | undefined,
+  depth: number,
+  min: number,
+  max: number,
+  memberWantsToMove = false,
+): boolean {
+  // Contract 2 (advance) — the Independence Guarantee: the member sets the depth and can stop ANY time. If they say
+  // "move on / that's it / we already did this," advance now — never re-pose and loop (Donna's #3 window that kept
+  // asking for another Tuesday until she forced it). This can't flatten: it only fires on an explicit move-on signal.
+  if (memberWantsToMove) return true;
   const t = (modelText ?? '').trim();
   const wrappedUp = depth >= min && t.length >= 40 && !/\?\s*$/.test(t); // a declarative reflection, not another probe
   return (depthReady === true && depth >= min) || wrappedUp || depth >= max;

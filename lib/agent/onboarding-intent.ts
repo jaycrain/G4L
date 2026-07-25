@@ -56,6 +56,13 @@ export function memberSignalsGapComplete(message: string): boolean {
   return confirmsWhole(m) || memberWantsToWrap(m) || GAP_DONE_RE.test(m);
 }
 
+// Contract 2 (advance) — the Independence-Guarantee signal for a DRAW-OUT stage: the member is asking to move on, says
+// they're done, or deflects. A draw-out stage that sees this must advance rather than re-pose (never loop). Composes
+// the existing wrap + deflect detectors — one name the arcs pass into drawoutShouldReflect.
+export function memberWantsToAdvance(message: string): boolean {
+  return memberSignalsGapComplete(message) || memberDeflecting(message);
+}
+
 // ONE "the member is closing the Reclaim List" signal — consolidates the close shapes (wrap, whole, and the
 // reclaim-specific "that's the list / those are the real ones / those are the highlights / solid start" closings).
 // This is what makes the warm nudge fire at the RIGHT moment (a soft-close below the minimum) instead of a bare

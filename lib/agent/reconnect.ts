@@ -17,7 +17,7 @@ import { scoreIdq } from '../idq/scoring.ts';
 import { identityLabel } from '../member/identity.ts';
 import type { Db } from '../db/schema.ts';
 import { MEMBER_AGENT_SYSTEM_PROMPT } from './system-prompt.ts';
-import { resolveGapConfirm } from './onboarding-intent.ts';
+import { resolveGapConfirm, memberWantsToAdvance } from './onboarding-intent.ts';
 import { runArcTurn, administeredStage, drawoutShouldReflect, receiveThen, type ArcConfig, type StageDef } from './onboarding-staged.ts';
 import { CHECKPOINT_GRIT_ITEMS, grintaStem } from '../grinta/survey/instrument.ts';
 import type { Collected, ConvMessage, ConvState, DoorRevision, ModelTurn, ReplyIntent, Turn, Stage } from './onboarding.ts';
@@ -296,7 +296,7 @@ const doorsStage: StageDef = {
     sc.doorDepth = (sc.doorDepth ?? 0) + 1;
     // MODEL-JUDGED depth (Decision T): the model calls reflect_door when the door is genuinely excavated — NOT a
     // door-count or length proxy. The engine only BOUNDS it: a FLOOR (no insight without material) and a CAP.
-    const advance = drawoutShouldReflect(b.modelText, b.model.depthReady, sc.doorDepth, DOOR_MIN_DEPTH, DOOR_MAX_DEPTH);
+    const advance = drawoutShouldReflect(b.modelText, b.model.depthReady, sc.doorDepth, DOOR_MIN_DEPTH, DOOR_MAX_DEPTH, memberWantsToAdvance(b.memberMessage));
     if (!advance) {
       b.reply = withQuestion(b.modelText, doorMore(b.history));
     } else {
@@ -431,7 +431,7 @@ const driftStage: StageDef = {
     const sc = b.scratch as { driftDepth?: number };
     sc.driftDepth = (sc.driftDepth ?? 0) + 1;
     // Model-judged depth (reflect_drift → depthReady), bounded by a FLOOR (no pattern on thin material) and CAP.
-    const advance = drawoutShouldReflect(b.modelText, b.model.depthReady, sc.driftDepth, DRIFT_MIN_DEPTH, DRIFT_MAX_DEPTH);
+    const advance = drawoutShouldReflect(b.modelText, b.model.depthReady, sc.driftDepth, DRIFT_MIN_DEPTH, DRIFT_MAX_DEPTH, memberWantsToAdvance(b.memberMessage));
     if (!advance) {
       b.reply = withQuestion(b.modelText, driftMore(b.history));
     } else {
@@ -511,7 +511,7 @@ const windowStage: StageDef = {
   gather(b) {
     const sc = b.scratch as { windowDepth?: number };
     sc.windowDepth = (sc.windowDepth ?? 0) + 1;
-    const advance = drawoutShouldReflect(b.modelText, b.model.depthReady, sc.windowDepth, WINDOW_MIN_DEPTH, WINDOW_MAX_DEPTH);
+    const advance = drawoutShouldReflect(b.modelText, b.model.depthReady, sc.windowDepth, WINDOW_MIN_DEPTH, WINDOW_MAX_DEPTH, memberWantsToAdvance(b.memberMessage));
     if (!advance) {
       b.reply = withQuestion(b.modelText, windowMore(b.history));
     } else {
