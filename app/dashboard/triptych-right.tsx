@@ -49,7 +49,7 @@ export default async function TriptychRight({
           take a lot of room, so they live on the subpage where each item can breathe (Jay, 2026-07-22) — that's the real
           See more →, not a fake one. Editing the list stays the Companion's job. */}
       <div className="rcard r-reclaim" data-tour="reclaim">
-        <div className="rc-h">Your Reclaim List</div>
+        <div className="rc-h">Reclaim List</div>
         <div className="rc-sub">What you’re taking back.</div>
         <ul className="r-reclaim-list">
           {dash.reclaimItems.map((item, i) => (

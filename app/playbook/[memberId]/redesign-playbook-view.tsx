@@ -163,7 +163,7 @@ export default function RedesignPlaybookView({
   return (
     <>
       {/* Navy hero banner — same treatment every other subpage carries (Jay's walk: Playbook was missing it). */}
-      <div className="hero"><h1>Your G4L Playbook</h1></div>
+      <div className="hero"><h1>G4L Playbook</h1></div>
       <p className="pb-sub">Everything you’ve kept — sorted by what it’s for, so you can reach for the right thing fast.</p>
 
       {gathering ? (

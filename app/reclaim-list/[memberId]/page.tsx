@@ -28,7 +28,7 @@ export default async function ReclaimListPage({ params }: { params: Promise<{ me
 
   return (
     <SubpageShell memberId={memberId}>
-      <div className="hero"><h1>Your Reclaim List</h1></div>
+      <div className="hero"><h1>Reclaim List</h1></div>
       <div className="card">
         <p className="card-subtitle">
           What you’re taking back. These are your intentions — turn on a tracker to tie one to your Movement and watch it

@@ -257,7 +257,7 @@ export default async function RedesignDashboard({ db, memberId, dash }: { db: Db
 
         {/* Reclaim List — the fuel the program works toward */}
         <div className="rcard r-reclaim" data-tour="reclaim">
-          <div className="rc-h">Your Reclaim List</div>
+          <div className="rc-h">Reclaim List</div>
           <div className="rc-sub">What you’re taking back.</div>
           <ul className="r-reclaim-list">
             {dash.reclaimItems.map((item, i) => {
@@ -380,7 +380,7 @@ export default async function RedesignDashboard({ db, memberId, dash }: { db: Db
         {/* Badges — ceremonial shelf: earned filled, locked greyed (honest map, never a scold) */}
         <div className="rcard r-badges">
           <div className="rb-head">
-            <div className="rc-h">Your Badges</div>
+            <div className="rc-h">Badges</div>
             <span className="rb-count">{passport.earned} of {passport.total} earned</span>
           </div>
           <div className="rc-sub">Earned for real accomplishments — revealed when you get there.</div>

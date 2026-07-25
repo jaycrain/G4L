@@ -104,7 +104,7 @@ export default async function TriptychLeft({ db, memberId, dash }: { db: Db; mem
       {/* Badges — the ceremonial shelf */}
       <div className="rcard r-badges">
         <div className="rb-head">
-          <div className="rc-h">Your Badges</div>
+          <div className="rc-h">Badges</div>
           <span className="rb-count">{passport.earned} of {passport.total} earned</span>
         </div>
         <div className="rc-sub">Earned for real accomplishments — revealed when you get there.</div>

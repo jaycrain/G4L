@@ -69,7 +69,7 @@ function redesignView(memberId: string, passport: PassportView) {
       <RedesignTopbar memberId={memberId} />
       <div className="bd-wrap">
         <Link href={`/dashboard/${memberId}`} className="ws-back">← Dashboard</Link>
-        <div className="hero"><h1>Your Badges</h1></div>
+        <div className="hero"><h1>Badges</h1></div>
         <p className="bd-lede">
           Earned for real accomplishments — never participation. Each badge marks something you actually did; the ones
           ahead stay greyed until you get there — an honest map of the road, never a scold.
