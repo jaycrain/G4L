@@ -574,7 +574,10 @@ function resolvePendingShape(b: Beat, pending: PendingReclaimShape): string {
   // it reads as a real want; otherwise leave the paragraph (they can edit on the card).
   markResolved(shapeKey({ kind: 'multiwant', index: 0, item: pending.item }));
   const distilled = stripReclaimPreamble(b.memberMessage);
-  if (shouldCaptureStagedReclaim(distilled) && !correctsReflection(b.memberMessage)) {
+  // Contract 3: a meta reply to the multi-want (a protest / "you're glitching" / "not an item") is NOT their distilled
+  // want — never echo it as "Perfect — X it is" and re-pose (Donna's #17 loop). The shape is already markResolved above,
+  // so it won't re-propose; we just decline to capture the meta.
+  if (shouldCaptureStagedReclaim(distilled) && !correctsReflection(b.memberMessage) && !isProcessMetaOrAssent(distilled)) {
     removeReclaimItem(b.collected, pending.item);
     appendReclaim(b.collected, distilled);
     return `Perfect — “${distilled}” it is.`;
@@ -589,6 +592,13 @@ function resolvePendingShape(b: Beat, pending: PendingReclaimShape): string {
 const RECLAIM_ASSENT_RE = /^(ok(ay)?|yes|yeah|yep|yup|no|nope|nah|sure|fine|done|next|maybe|idk|dunno|i don'?t know|nothing( else)?|that'?s it|thanks?|thank you)[.!?]*$/i;
 const RECLAIM_META_EXIT_RE = /\b(continue (this )?later|come back (to (this|it) )?later|can (i|we) (continue|stop|pause|finish|do (this|the rest)) (later|another time|now)?|that'?s (the end|it for now|all for now|enough( for now)?)|i'?m done( (for now|for today|here))?|stop (here|now|for now|there|for today)|pause (here|for now)|(finish|do) (this|the rest) later|quit (for now|this)|take a break|are we (done|finished|almost done)|how (long|much longer|many more)|what'?s next|not right now)\b/i;
 
+// Agent-directed protest/complaint — the member is talking TO or ABOUT the Companion, not naming a want (Donna's
+// walk: "I feel like you are glitching", "Hey G4L companion, I'm trying to tell you something, not document an item for
+// my Reclaim List" — both got committed as items and re-asked as multi-wants, looping). Deliberately narrow to
+// agent-meta phrasings so it can never swallow a real want (no life-goal says "glitching" or "hey companion").
+const RECLAIM_AGENT_META_RE =
+  /\b(glitch(ing|ed|y)?|you'?re (broke|broken|bugg(y|ing)|malfunction(ing)?|not (working|listening))|document(ing)? an? (item|entry)|not (a|an) (reclaim[- ]?)?(item|entry|goal)\b|hey,? (g4l|companion)\b|g4l companion|trying to (tell|say) you|talking (to|at) you|you (misunderstood|did\s?n['’]?t (get|understand) (me|this|that)))\b/i;
+
 // True if `text` is session-meta / assent / an agent-directed question — never a real Reclaim want.
 export function isProcessMetaOrAssent(text: string): boolean {
   const t = (text ?? '').trim();
@@ -596,6 +606,7 @@ export function isProcessMetaOrAssent(text: string): boolean {
   if (RECLAIM_ASSENT_RE.test(t)) return true;
   if (RECLAIM_META_EXIT_RE.test(t)) return true;
   if (isReclaimMetaFragment(t)) return true; // confusion / "this isn't making sense" — never a want
+  if (RECLAIM_AGENT_META_RE.test(t.replace(/[‘’]/g, "'"))) return true; // agent-directed protest/complaint — never a want (Donna's #2/#17)
   // A question aimed at the agent: starts with a question/modal word AND ends with '?'. (A real want is declarative;
   // "riding again?" starts with a noun so it's spared.)
   if (/\?\s*$/.test(t) && /^(can|could|should|would|will|do|does|did|is|are|am|how|what|when|where|why|may|shall)\b/i.test(t)) return true;
