@@ -269,17 +269,17 @@ export default function OnboardingChat({ welcomeEnabled = false }: { welcomeEnab
           </>
         ) : (
           <>
-            {/* Sign Up — Onboarding Copy v2 (Jay's voice pass): warmer, peer-voiced, with the honesty-helps note. */}
-            <h1>You’re in the right place.</h1>
+            {/* Sign Up — Onboarding Copy v3 (Jay 2026-07-26, the deck rework): short + warm; the welcome hero already
+                carried the "what this is." Plain text, no color backgrounds (Jay's note for this screen). */}
+            <h1>Welcome.</h1>
             <div className="onboard-intro">
-              <p>However you got here — a newsletter, a post, someone who thought of you — something landed, or you wouldn’t be reading this. Trust that.</p>
-              <p>Here’s how it works: we start with a real conversation. No forms, nothing to pass or fail — just you and a companion built for this one thing. It takes about twenty minutes, and it goes better slow, so find a quiet spot before you start. If life interrupts, your place is saved — come back when you can.</p>
-              <p>One thing the rest of us learned the hard way: the more honest you’re willing to be here, the more this can do for you. Nobody’s grading you. This is you, helping you.</p>
+              <p>Starting your comeback is as simple as sharing your name and email. Find a comfortable place before you start. Be honest. Have fun.</p>
+              <p>Your Companion will be with you all along the way.</p>
             </div>
-            {/* AI disclosure — woven in, its own quiet beat (governance): they always know they're talking with AI. */}
-            <p className="ai-disclosure" role="note">
-              From here it’s you and your G4L companion — an AI built for this and nothing else. It remembers what
-              you share, so you never start over, and everything you tell it shapes what comes next.
+            {/* AI disclosure (governance HARD rule — the member always knows it's an AI before the first conversation).
+                Kept as plain muted text, not the colored note box, per "all simple text, no color backgrounds" here. */}
+            <p className="muted onboard-disclosure" role="note">
+              Your Companion is an AI built for this one thing — it remembers what you share, so you never start over.
             </p>
           </>
         )}

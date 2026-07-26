@@ -205,6 +205,7 @@ button:hover, .btn:hover { background: var(--navy); }
 
 .onboard-intro { margin: 0 0 1.4rem; }
 .onboard-intro p { line-height: 1.6; margin: 0 0 0.85rem; color: var(--charcoal); }
+.onboard-disclosure { margin: 0 0 1.4rem; line-height: 1.55; } /* plain-text AI disclosure (governance) — no color box on this screen */
 /* Password field with a show/hide eye toggle (the toggle sits inside the field, right-aligned). */
 .pw-field { position: relative; display: flex; align-items: center; }
 .pw-field input { flex: 1; padding-right: 4rem; }
@@ -1884,13 +1885,13 @@ body.redesign-on .confidential-footer { display: none; } /* full-bleed app — n
 .onbwel-cta:hover { background: var(--teal-d, #2f7a7b); }
 .onbwel-reassure { margin-top: 18px; color: rgba(255, 255, 255, 0.55); font-size: 14px; }
 
-/* Two opening tracks, one shown per breakpoint (no viewport-detection flash): DESKTOP = hero → the four navy beats;
-   MOBILE = straight into the four navy beats. The warm hero gradient stands in for the photo (cool daylight → warm olive). */
+/* Two opening tracks, one shown per breakpoint (no viewport-detection flash). BOTH now run hero → the five navy beats
+   (Jay 2026-07-26: fold the hero into mobile). Full-bleed at every width so the hero photo + navy billboards break out
+   of the app's 720px `main` column and fill the screen (phone on the right on desktop, centered-scrim on mobile). */
+.onbwel-track { width: 100vw; margin-left: calc(50% - 50vw); }
 .onbwel-track-d { display: none; }
 @media (min-width: 1001px) {
-  /* Full-bleed: break the desktop opening out of the app's 720px `main` column so the landscape hero photo can breathe
-     (phone on the right, headline over the darker left) and the navy beats fill the whole screen. */
-  .onbwel-track-d { display: block; width: 100vw; margin-left: calc(50% - 50vw); }
+  .onbwel-track-d { display: block; }
   .onbwel-track-m { display: none; }
 }
 .onbwel-d-hero { min-height: 100dvh; display: flex; flex-direction: column; justify-content: center; position: relative; padding: 0 8vw;
@@ -1909,6 +1910,42 @@ body.redesign-on .confidential-footer { display: none; } /* full-bleed app — n
 .onbwel-d-cta { margin-top: 34px; display: inline-flex; align-items: center; background: var(--teal); color: #fff; font-family: inherit; font-weight: 700; font-size: 18px; padding: 18px 34px; border: none; border-radius: 8px; cursor: pointer; box-shadow: 0 12px 30px rgba(59, 148, 149, 0.4); transition: 0.15s; }
 .onbwel-d-cta:hover { background: var(--teal-d, #2f7a7b); }
 .onbwel-d-reassure { margin-top: 20px; color: rgba(255, 255, 255, 0.6); font-size: 14px; }
+.onbwel-d-sub + .onbwel-d-sub { margin-top: 16px; } /* the hero now carries three intro paragraphs — tighten the gap between them */
+/* The hero on mobile (Jay: fold the hero into mobile). A full-width dark scrim over the centered photo keeps the copy
+   legible on a narrow screen; top-aligned with scroll room for the three intro paragraphs, tighter type. */
+@media (max-width: 1000px) {
+  .onbwel-d-hero { min-height: 100dvh; justify-content: flex-start;
+    padding: calc(env(safe-area-inset-top, 0px) + 52px) 26px calc(env(safe-area-inset-bottom, 0px) + 40px);
+    background:
+      linear-gradient(180deg, rgba(19, 27, 35, 0.88) 0%, rgba(22, 31, 40, 0.74) 52%, rgba(28, 38, 46, 0.66) 100%),
+      url('/brand/onboarding-hero.jpg') center 22% / cover no-repeat,
+      linear-gradient(150deg, #26333f 0%, #4f6668 46%, #9aa06a 100%); }
+  .onbwel-d-head { font-size: clamp(38px, 11vw, 56px); }
+  .onbwel-d-sub { font-size: 16px; line-height: 1.5; margin-top: 16px; }
+  .onbwel-d-cta { margin-top: 26px; }
+}
+
+/* ============ Login photo-hero (returning member) — shares the onboarding hero photo + scrim (Jay 2026-07-26) ======= */
+.auth-hero { width: 100vw; margin-left: calc(50% - 50vw); min-height: calc(100dvh - 132px); display: flex; align-items: center; padding: 40px 8vw;
+  background:
+    linear-gradient(100deg, rgba(19, 27, 35, 0.9) 0%, rgba(40, 54, 66, 0.55) 46%, rgba(120, 124, 92, 0.16) 74%, transparent 100%),
+    radial-gradient(130% 120% at 94% 34%, rgba(176, 180, 132, 0.32) 0%, transparent 55%),
+    url('/brand/onboarding-hero.jpg') right center / cover no-repeat,
+    linear-gradient(150deg, #26333f 0%, #4f6668 46%, #9aa06a 100%); }
+.auth-hero-heart { width: 100%; max-width: 430px; }
+.auth-hero-h { font-family: var(--font-condensed), var(--font-barlow), sans-serif; font-weight: 900; color: #fff; text-transform: uppercase; font-size: clamp(46px, 5.4vw, 68px); line-height: 0.9; letter-spacing: 0.5px; margin: 0; text-shadow: 0 2px 20px rgba(0, 0, 0, 0.28); }
+.auth-hero-sub { color: rgba(255, 255, 255, 0.86); font-size: 17px; line-height: 1.5; margin: 14px 0 0; }
+.auth-card { margin-top: 26px; background: #fff; border-radius: 16px; padding: 22px 24px 26px; box-shadow: 0 22px 55px rgba(16, 16, 69, 0.28); }
+.auth-card label:first-of-type { margin-top: 0; }
+@media (max-width: 1000px) {
+  .auth-hero { min-height: calc(100dvh - 120px); align-items: flex-start; padding: 30px 22px 40px;
+    background:
+      linear-gradient(180deg, rgba(19, 27, 35, 0.9) 0%, rgba(22, 31, 40, 0.78) 45%, rgba(28, 38, 46, 0.66) 100%),
+      url('/brand/onboarding-hero.jpg') center 22% / cover no-repeat,
+      linear-gradient(150deg, #26333f 0%, #4f6668 46%, #9aa06a 100%); }
+  .auth-hero-heart { max-width: 460px; margin: 0 auto; }
+  .auth-hero-h { font-size: clamp(40px, 12vw, 56px); }
+}
 
 /* ============ Dashboard triptych (reflect ← Companion → act) — light theme, docs/dashboard-triptych-spec.md ============ */
 .tri-app { height: calc(100dvh - 64px); overflow: hidden; display: flex; flex-direction: column; padding: 24px; gap: 16px; background: #f5f4f1; }

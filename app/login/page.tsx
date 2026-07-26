@@ -20,11 +20,17 @@ export default async function LoginPage({
     : out
       ? 'You’ve been signed out. Log back in to return to your dashboard.'
       : 'Log in to return to your dashboard.';
+  // Photo-hero treatment (Jay 2026-07-26, the deck rework): the returning-member login now shares the new-user hero
+  // photo + dark scrim, headline "WELCOME BACK", with the form in a white card floating on top.
   return (
-    <>
-      <h1>{heading}</h1>
-      <p className="muted">{message}</p>
-      <LoginForm />
-    </>
+    <div className="auth-hero">
+      <div className="auth-hero-heart">
+        <h1 className="auth-hero-h">{heading}</h1>
+        <p className="auth-hero-sub">{message}</p>
+        <div className="auth-card">
+          <LoginForm />
+        </div>
+      </div>
+    </div>
   );
 }
