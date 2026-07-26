@@ -54,7 +54,9 @@ export default function WorkspaceSession({
 }) {
   const [artifact, setArtifact] = useState<Artifact>(initial);
   const summary = sessionSummary(sessionKey);
-  const [whyOpen, setWhyOpen] = useState(false);
+  // Open on landing (#18E): the member should see WHY this Session matters before diving in, not have to hunt for it.
+  // Still collapsible once they've read it.
+  const [whyOpen, setWhyOpen] = useState(true);
   // The "here's what you built" card — shown when the conversation reaches its close (SESSION_COMPLETE_EVENT), over the
   // hand-home beat. "Continue →" dismisses it, revealing the hand-home/next-step underneath. Not the close itself.
   const [endCard, setEndCard] = useState(false);
