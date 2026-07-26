@@ -633,6 +633,17 @@ function resolveReframe(msg: string, c: Collected): { line: string; reused: bool
   if (line0 && W3_CONFIRM_OFFER_RE.test(m)) return { line: line0, reused: true };
   return { line: msg.trim(), reused: false };
 }
+// A DISPUTE at the Reframe — the member says the offered line wasn't theirs ("I didn't write this / where did that come
+// from"). It is NOT a new line and NOT a completion (Donna's #13: the dispute got harvested as a keeper AND skipped
+// Restart). The engine recovers: own it, and re-offer their REAL line (or draw one out) — never harvest, never advance.
+const W3_REFRAME_DISPUTE_RE =
+  /\b(didn'?t write|did not write|not (my|mine|what i (wrote|said))|isn'?t (my|mine)|never (wrote|said)|where('?s| did| does)?\s+(that|this|it)\s+com|that'?s not (my|mine|it|my line))\b/i;
+function disputesReframe(msg: string): boolean {
+  return W3_REFRAME_DISPUTE_RE.test((msg ?? '').replace(/[‘’]/g, "'"));
+}
+function w3ReframeRecover(c: Collected): string {
+  return `You're right — that wasn't your line, and I shouldn't have put it in your mouth. YOUR words are the ones that hold on a hard day.${BEAT_SEP}${reframeFallback(c)}`;
+}
 // The finished protocol → one recovery_move keeper: the trigger(s) + Redirect + Reframe + Restart, their own words.
 function composeProtocol(c: Collected): string {
   const triggers = (c.w3Triggers ?? []).map((s) => (s ?? '').trim()).filter(Boolean);
@@ -701,10 +712,19 @@ const protocolStage: StageDef = {
     if (idx === 0) {
       b.collected.w3Redirect = msg;
       sc.moveIdx = 1;
-      b.reply = reply || reframeFallback(b.collected); // model: ack + Reframe (their real line); else fallback
+      // Contract 3 (injected-not-generated): the Reframe serves the member's REAL true line — deterministically, never
+      // the model's improvisation, which fabricated a "line you wrote" (#13a). reframeFallback quotes their captured
+      // line, or draws one out fresh when there isn't one — it never claims words they didn't write.
+      b.reply = reframeFallback(b.collected);
       return;
     }
     if (idx === 1) {
+      // Contract 2 (advance): a dispute is not a new line and not a completion — recover and STAY (#13b). Never harvest
+      // the dispute, never skip Restart.
+      if (disputesReframe(msg)) {
+        b.reply = w3ReframeRecover(b.collected);
+        return;
+      }
       const r = resolveReframe(msg, b.collected);
       b.collected.w3Reframe = r.line;
       if (!r.reused) {
