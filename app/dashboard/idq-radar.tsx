@@ -54,16 +54,16 @@ export default function IdqRadar({
         return <line key={ax.key} x1={cx} y1={cy} x2={x} y2={y} stroke="#E8E6E6" strokeWidth={1} />;
       })}
 
-      {/* previous IDQ — faint dashed overlay, so the current shape reads as having grown out from it */}
+      {/* previous IDQ — faint dashed OUTLINE (no fill), so the current shape reads as having grown out from it */}
       {previous && (
-        <polygon points={polygon(previous)} fill="rgba(55,79,99,0.05)" stroke="#374F63" strokeOpacity={0.35} strokeWidth={1.5} strokeDasharray="4 3" />
+        <polygon points={polygon(previous)} fill="none" stroke="#374F63" strokeOpacity={0.4} strokeWidth={2} strokeDasharray="4 3" strokeLinejoin="round" />
       )}
 
-      {/* current identity shape */}
-      <polygon points={polygon(current)} fill="rgba(59,148,149,0.18)" stroke="#3B9495" strokeWidth={2} strokeLinejoin="round" />
+      {/* current identity shape — bold teal OUTLINE, no mint wash (palette: solid teal only) */}
+      <polygon points={polygon(current)} fill="none" stroke="#3B9495" strokeWidth={3.5} strokeLinejoin="round" />
       {AXES.map((ax) => {
         const [x, y] = at(ax.angle, r * clamp(current[ax.key]));
-        return <circle key={ax.key} cx={x} cy={y} r={withLabels ? 3.5 : 2.5} fill="#3B9495" />;
+        return <circle key={ax.key} cx={x} cy={y} r={withLabels ? 4 : 3} fill="#3B9495" />;
       })}
 
       {/* axis labels (names only — the numbers live in the table beside the chart) */}
