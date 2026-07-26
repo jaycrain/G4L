@@ -23,7 +23,7 @@ export function reclaimEnabled(): boolean {
 const C1_OPEN =
   "Reclaim isn't something someone else declares for you — it's something you recognize in yourself. This is a look at " +
   "whether the work you've done through Reconnect, Rewire, and Rebuild is showing up in how you live, not just how you " +
-  "feel. Rate each one 1 (strongly disagree) to 5 (strongly agree). There's no score here — just an honest read. We'll " +
+  "feel. Rate each one 1 (strongly disagree) to 5 (strongly agree). There's no grade here — just an honest read. We'll " +
   "go in three parts: your body, your relationships, and who you are.";
 // The close (Greg's verbatim "Guide to Member after Step 1") — reflective, all-or-nothing explicitly rejected.
 const C1_STEP1_CLOSE =

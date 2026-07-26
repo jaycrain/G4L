@@ -37,7 +37,7 @@ const B1_DIET_TURN = "That's movement. Now the other half of it — eating.";
 // The forward-looking close (ours, RB-1): frame the baseline as a promise, not a verdict. No number is shown.
 const B1_CLOSE =
   "That's your starting why. Some of it is already yours; some of it might still be the shoulds — and that's exactly " +
-  "the point. We're not scoring it. We're marking where you stand today, so when you come back to these same " +
+  "the point. We're not grading it. We're marking where you stand today, so when you come back to these same " +
   "questions down the road, you can watch your why become more your own. That shift is the real work of Rebuild. Your " +
   "next step is on your dashboard.";
 

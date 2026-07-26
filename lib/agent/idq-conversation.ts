@@ -71,7 +71,7 @@ export function idqOpening(): IdqTurn {
     'Think of the whole thing as a mirror. You hold it up, you look, and you see the distance between who you are ' +
     'today and who you know you still are underneath. We’ve got a name for that distance around here: the Fade. ' +
     'Seeing it clearly is how you start closing it.\n\n' +
-    'No clock. No score to pass. Go when you’re ready.\n\n';
+    'No clock. Nothing to pass. Go when you’re ready.\n\n';
   return { reply: intro + frame(0) + presentItem(0), state: INITIAL_IDQ_STATE, complete: false };
 }
 

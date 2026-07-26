@@ -37,7 +37,7 @@ const BEATS: Beat[] = [
     head: ['Four moves.', 'Your pace.'],
     road: true,
     body: [
-      'No grades, no streaks, nothing to catch up on. Every number you’ll ever see here is built from your own honest read — ',
+      'Every number you’ll ever see here is built from your own honest read — ',
       { b: 'a mirror, not a report card.' },
     ],
     cta: 'I’m in →',
@@ -89,7 +89,7 @@ function NavyBeats({ onDone }: { onDone: () => void }) {
           )}
           <p className="onbwel-body">{renderBody(beat.body)}</p>
           <button type="button" className="onbwel-cta" onClick={advance}>{beat.cta}</button>
-          {last && <p className="onbwel-reassure">Takes about 10 minutes. No grades, no wrong answers.</p>}
+          {last && <p className="onbwel-reassure">Takes about 10 minutes — no wrong answers, just your honest read.</p>}
         </div>
       </div>
     </div>
@@ -105,7 +105,7 @@ function DesktopHero({ onNext }: { onNext: () => void }) {
         <h1 className="onbwel-d-head">Let’s begin<br />your comeback.</h1>
         <p className="onbwel-d-sub">You’ve carried a lot to get here. I’m your Companion — I’ll walk the whole way with you, at your pace.</p>
         <button type="button" className="onbwel-d-cta" onClick={onNext}>Let’s get started →</button>
-        <p className="onbwel-d-reassure">Takes about 10 minutes. No grades, no wrong answers.</p>
+        <p className="onbwel-d-reassure">Takes about 10 minutes — no wrong answers, just your honest read.</p>
       </div>
     </div>
   );

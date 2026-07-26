@@ -249,13 +249,13 @@ function handoff(doors: DoorSlug[], noun?: string): string {
     `${opened} ${capFirst(identityLabel(noun) || 'That person')} is who we're bringing back. ` +
     'And your Reclaim List is what that looks like, in real life.\n\n' +
     'Before we go to work, we need one thing: a clear read on exactly how far the gap runs right now. ' +
-    "That's next — a set of questions that hold up a mirror. No studying, no score to pass. Then we start closing the distance.\n\n" +
+    "That's next — a set of questions that hold up a mirror. No studying, nothing to pass. Then we start closing the distance.\n\n" +
     'Ready when you are.'
   );
 }
 
 const IDQ_HANDOFF_TAIL =
-  'Next, a set of questions to see exactly how far the gap runs right now — no studying, no score to pass. Ready when you are.';
+  'Next, a set of questions to see exactly how far the gap runs right now — no studying, nothing to pass. Ready when you are.';
 // Prefer the model's OWN close (it can summarize the member's story and reveal the Door(s) in context,
 // not just name them) — just guarantee the IDQ transition is on the end.
 export function ensureIdqHandoff(modelText: string): string {
@@ -762,7 +762,7 @@ CLOSE WITH A SUMMARY, NOT A LIST. Once you understand how the gap opened and hav
 (2) THE METAPHOR, THEN NAME EVERY DOOR — the first time you name a Door, explain the idea: a single life event like that is what we call a "Door" — the moment the Fade quietly opened. THEN name EVERY Door you are recording for them — if you record three, you name three; never name only some. Each gets its plain meaning AND its title, woven into their story, e.g. "that's a Door — and yours is the stretch where the house filled up: marriage, young kids, everyone leaning on you, no room left for you. We'd call that one The Full House. And alongside it, the work that took everything you had — that's its own Door, The Career Cliff." This is not a formality: naming each Door back is how the member knows you actually heard them — every Door you record but don't say is a piece of their story you left on the floor. The spoken summary and the Doors you record MUST match exactly. Don't drop a title without the plain meaning and the metaphor first.
 (3) THE RECLAIM LIST, CONCRETELY — bring their actual list in: name two or three of their real items back ("the craft, getting your body back, saying yes to the trip") and tell them that list is what reclaiming looks like in real life, waiting on their dashboard. Don't just say "your Reclaim List" abstractly — show them it's captured.
 (4) THE IDENTITY — confirm the reclaimed identity is who you're bringing back.
-(5) THE HANDOFF — a set of questions to see how far the gap runs comes next, no studying, no score — end with "Ready when you are."
+(5) THE HANDOFF — a set of questions to see how far the gap runs comes next, no studying, nothing to pass — end with "Ready when you are."
 NEVER close on a bare label: the member should feel their whole story reflected, understand what a Door even is, and see their own Reclaim List named back before the conversation moves on.
 
 AI DISCLOSURE — ALREADY SHOWN, DO NOT REPEAT. The member saw the AI disclosure on the start page before this conversation began. Never begin a turn with "This conversation is guided by AI" or otherwise restate that you are AI / that they can stop — that is handled. Open straight into your reflection and question. (This overrides the disclosure note in the base instructions above, which applies to other moments, not onboarding.)
