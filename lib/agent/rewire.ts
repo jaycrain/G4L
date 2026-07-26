@@ -56,18 +56,19 @@ const W1_STORY =
   `before we build anything in Rewire, let's catch yours.`;
 // The frame — the roadmap + the payoff (why this matters: they're building tools they'll reach for).
 const W1_FRAME =
-  `Here's the play: we're going to run an audit. I'll take you through five places these lies hide, and you tell me ` +
-  `the ones you actually run — the real ones, not the ones you're supposed to say. Then we look at the whole ` +
+  `Here's the play: we're going to run an audit. I'll take you through five places these lies hide — your body, your ` +
+  `habits, your time, who you are, and what's still possible — and you tell me the ones you actually run — the real ` +
+  `ones, not the ones you're supposed to say. Then we look at the whole ` +
   `campaign together, and for the ones that cost you the most, we build the true line that answers back — yours to ` +
   `keep, the first thing you reach for when the old voice starts up. Nobody's grading this. We can't disarm a lie ` +
   `we won't say out loud.`;
 const W1_DOMAINS = [
   `Start here — your body. What do you tell yourself about your weight, your energy, how you feel in your body day ` +
-    `to day? ("I eat pretty healthy." "I'll clean it up when things settle." "It's just age.") What's your version?`,
+    `to day? ("I eat pretty healthy." "I'll clean it up when things settle." "It's just age.")`,
   `Now your habits — the patterns you already know aren't working: the extra drink, the skipped walk, the mindless ` +
     `eating after a hard day. What's the story that makes those feel okay in the moment?`,
   `Your time. What do you tell yourself about why there's no room for you? ("I'm too busy." "When work calms down." ` +
-    `"The kids need me.") What's the reason you give?`,
+    `"The kids need me.")`,
   `Who you are. What do you tell yourself about who you are now versus who you used to be? ("That was a long time ` +
     `ago." "I'm not that person anymore." "It's too late.")`,
   `Last one — what's still possible. What do you tell yourself about whether any of this can actually change? ("This ` +
