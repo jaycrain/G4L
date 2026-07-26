@@ -37,7 +37,7 @@ import DailyBeatPanel from '../daily-beat-panel.tsx';
 import { getDailyBeat } from '../../../lib/daily-beat/store.ts';
 import { looksTrackable, suggestTracker } from '../../../lib/measure/store.ts';
 import { listPlaybook } from '../../../lib/playbook/store.ts';
-import { getForecast, getPassport, getFacets, ensureOnboardingBadge } from '../../../lib/curriculum/view.ts';
+import { getForecast, getPassport, getFacets, ensureOnboardingBadge, reconcileRedesignBadges } from '../../../lib/curriculum/view.ts';
 import { logoutAction } from '../../login/actions.ts';
 import { authorizeMember } from '../../authz.ts';
 import { logEvent } from '../../../lib/telemetry/store.ts';
@@ -87,6 +87,10 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
     // docked-rail dashboard) and is flag-gated on top, so DASH_TRIPTYCH off → the current redesign dashboard is
     // untouched. PHASE 1: empty shell to prove the layout/fold on both breakpoints.
     if (dashboardTriptychEnabled()) {
+      // Earn the event-driven milestone badges from committed state before the flank reads the passport — the
+      // non-triptych dashboard + the /badges detail both do this, so the triptych shelf must too, or it under-counts
+      // (Donna's #7: 1 of 16 on the dashboard vs 3 in the detail). Idempotent + drift-hardened.
+      await reconcileRedesignBadges(db, memberId).catch(() => {});
       const [hero, keeper, ct, facets, forecast] = await Promise.all([
         heroCard(db, memberId),
         centerKeeper(db, memberId),

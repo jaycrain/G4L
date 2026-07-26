@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { getDb } from '../../lib/db/index.ts';
-import { initials, firstName } from '../../lib/member/avatar.ts';
+import { initials } from '../../lib/member/avatar.ts';
 import type { Db } from '../../lib/db/schema.ts';
 
 // The shared app topbar (brand · Program · Field Guide · Playbook · account). ONE source so every member surface — the
@@ -43,7 +43,6 @@ export default async function RedesignTopbar({ memberId }: { memberId: string })
             ) : (
               <span className="rt-av rt-av-initials" aria-hidden="true">{initials(displayName)}</span>
             )}
-            <span className="rt-hi">Hi, {firstName(displayName)}</span>
           </Link>
         </span>
       </div>
