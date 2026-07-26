@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import RichText from '../rich-text.tsx';
 import { startReconnectAction, reconnectTurnAction, reconnectCeremonyDataAction, loadReconnectSessionAction } from './actions.ts';
 import ScaleChips from '../components/scale-chips.tsx';
 import { useChatAutoscroll } from '../components/use-chat-autoscroll.ts';
@@ -106,7 +107,7 @@ export default function ReconnectChat({ memberId, mobile = false }: { memberId: 
       <div className="chat" ref={chatRef}>
         {messages.map((m, i) => (
           <div key={i} className={`bubble ${m.role}`}>
-            {m.text}
+            {m.role === 'agent' ? <RichText text={m.text} /> : m.text}
           </div>
         ))}
         {pending && <div className="typing">Thinking…</div>}

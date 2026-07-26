@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import RichText from '../rich-text.tsx';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { openCheckin, sendCheckin, loadCheckin, logPlayRerun } from './checkin-actions.ts';
@@ -252,7 +253,7 @@ export default function TriptychCenter({
       <div className="tri-comp-stream">
         {messages.map((m, i) => (
           <div key={i} className={`rmsg ${m.role}`}>
-            {m.text}
+            {m.role === 'agent' ? <RichText text={m.text} /> : m.text}
           </div>
         ))}
         {nudge && (

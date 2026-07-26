@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import RichText from '../rich-text.tsx';
 import { useRouter } from 'next/navigation';
 import { idqOpening, idqRespond, type IdqConvState } from '../../lib/agent/idq-conversation.ts';
 import { TOTAL_ITEMS } from '../../lib/idq/instrument.ts';
@@ -59,7 +60,7 @@ export default function IdqChat({ memberId }: { memberId: string }) {
       <div className="chat">
         {messages.map((m, i) => (
           <div key={i} className={`bubble ${m.role}`}>
-            {m.text}
+            {m.role === 'agent' ? <RichText text={m.text} /> : m.text}
           </div>
         ))}
         {pending && <div className="typing">scoring…</div>}

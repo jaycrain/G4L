@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import RichText from '../rich-text.tsx';
 import { useRouter } from 'next/navigation';
 import { startRewireAction, rewireTurnAction, rewireCeremonyDataAction, loadRewireSessionAction, type RewireSession } from './actions.ts';
 import RewireCeremony from './rewire-ceremony.tsx';
@@ -105,7 +106,7 @@ export default function RewireChat({ memberId, session = 'w1' }: { memberId: str
       <div className="chat" ref={chatRef}>
         {messages.map((m, i) => (
           <div key={i} className={`bubble ${m.role}`}>
-            {m.text}
+            {m.role === 'agent' ? <RichText text={m.text} /> : m.text}
           </div>
         ))}
         {pending && <div className="typing">Thinking…</div>}
