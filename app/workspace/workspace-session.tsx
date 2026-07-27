@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { readArtifactAction } from './actions.ts';
 import { ARTIFACT_REFRESH_EVENT, SESSION_COMPLETE_EVENT } from '../components/artifact-refresh.ts';
@@ -55,8 +55,24 @@ export default function WorkspaceSession({
   const [artifact, setArtifact] = useState<Artifact>(initial);
   const summary = sessionSummary(sessionKey);
   // Open on landing (#18E): the member should see WHY this Session matters before diving in, not have to hunt for it.
-  // Still collapsible once they've read it.
+  // But it's tall — once they engage with the conversation it should get out of the way (Jennifer's walk: it ate the
+  // mobile screen). So: open on landing, then AUTO-COLLAPSE the moment they scroll the conversation, leaving the pinned
+  // "Why this matters ▸" pill (the header never scrolls) to reopen it. We listen on wheel/touchmove — real user gestures
+  // — NOT `scroll`, so the chat's own autoscroll-to-newest doesn't collapse it out from under them on load.
   const [whyOpen, setWhyOpen] = useState(true);
+  const bodyRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (review) return;
+    const el = bodyRef.current;
+    if (!el) return;
+    const collapse = () => setWhyOpen(false); // no-op re-render when already closed (React bails on same value)
+    el.addEventListener('wheel', collapse, { passive: true });
+    el.addEventListener('touchmove', collapse, { passive: true });
+    return () => {
+      el.removeEventListener('wheel', collapse);
+      el.removeEventListener('touchmove', collapse);
+    };
+  }, [review]);
   // The "here's what you built" card — shown when the conversation reaches its close (SESSION_COMPLETE_EVENT), over the
   // hand-home beat. "Continue →" dismisses it, revealing the hand-home/next-step underneath. Not the close itself.
   const [endCard, setEndCard] = useState(false);
@@ -161,7 +177,7 @@ export default function WorkspaceSession({
           )}
         </header>
 
-        <div className="ws-col-body">
+        <div className="ws-col-body" ref={bodyRef}>
           {review ? (
             // The summary card — every answer the member built, kept.
             <div className="ws-built">
