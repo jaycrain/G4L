@@ -375,6 +375,19 @@ export function joinGapChapters(prev: string, next: string): string {
   return /[.!?]$/.test(p) ? `${p} ${n}` : `${p}. ${n}`;
 }
 
+// A light MECHANICS-ONLY tidy for a gap built from the member's RAW messages (the backstop path, when the model didn't
+// record a clean set_gap). Fixes whitespace, punctuation spacing, and sentence capitalization WITHOUT changing any
+// words — governance: it's the member's own account, kept in their voice (milie@ walk: the raw fallback showed
+// run-ons/fragments unpolished; set_gap is the primary tidy, this is the safety net so the fallback is never that raw).
+export function tidyGapProse(s: string): string {
+  let t = (s ?? '').replace(/\s+/g, ' ').trim();
+  if (!t) return t;
+  t = t.replace(/\s+([.,;:!?])/g, '$1'); // no space before punctuation
+  t = t.replace(/([.!?])(?=[A-Za-z])/g, '$1 '); // a space after sentence-ending punctuation
+  t = t.replace(/([.!?]\s+|^)([a-z])/g, (_m, pre: string, ch: string) => pre + ch.toUpperCase()); // capitalize sentence starts
+  return /[.!?]$/.test(t) ? t : `${t}.`; // a closing period
+}
+
 // The reclaim-stage opener. If the member ALREADY parked wants earlier (front-loader), read them back —
 // "earlier you said X — let's start there." True by construction, and the single best trust moment in the
 // flow: it proves nothing was dropped. With nothing parked, it's the clean RECLAIM_OPEN.
@@ -974,18 +987,19 @@ const gapStage: StageDef = {
     // the gap if it reads as a real fade — ACCUMULATE (append) so a progressive revealer's chapters aren't lost.
     const modelTaggedGap = b.model.record?.gap !== undefined && b.model.record.gap !== '' && !isForwardAmbition(b.model.record.gap);
     if (!b.collected.gap && !s.noFade && shouldCaptureStagedGap(b.memberMessage)) {
-      b.collected.gap = b.memberMessage.trim();
+      b.collected.gap = tidyGapProse(b.memberMessage);
     } else if (b.collected.gap && !s.noFade && !modelTaggedGap && shouldCaptureStagedGap(b.memberMessage)) {
       // W-33: join with a sentence boundary (joinGapChapters, W-12) — a raw space ran the member's sentences together
       // ("consumed me It also…"). Same helper the confirm-append path uses; boundary-only, no internal/proper-noun risk.
-      b.collected.gap = joinGapChapters(b.collected.gap, b.memberMessage);
+      // tidyGapProse (milie walk): mechanics-only cleanup of the raw backstop text (never the model's clean set_gap).
+      b.collected.gap = tidyGapProse(joinGapChapters(b.collected.gap, b.memberMessage));
     }
     if (!b.collected.gap && !s.noFade) s.gapTurns = (s.gapTurns ?? 0) + 1; // count gather turns only while no real fade is in hand
     // NEVER-STRAND the gap stage: after several gap turns with NOTHING captured, grab the accumulated gap-stage
     // story so we advance instead of looping the opening question.
     if (!b.collected.gap && !s.noFade && (s.gapTurns ?? 0) >= GAP_MAX_TURNS) {
       const corpus = gapStageCorpus(b.history, b.memberMessage).trim();
-      if (corpus.length >= 40 && !isForwardAmbition(corpus)) b.collected.gap = corpus;
+      if (corpus.length >= 40 && !isForwardAmbition(corpus)) b.collected.gap = tidyGapProse(corpus);
     }
     // DECISION E FORK: resolve a "no obvious fade event" member from the whole gap-stage corpus.
     const gapCorpus = gapStageCorpus(b.history, b.memberMessage);
@@ -993,7 +1007,7 @@ const gapStage: StageDef = {
       // RESIGNED to age-decline → The Acceptance Door: a real, quiet Fade. NOT no-fade — clear the flag, capture
       // their own words as the gap, and fall through to the normal real-fade reflect/advance below.
       s.noFade = false;
-      if (!b.collected.gap) b.collected.gap = b.memberMessage.trim() || gapCorpus.trim();
+      if (!b.collected.gap) b.collected.gap = tidyGapProse(b.memberMessage || gapCorpus);
     }
     // GENUINELY THRIVING → graceful DECLINE. Fires when there's NO real-fade signal anywhere AND either the model
     // judged no-fade, or the member's own words are pure forward-ambition with nothing captured after a couple turns.
@@ -1614,7 +1628,11 @@ quietly collapse it to one and pin "the body" on them). Stay with their story fo
 don't rush to wrap it.
 The Fade is usually more than one Door — once you understand the first, check ONCE whether another stacked on
 ("was that the whole of it, or did something else pile on around then?"), then let it be. Capture the story
-with set_gap as it grows.
+with set_gap as it grows — and ALWAYS record it with set_gap, every gap turn, in clean mechanics-fixed prose
+(their exact words, whole sentences, proper capitalization and periods). The set_gap text is the ONLY tidied
+record shown on their card and dashboard "in your own words"; if you skip it, the engine falls back to their raw
+message VERBATIM — typos, fragments, run-ons and all — which reads unpolished. So never leave the fade story
+unrecorded, and never store it raw.
 ONLY when you have GENUINELY drawn it out — something specific and true you can reflect back in their own words —
 call reflect_gap to close the beat, and on that same turn reflect their WHOLE story back in two or three
 sentences, in their words. NEVER call reflect_gap on the first mention of what happened. (The engine holds the

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { applyStagedTurn, stagedOpening, correctsReflection } from '../lib/agent/onboarding-staged.ts';
+import { applyStagedTurn, stagedOpening, correctsReflection, tidyGapProse } from '../lib/agent/onboarding-staged.ts';
 import { memberClosingReclaim } from '../lib/agent/onboarding-intent.ts';
 import { BEAT_SEP, type ConvMessage, type ConvState, type ModelTurn, type Turn } from '../lib/agent/onboarding.ts';
 
@@ -674,6 +674,18 @@ test('Decision II — the shape gate is UNBYPASSABLE: even the forceProgress/run
   const t = applyStagedTurn(stalled, [], '...', { text: 'ok' });
   assert.equal(t.state.stage, 'reclaim', 'the runaway handoff is held back to resolve the shape, not advanced to the survey');
   assert.equal(t.state.pendingReclaimShape?.kind, 'overlap', 'the "drop/lose 40 lbs" duplicate is surfaced');
+});
+
+test('tidyGapProse — mechanics-only cleanup of a raw backstop gap (milie walk); leaves the member’s words alone', () => {
+  // Fixes run-on/punctuation/capitalization mechanics WITHOUT changing words (governance: their own account).
+  assert.equal(
+    tidyGapProse('i took a job in data entry.it is the opposite of being creative . my knee hurts'),
+    'I took a job in data entry. It is the opposite of being creative. My knee hurts.',
+  );
+  // No-op on already-clean prose (the model's set_gap path is never mangled).
+  assert.equal(tidyGapProse('Already clean prose. It stays exactly as written.'), 'Already clean prose. It stays exactly as written.');
+  // Does NOT invent/change words — a member typo/contraction stays theirs (only the model tidies deeper, via set_gap).
+  assert.match(tidyGapProse('i cant run anymore'), /cant run/);
 });
 
 test('Decision II — a MULTI-WANT paragraph is drawn out; the member\'s pick replaces the paragraph', () => {
