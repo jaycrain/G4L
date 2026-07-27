@@ -215,6 +215,12 @@ test('augmentDoors infers Door(s) from the GAP narrative — incl. the first —
   );
   // A genuine empty-nest story is untouched (kids actually left).
   assert.deepEqual(augmentDoors(['empty_nest'], 'the kids moved out and the house went quiet'), ['empty_nest']);
+  // milie@ walk (2026-07-26): a rich gap named The Body (physical events, no word "body") and The Loss (a parent
+  // died, not "lost my …") — the backstop caught NEITHER. Now the event language and "[relative] died" are read.
+  assert.deepEqual(
+    augmentDoors([], 'My father died. He had been a huge support. My knee hurts so I can’t run anymore and I throw my back out for days.'),
+    ['body', 'loss'],
+  );
 });
 
 test('isAffirmation recognizes short confirmations (incl. "for sure"), not longer add-ons', () => {

@@ -80,7 +80,7 @@ const DOOR_ALIASES: Partial<Record<DoorSlug, string[]>> = {
 // job" / "weight loss" never trip it, which is why the bare word "loss" itself stays alias-only. Tested against
 // the already-lowercased, apostrophe-normalized message, so no /i needed.
 const BEREAVEMENT_LOSS =
-  /\blost (my|his|her|their|our) (dad|mom|mum|mother|father|parent|parents|son|daughter|child|children|kid|brother|sister|sibling|husband|wife|partner|spouse|grandmother|grandfather|grandma|grandpa|best friend|friend)\b|\b(a )?(decade|year|years|lifetime) of (stacking )?loss(es)?\b|\bstacking losses\b/;
+  /\blost (my|his|her|their|our) (dad|mom|mum|mother|father|parent|parents|son|daughter|child|children|kid|brother|sister|sibling|husband|wife|partner|spouse|grandmother|grandfather|grandma|grandpa|best friend|friend)\b|\b(my|his|her|their|our) (dad|mom|mum|mother|father|parent|parents|son|daughter|child|brother|sister|sibling|husband|wife|partner|spouse|grandmother|grandfather|grandma|grandpa) (died|passed away|passed)\b|\b(a )?(decade|year|years|lifetime) of (stacking )?loss(es)?\b|\bstacking losses\b/;
 
 // Map a member's free-text answer to one or more Doors (voice rewrite v1: members answer in their
 // own words; the agent maps silently). Matches by slug, full/short display name, or a 1–8 number;
@@ -91,6 +91,15 @@ export function matchDoors(message: string): DoorSlug[] {
   // never matched, so the precedence rule deleted it alongside aging_parents).
   const m = (message || '').toLowerCase().replace(/[‘’]/g, "'");
   const found = new Set<DoorSlug>();
+  // The Body / The Acceptance are read from the member's OWN physical language (event vs stance), computed once. A
+  // NAMED physical event/change (knees, bad back, an injury, can't do X, "throw my back out", "wear and tear") is
+  // The Body; a bare "settled" framing is The Acceptance. Promoting the event language to a PRIMARY signal (not just
+  // the old body-vs-acceptance tiebreaker) is what catches The Body when the literal word "body" is absent — milie's
+  // walk tagged NO body from "my knee hurts, I can't run anymore, I throw my back out."
+  const CONCRETE_PHYSICAL_EVENT =
+    /\b(knees?|hips?|shoulders?|joints?|my back|bad (knee|back|hip|shoulder)|injur(y|ed|ies)|blew out|gave out|went out|surgery|torn|tore|sprained|can'?t (run|lift|walk|climb|play|keep up)|quit the sport|throw(s|ing)? my back out|threw my back out|wear and tear)\b/.test(m);
+  const EXPLICIT_SETTLED =
+    /\b(made peace with|it is what it is|resigned myself|these things happen|what do you expect at my age|my best years are behind|this is just who i am now|settled for)\b/.test(m);
   // Numbered selection ("5", "1 and 3") maps to a Door by position — but ONLY when the whole message
   // IS a numeric pick. Otherwise an incidental number in prose ("3 walks a week", "lose 30 lbs") gets
   // misread as "pick Door 3" — which silently tagged Joanne with The Empty Nest (Door #3) from her
@@ -122,6 +131,9 @@ export function matchDoors(message: string): DoorSlug[] {
   // loss" (which is exactly why the bare word "loss" stays alias-only). First- and third-person (a summary of
   // the member's story can read "his"). This closed a real matcher gap (the Blake doorsToConfirm case).
   if (BEREAVEMENT_LOSS.test(m)) found.add('loss');
+  // A named physical event is The Body even without the word "body" (see the const above). The Body/Acceptance
+  // precedence below resolves the overlap when a "settled" stance ALSO fired.
+  if (CONCRETE_PHYSICAL_EVENT && !EXPLICIT_SETTLED) found.add('body');
   // Precedence among LOAD doors (taxonomy spec §4): Aging Parents (parent care) and Full House
   // (active-family season) own their load; The Load-Bearer is the catch-all for OTHER load, so it
   // yields to them — it never redundantly re-tags a load a specific Door already owns. (Genuine
@@ -142,10 +154,6 @@ export function matchDoors(message: string): DoorSlug[] {
   // resolves when both literally fired (Body fires on the word "body"); the live agent maps richer
   // stories itself.
   if (found.has('acceptance') && found.has('body')) {
-    const CONCRETE_PHYSICAL_EVENT =
-      /\b(knees?|hips?|shoulders?|joints?|my back|bad (knee|back|hip|shoulder)|injur(y|ed|ies)|blew out|gave out|went out|surgery|torn|tore|sprained|can'?t (run|lift|walk|climb|play|keep up)|quit the sport)\b/.test(m);
-    const EXPLICIT_SETTLED =
-      /\b(made peace with|it is what it is|resigned myself|these things happen|what do you expect at my age|my best years are behind|this is just who i am now|settled for)\b/.test(m);
     if (CONCRETE_PHYSICAL_EVENT && !EXPLICIT_SETTLED) found.delete('acceptance'); // named event → The Body
     else found.delete('body'); // surrender / settled stance → The Acceptance
   }
