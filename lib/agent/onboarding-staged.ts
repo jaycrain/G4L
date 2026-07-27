@@ -107,6 +107,12 @@ const GAP_MAX_TURNS = 4;
 // richness proxy (door-count / length): depth is judgment, the floor/cap bound the error, the card corrects.
 const GAP_MIN_DEPTH = 2;
 const GAP_MAX_DEPTH = 5;
+// Anti-loop ceiling for the CONFIRM phase (torture-harness fragment-typer / rambler, 2026-07-26): GAP_MAX_DEPTH bounds
+// GATHER, but an engaged member who keeps adding never gives a clean "done" — every reply reads as an 'addition', so
+// the confirm bounces append → re-ask → append forever ("Have we got a good handle… or is there more?" repeated 10×).
+// Past this depth, KEEP their addition but stop asking and advance (the card is the backstop). High enough that a real
+// multi-chapter fade (Scott/Blake) finishes naturally first.
+const GAP_CONFIRM_CEILING = 8;
 // SYSTEMIC INVARIANT — no gather stage loops unbounded. But the trigger is STALL, not length: a verbose, engaged
 // member (Scott, Blake — getting real value from a long conversation) must NOT be force-completed just for being
 // long. So we force progress to the card only when the member has actually gone quiet — IDLE_LIMIT consecutive
@@ -1041,6 +1047,7 @@ const gapStage: StageDef = {
     }
   },
   confirm(b) {
+    const s = b.scratch as GapScratch;
     // GAP CONFIRM — "…or is there more to it?" A bare "no / nope / that's it / more or less it for now" means NO
     // MORE = DONE → ADVANCE. resolveGapConfirm owns the meaning (dispute / addition / done); the engine acts on it.
     const intent = resolveGapConfirm(b.memberMessage, b.model.replyIntent);
@@ -1054,7 +1061,16 @@ const gapStage: StageDef = {
       if (!modelTaggedGap) b.collected.gap = joinGapChapters(b.collected.gap ?? '', b.memberMessage);
       b.collected.doors = augmentDoors(b.collected.doors ?? [], gapStageCorpus(b.history, b.memberMessage));
       b.awaitingConfirm = false;
-      b.reply = withQuestion(b.modelText, gapMore(b.history));
+      // ANTI-LOOP (torture harness, 2026-07-26): a rambling / drifting member's every reply reads as an 'addition',
+      // so this append → re-ask cycle never reaches a clean "done" and the confirm probe repeats ("…or is there
+      // more?" ×10). Past GAP_CONFIRM_CEILING, KEEP the addition (content is never dropped, above) but stop asking
+      // and advance — the card is the backstop for anything still missing.
+      if ((s.gapDepth ?? 0) >= GAP_CONFIRM_CEILING) {
+        b.stage = 'reclaim';
+        b.reply = reclaimOpening(b.collected);
+      } else {
+        b.reply = withQuestion(b.modelText, gapMore(b.history));
+      }
     } else {
       // done / affirm / bare "no more" → advance into reclaim (re-surfacing any parked wants).
       b.stage = 'reclaim';

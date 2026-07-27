@@ -209,6 +209,18 @@ test('STAGED gap confirm — done-signals ADVANCE, never loop (Jay walk: "won\'t
   assert.match(more.state.collected.gap ?? '', /divorce/i, 'appends the new material — never dropped');
 });
 
+test('STAGED gap confirm — CONFIRM-PHASE ceiling stops the rambler loop (torture harness fragment-typer)', () => {
+  // The gather CAP (GAP_MAX_DEPTH) bounds gathering, but a rambling member whose every reply reads as an 'addition'
+  // bounced append → re-ask "…or is there more?" forever. Past GAP_CONFIRM_CEILING (8) the beat closes — content kept.
+  const deepConfirm = (): ConvState => ({
+    stage: 'gap', awaitingConfirm: true, stageScratch: { gap: { gapDepth: 8 } },
+    collected: { athleticPast: 'a cyclist', identityNoun: 'Free Spirit', gap: 'Kids and work crowded it out over fifteen years.', doors: ['full_house', 'grind'] },
+  });
+  const rambled = applyStagedTurn(deepConfirm(), [], 'Actually there was also my divorce that year — it wrecked me', { text: 'Tell me about that.' });
+  assert.equal(rambled.state.stage, 'reclaim', 'past the ceiling, an addition advances instead of looping the probe');
+  assert.match(rambled.state.collected.gap ?? '', /divorce/i, 'the final addition is still appended — content never dropped');
+});
+
 test('STAGED gap — CAP (v2.1): a member who keeps giving is never looped forever — the beat closes by GAP_MAX_DEPTH', () => {
   const atGap: ConvState = { stage: 'gap', collected: { athleticPast: 'a cyclist', identityNoun: 'Athlete' } };
   // The model never calls reflect_gap; the member keeps adding. The engine must close it by the cap, not loop.
