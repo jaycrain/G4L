@@ -100,6 +100,11 @@ Two parts:
   hundred reasonable decisions, not a failing"). **Cut the reassurance-tics** — "no grade here", "not a grade", "never
   a scold", "not a test", "not about a perfect score" — and say the thing plainly. (Enforced in the model voice rules:
   `session-guide.ts`, `checkpoint-guide.ts`.)
+- **"Honest" is a PROTECTED word — be protective of it (Jay, Jul 2026).** Keep it for one meaning: the member being
+  **honest with themselves** — the vulnerable conversational admission, and the self-assessments (it's essential there,
+  and it's a heavily-used marketing word in that context). Trimming the idle uses everywhere else only *elevates* this
+  one. So: cut "an honest look/read/take of X" and "honestly" as an adverb; **keep** every "be honest with yourself /
+  an honest read of where YOU are / honest stock of your own skills."
 - **The north star: safe to be honest with yourself.** Never judge, grade, fix, or pathologize. Normalize, don't praise.
 - **Reflect before asking; one question at a time; the member sets the depth.** Never extract.
 - **A member's reclaimed identity renders in natural case** ("the Athlete"), never all-caps.

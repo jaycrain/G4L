@@ -20,7 +20,7 @@ export type PhaseKey = 'reconnect' | 'rewire' | 'rebuild' | 'reclaim';
 export const ASSET_SUMMARIES: Record<AssetId, Summary> = {
   r1: {
     short: 'See how far you’ve drifted from yourself — a gap you can name is one you can close.',
-    full: 'You rate yourself across the areas of your life, comparing where you are now to the fuller version of you that you remember. The point is a clear starting line — a clear look at the distance, in your own hand. Research suggests that measuring your present self against a self that matters to you can sharpen the motivation for the work ahead. Retake it later, and the space between the two readings becomes your own measuring stick.',
+    full: 'You rate yourself across the areas of your life, comparing where you are now to the fuller version of you that you remember. The point is a clear starting line — an honest look at the distance, in your own hand. Research suggests that measuring your present self against a self that matters to you can sharpen the motivation for the work ahead. Retake it later, and the space between the two readings becomes your own measuring stick.',
   },
   r2: {
     short: 'Name the doors your Fade came in through — most people walked through more than one.',
@@ -70,7 +70,7 @@ export const ASSET_SUMMARIES: Record<AssetId, Summary> = {
 
 export const PHASE_SUMMARIES: Record<PhaseKey, Summary> = {
   reconnect: {
-    short: 'Get clear about where you are, and remember the person you were before the Fade set in.',
+    short: 'Get honest about where you are, and remember the person you were before the Fade set in.',
     full: 'Here, you’ll explore where you are now and excavate who you were before. You’ll recognize events that opened Doors you came through that caused you to Fade from your true self. You’ll put words to the life you want to reclaim. And you’ll answer questions that measure the distance you need to close to get there. Go at your own pace, there are no right or wrong answers, only clarity.',
   },
   rewire: {

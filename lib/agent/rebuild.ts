@@ -372,9 +372,9 @@ export function composePilotPlan(activity: string, diet: string): string {
 // the 12 → 6, scores the Control component (Ave1→Ave2), writes the Checkpoint grinta_reading, and sets the
 // rebuild_checkpoint_passed gate (→ Reclaim lit). Items VERBATIM (CHECKPOINT_CONTROL_ITEMS, RB-2 resolved). Copy: B4 doc.
 const B4_CHECKPOINT_OPEN =
-  "You did the real work of Rebuild — you found your why, took stock of your skills, and ran the pilot in your " +
+  "You did the real work of Rebuild — you found your why, took honest stock of your skills, and ran the pilot in your " +
   "own life. Before we close the Phase, a quick read on where your control sits now. A dozen of these, one to five. No " +
-  "passing score — just a gauge of what you've built.";
+  "passing score — just an honest gauge of what you've built.";
 const B4_CHECKPOINT_CLOSE = "That's the read. Hold on — let me show you what you just built.";
 function rebuildCheckpointDeliver(index: number): string {
   return grintaStem(CHECKPOINT_CONTROL_ITEMS[index]!);

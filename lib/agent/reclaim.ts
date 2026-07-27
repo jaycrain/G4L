@@ -500,7 +500,7 @@ export async function liveTurnReclaimC3(state: ConvState, history: ConvMessage[]
 const C4_CHECKPOINT_OPEN =
   "You did the real work of Reclaim — you revisited your list with clearer eyes, mapped where your world can get " +
   "bigger, and defined what makes a day yours. Before we close the cycle, a quick read on where your challenge sits " +
-  "now — the pull toward what's possible. Six of these, one to five. No passing score — just a gauge.";
+  "now — the pull toward what's possible. Six of these, one to five. No passing score — just an honest gauge.";
 const C4_CHECKPOINT_CLOSE = "That's the read. Hold on — let me show you what you just built.";
 function reclaimCheckpointDeliver(index: number): string {
   return grintaStem(CHECKPOINT_CHALLENGE_ITEMS[index]!);
