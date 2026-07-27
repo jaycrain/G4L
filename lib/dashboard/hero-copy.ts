@@ -36,11 +36,11 @@ export function heroView(state: HeroState, ctx: HeroContext): HeroView {
         title: `Nice work — ${state.session.label}`,
         copy: state.next
           ? state.next.isCheckpoint
-            ? `That's ${state.session.label} done — you've walked the whole ${ctx.phaseLabel} phase. Next up: ${state.next.label}, whenever you're ready.`
+            ? `You've walked the whole ${ctx.phaseLabel} phase. Next up: ${state.next.label}, whenever you're ready.`
             : isRewire
               ? `Great job completing ${state.session.label}. That was some hard work — take a break if you want, then pick back up here whenever you're ready. If you want to keep going, ${state.next.label} is next.`
-              : `That's ${state.session.label} done. Next up: ${state.next.label}, whenever you're ready.`
-          : `That's ${state.session.label} done. Take a breath — the next step will be here when you are.`,
+              : `Next up: ${state.next.label}, whenever you're ready.`
+          : `Take a breath — the next step will be here when you are.`,
         ctaLabel: state.next ? (state.next.isCheckpoint ? 'Take the Checkpoint' : 'Start the next Session') : 'Back to your path',
       };
     case 'reclaim-locked':
