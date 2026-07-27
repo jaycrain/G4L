@@ -12,7 +12,7 @@ import { saveArcSession, loadArcSession, clearArcSession } from '../../lib/agent
 import { softSetMemberDoors, getMemberDoorNames } from '../../lib/member/refine.ts';
 import type { ReconnectCeremonyData } from '../../lib/ceremony/reconnect-ceremony-beats.ts';
 import { earnedBadgeReveal } from '../../lib/ceremony/badge-reveal.ts';
-import { emitHarvestMoment, harvestSignal, type KeeperType } from '../../lib/agent/harvest.ts';
+import { emitHarvestMoment, drainHarvest, type KeeperType } from '../../lib/agent/harvest.ts';
 import { DOORS } from '../../lib/doors.ts';
 import { submitIdq } from '../../lib/gateway/flow.ts';
 import { TOTAL_ITEMS } from '../../lib/idq/instrument.ts';
@@ -123,12 +123,9 @@ async function persistReconnectComplete(db: Db, memberId: string, prev: ConvStat
 // §2d harvest: drain any NEW harvest candidates the engine queued this turn (drift keeper now; legacy share later) via
 // the existing member_event/emitHarvestMoment seam — same default-emit discipline as the §2b tell. Best-effort.
 async function persistHarvest(db: Db, memberId: string, prev: ConvState, turn: Turn): Promise<void> {
-  const priorN = prev.pendingHarvest?.length ?? 0;
-  // harvestSignal emits the QI moment + commits the keeper as INDEPENDENT best-effort steps, so a moment-emit failure
-  // never costs the keeper (the prod silent-drop that lost Millie's session keepers). Each drain guards + logs itself.
-  for (const s of (turn.state.pendingHarvest ?? []).slice(priorN)) {
-    await harvestSignal(db, memberId, s, 'reconnect');
-  }
+  // drainHarvest emits the QI moment + commits the keeper as INDEPENDENT best-effort steps (a moment-emit failure
+  // never costs the keeper — the prod silent-drop that lost Millie's session keepers), each guarded + logged.
+  await drainHarvest(db, memberId, prev, turn.state, 'reconnect');
 }
 
 export async function startReconnectAction(memberId: string): Promise<{ ok: boolean; reply?: string; state?: ConvState; expects?: ScaleExpectation; error?: string }> {

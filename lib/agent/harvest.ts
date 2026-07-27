@@ -117,6 +117,24 @@ export async function harvestSignal(
   }
 }
 
+/** Drain the harvest signals produced THIS turn — those the arc pushed beyond what the prior (client-sent) state
+ *  already carried — each through harvestSignal. `pendingHarvest` ACCUMULATES in the arc state across turns, so the
+ *  priorN offset is what stops earlier turns' signals from re-committing. This is the exact drain every arc action
+ *  runs; it was previously hand-rolled per action (and untested end-to-end). Prev/next are the incoming state and the
+ *  turn's resulting state. */
+export async function drainHarvest(
+  db: Db,
+  memberId: string,
+  prev: { pendingHarvest?: readonly unknown[] },
+  next: { pendingHarvest?: readonly { kind: string; ref?: string; keeperType?: string; destinationIntent: 'keeper' | 'share' | 'both'; payloadRef: string; label?: string; private?: boolean }[] },
+  surface: string,
+): Promise<void> {
+  const priorN = prev.pendingHarvest?.length ?? 0;
+  for (const s of (next.pendingHarvest ?? []).slice(priorN)) {
+    await harvestSignal(db, memberId, s, surface);
+  }
+}
+
 /** The ONE v2.1 detector (Decision R, minimal): a member-CONFIRMED identity phrase → a `definition` keeper,
  *  harvested once at onboarding commit. A skipped/unnamed identity harvests NOTHING (restraint). The identity
  *  was confirmed at the card, so the keeper lands 'kept' — immediately recall-ready via forCompanionContext

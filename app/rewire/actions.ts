@@ -26,7 +26,7 @@ import { BEAT_SEP } from '../../lib/agent/onboarding.ts';
 import { scaleExpects, type ArcConfig } from '../../lib/agent/onboarding-staged.ts';
 import { saveArcSession, loadArcSession, clearArcSession } from '../../lib/agent/arc-session.ts';
 import { loadReconnectCaptures } from '../../lib/agent/reconnect.ts';
-import { harvestSignal } from '../../lib/agent/harvest.ts';
+import { drainHarvest } from '../../lib/agent/harvest.ts';
 import { startPracticeWeek, latestImageKeeper } from '../../lib/practice/store.ts';
 import { getGrintaBaselineReading, latestGrintaReading, persistGrintaReading, commitmentCheckpointResponsesMap } from '../../lib/grinta/survey/store.ts';
 import { scoreCheckpointStrand, grintaChangePct, directionOf } from '../../lib/grinta/survey/scoring.ts';
@@ -166,12 +166,9 @@ async function loadCeremonyKeepers(db: Db, memberId: string): Promise<string[]> 
 // Drain the NEW harvest signals this turn (the true lines) → a member_event moment + a kept Playbook entry in the
 // member's own words. Best-effort: a harvest hiccup never fails the conversation turn.
 async function persistRewireHarvest(db: Db, memberId: string, prev: ConvState, turn: Turn): Promise<void> {
-  const priorN = prev.pendingHarvest?.length ?? 0;
-  // harvestSignal emits the QI moment + commits the keeper as INDEPENDENT best-effort steps, so a moment-emit failure
-  // never costs the keeper (the prod silent-drop that lost Millie's session keepers). Each drain guards + logs itself.
-  for (const s of (turn.state.pendingHarvest ?? []).slice(priorN)) {
-    await harvestSignal(db, memberId, s, 'rewire');
-  }
+  // drainHarvest emits the QI moment + commits the keeper as INDEPENDENT best-effort steps (a moment-emit failure
+  // never costs the keeper — the prod silent-drop that lost Millie's session keepers), each guarded + logged.
+  await drainHarvest(db, memberId, prev, turn.state, 'rewire');
 }
 
 // Per-turn save/resume (the same W-15 pattern Reconnect uses, now per Rewire session). Keyed by (member, 'rewire', session)
