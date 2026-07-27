@@ -27,9 +27,11 @@ test('builds the seven-beat Threshold with the uncovered reveal carrying the mem
     assert.equal(uncovered.dimensions?.physical, 12); // the dimensions ride along for the cluster read
   }
 
-  // Beat 5 is the Journey reveal; the last beat carries the first move + is the resolve (clip-in) beat.
-  assert.equal(beats[4]!.reveal?.kind, 'journey');
-  assert.match(beats[6]!.text, /Seven Minutes/);
+  // Donna's Reconnect edits: the Playbook beat now runs 5th (no reveal), the Journey reveal 6th; the last beat is the
+  // resolve (clip-in) beat — which no longer appends the per-member first move.
+  assert.equal(beats[4]!.reveal, undefined); // 5th = the Playbook beat (plain, no reveal)
+  assert.equal(beats[5]!.reveal?.kind, 'journey'); // 6th = the 4Rs reveal
+  assert.match(beats[6]!.text, /clip/i);
 });
 
 test('seeds beat reveals up to 3 lines when present', () => {

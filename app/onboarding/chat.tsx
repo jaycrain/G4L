@@ -361,9 +361,9 @@ export default function OnboardingChat({ welcomeEnabled = false }: { welcomeEnab
               <dl className="summary-list">
                 <dt>Who you’re reclaiming</dt>
                 <dd>{card.identityLabel ?? 'You’ll name this through the work — that part comes soon.'}</dd>
-                <dt>How the gap opened</dt>
+                <dt>How your identity loss happened</dt>
                 <dd>{card.gap}</dd>
-                <dt>The door{card.doors.length === 1 ? '' : 's'} you came through — the way{card.doors.length === 1 ? '' : 's'} the fade got in</dt>
+                <dt>The door{card.doors.length === 1 ? '' : 's'} you came through that created your Fade</dt>
                 <dd>
                   {card.doors.length ? (
                     <ul className="summary-doors">
@@ -375,7 +375,7 @@ export default function OnboardingChat({ welcomeEnabled = false }: { welcomeEnab
                     '—'
                   )}
                 </dd>
-                <dt>What you want back</dt>
+                <dt>Your comeback — what you want back</dt>
                 <dd>
                   <ul className="summary-reclaim">
                     {card.reclaimList.map((it, i) => (<li key={i}>{it}</li>))}

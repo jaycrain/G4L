@@ -43,7 +43,9 @@ export const GRINTA_ITEMS: Record<string, GrintaItem> = {
   G2Q1: { code: 'G2Q1', strand: 'reconnect', subscale: 'G2', stem: 'I can focus on my personal wellness goals even when challenges arise' },
   G3Q1: { code: 'G3Q1', strand: 'reconnect', subscale: 'G3', stem: 'I can persevere and achieve what is important to me' },
   // commitment → Rewire
-  W1Q1: { code: 'W1Q1', strand: 'rewire', subscale: 'W1', stem: 'I can affirm myself and provide positive self-talk to get me through challenges' },
+  // W1Q1 wording simplified per Donna's Reconnect edits (2026-07-26); Jay wants Greg to see it in-context on his own
+  // walk (instrument reword — pending Greg's sign-off, per the frozen-instrument rule).
+  W1Q1: { code: 'W1Q1', strand: 'rewire', subscale: 'W1', stem: 'I can practice positive self-talk to get me through challenges' },
   W2Q1: { code: 'W2Q1', strand: 'rewire', subscale: 'W2', stem: 'I know where my life is going and look forward to my future' },
   W3Q1: { code: 'W3Q1', strand: 'rewire', subscale: 'W3', stem: 'I have a general sense of what I am doing and why I am doing it' },
   // control → Rebuild

@@ -129,11 +129,13 @@ function identityRef(c: Collected): string {
 // §3 — Stage 1 (who you are): the opener (the AI disclosure + primer live on the Stage-0 start page).
 // Onboarding Copy v2 (Jay's voice pass): the corny example run is cut; the prompt is tightened + de-gendered.
 export const STAGED_OPENING =
-  "Let's start with a simple question — but take your time with it.\n\n" +
-  'When did you last feel like yourself?\n\n' +
-  "Not the job title. Not the role everyone knows you for — even if that's mom or dad, partner or child. The version " +
-  "underneath all of it. The one you've drifted from and want to be again.\n\n" +
-  'Who were they? What were they doing? How did it feel to be them?\n\nTell me about them.';
+  "Let's start with a simple question.\n\n" +
+  'When did you feel most like yourself?\n\n' +
+  'We’ll work together to pick just one word, a handle, to describe them. Someone we can refer to that says ' +
+  '“this is still who I am underneath everything.” This isn’t a label set in stone. It just puts a name to who ' +
+  'you’re trying to reclaim. We can always change it later.\n\n' +
+  'So tell me, when DID you feel most like yourself? Tell me about them. Not the job title or just the role for ' +
+  'which everyone knows you. Who were they? What were they doing? How did it feel to be them?';
 
 // The short re-draw when the member has spoken but we haven't yet caught a PAST self. NEVER re-emit the full
 // STAGED_OPENING here — on turn 2+ they've already answered it, so the whole cold-open reads as a verbatim
@@ -1183,17 +1185,16 @@ const reclaimStage: StageDef = {
 // Introduce the four Phases HERE — the first time the member meets the framework — right before the baseline
 // survey, so the Card's "each Phase"/"first Phase" has a referent. Onboarding Copy v2 (Jay's voice pass, verbatim).
 const GRINTA_OPEN =
-  'Here’s the road ahead. Four Phases, each building on the last: Reconnect — find who you are again. Rewire — get ' +
-  'your head right. Rebuild — get your body back. Reclaim — step all the way into it. It takes grit to walk it, ' +
-  'which is the whole point: Grinta is Italian for grit, and it’s exactly what we’re going to build in you, one ' +
-  'Phase at a time.';
+  'Great work! Now you’re ready to take the first assessment. This is a series of 12 questions that will establish ' +
+  'a baseline for your Grinta Index. As you know, Grinta means grit, so we’re doing an initial measurement of your ' +
+  'resilience and hardiness. We know there’s no way you’ve made it to this point in your life without weathering ' +
+  'your share of tough times. This just shows a starting point with a number we expect you will see rise as you go ' +
+  'through the G4L program. We’ll track this over time.';
 // The WHY before the scale (a mirror; sets the starting Grinta to watch climb), then how to answer + the 1–5 scale.
 const GRINTA_SCALE =
-  'But first, a quick read on where you’re starting. These next twelve aren’t a test — think of them as a mirror. ' +
-  'Each one touches a different part of what it takes to reclaim yourself. Your answers set your starting Grinta — a ' +
-  'number you’ll watch climb as you do the work. That’s the point: not to score you, but to give you something real ' +
-  'to measure the comeback against.\n\nAnswer as the person you actually are today, not the one you wish you were. ' +
-  'For each one, tell me how true it feels — 1 (not at all) to 5 (completely).';
+  'Answer this as the person you actually are right now, not the one you wish you were or where you want to end up. ' +
+  'Remember, the more honest you are, the more the work will benefit you. For each question, tell me how true it ' +
+  'feels — 1 (not at all) to 5 (completely).\n\nToday:';
 // The full survey opener as TWO beats (two bubbles): the Phases intro (orientation), then the pre-survey framing +
 // the first item (the survey instruction). Two jobs — let each breathe (same reason as the drift-beat split).
 function grintaSurveyOpener(): string {
@@ -1218,11 +1219,11 @@ function grintaClose(composite: number): string {
   // Onboarding Copy v2 (Jay's voice pass): "working through the four Phases, one at a time" (was "closing each R…");
   // "ready for you now" (was "already lit").
   return (
-    `That’s the whole check-in — thanks for staying with it.\n\n` +
-    `Your starting Grinta Index is ${composite} out of 5. Grinta means grit — never give up — and you build it by ` +
-    `working through the four Phases, one at a time. This is just where you stand today: nothing to grade, ` +
-    `everything to build on.\n\n` +
-    `Take a look at what I captured from our conversation below. Reconnect is your first Phase, and it’s ready for you now.`
+    `That’s the whole check-in. Thanks for staying with it.\n\n` +
+    `Your starting Grinta Index is ${composite} out of 5. This is just where you stand today. You will build it in ` +
+    `the G4L program by working through the four Phases — Reconnect, Rewire, Rebuild, and Reclaim.\n\n` +
+    `Take a look below at what I captured from our conversation so far. You are now officially into the first Phase ` +
+    `of G4L — Reconnect. Well done!`
   );
 }
 

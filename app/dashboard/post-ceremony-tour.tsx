@@ -39,13 +39,11 @@ export default function PostCeremonyTour({
   const allStops: Stop[] = [
     {
       target: 'program',
-      line: nextSessionTitle
-        ? `Your path — Reconnect, Rewire, Rebuild, Reclaim. Your next step's already lit: ${nextSessionTitle}.`
-        : `Your path — Reconnect, Rewire, Rebuild, Reclaim. Your next step lights up here.`,
+      line: 'This section will always let you know where you are in the program. You can kick off the next phase by clicking the Open this Session button.',
     },
     { target: 'daily', line: 'Your Daily Beat — the heartbeat between Sessions. One thought, one small move, every day.' },
-    { target: 'idscore', line: 'Your ID Score — the mirror. How far the gap runs, and the climb back.' },
-    { target: 'reclaim', line: "Your Reclaim List — what you're bringing back. The goals the work points at." },
+    { target: 'idscore', line: 'Identity Distance (ID) establishes a number that shows the space between who you are and who you want to be. It’s derived from questions you answer periodically. It will show progress you make as you close that distance.' },
+    { target: 'reclaim', line: 'Your Reclaim List shows the goals you’re working toward in your comeback.' },
     { target: 'doors', line: doorsLine },
   ];
   // Only walk stops whose anchor exists AND is VISIBLE on THIS dashboard — so the redesign (no Daily Beat panel) skips
@@ -131,7 +129,9 @@ export default function PostCeremonyTour({
         <div className="tour-card tour-intro">
           <Mark />
           <p className="tour-line">
-            That&apos;s your Threshold crossed, {firstName}. Before I step back — let me show you around your home base.
+            Way to go! Hope you have already had some valuable insights and thought provoking moments. I’ve been
+            tracking everything we’ve talked about. Take a minute to look around your Dashboard where we’re keeping
+            everything we’ve done and more.
           </p>
           <div className="tour-cta">
             <button type="button" className="tour-next" onClick={() => { setStep(0); setPhase('walk'); }}>Show me around →</button>

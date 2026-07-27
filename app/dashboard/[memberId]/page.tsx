@@ -253,13 +253,9 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
   // Post-Ceremony Tour copy — the Doors spotlight line, named back from their own onboarding (§7: declare
   // what it is). Falls back to a generic line if doors weren't captured (the foot line won't render then).
   const doorNames = dash.doors.map((d) => d.displayName);
-  const namedDoors =
-    doorNames.length <= 1
-      ? doorNames[0] ?? ''
-      : `${doorNames.slice(0, -1).join(', ')} and ${doorNames[doorNames.length - 1]}`;
-  const doorsLine = doorNames.length
-    ? `Your Door${doorNames.length > 1 ? 's' : ''} — how the gap opened. You named ${namedDoors}.`
-    : 'Your Doors — how the gap opened, in your own words.';
+  // Donna's Reconnect edits (2026-07-26): the Doors tour line is now generic — no member-specific "you named X".
+  const doorsLine =
+    'Doors are common life changes that happen to almost all midlifers. Your Doors show the ones you walked through that started the Fade away from who you were to who you are now, and provide meaningful insights for your comeback.';
 
   return (
     <>

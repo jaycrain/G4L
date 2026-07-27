@@ -142,11 +142,9 @@ export default async function RedesignDashboard({ db, memberId, dash }: { db: Db
   ).rows[0];
   const thresholdCrossed = !!pf?.threshold_crossed_at;
   const tourCompleted = !!pf?.tour_completed_at;
-  const namedDoors =
-    doorNames.length <= 1 ? doorNames[0] ?? '' : `${doorNames.slice(0, -1).join(', ')} and ${doorNames[doorNames.length - 1]}`;
-  const doorsLine = doorNames.length
-    ? `Your Door${doorNames.length > 1 ? 's' : ''} — how the gap opened. You named ${namedDoors}.`
-    : 'Your Doors — how the gap opened, in your own words.';
+  // Donna's Reconnect edits (2026-07-26): the Doors tour line is now generic — no member-specific "you named X".
+  const doorsLine =
+    'Doors are common life changes that happen to almost all midlifers. Your Doors show the ones you walked through that started the Fade away from who you were to who you are now, and provide meaningful insights for your comeback.';
   const playbookSeeds = thresholdCrossed
     ? []
     : (await listPlaybook(db, memberId)).filter((e) => e.authorship === 'gathered').slice(0, 3).map((e) => e.body);

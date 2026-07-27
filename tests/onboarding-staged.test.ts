@@ -34,7 +34,7 @@ function assertHandsToGrinta(turn: Turn) {
   // Copy v2: the Phases intro and the pre-survey framing are TWO beats (two bubbles), split on BEAT_SEP.
   const bubbles = turn.reply.split(BEAT_SEP);
   assert.equal(bubbles.length, 2, 'the opener is two beats — the Phases intro | the pre-survey framing + first item');
-  assert.match(bubbles[0]!, /Four Phases/i, 'bubble 1 = the Phases intro');
+  assert.match(bubbles[0]!, /first assessment/i, 'bubble 1 = the Grinta assessment intro (Donna edit)');
   assert.match(bubbles[1]!, /1 \(not at all\) to 5/i, 'bubble 2 = the pre-survey framing + the first item');
 }
 // Answer the 12-item survey with `val` (default 3); returns the final (completing) turn.
@@ -52,7 +52,7 @@ test('STAGED opening — opens on the identity question, stage = identity', () =
   const t = stagedOpening();
   assert.equal(t.state.stage, 'identity');
   assert.equal(t.complete, false);
-  assert.match(t.reply, /feel like yourself/i);
+  assert.match(t.reply, /feel most like yourself/i);
 });
 
 test('STAGED identity — breathe floor (1a): gather → PROBE the person → reflect-confirm → advance', () => {
@@ -1158,5 +1158,5 @@ test('STAGED end-to-end — opening → identity → gap → reclaim → complet
   assert.equal(done.complete, true, 'the survey completes the full arc');
   assert.equal(done.state.stage, 'complete');
   assert.equal(done.state.collected.grintaBaseline?.composite, 4, 'all-4s → composite 4');
-  assert.match(done.reply, /starting Grinta Index is 4|Reconnect is your first Phase/i, 'the light reveal names the baseline + Reconnect');
+  assert.match(done.reply, /starting Grinta Index is 4|officially into the first Phase/i, 'the light reveal names the baseline + Reconnect');
 });

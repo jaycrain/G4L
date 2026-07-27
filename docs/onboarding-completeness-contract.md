@@ -135,3 +135,19 @@ the drawing-out survives. This proposal is that pattern applied to onboarding ca
 
 Until then: the revert stands, the vibe is protected, and the completeness gaps above are KNOWN
 and OPEN — not fixed.
+
+---
+
+## Deferred inputs to weigh in this discussion
+
+- **Donna's Reclaim List "formula" (from her Reconnect edits, 2026-07-26 — HELD by Jay, not built).**
+  She proposed adding guidance to the reclaim step: *"We're creating a simple list of goals (we
+  can edit these later). Use this formula: I want (fill in blank). You can add timing like 'in 3
+  months', or measurements like '20 pounds' or 'run 4 times a week'. You'll be able to add trackers
+  on the dashboard later."* Jay held it (Donna doesn't make the programming call) precisely because
+  it lands on this contract: an **"I want ___" + measurement** shape is exactly the clean, trackable
+  item the engine's distill step should produce — but injected as **member-facing instruction** ("use
+  this formula") it risks re-formaulaic-izing the draw-out we just protected. The question for this
+  discussion: fold the *shape* (I-want + measurement) into the engine's distill→confirm as the target
+  format, WITHOUT ever showing the member a "formula" or asking mid-draw-out. Decide here; don't
+  hard-code the formula into the live loop.
