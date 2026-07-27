@@ -209,16 +209,36 @@ test('STAGED gap confirm — done-signals ADVANCE, never loop (Jay walk: "won\'t
   assert.match(more.state.collected.gap ?? '', /divorce/i, 'appends the new material — never dropped');
 });
 
-test('STAGED gap confirm — CONFIRM-PHASE ceiling stops the rambler loop (torture harness fragment-typer)', () => {
-  // The gather CAP (GAP_MAX_DEPTH) bounds gathering, but a rambling member whose every reply reads as an 'addition'
-  // bounced append → re-ask "…or is there more?" forever. Past GAP_CONFIRM_CEILING (8) the beat closes — content kept.
-  const deepConfirm = (): ConvState => ({
-    stage: 'gap', awaitingConfirm: true, stageScratch: { gap: { gapDepth: 8 } },
+test('STAGED confirm bounce — SHARED ceiling stops the rambler loop in every stage (torture harness)', () => {
+  // One shared contract: each stage's CONFIRM re-opened forever when a rambler's reply never reads as a clean "done".
+  // Past CONFIRM_BOUNCE_CEILING the beat closes on the stage's own advance path — content already captured.
+
+  // GAP: every reply an 'addition' → append → re-ask "…or is there more?" forever. Past the ceiling → advance, kept.
+  const gapConfirm = (): ConvState => ({
+    stage: 'gap', awaitingConfirm: true, stageScratch: { gap: { confirmBounces: 4 } },
     collected: { athleticPast: 'a cyclist', identityNoun: 'Free Spirit', gap: 'Kids and work crowded it out over fifteen years.', doors: ['full_house', 'grind'] },
   });
-  const rambled = applyStagedTurn(deepConfirm(), [], 'Actually there was also my divorce that year — it wrecked me', { text: 'Tell me about that.' });
-  assert.equal(rambled.state.stage, 'reclaim', 'past the ceiling, an addition advances instead of looping the probe');
-  assert.match(rambled.state.collected.gap ?? '', /divorce/i, 'the final addition is still appended — content never dropped');
+  const gapRambled = applyStagedTurn(gapConfirm(), [], 'Actually there was also my divorce that year — it wrecked me', { text: 'Tell me about that.' });
+  assert.equal(gapRambled.state.stage, 'reclaim', 'gap: past the ceiling, an addition advances instead of looping');
+  assert.match(gapRambled.state.collected.gap ?? '', /divorce/i, 'gap: the final addition is still appended — never dropped');
+
+  // IDENTITY: repeated dispute → reopen forever. Past the ceiling → SKIP (never commit a disputed name), advance.
+  const idConfirm: ConvState = {
+    stage: 'identity', awaitingConfirm: true, stageScratch: { identity: { confirmBounces: 4 } },
+    collected: { athleticPast: 'a runner', identityNoun: 'Runner' },
+  };
+  const idDisputed = applyStagedTurn(idConfirm, [], "no that's not it either", { text: 'Okay.', replyIntent: 'dispute' });
+  assert.equal(idDisputed.state.stage, 'gap', 'identity: past the ceiling, a persistent dispute skips forward');
+  assert.equal(idDisputed.state.collected.identitySkipped, true, 'identity: skipped rather than committing a wrong name');
+  assert.ok(!idDisputed.state.collected.identityNoun, 'identity: never names an unconfirmed identity (governance)');
+
+  // RECLAIM: every reply a late-want → re-reflect forever ("Anything missing?" ×N — the milie shape). Past → survey.
+  const rcConfirm: ConvState = {
+    stage: 'reclaim', awaitingConfirm: true, stageScratch: { reclaim: { confirmBounces: 4 } },
+    collected: { athleticPast: 'a cyclist', identityNoun: 'Free Spirit', gap: 'Kids and work crowded it out.', doors: ['grind'], reclaimList: ['Open-water swimming', 'Own my mornings', 'Play piano'] },
+  };
+  const rcRambled = applyStagedTurn(rcConfirm, [], 'oh and also I want to start painting again', { text: 'Noted.', replyIntent: 'more' });
+  assert.notEqual(rcRambled.state.stage, 'reclaim', 'reclaim: past the ceiling, a late-want advances instead of looping');
 });
 
 test('STAGED gap — CAP (v2.1): a member who keeps giving is never looped forever — the beat closes by GAP_MAX_DEPTH', () => {

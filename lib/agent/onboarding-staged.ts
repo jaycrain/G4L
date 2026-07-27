@@ -107,12 +107,6 @@ const GAP_MAX_TURNS = 4;
 // richness proxy (door-count / length): depth is judgment, the floor/cap bound the error, the card corrects.
 const GAP_MIN_DEPTH = 2;
 const GAP_MAX_DEPTH = 5;
-// Anti-loop ceiling for the CONFIRM phase (torture-harness fragment-typer / rambler, 2026-07-26): GAP_MAX_DEPTH bounds
-// GATHER, but an engaged member who keeps adding never gives a clean "done" — every reply reads as an 'addition', so
-// the confirm bounces append → re-ask → append forever ("Have we got a good handle… or is there more?" repeated 10×).
-// Past this depth, KEEP their addition but stop asking and advance (the card is the backstop). High enough that a real
-// multi-chapter fade (Scott/Blake) finishes naturally first.
-const GAP_CONFIRM_CEILING = 8;
 // SYSTEMIC INVARIANT — no gather stage loops unbounded. But the trigger is STALL, not length: a verbose, engaged
 // member (Scott, Blake — getting real value from a long conversation) must NOT be force-completed just for being
 // long. So we force progress to the card only when the member has actually gone quiet — IDLE_LIMIT consecutive
@@ -753,9 +747,22 @@ export type StageMode = 'drawout' | 'administered' | 'coach';
 // view (IdentityScratch/GapScratch/ReclaimScratch below), so ConvState carries ONE `stageScratch` map instead of
 // a flat field per counter that would sprawl as arcs multiply (Phase 1 step 0).
 type StageScratch = Record<string, number | boolean | undefined>;
-interface IdentityScratch { identityTurns?: number; identityProbes?: number }
-interface GapScratch { gapTurns?: number; gapDepth?: number; noFade?: boolean }
-interface ReclaimScratch { reclaimNudged?: boolean }
+interface IdentityScratch { identityTurns?: number; identityProbes?: number; confirmBounces?: number }
+interface GapScratch { gapTurns?: number; gapDepth?: number; noFade?: boolean; confirmBounces?: number }
+interface ReclaimScratch { reclaimNudged?: boolean; confirmBounces?: number }
+
+// SHARED anti-loop contract for the CONFIRM phase (torture harness, 2026-07-26). Every gather stage's GATHER phase is
+// bounded by its own floor/cap, but each stage's CONFIRM re-opened forever when a rambling member's reply never reads
+// as a clean "done" — identity: repeated dispute → reopen; gap: every reply an 'addition'; reclaim: every reply a
+// late-want / change. Same shape, three places → one contract, not three ad-hoc ceilings (CLAUDE.md "fix the pattern").
+// Count each NON-done re-open; past the ceiling, take the stage's own advance path (content already captured — the
+// card is the backstop). The model still owns the drawing-out; this fires ONLY on a genuine loop. Deliberately does
+// NOT count Decision-II shape-proposal turns (those are finite by construction — one per shape).
+const CONFIRM_BOUNCE_CEILING = 4;
+function confirmBounceExceeded(s: { confirmBounces?: number }): boolean {
+  s.confirmBounces = (s.confirmBounces ?? 0) + 1;
+  return s.confirmBounces > CONFIRM_BOUNCE_CEILING;
+}
 
 // The mutable per-turn working state handed to every stage handler: the merged captures, the CURRENT stage's
 // scratch bag, and the control fields a handler sets. A handler mutates it in place OR returns a terminal Turn
@@ -951,10 +958,22 @@ const identityStage: StageDef = {
     }
   },
   confirm(b) {
+    const s = b.scratch as IdentityScratch;
     // Model-signaled (Phase 2.1): a 'dispute' reopens the naming; anything else advances. Regex fallback when the
     // model didn't tag the reply.
     const disputes = b.model.replyIntent ? b.model.replyIntent === 'dispute' : correctsReflection(b.memberMessage);
     if (disputes) {
+      // Anti-loop: a member who keeps disputing the reflection re-opens the naming forever. Past the ceiling, DON'T
+      // commit a wrong name — SKIP identity (recovered later at Reconnect's Identity Excavation) and move on. Never
+      // names an unconfirmed identity (governance) — skipping is the safe advance here.
+      if (confirmBounceExceeded(s)) {
+        b.collected.identitySkipped = true;
+        b.collected.identityNoun = undefined;
+        b.stage = 'gap';
+        b.awaitingConfirm = false;
+        b.reply = `${SKIP_ACK}\n\n${gapOpen(b.collected)}`;
+        return;
+      }
       b.awaitingConfirm = false;
       b.reply = REOPEN_IDENTITY;
     } else {
@@ -1061,11 +1080,11 @@ const gapStage: StageDef = {
       if (!modelTaggedGap) b.collected.gap = joinGapChapters(b.collected.gap ?? '', b.memberMessage);
       b.collected.doors = augmentDoors(b.collected.doors ?? [], gapStageCorpus(b.history, b.memberMessage));
       b.awaitingConfirm = false;
-      // ANTI-LOOP (torture harness, 2026-07-26): a rambling / drifting member's every reply reads as an 'addition',
-      // so this append → re-ask cycle never reaches a clean "done" and the confirm probe repeats ("…or is there
-      // more?" ×10). Past GAP_CONFIRM_CEILING, KEEP the addition (content is never dropped, above) but stop asking
-      // and advance — the card is the backstop for anything still missing.
-      if ((s.gapDepth ?? 0) >= GAP_CONFIRM_CEILING) {
+      // ANTI-LOOP (shared contract): a rambling / drifting member's every reply reads as an 'addition', so this
+      // append → re-ask cycle never reaches a clean "done" and the confirm probe repeats ("…or is there more?" ×10).
+      // Past the bounce ceiling, KEEP the addition (content is never dropped, above) but stop asking and advance —
+      // the card is the backstop for anything still missing.
+      if (confirmBounceExceeded(s)) {
         b.stage = 'reclaim';
         b.reply = reclaimOpening(b.collected);
       } else {
@@ -1159,6 +1178,7 @@ const reclaimStage: StageDef = {
     }
   },
   confirm(b) {
+    const s = b.scratch as ReclaimScratch;
     // DECISION II — a shape proposal is pending the member's yes/no. Resolve it from their answer (merge / move to
     // Playbook / draw-out), then surface the NEXT shape or re-reflect the cleaned list. Never a silent rewrite.
     if (b.pendingReclaimShape) {
@@ -1184,6 +1204,10 @@ const reclaimStage: StageDef = {
       shouldCaptureStagedReclaim(lateWant) &&
       appendReclaim(b.collected, lateWant)
     ) {
+      // Anti-loop (shared contract): a rambling member whose every reply reads as a late-want re-reflects forever
+      // ("Got it — that's a strong list… Anything missing?" ×N — the milie shape). The want IS captured above; past
+      // the ceiling, stop re-reflecting and hand into the survey (the card is the backstop for anything more).
+      if (confirmBounceExceeded(s)) return void enterGrintaSurvey(b);
       b.reply = reflectReclaim(b.collected);
       b.awaitingConfirm = true; // stay in confirm — re-reflect with the just-added want included
       return;
@@ -1199,6 +1223,9 @@ const reclaimStage: StageDef = {
     // RECLAIM CONFIRM — "Anything missing?" A bare "no / nope / that's a good list" = nothing missing = DONE →
     // the card. Only an explicit CHANGE request reopens the gather. resolveReclaimConfirm owns the meaning.
     if (resolveReclaimConfirm(b.memberMessage, b.model.replyIntent) === 'change') {
+      // Anti-loop (shared contract): a member whose every reply reads as a 'change' reopens the gather forever. Past
+      // the ceiling, stop reopening and hand into the survey — the list is captured; the card is the backstop.
+      if (confirmBounceExceeded(s)) return void enterGrintaSurvey(b);
       b.awaitingConfirm = false;
       b.reply = withQuestion(b.modelText, reclaimMore(b.history));
     } else {
