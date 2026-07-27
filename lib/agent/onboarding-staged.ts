@@ -1569,7 +1569,10 @@ export function parseStagedTurn(content: readonly unknown[]): ModelTurn {
       if (b.name === 'set_past_self' && typeof b.input?.text === 'string') rec.athleticPast = b.input.text;
       if (b.name === 'name_identity' && typeof b.input?.noun === 'string') rec.identityNoun = cleanIdentityNoun(b.input.noun);
       if (b.name === 'skip_identity') rec.identitySkipped = true;
-      if (b.name === 'set_gap' && typeof b.input?.text === 'string') rec.gap = b.input.text;
+      // Tidy the MODEL's set_gap too (torture-harness fragment-typer: the model sometimes stores raw run-on prose
+      // despite the instruction). tidyGapProse is a no-op on clean prose, so this only cleans mechanics — never
+      // changes the model's words. Closes the hole where a raw model set_gap bypassed the backstop-only tidy.
+      if (b.name === 'set_gap' && typeof b.input?.text === 'string') rec.gap = tidyGapProse(b.input.text);
       if (b.name === 'note_door' && typeof b.input?.slug === 'string' && isDoorSlug(b.input.slug)) {
         (rec.doors ??= []).push(b.input.slug);
       }
