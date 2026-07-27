@@ -111,8 +111,7 @@ function WelcomeHero({ onNext }: { onNext: () => void }) {
           your way back from identity loss to a healthier and happier rest of your life.
         </p>
         <p className="onbwel-d-sub">
-          It starts with a real conversation with your G4L AI Companion. I’m your Companion — getting started with G4L
-          is as easy as a chat with a friend.
+          It starts with a real conversation with your AI G4L Companion that’s as easy as a chat with a friend.
         </p>
         <button type="button" className="onbwel-d-cta" onClick={onNext}>Sign up →</button>
       </div>
