@@ -677,7 +677,10 @@ test('Decision II — the shape gate is UNBYPASSABLE: even the forceProgress/run
 });
 
 test('Decision II — a MULTI-WANT paragraph is drawn out; the member\'s pick replaces the paragraph', () => {
-  const para = 'Regular income that covers our baseline needs. Freelance and creative projects and funding for my role.';
+  // A genuine multi-want dump reads as a COMMA list (milie@ walk fix: an "and…and" join with no comma is
+  // indistinguishable from a single want's facet-pair — "eating and workout habits to lose weight and regain strength" —
+  // so the gate now needs a real enumeration to fire).
+  const para = 'Regular income that covers our baseline needs. Freelance, creative projects, and funding for my role.';
   const atConfirm: ConvState = { stage: 'reclaim', awaitingConfirm: true, collected: { ...DII_BASE, reclaimList: ['My fitness', para] } };
   const t1 = applyStagedTurn(atConfirm, [], 'looks good', { text: 'Great.', replyIntent: 'done' });
   assert.equal(t1.state.pendingReclaimShape?.kind, 'multiwant');

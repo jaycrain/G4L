@@ -58,10 +58,17 @@ export function isMultiWantParagraph(text: string): boolean {
   const t = (text ?? '').trim();
   if (!t) return false;
   // Substantive sentence-like segments (terminator- or semicolon-separated), each carrying real content — but NOT a
-  // bare cadence phrase, which only qualifies the want beside it.
+  // bare cadence phrase, which only qualifies the want beside it. Require THREE+ (milie@ walk, 2026-07-26): a want that
+  // was DRAWN OUT almost always carries a want + one elaboration sentence (2 segments) — treating that as a multi-want
+  // dump made the close re-interrogate every item ("which one do you most want back?") in a loop. Three substantive
+  // sentences is a genuine dump; two is an elaborated single want. (Erring toward NOT firing is correct — a slightly
+  // verbose item on the card beats re-running the exercise; the draw-out already separated the wants.)
   const segments = t.split(/[.;\n]+|(?:\!|\?)+/).map((s) => s.trim()).filter((s) => s.split(/\s+/).length >= 4 && !CADENCE_ONLY_RE.test(s));
-  if (segments.length >= 2) return true;
-  // A single run-on that enumerates 3+ distinct content chunks ("X, Y, and Z" where each is substantive).
+  if (segments.length >= 3) return true;
+  // OR a genuine enumeration — a real COMMA list of 3+ substantive chunks ("A, B, and C"). Requiring an actual comma
+  // (not just "and") keeps the facet-pairs of ONE want out: "change my eating and workout habits to lose 15 lbs and
+  // regain core strength" is one health want joined by "and", no comma → not multi-want.
+  if (!t.includes(',')) return false;
   const commaChunks = t.split(/,| and /i).map((s) => s.trim()).filter((s) => contentTokens(s).size >= 1);
   return commaChunks.length >= 3 && t.split(/\s+/).length >= 8;
 }

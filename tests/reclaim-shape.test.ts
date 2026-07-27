@@ -27,6 +27,15 @@ test('multi-want paragraph — Donna\'s "regular income…" splits into several 
   for (const item of ['Hang out with friends. One night a week.', 'Get to the gym. Twice a week.', 'Ride my bike. Every day.']) {
     assert.equal(isMultiWantParagraph(item), false, `cadence isn't a second want: ${item}`);
   }
+  // milie@ walk (2026-07-26): a DRAWN-OUT want carries a want + an elaboration sentence (2 segments), or facets joined
+  // by "and" — these were falsely split and re-interrogated in a loop at the close. They are single wants; must NOT fire.
+  for (const item of [
+    'Some time every week to create. Focus first on writing a story I started a long time ago about something that happened in my hometown.',
+    'Start with one day a week. An hour. Can be any time that works.',
+    'Change my eating and workout habits to lose 15 lbs and regain core strength.',
+  ]) {
+    assert.equal(isMultiWantParagraph(item), false, `elaborated single want stays single (milie walk): ${item}`);
+  }
 });
 
 test('life-vision — Donna\'s "I\'ll be 60…" vision is caught; concrete wants are not', () => {
