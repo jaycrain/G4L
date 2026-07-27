@@ -34,9 +34,9 @@ test('C1 Step 1 · warm frame → 15 evidence items in three parts → hands int
   }
   assert.equal(t.complete, false, 'evidence completing hands into Step 2, not the whole session');
   assert.equal(t.state.stage, 'refine', 'transitions to the refinement coach stage');
-  assert.match(t.reply, /you're in Reclaim/i, 'the reflective mirror');
-  assert.match(t.reply, /cycle, not a checklist/i, 'not all-or-nothing');
-  assert.match(t.reply, /revisit it with clearer eyes/i, 'the Step 2 transition');
+  assert.match(t.reply, /ready for the Reclaim phase/i, 'the reflective mirror');
+  assert.match(t.reply, /cycle, not a linear checklist/i, 'not all-or-nothing');
+  assert.match(t.reply, /revisit it now to make sure it still fits/i, 'the Step 2 transition');
   assert.doesNotMatch(t.reply, /\bscore\b/i, 'RC-2: formative — no score');
 });
 

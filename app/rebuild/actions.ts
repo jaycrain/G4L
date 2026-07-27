@@ -232,7 +232,9 @@ export async function rebuildTurnAction(
         // Mark B3 closed so the v2.4 forecast advances the member B3 → B4 (best-effort).
         try {
           await markSessionClosed(db, memberId, 'RBLD-B3');
-          b3Badge = await acknowledgeSessionBadge(db, memberId, 'RBLD-B3'); // newly-earned milestone → named at the close
+          // Earn the milestone (idempotent) but do NOT surface the badge beat here — B3 only SETS UP the pilot; the
+          // "week of noticing" is celebrated in the Rebuild ceremony, so a beat at the close is a duplicate (Donna).
+          await acknowledgeSessionBadge(db, memberId, 'RBLD-B3');
         } catch {
           /* swallow — the session still completed; the forecast advance is best-effort */
         }

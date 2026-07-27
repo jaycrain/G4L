@@ -165,8 +165,9 @@ export async function reclaimTurnAction(
             /* swallow — the logging nudge is a bonus */
           }
           try {
+            // Close the session for the forecast, but do NOT earn/surface the "quality-days" badge here — it now
+            // earns when the member LOGS a quality day (living the tracking week), not at the definition close (Donna).
             await markSessionClosed(db, memberId, 'RCL-C3');
-            c3Badge = await acknowledgeSessionBadge(db, memberId, 'RCL-C3'); // newly-earned milestone → named at the close
           } catch {
             /* swallow — the forecast advance is best-effort */
           }

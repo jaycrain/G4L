@@ -9,7 +9,7 @@
 import { runArcTurn, administeredStage, scaleExpects, type ArcConfig, type StageDef } from './onboarding-staged.ts';
 import { withScriptedBeat } from './rewire.ts'; // "model reflects, engine carries the turn forward — never both, never a dead-end"
 import { BEAT_SEP, type ConvMessage, type ConvState, type ModelTurn, type Turn } from './onboarding.ts';
-import { WHY_ITEMS, WHY_PROMPTS, WHY_SCALE_MAX, WHY_ITEM_COUNT, WHY_DOMAIN_SPLIT } from '../rebuild/why-instrument.ts';
+import { WHY_ITEMS, WHY_SCALE_MAX, WHY_ITEM_COUNT, WHY_DOMAIN_SPLIT } from '../rebuild/why-instrument.ts';
 import {
   SKILL_ITEMS,
   SKILLS_ITEM_COUNT,
@@ -28,10 +28,9 @@ export function rebuildEnabled(): boolean {
 // The warm frame (ours), then Greg's activity prompt + item 0. Sets the honesty posture: no right answers, nothing
 // to pass, not a score — a starting mark to watch move.
 const B1_OPEN =
-  "Before we build anything in Rebuild, a simple place to start — your why. Not the shoulds. The reasons that are " +
-  "actually yours. There are no right answers here and nothing to pass; this is just a read on where you stand today. " +
-  "For each statement, tell me how true it feels — 1 (not at all true for you) to 7 (very true for you). Movement " +
-  "first, then eating.";
+  "There's a simple place to start — your why. The reasons that are actually yours. Answer a few questions to get a " +
+  "read on where you stand today. For each statement, tell me how true it feels — 1 (not at all true for you) to 7 " +
+  "(very true for you).";
 // The domain transition (ours) — shown when the diet items begin (index 6).
 const B1_DIET_TURN = "That's movement. Now the other half of it — eating.";
 // The forward-looking close (ours, RB-1): frame the baseline as a promise, not a verdict. No number is shown.
@@ -45,8 +44,9 @@ const B1_CLOSE =
 // bare stem otherwise (the item IS the ask — the administered wall, no draw-out).
 function whyDeliver(index: number): string {
   const item = WHY_ITEMS[index]!;
-  if (index === 0) return `${WHY_PROMPTS.activity}\n\n${item.stem}`;
-  if (index === WHY_DOMAIN_SPLIT) return `${B1_DIET_TURN}\n\n${WHY_PROMPTS.diet}\n\n${item.stem}`;
+  // The "Why do you want to be physically active regularly?" framing prompt is removed (Donna) — the member answers
+  // the statements as they see fit. The eating half keeps its light transition (B1_DIET_TURN).
+  if (index === WHY_DOMAIN_SPLIT) return `${B1_DIET_TURN}\n\n${item.stem}`;
   return item.stem;
 }
 function whyOpener(): string {
@@ -98,17 +98,17 @@ export function liveTurnRebuildB1(state: ConvState, history: ConvMessage[], memb
 // + growth edge — never a table of numbers). COPY: directional placeholder (Cowork wordsmiths), built from Greg's
 // member-shown intro. The action scores + stores the reading and opens the noticing week on completion.
 const B2_OPEN =
-  "Rebuild is about the skills that let a healthy life actually stick. So before you start changing anything, let's " +
-  "take honest stock of your self-management skills — the ones that get you where you want to go. There are no right " +
-  "answers; a skill is just something you practice. Rate each one 1 (strongly disagree) to 4 (strongly agree). " +
-  "Movement first, then eating — then you'll watch these skills show up in your week.";
+  "During the Rebuild phase, we'll practice what makes a healthy life actually stick. But before you change anything, " +
+  "let's take stock of your current state. Review these statements and rate each one 1-strongly disagree to 4-strongly " +
+  "agree.\n\nLet's start with Movement.";
 const B2_DIET_TURN = "That's movement. Same skills now, for eating.";
 function b2Close(strongest: string, growthEdge: string): string {
   return (
-    `That's your read. Right now your strongest looks like ${strongest.toLowerCase()} — and the one with the most room ` +
-    `to grow is ${growthEdge.toLowerCase()}. Neither is fixed; a skill is just something you practice. This week you ` +
-    `don't have to change anything — just notice these showing up: when a skill carries you, and when a gap trips you. ` +
-    `That noticing is the work. Your next step is on your dashboard.`
+    `Right now it looks like ${strongest.toLowerCase()} is a strength of yours. The skill with the most room to grow ` +
+    `is ${growthEdge.toLowerCase()}. Neither is fixed; a skill is just something you practice and improve. This week ` +
+    `you don't have to change anything — just notice these showing up: when a strong skill carries you, and when a ` +
+    `weaker one trips you. That's the work. Just notice. We'll kick that off in your next step. You can find it at the ` +
+    `top of your Dashboard.`
   );
 }
 
@@ -173,23 +173,19 @@ export function liveTurnRebuildB2(state: ConvState, history: ConvMessage[], memb
 // via record_plan) and the member CONFIRMS the whole plan (propose-confirm, Decision L). Reusable — Reclaim +
 // Cycle 2 run on this same mode. COPY: directional placeholder (Cowork wordsmiths), built from Greg's B3 setup script.
 const B3_OPEN_1 =
-  "You've named your why, and you've taken honest stock of your skills. Now you put a little of it into practice — a " +
-  "Lifestyle Pilot.";
+  "You've identified your why, and you've taken stock of your skills. Now we'll put it into practice.";
 const B3_OPEN_2 =
-  "Here's the whole move: one small new movement change, and one small new eating change, for a week. Not an overhaul — " +
-  "two small things you're not already doing, small enough to actually stick on a normal week. The point isn't to " +
-  "prove discipline; it's to watch how healthier calls actually happen in your life, and how movement and eating pull " +
-  "on each other.";
-const B3_OPEN_3 = "Let's build it. We'll start with movement — what's one small change you could try this week?";
+  "You'll pick one small movement change, and one small healthier eating change to try for a week. Just two things " +
+  "you're not already doing and small enough to actually stick.";
+const B3_OPEN_3 = "We'll start with movement — what's one small change you could try this week?";
 function b3Opening(): string {
   return `${B3_OPEN_1}${BEAT_SEP}${B3_OPEN_2}${BEAT_SEP}${B3_OPEN_3}`;
 }
 
 const B3_PLAN_CONFIRMED_1 =
-  "Locked in. That's your Lifestyle Pilot — one small change in movement, one in eating, for the week.";
+  "Your Lifestyle Pilot is locked in. You've committed to one small change in movement, one in eating, for next week.";
 const B3_PLAN_CONFIRMED_2 =
-  "Each day I'll check in — not to grade you, just to notice how the calls go. A good call, a false start, a quiet " +
-  "day: they're all information. Your plan's on your dashboard.";
+  "I'll check in on you every day. It's a good time to talk with other Community members too. Your plan's on your dashboard.";
 const PILOT_REVISE_NUDGE = "No problem — tell me what you'd change, and we'll adjust it.";
 
 // The engine-owned plan reflection (propose-confirm) — reflects BOTH changes back in the member's words, then the
@@ -376,9 +372,9 @@ export function composePilotPlan(activity: string, diet: string): string {
 // the 12 → 6, scores the Control component (Ave1→Ave2), writes the Checkpoint grinta_reading, and sets the
 // rebuild_checkpoint_passed gate (→ Reclaim lit). Items VERBATIM (CHECKPOINT_CONTROL_ITEMS, RB-2 resolved). Copy: B4 doc.
 const B4_CHECKPOINT_OPEN =
-  "You did the real work of Rebuild — you found your why, took honest stock of your skills, and ran the pilot in your " +
+  "You did the real work of Rebuild — you found your why, took stock of your skills, and ran the pilot in your " +
   "own life. Before we close the Phase, a quick read on where your control sits now. A dozen of these, one to five. No " +
-  "passing score — just an honest gauge of what you've built.";
+  "passing score — just a gauge of what you've built.";
 const B4_CHECKPOINT_CLOSE = "That's the read. Hold on — let me show you what you just built.";
 function rebuildCheckpointDeliver(index: number): string {
   return grintaStem(CHECKPOINT_CONTROL_ITEMS[index]!);

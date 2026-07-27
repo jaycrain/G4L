@@ -14,7 +14,7 @@ const step = (state: ConvState, msg: string, model: ModelTurn) => applyRebuildB3
 test('B3 · opens into the pilot, movement first', () => {
   const t = rebuildB3Opening();
   assert.equal(t.state.stage, 'pilot');
-  assert.match(t.reply, /Lifestyle Pilot/i);
+  assert.match(t.reply, /put it into practice/i);
   assert.match(t.reply, /start with movement/i);
   assert.equal(t.complete, false);
 });

@@ -39,7 +39,9 @@ export function heroView(state: HeroState, ctx: HeroContext): HeroView {
             ? `You've walked the whole ${ctx.phaseLabel} phase. Next up: ${state.next.label}, whenever you're ready.`
             : isRewire
               ? `Great job completing ${state.session.label}. That was some hard work — take a break if you want, then pick back up here whenever you're ready. If you want to keep going, ${state.next.label} is next.`
-              : `Next up: ${state.next.label}, whenever you're ready.`
+              : state.next.label === 'Quality Days'
+                ? "Next up is one of the most fulfilling exercises in the entire G4L program, Quality Days. Whenever you're ready."
+                : `Next up: ${state.next.label}, whenever you're ready.`
           : `Take a breath — the next step will be here when you are.`,
         ctaLabel: state.next ? (state.next.isCheckpoint ? 'Take the Checkpoint' : 'Start the next Session') : 'Back to your path',
       };

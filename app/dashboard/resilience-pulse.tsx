@@ -39,7 +39,7 @@ export default function ResiliencePulse({ beats = [], bare = false }: { beats?: 
     <div className={bare ? 'resilience-pulse resilience-pulse-bare' : 'card resilience-pulse'}>
       {!bare && (
         <h3 style={{ marginBottom: '0.25rem' }}>
-          Your daily momentum <span style={{ color: 'var(--muted, #6b7683)', fontWeight: 400 }}>· the Resilience Pulse</span>
+          Your momentum <span style={{ color: 'var(--muted, #6b7683)', fontWeight: 400 }}>· the Resilience Pulse</span>
         </h3>
       )}
       <svg
@@ -97,7 +97,7 @@ export default function ResiliencePulse({ beats = [], bare = false }: { beats?: 
           <p style={{ fontSize: '14px', lineHeight: 1.55, color: 'var(--navy, #374F63)', margin: '0.4rem 0 0' }}>
             {empty
               ? 'Every call you make moves the line — starting with your first.'
-              : 'Recovery is the point — the bounce after the dip is what "momentum, not streaks" looks like. Rolling window; it never accumulates into a score.'}
+              : 'A bounce after a dip is evidence of the comeback and that your protocol is working. Keep going.'}
           </p>
         </>
       )}

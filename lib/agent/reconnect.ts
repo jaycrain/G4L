@@ -556,10 +556,10 @@ const windowStage: StageDef = {
 const IDQ_SCALE_HINT = '1 to 5 — 1 for not at all, 5 for completely';
 function idqOpen(): string {
   return (
-    "We've been deep in how the distance opened. Let's shift to something lighter for a bit — a quick check-in, the " +
-    "kind we'll come back to now and then to see how you're actually doing. I'll read a few short statements; just " +
-    `tell me how true each feels right now, ${IDQ_SCALE_HINT}. No right answers, and nothing here is a test.\n\n` +
-    `First, a few about your body.\n\n${itemStem(0)}`
+    "We've gone deep into what created the distance. Now, we're going to go through questions that determine your " +
+    "Identity Distance (ID) Score. This will establish a baseline and allow us to watch it close that gap as you " +
+    "progress through G4L. For the following short statements, just tell me how true each feels right now. 1 for not " +
+    `at all. 5 for completely.\n\nFirst a few about your body.\n\n${itemStem(0)}`
   );
 }
 // Authored cluster transitions at the four dimension boundaries (items 6/12/18) — the only warmth between items, so it
@@ -659,8 +659,9 @@ const measurementStage: StageDef = administeredStage({
 // depth kernel (administered mode), on the SHARED factory. Grinta is NOT named to the member here — this reads as a
 // check-in; the number surfaces in the Ceremony. DIRECTIONAL copy (for Jay's wordsmithing).
 const CHECKPOINT_OPEN =
-  "One last check-in before we close — and this one's about you. Six short statements about what this work has stirred " +
-  "in you. Same as before: just tell me how true each feels right now, 1 (not at all) to 5 (completely).";
+  'A quick check-in before we close. Six short statements about what this work is making you think about. No score ' +
+  "here, and it won't show up on your dashboard. Same as before: just tell me how true each feels right now. 1—not " +
+  'at all. 5—completely.';
 function checkpointDeliver(index: number): string {
   return grintaStem(CHECKPOINT_GRIT_ITEMS[index]!);
 }

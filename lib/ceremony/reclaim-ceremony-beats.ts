@@ -39,13 +39,17 @@ export type ReclaimCeremonyData = {
 // ─────────────────────────────────────────────────────────────────────────────────────
 export const RECLAIM_CEREMONY_COPY = {
   up: "Look at that — your Reclaim just climbed. The challenge you built this Phase is part of it now — the pull toward what's possible, reading higher than the line you started on. The list you clarified, the priorities you named, the days you learned to shape — that's them, in the number.",
-  down: "Your Reclaim reads a little lower than your starting line — and that's Reclaim doing its work. You looked clearly at the gap between where you are and where you want to be; naming it honestly is how it closes. A dip here means you're seeing the whole picture. That's the ground the next cycle builds on.",
+  down: "Your Reclaim reads a little lower than your starting line — and that's Reclaim doing its work. You looked clearly at the gap between where you are and where you want to be; naming it clearly is how it closes. A dip here means you're seeing the whole picture. That's the ground the next cycle builds on.",
   flat: "Your Reclaim held steady — a solid line to build from. The real move was Reclaim itself — watching your world get bigger. The climb comes as you keep reaching.",
   playbook:
     "Here's what you're taking with you, saved to your Playbook: the priorities you clarified, the quality day you defined, the bigger world you mapped. That's your kit for what comes next.",
   playbookEmpty: 'Everything you clarified in Reclaim lives in your Playbook — your kit, ready to reach for.',
+  // NOTE (Donna's walk): the conversational Reconnect flow doesn't yet have the member WRITE a "Legacy Letter" (it's a
+  // defined asset, not wired into the live arc), so this beat pointed at something they never made. Interim: point them
+  // at their own early words in the Playbook (which DO exist). DECISION for Jay/Greg: build the Legacy Letter into
+  // Reconnect, or keep this repointed.
   legacy:
-    "And one more thing — go back and read the Legacy you wrote near the start. You're not the same person who wrote it. Read it, and see how far you've come.",
+    "And one more thing — go back through your Playbook to the words you wrote near the start. You're not the same person who wrote them. Read them, and see how far you've come.",
   cycle:
     "You've closed your first full cycle — Reconnect, Rewire, Rebuild, Reclaim. That's rare air. The Loop doesn't end here; it begins again, deeper. And you're not doing it alone — share your Success Story with the community, and help someone standing where you started.",
 } as const;

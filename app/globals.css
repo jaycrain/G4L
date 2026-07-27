@@ -1236,8 +1236,10 @@ html:has(.companion-hero), body:has(.companion-hero) { overflow-anchor: none; }
 
 /* R4 Rewire ceremony — the component is the hero; these two lines are quiet context (the starting line + the overall
    composite), so the moment leans on the component move, not the diluted composite. */
-.cer-grinta-from { margin-top: 0.3rem; font-size: 0.85rem; color: var(--navy); opacity: 0.7; }
-.cer-grinta-overall { margin-top: 0.5rem; font-size: 0.8rem; color: var(--navy); opacity: 0.6; }
+.cer-grinta-from { margin-top: 0.3rem; font-size: 0.98rem; color: var(--navy); opacity: 0.75; }
+/* The overall Grinta Index line stays the SMALLEST thing in the box — present but de-emphasized (Jay #4: keep it,
+   shrink it, don't remove). Everything else in the ceremony box reads larger for legibility (Donna). */
+.cer-grinta-overall { margin-top: 0.5rem; font-size: 0.75rem; color: var(--navy); opacity: 0.55; }
 
 /* ============================================================================
    REDESIGN (Layer 2) — flag-gated desktop dashboard. Scoped under .redesign-app
@@ -1713,7 +1715,7 @@ body.redesign-on .confidential-footer { display: none; } /* full-bleed app — n
   .rhome-billboard::after { content: ""; position: absolute; left: 0; right: 0; bottom: -22px; height: 22px; background: linear-gradient(180deg, #2c4152, transparent); pointer-events: none; }
   .rhome-kick { color: #8fd0d1; font-size: 12px; font-weight: 700; letter-spacing: 1.8px; text-transform: uppercase; margin-bottom: 12px; }
   .rhome-badge { width: 56px; height: 56px; border-radius: 16px; display: flex; align-items: center; justify-content: center; margin-bottom: 12px;
-    background: linear-gradient(145deg, #4bb0b1, #2f7d7e); box-shadow: 0 0 0 6px rgba(59, 148, 149, 0.18), 0 10px 24px rgba(0, 0, 0, 0.3); }
+    background: linear-gradient(145deg, #3B9495, #2f7d7e); box-shadow: 0 0 0 6px rgba(59, 148, 149, 0.18), 0 10px 24px rgba(0, 0, 0, 0.3); }
   .rhome-badge svg { width: 28px; height: 28px; stroke: #fff; fill: none; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
   .rhome-head { font-family: var(--font-condensed), var(--font-barlow), sans-serif; font-weight: 900; color: #fff; text-transform: uppercase;
     font-size: 40px; line-height: 0.92; letter-spacing: 0.5px; margin: 0; }
@@ -2031,7 +2033,7 @@ body.redesign-on .confidential-footer { display: none; } /* full-bleed app — n
 /* The navy hero — headline + guiding line + CTA, with the merged 4R ring beside it (phase + progress). */
 .tri-hero { flex: 0 0 auto; padding: 20px 24px 22px; border-bottom: 1px solid rgba(255, 255, 255, 0.10); display: flex; gap: 20px; align-items: center; }
 .tri-hero-text { flex: 1; min-width: 0; }
-.tri-hero-eyebrow { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.07em; color: #4FB3B4; }
+.tri-hero-eyebrow { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.07em; color: #3B9495; }
 .tri-hero-title { margin: 6px 0 0; font-size: 27px; line-height: 1.1; font-weight: 800; color: #fff; }
 .tri-hero-copy { margin: 10px 0 0; font-size: 14.5px; line-height: 1.5; color: rgba(255, 255, 255, 0.78); max-width: 52ch; }
 .tri-hero-ctarow { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; margin-top: 16px; }
@@ -2042,7 +2044,7 @@ body.redesign-on .confidential-footer { display: none; } /* full-bleed app — n
 .tri-hero-program:hover { color: #fff; text-decoration: underline; }
 .tri-hero-ring { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; gap: 6px; }
 .tri-ring-legend { color: rgba(255, 255, 255, 0.6); font-size: 12px; max-width: 160px; }
-.tri-ring-legend summary { cursor: pointer; font-weight: 700; color: #4FB3B4; list-style: none; }
+.tri-ring-legend summary { cursor: pointer; font-weight: 700; color: #3B9495; list-style: none; }
 .tri-ring-legend summary::-webkit-details-marker { display: none; }
 .tri-ring-legend p { margin: 8px 0 0; line-height: 1.4; }
 

@@ -63,8 +63,8 @@ test('C4 ceremony · branches on the Challenge delta; Legacy revisit; closes Cyc
   const flat = buildReclaimCeremonyBeats(withGrinta('flat', 3.0, 3.0, 0));
   assert.match(flat[0]!.text, /held steady/i, 'FLAT copy');
 
-  const legacy = up.find((b) => /Legacy/i.test(b.text));
-  assert.ok(legacy, 'a Legacy-revisit beat');
+  const legacy = up.find((b) => /words you wrote near the start/i.test(b.text));
+  assert.ok(legacy, 'the Legacy-revisit beat (repointed to the Playbook — no Legacy Letter is written in the live flow yet)');
   const cycle = up.find((b) => b.reveal?.kind === 'cycle_complete');
   assert.match(cycle!.text, /closed your first full cycle|Success Story/i, 'closes Cycle 1 + invites the Success Story');
   assert.equal(RECLAIM_CEREMONY_RESOLVE_LABEL, 'Share your story →');

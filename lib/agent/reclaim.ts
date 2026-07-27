@@ -21,16 +21,15 @@ export function reclaimEnabled(): boolean {
 
 // ══ C1 · Readiness Assessment · Step 1 — Reflecting on Progress ═══════════════════════════════════════════════
 const C1_OPEN =
-  "Reclaim isn't something someone else declares for you — it's something you recognize in yourself. This is a look at " +
-  "whether the work you've done through Reconnect, Rewire, and Rebuild is showing up in how you live, not just how you " +
-  "feel. Rate each one 1 (strongly disagree) to 5 (strongly agree). There's no grade here — just an honest read. We'll " +
-  "go in three parts: your body, your relationships, and who you are.";
-// The close (Greg's verbatim "Guide to Member after Step 1") — reflective, all-or-nothing explicitly rejected.
+  "You are the only one who can declare that you are ready for Reclaim. It's something you recognize in yourself. Here " +
+  "we'll take a look back at how the work you've done through Reconnect, Rewire, and Rebuild is showing up for you. " +
+  "It's how you feel but, even more importantly, it's in how you're living. Rate each statement from 1 (strongly " +
+  "disagree) to 5 (strongly agree). We'll do it in three parts: your body, your relationships, and who you are.";
+// The close (Greg's "Guide to Member after Step 1") — reflective, all-or-nothing explicitly rejected.
 const C1_STEP1_CLOSE =
-  "That's the read. If you rated yourself a 4 or 5 on most of these, the work has landed — you're in Reclaim. Not " +
-  "because someone told you, but because the evidence is there. And if it's more mixed, that's honest too: Reclaim " +
-  "isn't all-or-nothing. You can be in Reclaim in your body and still in Rebuild in your relationships. The Rs are a " +
-  "cycle, not a checklist.";
+  "If you rated yourself a 4 or 5 on most of these, great work, you're ready for the Reclaim phase. If your ratings " +
+  "were mixed, that's honest too: Reclaim isn't all-or-nothing. You can be in Reclaim in your body and still in " +
+  "Rebuild in your relationships. The G4L program is a cycle, not a linear checklist.";
 
 function evidenceDeliver(index: number): string {
   const item = EVIDENCE_ITEMS[index]!;
@@ -68,10 +67,9 @@ function refineOpener(c: Collected): string {
   const list = currentList(c);
   const shown = list.length ? list.map((t) => `• ${t}`).join('\n') : '(your list is empty — we can build it here)';
   return (
-    "At the start, you built this Reclaim List from who you were then. You're not standing in the same place now — " +
-    "you've reconnected with who you are, seen what pulls you off course, and learned how your habits actually work. " +
-    "Let's revisit it with clearer eyes. Not to prove the old list right or wrong — just to make sure it still fits the " +
-    `person you're becoming.${BEAT_SEP}Here's your list as it stands:\n\n${shown}${BEAT_SEP}Before changing anything, ` +
+    "At the start, you built this Reclaim List from who you were then. But, you've done a lot of work since then. " +
+    "You've reconnected with who you are, seen what pulls you off course, and learned how your habits work. Let's " +
+    `revisit it now to make sure it still fits the person you're becoming.${BEAT_SEP}Here's your list as it stands:\n\n${shown}${BEAT_SEP}Before changing anything, ` +
     "just notice it. What still feels true, what feels different, and what feels newly important?"
   );
 }
@@ -298,8 +296,8 @@ function auditSummary(responses: number[]): string {
       ? ` It's also where you feel most ready to move — a strong place to start.`
       : ` And if you want an easier place to build momentum first, ${lever} is where you're most ready.`;
   return (
-    `Here's what stands out. Your best next focus looks like your ${primary} life — not just because there's distance ` +
-    `there, but because it matters to you and progress there would ripple into the rest of your life.${leverLine}` +
+    `Here's what stands out. Your best next focus looks like your ${primary} life because it matters to you and ` +
+    `progress there would ripple into the rest of your life.${leverLine}` +
     `${BEAT_SEP}This was about finding the priority, not judging any of it. It's saved — you can come back to it anytime.`
   );
 }
@@ -348,21 +346,21 @@ export function liveTurnReclaimC2(state: ConvState, history: ConvMessage[], memb
 // stores the Quality-Day profile + opens the week of logging (c3_quality practice week). Step 2 (the daily log) is the
 // /quality-day surface. COPY: directional placeholder (Cowork wordsmiths), built from Greg's setup script.
 const C3_OPEN_1 =
-  "The last piece of Reclaim is a small, powerful one: Quality Days. The idea is simple — quality days lead to a " +
-  "quality life, and a quality life makes more quality days possible.";
+  "The idea is simple but powerful: quality days lead to a quality life, and a quality life makes more quality days " +
+  "possible.";
 const C3_OPEN_2 =
-  "We're going to define what a quality day actually looks like for YOU — then track it for a week. Not to chase a " +
-  "perfect score, but to notice what makes a day feel like yours. Let's start with the definition.";
+  "We're going to define what a quality day actually looks like for YOU then track it for a week. You'll notice what " +
+  "makes a day feel like yours. Let's start by defining your quality day.";
 const C3_OPEN_3 =
-  "When a day feels genuinely good to you — not perfect, but solid, healthy, meaningful, aligned — what tends to be present?";
+  "When a day feels genuinely good to you — solid, healthy, meaningful, aligned — what tends to be present?";
 function c3Opening(): string {
   return `${C3_OPEN_1}${BEAT_SEP}${C3_OPEN_2}${BEAT_SEP}${C3_OPEN_3}`;
 }
 
 const C3_REVISE_NUDGE = "No problem — tell me what you'd change, and we'll adjust it.";
 const C3_NUDGE = "Take your time — what makes a day feel healthy, meaningful, and worth it to you? We'll sort it into what's essential, what helps, and what pulls a day down.";
-const C3_COMMITTED_1 = "Done — that's your Quality Day. For the next week, each day I'll ask how much the day felt like a quality one, and which of these showed up.";
-const C3_COMMITTED_2 = "It's not about a perfect score — it's about noticing what actually makes your days yours. You can log any day from your dashboard.";
+const C3_COMMITTED_1 = "Great work identifying what makes up your Quality Day, and what takes away from it. For the next week, each day I'll ask how much the day felt like a quality one. You can share which of these elements showed up to make it that way.";
+const C3_COMMITTED_2 = "It's all about noticing what actually makes your days yours. You can log any day from your dashboard.";
 
 type QDCapture = NonNullable<Collected['pendingQualityDay']>;
 function sanitizeQualityDay(q: ModelTurn['qualityDay']): QDCapture | undefined {
@@ -502,7 +500,7 @@ export async function liveTurnReclaimC3(state: ConvState, history: ConvMessage[]
 const C4_CHECKPOINT_OPEN =
   "You did the real work of Reclaim — you revisited your list with clearer eyes, mapped where your world can get " +
   "bigger, and defined what makes a day yours. Before we close the cycle, a quick read on where your challenge sits " +
-  "now — the pull toward what's possible. Six of these, one to five. No passing score — just an honest gauge.";
+  "now — the pull toward what's possible. Six of these, one to five. No passing score — just a gauge.";
 const C4_CHECKPOINT_CLOSE = "That's the read. Hold on — let me show you what you just built.";
 function reclaimCheckpointDeliver(index: number): string {
   return grintaStem(CHECKPOINT_CHALLENGE_ITEMS[index]!);

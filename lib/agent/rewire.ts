@@ -593,13 +593,10 @@ const W3_RESTART =
   `in the goal you named. The campaign can't compete with a picture that real.`;
 // ── Step 3 — The week of noticing (Momentum turns on — the LOGGING mechanic is the Momentum slice) ──
 const W3_STEP3_1 =
-  `Here's your work this week, and it's not what you'd think: don't try to change anything yet. Just notice. Each ` +
-  `day, log your good calls and your false starts — the movement, the eating, the choices. Not to grade yourself — ` +
-  `to see your own patterns, out loud.`;
+  `Here's your work this week: don't try to change anything yet. Just notice. Go to the Momentum card on your ` +
+  `dashboard every day and log your good calls, your false starts and even quiet days where not much happened.`;
 const W3_STEP3_2 =
-  `That's what starts filling in your Momentum — the line that tracks the calls you make, one at a time. And when a ` +
-  `false start happens this week — it will — run your protocol. Redirect, Reframe, Restart. That's the rep. That's ` +
-  `the whole skill.`;
+  `And when a false start happens — it will — run your protocol. Redirect, Reframe, Restart.`;
 // ── Close — harvest + hand-off ──
 const W3_CLOSE_1 =
   `Grit isn't never falling. It's getting back on — now, today, the next meal, the next ride, the next morning. ` +

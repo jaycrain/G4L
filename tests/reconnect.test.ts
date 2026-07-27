@@ -250,7 +250,7 @@ test('reconnect measurement · Doors done hands into the administered check-in (
   const atDoors: ConvState = { stage: 'doors', awaitingConfirm: true, collected: { identityNoun: 'Racer', doors: ['grind'] } };
   const turn = applyReconnectTurn(atDoors, [], "yeah, that's it", { text: '', replyIntent: 'done' });
   assert.equal(turn.state.stage, 'measurement', 'Doors hands into measurement');
-  assert.match(turn.reply, /check-in/i, 'framed as a check-in, not a test');
+  assert.match(turn.reply, /Identity Distance/i, 'framed warmly (the ID Score), not a survey wall');
   assert.match(turn.reply, /1 to 5|not at all/i, 'gives the 1–5 scale');
 });
 
@@ -340,7 +340,7 @@ test('reconnect window · confirm queues the VISION keeper (lights_you_up) and h
   const turn = applyReconnectTurn(pending, [], "yeah — that's the one", { text: '', replyIntent: 'done' });
   assert.equal(turn.state.stage, 'checkpoint', 'hands into the §2e Checkpoint');
   assert.match(turn.reply, /spark/i, 'the close names the spark (ends on hope)');
-  assert.match(turn.reply, /1 \(not at all\)/i, 'the Checkpoint opener + first grit item are delivered');
+  assert.match(turn.reply, /1—not at all/i, 'the Checkpoint opener + first grit item are delivered');
   assert.equal(turn.state.administeredResponses?.length ?? 0, 0, 'the accumulator is reset from the IDQ responses for the grit instrument');
   assert.deepEqual(turn.state.pendingHarvest, [{ kind: 'window', keeperType: 'lights_you_up', destinationIntent: 'keeper', payloadRef: 'the ride before the house wakes, home strong', label: 'The spark' }], 'the vision is queued as a lights_you_up keeper');
 });

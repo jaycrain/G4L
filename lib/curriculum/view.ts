@@ -137,7 +137,8 @@ const SESSION_BADGE: Record<string, string> = {
   'RBLD-B2': 'honest-read',
   'RBLD-B3': 'week-noticing',
   'RCL-C2': 'widened-world',
-  'RCL-C3': 'quality-days',
+  // 'RCL-C3' → 'quality-days' is DELIBERATELY not here: that badge earns when the member LOGS a quality day (living
+  // the tracking week, in app/quality-day/actions.ts), not on the C3 definition close (Donna).
 };
 export async function reconcileRedesignBadges(db: Db, memberId: string): Promise<void> {
   try {

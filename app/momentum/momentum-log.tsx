@@ -9,7 +9,7 @@ import type { CallType, CallDomain } from '../../lib/momentum/store.ts';
 // log_call (no wrong door, FF). Warm + non-judgmental: a false start logs as honest, never a scold (Decision HH/EE).
 const OPTIONS: { type: CallType; label: string; done: string }[] = [
   { type: 'good_call', label: 'Good Call', done: "Logged — nice one." },
-  { type: 'false_start', label: 'False Start', done: "Logged — that's an honest call. Your protocol's there when you want it." },
+  { type: 'false_start', label: 'False Start', done: "Logged — that's a real one, not a scold. Your protocol's there when you want it." },
   { type: 'quiet_day', label: 'Quiet Day', done: 'Logged — quiet counts too.' },
 ];
 
@@ -62,13 +62,8 @@ export default function MomentumLog({ memberId, commitments }: { memberId: strin
           </div>
         </div>
       )}
-      <div className="momentum-log-options">
-        {OPTIONS.map((o) => (
-          <button key={o.type} type="button" className={`momentum-log-btn is-${o.type}`} disabled={pending} onClick={() => log(o.type)}>
-            {o.label}
-          </button>
-        ))}
-      </div>
+      {/* The optional note sits ABOVE the call buttons — you jot the context first, then tap the call (Donna: tapping
+          first then entering the note read out of order). The tap is the commit, so it stays last. */}
       <textarea
         className="momentum-log-note"
         value={note}
@@ -76,6 +71,13 @@ export default function MomentumLog({ memberId, commitments }: { memberId: strin
         placeholder="Add a note (optional)"
         rows={2}
       />
+      <div className="momentum-log-options">
+        {OPTIONS.map((o) => (
+          <button key={o.type} type="button" className={`momentum-log-btn is-${o.type}`} disabled={pending} onClick={() => log(o.type)}>
+            {o.label}
+          </button>
+        ))}
+      </div>
       {doneLine && <p className="momentum-log-done">{doneLine}</p>}
       {error && <p className="error">{error}</p>}
     </div>

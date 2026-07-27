@@ -6,6 +6,19 @@ context to resume cold. Add to the top; move to "Done" or delete when shipped.
 
 ---
 
+## False Start Protocol — make it a GATE + nudge/notification sign-up (product decision, not copy)
+**Status:** TABLED for Jay/Greg (Donna flagged it on her 2026-07-27 charter walk — "not really her call," Jay).
+**What Donna raised (New Edits 7_27_C):** the False Start Protocol close (Rewire W3, "run your protocol —
+Redirect, Reframe, Restart") "feels like it should be a **gate** here, along with options for signing up to
+receive **nudges/notifications**." Right now the protocol is delivered as conversational copy at the W3 close,
+not a gate, and there's no nudge opt-in surfaced at that moment.
+**Why it's deferred, not applied:** this is a flow/product change (add a gate step + a nudge sign-up affordance),
+adjacent to the Proactive Outreach work ([[nudges-feature-next]] — the governed in-app nudge is built dark under
+`OUTREACH`; SMS/push channels + opt-in UI are the infra-gated remainder). The nudge sign-up Donna wants is
+essentially the opt-in surface for that. **Do together with the Outreach opt-in, not as a one-off.**
+**Related (same PDF):** "Can the False Start protocol be **logged in the Playbook** for easy reference?" — see the
+Playbook-as-operating-manual work ([[playbook-operating-manual-vision]]); a runnable R-R-R play is a natural fit.
+
 ## Onboarding — the captured gap is a lossy model SUMMARY (mis-voiced AND drops content)
 **Status:** UPGRADED — not just voice. Confirmed (ree@ree.com, Jun 26) that the same lossy third-person
 *summary* also **drops content**: Donna raised her aging parents DURING onboarding and it was never

@@ -60,7 +60,7 @@ export default async function MomentumPage({ params }: { params: Promise<{ membe
     <SubpageShell memberId={memberId}>
       <div className="hero"><h1>Momentum</h1></div>
       <div className="card">
-        <p className="card-subtitle">The calls you make, one at a time — and how they add up. Self-monitoring, never scored — just yours to watch.</p>
+        <p className="card-subtitle">The minute-to-minute decisions you make are what add up to change. Here you can track your good calls, false starts — and even quiet days where nothing much happened — and begin to understand how your patterns impact your progress.</p>
         {practiceLine && <p className="practice-strip">{practiceLine}</p>}
         {commitments && (
           <div className="commitment-progress">

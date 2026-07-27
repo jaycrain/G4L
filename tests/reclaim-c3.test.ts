@@ -38,7 +38,7 @@ test('C3 Step 1 · coach → propose → confirm; the profile lands in the snaps
   t = applyReclaimC3Turn(t.state, [], "yes, let's go", m(''));
   assert.equal(t.complete, true);
   assert.equal(t.state.collected?.pendingQualityDay?.nonNegotiables.length, 3);
-  assert.match(t.reply, /that's your Quality Day/i, 'the committed close');
+  assert.match(t.reply, /what makes up your Quality Day/i, 'the committed close');
 });
 
 test('C3 Step 1 · "Please do" confirms the profile — not treated as an adjustment', () => {
@@ -49,7 +49,7 @@ test('C3 Step 1 · "Please do" confirms the profile — not treated as an adjust
   // The natural reply to "Want me to save this…?" — must complete, not re-open coaching.
   t = applyReclaimC3Turn(t.state, [], 'Please do', m(''));
   assert.equal(t.complete, true, '"Please do" is a confirm');
-  assert.match(t.reply, /that's your Quality Day/i);
+  assert.match(t.reply, /what makes up your Quality Day/i);
 });
 
 test('C3 Step 1 · a profile with no non-negotiables never proposes (they are the floor)', () => {

@@ -7,12 +7,12 @@ import { parseLikert } from '../lib/agent/onboarding-staged.ts';
 // B1 · What is Your Why? — the administered SDT arc (12 items, 1–7, activity→diet), the scale parameterization, and
 // Greg's SDT scoring. B1 stores but never displays (RB-1) — the arc closes on a forward-looking reflection, no number.
 
-test('B1 arc · warm frame → activity prompt + item 0, then walks 12 items → forward-looking close', () => {
+test('B1 arc · warm frame → item 0 (no framing prompt), then walks 12 items → forward-looking close', () => {
   let t = rebuildB1Opening();
   assert.equal(t.state.stage, 'why');
   assert.match(t.reply, /a simple place to start/i, 'the warm frame is in');
   assert.match(t.reply, /1 \(not at all true for you\) to 7/i, 'the 1–7 scale is set, not 1–5');
-  assert.match(t.reply, /Why do you want to be physically active regularly\?/i, 'activity domain prompt');
+  assert.doesNotMatch(t.reply, /Why do you want to be physically active/i, 'the activity framing prompt is removed (Donna)');
   assert.ok(t.reply.includes(WHY_ITEMS[0]!.stem), 'item 0 verbatim');
 
   // Answer all 12 with valid 1–7 values.
@@ -33,7 +33,7 @@ test('B1 arc · the domain transition frame fires when the diet items begin (ind
   // answer the first 6 (activity) — the 6th answer should deliver the diet transition + prompt + first diet item.
   for (let i = 0; i < WHY_DOMAIN_SPLIT; i++) t = applyRebuildB1Turn(t.state, [], '4', { text: '' } as never);
   assert.match(t.reply, /Now the other half of it — eating/i, 'the domain transition frame');
-  assert.match(t.reply, /Why do you want to eat healthier\?/i, 'the diet domain prompt');
+  assert.doesNotMatch(t.reply, /Why do you want to eat/i, 'the diet framing prompt is removed too (symmetry with activity)');
   assert.ok(t.reply.includes(WHY_ITEMS[WHY_DOMAIN_SPLIT]!.stem), 'the first diet item, verbatim');
 });
 

@@ -16,13 +16,13 @@ test('W-35 · the handoff LEADS with the model’s acknowledgment, then the IDQ 
   const turn = applyReconnectTurn(atInsightConfirm, [], 'about twelve years', { text: ack, replyIntent: 'done' });
   assert.equal(turn.state.stage, 'measurement', 'still hands into the measurement block');
   assert.ok(turn.reply.startsWith(ack), 'receives their final answer FIRST');
-  assert.match(turn.reply, /shift to something lighter/i, 'then delivers the IDQ frame');
-  assert.ok(turn.reply.indexOf('carried it') < turn.reply.indexOf('shift to something lighter'), 'receive before the frame');
+  assert.match(turn.reply, /go through questions that determine your Identity Distance/i, 'then delivers the IDQ frame');
+  assert.ok(turn.reply.indexOf('carried it') < turn.reply.indexOf('go through questions'), 'receive before the frame');
 });
 
 test('W-35 · graceful — no model acknowledgment → the IDQ frame stands alone (no stray separator)', () => {
   const turn = applyReconnectTurn(atInsightConfirm, [], "yeah, that's it", { text: '', replyIntent: 'done' });
   assert.equal(turn.state.stage, 'measurement');
-  assert.ok(turn.reply.startsWith('We’ve been deep') || turn.reply.startsWith("We've been deep"), 'opens cleanly on the IDQ frame');
+  assert.ok(turn.reply.startsWith('We’ve gone deep') || turn.reply.startsWith("We've gone deep"), 'opens cleanly on the IDQ frame');
   assert.doesNotMatch(turn.reply, /^\s*\n/, 'no leading blank separator when there is nothing to receive');
 });

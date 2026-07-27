@@ -77,7 +77,7 @@ export default function ReclaimChat({ memberId, session = 'c1' }: { memberId: st
     if (r.state.stage === 'complete') {
       // W-21 — hand the member home in the companion's voice, then show the CTA (C3 → its week; else → home).
       const handHome = session === 'c3' ? RECLAIM_C3_HAND_HOME : RECLAIM_HAND_HOME;
-      const badgeBeat = r.earnedBadge ? [{ role: 'agent' as const, text: `You earned another badge: “${r.earnedBadge.name}.” It’s in your collection now.` }] : [];
+      const badgeBeat = r.earnedBadge ? [{ role: 'agent' as const, text: `You earned another badge! “${r.earnedBadge.name}.” I added it to your collection.` }] : [];
       setMessages((m) => [...m, ...agentBubbles(r.reply!), ...badgeBeat, { role: 'agent', text: handHome }]);
       setDone(true);
       notifySessionComplete(); // → the workspace shows the "here's what you built" card before the hand-home

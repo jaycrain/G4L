@@ -19,8 +19,8 @@ export type PhaseKey = 'reconnect' | 'rewire' | 'rebuild' | 'reclaim';
 
 export const ASSET_SUMMARIES: Record<AssetId, Summary> = {
   r1: {
-    short: 'See, honestly, how far you’ve drifted from yourself — a gap you can name is one you can close.',
-    full: 'You rate yourself across the areas of your life, comparing where you are now to the fuller version of you that you remember. The point is a clear starting line — an honest look at the distance, in your own hand. Research suggests that measuring your present self against a self that matters to you can sharpen the motivation for the work ahead. Retake it later, and the space between the two readings becomes your own measuring stick.',
+    short: 'See how far you’ve drifted from yourself — a gap you can name is one you can close.',
+    full: 'You rate yourself across the areas of your life, comparing where you are now to the fuller version of you that you remember. The point is a clear starting line — a clear look at the distance, in your own hand. Research suggests that measuring your present self against a self that matters to you can sharpen the motivation for the work ahead. Retake it later, and the space between the two readings becomes your own measuring stick.',
   },
   r2: {
     short: 'Name the doors your Fade came in through — most people walked through more than one.',
@@ -44,15 +44,15 @@ export const ASSET_SUMMARIES: Record<AssetId, Summary> = {
   },
   b1: {
     short: 'Find the reasons to care for your body that actually last.',
-    full: 'Guilt and pressure can get you moving, but they run out fast. Here you look underneath the shoulds for the reasons that are truly yours — your energy, your health, your freedom, the people you love, the life you want. Research suggests people stay engaged far longer when their motivation feels like their own. Naming it gives you something durable to keep showing up for.',
+    full: 'Guilt and pressure can get you moving, but if they are your sole driver, they run out fast. Research suggests people stay engaged when their motivation feels like their own. Here we’ll look underneath the “shoulds” for reasons personal to you. Your energy, health, freedom. The people you love. The life you want. Identifying them gives you real reasons to keep showing up.',
   },
   b2: {
     short: 'Take stock of the everyday skills that make change stick.',
-    full: 'Motivation alone doesn’t carry change — the practical skills do: planning, setting goals, handling barriers, tracking progress, recovering from setbacks. Here you take an honest read of where yours are strong and where they could grow, sorted into three simple jobs: getting ready, taking action, and staying consistent. Research suggests lasting change leans on all three. You come away with a map of what to build on and where a little more support or practice would help.',
+    full: 'Motivation alone doesn’t create change. It’s the practical skills: planning, setting goals, handling barriers, tracking progress, recovering from setbacks, that make a difference. Here you’ll respond to statements that measure where your skills are strong and where they could grow. They’re sorted into three simple jobs: getting ready, taking action, and staying consistent. Research suggests lasting change leans on all three. You’ll come away with a map of what to build on and where support and practice can help.',
   },
   b3: {
     short: 'Watch your everyday choices for a week and learn how your lifestyle actually works.',
-    full: 'You pick one small movement habit and one small eating habit, then watch how they actually play out over a week — the Good Calls, the False Starts, the obstacles you didn’t see coming. It’s a week of noticing, with nothing graded. Research suggests self-monitoring sharpens your awareness and makes the next change more realistic. You end with a clearer picture of what helps, what gets in your way, and what to adjust.',
+    full: 'This week, you’ll pick one small movement habit and one small eating habit to practice, then watch how they actually play out. It’s a week of just noticing. Research suggests self-monitoring sharpens your awareness and makes the next change more realistic. You can track the Good Calls, the False Starts, the obstacles you didn’t see coming, in your Movement screen. At the end of the week you’ll have a clearer picture of what helps, what gets in your way, and what to adjust.',
   },
   c1: {
     short: 'Revisit your Reclaim List now that you know yourself better.',
@@ -70,8 +70,8 @@ export const ASSET_SUMMARIES: Record<AssetId, Summary> = {
 
 export const PHASE_SUMMARIES: Record<PhaseKey, Summary> = {
   reconnect: {
-    short: 'Get honest about where you are, and remember the person you were before the Fade set in.',
-    full: 'Everything here starts with an honest look. Before you change anything, you get clear on where you actually are and who you were before the drift — the person still in there, worth chasing. You name the doors your Fade came through, measure the distance to yourself, and put words to the life you’re reclaiming. It’s the excavation the rest of the work stands on. Go at your own pace; there are no wrong answers here, only a clearer starting line.',
+    short: 'Get clear about where you are, and remember the person you were before the Fade set in.',
+    full: 'Here, you’ll explore where you are now and excavate who you were before. You’ll recognize events that opened Doors you came through that caused you to Fade from your true self. You’ll put words to the life you want to reclaim. And you’ll answer questions that measure the distance you need to close to get there. Go at your own pace, there are no right or wrong answers, only clarity.',
   },
   rewire: {
     short: 'Catch the stories your mind uses to keep you comfortable, and build ones you can act on.',
@@ -79,7 +79,7 @@ export const PHASE_SUMMARIES: Record<PhaseKey, Summary> = {
   },
   rebuild: {
     short: 'Put focused effort into the body — small, real, repeatable.',
-    full: 'Now the work turns to the body, and it stays honest and small. You get clear on why this actually matters to you — the reasons that outlast guilt — take stock of the everyday skills that make change stick, and spend a week noticing how your real choices play out. No grand overhaul, nothing graded. Just the ordinary, repeatable moves that build fitness one decision at a time, with the mind-work from Rewire backing you up.',
+    full: 'Now the work turns to the body, and it stays grounded and small. You get clear on why this actually matters to you — the reasons that outlast guilt — take stock of the everyday skills that make change stick, and spend a week noticing how your real choices play out. No grand overhaul, nothing graded. Just the ordinary, repeatable moves that build fitness one decision at a time, with the mind-work from Rewire backing you up.',
   },
   reclaim: {
     short: 'Grow into a bigger life, and take back what the Fade shrank.',

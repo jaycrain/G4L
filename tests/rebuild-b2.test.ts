@@ -17,8 +17,8 @@ import { practicePrompt } from '../lib/practice/store.ts';
 test('B2 arc · warm frame → movement pass → diet transition at 12 → plain-language close (no numbers)', () => {
   let t = rebuildB2Opening();
   assert.equal(t.state.stage, 'skills');
-  assert.match(t.reply, /take honest stock/i, 'the warm frame');
-  assert.match(t.reply, /1 \(strongly disagree\) to 4 \(strongly agree\)/i, 'the 1–4 scale');
+  assert.match(t.reply, /take stock of your current state/i, 'the warm frame');
+  assert.match(t.reply, /1-strongly disagree to 4-strongly agree/i, 'the 1–4 scale');
   assert.ok(t.reply.includes(SKILL_ITEMS[0]!.stem), 'item 0 verbatim');
 
   for (let i = 0; i < SKILLS_ITEM_COUNT; i++) {
