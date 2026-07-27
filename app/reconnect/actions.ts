@@ -12,7 +12,7 @@ import { saveArcSession, loadArcSession, clearArcSession } from '../../lib/agent
 import { softSetMemberDoors, getMemberDoorNames } from '../../lib/member/refine.ts';
 import type { ReconnectCeremonyData } from '../../lib/ceremony/reconnect-ceremony-beats.ts';
 import { earnedBadgeReveal } from '../../lib/ceremony/badge-reveal.ts';
-import { emitHarvestMoment, commitKeeper, type KeeperType } from '../../lib/agent/harvest.ts';
+import { emitHarvestMoment, harvestSignal, type KeeperType } from '../../lib/agent/harvest.ts';
 import { DOORS } from '../../lib/doors.ts';
 import { submitIdq } from '../../lib/gateway/flow.ts';
 import { TOTAL_ITEMS } from '../../lib/idq/instrument.ts';
@@ -123,32 +123,11 @@ async function persistReconnectComplete(db: Db, memberId: string, prev: ConvStat
 // §2d harvest: drain any NEW harvest candidates the engine queued this turn (drift keeper now; legacy share later) via
 // the existing member_event/emitHarvestMoment seam — same default-emit discipline as the §2b tell. Best-effort.
 async function persistHarvest(db: Db, memberId: string, prev: ConvState, turn: Turn): Promise<void> {
-  try {
-    const priorN = prev.pendingHarvest?.length ?? 0;
-    for (const s of (turn.state.pendingHarvest ?? []).slice(priorN)) {
-      const momentId = await emitHarvestMoment(db, memberId, {
-        destinationIntent: s.destinationIntent,
-        keeperType: s.keeperType as KeeperType,
-        surface: 'reconnect',
-        sourceRef: { kind: s.kind, ref: s.kind, label: s.label ?? s.kind },
-        payloadRef: s.payloadRef,
-        private: s.private,
-      });
-      // A keeper-intent signal COMMITS a Playbook entry so it's actually visible (the drift bridge says "I've kept it
-      // for you"). A share-only or private signal does NOT — the letter body never lands as a stored keeper.
-      if (s.destinationIntent !== 'share' && !s.private) {
-        await commitKeeper(db, memberId, {
-          momentId,
-          keeperType: s.keeperType as KeeperType,
-          section: 'own_words', // the member's own words (preserve declarations)
-          body: s.payloadRef,
-          state: 'kept',
-          source: { kind: 'own', ref: s.kind, label: s.label ?? s.kind }, // member-authored (constrained source_kind)
-        });
-      }
-    }
-  } catch {
-    // swallow — best-effort; the conversation turn already succeeded.
+  const priorN = prev.pendingHarvest?.length ?? 0;
+  // harvestSignal emits the QI moment + commits the keeper as INDEPENDENT best-effort steps, so a moment-emit failure
+  // never costs the keeper (the prod silent-drop that lost Millie's session keepers). Each drain guards + logs itself.
+  for (const s of (turn.state.pendingHarvest ?? []).slice(priorN)) {
+    await harvestSignal(db, memberId, s, 'reconnect');
   }
 }
 

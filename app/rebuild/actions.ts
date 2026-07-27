@@ -31,7 +31,7 @@ import { persistCoachingPlan } from '../../lib/rebuild/plan-store.ts';
 import { WHY_ITEM_COUNT } from '../../lib/rebuild/why-instrument.ts';
 import { SKILLS_ITEM_COUNT } from '../../lib/rebuild/skills-instrument.ts';
 import { startPracticeWeek } from '../../lib/practice/store.ts';
-import { emitHarvestMoment, commitKeeper } from '../../lib/agent/harvest.ts';
+import { harvestSignal } from '../../lib/agent/harvest.ts';
 import { getGrintaBaselineReading, latestGrintaReading, persistGrintaReading, controlCheckpointResponsesMap } from '../../lib/grinta/survey/store.ts';
 import { scoreCheckpointStrand, grintaChangePct, directionOf } from '../../lib/grinta/survey/scoring.ts';
 import { BASELINE_CONTROL_ITEMS, CHECKPOINT_CONTROL_ITEMS, pairwiseAverage } from '../../lib/grinta/survey/instrument.ts';
@@ -214,27 +214,14 @@ export async function rebuildTurnAction(
           } catch {
             /* swallow — best-effort; the member still committed their plan */
           }
-          try {
-            const body = composePilotPlan(activity, diet);
-            const momentId = await emitHarvestMoment(db, memberId, {
-              destinationIntent: 'keeper',
-              keeperType: 'plan',
-              surface: 'rebuild',
-              sourceRef: { kind: 'plan', ref: 'b3', label: 'Your Lifestyle Pilot' },
-              payloadRef: body,
-              private: false,
-            });
-            await commitKeeper(db, memberId, {
-              momentId,
-              keeperType: 'plan',
-              section: 'own_words',
-              body,
-              state: 'kept',
-              source: { kind: 'own', ref: 'b3', label: 'Your Lifestyle Pilot' },
-            });
-          } catch {
-            /* swallow — the plan is stored; the Playbook keeper is best-effort */
-          }
+          // harvestSignal commits the Lifestyle Pilot keeper even if the QI moment-emit fails (the prod silent-drop
+          // that lost session keepers) — and logs on failure instead of swallowing blind.
+          await harvestSignal(
+            db,
+            memberId,
+            { kind: 'plan', ref: 'b3', keeperType: 'plan', destinationIntent: 'keeper', payloadRef: composePilotPlan(activity, diet), label: 'Your Lifestyle Pilot' },
+            'rebuild',
+          );
         }
         // Open the pilot logging week (Part B) — the plan-aware daily nudge rides the practice-week scaffold.
         try {

@@ -3,6 +3,7 @@
 // ARTIFACT commits (a keeper → playbook_entry), joined by a momentId. Onboarding harvest is deliberately LIGHT
 // and opportunistic (restraint — never a running "keep this?" overlay); the single v2.1 detector is the
 // member-confirmed identity phrase → a `definition` keeper. Community/share surfaces are deferred (v2.2).
+import { randomUUID } from 'node:crypto';
 import type { Db } from '../db/schema.ts';
 import type { Collected } from './onboarding.ts';
 import { identityLabel } from '../member/identity.ts';
@@ -69,6 +70,51 @@ export async function commitKeeper(
     [memberId, k.section, k.body.trim(), k.state ?? 'proposed', k.keeperType, k.momentId,
      k.source?.kind ?? null, k.source?.ref ?? null, k.source?.label ?? null],
   );
+}
+
+/** Emit the QI moment AND commit the Playbook keeper as INDEPENDENT best-effort steps. The keeper is what the member
+ *  actually SEES in their Playbook; the moment is only the QI correlation log. They must not share a fate: prod
+ *  (2026-07-27) had `emitHarvestMoment` throwing on a `member_event` drift, and because every arc ran emit-then-commit
+ *  inside ONE swallowed try, the throw silently dropped EVERY session keeper — Millie completed 6 sessions and
+ *  harvested nothing. Here each step has its own guard and LOGS on failure (never a blind swallow); if the moment
+ *  can't be written, the keeper still commits with a locally-generated correlation id. Use this for every arc harvest
+ *  drain instead of hand-rolling emit+commit. */
+export async function harvestSignal(
+  db: Db,
+  memberId: string,
+  s: { kind: string; ref?: string; keeperType?: string; destinationIntent: 'keeper' | 'share' | 'both'; payloadRef: string; label?: string; private?: boolean },
+  surface: string,
+): Promise<void> {
+  const ref = s.ref ?? s.kind;
+  let momentId: string;
+  try {
+    momentId = await emitHarvestMoment(db, memberId, {
+      destinationIntent: s.destinationIntent,
+      keeperType: s.keeperType as KeeperType,
+      surface,
+      sourceRef: { kind: s.kind, ref, label: s.label ?? s.kind },
+      payloadRef: s.payloadRef,
+      private: s.private,
+    });
+  } catch (e) {
+    console.error(`[harvest] moment emit failed (${surface}/${s.kind}) — committing the keeper anyway:`, e);
+    momentId = randomUUID(); // the keeper still lands with a valid correlation id; only the QI moment row is lost
+  }
+  // A keeper-intent signal COMMITS a visible Playbook entry; a share-only or private signal does not.
+  if (s.destinationIntent !== 'share' && !s.private) {
+    try {
+      await commitKeeper(db, memberId, {
+        momentId,
+        keeperType: s.keeperType as KeeperType,
+        section: 'own_words',
+        body: s.payloadRef,
+        state: 'kept',
+        source: { kind: 'own', ref, label: s.label ?? s.kind },
+      });
+    } catch (e) {
+      console.error(`[harvest] keeper commit failed (${surface}/${s.kind}):`, e);
+    }
+  }
 }
 
 /** The ONE v2.1 detector (Decision R, minimal): a member-CONFIRMED identity phrase → a `definition` keeper,
