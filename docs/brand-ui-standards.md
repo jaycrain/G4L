@@ -94,8 +94,12 @@ Two parts:
 
 - **Plain, measured, no hype.** Call things what they are. Member-facing copy is **normalizing and reflective**, not
   motivational-pep, not corrective.
-- **Declare what something *is*.** Don't define by negation ("not X, that's Y"). *Exception:* keep negation that lifts
-  shame or a false fear ("a hundred reasonable decisions, not a failing"; "no grade here").
+- **Declare what something *is*.** Don't define or reassure by negation — the "it's not X, it's Y" cadence is cringe
+  we're actively thinning out (same family as the retired "That's ___ done" cadence and the "honest" AI-tell). The
+  **only** negation to keep is the rare one that removes a genuinely *harmful belief* — the Fade normalization ("a
+  hundred reasonable decisions, not a failing"). **Cut the reassurance-tics** — "no grade here", "not a grade", "never
+  a scold", "not a test", "not about a perfect score" — and say the thing plainly. (Enforced in the model voice rules:
+  `session-guide.ts`, `checkpoint-guide.ts`.)
 - **The north star: safe to be honest with yourself.** Never judge, grade, fix, or pathologize. Normalize, don't praise.
 - **Reflect before asking; one question at a time; the member sets the depth.** Never extract.
 - **A member's reclaimed identity renders in natural case** ("the Athlete"), never all-caps.

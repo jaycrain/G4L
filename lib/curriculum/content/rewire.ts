@@ -79,7 +79,7 @@ export const REWIRE_SESSIONS: Asset[] = [
       },
     ],
     close: {
-      companion: 'These are your baseline now — not a grade, a starting line. I\'ve dropped your note into your Playbook to keep or cut.',
+      companion: 'These are your baseline now — a starting line to build from. I\'ve dropped your note into your Playbook to keep or cut.',
       prompt: 'Want me to track any of these so you can see them change?',
       options: ['Yes', 'Not yet'],
       to_playbook: true,

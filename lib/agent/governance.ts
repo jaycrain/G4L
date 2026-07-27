@@ -90,7 +90,7 @@ export function presentScore(
 ): ScorePresentation {
   let context: string;
   if (direction === null || delta === null) {
-    context = 'This is your starting point — a baseline to grow from, not a grade.';
+    context = 'This is your starting point — a baseline to grow from.';
   } else if (direction === 'up') {
     context = `Up ${Math.abs(delta)} since last time. Movement in the right direction.`;
   } else if (direction === 'down') {
