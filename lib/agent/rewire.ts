@@ -94,7 +94,7 @@ const W1_AFFIRM_NUDGE = "Even one is enough — take the lie that stung most and
 // is the model's own reflection of the true lines; this is the fixed CLOSE that follows the list.
 const W1_CLOSE =
   `These true lines will be the first thing you reach for when the old voice starts back with the lies and excuses.\n\n` +
-  `And, congrats — your honesty and resilience here earned you a badge. "You turned the voice."`;
+  `And, congrats — your grit and resilience here earned you a badge: "True Line."`;
 
 function w1Opening(): string {
   return `${W1_STORY}${BEAT_SEP}${W1_FRAME}${BEAT_SEP}${W1_DOMAINS[0]}`;

@@ -171,22 +171,22 @@ const LEGACY_BADGES: Badge[] = [
 // icon = a distinct placeholder glyph per badge so no two collide within a phase (Scott swaps the final art later,
 // anchored to the badge id). color is now driven by PHASE, not category — see badgePhase()/badgeTile() below.
 const REDESIGN_BADGES: Badge[] = [
-  badge('named-yourself', 'You named the Doors', 'milestone', 'door', 'reconnect:doors', true), // wired: RCN-EXC close
-  badge('starting-line', 'You met your starting line', 'milestone', 'cflag', 'reconnect:idq', false),
-  badge('reconnect-milestone', 'You crossed the Threshold', 'milestone', 'up', 'checkpoint:reconnect:passed', true), // wired
-  badge('turned-voice', 'You turned the voice', 'milestone', 'rtn', 'rewire:w1', false),
-  badge('built-picture', 'You built the picture', 'milestone', 'spark', 'rewire:w2', false),
-  badge('caught-real-time', 'You caught it in real time', 'comeback', 'eye', 'rewire:w3', false),
-  badge('rewire-milestone', 'You retrained the mind', 'milestone', 'bolt', 'checkpoint:rewire:passed', true), // wired
-  badge('found-why', 'You found your why', 'milestone', 'flame', 'rebuild:b1', false),
-  badge('honest-read', 'You took an honest read', 'milestone', 'trend', 'rebuild:b2', false),
-  badge('week-noticing', 'You lived a week of noticing', 'hardiness', 'wheel', 'rebuild:b3', false),
-  badge('rebuild-milestone', 'You rebuilt the body', 'milestone', 'mountain', 'checkpoint:rebuild:passed', true), // wired
-  badge('goal-reclaimed', 'You kept a want', 'goal', 'check', 'reclaim:item:reclaimed', false), // wired · Journey/bullseye
-  badge('widened-world', 'You widened the world', 'milestone', 'sunrise', 'reclaim:c2', false),
-  badge('quality-days', 'You lived quality days', 'hardiness', 'sun', 'reclaim:c3', false),
-  badge('wrote-story', 'You wrote your story', 'milestone', 'pen', 'reclaim:transition', true),
-  badge('reclaim-capstone', 'You closed the loop', 'capstone', 'bullseye', 'checkpoint:reclaim:passed', true), // wired · Journey/bullseye
+  badge('named-yourself', 'Doors', 'milestone', 'door', 'reconnect:doors', true), // wired: RCN-EXC close
+  badge('starting-line', 'ID', 'milestone', 'cflag', 'reconnect:idq', false),
+  badge('reconnect-milestone', 'Reconnect', 'milestone', 'up', 'checkpoint:reconnect:passed', true), // wired
+  badge('turned-voice', 'True Line', 'milestone', 'rtn', 'rewire:w1', false),
+  badge('built-picture', 'Visualization', 'milestone', 'spark', 'rewire:w2', false),
+  badge('caught-real-time', 'False Starts', 'comeback', 'eye', 'rewire:w3', false),
+  badge('rewire-milestone', 'Rewire', 'milestone', 'bolt', 'checkpoint:rewire:passed', true), // wired
+  badge('found-why', 'Why', 'milestone', 'flame', 'rebuild:b1', false),
+  badge('honest-read', 'Strengths & Weaknesses', 'milestone', 'trend', 'rebuild:b2', false),
+  badge('week-noticing', 'Observer', 'hardiness', 'wheel', 'rebuild:b3', false),
+  badge('rebuild-milestone', 'Rebuild', 'milestone', 'mountain', 'checkpoint:rebuild:passed', true), // wired
+  badge('goal-reclaimed', 'Goals', 'goal', 'check', 'reclaim:item:reclaimed', false), // wired · Journey/bullseye
+  badge('widened-world', 'Big, Big World', 'milestone', 'sunrise', 'reclaim:c2', false),
+  badge('quality-days', 'Quality Days', 'hardiness', 'sun', 'reclaim:c3', false),
+  badge('wrote-story', 'Reclaim', 'milestone', 'pen', 'reclaim:transition', true),
+  badge('reclaim-capstone', 'Comeback', 'capstone', 'bullseye', 'checkpoint:reclaim:passed', true), // wired · Journey/bullseye
 ];
 
 export const BADGES: Badge[] = redesignStaged ? REDESIGN_BADGES : LEGACY_BADGES;

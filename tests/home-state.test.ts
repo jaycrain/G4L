@@ -56,7 +56,7 @@ test('milestone outranks everything and carries the badge + shelf pill', () => {
     ...base,
     hero: { kind: 'checkpoint-ready', checkpoint: { phase: 'rewire', label: 'x' } }, // present but outranked
     openOutreach: { trigger: 'morning_presence', message: 'x' },
-    milestone: { badgeName: 'You turned the voice', href: '/badges/m1', badgeId: 'voice_turned' },
+    milestone: { badgeName: 'True Line', href: '/badges/m1', badgeId: 'voice_turned' },
   });
   assert.equal(s.kind, 'milestone');
   assert.equal(s.badge, true);

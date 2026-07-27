@@ -31,22 +31,22 @@ export default async function BadgesMorePage({ params }: { params: Promise<{ mem
 
 // Member-facing meaning of each milestone — plain, normalizing, no pep. What it marks, honestly.
 const BADGE_MEANING: Record<string, string> = {
-  'named-yourself': 'You sat with the Doors — the life events that opened the distance — and named them out loud. That’s where the work starts.',
-  'starting-line': 'You took the first ID read. Not a grade — a starting line, so you can see how far you’ve come from here.',
-  'reconnect-milestone': 'You crossed the Threshold: you saw the Fade clearly and decided to do something about it.',
-  'turned-voice': 'You caught the inner voice that narrates you short — and practiced turning it.',
-  'built-picture': 'You built a fuller, truer picture of yourself than the one the Fade was running.',
-  'caught-real-time': 'You caught a distortion as it happened, not hours later. That’s the reflex starting to change.',
-  'rewire-milestone': 'You retrained the mind — the Rewire work moved the frame, and it held.',
-  'found-why': 'You found the why underneath the movement — the reason that’s yours, not borrowed.',
-  'honest-read': 'You took an honest read of where the body actually is — no flattering, no flinching.',
+  'named-yourself': 'You identified the doors you walked through, the life events that created the distance between who are you and who you want to be.',
+  'starting-line': 'You measured the distance between who you were, who you are, and who you want to be.',
+  'reconnect-milestone': 'You completed the first phase of the G4L program.',
+  'turned-voice': 'You caught the lies you tell yourself — and practiced turning them into truths.',
+  'built-picture': 'You built a picture of yourself that will inspire and motivate you.',
+  'caught-real-time': 'You kept going. That’s the reflex starting to change.',
+  'rewire-milestone': 'You completed the second phase of the G4L program.',
+  'found-why': 'You explored your why underneath the movement.',
+  'honest-read': 'You took a hard look at where your body actually is, good and bad.',
   'week-noticing': 'You lived a full week paying attention. Noticing is the rep that makes the rest possible.',
-  'rebuild-milestone': 'You rebuilt the body — the numbers moved against your own baseline.',
-  'goal-reclaimed': 'You took back something you’d named as lost — a want, returned to your life.',
-  'widened-world': 'You widened the world — you looked past the narrow room the Fade had you living in.',
-  'quality-days': 'You strung together days that felt like yours. Not perfect — quality, on your terms.',
-  'wrote-story': 'You wrote your story in your own words — the Transition, told by you.',
-  'reclaim-capstone': 'You closed the loop — a full cycle of the work. It fades again, and you clip back in. That’s the Loop.',
+  'rebuild-milestone': 'You completed the third phase of the G4L program.',
+  'goal-reclaimed': 'You took back something you’d named as lost.',
+  'widened-world': 'You stepped outside of the narrow room the Fade had you living in.',
+  'quality-days': 'You built days that feel like you.',
+  'wrote-story': 'You completed the fourth phase of the G4L program.',
+  'reclaim-capstone': 'You made it all of the way through a Grinta for Life cycle.',
 };
 
 const PHASES: { key: BadgePhase; label: string }[] = [
@@ -71,8 +71,8 @@ function redesignView(memberId: string, passport: PassportView) {
         <Link href={`/dashboard/${memberId}`} className="ws-back">← Dashboard</Link>
         <div className="hero"><h1>Badges</h1></div>
         <p className="bd-lede">
-          Earned for real accomplishments — never participation. Each badge marks something you actually did; the ones
-          ahead stay greyed until you get there — an honest map of the road, never a scold.
+          G4L believes in being rewarded for your hard work. You’ll earn each badge as you demonstrate grit and make
+          your way through the program.
         </p>
         <div className="bd-count"><b>{passport.earned}</b> of {passport.total} earned</div>
 

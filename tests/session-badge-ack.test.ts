@@ -16,7 +16,7 @@ test('acknowledgeSessionBadge names a milestone once, then stays quiet; unmapped
   const m = (await db.query<{ member_id: string }>(`insert into member_profile (display_name, email) values ('Pat', 'ack@x.com') returning member_id`)).rows[0]!.member_id;
 
   const first = await acknowledgeSessionBadge(db, m, 'RWR-W1');
-  assert.equal(first?.name, 'You turned the voice', 'the W1 close earns + names the milestone');
+  assert.equal(first?.name, 'True Line', 'the W1 close earns + names the milestone');
 
   const second = await acknowledgeSessionBadge(db, m, 'RWR-W1');
   assert.equal(second, null, 'already earned → no double-acknowledgment');
