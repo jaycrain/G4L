@@ -47,6 +47,26 @@ test('checkpoint-ready — the Grinta-moves framing, phase-named', () => {
   assert.equal(v.ctaLabel, 'Take the Checkpoint');
 });
 
+// Donna's hand-off + checkpoint copy is REWIRE-ONLY (Jay: "Rewire is different"). Every other phase keeps the generic
+// copy — these guard that split so it can't silently regress.
+const rebuildCtx = { phaseLabel: 'Rebuild', phaseOrdinal: 3, sessionPosition: 'Session 1 of 3' };
+
+test('just-finished (non-Rewire) — keeps the generic "Next up" hand-off, not Donna\'s Rewire copy', () => {
+  const v = heroView(
+    { kind: 'just-finished', session: { id: 'b1', label: 'What Is Your Why?' }, next: { id: 'b2', label: 'Your Strengths', isCheckpoint: false } },
+    rebuildCtx,
+  );
+  assert.match(v.copy, /Next up: Your Strengths/);
+  assert.doesNotMatch(v.copy, /some hard work/);
+});
+
+test('checkpoint-ready (non-Rewire) — keeps the generic Grinta-moves framing, phase-named', () => {
+  const v = heroView({ kind: 'checkpoint-ready', checkpoint: { phase: 'rebuild', label: 'Rebuild Checkpoint' } }, rebuildCtx);
+  assert.match(v.title, /Your Rebuild Checkpoint/);
+  assert.match(v.copy, /no studying, just an honest read/);
+  assert.doesNotMatch(v.copy, /You did it|uptick/);
+});
+
 test('mid-week-practice — day N of total, log-today CTA', () => {
   const v = heroView({ kind: 'mid-week-practice', practice: { kind: 'w3_logging', label: 'Log your calls', day: 3, total: 7 } }, ctx);
   assert.match(v.eyebrow, /Day 3 of 7/);

@@ -17,6 +17,10 @@ export interface HeroContext {
 export function heroView(state: HeroState, ctx: HeroContext): HeroView {
   const where = (extra?: string | null) =>
     `Phase ${ctx.phaseOrdinal} · ${ctx.phaseLabel}${extra ? ` · ${extra}` : ''}`;
+  // Rewire is Phase 2. Donna's Rewire edits (2026-07-26) gave Rewire its OWN hand-off + checkpoint copy — Jay: "it's
+  // not meant for every Phase, Rewire is different." So those two beats branch on Rewire; every other phase keeps the
+  // generic copy.
+  const isRewire = ctx.phaseOrdinal === 2;
 
   switch (state.kind) {
     case 'resume':
@@ -33,7 +37,9 @@ export function heroView(state: HeroState, ctx: HeroContext): HeroView {
         copy: state.next
           ? state.next.isCheckpoint
             ? `That's ${state.session.label} done — you've walked the whole ${ctx.phaseLabel} phase. Next up: ${state.next.label}, whenever you're ready.`
-            : `Great job completing ${state.session.label}. That was some hard work — take a break if you want, then pick back up here whenever you're ready. If you want to keep going, ${state.next.label} is next.`
+            : isRewire
+              ? `Great job completing ${state.session.label}. That was some hard work — take a break if you want, then pick back up here whenever you're ready. If you want to keep going, ${state.next.label} is next.`
+              : `That's ${state.session.label} done. Next up: ${state.next.label}, whenever you're ready.`
           : `That's ${state.session.label} done. Take a breath — the next step will be here when you are.`,
         ctaLabel: state.next ? (state.next.isCheckpoint ? 'Take the Checkpoint' : 'Start the next Session') : 'Back to your path',
       };
@@ -48,9 +54,11 @@ export function heroView(state: HeroState, ctx: HeroContext): HeroView {
     case 'checkpoint-ready':
       return {
         eyebrow: `${ctx.phaseLabel} · Checkpoint ready`,
-        title: 'You did it!',
-        // Donna's Rewire edits (2026-07-26), generalized to the phase label so it's correct for every checkpoint.
-        copy: `${ctx.phaseLabel} is some heavy stuff, and now you've walked the whole phase. You should see an uptick in your Grinta Index after this — you couldn't get through without demonstrating some grit. Let's see how it's going.`,
+        // Rewire gets Donna's celebratory copy; other phases keep the generic checkpoint framing.
+        title: isRewire ? 'You did it!' : `Your ${ctx.phaseLabel} Checkpoint`,
+        copy: isRewire
+          ? `${ctx.phaseLabel} is some heavy stuff, and now you've walked the whole phase. You should see an uptick in your Grinta Index after this — you couldn't get through without demonstrating some grit. Let's see how it's going.`
+          : "You've walked the whole phase. This is where your Grinta moves — no studying, just an honest read.",
         ctaLabel: 'Take the Checkpoint',
       };
     case 'mid-week-practice':
