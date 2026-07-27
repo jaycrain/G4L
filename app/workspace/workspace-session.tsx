@@ -58,7 +58,7 @@ export default function WorkspaceSession({
   // But it's tall — on a PHONE it ate the whole screen and squeezed the chat to an unreadable sliver, stranding the
   // member on the tail of a message with no visible question (Jennifer's walk, 2026-07-27). The first fix collapsed it
   // on scroll, but a phone member has no reason to scroll (the composer is already in view), so it stayed open. Real
-  // fix: on a phone, start COLLAPSED — the pinned "Why this matters ▸" pill (the header never scrolls) invites a tap;
+  // fix: on a phone, start COLLAPSED — the pinned "Why this matters ▶" pill (the header never scrolls) invites a tap;
   // the chat gets full height immediately. Desktop/tablet keep open-on-landing + collapse-on-scroll below.
   const [whyOpen, setWhyOpen] = useState(true);
   const bodyRef = useRef<HTMLDivElement>(null);
@@ -166,7 +166,7 @@ export default function WorkspaceSession({
           {summary && !review && (
             <div className={`ws-why${whyOpen ? ' open' : ''}`}>
               <button type="button" className="ws-why-toggle" onClick={() => setWhyOpen((v) => !v)} aria-expanded={whyOpen}>
-                Why this matters <span className="ws-why-caret" aria-hidden="true">{whyOpen ? '▾' : '▸'}</span>
+                Why this matters <span className="ws-why-caret" aria-hidden="true">{whyOpen ? '▼' : '▶'}</span>
               </button>
               {whyOpen && <p className="ws-why-full">{summary.full}</p>}
             </div>
