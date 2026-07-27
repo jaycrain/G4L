@@ -33,7 +33,7 @@ export function heroView(state: HeroState, ctx: HeroContext): HeroView {
         copy: state.next
           ? state.next.isCheckpoint
             ? `That's ${state.session.label} done — you've walked the whole ${ctx.phaseLabel} phase. Next up: ${state.next.label}, whenever you're ready.`
-            : `That's ${state.session.label} done. Next up: ${state.next.label}, whenever you're ready.`
+            : `Great job completing ${state.session.label}. That was some hard work — take a break if you want, then pick back up here whenever you're ready. If you want to keep going, ${state.next.label} is next.`
           : `That's ${state.session.label} done. Take a breath — the next step will be here when you are.`,
         ctaLabel: state.next ? (state.next.isCheckpoint ? 'Take the Checkpoint' : 'Start the next Session') : 'Back to your path',
       };
@@ -48,8 +48,9 @@ export function heroView(state: HeroState, ctx: HeroContext): HeroView {
     case 'checkpoint-ready':
       return {
         eyebrow: `${ctx.phaseLabel} · Checkpoint ready`,
-        title: `Your ${ctx.phaseLabel} Checkpoint`,
-        copy: "You've walked the whole phase. This is where your Grinta moves — no studying, just an honest read.",
+        title: 'You did it!',
+        // Donna's Rewire edits (2026-07-26), generalized to the phase label so it's correct for every checkpoint.
+        copy: `${ctx.phaseLabel} is some heavy stuff, and now you've walked the whole phase. You should see an uptick in your Grinta Index after this — you couldn't get through without demonstrating some grit. Let's see how it's going.`,
         ctaLabel: 'Take the Checkpoint',
       };
     case 'mid-week-practice':

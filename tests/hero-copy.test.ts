@@ -20,7 +20,7 @@ test('just-finished — congratulates, NAMES the next session', () => {
     ctx,
   );
   assert.match(v.title, /Nice work — the Disinformation Audit/);
-  assert.match(v.copy, /Next up: Visualization Workshop/);
+  assert.match(v.copy, /Visualization Workshop is next/);
   assert.equal(v.ctaLabel, 'Start the next Session');
 });
 
@@ -41,8 +41,9 @@ test('just-finished with no next — no fabricated next step', () => {
 
 test('checkpoint-ready — the Grinta-moves framing, phase-named', () => {
   const v = heroView({ kind: 'checkpoint-ready', checkpoint: { phase: 'rewire', label: 'Rewire Checkpoint' } }, ctx);
-  assert.match(v.title, /Your Rewire Checkpoint/);
+  assert.match(v.title, /You did it/);
   assert.match(v.eyebrow, /Checkpoint ready/);
+  assert.match(v.copy, /walked the whole phase/); // Donna edit: celebratory + phase framing
   assert.equal(v.ctaLabel, 'Take the Checkpoint');
 });
 

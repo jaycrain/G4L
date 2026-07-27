@@ -48,20 +48,22 @@ export function dropTrailingQuestion(text: string): string {
 
 // ── W1 · The Disinformation Audit — final approved copy ──────────────────────────────────────────────────────
 const W1_STORY =
-  `Jay ran a disinformation campaign on himself for eight years.\n\n` +
-  `The lies didn't sound like lies. They sounded like reason. "I'm alright." "It's not that bad." "I'll deal with ` +
-  `it next month." The whole time his body was telling the truth — the weight, the hives, the blood markers, three ` +
-  `doctor's warnings — and his brain kept overriding the signal with the same comfortable story.\n\n` +
-  `Everybody runs one. It's how the Fade keeps its hold — not with one big lie, but a hundred reasonable ones. So ` +
-  `before we build anything in Rewire, let's catch yours.`;
-// The frame — the roadmap + the payoff (why this matters: they're building tools they'll reach for).
+  `G4L founder, Jay Crain, ran a disinformation campaign on himself for eight years.\n\n` +
+  `Only, the lies didn't seem like lies. They sounded like reason. "I'm alright." "It's not that bad." "I'll deal ` +
+  `with it next month." The whole time his body was telling the truth — the weight, the hives, the blood markers. ` +
+  `But his brain kept overriding the signals, and three doctor's warnings, with the same comfortable story.\n\n` +
+  `Lying to yourself is common. And it's not usually the big ones, but a hundred reasonable ones. The disinformation ` +
+  `and avoidance contribute to the Fade and allow it to keep its hold.`;
+// The frame — the roadmap + the payoff (why this matters: they're building tools they'll reach for). Donna's Rewire
+// edits (2026-07-26), keeping the five domains named up front (Jay's earlier #8 — "keep both").
 const W1_FRAME =
-  `Here's the play: we're going to run an audit. I'll take you through five places these lies hide — your body, your ` +
-  `habits, your time, who you are, and what's still possible — and you tell me the ones you actually run — the real ` +
-  `ones, not the ones you're supposed to say. Then we look at the whole ` +
-  `campaign together, and for the ones that cost you the most, we build the true line that answers back — yours to ` +
-  `keep, the first thing you reach for when the old voice starts up. Nobody's grading this. We can't disarm a lie ` +
-  `we won't say out loud.`;
+  `So, let's get real about the lies you're telling yourself. I'll take you through five places these lies hide — ` +
+  `your body, your habits, your time, who you are, and what's still possible. You'll get honest about these ` +
+  `untruths — things you might not have admitted before.\n\n` +
+  `We'll identify the lies that cost you the most. Then we'll build the true lines together that negate each lie — ` +
+  `an answer that becomes the first thing you reach for when the old dishonest voice tries to take back over.\n\n` +
+  `We can't disarm a lie we won't say out loud. Facing uncomfortable truths won't be fun. This is where your grit ` +
+  `comes in.`;
 const W1_DOMAINS = [
   `Start here — your body. What do you tell yourself about your weight, your energy, how you feel in your body day ` +
     `to day? ("I eat pretty healthy." "I'll clean it up when things settle." "It's just age.")`,
@@ -88,10 +90,11 @@ const W1_TURN_ASK_FALLBACK =
 // the model returns nothing.
 const W1_AFFIRM_ACK = "Kept — that's yours. Here's another that stood out — what's the true line you'd put in its place? Or tell me that's your set.";
 const W1_AFFIRM_NUDGE = "Even one is enough — take the lie that stung most and write the honest line back.";
+// Donna's Rewire edits (2026-07-26). The pre-list summary ("Here's your counter-campaign, saved to your Playbook")
+// is the model's own reflection of the true lines; this is the fixed CLOSE that follows the list.
 const W1_CLOSE =
-  `They're the first thing you'll reach for when the old voice gets loud. I've saved them to your Playbook.\n\n` +
-  `Catching your own lies is the whole game in Rewire, and you just did the hard part: you said them out loud. ` +
-  `That's Grinta in its quietest, most useful form.`;
+  `These true lines will be the first thing you reach for when the old voice starts back with the lies and excuses.\n\n` +
+  `And, congrats — your honesty and resilience here earned you a badge. "You turned the voice."`;
 
 function w1Opening(): string {
   return `${W1_STORY}${BEAT_SEP}${W1_FRAME}${BEAT_SEP}${W1_DOMAINS[0]}`;
@@ -294,20 +297,20 @@ export async function liveTurnRewire(state: ConvState, history: ConvMessage[], m
 
 // ── Opening — the value (why visualize; the through-line from W1) ──
 const W2_OPEN_1 =
-  `Last time, you built the true lines that answer your lies. This time you build the thing those lies have been ` +
-  `keeping from you — a clear picture of the person you're becoming.`;
+  `In the Disinformation Audit you built the true lines that negate the lies you tell yourself. This time you'll ` +
+  `build a clear picture of the person you want to become — the very thing those lies have been keeping from you.`;
 const W2_OPEN_2 =
-  `And this isn't soft. Every athlete who's done anything hard rehearsed it in their head first — not because it's ` +
-  `magic, but because your brain moves toward what it can see clearly. "I want to be healthier" has nothing to aim ` +
-  `at. A specific picture of you, on an ordinary day, does. So let's build one you can actually step into.`;
+  `There's science behind visualization. Every athlete who's done anything hard rehearsed it in their head first. ` +
+  `Your brain moves toward what it can see clearly. "I want to be healthier" has nothing to aim at. A specific ` +
+  `picture of you, on an ordinary day, does. So let's build a picture of where you want to be.`;
 // ── The anchor — a goal, made vivid (pull from their Reclaim List) ──
 const W2_ANCHOR_LEAD =
-  `You named two things in Reconnect: who you'd drifted from, and what you want back. Let's put them together — you, ` +
-  `at the moment you get one of those things back.`;
+  `In Reconnect you discovered the identity you'd drifted from, and set goals — building an entire Reclaim List of ` +
+  `what you want back. Which one of those means the most to you right now?`;
 const W2_ANCHOR_PICK =
-  `Pick the one that pulls hardest. A race you've put on the calendar. A trip with friends you've been putting off. ` +
-  `A day, in the clothes you want to be wearing, that's felt out of reach. Your brain rehearses a real destination ` +
-  `far better than a vague "someday." So — which one do you want to stand in?`;
+  `A race you've put on the calendar. A trip with friends you've been putting off. A day, in the clothes you'll be ` +
+  `wearing, that's felt out of reach. Pick one.\n\nYour brain rehearses a real destination far better than a vague ` +
+  `"someday." So which one do you want to visualize?`;
 const W2_ANCHOR_HELP =
   `Take your pick from what you want back — the one you'd most want to actually live. Or tell me you're not sure, and ` +
   `we'll find it together.`;

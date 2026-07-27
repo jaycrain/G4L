@@ -128,7 +128,7 @@ const CAPTURES: Collected = {
 function walkImage(committed: Collected | null = CAPTURES): { state: ConvState; recognitionReply: string } {
   let t = rewireW2Opening(committed);
   assert.equal(t.state.stage, 'anchor');
-  assert.match(t.reply, /clear picture of the person you're becoming/i, 'opens on the value (through-line from W1)');
+  assert.match(t.reply, /clear picture of the person you want to become/i, 'opens on the value (through-line from W1)');
   // pick the anchor goal → advances into the image build with the first scene prompt
   t = applyRewireW2Turn(t.state, [], 'The half-marathon finish line', { text: "The half-marathon — let's stand you there." });
   assert.equal(t.state.stage, 'image', 'a picked goal advances to the image build');
@@ -167,7 +167,7 @@ test('W2 · the reveal → practice + close, harvesting the finished image as ON
 test('W2 · graceful degrade — thin captures still open and walk (the model offers from context)', () => {
   const t = rewireW2Opening(null);
   assert.equal(t.state.stage, 'anchor');
-  assert.match(t.reply, /pick the one that pulls hardest/i, 'falls back to the approved generic pick copy');
+  assert.match(t.reply, /which one do you want to visualize/i, 'falls back to the approved generic pick copy');
 });
 
 test('W2 · "not sure" holds at the anchor (the model offers candidates); a real pick advances', () => {
