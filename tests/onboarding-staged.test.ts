@@ -633,18 +633,22 @@ test('Decision II — an IDENTITY statement is routed off the goal list and PRES
   assert.equal((t2.state.collected.visionKeepers ?? []).includes(identity), true, 'preserved (never discarded — never drop what they gave you)');
 });
 
-test('Decision II — when NO identity was named, an identity statement SEEDS the identity noun (Donna: identity_noun was null)', () => {
+test('an identity statement at reclaim is held in the Playbook, NEVER auto-committed as identity_noun (vibe-wins revert of 5d683d2)', () => {
+  // Donna's walk (Jay 2026-07-26): a passing "who I am" statement was auto-promoted to her committed identity —
+  // "named her without asking." Governance: never name an identity without the member being drawn out and asked.
+  // The shape gate STILL keeps the statement off the reclaim (goal) list and preserves it to the Playbook as their
+  // own words — but it does NOT set identity_noun and does NOT clear the skip. identity_noun is set ONLY through the
+  // real naming beat. A blank strip is recoverable; an unasked label is not.
   const identity = "I'm a director and creative producer";
-  // A member who skipped naming, then stated who they are at the reclaim stage (exactly Donna's shape).
   const base = { athleticPast: 'a player', identitySkipped: true, gap: 'a real fade over a long hard decade' };
   const atConfirm: ConvState = { stage: 'reclaim', awaitingConfirm: true, collected: { ...base, reclaimList: ['Creative outlet, do more films', identity, 'Autonomy'] } };
   const t1 = applyStagedTurn(atConfirm, [], 'looks good', { text: 'Great.', replyIntent: 'done' });
   assert.equal(t1.state.pendingReclaimShape?.kind, 'identity');
   const t2 = applyStagedTurn(t1.state, [], 'yes', { text: 'Okay.' });
-  assert.equal((t2.state.collected.reclaimList ?? []).includes(identity), false, 'off the goal list');
-  assert.equal(t2.state.collected.identityNoun, 'director and creative producer', 'captured as their identity, not lost');
-  assert.equal(t2.state.collected.identitySkipped, false, 'the skip is cleared — they named themselves after all');
-  assert.equal((t2.state.collected.visionKeepers ?? []).includes(identity), false, 'not double-stored to the Playbook');
+  assert.equal((t2.state.collected.reclaimList ?? []).includes(identity), false, 'off the goal list (not a reclaim want)');
+  assert.ok(!t2.state.collected.identityNoun, 'NOT auto-named — identity_noun stays unset until the real naming beat');
+  assert.equal(t2.state.collected.identitySkipped, true, 'the skip is NOT silently cleared by a passing statement');
+  assert.equal((t2.state.collected.visionKeepers ?? []).includes(identity), true, 'preserved to the Playbook as their own words, never dropped');
 });
 
 test('gather hygiene (Elite Cyclist walk) — a "shape of it" close is not captured; an "N rides a week" cadence folds', () => {

@@ -46,7 +46,7 @@ import {
   type Stage,
   type Turn,
 } from './onboarding.ts';
-import { reconcileReclaimShapes, shapeKey, extractIdentityNoun } from './reclaim-shape.ts';
+import { reconcileReclaimShapes, shapeKey } from './reclaim-shape.ts';
 import { detectCrisis, CRISIS_RESPONSE_US } from './governance.ts';
 // The intent layer — the one place that decides what a member's utterance MEANS (see onboarding-intent.ts).
 import {
@@ -557,14 +557,12 @@ function resolvePendingShape(b: Beat, pending: PendingReclaimShape): string {
     markResolved(shapeKey({ kind: 'identity', index: 0, item: pending.item }));
     if (yes) {
       removeReclaimItem(b.collected, pending.item);
-      if (!b.collected.identityNoun?.trim()) {
-        // They stated WHO they are but no identity was captured (named later / skipped, then said it here) — seed it
-        // as their identity so the strip isn't left blank and it isn't lost. This is the naming signal, recovered.
-        b.collected.identityNoun = extractIdentityNoun(pending.item);
-        b.collected.identitySkipped = false;
-        return 'Got it — I’ll hold onto that as who you are.';
-      }
-      // Already named an identity → preserve this statement to the Playbook (never drop what they gave you).
+      // Revert of 5d683d2 (Jay 2026-07-26 — "vibe wins"): NEVER auto-seed identity_noun from a stated identity.
+      // Committing an identity the member was never drawn out on and asked to confirm is the governance breach
+      // ("named her without asking"). A confirmed identity-shape statement is preserved to the Playbook as their own
+      // words; identity_noun is set ONLY through the real naming beat. A blank strip is recoverable; an unasked label
+      // is not. (Completeness — seeding the strip when they clearly named themselves — is a follow-up we solve WITHOUT
+      // touching the draw-out: draw out → ask → confirm → then commit.)
       b.collected.visionKeepers = [...(b.collected.visionKeepers ?? []), pending.item];
       return 'Kept — it’s part of who you are, held in your Playbook.';
     }
@@ -1679,13 +1677,11 @@ export function stageInstruction(stage?: Stage): string {
     return (
       '\n\nCURRENT STAGE: what they want back — the Reclaim List (what the whole program measures against; big or ' +
       'small, there are no wrong answers).\n' +
-      'SEED FROM THE GAP FIRST (W-46, load-bearing): the fade story you just captured almost always NAMES what they ' +
-      'want back — the activities, roles, creative work, relationships, or the body they said they lost, miss, or are ' +
-      '"getting back to". Before inviting anything new, SURFACE those: reflect them and propose them as candidate items ' +
-      '("you named getting back to lifting, to creating, to writing — do those belong on your list?"), calling ' +
-      'add_reclaim_item for each one they affirm. If they already named some earlier, build on those — don\'t re-ask. ' +
-      'NEVER start the list from zero when the gap already holds their wants.\n' +
-      'THEN draw out what else, the way you drew out the gap — do NOT rush to collect a list. When they name one, ' +
+      // Revert of the W-46 "SEED FROM THE GAP FIRST" front-load (Jay 2026-07-26 — "vibe wins"): do NOT open the list
+      // by mining the gap and proposing a batch of candidate items. That raced the drawing-out and made the list feel
+      // pre-decided. DRAW IT OUT the way you drew out the gap instead.
+      'DRAW THIS OUT the way you drew out the gap — do NOT rush to collect a list, and do NOT open by proposing or ' +
+      'reciting a set of items. Invite what they want back gently, and let them lead. When they name one, ' +
       'RECEIVE it: reflect it back, feel what it means to them, and (if vague) drill it concrete — then, and only then, ' +
       'invite the next. One want at a time, with care; never a rote "what else?" march. Aim for a few; never pressure ' +
       'or interrogate — small things count.\n' +
