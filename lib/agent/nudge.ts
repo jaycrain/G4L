@@ -49,8 +49,8 @@ export function computeNudges(s: NudgeSignals): Nudge[] {
     const c = s.curriculumNext;
     const text =
       c.kind === 'checkpoint'
-        ? `Your ${c.title} Checkpoint is ready — cross it in your Program.`
-        : `Your next Session, ${c.title}, is ready in your Program.`;
+        ? `Your ${c.title} Checkpoint is ready — open it from the top of your dashboard.`
+        : `Your next Session, ${c.title}, is ready — open it from the top of your dashboard.`;
     n.push({ kind: 'curriculum_next', text, priority: 80 });
   }
   if (s.recentAssetName && s.daysSinceRecentAsset != null && s.daysSinceRecentAsset <= 3) {
