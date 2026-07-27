@@ -164,6 +164,25 @@ test('W2 · the reveal → practice + close, harvesting the finished image as ON
   assert.match(harvest[0]!.payloadRef, /My kids at the rail/, 'the keeper carries every scene piece');
 });
 
+test('W2 · the last-image reflection must not STRAND a trailing question before the recognition (Millie walk)', () => {
+  // Bug: on the final piece the engine appended the scripted recognition onto the model's reflection — but if the
+  // model ended by ASKING ("Is anyone with you, or is this your solo moment?"), that question got stranded, unanswered,
+  // right before "That's not a wish…". The reflection here must be a RECEIPT: the trailing question is stripped.
+  let t = rewireW2Opening(CAPTURES);
+  t = applyRewireW2Turn(t.state, [], 'The half-marathon finish line', { text: "The half-marathon — let's stand you there." });
+  const PIECES = ['A cool morning, the finish chute', 'Lighter, steadier, proud', 'My kids at the rail', 'Like I came back'];
+  PIECES.forEach((piece, i) => {
+    const last = i === PIECES.length - 1;
+    const modelText = last
+      ? 'There you are — lighter, proud, your kids at the rail. Is anyone with you, or is this your solo moment?'
+      : 'I can see it.';
+    t = applyRewireW2Turn(t.state, [], piece, { text: modelText });
+  });
+  assert.equal(t.state.stage, 'hold', 'still hands into the reveal');
+  assert.match(t.reply, /that's not a wish/i, 'delivers the recognition');
+  assert.doesNotMatch(t.reply, /is anyone with you|solo moment/i, "the model's trailing question is stripped — never stranded before the recognition");
+});
+
 test('W2 · graceful degrade — thin captures still open and walk (the model offers from context)', () => {
   const t = rewireW2Opening(null);
   assert.equal(t.state.stage, 'anchor');

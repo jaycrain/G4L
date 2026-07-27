@@ -412,8 +412,12 @@ const imageStage: StageDef = {
       b.reply = withScriptedBeat(reflected, W2_IMAGE[next]!);
     } else {
       // whole scene built → the model's full-image reflection + the recognition reveal, then sit with it (hold).
+      // W-?? (Millie's walk): the recognition is a scripted CLOSE of this beat — so the model's line must be a RECEIPT,
+      // not a question. If it ended by asking (e.g. "Is anyone with you?"), stacking the recognition after it strands
+      // that question, unanswered. Strip the trailing question first — same discipline the hold stage already uses.
       b.stage = 'hold';
-      b.reply = `${reflected ? `${reflected}${BEAT_SEP}` : ''}${W2_RECOGNITION}`;
+      const receipt = dropTrailingQuestion(reflected);
+      b.reply = `${receipt ? `${receipt}${BEAT_SEP}` : ''}${W2_RECOGNITION}`;
     }
   },
   confirm(b) {
