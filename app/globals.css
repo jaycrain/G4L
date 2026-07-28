@@ -375,7 +375,9 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .typing { color: var(--navy); opacity: 0.6; align-self: flex-start; }
 .chat-input { display: flex; gap: 0.5rem; margin-top: 0.5rem; align-items: flex-end; }
 .chat-input input { flex: 1; margin: 0; }
-.chat-input textarea { flex: 1; margin: 0; resize: none; overflow-y: auto; line-height: 1.4; }
+/* Match the Send button's height at rest (46px) instead of the global 72px textarea floor, then grow with content
+   (Jay 7/28 — the field looked oversized next to Send). field-sizing is already used by the companion rail. */
+.chat-input textarea { flex: 1; margin: 0; resize: none; overflow-y: auto; line-height: 1.4; min-height: 46px; max-height: 160px; field-sizing: content; box-sizing: border-box; }
 .chat-input button { margin: 0; }
 .chat-continue { margin-top: 0.75rem; }
 .chat-continue button { margin: 0; width: 100%; }
