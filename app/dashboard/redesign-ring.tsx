@@ -13,11 +13,12 @@ const PHASE_COLOR: Record<string, string> = {
   rebuild: '#919536',
   reclaim: '#EC6233',
 };
-// On the NAVY hero, the true Reconnect navy (#374F63) is navy-on-navy — invisible. Rather than LIGHTEN it, we take
-// Reconnect DARKER — a deep navy that reads against the #374F63 hero (Jay, 2026-07-28). Rewire/Rebuild/Reclaim keep the
-// lightened variants that already read well on navy.
+// On the NAVY hero, the true Reconnect navy (#374F63) is navy-on-navy — invisible. So Reconnect renders as a deeper
+// navy in the SAME family that separates from the #374F63 hero — a little brighter than the first pass so it reads as
+// a clean navy, not muddy (Donna, 2026-07-28), while staying clearly darker than the hero. Rewire/Rebuild/Reclaim keep
+// the lightened variants that already read well on navy.
 const PHASE_COLOR_DARK: Record<string, string> = {
-  reconnect: '#1B2A38', // a darker navy so the outer Reconnect ring separates from the hero navy
+  reconnect: '#223A4C', // a deeper navy (same family as #374F63), a touch brighter than the muddier first pass
   rewire: '#4FB3B4',
   rebuild: '#B7BB55',
   reclaim: '#F07A4E',
