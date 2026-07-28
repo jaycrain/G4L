@@ -1264,8 +1264,10 @@ body.redesign-on .confidential-footer { display: none; } /* full-bleed app — n
 .rt-wordmark { height: 30px; width: auto; display: block; flex: none; }
 .rt-who { display: flex; align-items: center; gap: 26px; }
 /* Avatar + greeting + Log out ride together as one right-aligned cluster (like the prior dashboard). */
-.rt-account-group { display: flex; align-items: center; gap: 12px; }
+.rt-account-group { display: flex; flex-direction: column; align-items: center; gap: 3px; }
 .rt-account { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+.rt-story { font-weight: 600; font-size: 12.5px; color: var(--teal); text-decoration: none; white-space: nowrap; } /* the My Story nav, tucked under the avatar */
+.rt-story:hover { text-decoration: underline; }
 .rt-av { width: 34px; height: 34px; border-radius: 50%; object-fit: cover; }
 .rt-av-initials { background: var(--teal); color: #fff; display: grid; place-items: center; font-weight: 700; font-size: 13px; }
 .rt-hi { font-weight: 700; color: var(--navy); }

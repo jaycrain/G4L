@@ -91,8 +91,10 @@ export default function DashboardTriptych({
               ) : (
                 <span className="rt-av rt-av-initials" aria-hidden="true">{initials(displayName)}</span>
               )}
-              <span className="rt-hi">Hi, {firstName}</span>
             </Link>
+            {hasStory && (
+              <Link href={`/story/${memberId}`} className="rt-story" prefetch={false}>My Story →</Link>
+            )}
           </span>
         </div>
       </div>
@@ -103,13 +105,9 @@ export default function DashboardTriptych({
         {(identitySelves || hasStory) && (
           <div className="tri-member">
             <div className="tri-member-id">
-              <span className="tri-member-name">{displayName}</span>
+              <span className="tri-member-name">Hi {firstName}!</span>
               {identitySelves && <span className="tri-member-reclaim">Reclaiming {identitySelves}</span>}
-              {phaseLabel && <span className="tri-member-phase">{phaseLabel}</span>}
             </div>
-            {hasStory && (
-              <Link href={`/story/${memberId}`} className="tri-member-story" prefetch={false}>My Story →</Link>
-            )}
           </div>
         )}
         {/* Mobile-only segmented control (CSS-shown ≤1000px). Composer lives at the foot of the center pane, so this
