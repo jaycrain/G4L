@@ -186,7 +186,7 @@ const REDESIGN_BADGES: Badge[] = [
   badge('widened-world', 'Big, Big World', 'milestone', 'sunrise', 'reclaim:c2', false),
   badge('quality-days', 'Quality Days', 'hardiness', 'sun', 'reclaim:c3', false),
   badge('wrote-story', 'Reclaim', 'milestone', 'pen', 'reclaim:transition', true),
-  badge('reclaim-capstone', 'Comeback', 'capstone', 'bullseye', 'checkpoint:reclaim:passed', true), // wired · Journey/bullseye
+  badge('reclaim-capstone', 'Grinta', 'capstone', 'bullseye', 'checkpoint:reclaim:passed', true), // wired · Your Comeback group (white tile)
 ];
 
 export const BADGES: Badge[] = redesignStaged ? REDESIGN_BADGES : LEGACY_BADGES;
@@ -226,7 +226,9 @@ export function badgePhase(b: Pick<Badge, 'id' | 'earn_rule'>): BadgePhase {
 /** The CSS background for a badge tile (phase color, or the bullseye gradient for Journey badges). */
 export function badgeTileBackground(b: Pick<Badge, 'id' | 'earn_rule'>): string {
   const p = badgePhase(b);
-  return p === 'journey' ? BULLSEYE_GRADIENT : PHASE_BADGE_COLOR[p];
+  // "Your Comeback" badges (Goals + Grinta) render on WHITE — they're the outcome, echoing the bullseye's white center
+  // (Donna, 2026-07-28). BadgeStamp adds the border + dark glyph so the white tile reads on the white shelf.
+  return p === 'journey' ? '#ffffff' : PHASE_BADGE_COLOR[p];
 }
 
 // --- Accessors (the renderer reads only through these) ---

@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 // placeholder glyph is a real, distinct-within-phase icon key (so Scott can swap art by id without collisions).
 process.env.REDESIGN = 'staged'; // expose the 16-milestone REDESIGN_BADGES from the registry
 
-const { listBadges, badgePhase, badgeTileBackground, PHASE_BADGE_COLOR, BULLSEYE_GRADIENT } = await import(
+const { listBadges, badgePhase, badgeTileBackground, PHASE_BADGE_COLOR } = await import(
   '../lib/curriculum/registry.ts'
 );
 const { BADGE_GLYPH_KEYS } = await import('../lib/curriculum/badge-glyph-keys.ts');
@@ -46,10 +46,10 @@ test('the group counts match the handoff: 3 orange / 4 olive / 4 teal / 3 navy /
   assert.deepEqual(tally, { reconnect: 3, rewire: 4, rebuild: 4, reclaim: 3, journey: 2 });
 });
 
-test('tile background is the phase color, or the bullseye gradient for Journey badges', () => {
+test('tile background is the phase color, or white for the "Your Comeback" (Journey) badges', () => {
   for (const b of listBadges()) {
     const bg = badgeTileBackground(b);
-    if (badgePhase(b) === 'journey') assert.equal(bg, BULLSEYE_GRADIENT);
+    if (badgePhase(b) === 'journey') assert.equal(bg, '#ffffff');
     else assert.equal(bg, PHASE_BADGE_COLOR[badgePhase(b) as keyof typeof PHASE_BADGE_COLOR]);
   }
 });

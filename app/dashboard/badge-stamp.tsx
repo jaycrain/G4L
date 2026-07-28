@@ -1,5 +1,5 @@
 import type { Badge } from '../../lib/curriculum/types.ts';
-import { badgeTileBackground } from '../../lib/curriculum/registry.ts';
+import { badgeTileBackground, badgePhase } from '../../lib/curriculum/registry.ts';
 import { BADGE_GLYPHS } from '../../lib/curriculum/badge-glyphs.tsx';
 
 // One badge stamp — the shared visual for the redesign shelf + the badges detail page.
@@ -14,7 +14,9 @@ export default function BadgeStamp({
   size?: 'md' | 'lg';
 }) {
   const glyph = BADGE_GLYPHS[badge.icon] ?? BADGE_GLYPHS.spark;
-  const cls = `bstamp bstamp-${size}${badge.earned ? ' earned' : ' locked'}`;
+  // The "Your Comeback" badges (Goals + Grinta) earn a WHITE tile — bstamp-journey adds the border + dark glyph.
+  const isJourney = badge.earned && badgePhase(badge) === 'journey';
+  const cls = `bstamp bstamp-${size}${badge.earned ? ' earned' : ' locked'}${isJourney ? ' bstamp-journey' : ''}`;
   const style = badge.earned ? { background: badgeTileBackground(badge) } : undefined;
   return (
     <span

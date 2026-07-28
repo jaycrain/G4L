@@ -1377,6 +1377,9 @@ body.redesign-on .confidential-footer { display: none; } /* full-bleed app — n
 .bstamp svg { width: 54%; height: 54%; }
 .bstamp.earned { box-shadow: 0 2px 7px rgba(42, 42, 42, 0.17); }
 .bstamp.locked { background: #f4f3f0; border: 1.6px dashed #d8d6d1; color: #c3c1bb; box-shadow: none; }
+/* "Your Comeback" badges (Goals + Grinta) — white tile (bg set inline), so give it a border to read on the white shelf
+   and a navy glyph instead of the white one (Donna, 2026-07-28). */
+.bstamp.bstamp-journey { border: 1.6px solid #d8d6d1; color: #374F63; }
 
 /* The persistent rail */
 .rrail-head { padding: 20px 22px 12px; border-bottom: 1px solid #e3e2df; }

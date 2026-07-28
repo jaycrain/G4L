@@ -54,7 +54,7 @@ const PHASES: { key: BadgePhase; label: string }[] = [
   { key: 'rewire', label: 'Rewire' },
   { key: 'rebuild', label: 'Rebuild' },
   { key: 'reclaim', label: 'Reclaim' },
-  { key: 'journey', label: 'The Comeback' },
+  { key: 'journey', label: 'Your Comeback' },
 ];
 
 function redesignView(memberId: string, passport: PassportView) {
