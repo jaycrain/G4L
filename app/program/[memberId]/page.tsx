@@ -8,66 +8,62 @@ import { redesignEnabled } from '../../../lib/dashboard/redesign.ts';
 import SubpageShell from '../../dashboard/subpage-shell.tsx';
 import { completedReviewSessions } from '../../../lib/workspace/review.ts';
 import { reclaimReadiness } from '../../../lib/reclaim/readiness.ts';
-import { ASSET_SUMMARIES, phaseSummary, type AssetId, type PhaseKey } from '../../../lib/content/summaries.ts';
 import type { Db } from '../../../lib/db/schema.ts';
-
-// The route derives from the canon summaries (lib/content/summaries.ts) so the "whole route" and the session threshold
-// say the SAME thing — one canonical line each. We keep the asset NAMES + the closing beat/reveal as literals (those
-// aren't in the summaries); the per-session descriptor is the asset's canon short, and the phase blurb is the phase short.
-const NAMED_SESSIONS: Record<PhaseKey, Array<[string, AssetId]>> = {
-  // Names match the live session registry (lib/workspace/session-registry.ts) exactly — no invented "The" prefixes, no
-  // stale names. Reconnect is the onboarding gateway (not registry sessions), so its descriptors stay as-is; "The Doors"
-  // is the locked term.
-  reconnect: [['The Doors', 'r2'], ['The IDQ', 'r1'], ['Visioning', 'r3']],
-  rewire: [['Disinformation Audit', 'w1'], ['Visualization Workshop', 'w2'], ['False Start Protocol', 'w3']],
-  rebuild: [['What’s Your Why?', 'b1'], ['Strengths & Weaknesses', 'b2'], ['The Lifestyle Pilot', 'b3']],
-  reclaim: [['Readiness Assessment', 'c1'], ['Bigger World Audit', 'c2'], ['Quality Days', 'c3']],
-};
-const CLOSING_BEAT: Record<PhaseKey, string> = {
-  reconnect: 'The Checkpoint — where your Grinta moves for the first time.',
-  rewire: 'The Checkpoint.',
-  rebuild: 'The Checkpoint.',
-  reclaim: 'The Transition — your Success Story, and the door into Community.',
-};
-const routeSessions = (key: PhaseKey): string[] => [
-  ...NAMED_SESSIONS[key].map(([name, asset]) => `${name} — ${ASSET_SUMMARIES[asset].short}`),
-  CLOSING_BEAT[key],
-];
 
 const REVIEW_PHASE_LABEL: Record<string, string> = { reconnect: 'Reconnect', rewire: 'Rewire', rebuild: 'Rebuild', reclaim: 'Reclaim' };
 
-// The Program — the whole four-Phase route (Program Page v1.0, from G4L_Program_Page_v1.0.md). Greg's "Route Card": a
-// member sees the whole path they're headed down. All four Phases are LIVE now (v3.2 — the four Rs shipped), so none
-// render as "coming"; the Session names match the live registry. The "you're here" marker is wired to the member's
-// active Phase from the forecast. (Reclaim can still show a Loop-gate "Opens…" when RECLAIM_GATE is on + not ready.)
+// The Program — the whole four-Phase route. All four Phases are LIVE (v3.2 — the four Rs shipped), so none render as
+// "coming"; the "you're here" marker wires to the member's active Phase from the forecast. Copy is Donna's 7/28
+// Program-page rev (Jay): the blurbs + session bullets are Program-page LITERALS here — they intentionally read
+// differently from the per-session canvas summaries (lib/content/summaries.ts), which are unchanged.
 const RING: Record<string, string> = { reconnect: '#374f63', rewire: '#3b9495', rebuild: '#919536', reclaim: '#ec6233' };
 
-type PhaseRow = { key: string; num: number; name: string; tagline: string; blurb: string; sessions: string[]; reveal?: string; coming: boolean };
+type PhaseRow = { key: string; num: number; name: string; blurb: string; sessions: string[]; reveal?: string; coming: boolean };
 
 const PHASES: PhaseRow[] = [
   {
-    key: 'reconnect', num: 1, name: 'Reconnect', tagline: 'find who you are again',
-    blurb: phaseSummary('reconnect').short,
-    sessions: routeSessions('reconnect'),
-    reveal: 'the Threshold Ceremony — the earned reveal, and Rewire lights up.',
+    key: 'reconnect', num: 1, name: 'Reconnect',
+    blurb: 'Think about who you were before life got in the way.',
+    sessions: [
+      'Doors — identify the doors you walked through that caused you to Fade',
+      'IDQ — Measure the distance between who you are and who you want to be',
+      'Visioning — See your drift clearly, then put words to who you’re becoming.',
+      'Checkpoint — take stock of how it’s going, see progress in your Grinta Index',
+    ],
+    reveal: 'Ceremony — the earned reveal, move to Rewire',
     coming: false,
   },
   {
-    key: 'rewire', num: 2, name: 'Rewire', tagline: 'retrain your mind',
-    blurb: phaseSummary('rewire').short,
-    sessions: routeSessions('rewire'),
+    key: 'rewire', num: 2, name: 'Rewire',
+    blurb: 'Rewire your brain to do the work. You’ll identify the stories your mind uses to keep you comfortable, and build new ones you can act on and affect change.',
+    sessions: [
+      'Disinformation Audit — Catch the reasonable-sounding lies that keep you stuck — and craft answers to dispel them.',
+      'Visualization Workshop — Build a picture of who you’re becoming vivid enough to pull you forward.',
+      'False Start Protocol — Learn to notice a slip early and clip back in fast.',
+      'Checkpoint — take stock of how it’s going, see progress in your Grinta Index',
+    ],
     coming: false,
   },
   {
-    key: 'rebuild', num: 3, name: 'Rebuild', tagline: 'rebuild your body',
-    blurb: phaseSummary('rebuild').short,
-    sessions: routeSessions('rebuild'),
+    key: 'rebuild', num: 3, name: 'Rebuild',
+    blurb: 'A focus on your physical body and eating habits is an important part of increasing healthspan. Explore where you are right now, practice small, real, repeatable exercises that can get you there.',
+    sessions: [
+      'What’s Your Why? — Find your reasons to care for your body.',
+      'Strengths & Weaknesses — Evaluate your skills that can make change stick.',
+      'The Lifestyle Pilot — Watch your everyday choices for a week and learn how your lifestyle actually works.',
+      'Checkpoint.',
+    ],
     coming: false,
   },
   {
-    key: 'reclaim', num: 4, name: 'Reclaim', tagline: 'reclaim your life',
-    blurb: phaseSummary('reclaim').short,
-    sessions: routeSessions('reclaim'),
+    key: 'reclaim', num: 4, name: 'Reclaim',
+    blurb: 'Grow into a bigger life as who you want to be.',
+    sessions: [
+      'Readiness Assessment — Revisit your Reclaim List now that you know yourself better.',
+      'Bigger World Audit — Check in on how your world has expanded from where you started',
+      'Quality Days — Track the days that feel like the life you’re building.',
+      'Transition — your Success Story',
+    ],
     coming: false,
   },
 ];
@@ -98,7 +94,7 @@ export default async function ProgramPage({
 
   return (
     <SubpageShell memberId={memberId}>
-      <div className="hero"><h1>The Program</h1></div>
+      <div className="hero"><h1>Program</h1></div>
       {sessionBack && (
         <Link href={sessionBack} className="ws-back program-session-back">← Session</Link>
       )}
@@ -122,9 +118,8 @@ export default async function ProgramPage({
       )}
 
       <div className="card sub-copy">
-        <h3>The whole route</h3>
-        <p>Grinta for Life runs through four Phases, as a loop — Reconnect, Rewire, Rebuild, Reclaim — and it comes back around, because identity slips and life keeps moving. That’s why it’s <em>for life</em>.</p>
-        <p>Every Phase has the same shape: <strong>three Sessions</strong> (each a guided conversation, not a worksheet), then a <strong>Checkpoint</strong> where your Grinta updates, then an <strong>earned reveal</strong> that lights the next Phase. You go one Session at a time, at your own pace.</p>
+        <p>The Grinta for Life program has four phases—Reconnect, Rewire, Rebuild, Reclaim—and infinite loops, because identity slips and life keeps moving. That’s why it’s <em>for life</em>.</p>
+        <p>Every Phase has three Sessions (each a guided conversation with your AI G4L Companion), some work, a Checkpoint, and an earned reveal that moves you to the next Phase. You go one Session at a time, at your own pace.</p>
 
         <div className="route">
           {PHASES.map((p) => {
@@ -134,7 +129,7 @@ export default async function ProgramPage({
               <section key={p.key} className={`route-phase${here ? ' here' : ''}${p.coming ? ' coming' : ''}`} style={{ ['--ring' as string]: RING[p.key] }}>
                 <div className="route-phase-head">
                   <span className="route-dot" style={{ background: RING[p.key] }} />
-                  <h4>Phase {p.num} · {p.name} — {p.tagline}</h4>
+                  <h4>Phase {p.num} · {p.name}</h4>
                   {here && <span className="route-tag here-tag">You’re here</span>}
                   {done && !here && <span className="route-tag done-tag">Done</span>}
                   {p.key === 'reclaim' && !reclaimReady.ready && !here && !done ? (

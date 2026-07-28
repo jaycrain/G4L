@@ -21,7 +21,7 @@ export default function ConnectSettings({
         <label htmlFor="handle">Your handle</label>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 4 }}>
           <input id="handle" name="handle" defaultValue={handle ?? ''} placeholder="e.g. uphill_again" style={{ flex: 1 }} />
-          <button type="submit" className="btn-pill">Save handle</button>
+          <button type="submit" className="btn-pill btn-rect">Save handle</button>
         </div>
         <p className="muted" style={{ fontSize: '0.85rem', marginTop: 6 }}>
           Your name in the Community. You start anonymous — others see this, not your real name. 3–20 letters, numbers, or underscores.
@@ -33,7 +33,7 @@ export default function ConnectSettings({
           <input type="checkbox" name="revealDefault" defaultChecked={revealDefault} />
           Post under my real name ({myName}) by default
         </label>
-        <button type="submit" className="btn-pill" style={{ marginTop: '0.7rem' }}>Save default</button>
+        <button type="submit" className="btn-pill btn-rect" style={{ marginTop: '0.7rem' }}>Save default</button>
       </form>
 
       <div>

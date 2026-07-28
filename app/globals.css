@@ -240,7 +240,7 @@ button:hover, .btn:hover { background: var(--navy); }
 /* Match the pill shape the rest of the account page uses (Save, etc.) — applies to both the
    teal "Add/Change photo" and the grey btn-secondary "Remove" so they stay consistent with each
    other. Colors come from the base/btn-secondary rules; this only sets the pill geometry. */
-.avatar-edit-actions button { margin: 0; border-radius: 20px; padding: 0.45rem 1rem; font-size: 0.85rem; }
+.avatar-edit-actions button { margin: 0; border-radius: 8px; padding: 0.45rem 1rem; font-size: 0.85rem; }
 .member-greeting-link { display: flex; align-items: center; gap: 0.75rem; text-decoration: none; }
 .member-greeting-link:hover .greeting { color: var(--teal); }
 .greeting-actions { margin-left: auto; display: flex; align-items: center; gap: 0.9rem; }
@@ -839,6 +839,9 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .btn-pill:hover { background: #347f80; }
 .connect-cta:disabled, .btn-pill:disabled { opacity: 0.45; cursor: default; }
 .btn-pill:disabled:hover { background: var(--teal); }
+/* Shape modifier — rounded RECTANGLE instead of pill (matches the default/"Turn on notifications" button). Used on the
+   Account Settings action buttons so they read consistent (Donna, 2026-07-28). Kept off global .btn-pill (Connect/etc.). */
+.btn-rect { border-radius: 8px; }
 .connect-cta:disabled:hover { text-decoration: none; }
 .id-card .dim { display: flex; justify-content: space-between; gap: 0.4rem; font-size: 0.8rem; padding: 0.22rem 0; border-top: 1px solid var(--light-grey); }
 .id-card .dim span { white-space: nowrap; }
@@ -1264,10 +1267,8 @@ body.redesign-on .confidential-footer { display: none; } /* full-bleed app — n
 .rt-wordmark { height: 30px; width: auto; display: block; flex: none; }
 .rt-who { display: flex; align-items: center; gap: 26px; }
 /* Avatar + greeting + Log out ride together as one right-aligned cluster (like the prior dashboard). */
-.rt-account-group { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.rt-account-group { display: flex; align-items: center; gap: 12px; }
 .rt-account { display: flex; align-items: center; gap: 10px; text-decoration: none; }
-.rt-story { font-weight: 600; font-size: 12.5px; color: var(--teal); text-decoration: none; white-space: nowrap; } /* the My Story nav, tucked under the avatar */
-.rt-story:hover { text-decoration: underline; }
 .rt-av { width: 34px; height: 34px; border-radius: 50%; object-fit: cover; }
 .rt-av-initials { background: var(--teal); color: #fff; display: grid; place-items: center; font-weight: 700; font-size: 13px; }
 .rt-hi { font-weight: 700; color: var(--navy); }

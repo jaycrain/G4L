@@ -70,7 +70,7 @@ export default function StravaConnect({ connected, athleteName, configured, show
       </label>
       <button
         type="button"
-        className="btn-pill"
+        className="btn-pill btn-rect"
         disabled={!consented}
         onClick={() => {
           window.location.href = '/api/activity/strava/connect?consent=1';

@@ -92,9 +92,6 @@ export default function DashboardTriptych({
                 <span className="rt-av rt-av-initials" aria-hidden="true">{initials(displayName)}</span>
               )}
             </Link>
-            {hasStory && (
-              <Link href={`/story/${memberId}`} className="rt-story" prefetch={false}>My Story →</Link>
-            )}
           </span>
         </div>
       </div>
@@ -107,6 +104,9 @@ export default function DashboardTriptych({
             <div className="tri-member-id">
               <span className="tri-member-name">Hi {firstName}!</span>
               {identitySelves && <span className="tri-member-reclaim">Reclaiming {identitySelves}</span>}
+              {hasStory && (
+                <Link href={`/story/${memberId}`} className="tri-member-story" prefetch={false}>My Story →</Link>
+              )}
             </div>
           </div>
         )}
