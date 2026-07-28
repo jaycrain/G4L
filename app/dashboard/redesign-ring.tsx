@@ -27,7 +27,10 @@ const PHASE_COLOR_DARK: Record<string, string> = {
 // (reclaim) the innermost (see the radius lookup below). Fixed coordinate space; `size` only scales the SVG.
 const RADII = [34, 56, 78, 96];
 const STROKE = 9;
-const VIEW = 206; // coordinate space; = 2·(96 + 9/2) + a couple units so the outer ring's stroke never touches the edge.
+// The outer (Reconnect) ring gets a slightly heavier stroke so it reads as thick as the inner rings — the same 9px on
+// the largest radius looks proportionally slimmer, and the darker navy carries less contrast on the navy hero.
+const OUTER_STROKE = 11;
+const VIEW = 208; // coordinate space; = 2·(96 + 11/2) + a couple units so the outer ring's stroke never touches the edge.
 
 export default function RedesignRing({
   rings,
@@ -53,13 +56,14 @@ export default function RedesignRing({
         // OUTSIDE-IN: reconnect (i=0) → outermost radius, reclaim (i=3) → innermost. rings is always the 4 phases in
         // order (deriveRingState maps PHASES), so `RADII.length - 1 - i` walks the radii from outer to inner.
         const radius = RADII[RADII.length - 1 - i] ?? RADII[0]!;
+        const strokeW = i === 0 ? OUTER_STROKE : STROKE; // outermost (Reconnect) a touch heavier so it reads matched
         const color = colors[r.phase] ?? colors.reconnect!;
         const circ = 2 * Math.PI * radius;
         // On dark, lift the ahead/current base opacities so upcoming rings still read against the navy.
         const baseOpacity = r.state === 'done' ? 1 : r.state === 'current' ? (onDark ? 0.34 : 0.22) : (onDark ? 0.24 : 0.14);
         return (
           <g key={r.phase}>
-            <circle cx={cx} cy={cy} r={radius} fill="none" stroke={color} strokeWidth={STROKE} opacity={baseOpacity} />
+            <circle cx={cx} cy={cy} r={radius} fill="none" stroke={color} strokeWidth={strokeW} opacity={baseOpacity} />
             {r.state === 'current' && r.fill > 0 && (
               <circle
                 cx={cx}
@@ -67,7 +71,7 @@ export default function RedesignRing({
                 r={radius}
                 fill="none"
                 stroke={color}
-                strokeWidth={STROKE}
+                strokeWidth={strokeW}
                 strokeLinecap="round"
                 transform={`rotate(-90 ${cx} ${cy})`}
                 strokeDasharray={`${circ * Math.min(1, r.fill)} ${circ}`}
