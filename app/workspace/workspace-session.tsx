@@ -54,19 +54,12 @@ export default function WorkspaceSession({
 }) {
   const [artifact, setArtifact] = useState<Artifact>(initial);
   const summary = sessionSummary(sessionKey);
-  // Open on landing (#18E): the member should see WHY this Session matters before diving in, not have to hunt for it.
-  // But it's tall — on a PHONE it ate the whole screen and squeezed the chat to an unreadable sliver, stranding the
-  // member on the tail of a message with no visible question (Jennifer's walk, 2026-07-27). The first fix collapsed it
-  // on scroll, but a phone member has no reason to scroll (the composer is already in view), so it stayed open. Real
-  // fix: on a phone, start COLLAPSED — the pinned "Why this matters ▶" pill (the header never scrolls) invites a tap;
-  // the chat gets full height immediately. Desktop/tablet keep open-on-landing + collapse-on-scroll below.
-  const [whyOpen, setWhyOpen] = useState(true);
+  // "Why this matters" starts COLLAPSED at every width now (Jay 7/28): the conversation is the point, so it gets full
+  // height immediately; the pinned "Why this matters ▶" pill (the header never scrolls) invites a tap to read the
+  // framing, which the Companion's opening beat echoes anyway. (Was open-on-landing, which squeezed the chat — worst on
+  // a phone, where it stranded the member on a question-less tail; Jennifer's walk, 2026-07-27.)
+  const [whyOpen, setWhyOpen] = useState(false);
   const bodyRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    // Phone: default collapsed so the conversation isn't squeezed. Runs once after mount (SSR renders open → matches
-    // on hydrate, then this tucks it away before the member reads). matchMedia keeps the breakpoint in one place.
-    if (typeof window !== 'undefined' && window.matchMedia('(max-width: 700px)').matches) setWhyOpen(false);
-  }, []);
   useEffect(() => {
     if (review) return;
     const el = bodyRef.current;

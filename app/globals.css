@@ -1257,7 +1257,7 @@ body.redesign-on .back-dash,
 body.redesign-on .confidential-footer { display: none; } /* full-bleed app — no page-scroll under the fixed topbar */
 
 .redesign-topbar {
-  position: sticky; top: 0; z-index: 5; height: 64px;
+  position: sticky; top: 0; z-index: 5; height: 56px;
   display: flex; align-items: center; justify-content: space-between;
   padding: 0 32px; border-bottom: 1px solid #e3e2df; background: var(--white);
 }
@@ -1468,8 +1468,8 @@ body.redesign-on .confidential-footer { display: none; } /* full-bleed app — n
    the phone). */
 /* "Why this matters" — a visible tappable PILL, not a plain label (Jay missed it for 3 sessions when it was tiny text).
    Fills teal when open so the open/closed state reads. */
-.ws-why { margin-top: 10px; }
-.ws-why-toggle { padding: 8px 15px; background: #E8E6E6; border: 1px solid var(--teal); border-radius: 100px; cursor: pointer; font-family: inherit; font-size: 12.5px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: var(--teal); display: inline-flex; align-items: center; gap: 7px; }
+.ws-why { margin-top: 8px; }
+.ws-why-toggle { padding: 6px 13px; background: #E8E6E6; border: 1px solid var(--teal); border-radius: 100px; cursor: pointer; font-family: inherit; font-size: 12.5px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: var(--teal); display: inline-flex; align-items: center; gap: 7px; }
 .ws-why-toggle:hover { background: #dedcdc; }
 .ws-why.open .ws-why-toggle { background: var(--teal); border-color: var(--teal); color: #fff; }
 .ws-why-caret { font-size: 14px; line-height: 1; margin-left: 1px; }
@@ -1491,16 +1491,24 @@ body.redesign-on .confidential-footer { display: none; } /* full-bleed app — n
 /* Fixed to the viewport below the 64px sticky topbar, so the CHAT scrolls internally and the header stays PINNED
    (min-height would let the column grow → the page scrolls → the header scrolls away). */
 .ws-col { max-width: 800px; margin: 0 auto; height: calc(100dvh - 64px); overflow: hidden; display: flex; flex-direction: column; padding: 0 22px; }
-.ws-col-head { flex: 0 0 auto; padding-top: 14px; border-bottom: 1px solid #ecebe8; }
-.ws-col-way { display: flex; align-items: center; gap: 12px; margin: 6px 0 4px; }
+.ws-col-head { flex: 0 0 auto; padding-top: 10px; border-bottom: 1px solid #ecebe8; }
+.ws-col-way { display: flex; align-items: center; gap: 12px; margin: 4px 0 3px; }
 .ws-way-back { flex: 0 0 auto; color: var(--teal); font-weight: 800; font-size: 20px; line-height: 1; text-decoration: none; }
 .ws-way-back:hover { color: var(--teal-d, #2f7a7b); }
 .ws-col-way .ws-way-ring { flex: 0 0 auto; }
 .ws-col-way .ws-way-pos { flex: 1 1 auto; min-width: 0; }
 .ws-col-way .ws-way-route { flex: 0 0 auto; }
+/* On a phone, compress the wayfinding row so the conversation starts higher (Jay 7/28): smaller progress ring +
+   tighter phase/session text. Desktop keeps the full 72px ring. */
+@media (max-width: 700px) {
+  .ws-col-way .ws-way-ring, .ws-col-way .ws-way-ring .redesign-ring { width: 46px !important; height: 46px !important; }
+  .ws-way-ph { font-size: 15px; }
+  .ws-way-ss { font-size: 13px; margin-top: 1px; }
+  .ws-way-bar { margin-top: 6px; }
+}
 /* Kept chips — the running "here's what you've accomplished" row, grows as the conversation commits answers. */
 /* One horizontal-scroll row (no wrap) so the running "kept" stays one line however many chips there are. */
-.ws-kept { display: flex; flex-wrap: nowrap; align-items: center; gap: 8px; margin: 10px 0 4px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+.ws-kept { display: flex; flex-wrap: nowrap; align-items: center; gap: 8px; margin: 6px 0 3px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
 .ws-kept::-webkit-scrollbar { display: none; }
 .ws-kept-lab { flex: 0 0 auto; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.07em; color: #6b7680; }
 .ws-kept-chip { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 600; color: var(--navy); background: #E8E6E6; border: 1px solid #dcdada; border-radius: 100px; padding: 4px 12px; }
@@ -1967,7 +1975,7 @@ body.redesign-on .confidential-footer { display: none; } /* full-bleed app — n
   .tri-member-reclaim { font-size: 13px; }
   /* Fixed compact height; buttons stretch to fill and center their text. The `margin: 0` is load-bearing — the global
      `button,.btn` rule sets margin-top:1.5rem, which was pushing every tab ~24px down and inflating the bar. */
-  .tri-seg { display: flex; align-items: stretch; gap: 4px; background: #eceae6; border-radius: 100px; padding: 3px; flex: 0 0 auto; height: 42px; box-sizing: border-box; }
+  .tri-seg { display: flex; align-items: stretch; gap: 4px; background: #eceae6; border-radius: 100px; padding: 2px; flex: 0 0 auto; height: 34px; box-sizing: border-box; }
   .tri-seg-btn { flex: 1; margin: 0; display: flex; align-items: center; justify-content: center; border: none; background: none; font-family: inherit; font-size: 13px; font-weight: 700; line-height: 1; color: #6b7680; padding: 0 6px; border-radius: 100px; cursor: pointer; white-space: nowrap; }
   .tri-seg-btn.on { background: var(--white); color: var(--navy); box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12); }
   .tri-main { flex-direction: column; gap: 0; }
@@ -2005,7 +2013,7 @@ body.redesign-on .confidential-footer { display: none; } /* full-bleed app — n
      names the phase, so drop the ring's center label at this size. */
   .tri-hero { align-items: flex-start; gap: 14px; padding: 16px 20px; }
   .tri-hero-title { font-size: 22px; }
-  .tri-hero-ring .redesign-ring { width: 76px !important; height: 76px !important; }
+  .tri-hero-ring .redesign-ring { width: 58px !important; height: 58px !important; }
   /* Collapse-after-first-message: once conversing, the hero is a one-line strip (eyebrow + CTA), keeper hidden — the
      thread owns the screen. First visit (no member message yet) keeps the full hero. Desktop is unaffected. */
   .tri-companion.is-conversing .tri-hero { align-items: center; padding: 12px 20px; gap: 12px; }
@@ -2034,10 +2042,23 @@ body.redesign-on .confidential-footer { display: none; } /* full-bleed app — n
 .tri-hero-program:hover { color: #fff; text-decoration: underline; }
 .tri-hero-ring { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; gap: 8px; }
 
-/* The surfaced keeper — the member's own kept line, held in the Companion's voice (olive edge, translucent). */
-.tri-keeper { margin: 16px 24px 0; padding: 13px 16px; background: rgba(255, 255, 255, 0.05); border-left: 3px solid var(--olive); border-radius: 0 10px 10px 0; }
-.tri-keeper-eyebrow { font-size: 10.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: rgba(255, 255, 255, 0.55); }
-.tri-keeper-body { margin: 6px 0 0; font-size: 15px; line-height: 1.45; font-style: italic; color: #f0f3f6; }
+/* Once the member starts talking, the guiding hero collapses to a slim strip (eyebrow + CTA) so the CONVERSATION owns
+   the column — at EVERY width now (was mobile-only; Jay 7/28: the thread is the point, give it the room on desktop too).
+   The full hero returns on a fresh visit / resume. */
+.tri-companion.is-conversing .tri-hero-title,
+.tri-companion.is-conversing .tri-hero-copy,
+.tri-companion.is-conversing .tri-hero-program,
+.tri-companion.is-conversing .tri-hero-ring,
+.tri-companion.is-conversing .tri-keeper { display: none; }
+.tri-companion.is-conversing .tri-hero { align-items: center; padding-top: 14px; padding-bottom: 12px; gap: 12px; }
+.tri-companion.is-conversing .tri-hero-ctarow { margin-top: 0; }
+.tri-companion.is-conversing .tri-hero-eyebrow { margin-bottom: 4px; }
+
+/* The surfaced keeper — the member's own kept line, held in the Companion's voice (olive edge, translucent).
+   Compacted (Jay 7/28) so it costs fewer pixels below the CTA before the member starts talking. */
+.tri-keeper { margin: 10px 24px 0; padding: 9px 14px; background: rgba(255, 255, 255, 0.05); border-left: 3px solid var(--olive); border-radius: 0 10px 10px 0; }
+.tri-keeper-eyebrow { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: rgba(255, 255, 255, 0.55); }
+.tri-keeper-body { margin: 3px 0 0; font-size: 14px; line-height: 1.4; font-style: italic; color: #f0f3f6; }
 
 /* Triptych flank stacks — the panels moved as-is, stacked in the 280px column. */
 .tri-stack { display: flex; flex-direction: column; gap: 20px; }
