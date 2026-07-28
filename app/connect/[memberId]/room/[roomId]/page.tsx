@@ -8,6 +8,8 @@ import { getConnectProfile } from '../../../../../lib/connect/store.ts';
 import { CRISIS_RESPONSE_US } from '../../../../../lib/agent/governance.ts';
 import RoomChat from './room-chat.tsx';
 import { closeRoomAction } from '../../../actions.ts';
+import RedesignChrome from '../../../../dashboard/redesign-chrome.tsx';
+import RedesignTopbar from '../../../../dashboard/redesign-topbar.tsx';
 import type { Db } from '../../../../../lib/db/schema.ts';
 
 export const metadata = { title: 'Live room — G4L Community' };
@@ -27,6 +29,9 @@ export default async function RoomPage({ params }: { params: Promise<{ memberId:
 
   return (
     <>
+      <RedesignChrome />
+      <RedesignTopbar memberId={memberId} />
+      <div className="subpage-wrap">
       <div className="crumb">
         <Link href={`/connect/${memberId}`} className="back-link">← G4L Community</Link>
       </div>
@@ -52,6 +57,7 @@ export default async function RoomPage({ params }: { params: Promise<{ memberId:
         handle={profile?.handle ?? null}
         crisisText={CRISIS_RESPONSE_US}
       />
+      </div>
     </>
   );
 }

@@ -14,6 +14,7 @@ import {
 import { composeAction, replyAction, cheerAction, checkInAction, reportAction, blockAction, markAllReadAction, createRoomAction } from '../actions.ts';
 import { listOpenRooms } from '../../../lib/connect/rooms.ts';
 import { CRISIS_RESPONSE_US } from '../../../lib/agent/governance.ts';
+import SubpageShell from '../../dashboard/subpage-shell.tsx';
 import type { Db } from '../../../lib/db/schema.ts';
 
 export const metadata = { title: 'G4L Community — Grinta for Life' };
@@ -60,7 +61,7 @@ export default async function ConnectPage({
   const revealDefault = profile?.revealDefault ?? false;
 
   return (
-    <>
+    <SubpageShell memberId={memberId}>
       <div className="hero">
         <h1>G4L Community</h1>
         <p className="heromore">Reach out. Share the wins and the hard parts. Keep each other honest.</p>
@@ -235,6 +236,6 @@ export default async function ConnectPage({
           ))
         )}
       </div>
-    </>
+    </SubpageShell>
   );
 }
