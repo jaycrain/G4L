@@ -609,7 +609,7 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .pb-empty { font-size: 0.92rem; color: var(--muted, #6B7680); line-height: 1.55; margin: 0.2rem 0 0; font-style: italic; }
 .pb-edit textarea, .pb-add textarea { width: 100%; resize: vertical; font: inherit; padding: 0.5rem 0.65rem; border: 1px solid var(--field-line); border-radius: 8px; }
 .pb-add { margin-top: 0.6rem; display: flex; flex-direction: column; gap: 0.5rem; align-items: flex-start; }
-.pb-add .pb-btn { align-self: flex-end; }
+.pb-add .pb-btn { align-self: flex-end; border-radius: 8px; } /* Add note → rounded rectangle (Donna, 2026-07-28) */
 .pb-foot { font-size: 0.85rem; color: var(--muted, #6B7680); line-height: 1.55; max-width: 42rem; margin-top: 0.5rem; }
 .pb-gather-cta { background: rgba(59,148,149,0.07); border: 1px solid var(--teal); border-radius: 14px; padding: 1.1rem 1.25rem; margin-bottom: 1rem; }
 .pb-gather-cta p { margin: 0 0 0.7rem; color: var(--navy); font-weight: 600; }
@@ -1330,9 +1330,9 @@ body.redesign-on .confidential-footer { display: none; } /* full-bleed app — n
 .rm-seeall { color: var(--teal); font-weight: 700; font-size: 13px; text-decoration: none; }
 .rm-sources { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
 .rm-chip { display: inline-flex; align-items: center; gap: 8px; background: #f5f4f1; border: 1px solid #e3e2df;
-  border-radius: 100px; padding: 6px 12px; font-size: 13px; font-weight: 600; color: var(--navy); }
+  border-radius: 8px; padding: 6px 12px; font-size: 13px; font-weight: 600; color: var(--navy); }
 .rm-chip.on { background: #eef0dc; border-color: #d4d8b0; }
-.rm-chip b { background: var(--olive); color: #fff; font-size: 11px; padding: 3px 9px; border-radius: 100px; font-weight: 700; }
+.rm-chip b { background: var(--olive); color: #fff; font-size: 11px; padding: 3px 9px; border-radius: 6px; font-weight: 700; }
 .rm-chip b.muted { background: #fff; color: #6b7680; border: 1px solid #e3e2df; }
 .rm-chip.muted { color: #6b7680; }
 .rm-stats { display: flex; gap: 26px; margin-top: 16px; border-top: 1px solid #e3e2df; padding-top: 14px; color: #6b7680; font-size: 12px; }

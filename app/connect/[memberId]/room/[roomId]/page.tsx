@@ -32,18 +32,18 @@ export default async function RoomPage({ params }: { params: Promise<{ memberId:
       <RedesignChrome />
       <RedesignTopbar memberId={memberId} />
       <div className="subpage-wrap">
-      <div className="crumb">
+      {/* Crumb row (outside the navy hero) carries both page-level controls: the one back-nav, and — for the owner of
+          an open room — the Close-room action, right-aligned, no arrow (Jay 7/28). */}
+      <div className="crumb" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
         <Link href={`/connect/${memberId}`} className="back-link">← G4L Community</Link>
+        {room.createdBy === memberId && room.status === 'open' && (
+          <form action={closeRoomAction.bind(null, roomId)}>
+            <button type="submit" className="connect-cta" style={{ whiteSpace: 'nowrap' }}>Close room</button>
+          </form>
+        )}
       </div>
       <div className="hero">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12 }}>
-          <h1 style={{ margin: 0 }}>{room.title}</h1>
-          {room.createdBy === memberId && room.status === 'open' && (
-            <form action={closeRoomAction.bind(null, roomId)}>
-              <button type="submit" className="connect-cta" style={{ whiteSpace: 'nowrap' }}>Close room →</button>
-            </form>
-          )}
-        </div>
+        <h1 style={{ margin: 0 }}>{room.title}</h1>
         <p className="heromore">
           {room.status === 'closed' ? 'This room is closed. ' : ''}Be honest and supportive. Commiserate kindly.
         </p>

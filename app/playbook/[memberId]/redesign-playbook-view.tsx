@@ -23,11 +23,11 @@ type ChapterKey = 'who' | 'lights' | 'tells' | 'plays' | 'why';
 // Plays lead — they're the heart of an operating manual (Jay: the Playbook's real value is "how did I handle this
 // before?"). The rest follow: who you are, what lights you up, your tells, why it works.
 const CHAPTERS: { key: ChapterKey; title: string; sub: string; empty: string }[] = [
-  { key: 'plays', title: 'Your plays', sub: 'Your true lines and recovery moves — reach for them when it’s hard.', empty: 'Your reframes and comeback moves get kept here — your go-to plays.' },
-  { key: 'who', title: 'Who you are', sub: 'The selves you’re reclaiming — named in your words.', empty: 'The identities you reclaim land here as you name them.' },
-  { key: 'lights', title: 'What lights you up', sub: 'The fuel — what’s still alive in you.', empty: 'What still moves you gets kept here — your spark, in your words.' },
+  { key: 'plays', title: 'Your plays', sub: 'A reference of what is truly working for you.', empty: 'Your reframes and comeback moves get kept here — your go-to plays.' },
+  { key: 'who', title: 'Who you are', sub: 'A reminder of who you were, and who you hope to be again.', empty: 'The identities you reclaim land here as you name them.' },
+  { key: 'lights', title: 'What lights you up', sub: 'Where you found excitement and motivation. What moves you gets kept here.', empty: 'What still moves you gets kept here — your spark, in your words.' },
   { key: 'tells', title: 'Your tells', sub: 'The patterns worth catching early.', empty: 'The signs you’re drifting land here, so you can catch them sooner.' },
-  { key: 'why', title: 'Why it works', sub: 'The science that convinced you — in plain language, not the whole textbook.', empty: 'The few facts that actually land for you get kept here, plainly.' },
+  { key: 'why', title: 'Why it works', sub: 'The science that convinced you, in plain language.', empty: 'Facts that resonated with you get kept here.' },
 ];
 const CHAPTER_LABEL: Record<ChapterKey, string> = { who: 'Who you are', lights: 'Lights you up', tells: 'Your tells', plays: 'Your plays', why: 'Why it works' };
 
@@ -185,7 +185,7 @@ export default function RedesignPlaybookView({
     <>
       {/* Navy hero banner — same treatment every other subpage carries (Jay's walk: Playbook was missing it). */}
       <div className="hero"><h1>G4L Playbook</h1></div>
-      <p className="pb-sub">Everything that works for you, in one place — the plays you reach for when you need them.</p>
+      <p className="pb-sub">Find inspiration, confidence, and strength based on the real work you’re doing — most of it in your own words. Your Companion keeps these here for you as you go through.</p>
 
       {gathering ? (
         <div className="pb-gather"><span className="typing">Gathering from your work…</span></div>

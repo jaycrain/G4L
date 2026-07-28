@@ -60,14 +60,10 @@ export default function StravaConnect({ connected, athleteName, configured, show
 
   return (
     <div>
-      <p className="muted">
-        Connect your Strava so your movement shows up here — rides, runs, walks: quiet evidence of the work
-        coming back in your body. We sync the activity type, distance, time, and date. Nothing is graded, and
-        you can disconnect or delete it anytime.
-      </p>
+      <p className="muted">Connect Strava so activities show up here.</p>
       <label className="muted" style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start', margin: '0.75rem 0' }}>
         <input type="checkbox" checked={consented} onChange={(e) => setConsented(e.target.checked)} />
-        <span>I consent to G4L syncing my Strava activity to show on my dashboard.</span>
+        <span>I consent to G4L syncing my Strava activity to my dashboard.</span>
       </label>
       <button
         type="button"
