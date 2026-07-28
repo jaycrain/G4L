@@ -73,21 +73,27 @@ try {
   const memberId = url.match(/\/dashboard\/([0-9a-f-]+)/i)?.[1];
   check(!!memberId, 'login → dashboard', url);
 
-  // 2. Dashboard renders with the renamed panel + the companion.
-  const header = (await page.locator('[data-tour="program"] h3').first().textContent({ timeout: 15000 }))?.trim();
-  check(header === 'The Program', 'dashboard "The Program" panel', header || 'missing');
-  const companion = await page.locator('.companion-hero, .companion-rail, [class*="companion"]').count();
+  // 2. Dashboard renders: the program hero + a session title + the centered Companion (triptych, v3.2).
+  check((await page.locator('[data-tour="program"]').count()) > 0, 'dashboard program hero present');
+  const heroTitle = (await page.locator('.tri-hero-title').first().textContent({ timeout: 15000 }).catch(() => null))?.trim();
+  check(!!heroTitle, 'dashboard hero session title', heroTitle || 'missing');
+  const companion = await page.locator('[data-tour="companion"], [class*="companion"]').count();
   check(companion > 0, 'companion present');
 
-  // 3. Sub-pages render with the rename.
+  // 3. Sub-pages render (headings reflect the consolidated terminology: "Program", not "The Program").
   if (memberId) {
     await open(`/program/${memberId}`);
     const h1 = (await page.locator('h1').first().textContent())?.trim();
-    check(h1 === 'The Program', '/program heading', h1 || 'missing');
+    check(h1 === 'Program', '/program heading', h1 || 'missing');
 
     await open(`/field-guide/${memberId}`);
-    const fg = await page.locator('.fg-pieces', { hasText: 'The Program' }).count();
-    check(fg > 0, '/field-guide "The Program" entry');
+    const fgH1 = (await page.locator('h1').first().textContent())?.trim();
+    check(fgH1 === 'Field Guide', '/field-guide heading', fgH1 || 'missing');
+
+    // The first-class subpages the triptych elevated — each must render for a logged-in member (open() asserts <400).
+    for (const sub of ['score', 'grinta', 'reclaim-list', 'movement', 'badges', 'playbook']) {
+      await open(`/${sub}/${memberId}`);
+    }
   }
 
   // 4. No server errors anywhere in the run.
