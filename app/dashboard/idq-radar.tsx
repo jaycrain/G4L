@@ -45,13 +45,13 @@ export default function IdqRadar({
 
   return (
     <svg viewBox={`0 0 ${vw} ${size}`} width="100%" style={{ maxWidth: vw, height: 'auto', display: 'block', margin: '0 auto' }} role="img" aria-label={a11y}>
-      {/* grid rings + spokes */}
+      {/* grid rings + spokes — grey lines the SAME thickness as the teal shape below (Donna, 2026-07-28) */}
       {[1 / 3, 2 / 3, 1].map((lvl, i) => (
-        <polygon key={i} points={gridRing(lvl)} fill="none" stroke="#E8E6E6" strokeWidth={1} />
+        <polygon key={i} points={gridRing(lvl)} fill="none" stroke="#E8E6E6" strokeWidth={3.5} />
       ))}
       {AXES.map((ax) => {
         const [x, y] = at(ax.angle, r);
-        return <line key={ax.key} x1={cx} y1={cy} x2={x} y2={y} stroke="#E8E6E6" strokeWidth={1} />;
+        return <line key={ax.key} x1={cx} y1={cy} x2={x} y2={y} stroke="#E8E6E6" strokeWidth={3.5} />;
       })}
 
       {/* previous IDQ — faint dashed OUTLINE (no fill), so the current shape reads as having grown out from it */}

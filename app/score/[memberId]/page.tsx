@@ -44,10 +44,10 @@ export default async function ScoreMorePage({ params }: { params: Promise<{ memb
         {dash?.score && (
           <p className="sub-personal">Your ID Score right now is <strong>{Math.round(dash.score.score)}</strong>. {dash.score.context}</p>
         )}
-        <p>Your ID Score is the mirror — and like any mirror, it won’t flatter you and it won’t lie. It’s a single 0–100 read of how close you are to the person you’re reclaiming, drawn from four corners of a life.</p>
+        <p>Your ID Score is a 0–100 read of how close you are to the person you’re reclaiming, drawn from four corners of a life.</p>
 
         <h3>The shape of you</h3>
-        <p>Identity isn’t one number — it’s a shape. Your score is built from four dimensions, and seeing them together shows you where you’re whole and where the distance runs widest.</p>
+        <p>Your score is built from four dimensions. Seeing them together shows you where you’re whole and where the distance runs widest.</p>
 
         {dims && (
           <div className="radar-wrap">
@@ -68,16 +68,15 @@ export default async function ScoreMorePage({ params }: { params: Promise<{ memb
           ))}
         </dl>
 
-        <p>Each is scored out of 30. Together they make the 0–100 number at the top (for example, 74 out of a possible 120 reads as 62). The big number is the whole picture; the four beneath it are the map — and a low one isn’t a failing grade, it’s a sign of where the work will pay off most.</p>
-        <p className="muted"><em>How to use it:</em> when one dimension sits low, ask your Companion what to do about it — it’ll point you toward the Sessions and goals that move that corner.</p>
+        <p>The big number is the whole picture; the four beneath it are the map. A lower number is a sign of where the work will pay off most.</p>
 
         <h3>Why it moves slowly</h3>
-        <p>It comes from the IDQ — twenty-four questions you answer about every 60 days. That pace is on purpose. Who you are doesn’t lurch from week to week, so neither should this. The ID Score is built to move slowly, so that when it does move, you know you earned it — real change, not a good night’s sleep.</p>
-        <p>So don’t chase it daily; you won’t catch it moving, and that’s the point. Do the reps, and let the next IDQ tell the truth. When the number climbs, that isn’t a better score — it’s more of you, back.</p>
+        <p>Your ID Score comes from taking the IDQ — twenty-four questions you answer about every 60 days. That pace is on purpose. Who you are doesn’t lurch from week to week, so neither should this. The ID Score is built to move slowly, so that when it does move, you know you earned it. It reflects real change, not just a good night’s sleep.</p>
+        <p>Do the reps, and let the next IDQ tell the truth. When the number climbs, it’s more of you, back.</p>
 
-        <h3>The mirror and the grit</h3>
-        <p>Your ID Score moves slowly; your Grinta Index moves with the work. Watch them side by side: the grit is how hard you’re working, the mirror is how reconnected you feel. They’re two true pictures of the same comeback — we keep both honest and let you see them rise together.</p>
-        <p>Sixty days from now, this number gets to tell a different story. The space in between is where you write it.</p>
+        <h3>Closing the distance and the grit</h3>
+        <p>Watch your ID Score and Grinta Index side-by-side: the grit is how hard you’re working, the ID Score is how reconnected you feel over time. They’re two true pictures of the same Comeback.</p>
+        <p>Sixty days from now, this number will tell a different story. The space in between is where you do the work to get it there.</p>
       </div>
     </SubpageShell>
   );

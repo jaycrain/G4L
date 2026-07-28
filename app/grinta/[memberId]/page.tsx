@@ -63,21 +63,14 @@ export default async function GrintaMorePage({ params }: { params: Promise<{ mem
 
         <h3>What it measures</h3>
         <p>
-          Your Grinta is built from four parts, one for each Phase — Reconnect, Rewire, Rebuild, Reclaim. You get a
-          first reading of all four at the start, and each part grows as you finish its Phase.
+          Your Grinta Index is a gauge of the hardiness, grit and determination built from doing the work in the G4L program.
         </p>
 
         <h3>How it grows</h3>
         <p>
-          It isn’t a daily score and it isn’t a grade. It’s summative — it moves when you complete a Phase’s
-          Checkpoint, not day to day. Close the whole loop and you’ve built something that holds. It’s yours alone —
-          your own scale, not a curve, not a comparison.
-        </p>
-        <p>
-          Your Grinta won’t only climb. At a Checkpoint you might rate yourself a little lower than before — and that’s
-          not a step back. It usually means you’re seeing yourself more clearly than you could at the start. An honest
-          read you can build from beats a flattering one you can’t. Over the whole loop the work compounds; a single
-          Checkpoint is just a truer snapshot.
+          The Index moves when you complete a Checkpoint at the end of each Phase. Your number might fluctuate depending
+          on how you answer questions. That’s not a step back. It means you’re seeing yourself more clearly than you
+          could at the start. An honest read you can build from beats a flattering one you can’t.
         </p>
       </div>
     </SubpageShell>
