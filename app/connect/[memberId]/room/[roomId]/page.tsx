@@ -40,8 +40,7 @@ export default async function RoomPage({ params }: { params: Promise<{ memberId:
           )}
         </div>
         <p className="heromore">
-          Live{room.status === 'closed' ? ' (closed)' : ''} — say what's true, keep each other honest. Messages here are
-          kept and can be reported, the same as everywhere in the Community.
+          {room.status === 'closed' ? 'This room is closed. ' : ''}Be honest and supportive. Commiserate kindly.
         </p>
       </div>
       <RoomChat

@@ -169,7 +169,7 @@ export default function RoomChat({
 
       <form onSubmit={send} style={{ marginTop: 10, display: 'flex', gap: 8 }}>
         <input type="text" value={input} onChange={(e) => setInput(e.target.value)} placeholder="Say something…" style={{ flex: 1 }} />
-        <button type="submit" className="btn-pill">Send <span aria-hidden="true">→</span></button>
+        <button type="submit" className="btn-pill btn-rect">Send <span aria-hidden="true">→</span></button>
       </form>
       <label className="muted" style={{ fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: 6, marginTop: 6 }}>
         <input type="checkbox" checked={showName} onChange={(e) => setShowName(e.target.checked)} /> Send under my real name ({myName})

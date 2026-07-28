@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { getDb } from '../../../lib/db/index.ts';
 import { authorizeMember } from '../../authz.ts';
@@ -31,8 +30,8 @@ export default async function ReclaimListPage({ params }: { params: Promise<{ me
       <div className="hero"><h1>Reclaim List</h1></div>
       <div className="card">
         <p className="card-subtitle">
-          What you’re taking back. These are your intentions — turn on a tracker to tie one to your Movement and watch it
-          come back. To add or refine the list itself, talk to your Companion.
+          What you’re taking back. These are your intentions. Talk to your Companion to add or refine the list or to add
+          a tracker.
         </p>
         {dash.reclaimItems.length === 0 ? (
           <p className="muted">Your list lands here once you name what you’re reclaiming with your Companion.</p>
@@ -74,11 +73,6 @@ export default async function ReclaimListPage({ params }: { params: Promise<{ me
         </div>
       )}
 
-      {/* Not a dead end — clear ways back. */}
-      <div className="momentum-nav">
-        <Link href={`/dashboard/${memberId}`} className="momentum-nav-primary">← Back to your path</Link>
-        <Link href={`/movement/${memberId}`} className="momentum-nav-secondary">See your Movement →</Link>
-      </div>
     </SubpageShell>
   );
 }

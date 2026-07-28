@@ -167,7 +167,7 @@ export default async function ConnectPage({
               <form action={replyAction.bind(null, p.id)} style={{ marginTop: 8, display: 'flex', gap: 8 }}>
                 <input type="hidden" name="showName" value={revealDefault ? 'on' : ''} />
                 <input type="text" name="body" required placeholder="Reply…" style={{ flex: 1 }} />
-                <button type="submit" className="btn-pill">Reply <span aria-hidden="true">→</span></button>
+                <button type="submit" className="btn-pill btn-rect">Reply <span aria-hidden="true">→</span></button>
               </form>
 
               <details style={{ marginTop: 8 }}>
@@ -205,7 +205,7 @@ export default async function ConnectPage({
                   {rm.hereNow > 0 ? `${rm.hereNow} here now · ` : ''}{rm.messageCount} message{rm.messageCount === 1 ? '' : 's'}
                 </p>
               </div>
-              <Link href={`/connect/${memberId}/room/${rm.id}`} className="btn-pill">Join <span aria-hidden="true">→</span></Link>
+              <Link href={`/connect/${memberId}/room/${rm.id}`} className="btn-pill btn-rect">Join <span aria-hidden="true">→</span></Link>
             </div>
           ))
         )}
