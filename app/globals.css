@@ -1386,7 +1386,7 @@ body.redesign-on .confidential-footer { display: none; } /* full-bleed app — n
 .rrail-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--olive); margin-right: 5px; vertical-align: 1px; }
 .rrail-discl { font-size: 11px; color: #6b7680; margin-top: 6px; line-height: 1.4; }
 .rrail-stream { flex: 1; overflow-y: auto; padding: 16px 20px; display: flex; flex-direction: column; gap: 12px; }
-.rmsg { max-width: 88%; padding: 11px 14px; font-size: 14.5px; line-height: 1.45; }
+.rmsg { max-width: 88%; padding: 11px 14px; font-size: 14.5px; line-height: 1.45; overflow-wrap: anywhere; }
 .rmsg.agent { align-self: flex-start; background: #fff; border: 1px solid #e3e2df; border-radius: 4px 13px 13px 13px; }
 .rmsg.member { align-self: flex-end; background: var(--navy); color: #fff; border-radius: 13px 13px 4px 13px; }
 .rmsg.typing { align-self: flex-start; background: #fff; border: 1px solid #e3e2df; border-radius: 13px; color: #8b949b; font-style: italic; }
@@ -1437,7 +1437,7 @@ body.redesign-on .confidential-footer { display: none; } /* full-bleed app — n
 
 /* ---- REDESIGN Layer 3 · Program Workspace (build spec §4). Reuses the two-pane .redesign-app; the rail holds the
    existing arc chat client, the canvas holds wayfinding + the artifact. ---- */
-.ws-back { display: inline-block; margin: 8px 0 2px; color: var(--teal); font-weight: 600; font-size: 0.9rem; text-decoration: none; }
+.ws-back { display: inline-block; margin: 4px 0 0; color: var(--teal); font-weight: 600; font-size: 0.9rem; text-decoration: none; }
 .ws-back:hover { text-decoration: underline; }
 /* Uniform "← Dashboard" spacing on every subpage: the wrap's top padding is the space ABOVE, a clean 1rem BELOW to the
    hero — same on Movement, Badges, Account, and all SubpageShell pages. (Scoped to the subpage wraps; the workspace
@@ -1469,7 +1469,7 @@ body.redesign-on .confidential-footer { display: none; } /* full-bleed app — n
 /* "Why this matters" — a visible tappable PILL, not a plain label (Jay missed it for 3 sessions when it was tiny text).
    Fills teal when open so the open/closed state reads. */
 .ws-why { margin-top: 8px; }
-.ws-why-toggle { padding: 6px 13px; background: #E8E6E6; border: 1px solid var(--teal); border-radius: 100px; cursor: pointer; font-family: inherit; font-size: 12.5px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: var(--teal); display: inline-flex; align-items: center; gap: 7px; }
+.ws-why-toggle { margin: 0; padding: 6px 13px; background: #E8E6E6; border: 1px solid var(--teal); border-radius: 100px; cursor: pointer; font-family: inherit; font-size: 12.5px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: var(--teal); display: inline-flex; align-items: center; gap: 7px; }
 .ws-why-toggle:hover { background: #dedcdc; }
 .ws-why.open .ws-why-toggle { background: var(--teal); border-color: var(--teal); color: #fff; }
 .ws-why-caret { font-size: 14px; line-height: 1; margin-left: 1px; }
@@ -1948,7 +1948,7 @@ body.redesign-on .confidential-footer { display: none; } /* full-bleed app — n
 }
 
 /* ============ Dashboard triptych (reflect ← Companion → act) — light theme, docs/dashboard-triptych-spec.md ============ */
-.tri-app { height: calc(100dvh - 64px); overflow: hidden; display: flex; flex-direction: column; padding: 24px; gap: 16px; background: #f5f4f1; }
+.tri-app { height: calc(100dvh - 56px); overflow: hidden; display: flex; flex-direction: column; padding: 24px; gap: 16px; background: #f5f4f1; }
 .tri-seg { display: none; } /* mobile only */
 .tri-main { flex: 1 1 auto; min-height: 0; display: flex; gap: 20px; }
 .tri-flank { flex: 0 0 280px; width: 280px; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; -webkit-overflow-scrolling: touch; }
@@ -2011,9 +2011,15 @@ body.redesign-on .confidential-footer { display: none; } /* full-bleed app — n
   .tri-comp-composer textarea { font-size: 16px; }
   /* Compact hero: text + a SMALL ring side by side (the ring is reference, not the hero on a phone). The eyebrow already
      names the phase, so drop the ring's center label at this size. */
-  .tri-hero { align-items: flex-start; gap: 14px; padding: 16px 20px; }
+  .tri-hero { align-items: flex-start; gap: 12px; padding: 12px 18px; }
   .tri-hero-title { font-size: 22px; }
+  .tri-hero-copy { margin-top: 6px; }
+  .tri-hero-ctarow { margin-top: 12px; }
   .tri-hero-ring .redesign-ring { width: 58px !important; height: 58px !important; }
+  /* Thread fills more of the phone width so it reads grounded, not floaty/left-heavy, and can't clip at the edge
+     (Jay 7/28): tighter side padding + wider bubbles. */
+  .tri-comp-stream { padding: 8px 16px 16px; }
+  .tri-navy .rmsg.agent, .tri-navy .rmsg.member { max-width: 93%; }
   /* Collapse-after-first-message: once conversing, the hero is a one-line strip (eyebrow + CTA), keeper hidden — the
      thread owns the screen. First visit (no member message yet) keeps the full hero. Desktop is unaffected. */
   .tri-companion.is-conversing .tri-hero { align-items: center; padding: 12px 20px; gap: 12px; }
