@@ -219,11 +219,11 @@ export default function TriptychCenter({
             <p className="tri-hero-copy">{hero.copy}</p>
             <div className="tri-hero-ctarow">
               {hero.ctaHref ? (
-                <Link href={hero.ctaHref} className="tri-hero-cta">
+                <Link href={hero.ctaHref} className="tri-hero-cta" data-tour="next-step">
                   {hero.ctaLabel} <span aria-hidden="true">→</span>
                 </Link>
               ) : (
-                <span className="tri-hero-cta muted">{hero.ctaLabel}</span>
+                <span className="tri-hero-cta muted" data-tour="next-step">{hero.ctaLabel}</span>
               )}
             </div>
           </div>

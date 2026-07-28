@@ -94,7 +94,7 @@ export default async function TriptychLeft({ db, memberId, dash }: { db: Db; mem
       </div>
 
       {/* Grinta Index — grit */}
-      <div className="rcard r-reg">
+      <div className="rcard r-reg" data-tour="grinta">
         <div className="rreg-eyebrow">Grinta Index</div>
         <div className="rc-sub">Grit. Stronger each Phase.</div>
         {grinta ? (
@@ -128,7 +128,7 @@ export default async function TriptychLeft({ db, memberId, dash }: { db: Db; mem
       </div>
 
       {/* Badges — the ceremonial shelf */}
-      <div className="rcard r-badges">
+      <div className="rcard r-badges" data-tour="badges">
         <div className="rb-head">
           <div className="rc-h">Badges</div>
           <span className="rb-count">{passport.earned} of {passport.total} earned</span>

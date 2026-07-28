@@ -34,22 +34,28 @@ export default function PostCeremonyTour({
   const [landed, setLanded] = useState(false);
 
   // The spotlight walk — fixed sequence, words filled from the member's data. §7 voice (declare what it
-  // is; no definitional negation). Ordered top-to-bottom by the shipped dashboard, ending near the foot
-  // so the settle rises back up to the companion's home.
+  // is; no definitional negation). Covers EVERY panel a member sees: center (where you are) → left flank
+  // (the mirrors) → right flank (the actions), ending on the Reclaim List, then the one next step — so the
+  // settle rises back up to the companion's home. Stops whose anchor isn't on this dashboard are filtered
+  // out below (daily/doors live on the old dashboard; the triptych folds them into other surfaces).
   const allStops: Stop[] = [
     {
       target: 'program',
       line: 'This section will always let you know where you are in the program. You can kick off the next phase by clicking the Open this Session button.',
     },
-    { target: 'daily', line: 'Your Daily Beat — the heartbeat between Sessions. One thought, one small move, every day.' },
     { target: 'idscore', line: 'Identity Distance (ID) establishes a number that shows the space between who you are and who you want to be. It’s derived from questions you answer periodically. It will show progress you make as you close that distance.' },
+    { target: 'grinta', line: 'Your Grinta Index — your grit, on its own scale. It gets a little stronger with each Phase you come through.' },
+    { target: 'badges', line: 'Your Badges — earned for real milestones, and revealed the moment you reach them.' },
+    { target: 'momentum', line: 'Momentum — the small calls you make between Sessions. You log them one at a time, and they add up.' },
+    { target: 'connect', line: 'The Community — other members walking the same road. A place to receive and offer support with people who get it.' },
+    { target: 'movement', line: 'Movement — your activity shows up here once you connect an app: quiet evidence of the work coming back in your body.' },
     { target: 'reclaim', line: 'Your Reclaim List shows the goals you’re working toward in your comeback.' },
+    { target: 'daily', line: 'Your Daily Beat — the heartbeat between Sessions. One thought, one small move, every day.' },
     { target: 'doors', line: doorsLine },
   ];
-  // Only walk stops whose anchor exists AND is VISIBLE on THIS dashboard — so the redesign (no Daily Beat panel) skips
-  // that stop, and the triptych's MOBILE fold skips the off-screen flank anchors (idscore/reclaim live in panes that are
-  // display:none), instead of dimming to a spotlight-less line or spotlighting a 0×0 box. The live dashboard has every
-  // anchor visible, so its walk is unchanged.
+  // Only walk stops whose anchor exists AND is VISIBLE on THIS dashboard — so a panel not on this layout skips
+  // its stop, and the triptych's MOBILE fold skips the off-screen flank anchors (they live in panes that are
+  // display:none), instead of dimming to a spotlight-less line or spotlighting a 0×0 box.
   const stops: Stop[] =
     typeof document !== 'undefined'
       ? allStops.filter((s) => {

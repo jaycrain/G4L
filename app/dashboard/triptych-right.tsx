@@ -34,7 +34,7 @@ export default async function TriptychRight({
   return (
     <div className="tri-stack">
       {/* Momentum — the calls you make */}
-      <div className="rcard r-reg">
+      <div className="rcard r-reg" data-tour="momentum">
         <div className="rreg-eyebrow">Momentum</div>
         <div className="rc-sub">The calls you make, one at a time.</div>
         <div className="rreg-mom-viz"><ResiliencePulse beats={pulse} bare /></div>
@@ -50,7 +50,7 @@ export default async function TriptychRight({
 
       {/* Movement — first-class evidence surface (Cycle 1: Strava) */}
       {activity.connected ? (
-        <div className="rcard r-movement">
+        <div className="rcard r-movement" data-tour="movement">
           <div className="rc-h">Movement</div>
           <div className="rc-sub">All your activity, in one place.</div>
           <div className="rm-sources">
@@ -68,7 +68,7 @@ export default async function TriptychRight({
           <Link href={`/movement/${memberId}`} className="rreg-more">See more →</Link>
         </div>
       ) : (
-        <div className="rcard r-movement">
+        <div className="rcard r-movement" data-tour="movement">
           <div className="rc-h">Movement</div>
           <div className="rc-sub">Connect apps to automatically record activity.</div>
           <div className="rm-sources">
