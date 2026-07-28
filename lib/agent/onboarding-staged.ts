@@ -241,12 +241,17 @@ const DECLINE_REPLY =
 // identity. Directional copy (Jay reacts on the walk).
 function reclaimOpen(c: Collected): string {
   const identity = identityLabel(c.identityNoun);
+  // Donna's numbered-entry: be EXPLICIT about switching from conversation to writing the list down, and invite the
+  // member to number each item — the number is a deterministic cue the engine splits on (parseReclaimItems), so a
+  // multi-want turn lands as clean separate items instead of one run-on. We start with three (the floor); the list is
+  // never locked — they add more anytime with the companion on the dashboard.
   return (
     `That's a lot to have been carrying${identity ? ` — no wonder ${identity} got quiet under all of it` : ''}. ` +
-    `Here's the turn, though: none of it is gone. It's been waiting for you. So let's name what you want back` +
-    `${identity ? `, the pieces of ${identity}'s life you miss most` : ''} — in your own words. This becomes your ` +
-    `Reclaim List, the thing the whole program works toward, and it's yours to add to or change anytime. ` +
-    `What's the first thing you'd want back?`
+    `Here's the turn, though: none of it is gone. It's been waiting for you. Now I'm going to write these down with ` +
+    `you — your Reclaim List, the thing the whole program works toward${identity ? `: the pieces of ${identity}'s life you miss most` : ''}. ` +
+    `We'll start with three, and you can always add more later just by talking with me on your dashboard. ` +
+    `So — take a moment, and when you're ready, send me the first thing you'd want back, starting with “1.” ` +
+    `(for example, “1. Get back on real trails”).`
   );
 }
 
@@ -407,7 +412,9 @@ function reclaimOpening(c: Collected): string {
 // renders the consolidated list from `collected`), so the mid-conversation reflect only acknowledges + invites a
 // last add. This kills the doubled list (reflect + card) and keeps the card as the one place under-tagging surfaces.
 function reflectReclaim(_c: Collected): string {
-  return `Got it — that’s a strong list to build from. Anything missing before we move on?`;
+  // Donna's phrasing — invite an edit to what's captured (not an open "anything missing?" that reads as pressure to
+  // keep producing). The card is still the authoritative view; this only offers a last correction before we move on.
+  return `Got it — that’s a strong list to build from. Want to make any edits to those, or does that feel like the shape of what you’d want back?`;
 }
 
 // The recite-mismatch guard's detector (Phase 2.2): is the model's turn RECITING/wrapping the Reclaim List in
@@ -656,6 +663,43 @@ function appendReclaim(c: Collected, item: string, category = ''): boolean {
   c.reclaimList = [...list, trimmed]; // 4. a genuinely new want
   c.reclaimCategories = [...(c.reclaimCategories ?? []), category];
   return true;
+}
+
+// ── Decision II follow-on (Donna's numbered-entry): split a member's reclaim message into DISTINCT wants when they
+// gave EXPLICIT list structure — numbered markers ("1. …  2. …  3. …") or bullets ("- …"). This moves the "what is
+// an item" decision OFF the fuzzy model and onto deterministic engine parsing: the member structures, the engine
+// splits, so a multi-want turn lands as clean separate items instead of one run-on paragraph (the milie/Marcus/Donna
+// shape: "1. Lose 20 lbs 2. Go to yoga 3. Ride my bike" became a single item, then the multiwant gate looped on it).
+// Deliberately CONSERVATIVE: only splits on explicit markers, never guess-splits a prose sentence on "and"/commas
+// (a false split is worse than a run-on the shape gate can still catch). A leading segment before the first marker is
+// preamble ("For my list please state…"), not an item, so it's dropped. Prose with no markers → the whole want,
+// unchanged. Pure + testable; each split item still flows through appendReclaim's dedup/fold/subset guards.
+const RECLAIM_ITEM_MARKER_RE = /(?:^|\s)[([]?\d{1,2}[.):\]–-]\s+|(?:^|\n)\s*[-•*]\s+/g;
+const RECLAIM_STARTS_WITH_MARKER_RE = /^\s*(?:[([]?\d{1,2}[.):\]–-]|[-•*])\s+/;
+export function parseReclaimItems(message: string): string[] {
+  const raw = (message ?? '').trim();
+  if (!raw) return [];
+  const markers = raw.match(RECLAIM_ITEM_MARKER_RE) ?? [];
+  if (markers.length >= 2) {
+    const parts = raw.split(RECLAIM_ITEM_MARKER_RE);
+    // Drop the pre-first-marker segment unless the message itself opens on a marker (else it's a preamble, not an item).
+    const segs = RECLAIM_STARTS_WITH_MARKER_RE.test(raw) ? parts : parts.slice(1);
+    const cleaned = segs.map((s) => stripReclaimPreamble(s.trim())).filter((s) => s.length >= 3);
+    if (cleaned.length >= 2) return cleaned;
+  }
+  // Single want: strip a leading list marker too (a member who types just "1. Get back on real trails" shouldn't
+  // store the "1." prefix), but never strip down to nothing.
+  const single = raw.replace(RECLAIM_STARTS_WITH_MARKER_RE, '').trim();
+  return [stripReclaimPreamble(single.length >= 3 ? single : raw)];
+}
+
+// Append EVERY want the member structured this turn (numbered/bulleted → each; plain prose → the one). Returns whether
+// any genuinely new item landed. Single point so the gather backstop, forceProgress, and the confirm late-add all
+// split identically.
+function appendReclaimItems(c: Collected, message: string): boolean {
+  let grew = false;
+  for (const item of parseReclaimItems(message)) if (appendReclaim(c, item)) grew = true;
+  return grew;
 }
 
 // --- capture merge (the per-field tools' result, merged into Collected) ---------------------------------
@@ -1107,7 +1151,7 @@ const reclaimStage: StageDef = {
   forceProgress(b) {
     // Bound the reclaim loop → the card once card-ready. NEVER drop the want they JUST offered at the cap.
     if (!memberClosingReclaim(b.memberMessage) && shouldCaptureStagedReclaim(b.memberMessage)) {
-      appendReclaim(b.collected, stripReclaimPreamble(b.memberMessage));
+      appendReclaimItems(b.collected, b.memberMessage);
     }
     const realGap = gapIsNarrative(b.collected.gap, b.collected.reclaimList ?? []) && !isForwardAmbition(b.collected.gap ?? '');
     if (hasIdentity(b.collected) && realGap && (b.collected.reclaimList?.length ?? 0) >= RECLAIM_LIST_FLOOR) {
@@ -1128,7 +1172,7 @@ const reclaimStage: StageDef = {
     // model already tagged ("Every day" folded once by the model, then again by the backstop). Only backstop when
     // the model tagged NOTHING and the member is offering.
     const modelTagged = (b.model.record?.reclaimList?.length ?? 0) > 0;
-    if (offered && !modelTagged && !b.refinedThisTurn) appendReclaim(b.collected, stripReclaimPreamble(b.memberMessage));
+    if (offered && !modelTagged && !b.refinedThisTurn) appendReclaimItems(b.collected, b.memberMessage);
     const count = b.collected.reclaimList?.length ?? 0;
     const grewThisTurn = count > b.priorReclaimLen; // a NEW unique want landed this turn (model or backstop)
     // RECITE-MISMATCH GUARD (Phase 2.2): the Reclaim List is built ONLY from tags. If the model RECITES/wraps the
@@ -1202,7 +1246,7 @@ const reclaimStage: StageDef = {
       !correctsReflection(b.memberMessage) &&
       !memberClosingReclaim(lateWant) &&
       shouldCaptureStagedReclaim(lateWant) &&
-      appendReclaim(b.collected, lateWant)
+      appendReclaimItems(b.collected, b.memberMessage)
     ) {
       // Anti-loop (shared contract): a rambling member whose every reply reads as a late-want re-reflects forever
       // ("Got it — that's a strong list… Anything missing?" ×N — the milie shape). The want IS captured above; past
