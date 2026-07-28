@@ -241,6 +241,34 @@ interaction and outranks any copy edit — do not let it drift:
 
 ---
 
+## Cowork sync — the release bundle (STANDING obligation, do without being asked)
+
+The live app is the **source of record** for branding/naming/messaging; the marketing site, campaigns, and the
+2nd-edition book all quote or describe exactly what a member sees. Cowork (the separate marketing/book workspace)
+stays in sync via a **per-version release bundle** we drop to the shared Drive handoff folder — so Jay only makes
+decisions, never shuttles files. Two-sided agreement: **"G4L Platform ↔ Cowork — Standing Sync Protocol"** (in the
+Drive folder + `docs/handoffs/`). **CC's half is mandatory: at every version bump, generate the bundle and push it to
+Drive.** The routine:
+
+1. `node scripts/build-release-bundle.mjs <version>` → assembles the mechanical parts into `dist/cowork-bundle/`:
+   **(1)** `member-transcript.md` — clean authored copy, reading order (`scripts/build-transcript.mjs`) — **the thing
+   marketing + the book QUOTE**; **(2)** `member-facing-strings.txt` — the full raw dump (traceability backstop, do
+   NOT quote); **(5)** `voice-rules.md` — the canonical voice/brand doc governing the DYNAMIC (model-generated)
+   Companion copy; **MANIFEST.md** — stamped `version · commit · date` + glossary version.
+2. CC adds **(3)** the `sync-note` (Marketing Alignment Brief format — what changed in voice/naming/story/function)
+   and **(4)** `screenshots/` of key surfaces (via the preview tools).
+3. CC **pushes the folder to the shared Drive folder** via the Drive connector (headless scripts can't).
+
+**Quotability rule (protects the book):** authored copy (transcript, assessment items, UI, badges) is fixed — quote
+verbatim. The Companion's in-the-moment reflections are model-generated and vary per member — never quote as
+canonical; describe them by the voice rules. **Quote the authored; describe the dynamic.**
+
+**v3.2.1 is the baseline bundle** (generate the moment it's locked). After it, the flow flips to **canon-leads /
+app-follows**: decisions land in Cowork's glossary first → handed to CC → built → the next bundle's transcript
+verifies the app matches.
+
+---
+
 ## Dashboard & companion UI standards
 
 The member dashboard + companion patterns are settled — see **`docs/dashboard-ui-standards.md`** and
