@@ -137,7 +137,7 @@ export default function WorkspaceSession({
         <header className="ws-col-head">
           {review ? (
             <>
-              <Link href={`/program/${memberId}`} className="ws-back">← Your Journey</Link>
+              <Link href={`/program/${memberId}`} className="ws-back">← The Program</Link>
               <div className="ws-col-way">
                 <div className="ws-way-pos">
                   <div className="ws-way-ph">Phase {wayfinding.phaseOrdinal} · {wayfinding.phaseLabel} · Completed</div>

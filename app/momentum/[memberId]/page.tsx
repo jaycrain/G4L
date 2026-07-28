@@ -109,7 +109,7 @@ export default async function MomentumPage({ params }: { params: Promise<{ membe
       {/* Not a dead end — clear ways back into the program after logging. */}
       <div className="momentum-nav">
         <Link href={`/dashboard/${memberId}`} className="momentum-nav-primary">← Back to your path</Link>
-        <Link href={`/program/${memberId}`} className="momentum-nav-secondary">See your Journey →</Link>
+        <Link href={`/program/${memberId}`} className="momentum-nav-secondary">See the Program →</Link>
       </div>
     </SubpageShell>
   );
