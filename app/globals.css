@@ -2002,7 +2002,7 @@ body.redesign-on .confidential-footer { display: none; } /* full-bleed app — n
      names the phase, so drop the ring's center label at this size. */
   .tri-hero { align-items: flex-start; gap: 14px; padding: 16px 20px; }
   .tri-hero-title { font-size: 22px; }
-  .tri-hero-ring .redesign-ring { width: 84px !important; height: 84px !important; }
+  .tri-hero-ring .redesign-ring { width: 76px !important; height: 76px !important; }
   /* Collapse-after-first-message: once conversing, the hero is a one-line strip (eyebrow + CTA), keeper hidden — the
      thread owns the screen. First visit (no member message yet) keeps the full hero. Desktop is unaffected. */
   .tri-companion.is-conversing .tri-hero { align-items: center; padding: 12px 20px; gap: 12px; }

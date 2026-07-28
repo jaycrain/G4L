@@ -229,7 +229,7 @@ export default function TriptychCenter({
           </div>
           {hero.rings.length > 0 && (
             <div className="tri-hero-ring">
-              <RedesignRing rings={hero.rings} centerTop={hero.ringTop} centerSub={hero.ringSub} size={132} onDark />
+              <RedesignRing rings={hero.rings} centerTop={hero.ringTop} centerSub={hero.ringSub} size={119} onDark />
               <Link href={`/program/${memberId}`} className="tri-hero-program">See the Program →</Link>
             </div>
           )}
