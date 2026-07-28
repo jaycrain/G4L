@@ -863,10 +863,14 @@ export function parseReconnectTurn(content: readonly unknown[]): ModelTurn {
 function reconnectContext(c: Collected): string {
   const identity = identityLabel(c.identityNoun);
   const doorNames = (c.doors ?? []).map((s) => DOORS.find((d) => d.slug === s)?.displayName).filter(Boolean);
+  const reclaim = (c.reclaimList ?? []).map((s) => (s ?? '').trim()).filter(Boolean);
   const lines = [
     identity ? `Who they're reclaiming: ${identity}` : '',
     doorNames.length ? `The Door(s) they named at onboarding: ${doorNames.join(', ')}` : '',
     (c.gap ?? '').trim() ? `How they first described the gap opening: ${c.gap!.trim()}` : '',
+    // Their Reclaim List — the thing the whole program works toward. It MUST be in context: without it the model
+    // truthfully told a member "I can't pull it directly" when asked about their own list (backbone violation).
+    reclaim.length ? `Their Reclaim List (what they're taking back — you HAVE this; never say you can't see it): ${reclaim.join('; ')}` : '',
   ].filter(Boolean);
   return lines.length ? `\n\nMEMBER CONTEXT (what you already know — never say you don't):\n${lines.join('\n')}` : '';
 }
