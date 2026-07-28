@@ -76,7 +76,7 @@ export default async function MovementPage({ params }: { params: Promise<{ membe
       <div className="mv-wrap">
         <Link href={`/dashboard/${memberId}`} className="ws-back">← Dashboard</Link>
         <div className="hero"><h1>Movement</h1></div>
-        <p className="mv-lede">Everything you’re doing, in one place. Connect the apps you already use, and the Companion adds what you tell it along the way. Read against who you’re reclaiming — never left as raw numbers.</p>
+        <p className="mv-lede">Connect apps you use to make it simple to track your movement.</p>
 
         {/* Connect sources */}
         <div className="mv-sources">
@@ -84,11 +84,11 @@ export default async function MovementPage({ params }: { params: Promise<{ membe
           <div className="mv-source-grid">
             <div className="mv-source on">
               <div><div className="mv-source-name">Strava</div><div className="mv-source-what">Rides · runs · activities</div></div>
-              {connected ? <span className="mv-badge on">Connected</span> : <span className="mv-connect"><StravaConnect connected={false} configured={stravaConfigured()} /></span>}
+              {connected ? <span className="mv-badge on">Connected</span> : <span className="mv-connect"><StravaConnect connected={false} configured={stravaConfigured()} newTab /></span>}
             </div>
             <div className="mv-source">
               <div><div className="mv-source-name">Apple Health</div><div className="mv-source-what">Weight · sleep · steps</div></div>
-              <span className="mv-badge">Needs the app</span>
+              <span className="mv-badge">Soon</span>
             </div>
             {SOON.map((s) => (
               <div className="mv-source" key={s.name}>
@@ -129,8 +129,8 @@ export default async function MovementPage({ params }: { params: Promise<{ membe
 
         {/* History — synced + self-logged, merged */}
         <div className="mv-history">
-          <div className="mv-history-h">Your history</div>
-          <p className="mv-history-lede">Everything you’ve done and everything you’ve told me — kept in order, so the story of your movement stays whole.</p>
+          <div className="mv-history-h">Movement &amp; Activity Log</div>
+          <p className="mv-history-lede">A chronological record, all in one place.</p>
           {groups.length === 0 ? (
             <p className="muted">Once you connect a source, log an activity above, or tell your Companion about a walk, it lands here — in order.</p>
           ) : (

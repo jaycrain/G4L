@@ -11,9 +11,10 @@ type Props = {
   athleteName?: string | null;
   configured: boolean; // STRAVA_* env present — hide the affordance entirely if not
   showManage?: boolean; // render disconnect/delete controls (Account page); off on the dashboard card
+  newTab?: boolean; // open the OAuth handoff in a new tab (Movement page, Donna 2026-07-28)
 };
 
-export default function StravaConnect({ connected, athleteName, configured, showManage = false }: Props) {
+export default function StravaConnect({ connected, athleteName, configured, showManage = false, newTab = false }: Props) {
   const [consented, setConsented] = useState(false);
   const [pending, startTransition] = useTransition();
   const [msg, setMsg] = useState<string | null>(null);
@@ -73,7 +74,9 @@ export default function StravaConnect({ connected, athleteName, configured, show
         className="btn-pill btn-rect"
         disabled={!consented}
         onClick={() => {
-          window.location.href = '/api/activity/strava/connect?consent=1';
+          const url = '/api/activity/strava/connect?consent=1';
+          if (newTab) window.open(url, '_blank', 'noopener');
+          else window.location.href = url;
         }}
       >
         Connect Strava →

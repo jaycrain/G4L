@@ -39,7 +39,7 @@ export default function LogActivity({ memberId }: { memberId: string }) {
   return (
     <div className="mv-log">
       <div className="mv-log-h">Log an activity</div>
-      <p className="mv-log-lede">Did something off-device — a walk, a swim, a class? Add it here, or just tell your Companion.</p>
+      <p className="mv-log-lede">Add unrecorded activities here, or just tell your Companion and they’ll do it for you.</p>
       <div className="mv-log-row">
         <select className="mv-log-type" value={type} onChange={(e) => { setType(e.target.value); setSaved(false); }} aria-label="Activity type" disabled={pending}>
           {MOVEMENT_KINDS.map((k) => (
