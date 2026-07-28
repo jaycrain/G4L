@@ -26,7 +26,7 @@ export default async function ConnectPanel({ memberId, ctaLabel = 'Connect with 
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
         <div>
           <div className="rc-h">Community</div>
-          <p className="rc-sub" style={{ margin: '0.2rem 0 0' }}>Get and offer support and accountability with people who get you.</p>
+          <p className="rc-sub" style={{ margin: '0.2rem 0 0' }}>Receive and offer support and accountability with people who get you.</p>
         </div>
         <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
           {unread > 0 && (
