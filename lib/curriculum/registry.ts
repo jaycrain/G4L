@@ -197,11 +197,14 @@ export const BADGES: Badge[] = redesignStaged ? REDESIGN_BADGES : LEGACY_BADGES;
 // loop") are the Journey/bullseye group. Scott's final icon art + earned-reveal animation are a later pass.
 export type BadgePhase = 'reconnect' | 'rewire' | 'rebuild' | 'reclaim' | 'journey';
 
+// Canonical 4R phase colors — outside-in on the bullseye ring: Reconnect (navy, outermost) → Rewire (teal) →
+// Rebuild (olive) → Reclaim (orange, innermost). This is the ONE mapping across the site (the hero ring, the Program
+// page, the ceremonies all agree); the Badges were previously reversed. Reconcile here, never re-invent per surface.
 export const PHASE_BADGE_COLOR: Record<Exclude<BadgePhase, 'journey'>, string> = {
-  reconnect: '#EC6233', // orange
-  rewire: '#919536', // olive
-  rebuild: '#3B9495', // teal
-  reclaim: '#374F63', // navy
+  reconnect: '#374F63', // navy
+  rewire: '#3B9495', // teal
+  rebuild: '#919536', // olive
+  reclaim: '#EC6233', // orange
 };
 // Journey / cross-cutting = the bullseye: a radial gradient of all four phases (same as the ring).
 export const BULLSEYE_GRADIENT =

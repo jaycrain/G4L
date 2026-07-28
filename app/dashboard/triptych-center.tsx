@@ -225,16 +225,12 @@ export default function TriptychCenter({
               ) : (
                 <span className="tri-hero-cta muted">{hero.ctaLabel}</span>
               )}
-              <Link href={`/program/${memberId}`} className="tri-hero-program">See the Program →</Link>
             </div>
           </div>
           {hero.rings.length > 0 && (
             <div className="tri-hero-ring">
               <RedesignRing rings={hero.rings} centerTop={hero.ringTop} centerSub={hero.ringSub} size={132} onDark />
-              <details className="tri-ring-legend">
-                <summary>What’s the ring?</summary>
-                <p>Four rings — one per phase, from the center out. Each fills as you finish its sessions and goes solid when you cross its checkpoint. Your whole path, at a glance.</p>
-              </details>
+              <Link href={`/program/${memberId}`} className="tri-hero-program">See the Program →</Link>
             </div>
           )}
         </div>

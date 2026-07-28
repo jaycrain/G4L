@@ -1,5 +1,6 @@
 // Redesign Layer 2 (D-03) — the bullseye RING, Journey merged into the hero. Renders RingPhaseState[] (Layer 1,
-// center-out reconnect → reclaim): completed phases solid, the active phase filled to its fraction, upcoming ghosted.
+// OUTSIDE-IN reconnect → reclaim — Reconnect is the OUTERMOST ring, Reclaim the innermost, matching the 4R flow and
+// the bullseye logo): completed phases solid, the active phase filled to its fraction, upcoming ghosted.
 // Pure SVG server component — reads the numbers deriveRingState computed, draws nothing of its own. "Borrowed grammar,
 // refused semantics": Apple-Watch familiarity, but rings only advance, never guilt. Exact radii/colour are a Scott
 // polish layer; this is the honest instrument underneath.
@@ -20,7 +21,8 @@ const PHASE_COLOR_DARK: Record<string, string> = {
   rebuild: '#B7BB55',
   reclaim: '#F07A4E',
 };
-// Center-out radii — index 0 (reconnect) innermost. These live in a FIXED 200-unit coordinate space; `size` only
+// Radii, innermost → outermost. The ring builds OUTSIDE-IN: index 0 (reconnect) takes the OUTERMOST radius, index 3
+// (reclaim) the innermost (see the radius lookup below). These live in a FIXED 200-unit coordinate space; `size` only
 // scales the SVG via width/height. (Previously the viewBox was `0 0 size size` while the radii stayed absolute, so
 // any size ≠ 200 drew the outer rings outside the box and clipped — badly at the small workspace ring. 2026-07-22.)
 const RADII = [34, 56, 78, 96];
@@ -43,13 +45,14 @@ export default function RedesignRing({
   const cx = VIEW / 2;
   const cy = VIEW / 2;
   const colors = onDark ? PHASE_COLOR_DARK : PHASE_COLOR;
-  // The center label can't render legibly on a small ring (it would be ~3px) and only duplicates the phase text beside
-  // it there — so show it only on the larger rings (hero/ceremony); small rings are just the bullseye.
-  const showLabel = size >= 90;
+  // The center stays EMPTY (a clean white/navy bullseye center — no word, no number). `centerTop`/`centerSub` are kept
+  // ONLY for the SVG accessible name; the phase label lives beside the ring as the hero eyebrow (Jay, 2026-07-28).
   return (
     <svg viewBox={`0 0 ${VIEW} ${VIEW}`} width={size} height={size} className="redesign-ring" role="img" aria-label={`${centerTop}${centerSub ? `, ${centerSub}` : ''}`}>
       {rings.map((r, i) => {
-        const radius = RADII[i] ?? RADII[RADII.length - 1]!;
+        // OUTSIDE-IN: reconnect (i=0) → outermost radius, reclaim (i=3) → innermost. rings is always the 4 phases in
+        // order (deriveRingState maps PHASES), so `RADII.length - 1 - i` walks the radii from outer to inner.
+        const radius = RADII[RADII.length - 1 - i] ?? RADII[0]!;
         const color = colors[r.phase] ?? colors.reconnect!;
         const circ = 2 * Math.PI * radius;
         // On dark, lift the ahead/current base opacities so upcoming rings still read against the navy.
@@ -73,16 +76,6 @@ export default function RedesignRing({
           </g>
         );
       })}
-      {showLabel && (
-        <text x={cx} y={cy - 2} textAnchor="middle" fill={onDark ? '#fff' : '#374F63'} fontSize="13" fontWeight="800" fontFamily="Barlow">
-          {centerTop.toUpperCase()}
-        </text>
-      )}
-      {showLabel && centerSub && (
-        <text x={cx} y={cy + 14} textAnchor="middle" fill={onDark ? 'rgba(255,255,255,.7)' : 'rgba(55,79,99,.65)'} fontSize="11" fontFamily="Barlow">
-          {centerSub}
-        </text>
-      )}
     </svg>
   );
 }

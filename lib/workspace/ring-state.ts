@@ -1,5 +1,6 @@
 // Redesign Layer 1 (D-03) — the RING STATE deriver. Journey merges into the hero as the bullseye ring (build spec §5):
-// four concentric phases, center-out reconnect → rewire → rebuild → reclaim (self radiating to the bigger world).
+// four concentric phases in 4R order reconnect → rewire → rebuild → reclaim. This array is returned reconnect-first;
+// the renderer builds OUTSIDE-IN (Reconnect = the outermost ring, Reclaim the innermost — matching the 4R flow).
 // Completed phases render solid, the ACTIVE phase fills by its share of done items (its "thirds": 3 sessions + a
 // checkpoint), upcoming phases ghost. PURE — derived entirely from the forecast the dashboard already computes, so the
 // ring and the program path never disagree. No visuals here (Scott's ring reads these numbers); "borrowed grammar,
@@ -27,7 +28,7 @@ const PHASE_LABEL: Record<Phase, string> = {
   reclaim: 'Reclaim',
 };
 
-// Returned in center-out order (reconnect first) — the renderer maps index → ring radius.
+// Returned reconnect-first (4R order) — the renderer maps index 0 → the OUTERMOST radius (outside-in build).
 // lockedPhase: a phase that's the active boundary but GATED (the Loop, e.g. Reclaim not yet open) — it renders 'locked'
 // (dim, empty) instead of the bright 'current' treatment, so the ring agrees with the "coming, not active" hero.
 export function deriveRingState(forecast: Forecast, lockedPhase?: Phase, _cycle = 1): RingPhaseState[] {

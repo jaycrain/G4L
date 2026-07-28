@@ -1541,10 +1541,10 @@ body.redesign-on .confidential-footer { display: none; } /* full-bleed app — n
 .bd-count b { color: var(--navy); font-size: 16px; }
 .bd-phase { margin-top: 30px; }
 .bd-phase-h { font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; margin: 0 0 12px; padding-bottom: 7px; border-bottom: 1px solid #e3e2df; }
-.bd-phase-h.reconnect { color: #EC6233; }
-.bd-phase-h.rewire { color: #919536; }
-.bd-phase-h.rebuild { color: #3B9495; }
-.bd-phase-h.reclaim { color: #374F63; }
+.bd-phase-h.reconnect { color: #374F63; }
+.bd-phase-h.rewire { color: #3B9495; }
+.bd-phase-h.rebuild { color: #919536; }
+.bd-phase-h.reclaim { color: #EC6233; }
 .bd-phase-h.journey { color: #101045; }
 .bd-list { display: flex; flex-direction: column; gap: 10px; }
 .bd-badge { display: flex; gap: 14px; align-items: flex-start; background: #fff; border: 1px solid #e8e6e6; border-radius: 14px; padding: 15px 17px; opacity: .62; }
@@ -1668,23 +1668,10 @@ body.redesign-on .confidential-footer { display: none; } /* full-bleed app — n
 .pb-tray { border: 1px solid #d4d8b0; background: #fbfcf3; border-radius: 14px; padding: 18px 20px; margin: 1.2rem 0; }
 .pb-pin-dot { margin-right: 6px; font-size: 0.85em; }
 
-/* Hero ring legend — an on-demand "what's the ring?" explainer (colors + center-out + fills by session). */
-.rh-ring-legend { margin-top: 8px; position: relative; }
-.rh-ring-legend > summary { list-style: none; cursor: pointer; font-size: 11.5px; font-weight: 700; color: #9fd0d1; text-align: center; }
-.rh-ring-legend > summary::-webkit-details-marker { display: none; }
-.rh-ring-legend > summary::after { content: ' ⌄'; }
-.rh-ring-legend[open] > summary::after { content: ' ⌃'; }
-/* The expanded legend pops UP over the ring as a dark panel — so it stays on the navy (readable) and never overflows
-   the fixed-height ring box onto the white dashboard below (white-on-white = looked like nothing happened). */
-.rh-legend-body {
-  position: absolute; left: 50%; transform: translateX(-50%); bottom: calc(100% + 8px); width: 240px;
-  background: #223442; border: 1px solid rgba(255,255,255,.18); border-radius: 12px; padding: 13px 15px;
-  box-shadow: 0 10px 28px rgba(0,0,0,.4); z-index: 20; text-align: left;
-}
-.rh-legend-body p { font-size: 11.5px; line-height: 1.45; color: rgba(255,255,255,.85); margin: 0; }
-.rh-legend-body ul { list-style: none; margin: 10px 0 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 5px 10px; }
-.rh-legend-body li { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: rgba(255,255,255,.9); }
-.rh-leg-dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+/* "See the Program →" — the ring's wayfinder, centered beneath the bullseye (replaced the old "what's the ring?"
+   legend, Jay 2026-07-28). */
+.rh-ring-program { margin-top: 8px; display: block; text-align: center; font-size: 12.5px; font-weight: 700; color: #9fd0d1; text-decoration: none; white-space: nowrap; }
+.rh-ring-program:hover { color: #fff; text-decoration: underline; }
 
 /* Proactive outreach card — a governed note from the Companion (OUTREACH slice). Teal accent = the Companion voice. */
 .outreach-card { background: var(--white); border: 1px solid var(--panel-line); border-left: 4px solid var(--teal); border-radius: 12px; padding: 1rem 1.15rem; margin: 0 0 1rem; }
@@ -2016,8 +2003,6 @@ body.redesign-on .confidential-footer { display: none; } /* full-bleed app — n
   .tri-hero { align-items: flex-start; gap: 14px; padding: 16px 20px; }
   .tri-hero-title { font-size: 22px; }
   .tri-hero-ring .redesign-ring { width: 84px !important; height: 84px !important; }
-  .tri-hero-ring .redesign-ring text { display: none; }
-  .tri-ring-legend { font-size: 11px; text-align: center; }
   /* Collapse-after-first-message: once conversing, the hero is a one-line strip (eyebrow + CTA), keeper hidden — the
      thread owns the screen. First visit (no member message yet) keeps the full hero. Desktop is unaffected. */
   .tri-companion.is-conversing .tri-hero { align-items: center; padding: 12px 20px; gap: 12px; }
@@ -2040,13 +2025,11 @@ body.redesign-on .confidential-footer { display: none; } /* full-bleed app — n
 .tri-hero-cta { display: inline-block; background: var(--teal); color: #fff; font-weight: 700; font-size: 14px; text-decoration: none; padding: 10px 18px; border-radius: 10px; }
 .tri-hero-cta:hover { filter: brightness(1.06); }
 .tri-hero-cta.muted { background: rgba(255, 255, 255, 0.10); color: rgba(255, 255, 255, 0.85); }
-.tri-hero-program { color: rgba(255, 255, 255, 0.72); font-weight: 700; font-size: 13px; text-decoration: none; white-space: nowrap; }
+/* "See the Program →" — the ring's wayfinder, sitting centered directly beneath the bullseye (replaced the old
+   "What's the ring?" legend, Jay 2026-07-28). */
+.tri-hero-program { color: rgba(255, 255, 255, 0.72); font-weight: 700; font-size: 13px; text-decoration: none; white-space: nowrap; text-align: center; }
 .tri-hero-program:hover { color: #fff; text-decoration: underline; }
-.tri-hero-ring { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; gap: 6px; }
-.tri-ring-legend { color: rgba(255, 255, 255, 0.6); font-size: 12px; max-width: 160px; }
-.tri-ring-legend summary { cursor: pointer; font-weight: 700; color: #3B9495; list-style: none; }
-.tri-ring-legend summary::-webkit-details-marker { display: none; }
-.tri-ring-legend p { margin: 8px 0 0; line-height: 1.4; }
+.tri-hero-ring { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; gap: 8px; }
 
 /* The surfaced keeper — the member's own kept line, held in the Companion's voice (olive edge, translucent). */
 .tri-keeper { margin: 16px 24px 0; padding: 13px 16px; background: rgba(255, 255, 255, 0.05); border-left: 3px solid var(--olive); border-radius: 0 10px 10px 0; }
