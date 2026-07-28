@@ -347,7 +347,7 @@ export async function sendCheckin(memberId: string, memberMessage: string): Prom
         const res = await markReclaimReclaimedByText(db, memberId, String(input.item ?? ''));
         if (res.ok) {
           mutated = true;
-          return { ok: true, message: `Marked "${res.text}" reclaimed — it now shows a check on their Reclaim List and ticked their Journey. Acknowledge it warmly; this is a real milestone.` };
+          return { ok: true, message: `Marked "${res.text}" reclaimed — it now shows a check on their Reclaim List, one more piece of their Comeback. Acknowledge it warmly; this is a real milestone.` };
         }
         if (res.reason === 'nomatch') {
           return { ok: false, message: "Couldn't find that item on their Reclaim List. Reflect what they said and ask which item they mean, then try again." };
