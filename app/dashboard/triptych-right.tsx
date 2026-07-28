@@ -9,8 +9,8 @@ import ResiliencePulse from './resilience-pulse.tsx';
 import StravaConnect from '../account/strava-connect.tsx';
 import ConnectPanel from './connect-panel.tsx';
 
-// Triptych RIGHT flank — "What's Next" (act / forward motion): Momentum · Reclaim List · Movement · Community, in that
-// order (Jay, 2026-07-22). Server component; panels moved from redesign-dashboard AS-IS. The See-more foot link is
+// Triptych RIGHT flank — "What's Next" (act / forward motion): Momentum · Community · Movement · Reclaim List, in that
+// order (Jay, 2026-07-27 — swapped Reclaim List ↔ Community). Server component; panels moved from redesign-dashboard AS-IS. The See-more foot link is
 // normalized to a single consistent "See more →" (rreg-more) across every panel that has a subpage — subpages are now
 // premium, so the nav must read as clearly tappable. The Reclaim List is Companion-edited (no subpage), so it keeps its
 // "talk to your Companion" foot line rather than a fake See-more. NOT next-Session — that's the center hero's CTA.
@@ -45,24 +45,8 @@ export default async function TriptychRight({
         </Link>
       </div>
 
-      {/* Reclaim List — a COMPACT read of the intentions. The trackers (a linked measure + the "turn on a tracker" offer)
-          take a lot of room, so they live on the subpage where each item can breathe (Jay, 2026-07-22) — that's the real
-          See more →, not a fake one. Editing the list stays the Companion's job. */}
-      <div className="rcard r-reclaim" data-tour="reclaim">
-        <div className="rc-h">Reclaim List</div>
-        <div className="rc-sub">What you’re taking back.</div>
-        <ul className="r-reclaim-list">
-          {dash.reclaimItems.map((item, i) => (
-            <li key={i} className={item.reclaimed ? 'reclaimed' : undefined}>
-              <span className="rr-text">
-                {item.reclaimed && <span className="rr-check" aria-label="reclaimed" title="Reclaimed">✓</span>}
-                {item.text}
-              </span>
-            </li>
-          ))}
-        </ul>
-        <Link href={`/reclaim-list/${memberId}`} className="rreg-more">See more →</Link>
-      </div>
+      {/* Community — elevated peer panel (real data via ConnectPanel). Triptych CTA label per Jay (2026-07-22). */}
+      <ConnectPanel memberId={memberId} ctaLabel="Connect with other members →" />
 
       {/* Movement — first-class evidence surface (Cycle 1: Strava) */}
       {activity.connected ? (
@@ -97,8 +81,24 @@ export default async function TriptychRight({
         </div>
       )}
 
-      {/* Community — elevated peer panel (real data via ConnectPanel). Triptych CTA label per Jay (2026-07-22). */}
-      <ConnectPanel memberId={memberId} ctaLabel="Connect with other members →" />
+      {/* Reclaim List — a COMPACT read of the intentions. The trackers (a linked measure + the "turn on a tracker" offer)
+          take a lot of room, so they live on the subpage where each item can breathe (Jay, 2026-07-22) — that's the real
+          See more →, not a fake one. Editing the list stays the Companion's job. */}
+      <div className="rcard r-reclaim" data-tour="reclaim">
+        <div className="rc-h">Reclaim List</div>
+        <div className="rc-sub">What you’re taking back.</div>
+        <ul className="r-reclaim-list">
+          {dash.reclaimItems.map((item, i) => (
+            <li key={i} className={item.reclaimed ? 'reclaimed' : undefined}>
+              <span className="rr-text">
+                {item.reclaimed && <span className="rr-check" aria-label="reclaimed" title="Reclaimed">✓</span>}
+                {item.text}
+              </span>
+            </li>
+          ))}
+        </ul>
+        <Link href={`/reclaim-list/${memberId}`} className="rreg-more">See more →</Link>
+      </div>
     </div>
   );
 }
