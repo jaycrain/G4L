@@ -2016,6 +2016,10 @@ body.redesign-on .confidential-footer { display: none; } /* full-bleed app — n
      names the phase, so drop the ring's center label at this size. */
   .tri-hero { align-items: flex-start; gap: 12px; padding: 12px 18px; }
   .tri-hero-title { font-size: 22px; }
+  /* Fit the longest eyebrow ("Phase 4 · Reclaim · Session 3 of 3") on ONE line beside the ring — at 11px it wrapped
+     to an orphan "of 3" (Jay 7/28). 10px + tighter tracking clears it. (Higher specificity than the base rule, which
+     is defined LATER in the file and would otherwise win.) */
+  .tri-hero .tri-hero-eyebrow { font-size: 10px; letter-spacing: 0.04em; }
   .tri-hero-copy { margin-top: 6px; }
   .tri-hero-ctarow { margin-top: 12px; }
   .tri-hero-ring .redesign-ring { width: 58px !important; height: 58px !important; }
