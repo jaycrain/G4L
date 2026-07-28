@@ -25,12 +25,12 @@ const PHASE_COLOR_DARK: Record<string, string> = {
 // Radii, innermost → outermost. The ring builds OUTSIDE-IN: index 0 (reconnect) takes the OUTERMOST radius, index 3
 // (reclaim) the innermost (see the radius lookup below). Fixed coordinate space; `size` only scales the SVG.
 const RADII = [34, 56, 78, 96];
-const STROKE = 9;
+const STROKE = 14; // the colored bands are thick — thicker than the white gaps between them (radii step 22 → ~8px gap).
 // A white disc under everything: the colored bands are drawn on top, so white shows only in the GAPS between bands and
 // in the CENTER — the crisp white separators + white bullseye center of the logo mark, with no seams. Its radius sits
 // just inside the outer (Reconnect) band so the disc never peeks outside it. (Jay's "white fill" reference, 2026-07-28.)
-const WHITE_R = 92;
-const VIEW = 206; // coordinate space; = 2·(96 + 9/2) + a couple units so the outer ring's stroke never touches the edge.
+const WHITE_R = 90;
+const VIEW = 210; // coordinate space; = 2·(96 + 14/2) + a couple units so the outer band's stroke never touches the edge.
 
 export default function RedesignRing({
   rings,
