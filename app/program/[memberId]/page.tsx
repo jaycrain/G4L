@@ -14,8 +14,9 @@ const REVIEW_PHASE_LABEL: Record<string, string> = { reconnect: 'Reconnect', rew
 
 // The Program — the whole four-Phase route. All four Phases are LIVE (v3.2 — the four Rs shipped), so none render as
 // "coming"; the "you're here" marker wires to the member's active Phase from the forecast. Copy is Donna's 7/28
-// Program-page rev (Jay): the blurbs + session bullets are Program-page LITERALS here — they intentionally read
-// differently from the per-session canvas summaries (lib/content/summaries.ts), which are unchanged.
+// Program-page rev (Jay). The blurbs + session-bullet descriptors mirror the SAME wording as the canon summaries
+// (lib/content/summaries.ts), formatted here as route-card bullets ("Name — …"); they're kept as literals rather than
+// derived because the bullet form drops the sentence caps/periods the canvas threshold needs.
 const RING: Record<string, string> = { reconnect: '#374f63', rewire: '#3b9495', rebuild: '#919536', reclaim: '#ec6233' };
 
 type PhaseRow = { key: string; num: number; name: string; blurb: string; sessions: string[]; reveal?: string; coming: boolean };
