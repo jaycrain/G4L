@@ -19,7 +19,7 @@ import type { Db } from '../db/schema.ts';
 import { MEMBER_AGENT_SYSTEM_PROMPT } from './system-prompt.ts';
 import { resolveGapConfirm, memberWantsToAdvance } from './onboarding-intent.ts';
 import { runArcTurn, administeredStage, drawoutShouldReflect, receiveThen, type ArcConfig, type StageDef } from './onboarding-staged.ts';
-import { captureModel } from './capture-model.ts';
+import { captureCreate } from './capture-model.ts';
 import { CHECKPOINT_GRIT_ITEMS, grintaStem } from '../grinta/survey/instrument.ts';
 import type { Collected, ConvMessage, ConvState, DoorRevision, ModelTurn, ReplyIntent, Turn, Stage } from './onboarding.ts';
 
@@ -994,12 +994,13 @@ export async function liveTurnReconnect(state: ConvState, history: ConvMessage[]
     ...history.map((m) => ({ role: (m.role === 'agent' ? 'assistant' : 'user') as 'assistant' | 'user', content: m.text })),
     { role: 'user' as const, content: memberMessage },
   ];
-  const res = await client.messages.create({
-    model: captureModel(), // Reconnect gateway (Doors excavation) → Opus by default; see capture-model.ts
+  // Reconnect gateway (Doors excavation) → Opus by default, Sonnet fail-safe if Opus errors. See capture-model.ts.
+  const res = await captureCreate((model) => client.messages.create({
+    model,
     max_tokens: 600,
     system: RECONNECT_SYSTEM + reconnectContext(state.collected) + stageInstructionReconnect(state.stage),
     tools: RECONNECT_TOOLS,
     messages,
-  });
+  }));
   return applyReconnectTurn(state, history, memberMessage, parseReconnectTurn(res.content));
 }

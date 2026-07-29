@@ -48,7 +48,7 @@ import {
 } from './onboarding.ts';
 import { reconcileReclaimShapes, shapeKey } from './reclaim-shape.ts';
 import { detectCrisis, CRISIS_RESPONSE_US } from './governance.ts';
-import { captureModel } from './capture-model.ts';
+import { captureCreate } from './capture-model.ts';
 // The intent layer — the one place that decides what a member's utterance MEANS (see onboarding-intent.ts).
 import {
   correctsReflection,
@@ -1836,13 +1836,14 @@ export async function liveTurnStaged(
     ...history.map((m) => ({ role: (m.role === 'agent' ? 'assistant' : 'user') as 'assistant' | 'user', content: m.text })),
     { role: 'user' as const, content: memberMessage },
   ];
-  const res = await client.messages.create({
-    model: captureModel(), // onboarding capture → Opus by default (Sonnet stalled in testing); see capture-model.ts
+  // onboarding capture → Opus by default (Sonnet stalled in testing), Sonnet fail-safe if Opus errors. See capture-model.ts.
+  const res = await captureCreate((model) => client.messages.create({
+    model,
     max_tokens: 600,
     system: STAGED_SYSTEM + stageInstruction(state.stage),
     tools: STAGED_TOOLS,
     messages,
-  });
+  }));
   return applyStagedTurn(state, history, memberMessage, parseStagedTurn(res.content));
 }
 

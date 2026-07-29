@@ -10,3 +10,18 @@
 export function captureModel(): string {
   return process.env.ONBOARDING_MODEL ?? 'claude-opus-4-8';
 }
+
+// Fail-safe wrapper: run a capture model call on the strong model, but if it ERRORS (e.g. the deployment's Anthropic
+// key can't reach Opus — an access/capacity error the SDK won't retry), fall back to Sonnet so onboarding NEVER breaks
+// from the model choice. It degrades to Sonnet + the deterministic numbered-capture fix rather than stranding the
+// member mid-conversation. Logs the fallback so a missing-Opus-access shows up in prod logs instead of hiding. An
+// explicit ONBOARDING_MODEL override surfaces its own errors (the operator chose it on purpose).
+export async function captureCreate<T>(create: (model: string) => Promise<T>): Promise<T> {
+  try {
+    return await create(captureModel());
+  } catch (err) {
+    if (process.env.ONBOARDING_MODEL) throw err;
+    console.error('[capture-model] strong model failed — falling back to claude-sonnet-4-6:', (err as Error)?.message);
+    return await create('claude-sonnet-4-6');
+  }
+}
