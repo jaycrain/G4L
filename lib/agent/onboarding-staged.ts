@@ -48,6 +48,7 @@ import {
 } from './onboarding.ts';
 import { reconcileReclaimShapes, shapeKey } from './reclaim-shape.ts';
 import { detectCrisis, CRISIS_RESPONSE_US } from './governance.ts';
+import { captureModel } from './capture-model.ts';
 // The intent layer — the one place that decides what a member's utterance MEANS (see onboarding-intent.ts).
 import {
   correctsReflection,
@@ -1836,7 +1837,7 @@ export async function liveTurnStaged(
     { role: 'user' as const, content: memberMessage },
   ];
   const res = await client.messages.create({
-    model: process.env.ANTHROPIC_MODEL ?? 'claude-sonnet-4-6',
+    model: captureModel(), // onboarding capture → Opus by default (Sonnet stalled in testing); see capture-model.ts
     max_tokens: 600,
     system: STAGED_SYSTEM + stageInstruction(state.stage),
     tools: STAGED_TOOLS,

@@ -19,6 +19,7 @@ import type { Db } from '../db/schema.ts';
 import { MEMBER_AGENT_SYSTEM_PROMPT } from './system-prompt.ts';
 import { resolveGapConfirm, memberWantsToAdvance } from './onboarding-intent.ts';
 import { runArcTurn, administeredStage, drawoutShouldReflect, receiveThen, type ArcConfig, type StageDef } from './onboarding-staged.ts';
+import { captureModel } from './capture-model.ts';
 import { CHECKPOINT_GRIT_ITEMS, grintaStem } from '../grinta/survey/instrument.ts';
 import type { Collected, ConvMessage, ConvState, DoorRevision, ModelTurn, ReplyIntent, Turn, Stage } from './onboarding.ts';
 
@@ -991,7 +992,7 @@ export async function liveTurnReconnect(state: ConvState, history: ConvMessage[]
     { role: 'user' as const, content: memberMessage },
   ];
   const res = await client.messages.create({
-    model: process.env.ANTHROPIC_MODEL ?? 'claude-sonnet-4-6',
+    model: captureModel(), // Reconnect gateway (Doors excavation) → Opus by default; see capture-model.ts
     max_tokens: 600,
     system: RECONNECT_SYSTEM + reconnectContext(state.collected) + stageInstructionReconnect(state.stage),
     tools: RECONNECT_TOOLS,
