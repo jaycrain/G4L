@@ -196,3 +196,21 @@ test('isDemoEmail flags reserved .test addresses only', () => {
   assert.equal(isDemoEmail('jennifer@jckpublishing.com'), false);
   assert.equal(isDemoEmail('someone@test.com'), false); // .test must be the TLD
 });
+
+// --- Telemetry honesty (Jay 2026-07-29) ------------------------------------------------------------------
+// Two accounts with NINE closed Sessions each reported 0 time / 0 drop-off, because both columns were derived
+// from the event log — which didn't exist when those Sessions happened. Drop-off now comes from the DURABLE
+// session_progress counts, and time-on-task reports NULL (not 0) when there's no event coverage.
+test('summarizeRoster does NOT count a no-coverage member as zero — it reports them as uncovered', () => {
+  const rows: RosterRow[] = [
+    { joinedAt: daysAgoISO(2), lastActiveAt: daysAgoISO(1), sessionsClosed: 3, engagedMinutes: 20 } as RosterRow,
+    // did real work, but the event log has nothing for them → must NOT silently read as 0 minutes
+    { joinedAt: daysAgoISO(5), lastActiveAt: daysAgoISO(2), sessionsClosed: 9, engagedMinutes: null } as RosterRow,
+    // brand-new member, no Sessions at all → not "missing telemetry", just nothing yet
+    { joinedAt: daysAgoISO(1), lastActiveAt: daysAgoISO(1), sessionsClosed: 0, engagedMinutes: null } as RosterRow,
+  ];
+  const s = summarizeRoster(rows, Date.now());
+  assert.equal(s.engagedMinutesTotal, 20, 'only covered members contribute minutes');
+  assert.equal(s.membersMissingTelemetry, 1, 'the 9-Session member is flagged as uncovered, not counted as 0');
+  assert.equal(s.sessionsClosedTotal, 12, 'durable Session counts are unaffected by telemetry gaps');
+});

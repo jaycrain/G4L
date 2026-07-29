@@ -30,9 +30,17 @@ export type RosterRow = {
   dailyBeatDays: number; // distinct days a Daily Beat was surfaced
   workouts: number; // logged activities (Strava)
   checkinDays: number; // distinct days the member sent the agent a message
-  // EXPERIENCE TELEMETRY — derived from member_event (only accrues from events going forward).
-  engagedMinutes: number; // summed time-on-asset across closed Sessions
-  stalledSessions: number; // Sessions opened but never closed (drop-off)
+  // EXPERIENCE TELEMETRY.
+  // DROP-OFF now comes from session_progress (DURABLE rows), not the event log. Event-derived, it counted "opened
+  // but no close EVENT" as a drop-off — so every missing session_close manufactured a FAKE drop-off, and the column
+  // measured our instrumentation gaps rather than member behaviour (Jay 2026-07-29: two accounts with 9 closed
+  // Sessions each reported 0 engagement / 0 drop-off).
+  stalledSessions: number; // Sessions opened but never closed — from session_progress, always correct
+  // TIME ON TASK can only be event-derived (session_progress carries no duration), so it stays that way — but it is
+  // NULL, never 0, when there's no event coverage for a member who has demonstrably done Sessions. A false zero
+  // reads as "this member did nothing"; an honest "—" reads as "we don't have this yet".
+  engagedMinutes: number | null; // summed time-on-asset; null = no telemetry coverage for this member
+  hasSessionTelemetry: boolean; // did the event log carry ANY session open/close for them?
 };
 
 type RawRow = {
@@ -112,7 +120,8 @@ export type RosterSummary = {
   joinedLast30: number;
   activeLast7: number;
   sessionsClosedTotal: number; // Sessions closed across the roster (true program progress)
-  engagedMinutesTotal: number; // time-on-asset summed across the roster
+  engagedMinutesTotal: number; // time-on-asset summed across members WHO HAVE coverage
+  membersMissingTelemetry: number; // members with closed Sessions but no session events — the total understates by these
 };
 
 export function summarizeRoster(rows: RosterRow[], nowMs: number): RosterSummary {
@@ -122,13 +131,15 @@ export function summarizeRoster(rows: RosterRow[], nowMs: number): RosterSummary
   let activeLast7 = 0;
   let sessionsClosedTotal = 0;
   let engagedMinutesTotal = 0;
+  let membersMissingTelemetry = 0;
   for (const r of rows) {
     if (new Date(r.joinedAt).getTime() >= d30) joinedLast30++;
     if (r.lastActiveAt && new Date(r.lastActiveAt).getTime() >= d7) activeLast7++;
     sessionsClosedTotal += r.sessionsClosed;
-    engagedMinutesTotal += r.engagedMinutes;
+    if (r.engagedMinutes != null) engagedMinutesTotal += r.engagedMinutes;
+    else if (r.sessionsClosed > 0) membersMissingTelemetry++;
   }
-  return { total: rows.length, joinedLast30, activeLast7, sessionsClosedTotal, engagedMinutesTotal };
+  return { total: rows.length, joinedLast30, activeLast7, sessionsClosedTotal, engagedMinutesTotal, membersMissingTelemetry };
 }
 
 // Compact relative-time label for the operator table ("3d ago", "just now", "—").
@@ -196,10 +207,15 @@ export async function getRoster(db: Db): Promise<RosterRow[]> {
   const mapped: RosterRow[] = rows.map((r) => {
     const lastSignInAt = toIso(r.last_sign_in_at);
     const sessionTele = deriveSessionTelemetry(events.get(r.member_id) ?? []);
-    const engagedMinutes = Math.round(
-      sessionTele.reduce((sum, s) => sum + (s.durationMs ?? 0), 0) / 60000,
-    );
-    const stalledSessions = sessionTele.filter((s) => !s.closed).length;
+    // DROP-OFF from the DURABLE rows: opened minus closed. Clamped at 0 — a member can close a Session that was
+    // opened before session_progress tracked it, which would otherwise render a negative drop-off.
+    const stalledSessions = Math.max(0, Number(r.sessions_opened ?? 0) - Number(r.sessions_closed ?? 0));
+    // TIME ON TASK stays event-derived (only the event log carries duration), but report NO COVERAGE as null.
+    // `hasSessionTelemetry` is the honest test: did the log carry any session open/close at all for this member?
+    const hasSessionTelemetry = sessionTele.length > 0;
+    const engagedMinutes = hasSessionTelemetry
+      ? Math.round(sessionTele.reduce((sum, s) => sum + (s.durationMs ?? 0), 0) / 60000)
+      : null;
     return {
       memberId: r.member_id,
       displayName: r.display_name,
@@ -231,6 +247,7 @@ export async function getRoster(db: Db): Promise<RosterRow[]> {
       workouts: toNum(r.workouts),
       checkinDays: toNum(r.checkin_days),
       engagedMinutes,
+      hasSessionTelemetry,
       stalledSessions,
     };
   });

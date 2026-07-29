@@ -144,9 +144,23 @@ export default async function AdminHome() {
             <span className="tile-num">{summary.sessionsClosedTotal}</span>
             <span className="tile-label">Sessions closed</span>
           </div>
-          <div className="summary-tile">
+          <div
+            className="summary-tile"
+            title={
+              summary.membersMissingTelemetry > 0
+                ? `Understated: ${summary.membersMissingTelemetry} member(s) have closed Sessions but no session telemetry, so their time isn't counted.`
+                : undefined
+            }
+          >
             <span className="tile-num">{fmtMinutes(summary.engagedMinutesTotal)}</span>
-            <span className="tile-label">Time on task</span>
+            {/* Say so when the roster total is INCOMPLETE — a confident number that silently omits members is
+                worse than a smaller one that admits its gap. (Jay 7/29) */}
+            <span className="tile-label">
+              Time on task
+              {summary.membersMissingTelemetry > 0 && (
+                <span className="muted"> · {summary.membersMissingTelemetry} not covered</span>
+              )}
+            </span>
           </div>
           <div
             className="summary-tile"
@@ -232,7 +246,16 @@ export default async function AdminHome() {
                       <td className="num">{m.sessionsOpened || <span className="muted">—</span>}</td>
                       <td className="num">{m.badges || <span className="muted">—</span>}</td>
                       <td className="num">{m.gates || <span className="muted">—</span>}</td>
-                      <td className="num">{m.engagedMinutes > 0 ? fmtMinutes(m.engagedMinutes) : <span className="muted">—</span>}</td>
+                      {/* "—" means NO TELEMETRY COVERAGE (null), not zero engagement — the distinction matters:
+                          older accounts did their Sessions before session_open/close events existed. A real
+                          zero (covered, but no time) still shows "—" but the title says so. (Jay 7/29) */}
+                      <td className="num" title={m.engagedMinutes == null ? 'No session telemetry for this member — their Sessions predate the event log, or events did not land' : undefined}>
+                        {m.engagedMinutes != null && m.engagedMinutes > 0 ? (
+                          fmtMinutes(m.engagedMinutes)
+                        ) : (
+                          <span className="muted">{m.engagedMinutes == null ? 'n/a' : '—'}</span>
+                        )}
+                      </td>
                       <td className="num">
                         {m.stalledSessions > 0 ? (
                           <span className="trend-down">{m.stalledSessions}</span>
