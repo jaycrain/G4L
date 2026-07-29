@@ -87,16 +87,21 @@ export default async function TriptychRight({
       <div className="rcard r-reclaim" data-tour="reclaim">
         <div className="rc-h">Reclaim List</div>
         <div className="rc-sub">What you’re taking back.</div>
-        <ul className="r-reclaim-list">
-          {dash.reclaimItems.map((item, i) => (
-            <li key={i} className={item.reclaimed ? 'reclaimed' : undefined}>
-              <span className="rr-text">
-                {item.reclaimed && <span className="rr-check" aria-label="reclaimed" title="Reclaimed">✓</span>}
-                {item.text}
-              </span>
-            </li>
-          ))}
-        </ul>
+        {dash.reclaimItems.length ? (
+          <ul className="r-reclaim-list">
+            {dash.reclaimItems.map((item, i) => (
+              <li key={i} className={item.reclaimed ? 'reclaimed' : undefined}>
+                <span className="rr-text">
+                  {item.reclaimed && <span className="rr-check" aria-label="reclaimed" title="Reclaimed">✓</span>}
+                  {item.text}
+                </span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          // Empty-state parity with the /reclaim-list subpage (CAT-47) — never a blank card when all items are released.
+          <p className="rc-empty">Your list lands here as you name what you’re taking back.</p>
+        )}
         <Link href={`/reclaim-list/${memberId}`} className="rreg-more">See more →</Link>
       </div>
     </div>

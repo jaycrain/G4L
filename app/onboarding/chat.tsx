@@ -379,9 +379,13 @@ export default function OnboardingChat({ welcomeEnabled = false }: { welcomeEnab
                 </dd>
                 <dt>Your comeback — what you want back</dt>
                 <dd>
-                  <ul className="summary-reclaim">
-                    {card.reclaimList.map((it, i) => (<li key={i}>{it}</li>))}
-                  </ul>
+                  {card.reclaimList.length ? (
+                    <ul className="summary-reclaim">
+                      {card.reclaimList.map((it, i) => (<li key={i}>{it}</li>))}
+                    </ul>
+                  ) : (
+                    'You’ll shape this with your companion — it starts in your first session.'
+                  )}
                 </dd>
               </dl>
               {state.collected.grintaBaseline && (

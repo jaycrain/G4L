@@ -26,7 +26,7 @@ export default function ReclaimListBuilder({
   };
   const remove = (i: number) => setItems(items.filter((_, x) => x !== i));
 
-  const canSubmit = items.length >= 1 && !disabled; // floor is 1; the copy encourages `min`
+  const canSubmit = items.length >= expects.min && !disabled; // the frozen ≥min floor is enforced here (and server-side)
   const belowAim = items.length < expects.min;
 
   return (

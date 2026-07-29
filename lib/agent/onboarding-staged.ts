@@ -746,6 +746,13 @@ export function parseReclaimListSubmission(message: string): string[] {
     .filter((line) => line.length > 0);
 }
 
+// Is this turn a structured Reclaim-builder submission? The builder (app/onboarding/reclaim-list-builder.tsx) submits
+// every item as a "• "-prefixed line, which no conversational reply looks like — so a bullet-led line is the reliable
+// signal that the member used the builder (→ verbatim/authoritative capture + floor), vs the retired conversational path.
+function isBuilderSubmission(message: string): boolean {
+  return /^[ \t]*•/m.test(message ?? '');
+}
+
 // The structured Reclaim List builder is an onboarding-only turn: whenever the machine is in the reclaim stage (and not
 // yet complete), tell the client to render the list builder — pre-filled with any wants volunteered earlier — instead
 // of the text box or the scale chips. Once submitted, the stage advances to 'grinta', so this stops firing. Everything
@@ -1260,6 +1267,39 @@ const gapStage: StageDef = {
   },
 };
 
+// Structured Reclaim capture is AUTHORITATIVE and VERBATIM — the member's exact builder entries ARE the list, so this
+// REPLACES it (discarding any model add/refine pollution mergeStaged merged earlier this turn — CAT-16), does exact
+// case-insensitive dedup only (NOT the fuzzy conversational appendReclaim, which folded/dropped deliberate entries —
+// CAT-15), and keeps reclaimCategories index-locked so the IDQ-dimension array can never desync (CAT-17).
+function setStructuredReclaim(c: Collected, items: string[]): void {
+  const seen = new Set<string>();
+  const list: string[] = [];
+  for (const raw of items) {
+    const item = raw.trim();
+    if (!item || seen.has(item.toLowerCase())) continue;
+    seen.add(item.toLowerCase());
+    list.push(item);
+  }
+  c.reclaimList = list;
+  c.reclaimCategories = list.map(() => ''); // IDQ dimension is assigned later; keep the parallel array in lockstep
+}
+
+// Reclaim → Grinta with the FLOOR enforced (CAT-13/14). The frozen data contract is a ≥RECLAIM_LIST_MIN list; that
+// floor lived ONLY in the dead v1 contractGaps, so the staged path advanced on an empty/short list. This is the single
+// reclaim→survey chokepoint: below the floor we HOLD and re-show the builder seeded with what they have.
+function commitStructuredReclaim(b: Beat): Turn {
+  setStructuredReclaim(b.collected, parseReclaimListSubmission(b.memberMessage));
+  if ((b.collected.reclaimList?.length ?? 0) < RECLAIM_LIST_MIN) {
+    return {
+      reply: RECLAIM_NUDGE,
+      state: beatState(b),
+      complete: false,
+      expects: { kind: 'reclaim_list', min: RECLAIM_LIST_MIN, seeded: (b.collected.reclaimList ?? []).filter(Boolean) },
+    };
+  }
+  return enterGrintaSurvey(b);
+}
+
 const reclaimStage: StageDef = {
   id: 'reclaim',
   mode: 'drawout', // unused for the structured turn; kept for the StageDef shape
@@ -1267,14 +1307,19 @@ const reclaimStage: StageDef = {
   offersSubstance: () => true, // the list-builder submission is always a real answer
   // STRUCTURED CAPTURE (Jay, 2026-07-29): the Reclaim List is built in a list-builder UI, not extracted from
   // conversation (which proved ~30% lossy in testing). The submission arrives as a bulleted block; the engine stores
-  // the member's EXACT entries — 100% reliable, no model, nothing to drop — then hands into the Grinta baseline
-  // survey. There is no conversational gather or confirm: the builder IS the input AND the confirmation.
+  // the member's EXACT entries VERBATIM (setStructuredReclaim), enforces the ≥MIN floor, then hands into the Grinta
+  // baseline survey. There is no conversational gather or confirm: the builder IS the input AND the confirmation.
   gather(b) {
+    // The LIVE reclaim surface is the structured builder (expects reclaim_list); its submission arrives as a "• "
+    // bulleted block. Only that authoritative path gets verbatim capture + the ≥MIN floor. Anything else routes to the
+    // retired conversational path (dead code a real member never hits — the builder is the only input; kept behind
+    // this guard until its dedicated cleanup so nothing churns).
+    if (isBuilderSubmission(b.memberMessage)) return commitStructuredReclaim(b);
     for (const item of parseReclaimListSubmission(b.memberMessage)) appendReclaim(b.collected, item);
     return enterGrintaSurvey(b);
   },
-  // Never reached (the structured gather never sets awaitingConfirm) — kept for the StageDef shape + as a safety net.
   confirm(b) {
+    if (isBuilderSubmission(b.memberMessage)) return commitStructuredReclaim(b);
     for (const item of parseReclaimListSubmission(b.memberMessage)) appendReclaim(b.collected, item);
     return enterGrintaSurvey(b);
   },

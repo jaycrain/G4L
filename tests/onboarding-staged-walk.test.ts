@@ -91,3 +91,35 @@ test('GATE/CAT-04 — one note_no_fade misfire must not permanently strand a gen
   assert.equal(finalState.stage !== 'declined', true, 'a genuine-loss member was declined after a note_no_fade misfire (CAT-04)');
   assert.equal(!!finalState.collected.gap, true, 'the loss story was never captured — the sticky no-fade flag blocked it (CAT-04)');
 });
+
+// ---------------------------------------------------------------------------
+// CLUSTER 2 — completion contract + structured reclaim capture.
+// ---------------------------------------------------------------------------
+const atReclaim = (): ConvState => ({
+  stage: 'reclaim',
+  collected: { athleticPast: 'a runner', identityNoun: 'Runner', gap: 'The years quietly took it, one reasonable choice at a time.' },
+});
+
+test('RECLAIM/CAT-14 — a below-floor list (< min) does NOT advance; it holds and re-shows the builder', () => {
+  const t = applyStagedTurn(atReclaim(), [], '• Run a 5k\n• Sleep well', { text: '' }); // only 2, floor is 3
+  assert.equal(t.state.stage, 'reclaim', 'must not advance to Grinta below the frozen ≥3 floor');
+  assert.equal(t.expects?.kind, 'reclaim_list', 're-shows the builder seeded with what they have');
+  assert.equal(t.complete, false);
+});
+
+test('RECLAIM/CAT-15 — deliberate near-duplicate entries are kept VERBATIM (not fuzzy-folded)', () => {
+  // "ride my bike" + "ride my bike a couple times a week" is a token-subset the conversational appendReclaim folds/drops.
+  const t = applyStagedTurn(atReclaim(), [], '• ride my bike\n• ride my bike a couple times a week\n• see my friends', { text: '' });
+  assert.deepEqual(t.state.collected.reclaimList, ['ride my bike', 'ride my bike a couple times a week', 'see my friends']);
+  assert.equal(t.state.stage, 'grinta', 'a valid ≥3 list advances');
+});
+
+test('RECLAIM/CAT-16/17 — the submission is authoritative: model phantom/refine pollution is discarded, categories stay in lockstep', () => {
+  const t = applyStagedTurn(atReclaim(), [], '• Golf again\n• Lose 20 lbs\n• Call my brother', {
+    text: '',
+    record: { reclaimList: ['PHANTOM WANT'] }, // model add_reclaim_item phantom
+    refineReclaim: 'CLOBBERED', // model refine
+  });
+  assert.deepEqual(t.state.collected.reclaimList, ['Golf again', 'Lose 20 lbs', 'Call my brother'], 'no phantom, no clobber');
+  assert.equal(t.state.collected.reclaimCategories?.length, t.state.collected.reclaimList?.length, 'parallel arrays index-locked (CAT-17)');
+});
