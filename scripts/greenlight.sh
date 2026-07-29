@@ -25,7 +25,27 @@ URL="${1:-https://g4l-ten.vercel.app}"
 # a full declaration (`selector{prop:value}`) over a bare class name so a pre-existing use elsewhere can't match.
 CSS_TELLS=("idp-own:hover")   # (carried) ghost-button hover opt-out
 JS_TELLS=("This is my list")            # reclaim builder submit button (carried; not a landing proof on its own)
-SERVER_TELLS=("Add each thing below")   # NEW THIS PUSH: the reclaim builder opener must now actually be reached
+
+# COMMIT CHECK — the authoritative proof for an ENGINE-ONLY push (server logic, no bundle change), where no static
+# tell exists. NOTE: `vercel ls --meta githubCommitSha=...` returns NOTHING on this project (the meta isn't queryable),
+# so do NOT use it — it reads as "not deployed" forever and will leave you waiting on a build that already shipped.
+# Compare TIMESTAMPS instead: the newest production deployment must be newer than your HEAD commit.
+if command -v vercel >/dev/null 2>&1 && [ "$URL" = "https://g4l-ten.vercel.app" ]; then
+  commit_ts="$(git log -1 --format=%ct 2>/dev/null)"
+  newest="$(vercel ls 2>/dev/null | grep -oE 'https://g4l-[a-z0-9]+-[a-z-]+\.vercel\.app' | head -1)"
+  if [ -n "$newest" ] && [ -n "$commit_ts" ]; then
+    info="$(vercel inspect "$newest" 2>&1)"
+    dep_date="$(echo "$info" | grep -E '^\s+created' | sed -E 's/.*created[[:space:]]+//; s/ \[.*//')"
+    dep_ts="$(date -j -f '%a %b %d %Y %H:%M:%S' "$(echo "$dep_date" | sed -E 's/ GMT.*//')" +%s 2>/dev/null)"
+    aliased="$(echo "$info" | grep -c 'g4l-ten.vercel.app')"
+    if [ -n "$dep_ts" ] && [ "$dep_ts" -ge "$commit_ts" ] && [ "$aliased" -gt 0 ]; then
+      echo "  commit: ✓ newest prod deploy is newer than HEAD $(git rev-parse --short HEAD) AND serves this alias"
+    else
+      echo "  commit: ⚠ newest prod deploy predates HEAD $(git rev-parse --short HEAD) or isn't aliased — still building"
+      ok=0
+    fi
+  fi
+fi
 
 html="$(curl -s "$URL/onboarding")"
 css_path="$(echo "$html" | grep -oE '/_next/static/[^"]+\.css' | head -1)"
