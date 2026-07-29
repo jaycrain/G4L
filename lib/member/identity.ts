@@ -18,3 +18,20 @@ export function identityLabel(raw: string | null | undefined): string {
   const n = displayIdentityNoun(raw);
   return n ? `the ${n}` : '';
 }
+
+// Validate a COINED identity handle (the "write your own" field) before it becomes a rendered label. Free text that
+// the member typed can be junk — surrounding quotes, trailing punctuation, emoji, a whole sentence, or a bare article.
+// Returns a clean handle, or null if it isn't a plausible 1–4-word label (→ the caller re-prompts instead of
+// committing garbage). Chips never hit this (they're pre-vetted); only the coin-your-own path does. (CAT-10)
+export function sanitizeCoinedIdentity(raw: string | null | undefined): string | null {
+  let s = (raw ?? '').trim();
+  s = s.replace(/[\p{Extended_Pictographic}\u{1F3FB}-\u{1F3FF}\u{200D}️]/gu, ' '); // strip emoji/ZWJ
+  s = s.replace(/\s+/g, ' ').trim();
+  s = s.replace(/^[^\p{L}]+/u, '').replace(/[^\p{L}\p{N}]+$/u, '').trim(); // trim non-letter edges (quotes/punct)
+  const noun = cleanIdentityNoun(s); // drop a leading article
+  if (!noun || /^(the|a|an)$/i.test(noun)) return null; // empty, or a bare article ("the")
+  if (noun.length > 40) return null; // a sentence, not a handle
+  if (noun.split(' ').length > 4) return null; // handles are 1–4 words ("the Stay-At-Home Parent")
+  if (!/\p{L}/u.test(noun)) return null; // must contain a letter (not "123" / "!!!")
+  return noun;
+}

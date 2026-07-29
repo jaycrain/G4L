@@ -21,7 +21,7 @@
 // load-bearing, not deferrable), and the handoff into the confirmation card. The flow is now END-TO-END
 // behind the flag — the first live-eval gate.
 
-import { cleanIdentityNoun, displayIdentityNoun, identityLabel } from '../member/identity.ts';
+import { cleanIdentityNoun, displayIdentityNoun, identityLabel, sanitizeCoinedIdentity } from '../member/identity.ts';
 import { isDoorSlug, matchDoors, type DoorSlug } from '../doors.ts';
 import { RECLAIM_LIST_FLOOR, RECLAIM_LIST_MIN, RECLAIM_LIST_TARGET, reclaimAddIntent, isReclaimMetaFragment } from '../member/reclaim.ts';
 import { gapIsNarrative, hasIdentity } from './onboarding-contract.ts';
@@ -178,7 +178,9 @@ const IDENTITY_PICK_SKIP_RE =
   /(?:not\s+sure|not\s+ready|not\s+yet|don'?t\s+know|no\s+idea|none\s+of\s+(?:these|them)|maybe\s+later)/i;
 function identityPickIsSkip(raw: string): boolean {
   const t = raw.trim();
-  if (t === IDENTITY_PICK_SKIP) return true;
+  // Case-insensitive + substring so a paste/altered-casing/decorated sentinel ("The __IDENTITY_SKIP__") still skips
+  // rather than committing the sentinel as a literal handle. (CAT-12)
+  if (t.toLowerCase().includes(IDENTITY_PICK_SKIP)) return true;
   const words = t.split(/\s+/).filter(Boolean);
   return words.length >= 2 && IDENTITY_PICK_SKIP_RE.test(t); // phrase-length uncertainty only
 }
@@ -1059,15 +1061,20 @@ const identityStage: StageDef = {
         b.pendingIdentityPick = undefined;
         b.stage = 'gap';
         b.reply = `${SKIP_ACK}\n\n${gapOpen(b.collected)}`;
-      } else if (!cleanIdentityNoun(raw)) {
-        // Empty / only an article — re-offer the same candidates once rather than lose the pick moment.
-        b.reply = IDENTITY_PICK_REPROMPT;
-        b.expects = { kind: 'identity_pick', candidates: b.pendingIdentityPick };
       } else {
-        b.collected.identityNoun = displayIdentityNoun(raw); // their word, verbatim (article stripped, natural case)
-        b.pendingIdentityPick = undefined;
-        b.stage = 'gap';
-        b.reply = identityPickAck(b.collected); // accept + bridge into the gap — the pick was definitive
+        // A tapped CHIP matches a candidate exactly (pre-vetted) → take it as-is; a COINED word goes through the
+        // validity gate so junk (emoji, a whole sentence, a bare article) re-prompts instead of becoming a label. (CAT-10)
+        const chip = b.pendingIdentityPick.find((c) => c.toLowerCase() === cleanIdentityNoun(raw).toLowerCase());
+        const handle = chip ?? sanitizeCoinedIdentity(raw);
+        if (!handle) {
+          b.reply = IDENTITY_PICK_REPROMPT;
+          b.expects = { kind: 'identity_pick', candidates: b.pendingIdentityPick };
+        } else {
+          b.collected.identityNoun = displayIdentityNoun(handle); // verbatim (article stripped, natural case)
+          b.pendingIdentityPick = undefined;
+          b.stage = 'gap';
+          b.reply = identityPickAck(b.collected); // accept + bridge into the gap — the pick was definitive
+        }
       }
     } else if (b.collected.identityNoun) {
       // BREATHE FLOOR (1a) + the conditional second probe (1b / Decision S). Reflect once the material is RICH
@@ -1742,6 +1749,9 @@ export function parseStagedTurn(content: readonly unknown[]): ModelTurn {
       if (b.name === 'reflect_gap') gapReady = true;
     }
   }
+  // Governance arbitration (CAT-11): if the model OFFERS candidate words this turn, the member's tap is what names the
+  // identity — so a same-turn name_identity must NOT commit an unconfirmed handle. The offer wins; drop the name.
+  if (identityCandidates && rec.identityNoun !== undefined) rec.identityNoun = undefined;
   return { text, record: rec, noFade, gapReady, refineReclaim, replyIntent, ...(identityCandidates && { identityCandidates }) };
 }
 

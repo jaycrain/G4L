@@ -72,3 +72,35 @@ test('PICK turn — an empty submission re-offers the same chips rather than los
   assert.equal(t.state.stage, 'identity');
   assert.equal(t.state.collected.identityNoun, undefined);
 });
+
+test('PICK/CAT-10 — coined garbage (emoji / a sentence / a bare article) re-prompts, never commits a junk label', () => {
+  for (const junk of ['🎉🎉🎉', 'the', 'well I guess if I really had to pick one it would probably be something like a runner maybe']) {
+    const pending: ConvState = { ...drawnOut, pendingIdentityPick: ['Athlete', 'Cyclist'] };
+    const t = applyStagedTurn(pending, [], junk, { text: '' });
+    assert.equal(t.state.collected.identityNoun, undefined, `junk "${junk.slice(0, 12)}…" must not become a handle`);
+    assert.equal(t.expects?.kind, 'identity_pick', 'it re-offers the chips');
+  }
+});
+
+test('PICK/CAT-10 — a coined word with decoration is cleaned and accepted', () => {
+  const pending: ConvState = { ...drawnOut, pendingIdentityPick: ['Athlete', 'Cyclist'] };
+  const t = applyStagedTurn(pending, [], '“Adventurer!” 🎒', { text: '' });
+  assert.equal(t.state.collected.identityNoun, 'Adventurer', 'quotes/punctuation/emoji stripped, word kept');
+});
+
+test('OFFER/CAT-11 — a same-turn offer_identity_words + name_identity does NOT commit an unconfirmed name', () => {
+  const m = parseStagedTurn([
+    { type: 'text', text: 'Here are a few words.' },
+    { type: 'tool_use', name: 'offer_identity_words', input: { words: ['Athlete', 'Cyclist'] } },
+    { type: 'tool_use', name: 'name_identity', input: { noun: 'Athlete' } }, // model over-eagerly names too
+  ]);
+  assert.equal(m.record?.identityNoun, undefined, 'the offer wins — the member’s tap names it, not this turn');
+  assert.deepEqual(m.identityCandidates, ['Athlete', 'Cyclist']);
+});
+
+test('PICK/CAT-12 — a decorated/uppercased skip sentinel still skips, not a literal handle', () => {
+  const pending: ConvState = { ...drawnOut, pendingIdentityPick: ['Athlete', 'Cyclist'] };
+  const t = applyStagedTurn(pending, [], 'The __IDENTITY_SKIP__', { text: '' });
+  assert.equal(t.state.collected.identitySkipped, true);
+  assert.equal(t.state.collected.identityNoun, undefined);
+});
