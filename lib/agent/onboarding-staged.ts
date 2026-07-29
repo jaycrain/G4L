@@ -957,11 +957,16 @@ const LIKERT_NUM_WORDS: Record<string, number> = { one: 1, two: 2, three: 3, fou
 // unaffected: "10"/"12" were already out-of-range → null.)
 export function parseLikert(msg: string, max = 5): number | null {
   const m = (msg ?? '').toLowerCase();
-  const digit = m.match(/\b(\d{1,2})\b/);
-  if (digit) {
-    const n = Number(digit[1]);
-    return n >= 1 && n <= max ? n : null;
-  }
+  // Strip SCALE/ITEM references first, then take the first remaining number — so an incidental figure ("on a scale of
+  // 1 to 5, I'm a 4" → 4; "question 3: a 5" → 5) can't beat the real rating, while "8 out of 10" still reads 8.
+  // Out-of-range digits are ignored (so "10" on a 1–5 scale still yields null). (CAT-33)
+  const cleaned = m
+    .replace(/\bout of\s+\d+/g, ' ') // "8 out of 10" → keep the 8
+    .replace(/\b\d+\s*(?:to|through|[-–—])\s*\d+\b/g, ' ') // ranges: "1 to 5", "1-5"
+    .replace(/\/\s*\d+/g, ' ') // "4/5"
+    .replace(/\b(?:question|item|q|#)\s*#?\s*\d+/g, ' '); // item labels: "question 3", "#2"
+  const inRange = [...cleaned.matchAll(/\b(\d{1,2})\b/g)].map((x) => Number(x[1])).filter((n) => n >= 1 && n <= max);
+  if (inRange.length) return inRange[0]!;
   for (const [w, n] of Object.entries(LIKERT_NUM_WORDS)) if (n <= max && new RegExp(`\\b${w}\\b`).test(m)) return n;
   return null;
 }
