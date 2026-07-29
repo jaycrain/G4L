@@ -113,3 +113,30 @@ test('W-34 · the model’s OWN revision still wins (engine detector doesn’t o
   assert.deepEqual(turn.state.pendingRevision, { kind: 'correct', fromSlug: 'diagnosis', toSlug: 'grind' }, 'the model’s signal is used directly');
   assert.equal(turn.state.awaitingConfirm, true);
 });
+
+// --- JAY'S WALK (2026-07-29): a bare "Yes" must never trigger a door REVISION -------------------------------
+// He affirmed the Companion's reflection and got "maybe the door you named isn't quite the one — say more" — twice.
+// The model signalled a revision on a turn carrying no member material; the engine accepted it unconditionally.
+// A revision must be GROUNDED in what the member actually said (propose ≠ assert).
+test('§2b · a bare affirmation ("Yes") does NOT trigger a door-revision probe', () => {
+  for (const msg of ['Yes', 'yeah', 'ok']) {
+    const turn = applyReconnectTurn(openedOnDiagnosis, [], msg, {
+      text: '', // the model signalled a swap but produced no words to justify it
+      revision: { kind: 'correct', fromSlug: 'diagnosis', toSlug: 'grind' },
+    });
+    assert.equal(turn.state.pendingRevision, undefined, `"${msg}" must not open a revision`);
+    assert.equal(
+      /isn't quite the one|isn’t quite the one/.test(turn.reply),
+      false,
+      `"${msg}" must not be answered with an unearned challenge to their Door`,
+    );
+  }
+});
+
+test('§2b · a GROUNDED redirect still proposes the revision (the guard is not a blanket block)', () => {
+  const turn = applyReconnectTurn(openedOnDiagnosis, [], 'No — it was really the grind, that came first and set all of it up', {
+    text: 'The Grind, then — does that feel truer?',
+    revision: { kind: 'correct', fromSlug: 'diagnosis', toSlug: 'grind' },
+  });
+  assert.ok(turn.state.pendingRevision, 'real material still opens the propose→confirm path');
+});

@@ -18,7 +18,7 @@ import { identityLabel } from '../member/identity.ts';
 import type { Db } from '../db/schema.ts';
 import { MEMBER_AGENT_SYSTEM_PROMPT } from './system-prompt.ts';
 import { resolveGapConfirm, memberWantsToAdvance } from './onboarding-intent.ts';
-import { runArcTurn, administeredStage, drawoutShouldReflect, receiveThen, type ArcConfig, type StageDef } from './onboarding-staged.ts';
+import { runArcTurn, administeredStage, drawoutShouldReflect, receiveThen, isProcessMetaOrAssent, type ArcConfig, type StageDef } from './onboarding-staged.ts';
 import { captureCreate } from './capture-model.ts';
 import { CHECKPOINT_GRIT_ITEMS, grintaStem } from '../grinta/survey/instrument.ts';
 import type { Collected, ConvMessage, ConvState, DoorRevision, ModelTurn, ReplyIntent, Turn, Stage } from './onboarding.ts';
@@ -212,6 +212,16 @@ function reflectReseeing(modelText: string): string {
   // Graceful: a swap was signaled but no words came — do NOT assert it. Ask, so it stays offered-not-asserted.
   return "Something you said makes me wonder if the door you named isn't quite the one — can you say more, so I get it right?";
 }
+// A door REVISION must be GROUNDED in something the member actually said this turn. A bare affirmation ("Yes") is the
+// member AGREEING with the reflection — it is not evidence their door is wrong — yet the model sometimes signals a
+// revision on exactly that turn, so the Companion answered "Yes" with "maybe the door you named isn't quite the one"
+// (twice, on Jay's walk: an unearned, repeated challenge to something he'd just confirmed). Propose-never-assert
+// requires substance: no bare assent, and enough words to actually carry a redirect. Same class as the gap-confirm
+// corroboration gate — a model guess must never outrank what the member plainly said.
+function revisionIsGrounded(memberMessage: string): boolean {
+  const t = (memberMessage ?? '').trim();
+  return t.length >= 12 && !isProcessMetaOrAssent(t);
+}
 function reseeingLanded(toSlug: DoorSlug, kind: DoorRevision['kind']): string {
   const name = DOORS.find((d) => d.slug === toSlug)?.displayName ?? 'that';
   if (kind === 'correct') return `${name}, then — that's the one. That changes the shape of it. Let me sit with what it means, and we'll keep going from there.`;
@@ -275,7 +285,7 @@ const doorsStage: StageDef = {
   gather(b) {
     // Mid-draw-out RE-SEEING: the model proposes the primary Door is really a different one → offer it as a check
     // (never asserted). Holds until the member confirms next turn.
-    if (b.model.revision && isDoorSlug(b.model.revision.toSlug)) {
+    if (b.model.revision && isDoorSlug(b.model.revision.toSlug) && revisionIsGrounded(b.memberMessage)) {
       b.pendingRevision = b.model.revision;
       b.awaitingConfirm = true;
       b.reply = reflectReseeing(b.modelText);
@@ -336,7 +346,7 @@ const doorsStage: StageDef = {
       return;
     }
     // (2) A re-seeing may surface AT the insight confirm too (they dispute + the model proposes the truer door here).
-    if (b.model.revision && isDoorSlug(b.model.revision.toSlug)) {
+    if (b.model.revision && isDoorSlug(b.model.revision.toSlug) && revisionIsGrounded(b.memberMessage)) {
       b.pendingRevision = b.model.revision;
       b.awaitingConfirm = true;
       b.reply = reflectReseeing(b.modelText);
