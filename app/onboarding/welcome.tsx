@@ -117,6 +117,10 @@ function WelcomeHero({ onNext }: { onNext: () => void }) {
           It starts with a real conversation with your AI G4L Companion that’s as easy as a chat with a friend.
         </p>
         <button type="button" className="onbwel-d-cta" onClick={onNext}>Sign up →</button>
+        {/* "/" now lands here, so this hero is the FRONT DOOR — a returning member must have a way through it. */}
+        <p className="onbwel-d-signin">
+          Already a member? <a href="/login">Log in</a>.
+        </p>
       </div>
     </div>
   );

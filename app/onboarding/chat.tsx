@@ -317,6 +317,12 @@ export default function OnboardingChat({ welcomeEnabled = false }: { welcomeEnab
           {error && <p className="error">{error}</p>}
           <button type="submit">{resumable ? 'Pick up where I left off →' : 'Let’s begin →'}</button>
         </form>
+        {/* A returning member on a fresh device sees the blank gate, so always offer the way to log in. */}
+        {!resumable && (
+          <p className="muted onboard-signin">
+            Already a member? <a href="/login">Log in</a>.
+          </p>
+        )}
       </>
     );
   }

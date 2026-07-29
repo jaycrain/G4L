@@ -23,7 +23,7 @@ URL="${1:-https://g4l-ten.vercel.app}"
 # batch are already on the old build, so they pass BEFORE your push promotes — a FALSE GREEN (this bit us: a stale
 # tell list green-lit an old build). RULE: when you push, REPLACE these with a string unique to that push, and prefer
 # a full declaration (`selector{prop:value}`) over a bare class name so a pre-existing use elsewhere can't match.
-CSS_TELLS=("idp-own:hover")   # (carried) ghost-button hover opt-out
+CSS_TELLS=("onbwel-d-signin")   # NEW THIS PUSH: front-door sign-in link (entry narrowing)
 JS_TELLS=("This is my list")            # reclaim builder submit button (carried; not a landing proof on its own)
 
 # COMMIT CHECK — the authoritative proof for an ENGINE-ONLY push (server logic, no bundle change), where no static

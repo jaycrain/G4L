@@ -1,10 +1,17 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { currentMemberId } from './auth.ts';
+import { onboardingWelcomeEnabled } from '../lib/dashboard/redesign.ts';
 
 export default async function Home() {
   const id = await currentMemberId();
   if (id) redirect(`/dashboard/${id}`);
+  // ENTRY NARROWING (Jay, 2026-07-29): "/" IS the new-member front door. It used to render its own landing page whose
+  // copy ("You're still in there… the hundred reasonable trade-offs…") then repeated almost verbatim in the welcome
+  // hero one click later — a double intro. Send a fresh visitor straight to the welcome so there's ONE opening.
+  // Returning members go to /login, linked from both the welcome hero and the sign-up gate.
+  // If the welcome is flag-off, fall through to the original landing so this is never a dead end.
+  if (onboardingWelcomeEnabled()) redirect('/onboarding');
 
   return (
     <>
