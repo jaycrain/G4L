@@ -31,6 +31,10 @@ const REPORT_SQL = `select jsonb_build_object(
   'doors', (select coalesce(jsonb_agg(to_jsonb(d) order by d.sort_order), '[]') from member_door d where d.member_id = $1),
   'facets', (select coalesce(jsonb_agg(to_jsonb(f) order by f.sort_order), '[]') from facet f where f.member_id = $1),
   'idq_retakes', (select coalesce(jsonb_agg((to_jsonb(i) - 'responses') order by i.sequence_no), '[]') from idq_retake i where i.member_id = $1),
+  -- The GRINTA readings (survey Grinta Index, migration 0047). A FROZEN data contract the member sees on their card
+  -- and dashboard, so it must be inspectable here — its absence from this report used to be unreadable: you couldn't
+  -- tell "the baseline never saved" from "the diagnostic doesn't look".
+  'grinta_readings', (select coalesce(jsonb_agg((to_jsonb(g) - 'responses') order by g.sequence_no), '[]') from grinta_reading g where g.member_id = $1),
   'session_progress', (select coalesce(jsonb_agg((to_jsonb(s) - 'answers') order by s.updated_at), '[]') from session_progress s where s.member_id = $1),
   'arc_sessions', (select coalesce(jsonb_agg(jsonb_build_object(
        'arc', a.arc, 'state', a.state, 'msg_count', jsonb_array_length(a.messages), 'updated_at', a.updated_at) order by a.updated_at), '[]')
@@ -73,6 +77,9 @@ const REPORT_SQL = `select jsonb_build_object(
                                        then jsonb_build_object('named_door', (select named_door from member_profile where member_id = $1),
                                             'primary_member_door', (select door_slug from member_door where member_id = $1 and is_primary limit 1)) end,
      'no_baseline_idq',            case when not exists (select 1 from idq_retake where member_id = $1 and sequence_no = 0) then true end,
+     -- Every member who finishes intake takes the Grinta baseline survey, so a committed member with no onboarding
+     -- grinta_reading means the frozen baseline silently failed to persist. Surface it rather than leaving it unread.
+     'no_grinta_baseline',         case when not exists (select 1 from grinta_reading where member_id = $1 and source = 'onboarding') then true end,
      'sessions_stuck_in_progress', (select case when count(*) > 0 then jsonb_agg(session_id) end from session_progress where member_id = $1 and status = 'in_progress'),
      'rebuild_underway_without_reconnect_core', case when exists (select 1 from phase_gate where member_id = $1 and gate = 'rebuild_underway')
                                                      and not exists (select 1 from phase_gate where member_id = $1 and gate = 'reconnect_core_complete') then true end
