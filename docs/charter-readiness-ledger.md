@@ -641,3 +641,31 @@ fns + replay fixtures + pglite finalize asserts) — the more mechanically fixab
   `/dashboard/{id}` on every member page, and nothing on the dashboard itself / login / onboarding / admin. Verified in
   dev: present on a Session (reclaim C1 → correct dashboard href), absent on /login. tsc + 653 green. Covers every
   subpage + Session automatically (incl. future routes). **Shipped.**
+
+## Identity tap-to-pick walk (2026-07-29, Jay) — COMPILING, fixes held
+- **IDP-1 🎨 cosmetic — picker link-buttons unreadable on rollover.** The `.idp-own` ("None of these — I'll write my
+  own") and `.idp-skip` ("Not sure yet — we'll find it later") link-styled buttons go dark-on-dark on `:hover`/`:active`:
+  the GLOBAL `button:hover { background: var(--navy) }` (globals.css:106) paints them navy while their text stays
+  teal/grey. Fix = give the two link-buttons a `:hover`/`:active` override (keep `background: none`, only shift color/
+  underline) — same treatment `.pb-tools button` etc. already use. NOT YET FIXED (Jay compiling walk observations first).
+- **IDP-2 ⛔ GOVERNANCE (serious) — false DECLINE of a real member.** The Athlete member gave a textbook
+  Doors-accumulation fade (married → "didn't have the ultimate freedom anymore" → kids shifted priorities → work
+  ramped up), yet the model fired `note_no_fade` → terminal Decision-E decline ("you're reaching forward… keep
+  building"). Root cause: the decline guard `hasGenuineLoss(corpus)` (onboarding-intent.ts) keys ONLY on loss-VERB
+  vocabulary (lost/divorce/died/burned out…) and does NOT consult the named Doors — so the CANONICAL slow
+  Doors-accumulation fade (the program's most common case) reads as "no loss." Compounded by: (a) the last message
+  "Bigger job, more hours" tripped AMBITION_RE ("bigger") reinforcing the false forward-ambition read; (b) the model
+  over-eagerly tagged note_no_fade on upbeat phrasing. Also "too quick" — the decline fired the instant the member
+  answered, without acknowledging it or reflecting the drawn-out story. Fix direction (later): decline gate must treat
+  ≥1–2 named Doors in the corpus as a real-fade signal (use hasLossSignal, which includes matchDoors, not the
+  vocab-only hasGenuineLoss) → engine overrides a wrong note_no_fade; never decline once Doors are in hand. This is the
+  known [[staged-backstops-break-no-fade]] hole. NOT cosmetic — deploy before the cosmetic batch. NOT YET FIXED.
+- **IDP-3 ⛔ DATA — summary card reachable with an EMPTY Reclaim List (+ no Grinta).** Same Athlete walk: after the
+  IDP-2 false-decline detour, the flow recovered into a strong reflection AND reached the "Here's what you shared" card
+  — but "YOUR COMEBACK — WHAT YOU WANT BACK" is EMPTY and there is no Grinta baseline block. The card must be
+  UNREACHABLE without ≥RECLAIM_LIST_MIN (3) items + the Grinta survey; the reclaim builder + grinta stage were never
+  run. Root suspect: the terminal `declined` off-ramp corrupts the stage flow so a later path lands on `complete`
+  bypassing reclaim→grinta. Likely fixed as a side effect of IDP-2 (don't decline a real fade → the normal
+  gap→reclaim→grinta path runs), but ADD a completion-contract guard: never render/commit the card unless the reclaim
+  floor + grinta baseline are both satisfied (the deterministic completion contract should already gate this — verify
+  the decline path can't slip past it). NOT YET FIXED.
