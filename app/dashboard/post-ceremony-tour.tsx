@@ -67,11 +67,25 @@ export default function PostCeremonyTour({
   // Run on first post-Threshold landing (autoStart) or a Field-Guide replay (?tour=1).
   useEffect(() => {
     const force = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('tour') === '1';
-    if (autoStart || force) setPhase('transition');
-    // Mark it SEEN the moment the first-run tour appears — so navigating away mid-tour (e.g. to "Your full story")
-    // doesn't re-fire it on return. finish() marks it too (idempotent); a ?tour=1 replay never re-marks.
-    if (autoStart) void completeTourAction(memberId);
-  }, [autoStart]);
+    if (force) {
+      setPhase('transition'); // an explicit replay always runs, and never re-marks
+      return;
+    }
+    if (!autoStart) return;
+    // ONE-SHOT, belt AND braces. `autoStart` comes from a SERVER-rendered read of tour_completed_at, which Next's
+    // client router cache can replay STALE: leaving for "My Story" and coming back re-served the pre-write payload,
+    // so the tour fired a second time even though the DB already said completed (Jay's walk). Marking it server-side
+    // alone can't fix that — the stale prop never sees the write. A durable per-member client marker closes it.
+    const key = `g4l-tour-seen-${memberId}`;
+    try {
+      if (localStorage.getItem(key) === '1') return; // already shown on this device — never replay
+      localStorage.setItem(key, '1');
+    } catch {
+      /* storage unavailable (private mode) — fall back to the server prop alone */
+    }
+    setPhase('transition');
+    void completeTourAction(memberId); // idempotent; finish() marks it too
+  }, [autoStart, memberId]);
 
   const measure = useCallback((key: string) => {
     const el = document.querySelector(`[data-tour="${key}"]`) as HTMLElement | null;
