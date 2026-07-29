@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { applyStagedTurn } from '../lib/agent/onboarding-staged.ts';
+import { detectCrisis } from '../lib/agent/governance.ts';
 import type { ConvState, ConvMessage, ModelTurn, Turn } from '../lib/agent/onboarding.ts';
 
 // ============================================================================
@@ -122,4 +123,21 @@ test('RECLAIM/CAT-16/17 — the submission is authoritative: model phantom/refin
   });
   assert.deepEqual(t.state.collected.reclaimList, ['Golf again', 'Lose 20 lbs', 'Call my brother'], 'no phantom, no clobber');
   assert.equal(t.state.collected.reclaimCategories?.length, t.state.collected.reclaimList?.length, 'parallel arrays index-locked (CAT-17)');
+});
+
+// ---------------------------------------------------------------------------
+// CLUSTER 4 — crisis lexicon + declined-resume.
+// ---------------------------------------------------------------------------
+test('CRISIS/CAT-22 — explicit self-harm / overdose / planning phrasings all route to crisis', () => {
+  for (const s of ['I keep cutting myself', 'I want to overdose', 'I made a plan to end it', 'thinking about taking all my pills']) {
+    assert.equal(detectCrisis(s).flagged, true, `must flag: "${s}"`);
+  }
+  assert.equal(detectCrisis('I want to cut back on drinking').flagged, false, 'ordinary "cut back" does not false-fire');
+});
+
+test('DECLINE/CAT-26 — a declined session stays terminal on resume; never dragged into a completion', () => {
+  const declined: ConvState = { stage: 'declined', collected: {} };
+  const t = applyStagedTurn(declined, [], 'actually wait', { text: '' });
+  assert.equal(t.declined, true, 're-asserts the decline');
+  assert.equal(t.complete, false, 'never force-completes an empty declined session');
 });

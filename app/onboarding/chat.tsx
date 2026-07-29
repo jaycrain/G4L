@@ -156,6 +156,7 @@ export default function OnboardingChat({ welcomeEnabled = false }: { welcomeEnab
         // If they'd already reached the handoff, resume straight into the ready screen (still
         // reversible — they can keep talking or proceed).
         if (resumed.state.stage === 'complete') setReady(true);
+        if (resumed.state.stage === 'declined') setDeclined(true); // resume a declined session as terminal, not a broken commit (CAT-26)
         setPending(false);
         return;
       }

@@ -55,6 +55,13 @@ const CRISIS_PATTERNS: readonly RegExp[] = [
   /\bgiv(e|ing)\s+up\s+on\s+(life|living|everything|myself)\b/i,
   /\btired\s+of\s+(living|being\s+(here|alive)|it\s+all)\b/i,
   /\bdon'?t\s+want\s+to\s+(wake\s+up|exist|be\s+around)\b/i,
+  // Explicit self-harm methods + planning (CAT-22) — the set above missed 'cut/cutting myself', overdose, and
+  // making a plan to end it. Deterministic recall is the guarantee (the model prompt is only the second defense).
+  /\bcut(ting)?\s+my\s?self\b/i,
+  /\b(over[-\s]?dos(e|ing)|\bOD('?ing)?\b)\b/i,
+  /\btak(e|ing)\s+(all\s+)?(my|the)\s+pills\b/i,
+  /\b(made|have|got)\s+a\s+plan\s+to\s+(end|kill|hurt)\b/i,
+  /\b(plan(ning)?|going)\s+to\s+end\s+(it|my\s+life|everything)\b/i,
 ];
 
 export type CrisisCheck = { flagged: boolean; matched: string[] };

@@ -1576,6 +1576,12 @@ export function applyStagedTurn(
   memberMessage: string,
   model: ModelTurn,
 ): Turn {
+  // 'declined' is a TERMINAL off-ramp (out of scope, Decision E). On resume it isn't a real stage in the arc, so
+  // without this it fell through to the 'complete' card branch and force-committed an empty member. Re-assert the
+  // decline instead — never drag a declined session into a broken completion. (CAT-26)
+  if (state.stage === 'declined') {
+    return { reply: DECLINE_REPLY, state, complete: false, declined: true };
+  }
   return runArcTurn(ONBOARDING_ARC, state, history, memberMessage, model);
 }
 
