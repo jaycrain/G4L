@@ -18,8 +18,13 @@ URL="${1:-https://g4l-ten.vercel.app}"
 # CSS tells (class names in the built stylesheet) and JS tells (strings in the chunks).
 # Tells must live in the STATIC bundle — CSS classes or client strings. Do NOT use
 # server-generated copy (engine/model replies): it renders at runtime, never in a chunk.
-CSS_TELLS=("rlb-input" "onbwel-bleed" "idp-chip")  # reclaim builder · full-bleed welcome · identity tap-to-pick
-JS_TELLS=("This is my list")                        # reclaim builder submit button
+#
+# ⚠ CRITICAL: a tell only proves the deploy landed if it is NEW IN THE BATCH YOU JUST PUSHED. Tells from an earlier
+# batch are already on the old build, so they pass BEFORE your push promotes — a FALSE GREEN (this bit us: a stale
+# tell list green-lit an old build). RULE: when you push, REPLACE these with a string unique to that push, and prefer
+# a full declaration (`selector{prop:value}`) over a bare class name so a pre-existing use elsewhere can't match.
+CSS_TELLS=("idp-own:hover" "d8d6d6")   # v3.2.1 stabilization: ghost-button hover opt-out · btn-secondary non-red hover
+JS_TELLS=("This is my list")            # reclaim builder submit button (carried; not a landing proof on its own)
 
 html="$(curl -s "$URL/onboarding")"
 css_path="$(echo "$html" | grep -oE '/_next/static/[^"]+\.css' | head -1)"
