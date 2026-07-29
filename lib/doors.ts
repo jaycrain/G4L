@@ -179,6 +179,10 @@ export function correctDoors(doors: DoorSlug[], narrative: string): DoorSlug[] {
 
   const set = new Set<DoorSlug>(doors);
   if (fullHouseSignal) {
+    // OPEN (CAT-07, needs Jay's product call): dropping aging_parents here fixes Scott's mis-tag walk, but Full House
+    // and Aging Parents are NOT logically contradictory (the sandwich generation) — so a member who names a parent's
+    // decline in one turn and young kids in another can lose the Door they named. Empty Nest genuinely IS
+    // contradictory with Full House. Left as-is pending that decision; do not "fix" one walk by breaking the other.
     if (!agingParentsSignal) set.delete('aging_parents');
     if (!emptyNestSignal) set.delete('empty_nest');
     set.add('full_house');

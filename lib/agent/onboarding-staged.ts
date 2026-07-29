@@ -421,7 +421,9 @@ export function tidyGapProse(s: string): string {
   let t = (s ?? '').replace(/\s+/g, ' ').trim();
   if (!t) return t;
   t = t.replace(/\s+([.,;:!?])/g, '$1'); // no space before punctuation
-  t = t.replace(/([.!?])(?=[A-Za-z])/g, '$1 '); // a space after sentence-ending punctuation
+  // a space after sentence-ending punctuation — but NOT when the period is part of a single-letter abbreviation
+  // ("3 p.m.", "e.g.", "a.m.") — those are the member's own words, not a sentence boundary. (CAT-25)
+  t = t.replace(/(?<!\b[a-z])([.!?])(?=[A-Za-z])/gi, '$1 ');
   t = t.replace(/([.!?]\s+|^)([a-z])/g, (_m, pre: string, ch: string) => pre + ch.toUpperCase()); // capitalize sentence starts
   return /[.!?]$/.test(t) ? t : `${t}.`; // a closing period
 }
@@ -1251,7 +1253,15 @@ const gapStage: StageDef = {
     // MORE = DONE → ADVANCE. resolveGapConfirm owns the meaning (dispute / addition / done); the engine acts on it.
     const intent = resolveGapConfirm(b.memberMessage, b.model.replyIntent);
     if (intent === 'dispute') {
-      // wrong, no new content → reopen, but KEEP the gap + Doors (never wipe).
+      // wrong, no new content → reopen, but KEEP the gap + Doors (never wipe). ANTI-LOOP: count the bounce like
+      // identity's confirm does — a member who keeps disputing must hit the SHARED ceiling and be moved on, not
+      // ping-pong to the 30-turn hard ceiling. Past it, accept the story as-is and advance to reclaim. (CAT-21)
+      if (confirmBounceExceeded(s)) {
+        b.stage = 'reclaim';
+        b.awaitingConfirm = false;
+        b.reply = reclaimOpening(b.collected);
+        return { reply: b.reply, state: beatState(b), complete: false, ...(nextExpects(b.arc, b.stage, false, 0, b.collected) ? { expects: nextExpects(b.arc, b.stage, false, 0, b.collected)! } : {}) };
+      }
       b.awaitingConfirm = false;
       b.reply = REOPEN_GAP;
     } else if (intent === 'addition') {
@@ -1662,7 +1672,8 @@ export const STAGED_TOOLS = [
     name: 'note_door',
     description:
       'Record a Door that surfaces in the fade story — the life event that opened the distance. Call once per Door (it accumulates). Slugs: ' +
-      'career_cliff, aging_parents, empty_nest, vanishing, body, diagnosis, marriage, loss, full_house, grind, load_bearer. ' +
+      'career_cliff, aging_parents, empty_nest, vanishing, body, diagnosis, marriage, loss, full_house, grind, load_bearer, acceptance ' +
+      '(acceptance = resignation to age/decline — "this is just who I am now, at my age" — a real, quiet Fade). ' +
       'Only note a Door the member actually describes — none is a valid outcome; never force one.',
     input_schema: { type: 'object' as const, properties: { slug: { type: 'string' } }, required: ['slug'] },
   },
