@@ -153,11 +153,40 @@ const NO_LOSS_RE =
   /\b(no (real )?(loss|drift|regret|hardship|crisis)( or (loss|drift|regret|hardship))?|nothing (ever |really )?(went |is )?wrong|haven'?t (drifted|lost|fallen)|don'?t feel (a |any )?(loss|drift|gap))\b/i;
 const LOSS_RE =
   /\b(lost|loss|losing|died|death|passed|sick|illness|diagnos|divorce|laid off|layoff|let go|left me|gone|stopped|gave up|drift|faded|fading|disappear|alone|lonely|empty|caregiver|caring for|injur|grief|grieving|miss(ed|ing)?|used to|no longer|slipped away|fell apart|burned out|breakdown)\b/i;
+// Negated-loss DECLARATIONS beyond NO_LOSS_RE's "no X" — "not carrying any loss", "without loss", "don't feel any
+// drift". These assert the ABSENCE of a fade, so we strip them before reading LOSS_RE, or the loss word inside the
+// negation ("any loss") false-positives as a real fade (the incidental-token bug). Conservative: the negation must
+// bind tightly to the loss word, so a REAL loss with an incidental negation ("can't stop thinking about the loss")
+// is NOT stripped. (CAT-03/CAT-06)
+const NEG_LOSS_RE =
+  /\b(?:no|not|without|zero|not carrying(?: any)?|don'?t (?:have|feel)(?: any)?|haven'?t (?:felt|had)(?: any)?)\s+(?:real\s+|a\s+|any\s+|sense of\s+)*(?:loss|drift|distance|regret|gap|hardship|crisis|fade)\b/gi;
 // Real loss LANGUAGE, ignoring explicit "no loss / nothing wrong" declarations. Keyed on loss VERBS/events, NOT a
 // Door-name match — "marriage is genuinely good" mentions "marriage" but is not a loss.
 export function hasGenuineLoss(text: string): boolean {
   // Strip ALL "no loss / no drift" declarations (global) — a corpus can repeat them, and a leftover would trip LOSS_RE.
-  return LOSS_RE.test((text ?? '').replace(new RegExp(NO_LOSS_RE.source, NO_LOSS_RE.flags + 'g'), ' '));
+  const stripped = (text ?? '')
+    .replace(new RegExp(NO_LOSS_RE.source, NO_LOSS_RE.flags + 'g'), ' ')
+    .replace(NEG_LOSS_RE, ' ');
+  return LOSS_RE.test(stripped);
+}
+
+// REDUCTION / REROUTE language — the ORDINARY fade voiced WITHOUT loss-verbs: freedom/time/self getting squeezed,
+// rerouted, or put on hold as life accumulates. This is the Doors-accumulation member (G4L's MOST common fade), whose
+// story the loss-verb vocabulary completely misses ("didn't have that freedom anymore", "no time for myself",
+// "everything had to fit around the kids", "shifted my priorities", "put myself last"). A HARD real-fade signal. (CAT-01)
+const REDUCTION_RE =
+  /\b(anymore|no (more )?time (for|to)\b|no (space|room)( left)? for (myself|me|us)|had to fit (it|them|everything|around)|crowded out|squeezed out|less time for|put (myself|me|it|them) (on hold|aside|last|second|on the back ?burner)|on the back ?burner|gave up|stopped (doing|going|playing|training|riding|making time)|slipped away|fell away|lost touch|shifted (my |our )?priorities|no longer (have|had|do|make|had time)|don'?t (have|make) (the )?time)\b/i;
+export function hasReductionLanguage(text: string): boolean {
+  return REDUCTION_RE.test(text ?? '');
+}
+
+// An AFFIRMATIVE no-fade DECLARATION — the genuine forward optimizer positively asserting there's no loss/drift and
+// they simply want MORE. This is POSITIVE evidence of no-fade (never mere absence), and it's what the decline gate
+// keys on — so an incidental loss token can't fabricate a fade, and a real fade is never turned away by silence. (CAT-03)
+const THRIVING_RE =
+  /\b(nothing (ever |really )?(went|is|feels?) (wrong|off|missing)|nothing('?s| is) missing|no (real )?(loss|drift|distance|regret|gap|hardship|crisis)\b|not carrying (any )?(loss|distance|weight)|(i'?m|i am|i feel|feeling|i'?m just) (great|amazing|fulfilled|wonderful|thriving)|life('?s| is) (great|good|full|amazing|wonderful)|no drift|no distance|just want (more|to (level up|optimi|grow|do more))|reaching forward|want to keep (leveling|growing|building|pushing)|i just want more)\b/i;
+export function declaresThriving(text: string): boolean {
+  return THRIVING_RE.test(text ?? '');
 }
 export function isForwardAmbition(text: string): boolean {
   const t = text ?? '';

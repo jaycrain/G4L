@@ -15,7 +15,7 @@ function replayStaged(steps: Step[], from: ConvState = { stage: 'identity', coll
     turns.push(t);
     history.push({ role: 'member', text: s.member }, { role: 'agent', text: t.reply });
     state = t.state;
-    if (t.complete) break;
+    if (t.complete || t.declined) break; // a decline is terminal too — the client shows the decline, no more turns
   }
   return { turns, finalState: state };
 }

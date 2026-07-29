@@ -53,7 +53,9 @@ import { captureCreate } from './capture-model.ts';
 // The intent layer — the one place that decides what a member's utterance MEANS (see onboarding-intent.ts).
 import {
   correctsReflection,
+  declaresThriving,
   hasGenuineLoss,
+  hasReductionLanguage,
   isAcceptanceFade,
   isForwardAmbition,
   memberClosingReclaim,
@@ -1143,11 +1145,22 @@ const gapStage: StageDef = {
   },
   gather(b) {
     const s = b.scratch as GapScratch;
-    // The model's explicit no-fade judgement (note_no_fade) is the PRIMARY signal. Sticky once set.
-    if (b.model.noFade) s.noFade = true;
-    // FADE GATE. Reject a model-tagged gap that is forward-looking ambition (never FABRICATE a fade). Reject on
-    // AMBITION specifically, not shortness — a terse real fade ("Knee. Then divorce.") must survive.
-    if (b.collected.gap && isForwardAmbition(b.collected.gap) && !s.noFade) b.collected.gap = undefined;
+    // REAL-FADE SIGNALS, read fresh from the whole gap-stage corpus every turn. HARD signals — committed Doors, the
+    // ordinary reduction/reroute fade, or resigned Acceptance — are UNAMBIGUOUS: a member showing any is a real Fade
+    // and is NEVER declined (fixes the Doors-accumulation member wrongly turned away — the Doors ARE the fade
+    // taxonomy, so a committed Door outranks any vocabulary check). A genuine loss verb also admits + captures. (CAT-01/05/06)
+    const gapCorpusNow = gapStageCorpus(b.history, b.memberMessage);
+    const hardFadeSignal =
+      (b.collected.doors?.length ?? 0) > 0 || hasReductionLanguage(gapCorpusNow) || isAcceptanceFade(gapCorpusNow);
+    const anyFadeSignal = hardFadeSignal || hasGenuineLoss(gapCorpusNow);
+    // note_no_fade is a HINT, not authority: honored ONLY while NO fade signal is present, and RECONCILED every turn —
+    // the moment a Door / reduction / loss surfaces, a stale no-fade flag clears for good. This kills the sticky-flag
+    // strand where one model misfire silently dropped a genuine-loss member's whole story. (CAT-02/04)
+    s.noFade = (s.noFade || !!b.model.noFade) && !anyFadeSignal;
+    // FADE GATE. Only wipe a model-tagged gap as "forward ambition" when there's NO hard fade signal — an accumulation
+    // fade routinely carries ambition words ("a bigger job") yet is plainly real once a Door/reduction is on the table.
+    // Reject on AMBITION specifically, not shortness — a terse real fade ("Knee. Then divorce.") must survive. (CAT-05)
+    if (b.collected.gap && isForwardAmbition(b.collected.gap) && !hardFadeSignal) b.collected.gap = undefined;
     // Backstop: when the model did NOT tag a (real-fade) set_gap this turn, capture the member's own message as
     // the gap if it reads as a real fade — ACCUMULATE (append) so a progressive revealer's chapters aren't lost.
     const modelTaggedGap = b.model.record?.gap !== undefined && b.model.record.gap !== '' && !isForwardAmbition(b.model.record.gap);
@@ -1159,26 +1172,34 @@ const gapStage: StageDef = {
       // tidyGapProse (milie walk): mechanics-only cleanup of the raw backstop text (never the model's clean set_gap).
       b.collected.gap = tidyGapProse(joinGapChapters(b.collected.gap, b.memberMessage));
     }
-    if (!b.collected.gap && !s.noFade) s.gapTurns = (s.gapTurns ?? 0) + 1; // count gather turns only while no real fade is in hand
+    if (!b.collected.gap) s.gapTurns = (s.gapTurns ?? 0) + 1; // count gap-stage turns spent without a captured fade
     // NEVER-STRAND the gap stage: after several gap turns with NOTHING captured, grab the accumulated gap-stage
     // story so we advance instead of looping the opening question.
     if (!b.collected.gap && !s.noFade && (s.gapTurns ?? 0) >= GAP_MAX_TURNS) {
       const corpus = gapStageCorpus(b.history, b.memberMessage).trim();
-      if (corpus.length >= 40 && !isForwardAmbition(corpus)) b.collected.gap = tidyGapProse(corpus);
+      // NEVER fabricate a fade: still never-strand a subtle real fade the matcher missed, but do NOT grab a corpus
+      // that positively declares thriving (or is pure forward ambition) — that would manufacture a fade for a
+      // genuinely-thriving member. (CAT-03; preserves the run-2 never-strand for real subtle fades.)
+      if (corpus.length >= 40 && !declaresThriving(corpus) && !isForwardAmbition(corpus)) b.collected.gap = tidyGapProse(corpus);
     }
     // DECISION E FORK: resolve a "no obvious fade event" member from the whole gap-stage corpus.
-    const gapCorpus = gapStageCorpus(b.history, b.memberMessage);
+    const gapCorpus = gapCorpusNow;
     if (isAcceptanceFade(gapCorpus)) {
       // RESIGNED to age-decline → The Acceptance Door: a real, quiet Fade. NOT no-fade — clear the flag, capture
       // their own words as the gap, and fall through to the normal real-fade reflect/advance below.
       s.noFade = false;
       if (!b.collected.gap) b.collected.gap = tidyGapProse(b.memberMessage || gapCorpus);
     }
-    // GENUINELY THRIVING → graceful DECLINE. Fires when there's NO real-fade signal anywhere AND either the model
-    // judged no-fade, or the member's own words are pure forward-ambition with nothing captured after a couple turns.
-    const noRealFadeSignal = !isAcceptanceFade(gapCorpus) && !hasGenuineLoss(gapCorpus);
+    // GENUINELY THRIVING → graceful DECLINE. Fires ONLY on POSITIVE evidence of no-fade — an affirmative thriving/
+    // no-loss declaration (or a reconciled model no-fade judgement) — AND NO hard fade signal (Door/reduction/
+    // Acceptance) AND NO genuine loss anywhere. Absence of a fade is never enough on its own: we never fabricate a
+    // fade to admit, and — the failure that turned away our own demographic — never turn away a real one. (CAT-01/03)
     const thrivingDecline =
-      noRealFadeSignal && (s.noFade || (isForwardAmbition(b.memberMessage) && !b.collected.gap && (s.gapTurns ?? 0) >= 2));
+      !hardFadeSignal &&
+      !hasGenuineLoss(gapCorpus) &&
+      // The member's OWN affirmative thriving declaration decides it immediately; a bare model no-fade HINT needs a
+      // beat first, so one premature note_no_fade on a vague opener never terminates before the fade can surface. (CAT-04)
+      (declaresThriving(gapCorpus) || (s.noFade && (s.gapTurns ?? 0) >= 2));
     if (thrivingDecline) {
       // Out of scope; the door stays open. Terminal — no card, no reclaim. We never fabricate a fade to admit them.
       b.stage = 'declined';
