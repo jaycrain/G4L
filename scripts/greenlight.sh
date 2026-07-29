@@ -23,8 +23,9 @@ URL="${1:-https://g4l-ten.vercel.app}"
 # batch are already on the old build, so they pass BEFORE your push promotes — a FALSE GREEN (this bit us: a stale
 # tell list green-lit an old build). RULE: when you push, REPLACE these with a string unique to that push, and prefer
 # a full declaration (`selector{prop:value}`) over a bare class name so a pre-existing use elsewhere can't match.
-CSS_TELLS=("idp-own:hover" "d8d6d6")   # v3.2.1 stabilization: ghost-button hover opt-out · btn-secondary non-red hover
+CSS_TELLS=("idp-own:hover")   # (carried) ghost-button hover opt-out
 JS_TELLS=("This is my list")            # reclaim builder submit button (carried; not a landing proof on its own)
+SERVER_TELLS=("Add each thing below")   # NEW THIS PUSH: the reclaim builder opener must now actually be reached
 
 html="$(curl -s "$URL/onboarding")"
 css_path="$(echo "$html" | grep -oE '/_next/static/[^"]+\.css' | head -1)"

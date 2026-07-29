@@ -1251,7 +1251,17 @@ const gapStage: StageDef = {
     const s = b.scratch as GapScratch;
     // GAP CONFIRM — "…or is there more to it?" A bare "no / nope / that's it / more or less it for now" means NO
     // MORE = DONE → ADVANCE. resolveGapConfirm owns the meaning (dispute / addition / done); the engine acts on it.
-    const intent = resolveGapConfirm(b.memberMessage, b.model.replyIntent);
+    // CORROBORATION GATE: the model's 'more' is a GUESS about what the member meant; a clear closing affirmation
+    // ("that's the brunt of it", "that's it") is a deterministic CLOSE. When the member's own words plainly close the
+    // beat and carry NO new material, the close WINS — otherwise the engine holds in gap while the model, believing
+    // it has moved on, runs the next stage's conversation itself (Jay's walk: the reclaim BUILDER never fired and the
+    // old conversational extraction came back). Same "a guess promoted over a clear signal" pattern as the capture
+    // discipline: an 'addition' must be corroborated by actual new content, not asserted.
+    const deterministic = resolveGapConfirm(b.memberMessage, undefined);
+    const intent =
+      deterministic === 'done' && b.model.replyIntent === 'more' && !shouldCaptureStagedGap(b.memberMessage)
+        ? 'done'
+        : resolveGapConfirm(b.memberMessage, b.model.replyIntent);
     if (intent === 'dispute') {
       // wrong, no new content → reopen, but KEEP the gap + Doors (never wipe). ANTI-LOOP: count the bounce like
       // identity's confirm does — a member who keeps disputing must hit the SHARED ceiling and be moved on, not

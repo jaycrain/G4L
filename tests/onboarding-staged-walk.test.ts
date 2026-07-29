@@ -141,3 +141,40 @@ test('DECLINE/CAT-26 — a declined session stays terminal on resume; never drag
   assert.equal(t.declined, true, 're-asserts the decline');
   assert.equal(t.complete, false, 'never force-completes an empty declined session');
 });
+
+// ---------------------------------------------------------------------------
+// JAY'S CYCLIST WALK (2026-07-29) — the model tagged a clear CLOSE as 'more', so the engine held in the gap stage
+// while the model, believing it had moved on, ran the OLD conversational reclaim itself. The structured builder
+// never fired. A close the member plainly stated must win over the model's contradicting guess.
+// ---------------------------------------------------------------------------
+test('GAP CONFIRM — a plain close ("that\'s the brunt of it") advances to the reclaim BUILDER even if the model says "more"', () => {
+  const atGapConfirm = (): ConvState => ({
+    stage: 'gap',
+    awaitingConfirm: true,
+    collected: {
+      athleticPast: 'riding, out and about',
+      identityNoun: 'Cyclist',
+      gap: 'I got married, then kids, then the job grew and there was no room for the bike.',
+      doors: ['marriage', 'full_house', 'grind'],
+    },
+  });
+  const hist: ConvMessage[] = [{ role: 'agent', text: 'Does that land the way it happened — or is there more to it?' }];
+  for (const replyIntent of [undefined, 'done' as const, 'more' as const]) {
+    const t = applyStagedTurn(atGapConfirm(), hist, "That's the brunt of it", {
+      text: "We're going to fix that. Now let's talk about what you want back.",
+      ...(replyIntent ? { replyIntent } : {}),
+    });
+    assert.equal(t.state.stage, 'reclaim', `model replyIntent=${replyIntent}: must advance out of gap`);
+    assert.equal(t.expects?.kind, 'reclaim_list', `model replyIntent=${replyIntent}: the structured builder must fire`);
+  }
+});
+
+test('GAP CONFIRM — a genuine ADDITION still keeps drawing out (the corroboration gate is not a blanket override)', () => {
+  const t = applyStagedTurn(
+    { stage: 'gap', awaitingConfirm: true, collected: { athleticPast: 'riding', identityNoun: 'Cyclist', gap: 'The job grew.', doors: ['grind'] } },
+    [{ role: 'agent', text: 'is there more to it?' }],
+    'Actually yes — my father died that same year and I stopped riding altogether after that',
+    { text: 'Thank you for telling me.', replyIntent: 'more' },
+  );
+  assert.equal(t.state.stage, 'gap', 'real new material still holds in the gap draw-out');
+});
