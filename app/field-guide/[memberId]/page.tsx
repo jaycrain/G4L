@@ -56,7 +56,12 @@ export default async function FieldGuidePage({ params }: { params: Promise<{ mem
             <li><strong>Playbook</strong> — your Companion saves the story you’re writing as you go, plus the best lines, reframes, and science that hold it up. It deepens every time you close a Session. Reach for it whenever you need a reminder. Pin what matters, edit or remove what doesn’t.</li>
             <li><strong>Community</strong> — a place to connect with like-minded midlifers doing this work alongside you. Share the wins and the hard parts, and keep each other honest. Post a topic, cheer someone on, reply, or start a live room. Report or block anything that doesn’t belong.</li>
             <li><strong>Badges</strong> — no participation trophies here, this is earned acknowledgement of the hard work you’re doing.</li>
-            <li><strong>Movement</strong> — everything you’re doing for your body, in one place. Connect Strava and your rides, runs, and workouts flow in on their own.</li>
+            {/* Only promise the Strava sync when it's actually switched on — the help copy must never contradict the
+                live control (STRAVA_* is unset on prod today, so this read as a broken promise). (CAT-52) */}
+            <li>
+              <strong>Movement</strong> — everything you’re doing for your body, in one place. Log what you do and see it add up.
+              {process.env.STRAVA_CLIENT_ID ? ' Connect Strava and your rides, runs, and workouts flow in on their own.' : ''}
+            </li>
           </ul>
         </section>
 

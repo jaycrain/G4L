@@ -104,6 +104,8 @@ export default function DashboardTriptych({
             <div className="tri-member-id">
               <span className="tri-member-name">Hi {firstName}!</span>
               {identitySelves && <span className="tri-member-reclaim">Reclaiming {identitySelves}</span>}
+              {/* The Phase they're in — computed and passed all along but never rendered (dead prop + orphan CSS). (CAT-48) */}
+              {phaseLabel && <span className="tri-member-phase">{phaseLabel}</span>}
               {hasStory && (
                 <Link href={`/story/${memberId}`} className="tri-member-story" prefetch={false}>My Story →</Link>
               )}

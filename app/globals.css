@@ -105,6 +105,20 @@ button, .btn {
 }
 button:hover, .btn:hover { background: var(--navy); }
 
+/* GHOST / LINK buttons — the global `button:hover { background: navy }` above paints a navy block behind any
+   button styled as a plain link, making its text unreadable (dark-on-dark) on rollover. Every link-style button
+   opts out here in ONE place, so a new one only has to join this list rather than rediscover the bug. (CAT-44) */
+.idp-own:hover, .idp-skip:hover,
+.onboard-fresh button:hover,
+.rlb-remove:hover,
+.pb-tools button:hover,
+.fb-status-row button:hover {
+  background: none;
+}
+.idp-own:hover:not(:disabled) { color: var(--navy); }
+.idp-skip:hover:not(:disabled) { color: var(--navy); text-decoration: underline; }
+.rlb-remove:hover { background: #eceae7; } /* keeps its own subtle chip wash */
+
 .error { color: var(--deep-red); font-weight: 600; }
 .crisis {
   background: #fbecec;
@@ -366,7 +380,9 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 
 /* Conversational onboarding */
 .chat { display: flex; flex-direction: column; gap: 0.6rem; margin: 1.25rem 0; }
-.bubble { padding: 0.65rem 0.95rem; border-radius: 14px; max-width: 85%; white-space: pre-wrap; }
+/* overflow-wrap: a single long unbroken token (a pasted URL, a run-on) must wrap inside the bubble instead of
+   blowing out the chat width. (CAT-43 — the .rmsg fix was never backported here.) */
+.bubble { padding: 0.65rem 0.95rem; border-radius: 14px; max-width: 85%; white-space: pre-wrap; overflow-wrap: anywhere; }
 /* RichText — agent message paragraphs (blank lines) render tight inside any chat bubble; **bold** renders as <strong>. */
 .rich-p { margin: 0; }
 .rich-p + .rich-p { margin-top: 0.6em; }
@@ -797,7 +813,9 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .draft-actions { display: flex; gap: 0.6rem; margin-top: 0.6rem; }
 .draft-actions button { margin: 0; }
 .btn-secondary { background: var(--grey) !important; color: var(--charcoal) !important; }
-.btn-secondary:hover { background: var(--deep-red) !important; color: var(--white) !important; }
+/* A secondary action ("Save my place — I'll come back") is BENIGN — it must not turn destructive-red on hover,
+   which read as "this will delete something". Darken the grey instead; deep red is reserved for real destruction. */
+.btn-secondary:hover { background: #d8d6d6 !important; color: var(--charcoal) !important; }
 .draft-note { font-size: 0.82rem; margin-top: 0.5rem; }
 .draft-sent-body { white-space: pre-wrap; font: inherit; background: var(--grey); padding: 0.8rem; border-radius: 8px; margin: 0.3rem 0 0; }
 
@@ -1933,7 +1951,9 @@ body.redesign-on .confidential-footer { display: none; } /* full-bleed app — n
 /* Two opening tracks, one shown per breakpoint (no viewport-detection flash). BOTH now run hero → the five navy beats
    (Jay 2026-07-26: fold the hero into mobile). Full-bleed at every width so the hero photo + navy billboards break out
    of the app's 720px `main` column and fill the screen (phone on the right on desktop, centered-scrim on mobile). */
-.onbwel-track { width: 100vw; margin-left: calc(50% - 50vw); }
+/* 100dvw excludes the scrollbar gutter that 100vw includes — 100vw caused a spurious horizontal
+   scrollbar / edge overflow on scrollbar-reserving browsers. (CAT-50) */
+.onbwel-track { width: 100dvw; margin-left: calc(50% - 50dvw); }
 .onbwel-track-d { display: none; }
 @media (min-width: 1001px) {
   .onbwel-track-d { display: block; }
@@ -1978,7 +1998,7 @@ body.onbwel-bleed main { max-width: none; margin: 0; padding: 0; }
 }
 
 /* ============ Login photo-hero (returning member) — shares the onboarding hero photo + scrim (Jay 2026-07-26) ======= */
-.auth-hero { width: 100vw; margin-left: calc(50% - 50vw); min-height: calc(100dvh - 132px); display: flex; align-items: center; padding: 40px 8vw;
+.auth-hero { width: 100dvw; margin-left: calc(50% - 50dvw); min-height: calc(100dvh - 132px); display: flex; align-items: center; padding: 40px 8vw;
   background:
     linear-gradient(100deg, rgba(19, 27, 35, 0.9) 0%, rgba(40, 54, 66, 0.55) 46%, rgba(120, 124, 92, 0.16) 74%, transparent 100%),
     radial-gradient(130% 120% at 94% 34%, rgba(176, 180, 132, 0.32) 0%, transparent 55%),

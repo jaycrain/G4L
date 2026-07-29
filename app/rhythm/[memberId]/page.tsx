@@ -1,7 +1,6 @@
 import { redirect } from 'next/navigation';
 import { getDb } from '../../../lib/db/index.ts';
 import { currentMemberId } from '../../auth.ts';
-import { mobileEnabled } from '../../../lib/dashboard/redesign.ts';
 import { outreachEnabled } from '../../../lib/outreach/config.ts';
 import { getPref } from '../../../lib/outreach/store.ts';
 import { loadContext } from '../../../lib/outreach/context.ts';
@@ -15,7 +14,10 @@ export default async function RhythmPage({ params }: { params: Promise<{ memberI
   const { memberId } = await params;
   const me = await currentMemberId();
   if (!me || me !== memberId) redirect('/login');
-  if (!(mobileEnabled() && outreachEnabled())) redirect(`/dashboard/${memberId}`);
+  // Gate on OUTREACH only — rhythm elicitation sets the nudge cadence, which is an Outreach feature, not a mobile
+  // one. Requiring MOBILE too made the page unreachable once MOBILE was removed from prod, silently disabling a
+  // sub-feature of a flag that IS on. (CAT-53)
+  if (!outreachEnabled()) redirect(`/dashboard/${memberId}`);
   const db = (await getDb()) as unknown as Db;
   const [ctx, pref] = await Promise.all([loadContext(db, memberId).catch(() => null), getPref(db, memberId).catch(() => null)]);
   return <RhythmSetting memberId={memberId} currentPhase={ctx?.phase ?? 'reconnect'} initialRhythm={pref?.rhythm ?? 'few_week'} />;
