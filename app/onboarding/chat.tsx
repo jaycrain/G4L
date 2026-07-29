@@ -454,7 +454,12 @@ export default function OnboardingChat({ welcomeEnabled = false }: { welcomeEnab
                     void submit(input.trim());
                   }
                 }}
-                placeholder="Type your reply…  (Enter to send, Shift+Enter for a new line)"
+                /* Keep the placeholder SHORT: the long version wrapped to two lines on a phone and got clipped
+                   by the composer's height, so Jennifer could not read it (Jay 7/29). The keyboard hint is
+                   desktop-only guidance anyway — on a phone Enter inserts a newline and you tap Send — so it
+                   moves to the tooltip rather than eating the visible line. */
+                placeholder="Type your reply…"
+                title="Enter to send · Shift+Enter for a new line"
                 autoFocus
                 disabled={pending}
               />

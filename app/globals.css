@@ -393,7 +393,9 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .chat-input input { flex: 1; margin: 0; }
 /* Match the Send button's height at rest (46px) instead of the global 72px textarea floor, then grow with content
    (Jay 7/28 — the field looked oversized next to Send). field-sizing is already used by the companion rail. */
-.chat-input textarea { flex: 1; margin: 0; resize: none; overflow-y: auto; line-height: 1.4; min-height: 46px; max-height: 160px; field-sizing: content; box-sizing: border-box; }
+/* min-height fits a comfortable single line WITH padding — 46px clipped a wrapped placeholder on a phone.
+   The box still grows with typing (JS autogrow + field-sizing) up to max-height, then scrolls. (Jay 7/29) */
+.chat-input textarea { flex: 1; margin: 0; resize: none; overflow-y: auto; line-height: 1.4; min-height: 54px; max-height: 160px; field-sizing: content; box-sizing: border-box; }
 .chat-input button { margin: 0; }
 .chat-continue { margin-top: 0.75rem; }
 .chat-continue button { margin: 0; width: 100%; }
