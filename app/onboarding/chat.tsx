@@ -15,7 +15,7 @@ import { BEAT_SEP } from '../../lib/agent/onboarding.ts';
 const agentBubbles = (text: string): ConvMessage[] =>
   text.split(BEAT_SEP).map((t) => t.trim()).filter(Boolean).map((t) => ({ role: 'agent' as const, text: t }));
 import { buildSummaryCard } from '../../lib/agent/onboarding-contract.ts';
-import FeedbackWidget from '../feedback-widget.tsx';
+// import FeedbackWidget from '../feedback-widget.tsx'; // Send Feedback pill — dropped for now (reinstate with the render below)
 
 // Onboarding can be taken in multiple sittings — completed turns persist server-side per turn; these
 // device-local bits let a member return straight into it (and keep an unsent draft). Never the password.
@@ -469,9 +469,12 @@ export default function OnboardingChat({ welcomeEnabled = false }: { welcomeEnab
         Saved automatically — take your time, you can leave and pick this up anytime.{' '}
         <button type="button" onClick={startFresh}>Not you? Start fresh</button>
       </p>
-      {/* Feedback during onboarding — no member account yet, so attribute by the gate's name/email.
-          The global launcher is hidden pre-auth, so this is the only feedback path here. */}
-      <FeedbackWidget onboarding={{ name: ctx.name, email: ctx.email }} />
+      {/* Send Feedback pill dropped here too (Jay, 2026-07-29) — the GLOBAL launcher was dropped 2026-07-23
+          (app/layout.tsx) but this onboarding-only copy was missed, so the pill still showed across the welcome,
+          gate, and chat screens. Reinstate by uncommenting this + the import above; the widget, its store, and the
+          admin review panel are all still intact. Onboarding needs its own render because there's no member account
+          yet — attribution comes from the gate's name/email.
+          <FeedbackWidget onboarding={{ name: ctx.name, email: ctx.email }} /> */}
     </>
   );
 }

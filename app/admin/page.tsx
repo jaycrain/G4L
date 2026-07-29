@@ -293,7 +293,7 @@ export default async function AdminHome() {
           )}
         </div>
         {feedback.length === 0 ? (
-          <p className="muted">No feedback yet. Members and operators file it from the “Send Feedback” pill.</p>
+          <p className="muted">No feedback yet. The “Send Feedback” pill is currently switched off — reinstate it in app/layout.tsx (and app/onboarding/chat.tsx for pre-signup) to start collecting again.</p>
         ) : (
           feedback.map((f) => {
             const events = Array.isArray(f.context?.recentEvents) ? (f.context.recentEvents as { kind: string; ref: string | null; step: number | null }[]) : [];
