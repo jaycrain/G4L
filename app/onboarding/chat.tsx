@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { onboardingTurn, finalizeOnboardingAction, loadOnboardingSessionAction } from './actions.ts';
 import ScaleChips from '../components/scale-chips.tsx';
 import ReclaimListBuilder from './reclaim-list-builder.tsx';
+import IdentityPicker from './identity-picker.tsx';
 import OnboardingWelcome from './welcome.tsx';
 import type { ConvState, ConvMessage, Expectation } from '../../lib/agent/onboarding.ts';
 import { BEAT_SEP } from '../../lib/agent/onboarding.ts';
@@ -424,6 +425,9 @@ export default function OnboardingChat({ welcomeEnabled = false }: { welcomeEnab
           {expects?.kind === 'reclaim_list' ? (
             // Structured Reclaim List builder — the member's exact entries ARE the list (submitted as a bulleted block).
             <ReclaimListBuilder expects={expects} disabled={pending} onSubmit={(items) => void submit(items.map((x) => `• ${x}`).join('\n'))} />
+          ) : expects?.kind === 'identity_pick' ? (
+            // Identity tap-to-pick — the tapped/coined word IS the handle (captured verbatim by the engine).
+            <IdentityPicker expects={expects} disabled={pending} onPick={(word) => void submit(word)} />
           ) : expects?.kind === 'scale' ? (
             <ScaleChips expects={expects} disabled={pending} onPick={(n) => void submit(String(n))} />
           ) : (

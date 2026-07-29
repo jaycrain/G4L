@@ -18,8 +18,8 @@ URL="${1:-https://g4l-ten.vercel.app}"
 # CSS tells (class names in the built stylesheet) and JS tells (strings in the chunks).
 # Tells must live in the STATIC bundle — CSS classes or client strings. Do NOT use
 # server-generated copy (engine/model replies): it renders at runtime, never in a chunk.
-CSS_TELLS=("rlb-input" "onbwel-bleed")          # reclaim builder · full-bleed welcome
-JS_TELLS=("This is my list")                     # reclaim builder submit button
+CSS_TELLS=("rlb-input" "onbwel-bleed" "idp-chip")  # reclaim builder · full-bleed welcome · identity tap-to-pick
+JS_TELLS=("This is my list")                        # reclaim builder submit button
 
 html="$(curl -s "$URL/onboarding")"
 css_path="$(echo "$html" | grep -oE '/_next/static/[^"]+\.css' | head -1)"

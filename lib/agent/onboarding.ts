@@ -122,6 +122,7 @@ export type ConvState = {
   // Until then a gap can't be captured and the intake can't complete — "list hit the minimum" is NOT
   // "we're in the Door beat" (the list has no max). The fix for capturing/completing before the ask.
   doorBeatFromIndex?: number; // history index where the Door beat began — bounds the reconciliation scan
+  pendingIdentityPick?: string[]; // identity tap-to-pick: candidate words offered LAST turn, awaiting the member's choice
   pendingDoorConfirm?: DoorSlug | null; // a Door the engine surfaced for confirmation, awaiting the member's answer
   declinedDoors?: DoorSlug[]; // Doors the member set aside when asked — never re-surfaced
   awaitingMore?: boolean; // the member said the fade story isn't finished — hold (no complete) until they close it
@@ -194,7 +195,13 @@ export type ScaleExpectation = { kind: 'scale'; min: number; max: number; minLab
 // verbatim, so capture is 100% reliable (Jay, 2026-07-29 — after conversational extraction proved ~30% lossy).
 // `seeded` pre-fills any wants the member already volunteered earlier; `min` is the soft floor the UI encourages.
 export type ReclaimListExpectation = { kind: 'reclaim_list'; min: number; seeded: string[] };
-export type Expectation = ScaleExpectation | ReclaimListExpectation;
+// The identity HANDLE is captured with a definitive tap-to-pick, not extracted from conversation (Jay, 2026-07-29 —
+// the model kept not committing a clear pick). The draw-out ("who were you?") stays conversational; when the model has
+// drawn it out it offers candidate words (from the member's OWN language), the client renders them as chips + a "coin
+// your own" field, and the member's choice is captured VERBATIM. The story-reflection still precedes it, so the vibe is
+// untouched — only the mechanical word-choice becomes reliable.
+export type IdentityPickExpectation = { kind: 'identity_pick'; candidates: string[] };
+export type Expectation = ScaleExpectation | ReclaimListExpectation | IdentityPickExpectation;
 
 export type Turn = { reply: string; state: ConvState; complete: boolean; crisis?: boolean; declined?: boolean; expects?: Expectation };
 
@@ -822,6 +829,9 @@ export type ModelTurn = { text: string; record?: Partial<Collected> & { complete
   // v2.5 Reclaim C3 (coach mode) — the member's Quality-Day definition (from record_quality_day): top-3
   // non-negotiables / next-3 contributors / top-2 disruptors. Coached, proposed, and committed on confirm.
   qualityDay?: { nonNegotiables: string[]; contributors: string[]; disruptors: string[] };
+  // Identity tap-to-pick (2026-07-29): the candidate handle words the model offers once it has drawn out the story
+  // (from offer_identity_words). The engine renders them as chips + "coin your own"; the member's pick is definitive.
+  identityCandidates?: string[];
 };
 
 // Parse an Anthropic response into a ModelTurn (prose + the record_progress tool input, if any).

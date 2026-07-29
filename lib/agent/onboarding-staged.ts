@@ -157,6 +157,37 @@ const SKIP_ACK = "That's completely fine — you'll find your way back to them t
 
 const REOPEN_IDENTITY = "My mistake — let's get it right. What word feels truer for who she was?";
 
+// Identity tap-to-pick (Jay, 2026-07-29): once the past self is drawn out, the model offers 2–4 candidate handle
+// words FROM THE MEMBER'S OWN LANGUAGE (offer_identity_words); the client renders them as chips + a "write your own"
+// field. The member's tap/coin is DEFINITIVE — the engine captures it verbatim (no model in the capture path, which
+// kept failing to commit a clear pick). Accepting the pick advances straight to the gap — no re-litigating a confirm.
+const IDENTITY_PICK_OFFER =
+  'Here are a few words for who that was — tap the one that fits, or write your own. It’s a handle to hold onto, ' +
+  'not a label set in stone, and we can change it anytime.';
+const IDENTITY_PICK_REPROMPT =
+  'No wrong answer here — pick whichever comes closest, or write your own word for that person.';
+// The picker's "not sure yet" affordance submits this exact sentinel; the engine also recognizes a few natural "not
+// yet" phrasings a member might type into the write-your-own field, so neither path names them something they didn't mean.
+const IDENTITY_PICK_SKIP = '__identity_skip__';
+// Phrases anywhere in the reply that signal "I'm not ready to name it." Deliberately phrase-based (not lone words like
+// "skip"/"pass") so a one-word handle can never be mistaken for a skip — a real handle ("Skipper", "Passer") is a word,
+// this is a sentence. The picker's button submits the sentinel; this only defends the write-your-own field.
+const IDENTITY_PICK_SKIP_RE =
+  /(?:not\s+sure|not\s+ready|not\s+yet|don'?t\s+know|no\s+idea|none\s+of\s+(?:these|them)|maybe\s+later)/i;
+function identityPickIsSkip(raw: string): boolean {
+  const t = raw.trim();
+  if (t === IDENTITY_PICK_SKIP) return true;
+  const words = t.split(/\s+/).filter(Boolean);
+  return words.length >= 2 && IDENTITY_PICK_SKIP_RE.test(t); // phrase-length uncertainty only
+}
+// Accept the tapped/coined handle and bridge straight into the gap — the pick is definitive (Jay: accept it as the
+// answer, don't re-ask). Warm and brief, then the gap draw-out opens FROM the named person (gapBridge).
+function identityPickAck(c: Collected): string {
+  const label = identityLabel(c.identityNoun) || 'that person';
+  const Label = label.charAt(0).toUpperCase() + label.slice(1); // sentence-start ("The Athlete")
+  return `${Label} it is.\n\n${gapBridge(c)}`;
+}
+
 // The breathe-floor probe (Increment 1a): when a name lands but the person hasn't been drawn out yet,
 // draw them out once before reflecting it back. (Directional voice — refined in 1b.)
 function identityProbe(c: Collected): string {
@@ -872,6 +903,8 @@ interface Beat {
   driftPayload?: string; // §2d: the member's drift declaration, carried reflect→confirm
   pendingReclaimShape?: PendingReclaimShape; // Decision II: a shape awaiting the member's confirm (merge/move/draw-out)
   reclaimShapesResolved: string[]; // Decision II: keys of shapes already ruled on — never re-proposed
+  pendingIdentityPick?: string[]; // identity tap-to-pick: candidate words offered LAST turn, awaiting the member's choice
+  expects?: Expectation; // a structured turn a handler emits directly (identity chips); else nextExpects() computes it
 }
 
 // A stage handler mutates the Beat (sets b.reply etc.) or returns a terminal Turn. `resolveConfirm`'s CONTRACT
@@ -990,6 +1023,7 @@ function beatState(b: Beat): ConvState {
     ...(b.driftPayload !== undefined && { driftPayload: b.driftPayload }),
     ...(b.pendingReclaimShape && { pendingReclaimShape: b.pendingReclaimShape }),
     ...(b.reclaimShapesResolved.length > 0 && { reclaimShapesResolved: b.reclaimShapesResolved }),
+    ...(b.pendingIdentityPick && b.pendingIdentityPick.length > 0 && { pendingIdentityPick: b.pendingIdentityPick }),
   };
 }
 
@@ -1006,6 +1040,26 @@ const identityStage: StageDef = {
       // Skipped — nothing to confirm; acknowledge and advance straight into the gap stage.
       b.stage = 'gap';
       b.reply = `${SKIP_ACK}\n\n${gapOpen(b.collected)}`;
+    } else if (b.pendingIdentityPick && b.pendingIdentityPick.length > 0) {
+      // TAP-TO-PICK RESOLVE: last turn we offered candidate handles as chips; this message IS the member's pick
+      // (a tapped chip, a coined word, or the "not sure yet" affordance). Engine-authoritative, verbatim — the model
+      // is NOT in this capture path (it kept failing to commit a clear pick). Accept it and move on; never re-litigate.
+      const raw = b.memberMessage.trim();
+      if (identityPickIsSkip(raw)) {
+        b.collected.identitySkipped = true;
+        b.pendingIdentityPick = undefined;
+        b.stage = 'gap';
+        b.reply = `${SKIP_ACK}\n\n${gapOpen(b.collected)}`;
+      } else if (!cleanIdentityNoun(raw)) {
+        // Empty / only an article — re-offer the same candidates once rather than lose the pick moment.
+        b.reply = IDENTITY_PICK_REPROMPT;
+        b.expects = { kind: 'identity_pick', candidates: b.pendingIdentityPick };
+      } else {
+        b.collected.identityNoun = displayIdentityNoun(raw); // their word, verbatim (article stripped, natural case)
+        b.pendingIdentityPick = undefined;
+        b.stage = 'gap';
+        b.reply = identityPickAck(b.collected); // accept + bridge into the gap — the pick was definitive
+      }
     } else if (b.collected.identityNoun) {
       // BREATHE FLOOR (1a) + the conditional second probe (1b / Decision S). Reflect once the material is RICH
       // (front-loader escape), the member PUSHES PAST (terse escape), or we've drawn out enough (2 probes).
@@ -1020,6 +1074,14 @@ const identityStage: StageDef = {
         const probe = s.identityProbes === 1 ? identityProbe(b.collected) : identityProbe2(b.collected);
         b.reply = withQuestion(b.modelText, probe);
       }
+    } else if ((b.model.identityCandidates ?? []).map((w) => w.trim()).filter(Boolean).length > 0) {
+      // OFFER: the model has drawn out the past self and proposed candidate handle words from the member's OWN
+      // language. Hand them to the client as a tap-to-pick chooser (chips + write-your-own); the member's pick names
+      // it next turn (resolved above). The model's prose frames the invite; fall back to a warm default.
+      const candidates = (b.model.identityCandidates ?? []).map((w) => w.trim()).filter(Boolean).slice(0, 4);
+      b.pendingIdentityPick = candidates;
+      b.expects = { kind: 'identity_pick', candidates };
+      b.reply = b.modelText || IDENTITY_PICK_OFFER;
     } else {
       // Gather. Never-strand a member who won't name a PAST self: offer the "find it later" skip after a couple
       // of tries, HARD-ESCAPE after a few (recovered at Identity Excavation in Reconnect).
@@ -1357,6 +1419,7 @@ export function runArcTurn(
     driftPayload: state.driftPayload,
     pendingReclaimShape: state.pendingReclaimShape, // Decision II, threaded across the propose→confirm turns
     reclaimShapesResolved: [...(state.reclaimShapesResolved ?? [])],
+    pendingIdentityPick: state.pendingIdentityPick, // identity chips: candidates offered last turn, this message is the pick
   };
   const stageDef = arc.stages[b.stage];
 
@@ -1426,7 +1489,9 @@ export function runArcTurn(
     b.reply = `${leads[history.length % leads.length]} ${b.reply}`;
   }
 
-  const expects = nextExpects(arc, b.stage, b.complete, b.administeredResponses.length, b.collected); // W-24/W-48: a draw-out stage handing INTO an administered stage delivers item 0 → chips (+ "n of y")
+  // A handler may have emitted a structured turn directly (identity tap-to-pick chips); that wins. Otherwise derive
+  // the expectation from the resulting stage (W-24/W-48: a draw-out handing INTO an administered stage delivers item 0).
+  const expects = b.expects ?? nextExpects(arc, b.stage, b.complete, b.administeredResponses.length, b.collected);
   return { reply: b.reply, state: beatState(b), complete: b.complete, ...(b.declined ? { declined: true } : {}), ...(expects && { expects }) };
 }
 
@@ -1461,8 +1526,21 @@ export const STAGED_TOOLS = [
     input_schema: { type: 'object' as const, properties: { text: { type: 'string' } }, required: ['text'] },
   },
   {
+    name: 'offer_identity_words',
+    description:
+      "Offer 2–4 candidate handle words for who the member was at their best, drawn FROM THEIR OWN LANGUAGE in this " +
+      'conversation (e.g. after they describe racing bikes and chasing summits: ["Athlete", "Cyclist", "Competitor"]). ' +
+      "Call this ONCE you've genuinely drawn out the past self — it hands the member a tap-to-pick chooser (chips + a " +
+      "write-your-own field) so THEY choose or coin the word; their pick is captured verbatim and is definitive. Natural " +
+      'case, no leading article ("Athlete", never "the Athlete"). Your prose this turn should warmly invite them to tap ' +
+      "one or write their own. Do NOT also call name_identity — the member's tap is what names it.",
+    input_schema: { type: 'object' as const, properties: { words: { type: 'array', items: { type: 'string' } } }, required: ['words'] },
+  },
+  {
     name: 'name_identity',
-    description: 'Record the confirmed reclaimed-identity word, natural case (e.g. "Athlete"), once the member chooses or coins it.',
+    description:
+      'Record the reclaimed-identity word directly, natural case (e.g. "Athlete") — ONLY when the member flatly names ' +
+      'it themselves before you offer candidates. For the normal choose-a-word beat use offer_identity_words instead.',
     input_schema: { type: 'object' as const, properties: { noun: { type: 'string' } }, required: ['noun'] },
   },
   {
@@ -1567,11 +1645,16 @@ export function parseStagedTurn(content: readonly unknown[]): ModelTurn {
   let gapReady = false;
   let refineReclaim: string | undefined;
   let replyIntent: ReplyIntent | undefined;
+  let identityCandidates: string[] | undefined;
   const rec: Partial<Collected> = {};
   for (const b of content as Array<{ type: string; text?: string; name?: string; input?: Record<string, unknown> }>) {
     if (b.type === 'text' && typeof b.text === 'string') text += b.text;
     if (b.type === 'tool_use') {
       if (b.name === 'set_past_self' && typeof b.input?.text === 'string') rec.athleticPast = b.input.text;
+      if (b.name === 'offer_identity_words' && Array.isArray(b.input?.words)) {
+        const words = (b.input.words as unknown[]).filter((w): w is string => typeof w === 'string' && w.trim().length > 0).map((w) => w.trim());
+        if (words.length) identityCandidates = words;
+      }
       if (b.name === 'name_identity' && typeof b.input?.noun === 'string') rec.identityNoun = cleanIdentityNoun(b.input.noun);
       if (b.name === 'skip_identity') rec.identitySkipped = true;
       // Tidy the MODEL's set_gap too (torture-harness fragment-typer: the model sometimes stores raw run-on prose
@@ -1593,7 +1676,7 @@ export function parseStagedTurn(content: readonly unknown[]): ModelTurn {
       if (b.name === 'reflect_gap') gapReady = true;
     }
   }
-  return { text, record: rec, noFade, gapReady, refineReclaim, replyIntent };
+  return { text, record: rec, noFade, gapReady, refineReclaim, replyIntent, ...(identityCandidates && { identityCandidates }) };
 }
 
 // Is the staged engine selected? Flag only — defaults OFF, so v1 serves prod until cut-over.
@@ -1611,7 +1694,8 @@ one warm conversation; the stages are invisible to the member.
 
 CAPTURE WITH TOOLS, never in prose — and never narrate that you saved something:
 - set_past_self(text): who they were at their best, in their own words.
-- name_identity(noun): the reclaimed-identity word, natural case (e.g. "Athlete"), once they choose or coin it.
+- offer_identity_words(words): 2–4 candidate handle words from THEIR OWN language → the member taps or coins one (the normal path once you've drawn the past self out).
+- name_identity(noun): only if the member flatly declares the word themselves before you offer.
 - skip_identity(): they chose not to name one yet.
 - set_gap(text): how the distance opened — their fade story, in their words.
 - note_door(slug): a life event that opened the distance (one call per Door; none is valid — never force one).
@@ -1620,10 +1704,13 @@ identity), capture it with its tool anyway — never lose it — but keep asking
 you'll bring it back at its stage.
 
 IDENTITY STAGE: open on who they were when they felt most like themselves — a past self of ANY kind (never
-assume athletic). Reflect a specific detail back, then offer a couple of candidate words FROM THEIR OWN
-LANGUAGE and invite them to choose or coin one — framed as a changeable HANDLE, not a verdict. Confirm the
-word. If they're genuinely not ready, reassure them and call skip_identity — never pressure a name. Record
-the word with name_identity in natural case ("Athlete", never "the Athlete").
+assume athletic). Draw it out, reflect a specific detail back, and once you have a real feel for that person,
+call offer_identity_words with 2–4 candidate words FROM THEIR OWN LANGUAGE — your prose warmly invites them to
+tap one or write their own, framed as a changeable HANDLE, not a verdict. The member's tap/coin names it
+(captured verbatim) — do NOT also call name_identity on that turn, and do NOT ask them to confirm it afterward;
+the tap IS the choice, so once it's made you move straight on to how the gap opened. Only use name_identity if
+the member flatly declares the word themselves before you offer. If they're genuinely not ready, reassure them
+and call skip_identity — never pressure a name.
 
 GAP STAGE ("how it opened") — the most important, most vulnerable beat. EXPLORE it; do not just receive it.
 Open with a real question about how the distance opened, then have a CONVERSATION, not a form: follow up to
