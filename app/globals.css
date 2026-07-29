@@ -1242,11 +1242,6 @@ html:has(.companion-hero), body:has(.companion-hero) { overflow-anchor: none; }
 .mlog-note { margin-top: 0.2rem; font-size: 0.92rem; color: var(--charcoal); line-height: 1.4; }
 
 /* Momentum nav — clear ways back into the program after logging (not a dead end). */
-.momentum-nav { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; margin: 0.5rem 0 1.5rem; }
-.momentum-nav-primary { display: inline-block; padding: 0.6rem 1.1rem; background: var(--teal); color: #fff; border-radius: 999px; font-weight: 700; font-size: 0.95rem; text-decoration: none; }
-.momentum-nav-primary:hover { background: var(--navy); }
-.momentum-nav-secondary { color: var(--teal); font-weight: 600; font-size: 0.9rem; text-decoration: none; }
-.momentum-nav-secondary:hover { text-decoration: underline; }
 
 /* B3 pilot — the OPTIONAL activity/diet tag (Decision OO). Neutral pills, teal when chosen; never required. */
 /* Per-commitment progress — what they're holding themselves to + how it's going (last 2 weeks). Never a scoreboard. */

@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { getDb } from '../../../lib/db/index.ts';
 import { authorizeMember } from '../../authz.ts';
@@ -105,12 +104,8 @@ export default async function MomentumPage({ params }: { params: Promise<{ membe
           </ul>
         )}
       </div>
-
-      {/* Not a dead end — clear ways back into the program after logging. */}
-      <div className="momentum-nav">
-        <Link href={`/dashboard/${memberId}`} className="momentum-nav-primary">← Back to your path</Link>
-        <Link href={`/program/${memberId}`} className="momentum-nav-secondary">See the Program →</Link>
-      </div>
+      {/* No foot nav here (Jay 7/29): the global "← Dashboard" affordance already covers getting back, so a second
+          pair of way-out buttons at the bottom read as confusing and unnecessary. */}
     </SubpageShell>
   );
 }
