@@ -73,8 +73,10 @@ done
 echo
 echo "  runtime surfaces:"
 for path in "/" "/onboarding" "/login"; do
-  body="$(curl -s --max-time 20 "$URL$path")"
-  code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "$URL$path")"
+  # -L FOLLOWS redirects and judges the DESTINATION: "/" legitimately 307s to the welcome now, and a bare status
+  # check called that a broken surface (a false RED on a healthy app). What matters is where the member lands.
+  body="$(curl -sL --max-time 20 "$URL$path")"
+  code="$(curl -sL -o /dev/null -w '%{http_code}' --max-time 20 "$URL$path")"
   if [ "$code" != "200" ]; then
     echo "    ✗ $path  HTTP $code"; ok=0
   elif echo "$body" | grep -qiE 'application error|internal server error|__next_error__'; then
