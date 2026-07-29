@@ -8,7 +8,8 @@
 
 import { runArcTurn, administeredStage, scaleExpects, type ArcConfig, type StageDef } from './onboarding-staged.ts';
 import { withScriptedBeat } from './rewire.ts'; // "model reflects, engine carries the turn forward — never both, never a dead-end"
-import { BEAT_SEP, type ConvMessage, type ConvState, type ModelTurn, type Turn } from './onboarding.ts';
+import { BEAT_SEP, type Collected, type ConvMessage, type ConvState, type ModelTurn, type Turn } from './onboarding.ts';
+import { identityLabel } from '../member/identity.ts';
 import { WHY_ITEMS, WHY_SCALE_MAX, WHY_ITEM_COUNT, WHY_DOMAIN_SPLIT } from '../rebuild/why-instrument.ts';
 import {
   SKILL_ITEMS,
@@ -314,6 +315,18 @@ const RECORD_PLAN_TOOL = {
   },
 };
 
+// The B3 coaching plan ladders to the Reclaim List (Rebuild commitments serve reclaim outcomes), so the coach must
+// KNOW it — same backbone rule as the other arcs (the model should never say it can't see the member's own list).
+function b3Context(c: Collected): string {
+  const identity = identityLabel(c.identityNoun);
+  const reclaim = (c.reclaimList ?? []).map((s) => (s ?? '').trim()).filter(Boolean);
+  const lines = [
+    identity ? `Who they're reclaiming: ${identity}` : '',
+    reclaim.length ? `Their Reclaim List (what they're taking back — you HAVE this; never say you can't see it): ${reclaim.join('; ')}` : '',
+  ].filter(Boolean);
+  return lines.length ? `\n\nMEMBER CONTEXT (what you already know — never say you don't):\n${lines.join('\n')}` : '';
+}
+
 function b3StageNote(state: ConvState): string {
   const activity = (state.collected?.pilotActivity ?? '').trim();
   const diet = (state.collected?.pilotDiet ?? '').trim();
@@ -354,7 +367,7 @@ export async function liveTurnRebuildB3(state: ConvState, history: ConvMessage[]
   const res = await client.messages.create({
     model: process.env.ANTHROPIC_MODEL ?? 'claude-sonnet-4-6',
     max_tokens: 400,
-    system: B3_SYSTEM + b3StageNote(state),
+    system: B3_SYSTEM + b3Context(state.collected) + b3StageNote(state),
     tools: [RECORD_PLAN_TOOL],
     messages,
   });
