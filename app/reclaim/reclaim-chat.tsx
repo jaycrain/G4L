@@ -8,7 +8,7 @@ import ScaleChips from '../components/scale-chips.tsx';
 import { useChatAutoscroll } from '../components/use-chat-autoscroll.ts';
 import { notifyArtifactCommitted, notifySessionComplete } from '../components/artifact-refresh.ts';
 import type { ReclaimCeremonyData } from '../../lib/ceremony/reclaim-ceremony-beats.ts';
-import type { ConvMessage, ConvState, ScaleExpectation } from '../../lib/agent/onboarding.ts';
+import type { ConvMessage, ConvState, Expectation } from '../../lib/agent/onboarding.ts';
 import { BEAT_SEP } from '../../lib/agent/onboarding.ts';
 
 // A turn may hand over more than one beat (a frame + the next item / a two-part close), joined by BEAT_SEP — render
@@ -30,7 +30,7 @@ export default function ReclaimChat({ memberId, session = 'c1' }: { memberId: st
   const [input, setInput] = useState('');
   const [pending, setPending] = useState(false);
   const [done, setDone] = useState(false);
-  const [expects, setExpects] = useState<ScaleExpectation | null>(null); // W-24: administered turn → render the scale chips
+  const [expects, setExpects] = useState<Expectation | null>(null); // W-24: administered turn → render the scale chips
   const [ceremony, setCeremony] = useState<ReclaimCeremonyData | null>(null); // C4: set when the checkpoint reaches 'ceremony'
   const [error, setError] = useState<string | null>(null);
   const started = useRef(false);
@@ -109,7 +109,7 @@ export default function ReclaimChat({ memberId, session = 'c1' }: { memberId: st
         ))}
         {pending && <div className="typing">Thinking…</div>}
         {/* chips scroll WITH the thread (Jay's walk: not pinned) — they answer the question above, autosend. */}
-        {!done && expects && <ScaleChips expects={expects} disabled={pending || !state} onPick={(n) => void submit(String(n))} />}
+        {!done && expects?.kind === 'scale' && <ScaleChips expects={expects} disabled={pending || !state} onPick={(n) => void submit(String(n))} />}
       </div>
       {error && <p className="error">{error}</p>}
       {!done && (

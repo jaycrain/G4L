@@ -5,7 +5,7 @@ import { authorizeMember } from '../authz.ts';
 import { logEvent } from '../../lib/telemetry/store.ts';
 import { maybeTriggerDraft } from '../../lib/founder/triggers.ts';
 import type { Db } from '../../lib/db/schema.ts';
-import type { ConvMessage, ConvState, ScaleExpectation, Turn } from '../../lib/agent/onboarding.ts';
+import type { ConvMessage, ConvState, Expectation, Turn } from '../../lib/agent/onboarding.ts';
 import { liveTurnReconnect, loadReconnectCaptures, reconnectEnabled, reconnectOpening, reconnectMeasurementClose, driftOpen, RECONNECT_ARC, BEAT_SEP } from '../../lib/agent/reconnect.ts';
 import { scaleExpects } from '../../lib/agent/onboarding-staged.ts';
 import { saveArcSession, loadArcSession, clearArcSession } from '../../lib/agent/arc-session.ts';
@@ -128,7 +128,7 @@ async function persistHarvest(db: Db, memberId: string, prev: ConvState, turn: T
   await drainHarvest(db, memberId, prev, turn.state, 'reconnect');
 }
 
-export async function startReconnectAction(memberId: string): Promise<{ ok: boolean; reply?: string; state?: ConvState; expects?: ScaleExpectation; error?: string }> {
+export async function startReconnectAction(memberId: string): Promise<{ ok: boolean; reply?: string; state?: ConvState; expects?: Expectation; error?: string }> {
   if (!reconnectEnabled()) return { ok: false, error: 'Reconnect is not enabled.' };
   if (!(await authorizeMember(memberId))) return { ok: false, error: 'Not authorized.' };
   const db = (await getDb()) as unknown as Db;
@@ -213,7 +213,7 @@ async function persistArcSession(db: Db, memberId: string, history: ConvMessage[
 // from the resumed stage, so a refresh mid-IDQ restores the scale chips), or null when there's nothing to resume.
 export async function loadReconnectSessionAction(
   memberId: string,
-): Promise<{ ok: boolean; session?: { state: ConvState; messages: ConvMessage[]; expects?: ScaleExpectation }; error?: string }> {
+): Promise<{ ok: boolean; session?: { state: ConvState; messages: ConvMessage[]; expects?: Expectation }; error?: string }> {
   if (!reconnectEnabled()) return { ok: false, error: 'Reconnect is not enabled.' };
   if (!(await authorizeMember(memberId))) return { ok: false, error: 'Not authorized.' };
   try {
@@ -232,7 +232,7 @@ export async function reconnectTurnAction(
   state: ConvState,
   history: ConvMessage[],
   message: string,
-): Promise<{ ok: boolean; reply?: string; state?: ConvState; expects?: ScaleExpectation; error?: string }> {
+): Promise<{ ok: boolean; reply?: string; state?: ConvState; expects?: Expectation; error?: string }> {
   if (!reconnectEnabled()) return { ok: false, error: 'Reconnect is not enabled.' };
   if (!(await authorizeMember(memberId))) return { ok: false, error: 'Not authorized.' };
   try {

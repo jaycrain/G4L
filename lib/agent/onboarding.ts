@@ -189,8 +189,14 @@ export type ReseeingTell = { toSlug: DoorSlug; fromSlug?: DoorSlug }; // fromSlu
 // the instrument completes. The two labels are the instrument's own pole anchors (e.g. "not at all true" → "very true").
 // W-48: `index`/`total` let the chip surface show a universal "Question n of y" length cue (optional — shown only when both are set).
 export type ScaleExpectation = { kind: 'scale'; min: number; max: number; minLabel: string; maxLabel: string; index?: number; total?: number };
+// The Reclaim List is captured with a STRUCTURED input (a list builder), not extracted from conversation — the one
+// moment in onboarding that is structured DATA, not a feeling. The client renders the builder and submits the items
+// verbatim, so capture is 100% reliable (Jay, 2026-07-29 — after conversational extraction proved ~30% lossy).
+// `seeded` pre-fills any wants the member already volunteered earlier; `min` is the soft floor the UI encourages.
+export type ReclaimListExpectation = { kind: 'reclaim_list'; min: number; seeded: string[] };
+export type Expectation = ScaleExpectation | ReclaimListExpectation;
 
-export type Turn = { reply: string; state: ConvState; complete: boolean; crisis?: boolean; declined?: boolean; expects?: ScaleExpectation };
+export type Turn = { reply: string; state: ConvState; complete: boolean; crisis?: boolean; declined?: boolean; expects?: Expectation };
 
 export const INITIAL_STATE: ConvState = { stage: 'identity', collected: {} };
 

@@ -6,7 +6,7 @@ import { logEvent } from '../../lib/telemetry/store.ts';
 import { maybeTriggerDraft } from '../../lib/founder/triggers.ts';
 import { setCommitment } from '../../lib/commitments/store.ts';
 import type { Db } from '../../lib/db/schema.ts';
-import type { ConvMessage, ConvState, ScaleExpectation, Turn } from '../../lib/agent/onboarding.ts';
+import type { ConvMessage, ConvState, Expectation, Turn } from '../../lib/agent/onboarding.ts';
 import {
   rebuildEnabled,
   rebuildB1Opening,
@@ -48,7 +48,7 @@ export type RebuildSession = 'b1' | 'b2' | 'b3' | 'checkpoint';
 export async function startRebuildAction(
   memberId: string,
   session: RebuildSession = 'b1',
-): Promise<{ ok: boolean; reply?: string; state?: ConvState; expects?: ScaleExpectation; error?: string }> {
+): Promise<{ ok: boolean; reply?: string; state?: ConvState; expects?: Expectation; error?: string }> {
   if (!rebuildEnabled()) return { ok: false, error: 'Rebuild is not enabled.' };
   if (!(await authorizeMember(memberId))) return { ok: false, error: 'Not authorized.' };
   const turn =
@@ -155,7 +155,7 @@ async function persistRebuildArcSession(db: Db, memberId: string, session: Rebui
 export async function loadRebuildSessionAction(
   memberId: string,
   session: RebuildSession = 'b1',
-): Promise<{ ok: boolean; session?: { state: ConvState; messages: ConvMessage[]; expects?: ScaleExpectation }; error?: string }> {
+): Promise<{ ok: boolean; session?: { state: ConvState; messages: ConvMessage[]; expects?: Expectation }; error?: string }> {
   if (!rebuildEnabled()) return { ok: false, error: 'Rebuild is not enabled.' };
   if (!(await authorizeMember(memberId))) return { ok: false, error: 'Not authorized.' };
   try {
@@ -176,7 +176,7 @@ export async function rebuildTurnAction(
   history: ConvMessage[],
   message: string,
   session: RebuildSession = 'b1',
-): Promise<{ ok: boolean; reply?: string; state?: ConvState; expects?: ScaleExpectation; error?: string; earnedBadge?: { id: string; name: string } | null }> {
+): Promise<{ ok: boolean; reply?: string; state?: ConvState; expects?: Expectation; error?: string; earnedBadge?: { id: string; name: string } | null }> {
   if (!rebuildEnabled()) return { ok: false, error: 'Rebuild is not enabled.' };
   if (!(await authorizeMember(memberId))) return { ok: false, error: 'Not authorized.' };
   try {

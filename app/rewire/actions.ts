@@ -5,7 +5,7 @@ import { authorizeMember } from '../authz.ts';
 import { logEvent } from '../../lib/telemetry/store.ts';
 import { maybeTriggerDraft } from '../../lib/founder/triggers.ts';
 import type { Db } from '../../lib/db/schema.ts';
-import type { ConvMessage, ConvState, ScaleExpectation, Turn } from '../../lib/agent/onboarding.ts';
+import type { ConvMessage, ConvState, Expectation, Turn } from '../../lib/agent/onboarding.ts';
 import {
   rewireEnabled,
   rewireOpening,
@@ -63,7 +63,7 @@ async function loadTrueLines(db: Db, memberId: string): Promise<string[]> {
 export async function startRewireAction(
   memberId: string,
   session: RewireSession = 'w1',
-): Promise<{ ok: boolean; reply?: string; state?: ConvState; expects?: ScaleExpectation; error?: string }> {
+): Promise<{ ok: boolean; reply?: string; state?: ConvState; expects?: Expectation; error?: string }> {
   if (!rewireEnabled()) return { ok: false, error: 'Rewire is not enabled.' };
   if (!(await authorizeMember(memberId))) return { ok: false, error: 'Not authorized.' };
   if (session === 'w2') {
@@ -198,7 +198,7 @@ async function persistRewireArcSession(db: Db, memberId: string, session: Rewire
 export async function loadRewireSessionAction(
   memberId: string,
   session: RewireSession = 'w1',
-): Promise<{ ok: boolean; session?: { state: ConvState; messages: ConvMessage[]; expects?: ScaleExpectation }; error?: string }> {
+): Promise<{ ok: boolean; session?: { state: ConvState; messages: ConvMessage[]; expects?: Expectation }; error?: string }> {
   if (!rewireEnabled()) return { ok: false, error: 'Rewire is not enabled.' };
   if (!(await authorizeMember(memberId))) return { ok: false, error: 'Not authorized.' };
   try {
@@ -219,7 +219,7 @@ export async function rewireTurnAction(
   history: ConvMessage[],
   message: string,
   session: RewireSession = 'w1',
-): Promise<{ ok: boolean; reply?: string; state?: ConvState; expects?: ScaleExpectation; error?: string; earnedBadge?: { id: string; name: string } | null }> {
+): Promise<{ ok: boolean; reply?: string; state?: ConvState; expects?: Expectation; error?: string; earnedBadge?: { id: string; name: string } | null }> {
   if (!rewireEnabled()) return { ok: false, error: 'Rewire is not enabled.' };
   if (!(await authorizeMember(memberId))) return { ok: false, error: 'Not authorized.' };
   try {

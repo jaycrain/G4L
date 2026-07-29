@@ -10,7 +10,7 @@ import {
   type ConvState,
   type ConvMessage,
   type Ctx,
-  type ScaleExpectation,
+  type Expectation,
 } from '../../lib/agent/onboarding.ts';
 import {
   saveOnboardingSession,
@@ -59,7 +59,7 @@ export type TurnOutput = {
   complete: boolean;
   // W-24: set when the turn just delivered an administered item (the Grinta baseline at the end of onboarding) — the
   // client renders the scale chips instead of the free-text box. Absent on every draw-out turn.
-  expects?: ScaleExpectation;
+  expects?: Expectation;
   crisis?: boolean;
   // Set when the fade gate gracefully declines a genuinely-thriving no-fade member (Decision E). Terminal:
   // the client shows the decline screen — no card, no member created. Only fires under the staged engine.

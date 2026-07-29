@@ -336,24 +336,6 @@ test('STAGED gap — no Door tagged is a complete capture (recognition over rout
   assert.deepEqual(turns[1]!.state.collected.doors ?? [], [], 'no Door invented when none was described');
 });
 
-test('STAGED gap — backstop: model converses WITHOUT set_gap; engine captures the message in-stage', () => {
-  const atGap: ConvState = { stage: 'gap', collected: { athleticPast: 'a runner', identityNoun: 'Runner' } };
-  // The most common real failure: the model reflects warmly but never calls the tool (record undefined).
-  const story =
-    'It was slow. I became the one caring for my aging mother — the role reversal where I was suddenly the ' +
-    'parent to my own parent — and somewhere in those years I stopped being anyone but the person who showed up.';
-  const { turns } = replayStaged(
-    [
-      { member: story, model: { text: 'That must have been so hard.' } },
-      { member: 'That’s about it', model: { text: 'Okay.' } }, // whole → reflect
-    ],
-    atGap,
-  );
-  assert.equal(turns[0]!.state.collected.gap, story, 'backstop captured the member’s own gap message');
-  assert.equal(turns[1]!.state.awaitingConfirm, true, 'reflects once whole — no loop on the opening question');
-  assert.deepEqual(turns[1]!.state.collected.doors, ['aging_parents'], 'Door still derived from the captured gap');
-});
-
 test('STAGED gap — never-strand (run-2 fix): short progressive turns the matcher misses still get captured', () => {
   // Each message is short and uses phrasing matchDoors doesn't catch + the model never tags set_gap — exactly
   // the run-2 stall. After a few turns the engine must capture the accumulated story and advance, not loop.
@@ -409,21 +391,6 @@ test('STAGED — runaway backstop: a STALLED gap (real gap in hand, nothing new)
   assert.match(turn.reply, /want back|reclaim/i);
 });
 
-test('STAGED — a verbose ENGAGED member is NOT force-completed for LENGTH (Scott/Blake): only a stall or ceiling ends it', () => {
-  // Well past the OLD 20-turn cap, still actively offering new wants. Must keep going — this is the whole point.
-  const history: ConvMessage[] = [];
-  for (let i = 0; i < 21; i++) history.push({ role: 'member', text: `earlier ${i}` }, { role: 'agent', text: 'go on' });
-  const engaged: ConvState = {
-    stage: 'reclaim',
-    idleTurns: 0,
-    collected: { athleticPast: 'a triathlete', identityNoun: 'Ironman Triathlete', gap: 'It opened slowly over years — the grind grew and the family needed more, and he lost the fitness and outlet that held him together.', reclaimList: ['My fitness', 'Get down to 190 lbs', 'See friends more'] },
-  };
-  const turn = applyStagedTurn(engaged, history, 'Get back on my bike 3-4 days a week', { text: 'Nice. What else?', record: { reclaimList: ['Get back on my bike 3-4 days a week'] } });
-  assert.equal(turn.complete ?? false, false, 'still engaged (offering a new want) at turn 22 → NOT cut off');
-  assert.match(turn.reply, /what else|comes/i, 'keeps gathering');
-  assert.ok((turn.state.collected.reclaimList ?? []).some((x) => /bike/i.test(x)), 'the new want is captured');
-});
-
 test('STAGED — the ABSOLUTE ceiling still bounds a true runaway, and captures the last want before completing', () => {
   const history: ConvMessage[] = [];
   for (let i = 0; i < 29; i++) history.push({ role: 'member', text: `turn ${i}` });
@@ -468,58 +435,6 @@ test('STAGED gap — never-strand fires even when her LATEST turn is a frustrate
   const last = turns.at(-1)!;
   assert.ok((last.state.collected.gap ?? '').length > 0, 'captured the earlier story despite the current deflection');
   assert.match(last.state.collected.gap!, /lost my job/, 'the accumulated corpus holds her real account');
-});
-
-test('STAGED reclaim — complete-when-done (run-6 fix): ≥3 items then a non-adding turn reflects, never loops', () => {
-  // She has 3 items and then says something that adds NO new item and isn't an explicit "that's the list".
-  // The engine must reflect (she's done offering), not loop "what else?" forever. Never force-closes — she
-  // still confirms the card.
-  const atReclaim: ConvState = {
-    stage: 'reclaim',
-    collected: {
-      athleticPast: 'a runner', identityNoun: 'Runner', gap: 'a real fade over a long hard decade of putting everyone else first',
-      reclaimList: ['running', 'sleep', 'seeing friends'],
-    },
-  };
-  const turn = applyStagedTurn(atReclaim, [], 'hm, I’m not sure what else right now', { text: 'Okay.' });
-  assert.equal(turn.state.collected.reclaimList?.length, 3, 'a non-item reply is not captured as an item');
-  assert.equal(turn.state.awaitingConfirm, true, 'reflects the list once she stops adding — no infinite "what else?"');
-  assert.equal(turn.complete, false, 'reflect is not completion — she still confirms the card (never force-closed)');
-  assert.match(turn.reply, /strong list to build from|Anything missing/i, 'the light reflect (no re-listing — the card is the list)');
-});
-
-test('STAGED reclaim — late-add (v2.1 fix): a want volunteered AT the confirm is captured, not dropped (Jay’s "play golf")', () => {
-  // At the reclaim reflect-confirm ("anything missing?"), the member volunteers a NEW want. It must be captured
-  // before advancing — the bug on Jay's walk dropped it. A bare affirmation still advances.
-  const atConfirm: ConvState = {
-    stage: 'reclaim', awaitingConfirm: true,
-    collected: {
-      athleticPast: 'x', identityNoun: 'Athlete', gap: 'a real fade over a long decade', doors: ['marriage'],
-      reclaimList: ['work out more', 'see friends', 'ride my bike'], reclaimCategories: ['', '', ''],
-    },
-  };
-  const added = applyStagedTurn(atConfirm, [], 'play golf on weekends', { text: 'Love it.' });
-  assert.ok((added.state.collected.reclaimList ?? []).includes('play golf on weekends'), 'the volunteered want is captured, not dropped');
-  assert.equal(added.state.awaitingConfirm, true, 're-reflects the fuller list — does not skip to the card');
-  // a bare affirmation is NOT captured as a want — it advances to the card.
-  const done = applyStagedTurn(atConfirm, [], 'yes, that’s it', { text: 'Great.' });
-  assert.equal((done.state.collected.reclaimList ?? []).length, 3, 'an affirmation is not captured as a want');
-  assert.equal(done.state.stage, 'grinta', 'affirmation advances past Reclaim — into the Grinta survey');
-});
-
-test('STAGED reclaim — late-add wrapped in a META-preamble is captured cleanly (Jay walk: "I\'d like to add to the list…")', () => {
-  // The model conversed WITHOUT tagging (the common failure). The engine backstop must strip the "I'd like to add
-  // to the list." wrapper and store the ACTUAL want — not drop it (the kids'-lives bug) and not store the meta-sentence.
-  const atConfirm: ConvState = {
-    stage: 'reclaim', awaitingConfirm: true,
-    collected: { athleticPast: 'x', identityNoun: 'Player', gap: 'a real fade over a long decade', reclaimList: ['My fitness', 'Get back on my bike', 'Travel to Europe'] },
-  };
-  const added = applyStagedTurn(atConfirm, [], "I'd like to add to the list. Have more energy to be involved in my kids' lives", { text: "That's a good one. Anything else?", replyIntent: 'more' });
-  const list = added.state.collected.reclaimList ?? [];
-  assert.equal(list.length, 4, 'the want is captured (not dropped)');
-  assert.ok(list.some((x) => /^Have more energy to be involved in my kids' lives$/.test(x)), 'stored as the clean want, without the meta-preamble');
-  assert.ok(!list.some((x) => /add to the list/i.test(x)), 'the meta wrapper never lands on the list');
-  assert.equal(added.state.awaitingConfirm, true, 're-reflects, does not skip the card');
 });
 
 test('STAGED reclaim — complete-when-done still GATHERS while she is actively adding (no premature reflect)', () => {
@@ -615,74 +530,6 @@ test('STAGED terminal — CONFIRM-ONLY card: the Reclaim List is FROZEN, no post
 // ── Decision II: the shape gate wired into the reclaim confirm (propose/confirm, never a silent rewrite) ──
 const DII_BASE = { athleticPast: 'a player', identityNoun: 'Player', gap: 'a real fade over a long hard decade' };
 
-test('Decision II — an OVERLAP is surfaced for a member-confirmed merge; "yes" removes the duplicate (Donna\'s pair)', () => {
-  const atConfirm: ConvState = {
-    stage: 'reclaim', awaitingConfirm: true,
-    collected: { ...DII_BASE, reclaimList: ['My fitness', 'Start with losing about 35 lbs', 'Lose about 35 lbs', 'Buy some new clothes'] },
-  };
-  // The member confirms the list — the engine surfaces the overlap FIRST instead of advancing.
-  const t1 = applyStagedTurn(atConfirm, [], 'looks good', { text: 'Great.', replyIntent: 'done' });
-  assert.equal(t1.state.stage, 'reclaim', 'stays in reclaim to resolve the shape; does not advance to the survey');
-  assert.match(t1.reply, /same thing|keep them as one|are they different/i, 'proposes the merge');
-  assert.equal(t1.state.pendingReclaimShape?.kind, 'overlap');
-  // "yes, same" → the duplicate is merged away, list re-reflected, pending cleared.
-  const t2 = applyStagedTurn(t1.state, [], 'yes, same thing', { text: 'Okay.' });
-  assert.equal((t2.state.collected.reclaimList ?? []).filter((x) => /35 lbs/i.test(x)).length, 1, 'the duplicate "lose 35 lbs" is merged away');
-  assert.equal(t2.state.pendingReclaimShape, undefined, 'pending cleared');
-});
-
-test('Decision II — "no, they\'re different" keeps BOTH wants (no data loss) and never re-proposes', () => {
-  const atConfirm: ConvState = { stage: 'reclaim', awaitingConfirm: true, collected: { ...DII_BASE, reclaimList: ['Start with losing about 35 lbs', 'Lose about 35 lbs'] } };
-  const t1 = applyStagedTurn(atConfirm, [], 'looks good', { text: 'Great.', replyIntent: 'done' });
-  assert.equal(t1.state.pendingReclaimShape?.kind, 'overlap');
-  const t2 = applyStagedTurn(t1.state, [], 'no, they are different', { text: 'Okay.' });
-  assert.equal((t2.state.collected.reclaimList ?? []).length, 2, 'both wants kept — a distinct want is never dropped');
-  // Confirm again → the ruled-on overlap is NOT re-proposed; the flow advances into the Grinta survey.
-  const t3 = applyStagedTurn(t2.state, [], "that's the list", { text: 'Great.', replyIntent: 'done' });
-  assert.equal(/same thing|keep them as one/i.test(t3.reply), false, 'the resolved overlap is not re-proposed');
-  assert.equal(t3.state.stage, 'grinta', 'advances once shapes are clean');
-});
-
-test('Decision II — a VISION is offered to the Playbook; "yes" moves it out of the goal list into visionKeepers', () => {
-  const vision = "I'll be 60 in a month; I want to spend the rest of my days at peace and be myself everywhere I go";
-  const atConfirm: ConvState = { stage: 'reclaim', awaitingConfirm: true, collected: { ...DII_BASE, reclaimList: ['My fitness', vision, 'Buy some new clothes'] } };
-  const t1 = applyStagedTurn(atConfirm, [], 'looks good', { text: 'Great.', replyIntent: 'done' });
-  assert.equal(t1.state.pendingReclaimShape?.kind, 'vision');
-  assert.match(t1.reply, /Playbook|bigger picture/i, 'offers to move the vision, not silently drop it');
-  const t2 = applyStagedTurn(t1.state, [], 'yes please', { text: 'Okay.' });
-  assert.equal((t2.state.collected.reclaimList ?? []).includes(vision), false, 'the vision leaves the goal list');
-  assert.equal((t2.state.collected.visionKeepers ?? []).includes(vision), true, 'preserved to visionKeepers for the Playbook (never discarded)');
-});
-
-test('Decision II — an IDENTITY statement is routed off the goal list and PRESERVED (Donna walk: "I\'m a director…")', () => {
-  const identity = "I'm a director and creative producer";
-  const atConfirm: ConvState = { stage: 'reclaim', awaitingConfirm: true, collected: { ...DII_BASE, reclaimList: ['Creative outlet, do more films', identity, 'Autonomy'] } };
-  const t1 = applyStagedTurn(atConfirm, [], 'looks good', { text: 'Great.', replyIntent: 'done' });
-  assert.equal(t1.state.pendingReclaimShape?.kind, 'identity');
-  assert.match(t1.reply, /who you are|part of your identity/i, 'offers to hold it as identity, not silently drop it');
-  const t2 = applyStagedTurn(t1.state, [], 'yes please', { text: 'Okay.' });
-  assert.equal((t2.state.collected.reclaimList ?? []).includes(identity), false, 'the identity leaves the goal list');
-  assert.equal((t2.state.collected.visionKeepers ?? []).includes(identity), true, 'preserved (never discarded — never drop what they gave you)');
-});
-
-test('an identity statement at reclaim is held in the Playbook, NEVER auto-committed as identity_noun (vibe-wins revert of 5d683d2)', () => {
-  // Donna's walk (Jay 2026-07-26): a passing "who I am" statement was auto-promoted to her committed identity —
-  // "named her without asking." Governance: never name an identity without the member being drawn out and asked.
-  // The shape gate STILL keeps the statement off the reclaim (goal) list and preserves it to the Playbook as their
-  // own words — but it does NOT set identity_noun and does NOT clear the skip. identity_noun is set ONLY through the
-  // real naming beat. A blank strip is recoverable; an unasked label is not.
-  const identity = "I'm a director and creative producer";
-  const base = { athleticPast: 'a player', identitySkipped: true, gap: 'a real fade over a long hard decade' };
-  const atConfirm: ConvState = { stage: 'reclaim', awaitingConfirm: true, collected: { ...base, reclaimList: ['Creative outlet, do more films', identity, 'Autonomy'] } };
-  const t1 = applyStagedTurn(atConfirm, [], 'looks good', { text: 'Great.', replyIntent: 'done' });
-  assert.equal(t1.state.pendingReclaimShape?.kind, 'identity');
-  const t2 = applyStagedTurn(t1.state, [], 'yes', { text: 'Okay.' });
-  assert.equal((t2.state.collected.reclaimList ?? []).includes(identity), false, 'off the goal list (not a reclaim want)');
-  assert.ok(!t2.state.collected.identityNoun, 'NOT auto-named — identity_noun stays unset until the real naming beat');
-  assert.equal(t2.state.collected.identitySkipped, true, 'the skip is NOT silently cleared by a passing statement');
-  assert.equal((t2.state.collected.visionKeepers ?? []).includes(identity), true, 'preserved to the Playbook as their own words, never dropped');
-});
-
 test('gather hygiene (Elite Cyclist walk) — a "shape of it" close is not captured; an "N rides a week" cadence folds', () => {
   // "That's about the shape of it" is the member closing the list, not a want (RECLAIM_CLOSE_RE missed "shape of it").
   assert.equal(memberClosingReclaim("That's about the shape of it"), true);
@@ -718,21 +565,6 @@ test('tidyGapProse — mechanics-only cleanup of a raw backstop gap (milie walk)
   assert.equal(tidyGapProse('Already clean prose. It stays exactly as written.'), 'Already clean prose. It stays exactly as written.');
   // Does NOT invent/change words — a member typo/contraction stays theirs (only the model tidies deeper, via set_gap).
   assert.match(tidyGapProse('i cant run anymore'), /cant run/);
-});
-
-test('Decision II — a MULTI-WANT paragraph is drawn out; the member\'s pick replaces the paragraph', () => {
-  // A genuine multi-want dump reads as a COMMA list (milie@ walk fix: an "and…and" join with no comma is
-  // indistinguishable from a single want's facet-pair — "eating and workout habits to lose weight and regain strength" —
-  // so the gate now needs a real enumeration to fire).
-  const para = 'Regular income that covers our baseline needs. Freelance, creative projects, and funding for my role.';
-  const atConfirm: ConvState = { stage: 'reclaim', awaitingConfirm: true, collected: { ...DII_BASE, reclaimList: ['My fitness', para] } };
-  const t1 = applyStagedTurn(atConfirm, [], 'looks good', { text: 'Great.', replyIntent: 'done' });
-  assert.equal(t1.state.pendingReclaimShape?.kind, 'multiwant');
-  assert.match(t1.reply, /which one|most want back/i, 'draws the real want out');
-  const t2 = applyStagedTurn(t1.state, [], 'Steady freelance income', { text: 'Okay.' });
-  const list = t2.state.collected.reclaimList ?? [];
-  assert.equal(list.includes(para), false, 'the paragraph is replaced');
-  assert.equal(list.some((x) => /freelance income/i.test(x)), true, 'with the distilled want');
 });
 
 test('STAGED gap — a short dispute re-opens but NEVER wipes the gap or Doors (never drop what they gave)', () => {
@@ -823,17 +655,6 @@ test('STAGED confirm — the model replyIntent drives the branch through the eng
   assertHandsToGrinta(rdone); // done signal settles Reclaim even on an ambiguous message
 });
 
-test('STAGED reclaim — RECITE-MISMATCH guard (Phase 2.2): a prose list-recital never stands; the member confirms the TAGS', () => {
-  const atReclaim: ConvState = { stage: 'reclaim', collected: { athleticPast: 'a runner', identityNoun: 'Runner', gap: 'The caregiving years took it.', reclaimList: ['run 3x a week'] } };
-  // The model recites a FULLER list in prose but only "run 3x a week" is actually tagged (no record this turn).
-  const recital = "Here's what you want to reclaim:\n- Run 3x a week\n- Find a local 5k\n- Visit family in Italy\n\nAnything else?";
-  const turn = applyStagedTurn(atReclaim, [], 'yep', { text: recital });
-  assert.equal(turn.state.awaitingConfirm, true, 'the guard routes to the light engine reflect, not the model prose');
-  assert.match(turn.reply, /strong list to build from|Anything missing/i, 'the ENGINE reflect is shown, not the model prose');
-  assert.doesNotMatch(turn.reply, /local 5k|Italy/i, 'the UN-tagged phantom items never appear (the card shows only the tags)');
-  assert.deepEqual(turn.state.collected.reclaimList, ['run 3x a week'], 'under-tagging surfaces at the card — no phantom list commits');
-});
-
 test('STAGED gap→reclaim — a WARM bridge off the gap, not a cold pivot (Phase 2.3 / Cowork #5)', () => {
   const atGapConfirm: ConvState = { stage: 'gap', awaitingConfirm: true, collected: { athleticPast: 'a runner', identityNoun: 'Racer', gap: 'The caregiving years slowly took it.', doors: ['aging_parents'] } };
   const turn = applyStagedTurn(atGapConfirm, [], "that's the whole of it", { text: 'Okay.' });
@@ -866,13 +687,6 @@ test('STAGED reclaim — the list stays CLEAN: drill fragments fold in, near-dup
   assert.equal(list.length, 3, 'three clean wants, not seven sloppy fragments');
 });
 
-test('STAGED reclaim confirm — "That\'s about it" wraps up cleanly (not captured; completes)', () => {
-  const atConfirm: ConvState = { stage: 'reclaim', awaitingConfirm: true, collected: { athleticPast: 'a runner', identityNoun: 'Runner', gap: 'The years took it.', reclaimList: ['run again', 'walk daily', 'see friends'] } };
-  const turn = applyStagedTurn(atConfirm, [], "That's about it", { text: 'Good.' });
-  assertHandsToGrinta(turn); // a wrap-up phrase settles Reclaim → the survey
-  assert.ok(!(turn.state.collected.reclaimList ?? []).some((x) => /about it/i.test(x)), '"That\'s about it" is not captured as a want');
-});
-
 test('STAGED reclaim confirm — "That looks great" is NOT captured as a want (Jay walk); it completes', () => {
   const atConfirm: ConvState = { stage: 'reclaim', awaitingConfirm: true, collected: { athleticPast: 'a runner', identityNoun: 'Runner', gap: 'The caregiving years took it.', reclaimList: ['My running', '2-3 runs per week', 'a local 5k'] } };
   // No model signal → the positive-ack regex must catch it (not append the confirmation as a list item).
@@ -886,20 +700,6 @@ test('STAGED reclaim confirm — "That looks great" is NOT captured as a want (J
 });
 
 // --- slice c: the RECLAIM stage + end-to-end --------------------------------------------------------
-test('STAGED reclaim confirm — "Nope, that\'s a good list" COMPLETES (won\'t-take-yes fix; no reopen, no dupes)', () => {
-  // The reclaim reflect ("Anything missing?") is awaiting confirm with a full list. A leading "Nope" answering
-  // that question = nothing missing = DONE → the card. It must NOT reopen the gather (Jay's walk: it re-captured
-  // fragments as duplicates and the model free-texted an IDQ pitch).
-  const atConfirm: ConvState = {
-    stage: 'reclaim',
-    awaitingConfirm: true,
-    collected: { athleticPast: 'a cyclist', identityNoun: 'Competitor', gap: 'Years of the grind and marriage tension quietly crowded him out.', reclaimList: ['Ride my bike 3x a week', 'More time with friends', 'Weekend hiking trips'] },
-  };
-  const turn = applyStagedTurn(atConfirm, [], "Nope, that's a good list", { text: 'Good. The Competitor has a list now.' });
-  assertHandsToGrinta(turn); // a bare "nope" at the confirm settles Reclaim → the survey (not "what else?")
-  assert.equal(turn.state.collected.reclaimList?.length, 3, 'the list is untouched — no reopen, no re-captured dupes');
-});
-
 test('STAGED reclaim confirm — an explicit CHANGE request reopens the gather (not everything is done)', () => {
   const atConfirm: ConvState = {
     stage: 'reclaim',
@@ -909,34 +709,6 @@ test('STAGED reclaim confirm — an explicit CHANGE request reopens the gather (
   const turn = applyStagedTurn(atConfirm, [], 'no, take the hiking one off — I meant something else', { text: 'Okay.' });
   assert.equal(turn.complete ?? false, false, 'a real change request does not complete');
   assert.equal(turn.state.awaitingConfirm, false, 'reopens the gather');
-});
-
-test('STAGED reclaim — gather to the minimum → reflect the list → confirm → complete (hands off to the card)', () => {
-  const atReclaim: ConvState = {
-    stage: 'reclaim',
-    collected: { athleticPast: 'a cyclist', identityNoun: 'Athlete', gap: 'It opened slowly over years of caring for my dad until I lost myself in it entirely.' },
-  };
-  const { turns, finalState } = replayStaged(
-    [
-      { member: 'I want to ride again', model: { text: 'Good.', record: { reclaimList: ['riding again'] } } },
-      { member: 'and have my mornings back', model: { text: 'Yes.', record: { reclaimList: ['my mornings back'] } } },
-      { member: 'and see my friends', model: { text: 'Got it.', record: { reclaimList: ['seeing my friends'] } } },
-      { member: 'yes, that’s the whole list', model: { text: 'Okay.' } }, // closes at the minimum → reflect
-      { member: 'yes, that’s right', model: { text: 'Okay.' } }, // confirm → complete
-    ],
-    atReclaim,
-  );
-  // at/above the minimum the engine gathers toward the aim; the member's CLOSE triggers the reflect-confirm
-  assert.equal(turns[3]!.state.awaitingConfirm, true, 'closing at the minimum reflects (lightly) and awaits confirm');
-  assert.match(turns[3]!.reply, /strong list to build from|Anything missing/i, 'the light reflect — no re-listing');
-  assert.ok((turns[3]!.state.collected.reclaimList ?? []).some((x) => /riding again/i.test(x)), 'the item is captured (shown on the card, not the reflect)');
-  // confirm → hands into the survey; walking it completes to the card
-  assertHandsToGrinta(turns[4]!);
-  assert.equal(finalState.collected.reclaimList?.length, 3);
-  const done = walkSurvey(finalState);
-  assert.equal(done.complete, true, 'the survey completes — the card renders from collected');
-  assert.ok(done.state.collected.grintaBaseline, 'the Grinta baseline is captured');
-  assert.match(done.reply, /captured|look like you/i);
 });
 
 test('STAGED reclaim — a REPHRASED want collapses to one (Jay walk: "Getting down to 190 lbs" / "Get down to 190 lbs")', () => {
@@ -954,23 +726,6 @@ test('STAGED reclaim — a REPHRASED want collapses to one (Jay walk: "Getting d
   assert.equal(list.length, 2, 'two distinct wants, no near-dup');
 });
 
-test('STAGED reclaim — a want captured twice lands ONCE (Jay walk: "Ride my bike more" ×2 on the card)', () => {
-  const atReclaim: ConvState = { stage: 'reclaim', collected: { athleticPast: 'a cyclist', identityNoun: 'Player', gap: 'The grind slowly took it over fifteen years.' } };
-  const { finalState } = replayStaged(
-    [
-      { member: 'Ride my bike more', model: { text: 'Got it. What else comes to mind?', record: { reclaimList: ['Ride my bike more'] } } },
-      { member: 'Lose 25 lbs', model: { text: 'Good. Anything else?', record: { reclaimList: ['Lose 25 lbs'] } } },
-      { member: 'Ride my bike more', model: { text: 'Yes.', record: { reclaimList: ['Ride my bike more'] } } }, // model re-tags an identical want
-      { member: 'spend more time with friends and travel', model: { text: 'Got it.', record: {} } }, // model under-tags → backstop captures once
-    ],
-    atReclaim,
-  );
-  const list = finalState.collected.reclaimList ?? [];
-  assert.equal(list.filter((x) => /^ride my bike more$/i.test(x.trim())).length, 1, 'the re-said want is deduped — no second "Ride my bike more"');
-  assert.ok(list.some((x) => /friends and travel/i.test(x)), 'the backstop-captured want still lands');
-  assert.equal(list.length, 3, 'three distinct wants — no duplicate on the card');
-});
-
 test('STAGED reclaim — light-touch sharpening REPLACES a vague want in place, never duplicates (measurable list)', () => {
   const atReclaim: ConvState = { stage: 'reclaim', collected: { athleticPast: 'a cyclist', identityNoun: 'Player', gap: 'The grind took it over the years.' } };
   const { finalState } = replayStaged(
@@ -985,40 +740,6 @@ test('STAGED reclaim — light-touch sharpening REPLACES a vague want in place, 
   assert.deepEqual(list, ['Ride my bike 3 times a week', 'Lose 25 lbs'], 'the vague want is sharpened in place — no "Ride my bike more" left, no duplicate');
 });
 
-test('STAGED reclaim — soft-close phrases are NOT captured as wants (Jay walk: "Pretty solid start" / "sums it up")', () => {
-  const base: ConvState = {
-    stage: 'reclaim',
-    collected: { athleticPast: 'a cyclist', identityNoun: 'Player', gap: 'The grind took it over the years.', reclaimList: ['My body, lose 25 lbs', 'Ride my bike more', 'Travel on weekends with friends'] },
-  };
-  // gather turn: an acknowledgement of the reflection, not a want → not captured; at ≥min it reflects the list.
-  const t1 = applyStagedTurn(base, [], 'Pretty solid start', { text: 'Okay.' });
-  assert.ok(!(t1.state.collected.reclaimList ?? []).some((x) => /solid start/i.test(x)), '"Pretty solid start" is not a want');
-  assert.equal(t1.state.awaitingConfirm, true, 'a soft close at ≥min reflects the list, does not add an item');
-  // at the confirm: "That about sums it up for now" advances to the card — never captured as another list item.
-  const t2 = applyStagedTurn({ ...base, awaitingConfirm: true }, [], 'That about sums it up for now', { text: 'Okay.' });
-  assert.ok(!(t2.state.collected.reclaimList ?? []).some((x) => /sums it up/i.test(x)), '"That about sums it up" is not a want');
-  assert.equal(t2.state.stage, 'grinta', 'the close settles Reclaim → the Grinta survey');
-});
-
-test('STAGED reclaim — "Those are the highlights" is a CLOSE, not a want (W-08: never captured, moves to confirm)', () => {
-  // The founder's live walk: after a full list, the member wrapped with "Those are the highlights." Before the
-  // close-vocab fix, that phrase wasn't recognized as a close → the engine re-asked AND captured it as a bogus
-  // want that persisted onto the summary card. It must now reflect + confirm, and never land as an item.
-  const base: ConvState = {
-    stage: 'reclaim',
-    collected: {
-      athleticPast: 'a cyclist', identityNoun: 'Cyclist', gap: 'The grind took it over the years.',
-      reclaimList: ['Fitness back — riding up to Brainard Lake', 'Losing 25 more lbs', 'Show up ready to Big Sugar gravel race'],
-    },
-  };
-  const t = applyStagedTurn(base, [], 'Those are the highlights', { text: 'Okay.' });
-  assert.ok(
-    !(t.state.collected.reclaimList ?? []).some((x) => /highlights/i.test(x)),
-    '"Those are the highlights" is never captured as a want',
-  );
-  assert.equal(t.state.awaitingConfirm, true, 'a close at ≥min reflects the list and moves to confirm — no bare re-ask');
-});
-
 test('STAGED reclaim — re-surfaces a parked front-loader item at stage entry (the trust moment)', () => {
   // Member parked "writing again" back in the identity stage; we enter reclaim by confirming the gap.
   const atGapConfirm: ConvState = {
@@ -1029,54 +750,6 @@ test('STAGED reclaim — re-surfaces a parked front-loader item at stage entry (
   assert.equal(turn.state.stage, 'reclaim', 'advanced into reclaim');
   assert.match(turn.reply, /earlier you said/i, 'reads the parked item back');
   assert.match(turn.reply, /writing again/, 'names the exact parked want — nothing dropped');
-});
-
-test('STAGED reclaim — never-trap: a wrap below the minimum nudges ONCE, then does not loop or complete', () => {
-  const atReclaim: ConvState = {
-    stage: 'reclaim',
-    collected: { athleticPast: 'a runner', identityNoun: 'Runner', gap: 'It faded over a long slow decade of putting everyone else first.', reclaimList: ['running'] },
-  };
-  // member gives a 2nd, then says "that's all" while still at 2 (below the min of 3)
-  const { turns } = replayStaged(
-    [
-      { member: 'and getting outside', model: { text: 'Good.', record: { reclaimList: ['getting outside'] } } },
-      { member: 'honestly that’s all I’ve got', model: { text: 'Okay.' } },
-      { member: 'no really, I’m done', model: { text: 'Okay.' } },
-    ],
-    atReclaim,
-  );
-  // turn 2: wrap below min → nudge ONCE, do not complete
-  assert.equal(turns[1]!.state.stageScratch?.reclaim?.reclaimNudged, true, 'nudged once');
-  assert.equal(turns[1]!.complete, false, 'never completes below the frozen floor');
-  assert.match(turns[1]!.reply, /even one or two more|small/i, 'lowers the bar rather than re-asking');
-  // turn 3: wraps again — must NOT nudge a second time (no loop) and still must not complete
-  assert.equal(/even one or two more/i.test(turns[2]!.reply), false, 'does not repeat the nudge — no loop');
-  assert.equal(turns[2]!.complete, false, 'still cannot complete below the minimum');
-});
-
-test('STAGED reclaim — backstop: model converses WITHOUT add_reclaim_item; engine captures the wants in-stage', () => {
-  const atReclaim: ConvState = {
-    stage: 'reclaim',
-    collected: { athleticPast: 'a leader', identityNoun: 'Leader', gap: 'The layoff took the role, then everything else slowly went with it over a couple of hard years.' },
-  };
-  // The exact live failure the eval caught: the model reflects each want warmly but never tags it.
-  const { turns, finalState } = replayStaged(
-    [
-      { member: 'I want paid creative work — writing, something that uses that part of my mind again', model: { text: 'That sounds important to you.' } },
-      { member: 'and I want my financial independence back', model: { text: 'Of course.' } },
-      { member: 'and to feel like myself in a room again', model: { text: 'I hear that.' } },
-      { member: 'that’s everything', model: { text: 'Okay.' } }, // closes → reflect
-      { member: 'yes', model: { text: 'Okay.' } }, // confirm → complete
-    ],
-    atReclaim,
-  );
-  assert.equal(finalState.collected.reclaimList?.length, 3, 'backstop captured all three untagged wants');
-  assertHandsToGrinta(turns.at(-1)!); // reached the minimum and settled Reclaim — no 0-item stall
-  assert.equal(walkSurvey(finalState).complete, true, 'the survey then completes onboarding');
-  // a wrap/refusal in-stage is NOT captured as an item
-  const wrapState: ConvState = { stage: 'reclaim', collected: { athleticPast: 'x', identityNoun: 'X', gap: 'a'.repeat(40), reclaimList: ['one'] } };
-  const w = applyStagedTurn(wrapState, [], 'no, that’s all — I’m done, let’s move on', { text: 'Okay.' });
-  assert.equal(w.state.collected.reclaimList?.length, 1, 'a wrap line never becomes a reclaim item');
 });
 
 // --- Increment 2: the decline-vs-Acceptance fork (Decision E — supersedes the Jun-26 admit-at-floor) --------
@@ -1143,67 +816,3 @@ test('STAGED fade gate — does NOT misfire on a real fade that also mentions wa
   assert.equal(turns[1]!.state.awaitingConfirm, true, 'proceeds to reflect-confirm once the story is whole');
 });
 
-test('STAGED reclaim — sub-3 completion (Gate-1 decision): two items + done → completes, card carries shortfall', () => {
-  const atReclaim: ConvState = {
-    stage: 'reclaim',
-    collected: { athleticPast: 'a writer', identityNoun: 'Writer', gap: 'Work slowly took everything over a long decade until I lost the thread of myself.', reclaimList: ['writing again'] },
-  };
-  const { turns, finalState } = replayStaged(
-    [
-      { member: 'and time to read', model: { text: 'Good.', record: { reclaimList: ['time to read'] } } }, // count 2
-      { member: 'honestly that’s all', model: { text: 'Okay.' } }, // close below 3 → nudge once
-      { member: 'no, that’s really it for me', model: { text: 'Okay.' } }, // still closing → accept (sub-3) → reflect
-      { member: 'yes', model: { text: 'Okay.' } }, // confirm → complete
-    ],
-    atReclaim,
-  );
-  assert.equal(turns[1]!.state.stageScratch?.reclaim?.reclaimNudged, true, 'nudged once below the aim');
-  assert.match(turns[2]!.reply, /strong list to build from|Anything missing/i, 'accepts the sub-3 list and reflects lightly (never fabricates a 3rd)');
-  assert.equal(finalState.collected.reclaimList?.length, 2);
-  assertHandsToGrinta(turns.at(-1)!); // the sub-3 confirm settles Reclaim → the survey (the card carries the shortfall)
-  assert.equal(walkSurvey(finalState).complete, true, 'completes below the old ≥3 floor after the survey');
-});
-
-test('STAGED reclaim — caps runaway capture at the soft aim (no 17-item ballooning)', () => {
-  const atReclaim: ConvState = {
-    stage: 'reclaim',
-    collected: { athleticPast: 'x', identityNoun: 'X', gap: 'a real fade that unfolded slowly after a hard loss and a long drift'.padEnd(70, '.') },
-  };
-  // Seven genuine offered wants — the 7th hits the aim and triggers reflect-confirm (no endless "what else?").
-  const wants = ['one thing', 'another thing', 'a third', 'a fourth', 'a fifth', 'a sixth', 'a seventh', 'an eighth'];
-  const { turns } = replayStaged(
-    wants.map((w) => ({ member: `I want ${w} back`, model: { text: 'Good.', record: { reclaimList: [w] } } })),
-    atReclaim,
-  );
-  const reflected = turns.findIndex((t) => t.state.awaitingConfirm);
-  assert.ok(reflected >= 0 && reflected <= 6, 'reflects by the time the aim (~7) is hit, not after ballooning');
-});
-
-test('STAGED end-to-end — opening → identity → gap → reclaim → complete, full contract met', () => {
-  const { turns, finalState } = replayStaged([
-    { member: 'I was a competitive swimmer — up at 5am every day for the pool, the black line the one place my mind ever went quiet, and I felt unbreakable out there', model: { text: 'That dedication shows.', record: { athleticPast: 'a competitive swimmer, up at 5am every day for the pool, the black line the one place her mind went quiet, felt unbreakable out there' } } },
-    { member: 'The Swimmer', model: { text: 'The Swimmer.', record: { identityNoun: 'Swimmer' } } },
-    { member: 'yes that’s right', model: { text: 'Good.' } },
-    { member: 'After my divorce I just stopped. The early mornings went, then everything else, and I never found my way back to the water or to myself.', model: { text: 'When did you first feel yourself slipping from the water?', record: { gap: 'After my divorce I stopped — the early mornings went, then everything else, and I never found my way back to the water or to myself.', doors: ['marriage'] } } },
-    { member: 'Within a year the pool felt like someone else’s life — really I’d lost the person who got up for it.', model: { text: 'That’s the quiet cost of it — losing the one who got up for it.', record: { gap: 'After my divorce I stopped swimming; within a year the pool felt like someone else’s life, and I’d lost the person who got up for it.' }, gapReady: true } },
-    { member: 'yes, exactly', model: { text: 'Thank you.' } },
-    { member: 'I want to swim again', model: { text: 'Good.', record: { reclaimList: ['swimming again'] } } },
-    { member: 'my early mornings', model: { text: 'Yes.', record: { reclaimList: ['my early mornings'] } } },
-    { member: 'and feeling strong in my body', model: { text: 'Got it.', record: { reclaimList: ['feeling strong in my body'] } } },
-    { member: 'that’s everything', model: { text: 'Okay.' } }, // closes → reflect
-    { member: 'yes, that’s right', model: { text: 'Okay.' } }, // confirm → complete
-  ]);
-  // Reclaim settles → hands into the Grinta baseline survey; walking it completes onboarding.
-  assertHandsToGrinta(turns.at(-1)!);
-  const c = finalState.collected;
-  assert.equal(c.identityNoun, 'Swimmer');
-  assert.ok(c.gap && c.gap.length > 20);
-  assert.deepEqual(c.doors, ['marriage']);
-  assert.equal(c.reclaimList?.length, 3);
-  // walk the 12 survey items (all 4s here) → completion + the baseline
-  const done = walkSurvey(finalState, [], 4);
-  assert.equal(done.complete, true, 'the survey completes the full arc');
-  assert.equal(done.state.stage, 'complete');
-  assert.equal(done.state.collected.grintaBaseline?.composite, 4, 'all-4s → composite 4');
-  assert.match(done.reply, /starting Grinta Index is 4|officially into the first Phase/i, 'the light reveal names the baseline + Reconnect');
-});

@@ -6,7 +6,7 @@ import { startReconnectAction, reconnectTurnAction, reconnectCeremonyDataAction,
 import ScaleChips from '../components/scale-chips.tsx';
 import { useChatAutoscroll } from '../components/use-chat-autoscroll.ts';
 import { notifyArtifactCommitted } from '../components/artifact-refresh.ts';
-import type { ConvMessage, ConvState, ScaleExpectation } from '../../lib/agent/onboarding.ts';
+import type { ConvMessage, ConvState, Expectation } from '../../lib/agent/onboarding.ts';
 import { BEAT_SEP } from '../../lib/agent/reconnect.ts';
 import { DOORS } from '../../lib/doors.ts';
 
@@ -27,7 +27,7 @@ export default function ReconnectChat({ memberId, mobile = false }: { memberId: 
   const [state, setState] = useState<ConvState | null>(null);
   const [input, setInput] = useState('');
   const [pending, setPending] = useState(false);
-  const [expects, setExpects] = useState<ScaleExpectation | null>(null); // W-24: administered turn (IDQ / §2e grit) → render the scale chips
+  const [expects, setExpects] = useState<Expectation | null>(null); // W-24: administered turn (IDQ / §2e grit) → render the scale chips
   const [error, setError] = useState<string | null>(null);
   const [ceremony, setCeremony] = useState<ReconnectCeremonyData | null>(null); // §2f: set when the arc reaches 'ceremony'
   const started = useRef(false);
@@ -112,7 +112,7 @@ export default function ReconnectChat({ memberId, mobile = false }: { memberId: 
         ))}
         {pending && <div className="typing">Thinking…</div>}
         {/* W-32 chips scroll WITH the thread (Jay's walk: not pinned to the bottom) — they answer the question above, autosend. */}
-        {expects && <ScaleChips expects={expects} disabled={pending || !state} onPick={(n) => void submit(String(n))} />}
+        {expects?.kind === 'scale' && <ScaleChips expects={expects} disabled={pending || !state} onPick={(n) => void submit(String(n))} />}
       </div>
       {error && <p className="error">{error}</p>}
       {/* The text box is hidden on an administered turn (the chips above ARE the input); it returns on conversational turns. */}

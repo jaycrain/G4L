@@ -4,8 +4,9 @@ import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { onboardingTurn, finalizeOnboardingAction, loadOnboardingSessionAction } from './actions.ts';
 import ScaleChips from '../components/scale-chips.tsx';
+import ReclaimListBuilder from './reclaim-list-builder.tsx';
 import OnboardingWelcome from './welcome.tsx';
-import type { ConvState, ConvMessage, ScaleExpectation } from '../../lib/agent/onboarding.ts';
+import type { ConvState, ConvMessage, Expectation } from '../../lib/agent/onboarding.ts';
 import { BEAT_SEP } from '../../lib/agent/onboarding.ts';
 
 // A turn may hand over more than one beat (e.g. the Phases intro + the pre-survey framing), joined by BEAT_SEP —
@@ -42,7 +43,7 @@ export default function OnboardingChat({ welcomeEnabled = false }: { welcomeEnab
   const [state, setState] = useState<ConvState | null>(null);
   const [input, setInput] = useState('');
   const [pending, setPending] = useState(false);
-  const [expects, setExpects] = useState<ScaleExpectation | null>(null); // W-24: administered turn (the Grinta baseline) → render the scale chips
+  const [expects, setExpects] = useState<Expectation | null>(null); // structured turns: scale chips (Grinta) or the Reclaim List builder
   const [error, setError] = useState<string | null>(null);
   const [ready, setReady] = useState(false); // conversation has everything; offer the handoff (reversible)
   const [declined, setDeclined] = useState(false); // fade gate gracefully declined (Decision E) — terminal, no card
@@ -420,7 +421,10 @@ export default function OnboardingChat({ welcomeEnabled = false }: { welcomeEnab
         <>
           {/* W-32: the Grinta baseline items → the chips ARE the input (autosend); drop the text box (closes the
               mis-scaling hole). The box returns on conversational turns. */}
-          {expects ? (
+          {expects?.kind === 'reclaim_list' ? (
+            // Structured Reclaim List builder — the member's exact entries ARE the list (submitted as a bulleted block).
+            <ReclaimListBuilder expects={expects} disabled={pending} onSubmit={(items) => void submit(items.map((x) => `• ${x}`).join('\n'))} />
+          ) : expects?.kind === 'scale' ? (
             <ScaleChips expects={expects} disabled={pending} onPick={(n) => void submit(String(n))} />
           ) : (
             <form className="chat-input" onSubmit={send}>

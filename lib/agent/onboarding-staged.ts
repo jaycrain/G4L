@@ -43,6 +43,7 @@ import {
   type ReplyIntent,
   type ReseeingTell,
   type ScaleExpectation,
+  type Expectation,
   type Stage,
   type Turn,
 } from './onboarding.ts';
@@ -242,17 +243,13 @@ const DECLINE_REPLY =
 // identity. Directional copy (Jay reacts on the walk).
 function reclaimOpen(c: Collected): string {
   const identity = identityLabel(c.identityNoun);
-  // Donna's numbered-entry: be EXPLICIT about switching from conversation to writing the list down, and invite the
-  // member to number each item — the number is a deterministic cue the engine splits on (parseReclaimItems), so a
-  // multi-want turn lands as clean separate items instead of one run-on. We start with three (the floor); the list is
-  // never locked — they add more anytime with the companion on the dashboard.
+  // STRUCTURED builder (Jay, 2026-07-29): the warm line, then hand OFF to the list-builder UI (rendered below by the
+  // reclaim_list expectation). The member types each item and it's captured verbatim — no extraction, so nothing drops.
   return (
     `That's a lot to have been carrying${identity ? ` — no wonder ${identity} got quiet under all of it` : ''}. ` +
-    `Here's the turn, though: none of it is gone. It's been waiting for you. Now I'm going to write these down with ` +
-    `you — your Reclaim List, the thing the whole program works toward${identity ? `: the pieces of ${identity}'s life you miss most` : ''}. ` +
-    `We'll start with three, and you can always add more later just by talking with me on your dashboard. ` +
-    `So — take a moment, and when you're ready, send me the first thing you'd want back, starting with “1.” ` +
-    `(for example, “1. Get back on real trails”).`
+    `Here's the turn, though: none of it is gone. It's been waiting for you. Let's write down what you want back — ` +
+    `your Reclaim List, the thing the whole program works toward${identity ? `: the pieces of ${identity}'s life you miss most` : ''}. ` +
+    `Add each thing below — big or small. Three to start is plenty, and you can always add more later. Take your time.`
   );
 }
 
@@ -704,6 +701,27 @@ function appendReclaimItems(c: Collected, message: string): boolean {
   let grew = false;
   for (const item of parseReclaimItems(message)) if (appendReclaim(c, item)) grew = true;
   return grew;
+}
+
+// The list-builder's submission: one item per line (the builder controls the format — single-line entries, each
+// optionally sent with a "• " / number prefix for a nice member bubble). Deterministic — split on newlines, strip a
+// leading marker, keep the member's exact words. This is the whole capture: no model, nothing to drop.
+export function parseReclaimListSubmission(message: string): string[] {
+  return (message ?? '')
+    .split(/\r?\n+/)
+    .map((line) => line.replace(/^\s*(?:[([]?\d{1,2}[.):\]–-]|[-•*])\s*/, '').trim())
+    .filter((line) => line.length > 0);
+}
+
+// The structured Reclaim List builder is an onboarding-only turn: whenever the machine is in the reclaim stage (and not
+// yet complete), tell the client to render the list builder — pre-filled with any wants volunteered earlier — instead
+// of the text box or the scale chips. Once submitted, the stage advances to 'grinta', so this stops firing. Everything
+// else defers to the scale-chip expectation.
+function nextExpects(arc: ArcConfig, stageId: StageId, complete: boolean, answered: number, collected: Collected): Expectation | undefined {
+  if (arc.id === 'onboarding' && stageId === 'reclaim' && !complete) {
+    return { kind: 'reclaim_list', min: RECLAIM_LIST_MIN, seeded: (collected.reclaimList ?? []).filter(Boolean) };
+  }
+  return scaleExpects(arc, stageId, complete, answered);
 }
 
 // At the CONFIRM gate (after the list is reflected — "want to make edits, or does that feel like the shape?"), the
@@ -1161,138 +1179,21 @@ const gapStage: StageDef = {
 
 const reclaimStage: StageDef = {
   id: 'reclaim',
-  mode: 'drawout',
+  mode: 'drawout', // unused for the structured turn; kept for the StageDef shape
   opener: (c) => reclaimOpening(c),
-  offersSubstance: (message) => shouldCaptureStagedReclaim(message),
-  forceProgress(b) {
-    // Bound the reclaim loop → the card once card-ready. NEVER drop the want they JUST offered at the cap.
-    if (!memberClosingReclaim(b.memberMessage) && shouldCaptureStagedReclaim(b.memberMessage)) {
-      appendReclaimItems(b.collected, b.memberMessage);
-    }
-    const realGap = gapIsNarrative(b.collected.gap, b.collected.reclaimList ?? []) && !isForwardAmbition(b.collected.gap ?? '');
-    if (hasIdentity(b.collected) && realGap && (b.collected.reclaimList?.length ?? 0) >= RECLAIM_LIST_FLOOR) {
-      // Capture is card-ready → hand into the Grinta baseline survey (it completes onboarding, not this crossing).
-      return enterGrintaSurvey(b);
-    }
-    // not card-ready → mutation kept, fall through to normal gather
-  },
+  offersSubstance: () => true, // the list-builder submission is always a real answer
+  // STRUCTURED CAPTURE (Jay, 2026-07-29): the Reclaim List is built in a list-builder UI, not extracted from
+  // conversation (which proved ~30% lossy in testing). The submission arrives as a bulleted block; the engine stores
+  // the member's EXACT entries — 100% reliable, no model, nothing to drop — then hands into the Grinta baseline
+  // survey. There is no conversational gather or confirm: the builder IS the input AND the confirmation.
   gather(b) {
-    const s = b.scratch as ReclaimScratch;
-    // Uniform floor+escape (1b): reclaim's drawing-out is "gather toward the aim."
-    const closing = memberPushedPast('reclaim', b.memberMessage, b.collected);
-    // The member put a want FORWARD this turn (new or a restatement) — the "still in flow" signal, distinct from
-    // whether the list actually grew (a dup offer keeps them in flow).
-    const offered = !closing && shouldCaptureStagedReclaim(b.memberMessage);
-    // The model ATTEMPTED to tag a want this turn (record carried one) — trust it even if appendReclaim folded or
-    // deduped it (so the list didn't grow). This is what stops the backstop from re-folding a bare cadence the
-    // model already tagged ("Every day" folded once by the model, then again by the backstop). Only backstop when
-    // the model tagged NOTHING and the member is offering.
-    const modelTagged = (b.model.record?.reclaimList?.length ?? 0) > 0;
-    if (offered && !modelTagged && !b.refinedThisTurn) appendReclaimItems(b.collected, b.memberMessage);
-    const count = b.collected.reclaimList?.length ?? 0;
-    const grewThisTurn = count > b.priorReclaimLen; // a NEW unique want landed this turn (model or backstop)
-    // RECITE-MISMATCH GUARD (Phase 2.2): the Reclaim List is built ONLY from tags. If the model RECITES/wraps the
-    // list in prose (the phantom-list shape that silently dropped Joanne's items), NEVER let that prose stand —
-    // reflect from the TAGS so the member confirms what's actually captured. Under-tagging surfaces right here at
-    // the seatbelt instead of vanishing off the card. (If nothing's tagged yet, keep gathering rather than reflect
-    // an empty list.)
-    if (modelRecitesList(b.modelText)) {
-      if (count >= RECLAIM_LIST_FLOOR) {
-        b.reply = reflectReclaim(b.collected);
-        b.awaitingConfirm = true;
-      } else {
-        b.reply = RECLAIM_MORE;
-      }
-      return;
-    }
-    if (count >= RECLAIM_LIST_TARGET || (count >= RECLAIM_LIST_MIN && closing)) {
-      // Aim reached, OR at the minimum and closing — reflect the whole list and confirm.
-      b.reply = reflectReclaim(b.collected);
-      b.awaitingConfirm = true;
-    } else if (count >= RECLAIM_LIST_MIN) {
-      // At/above the minimum, below the aim, not explicitly closing. COMPLETE-WHEN-DONE: keep gathering while
-      // she's still OFFERING (new item OR a restatement — a dup must NOT pull the list up short). Only when a
-      // turn brings nothing at all is she finished — reflect and await her confirm.
-      if ((grewThisTurn || offered) && count < RECLAIM_LIST_TARGET) {
-        b.reply = withQuestion(b.modelText, reclaimMore(b.history));
-      } else {
-        b.reply = reflectReclaim(b.collected);
-        b.awaitingConfirm = true;
-      }
-    } else if (closing && !s.reclaimNudged) {
-      // Soft-close below the minimum → nudge ONCE (small things count), draw out more.
-      s.reclaimNudged = true;
-      b.reply = RECLAIM_NUDGE;
-    } else if (closing && s.reclaimNudged) {
-      // Already nudged, still closing below the floor. Gate-1 (sub-3): with ≥1 real want, ACCEPT and complete —
-      // the card carries the shortfall. Never fabricate. Only a truly empty list holds.
-      if (count >= 1) {
-        b.reply = reflectReclaim(b.collected);
-        b.awaitingConfirm = true;
-      } else {
-        b.reply = RECLAIM_SOFT_HOLD;
-      }
-    } else {
-      // Still offering — keep the model's reflection with a guaranteed closing question; else invite the next item.
-      b.reply = withQuestion(b.modelText, reclaimMore(b.history));
-    }
+    for (const item of parseReclaimListSubmission(b.memberMessage)) appendReclaim(b.collected, item);
+    return enterGrintaSurvey(b);
   },
+  // Never reached (the structured gather never sets awaitingConfirm) — kept for the StageDef shape + as a safety net.
   confirm(b) {
-    const s = b.scratch as ReclaimScratch;
-    // DECISION II — a shape proposal is pending the member's yes/no. Resolve it from their answer (merge / move to
-    // Playbook / draw-out), then surface the NEXT shape or re-reflect the cleaned list. Never a silent rewrite.
-    if (b.pendingReclaimShape) {
-      const ack = resolvePendingShape(b, b.pendingReclaimShape);
-      const next = gateNextShape(b);
-      b.reply = next ? `${ack}\n\n${next}` : `${ack}\n\n${reflectReclaim(b.collected)}`;
-      b.awaitingConfirm = true;
-      return;
-    }
-    // RECLAIM late-add: a want volunteered AT the confirm — neither a correction nor an affirmation — used to be
-    // dropped as the beat advanced. Capture it and re-reflect. Only a genuinely NEW want re-opens (deduped).
-    // Phase 2.1 guard (Jay's "That looks great" bug): if the model signaled the reply is 'done' or 'dispute', it's
-    // NOT a new want — never capture a confirmation/dispute as a list item. Only 'more' (or no signal) can offer one.
-    // Strip any "I'd like to add to the list." preamble so the ACTUAL want is what's evaluated + stored (the meta
-    // wrapper otherwise fails the detector / mangles dedup and the want vanishes).
-    const lateWant = stripReclaimPreamble(b.memberMessage);
-    if (
-      b.model.replyIntent !== 'done' &&
-      b.model.replyIntent !== 'dispute' &&
-      !b.refinedThisTurn && // a sharpening answer isn't a new want
-      !correctsReflection(b.memberMessage) &&
-      !affirmsReflection(b.memberMessage) && // engine owns this: an affirmation of the shape is NOT a want ("those feel right")
-      !memberClosingReclaim(lateWant) &&
-      shouldCaptureStagedReclaim(lateWant) &&
-      appendReclaimItems(b.collected, b.memberMessage)
-    ) {
-      // Anti-loop (shared contract): a rambling member whose every reply reads as a late-want re-reflects forever
-      // ("Got it — that's a strong list… Anything missing?" ×N — the milie shape). The want IS captured above; past
-      // the ceiling, stop re-reflecting and hand into the survey (the card is the backstop for anything more).
-      if (confirmBounceExceeded(s)) return void enterGrintaSurvey(b);
-      b.reply = reflectReclaim(b.collected);
-      b.awaitingConfirm = true; // stay in confirm — re-reflect with the just-added want included
-      return;
-    }
-    // DECISION II — before treating this as a final confirm, surface any unaddressed shape in the assembled list
-    // (an overlap to merge, a vision to move, a paragraph to draw out). One at a time; the member confirms each.
-    const proposal = gateNextShape(b);
-    if (proposal) {
-      b.reply = proposal;
-      b.awaitingConfirm = true;
-      return;
-    }
-    // RECLAIM CONFIRM — "Anything missing?" A bare "no / nope / that's a good list" = nothing missing = DONE →
-    // the card. Only an explicit CHANGE request reopens the gather. resolveReclaimConfirm owns the meaning.
-    if (resolveReclaimConfirm(b.memberMessage, b.model.replyIntent) === 'change') {
-      // Anti-loop (shared contract): a member whose every reply reads as a 'change' reopens the gather forever. Past
-      // the ceiling, stop reopening and hand into the survey — the list is captured; the card is the backstop.
-      if (confirmBounceExceeded(s)) return void enterGrintaSurvey(b);
-      b.awaitingConfirm = false;
-      b.reply = withQuestion(b.modelText, reclaimMore(b.history));
-    } else {
-      // Seatbelt confirmed → don't complete yet; hand into the Grinta baseline survey (the new end of onboarding).
-      enterGrintaSurvey(b);
-    }
+    for (const item of parseReclaimListSubmission(b.memberMessage)) appendReclaim(b.collected, item);
+    return enterGrintaSurvey(b);
   },
 };
 
@@ -1383,7 +1284,7 @@ function enterGrintaSurvey(b: Beat): Turn {
   b.reply = grintaSurveyOpener();
   // W-24/W-48: this is the ONLY path into the grinta survey (natural confirm AND the runaway/ceiling backstop), so emit
   // the chip signal (+ "Question 1 of 12") here — otherwise a force-progressed member gets the text box for item 1.
-  const expects = scaleExpects(b.arc, b.stage, false, b.administeredResponses.length);
+  const expects = nextExpects(b.arc, b.stage, false, b.administeredResponses.length, b.collected);
   return { reply: b.reply, state: beatState(b), complete: false, ...(expects && { expects }) };
 }
 
@@ -1466,7 +1367,7 @@ export function runArcTurn(
     b.awaitingConfirm = false; // administered stages have no reflect-confirm loop
     const early = stageDef.administer(b);
     if (early) return early;
-    const expects = scaleExpects(arc, b.stage, b.complete, b.administeredResponses.length); // W-24/W-48: next item → chips (+ "n of y"); completed → prose close
+    const expects = nextExpects(arc, b.stage, b.complete, b.administeredResponses.length, b.collected); // W-24/W-48: next item → chips (+ "n of y"); completed → prose close
     return { reply: b.reply, state: beatState(b), complete: b.complete, ...(b.declined ? { declined: true } : {}), ...(expects && { expects }) };
   }
 
@@ -1525,7 +1426,7 @@ export function runArcTurn(
     b.reply = `${leads[history.length % leads.length]} ${b.reply}`;
   }
 
-  const expects = scaleExpects(arc, b.stage, b.complete, b.administeredResponses.length); // W-24/W-48: a draw-out stage handing INTO an administered stage delivers item 0 → chips (+ "n of y")
+  const expects = nextExpects(arc, b.stage, b.complete, b.administeredResponses.length, b.collected); // W-24/W-48: a draw-out stage handing INTO an administered stage delivers item 0 → chips (+ "n of y")
   return { reply: b.reply, state: beatState(b), complete: b.complete, ...(b.declined ? { declined: true } : {}), ...(expects && { expects }) };
 }
 

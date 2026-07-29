@@ -382,6 +382,24 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .chat-continue { margin-top: 0.75rem; }
 .chat-continue button { margin: 0; width: 100%; }
 
+/* Reclaim List builder — the structured capture (the member's exact entries ARE the list). On-brand, calm. */
+.rlb { margin-top: 0.5rem; }
+.rlb-list { list-style: none; margin: 0 0 0.6rem; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.rlb-item { display: flex; align-items: center; gap: 9px; background: #f5f4f1; border: 1px solid #e3e2df; border-radius: 8px; padding: 8px 10px 8px 12px; font-size: 15px; color: var(--navy, #374f63); font-weight: 600; }
+.rlb-check { color: var(--teal, #3b9495); font-weight: 800; flex: 0 0 auto; }
+.rlb-item-text { flex: 1; }
+.rlb-remove { flex: 0 0 auto; margin: 0; padding: 2px 7px; background: transparent; border: none; color: #9aa2a8; font-size: 13px; cursor: pointer; border-radius: 6px; }
+.rlb-remove:hover { color: var(--deep-red, #bb2127); background: #eceae7; }
+.rlb-add { display: flex; gap: 0.5rem; align-items: stretch; }
+.rlb-input { flex: 1; margin: 0; box-sizing: border-box; }
+.rlb-addbtn { margin: 0; flex: 0 0 auto; background: #E8E6E6; color: var(--navy, #374f63); border: 1px solid #dcdada; border-radius: 8px; font-weight: 700; }
+.rlb-addbtn:hover:not(:disabled) { background: #dedcdc; }
+.rlb-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 0.7rem; flex-wrap: wrap; }
+.rlb-hint { font-size: 12.5px; color: #6b7680; flex: 1; min-width: 180px; }
+.rlb-done { margin: 0; flex: 0 0 auto; background: var(--teal, #3b9495); color: #fff; border: 1px solid var(--teal, #3b9495); border-radius: 8px; font-weight: 700; }
+.rlb-done:hover:not(:disabled) { background: #327f7e; border-color: #327f7e; }
+.rlb-done:disabled, .rlb-addbtn:disabled { opacity: 0.5; cursor: default; }
+
 /* W-24 — administered-scale chips. The fixed-scale answer surface for validated instruments (IDQ, Grinta, SDT,
    self-management, control/challenge checkpoints): the member PICKS on the scale instead of holding it in their head
    (the mis-scaling fix). Rounded squares, teal outline; hover tints, the picked chip fills teal; the instrument's own

@@ -9,7 +9,7 @@ import ScaleChips from '../components/scale-chips.tsx';
 import { useChatAutoscroll } from '../components/use-chat-autoscroll.ts';
 import { notifyArtifactCommitted, notifySessionComplete } from '../components/artifact-refresh.ts';
 import type { RewireCeremonyData } from '../../lib/ceremony/rewire-ceremony-beats.ts';
-import type { ConvMessage, ConvState, ScaleExpectation } from '../../lib/agent/onboarding.ts';
+import type { ConvMessage, ConvState, Expectation } from '../../lib/agent/onboarding.ts';
 import { BEAT_SEP } from '../../lib/agent/onboarding.ts';
 
 // W-21 — the conversational hand-home. A completed session used to hide the input and render nothing (a hard dead-end).
@@ -31,7 +31,7 @@ export default function RewireChat({ memberId, session = 'w1' }: { memberId: str
   const [input, setInput] = useState('');
   const [pending, setPending] = useState(false);
   const [done, setDone] = useState(false);
-  const [expects, setExpects] = useState<ScaleExpectation | null>(null); // W-24: administered turn (§2e checkpoint) → render the scale chips
+  const [expects, setExpects] = useState<Expectation | null>(null); // W-24: administered turn (§2e checkpoint) → render the scale chips
   const [ceremony, setCeremony] = useState<RewireCeremonyData | null>(null); // R4: set when the checkpoint reaches 'ceremony'
   const [error, setError] = useState<string | null>(null);
   const started = useRef(false);
@@ -111,7 +111,7 @@ export default function RewireChat({ memberId, session = 'w1' }: { memberId: str
         ))}
         {pending && <div className="typing">Thinking…</div>}
         {/* chips scroll WITH the thread (Jay's walk: not pinned) — they answer the question above, autosend. */}
-        {!done && expects && <ScaleChips expects={expects} disabled={pending || !state} onPick={(n) => void submit(String(n))} />}
+        {!done && expects?.kind === 'scale' && <ScaleChips expects={expects} disabled={pending || !state} onPick={(n) => void submit(String(n))} />}
       </div>
       {error && <p className="error">{error}</p>}
       {!done && (
