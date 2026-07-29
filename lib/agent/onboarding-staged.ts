@@ -636,7 +636,10 @@ export function isProcessMetaOrAssent(text: string): boolean {
 
 function appendReclaim(c: Collected, item: string, category = ''): boolean {
   const trimmed = item.trim();
-  if (isProcessMetaOrAssent(trimmed)) return false; // W-42: session-meta / assent / agent-question never joins the list
+  // The ONE chokepoint that turns text into a list item — so the "never capture a confirmation" rule holds on EVERY
+  // path (gather backstop, forceProgress, confirm late-add). isProcessMetaOrAssent catches bare assent; affirmsReflection
+  // catches the confirm-the-shape family ("those feel right") that slipped through and landed as Blair's goal.
+  if (isProcessMetaOrAssent(trimmed) || affirmsReflection(trimmed)) return false;
   const key = reclaimKey(trimmed);
   if (!key) return false;
   const list = c.reclaimList ?? [];
@@ -701,6 +704,18 @@ function appendReclaimItems(c: Collected, message: string): boolean {
   let grew = false;
   for (const item of parseReclaimItems(message)) if (appendReclaim(c, item)) grew = true;
   return grew;
+}
+
+// At the CONFIRM gate (after the list is reflected — "want to make edits, or does that feel like the shape?"), the
+// engine — not the model — must not mistake an AFFIRMATION of the reflection for a new want. The assent regex only
+// catches bare "yes/ok/fine"; it missed Blair's "Those feel right", which then landed as a goal. This recognizes the
+// bounded family of confirm-the-shape replies ("those feel right", "that works", "looks good", "that's the shape",
+// "no changes", "leave them", "perfect") so they advance instead of capturing. A genuine bare want ("play golf",
+// "swimming") does NOT match — those still capture. Only used at the confirm gate, not the gather.
+const RECLAIM_AFFIRM_RE =
+  /^\s*(?:(?:those|these|that|they|it)\s+(?:feel|feels|look|looks|sound|sounds|seem|seems|are|is|work|works)\b|(?:that'?s|those are|these are)\s+(?:right|good|great|perfect|it|the\s+(?:shape|list|ones?)|all|everything)\b|(?:looks?|sounds?|feels?)\s+(?:right|good|great|perfect|complete)\b|(?:perfect|great|exactly|correct|agreed|spot\s*on)\b|no\s+(?:edits?|changes?|more)\b|nothing\s+(?:to\s+(?:add|change|edit)\b|else\b|missing\b)|(?:just\s+)?leave\s+(?:it|them|as)\b|keep\s+(?:it|them)\b)/i;
+export function affirmsReflection(message: string): boolean {
+  return RECLAIM_AFFIRM_RE.test((message ?? '').trim());
 }
 
 // --- capture merge (the per-field tools' result, merged into Collected) ---------------------------------
@@ -1245,6 +1260,7 @@ const reclaimStage: StageDef = {
       b.model.replyIntent !== 'dispute' &&
       !b.refinedThisTurn && // a sharpening answer isn't a new want
       !correctsReflection(b.memberMessage) &&
+      !affirmsReflection(b.memberMessage) && // engine owns this: an affirmation of the shape is NOT a want ("those feel right")
       !memberClosingReclaim(lateWant) &&
       shouldCaptureStagedReclaim(lateWant) &&
       appendReclaimItems(b.collected, b.memberMessage)
