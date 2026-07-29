@@ -41,11 +41,28 @@ for t in "${JS_TELLS[@]}"; do
   if [ "$hit" = 1 ]; then echo "  ✓ js   $t"; else echo "  ✗ js   $t  MISSING"; ok=0; fi
 done
 
+# RUNTIME surface checks (CAT-41). Bundle tells prove the code is PROMOTED; they say nothing about whether the
+# member-facing surfaces actually RENDER — a half-flagged prod (route on, engine dark) passed the old check. These
+# hit the real entry points a Charter member uses and fail on a non-200 or a Next.js error page.
+echo
+echo "  runtime surfaces:"
+for path in "/" "/onboarding" "/login"; do
+  body="$(curl -s --max-time 20 "$URL$path")"
+  code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "$URL$path")"
+  if [ "$code" != "200" ]; then
+    echo "    ✗ $path  HTTP $code"; ok=0
+  elif echo "$body" | grep -qiE 'application error|internal server error|__next_error__'; then
+    echo "    ✗ $path  renders an error page"; ok=0
+  else
+    echo "    ✓ $path"
+  fi
+done
+
 echo
 if [ "$ok" = 1 ]; then
-  echo "🟢 GREEN — today's code is live. Safe to walk."
+  echo "🟢 GREEN — today's code is live and the member surfaces render. Safe to walk."
   exit 0
 else
-  echo "🔴 RED — the live alias is NOT serving today's code yet. Wait, re-run in ~60s."
+  echo "🔴 RED — NOT safe to walk (stale bundle or a broken/half-flagged surface). Re-run in ~60s."
   exit 1
 fi

@@ -37,7 +37,7 @@ import { latestBiggerWorldReading } from '../../lib/reclaim/bigger-world-store.t
 import { AUDIT_DOMAIN_LABEL } from '../../lib/reclaim/bigger-world-instrument.ts';
 import { activeQualityDayProfile, recentQualityDays } from '../../lib/reclaim/quality-day-store.ts';
 import { listFacets, closedSessionIds } from '../../lib/curriculum/store.ts';
-import { getForecast } from '../../lib/curriculum/view.ts';
+import { getForecast, getPassport } from '../../lib/curriculum/view.ts';
 import { getAsset } from '../../lib/curriculum/registry.ts';
 import { getDailyBeat } from '../../lib/daily-beat/store.ts';
 import { getMemberExperience } from '../../lib/telemetry/store.ts';
@@ -87,12 +87,15 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
     reclaimList: dash.reclaimList,
     momentumLog,
     commitments,
+    // `today` depends on NO db read, so it is free to always supply. Omitting it here let the prompt's
+    // "NEVER GUESS THE DATE" instruction fire with no date — risking a mis-dated reading/milestone. (CAT-39)
+    today: new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }),
   };
   try {
   // "best-effort" but was UNGUARDED — and it runs a memory-fold (API/query) BEFORE everything else, so if it threw it
   // sank the entire context to minimal (this is why the companion still couldn't see momentum after the first pass).
   await maybeFoldMemory(db, memberId).catch((e) => console.warn('maybeFoldMemory failed (non-fatal):', (e as Error).message));
-  const [grinta, grintaReading, whyReading, skillsReading, pilotPlan, pilotTally, biggerWorld, qdProfile, qdRecent, consumedBites, profRows, idqRows, reclaimItems, beatRows, playbook, measures, linkedMeasureRows, facets, closedIds, lastClosedRows, forecast, experience] = await Promise.all([
+  const [grinta, grintaReading, whyReading, skillsReading, pilotPlan, pilotTally, biggerWorld, qdProfile, qdRecent, consumedBites, profRows, idqRows, reclaimItems, beatRows, playbook, measures, linkedMeasureRows, facets, closedIds, lastClosedRows, forecast, experience, passport] = await Promise.all([
     getGrinta(db, memberId, dash.identityNoun).catch(() => ({ score: null, direction: null }) as unknown as Awaited<ReturnType<typeof getGrinta>>),
     // Rebuild/Reclaim REGISTERS — all SUPPLEMENTARY context ("the agent knows X"), each null-safe downstream. Guard
     // EVERY one with .catch: a single missing/drifted register table (prod migrations don't auto-apply) must NEVER
@@ -137,6 +140,8 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
     ).catch(() => ({ rows: [] as never[] })),
     getForecast(db, memberId).catch(() => ({ phases: [], current: null }) as unknown as Awaited<ReturnType<typeof getForecast>>),
     getMemberExperience(db, memberId, (id) => getAsset(id)?.title ?? id).catch(() => ({ summary: '' }) as Awaited<ReturnType<typeof getMemberExperience>>),
+    // The 16-milestone Passport — the member SEES these badges, so the agent must know them (CAT-37).
+    getPassport(db, memberId).catch(() => ({ earned: 0, total: 0, badges: [], placeholders: 0 }) as Awaited<ReturnType<typeof getPassport>>),
   ]);
   const prof = profRows.rows[0];
 
@@ -204,6 +209,8 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
   // momentumLog + commitments were computed UP FRONT (folded into `minimal` too) — see the top of buildContext.
   return {
     today: new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }),
+    // Earned badges — member-visible, so agent-visible (CLAUDE.md cornerstone). Names only. (CAT-37)
+    earnedBadges: passport.badges.filter((b) => b.earned).map((b) => b.name),
     displayName: dash.displayName,
     identityNoun: dash.identityNoun,
     namedSelves,

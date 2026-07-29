@@ -23,6 +23,10 @@ export type CheckinContext = {
   completedSessions?: string[]; // curriculum Sessions they've finished (Identity Excavation, …)
   nextStep?: { title: string; kind: string; openable: boolean } | null; // the lit step on their path (send them there)
   dailyBeat?: string | null; // today's Daily Beat reflection on their dashboard (a read, not a task)
+  // Earned badges (the 16-milestone Passport). The member sees these on the dashboard, in the ceremony, and at
+  // session close — so the agent MUST know them too (CLAUDE.md: no data the member can see is invisible to the
+  // agent). Names only; acknowledge warmly as earned, never grade or gamify. (CAT-37)
+  earnedBadges?: string[] | null;
   doorDisplayNames: string[];
   idScore: number | null;
   direction: Direction | null;
@@ -208,6 +212,11 @@ export function contextBlock(c: CheckinContext): string {
       ? `Since they last talked with you, their dashboard moved:\n${c.recentChanges.map((x) => `  • ${x}`).join('\n')}`
       : null,
     `Member: ${c.displayName}`,
+    // Badges the member has EARNED — they see them, so you know them. Acknowledge as earned work when it's relevant;
+    // never grade, gamify, or dangle them as a carrot. (CAT-37)
+    c.earnedBadges && c.earnedBadges.length
+      ? `Badges they've earned: ${c.earnedBadges.join(', ')} (earned acknowledgement — never a grade or a carrot)`
+      : null,
     c.namedSelves && c.namedSelves.length
       ? `Reclaimed selves they've named: ${c.namedSelves.join(', ')} (speak to all of them, not just one)`
       : c.identityNoun
