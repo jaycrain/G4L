@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 // Onboarding welcome (Slice B) — the first-run "meet the Companion" flow. Comes BEFORE the sign-up gate (Jay): forecast
 // what to expect + establish safety FIRST, so identifying yourself reads as a good decision, not a risk. The opening
@@ -98,6 +98,9 @@ function NavyBeats({ onDone }: { onDone: () => void }) {
 function WelcomeHero({ onNext }: { onNext: () => void }) {
   return (
     <div className="onbwel-d-hero">
+      {/* Logo sits tonally ON the image (Jay 7/29 — no header bar; the wordmark does the branding). */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img className="onbwel-d-wordmark" src="/brand/g4l-wordmark.svg" alt="Grinta for Life" />
       <div className="onbwel-d-heart">
         <h1 className="onbwel-d-head">Welcome midlifer.<br />Your comeback<br />begins today.</h1>
         <p className="onbwel-d-sub">
@@ -120,6 +123,12 @@ function WelcomeHero({ onNext }: { onNext: () => void }) {
 }
 
 export default function OnboardingWelcome({ onBegin }: { onBegin: () => void }) {
+  // Full-bleed intro (Jay 7/29): the welcome is a true one-screen image + message — drop the global header, footer, and
+  // page padding while it shows, then restore them when it hands off to the sign-up gate.
+  useEffect(() => {
+    document.body.classList.add('onbwel-bleed');
+    return () => document.body.classList.remove('onbwel-bleed');
+  }, []);
   // Both tracks now run hero → beats (Jay: the hero shows on mobile too). Each track holds its own stage so the CSS
   // breakpoint toggle stays flash-free; only the one for the current viewport is visible, the other is inert.
   const [dStage, setDStage] = useState<'hero' | 'beats'>('hero');
