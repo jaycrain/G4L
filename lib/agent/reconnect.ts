@@ -464,25 +464,27 @@ const driftStage: StageDef = {
   },
 };
 
-// --- §2d VISIONING · beat 2: THE WINDOW (draw-out) — the two Tuesdays, the spark, the LIFT ---------------------
-// Greg's authored RCN-WIN "The Window": picture an ordinary Tuesday a year out if nothing changes, then the one where
-// you did the work. The SECOND Tuesday is the spark — the reclaimed ordinary day. Draw-out (reuses the machinery),
-// ends on HOPE. On confirm, the vision is a KEEPER (keeperType 'lights_you_up' — what lights them up). Copy reused
-// from RCN-WIN. (WIN-LIST is skipped — the Reclaim List already exists from onboarding.)
+// --- §2d VISIONING · beat 2: THE WINDOW (draw-out) — the future Tuesday, the spark, the LIFT ---------------------
+// "The Window": picture an ordinary Tuesday a year out where you've DONE the work and the things on your Reclaim List
+// are real. That reclaimed ordinary day is the spark. (Donna, 2026-07-28: the old "first Tuesday where nothing
+// changes" beat was cut — we only walk the member through the OTHER Tuesday, the one worth chasing.) Draw-out (reuses
+// the machinery), ends on HOPE. On confirm the vision is a KEEPER (keeperType 'lights_you_up'). WIN-LIST is skipped —
+// the Reclaim List already exists from onboarding.
 const WINDOW_MIN_DEPTH = 2;
 const WINDOW_MAX_DEPTH = 4;
-// The opener — RCN-WIN step-1 frame + prompt (hoisted so the drift bridge can hand straight into it).
+// The opener — go straight to the reclaimed Tuesday (no "nothing changes" version first).
 function windowOpen(_c: Collected): string {
   return (
     "There's a window between who you are today and who you keep saying you'll be — most people never look through " +
-    'it. Today you look. Picture an ordinary Tuesday a year from now if NOTHING changes: how do you wake up, what do ' +
-    "you reach for? Not the disaster version — the ordinary one. Sit with that Tuesday for a second, and tell me what you see."
+    "it. Today you look. Picture an ordinary Tuesday a year from now — but you've done the work, and the things on " +
+    'your Reclaim List are real. How do you wake up, what do you reach for? Not the highlight reel — the ordinary ' +
+    'morning. Sit with that Tuesday for a second, and tell me what you see.'
   );
 }
 const WINDOW_MORE_VARIANTS = [
-  "Now the OTHER Tuesday — same year out, but you've been doing the work. What's different by 7am? Not the highlight reel — the ordinary stuff: how you wake, what you reach for, how you move.",
-  'Make it ordinary and real — not the medal, the morning. What does that day actually feel like?',
-  "What's the smallest piece of that second Tuesday you'd feel if it were already here?",
+  "What else is different by 7am? Not the medal — the ordinary stuff: how you wake, what you reach for, how you move.",
+  'Make it ordinary and real — the morning, not the highlight. What does that day actually feel like?',
+  "What's the smallest piece of that Tuesday you'd feel if it were already here?",
 ];
 function windowMore(history: ConvMessage[]): string {
   const asked = history.filter((h) => h.role === 'agent' && /\?/.test(h.text)).length;
@@ -493,13 +495,13 @@ function reflectWindow(modelText: string): string {
   const t = (modelText ?? '').trim();
   if (t && /\?\s*$/.test(t)) return t;
   if (t) return `${t}\n\n${WINDOW_CONFIRM}`;
-  return "Stay with that second Tuesday a moment — tell me more about what's different, and we'll find the spark in it.";
+  return "Stay with that Tuesday a moment — tell me more about what's different, and we'll find the spark in it.";
 }
 const REOPEN_WINDOW = "Then it's not quite the one yet — say more. What would the Tuesday worth chasing actually look like?";
-// The close — RCN-WIN's: name the second Tuesday as the spark, and hold onto it. Ends on HOPE; hands to the Checkpoint.
+// The close — name that Tuesday as the spark, and hold onto it. Ends on HOPE; hands to the Checkpoint.
 function windowClose(): string {
   return (
-    'That second Tuesday — that\'s the spark. Hold onto it; everything from here is about making it the real one. ' +
+    "That Tuesday — that's the spark. Hold onto it; everything from here is about making it the real one. " +
     "I've kept it for you."
   );
 }
@@ -778,10 +780,10 @@ export const RECONNECT_TOOLS = [
   {
     name: 'reflect_window',
     description:
-      "§2d The Window beat: call ONLY once the member has pictured BOTH Tuesdays — the one if nothing changes, and the " +
-      "one where they did the work — and you can reflect the SPARK (the ordinary, reclaimed second Tuesday) back in " +
-      "THEIR words, offered as a check. NEVER before both are drawn out; if thin, keep drawing out. This beat LIFTS — " +
-      "the spark is the reclaimed ordinary day worth chasing. (Same depth signal as reflect_door.)",
+      "§2d The Window beat: call ONLY once the member has pictured the future Tuesday — a year out, where they've done " +
+      "the work and their Reclaim List is real — and you can reflect the SPARK (that ordinary, reclaimed day) back in " +
+      "THEIR words, offered as a check. NEVER before it's drawn out; if thin, keep drawing out. This beat LIFTS — the " +
+      "spark is the reclaimed ordinary day worth chasing. (Same depth signal as reflect_door.)",
     input_schema: { type: 'object' as const, properties: {}, required: [] },
   },
   {
@@ -964,11 +966,12 @@ function stageInstructionReconnect(stage?: Stage): string {
     );
   if (stage === 'window')
     return (
-      '\n\nCURRENT STAGE: The Window (§2d Visioning, beat 2) — the turn toward HOPE. Draw out the TWO Tuesdays: the ' +
-      'ordinary day a year out if nothing changes, then the day where they did the work (ordinary and real — the ' +
-      'morning, not the medal). Then reflect the SPARK — that second Tuesday, the reclaimed ordinary day — IN THEIR ' +
-      'WORDS, offered as a check; call reflect_window ONLY once both Tuesdays are drawn out. This beat should LIFT: ' +
-      'leave them feeling the reclaimed day is reachable. Grounded in their real life, never over-promised fantasy.'
+      '\n\nCURRENT STAGE: The Window (§2d Visioning, beat 2) — the turn toward HOPE. Draw out ONE day: an ordinary ' +
+      'Tuesday a year out where they have DONE the work and the things on their Reclaim List are real (ordinary and ' +
+      'real — the morning, not the medal). Do NOT ask them to picture a "nothing changes" version first. Then reflect ' +
+      'the SPARK — that reclaimed ordinary day — IN THEIR WORDS, offered as a check; call reflect_window ONLY once it ' +
+      'is drawn out. This beat should LIFT: leave them feeling the reclaimed day is reachable. Grounded in their real ' +
+      'life, never over-promised fantasy.'
     );
   return (
     '\n\nCURRENT STAGE: entry — the callback asked whether the distance still feels like it began where they named, ' +
