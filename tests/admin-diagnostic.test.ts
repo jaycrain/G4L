@@ -30,6 +30,8 @@ async function seedCleanWalk(db: Db, memberId: string): Promise<void> {
   await db.query(`insert into member_door (member_id, door_slug, is_primary) values ($1,$2,true)`, [memberId, door]);
   await db.query(`update member_profile set named_door=$2 where member_id=$1`, [memberId, door]);
   await db.query(`insert into idq_retake (member_id, cycle_indicator, sequence_no, responses, physical_score, self_score, social_score, outlook_score, id_score_raw, id_score) values ($1,1,0,'{}'::jsonb,18,18,18,18,72,60)`, [memberId]);
+  // Every member who finishes intake takes the Grinta baseline survey, so a genuinely CLEAN walk has one.
+  await db.query(`insert into grinta_reading (member_id, source, sequence_no, responses, composite) values ($1,'onboarding',0,'{}'::jsonb,3.08)`, [memberId]);
   await db.query(`insert into phase_gate (member_id, gate) values ($1,'reconnect_core_complete'),($1,'rewire_threshold_met'),($1,'rebuild_underway')`, [memberId]);
   await db.query(`insert into member_event (member_id, kind, ref, step) values ($1,'session_step','RCN-EXC',3),($1,'session_close','RCN-EXC',null)`, [memberId]);
 }
