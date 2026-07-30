@@ -1601,8 +1601,26 @@ export function runArcTurn(
 
   // COACH stages (§B3, Decision PP) also run OFF the depth kernel: the model owns the coaching conversation and the
   // engine holds the plan-COMPLETENESS contract (accumulate the model's locked fields via model.plan → propose the
-  // whole plan → confirm → complete). No idle/runaway/floor/no-repeat machinery — the contract is the only gate.
+  // whole plan → confirm → complete).
+  //
+  // CAT-35 — COACH MODE HAD NO LIVENESS FLOOR, and it was the only kernel path without one. The completeness
+  // contract guarantees "never leave without a plan" but said nothing about "always able to LEAVE": if the model
+  // never emitted both plan fields — because the member stonewalled, or because it simply never called record_plan
+  // — the stage never proposed and never completed. B3 looped forever and blocked the B3→B4 advance. Reproduced at
+  // 30 turns of "I don't know" still sitting in 'pilot'.
+  //
+  // So coach mode gets the same ABSOLUTE ceiling the draw-out path has. Deliberately only the hard ceiling, not the
+  // 3-turn idle limit: coaching is legitimately slow and circular, and a member thinking out loud must never be
+  // hurried out of it. This is the runaway floor, not an efficiency gate.
   if (stageDef?.mode === 'coach' && stageDef.coach) {
+    const coachTurns = history.filter((h) => h.role === 'member').length + 1;
+    if (coachTurns >= ONBOARDING_HARD_CEILING) {
+      const forced = stageDef.forceProgress?.(b);
+      if (forced) return forced;
+      // forceProgress may mutate-and-fall-through (the usual shape) — if it ended the stage, emit that, don't
+      // hand the turn back to the coach and overwrite its exit line.
+      if (b.complete) return { reply: b.reply, state: beatState(b), complete: true };
+    }
     const early = stageDef.coach(b);
     if (early) return early;
     return { reply: b.reply, state: beatState(b), complete: b.complete, ...(b.declined ? { declined: true } : {}) };

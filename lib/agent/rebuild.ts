@@ -268,6 +268,29 @@ const pilotStage: StageDef = {
     // the Rewire beats. Empty model → the scripted nudge stands alone.
     b.reply = withScriptedBeat((b.modelText ?? '').trim(), pilotCoachNudge(activity, diet));
   },
+
+  // CAT-35 — THE WAY OUT. Coach mode had no liveness floor: if the model never locked both plan fields (member
+  // stonewalls, or it simply never calls record_plan) the stage never proposed and never completed, so B3 looped
+  // forever and blocked B3→B4. Reproduced at 30 turns of "I don't know" still sitting in 'pilot'.
+  //
+  // Only reachable at the ABSOLUTE ceiling — coaching is legitimately slow and circular, and nobody gets hurried
+  // out of thinking. Governed at the exit: we do NOT invent a plan they never agreed to. Whatever they DID land
+  // is kept, the rest stays open, and they leave with their place held rather than trapped in a session that
+  // cannot end. Normalising, not a scold — a hard week is a hundred reasonable decisions, not a failure to plan.
+  forceProgress(b) {
+    const activity = (b.collected.pilotActivity ?? '').trim();
+    const diet = (b.collected.pilotDiet ?? '').trim();
+    b.stage = 'complete';
+    b.complete = true;
+    b.reply =
+      activity || diet
+        ? `Let's leave it there for today — you've got ${activity && diet ? 'both pieces' : 'one piece'} down` +
+          `${activity ? `: ${activity}` : ''}${activity && diet ? `, and ${diet}` : diet ? `: ${diet}` : ''}. ` +
+          `The rest can wait until it's clearer. I'll keep this with me and we can pick it up whenever you want.`
+        : `Let's leave this one for now — nothing's lost, and there's no right answer waiting to be found today. ` +
+          `Come back to it when something occurs to you; I'll be here and I'll still have the thread.`;
+    // Mutate only — the kernel builds the Turn (it owns beatState).
+  },
 };
 
 export const REBUILD_B3_ARC: ArcConfig = {
