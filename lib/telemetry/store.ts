@@ -4,6 +4,7 @@
 // never break a page or an action); the derivations are pure so they unit-test without a database.
 
 import type { Db } from '../db/schema.ts';
+import { currentDeviceClass } from './device.ts';
 
 export type EventKind =
   | 'session_open'
@@ -25,10 +26,15 @@ export type LogOpts = { surface?: string | null; ref?: string | null; step?: num
 // Fire-safe: a telemetry failure must never surface to the member or abort the caller.
 export async function logEvent(db: Db, memberId: string, kind: EventKind, opts: LogOpts = {}): Promise<void> {
   try {
+    // Enrich EVERY event with a coarse device bucket ('phone' | 'tablet' | 'desktop') so mobile-only failures are
+    // diagnosable without waiting for a screenshot. Rides in meta — no migration, no schema change. Never the raw
+    // user-agent, never a fingerprint. Null outside request scope (cron/scripts) and on any failure. (2026-07-30)
+    const device = await currentDeviceClass().catch(() => null);
+    const meta = device ? { ...(opts.meta ?? {}), device } : (opts.meta ?? {});
     await db.query(
       `insert into member_event (member_id, kind, surface, ref, step, meta)
        values ($1,$2,$3,$4,$5,$6::jsonb)`,
-      [memberId, kind, opts.surface ?? null, opts.ref ?? null, opts.step ?? null, JSON.stringify(opts.meta ?? {})],
+      [memberId, kind, opts.surface ?? null, opts.ref ?? null, opts.step ?? null, JSON.stringify(meta)],
     );
   } catch (e) {
     console.warn('telemetry: logEvent failed —', (e as Error).message);

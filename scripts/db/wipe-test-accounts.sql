@@ -30,6 +30,12 @@ begin
   delete from grinta_reading       where member_id = any(ids);
   delete from founder_agent_drafts where member_id = any(ids);
 
+  -- IN-FLIGHT ONBOARDING. Keyed by EMAIL with no member FK, so it is NOT reached by the member_id delete
+  -- below and NOT covered by any cascade — a wipe that skips it leaves the member's onboarding CONVERSATION
+  -- behind (the most sensitive text in the product) while every other trace is gone. Delete by the same
+  -- emails the targets were resolved from. (Found 2026-07-30: yesterday's "clean" wipe left these behind.)
+  delete from onboarding_session where lower(email) in (select lower(email) from member_profile where member_id = any(ids));
+
   -- The profile. Every ON DELETE CASCADE child (credentials, sessions, arc_session, playbook,
   -- member_event, connect_*, telemetry, …) clears automatically.
   delete from member_profile where member_id = any(ids);
@@ -37,7 +43,7 @@ begin
   raise notice 'Wiped % account(s).', array_length(ids, 1);
 end $$;
 
--- Verify (should return 0): any profile still matching those emails.
-select count(*) as remaining
-from member_profile
-where lower(email) in ('jay@jay.com','gdc@gdc.com');
+-- Verify (should return 0 for BOTH): the profile, and any in-flight onboarding for those emails.
+select
+  (select count(*) from member_profile     where lower(email) in ('jay@jay.com','gdc@gdc.com')) as profiles_remaining,
+  (select count(*) from onboarding_session where lower(email) in ('jay@jay.com','gdc@gdc.com')) as sessions_remaining;
