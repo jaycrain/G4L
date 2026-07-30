@@ -378,3 +378,26 @@ test('CAT-20 — the ENGINE BODY never repeats verbatim, even though the model r
   }
   assert.ok(exercised >= 2, 'the fixture must actually run consecutive identity turns, or it proves nothing');
 });
+
+test('LIVE-WALK — every want the model records on a GAP turn is kept, never just the last one', () => {
+  // Joanne's walk (2026-07-30, persona-walk): the Companion read three wants back to her in the gap stage, she
+  // said "yes, that's it" — and only ONE was stored. The prompt now forbids composing a list there at all, but
+  // this pins the engine half: if wants DO come through on a gap turn, all of them survive. Telling a member we
+  // have her list and keeping a third of it is the worst version of "never drop what they gave you".
+  const state: ConvState = {
+    stage: 'gap',
+    awaitingConfirm: false,
+    collected: { athleticPast: 'a swimmer', identityNoun: 'Elemental' },
+  };
+  const t = applyStagedTurn(state, [], 'I stopped swimming when mum got sick, and I never went back.', {
+    text: 'That was the hinge.',
+    record: {
+      gap: 'I stopped swimming when mum got sick, and I never went back.',
+      reclaimList: ['Get back in open water', 'Make the piece I have been carrying', 'Know what I am made of again'],
+    },
+  });
+  const list = t.state.collected.reclaimList ?? [];
+  assert.equal(list.length, 3, `all three wants must survive the turn — got ${list.length}: ${JSON.stringify(list)}`);
+  assert.ok(list.includes('Get back in open water'));
+  assert.ok(list.includes('Make the piece I have been carrying'));
+});

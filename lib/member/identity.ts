@@ -32,6 +32,13 @@ export function sanitizeCoinedIdentity(raw: string | null | undefined): string |
   if (!noun || /^(the|a|an)$/i.test(noun)) return null; // empty, or a bare article ("the")
   if (noun.length > 40) return null; // a sentence, not a handle
   if (noun.split(' ').length > 4) return null; // handles are 1–4 words ("the Stay-At-Home Parent")
+  // A LIST OF CANDIDATES, not a choice. Live walk 2026-07-30: offered chips, the member replied "Untamed. Alive.
+  // Sovereign. Unguarded." and the whole string became her handle — then rendered back at her in every sentence
+  // for the rest of onboarding ("what pulled you away from the Untamed. Alive. Sovereign. Unguarded?"). The word
+  // count didn't catch it because the separators are punctuation, not spaces. Sentence punctuation never belongs
+  // inside a 1-4 word handle, so its presence means they echoed several words instead of picking one — re-prompt
+  // and let them choose, rather than labelling them with all of it.
+  if (/[.,;:/|]/.test(noun)) return null;
   if (!/\p{L}/u.test(noun)) return null; // must contain a letter (not "123" / "!!!")
   return noun;
 }
