@@ -106,6 +106,9 @@ const MIGRATIONS: Array<{ file: string; sentinel: Sentinel }> = [
   { file: 'migrations/0060_commitment.sql', sentinel: 'commitment' },
   { file: 'migrations/0061_commitment_reclaim_link.sql', sentinel: { table: 'commitment', column: 'reclaim_item_id' } },
   { file: 'migrations/0062_auth_attempt.sql', sentinel: 'auth_attempt' },
+  // Sentinel is the LAST thing 0063 adds, not the first — so a half-applied 0063 re-runs and completes
+  // (the whole file is if-not-exists idempotent).
+  { file: 'migrations/0063_auth_token.sql', sentinel: { table: 'member_credential', column: 'email_verified_at' } },
 ];
 export const SEED_SQL = () => sqlFile('seed/0001_reference_data.sql');
 

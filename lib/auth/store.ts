@@ -36,6 +36,23 @@ export async function updatePasswordHash(db: Db, memberId: string, passwordHash:
   await db.query(`update member_credential set password_hash = $2 where member_id = $1`, [memberId, passwordHash]);
 }
 
+/** Record that this address has been proven (SEC-08). Idempotent; keeps the FIRST proof, not the latest. */
+export async function markEmailVerified(db: Db, email: string): Promise<void> {
+  await db.query(
+    `update member_credential set email_verified_at = now()
+      where lower(email) = lower($1) and email_verified_at is null`,
+    [email],
+  );
+}
+
+export async function isEmailVerified(db: Db, memberId: string): Promise<boolean> {
+  const { rows } = await db.query<{ v: Date | null }>(
+    `select email_verified_at as v from member_credential where member_id = $1`,
+    [memberId],
+  );
+  return Boolean(rows[0]?.v);
+}
+
 export async function hasCredential(db: Db, memberId: string): Promise<boolean> {
   const { rows } = await db.query<{ e: boolean }>(
     `select exists(select 1 from member_credential where member_id = $1) as e`,
@@ -65,4 +82,17 @@ export async function getSessionMember(db: Db, token: string | undefined | null)
 
 export async function deleteSession(db: Db, token: string): Promise<void> {
   await db.query(`delete from member_session where token = $1`, [token]);
+}
+
+/**
+ * Revoke EVERY session for a member (SEC-08/SEC-14). Called on password reset and password change: a member
+ * resets precisely when they fear someone else is in their account, so leaving that someone's 30-day session
+ * alive would defeat the reset. Returns the number of sessions ended.
+ */
+export async function deleteSessionsForMember(db: Db, memberId: string): Promise<number> {
+  const { rows } = await db.query<{ token: string }>(
+    `delete from member_session where member_id = $1 returning token`,
+    [memberId],
+  );
+  return rows.length;
 }

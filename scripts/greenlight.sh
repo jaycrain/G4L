@@ -23,8 +23,10 @@ URL="${1:-https://g4l-ten.vercel.app}"
 # batch are already on the old build, so they pass BEFORE your push promotes — a FALSE GREEN (this bit us: a stale
 # tell list green-lit an old build). RULE: when you push, REPLACE these with a string unique to that push, and prefer
 # a full declaration (`selector{prop:value}`) over a bare class name so a pre-existing use elsewhere can't match.
-CSS_TELLS=("onbwel-d-signin")   # NEW THIS PUSH: front-door sign-in link (entry narrowing)
-JS_TELLS=("This is my list")            # reclaim builder submit button (carried; not a landing proof on its own)
+# Bundle tells only work for chunks reachable from /onboarding. For a surface with its own route, prefer a
+# RUNTIME tell below (SURFACES) — it proves the page actually RENDERS the new thing, which is what we care about.
+CSS_TELLS=()
+JS_TELLS=()
 
 # COMMIT CHECK — the authoritative proof for an ENGINE-ONLY push (server logic, no bundle change), where no static
 # tell exists. NOTE: `vercel ls --meta githubCommitSha=...` returns NOTHING on this project (the meta isn't queryable),
@@ -55,11 +57,11 @@ ok=1
 echo "GREEN-LIGHT — $URL"
 echo "  build: $(curl -sI "$URL/onboarding" | grep -i '^x-vercel-id' | tr -d '\r' || echo 'n/a')"
 
-for t in "${CSS_TELLS[@]}"; do
+for t in ${CSS_TELLS[@]+"${CSS_TELLS[@]}"}; do
   if echo "$css" | grep -q "$t"; then echo "  ✓ css  $t"; else echo "  ✗ css  $t  MISSING"; ok=0; fi
 done
 
-for t in "${JS_TELLS[@]}"; do
+for t in ${JS_TELLS[@]+"${JS_TELLS[@]}"}; do
   hit=0
   for c in $(echo "$html" | grep -oE '/_next/static/chunks/[^"]+\.js'); do
     curl -s "$URL$c" | grep -aqF "$t" && { hit=1; break; }
@@ -72,7 +74,19 @@ done
 # hit the real entry points a Charter member uses and fail on a non-200 or a Next.js error page.
 echo
 echo "  runtime surfaces:"
-for path in "/" "/onboarding" "/login"; do
+# "path" alone = must render without erroring. "path|string" = must ALSO contain that string — that second form
+# is the strongest tell we have: it proves the deployed page really renders today's change, not just that the
+# route exists. Add one for each member-facing surface you ship.
+SURFACES=(
+  "/"
+  "/onboarding"
+  "/login|Forgot your password?"            # NEW THIS PUSH (SEC-08): the way back in is reachable from the door
+  "/login/forgot|Send me a reset link"      # NEW THIS PUSH (SEC-08): the reset request surface renders
+)
+for entry in "${SURFACES[@]}"; do
+  path="${entry%%|*}"
+  want=""
+  [ "$entry" != "$path" ] && want="${entry#*|}"
   # -L FOLLOWS redirects and judges the DESTINATION: "/" legitimately 307s to the welcome now, and a bare status
   # check called that a broken surface (a false RED on a healthy app). What matters is where the member lands.
   body="$(curl -sL --max-time 20 "$URL$path")"
@@ -81,8 +95,10 @@ for path in "/" "/onboarding" "/login"; do
     echo "    ✗ $path  HTTP $code"; ok=0
   elif echo "$body" | grep -qiE 'application error|internal server error|__next_error__'; then
     echo "    ✗ $path  renders an error page"; ok=0
+  elif [ -n "$want" ] && ! echo "$body" | grep -qF "$want"; then
+    echo "    ✗ $path  renders, but is STALE (missing: $want)"; ok=0
   else
-    echo "    ✓ $path"
+    echo "    ✓ $path${want:+  ($want)}"
   fi
 done
 

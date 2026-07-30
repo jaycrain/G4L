@@ -26,6 +26,7 @@ import { proposeEntry, addOwnEntry } from '../../lib/playbook/store.ts';
 import { addFacet } from '../../lib/curriculum/store.ts';
 import { consolidateReclaim } from '../../lib/member/reclaim.ts';
 import { createCredential, hasCredential } from '../../lib/auth/store.ts';
+import { sendVerificationEmail } from '../login/reset-actions.ts';
 import { hashPassword } from '../../lib/auth/password.ts';
 import { startSession } from '../auth.ts';
 import { stagedEngineEnabled } from '../../lib/agent/onboarding-staged.ts';
@@ -177,6 +178,9 @@ export async function finalizeOnboardingAction(input: FinalizeInput): Promise<Fi
     return { ok: false, code: 'exists', error: 'That email already has an account — please log in.' };
   }
   await createCredential(db, res.memberId, input.ctx.email.trim(), await hashPassword(input.password));
+  // SEC-08: send the proof-of-control link. NOT a gate — they go straight to the Ceremony either way; this just
+  // means a member who later forgets their password has a way back to their own story. Never fails the signup.
+  void sendVerificationEmail(input.ctx.email, res.memberId);
   await startSession(res.memberId);
   const next = stagedEngineEnabled() ? `/dashboard/${res.memberId}` : `/idq?member=${res.memberId}`;
   // Seed the named identity as the member's first facet (the identity strip). A member who chose

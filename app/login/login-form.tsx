@@ -36,6 +36,9 @@ export default function LoginForm() {
         {pending ? 'Signing in…' : 'Log in'}
       </button>
       <p className="muted" style={{ marginTop: '1rem' }}>
+        <Link href="/login/forgot">Forgot your password?</Link>
+      </p>
+      <p className="muted" style={{ marginTop: '0.35rem' }}>
         New here? <Link href="/onboarding">Create an account</Link>.
       </p>
     </form>
