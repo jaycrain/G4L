@@ -15,6 +15,36 @@ export function hashSessionToken(token: string): string {
   return createHash('sha256').update(token).digest('hex');
 }
 
+// SCHEMA-TOLERANT ON PURPOSE — and this is the lesson, not a nicety.
+// Prod migrations here are applied BY HAND, so new code and new schema never land at the same instant. My first
+// cut of this read/wrote token_hash unconditionally, which would have broken LOGIN FOR EVERYONE in the window
+// between the deploy and the migration — no session could be created OR resolved. A security fix that takes the
+// product down is not a security fix.
+//
+// So the store asks the database what it has and works either way. `true` is cached forever (once hashed, always
+// hashed); `false` is deliberately NOT cached, so a running instance picks the column up the moment the migration
+// lands, without a redeploy. Delete this shim once 0064 is applied everywhere and `token` is dropped.
+let hashedColumnConfirmed = false;
+/** Test-only: the confirmation is process-wide, so a test exercising the pre-migration shape must clear it. */
+export function __resetSessionSchemaCache(): void {
+  hashedColumnConfirmed = false;
+}
+async function usesHashedTokens(db: Db): Promise<boolean> {
+  if (hashedColumnConfirmed) return true;
+  try {
+    const { rows } = await db.query<{ e: boolean }>(
+      `select exists (
+         select 1 from information_schema.columns
+          where table_schema = 'public' and table_name = 'member_session' and column_name = 'token_hash'
+       ) as e`,
+    );
+    hashedColumnConfirmed = Boolean(rows[0]?.e);
+    return hashedColumnConfirmed;
+  } catch {
+    return false; // never let a catalog hiccup lock members out
+  }
+}
+
 export const SESSION_TTL_DAYS = 30;
 
 export async function createCredential(db: Db, memberId: string, email: string, passwordHash: string): Promise<void> {
@@ -75,25 +105,36 @@ export async function hasCredential(db: Db, memberId: string): Promise<boolean> 
 
 export async function createSession(db: Db, memberId: string): Promise<string> {
   const token = randomBytes(32).toString('hex');
+  const hashed = await usesHashedTokens(db);
   await db.query(
-    `insert into member_session (token_hash, member_id, expires_at)
-     values ($1, $2, now() + ($3 * interval '1 day'))`,
-    [hashSessionToken(token), memberId, SESSION_TTL_DAYS],
+    hashed
+      ? `insert into member_session (token_hash, member_id, expires_at)
+         values ($1, $2, now() + ($3 * interval '1 day'))`
+      : `insert into member_session (token, member_id, expires_at)
+         values ($1, $2, now() + ($3 * interval '1 day'))`,
+    [hashed ? hashSessionToken(token) : token, memberId, SESSION_TTL_DAYS],
   );
-  return token; // the PLAINTEXT goes to the cookie and is never stored
+  return token; // the PLAINTEXT goes to the cookie and is never stored once 0064 is applied
 }
 
 export async function getSessionMember(db: Db, token: string | undefined | null): Promise<string | null> {
   if (!token) return null;
+  const hashed = await usesHashedTokens(db);
   const { rows } = await db.query<{ member_id: string }>(
-    `select member_id from member_session where token_hash = $1 and expires_at > now()`,
-    [hashSessionToken(token)],
+    hashed
+      ? `select member_id from member_session where token_hash = $1 and expires_at > now()`
+      : `select member_id from member_session where token = $1 and expires_at > now()`,
+    [hashed ? hashSessionToken(token) : token],
   );
   return rows[0]?.member_id ?? null;
 }
 
 export async function deleteSession(db: Db, token: string): Promise<void> {
-  await db.query(`delete from member_session where token_hash = $1`, [hashSessionToken(token)]);
+  const hashed = await usesHashedTokens(db);
+  await db.query(
+    hashed ? `delete from member_session where token_hash = $1` : `delete from member_session where token = $1`,
+    [hashed ? hashSessionToken(token) : token],
+  );
 }
 
 /**
@@ -102,8 +143,8 @@ export async function deleteSession(db: Db, token: string): Promise<void> {
  * alive would defeat the reset. Returns the number of sessions ended.
  */
 export async function deleteSessionsForMember(db: Db, memberId: string): Promise<number> {
-  const { rows } = await db.query<{ token_hash: string }>(
-    `delete from member_session where member_id = $1 returning token_hash`,
+  const { rows } = await db.query<{ member_id: string }>(
+    `delete from member_session where member_id = $1 returning member_id`,
     [memberId],
   );
   return rows.length;
@@ -116,11 +157,17 @@ export async function deleteSessionsForMember(db: Db, memberId: string): Promise
  * leaving that someone with a 30-day session is the whole failure.
  */
 export async function deleteOtherSessionsForMember(db: Db, memberId: string, keepToken: string | null): Promise<number> {
-  const { rows } = await db.query<{ token_hash: string }>(
-    `delete from member_session
-      where member_id = $1 and ($2::text is null or token_hash <> $2)
-      returning token_hash`,
-    [memberId, keepToken ? hashSessionToken(keepToken) : null],
+  const hashed = await usesHashedTokens(db);
+  const keep = keepToken ? (hashed ? hashSessionToken(keepToken) : keepToken) : null;
+  const { rows } = await db.query<{ member_id: string }>(
+    hashed
+      ? `delete from member_session
+          where member_id = $1 and ($2::text is null or token_hash is distinct from $2)
+          returning member_id`
+      : `delete from member_session
+          where member_id = $1 and ($2::text is null or token is distinct from $2)
+          returning member_id`,
+    [memberId, keep],
   );
   return rows.length;
 }

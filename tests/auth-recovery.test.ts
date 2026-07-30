@@ -147,7 +147,12 @@ test('verification is NOT a gate — an unverified member still has a working ac
 // ---------------------------------------------------------------------------
 // SEC-12 / SEC-13 / SEC-14 — the auth hardening batch.
 // ---------------------------------------------------------------------------
-import { hashSessionToken, deleteOtherSessionsForMember } from '../lib/auth/store.ts';
+import {
+  hashSessionToken,
+  deleteOtherSessionsForMember,
+  deleteSession,
+  __resetSessionSchemaCache,
+} from '../lib/auth/store.ts';
 import { burnPasswordTime } from '../lib/auth/password.ts';
 
 test('SEC-12 · the raw session token is NEVER stored — a DB read yields nothing you can paste into a cookie', async () => {
@@ -195,4 +200,22 @@ test('SEC-13 · the no-such-member login path pays the same scrypt cost (no timi
   const ms = Number(process.hrtime.bigint() - t0) / 1e6;
   assert.equal(r, false, 'it never authenticates anyone');
   assert.ok(ms > 5, `expected real KDF work on the miss path, took ${ms.toFixed(1)}ms`);
+});
+
+test('SEC-12 · sessions still work on the PRE-MIGRATION schema (a security fix must not take login down)', async () => {
+  // This is the test for the mistake I actually made. Prod migrations are applied BY HAND, so the deploy and the
+  // schema change never land together. My first cut read/wrote token_hash unconditionally, which would have broken
+  // login for EVERYONE in that window — no session could be created or resolved. The store must work either way.
+  const d = await db();
+  await d.query('alter table member_session drop column if exists token_hash'); // rewind to the 0009 shape
+  await d.query('alter table member_session alter column token set not null');
+  __resetSessionSchemaCache();
+
+  const id = await member(d, 'premigration@example.com');
+  const token = await createSession(d, id);
+  assert.equal(await getSessionMember(d, token), id, 'login works before the migration lands');
+  assert.equal(await getSessionMember(d, 'wrong-token'), null);
+  await deleteSession(d, token);
+  assert.equal(await getSessionMember(d, token), null, 'and sign-out works too');
+  __resetSessionSchemaCache(); // leave the process clean for the other tests
 });
