@@ -273,8 +273,12 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
   };
   } catch (e) {
     // A supplementary read threw (prod drift / transient). Serve the minimal context so the cornerstone never 500s.
+    // CAT-38: FLAG IT. Minimal drops the durable record — story, Playbook, IDQ detail, Grinta — while the system
+    // prompt (rightly) forbids denying that we remember the member. Unflagged, the agent's only options were to
+    // confabulate specifics or go blandly generic. The flag lets it say "I'm not pulling everything up this
+    // minute" without ever claiming memory doesn't persist.
     console.warn('buildContext degraded to minimal — a supplementary read failed:', (e as Error).message);
-    return minimal;
+    return { ...minimal, degraded: true };
   }
 }
 

@@ -9,6 +9,7 @@ import { deriveRingState } from '../../../../lib/workspace/ring-state.ts';
 import { readArtifact } from '../../../../lib/workspace/artifact.ts';
 import { isSessionKey } from '../../../../lib/workspace/session-key.ts';
 import { sessionById, sessionsForPhase, PHASES, type Phase } from '../../../../lib/workspace/session-registry.ts';
+import { phaseEngineEnabled } from '../../../../lib/workspace/phase-enabled.ts';
 import { reclaimReadiness } from '../../../../lib/reclaim/readiness.ts';
 import WorkspaceSession from '../../workspace-session.tsx';
 
@@ -35,6 +36,11 @@ export default async function WorkspacePage({
 
   const db = (await getDb()) as unknown as Db;
   const def = sessionById(sessionKey)!;
+  // CAT-40 — DON'T OPEN A DOOR THE ENGINE IS BEHIND. This route gated on REDESIGN only, while the arc-turn action
+  // gates on the PHASE flag. With REDESIGN on and (say) RECLAIM off, the workspace rendered fully, emitted
+  // session_open, and then refused every turn with "Reclaim is not enabled" — a live-looking session that would
+  // not move, plus an open with no close in QI. Check the engine at the entrance, BEFORE the telemetry below.
+  if (!review && !phaseEngineEnabled(def.phase)) redirect(`/dashboard/${memberId}`);
   // The Loop gate — no side door into Reclaim before it opens (readiness stays true once reached, so this only blocks
   // the genuinely-not-yet). Review mode is exempt (it reads committed state, not a live session).
   if (def.phase === 'reclaim' && !review && !(await reclaimReadiness(db, memberId)).ready) redirect(`/dashboard/${memberId}`);

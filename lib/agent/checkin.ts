@@ -16,6 +16,11 @@ import { connectContextLines, type ConnectAgentSummary } from '../connect/agent.
 import type { Direction } from '../idq/scoring.ts';
 
 export type CheckinContext = {
+  // CAT-38 — TRUE when this context is the degraded fallback (a supplementary read failed). The prompt HARD-FORBIDS
+  // denying that you remember the member, which is right — but on a degrade the agent was still instructed to behave
+  // omnisciently over a gutted context, so its only options were to confabulate or go vague. This lets it be honest
+  // about the SHAPE of what it can see right now without ever denying the continuity that actually exists.
+  degraded?: boolean;
   today?: string; // current date, injected server-side so the agent has a real temporal anchor
   displayName: string;
   identityNoun: string | null;
@@ -187,6 +192,18 @@ function momentumLogLine(log: NonNullable<CheckinContext['momentumLog']>): strin
 }
 
 export function contextBlock(c: CheckinContext): string {
+  // CAT-38 — say it OUT LOUD when the context is degraded. The memory rule below (never deny that you remember)
+  // is right and stays; the failure was that on a degrade the agent was still told to behave omnisciently over a
+  // gutted context, leaving it only confabulation or vagueness. Naming the state lets it stay honest about what it
+  // can SEE this minute without ever denying the continuity that genuinely exists.
+  const degraded = c.degraded
+    ? 'CONTEXT IS INCOMPLETE RIGHT NOW — a background read failed, so parts of this member\'s durable record ' +
+      '(their story, Playbook, ID Score/IDQ detail, Grinta) are MISSING from the block below. This is a system ' +
+      'hiccup on our side, not a gap in what we keep. Do NOT invent specifics you cannot see, and do NOT claim ' +
+      'to recall detail that is absent. You may say you are not pulling everything up this minute and ask them ' +
+      'to remind you. NEVER say you do not remember them or that memory does not persist — that is false, and ' +
+      'the durable record is intact.'
+    : null;
   const dims = c.dimensions
     ? `ID Score dimensions (each out of 30): Physical ${c.dimensions.physical}, Self ${c.dimensions.self}, Social ${c.dimensions.social}, Outlook ${c.dimensions.outlook}`
     : null;
@@ -207,6 +224,7 @@ export function contextBlock(c: CheckinContext): string {
           .join('\n')}`
       : null;
   return [
+    degraded, // CAT-38: first, so the model reads the caveat before the (incomplete) facts
     c.today ? `Today is ${c.today}.` : null,
     c.recentChanges && c.recentChanges.length
       ? `Since they last talked with you, their dashboard moved:\n${c.recentChanges.map((x) => `  • ${x}`).join('\n')}`
