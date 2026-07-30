@@ -4,16 +4,33 @@ import { useEffect, useRef, useState, useTransition } from 'react';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { reportRoomMessageAction } from '../../../actions.ts';
 import { getRealtimeClient } from '../../../../../lib/connect/realtime-client.ts';
+import { createCoalescer, type Coalescer } from '../../../../../lib/connect/live-ping.ts';
 
 type Msg = { id: string; body: string; authorLabel: string; createdAt: string };
 
 // Live room chat. Delivery is layered:
-//  • Phase 2b (when NEXT_PUBLIC_SUPABASE_* are set): a Supabase Realtime channel per room gives instant
-//    broadcast of new messages + presence ("N here now"). Broadcast is best-effort and never touches the
-//    DB (RLS-blocked by design), so a slow 15s poll reconciles anything a broadcast dropped.
+//  • Phase 2b (when NEXT_PUBLIC_SUPABASE_* are set): a Supabase Realtime channel per room signals "something
+//    changed" so we refetch immediately instead of waiting for the poll. Presence gives "N here now".
 //  • Fallback (no vars, or the socket won't connect): the original 3s poll — unchanged behavior.
 // Either way messages are persisted + crisis-routed server-side; a sent message that trips crisis
 // detection comes back flagged and we surface the 988 resources to the author.
+//
+// SEC-04 — THE CHANNEL IS PUBLIC. TREAT EVERYTHING ON IT AS HOSTILE.
+// It is joined with NEXT_PUBLIC_SUPABASE_ANON_KEY, which ships inside our own JS bundle. Anyone who opens
+// devtools has it, so anyone can join `connect-room:<id>` and both listen and speak. It used to carry the
+// full message object, which meant two live holes in a product whose whole promise is a safe place to be
+// honest: an outsider could READ every message in any room as it was sent, and could SEND a forged one that
+// rendered in every member's room under any author label they chose.
+//
+// So the channel now carries NO CONTENT and NO IDENTITY:
+//   * a broadcast is a contentless ping — "go look" — and message bodies only ever come back from
+//     /api/connect/rooms/<id>, which authenticates the caller. A forged ping costs a refetch, nothing more,
+//     and it is coalesced (lib/connect/live-ping.ts) so a flood can't be turned into load.
+//   * presence is keyed by a random per-tab id, NOT memberId. We need the COUNT, and the count is all we
+//     take; keying by member let an eavesdropper enumerate exactly who was sitting in a given room.
+// Anything stronger (truly private channels) needs Supabase Realtime Authorization + a signed JWT per member,
+// which is worth doing later — but it is not what stands between us and this bug. Never trusting the
+// channel is, and that holds even if the authorization layer is ever misconfigured.
 export default function RoomChat({
   roomId,
   memberId,
@@ -41,6 +58,7 @@ export default function RoomChat({
   const lastAt = useRef<string | null>(initial.length ? initial[initial.length - 1]!.createdAt : null);
   const boxRef = useRef<HTMLDivElement>(null);
   const channelRef = useRef<RealtimeChannel | null>(null);
+  const pingRef = useRef<Coalescer | null>(null);
   const [, startTransition] = useTransition();
 
   // Dedupe by id and advance the poll cursor — the single path every new message flows through, whether
@@ -64,33 +82,41 @@ export default function RoomChat({
     merge(data.messages ?? []);
   }
 
-  // Realtime: broadcast + presence. Best-effort; falls through to polling on any failure.
+  // Realtime: contentless ping + anonymous presence. Best-effort; falls through to polling on any failure.
   useEffect(() => {
     const client = getRealtimeClient();
     if (!client) return; // not configured → polling only
+    // Opaque per-tab id. Presence needs a stable key to count by; it must NOT be the member's id, or anyone
+    // listening on this public channel could read off exactly who is in the room.
+    const presenceKey = Math.random().toString(36).slice(2) + Date.now().toString(36);
     const channel = client.channel(`connect-room:${roomId}`, {
-      config: { broadcast: { self: false }, presence: { key: memberId } },
+      config: { broadcast: { self: false }, presence: { key: presenceKey } },
     });
     channelRef.current = channel;
+    // A ping only ever triggers a refetch from our own authenticated API, coalesced so a flood is cheap.
+    const coalescer = createCoalescer(1200, () => void pull());
+    pingRef.current = coalescer;
 
     channel
-      .on('broadcast', { event: 'msg' }, (e) => merge([e.payload as Msg]))
+      .on('broadcast', { event: 'ping' }, () => coalescer.ping())
       .on('presence', { event: 'sync' }, () => setHereNow(Object.keys(channel.presenceState()).length))
       .subscribe((status) => {
         if (status === 'SUBSCRIBED') {
           setLive(true);
-          void channel.track({ at: roomId });
+          void channel.track({}); // no payload — we publish presence, not who we are
         } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
           setLive(false);
         }
       });
 
     return () => {
+      coalescer.cancel();
+      pingRef.current = null;
       channelRef.current = null;
       void client.removeChannel(channel);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [roomId, memberId]);
+  }, [roomId]);
 
   // Poll: 3s as the primary path when not live; a slow 15s reconciling backstop when live (in case a
   // broadcast was dropped — the DB is the source of truth). Re-establishes when `live` flips.
@@ -123,8 +149,9 @@ export default function RoomChat({
     }
     if (res?.crisis) setCare(true);
     if (res?.message) {
-      merge([res.message as Msg]); // show it to ourselves immediately
-      channelRef.current?.send({ type: 'broadcast', event: 'msg', payload: res.message }); // and to peers
+      merge([res.message as Msg]); // show it to ourselves immediately (this came from our authenticated POST)
+      // Tell peers only THAT something changed — never what. They refetch it through their own authorized read.
+      channelRef.current?.send({ type: 'broadcast', event: 'ping', payload: {} });
     } else {
       await pull(); // older API shape / no message returned → reconcile via poll
     }
