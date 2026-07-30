@@ -22,5 +22,16 @@ export async function GET(req: Request): Promise<Response> {
   }
   const db = (await getDb()) as unknown as Db;
   const result = await runScheduledNudges(db);
-  return NextResponse.json({ ok: true, ...result });
+  // SEC-15 — retention. Purge expired sessions, spent auth tokens, and onboardings abandoned 30+ days ago. This
+  // rides the existing daily cron rather than adding a schedule: a retention rule that needs new infrastructure to
+  // take effect is a retention rule that quietly never runs (the same "enforced by nothing" shape as SEC-07).
+  // Best-effort and reported, never fatal — a failed purge must not stop members getting their nudges.
+  let purged: 'ok' | 'skipped' = 'ok';
+  try {
+    await db.query('select purge_expired_auth()');
+  } catch (e) {
+    purged = 'skipped'; // migration 0064 not applied yet
+    console.warn('cron: purge_expired_auth unavailable —', (e as Error).message);
+  }
+  return NextResponse.json({ ok: true, purged, ...result });
 }

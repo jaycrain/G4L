@@ -7,11 +7,22 @@ export function firstName(displayName: string): string {
   return words[0] ?? (displayName ?? '').trim();
 }
 
-/** A safe member-set avatar: a small image data URL (browser-resized) or a served path like
- *  /avatars/tom.png. Caps size to keep it sane in the DB. */
+/** A safe member-set avatar: a small RASTER image data URL (browser-resized) or a served path like
+ *  /avatars/tom.png. Caps size to keep it sane in the DB.
+ *
+ *  SEC-17 — the type allowlist is the point, not decoration. `data:image/` alone also admits
+ *  `data:image/svg+xml;base64,...`, and an SVG is a document: it can carry <script> and external references.
+ *  Inside an <img> tag browsers won't execute it, so this was not live XSS — but avatars are exactly the kind
+ *  of value that later gets moved into a CSS background, an <object>, or a direct link, and then it is. Pinning
+ *  to raster formats now costs nothing and removes the trap. Also anchors the `/avatars/` branch so a value
+ *  like `/avatars/../../evil` can't sneak through, and rejects control characters. */
+const RASTER_DATA_URL = /^data:image\/(png|jpeg|jpg|webp|gif);base64,[A-Za-z0-9+/=]+$/;
 export function isAvatarValue(s: string): boolean {
-  if (s.startsWith('/avatars/')) return true; // seeded/served file
-  return s.startsWith('data:image/') && s.includes(';base64,') && s.length <= 300_000; // ~220KB
+  const v = (s ?? '').trim();
+  if (!v || v.length > 300_000) return false; // ~220KB
+  if (/[\u0000-\u001F]/.test(v)) return false;
+  if (v.startsWith('/avatars/')) return !v.includes('..') && /^\/avatars\/[A-Za-z0-9._-]+$/.test(v);
+  return RASTER_DATA_URL.test(v);
 }
 
 /** Up to two initials from the member's name. "Tom Miller" → "TM"; "Demo — Maria" → "DM". */
