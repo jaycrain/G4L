@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { applyStagedTurn, isProcessMetaOrAssent } from '../lib/agent/onboarding-staged.ts';
 import { detectCrisis } from '../lib/agent/governance.ts';
+import { BEAT_SEP } from '../lib/agent/onboarding.ts';
 import type { ConvState, ConvMessage, ModelTurn, Turn } from '../lib/agent/onboarding.ts';
 
 // ============================================================================
@@ -317,4 +318,63 @@ test('SHAPE-GATE — an answer to our own proposal is never committed as a life-
   ]) {
     assert.equal(isProcessMetaOrAssent(want), false, `must stay a want: ${want}`);
   }
+});
+
+// ---------------------------------------------------------------------------
+// CAT-18 / CAT-20 — structured input into a free-text gate, and fallbacks that repeat verbatim.
+// ---------------------------------------------------------------------------
+
+test('CAT-18 — a bulleted list pasted at the gap confirm is KEPT as wants, not folded into the gap prose', () => {
+  // It used to be classified as an "addition" and joined raw into the narrative — "…what to do with myself.
+  // • Rediscover what I enjoy" — corrupting the stored gap, and those items never reached the Reclaim List.
+  const state: ConvState = {
+    stage: 'gap',
+    awaitingConfirm: true,
+    collected: { athleticPast: 'a runner', identityNoun: 'Runner', gap: 'The job swallowed me and I stopped running.' },
+  };
+  const t = applyStagedTurn(state, [], '• Rediscover what I enjoy\n• Get back to walking\n• See my friends again', {
+    text: 'Thank you for that.',
+  });
+  const gap = t.state.collected.gap ?? '';
+  assert.doesNotMatch(gap, /Rediscover what I enjoy/, 'the list must not pollute the gap narrative');
+  assert.doesNotMatch(gap, /•/, 'no bullets in prose meant to be their story');
+  const list = t.state.collected.reclaimList ?? [];
+  assert.equal(list.length >= 3, true, 'never drop what they gave you — the items are kept as wants');
+  assert.match(t.reply, /kept those/i, 'and they are told so');
+});
+
+test('CAT-18 — an ordinary sentence is NOT mistaken for a list (the guard must not swallow real story)', () => {
+  const state: ConvState = {
+    stage: 'gap',
+    awaitingConfirm: true,
+    collected: { athleticPast: 'a runner', identityNoun: 'Runner', gap: 'The job swallowed me.' },
+  };
+  const msg = 'Then in 2019 my mother got sick - I was driving up every weekend for two years, and it just stopped.';
+  const t = applyStagedTurn(state, [], msg, { text: 'That is a lot to carry.' });
+  assert.match(t.state.collected.gap ?? '', /mother got sick/, 'a real chapter still lands in the gap');
+});
+
+test('CAT-20 — the ENGINE BODY never repeats verbatim, even though the model receipt varies', () => {
+  // The no-verbatim guard compared the WHOLE reply, but withQuestion prepends the model's varying receipt — so the
+  // engine body could repeat byte-for-byte while the whole reply differed, and the guard never fired. To a terse
+  // member that reads as a broken loop: the same paragraph again, as though nothing they said had registered.
+  // So the assertion strips the receipt and compares the BODY — precisely what the old guard failed to do.
+  const RECEIPT = 'Take your time.';
+  const bodyOf = (reply) => reply.split(BEAT_SEP).join(' ').split(RECEIPT).join(' ').replace(/\s+/g, ' ').trim();
+
+  const seen = new Set();
+  let state = { stage: 'identity', collected: {} };
+  const hist = [];
+  let exercised = 0;
+  for (let i = 0; i < 3; i++) {
+    const t = applyStagedTurn(state, hist, 'i dont know', { text: RECEIPT });
+    const body = bodyOf(t.reply);
+    assert.equal(seen.has(body), false, `the engine body repeated verbatim on turn ${i + 1}: "${body.slice(0, 70)}"`);
+    seen.add(body);
+    exercised++;
+    hist.push({ role: 'member', text: 'i dont know' }, { role: 'agent', text: t.reply });
+    state = t.state;
+    if (t.state.stage !== 'identity') break;
+  }
+  assert.ok(exercised >= 2, 'the fixture must actually run consecutive identity turns, or it proves nothing');
 });

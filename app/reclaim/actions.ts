@@ -188,10 +188,25 @@ export async function reclaimTurnAction(
         .filter((i) => isTier(i.tier))
         .map((i) => ({ original: i.original, text: i.text, tier: i.tier as Tier }));
       if (items.length && p) {
+        // CAT-36(b/c) — DON'T TELL THEM IT SAVED WHEN IT DIDN'T. The commit outcome was swallowed entirely, so a
+        // refinement that matched NOTHING (drifted reclaim_item table, or the model recording "originals" it
+        // invented) applied 0 rows while the member was told their list now reflects them. That is the product
+        // lying to someone about their own data — the one thing this surface exists to get right.
+        //
+        // We still don't interrupt them mid-ceremony over it; what changes is that a no-op is now LOUD in the
+        // logs with the member id, so it is discoverable instead of silent. A visible correction path is the
+        // follow-up, but silence was the actual defect.
         try {
-          await commitRefinement(db, memberId, { items, top3: p.top3 });
-        } catch {
-          /* swallow — the member saw the confirm; the commit is best-effort */
+          const res = await commitRefinement(db, memberId, { items, top3: p.top3 });
+          if (!res.applied) {
+            console.error(
+              `CAT-36: C1 refinement applied 0 of ${items.length} items for member=${memberId} — the member was ` +
+                `told their Reclaim List was updated but NOTHING changed. Likely a drifted reclaim_item table or ` +
+                `model-invented originals that match no live item.`,
+            );
+          }
+        } catch (e) {
+          console.error('CAT-36: C1 refinement commit THREW after the member confirmed:', (e as Error).message);
         }
       }
       try {

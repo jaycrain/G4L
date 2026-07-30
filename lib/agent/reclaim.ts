@@ -126,7 +126,12 @@ const refineStage: StageDef = {
     const captured = sanitizeRefinement(b.model.refinement);
     if (captured) b.collected.pendingRefinement = captured;
     const ref = b.collected.pendingRefinement;
-    const ready = !!ref && ref.items.length > 0 && ref.top3.length > 0;
+    // CAT-36(a) — top3 was a HARD precondition for proposing, but sanitizeRefinement happily lets an empty top3
+    // through. That combination is a dead state: `ready` never fires, `proposed` is never set, the confirm branch
+    // is unreachable, and every later "yes, save it" just re-emits model text. The member is stuck saying yes to
+    // something that will never save. The refined ITEMS are the substance; a top-3 ordering is a nicety, and a
+    // nicety must never be able to trap someone.
+    const ready = !!ref && ref.items.length > 0;
 
     if (sc.proposed) {
       if (refineConfirms(b.memberMessage)) {

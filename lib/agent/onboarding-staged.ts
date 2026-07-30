@@ -151,9 +151,28 @@ const NAME_PROMPT =
   'If you put that person in a single word — the Runner, the Writer, the Builder, the Friend — what would it be? ' +
   "It's a handle to hold onto, not a label set in stone, and we can change it.";
 
-const SKIP_OFFER =
+// CAT-20 — ROTATE THE FALLBACKS. The no-verbatim guard compares the WHOLE reply, but withQuestion prepends the
+// model's varying receipt — so the engine BODY could repeat byte-for-byte across consecutive turns while the whole
+// reply differed, and the guard never fired. To a terse member that reads as a broken loop: the same paragraph,
+// again, as though nothing they said registered. GAP_MORE/RECLAIM_MORE were already rotated; these two were not.
+// Rotation is the honest fix — the same question asked a different way is a person; the identical paragraph twice
+// is a machine.
+const SKIP_OFFER_VARIANTS = [
   "No rush on the perfect word — and you don't have to land it today. If one comes — the Runner, the Builder, the " +
-  "Friend — say it. If not, that's completely fine; we'll find it together as you go. Want to leave it for now?";
+    "Friend — say it. If not, that's completely fine; we'll find it together as you go. Want to leave it for now?",
+  "The word can wait. Some people know it straight away, some find it months in — both are normal. Shall we leave " +
+    'it open and come back when something fits?',
+  "You don't need a label to do this work. If nothing lands, we can move on and let it surface later — want to do " +
+    'that?',
+];
+/** Pick a variant by how many times we've already offered the skip, so consecutive turns never repeat verbatim. */
+function skipOffer(history: ConvMessage[]): string {
+  const asked = history.filter(
+    (h) => h.role === 'agent' && /(no rush on the perfect word|the word can wait|don't need a label)/i.test(h.text),
+  ).length;
+  return SKIP_OFFER_VARIANTS[Math.min(asked, SKIP_OFFER_VARIANTS.length - 1)]!;
+}
+export const SKIP_OFFER = SKIP_OFFER_VARIANTS[0]!; // the first variant, exported for tests/fixtures
 
 const SKIP_ACK = "That's completely fine — you'll find your way back to them through the work, no rush.";
 
@@ -208,7 +227,12 @@ function identityProbe2(c: Collected): string {
 }
 
 // §4 — Stage 2 (how the gap opened): introduces "Doors" at first use, personalized to their handle.
-function gapOpen(c: Collected): string {
+function gapOpen(c: Collected, history: ConvMessage[] = []): string {
+  // CAT-20: re-asked cold, this used to repeat verbatim. The Doors teaching is only owed ONCE — after that, ask
+  // again in fewer words rather than replaying the whole paragraph at someone who already heard it.
+  const asked = history.filter((h) => h.role === 'agent' && /what we call Doors|caused that version of you|pulled you away from/i.test(h.text)).length;
+  if (asked >= 2) return `Take it wherever it starts. What was going on for you when the distance opened?`;
+  if (asked === 1) return `Whenever you're ready — what's been happening that pulled you away from ${identityRef(c)}?`;
   return (
     `Somewhere, the distance between you and ${identityRef(c)} started to open. Sometimes it's one clear thing — a loss, ` +
     'a diagnosis, a move, a job that swallowed you. More often it’s slower: an accumulation of what we call Doors — moments ' +
@@ -767,6 +791,16 @@ function isBuilderSubmission(message: string): boolean {
   return /^[ \t]*•/m.test(message ?? '');
 }
 
+// CAT-18 — a STRUCTURED LIST typed anywhere it wasn't expected. Broader than isBuilderSubmission (which detects our
+// own builder's "• " submissions): this catches a member pasting their own bulleted or numbered block into a
+// free-text gate. Requires TWO marked lines, so an ordinary sentence that happens to start with "1." or a dash
+// can't be mistaken for a list.
+const LIST_LINE_RE = /^[ \t]*(?:[-•*]|\(?\d{1,2}[.):\]])\s+\S/;
+export function isListBlock(message: string): boolean {
+  const marked = (message ?? '').split(/\r?\n/).filter((l) => LIST_LINE_RE.test(l));
+  return marked.length >= 2;
+}
+
 // The structured Reclaim List builder is an onboarding-only turn: whenever the machine is in the reclaim stage (and not
 // yet complete), tell the client to render the list builder — pre-filled with any wants volunteered earlier — instead
 // of the text box or the scale chips. Once submitted, the stage advances to 'grinta', so this stops firing. Everything
@@ -1153,7 +1187,10 @@ const identityStage: StageDef = {
         b.stage = 'gap';
         b.reply = `${SKIP_ACK}\n\n${gapOpen(b.collected)}`;
       } else {
-        const probe = !b.collected.athleticPast ? (skipOfferable ? SKIP_OFFER : IDENTITY_REDRAW) : skipOfferable ? SKIP_OFFER : NAME_PROMPT;
+        // CAT-20: rotate the skip offer by how often we've already made it — the same paragraph twice reads as a
+        // broken loop to a terse member (the whole-reply guard misses it, since withQuestion varies the lead).
+        const offer = skipOffer(b.history);
+        const probe = !b.collected.athleticPast ? (skipOfferable ? offer : IDENTITY_REDRAW) : skipOfferable ? offer : NAME_PROMPT;
         b.reply = withQuestion(b.modelText, probe);
       }
     }
@@ -1313,6 +1350,25 @@ const gapStage: StageDef = {
       b.awaitingConfirm = false;
       b.reply = REOPEN_GAP;
     } else if (intent === 'addition') {
+      // CAT-18 — A LIST IS NOT PROSE. A member who pastes a bulleted/numbered block at the gap confirm (their
+      // wants, or fade chapters) had it classified as an "addition" and joined RAW into the gap narrative —
+      // "…what to do with myself. • Rediscover what I enjoy" — corrupting the stored gap, and those items never
+      // reached the Reclaim List. This is the same "structured input into a free-text gate" shape
+      // parseReclaimListSubmission already solved for the reclaim stage; this gate was simply unguarded.
+      //
+      // Never drop what they gave you: the items are parked as Reclaim wants (they seed the builder later), and
+      // the gap prose is left alone rather than polluted.
+      const listItems = isListBlock(b.memberMessage) ? parseReclaimListSubmission(b.memberMessage) : [];
+      if (listItems.length >= 2) {
+        for (const item of listItems) appendReclaim(b.collected, item);
+        b.collected.doors = augmentDoors(b.collected.doors ?? [], gapStageCorpus(b.history, b.memberMessage));
+        b.awaitingConfirm = true; // still at the confirm — we haven't heard more of the STORY yet
+        b.reply = withQuestion(
+          b.modelText,
+          "I've kept those — they're the things you want back, and we'll build that list together in a minute. Right now I'm still with how it happened. Was there more to it?",
+        );
+        return;
+      }
       // a new chapter (or a correction WITH content) → append it, re-derive Doors, and DRAW IT OUT.
       const modelTaggedGap = b.model.record?.gap !== undefined && b.model.record.gap !== '';
       if (!modelTaggedGap) b.collected.gap = joinGapChapters(b.collected.gap ?? '', b.memberMessage);
