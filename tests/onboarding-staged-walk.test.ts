@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { applyStagedTurn } from '../lib/agent/onboarding-staged.ts';
+import { applyStagedTurn, isProcessMetaOrAssent } from '../lib/agent/onboarding-staged.ts';
 import { detectCrisis } from '../lib/agent/governance.ts';
 import type { ConvState, ConvMessage, ModelTurn, Turn } from '../lib/agent/onboarding.ts';
 
@@ -294,4 +294,28 @@ test('SHAPE-GATE — a list with TWO shapes resolves them one at a time, then ad
   const second = applyStagedTurn(first.state, hist, 'Get back in shape.', { text: '' });
   assert.equal(second.state.stage, 'grinta', 'both resolved → through to the survey');
   assert.doesNotMatch(second.reply, /Which one do you most want back|sound like the same thing/, 'neither is re-asked');
+});
+
+test('SHAPE-GATE — an answer to our own proposal is never committed as a life-want (Jennifer, W-42 class)', () => {
+  // The structural fix keeps these off the append path entirely; this pins the chokepoint guard beneath it, so the
+  // rule survives any future path. Same shape as Scott's exit line and Donna's protest landing as Reclaim items.
+  for (const reply of [
+    'We can keep them as one.',
+    'Keep them as one',
+    'keep both',
+    "They're different.",
+    'No, they are separate',
+    'Yes, merge them',
+  ]) {
+    assert.equal(isProcessMetaOrAssent(reply), true, `must not be a want: ${reply}`);
+  }
+  // And it must NOT swallow real wants that happen to use those verbs.
+  for (const want of [
+    'Keep my strength up as I age',
+    'Keep walking every day',
+    'Merge my work and my running so I stop choosing',
+    'Keep both of my knees healthy enough to hike',
+  ]) {
+    assert.equal(isProcessMetaOrAssent(want), false, `must stay a want: ${want}`);
+  }
 });

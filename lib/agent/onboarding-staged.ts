@@ -654,12 +654,22 @@ const RECLAIM_META_EXIT_RE = /\b(continue (this )?later|come back (to (this|it) 
 const RECLAIM_AGENT_META_RE =
   /\b(glitch(ing|ed|y)?|you'?re (broke|broken|bugg(y|ing)|malfunction(ing)?|not (working|listening))|document(ing)? an? (item|entry)|not (a|an) (reclaim[- ]?)?(item|entry|goal)\b|hey,? (g4l|companion)\b|g4l companion|trying to (tell|say) you|talking (to|at) you|you (misunderstood|did\s?n['’]?t (get|understand) (me|this|that)))\b/i;
 
-// True if `text` is session-meta / assent / an agent-directed question — never a real Reclaim want.
+// An answer to one of OUR OWN shape proposals ("want me to keep them as one, or are they different?"). Jennifer's
+// walk (2026-07-30) committed "We can keep them as one." to her Reclaim List as a life-want. Same shape as Scott's
+// exit line and Donna's protest: a reply ABOUT the process, promoted to a want. The structural fix is that a pending
+// shape now owns its turn so these never reach the append path at all — this is the belt to that suspenders, living
+// at the one chokepoint so it holds on any future path too. Whole-string anchored and deliberately narrow: a real
+// want is a life goal, and essentially never has the exact shape "keep/merge <them|both> ...".
+const RECLAIM_PROPOSAL_ANSWER_RE =
+  /^(yes|no|nope|nah|sure|ok(ay)?)?[,.\s]*(((we|you|i)\s+(can|could|should|)\s*)?(please\s+)?(keep|merge|combine)\s+(them|those|these|both|it)(\s+(as|in)\s+one|\s+together|\s+both|\s+separate(ly)?|\s+apart)?|(they'?re|they are|those are|it'?s)\s+(the\s+same|different|separate|distinct))[.!]*$/i;
+
+// True if `text` is session-meta / assent / a proposal answer / an agent-directed question — never a real Reclaim want.
 export function isProcessMetaOrAssent(text: string): boolean {
   const t = (text ?? '').trim();
   if (!t) return true;
   if (RECLAIM_ASSENT_RE.test(t)) return true;
   if (RECLAIM_META_EXIT_RE.test(t)) return true;
+  if (RECLAIM_PROPOSAL_ANSWER_RE.test(t.replace(/[‘’]/g, "'"))) return true; // an answer to our own shape proposal (Jennifer's)
   if (isReclaimMetaFragment(t)) return true; // confusion / "this isn't making sense" — never a want
   if (RECLAIM_AGENT_META_RE.test(t.replace(/[‘’]/g, "'"))) return true; // agent-directed protest/complaint — never a want (Donna's #2/#17)
   // A question aimed at the agent: starts with a question/modal word AND ends with '?'. (A real want is declarative;
