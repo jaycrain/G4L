@@ -46,12 +46,21 @@ async function driftedMember(db: Db, email: string): Promise<string> {
   return m;
 }
 
+// Fix the clock at 03:00 UTC (inside the default 21→7 quiet window) or 12:00 UTC (outside it).
+//
+// EVERY test here pins `now`. SEC-06 added a quiet-hours gate but I left the three pre-existing tests on the
+// REAL clock, so the suite passed all afternoon and went red at 21:00 — green by day, red by night. A suite whose
+// colour depends on the time of day is worse than no suite: it teaches everyone to shrug at red. If a test
+// touches the outbound cadence gate, it pins the clock. No exceptions.
+const AT_3AM = new Date(Date.UTC(2026, 6, 30, 3, 0, 0));
+const AT_NOON = new Date(Date.UTC(2026, 6, 30, 12, 0, 0));
+
 test('pushes a real nudge to a drifted member, then logs it', async () => {
   const db = new PGlite() as unknown as Db;
   await applySchema(db);
   const m = await driftedMember(db, 'a@x.com');
 
-  const res = await runScheduledNudges(db, { sender: okSender });
+  const res = await runScheduledNudges(db, { sender: okSender, now: AT_NOON });
   assert.equal(res.eligible, 1);
   assert.equal(res.pushed, 1);
   const log = await db.query<{ kind: string }>(`select kind from nudge_log where member_id=$1`, [m]);
@@ -63,8 +72,8 @@ test('cooldown: a member pushed recently is not eligible again', async () => {
   const db = new PGlite() as unknown as Db;
   await applySchema(db);
   await driftedMember(db, 'b@x.com');
-  assert.equal((await runScheduledNudges(db, { sender: okSender })).pushed, 1);
-  const second = await runScheduledNudges(db, { sender: okSender });
+  assert.equal((await runScheduledNudges(db, { sender: okSender, now: AT_NOON })).pushed, 1);
+  const second = await runScheduledNudges(db, { sender: okSender, now: AT_NOON });
   assert.equal(second.eligible, 0);
   assert.equal(second.pushed, 0);
 });
@@ -73,8 +82,8 @@ test('the same message is never pushed twice in a row (repeat guard)', async () 
   const db = new PGlite() as unknown as Db;
   await applySchema(db);
   await driftedMember(db, 'c@x.com');
-  assert.equal((await runScheduledNudges(db, { sender: okSender, cooldownHours: 0 })).pushed, 1);
-  const second = await runScheduledNudges(db, { sender: okSender, cooldownHours: 0 });
+  assert.equal((await runScheduledNudges(db, { sender: okSender, cooldownHours: 0, now: AT_NOON })).pushed, 1);
+  const second = await runScheduledNudges(db, { sender: okSender, cooldownHours: 0, now: AT_NOON });
   assert.equal(second.eligible, 1);
   assert.equal(second.pushed, 0);
   assert.equal(second.skipped, 1);
@@ -87,7 +96,7 @@ test('a recently-active member is skipped — no push that just repeats their da
   await saveSubscription(db, m, sub('e@x.com'));
   await setConnection(db, m, 'strava', 'Strava');
   await saveActivities(db, m, [ride('r-e', 0.1)]); // active ~2 hours ago
-  const res = await runScheduledNudges(db, { sender: okSender });
+  const res = await runScheduledNudges(db, { sender: okSender, now: AT_NOON });
   assert.equal(res.eligible, 0); // in the app right now → not pushed
   assert.equal(res.pushed, 0);
 });
@@ -96,7 +105,7 @@ test('no subscription → nobody is processed', async () => {
   const db = new PGlite() as unknown as Db;
   await applySchema(db);
   await member(db, 'd@x.com');
-  assert.equal((await runScheduledNudges(db, { sender: okSender })).eligible, 0);
+  assert.equal((await runScheduledNudges(db, { sender: okSender, now: AT_NOON })).eligible, 0);
 });
 
 // ---------------------------------------------------------------------------
@@ -107,9 +116,6 @@ test('no subscription → nobody is processed', async () => {
 // ---------------------------------------------------------------------------
 import { setPref } from '../lib/outreach/store.ts';
 
-// Fix the clock at 03:00 UTC (inside the default 21→7 quiet window) or 12:00 UTC (outside it).
-const AT_3AM = new Date(Date.UTC(2026, 6, 30, 3, 0, 0));
-const AT_NOON = new Date(Date.UTC(2026, 6, 30, 12, 0, 0));
 
 test('SEC-06 · "only when I ask" is honoured — no proactive push, ever', async () => {
   const db = new PGlite() as unknown as Db;

@@ -52,6 +52,45 @@ async function askJoanne(history: ConvMessage[]): Promise<string> {
   return block && block.type === 'text' ? block.text.trim() : '(…)';
 }
 
+// THE HARNESS MUST USE THE SAME AFFORDANCES THE MEMBER DOES (Jay, 2026-07-30).
+//
+// The engine emits an `expects` signal telling the client to render a structured turn — identity CHIPS, the
+// Reclaim List BUILDER, or scale chips — and the real UI renders exactly that. This script ignored it and typed
+// prose every turn, which meant it was driving the RETIRED conversational paths on precisely the two surfaces we
+// replaced with structured input. That over-reports: walk 3's identity loop was reached by "typing" three
+// candidate words back, which no tapping member can do, and the earlier reclaim findings came through free text
+// no member sends either. A harness that exercises paths the product doesn't use manufactures its own bugs.
+//
+// So: when the engine says "chips", we TAP one (send the candidate string verbatim, as the chip does). When it
+// says "builder", we submit a "• "-prefixed block, exactly as reclaim-list-builder.tsx does. The persona model
+// still decides WHAT to choose or write — we only constrain the FORM to what the surface can actually produce.
+type Expectation = { kind: string; candidates?: string[]; min?: number; seeded?: string[] };
+
+/** Ask the persona to choose from the offered chips; returns the chosen candidate VERBATIM (a tap). */
+async function tapChip(history: ConvMessage[], candidates: string[]): Promise<string> {
+  const raw = await askJoanne([
+    ...history,
+    { role: 'agent', text: `(Choose ONE of these words: ${candidates.join(', ')}. Reply with just that one word.)` },
+  ]);
+  // A tap can only ever emit an exact candidate. Match loosely on the model's reply, else take the first.
+  const hit = candidates.find((c) => raw.toLowerCase().includes(c.toLowerCase()));
+  return hit ?? candidates[0]!;
+}
+
+/** Ask the persona for her list, and submit it in the builder's own format (one "• " item per line). */
+async function submitBuilder(history: ConvMessage[], min: number, seeded: string[]): Promise<string> {
+  const raw = await askJoanne([
+    ...history,
+    { role: 'agent', text: `(List at least ${min} things you want back — one per line, short, no commentary.)` },
+  ]);
+  const items = raw
+    .split(/\r?\n+/)
+    .map((l) => l.replace(/^\s*(?:[-•*]|\d{1,2}[.)])\s*/, '').trim())
+    .filter(Boolean);
+  const all = [...seeded, ...items].filter(Boolean).slice(0, 7);
+  return all.map((i) => `• ${i}`).join('\n');
+}
+
 function signal(state: ConvState): string {
   const c = state.collected ?? {};
   const list = c.reclaimList ?? [];
@@ -66,9 +105,21 @@ async function main() {
   console.log(signal(state));
 
   const MAX = 30;
+  let expects: Expectation | undefined = (open as { expects?: Expectation }).expects;
   for (let i = 0; i < MAX; i++) {
-    const joanne = await askJoanne(history);
-    console.log('\nJOANNE:', joanne);
+    // Answer through the SURFACE the engine asked for, not free prose — that is what a member's client does.
+    let joanne: string;
+    let via = '';
+    if (expects?.kind === 'identity_pick' && (expects.candidates ?? []).length) {
+      joanne = await tapChip(history, expects.candidates!);
+      via = ' [tapped a chip]';
+    } else if (expects?.kind === 'reclaim_list') {
+      joanne = await submitBuilder(history, expects.min ?? 3, expects.seeded ?? []);
+      via = ' [submitted the list builder]';
+    } else {
+      joanne = await askJoanne(history);
+    }
+    console.log('\nJOANNE' + via + ':', joanne);
     let turn;
     try {
       turn = await liveTurnStaged({} as never, history, state, joanne);
@@ -79,6 +130,7 @@ async function main() {
     history.push({ role: 'member', text: joanne });
     history.push({ role: 'agent', text: turn.reply });
     state = turn.state;
+    expects = (turn as { expects?: Expectation }).expects;
     console.log('\nCOMPANION:', readable(turn.reply));
     console.log(signal(state));
     if (turn.complete) { console.log('\n=== COMPLETE (turn', i + 1, ') ==='); break; }

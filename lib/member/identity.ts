@@ -32,13 +32,12 @@ export function sanitizeCoinedIdentity(raw: string | null | undefined): string |
   if (!noun || /^(the|a|an)$/i.test(noun)) return null; // empty, or a bare article ("the")
   if (noun.length > 40) return null; // a sentence, not a handle
   if (noun.split(' ').length > 4) return null; // handles are 1–4 words ("the Stay-At-Home Parent")
-  // A LIST OF CANDIDATES, not a choice. Live walk 2026-07-30: offered chips, the member replied "Untamed. Alive.
-  // Sovereign. Unguarded." and the whole string became her handle — then rendered back at her in every sentence
-  // for the rest of onboarding ("what pulled you away from the Untamed. Alive. Sovereign. Unguarded?"). The word
-  // count didn't catch it because the separators are punctuation, not spaces. Sentence punctuation never belongs
-  // inside a 1-4 word handle, so its presence means they echoed several words instead of picking one — re-prompt
-  // and let them choose, rather than labelling them with all of it.
-  if (/[.,;:/|]/.test(noun)) return null;
   if (!/\p{L}/u.test(noun)) return null; // must contain a letter (not "123" / "!!!")
+  // REVERTED 2026-07-30: a guard here rejecting sentence punctuation (a list of candidate words echoed back).
+  // It fixed a HARNESS artifact — the persona walk types, so it can emit "Untamed. Alive. Sovereign."; a real
+  // member TAPS a pre-vetted chip and cannot. Meanwhile rejecting more inputs is exactly what dropped the walk
+  // into CAT-54's fifteen-turn re-prompt loop, because this path has no escape hatch. Net-negative: a cosmetic
+  // problem that doesn't occur, traded for easier access to a trap that does. Fix CAT-54 first (give the beat an
+  // escape + accept a reply CONTAINING a candidate); a guard here is safe to reconsider only after that.
   return noun;
 }
