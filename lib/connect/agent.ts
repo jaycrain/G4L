@@ -82,8 +82,8 @@ export async function getConnectSummaryForAgent(db: Db, memberId: string): Promi
 
 /** Render the Connect summary into the agent's MEMBER CONTEXT block. Empty footprint → a short line. */
 export function connectContextLines(c: ConnectAgentSummary): string {
-  if (!c.hasPresence) return 'Connect (community): no activity yet — they have not posted or connected with anyone.';
-  const lines: string[] = ['Connect (community — their bridge to other members):'];
+  if (!c.hasPresence) return 'Community: no activity yet — they have not posted or connected with anyone.';
+  const lines: string[] = ['Community (their bridge to other members):'];
   lines.push(`  • Their handle: ${c.handle ?? '—'}${c.nameRevealed ? ' (posts under their real name)' : ' (posts anonymously)'}`);
   if (c.recentEngagement.length) {
     lines.push(`  • Recent engagement they received${c.unreadCount ? ` (${c.unreadCount} unread)` : ''}:`);

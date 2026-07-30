@@ -283,10 +283,14 @@ file creates a client↔client cycle webpack-dev resolves to `undefined` — the
 ## Stack & tools
 
 - AI: Anthropic API (Claude) powers both agents.
-- Community: **Connect** — built native on our stack (Supabase + Next), **not** Circle (dropped
-  Jun 2026: didn't need the full feature set, disliked the org/UI, expensive). Name plays off the
-  4Rs: Reconnect (with yourself) → Connect (with others). Design: `docs/connect-design.md`.
-  Course/content delivery: Tovuti. Payments: Stripe.
+- Community: **the Community** — built native on our stack (Supabase + Next), **not** Circle (dropped
+  Jun 2026: didn't need the full feature set, disliked the org/UI, expensive). Design:
+  `docs/connect-design.md`. **NAMING (Jay, 2026-07-30): the name "Connect" is RETIRED — it is the
+  Community, everywhere a member or the market can see.** No member ever saw "Connect", so there is
+  no transition to manage; treat it as a name that never shipped. This is member-facing + agent
+  vocabulary only — the CODE keeps `lib/connect/*`, `connect_*` tables, `/connect` routes and
+  `ConnectPanel`. Renaming those is churn with real regression risk and zero member value; do not
+  "tidy" them. Course/content delivery: Tovuti. Payments: Stripe.
   Lifecycle/email: HubSpot. (Integrations, not rebuilds.)
 - App stack, hosting, DB, auth: **[to confirm with the fractional senior engineer]** —
   whatever is chosen, record it here.
