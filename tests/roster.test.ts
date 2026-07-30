@@ -34,7 +34,7 @@ async function seed(): Promise<{ db: Db; alice: string; demo: string }> {
 
   // Alice is a real signup: credential + sign-in 2 days ago.
   await db.query(`insert into member_credential (member_id, email, password_hash) values ($1,'alice@x.com','x')`, [a]);
-  await db.query(`insert into member_session (token, member_id, created_at, expires_at) values ('tok-a',$1,$2,$3)`, [
+  await db.query(`insert into member_session (token_hash, member_id, created_at, expires_at) values ('hash-a',$1,$2,$3)`, [
     a,
     daysAgoISO(2),
     daysAgoISO(-30),
