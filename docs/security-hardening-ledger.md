@@ -63,6 +63,33 @@ quickly" — that is a race, not a design. Ask the catalog which shape exists an
 answer, never the pre-migration one, so a running instance upgrades itself the moment the migration lands.
 Corollary: any migration that DROPS or NOT-NULLs a column in use needs two releases.
 
+## Round 3 — correctness leftovers (2026-07-30)
+
+Closed: CAT-18 (a list pasted at the gap confirm corrupted the gap prose and lost the items), CAT-20
+(unrotated fallbacks repeating verbatim — the guard compared the whole reply while the model's receipt varied),
+CAT-32 (IDQ answers could be scored and written as the member's grit), CAT-35 (B3 coach mode had no way out),
+CAT-36 (C1 dead state + a commit that applied nothing while telling the member it saved), CAT-38 (degraded
+Companion instructed to be omniscient), CAT-40 (half-flagged workspace), CAT-46 (mobile Opening Tour silently
+dropped 7 of 9 introductions, permanently), CAT-49, CAT-51.
+
+### CAT-19 — DEFERRED ON PURPOSE, needs a live walk
+
+CAT-19 is "front-loaded fade content offered during the identity stage is dropped rather than carried into the
+gap." The fix is a **completeness patch to the live capture loop** — and that is the single most-repeated
+regression in this codebase. Two prior attempts at exactly this shape (`5d683d2` auto-seeding identity_noun,
+`ad749ee` seeding the Reclaim List from the gap) were both reverted for racing the draw-out and naming the member
+unbidden. See [[completeness-never-touches-drawout]].
+
+Two reasons not to ship it blind:
+1. **Vibe wins.** A want not yet listed is recoverable (the card, the rail). A loop that commits without drawing
+   the member out is not. This class of fix keeps re-flattening the drawing-out.
+2. **A green suite cannot prove it.** Offline replay feeds RECORDED model turns, so it can't exercise the model
+   reading a changed prompt. Only a live persona walk shows whether the feel survived.
+
+So it wants: the fix, then `scripts/persona-walk.ts` as Joanne, then Jay's read — not a blind push on a day when
+a Charter member is about to walk. Everything else in Round 3 is engine-deterministic and offline-provable, which
+is why it shipped today and this did not.
+
 ## The "enforced by nothing" shape
 
 SEC-07 was a governance rule that existed in code and was wired to nothing. It is the same shape as a retention
