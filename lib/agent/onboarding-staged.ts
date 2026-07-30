@@ -1359,6 +1359,7 @@ const reclaimStage: StageDef = {
   // the member's EXACT entries VERBATIM (setStructuredReclaim), enforces the ≥MIN floor, then hands into the Grinta
   // baseline survey. There is no conversational gather or confirm: the builder IS the input AND the confirmation.
   gather(b) {
+    if (b.pendingReclaimShape) return answerPendingShape(b);
     // The LIVE reclaim surface is the structured builder (expects reclaim_list); its submission arrives as a "• "
     // bulleted block. Only that authoritative path gets verbatim capture + the ≥MIN floor. Anything else routes to the
     // retired conversational path (dead code a real member never hits — the builder is the only input; kept behind
@@ -1368,11 +1369,36 @@ const reclaimStage: StageDef = {
     return enterGrintaSurvey(b);
   },
   confirm(b) {
+    if (b.pendingReclaimShape) return answerPendingShape(b);
     if (isBuilderSubmission(b.memberMessage)) return commitStructuredReclaim(b);
     for (const item of parseReclaimListSubmission(b.memberMessage)) appendReclaim(b.collected, item);
     return enterGrintaSurvey(b);
   },
 };
+
+// DECISION II — THE MISSING HALF OF THE SHAPE GATE. gateNextShape() posed the proposal and parked it on
+// `pendingReclaimShape`, and resolvePendingShape() knew how to apply the answer — but NOTHING CONNECTED THEM.
+// resolvePendingShape was unreachable, so the member's answer fell through to the "append whatever they typed"
+// path below and the unresolved shape re-detected on the next pass. Two live failures, both hit in Jennifer's
+// walk (2026-07-30): the proposal repeated VERBATIM after she answered it, and her answer to a multi-want
+// draw-out was appended to the list as a NEW item — which then overlapped the original and started a SECOND
+// loop the engine had manufactured itself.
+//
+// A pending shape OWNS the turn: she is ruling on our proposal, not adding to her list. Apply her answer, then
+// re-gate — because resolving one shape can reveal the next (and clearing the last one is what lets her through).
+function answerPendingShape(b: Beat): Turn {
+  const ack = resolvePendingShape(b, b.pendingReclaimShape!);
+  const next = gateNextShape(b);
+  if (next) {
+    b.stage = 'reclaim';
+    b.awaitingConfirm = true;
+    b.reply = `${ack}${BEAT_SEP}${next}`;
+    return { reply: b.reply, state: beatState(b), complete: false };
+  }
+  const turn = enterGrintaSurvey(b);
+  b.reply = `${ack}${BEAT_SEP}${turn.reply}`;
+  return { ...turn, reply: b.reply, state: beatState(b) };
+}
 
 // --- The Grinta baseline — "Introduction to Grinta." An administered 12-item survey that runs AFTER the member
 // confirms their Reclaim List (the seatbelt above is untouched) and BEFORE onboarding completes. Off the depth
