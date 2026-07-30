@@ -81,3 +81,98 @@ test('grounded / cadence / dismissible gates hold', () => {
   assert.ok(validateOutreach(base, { cadenceOk: false, dismissible: true }).failures.some((f) => /cadence/.test(f)), 'over cadence → held');
   assert.ok(validateOutreach(base, { cadenceOk: true, dismissible: false }).failures.some((f) => /dismissible/.test(f)), 'not dismissible → held');
 });
+
+// ---------------------------------------------------------------------------
+// SEC-07 — the plan rules were structurally DEAD. Three checks keyed off draft.hasPlan, and the only generator we
+// ship hard-codes it to false for every draft — including the free text the live model composes. So the model
+// could emit a directive and the validator was told, by the model's own wrapper, that no directive existed.
+// "A plan is only legal in Practice" and "a Practice plan must be an invitation" read as enforced and enforced
+// nothing. Same shape as the capture bugs: a gate trusting a producer's self-report instead of reading the artifact.
+// ---------------------------------------------------------------------------
+import { containsPlan } from '../lib/outreach/validate.ts';
+
+const src = { kind: 'session' as const, ref: 'w1', quote: 'I said I wanted to ride again' };
+// A draft exactly as the shipped generator emits it: hasPlan hard-coded false, whatever the text says.
+const asGenerated = (text: string, tense: 'present' | 'practice' | 'horizon') => ({
+  trigger: 'morning_presence' as const,
+  tense,
+  text,
+  provenance: src,
+  hasPlan: false, // <- the lie the validator used to believe
+  questionCount: (text.match(/\?/g) ?? []).length,
+});
+
+test('SEC-07 · a directive in the PRESENT is now caught, even though the generator declared hasPlan:false', () => {
+  const v = validateOutreach(asGenerated('Here’s the plan: start by riding twice this week.', 'present'), {
+    cadenceOk: true,
+    dismissible: true,
+  });
+  assert.equal(v.ok, false);
+  assert.equal(
+    v.failures.some((x) => /only legal in Practice/.test(x)),
+    true,
+    'the tense rule must fire off the TEXT, not the self-report',
+  );
+});
+
+test('SEC-07 · a Practice plan that is not an invitation is caught', () => {
+  const v = validateOutreach(asGenerated('This week, aim for three short rides.', 'practice'), {
+    cadenceOk: true,
+    dismissible: true,
+  });
+  assert.equal(v.ok, false);
+  assert.equal(v.failures.some((x) => /not framed as an invitation/.test(x)), true);
+});
+
+test('SEC-07 · a properly invited Practice plan with an easy-out still passes (the gate is not a wall)', () => {
+  const v = validateOutreach(
+    asGenerated('If you’re up for it, we could try one short ride this week — no pressure either way.', 'practice'),
+    { cadenceOk: true, dismissible: true },
+  );
+  assert.equal(v.ok, true, v.failures.join('; '));
+});
+
+test('SEC-07 · a plain reflection is not mistaken for a plan', () => {
+  // The guard must not swallow the ordinary case, or every gentle check-in would be held and the Companion
+  // would go silent — a failure that hides itself.
+  const v = validateOutreach(
+    asGenerated('You said riding was the thing you missed most. What’s that been like lately?', 'present'),
+    { cadenceOk: true, dismissible: true },
+  );
+  assert.equal(v.ok, true, v.failures.join('; '));
+});
+
+test('SEC-07 · containsPlan reads directives, not reflections', () => {
+  for (const yes of [
+    'You should get back on the bike',
+    'Here’s what to do next',
+    'Start by walking ten minutes',
+    'This week, try two rides',
+    'I’d suggest picking one small thing',
+    'Make sure you log it',
+  ]) {
+    assert.equal(containsPlan(yes), true, `must read as a plan: ${yes}`);
+  }
+  for (const no of [
+    'You said riding was the thing you missed most.',
+    'That sounds like a hard week.',
+    'What’s been on your mind?',
+    'It’s been a while since we talked about your knee.',
+  ]) {
+    assert.equal(containsPlan(no), false, `must NOT read as a plan: ${no}`);
+  }
+});
+
+test('GUILT guard · the accusation still fails, the reflection now passes (both senses of "you missed")', () => {
+  const ctx = { cadenceOk: true, dismissible: true };
+  const accusation = validateOutreach(asGenerated('You missed your check-in again.', 'present'), ctx);
+  assert.equal(accusation.failures.some((x) => /guilt/.test(x)), true, 'shaming them for a missed session must fail');
+
+  for (const reflection of [
+    'You said riding was the thing you missed most.',
+    'That’s what you missed most about it, in your words.',
+  ]) {
+    const v = validateOutreach(asGenerated(reflection, 'present'), ctx);
+    assert.equal(v.failures.some((x) => /guilt/.test(x)), false, `must not read as guilt: ${reflection}`);
+  }
+});
