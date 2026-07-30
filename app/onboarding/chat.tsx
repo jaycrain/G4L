@@ -40,6 +40,13 @@ export default function OnboardingChat({ welcomeEnabled = false }: { welcomeEnab
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false); // eye toggle on the password field
   const [resumable, setResumable] = useState(false); // a saved session exists → show the "welcome back" gate
+  // SERVER-CONFIRMED resume. `resumable` is set OPTIMISTICALLY from local storage so the returner sees "welcome
+  // back" instantly — but optimism must never reach the browser's credential machinery. Asking for "Your password"
+  // with autoComplete="current-password" is precisely the cue that makes a phone offer its saved G4L login, so a
+  // member whose local storage was stale (abandoned walk, wiped session, shared device) got their OLD account's
+  // credentials pre-filled into what is actually a SIGN-UP form. Jennifer hit this on her phone; clearing the
+  // browser cache is the workaround, this is the fix. Credential autofill waits for the server to confirm.
+  const [resumeConfirmed, setResumeConfirmed] = useState(false);
   const [messages, setMessages] = useState<ConvMessage[]>([]);
   const [state, setState] = useState<ConvState | null>(null);
   const [input, setInput] = useState('');
@@ -82,9 +89,14 @@ export default function OnboardingChat({ welcomeEnabled = false }: { welcomeEnab
     let cancelled = false;
     void (async () => {
       const session = await loadOnboardingSessionAction(savedEmail, ls.get(LS.token));
-      if (cancelled || (session && session.messages.length > 0)) return;
+      if (cancelled) return;
+      if (session && session.messages.length > 0) {
+        setResumeConfirmed(true); // a REAL session is there — now it's honest to ask for their existing password
+        return;
+      }
       clearOnboardingStorage();
       setResumable(false);
+      setResumeConfirmed(false);
       setName('');
       setEmail('');
     })();
@@ -288,9 +300,11 @@ export default function OnboardingChat({ welcomeEnabled = false }: { welcomeEnab
         )}
         <form onSubmit={begin}>
           <label htmlFor="name">Your name</label>
-          <input id="name" type="text" value={name} onChange={(e) => setName(e.target.value)} required />
+          <input id="name" type="text" value={name} onChange={(e) => setName(e.target.value)} required autoComplete="name" />
           <label htmlFor="email">Email</label>
-          <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+          {/* "email", never "username": `username` next to a password field is what tells a browser this is a
+              login form and to offer the saved credential pair. This is a sign-up. */}
+          <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email" />
           {/* Decision Z: password set once, here — held in memory, the account is created only when they confirm
               the card, so the Ceremony is never interrupted by a signup step. */}
           <label htmlFor="password">{resumable ? 'Your password' : 'Choose a password'}</label>
@@ -300,7 +314,7 @@ export default function OnboardingChat({ welcomeEnabled = false }: { welcomeEnab
               type={showPassword ? 'text' : 'password'}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              autoComplete={resumable ? 'current-password' : 'new-password'}
+              autoComplete={resumeConfirmed ? 'current-password' : 'new-password'}
               minLength={8}
               required
             />

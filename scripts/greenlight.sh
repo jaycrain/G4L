@@ -81,7 +81,8 @@ SURFACES=(
   "/"
   "/onboarding"
   "/login|Forgot your password?"            # NEW THIS PUSH (SEC-08): the way back in is reachable from the door
-  "/login/forgot|Send me a reset link"      # NEW THIS PUSH (SEC-08): the reset request surface renders
+  "/login/forgot|Send me a reset link"      # SEC-08: the reset request surface renders
+  "/onboarding|autocomplete=\"new-password\""  # NEW THIS PUSH: signup asks for a NEW password, so a phone can't prefill a saved login
 )
 for entry in "${SURFACES[@]}"; do
   path="${entry%%|*}"
