@@ -2,7 +2,13 @@ import { NextResponse } from 'next/server';
 import { timingSafeEqual } from 'node:crypto';
 import { getDb } from '../../../../lib/db/index.ts';
 import type { Db } from '../../../../lib/db/schema.ts';
-import { searchMembers, runMemberDiagnostic, findInFlightOnboarding } from '../../../../lib/admin/diagnostic.ts';
+import {
+  searchMembers,
+  runMemberDiagnostic,
+  findInFlightOnboarding,
+  isSpecificEnough,
+  DIAGNOSTIC_MIN_QUERY,
+} from '../../../../lib/admin/diagnostic.ts';
 
 // Read-only operator diagnostic: returns a member's cross-phase backend state + an anomaly FLAGS block,
 // so a member's walk (onboarding → Rebuild → …) can be inspected for data issues without hand-run SQL.
@@ -26,8 +32,16 @@ export async function GET(req: Request): Promise<Response> {
   if (!secret) return new NextResponse('Not found', { status: 404 }); // disabled until an operator sets the token
   if (!tokenOk(req, secret)) return new NextResponse('Unauthorized', { status: 401 });
 
-  const q = new URL(req.url).searchParams.get('q')?.trim();
+  const url = new URL(req.url);
+  const q = url.searchParams.get('q')?.trim();
   if (!q) return NextResponse.json({ error: 'pass ?q=<name | email | member_id>' }, { status: 400 });
+  if (!isSpecificEnough(q)) {
+    // SEC-05: refuse a term broad enough to be a trawl rather than a lookup.
+    return NextResponse.json(
+      { error: `too broad — give a full member_id, a full email, or at least ${DIAGNOSTIC_MIN_QUERY} characters` },
+      { status: 400 },
+    );
+  }
 
   const db = (await getDb()) as unknown as Db;
   const matches = await searchMembers(db, q);
@@ -37,7 +51,28 @@ export async function GET(req: Request): Promise<Response> {
   const inFlight = await findInFlightOnboarding(db, q).catch(() => []);
   if (matches.length === 0) return NextResponse.json({ query: q, matches: [], inFlight, report: null });
 
-  // Report the best (first) match; surface the rest so the operator can disambiguate a common name.
-  const report = await runMemberDiagnostic(db, matches[0]!.memberId);
-  return NextResponse.json({ query: q, matchCount: matches.length, matches, inFlight, reportFor: matches[0], report });
+  // SEC-05 — NEVER AUTO-DUMP A FULL RECORD. This used to run the whole diagnostic on matches[0] for ANY search,
+  // so a loose term didn't just list people, it opened one of them: their Doors, their facets, their Playbook,
+  // their whole cross-phase state. The search step now returns identifiers only; the vulnerable record requires
+  // the operator to NAME the member — an exact member_id/email as `q`, or an explicit &member=<uuid>.
+  //
+  // The point isn't that an operator with the token can't get the data — they can, in one more step. It's that
+  // reading a specific person's record has to be a decision, never a side effect of typing a name fragment.
+  const explicit = url.searchParams.get('member')?.trim();
+  const named = explicit
+    ? matches.find((m) => m.memberId === explicit)
+    : matches.find((m) => m.memberId === q || m.email.toLowerCase() === q.toLowerCase());
+  if (!named) {
+    return NextResponse.json({
+      query: q,
+      matchCount: matches.length,
+      matches,
+      inFlight,
+      report: null,
+      hint: 'name the member to open their record: re-query with their exact member_id/email, or add &member=<member_id>',
+    });
+  }
+
+  const report = await runMemberDiagnostic(db, named.memberId);
+  return NextResponse.json({ query: q, matchCount: matches.length, matches, inFlight, reportFor: named, report });
 }

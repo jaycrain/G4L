@@ -8,15 +8,40 @@ import type { Db } from '../db/schema.ts';
 export type MemberMatch = { memberId: string; displayName: string; email: string; createdAt: string };
 
 /** Resolve a search term to candidate members — exact member_id, or a name/email substring. */
+// SEC-05 — SEARCH MUST NOT BE ENUMERATION. Two holes fed one outcome: LIKE wildcards were not escaped, so
+// `?q=%` matched EVERY member (and `_` matched any single character), and even without wildcards a 1-2 char
+// term swept most of the corpus a slice at a time. On this endpoint a "match" carries a real name and email
+// for people whose membership is itself sensitive.
+//
+// So: wildcards are escaped to literals, and a term must be specific enough to be a LOOKUP rather than a
+// trawl (a full UUID, or >= 3 characters). The operator knows who they are looking for; the endpoint exists
+// to answer "show me this member", never "show me everyone".
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+export const DIAGNOSTIC_MIN_QUERY = 3;
+
+/** Neutralise LIKE metacharacters so a member's search term can never widen the match. */
+export function escapeLike(term: string): string {
+  return term.replace(/([\\%_])/g, '\\$1');
+}
+
+/** True when a term is specific enough to be a lookup rather than a sweep of the member corpus. */
+export function isSpecificEnough(term: string): boolean {
+  const t = (term ?? '').trim();
+  return UUID_RE.test(t) || t.length >= DIAGNOSTIC_MIN_QUERY;
+}
+
 export async function searchMembers(db: Db, q: string): Promise<MemberMatch[]> {
   const term = q.trim();
+  if (!isSpecificEnough(term)) return [];
   const { rows } = await db.query<{ member_id: string; display_name: string; email: string; created_at: string }>(
     `select member_id, display_name, email, created_at
        from member_profile
-      where member_id::text = $1 or display_name ilike '%'||$1||'%' or email ilike '%'||$1||'%'
+      where member_id::text = $1
+         or display_name ilike '%'||$2||'%' escape '\\'
+         or email ilike '%'||$2||'%' escape '\\'
       order by (member_id::text = $1) desc, created_at desc
       limit 10`,
-    [term],
+    [term, escapeLike(term)],
   );
   return rows.map((r) => ({ memberId: r.member_id, displayName: r.display_name, email: r.email, createdAt: r.created_at }));
 }
@@ -41,6 +66,7 @@ export type InFlightOnboarding = {
  */
 export async function findInFlightOnboarding(db: Db, q: string): Promise<InFlightOnboarding[]> {
   const term = q.trim();
+  if (!isSpecificEnough(term)) return []; // SEC-05: same rule — a lookup, never a sweep
   const { rows } = await db.query<{
     email: string; updated_at: string; stage: string | null; turns: number;
     identity_noun: string | null; has_gap: boolean; reclaim_count: number; doors: unknown;
@@ -54,10 +80,10 @@ export async function findInFlightOnboarding(db: Db, q: string): Promise<InFligh
             coalesce(jsonb_array_length(state->'collected'->'reclaimList'), 0) as reclaim_count,
             coalesce(state->'collected'->'doors', '[]'::jsonb)           as doors
        from onboarding_session
-      where email ilike '%'||$1||'%'
+      where email ilike '%'||$1||'%' escape '\\'
       order by updated_at desc
       limit 10`,
-    [term],
+    [escapeLike(term)],
   );
   return rows.map((r) => ({
     email: r.email,
