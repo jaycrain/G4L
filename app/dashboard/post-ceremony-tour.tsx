@@ -38,6 +38,21 @@ export default function PostCeremonyTour({
   // (the mirrors) → right flank (the actions), ending on the Reclaim List, then the one next step — so the
   // settle rises back up to the companion's home. Stops whose anchor isn't on this dashboard are filtered
   // out below (daily/doors live on the old dashboard; the triptych folds them into other surfaces).
+  // CAT-46 — which triptych pane each stop lives in, so the tour can reveal it on the mobile fold. Anything not
+  // listed is centre/legacy and needs no switch.
+  const PANE_OF: Record<string, 'left' | 'center' | 'right'> = {
+    idscore: 'left',
+    grinta: 'left',
+    badges: 'left',
+    momentum: 'right',
+    connect: 'right',
+    movement: 'right',
+    reclaim: 'right',
+    program: 'center',
+    daily: 'center',
+    doors: 'center',
+  };
+
   const allStops: Stop[] = [
     {
       target: 'program',
@@ -53,15 +68,19 @@ export default function PostCeremonyTour({
     { target: 'daily', line: 'Your Daily Beat — the heartbeat between Sessions. One thought, one small move, every day.' },
     { target: 'doors', line: doorsLine },
   ];
-  // Only walk stops whose anchor exists AND is VISIBLE on THIS dashboard — so a panel not on this layout skips
-  // its stop, and the triptych's MOBILE fold skips the off-screen flank anchors (they live in panes that are
-  // display:none), instead of dimming to a spotlight-less line or spotlighting a 0×0 box.
+  // CAT-46 — DON'T SILENTLY DROP 7 OF 9 STOPS ON A PHONE.
+  // This filtered to anchors with width > 0. On the triptych's mobile fold the two inactive panes are
+  // display:none (width 0), so a brand-new member onboarding on a phone got a gutted tour — only the centre
+  // stop — and never met their ID Score, Grinta, Badges, Momentum, Community, Movement or Reclaim List. Because
+  // the tour is marked complete and runs once per member, those introductions were lost PERMANENTLY. The
+  // once-only design is right; combining it with a silent visibility filter is what made the loss unrecoverable.
+  //
+  // The anchors are in the DOM either way — just in a hidden pane. So instead of dropping them we bring the pane
+  // to them: each stop declares which pane it lives in, and the tour asks the triptych to switch before
+  // spotlighting. On desktop every pane is visible and the switch is a no-op.
   const stops: Stop[] =
     typeof document !== 'undefined'
-      ? allStops.filter((s) => {
-          const el = document.querySelector(`[data-tour="${s.target}"]`) as HTMLElement | null;
-          return !!el && el.getBoundingClientRect().width > 0;
-        })
+      ? allStops.filter((s) => !!document.querySelector(`[data-tour="${s.target}"]`))
       : allStops;
 
   // Run on first post-Threshold landing (autoStart) or a Field-Guide replay (?tour=1).
@@ -97,7 +116,15 @@ export default function PostCeremonyTour({
   }, []);
 
   useEffect(() => {
-    if (phase === 'walk') return measure(stops[step]!.target);
+    if (phase === 'walk') {
+      // CAT-46: bring the pane to the stop before measuring. On the mobile fold the flank panes are display:none,
+      // so without this the anchor measures 0×0 and the member never meets that surface at all. Desktop shows all
+      // three panes, so the request is a no-op there. One frame for the pane swap to lay out, then measure.
+      const pane = PANE_OF[stops[step]!.target];
+      if (pane) window.dispatchEvent(new CustomEvent('g4l:show-pane', { detail: pane }));
+      const t = setTimeout(() => measure(stops[step]!.target), pane ? 90 : 0);
+      return () => clearTimeout(t);
+    }
     if (phase === 'next') return measure('next-step');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, step, measure]);

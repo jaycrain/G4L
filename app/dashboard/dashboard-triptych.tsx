@@ -47,6 +47,20 @@ export default function DashboardTriptych({
   right: React.ReactNode; // "What's Next" — server-rendered panels
 }) {
   const [pane, setPane] = useState<Pane>('center'); // mobile: which pane is showing (desktop shows all three)
+
+  // CAT-46 — let the Opening Tour drive the fold. The tour walks stops that live in the flank panes, which are
+  // display:none on mobile; without this it measured 0×0 anchors and silently skipped 7 of 9 introductions,
+  // permanently (the tour is once-per-member). An event rather than lifted state on purpose: the tour is mounted
+  // elsewhere in the tree, and threading a context through for one transient interaction would cost more than it
+  // buys. No-op on desktop, where every pane is already visible.
+  useEffect(() => {
+    const onShow = (e: Event) => {
+      const next = (e as CustomEvent).detail;
+      if (next === 'left' || next === 'right' || next === 'center') setPane(next);
+    };
+    window.addEventListener('g4l:show-pane', onShow);
+    return () => window.removeEventListener('g4l:show-pane', onShow);
+  }, []);
   // Remember the last pane across a subpage round-trip (Jay): leave "What's Next" → tap a See-more → ← Dashboard should
   // land you back on "What's Next", not reset to center. Restored AFTER mount (not the initial state) so SSR and the
   // first client render both start on 'center' — no hydration mismatch. Session-scoped; a fresh tab starts at center.

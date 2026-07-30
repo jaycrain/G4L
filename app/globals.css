@@ -596,7 +596,11 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .cgs-move.dir-up { color: var(--olive); }
 .cgs-move.dir-down { color: var(--navy); opacity: 0.5; } /* §3: dip = neutral, never red */
 .cgs-move.dir-flat { color: var(--navy); }
-.cer-journey { display: flex; gap: 18px; }
+/* CAT-51: a fixed-count flex row with no wrap and a 320px cap — on the narrowest phones the four ~9-char
+   labels plus three 18px gaps squeeze together or overrun. Wrap + a smaller gap below 380px, matching the
+   grinta-strands cue-wrapping fix; the row is a wayfinding cue, not a table. */
+.cer-journey { display: flex; gap: 18px; flex-wrap: wrap; }
+@media (max-width: 380px) { .cer-journey { gap: 10px; row-gap: 6px; } }
 .cer-rstep { display: flex; flex-direction: column; align-items: center; gap: 6px; }
 .cer-rdot { width: 13px; height: 13px; border-radius: 50%; background: var(--grey); }
 .cer-rstep.lit .cer-rdot { background: var(--navy); }
