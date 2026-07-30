@@ -82,7 +82,9 @@ SURFACES=(
   "/onboarding"
   "/login|Forgot your password?"            # NEW THIS PUSH (SEC-08): the way back in is reachable from the door
   "/login/forgot|Send me a reset link"      # SEC-08: the reset request surface renders
-  "/onboarding|autocomplete=\"new-password\""  # NEW THIS PUSH: signup asks for a NEW password, so a phone can't prefill a saved login
+  # NOTE (learned 2026-07-30): do NOT try to tell on the sign-up gate's fields. The gate renders BEHIND the
+  # welcome screen, so the email/password inputs are never in the SSR HTML — a runtime tell on them is a
+  # guaranteed false RED. For changes with no static tell, the COMMIT TIMESTAMP check above is the proof.
 )
 for entry in "${SURFACES[@]}"; do
   path="${entry%%|*}"
