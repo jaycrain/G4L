@@ -14,6 +14,7 @@ import { identityLabel } from '../member/identity.ts';
 import { consolidateReclaimList } from '../member/reclaim.ts';
 import { grintaStem, CHECKPOINT_COMMITMENT_ITEMS } from '../grinta/survey/instrument.ts';
 import { BEAT_SEP, type Collected, type ConvMessage, type ConvState, type ModelTurn, type Turn } from './onboarding.ts';
+import { hasRevisionTail } from './onboarding-intent.ts';
 
 export function rewireEnabled(): boolean {
   return process.env.REWIRE === 'staged';
@@ -646,6 +647,11 @@ const W3_REFRAME_DISPUTE_RE =
 function disputesReframe(msg: string): boolean {
   return W3_REFRAME_DISPUTE_RE.test((msg ?? '').replace(/[‘’]/g, "'"));
 }
+// CAT-34: they AGREED and asked for a tweak ("yes, but say it shorter"). Not a dispute — don't apologise — and not
+// a new line. Invite the words so we keep THEIR phrasing rather than committing the version they just amended.
+function w3ReframeTweak(c: Collected): string {
+  return `Good — let's get it exactly how you'd say it.${BEAT_SEP}${reframeFallback(c)}`;
+}
 function w3ReframeRecover(c: Collected): string {
   return `You're right — that wasn't your line, and I shouldn't have put it in your mouth. YOUR words are the ones that hold on a hard day.${BEAT_SEP}${reframeFallback(c)}`;
 }
@@ -728,6 +734,13 @@ const protocolStage: StageDef = {
       // the dispute, never skip Restart.
       if (disputesReframe(msg)) {
         b.reply = w3ReframeRecover(b.collected);
+        return;
+      }
+      // CAT-34: agreement WITH a revision is neither a reuse (drops their change) nor a new line (would store
+      // "yes, but say it shorter" as their true line). Requires BOTH signals so a real line containing "but"
+      // ("I'm not broken but I'm tired") is still taken verbatim.
+      if (W3_CONFIRM_OFFER_RE.test(msg.trim().replace(/[.,!?]+$/, '')) && hasRevisionTail(msg)) {
+        b.reply = w3ReframeTweak(b.collected);
         return;
       }
       const r = resolveReframe(msg, b.collected);

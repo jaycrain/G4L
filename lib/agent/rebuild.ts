@@ -20,6 +20,7 @@ import {
   skillHighlights,
 } from '../rebuild/skills-instrument.ts';
 import { grintaStem, CHECKPOINT_CONTROL_ITEMS } from '../grinta/survey/instrument.ts';
+import { hasRevisionTail } from './onboarding-intent.ts';
 
 export function rebuildEnabled(): boolean {
   return process.env.REBUILD === 'staged';
@@ -215,6 +216,9 @@ function pilotCoachNudge(activity: string, diet: string): string {
 const PILOT_CONFIRM_RE =
   /^(yes|yeah|yep|yup|please(?: do)?|go ahead|sure|ok(?:ay)?|lock (?:it|them|'?em)(?: in)?|that'?s it|that works|that'?s good|perfect|good|sounds good|do it|let'?s do it|i'?m in|ready|confirm(ed)?|keep it)\b/i;
 function pilotConfirms(msg: string): boolean {
+  // CAT-34: a confirm must be a WHOLE-message intent — 'yes, but make it twice a week' is a CHANGE, not a
+  // confirm. Without this the leading 'yes' committed the un-tweaked artifact and silently dropped the change.
+  if (hasRevisionTail(msg)) return false;
   return PILOT_CONFIRM_RE.test(msg.trim().replace(/[.,!?]+$/, ''));
 }
 

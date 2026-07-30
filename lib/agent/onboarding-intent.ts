@@ -77,6 +77,43 @@ export function memberClosingReclaim(message: string): boolean {
   return memberDeflecting(m) || confirmsWhole(m) || RECLAIM_CLOSE_RE.test(m);
 }
 
+// =======================================================================================================
+// CAT-34 — "yes, BUT…" — the REVISION TAIL guard (shared by every propose→confirm point).
+// =======================================================================================================
+// Every confirm predicate in the arcs is ^-anchored on the leading token, so "yes, but make it twice a week"
+// matched `^yes\b` and committed the UN-TWEAKED artifact — silently dropping the member's change. Same root as
+// the reclaim/gap/door bugs: a leading word is a GUESS about the whole message, and it outranked what the member
+// actually said. A confirm must be a WHOLE-message intent.
+//
+// This detects the tail that turns an affirmation into a change request. Deliberately conservative — a warm
+// confirm ("yes, that's perfect", "yeah exactly right", "yes but that's fine") must still CONFIRM, or we'd trap
+// members in an adjust loop, which is its own failure.
+const CHANGE_REQUEST_RE =
+  /\b(can (we|you)|could (we|you)|would you|i'?(d| would) (like|prefer|rather)|i want|let'?s (make|change|do)|make (it|that|them)|change|swap|instead|rather than|add |remove|drop |take out|tweak|adjust|shorten|lengthen|only thing|one thing|except that|other than)\b/i;
+const CONTRAST_RE = /\b(but|although|though|however|except)\b/i;
+
+/**
+ * Does this message carry a REVISION after its affirmation? True = do NOT treat it as a plain confirm; route it
+ * to the adjust/refine path so the member's change is honoured instead of discarded.
+ */
+export function hasRevisionTail(message: string): boolean {
+  const m = (message ?? '').replace(/[\u2018\u2019]/g, "'").trim();
+  if (!m) return false;
+  if (CHANGE_REQUEST_RE.test(m)) return true; // an explicit ask — no ambiguity
+  // A bare contrast word only counts when SUBSTANCE follows it ("yes but that's fine" is still a confirm;
+  // "yes but I'd want Tuesdays and Thursdays" is not). Measured on the text AFTER the contrast word.
+  const hit = CONTRAST_RE.exec(m);
+  if (!hit) return false;
+  const tail = m.slice(hit.index + hit[0].length).trim();
+  return tail.split(/\s+/).filter(Boolean).length >= 4;
+}
+
+/** A plain, whole-message confirm: the predicate says yes AND there's no revision riding along. */
+export function isPlainConfirm(message: string, predicate: (m: string) => boolean): boolean {
+  return predicate(message) && !hasRevisionTail(message);
+}
+
+
 // A DISPUTE at the gap confirm ("no, that's not quite right") — the member says the reflection is WRONG, with no
 // new content to append. Distinct from a bare "no/nope" (which answers "…or is there more?" = no more = done) and
 // from an ADDITION (new material). Keyed on explicit wrongness so a plain negation never reopens the beat.
