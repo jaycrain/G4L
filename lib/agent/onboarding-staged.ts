@@ -1356,7 +1356,8 @@ function commitStructuredReclaim(b: Beat): Turn {
       expects: { kind: 'reclaim_list', min: RECLAIM_LIST_MIN, seeded: (b.collected.reclaimList ?? []).filter(Boolean) },
     };
   }
-  return enterGrintaSurvey(b);
+  // The member authored these entries herself. Nothing to reconcile — do NOT run the shape gate over her own words.
+  return enterGrintaSurvey(b, false);
 }
 
 const reclaimStage: StageDef = {
@@ -1396,16 +1397,14 @@ const reclaimStage: StageDef = {
 //
 // A pending shape OWNS the turn: she is ruling on our proposal, not adding to her list. Apply her answer, then
 // re-gate — because resolving one shape can reveal the next (and clearing the last one is what lets her through).
+// Only reachable now for a session that was ALREADY holding a proposal when this shipped (Jennifer's), or the retired
+// conversational path — a builder submission never creates one. It applies her answer and advances WITHOUT re-gating:
+// at most ONE proposal, ever. That is deliberate and it is what makes the loop structurally impossible rather than
+// merely fixed — with no path from "answered a proposal" back to "pose a proposal", there is no cycle in the graph to
+// get stuck in. Anything still worth sharpening is hers to edit from the rail, with the Companion's help.
 function answerPendingShape(b: Beat): Turn {
   const ack = resolvePendingShape(b, b.pendingReclaimShape!);
-  const next = gateNextShape(b);
-  if (next) {
-    b.stage = 'reclaim';
-    b.awaitingConfirm = true;
-    b.reply = `${ack}${BEAT_SEP}${next}`;
-    return { reply: b.reply, state: beatState(b), complete: false };
-  }
-  const turn = enterGrintaSurvey(b);
+  const turn = enterGrintaSurvey(b, false);
   b.reply = `${ack}${BEAT_SEP}${turn.reply}`;
   return { ...turn, reply: b.reply, state: beatState(b) };
 }
@@ -1480,11 +1479,26 @@ const grintaStage: StageDef = administeredStage({
 // The seam from Reclaim into the Grinta baseline. Called from BOTH of Reclaim's terminal crossings (the confirm
 // seatbelt and the runaway backstop) in place of completing: the capture is settled, so instead of finishing we
 // hand into the administered survey. complete stays false — the opener renders as a normal turn, not the card.
-function enterGrintaSurvey(b: Beat): Turn {
-  // DECISION II CHOKEPOINT: every path from reclaim to the survey/card runs through here (the confirm handler AND
-  // the forceProgress/runaway backstop). Before advancing, surface any unaddressed shape (overlap/vision/multiwant)
-  // so a sloppy list can NEVER reach the card ungated. If one exists, HOLD in reclaim-confirm and propose it; only a
-  // clean list advances. (The confirm handler also proposes shapes, so on the normal path this is already null.)
+function enterGrintaSurvey(b: Beat, gateShapes = true): Turn {
+  // DECISION II CHOKEPOINT — now scoped to the RETIRED CONVERSATIONAL PATH ONLY (Jay, 2026-07-30).
+  //
+  // The shape gate is extraction-era machinery: it existed because conversational capture produced sloppy lists that
+  // had to be reconciled before they could be trusted. Since the structured builder shipped (2026-07-29) the member
+  // TYPES her own entries and they ARE the list, verbatim — so running the gate over them means interrogating words
+  // she wrote herself ("you named a few things in <her own sentence>"), which contradicts the very guarantee the
+  // builder was built to give. Jennifer's walk is what that looks like from her side.
+  //
+  // So a builder submission passes gateShapes=false and goes straight through. Shaping did not disappear — it MOVED
+  // to where it belongs: the member edits her list from the Companion rail, and the Companion can offer to sharpen an
+  // item into something trackable. That is member-initiated and non-blocking, instead of a gate standing between her
+  // and the rest of onboarding.
+  if (!gateShapes) {
+    b.stage = 'grinta';
+    b.awaitingConfirm = false;
+    b.reply = grintaSurveyOpener();
+    const ex = nextExpects(b.arc, b.stage, false, b.administeredResponses.length, b.collected);
+    return { reply: b.reply, state: beatState(b), complete: false, ...(ex && { expects: ex }) };
+  }
   const proposal = gateNextShape(b);
   if (proposal) {
     b.stage = 'reclaim';

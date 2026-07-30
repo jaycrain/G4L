@@ -211,89 +211,88 @@ test('ADMINISTERED/CAT-31 — a readable answer clears the streak and advances n
 });
 
 // ---------------------------------------------------------------------------
-// DECISION II — the shape gate's propose→ANSWER→resolve loop.
+// THE RECLAIM LIST IS THE MEMBER'S OWN WORDS — the engine never interrogates it.
 //
-// Jennifer's live walk (2026-07-30) hit the gate's missing half: gateNextShape() posed a proposal and parked it on
-// `pendingReclaimShape`, resolvePendingShape() knew how to apply her answer — but nothing called it. It was dead
-// code. So her answer fell through to "append whatever they typed", the unresolved shape re-detected, and the
-// proposal repeated VERBATIM. Then the item the engine had just appended overlapped the original, starting a
-// SECOND loop the engine manufactured itself. She was stuck.
+// Jennifer's live walk (2026-07-30) looped: the shape gate asked its question, she answered, it re-asked VERBATIM.
+// Proximate cause was dead code (gateNextShape parked a proposal on `pendingReclaimShape`; resolvePendingShape knew
+// how to apply her answer; nothing connected them). But the real cause was older: the shape gate is EXTRACTION-ERA
+// machinery. It existed to reconcile lists the engine had GUESSED out of prose. Since the structured builder shipped
+// (2026-07-29) the member types her own entries verbatim — so the gate was interrogating words she wrote herself.
+//
+// The fix is structural: a builder submission is never gated, and resolving a proposal never re-gates. At most ONE
+// proposal can ever be posed, and none at all on the live path — so there is no cycle in the graph to get stuck in.
+// Shaping moved to where it belongs: she edits the list from the rail, with the Companion's help, un-blocked.
 // ---------------------------------------------------------------------------
 const JENNIFER_PARAGRAPH =
   'I want to get back in shape—toned, stronger for bone health and balance, and feeling confident in my own skin ' +
   'again.  I also want to get back to healthy eating—working toward NOT being an emotional eater.  I also want to ' +
   'get back to walking every day..';
 
-test('SHAPE-GATE — answering a multi-want draw-out RESOLVES it: never re-asked, answer never appended as a new item', () => {
-  const submitted = applyStagedTurn(
+test('RECLAIM — a multi-want paragraph the MEMBER typed is kept verbatim and never interrogated', () => {
+  // Jennifer's exact entry. The old gate quoted her own sentence back at her ("You named a few things in ...")
+  // and asked her to pick one. She typed it; it is hers; it goes through untouched.
+  const t = applyStagedTurn(
     atReclaim(),
     [],
     `• ${JENNIFER_PARAGRAPH}\n• Get back to reading\n• See my sister more`,
     { text: '' },
   );
-  assert.match(submitted.reply, /Which one do you most want back/, 'the paragraph is caught as multi-want');
-  assert.equal(submitted.state.stage, 'reclaim', 'held at reclaim — a sloppy list cannot reach the card');
-
-  const hist: ConvMessage[] = [{ role: 'agent', text: submitted.reply }];
-  const answered = applyStagedTurn(submitted.state, hist, 'Get back in shape and walking daily.', { text: '' });
-
-  assert.doesNotMatch(answered.reply, /Which one do you most want back/, 'THE BUG: the proposal must not repeat');
-  const list = answered.state.collected.reclaimList ?? [];
-  assert.equal(list.includes(JENNIFER_PARAGRAPH), false, 'the paragraph is replaced by her distilled want');
-  assert.equal(list.filter((i) => /get back in shape/i.test(i)).length, 1, 'her answer lands ONCE, not appended alongside');
-  assert.equal(answered.state.stage, 'grinta', 'a now-clean list advances to the baseline survey');
+  assert.doesNotMatch(t.reply, /Which one do you most want back/, 'her own words are never interrogated');
+  assert.equal(t.state.stage, 'grinta', 'straight through to the baseline survey');
+  assert.deepEqual(t.state.collected.reclaimList, [JENNIFER_PARAGRAPH, 'Get back to reading', 'See my sister more']);
 });
 
-test('SHAPE-GATE — "keep them as one" MERGES and moves on (the second loop Jennifer hit)', () => {
-  const submitted = applyStagedTurn(
+test('RECLAIM — near-duplicate entries the MEMBER typed are kept, not merge-prompted', () => {
+  // The second loop she hit. Two similar entries are her call to make, from the rail, later — not a gate.
+  const t = applyStagedTurn(
     atReclaim(),
     [],
     '• Get back in shape and walk daily\n• Get back in shape and walking daily\n• See my sister more',
     { text: '' },
   );
-  assert.match(submitted.reply, /sound like the same thing to me/, 'the near-duplicate is caught as an overlap');
-
-  const hist: ConvMessage[] = [{ role: 'agent', text: submitted.reply }];
-  const answered = applyStagedTurn(submitted.state, hist, 'We can keep them as one.', { text: '' });
-
-  assert.doesNotMatch(answered.reply, /sound like the same thing to me/, 'THE BUG: the merge question must not repeat');
-  assert.equal((answered.state.collected.reclaimList ?? []).length, 2, 'the two became one');
-  assert.equal(answered.state.stage, 'grinta', 'and she is through');
+  assert.doesNotMatch(t.reply, /sound like the same thing to me/, 'no merge question on member-authored entries');
+  assert.equal((t.state.collected.reclaimList ?? []).length, 3, 'nothing folded, nothing dropped');
+  assert.equal(t.state.stage, 'grinta');
 });
 
-test('SHAPE-GATE — "they are different" keeps BOTH and still moves on (a want is never lost)', () => {
-  const submitted = applyStagedTurn(
-    atReclaim(),
-    [],
+test('RECLAIM — NO builder submission can ever produce a proposal (the loop is structurally impossible)', () => {
+  // The property that matters, not one example of it: across every shape the old gate could detect — multi-want,
+  // near-duplicate, whole-life vision, identity statement — a builder submission goes straight through with no
+  // pending proposal parked on state. No proposal ⇒ no answer to mis-handle ⇒ no cycle to get stuck in.
+  const lists = [
+    `• ${JENNIFER_PARAGRAPH}\n• Get back to reading\n• See my sister more`,
     '• Get back in shape and walk daily\n• Get back in shape and walking daily\n• See my sister more',
-    { text: '' },
-  );
-  const hist: ConvMessage[] = [{ role: 'agent', text: submitted.reply }];
-  const answered = applyStagedTurn(submitted.state, hist, "No, they're different.", { text: '' });
-
-  assert.equal((answered.state.collected.reclaimList ?? []).length, 3, 'nothing dropped on a "no"');
-  assert.doesNotMatch(answered.reply, /sound like the same thing to me/, 'and it is never re-proposed');
-  assert.equal(answered.state.stage, 'grinta');
+    '• I want a life that feels like mine again\n• Run a 5k\n• Call my brother',
+    "• I'm a runner\n• Sleep through the night\n• Cook properly again",
+    '• Golf again\n• Lose 20 lbs\n• Call my brother',
+  ];
+  for (const list of lists) {
+    const t = applyStagedTurn(atReclaim(), [], list, { text: '' });
+    assert.equal(t.state.pendingReclaimShape, undefined, `a proposal was parked for: ${list}`);
+    assert.equal(t.state.stage, 'grinta', `did not advance for: ${list}`);
+    assert.equal((t.state.collected.reclaimList ?? []).length, 3, `entries were altered for: ${list}`);
+  }
 });
 
-test('SHAPE-GATE — a list with TWO shapes resolves them one at a time, then advances', () => {
-  const submitted = applyStagedTurn(
-    atReclaim(),
-    [],
-    `• ${JENNIFER_PARAGRAPH}\n• See my sister more\n• See my sister more often`,
-    { text: '' },
-  );
-  // Overlap is reconciled before multi-want, so the near-duplicate sisters are proposed first.
-  assert.match(submitted.reply, /sound like the same thing to me/);
-  const hist: ConvMessage[] = [{ role: 'agent', text: submitted.reply }];
-  const first = applyStagedTurn(submitted.state, hist, 'Keep them as one.', { text: '' });
-  assert.equal(first.state.stage, 'reclaim', 'the SECOND shape now surfaces — still gated');
-  assert.match(first.reply, /Which one do you most want back/, 'and it is a DIFFERENT question, not a repeat');
-
-  hist.push({ role: 'agent', text: first.reply });
-  const second = applyStagedTurn(first.state, hist, 'Get back in shape.', { text: '' });
-  assert.equal(second.state.stage, 'grinta', 'both resolved → through to the survey');
-  assert.doesNotMatch(second.reply, /Which one do you most want back|sound like the same thing/, 'neither is re-asked');
+test('RECLAIM — a session ALREADY holding a proposal is resolved and released, never re-asked', () => {
+  // Jennifer was mid-walk with a proposal parked on her state when the fix shipped. Her answer must apply and let
+  // her through in ONE turn — resolving never re-gates, so there is no second question and no way back into a loop.
+  const stuck: ConvState = {
+    stage: 'reclaim',
+    awaitingConfirm: true,
+    collected: {
+      athleticPast: 'a walker',
+      identityNoun: 'Walker',
+      gap: 'It faded.',
+      reclaimList: ['Get back in shape and walk daily', 'Get back in shape and walking daily', 'See my sister more'],
+    },
+    pendingReclaimShape: { kind: 'overlap', keep: 'Get back in shape and walk daily', drop: 'Get back in shape and walking daily' },
+  };
+  const t = applyStagedTurn(stuck, [{ role: 'agent', text: 'sound like the same thing to me — want me to keep them as one?' }], 'We can keep them as one.', { text: '' });
+  assert.doesNotMatch(t.reply, /sound like the same thing to me|Which one do you most want back/, 'never re-asked');
+  assert.equal(t.state.pendingReclaimShape, undefined, 'the proposal is cleared, not re-parked');
+  assert.equal((t.state.collected.reclaimList ?? []).length, 2, 'her answer was honoured — the two became one');
+  assert.equal(t.state.stage, 'grinta', 'and she is released in a single turn');
 });
 
 test('SHAPE-GATE — an answer to our own proposal is never committed as a life-want (Jennifer, W-42 class)', () => {
