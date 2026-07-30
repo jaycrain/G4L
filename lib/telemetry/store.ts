@@ -4,7 +4,7 @@
 // never break a page or an action); the derivations are pure so they unit-test without a database.
 
 import type { Db } from '../db/schema.ts';
-import { currentDeviceClass } from './device.ts';
+import { currentDeviceClass, currentDisplayMode } from './device.ts';
 
 export type EventKind =
   | 'session_open'
@@ -29,8 +29,15 @@ export async function logEvent(db: Db, memberId: string, kind: EventKind, opts: 
     // Enrich EVERY event with a coarse device bucket ('phone' | 'tablet' | 'desktop') so mobile-only failures are
     // diagnosable without waiting for a screenshot. Rides in meta — no migration, no schema change. Never the raw
     // user-agent, never a fingerprint. Null outside request scope (cron/scripts) and on any failure. (2026-07-30)
-    const device = await currentDeviceClass().catch(() => null);
-    const meta = device ? { ...(opts.meta ?? {}), device } : (opts.meta ?? {});
+    const [device, display] = await Promise.all([
+      currentDeviceClass().catch(() => null),
+      currentDisplayMode().catch(() => null),
+    ]);
+    const meta = {
+      ...(opts.meta ?? {}),
+      ...(device ? { device } : {}),
+      ...(display ? { display } : {}), // 'standalone' (installed PWA) vs 'browser' — UA can't tell them apart
+    };
     await db.query(
       `insert into member_event (member_id, kind, surface, ref, step, meta)
        values ($1,$2,$3,$4,$5,$6::jsonb)`,

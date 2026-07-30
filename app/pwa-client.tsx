@@ -28,6 +28,17 @@ export default function PwaClient() {
     const standalone =
       window.matchMedia('(display-mode: standalone)').matches ||
       (navigator as unknown as { standalone?: boolean }).standalone === true;
+    // TELEMETRY: record HOW the app was launched, before the early return below (which fires when standalone is
+    // true — the very case we most want to see). An installed PWA sends a user-agent IDENTICAL to Safari's, so the
+    // server cannot tell them apart; only the client knows. Layout differs materially between them (no browser
+    // chrome → different viewport height + safe-area insets), which is exactly how mobile-only clipping bugs hide.
+    // A single bucket in a plain cookie — no identifiers, nothing sensitive. (2026-07-30)
+    try {
+      document.cookie = `g4l_display=${standalone ? 'standalone' : 'browser'}; path=/; max-age=31536000; SameSite=Lax`;
+    } catch {
+      /* cookies blocked — telemetry simply won't carry launch context */
+    }
+
     const dismissed = localStorage.getItem('g4l-install-dismissed') === '1';
     if (!isMobile || standalone || dismissed) return;
 

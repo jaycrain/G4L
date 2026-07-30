@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { classifyUserAgent } from '../lib/telemetry/device.ts';
+import { classifyUserAgent, parseDisplayMode } from '../lib/telemetry/device.ts';
 test('device bucket', () => {
   const IPHONE='Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1';
   const IPAD='Mozilla/5.0 (iPad; CPU OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1';
@@ -14,4 +14,12 @@ test('device bucket', () => {
   assert.equal(classifyUserAgent(MAC),'desktop');
   assert.equal(classifyUserAgent(null),null);
   assert.equal(classifyUserAgent(''),null);
+});
+
+test('launch context: only the two known buckets parse; anything else is null', () => {
+  assert.equal(parseDisplayMode('standalone'), 'standalone', 'installed PWA');
+  assert.equal(parseDisplayMode('browser'), 'browser');
+  assert.equal(parseDisplayMode(' standalone '), 'standalone', 'tolerates whitespace');
+  for (const junk of ['', null, undefined, 'STANDALONE', 'true', 'pwa', '1'])
+    assert.equal(parseDisplayMode(junk as string), null, `must reject ${JSON.stringify(junk)}`);
 });
