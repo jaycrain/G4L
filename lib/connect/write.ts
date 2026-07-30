@@ -45,8 +45,13 @@ export async function reportContent(
 // Crisis routing: composed content that trips detectCrisis is NEVER censored (the member is reaching
 // out — that's the point). We surface 988 resources to them (the caller redirects) and quietly file a
 // system report so a human follows up. AI Governance: crisis routing is always on.
-async function routeCrisis(db: Db, kind: 'post' | 'reply', id: string, body: string): Promise<boolean> {
-  const a = await assessCrisis(body);
+//
+// SEC-10 — SCREEN EVERY FIELD THE MEMBER WROTE, NOT A CHOSEN ONE. This used to take only `body`, so a
+// post whose distress was in the TITLE ("I don't want to be here anymore") with an unremarkable body was
+// never flagged and never routed to 988 — the single failure in this product we cannot take back. Callers
+// now pass every member-authored field; `...parts` makes adding a field impossible to forget silently.
+async function routeCrisis(db: Db, kind: 'post' | 'reply', id: string, ...parts: Array<string | null | undefined>): Promise<boolean> {
+  const a = await assessCrisis(parts.filter(Boolean).join('\n'));
   if (!a.flagged) return false;
   await reportContent(db, null, kind, id, `Auto-flagged by crisis detection (${a.source}) — please follow up.`, true, 'system');
   return true;
@@ -117,7 +122,7 @@ export async function createPost(
     `insert into connect_post (author_id, title, body, show_name) values ($1, $2, $3, $4) returning id`,
     [memberId, input.title?.trim() || null, body, input.showName],
   );
-  const crisis = await routeCrisis(db, 'post', rows[0]!.id, body);
+  const crisis = await routeCrisis(db, 'post', rows[0]!.id, input.title, body); // title too — SEC-10
   return { ok: true, crisis };
 }
 
@@ -169,6 +174,10 @@ export async function reportTarget(
 
 /** Toggle a cheer on a post or reply (the inspire signal). */
 export async function toggleCheer(db: Db, memberId: string, targetKind: 'post' | 'reply', targetId: string): Promise<void> {
+  // SEC-09: a cheer makes you VISIBLE to the person you cheered, so it needs a Connect identity exactly as much
+  // as posting does. This didn't create one, which is how a member whose first action was a cheer ended up
+  // labelled with their real name.
+  await ensureProfile(db, memberId);
   const existing = await db.query<{ id: string }>(
     `select id from connect_reaction where target_kind = $1 and target_id = $2 and member_id = $3 and kind = 'cheer'`,
     [targetKind, targetId, memberId],

@@ -96,7 +96,11 @@ export async function getRoomMessages(db: Db, roomId: string, viewerId: string, 
   }));
 }
 
-export async function createRoom(db: Db, memberId: string, title: string): Promise<{ ok: true; id: string } | { ok: false; error: string }> {
+export async function createRoom(
+  db: Db,
+  memberId: string,
+  title: string,
+): Promise<{ ok: true; id: string; crisis: boolean } | { ok: false; error: string }> {
   const t = (title ?? '').trim();
   if (!t) return { ok: false, error: 'Give the room a title first.' };
   await ensureProfile(db, memberId);
@@ -104,7 +108,28 @@ export async function createRoom(db: Db, memberId: string, title: string): Promi
     `insert into connect_room (title, created_by) values ($1, $2) returning id`,
     [t.slice(0, 120), memberId],
   );
-  return { ok: true, id: rows[0]!.id };
+  // SEC-10 — this ran NO crisis screening at all, despite the file header claiming rooms carry the same posture
+  // as posts. Opening a room is a reach TOWARD other people, which makes it one of the likelier places a member
+  // in real distress types it ("can't do this anymore, anyone up?"). Governance says crisis routing is always
+  // on; here it was simply off. Never censored — the room opens either way — but the member is shown 988 and a
+  // human is asked to check on them.
+  //
+  // Filed against the MEMBER, not the room: connect_report has no 'room' subject kind, and what this report is
+  // FOR is a person to follow up with, not content to moderate. The title rides along in the reason so the queue
+  // stays actionable — deliberately avoiding a schema change, so nothing stands between this gap and being closed.
+  const a = await assessCrisis(t);
+  if (a.flagged) {
+    await reportContent(
+      db,
+      null,
+      'member',
+      memberId,
+      `Auto-flagged by crisis detection (${a.source}) in a room title — please follow up. Room: “${t.slice(0, 120)}”`,
+      true,
+      'system',
+    );
+  }
+  return { ok: true, id: rows[0]!.id, crisis: a.flagged };
 }
 
 export async function postRoomMessage(

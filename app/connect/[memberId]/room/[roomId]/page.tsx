@@ -14,8 +14,17 @@ import type { Db } from '../../../../../lib/db/schema.ts';
 
 export const metadata = { title: 'Live room — G4L Community' };
 
-export default async function RoomPage({ params }: { params: Promise<{ memberId: string; roomId: string }> }) {
+export default async function RoomPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ memberId: string; roomId: string }>;
+  searchParams: Promise<{ care?: string }>;
+}) {
   const { memberId, roomId } = await params;
+  // SEC-10: the room TITLE tripped crisis detection at creation. The room still opens — we never censor a member
+  // reaching out — but they land with the 988 resources already showing.
+  const care = (await searchParams).care === '1';
   if (!(await authorizeMember(memberId))) redirect('/login');
   const db = (await getDb()) as unknown as Db;
   const room = await getRoom(db, roomId);
@@ -56,6 +65,7 @@ export default async function RoomPage({ params }: { params: Promise<{ memberId:
         myName={nameRow.rows[0]?.display_name ?? 'my real name'}
         handle={profile?.handle ?? null}
         crisisText={CRISIS_RESPONSE_US}
+        careOnOpen={care}
       />
       </div>
     </>

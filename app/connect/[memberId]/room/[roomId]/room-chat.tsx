@@ -39,6 +39,7 @@ export default function RoomChat({
   myName,
   handle,
   crisisText,
+  careOnOpen = false,
 }: {
   roomId: string;
   memberId: string;
@@ -47,11 +48,12 @@ export default function RoomChat({
   myName: string;
   handle: string | null;
   crisisText: string;
+  careOnOpen?: boolean;
 }) {
   const [messages, setMessages] = useState<Msg[]>(initial);
   const [input, setInput] = useState('');
   const [showName, setShowName] = useState(revealDefault);
-  const [care, setCare] = useState(false);
+  const [care, setCare] = useState(careOnOpen);
   const [notice, setNotice] = useState<string | null>(null);
   const [live, setLive] = useState(false);
   const [hereNow, setHereNow] = useState(0);

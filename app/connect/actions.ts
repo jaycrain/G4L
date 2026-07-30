@@ -78,7 +78,8 @@ export async function createRoomAction(formData: FormData): Promise<void> {
   const { db, memberId } = await actor();
   const res = await createRoom(db, memberId, String(formData.get('title') ?? ''));
   if (!res.ok) redirect(`/connect/${memberId}?notice=${encodeURIComponent(res.error)}`);
-  redirect(`/connect/${memberId}/room/${res.id}`);
+  // SEC-10: a title that tripped crisis detection opens the room AND surfaces 988 on arrival — never blocked.
+  redirect(`/connect/${memberId}/room/${res.id}${res.crisis ? '?care=1' : ''}`);
 }
 
 export async function reportRoomMessageAction(messageId: string): Promise<void> {

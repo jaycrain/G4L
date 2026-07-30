@@ -181,7 +181,14 @@ export type ConnectNotification = {
 };
 
 // An actor's ambient label (cheers, notifications): their handle unless their default identity is revealed.
-const ACTOR_LABEL = `case when cp.reveal_default then mp.display_name else coalesce(cp.handle, mp.display_name) end`;
+//
+// SEC-09 — THE FALLBACK MUST NEVER BE THE REAL NAME. It used to be `coalesce(cp.handle, mp.display_name)`, so a
+// member with no handle yet was published under their real name without ever choosing to be. That was reachable:
+// cheering a post does not create a Connect profile, so anyone whose FIRST action was a cheer — rather than a
+// post — was outed to the person they cheered. Pseudonymity has to fail closed, and every other surface here
+// already falls back to 'A member'; this one line was the exception. (toggleCheer now also ensures a profile, so
+// they get a real handle — but the label must be safe even if some future path forgets.)
+const ACTOR_LABEL = `case when cp.reveal_default then mp.display_name else coalesce(cp.handle, 'A member') end`;
 
 /** A member's Connect notifications — who replied to / cheered their posts. */
 export async function getNotifications(db: Db, memberId: string, limit = 20): Promise<ConnectNotification[]> {
