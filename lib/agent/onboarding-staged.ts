@@ -993,6 +993,12 @@ export type AdministeredConfig = {
   deliverItem: (index: number) => string; // the framed item at 0-based index (cluster transitions etc.)
   reprompt: (index: number) => string; // a gentle re-prompt of the current item on an unclear (out-of-scale) answer
   onComplete: (b: Beat) => void; // all items in — the config sets b.stage + b.reply (advance + close)
+  // CAT-32 — clear the shared administeredResponses accumulator when this instrument STARTS, not only when the
+  // previous one ends. Two instruments in one arc (Reconnect's 24-item IDQ then the 6-item grit Checkpoint) share
+  // one bag, and the hand-off reset lived in a single distant stage-confirm branch — one bypass away from scoring
+  // IDQ answers as the member's grit. An instrument that owns its own bag can't inherit anybody else's answers,
+  // whichever path reached it. Opt-in, because a single-instrument arc must not wipe a legitimate resume.
+  resetOnEntry?: boolean;
 };
 
 // Build an administered StageDef from an instrument config. gather/confirm are unused (the kernel dispatches to
@@ -1008,6 +1014,11 @@ export function administeredStage(cfg: AdministeredConfig): StageDef {
     gather() {},
     confirm() {},
     administer(b) {
+      // CAT-32: first answer of this instrument, but the bag already holds MORE than this instrument can — those
+      // are the previous instrument's responses. Drop them; they are not ours to score.
+      if (cfg.resetOnEntry && b.administeredResponses.length >= cfg.itemCount) {
+        b.administeredResponses = [];
+      }
       const val = parseLikert(b.memberMessage, cfg.scaleMax ?? 5);
       const sc = b.scratch as { unparsed?: number };
       if (val == null) {

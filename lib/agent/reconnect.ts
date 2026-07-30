@@ -686,8 +686,13 @@ function checkpointOpener(): string {
 }
 const CHECKPOINT_CLOSE =
   "That's it — you named what this stirred in you. Hold on, don't go anywhere yet.";
+// CAT-32 — the accumulator is reset on the way OUT of the window stage (reconnect.ts, windowStage.confirm). That
+// is one branch away from a missed reset scoring IDQ answers as grit. `resetOnEntry` makes the Checkpoint clear it
+// on the way IN as well: an instrument owns its own response bag, so it cannot inherit the previous one's answers
+// no matter which path reached it. Belt to that suspenders, plus the exact-length guard in persistCheckpoint.
 const checkpointStage: StageDef = administeredStage({
   id: 'checkpoint',
+  resetOnEntry: true,
   itemCount: CHECKPOINT_GRIT_ITEMS.length, // 6
   minLabel: 'not at all', // W-24: chip anchors — the frozen Grinta 1–5 poles
   maxLabel: 'completely',

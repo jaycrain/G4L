@@ -87,8 +87,25 @@ async function persistMeasurement(db: Db, memberId: string, prev: ConvState, tur
 async function persistCheckpoint(db: Db, memberId: string, prev: ConvState, turn: Turn): Promise<void> {
   try {
     if (prev.stage !== 'checkpoint' || turn.state.stage !== 'ceremony') return; // only on the completion crossing
-    const grit = (turn.state.administeredResponses ?? []).slice(0, CHECKPOINT_GRIT_ITEMS.length);
-    if (grit.length < CHECKPOINT_GRIT_ITEMS.length) return;
+    // CAT-32 — INSTRUMENT-IDENTITY GUARD. IDQ (24 items) and the Checkpoint grit (6) share ONE
+    // administeredResponses accumulator, and the between-instrument reset lives in a distant stage-confirm branch.
+    // This used to take slice(0, 6) on faith: if that reset were ever missed — a refactor, a bypassed branch, a
+    // resume with a leaked flag — the first SIX IDQ ANSWERS would be scored and written as the member's grit,
+    // silently, into a frozen data contract they see on their dashboard. Wrong numbers about someone's own
+    // resilience are worse than no numbers.
+    //
+    // An EXACT length is the cheap tell: on a clean crossing this is exactly 6; contaminated it is 30. Refuse and
+    // shout rather than write a plausible-looking lie. Skipping the write is recoverable; a bad reading is not.
+    const responses = turn.state.administeredResponses ?? [];
+    if (responses.length !== CHECKPOINT_GRIT_ITEMS.length) {
+      console.error(
+        `CAT-32: refusing to write a Checkpoint grit reading — expected exactly ${CHECKPOINT_GRIT_ITEMS.length} ` +
+          `responses, got ${responses.length}. The accumulator was not reset between instruments; ` +
+          `member=${memberId}. NOT scoring, to avoid writing IDQ answers as grit.`,
+      );
+      return;
+    }
+    const grit = responses.slice(0, CHECKPOINT_GRIT_ITEMS.length);
     const base = await getGrintaBaselineReading(db, memberId);
     const baselineGritValues = base
       ? BASELINE_GRIT_ITEMS.map((c) => base.responses[c]).filter((v): v is number => v != null)
