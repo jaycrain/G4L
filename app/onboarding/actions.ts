@@ -44,10 +44,12 @@ export async function loadOnboardingSessionAction(
   email: string,
   token: string,
 ): Promise<OnboardingSession | null> {
-  if (!email?.trim()) return null; // an empty token is allowed — it recovers a lost-token device by email
+  // Both are REQUIRED. A blank token used to "recover by email", which let anyone holding an email address read a
+  // stranger's in-flight onboarding and take over the account. Fail closed. (2026-07-30)
+  if (!email?.trim() || !token?.trim()) return null;
   try {
     const db = (await getDb()) as unknown as Db;
-    return await loadOnboardingSession(db, email.trim(), token ?? '');
+    return await loadOnboardingSession(db, email.trim(), token.trim());
   } catch {
     return null;
   }

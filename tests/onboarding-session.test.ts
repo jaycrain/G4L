@@ -51,13 +51,25 @@ test('a wrong (present) token does NOT resume (no resuming someone else by guess
   assert.equal(await loadOnboardingSession(d, 'jay@x.com', 'tok-WRONG'), null);
 });
 
-test('an EMPTY token recovers by email (lost-token device) and surfaces the saved token to adopt', async () => {
+// SECURITY (2026-07-30) — this test previously PINNED the vulnerability: it asserted that an empty token recovers
+// the session by email and hands back the saved token. That let anyone who knew a prospect's email read their whole
+// in-flight onboarding (transcript, Door, gap in their own words, Reclaim List) via the public resume action, take
+// the returned token, and finalize the account under their OWN password — locking the real person out for good.
+// Losing an in-flight onboarding is recoverable; that is not. Recovery must be rebuilt on PROOF of email control.
+test('an EMPTY token NEVER resumes — knowing the email is not permission', async () => {
   const d = await db();
   await saveOnboardingSession(d, 'jay@x.com', 'tok-1', state, messages);
-  const got = await loadOnboardingSession(d, 'jay@x.com', '');
-  assert.ok(got, 'empty token should recover the in-flight session by email');
+  assert.equal(await loadOnboardingSession(d, 'jay@x.com', ''), null, 'empty token must not resume');
+  assert.equal(await loadOnboardingSession(d, 'jay@x.com', '   '), null, 'whitespace is not a token either');
+});
+
+test('the correct device token still resumes, and only it', async () => {
+  const d = await db();
+  await saveOnboardingSession(d, 'jay@x.com', 'tok-1', state, messages);
+  const got = await loadOnboardingSession(d, 'jay@x.com', 'tok-1');
+  assert.ok(got, 'the device that started it still resumes');
   assert.equal(got!.state.stage, 'reclaim');
-  assert.equal(got!.token, 'tok-1'); // the client adopts this so the device re-syncs
+  assert.equal(await loadOnboardingSession(d, 'jay@x.com', 'tok-1 '), null, 'not even a near-miss');
 });
 
 test('a matching token still resumes and returns the token', async () => {
