@@ -109,7 +109,6 @@ const MIGRATIONS: Array<{ file: string; sentinel: Sentinel }> = [
   // Sentinel is the LAST thing 0063 adds, not the first — so a half-applied 0063 re-runs and completes
   // (the whole file is if-not-exists idempotent).
   { file: 'migrations/0063_auth_token.sql', sentinel: { table: 'member_credential', column: 'email_verified_at' } },
-  { file: 'migrations/0064_session_token_hash.sql', sentinel: { table: 'member_session', column: 'token_hash' } },
 ];
 export const SEED_SQL = () => sqlFile('seed/0001_reference_data.sql');
 

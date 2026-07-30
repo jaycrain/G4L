@@ -3,7 +3,7 @@
 import { redirect } from 'next/navigation';
 import { getDb } from '../../lib/db/index.ts';
 import { findCredentialByEmail } from '../../lib/auth/store.ts';
-import { verifyPassword, burnPasswordTime } from '../../lib/auth/password.ts';
+import { verifyPassword } from '../../lib/auth/password.ts';
 import { startSession, endSession } from '../auth.ts';
 import { isThrottled, recordFailure, clearFailures, callerIp } from '../../lib/auth/rate-limit.ts';
 import type { Db } from '../../lib/db/schema.ts';
@@ -22,12 +22,8 @@ export async function loginAction(
     return { ok: false, error: 'That email or password is incorrect.' };
   }
   const cred = await findCredentialByEmail(db, addr);
-  // SEC-13: when there is no such member we still pay the scrypt cost, against a throwaway hash. Without this the
-  // two paths are ~1ms vs ~50-150ms — a stopwatch tells you whether an address is registered, no matter how
-  // carefully both branches word their reply. Here that leaks MEMBERSHIP of this program, to anyone, at scale.
-  const ok = cred ? await verifyPassword(password ?? '', cred.password_hash) : await burnPasswordTime(password ?? '');
   // Generic message — don't reveal whether the email exists.
-  if (!cred || !ok) {
+  if (!cred || !(await verifyPassword(password ?? '', cred.password_hash))) {
     await recordFailure(db, 'login_email', addr);
     if (ip) await recordFailure(db, 'login_ip', ip);
     return { ok: false, error: 'That email or password is incorrect.' };

@@ -6,7 +6,7 @@ import { getDb } from '../../lib/db/index.ts';
 import { getCredentialByMember, updatePasswordHash } from '../../lib/auth/store.ts';
 import { hashPassword, verifyPassword } from '../../lib/auth/password.ts';
 import { isAvatarValue } from '../../lib/member/avatar.ts';
-import { currentMemberId, endSession, revokeOtherSessions } from '../auth.ts';
+import { currentMemberId, endSession } from '../auth.ts';
 import { getConnectionTokens, markDisconnected, deleteActivityData } from '../../lib/activity/store.ts';
 import { deauthorize } from '../../lib/activity/strava.ts';
 import type { Db } from '../../lib/db/schema.ts';
@@ -65,10 +65,7 @@ export async function setAvatarAction(dataUrl: string | null): Promise<{ ok: boo
   return { ok: true };
 }
 
-export async function changePasswordAction(
-  current: string,
-  next: string,
-): Promise<{ ok: boolean; error?: string; signedOutDevices?: number }> {
+export async function changePasswordAction(current: string, next: string): Promise<{ ok: boolean; error?: string }> {
   const memberId = await currentMemberId();
   if (!memberId) return { ok: false, error: 'You’re not signed in.' };
   if (!next || next.length < 8) return { ok: false, error: 'New password must be at least 8 characters.' };
@@ -78,11 +75,7 @@ export async function changePasswordAction(
     return { ok: false, error: 'Your current password is incorrect.' };
   }
   await updatePasswordHash(db, memberId, await hashPassword(next));
-  // SEC-14: every OTHER device is signed out. This used to change the hash and leave all existing sessions live,
-  // so a member who changed their password BECAUSE someone else was in their account left that someone with up to
-  // 30 more days of access — and nothing on screen suggested otherwise.
-  const ended = await revokeOtherSessions(db, memberId);
-  return { ok: true, signedOutDevices: ended };
+  return { ok: true };
 }
 
 // --- Strava activity connection (Path B) ---------------------------------------------------

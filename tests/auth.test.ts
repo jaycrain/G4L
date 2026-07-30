@@ -12,7 +12,6 @@ import {
   createSession,
   getSessionMember,
   deleteSession,
-  hashSessionToken,
 } from '../lib/auth/store.ts';
 
 async function dbWithMember(email = 'greg@example.com'): Promise<{ db: Db; memberId: string }> {
@@ -67,10 +66,9 @@ test('sessions resolve to the member, and revoke on delete', async () => {
 
 test('expired sessions do not resolve', async () => {
   const { db, memberId } = await dbWithMember();
-  // Insert the HASH, as createSession now does (SEC-12) — the raw token only ever exists in the cookie.
   await db.query(
-    `insert into member_session (token_hash, member_id, expires_at) values ($2, $1, now() - interval '1 hour')`,
-    [memberId, hashSessionToken('expired')],
+    `insert into member_session (token, member_id, expires_at) values ('expired', $1, now() - interval '1 hour')`,
+    [memberId],
   );
   assert.equal(await getSessionMember(db, 'expired'), null);
 });

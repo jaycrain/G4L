@@ -1,19 +1,7 @@
 // Credential + session store. Framework-free (takes a Db). Sessions are server-side and
 // revocable; the app layer maps a session token to an httpOnly cookie.
-import { createHash, randomBytes } from 'node:crypto';
+import { randomBytes } from 'node:crypto';
 import type { Db } from '../db/schema.ts';
-
-// SEC-12 — SESSION TOKENS ARE HASHED AT REST.
-// member_session.token used to hold the RAW bearer token — the exact string in the member's cookie. Anyone who
-// could read that table (a backup, a log, a snapshot, an RLS gap, an ops export) could paste a row straight into
-// a cookie and BE that member: their whole story, no password needed. Same reasoning as password hashing, and
-// the same reasoning we already applied to auth_token in 0063 — this table was just missed.
-//
-// sha-256 with no salt is correct here and NOT a shortcut: the input is 256 bits of CSPRNG, so it isn't
-// guessable or rainbow-tableable, and lookup must stay a single indexed probe.
-export function hashSessionToken(token: string): string {
-  return createHash('sha256').update(token).digest('hex');
-}
 
 export const SESSION_TTL_DAYS = 30;
 
@@ -76,24 +64,24 @@ export async function hasCredential(db: Db, memberId: string): Promise<boolean> 
 export async function createSession(db: Db, memberId: string): Promise<string> {
   const token = randomBytes(32).toString('hex');
   await db.query(
-    `insert into member_session (token_hash, member_id, expires_at)
+    `insert into member_session (token, member_id, expires_at)
      values ($1, $2, now() + ($3 * interval '1 day'))`,
-    [hashSessionToken(token), memberId, SESSION_TTL_DAYS],
+    [token, memberId, SESSION_TTL_DAYS],
   );
-  return token; // the PLAINTEXT goes to the cookie and is never stored
+  return token;
 }
 
 export async function getSessionMember(db: Db, token: string | undefined | null): Promise<string | null> {
   if (!token) return null;
   const { rows } = await db.query<{ member_id: string }>(
-    `select member_id from member_session where token_hash = $1 and expires_at > now()`,
-    [hashSessionToken(token)],
+    `select member_id from member_session where token = $1 and expires_at > now()`,
+    [token],
   );
   return rows[0]?.member_id ?? null;
 }
 
 export async function deleteSession(db: Db, token: string): Promise<void> {
-  await db.query(`delete from member_session where token_hash = $1`, [hashSessionToken(token)]);
+  await db.query(`delete from member_session where token = $1`, [token]);
 }
 
 /**
@@ -102,25 +90,9 @@ export async function deleteSession(db: Db, token: string): Promise<void> {
  * alive would defeat the reset. Returns the number of sessions ended.
  */
 export async function deleteSessionsForMember(db: Db, memberId: string): Promise<number> {
-  const { rows } = await db.query<{ token_hash: string }>(
-    `delete from member_session where member_id = $1 returning token_hash`,
+  const { rows } = await db.query<{ token: string }>(
+    `delete from member_session where member_id = $1 returning token`,
     [memberId],
-  );
-  return rows.length;
-}
-
-/**
- * Revoke every session EXCEPT the caller's own (SEC-14). This is the change-password case: they are signed in
- * and mid-flow, so signing them out of the device in their hand would be hostile — but every OTHER device has to
- * go, because "change my password" is what you do when you think someone else is in your account. Silently
- * leaving that someone with a 30-day session is the whole failure.
- */
-export async function deleteOtherSessionsForMember(db: Db, memberId: string, keepToken: string | null): Promise<number> {
-  const { rows } = await db.query<{ token_hash: string }>(
-    `delete from member_session
-      where member_id = $1 and ($2::text is null or token_hash <> $2)
-      returning token_hash`,
-    [memberId, keepToken ? hashSessionToken(keepToken) : null],
   );
   return rows.length;
 }

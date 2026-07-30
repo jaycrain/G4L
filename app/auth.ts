@@ -2,13 +2,7 @@
 // currentMemberId() is safe in server components (read-only); start/end run in actions only.
 import { cookies } from 'next/headers';
 import { getDb } from '../lib/db/index.ts';
-import {
-  createSession,
-  deleteSession,
-  getSessionMember,
-  deleteOtherSessionsForMember,
-  SESSION_TTL_DAYS,
-} from '../lib/auth/store.ts';
+import { createSession, deleteSession, getSessionMember, SESSION_TTL_DAYS } from '../lib/auth/store.ts';
 import type { Db } from '../lib/db/schema.ts';
 
 const COOKIE = 'g4l_session';
@@ -30,16 +24,6 @@ export async function startSession(memberId: string): Promise<void> {
     path: '/',
     maxAge: 60 * 60 * 24 * SESSION_TTL_DAYS,
   });
-}
-
-/**
- * SEC-14 — sign out every OTHER device, keeping the one in the member's hand. Used by change-password: signing
- * them out of the device they're actively using would be hostile, but every other session has to go, because
- * changing your password is what you do when you think someone else is in your account.
- */
-export async function revokeOtherSessions(db: Db, memberId: string): Promise<number> {
-  const token = (await cookies()).get(COOKIE)?.value ?? null;
-  return deleteOtherSessionsForMember(db, memberId, token);
 }
 
 export async function endSession(): Promise<void> {
