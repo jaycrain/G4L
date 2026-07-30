@@ -27,10 +27,19 @@ export async function isAdmin(): Promise<boolean> {
   return verifyAdminToken(adminSecret(), token, Date.now());
 }
 
+/** Length-safe constant-time string compare (admin password / tokens). */
+function constantTimeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let d = 0;
+  for (let i = 0; i < a.length; i++) d |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return d === 0;
+}
+
 /** Verify the admin password and, if correct, set the signed admin cookie. */
 export async function adminLogin(password: string): Promise<boolean> {
   const secret = adminSecret();
-  if (!secret || password !== secret) return false;
+  // Constant-time compare: a plain !== short-circuits on the first differing byte, which is measurable. (SEC-02)
+  if (!secret || !constantTimeEqual(password ?? '', secret)) return false;
   await setAdminCookie(secret);
   return true;
 }
