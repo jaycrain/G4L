@@ -999,17 +999,34 @@ export function administeredStage(cfg: AdministeredConfig): StageDef {
     confirm() {},
     administer(b) {
       const val = parseLikert(b.memberMessage, cfg.scaleMax ?? 5);
+      const sc = b.scratch as { unparsed?: number };
       if (val == null) {
         // Unclear answer → re-prompt the CURRENT item; do NOT advance or record.
-        b.reply = cfg.reprompt(b.administeredResponses.length);
+        // LIVENESS (CAT-31): administered stages return BEFORE the idle/runaway backstop, so this used to re-prompt
+        // the same item forever with no way out. We must not skip an item (a validated instrument is a frozen
+        // contract) and must never fabricate a value — so instead of looping in silence, after a few tries we say
+        // plainly how to answer AND that they can leave with their place saved. An informed choice, not a trap.
+        sc.unparsed = (sc.unparsed ?? 0) + 1;
+        const base = cfg.reprompt(b.administeredResponses.length);
+        b.reply = sc.unparsed >= ADMINISTERED_HELP_AFTER ? `${base}${BEAT_SEP}${administeredStuckHelp(cfg.scaleMax ?? 5)}` : base;
         return;
       }
+      sc.unparsed = 0; // a readable answer clears the streak
       b.administeredResponses = [...b.administeredResponses, val];
       const n = b.administeredResponses.length;
       if (n >= cfg.itemCount) cfg.onComplete(b);
       else b.reply = cfg.deliverItem(n);
     },
   };
+}
+
+// After this many consecutive unreadable answers, stop repeating the item alone and name the way out. (CAT-31)
+const ADMINISTERED_HELP_AFTER = 3;
+function administeredStuckHelp(max: number): string {
+  return (
+    `Tap any number from 1 to ${max} above — whichever is closest is the right one; there's no wrong answer here. ` +
+    `And if now isn't the moment for this, you can leave it and come back whenever you like — your place is saved.`
+  );
 }
 
 // W-24 — the chip signal for a turn, derived from the RESULTING active stage. One rule covers every administered ask:

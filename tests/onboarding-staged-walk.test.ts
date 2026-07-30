@@ -178,3 +178,34 @@ test('GAP CONFIRM — a genuine ADDITION still keeps drawing out (the corroborat
   );
   assert.equal(t.state.stage, 'gap', 'real new material still holds in the gap draw-out');
 });
+
+// ---------------------------------------------------------------------------
+// CAT-31 — administered liveness. These stages return BEFORE the idle/runaway backstop, so an unreadable answer
+// re-prompted the same item forever. We can't skip an item (frozen instrument) or invent a value — so the escape
+// has to be made EXPLICIT rather than left silent.
+// ---------------------------------------------------------------------------
+test('ADMINISTERED/CAT-31 — repeated unreadable answers surface the way out (never a silent loop)', () => {
+  let state: ConvState = { stage: 'grinta', collected: { athleticPast: 'a runner', identityNoun: 'Runner', gap: 'It faded.', reclaimList: ['a', 'b', 'c'] } };
+  const hist: ConvMessage[] = [];
+  const replies: string[] = [];
+  for (let i = 0; i < 4; i++) {
+    const t = applyStagedTurn(state, hist, 'I really do not know how to answer that', { text: '' });
+    replies.push(t.reply);
+    hist.push({ role: 'member', text: 'I really do not know how to answer that' }, { role: 'agent', text: t.reply });
+    state = t.state;
+  }
+  assert.equal(state.stage, 'grinta', 'still holding the item — never fabricates a score to escape');
+  assert.equal(/leave it and come back|place is saved/i.test(replies[0]!), false, 'the first miss is just a re-prompt');
+  assert.equal(
+    replies.some((r) => /leave it and come back/i.test(r) && /place is saved/i.test(r)),
+    true,
+    'after repeated misses the member is told how to answer AND that they can leave with their place kept',
+  );
+});
+
+test('ADMINISTERED/CAT-31 — a readable answer clears the streak and advances normally', () => {
+  const state: ConvState = { stage: 'grinta', collected: { athleticPast: 'a runner', identityNoun: 'Runner', gap: 'It faded.', reclaimList: ['a', 'b', 'c'] } };
+  const t = applyStagedTurn(state, [], '4', { text: '' });
+  assert.equal((t.state.administeredResponses ?? []).length, 1, 'the score records');
+  assert.equal(/place is saved/i.test(t.reply), false, 'no stuck-help on a good answer');
+});
