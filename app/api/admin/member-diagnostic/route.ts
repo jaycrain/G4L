@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { timingSafeEqual } from 'node:crypto';
 import { getDb } from '../../../../lib/db/index.ts';
 import type { Db } from '../../../../lib/db/schema.ts';
-import { searchMembers, runMemberDiagnostic } from '../../../../lib/admin/diagnostic.ts';
+import { searchMembers, runMemberDiagnostic, findInFlightOnboarding } from '../../../../lib/admin/diagnostic.ts';
 
 // Read-only operator diagnostic: returns a member's cross-phase backend state + an anomaly FLAGS block,
 // so a member's walk (onboarding → Rebuild → …) can be inspected for data issues without hand-run SQL.
@@ -31,9 +31,13 @@ export async function GET(req: Request): Promise<Response> {
 
   const db = (await getDb()) as unknown as Db;
   const matches = await searchMembers(db, q);
-  if (matches.length === 0) return NextResponse.json({ query: q, matches: [], report: null });
+  // IN-FLIGHT onboardings (started, not committed) live in onboarding_session — no member row exists yet, so
+  // member_profile can't see them. Always report them: a prospect who stalled mid-onboarding is the drop-off we
+  // most need visibility into, and without this "never started" and "we don't look" are indistinguishable.
+  const inFlight = await findInFlightOnboarding(db, q).catch(() => []);
+  if (matches.length === 0) return NextResponse.json({ query: q, matches: [], inFlight, report: null });
 
   // Report the best (first) match; surface the rest so the operator can disambiguate a common name.
   const report = await runMemberDiagnostic(db, matches[0]!.memberId);
-  return NextResponse.json({ query: q, matchCount: matches.length, matches, reportFor: matches[0], report });
+  return NextResponse.json({ query: q, matchCount: matches.length, matches, inFlight, reportFor: matches[0], report });
 }

@@ -21,6 +21,56 @@ export async function searchMembers(db: Db, q: string): Promise<MemberMatch[]> {
   return rows.map((r) => ({ memberId: r.member_id, displayName: r.display_name, email: r.email, createdAt: r.created_at }));
 }
 
+/** An onboarding that STARTED but hasn't committed — no member row exists yet, so member_profile can't see it. */
+export type InFlightOnboarding = {
+  email: string;
+  stage: string | null; // identity | gap | reclaim | grinta | complete | declined
+  turns: number; // messages exchanged so far
+  updatedAt: string;
+  identityNoun: string | null;
+  hasGap: boolean;
+  reclaimCount: number;
+  doors: string[];
+};
+
+/**
+ * Find IN-FLIGHT onboardings by email/name substring. Without this, a prospect who started and stalled is
+ * INVISIBLE — "they never began" and "we don't look there" read identically, which is exactly the drop-off
+ * we most need to see before Charter. Metadata only: stage, turn count, and which fields are captured — never
+ * the raw conversation (this is the most vulnerable moment in the product; the report stays legible and private).
+ */
+export async function findInFlightOnboarding(db: Db, q: string): Promise<InFlightOnboarding[]> {
+  const term = q.trim();
+  const { rows } = await db.query<{
+    email: string; updated_at: string; stage: string | null; turns: number;
+    identity_noun: string | null; has_gap: boolean; reclaim_count: number; doors: unknown;
+  }>(
+    `select email,
+            updated_at,
+            state->>'stage'                                              as stage,
+            coalesce(jsonb_array_length(messages), 0)                    as turns,
+            state->'collected'->>'identityNoun'                          as identity_noun,
+            coalesce(length(state->'collected'->>'gap') > 0, false)      as has_gap,
+            coalesce(jsonb_array_length(state->'collected'->'reclaimList'), 0) as reclaim_count,
+            coalesce(state->'collected'->'doors', '[]'::jsonb)           as doors
+       from onboarding_session
+      where email ilike '%'||$1||'%'
+      order by updated_at desc
+      limit 10`,
+    [term],
+  );
+  return rows.map((r) => ({
+    email: r.email,
+    stage: r.stage,
+    turns: Number(r.turns ?? 0),
+    updatedAt: r.updated_at,
+    identityNoun: r.identity_noun,
+    hasGap: !!r.has_gap,
+    reclaimCount: Number(r.reclaim_count ?? 0),
+    doors: Array.isArray(r.doors) ? (r.doors as string[]) : [],
+  }));
+}
+
 // The report, parameterized by $1 = member_id. Mirrors scripts/db/inspect-donna.sql. FLAGS carries only
 // anomalies (jsonb_strip_nulls drops the clean ones) so an empty {} means "nothing looks wrong".
 const REPORT_SQL = `select jsonb_build_object(
