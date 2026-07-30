@@ -98,3 +98,66 @@ test('no subscription → nobody is processed', async () => {
   await member(db, 'd@x.com');
   assert.equal((await runScheduledNudges(db, { sender: okSender })).eligible, 0);
 });
+
+// ---------------------------------------------------------------------------
+// SEC-06 — the scheduled push must honour the member's OWN dial. It never read outreach_pref at all: it had its
+// own private restraint rules, which meant a member who set "only when I ask" was still pushed, and a push could
+// land at 3am inside their own stated quiet hours. We ask them to set a rhythm and then ignored the answer.
+// `now` is injected so quiet hours are testable without depending on when the suite runs.
+// ---------------------------------------------------------------------------
+import { setPref } from '../lib/outreach/store.ts';
+
+// Fix the clock at 03:00 UTC (inside the default 21→7 quiet window) or 12:00 UTC (outside it).
+const AT_3AM = new Date(Date.UTC(2026, 6, 30, 3, 0, 0));
+const AT_NOON = new Date(Date.UTC(2026, 6, 30, 12, 0, 0));
+
+test('SEC-06 · "only when I ask" is honoured — no proactive push, ever', async () => {
+  const db = new PGlite() as unknown as Db;
+  await applySchema(db);
+  const m = await driftedMember(db, 'onask@x.com');
+  await setPref(db, m, { rhythm: 'on_ask' });
+
+  const res = await runScheduledNudges(db, { sender: okSender, now: AT_NOON });
+  assert.equal(res.pushed, 0, 'they told us not to reach out');
+  assert.equal(res.held, 1, 'and it is recorded as HELD, not silently skipped');
+  const log = await db.query<{ n: string }>(`select count(*)::text n from nudge_log where member_id=$1`, [m]);
+  assert.equal(Number(log.rows[0]!.n), 0);
+});
+
+test('SEC-06 · quiet hours are honoured — nothing lands at 3am', async () => {
+  const db = new PGlite() as unknown as Db;
+  await applySchema(db);
+  await driftedMember(db, 'quiet@x.com');
+
+  assert.equal((await runScheduledNudges(db, { sender: okSender, now: AT_3AM })).pushed, 0, 'inside quiet hours');
+});
+
+test('SEC-06 · the same member IS reached at a reasonable hour (the gate is not a blanket off-switch)', async () => {
+  const db = new PGlite() as unknown as Db;
+  await applySchema(db);
+  await driftedMember(db, 'awake@x.com');
+
+  const res = await runScheduledNudges(db, { sender: okSender, now: AT_NOON });
+  assert.equal(res.pushed, 1, 'a drifted member on the default rhythm still hears from us');
+});
+
+test('SEC-06 · an explicit channel opt-out is absolute', async () => {
+  const db = new PGlite() as unknown as Db;
+  await applySchema(db);
+  const m = await driftedMember(db, 'nopush@x.com');
+  await setPref(db, m, { channels: { in_app: true, push: false } });
+
+  const res = await runScheduledNudges(db, { sender: okSender, now: AT_NOON });
+  assert.equal(res.pushed, 0);
+  assert.equal(res.held, 1);
+});
+
+test('SEC-06 · quiet hours follow the MEMBER’s timezone, not the server’s', async () => {
+  // 12:00 UTC is the middle of the day in London and 04:00 in Los Angeles. The member in LA must be left alone.
+  const db = new PGlite() as unknown as Db;
+  await applySchema(db);
+  const la = await driftedMember(db, 'la@x.com');
+  await setPref(db, la, { timezone: 'America/Los_Angeles' });
+
+  assert.equal((await runScheduledNudges(db, { sender: okSender, now: AT_NOON })).pushed, 0, '04:00 for them');
+});
