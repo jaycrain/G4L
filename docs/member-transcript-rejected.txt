@@ -1,0 +1,551 @@
+# Strings EXCLUDED from the member transcript (app @ bf06b87 · 2026-07-31)
+# Not member copy: system prompts, multi-line fragments, code artifacts. Review when a real line goes missing.
+
+[lib/agent/onboarding-staged.ts] you’re trying to reclaim. We can always change it later.
+[lib/agent/onboarding-staged.ts] So tell me, when DID you feel most like yourself? Tell me about them. Not the job title or just the role for
+[lib/agent/onboarding-staged.ts] which everyone knows you. Who were they? What were they doing? How did it feel to be them?
+[lib/agent/onboarding-staged.ts] No rush on the perfect word — and you don't have to land it today. If one comes — the Runner, the Builder, the
+[lib/agent/onboarding-staged.ts] it open and come back when something fits?
+[lib/agent/onboarding-staged.ts] that?
+[lib/agent/onboarding-staged.ts] not a label set in stone, and we can change it anytime.
+[lib/agent/onboarding-staged.ts] ${Label} it is.  ${gapBridge(c)}
+[lib/agent/onboarding-staged.ts] Before we hold onto that word — take me back into being ${label}. What did it actually feel like, and when did it feel most true?
+[lib/agent/onboarding-staged.ts] Even one small moment is enough — a specific morning, a feeling in your body — when you were most ${label}. What did being ${label} give you that you don't feel now? Even a little thing; there's no wrong answer.
+[lib/agent/onboarding-staged.ts] Whenever you're ready — what's been happening that pulled you away from ${identityRef(c)}?
+[lib/agent/onboarding-staged.ts] Somewhere, the distance between you and ${identityRef(c)} started to open. Sometimes it's one clear thing — a loss,
+[lib/agent/onboarding-staged.ts] and seasons you walk through and barely notice, each one widening the gap. What’s been happening that caused that
+[lib/agent/onboarding-staged.ts] version of you to Fade? Tell me how it went for you.
+[lib/agent/onboarding-staged.ts] Then let's find out what happened to ${label}. The distance from ${label} rarely opens all at once — more often
+[lib/agent/onboarding-staged.ts] it's an accumulation of what we call Doors: moments and seasons you walk through and barely notice, each one
+[lib/agent/onboarding-staged.ts] widening the gap. So how did it go — what pulled you away from ${label}? Take me through it.
+[lib/agent/onboarding-staged.ts] was there more?
+[lib/agent/onboarding-staged.ts] you're reaching forward, not trying to find your way back to someone you've lost. That's a genuinely good place
+[lib/agent/onboarding-staged.ts] to be, and it would be dishonest of me to manufacture a problem you don't have. G4L is for the season when that
+[lib/agent/onboarding-staged.ts] changes — when something real has pulled you away from who you were. If that day comes, this door stays open
+[lib/agent/onboarding-staged.ts] and I'll be right here. Until then — keep building.
+[lib/agent/onboarding-staged.ts] That's a lot to have been carrying${identity ?
+[lib/agent/onboarding-staged.ts] your Reclaim List, the thing the whole program works toward${identity ?
+[lib/agent/onboarding-staged.ts] s life you miss most` :
+[lib/agent/onboarding-staged.ts] lost touch with, ten quiet minutes that are yours. What comes to mind?
+[lib/agent/onboarding-staged.ts] That's a real start, and there's no rush — your list is never locked, and you can add to it any time as
+[lib/agent/onboarding-staged.ts] more comes back to you. If even one more surfaces right now, tell me; if not, that's completely okay.
+[lib/agent/onboarding-staged.ts] So — ${label} is who we're bringing back — “${specifics}.” That's the version that feels most like you. Did I get ${label} right?
+[lib/agent/onboarding-staged.ts] So — ${label} is who we're bringing back, the version that feels most like you. Did I get ${label} right?
+[lib/agent/onboarding-staged.ts] ${p}. ${n}
+[lib/agent/onboarding-staged.ts] ${t}.
+[lib/agent/onboarding-staged.ts] “${x.trim()}”
+[lib/agent/onboarding-staged.ts] Now, the good part — and you've already started. Earlier you said you want ${items} back, so
+[lib/agent/onboarding-staged.ts] ${parked.length === 1 ? "that's" : "those are"} on your list. What else? Big or small, there are no wrong answers.
+[lib/agent/onboarding-staged.ts] “${drop}” and “${keep}” sound like the same thing to me — want me to keep them as one, or are they different?
+[lib/agent/onboarding-staged.ts] “${item}” reads more like the bigger picture of the life you’re reclaiming than a single goal. I’d keep it in your Playbook for that work and leave the goal list for the concrete steps — want me to do that?
+[lib/agent/onboarding-staged.ts] “${item}” sounds like who you are, not one goal on a list. I’d hold onto it as part of your identity and keep the list for the concrete things you’re taking back — want me to do that?
+[lib/agent/onboarding-staged.ts] You named a few things in “${item}.” Which one do you most want back? We’ll start there — the rest aren’t going anywhere.
+[lib/agent/onboarding-staged.ts] Perfect — “${distilled}” it is.
+[lib/agent/onboarding-staged.ts] ?t know|nothing( else)?|that
+[lib/agent/onboarding-staged.ts] ?re|they are|those are|it
+[lib/agent/onboarding-staged.ts] this isn't making sense
+[lib/agent/onboarding-staged.ts] ${merged[merged.length - 1]}, ${trimmed}
+[lib/agent/onboarding-staged.ts] s merge (for the backstop
+[lib/agent/onboarding-staged.ts] 8 out of 10
+[lib/agent/onboarding-staged.ts] 1 to 5
+[lib/agent/onboarding-staged.ts] ${base}${BEAT_SEP}${administeredStuckHelp(cfg.scaleMax ?? 5)}
+[lib/agent/onboarding-staged.ts] Tap any number from 1 to ${max} above — whichever is closest is the right one; there's no wrong answer here.
+[lib/agent/onboarding-staged.ts] ${SKIP_ACK}  ${gapOpen(b.collected)}
+[lib/agent/onboarding-staged.ts] ${SKIP_ACK}  ${gapOpen(b.collected)}
+[lib/agent/onboarding-staged.ts] ${SKIP_ACK}  ${gapOpen(b.collected)}
+[lib/agent/onboarding-staged.ts] ${SKIP_ACK}  ${gapOpen(b.collected)}
+[lib/agent/onboarding-staged.ts] ${ack}${BEAT_SEP}${turn.reply}
+[lib/agent/onboarding-staged.ts] a baseline for your Grinta Index. As you know, Grinta means grit, so we’re doing an initial measurement of your
+[lib/agent/onboarding-staged.ts] resilience and hardiness. We know there’s no way you’ve made it to this point in your life without weathering
+[lib/agent/onboarding-staged.ts] your share of tough times. This just shows a starting point with a number we expect you will see rise as you go
+[lib/agent/onboarding-staged.ts] through the G4L program. We’ll track this over time.
+[lib/agent/onboarding-staged.ts] Remember, the more honest you are, the more the work will benefit you. For each question, tell me how true it
+[lib/agent/onboarding-staged.ts] feels — 1 (not at all) to 5 (completely).  Today:
+[lib/agent/onboarding-staged.ts] A number from 1 to 5 is all I need here — 1 is “not at all,” 5 is “completely.”  ${grintaDeliver(index)}
+[lib/agent/onboarding-staged.ts] “${grintaStem(ONBOARDING_BASELINE_ITEMS[index]!)}”
+[lib/agent/onboarding-staged.ts] Your starting Grinta Index is ${composite} out of 5. This is just where you stand today. You will build it in
+[lib/agent/onboarding-staged.ts] of G4L — Reconnect. Well done!
+[lib/agent/onboarding-staged.ts] ${leads[history.length % leads.length]} ${b.reply}
+[lib/agent/onboarding-staged.ts] conversation (e.g. after they describe racing bikes and chasing summits: ["Athlete", "Cyclist", "Competitor"]).
+[lib/agent/onboarding-staged.ts] Call this ONCE you've genuinely drawn out the past self — it hands the member a tap-to-pick chooser (chips + a
+[lib/agent/onboarding-staged.ts] write-your-own field) so THEY choose or coin the word; their pick is captured verbatim and is definitive. Natural
+[lib/agent/onboarding-staged.ts] case, no leading article ("Athlete", never "the Athlete"). Your prose this turn should warmly invite them to tap
+[lib/agent/onboarding-staged.ts] one or write their own. Do NOT also call name_identity — the member's tap is what names it.
+[lib/agent/onboarding-staged.ts] it themselves before you offer candidates. For the normal choose-a-word beat use offer_identity_words instead.
+[lib/agent/onboarding-staged.ts] their words and specifics as they told it ('I stopped training but kept riding, then lost the level'; 'my wife
+[lib/agent/onboarding-staged.ts] got laid off, which hit her hard'). This exact text is shown back to them on their summary card ('Here's what
+[lib/agent/onboarding-staged.ts] you shared') and dashboard ('in your own words'), so it must read as their OWN account. The one thing to avoid:
+[lib/agent/onboarding-staged.ts] from their own story. Keep it first person, as they said it. W-33: write it as clean, correctly-spelled and
+[lib/agent/onboarding-staged.ts] phrasing, and voice. Never paraphrase, reorder, smooth, or add. W-45: compose the story ONCE — each part of it
+[lib/agent/onboarding-staged.ts] appears a SINGLE time; never re-tell or restate what you've already captured. As a member reveals more, the gap
+[lib/agent/onboarding-staged.ts] them), stayed with one thread until it's particular and real, and checked whether more than one Door stacked
+[lib/agent/onboarding-staged.ts] on. It signals you're ready to reflect their WHOLE story back in their own words and move on. Naming several
+[lib/agent/onboarding-staged.ts] things briefly ('married, kids, work') is BREADTH, not depth — do NOT call this until you have something
+[lib/agent/onboarding-staged.ts] specific and true to reflect. (The system won't let you close the beat before it has genuinely breathed.)
+[lib/agent/onboarding-staged.ts] career_cliff, aging_parents, empty_nest, vanishing, body, diagnosis, marriage, loss, full_house, grind, load_bearer, acceptance
+[lib/agent/onboarding-staged.ts] thriving and simply want MORE (optimize, level up, the next challenge). Do NOT fabricate a hardship; mark this
+[lib/agent/onboarding-staged.ts] instead. They will still be admitted and build a Reclaim List — their first ID Score later just comes back high.
+[lib/agent/onboarding-staged.ts] Call add ONLY for a genuinely NEW, distinct want. Do NOT call add for an amount, number, cadence, or detail that
+[lib/agent/onboarding-staged.ts] those into the existing item with refine_reclaim_item — NEVER as a second item, or the card reads repetitive and sloppy.
+[lib/agent/onboarding-staged.ts] ONLY record a concrete want. Do NOT record a passing aside, a moment of confusion ("this isn't making sense"),
+[lib/agent/onboarding-staged.ts] they are, not the goal list; reflect it back and hold it, but do not add it as a reclaim item.
+[lib/agent/onboarding-staged.ts] phrasing in `text`, in their words. Two triggers: (1) after you gently drew them toward something trackable
+[lib/agent/onboarding-staged.ts] number, cadence, or detail to the want you most recently added — FOLD it in ('lose weight' + 'about 25 lbs' →
+[lib/agent/onboarding-staged.ts] 'lose about 25 lbs'; 'core work' + '2-3 days a week' → 'core work, 2-3 days a week'). This updates the item in
+[lib/agent/onboarding-staged.ts] place — it does NOT add a second one. Use add_reclaim_item ONLY for a genuinely new, distinct want.
+[lib/agent/onboarding-staged.ts] At a reflect-confirm beat (right after you reflected something back — their past self, their gap story, or
+[lib/agent/onboarding-staged.ts] their Reclaim List — and asked whether it lands or if there's more), classify what the member's reply MEANS,
+[lib/agent/onboarding-staged.ts] so the conversation moves the right way. Call it once with `intent`: 'done' = they're satisfied / nothing to
+[lib/agent/onboarding-staged.ts] add / a plain 'nope, that's right' answering 'anything missing?'; 'more' = they're adding new material or want
+[lib/agent/onboarding-staged.ts] fallback covers you. This is ONLY for the reply to a reflection, not for normal gathering turns.
+[lib/agent/onboarding-staged.ts] married, kids, work
+[lib/agent/onboarding-staged.ts] t give (if they named travel, friends, and competing, don
+[lib/agent/onboarding-staged.ts] was that the whole of it, or did something else pile on around then?
+[lib/agent/onboarding-staged.ts] here's the whole of it… does that land?
+[lib/agent/onboarding-staged.ts] re satisfied / a plain "nope, that
+[lib/agent/onboarding-staged.ts] anything missing?
+[lib/agent/onboarding-staged.ts] CURRENT STAGE: how the gap opened — the Door(s). EXPLORE, and EXPECT MORE THAN ONE: it is rare for a single
+[lib/agent/onboarding-staged.ts] thing to be the whole story — usually several pile up over time (a job, a move, an injury, a loss, kids, slow
+[lib/agent/onboarding-staged.ts] drift). Draw the story out over SEVERAL exchanges — the sequence, when they first felt it, what it cost. After
+[lib/agent/onboarding-staged.ts] they name one door, RECEIVE it (reflect it back so they feel heard) and then ask what ELSE was going on around
+[lib/agent/onboarding-staged.ts] then — do NOT collapse it to one thread, and do NOT rush on to what they want back. This conversation earns its
+[lib/agent/onboarding-staged.ts] time; do not compress it. Capture with set_gap as it grows, note_door for EACH door named (none is valid). Call
+[lib/agent/onboarding-staged.ts] reflect_gap ONLY once the FULLER picture is genuinely drawn out — usually after they have named more than one
+[lib/agent/onboarding-staged.ts] door or clearly told you that is the whole of it — and reflect their whole story back in their words on that turn.
+[lib/agent/onboarding-staged.ts] around then — other things that landed at the same time?"), or your correctable check on the reflect turn
+[lib/agent/onboarding-staged.ts] ("does that land, or is there more to it?"). NEVER end on a bare reflection or wrap-up coda with no
+[lib/agent/onboarding-staged.ts] question ("let me make sure I have it right"), or the engine appends its own and the member sees a jumbled double-ask.
+[lib/agent/onboarding-staged.ts] CURRENT STAGE: what they want back — the Reclaim List (what the whole program measures against; big or
+[lib/agent/onboarding-staged.ts] small, there are no wrong answers).
+[lib/agent/onboarding-staged.ts] DRAW THIS OUT the way you drew out the gap — do NOT rush to collect a list, and do NOT open by proposing or
+[lib/agent/onboarding-staged.ts] reciting a set of items. Invite what they want back gently, and let them lead. When they name one,
+[lib/agent/onboarding-staged.ts] invite the next. One want at a time, with care; never a rote "what else?" march. Aim for a few; never pressure
+[lib/agent/onboarding-staged.ts] or interrogate — small things count.
+[lib/agent/onboarding-staged.ts] TAG EVERY WANT — this is load-bearing. Call add_reclaim_item the MOMENT a want is named, including any they
+[lib/agent/onboarding-staged.ts] volunteered earlier in the conversation (the gap beat). The Reclaim List is built ONLY from your tool calls,
+[lib/agent/onboarding-staged.ts] never from your prose — so if you reflect or list wants back to the member, EVERY item you name must already
+[lib/agent/onboarding-staged.ts] be an add_reclaim_item call. Never recite a list you have not tagged, or it silently vanishes from their card.
+[lib/agent/onboarding-staged.ts] progress on. When a want is vague ("ride my bike more", "get in shape"), reflect it and ask ONE gentle
+[lib/agent/onboarding-staged.ts] question toward something trackable — a rough cadence, a number, a specific anchor ("what would that look
+[lib/agent/onboarding-staged.ts] like — a couple rides a week? weekends?"). Then call refine_reclaim_item with the sharper phrasing IN
+[lib/agent/onboarding-staged.ts] amount, or detail ("2-3 times a week", "about 25 lbs"), THAT is the SAME want getting sharper — refine the tag
+[lib/agent/onboarding-staged.ts] to fold it in ("run 2-3x a week", "lose about 25 lbs"), NEVER add_reclaim_item a second bullet for it, and
+[lib/agent/onboarding-staged.ts] never leave the vague "My running" on the list. The captured item must be the concrete one, because the
+[lib/agent/onboarding-staged.ts] whole program measures against this list. Take whatever they give — if they stay general, that's fine;
+[lib/agent/onboarding-staged.ts] never force a metric, never turn it into a form, at most ONE sharpening per want. Already-concrete wants
+[lib/agent/onboarding-staged.ts] you'd want back?"). NEVER end on a bare wrap-up coda with no question ("let me make sure I have all of
+[lib/agent/onboarding-staged.ts] that captured"), or the engine stacks a second ask on top and it reads pushy. And do NOT ANNOUNCE the
+[lib/agent/onboarding-staged.ts] mechanics — never say "let me make that concrete" or "before I capture that": just DO it (reflect + one
+[lib/agent/onboarding-staged.ts] sharpening question, or acknowledge their answer and invite the next), in-line and in plain language.
+[lib/agent/onboarding-staged.ts] CURRENT STAGE: identity — who they were at their best, and the one-word handle (or skip).
+[lib/agent/reconnect.ts] ${identity ?
+[lib/agent/reconnect.ts] felt like the distance started with ${doorPhrase}. This time, we go deeper into all of it.
+[lib/agent/reconnect.ts] Last time, you started to tell me how the distance opened${identity ?
+[lib/agent/reconnect.ts] Let's pick up where we left off${identity ?
+[lib/agent/reconnect.ts] re bringing back` :
+[lib/agent/reconnect.ts] measure of where you are now, then look at what it quietly cost and the life you're reclaiming. It ends where your
+[lib/agent/reconnect.ts] next phase begins. One thing at a time, at your pace — you set the depth, and you can stop whenever you want.
+[lib/agent/reconnect.ts] select identity_noun, named_door, intake_gap, reclaim_list from member_profile where member_id = $1
+[lib/agent/reconnect.ts] select door_slug, is_primary from member_door where member_id = $1 and removed_at is null order by is_primary desc, sort_order
+[lib/agent/reconnect.ts] We'll get to the other${others > 1 ? 's' : ''} — this is just where we start.
+[lib/agent/reconnect.ts] Let's start with ${doorName} — ${others > 0 ? 'one of the ones you named' : 'the one you named'}.${held} Not the label, the real thing: take me
+[lib/agent/reconnect.ts] back to how it actually happened${identity ?
+[lib/agent/reconnect.ts] ${name}, then — that's the one. That changes the shape of it. Let me sit with what it means, and we'll keep going from there.
+[lib/agent/reconnect.ts] ${name}, too — I'll hold that alongside the one you named. Both are part of it. Let's keep going.
+[lib/agent/reconnect.ts] Hold on — it sounds like you're taking me to ${to}, more than ${from}. Should we start there instead — is ${to} closer to where it really began?
+[lib/agent/reconnect.ts] ${xs.slice(0, -1).join(', ')}, and ${xs[xs.length - 1]}
+[lib/agent/reconnect.ts] Back at the start, you named what you want back — ${serveReclaim(wants)}. Let's stay with those a moment —
+[lib/agent/reconnect.ts] not a new list, the real weight of it. Of the things you named, which do you feel the distance from most right now?
+[lib/agent/reconnect.ts] That's your inventory — what it cost, how far the drift ran. Not to sit in — to push off from; I've kept it for
+[lib/agent/reconnect.ts] you.  Now we look the other way — at the version of you that's still in there.
+[lib/agent/reconnect.ts] it. Today you look. Picture an ordinary Tuesday a year from now — but you've done the work, and the things on
+[lib/agent/reconnect.ts] your Reclaim List are real. How do you wake up, what do you reach for? Not the highlight reel — the ordinary
+[lib/agent/reconnect.ts] morning. Sit with that Tuesday for a second, and tell me what you see.
+[lib/agent/reconnect.ts] We've gone deep into what created the distance. Now, we're going to go through questions that determine your
+[lib/agent/reconnect.ts] Identity Distance (ID) Score. This will establish a baseline and allow us to watch it close that gap as you
+[lib/agent/reconnect.ts] progress through G4L. For the following short statements, just tell me how true each feels right now. 1 for not
+[lib/agent/reconnect.ts] at all. 5 for completely.  First a few about your body.  ${itemStem(0)}
+[lib/agent/reconnect.ts] ${IDQ_CLUSTER_LEAD[i] ?? ''}${itemStem(i)}
+[lib/agent/reconnect.ts] Just a number for this one, ${IDQ_SCALE_HINT} — how true does it feel?
+[lib/agent/reconnect.ts] on your dashboard, and it's something we'll watch move together over time — never a grade.
+[lib/agent/reconnect.ts] the self — who you are
+[lib/agent/reconnect.ts] the social — the people around you
+[lib/agent/reconnect.ts] matters more than it might feel.
+[lib/agent/reconnect.ts] Who they're reclaiming: ${identity}.
+[lib/agent/reconnect.ts] Door(s) they named: ${doorNames.join(', ')}.
+[lib/agent/reconnect.ts] ${idLine} ${doorLine} Baseline shape: lowest area is ${DIM_FRIENDLY[shape.lowest]}; highest is ${DIM_FRIENDLY[shape.highest]}. Reflect this as their starting picture, tie the lowest to their Door(s) ONLY if it genuinely fits, and close warmly. No numbers, no grades.
+[lib/agent/reconnect.ts] ${idqClose()}${BEAT_SEP}${driftOpen(b.collected)}
+[lib/agent/reconnect.ts] here, and it won't show up on your dashboard. Same as before: just tell me how true each feels right now. 1—not
+[lib/agent/reconnect.ts] at all. 5—completely.
+[lib/agent/reconnect.ts] Just a number, 1 to 5 — how true does that feel right now?  ${checkpointDeliver(index)}
+[lib/agent/reconnect.ts] Call ONLY once you have GENUINELY drawn out the door — how it actually opened, the sequence, what it quietly
+[lib/agent/reconnect.ts] cost — and you have a real INSIGHT to reflect (the cost they normalized, how it targeted who they were, the
+[lib/agent/reconnect.ts] sequence). NEVER on the first mention. If the material is still thin, do NOT call it — keep drawing out; a
+[lib/agent/reconnect.ts] manufactured insight is worse than none. On the same turn you call it, reflect that insight in THEIR words,
+[lib/agent/reconnect.ts] offered as a check they can reject.
+[lib/agent/reconnect.ts] §2d Drift beat: call ONLY once the member has genuinely drawn out the DRIFT — what the Fade cost, and how far
+[lib/agent/reconnect.ts] it has run — and you can reflect the PATTERN of it (the recurring shape, the quiet thing they've stopped
+[lib/agent/reconnect.ts] noticing is gone), offered as a check they can reject. NEVER on the first mention; if it's still thin, keep
+[lib/agent/reconnect.ts] drawing out. On the same turn you call it, reflect that pattern in THEIR words. (Same depth signal as reflect_door.)
+[lib/agent/reconnect.ts] §2d The Window beat: call ONLY once the member has pictured the future Tuesday — a year out, where they've done
+[lib/agent/reconnect.ts] the work and their Reclaim List is real — and you can reflect the SPARK (that ordinary, reclaimed day) back in
+[lib/agent/reconnect.ts] THEIR words, offered as a check. NEVER before it's drawn out; if thin, keep drawing out. This beat LIFTS — the
+[lib/agent/reconnect.ts] spark is the reclaimed ordinary day worth chasing. (Same depth signal as reflect_door.)
+[lib/agent/reconnect.ts] At an insight reflect-confirm, classify the member's reply: 'done' (it landed / they're satisfied), 'more'
+[lib/agent/reconnect.ts] Use ONLY when the drawn-out story genuinely points to a DIFFERENT canonical Door than the one they named as
+[lib/agent/reconnect.ts] primary — a real RE-SEEING, not a synonym or a second door. Propose it in THEIR words, OFFERED as a check they
+[lib/agent/reconnect.ts] can reject (never asserted): name the shift and why the story fits the truer door, then let them decide. Pass
+[lib/agent/reconnect.ts] from_slug (the Door they named) and to_slug (the truer one), both canonical Door slugs. Set flat_mislabel=true
+[lib/agent/reconnect.ts] doubt, leave it off.
+[lib/agent/reconnect.ts] through more than one (kind='widen'), or a Door was quietly there all along and now gets named (kind='name').
+[lib/agent/reconnect.ts] This ADDS a Door; it does NOT replace the one they named (use propose_correction for a replacement). Propose it
+[lib/agent/reconnect.ts] in THEIR words, OFFERED as a check they can reject, only when the material genuinely earns it. Pass slug (the
+[lib/agent/reconnect.ts] canonical Door to add). Set mechanical=true ONLY for a routine add that carries no real new understanding — when
+[lib/agent/reconnect.ts] it's a genuine re-seeing, leave it off.
+[lib/agent/reconnect.ts] The Door(s) they named at onboarding: ${doorNames.join(', ')}
+[lib/agent/reconnect.ts] How they first described the gap opening: ${c.gap!.trim()}
+[lib/agent/reconnect.ts] Their Reclaim List (what they're taking back — you HAVE this; never say you can't see it): ${reclaim.join('; ')}
+[lib/agent/reconnect.ts] MEMBER CONTEXT (what you already know — never say you don't): ${lines.join(' ')}
+[lib/agent/reconnect.ts] - ${d.displayName} (${d.slug}): ${d.descriptor}
+[lib/agent/reconnect.ts] does it feel like the real cost was X — or is that not it?
+[lib/agent/reconnect.ts] s go there." (This is different from a re-seeing below: they
+[lib/agent/reconnect.ts] it was really about X
+[lib/agent/reconnect.ts] that's the truer one
+[lib/agent/reconnect.ts] no, it really is the marriage
+[lib/agent/reconnect.ts] what were my Doors again?
+[lib/agent/reconnect.ts] CURRENT STAGE: the Doors excavation. Draw out the primary Door over a few exchanges, then reflect an
+[lib/agent/reconnect.ts] INSIGHT (the normalized cost / how it targeted who they were / the sequence) IN THEIR WORDS, offered as a
+[lib/agent/reconnect.ts] check they can reject. Call reflect_door ONLY once it is genuinely drawn out and the insight is earned. If the
+[lib/agent/reconnect.ts] story points to a truer Door than the one they named, you may propose that re-seeing (propose_correction),
+[lib/agent/reconnect.ts] offered — never asserted — and only when the material earns it.
+[lib/agent/reconnect.ts] CURRENT STAGE: the Drift beat (§2d Visioning). Draw out what the Fade COST and how far it has run — their
+[lib/agent/reconnect.ts] inventory, in their words. This is formative and reflective, never scored. After a couple of exchanges, reflect
+[lib/agent/reconnect.ts] the PATTERN of the drift (the recurring shape, the quiet thing they stopped noticing) IN THEIR WORDS, offered as
+[lib/agent/reconnect.ts] a check — call reflect_drift ONLY once it is genuinely drawn out; if thin, keep drawing out (never manufacture a
+[lib/agent/reconnect.ts] pattern). Name it to push OFF from, not to sit in. Do not diagnose.
+[lib/agent/reconnect.ts] CURRENT STAGE: The Window (§2d Visioning, beat 2) — the turn toward HOPE. Draw out ONE day: an ordinary
+[lib/agent/reconnect.ts] Tuesday a year out where they have DONE the work and the things on their Reclaim List are real (ordinary and
+[lib/agent/reconnect.ts] real — the morning, not the medal). Do NOT ask them to picture a "nothing changes" version first. Then reflect
+[lib/agent/reconnect.ts] the SPARK — that reclaimed ordinary day — IN THEIR WORDS, offered as a check; call reflect_window ONLY once it
+[lib/agent/reconnect.ts] is drawn out. This beat should LIFT: leave them feeling the reclaimed day is reachable. Grounded in their real
+[lib/agent/reconnect.ts] life, never over-promised fantasy.
+[lib/agent/reconnect.ts] CURRENT STAGE: entry — the callback asked whether the distance still feels like it began where they named,
+[lib/agent/reconnect.ts] or whether something has shifted. RECEIVE their answer: in one or two sentences, reflect back specifically what
+[lib/agent/reconnect.ts] they just said — if they named a shift, name it; if they confirmed, affirm it. Do NOT ask a question and do NOT
+[lib/agent/reconnect.ts] start excavating a Door — the next beat opens that work. Just land their answer so they feel heard.
+[lib/idq/instrument.ts] expected ${TOTAL_ITEMS} items, got ${responses.length}
+[lib/idq/instrument.ts] item ${i}: must be an integer (got ${JSON.stringify(r)})
+[lib/agent/rewire.ts] with it next month." The whole time his body was telling the truth — the weight, the hives, the blood markers.
+[lib/agent/rewire.ts] and avoidance contribute to the Fade and allow it to keep its hold.
+[lib/agent/rewire.ts] your body, your habits, your time, who you are, and what's still possible. You'll get honest about these
+[lib/agent/rewire.ts] untruths — things you might not have admitted before.
+[lib/agent/rewire.ts] comes in.
+[lib/agent/rewire.ts] to day? ("I eat pretty healthy." "I'll clean it up when things settle." "It's just age.")
+[lib/agent/rewire.ts] eating after a hard day. What's the story that makes those feel okay in the moment?
+[lib/agent/rewire.ts] ago." "I'm not that person anymore." "It's too late.")
+[lib/agent/rewire.ts] is just who I am now." "It probably wouldn't work." "I've tried before.")
+[lib/agent/rewire.ts] you exactly where you are. That's not weakness; it's the campaign, running on autopilot. You just made it visible
+[lib/agent/rewire.ts] You are the G4L Companion running W1, the Disinformation Audit, in Rewire (Phase 2). The member is naming the
+[lib/agent/rewire.ts] comfortable LIES they tell themselves across five life domains (body, habits, time, who they are, what's still
+[lib/agent/rewire.ts] possible). Never judge, grade, praise, or diagnose; a self-lie is a hundred reasonable decisions, not a failing —
+[lib/agent/rewire.ts] normalize it. Reflect their WORDS back; never state who they ARE as a fact (no identity verdicts like 'that's a
+[lib/agent/rewire.ts] man who stopped believing he's allowed to want anything' — W-39) — if you name a pattern, offer it as a check
+[lib/agent/rewire.ts] they can reject, in their own words. Plain, measured, no hype. Do NOT write the member's counter-line for them (that's their work at the
+[lib/agent/rewire.ts] turn). STAY ON THIS SESSION'S JOB — it catches self-lies, nothing else. If the member veers into domain detail (training specifics, work logistics), acknowledge it in ONE line, then steer back: "That's real — and worth its own ride sometime. Right now, let's stay with the story you tell yourself — that's the one we're here to catch." Never turn the session into domain coaching or technical analysis.
+[lib/agent/rewire.ts] If a distress or crisis signal appears, drop the exercise and route to support (988 US / local) and a
+[lib/agent/rewire.ts] human — always on.
+[lib/agent/rewire.ts] it warmly in a few words — do not rewrite it or add your own; then (2) SERVE UP the next heaviest lie they
+[lib/agent/rewire.ts] named earlier that they haven't answered yet — name it back in their words and ask for its true line, one at
+[lib/agent/rewire.ts] add a gentle out — 'or is that your set?' — but keep offering the next one until they close.
+[lib/agent/rewire.ts] flowing turn, IN THIS ORDER: (1) RECEIVE it first (W-39) — reflect what they just admitted, in their OWN words;
+[lib/agent/rewire.ts] never lead with analysis. (2) Make the campaign visible: all five sounded reasonable, and every one keeps them
+[lib/agent/rewire.ts] where they are — not weakness, the campaign on autopilot; naming it is the first real move. (3) SEED the true
+[lib/agent/rewire.ts] line (W-40): they've been speaking honest, first-person lines all session (their story, their Reclaim List — see
+[lib/agent/rewire.ts] MEMBER CONTEXT; echo a few of their OWN words), so it lands as 'you already do this.' (4) Ask for the true line
+[lib/agent/rewire.ts] to the ONE lie that costs the most. Warm; use only their real words; no identity verdicts (reflect what they
+[lib/agent/rewire.ts] said, don't declare who they are).
+[lib/agent/rewire.ts] Their own first-person account of how the distance opened (honest lines they ALREADY spoke — seed the true-line work from these): ${gap}
+[lib/agent/rewire.ts] What they said they want back, in their words: ${list.map((x) =>
+[lib/agent/rewire.ts] MEMBER CONTEXT (what you already know — never say you don't): ${lines.join(' ')}
+[lib/agent/rewire.ts] build a clear picture of the person you want to become — the very thing those lies have been keeping from you.
+[lib/agent/rewire.ts] picture of you, on an ordinary day, does. So let's build a picture of where you want to be.
+[lib/agent/rewire.ts] In Reconnect you discovered the identity you'd drifted from, and set goals — building an entire Reclaim List of
+[lib/agent/rewire.ts] what you want back. Which one of those means the most to you right now?
+[lib/agent/rewire.ts] A race you've put on the calendar. A trip with friends you've been putting off. A day, in the clothes you'll be
+[lib/agent/rewire.ts] wearing, that's felt out of reach. Pick one.  Your brain rehearses a real destination far better than a vague
+[lib/agent/rewire.ts] Take your pick from what you want back — the one you'd most want to actually live. Or tell me you're not sure, and
+[lib/agent/rewire.ts] we'll find it together.
+[lib/agent/rewire.ts] That's not a wish. It's a goal you already named, with you standing in it, on the far side of the work. Look at
+[lib/agent/rewire.ts] it for a second — that's what the work is for. Hold onto that. When you're ready, tell me what comes up.
+[lib/agent/rewire.ts] it vivid — the light, the effort, the feeling. Don't rush it.
+[lib/agent/rewire.ts] you go back to the image. The lie is a story. The image is real — you built it from your own life. That's the
+[lib/agent/rewire.ts] whole move: the true line answers the lie, the image outlasts it.
+[lib/agent/rewire.ts] into it.
+[lib/agent/rewire.ts] I've saved your picture to your Playbook — yours to return to anytime. You've got both tools now: the lines that
+[lib/agent/rewire.ts] answer the lies, and the image that's stronger than them. That's Rewire starting to hold.
+[lib/agent/rewire.ts] ${receipt ?
+[lib/agent/rewire.ts] ${reflected ?
+[lib/agent/rewire.ts] You are the G4L Companion running W2, the Visualization Workshop, in Rewire (Phase 2). You already know this
+[lib/agent/rewire.ts] member (see MEMBER CONTEXT) — never say you don't. You are helping them build ONE vivid, aspirational mental
+[lib/agent/rewire.ts] image: themselves at the moment they get back something they named they want. Plain, measured, warm; never judge,
+[lib/agent/rewire.ts] grade, praise, diagnose, or over-promise. Draw out — reflect in THEIR words, one question at a time; let them set
+[lib/agent/rewire.ts] the depth. Do NOT invent details they didn't give; make what they DID give a touch more vivid. If a distress or
+[lib/agent/rewire.ts] crisis signal appears, drop the exercise and route to support (988 US / local) and a human — always on.
+[lib/agent/rewire.ts] Their Reclaim List (what they want back — pull the anchor goal from HERE): ${list.map((x) =>
+[lib/agent/rewire.ts] MEMBER CONTEXT (what you already know — never say you don't): ${lines.join(' ')}
+[lib/agent/rewire.ts] RIGHT NOW (the anchor): the member is choosing a vivid, aspirational GOAL to stand inside. Pull from their
+[lib/agent/rewire.ts] Reclaim List (in MEMBER CONTEXT). If they named one, reflect it back warmly and confirm it in one line, then
+[lib/agent/rewire.ts] we build the scene. If they're unsure, OFFER two or three of their actual Reclaim List items as candidates and
+[lib/agent/rewire.ts] ask them to pick. ADAPT to the goal: a race, a trip, or the clothes they want to wear paints a scene directly;
+[lib/agent/rewire.ts] a subtler goal (getting the marriage back on track, financial stability, being present) → help them find the
+[lib/agent/rewire.ts] coherent moment — where they are, themselves in it, who's with them, the feeling — warmly, in their own words.
+[lib/agent/rewire.ts] Do NOT add a question, do NOT add anything they didn't give.
+[lib/agent/rewire.ts] RIGHT NOW: the member just gave one piece of the scene. Reflect it back in 1–2 sentences, in their words, a
+[lib/agent/rewire.ts] touch more vivid — no new question, no next piece, no advice, nothing they didn't say.
+[lib/agent/rewire.ts] You've named the lies you tell yourself, and you've built a picture of where you're headed. This one's about the
+[lib/agent/rewire.ts] day it all goes sideways — because it will.
+[lib/agent/rewire.ts] they're the ones who had a plan for the slip before it happened. So we build yours now, while things are calm.
+[lib/agent/rewire.ts] And get this straight, because it's the whole game: a false start is not failure. It's the expected cost of
+[lib/agent/rewire.ts] changing a pattern you've run for decades. Expect it. Plan for it. Then a slip stops being the thing that ends
+[lib/agent/rewire.ts] your comeback and becomes just another day — something you recover from by dinner.
+[lib/agent/rewire.ts] So — when are you most likely to slip? A brutal week, travel, the holidays, late nights — what's usually going on
+[lib/agent/rewire.ts] when it happens?
+[lib/agent/rewire.ts] bored, celebrating); the excuse the brain makes ("just one day", "I'll start Monday", "I earned this" — the
+[lib/agent/rewire.ts] reasonable-sounding lies they audited before); the risky time or place (the 3pm slump, the evening collapse).
+[lib/agent/rewire.ts] and if you still want to quit after five, quit. (Usually you won't.) When it's food, name the specific swap — walk
+[lib/agent/rewire.ts] Now Reframe — the true line for a bad day. You've written lines that answer your lies before; here's one for a
+[lib/agent/rewire.ts] slip: "A false start is the cost of changing, not proof I can't." Say it your way.
+[lib/agent/rewire.ts] in the goal you named. The campaign can't compete with a picture that real.
+[lib/agent/rewire.ts] Here's your work this week: don't try to change anything yet. Just notice. Go to the Momentum card on your
+[lib/agent/rewire.ts] dashboard every day and log your good calls, your false starts and even quiet days where not much happened.
+[lib/agent/rewire.ts] that turns a slip into a comeback. That's Rewire. Next, we put it into the body.
+[lib/agent/rewire.ts] ?s| did| does)?\s+(that|this|it)\s+com|that
+[lib/agent/rewire.ts] Good — let's get it exactly how you'd say it.${BEAT_SEP}${reframeFallback(c)}
+[lib/agent/rewire.ts] You're right — that wasn't your line, and I shouldn't have put it in your mouth. YOUR words are the ones that hold on a hard day.${BEAT_SEP}${reframeFallback(c)}
+[lib/agent/rewire.ts] Triggers: ${triggers.join('; ')}
+[lib/agent/rewire.ts] Redirect — ${c.w3Redirect!.trim()}
+[lib/agent/rewire.ts] Reframe — “${c.w3Reframe!.trim()}”
+[lib/agent/rewire.ts] ${receipt ?
+[lib/agent/rewire.ts] Now Reframe — your true line for a bad day. Here's one you already wrote: “${line}” — want that as your bad-day line, or write a new one?
+[lib/agent/rewire.ts] And Restart — when the old voice gets loud, go back to the picture you built:  “${img}”  Sit with it a second — does it feel like enough to reach for on the hard day?
+[lib/agent/rewire.ts] ${W3_RESTART} When you picture it — does it feel like enough to reach for on the hard day?
+[lib/agent/rewire.ts] You are the G4L Companion running the False Start Protocol, in Rewire (Phase 2). You already know this member (see
+[lib/agent/rewire.ts] MEMBER CONTEXT). You are helping them build a plan for the day they slip — BEFORE it happens. Core posture: a false
+[lib/agent/rewire.ts] start is NOT failure; it's the expected cost of change — normalize it, never judge, grade, or scold. Plain, warm,
+[lib/agent/rewire.ts] measured — a real conversation, not a form. HOW YOU TALK (hard rules): (1) ONE question per turn — your reply ends
+[lib/agent/rewire.ts] with a single question; never stack two. (2) DRAW THEM OUT — reflect what they just said, specifically and in their
+[lib/agent/rewire.ts] words, then DIG IN: your one question goes DEEPER into what they raised, or opens a genuinely new angle — you are
+[lib/agent/rewire.ts] list to work through. (4) Reflect SPARINGLY — don't open every turn with the same validation tic ('makes complete
+[lib/agent/rewire.ts] sense', 'completely heard'); vary it. This session PULLS THEIR PRIOR TOOLS FORWARD: at the Reframe, offer the true
+[lib/agent/rewire.ts] lines they wrote before; at the Restart, point them to the picture they built (both in MEMBER CONTEXT) — adapt
+[lib/agent/rewire.ts] gracefully if a tool isn't there. (5) RECALL VERBATIM (W-23): when you surface a prior tool, QUOTE THEIR EXACT
+[lib/agent/rewire.ts] WORDS from MEMBER CONTEXT — never paraphrase or generalize ('the picture you built', 'that line you wrote'). Say
+[lib/agent/rewire.ts] line]"'. Hearing their OWN words at the moment of a slip is the whole point. NAMES: never say 'W1'/'W2'/'W3' — refer to earlier work descriptively. If a
+[lib/agent/rewire.ts] distress or crisis signal appears, drop the exercise and route to support (988 US / local) and a human — always on.
+[lib/agent/rewire.ts] The true lines they wrote to answer their lies (reach for these at the Reframe): ${lines.map((x) =>
+[lib/agent/rewire.ts] The picture they built of where they're headed (point them here at the Restart): ${image}
+[lib/agent/rewire.ts] MEMBER CONTEXT (what you already know — never say you don't): ${ctx.join(' ')}
+[lib/agent/rewire.ts] RIGHT NOW: the member just gave their REDIRECT (what they'll do instead). Acknowledge it warmly and
+[lib/agent/rewire.ts] specifically in a line, then pose the second move — NAME IT, open with 'Reframe —' so they see the step — as
+[lib/agent/rewire.ts] your single question:
+[lib/agent/rewire.ts] offer THIS line they already wrote, verbatim — "Reframe: here's a line you wrote: '${line}' — want that as your bad-day line, or write your own?"
+[lib/agent/rewire.ts] ask for a true line for a bad day — a slip is the cost of changing, not proof they can't; invite them to write it their way.
+[lib/agent/rewire.ts] then pose the third move — NAME IT, open with 'Restart —' so they see the step:
+[lib/agent/rewire.ts] point them to the picture they built, quoting it: "Restart: when the old voice gets loud, go back to this — '${img}'." Then invite them to sit with it (a gentle question so it's not a dead end — e.g. does it feel like enough to reach for?).
+[lib/agent/rewire.ts] remind them to go back to the picture they built of where they're headed, and invite them to sit with it (a gentle question so it's not a dead end).
+[lib/agent/rewire.ts] that seem heaviest (their words), then move into building THEIR PROTOCOL. Tell them it's THREE MOVES — Redirect,
+[lib/agent/rewire.ts] INSTEAD when that moment hits (the five-minute rule: start, and if you still want to quit after five, quit; or a
+[lib/agent/rewire.ts] specific swap — walk the block, call someone, leave the room).
+[lib/agent/rewire.ts] then DIG IN with your single question — go DEEPER into what they just raised, or open a genuinely new angle that
+[lib/agent/rewire.ts] hasn't come up. Areas for YOUR guidance only (never list or count them to the member): ${W3_TRIGGER_AREAS} Offer
+[lib/agent/rewire.ts] the Phase, a quick read on where your commitment sits now. Six of these, one to five. No passing score — just an
+[lib/agent/rewire.ts] honest gauge of what you're building.
+[lib/agent/rewire.ts] Just a number, 1 to 5 — how true does that feel right now?  ${rewireCheckpointDeliver(n)}
+[lib/curriculum/content/rewire.ts] Cross-examine it
+[lib/curriculum/content/rewire.ts] your starting-line note (and baseline numbers)
+[lib/curriculum/content/rewire.ts] your food reframe (in their words)
+[lib/curriculum/content/rewire.ts] I'm in
+[lib/curriculum/content/rewire.ts] your rehearsed win (in their words)
+[lib/curriculum/content/rewire.ts] your reframed line (in their words)
+[lib/curriculum/content/rewire.ts] your clip-back-in move (in their words)
+[lib/curriculum/content/rewire.ts] Setbacks are built in
+[lib/agent/rebuild.ts] model reflects, engine carries the turn forward — never both, never a dead-end
+[lib/agent/rebuild.ts] There's a simple place to start — your why. The reasons that are actually yours. Answer a few questions to get a
+[lib/agent/rebuild.ts] read on where you stand today. For each statement, tell me how true it feels — 1 (not at all true for you) to 7
+[lib/agent/rebuild.ts] questions down the road, you can watch your why become more your own. That shift is the real work of Rebuild. Your
+[lib/agent/rebuild.ts] next step is on your dashboard.
+[lib/agent/rebuild.ts] ${B1_DIET_TURN}  ${item.stem}
+[lib/agent/rebuild.ts] A number from 1 to 7 — 1 is “not at all true for you,” 7 is “very true for you.”  ${whyDeliver(n)}
+[lib/agent/rebuild.ts] let's take stock of your current state. Review these statements and rate each one 1-strongly disagree to 4-strongly
+[lib/agent/rebuild.ts] agree.  Let's start with Movement.
+[lib/agent/rebuild.ts] Right now it looks like ${strongest.toLowerCase()} is a strength of yours. The skill with the most room to grow
+[lib/agent/rebuild.ts] is ${growthEdge.toLowerCase()}. Neither is fixed; a skill is just something you practice and improve. This week
+[lib/agent/rebuild.ts] you don't have to change anything — just notice these showing up: when a strong skill carries you, and when a
+[lib/agent/rebuild.ts] weaker one trips you. That's the work. Just notice. We'll kick that off in your next step. You can find it at the
+[lib/agent/rebuild.ts] top of your Dashboard.
+[lib/agent/rebuild.ts] ${item.skill}: ${item.stem}
+[lib/agent/rebuild.ts] Movement first.  ${line}
+[lib/agent/rebuild.ts] A number from 1 to 4 — 1 is strongly disagree, 4 is strongly agree.  ${skillsDeliver(n)}
+[lib/agent/rebuild.ts] you're not already doing and small enough to actually stick.
+[lib/agent/rebuild.ts] Here's your week, then — small and yours:  Movement: ${activity} Eating: ${diet}
+[lib/agent/rebuild.ts] doing. A 10-minute walk after dinner, five minutes of stretching, one short strength session. Small and real.
+[lib/agent/rebuild.ts] sugary drink for water, a fruit with breakfast. What feels doable?
+[lib/agent/rebuild.ts] ?em)(?: in)?|that
+[lib/agent/rebuild.ts] Let's leave it there for today — you've got ${activity && diet ? 'both pieces' : 'one piece'} down
+[lib/agent/rebuild.ts] ${activity ?
+[lib/agent/rebuild.ts] : ''}${activity && diet ?
+[lib/agent/rebuild.ts] You are the G4L Companion running B3, the Lifestyle Pilot, in Rebuild (Phase 3). Your job is to COACH the member to
+[lib/agent/rebuild.ts] a small, doable, member-owned plan: ONE small new physical-activity change and ONE small new dietary change for the
+[lib/agent/rebuild.ts] coming week. This is coaching, not therapy and not a survey — help them make a plan; don't excavate feelings or
+[lib/agent/rebuild.ts] grade them. Plain, measured, warm, no hype.
+[lib/agent/rebuild.ts] vague ('exercise more', 'eat better'), sharpen it WITH them into something specific and trackable ('a 10-minute walk
+[lib/agent/rebuild.ts] after dinner, 3 days'). If they have nothing to reach for, OFFER concrete examples (a 10-minute walk after dinner;
+[lib/agent/rebuild.ts] five minutes of morning stretching; adding a vegetable at dinner; swapping one sugary drink for water). RIGHT-SIZE:
+[lib/agent/rebuild.ts] if they over-commit ('run every day', 'cut out all sugar'), gently dial it back — small and new beats ambitious and
+[lib/agent/rebuild.ts] abandoned. Play their own words back; never impose a plan.
+[lib/agent/rebuild.ts] LOCKING A CHANGE: the moment a change is specific, right-sized, AND the member has affirmed it, call record_plan for
+[lib/agent/rebuild.ts] that field (activityChange for movement, dietChange for eating) — the change in their own words. Do NOT call
+[lib/agent/rebuild.ts] record_plan for a vague or oversized change; keep coaching until it's real. After you lock the FIRST change, keep
+[lib/agent/rebuild.ts] never end your turn on just an acknowledgment while a change is still open. Once BOTH are locked, stop and give a
+[lib/agent/rebuild.ts] brief warm acknowledgment — the app shows the member their plan to confirm. If a distress or crisis signal appears,
+[lib/agent/rebuild.ts] drop the exercise and route to support (988 US / local) and a human — always on.
+[lib/agent/rebuild.ts] Lock a plan field once it is specific, right-sized, and the member has affirmed it. Pass activityChange for the
+[lib/agent/rebuild.ts] Their Reclaim List (what they're taking back — you HAVE this; never say you can't see it): ${reclaim.join('; ')}
+[lib/agent/rebuild.ts] MEMBER CONTEXT (what you already know — never say you don't): ${lines.join(' ')}
+[lib/agent/rebuild.ts] RIGHT NOW: coach the MOVEMENT change — one small, specific, trackable thing they're not already doing. When it's real and they've affirmed it, call record_plan(activityChange). Then DON'T STOP — in the same reply, briefly acknowledge it and move straight into coaching the EATING change (there are two; never end your turn on just an acknowledgment).
+[lib/agent/rebuild.ts] RIGHT NOW: the movement change is locked. Now coach the EATING change — one small upgrade. When it's real and affirmed, call record_plan(dietChange).
+[lib/agent/rebuild.ts] Movement — ${activity} Eating — ${diet}
+[lib/agent/rebuild.ts] You did the real work of Rebuild — you found your why, took honest stock of your skills, and ran the pilot in your
+[lib/agent/rebuild.ts] own life. Before we close the Phase, a quick read on where your control sits now. A dozen of these, one to five. No
+[lib/agent/rebuild.ts] passing score — just an honest gauge of what you've built.
+[lib/agent/rebuild.ts] Just a number, 1 to 5 — how true does that feel right now?  ${rebuildCheckpointDeliver(n)}
+[lib/rebuild/why-instrument.ts] scoreWhy expects ${WHY_ITEM_COUNT} responses, got ${responses.length}
+[lib/rebuild/skills-instrument.ts] B2-PA${s.no}
+[lib/rebuild/skills-instrument.ts] B2-DI${s.no}
+[lib/rebuild/skills-instrument.ts] scoreSkills expects ${SKILLS_ITEM_COUNT} responses, got ${responses.length}
+[lib/rebuild/skills-instrument.ts] B2-PA${s.no}
+[lib/rebuild/skills-instrument.ts] B2-DI${s.no}
+[lib/agent/reclaim.ts] we'll take a look back at how the work you've done through Reconnect, Rewire, and Rebuild is showing up for you.
+[lib/agent/reclaim.ts] disagree) to 5 (strongly agree). We'll do it in three parts: your body, your relationships, and who you are.
+[lib/agent/reclaim.ts] were mixed, that's honest too: Reclaim isn't all-or-nothing. You can be in Reclaim in your body and still in
+[lib/agent/reclaim.ts] ${EVIDENCE_PART_LABEL[partStart]}  ${item.stem}
+[lib/agent/reclaim.ts] Just a number, 1 to 5 — how true does that feel?  ${evidenceDeliver(n)}
+[lib/agent/reclaim.ts] ${C1_STEP1_CLOSE}${BEAT_SEP}${refineOpener(b.collected)}
+[lib/agent/reclaim.ts] revisit it now to make sure it still fits the person you're becoming.${BEAT_SEP}Here's your list as it stands:  ${shown}${BEAT_SEP}Before changing anything,
+[lib/agent/reclaim.ts] just notice it. What still feels true, what feels different, and what feels newly important?
+[lib/agent/reclaim.ts] pendingRefinement
+[lib/agent/reclaim.ts] ${TIER_LABEL[tier]}: ${items.map((i) =>
+[lib/agent/reclaim.ts] The three you'd move on next: ${top3.join(' · ')}.
+[lib/agent/reclaim.ts] Here's your list, refined:  ${byTier}${top3Line}${BEAT_SEP}Want me to save this as your Reclaim List, or tweak something first?
+[lib/agent/reclaim.ts] pendingRefinement
+[lib/agent/reclaim.ts] You are the G4L Companion running C1 Step 2 — revisiting the member's Reclaim List in Reclaim (Phase 4). The list
+[lib/agent/reclaim.ts] was built at the very start; now, after Reconnect/Rewire/Rebuild, you help them re-read it THROUGH A CHANGED SELF
+[lib/agent/reclaim.ts] and refine it. This is coaching, warm and member-owned — not a survey, not therapy. Walk them, one question at a
+[lib/agent/reclaim.ts] time, through: (1) re-read the list and notice it; (2) reflect on what still feels true, what feels different,
+[lib/agent/reclaim.ts] what's newly important; (3) refine the wording — help vague items ('be healthier') become specific and personal
+[lib/agent/reclaim.ts] tiers — Top Priorities Now, Important but Not First, Emerging Priorities, No Longer Central — then name the three
+[lib/agent/reclaim.ts] they'd move on next. Play their own words back; never impose. Do NOT rewrite their list yourself — you propose,
+[lib/agent/reclaim.ts] they decide.
+[lib/agent/reclaim.ts] if unchanged), tier} — plus top3 (the three refined texts they'd move on next). Only call it when the refinement is
+[lib/agent/reclaim.ts] settled; the app then shows them the result to confirm before anything is saved. 'No Longer Central' just means
+[lib/agent/reclaim.ts] lowest priority for this season — it does NOT delete the item. If a distress or crisis signal appears, drop the
+[lib/agent/reclaim.ts] exercise and route to support (988 US / local) and a human — always on.
+[lib/agent/reclaim.ts] as {original, text, tier} and the top3 refined texts. Only call once the refinement is settled in conversation.
+[lib/agent/reclaim.ts] RIGHT NOW: the member's current Reclaim List is: ${list.map((t) =>
+[lib/agent/reclaim.ts] you want your world to get BIGGER, and which area to push on first. I'll walk you through four areas — Physical,
+[lib/agent/reclaim.ts] Self, Social, Outlook — and for each, a few quick reads, 1 to 10: where you are, where you want to be, how much it
+[lib/agent/reclaim.ts] matters, how ready you feel, and how much progress there would lift the rest of your life. No wrong answers — this
+[lib/agent/reclaim.ts] is about finding priorities, not judging yourself.
+[lib/agent/reclaim.ts] ${AUDIT_DOMAIN_LABEL[domainStart]} — ${AUDIT_DOMAIN_INTRO[domainStart]}  ${item.prompt}
+[lib/agent/reclaim.ts] And if you want an easier place to build momentum first, ${lever} is where you're most ready.
+[lib/agent/reclaim.ts] Here's what stands out. Your best next focus looks like your ${primary} life because it matters to you and
+[lib/agent/reclaim.ts] progress there would ripple into the rest of your life.${leverLine}
+[lib/agent/reclaim.ts] ${BEAT_SEP}This was about finding the priority, not judging any of it. It's saved — you can come back to it anytime.
+[lib/agent/reclaim.ts] A number from 1 to 10 — where would you put it?  ${auditDeliver(n)}
+[lib/agent/reclaim.ts] possible.
+[lib/agent/reclaim.ts] makes a day feel like yours. Let's start by defining your quality day.
+[lib/agent/reclaim.ts] pendingQualityDay
+[lib/agent/reclaim.ts] qualityDay
+[lib/agent/reclaim.ts] Non-negotiables — a day's hard to call quality without these: ${list(q.nonNegotiables)}
+[lib/agent/reclaim.ts] Strong contributors: ${list(q.contributors)}
+[lib/agent/reclaim.ts] And what tends to pull a day down for you: ${list(q.disruptors)}
+[lib/agent/reclaim.ts] Here's your Quality Day:  ${parts}${BEAT_SEP}Want me to save this and start your week of tracking, or adjust it first?
+[lib/agent/reclaim.ts] ?s go|that
+[lib/agent/reclaim.ts] You are the G4L Companion running C3, Quality Days, in Reclaim (Phase 4). You help the member DEFINE what makes a
+[lib/agent/reclaim.ts] day a 'quality day' for them — a warm, member-owned coaching conversation (not a survey). Walk them: (1) elicit
+[lib/agent/reclaim.ts] what's present when a day feels genuinely good — solid, healthy, meaningful, aligned (offer examples only if they're
+[lib/agent/reclaim.ts] stuck — movement, eating well, rest, connection, calm, focus, time outside, creativity, progress); (2) help them
+[lib/agent/reclaim.ts] sort it into Greg's simple ranking — the TOP 3 non-negotiables (a day is hard to call quality without these), the
+[lib/agent/reclaim.ts] their own words back. Anchor elements (movement, eating, rest) usually belong in the non-negotiables, but it's
+[lib/agent/reclaim.ts] theirs to decide — never impose.
+[lib/agent/reclaim.ts] to 3), and disruptors (up to 2) — the member's own words. Only call it when it's settled; the app then shows them
+[lib/agent/reclaim.ts] top 3 — a day is hard to call quality without these
+[lib/agent/reclaim.ts] next 3 — strongly improve the day
+[lib/agent/reclaim.ts] top 2 — most often pull the day down
+[lib/agent/reclaim.ts] nonNegotiables
+[lib/agent/reclaim.ts] qualityDay
+[lib/agent/reclaim.ts] bigger, and defined what makes a day yours. Before we close the cycle, a quick read on where your challenge sits
+[lib/agent/reclaim.ts] now — the pull toward what's possible. Six of these, one to five. No passing score — just an honest gauge.
+[lib/agent/reclaim.ts] Just a number, 1 to 5 — how true does that feel right now?  ${reclaimCheckpointDeliver(n)}
+[lib/grinta/survey/instrument.ts] I have a general sense of what I am doing and why I am doing it
+[lib/grinta/survey/instrument.ts] pairwiseAverage expects an even count, got ${responses.length}
+[lib/grinta/survey/instrument.ts] unknown Grinta item code: ${code}
+[lib/grinta/survey/instrument.ts] unknown Grinta item code: ${code}
+[lib/curriculum/registry.ts] light (did-you / yes-no)
+[lib/curriculum/registry.ts] milestone + gate
+[lib/curriculum/registry.ts] your ID Score (baseline measurement)
+[lib/curriculum/registry.ts] Daily clip-in
+[lib/curriculum/registry.ts] Sleep check-in
+[lib/curriculum/registry.ts] session:RCN-EXC:closed
+[lib/curriculum/registry.ts] checkpoint:reconnect:passed
+[lib/curriculum/registry.ts] checkpoint:rewire:passed
+[lib/curriculum/registry.ts] checkpoint:rebuild:passed
+[lib/curriculum/registry.ts] reclaim:item:reclaimed
+[lib/curriculum/registry.ts] checkpoint:reclaim:passed
+[lib/curriculum/registry.ts] reconnect:doors
+[lib/curriculum/registry.ts] reconnect:idq
+[lib/curriculum/registry.ts] checkpoint:reconnect:passed
+[lib/curriculum/registry.ts] rewire:w1
+[lib/curriculum/registry.ts] rewire:w2
+[lib/curriculum/registry.ts] rewire:w3
+[lib/curriculum/registry.ts] checkpoint:rewire:passed
+[lib/curriculum/registry.ts] rebuild:b1
+[lib/curriculum/registry.ts] rebuild:b2
+[lib/curriculum/registry.ts] rebuild:b3
+[lib/curriculum/registry.ts] checkpoint:rebuild:passed
+[lib/curriculum/registry.ts] reclaim:item:reclaimed
+[lib/curriculum/registry.ts] reclaim:c2
+[lib/curriculum/registry.ts] reclaim:c3
+[lib/curriculum/registry.ts] reclaim:transition
+[lib/curriculum/registry.ts] checkpoint:reclaim:passed
+[lib/curriculum/registry.ts] radial-gradient(circle, #EC6233 0 28%, #919536 28% 52%, #3B9495 52% 76%, #374F63 76% 100%)
+[lib/curriculum/registry.ts] checkpoint:
+[lib/curriculum/registry.ts] reclaim:transition
+[app/badges/[memberId]/page.tsx] bd-phase-h ${g.key}
+[app/badges/[memberId]/page.tsx] bd-badge${b.earned ? ' earned' : ''}
+[app/badges/[memberId]/page.tsx] so far.
+[app/dashboard/redesign-dashboard.tsx] Session ${curSessionIdx + 1} of ${phaseSessions.length}
+[app/dashboard/redesign-dashboard.tsx] 0 of 3
+[app/dashboard/redesign-dashboard.tsx] ${Math.min(activeRing.done, phaseSessions.length)} of ${phaseSessions.length}
+[app/dashboard/redesign-dashboard.tsx] the ${dash.identityNoun}
+[app/dashboard/redesign-dashboard.tsx] ${HERO_VERB[activePhase] ?? 'Reconnecting'} ${identitySelves}
+[app/dashboard/redesign-dashboard.tsx] select threshold_crossed_at, tour_completed_at from member_profile where member_id=$1
+[app/dashboard/redesign-dashboard.tsx] Or move on to ${practiceNext.label}
+[app/dashboard/redesign-dashboard.tsx] rreg-dir dir-${dash.score.direction}
+[app/dashboard/redesign-dashboard.tsx] ${dash.score.delta > 0 ? '+' : ''}${Math.round(dash.score.delta)}
+[app/dashboard/redesign-dashboard.tsx] rreg-dir dir-${grinta.direction}
+[app/dashboard/redesign-dashboard.tsx] ${grinta.changePct > 0 ? '+' : ''}${grinta.changePct}%
+[app/dashboard/resilience-pulse.tsx] 0 0 ${g.width} ${H}
+[app/dashboard/resilience-pulse.tsx] 10px 18px
+[app/momentum/[memberId]/page.tsx] ${t.good} good
+[app/momentum/[memberId]/page.tsx] ${t.false} false start${t.false === 1 ? '' : 's'}
+[app/momentum/[memberId]/page.tsx] What you’re holding yourself to
+[app/momentum/[memberId]/page.tsx] mlog-row is-${c.type}
+[app/momentum/momentum-log.tsx] momentum-domain-btn${domain === 'activity' ? ' is-on' : ''}
+[app/momentum/momentum-log.tsx] momentum-domain-btn${domain === 'diet' ? ' is-on' : ''}
+[app/momentum/momentum-log.tsx] momentum-log-btn is-${o.type}
+[app/score/[memberId]/page.tsx] Your ID Score right now is
+[app/score/[memberId]/page.tsx] The shape of you
+[app/score/[memberId]/page.tsx] now ·
+[app/score/[memberId]/page.tsx] your last IDQ
+[app/grinta/[memberId]/page.tsx] Where the name comes from
