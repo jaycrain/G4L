@@ -1,26 +1,38 @@
 'use server';
 
 import { isAdmin } from '../../authz.ts';
+import { getDb } from '../../../lib/db/index.ts';
 import { FOUNDER_COMPANION_SYSTEM, cohortContext } from '../../../lib/founder/companion.ts';
+import { FOUNDER_TOOLS, runFounderTool, newTurnBudget } from '../../../lib/founder/companion-tools.ts';
 import type { CohortView, AttentionRow } from '../../../lib/admin/console.ts';
 
 /**
- * One turn with the Founder Companion. READ-ONLY over member data — it reasons from the cohort context the
- * server already computed, and has no tool that writes anything.
+ * One turn with the Founder Companion.
  *
- * The cohort/attention values arrive from the client, which is safe here ONLY because they are used as
- * PROMPT CONTEXT and nothing else — no query is built from them and no record is written. They are also
- * already on that client's screen. If this ever gains a tool that acts, re-derive them server-side first.
+ * IT RETRIEVES RATHER THAN BEING BRIEFED. The first cut handed the model a fixed cohort summary, so it could
+ * say "1 stalled" but not who — and at 1,000 members no static brief fits in a prompt anyway, while 999 of
+ * those members are irrelevant to whatever Jay just asked. So it runs tools: it fetches the answer to the
+ * question asked, and nothing else. Jay's use is a phone, mid-ride, asking one specific thing.
+ *
+ * READ-ONLY, ENFORCED HERE AND NOT JUST BY THE PROMPT. Every tool in FOUNDER_TOOLS is a SELECT. There is no
+ * write path, no send path, no draft-approve path — a prompt injection through a member's own name or gap
+ * text has nothing to reach for. The no-auto-send rule is upheld by there being no send tool to call.
+ *
+ * The cohort/attention values from the client stay PROMPT CONTEXT only — nothing queries from them. Tools
+ * re-derive everything server-side, which is what makes it safe to let the model drive them.
  */
 export async function askFounderCompanionAction(
   question: string,
   cohort: CohortView,
   attention: AttentionRow[],
-): Promise<{ reply: string }> {
-  if (!(await isAdmin())) return { reply: 'Not authorized.' };
+): Promise<{ reply: string; looked: string[] }> {
+  if (!(await isAdmin())) return { reply: 'Not authorized.', looked: [] };
   const q = (question ?? '').trim().slice(0, 2000);
-  if (!q) return { reply: '' };
+  if (!q) return { reply: '', looked: [] };
+
+  const looked: string[] = [];
   try {
+    const db = await getDb();
     const { default: Anthropic } = await import('@anthropic-ai/sdk');
     const client = new Anthropic({
       apiKey: process.env.ANTHROPIC_API_KEY,
@@ -28,15 +40,51 @@ export async function askFounderCompanionAction(
       maxRetries: 2,
       defaultHeaders: { 'accept-encoding': 'identity' },
     });
-    const res = await client.messages.create({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 700,
-      system: `${FOUNDER_COMPANION_SYSTEM}\n\nMEMBER CONTEXT (the only facts you have — never invent beyond these):\n${cohortContext(cohort, attention)}`,
-      messages: [{ role: 'user', content: q }],
-    });
-    const block = res.content.find((c) => c.type === 'text');
-    return { reply: block && block.type === 'text' ? block.text.trim() : '(no answer)' };
+
+    const system = `${FOUNDER_COMPANION_SYSTEM}
+
+WHAT IS ALREADY ON JAY'S SCREEN (so you don't just read it back at him):
+${cohortContext(cohort, attention)}`;
+
+    const messages: Array<{ role: 'user' | 'assistant'; content: unknown }> = [{ role: 'user', content: q }];
+    // One budget for the whole turn, so the member-detail fan-out cap spans every pass of the tool loop —
+    // not just a single pass, which the model could trivially step around by spreading calls out.
+    const budget = newTurnBudget();
+
+    // Bounded loop. Four passes is enough for "find the stalled members, then look one up" and it caps the
+    // cost of a model that decides to keep browsing. Terminates on the first turn with no tool_use.
+    for (let pass = 0; pass < 4; pass++) {
+      const res = await client.messages.create({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 900,
+        system,
+        tools: FOUNDER_TOOLS,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        messages: messages as any,
+      });
+
+      const calls = res.content.filter((c): c is Extract<typeof c, { type: 'tool_use' }> => c.type === 'tool_use');
+      if (!calls.length || res.stop_reason !== 'tool_use') {
+        const block = res.content.find((c) => c.type === 'text');
+        return { reply: block && block.type === 'text' ? block.text.trim() : '(no answer)', looked };
+      }
+
+      messages.push({ role: 'assistant', content: res.content });
+      const results = await Promise.all(
+        calls.map(async (c) => {
+          looked.push(c.name);
+          const out = await runFounderTool(db, c.name, (c.input ?? {}) as Record<string, unknown>, Date.now(), budget).catch((e) => ({
+            error: `That lookup failed: ${e instanceof Error ? e.message : 'unknown'}. Say the lookup failed — do not answer as if the result were empty.`,
+          }));
+          return { type: 'tool_result' as const, tool_use_id: c.id, content: JSON.stringify(out) };
+        }),
+      );
+      messages.push({ role: 'user', content: results });
+    }
+
+    // Ran out of passes. Say so rather than inventing a conclusion from partial lookups.
+    return { reply: 'That took more digging than I could do in one go — try asking it more narrowly.', looked };
   } catch {
-    return { reply: 'I couldn’t reach that just now — try again in a moment.' };
+    return { reply: 'I couldn’t reach that just now — try again in a moment.', looked };
   }
 }

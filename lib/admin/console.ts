@@ -120,9 +120,13 @@ export type FeedItem = { initials: string; text: string; at: string; memberId: s
 export async function activityFeed(db: Db, limit = 12): Promise<FeedItem[]> {
   try {
     const { rows } = await db.query<{
-      member_id: string; display_name: string; kind: string; payload: unknown; created_at: unknown;
+      member_id: string; display_name: string; kind: string; ref: string | null; created_at: unknown;
     }>(
-      `select e.member_id, p.display_name, e.kind, e.payload, e.created_at
+      // `ref` is a TOP-LEVEL column on member_event, not a key inside a payload jsonb. The first cut read
+      // e.payload — a column that does not exist — so this threw on every call and the catch below turned it
+      // into an empty feed. It rendered as "nothing has happened", which is the most misleading possible
+      // failure for a panel whose whole job is showing what happened. Hence the log in the catch.
+      `select e.member_id, p.display_name, e.kind, e.ref, e.created_at
          from member_event e
          join member_profile p on p.member_id = e.member_id
         where e.kind in ('session_close','checkpoint_cross','idq_complete','goal_reclaimed')
@@ -132,7 +136,7 @@ export async function activityFeed(db: Db, limit = 12): Promise<FeedItem[]> {
       [limit],
     );
     return rows.map((r) => {
-      const ref = (r.payload as { ref?: string } | null)?.ref ?? '';
+      const ref = r.ref ?? '';
       const text =
         r.kind === 'session_close' ? `closed ${ref || 'a Session'}`
         : r.kind === 'checkpoint_cross' ? `crossed ${ref || 'a Checkpoint'}`
@@ -146,8 +150,12 @@ export async function activityFeed(db: Db, limit = 12): Promise<FeedItem[]> {
         tone: r.kind === 'idq_complete' ? 'join' : r.kind === 'session_close' ? 'work' : 'win',
       } as FeedItem;
     });
-  } catch {
-    return []; // the console degrades to quiet rather than breaking — same posture as the dashboard reads
+  } catch (e) {
+    // Degrade to quiet rather than break the page — but SAY SO in the log. A silent [] here is
+    // indistinguishable from a genuinely quiet cohort, and that is exactly how the broken query above
+    // survived a deploy unnoticed.
+    console.error('[console] activityFeed read failed — feed rendered empty:', e);
+    return [];
   }
 }
 

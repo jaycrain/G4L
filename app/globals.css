@@ -2230,6 +2230,8 @@ main:has(.fc-wrap) { max-width: 1240px; }
 .fc-b.co { align-self:flex-start; background:rgba(255,255,255,.09); color:#EAF0F2; border-bottom-left-radius:5px; }
 .fc-b.me { align-self:flex-end; background:rgba(255,255,255,.19); color:#fff; border-bottom-right-radius:5px; }
 .fc-thinking { opacity:.6; font-style:italic; }
+/* Where the answer came from. Quiet on purpose — it's a receipt, not a finding. */
+.fc-looked { font-size:11px; letter-spacing:.02em; opacity:.5; margin:2px 0 8px 2px; }
 .fc-pins { display:flex; gap:7px; flex-wrap:wrap; padding:8px 22px 2px; }
 .fc-pin { font-family:inherit; font-size:12px; font-weight:600; color:#DCE7EA; background:rgba(255,255,255,.10);
   border:1px solid rgba(255,255,255,.14); border-radius:999px; padding:.3rem .68rem; cursor:pointer; white-space:nowrap; }

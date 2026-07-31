@@ -120,3 +120,42 @@ test('QUIET_AFTER_DAYS is 5 — the threshold Jay reads the cohort against', () 
   assert.equal(QUIET_AFTER_DAYS, 5);
   assert.equal(STALLED_AFTER_HOURS, 24);
 });
+
+// ── THE ACTIVITY FEED ────────────────────────────────────────────────────────────────────────────────────
+// This needs a real database because the bug it protects against was a WRONG COLUMN NAME, and no amount of
+// pure-function testing can catch that. The first cut selected `e.payload` — member_event has no such column
+// (`ref` is top-level) — so every call threw, the catch turned it into `[]`, and the panel rendered "nothing
+// has happened yet" on a cohort that had been busy. A silent empty is the most dangerous result a feed can
+// return, because it is indistinguishable from the truth.
+//
+// So this test asserts the feed contains ROWS. "It didn't throw" is not the property that matters.
+
+test('activityFeed returns real rows — a wrong column must fail loudly, not render as a quiet cohort', async () => {
+  const { PGlite } = await import('@electric-sql/pglite');
+  const { applySchema } = await import('../lib/db/schema.ts');
+  const { activityFeed } = await import('../lib/admin/console.ts');
+  const db = new PGlite() as unknown as import('../lib/db/schema.ts').Db;
+  await applySchema(db);
+
+  const id = (
+    await db.query<{ member_id: string }>(
+      `insert into member_profile (display_name, email) values ('Donna Crain','donna@x.com') returning member_id`,
+    )
+  ).rows[0]!.member_id;
+  const demo = (
+    await db.query<{ member_id: string }>(
+      `insert into member_profile (display_name, email) values ('Demo','demo@grintaforlife.test') returning member_id`,
+    )
+  ).rows[0]!.member_id;
+  await db.query(`insert into member_event (member_id, kind, ref) values ($1,'session_close','RCN-EXC')`, [id]);
+  await db.query(`insert into member_event (member_id, kind) values ($1,'idq_complete')`, [id]);
+  await db.query(`insert into member_event (member_id, kind, ref) values ($1,'page_view','dashboard')`, [id]);
+  await db.query(`insert into member_event (member_id, kind, ref) values ($1,'session_close','RCN-VAL')`, [demo]);
+
+  const feed = await activityFeed(db);
+  assert.ok(feed.length > 0, 'the feed came back empty — the read is broken, not the cohort');
+  assert.equal(feed.length, 2, 'a page_view is not news, and a demo persona is not a member');
+  assert.ok(feed.some((f) => f.text === 'Donna Crain closed RCN-EXC'), 'the ref must reach the label');
+  assert.ok(feed.some((f) => f.text === 'Donna Crain completed the IDQ'));
+  assert.equal(feed[0]!.initials, 'DC');
+});

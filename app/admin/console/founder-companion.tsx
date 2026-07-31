@@ -4,7 +4,21 @@ import { useState } from 'react';
 import type { CohortView, AttentionRow } from '../../../lib/admin/console.ts';
 import { askFounderCompanionAction } from './actions.ts';
 
-type Turn = { role: 'jay' | 'companion'; text: string };
+type Turn = { role: 'jay' | 'companion'; text: string; looked?: string[] };
+
+/**
+ * What each tool is called, in words. Shown under an answer so Jay can see WHERE it looked — the difference
+ * between "it says 2 are stalled" and "it says 2 are stalled and I can see it actually checked". It also
+ * makes the privacy line visible in use: if an answer about the cohort ever shows "opened one member's
+ * record", that is the thing to catch, and it is now catchable by eye.
+ */
+const LOOKED: Record<string, string> = {
+  cohort_stats: 'the cohort numbers',
+  find_members: 'who matches',
+  member_detail: "one member's record",
+  recent_activity: 'what moved',
+  operations_status: 'your queues',
+};
 
 /** Saved starting points. These are the questions Jay actually opens with — not a feature tour. */
 const PINS = [
@@ -26,7 +40,14 @@ export default function FounderCompanion({ cohort, attention }: { cohort: Cohort
     setThread((t) => [...t, { role: 'jay', text: q }]);
     setPending(true);
     const r = await askFounderCompanionAction(q, cohort, attention).catch(() => null);
-    setThread((t) => [...t, { role: 'companion', text: r?.reply ?? 'I couldn’t reach that just now — try again in a moment.' }]);
+    setThread((t) => [
+      ...t,
+      {
+        role: 'companion',
+        text: r?.reply ?? 'I couldn’t reach that just now — try again in a moment.',
+        looked: r?.looked ?? [],
+      },
+    ]);
     setPending(false);
   }
 
@@ -47,9 +68,15 @@ export default function FounderCompanion({ cohort, attention }: { cohort: Cohort
 
       <div className="fc-thread">
         <div className="fc-b co">{opener}</div>
-        {thread.map((t, i) => (
-          <div key={i} className={`fc-b ${t.role === 'jay' ? 'me' : 'co'}`}>{t.text}</div>
-        ))}
+        {thread.map((t, i) => {
+          const where = [...new Set(t.looked ?? [])].map((n) => LOOKED[n] ?? n);
+          return (
+            <div key={i}>
+              <div className={`fc-b ${t.role === 'jay' ? 'me' : 'co'}`}>{t.text}</div>
+              {where.length > 0 && <div className="fc-looked">Checked {where.join(', ')}</div>}
+            </div>
+          );
+        })}
         {pending && <div className="fc-b co fc-thinking">Looking…</div>}
       </div>
 
