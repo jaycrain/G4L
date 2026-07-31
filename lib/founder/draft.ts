@@ -13,18 +13,24 @@
 
 import type { Direction } from '../idq/scoring.ts';
 
+// RETIRED 2026-07-31: 'cycle2_welcome'. It drafted an email built entirely on the Loop — "a new Door has
+// opened, you're starting again, what you built last cycle comes with you." The Loop gate is OFF in production
+// and the 60-day rule is still a Greg-and-Jay placeholder, so clicking it wrote confidently about a member's
+// "last cycle" when there had never been one. Bring it back the day the Loop ships, with the wording checked
+// against whatever the Loop actually turns out to be.
 export type OperatingMoment =
   | 'post_idq_welcome'
   | 'retake_commentary'
   | 'milestone_commentary'
   | 'false_start_return'
-  | 'cycle2_welcome';
+  | 'gone_quiet'
+  | 'goal_reclaimed';
 
 export const MOMENTS: Record<OperatingMoment, { label: string; posture: string }> = {
   post_idq_welcome: {
     label: 'Welcome (post-IDQ)',
     posture:
-      'Welcome them to the cycle. Acknowledge their intake in plain language, name their Door, and frame the work ahead. This is NOT a results email — no metrics. Warm, steady, personal. 6–10 sentences.',
+      'Welcome them to the program. Acknowledge their intake in plain language, name their Door, and frame the work ahead. This is NOT a results email — no metrics. Warm, steady, personal. 6–10 sentences.',
   },
   retake_commentary: {
     label: 'Retake commentary',
@@ -41,10 +47,15 @@ export const MOMENTS: Record<OperatingMoment, { label: string; posture: string }
     posture:
       'They slipped and have been away. Welcome them back with zero guilt or pressure. Normalize the false start — it is part of the work. Offer one small next step. Short.',
   },
-  cycle2_welcome: {
-    label: 'Cycle 2 welcome',
+  gone_quiet: {
+    label: 'Gone quiet',
     posture:
-      'A new Door has opened and they are beginning again. Acknowledge what they carry forward from last cycle. Frame Cycle 2 without making it feel like starting over. 6–10 sentences.',
+      'They have not been back in a while and have NOT told you why. Do not assume a reason, do not imply they owe you anything, and never suggest they have fallen behind — the Fade is a hundred reasonable decisions, not a failing. Reference one specific thing they told you they wanted back, so it reads as being remembered rather than chased. Leave the door open and expect nothing. Short — 3–5 sentences.',
+  },
+  goal_reclaimed: {
+    label: 'Goal reclaimed',
+    posture:
+      'They marked something on their Reclaim List as reclaimed — the thing the whole program works toward. Name the specific item in their own words. Reflect what it took without grading it or calling it a win; they are the authority on what it meant. Do not immediately point at the next goal — let this one land. 3–6 sentences.',
   },
 };
 
@@ -111,10 +122,15 @@ function scriptedDraft(moment: OperatingMoment, c: FounderContext): Draft {
         subject: `${name} — good to see you back`,
         body: `${name},\n\nYou stepped away for a bit. That happens — it's built into the work, not a mark against you. No need to make up for lost time.\n\nOne small step is enough to be back in it. It's on your dashboard when you're ready.\n\n— Jay`,
       };
-    case 'cycle2_welcome':
+    case 'gone_quiet':
       return {
-        subject: `${name} — Cycle 2 begins`,
-        body: `${name},\n\nA new Door has opened, and you're starting again — but not from zero. What you built last cycle comes with you.\n\nWe'll work across ${door} this time. Steady as before.\n\n— Jay`,
+        subject: `${name} — no agenda`,
+        body: `${name},\n\nYou've been away a bit. No agenda here — life gets loud, and that's most of what this program is about.\n\n${list[0] ? `You told me you wanted “${list[0]}” back. That's still there when you are.` : `What you named is still there when you are.`}\n\n— Jay`,
+      };
+    case 'goal_reclaimed':
+      return {
+        subject: `${name} — you got one back`,
+        body: `${name},\n\nYou marked one reclaimed. That's the thing this whole program is pointed at, and you did it against ${door}.\n\nNo next step from me today. Just wanted you to know I saw it.\n\n— Jay`,
       };
   }
 }

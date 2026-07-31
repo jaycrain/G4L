@@ -31,7 +31,11 @@ test('the admin data layer no longer QUERIES a metric that cannot be true', () =
 test('no admin surface RENDERS the retired metrics', () => {
   for (const [name, src] of [['member subpage', subpage], ['founder dashboard', adminPage]] as const) {
     const c = code(src);
-    assert.doesNotMatch(c, /usage\.beats|usage\.dailyBeatDays|usage\.workouts|lastBeatAt/, `${name} still renders a retired metric`);
+    // Guard BOTH shapes. The first version of this test only knew about usage.* — so two whole telemetry
+    // blocks reading experience.beats / experience.dailyBeat survived the sweep and shipped. A guard that
+    // knows one spelling of a thing gives false confidence about the other.
+    assert.doesNotMatch(c, /usage\.beats|usage\.dailyBeatDays|usage\.workouts|lastBeatAt/, `${name} still renders a retired metric (usage.*)`);
+    assert.doesNotMatch(c, /experience\.beats|experience\.dailyBeat/, `${name} still renders a retired metric (experience.*)`);
     assert.doesNotMatch(c, /Gates crossed/, `${name} still uses "Gates" — internal jargon, and a count says nothing`);
   }
 });
@@ -51,4 +55,20 @@ test('the member subpage shows the LIVE Reclaim List — the one thing you read 
     subpage.indexOf('Their Reclaim List') < subpage.indexOf('Generate a message'),
     'the Reclaim List must come BEFORE the draft box — it is what you read before writing',
   );
+});
+
+test('no operating moment drafts a message about a mechanic that is not live', () => {
+  const draft = code(readFileSync('lib/founder/draft.ts', 'utf8'));
+  // 'cycle2_welcome' wrote confidently about a member's "last cycle" — but the Loop gate is OFF in production
+  // and the 60-day rule is still a placeholder, so there had never been one. Retired until the Loop ships.
+  assert.doesNotMatch(draft, /cycle2_welcome/, 'the Loop is not live — this moment cannot be honestly drafted');
+  assert.doesNotMatch(draft, /Welcome them to the cycle/, '"cycle" is not current member vocabulary');
+});
+
+test('the moments cover what a founder actually reaches for with a live cohort', () => {
+  const draft = readFileSync('lib/founder/draft.ts', 'utf8');
+  // Someone who has gone quiet, and someone who reclaimed a goal — the two real triggers. The second is the
+  // outcome the whole program is pointed at, and there was no way to write to it.
+  assert.match(draft, /gone_quiet/, 'no way to reach a member who has drifted');
+  assert.match(draft, /goal_reclaimed/, 'no way to acknowledge the thing the program exists for');
 });

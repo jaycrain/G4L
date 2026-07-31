@@ -29,7 +29,7 @@ export default async function AdminMember({ params }: { params: Promise<{ member
   const pushCount = await countSubscriptions(db, memberId);
   const nudge = await buildNudge(db, memberId);
   const sessionTitle = (id: string) => getSession(id)?.title ?? id;
-  const [usage, forecast, passport, facets, experience, confirmation, liveReclaim] = await Promise.all([
+  const [usage, forecast, passport, facets, experience, confirmation, liveReclaim, retakeRows] = await Promise.all([
     getMemberUsage(db, memberId),
     getForecast(db, memberId),
     getPassport(db, memberId),
@@ -37,7 +37,24 @@ export default async function AdminMember({ params }: { params: Promise<{ member
     getMemberExperience(db, memberId, (id) => getAsset(id)?.title ?? id),
     getOnboardingConfirmation(db, memberId),
     getReclaimItems(db, memberId).catch(() => []),
+    db
+      .query<{ sequence_no: number; id_score: string; delta_from_previous: string | null; physical_score: number; self_score: number; social_score: number; outlook_score: number; taken_at: unknown }>(
+        `select sequence_no, id_score, delta_from_previous, physical_score, self_score, social_score, outlook_score, taken_at
+           from idq_retake where member_id = $1 order by cycle_indicator, sequence_no`,
+        [memberId],
+      )
+      .catch(() => ({ rows: [] as never[] })),
   ]);
+  const retakes = retakeRows.rows.map((r) => ({
+    sequenceNo: Number(r.sequence_no),
+    idScore: Number(r.id_score),
+    deltaFromPrevious: r.delta_from_previous == null ? null : Number(r.delta_from_previous),
+    physical: Number(r.physical_score),
+    self: Number(r.self_score),
+    social: Number(r.social_score),
+    outlook: Number(r.outlook_score),
+    takenAt: (r.taken_at as Date | string | null) ? new Date(r.taken_at as string).toISOString() : null,
+  }));
   // The saved onboarding confirmation card (immutable snapshot of what they confirmed before the IDQ).
   const obCard = confirmation?.card as
     | { identityLabel?: string | null; gap?: string; doors?: { slug?: string; displayName?: string }[]; reclaimList?: string[] }
@@ -234,48 +251,37 @@ export default async function AdminMember({ params }: { params: Promise<{ member
           <p className="muted">No checkpoint arrivals yet.</p>
         )}
 
-        {/* Beats — the daily program reps. */}
-        <h4 className="tele-head">Beats</h4>
-        {experience.beats.total > 0 ? (
-          <p className="member-meta">
-            {experience.beats.total} closed{experience.beats.lastAt && <span className="muted"> · last {relativeTime(experience.beats.lastAt, now)}</span>}
-            {experience.beats.recent.length > 0 && (
-              <span className="muted">
-                {' '}— recent:{' '}
-                {experience.beats.recent
-                  .map((b) => `${b.beatId ?? 'beat'}${b.response ? ` (${b.response})` : ''}`)
-                  .join(', ')}
-              </span>
-            )}
-          </p>
+        {/* Beats and Daily Beat blocks REMOVED (2026-07-31). Same three dead metrics as the roster: no member
+            on production can close a Beat (the v3.0 redesign removed the surface) and the Daily Beat panel no
+            longer renders. They read from experience.* rather than usage.*, which is how they survived the first
+            sweep — the guard only knew about one of the two shapes. It now knows about both. */}
+        {/* The ID Score is THE longitudinal metric (24 items · 4 dimensions · retaken every 60 days). One
+            "latest score" line threw that away. The series is the point: where they started, where they are,
+            and the distance between — which is the mirror the member is shown. Never a grade. */}
+        <h4 className="tele-head">ID Score history</h4>
+        {retakes.length > 0 ? (
+          <ul className="member-sessions">
+            {retakes.map((r) => (
+              <li key={r.sequenceNo}>
+                <span className="member-session-title">
+                  {r.sequenceNo === 0 ? 'Baseline' : `Retake ${r.sequenceNo}`}
+                </span>{' '}
+                <strong>{Math.round(r.idScore)}</strong>{' '}
+                {r.deltaFromPrevious != null && (
+                  <span className={r.deltaFromPrevious > 0 ? 'trend-up' : r.deltaFromPrevious < 0 ? 'trend-down' : 'muted'}>
+                    {r.deltaFromPrevious > 0 ? '+' : ''}{Math.round(r.deltaFromPrevious)} vs previous
+                  </span>
+                )}{' '}
+                <span className="muted">
+                  · P {r.physical} · S {r.self} · So {r.social} · O {r.outlook} · {relativeTime(r.takenAt, now)}
+                </span>
+              </li>
+            ))}
+          </ul>
         ) : (
-          <p className="muted">No Beats closed yet.</p>
+          <p className="muted">No IDQ yet — the baseline lands at the end of Reconnect.</p>
         )}
 
-        {/* Daily Beat — the lightweight daily reflection. */}
-        <h4 className="tele-head">Daily Beat</h4>
-        {experience.dailyBeat.days > 0 ? (
-          <p className="member-meta">
-            surfaced on {experience.dailyBeat.days} day{experience.dailyBeat.days === 1 ? '' : 's'}
-            {experience.dailyBeat.lastAt && <span className="muted"> · last {relativeTime(experience.dailyBeat.lastAt, now)}</span>}
-          </p>
-        ) : (
-          <p className="muted">No Daily Beat views yet.</p>
-        )}
-
-        {/* IDQ — baseline + retakes. */}
-        <h4 className="tele-head">IDQ</h4>
-        {experience.idq.count > 0 ? (
-          <p className="member-meta">
-            {experience.idq.count} completed
-            {experience.idq.latestScore != null && <span className="muted"> · latest ID Score {Math.round(experience.idq.latestScore)}</span>}
-            {experience.idq.lastAt && <span className="muted"> · {relativeTime(experience.idq.lastAt, now)}</span>}
-          </p>
-        ) : (
-          <p className="muted">No IDQ completed yet.</p>
-        )}
-
-        {/* Surfaces — which panels they actually open. */}
         <h4 className="tele-head">Surfaces opened</h4>
         {experience.surfaces.length > 0 ? (
           <p className="member-meta">
