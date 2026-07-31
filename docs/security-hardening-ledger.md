@@ -95,3 +95,16 @@ is why it shipped today and this did not.
 SEC-07 was a governance rule that existed in code and was wired to nothing. It is the same shape as a retention
 function no cron calls, or a validator whose input is hard-coded. When adding a rule, find its caller before
 calling it done — and if there is no caller yet, that is the work, not a follow-up.
+
+---
+
+## Operator credentials (2026-07-30)
+
+- **`DIAGNOSTIC_READ_TOKEN` rotated.** The previous value was 12 days old and unavailable locally. The new one was
+  generated, written to the operator's `.env.local`, and piped straight to `vercel env add` — never printed to a
+  screen or a transcript. Rotate again whenever it *is* displayed anywhere: it grants read access to any member's
+  full cross-phase record, which is the most sensitive read in the product.
+- **Smoke login enabled.** `SMOKE_EMAIL` / `SMOKE_PASSWORD` point at the `demo-tom@grintaforlife.test` fake-data
+  account. `scripts/smoke.ts` refuses any non-`.test` address, so this credential is structurally incapable of
+  reaching a real member. Until now nothing verified a deploy END TO END — every check proved the code was live
+  and the surfaces rendered, never that a member could actually log in and use them.
