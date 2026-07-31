@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getDb } from '../../lib/db/index.ts';
 import { listPending } from '../../lib/founder/store.ts';
-import { getRoster, summarizeRoster, relativeTime } from '../../lib/admin/roster.ts';
+import { BADGE_TOTAL, getRoster, summarizeRoster, relativeTime } from '../../lib/admin/roster.ts';
 import { listFeedback, type FeedbackStatus } from '../../lib/feedback/store.ts';
 import { setFeedbackStatusAction, deleteResolvedFeedbackAction } from '../feedback-actions.ts';
 import { getOnboardingReturns, keepTalkingStats } from '../../lib/telemetry/store.ts';
@@ -182,17 +182,13 @@ export default async function AdminHome() {
                 <tr>
                   <th>Member</th>
                   <th>Door</th>
+                  <th>Phase</th>
                   <th className="num">ID Score</th>
-                  <th className="num">Sessions<br />closed</th>
-                  <th className="num">Sessions<br />opened</th>
+                  <th className="num">Sessions</th>
+                  <th className="num">Goals<br />reclaimed</th>
+                  <th className="num">Days<br />talked</th>
+                  <th className="num">Time<br />in app</th>
                   <th className="num">Badges</th>
-                  <th className="num">Gates</th>
-                  <th className="num">Time on<br />task</th>
-                  <th className="num">Drop-off</th>
-                  <th className="num">Beats</th>
-                  <th className="num">Daily<br />Beat</th>
-                  <th className="num">Workouts</th>
-                  <th className="num">Check-in<br />days</th>
                   <th>Last active</th>
                   <th>Joined</th>
                 </tr>
@@ -228,6 +224,10 @@ export default async function AdminHome() {
                         </span>
                       </td>
                       <td className="roster-door">{fmtDoor(m.namedDoor)}</td>
+                      {/* WHERE THEY ARE, as a word. This replaced a "Gates" count — "2" told an operator nothing;
+                          "Rewire" is the thing you'd act on. Derived from the same rule the member's own Program
+                          page uses, so the panel and the member can never disagree. */}
+                      <td className="roster-phase">{m.phase}</td>
                       <td className="num">
                         {m.idScore == null ? (
                           <span className="muted">—</span>
@@ -242,10 +242,24 @@ export default async function AdminHome() {
                           </span>
                         )}
                       </td>
-                      <td className="num">{m.sessionsClosed || <span className="muted">—</span>}</td>
-                      <td className="num">{m.sessionsOpened || <span className="muted">—</span>}</td>
-                      <td className="num">{m.badges || <span className="muted">—</span>}</td>
-                      <td className="num">{m.gates || <span className="muted">—</span>}</td>
+                      {/* Sessions in ONE cell: done, plus unfinished only when there are any. "Drop-off" was a
+                          misnomer — an unfinished Session is someone mid-work, not someone who left. */}
+                      <td className="num" title={`${m.sessionsClosed} closed of ${m.sessionsOpened} started`}>
+                        {m.sessionsClosed || m.sessionsOpened ? (
+                          <>
+                            {m.sessionsClosed}
+                            {m.stalledSessions > 0 && (
+                              <span className="trend-down"> · {m.stalledSessions} open</span>
+                            )}
+                          </>
+                        ) : (
+                          <span className="muted">—</span>
+                        )}
+                      </td>
+                      {/* Goals the member has marked back. Real signal, and it is THEIR claim, not our inference —
+                          kept visible so the history is documented for us and for the Companion (Jay 7/31). */}
+                      <td className="num">{m.reclaimedGoals || <span className="muted">—</span>}</td>
+                      <td className="num">{m.checkinDays || <span className="muted">—</span>}</td>
                       {/* "—" means NO TELEMETRY COVERAGE (null), not zero engagement — the distinction matters:
                           older accounts did their Sessions before session_open/close events existed. A real
                           zero (covered, but no time) still shows "—" but the title says so. (Jay 7/29) */}
@@ -256,17 +270,10 @@ export default async function AdminHome() {
                           <span className="muted">{m.engagedMinutes == null ? 'n/a' : '—'}</span>
                         )}
                       </td>
+                      {/* Same fraction the MEMBER sees on their own badges page — a bare count means nothing. */}
                       <td className="num">
-                        {m.stalledSessions > 0 ? (
-                          <span className="trend-down">{m.stalledSessions}</span>
-                        ) : (
-                          <span className="muted">—</span>
-                        )}
+                        {m.badges ? `${m.badges}/${BADGE_TOTAL}` : <span className="muted">0/{BADGE_TOTAL}</span>}
                       </td>
-                      <td className="num">{m.beats || <span className="muted">—</span>}</td>
-                      <td className="num">{m.dailyBeatDays || <span className="muted">—</span>}</td>
-                      <td className="num">{m.workouts || <span className="muted">—</span>}</td>
-                      <td className="num">{m.checkinDays || <span className="muted">—</span>}</td>
                       <td className="roster-time">{relativeTime(m.lastActiveAt, now)}</td>
                       <td className="roster-time">{relativeTime(m.joinedAt, now)}</td>
                     </tr>
@@ -277,9 +284,11 @@ export default async function AdminHome() {
           </div>
         )}
         <p className="muted roster-foot">
-          Sorted by most recent activity. A closed Session is a completed asset; <strong>Drop-off</strong> = Sessions
-          opened but never closed. <strong>Time on task</strong> and <strong>Drop-off</strong> are experience telemetry
-          (they accrue from new activity going forward). <strong>Last active</strong> reflects any tracked action.
+          Sorted by most recent activity. <strong>Sessions</strong> shows closed, plus any still open (someone
+          mid-work, not someone gone). <strong>Goals reclaimed</strong> is the member&apos;s own claim, not our
+          inference. <strong>Days talked</strong> counts distinct days they wrote to their Companion — the truest
+          engagement signal here. <strong>Time in app</strong> is telemetry-derived, so it reads &ldquo;n/a&rdquo;
+          for members whose Sessions predate the event log. <strong>Last active</strong> reflects any tracked action.
         </p>
       </div>
 

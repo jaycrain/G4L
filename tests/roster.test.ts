@@ -7,6 +7,7 @@ import {
   summarizeRoster,
   relativeTime,
   activityCount,
+  phaseName,
   newestIso,
   isDemoEmail,
   type RosterRow,
@@ -127,13 +128,15 @@ test('getRoster aggregates live progress, activity, and ID Score correctly', asy
   assert.equal(alice.sessionsClosed, 1, 'one Session closed = one completed asset');
   assert.equal(alice.badges, 1);
   assert.equal(alice.facets, 1);
-  assert.equal(alice.gates, 1);
-  // Activity — showing-up signals.
-  assert.equal(alice.beats, 1);
-  assert.equal(alice.dailyBeatDays, 2, 'two distinct Daily Beat days');
-  assert.equal(alice.workouts, 1);
+  // WHERE THEY ARE — the phase NAME, not a gate count. Alice crossed the Reconnect checkpoint, so she is in
+  // Rewire. This mirrors the member-facing rule, so the panel and her own Program page always agree.
+  assert.equal(alice.phase, 'Rewire', 'crossed the Reconnect checkpoint → now in Rewire');
+  // Activity — showing-up signals. `beats`, `dailyBeatDays` and `workouts` were RETIRED 2026-07-31: none of the
+  // three could ever be non-zero on production (no member can close a Beat since the v3.0 redesign; the Daily
+  // Beat panel no longer renders; Strava is unset), so they measured nothing and crowded out what does.
   assert.equal(alice.checkinDays, 2, 'two distinct days with member messages');
-  assert.equal(activityCount(alice), 6, '1 beat + 2 daily-beat days + 1 workout + 2 check-in days');
+  assert.equal(alice.reclaimedGoals, 0, 'no goals marked back yet');
+  assert.equal(activityCount(alice), 2, '2 check-in days + 0 reclaimed goals');
   // Experience telemetry derived from member_event.
   assert.equal(alice.engagedMinutes, 15, 'RCN-EXC: open → close 15 min apart');
   assert.equal(alice.stalledSessions, 1, 'RCN-VAL opened, never closed = a drop-off');
@@ -157,6 +160,7 @@ test('demo member with no activity has null timestamps and zero counts', async (
   assert.equal(demo.lastSignInAt, null);
   assert.equal(demo.idScore, null);
   assert.equal(activityCount(demo), 0);
+  assert.equal(demo.phase, 'Reconnect', 'no gates crossed → still at the start');
 });
 
 test('summarizeRoster counts totals, recent joins, 7-day actives, and Sessions closed', () => {
@@ -213,4 +217,38 @@ test('summarizeRoster does NOT count a no-coverage member as zero — it reports
   assert.equal(s.engagedMinutesTotal, 20, 'only covered members contribute minutes');
   assert.equal(s.membersMissingTelemetry, 1, 'the 9-Session member is flagged as uncovered, not counted as 0');
   assert.equal(s.sessionsClosedTotal, 12, 'durable Session counts are unaffected by telemetry gaps');
+});
+
+test('the panel and the member can never disagree about which phase they are in', async () => {
+  // phaseName mirrors lib/curriculum/view.ts activePhaseIndex. If that rule ever changes, this fails loudly
+  // rather than letting the operator panel quietly drift from what the member sees on their Program page.
+  assert.equal(phaseName(false, false, false), 'Reconnect', 'no gates → the start');
+  assert.equal(phaseName(true, false, false), 'Rewire');
+  assert.equal(phaseName(true, true, false), 'Rebuild');
+  assert.equal(phaseName(true, true, true), 'Reclaim');
+  // Out-of-order gates resolve to the FURTHEST crossed — never a lower phase than they have earned.
+  assert.equal(phaseName(false, false, true), 'Reclaim', 'a later gate wins even if an earlier one is missing');
+});
+
+test('goals a member marked back are counted, and removed items are not', async () => {
+  // Jay 2026-07-31: keep the self-marked history — "we need the member history documented, if not for them for
+  // us/companion". It moved OUT of the bogus "Beats" count and into a column that says what it is.
+  const db = new PGlite() as unknown as Db;
+  await applySchema(db);
+  const m = (
+    await db.query<{ member_id: string }>(
+      `insert into member_profile (display_name, email) values ('Marked Member','marked@x.com') returning member_id`,
+    )
+  ).rows[0]!.member_id;
+  await db.query(
+    `insert into reclaim_item (member_id, text, category, state, sort_order) values
+       ($1,'Ride to Carter Lake','physical','reclaimed',0),
+       ($1,'Call my brother','social','reclaimed',1),
+       ($1,'Sleep through the night','physical','not_yet',2),
+       ($1,'An item they removed','self','reclaimed',3)`,
+    [m],
+  );
+  await db.query(`update reclaim_item set removed_at = now() where member_id=$1 and text='An item they removed'`, [m]);
+  const row = (await getRoster(db)).find((r) => r.email === 'marked@x.com')!;
+  assert.equal(row.reclaimedGoals, 2, 'two reclaimed; the open one and the removed one do not count');
 });

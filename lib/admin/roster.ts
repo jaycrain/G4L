@@ -22,13 +22,20 @@ export type RosterRow = {
   // flows here now; the old asset-delivery engine (asset_completion) is no longer in the live UI.
   sessionsOpened: number; // distinct Sessions started (a Session opened = "asset viewed")
   sessionsClosed: number; // Sessions closed (a Session closed = "asset completed")
-  badges: number; // passport badges earned
+  badges: number; // passport badges earned (of BADGE_TOTAL)
   facets: number; // reclaimed identities named at Session closes
-  gates: number; // phase gates crossed (4Rs / checkpoint progress)
+  // WHERE THEY ARE — the phase NAME, not a count. "gates: 2" told an operator nothing; the question this
+  // panel answers is "who needs me", and the useful form of that is "she's in Rewire" (Jay, 2026-07-31).
+  phase: string; // Reconnect | Rewire | Rebuild | Reclaim — derived from the crossed checkpoint gates
   // ACTIVITY — showing-up signals.
-  beats: number; // Beats closed (the daily program work)
-  dailyBeatDays: number; // distinct days a Daily Beat was surfaced
-  workouts: number; // logged activities (Strava)
+  // RETIRED 2026-07-31 (Jay: "there's no longer such a thing as beat"): `beats`, `dailyBeatDays` and `workouts`
+  // are gone. beats counted beat_completion UNFILTERED, so it could only ever contain onboarding artifacts and
+  // self-marked markers — the two row types the member's own Past Beats view hides — because no member on
+  // production can close a Beat (the v3.0 redesign removed the surface). dailyBeatDays counted days WE surfaced
+  // a panel that no longer renders, so it measured our behaviour and froze at the v3.0 flip. workouts reads
+  // activity_event, which is structurally 0 while Strava is unset in production. Three columns, none of which
+  // could ever be true. Bring `workouts` back the day Strava ships.
+  reclaimedGoals: number; // Reclaim List items the member has marked back — the self-marked history, kept on purpose
   checkinDays: number; // distinct days the member sent the agent a message
   // EXPERIENCE TELEMETRY.
   // DROP-OFF now comes from session_progress (DURABLE rows), not the event log. Event-derived, it counted "opened
@@ -60,11 +67,13 @@ type RawRow = {
   sessions_opened: unknown;
   sessions_closed: unknown;
   badges: unknown;
+  g_reconnect: unknown;
+  g_rewire: unknown;
+  g_rebuild: unknown;
+  reclaimed_goals: unknown;
   facets: unknown;
-  gates: unknown;
-  beats: unknown;
+
   daily_beat_days: unknown;
-  workouts: unknown;
   checkin_days: unknown;
   id_score: unknown;
   id_direction: string | null;
@@ -107,12 +116,26 @@ export function newestIso(...isos: (string | null)[]): string | null {
   return best;
 }
 
+
+/** The 16 milestone badges a member can earn — the denominator the MEMBER sees ("0 of 16 earned"), so the
+ *  operator panel shows the same fraction rather than a bare count that means nothing on its own. */
+export const BADGE_TOTAL = 16;
+
+/** Which of the 4Rs the member is in now, from the crossed checkpoint gates. Pure — mirrors the member-facing
+ *  rule in lib/curriculum/view.ts (activePhaseIndex) so the panel and the member can never disagree. */
+export function phaseName(reconnectPassed: boolean, rewirePassed: boolean, rebuildPassed: boolean): string {
+  if (rebuildPassed) return 'Reclaim';
+  if (rewirePassed) return 'Rebuild';
+  if (reconnectPassed) return 'Rewire';
+  return 'Reconnect';
+}
+
 // "Activity" rollup = the showing-up signals a member generates between Sessions.
 // Kept separate from Session progress (true program progress) so the meaningful number isn't buried.
-export function activityCount(
-  row: Pick<RosterRow, 'beats' | 'dailyBeatDays' | 'workouts' | 'checkinDays'>,
-): number {
-  return row.beats + row.dailyBeatDays + row.workouts + row.checkinDays;
+// 2026-07-31: beats/dailyBeatDays/workouts dropped from the sum — each was structurally incapable of being
+// non-zero on production (see the RosterRow notes), so including them only diluted the one real signal.
+export function activityCount(row: Pick<RosterRow, 'checkinDays' | 'reclaimedGoals'>): number {
+  return row.checkinDays + row.reclaimedGoals;
 }
 
 export type RosterSummary = {
@@ -178,10 +201,12 @@ const ROSTER_SQL = `
     (select count(*) from session_progress sp where sp.member_id = p.member_id and sp.status = 'closed') as sessions_closed,
     (select count(*) from badge_earned be where be.member_id = p.member_id) as badges,
     (select count(*) from facet f         where f.member_id  = p.member_id) as facets,
-    (select count(*) from phase_gate pg   where pg.member_id = p.member_id) as gates,
-    (select count(*) from beat_completion bc where bc.member_id = p.member_id) as beats,
-    (select count(distinct dbl.shown_on) from daily_beat_log dbl where dbl.member_id = p.member_id) as daily_beat_days,
-    (select count(*) from activity_event ae where ae.member_id = p.member_id) as workouts,
+    -- The crossed checkpoint gates, resolved to a phase NAME below (mirrors curriculum/view.ts activePhaseIndex).
+    (select coalesce(bool_or(pg.gate = 'reconnect_checkpoint_passed'), false) from phase_gate pg where pg.member_id = p.member_id) as g_reconnect,
+    (select coalesce(bool_or(pg.gate = 'rewire_checkpoint_passed'),    false) from phase_gate pg where pg.member_id = p.member_id) as g_rewire,
+    (select coalesce(bool_or(pg.gate = 'rebuild_checkpoint_passed'),   false) from phase_gate pg where pg.member_id = p.member_id) as g_rebuild,
+    (select count(*) from reclaim_item ri
+      where ri.member_id = p.member_id and ri.state = 'reclaimed' and ri.removed_at is null) as reclaimed_goals,
     (select count(distinct date_trunc('day', am.created_at)) from agent_message am
        where am.member_id = p.member_id and am.role = 'member') as checkin_days,
     lr.id_score as id_score, lr.direction as id_direction,
@@ -241,10 +266,8 @@ export async function getRoster(db: Db): Promise<RosterRow[]> {
       sessionsClosed: toNum(r.sessions_closed),
       badges: toNum(r.badges),
       facets: toNum(r.facets),
-      gates: toNum(r.gates),
-      beats: toNum(r.beats),
-      dailyBeatDays: toNum(r.daily_beat_days),
-      workouts: toNum(r.workouts),
+      phase: phaseName(Boolean(r.g_reconnect), Boolean(r.g_rewire), Boolean(r.g_rebuild)),
+      reclaimedGoals: toNum(r.reclaimed_goals),
       checkinDays: toNum(r.checkin_days),
       engagedMinutes,
       hasSessionTelemetry,
