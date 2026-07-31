@@ -2182,3 +2182,76 @@ body.onbwel-bleed main { max-width: none; margin: 0; padding: 0; }
 .reclaim-released { margin-top: 18px; }
 .reclaim-released .rc-h { color: #6b7680; }
 .reclaim-released .reclaim-row-text.muted { font-weight: 500; color: #6b7680; margin-bottom: 0; }
+
+/* ── FOUNDER CONSOLE ────────────────────────────────────────────────────────────────────────────────────────
+   The operator surface, Companion-first — the same reflect ← ask → act spine as the member triptych.
+   Deliberately reuses the app's existing palette, Barlow, and .card treatment rather than the mockup's own
+   values: a mock defines IA and proportion here, never brand. */
+.fc-wrap { max-width: 1240px; margin: 0 auto; }
+.fc-greet { display:flex; align-items:center; gap:14px; flex-wrap:wrap; padding:22px 0 16px; }
+.fc-hi { font-size:24px; font-weight:800; color:var(--navy); }
+.fc-st { color:#6B7580; font-size:15px; }
+.fc-chip { display:inline-flex; align-items:center; gap:6px; background:rgba(145,149,54,.12); color:#6f7327;
+  font-size:12px; font-weight:700; letter-spacing:.03em; text-transform:uppercase; border-radius:999px; padding:.24rem .6rem; }
+.fc-chip i { width:7px; height:7px; border-radius:50%; background:var(--olive); }
+.fc-browse { margin-left:auto; color:#2F7A7B; font-weight:700; text-decoration:none; font-size:14.5px; }
+
+.fc-tri { display:grid; grid-template-columns:296px minmax(0,1fr) 300px; gap:18px; align-items:start; }
+.fc-eyebrow { font-size:11px; font-weight:700; letter-spacing:.09em; text-transform:uppercase; color:#2F7A7B; }
+.fc-h { font-size:18px; font-weight:700; color:var(--navy); margin:2px 0 10px; }
+:root { --fc-muted:#6B7580; }
+
+.fc-kpis { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.fc-kpi { border:1px solid rgba(55,79,99,.16); border-radius:11px; padding:11px 12px; }
+.fc-kpi .n { font-size:24px; font-weight:800; color:#2F7A7B; line-height:1; }
+.fc-kpi .l { font-size:11.5px; color:var(--fc-muted); margin-top:4px; }
+.fc-dist { margin-top:14px; }
+.fc-r { display:flex; align-items:center; gap:9px; font-size:13px; padding:5px 0; }
+.fc-pl { width:66px; }
+.fc-bar { flex:1; height:7px; border-radius:4px; background:var(--grey,#E8E6E6); overflow:hidden; }
+.fc-bar i { display:block; height:100%; background:var(--teal); }
+.fc-v { color:var(--fc-muted); font-weight:700; width:16px; text-align:right; }
+
+.fc-hero { background:var(--navy); border-radius:20px; overflow:hidden; display:flex; flex-direction:column;
+  min-height:600px; box-shadow:0 10px 30px rgba(55,79,99,.18); }
+.fc-hero-h { padding:20px 22px 6px; }
+.fc-hero-eye { font-size:11px; font-weight:700; letter-spacing:.11em; text-transform:uppercase; color:#8FBDBE; }
+.fc-hero-title { font-size:23px; font-weight:800; color:#fff; margin:4px 0 2px; }
+.fc-hero-sub { color:#C7D2D9; font-size:13.5px; opacity:.9; }
+.fc-thread { flex:1; padding:12px 22px 4px; display:flex; flex-direction:column; gap:11px; overflow:auto; }
+.fc-b { max-width:82%; padding:11px 14px; border-radius:15px; font-size:14.5px; line-height:1.5; white-space:pre-wrap; }
+.fc-b.co { align-self:flex-start; background:rgba(255,255,255,.09); color:#EAF0F2; border-bottom-left-radius:5px; }
+.fc-b.me { align-self:flex-end; background:rgba(255,255,255,.19); color:#fff; border-bottom-right-radius:5px; }
+.fc-thinking { opacity:.6; font-style:italic; }
+.fc-pins { display:flex; gap:7px; flex-wrap:wrap; padding:8px 22px 2px; }
+.fc-pin { font-family:inherit; font-size:12px; font-weight:600; color:#DCE7EA; background:rgba(255,255,255,.10);
+  border:1px solid rgba(255,255,255,.14); border-radius:999px; padding:.3rem .68rem; cursor:pointer; white-space:nowrap; }
+.fc-pin:hover:not(:disabled) { background:var(--teal); border-color:var(--teal); color:#fff; }
+.fc-pin:disabled { opacity:.5; cursor:default; }
+.fc-composer { display:flex; gap:9px; padding:12px 18px 18px; align-items:center; }
+.fc-composer input { flex:1; font-family:inherit; font-size:14.5px; border:0; border-radius:12px;
+  padding:.75rem .95rem; background:rgba(255,255,255,.12); color:#fff; }
+.fc-composer input::placeholder { color:#AFC0C7; }
+.fc-send { font-family:inherit; font-weight:700; font-size:14px; border:0; border-radius:12px;
+  padding:.72rem 1.15rem; background:var(--teal); color:#fff; cursor:pointer; }
+.fc-send:disabled { opacity:.6; cursor:default; }
+
+.fc-need { display:flex; align-items:flex-start; gap:10px; padding:9px 0; border-top:1px solid rgba(55,79,99,.16); }
+.fc-need:first-of-type { border-top:0; }
+.fc-nd { width:9px; height:9px; border-radius:50%; margin-top:5px; flex:0 0 9px; }
+.fc-nd.clear { background:var(--olive); } .fc-nd.attn { background:var(--orange); } .fc-nd.win { background:var(--teal); }
+.fc-nk { font-size:13.5px; }
+.fc-cnt { margin-left:auto; font-weight:800; color:var(--navy); font-size:15px; }
+.fc-evt { display:flex; align-items:center; gap:9px; padding:8px 0; border-top:1px solid rgba(55,79,99,.16); font-size:13.5px; }
+.fc-evt:first-of-type { border-top:0; }
+.fc-ea { width:26px; height:26px; border-radius:50%; flex:0 0 26px; color:#fff; font-size:10.5px; font-weight:700;
+  display:flex; align-items:center; justify-content:center; }
+.fc-el { color:inherit; text-decoration:none; }
+.fc-el:hover { color:#2F7A7B; }
+.fc-et { color:#8A929A; font-size:12px; white-space:nowrap; margin-left:auto; }
+
+/* The fold: one column, Companion FIRST — on a phone the morning read is the whole point. */
+@media (max-width: 980px) {
+  .fc-tri { grid-template-columns:1fr; }
+  .fc-hero { order:-1; min-height:520px; }
+}

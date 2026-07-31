@@ -12,6 +12,9 @@ import { moderateAction } from './connect-actions.ts';
 import AiHealthCheck from './ai-health-check.tsx';
 import AdminAutoRefresh from './auto-refresh.tsx';
 import { isAdmin } from '../authz.ts';
+import { founderConsoleEnabled } from '../../lib/dashboard/redesign.ts';
+import { cohortView, rosterAttention, activityFeed } from '../../lib/admin/console.ts';
+import ConsoleShell from './console/console-shell.tsx';
 import { initials } from '../../lib/member/avatar.ts';
 import type { Db } from '../../lib/db/schema.ts';
 
@@ -23,7 +26,7 @@ const AI_STATUS_LABEL: Record<string, string> = {
   overloaded: 'DEGRADED — overloaded', down: 'DOWN',
 };
 
-export default async function AdminHome() {
+export default async function AdminHome({ searchParams }: { searchParams?: Promise<{ view?: string }> }) {
   if (!(await isAdmin())) redirect('/admin/login');
   const db = (await getDb()) as unknown as Db;
 
@@ -38,6 +41,29 @@ export default async function AdminHome() {
   const modCount = await openReportCount(db);
   const now = Date.now();
   const summary = summarizeRoster(roster, now);
+
+  // THE FOUNDER CONSOLE (flag-gated). Unset → today's page, untouched. `?view=roster` always reaches the old
+  // page, so the table is never lost — the console links to it, and a console that can't answer something
+  // must not become a dead end.
+  if (founderConsoleEnabled() && (await searchParams)?.view !== 'roster') {
+    const [feed] = await Promise.all([activityFeed(db)]);
+    const cohort = cohortView(roster, summary);
+    const attention = [
+      { kind: 'crisis' as const, label: modCount.safety > 0 ? `${modCount.safety} safety report${modCount.safety === 1 ? '' : 's'} open` : 'nothing flagged', count: modCount.safety },
+      { kind: 'draft' as const, label: pending.length ? `${pending.length} draft${pending.length === 1 ? '' : 's'} waiting on you` : 'no drafts waiting', count: pending.length },
+      ...rosterAttention(roster, now),
+    ];
+    return (
+      <ConsoleShell
+        cohort={cohort}
+        attention={attention}
+        feed={feed}
+        memberCount={cohort.members}
+        activeCount={cohort.activeLast7}
+        now={now}
+      />
+    );
+  }
   const NEXT_STATUS: Record<FeedbackStatus, { to: FeedbackStatus; label: string }[]> = {
     new: [{ to: 'triaged', label: 'Triage' }, { to: 'resolved', label: 'Resolve' }],
     triaged: [{ to: 'resolved', label: 'Resolve' }, { to: 'new', label: 'Reopen' }],

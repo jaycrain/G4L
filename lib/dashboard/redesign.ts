@@ -25,3 +25,12 @@ export function dashboardTriptychEnabled(): boolean {
 export function onboardingWelcomeEnabled(): boolean {
   return process.env.ONBOARDING_WELCOME === 'staged';
 }
+
+// The FOUNDER CONSOLE (2026-07-31) — the operator surface re-architected Companion-first, mirroring the member
+// triptych: cohort on the left, the Founder Companion in the middle, what-needs-you on the right.
+//
+// Flag-gated for the same reason every other surface here is: the current /admin page is the only way Jay sees
+// his members, and a console that fails is worse than a console that's plain. Unset → today's page, unchanged.
+export function founderConsoleEnabled(): boolean {
+  return process.env.FOUNDER_CONSOLE === 'staged';
+}
