@@ -1,6 +1,6 @@
 # G4L — Member Transcript (authored copy, verbatim)
 
-Stamp: `app @ 0794ef0 · 2026-07-28` · PART 1 of the Cowork release bundle.
+Stamp: `app @ 014f1ec · 2026-07-31` · PART 1 of the Cowork release bundle.
 
 **Quote from this.** Every line below is authored, fixed copy a member reads, in reading order by surface. It does
 **not** include the Companion's in-the-moment reflections (those are model-generated and vary per member — describe
@@ -24,10 +24,21 @@ _source: lib/agent/onboarding-staged.ts_
 - It's a handle to hold onto, not a label set in stone, and we can change it.
 - No rush on the perfect word — and you don't have to land it today. If one comes — the Runner, the Builder, the
 - Friend — say it. If not, that's completely fine; we'll find it together as you go. Want to leave it for now?
+- The word can wait. Some people know it straight away, some find it months in — both are normal. Shall we leave
+- it open and come back when something fits?
+- You don't need a label to do this work. If nothing lands, we can move on and let it surface later — want to do
+- that?
 - That's completely fine — you'll find your way back to them through the work, no rush.
 - My mistake — let's get it right. What word feels truer for who she was?
+- Here are a few words for who that was — tap the one that fits, or write your own. It’s a handle to hold onto,
+- not a label set in stone, and we can change it anytime.
+- No wrong answer here — pick whichever comes closest, or write your own word for that person.
+- The Athlete
+- ${Label} it is.  ${gapBridge(c)}
 - Before we hold onto that word — take me back into being ${label}. What did it actually feel like, and when did it feel most true?
 - Even one small moment is enough — a specific morning, a feeling in your body — when you were most ${label}. What did being ${label} give you that you don't feel now? Even a little thing; there's no wrong answer.
+- Take it wherever it starts. What was going on for you when the distance opened?
+- Whenever you're ready — what's been happening that pulled you away from ${identityRef(c)}?
 - Somewhere, the distance between you and ${identityRef(c)} started to open. Sometimes it's one clear thing — a loss,
 - a diagnosis, a move, a job that swallowed you. More often it’s slower: an accumulation of what we call Doors — moments
 - and seasons you walk through and barely notice, each one widening the gap. What’s been happening that caused that
@@ -48,11 +59,10 @@ _source: lib/agent/onboarding-staged.ts_
 - changes — when something real has pulled you away from who you were. If that day comes, this door stays open
 - and I'll be right here. Until then — keep building.
 - That's a lot to have been carrying${identity ?
-- Here's the turn, though: none of it is gone. It's been waiting for you. So let's name what you want back
-- ${identity ?
+- Here's the turn, though: none of it is gone. It's been waiting for you. Let's write down what you want back —
+- your Reclaim List, the thing the whole program works toward${identity ?
 - s life you miss most` :
-- Reclaim List, the thing the whole program works toward, and it's yours to add to or change anytime.
-- What's the first thing you'd want back?
+- Add each thing below — big or small. Three to start is plenty, and you can always add more later. Take your time.
 - What else? Anything that comes — big or small.
 - What else would you want back? No wrong answers here — small things count.
 - Anything else on your mind — even something small you miss?
@@ -70,7 +80,7 @@ _source: lib/agent/onboarding-staged.ts_
 - “${x.trim()}”
 - Now, the good part — and you've already started. Earlier you said you want ${items} back, so
 - ${parked.length === 1 ? "that's" : "those are"} on your list. What else? Big or small, there are no wrong answers.
-- Got it — that’s a strong list to build from. Anything missing before we move on?
+- Got it — that’s a strong list to build from. Want to make any edits to those, or does that feel like the shape of what you’d want back?
 - “${drop}” and “${keep}” sound like the same thing to me — want me to keep them as one, or are they different?
 - “${item}” reads more like the bigger picture of the life you’re reclaiming than a single goal. I’d keep it in your Playbook for that work and leave the goal list for the concrete steps — want me to do that?
 - “${item}” sounds like who you are, not one goal on a list. I’d hold onto it as part of your identity and keep the list for the concrete things you’re taking back — want me to do that?
@@ -86,12 +96,19 @@ _source: lib/agent/onboarding-staged.ts_
 - ?t know|nothing( else)?|that
 - ?s (the end|it for now|all for now|enough( for now)?)|i
 - ?re (broke|broken|bugg(y|ing)|malfunction(ing)?|not (working|listening))|document(ing)? an? (item|entry)|not (a|an) (reclaim[- ]?)?(item|entry|goal)\b|hey,? (g4l|companion)\b|g4l companion|trying to (tell|say) you|talking (to|at) you|you (misunderstood|did\s?n[
+- ?re|they are|those are|it
 - this isn't making sense
 - ${merged[merged.length - 1]}, ${trimmed}
 - s merge (for the backstop
+- 8 out of 10
+- 1 to 5
 - = 1 && n
+- ${base}${BEAT_SEP}${administeredStuckHelp(cfg.scaleMax ?? 5)}
+- Tap any number from 1 to ${max} above — whichever is closest is the right one; there's no wrong answer here.
+- And if now isn't the moment for this, you can leave it and come back whenever you like — your place is saved.
 - ${SKIP_ACK}  ${gapOpen(b.collected)}
-- ${ack}  ${reflectReclaim(b.collected)}
+- I've kept those — they're the things you want back, and we'll build that list together in a minute. Right now I'm still with how it happened. Was there more to it?
+- ${ack}${BEAT_SEP}${turn.reply}
 - Great work! Now you’re ready to take the first assessment. This is a series of 12 questions that will establish
 - a baseline for your Grinta Index. As you know, Grinta means grit, so we’re doing an initial measurement of your
 - resilience and hardiness. We know there’s no way you’ve made it to this point in your life without weathering
@@ -113,7 +130,13 @@ _source: lib/agent/onboarding-staged.ts_
 - There's no wrong way in.
 - ${leads[history.length % leads.length]} ${b.reply}
 - Record who the member was at their best, in their own words (the past self).
-- Record the confirmed reclaimed-identity word, natural case (e.g. "Athlete"), once the member chooses or coins it.
+- Offer 2–4 candidate handle words for who the member was at their best, drawn FROM THEIR OWN LANGUAGE in this
+- conversation (e.g. after they describe racing bikes and chasing summits: ["Athlete", "Cyclist", "Competitor"]).
+- Call this ONCE you've genuinely drawn out the past self — it hands the member a tap-to-pick chooser (chips + a
+- write-your-own field) so THEY choose or coin the word; their pick is captured verbatim and is definitive. Natural
+- case, no leading article ("Athlete", never "the Athlete"). Your prose this turn should warmly invite them to tap
+- Record the reclaimed-identity word directly, natural case (e.g. "Athlete") — ONLY when the member flatly names
+- it themselves before you offer candidates. For the normal choose-a-word beat use offer_identity_words instead.
 - Record that the member chose NOT to name an identity yet (they will find it at Identity Excavation).
 - Record how the distance opened — the fade story (the gap) — in the member's OWN FIRST-PERSON voice, keeping
 - their words and specifics as they told it ('I stopped training but kept riding, then lost the level'; 'my wife
@@ -131,7 +154,7 @@ _source: lib/agent/onboarding-staged.ts_
 - things briefly ('married, kids, work') is BREADTH, not depth — do NOT call this until you have something
 - specific and true to reflect. (The system won't let you close the beat before it has genuinely breathed.)
 - Record a Door that surfaces in the fade story — the life event that opened the distance. Call once per Door (it accumulates). Slugs:
-- career_cliff, aging_parents, empty_nest, vanishing, body, diagnosis, marriage, loss, full_house, grind, load_bearer.
+- career_cliff, aging_parents, empty_nest, vanishing, body, diagnosis, marriage, loss, full_house, grind, load_bearer, acceptance
 - Only note a Door the member actually describes — none is a valid outcome; never force one.
 - Call this when the member genuinely has NO Fade — no loss, no drift, no distance from who they were; they're
 - instead. They will still be admitted and build a Reclaim List — their first ID Score later just comes back high.
@@ -154,11 +177,10 @@ _source: lib/agent/onboarding-staged.ts_
 - so the conversation moves the right way. Call it once with `intent`: 'done' = they're satisfied / nothing to
 - add / a plain 'nope, that's right' answering 'anything missing?'; 'more' = they're adding new material or want
 - fallback covers you. This is ONLY for the reply to a reflection, not for normal gathering turns.
-- Athlete
-- the Athlete
 - married, kids, work
 - t give (if they named travel, friends, and competing, don
 - was that the whole of it, or did something else pile on around then?
+- here's the whole of it… does that land?
 - re satisfied / a plain "nope, that
 - anything missing?
 - the Racer
@@ -255,15 +277,16 @@ _source: lib/agent/reconnect.ts_
 - you.  Now we look the other way — at the version of you that's still in there.
 - The drift
 - There's a window between who you are today and who you keep saying you'll be — most people never look through
-- it. Today you look. Picture an ordinary Tuesday a year from now if NOTHING changes: how do you wake up, what do
-- you reach for? Not the disaster version — the ordinary one. Sit with that Tuesday for a second, and tell me what you see.
-- Now the OTHER Tuesday — same year out, but you've been doing the work. What's different by 7am? Not the highlight reel — the ordinary stuff: how you wake, what you reach for, how you move.
-- Make it ordinary and real — not the medal, the morning. What does that day actually feel like?
-- What's the smallest piece of that second Tuesday you'd feel if it were already here?
+- it. Today you look. Picture an ordinary Tuesday a year from now — but you've done the work, and the things on
+- your Reclaim List are real. How do you wake up, what do you reach for? Not the highlight reel — the ordinary
+- morning. Sit with that Tuesday for a second, and tell me what you see.
+- What else is different by 7am? Not the medal — the ordinary stuff: how you wake, what you reach for, how you move.
+- Make it ordinary and real — the morning, not the highlight. What does that day actually feel like?
+- What's the smallest piece of that Tuesday you'd feel if it were already here?
 - Is that the one worth chasing — or not quite it yet?
-- Stay with that second Tuesday a moment — tell me more about what's different, and we'll find the spark in it.
+- Stay with that Tuesday a moment — tell me more about what's different, and we'll find the spark in it.
 - Then it's not quite the one yet — say more. What would the Tuesday worth chasing actually look like?
-- That second Tuesday — that's the spark. Hold onto it; everything from here is about making it the real one.
+- That Tuesday — that's the spark. Hold onto it; everything from here is about making it the real one.
 - I've kept it for you.
 - The spark
 - 1 to 5 — 1 for not at all, 5 for completely
@@ -301,8 +324,8 @@ _source: lib/agent/reconnect.ts_
 - offered as a check they can reject.
 - it has run — and you can reflect the PATTERN of it (the recurring shape, the quiet thing they've stopped
 - noticing is gone), offered as a check they can reject. NEVER on the first mention; if it's still thin, keep
-- one where they did the work — and you can reflect the SPARK (the ordinary, reclaimed second Tuesday) back in
-- THEIR words, offered as a check. NEVER before both are drawn out; if thin, keep drawing out. This beat LIFTS —
+- the work and their Reclaim List is real — and you can reflect the SPARK (that ordinary, reclaimed day) back in
+- THEIR words, offered as a check. NEVER before it's drawn out; if thin, keep drawing out. This beat LIFTS — the
 - At an insight reflect-confirm, classify the member's reply: 'done' (it landed / they're satisfied), 'more'
 - (there's more, or they're adding), 'dispute' (the insight was off — they're correcting it).
 - Use ONLY when the drawn-out story genuinely points to a DIFFERENT canonical Door than the one they named as
@@ -319,6 +342,7 @@ _source: lib/agent/reconnect.ts_
 - it's a genuine re-seeing, leave it off.
 - The Door(s) they named at onboarding: ${doorNames.join(', ')}
 - How they first described the gap opening: ${c.gap!.trim()}
+- Their Reclaim List (what they're taking back — you HAVE this; never say you can't see it): ${reclaim.join('; ')}
 - - ${d.displayName} (${d.slug}): ${d.descriptor}
 - does it feel like the real cost was X — or is that not it?
 - s go there." (This is different from a re-seeing below: they
@@ -334,10 +358,10 @@ _source: lib/agent/reconnect.ts_
 - inventory, in their words. This is formative and reflective, never scored. After a couple of exchanges, reflect
 - the PATTERN of the drift (the recurring shape, the quiet thing they stopped noticing) IN THEIR WORDS, offered as
 - pattern). Name it to push OFF from, not to sit in. Do not diagnose.
-- CURRENT STAGE: The Window (§2d Visioning, beat 2) — the turn toward HOPE. Draw out the TWO Tuesdays: the
-- ordinary day a year out if nothing changes, then the day where they did the work (ordinary and real — the
-- morning, not the medal). Then reflect the SPARK — that second Tuesday, the reclaimed ordinary day — IN THEIR
-- leave them feeling the reclaimed day is reachable. Grounded in their real life, never over-promised fantasy.
+- CURRENT STAGE: The Window (§2d Visioning, beat 2) — the turn toward HOPE. Draw out ONE day: an ordinary
+- Tuesday a year out where they have DONE the work and the things on their Reclaim List are real (ordinary and
+- is drawn out. This beat should LIFT: leave them feeling the reclaimed day is reachable. Grounded in their real
+- life, never over-promised fantasy.
 - CURRENT STAGE: entry — the callback asked whether the distance still feels like it began where they named,
 - or whether something has shifted. RECEIVE their answer: in one or two sentences, reflect back specifically what
 - start excavating a Door — the next beat opens that work. Just land their answer so they feel heard.
@@ -527,6 +551,7 @@ _source: lib/agent/rewire.ts_
 - ?s (the one|it)|yes|yeah|yep|keep (it|that)|the first one|perfect|good|sounds good|i
 - ?t write|did not write|not (my|mine|what i (wrote|said))|isn
 - ?s| did| does)?\s+(that|this|it)\s+com|that
+- Good — let's get it exactly how you'd say it.${BEAT_SEP}${reframeFallback(c)}
 - You're right — that wasn't your line, and I shouldn't have put it in your mouth. YOUR words are the ones that hold on a hard day.${BEAT_SEP}${reframeFallback(c)}
 - Triggers: ${triggers.join('; ')}
 - Redirect — ${c.w3Redirect!.trim()}
@@ -734,6 +759,13 @@ _source: lib/agent/rebuild.ts_
 - sugary drink for water, a fruit with breakfast. What feels doable?
 - ?em)(?: in)?|that
 - ?s good|perfect|good|sounds good|do it|let
+- Let's leave it there for today — you've got ${activity && diet ? 'both pieces' : 'one piece'} down
+- ${activity ?
+- : ''}${activity && diet ?
+- : diet ?
+- The rest can wait until it's clearer. I'll keep this with me and we can pick it up whenever you want.
+- Let's leave this one for now — nothing's lost, and there's no right answer waiting to be found today.
+- Come back to it when something occurs to you; I'll be here and I'll still have the thread.
 - a small, doable, member-owned plan: ONE small new physical-activity change and ONE small new dietary change for the
 - coming week. This is coaching, not therapy and not a survey — help them make a plan; don't excavate feelings or
 - grade them. Plain, measured, warm, no hype.
@@ -750,6 +782,7 @@ _source: lib/agent/rebuild.ts_
 - Lock a plan field once it is specific, right-sized, and the member has affirmed it. Pass activityChange for the
 - The member's committed small movement change — specific + trackable.
 - The member's committed small eating change — specific + trackable.
+- Their Reclaim List (what they're taking back — you HAVE this; never say you can't see it): ${reclaim.join('; ')}
 - RIGHT NOW: both changes are locked. Give a brief warm acknowledgment; the app will show the plan to confirm.
 - Movement — ${activity} Eating — ${diet}
 - You did the real work of Rebuild — you found your why, took honest stock of your skills, and ran the pilot in your
@@ -1036,37 +1069,37 @@ _source: lib/grinta/survey/instrument.ts_
 
 _source: lib/content/summaries.ts_
 
-- See how far you’ve drifted from yourself — a gap you can name is one you can close.
+- Measure the distance between who you are and who you want to be.
 - You rate yourself across the areas of your life, comparing where you are now to the fuller version of you that you remember. The point is a clear starting line — an honest look at the distance, in your own hand. Research suggests that measuring your present self against a self that matters to you can sharpen the motivation for the work ahead. Retake it later, and the space between the two readings becomes your own measuring stick.
-- Name the doors your Fade came in through — most people walked through more than one.
+- Identify the doors you walked through that caused you to Fade.
 - The Fade rarely arrives all at once. It comes through doors — a relationship, a shrinking social world, autopilot, and others — usually several at the same time. Here you mark which ones are yours, then look at which opened first, which shaped you most, and which is still open. Research suggests people move through life change more steadily when they can put it in a clear story rather than carry it as fog. And in the Spark space, you’ll see these doors are a shared pattern.
 - See your drift clearly, then put words to who you’re becoming.
 - Two moves in one. The Drift Quiz holds up a mirror to how the Fade shows up in small daily choices — a place to see patterns, with no wrong answers. Then the Legacy Letter turns you forward, to name the person you want to become and what the next chapter stands for. Research suggests we’re more motivated when we can picture our future self clearly, and that writing intentions down makes them stick. You keep the letter, and come back to it.
-- Catch the reasonable-sounding stories that keep you stuck — and answer them.
+- Catch the reasonable-sounding lies that keep you stuck — and craft answers to dispel them.
 - You tell yourself things about why change can wait, why it’s not that serious, why it might be too late. They sound reasonable, which is exactly what makes them powerful. Here you bring those lines into the open and write stronger, truer ones to stand in their place. Research suggests the way you talk to yourself shapes your motivation and your staying power when things get hard. The work builds an inner voice that backs your effort.
 - Build a picture of who you’re becoming vivid enough to pull you forward.
 - When the future stays vague, it’s easy to lose heart the first time results are slow. So here you build a clear, personal picture of where you’re headed, returning to the spark you named earlier to make it real. Research suggests people stay more committed when they can vividly imagine their future self and feel connected to it. A destination you can actually see gives your effort direction on the hard days.
 - Learn to notice a slip early and clip back in fast.
 - Change gets messy, and a false start can feel like proof you’ve failed — which is usually right when people quit. This week teaches a steadier response: the False Start protocol prepares your comeback before you need it, and the mindfulness practice helps you catch stress, discouragement, and old habits before they take the wheel. Research suggests people do better when they know how to recover from a lapse and can watch themselves without piling on judgment. You build the skill to notice, reset, and keep going.
-- Find the reasons to care for your body that actually last.
+- Find your reasons to care for your body.
 - Guilt and pressure can get you moving, but if they are your sole driver, they run out fast. Research suggests people stay engaged when their motivation feels like their own. Here we’ll look underneath the “shoulds” for reasons personal to you. Your energy, health, freedom. The people you love. The life you want. Identifying them gives you real reasons to keep showing up.
-- Take stock of the everyday skills that make change stick.
+- Evaluate your skills that can make change stick.
 - Motivation alone doesn’t create change. It’s the practical skills: planning, setting goals, handling barriers, tracking progress, recovering from setbacks, that make a difference. Here you’ll respond to statements that measure where your skills are strong and where they could grow. They’re sorted into three simple jobs: getting ready, taking action, and staying consistent. Research suggests lasting change leans on all three. You’ll come away with a map of what to build on and where support and practice can help.
 - Watch your everyday choices for a week and learn how your lifestyle actually works.
 - This week, you’ll pick one small movement habit and one small eating habit to practice, then watch how they actually play out. It’s a week of just noticing. Research suggests self-monitoring sharpens your awareness and makes the next change more realistic. You can track the Good Calls, the False Starts, the obstacles you didn’t see coming, in your Movement screen. At the end of the week you’ll have a clearer picture of what helps, what gets in your way, and what to adjust.
 - Revisit your Reclaim List now that you know yourself better.
 - The goals you named at the start aren’t always the ones that stay most meaningful once you’ve done the work. After looking hard at your identity, your patterns, and your habits, you revisit your Reclaim List — some goals now feel more real and more possible, others feel borrowed or vague. Research suggests goals hold best when they’re truly yours and fit who you’re becoming. You refine the list so your next moves are grounded in what actually matters to you.
-- Check whether your world is getting bigger.
+- Check in on how your world has expanded from where you started.
 - Struggle isn’t always loud — often it looks like a life quietly shrinking: pulling back, exploring less, imagining less. This is a look at the opposite. Is your world getting more open, more active, more connected, more full of what’s possible? Research suggests people do better when they stay engaged with what matters and keep moving toward a wider life. You come away with a clearer read on whether you’re reclaiming range and participation, not only progress.
 - Track the days that feel like the life you’re building.
 - Wellness grows the way fitness does — out of ordinary days, one at a time. Here you track Quality Days: the days that reflect the life you’re building. You notice which choices and conditions make a day a good one, so you can repeat them on purpose. Research suggests that watching a process you care about sharpens your awareness and your consistency over time. It’s the same attention that builds fitness, turned toward how you actually want to live.
-- Get honest about where you are, and remember the person you were before the Fade set in.
+- Think about who you were before life got in the way.
 - Here, you’ll explore where you are now and excavate who you were before. You’ll recognize events that opened Doors you came through that caused you to Fade from your true self. You’ll put words to the life you want to reclaim. And you’ll answer questions that measure the distance you need to close to get there. Go at your own pace, there are no right or wrong answers, only clarity.
-- Catch the stories your mind uses to keep you comfortable, and build ones you can act on.
+- Rewire your brain to do the work. You’ll identify the stories your mind uses to keep you comfortable, and build new ones you can act on and affect change.
 - Your mind has a script for staying stuck, and it sounds reasonable every time. Rewire is where you take that script apart. You catch the excuses and the quiet lies, write truer lines to stand in their place, build a vivid picture of who you’re becoming, and learn to recover fast when you slip. This is mindfulness with teeth — seeing what’s really running the show, so your effort stops arguing with an inside voice and starts working with one.
-- Put focused effort into the body — small, real, repeatable.
+- A focus on your physical body and eating habits is an important part of increasing healthspan. Explore where you are right now, practice small, real, repeatable exercises that can get you there.
 - Now the work turns to the body, and it stays grounded and small. You get clear on why this actually matters to you — the reasons that outlast guilt — take stock of the everyday skills that make change stick, and spend a week noticing how your real choices play out. No grand overhaul, nothing graded. Just the ordinary, repeatable moves that build fitness one decision at a time, with the mind-work from Rewire backing you up.
-- Grow into a bigger life, and take back what the Fade shrank.
+- Grow into a bigger life as who you want to be.
 - Reclaim is where it widens out. You revisit what you set out to take back — now that you know yourself better — and check that your world is genuinely getting bigger: more open, more connected, more alive. You track the days that feel like the life you’re building, so a good day becomes something you can repeat on purpose. This is the wellness the whole arc was pointing at: a life you’ve grown back into, and keep growing.
 
 
@@ -1157,7 +1190,7 @@ _source: lib/curriculum/registry.ts_
 - reclaim:c3
 - Reclaim
 - reclaim:transition
-- Comeback
+- Grinta
 - radial-gradient(circle, #EC6233 0 28%, #919536 28% 52%, #3B9495 52% 76%, #374F63 76% 100%)
 - :reconnect:
 - :rewire:
@@ -1186,7 +1219,7 @@ _source: app/badges/[memberId]/page.tsx_
 - Rewire
 - Rebuild
 - Reclaim
-- The Journey
+- Your Comeback
 - ← Dashboard
 - Badges
 - bd-phase-h ${g.key}
@@ -1241,8 +1274,7 @@ _source: app/dashboard/redesign-dashboard.tsx_
 - Your full story →
 - Or take the Checkpoint
 - Or move on to ${practiceNext.label}
-- What’s the ring?
-- Four rings — one per phase — from the center out. Each fills as you finish its sessions, and goes solid when you cross its checkpoint. Your whole path, at a glance.
+- See the Program →
 - Reclaim List
 - What you’re taking back.
 - Reclaimed
@@ -1252,11 +1284,11 @@ _source: app/dashboard/redesign-dashboard.tsx_
 - Strava
 - Connected
 - Apple Health
-- Needs the app
+- Soon
 - + 400 more
 - Full health data — weight, sleep — arrives with the mobile app.
 - See all →
-- Connect your activity — evidence of the identity coming back.
+- Connect apps to automatically record activity.
 - Connect
 - ID Score
 - How close you are to yourself.
@@ -1288,14 +1320,15 @@ _source: app/dashboard/triptych-right.tsx_
 - Strava
 - Connected
 - Apple Health
-- Needs the app
+- Soon
 - + 400 more
 - Full health data — weight, sleep — arrives with the mobile app.
-- Connect your activity — evidence of the identity coming back.
+- Connect apps to automatically record activity.
 - Connect
 - Reclaim List
 - What you’re taking back.
 - Reclaimed
+- Your list lands here as you name what you’re taking back.
 
 _source: app/dashboard/resilience-pulse.tsx_
 
@@ -1337,8 +1370,7 @@ _source: app/momentum/[memberId]/page.tsx_
 - Your log
 - Nothing logged yet. Every call you make — good, false start, or quiet — lands here, in order.
 - mlog-row is-${c.type}
-- ← Back to your path
-- See your Journey →
+- ← Dashboard
 
 _source: app/momentum/momentum-log.tsx_
 
@@ -1359,12 +1391,12 @@ _source: app/momentum/momentum-log.tsx_
 _source: app/field-guide/[memberId]/page.tsx_
 
 - Field Guide
-- What this is
-- Somewhere along the way, a gap opened — between who you are right now and who you still are underneath. We call that gap the Fade. It didn’t happen all at once. It happened through a hundred reasonable decisions, and most people are the last to notice it.
-- Grinta for Life is where you close that gap and keep it closed. Not with a quick fix or a streak to chase — with a real practice that rebuilds the parts of you that faded, and the grit to hold the line when life pushes back.
-- At the center of all of it is your Companion. It’s who you talk to — the primary way you use Grinta for Life — and it remembers everything: your onboarding, what’s on your dashboard, and every conversation you’ve had with it. Around the Companion sits a path you move through (the four Phases) and the proof that you’re actually changing (your scores, your Playbook, your Reclaim List). The Companion is how you reach all of it. You set the pace; it keeps the map.
-- How the work moves — the four Phases
-- The work runs through four Phases, as a loop. You clip back into them again and again, because identity slips and life keeps moving. That’s why it’s Grinta for Life.
+- The G4L program explained
+- Somewhere along the way, a distance grew between who you are right now and who you still are underneath. It’s a loss of identity that happens in midlife. The Fade that caused it didn’t happen all at once but through a hundred reasonable decisions you make in response to life events.
+- Grinta for Life is where you reclaim your identity. It’s a practice that reconnects you to the parts of you that faded, and builds the grit to hold the line when life pushes back.
+- At the center of all of it is your AI G4L Companion. It’s who you talk to — the primary way you use Grinta for Life — your onboarding, what’s on your dashboard, and it remembers every conversation you’ve had with it. The Companion guides you through the four Phases of the Program alongside proof that you’re actually changing (your scores, your Playbook, your Reclaim List). You set the pace; it keeps the map.
+- How G4L works
+- You’ll work through four Phases and can clip back into them again and again, because identity slips and life keeps moving. That’s why it’s Grinta for Life.
 - Reconnect
 - — your starting point. See where you are, remember who you were before life talked you out of it, and find the spark worth chasing.
 - Rewire
@@ -1374,53 +1406,31 @@ _source: app/field-guide/[memberId]/page.tsx_
 - Reclaim
 - — the life. Go after the things that make you feel like you again, on purpose, out in the world.
 - Underneath all four Phases is Grinta — the grit you build by doing the work. Every Phase you close adds to it.
-- The pieces, and how to use each
-- Everything on your dashboard does one job. Here’s what each is for, and how to get the most from it.
+- The elements of G4L
+- Everything on your dashboard works toward helping you reclaim your identity to live longer, healthier, and happier. Here’s what each one does, and how to get the most from them.
 - Companion
-- — this is the product, and the primary way you use everything here. It sits at the center of your dashboard. It remembers your whole onboarding, knows what’s on your dashboard, and carries every interaction you’ve had with it — so you never start over or re-explain yourself. It sees your Sessions, your scores, your Reclaim goals, your logs, and your Community activity, and brings the right one up at the right moment — a friend’s reply, a walk you logged, a Session you’re ready for. It talks like a person, not a form.
-- How to use it:
-- talk to it. Tap “Talk to me” to open it — think something through, set or refine a goal, log a call, or just say what’s going on. You start a Session from your dashboard; everything else on this page is something your Companion helps you see and do.
-- The Program &amp; Sessions
-- — the path itself, laid out start to finish, so you always know what you’re walking into. Each step is a Session — a guided conversation, not a worksheet.
-- open the next lit Session when you have fifteen or twenty minutes. Do one at a time. Finishing one re-weaves your Playbook and moves you forward.
+- — the AI G4L Companion sits at the center of your dashboard. Conversations with it will guide you through the program. It will remember everything you ever tell it, will show you what’s next and, at any time, you can ask it a question. It sees everything and lets you know if there’s something for you to do. You start a Session at the top of your dashboard; everything else is something your Companion helps you see and do.
+- Program
+- — the entire G4L at-a-glance, so you always know what’s next. Each step is a Session — a guided conversation, or an assessment.
 - Checkpoints
-- — the moment at the end of each Phase where you look back and we measure what you built. This is where your Grinta updates.
-- treat it as a mile-marker. Answer as it truly feels — a slip you noticed and came back from still counts as building, and the number can dip as well as climb. A dip usually just means you’re seeing yourself more clearly than you could at the start.
+- — the moment at the end of each Phase where you look back and measure progress reflected in your Grinta Index.
 - Momentum
-- — the calls you make, one at a time, and how they add up. Every day brings small calls; the good ones and the honest false starts build into a line you can watch move.
-- make a call, mark it, and see the momentum build. Keep what’s worth remembering — it goes to your Playbook.
-- Commitments
-- — the specific changes you choose to hold yourself to — a way of moving, a way of eating — set with your Companion. This is the accountability, and it’s to your own goals, never an outside standard.
-- name one or two with your Companion, then tag your Momentum calls to them so the follow-through adds up where you can see it. Change one or set it aside anytime — they’re yours.
+- — track the calls you make, one at a time, and see a rhythm in how they add up. Good calls, false starts, or even quiet days build into a line you can watch move.
 - ID Score
-- — the mirror — an honest read on how connected you are to yourself, across four parts of identity: Physical, Self, Social, and Outlook. It comes from the IDQ.
-- check it to see the shape of where you’re strong and where there’s room. It updates when you retake the IDQ on schedule — it’s a starting line, not a verdict.
-- Journey
-- — the path — the whole loop of the four Phases and where you stand on it right now.
-- glance at it when you want perspective. It’s the zoom-out that shows the loop is actually turning.
+- — reflects answers to questions you answer across four parts of your identity: Physical, Self, Social, and Outlook. It measures the distance from where you are at that point in time to where you want to end up. It updates when you retake the IDQ.
 - Grinta Index
-- — the grit. Grinta means grit: never give up. It’s the grit you build across the whole journey, one Phase at a time. You get your first Grinta reading right at the start, and it grows as you finish each Phase and see yourself more clearly.
-- don’t aim at the number — do the work, and it follows. It’s measured at each Phase’s Checkpoint, and it can dip as well as climb — a dip usually means you’re seeing yourself more honestly, which is the work.
+- — Grinta means grit. The Index measures the resilience and determination you demonstrate and build as you go through each Phase. You get your first reading right at the start, and it grows as you do the work to finish each Phase. It’s recalculated at each Checkpoint.
 - Reclaim List
-- — the concrete things you’re coming back for — your goals, in your words, with simple logging.
-- add or refine items just by talking to your Companion. Turn on a tracker to tie one to your Movement and watch it come back. These are what the work is aiming at.
+- — goals you set and work toward as you work through the program. Add or refine items just by talking to your Companion. You can add a tracker to individual items to monitor progress.
 - Playbook
-- — your kept record — the story you’re writing as you go, plus the best lines, reframes, and science that hold it up. It deepens every time you close a Session.
-- reach for it whenever you need a reminder of who you are and what works. Pin what matters, edit or remove what doesn’t. Over time it becomes the raw material for your Legacy Letter and Success Story.
+- — your Companion saves the story you’re writing as you go, plus the best lines, reframes, and science that hold it up. It deepens every time you close a Session. Reach for it whenever you need a reminder. Pin what matters, edit or remove what doesn’t.
 - Community
-- — the others doing this work alongside you — a place to share the wins and the hard parts, and keep each other honest.
-- post a topic, cheer someone on, reply, or start a live room. Post under your name or your handle — your call, every time. Report or block anything that doesn’t belong.
+- — a place to connect with like-minded midlifers doing this work alongside you. Share the wins and the hard parts, and keep each other honest. Post a topic, cheer someone on, reply, or start a live room. Report or block anything that doesn’t belong.
 - Badges
-- — the receipts — proof, in one place, of the real things you’ve actually done.
-- nothing to do but earn them. They mark the stretches of grit worth remembering.
+- — no participation trophies here, this is earned acknowledgement of the hard work you’re doing.
 - Movement
-- — everything you’re doing for your body, in one place. Connect Strava and your rides, runs, and workouts flow in on their own; or just tell your Companion about a walk and it lands here too — all of it read against who you’re reclaiming, never left as raw numbers.
-- connect a source in Account, or log an activity right on the page. More connections (Apple Health, Fitbit, Garmin) arrive with the app.
-- — this page — the map of the whole platform.
-- come back anytime you’re not sure what something is or how to use it.
-- A simple rhythm
-- There’s no wrong way to do this, but if you want a default: do a Session when you’ve got the time, make your calls and mark them in Momentum against the commitments you set, log your Reclaim items and your Movement as life happens, drop into Community when you want company, and revisit your Playbook whenever you need to remember who you are. Small and steady wins this.
-- Take the tour again →
+- Connect Strava and your rides, runs, and workouts flow in on their own.
+- Take the tour →
 
 _source: app/score/[memberId]/page.tsx_
 
@@ -1434,20 +1444,18 @@ _source: app/score/[memberId]/page.tsx_
 - How you see what’s ahead — purpose, hope, the road in front of you.
 - More about your ID Score
 - Your ID Score right now is
-- Your ID Score is the mirror — and like any mirror, it won’t flatter you and it won’t lie. It’s a single 0–100 read of how close you are to the person you’re reclaiming, drawn from four corners of a life.
+- Your ID Score is a 0–100 read of how close you are to the person you’re reclaiming, drawn from four corners of a life.
 - The shape of you
-- Identity isn’t one number — it’s a shape. Your score is built from four dimensions, and seeing them together shows you where you’re whole and where the distance runs widest.
+- Your score is built from four dimensions. Seeing them together shows you where you’re whole and where the distance runs widest.
 - now ·
 - your last IDQ
-- Each is scored out of 30. Together they make the 0–100 number at the top (for example, 74 out of a possible 120 reads as 62). The big number is the whole picture; the four beneath it are the map — and a low one isn’t a failing grade, it’s a sign of where the work will pay off most.
-- How to use it:
-- when one dimension sits low, ask your Companion what to do about it — it’ll point you toward the Sessions and goals that move that corner.
+- The big number is the whole picture; the four beneath it are the map. A lower number is a sign of where the work will pay off most.
 - Why it moves slowly
-- It comes from the IDQ — twenty-four questions you answer about every 60 days. That pace is on purpose. Who you are doesn’t lurch from week to week, so neither should this. The ID Score is built to move slowly, so that when it does move, you know you earned it — real change, not a good night’s sleep.
-- So don’t chase it daily; you won’t catch it moving, and that’s the point. Do the reps, and let the next IDQ tell the truth. When the number climbs, that isn’t a better score — it’s more of you, back.
-- The mirror and the grit
-- Your ID Score moves slowly; your Grinta Index moves with the work. Watch them side by side: the grit is how hard you’re working, the mirror is how reconnected you feel. They’re two true pictures of the same comeback — we keep both honest and let you see them rise together.
-- Sixty days from now, this number gets to tell a different story. The space in between is where you write it.
+- Your ID Score comes from taking the IDQ — twenty-four questions you answer about every 60 days. That pace is on purpose. Who you are doesn’t lurch from week to week, so neither should this. The ID Score is built to move slowly, so that when it does move, you know you earned it. It reflects real change, not just a good night’s sleep.
+- Do the reps, and let the next IDQ tell the truth. When the number climbs, it’s more of you, back.
+- Closing the distance and the grit
+- Watch your ID Score and Grinta Index side-by-side: the grit is how hard you’re working, the ID Score is how reconnected you feel over time. They’re two true pictures of the same Comeback.
+- Sixty days from now, this number will tell a different story. The space in between is where you do the work to get it there.
 
 _source: app/grinta/[memberId]/page.tsx_
 
