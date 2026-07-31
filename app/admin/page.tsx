@@ -78,7 +78,7 @@ export default async function AdminHome({ searchParams }: { searchParams?: Promi
       </div>
 
       <div className={`card health-card${aiHealth && aiHealth.status !== 'ok' ? ' health-down' : ''}`}>
-        <h3>AI surfaces</h3>
+        <h3 id="health">AI surfaces</h3>
         {aiHealth ? (
           <p className="health-line">
             <span className={`health-dot health-${aiHealth.status === 'ok' ? 'ok' : 'bad'}`} aria-hidden="true" />
@@ -94,7 +94,7 @@ export default async function AdminHome({ searchParams }: { searchParams?: Promi
       </div>
 
       <div className={`card${modCount.safety > 0 ? ' health-down' : ''}`}>
-        <h3>Community moderation ({modCount.total} open{modCount.safety > 0 ? ` · ${modCount.safety} safety` : ''})</h3>
+        <h3 id="moderation">Community moderation ({modCount.total} open{modCount.safety > 0 ? ` · ${modCount.safety} safety` : ''})</h3>
         {modQueue.length === 0 ? (
           <p className="muted">No open reports. Member reports and crisis flags land here, safety concerns first.</p>
         ) : (
@@ -134,7 +134,7 @@ export default async function AdminHome({ searchParams }: { searchParams?: Promi
       </div>
 
       <div className="card">
-        <h3>Review queue ({pending.length})</h3>
+        <h3 id="review">Review queue ({pending.length})</h3>
         {pending.length === 0 ? (
           <p className="muted">No drafts waiting. Generate one from a member&apos;s page.</p>
         ) : (
@@ -151,7 +151,7 @@ export default async function AdminHome({ searchParams }: { searchParams?: Promi
       </div>
 
       <div className="card">
-        <h3>Members ({summary.total})</h3>
+        <h3 id="members">Members ({summary.total})</h3>
 
         <div className="roster-summary">
           <div className="summary-tile">
@@ -320,7 +320,7 @@ export default async function AdminHome({ searchParams }: { searchParams?: Promi
 
       <div className="card">
         <div className="fb-head" style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-          <h3 style={{ margin: 0 }}>Feedback ({openFeedback.length} open · {feedback.length} total)</h3>
+          <h3 id="feedback" style={{ margin: 0 }}>Feedback ({openFeedback.length} open · {feedback.length} total)</h3>
           {resolvedCount > 0 && (
             <form action={deleteResolvedFeedbackAction}>
               <button type="submit" className="btn-secondary">Clear resolved ({resolvedCount})</button>

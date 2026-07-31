@@ -77,13 +77,17 @@ export default function ConsoleShell({
           <div className="card">
             <div className="fc-eyebrow">Attention</div>
             <h3 className="fc-h">Needs you</h3>
-            {attention.map((a) => (
-              <div className="fc-need" key={a.kind}>
-                <span className={`fc-nd ${a.count > 0 ? (a.kind === 'milestone' ? 'win' : 'attn') : 'clear'}`} />
-                <span className="fc-nk">{a.label}</span>
-                <span className="fc-cnt">{a.count}</span>
-              </div>
-            ))}
+            {attention.map((a) => {
+              const dot = <span className={`fc-nd ${a.count > 0 ? (a.kind === 'milestone' ? 'win' : 'attn') : 'clear'}`} />;
+              const body = (<><span className="fc-nk">{a.label}</span><span className="fc-cnt">{a.count}</span></>);
+              // A count you cannot act on is a dead end. Anything with something behind it LINKS to it —
+              // drafts and safety reports live on the full page, so send him straight to that anchor.
+              const href = a.href ?? (a.count > 0 && a.kind === 'draft' ? '/admin?view=roster#review'
+                : a.count > 0 && a.kind === 'crisis' ? '/admin?view=roster#moderation' : null);
+              return href
+                ? <Link className="fc-need fc-need-link" key={a.kind} href={href}>{dot}{body}</Link>
+                : <div className="fc-need" key={a.kind}>{dot}{body}</div>;
+            })}
           </div>
 
           <div className="card" style={{ marginTop: 18 }}>
@@ -103,6 +107,19 @@ export default function ConsoleShell({
           </div>
         </div>
       </div>
+
+      {/* EVERYTHING ELSE IS ONE CLICK AWAY. The console answers "who needs me" — it deliberately does not
+          try to hold the whole operator surface. But nothing may become unreachable because a new view
+          shipped, so the things that still live on the full page are named here rather than left to be
+          rediscovered. */}
+      <p className="fc-elsewhere">
+        Also on the full page:{' '}
+        <Link href="/admin?view=roster#review">Review queue</Link> ·{' '}
+        <Link href="/admin?view=roster#moderation">Community moderation</Link> ·{' '}
+        <Link href="/admin?view=roster#health">AI surfaces</Link> ·{' '}
+        <Link href="/admin?view=roster#feedback">Feedback</Link> ·{' '}
+        <Link href="/admin?view=roster">the member table</Link>
+      </p>
     </div>
   );
 }
