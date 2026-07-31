@@ -140,7 +140,8 @@ test('contextBlock surfaces the full member data the MA can speak to', () => {
   assert.match(block, /60 → 67/); // trend
   assert.match(block, /Your body feels like it belongs to you\. — 2/); // a specific IDQ answer
   assert.match(block, /ride again \[physical\] — closer/); // Reclaim item + progress
-  assert.match(block, /Beats worked so far: 5/);
+  assert.match(block, /Program reps completed so far: 5/);
+  assert.doesNotMatch(block, /\bBeats? worked\b|Daily Beat/, 'retired vocabulary must not reach the Companion');
 });
 
 test('contextBlock surfaces the named selves + completed Sessions (curriculum awareness)', () => {

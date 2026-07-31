@@ -54,7 +54,10 @@ export function diffSnapshot(prev: DashboardSnapshot | null, curr: DashboardSnap
   }
   if (curr.beatsDone > prev.beatsDone) {
     const d = curr.beatsDone - prev.beatsDone;
-    out.push(`${d} new Beat${d === 1 ? '' : 's'} completed (now ${curr.beatsDone})`);
+    // "Beat" is retired member-facing vocabulary (Jay, 2026-07-31) and no member on production can close one.
+    // The count is now filtered to real closes, so this line effectively cannot fire — but if the surface ever
+    // returns, it must not reintroduce the word to a member.
+    out.push(`${d} new program rep${d === 1 ? '' : 's'} completed (now ${curr.beatsDone})`);
   }
   const wasReclaimed = new Set(prev.reclaimedItems);
   for (const t of curr.reclaimedItems) if (!wasReclaimed.has(t)) out.push(`Newly reclaimed: "${t}"`);

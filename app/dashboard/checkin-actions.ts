@@ -125,7 +125,16 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
       [memberId],
     ).catch(() => ({ rows: [] as never[] })),
     getReclaimItems(db, memberId).catch(() => [] as Awaited<ReturnType<typeof getReclaimItems>>),
-    db.query<{ n: number }>('select count(*)::int n from beat_completion where member_id=$1', [memberId]).catch(() => ({ rows: [] as never[] })),
+    // Count only REAL closes. beat_completion also holds onboarding artifacts and 'self_marked' markers
+    // (written when a member tells the Companion "I already got that one back") — the same two the member's own
+    // Past Beats view hides. Unfiltered, this fed the Companion a number that made it announce "2 new Beats
+    // completed" when someone had actually self-marked two Reclaim goals: wrong event AND a retired word.
+    // Same filter as getBeatHistory, so the Companion can never disagree with what the member sees.
+    db.query<{ n: number }>(
+      `select count(*)::int n from beat_completion
+        where member_id=$1 and coalesce(close_response,'') not in ('onboarding','self_marked')`,
+      [memberId],
+    ).catch(() => ({ rows: [] as never[] })),
     playbookForAgent(db, memberId).catch(() => ({ keepers: [], recentNotes: [] }) as Awaited<ReturnType<typeof playbookForAgent>>),
     measuresForAgent(db, memberId).catch(() => [] as Awaited<ReturnType<typeof measuresForAgent>>),
     db.query<{ reclaim_item_id: string }>(

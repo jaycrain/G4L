@@ -19,7 +19,9 @@ test('detects score, grinta, beats, tracker movement, and a new reclaim', () => 
   const d = diffSnapshot(base, curr);
   assert.ok(d.some((x) => x.includes('ID Score: 60 → 63')));
   assert.ok(d.some((x) => x.includes('Grinta Index: 24 → 28')));
-  assert.ok(d.some((x) => x.includes('2 new Beats completed')));
+  // "Beat" is retired member-facing vocabulary (Jay, 2026-07-31) — the Companion must never say it again.
+  assert.ok(d.some((x) => x.includes('2 new program reps completed')));
+  assert.equal(d.some((x) => /\bBeats?\b/.test(x)), false, 'a retired word must not reach the member');
   assert.ok(d.some((x) => x.includes('Weight: 213.4 → 211')));
   assert.ok(d.some((x) => x.includes('New tracker started: Funds raised')));
   assert.ok(d.some((x) => x.includes('Newly reclaimed: "Weight down to 190"')));
