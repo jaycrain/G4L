@@ -1,6 +1,6 @@
 # G4L — Member Transcript (authored copy, verbatim)
 
-Stamp: `app @ bf06b87 · 2026-07-31` · PART 1 of the Cowork release bundle.
+Stamp: `app @ 3c0f274 · 2026-07-31` · PART 1 of the Cowork release bundle.
 
 **Quote from this.** Every line below is authored, fixed copy a member reads, in reading order by surface. It does
 **not** include the Companion's in-the-moment reflections (those are model-generated and vary per member — describe
@@ -28,7 +28,6 @@ _source: lib/agent/onboarding-staged.ts_
 - No wrong answer here — pick whichever comes closest, or write your own word for that person.
 - The Athlete
 - Take it wherever it starts. What was going on for you when the distance opened?
-- a diagnosis, a move, a job that swallowed you. More often it’s slower: an accumulation of what we call Doors — moments
 - Thank you for trusting me with that — that kind of distance rarely opens all at once.
 - Have we got a good handle on how it all happened — or is there more to it?
 - I want to get this right — tell me how it really went, in your own words.
@@ -55,7 +54,8 @@ _source: lib/agent/onboarding-staged.ts_
 - No rush — we can shape that one together anytime.
 - ?s (the end|it for now|all for now|enough( for now)?)|i
 - ?re (broke|broken|bugg(y|ing)|malfunction(ing)?|not (working|listening))|document(ing)? an? (item|entry)|not (a|an) (reclaim[- ]?)?(item|entry|goal)\b|hey,? (g4l|companion)\b|g4l companion|trying to (tell|say) you|talking (to|at) you|you (misunderstood|did\s?n[
-- = 1 && n
+- 8 out of 10
+- 1 to 5
 - And if now isn't the moment for this, you can leave it and come back whenever you like — your place is saved.
 - I've kept those — they're the things you want back, and we'll build that list together in a minute. Right now I'm still with how it happened. Was there more to it?
 - Great work! Now you’re ready to take the first assessment. This is a series of 12 questions that will establish
@@ -72,7 +72,6 @@ _source: lib/agent/onboarding-staged.ts_
 - Record the reclaimed-identity word directly, natural case (e.g. "Athlete") — ONLY when the member flatly names
 - Record that the member chose NOT to name an identity yet (they will find it at Identity Excavation).
 - Record how the distance opened — the fade story (the gap) — in the member's OWN FIRST-PERSON voice, keeping
-- -punctuated prose (whole sentences, proper periods) — but ONLY fix mechanics; preserve their exact words,
 - GROWS with the new part; it does not repeat the whole arc again. Call this once they've told you how it went.
 - Call this ONLY once you have genuinely DRAWN OUT the fade story — never on the first mention of what happened.
 - It means: you explored HOW the distance opened (the sequence, when they first felt it, what it quietly cost
@@ -84,13 +83,8 @@ _source: lib/agent/onboarding-staged.ts_
 - If they volunteer one EARLY (before the reclaim stage), capture it here anyway so it's never lost — you'll bring it back at its stage.
 - ELABORATES the want you most recently added — that is the SAME want getting sharper ('about 25 lbs' after
 - 'lose weight'; '2-3 rides a week' after 'ride my bike'; 'a few days a week there too' after 'core work'). Fold
-- a logistics remark, or an identity statement of WHO they are ("I'm a director") — an identity belongs to who
 - REPLACE the reclaim item you MOST RECENTLY added with a sharper, more complete version — pass the WHOLE new
 - ('ride my bike more' → 'ride my bike a couple times a week'); (2) whenever their reply just adds an amount,
-- the Racer
-- the Player
-- the Writer
-- the Racer… he faded
 - ALWAYS end your turn with your single forward question — your drawing-out ask while gathering ("was there more
 - RECEIVE it: reflect it back, feel what it means to them, and (if vague) drill it concrete — then, and only then,
 - MAKE EACH WANT CONCRETE (light touch): a Reclaim item should be something they could actually notice
@@ -103,7 +97,6 @@ _source: lib/agent/onboarding-staged.ts_
 
 _source: lib/agent/reconnect.ts_
 
-- the Player
 - Does that still feel like where it began — or has something shifted since?
 - : ''}. I've been holding it, and I want to go deeper into it with you now.
 - Does it still feel the way it did — or has it moved?
@@ -144,8 +137,6 @@ _source: lib/agent/reconnect.ts_
 - Good. Now the people around you.
 - Last stretch — how you're looking at what's ahead.
 - That's the whole check-in — thank you for staying with it. I've got your baseline now. You'll see it take shape
-- the physical — body, movement, sleep
-- the outlook — how you see what lies ahead
 - Premature close
 - They named no specific Door.
 - A quick check-in before we close. Six short statements about what this work is making you think about. No score
@@ -227,10 +218,8 @@ _source: lib/agent/rewire.ts_
 - And, congrats — your grit and resilience here earned you a badge: "True Line."
 - Your true line
 - RIGHT NOW: the member just wrote a TRUE LINE (their honest counter to a lie). In ONE turn: (1) acknowledge
-- a time. Don't make them go find the next one. Once they've put lines to two or three (or answered them all),
 - RIGHT NOW: the member just named their FIFTH and last self-lie — often the most vulnerable. Respond in ONE
 - RIGHT NOW: the member just named a self-lie in one domain. Reflect it back in 1–2 sentences — heard, un-judged, the real story under it. No question, no next domain, no counter-line.
-- ).join(', ')}
 - In the Disinformation Audit you built the true lines that negate the lies you tell yourself. This time you'll
 - There's science behind visualization. Every athlete who's done anything hard rehearsed it in their head first.
 - Your brain moves toward what it can see clearly. "I want to be healthier" has nothing to aim at. A specific
@@ -253,7 +242,6 @@ _source: lib/agent/rewire.ts_
 - Slips aren't random — they have triggers. Let's find yours.
 - Say more about that — what's underneath it?
 - No wrong answer — just the real pattern. When does it tend to get you?
-- the situations (travel, a brutal week, late nights, the holidays); the internal states (wiped out, frustrated,
 - Now we write the plan — for the trigger that gets you most. Three moves.
 - First, Redirect — the thing you do instead. When you don't want to do the work, the rule is five minutes: start,
 - the block, call someone, leave the room. What's yours?
@@ -267,8 +255,6 @@ _source: lib/agent/rewire.ts_
 - Restart — go back to your picture, standing in the goal you named.
 - Your true line for a bad day
 - Your False Start Protocol
-- the actual words back, in quotes, in their own first-person voice — 'go back to the line you wrote: "[their exact
-- ).join(' · ')}
 - RIGHT NOW: the member just gave their bad-day line. Acknowledge it warmly in a line (don't rewrite it),
 - RIGHT NOW: the member is responding to the Restart. Receive their reaction warmly in ONE line — no new question; you're about to close.
 - RIGHT NOW: you've drawn out enough triggers — do NOT ask for another. Reflect briefly, name the ONE or TWO
@@ -282,7 +268,6 @@ _source: lib/agent/rewire.ts_
 _source: lib/curriculum/content/rewire.ts_
 
 - The Disinformation Audit
-- Awareness
 - Catch the comfortable lies your mind runs to keep you safe and small — and take them apart.
 - the member's true line (in their words)
 - The comfortable lie
@@ -326,7 +311,6 @@ _source: lib/curriculum/content/rewire.ts_
 - That's a new deal with food — a lens you can carry. I've put your reframe in your Playbook to keep or cut.
 - Use this lens at your next meal?
 - The Visualization Workshop
-- Visualization
 - Use the trick athletes use — rehearse the hard thing before it happens.
 - Why this isn't woo
 - Pick the moment you most want to handle better — the 6am alarm, the hill, the room you walk into. Name it.
@@ -339,7 +323,6 @@ _source: lib/curriculum/content/rewire.ts_
 - You just practiced winning before it happened. I've saved what it felt like to your Playbook to keep or cut.
 - Run this once more before the moment this week?
 - The Self-Talk Audit
-- Hardiness
 - Catch how you talk to yourself, and rewrite one line true-but-forgiving.
 - Catch the voice
 - Write the harshest thing you say to yourself when you mess up — word for word.
@@ -363,18 +346,15 @@ _source: lib/curriculum/content/rewire.ts_
 - Now the slip has a plan, and a plan beats willpower. I've put your move in your Playbook to keep or cut.
 - If you miss this week, will you run this move?
 - Disinformation Audit
-- Affirmation
 - Catch the comfortable lies your mind runs — and write the true lines that answer them.
 - the member's true lines (in their words)
 - Visualization Workshop
 - Build a vivid picture of where you’re headed — the one the old voice can’t compete with.
 - the member's image (in their words)
 - False Start Protocol
-- Focus
 - Build the plan for the day it goes sideways — Redirect, Reframe, Restart.
 - the member's recovery protocol (in their words)
 - Rewire Checkpoint
-- Checkpoint
 - A read on the commitment you built — and the close of the Phase.
 
 _source: lib/ceremony/rewire-ceremony-beats.ts_
@@ -395,7 +375,6 @@ _source: lib/agent/rebuild.ts_
 - (very true for you).
 - That's movement. Now the other half of it — eating.
 - That's your starting why. Some of it is already yours; some of it might still be the shoulds — and that's exactly
-- the point. We're not grading it. We're marking where you stand today, so when you come back to these same
 - During the Rebuild phase, we'll practice what makes a healthy life actually stick. But before you change anything,
 - That's movement. Same skills now, for eating.
 - You've identified your why, and you've taken stock of your skills. Now we'll put it into practice.
@@ -413,7 +392,6 @@ _source: lib/agent/rebuild.ts_
 - Let's leave this one for now — nothing's lost, and there's no right answer waiting to be found today.
 - Come back to it when something occurs to you; I'll be here and I'll still have the thread.
 - HOW TO COACH: one change at a time — movement first, then eating. One question per turn. Elicit their idea; if it's
-- the turn going in the same reply — acknowledge it in a few words and pivot straight to coaching the other change;
 - The member's committed small movement change — specific + trackable.
 - The member's committed small eating change — specific + trackable.
 - RIGHT NOW: both changes are locked. Give a brief warm acknowledgment; the app will show the plan to confirm.
@@ -440,16 +418,13 @@ _source: lib/rebuild/why-instrument.ts_
 _source: lib/rebuild/skills-instrument.ts_
 
 - 1 (strongly disagree) to 4 (strongly agree)
-- Self-assessment
 - I can evaluate my needs related to fitness
 - I can evaluate my needs related to nutrition
-- Self-monitoring
 - I can self-monitor physical activity behavior
 - I can self-monitor dietary behavior
 - Goal setting
 - I can set goals for physical activity behaviors
 - I can set goals for dietary behaviors
-- Self-planning
 - I can create a physical activity plan to address my needs.
 - I can create a dietary plan to address my needs.
 - Performance skills
@@ -503,14 +478,11 @@ _source: lib/agent/reclaim.ts_
 - Take your time. Which items still matter most, which feel different now, and what's newly important?
 - Done — your Reclaim List now reflects where you actually are, sorted by what matters most right now.
 - I've kept a snapshot of where it was, too — so you can always see how it's shifted. You can revisit it anytime by asking for your Reclaim List.
-- ).join(' ')}
 - ('feel physically capable and steady again'), and merge items that belong together; (4) re-prioritize into four
 - RECORDING: once you've walked the refinement and the member has settled it, call record_refinement with the WHOLE
 - Record the member's settled, refined Reclaim List so the app can show it back for confirmation. Pass every item
-- the refined list — one entry per current item
 - the item's CURRENT wording (to match the live list)
 - the refined wording (or the same if unchanged)
-- ).join(' ') || '(empty)'}  Coach the refinement one step at a time; when it's settled, call record_refinement with the whole refined list.
 - In Reconnect, the IDQ showed how far you'd drifted across four areas of life. This is the other side of it — where
 - It's also where you feel most ready to move — a strong place to start.
 - Here’s what stands out from the audit.
@@ -522,7 +494,6 @@ _source: lib/agent/reclaim.ts_
 - It's all about noticing what actually makes your days yours. You can log any day from your dashboard.
 - NEXT 3 contributors (they strongly help), and the TOP 2 disruptors (what most often pulls a day down); (3) play
 - RECORDING: once the definition is settled, call record_quality_day with nonNegotiables (up to 3), contributors (up
-- the profile to confirm before saving. If a distress or crisis signal appears, drop the exercise and route to support
 - (988 US / local) and a human — always on.
 - Record the member's settled Quality-Day definition so the app can show it back to confirm. Their own words.
 - You did the real work of Reclaim — you revisited your list with clearer eyes, mapped where your world can get
@@ -531,10 +502,6 @@ _source: lib/agent/reclaim.ts_
 
 _source: lib/reclaim/bigger-world-instrument.ts_
 
-- Physical
-- Self
-- Social
-- Outlook
 - When you think about your physical life right now — your energy, sleep, movement, health habits, and how you’re treating your body — where would you rate yourself from 1 to 10?
 - If 10 represents the physical version of you that feels strong, well-cared-for, and aligned with the life you want, where would you want to be?
 - How important is it for you to close that physical gap right now, from 1 to 10?
@@ -597,29 +564,17 @@ _source: lib/grinta/survey/instrument.ts_
 - I can visualize what I want to accomplish
 - I can counter triggers that challenge my behavior change efforts
 - I am confident that I can maintain physical activity habits and healthy eating patterns over time
-- B1Q2a
 - I am aware of my physical activity behaviors and how they relate to recommended guidelines
-- B1Q2b
 - I am aware of my dietary habits and how they relate to recommended guidelines
-- B1Q3a
 - I am aware of how sleep and stress can influence my lifestyle choices and my mood
-- B1Q3b
 - I am aware of how my lifestyle influences various health indicators
-- B2Q2a
 - I am skilled at self-monitoring my lifestyle behaviors
-- B2Q2b
 - I am skilled at using self-planning and time management skills to manage my behaviors
-- B2Q3a
 - I am skilled at overcoming barriers and recovering from short relapses
-- B2Q3b
 - I am skilled at managing my attitudes and staying motivated on healthy living
-- B3Q2a
 - I have a consistent movement practice
-- B3Q2b
 - I eat intentionally more often than I eat reactively
-- B3Q3a
 - I can appreciate how physical activity, dietary behaviors and sleep patterns interact together
-- B3Q3b
 - I can see how lifestyle behaviors influence my health, function, and quality of life
 - I am aware of what I want to work towards in the future
 - I am aware of the importance of focusing to achieve my goals
@@ -672,7 +627,6 @@ _source: lib/content/summaries.ts_
 _source: lib/curriculum/registry.ts_
 
 - Identity Excavation
-- Excavation
 - Dig up the buried self and name who you're reclaiming.
 - The archaeological dig
 - What did you used to do that made you feel most like yourself?
@@ -691,10 +645,8 @@ _source: lib/curriculum/registry.ts_
 - Name it — one phrase you can put on, like a title you wear. Natural case: “the Elite Cyclist”, “the Builder”. The self you’re reclaiming.
 - Make it yours — self-chosen, not a role someone else assigned you. What’s the version underneath?
 - The IDQ
-- Recognition
 - The mirror — your starting read across four dimensions. Retakes every 60 days.
 - The Reconnect Checkpoint
-- Checkpoint
 - The reconnection milestone — have you found yourself? Firm gate; opens Rewire.
 - The Rewire Checkpoint
 - Has the frame moved? Opens the deeper Rebuild work.
@@ -703,7 +655,6 @@ _source: lib/curriculum/registry.ts_
 - The Reclaim Checkpoint
 - Carrying it outward — the capstone, and the Loop clips you back in.
 - The Seven Minutes
-- Daily
 - A daily short rep to keep your grit warm.
 - The daily rep — plus the Hardiness reps.
 - A quick nightly check on recovery.
@@ -715,25 +666,13 @@ _source: lib/curriculum/registry.ts_
 - The identity-distance read, retaken every 60 days.
 - Onboarding Courage
 - Named Yourself
-- Reconnected
-- Rewired
-- Rebuilt
 - Goal Reclaimed
 - Reclaimed — a full cycle
-- Doors
-- Reconnect
 - True Line
-- Visualization
 - False Starts
-- Rewire
 - Strengths & Weaknesses
-- Observer
-- Rebuild
-- Goals
 - Big, Big World
 - Quality Days
-- Reclaim
-- Grinta
 - :reconnect:
 - :rewire:
 - :rebuild:
@@ -756,15 +695,8 @@ _source: app/badges/[memberId]/page.tsx_
 - You built days that feel like you.
 - You completed the fourth phase of the G4L program.
 - You made it all of the way through a Grinta for Life cycle.
-- Reconnect
-- Rewire
-- Rebuild
-- Reclaim
 - Your Comeback
 - ← Dashboard
-- Badges
-- Earned
-- Ahead
 - More about your Badges
 - You’ve earned
 - Your Badges are the receipts — proof, in one place, of the real things you’ve actually done. Think passport stamps, not trophies: every one is the same size, each with its own color and design, and the point was never any single one. The point is how many you stack.
@@ -772,10 +704,7 @@ _source: app/badges/[memberId]/page.tsx_
 - You don’t get one for showing up or logging in. You get one for the plays that count — passing a stretch of grit, reclaiming something on your list, coming back after a miss, crossing a Checkpoint. They’re meant to be hard. The accumulation is the whole game: a passport that fills is a life being won back.
 - So don’t measure yourself against the one you don’t have yet. Look at the density — a board crowding with color is the story, told in stamps.
 - Your first was the hardest to see coming: getting through onboarding and into this room. That one took facing yourself. The rest, you’ll stack.
-- Milestones
-- Hardiness
 - Goals reclaimed
-- Comebacks
 - Still to earn
 
 
@@ -783,44 +712,24 @@ _source: app/badges/[memberId]/page.tsx_
 
 _source: app/dashboard/redesign-dashboard.tsx_
 
-- Reconnecting
-- Rewiring
-- Rebuilding
-- Reclaiming
-- Physical
-- Self
-- Social
-- Outlook
-- Reconnect
-- Rewire
-- Rebuild
-- Reclaim
+- 0 of 3
 - Who you’re reclaiming lands here once you name it.
 - Doors are common life changes that happen to almost all midlifers. Your Doors show the ones you walked through that started the Fade away from who you were to who you are now, and provide meaningful insights for your comeback.
 - Go to your G4L home
 - Grinta for Life
-- Program
 - Field Guide
-- Playbook
 - Your account
 - Your full story →
 - Or take the Checkpoint
 - See the Program →
 - Reclaim List
 - What you’re taking back.
-- Reclaimed
 - Just your intentions — turn on a tracker to tie one to your Movement. To add or refine, talk to your Companion.
-- Movement
 - All your activity, in one place.
-- Strava
-- Connected
 - Apple Health
-- Soon
-- + 400 more
 - Full health data — weight, sleep — arrives with the mobile app.
 - See all →
 - Connect apps to automatically record activity.
-- Connect
 - ID Score
 - How close you are to yourself.
 - Blank for now — it fills the moment you start Reconnect.
@@ -828,52 +737,35 @@ _source: app/dashboard/redesign-dashboard.tsx_
 - Grinta Index
 - Grit. Stronger each Phase.
 - Blank for now — your grit baseline lands when you finish the intro.
-- Momentum
 - The calls you make, one at a time.
 - Good Calls · False Starts · Quiet Days
-- Badges
 - Earned for real accomplishments — revealed when you get there.
 - Locked badges show what’s ahead.
 
 _source: app/dashboard/triptych-right.tsx_
 
-- Momentum
 - The calls you make, one at a time.
 - Good Calls · False Starts · Quiet Days
 - See more →
 - Connect with other members →
-- Movement
 - All your activity, in one place.
-- Strava
-- Connected
 - Apple Health
-- Soon
-- + 400 more
 - Full health data — weight, sleep — arrives with the mobile app.
 - Connect apps to automatically record activity.
-- Connect
 - Reclaim List
 - What you’re taking back.
-- Reclaimed
 - Your list lands here as you name what you’re taking back.
 
 _source: app/dashboard/resilience-pulse.tsx_
 
-- 0.25rem
 - · the Resilience Pulse
 - The Resilience Pulse: a flat baseline with one live, pulsing point at today. It fills as you log your calls.
 - The Resilience Pulse: a rolling two-week rhythm, call by call — an up-beat for a good call, a dip for a false start, flat for a quiet day, ending on today's live point.
-- 1.8s
-- 0.9s
-- Today
 - Good Calls · False Starts · Quiet Days
-- 12.5px
-- 0.5rem 0 0.25rem
 - Good Call — up-beat
 - False Start — dip
 - Quiet Day — flat
 - Today — live
-- 0.4rem 0 0
 - Every call you make moves the line — starting with your first.
 - A bounce after a dip is evidence of the comeback and that your protocol is working. Keep going.
 
@@ -882,12 +774,6 @@ _source: app/momentum/[memberId]/page.tsx_
 - Good Call
 - False Start
 - Quiet Day
-- Movement
-- Eating
-- Today
-- T00:00:00
-- Yesterday
-- Momentum
 - The minute-to-minute decisions you make are what add up to change. Here you can track your good calls, false starts — and even quiet days where nothing much happened — and begin to understand how your patterns impact your progress.
 - Your log
 - Nothing logged yet. Every call you make — good, false start, or quiet — lands here, in order.
@@ -915,24 +801,16 @@ _source: app/field-guide/[memberId]/page.tsx_
 - At the center of all of it is your AI G4L Companion. It’s who you talk to — the primary way you use Grinta for Life — your onboarding, what’s on your dashboard, and it remembers every conversation you’ve had with it. The Companion guides you through the four Phases of the Program alongside proof that you’re actually changing (your scores, your Playbook, your Reclaim List). You set the pace; it keeps the map.
 - How G4L works
 - You’ll work through four Phases and can clip back into them again and again, because identity slips and life keeps moving. That’s why it’s Grinta for Life.
-- Reconnect
 - — your starting point. See where you are, remember who you were before life talked you out of it, and find the spark worth chasing.
-- Rewire
 - — the mind. Take apart the old stories your mind tells to keep you comfortable, and build new ones you can act on.
-- Rebuild
 - — the body. Put it into the body: how you move, eat, sleep, and recover, built back one small decision at a time.
-- Reclaim
 - — the life. Go after the things that make you feel like you again, on purpose, out in the world.
 - Underneath all four Phases is Grinta — the grit you build by doing the work. Every Phase you close adds to it.
 - The elements of G4L
 - Everything on your dashboard works toward helping you reclaim your identity to live longer, healthier, and happier. Here’s what each one does, and how to get the most from them.
-- Companion
 - — the AI G4L Companion sits at the center of your dashboard. Conversations with it will guide you through the program. It will remember everything you ever tell it, will show you what’s next and, at any time, you can ask it a question. It sees everything and lets you know if there’s something for you to do. You start a Session at the top of your dashboard; everything else is something your Companion helps you see and do.
-- Program
 - — the entire G4L at-a-glance, so you always know what’s next. Each step is a Session — a guided conversation, or an assessment.
-- Checkpoints
 - — the moment at the end of each Phase where you look back and measure progress reflected in your Grinta Index.
-- Momentum
 - — track the calls you make, one at a time, and see a rhythm in how they add up. Good calls, false starts, or even quiet days build into a line you can watch move.
 - ID Score
 - — reflects answers to questions you answer across four parts of your identity: Physical, Self, Social, and Outlook. It measures the distance from where you are at that point in time to where you want to end up. It updates when you retake the IDQ.
@@ -940,25 +818,17 @@ _source: app/field-guide/[memberId]/page.tsx_
 - — Grinta means grit. The Index measures the resilience and determination you demonstrate and build as you go through each Phase. You get your first reading right at the start, and it grows as you do the work to finish each Phase. It’s recalculated at each Checkpoint.
 - Reclaim List
 - — goals you set and work toward as you work through the program. Add or refine items just by talking to your Companion. You can add a tracker to individual items to monitor progress.
-- Playbook
 - — your Companion saves the story you’re writing as you go, plus the best lines, reframes, and science that hold it up. It deepens every time you close a Session. Reach for it whenever you need a reminder. Pin what matters, edit or remove what doesn’t.
-- Community
 - — a place to connect with like-minded midlifers doing this work alongside you. Share the wins and the hard parts, and keep each other honest. Post a topic, cheer someone on, reply, or start a live room. Report or block anything that doesn’t belong.
-- Badges
 - — no participation trophies here, this is earned acknowledgement of the hard work you’re doing.
-- Movement
 - Connect Strava and your rides, runs, and workouts flow in on their own.
 - Take the tour →
 
 _source: app/score/[memberId]/page.tsx_
 
-- Physical
 - Your body, your energy, how you move and feel in it.
-- Self
 - Who you are to yourself — identity, confidence, the inner story.
-- Social
 - Your people — connection, belonging, who’s in your corner.
-- Outlook
 - How you see what’s ahead — purpose, hope, the road in front of you.
 - More about your ID Score
 - Your ID Score is a 0–100 read of how close you are to the person you’re reclaiming, drawn from four corners of a life.
@@ -973,10 +843,6 @@ _source: app/score/[memberId]/page.tsx_
 
 _source: app/grinta/[memberId]/page.tsx_
 
-- Reconnect
-- Rewire
-- Rebuild
-- Reclaim
 - More about your Grinta Index
 - — Eros Poli, GRINTA!
 - What it measures

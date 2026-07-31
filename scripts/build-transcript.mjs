@@ -73,17 +73,35 @@ function looksLikeSystemPrompt(s) {
 const ENDS_MID_CLAUSE = /\b(the|a|an|and|or|but|their|your|his|her|its|of|to|in|on|for|with|that|which|so|if|when|as|at|by|from|is|are|was|were|be|been|it|they|you|we|not|no)$/i;
 function isFragment(s) {
   // Starts mid-sentence: a lowercase opener that isn't a legitimate sentence start.
+  // The "the / a / an" exemption exists because real copy does start that way — but a genuine sentence also
+  // FINISHES. "the turn going in the same reply — … pivot straight to coa" used the exemption to walk through.
+  // So a lowercase opener is only forgiven when the string actually terminates.
   if (/^[a-z]/.test(s) && !/^(i\b|i'|the |a |an )/i.test(s)) return true;
+  if (/^[a-z]/.test(s) && !/[.?!:"'\u2019\u201d)]$/.test(s)) return true;
+  if (/\dT\d{2}:\d{2}|^T\d{2}:\d{2}/.test(s)) return true; // ISO timestamp shard
   // Ends mid-clause: no terminal punctuation AND trails off on a function word.
   if (!/[.!?:;,"'\u2019\u201d)\]]$/.test(s) && ENDS_MID_CLAUSE.test(s)) return true;
   return false;
 }
 
-// Un-rendered code: template interpolation, JSON/serialisation, CSS-ish tokens. A member never sees a `${…}`.
+// Un-rendered code: template interpolation, JSON/serialisation, CSS values, style-object fragments.
+// A member never sees a `${…}` — or "0.25rem", or ").join(' ')}".
+//
+// WIDENED 2026-07-31 (second pass). The first version caught prompt fragments and I reported the file "0.0%
+// contaminated" — but I had measured with the FRAGMENT heuristic only, which never looked for code. CSS values
+// scraped out of inline style={{…}} objects sailed through, and that file went to Cowork labelled quote-verbatim.
+// Same failure as the guard it replaced: confident because the check I ran was the check I designed the filter
+// against. The audit at the bottom of this file now runs INDEPENDENT checks for that reason.
 function isCodeArtifact(s) {
-  if (/\$\{/.test(s)) return true;
-  if (/JSON\.|\bmust be an integer\b|\btypeof\b|\bundefined\b|\bnull\b\s*$/.test(s)) return true;
-  if (/^[a-z0-9-]+(\s+[a-z0-9-]+)*$/.test(s) && !/[.?!]/.test(s) && s.split(' ').length <= 4) return true;
+  if (/\$\{/.test(s)) return true;                                  // template interpolation
+  if (/JSON\.|\bmust be an integer\b|\btypeof\b|\bundefined\b/.test(s)) return true;
+  if (/^\)\.|\)\.join\(|=>|\bmap\(|\bfilter\(/.test(s)) return true;   // code tails
+  if (/^[+\-*/=<>|&]/.test(s)) return true;                          // starts as an operator ("+ 400 more")
+  // CSS: a value, a shorthand list of values, a duration, a dimension.
+  if (/^-?[0-9.]+(rem|px|em|%|s|ms|vh|vw|fr|deg)?(\s+-?[0-9.]+(rem|px|em|%|s|ms|vh|vw|fr|deg)?)*$/.test(s)) return true;
+  if (/^(#[0-9a-f]{3,8}|rgba?\(|hsla?\()/i.test(s)) return true;      // colours
+  // A short token with no spaces and no sentence punctuation is a key or a class, not a sentence.
+  if (!/\s/.test(s) && !/[.?!,;:]/.test(s) && s.length < 24) return true;
   return false;
 }
 
