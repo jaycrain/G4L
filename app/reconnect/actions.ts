@@ -19,7 +19,7 @@ import { TOTAL_ITEMS } from '../../lib/idq/instrument.ts';
 import { BASELINE_GRIT_ITEMS, CHECKPOINT_GRIT_ITEMS } from '../../lib/grinta/survey/instrument.ts';
 import { scoreCheckpointGrit, grintaChangePct } from '../../lib/grinta/survey/scoring.ts';
 import { persistGrintaReading, checkpointResponsesMap, getGrintaBaselineReading, latestGrintaReading } from '../../lib/grinta/survey/store.ts';
-import { setGate, earnBadge } from '../../lib/curriculum/store.ts';
+import { setGate, earnBadge, markSessionClosed } from '../../lib/curriculum/store.ts';
 
 // v2.2 Reconnect server actions. Flag-gated. The callback (entry) READS committed captures and opens; the DOORS
 // excavation (§2b) is a live model turn (draw-out + insight + the re-seeing revision). Conversation state is
@@ -118,6 +118,45 @@ async function persistCheckpoint(db: Db, memberId: string, prev: ConvState, turn
     await persistGrintaReading(db, memberId, { source: 'checkpoint', responses: checkpointResponsesMap(grit), score: cp.score });
   } catch {
     // swallow — best-effort; the conversation turn already succeeded.
+  }
+}
+
+
+// SESSION CLOSES — the half the v2.2 arc bypass forgot.
+//
+// Reconnect runs as ONE conversational arc, so it never touches the step-player's closeSessionAction or the
+// checkpoint action. Badges were re-wired for that bypass (see persistReconnectComplete below); the SESSION CLOSE
+// was not. Result on production: Greg opened seven Sessions across two days, finished Reconnect, crossed the
+// checkpoint — and `session_progress` held ZERO rows for him, with not one session_close event. His work was real
+// and simply unrecorded: no Session history, no time-on-asset (the open window never closed), and an operator
+// panel that showed "—" and read as "did nothing". Found because Jay knew the program is linear and therefore
+// that crossing the checkpoint with no closed Sessions was impossible (2026-07-31).
+//
+// Closed at each STAGE BOUNDARY rather than all at the end, so the open→close window per Session is the real
+// elapsed time. Idempotent (markSessionClosed upserts and only emits session_close on the first close).
+const RECONNECT_STAGE_ASSET: Record<string, string> = {
+  doors: 'RCN-EXC',       // Identity Excavation — the Doors work
+  measurement: 'RCN-IDQ', // The IDQ — the baseline ID Score
+};
+
+async function persistReconnectSessionCloses(db: Db, memberId: string, prev: ConvState, turn: Turn): Promise<void> {
+  try {
+    const from = String(prev.stage ?? '');
+    const to = String(turn.state.stage ?? '');
+    if (from === to) return;
+    // Left a stage that maps to a Session → that Session is done.
+    const left = RECONNECT_STAGE_ASSET[from];
+    if (left) await markSessionClosed(db, memberId, left);
+    if (to === 'ceremony') {
+      // The gateway is complete. The program is LINEAR — reaching the Ceremony means every Reconnect Session
+      // was worked — so close any that are still open. This is the self-heal: a member who somehow skipped a
+      // boundary (a resume across a deploy, a stage jump) still ends with a truthful record instead of a hole.
+      for (const asset of [...Object.values(RECONNECT_STAGE_ASSET), 'RCN-CHK']) {
+        await markSessionClosed(db, memberId, asset);
+      }
+    }
+  } catch {
+    // swallow — best-effort; never fail a member's turn over bookkeeping.
   }
 }
 
@@ -262,6 +301,7 @@ export async function reconnectTurnAction(
     await persistRevision(db, memberId, state, turn);
     await persistHarvest(db, memberId, state, turn); // §2d drift keeper (and later legacy share)
     await persistCheckpoint(db, memberId, state, turn); // §2e Checkpoint — the first grinta movement
+    await persistReconnectSessionCloses(db, memberId, state, turn); // record the Session closes the arc bypass dropped
     await persistReconnectComplete(db, memberId, state, turn); // §2f — advance the dashboard phase (Reconnect → Rewire)
     // On IDQ completion this may return a personalized close (M3) that ties the baseline shape to their doors —
     // UPGRADING the engine's generic close; null → the generic close stands.
