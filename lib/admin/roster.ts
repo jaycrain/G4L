@@ -61,8 +61,6 @@ type RawRow = {
   last_msg_at: unknown;
   last_session_at: unknown;
   last_beat_at: unknown;
-  last_daily_beat_at: unknown;
-  last_workout_at: unknown;
   last_retake_at: unknown;
   sessions_opened: unknown;
   sessions_closed: unknown;
@@ -193,9 +191,6 @@ const ROSTER_SQL = `
     (select max(s.created_at)   from member_session s    where s.member_id  = p.member_id) as last_sign_in_at,
     (select max(am.created_at)  from agent_message am    where am.member_id = p.member_id) as last_msg_at,
     (select max(sp.updated_at)  from session_progress sp where sp.member_id = p.member_id) as last_session_at,
-    (select max(bc.completed_at) from beat_completion bc where bc.member_id = p.member_id) as last_beat_at,
-    (select max(dbl.created_at) from daily_beat_log dbl  where dbl.member_id = p.member_id) as last_daily_beat_at,
-    (select max(ae.started_at)  from activity_event ae   where ae.member_id = p.member_id) as last_workout_at,
     (select max(r.taken_at)     from idq_retake r        where r.member_id  = p.member_id) as last_retake_at,
     (select count(*) from session_progress sp where sp.member_id = p.member_id) as sessions_opened,
     (select count(*) from session_progress sp where sp.member_id = p.member_id and sp.status = 'closed') as sessions_closed,
@@ -250,13 +245,13 @@ export async function getRoster(db: Db): Promise<RosterRow[]> {
       isDemo: isDemoEmail(r.email),
       joinedAt: toIso(r.joined_at) ?? new Date(0).toISOString(),
       lastSignInAt,
+      // "Last active" now reads only from signals that can actually happen. It previously folded in
+      // last_beat_at, last_daily_beat_at and last_workout_at — so a member who merely SELF-MARKED a Reclaim
+      // goal looked like fresh program work, on the exact column you scan to decide who needs you.
       lastActiveAt: newestIso(
         lastSignInAt,
         toIso(r.last_msg_at),
         toIso(r.last_session_at),
-        toIso(r.last_beat_at),
-        toIso(r.last_daily_beat_at),
-        toIso(r.last_workout_at),
         toIso(r.last_retake_at),
       ),
       idScore: toNumOrNull(r.id_score),
@@ -300,29 +295,26 @@ export type MemberUsage = {
   sessions: MemberSessionRow[];
   sessionsOpened: number;
   sessionsClosed: number;
-  beats: number;
-  dailyBeatDays: number;
-  workouts: number;
   checkinDays: number;
   gates: number;
-  lastBeatAt: string | null;
-  lastDailyBeatAt: string | null;
-  lastWorkoutAt: string | null;
   lastMessageAt: string | null;
   lastSessionAt: string | null;
 };
 
+// DEAD METRICS REMOVED AT THE SOURCE (2026-07-31). The roster stopped DISPLAYING beats / daily-beat-days /
+// workouts, but left these queries feeding the member subpage — so the same untrue numbers simply moved one
+// page over. Deleting the columns was a display change presented as a data fix; this is the data fix.
+//   · beats        — counted beat_completion UNFILTERED, so it could only ever hold onboarding artifacts and
+//                    'self_marked' markers (the two rows the member's own Past Beats view hides). No member on
+//                    production can close a Beat: the v3.0 redesign removed the surface.
+//   · dailyBeatDays— counted days we SHOWED a panel that no longer renders. Measured us, not them.
+//   · workouts     — activity_event, and Strava is unset in production. Structurally always 0.
+// Restore them the day their surface returns, with the member-view filter applied.
 const MEMBER_USAGE_SQL = `
   select
-    (select count(*) from beat_completion bc where bc.member_id = $1) as beats,
-    (select count(distinct dbl.shown_on) from daily_beat_log dbl where dbl.member_id = $1) as daily_beat_days,
-    (select count(*) from activity_event ae where ae.member_id = $1) as workouts,
     (select count(*) from phase_gate pg where pg.member_id = $1) as gates,
     (select count(distinct date_trunc('day', am.created_at)) from agent_message am
        where am.member_id = $1 and am.role = 'member') as checkin_days,
-    (select max(bc.completed_at) from beat_completion bc where bc.member_id = $1) as last_beat_at,
-    (select max(dbl.created_at) from daily_beat_log dbl where dbl.member_id = $1) as last_daily_beat_at,
-    (select max(ae.started_at) from activity_event ae where ae.member_id = $1) as last_workout_at,
     (select max(am.created_at) from agent_message am where am.member_id = $1) as last_message_at,
     (select max(sp.updated_at) from session_progress sp where sp.member_id = $1) as last_session_at
 `;
@@ -354,14 +346,8 @@ export async function getMemberUsage(db: Db, memberId: string): Promise<MemberUs
     sessions,
     sessionsOpened: sessions.length,
     sessionsClosed: sessions.filter((s) => s.status === 'closed').length,
-    beats: toNum(r.beats),
-    dailyBeatDays: toNum(r.daily_beat_days),
-    workouts: toNum(r.workouts),
     checkinDays: toNum(r.checkin_days),
     gates: toNum(r.gates),
-    lastBeatAt: toIso(r.last_beat_at),
-    lastDailyBeatAt: toIso(r.last_daily_beat_at),
-    lastWorkoutAt: toIso(r.last_workout_at),
     lastMessageAt: toIso(r.last_message_at),
     lastSessionAt: toIso(r.last_session_at),
   };

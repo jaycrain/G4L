@@ -8,6 +8,7 @@ import { buildNudge } from '../../../../lib/agent/nudge.ts';
 import { getMemberUsage, relativeTime } from '../../../../lib/admin/roster.ts';
 import { getMemberExperience, getOnboardingConfirmation } from '../../../../lib/telemetry/store.ts';
 import { doorsToConfirm } from '../../../../lib/agent/onboarding-contract.ts';
+import { getReclaimItems } from '../../../../lib/beats/store.ts';
 import { getForecast, getPassport, getFacets } from '../../../../lib/curriculum/view.ts';
 import { getSession, getAsset } from '../../../../lib/curriculum/registry.ts';
 import { redirect } from 'next/navigation';
@@ -28,13 +29,14 @@ export default async function AdminMember({ params }: { params: Promise<{ member
   const pushCount = await countSubscriptions(db, memberId);
   const nudge = await buildNudge(db, memberId);
   const sessionTitle = (id: string) => getSession(id)?.title ?? id;
-  const [usage, forecast, passport, facets, experience, confirmation] = await Promise.all([
+  const [usage, forecast, passport, facets, experience, confirmation, liveReclaim] = await Promise.all([
     getMemberUsage(db, memberId),
     getForecast(db, memberId),
     getPassport(db, memberId),
     getFacets(db, memberId),
     getMemberExperience(db, memberId, (id) => getAsset(id)?.title ?? id),
     getOnboardingConfirmation(db, memberId),
+    getReclaimItems(db, memberId).catch(() => []),
   ]);
   // The saved onboarding confirmation card (immutable snapshot of what they confirmed before the IDQ).
   const obCard = confirmation?.card as
@@ -117,17 +119,21 @@ export default async function AdminMember({ params }: { params: Promise<{ member
           </div>
           <div className="summary-tile">
             <span className="tile-num">{facets.length}</span>
-            <span className="tile-label">Facets reclaimed</span>
+            {/* Facets are identity WORDS from the strip ("the Swimmer"), not reclaimed goals. Sitting beside a
+                real goals-reclaimed count, "Facets reclaimed" read as the same thing and is not. */}
+            <span className="tile-label">Identity facets named</span>
           </div>
           <div className="summary-tile">
-            <span className="tile-num">{usage.gates}</span>
-            <span className="tile-label">Gates crossed</span>
+            {/* Was "Gates crossed" — internal jargon, and a COUNT of gates tells you nothing. What you want is
+                where they are. Same fix as the roster's Phase column. */}
+            <span className="tile-num" style={{ fontSize: '1.1rem' }}>{forecast.phases.find((p) => p.status === "You're here")?.label ?? '—'}</span>
+            <span className="tile-label">Phase</span>
           </div>
         </div>
 
         {/* Where they are on the 4Rs — the same forecast the member sees, status only. */}
         <p className="member-meta">
-          <strong>Journey:</strong>{' '}
+          <strong>Program:</strong>{' '}
           {forecast.phases.map((p, i) => (
             <span key={p.phase}>
               {i > 0 && ' · '}
@@ -163,14 +169,14 @@ export default async function AdminMember({ params }: { params: Promise<{ member
           <p className="muted">No Sessions opened yet.</p>
         )}
 
-        {/* Activity — the showing-up signals between Sessions. */}
+        {/* Activity — the showing-up signal between Sessions.
+            Beats / Daily Beat days / workouts were REMOVED (2026-07-31): no member on production can close a
+            Beat (the v3.0 redesign removed the surface), the Daily Beat panel no longer renders, and Strava is
+            unset so workouts is structurally 0. Three numbers that read as engagement and could only ever be
+            noise. Days-talked is the one real signal here, so it stands alone rather than hiding among them. */}
         <p className="member-meta">
-          <strong>Activity:</strong> {usage.beats} Beat{usage.beats === 1 ? '' : 's'} closed
-          {usage.lastBeatAt && <span className="muted"> (last {relativeTime(usage.lastBeatAt, now)})</span>} ·{' '}
-          {usage.dailyBeatDays} Daily Beat day{usage.dailyBeatDays === 1 ? '' : 's'} ·{' '}
-          {usage.workouts} workout{usage.workouts === 1 ? '' : 's'} ·{' '}
-          {usage.checkinDays} check-in day{usage.checkinDays === 1 ? '' : 's'}
-          {usage.lastMessageAt && <span className="muted"> (last message {relativeTime(usage.lastMessageAt, now)})</span>}
+          <strong>Days talked:</strong> {usage.checkinDays} day{usage.checkinDays === 1 ? '' : 's'} they wrote to their Companion
+          {usage.lastMessageAt && <span className="muted"> · last {relativeTime(usage.lastMessageAt, now)}</span>}
         </p>
       </div>
 
@@ -286,6 +292,34 @@ export default async function AdminMember({ params }: { params: Promise<{ member
 
         {experience.summary && (
           <p className="member-meta muted"><em>Agent read:</em> {experience.summary}</p>
+        )}
+      </div>
+
+      {/* THE RECLAIM LIST — LIVE, not the frozen onboarding snapshot above.
+          This page had every metric about a member and not the one thing they actually said they wanted back.
+          It sits directly above the draft box on purpose: it is what you read before writing to someone in your
+          own voice. Their words, verbatim — never our paraphrase. */}
+      <div className="card">
+        <h3>Their Reclaim List ({liveReclaim.filter((i) => i.state === 'reclaimed').length} of {liveReclaim.length} reclaimed)</h3>
+        {liveReclaim.length === 0 ? (
+          <p className="muted">No Reclaim List yet — it is built at the end of onboarding.</p>
+        ) : (
+          <ul className="member-sessions">
+            {liveReclaim.map((i) => (
+              <li key={i.id}>
+                <span className={i.state === 'reclaimed' ? 'muted' : undefined}>
+                  {i.state === 'reclaimed' ? '✓ ' : '· '}{i.text}
+                </span>{' '}
+                {i.state === 'reclaimed' && <span className="pill approved">reclaimed</span>}
+              </li>
+            ))}
+          </ul>
+        )}
+        {obCard?.gap && (
+          <>
+            <h4 className="tele-head">How the distance opened — in their words</h4>
+            <p className="member-meta" style={{ fontStyle: 'italic' }}>“{obCard.gap}”</p>
+          </>
         )}
       </div>
 
