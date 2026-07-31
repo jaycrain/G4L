@@ -25,26 +25,45 @@ const summary: RosterSummary = {
 } as RosterSummary;
 
 test('a demo persona never inflates the cohort — it is not a member', () => {
-  const v = cohortView([member(), member({ memberId: 'demo', isDemo: true, idScore: 99 })], summary);
+  const v = cohortView([member(), member({ memberId: 'demo', isDemo: true, idScore: 99 })], summary, NOW);
   assert.equal(v.members, 1, 'the seeded .test account is excluded from the count');
   assert.equal(v.avgIdScore, 55, 'and from the average — a 99 would have skewed the whole cohort read');
 });
 
+test('members and active-7d are counted from the SAME population', () => {
+  // Caught by looking at the rendered page: it showed "0 members · 2 active" because `members` filtered demo
+  // personas and `activeLast7` came from the roster summary, which does not. Two numbers on one card must
+  // never be built from different populations — the card contradicts itself and neither can be trusted.
+  const rows = [member({ memberId: 'demo1', isDemo: true }), member({ memberId: 'demo2', isDemo: true })];
+  const v = cohortView(rows, { ...summary, activeLast7: 2 }, NOW);
+  assert.equal(v.members, 0);
+  assert.equal(v.activeLast7, 0, 'no real members means nobody active — not "2"');
+});
+
+test('active-7d counts only members active INSIDE the window', () => {
+  const v = cohortView(
+    [member({ memberId: 'a', lastActiveAt: ago(2 * DAY) }), member({ memberId: 'b', lastActiveAt: ago(20 * DAY) })],
+    summary, NOW,
+  );
+  assert.equal(v.members, 2);
+  assert.equal(v.activeLast7, 1);
+});
+
 test('an average over nobody is NOTHING, not zero', () => {
   // "0" reads as "the cohort is failing". The honest answer to "what is the average of no scores" is none.
-  const v = cohortView([member({ idScore: null })], summary);
+  const v = cohortView([member({ idScore: null })], summary, NOW);
   assert.equal(v.avgIdScore, null);
   assert.equal(v.scoredMembers, 0, 'and the denominator is stated, so the number can be trusted');
 });
 
 test('the average says how many it is built from', () => {
-  const v = cohortView([member({ idScore: 80 }), member({ memberId: 'b', idScore: 40 }), member({ memberId: 'c', idScore: null })], summary);
+  const v = cohortView([member({ idScore: 80 }), member({ memberId: 'b', idScore: 40 }), member({ memberId: 'c', idScore: null })], summary, NOW);
   assert.equal(v.avgIdScore, 60);
   assert.equal(v.scoredMembers, 2, '2 of 3 — an operator must be able to see the average is partial');
 });
 
 test('phase distribution counts real members by where they actually are', () => {
-  const v = cohortView([member({ phase: 'Rewire' }), member({ memberId: 'b', phase: 'Rewire' }), member({ memberId: 'c', phase: 'Reclaim' })], summary);
+  const v = cohortView([member({ phase: 'Rewire' }), member({ memberId: 'b', phase: 'Rewire' }), member({ memberId: 'c', phase: 'Reclaim' })], summary, NOW);
   assert.deepEqual(v.byPhase, [
     { phase: 'Reconnect', count: 0 }, { phase: 'Rewire', count: 2 },
     { phase: 'Rebuild', count: 0 }, { phase: 'Reclaim', count: 1 },

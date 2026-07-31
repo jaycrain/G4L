@@ -2196,7 +2196,14 @@ body.onbwel-bleed main { max-width: none; margin: 0; padding: 0; }
 .fc-chip i { width:7px; height:7px; border-radius:50%; background:var(--olive); }
 .fc-browse { margin-left:auto; color:#2F7A7B; font-weight:700; text-decoration:none; font-size:14.5px; }
 
-.fc-tri { display:grid; grid-template-columns:296px minmax(0,1fr) 300px; gap:18px; align-items:start; }
+/* The app's default `main` is 720px — built for the member's single reading column. The console needs the
+   full width, same as the existing `main:has(.dock-open)` rule. WITHOUT this the two fixed flanks ate the
+   container and the Companion collapsed to a ~50px sliver, wrapping one character per line. */
+main:has(.fc-wrap) { max-width: 1240px; }
+/* minmax's MIN is the guard: the centre can never be squeezed below a readable width. If the viewport
+   can't seat all three, the fold below takes over and stacks — a sliver is not an acceptable degradation. */
+.fc-tri { display:grid; grid-template-columns:296px minmax(430px,1fr) 300px; gap:18px; align-items:start; }
+@media (max-width: 1140px) { .fc-tri { grid-template-columns:1fr; } .fc-hero { order:-1; } }
 .fc-eyebrow { font-size:11px; font-weight:700; letter-spacing:.09em; text-transform:uppercase; color:#2F7A7B; }
 .fc-h { font-size:18px; font-weight:700; color:var(--navy); margin:2px 0 10px; }
 :root { --fc-muted:#6B7580; }

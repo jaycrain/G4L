@@ -37,13 +37,16 @@ const PHASES = ['Reconnect', 'Rewire', 'Rebuild', 'Reclaim'];
  * Demo personas are excluded: a seeded .test account is not a member and would quietly inflate every number
  * on the page, including the average ID Score.
  */
-export function cohortView(rows: RosterRow[], summary: RosterSummary): CohortView {
+export function cohortView(rows: RosterRow[], summary: RosterSummary, now = Date.now()): CohortView {
   const real = rows.filter((r) => !r.isDemo);
   const scored = real.filter((r) => typeof r.idScore === 'number');
   const byPhase = PHASES.map((phase) => ({ phase, count: real.filter((r) => r.phase === phase).length }));
   return {
     members: real.length,
-    activeLast7: summary.activeLast7,
+    // Counted from the SAME filtered rows as `members`, not from the roster summary — which counts demo
+    // personas. Taking it from there rendered "0 members · 2 active", a panel disagreeing with itself in
+    // adjacent tiles. Two numbers on one card must always be built from one population.
+    activeLast7: real.filter((r) => r.lastActiveAt && now - new Date(r.lastActiveAt).getTime() < 7 * DAY).length,
     sessionsClosed: summary.sessionsClosedTotal,
     // An average over nobody is not 0, it is nothing. Saying "0" would read as "the cohort is failing".
     avgIdScore: scored.length ? Math.round(scored.reduce((a, r) => a + (r.idScore ?? 0), 0) / scored.length) : null,

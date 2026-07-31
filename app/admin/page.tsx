@@ -47,7 +47,7 @@ export default async function AdminHome({ searchParams }: { searchParams?: Promi
   // must not become a dead end.
   if (founderConsoleEnabled() && (await searchParams)?.view !== 'roster') {
     const [feed] = await Promise.all([activityFeed(db)]);
-    const cohort = cohortView(roster, summary);
+    const cohort = cohortView(roster, summary, now);
     const attention = [
       { kind: 'crisis' as const, label: modCount.safety > 0 ? `${modCount.safety} safety report${modCount.safety === 1 ? '' : 's'} open` : 'nothing flagged', count: modCount.safety },
       { kind: 'draft' as const, label: pending.length ? `${pending.length} draft${pending.length === 1 ? '' : 's'} waiting on you` : 'no drafts waiting', count: pending.length },
