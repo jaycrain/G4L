@@ -30,7 +30,7 @@ export default function ConsoleShell({
         <span className="fc-hi">Hi Jay!</span>
         <span className="fc-st">Founder Console · {memberCount} member{memberCount === 1 ? '' : 's'}</span>
         {allActive && <span className="fc-chip"><i />all active</span>}
-        <Link className="fc-browse" href="/admin?view=roster">Browse all members →</Link>
+        <Link className="fc-browse" href="/admin/members">Browse all members →</Link>
       </div>
 
       <div className="fc-tri">
@@ -80,10 +80,16 @@ export default function ConsoleShell({
             {attention.map((a) => {
               const dot = <span className={`fc-nd ${a.count > 0 ? (a.kind === 'milestone' ? 'win' : 'attn') : 'clear'}`} />;
               const body = (<><span className="fc-nk">{a.label}</span><span className="fc-cnt">{a.count}</span></>);
-              // A count you cannot act on is a dead end. Anything with something behind it LINKS to it —
-              // drafts and safety reports live on the full page, so send him straight to that anchor.
-              const href = a.href ?? (a.count > 0 && a.kind === 'draft' ? '/admin?view=roster#review'
-                : a.count > 0 && a.kind === 'crisis' ? '/admin?view=roster#moderation' : null);
+              // A count you cannot act on is a dead end. Everything with something behind it LINKS to it —
+              // now to a real subpage rather than an anchor two-thirds down a long page.
+              //
+              // `a.href` (set when a row points at exactly ONE person) still wins: going straight to Donna
+              // beats going to a list containing only Donna. When it's a group, go to the queue.
+              const href = a.href ?? (a.count > 0
+                ? a.kind === 'draft' ? '/admin/review'
+                : a.kind === 'crisis' ? '/admin/moderation'
+                : '/admin/attention'
+                : null);
               return href
                 ? <Link className="fc-need fc-need-link" key={a.kind} href={href}>{dot}{body}</Link>
                 : <div className="fc-need" key={a.kind}>{dot}{body}</div>;
@@ -104,21 +110,28 @@ export default function ConsoleShell({
                 </div>
               ))
             )}
+            {/* The member app's depth pattern — a panel earns its subpage with a foot link, not a button. */}
+            {feed.length > 0 && (
+              <p className="see-more"><Link href="/admin/activity">All activity →</Link></p>
+            )}
           </div>
         </div>
       </div>
 
-      {/* EVERYTHING ELSE IS ONE CLICK AWAY. The console answers "who needs me" — it deliberately does not
-          try to hold the whole operator surface. But nothing may become unreachable because a new view
-          shipped, so the things that still live on the full page are named here rather than left to be
-          rediscovered. */}
+      {/* EVERYTHING ELSE IS ONE CLICK AWAY. The console answers "who needs me" — it deliberately does not try
+          to hold the whole operator surface. But nothing may become unreachable because a new view shipped,
+          so every sibling is named here rather than left to be rediscovered.
+          These are REAL ROUTES now, not anchors two-thirds down a long page. The long page still exists at
+          ?view=roster and still works — it just isn't the only way to reach any of this. */}
       <p className="fc-elsewhere">
-        Also on the full page:{' '}
-        <Link href="/admin?view=roster#review">Review queue</Link> ·{' '}
-        <Link href="/admin?view=roster#moderation">Community moderation</Link> ·{' '}
-        <Link href="/admin?view=roster#health">AI surfaces</Link> ·{' '}
-        <Link href="/admin?view=roster#feedback">Feedback</Link> ·{' '}
-        <Link href="/admin?view=roster">the member table</Link>
+        Also here:{' '}
+        <Link href="/admin/attention">Attention</Link> ·{' '}
+        <Link href="/admin/activity">Activity</Link> ·{' '}
+        <Link href="/admin/review">Review queue</Link> ·{' '}
+        <Link href="/admin/moderation">Community moderation</Link> ·{' '}
+        <Link href="/admin/health">AI surfaces</Link> ·{' '}
+        <Link href="/admin/feedback">Feedback</Link> ·{' '}
+        <Link href="/admin/members">the member table</Link>
       </p>
     </div>
   );

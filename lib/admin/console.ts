@@ -69,21 +69,41 @@ export type AttentionRow = {
  * definitions of "stalled" and "gone quiet" are testable without a database, because those two thresholds
  * are judgement calls and judgement calls are exactly what regress silently.
  */
+const ageOf = (iso: string | null, now: number) => (iso ? now - new Date(iso).getTime() : Infinity);
+
+// THE TWO DEFINITIONS, WRITTEN ONCE.
+//
+// The console tile, the subpage list and the Companion's find_members tool all have to mean the SAME thing by
+// "stalled". If each re-expresses the predicate, they drift, and then a count disagrees with the list behind
+// it — the exact failure that made the roster and the member subpage untrustworthy. So the predicate is the
+// shared thing and everything else is a caller.
+
+/** Mid-work and paused: a Session open, and nothing at all since. NOT abandonment — someone two hours into a
+ *  hard beat looks identical to someone who walked away, and the only difference is time. */
+export const isStalled = (r: RosterRow, now: number) =>
+  r.sessionsOpened > r.sessionsClosed && ageOf(r.lastActiveAt, now) >= STALLED_AFTER_HOURS * 60 * 60 * 1000;
+
+/** Gone quiet: no signal of any kind for a while. Deliberately separate from stalled — one is about a piece
+ *  of work, the other about a person, and they call for different messages. Only counts once they've
+ *  actually started; never-started and stopped-coming are different problems. */
+export const isQuiet = (r: RosterRow, now: number, days = QUIET_AFTER_DAYS) =>
+  Boolean(r.lastActiveAt) && ageOf(r.lastActiveAt, now) >= days * DAY;
+
+/** The people behind the counts — for the Attention subpage. Same predicates, so the list can never
+ *  contradict the tile that linked to it. */
+export function attentionLists(rows: RosterRow[], now: number): { stalled: RosterRow[]; quiet: RosterRow[] } {
+  const real = rows.filter((r) => !r.isDemo);
+  return {
+    stalled: real.filter((r) => isStalled(r, now)).sort((a, b) => ageOf(b.lastActiveAt, now) - ageOf(a.lastActiveAt, now)),
+    quiet: real.filter((r) => isQuiet(r, now)).sort((a, b) => ageOf(b.lastActiveAt, now) - ageOf(a.lastActiveAt, now)),
+  };
+}
+
 export function rosterAttention(rows: RosterRow[], now: number): AttentionRow[] {
   const real = rows.filter((r) => !r.isDemo);
-  const age = (iso: string | null) => (iso ? now - new Date(iso).getTime() : Infinity);
-
-  // STALLED — they opened a Session and haven't closed it, and nothing has happened since. This is the
-  // "mid-work, paused" signal, NOT abandonment: someone two hours into a hard beat looks identical to
-  // someone who walked away, and the difference is only time.
-  const stalled = real.filter(
-    (r) => r.sessionsOpened > r.sessionsClosed && age(r.lastActiveAt) >= STALLED_AFTER_HOURS * 60 * 60 * 1000,
-  );
-
-  // GONE QUIET — no signal at all for a while. Deliberately separate from stalled: one is about a piece of
-  // work, the other is about a person. They call for different messages, which is the whole point of the
-  // queue. A member is only "quiet" once they've actually started (joined and did something at least once).
-  const quiet = real.filter((r) => r.lastActiveAt && age(r.lastActiveAt) >= QUIET_AFTER_DAYS * DAY);
+  const age = (iso: string | null) => ageOf(iso, now);
+  const stalled = real.filter((r) => isStalled(r, now));
+  const quiet = real.filter((r) => isQuiet(r, now));
 
   return [
     {

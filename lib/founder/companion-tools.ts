@@ -26,7 +26,7 @@
 
 import type { Db } from '../db/schema.ts';
 import { getRoster, type RosterRow } from '../admin/roster.ts';
-import { STALLED_AFTER_HOURS, QUIET_AFTER_DAYS } from '../admin/console.ts';
+import { QUIET_AFTER_DAYS, isStalled, isQuiet } from '../admin/console.ts';
 
 const DAY = 24 * 60 * 60 * 1000;
 
@@ -144,8 +144,10 @@ export async function runFounderTool(
     const days = typeof input.days === 'number' ? input.days : QUIET_AFTER_DAYS;
     const limit = Math.min(typeof input.limit === 'number' ? input.limit : 25, 100);
     let rows = roster;
-    if (filter === 'stalled') rows = roster.filter((r) => r.sessionsOpened > r.sessionsClosed && age(r.lastActiveAt) >= STALLED_AFTER_HOURS * 3600_000);
-    else if (filter === 'quiet') rows = roster.filter((r) => r.lastActiveAt && age(r.lastActiveAt) >= days * DAY);
+    // The SHARED predicates — so the Companion's "who's stalled" and the console tile behind Jay's eyes can
+    // never mean two different things. This used to re-express both definitions inline.
+    if (filter === 'stalled') rows = roster.filter((r) => isStalled(r, now));
+    else if (filter === 'quiet') rows = roster.filter((r) => isQuiet(r, now, days));
     else if (filter === 'by_phase') rows = roster.filter((r) => r.phase === String(input.phase ?? ''));
     else if (filter === 'no_idq') rows = roster.filter((r) => r.idScore == null);
     rows = [...rows].sort((a, b) => age(a.lastActiveAt) - age(b.lastActiveAt));
