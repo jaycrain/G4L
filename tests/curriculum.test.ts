@@ -69,6 +69,11 @@ test('the forecast is derived purely from registry rows — every non-daily asse
   assert.equal(inColumns, nonDaily);
 });
 
+// NOTE: this asserts the UNFLAGGED (v1, asset-based) program — the fallback shape when REWIRE / REBUILD /
+// RECLAIM are unset. PRODUCTION runs them staged, which is a different program entirely; its invariants live
+// in tests/curriculum-staged.test.ts. Both are real: this one guards the revert path, that one guards what
+// members actually walk. Don't "fix" this file by loosening the counts — that would delete the only coverage
+// the fallback has.
 test('the whole program is authored — all four phases, every Session has steps, one checkpoint each', () => {
   const cols = phaseColumns();
   const counts = Object.fromEntries(cols.map((c) => [c.phase, c.items.length]));

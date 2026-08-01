@@ -22,6 +22,7 @@ import type { FeedbackStatus } from '../../../lib/feedback/store.ts';
 import type { DraftRow } from '../../../lib/founder/store.ts';
 import type { ModItem } from '../../../lib/connect/moderation.ts';
 import { filterFeedback, feedbackHref } from '../../../lib/admin/feedback-filter.ts';
+import { incidentLength, type HealthSummary } from '../../../lib/health/summary.ts';
 
 const fmtDoor = (d: string | null) => (d ? d.replace(/_/g, ' ') : '—');
 /** Compact time-on-task: minutes under an hour, else h/m. */
@@ -42,8 +43,9 @@ const NEXT_STATUS: Record<FeedbackStatus, { to: FeedbackStatus; label: string }[
 
 type Health = { status: string; latency_ms?: number | null; detail?: string | null; checked_at: string } | null;
 
-export function HealthSection({ health, now }: { health: Health; now: number }) {
+export function HealthSection({ health, now, history }: { health: Health; now: number; history?: HealthSummary }) {
   return (
+    <>
     <div className={`card health-card${health && health.status !== 'ok' ? ' health-down' : ''}`}>
       <h3 id="health">AI surfaces</h3>
       {health ? (
@@ -59,6 +61,55 @@ export function HealthSection({ health, now }: { health: Health; now: number }) 
       )}
       <AiHealthCheck />
     </div>
+
+    {/* HAS IT BEEN RELIABLE? — the question the single "right now" row could never answer.
+        system_health is upserted per check, so every probe erased the one before it; we could say "up now"
+        and nothing else. Migration 0065 keeps the probes; this reads them. */}
+    {history && (
+      <div className="card" style={{ marginTop: 18 }}>
+        <h3>Last 7 days</h3>
+        {history.probes === 0 ? (
+          // NOT "100% up". No data is no data — and this is also what shows in the window between this code
+          // deploying and migration 0065 being applied by hand, so it has to say WHY it's empty.
+          <p className="muted" style={{ marginBottom: 0 }}>
+            No probe history yet. The probe records one every 15 minutes from now on — if this stays empty for
+            more than an hour, migration 0065 hasn&apos;t been applied.
+          </p>
+        ) : (
+          <>
+            <div className="fc-kpis">
+              <div className="fc-kpi">
+                <div className="n">{history.okPct}%</div>
+                <div className="l">Healthy<span className="muted"> · of {history.probes} checks</span></div>
+              </div>
+              <div className="fc-kpi">
+                <div className="n">{history.medianLatencyMs ?? '—'}{history.medianLatencyMs != null && <span style={{ fontSize: '0.5em' }}>ms</span>}</div>
+                <div className="l">Typical response</div>
+              </div>
+              <div className="fc-kpi">
+                <div className="n">{history.incidents.length}</div>
+                <div className="l">Interruption{history.incidents.length === 1 ? '' : 's'}</div>
+              </div>
+            </div>
+            {history.incidents.length === 0 ? (
+              <p className="muted" style={{ marginBottom: 0 }}>No interruptions in the window.</p>
+            ) : (
+              history.incidents.map((i) => (
+                <div className="fc-evt" key={i.from}>
+                  <span className="fc-nd attn" />
+                  <span className="fc-el">
+                    {AI_STATUS_LABEL[i.status] ?? i.status}
+                    {i.detail && <span className="muted"> — {i.detail}</span>}
+                  </span>
+                  <span className="fc-et">{incidentLength(i, now)} · {relativeTime(i.from, now)}</span>
+                </div>
+              ))
+            )}
+          </>
+        )}
+      </div>
+    )}
+    </>
   );
 }
 

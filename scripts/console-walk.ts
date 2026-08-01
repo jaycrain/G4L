@@ -21,7 +21,7 @@ const ROUTES: Array<{ path: string; expect: string[] }> = [
   { path: '/admin/activity', expect: ['Activity', 'Founder Console'] },
   { path: '/admin/review', expect: ['Review queue', 'send nothing until you approve'] },
   { path: '/admin/moderation', expect: ['Community moderation'] },
-  { path: '/admin/health', expect: ['AI surfaces'] },
+  { path: '/admin/health', expect: ['AI surfaces', 'Last 7 days'] },
   { path: '/admin/feedback', expect: ['Feedback'] },
   // The long page must still work — nothing may become unreachable because a new view shipped.
   { path: '/admin?view=roster', expect: ['Founder Agent', 'Members', 'Review queue', 'AI surfaces'] },
