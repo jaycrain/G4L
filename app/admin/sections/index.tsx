@@ -68,6 +68,16 @@ export function HealthSection({ health, now, history }: { health: Health; now: n
     {history && (
       <div className="card" style={{ marginTop: 18 }}>
         <h3>Last 7 days</h3>
+        {/* SAY HOW MUCH HISTORY WE ACTUALLY HAVE. "Last 7 days · 100% of 24 checks" reads as a week of perfect
+            uptime; 24 checks is about six hours (the probe runs 96×/day). The window and the COVERAGE are
+            different things, and only one of them is a claim we can support. Shown until the history fills
+            the window, then it stops being worth saying. */}
+        {history.probes > 0 && history.since && (now - new Date(history.since).getTime()) < 6.5 * 24 * 3600_000 && (
+          <p className="muted" style={{ marginTop: -6 }}>
+            Recording started {relativeTime(history.since, now)} — everything below covers that stretch, not a
+            full week yet.
+          </p>
+        )}
         {history.probes === 0 ? (
           // NOT "100% up". No data is no data — and this is also what shows in the window between this code
           // deploying and migration 0065 being applied by hand, so it has to say WHY it's empty.
