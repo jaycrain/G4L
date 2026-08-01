@@ -129,8 +129,34 @@ const run = async () => {
     process.exit(1);
   }
 
-  // ── PASS 2: signed in ─────────────────────────────────────────────────────────────────────────────────
+  // ── PASS 2: signed in, desktop ────────────────────────────────────────────────────────────────────────
   for (const f of fieldsFor(home)) failed += await checkField(page, f);
+
+  // ── PASS 3: signed in, PHONE ──────────────────────────────────────────────────────────────────────────
+  // With MOBILE unset, a phone gets the triptych's own responsive fold — the SAME .tri-comp-composer, just
+  // laid out differently. "Should be the same component" is an assumption though, and the composer could
+  // easily be swapped or hidden in the fold, so measure it rather than reason about it.
+  //
+  // Also checks the iOS ZOOM TRAP: Safari auto-zooms when you focus an input under 16px, which breaks fixed
+  // full-screen panels. That rule is already written down for this codebase; a composer that silently drops
+  // to 14.5px on the fold would reintroduce it.
+  console.log('\n  — phone (390×844) —\n');
+  await page.setViewportSize({ width: 390, height: 844 });
+  for (const f of fieldsFor(home)) failed += await checkField(page, f);
+
+  const composer = page.locator('.tri-comp-composer textarea').first();
+  if (await composer.count() > 0) {
+    const px = await composer.evaluate((n) => parseFloat(getComputedStyle(n as Element).fontSize));
+    const bigEnough = px >= 16;
+    if (!bigEnough) failed++;
+    console.log(`${bigEnough ? '✔' : '✖'}  Phone: composer font-size ${px}px${bigEnough ? '' : '   <16px — iOS Safari will zoom and break the fixed panel'}`);
+    // A picture of the focused composer on a phone, so the teal is reviewable by eye and not only as a
+    // computed value. Numbers prove the rule applied; a screenshot shows whether it LOOKS right.
+    await composer.click().catch(() => {});
+    await composer.scrollIntoViewIfNeeded().catch(() => {});
+    await page.screenshot({ path: '/tmp/focus-phone-composer.png' });
+    console.log('   → /tmp/focus-phone-composer.png');
+  }
 
   await browser.close();
   const total = failed + failedRest;
