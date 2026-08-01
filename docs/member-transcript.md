@@ -1,6 +1,6 @@
 # G4L — Member Transcript (authored copy, verbatim)
 
-Stamp: `app @ 3c0f274 · 2026-07-31` · PART 1 of the Cowork release bundle.
+Stamp: `app @ bb69b44 · 2026-08-01` · PART 1 of the Cowork release bundle.
 
 **Quote from this.** Every line below is authored, fixed copy a member reads, in reading order by surface. It does
 **not** include the Companion's in-the-moment reflections (those are model-generated and vary per member — describe

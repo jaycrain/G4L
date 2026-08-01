@@ -1,4 +1,4 @@
-# Strings EXCLUDED from the member transcript (app @ 3c0f274 · 2026-07-31)
+# Strings EXCLUDED from the member transcript (app @ bb69b44 · 2026-08-01)
 # Not member copy: system prompts, multi-line fragments, code artifacts. Review when a real line goes missing.
 
 [lib/agent/onboarding-staged.ts] you’re trying to reclaim. We can always change it later.
@@ -54,6 +54,7 @@
 [lib/agent/onboarding-staged.ts] ${SKIP_ACK}  ${gapOpen(b.collected)}
 [lib/agent/onboarding-staged.ts] ${SKIP_ACK}  ${gapOpen(b.collected)}
 [lib/agent/onboarding-staged.ts] ${SKIP_ACK}  ${gapOpen(b.collected)}
+[lib/agent/onboarding-staged.ts] ${SKIP_ACK}  ${gapOpen(b.collected)}
 [lib/agent/onboarding-staged.ts] ${ack}${BEAT_SEP}${turn.reply}
 [lib/agent/onboarding-staged.ts] a baseline for your Grinta Index. As you know, Grinta means grit, so we’re doing an initial measurement of your
 [lib/agent/onboarding-staged.ts] resilience and hardiness. We know there’s no way you’ve made it to this point in your life without weathering
@@ -100,6 +101,15 @@
 [lib/agent/onboarding-staged.ts] so the conversation moves the right way. Call it once with `intent`: 'done' = they're satisfied / nothing to
 [lib/agent/onboarding-staged.ts] add / a plain 'nope, that's right' answering 'anything missing?'; 'more' = they're adding new material or want
 [lib/agent/onboarding-staged.ts] fallback covers you. This is ONLY for the reply to a reflection, not for normal gathering turns.
+[lib/agent/onboarding-staged.ts] the Runner
+[lib/agent/onboarding-staged.ts] the Swimmer
+[lib/agent/onboarding-staged.ts] the Builder
+[lib/agent/onboarding-staged.ts] the Maker
+[lib/agent/onboarding-staged.ts] the Friend Who Always Called
+[lib/agent/onboarding-staged.ts] Untamed
+[lib/agent/onboarding-staged.ts] Sovereign
+[lib/agent/onboarding-staged.ts] Alive
+[lib/agent/onboarding-staged.ts] Fearless
 [lib/agent/onboarding-staged.ts] married, kids, work
 [lib/agent/onboarding-staged.ts] t give (if they named travel, friends, and competing, don
 [lib/agent/onboarding-staged.ts] was that the whole of it, or did something else pile on around then?

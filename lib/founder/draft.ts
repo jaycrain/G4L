@@ -93,7 +93,15 @@ Always call the draft_email tool with a subject line and the body. The body is p
 const firstNameOr = (c: FounderContext) => c.firstName || 'there';
 
 // --- Scripted fallback (brand-safe, no banned phrases) --------------------------------------
-function scriptedDraft(moment: OperatingMoment, c: FounderContext): Draft {
+// EXPORTED so the Cowork bundle can RENDER these rather than shipping the template strings. They are
+// authored, deterministic copy a member can actually receive (whenever the live agent is unavailable), so
+// they are quotable — but only once interpolated. `${name}` in a marketing doc helps nobody.
+/** "the Swimmer" is right mid-sentence and wrong at the start of one. Caught by RENDERING these for the Cowork
+ *  bundle — the template read fine; the email said "…set against The Career Cliff. the Swimmer is a little
+ *  closer." Interpolated copy has to be read as copy, which is the argument for rendering it at all. */
+const sentenceStart = (s: string): string => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
+
+export function scriptedDraft(moment: OperatingMoment, c: FounderContext): Draft {
   const name = firstNameOr(c);
   const door = c.doorDisplayNames.length ? c.doorDisplayNames.join(' and ') : 'the door that opened';
   const noun = c.identityNoun ? `the ${c.identityNoun}` : 'the person you are reclaiming';
@@ -115,7 +123,7 @@ function scriptedDraft(moment: OperatingMoment, c: FounderContext): Draft {
     case 'milestone_commentary':
       return {
         subject: `${name} — that's worth noting`,
-        body: `${name},\n\n${c.lastCompletedAsset ? `You finished ${c.lastCompletedAsset}.` : 'You hit a milestone.'} That's evidence of work, set against ${door}. ${noun} is a little closer.\n\n— Jay`,
+        body: `${name},\n\n${c.lastCompletedAsset ? `You finished ${c.lastCompletedAsset}.` : 'You hit a milestone.'} That's evidence of work, set against ${door}. ${sentenceStart(noun)} is a little closer.\n\n— Jay`,
       };
     case 'false_start_return':
       return {
