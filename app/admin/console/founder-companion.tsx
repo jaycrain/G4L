@@ -1,10 +1,46 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { CohortView, AttentionRow } from '../../../lib/admin/console.ts';
 import { askFounderCompanionAction } from './actions.ts';
 
 type Turn = { role: 'jay' | 'companion'; text: string; looked?: string[] };
+
+// ── THE THREAD SURVIVES A RELOAD ────────────────────────────────────────────────────────────────────────────
+// The conversation was pure component state, so leaving the page and coming back — or a hard reload — wiped
+// it. (The 30s auto-refresh does NOT: router.refresh() re-pulls server data and preserves client state, which
+// is verified in the browser walk. The loss is navigation and reload.) Losing an exchange mid-thought on a
+// surface whose whole value is "ask a follow-up" is the wrong kind of forgetting.
+//
+// SESSION STORAGE, NOT THE DATABASE — a deliberate privacy choice, and worth stating plainly because the
+// obvious move was a `founder_message` table mirroring the Member Agent's `agent_message`.
+//
+// When Jay asks about ONE member, the reply can legitimately contain that member's own words — their gap,
+// their Reclaim List. Persisting this thread server-side would therefore create a NEW durable copy of the
+// most vulnerable text in the product, in a table nobody asked for, outside the governance that surrounds
+// the original. "Minimum necessary data" (CLAUDE.md) says don't.
+//
+// sessionStorage fixes the actual complaint — reload and navigation — costs nothing, needs no migration, and
+// dies with the tab. Durable, cross-device console history is a bigger feature with a real privacy price;
+// that is Jay's call to make explicitly, not mine to make by accident.
+const THREAD_KEY = 'g4l.founder.thread';
+
+function loadThread(): Turn[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = window.sessionStorage.getItem(THREAD_KEY);
+    const parsed: unknown = raw ? JSON.parse(raw) : null;
+    if (!Array.isArray(parsed)) return [];
+    // Validate rather than trust: a stale or hand-edited value must not crash the console on load.
+    return parsed.filter(
+      (t): t is Turn =>
+        !!t && typeof t === 'object' && typeof (t as Turn).text === 'string' &&
+        ((t as Turn).role === 'jay' || (t as Turn).role === 'companion'),
+    );
+  } catch {
+    return [];
+  }
+}
 
 /**
  * What each tool is called, in words. Shown under an answer so Jay can see WHERE it looked — the difference
@@ -29,9 +65,29 @@ const PINS = [
 ];
 
 export default function FounderCompanion({ cohort, attention }: { cohort: CohortView; attention: AttentionRow[] }) {
+  // Starts EMPTY, then restores after mount. Reading sessionStorage during the initial render would make the
+  // client markup disagree with the server's and trip a hydration error.
   const [thread, setThread] = useState<Turn[]>([]);
   const [input, setInput] = useState('');
   const [pending, setPending] = useState(false);
+  const restored = useRef(false);
+
+  useEffect(() => {
+    const saved = loadThread();
+    if (saved.length) setThread(saved);
+    restored.current = true;
+  }, []);
+
+  useEffect(() => {
+    // Don't write until the restore has run, or the first render's empty array would erase a saved thread.
+    if (!restored.current) return;
+    try { window.sessionStorage.setItem(THREAD_KEY, JSON.stringify(thread)); } catch { /* private mode / full */ }
+  }, [thread]);
+
+  function clearThread() {
+    setThread([]);
+    try { window.sessionStorage.removeItem(THREAD_KEY); } catch { /* nothing to do */ }
+  }
 
   async function ask(qRaw: string) {
     const q = qRaw.trim();
@@ -66,7 +122,18 @@ export default function FounderCompanion({ cohort, attention }: { cohort: Cohort
       <div className="fc-hero-h">
         <div className="fc-hero-eye">The Founder Companion · read-only</div>
         <div className="fc-hero-title">Your morning read</div>
-        <div className="fc-hero-sub">Ask anything about your members.</div>
+        <div className="fc-hero-sub">
+          Ask anything about your members.
+          {/* Clearing is a PRIVACY control as much as a tidiness one: a thread where Jay asked about one
+              person holds that person's own words, and he should be able to put them down. It also closes
+              the loop honestly — the thread is kept in this tab only, and this empties it for good. */}
+          {thread.length > 0 && (
+            <>
+              {' · '}
+              <button type="button" className="fc-clear" onClick={clearThread}>Clear this conversation</button>
+            </>
+          )}
+        </div>
       </div>
 
       <div className="fc-thread">

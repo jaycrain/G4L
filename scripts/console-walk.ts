@@ -94,6 +94,29 @@ async function main() {
   if (!kept) failed++;
   console.log(`${kept ? '✔' : '✖'} the refresh tick preserves the Companion's client state${kept ? '' : `  (got: "${survived}")`}`);
 
+  // ── THE THREAD SURVIVES A RELOAD ───────────────────────────────────────────────────────────────────────
+  // The point of persisting it. Seed a thread through the real sessionStorage key, reload, and check the
+  // turns are rendered — then Clear, reload again, and check they are GONE (so "clear" is not cosmetic).
+  await page.goto(BASE + '/admin', { waitUntil: 'networkidle' });
+  await page.evaluate(() => window.sessionStorage.setItem('g4l.founder.thread', JSON.stringify([
+    { role: 'jay', text: 'a question from before the reload' },
+    { role: 'companion', text: 'an answer from before the reload', looked: ['cohort_stats'] },
+  ])));
+  await page.reload({ waitUntil: 'networkidle' });
+  const threadKept = await page.getByText('an answer from before the reload').count() > 0;
+  if (!threadKept) failed++;
+  console.log(`${threadKept ? '✔' : '✖'} the Companion thread survives a reload`);
+
+  if (threadKept) {
+    await page.getByRole('button', { name: 'Clear this conversation' }).click();
+    await page.reload({ waitUntil: 'networkidle' });
+    const gone = await page.getByText('an answer from before the reload').count() === 0;
+    const emptied = await page.evaluate(() => window.sessionStorage.getItem('g4l.founder.thread'));
+    const cleared = gone && (emptied === null || emptied === '[]');
+    if (!cleared) failed++;
+    console.log(`${cleared ? '✔' : '✖'} clearing it really empties the store, not just the screen`);
+  }
+
   await browser.close();
   console.log(failed === 0 ? '\n✅ every console surface rendered' : `\n❌ ${failed} problem(s)`);
   process.exit(failed === 0 ? 0 : 1);

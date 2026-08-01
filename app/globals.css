@@ -2368,3 +2368,8 @@ main:has(.fcs) { max-width: 1240px; }
 /* Live indicator sits beside the subpage title, not stacked under it. */
 .fcs-title-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 .fcs-title-row h1 { margin: 0 0 4px; }
+
+/* "Clear this conversation" — a quiet inline control, not a button that competes with Send. */
+.fc-clear { font: inherit; font-size: inherit; background: none; border: 0; padding: 0; color: inherit;
+  text-decoration: underline; text-underline-offset: 2px; cursor: pointer; opacity: .85; }
+.fc-clear:hover { opacity: 1; }
