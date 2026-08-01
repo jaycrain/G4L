@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { PGlite } from '@electric-sql/pglite';
 import { applySchema, type Db } from '../lib/db/schema.ts';
-import { FOUNDER_TOOLS, runFounderTool, newTurnBudget } from '../lib/founder/companion-tools.ts';
+import { FOUNDER_TOOLS, runFounderTool, newTurnBudget, WRITE_TOOLS } from '../lib/founder/companion-tools.ts';
 
 // WHAT THESE TESTS ARE PROTECTING.
 //
@@ -128,13 +128,33 @@ test('find_members honours the stalled definition and returns operational fields
   ]);
 });
 
-test('every tool is read-only — no tool description or schema offers a write', () => {
-  // The no-auto-send rule is upheld by there being nothing to call, not by asking the model nicely.
+test('the write set is EXACTLY {draft_message} — everything else reads', () => {
+  // This invariant CHANGED SHAPE on 2026-07-31 and the change is recorded here rather than hidden.
+  //
+  // It used to be "no tool name may look like a mutation", which was right while the Companion was purely an
+  // analyst. It gained exactly one write — a draft into the review queue, the same act as clicking "Generate
+  // one" on a member's page, which sends nothing. The governance rule is NO AUTO-SEND, not no drafting.
+  //
+  // So the guard is now an ENUMERATION, which is stronger than a pattern: the next tool that wants to write
+  // has to come here and add itself on purpose, in a diff someone reads.
+  assert.deepEqual([...WRITE_TOOLS], ['draft_message']);
+
+  const declared = new Set<string>(WRITE_TOOLS);
   for (const t of FOUNDER_TOOLS) {
+    if (declared.has(t.name)) continue;
     assert.ok(
-      !/send|draft|approve|delete|update|write|remove/i.test(t.name),
-      `${t.name} reads like a mutation — the Founder Companion must have no write path`,
+      !/send|draft|approve|delete|update|write|remove|set_|create/i.test(t.name),
+      `${t.name} reads like a mutation but is not in WRITE_TOOLS — declare it or don't ship it`,
     );
+  }
+});
+
+test('NOTHING can send or approve — the human gate is not reachable from any tool', () => {
+  // The rule that must never bend (CLAUDE.md): any message in Jay's name is DRAFTED only. A send tool would
+  // not be a feature, it would be a governance breach, so it must be impossible to call by accident.
+  for (const t of FOUNDER_TOOLS) {
+    assert.ok(!/send|approve|deliver|email_now/i.test(t.name), `${t.name} must not exist`);
+    assert.ok(!/\bsends? (it|the message|them)\b/i.test(t.description), `${t.description} implies sending`);
   }
 });
 
@@ -177,4 +197,91 @@ test('with no budget passed the cap is inert — callers opt in, existing reads 
   const db = await seed();
   const r = await runFounderTool(db, 'member_detail', { name: 'donna' }, NOW);
   assert.equal(r.found, true);
+});
+
+// ── THE ONE WRITE ────────────────────────────────────────────────────────────────────────────────────────
+// draft_message is the only tool that changes anything. What these pin is that it changes ONLY the review
+// queue: a row Jay must read, in a state he must approve, for a member whose record is untouched.
+
+async function seedForDraft(): Promise<{ db: Db; memberId: string }> {
+  const db = await seed();
+  const { rows } = await db.query<{ member_id: string }>(
+    `select member_id from member_profile where email = 'donna@x.com'`,
+  );
+  return { db, memberId: rows[0]!.member_id };
+}
+
+test('draft_message lands in the review queue as PENDING, unsent', async () => {
+  const { db, memberId } = await seedForDraft();
+  const r = await runFounderTool(db, 'draft_message', { name: 'Donna', moment: 'gone_quiet' }, NOW);
+  assert.equal(r.drafted, true, `expected a draft, got: ${JSON.stringify(r)}`);
+  assert.match(String(r.status), /NOTHING HAS BEEN SENT/);
+
+  const { rows } = await db.query<{ member_id: string; approval_status: string; sent_at: string | null; operating_moment: string }>(
+    `select member_id, approval_status, sent_at, operating_moment from founder_agent_drafts`,
+  );
+  assert.equal(rows.length, 1, 'exactly one draft row');
+  assert.equal(rows[0]!.member_id, memberId, 'and it is addressed to the member Jay named');
+  assert.equal(rows[0]!.approval_status, 'pending', 'pending — never pre-approved');
+  assert.equal(rows[0]!.sent_at, null, 'and never sent');
+  assert.equal(rows[0]!.operating_moment, 'gone_quiet');
+});
+
+test('drafting touches NO member data — only the queue grows', async () => {
+  const { db, memberId } = await seedForDraft();
+  const before = await db.query(
+    `select (select count(*) from reclaim_item where member_id=$1) ri,
+            (select intake_gap from member_profile where member_id=$1) gap,
+            (select count(*) from member_door where member_id=$1) doors`, [memberId]);
+  await runFounderTool(db, 'draft_message', { name: 'Donna', moment: 'gone_quiet' }, NOW);
+  const after = await db.query(
+    `select (select count(*) from reclaim_item where member_id=$1) ri,
+            (select intake_gap from member_profile where member_id=$1) gap,
+            (select count(*) from member_door where member_id=$1) doors`, [memberId]);
+  assert.deepEqual(after.rows[0], before.rows[0], 'the member’s own record is exactly as they left it');
+});
+
+test('an invented moment is refused — and writes nothing', async () => {
+  const { db } = await seedForDraft();
+  const r = await runFounderTool(db, 'draft_message', { name: 'Donna', moment: 'congratulate_her' }, NOW);
+  assert.equal(r.drafted, false);
+  const { rows } = await db.query(`select 1 from founder_agent_drafts`);
+  assert.equal(rows.length, 0, 'a rejected moment must not leave a half-written draft behind');
+});
+
+test('an unknown member is refused — never drafted to the nearest name', async () => {
+  const { db } = await seedForDraft();
+  // The dangerous shape: a message going out in Jay's name, to the wrong person, about someone else's life.
+  const r = await runFounderTool(db, 'draft_message', { name: 'Dave', moment: 'gone_quiet' }, NOW);
+  assert.equal(r.found, false);
+  const { rows } = await db.query(`select 1 from founder_agent_drafts`);
+  assert.equal(rows.length, 0);
+});
+
+test('one draft per turn — a "nudge everyone" sweep is refused after the first', async () => {
+  const db = new PGlite() as unknown as Db;
+  await applySchema(db);
+  for (const n of ['Ann A', 'Bob B']) {
+    const e = `${n.split(' ')[0]!.toLowerCase()}@x.com`;
+    const id = (await db.query<{ member_id: string }>(
+      `insert into member_profile (display_name, email, intake_gap) values ($1,$2,'words') returning member_id`, [n, e])).rows[0]!.member_id;
+    await db.query(`insert into member_credential (member_id, email, password_hash) values ($1,$2,'x')`, [id, e]);
+  }
+  const budget = newTurnBudget();
+  const a = await runFounderTool(db, 'draft_message', { name: 'Ann', moment: 'gone_quiet' }, NOW, budget);
+  const b = await runFounderTool(db, 'draft_message', { name: 'Bob', moment: 'gone_quiet' }, NOW, budget);
+  assert.equal(a.drafted, true);
+  assert.equal(b.drafted, false, 'the second is refused — Jay reviews one message at a time, not a batch');
+  const { rows } = await db.query(`select 1 from founder_agent_drafts`);
+  assert.equal(rows.length, 1, 'and only one row exists');
+});
+
+test('drafting the same member twice in one turn does not duplicate', async () => {
+  const { db } = await seedForDraft();
+  const budget = newTurnBudget();
+  await runFounderTool(db, 'draft_message', { name: 'Donna', moment: 'gone_quiet' }, NOW, budget);
+  const again = await runFounderTool(db, 'draft_message', { name: 'Donna', moment: 'gone_quiet' }, NOW, budget);
+  assert.equal(again.drafted, false);
+  const { rows } = await db.query(`select 1 from founder_agent_drafts`);
+  assert.equal(rows.length, 1);
 });

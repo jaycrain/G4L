@@ -37,9 +37,12 @@ export default function FounderCompanion({ cohort, attention }: { cohort: Cohort
     const q = qRaw.trim();
     if (!q || pending) return;
     setInput('');
+    // Snapshot the thread BEFORE appending this question — it's the history the model needs, and the new
+    // question is passed separately. Reading `thread` after setThread would race React's batching.
+    const history = thread.map((t) => ({ role: t.role, text: t.text }));
     setThread((t) => [...t, { role: 'jay', text: q }]);
     setPending(true);
-    const r = await askFounderCompanionAction(q, cohort, attention).catch(() => null);
+    const r = await askFounderCompanionAction(q, cohort, attention, history).catch(() => null);
     setThread((t) => [
       ...t,
       {

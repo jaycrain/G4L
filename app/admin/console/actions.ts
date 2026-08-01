@@ -21,10 +21,17 @@ import type { CohortView, AttentionRow } from '../../../lib/admin/console.ts';
  * The cohort/attention values from the client stay PROMPT CONTEXT only — nothing queries from them. Tools
  * re-derive everything server-side, which is what makes it safe to let the model drive them.
  */
+/** What was already said in this sitting. Text only — the tool traffic doesn't need to be replayed. */
+export type PriorTurn = { role: 'jay' | 'companion'; text: string };
+
+/** Enough to hold a conversation, bounded so a long morning doesn't grow the prompt without limit. */
+const HISTORY_TURNS = 12;
+
 export async function askFounderCompanionAction(
   question: string,
   cohort: CohortView,
   attention: AttentionRow[],
+  history: PriorTurn[] = [],
 ): Promise<{ reply: string; looked: string[] }> {
   if (!(await isAdmin())) return { reply: 'Not authorized.', looked: [] };
   const q = (question ?? '').trim().slice(0, 2000);
@@ -46,7 +53,24 @@ export async function askFounderCompanionAction(
 WHAT IS ALREADY ON JAY'S SCREEN (so you don't just read it back at him):
 ${cohortContext(cohort, attention)}`;
 
-    const messages: Array<{ role: 'user' | 'assistant'; content: unknown }> = [{ role: 'user', content: q }];
+    // THE THREAD, NOT A ONE-SHOT.
+    //
+    // This was missing and it broke the most important exchange there is. The rail rendered the conversation
+    // but sent only the latest line, so every question arrived with no memory: Jay asks "who needs a nudge?",
+    // the Companion offers to write to Pat, Jay says "yes, draft something to Pat" — and the model has no idea
+    // what it just offered. Caught by a live walk; the offer/accept flow simply could not complete.
+    //
+    // The product's own north star is REMEMBER, SO THE KNOWING COMPOUNDS. An operator surface that forgets
+    // the previous sentence fails that at the smallest possible scale.
+    const messages: Array<{ role: 'user' | 'assistant'; content: unknown }> = [
+      ...history
+        .slice(-HISTORY_TURNS)
+        .filter((t) => t.text.trim())
+        .map((t) => ({ role: (t.role === 'jay' ? 'user' : 'assistant') as 'user' | 'assistant', content: t.text })),
+      { role: 'user', content: q },
+    ];
+    // The API rejects a leading assistant turn — which is exactly what a trimmed window can start with.
+    while (messages.length > 1 && messages[0]!.role === 'assistant') messages.shift();
     // One budget for the whole turn, so the member-detail fan-out cap spans every pass of the tool loop —
     // not just a single pass, which the model could trivially step around by spreading calls out.
     const budget = newTurnBudget();

@@ -27,8 +27,26 @@
 import type { Db } from '../db/schema.ts';
 import { getRoster, type RosterRow } from '../admin/roster.ts';
 import { QUIET_AFTER_DAYS, isStalled, isQuiet } from '../admin/console.ts';
+import { buildFounderContext } from './context.ts';
+import { generateDraft, MOMENTS, type OperatingMoment } from './draft.ts';
+import { createDraft } from './store.ts';
 
 const DAY = 24 * 60 * 60 * 1000;
+
+// ── THE ONE WRITE, AND WHY IT IS ALLOWED ────────────────────────────────────────────────────────────────────
+// This file shipped read-only, enforced by there being nothing to call. That was the right default and it is
+// being relaxed by exactly one tool, deliberately, in the open:
+//
+//   · draft_message writes ONE ROW into the review queue. It touches no member data, and it does not send.
+//   · It is the same act as clicking "Generate one" on a member's page — which Jay can already do. Parity
+//     again: the Companion may do what he can do, not more.
+//   · The governance rule is "no auto-send", not "no drafting". The human review gate is untouched: the
+//     draft sits in the queue until Jay reads, edits and approves it. Nothing here can approve or send.
+//
+// The invariant therefore CHANGES SHAPE rather than disappearing: no tool may write member data, and the set
+// of write tools is exactly {draft_message}. That is enumerated in WRITE_TOOLS below and asserted in the
+// tests, so the next tool that wants to write has to come and edit this list on purpose.
+export const WRITE_TOOLS = ['draft_message'] as const;
 
 export const FOUNDER_TOOLS = [
   {
@@ -77,6 +95,27 @@ export const FOUNDER_TOOLS = [
     description: 'The running of the thing, not the members: drafts waiting in the review queue, open moderation/safety reports, and whether the AI surfaces are healthy.',
     input_schema: { type: 'object' as const, properties: {}, required: [] },
   },
+  {
+    name: 'draft_message',
+    description:
+      'Write a message to ONE member, in Jay\'s voice, into his review queue. It SENDS NOTHING — Jay reads, edits and approves every message himself, and he may reject it. ' +
+      'Use when he asks you to reach out to someone, or when he agrees to a nudge you suggested. Ask him first if he has not asked for it. ' +
+      'Moments: "gone_quiet" (been away, no reason given — no guilt, no chasing), "false_start_return" (slipped and came back), ' +
+      '"milestone_commentary" (finished something specific), "goal_reclaimed" (marked a Reclaim List item back), ' +
+      '"retake_commentary" (just retook the IDQ), "post_idq_welcome" (new member, just finished intake).',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        name: { type: 'string', description: 'The member, as Jay said it' },
+        moment: {
+          type: 'string',
+          enum: ['gone_quiet', 'false_start_return', 'milestone_commentary', 'goal_reclaimed', 'retake_commentary', 'post_idq_welcome'],
+          description: 'Which of the founder moments fits what actually happened. Pick from the DATA, not from a hunch.',
+        },
+      },
+      required: ['name', 'moment'],
+    },
+  },
 ];
 
 /** Operational shape — the ONLY member fields a cohort answer may contain. */
@@ -100,8 +139,8 @@ export type ToolResult = Record<string, unknown>;
 /**
  * Per-TURN state, so the fan-out cap below can exist. One of these is created for each question Jay asks.
  */
-export type TurnBudget = { openedMembers: Set<string> };
-export const newTurnBudget = (): TurnBudget => ({ openedMembers: new Set() });
+export type TurnBudget = { openedMembers: Set<string>; drafted: Set<string> };
+export const newTurnBudget = (): TurnBudget => ({ openedMembers: new Set(), drafted: new Set() });
 
 /**
  * How many DISTINCT members' private records one question may open.
@@ -115,6 +154,16 @@ export const newTurnBudget = (): TurnBudget => ({ openedMembers: new Set() });
  * the enforcement.
  */
 export const MAX_MEMBERS_PER_TURN = 2;
+
+/**
+ * How many members one question may DRAFT to.
+ *
+ * Same reasoning as the read cap, but tighter, because a draft is a thing that appears in Jay's queue with
+ * his name on it. "Nudge everyone who's gone quiet" is a request a model would happily satisfy by writing
+ * five personal messages in one turn — and Jay would then face five drafts he has to read individually to
+ * find out what he just agreed to. One at a time keeps the review gate meaningful instead of a rubber stamp.
+ */
+export const MAX_DRAFTS_PER_TURN = 1;
 
 export async function runFounderTool(
   db: Db,
@@ -154,11 +203,20 @@ export async function runFounderTool(
     return { filter, matched: rows.length, members: rows.slice(0, limit).map((r) => operational(r, now)) };
   }
 
+  /** Resolve a person the way Jay said their name. Shared, so member_detail and draft_message can never
+   *  disagree about who "Donna" is — which would mean drafting to one member about another's situation. */
+  const resolve = (raw: unknown) => {
+    const q = String(raw ?? '').trim().toLowerCase();
+    if (!q) return null;
+    return roster.find((r) => r.displayName.toLowerCase().includes(q) || r.email.toLowerCase() === q) ?? null;
+  };
+  const noMatch = (raw: unknown) =>
+    ({ found: false, note: `No member matching "${raw}". Names I have: ${roster.map((r) => r.displayName).join(', ')}` });
+
   if (name === 'member_detail') {
     // Jay named a person. This is parity with opening their page — the one place their own words belong.
-    const q = String(input.name ?? '').trim().toLowerCase();
-    const hit = roster.find((r) => r.displayName.toLowerCase().includes(q) || r.email.toLowerCase() === q);
-    if (!hit) return { found: false, note: `No member matching "${input.name}". Names I have: ${roster.map((r) => r.displayName).join(', ')}` };
+    const hit = resolve(input.name);
+    if (!hit) return noMatch(input.name);
 
     // The fan-out cap. Re-opening someone already opened this turn is free — it is the same person, and
     // refusing it would break a natural follow-up.
@@ -241,6 +299,51 @@ export async function runFounderTool(
       openReports: reports.rows[0]?.n ?? 0,
       safetyReports: reports.rows[0]?.safety ?? 0,
       note: 'Drafts send nothing until you approve them.',
+    };
+  }
+
+  if (name === 'draft_message') {
+    // THE ONE WRITE. It creates a row in the review queue and nothing else. No send path is reachable from
+    // here — approving and sending live behind Jay's own hands in the console, and that is the whole point.
+    const hit = resolve(input.name);
+    if (!hit) return noMatch(input.name);
+
+    const moment = String(input.moment ?? '') as OperatingMoment;
+    if (!(moment in MOMENTS)) {
+      return { drafted: false, error: `"${input.moment}" is not a founder moment. One of: ${Object.keys(MOMENTS).join(', ')}` };
+    }
+
+    if (budget) {
+      if (budget.drafted.has(hit.memberId)) {
+        return { drafted: false, why: `You already drafted to ${hit.displayName} in this answer. It is in the queue — don't write a second one.` };
+      }
+      if (budget.drafted.size >= MAX_DRAFTS_PER_TURN) {
+        return {
+          drafted: false,
+          why: `One draft per question. There is already a message waiting for Jay to read from this answer; writing several at once turns his review into a rubber stamp. Tell him who else you'd write to and let him ask.`,
+        };
+      }
+    }
+
+    // The draft is grounded in the member's REAL record, built by the same function the member page uses —
+    // never in whatever the model happens to remember from earlier in the conversation. A message going out
+    // in Jay's name must be about what actually happened to that person.
+    const ctx = await buildFounderContext(db, hit.memberId);
+    if (!ctx) return { drafted: false, error: `Could not build ${hit.displayName}'s record, so there is nothing honest to write from. Nothing was drafted.` };
+
+    const draft = await generateDraft(moment, ctx);
+    const id = await createDraft(db, { memberId: hit.memberId, moment, draft, inputSnapshot: ctx });
+    budget?.drafted.add(hit.memberId);
+
+    return {
+      drafted: true,
+      draftId: id,
+      to: hit.displayName,
+      moment: MOMENTS[moment].label,
+      subject: draft.subject,
+      body: draft.body,
+      status: 'Waiting in the review queue. NOTHING HAS BEEN SENT — Jay reads, edits and approves it himself, and can reject it.',
+      whereToFind: '/admin/review',
     };
   }
 
