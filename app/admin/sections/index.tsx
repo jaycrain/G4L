@@ -205,6 +205,24 @@ export function MembersSection({
         </div>
       </div>
 
+      <MembersTable roster={roster} now={now} />
+    </div>
+  );
+}
+
+/**
+ * Just the table — no summary tiles.
+ *
+ * Split out so the Founder Console can put the real member list back on its front page (Jay, 2026-07-31:
+ * "I need to see the detail I could see before on the Member panel") WITHOUT dragging the six summary tiles
+ * along. Those tiles would land directly beneath the console's own Cohort panel and quietly disagree with it,
+ * since one counts demo personas and the other doesn't — the precise failure this file exists to prevent.
+ *
+ * Still ONE definition of the table. The console and /admin/members render the same rows.
+ */
+export function MembersTable({ roster, now }: { roster: RosterRow[]; now: number }) {
+  return (
+    <>
       {roster.length === 0 ? (
         <p className="muted">No members yet.</p>
       ) : (
@@ -322,7 +340,7 @@ export function MembersSection({
         engagement signal here. <strong>Time in app</strong> is telemetry-derived, so it reads &ldquo;n/a&rdquo;
         for members whose Sessions predate the event log. <strong>Last active</strong> reflects any tracked action.
       </p>
-    </div>
+    </>
   );
 }
 

@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import type { CohortView, AttentionRow, FeedItem } from '../../../lib/admin/console.ts';
+import type { RosterRow } from '../../../lib/admin/roster.ts';
 import FounderCompanion from './founder-companion.tsx';
+import { MembersTable } from '../sections/index.tsx';
 
 /** Relative time in the same plain register the rest of the app uses. */
 function ago(iso: string, now: number): string {
@@ -18,9 +20,9 @@ const TONE: Record<FeedItem['tone'], string> = { work: 'var(--teal)', win: 'var(
  * LEFT the cohort, CENTRE the Companion (the workhorse), RIGHT what needs him.
  */
 export default function ConsoleShell({
-  cohort, attention, feed, memberCount, activeCount, now,
+  cohort, attention, feed, roster, memberCount, activeCount, now,
 }: {
-  cohort: CohortView; attention: AttentionRow[]; feed: FeedItem[];
+  cohort: CohortView; attention: AttentionRow[]; feed: FeedItem[]; roster: RosterRow[];
   memberCount: number; activeCount: number; now: number;
 }) {
   const allActive = memberCount > 0 && activeCount >= memberCount;
@@ -116,6 +118,21 @@ export default function ConsoleShell({
             )}
           </div>
         </div>
+      </div>
+
+      {/* THE MEMBER TABLE, BACK ON THE FRONT PAGE.
+          Jay, 2026-07-31: "I need to see the detail I could see before on the Member panel." Moving it behind
+          a click was a real loss — the console answers "who needs me this morning", but he also just wants to
+          SEE everyone, and one click is one click too many for the thing you do every day.
+          BELOW the triptych on purpose, so it doesn't compete with the Companion for the fold, and WITHOUT the
+          six summary tiles that /admin/members carries — those would sit directly under the Cohort panel and
+          disagree with it, since one counts demo personas and the other doesn't. Same table, one definition. */}
+      <div className="card fc-roster">
+        <div className="fc-roster-h">
+          <h3 className="fc-h" style={{ margin: 0 }}>Everyone</h3>
+          <Link className="fc-browse" href="/admin/members">Full member view →</Link>
+        </div>
+        <MembersTable roster={roster} now={now} />
       </div>
 
       {/* EVERYTHING ELSE IS ONE CLICK AWAY. The console answers "who needs me" — it deliberately does not try

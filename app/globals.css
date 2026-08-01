@@ -2315,3 +2315,7 @@ main:has(.fcs) { max-width: 1240px; }
   .fca-meta { width: 100%; }
   .fca-when { min-width: 0; }
 }
+
+/* The member table back on the console front page — below the triptych, full width. */
+.fc-roster { margin-top: 18px; }
+.fc-roster-h { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
