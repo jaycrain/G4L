@@ -39,6 +39,25 @@ const fieldsFor = (home: string): Field[] => [
 /** Click into a field for real and read what the member would see. Returns 1 on failure, 0 on pass. */
 async function checkField(page: import('playwright').Page, f: Field): Promise<number> {
   await page.goto(`${base}${f.path}`, { waitUntil: 'networkidle' });
+
+  // A member can land mid-CEREMONY, and its overlay swallows every click — which is indistinguishable from
+  // "the field isn't there". The ceremony is a SEQUENCE of beats advanced by clicking the card, so one click
+  // isn't enough; step through it the way a member would, then measure what's underneath.
+  const overlay = page.locator('.cer-overlay');
+  for (let beat = 0; beat < 25 && await overlay.isVisible().catch(() => false); beat++) {
+    // Drive the real control (.cer-btn), not the card: the card only advances once the beat's typewriter
+    // has finished, and the LAST beat runs a server action that leaves the button briefly disabled.
+    const btn = page.locator('.cer-btn');
+    await btn.waitFor({ state: 'visible', timeout: 3000 }).catch(() => {});
+    if (await btn.isEnabled().catch(() => false)) await btn.click({ timeout: 3000 }).catch(() => {});
+    else await page.locator('.cer-card').click({ timeout: 2000, force: true }).catch(() => {});
+    await page.waitForTimeout(500);
+  }
+  await overlay.waitFor({ state: 'detached', timeout: 5000 }).catch(() => {});
+  if (await overlay.count() > 0 && await overlay.isVisible().catch(() => false)) {
+    console.log(`   (a ceremony overlay is still up after 20 beats — measuring anyway, may fail)`);
+  }
+
   const el = page.locator(f.selector).first();
   if (await el.count() === 0) {
     // A SKIP IS NOT A PASS. The first version of this walk printed "✅ every member field shows the teal
