@@ -21,10 +21,51 @@ const TIER_ORDER: Record<Tier, number> = { top: 0, important: 1, emerging: 2, no
 
 // One refined item: `original` matches a live item (the member's current wording), `text` is the confirmed refined
 // wording (may equal original), `tier` is the bucket. Additions/removals are NOT part of a refinement commit.
-export type RefinedItem = { original: string; text: string; tier: Tier };
+export type RefinedItem = {
+  original: string; text: string; tier: Tier;
+  /** The live reclaim_item this refines, RESOLVED WHEN THE REFINEMENT IS PROPOSED (CAT-36 fix, option b).
+   *  The model's `original` string used to be the join key at commit time, so a wording it invented matched
+   *  nothing and applied 0 rows — while the member was told their list now reflected them. Resolving up front
+   *  means anything that survives to the confirmation is guaranteed to apply. */
+  reclaimItemId?: string;
+};
 export type RefinementResult = { items: RefinedItem[]; top3: string[] }; // top3 = the refined texts, member's order
 
 const norm = (s: string): string => (s ?? '').trim().toLowerCase();
+
+/** The ONE matcher. Shared by the propose-time resolve and the commit, so they can never disagree about
+ *  which live item a refined line refers to. */
+export function matchLiveId(live: Array<{ id: string; text: string }>, original: string): string | undefined {
+  const q = norm(original);
+  if (!q) return undefined;
+  return (live.find((i) => norm(i.text) === q) ?? live.find((i) => norm(i.text).includes(q) || q.includes(norm(i.text))))?.id;
+}
+
+/**
+ * CAT-36 (option b) — resolve a proposed refinement against the member's LIVE list BEFORE they are asked to
+ * confirm it. Returns only the items that actually point at something, plus what didn't match.
+ *
+ * The old flow validated nothing until commit, so the failure surfaced as a lie: "Done — your Reclaim List now
+ * reflects where you actually are", zero rows changed. Doing it here means the ceremony can only ever confirm
+ * changes that will land — and if NOTHING resolves, the caller declines to propose at all rather than promising.
+ */
+export async function resolveRefinement(
+  db: Db,
+  memberId: string,
+  items: RefinedItem[],
+): Promise<{ resolved: RefinedItem[]; unmatched: RefinedItem[] }> {
+  const live = await getReclaimItems(db, memberId);
+  const taken = new Set<string>();
+  const resolved: RefinedItem[] = [];
+  const unmatched: RefinedItem[] = [];
+  for (const it of items) {
+    const id = matchLiveId(live, it.original);
+    // One refined line per live item — a second claim on the same id is a dupe, not a second change.
+    if (id && !taken.has(id)) { taken.add(id); resolved.push({ ...it, reclaimItemId: id }); }
+    else unmatched.push(it);
+  }
+  return { resolved, unmatched };
+}
 
 // Commit a member-CONFIRMED refinement. (1) snapshot the pre-refinement live list to coaching_plan as history;
 // (2) apply the confirmed refinement to the LIVE list — reword text + set the tier attribute; (3) reorder (top-3
@@ -48,11 +89,7 @@ export async function commitRefinement(db: Db, memberId: string, result: Refinem
     ],
   );
 
-  const matchId = (original: string): string | undefined => {
-    const q = norm(original);
-    if (!q) return undefined;
-    return (live.find((i) => norm(i.text) === q) ?? live.find((i) => norm(i.text).includes(q) || q.includes(norm(i.text))))?.id;
-  };
+  const matchId = (original: string): string | undefined => matchLiveId(live, original);
 
   // (2) apply — reword + tier for each matched item. Map BOTH the original and the refined text → id, so the top-3
   // (which references the REFINED wording) resolves even though `live` holds the pre-refinement text.
@@ -61,7 +98,9 @@ export async function commitRefinement(db: Db, memberId: string, result: Refinem
   const usedText = new Set<string>(); // guard against a MERGE producing two identical-text items
   let applied = 0;
   for (const it of result.items) {
-    const id = matchId(it.original);
+    // Prefer the id RESOLVED AT PROPOSE TIME. Falling back to string matching keeps snapshots written before
+    // this fix committable, but a fresh refinement never depends on the model's wording surviving the round trip.
+    const id = it.reclaimItemId ?? matchId(it.original);
     if (!id || !isTier(it.tier) || idTier[id] !== undefined) continue; // one refined line per live item — a second match is a dupe
     const text = (it.text ?? '').trim();
     const key = norm(text);

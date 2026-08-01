@@ -4,6 +4,7 @@ import { isAdmin } from '../../authz.ts';
 import { getDb } from '../../../lib/db/index.ts';
 import { FOUNDER_COMPANION_SYSTEM, cohortContext } from '../../../lib/founder/companion.ts';
 import { FOUNDER_TOOLS, runFounderTool, newTurnBudget } from '../../../lib/founder/companion-tools.ts';
+import { appendFounderTurns, loadFounderThread, clearFounderThread } from '../../../lib/founder/thread.ts';
 import type { CohortView, AttentionRow } from '../../../lib/admin/console.ts';
 
 /**
@@ -23,6 +24,19 @@ import type { CohortView, AttentionRow } from '../../../lib/admin/console.ts';
  */
 /** What was already said in this sitting. Text only — the tool traffic doesn't need to be replayed. */
 export type PriorTurn = { role: 'jay' | 'companion'; text: string };
+
+/** The stored thread, for the console to render on load (a different device, or a fresh tab). */
+export async function loadFounderThreadAction(): Promise<PriorTurn[]> {
+  if (!(await isAdmin())) return [];
+  const db = await getDb();
+  return (await loadFounderThread(db)).map((t) => ({ role: t.role, text: t.text }));
+}
+
+/** Purge — deletes the rows, not just the screen. The privacy control the durable version is built WITH. */
+export async function clearFounderThreadAction(): Promise<void> {
+  if (!(await isAdmin())) return;
+  await clearFounderThread(await getDb());
+}
 
 /** Enough to hold a conversation, bounded so a long morning doesn't grow the prompt without limit. */
 const HISTORY_TURNS = 12;
@@ -90,7 +104,11 @@ ${cohortContext(cohort, attention)}`;
       const calls = res.content.filter((c): c is Extract<typeof c, { type: 'tool_use' }> => c.type === 'tool_use');
       if (!calls.length || res.stop_reason !== 'tool_use') {
         const block = res.content.find((c) => c.type === 'text');
-        return { reply: block && block.type === 'text' ? block.text.trim() : '(no answer)', looked };
+        const reply = block && block.type === 'text' ? block.text.trim() : '(no answer)';
+        // Durable now (0066), so the thread survives moving from a phone to a desk. Best-effort: losing the
+        // continuity must never cost him the answer he just got.
+        await appendFounderTurns(db, [{ role: 'jay', text: q }, { role: 'companion', text: reply, looked }]);
+        return { reply, looked };
       }
 
       messages.push({ role: 'assistant', content: res.content });

@@ -107,7 +107,7 @@ export type Collected = {
   pilotDiet?: string;
   // Reclaim C1 Step 2 (coach mode). The refined Reclaim List awaiting the member's confirm — the snapshot. Set by the
   // ENGINE from the model's record_refinement; the action commits it to the live list on confirm (never before).
-  pendingRefinement?: { items: { original: string; text: string; tier: string }[]; top3: string[] };
+  pendingRefinement?: { items: { original: string; text: string; tier: string; reclaimItemId?: string }[]; top3: string[] };
   // Reclaim C3 (coach mode). The Quality-Day definition awaiting the member's confirm. Set by the ENGINE from the
   // model's record_quality_day; the action stores it + opens the logging week on confirm.
   pendingQualityDay?: { nonNegotiables: string[]; contributors: string[]; disruptors: string[] };

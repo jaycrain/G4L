@@ -26,7 +26,7 @@ import { BEAT_SEP } from '../../lib/agent/onboarding.ts';
 import { scaleExpects, type ArcConfig } from '../../lib/agent/onboarding-staged.ts';
 import { saveArcSession, loadArcSession, clearArcSession } from '../../lib/agent/arc-session.ts';
 import { getReclaimItems, liveReclaimTexts } from '../../lib/beats/store.ts';
-import { commitRefinement, isTier, type Tier } from '../../lib/reclaim/refinement-store.ts';
+import { commitRefinement, resolveRefinement, isTier, type Tier } from '../../lib/reclaim/refinement-store.ts';
 import { persistBiggerWorldReading } from '../../lib/reclaim/bigger-world-store.ts';
 import { AUDIT_ITEM_COUNT } from '../../lib/reclaim/bigger-world-instrument.ts';
 import { persistQualityDayProfile } from '../../lib/reclaim/quality-day-store.ts';
@@ -180,13 +180,45 @@ export async function reclaimTurnAction(
     const turn = state.stage === 'refine' ? await liveTurnReclaimRefine(state, history, message) : applyReclaimC1Turn(state, history, message);
     const db = (await getDb()) as unknown as Db;
 
+    // CAT-36 (option b, Jay 2026-08-01) — VALIDATE BEFORE THE MEMBER IS ASKED TO CONFIRM.
+    //
+    // The model's `original` string was the join key at COMMIT time, so a wording it invented matched nothing,
+    // applied 0 rows, and the member was still told "your Reclaim List now reflects where you actually are".
+    // The product lying to someone about their own data — the one thing this surface exists to get right.
+    //
+    // Resolving here means anything that reaches the confirmation is guaranteed to land. Unmatched lines are
+    // dropped from the snapshot (an add goes through the normal path, not a refinement); if NOTHING resolves we
+    // clear the proposal entirely, so the coach keeps talking instead of offering a save that cannot happen.
+    const pending = turn.state.collected?.pendingRefinement;
+    if (pending?.items?.length && !pending.items.every((i) => i.reclaimItemId)) {
+      try {
+        const { resolved, unmatched } = await resolveRefinement(
+          db, memberId,
+          pending.items.filter((i) => isTier(i.tier)).map((i) => ({ original: i.original, text: i.text, tier: i.tier as Tier })),
+        );
+        if (unmatched.length) {
+          console.warn(
+            `CAT-36: dropped ${unmatched.length} refined item(s) that matched no live Reclaim item for ` +
+            `member=${memberId} — they never reach the confirmation: ${unmatched.map((u) => JSON.stringify(u.original)).join(', ')}`,
+          );
+        }
+        if (resolved.length) pending.items = resolved;
+        else {
+          console.error(`CAT-36: NO refined item matched the live list for member=${memberId} — proposal withdrawn rather than promised.`);
+          turn.state.collected!.pendingRefinement = undefined;
+        }
+      } catch (e) {
+        console.error('CAT-36: could not resolve the refinement against the live list:', e);
+      }
+    }
+
     // On completion (the member confirmed the refinement) → COMMIT the snapshot to the live Reclaim List. Best-effort:
     // the member already saw the confirmation; a write hiccup never breaks the close.
     if (turn.complete) {
       const p = turn.state.collected?.pendingRefinement;
       const items = (p?.items ?? [])
         .filter((i) => isTier(i.tier))
-        .map((i) => ({ original: i.original, text: i.text, tier: i.tier as Tier }));
+        .map((i) => ({ original: i.original, text: i.text, tier: i.tier as Tier, reclaimItemId: i.reclaimItemId }));
       if (items.length && p) {
         // CAT-36(b/c) — DON'T TELL THEM IT SAVED WHEN IT DIDN'T. The commit outcome was swallowed entirely, so a
         // refinement that matched NOTHING (drifted reclaim_item table, or the model recording "originals" it

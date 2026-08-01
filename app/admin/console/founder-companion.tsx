@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import type { CohortView, AttentionRow } from '../../../lib/admin/console.ts';
-import { askFounderCompanionAction } from './actions.ts';
+import { askFounderCompanionAction, loadFounderThreadAction, clearFounderThreadAction } from './actions.ts';
 
 type Turn = { role: 'jay' | 'companion'; text: string; looked?: string[] };
 
@@ -12,17 +12,18 @@ type Turn = { role: 'jay' | 'companion'; text: string; looked?: string[] };
 // is verified in the browser walk. The loss is navigation and reload.) Losing an exchange mid-thought on a
 // surface whose whole value is "ask a follow-up" is the wrong kind of forgetting.
 //
-// SESSION STORAGE, NOT THE DATABASE — a deliberate privacy choice, and worth stating plainly because the
-// obvious move was a `founder_message` table mirroring the Member Agent's `agent_message`.
+// DURABLE SINCE 0066, WITH TWO CONTROLS. This shipped as sessionStorage-only, deliberately: when Jay asks
+// about ONE member the reply can contain that member's own words, so persisting the thread creates a SECOND
+// copy of the most sensitive text in the product. I flagged it rather than deciding it, and Jay decided —
+// he works from a bike ride and then a desk, and a thread that dies with the tab is no use to him.
 //
-// When Jay asks about ONE member, the reply can legitimately contain that member's own words — their gap,
-// their Reclaim List. Persisting this thread server-side would therefore create a NEW durable copy of the
-// most vulnerable text in the product, in a table nobody asked for, outside the governance that surrounds
-// the original. "Minimum necessary data" (CLAUDE.md) says don't.
+// The two controls are part of the feature, not polish on it (lib/founder/thread.ts):
+//   RETENTION — 30 days, pruned on write. Continuity is a days-to-weeks need; a permanent archive of
+//   conversations about members is a different thing, and nobody asked for that one.
+//   PURGE — "Clear this conversation" deletes the ROWS, not just the screen.
 //
-// sessionStorage fixes the actual complaint — reload and navigation — costs nothing, needs no migration, and
-// dies with the tab. Durable, cross-device console history is a bigger feature with a real privacy price;
-// that is Jay's call to make explicitly, not mine to make by accident.
+// sessionStorage stays as the instant paint and as the pre-migration fallback; the server is the source of
+// truth once it has one.
 const THREAD_KEY = 'g4l.founder.thread';
 
 function loadThread(): Turn[] {
@@ -73,9 +74,22 @@ export default function FounderCompanion({ cohort, attention }: { cohort: Cohort
   const restored = useRef(false);
 
   useEffect(() => {
-    const saved = loadThread();
-    if (saved.length) setThread(saved);
+    // DURABLE FIRST, tab-local as the fallback (Jay, 2026-08-01: he checks the console from a bike ride and
+    // then a desk, and the thread used to die with the tab). sessionStorage stays as the instant paint and as
+    // the degradation path before migration 0066 is applied — the server is the source of truth once it has one.
+    let cancelled = false;
+    const local = loadThread();
+    if (local.length) setThread(local);
+    void loadFounderThreadAction()
+      .then((stored) => {
+        if (cancelled || !stored.length) return;
+        setThread((cur) => (stored.length >= cur.length ? stored : cur));
+      })
+      .catch(() => { /* stay on the local copy */ })
+      .finally(() => { restored.current = true; });
+    // Don't block the first paint on the round trip: if the server is slow or empty, the local copy stands.
     restored.current = true;
+    return () => { cancelled = true; };
   }, []);
 
   useEffect(() => {
@@ -87,6 +101,9 @@ export default function FounderCompanion({ cohort, attention }: { cohort: Cohort
   function clearThread() {
     setThread([]);
     try { window.sessionStorage.removeItem(THREAD_KEY); } catch { /* nothing to do */ }
+    // AND the server rows. Now that the thread is durable, "clear" has to mean deleted — not hidden. This is
+    // the purge control the durable version was agreed WITH, since a thread about one member holds her words.
+    void clearFounderThreadAction().catch(() => {});
   }
 
   async function ask(qRaw: string) {
@@ -125,8 +142,8 @@ export default function FounderCompanion({ cohort, attention }: { cohort: Cohort
         <div className="fc-hero-sub">
           Ask anything about your members.
           {/* Clearing is a PRIVACY control as much as a tidiness one: a thread where Jay asked about one
-              person holds that person's own words, and he should be able to put them down. It also closes
-              the loop honestly — the thread is kept in this tab only, and this empties it for good. */}
+              person holds that person's own words, and he should be able to put them down. Now that the
+              thread is durable this deletes the stored rows too — "clear" has to mean gone, not hidden. */}
           {thread.length > 0 && (
             <>
               {' · '}
