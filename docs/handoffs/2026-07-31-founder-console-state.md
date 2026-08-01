@@ -1,7 +1,7 @@
 # Founder Console — where we stopped, 2026-07-31
 
 Written at the end of the day so the morning starts from state, not from memory.
-**Prod is at `0e41efd`.** Three ships today, all live, all behind `FOUNDER_CONSOLE=staged`.
+**Prod is at `3546c6e`.** Four ships today, all live, all behind `FOUNDER_CONSOLE=staged`.
 
 ---
 
@@ -36,6 +36,13 @@ route — `app/admin/page.tsx` went 366 → 69 lines. `?view=roster` still works
 
 **3. One write + conversation memory** (`0e41efd`). `draft_message` into the review queue; the thread is now
 actually sent to the model.
+
+**4. The member table is back on `/admin`** (`3546c6e`). Jay, last thing tonight: *"I need to see the detail I
+could see before on the Member panel."* Moving the roster behind a click was a real loss — the console answers
+"who needs me", but he also just wants to SEE everyone. Full table below the triptych, same component
+`/admin/members` renders (MembersSection was split into tiles + `MembersTable`). Deliberately WITHOUT the six
+summary tiles: under the Cohort panel they'd disagree with it about the cohort size. **Placement is provisional
+and he knows it** — "even if we ultimately redesign where it lives".
 
 ## The governance shape (the part to not re-litigate)
 
