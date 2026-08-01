@@ -1470,6 +1470,12 @@ body.redesign-on .confidential-footer { display: none; } /* full-bleed app — n
 .rrail-composer { border-top: 1px solid #e3e2df; padding: 14px 18px max(18px, env(safe-area-inset-bottom)); display: flex; gap: 9px; align-items: flex-end; }
 /* Squared-off corners + a multi-row auto-growing textarea, matching the dock's composer. */
 .rrail-composer textarea { flex: 1; border: 1px solid #e3e2df; border-radius: 10px; padding: 11px 15px; font-family: inherit; font-size: 14.5px; line-height: 1.4; outline: none; resize: none; overflow-y: auto; min-height: 44px; max-height: 160px; }
+/* The rail composer set outline:none, so the global teal focus ring never reached it — the member's own
+   Companion was the one field in the app with NO focus indication at all. Same treatment as everywhere else:
+   suppressed on :focus (no ring for a mouse click), teal on :focus-visible (keyboard users can see where
+   they are). Jay, 2026-08-01: the teal ring reads as "this field is actionable" — so it belongs here most. */
+.rrail-composer textarea:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; border-color: var(--teal); }
+
 .rrail-send { background: var(--teal); color: #fff; font-weight: 700; border: none; border-radius: 10px; padding: 11px 18px; font-size: 14px; cursor: pointer; flex: none; }
 .rrail-send:disabled { opacity: .5; cursor: default; }
 /* Phone-only controls (CSS-hidden above 767px); shown in the phone block below. */
@@ -1820,6 +1826,7 @@ body.redesign-on .confidential-footer { display: none; } /* full-bleed app — n
   .rhome-composer { flex: 0 0 auto; display: flex; align-items: center; gap: 10px; padding: 12px 16px; background: #2c4152; border-top: 1px solid rgba(255, 255, 255, 0.08); }
   .rhome-composer input { flex: 1; height: 46px; border-radius: 24px; border: 1px solid rgba(255, 255, 255, 0.18); background: rgba(255, 255, 255, 0.08);
     color: #fff; font-family: inherit; font-size: 16px; padding: 0 18px; outline: none; }
+  .rhome-composer input:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; border-color: var(--teal); }
   .rhome-composer input::placeholder { color: rgba(255, 255, 255, 0.5); }
   .rhome-composer .rrail-send { border-radius: 24px; height: 46px; padding: 0 18px; }
   .rhome-godash { flex: 0 0 auto; display: flex; align-items: center; justify-content: center; gap: 6px; border: none; cursor: pointer;
@@ -2094,6 +2101,9 @@ body.onbwel-bleed main { max-width: none; margin: 0; padding: 0; }
 .tri-comp-composer { border-top: 1px solid rgba(255, 255, 255, 0.10); padding: 14px 20px; display: flex; gap: 9px; align-items: flex-end; }
 /* min-height:44 (beats the global `textarea{min-height:4.5rem}`) is the floor when empty; the grow effect sets an inline
    height only once there's text. Was min-height originally — a stray switch to `height` let the global 72px win. */
+/* THE MEMBER'S COMPANION COMPOSER. The most-used input in the product, and it had outline:none with nothing
+   put back — no focus indication whatsoever. Teal on the navy panel, matching the Founder Console composer. */
+.tri-comp-composer textarea:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; border-color: var(--teal); }
 .tri-comp-composer textarea { flex: 1; border: 1px solid rgba(255, 255, 255, 0.22); border-radius: 10px; padding: 11px 15px; font-family: inherit; font-size: 14.5px; line-height: 1.4; outline: none; resize: none; overflow-y: auto; min-height: 44px; height: 44px; max-height: 160px; background: rgba(255, 255, 255, 0.06); color: #fff; }
 .tri-comp-composer textarea::placeholder { color: rgba(255, 255, 255, 0.5); }
 /* Navy bubble overrides — the shared .rmsg.member is navy-on-navy (invisible), so lift it; agent goes translucent. */
