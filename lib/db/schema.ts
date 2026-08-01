@@ -113,6 +113,17 @@ const MIGRATIONS: Array<{ file: string; sentinel: Sentinel }> = [
   { file: 'migrations/0065_system_health_event.sql', sentinel: 'system_health_event' },
   { file: 'migrations/0066_founder_message.sql', sentinel: 'founder_message' },
   { file: 'migrations/0067_founder_prompt.sql', sentinel: 'founder_prompt' },
+  // A DROP inverts the usual sentinel: "applied" means the column is GONE, so the check is a NOT EXISTS.
+  // The {table,column} form would have read it backwards and skipped the migration forever.
+  {
+    file: 'migrations/0068_drop_session_token.sql',
+    sentinel: {
+      sql: `select not exists (
+              select 1 from information_schema.columns
+               where table_schema = 'public' and table_name = 'member_session' and column_name = 'token'
+            ) as e`,
+    },
+  },
 ];
 export const SEED_SQL = () => sqlFile('seed/0001_reference_data.sql');
 

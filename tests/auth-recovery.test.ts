@@ -151,7 +151,6 @@ import {
   hashSessionToken,
   deleteOtherSessionsForMember,
   deleteSession,
-  __resetSessionSchemaCache,
 } from '../lib/auth/store.ts';
 import { burnPasswordTime } from '../lib/auth/password.ts';
 
@@ -202,20 +201,23 @@ test('SEC-13 · the no-such-member login path pays the same scrypt cost (no timi
   assert.ok(ms > 5, `expected real KDF work on the miss path, took ${ms.toFixed(1)}ms`);
 });
 
-test('SEC-12 · sessions still work on the PRE-MIGRATION schema (a security fix must not take login down)', async () => {
-  // This is the test for the mistake I actually made. Prod migrations are applied BY HAND, so the deploy and the
-  // schema change never land together. My first cut read/wrote token_hash unconditionally, which would have broken
-  // login for EVERYONE in that window — no session could be created or resolved. The store must work either way.
+test('SEC-12 · a session token is NEVER stored in plaintext', async () => {
+  // REPLACES the old pre-migration-shape test. That one proved the store worked BEFORE 0064 landed — the
+  // mistake I actually made was shipping a security fix that would have broken login for everyone in the
+  // hand-applied-migration window. 0064 is applied everywhere now and the plaintext column is dropped, so the
+  // shape it tested cannot occur and the shim is gone.
+  //
+  // The LESSON outlives the test and lives in docs/security-hardening-ledger.md: a schema-dependent change
+  // must work on both shapes and be tested on both. What's worth asserting HERE is the property that must
+  // hold forever — the string in the member's cookie is never the string in the database, so a DB read can
+  // never yield a paste-into-cookie session.
   const d = await db();
-  await d.query('alter table member_session drop column if exists token_hash'); // rewind to the 0009 shape
-  await d.query('alter table member_session alter column token set not null');
-  __resetSessionSchemaCache();
-
-  const id = await member(d, 'premigration@example.com');
+  const id = await member(d, 'hashed@example.com');
   const token = await createSession(d, id);
-  assert.equal(await getSessionMember(d, token), id, 'login works before the migration lands');
-  assert.equal(await getSessionMember(d, 'wrong-token'), null);
-  await deleteSession(d, token);
-  assert.equal(await getSessionMember(d, token), null, 'and sign-out works too');
-  __resetSessionSchemaCache(); // leave the process clean for the other tests
+
+  const { rows } = await d.query<{ token_hash: string }>('select token_hash from member_session');
+  assert.equal(rows.length, 1);
+  assert.notEqual(rows[0]!.token_hash, token, 'the stored value must NOT be the cookie value');
+  assert.match(rows[0]!.token_hash, /^[0-9a-f]{64}$/, 'it is a sha-256 digest');
+  assert.equal(await getSessionMember(d, token), id, 'and the real token still resolves');
 });

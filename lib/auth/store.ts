@@ -15,35 +15,18 @@ export function hashSessionToken(token: string): string {
   return createHash('sha256').update(token).digest('hex');
 }
 
-// SCHEMA-TOLERANT ON PURPOSE — and this is the lesson, not a nicety.
-// Prod migrations here are applied BY HAND, so new code and new schema never land at the same instant. My first
-// cut of this read/wrote token_hash unconditionally, which would have broken LOGIN FOR EVERYONE in the window
-// between the deploy and the migration — no session could be created OR resolved. A security fix that takes the
+// TOKENS ARE HASHED, FULL STOP (0064).
+//
+// This carried a schema-tolerance shim that asked the database whether `token_hash` existed and worked either
+// way. That was not a nicety — my first cut read/wrote token_hash unconditionally and would have broken LOGIN
+// FOR EVERYONE in the window between the deploy and the hand-applied migration. A security fix that takes the
 // product down is not a security fix.
 //
-// So the store asks the database what it has and works either way. `true` is cached forever (once hashed, always
-// hashed); `false` is deliberately NOT cached, so a running instance picks the column up the moment the migration
-// lands, without a redeploy. Delete this shim once 0064 is applied everywhere and `token` is dropped.
-let hashedColumnConfirmed = false;
-/** Test-only: the confirmation is process-wide, so a test exercising the pre-migration shape must clear it. */
-export function __resetSessionSchemaCache(): void {
-  hashedColumnConfirmed = false;
-}
-async function usesHashedTokens(db: Db): Promise<boolean> {
-  if (hashedColumnConfirmed) return true;
-  try {
-    const { rows } = await db.query<{ e: boolean }>(
-      `select exists (
-         select 1 from information_schema.columns
-          where table_schema = 'public' and table_name = 'member_session' and column_name = 'token_hash'
-       ) as e`,
-    );
-    hashedColumnConfirmed = Boolean(rows[0]?.e);
-    return hashedColumnConfirmed;
-  } catch {
-    return false; // never let a catalog hiccup lock members out
-  }
-}
+// The shim has done its job: 0064 is applied everywhere and the plaintext `token` column is dropped, so the
+// fallback branches were unreachable and are gone. THE LESSON STAYS EVEN THOUGH THE CODE DIDN'T — prod
+// migrations here are applied by hand, so any future schema-dependent change must work on BOTH shapes and be
+// tested on both. See docs/security-hardening-ledger.md.
+
 
 export const SESSION_TTL_DAYS = 30;
 
@@ -105,36 +88,25 @@ export async function hasCredential(db: Db, memberId: string): Promise<boolean> 
 
 export async function createSession(db: Db, memberId: string): Promise<string> {
   const token = randomBytes(32).toString('hex');
-  const hashed = await usesHashedTokens(db);
   await db.query(
-    hashed
-      ? `insert into member_session (token_hash, member_id, expires_at)
-         values ($1, $2, now() + ($3 * interval '1 day'))`
-      : `insert into member_session (token, member_id, expires_at)
-         values ($1, $2, now() + ($3 * interval '1 day'))`,
-    [hashed ? hashSessionToken(token) : token, memberId, SESSION_TTL_DAYS],
+    `insert into member_session (token_hash, member_id, expires_at)
+     values ($1, $2, now() + ($3 * interval '1 day'))`,
+    [hashSessionToken(token), memberId, SESSION_TTL_DAYS],
   );
   return token; // the PLAINTEXT goes to the cookie and is never stored once 0064 is applied
 }
 
 export async function getSessionMember(db: Db, token: string | undefined | null): Promise<string | null> {
   if (!token) return null;
-  const hashed = await usesHashedTokens(db);
   const { rows } = await db.query<{ member_id: string }>(
-    hashed
-      ? `select member_id from member_session where token_hash = $1 and expires_at > now()`
-      : `select member_id from member_session where token = $1 and expires_at > now()`,
-    [hashed ? hashSessionToken(token) : token],
+    `select member_id from member_session where token_hash = $1 and expires_at > now()`,
+    [hashSessionToken(token)],
   );
   return rows[0]?.member_id ?? null;
 }
 
 export async function deleteSession(db: Db, token: string): Promise<void> {
-  const hashed = await usesHashedTokens(db);
-  await db.query(
-    hashed ? `delete from member_session where token_hash = $1` : `delete from member_session where token = $1`,
-    [hashed ? hashSessionToken(token) : token],
-  );
+  await db.query(`delete from member_session where token_hash = $1`, [hashSessionToken(token)]);
 }
 
 /**
@@ -157,16 +129,11 @@ export async function deleteSessionsForMember(db: Db, memberId: string): Promise
  * leaving that someone with a 30-day session is the whole failure.
  */
 export async function deleteOtherSessionsForMember(db: Db, memberId: string, keepToken: string | null): Promise<number> {
-  const hashed = await usesHashedTokens(db);
-  const keep = keepToken ? (hashed ? hashSessionToken(keepToken) : keepToken) : null;
+  const keep = keepToken ? hashSessionToken(keepToken) : null;
   const { rows } = await db.query<{ member_id: string }>(
-    hashed
-      ? `delete from member_session
-          where member_id = $1 and ($2::text is null or token_hash is distinct from $2)
-          returning member_id`
-      : `delete from member_session
-          where member_id = $1 and ($2::text is null or token is distinct from $2)
-          returning member_id`,
+    `delete from member_session
+      where member_id = $1 and ($2::text is null or token_hash is distinct from $2)
+      returning member_id`,
     [memberId, keep],
   );
   return rows.length;
