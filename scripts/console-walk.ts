@@ -15,9 +15,9 @@ const BASE = process.argv[2] ?? 'http://localhost:3100';
 
 /** Every console route, with a string that proves ITS OWN content rendered — not just the shared chrome. */
 const ROUTES: Array<{ path: string; expect: string[] }> = [
-  { path: '/admin', expect: ['Founder Console', 'Cohort', 'Needs you', 'What moved', 'Everyone', 'Last active', 'Full member view'] },
+  { path: '/admin', expect: ['Founder Console', 'Cohort', 'Needs you', 'What moved', 'Everyone', 'Last active', 'Full member view', 'Live ·'] },
   { path: '/admin/members', expect: ['Members', 'Total rows', 'Attention', 'Review queue'] },
-  { path: '/admin/attention', expect: ['Attention', 'Mid-Session, paused', "Haven't been back"] },
+  { path: '/admin/attention', expect: ['Attention', 'Mid-Session, paused', "Haven't been back", 'Live ·'] },
   { path: '/admin/activity', expect: ['Activity', 'Founder Console'] },
   { path: '/admin/review', expect: ['Review queue', 'send nothing until you approve'] },
   { path: '/admin/moderation', expect: ['Community moderation'] },
@@ -78,6 +78,21 @@ async function main() {
   }
   failed += dead;
   console.log(`\n${hrefs.length} links out of the console, all reachable: ${dead === 0 ? 'yes' : `NO (${dead} dead)`}`);
+
+  // ── THE REFRESH TICK MUST NOT EAT THE CONVERSATION ─────────────────────────────────────────────────────
+  // The console auto-refreshes every 30s via router.refresh(). The Companion thread is CLIENT state, and the
+  // documented behaviour is that router.refresh() re-pulls server data while preserving it — but "documented"
+  // is not "true on this page", and silently wiping a conversation mid-sentence would be far worse than a
+  // stale panel. So: type something, force a tick, and check it is still there.
+  await page.goto(BASE + '/admin', { waitUntil: 'networkidle' });
+  const composer = page.locator('input[aria-label="Ask the Founder Companion"]');
+  await composer.fill('a half-typed question I have not sent yet');
+  await page.getByRole('button', { name: 'Refresh now' }).click();
+  await page.waitForTimeout(1500);
+  const survived = await composer.inputValue();
+  const kept = survived === 'a half-typed question I have not sent yet';
+  if (!kept) failed++;
+  console.log(`${kept ? '✔' : '✖'} the refresh tick preserves the Companion's client state${kept ? '' : `  (got: "${survived}")`}`);
 
   await browser.close();
   console.log(failed === 0 ? '\n✅ every console surface rendered' : `\n❌ ${failed} problem(s)`);

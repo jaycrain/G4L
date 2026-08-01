@@ -2,6 +2,7 @@ import Link from 'next/link';
 import type { CohortView, AttentionRow, FeedItem } from '../../../lib/admin/console.ts';
 import type { RosterRow } from '../../../lib/admin/roster.ts';
 import FounderCompanion from './founder-companion.tsx';
+import AdminAutoRefresh from '../auto-refresh.tsx';
 import { MembersTable } from '../sections/index.tsx';
 
 /** Relative time in the same plain register the rest of the app uses. */
@@ -32,6 +33,15 @@ export default function ConsoleShell({
         <span className="fc-hi">Hi Jay!</span>
         <span className="fc-st">Founder Console · {memberCount} member{memberCount === 1 ? '' : 's'}</span>
         {allActive && <span className="fc-chip"><i />all active</span>}
+        {/* LIVE. This was mounted only on the long ?view=roster page, so the console — the surface Jay
+            actually opens — never ticked. Two consequences, and the second is the quieter one:
+            (1) new activity didn't appear without a manual reload, on a page whose whole job is "what needs
+                me right now";
+            (2) this component is also what calls renewAdminSessionAction, so the SLIDING admin session was
+                never sliding here. "Stays signed in while you're working" silently wasn't true.
+            router.refresh() re-pulls server data only — the Companion thread is client state and survives,
+            which is verified in the browser rather than assumed. */}
+        <AdminAutoRefresh />
         <Link className="fc-browse" href="/admin/members">Browse all members →</Link>
       </div>
 

@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import AdminAutoRefresh from '../auto-refresh.tsx';
 
 // THE CHROME EVERY CONSOLE SUBPAGE WEARS.
 //
@@ -50,7 +51,12 @@ export default function ConsoleSubpage({
       </nav>
 
       <div className="fcs-head">
-        <h1>{title}</h1>
+        <div className="fcs-title-row">
+          <h1>{title}</h1>
+          {/* Live here too. A queue you sit and watch — Attention, Review, Moderation — is exactly where a
+              stale page misleads most, and it keeps the admin session sliding on whichever page he's parked on. */}
+          <AdminAutoRefresh />
+        </div>
         {lede && <p className="fcs-lede">{lede}</p>}
       </div>
 

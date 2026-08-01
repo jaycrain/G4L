@@ -2319,3 +2319,7 @@ main:has(.fcs) { max-width: 1240px; }
 /* The member table back on the console front page — below the triptych, full width. */
 .fc-roster { margin-top: 18px; }
 .fc-roster-h { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+
+/* Live indicator sits beside the subpage title, not stacked under it. */
+.fcs-title-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.fcs-title-row h1 { margin: 0 0 4px; }
