@@ -15,7 +15,7 @@ const BASE = process.argv[2] ?? 'http://localhost:3100';
 
 /** Every console route, with a string that proves ITS OWN content rendered — not just the shared chrome. */
 const ROUTES: Array<{ path: string; expect: string[] }> = [
-  { path: '/admin', expect: ['Founder Console', 'Cohort', 'Needs you', 'What moved', 'Everyone', 'Last active', 'Full member view', 'Live ·', 'All members', 'Work the queue', 'All activity'] },
+  { path: '/admin', expect: ['Founder Console', 'Cohort', 'Needs you', 'What moved', 'Live ·', 'All members', 'Work the queue', 'All activity', 'Members', 'Attention', 'Feedback'] },
   { path: '/admin/members', expect: ['Members', 'Total rows', 'Attention', 'Review queue'] },
   { path: '/admin/attention', expect: ['Attention', 'Mid-Session, paused', "Haven't been back", 'Live ·', 'Console'] },
   { path: '/admin/activity', expect: ['Activity', 'Founder Console'] },
@@ -93,6 +93,15 @@ async function main() {
   const kept = survived === 'a half-typed question I have not sent yet';
   if (!kept) failed++;
   console.log(`${kept ? '✔' : '✖'} the refresh tick preserves the Companion's client state${kept ? '' : `  (got: "${survived}")`}`);
+
+  // ── AN OPERATOR IS NOT A COLD VISITOR ──────────────────────────────────────────────────────────────────
+  // Signed in as admin, "/" used to fall through to the marketing welcome ("Welcome midlifer, your comeback
+  // begins today") — the wrong thing to show the person running the program. It should land on the console.
+  await page.goto(BASE + '/', { waitUntil: 'domcontentloaded' });
+  const landed = new URL(page.url()).pathname;
+  const routed = landed === '/admin';
+  if (!routed) failed++;
+  console.log(`${routed ? '✔' : '✖'} "/" as an admin → ${landed}${routed ? '' : '   EXPECTED /admin'}`);
 
   // ── THE LOGO GOES HOME, NOT OUT ────────────────────────────────────────────────────────────────────────
   // It was hard-wired to '/', so tapping the wordmark inside the console threw the operator into the MEMBER

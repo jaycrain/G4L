@@ -45,7 +45,6 @@ export default async function AdminHome({ searchParams }: { searchParams?: Promi
         cohort={cohort}
         attention={attention}
         feed={feed}
-        roster={roster}
         memberCount={cohort.members}
         activeCount={cohort.activeLast7}
         now={now}

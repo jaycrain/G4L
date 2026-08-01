@@ -1,11 +1,20 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { currentMemberId } from './auth.ts';
+import { isAdmin } from './authz.ts';
 import { onboardingWelcomeEnabled } from '../lib/dashboard/redesign.ts';
 
 export default async function Home() {
   const id = await currentMemberId();
   if (id) redirect(`/dashboard/${id}`);
+
+  // AN OPERATOR IS NOT A COLD VISITOR. Jay opened the app from his phone's home screen, had an ADMIN session
+  // but no member session, and got the marketing welcome — "Welcome midlifer, your comeback begins today" —
+  // which is exactly the wrong thing to show the person running the program (Jay, 2026-08-01).
+  //
+  // Checked AFTER the member session on purpose: he wears both hats, and when he's signed in as a member the
+  // member dashboard is still the right home. This only catches the case he actually hit.
+  if (await isAdmin()) redirect('/admin');
   // ENTRY NARROWING (Jay, 2026-07-29): "/" IS the new-member front door. It used to render its own landing page whose
   // copy ("You're still in there… the hundred reasonable trade-offs…") then repeated almost verbatim in the welcome
   // hero one click later — a double intro. Send a fresh visitor straight to the welcome so there's ONE opening.

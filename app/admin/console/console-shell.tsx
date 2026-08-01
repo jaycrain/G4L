@@ -1,9 +1,8 @@
 import Link from 'next/link';
 import type { CohortView, AttentionRow, FeedItem } from '../../../lib/admin/console.ts';
-import type { RosterRow } from '../../../lib/admin/roster.ts';
 import FounderCompanion from './founder-companion.tsx';
 import AdminAutoRefresh from '../auto-refresh.tsx';
-import { MembersTable } from '../sections/index.tsx';
+import { CONSOLE_NAV } from './subpage.tsx';
 
 /** Relative time in the same plain register the rest of the app uses. */
 function ago(iso: string, now: number): string {
@@ -21,9 +20,9 @@ const TONE: Record<FeedItem['tone'], string> = { work: 'var(--teal)', win: 'var(
  * LEFT the cohort, CENTRE the Companion (the workhorse), RIGHT what needs him.
  */
 export default function ConsoleShell({
-  cohort, attention, feed, roster, memberCount, activeCount, now,
+  cohort, attention, feed, memberCount, activeCount, now,
 }: {
-  cohort: CohortView; attention: AttentionRow[]; feed: FeedItem[]; roster: RosterRow[];
+  cohort: CohortView; attention: AttentionRow[]; feed: FeedItem[];
   memberCount: number; activeCount: number; now: number;
 }) {
   const allActive = memberCount > 0 && activeCount >= memberCount;
@@ -43,6 +42,16 @@ export default function ConsoleShell({
             which is verified in the browser rather than assumed. */}
         <AdminAutoRefresh />
       </div>
+
+      {/* THE SAME TAB ROW THE SUBPAGES CARRY. Jay on his phone: the console had no wayfinding at all — the
+          subpages had tabs, their parent didn't, so mobile arrived with nowhere visible to go. Mirrors the
+          member app's topbar, which is the pattern this product already uses for "where else can I be". */}
+      <nav className="fcs-nav" aria-label="Console sections">
+        <span className="fcs-tab on">Console</span>
+        {CONSOLE_NAV.filter((n) => n.href !== '/admin').map((n) => (
+          <Link className="fcs-tab" key={n.href} href={n.href}>{n.label}</Link>
+        ))}
+      </nav>
 
       <div className="fc-tri">
         {/* LEFT — the room */}
@@ -138,36 +147,18 @@ export default function ConsoleShell({
         </div>
       </div>
 
-      {/* THE MEMBER TABLE, BACK ON THE FRONT PAGE.
-          Jay, 2026-07-31: "I need to see the detail I could see before on the Member panel." Moving it behind
-          a click was a real loss — the console answers "who needs me this morning", but he also just wants to
-          SEE everyone, and one click is one click too many for the thing you do every day.
-          BELOW the triptych on purpose, so it doesn't compete with the Companion for the fold, and WITHOUT the
-          six summary tiles that /admin/members carries — those would sit directly under the Cohort panel and
-          disagree with it, since one counts demo personas and the other doesn't. Same table, one definition. */}
-      <div className="card fc-roster">
-        <div className="fc-roster-h">
-          <h3 className="fc-h" style={{ margin: 0 }}>Everyone</h3>
-          <Link className="fc-browse" href="/admin/members">Full member view →</Link>
-        </div>
-        <MembersTable roster={roster} now={now} />
-      </div>
+      {/* The member table used to sit here — bolted on 2026-07-31 when the console was the only way to see
+          everyone. The tab row above now reaches /admin/members, which renders the same table with its summary
+          tiles, so keeping a second copy here was duplication that could only drift. Removed at Jay's call
+          once the nav made it redundant. */}
 
       {/* EVERYTHING ELSE IS ONE CLICK AWAY. The console answers "who needs me" — it deliberately does not try
           to hold the whole operator surface. But nothing may become unreachable because a new view shipped,
           so every sibling is named here rather than left to be rediscovered.
           These are REAL ROUTES now, not anchors two-thirds down a long page. The long page still exists at
           ?view=roster and still works — it just isn't the only way to reach any of this. */}
-      <p className="fc-elsewhere">
-        Also here:{' '}
-        <Link href="/admin/attention">Attention</Link> ·{' '}
-        <Link href="/admin/activity">Activity</Link> ·{' '}
-        <Link href="/admin/review">Review queue</Link> ·{' '}
-        <Link href="/admin/moderation">Community moderation</Link> ·{' '}
-        <Link href="/admin/health">AI surfaces</Link> ·{' '}
-        <Link href="/admin/feedback">Feedback</Link> ·{' '}
-        <Link href="/admin/members">the member table</Link>
-      </p>
+      {/* The "Also here:" footer is gone too — it existed because there was no nav. There is now. */}
+
     </div>
   );
 }
