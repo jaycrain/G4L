@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import type { CohortView, AttentionRow } from '../../../lib/admin/console.ts';
-import { askFounderCompanionAction, loadFounderThreadAction, clearFounderThreadAction } from './actions.ts';
+import { askFounderCompanionAction, loadFounderThreadAction, clearFounderThreadAction, listSavedPromptsAction, toggleSavedPromptAction } from './actions.ts';
 
 import DataCard from './data-card.tsx';
 import type { Card } from '../../../lib/founder/cards.ts';
@@ -60,8 +60,9 @@ const LOOKED: Record<string, string> = {
   operations_status: 'your queues',
 };
 
-/** Saved starting points. These are the questions Jay actually opens with — not a feature tour. */
-const PINS = [
+/** The four we ship with. A reasonable guess at a morning routine — not HIS routine, which only shows up in
+ *  use, which is what starring is for. Saved ones lead the row; these fill out the rest. */
+const DEFAULT_PINS = [
   'Run my morning scan',
   "Who hasn't been back in 5 days?",
   'Who is closest to a Checkpoint?',
@@ -74,6 +75,8 @@ export default function FounderCompanion({ cohort, attention }: { cohort: Cohort
   const [thread, setThread] = useState<Turn[]>([]);
   const [input, setInput] = useState('');
   const [pending, setPending] = useState(false);
+  const [saved, setSaved] = useState<string[]>([]);
+  const [lastAsked, setLastAsked] = useState('');
   const restored = useRef(false);
 
   useEffect(() => {
@@ -83,6 +86,7 @@ export default function FounderCompanion({ cohort, attention }: { cohort: Cohort
     let cancelled = false;
     const local = loadThread();
     if (local.length) setThread(local);
+    void listSavedPromptsAction().then((p) => { if (!cancelled) setSaved(p); }).catch(() => {});
     void loadFounderThreadAction()
       .then((stored) => {
         if (cancelled || !stored.length) return;
@@ -113,6 +117,7 @@ export default function FounderCompanion({ cohort, attention }: { cohort: Cohort
     const q = qRaw.trim();
     if (!q || pending) return;
     setInput('');
+    setLastAsked(q);
     // Snapshot the thread BEFORE appending this question — it's the history the model needs, and the new
     // question is passed separately. Reading `thread` after setThread would race React's batching.
     const history = thread.map((t) => ({ role: t.role, text: t.text }));
@@ -173,10 +178,35 @@ export default function FounderCompanion({ cohort, attention }: { cohort: Cohort
         {pending && <div className="fc-b co fc-thinking">Looking…</div>}
       </div>
 
+      {/* SAVED FIRST, then the defaults we shipped. A starred question is one he's actually asked, so it
+          outranks our guess at what he'd want. The last question asked can be starred from here, which is the
+          only moment he knows whether it was worth keeping. */}
       <div className="fc-pins">
-        {PINS.map((p) => (
-          <button key={p} type="button" className="fc-pin" onClick={() => ask(p)} disabled={pending}>{p}</button>
-        ))}
+        {[...saved, ...DEFAULT_PINS.filter((d) => !saved.includes(d))].map((p) => {
+          const isSaved = saved.includes(p);
+          return (
+            <span key={p} className={`fc-pin-wrap${isSaved ? ' on' : ''}`}>
+              <button type="button" className="fc-pin" onClick={() => ask(p)} disabled={pending}>
+                {isSaved && <span aria-hidden="true">★ </span>}{p}
+              </button>
+              <button
+                type="button"
+                className="fc-pin-star"
+                title={isSaved ? 'Remove from your saved questions' : 'Save this question'}
+                aria-label={isSaved ? `Unsave "${p}"` : `Save "${p}"`}
+                onClick={() => { void toggleSavedPromptAction(p, !isSaved).then(setSaved).catch(() => {}); }}
+              >{isSaved ? '×' : '★'}</button>
+            </span>
+          );
+        })}
+        {/* Star what he JUST asked — the only moment he can tell whether it earned a place. */}
+        {lastAsked && !saved.includes(lastAsked) && !DEFAULT_PINS.includes(lastAsked) && (
+          <button
+            type="button"
+            className="fc-pin fc-pin-savelast"
+            onClick={() => { void toggleSavedPromptAction(lastAsked, true).then(setSaved).catch(() => {}); }}
+          >★ Save “{lastAsked.length > 34 ? `${lastAsked.slice(0, 34)}…` : lastAsked}”</button>
+        )}
       </div>
 
       <form

@@ -6,6 +6,7 @@ import { FOUNDER_COMPANION_SYSTEM, cohortContext } from '../../../lib/founder/co
 import { FOUNDER_TOOLS, runFounderTool, newTurnBudget } from '../../../lib/founder/companion-tools.ts';
 import { appendFounderTurns, loadFounderThread, clearFounderThread } from '../../../lib/founder/thread.ts';
 import { cardFor, type Card } from '../../../lib/founder/cards.ts';
+import { listSavedPrompts, savePrompt, unsavePrompt } from '../../../lib/founder/prompts.ts';
 import type { CohortView, AttentionRow } from '../../../lib/admin/console.ts';
 
 /**
@@ -31,6 +32,21 @@ export async function loadFounderThreadAction(): Promise<PriorTurn[]> {
   if (!(await isAdmin())) return [];
   const db = await getDb();
   return (await loadFounderThread(db)).map((t) => ({ role: t.role, text: t.text }));
+}
+
+/** The questions Jay has starred. Empty before 0067 — the defaults still work. */
+export async function listSavedPromptsAction(): Promise<string[]> {
+  if (!(await isAdmin())) return [];
+  return listSavedPrompts(await getDb());
+}
+
+/** Star / unstar. One call so the client doesn't have to know which way it's toggling. */
+export async function toggleSavedPromptAction(text: string, save: boolean): Promise<string[]> {
+  if (!(await isAdmin())) return [];
+  const db = await getDb();
+  if (save) await savePrompt(db, text);
+  else await unsavePrompt(db, text);
+  return listSavedPrompts(db);
 }
 
 /** Purge — deletes the rows, not just the screen. The privacy control the durable version is built WITH. */

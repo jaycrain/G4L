@@ -2397,3 +2397,16 @@ main:has(.fcs) { max-width: 1240px; }
 .fc-bar-track { width: 100%; height: 54px; display: flex; align-items: flex-end; background: #f4f4f3; border-radius: 3px; }
 .fc-bar-track i { display: block; width: 100%; border-radius: 3px; }
 .fc-bar-l { font-size: 11px; color: var(--fc-muted, #7b8794); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+
+/* Saved prompts. The star sits alongside the pin rather than inside it, so tapping the question ASKS it and
+   tapping the star SAVES it — one control doing two jobs is how you get accidental saves. */
+.fc-pin-wrap { display: inline-flex; align-items: stretch; border-radius: 999px; overflow: hidden; }
+.fc-pin-wrap.on .fc-pin { background: rgba(59,148,149,.24); border-color: rgba(143,189,190,.5); color: #EAF7F7; }
+.fc-pin-star {
+  font-family: inherit; font-size: 11px; line-height: 1; cursor: pointer; padding: 0 .5rem;
+  color: #AFC0C7; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.14); border-left: 0;
+  border-radius: 0 999px 999px 0;
+}
+.fc-pin-star:hover { color: #fff; background: var(--teal); border-color: var(--teal); }
+.fc-pin-wrap .fc-pin { border-radius: 999px 0 0 999px; border-right: 0; }
+.fc-pin-savelast { border-style: dashed; }
