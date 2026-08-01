@@ -913,7 +913,9 @@ export type StageMode = 'drawout' | 'administered' | 'coach';
 // view (IdentityScratch/GapScratch/ReclaimScratch below), so ConvState carries ONE `stageScratch` map instead of
 // a flat field per counter that would sprawl as arcs multiply (Phase 1 step 0).
 type StageScratch = Record<string, number | boolean | undefined>;
-interface IdentityScratch { identityTurns?: number; identityProbes?: number; confirmBounces?: number }
+interface IdentityScratch { identityTurns?: number; identityProbes?: number; confirmBounces?: number;
+  /** CAT-54: failed pick re-prompts, so this beat can't loop forever like it did fifteen times in walk 3. */
+  pickMisses?: number }
 interface GapScratch { gapTurns?: number; gapDepth?: number; noFade?: boolean; confirmBounces?: number }
 interface ReclaimScratch { reclaimNudged?: boolean; confirmBounces?: number }
 
@@ -1130,6 +1132,15 @@ const identityStage: StageDef = {
       // Skipped — nothing to confirm; acknowledge and advance straight into the gap stage.
       b.stage = 'gap';
       b.reply = `${SKIP_ACK}\n\n${gapOpen(b.collected)}`;
+    } else if (b.collected.identityNoun && b.pendingIdentityPick && b.pendingIdentityPick.length > 0) {
+      // CAT-54 (1) — WE ALREADY HAVE THEIR ANSWER. In walk 3 the model recorded identityNoun="Sovereign" from the
+      // member's second reply while the pick branch below rejected that same message, and the engine's rejection
+      // won silently: fifteen consecutive re-prompts for a question she had answered. Two sources of truth
+      // disagreed about the member's own word, and the one that ignored her won.
+      // A set handle is the end of this beat, full stop. [[member-words-outrank-model-guess]]
+      b.pendingIdentityPick = undefined;
+      b.stage = 'gap';
+      b.reply = identityPickAck(b.collected);
     } else if (b.pendingIdentityPick && b.pendingIdentityPick.length > 0) {
       // TAP-TO-PICK RESOLVE: last turn we offered candidate handles as chips; this message IS the member's pick
       // (a tapped chip, a coined word, or the "not sure yet" affordance). Engine-authoritative, verbatim — the model
@@ -1144,10 +1155,27 @@ const identityStage: StageDef = {
         // A tapped CHIP matches a candidate exactly (pre-vetted) → take it as-is; a COINED word goes through the
         // validity gate so junk (emoji, a whole sentence, a bare article) re-prompts instead of becoming a label. (CAT-10)
         const chip = b.pendingIdentityPick.find((c) => c.toLowerCase() === cleanIdentityNoun(raw).toLowerCase());
-        const handle = chip ?? sanitizeCoinedIdentity(raw);
+        // CAT-54 (2) — people don't answer a chip question with a bare word. "Sovereign. Yeah. That one." and
+        // "I already picked — Sovereign." are unambiguous picks that exact-match could never see. Take a candidate
+        // NAMED INSIDE the reply, but only when exactly one appears: two would be a genuine ambiguity to ask about.
+        const named = b.pendingIdentityPick.filter((c) =>
+          new RegExp(`\\b${c.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i').test(raw));
+        const handle = chip ?? (named.length === 1 ? named[0]! : null) ?? sanitizeCoinedIdentity(raw);
         if (!handle) {
-          b.reply = IDENTITY_PICK_REPROMPT;
-          b.expects = { kind: 'identity_pick', candidates: b.pendingIdentityPick };
+          // CAT-54 (3) — the runaway escape every other stage has and this one didn't. `pendingIdentityPick` was
+          // never cleared on a miss, so no input shape could end the beat: it was the only surface in onboarding
+          // that could not self-recover. Two misses is plenty; after that we stop asking and let them move on.
+          // Their identity is recoverable later from the rail — being trapped here is not.
+          s.pickMisses = (s.pickMisses ?? 0) + 1;
+          if (s.pickMisses >= 2) {
+            b.collected.identitySkipped = true;
+            b.pendingIdentityPick = undefined;
+            b.stage = 'gap';
+            b.reply = `${SKIP_ACK}\n\n${gapOpen(b.collected)}`;
+          } else {
+            b.reply = IDENTITY_PICK_REPROMPT;
+            b.expects = { kind: 'identity_pick', candidates: b.pendingIdentityPick };
+          }
         } else {
           b.collected.identityNoun = displayIdentityNoun(handle); // verbatim (article stripped, natural case)
           b.pendingIdentityPick = undefined;
@@ -1966,7 +1994,12 @@ you'll bring it back at its stage.
 IDENTITY STAGE: open on who they were when they felt most like themselves — a past self of ANY kind (never
 assume athletic). Draw it out, reflect a specific detail back, and once you have a real feel for that person,
 call offer_identity_words with 2–4 candidate words FROM THEIR OWN LANGUAGE — your prose warmly invites them to
-tap one or write their own, framed as a changeable HANDLE, not a verdict. The member's tap/coin names it
+tap one or write their own, framed as a changeable HANDLE, not a verdict.
+EVERY CANDIDATE MUST BE A NOUN — A PERSON THEY WERE, NOT A QUALITY THEY HAD. "the Runner", "the Swimmer",
+"the Builder", "the Maker", "the Friend Who Always Called". NEVER adjectives: not "Untamed", not "Sovereign",
+not "Alive", not "Fearless". The whole program is about reclaiming an IDENTITY — someone you can go be again
+on a Tuesday morning — and an adjective is a mood, which gives them nothing to walk back toward. If their own
+language gives you only adjectives, name the PERSON who was that way ("unstoppable on the bike" → the Cyclist). The member's tap/coin names it
 (captured verbatim) — do NOT also call name_identity on that turn, and do NOT ask them to confirm it afterward;
 the tap IS the choice, so once it's made you move straight on to how the gap opened. Only use name_identity if
 the member flatly declares the word themselves before you offer. If they're genuinely not ready, reassure them
