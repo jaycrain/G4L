@@ -20,7 +20,9 @@ if (!/\.test$/i.test(email)) { console.error(`Refusing: ${email} is not a demo (
 const TEAL = 'rgb(59, 148, 149)';
 
 /** Every field a member can put a cursor in, and where to find it. */
-type Field = { where: string; path: string; selector: string; what: string; optional?: boolean };
+type Field = { where: string; path: string; selector: string; what: string; optional?: boolean;
+  /** A composer: must read as "type here" BEFORE anyone clicks it, so its border is teal at rest. */
+  tealAtRest?: boolean };
 
 // SIGNED-OUT fields must be checked BEFORE logging in — once you have a session, /login correctly
 // redirects to the dashboard, so looking for #email there finds nothing and reports a false failure.
@@ -30,11 +32,13 @@ const SIGNED_OUT: Field[] = [
 ];
 
 const fieldsFor = (home: string): Field[] => [
-  { where: 'Dashboard', path: home,     selector: '.tri-comp-composer textarea', what: 'the Companion composer' },
+  { where: 'Dashboard', path: home,     selector: '.tri-comp-composer textarea', what: 'the Companion composer', tealAtRest: true },
   // The docked rail lives behind a toggle on narrower widths, so its absence is legitimate — but only this
   // one is allowed to be absent, and it still has to be SAID.
-  { where: 'Dashboard', path: home,     selector: '.rrail-composer textarea',    what: 'the docked rail composer', optional: true },
+  { where: 'Dashboard', path: home,     selector: '.rrail-composer textarea',    what: 'the docked rail composer', optional: true, tealAtRest: true },
 ];
+
+let failedRest = 0;
 
 /** Click into a field for real and read what the member would see. Returns 1 on failure, 0 on pass. */
 async function checkField(page: import('playwright').Page, f: Field): Promise<number> {
@@ -67,6 +71,16 @@ async function checkField(page: import('playwright').Page, f: Field): Promise<nu
     console.log(`✖  ${f.where}: ${f.what} NOT FOUND at ${f.path} — cannot be checked, so this is a failure`);
     return 1;
   }
+  // RESTING STATE FIRST, before anything is clicked. A composer has to read as "this is where I type"
+  // to someone who has not touched it yet — that is the whole point of the affordance, and measuring it
+  // after a click would prove nothing.
+  if (f.tealAtRest) {
+    const rest = await el.evaluate((n) => getComputedStyle(n as Element).borderColor);
+    const restOk = rest === TEAL;
+    if (!restOk) failedRest++;
+    console.log(`${restOk ? '✔' : '✖'}  ${f.where}: ${f.what} AT REST  →  border ${rest}${restOk ? '' : `   EXPECTED ${TEAL}`}`);
+  }
+
   // A real click, not el.focus() — programmatic focus does not always satisfy :focus-visible, and what
   // matters is what a person sees when they click into the field.
   await el.click();
@@ -116,10 +130,11 @@ const run = async () => {
   for (const f of fieldsFor(home)) failed += await checkField(page, f);
 
   await browser.close();
-  console.log(failed === 0
-    ? '\n✅ every member field shows the teal ring\n'
-    : `\n❌ ${failed} field(s) with no ring or the wrong colour\n`);
-  process.exit(failed === 0 ? 0 : 1);
+  const total = failed + failedRest;
+  console.log(total === 0
+    ? '\n✅ composers read as teal at rest; every member field rings teal on focus\n'
+    : `\n❌ ${failedRest} resting-state and ${failed} focus-state problem(s)\n`);
+  process.exit(total === 0 ? 0 : 1);
 };
 
 void run();
