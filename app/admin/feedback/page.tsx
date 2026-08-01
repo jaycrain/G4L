@@ -6,16 +6,17 @@ import ConsoleSubpage from '../console/subpage.tsx';
 import { FeedbackSection } from '../sections/index.tsx';
 import type { Db } from '../../../lib/db/schema.ts';
 
-export default async function FeedbackPage() {
+export default async function FeedbackPage({ searchParams }: { searchParams?: Promise<{ kind?: string; surface?: string }> }) {
   if (!(await isAdmin())) redirect('/admin/login');
   const db = (await getDb()) as unknown as Db;
+  const sp = (await searchParams) ?? {};
   return (
     <ConsoleSubpage
       title="Feedback"
       here="/admin/feedback"
       lede="What members and operators told us, in their words."
     >
-      <FeedbackSection feedback={await listFeedback(db)} now={Date.now()} />
+      <FeedbackSection feedback={await listFeedback(db)} now={Date.now()} filter={{ kind: sp.kind, surface: sp.surface }} />
     </ConsoleSubpage>
   );
 }

@@ -2373,3 +2373,10 @@ main:has(.fcs) { max-width: 1240px; }
 .fc-clear { font: inherit; font-size: inherit; background: none; border: 0; padding: 0; color: inherit;
   text-decoration: underline; text-underline-offset: 2px; cursor: pointer; opacity: .85; }
 .fc-clear:hover { opacity: 1; }
+
+/* Feedback filters — chips, same register as the console's subpage tabs. */
+.fb-filters { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 14px; }
+.fb-chip { font-size: 12px; padding: 4px 10px; border-radius: 999px; text-decoration: none;
+  color: var(--fc-muted, #7b8794); border: 1px solid var(--light-grey, #E8E6E6); background: #fff; }
+.fb-chip:hover { color: var(--navy); border-color: var(--navy); }
+.fb-chip.on { color: #fff; background: var(--navy); border-color: var(--navy); font-weight: 600; }

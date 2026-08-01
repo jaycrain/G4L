@@ -21,6 +21,7 @@ import type { FeedbackStatus } from '../../../lib/feedback/store.ts';
 // disagreeing with what the query returns — and the disagreement only shows up at runtime.
 import type { DraftRow } from '../../../lib/founder/store.ts';
 import type { ModItem } from '../../../lib/connect/moderation.ts';
+import { filterFeedback, feedbackHref } from '../../../lib/admin/feedback-filter.ts';
 
 const fmtDoor = (d: string | null) => (d ? d.replace(/_/g, ' ') : '—');
 /** Compact time-on-task: minutes under an hour, else h/m. */
@@ -64,9 +65,10 @@ export function HealthSection({ health, now }: { health: Health; now: number }) 
 /* ── COMMUNITY MODERATION ─────────────────────────────────────────────────────────────────────────────── */
 
 export function ModerationSection({
-  queue, count, now,
-}: { queue: ModItem[]; count: { total: number; safety: number }; now: number }) {
+  queue, count, now, archive,
+}: { queue: ModItem[]; count: { total: number; safety: number }; now: number; archive?: ModItem[] }) {
   return (
+    <>
     <div className={`card${count.safety > 0 ? ' health-down' : ''}`}>
       <h3 id="moderation">Community moderation ({count.total} open{count.safety > 0 ? ` · ${count.safety} safety` : ''})</h3>
       {queue.length === 0 ? (
@@ -106,6 +108,39 @@ export function ModerationSection({
         ))
       )}
     </div>
+
+    {/* WHAT YOU ALREADY DECIDED.
+        The queue only ever showed OPEN reports, so a dismissal made the report vanish with no record on the
+        surface: you couldn't answer "did I already deal with this?" or "has this member been reported
+        before?". On a surface that touches member safety, a decision you can't look back at is a decision
+        you can't be accountable for.
+        Passed in rather than fetched here — the console renders this section too, and shouldn't pay for a
+        history it doesn't show. */}
+    {archive && (
+      <div className="card" style={{ marginTop: 18 }}>
+        <h3 id="moderation-archive">Already handled ({archive.length})</h3>
+        {archive.length === 0 ? (
+          <p className="muted" style={{ marginBottom: 0 }}>Nothing has been reviewed yet.</p>
+        ) : (
+          archive.map((it) => (
+            <div key={it.reportId} className="fb-item muted">
+              <div className="fb-item-head">
+                {it.concernForSafety && <span className="fb-kind-chip issue">safety</span>}
+                <span className="fb-kind-chip">{it.source === 'system' ? 'crisis flag' : 'report'}</span>
+                <strong>{it.subjectKind}</strong>
+                {it.authorName && <span className="muted">· by {it.authorName}</span>}
+                <span className="pill approved">{it.status}</span>
+                {it.reviewedAt && <span className="muted">· {relativeTime(it.reviewedAt, now)}</span>}
+                {it.contentStatus && it.contentStatus !== 'visible' && <span className="pill">{it.contentStatus}</span>}
+              </div>
+              {it.reason && <p className="fb-body">{it.reason}</p>}
+              <div className="fb-ctx">{it.reporterName ? `reported by ${it.reporterName}` : 'auto-flagged by the system'}</div>
+            </div>
+          ))
+        )}
+      </div>
+    )}
+    </>
   );
 }
 
@@ -352,23 +387,50 @@ type FeedbackItem = {
   context?: Record<string, unknown> | null;
 };
 
-export function FeedbackSection({ feedback, now }: { feedback: FeedbackItem[]; now: number }) {
-  const open = feedback.filter((f) => f.status !== 'resolved');
-  const resolvedCount = feedback.length - open.length;
+export function FeedbackSection({
+  feedback, now, filter,
+}: { feedback: FeedbackItem[]; now: number; filter?: { kind?: string; surface?: string } }) {
+  const sel = filter ?? {};
+  const { shown, kinds, surfaces } = filterFeedback(feedback, sel);
+  const open = shown.filter((f) => f.status !== 'resolved');
+  const resolvedCount = shown.length - open.length;
+  const chip = (label: string, on: boolean, href: string) => (
+    <Link key={href} href={href} className={`fb-chip${on ? ' on' : ''}`}>{label}</Link>
+  );
+  const q = feedbackHref;
   return (
     <div className="card">
       <div className="fb-head" style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-        <h3 id="feedback" style={{ margin: 0 }}>Feedback ({open.length} open · {feedback.length} total)</h3>
+        <h3 id="feedback" style={{ margin: 0 }}>
+          Feedback ({open.length} open · {shown.length}{shown.length !== feedback.length ? ` of ${feedback.length}` : ''} total)
+        </h3>
         {resolvedCount > 0 && (
           <form action={deleteResolvedFeedbackAction}>
             <button type="submit" className="btn-secondary">Clear resolved ({resolvedCount})</button>
           </form>
         )}
       </div>
+      {/* FILTERS. Every item already carries a `kind` and a `surface`; the page rendered one undifferentiated
+          list, so "what are people saying about onboarding" meant reading everything. Server-side via the
+          query string rather than client state, so a filtered view is a LINK — shareable, bookmarkable, and
+          survives the 30s auto-refresh. Counts come from the same pass as the list, so a chip can't disagree
+          with what's under it. */}
+      {feedback.length > 0 && (kinds.length > 1 || surfaces.length > 1) && (
+        <div className="fb-filters">
+          {(sel.kind || sel.surface) && chip('All', false, q({}))}
+          {kinds.length > 1 && kinds.map((k) =>
+            chip(`${k.value} ${k.n}`, sel.kind === k.value, q({ ...sel, kind: sel.kind === k.value ? undefined : k.value })))}
+          {surfaces.length > 1 && surfaces.slice(0, 8).map((sf) =>
+            chip(`${sf.value} ${sf.n}`, sel.surface === sf.value, q({ ...sel, surface: sel.surface === sf.value ? undefined : sf.value })))}
+        </div>
+      )}
+
       {feedback.length === 0 ? (
         <p className="muted">No feedback yet. The “Send Feedback” pill is currently switched off — reinstate it in app/layout.tsx (and app/onboarding/chat.tsx for pre-signup) to start collecting again.</p>
+      ) : shown.length === 0 ? (
+        <p className="muted">Nothing matches that filter. <Link href="/admin/feedback">Show everything →</Link></p>
       ) : (
-        feedback.map((f) => {
+        shown.map((f) => {
           const events = Array.isArray(f.context?.recentEvents) ? (f.context.recentEvents as { kind: string; ref: string | null; step: number | null }[]) : [];
           return (
             <div key={f.id} className={`fb-item${f.status === 'resolved' ? ' muted' : ''}`}>

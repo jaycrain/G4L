@@ -124,7 +124,12 @@ function operational(r: RosterRow, now: number) {
     name: r.displayName,
     memberId: r.memberId,
     phase: r.phase,
-    idScore: r.idScore,
+    // ROUNDED, like everywhere else. The Companion reported "ID Score is 80.83" (Jay's walk, 2026-08-01)
+    // while every other surface — the member's own dashboard, the roster, the member subpage, the cohort
+    // average — shows a whole number. The ID Score is a mirror, not a measurement to two decimal places, and
+    // a decimal implies a precision the instrument doesn't have. Rounded HERE rather than in the roster,
+    // because the raw value is still needed to compute deltas.
+    idScore: r.idScore == null ? null : Math.round(r.idScore),
     idDirection: r.idDirection,
     sessionsClosed: r.sessionsClosed,
     sessionsOpen: Math.max(0, r.sessionsOpened - r.sessionsClosed),

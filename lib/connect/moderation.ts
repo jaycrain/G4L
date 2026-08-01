@@ -15,10 +15,30 @@ export type ModItem = {
   contentStatus: string | null;
   authorName: string | null; // real name — moderators see who's behind the handle
   reporterName: string | null; // null for system-filed (crisis) reports
+  status: 'open' | 'reviewed' | 'actioned';
+  reviewedAt: string | null;
 };
 
 /** Open reports, safety concerns first, with the reported content + the real names behind it. */
 export async function getModerationQueue(db: Db): Promise<ModItem[]> {
+  return queryReports(db, 'open');
+}
+
+/**
+ * What you already decided. Reviewed and actioned reports, newest first.
+ *
+ * The queue only ever showed OPEN reports, so the moment you dismissed or removed something it vanished with
+ * no record on the surface — you could not answer "did I already deal with this?", "what did I do about that
+ * post last week?", or "has this member been reported before?". For a moderation surface that touches safety,
+ * a decision you can't look back at is a decision you can't be accountable for.
+ *
+ * Shares its query with the open queue, so the archive can never disagree with the queue about the same row.
+ */
+export async function getModerationArchive(db: Db, limit = 50): Promise<ModItem[]> {
+  return queryReports(db, 'closed', limit);
+}
+
+async function queryReports(db: Db, which: 'open' | 'closed', limit = 200): Promise<ModItem[]> {
   const { rows } = await db.query<{
     report_id: string;
     subject_kind: 'post' | 'reply' | 'member' | 'room_message';
@@ -32,9 +52,11 @@ export async function getModerationQueue(db: Db): Promise<ModItem[]> {
     content_status: string | null;
     author_name: string | null;
     reporter_name: string | null;
+    status: 'open' | 'reviewed' | 'actioned';
+    reviewed_at: string | null;
   }>(
     `select rep.id as report_id, rep.subject_kind, rep.subject_id, rep.reason, rep.concern_for_safety,
-            rep.source, rep.created_at,
+            rep.source, rep.created_at, rep.status, rep.reviewed_at,
             coalesce(po.body, re.body, rm.body) as content_body,
             po.title as post_title,
             coalesce(po.status, re.status, rm.status) as content_status,
@@ -49,8 +71,16 @@ export async function getModerationQueue(db: Db): Promise<ModItem[]> {
        left join member_profile rma on rma.member_id = rm.author_id
        left join member_profile ma on rep.subject_kind = 'member' and ma.member_id = rep.subject_id
        left join member_profile reporter on reporter.member_id = rep.reporter_id
-      where rep.status = 'open'
-      order by rep.concern_for_safety desc, rep.created_at asc`,
+      where ($1::text = 'open' and rep.status = 'open')
+         or ($1::text = 'closed' and rep.status <> 'open')
+      -- Open: safety first, then OLDEST first — a queue you work down. Closed: newest first, because an
+      -- archive is something you scan back through, not work through.
+      order by case when $1::text = 'open' then 0 else 1 end,
+               rep.concern_for_safety desc,
+               case when $1::text = 'open' then rep.created_at end asc,
+               coalesce(rep.reviewed_at, rep.created_at) desc
+      limit $2`,
+    [which, limit],
   );
   return rows.map((r) => ({
     reportId: r.report_id,
@@ -65,6 +95,8 @@ export async function getModerationQueue(db: Db): Promise<ModItem[]> {
     contentStatus: r.content_status,
     authorName: r.author_name,
     reporterName: r.reporter_name,
+    status: r.status,
+    reviewedAt: r.reviewed_at,
   }));
 }
 

@@ -83,6 +83,29 @@ test('NO search tool can return a member\'s gap or Reclaim List — not for any 
   }
 });
 
+test('the ID Score is ROUNDED — the Companion must not invent precision', async () => {
+  // Jay's prod walk: the Companion said "ID Score is 80.83". Every other surface — the member's own
+  // dashboard, the roster, the member subpage, the cohort average — shows a whole number. The ID Score is a
+  // mirror, not a measurement to two decimals, and a decimal claims a precision the instrument doesn't have.
+  const db = new PGlite() as unknown as Db;
+  await applySchema(db);
+  const id = (await db.query<{ member_id: string }>(
+    `insert into member_profile (display_name, email) values ('Greg Welk','greg@x.com') returning member_id`)).rows[0]!.member_id;
+  await db.query(`insert into member_credential (member_id, email, password_hash) values ($1,'greg@x.com','x')`, [id]);
+  await db.query(
+    `insert into idq_retake (member_id, cycle_indicator, sequence_no, taken_at, responses,
+       physical_score, self_score, social_score, outlook_score, id_score_raw, id_score)
+     values ($1,1,0,now(),'[]'::jsonb,25,24,25,23,97,80.83)`, [id]);
+
+  const found = await runFounderTool(db, 'find_members', { filter: 'all' }, NOW);
+  const m = (found as { members: Array<{ idScore: number }> }).members[0]!;
+  assert.equal(m.idScore, 81, 'find_members must not hand the model 80.83');
+
+  const detail = await runFounderTool(db, 'member_detail', { name: 'Greg' }, NOW);
+  assert.equal((detail as { idScore: number }).idScore, 81, 'nor may member_detail');
+  assert.ok(!allText(detail).includes('80.83'), 'the raw value must not reach the model at all');
+});
+
 test('member_detail DOES return their words — that is the parity Jay asked for', async () => {
   const db = await seed();
   const r = await runFounderTool(db, 'member_detail', { name: 'donna' }, NOW);
