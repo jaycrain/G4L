@@ -33,9 +33,12 @@ const SIGNED_OUT: Field[] = [
 
 const fieldsFor = (home: string): Field[] => [
   { where: 'Dashboard', path: home,     selector: '.tri-comp-composer textarea', what: 'the Companion composer', tealAtRest: true },
-  // The docked rail lives behind a toggle on narrower widths, so its absence is legitimate — but only this
-  // one is allowed to be absent, and it still has to be SAID.
-  { where: 'Dashboard', path: home,     selector: '.rrail-composer textarea',    what: 'the docked rail composer', optional: true, tealAtRest: true },
+  // The docked rail belongs to the PRE-TRIPTYCH dashboard (RedesignShell). With DASH_TRIPTYCH on — which is
+  // prod — the triptych replaces it entirely, so it is absent for a structural reason, not a width one.
+  // The earlier "not rendered at this width" message was a plausible-sounding guess and it was wrong; it
+  // would have sent someone hunting a responsive bug that doesn't exist. Kept in the walk because the rail
+  // is the documented revert path if DASH_TRIPTYCH is ever turned off.
+  { where: 'Dashboard', path: home,     selector: '.rrail-composer textarea',    what: 'the docked rail composer (pre-triptych dashboard)', optional: true, tealAtRest: true },
 ];
 
 let failedRest = 0;
@@ -67,7 +70,7 @@ async function checkField(page: import('playwright').Page, f: Field): Promise<nu
     // A SKIP IS NOT A PASS. The first version of this walk printed "✅ every member field shows the teal
     // ring" while silently skipping the two composers that were the whole reason it existed — it had the
     // wrong route. A harness that counts a missing field as success is worse than no harness.
-    if (f.optional) { console.log(`—  ${f.where}: ${f.what} — not rendered at this width (allowed)`); return 0; }
+    if (f.optional) { console.log(`—  ${f.where}: ${f.what} — not on this build (allowed; see the field's note)`); return 0; }
     console.log(`✖  ${f.where}: ${f.what} NOT FOUND at ${f.path} — cannot be checked, so this is a failure`);
     return 1;
   }
