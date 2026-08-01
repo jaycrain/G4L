@@ -84,6 +84,23 @@ input:not([type]) {
 }
 textarea { min-height: 4.5rem; resize: vertical; }
 
+/* FOCUS — app-wide, and on-palette.
+   Nothing in this stylesheet styled :focus, so every input in the product fell back to the BROWSER'S own
+   focus ring: a blue glow, which is off-palette everywhere and reads as a foreign artifact on the navy
+   Companion panels (Jay spotted it on the Founder Console composer, 2026-08-01). It was never one surface —
+   it was every text field the member touches, including onboarding.
+   Teal because it's the palette's interactive colour. :focus-visible, not :focus, so it appears for keyboard
+   navigation and not on every mouse click. NEVER removed outright — a field you can't tell you're in is an
+   accessibility failure, and the browser default exists for a reason even if it's the wrong colour. */
+input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-visible, a:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 2px;
+}
+input[type='text']:focus-visible, input[type='email']:focus-visible, input[type='password']:focus-visible,
+input:not([type]):focus-visible, textarea:focus-visible, select:focus-visible {
+  border-color: var(--teal);
+}
+
 /* Password field with show/hide (eye) toggle */
 .pw-wrap { position: relative; }
 .pw-wrap input { padding-right: 2.6rem; }
@@ -2241,6 +2258,14 @@ main:has(.fc-wrap) { max-width: 1240px; }
 .fc-composer input { flex:1; font-family:inherit; font-size:14.5px; border:0; border-radius:12px;
   padding:.75rem .95rem; background:rgba(255,255,255,.12); color:#fff; }
 .fc-composer input::placeholder { color:#AFC0C7; }
+/* The composer had border:0 and no focus style, so the browser painted its OWN focus ring — a blue glow,
+   off-palette, and especially loud against the navy panel. Replaced, not removed: killing the outline
+   outright would leave keyboard users with no idea where they are. Teal is the interactive colour here
+   (it's the Send button), and the lifted background does the rest. */
+.fc-composer input:focus { outline:none; }
+.fc-composer input:focus-visible {
+  outline:2px solid var(--teal); outline-offset:2px; background:rgba(255,255,255,.18);
+}
 .fc-send { font-family:inherit; font-weight:700; font-size:14px; border:0; border-radius:12px;
   padding:.72rem 1.15rem; background:var(--teal); color:#fff; cursor:pointer; }
 .fc-send:disabled { opacity:.6; cursor:default; }
