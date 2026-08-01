@@ -1,7 +1,7 @@
 # Founder Console — where we stopped, 2026-07-31
 
 Written at the end of the day so the morning starts from state, not from memory.
-**Prod is at `3546c6e`.** Four ships today, all live, all behind `FOUNDER_CONSOLE=staged`.
+**Prod is at `a5f51fc`.** Five ships today, all live, all behind `FOUNDER_CONSOLE=staged`.
 
 ---
 
@@ -44,6 +44,13 @@ could see before on the Member panel."* Moving the roster behind a click was a r
 summary tiles: under the Cohort panel they'd disagree with it about the cohort size. **Placement is provisional
 and he knows it** — "even if we ultimately redesign where it lives".
 
+**5. The console is LIVE** (`a5f51fc`). Jay: *"And it's live and self-refreshes."* It wasn't — `AdminAutoRefresh`
+was mounted only on the long `?view=roster` page, so the console and every new subpage never ticked. Second,
+quieter consequence: that component is what calls `renewAdminSessionAction`, so **the sliding admin session was
+never sliding on the console**. Both fixed. The browser walk now types into the Companion, forces a tick, and
+asserts the text survives — `router.refresh()` is *documented* to preserve client state, but eating a
+half-written question mid-sentence would be worse than a stale panel, so it is checked rather than assumed.
+
 ## The governance shape (the part to not re-litigate)
 
 Jay's line: *"I don't want to pry into Member's info any more than I could see before, but make the Companion
@@ -72,7 +79,7 @@ The Companion walk carries a **conversation**, not standalone questions — that
 The console walk mints a local admin cookie from `ADMIN_PASSWORD` (never printed, never written) and asserts
 each page's OWN content rendered, then follows every link out of the console to prove none is dead.
 
-Last run: 1,022 offline tests · 9/9 surfaces · 7/7 links · no privacy crossings · 0 drafts sent.
+Last run: 1,022 offline tests · 9/9 surfaces · 9/9 links · thread survives the refresh tick · no privacy crossings · 0 drafts sent.
 
 ---
 
