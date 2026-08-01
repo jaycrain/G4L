@@ -15,7 +15,7 @@ const BASE = process.argv[2] ?? 'http://localhost:3100';
 
 /** Every console route, with a string that proves ITS OWN content rendered — not just the shared chrome. */
 const ROUTES: Array<{ path: string; expect: string[] }> = [
-  { path: '/admin', expect: ['Founder Console', 'Cohort', 'Needs you', 'What moved', 'Everyone', 'Last active', 'Full member view', 'Live ·'] },
+  { path: '/admin', expect: ['Founder Console', 'Cohort', 'Needs you', 'What moved', 'Everyone', 'Last active', 'Full member view', 'Live ·', 'All members', 'Work the queue', 'All activity'] },
   { path: '/admin/members', expect: ['Members', 'Total rows', 'Attention', 'Review queue'] },
   { path: '/admin/attention', expect: ['Attention', 'Mid-Session, paused', "Haven't been back", 'Live ·'] },
   { path: '/admin/activity', expect: ['Activity', 'Founder Console'] },

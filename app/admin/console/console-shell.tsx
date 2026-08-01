@@ -42,7 +42,6 @@ export default function ConsoleShell({
             router.refresh() re-pulls server data only — the Companion thread is client state and survives,
             which is verified in the browser rather than assumed. */}
         <AdminAutoRefresh />
-        <Link className="fc-browse" href="/admin/members">Browse all members →</Link>
       </div>
 
       <div className="fc-tri">
@@ -78,6 +77,11 @@ export default function ConsoleShell({
                 </div>
               ))}
             </div>
+            {/* The panel's own way down. Jay, 2026-08-01: put it where every other panel keeps it.
+                `.see-more` "Label →" is the app-wide depth pattern (docs/dashboard-ui-standards.md) — a
+                floating link in the greeting row was a one-off, and one-offs are what make a surface feel
+                assembled rather than designed. */}
+            <p className="see-more"><Link href="/admin/members">All members →</Link></p>
           </div>
         </div>
 
@@ -106,6 +110,9 @@ export default function ConsoleShell({
                 ? <Link className="fc-need fc-need-link" key={a.kind} href={href}>{dot}{body}</Link>
                 : <div className="fc-need" key={a.kind}>{dot}{body}</div>;
             })}
+            {/* The rows link per-item; this is how you reach the QUEUE itself, which is a different job:
+                working down a list rather than jumping to one person. */}
+            <p className="see-more"><Link href="/admin/attention">Work the queue →</Link></p>
           </div>
 
           <div className="card" style={{ marginTop: 18 }}>
@@ -122,10 +129,11 @@ export default function ConsoleShell({
                 </div>
               ))
             )}
-            {/* The member app's depth pattern — a panel earns its subpage with a foot link, not a button. */}
-            {feed.length > 0 && (
-              <p className="see-more"><Link href="/admin/activity">All activity →</Link></p>
-            )}
+            {/* UNCONDITIONAL, like the other two panels. It used to hide when the feed was empty, which is
+                exactly when you most want to look: "nothing yet today" is the moment you ask whether that's
+                true or whether something stopped recording. The subpage says which — it distinguishes an empty
+                window from a broken read — and the panel can't. Hiding the way in left a dead end. */}
+            <p className="see-more"><Link href="/admin/activity">All activity →</Link></p>
           </div>
         </div>
       </div>
