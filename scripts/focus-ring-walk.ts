@@ -21,19 +21,53 @@ const TEAL = 'rgb(59, 148, 149)';
 
 /** Every field a member can put a cursor in, and where to find it. */
 type Field = { where: string; path: string; selector: string; what: string; optional?: boolean };
+
+// SIGNED-OUT fields must be checked BEFORE logging in — once you have a session, /login correctly
+// redirects to the dashboard, so looking for #email there finds nothing and reports a false failure.
+const SIGNED_OUT: Field[] = [
+  { where: 'Log in', path: '/login', selector: '#email',    what: 'email' },
+  { where: 'Log in', path: '/login', selector: '#password', what: 'password' },
+];
+
 const fieldsFor = (home: string): Field[] => [
-  { where: 'Log in',    path: '/login', selector: '#email',                      what: 'email' },
-  { where: 'Log in',    path: '/login', selector: '#password',                   what: 'password' },
   { where: 'Dashboard', path: home,     selector: '.tri-comp-composer textarea', what: 'the Companion composer' },
   // The docked rail lives behind a toggle on narrower widths, so its absence is legitimate — but only this
   // one is allowed to be absent, and it still has to be SAID.
   { where: 'Dashboard', path: home,     selector: '.rrail-composer textarea',    what: 'the docked rail composer', optional: true },
 ];
 
+/** Click into a field for real and read what the member would see. Returns 1 on failure, 0 on pass. */
+async function checkField(page: import('playwright').Page, f: Field): Promise<number> {
+  await page.goto(`${base}${f.path}`, { waitUntil: 'networkidle' });
+  const el = page.locator(f.selector).first();
+  if (await el.count() === 0) {
+    // A SKIP IS NOT A PASS. The first version of this walk printed "✅ every member field shows the teal
+    // ring" while silently skipping the two composers that were the whole reason it existed — it had the
+    // wrong route. A harness that counts a missing field as success is worse than no harness.
+    if (f.optional) { console.log(`—  ${f.where}: ${f.what} — not rendered at this width (allowed)`); return 0; }
+    console.log(`✖  ${f.where}: ${f.what} NOT FOUND at ${f.path} — cannot be checked, so this is a failure`);
+    return 1;
+  }
+  // A real click, not el.focus() — programmatic focus does not always satisfy :focus-visible, and what
+  // matters is what a person sees when they click into the field.
+  await el.click();
+  const got = await el.evaluate((n) => {
+    const s = getComputedStyle(n as Element);
+    return { outline: s.outlineColor, width: s.outlineWidth };
+  });
+  const ok = got.outline === TEAL && parseFloat(got.width) >= 2;
+  console.log(`${ok ? '✔' : '✖'}  ${f.where}: ${f.what}  →  ${got.outline} ${got.width}${ok ? '' : `   EXPECTED ${TEAL} 2px`}`);
+  return ok ? 0 : 1;
+}
+
 const run = async () => {
   const browser = await chromium.launch();
   const page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
   let failed = 0;
+
+  // ── PASS 1: signed out ────────────────────────────────────────────────────────────────────────────────
+  console.log(`\nFOCUS RINGS → ${base}\n`);
+  for (const f of SIGNED_OUT) failed += await checkField(page, f);
 
   await page.goto(`${base}/login`, { waitUntil: 'domcontentloaded' });
   // Wait for React to hydrate before typing — filling a form the client hasn't claimed yet submits nothing.
@@ -52,37 +86,15 @@ const run = async () => {
   // The member's home is /dashboard/<memberId> — take it from where login actually landed rather than
   // guessing '/', which is the signed-out welcome page and has none of these fields on it.
   const home = new URL(page.url()).pathname;
-  console.log(`\nFOCUS RINGS → ${base}  (as ${email}, home ${home})\n`);
+  console.log(`\n  signed in as ${email} → ${home}\n`);
   if (!/^\/dashboard\//.test(home)) {
     console.log(`✖  login did not land on a dashboard (got ${home}) — cannot check the composers`);
     await browser.close();
     process.exit(1);
   }
 
-  for (const f of fieldsFor(home)) {
-    await page.goto(`${base}${f.path}`, { waitUntil: 'networkidle' });
-    const el = page.locator(f.selector).first();
-    if (await el.count() === 0) {
-      // A SKIP IS NOT A PASS. The first version of this walk printed "✅ every member field shows the teal
-      // ring" while silently skipping the two composers that were the whole reason it existed — it had the
-      // wrong route. A harness that counts a missing field as success is worse than no harness.
-      if (f.optional) { console.log(`—  ${f.where}: ${f.what} — not rendered at this width (allowed)`); continue; }
-      failed++;
-      console.log(`✖  ${f.where}: ${f.what} NOT FOUND at ${f.path} — cannot be checked, so this is a failure`);
-      continue;
-    }
-
-    // A real click, not el.focus() — programmatic focus does not always satisfy :focus-visible, and what
-    // matters is what a person sees when they click into the field.
-    await el.click();
-    const got = await el.evaluate((n) => {
-      const s = getComputedStyle(n as Element);
-      return { outline: s.outlineColor, width: s.outlineWidth, fv: (n as Element).matches(':focus-visible') };
-    });
-    const ok = got.outline === TEAL && parseFloat(got.width) >= 2;
-    if (!ok) failed++;
-    console.log(`${ok ? '✔' : '✖'}  ${f.where}: ${f.what}  →  ${got.outline} ${got.width}${ok ? '' : `   EXPECTED ${TEAL} 2px`}`);
-  }
+  // ── PASS 2: signed in ─────────────────────────────────────────────────────────────────────────────────
+  for (const f of fieldsFor(home)) failed += await checkField(page, f);
 
   await browser.close();
   console.log(failed === 0
