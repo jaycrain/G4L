@@ -84,7 +84,11 @@ export function HealthSection({ health, now, history }: { health: Health; now: n
               </div>
               <div className="fc-kpi">
                 <div className="n">{history.medianLatencyMs ?? '—'}{history.medianLatencyMs != null && <span style={{ fontSize: '0.5em' }}>ms</span>}</div>
-                <div className="l">Typical response</div>
+                {/* NAME WHAT IT MEASURES. The first cut said "Typical response", and the first real numbers
+                    were 900–1800ms — which reads as "the app is slow". It isn't: this is the probe's full
+                    round-trip to the Anthropic API, so a second-ish is normal and healthy. A metric whose
+                    label invites the wrong conclusion is worse than no metric. */}
+                <div className="l">AI round-trip<span className="muted"> · median</span></div>
               </div>
               <div className="fc-kpi">
                 <div className="n">{history.incidents.length}</div>
@@ -92,7 +96,10 @@ export function HealthSection({ health, now, history }: { health: Health; now: n
               </div>
             </div>
             {history.incidents.length === 0 ? (
-              <p className="muted" style={{ marginBottom: 0 }}>No interruptions in the window.</p>
+              <p className="muted" style={{ marginBottom: 0 }}>
+                No interruptions in the window. Round-trip is the probe&apos;s own call to the model — around
+                a second is normal, and it is not a measure of how fast the app loads.
+              </p>
             ) : (
               history.incidents.map((i) => (
                 <div className="fc-evt" key={i.from}>

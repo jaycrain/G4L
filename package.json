@@ -10,7 +10,7 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "test": "node --experimental-strip-types --test tests/*.test.ts",
+    "test": "node scripts/run-tests.mjs",
     "db:verify": "node --experimental-strip-types scripts/db/verify.ts",
     "db:reset": "rm -rf .pglite && echo 'local dev DB wiped — restart the dev server to recreate it'",
     "db:migrate": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/db/migrate.ts",

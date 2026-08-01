@@ -1,3 +1,14 @@
+// DETERMINISTIC REGARDLESS OF THE SHELL.
+//
+// lib/curriculum/registry.ts reads REWIRE / REBUILD / RECLAIM at MODULE SCOPE, so this file's expectations
+// depended on ambient environment. Sourcing .env.local before `npm test` — which I did three separate times
+// while working — silently switched the registry to the STAGED program and turned five tests red for reasons
+// that had nothing to do with the code under test.
+//
+// Discipline was the wrong fix; a suite whose result depends on how you invoked the shell is the bug. The
+// flags are cleared by the side-effect import below, so this file always tests the UNFLAGGED (fallback)
+// program and tests/curriculum-staged.test.ts always tests the staged one.
+import './helpers/no-phase-flags.ts'; // MUST be first — see that file for why a plain `delete` here fails
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { PGlite } from '@electric-sql/pglite';
