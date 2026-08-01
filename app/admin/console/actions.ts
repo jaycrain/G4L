@@ -5,6 +5,7 @@ import { getDb } from '../../../lib/db/index.ts';
 import { FOUNDER_COMPANION_SYSTEM, cohortContext } from '../../../lib/founder/companion.ts';
 import { FOUNDER_TOOLS, runFounderTool, newTurnBudget } from '../../../lib/founder/companion-tools.ts';
 import { appendFounderTurns, loadFounderThread, clearFounderThread } from '../../../lib/founder/thread.ts';
+import { cardFor, type Card } from '../../../lib/founder/cards.ts';
 import type { CohortView, AttentionRow } from '../../../lib/admin/console.ts';
 
 /**
@@ -46,12 +47,15 @@ export async function askFounderCompanionAction(
   cohort: CohortView,
   attention: AttentionRow[],
   history: PriorTurn[] = [],
-): Promise<{ reply: string; looked: string[] }> {
-  if (!(await isAdmin())) return { reply: 'Not authorized.', looked: [] };
+): Promise<{ reply: string; looked: string[]; cards: Card[] }> {
+  if (!(await isAdmin())) return { reply: 'Not authorized.', looked: [], cards: [] };
   const q = (question ?? '').trim().slice(0, 2000);
-  if (!q) return { reply: '', looked: [] };
+  if (!q) return { reply: '', looked: [], cards: [] };
 
   const looked: string[] = [];
+  // Built from the TOOL RESULTS as they come back — never from the model's retelling of them. The prose may be
+  // loose ("a couple of people"); the card underneath is the rows the query actually returned.
+  const cards: Card[] = [];
   try {
     const db = await getDb();
     const { default: Anthropic } = await import('@anthropic-ai/sdk');
@@ -108,16 +112,20 @@ ${cohortContext(cohort, attention)}`;
         // Durable now (0066), so the thread survives moving from a phone to a desk. Best-effort: losing the
         // continuity must never cost him the answer he just got.
         await appendFounderTurns(db, [{ role: 'jay', text: q }, { role: 'companion', text: reply, looked }]);
-        return { reply, looked };
+        return { reply, looked, cards };
       }
 
       messages.push({ role: 'assistant', content: res.content });
       const results = await Promise.all(
         calls.map(async (c) => {
           looked.push(c.name);
-          const out = await runFounderTool(db, c.name, (c.input ?? {}) as Record<string, unknown>, Date.now(), budget).catch((e) => ({
+          const input = (c.input ?? {}) as Record<string, unknown>;
+          const out = await runFounderTool(db, c.name, input, Date.now(), budget).catch((e) => ({
             error: `That lookup failed: ${e instanceof Error ? e.message : 'unknown'}. Say the lookup failed — do not answer as if the result were empty.`,
           }));
+          // A failed lookup gets NO card. An empty table under "the read failed" would be the same confident
+          // lie the whole sweep was about, drawn in a nicer box.
+          if (!('error' in out)) cards.push(...cardFor(c.name, input, out as Record<string, unknown>));
           return { type: 'tool_result' as const, tool_use_id: c.id, content: JSON.stringify(out) };
         }),
       );
@@ -125,8 +133,8 @@ ${cohortContext(cohort, attention)}`;
     }
 
     // Ran out of passes. Say so rather than inventing a conclusion from partial lookups.
-    return { reply: 'That took more digging than I could do in one go — try asking it more narrowly.', looked };
+    return { reply: 'That took more digging than I could do in one go — try asking it more narrowly.', looked, cards };
   } catch {
-    return { reply: 'I couldn’t reach that just now — try again in a moment.', looked };
+    return { reply: 'I couldn’t reach that just now — try again in a moment.', looked, cards: [] };
   }
 }

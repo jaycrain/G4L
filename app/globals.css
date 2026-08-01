@@ -2380,3 +2380,20 @@ main:has(.fcs) { max-width: 1240px; }
   color: var(--fc-muted, #7b8794); border: 1px solid var(--light-grey, #E8E6E6); background: #fff; }
 .fb-chip:hover { color: var(--navy); border-color: var(--navy); }
 .fb-chip.on { color: #fff; background: var(--navy); border-color: var(--navy); font-weight: 600; }
+
+/* Inline data cards in the Companion thread — the tool's rows, sitting under the model's prose. */
+.fc-dcard { align-self: stretch; background: #fff; border-radius: 13px; padding: 13px 15px; margin: 3px 0 6px; }
+.fc-de { font-size: 10.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--fc-muted, #7b8794); margin-bottom: 8px; }
+.fc-dcard table { width: 100%; border-collapse: collapse; }
+.fc-dcard td, .fc-dcard th { padding: 6px 4px; font-size: 13px; text-align: left; }
+.fc-dcard th { color: var(--fc-muted, #7b8794); font-size: 10.5px; text-transform: uppercase; letter-spacing: .05em; border-bottom: 1px solid var(--light-grey, #E8E6E6); font-weight: 700; }
+.fc-dcard td.r, .fc-dcard th.r { text-align: right; }
+.fc-dcard td a { color: var(--navy); font-weight: 600; text-decoration: none; }
+.fc-dcard td a:hover { text-decoration: underline; }
+
+.fc-bars { display: flex; gap: 10px; align-items: flex-end; }
+.fc-bar { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0; }
+.fc-bar-v { font-size: 12px; font-weight: 700; color: var(--navy); }
+.fc-bar-track { width: 100%; height: 54px; display: flex; align-items: flex-end; background: #f4f4f3; border-radius: 3px; }
+.fc-bar-track i { display: block; width: 100%; border-radius: 3px; }
+.fc-bar-l { font-size: 11px; color: var(--fc-muted, #7b8794); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }

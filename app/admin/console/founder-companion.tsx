@@ -4,7 +4,10 @@ import { useState, useEffect, useRef } from 'react';
 import type { CohortView, AttentionRow } from '../../../lib/admin/console.ts';
 import { askFounderCompanionAction, loadFounderThreadAction, clearFounderThreadAction } from './actions.ts';
 
-type Turn = { role: 'jay' | 'companion'; text: string; looked?: string[] };
+import DataCard from './data-card.tsx';
+import type { Card } from '../../../lib/founder/cards.ts';
+
+type Turn = { role: 'jay' | 'companion'; text: string; looked?: string[]; cards?: Card[] };
 
 // ── THE THREAD SURVIVES A RELOAD ────────────────────────────────────────────────────────────────────────────
 // The conversation was pure component state, so leaving the page and coming back — or a hard reload — wiped
@@ -122,6 +125,7 @@ export default function FounderCompanion({ cohort, attention }: { cohort: Cohort
         role: 'companion',
         text: r?.reply ?? 'I couldn’t reach that just now — try again in a moment.',
         looked: r?.looked ?? [],
+        cards: r?.cards ?? [],
       },
     ]);
     setPending(false);
@@ -160,6 +164,8 @@ export default function FounderCompanion({ cohort, attention }: { cohort: Cohort
           return (
             <div key={i}>
               <div className={`fc-b ${t.role === 'jay' ? 'me' : 'co'}`}>{t.text}</div>
+              {/* The data UNDER the answer, built from the query rather than the retelling. */}
+              {(t.cards ?? []).map((c, ci) => <DataCard key={ci} card={c} />)}
               {where.length > 0 && <div className="fc-looked">Checked {where.join(', ')}</div>}
             </div>
           );
