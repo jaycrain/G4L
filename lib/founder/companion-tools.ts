@@ -293,18 +293,32 @@ export async function runFounderTool(
   }
 
   if (name === 'operations_status') {
-    const [drafts, reports] = await Promise.all([
-      db.query<{ n: number }>(`select count(*)::int n from founder_agent_drafts where approval_status='pending'`).catch(() => ({ rows: [{ n: 0 }] })),
-      db.query<{ n: number; safety: number }>(
-        `select count(*)::int n, count(*) filter (where concern_for_safety)::int safety from connect_report where status='open'`,
-      ).catch(() => ({ rows: [{ n: 0, safety: 0 }] })),
-    ]);
-    return {
-      draftsAwaitingYourApproval: drafts.rows[0]?.n ?? 0,
-      openReports: reports.rows[0]?.n ?? 0,
-      safetyReports: reports.rows[0]?.safety ?? 0,
-      note: 'Drafts send nothing until you approve them.',
-    };
+    // NO CATCH-TO-ZERO. I wrote these with `.catch(() => ({ rows: [{ n: 0 }] }))` yesterday and my own sweep
+    // caught it: a failed read would have told Jay "no drafts waiting, no open reports" — a confident zero
+    // about the two queues where work silently disappearing is the whole risk. An unfiled safety report
+    // reading as "nothing flagged" is the worst sentence this tool could say.
+    try {
+      const [drafts, reports] = await Promise.all([
+        db.query<{ n: number }>(`select count(*)::int n from founder_agent_drafts where approval_status='pending'`),
+        db.query<{ n: number; safety: number }>(
+          `select count(*)::int n, count(*) filter (where concern_for_safety)::int safety from connect_report where status='open'`,
+        ),
+      ]);
+      return {
+        draftsAwaitingYourApproval: drafts.rows[0]?.n ?? 0,
+        openReports: reports.rows[0]?.n ?? 0,
+        safetyReports: reports.rows[0]?.safety ?? 0,
+        note: 'Drafts send nothing until you approve them.',
+      };
+    } catch (e) {
+      console.error('[founder] operations_status read failed:', e);
+      return {
+        unavailable: true,
+        error:
+          'The queues could not be read just now. Tell Jay the READ FAILED — do not say the queues are empty, ' +
+          'because you do not know that. Open drafts and safety reports may be waiting.',
+      };
+    }
   }
 
   if (name === 'draft_message') {

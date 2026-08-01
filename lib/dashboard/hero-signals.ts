@@ -95,14 +95,28 @@ export async function gatherHeroSignals(db: Db, memberId: string): Promise<HeroS
   const nextSession =
     current?.openable && currentInfo?.kind === 'session' ? { id: current.id, label: current.title } : null;
 
-  const closed = await closedSessionIds(db, memberId).catch(() => [] as string[]);
-  const gates = await listGates(db, memberId).catch(() => [] as string[]);
+  // THESE READS DECIDE WHETHER THE MEMBER LOOKS LIKE THEY HAVE A HISTORY.
+  //
+  // They degrade rather than crash the dashboard, which is right — but a swallowed failure used to collapse
+  // into "no sessions, no gates, no onboarding", and that is not a neutral default: it renders as "You're
+  // brand new · Start here" to somebody eight Sessions in. The comment below already said that must never
+  // happen; the error handling defeated it.
+  //
+  // So failures are LOGGED, and tracked — see `readFailed` at hasStarted. "We couldn't read your history"
+  // must never render as "you don't have one".
+  let readFailed = false;
+  const soft = async <T>(what: string, p: Promise<T>, fallback: T): Promise<T> => {
+    try { return await p; } catch (e) { readFailed = true; console.error(`[hero] ${what} read failed:`, e); return fallback; }
+  };
+
+  const closed = await soft('closed sessions', closedSessionIds(db, memberId), [] as string[]);
+  const gates = await soft('phase gates', listGates(db, memberId), [] as string[]);
   const gateSet = new Set(gates);
 
   // A practice week belongs to a phase's Part B. Once that phase's Checkpoint is crossed the week is STALE — it can
   // linger inside its 7-day window and strand the hero on "Log today" while the member has already moved to the next
   // phase. Ignore it for the hero (it stays loggable on the Momentum page); only surface a week for the CURRENT phase.
-  const pw = await activePracticeWeek(db, memberId).catch(() => null);
+  const pw = await soft('practice week', activePracticeWeek(db, memberId), null);
   const pwStale = pw ? gateSet.has(`${PRACTICE_PHASE[pw.kind]}_checkpoint_passed`) : false;
   const activePractice =
     pw && !pwStale
@@ -111,8 +125,12 @@ export async function gatherHeroSignals(db: Db, memberId: string): Promise<HeroS
 
   // "Started" = any closed session, an in-flight arc, a crossed checkpoint (a gate), OR completed onboarding (a named
   // identity / Door / Reclaim List). A member who finished intake must never read as "brand new / Start here."
-  const onboardingDone = await hasOnboardingCaptures(db, memberId).catch(() => false);
-  const hasStarted = closed.length > 0 || inflightArc != null || inProgressSession != null || gates.length > 0 || onboardingDone;
+  const onboardingDone = await soft('onboarding captures', hasOnboardingCaptures(db, memberId), false);
+  // `|| readFailed` — if ANY of the reads above failed we do not know their history, and of the two possible
+  // wrong answers only one is harmful. Telling an established member "you're brand new" erases their work in
+  // front of them; showing a returning-member hero to an actual newcomer is merely slightly off, and their
+  // first Session still opens normally. Fail toward the one that doesn't insult anybody.
+  const hasStarted = closed.length > 0 || inflightArc != null || inProgressSession != null || gates.length > 0 || onboardingDone || readFailed;
 
   // The Loop gate — at the Reclaim boundary (Rebuild checkpoint crossed) but no Reclaim session yet started: consult
   // the readiness predicate. Not ready → the hero reads "Reclaim is coming" instead of offering C1.

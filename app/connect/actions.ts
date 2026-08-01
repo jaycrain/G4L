@@ -57,7 +57,22 @@ export async function replyAction(postId: string, formData: FormData): Promise<v
 
 export async function reportAction(subjectKind: 'post' | 'reply', subjectId: string, formData: FormData): Promise<void> {
   const { db, memberId } = await actor();
-  await reportTarget(db, memberId, subjectKind, subjectId, String(formData.get('reason') ?? ''), formData.get('concern') === 'on');
+  const concern = formData.get('concern') === 'on';
+  // "I'm worried about them" jumps the moderation queue — losing THAT is losing a safety signal a member
+  // took the trouble to raise. A failed write used to throw into the generic error boundary: the report was
+  // gone, and the member had no idea whether it landed. Now we say plainly that it didn't, and log enough
+  // for a human to act on it regardless.
+  try {
+    await reportTarget(db, memberId, subjectKind, subjectId, String(formData.get('reason') ?? ''), concern);
+  } catch (e) {
+    console.error(
+      `[MODERATION] a member's report FAILED TO FILE${concern ? ' — flagged as a SAFETY CONCERN' : ''}. ` +
+      `Follow up by hand: reporter=${memberId} kind=${subjectKind} subject=${subjectId}`, e,
+    );
+    redirect(`/connect/${memberId}?notice=${encodeURIComponent(
+      'Something went wrong filing that — it has not been recorded. Please try again.',
+    )}`);
+  }
   redirect(`/connect/${memberId}?notice=${encodeURIComponent('Thanks — a moderator will review this.')}`);
 }
 

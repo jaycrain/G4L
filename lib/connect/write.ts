@@ -53,8 +53,46 @@ export async function reportContent(
 async function routeCrisis(db: Db, kind: 'post' | 'reply', id: string, ...parts: Array<string | null | undefined>): Promise<boolean> {
   const a = await assessCrisis(parts.filter(Boolean).join('\n'));
   if (!a.flagged) return false;
-  await reportContent(db, null, kind, id, `Auto-flagged by crisis detection (${a.source}) — please follow up.`, true, 'system');
+
+  // FILING THE REPORT MUST NEVER COST THE MEMBER THE RESOURCES.
+  //
+  // This was an unguarded await. Their post is already inserted by the time we reach here, so a failing
+  // report INSERT threw out of the whole action: the post stayed, the flag was never filed, no human ever
+  // followed up — and the member, who had just written something painful, got an ERROR SCREEN. That is the
+  // worst moment in this product to show one.
+  //
+  // The two jobs are separable and only one is urgent. Surfacing 988 to the person NOW is the safety
+  // response; the report is for human follow-up afterwards. A filing failure must not take the first down
+  // with it — we still return flagged, and the caller still routes them to help.
+  //
+  // Loud, never silent: governance says crisis routing is always on, so a failure here is an incident.
+  await fileCrisisReport(db, kind, id, `Auto-flagged by crisis detection (${a.source}) — please follow up.`, a.source);
   return true;
+}
+
+/**
+ * File a system crisis report — the ONE way to do it, so it cannot be written unguarded again.
+ *
+ * There were three call sites (a post/reply, a room title, a room message) and all three awaited the INSERT
+ * bare. Wrapping them individually would have left the fourth one, whenever it gets written, exposed. This is
+ * the seam, and it swallows nothing: a failure is logged with everything a human needs to find the content
+ * and follow up by hand.
+ */
+export async function fileCrisisReport(
+  db: Db,
+  kind: 'post' | 'reply' | 'member' | 'room_message',
+  subjectId: string,
+  reason: string,
+  source = 'unknown',
+): Promise<void> {
+  try {
+    await reportContent(db, null, kind, subjectId, reason, true, 'system');
+  } catch (e) {
+    console.error(
+      `[CRISIS] FAILED TO FILE the auto-report — a member was flagged and NO ONE HAS BEEN TOLD. ` +
+      `Follow up by hand: kind=${kind} id=${subjectId} source=${source}`, e,
+    );
+  }
 }
 
 async function postAuthor(db: Db, postId: string): Promise<string | null> {

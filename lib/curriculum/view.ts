@@ -145,7 +145,10 @@ export async function reconcileRedesignBadges(db: Db, memberId: string): Promise
     const [closedArr, gatesArr] = await Promise.all([closedSessionIds(db, memberId), listGates(db, memberId)]);
     const closed = new Set(closedArr);
     const gates = new Set(gatesArr);
-    const earn = (id: string) => earnBadge(db, memberId, id).catch(() => {});
+    // Per-badge, so one failure can't cost the member the rest of the run — but LOGGED, because a badge
+    // that silently never lands is a milestone missing from their passport with nothing to explain it.
+    const earn = (id: string) =>
+      earnBadge(db, memberId, id).catch((e) => { console.error(`[badges] could not earn ${id} for ${memberId}:`, e); });
     for (const [sid, bid] of Object.entries(SESSION_BADGE)) if (closed.has(sid)) await earn(bid);
     // "You named the Doors" is earned at ONBOARDING, where the Doors are named (Jay's walk) — not the Reconnect
     // checkpoint. Any member on the dashboard has finished onboarding; earn it once they've named at least one Door.

@@ -2,7 +2,7 @@
 // every message runs through crisis routing, same posture as posts/replies. Delivery is polling in
 // 2a; Supabase Realtime in 2b. Design: docs/connect-design.md.
 import { assessCrisis } from './crisis.ts';
-import { ensureProfile, reportContent } from './write.ts';
+import { ensureProfile, reportContent, fileCrisisReport } from './write.ts';
 import type { Db } from '../db/schema.ts';
 
 export type Room = {
@@ -119,14 +119,11 @@ export async function createRoom(
   // stays actionable — deliberately avoiding a schema change, so nothing stands between this gap and being closed.
   const a = await assessCrisis(t);
   if (a.flagged) {
-    await reportContent(
-      db,
-      null,
-      'member',
-      memberId,
+    // Through the shared filer: a failure here must not throw out of room creation, and must never be quiet.
+    await fileCrisisReport(
+      db, 'member', memberId,
       `Auto-flagged by crisis detection (${a.source}) in a room title — please follow up. Room: “${t.slice(0, 120)}”`,
-      true,
-      'system',
+      a.source,
     );
   }
   return { ok: true, id: rows[0]!.id, crisis: a.flagged };
@@ -171,7 +168,7 @@ export async function postRoomMessage(
   // Crisis routing — never censor; surface help to them (caller) and file a system report for review.
   const a = await assessCrisis(text);
   if (a.flagged) {
-    await reportContent(db, null, 'room_message', rows[0]!.id, `Auto-flagged by crisis detection (${a.source}) — please follow up.`, true, 'system');
+    await fileCrisisReport(db, 'room_message', rows[0]!.id, `Auto-flagged by crisis detection (${a.source}) — please follow up.`, a.source);
   }
   return { ok: true, crisis: a.flagged, message };
 }
