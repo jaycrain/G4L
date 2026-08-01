@@ -17,7 +17,7 @@ const BASE = process.argv[2] ?? 'http://localhost:3100';
 const ROUTES: Array<{ path: string; expect: string[] }> = [
   { path: '/admin', expect: ['Founder Console', 'Cohort', 'Needs you', 'What moved', 'Everyone', 'Last active', 'Full member view', 'Live ·', 'All members', 'Work the queue', 'All activity'] },
   { path: '/admin/members', expect: ['Members', 'Total rows', 'Attention', 'Review queue'] },
-  { path: '/admin/attention', expect: ['Attention', 'Mid-Session, paused', "Haven't been back", 'Live ·'] },
+  { path: '/admin/attention', expect: ['Attention', 'Mid-Session, paused', "Haven't been back", 'Live ·', 'Console'] },
   { path: '/admin/activity', expect: ['Activity', 'Founder Console'] },
   { path: '/admin/review', expect: ['Review queue', 'send nothing until you approve'] },
   { path: '/admin/moderation', expect: ['Community moderation'] },
@@ -93,6 +93,23 @@ async function main() {
   const kept = survived === 'a half-typed question I have not sent yet';
   if (!kept) failed++;
   console.log(`${kept ? '✔' : '✖'} the refresh tick preserves the Companion's client state${kept ? '' : `  (got: "${survived}")`}`);
+
+  // ── THE LOGO GOES HOME, NOT OUT ────────────────────────────────────────────────────────────────────────
+  // It was hard-wired to '/', so tapping the wordmark inside the console threw the operator into the MEMBER
+  // app. Check on a SUBPAGE, not just /admin, because that's where you actually reach for it.
+  for (const p of ['/admin', '/admin/members', '/admin/attention']) {
+    await page.goto(BASE + p, { waitUntil: 'domcontentloaded' });
+    const href = await page.locator('a.brand-home').first().getAttribute('href');
+    const ok = href === '/admin';
+    if (!ok) failed++;
+    console.log(`${ok ? '✔' : '✖'} logo on ${p} → ${href}${ok ? '' : '   EXPECTED /admin'}`);
+  }
+  // And it must NOT have changed for members — the same component serves both.
+  await page.goto(BASE + '/login', { waitUntil: 'domcontentloaded' });
+  const memberHref = await page.locator('a.brand-home').first().getAttribute('href');
+  const memberOk = memberHref === '/';
+  if (!memberOk) failed++;
+  console.log(`${memberOk ? '✔' : '✖'} logo on /login (member side) → ${memberHref}${memberOk ? '' : '   EXPECTED /'}`);
 
   // ── THE THREAD SURVIVES A RELOAD ───────────────────────────────────────────────────────────────────────
   // The point of persisting it. Seed a thread through the real sessionStorage key, reload, and check the

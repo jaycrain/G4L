@@ -13,8 +13,14 @@ import AdminAutoRefresh from '../auto-refresh.tsx';
 
 export type Crumb = { label: string; href: string };
 
-/** The console's peer sections. One list, so a new subpage appears in every subpage's nav at once. */
+/** The console's peer sections. One list, so a new subpage appears in every subpage's nav at once.
+ *
+ *  The CONSOLE ITSELF leads the list. Jay, 2026-08-01: "There's no nav back to the Dashboard." There was a
+ *  crumb, but a crumb is a small target and it sat above the thing people actually navigate with. Home now
+ *  appears in the same row as its siblings, which is also honest about the structure: the console is one of
+ *  these places, not a mode you escape from. */
 export const CONSOLE_NAV: Crumb[] = [
+  { label: 'Console', href: '/admin' },
   { label: 'Members', href: '/admin/members' },
   { label: 'Attention', href: '/admin/attention' },
   { label: 'Activity', href: '/admin/activity' },

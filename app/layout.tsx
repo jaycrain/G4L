@@ -6,6 +6,7 @@ import './globals.css';
 import PwaClient from './pwa-client.tsx';
 // import FeedbackLauncher from './feedback-launcher.tsx'; // Send Feedback pill — dropped for now (reinstate with the render below)
 import BackToDashboard from './components/back-to-dashboard.tsx';
+import BrandHome from './components/brand-home.tsx';
 
 const barlow = Barlow({
   subsets: ['latin'],
@@ -44,16 +45,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <main>
           <div className="brand-bar">
-            {/* W-47a: the logo is the home button — '/' redirects an authed member to their dashboard. Two SEPARATE
-                links keep the brand-bar's space-between layout (wordmark left, bullseye right) while both stay tappable. */}
-            <Link href="/" className="brand-home" aria-label="Go to your G4L home">
+            {/* W-47a: the logo is the home button. Two SEPARATE links keep the brand-bar's space-between
+                layout (wordmark left, bullseye right) while both stay tappable.
+                BrandHome resolves the destination from the ROUTE: '/admin/*' → the Founder Console, everything
+                else → '/', which redirects an authed member to their dashboard. Hard-wiring '/' threw an
+                operator out of the console into the member app (Jay, 2026-08-01). */}
+            <BrandHome className="brand-home" aria-label="Go to your G4L home">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img className="brand-wordmark" src="/brand/g4l-wordmark.svg" alt="Grinta for Life" />
-            </Link>
-            <Link href="/" className="brand-home" aria-hidden="true" tabIndex={-1}>
+            </BrandHome>
+            <BrandHome className="brand-home" aria-hidden="true" tabIndex={-1}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img className="brand-mark" src="/brand/g4l-rings.svg" alt="" aria-hidden="true" />
-            </Link>
+            </BrandHome>
           </div>
           {/* W-47: universal "← Dashboard" on every member subpage + Session (Suspense for the IDQ's ?member= query read). */}
           <Suspense fallback={null}>
