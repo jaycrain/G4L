@@ -11,6 +11,31 @@
   --charcoal: #2a2a2a;
   --grey: #e8e6e6;
   --white: #ffffff;
+
+  /* ── TEXT VARIANTS OF THE THREE ACCENTS (Jay's call, 2026-08-02: "Option A") ────────────────────────────
+     Measured against white: teal 3.59:1, orange 3.30:1, olive 3.20:1. All three clear the 3:1 bar for large
+     text and UI shapes, and all three FAIL the 4.5:1 that normal-size text needs — which is most of where we
+     were using them. That matters more here than it would elsewhere: this product is built for midlife
+     adults, and contrast sensitivity declines with age as ordinary physiology. A member squinting at their
+     own ID Score is the product failing at its job long before it is an accessibility finding.
+     THE BRAND VALUES ABOVE ARE UNCHANGED and still carry every fill, bar, dot, border and ring. These are for
+     FOREGROUND use — text, and the small white labels sitting on a filled control.
+     NOTE this mostly ratifies drift that had already happened without a decision: #2F7A7B was already in this
+     stylesheet 8 times before today, because the brand teal wasn't readable in those spots and whoever was
+     working reached for something darker. Now it has a name and a rule. */
+  --teal-text: #2f7a7b;    /* 5.01:1 on white */
+  --orange-text: #bc4e28;  /* 4.93:1 */
+  --olive-text: #74772b;   /* 4.76:1 */
+
+  /* The two off-palette greys that had also crept in (var(--muted-grey) at 2.64:1, var(--muted-grey-2) at 3.09:1), darkened to
+     clear 4.5:1 and named so the next person reaches for these instead of inventing a third. */
+  --muted-grey: #6e7376;   /* 4.80:1 */
+  --muted-grey-2: #6f767c; /* 4.61:1 */
+  /* ON DARK GROUNDS the correction is the opposite one. Darkening secondary text is only right when the
+     ground is white — inside the navy panels (Movement sources, the Companion hero) it made things worse,
+     which the scan caught immediately. 5.34:1 on navy. */
+  --muted-on-navy: #c9cdd1;
+  --teal-on-navy: #a8d2d3;   /* 5.21:1 on navy — the accent, lifted rather than darkened */
   /* Main panel outline — navy-tinted, darkened a notch past the 0.38 accent level (one place to tune). */
   --panel-line: rgba(55, 79, 99, 0.55);
   /* Data-entry field outline — the standard (solid navy); one knob so every field reads the same. */
@@ -40,16 +65,16 @@ main:has(.dock-open) { max-width: 1240px; }
 /* W-47a: the logo lockup is a home link — keep the wordmark + mark together, no link styling. */
 .brand-home { display: inline-flex; align-items: center; gap: 0.5rem; text-decoration: none; }
 /* W-47: the universal "← Dashboard" back affordance on member subpages + Sessions. */
-.back-dash { display: inline-block; margin: -0.35rem 0 1rem; color: var(--teal); font-weight: 600; font-size: 0.9rem; text-decoration: none; }
+.back-dash { display: inline-block; margin: -0.35rem 0 1rem; color: var(--teal-text); font-weight: 600; font-size: 0.9rem; text-decoration: none; }
 .back-dash:hover { text-decoration: underline; }
 .brand-wordmark { height: 2.45rem; width: auto; display: block; flex: none; }
 .brand-mark { width: 39px; height: 39px; border-radius: 50%; display: block; flex: none; }
 
 h1, h2, h3 { color: var(--navy); font-weight: 600; line-height: 1.2; }
 h1 { font-size: 2rem; margin: 0 0 0.5rem; }
-a { color: var(--teal); }
+a { color: var(--teal-text); }
 
-.muted { color: var(--navy); opacity: 0.75; }
+.muted { color: var(--navy); opacity: 0.82; }  /* 0.75 was 4.37:1 — just under the line */
 .disclosure {
   background: var(--grey);
   border-left: 4px solid var(--teal);
@@ -98,19 +123,19 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-
 }
 input[type='text']:focus-visible, input[type='email']:focus-visible, input[type='password']:focus-visible,
 input:not([type]):focus-visible, textarea:focus-visible, select:focus-visible {
-  border-color: var(--teal);
+  border-color: var(--teal-text);
 }
 
 /* Password field with show/hide (eye) toggle */
 .pw-wrap { position: relative; }
 .pw-wrap input { padding-right: 2.6rem; }
 .pw-toggle { position: absolute; top: 50%; transform: translateY(-50%); right: 0.5rem; margin: 0; padding: 0.25rem; background: none; border: none; border-radius: 6px; color: var(--navy); opacity: 0.55; cursor: pointer; display: inline-flex; }
-.pw-toggle:hover { background: none; color: var(--teal); opacity: 1; }
+.pw-toggle:hover { background: none; color: var(--teal-text); opacity: 1; }
 
 button, .btn {
   display: inline-block;
   margin-top: 1.5rem;
-  background: var(--teal);
+  background: var(--teal-text);
   color: var(--white);
   border: none;
   border-radius: 8px;
@@ -151,9 +176,9 @@ button:hover, .btn:hover { background: var(--navy); }
 .phase-cross { position: relative; background: var(--white); border: 1px solid var(--panel-line); border-left: 5px solid var(--orange); border-radius: 12px; padding: 1.1rem 1.25rem; margin-bottom: 1rem; }
 .phase-cross-x { position: absolute; top: 0.5rem; right: 0.6rem; background: none; border: none; font-size: 1.15rem; line-height: 1; color: var(--charcoal); opacity: 0.45; cursor: pointer; }
 .phase-cross-x:hover { opacity: 0.9; }
-.phase-cross-eyebrow { font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--orange); font-weight: 700; }
+.phase-cross-eyebrow { font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--orange-text); font-weight: 700; }
 .phase-cross-title { font-size: 1.35rem; font-weight: 800; color: var(--navy); margin: 0.15rem 0 0.4rem; }
-.phase-cross-title span { color: var(--teal); }
+.phase-cross-title span { color: var(--teal-text); }
 .phase-cross-blurb { margin: 0; color: var(--charcoal); line-height: 1.5; font-size: 0.95rem; }
 .phase-cross-cta { display: inline-block; margin-top: 0.75rem; font-weight: 700; color: var(--navy); text-decoration: underline; }
 
@@ -161,10 +186,10 @@ button:hover, .btn:hover { background: var(--navy); }
    the only flourish is the quiet "keep this" action. */
 .daily-beat-panel .db-text { margin: 0.5rem 0 0; font-size: 1.05rem; line-height: 1.6; color: var(--charcoal); }
 .daily-beat-panel .db-foot { margin-top: 0.8rem; }
-.daily-beat-panel .db-keep { background: none; border: none; padding: 0; font: inherit; font-weight: 700; color: var(--teal); cursor: pointer; }
+.daily-beat-panel .db-keep { background: none; border: none; padding: 0; font: inherit; font-weight: 700; color: var(--teal-text); cursor: pointer; }
 .daily-beat-panel .db-keep:hover { text-decoration: underline; }
 .daily-beat-panel .db-keep:disabled { opacity: 0.6; cursor: default; }
-.daily-beat-panel .db-kept { font-size: 0.85rem; font-weight: 700; color: var(--olive); }
+.daily-beat-panel .db-kept { font-size: 0.85rem; font-weight: 700; color: var(--olive-text); }
 
 /* "More about…" sub-page explainers — readable, paced body copy. */
 .sub-copy p { line-height: 1.62; margin: 0 0 0.9rem; }
@@ -183,13 +208,13 @@ button:hover, .btn:hover { background: var(--navy); }
 .route-dot { width: 11px; height: 11px; border-radius: 50%; flex: none; }
 .route-phase-head h4 { margin: 0; color: var(--navy); font-size: 1.02rem; }
 .route-tag { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; padding: 0.15rem 0.5rem; border-radius: 999px; }
-.here-tag { background: var(--teal); color: #fff; }
+.here-tag { background: var(--teal-text); color: #fff; }
 .done-tag { background: var(--light-grey, #E8E6E6); color: var(--navy); }
 .coming-tag { background: transparent; color: var(--navy); opacity: 0.55; border: 1px solid var(--panel-line); }
-.route-blurb { font-style: italic; color: var(--navy); opacity: 0.75; margin: 0 0 0.5rem; font-size: 0.92rem; }
+.route-blurb { font-style: italic; color: var(--navy); opacity: 0.82; margin: 0 0 0.5rem; font-size: 0.92rem; }
 .route-sessions { margin: 0 0 0.4rem; padding-left: 1.1rem; }
 .route-sessions li { line-height: 1.5; margin: 0 0 0.3rem; }
-.route-reveal { font-size: 0.9rem; color: var(--navy); opacity: 0.7; font-style: italic; margin: 0.2rem 0 0; }
+.route-reveal { font-size: 0.9rem; color: var(--navy); opacity: 0.82; font-style: italic; margin: 0.2rem 0 0; }
 .route-loop { font-size: 0.95rem; color: var(--navy); font-weight: 600; font-style: italic; margin: 0.2rem 0 0; }
 .route-foot { font-size: 0.82rem; }
 
@@ -197,10 +222,10 @@ button:hover, .btn:hover { background: var(--navy); }
 .program-revisit h3 { margin: 0 0 0.35rem; }
 .revisit-list { list-style: none; margin: 0.8rem 0 0; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; }
 .revisit-link { display: flex; align-items: center; gap: 0.75rem; padding: 0.7rem 0.9rem; border: 1px solid var(--light-grey, #e8e6e6); border-radius: 10px; text-decoration: none; transition: border-color 0.12s ease, background 0.12s ease; }
-.revisit-link:hover { border-color: var(--teal); background: rgba(59, 148, 149, 0.05); }
+.revisit-link:hover { border-color: var(--teal-text); background: rgba(59, 148, 149, 0.05); }
 .revisit-name { font-weight: 700; color: var(--navy); font-size: 0.98rem; }
-.revisit-phase { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--teal); }
-.revisit-arrow { margin-left: auto; color: var(--teal); font-weight: 800; }
+.revisit-phase { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--teal-text); }
+.revisit-arrow { margin-left: auto; color: var(--teal-text); font-weight: 800; }
 .sub-personal strong { color: var(--navy); }
 /* Detail-page subheads + lists (ID Score / Grinta / Journey copy refresh) */
 /* The Grinta origin pull-quote (Eros Poli) on the /grinta See-more page. */
@@ -221,8 +246,8 @@ button:hover, .btn:hover { background: var(--navy); }
 .dim-legend dt { font-weight: 600; color: var(--navy); margin: 0; }
 .dim-legend .dim-name { display: inline-block; min-width: 4.6rem; }
 .dim-legend dd { margin: 0; line-height: 1.5; }
-.dim-legend .dim-val { color: var(--teal); font-weight: 700; white-space: nowrap; }
-.dim-legend .dim-max { color: var(--navy); opacity: 0.5; font-weight: 400; font-size: 0.85em; }
+.dim-legend .dim-val { color: var(--teal-text); font-weight: 700; white-space: nowrap; }
+.dim-legend .dim-max { color: var(--navy); opacity: 0.82; font-weight: 400; font-size: 0.85em; }
 /* Dashboard ID Score card — compact radar */
 .metric-radar { margin: 0.25rem auto 0.55rem; max-width: 140px; }
 /* ID Score no-score-yet: a faint radar ghost of the shape that's coming, with the anticipatory copy over it. */
@@ -240,7 +265,7 @@ button:hover, .btn:hover { background: var(--navy); }
 /* Password field with a show/hide eye toggle (the toggle sits inside the field, right-aligned). */
 .pw-field { position: relative; display: flex; align-items: center; }
 .pw-field input { flex: 1; padding-right: 4rem; }
-.pw-toggle { position: absolute; right: 10px; background: none; border: none; color: var(--teal); font-weight: 600; font-size: 0.85rem; cursor: pointer; padding: 4px 6px; }
+.pw-toggle { position: absolute; right: 10px; background: none; border: none; color: var(--teal-text); font-weight: 600; font-size: 0.85rem; cursor: pointer; padding: 4px 6px; }
 .pw-toggle:hover { text-decoration: underline; }
 /* AI disclosure — its own framed beat at the top of the gate (governance: members always know it's AI). */
 .ai-disclosure { margin: 0 0 1.3rem; padding: 0.85rem 1rem; border-left: 4px solid var(--teal); border-radius: 8px; background: rgba(59, 148, 149, 0.07); color: var(--navy); line-height: 1.55; font-size: 0.95rem; }
@@ -250,7 +275,7 @@ button:hover, .btn:hover { background: var(--navy); }
 .onboard-primer p { line-height: 1.6; margin: 0 0 0.7rem; color: var(--charcoal); }
 .onboard-primer p:last-child { margin-bottom: 0; }
 .onboard-fresh { font-size: 0.8rem; margin-top: 1rem; text-align: center; }
-.onboard-fresh button { background: none; border: none; padding: 0; font: inherit; color: var(--teal); font-weight: 700; cursor: pointer; text-decoration: underline; }
+.onboard-fresh button { background: none; border: none; padding: 0; font: inherit; color: var(--teal-text); font-weight: 700; cursor: pointer; text-decoration: underline; }
 
 .hero { background: var(--navy); color: var(--white); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; }
 .hero h1 { color: var(--white); }
@@ -263,7 +288,7 @@ button:hover, .btn:hover { background: var(--navy); }
 /* Member greeting — top-left of the dashboard */
 .member-greeting { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.6rem; }
 .avatar { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; display: block; }
-.avatar-initials { width: 48px; height: 48px; border-radius: 50%; background: var(--teal); color: var(--white); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.05rem; letter-spacing: 0.02em; }
+.avatar-initials { width: 48px; height: 48px; border-radius: 50%; background: var(--teal-text); color: var(--white); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.05rem; letter-spacing: 0.02em; }
 .greeting { font-size: 1.35rem; font-weight: 600; color: var(--navy); }
 .avatar-edit { display: flex; align-items: center; gap: 1rem; margin-bottom: 0.5rem; }
 .avatar-lg { width: 72px; height: 72px; font-size: 1.6rem; flex: 0 0 auto; }
@@ -273,18 +298,18 @@ button:hover, .btn:hover { background: var(--navy); }
    other. Colors come from the base/btn-secondary rules; this only sets the pill geometry. */
 .avatar-edit-actions button { margin: 0; border-radius: 8px; padding: 0.45rem 1rem; font-size: 0.85rem; }
 .member-greeting-link { display: flex; align-items: center; gap: 0.75rem; text-decoration: none; }
-.member-greeting-link:hover .greeting { color: var(--teal); }
+.member-greeting-link:hover .greeting { color: var(--teal-text); }
 .greeting-actions { margin-left: auto; display: flex; align-items: center; gap: 0.9rem; }
 .logout-form { margin: 0; }
 .logout-link { margin: 0; background: none; color: var(--navy); border: none; padding: 0.2rem 0.4rem; font: inherit; font-size: 0.85rem; font-weight: 600; opacity: 0.6; cursor: pointer; text-decoration: underline; }
-.logout-link:hover { background: none; color: var(--teal); opacity: 1; }
+.logout-link:hover { background: none; color: var(--teal-text); opacity: 1; }
 /* Header nav (Field Guide · Playbook) — full-strength navy, more prominent than the quiet Log out. */
 .greeting-nav { color: var(--navy); font-weight: 600; font-size: 1.05rem; text-decoration: underline; text-underline-offset: 2px; }
-.greeting-nav:hover { color: var(--teal); }
+.greeting-nav:hover { color: var(--teal-text); }
 
 .score { display: flex; align-items: baseline; gap: 0.6rem; }
-.score .num { font-size: 3rem; font-weight: 700; color: var(--teal); }
-.score .dir-up { color: var(--olive); font-weight: 700; }
+.score .num { font-size: 3rem; font-weight: 700; color: var(--teal-text); }
+.score .dir-up { color: var(--olive-text); font-weight: 700; }
 /* No validated-score down-delta renders in alarm-red, anywhere (Decision HH, extended to the ID Score). A dip is
    never a verdict on the dashboard — the color stays NEUTRAL and any honest nudge is the Companion's job, not a
    red number. This is the ID Score's treatment (color only — keeps its weight/size). */
@@ -310,13 +335,13 @@ button:hover, .btn:hover { background: var(--navy); }
 .grinta-strands .strand-label, .grinta-strands .strand-val { white-space: nowrap; }
 .grinta-strands .strand-cue { flex-basis: 100%; text-align: right; margin-top: 0.05rem; }
 .strand-cue { font-style: normal; color: var(--navy); opacity: 0.5; font-size: 0.82em; }
-.focus-chip { display: inline-block; background: var(--teal); color: var(--white); border-radius: 999px; padding: 0.25rem 0.8rem; font-weight: 600; }
+.focus-chip { display: inline-block; background: var(--teal-text); color: var(--white); border-radius: 999px; padding: 0.25rem 0.8rem; font-weight: 600; }
 
 ul.reclaim { padding-left: 1.1rem; }
 ul.reclaim li { margin: 0.2rem 0; }
 /* A reclaimed item is won — a teal check, no strikethrough (stays readable). */
 ul.reclaim li.reclaimed { color: var(--navy); }
-.reclaim-check { color: var(--teal); font-weight: 700; margin-left: -0.95rem; margin-right: 0.35rem; }
+.reclaim-check { color: var(--teal-text); font-weight: 700; margin-left: -0.95rem; margin-right: 0.35rem; }
 
 /* Measures — a number watched over time, beside the goal it serves. */
 .measure-card {
@@ -328,14 +353,14 @@ ul.reclaim li.reclaimed { color: var(--navy); }
 }
 .measure-head { display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; }
 .measure-label { font-weight: 600; font-size: 0.9rem; color: var(--charcoal); }
-.measure-hit { font-size: 0.72rem; color: var(--teal); font-weight: 700; }
+.measure-hit { font-size: 0.72rem; color: var(--teal-text); font-weight: 700; }
 .measure-readout { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.1rem; flex-wrap: wrap; }
 .measure-now { font-size: 1.35rem; font-weight: 700; color: var(--navy); line-height: 1; }
 .measure-target { font-size: 0.85rem; color: var(--charcoal); opacity: 0.8; }
 .measure-spark { margin-left: auto; }
 .measure-sub { font-size: 0.78rem; margin-top: 0.15rem; display: flex; gap: 0.6rem; }
-.measure-good { color: var(--teal); font-weight: 600; }
-.measure-off { color: var(--orange); font-weight: 600; }
+.measure-good { color: var(--teal-text); font-weight: 600; }
+.measure-off { color: var(--orange-text); font-weight: 600; }
 .measure-pct { margin-left: auto; }
 .measure-log { display: flex; gap: 0.4rem; margin-top: 0.45rem; }
 .measure-log input {
@@ -344,16 +369,16 @@ ul.reclaim li.reclaimed { color: var(--navy); }
 }
 .measure-log button {
   padding: 0.35rem 0.8rem; font-size: 0.82rem; font-weight: 600; cursor: pointer;
-  background: var(--teal); color: #fff; border: none; border-radius: 6px;
+  background: var(--teal-text); color: #fff; border: none; border-radius: 6px;
 }
 .measure-log button:disabled { opacity: 0.5; cursor: default; }
 .measure-meta { font-size: 0.7rem; margin-top: 0.5rem; padding-top: 0.4rem; border-top: 1px solid var(--light-grey); opacity: 0.6; }
 .measure-error { color: var(--deep-red); font-size: 0.76rem; margin: 0.3rem 0 0; }
-.measure-saved { color: var(--teal); font-size: 0.78rem; font-weight: 600; margin: 0.3rem 0 0; }
+.measure-saved { color: var(--teal-text); font-size: 0.78rem; font-weight: 600; margin: 0.3rem 0 0; }
 /* "Track this" affordance — the deterministic offer on a numbered goal with no tracker yet. */
 .track-this-btn {
   margin: 0.35rem 0 0.2rem; padding: 0.25rem 0.6rem; font-size: 0.78rem; font-weight: 600;
-  cursor: pointer; background: transparent; color: var(--teal);
+  cursor: pointer; background: transparent; color: var(--teal-text);
   border: 1px dashed var(--teal); border-radius: 6px; font-family: inherit;
 }
 .track-this-btn:hover { background: rgba(59, 148, 149, 0.08); }
@@ -375,7 +400,7 @@ ul.reclaim li.reclaimed { color: var(--navy); }
 .tt-actions { display: flex; gap: 0.4rem; }
 .tt-create {
   padding: 0.3rem 0.8rem; font-size: 0.82rem; font-weight: 600; cursor: pointer;
-  background: var(--teal); color: #fff; border: none; border-radius: 6px;
+  background: var(--teal-text); color: #fff; border: none; border-radius: 6px;
 }
 .tt-cancel {
   padding: 0.3rem 0.7rem; font-size: 0.82rem; cursor: pointer;
@@ -389,8 +414,8 @@ ul.reclaim li.reclaimed { color: var(--navy); }
 ul.program { list-style: none; padding: 0; margin: 0; }
 .prog { display: grid; grid-template-columns: 1.5rem 1fr auto; align-items: center; gap: 0.5rem; padding: 0.4rem 0; border-bottom: 1px solid var(--grey); }
 .prog .mark { font-weight: 700; text-align: center; }
-.prog.completed .mark { color: var(--olive); }
-.prog.available .mark { color: var(--teal); }
+.prog.completed .mark { color: var(--olive-text); }
+.prog.available .mark { color: var(--teal-text); }
 .prog.locked { opacity: 0.5; }
 .prog.available .pname { font-weight: 600; color: var(--navy); }
 .prog .pgroup { font-size: 0.8rem; color: var(--navy); opacity: 0.6; }
@@ -430,7 +455,7 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .rlb-addbtn { margin: 0; flex: 0 0 auto; background: #E8E6E6; color: var(--navy, #374f63); border: 1px solid #dcdada; border-radius: 8px; font-weight: 700; }
 .rlb-addbtn:hover:not(:disabled) { background: #dedcdc; }
 .rlb-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 0.7rem; flex-wrap: wrap; }
-.rlb-hint { font-size: 12.5px; color: #6b7680; flex: 1; min-width: 180px; }
+.rlb-hint { font-size: 12.5px; color: var(--muted-grey); flex: 1; min-width: 180px; }
 .rlb-done { margin: 0; flex: 0 0 auto; background: var(--teal, #3b9495); color: #fff; border: 1px solid var(--teal, #3b9495); border-radius: 8px; font-weight: 700; }
 .rlb-done:hover:not(:disabled) { background: #327f7e; border-color: #327f7e; }
 .rlb-done:disabled, .rlb-addbtn:disabled { opacity: 0.5; cursor: default; }
@@ -449,7 +474,7 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .idp-coin-btn { margin: 0; flex: 0 0 auto; background: var(--teal, #3b9495); color: #fff; border: 1px solid var(--teal, #3b9495); border-radius: 8px; font-weight: 700; }
 .idp-coin-btn:hover:not(:disabled) { background: #327f7e; border-color: #327f7e; }
 .idp-coin-btn:disabled { opacity: 0.5; cursor: default; }
-.idp-skip { margin: 0.55rem 0 0; padding: 0; background: none; border: none; color: #6b7680; font-size: 12.5px; cursor: pointer; display: block; }
+.idp-skip { margin: 0.55rem 0 0; padding: 0; background: none; border: none; color: var(--muted-grey); font-size: 12.5px; cursor: pointer; display: block; }
 .idp-skip:hover:not(:disabled) { color: var(--navy, #374f63); text-decoration: underline; }
 .idp-skip:disabled { opacity: 0.5; cursor: default; }
 
@@ -464,11 +489,11 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .scale-chip {
   flex: 1 1 0; min-width: 42px; padding: 0.6rem 0; margin: 0;
   border: 1.5px solid var(--teal); border-radius: 8px; background: #fff;
-  color: var(--teal); font-family: inherit; font-weight: 700; font-size: 1.05rem; line-height: 1;
+  color: var(--teal-text); font-family: inherit; font-weight: 700; font-size: 1.05rem; line-height: 1;
   cursor: pointer; transition: background 0.12s ease, color 0.12s ease;
 }
 .scale-chip:hover:not(:disabled) { background: rgba(59, 148, 149, 0.12); }
-.scale-chip.selected { background: var(--teal); color: #fff; }
+.scale-chip.selected { background: var(--teal-text); color: #fff; }
 .scale-chip:disabled { cursor: default; }
 .scale-chip:disabled:not(.selected) { opacity: 0.5; }
 .scale-chips-anchors { display: flex; justify-content: space-between; gap: 0.75rem; margin-top: 0.4rem; }
@@ -478,7 +503,7 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 /* v2.2 Reconnect (skeleton): the dashboard entry CTA + the session surface. Reuses .chat/.bubble/.chat-input. */
 .reconnect-entry { margin: 0 0 1rem; }
 .reconnect-cta {
-  display: inline-block; background: var(--teal); color: var(--white);
+  display: inline-block; background: var(--teal-text); color: var(--white);
   padding: 0.7rem 1.15rem; border-radius: 10px; font-weight: 600; text-decoration: none;
 }
 .reconnect-cta:hover { filter: brightness(0.95); }
@@ -489,7 +514,7 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .onboard-summary h2 { margin: 0 0 0.3rem; font-size: 1.15rem; color: var(--navy); }
 .onboard-summary > .muted { margin: 0 0 0.9rem; }
 .summary-list { margin: 0 0 1rem; }
-.summary-list dt { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--teal); margin-top: 0.8rem; }
+.summary-list dt { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--teal-text); margin-top: 0.8rem; }
 .summary-list dt:first-child { margin-top: 0; }
 .summary-list dd { margin: 0.15rem 0 0; color: var(--charcoal); line-height: 1.5; }
 .summary-reclaim { margin: 0.2rem 0 0; padding-left: 1.2rem; }
@@ -503,7 +528,7 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .og-score { display: flex; align-items: baseline; gap: 0.35rem; }
 .og-num { font-size: 2rem; font-weight: 700; color: var(--navy); line-height: 1; }
 .og-scale { font-size: 0.95rem; color: var(--muted, #6B7680); }
-.og-label { margin-left: 0.4rem; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--teal); }
+.og-label { margin-left: 0.4rem; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--teal-text); }
 .og-sub { margin: 0.4rem 0 0.9rem; font-size: 0.85rem; color: var(--charcoal); line-height: 1.45; }
 .og-journey { justify-content: space-between; max-width: 320px; }
 .og-next { margin: 0.8rem 0 0; font-size: 0.85rem; font-weight: 600; color: var(--navy); }
@@ -513,9 +538,9 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .beat-title { font-weight: 700; color: var(--navy); margin: 0.25rem 0 0.35rem; }
 .beat-content { color: var(--charcoal); margin: 0 0 0.9rem; }
 .beat-close-step { margin-top: 1rem; padding-top: 0.9rem; border-top: 1px solid var(--grey); }
-.beat-close-label { display: inline-block; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--olive); margin-bottom: 0.4rem; }
+.beat-close-label { display: inline-block; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--olive-text); margin-bottom: 0.4rem; }
 .beat-close { font-weight: 600; color: var(--navy); margin: 0 0 0.6rem; }
-.beat-ack { margin: 0 0 0.5rem; color: var(--olive); font-weight: 600; }
+.beat-ack { margin: 0 0 0.5rem; color: var(--olive-text); font-weight: 600; }
 .beat-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
 .beat-actions button { margin: 0; }
 .beat-reflect { display: flex; gap: 0.5rem; flex: 1; }
@@ -532,13 +557,13 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .jr.current { opacity: 1; }
 .jr.done { opacity: 0.7; }
 .jr-name { flex: 0 0 5.5rem; font-weight: 700; color: var(--navy); font-size: 0.85rem; }
-.jr.current .jr-name { color: var(--teal); }
+.jr.current .jr-name { color: var(--teal-text); }
 .jr-blurb { font-size: 0.82rem; color: var(--charcoal); }
 .journey-loop { margin: 0.7rem 0 0; font-size: 0.8rem; font-style: italic; }
 
 /* Today's daily Hardiness rep */
 .daily-beat { border-left: 4px solid var(--olive); }
-.daily-tag { display: inline-block; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; font-variant: small-caps; color: var(--olive); }
+.daily-tag { display: inline-block; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; font-variant: small-caps; color: var(--olive-text); }
 
 .card-subtitle { margin: -0.4rem 0 0.6rem; font-size: 0.95rem; font-style: italic; color: var(--navy); opacity: 0.8; }
 
@@ -548,7 +573,7 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .fg-head { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--grey); padding-bottom: 0.6rem; }
 .fg-head h2 { margin: 0; color: var(--navy); }
 .fg-close { background: none; border: none; font-size: 1.7rem; line-height: 1; color: var(--navy); cursor: pointer; margin: 0; padding: 0 0.3rem; }
-.fg-close:hover { background: none; color: var(--teal); }
+.fg-close:hover { background: none; color: var(--teal-text); }
 .fg-panel section { margin-top: 1.2rem; }
 .fg-panel section h3 { margin: 0 0 0.4rem; }
 .fg-panel section p { margin: 0.4rem 0; color: var(--charcoal); }
@@ -573,21 +598,21 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 }
 .cer-comp { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
 .cer-spark {
-  width: 32px; height: 32px; border-radius: 50%; background: var(--teal); color: #fff;
+  width: 32px; height: 32px; border-radius: 50%; background: var(--teal-text); color: #fff;
   display: flex; align-items: center; justify-content: center; font-size: 16px;
 }
-.cer-label { font-size: 0.82rem; font-weight: 600; color: var(--teal); letter-spacing: 0.02em; }
+.cer-label { font-size: 0.82rem; font-weight: 600; color: var(--teal-text); letter-spacing: 0.02em; }
 .cer-beat { font-size: 1.5rem; line-height: 1.42; color: var(--navy); font-weight: 400; margin: 0; min-height: 100px; }
 .cer-beat.small { font-size: 1.2rem; font-weight: 400; line-height: 1.5; }
-.cer-caret { color: var(--teal); font-weight: 400; }
+.cer-caret { color: var(--teal-text); font-weight: 400; }
 .cer-reveal { margin: 16px 0 2px; }
 .cer-cluster { margin: 0.8rem 0 0; font-size: 0.95rem; line-height: 1.55; color: var(--charcoal); }
 .cer-cluster strong { color: var(--navy); }
 .cer-chips { display: flex; gap: 9px; flex-wrap: wrap; }
 .cer-chip { font-size: 0.82rem; font-weight: 500; color: var(--navy); background: var(--grey); padding: 6px 13px; border-radius: 20px; }
-.cer-chip.score { color: #fff; background: var(--teal); }
+.cer-chip.score { color: #fff; background: var(--teal-text); }
 /* close-ceremony reveals: a prominent facet chip + the earned badge stamp */
-.cer-facet { font-size: 1.1rem; font-weight: 700; color: #fff; background: var(--teal); padding: 8px 18px; border-radius: 20px; }
+.cer-facet { font-size: 1.1rem; font-weight: 700; color: #fff; background: var(--teal-text); padding: 8px 18px; border-radius: 20px; }
 .cer-badge-reveal { display: flex; align-items: center; gap: 0.7rem; }
 .cer-badge-stamp { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex: none; }
 .cer-badge-stamp svg { width: 20px; height: 20px; }
@@ -598,10 +623,10 @@ ul.program { list-style: none; padding: 0; margin: 0; }
    first movement, and the four strands with grit stepped up. */
 .cer-grinta { display: flex; flex-direction: column; align-items: center; gap: 14px; }
 .cer-grinta-head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; justify-content: center; }
-.cgn-val { font-size: 2.4rem; font-weight: 700; color: var(--olive); line-height: 1; }
+.cgn-val { font-size: 2.4rem; font-weight: 700; color: var(--olive-text); line-height: 1; }
 .cgn-scale { font-size: 1rem; color: var(--muted, #6B7680); font-weight: 600; }
 .cgn-move { font-size: 1rem; font-weight: 700; }
-.cgn-move.dir-up { color: var(--olive); }
+.cgn-move.dir-up { color: var(--olive-text); }
 .cgn-move.dir-down { color: var(--navy); opacity: 0.5; font-weight: 600; font-size: 0.85em; } /* §3: dip = neutral, never red */
 .cgn-move.dir-flat { color: var(--navy); }
 .cer-grinta-strands { display: grid; gap: 6px; min-width: 220px; }
@@ -610,7 +635,7 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .cgs-label { font-size: 0.9rem; color: var(--navy); }
 .cgs-val { font-size: 0.9rem; font-weight: 700; color: var(--navy); white-space: nowrap; }
 .cgs-move { font-style: normal; font-size: 0.85em; margin-left: 0.15rem; }
-.cgs-move.dir-up { color: var(--olive); }
+.cgs-move.dir-up { color: var(--olive-text); }
 .cgs-move.dir-down { color: var(--navy); opacity: 0.5; } /* §3: dip = neutral, never red */
 .cgs-move.dir-flat { color: var(--navy); }
 /* CAT-51: a fixed-count flex row with no wrap and a 320px cap — on the narrowest phones the four ~9-char
@@ -627,7 +652,7 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .cer-dots { display: flex; gap: 7px; }
 .cer-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--grey); }
 .cer-dot.on { background: var(--teal); }
-.cer-btn { font: inherit; font-size: 0.95rem; font-weight: 600; border: none; cursor: pointer; border-radius: 10px; padding: 11px 28px; background: var(--teal); color: #fff; }
+.cer-btn { font: inherit; font-size: 0.95rem; font-weight: 600; border: none; cursor: pointer; border-radius: 10px; padding: 11px 28px; background: var(--teal-text); color: #fff; }
 .cer-btn:disabled { opacity: 0.6; cursor: default; }
 
 /* Confidentiality footer — evaluation build; appears on every screen (root layout) */
@@ -643,7 +668,7 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 }
 
 /* ── Your G4L Playbook (secondary page) ─────────────────────────────────────── */
-.pb-back { display: inline-block; font-weight: 600; color: var(--teal); text-decoration: none; margin-bottom: 0.75rem; }
+.pb-back { display: inline-block; font-weight: 600; color: var(--teal-text); text-decoration: none; margin-bottom: 0.75rem; }
 .pb-page-title { font-size: 1.9rem; font-weight: 700; color: var(--navy); margin: 0 0 0.15rem; }
 .pb-sub { font-style: italic; color: var(--muted, #6B7680); margin: 0 0 0.6rem; }
 .pb-intro { color: var(--muted, #6B7680); max-width: 42rem; line-height: 1.55; margin: 0 0 1.2rem; }
@@ -663,22 +688,22 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .pb-line { font-size: 1.02rem; line-height: 1.5; color: var(--charcoal); margin: 0 0 0.45rem; white-space: pre-wrap; }
 .pb-meta { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap; }
 .pb-chip { font-size: 0.72rem; font-weight: 600; color: var(--navy); background: var(--grey); padding: 0.15rem 0.6rem; border-radius: 20px; }
-.pb-chip.sci { color: #fff; background: var(--olive); }
+.pb-chip.sci { color: #fff; background: var(--olive-text); }
 .pb-tools { display: flex; gap: 0.85rem; }
 .pb-tools button { background: none; border: none; padding: 0; margin: 0; font: inherit; font-size: 0.8rem; color: var(--muted, #6B7680); cursor: pointer; }
-.pb-tools button:hover { color: var(--teal); }
+.pb-tools button:hover { color: var(--teal-text); }
 /* A play card: situation → move → run row (Playbook Phase 2). The situation is the "when" this play is for. */
 .pb-situation { font-size: 0.8rem; color: #6B7680; margin: 0 0 0.3rem; }
 .pb-runrow { display: flex; align-items: baseline; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap; margin-top: 0.55rem; }
 /* "Run it again with your Companion" — a play hands itself back to the Companion (never resets a gate). */
-.pb-run { display: inline-block; font-size: 0.85rem; font-weight: 600; color: var(--teal); text-decoration: none; }
+.pb-run { display: inline-block; font-size: 0.85rem; font-weight: 600; color: var(--teal-text); text-decoration: none; }
 .pb-run:hover { text-decoration: underline; }
 .pb-runstat { font-size: 0.78rem; color: #6B7680; }
 .pb-proposed { background: #fff; border: 1.5px dashed var(--teal); border-radius: 12px; padding: 0.8rem 0.95rem; margin: 0.7rem 0; }
-.pb-prop-head { font-size: 0.78rem; font-weight: 700; color: var(--teal); margin-bottom: 0.4rem; }
+.pb-prop-head { font-size: 0.78rem; font-weight: 700; color: var(--teal-text); margin-bottom: 0.4rem; }
 .pb-actions { display: flex; gap: 0.6rem; margin-top: 0.5rem; }
 .pb-btn { font: inherit; font-size: 0.85rem; font-weight: 600; border-radius: 20px; padding: 0.35rem 1rem; cursor: pointer; border: 1px solid var(--teal); }
-.pb-btn.keep { background: var(--teal); color: #fff; }
+.pb-btn.keep { background: var(--teal-text); color: #fff; }
 .pb-btn.ghost { background: #fff; color: var(--muted, #6B7680); border-color: var(--grey); }
 .pb-btn:disabled { opacity: 0.5; cursor: default; }
 .pb-empty { font-size: 0.92rem; color: var(--muted, #6B7680); line-height: 1.55; margin: 0.2rem 0 0; font-style: italic; }
@@ -689,9 +714,9 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .pb-gather-cta { background: rgba(59,148,149,0.07); border: 1px solid var(--teal); border-radius: 14px; padding: 1.1rem 1.25rem; margin-bottom: 1rem; }
 .pb-gather-cta p { margin: 0 0 0.7rem; color: var(--navy); font-weight: 600; }
 .pb-gather { margin-bottom: 1rem; }
-.pb-gather-msg { font-size: 0.9rem; color: var(--teal); font-weight: 600; margin: 0 0 1rem; }
+.pb-gather-msg { font-size: 0.9rem; color: var(--teal-text); font-weight: 600; margin: 0 0 1rem; }
 .pb-gather-link { margin: 0.4rem 0 0.6rem; }
-.pb-linkbtn { background: none; border: none; padding: 0; font: inherit; font-size: 0.85rem; font-weight: 600; color: var(--teal); cursor: pointer; }
+.pb-linkbtn { background: none; border: none; padding: 0; font: inherit; font-size: 0.85rem; font-weight: 600; color: var(--teal-text); cursor: pointer; }
 
 /* "To Add or Refine…" hint — its own line, set apart from the list/doors it follows */
 .refine-hint { margin-top: 0.8rem; font-size: 0.82rem; opacity: 0.75; }
@@ -703,10 +728,10 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .past-beats summary { display: flex; justify-content: space-between; align-items: baseline; gap: 0.75rem; cursor: pointer; list-style: none; }
 .past-beats summary::-webkit-details-marker { display: none; }
 .pb-title { font-weight: 600; color: var(--navy); flex: 1; }
-.past-beats summary:hover .pb-title { color: var(--teal); }
-.past-beats details[open] .pb-title { color: var(--teal); }
+.past-beats summary:hover .pb-title { color: var(--teal-text); }
+.past-beats details[open] .pb-title { color: var(--teal-text); }
 .pb-when { font-size: 0.78rem; color: var(--navy); opacity: 0.55; white-space: nowrap; }
-.pb-caret { color: var(--teal); font-weight: 700; font-size: 1.5rem; line-height: 0.8; align-self: center; transition: transform 0.15s ease; }
+.pb-caret { color: var(--teal-text); font-weight: 700; font-size: 1.5rem; line-height: 0.8; align-self: center; transition: transform 0.15s ease; }
 .past-beats details[open] .pb-caret { transform: rotate(90deg); }
 .pb-content { margin: 0.5rem 0 0.4rem; color: var(--charcoal); white-space: pre-wrap; }
 .pb-answered { margin: 0; font-size: 0.85rem; color: var(--navy); opacity: 0.85; }
@@ -718,7 +743,7 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .jstep.current { background: var(--grey); border-radius: 999px; padding: 0.2rem 0.7rem; } /* "you are here" — the bold pill */
 .jstep.ahead { opacity: 0.42; } /* upcoming Phases sit faint */
 .jdot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
-.jarrow { color: var(--teal); opacity: 0.65; font-weight: 400; }
+.jarrow { color: var(--teal-text); opacity: 0.65; font-weight: 400; }
 
 /* Founder Agent admin */
 .admin-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
@@ -728,8 +753,8 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 @keyframes admin-live-pulse { 0% { box-shadow: 0 0 0 0 rgba(145,149,54,0.45); } 70% { box-shadow: 0 0 0 6px rgba(145,149,54,0); } 100% { box-shadow: 0 0 0 0 rgba(145,149,54,0); } }
 /* nowrap: the clock wrapping to a second line stretched the console header past its 60px row. */
 .admin-live-label { font-variant-numeric: tabular-nums; white-space: nowrap; }
-.admin-live-toggle { margin: 0; padding: 0.2rem 0.6rem; font-size: 0.78rem; background: transparent; color: var(--teal); border: 1px solid var(--grey); border-radius: 6px; cursor: pointer; }
-.admin-live-toggle:hover { border-color: var(--teal); }
+.admin-live-toggle { margin: 0; padding: 0.2rem 0.6rem; font-size: 0.78rem; background: transparent; color: var(--teal-text); border: 1px solid var(--grey); border-radius: 6px; cursor: pointer; }
+.admin-live-toggle:hover { border-color: var(--teal-text); }
 .admin-search { display: flex; gap: 0.5rem; margin: 0.5rem 0 1rem; }
 .admin-search input { flex: 1; margin: 0; }
 .admin-search button { margin: 0; }
@@ -740,27 +765,27 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .avatar-sm { width: 34px; height: 34px; font-size: 0.8rem; flex: 0 0 auto; }
 .roster-summary { display: flex; flex-wrap: wrap; gap: 0.75rem; margin: 0.25rem 0 1.1rem; }
 .summary-tile { flex: 1 1 120px; border: 1px solid var(--panel-line); border-radius: 10px; padding: 0.7rem 0.9rem; display: flex; flex-direction: column; gap: 0.15rem; }
-.summary-tile .tile-num { font-size: 1.8rem; font-weight: 700; color: var(--teal); line-height: 1; }
-.summary-tile .tile-label { font-size: 0.78rem; font-weight: 600; color: var(--navy); opacity: 0.75; }
+.summary-tile .tile-num { font-size: 1.8rem; font-weight: 700; color: var(--teal-text); line-height: 1; }
+.summary-tile .tile-label { font-size: 0.78rem; font-weight: 600; color: var(--navy); opacity: 0.82; }
 .roster-scroll { overflow-x: auto; }
 .roster-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
 .roster-table th, .roster-table td { text-align: left; padding: 0.55rem 0.6rem; border-bottom: 1px solid var(--grey); vertical-align: middle; white-space: nowrap; }
-.roster-table th { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--navy); opacity: 0.7; font-weight: 700; }
+.roster-table th { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--navy); opacity: 0.82; font-weight: 700; }
 .roster-table th.num, .roster-table td.num { text-align: right; }
 .roster-table tbody tr:hover { background: rgba(59, 148, 149, 0.06); }
 .roster-member { display: inline-flex; align-items: center; gap: 0.6rem; text-decoration: none; }
 .roster-id { display: flex; flex-direction: column; line-height: 1.2; }
 .roster-name { font-weight: 600; color: var(--navy); }
-.roster-member:hover .roster-name { color: var(--teal); }
+.roster-member:hover .roster-name { color: var(--teal-text); }
 .roster-email { font-size: 0.76rem; }
 .roster-door { text-transform: capitalize; }
 .roster-score { font-weight: 700; color: var(--navy); }
-.roster-score .trend-up { color: var(--olive); font-size: 0.8rem; }
+.roster-score .trend-up { color: var(--olive-text); font-size: 0.8rem; }
 .roster-score .trend-down { color: var(--deep-red); font-size: 0.8rem; }
 .roster-score .trend-flat { color: var(--navy); opacity: 0.6; font-size: 0.8rem; }
 .roster-time { color: var(--navy); opacity: 0.8; font-size: 0.84rem; }
 .badge { display: inline-block; margin-left: 0.55rem; padding: 0.1rem 0.5rem; border-radius: 999px; font-size: 0.66rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; vertical-align: middle; }
-.badge-account { background: var(--teal); color: var(--white); }
+.badge-account { background: var(--teal-text); color: var(--white); }
 .badge-demo { background: var(--grey); color: var(--navy); }
 .roster-foot { font-size: 0.78rem; margin-top: 0.75rem; }
 .moment-buttons { display: flex; flex-wrap: wrap; gap: 0.5rem; }
@@ -771,8 +796,8 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .draft-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem; }
 .draft-moment { text-transform: capitalize; font-weight: 600; color: var(--navy); }
 .pill { font-size: 0.75rem; font-weight: 700; padding: 0.15rem 0.6rem; border-radius: 999px; text-transform: uppercase; letter-spacing: 0.03em; }
-.pill.pending { background: var(--olive); color: var(--white); }
-.pill.approved { background: var(--teal); color: var(--white); }
+.pill.pending { background: var(--olive-text); color: var(--white); }
+.pill.approved { background: var(--teal-text); color: var(--white); }
 .pill.rejected { background: var(--grey); color: var(--charcoal); }
 .member-meta { margin: 0.6rem 0 0; line-height: 1.6; }
 .member-sessions { list-style: none; padding: 0; margin: 0.5rem 0 0; }
@@ -794,7 +819,7 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .tele-head {
   margin: 1.65rem 0 0; padding-bottom: 0.3rem;
   font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.09em;
-  color: var(--teal); border-bottom: 1px solid var(--panel-line);
+  color: var(--teal-text); border-bottom: 1px solid var(--panel-line);
 }
 .fc-dark .tele-head { color: var(--teal-lift); border-bottom-color: var(--edge); }
 
@@ -834,7 +859,7 @@ ul.program { list-style: none; padding: 0; margin: 0; }
   font-family: var(--font-barlow); font-weight: 600; font-size: 0.82rem; cursor: pointer;
 }
 .fb-launch:hover { background: rgba(59, 148, 149, 0.08); border-color: var(--navy); }
-.fb-launch svg { color: var(--teal); }
+.fb-launch svg { color: var(--teal-text); }
 .fb-panel {
   position: fixed; left: 18px; bottom: 66px; z-index: 61;
   width: min(340px, calc(100vw - 36px));
@@ -851,7 +876,7 @@ ul.program { list-style: none; padding: 0; margin: 0; }
   background: #fff; color: var(--navy); border: 1px solid var(--panel-line);
   font-family: var(--font-barlow); font-weight: 600; font-size: 0.78rem;
 }
-.fb-kind.on { background: var(--teal); color: #fff; border-color: var(--teal); }
+.fb-kind.on { background: var(--teal-text); color: #fff; border-color: var(--teal-text); }
 .fb-text {
   width: 100%; box-sizing: border-box; font: inherit; font-size: 0.85rem;
   padding: 0.55rem; border: 1px solid var(--field-line); border-radius: 7px; resize: vertical;
@@ -859,7 +884,7 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .fb-actions { display: flex; justify-content: flex-end; margin-top: 0.6rem; }
 .fb-send {
   padding: 0.45rem 1.1rem; border-radius: 999px; border: none; cursor: pointer;
-  background: var(--orange); color: #fff; font-family: var(--font-barlow); font-weight: 700; font-size: 0.82rem;
+  background: var(--orange-text); color: #fff; font-family: var(--font-barlow); font-weight: 700; font-size: 0.82rem;
 }
 .fb-send:disabled { opacity: 0.5; cursor: default; }
 .fb-thanks { color: var(--navy); font-weight: 600; margin: 0.3rem 0; }
@@ -868,7 +893,7 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .fb-item-head { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
 .fb-kind-chip { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; padding: 0.1rem 0.5rem; border-radius: 999px; background: var(--light-grey, #e8e6e6); color: var(--charcoal); }
 .fb-kind-chip.issue { background: rgba(187, 33, 39, 0.14); color: var(--deep-red, #bb2127); }
-.fb-kind-chip.suggestion { background: rgba(145, 149, 54, 0.16); color: var(--olive); }
+.fb-kind-chip.suggestion { background: rgba(145, 149, 54, 0.16); color: var(--olive-text); }
 .fb-body { margin: 0.45rem 0 0.3rem; }
 .fb-ctx { font-size: 0.74rem; color: var(--charcoal); opacity: 0.7; }
 .fb-status-row { display: flex; gap: 0.4rem; margin-top: 0.5rem; }
@@ -888,7 +913,7 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 
 /* Member Agent dock — the always-on companion bubble */
 .agent-dock { position: fixed; right: 1.25rem; bottom: 1.25rem; z-index: 50; display: flex; flex-direction: column; align-items: flex-end; gap: 0.6rem; }
-.agent-fab { position: relative; margin: 0; display: inline-flex; align-items: center; gap: 0.5rem; background: var(--teal); color: var(--white); border: none; border-radius: 999px; padding: 0.75rem 1.4rem; font-weight: 700; box-shadow: 0 6px 20px rgba(16,16,69,0.25); cursor: pointer; }
+.agent-fab { position: relative; margin: 0; display: inline-flex; align-items: center; gap: 0.5rem; background: var(--teal-text); color: var(--white); border: none; border-radius: 999px; padding: 0.75rem 1.4rem; font-weight: 700; box-shadow: 0 6px 20px rgba(16,16,69,0.25); cursor: pointer; }
 /* speech-bubble tail, bottom-right */
 .agent-fab::after { content: ""; position: absolute; right: 26px; bottom: -9px; width: 0; height: 0; border-left: 6px solid transparent; border-right: 14px solid transparent; border-top: 13px solid var(--teal); }
 .agent-fab:hover { background: var(--navy); }
@@ -903,13 +928,13 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 
 /* Science Check — the scientist's voice inside an asset (signed) */
 .science-check { background: var(--grey); border-left: 4px solid var(--teal); border-radius: 6px; padding: 0.9rem 1.1rem; margin: 1.5rem 0; }
-.science-check .sc-tag { display: inline-block; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--teal); }
+.science-check .sc-tag { display: inline-block; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--teal-text); }
 .science-check h3 { margin: 0.25rem 0 0.45rem; font-size: 1.05rem; }
 .science-check .sc-by { font-style: italic; color: var(--navy); opacity: 0.8; margin: 0.55rem 0 0; font-size: 0.9rem; }
 
 /* GRINTA! Bites — small daily content the agent serves */
 .bite-head { display: flex; justify-content: space-between; align-items: baseline; gap: 0.5rem; }
-.bite-tag { display: inline-block; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; font-variant: small-caps; color: var(--olive); }
+.bite-tag { display: inline-block; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; font-variant: small-caps; color: var(--olive-text); }
 .bite-meta { font-size: 0.78rem; color: var(--navy); opacity: 0.6; }
 .bite-body { white-space: pre-wrap; }
 .bite-by { font-style: italic; color: var(--navy); opacity: 0.8; font-size: 0.9rem; margin: 0.4rem 0 0; }
@@ -923,7 +948,7 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 
 /* Activity panel (Strava) — reflective, not gamified */
 .activity-week { display: flex; gap: 1.25rem; margin: 0.4rem 0 0.7rem; font-size: 0.95rem; color: var(--charcoal); }
-.activity-week strong { color: var(--teal); font-size: 1.15rem; }
+.activity-week strong { color: var(--teal-text); font-size: 1.15rem; }
 .activity-list { list-style: none; padding: 0; margin: 0; }
 .activity-list li { display: flex; justify-content: space-between; padding: 0.35rem 0; border-bottom: 1px solid var(--grey); }
 .act-type { font-weight: 600; color: var(--navy); }
@@ -940,7 +965,7 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 
 .likert { display: flex; gap: 0.9rem; margin: 0.3rem 0 0.9rem; }
 .likert label { display: inline-flex; align-items: center; gap: 0.3rem; margin: 0; font-weight: 400; }
-.idq-dim-head { color: var(--teal); margin-top: 1.5rem; }
+.idq-dim-head { color: var(--teal-text); margin-top: 1.5rem; }
 
 /* ===== v0.4 dashboard shell — IA from the mock, the app's own type/weights ===== */
 /* Zone 1 — three squarish metric panels side by side; each with a See-more pinned to the foot */
@@ -951,13 +976,13 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .metric .metric-body { flex: 1; }
 .metric .metric-center { display: flex; flex-direction: column; align-items: center; justify-content: center; }
 .metric .metric-foot { font-size: 0.8rem; margin-top: 0.7rem; }
-.see-more { margin-top: 0.9rem; align-self: flex-start; font-size: 0.85rem; font-weight: 600; color: var(--teal); text-decoration: none; }
+.see-more { margin-top: 0.9rem; align-self: flex-start; font-size: 0.85rem; font-weight: 600; color: var(--teal-text); text-decoration: none; }
 .see-more:hover { text-decoration: underline; }
 /* Connect CTAs: quiet teal text like .see-more, for buttons and links (Reply stays a real button). */
-.connect-cta { background: none; border: none; border-radius: 0; padding: 0; margin: 0; font: inherit; font-size: 0.85rem; font-weight: 600; color: var(--teal); text-decoration: none; cursor: pointer; }
-.connect-cta:hover { background: none; color: var(--teal); text-decoration: underline; }
+.connect-cta { background: none; border: none; border-radius: 0; padding: 0; margin: 0; font: inherit; font-size: 0.85rem; font-weight: 600; color: var(--teal-text); text-decoration: none; cursor: pointer; }
+.connect-cta:hover { background: none; color: var(--teal-text); text-decoration: underline; }
 /* Primary pill action with arrow — the shared standard behind "Talk to me" / "Open this Session". */
-.btn-pill { display: inline-flex; align-items: center; gap: 0.4rem; margin: 0; background: var(--teal); color: var(--white); font-weight: 600; font-size: 0.85rem; padding: 0.45rem 1rem; border-radius: 20px; text-decoration: none; }
+.btn-pill { display: inline-flex; align-items: center; gap: 0.4rem; margin: 0; background: var(--teal-text); color: var(--white); font-weight: 600; font-size: 0.85rem; padding: 0.45rem 1rem; border-radius: 20px; text-decoration: none; }
 .btn-pill:hover { text-decoration: none; }
 .btn-pill:hover { background: #347f80; }
 .connect-cta:disabled, .btn-pill:disabled { opacity: 0.45; cursor: default; }
@@ -974,7 +999,7 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .gcomps { margin-top: 0.8rem; }
 .gcomp { margin-bottom: 0.6rem; }
 .gcomp-top { display: flex; justify-content: space-between; font-size: 0.78rem; font-weight: 600; color: var(--charcoal); margin-bottom: 0.25rem; }
-.gcomp-pass { color: var(--teal); font-weight: 700; }
+.gcomp-pass { color: var(--teal-text); font-weight: 700; }
 .gcomp-build { color: #AEB3B8; }
 .gbar { position: relative; height: 8px; background: var(--light-grey); border-radius: 5px; }
 .gfill { position: absolute; left: 0; top: 0; height: 8px; border-radius: 5px; background: var(--olive); }
@@ -1002,9 +1027,9 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .curric .phh { display: flex; align-items: center; justify-content: space-between; border-left: 3px solid var(--navy); padding: 1px 0 1px 0.6rem; margin-bottom: 0.55rem; }
 .curric .phn { font-size: 0.95rem; font-weight: 700; color: var(--navy); }
 .curric .phs { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: #AEB3B8; }
-.curric .phase.is-here .phs { color: var(--olive); }
+.curric .phase.is-here .phs { color: var(--olive-text); }
 .curric .crow2 { display: grid; grid-template-columns: 18px 1fr auto; gap: 0.55rem; align-items: center; padding: 0.18rem 0; }
-.curric .crow2 .mk { color: var(--teal); font-weight: 700; text-align: center; }
+.curric .crow2 .mk { color: var(--teal-text); font-weight: 700; text-align: center; }
 .curric .crow2.up .mk { color: #C7CBCF; }
 .curric .crow2 .t2 { font-size: 0.9rem; line-height: 1.3; color: var(--charcoal); }
 .curric .crow2.done .t2 { color: var(--navy); opacity: 0.6; }
@@ -1012,10 +1037,10 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .curric .crow2 .kt { font-size: 0.6rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; color: var(--navy); border: 1px solid rgba(55, 79, 99, 0.32); border-radius: 4px; padding: 1px 6px; }
 .curric .crow2 .kt.idq { color: var(--indigo); border-color: #cdcde0; }
 .curric .litrow { border: 1px solid var(--panel-line); border-radius: 10px; padding: 0.75rem 0.85rem; margin: 0.4rem 0 0.5rem; background: var(--white); }
-.curric .littag { font-size: 0.62rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--olive); margin-bottom: 0.2rem; }
+.curric .littag { font-size: 0.62rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--olive-text); margin-bottom: 0.2rem; }
 .curric .littitle { font-size: 1.05rem; font-weight: 700; color: var(--navy); margin-bottom: 0.3rem; }
 .curric .lithook { font-size: 0.85rem; color: var(--charcoal); line-height: 1.45; margin-bottom: 0.65rem; }
-.curric .open { display: inline-flex; align-items: center; gap: 0.4rem; background: var(--teal); color: var(--white); font-weight: 600; font-size: 0.85rem; padding: 0.45rem 1rem; border-radius: 20px; text-decoration: none; }
+.curric .open { display: inline-flex; align-items: center; gap: 0.4rem; background: var(--teal-text); color: var(--white); font-weight: 600; font-size: 0.85rem; padding: 0.45rem 1rem; border-radius: 20px; text-decoration: none; }
 .curric .open.open-soon { background: var(--light-grey); color: #AEB3B8; }
 .curric .across { margin-top: 1.1rem; padding-top: 0.85rem; border-top: 1px solid var(--light-grey); }
 .curric .acrlbl { font-size: 0.65rem; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase; color: var(--navy); opacity: 0.6; margin-bottom: 0.55rem; }
@@ -1056,7 +1081,7 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .rail-head-avatar { width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0; }
 .rail-id-text { display: flex; flex-direction: column; line-height: 1.2; }
 .rail-title { font-weight: 700; color: var(--navy); font-size: 0.95rem; }
-.rail-status { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.78rem; font-weight: 600; color: var(--teal); }
+.rail-status { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.78rem; font-weight: 600; color: var(--teal-text); }
 .rail-status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--teal); }
 .rail-chat { gap: 0.9rem; }
 .rail-msg { display: flex; align-items: flex-start; gap: 0.55rem; }
@@ -1069,11 +1094,11 @@ ul.program { list-style: none; padding: 0; margin: 0; }
    other nav) — not a floating edge widget, which reads as a generic ignorable site bot. */
 .companion-nav {
   position: relative; display: inline-flex; align-items: center; gap: 0.4rem;
-  background: rgba(59, 148, 149, 0.12); color: var(--teal); border: 1px solid rgba(59, 148, 149, 0.32);
+  background: rgba(59, 148, 149, 0.12); color: var(--teal-text); border: 1px solid rgba(59, 148, 149, 0.32);
   font-weight: 700; font-size: 0.9rem; padding: 0.35rem 0.8rem; border-radius: 20px; cursor: pointer;
   transition: background 0.14s ease, border-color 0.14s ease;
 }
-.companion-nav:hover, .companion-nav:focus-visible { background: rgba(59, 148, 149, 0.2); border-color: var(--teal); }
+.companion-nav:hover, .companion-nav:focus-visible { background: rgba(59, 148, 149, 0.2); border-color: var(--teal-text); }
 .companion-nav-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--orange); }
 
 /* Post-Ceremony Tour — dim/spotlight walk + settle into the companion hero */
@@ -1085,7 +1110,7 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .tour-mark { width: 30px; height: 30px; border-radius: 50%; }
 .tour-line { font-size: 1rem; line-height: 1.5; color: var(--navy); margin: 0.5rem 0 0.9rem; }
 .tour-cta { display: flex; align-items: center; gap: 0.6rem; }
-.tour-next { background: var(--teal); color: #fff; border: none; font-weight: 700; font-size: 0.9rem; padding: 0.5rem 1.1rem; border-radius: 10px; cursor: pointer; }
+.tour-next { background: var(--teal-text); color: #fff; border: none; font-weight: 700; font-size: 0.9rem; padding: 0.5rem 1.1rem; border-radius: 10px; cursor: pointer; }
 .tour-skip { background: none; border: none; color: #AEB3B8; font-weight: 600; font-size: 0.85rem; cursor: pointer; }
 .tour-foot { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; margin-top: 0.3rem; }
 .tour-dots { display: inline-flex; gap: 0.32rem; }
@@ -1124,8 +1149,8 @@ html:has(.companion-hero), body:has(.companion-hero) { overflow-anchor: none; }
 .companion-hero.is-condensed .companion-message { flex: 0 0 0; min-width: 0; max-height: 0; opacity: 0; margin: 0; }
 .companion-hero.is-condensed .companion-hero-cta { flex: none; align-items: center; margin: 0; }
 .companion-hero.is-condensed .hero-talk { padding: 0.42rem 0.95rem; font-size: 0.85rem; margin: 0; }
-.hero-primary { display: inline-flex; align-items: center; background: var(--orange); color: var(--white); font-weight: 700; font-size: 0.9rem; padding: 0.55rem 1.15rem; border-radius: 22px; text-decoration: none; }
-.hero-talk { margin-left: auto; display: inline-flex; align-items: center; gap: 0.4rem; background: var(--teal); color: var(--white); border: none; font-weight: 700; font-size: 0.9rem; padding: 0.55rem 1.2rem; border-radius: 22px; cursor: pointer; transition: background 0.14s ease; }
+.hero-primary { display: inline-flex; align-items: center; background: var(--orange-text); color: var(--white); font-weight: 700; font-size: 0.9rem; padding: 0.55rem 1.15rem; border-radius: 22px; text-decoration: none; }
+.hero-talk { margin-left: auto; display: inline-flex; align-items: center; gap: 0.4rem; background: var(--teal-text); color: var(--white); border: none; font-weight: 700; font-size: 0.9rem; padding: 0.55rem 1.2rem; border-radius: 22px; cursor: pointer; transition: background 0.14s ease; }
 .hero-talk:hover, .hero-talk:focus-visible { background: #347f80; }
 
 /* Full-story narrative (/story) — plain weight, with only the "You are someone" lead bold for effect */
@@ -1147,7 +1172,7 @@ html:has(.companion-hero), body:has(.companion-hero) { overflow-anchor: none; }
 /* W-25: the active practice week's compact "this week" line on the Momentum panel (relocated off the hero) -- a quiet
    teal-tinted strip, present enough to be inviting, small enough that it no longer owns the surface. */
 .practice-strip { margin: 0 0 0.75rem; padding: 0.6rem 0.8rem; background: rgba(59, 148, 149, 0.15); border-radius: 8px; font-size: 0.92rem; line-height: 1.45; color: var(--navy); font-weight: 600; }
-.see-more-inline { color: var(--teal); font-weight: 700; text-decoration: none; white-space: nowrap; }
+.see-more-inline { color: var(--teal-text); font-weight: 700; text-decoration: none; white-space: nowrap; }
 .see-more-inline:hover { text-decoration: underline; }
 .gcomp-gloss { font-size: 0.72rem; color: var(--charcoal); opacity: 0.7; margin: 0.2rem 0 0; }
 
@@ -1170,7 +1195,7 @@ html:has(.companion-hero), body:has(.companion-hero) { overflow-anchor: none; }
 
 /* Session sub-page */
 .crumb { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
-.back-link { font-size: 0.9rem; color: var(--teal); font-weight: 600; text-decoration: none; }
+.back-link { font-size: 0.9rem; color: var(--teal-text); font-weight: 600; text-decoration: none; }
 .crumb .where { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase; color: var(--navy); opacity: 0.6; }
 .session-hero .session-kicker { font-size: 0.72rem; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: #9fb0bd; margin-bottom: 0.3rem; }
 .session-hero .session-sub { color: var(--white); opacity: 0.85; margin-top: 0.5rem; }
@@ -1186,19 +1211,19 @@ html:has(.companion-hero), body:has(.companion-hero) { overflow-anchor: none; }
 .sess-sec.cur { border: 1px solid var(--panel-line); box-shadow: 0 4px 18px rgba(55,79,99,.07); padding-bottom: 0.9rem; }
 .sess-sec.up { background: #F7F7F6; border-style: dashed; }
 .sess-dhead, .sess-uhead { display: flex; align-items: center; gap: 0.6rem; padding: 0.8rem 1.1rem; }
-.sess-dcheck { width: 22px; height: 22px; border-radius: 50%; background: var(--teal); color: #fff; font-size: 0.8rem; display: flex; align-items: center; justify-content: center; flex: none; }
+.sess-dcheck { width: 22px; height: 22px; border-radius: 50%; background: var(--teal-text); color: #fff; font-size: 0.8rem; display: flex; align-items: center; justify-content: center; flex: none; }
 .sess-dtt { font-weight: 700; color: var(--navy); font-size: 0.92rem; }
 .sess-dtt .num, .sess-utt .num { color: var(--navy); opacity: 0.55; margin-right: 0.45rem; }
-.sess-edit { margin-left: auto; background: none; border: none; color: var(--teal); font-weight: 600; font-size: 0.8rem; cursor: pointer; padding: 0; width: auto; }
+.sess-edit { margin-left: auto; background: none; border: none; color: var(--teal-text); font-weight: 600; font-size: 0.8rem; cursor: pointer; padding: 0; width: auto; }
 .sess-edit:hover { background: none; text-decoration: underline; }
 .sess-danswer { padding: 0 1.1rem 0.9rem 3rem; font-size: 0.92rem; color: var(--charcoal); line-height: 1.5; font-style: italic; }
 .sess-ulock { width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid #cdccc6; color: #cdccc6; display: flex; align-items: center; justify-content: center; flex: none; font-size: 0.8rem; }
 .sess-utt { color: #AEB3B8; font-weight: 700; font-size: 0.92rem; }
 .sess-clab { display: flex; align-items: center; gap: 0.55rem; padding: 0.95rem 1.1rem 0; }
-.sess-cnum { width: 22px; height: 22px; border-radius: 50%; background: var(--olive); color: #fff; font-size: 0.78rem; font-weight: 700; display: flex; align-items: center; justify-content: center; flex: none; }
+.sess-cnum { width: 22px; height: 22px; border-radius: 50%; background: var(--olive-text); color: #fff; font-size: 0.78rem; font-weight: 700; display: flex; align-items: center; justify-content: center; flex: none; }
 .sess-ctt { font-weight: 700; color: var(--navy); }
 .sess-bubble { margin: 0.85rem 1.1rem 0; background: var(--grey); border-radius: 14px; border-bottom-left-radius: 4px; padding: 0.85rem 1rem; font-size: 0.95rem; color: var(--charcoal); line-height: 1.5; }
-.sess-agent { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--teal); margin-bottom: 0.35rem; }
+.sess-agent { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--teal-text); margin-bottom: 0.35rem; }
 .sess-q { font-size: 1.02rem; font-weight: 700; color: var(--navy); margin: 1rem 1.1rem 0.5rem; }
 .sess-field { display: block; width: calc(100% - 2.2rem); margin: 0 1.1rem; border: 1.5px solid var(--field-line); border-radius: 10px; padding: 0.8rem 0.9rem; font-family: inherit; font-size: 0.95rem; color: var(--charcoal); line-height: 1.5; resize: vertical; }
 .sess-probe { margin: 0.6rem 1.1rem 0; font-size: 0.82rem; color: var(--navy); opacity: 0.7; font-style: italic; }
@@ -1206,20 +1231,20 @@ html:has(.companion-hero), body:has(.companion-hero) { overflow-anchor: none; }
 .sess-mbubble { margin: 0.85rem 1.1rem 0; margin-left: auto; max-width: 85%; background: var(--navy); color: var(--white); border-radius: 14px; border-bottom-right-radius: 4px; padding: 0.7rem 0.95rem; font-size: 0.95rem; line-height: 1.5; white-space: pre-wrap; }
 .sess-bubble.typing { opacity: 0.6; }
 .sess-crow { display: flex; align-items: center; justify-content: space-between; margin: 1rem 1.1rem 0; gap: 0.75rem; }
-.sess-send { background: var(--teal); color: #fff; font-weight: 600; font-size: 0.9rem; padding: 0.55rem 1.2rem; border-radius: 22px; border: none; cursor: pointer; width: auto; }
+.sess-send { background: var(--teal-text); color: #fff; font-weight: 600; font-size: 0.9rem; padding: 0.55rem 1.2rem; border-radius: 22px; border: none; cursor: pointer; width: auto; }
 .sess-send:hover { background: var(--navy); }
 .sess-send:disabled { opacity: 0.5; cursor: default; }
-.sess-next { background: var(--teal); color: #fff; font-weight: 600; font-size: 0.9rem; padding: 0.55rem 1.2rem; border-radius: 22px; border: none; cursor: pointer; width: auto; }
+.sess-next { background: var(--teal-text); color: #fff; font-weight: 600; font-size: 0.9rem; padding: 0.55rem 1.2rem; border-radius: 22px; border: none; cursor: pointer; width: auto; }
 .sess-next:hover { background: var(--navy); }
 /* When the companion hasn't yet confirmed depth, advancing is offered quietly (soft, never gated). */
 .sess-next.soft { background: none; color: var(--navy); text-decoration: underline; padding: 0.55rem 0.4rem; }
-.sess-next.soft:hover { background: none; color: var(--teal); }
+.sess-next.soft:hover { background: none; color: var(--teal-text); }
 .sess-close { margin-top: 0.75rem; border: 1.5px dashed #cdccc6; border-radius: 14px; padding: 1.1rem 1.2rem; background: #F7F7F6; }
 .sess-close.locked .sess-ct { color: #AEB3B8; }
 .sess-ctag { font-size: 0.65rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #AEB3B8; margin: 0 0 0.3rem; }
 .sess-ct { font-size: 1.05rem; font-weight: 700; color: var(--navy); margin: 0 0 0.4rem; }
 .sess-cbtn-locked { display: inline-flex; margin-top: 0.6rem; background: var(--light-grey); color: #AEB3B8; font-weight: 700; font-size: 0.85rem; padding: 0.5rem 1rem; border-radius: 22px; }
-.sess-done-card .sess-done-tag { font-size: 0.65rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--teal); margin-bottom: 0.3rem; }
+.sess-done-card .sess-done-tag { font-size: 0.65rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--teal-text); margin-bottom: 0.3rem; }
 .sess-closewords { font-size: 1rem; line-height: 1.55; color: var(--charcoal); margin: 0 0 0.8rem; }
 
 /* Reconnect Checkpoint — center-stage ceremony (the one firm gate) */
@@ -1227,7 +1252,7 @@ html:has(.companion-hero), body:has(.companion-hero) { overflow-anchor: none; }
 .ckpt-card { width: 100%; max-width: 620px; background: var(--navy); color: var(--white); border-radius: 16px; padding: 1.8rem 1.7rem; box-shadow: 0 10px 40px rgba(16,16,69,.18); }
 .ckpt-label { font-size: 0.72rem; font-weight: 700; letter-spacing: 1.3px; text-transform: uppercase; color: #9fb0bd; margin-bottom: 1rem; }
 .ckpt-bubble { background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.12); border-radius: 12px; border-top-left-radius: 3px; padding: 1rem 1.1rem; font-size: 1.02rem; line-height: 1.55; color: #eef3f6; }
-.ckpt-agent { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--teal); margin-bottom: 0.4rem; }
+.ckpt-agent { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; color: var(--teal-text); margin-bottom: 0.4rem; }
 .ckpt-facets { font-size: 0.92rem; color: #C9D2DA; margin: 0.9rem 0 0; }
 .ckpt-facets strong { color: #fff; }
 /* Reclaim capstone — the goal-reconciliation walk. */
@@ -1240,14 +1265,14 @@ html:has(.companion-hero), body:has(.companion-hero) { overflow-anchor: none; }
 .ckpt-field::placeholder { color: #9fb0bd; }
 .ckpt-nudge { font-size: 0.88rem; color: #f0d9cf; margin: 0.7rem 0 0; font-style: italic; }
 .ckpt-actions { display: flex; flex-wrap: wrap; gap: 0.7rem; margin-top: 1.2rem; }
-.ckpt-declare { background: var(--teal); color: #fff; font-weight: 700; font-size: 0.95rem; padding: 0.7rem 1.4rem; border-radius: 24px; border: none; cursor: pointer; width: auto; }
+.ckpt-declare { background: var(--teal-text); color: #fff; font-weight: 700; font-size: 0.95rem; padding: 0.7rem 1.4rem; border-radius: 24px; border: none; cursor: pointer; width: auto; }
 .ckpt-declare:hover { background: var(--olive); }
 .ckpt-notyet { background: transparent; color: #C9D2DA; font-weight: 600; font-size: 0.9rem; padding: 0.7rem 1.1rem; border: 1px solid rgba(255,255,255,.22); border-radius: 24px; cursor: pointer; width: auto; }
 .ckpt-notyet:hover { background: rgba(255,255,255,.08); }
-.ckpt-crossed .ckpt-milestone { font-size: 0.78rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--teal); margin-bottom: 0.6rem; }
+.ckpt-crossed .ckpt-milestone { font-size: 0.78rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--teal-text); margin-bottom: 0.6rem; }
 .ckpt-affirm { font-size: 1.1rem; line-height: 1.55; color: #fff; margin: 0 0 1rem; }
 .ckpt-badge { font-size: 0.92rem; color: #C9D2DA; margin: 0 0 0.4rem; }
-.ckpt-badge strong { color: var(--teal); }
+.ckpt-badge strong { color: var(--teal-text); }
 .ckpt-crossed .muted, .ckpt-held .muted { color: #C9D2DA; opacity: 1; }
 .ckpt-crossed .ckpt-declare, .ckpt-held .ckpt-notyet { margin-top: 1.1rem; }
 
@@ -1269,13 +1294,13 @@ html:has(.companion-hero), body:has(.companion-hero) { overflow-anchor: none; }
 }
 .route-step { display: inline-flex; align-items: center; gap: 0.4rem 0.6rem; }
 .route-r { font-weight: 600; color: var(--navy); }
-.route-step:nth-child(2) .route-r { color: var(--teal); }
-.route-step:nth-child(3) .route-r { color: var(--olive); }
-.route-step:nth-child(4) .route-r { color: var(--orange); }
+.route-step:nth-child(2) .route-r { color: var(--teal-text); }
+.route-step:nth-child(3) .route-r { color: var(--olive-text); }
+.route-step:nth-child(4) .route-r { color: var(--orange-text); }
 .route-arrow { color: var(--navy); opacity: 0.5; }
-.route-loop { flex-basis: 100%; margin-top: 0.5rem; font-size: 0.85rem; color: var(--navy); opacity: 0.7; }
+.route-loop { flex-basis: 100%; margin-top: 0.5rem; font-size: 0.85rem; color: var(--navy); opacity: 0.82; }
 .tour-progress { font-size: 0.8rem; letter-spacing: 0.02em; }
-.route-r.route-now { text-decoration: underline; text-underline-offset: 4px; text-decoration-color: var(--orange); }
+.route-r.route-now { text-decoration: underline; text-underline-offset: 4px; text-decoration-color: var(--orange-text); }
 
 /* Momentum quick-log (Rewire W3 · Step 3). Buttons are UNIFORM + neutral on purpose — a false start must never read
    as an alarm/red (self-monitoring, not scored; Decision HH/EE). Barlow + palette only. */
@@ -1292,7 +1317,7 @@ html:has(.companion-hero), body:has(.companion-hero) { overflow-anchor: none; }
   width: 100%; box-sizing: border-box; font-family: inherit; font-size: 0.9rem; color: var(--charcoal);
   border: 1px solid var(--light-grey, #e8e6e6); border-radius: 8px; padding: 0.55rem 0.7rem; resize: vertical;
 }
-.momentum-log-done { margin-top: 0.6rem; color: var(--teal); font-weight: 600; font-size: 0.9rem; }
+.momentum-log-done { margin-top: 0.6rem; color: var(--teal-text); font-weight: 600; font-size: 0.9rem; }
 
 /* Momentum history — the member's own saved log (a call has a visible home, never a dead end). */
 .momentum-history h3 { margin: 0 0 0.6rem; }
@@ -1304,8 +1329,8 @@ html:has(.companion-hero), body:has(.companion-hero) { overflow-anchor: none; }
 .mlog-row.is-quiet_day .mlog-dot { background: #b7b5af; }
 .mlog-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.5rem; }
 .mlog-type { font-weight: 700; color: var(--navy); font-size: 0.95rem; }
-.mlog-domain { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--olive); border: 1px solid var(--light-grey, #e8e6e6); border-radius: 999px; padding: 0 0.45rem; }
-.mlog-day { font-size: 0.82rem; color: #8b949b; margin-left: auto; }
+.mlog-domain { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--olive-text); border: 1px solid var(--light-grey, #e8e6e6); border-radius: 999px; padding: 0 0.45rem; }
+.mlog-day { font-size: 0.82rem; color: var(--muted-grey-2); margin-left: auto; }
 .mlog-note { margin-top: 0.2rem; font-size: 0.92rem; color: var(--charcoal); line-height: 1.4; }
 
 /* Momentum nav — clear ways back into the program after logging (not a dead end). */
@@ -1313,12 +1338,12 @@ html:has(.companion-hero), body:has(.companion-hero) { overflow-anchor: none; }
 /* B3 pilot — the OPTIONAL activity/diet tag (Decision OO). Neutral pills, teal when chosen; never required. */
 /* Per-commitment progress — what they're holding themselves to + how it's going (last 2 weeks). Never a scoreboard. */
 .commitment-progress { margin: 0 0 0.9rem; padding: 0.7rem 0.85rem; background: #f4f8f8; border: 1px solid #e2eded; border-radius: 10px; }
-.commitment-progress-h { font-size: 0.8rem; font-weight: 800; letter-spacing: 0.02em; text-transform: uppercase; color: #6b7680; margin-bottom: 0.5rem; }
+.commitment-progress-h { font-size: 0.8rem; font-weight: 800; letter-spacing: 0.02em; text-transform: uppercase; color: var(--muted-grey); margin-bottom: 0.5rem; }
 .commitment-progress-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.5rem; }
 .commitment-progress-list li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.4rem 0.6rem; }
-.cp-domain { font-size: 0.72rem; font-weight: 800; text-transform: uppercase; color: var(--teal); min-width: 4.5rem; }
+.cp-domain { font-size: 0.72rem; font-weight: 800; text-transform: uppercase; color: var(--teal-text); min-width: 4.5rem; }
 .cp-text { font-size: 0.95rem; color: var(--navy); font-weight: 600; flex: 1 1 auto; }
-.cp-count { font-size: 0.8rem; color: #6b7680; }
+.cp-count { font-size: 0.8rem; color: var(--muted-grey); }
 .momentum-log-domain { margin: 0.25rem 0 0.4rem; }
 .momentum-log-domain-label { font-size: 0.8rem; color: var(--navy); opacity: 0.7; }
 .momentum-log-domain-opts { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.35rem; }
@@ -1327,8 +1352,8 @@ html:has(.companion-hero), body:has(.companion-hero) { overflow-anchor: none; }
   background: transparent; border: 1.5px solid var(--light-grey, #e8e6e6); border-radius: 999px;
   padding: 0.35rem 0.85rem; cursor: pointer; transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
 }
-.momentum-domain-btn:hover:not(:disabled) { border-color: var(--teal); }
-.momentum-domain-btn.is-on { background: var(--teal); border-color: var(--teal); color: #fff; }
+.momentum-domain-btn:hover:not(:disabled) { border-color: var(--teal-text); }
+.momentum-domain-btn.is-on { background: var(--teal-text); border-color: var(--teal-text); color: #fff; }
 .momentum-domain-btn:disabled { opacity: 0.5; cursor: default; }
 
 /* Reclaim C3 · Quality-Day daily log — a 1–10 score, element toggles, two reflections. Neutral pills, teal on select
@@ -1340,8 +1365,8 @@ html:has(.companion-hero), body:has(.companion-hero) { overflow-anchor: none; }
   background: transparent; border: 1.5px solid var(--light-grey, #e8e6e6); border-radius: 999px;
   width: 2.1rem; height: 2.1rem; cursor: pointer; transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
 }
-.qd-score-btn:hover:not(:disabled) { border-color: var(--teal); }
-.qd-score-btn.is-on { background: var(--teal); border-color: var(--teal); color: #fff; }
+.qd-score-btn:hover:not(:disabled) { border-color: var(--teal-text); }
+.qd-score-btn.is-on { background: var(--teal-text); border-color: var(--teal-text); color: #fff; }
 .qd-score-btn:disabled { opacity: 0.5; cursor: default; }
 .qd-elements { margin: 0.3rem 0 0.6rem; }
 .qd-elements-label { font-size: 0.82rem; color: var(--navy); opacity: 0.7; }
@@ -1351,8 +1376,8 @@ html:has(.companion-hero), body:has(.companion-hero) { overflow-anchor: none; }
   background: transparent; border: 1.5px solid var(--light-grey, #e8e6e6); border-radius: 999px;
   padding: 0.35rem 0.85rem; cursor: pointer; transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
 }
-.qd-el-btn:hover:not(:disabled) { border-color: var(--teal); }
-.qd-el-btn.is-on { background: var(--teal); border-color: var(--teal); color: #fff; }
+.qd-el-btn:hover:not(:disabled) { border-color: var(--teal-text); }
+.qd-el-btn.is-on { background: var(--teal-text); border-color: var(--teal-text); color: #fff; }
 .qd-el-btn:disabled { opacity: 0.5; cursor: default; }
 
 /* R4 Rewire ceremony — the component is the hero; these two lines are quiet context (the starting line + the overall
@@ -1388,7 +1413,7 @@ body.redesign-on .confidential-footer { display: none; } /* full-bleed app — n
 .rt-account-group { display: flex; align-items: center; gap: 12px; }
 .rt-account { display: flex; align-items: center; gap: 10px; text-decoration: none; }
 .rt-av { width: 34px; height: 34px; border-radius: 50%; object-fit: cover; }
-.rt-av-initials { background: var(--teal); color: #fff; display: grid; place-items: center; font-weight: 700; font-size: 13px; }
+.rt-av-initials { background: var(--teal-text); color: #fff; display: grid; place-items: center; font-weight: 700; font-size: 13px; }
 .rt-hi { font-weight: 700; color: var(--navy); }
 .rt-account:hover .rt-hi { text-decoration: underline; } /* underline the greeting on hover, like the nav links */
 .rt-nav { display: flex; gap: 20px; }
@@ -1406,16 +1431,16 @@ body.redesign-on .confidential-footer { display: none; } /* full-bleed app — n
 /* Cards */
 .rcard { background: var(--white); border: 1px solid #e3e2df; border-radius: 14px; padding: 22px; }
 .rc-h { font-weight: 700; font-size: 20px; color: var(--navy); }
-.rc-sub { color: #6b7680; font-size: 14px; font-style: italic; margin-top: 2px; }
-.rc-foot, .rb-cap, .rm-foot { font-size: 12.5px; color: #8b949b; margin-top: 14px; }
+.rc-sub { color: var(--muted-grey); font-size: 14px; font-style: italic; margin-top: 2px; }
+.rc-foot, .rb-cap, .rm-foot { font-size: 12.5px; color: var(--muted-grey-2); margin-top: 14px; }
 
 /* Identity strip */
 .r-identity { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 .ri-title { font-weight: 800; font-size: 22px; color: var(--navy); }
-.ri-doors { font-size: 12.5px; color: #6b7680; margin-top: 3px; }
+.ri-doors { font-size: 12.5px; color: var(--muted-grey); margin-top: 3px; }
 .ri-doors b { color: var(--navy); font-weight: 600; }
-.ri-doors-note { font-size: 12.5px; color: #8b949b; margin-top: 3px; }
-.ri-story { color: var(--teal); font-weight: 600; font-size: 14px; white-space: nowrap; text-decoration: none; }
+.ri-doors-note { font-size: 12.5px; color: var(--muted-grey-2); margin-top: 3px; }
+.ri-story { color: var(--teal-text); font-weight: 600; font-size: 14px; white-space: nowrap; text-decoration: none; }
 
 /* Resume hero + ring */
 .r-hero { background: var(--navy); border-radius: 16px; padding: 30px 32px; color: #fff;
@@ -1425,7 +1450,7 @@ body.redesign-on .confidential-footer { display: none; } /* full-bleed app — n
 .rh-title { color: #fff; font-weight: 800; font-size: 30px; margin: 8px 0 12px; line-height: 1.04; }
 .rh-copy { font-size: 16px; line-height: 1.5; color: rgba(255,255,255,.86); max-width: 52ch; }
 .rh-cta { margin-top: 18px; display: inline-flex; align-items: center; gap: 8px;
-  background: var(--teal); color: #fff; font-weight: 700; font-size: 16px; padding: 13px 22px; border-radius: 100px; text-decoration: none; }
+  background: var(--teal-text); color: #fff; font-weight: 700; font-size: 16px; padding: 13px 22px; border-radius: 100px; text-decoration: none; }
 /* Secondary "move on to the next step" link during a practice week — a nudge, never a trap. */
 .rh-cta-next { display: flex; width: fit-content; align-items: center; gap: 6px; margin-top: 12px; margin-left: 4px; color: rgba(255,255,255,.82); font-weight: 600; font-size: 14px; text-decoration: none; }
 .rh-cta-next:hover { color: #fff; text-decoration: underline; }
@@ -1438,34 +1463,34 @@ body.redesign-on .confidential-footer { display: none; } /* full-bleed app — n
 .r-reclaim-list { list-style: none; margin: 16px 0 0; padding: 0; display: flex; flex-direction: column; gap: 13px; }
 .r-reclaim-list li { display: flex; flex-direction: column; gap: 8px; }
 .rr-text { font-size: 16px; color: var(--charcoal); }
-.r-reclaim-list li.reclaimed .rr-text { color: #6b7680; }
-.rr-check { color: var(--olive); font-weight: 700; margin-right: 8px; }
+.r-reclaim-list li.reclaimed .rr-text { color: var(--muted-grey); }
+.rr-check { color: var(--olive-text); font-weight: 700; margin-right: 8px; }
 
 /* Movement */
 .rm-head { display: flex; justify-content: space-between; align-items: flex-start; }
-.rm-seeall { color: var(--teal); font-weight: 700; font-size: 13px; text-decoration: none; }
+.rm-seeall { color: var(--teal-text); font-weight: 700; font-size: 13px; text-decoration: none; }
 .rm-sources { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
 .rm-chip { display: inline-flex; align-items: center; gap: 8px; background: #f5f4f1; border: 1px solid #e3e2df;
   border-radius: 8px; padding: 6px 12px; font-size: 13px; font-weight: 600; color: var(--navy); }
 .rm-chip.on { background: #eef0dc; border-color: #d4d8b0; }
-.rm-chip b { background: var(--olive); color: #fff; font-size: 11px; padding: 3px 9px; border-radius: 6px; font-weight: 700; }
-.rm-chip b.muted { background: #fff; color: #6b7680; border: 1px solid #e3e2df; }
-.rm-chip.muted { color: #6b7680; }
-.rm-stats { display: flex; gap: 26px; margin-top: 16px; border-top: 1px solid #e3e2df; padding-top: 14px; color: #6b7680; font-size: 12px; }
+.rm-chip b { background: var(--olive-text); color: #fff; font-size: 11px; padding: 3px 9px; border-radius: 6px; font-weight: 700; }
+.rm-chip b.muted { background: #fff; color: #4a4f52; opacity: 1; border: 1px solid #e3e2df; }
+.rm-chip.muted { color: #4a4f52; opacity: 1; }
+.rm-stats { display: flex; gap: 26px; margin-top: 16px; border-top: 1px solid #e3e2df; padding-top: 14px; color: var(--muted-grey); font-size: 12px; }
 .rm-stats b { display: block; font-size: 21px; color: var(--navy); }
-.rm-line { margin-top: 12px; color: #6b7680; font-size: 14px; }
+.rm-line { margin-top: 12px; color: var(--muted-grey); font-size: 14px; }
 
 /* The three registers */
 .r-registers { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; align-items: stretch; }
 /* Each register is a flex column so its "See more" foot link anchors to the card bottom (standard placement) —
    the three cards are equal height (grid stretch), so the three See-mores line up across the row. */
 .r-reg { display: flex; flex-direction: column; }
-.rreg-eyebrow { font-weight: 800; text-transform: uppercase; letter-spacing: .07em; font-size: 12px; color: var(--teal); }
+.rreg-eyebrow { font-weight: 800; text-transform: uppercase; letter-spacing: .07em; font-size: 12px; color: var(--teal-text); }
 .rreg-big { font-weight: 800; font-size: 44px; color: var(--navy); line-height: .95; margin-top: 8px; }
-.rreg-unit { font-size: 17px; color: #6b7680; font-weight: 600; }
+.rreg-unit { font-size: 17px; color: var(--muted-grey); font-weight: 600; }
 .rreg-dir { font-size: 14px; font-weight: 700; margin-left: 8px; }
-.rreg-dir.dir-up { color: var(--olive); }
-.rreg-dir.dir-down { color: #8b949b; }  /* down = grey, never red (governance) */
+.rreg-dir.dir-up { color: var(--olive-text); }
+.rreg-dir.dir-down { color: var(--muted-grey-2); }  /* down = grey, never red (governance) */
 .rreg-radar { margin-top: 8px; }
 .rreg-blank { margin-top: 14px; font-size: 14px; }
 .rreg-strands { margin-top: 12px; }
@@ -1473,13 +1498,13 @@ body.redesign-on .confidential-footer { display: none; } /* full-bleed app — n
 .rreg-strand:first-child { border-top: none; }
 .rreg-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 7px; vertical-align: 1px; }
 /* ID Score dimension breakdown (reuses .rreg-strands rows): teal value + muted /max, and a bolded "All four" total. */
-.rreg-dimv { color: var(--teal); font-weight: 800; white-space: nowrap; }
-.rreg-dimmax { color: var(--navy); opacity: .45; font-weight: 600; font-size: .85em; margin-left: 1px; }
+.rreg-dimv { color: var(--teal-text); font-weight: 800; white-space: nowrap; }
+.rreg-dimmax { color: var(--navy); opacity: .82; font-weight: 600; font-size: .85em; margin-left: 1px; }
 .rreg-strand-total { border-top-width: 2px; padding-top: 7px; font-weight: 700; }
-.rreg-scalenote { margin-top: 10px; font-size: 12px; color: #6b7680; line-height: 1.45; }
+.rreg-scalenote { margin-top: 10px; font-size: 12px; color: var(--muted-grey); line-height: 1.45; }
 .rreg-mom-viz { margin-top: 16px; }
-.rreg-mom-cap { font-size: 12px; color: #8b949b; margin-top: 12px; }
-.rreg-more { display: inline-block; margin-top: auto; padding-top: 16px; align-self: flex-start; color: var(--teal); font-weight: 600; font-size: 13px; text-decoration: none; }
+.rreg-mom-cap { font-size: 12px; color: var(--muted-grey-2); margin-top: 12px; }
+.rreg-more { display: inline-block; margin-top: auto; padding-top: 16px; align-self: flex-start; color: var(--teal-text); font-weight: 600; font-size: 13px; text-decoration: none; }
 
 /* Badges shelf */
 .rb-head { display: flex; justify-content: space-between; align-items: baseline; }
@@ -1503,14 +1528,14 @@ body.redesign-on .confidential-footer { display: none; } /* full-bleed app — n
 .rrail-head { padding: 20px 22px 12px; border-bottom: 1px solid #e3e2df; }
 .rrail-id { display: flex; align-items: center; justify-content: space-between; }
 .rrail-title { font-weight: 800; font-size: 18px; color: var(--navy); }
-.rrail-status { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--olive); }
+.rrail-status { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--olive-text); }
 .rrail-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--olive); margin-right: 5px; vertical-align: 1px; }
-.rrail-discl { font-size: 11px; color: #6b7680; margin-top: 6px; line-height: 1.4; }
+.rrail-discl { font-size: 11px; color: var(--muted-grey); margin-top: 6px; line-height: 1.4; }
 .rrail-stream { flex: 1; overflow-y: auto; padding: 16px 20px; display: flex; flex-direction: column; gap: 12px; }
 .rmsg { max-width: 88%; padding: 11px 14px; font-size: 14.5px; line-height: 1.45; overflow-wrap: anywhere; }
 .rmsg.agent { align-self: flex-start; background: #fff; border: 1px solid #e3e2df; border-radius: 4px 13px 13px 13px; }
 .rmsg.member { align-self: flex-end; background: var(--navy); color: #fff; border-radius: 13px 13px 4px 13px; }
-.rmsg.typing { align-self: flex-start; background: #fff; border: 1px solid #e3e2df; border-radius: 13px; color: #8b949b; font-style: italic; }
+.rmsg.typing { align-self: flex-start; background: #fff; border: 1px solid #e3e2df; border-radius: 13px; color: var(--muted-grey-2); font-style: italic; }
 .rrail-composer { border-top: 1px solid #e3e2df; padding: 14px 18px max(18px, env(safe-area-inset-bottom)); display: flex; gap: 9px; align-items: flex-end; }
 /* Squared-off corners + a multi-row auto-growing textarea, matching the dock's composer. */
 .rrail-composer textarea { flex: 1; border: 1.5px solid var(--teal); border-radius: 10px; padding: 11px 15px; font-family: inherit; font-size: 14.5px; line-height: 1.4; outline: none; resize: none; overflow-y: auto; min-height: 44px; max-height: 160px; }
@@ -1528,12 +1553,12 @@ body.redesign-on .confidential-footer { display: none; } /* full-bleed app — n
    Companion was the one field in the app with NO focus indication at all. Same treatment as everywhere else:
    suppressed on :focus (no ring for a mouse click), teal on :focus-visible (keyboard users can see where
    they are). Jay, 2026-08-01: the teal ring reads as "this field is actionable" — so it belongs here most. */
-.rrail-composer textarea:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; border-color: var(--teal); }
+.rrail-composer textarea:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; border-color: var(--teal-text); }
 
-.rrail-send { background: var(--teal); color: #fff; font-weight: 700; border: none; border-radius: 10px; padding: 11px 18px; font-size: 14px; cursor: pointer; flex: none; }
+.rrail-send { background: var(--teal-text); color: #fff; font-weight: 700; border: none; border-radius: 10px; padding: 11px 18px; font-size: 14px; cursor: pointer; flex: none; }
 .rrail-send:disabled { opacity: .5; cursor: default; }
 /* Phone-only controls (CSS-hidden above 767px); shown in the phone block below. */
-.rrail-close { display: none; background: none; border: none; font-size: 20px; line-height: 1; color: #9aa0a5; cursor: pointer; padding: 0 2px; }
+.rrail-close { display: none; background: none; border: none; font-size: 20px; line-height: 1; color: var(--muted-grey); cursor: pointer; padding: 0 2px; }
 .rrail-fab { display: none; }
 
 /* Below 1000px: the rail drops beneath the canvas (dashboard-ui-standards). */
@@ -1566,7 +1591,7 @@ body.redesign-on .confidential-footer { display: none; } /* full-bleed app — n
   .redesign-rail:not(.ws-rail) .rrail-composer textarea { font-size: 16px; }
   .rrail-fab {
     display: inline-flex; align-items: center; gap: 7px; position: fixed; right: 16px; bottom: 16px; z-index: 1100;
-    background: var(--teal); color: #fff; font-weight: 700; font-size: 15px; border: none; border-radius: 100px;
+    background: var(--teal-text); color: #fff; font-weight: 700; font-size: 15px; border: none; border-radius: 100px;
     padding: 13px 20px; box-shadow: 0 6px 20px rgba(59, 148, 149, 0.42); cursor: pointer;
   }
   .rrail-fab-dot { width: 8px; height: 8px; border-radius: 50%; background: #fff; }
@@ -1574,7 +1599,7 @@ body.redesign-on .confidential-footer { display: none; } /* full-bleed app — n
 
 /* ---- REDESIGN Layer 3 · Program Workspace (build spec §4). Reuses the two-pane .redesign-app; the rail holds the
    existing arc chat client, the canvas holds wayfinding + the artifact. ---- */
-.ws-back { display: inline-block; margin: 4px 0 0; color: var(--teal); font-weight: 600; font-size: 0.9rem; text-decoration: none; }
+.ws-back { display: inline-block; margin: 4px 0 0; color: var(--teal-text); font-weight: 600; font-size: 0.9rem; text-decoration: none; }
 .ws-back:hover { text-decoration: underline; }
 /* Uniform "← Dashboard" spacing on every subpage: the wrap's top padding is the space ABOVE, a clean 1rem BELOW to the
    hero — same on Movement, Badges, Account, and all SubpageShell pages. (Scoped to the subpage wraps; the workspace
@@ -1584,21 +1609,21 @@ body.redesign-on .confidential-footer { display: none; } /* full-bleed app — n
 /* Read-only review — no live rail, so the canvas gets the full width; a calm "completed" banner replaces the ring. */
 .ws-review .redesign-canvas { max-width: 820px; margin: 0 auto; }
 .ws-review-banner { display: flex; flex-direction: column; gap: 3px; background: var(--white); border: 1px solid #e3e2df; border-left: 4px solid var(--teal); border-radius: 12px; padding: 14px 18px; }
-.ws-review-eyebrow { font-weight: 800; text-transform: uppercase; letter-spacing: .05em; font-size: 12px; color: var(--teal); }
-.ws-review-note { font-size: 14px; color: #6b7680; }
+.ws-review-eyebrow { font-weight: 800; text-transform: uppercase; letter-spacing: .05em; font-size: 12px; color: var(--teal-text); }
+.ws-review-note { font-size: 14px; color: var(--muted-grey); }
 
 .ws-wayfind { display: flex; align-items: center; gap: 18px; background: var(--white); border: 1px solid #e3e2df; border-radius: 14px; padding: 16px 20px; }
 .ws-way-ring { width: 72px; height: 72px; flex: 0 0 auto; }
 .ws-way-pos { flex: 1; min-width: 0; }
 .ws-way-ph { font-weight: 800; color: var(--navy); font-size: 17px; }
-.ws-way-ss { color: #6b7680; font-size: 14px; margin-top: 2px; }
+.ws-way-ss { color: var(--muted-grey); font-size: 14px; margin-top: 2px; }
 .ws-way-bar { height: 6px; background: #f5f4f1; border-radius: 99px; margin-top: 9px; overflow: hidden; }
 .ws-way-fill { display: block; height: 100%; background: var(--olive); border-radius: 99px; transition: width .5s ease; }
-.ws-way-route { font-size: 14px; white-space: nowrap; color: var(--teal); font-weight: 600; text-decoration: none; }
+.ws-way-route { font-size: 14px; white-space: nowrap; color: var(--teal-text); font-weight: 600; text-decoration: none; }
 
 .ws-artifact { margin-top: 20px; background: var(--white); border: 1px solid #e3e2df; border-radius: 16px; padding: 28px 30px; }
 .ws-art-title { font-weight: 800; font-size: 26px; color: var(--navy); margin: 0; }
-.ws-art-lede { color: #6b7680; font-size: 15px; margin-top: 6px; font-style: italic; }
+.ws-art-lede { color: var(--muted-grey); font-size: 15px; margin-top: 6px; font-style: italic; }
 /* Session Summary — the "why this matters" threshold block. A teal-edged callout so it reads as its own beat, not a
    second lede: the short line always shows, the full expands behind the tap. Same on desktop + the mobile canvas. */
 /* Compact by default — just the tap link; the box only appears when expanded (Jay's walk: the pinned header was eating
@@ -1608,23 +1633,23 @@ body.redesign-on .confidential-footer { display: none; } /* full-bleed app — n
 .ws-why { margin-top: 8px; }
 /* Why-this-matters button — teal fill + white text, rounded rectangle (Donna, 2026-07-28: reversed from the grey
    pill so it reads as the one solid affordance in the header). */
-.ws-why-toggle { margin: 0; padding: 6px 13px; background: var(--teal); border: 1px solid var(--teal); border-radius: 8px; cursor: pointer; font-family: inherit; font-size: 12.5px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: #fff; display: inline-flex; align-items: center; gap: 7px; }
+.ws-why-toggle { margin: 0; padding: 6px 13px; background: var(--teal-text); border: 1px solid var(--teal); border-radius: 8px; cursor: pointer; font-family: inherit; font-size: 12.5px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: #fff; display: inline-flex; align-items: center; gap: 7px; }
 .ws-why-toggle:hover { background: #327f7e; border-color: #327f7e; }
 .ws-why.open .ws-why-toggle { background: #327f7e; border-color: #327f7e; color: #fff; }
 .ws-why-caret { font-size: 14px; line-height: 1; margin-left: 1px; }
 .ws-why-full { margin: 12px 0 0; padding: 12px 15px; background: #f5f4f1; border-left: 4px solid var(--teal); border-radius: 0 10px 10px 0; font-size: 14.5px; line-height: 1.6; color: #4a5560; }
 .ws-slots { margin-top: 22px; display: flex; flex-direction: column; gap: 14px; }
 .ws-slot { border: 1px solid #e3e2df; border-left: 4px solid #e3e2df; border-radius: 12px; padding: 16px 18px; background: #f5f4f1; transition: .3s; }
-.ws-slot-lab { font-weight: 800; text-transform: uppercase; letter-spacing: .05em; font-size: 11.5px; color: #6b7680; }
+.ws-slot-lab { font-weight: 800; text-transform: uppercase; letter-spacing: .05em; font-size: 11.5px; color: var(--muted-grey); }
 .ws-slot-val { font-size: 17px; line-height: 1.4; margin-top: 6px; color: #b7b5af; white-space: pre-line; }
 .ws-slot-val.empty { font-style: italic; color: #b0aea8; }
 /* Committed lines read as KEPT — each with a teal tick, so the member watches their own words get immortalized. */
 .ws-slot-list { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 7px; }
 .ws-slot-line { position: relative; padding-left: 26px; font-size: 16.5px; line-height: 1.4; color: var(--charcoal); font-weight: 500; }
-.ws-slot-tick { position: absolute; left: 0; top: 0; color: var(--teal); font-weight: 800; }
-.ws-slot.filled { background: var(--white); border-left-color: var(--olive); }
+.ws-slot-tick { position: absolute; left: 0; top: 0; color: var(--teal-text); font-weight: 800; }
+.ws-slot.filled { background: var(--white); border-left-color: var(--olive-text); }
 .ws-slot.filled .ws-slot-val { color: var(--charcoal); font-weight: 500; }
-.ws-art-foot { margin-top: 20px; font-size: 13px; color: #6b7680; }
+.ws-art-foot { margin-top: 20px; font-size: 13px; color: var(--muted-grey); }
 
 /* ============ Single-column Session (2026-07-21, direction A) — one conversation column, no two-pane ============ */
 /* Fixed to the viewport below the 64px sticky topbar, so the CHAT scrolls internally and the header stays PINNED
@@ -1632,7 +1657,7 @@ body.redesign-on .confidential-footer { display: none; } /* full-bleed app — n
 .ws-col { max-width: 800px; margin: 0 auto; height: calc(100dvh - 64px); overflow: hidden; display: flex; flex-direction: column; padding: 0 22px; }
 .ws-col-head { flex: 0 0 auto; padding-top: 10px; border-bottom: 1px solid #ecebe8; }
 .ws-col-way { display: flex; align-items: center; gap: 12px; margin: 4px 0 3px; }
-.ws-way-back { flex: 0 0 auto; color: var(--teal); font-weight: 800; font-size: 20px; line-height: 1; text-decoration: none; }
+.ws-way-back { flex: 0 0 auto; color: var(--teal-text); font-weight: 800; font-size: 20px; line-height: 1; text-decoration: none; }
 .ws-way-back:hover { color: var(--teal-d, #2f7a7b); }
 .ws-col-way .ws-way-ring { flex: 0 0 auto; }
 .ws-col-way .ws-way-pos { flex: 1 1 auto; min-width: 0; }
@@ -1649,11 +1674,11 @@ body.redesign-on .confidential-footer { display: none; } /* full-bleed app — n
 /* One horizontal-scroll row (no wrap) so the running "kept" stays one line however many chips there are. */
 .ws-kept { display: flex; flex-wrap: nowrap; align-items: center; gap: 8px; margin: 6px 0 3px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
 .ws-kept::-webkit-scrollbar { display: none; }
-.ws-kept-lab { flex: 0 0 auto; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.07em; color: #6b7680; }
+.ws-kept-lab { flex: 0 0 auto; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted-grey); }
 /* Passive proof, not a button — Donna flagged the grey pills read as clickable. Flattened to a plain ticked tag
    (no fill, no border) so it reads as a checklist of what's landed. (Full removal is an open call — see the arch.) */
 .ws-kept-chip { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 600; color: var(--navy); background: transparent; border: none; border-radius: 0; padding: 4px 2px; }
-.ws-kept-tick { color: var(--teal); font-weight: 800; }
+.ws-kept-tick { color: var(--teal-text); font-weight: 800; }
 /* The conversation fills the rest of the column; the chat scrolls, the composer stays at the foot. */
 .ws-col-body { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; padding: 6px 0 10px; }
 .ws-col-body > * { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
@@ -1662,16 +1687,16 @@ body.redesign-on .confidential-footer { display: none; } /* full-bleed app — n
 /* Review / end summary card — every kept answer in one place. */
 .ws-built { background: var(--white); border: 1px solid #e3e2df; border-radius: 16px; padding: 26px 28px; margin-top: 6px; }
 .ws-built-title { font-weight: 800; font-size: 24px; color: var(--navy); margin: 0; }
-.ws-built-lede { color: #6b7680; font-size: 15px; margin-top: 6px; font-style: italic; }
+.ws-built-lede { color: var(--muted-grey); font-size: 15px; margin-top: 6px; font-style: italic; }
 .ws-built-slots { margin-top: 20px; display: flex; flex-direction: column; gap: 16px; }
-.ws-built-foot { margin-top: 22px; font-size: 13px; color: #6b7680; }
+.ws-built-foot { margin-top: 22px; font-size: 13px; color: var(--muted-grey); }
 /* End card — raised over the hand-home at the session's close ("Here's what you built"). */
 .ws-endcard-scrim { position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; padding: 24px; background: rgba(16, 16, 69, 0.55); animation: ws-endcard-in 0.25s ease; }
 @keyframes ws-endcard-in { from { opacity: 0; } to { opacity: 1; } }
 .ws-endcard { background: var(--white); border-radius: 18px; max-width: 560px; width: 100%; max-height: 86dvh; overflow-y: auto; padding: 28px 32px 26px; box-shadow: 0 24px 70px rgba(0, 0, 0, 0.35); }
-.ws-endcard-eyebrow { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: var(--teal); }
+.ws-endcard-eyebrow { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: var(--teal-text); }
 .ws-endcard-title { font-family: var(--font-condensed), var(--font-barlow), sans-serif; font-weight: 900; font-size: 34px; color: var(--navy); margin: 6px 0 2px; text-transform: uppercase; letter-spacing: 0.5px; }
-.ws-endcard-cta { margin-top: 24px; display: inline-flex; align-items: center; background: var(--teal); color: #fff; font-weight: 700; font-size: 16px; border: none; border-radius: 8px; padding: 14px 28px; cursor: pointer; box-shadow: 0 10px 26px rgba(59, 148, 149, 0.4); }
+.ws-endcard-cta { margin-top: 24px; display: inline-flex; align-items: center; background: var(--teal-text); color: #fff; font-weight: 700; font-size: 16px; border: none; border-radius: 8px; padding: 14px 28px; cursor: pointer; box-shadow: 0 10px 26px rgba(59, 148, 149, 0.4); }
 
 /* The rail hosts the existing arc chat client — make it fill the sticky rail and scroll internally. */
 .ws-rail { padding: 0; }
@@ -1686,29 +1711,29 @@ body.redesign-on .confidential-footer { display: none; } /* full-bleed app — n
 /* ---- REDESIGN Layer 3 · Movement subpage (Decision YY) ---- */
 /* Badges detail subpage (redesign) — the milestone map in full, grouped by the 4Rs. */
 .bd-wrap { max-width: 780px; margin: 0 auto; padding: 28px 28px 70px; }
-.bd-eyebrow { font-weight: 800; text-transform: uppercase; letter-spacing: .07em; font-size: 12px; color: var(--teal); }
+.bd-eyebrow { font-weight: 800; text-transform: uppercase; letter-spacing: .07em; font-size: 12px; color: var(--teal-text); }
 .bd-title { font-weight: 800; font-size: 28px; color: var(--navy); margin: 6px 0 4px; line-height: 1.2; }
-.bd-lede { font-size: 15px; color: #6b7680; line-height: 1.5; max-width: 62ch; }
-.bd-count { margin-top: 14px; font-size: 13px; color: #6b7680; }
+.bd-lede { font-size: 15px; color: var(--muted-grey); line-height: 1.5; max-width: 62ch; }
+.bd-count { margin-top: 14px; font-size: 13px; color: var(--muted-grey); }
 .bd-count b { color: var(--navy); font-size: 16px; }
 .bd-phase { margin-top: 30px; }
 .bd-phase-h { font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; margin: 0 0 12px; padding-bottom: 7px; border-bottom: 1px solid #e3e2df; }
 .bd-phase-h.reconnect { color: #374F63; }
-.bd-phase-h.rewire { color: #3B9495; }
-.bd-phase-h.rebuild { color: #919536; }
-.bd-phase-h.reclaim { color: #EC6233; }
+.bd-phase-h.rewire { color: var(--teal-text); }
+.bd-phase-h.rebuild { color: var(--olive-text); }
+.bd-phase-h.reclaim { color: var(--orange-text); }
 .bd-phase-h.journey { color: #101045; }
 .bd-list { display: flex; flex-direction: column; gap: 10px; }
 .bd-badge { display: flex; gap: 14px; align-items: flex-start; background: #fff; border: 1px solid #e8e6e6; border-radius: 14px; padding: 15px 17px; opacity: .62; }
 .bd-badge.earned { opacity: 1; border-color: #d6d4d4; box-shadow: 0 1px 2px rgba(42,42,42,.05); }
 .bd-mark { font-size: 20px; line-height: 1.2; color: #b9bdc1; flex: none; }
-.bd-badge.earned .bd-mark { color: var(--teal); }
+.bd-badge.earned .bd-mark { color: var(--teal-text); }
 .bd-body { min-width: 0; }
 .bd-name { font-weight: 700; font-size: 15.5px; color: var(--navy); display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
-.bd-tag { font-size: 10.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: #9aa0a5; border: 1px solid #dcdad9; border-radius: 999px; padding: 1px 8px; }
-.bd-tag.earned { color: #fff; background: var(--teal); border-color: var(--teal); }
+.bd-tag { font-size: 10.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: var(--muted-grey); border: 1px solid #dcdad9; border-radius: 999px; padding: 1px 8px; }
+.bd-tag.earned { color: #fff; background: var(--teal-text); border-color: var(--teal-text); }
 .bd-meaning { font-size: 14px; color: #5f6a73; line-height: 1.5; margin: 5px 0 0; }
-.bd-more { margin-top: 26px; font-size: 13.5px; color: #8b949b; font-style: italic; }
+.bd-more { margin-top: 26px; font-size: 13.5px; color: var(--muted-grey-2); font-style: italic; }
 @media (max-width: 640px) { .bd-wrap { padding: 20px 14px 56px; } .bd-title { font-size: 24px; } }
 
 /* Shared subpage content column under the topbar (SubpageShell) — restores the 720px centering the text-column
@@ -1716,20 +1741,20 @@ body.redesign-on .confidential-footer { display: none; } /* full-bleed app — n
 .subpage-wrap { max-width: 720px; margin: 0 auto; padding: 28px 24px 70px; }
 @media (max-width: 640px) { .subpage-wrap { padding: 20px 16px 56px; } }
 .mv-wrap { max-width: 860px; margin: 0 auto; padding: 28px 28px 70px; }
-.mv-eyebrow { font-weight: 800; text-transform: uppercase; letter-spacing: .07em; font-size: 12px; color: var(--teal); }
+.mv-eyebrow { font-weight: 800; text-transform: uppercase; letter-spacing: .07em; font-size: 12px; color: var(--teal-text); }
 .mv-title { font-weight: 800; font-size: 30px; color: var(--navy); margin: 6px 0 4px; }
-.mv-lede { font-size: 15px; color: #6b7680; line-height: 1.5; max-width: 60ch; }
+.mv-lede { font-size: 15px; color: var(--muted-grey); line-height: 1.5; max-width: 60ch; }
 .mv-sources { margin-top: 24px; background: var(--navy); border-radius: 16px; padding: 22px 24px; }
-.mv-sources-h { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: #9aa0a5; font-weight: 800; }
+.mv-sources-h { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted-on-navy); font-weight: 800; }
 .mv-source-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
 .mv-source { display: flex; align-items: center; justify-content: space-between; gap: 10px; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.14); border-radius: 12px; padding: 13px 15px; }
 .mv-source.on { background: rgba(145,149,54,.22); border-color: rgba(145,149,54,.5); }
 .mv-source-name { font-weight: 700; font-size: 15px; color: #fff; }
-.mv-source-what { font-size: 11.5px; color: #9aa0a5; }
+.mv-source-what { font-size: 11.5px; color: #d3d8dc; }
 .mv-badge { background: rgba(255,255,255,.16); color: #fff; font-weight: 700; font-size: 12px; padding: 6px 13px; border-radius: 100px; white-space: nowrap; }
-.mv-badge.on { background: var(--olive); }
+.mv-badge.on { background: var(--olive-text); }
 .mv-connect :is(a, button) { font-size: 12px; padding: 6px 12px; }
-.mv-sources-foot { margin-top: 12px; font-size: 12px; color: #9aa0a5; }
+.mv-sources-foot { margin-top: 12px; font-size: 12px; color: var(--muted-on-navy); }
 /* The panel is dark (charcoal) — the default .muted (navy @ 75%) is unreadable on it. Any muted text inside
    (the Strava connect description + consent label, before connecting) must render light. */
 .mv-sources .muted { color: #c9cdd1; opacity: 1; }
@@ -1740,21 +1765,21 @@ body.redesign-on .confidential-footer { display: none; } /* full-bleed app — n
 .mv-strava-title { font-size: 18px; font-weight: 800; color: var(--navy); margin: 0; }
 .mv-strava .mv-week { border-bottom: none; margin-top: 12px; padding: 0; }
 .mv-strava-lead { font-size: 17px; font-weight: 600; color: var(--navy); margin: 10px 0 0; line-height: 1.35; } /* meaning first (B) */
-.mv-strava-goal { font-size: 15px; font-weight: 600; color: var(--teal); margin: 12px 0 0; } /* progress vs the Reclaim goal (C-1) */
-.mv-strava-line { font-size: 14px; color: #6b7680; margin: 8px 0 0; } /* week-over-week (A) */
-.mv-strava-foot { font-size: 12px; color: #9aa0a5; margin: 8px 0 0; }
+.mv-strava-goal { font-size: 15px; font-weight: 600; color: var(--teal-text); margin: 12px 0 0; } /* progress vs the Reclaim goal (C-1) */
+.mv-strava-line { font-size: 14px; color: var(--muted-grey); margin: 8px 0 0; } /* week-over-week (A) */
+.mv-strava-foot { font-size: 12px; color: var(--muted-grey); margin: 8px 0 0; }
 /* Sync-now — manual provider pull + "last synced" line under the Strava card. */
 .mv-sync { display: flex; align-items: center; gap: 12px; margin-top: 14px; }
-.mv-sync-btn { margin: 0; font: inherit; font-size: 13px; font-weight: 700; color: var(--teal); background: #E8E6E6; border: 1px solid var(--teal); border-radius: 8px; padding: 7px 16px; cursor: pointer; }
+.mv-sync-btn { margin: 0; font: inherit; font-size: 13px; font-weight: 700; color: #2a6d6e; background: #E8E6E6; border: 1px solid var(--teal); border-radius: 8px; padding: 7px 16px; cursor: pointer; }
 .mv-sync-btn:hover:not(:disabled) { background: #dedcdc; }
 .mv-sync-btn:disabled { opacity: 0.6; cursor: default; }
-.mv-sync-note { font-size: 12px; color: #9aa0a5; }
-.mv-week span { font-size: 12px; color: #6b7680; }
+.mv-sync-note { font-size: 12px; color: var(--muted-grey); }
+.mv-week span { font-size: 12px; color: var(--muted-grey); }
 .mv-week b { display: block; font-size: 24px; color: var(--navy); }
 .mv-history { margin-top: 24px; }
 .mv-history-h { font-weight: 800; font-size: 18px; color: var(--navy); margin-bottom: 4px; }
-.mv-history-lede { font-size: 13px; color: #6b7680; margin-bottom: 18px; }
-.mv-day-label { font-weight: 700; text-transform: uppercase; letter-spacing: .05em; font-size: 11.5px; color: #8b949b; margin: 0 0 10px; }
+.mv-history-lede { font-size: 13px; color: var(--muted-grey); margin-bottom: 18px; }
+.mv-day-label { font-weight: 700; text-transform: uppercase; letter-spacing: .05em; font-size: 11.5px; color: var(--muted-grey-2); margin: 0 0 10px; }
 .mv-day-items { border-left: 2px solid #e3e2df; padding-left: 18px; margin-left: 6px; display: flex; flex-direction: column; gap: 16px; padding-bottom: 22px; }
 .mv-entry { position: relative; }
 .mv-dot { position: absolute; left: -25px; top: 2px; width: 16px; height: 16px; border-radius: 50%; box-shadow: 0 0 0 3px var(--white); }
@@ -1763,16 +1788,16 @@ body.redesign-on .confidential-footer { display: none; } /* full-bleed app — n
 .mv-entry-head { display: flex; align-items: center; gap: 8px; }
 .mv-entry-type { font-size: 15px; font-weight: 600; color: var(--charcoal); }
 .mv-src-chip { font-size: 11px; font-weight: 700; color: var(--navy); background: #E8E6E6; padding: 2px 9px; border-radius: 100px; }
-.mv-entry-meta { font-size: 13.5px; color: #6b7680; margin-top: 2px; }
+.mv-entry-meta { font-size: 13.5px; color: var(--muted-grey); margin-top: 2px; }
 .mv-entry-note { font-style: italic; }
 /* Log an off-device activity — the member's own entry, lands in the history as 'logged'. */
 .mv-log { margin-top: 26px; padding: 16px 18px; background: #f6f7f8; border: 1px solid #e6eaed; border-radius: 12px; }
 .mv-log-h { font-weight: 800; font-size: 15px; color: var(--navy); }
-.mv-log-lede { font-size: 12.5px; color: #6b7680; margin: 2px 0 12px; }
+.mv-log-lede { font-size: 12.5px; color: #5f6468; margin: 2px 0 12px; }
 .mv-log-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .mv-log-type, .mv-log-date { margin: 0; flex: 0 0 auto; }
 .mv-log-note { margin: 0; flex: 1 1 200px; min-width: 160px; }
-.mv-log-btn { margin: 0; flex: 0 0 auto; background: var(--teal); color: #fff; border: none; font-weight: 700; padding: 0.5rem 1.1rem; border-radius: 8px; cursor: pointer; }
+.mv-log-btn { margin: 0; flex: 0 0 auto; background: var(--teal-text); color: #fff; border: none; font-weight: 700; padding: 0.5rem 1.1rem; border-radius: 8px; cursor: pointer; }
 .mv-log-btn:hover { background: #327f80; }
 .mv-log-btn:disabled { opacity: 0.6; cursor: default; }
 @media (max-width: 700px) { .mv-source-grid { grid-template-columns: 1fr; } .mv-log-note { flex-basis: 100%; } }
@@ -1781,7 +1806,7 @@ body.redesign-on .confidential-footer { display: none; } /* full-bleed app — n
 .cer-badge { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 6px 0; }
 .cer-badge-medal { width: 58px; height: 58px; border-radius: 15px; display: grid; place-items: center; font-size: 30px;
   background: var(--navy); color: #fff; animation: cerBadgePop .6s ease; }
-.cer-badge-eyebrow { font-weight: 800; text-transform: uppercase; letter-spacing: .06em; font-size: 11px; color: var(--olive); }
+.cer-badge-eyebrow { font-weight: 800; text-transform: uppercase; letter-spacing: .06em; font-size: 11px; color: var(--olive-text); }
 .cer-badge-name { font-weight: 800; font-size: 18px; color: var(--navy); text-align: center; }
 @keyframes cerBadgePop { 0% { transform: scale(.5); opacity: 0; } 45% { transform: scale(1.25); box-shadow: 0 0 0 8px rgba(145,149,54,.22); } 100% { transform: scale(1); opacity: 1; } }
 
@@ -1829,13 +1854,13 @@ body.redesign-on .confidential-footer { display: none; } /* full-bleed app — n
 .outreach-card { background: var(--white); border: 1px solid var(--panel-line); border-left: 4px solid var(--teal); border-radius: 12px; padding: 1rem 1.15rem; margin: 0 0 1rem; }
 .outreach-card-head { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; }
 .outreach-card-avatar { width: 22px; height: 22px; border-radius: 50%; flex: none; }
-.outreach-card-from { font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--teal); font-weight: 700; }
+.outreach-card-from { font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--teal-text); font-weight: 700; }
 .outreach-card-body { margin: 0 0 0.85rem; color: var(--navy); font-size: 1.05rem; line-height: 1.5; }
 .outreach-card-actions { display: flex; gap: 0.5rem; }
-.outreach-card-actions .outreach-reply { background: var(--teal); color: #fff; border: none; border-radius: 8px; padding: 0.4rem 1rem; font-weight: 700; font-size: 0.9rem; cursor: pointer; }
+.outreach-card-actions .outreach-reply { background: var(--teal-text); color: #fff; border: none; border-radius: 8px; padding: 0.4rem 1rem; font-weight: 700; font-size: 0.9rem; cursor: pointer; }
 .outreach-card-actions .outreach-reply:hover { background: var(--navy); }
 .outreach-card-actions .outreach-dismiss { background: none; border: none; color: var(--navy); opacity: 0.6; font-weight: 600; font-size: 0.9rem; cursor: pointer; padding: 0.4rem 0.5rem; }
-.outreach-card-actions .outreach-dismiss:hover { opacity: 1; color: var(--teal); background: none; }
+.outreach-card-actions .outreach-dismiss:hover { opacity: 1; color: var(--teal-text); background: none; }
 
 /* ============ Mobile slice 1 — the conversation-first HOME cover (navy billboard + 8 states) ============ */
 /* Desktop: never shown (the docked rail is the companion). Only the ≤1000px portrait breakpoint — the same one the
@@ -1860,7 +1885,7 @@ body.redesign-on .confidential-footer { display: none; } /* full-bleed app — n
     font-size: 40px; line-height: 0.92; letter-spacing: 0.5px; margin: 0; }
   .rhome-sub { display: block; font-family: var(--font-barlow), sans-serif; font-weight: 500; font-size: 17px; letter-spacing: 0; text-transform: none; color: rgba(255, 255, 255, 0.62); margin-top: 10px; }
   .rhome-ctarow { display: flex; justify-content: flex-end; margin-top: 16px; }
-  .rhome-pill { display: inline-flex; align-items: center; min-height: 44px; background: var(--teal); color: #fff; border-radius: 26px;
+  .rhome-pill { display: inline-flex; align-items: center; min-height: 44px; background: var(--teal-text); color: #fff; border-radius: 26px;
     font-weight: 700; font-size: 15px; padding: 0 20px; text-decoration: none; box-shadow: 0 6px 18px rgba(59, 148, 149, 0.35); }
 
   /* thread — same messages as the rail, restyled for the navy ground (member bubbles lift off it) */
@@ -1871,7 +1896,7 @@ body.redesign-on .confidential-footer { display: none; } /* full-bleed app — n
   .rhome-thread .rmsg.typing { align-self: flex-start; background: none; color: rgba(255, 255, 255, 0.6); font-style: italic; }
   /* The proactive nudge, rendered inline as the companion's latest line (a teal edge marks it as a reach-out). */
   .rhome-thread .rmsg.rhome-nudge { border-left: 3px solid var(--teal); }
-  .rhome-nudge-skip { display: inline-block; margin-top: 9px; background: none; border: none; padding: 0; color: #6b7680; font: inherit; font-size: 13px; text-decoration: underline; cursor: pointer; }
+  .rhome-nudge-skip { display: inline-block; margin-top: 9px; background: none; border: none; padding: 0; color: var(--muted-grey); font: inherit; font-size: 13px; text-decoration: underline; cursor: pointer; }
   /* On the mobile viewport (mobile home active) the outreach nudge lives in the companion thread — hide the dashboard
      card so it never doubles as a mid-dashboard panel. Desktop (and MOBILE-off) keeps the card. */
   .redesign-app.mobile-home .outreach-card { display: none; }
@@ -1880,7 +1905,7 @@ body.redesign-on .confidential-footer { display: none; } /* full-bleed app — n
   .rhome-composer { flex: 0 0 auto; display: flex; align-items: center; gap: 10px; padding: 12px 16px; background: #2c4152; border-top: 1px solid rgba(255, 255, 255, 0.08); }
   .rhome-composer input { flex: 1; height: 46px; border-radius: 24px; border: 1.5px solid var(--teal); background: rgba(255, 255, 255, 0.08);
     color: #fff; font-family: inherit; font-size: 16px; padding: 0 18px; outline: none; }
-  .rhome-composer input:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; border-color: var(--teal); }
+  .rhome-composer input:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; border-color: var(--teal-text); }
   .rhome-composer input::placeholder { color: rgba(255, 255, 255, 0.5); }
   .rhome-composer .rrail-send { border-radius: 24px; height: 46px; padding: 0 18px; }
   .rhome-godash { flex: 0 0 auto; display: flex; align-items: center; justify-content: center; gap: 6px; border: none; cursor: pointer;
@@ -1899,14 +1924,14 @@ body.redesign-on .confidential-footer { display: none; } /* full-bleed app — n
 /* ============ Mobile slice 2 — the Notifications DIAL (inline on Your Account; light card) ============ */
 .noti-card { position: relative; }
 .noti-dial { margin-top: 2px; }
-.noti-savebar { position: absolute; top: 16px; right: 18px; color: var(--olive); font-size: 12px; font-weight: 700; letter-spacing: 0.3px; min-height: 16px; }
+.noti-savebar { position: absolute; top: 16px; right: 18px; color: var(--olive-text); font-size: 12px; font-weight: 700; letter-spacing: 0.3px; min-height: 16px; }
 .noti-subhead { color: #8A929A; font-size: 11px; font-weight: 700; letter-spacing: 1.3px; text-transform: uppercase; margin: 20px 2px 10px; }
 .noti-dial .noti-subhead:first-of-type { margin-top: 4px; }
 .noti-group { border: 1px solid var(--panel-line, #E8E6E6); border-radius: 13px; overflow: hidden; }
 .noti-opt { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; padding: 13px 14px; cursor: pointer; border: none; border-bottom: 1px solid var(--panel-line, #E8E6E6); background: #fff; font-family: inherit; }
 .noti-opt:last-child { border-bottom: none; }
 .noti-radio { width: 21px; height: 21px; border-radius: 50%; border: 2px solid #c7ccd1; flex: 0 0 auto; display: flex; align-items: center; justify-content: center; }
-.noti-opt.sel .noti-radio { background: var(--teal); border-color: var(--teal); }
+.noti-opt.sel .noti-radio { background: var(--teal); border-color: var(--teal-text); }
 .noti-radio svg { width: 11px; height: 11px; stroke: #fff; fill: none; stroke-width: 3.4; stroke-linecap: round; stroke-linejoin: round; opacity: 0; }
 .noti-opt.sel .noti-radio svg { opacity: 1; }
 .noti-optlabel { display: flex; flex-direction: column; }
@@ -1915,7 +1940,7 @@ body.redesign-on .confidential-footer { display: none; } /* full-bleed app — n
 .noti-de { color: #8A929A; font-size: 12px; margin-top: 1px; }
 .noti-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 13px 14px; border-bottom: 1px solid var(--panel-line, #E8E6E6); }
 .noti-row:last-child { border-bottom: none; }
-.noti-always { color: var(--olive); font-size: 12.5px; font-weight: 700; flex: 0 0 auto; }
+.noti-always { color: var(--olive-text); font-size: 12.5px; font-weight: 700; flex: 0 0 auto; }
 .noti-sw { width: 46px; height: 28px; border-radius: 15px; background: #d3d7db; position: relative; cursor: pointer; transition: 0.18s; flex: 0 0 auto; border: none; padding: 0; }
 .noti-sw::after { content: ""; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25); transition: 0.18s; }
 .noti-sw.on { background: var(--teal); }
@@ -1925,7 +1950,7 @@ body.redesign-on .confidential-footer { display: none; } /* full-bleed app — n
 .noti-quiet-edit { display: flex; align-items: center; gap: 8px; }
 .noti-quiet-edit select { font-family: inherit; font-size: 15px; font-weight: 600; color: var(--navy); border: 1px solid var(--panel-line, #E8E6E6); border-radius: 8px; padding: 6px 8px; background: #fff; }
 .noti-dash { color: #8A929A; }
-.noti-edit { color: var(--teal); font-weight: 700; font-size: 14px; cursor: pointer; background: none; border: none; padding: 6px; font-family: inherit; }
+.noti-edit { color: var(--teal-text); font-weight: 700; font-size: 14px; cursor: pointer; background: none; border: none; padding: 6px; font-family: inherit; }
 .noti-antinag { color: #8A929A; font-size: 12.5px; line-height: 1.5; margin-top: 14px; font-style: italic; }
 
 /* ============ Mobile slice 3 — the session workspace as canvas + a rising Companion bottom-sheet ============ */
@@ -1961,7 +1986,7 @@ body.redesign-on .confidential-footer { display: none; } /* full-bleed app — n
   /* the pulsing FAB — raises the conversation (canvas orients first) */
   .ws-sheet-fab {
     display: inline-flex; align-items: center; gap: 8px; position: fixed; right: 16px; bottom: 18px; z-index: 1200;
-    background: var(--teal); color: #fff; font-family: inherit; font-weight: 700; font-size: 16px; border: none; border-radius: 100px;
+    background: var(--teal-text); color: #fff; font-family: inherit; font-weight: 700; font-size: 16px; border: none; border-radius: 100px;
     padding: 14px 22px; box-shadow: 0 8px 24px rgba(59, 148, 149, 0.5); cursor: pointer; animation: ws-fab-pulse 2.2s ease-in-out infinite;
   }
   .ws-sheet-fab-dot { width: 9px; height: 9px; border-radius: 50%; background: #fff; }
@@ -1995,9 +2020,9 @@ body.redesign-on .confidential-footer { display: none; } /* full-bleed app — n
 .rhythm-step.cur .rhythm-step-n { box-shadow: 0 0 0 5px rgba(255, 255, 255, 0.12); }
 .rhythm-ask { color: #fff; font-weight: 700; font-size: 18px; margin: 26px 0 14px; }
 .rhythm-opt { display: flex; width: 100%; text-align: left; align-items: center; gap: 14px; background: rgba(255, 255, 255, 0.05); border: 1.5px solid rgba(255, 255, 255, 0.13); border-radius: 16px; padding: 15px 16px; margin-bottom: 11px; cursor: pointer; transition: 0.15s; font-family: inherit; }
-.rhythm-opt.sel { background: rgba(59, 148, 149, 0.18); border-color: var(--teal); }
+.rhythm-opt.sel { background: rgba(59, 148, 149, 0.18); border-color: var(--teal-text); }
 .rhythm-radio { width: 24px; height: 24px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, 0.35); flex: 0 0 auto; display: flex; align-items: center; justify-content: center; transition: 0.15s; }
-.rhythm-opt.sel .rhythm-radio { background: var(--teal); border-color: var(--teal); }
+.rhythm-opt.sel .rhythm-radio { background: var(--teal); border-color: var(--teal-text); }
 .rhythm-radio svg { width: 13px; height: 13px; stroke: #fff; fill: none; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; opacity: 0; }
 .rhythm-opt.sel .rhythm-radio svg { opacity: 1; }
 .rhythm-optlabel { display: flex; flex-direction: column; }
@@ -2005,7 +2030,7 @@ body.redesign-on .confidential-footer { display: none; } /* full-bleed app — n
 .rhythm-de { color: rgba(255, 255, 255, 0.6); font-size: 13px; margin-top: 2px; line-height: 1.35; }
 .rhythm-sugg { color: #8fd0d1; }
 .rhythm-reassure { color: rgba(255, 255, 255, 0.55); font-size: 13px; line-height: 1.5; margin: 16px 2px 22px; }
-.rhythm-confirm { width: 100%; min-height: 52px; border: none; border-radius: 28px; background: var(--teal); color: #fff; font-family: inherit; font-weight: 700; font-size: 17px; cursor: pointer; box-shadow: 0 10px 26px rgba(59, 148, 149, 0.35); }
+.rhythm-confirm { width: 100%; min-height: 52px; border: none; border-radius: 28px; background: var(--teal-text); color: #fff; font-family: inherit; font-weight: 700; font-size: 17px; cursor: pointer; box-shadow: 0 10px 26px rgba(59, 148, 149, 0.35); }
 .rhythm-confirm:disabled { opacity: 0.6; cursor: default; }
 
 /* ============ Onboarding welcome (Slice B) — the meet-the-Companion billboard (desktop + mobile) ============ */
@@ -2023,7 +2048,7 @@ body.redesign-on .confidential-footer { display: none; } /* full-bleed app — n
 .onbwel-road-step { color: #fff; font-weight: 700; font-size: 13px; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.18); border-radius: 100px; padding: 6px 14px; }
 .onbwel-body { color: rgba(255, 255, 255, 0.86); font-size: 18px; line-height: 1.55; margin-top: 24px; max-width: 540px; }
 .onbwel-body strong { color: #fff; font-weight: 700; }
-.onbwel-cta { margin-top: 30px; display: inline-flex; align-items: center; background: var(--teal); color: #fff; font-family: inherit; font-weight: 700; font-size: 18px; padding: 16px 32px; border: none; border-radius: 8px; cursor: pointer; box-shadow: 0 12px 30px rgba(59, 148, 149, 0.4); transition: 0.15s; }
+.onbwel-cta { margin-top: 30px; display: inline-flex; align-items: center; background: var(--teal-text); color: #fff; font-family: inherit; font-weight: 700; font-size: 18px; padding: 16px 32px; border: none; border-radius: 8px; cursor: pointer; box-shadow: 0 12px 30px rgba(59, 148, 149, 0.4); transition: 0.15s; }
 .onbwel-cta:hover { background: var(--teal-d, #2f7a7b); }
 .onbwel-reassure { margin-top: 18px; color: rgba(255, 255, 255, 0.55); font-size: 14px; }
 
@@ -2057,7 +2082,7 @@ body.redesign-on .confidential-footer { display: none; } /* full-bleed app — n
 .onbwel-d-signin { margin-top: 16px; color: rgba(255,255,255,0.82); font-size: 14px; }
 .onbwel-d-signin a { color: #fff; font-weight: 700; text-decoration: underline; }
 .onboard-signin { margin-top: 1rem; }
-.onbwel-d-cta { margin-top: 26px; display: inline-flex; align-items: center; background: var(--teal); color: #fff; font-family: inherit; font-weight: 700; font-size: 18px; padding: 16px 32px; border: none; border-radius: 8px; cursor: pointer; box-shadow: 0 12px 30px rgba(59, 148, 149, 0.4); transition: 0.15s; }
+.onbwel-d-cta { margin-top: 26px; display: inline-flex; align-items: center; background: var(--teal-text); color: #fff; font-family: inherit; font-weight: 700; font-size: 18px; padding: 16px 32px; border: none; border-radius: 8px; cursor: pointer; box-shadow: 0 12px 30px rgba(59, 148, 149, 0.4); transition: 0.15s; }
 .onbwel-d-cta:hover { background: var(--teal-d, #2f7a7b); }
 .onbwel-d-reassure { margin-top: 20px; color: rgba(255, 255, 255, 0.6); font-size: 14px; }
 .onbwel-d-sub + .onbwel-d-sub { margin-top: 16px; } /* the hero now carries three intro paragraphs — tighten the gap between them */
@@ -2114,16 +2139,16 @@ body.onbwel-bleed main { max-width: none; margin: 0; padding: 0; }
 /* Phase-1 placeholder stubs (removed as the real regions land). */
 .tri-stub { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; text-align: center; min-height: 150px; background: var(--white); border: 1px dashed #d6d5d1; border-radius: 16px; padding: 24px; }
 .tri-center .tri-stub { border: none; background: transparent; }
-.tri-stub-h { font-weight: 800; font-size: 15px; color: #6b7680; text-transform: uppercase; letter-spacing: 0.05em; }
+.tri-stub-h { font-weight: 800; font-size: 15px; color: var(--muted-grey); text-transform: uppercase; letter-spacing: 0.05em; }
 .tri-stub-s { font-size: 13px; color: #9a9791; }
 
 /* The MEMBER strip — name · who they're reclaiming · Phase, with the My Story nav. Slim, above the columns. */
 .tri-member { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 4px; }
 .tri-member-id { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 12px; min-width: 0; }
 .tri-member-name { font-weight: 800; font-size: 18px; color: var(--navy); }
-.tri-member-reclaim { font-size: 14px; color: #6b7680; }
-.tri-member-phase { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; color: var(--teal); background: #E8E6E6; padding: 3px 9px; border-radius: 100px; align-self: center; }
-.tri-member-story { font-weight: 600; font-size: 14px; color: var(--teal); white-space: nowrap; text-decoration: none; } /* matches .see-more / .rreg-more subpage-nav weight */
+.tri-member-reclaim { font-size: 14px; color: #5f6468; }
+.tri-member-phase { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; color: #2a6d6e; background: #E8E6E6; padding: 3px 9px; border-radius: 100px; align-self: center; }
+.tri-member-story { font-weight: 600; font-size: 14px; color: var(--teal-text); white-space: nowrap; text-decoration: none; } /* matches .see-more / .rreg-more subpage-nav weight */
 .tri-member-story:hover { text-decoration: underline; }
 
 @media (max-width: 1000px) {
@@ -2133,7 +2158,7 @@ body.onbwel-bleed main { max-width: none; margin: 0; padding: 0; }
   /* Fixed compact height; buttons stretch to fill and center their text. The `margin: 0` is load-bearing — the global
      `button,.btn` rule sets margin-top:1.5rem, which was pushing every tab ~24px down and inflating the bar. */
   .tri-seg { display: flex; align-items: stretch; gap: 4px; background: #eceae6; border-radius: 100px; padding: 2px; flex: 0 0 auto; height: 34px; box-sizing: border-box; }
-  .tri-seg-btn { flex: 1; margin: 0; display: flex; align-items: center; justify-content: center; border: none; background: none; font-family: inherit; font-size: 13px; font-weight: 700; line-height: 1; color: #6b7680; padding: 0 6px; border-radius: 100px; cursor: pointer; white-space: nowrap; }
+  .tri-seg-btn { flex: 1; margin: 0; display: flex; align-items: center; justify-content: center; border: none; background: none; font-family: inherit; font-size: 13px; font-weight: 700; line-height: 1; color: var(--muted-grey); padding: 0 6px; border-radius: 100px; cursor: pointer; white-space: nowrap; }
   .tri-seg-btn.on { background: var(--white); color: var(--navy); box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12); }
   .tri-main { flex-direction: column; gap: 0; }
   .tri-flank, .tri-center { flex: 1 1 auto; width: auto; }
@@ -2157,7 +2182,7 @@ body.onbwel-bleed main { max-width: none; margin: 0; padding: 0; }
    height only once there's text. Was min-height originally — a stray switch to `height` let the global 72px win. */
 /* THE MEMBER'S COMPANION COMPOSER. The most-used input in the product, and it had outline:none with nothing
    put back — no focus indication whatsoever. Teal on the navy panel, matching the Founder Console composer. */
-.tri-comp-composer textarea:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; border-color: var(--teal); }
+.tri-comp-composer textarea:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; border-color: var(--teal-text); }
 .tri-comp-composer textarea { flex: 1; border: 1.5px solid var(--teal); border-radius: 10px; padding: 11px 15px; font-family: inherit; font-size: 14.5px; line-height: 1.4; outline: none; resize: none; overflow-y: auto; min-height: 44px; height: 44px; max-height: 160px; background: rgba(255, 255, 255, 0.06); color: #fff; }
 .tri-comp-composer textarea::placeholder { color: rgba(255, 255, 255, 0.5); }
 /* Navy bubble overrides — the shared .rmsg.member is navy-on-navy (invisible), so lift it; agent goes translucent. */
@@ -2199,11 +2224,11 @@ body.onbwel-bleed main { max-width: none; margin: 0; padding: 0; }
 /* The navy hero — headline + guiding line + CTA, with the merged 4R ring beside it (phase + progress). */
 .tri-hero { flex: 0 0 auto; padding: 20px 24px 22px; border-bottom: 1px solid rgba(255, 255, 255, 0.10); display: flex; gap: 20px; align-items: center; }
 .tri-hero-text { flex: 1; min-width: 0; }
-.tri-hero-eyebrow { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.07em; color: #3B9495; }
+.tri-hero-eyebrow { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.07em; color: var(--teal-on-navy); }
 .tri-hero-title { margin: 6px 0 0; font-size: 27px; line-height: 1.1; font-weight: 800; color: #fff; }
 .tri-hero-copy { margin: 10px 0 0; font-size: 14.5px; line-height: 1.5; color: rgba(255, 255, 255, 0.78); max-width: 52ch; }
 .tri-hero-ctarow { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; margin-top: 16px; }
-.tri-hero-cta { display: inline-block; background: var(--teal); color: #fff; font-weight: 700; font-size: 14px; text-decoration: none; padding: 10px 18px; border-radius: 10px; }
+.tri-hero-cta { display: inline-block; background: var(--teal-text); color: #fff; font-weight: 700; font-size: 14px; text-decoration: none; padding: 10px 18px; border-radius: 10px; }
 .tri-hero-cta:hover { filter: brightness(1.06); }
 .tri-hero-cta.muted { background: rgba(255, 255, 255, 0.10); color: rgba(255, 255, 255, 0.85); }
 /* "See the Program →" — the ring's wayfinder, sitting centered directly beneath the bullseye (replaced the old
@@ -2227,7 +2252,7 @@ body.onbwel-bleed main { max-width: none; margin: 0; padding: 0; }
 /* The surfaced keeper — the member's own kept line, held in the Companion's voice (olive edge, translucent).
    Compacted (Jay 7/28) so it costs fewer pixels below the CTA before the member starts talking. */
 .tri-keeper { margin: 10px 24px 0; padding: 9px 14px; background: rgba(255, 255, 255, 0.05); border-left: 3px solid var(--olive); border-radius: 0 10px 10px 0; }
-.tri-keeper-eyebrow { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: rgba(255, 255, 255, 0.55); }
+.tri-keeper-eyebrow { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: rgba(255, 255, 255, 0.78); }
 .tri-keeper-body { margin: 3px 0 0; font-size: 14px; line-height: 1.4; font-style: italic; color: #f0f3f6; }
 
 /* Triptych flank stacks — the panels moved as-is, stacked in the 280px column. */
@@ -2240,7 +2265,7 @@ body.onbwel-bleed main { max-width: none; margin: 0; padding: 0; }
 .tri-stack .r-reclaim-list li { padding: 12px 0; border-top: 1px solid #e8e6e6; }
 .tri-stack .r-reclaim-list li:first-child { border-top: none; padding-top: 2px; }
 /* "Your next IDQ is …" — a quiet scheduling line under the ID Score radar (the 60-day cadence). */
-.rreg-nextidq { margin-top: 12px; font-size: 13px; color: #6b7680; }
+.rreg-nextidq { margin-top: 12px; font-size: 13px; color: var(--muted-grey); }
 /* Community panel in the flank — a white fill + rounded to match the other .rcard panels (it's a .card, not .rcard),
    and a bold CTA (Jay's iPad walk). Scoped to the triptych; the live dashboard's Connect panel is untouched. */
 .tri-stack .connect-panel { background: var(--white); border: 1px solid #e3e2df; border-radius: 14px; }
@@ -2249,7 +2274,7 @@ body.onbwel-bleed main { max-width: none; margin: 0; padding: 0; }
 .program-session-back { display: inline-block; margin-top: 14px; }
 /* Consistent, clearly-tappable See-more nav (subpages are premium) — a full-width footer action with a divider, not a
    faint inline link. Scoped to the triptych so the live dashboard's own .rreg-more is untouched. */
-.tri-stack .rreg-more { display: flex; align-items: center; gap: 5px; width: 100%; margin-top: 14px; padding: 11px 0 3px; border-top: 1px solid #eceae6; color: var(--teal); font-weight: 800; font-size: 13.5px; letter-spacing: 0.01em; text-decoration: none; }
+.tri-stack .rreg-more { display: flex; align-items: center; gap: 5px; width: 100%; margin-top: 14px; padding: 11px 0 3px; border-top: 1px solid #eceae6; color: var(--teal-text); font-weight: 800; font-size: 13.5px; letter-spacing: 0.01em; text-decoration: none; }
 .tri-stack .rreg-more:hover { text-decoration: underline; }
 
 /* Reclaim List subpage — the full list with room for trackers (dashboard flank stays a compact read). */
@@ -2257,12 +2282,12 @@ body.onbwel-bleed main { max-width: none; margin: 0; padding: 0; }
 .reclaim-row { padding: 18px 0; border-top: 1px solid #e8e6e6; }
 .reclaim-row:first-child { border-top: none; padding-top: 6px; }
 .reclaim-row-text { font-size: 16px; font-weight: 600; color: var(--navy); margin-bottom: 10px; }
-.reclaim-row.reclaimed .reclaim-row-text { color: #6b7680; }
-.reclaim-row .rr-check { color: var(--teal); margin-right: 6px; font-weight: 800; }
+.reclaim-row.reclaimed .reclaim-row-text { color: var(--muted-grey); }
+.reclaim-row .rr-check { color: var(--teal-text); margin-right: 6px; font-weight: 800; }
 /* No Longer Central — released items, kept + restorable, rendered quietly below the active list. */
 .reclaim-released { margin-top: 18px; }
-.reclaim-released .rc-h { color: #6b7680; }
-.reclaim-released .reclaim-row-text.muted { font-weight: 500; color: #6b7680; margin-bottom: 0; }
+.reclaim-released .rc-h { color: var(--muted-grey); }
+.reclaim-released .reclaim-row-text.muted { font-weight: 500; color: var(--muted-grey); margin-bottom: 0; }
 
 /* ── FOUNDER CONSOLE ────────────────────────────────────────────────────────────────────────────────────────
    The operator surface, Companion-first — the same reflect ← ask → act spine as the member triptych.
@@ -2321,7 +2346,7 @@ body:has(.fc-app) .confidential-footer { display: none; }
 .fc-scroll { flex: 1 1 auto; min-height: 0; overflow: auto; padding-bottom: 24px; }
 
 /* The one way back up, on the pages the tab row can't name. Not a trail — one control. */
-.fc-back { display: inline-block; margin: 14px 0 4px; color: var(--teal); font-weight: 600; font-size: 14px; text-decoration: none; }
+.fc-back { display: inline-block; margin: 14px 0 4px; color: var(--teal-text); font-weight: 600; font-size: 14px; text-decoration: none; }
 .fc-back:hover { text-decoration: underline; }
 .fc-record-name { margin: 12px 0 14px; font-size: 26px; }
 
@@ -2332,7 +2357,7 @@ body:has(.fc-app) .confidential-footer { display: none; }
 }
 .fc-eyebrow { font-size:11px; font-weight:700; letter-spacing:.09em; text-transform:uppercase; color:#2F7A7B; }
 .fc-h { font-size:18px; font-weight:700; color:var(--navy); margin:2px 0 10px; }
-:root { --fc-muted:#6B7580; }
+:root { --fc-muted: #7d8892; }
 
 .fc-kpis { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
 .fc-kpi { border:1px solid rgba(55,79,99,.16); border-radius:11px; padding:11px 12px; }
@@ -2352,7 +2377,7 @@ body:has(.fc-app) .confidential-footer { display: none; }
    is gone — the composer placeholder says the same thing at the moment it's useful. */
 .fc-hero-h { padding:20px 22px 10px; display:flex; align-items:flex-start; justify-content:space-between; gap:14px; }
 .fc-hero-heading { min-width:0; }
-.fc-hero-eye { font-size:11px; font-weight:700; letter-spacing:.11em; text-transform:uppercase; color:#8FBDBE; }
+.fc-hero-eye { font-size:11px; font-weight:700; letter-spacing:.11em; text-transform:uppercase; color:var(--teal-on-navy); }
 .fc-hero-title { font-size:23px; font-weight:800; color:#fff; margin:4px 0 2px; }
 .fc-thread { flex:1; padding:12px 22px 4px; display:flex; flex-direction:column; gap:11px; overflow:auto; }
 .fc-b { max-width:82%; padding:11px 14px; border-radius:15px; font-size:14.5px; line-height:1.5; white-space:pre-wrap; }
@@ -2389,7 +2414,7 @@ body:has(.fc-app) .confidential-footer { display: none; }
    same global on its own; it's the element-selector default biting a component for the second time. */
 .fc-send { flex:none; margin:0; height:var(--composer-h); font-family:inherit; font-weight:700; font-size:14px;
   box-sizing:border-box; border:1.5px solid var(--teal); border-radius:12px;
-  padding:0 1.15rem; background:var(--teal); color:#fff; cursor:pointer; }
+  padding:0 1.15rem; background: var(--teal-text); color:#fff; cursor:pointer; }
 .fc-send:disabled { opacity:.6; cursor:default; }
 
 .fc-need { display:flex; align-items:flex-start; gap:10px; padding:9px 0; border-top:1px solid rgba(55,79,99,.16); }
@@ -2456,7 +2481,7 @@ button.fcs-tab { font-family: inherit; cursor: pointer; }
 }
 .fc-need-link { text-decoration:none; color:inherit; cursor:pointer; }
 .fc-need-link:hover .fc-nk { color:#2F7A7B; }
-.fc-elsewhere { margin:22px 0 0; font-size:13px; color:#6B7580; text-align:center; }
+.fc-elsewhere { margin:22px 0 0; font-size:13px; color:var(--muted-grey); text-align:center; }
 .fc-elsewhere a { color:#2F7A7B; font-weight:700; text-decoration:none; }
 
 /* ── FOUNDER CONSOLE SUBPAGES ─────────────────────────────────────────────────────────────────────────────
@@ -2551,12 +2576,12 @@ button.fcs-tab { font-family: inherit; cursor: pointer; }
 .fc-evt.unseen { box-shadow: inset 2px 0 0 var(--teal); padding-left: 8px; }
 /* The unseen count on the console's Activity panel. */
 .fc-new { margin-left: 8px; font-size: 11px; font-weight: 700; letter-spacing: .02em; text-transform: uppercase;
-  color: #fff; background: var(--teal); border-radius: 999px; padding: 2px 8px; vertical-align: middle; }
+  color: #fff; background: var(--teal-text); border-radius: 999px; padding: 2px 8px; vertical-align: middle; }
 /* "Since you last looked" sits on one line with its own control — clearing is a tap, never a side effect. */
 .fca-since { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .fca-seen-btn { font-family: inherit; font-size: 12px; font-weight: 600; cursor: pointer; padding: .25rem .7rem;
-  color: var(--teal); background: #fff; border: 1px solid var(--teal); border-radius: 999px; }
-.fca-seen-btn:hover { color: #fff; background: var(--teal); }
+  color: var(--teal-text); background: #fff; border: 1px solid var(--teal); border-radius: 999px; }
+.fca-seen-btn:hover { color: #fff; background: var(--teal-text); }
 
 
 /* ═══════════════════════════════════════════════════════════════════════════════════════════════════════
@@ -2579,10 +2604,11 @@ button.fcs-tab { font-family: inherit; cursor: pointer; }
      rgba(255,255,255,.03) as white — a whole dark theme built from translucent whites will defeat any
      contrast check that ignores alpha.) */
   --sec: rgba(255, 255, 255, .78);
-  --faint: rgba(255, 255, 255, .58);
+  --faint: rgba(255, 255, 255, .70);
   --fill: rgba(255, 255, 255, .03);
   --fill-6: rgba(255, 255, 255, .06);
   --edge: rgba(255, 255, 255, .08);
+  --fc-muted: rgba(255, 255, 255, .70);
   --teal-lift: #5FBDBE;      /* teal on charcoal needs a step up to hold its contrast */
   background: var(--charcoal, #2A2A2A);
   color: var(--ink);
@@ -2614,8 +2640,8 @@ button.fcs-tab { font-family: inherit; cursor: pointer; }
 
 /* Tabs. */
 .fc-dark .fcs-tab { background: transparent; border-color: rgba(255, 255, 255, .14); color: var(--sec); }
-.fc-dark .fcs-tab:hover { color: var(--ink); border-color: var(--teal); }
-.fc-dark .fcs-tab.on { background: var(--teal); border-color: var(--teal); color: #fff; }
+.fc-dark .fcs-tab:hover { color: var(--ink); border-color: var(--teal-text); }
+.fc-dark .fcs-tab.on { background: var(--teal-text); border-color: var(--teal-text); color: #fff; }
 
 /* The member table — the biggest light surface in the console, and where a half-done dark mode shows. */
 .fc-dark .roster-table th { color: var(--faint); border-bottom-color: var(--edge); }
@@ -2624,7 +2650,7 @@ button.fcs-tab { font-family: inherit; cursor: pointer; }
 .fc-dark .roster-name, .fc-dark .roster-phase, .fc-dark .roster-score { color: var(--ink); }
 .fc-dark .roster-email, .fc-dark .roster-time, .fc-dark .roster-door { color: var(--sec); }
 .fc-dark .summary-tile { background: var(--fill); border-color: var(--edge); }
-.fc-dark .avatar-initials { background: var(--teal); color: #fff; }
+.fc-dark .avatar-initials { background: var(--teal-text); color: #fff; }
 
 /* Chips and pills keep their meaning; only their ground changes. */
 .fc-dark .badge, .fc-dark .pill, .fc-dark .fb-kind-chip, .fc-dark .fca-chip {
@@ -2651,16 +2677,22 @@ button.fcs-tab { font-family: inherit; cursor: pointer; }
   background: transparent; color: var(--ink); border: 1px solid rgba(255, 255, 255, .18);
 }
 .fc-dark button:not(.fc-own):hover, .fc-dark .btn-secondary:not(.fc-own):hover {
-  border-color: var(--teal); background: var(--fill-6);
+  border-color: var(--teal-text); background: var(--fill-6);
 }
 .fc-dark input:not(.fc-own), .fc-dark textarea:not(.fc-own), .fc-dark select:not(.fc-own) {
   background: var(--fill-6); border-color: rgba(255, 255, 255, .18); color: var(--ink);
 }
 .fc-dark input:not(.fc-own)::placeholder, .fc-dark textarea:not(.fc-own)::placeholder { color: var(--faint); }
+/* THIRD TIME I MADE THIS MISTAKE IN ONE SITTING, so it gets written down rather than just quietly fixed:
+   "muted" is not a direction. --muted-grey is a value for text on WHITE; used on charcoal it goes the wrong
+   way, and this line measured 2.99:1. Any token whose name describes how something LOOKS rather than what
+   GROUND it sits on will keep causing this — the ground-named ones (--muted-on-navy, --sec, --faint) never
+   did. Worth remembering the next time a "muted" token is added. */
+.fc-dark .fc-elsewhere { color: var(--sec); }
 .fc-dark .admin-live-label { color: var(--sec); }
 .fc-dark .admin-live-toggle { color: var(--teal-lift); }
-.fc-dark .fca-seen-btn { background: transparent; color: var(--teal-lift); border-color: var(--teal); }
-.fc-dark .fca-seen-btn:hover { background: var(--teal); color: #fff; }
+.fc-dark .fca-seen-btn { background: transparent; color: var(--teal-lift); border-color: var(--teal-text); }
+.fc-dark .fca-seen-btn:hover { background: var(--teal-text); color: #fff; }
 
 /* THE DRAFT YOU ARE ABOUT TO SEND IN YOUR OWN NAME — and it was white text on a light-grey slab.
    `.draft-sent-body` hardcodes `background: var(--grey)` and sets no colour, so under the dark scope it
@@ -2711,6 +2743,6 @@ body:has(.fc-dark) .brand-wordmark,
   border: 1px solid var(--light-grey, #E8E6E6); }
 /* Restating the background is not redundant: the global `button:hover { background: navy }` otherwise paints
    a navy block behind teal text, which is the one hover state on this surface you can't read. */
-.fc-theme-toggle:hover { background: #fff; border-color: var(--teal); color: var(--teal); }
+.fc-theme-toggle:hover { background: #fff; border-color: var(--teal-text); color: var(--teal-text); }
 .fc-dark .fc-theme-toggle { background: transparent; color: rgba(255,255,255,.62); border-color: rgba(255,255,255,.18); }
-.fc-dark .fc-theme-toggle:hover { color: #fff; border-color: var(--teal); }
+.fc-dark .fc-theme-toggle:hover { color: #fff; border-color: var(--teal-text); }

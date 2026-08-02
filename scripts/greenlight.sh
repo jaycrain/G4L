@@ -27,7 +27,7 @@ URL="${1:-https://g4l-ten.vercel.app}"
 # RUNTIME tell below (SURFACES) — it proves the page actually RENDERS the new thing, which is what we care about.
 # Founder Companion tweaks — header row, merged composer sizing, pins removed. All three are NEW in this
 # push, so none of them can match the previous build (which is the whole point of the rule above).
-CSS_TELLS=(".tele-chip" ".fc-hero-heading")
+CSS_TELLS=("--teal-text" "--muted-on-navy")
 JS_TELLS=()
 
 # COMMIT CHECK — the authoritative proof for an ENGINE-ONLY push (server logic, no bundle change), where no static

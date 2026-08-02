@@ -38,7 +38,7 @@ const ROUTES = [
   '/admin/review', '/admin/moderation', '/admin/health', '/admin/feedback',
 ];
 
-type Finding = { ratio: number; size: number; weight: string; cls: string; tag: string; text: string };
+type Finding = { ratio: number; size: number; weight: string; cls: string; tag: string; text: string; bg: string };
 
 function scan(): Finding[] {
   const parse = (c: string) => {
@@ -92,6 +92,7 @@ function scan(): Finding[] {
       out.push({
         ratio: +ratio.toFixed(2), size: parseFloat(cs.fontSize), weight: cs.fontWeight,
         cls: (el.className || '').toString().slice(0, 40), tag: el.tagName, text: text.slice(0, 40),
+        bg: '#' + [bg.r, bg.g, bg.b].map((v) => Math.round(v).toString(16).padStart(2, '0')).join(''),
       });
     }
   }
@@ -153,7 +154,7 @@ async function main() {
   let total = 0;
   // ROLLED UP BY ELEMENT, because 37 findings are rarely 37 problems — they are usually one CSS rule seen
   // 37 times, and a per-route list makes you fix the same thing repeatedly without noticing.
-  const byElement = new Map<string, { worst: number; size: number; count: number; example: string }>();
+  const byElement = new Map<string, { worst: number; size: number; count: number; example: string; bg: string }>();
 
   console.log(`CONTRAST — ${BASE} (threshold ${AA_NORMAL}:1 for normal text)`);
   for (const route of routes) {
@@ -163,8 +164,9 @@ async function main() {
     for (const f of bad) {
       const key = `${f.tag.toLowerCase()}${f.cls ? `.${f.cls.split(' ').join('.')}` : ''}`;
       const cur = byElement.get(key);
-      if (!cur) byElement.set(key, { worst: f.ratio, size: f.size, count: 1, example: f.text });
-      else { cur.count++; cur.worst = Math.min(cur.worst, f.ratio); }
+      if (!cur) byElement.set(key, { worst: f.ratio, size: f.size, count: 1, example: f.text, bg: f.bg });
+      // Keep the ground of the WORST instance — that's the one whose direction the fix has to follow.
+      else { cur.count++; if (f.ratio < cur.worst) { cur.worst = f.ratio; cur.bg = f.bg; } }
     }
     if (bad.length) {
       // Say how many were withheld. A list that quietly stops at 8 reads as "that's all of them".
@@ -173,7 +175,7 @@ async function main() {
         // Large text (>=24px, or >=18.66px bold) only needs 3:1 — flag it differently rather than crying wolf.
         const large = f.size >= 24 || (f.size >= 18.66 && +f.weight >= 700);
         const mark = f.ratio < (large ? 3 : AA_NORMAL) ? '✖' : '·';
-        console.log(`   ${mark} ${f.ratio}:1  ${Math.round(f.size)}px  ${f.tag}.${f.cls}  → ${JSON.stringify(f.text)}`);
+        console.log(`   ${mark} ${f.ratio}:1  ${Math.round(f.size)}px  on ${f.bg}  ${f.tag}.${f.cls}  → ${JSON.stringify(f.text)}`);
       }
       if (bad.length > 6) console.log(`   … and ${bad.length - 6} more on this page (all counted in the rollup)`);
       worst = Math.min(worst, bad[0]!.ratio);
@@ -183,7 +185,9 @@ async function main() {
 
   console.log(`\nBY ELEMENT — ${byElement.size} distinct rules behind ${total} findings`);
   for (const [k, v] of [...byElement.entries()].sort((a, b) => a[1].worst - b[1].worst)) {
-    console.log(`   ${String(v.worst).padStart(5)}:1  ${String(Math.round(v.size)).padStart(2)}px  ×${String(v.count).padStart(3)}  ${k}  → ${JSON.stringify(v.example.slice(0, 34))}`);
+    // The GROUND is printed because the fix runs the opposite way on a dark one, and guessing it wrong turns
+    // a 3:1 into a 1.5:1. (I did that four times in one sitting before adding this column.)
+    console.log(`   ${String(v.worst).padStart(5)}:1  ${String(Math.round(v.size)).padStart(2)}px  on ${v.bg}  ×${String(v.count).padStart(3)}  ${k}  → ${JSON.stringify(v.example.slice(0, 30))}`);
   }
   console.log(`\n${total} below ${AA_NORMAL}:1 · worst ${worst === 99 ? 'n/a' : `${worst}:1`}`);
   // Below 3:1 is the "can't read it" band and is treated as a failure; 3–4.5 is reported for judgement.

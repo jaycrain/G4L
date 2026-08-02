@@ -231,9 +231,13 @@ async function main() {
   });
   // Teal is #3B9495 = rgb(59, 148, 149). Read the painted value, not the class list — the whole bug was that
   // the class was present and the paint was wrong.
-  const TEAL = 'rgb(59, 148, 149)';
-  const sendOk = !!sendPaint && sendPaint.bg === TEAL;
-  const ringOk = !!sendPaint && sendPaint.inputBorder === TEAL;
+  // EITHER TEAL COUNTS. Brand teal is rgb(59,148,149); the text variant #2f7a7b = rgb(47,122,123) took over
+  // filled controls under Option A (2026-08-02), because white-on-brand-teal at 13px is 3.59:1. Pinning one
+  // exact hex made this check fail on a deliberate palette decision — what it is actually guarding is that
+  // Send stays a FILLED primary action rather than being flattened into chrome by a blanket theme rule.
+  const TEALS = ['rgb(59, 148, 149)', 'rgb(47, 122, 123)'];
+  const sendOk = !!sendPaint && TEALS.includes(sendPaint.bg);
+  const ringOk = !!sendPaint && TEALS.includes(sendPaint.inputBorder);
   const sizeOk = !!sendPaint && sendPaint.dh < 1.5;
   const lineOk = !!sendPaint && sendPaint.dtop < 1.5;
   if (!sendOk) failed++;
