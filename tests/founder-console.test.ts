@@ -154,8 +154,12 @@ test('activityFeed returns real rows — a wrong column must fail loudly, not re
 
   const feed = await activityFeed(db);
   assert.ok(feed.length > 0, 'the feed came back empty — the read is broken, not the cohort');
-  assert.equal(feed.length, 2, 'a page_view is not news, and a demo persona is not a member');
+  // THREE, not two: the feed became a UNION when Jay asked for new members and Grinta movement alongside the
+  // member_event kinds (2026-08-01). Donna's own SIGNUP is now a row, which is the point — a join was the one
+  // thing the feed could never show. The exclusions still hold and are what this test is really guarding.
+  assert.equal(feed.length, 3, 'session + IDQ + her signup; a page_view is not news and a demo is not a member');
   assert.ok(feed.some((f) => f.text === 'Donna Crain closed RCN-EXC'), 'the ref must reach the label');
   assert.ok(feed.some((f) => f.text === 'Donna Crain completed the IDQ'));
+  assert.ok(feed.some((f) => f.text === 'Donna Crain joined'), 'and the signup the union added');
   assert.equal(feed[0]!.initials, 'DC');
 });

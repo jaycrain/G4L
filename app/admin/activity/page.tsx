@@ -1,9 +1,11 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getDb } from '../../../lib/db/index.ts';
-import { activityFeed, type FeedItem } from '../../../lib/admin/console.ts';
+import { activityFeed, markUnseen, type FeedItem } from '../../../lib/admin/console.ts';
+import { getActivitySeenAt, markActivitySeen } from '../../../lib/founder/state.ts';
 import { isAdmin } from '../../authz.ts';
 import ConsoleSubpage from '../console/subpage.tsx';
+import { relativeTime } from '../../../lib/admin/roster.ts';
 import type { Db } from '../../../lib/db/schema.ts';
 
 // THE ACTIVITY SUBPAGE — the console's twelve most recent events, without the twelve.
@@ -30,7 +32,14 @@ export default async function ActivityPage() {
   if (!(await isAdmin())) redirect('/admin/login');
   const db = (await getDb()) as unknown as Db;
   const now = Date.now();
-  const feed = await activityFeed(db, 200);
+  const raw = await activityFeed(db, 200);
+
+  // SINCE YOU LAST LOOKED. Read the marker BEFORE stamping the new one, or the page would always show zero.
+  const seenAt = await getActivitySeenAt(db);
+  const { feed, unseen } = markUnseen(raw, seenAt);
+  // Stamp the moment we rendered — NOT now() inside the write. Anything landing during the round trip stays
+  // new next time rather than being silently swallowed by our own bookkeeping.
+  await markActivitySeen(db, new Date(now).toISOString());
 
   // Group in order — the feed already arrives newest-first, so days come out newest-first too.
   const days: Array<{ label: string; items: FeedItem[] }> = [];
@@ -45,8 +54,18 @@ export default async function ActivityPage() {
     <ConsoleSubpage
       title="Activity"
       here="/admin/activity"
-      lede="What actually happened — Sessions closed, Checkpoints crossed, IDQs completed, goals reclaimed."
+      lede="What actually happened — new members, Sessions, Checkpoints, IDQs, Grinta movement, goals reclaimed."
     >
+      {/* THE POINT OF THE PAGE, per Jay: an instant check-in across a MacBook, an iPad and a phone. The marker
+          is per-ACCOUNT, so this counts what's landed since he last looked ANYWHERE — not since this device
+          last looked. Shown even at zero: "nothing new" is a real answer and the one he'll get most often. */}
+      <p className={`fca-since${unseen > 0 ? ' on' : ''}`}>
+        {unseen > 0
+          ? `${unseen} new since you last looked${seenAt ? ` · ${relativeTime(seenAt, now)}` : ''}`
+          : seenAt
+            ? `Nothing new since you last looked · ${relativeTime(seenAt, now)}`
+            : 'First look — everything below is new to you.'}
+      </p>
       {days.length === 0 ? (
         <div className="card">
           {/* An empty feed used to mean a BROKEN READ (member_event has no `payload` column, and the catch
@@ -64,7 +83,7 @@ export default async function ActivityPage() {
             <div className="fc-eyebrow">{d.label}</div>
             <h3 className="fc-h">{d.items.length} thing{d.items.length === 1 ? '' : 's'} moved</h3>
             {d.items.map((f, i) => (
-              <div className="fc-evt" key={`${f.memberId}-${i}`}>
+              <div className={`fc-evt${f.unseen ? ' unseen' : ''}`} key={`${f.memberId}-${i}`}>
                 <span className="fc-ea" style={{ background: TONE[f.tone] }}>{f.initials}</span>
                 <Link href={`/admin/member/${f.memberId}`} className="fc-el">{f.text}</Link>
                 <span className="fc-et">{time(f.at)}</span>

@@ -129,7 +129,30 @@ export function rosterAttention(rows: RosterRow[], now: number): AttentionRow[] 
   ];
 }
 
-export type FeedItem = { initials: string; text: string; at: string; memberId: string; tone: 'work' | 'win' | 'join' };
+export type FeedItem = {
+  initials: string; text: string; at: string; memberId: string;
+  tone: 'work' | 'win' | 'join';
+  /** Newer than the operator's last visit. Set by markUnseen, not by the query. */
+  unseen?: boolean;
+};
+
+/**
+ * Split a feed against "when did I last look".
+ *
+ * PURE, because the interesting part is the edge cases, not the SQL: a first-ever visit (null) means
+ * EVERYTHING is new, which is true and is the honest thing to show; and an event exactly ON the boundary is
+ * treated as seen, so re-opening the page twice in a row can't resurrect the same row.
+ */
+export function markUnseen(feed: FeedItem[], seenAt: string | null): { feed: FeedItem[]; unseen: number } {
+  const cutoff = seenAt ? new Date(seenAt).getTime() : null;
+  let unseen = 0;
+  const marked = feed.map((f) => {
+    const isNew = cutoff === null || new Date(f.at).getTime() > cutoff;
+    if (isNew) unseen++;
+    return isNew ? { ...f, unseen: true } : f;
+  });
+  return { feed: marked, unseen };
+}
 
 /**
  * What moved, newest first. Reads member_event, which is the honest record of what happened — as opposed to
@@ -139,19 +162,50 @@ export type FeedItem = { initials: string; text: string; at: string; memberId: s
  */
 export async function activityFeed(db: Db, limit = 12): Promise<FeedItem[]> {
   try {
+    // THREE SOURCES, ONE FEED.
+    //
+    // member_event only ever carried Sessions, Checkpoints, IDQs and reclaimed goals. Jay's list of what he
+    // wants to see on an instant check-in also has NEW MEMBERS and GRINTA SCORES — neither of which emits an
+    // event at all. Rather than start logging them (which would only help from today forward), they're read
+    // from the tables that already hold them, so the feed has real history the moment this ships.
+    //
+    // `ref` is a top-level column on member_event, not a key in a payload jsonb — the first cut selected
+    // `e.payload`, threw on every call, and the catch below rendered it as "nothing has happened".
     const { rows } = await db.query<{
       member_id: string; display_name: string; kind: string; ref: string | null; created_at: unknown;
     }>(
-      // `ref` is a TOP-LEVEL column on member_event, not a key inside a payload jsonb. The first cut read
-      // e.payload — a column that does not exist — so this threw on every call and the catch below turned it
-      // into an empty feed. It rendered as "nothing has happened", which is the most misleading possible
-      // failure for a panel whose whole job is showing what happened. Hence the log in the catch.
       `select e.member_id, p.display_name, e.kind, e.ref, e.created_at
          from member_event e
          join member_profile p on p.member_id = e.member_id
         where e.kind in ('session_close','checkpoint_cross','idq_complete','goal_reclaimed')
           and coalesce(p.email,'') not like '%.test'
-        order by e.created_at desc
+
+       union all
+       -- NEW MEMBERS. A signup is the single most interesting thing that can happen on a day, and it was the
+       -- one event the feed could not show.
+       select p.member_id, p.display_name, 'member_joined', null, p.created_at
+         from member_profile p
+        where coalesce(p.email,'') not like '%.test' and p.active
+
+       union all
+       -- GRINTA, with its DIRECTION. A bare "took the Grinta survey" is not the news; whether it moved is.
+       -- The prior reading comes from the same table via a window, so "up/down" is computed once here rather
+       -- than being re-derived (and re-disagreed-about) by every caller.
+       select g.member_id, p.display_name,
+              case when g.prev is null then 'grinta_first'
+                   when g.composite > g.prev then 'grinta_up'
+                   when g.composite < g.prev then 'grinta_down'
+                   else 'grinta_flat' end,
+              to_char(g.composite, 'FM9.0'), g.taken_at
+         from (
+           select member_id, composite, taken_at,
+                  lag(composite) over (partition by member_id order by sequence_no) as prev
+             from grinta_reading
+         ) g
+         join member_profile p on p.member_id = g.member_id
+        where coalesce(p.email,'') not like '%.test'
+
+        order by created_at desc
         limit $1`,
       [limit],
     );
@@ -161,19 +215,29 @@ export async function activityFeed(db: Db, limit = 12): Promise<FeedItem[]> {
         r.kind === 'session_close' ? `closed ${ref || 'a Session'}`
         : r.kind === 'checkpoint_cross' ? `crossed ${ref || 'a Checkpoint'}`
         : r.kind === 'idq_complete' ? 'completed the IDQ'
+        : r.kind === 'member_joined' ? 'joined'
+        : r.kind === 'grinta_up' ? `Grinta up to ${ref}`
+        : r.kind === 'grinta_down' ? `Grinta down to ${ref}`
+        : r.kind === 'grinta_flat' ? `Grinta held at ${ref}`
+        : r.kind === 'grinta_first' ? `first Grinta reading — ${ref}`
         : 'reclaimed a goal';
+      // A DOWNWARD Grinta is not a "loss" tone. Movement is information, never a verdict (Three Feedbacks) —
+      // colouring it like a failure would put a judgement on the operator surface that the member never gets.
+      const tone: FeedItem['tone'] =
+        r.kind === 'member_joined' || r.kind === 'idq_complete' ? 'join'
+        : r.kind === 'goal_reclaimed' || r.kind === 'checkpoint_cross' || r.kind === 'grinta_up' ? 'win'
+        : 'work';
       return {
         memberId: r.member_id,
         initials: initialsOf(r.display_name),
         text: `${r.display_name} ${text}`,
         at: new Date(r.created_at as string).toISOString(),
-        tone: r.kind === 'idq_complete' ? 'join' : r.kind === 'session_close' ? 'work' : 'win',
+        tone,
       } as FeedItem;
     });
   } catch (e) {
-    // Degrade to quiet rather than break the page — but SAY SO in the log. A silent [] here is
-    // indistinguishable from a genuinely quiet cohort, and that is exactly how the broken query above
-    // survived a deploy unnoticed.
+    // Degrade to quiet rather than break the page — but SAY SO. A silent [] is indistinguishable from a
+    // genuinely quiet cohort, and that is exactly how the broken query above survived a deploy unnoticed.
     console.error('[console] activityFeed read failed — feed rendered empty:', e);
     return [];
   }

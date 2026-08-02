@@ -20,9 +20,9 @@ const TONE: Record<FeedItem['tone'], string> = { work: 'var(--teal)', win: 'var(
  * LEFT the cohort, CENTRE the Companion (the workhorse), RIGHT what needs him.
  */
 export default function ConsoleShell({
-  cohort, attention, feed, memberCount, activeCount, now,
+  cohort, attention, feed, unseen, memberCount, activeCount, now,
 }: {
-  cohort: CohortView; attention: AttentionRow[]; feed: FeedItem[];
+  cohort: CohortView; attention: AttentionRow[]; feed: FeedItem[]; unseen: number;
   memberCount: number; activeCount: number; now: number;
 }) {
   const allActive = memberCount > 0 && activeCount >= memberCount;
@@ -126,12 +126,17 @@ export default function ConsoleShell({
 
           <div className="card" style={{ marginTop: 18 }}>
             <div className="fc-eyebrow">Activity</div>
-            <h3 className="fc-h">What moved</h3>
+            <h3 className="fc-h">
+              What moved
+              {/* The count he came to check, visible without opening anything. Reading the console does NOT
+                  clear it — only opening Activity does, or a glance would silently swallow the news. */}
+              {unseen > 0 && <span className="fc-new">{unseen} new</span>}
+            </h3>
             {feed.length === 0 ? (
               <p className="muted" style={{ margin: 0 }}>Nothing yet today.</p>
             ) : (
               feed.map((f, i) => (
-                <div className="fc-evt" key={`${f.memberId}-${i}`}>
+                <div className={`fc-evt${f.unseen ? ' unseen' : ''}`} key={`${f.memberId}-${i}`}>
                   <span className="fc-ea" style={{ background: TONE[f.tone] }}>{f.initials}</span>
                   <Link href={`/admin/member/${f.memberId}`} className="fc-el">{f.text}</Link>
                   <span className="fc-et">{ago(f.at, now)}</span>

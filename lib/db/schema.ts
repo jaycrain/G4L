@@ -124,6 +124,7 @@ const MIGRATIONS: Array<{ file: string; sentinel: Sentinel }> = [
             ) as e`,
     },
   },
+  { file: 'migrations/0069_founder_state.sql', sentinel: 'founder_state' },
 ];
 export const SEED_SQL = () => sqlFile('seed/0001_reference_data.sql');
 

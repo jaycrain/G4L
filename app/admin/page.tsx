@@ -9,7 +9,8 @@ import { getModerationQueue, openReportCount } from '../../lib/connect/moderatio
 import AdminAutoRefresh from './auto-refresh.tsx';
 import { isAdmin } from '../authz.ts';
 import { founderConsoleEnabled } from '../../lib/dashboard/redesign.ts';
-import { cohortView, rosterAttention, activityFeed } from '../../lib/admin/console.ts';
+import { cohortView, rosterAttention, activityFeed, markUnseen } from '../../lib/admin/console.ts';
+import { getActivitySeenAt } from '../../lib/founder/state.ts';
 import ConsoleShell from './console/console-shell.tsx';
 import { HealthSection, ModerationSection, ReviewSection, MembersSection, FeedbackSection } from './sections/index.tsx';
 import type { Db } from '../../lib/db/schema.ts';
@@ -33,7 +34,10 @@ export default async function AdminHome({ searchParams }: { searchParams?: Promi
   // page, so the table is never lost — the console links to it, and a console that can't answer something
   // must not become a dead end.
   if (founderConsoleEnabled() && (await searchParams)?.view !== 'roster') {
-    const [feed] = await Promise.all([activityFeed(db)]);
+    // The console SHOWS the unseen count but never stamps it — only opening Activity marks things seen.
+    // Otherwise a glance at the dashboard would silently clear the thing he came to check.
+    const [rawFeed, seenAt] = await Promise.all([activityFeed(db), getActivitySeenAt(db)]);
+    const { feed, unseen } = markUnseen(rawFeed, seenAt);
     const cohort = cohortView(roster, summary, now);
     const attention = [
       { kind: 'crisis' as const, label: modCount.safety > 0 ? `${modCount.safety} safety report${modCount.safety === 1 ? '' : 's'} open` : 'nothing flagged', count: modCount.safety },
@@ -45,6 +49,7 @@ export default async function AdminHome({ searchParams }: { searchParams?: Promi
         cohort={cohort}
         attention={attention}
         feed={feed}
+        unseen={unseen}
         memberCount={cohort.members}
         activeCount={cohort.activeLast7}
         now={now}
