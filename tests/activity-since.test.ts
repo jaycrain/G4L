@@ -104,3 +104,29 @@ test('demo personas stay out of every source', async () => {
   await db.query(`insert into member_profile (display_name, email) values ('Demo','demo@grintaforlife.test')`);
   assert.deepEqual(await activityFeed(db, 50), [], 'including the join row the union added');
 });
+
+test('THE BUG: a re-render must not advance the marker', async () => {
+  // The first cut stamped inside the page render, and every console page auto-refreshes every 30 seconds —
+  // so the marker chased its own tail. Each tick marked everything seen, the count sat at zero forever, and
+  // the console badge never appeared. The feature was invisible; Jay's read of it was "I'm lost on this
+  // implementation", which is what an invisible feature feels like from the outside.
+  //
+  // A RENDER IS NOT AN INTENTION. This pins the property that makes the count trustworthy: only a deliberate
+  // act moves the marker, so rendering the page a hundred times changes nothing.
+  __resetFounderStateCache();
+  const db = new PGlite() as unknown as Db;
+  await applySchema(db);
+  await markActivitySeen(db, at(60));
+
+  const feed = [item(5), item(10)]; // two events since the marker
+  for (let render = 0; render < 5; render++) {
+    const seen = await getActivitySeenAt(db);
+    const { unseen } = markUnseen(feed, seen);
+    assert.equal(unseen, 2, `render ${render + 1} must still report 2 new — a refresh is not an acknowledgement`);
+  }
+
+  // Only the explicit act clears it.
+  await markActivitySeen(db, at(0));
+  const { unseen } = markUnseen(feed, await getActivitySeenAt(db));
+  assert.equal(unseen, 0, 'and after "Mark all seen", they are seen');
+});

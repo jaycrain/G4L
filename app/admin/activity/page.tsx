@@ -2,7 +2,8 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getDb } from '../../../lib/db/index.ts';
 import { activityFeed, markUnseen, type FeedItem } from '../../../lib/admin/console.ts';
-import { getActivitySeenAt, markActivitySeen } from '../../../lib/founder/state.ts';
+import { getActivitySeenAt } from '../../../lib/founder/state.ts';
+import { markActivitySeenAction } from './actions.ts';
 import { isAdmin } from '../../authz.ts';
 import ConsoleSubpage from '../console/subpage.tsx';
 import { relativeTime } from '../../../lib/admin/roster.ts';
@@ -34,12 +35,16 @@ export default async function ActivityPage() {
   const now = Date.now();
   const raw = await activityFeed(db, 200);
 
-  // SINCE YOU LAST LOOKED. Read the marker BEFORE stamping the new one, or the page would always show zero.
+  // SINCE YOU LAST LOOKED — and the page does NOT stamp the marker.
+  //
+  // It used to, on every render. But every console page auto-refreshes every 30 seconds, so the marker chased
+  // its own tail: each tick marked everything seen, the count sat at zero forever, and the console badge never
+  // appeared because Activity had already swallowed it. The whole feature was invisible.
+  //
+  // A RENDER IS NOT AN INTENTION. Clearing is now a deliberate tap (markActivitySeenAction), which also makes
+  // the rule something you can see rather than something you have to trust: nothing clears until you say so.
   const seenAt = await getActivitySeenAt(db);
   const { feed, unseen } = markUnseen(raw, seenAt);
-  // Stamp the moment we rendered — NOT now() inside the write. Anything landing during the round trip stays
-  // new next time rather than being silently swallowed by our own bookkeeping.
-  await markActivitySeen(db, new Date(now).toISOString());
 
   // Group in order — the feed already arrives newest-first, so days come out newest-first too.
   const days: Array<{ label: string; items: FeedItem[] }> = [];
@@ -59,13 +64,20 @@ export default async function ActivityPage() {
       {/* THE POINT OF THE PAGE, per Jay: an instant check-in across a MacBook, an iPad and a phone. The marker
           is per-ACCOUNT, so this counts what's landed since he last looked ANYWHERE — not since this device
           last looked. Shown even at zero: "nothing new" is a real answer and the one he'll get most often. */}
-      <p className={`fca-since${unseen > 0 ? ' on' : ''}`}>
-        {unseen > 0
-          ? `${unseen} new since you last looked${seenAt ? ` · ${relativeTime(seenAt, now)}` : ''}`
-          : seenAt
-            ? `Nothing new since you last looked · ${relativeTime(seenAt, now)}`
-            : 'First look — everything below is new to you.'}
-      </p>
+      <div className={`fca-since${unseen > 0 ? ' on' : ''}`}>
+        <span>
+          {unseen > 0
+            ? `${unseen} new since you last looked${seenAt ? ` · ${relativeTime(seenAt, now)}` : ''}`
+            : seenAt
+              ? `Nothing new since you last looked · ${relativeTime(seenAt, now)}`
+              : 'First look — everything below is new to you.'}
+        </span>
+        {unseen > 0 && (
+          <form action={markActivitySeenAction}>
+            <button type="submit" className="fca-seen-btn">Mark all seen</button>
+          </form>
+        )}
+      </div>
       {days.length === 0 ? (
         <div className="card">
           {/* An empty feed used to mean a BROKEN READ (member_event has no `payload` column, and the catch
