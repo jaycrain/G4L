@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import type { CohortView, AttentionRow } from '../../../lib/admin/console.ts';
-import { askFounderCompanionAction, loadFounderThreadAction, clearFounderThreadAction, listSavedPromptsAction, toggleSavedPromptAction } from './actions.ts';
+import { askFounderCompanionAction, loadFounderThreadAction, clearFounderThreadAction } from './actions.ts';
 
 import DataCard from './data-card.tsx';
 import type { Card } from '../../../lib/founder/cards.ts';
@@ -60,23 +60,28 @@ const LOOKED: Record<string, string> = {
   operations_status: 'your queues',
 };
 
-/** The four we ship with. A reasonable guess at a morning routine — not HIS routine, which only shows up in
- *  use, which is what starring is for. Saved ones lead the row; these fill out the rest. */
-const DEFAULT_PINS = [
-  'Run my morning scan',
-  "Who hasn't been back in 5 days?",
-  'Who is closest to a Checkpoint?',
-  'What moved overnight?',
-];
+/**
+ * The Companion writes **bold**; the thread was printing the asterisks.
+ *
+ * A deliberately tiny renderer rather than a markdown library: the only thing the model actually emits here is
+ * emphasis on a name or a value, and everything else it might emit — links, images, raw HTML — is something we
+ * do NOT want executing on a surface that renders members' own words. Splitting on `**` and building real
+ * React elements means there is no HTML-injection path at all.
+ */
+function withEmphasis(text: string): React.ReactNode {
+  const parts = text.split(/\*\*(.+?)\*\*/g);
+  // split() with one capture group alternates plain, captured, plain, captured…
+  return parts.map((p, i) => (i % 2 === 1 ? <strong key={i}>{p}</strong> : p));
+}
 
-export default function FounderCompanion({ cohort, attention }: { cohort: CohortView; attention: AttentionRow[] }) {
+export default function FounderCompanion({
+  cohort, attention, unseen = 0,
+}: { cohort: CohortView; attention: AttentionRow[]; unseen?: number }) {
   // Starts EMPTY, then restores after mount. Reading sessionStorage during the initial render would make the
   // client markup disagree with the server's and trip a hydration error.
   const [thread, setThread] = useState<Turn[]>([]);
   const [input, setInput] = useState('');
   const [pending, setPending] = useState(false);
-  const [saved, setSaved] = useState<string[]>([]);
-  const [lastAsked, setLastAsked] = useState('');
   const restored = useRef(false);
 
   useEffect(() => {
@@ -86,7 +91,6 @@ export default function FounderCompanion({ cohort, attention }: { cohort: Cohort
     let cancelled = false;
     const local = loadThread();
     if (local.length) setThread(local);
-    void listSavedPromptsAction().then((p) => { if (!cancelled) setSaved(p); }).catch(() => {});
     void loadFounderThreadAction()
       .then((stored) => {
         if (cancelled || !stored.length) return;
@@ -117,7 +121,6 @@ export default function FounderCompanion({ cohort, attention }: { cohort: Cohort
     const q = qRaw.trim();
     if (!q || pending) return;
     setInput('');
-    setLastAsked(q);
     // Snapshot the thread BEFORE appending this question — it's the history the model needs, and the new
     // question is passed separately. Reading `thread` after setThread would race React's batching.
     const history = thread.map((t) => ({ role: t.role, text: t.text }));
@@ -136,30 +139,48 @@ export default function FounderCompanion({ cohort, attention }: { cohort: Cohort
     setPending(false);
   }
 
-  // The opening line is COMPUTED, not asked for — the morning read is already done when he arrives.
+  // The opening line is COMPUTED, not asked for — the read is already done when he arrives.
+  //
+  // IT LEADS WITH THE DELTA, because the panel is now titled "Since you last checked in" and a title that
+  // promises a change while the text underneath reports a snapshot is a small lie told on every load. It uses
+  // the SAME unseen count as the Activity panel (one marker, one definition of "last looked"), so the two can
+  // never disagree about what's new.
   const needs = attention.filter((a) => a.count > 0);
-  const opener =
-    needs.length === 0
-      ? `${cohort.members} member${cohort.members === 1 ? '' : 's'}, nothing needs you this morning. Ask me anything.`
-      : `${cohort.members} member${cohort.members === 1 ? '' : 's'}. ${needs.length === 1 ? 'One thing needs' : `${needs.length} things need`} a look: ${needs.map((n) => n.label).join('; ')}.`;
+  const moved = unseen > 0
+    ? `${unseen} thing${unseen === 1 ? '' : 's'} moved since you last looked.`
+    : 'Nothing new since you last looked.';
+  const opener = needs.length === 0
+    ? `${moved} Nothing needs you.`
+    : `${moved} ${needs.length === 1 ? 'One thing needs' : `${needs.length} things need`} a look: ${needs.map((n) => n.label).join('; ')}.`;
 
   return (
     <div className="fc-hero">
       <div className="fc-hero-h">
-        <div className="fc-hero-eye">The Founder Companion · read-only</div>
-        <div className="fc-hero-title">Your morning read</div>
-        <div className="fc-hero-sub">
-          Ask anything about your members.
-          {/* Clearing is a PRIVACY control as much as a tidiness one: a thread where Jay asked about one
-              person holds that person's own words, and he should be able to put them down. Now that the
-              thread is durable this deletes the stored rows too — "clear" has to mean gone, not hidden. */}
-          {thread.length > 0 && (
-            <>
-              {' · '}
-              <button type="button" className="fc-clear" onClick={clearThread}>Clear this conversation</button>
-            </>
-          )}
+        <div className="fc-hero-heading">
+          {/* "read-only" WAS TRUE AND ISN'T ANY MORE. The Companion has one write tool (draft_message), which
+              puts a row in the review queue. A governance badge is the thing you'd point at to prove the
+              guarantee, so it has to describe the guarantee that actually holds: it can draft, it cannot send.
+              See lib/founder/companion-tools.ts — WRITE_TOOLS is enumerated there and asserted in tests. */}
+          <div className="fc-hero-eye">The Founder Companion · nothing sends without you</div>
+          <div className="fc-hero-title">Since you last checked in</div>
         </div>
+        {/* Clearing is a PRIVACY control as much as a tidiness one: a thread where Jay asked about one
+            person holds that person's own words, and he should be able to put them down. Now that the
+            thread is durable this deletes the stored rows too — "clear" has to mean gone, not hidden. */}
+        {/* On a phone the full label ate half the header row, squeezing the AI-disclosure badge beside it into
+            three wrapped lines — so the visible text shortens to "Clear" below 700px. aria-label pins the
+            ACCESSIBLE name either way: a control whose name changes with the viewport is one a screen reader
+            (and the walk that clicks it by name) can find at one width and lose at another. */}
+        {thread.length > 0 && (
+          <button
+            type="button"
+            className="fc-clear fc-own"
+            aria-label="Clear this conversation"
+            onClick={clearThread}
+          >
+            Clear<span className="fc-clear-long"> this conversation</span>
+          </button>
+        )}
       </div>
 
       <div className="fc-thread">
@@ -168,7 +189,7 @@ export default function FounderCompanion({ cohort, attention }: { cohort: Cohort
           const where = [...new Set(t.looked ?? [])].map((n) => LOOKED[n] ?? n);
           return (
             <div key={i}>
-              <div className={`fc-b ${t.role === 'jay' ? 'me' : 'co'}`}>{t.text}</div>
+              <div className={`fc-b ${t.role === 'jay' ? 'me' : 'co'}`}>{withEmphasis(t.text)}</div>
               {/* The data UNDER the answer, built from the query rather than the retelling. */}
               {(t.cards ?? []).map((c, ci) => <DataCard key={ci} card={c} />)}
               {where.length > 0 && <div className="fc-looked">Checked {where.join(', ')}</div>}
@@ -178,48 +199,26 @@ export default function FounderCompanion({ cohort, attention }: { cohort: Cohort
         {pending && <div className="fc-b co fc-thinking">Looking…</div>}
       </div>
 
-      {/* SAVED FIRST, then the defaults we shipped. A starred question is one he's actually asked, so it
-          outranks our guess at what he'd want. The last question asked can be starred from here, which is the
-          only moment he knows whether it was worth keeping. */}
-      <div className="fc-pins">
-        {[...saved, ...DEFAULT_PINS.filter((d) => !saved.includes(d))].map((p) => {
-          const isSaved = saved.includes(p);
-          return (
-            <span key={p} className={`fc-pin-wrap${isSaved ? ' on' : ''}`}>
-              <button type="button" className="fc-pin" onClick={() => ask(p)} disabled={pending}>
-                {isSaved && <span aria-hidden="true">★ </span>}{p}
-              </button>
-              <button
-                type="button"
-                className="fc-pin-star"
-                title={isSaved ? 'Remove from your saved questions' : 'Save this question'}
-                aria-label={isSaved ? `Unsave "${p}"` : `Save "${p}"`}
-                onClick={() => { void toggleSavedPromptAction(p, !isSaved).then(setSaved).catch(() => {}); }}
-              >{isSaved ? '×' : '★'}</button>
-            </span>
-          );
-        })}
-        {/* Star what he JUST asked — the only moment he can tell whether it earned a place. */}
-        {lastAsked && !saved.includes(lastAsked) && !DEFAULT_PINS.includes(lastAsked) && (
-          <button
-            type="button"
-            className="fc-pin fc-pin-savelast"
-            onClick={() => { void toggleSavedPromptAction(lastAsked, true).then(setSaved).catch(() => {}); }}
-          >★ Save “{lastAsked.length > 34 ? `${lastAsked.slice(0, 34)}…` : lastAsked}”</button>
-        )}
-      </div>
+      {/* THE SUGGESTED-PROMPT ROW IS GONE (Jay, 2026-08-02: "don't need the suggested prompt system at all").
+          It was four guesses at his morning routine plus a starring mechanism to correct the guesses — two
+          rows of chrome, a persistence table and a second way to do the one thing the composer already does.
+          The `founder_prompt` table is left in place rather than dropped in the same breath; it's dormant and
+          costs nothing, and dropping a live table deserves its own migration. */}
 
       <form
         className="fc-composer"
         onSubmit={(e) => { e.preventDefault(); void ask(input); }}
       >
+        {/* `fc-own` on both: this component sets its own colours, and the dark theme's blanket element rules
+            must not repaint them. Without it the composer lost its teal border and Send lost its teal fill. */}
         <input
+          className="fc-own"
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="Ask about your members…"
           aria-label="Ask the Founder Companion"
         />
-        <button type="submit" className="fc-send" disabled={pending}>Send</button>
+        <button type="submit" className="fc-send fc-own" disabled={pending}>Send</button>
       </form>
     </div>
   );

@@ -6,7 +6,6 @@ import { FOUNDER_COMPANION_SYSTEM, cohortContext } from '../../../lib/founder/co
 import { FOUNDER_TOOLS, runFounderTool, newTurnBudget } from '../../../lib/founder/companion-tools.ts';
 import { appendFounderTurns, loadFounderThread, clearFounderThread } from '../../../lib/founder/thread.ts';
 import { cardFor, type Card } from '../../../lib/founder/cards.ts';
-import { listSavedPrompts, savePrompt, unsavePrompt } from '../../../lib/founder/prompts.ts';
 import type { CohortView, AttentionRow } from '../../../lib/admin/console.ts';
 
 /**
@@ -17,9 +16,13 @@ import type { CohortView, AttentionRow } from '../../../lib/admin/console.ts';
  * those members are irrelevant to whatever Jay just asked. So it runs tools: it fetches the answer to the
  * question asked, and nothing else. Jay's use is a phone, mid-ride, asking one specific thing.
  *
- * READ-ONLY, ENFORCED HERE AND NOT JUST BY THE PROMPT. Every tool in FOUNDER_TOOLS is a SELECT. There is no
- * write path, no send path, no draft-approve path — a prompt injection through a member's own name or gap
- * text has nothing to reach for. The no-auto-send rule is upheld by there being no send tool to call.
+ * WHAT IT CAN AND CANNOT DO, ENFORCED HERE AND NOT JUST BY THE PROMPT. This said "READ-ONLY … there is no
+ * write path" and that stopped being true when draft_message shipped — a stale governance claim in the one
+ * place someone would check it. The accurate statement: every tool is a SELECT except draft_message, which
+ * writes ONE row into the review queue and touches no member data. There is still NO SEND PATH, so the
+ * no-auto-send rule is upheld the only way worth relying on — by there being no send tool to call. The set of
+ * write tools is enumerated in WRITE_TOOLS (companion-tools.ts) and asserted in tests, so adding a second one
+ * is a deliberate act that fails a test rather than a quiet edit.
  *
  * The cohort/attention values from the client stay PROMPT CONTEXT only — nothing queries from them. Tools
  * re-derive everything server-side, which is what makes it safe to let the model drive them.
@@ -32,21 +35,6 @@ export async function loadFounderThreadAction(): Promise<PriorTurn[]> {
   if (!(await isAdmin())) return [];
   const db = await getDb();
   return (await loadFounderThread(db)).map((t) => ({ role: t.role, text: t.text }));
-}
-
-/** The questions Jay has starred. Empty before 0067 — the defaults still work. */
-export async function listSavedPromptsAction(): Promise<string[]> {
-  if (!(await isAdmin())) return [];
-  return listSavedPrompts(await getDb());
-}
-
-/** Star / unstar. One call so the client doesn't have to know which way it's toggling. */
-export async function toggleSavedPromptAction(text: string, save: boolean): Promise<string[]> {
-  if (!(await isAdmin())) return [];
-  const db = await getDb();
-  if (save) await savePrompt(db, text);
-  else await unsavePrompt(db, text);
-  return listSavedPrompts(db);
 }
 
 /** Purge — deletes the rows, not just the screen. The privacy control the durable version is built WITH. */

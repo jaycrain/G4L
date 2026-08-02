@@ -191,6 +191,53 @@ async function main() {
     console.log(`${cleared ? '✔' : '✖'} clearing it really empties the store, not just the screen`);
   }
 
+  // ── THE COMPANION SAYS WHAT IT ACTUALLY GUARANTEES ─────────────────────────────────────────────────────
+  // The badge read "read-only" long after draft_message shipped. A governance label is the thing you'd point
+  // at to prove the guarantee, so a stale one is worse than none — assert the false claim can't come back.
+  await page.goto(BASE + '/admin', { waitUntil: 'networkidle' });
+  const badge = (await page.locator('.fc-hero-eye').first().innerText().catch(() => '')).toLowerCase();
+  const badgeOk = badge.includes('nothing sends without you') && !badge.includes('read-only');
+  if (!badgeOk) failed++;
+  console.log(`${badgeOk ? '✔' : '✖'} Companion badge states the real guarantee → "${badge}"`);
+
+  const titled = await page.getByText('Since you last checked in').count() > 0;
+  if (!titled) failed++;
+  console.log(`${titled ? '✔' : '✖'} the Companion panel is titled for the delta it reports`);
+
+  // ── THE PRIMARY ACTION IS STILL THE PRIMARY COLOUR ─────────────────────────────────────────────────────
+  // Regression guard for a CLASS of bug, not one button. The dark theme's blanket `.fc-dark button {}` rule
+  // outranks any component that styles itself with a single class, so it silently repainted Send from
+  // teal-filled to a transparent outline and stripped the composer's teal border. Two exceptions had already
+  // been hand-written to undo it elsewhere; this asserts the general fix instead of watching for a fourth.
+  const sendPaint = await page.evaluate(() => {
+    const b = document.querySelector('.fc-send');
+    const i = document.querySelector('.fc-composer input');
+    if (!b || !i) return null;
+    const bs = getComputedStyle(b), is = getComputedStyle(i);
+    return {
+      bg: bs.backgroundColor,
+      inputBorder: is.borderTopColor,
+      dh: Math.abs(b.getBoundingClientRect().height - i.getBoundingClientRect().height),
+    };
+  });
+  // Teal is #3B9495 = rgb(59, 148, 149). Read the painted value, not the class list — the whole bug was that
+  // the class was present and the paint was wrong.
+  const TEAL = 'rgb(59, 148, 149)';
+  const sendOk = !!sendPaint && sendPaint.bg === TEAL;
+  const ringOk = !!sendPaint && sendPaint.inputBorder === TEAL;
+  const sizeOk = !!sendPaint && sendPaint.dh < 1.5;
+  if (!sendOk) failed++;
+  if (!ringOk) failed++;
+  if (!sizeOk) failed++;
+  console.log(`${sendOk ? '✔' : '✖'} Send is still teal-filled → ${sendPaint?.bg ?? 'not found'}`);
+  console.log(`${ringOk ? '✔' : '✖'} composer keeps its teal border → ${sendPaint?.inputBorder ?? 'not found'}`);
+  console.log(`${sizeOk ? '✔' : '✖'} composer and Send are the same height → Δ${sendPaint?.dh.toFixed(2) ?? '?'}px`);
+
+  // The suggested-prompt row is gone, not merely hidden.
+  const noPins = await page.locator('.fc-pins, .fc-pin').count() === 0;
+  if (!noPins) failed++;
+  console.log(`${noPins ? '✔' : '✖'} the suggested-prompt row is gone`);
+
   // ── THE PAGE DOES NOT SCROLL; THE PANES DO ─────────────────────────────────────────────────────────────
   // Jay, 2026-08-01: "The center panel is fixed, pinned, and scrolls. The left and right flank also scroll
   // when they need too." The property is not "it looks right" — it's that the DOCUMENT is locked and each

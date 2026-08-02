@@ -41,7 +41,7 @@ export default function ConsoleShell({
       <ConsolePanes
         initialPane={pane}
         left={<CohortPanel cohort={cohort} />}
-        centre={<FounderCompanion cohort={cohort} attention={attention} />}
+        centre={<FounderCompanion cohort={cohort} attention={attention} unseen={unseen} />}
         right={<NeedsYouPanel attention={attention} feed={feed} unseen={unseen} now={now} />}
       />
     </div>

@@ -2305,10 +2305,12 @@ body:has(.fc-app) .confidential-footer { display: none; }
 /* No min-height any more — it fills the pane it's pinned into, and its .fc-thread does the scrolling. */
 .fc-hero { background:var(--navy); border-radius:20px; overflow:hidden; display:flex; flex-direction:column;
   min-height:0; box-shadow:0 10px 30px rgba(55,79,99,.18); }
-.fc-hero-h { padding:20px 22px 6px; }
+/* Title left, "Clear this conversation" pinned top-right. The sub-line ("Ask anything about your members")
+   is gone — the composer placeholder says the same thing at the moment it's useful. */
+.fc-hero-h { padding:20px 22px 10px; display:flex; align-items:flex-start; justify-content:space-between; gap:14px; }
+.fc-hero-heading { min-width:0; }
 .fc-hero-eye { font-size:11px; font-weight:700; letter-spacing:.11em; text-transform:uppercase; color:#8FBDBE; }
 .fc-hero-title { font-size:23px; font-weight:800; color:#fff; margin:4px 0 2px; }
-.fc-hero-sub { color:#C7D2D9; font-size:13.5px; opacity:.9; }
 .fc-thread { flex:1; padding:12px 22px 4px; display:flex; flex-direction:column; gap:11px; overflow:auto; }
 .fc-b { max-width:82%; padding:11px 14px; border-radius:15px; font-size:14.5px; line-height:1.5; white-space:pre-wrap; }
 .fc-b.co { align-self:flex-start; background:rgba(255,255,255,.09); color:#EAF0F2; border-bottom-left-radius:5px; }
@@ -2316,14 +2318,18 @@ body:has(.fc-app) .confidential-footer { display: none; }
 .fc-thinking { opacity:.6; font-style:italic; }
 /* Where the answer came from. Quiet on purpose — it's a receipt, not a finding. */
 .fc-looked { font-size:11px; letter-spacing:.02em; opacity:.5; margin:2px 0 8px 2px; }
-.fc-pins { display:flex; gap:7px; flex-wrap:wrap; padding:8px 22px 2px; }
-.fc-pin { font-family:inherit; font-size:12px; font-weight:600; color:#DCE7EA; background:rgba(255,255,255,.10);
-  border:1px solid rgba(255,255,255,.14); border-radius:999px; padding:.3rem .68rem; cursor:pointer; white-space:nowrap; }
-.fc-pin:hover:not(:disabled) { background:var(--teal); border-color:var(--teal); color:#fff; }
-.fc-pin:disabled { opacity:.5; cursor:default; }
-.fc-composer { display:flex; gap:9px; padding:12px 18px 18px; align-items:center; }
-.fc-composer input { flex:1; font-family:inherit; font-size:14.5px; border:1.5px solid var(--teal); border-radius:12px;
-  padding:.75rem .95rem; background:rgba(255,255,255,.12); color:#fff; }
+/* THE COMPOSER AND SEND ARE ONE CONTROL, so they're built to be the same object twice: one shared height,
+   one shared border, one shared radius. Their font sizes differ (14.5 / 14) and their padding differs, so
+   ANY approach that lets height fall out of content puts them a few pixels apart.
+
+   `align-items:stretch` was the first attempt and it does NOT work: an <input> stretches to the flex line,
+   a <button> does not — Chrome gives buttons their own internal layout box. That produced a 70px field
+   beside a 46px button, which is worse than the original mismatch and looks like a bug rather than a
+   rounding error. Measured, not eyeballed; the console walk now asserts the two heights agree. */
+.fc-composer { --composer-h: 46px; display:flex; gap:9px; padding:12px 18px 18px; align-items:center; }
+.fc-composer input { flex:1; min-width:0; height:var(--composer-h); font-family:inherit; font-size:14.5px;
+  box-sizing:border-box; border:1.5px solid var(--teal); border-radius:12px;
+  padding:0 .95rem; background:rgba(255,255,255,.12); color:#fff; }
 .fc-composer input::placeholder { color:#AFC0C7; }
 /* The composer had border:0 and no focus style, so the browser painted its OWN focus ring — a blue glow,
    off-palette, and especially loud against the navy panel. Replaced, not removed: killing the outline
@@ -2333,8 +2339,9 @@ body:has(.fc-app) .confidential-footer { display: none; }
 .fc-composer input:focus-visible {
   outline:2px solid var(--teal); outline-offset:2px; background:rgba(255,255,255,.18);
 }
-.fc-send { font-family:inherit; font-weight:700; font-size:14px; border:0; border-radius:12px;
-  padding:.72rem 1.15rem; background:var(--teal); color:#fff; cursor:pointer; }
+.fc-send { flex:none; height:var(--composer-h); font-family:inherit; font-weight:700; font-size:14px;
+  box-sizing:border-box; border:1.5px solid var(--teal); border-radius:12px;
+  padding:0 1.15rem; background:var(--teal); color:#fff; cursor:pointer; }
 .fc-send:disabled { opacity:.6; cursor:default; }
 
 .fc-need { display:flex; align-items:flex-start; gap:10px; padding:9px 0; border-top:1px solid rgba(55,79,99,.16); }
@@ -2451,10 +2458,15 @@ button.fcs-tab { font-family: inherit; cursor: pointer; }
 
 /* Live indicator sits beside the subpage title, not stacked under it. */
 
-/* "Clear this conversation" — a quiet inline control, not a button that competes with Send. */
-.fc-clear { font: inherit; font-size: inherit; background: none; border: 0; padding: 0; color: inherit;
-  text-decoration: underline; text-underline-offset: 2px; cursor: pointer; opacity: .85; }
-.fc-clear:hover { opacity: 1; }
+/* "Clear this conversation" — a quiet control in the panel's top-right, not a button that competes with Send.
+   `fc-own` so the dark theme's blanket button rule doesn't give it a box and a border. */
+.fc-clear { font: inherit; font-size: 12.5px; background: none; border: 0; padding: 0; color: #C7D2D9;
+  text-decoration: underline; text-underline-offset: 2px; cursor: pointer; opacity: .85;
+  white-space: nowrap; flex: none; margin-top: 4px; }
+.fc-clear:hover { opacity: 1; color: #fff; }
+/* "Clear" is the whole meaning; "this conversation" is the polite half. Below the fold the polite half costs
+   the AI-disclosure badge two extra wrapped lines, so it goes. */
+@media (max-width: 700px) { .fc-clear-long { display: none; } }
 
 /* Feedback filters — chips, same register as the console's subpage tabs. */
 .fb-filters { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 14px; }
@@ -2480,18 +2492,8 @@ button.fcs-tab { font-family: inherit; cursor: pointer; }
 .fc-bar-track i { display: block; width: 100%; border-radius: 3px; }
 .fc-bar-l { font-size: 11px; color: var(--fc-muted, #7b8794); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 
-/* Saved prompts. The star sits alongside the pin rather than inside it, so tapping the question ASKS it and
-   tapping the star SAVES it — one control doing two jobs is how you get accidental saves. */
-.fc-pin-wrap { display: inline-flex; align-items: stretch; border-radius: 999px; overflow: hidden; }
-.fc-pin-wrap.on .fc-pin { background: rgba(59,148,149,.24); border-color: rgba(143,189,190,.5); color: #EAF7F7; }
-.fc-pin-star {
-  font-family: inherit; font-size: 11px; line-height: 1; cursor: pointer; padding: 0 .5rem;
-  color: #AFC0C7; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.14); border-left: 0;
-  border-radius: 0 999px 999px 0;
-}
-.fc-pin-star:hover { color: #fff; background: var(--teal); border-color: var(--teal); }
-.fc-pin-wrap .fc-pin { border-radius: 999px 0 0 999px; border-right: 0; }
-.fc-pin-savelast { border-style: dashed; }
+/* The saved-prompt pins lived here (Jay, 2026-08-02: "don't need the suggested prompt system at all").
+   Removed with their markup rather than left behind — dead CSS is how a stylesheet stops being readable. */
 
 /* "Since you last looked" — the Activity page's whole job on a check-in. */
 .fca-since { font-size: 13px; color: var(--fc-muted, #7b8794); margin: -4px 0 14px; }
@@ -2571,15 +2573,31 @@ button.fcs-tab { font-family: inherit; cursor: pointer; }
 }
 .fc-dark .badge-demo { background: rgba(255, 255, 255, .06); color: var(--faint); }
 
-/* Controls. Buttons stop being light-grey chrome and become outlines on the dark ground. */
-.fc-dark button, .fc-dark .btn-secondary {
+/* Controls. Buttons stop being light-grey chrome and become outlines on the dark ground.
+   ─────────────────────────────────────────────────────────────────────────────────────────────────────────
+   `:not(.fc-own)` IS THE WHOLE POINT OF THIS BLOCK, so don't drop it.
+
+   These are ELEMENT selectors (`.fc-dark button` = specificity 0,1,1) and they sit near the END of this
+   stylesheet, so they beat every component that styles itself with a single class earlier in the file. That
+   is fine for generic chrome and WRONG for anything whose colour carries meaning: it silently repainted the
+   Companion's Send button from teal-filled to a transparent outline, and stripped the composer's teal border
+   — a primary action and its focus ring, both quietly turned into chrome (Jay, 2026-08-02: "Teal ring is
+   missing", "Send button is no longer teal").
+
+   The tell that this was a PATTERN and not a one-off: two exceptions had already been hand-written below
+   (.fca-seen-btn, .fc-theme-toggle) to undo exactly this. A third exception would have been the moment
+   brittleness sets in — so the rule now asks permission instead. A component that owns its palette marks
+   itself `fc-own` and the theme leaves it alone. */
+.fc-dark button:not(.fc-own), .fc-dark .btn-secondary:not(.fc-own) {
   background: transparent; color: var(--ink); border: 1px solid rgba(255, 255, 255, .18);
 }
-.fc-dark button:hover, .fc-dark .btn-secondary:hover { border-color: var(--teal); background: var(--fill-6); }
-.fc-dark input, .fc-dark textarea, .fc-dark select {
+.fc-dark button:not(.fc-own):hover, .fc-dark .btn-secondary:not(.fc-own):hover {
+  border-color: var(--teal); background: var(--fill-6);
+}
+.fc-dark input:not(.fc-own), .fc-dark textarea:not(.fc-own), .fc-dark select:not(.fc-own) {
   background: var(--fill-6); border-color: rgba(255, 255, 255, .18); color: var(--ink);
 }
-.fc-dark input::placeholder, .fc-dark textarea::placeholder { color: var(--faint); }
+.fc-dark input:not(.fc-own)::placeholder, .fc-dark textarea:not(.fc-own)::placeholder { color: var(--faint); }
 .fc-dark .admin-live-label { color: var(--sec); }
 .fc-dark .admin-live-toggle { color: var(--teal-lift); }
 .fc-dark .fca-seen-btn { background: transparent; color: var(--teal-lift); border-color: var(--teal); }
