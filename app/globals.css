@@ -24,7 +24,7 @@
      stylesheet 8 times before today, because the brand teal wasn't readable in those spots and whoever was
      working reached for something darker. Now it has a name and a rule. */
   --teal-text: #2f7a7b;    /* 5.01:1 on white */
-  --orange-text: #bc4e28;  /* 4.93:1 */
+  --orange-text: #c35127;  /* 4.64:1 on white — Jay's pick 2026-08-02: the closest to brand of the options that pass */
   --olive-text: #74772b;   /* 4.76:1 */
 
   /* The two off-palette greys that had also crept in (var(--muted-grey) at 2.64:1, var(--muted-grey-2) at 3.09:1), darkened to
