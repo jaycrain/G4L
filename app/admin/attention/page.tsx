@@ -56,7 +56,6 @@ export default async function AttentionPage() {
     <ConsoleSubpage
       title="Attention"
       here="/admin/attention"
-      lede="The people the console is pointing at, with enough context to decide whether to reach out."
     >
       <div className="card">
         <h3>Mid-Session, paused ({stalled.length})</h3>

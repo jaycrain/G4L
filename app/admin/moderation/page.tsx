@@ -14,7 +14,6 @@ export default async function ModerationPage() {
     <ConsoleSubpage
       title="Community moderation"
       here="/admin/moderation"
-      lede="Member reports and crisis flags, safety concerns first."
     >
       <ModerationSection queue={queue} count={count} now={Date.now()} archive={archive} />
     </ConsoleSubpage>

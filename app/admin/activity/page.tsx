@@ -59,7 +59,6 @@ export default async function ActivityPage() {
     <ConsoleSubpage
       title="Activity"
       here="/admin/activity"
-      lede="What actually happened — new members, Sessions, Checkpoints, IDQs, Grinta movement, goals reclaimed."
     >
       {/* THE POINT OF THE PAGE, per Jay: an instant check-in across a MacBook, an iPad and a phone. The marker
           is per-ACCOUNT, so this counts what's landed since he last looked ANYWHERE — not since this device

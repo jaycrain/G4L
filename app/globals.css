@@ -726,7 +726,8 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .admin-live-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--olive); box-shadow: 0 0 0 0 rgba(145, 149, 54, 0.5); animation: admin-live-pulse 2s infinite; }
 .admin-live-dot.paused { background: #b9bec2; animation: none; box-shadow: none; }
 @keyframes admin-live-pulse { 0% { box-shadow: 0 0 0 0 rgba(145,149,54,0.45); } 70% { box-shadow: 0 0 0 6px rgba(145,149,54,0); } 100% { box-shadow: 0 0 0 0 rgba(145,149,54,0); } }
-.admin-live-label { font-variant-numeric: tabular-nums; }
+/* nowrap: the clock wrapping to a second line stretched the console header past its 60px row. */
+.admin-live-label { font-variant-numeric: tabular-nums; white-space: nowrap; }
 .admin-live-toggle { margin: 0; padding: 0.2rem 0.6rem; font-size: 0.78rem; background: transparent; color: var(--teal); border: 1px solid var(--grey); border-radius: 6px; cursor: pointer; }
 .admin-live-toggle:hover { border-color: var(--teal); }
 .admin-search { display: flex; gap: 0.5rem; margin: 0.5rem 0 1rem; }
@@ -2224,23 +2225,68 @@ body.onbwel-bleed main { max-width: none; margin: 0; padding: 0; }
    The operator surface, Companion-first — the same reflect ← ask → act spine as the member triptych.
    Deliberately reuses the app's existing palette, Barlow, and .card treatment rather than the mockup's own
    values: a mock defines IA and proportion here, never brand. */
-.fc-wrap { max-width: 1240px; margin: 0 auto; }
-.fc-greet { display:flex; align-items:center; gap:14px; flex-wrap:wrap; padding:22px 0 16px; }
-.fc-hi { font-size:24px; font-weight:800; color:var(--navy); }
-.fc-st { color:#6B7580; font-size:15px; }
-.fc-chip { display:inline-flex; align-items:center; gap:6px; background:rgba(145,149,54,.12); color:#6f7327;
-  font-size:12px; font-weight:700; letter-spacing:.03em; text-transform:uppercase; border-radius:999px; padding:.24rem .6rem; }
-.fc-chip i { width:7px; height:7px; border-radius:50%; background:var(--olive); }
-.fc-browse { margin-left:auto; color:#2F7A7B; font-weight:700; text-decoration:none; font-size:14.5px; }
+/* ── THE CONSOLE IS AN APP SHELL, NOT A PAGE ──────────────────────────────────────────────────────────────
+   Jay, 2026-08-01: "The Console page should operate like the Dashboard on the Member App. The center panel
+   is fixed, pinned, and scrolls. The left and right flank also scroll when they need too."
 
-/* The app's default `main` is 720px — built for the member's single reading column. The console needs the
-   full width, same as the existing `main:has(.dock-open)` rule. WITHOUT this the two fixed flanks ate the
-   container and the Companion collapsed to a ~50px sliver, wrapping one character per line. */
-main:has(.fc-wrap) { max-width: 1240px; }
-/* minmax's MIN is the guard: the centre can never be squeezed below a readable width. If the viewport
-   can't seat all three, the fold below takes over and stacks — a sliver is not an acceptable degradation. */
-.fc-tri { display:grid; grid-template-columns:296px minmax(430px,1fr) 300px; gap:18px; align-items:start; }
-@media (max-width: 1140px) { .fc-tri { grid-template-columns:1fr; } .fc-hero { order:-1; } }
+   So the document never scrolls. The header and the nav row are fixed chrome; the region below them owns the
+   remaining height and hands it to scroll containers. The practical win is that the Companion's composer is
+   always exactly where you left it instead of somewhere down a long page.
+
+   100dvh, NOT 100vh. On iPhone Safari `vh` ignores the URL bar, so a locked layout puts the composer behind
+   it — the same class of bug as the 16px input zoom, and Jay runs this on a phone. */
+body:has(.fc-app) { overflow: hidden; }
+body:has(.fc-app) main { max-width: none; margin: 0; padding: 0; height: 100dvh; }
+/* The console wears its OWN header (app/admin/console/console-header.tsx), so the shared brand bar and the
+   page footer would be a second, redundant band of chrome above and below a viewport-locked app. */
+body:has(.fc-app) .brand-bar,
+body:has(.fc-app) .confidential-footer { display: none; }
+/* The admin layout's scope div sits between <main> and the shell; it has to pass the height through rather
+   than bleeding past padding the way it did on the old page-scrolled console. */
+.fc-scope:has(.fc-app) { height: 100dvh; min-height: 0; margin: 0; padding: 0; overflow: hidden; }
+
+.fc-app {
+  height: 100dvh; display: flex; flex-direction: column; overflow: hidden;
+  padding: 0 20px; box-sizing: border-box;
+}
+.fc-app > * { flex: 0 0 auto; }
+
+/* The header. One row: wordmark, then greeting + live + refresh + theme, right. */
+.fch { display: flex; align-items: center; gap: 16px; height: 60px; }
+.fch-brand { display: inline-flex; align-items: center; text-decoration: none; }
+.fch-wordmark { height: 30px; width: auto; display: block; }
+.fch-tools { margin-left: auto; display: flex; align-items: center; gap: 14px; }
+.fch-hi { font-size: 20px; font-weight: 800; color: var(--navy); white-space: nowrap; }
+
+/* align-items:center, not the default stretch: the section tabs are <a>, which flex blockifies, so they grew
+   to the row's full height while the pane tabs (already inline-flex buttons) stayed pill-sized — two
+   different-looking controls in one row that are meant to read as one set. */
+.fc-nav { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; padding: 0 0 14px; }
+
+/* minmax's MIN is the guard: the centre can never be squeezed below a readable width. Below the fold the
+   merged nav takes over and one pane owns the screen — a sliver is not an acceptable degradation. */
+.fc-tri {
+  flex: 1 1 auto; min-height: 0; padding-bottom: 18px;
+  display: grid; grid-template-columns: 296px minmax(430px, 1fr) 300px; gap: 18px;
+}
+/* Each column scrolls itself. min-height:0 is what actually permits that inside a grid track — without it
+   the track grows to its content and the page scrolls instead, which is the bug this whole change fixes. */
+.fc-flank { min-height: 0; overflow: auto; padding-right: 2px; }
+.fc-pane-centre { min-height: 0; display: flex; }
+.fc-pane-centre > * { flex: 1 1 auto; min-height: 0; }
+/* Subpages: one scroll region instead of three. Same lock, same chrome. */
+.fc-scroll { flex: 1 1 auto; min-height: 0; overflow: auto; padding-bottom: 24px; }
+
+/* The one way back up, on the pages the tab row can't name. Not a trail — one control. */
+.fc-back { display: inline-block; margin: 14px 0 4px; color: var(--teal); font-weight: 600; font-size: 14px; text-decoration: none; }
+.fc-back:hover { text-decoration: underline; }
+.fc-record-name { margin: 12px 0 14px; font-size: 26px; }
+
+/* Announced, not shown — the page title now lives in the lit tab, which a screen reader can't convey. */
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+}
 .fc-eyebrow { font-size:11px; font-weight:700; letter-spacing:.09em; text-transform:uppercase; color:#2F7A7B; }
 .fc-h { font-size:18px; font-weight:700; color:var(--navy); margin:2px 0 10px; }
 :root { --fc-muted:#6B7580; }
@@ -2256,8 +2302,9 @@ main:has(.fc-wrap) { max-width: 1240px; }
 .fc-bar i { display:block; height:100%; background:var(--teal); }
 .fc-v { color:var(--fc-muted); font-weight:700; width:16px; text-align:right; }
 
+/* No min-height any more — it fills the pane it's pinned into, and its .fc-thread does the scrolling. */
 .fc-hero { background:var(--navy); border-radius:20px; overflow:hidden; display:flex; flex-direction:column;
-  min-height:600px; box-shadow:0 10px 30px rgba(55,79,99,.18); }
+  min-height:0; box-shadow:0 10px 30px rgba(55,79,99,.18); }
 .fc-hero-h { padding:20px 22px 6px; }
 .fc-hero-eye { font-size:11px; font-weight:700; letter-spacing:.11em; text-transform:uppercase; color:#8FBDBE; }
 .fc-hero-title { font-size:23px; font-weight:800; color:#fff; margin:4px 0 2px; }
@@ -2304,10 +2351,53 @@ main:has(.fc-wrap) { max-width: 1240px; }
 .fc-el:hover { color:#2F7A7B; }
 .fc-et { color:#8A929A; font-size:12px; white-space:nowrap; margin-left:auto; }
 
-/* The fold: one column, Companion FIRST — on a phone the morning read is the whole point. */
-@media (max-width: 980px) {
-  .fc-tri { grid-template-columns:1fr; }
-  .fc-hero { order:-1; min-height:520px; }
+/* ── THE FOLD: ONE MERGED ROW, ONE PANE, FULL SCREEN ──────────────────────────────────────────────────────
+   Jay chose option A: rather than stacking a header, a section nav AND a pane switcher — three bands of
+   chrome before any content on a phone — the console's three columns join the sections in a single
+   scrollable row. Whichever you tap takes over the screen, with nothing underneath it.
+
+   1100px, because 296 + 430 + 300 + gaps is ~1060: below that the three columns cannot co-exist honestly,
+   and an iPad in landscape is on the wrong side of that line. */
+
+/* Above the fold all three columns are on screen, so there is nothing to switch between.
+   SCOPED TO .fc-nav (0,2,0) rather than left bare (0,1,0), and so is its override below. Bare, this rule
+   loses a source-order fight to whichever of `.fc-pane-tab` / `.fcs-tab` happens to come later in the file —
+   which it did, twice, in opposite directions: first the tabs never appeared on a phone, then they leaked
+   onto the desktop. Specificity makes the intent independent of where the rules sit. */
+.fc-nav .fc-pane-tab { display: none; }
+button.fcs-tab { font-family: inherit; cursor: pointer; }
+
+@media (max-width: 1100px) {
+  .fc-app { padding: 0 14px; }
+  .fc-tri { grid-template-columns: 1fr; }
+
+  /* The header is one row on a phone too — which only works if everything in it gives up a little. */
+  .fch { height: 54px; gap: 10px; }
+  .fch-wordmark { height: 24px; }
+  .fch-hi { font-size: 17px; }
+  .fch-tools { gap: 10px; }
+
+  /* One row that scrolls sideways rather than wrapping into three lines of pills. */
+  .fc-nav { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  .fc-nav::-webkit-scrollbar { display: none; }
+  .fc-nav .fcs-tab { flex: 0 0 auto; }
+
+  .fc-nav .fc-pane-tab { display: inline-flex; }
+  /* The three pane tabs ARE the console, so its own section tab would be a fourth way to the same place. */
+  .fc-nav [data-console-home] { display: none; }
+
+  /* Exactly one pane, owning the viewport. */
+  .fc-tri[data-pane='left']   > :not(.fc-pane-left),
+  .fc-tri[data-pane='centre'] > :not(.fc-pane-centre),
+  .fc-tri[data-pane='right']  > :not(.fc-pane-right) { display: none; }
+}
+
+/* Phone. The last thing to give is the word "Live" — the dot says it, and the clock is what you read. */
+@media (max-width: 560px) {
+  .admin-live-word { display: none; }
+  .fch { gap: 8px; }
+  .fch-tools { gap: 8px; }
+  .admin-live { gap: 0.4rem; }
 }
 .fc-need-link { text-decoration:none; color:inherit; cursor:pointer; }
 .fc-need-link:hover .fc-nk { color:#2F7A7B; }
@@ -2315,22 +2405,16 @@ main:has(.fc-wrap) { max-width: 1240px; }
 .fc-elsewhere a { color:#2F7A7B; font-weight:700; text-decoration:none; }
 
 /* ── FOUNDER CONSOLE SUBPAGES ─────────────────────────────────────────────────────────────────────────────
-   Depth that still reads as one surface. Same widening as the console itself, because a member table at
-   720px is unreadable — that's why it lived on its own page in the first place. */
-main:has(.fcs) { max-width: 1240px; }
+   Depth that still reads as one surface — the same header and the same nav row, with the lit tab doing the
+   job the crumb + title + lede used to do between them.
 
-.fcs-crumbs { font-size: 12px; color: var(--fc-muted, #7b8794); margin: 0 0 10px; }
-.fcs-crumbs a { color: inherit; text-decoration: none; }
-.fcs-crumbs a:hover { color: var(--navy); text-decoration: underline; }
-.fcs-sep { margin: 0 6px; opacity: .5; }
-.fcs-now { color: var(--navy); font-weight: 600; }
+   The crumb / .fcs-head / .fcs-lede rules were removed with the markup that used them (Jay, 2026-08-01). */
 
-.fcs-head h1 { margin: 0 0 4px; font-size: 26px; letter-spacing: -.01em; }
-.fcs-lede { margin: 0; color: var(--fc-muted, #7b8794); font-size: 14px; max-width: 62ch; }
-
-/* Peer nav. A subpage reachable only from the console is one Jay will forget exists. */
-.fcs-nav { display: flex; flex-wrap: wrap; gap: 6px; margin: 16px 0 18px; }
+/* Peer nav pills. A subpage reachable only from the console is one Jay will forget exists. */
 .fcs-tab {
+  /* margin:0 because the pane tabs are <button>, and the app's global button rule carries a top margin —
+     which sat them 12px below the <a> tabs beside them in the same row. */
+  display: inline-flex; align-items: center; white-space: nowrap; margin: 0;
   font-size: 13px; padding: 5px 11px; border-radius: 999px; text-decoration: none;
   color: var(--fc-muted, #7b8794); border: 1px solid var(--light-grey, #E8E6E6); background: #fff;
 }
@@ -2366,8 +2450,6 @@ main:has(.fcs) { max-width: 1240px; }
 .fc-roster-h { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
 
 /* Live indicator sits beside the subpage title, not stacked under it. */
-.fcs-title-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-.fcs-title-row h1 { margin: 0 0 4px; }
 
 /* "Clear this conversation" — a quiet inline control, not a button that competes with Send. */
 .fc-clear { font: inherit; font-size: inherit; background: none; border: 0; padding: 0; color: inherit;
@@ -2454,7 +2536,7 @@ main:has(.fcs) { max-width: 1240px; }
 }
 
 .fc-dark h1, .fc-dark h2, .fc-dark h3, .fc-dark h4, .fc-dark strong, .fc-dark b { color: var(--ink); }
-.fc-dark .muted, .fc-dark .fcs-lede, .fc-dark .fb-ctx, .fc-dark .roster-foot { color: var(--sec); }
+.fc-dark .muted, .fc-dark .fb-ctx, .fc-dark .roster-foot { color: var(--sec); }
 .fc-dark a { color: var(--teal-lift); }
 
 /* Cards: raised by fill, edged faintly — never a hard line. */
@@ -2469,12 +2551,10 @@ main:has(.fcs) { max-width: 1240px; }
 .fc-dark .fc-need, .fc-dark .fc-evt, .fc-dark .fca-row, .fc-dark .fb-item { border-top-color: var(--edge); }
 .fc-dark .fc-need-link:hover, .fc-dark .fca-row:hover { background: var(--fill-6); }
 
-/* Tabs + crumbs. */
+/* Tabs. */
 .fc-dark .fcs-tab { background: transparent; border-color: rgba(255, 255, 255, .14); color: var(--sec); }
 .fc-dark .fcs-tab:hover { color: var(--ink); border-color: var(--teal); }
 .fc-dark .fcs-tab.on { background: var(--teal); border-color: var(--teal); color: #fff; }
-.fc-dark .fcs-crumbs, .fc-dark .fcs-sep { color: var(--faint); }
-.fc-dark .fcs-now { color: var(--ink); }
 
 /* The member table — the biggest light surface in the console, and where a half-done dark mode shows. */
 .fc-dark .roster-table th { color: var(--faint); border-bottom-color: var(--edge); }
@@ -2490,7 +2570,6 @@ main:has(.fcs) { max-width: 1240px; }
   background: rgba(255, 255, 255, .10); color: var(--ink); border-color: var(--edge);
 }
 .fc-dark .badge-demo { background: rgba(255, 255, 255, .06); color: var(--faint); }
-.fc-dark .fc-chip { background: rgba(145, 149, 54, .18); color: #C4C97A; }
 
 /* Controls. Buttons stop being light-grey chrome and become outlines on the dark ground. */
 .fc-dark button, .fc-dark .btn-secondary {
@@ -2518,23 +2597,28 @@ main:has(.fcs) { max-width: 1240px; }
    The scope lives inside <main>, but the brand bar and the footer are siblings OUTSIDE it — so the first cut
    rendered a charcoal slab floating in a white page with a hard seam above and below. A half-dark page reads
    as broken, not as a theme. `body:has(.fc-dark)` carries the ground to the whole viewport; the member app,
-   which never sets that class, is untouched. */
+   which never sets that class, is untouched.
+   (The console shell now hides those two outright — this still covers the legacy `?view=roster` page.) */
 body:has(.fc-dark) { background: var(--charcoal, #2A2A2A); }
 body:has(.fc-dark) main { background: var(--charcoal, #2A2A2A); }
 body:has(.fc-dark) .brand-bar { background: var(--charcoal, #2A2A2A); }
 body:has(.fc-dark) .confidential-footer {
   background: var(--charcoal, #2A2A2A); color: rgba(255, 255, 255, .40); border-top-color: rgba(255, 255, 255, .08);
 }
-/* The wordmark is navy artwork — invert it so it reads as the brand rather than a smudge. */
-body:has(.fc-dark) .brand-wordmark { filter: invert(1) brightness(1.9); }
+/* The wordmark is navy artwork — invert it so it reads as the brand rather than a smudge. The BULLSEYE got
+   the same treatment and read as a smudge anyway (concentric rings lose their figure when inverted), which
+   is why Jay dropped it from the console header: "logo looks terrible on black, let's just drop it." */
+body:has(.fc-dark) .brand-wordmark,
+.fc-dark .fch-wordmark { filter: invert(1) brightness(1.9); }
 
-/* The greeting was navy: the largest words on the page, and the least legible on charcoal. */
-.fc-dark .fc-hi { color: var(--ink); }
-.fc-dark .fc-st { color: var(--sec); }
+/* The greeting was navy: the largest words in the header, and the least legible on charcoal. */
+.fc-dark .fch-hi { color: var(--ink); }
 /* Dark ⇄ light. Sits with Pause / Refresh now, styled as one of them rather than as a feature. */
-.fc-theme-toggle { font-family: inherit; font-size: 12px; font-weight: 600; cursor: pointer;
+.fc-theme-toggle { font-family: inherit; font-size: 12px; font-weight: 600; cursor: pointer; margin: 0;
   padding: .25rem .7rem; border-radius: 999px; color: var(--navy); background: #fff;
   border: 1px solid var(--light-grey, #E8E6E6); }
-.fc-theme-toggle:hover { border-color: var(--teal); color: var(--teal); }
+/* Restating the background is not redundant: the global `button:hover { background: navy }` otherwise paints
+   a navy block behind teal text, which is the one hover state on this surface you can't read. */
+.fc-theme-toggle:hover { background: #fff; border-color: var(--teal); color: var(--teal); }
 .fc-dark .fc-theme-toggle { background: transparent; color: rgba(255,255,255,.62); border-color: rgba(255,255,255,.18); }
 .fc-dark .fc-theme-toggle:hover { color: #fff; border-color: var(--teal); }

@@ -14,7 +14,6 @@ export default async function FeedbackPage({ searchParams }: { searchParams?: Pr
     <ConsoleSubpage
       title="Feedback"
       here="/admin/feedback"
-      lede="What members and operators told us, in their words."
     >
       <FeedbackSection feedback={await listFeedback(db)} now={Date.now()} filter={{ kind: sp.kind, surface: sp.surface }} />
     </ConsoleSubpage>

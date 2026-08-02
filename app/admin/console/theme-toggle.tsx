@@ -12,7 +12,9 @@ import { setConsoleThemeAction } from '../theme-actions.ts';
 export default function ThemeToggle({ theme }: { theme: 'dark' | 'light' }) {
   const next = theme === 'dark' ? 'light' : 'dark';
   return (
-    <form action={setConsoleThemeAction.bind(null, next)} style={{ display: 'inline' }}>
+    // display:flex, not inline — as a flex item of the header an inline form gets blockified and its button
+    // sat low against everything beside it.
+    <form action={setConsoleThemeAction.bind(null, next)} style={{ display: 'flex' }}>
       <button type="submit" className="fc-theme-toggle" title={`Switch to the ${next} theme`}>
         {next === 'light' ? 'Light' : 'Dark'}
       </button>

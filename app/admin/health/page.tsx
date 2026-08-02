@@ -14,7 +14,6 @@ export default async function HealthPage() {
     <ConsoleSubpage
       title="AI surfaces"
       here="/admin/health"
-      lede="Whether the Companion is answering. The probe runs every 15 minutes; you can also check it now."
     >
       <HealthSection
         health={await getHealth(db, 'ai')}

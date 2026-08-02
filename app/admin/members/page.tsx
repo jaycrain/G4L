@@ -16,7 +16,6 @@ export default async function MembersPage() {
     <ConsoleSubpage
       title="Members"
       here="/admin/members"
-      lede="Everyone who has signed up, newest activity first. Open anyone to see their full record."
     >
       <MembersSection
         roster={roster}

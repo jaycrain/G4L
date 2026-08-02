@@ -12,13 +12,15 @@ import { founderConsoleEnabled } from '../../lib/dashboard/redesign.ts';
 import { cohortView, rosterAttention, activityFeed, markUnseen } from '../../lib/admin/console.ts';
 import { getActivitySeenAt, getConsoleTheme } from '../../lib/founder/state.ts';
 import ConsoleShell from './console/console-shell.tsx';
+import { isPaneKey } from './console/nav-items.ts';
 import { HealthSection, ModerationSection, ReviewSection, MembersSection, FeedbackSection } from './sections/index.tsx';
 import type { Db } from '../../lib/db/schema.ts';
 
 
-export default async function AdminHome({ searchParams }: { searchParams?: Promise<{ view?: string }> }) {
+export default async function AdminHome({ searchParams }: { searchParams?: Promise<{ view?: string; pane?: string }> }) {
   if (!(await isAdmin())) redirect('/admin/login');
   const db = (await getDb()) as unknown as Db;
+  const sp = await searchParams;
 
   const pending = await listPending(db);
   const roster = await getRoster(db);
@@ -33,7 +35,7 @@ export default async function AdminHome({ searchParams }: { searchParams?: Promi
   // THE FOUNDER CONSOLE (flag-gated). Unset → today's page, untouched. `?view=roster` always reaches the old
   // page, so the table is never lost — the console links to it, and a console that can't answer something
   // must not become a dead end.
-  if (founderConsoleEnabled() && (await searchParams)?.view !== 'roster') {
+  if (founderConsoleEnabled() && sp?.view !== 'roster') {
     // The console SHOWS the unseen count but never stamps it — only opening Activity marks things seen.
     // Otherwise a glance at the dashboard would silently clear the thing he came to check.
     const [rawFeed, seenAt, theme] = await Promise.all([activityFeed(db), getActivitySeenAt(db), getConsoleTheme(db)]);
@@ -44,6 +46,9 @@ export default async function AdminHome({ searchParams }: { searchParams?: Promi
       { kind: 'draft' as const, label: pending.length ? `${pending.length} draft${pending.length === 1 ? '' : 's'} waiting on you` : 'no drafts waiting', count: pending.length },
       ...rosterAttention(roster, now),
     ];
+    // Below the fold one pane owns the screen. A link from a subpage says which — so "Cohort" tapped on the
+    // Members page lands on the cohort, not on the Companion.
+    const pane = isPaneKey(sp?.pane) ? sp.pane : undefined;
     return (
       <ConsoleShell
         cohort={cohort}
@@ -51,9 +56,8 @@ export default async function AdminHome({ searchParams }: { searchParams?: Promi
         feed={feed}
         unseen={unseen}
         theme={theme}
-        memberCount={cohort.members}
-        activeCount={cohort.activeLast7}
         now={now}
+        pane={pane}
       />
     );
   }

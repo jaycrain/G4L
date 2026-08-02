@@ -14,11 +14,13 @@ import { signAdminToken } from '../lib/auth/admin-token.ts';
 const BASE = process.argv[2] ?? 'http://localhost:3100';
 
 /** Every console route, with a string that proves ITS OWN content rendered — not just the shared chrome. */
+// 'Hi, Jay!' is the tell that the console's OWN header rendered — the wordmark beside it is an image, so it
+// proves nothing about text. Every subpage wears the same header, which is the point of it.
 const ROUTES: Array<{ path: string; expect: string[] }> = [
-  { path: '/admin', expect: ['Founder Console', 'Cohort', 'Needs you', 'What moved', 'Live ·', 'All members', 'Work the queue', 'All activity', 'Members', 'Attention', 'Feedback'] },
-  { path: '/admin/members', expect: ['Members', 'Total rows', 'Attention', 'Review queue'] },
-  { path: '/admin/attention', expect: ['Attention', 'Mid-Session, paused', "Haven't been back", 'Live ·', 'Console'] },
-  { path: '/admin/activity', expect: ['Activity', 'Founder Console'] },
+  { path: '/admin', expect: ['Hi, Jay!', 'Cohort', 'Needs you', 'What moved', 'Live ·', 'All members', 'Work the queue', 'All activity', 'Members', 'Attention', 'Feedback'] },
+  { path: '/admin/members', expect: ['Hi, Jay!', 'Total rows', 'Attention', 'Review queue'] },
+  { path: '/admin/attention', expect: ['Hi, Jay!', 'Mid-Session, paused', "Haven't been back", 'Live ·', 'Console'] },
+  { path: '/admin/activity', expect: ['Hi, Jay!', 'Console', 'Activity'] },
   { path: '/admin/review', expect: ['Review queue', 'send nothing until you approve'] },
   { path: '/admin/moderation', expect: ['Community moderation'] },
   { path: '/admin/health', expect: ['AI surfaces', 'Last 7 days'] },
@@ -87,7 +89,7 @@ async function main() {
   await page.goto(BASE + '/admin', { waitUntil: 'networkidle' });
   const composer = page.locator('input[aria-label="Ask the Founder Companion"]');
   await composer.fill('a half-typed question I have not sent yet');
-  await page.getByRole('button', { name: 'Refresh now' }).click();
+  await page.getByRole('button', { name: 'Refresh', exact: true }).click();
   await page.waitForTimeout(1500);
   const survived = await composer.inputValue();
   const kept = survived === 'a half-typed question I have not sent yet';
@@ -187,6 +189,103 @@ async function main() {
     const cleared = gone && (emptied === null || emptied === '[]');
     if (!cleared) failed++;
     console.log(`${cleared ? '✔' : '✖'} clearing it really empties the store, not just the screen`);
+  }
+
+  // ── THE PAGE DOES NOT SCROLL; THE PANES DO ─────────────────────────────────────────────────────────────
+  // Jay, 2026-08-01: "The center panel is fixed, pinned, and scrolls. The left and right flank also scroll
+  // when they need too." The property is not "it looks right" — it's that the DOCUMENT is locked and each
+  // column is its own scroll container. Assert both, because getting one without the other is the failure
+  // mode: a locked document whose panes can't scroll silently hides content below the fold.
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto(BASE + '/admin', { waitUntil: 'networkidle' });
+  const lock = await page.evaluate(() => {
+    const doc = document.scrollingElement!;
+    const scrolls = (el: Element | null) => !!el && getComputedStyle(el).overflowY === 'auto';
+    return {
+      pageScrolls: doc.scrollHeight > doc.clientHeight + 1,
+      left: scrolls(document.querySelector('.fc-pane-left')),
+      right: scrolls(document.querySelector('.fc-pane-right')),
+      thread: scrolls(document.querySelector('.fc-thread')),
+      // The composer is the thing pinning buys you: always reachable without scrolling anywhere.
+      composerInView: (() => {
+        const c = document.querySelector('.fc-composer');
+        if (!c) return false;
+        const r = c.getBoundingClientRect();
+        return r.bottom > 0 && r.bottom <= window.innerHeight + 1;
+      })(),
+    };
+  });
+  const locked = !lock.pageScrolls && lock.left && lock.right && lock.thread && lock.composerInView;
+  if (!locked) failed++;
+  console.log(`${locked ? '✔' : '✖'} the console is viewport-locked and each pane scrolls itself${locked ? '' : `   ${JSON.stringify(lock)}`}`);
+
+  // BOTH DIRECTIONS. Checking only that the pane tabs APPEAR on a phone let them leak onto the desktop,
+  // where all three columns are already on screen and a pane switcher is meaningless. A responsive rule has
+  // two halves and a harness that tests one of them is worth about half as much as it looks.
+  const deskTabs = await page.evaluate(() =>
+    [...document.querySelectorAll('.fc-pane-tab')].filter((e) => getComputedStyle(e).display !== 'none').length);
+  if (deskTabs !== 0) failed++;
+  console.log(`${deskTabs === 0 ? '✔' : '✖'} and at 1440px the pane tabs stay out of the way (${deskTabs} visible)`);
+
+  // ── BELOW THE FOLD: ONE MERGED ROW, ONE PANE, NOTHING UNDERNEATH ───────────────────────────────────────
+  // Jay chose one segmented row over stacked navs. Two things have to be true at once, and they're the two
+  // halves of the same promise: the pane tabs APPEAR, and exactly one pane is on screen.
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(BASE + '/admin', { waitUntil: 'networkidle' });
+  const fold = await page.evaluate(() => {
+    const shown = (sel: string) => {
+      const el = document.querySelector(sel);
+      return !!el && getComputedStyle(el).display !== 'none';
+    };
+    return {
+      paneTabs: document.querySelectorAll('.fc-pane-tab').length,
+      paneTabsVisible: shown('.fc-pane-tab'),
+      // The console's OWN section tab drops out below the fold — the pane tabs already lead there.
+      consoleTabHidden: !shown('.fc-nav [data-console-home]'),
+      visiblePanes: ['.fc-pane-left', '.fc-pane-centre', '.fc-pane-right'].filter(shown).length,
+      pageScrolls: document.scrollingElement!.scrollHeight > document.scrollingElement!.clientHeight + 1,
+      sections: document.querySelectorAll('.fc-nav .fcs-tab').length,
+    };
+  });
+  const foldOk = fold.paneTabs === 3 && fold.paneTabsVisible && fold.consoleTabHidden
+    && fold.visiblePanes === 1 && !fold.pageScrolls;
+  if (!foldOk) failed++;
+  console.log(`${foldOk ? '✔' : '✖'} at 390px: one merged row, one pane owns the screen${foldOk ? '' : `   ${JSON.stringify(fold)}`}`);
+
+  // Tapping a pane tab actually swaps the pane — the seam between the row and the panes, which is exactly
+  // the kind of wiring that gets built on both sides and never connected.
+  await page.getByRole('button', { name: 'Cohort' }).click();
+  await page.waitForTimeout(250);
+  const swapped = await page.evaluate(() => {
+    const vis = (sel: string) => getComputedStyle(document.querySelector(sel)!).display !== 'none';
+    return vis('.fc-pane-left') && !vis('.fc-pane-centre') && !vis('.fc-pane-right');
+  });
+  if (!swapped) failed++;
+  console.log(`${swapped ? '✔' : '✖'} tapping "Cohort" hands the screen to the cohort pane`);
+  await page.setViewportSize({ width: 1280, height: 900 });
+
+  // ── DEPTH IS STILL NAVIGABLE WITHOUT THE BREADCRUMB ────────────────────────────────────────────────────
+  // The crumb was removed (Jay: "Get rid of Members breadcrumb"), and the ONE thing it was load-bearing for
+  // is /admin/member/<id> — not in the tab row, so nothing else says where you are. Check the record page
+  // carries the single back affordance and that Members stays lit above it.
+  await page.goto(BASE + '/admin/members', { waitUntil: 'networkidle' });
+  const firstMember = await page.locator('a[href^="/admin/member/"]').first().getAttribute('href');
+  if (!firstMember) {
+    console.log('… no member rows to open — back-affordance check skipped (not a pass)');
+    failed++;
+  } else {
+    await page.goto(BASE + firstMember, { waitUntil: 'networkidle' });
+    const depth = await page.evaluate(() => ({
+      back: document.querySelector('.fc-back')?.getAttribute('href') ?? null,
+      backText: document.querySelector('.fc-back')?.textContent?.trim() ?? '',
+      litTab: document.querySelector('.fcs-tab.on')?.textContent?.trim() ?? '',
+      h1s: document.querySelectorAll('h1').length,
+      header: !!document.querySelector('.fch-hi'),
+    }));
+    const depthOk = depth.back === '/admin/members' && depth.litTab === 'Members'
+      && depth.h1s === 1 && depth.header;
+    if (!depthOk) failed++;
+    console.log(`${depthOk ? '✔' : '✖'} a member record says where it is: "${depth.backText}" + Members lit${depthOk ? '' : `   ${JSON.stringify(depth)}`}`);
   }
 
   await browser.close();

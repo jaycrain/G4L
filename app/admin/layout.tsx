@@ -21,5 +21,11 @@ import { getConsoleTheme } from '../../lib/founder/state.ts';
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const theme = await getConsoleTheme(await getDb()).catch(() => 'dark' as const);
-  return <div className={theme === 'dark' ? 'fc-dark' : undefined} data-console-theme={theme}>{children}</div>;
+  // `fc-scope` is unconditional — the LIGHT theme needs a hook too, now that the console is viewport-locked
+  // and this wrapper has to carry the height down from <main> to the shell. `fc-dark` only paints.
+  return (
+    <div className={`fc-scope${theme === 'dark' ? ' fc-dark' : ''}`} data-console-theme={theme}>
+      {children}
+    </div>
+  );
 }

@@ -13,7 +13,6 @@ export default async function ReviewPage() {
     <ConsoleSubpage
       title="Review queue"
       here="/admin/review"
-      lede="Messages drafted in your voice, waiting on you. Nothing here has been sent."
     >
       <ReviewSection pending={await listPending(db)} />
     </ConsoleSubpage>

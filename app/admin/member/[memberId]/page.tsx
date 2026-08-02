@@ -17,6 +17,7 @@ import { generateDraftAction } from '../../actions.ts';
 import { isAdmin } from '../../../authz.ts';
 import DraftReview from '../../draft-review.tsx';
 import PushNudgeButton from '../push-nudge-button.tsx';
+import ConsoleSubpage from '../../console/subpage.tsx';
 
 export default async function AdminMember({ params }: { params: Promise<{ memberId: string }> }) {
   if (!(await isAdmin())) redirect('/admin/login');
@@ -71,10 +72,22 @@ export default async function AdminMember({ params }: { params: Promise<{ member
   const fmtMin = (ms: number) => Math.max(1, Math.round(ms / 60000));
   const STATUS_LABEL: Record<string, string> = { closed: 'closed', in_progress: 'in progress', locked: 'locked' };
 
+  // THE ONE SUB-SUB-PAGE, and the reason the `back` affordance exists at all. This record isn't in the tab
+  // row, so with the breadcrumb gone (Jay, 2026-08-01) there'd be nothing saying where you are — on the
+  // console's most-visited deep page. `back` is that one control; the Members tab stays lit above it.
+  //
+  // It also picks up the console header + nav here for the first time. It used to be a bare page with a
+  // hand-rolled "← Admin" link, which is exactly the "scattering of admin URLs" the subpage chrome exists
+  // to prevent.
   return (
-    <>
-      <p><Link href="/admin">← Admin</Link></p>
-      <h1>{dash.displayName}</h1>
+    <ConsoleSubpage
+      title={dash.displayName}
+      here="/admin/members"
+      back={{ label: 'Members', href: '/admin/members' }}
+      // The person's NAME is content, not chrome — whose record you're reading is the one heading the tab
+      // row can't express — so here the title renders rather than hiding.
+      showTitle
+    >
 
       <div className="card">
         <p>
@@ -382,6 +395,6 @@ export default async function AdminMember({ params }: { params: Promise<{ member
           </div>
         ),
       )}
-    </>
+    </ConsoleSubpage>
   );
 }
