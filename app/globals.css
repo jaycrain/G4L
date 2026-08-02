@@ -2425,3 +2425,109 @@ main:has(.fcs) { max-width: 1240px; }
 .fca-seen-btn { font-family: inherit; font-size: 12px; font-weight: 600; cursor: pointer; padding: .25rem .7rem;
   color: var(--teal); background: #fff; border: 1px solid var(--teal); border-radius: 999px; }
 .fca-seen-btn:hover { color: #fff; background: var(--teal); }
+
+
+/* ═══════════════════════════════════════════════════════════════════════════════════════════════════════
+   THE FOUNDER CONSOLE IS DARK — everything under /admin, scoped to .fc-dark (app/admin/layout.tsx).
+   
+   The member app is white. The operator surface is charcoal. Jay switches between being a member and running
+   the program many times a day, and the ground telling him which one he's on beats any label.
+   
+   Elevation is Scott's language from the Companion prototype: surfaces raised by WHITE-AT-OPACITY over
+   charcoal rather than drawn with borders. No new colours — every grey below is white over charcoal, so the
+   locked nine stay nine.
+   ═══════════════════════════════════════════════════════════════════════════════════════════════════════ */
+
+.fc-dark {
+  --ink: #fff;
+  --sec: rgba(255, 255, 255, .62);
+  --faint: rgba(255, 255, 255, .40);
+  --fill: rgba(255, 255, 255, .03);
+  --fill-6: rgba(255, 255, 255, .06);
+  --edge: rgba(255, 255, 255, .08);
+  --teal-lift: #5FBDBE;      /* teal on charcoal needs a step up to hold its contrast */
+  background: var(--charcoal, #2A2A2A);
+  color: var(--ink);
+  min-height: 100vh;
+  margin: -1rem -1.25rem -4rem;   /* bleed past main's padding so the ground reaches every edge */
+  padding: 1rem 1.25rem 4rem;
+}
+
+.fc-dark h1, .fc-dark h2, .fc-dark h3, .fc-dark h4, .fc-dark strong, .fc-dark b { color: var(--ink); }
+.fc-dark .muted, .fc-dark .fcs-lede, .fc-dark .fb-ctx, .fc-dark .roster-foot { color: var(--sec); }
+.fc-dark a { color: var(--teal-lift); }
+
+/* Cards: raised by fill, edged faintly — never a hard line. */
+.fc-dark .card { background: var(--fill); border-color: var(--edge); }
+.fc-dark .fc-dcard { background: var(--fill-6); border: 1px solid var(--edge); }
+.fc-dark .fc-de, .fc-dark .fc-eyebrow { color: var(--faint); }
+
+/* Numbers carry the weight on a dark ground, so they keep full white; labels recede. */
+.fc-dark .fc-kpi .n, .fc-dark .tile-num, .fc-dark .fc-cnt { color: var(--ink); }
+.fc-dark .fc-kpi .l, .fc-dark .tile-label { color: var(--faint); }
+.fc-dark .fc-bar, .fc-dark .fc-bar-track { background: rgba(255, 255, 255, .10); }
+.fc-dark .fc-need, .fc-dark .fc-evt, .fc-dark .fca-row, .fc-dark .fb-item { border-top-color: var(--edge); }
+.fc-dark .fc-need-link:hover, .fc-dark .fca-row:hover { background: var(--fill-6); }
+
+/* Tabs + crumbs. */
+.fc-dark .fcs-tab { background: transparent; border-color: rgba(255, 255, 255, .14); color: var(--sec); }
+.fc-dark .fcs-tab:hover { color: var(--ink); border-color: var(--teal); }
+.fc-dark .fcs-tab.on { background: var(--teal); border-color: var(--teal); color: #fff; }
+.fc-dark .fcs-crumbs, .fc-dark .fcs-sep { color: var(--faint); }
+.fc-dark .fcs-now { color: var(--ink); }
+
+/* The member table — the biggest light surface in the console, and where a half-done dark mode shows. */
+.fc-dark .roster-table th { color: var(--faint); border-bottom-color: var(--edge); }
+.fc-dark .roster-table td { border-bottom-color: var(--edge); }
+.fc-dark .roster-table tr:hover td { background: var(--fill); }
+.fc-dark .roster-name, .fc-dark .roster-phase, .fc-dark .roster-score { color: var(--ink); }
+.fc-dark .roster-email, .fc-dark .roster-time, .fc-dark .roster-door { color: var(--sec); }
+.fc-dark .summary-tile { background: var(--fill); border-color: var(--edge); }
+.fc-dark .avatar-initials { background: var(--teal); color: #fff; }
+
+/* Chips and pills keep their meaning; only their ground changes. */
+.fc-dark .badge, .fc-dark .pill, .fc-dark .fb-kind-chip, .fc-dark .fca-chip {
+  background: rgba(255, 255, 255, .10); color: var(--ink); border-color: var(--edge);
+}
+.fc-dark .badge-demo { background: rgba(255, 255, 255, .06); color: var(--faint); }
+.fc-dark .fc-chip { background: rgba(145, 149, 54, .18); color: #C4C97A; }
+
+/* Controls. Buttons stop being light-grey chrome and become outlines on the dark ground. */
+.fc-dark button, .fc-dark .btn-secondary {
+  background: transparent; color: var(--ink); border: 1px solid rgba(255, 255, 255, .18);
+}
+.fc-dark button:hover, .fc-dark .btn-secondary:hover { border-color: var(--teal); background: var(--fill-6); }
+.fc-dark input, .fc-dark textarea, .fc-dark select {
+  background: var(--fill-6); border-color: rgba(255, 255, 255, .18); color: var(--ink);
+}
+.fc-dark input::placeholder, .fc-dark textarea::placeholder { color: var(--faint); }
+.fc-dark .admin-live-label { color: var(--sec); }
+.fc-dark .admin-live-toggle { color: var(--teal-lift); }
+.fc-dark .fca-seen-btn { background: transparent; color: var(--teal-lift); border-color: var(--teal); }
+.fc-dark .fca-seen-btn:hover { background: var(--teal); color: #fff; }
+
+/* Health + moderation carry a "something is wrong" state — it has to stay legible on charcoal without
+   becoming the loudest thing on a page that is mostly fine. */
+.fc-dark .health-down { border-color: rgba(187, 33, 39, .55); background: rgba(187, 33, 39, .10); }
+.fc-dark .health-line { color: var(--ink); }
+
+/* The Companion panel is ALREADY navy and needs nothing — on charcoal it stops being a panel on a page and
+   becomes the room, which is the whole reason this re-skin is worth doing. */
+
+/* THE GROUND HAS TO REACH THE EDGES.
+   The scope lives inside <main>, but the brand bar and the footer are siblings OUTSIDE it — so the first cut
+   rendered a charcoal slab floating in a white page with a hard seam above and below. A half-dark page reads
+   as broken, not as a theme. `body:has(.fc-dark)` carries the ground to the whole viewport; the member app,
+   which never sets that class, is untouched. */
+body:has(.fc-dark) { background: var(--charcoal, #2A2A2A); }
+body:has(.fc-dark) main { background: var(--charcoal, #2A2A2A); }
+body:has(.fc-dark) .brand-bar { background: var(--charcoal, #2A2A2A); }
+body:has(.fc-dark) .confidential-footer {
+  background: var(--charcoal, #2A2A2A); color: rgba(255, 255, 255, .40); border-top-color: rgba(255, 255, 255, .08);
+}
+/* The wordmark is navy artwork — invert it so it reads as the brand rather than a smudge. */
+body:has(.fc-dark) .brand-wordmark { filter: invert(1) brightness(1.9); }
+
+/* The greeting was navy: the largest words on the page, and the least legible on charcoal. */
+.fc-dark .fc-hi { color: var(--ink); }
+.fc-dark .fc-st { color: var(--sec); }

@@ -94,6 +94,25 @@ async function main() {
   if (!kept) failed++;
   console.log(`${kept ? '✔' : '✖'} the refresh tick preserves the Companion's client state${kept ? '' : `  (got: "${survived}")`}`);
 
+  // ── DARK IS SCOPED, AND IT MUST NOT LEAK ───────────────────────────────────────────────────────────────
+  // Every dark rule hangs off .fc-dark, set only by app/admin/layout.tsx. The property worth guarding is the
+  // BOUNDARY: an operator colour must never reach a member surface, and vice versa. A wholesale re-skin is
+  // only safe to do because that line is checkable.
+  for (const p of ['/admin', '/admin/members', '/admin/activity']) {
+    await page.goto(BASE + p, { waitUntil: 'networkidle' });
+    const bg = await page.evaluate(() => {
+      const el = document.querySelector('.fc-dark');
+      return el ? getComputedStyle(el).backgroundColor : null;
+    });
+    const dark = bg === 'rgb(42, 42, 42)';
+    if (!dark) failed++;
+    console.log(`${dark ? '✔' : '✖'} ${p} sits on charcoal${dark ? '' : `   got ${bg ?? 'no .fc-dark scope'}`}`);
+  }
+  await page.goto(BASE + '/login', { waitUntil: 'networkidle' });
+  const leaked = await page.evaluate(() => document.querySelectorAll('.fc-dark').length > 0);
+  if (leaked) failed++;
+  console.log(`${leaked ? '✖' : '✔'} the member app is untouched by the console theme`);
+
   // ── AN OPERATOR IS NOT A COLD VISITOR ──────────────────────────────────────────────────────────────────
   // Signed in as admin, "/" used to fall through to the marketing welcome ("Welcome midlifer, your comeback
   // begins today") — the wrong thing to show the person running the program. It should land on the console.
