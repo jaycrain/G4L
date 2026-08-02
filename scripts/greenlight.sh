@@ -29,7 +29,7 @@ URL="${1:-https://g4l-ten.vercel.app}"
 # ladder) touch no bundle, so there is no honest static tell to add — and leaving the PREVIOUS push's tells
 # here would green-light the old build, which is the false-green trap described above. The commit-timestamp
 # check below is the proof for these; put a tell back the moment something member-facing ships.
-CSS_TELLS=()
+CSS_TELLS=("16px!important" "16px !important")
 JS_TELLS=()
 
 # COMMIT CHECK — the authoritative proof for an ENGINE-ONLY push (server logic, no bundle change), where no static

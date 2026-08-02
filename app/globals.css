@@ -1605,10 +1605,7 @@ body.redesign-on .confidential-footer { display: none; } /* full-bleed app — n
   }
   .redesign-rail:not(.ws-rail).phone-open { transform: translateX(0); }
   .redesign-rail:not(.ws-rail) .rrail-close { display: block; }
-  /* iPhone Safari auto-ZOOMS the page when you focus an input under 16px, which shoves the fixed panel
-     wider than the (zoomed) visible viewport — bubbles + Send clip off the right, everything looks floaty.
-     16px is the zoom threshold. (iPad doesn't auto-zoom on focus, which is why it was already fine.) */
-  .redesign-rail:not(.ws-rail) .rrail-composer textarea { font-size: 16px; }
+  /* (the 16px zoom floor is now a single global rule at the end of this file) */
   .rrail-fab {
     display: inline-flex; align-items: center; gap: 7px; position: fixed; right: 16px; bottom: 16px; z-index: 1100;
     background: var(--teal-text); color: #fff; font-weight: 700; font-size: 15px; border: none; border-radius: 100px;
@@ -1999,7 +1996,6 @@ body.redesign-on .confidential-footer { display: none; } /* full-bleed app — n
   .ws-app.ws-mobile.sheet-dragging .ws-rail { transition: none; } /* finger-follow: no easing while dragging */
   .ws-app.ws-mobile .ws-rail > div { padding: 4px 16px 16px; }
   /* iOS 16px composer (never zoom-clip the fixed sheet) */
-  .ws-app.ws-mobile .ws-rail textarea, .ws-app.ws-mobile .ws-rail input:not([type=checkbox]):not([type=radio]) { font-size: 16px; }
   /* the grabber — tap to lower the sheet and read the canvas */
   .ws-app.ws-mobile .ws-sheet-handle { display: flex; align-items: center; justify-content: center; padding: 9px 0 5px; background: none; border: none; cursor: pointer; flex: 0 0 auto; }
   .ws-sheet-grip { width: 40px; height: 5px; border-radius: 3px; background: #c7ccd1; }
@@ -2212,8 +2208,6 @@ body.onbwel-bleed main { max-width: none; margin: 0; padding: 0; }
 .tri-comp-stream .rmsg.rhome-nudge { border-left: 3px solid var(--teal); }
 .tri-comp-stream .rhome-nudge-skip { display: block; margin-top: 9px; background: none; border: none; padding: 0; color: rgba(255, 255, 255, 0.7); font: inherit; font-size: 13px; text-decoration: underline; cursor: pointer; }
 @media (max-width: 1000px) {
-  /* ≥16px composer so iOS Safari doesn't auto-zoom the pane (memory: ios-input-16px). */
-  .tri-comp-composer textarea { font-size: 16px; }
   /* Compact hero: text + a SMALL ring side by side (the ring is reference, not the hero on a phone). The eyebrow already
      names the phase, so drop the ring's center label at this size. */
   .tri-hero { align-items: flex-start; gap: 12px; padding: 12px 18px; }
@@ -2766,3 +2760,23 @@ body:has(.fc-dark) .brand-wordmark,
 .fc-theme-toggle:hover { background: #fff; border-color: var(--teal-text); color: var(--teal-text); }
 .fc-dark .fc-theme-toggle { background: transparent; color: rgba(255,255,255,.62); border-color: rgba(255,255,255,.18); }
 .fc-dark .fc-theme-toggle:hover { color: #fff; border-color: var(--teal-text); }
+
+/* ── NO INPUT UNDER 16px ON A TOUCH SCREEN ──────────────────────────────────────────────────────────────────
+   iOS Safari auto-zooms the page when you focus an input smaller than 16px, and does NOT zoom back when you
+   dismiss it. The layout viewport stays wider than the visual one, so content clips off the LEFT edge and a
+   phantom horizontal scroll appears with an empty gutter on the right. Jay's word for it: "floaty".
+   (iPad and Android don't do this, which is why it always shows up as an iPhone-only report.)
+
+   THIS IS THE FOURTH TIME IT HAS BEEN PATCHED HERE — .rrail-composer, then .ws-rail, then
+   .tri-comp-composer, and now the Founder Console composer — each time as a new one-off rule for whichever
+   composer had just been built, and each time discovered by someone using the app rather than by a test. The
+   next composer anyone adds would have re-introduced it. So: one floor, no exceptions to remember.
+
+   `!important` IS DELIBERATE and is the right tool exactly once. A bare `input` selector is specificity
+   (0,0,1) and every component rule that sets a size is at least (0,1,1) — so without it this rule loses to
+   the very declarations it exists to correct. This is a hard accessibility floor, not a style preference.
+   Verified first that NO input in the app is larger than 16px, so nothing is shrunk by it.
+   Checkboxes and radios are excluded: they have no text to zoom toward. */
+@media (max-width: 1100px) {
+  input:not([type='checkbox']):not([type='radio']), textarea, select { font-size: 16px !important; }
+}
