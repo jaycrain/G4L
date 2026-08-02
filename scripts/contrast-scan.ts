@@ -19,6 +19,16 @@ import { chromium } from 'playwright';
 
 const BASE = process.argv[2] ?? 'http://localhost:3100';
 const PASSWORD = process.env.ADMIN_PASSWORD;
+
+// TWO SURFACES, AND THE SECOND ONE MATTERS MORE.
+//
+// This shipped scanning only /admin — Jay's own tool, read by one or two people. The MEMBER app had never
+// been measured, and that is the surface where contrast stops being a compliance question: G4L is built for
+// midlife adults, and contrast sensitivity declines with age as ordinary physiology, not disability. A member
+// squinting at their own ID Score is the product failing at its job long before it is an accessibility
+// finding. `--member` logs in as the demo account (same credentials the smoke test uses) and walks the real
+// member surfaces.
+const MEMBER_MODE = process.argv.includes('--member');
 /** WCAG AA for normal text. Large/bold text is allowed 3:1, which is why findings are reported with their
  *  font size rather than just failed — the number is the input to a judgement, not the judgement. */
 const AA_NORMAL = 4.5;
@@ -65,6 +75,12 @@ function scan(): Finding[] {
     if (r.width < 4 || r.height < 4) continue; // not rendered
     const cs = getComputedStyle(el);
     if (cs.visibility === 'hidden') continue;
+    // DISABLED CONTROLS ARE EXEMPT. WCAG 1.4.3 excludes inactive user-interface components, and dimming a
+    // disabled button is how you SAY it's inactive. Counting them made the two worst findings in the whole
+    // member app (2:1, "Send" and "Add note") artefacts of a .5 opacity rule that is doing its job — which
+    // would have sent Jay to "fix" correct code.
+    const ctl = el.closest('button, a, input, select, textarea, [role="button"]');
+    if (ctl && ((ctl as HTMLButtonElement).disabled || ctl.getAttribute('aria-disabled') === 'true')) continue;
     const fgRaw = parse(cs.color);
     if (!fgRaw || fgRaw.a === 0) continue;
     const op = parseFloat(cs.opacity);
@@ -83,26 +99,55 @@ function scan(): Finding[] {
 }
 
 async function main() {
-  if (!PASSWORD) { console.error('ADMIN_PASSWORD not set — source .env.local first.'); process.exit(1); }
   const browser = await chromium.launch();
   const page = await browser.newPage({ viewport: { width: 1440, height: 1200 } });
-  await page.goto(`${BASE}/admin/login`, { waitUntil: 'networkidle' });
-  await page.fill('input[type=password]', PASSWORD);
-  // WAIT FOR THE REDIRECT, don't just click. The login posts through a server action, so navigating straight
-  // after the click races the session cookie and every later page silently 307s back to /admin/login — which
-  // looks exactly like "no findings" rather than like "scanned nothing".
-  await Promise.all([
-    page.waitForURL((u) => !u.pathname.endsWith('/login'), { timeout: 20_000 }),
-    page.click('button[type=submit]'),
-  ]);
+  let routes: string[];
 
-  // The member record is the densest page in the console — the telemetry panel, the Reclaim List in the
-  // member's own words, the draft. It has no fixed URL, so it has to be discovered or it never gets scanned.
-  await page.goto(`${BASE}/admin/members`, { waitUntil: 'networkidle' });
-  const memberHref = await page.locator('a[href^="/admin/member/"]').first()
-    .getAttribute('href').catch(() => null);
-  const routes = memberHref ? [...ROUTES, memberHref] : ROUTES;
-  if (!memberHref) console.log('(no member rows — the record page was NOT scanned)');
+  if (MEMBER_MODE) {
+    const email = process.env.SMOKE_EMAIL?.trim();
+    const pw = process.env.SMOKE_PASSWORD;
+    if (!email || !pw) { console.error('SMOKE_EMAIL / SMOKE_PASSWORD not set — source .env.local first.'); process.exit(1); }
+    // DEMO ACCOUNTS ONLY. The same guard the smoke test carries: this drives a real login and renders a real
+    // member's surfaces, and a scan is never a reason to open a real person's story.
+    if (!/\.test$/i.test(email)) { console.error(`Refusing: ${email} is not a demo (.test) account.`); process.exit(1); }
+
+    await page.goto(`${BASE}/login`, { waitUntil: 'networkidle' });
+    // Wait for React to attach before typing — a click that lands pre-hydration is silently swallowed into a
+    // native submit, which reloads /login and looks exactly like a wrong password.
+    await page.waitForFunction(() => {
+      const el = document.querySelector('button[type="submit"]');
+      return !!el && Object.keys(el).some((k) => k.startsWith('__reactProps$'));
+    }, null, { timeout: 15_000 });
+    await page.fill('#email', email);
+    await page.fill('#password', pw);
+    await page.click('button[type="submit"]');
+    await page.waitForFunction(() => location.pathname.startsWith('/dashboard/'), null, { timeout: 20_000 });
+    const id = page.url().match(/\/dashboard\/([0-9a-f-]+)/i)?.[1];
+    if (!id) { console.error('login did not reach a dashboard'); process.exit(1); }
+    routes = [
+      `/dashboard/${id}`, `/program/${id}`, `/field-guide/${id}`, `/score/${id}`, `/grinta/${id}`,
+      `/reclaim-list/${id}`, `/movement/${id}`, `/badges/${id}`, `/playbook/${id}`, `/connect/${id}`,
+    ];
+  } else {
+    if (!PASSWORD) { console.error('ADMIN_PASSWORD not set — source .env.local first.'); process.exit(1); }
+    await page.goto(`${BASE}/admin/login`, { waitUntil: 'networkidle' });
+    await page.fill('input[type=password]', PASSWORD);
+    // WAIT FOR THE REDIRECT, don't just click. The login posts through a server action, so navigating straight
+    // after the click races the session cookie and every later page silently 307s back to /admin/login — which
+    // looks exactly like "no findings" rather than like "scanned nothing".
+    await Promise.all([
+      page.waitForURL((u) => !u.pathname.endsWith('/login'), { timeout: 20_000 }),
+      page.click('button[type=submit]'),
+    ]);
+
+    // The member record is the densest page in the console — the telemetry panel, the Reclaim List in the
+    // member's own words, the draft. It has no fixed URL, so it has to be discovered or it never gets scanned.
+    await page.goto(`${BASE}/admin/members`, { waitUntil: 'networkidle' });
+    const memberHref = await page.locator('a[href^="/admin/member/"]').first()
+      .getAttribute('href').catch(() => null);
+    routes = memberHref ? [...ROUTES, memberHref] : ROUTES;
+    if (!memberHref) console.log('(no member rows — the record page was NOT scanned)');
+  }
 
   let worst = 99;
   let total = 0;
