@@ -386,15 +386,32 @@ export default async function AdminMember({ params }: { params: Promise<{ member
             body={d.jay_edits ?? d.draft_body}
             moment={d.operating_moment}
           />
-        ) : (
+        ) : d.approval_status === 'approved' ? (
           <div key={d.id} className="card draft-card">
             <div className="draft-head">
               <span className="draft-moment">{d.operating_moment.replace(/_/g, ' ')}</span>
-              <span className={`pill ${d.approval_status}`}>{d.approval_status === 'approved' ? 'sent' : 'rejected'}</span>
+              <span className="pill approved">sent</span>
             </div>
             <p className="draft-subject"><strong>Subject:</strong> {d.draft_subject}</p>
             <pre className="draft-sent-body">{d.jay_edits ?? d.draft_body}</pre>
           </div>
+        ) : (
+          // REJECTED COLLAPSES. Jay, 2026-08-02: "If I reject an email, it needs to collapse or go away."
+          // It used to render exactly like a sent one — full card, full body — so the thing he had just
+          // decided against sat on the page at the same weight as the thing he'd approved.
+          //
+          // COLLAPSE RATHER THAN DELETE. He offered either, and the record is worth keeping: the review gate's
+          // whole claim is that a human decides, and a rejected draft is the evidence that a human did. Gone
+          // from the screen, still in the audit trail. <details> so it can be reopened without a click costing
+          // anything, and without JavaScript.
+          <details key={d.id} className="draft-rejected">
+            <summary>
+              <span className="draft-moment">{d.operating_moment.replace(/_/g, ' ')}</span>
+              <span className="pill rejected">rejected</span>
+              <span className="draft-rejected-subject">{d.draft_subject}</span>
+            </summary>
+            <pre className="draft-sent-body">{d.jay_edits ?? d.draft_body}</pre>
+          </details>
         ),
       )}
     </ConsoleSubpage>
