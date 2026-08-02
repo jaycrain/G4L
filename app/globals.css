@@ -484,7 +484,7 @@ ul.program { list-style: none; padding: 0; margin: 0; }
    pole anchors sit under the two ends. Reused across every arc's chat surface. */
 .scale-chips { margin-top: 0.65rem; }
 /* W-48: the universal "Question n of y" length cue above the chips. */
-.scale-chips-progress { margin: 0 0 0.4rem; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; color: var(--navy); opacity: 0.6; }
+.scale-chips-progress { margin: 0 0 0.4rem; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; color: var(--navy); opacity: 0.82; }
 .scale-chips-row { display: flex; gap: 0.4rem; flex-wrap: wrap; }
 .scale-chip {
   flex: 1 1 0; min-width: 42px; padding: 0.6rem 0; margin: 0;
@@ -497,7 +497,7 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .scale-chip:disabled { cursor: default; }
 .scale-chip:disabled:not(.selected) { opacity: 0.5; }
 .scale-chips-anchors { display: flex; justify-content: space-between; gap: 0.75rem; margin-top: 0.4rem; }
-.scale-chips-anchors span { font-size: 0.78rem; color: var(--navy); opacity: 0.72; max-width: 46%; }
+.scale-chips-anchors span { font-size: 0.78rem; color: var(--navy); opacity: 0.82; max-width: 46%; }
 .scale-chips-anchors span:last-child { text-align: right; }
 
 /* v2.2 Reconnect (skeleton): the dashboard entry CTA + the session surface. Reuses .chat/.bubble/.chat-input. */
@@ -1925,7 +1925,7 @@ body.redesign-on .confidential-footer { display: none; } /* full-bleed app — n
 .noti-card { position: relative; }
 .noti-dial { margin-top: 2px; }
 .noti-savebar { position: absolute; top: 16px; right: 18px; color: var(--olive-text); font-size: 12px; font-weight: 700; letter-spacing: 0.3px; min-height: 16px; }
-.noti-subhead { color: #8A929A; font-size: 11px; font-weight: 700; letter-spacing: 1.3px; text-transform: uppercase; margin: 20px 2px 10px; }
+.noti-subhead { color: var(--muted-grey); font-size: 11px; font-weight: 700; letter-spacing: 1.3px; text-transform: uppercase; margin: 20px 2px 10px; }
 .noti-dial .noti-subhead:first-of-type { margin-top: 4px; }
 .noti-group { border: 1px solid var(--panel-line, #E8E6E6); border-radius: 13px; overflow: hidden; }
 .noti-opt { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; padding: 13px 14px; cursor: pointer; border: none; border-bottom: 1px solid var(--panel-line, #E8E6E6); background: #fff; font-family: inherit; }
@@ -1937,7 +1937,7 @@ body.redesign-on .confidential-footer { display: none; } /* full-bleed app — n
 .noti-optlabel { display: flex; flex-direction: column; }
 .noti-ti { color: var(--charcoal, #2A2A2A); font-size: 15px; font-weight: 600; }
 .noti-opt.sel .noti-ti { color: var(--navy); }
-.noti-de { color: #8A929A; font-size: 12px; margin-top: 1px; }
+.noti-de { color: var(--muted-grey); font-size: 12px; margin-top: 1px; }
 .noti-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 13px 14px; border-bottom: 1px solid var(--panel-line, #E8E6E6); }
 .noti-row:last-child { border-bottom: none; }
 .noti-always { color: var(--olive-text); font-size: 12.5px; font-weight: 700; flex: 0 0 auto; }
@@ -1949,9 +1949,9 @@ body.redesign-on .confidential-footer { display: none; } /* full-bleed app — n
 .noti-quiet-time { color: var(--navy); font-weight: 800; font-size: 18px; }
 .noti-quiet-edit { display: flex; align-items: center; gap: 8px; }
 .noti-quiet-edit select { font-family: inherit; font-size: 15px; font-weight: 600; color: var(--navy); border: 1px solid var(--panel-line, #E8E6E6); border-radius: 8px; padding: 6px 8px; background: #fff; }
-.noti-dash { color: #8A929A; }
+.noti-dash { color: var(--muted-grey); }
 .noti-edit { color: var(--teal-text); font-weight: 700; font-size: 14px; cursor: pointer; background: none; border: none; padding: 6px; font-family: inherit; }
-.noti-antinag { color: #8A929A; font-size: 12.5px; line-height: 1.5; margin-top: 14px; font-style: italic; }
+.noti-antinag { color: var(--muted-grey); font-size: 12.5px; line-height: 1.5; margin-top: 14px; font-style: italic; }
 
 /* ============ Mobile slice 3 — the session workspace as canvas + a rising Companion bottom-sheet ============ */
 /* Only when MOBILE is on (.ws-mobile) and at the phone/portrait breakpoint. Desktop + the current mobile stack are
@@ -2158,7 +2158,7 @@ body.onbwel-bleed main { max-width: none; margin: 0; padding: 0; }
   /* Fixed compact height; buttons stretch to fill and center their text. The `margin: 0` is load-bearing — the global
      `button,.btn` rule sets margin-top:1.5rem, which was pushing every tab ~24px down and inflating the bar. */
   .tri-seg { display: flex; align-items: stretch; gap: 4px; background: #eceae6; border-radius: 100px; padding: 2px; flex: 0 0 auto; height: 34px; box-sizing: border-box; }
-  .tri-seg-btn { flex: 1; margin: 0; display: flex; align-items: center; justify-content: center; border: none; background: none; font-family: inherit; font-size: 13px; font-weight: 700; line-height: 1; color: var(--muted-grey); padding: 0 6px; border-radius: 100px; cursor: pointer; white-space: nowrap; }
+  .tri-seg-btn { flex: 1; margin: 0; display: flex; align-items: center; justify-content: center; border: none; background: none; font-family: inherit; font-size: 13px; font-weight: 700; line-height: 1; color: #55595c; padding: 0 6px; border-radius: 100px; cursor: pointer; white-space: nowrap; }
   .tri-seg-btn.on { background: var(--white); color: var(--navy); box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12); }
   .tri-main { flex-direction: column; gap: 0; }
   .tri-flank, .tri-center { flex: 1 1 auto; width: auto; }
@@ -2429,7 +2429,7 @@ body:has(.fc-app) .confidential-footer { display: none; }
   display:flex; align-items:center; justify-content:center; }
 .fc-el { color:inherit; text-decoration:none; }
 .fc-el:hover { color:#2F7A7B; }
-.fc-et { color:#8A929A; font-size:12px; white-space:nowrap; margin-left:auto; }
+.fc-et { color:var(--muted-grey); font-size:12px; white-space:nowrap; margin-left:auto; }
 
 /* ── THE FOLD: ONE MERGED ROW, ONE PANE, FULL SCREEN ──────────────────────────────────────────────────────
    Jay chose option A: rather than stacking a header, a section nav AND a pane switcher — three bands of

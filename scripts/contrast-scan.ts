@@ -38,6 +38,33 @@ const ROUTES = [
   '/admin/review', '/admin/moderation', '/admin/health', '/admin/feedback',
 ];
 
+/** Logged-OUT surfaces. Scanned in a fresh context before signing in, because an authed session redirects
+ *  most of them — and a redirect that silently lands on the dashboard would report the dashboard's contrast
+ *  under the login page's name. */
+const PUBLIC_ROUTES = ['/', '/onboarding', '/login', '/login/forgot'];
+
+/** The reading-heavy surfaces the first pass missed. Sessions and onboarding are where a member spends the
+ *  most CONTINUOUS time reading, so they matter more per finding than a dashboard panel does. Built per
+ *  member id at run time. */
+const memberRoutes = (id: string) => [
+  `/dashboard/${id}`, `/program/${id}`, `/field-guide/${id}`, `/score/${id}`, `/grinta/${id}`,
+  `/reclaim-list/${id}`, `/movement/${id}`, `/badges/${id}`, `/playbook/${id}`, `/connect/${id}`,
+  `/momentum/${id}`, `/journey/${id}`, `/checkpoint/${id}`, `/story/${id}`, `/account`,
+  `/idq?member=${id}`,
+  // Live Sessions — the real routes on disk. A member who hasn't reached one may be redirected; the report
+  // prints where it actually LANDED so a redirect can't masquerade as coverage.
+  `/reconnect/${id}`, `/w2/${id}`, `/w3/${id}`,
+  `/b1/${id}`, `/b2/${id}`, `/b3/${id}`, `/b4/${id}`,
+  `/c1/${id}`, `/c2/${id}`, `/c3/${id}`, `/c4/${id}`,
+];
+
+/** BOTH WIDTHS. Contrast is mostly viewport-independent, but the app swaps components at the fold — the
+ *  mobile pane control, the stacked hero — and a rule that only renders on a phone was never being measured. */
+const VIEWPORTS = [
+  { label: 'desktop', width: 1440, height: 1200 },
+  { label: 'phone', width: 390, height: 900 },
+];
+
 type Finding = { ratio: number; size: number; weight: string; cls: string; tag: string; text: string; bg: string };
 
 function scan(): Finding[] {
@@ -56,15 +83,36 @@ function scan(): Finding[] {
   };
   // Paint the ancestor backgrounds outermost-first, so a stack of translucent fills resolves to what the eye
   // actually sees rather than to the innermost declaration.
-  const effBg = (el: Element): C => {
-    const chain: C[] = [];
+  //
+  // GRADIENTS ARE NOT backgroundColor. The front door (.onbwel) and the auth hero are white text on a navy
+  // GRADIENT, and reading only backgroundColor saw transparent, walked up to the page, and reported
+  // white-on-white at 1:1 — twenty confident findings on four screens that are perfectly readable. A gradient
+  // has no single ground, so every colour stop is treated as a candidate and the WORST one decides: if the
+  // text clears 4.5:1 against the darkest and the lightest stop, it clears it everywhere in between.
+  //
+  // A url() image is genuinely unmeasurable this way. Those are reported separately rather than guessed at.
+  const grounds = (el: Element): { cands: C[]; unmeasurable: boolean } => {
+    const layers: C[][] = [];
+    let unmeasurable = false;
     for (let n: Element | null = el; n; n = n.parentElement) {
-      const c = parse(getComputedStyle(n).backgroundColor);
-      if (c && c.a > 0) chain.push(c);
+      const cs = getComputedStyle(n);
+      const img = cs.backgroundImage;
+      if (img && img !== 'none') {
+        if (/url\(/.test(img)) unmeasurable = true;
+        const stops = (img.match(/rgba?\([^)]*\)/g) ?? []).map(parse).filter((c): c is C => !!c && c.a > 0);
+        if (stops.length) { layers.push(stops); continue; }
+      }
+      const c = parse(cs.backgroundColor);
+      if (c && c.a > 0) layers.push([c]);
     }
-    let base: C = { r: 255, g: 255, b: 255, a: 1 };
-    for (let i = chain.length - 1; i >= 0; i--) base = over(chain[i]!, base);
-    return base;
+    // Composite outermost-in. Where a layer offered several stops, carry each forward as its own candidate.
+    let bases: C[] = [{ r: 255, g: 255, b: 255, a: 1 }];
+    for (let i = layers.length - 1; i >= 0; i--) {
+      const next: C[] = [];
+      for (const b of bases) for (const l of layers[i]!) next.push(over(l, b));
+      bases = next.slice(0, 8); // a handful of stops is plenty; this just stops a pathological blow-up
+    }
+    return { cands: bases, unmeasurable };
   };
 
   const out: Finding[] = [];
@@ -84,10 +132,16 @@ function scan(): Finding[] {
     const fgRaw = parse(cs.color);
     if (!fgRaw || fgRaw.a === 0) continue;
     const op = parseFloat(cs.opacity);
-    const bg = effBg(el);
-    const fg = over({ ...fgRaw, a: fgRaw.a * (isNaN(op) ? 1 : op) }, bg);
-    const L1 = lum(fg), L2 = lum(bg);
-    const ratio = (Math.max(L1, L2) + 0.05) / (Math.min(L1, L2) + 0.05);
+    const { cands, unmeasurable } = grounds(el);
+    if (unmeasurable) continue; // a photographic background — say nothing rather than guess
+    let ratio = Infinity;
+    let bg = cands[0]!;
+    for (const cand of cands) {
+      const fg = over({ ...fgRaw, a: fgRaw.a * (isNaN(op) ? 1 : op) }, cand);
+      const L1 = lum(fg), L2 = lum(cand);
+      const r2 = (Math.max(L1, L2) + 0.05) / (Math.min(L1, L2) + 0.05);
+      if (r2 < ratio) { ratio = r2; bg = cand; }
+    }
     if (ratio < 4.5) {
       out.push({
         ratio: +ratio.toFixed(2), size: parseFloat(cs.fontSize), weight: cs.fontWeight,
@@ -101,7 +155,7 @@ function scan(): Finding[] {
 
 async function main() {
   const browser = await chromium.launch();
-  const page = await browser.newPage({ viewport: { width: 1440, height: 1200 } });
+  let page = await browser.newPage({ viewport: { width: 1440, height: 1200 } });
   let routes: string[];
 
   if (MEMBER_MODE) {
@@ -125,10 +179,7 @@ async function main() {
     await page.waitForFunction(() => location.pathname.startsWith('/dashboard/'), null, { timeout: 20_000 });
     const id = page.url().match(/\/dashboard\/([0-9a-f-]+)/i)?.[1];
     if (!id) { console.error('login did not reach a dashboard'); process.exit(1); }
-    routes = [
-      `/dashboard/${id}`, `/program/${id}`, `/field-guide/${id}`, `/score/${id}`, `/grinta/${id}`,
-      `/reclaim-list/${id}`, `/movement/${id}`, `/badges/${id}`, `/playbook/${id}`, `/connect/${id}`,
-    ];
+    routes = memberRoutes(id);
   } else {
     if (!PASSWORD) { console.error('ADMIN_PASSWORD not set — source .env.local first.'); process.exit(1); }
     await page.goto(`${BASE}/admin/login`, { waitUntil: 'networkidle' });
@@ -157,8 +208,17 @@ async function main() {
   const byElement = new Map<string, { worst: number; size: number; count: number; example: string; bg: string }>();
 
   console.log(`CONTRAST — ${BASE} (threshold ${AA_NORMAL}:1 for normal text)`);
-  for (const route of routes) {
+
+  const redirected: string[] = [];
+  const walk = async (route: string, vp: string) => {
     await page.goto(BASE + route, { waitUntil: 'networkidle' });
+    // WHERE IT ACTUALLY LANDED. A gated Session redirects a member who hasn't reached it, and a redirect that
+    // quietly lands on the dashboard would report the dashboard's contrast under the Session's name — coverage
+    // that isn't. Recorded and reported rather than assumed.
+    const landed = new URL(page.url()).pathname + new URL(page.url()).search;
+    const asked = route.split('?')[0]!;
+    if (!landed.startsWith(asked)) redirected.push(`${route} → ${landed}`);
+
     const bad = await page.evaluate(scan);
     total += bad.length;
     for (const f of bad) {
@@ -169,19 +229,46 @@ async function main() {
       else { cur.count++; if (f.ratio < cur.worst) { cur.worst = f.ratio; cur.bg = f.bg; } }
     }
     if (bad.length) {
-      // Say how many were withheld. A list that quietly stops at 8 reads as "that's all of them".
-      console.log(`\n${route}  (${bad.length})`);
+      // Say how many were withheld. A list that quietly stops at 6 reads as "that's all of them".
+      console.log(`\n${route}  [${vp}]  (${bad.length})`);
       for (const f of bad.slice(0, 6)) {
         // Large text (>=24px, or >=18.66px bold) only needs 3:1 — flag it differently rather than crying wolf.
         const large = f.size >= 24 || (f.size >= 18.66 && +f.weight >= 700);
         const mark = f.ratio < (large ? 3 : AA_NORMAL) ? '✖' : '·';
         console.log(`   ${mark} ${f.ratio}:1  ${Math.round(f.size)}px  on ${f.bg}  ${f.tag}.${f.cls}  → ${JSON.stringify(f.text)}`);
       }
-      if (bad.length > 6) console.log(`   … and ${bad.length - 6} more on this page (all counted in the rollup)`);
+      if (bad.length > 6) console.log(`   … and ${bad.length - 6} more here (all counted in the rollup)`);
       worst = Math.min(worst, bad[0]!.ratio);
     }
+  };
+
+  for (const vp of VIEWPORTS) {
+    await page.setViewportSize({ width: vp.width, height: vp.height });
+    for (const route of routes) await walk(route, vp.label);
   }
+
+  // THE LOGGED-OUT FRONT DOOR, in a clean context. An authed session redirects /login and /onboarding
+  // straight past themselves, so scanning them on the signed-in page would have measured the dashboard and
+  // filed it under the login page's name. These are also the first thing a prospective member ever sees.
+  if (MEMBER_MODE) {
+    const anon = await browser.newContext({ viewport: { width: 1440, height: 1200 } });
+    const anonPage = await anon.newPage();
+    const signedIn = page;
+    page = anonPage;
+    for (const vp of VIEWPORTS) {
+      await page.setViewportSize({ width: vp.width, height: vp.height });
+      for (const route of PUBLIC_ROUTES) await walk(route, `${vp.label}·anon`);
+    }
+    page = signedIn;
+    await anon.close();
+  }
+
   await browser.close();
+
+  if (redirected.length) {
+    console.log(`\n${redirected.length} route(s) redirected — NOT the coverage the name implies:`);
+    for (const r of [...new Set(redirected)]) console.log(`   ${r}`);
+  }
 
   console.log(`\nBY ELEMENT — ${byElement.size} distinct rules behind ${total} findings`);
   for (const [k, v] of [...byElement.entries()].sort((a, b) => a[1].worst - b[1].worst)) {
