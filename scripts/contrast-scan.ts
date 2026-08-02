@@ -88,12 +88,26 @@ async function main() {
   const page = await browser.newPage({ viewport: { width: 1440, height: 1200 } });
   await page.goto(`${BASE}/admin/login`, { waitUntil: 'networkidle' });
   await page.fill('input[type=password]', PASSWORD);
-  await page.click('button[type=submit]');
+  // WAIT FOR THE REDIRECT, don't just click. The login posts through a server action, so navigating straight
+  // after the click races the session cookie and every later page silently 307s back to /admin/login — which
+  // looks exactly like "no findings" rather than like "scanned nothing".
+  await Promise.all([
+    page.waitForURL((u) => !u.pathname.endsWith('/login'), { timeout: 20_000 }),
+    page.click('button[type=submit]'),
+  ]);
+
+  // The member record is the densest page in the console — the telemetry panel, the Reclaim List in the
+  // member's own words, the draft. It has no fixed URL, so it has to be discovered or it never gets scanned.
+  await page.goto(`${BASE}/admin/members`, { waitUntil: 'networkidle' });
+  const memberHref = await page.locator('a[href^="/admin/member/"]').first()
+    .getAttribute('href').catch(() => null);
+  const routes = memberHref ? [...ROUTES, memberHref] : ROUTES;
+  if (!memberHref) console.log('(no member rows — the record page was NOT scanned)');
 
   let worst = 99;
   let total = 0;
   console.log(`CONTRAST — ${BASE} (threshold ${AA_NORMAL}:1 for normal text)`);
-  for (const route of ROUTES) {
+  for (const route of routes) {
     await page.goto(BASE + route, { waitUntil: 'networkidle' });
     const bad = await page.evaluate(scan);
     total += bad.length;

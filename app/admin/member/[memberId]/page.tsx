@@ -218,23 +218,24 @@ export default async function AdminMember({ params }: { params: Promise<{ member
         </p>
 
         {/* Sessions — open → step → close: time-on-asset, drop-off, re-engagement. */}
-        <h4 className="tele-head">Sessions</h4>
+        <h4 className="tele-head fc-own">Sessions</h4>
         {experience.sessions.length > 0 ? (
           <ul className="member-sessions">
             {experience.sessions.map((s) => (
               <li key={s.sessionId}>
-                <span className="member-session-title">{sessionTitle(s.sessionId)}</span>{' '}
+                <span className="member-session-title">{sessionTitle(s.sessionId)}</span>
                 {s.closed ? (
-                  <span className="muted">
+                  <span className="muted tele-detail">
                     closed{s.durationMs != null ? ` · ~${fmtMin(s.durationMs)} min` : ''}
-                    {s.opens > 1 ? ` · opened ${s.opens}×` : ''} · {relativeTime(s.closedAt, now)}
+                    {s.opens > 1 ? ` · opened ${s.opens}×` : ''}
                   </span>
                 ) : (
-                  <span className="muted">
+                  <span className="muted tele-detail">
                     {s.opens > 1 ? `opened ${s.opens}× · ` : ''}
-                    {s.dropOffStep ? `stalled at step ${s.dropOffStep}` : 'opened, no steps yet'} · {relativeTime(s.lastActivityAt, now)}
+                    {s.dropOffStep ? `stalled at step ${s.dropOffStep}` : 'opened, no steps yet'}
                   </span>
                 )}
+                <span className="muted tele-when">{relativeTime(s.closed ? s.closedAt : s.lastActivityAt, now)}</span>
               </li>
             ))}
           </ul>
@@ -243,20 +244,21 @@ export default async function AdminMember({ params }: { params: Promise<{ member
         )}
 
         {/* Checkpoints — arrival → crossing, and how long they sat at the gate. */}
-        <h4 className="tele-head">Checkpoints</h4>
+        <h4 className="tele-head fc-own">Checkpoints</h4>
         {experience.checkpoints.length > 0 ? (
           <ul className="member-sessions">
             {experience.checkpoints.map((c) => (
               <li key={c.checkpointId}>
-                <span className="member-session-title">{checkpointTitle(c.checkpointId)}</span>{' '}
+                <span className="member-session-title">{checkpointTitle(c.checkpointId)}</span>
                 {c.crossed ? (
-                  <span className="muted">
+                  <span className="muted tele-detail">
                     crossed{c.timeToCrossMs != null ? ` · ${fmtMin(c.timeToCrossMs)} min at the gate` : ''}
-                    {c.opens > 1 ? ` · ${c.opens} visits` : ''} · {relativeTime(c.crossedAt, now)}
+                    {c.opens > 1 ? ` · ${c.opens} visits` : ''}
                   </span>
                 ) : (
-                  <span className="muted">at the gate, not crossed{c.opens > 1 ? ` · ${c.opens} visits` : ''} · {relativeTime(c.firstOpenAt, now)}</span>
+                  <span className="muted tele-detail">at the gate, not crossed{c.opens > 1 ? ` · ${c.opens} visits` : ''}</span>
                 )}
+                <span className="muted tele-when">{relativeTime(c.crossed ? c.crossedAt : c.firstOpenAt, now)}</span>
               </li>
             ))}
           </ul>
@@ -271,23 +273,24 @@ export default async function AdminMember({ params }: { params: Promise<{ member
         {/* The ID Score is THE longitudinal metric (24 items · 4 dimensions · retaken every 60 days). One
             "latest score" line threw that away. The series is the point: where they started, where they are,
             and the distance between — which is the mirror the member is shown. Never a grade. */}
-        <h4 className="tele-head">ID Score history</h4>
+        <h4 className="tele-head fc-own">ID Score history</h4>
         {retakes.length > 0 ? (
           <ul className="member-sessions">
             {retakes.map((r) => (
               <li key={r.sequenceNo}>
                 <span className="member-session-title">
-                  {r.sequenceNo === 0 ? 'Baseline' : `Retake ${r.sequenceNo}`}
-                </span>{' '}
-                <strong>{Math.round(r.idScore)}</strong>{' '}
+                  {r.sequenceNo === 0 ? 'Baseline' : `Retake ${r.sequenceNo}`} {Math.round(r.idScore)}
+                </span>
                 {r.deltaFromPrevious != null && (
                   <span className={r.deltaFromPrevious > 0 ? 'trend-up' : r.deltaFromPrevious < 0 ? 'trend-down' : 'muted'}>
                     {r.deltaFromPrevious > 0 ? '+' : ''}{Math.round(r.deltaFromPrevious)} vs previous
                   </span>
-                )}{' '}
-                <span className="muted">
-                  · P {r.physical} · S {r.self} · So {r.social} · O {r.outlook} · {relativeTime(r.takenAt, now)}
+                )}
+                {/* The four dimensions the score is BUILT from — never a grade, and never shown without them. */}
+                <span className="muted tele-detail">
+                  P {r.physical} · S {r.self} · So {r.social} · O {r.outlook}
                 </span>
+                <span className="muted tele-when">{relativeTime(r.takenAt, now)}</span>
               </li>
             ))}
           </ul>
@@ -295,22 +298,21 @@ export default async function AdminMember({ params }: { params: Promise<{ member
           <p className="muted">No IDQ yet — the baseline lands at the end of Reconnect.</p>
         )}
 
-        <h4 className="tele-head">Surfaces opened</h4>
+        <h4 className="tele-head fc-own">Surfaces opened</h4>
         {experience.surfaces.length > 0 ? (
-          <p className="member-meta">
-            {experience.surfaces.map((u, i) => (
-              <span key={u.surface}>
-                {i > 0 && ' · '}
-                {u.surface.replace(/_/g, ' ')} <span className="muted">({u.views})</span>
+          <div className="tele-chips">
+            {experience.surfaces.map((u) => (
+              <span className="tele-chip" key={u.surface}>
+                {u.surface.replace(/_/g, ' ')} <i>{u.views}</i>
               </span>
             ))}
-          </p>
+          </div>
         ) : (
           <p className="muted">No page views yet.</p>
         )}
 
         {experience.summary && (
-          <p className="member-meta muted"><em>Agent read:</em> {experience.summary}</p>
+          <p className="tele-read"><strong>Agent read</strong> — {experience.summary}</p>
         )}
       </div>
 

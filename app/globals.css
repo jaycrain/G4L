@@ -775,11 +775,54 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .pill.approved { background: var(--teal); color: var(--white); }
 .pill.rejected { background: var(--grey); color: var(--charcoal); }
 .member-meta { margin: 0.6rem 0 0; line-height: 1.6; }
-.member-sessions { list-style: none; padding: 0; margin: 0.8rem 0 0; }
-.member-sessions li { padding: 0.35rem 0; border-bottom: 1px solid var(--panel-line); }
+.member-sessions { list-style: none; padding: 0; margin: 0.5rem 0 0; }
+/* ONE ROW, THREE ZONES: what it was · what happened · when. The "when" is pushed to the right edge and
+   tabular, so a column of times can be scanned down rather than hunted for at the end of each sentence —
+   which is what a telemetry list is actually for. */
+.member-sessions li {
+  display: flex; align-items: baseline; gap: 0.55rem;
+  padding: 0.45rem 0; border-bottom: 1px solid var(--panel-line);
+}
 .member-sessions li:last-child { border-bottom: none; }
-.member-session-title { font-weight: 600; }
-.tele-head { margin: 1rem 0 0.25rem; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--teal); }
+.member-session-title { font-weight: 600; flex: none; }
+.tele-detail { min-width: 0; }
+.tele-when { margin-left: auto; flex: none; white-space: nowrap; font-variant-numeric: tabular-nums; font-size: 0.85rem; }
+
+/* Section headers had 1rem of air above and 0.25rem below — nearly equidistant, so they floated between the
+   block they closed and the block they opened instead of belonging to one. Weighted downward, with a hairline
+   to make the grouping structural rather than a matter of spacing alone. */
+.tele-head {
+  margin: 1.65rem 0 0; padding-bottom: 0.3rem;
+  font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.09em;
+  color: var(--teal); border-bottom: 1px solid var(--panel-line);
+}
+.fc-dark .tele-head { color: var(--teal-lift); border-bottom-color: var(--edge); }
+
+/* Surfaces opened was a dot-separated run-on sentence — a shape that reads as prose and holds counts, which
+   is the worst of both. Chips: countable at a glance, wrap honestly. */
+.tele-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0.65rem 0 0; }
+.tele-chip {
+  font-size: 12px; padding: 0.2rem 0.6rem; border-radius: 999px;
+  border: 1px solid var(--panel-line); white-space: nowrap;
+}
+.fc-dark .tele-chip { border-color: var(--edge); background: var(--fill-6); }
+.tele-chip i { font-style: normal; font-weight: 700; }
+
+/* The blended read is a CONCLUSION, not another row — it's what both agents actually hold about this person.
+   Set apart so it stops looking like the tail of the surfaces list. */
+.tele-read {
+  margin: 1.5rem 0 0; padding: 0.7rem 0.9rem;
+  border-left: 3px solid var(--teal); border-radius: 0 8px 8px 0;
+  background: var(--grey); font-size: 0.9rem; line-height: 1.55;
+}
+
+/* On a phone three zones don't fit on one line, and a right-aligned time would collide with the detail.
+   Wrap, and let the time take its own line rather than truncating something. */
+@media (max-width: 700px) {
+  .member-sessions li { flex-wrap: wrap; }
+  .tele-when { margin-left: 0; width: 100%; }
+}
+.fc-dark .tele-read { background: var(--fill-6); color: var(--sec); border-left-color: var(--teal-lift); }
 
 /* Send Feedback — quiet ghost pill, bottom-LEFT (opposite the Member Agent bubble); never competes. */
 .fb-launch {
@@ -2548,7 +2591,12 @@ button.fcs-tab { font-family: inherit; cursor: pointer; }
   padding: 1rem 1.25rem 4rem;
 }
 
-.fc-dark h1, .fc-dark h2, .fc-dark h3, .fc-dark h4, .fc-dark strong, .fc-dark b { color: var(--ink); }
+/* `:not(.fc-own)` again — FOURTH instance of this exact shape. `.fc-dark h4` (0,1,1) outranks `.tele-head`
+   (0,1,0), so the member record's section headers lost their teal and rendered as plain white: the same
+   weight and colour as the rows beneath them, which is precisely why Jay read the panel as "headers and
+   information all run together". A heading that isn't distinguishable isn't a heading. */
+.fc-dark h1:not(.fc-own), .fc-dark h2:not(.fc-own), .fc-dark h3:not(.fc-own), .fc-dark h4:not(.fc-own),
+.fc-dark strong:not(.fc-own), .fc-dark b:not(.fc-own) { color: var(--ink); }
 .fc-dark .muted, .fc-dark .fb-ctx, .fc-dark .roster-foot { color: var(--sec); }
 .fc-dark a { color: var(--teal-lift); }
 
