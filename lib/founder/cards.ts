@@ -104,6 +104,40 @@ export function activityCard(events: Array<{ who: string; what: string; ref: str
 }
 
 /**
+ * WHO THIS ANSWER IS ABOUT — the name, on screen, as data.
+ *
+ * Jay, 2026-08-02: he asked "when was he last active" and got "Last active today — 0 days since his last
+ * signal." The model had resolved who "he" was (it opened that record) and simply never said the name. The
+ * tone rule — "lead with the answer, don't summarise his question back at him" — reads as "don't repeat the
+ * subject", and does slightly too much work.
+ *
+ * THREE REASONS THIS IS MORE THAN A READABILITY NIT, worst first:
+ *  1. draft_message takes a NAME. If the next message is "draft him a note", the model binds "him" from the
+ *     thread. If no turn ever stated the name, that binding is inference — and this file already worries, in
+ *     resolve(), about member_detail and draft_message disagreeing about who someone is, "which would mean
+ *     drafting to one member about another's situation".
+ *  2. The thread is durable for 30 days. Scrolled back to tomorrow, an unnamed answer is orphaned.
+ *  3. "Checked one member's record" says a private record was opened but not whose — an unauditable receipt.
+ *
+ * A prompt rule alone is a wish; this is the half that holds. OPERATIONAL FIELDS ONLY — name, phase, last
+ * active, sessions. Their own words stay in prose under the governance that already covers them, and nothing
+ * private is laid out as data.
+ */
+export function memberIdentityCard(m: OperationalMember): Card {
+  return {
+    kind: 'table',
+    eyebrow: 'Member',
+    columns: [
+      { key: 'member', label: 'Member' },
+      { key: 'phase', label: 'Phase' },
+      { key: 'waiting', label: 'Last active', right: true },
+    ],
+    rows: [{ member: m.name, phase: m.phase, waiting: ago(m.daysSinceActive) }],
+    memberIds: [m.memberId],
+  };
+}
+
+/**
  * Turn ONE tool result into a card, or nothing.
  *
  * Nothing is the common and correct answer: most turns don't want a table under them, and a card per tool call
@@ -124,7 +158,11 @@ export function cardFor(tool: string, input: Record<string, unknown>, result: Re
     const c = activityCard((result.events as never[] | undefined) ?? []);
     return c ? [c] : [];
   }
-  // cohort_stats is already the panel beside the thread; member_detail is one person's private record and
-  // belongs in prose, not laid out as data. operations_status is two numbers.
+  if (tool === 'member_detail' && result.found === true && typeof result.name === 'string') {
+    // Their PRIVATE record still belongs in prose — but the fact of WHO is operational, and putting it on
+    // screen is what stops a nameless answer (see memberIdentityCard).
+    return [memberIdentityCard(result as unknown as OperationalMember)];
+  }
+  // cohort_stats is already the panel beside the thread. operations_status is two numbers.
   return [];
 }

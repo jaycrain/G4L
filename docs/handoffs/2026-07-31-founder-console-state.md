@@ -109,3 +109,37 @@ skipped the most adversarial privacy probe; a dead-link check reused the failure
 reachable: NO" while printing no dead link; the Companion walk fired standalone questions, which is what
 **hid the missing conversation memory for an entire build**. A harness that mislabels its own cases is worse
 than no harness — and a harness that tests a surface which doesn't exist proves nothing at all.
+
+---
+
+## Deferred — the "real" fixes behind the 2026-08-02 cheap ones
+
+Two Companion behaviours Jay caught by eye in a live thread. The cheap halves shipped that day and are proven
+in `scripts/founder-companion-walk.ts`; these are what they defer.
+
+### 1. Checkpoint proximity — a tool that does not exist
+
+**Shipped:** the model now says it cannot see distance-to-a-gate, answers the neighbouring question, and names
+the substitution. Verified live.
+
+**Deferred:** there is still no way to answer *"who is closest to a Checkpoint?"* — the concept is absent from
+the tool surface entirely (`cohort_stats`, `find_members`, `member_detail`, `recent_activity`,
+`operations_status`).
+
+**Blocked on a definition, not on engineering.** "Closest" could mean steps remaining in the current Session,
+Sessions remaining before the gate, or time-since-last-move against a typical pace. Those rank people
+differently and only one of them is what Jay means by "who should I encourage today". That is a Greg + Jay
+call, and it is the same question the Loop work needs answered — worth deciding once.
+
+### 2. Naming — the prompt half holds, the structural half is partial
+
+**Shipped:** a prompt rule (answers about a member name them) plus `memberIdentityCard` — `member_detail` now
+emits a card carrying name/phase/last-active, built from the tool RESULT rather than from the model's prose.
+Operational fields only; their own words stay in prose under the existing governance.
+
+**Deferred / worth watching:** the card guarantees the name is on SCREEN. It does not guarantee the name is in
+the THREAD TEXT, which is what a later turn ("draft him a note") actually binds against — cards are not
+replayed into the model's context. So the pronoun-binding risk is reduced, not closed. The live walk shows the
+model asking who Jay means when a referent is ambiguous, which is the behaviour we want; if that ever drifts,
+the durable fix is to include the resolved member name in the persisted turn record, not to write a firmer
+prompt rule.
