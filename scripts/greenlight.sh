@@ -25,22 +25,34 @@ URL="${1:-https://g4l-ten.vercel.app}"
 # a full declaration (`selector{prop:value}`) over a bare class name so a pre-existing use elsewhere can't match.
 # Bundle tells only work for chunks reachable from /onboarding. For a surface with its own route, prefer a
 # RUNTIME tell below (SURFACES) — it proves the page actually RENDERS the new thing, which is what we care about.
-CSS_TELLS=()
+# b862612 — the console's own header + the viewport-locked triptych. All four class names are NEW in this
+# push, so none of them can match the previous build (which is the whole point of the rule above).
+CSS_TELLS=(".fch-wordmark" ".fch-tools" ".fc-pane-centre" ".admin-live-word")
 JS_TELLS=()
 
 # COMMIT CHECK — the authoritative proof for an ENGINE-ONLY push (server logic, no bundle change), where no static
 # tell exists. NOTE: `vercel ls --meta githubCommitSha=...` returns NOTHING on this project (the meta isn't queryable),
 # so do NOT use it — it reads as "not deployed" forever and will leave you waiting on a build that already shipped.
 # Compare TIMESTAMPS instead: the newest production deployment must be newer than your HEAD commit.
+#
+# `ok` IS INITIALISED HERE, not after this block. It used to be set to 1 further down, which silently threw
+# away a commit-check failure — the gate could report ⚠ and still exit GREEN.
+ok=1
+echo "GREEN-LIGHT — $URL"
+
+# EVERY grep IN A COMMAND SUBSTITUTION NEEDS `|| true`. Under `set -euo pipefail` a grep that matches nothing
+# exits 1, pipefail promotes it, and the whole script dies — before its first line of output. That is exactly
+# what happened on 2026-08-01: a gate whose job is to say GO or WAIT printed NOTHING and exited 1. A check
+# that can fail silently is worse than no check, because you read the silence as "fine".
 if command -v vercel >/dev/null 2>&1 && [ "$URL" = "https://g4l-ten.vercel.app" ]; then
-  commit_ts="$(git log -1 --format=%ct 2>/dev/null)"
-  newest="$(vercel ls 2>/dev/null | grep -oE 'https://g4l-[a-z0-9]+-[a-z-]+\.vercel\.app' | head -1)"
+  commit_ts="$(git log -1 --format=%ct 2>/dev/null || true)"
+  newest="$(vercel ls 2>/dev/null | grep -oE 'https://g4l-[a-z0-9]+-[a-z-]+\.vercel\.app' | head -1 || true)"
   if [ -n "$newest" ] && [ -n "$commit_ts" ]; then
-    info="$(vercel inspect "$newest" 2>&1)"
-    dep_date="$(echo "$info" | grep -E '^\s+created' | sed -E 's/.*created[[:space:]]+//; s/ \[.*//')"
-    dep_ts="$(date -j -f '%a %b %d %Y %H:%M:%S' "$(echo "$dep_date" | sed -E 's/ GMT.*//')" +%s 2>/dev/null)"
-    aliased="$(echo "$info" | grep -c 'g4l-ten.vercel.app')"
-    if [ -n "$dep_ts" ] && [ "$dep_ts" -ge "$commit_ts" ] && [ "$aliased" -gt 0 ]; then
+    info="$(vercel inspect "$newest" 2>&1 || true)"
+    dep_date="$(echo "$info" | grep -E '^\s+created' | sed -E 's/.*created[[:space:]]+//; s/ \[.*//' || true)"
+    dep_ts="$(date -j -f '%a %b %d %Y %H:%M:%S' "$(echo "$dep_date" | sed -E 's/ GMT.*//')" +%s 2>/dev/null || true)"
+    aliased="$(echo "$info" | grep -c 'g4l-ten.vercel.app' || true)"
+    if [ -n "$dep_ts" ] && [ "$dep_ts" -ge "$commit_ts" ] && [ "${aliased:-0}" -gt 0 ]; then
       echo "  commit: ✓ newest prod deploy is newer than HEAD $(git rev-parse --short HEAD) AND serves this alias"
     else
       echo "  commit: ⚠ newest prod deploy predates HEAD $(git rev-parse --short HEAD) or isn't aliased — still building"
@@ -49,12 +61,10 @@ if command -v vercel >/dev/null 2>&1 && [ "$URL" = "https://g4l-ten.vercel.app" 
   fi
 fi
 
-html="$(curl -s "$URL/onboarding")"
-css_path="$(echo "$html" | grep -oE '/_next/static/[^"]+\.css' | head -1)"
-css="$(curl -s "$URL$css_path")"
+html="$(curl -s "$URL/onboarding" || true)"
+css_path="$(echo "$html" | grep -oE '/_next/static/[^"]+\.css' | head -1 || true)"
+css="$(curl -s "$URL$css_path" || true)"
 
-ok=1
-echo "GREEN-LIGHT — $URL"
 echo "  build: $(curl -sI "$URL/onboarding" | grep -i '^x-vercel-id' | tr -d '\r' || echo 'n/a')"
 
 for t in ${CSS_TELLS[@]+"${CSS_TELLS[@]}"}; do
