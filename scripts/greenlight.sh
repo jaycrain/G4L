@@ -25,9 +25,11 @@ URL="${1:-https://g4l-ten.vercel.app}"
 # a full declaration (`selector{prop:value}`) over a bare class name so a pre-existing use elsewhere can't match.
 # Bundle tells only work for chunks reachable from /onboarding. For a surface with its own route, prefer a
 # RUNTIME tell below (SURFACES) — it proves the page actually RENDERS the new thing, which is what we care about.
-# Founder Companion tweaks — header row, merged composer sizing, pins removed. All three are NEW in this
-# push, so none of them can match the previous build (which is the whole point of the rule above).
-CSS_TELLS=(".draft-done-when")
+# EMPTY IS THE CORRECT STATE FOR A BACKEND-ONLY PUSH. The last few slices (outreach episodes, the absence
+# ladder) touch no bundle, so there is no honest static tell to add — and leaving the PREVIOUS push's tells
+# here would green-light the old build, which is the false-green trap described above. The commit-timestamp
+# check below is the proof for these; put a tell back the moment something member-facing ships.
+CSS_TELLS=()
 JS_TELLS=()
 
 # COMMIT CHECK — the authoritative proof for an ENGINE-ONLY push (server logic, no bundle change), where no static
