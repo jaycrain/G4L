@@ -782,7 +782,7 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .roster-score { font-weight: 700; color: var(--navy); }
 .roster-score .trend-up { color: var(--olive-text); font-size: 0.8rem; }
 .roster-score .trend-down { color: var(--deep-red); font-size: 0.8rem; }
-.roster-score .trend-flat { color: var(--navy); opacity: 0.6; font-size: 0.8rem; }
+.roster-score .trend-flat { color: var(--navy); opacity: 0.82; font-size: 0.8rem; }
 .roster-time { color: var(--navy); opacity: 0.8; font-size: 0.84rem; }
 .badge { display: inline-block; margin-left: 0.55rem; padding: 0.1rem 0.5rem; border-radius: 999px; font-size: 0.66rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; vertical-align: middle; }
 .badge-account { background: var(--teal-text); color: var(--white); }
@@ -2357,7 +2357,7 @@ body:has(.fc-app) .confidential-footer { display: none; }
 }
 .fc-eyebrow { font-size:11px; font-weight:700; letter-spacing:.09em; text-transform:uppercase; color:#2F7A7B; }
 .fc-h { font-size:18px; font-weight:700; color:var(--navy); margin:2px 0 10px; }
-:root { --fc-muted: #7d8892; }
+:root { --fc-muted: #646e78; }  /* 5.19:1 on white — the LIGHT theme reads this; .fc-dark overrides it */
 
 .fc-kpis { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
 .fc-kpi { border:1px solid rgba(55,79,99,.16); border-radius:11px; padding:11px 12px; }

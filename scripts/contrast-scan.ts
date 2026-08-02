@@ -203,6 +203,7 @@ async function main() {
 
   let worst = 99;
   let total = 0;
+  let scanned = 0;
   // ROLLED UP BY ELEMENT, because 37 findings are rarely 37 problems — they are usually one CSS rule seen
   // 37 times, and a per-route list makes you fix the same thing repeatedly without noticing.
   const byElement = new Map<string, { worst: number; size: number; count: number; example: string; bg: string }>();
@@ -220,6 +221,7 @@ async function main() {
     if (!landed.startsWith(asked)) redirected.push(`${route} → ${landed}`);
 
     const bad = await page.evaluate(scan);
+    scanned++;
     total += bad.length;
     for (const f of bad) {
       const key = `${f.tag.toLowerCase()}${f.cls ? `.${f.cls.split(' ').join('.')}` : ''}`;
@@ -276,7 +278,13 @@ async function main() {
     // a 3:1 into a 1.5:1. (I did that four times in one sitting before adding this column.)
     console.log(`   ${String(v.worst).padStart(5)}:1  ${String(Math.round(v.size)).padStart(2)}px  on ${v.bg}  ×${String(v.count).padStart(3)}  ${k}  → ${JSON.stringify(v.example.slice(0, 30))}`);
   }
-  console.log(`\n${total} below ${AA_NORMAL}:1 · worst ${worst === 99 ? 'n/a' : `${worst}:1`}`);
+  // SAY WHAT WAS COVERED, not just what was found. "0 findings" and "0 findings because nothing was scanned"
+  // print identically otherwise, and the second one has already happened here once (a login race sent every
+  // page to a redirect and the run reported clean).
+  console.log(`\nCOVERAGE — ${scanned} page loads: ${routes.length} route(s) x ${VIEWPORTS.length} widths` +
+    (MEMBER_MODE ? ` + ${PUBLIC_ROUTES.length} logged-out x ${VIEWPORTS.length}` : '') +
+    ` [${VIEWPORTS.map((v) => `${v.label} ${v.width}px`).join(', ')}]`);
+  console.log(`${total} below ${AA_NORMAL}:1 · worst ${worst === 99 ? 'n/a' : `${worst}:1`}`);
   // Below 3:1 is the "can't read it" band and is treated as a failure; 3–4.5 is reported for judgement.
   process.exit(worst < 3 ? 1 : 0);
 }
