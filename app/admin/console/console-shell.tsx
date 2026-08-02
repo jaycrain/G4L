@@ -3,6 +3,7 @@ import type { CohortView, AttentionRow, FeedItem } from '../../../lib/admin/cons
 import FounderCompanion from './founder-companion.tsx';
 import AdminAutoRefresh from '../auto-refresh.tsx';
 import { CONSOLE_NAV } from './subpage.tsx';
+import ThemeToggle from './theme-toggle.tsx';
 
 /** Relative time in the same plain register the rest of the app uses. */
 function ago(iso: string, now: number): string {
@@ -20,10 +21,10 @@ const TONE: Record<FeedItem['tone'], string> = { work: 'var(--teal)', win: 'var(
  * LEFT the cohort, CENTRE the Companion (the workhorse), RIGHT what needs him.
  */
 export default function ConsoleShell({
-  cohort, attention, feed, unseen, memberCount, activeCount, now,
+  cohort, attention, feed, unseen, memberCount, activeCount, now, theme,
 }: {
   cohort: CohortView; attention: AttentionRow[]; feed: FeedItem[]; unseen: number;
-  memberCount: number; activeCount: number; now: number;
+  memberCount: number; activeCount: number; now: number; theme: 'dark' | 'light';
 }) {
   const allActive = memberCount > 0 && activeCount >= memberCount;
   return (
@@ -41,6 +42,7 @@ export default function ConsoleShell({
             router.refresh() re-pulls server data only — the Companion thread is client state and survives,
             which is verified in the browser rather than assumed. */}
         <AdminAutoRefresh />
+        <ThemeToggle theme={theme} />
       </div>
 
       {/* THE SAME TAB ROW THE SUBPAGES CARRY. Jay on his phone: the console had no wayfinding at all — the

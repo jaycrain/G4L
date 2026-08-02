@@ -113,6 +113,33 @@ async function main() {
   if (leaked) failed++;
   console.log(`${leaked ? '✖' : '✔'} the member app is untouched by the console theme`);
 
+  // ── THE TOGGLE ACTUALLY TOGGLES, AND IT STICKS ─────────────────────────────────────────────────────────
+  // Dark is the default and the intent; light is the escape hatch. The property worth proving is that the
+  // choice SURVIVES a navigation — a theme that resets when you open a subpage isn't a preference, it's a
+  // button. Restored to dark afterwards so the run leaves no state behind.
+  await page.goto(BASE + '/admin', { waitUntil: 'networkidle' });
+  await page.getByRole('button', { name: 'Light' }).click();
+  await page.waitForTimeout(1200);
+  const afterClick = !(await page.evaluate(() => document.querySelectorAll('.fc-dark').length > 0));
+  // Reload before judging: a server action that WROTE but whose revalidation didn't reach this tab is a very
+  // different bug from one that didn't write at all, and only a reload separates them.
+  await page.reload({ waitUntil: 'networkidle' });
+  const wentLight = !(await page.evaluate(() => document.querySelectorAll('.fc-dark').length > 0));
+  if (wentLight && !afterClick) console.log('   (needed a reload — the write landed, the revalidation did not)');
+  if (!wentLight) failed++;
+  console.log(`${wentLight ? '✔' : '✖'} the toggle switches the console to light`);
+
+  await page.goto(BASE + '/admin/members', { waitUntil: 'networkidle' });
+  const stuck = !(await page.evaluate(() => document.querySelectorAll('.fc-dark').length > 0));
+  if (!stuck) failed++;
+  console.log(`${stuck ? '✔' : '✖'} and it holds across a navigation — a preference, not a button`);
+
+  await page.getByRole('button', { name: 'Dark' }).click();
+  await page.waitForTimeout(900);
+  const backToDark = await page.evaluate(() => document.querySelectorAll('.fc-dark').length > 0);
+  if (!backToDark) failed++;
+  console.log(`${backToDark ? '✔' : '✖'} and back to dark, leaving no state behind`);
+
   // ── AN OPERATOR IS NOT A COLD VISITOR ──────────────────────────────────────────────────────────────────
   // Signed in as admin, "/" used to fall through to the marketing welcome ("Welcome midlifer, your comeback
   // begins today") — the wrong thing to show the person running the program. It should land on the console.

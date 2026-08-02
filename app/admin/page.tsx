@@ -10,7 +10,7 @@ import AdminAutoRefresh from './auto-refresh.tsx';
 import { isAdmin } from '../authz.ts';
 import { founderConsoleEnabled } from '../../lib/dashboard/redesign.ts';
 import { cohortView, rosterAttention, activityFeed, markUnseen } from '../../lib/admin/console.ts';
-import { getActivitySeenAt } from '../../lib/founder/state.ts';
+import { getActivitySeenAt, getConsoleTheme } from '../../lib/founder/state.ts';
 import ConsoleShell from './console/console-shell.tsx';
 import { HealthSection, ModerationSection, ReviewSection, MembersSection, FeedbackSection } from './sections/index.tsx';
 import type { Db } from '../../lib/db/schema.ts';
@@ -36,7 +36,7 @@ export default async function AdminHome({ searchParams }: { searchParams?: Promi
   if (founderConsoleEnabled() && (await searchParams)?.view !== 'roster') {
     // The console SHOWS the unseen count but never stamps it — only opening Activity marks things seen.
     // Otherwise a glance at the dashboard would silently clear the thing he came to check.
-    const [rawFeed, seenAt] = await Promise.all([activityFeed(db), getActivitySeenAt(db)]);
+    const [rawFeed, seenAt, theme] = await Promise.all([activityFeed(db), getActivitySeenAt(db), getConsoleTheme(db)]);
     const { feed, unseen } = markUnseen(rawFeed, seenAt);
     const cohort = cohortView(roster, summary, now);
     const attention = [
@@ -50,6 +50,7 @@ export default async function AdminHome({ searchParams }: { searchParams?: Promi
         attention={attention}
         feed={feed}
         unseen={unseen}
+        theme={theme}
         memberCount={cohort.members}
         activeCount={cohort.activeLast7}
         now={now}

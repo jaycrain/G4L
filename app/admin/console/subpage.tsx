@@ -1,5 +1,8 @@
 import Link from 'next/link';
 import AdminAutoRefresh from '../auto-refresh.tsx';
+import ThemeToggle from './theme-toggle.tsx';
+import { getDb } from '../../../lib/db/index.ts';
+import { getConsoleTheme } from '../../../lib/founder/state.ts';
 
 // THE CHROME EVERY CONSOLE SUBPAGE WEARS.
 //
@@ -30,7 +33,7 @@ export const CONSOLE_NAV: Crumb[] = [
   { label: 'Feedback', href: '/admin/feedback' },
 ];
 
-export default function ConsoleSubpage({
+export default async function ConsoleSubpage({
   title, lede, here, crumbs = [], children,
 }: {
   title: string;
@@ -42,6 +45,9 @@ export default function ConsoleSubpage({
   crumbs?: Crumb[];
   children: React.ReactNode;
 }) {
+  // The toggle belongs on every console surface, not just the home — you notice the ground is wrong wherever
+  // you happen to be standing.
+  const theme = await getConsoleTheme(await getDb()).catch(() => 'dark' as const);
   return (
     <div className="fcs">
       <nav className="fcs-crumbs" aria-label="Breadcrumb">
@@ -62,6 +68,7 @@ export default function ConsoleSubpage({
           {/* Live here too. A queue you sit and watch — Attention, Review, Moderation — is exactly where a
               stale page misleads most, and it keeps the admin session sliding on whichever page he's parked on. */}
           <AdminAutoRefresh />
+          <ThemeToggle theme={theme} />
         </div>
         {lede && <p className="fcs-lede">{lede}</p>}
       </div>

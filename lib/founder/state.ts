@@ -58,3 +58,41 @@ export async function markActivitySeen(db: Db, at: string, operator = 'jay'): Pr
     console.error('[founder] could not stamp the activity marker:', e);
   }
 }
+
+export type ConsoleTheme = 'dark' | 'light';
+
+/**
+ * Which theme the console wears. DARK is the default and the intent — light is the escape hatch.
+ *
+ * Read server-side so the ground is correct in the first paint. A client-side theme flashes the wrong one
+ * while the page hydrates, and a flash of white on a surface chosen for being dark is worse than no option.
+ *
+ * Schema-tolerant: before 0070 (and before 0069) this returns 'dark', which is the default anyway — so the
+ * console looks right through the whole migration window and the toggle simply doesn't stick yet.
+ */
+export async function getConsoleTheme(db: Db, operator = 'jay'): Promise<ConsoleTheme> {
+  if (!(await hasTable(db))) return 'dark';
+  try {
+    const { rows } = await db.query<{ theme: string }>(
+      `select theme from founder_state where operator = $1`, [operator],
+    );
+    return rows[0]?.theme === 'light' ? 'light' : 'dark';
+  } catch {
+    // Not logged as an error: before 0070 the column genuinely isn't there, and this is the expected shape
+    // during the window rather than a fault worth shouting about.
+    return 'dark';
+  }
+}
+
+export async function setConsoleTheme(db: Db, theme: ConsoleTheme, operator = 'jay'): Promise<void> {
+  if (!(await hasTable(db))) return;
+  try {
+    await db.query(
+      `insert into founder_state (operator, theme, updated_at) values ($1,$2, now())
+       on conflict (operator) do update set theme = excluded.theme, updated_at = now()`,
+      [operator, theme],
+    );
+  } catch (e) {
+    console.error('[founder] could not save the console theme:', e);
+  }
+}

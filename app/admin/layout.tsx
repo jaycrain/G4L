@@ -1,18 +1,25 @@
-// THE OPERATOR SURFACE IS DARK. Everything under /admin, nothing outside it.
+// THE OPERATOR SURFACE HAS ITS OWN GROUND — dark by default, light on request.
 //
-// Jay, 2026-08-01: "I'm wondering if there can be more of a contrast between the Member App and the Founder
-// Console." The member app stays white; the console sits on charcoal. You know which app you're in from
-// across the room, before reading a word — which matters more than it sounds when the same person switches
-// between being a member and running the program several times a day.
+// Jay, 2026-08-01: "more of a contrast between the Member App and the Founder Console", pointing at Scott's
+// Companion prototype. The member app is white; the console is charcoal. You know which app you're in from
+// across the room, before reading a word — which matters because Jay switches between BEING a member and
+// RUNNING the program several times a day.
 //
-// ONE SCOPE, so it cannot leak. Every dark rule in globals.css hangs off `.fc-dark`, and this layout is the
-// only thing that sets it. A member surface can never accidentally inherit an operator colour, and the
-// reverse is true too — which is the property that makes a wholesale re-skin safe to do at all.
+// Then, on seeing it: "Maybe it should be the dark theme and I would like the option to switching back."
+// Dark is the intent and the default; light is one tap away. The choice follows the PERSON (founder_state),
+// not the browser, so it's the same on a MacBook, an iPad and a phone.
 //
-// The elevation language is Scott's, from the Companion prototype: charcoal ground, surfaces raised by
-// white-at-opacity rather than by borders, radius growing with the surface. No new colours — every grey here
-// is white over charcoal, so the nine stay nine.
+// READ SERVER-SIDE so the ground is correct in the FIRST paint. A client-side theme flashes the wrong one
+// while the page hydrates, and a flash of white on a surface chosen for being dark is worse than no option.
+//
+// ONE SCOPE, so it cannot leak: every dark rule hangs off `.fc-dark`, and this is the only thing that sets
+// it. A member surface can never inherit an operator colour, and the reverse holds too — that boundary is
+// what makes a wholesale re-skin safe, and the console walk asserts it in both directions.
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  return <div className="fc-dark">{children}</div>;
+import { getDb } from '../../lib/db/index.ts';
+import { getConsoleTheme } from '../../lib/founder/state.ts';
+
+export default async function AdminLayout({ children }: { children: React.ReactNode }) {
+  const theme = await getConsoleTheme(await getDb()).catch(() => 'dark' as const);
+  return <div className={theme === 'dark' ? 'fc-dark' : undefined} data-console-theme={theme}>{children}</div>;
 }

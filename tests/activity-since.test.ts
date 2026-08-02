@@ -130,3 +130,34 @@ test('THE BUG: a re-render must not advance the marker', async () => {
   const { unseen } = markUnseen(feed, await getActivitySeenAt(db));
   assert.equal(unseen, 0, 'and after "Mark all seen", they are seen');
 });
+
+test('the console theme defaults to DARK and persists the choice', async () => {
+  // Dark is the intent (the console should not look like the member app); light is the escape hatch.
+  // Read server-side so the first paint is right — a client theme flashes the wrong ground while hydrating,
+  // and a flash of white on a surface chosen for being dark is worse than having no option at all.
+  __resetFounderStateCache();
+  const db = new PGlite() as unknown as Db;
+  await applySchema(db);
+  const { getConsoleTheme, setConsoleTheme } = await import('../lib/founder/state.ts');
+
+  assert.equal(await getConsoleTheme(db), 'dark', 'dark without anyone choosing it');
+  await setConsoleTheme(db, 'light');
+  assert.equal(await getConsoleTheme(db), 'light');
+  await setConsoleTheme(db, 'dark');
+  assert.equal(await getConsoleTheme(db), 'dark', 'and back again');
+});
+
+test('BEFORE 0070: the theme reads dark and saving no-ops', async () => {
+  // This is what bit me locally: the dev server had booted before 0070 existed, so its founder_state had no
+  // `theme` column. The fallback did exactly its job — the console stayed dark and nothing threw — which is
+  // right for the production migration window and is also why the toggle silently did nothing until I
+  // restarted. Correct behaviour, confusing symptom; worth a test so the shape is documented rather than
+  // rediscovered.
+  __resetFounderStateCache();
+  const db = new PGlite() as unknown as Db;
+  await applySchema(db);
+  await db.query('alter table founder_state drop column if exists theme');
+  const { getConsoleTheme, setConsoleTheme } = await import('../lib/founder/state.ts');
+  await assert.doesNotReject(() => setConsoleTheme(db, 'light'));
+  assert.equal(await getConsoleTheme(db), 'dark', 'degrades to the default, never to a broken page');
+});

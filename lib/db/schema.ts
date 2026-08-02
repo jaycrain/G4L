@@ -125,6 +125,7 @@ const MIGRATIONS: Array<{ file: string; sentinel: Sentinel }> = [
     },
   },
   { file: 'migrations/0069_founder_state.sql', sentinel: 'founder_state' },
+  { file: 'migrations/0070_console_theme.sql', sentinel: { table: 'founder_state', column: 'theme' } },
 ];
 export const SEED_SQL = () => sqlFile('seed/0001_reference_data.sql');
 

@@ -2531,3 +2531,10 @@ body:has(.fc-dark) .brand-wordmark { filter: invert(1) brightness(1.9); }
 /* The greeting was navy: the largest words on the page, and the least legible on charcoal. */
 .fc-dark .fc-hi { color: var(--ink); }
 .fc-dark .fc-st { color: var(--sec); }
+/* Dark ⇄ light. Sits with Pause / Refresh now, styled as one of them rather than as a feature. */
+.fc-theme-toggle { font-family: inherit; font-size: 12px; font-weight: 600; cursor: pointer;
+  padding: .25rem .7rem; border-radius: 999px; color: var(--navy); background: #fff;
+  border: 1px solid var(--light-grey, #E8E6E6); }
+.fc-theme-toggle:hover { border-color: var(--teal); color: var(--teal); }
+.fc-dark .fc-theme-toggle { background: transparent; color: rgba(255,255,255,.62); border-color: rgba(255,255,255,.18); }
+.fc-dark .fc-theme-toggle:hover { color: #fff; border-color: var(--teal); }
