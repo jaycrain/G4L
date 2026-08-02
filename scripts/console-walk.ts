@@ -191,14 +191,17 @@ async function main() {
     console.log(`${cleared ? '✔' : '✖'} clearing it really empties the store, not just the screen`);
   }
 
-  // ── THE COMPANION SAYS WHAT IT ACTUALLY GUARANTEES ─────────────────────────────────────────────────────
-  // The badge read "read-only" long after draft_message shipped. A governance label is the thing you'd point
-  // at to prove the guarantee, so a stale one is worse than none — assert the false claim can't come back.
+  // ── THE COMPANION NEVER CLAIMS TO BE READ-ONLY ─────────────────────────────────────────────────────────
+  // The badge read "read-only" long after draft_message shipped — a false governance claim in the one place
+  // you'd point at to prove the guarantee. Jay has since dropped the replacement wording as unnecessary
+  // (2026-08-02), which is fine: the guarantee lives in code (no send tool) and on the review card. What must
+  // never come back is the CLAIM, so that is what this asserts — not any particular phrasing, or the check
+  // would just break again the next time the label is edited.
   await page.goto(BASE + '/admin', { waitUntil: 'networkidle' });
   const badge = (await page.locator('.fc-hero-eye').first().innerText().catch(() => '')).toLowerCase();
-  const badgeOk = badge.includes('nothing sends without you') && !badge.includes('read-only');
+  const badgeOk = badge.includes('founder companion') && !badge.includes('read-only');
   if (!badgeOk) failed++;
-  console.log(`${badgeOk ? '✔' : '✖'} Companion badge states the real guarantee → "${badge}"`);
+  console.log(`${badgeOk ? '✔' : '✖'} Companion badge makes no read-only claim → "${badge}"`);
 
   const titled = await page.getByText('Since you last checked in').count() > 0;
   if (!titled) failed++;

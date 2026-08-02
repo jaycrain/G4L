@@ -157,11 +157,13 @@ export default function FounderCompanion({
     <div className="fc-hero">
       <div className="fc-hero-h">
         <div className="fc-hero-heading">
-          {/* "read-only" WAS TRUE AND ISN'T ANY MORE. The Companion has one write tool (draft_message), which
-              puts a row in the review queue. A governance badge is the thing you'd point at to prove the
-              guarantee, so it has to describe the guarantee that actually holds: it can draft, it cannot send.
-              See lib/founder/companion-tools.ts — WRITE_TOOLS is enumerated there and asserted in tests. */}
-          <div className="fc-hero-eye">The Founder Companion · nothing sends without you</div>
+          {/* The badge used to claim "read-only", which stopped being true when draft_message shipped; it was
+              replaced with the real guarantee, and Jay has now dropped that too as unnecessary (2026-08-02).
+              THE GUARANTEE ITSELF IS UNTOUCHED and is not carried by this label: there is no send tool
+              (WRITE_TOOLS in companion-tools.ts, asserted in tests), and the review card states it at the
+              moment it matters — "You are the send gate — nothing goes out until you approve." A badge on a
+              panel Jay reads forty times a day was restating a promise he already knows. */}
+          <div className="fc-hero-eye">The Founder Companion</div>
           <div className="fc-hero-title">Since you last checked in</div>
         </div>
         {/* Clearing is a PRIVACY control as much as a tidiness one: a thread where Jay asked about one
