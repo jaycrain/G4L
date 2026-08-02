@@ -56,8 +56,20 @@ Taking that on runs close to the Independence Guarantee — let the member set t
 keeps it the right side of the line is that **the member set the rhythm.** The nudge carries their own prior
 intention back to them.
 
-> **If we ever nudge on a cadence WE picked, we have stopped holding their intention and started holding
-> ours.** That is the line, and it is worth re-reading before any change to this system.
+> **If we ever nudge on a cadence WE picked INSTEAD OF one they chose, we have stopped holding their
+> intention and started holding ours.** That is the line, and it is worth re-reading before any change here.
+
+**A light default is not a violation of that line — and without one the layer never activates** (Jay,
+2026-08-02). A member who never opens settings would otherwise get nothing, which is the same as not building
+it. So: ship a light default cadence, disclosed, changeable and switch-off-able from settings in one step.
+
+**But the default may only apply to a channel they actively granted.** That distinction is load-bearing:
+
+- **Push** — the member has already cleared an OS permission prompt. A disclosed default cadence over a
+  channel they deliberately switched on is holding their intention, not overriding it.
+- **Text** — a default cadence over SMS would be implied consent for automated messages to a personal phone,
+  which is exactly what the law does not allow and exactly what the second consent ask exists to prevent.
+  **Texting is opt-in, per member, always. It never inherits a default.**
 
 ---
 
@@ -154,5 +166,15 @@ person needing help.
 2. **Quiet hours.** No text before ~8am or after ~9pm local. Needs a timezone we do not currently store.
 3. **Turning it off.** Not a question — the Independence Guarantee requires it. Every nudge channel is
    revocable from the member's own settings, and STOP must work as a real unsubscribe.
-4. **Sequencing.** Push ships today; text needs phone collection, a provider, consent capture and STOP
-   handling. Whether the reactive layer ships push-only first is a Charter-timing call.
+4. **Sequencing — DECIDED (Jay, 2026-08-02): start with push, begin the SMS paperwork in parallel.**
+
+   What "the paperwork" actually is, so it does not surprise anyone later. The long pole is **A2P 10DLC
+   registration**: US carriers require an application-to-person sender to register a Brand and then a
+   Campaign before any traffic flows. That needs real business identity (legal entity, EIN, address, a
+   contact) and carrier approval, and it is typically one to three weeks — it is not a code task and not
+   CC's to complete. Alongside it: choose a provider, write the consent language shown at the second ask,
+   store the consent record (who, when, what wording, which number), and implement STOP / HELP / START as a
+   real unsubscribe rather than a courtesy.
+
+   Push ships meanwhile and reaches only members who granted notifications, which is a real and stated
+   limitation of the first release rather than a bug in it.
