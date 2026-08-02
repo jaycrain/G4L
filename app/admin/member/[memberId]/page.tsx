@@ -386,29 +386,35 @@ export default async function AdminMember({ params }: { params: Promise<{ member
             body={d.jay_edits ?? d.draft_body}
             moment={d.operating_moment}
           />
-        ) : d.approval_status === 'approved' ? (
-          <div key={d.id} className="card draft-card">
-            <div className="draft-head">
-              <span className="draft-moment">{d.operating_moment.replace(/_/g, ' ')}</span>
-              <span className="pill approved">sent</span>
-            </div>
-            <p className="draft-subject"><strong>Subject:</strong> {d.draft_subject}</p>
-            <pre className="draft-sent-body">{d.jay_edits ?? d.draft_body}</pre>
-          </div>
         ) : (
-          // REJECTED COLLAPSES. Jay, 2026-08-02: "If I reject an email, it needs to collapse or go away."
-          // It used to render exactly like a sent one — full card, full body — so the thing he had just
-          // decided against sat on the page at the same weight as the thing he'd approved.
+          // ANYTHING ACTED ON COLLAPSES. Jay, 2026-08-02: first "if I reject an email, it needs to collapse
+          // or go away", then "any email acted on should collapse — with a timestamp".
           //
-          // COLLAPSE RATHER THAN DELETE. He offered either, and the record is worth keeping: the review gate's
-          // whole claim is that a human decides, and a rejected draft is the evidence that a human did. Gone
-          // from the screen, still in the audit trail. <details> so it can be reopened without a click costing
-          // anything, and without JavaScript.
-          <details key={d.id} className="draft-rejected">
+          // Both states used to render as a full card with the whole body in a <pre>, so a member's page
+          // became a wall of messages already dealt with, and the one thing still needing him — a pending
+          // draft — competed with them for attention. Decided is decided; it belongs in the record, not in
+          // the way.
+          //
+          // COLLAPSE RATHER THAN DELETE, for the rejections especially: the review gate's whole claim is that
+          // a human decides, and a rejected draft is the evidence that one did. Off the screen, still in the
+          // audit trail. <details> reopens it with no JavaScript.
+          //
+          // THE TIMESTAMP IS THE DECISION TIME, NOT THE DRAFTING TIME — `sent_at` for approved, `rejected_at`
+          // (migration 0071) for rejected. Rows decided before that migration have no recorded decision time
+          // and say so, rather than borrowing `drafted_at` and stating something false on an audit record.
+          <details key={d.id} className={`draft-done draft-done-${d.approval_status}`}>
             <summary>
               <span className="draft-moment">{d.operating_moment.replace(/_/g, ' ')}</span>
-              <span className="pill rejected">rejected</span>
-              <span className="draft-rejected-subject">{d.draft_subject}</span>
+              <span className={`pill ${d.approval_status}`}>
+                {d.approval_status === 'approved' ? 'sent' : 'rejected'}
+              </span>
+              <span className="draft-done-subject">{d.draft_subject}</span>
+              <span className="draft-done-when">
+                {(() => {
+                  const at = d.approval_status === 'approved' ? d.sent_at : d.rejected_at;
+                  return at ? relativeTime(at, now) : 'date not recorded';
+                })()}
+              </span>
             </summary>
             <pre className="draft-sent-body">{d.jay_edits ?? d.draft_body}</pre>
           </details>

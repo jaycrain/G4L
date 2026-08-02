@@ -1,0 +1,11 @@
+-- WHEN JAY ACTED ON IT, for the drafts he turned down.
+--
+-- The table has recorded `approved_at` and `sent_at` since 0003 and nothing for a rejection — rejecting only
+-- flipped approval_status. So the only date on a rejected draft was `drafted_at`, which answers "when did the
+-- agent write this", not "when did I decide against it". Those are different questions, and the collapsed row
+-- Jay asked for (2026-08-02: "any email acted on should collapse … with a timestamp") wants the second one.
+--
+-- Nullable and backfilled to nothing on purpose: rows rejected before today genuinely have no recorded
+-- decision time, and inventing one — say, copying drafted_at across — would put a confident wrong timestamp
+-- on an audit record. They render as "rejected · date unknown" instead, which is true.
+alter table founder_agent_drafts add column if not exists rejected_at timestamptz;

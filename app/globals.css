@@ -909,22 +909,24 @@ ul.program { list-style: none; padding: 0; margin: 0; }
    which read as "this will delete something". Darken the grey instead; deep red is reserved for real destruction. */
 .btn-secondary:hover { background: #d8d6d6 !important; color: var(--charcoal) !important; }
 .draft-note { font-size: 0.82rem; margin-top: 0.5rem; }
-/* A REJECTED DRAFT, COLLAPSED. One line at rest: what moment it was, that it was rejected, and its subject —
-   enough to recognise it, not enough to re-read it by accident. Sits deliberately quieter than the sent cards
-   above it: this is a record, not a thing to act on. */
-.draft-rejected { margin: 0.5rem 0 0; border: 1px solid var(--panel-line); border-radius: 10px; padding: 0.5rem 0.75rem; }
-.draft-rejected > summary {
+/* A DRAFT ALREADY ACTED ON, COLLAPSED. One line at rest: what moment it was, what was decided, the subject,
+   and when — enough to recognise it, not enough to re-read by accident. Deliberately quieter than a pending
+   draft above it: this is a record, not a thing to act on. */
+.draft-done { margin: 0.5rem 0 0; border: 1px solid var(--panel-line); border-radius: 10px; padding: 0.5rem 0.75rem; }
+.draft-done > summary {
   display: flex; align-items: center; gap: 0.6rem; cursor: pointer; list-style: none;
   font-size: 0.88rem; color: var(--muted-grey);
 }
-.draft-rejected > summary::-webkit-details-marker { display: none; }
+.draft-done > summary::-webkit-details-marker { display: none; }
 /* A disclosure needs to LOOK like one, or it reads as a dead row nobody thinks to click. */
-.draft-rejected > summary::before { content: '▸'; font-size: 0.75em; opacity: 0.7; flex: none; }
-.draft-rejected[open] > summary::before { content: '▾'; }
-.draft-rejected-subject { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
-.draft-rejected .draft-sent-body { margin-top: 0.6rem; }
-.fc-dark .draft-rejected { border-color: var(--edge); }
-.fc-dark .draft-rejected > summary { color: var(--sec); }
+.draft-done > summary::before { content: '▸'; font-size: 0.75em; opacity: 0.7; flex: none; }
+.draft-done[open] > summary::before { content: '▾'; }
+.draft-done-subject { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; flex: 1; }
+/* The decision time, right-aligned and tabular so a column of them can be scanned down. */
+.draft-done-when { flex: none; margin-left: auto; white-space: nowrap; font-variant-numeric: tabular-nums; font-size: 0.82rem; }
+.draft-done .draft-sent-body { margin-top: 0.6rem; }
+.fc-dark .draft-done { border-color: var(--edge); }
+.fc-dark .draft-done > summary { color: var(--sec); }
 .fc-dark .draft-moment { color: var(--ink); }
 
 .draft-sent-body { white-space: pre-wrap; font: inherit; background: var(--grey); padding: 0.8rem; border-radius: 8px; margin: 0.3rem 0 0; }

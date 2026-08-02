@@ -17,6 +17,8 @@ export type DraftRow = {
   approval_status: 'pending' | 'approved' | 'rejected';
   drafted_at: string;
   sent_at: string | null;
+  /** Null on rows decided before migration 0071, and on every row until it is applied. */
+  rejected_at?: string | null;
 };
 
 export async function createDraft(
@@ -64,7 +66,8 @@ export async function listPending(db: Db): Promise<DraftRow[]> {
 export async function listForMember(db: Db, memberId: string): Promise<DraftRow[]> {
   const { rows } = await db.query<DraftRow>(
     `select id, member_id, operating_moment, channel, draft_subject, draft_body, jay_edits,
-            approval_status, drafted_at, sent_at
+            approval_status, drafted_at, sent_at,
+            (to_jsonb(founder_agent_drafts) ->> 'rejected_at') as rejected_at
      from founder_agent_drafts where member_id = $1 order by drafted_at desc`,
     [memberId],
   );
@@ -103,4 +106,12 @@ export async function rejectDraft(db: Db, id: string): Promise<void> {
     `update founder_agent_drafts set approval_status = 'rejected' where id = $1 and approval_status = 'pending'`,
     [id],
   );
+  // Its own statement, its own failure. Rejecting must work whether or not 0071 has been applied to this
+  // database — a draft that stays 'pending' because a timestamp column was missing is a message that could
+  // still be sent by accident.
+  try {
+    await db.query(`update founder_agent_drafts set rejected_at = now() where id = $1`, [id]);
+  } catch (e) {
+    console.error('[founder] rejected_at not recorded (migration 0071 may not be applied):', e);
+  }
 }
