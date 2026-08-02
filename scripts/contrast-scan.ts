@@ -106,23 +106,40 @@ async function main() {
 
   let worst = 99;
   let total = 0;
+  // ROLLED UP BY ELEMENT, because 37 findings are rarely 37 problems — they are usually one CSS rule seen
+  // 37 times, and a per-route list makes you fix the same thing repeatedly without noticing.
+  const byElement = new Map<string, { worst: number; size: number; count: number; example: string }>();
+
   console.log(`CONTRAST — ${BASE} (threshold ${AA_NORMAL}:1 for normal text)`);
   for (const route of routes) {
     await page.goto(BASE + route, { waitUntil: 'networkidle' });
     const bad = await page.evaluate(scan);
     total += bad.length;
+    for (const f of bad) {
+      const key = `${f.tag.toLowerCase()}${f.cls ? `.${f.cls.split(' ').join('.')}` : ''}`;
+      const cur = byElement.get(key);
+      if (!cur) byElement.set(key, { worst: f.ratio, size: f.size, count: 1, example: f.text });
+      else { cur.count++; cur.worst = Math.min(cur.worst, f.ratio); }
+    }
     if (bad.length) {
+      // Say how many were withheld. A list that quietly stops at 8 reads as "that's all of them".
       console.log(`\n${route}  (${bad.length})`);
-      for (const f of bad.slice(0, 8)) {
+      for (const f of bad.slice(0, 6)) {
         // Large text (>=24px, or >=18.66px bold) only needs 3:1 — flag it differently rather than crying wolf.
         const large = f.size >= 24 || (f.size >= 18.66 && +f.weight >= 700);
         const mark = f.ratio < (large ? 3 : AA_NORMAL) ? '✖' : '·';
         console.log(`   ${mark} ${f.ratio}:1  ${Math.round(f.size)}px  ${f.tag}.${f.cls}  → ${JSON.stringify(f.text)}`);
       }
+      if (bad.length > 6) console.log(`   … and ${bad.length - 6} more on this page (all counted in the rollup)`);
       worst = Math.min(worst, bad[0]!.ratio);
     }
   }
   await browser.close();
+
+  console.log(`\nBY ELEMENT — ${byElement.size} distinct rules behind ${total} findings`);
+  for (const [k, v] of [...byElement.entries()].sort((a, b) => a[1].worst - b[1].worst)) {
+    console.log(`   ${String(v.worst).padStart(5)}:1  ${String(Math.round(v.size)).padStart(2)}px  ×${String(v.count).padStart(3)}  ${k}  → ${JSON.stringify(v.example.slice(0, 34))}`);
+  }
   console.log(`\n${total} below ${AA_NORMAL}:1 · worst ${worst === 99 ? 'n/a' : `${worst}:1`}`);
   // Below 3:1 is the "can't read it" band and is treated as a failure; 3–4.5 is reported for judgement.
   process.exit(worst < 3 ? 1 : 0);
