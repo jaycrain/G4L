@@ -2339,7 +2339,12 @@ body:has(.fc-app) .confidential-footer { display: none; }
 .fc-composer input:focus-visible {
   outline:2px solid var(--teal); outline-offset:2px; background:rgba(255,255,255,.18);
 }
-.fc-send { flex:none; height:var(--composer-h); font-family:inherit; font-weight:700; font-size:14px;
+/* margin:0 IS LOad-BEARING. The global `button, .btn { margin-top: 1.5rem }` applies here too, and with
+   align-items:center a 24px top margin against a 0 bottom margin drops the button 12px below the field it
+   sits beside. Same box height, different baseline — which is what "misaligned" actually meant, and what my
+   first fix missed because it only asserted the heights matched. .draft-actions was already patching this
+   same global on its own; it's the element-selector default biting a component for the second time. */
+.fc-send { flex:none; margin:0; height:var(--composer-h); font-family:inherit; font-weight:700; font-size:14px;
   box-sizing:border-box; border:1.5px solid var(--teal); border-radius:12px;
   padding:0 1.15rem; background:var(--teal); color:#fff; cursor:pointer; }
 .fc-send:disabled { opacity:.6; cursor:default; }
@@ -2524,8 +2529,14 @@ button.fcs-tab { font-family: inherit; cursor: pointer; }
 
 .fc-dark {
   --ink: #fff;
-  --sec: rgba(255, 255, 255, .62);
-  --faint: rgba(255, 255, 255, .40);
+  /* MEASURED, NOT PICKED BY EYE. Over charcoal these were 2.8–3.3:1 — under the 4.5:1 the WCAG asks for
+     normal text, and the eyebrows and unit labels using --faint are 11px, which is exactly where a thin
+     translucent white stops being readable. Raised until a compositing contrast scan across all eight
+     console pages came back clean. (The first scan I wrote reported 1.00 for everything because it read
+     rgba(255,255,255,.03) as white — a whole dark theme built from translucent whites will defeat any
+     contrast check that ignores alpha.) */
+  --sec: rgba(255, 255, 255, .78);
+  --faint: rgba(255, 255, 255, .58);
   --fill: rgba(255, 255, 255, .03);
   --fill-6: rgba(255, 255, 255, .06);
   --edge: rgba(255, 255, 255, .08);
@@ -2602,6 +2613,21 @@ button.fcs-tab { font-family: inherit; cursor: pointer; }
 .fc-dark .admin-live-toggle { color: var(--teal-lift); }
 .fc-dark .fca-seen-btn { background: transparent; color: var(--teal-lift); border-color: var(--teal); }
 .fc-dark .fca-seen-btn:hover { background: var(--teal); color: #fff; }
+
+/* THE DRAFT YOU ARE ABOUT TO SEND IN YOUR OWN NAME — and it was white text on a light-grey slab.
+   `.draft-sent-body` hardcodes `background: var(--grey)` and sets no colour, so under the dark scope it
+   inherited white: roughly 1.1:1, which is "there is text here somewhere". The most consequential thing on
+   the operator surface (a message going out over Jay's name) was the least readable thing on it.
+   THE CLASS: any component that sets a LIGHT background but no colour inherits the dark theme's white. This
+   is that bug's other half — the Send button was a component that set its colour and got overridden; this is
+   a component that set its background and didn't set its colour. Both come from styling the theme and the
+   components in two places that don't know about each other. */
+.fc-dark .draft-sent-body {
+  background: var(--fill-6); color: var(--ink); border: 1px solid var(--edge);
+}
+/* navy at 60% opacity over charcoal is 1.5:1 — the "no change" marker was effectively invisible, which on a
+   trend column reads as missing data rather than as a flat line. */
+.fc-dark .roster-score .trend-flat { color: var(--sec); opacity: 1; }
 
 /* Health + moderation carry a "something is wrong" state — it has to stay legible on charcoal without
    becoming the loudest thing on a page that is mostly fine. */

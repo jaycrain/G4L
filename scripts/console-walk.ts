@@ -214,10 +214,16 @@ async function main() {
     const i = document.querySelector('.fc-composer input');
     if (!b || !i) return null;
     const bs = getComputedStyle(b), is = getComputedStyle(i);
+    const br = b.getBoundingClientRect(), ir = i.getBoundingClientRect();
     return {
       bg: bs.backgroundColor,
       inputBorder: is.borderTopColor,
-      dh: Math.abs(b.getBoundingClientRect().height - i.getBoundingClientRect().height),
+      dh: Math.abs(br.height - ir.height),
+      // THE HEIGHTS MATCHING IS NOT THE SAME AS THEM LINING UP. My first fix made both 46px and I called
+      // "misaligned" done — they were still 12px apart vertically, because the global
+      // `button { margin-top: 1.5rem }` applies here and centring splits an unbalanced margin. Assert the
+      // property that was actually wrong.
+      dtop: Math.abs(br.top - ir.top),
     };
   });
   // Teal is #3B9495 = rgb(59, 148, 149). Read the painted value, not the class list — the whole bug was that
@@ -226,12 +232,15 @@ async function main() {
   const sendOk = !!sendPaint && sendPaint.bg === TEAL;
   const ringOk = !!sendPaint && sendPaint.inputBorder === TEAL;
   const sizeOk = !!sendPaint && sendPaint.dh < 1.5;
+  const lineOk = !!sendPaint && sendPaint.dtop < 1.5;
   if (!sendOk) failed++;
   if (!ringOk) failed++;
   if (!sizeOk) failed++;
+  if (!lineOk) failed++;
   console.log(`${sendOk ? '✔' : '✖'} Send is still teal-filled → ${sendPaint?.bg ?? 'not found'}`);
   console.log(`${ringOk ? '✔' : '✖'} composer keeps its teal border → ${sendPaint?.inputBorder ?? 'not found'}`);
   console.log(`${sizeOk ? '✔' : '✖'} composer and Send are the same height → Δ${sendPaint?.dh.toFixed(2) ?? '?'}px`);
+  console.log(`${lineOk ? '✔' : '✖'} …and sit on the same line → Δtop ${sendPaint?.dtop.toFixed(2) ?? '?'}px`);
 
   // The suggested-prompt row is gone, not merely hidden.
   const noPins = await page.locator('.fc-pins, .fc-pin').count() === 0;
