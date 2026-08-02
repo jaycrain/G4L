@@ -68,13 +68,16 @@ css="$(curl -s "$URL$css_path" || true)"
 echo "  build: $(curl -sI "$URL/onboarding" | grep -i '^x-vercel-id' | tr -d '\r' || echo 'n/a')"
 
 for t in ${CSS_TELLS[@]+"${CSS_TELLS[@]}"}; do
-  if echo "$css" | grep -q "$t"; then echo "  ✓ css  $t"; else echo "  ✗ css  $t  MISSING"; ok=0; fi
+  # -F -e: a tell is a LITERAL string, and `-e` is what stops grep reading a leading `--` as an option.
+  # A CSS custom property (`--composer-h`) is a perfectly good tell and read as a flag → "MISSING" on a
+  # build that was serving it correctly. The gate reported RED on healthy code for ten minutes.
+  if echo "$css" | grep -qF -e "$t"; then echo "  ✓ css  $t"; else echo "  ✗ css  $t  MISSING"; ok=0; fi
 done
 
 for t in ${JS_TELLS[@]+"${JS_TELLS[@]}"}; do
   hit=0
   for c in $(echo "$html" | grep -oE '/_next/static/chunks/[^"]+\.js'); do
-    curl -s "$URL$c" | grep -aqF "$t" && { hit=1; break; }
+    curl -s "$URL$c" | grep -aqF -e "$t" && { hit=1; break; }
   done
   if [ "$hit" = 1 ]; then echo "  ✓ js   $t"; else echo "  ✗ js   $t  MISSING"; ok=0; fi
 done
