@@ -43,6 +43,8 @@ import { getDailyBeat } from '../../lib/daily-beat/store.ts';
 import { getMemberExperience } from '../../lib/telemetry/store.ts';
 import { itemStem, dimensionForIndex } from '../../lib/idq/instrument.ts';
 import { getConnectSummaryForAgent } from '../../lib/connect/agent.ts';
+import { awayHistory } from '../../lib/outreach/store.ts';
+import { foldAwayEpisodes, awayRecallLine } from '../../lib/outreach/episodes.ts';
 import { authorizeMember } from '../authz.ts';
 import { logEvent } from '../../lib/telemetry/store.ts';
 import type { Db } from '../../lib/db/schema.ts';
@@ -214,6 +216,11 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
     ? responses.map((score: number, i: number) => ({ dimension: dimensionForIndex(i), stem: itemStem(i), score }))
     : [];
   const connect = await getConnectSummaryForAgent(db, memberId).catch(() => undefined);
+
+  // AWAY EPISODES → the Companion's memory of having reached out. Folded pure (lib/outreach/episodes.ts) and
+  // carrying its own voice guard, because recall is exactly where praise sneaks in.
+  const away = await awayHistory(db, memberId);
+  const awayRecall = awayRecallLine(foldAwayEpisodes(away.rows, away.activityAt));
   const movementLog = redesignEnabled() ? await movementLogSummary(db, memberId).catch(() => '') : '';
   // momentumLog + commitments were computed UP FRONT (folded into `minimal` too) — see the top of buildContext.
   return {
@@ -279,6 +286,10 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
     recentChanges,
     experienceSummary: experience.summary || null,
     connect,
+    // Times they have been away and come back. Sits INSIDE the same try as the other supplementary reads, so
+    // a failure here degrades the context honestly (CAT-38) rather than silently telling the Companion it has
+    // never reached out — which would be a confident false memory about whether we showed up.
+    awayRecall,
   };
   } catch (e) {
     // A supplementary read threw (prod drift / transient). Serve the minimal context so the cornerstone never 500s.

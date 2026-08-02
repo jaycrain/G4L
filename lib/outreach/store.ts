@@ -3,6 +3,7 @@
 // enforced in the DB (the outreach_grounded check) AND here (we never record a non-held row without provenance).
 
 import type { Db } from '../db/schema.ts';
+import type { AwayRow } from './episodes.ts';
 import { DEFAULT_RHYTHM, DEFAULT_QUIET, type Rhythm, type Tense, type Provenance, type OutreachTrigger } from './config.ts';
 
 export type OutreachPref = {
@@ -139,4 +140,40 @@ export async function markResponded(db: Db, memberId: string, id: string, status
   await db.query(`update outreach_log set status=$3, responded_at=now() where id=$1 and member_id=$2`, [id, memberId, status]);
   const cur = await getPref(db, memberId);
   await setPref(db, memberId, { ignoredStreak: status === 'dismissed' ? cur.ignoredStreak + 1 : 0 });
+}
+
+// ── WHAT THE COMPANION IS ALLOWED TO REMEMBER ABOUT REACHING OUT ────────────────────────────────────────────
+//
+// Until now nothing read this table back into the agent. That is not a missing feature so much as a standing
+// rule unmet: "no data the member can see should be invisible to the Member Agent." A member who got a text
+// saying we noticed they were away would have found a Companion with no idea it had happened.
+//
+// Returns the raw rows and the member's signs of life; the FOLD into episodes is pure and lives in
+// episodes.ts, so its edge cases are tested offline rather than discovered in a live conversation.
+export async function awayHistory(
+  db: Db, memberId: string, limitDays = 400,
+): Promise<{ rows: AwayRow[]; activityAt: string[] }> {
+  // NO SWALLOWED CATCH. An empty result here would have the Companion believe it has never reached out —
+  // which is not "we have no history", it is a confident false memory about whether we showed up. If the read
+  // breaks, it breaks loudly and the caller degrades honestly (CheckinContext.degraded).
+  const since = new Date(Date.now() - limitDays * 86_400_000).toISOString();
+  const [reaches, activity] = await Promise.all([
+    db.query<{ trigger: string; status: string; created_at: unknown }>(
+      `select trigger, status, created_at from outreach_log
+        where member_id = $1 and created_at >= $2 order by created_at`,
+      [memberId, since],
+    ),
+    // Signs of life. Any recorded doing counts — coming back is coming back, whatever they came back FOR.
+    db.query<{ created_at: unknown }>(
+      `select created_at from member_event
+        where member_id = $1 and created_at >= $2 and kind <> 'page_view' order by created_at`,
+      [memberId, since],
+    ),
+  ]);
+  return {
+    rows: reaches.rows.map((r) => ({
+      trigger: r.trigger, status: r.status, createdAt: new Date(r.created_at as string).toISOString(),
+    })),
+    activityAt: activity.rows.map((r) => new Date(r.created_at as string).toISOString()),
+  };
 }

@@ -116,6 +116,11 @@ export type CheckinContext = {
   // their posts, their accountability pacts. The agent gently bridges them toward real people and
   // surfaces "someone replied to what you shared" — it never posts for them. See lib/connect/agent.ts.
   connect?: ConnectAgentSummary;
+  // Times this member has been away before and come back, folded from the outreach log (lib/outreach/
+  // episodes.ts). Jay, 2026-08-02: a nudge is an EVENT in their history, not a send — which is what makes
+  // "you were away around this time last April" sayable at all. Carries its own voice guard, because recall
+  // is exactly where praise sneaks in.
+  awayRecall?: string | null;
 };
 
 export type CheckinMessage = { role: 'agent' | 'member'; text: string };
@@ -226,6 +231,7 @@ export function contextBlock(c: CheckinContext): string {
   return [
     degraded, // CAT-38: first, so the model reads the caveat before the (incomplete) facts
     c.today ? `Today is ${c.today}.` : null,
+    c.awayRecall ?? null,
     c.recentChanges && c.recentChanges.length
       ? `Since they last talked with you, their dashboard moved:\n${c.recentChanges.map((x) => `  • ${x}`).join('\n')}`
       : null,
