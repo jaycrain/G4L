@@ -30,12 +30,12 @@ export const MOMENTS: Record<OperatingMoment, { label: string; posture: string }
   post_idq_welcome: {
     label: 'Welcome (post-IDQ)',
     posture:
-      'Welcome them to the program. Acknowledge their intake in plain language, name their Door, and frame the work ahead. This is NOT a results email — no metrics. Warm, steady, personal. 6–10 sentences.',
+      'Welcome them to the program. Acknowledge their intake in plain language, name their Door, and frame the work ahead. This is NOT a results email — no metrics. Warm, steady, personal. Declare what the work IS; avoid the "it is X, not Y" construction (the shame-removing negation — "not a failing", "not a mark against you" — is the one exception). 6–10 sentences.',
   },
   retake_commentary: {
     label: 'Retake commentary',
     posture:
-      'They just completed an IDQ retake. Name what moved in plain terms (the dashboard already shows the numbers). Reference their Door. Reflect movement — do not assign praise. Close with what is next. 8–14 sentences.',
+      'They just completed an IDQ retake. Name what moved in plain terms (the dashboard already shows the numbers). Reference their Door. Reflect movement — do not assign praise. Close with what is next. 5–10 sentences.',
   },
   milestone_commentary: {
     label: 'Milestone',
@@ -113,7 +113,7 @@ export function scriptedDraft(moment: OperatingMoment, c: FounderContext): Draft
     case 'post_idq_welcome':
       return {
         subject: `${name} — welcome to G4L`,
-        body: `${name},\n\nWelcome. You named ${door}, and you put words to where you are.${reclaimBit} That takes something.\n\nThe work ahead is steady, not dramatic. We start by getting reacquainted with ${noun}. Your first step is waiting on your dashboard.\n\nI read every welcome myself. Glad you're here.\n\n— Jay`,
+        body: `${name},\n\nWelcome. You named ${door}, and you put words to where you are.${reclaimBit} That takes something.\n\nThe work ahead is steady. We start by getting reacquainted with ${noun}. Your first step is waiting on your dashboard.\n\nI read every welcome myself. Glad you're here.\n\n— Jay`,
       };
     case 'retake_commentary':
       return {

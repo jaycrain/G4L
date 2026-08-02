@@ -1,6 +1,6 @@
 # Founder emails — the copy that goes out in Jay’s voice
 
-_Generated from `lib/founder/draft.ts` at commit `bb69b44`. Part 6 of the Cowork release bundle._
+_Generated from `lib/founder/draft.ts` at commit `3f318d4`. Part 6 of the Cowork release bundle._
 
 ## Read this first
 
@@ -16,7 +16,7 @@ or support copy describing this should say so plainly — it is a real commitmen
 | **The live drafts** | Model-generated per member, different every time. **Never quote as canon** — describe them by the posture. |
 | **The posture** | The instruction that governs the live version. **This is what to rework** if you want to change how these sound. |
 
-The sample renders against a representative member — Donna, the Swimmer, Career Cliff, mid-Rewire. She is
+The sample renders against a representative member — Maya, the Swimmer, Career Cliff, mid-Rewire. She is
 invented on purpose: no real member’s words belong in a marketing document.
 
 ---
@@ -27,18 +27,18 @@ invented on purpose: no real member’s words belong in a marketing document.
 
 **Posture** — the instruction behind the live version:
 
-> Welcome them to the program. Acknowledge their intake in plain language, name their Door, and frame the work ahead. This is NOT a results email — no metrics. Warm, steady, personal. 6–10 sentences.
+> Welcome them to the program. Acknowledge their intake in plain language, name their Door, and frame the work ahead. This is NOT a results email — no metrics. Warm, steady, personal. Declare what the work IS; avoid the "it is X, not Y" construction (the shame-removing negation — "not a failing", "not a mark against you" — is the one exception). 6–10 sentences.
 
 **Sample (authored, quotable):**
 
-**Subject:** Donna — welcome to G4L
+**Subject:** Maya — welcome to G4L
 
 ```
-Donna,
+Maya,
 
 Welcome. You named The Career Cliff, and you put words to where you are. You also named 3 things you want back — starting with “get back in open water”. That's your Reclaim List, and it's what we work toward. That takes something.
 
-The work ahead is steady, not dramatic. We start by getting reacquainted with the Swimmer. Your first step is waiting on your dashboard.
+The work ahead is steady. We start by getting reacquainted with the Swimmer. Your first step is waiting on your dashboard.
 
 I read every welcome myself. Glad you're here.
 
@@ -53,14 +53,14 @@ I read every welcome myself. Glad you're here.
 
 **Posture** — the instruction behind the live version:
 
-> They just completed an IDQ retake. Name what moved in plain terms (the dashboard already shows the numbers). Reference their Door. Reflect movement — do not assign praise. Close with what is next. 8–14 sentences.
+> They just completed an IDQ retake. Name what moved in plain terms (the dashboard already shows the numbers). Reference their Door. Reflect movement — do not assign praise. Close with what is next. 5–10 sentences.
 
 **Sample (authored, quotable):**
 
-**Subject:** Donna — your latest retake
+**Subject:** Maya — your latest retake
 
 ```
-Donna,
+Maya,
 
 Your IDQ just landed. Something moved in the right direction. Set against The Career Cliff, that matters.
 
@@ -81,10 +81,10 @@ Keep going at your pace. Your next step is on your dashboard.
 
 **Sample (authored, quotable):**
 
-**Subject:** Donna — that's worth noting
+**Subject:** Maya — that's worth noting
 
 ```
-Donna,
+Maya,
 
 You finished The Disinformation Audit. That's evidence of work, set against The Career Cliff. The Swimmer is a little closer.
 
@@ -103,10 +103,10 @@ You finished The Disinformation Audit. That's evidence of work, set against The 
 
 **Sample (authored, quotable):**
 
-**Subject:** Donna — good to see you back
+**Subject:** Maya — good to see you back
 
 ```
-Donna,
+Maya,
 
 You stepped away for a bit. That happens — it's built into the work, not a mark against you. No need to make up for lost time.
 
@@ -127,10 +127,10 @@ One small step is enough to be back in it. It's on your dashboard when you're re
 
 **Sample (authored, quotable):**
 
-**Subject:** Donna — no agenda
+**Subject:** Maya — no agenda
 
 ```
-Donna,
+Maya,
 
 You've been away a bit. No agenda here — life gets loud, and that's most of what this program is about.
 
@@ -151,10 +151,10 @@ You told me you wanted “get back in open water” back. That's still there whe
 
 **Sample (authored, quotable):**
 
-**Subject:** Donna — you got one back
+**Subject:** Maya — you got one back
 
 ```
-Donna,
+Maya,
 
 You marked one reclaimed. That's the thing this whole program is pointed at, and you did it against The Career Cliff.
 

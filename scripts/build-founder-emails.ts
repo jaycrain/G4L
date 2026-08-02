@@ -25,8 +25,13 @@ const OUT = process.argv[2] || 'docs/founder-emails.md';
 
 // A representative member, so every moment renders with something real in every slot. Deliberately NOT a real
 // member: this doc goes to a marketing workspace, and no actual person's words belong in it.
+//
+// THE NAME MATTERS MORE THAN IT LOOKS. This rendered as "Donna" until Cowork flagged it (2026-08-01), which
+// is the co-founder's name AND the name of an actual member in the system — so a document whose whole premise
+// is "nobody real appears here" was headed by someone who does. Cowork called it cosmetic; it isn't quite.
+// Keep this name clearly invented and unattached to anyone on the team or in the cohort.
 const SAMPLE: FounderContext = {
-  firstName: 'Donna',
+  firstName: 'Maya',
   identityNoun: 'Swimmer',
   doorDisplayNames: ['The Career Cliff'],
   reclaimList: ['get back in open water', 'sleep through the night', 'say yes to things again'],
@@ -60,7 +65,7 @@ const lines: string[] = [
   '| **The live drafts** | Model-generated per member, different every time. **Never quote as canon** — describe them by the posture. |',
   '| **The posture** | The instruction that governs the live version. **This is what to rework** if you want to change how these sound. |',
   '',
-  'The sample renders against a representative member — Donna, the Swimmer, Career Cliff, mid-Rewire. She is',
+  'The sample renders against a representative member — Maya, the Swimmer, Career Cliff, mid-Rewire. She is',
   'invented on purpose: no real member’s words belong in a marketing document.',
   '',
   '---',
