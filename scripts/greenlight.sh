@@ -29,7 +29,11 @@ URL="${1:-https://g4l-ten.vercel.app}"
 # ladder) touch no bundle, so there is no honest static tell to add — and leaving the PREVIOUS push's tells
 # here would green-light the old build, which is the false-green trap described above. The commit-timestamp
 # check below is the proof for these; put a tell back the moment something member-facing ships.
-CSS_TELLS=("16px!important" "16px !important")
+# ONE SPELLING, THE ONE THE MINIFIER EMITS. I listed both "16px!important" and "16px !important" here as
+# belt-and-braces — but EVERY tell must pass, so the un-minified spelling could never match and the gate
+# reported RED on a healthy prod. A tell is an exact literal against the BUILT stylesheet: check the built
+# form, don't hedge across variants.
+CSS_TELLS=("16px!important")
 JS_TELLS=()
 
 # COMMIT CHECK — the authoritative proof for an ENGINE-ONLY push (server logic, no bundle change), where no static
