@@ -26,36 +26,58 @@ export type OperatingMoment =
   | 'gone_quiet'
   | 'goal_reclaimed';
 
+// ── THE VOICE BLOCK — prepended to EVERY posture ────────────────────────────────────────────────────────
+//
+// Cowork's rework, 2026-08-02, after Jay read the LIVE drafts in the app: full of "it's not X, it's Y", and
+// not sounding like him. Their root-cause read is the one that matters — several postures MODELLED the
+// negation themselves ("a milestone is evidence of work, not a celebration"), so the model copied it. The fix
+// had to be at the posture level, because the posture governs the live draft, which is what members actually
+// receive. Editing the samples alone would have fixed the shop window and left the shop.
+//
+// ONE CONSTANT, PREPENDED, rather than pasted into six strings. Cowork said "prepend to every posture";
+// doing that by hand means six copies of a rule set that must never drift apart, and the seventh moment
+// anyone adds ships without it.
+const VOICE = [
+  "Write as Jay Crain, founder to member, one person who's been there to another. His voice: short sentences",
+  "and deliberate fragments; land a beat, then stop. Concrete over abstract - their Door, their own words,",
+  "their next step. First person, straight to them. Warmth earned through specifics, never announced. End on",
+  "one short line that lands.",
+  "HARD RULES: NEVER use the \"it's not X, it's Y\" construction - say what a thing IS. Keep a negation ONLY",
+  "when it lifts shame or false fear (\"a hundred reasonable decisions, not a failing\"). Never use: \"honest /",
+  "honestly\", \"name it / naming\" (say \"call it\"), \"quiet / quietly\", \"sit with\", \"genuinely\", \"lean in\", or",
+  "any hype or cliche. No stacked em-dash contrasts. Short. Real.",
+].join(' ');
+
 export const MOMENTS: Record<OperatingMoment, { label: string; posture: string }> = {
   post_idq_welcome: {
     label: 'Welcome (post-IDQ)',
     posture:
-      'Welcome them to the program. Acknowledge their intake in plain language, name their Door, and frame the work ahead. This is NOT a results email — no metrics. Warm, steady, personal. Declare what the work IS; avoid the "it is X, not Y" construction (the shame-removing negation — "not a failing", "not a mark against you" — is the one exception). 6–10 sentences.',
+      `${VOICE} Welcome them to the program, founder to member. Say plainly where they are - call their Door by name, and reflect the Reclaim List item they most want back, in their own words. Point them to the first step on their dashboard. No metrics. 6-9 short sentences. End warm and short.`,
   },
   retake_commentary: {
     label: 'Retake commentary',
     posture:
-      'They just completed an IDQ retake. Name what moved in plain terms (the dashboard already shows the numbers). Reference their Door. Reflect movement — do not assign praise. Close with what is next. 5–10 sentences.',
+      `${VOICE} They just retook the IDQ. Say what moved in plain words - the dashboard shows the numbers, so no metrics here. Tie it to their Door. Reflect the movement; skip praise and grades. Point to what's next. 6-10 short sentences.`,
   },
   milestone_commentary: {
     label: 'Milestone',
     posture:
-      'Acknowledge a specific milestone or asset they completed. Tie it to their Door and the identity they are reclaiming. Measured tone — a milestone is evidence of work, not a celebration. 4–8 sentences.',
+      `${VOICE} Acknowledge a specific asset or milestone they finished. Call their Door by name and tie it to the self they're reclaiming. Measured - mark the work, skip the confetti. 4-7 short sentences.`,
   },
   false_start_return: {
     label: 'False-start return',
     posture:
-      'They slipped and have been away. Welcome them back with zero guilt or pressure. Normalize the false start — it is part of the work. Offer one small next step. Short.',
+      `${VOICE} They slipped and have been away. Welcome them back with zero guilt. A false start is part of the work - keep that one shame-lifting note and nothing heavier. Offer one small next step. Short - 3-5 sentences.`,
   },
   gone_quiet: {
     label: 'Gone quiet',
     posture:
-      'They have not been back in a while and have NOT told you why. Do not assume a reason, do not imply they owe you anything, and never suggest they have fallen behind — the Fade is a hundred reasonable decisions, not a failing. Reference one specific thing they told you they wanted back, so it reads as being remembered rather than chased. Leave the door open and expect nothing. Short — 3–5 sentences.',
+      `${VOICE} They've been away a while and haven't said why. Assume no reason. Imply no debt. The Fade is a hundred reasonable decisions, not a failing - so never suggest they've fallen behind. Reflect one thing they told you they wanted back, in their words, so it reads as remembered. Leave the door open, expect nothing. 3-5 short sentences.`,
   },
   goal_reclaimed: {
     label: 'Goal reclaimed',
     posture:
-      'They marked something on their Reclaim List as reclaimed — the thing the whole program works toward. Name the specific item in their own words. Reflect what it took without grading it or calling it a win; they are the authority on what it meant. Do not immediately point at the next goal — let this one land. 3–6 sentences.',
+      `${VOICE} They marked a Reclaim List item reclaimed - the thing the whole program points at. Call the item by name, in their words. Reflect what it took, and let them be the authority on what it meant, so skip grades and 'wins'. Don't point at the next goal - let this land. 3-6 short sentences.`,
   },
 };
 
@@ -107,38 +129,38 @@ export function scriptedDraft(moment: OperatingMoment, c: FounderContext): Draft
   const noun = c.identityNoun ? `the ${c.identityNoun}` : 'the person you are reclaiming';
   const list = c.reclaimList ?? [];
   const reclaimBit = list.length
-    ? ` You also named ${list.length} thing${list.length === 1 ? '' : 's'} you want back${list[0] ? ` — starting with “${list[0]}”` : ''}. That's your Reclaim List, and it's what we work toward.`
+    ? ` And you told me what you want back${list[0] ? ` — starting with “${list[0]}”` : ''}. That's your Reclaim List. That's what we work toward.`
     : '';
   switch (moment) {
     case 'post_idq_welcome':
       return {
         subject: `${name} — welcome to G4L`,
-        body: `${name},\n\nWelcome. You named ${door}, and you put words to where you are.${reclaimBit} That takes something.\n\nThe work ahead is steady. We start by getting reacquainted with ${noun}. Your first step is waiting on your dashboard.\n\nI read every welcome myself. Glad you're here.\n\n— Jay`,
+        body: `${name},\n\nYou made it through the IDQ. Most people circle that for years and never sit down to do it. You did.\n\nYou called it ${door}.${reclaimBit}\n\nFirst step's on your dashboard. Start there, at your pace.\n\nI read every welcome myself. Glad you're here.\n\n— Jay`,
       };
     case 'retake_commentary':
       return {
         subject: `${name} — your latest retake`,
-        body: `${name},\n\nYour IDQ just landed. ${c.direction === 'up' ? 'Something moved in the right direction' : c.direction === 'down' ? 'A dip is information, not a failure' : 'You held steady'}. Set against ${door}, that matters.\n\nKeep going at your pace. Your next step is on your dashboard.\n\n— Jay`,
+        body: `${name},\n\nYour IDQ landed. ${c.direction === 'up' ? 'It moved the right way' : c.direction === 'down' ? 'It moved down. A dip is information, not a failing' : 'It held steady'}. Against ${door}, that's real ground.\n\nYou did that — one call at a time.\n\nNext step's on your dashboard when you want it.\n\n— Jay`,
       };
     case 'milestone_commentary':
       return {
         subject: `${name} — that's worth noting`,
-        body: `${name},\n\n${c.lastCompletedAsset ? `You finished ${c.lastCompletedAsset}.` : 'You hit a milestone.'} That's evidence of work, set against ${door}. ${sentenceStart(noun)} is a little closer.\n\n— Jay`,
+        body: `${name},\n\n${c.lastCompletedAsset ? `You finished ${c.lastCompletedAsset}.` : 'You hit a milestone.'} That's work, and it counts — against ${door}, it counts double.\n\n${sentenceStart(noun)} is a little closer than last week.\n\n— Jay`,
       };
     case 'false_start_return':
       return {
         subject: `${name} — good to see you back`,
-        body: `${name},\n\nYou stepped away for a bit. That happens — it's built into the work, not a mark against you. No need to make up for lost time.\n\nOne small step is enough to be back in it. It's on your dashboard when you're ready.\n\n— Jay`,
+        body: `${name},\n\nGood to see you back. Stepping away happens — it's built into this, never a mark against you. No making up for lost time.\n\nOne small step and you're back in it. It's on your dashboard when you're ready.\n\n— Jay`,
       };
     case 'gone_quiet':
       return {
         subject: `${name} — no agenda`,
-        body: `${name},\n\nYou've been away a bit. No agenda here — life gets loud, and that's most of what this program is about.\n\n${list[0] ? `You told me you wanted “${list[0]}” back. That's still there when you are.` : `What you named is still there when you are.`}\n\n— Jay`,
+        body: `${name},\n\nBeen a while. No agenda here — life gets loud, and that's most of what this is about.\n\n${list[0] ? `You told me you wanted “${list[0]}” back. That's still here when you are.` : `What you called out is still here when you are.`}\n\n— Jay`,
       };
     case 'goal_reclaimed':
       return {
         subject: `${name} — you got one back`,
-        body: `${name},\n\nYou marked one reclaimed. That's the thing this whole program is pointed at, and you did it against ${door}.\n\nNo next step from me today. Just wanted you to know I saw it.\n\n— Jay`,
+        body: `${name},\n\nYou got one back.${list[0] ? ` ${sentenceStart(list[0])} — you called it, and you did it.` : ''} Against ${door}, that's the whole point of this.\n\nNothing else from me today. I saw it, and I wanted you to know.\n\n— Jay`,
       };
   }
 }
