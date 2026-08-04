@@ -2643,6 +2643,24 @@ button.fcs-tab { font-family: inherit; cursor: pointer; }
 /* Cards: raised by fill, edged faintly — never a hard line. */
 .fc-dark .card { background: var(--fill); border-color: var(--edge); }
 .fc-dark .fc-dcard { background: var(--fill-6); border: 1px solid var(--edge); }
+/* THE MEMBER'S NAME WAS INVISIBLE — 1.19:1, the same colour as the panel behind it.
+   `.fc-dcard td a` sets navy, which is right on the WHITE card this component was designed for. Dark mode
+   later changed the card's background to a translucent fill over the navy Companion panel and left the link
+   colour behind, so the one piece of text the card exists to show stopped rendering. Sixth instance of the
+   same shape: a component picks a colour, something else picks the ground, nobody reconciles them.
+   WHITE, NOT THE TEAL LINK COLOUR. --teal-lift is the console's dark link colour and would signal
+   "clickable", but it measures 3.26:1 here — a quieter version of the same bug on the most important text on
+   the card. White is 7.2:1. The affordance comes from the underline on hover instead. */
+.fc-dark .fc-dcard td a { color: var(--ink); font-weight: 600; }
+.fc-dark .fc-dcard td a:hover { text-decoration: underline; }
+/* SAME BUG, SECOND ELEMENT — and the fixture above found it within seconds of existing.
+   .fc-bar-v is the NUMBER on an ID Score card (navy, for the white card this was designed for): 1.52:1 on
+   the dark card, which means the one value the card exists to communicate was not rendering. .fc-bar-l is
+   the name under it. Neither had ever been looked at, because a data card only appears after a live model
+   call and no page-load scan could reach one. */
+.fc-dark .fc-bar-v { color: var(--ink); }
+.fc-dark .fc-bar-l { color: var(--sec); }
+.fc-dark .fc-dcard th { color: var(--faint); border-bottom-color: var(--edge); }
 .fc-dark .fc-de, .fc-dark .fc-eyebrow { color: var(--faint); }
 
 /* Numbers carry the weight on a dark ground, so they keep full white; labels recede. */

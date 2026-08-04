@@ -235,6 +235,39 @@ export async function runFounderTool(
       budget.openedMembers.add(hit.memberId);
     }
 
+    // GRINTA — the second of the three feedbacks, and the Companion could not see it.
+    //
+    // Jay asked "what do you think of her starting scores on ID and Grinta" and got "I don't have a Grinta
+    // Score in her record — nothing came back for that." The model behaved correctly: it said it could not
+    // see rather than inventing a number. But the standing rule is that no data the member can see should be
+    // invisible to the agent, and Grinta is on the member's own dashboard AND already in this console's
+    // activity feed ("Grinta up to 4.1") — so the Companion was the only place it was missing.
+    //
+    // ITS OWN SCALE, SAID OUT LOUD. Grinta is 1–5; the ID Score is out of 100. They are different
+    // instruments and must never be rescaled to each other or read as a pair. The tool labels the scale in
+    // the payload so the model cannot quietly treat 4.2 and 90 as comparable.
+    let grinta: unknown = { unavailable: 'not read' };
+    try {
+      const { rows: g } = await db.query<{ composite: string; direction: string | null; taken_at: unknown; n: number }>(
+        `select composite, direction, taken_at, (select count(*)::int from grinta_reading where member_id=$1) n
+           from grinta_reading where member_id = $1 order by sequence_no desc limit 1`,
+        [hit.memberId],
+      );
+      const row = g[0];
+      grinta = row
+        ? {
+            latest: Number(row.composite),
+            scale: '1–5 (the Grinta Index has its OWN scale — never compare it to the ID Score, which is out of 100)',
+            direction: row.direction, // null on a baseline: there is nothing to have moved from yet
+            readings: row.n,
+            takenAt: new Date(row.taken_at as string).toISOString(),
+          }
+        : { none: 'No Grinta reading yet — they have not reached one. This is ABSENT, not zero and not low.' };
+    } catch (e) {
+      console.error('[founder] grinta read failed:', e);
+      grinta = { unavailable: 'The Grinta read FAILED. Say the lookup failed — do not say they have no Grinta.' };
+    }
+
     // NO SILENT CATCH HERE. A swallowed error would return an EMPTY Reclaim List, and the model would
     // faithfully report "she hasn't listed anything" — a confident false zero about the most important
     // thing in the product. Same failure class as the roster columns that could never be true. If the
@@ -256,6 +289,7 @@ export async function runFounderTool(
       return {
         found: true,
         ...operational(hit, now),
+        grinta,
         identityWord: prof.rows[0]?.identity_noun ?? null,
         doors: doors.rows.map((d) => d.door_slug),
         ...words,
@@ -265,6 +299,7 @@ export async function runFounderTool(
       return {
         found: true,
         ...operational(hit, now),
+        grinta,
         unavailable: "Their Reclaim List and gap could not be read just now — this is a READ FAILURE, not an empty list. Say so; do not report it as nothing.",
       };
     }

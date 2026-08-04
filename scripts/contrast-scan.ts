@@ -213,6 +213,28 @@ async function main() {
   const redirected: string[] = [];
   const walk = async (route: string, vp: string) => {
     await page.goto(BASE + route, { waitUntil: 'networkidle' });
+
+    // STATES BEHIND INTERACTION. A whole class of element only exists AFTER something happens — the
+    // Companion's data cards need a live model call to return a result, so no amount of page-loading will
+    // render one. That gap is not theoretical: the member-name link inside a data card sat at 1.19:1 on
+    // production, invisible, through a run that reported ZERO findings and was telling the truth about what
+    // it measured. Rendering the real components from fixtures puts their RULES under the same measurement
+    // without needing a conversation.
+    if (route === '/admin' || route.startsWith('/admin?')) await page.evaluate(() => {
+      const host = document.querySelector('.fc-thread');
+      if (!host || host.querySelector('[data-fixture]')) return;
+      const wrap = document.createElement('div');
+      wrap.setAttribute('data-fixture', 'cards');
+      wrap.innerHTML = `
+        <div class="fc-dcard"><div class="fc-de">Member</div><table>
+          <thead><tr><th>Member</th><th>Phase</th><th class="r">Last active</th></tr></thead>
+          <tbody><tr><td><a href="#">Jennifer Kuechler</a></td><td>Reconnect</td><td class="r">today</td></tr></tbody>
+        </table></div>
+        <div class="fc-dcard"><div class="fc-de">ID Score</div><div class="fc-bars">
+          <div class="fc-bar"><div class="fc-bar-v">90</div><div class="fc-bar-track"><i style="width:90%"></i></div><div class="fc-bar-l">Jennifer</div></div>
+        </div></div>`;
+      host.appendChild(wrap);
+    });
     // WHERE IT ACTUALLY LANDED. A gated Session redirects a member who hasn't reached it, and a redirect that
     // quietly lands on the dashboard would report the dashboard's contrast under the Session's name — coverage
     // that isn't. Recorded and reported rather than assumed.
