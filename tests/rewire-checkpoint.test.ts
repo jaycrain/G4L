@@ -61,7 +61,13 @@ test('ceremony beats · reveals the three tools together, then lights Rebuild', 
   assert.match(pb!.text, /full kit now|taking with you/i);
   assert.equal((pb!.reveal as any).keepers.length, 3, 'the true line, the picture, the protocol');
   const jr = beats.find((b) => b.reveal?.kind === 'journey_rebuild');
-  assert.match(jr!.text, /Rebuild is the body/i);
+  // The PROPERTY, not the sentence: this beat names Rebuild and the body. It used to pin the exact string
+  // "Rebuild is the body", which meant a correct copy fix (Greg, 2026-08-04) failed a passing test.
+  assert.match(jr!.text, /Rebuild/);
+  assert.match(jr!.text, /body/i);
+  // AND THE TENSE STAYS FIXED. "Rewire was the mind" told a member the mind work is behind them, which
+  // contradicts the program model — Rewire and Rebuild run in PARALLEL, dosed per member.
+  assert.doesNotMatch(jr!.text, /Rewire was/i, 'Rewire is not finished when Rebuild starts — they run in parallel');
   assert.equal(REWIRE_CEREMONY_RESOLVE_LABEL, 'Start Rebuilding →');
 });
 

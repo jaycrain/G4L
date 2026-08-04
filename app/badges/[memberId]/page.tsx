@@ -30,6 +30,16 @@ export default async function BadgesMorePage({ params }: { params: Promise<{ mem
 // so the two cross-cutting keeps ("kept a want", "closed the loop") group under Journey, not Reclaim.
 
 // Member-facing meaning of each milestone — plain, normalizing, no pep. What it marks, honestly.
+/** What an UNEARNED badge says. Only the phase milestones are spelled out: they sit visible for weeks
+ *  before anyone earns them, so they are the ones a member reads while it is still untrue. Everything else
+ *  falls back to a generated "Earned when you …" line. */
+const BADGE_UNEARNED: Record<string, string> = {
+  'reconnect-milestone': 'Earned when you cross the Reconnect checkpoint.',
+  'rewire-milestone': 'Earned when you cross the Rewire checkpoint.',
+  'rebuild-milestone': 'Earned when you cross the Rebuild checkpoint.',
+  'reclaim-capstone': 'Earned when you close the cycle at the Reclaim checkpoint.',
+};
+
 const BADGE_MEANING: Record<string, string> = {
   'named-yourself': 'You identified the doors you walked through, the life events that created the distance between who are you and who you want to be.',
   'starting-line': 'You measured the distance between who you were, who you are, and who you want to be.',
@@ -86,9 +96,20 @@ function redesignView(memberId: string, passport: PassportView) {
                   <div className="bd-body">
                     <div className="bd-name">
                       {b.name}
-                      {b.earned ? <span className="bd-tag earned">Earned</span> : <span className="bd-tag">Ahead</span>}
+                      {/* "Ahead" read as praise — as in "you're ahead" — rather than "this is still ahead of
+                          you", which is what it meant. Greg read it as a status about himself and then found
+                          it contradicted by the caption underneath. "Not yet" cannot be misread as approval. */}
+                      {b.earned ? <span className="bd-tag earned">Earned</span> : <span className="bd-tag">Not yet</span>}
                     </div>
-                    <p className="bd-meaning">{BADGE_MEANING[b.id] ?? b.earn_rule}</p>
+                    {/* THE TENSE HAS TO FOLLOW THE STATE. Every meaning below is written in the past — they
+                        are what the badge says once you have it — so an unearned badge was announcing
+                        "You completed the second phase" beside a greyed stamp reading "not yet". Unearned
+                        badges say what would earn them. */}
+                    <p className="bd-meaning">
+                      {b.earned
+                        ? (BADGE_MEANING[b.id] ?? b.earn_rule)
+                        : (BADGE_UNEARNED[b.id] ?? `Earned when you ${b.earn_rule.replace(/^You /, '').replace(/\.$/, '')}.`)}
+                    </p>
                   </div>
                 </div>
               ))}

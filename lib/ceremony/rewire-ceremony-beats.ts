@@ -46,7 +46,11 @@ export const REWIRE_CEREMONY_COPY = {
     "Here's what you're taking with you. Everything you built is in your Playbook: the true lines that answer your lies, the picture of where you're headed, and the protocol that turns a slip into a comeback. That's your kit — reach for it anytime.",
   // Fallback if somehow nothing was kept (edge case; voice-matched, not part of the approved verbatim).
   playbookEmpty: "Everything you build in Rewire lives in your Playbook — your kit, ready to reach for.",
-  rebuild: 'Rewire was the mind. Rebuild is the body — where you take all of this and put it to work. When you’re ready.',
+  // PAST TENSE CONTRADICTED THE PROGRAM MODEL (Greg's walk, 2026-08-04). Rewire and Rebuild run in
+  // PARALLEL, dosed per member — so "Rewire was" tells a member the mind work is finished and behind
+  // them, which is not how the program works and not what we want them to believe on the way into
+  // Rebuild. Greg's own correction, and it is right: both are for, neither is over.
+  rebuild: 'Rewire is for the mind. Rebuild is for the body — where you take all of this and put it to work. When you’re ready.',
 } as const;
 
 export function buildRewireCeremonyBeats(d: RewireCeremonyData): RewireCeremonyBeat[] {

@@ -129,6 +129,16 @@ export async function ensureOnboardingBadge(db: Db, memberId: string): Promise<v
 // The redesign's 16-milestone badges (Decision WW). Six earn via the existing wiring (checkpoints / reclaim-keep /
 // RCN-EXC); the other ten earn HERE, reconciled idempotently from committed state so no arc-completion code is touched.
 // Called at redesign dashboard load (behind REDESIGN → prod never runs it). earnBadge is idempotent (fires once).
+/** Phase checkpoint gate → the milestone badge crossing it earns. See the reconcile below for why this is
+ *  driven off the gate rather than from each phase's own action. Reconnect ALSO awards eagerly at the
+ *  crossing so the ceremony can name it in the moment; earnBadge is idempotent, so both paths are safe. */
+export const PHASE_GATE_BADGE: Record<string, string> = {
+  reconnect_checkpoint_passed: 'reconnect-milestone',
+  rewire_checkpoint_passed: 'rewire-milestone',
+  rebuild_checkpoint_passed: 'rebuild-milestone',
+  reclaim_checkpoint_passed: 'reclaim-capstone',
+};
+
 const SESSION_BADGE: Record<string, string> = {
   'RWR-W1': 'turned-voice',
   'RWR-W2': 'built-picture',
@@ -157,6 +167,25 @@ export async function reconcileRedesignBadges(db: Db, memberId: string): Promise
       !!(await db.query<{ named_door: string | null }>('select named_door from member_profile where member_id=$1', [memberId])).rows[0]?.named_door;
     if (hasDoors) await earn('named-yourself'); // "You named the Doors"
     if (gates.has('reclaim_checkpoint_passed')) await earn('wrote-story'); // "You wrote your story" (the Transition)
+
+    // PHASE MILESTONES, AWARDED FROM THE GATE — one place, all four phases.
+    //
+    // Greg finished Rewire on 2026-08-02: the rewire_checkpoint_passed gate is set, all three Rewire session
+    // badges are earned, and the Rewire phase badge is not. His screenshot shows it greyed, tagged "AHEAD",
+    // captioned "You completed the second phase of the G4L program" — both states at once.
+    //
+    // WHY: each phase's conversational arc sets its own gate directly and bypasses the old checkpoint action,
+    // which is where the registry's `earns:` used to be honoured. Reconnect got a hand-written fix for exactly
+    // this and says so in its own comment ("the v2.2 arc bypasses the checkpoint action, so award it here").
+    // Rewire, Rebuild and Reclaim never got the same patch — so THREE phase badges have never awarded for
+    // anyone. A fix applied to one instance of a class, with the rest left behind.
+    //
+    // Driven off the gate rather than repeated in four arc actions: the gate is the fact that the member
+    // crossed, it is already durable, and a new phase cannot now ship without its badge because adding the
+    // gate to this map is the same edit as adding the phase.
+    for (const [gate, badgeId] of Object.entries(PHASE_GATE_BADGE)) {
+      if (gates.has(gate)) await earn(badgeId);
+    }
     const idq = await db.query<{ one: number }>('select 1 as one from idq_retake where member_id=$1 limit 1', [memberId]);
     if (idq.rows.length) await earn('starting-line'); // "You met your starting line" — the first ID Score landed
   } catch {
