@@ -59,6 +59,21 @@ async function seed(): Promise<Db> {
         [id, ago(20), per, per * 4, Math.round((per * 4 / 120) * 100)],
       );
     }
+    // A REAL GRINTA READING for the first persona, and none for the others.
+    //
+    // This is the fixture whose absence made my own verification vacuous. I shipped the Grinta lookup, ran
+    // this walk, saw "No reading yet — she hasn't reached one", and called it verified — but every seeded
+    // member had no reading, so only the EMPTY branch ever ran. The query that returns a real number was
+    // never executed once before it reached production. Seed the positive case, or "it works" only means
+    // "the nothing-path works".
+    if (p.n === 'Donna Crain') {
+      await db.query(
+        `insert into grinta_reading (member_id, source, sequence_no, responses, composite,
+                                     reconnect_score, rewire_score, rebuild_score, reclaim_score, direction)
+         values ($1,'onboarding',0,'{"G1Q1":5}'::jsonb,4.84,4.9,4.67,5,5,null)`,
+        [id],
+      );
+    }
     await db.query(`insert into agent_message (member_id, role, text, created_at) values ($1,'member','hi',$2)`, [id, ago(p.stall || 0.2)]);
     if (p.stall) {
       await db.query(
@@ -84,6 +99,11 @@ const QUESTIONS = [
   'Run my morning scan',
   "Who hasn't been back in 5 days?",
   'Tell me about Donna',
+  // The POSITIVE branch of the Grinta lookup — the one my first verification never ran.
+  "What's Donna's Grinta Index?",
+  // ASKED TWICE ON PURPOSE. A repeated question is the shape that produced a confidently wrong answer on
+  // production: the model restated its own earlier reply instead of looking again. It should re-query.
+  "What's Donna's Grinta Index?",
   // NAMING, positive case: the referent is unambiguous one turn back, so the answer must still SAY "Donna"
   // rather than "Last active today". (A pronoun with no clear referent is a different test — see below.)
   'When was she last active?',

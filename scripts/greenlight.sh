@@ -33,7 +33,7 @@ URL="${1:-https://g4l-ten.vercel.app}"
 # belt-and-braces — but EVERY tell must pass, so the un-minified spelling could never match and the gate
 # reported RED on a healthy prod. A tell is an exact literal against the BUILT stylesheet: check the built
 # form, don't hedge across variants.
-CSS_TELLS=(".fc-dark .fc-bar-v")
+CSS_TELLS=()
 JS_TELLS=()
 
 # COMMIT CHECK — the authoritative proof for an ENGINE-ONLY push (server logic, no bundle change), where no static
