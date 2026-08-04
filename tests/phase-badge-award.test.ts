@@ -40,3 +40,41 @@ test('the four phases map to four DISTINCT badges', () => {
   const ids = Object.values(PHASE_GATE_BADGE);
   assert.equal(new Set(ids).size, ids.length, 'two phases share a badge — one of them will never be earnable');
 });
+
+// ── AND THE MECHANISM ACTUALLY RUNS ────────────────────────────────────────────────────────────────────────
+//
+// The three tests above check the MAP. This one checks the AWARD — because the map being right is exactly
+// what was already true before Greg's walk: the registry said RWR-CHK earns 'rewire-milestone' the whole
+// time, and nothing ever called it. A contract nobody executes is the shape this bug had.
+//
+// It also settles a question worth being precise about: this is a lazy backfill, not an eager one. The award
+// happens when the member's dashboard reconciles, so an existing member who crossed a checkpoint weeks ago
+// gets their badge on next load — not at deploy time.
+
+import { PGlite } from '@electric-sql/pglite';
+import { applySchema, type Db } from '../lib/db/schema.ts';
+import { reconcileRedesignBadges } from '../lib/curriculum/view.ts';
+
+test('a member who already crossed a checkpoint gets the badge on their next reconcile', async () => {
+  const db = new PGlite() as unknown as Db;
+  await applySchema(db);
+  const { rows } = await db.query<{ member_id: string }>(
+    `insert into member_profile (display_name, email) values ('Greg W','greg@example.test') returning member_id`,
+  );
+  const id = rows[0]!.member_id;
+
+  // The exact state Greg was in on production: gate set, badge missing.
+  await db.query(`insert into phase_gate (member_id, gate) values ($1,'rewire_checkpoint_passed')`, [id]);
+  const before = await db.query(`select 1 from badge_earned where member_id=$1 and badge_id='rewire-milestone'`, [id]);
+  assert.equal(before.rows.length, 0, 'precondition: the badge is missing, which is the bug');
+
+  await reconcileRedesignBadges(db, id);
+
+  const after = await db.query(`select 1 from badge_earned where member_id=$1 and badge_id='rewire-milestone'`, [id]);
+  assert.equal(after.rows.length, 1, 'crossing the Rewire checkpoint must award the Rewire badge');
+
+  // Idempotent: Reconnect awards eagerly at the crossing AND through this path, so double-award must be safe.
+  await reconcileRedesignBadges(db, id);
+  const twice = await db.query(`select count(*)::int n from badge_earned where member_id=$1 and badge_id='rewire-milestone'`, [id]);
+  assert.equal((twice.rows[0] as { n: number }).n, 1, 'reconciling twice must not duplicate the badge');
+});
