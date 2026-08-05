@@ -269,6 +269,45 @@ export function resolveGapConfirm(message: string, replyIntent?: ReplyIntent): G
   return 'done';
 }
 
+/**
+ * The CORROBORATION GATE around a confirm. The model's `'more'` is a GUESS about what the member meant; when their
+ * own words plainly CLOSE the beat and carry no new material, the close wins.
+ *
+ * Onboarding's gap confirm has had this since Jay's walk. Reconnect's confirms never got it, so a member who
+ * answered a landed reflection with "Yes." or "Perfectly depicted." was tagged `'more'` by the model and re-asked
+ * the same question — three times, verbatim, in Jennifer's walk (2026-08-05).
+ *
+ * THIS DOES NOT SHORTEN THE DRAW-OUT. It applies only AFTER the model has decided to reflect and has asked "is that
+ * the shape of it?" — a question the member has now answered. During the gather, warmth is still just warmth and
+ * the drawing-out is untouched. That is the whole distinction: praise counts as an answer only when we asked.
+ *
+ * Asymmetric on purpose. Only `'more'` can be overruled: a `'dispute'` always stands (a member pushing back must
+ * always be heard), and any reply carrying real material still reads as an addition — so "Yes, and Sarah's in it
+ * somewhere" keeps drawing out.
+ */
+export function resolveConfirmCorroborated(
+  message: string,
+  replyIntent: ReplyIntent | undefined,
+  carriesMaterial: (m: string) => boolean,
+): GapConfirmIntent {
+  const deterministic = resolveGapConfirm(message, undefined);
+  if (deterministic === 'done' && replyIntent === 'more' && !bringsSomethingNew(message, carriesMaterial)) return 'done';
+  return resolveGapConfirm(message, replyIntent);
+
+  // Measured AFTER a leading affirmation, because members answer a confirm and then keep going in the same breath:
+  // "That's it — though the mornings matter more than the lifting does." Testing the raw string lets the opening
+  // "That's it" mask the real content behind it, which is the CAT-34 shape ("yes, but make it twice a week") that
+  // committed an un-tweaked artifact. A revision tail counts on its own — that's a change request, not new colour.
+  function bringsSomethingNew(m: string, hasMaterial: (s: string) => boolean): boolean {
+    return hasRevisionTail(m) || hasMaterial(withoutLeadingAffirmation(m));
+  }
+}
+
+/** Strip an opening "yes / right / exactly / ok," so what FOLLOWS it can be judged on its own. */
+export function withoutLeadingAffirmation(message: string): string {
+  return (message ?? '').replace(/[‘’]/g, "'").trim().replace(AFFIRM_PREFIX_RE, '').trim();
+}
+
 // The reclaim reflect-confirm asks "Anything missing before we move on?". A bare "no / nope / that's a good list /
 // that's the list" ANSWERS that question — nothing missing = DONE → the card. Only an explicit request to CHANGE
 // the list ("no, take the hiking one off", "actually I meant…") reopens. (New OFFERS — another want — are handled

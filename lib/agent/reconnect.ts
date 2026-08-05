@@ -17,7 +17,7 @@ import { scoreIdq } from '../idq/scoring.ts';
 import { identityLabel } from '../member/identity.ts';
 import type { Db } from '../db/schema.ts';
 import { MEMBER_AGENT_SYSTEM_PROMPT } from './system-prompt.ts';
-import { resolveGapConfirm, memberWantsToAdvance } from './onboarding-intent.ts';
+import { resolveConfirmCorroborated, memberWantsToAdvance } from './onboarding-intent.ts';
 import { runArcTurn, administeredStage, drawoutShouldReflect, receiveThen, isProcessMetaOrAssent, affirmsReflection, type ArcConfig, type StageDef } from './onboarding-staged.ts';
 import { captureCreate } from './capture-model.ts';
 import { CHECKPOINT_GRIT_ITEMS, grintaStem } from '../grinta/survey/instrument.ts';
@@ -179,9 +179,12 @@ const DOOR_MORE_VARIANTS = [
   'What was underneath that — when did you first feel it, and what did it quietly take?',
   'Go a little deeper — how did that change what an ordinary day felt like?',
 ];
+// Rotate on how many times WE have spoken, not on how many of our lines contained a '?'. The question-mark count
+// freezes the moment a reply without one is emitted (the reflect fallbacks have none), so the same variant came
+// back forever — Jennifer's walk saw one line three times running. An agent-message count can only ever grow.
 function doorMore(history: ConvMessage[]): string {
-  const asked = history.filter((h) => h.role === 'agent' && /\?/.test(h.text)).length;
-  return DOOR_MORE_VARIANTS[asked % DOOR_MORE_VARIANTS.length]!;
+  const said = history.filter((h) => h.role === 'agent').length;
+  return DOOR_MORE_VARIANTS[said % DOOR_MORE_VARIANTS.length]!;
 }
 
 // The INSIGHT reflect: trust the model's synthesis (the prompt makes it offer a connection, in their words, as a
@@ -343,7 +346,7 @@ const doorsStage: StageDef = {
     // a swap they can wave off is cheap; a re-seeing they accepted but we failed to commit is the expensive miss.
     if (b.pendingRevision) {
       const rev = b.pendingRevision;
-      const intent = resolveGapConfirm(b.memberMessage, b.model.replyIntent);
+      const intent = resolveConfirmCorroborated(b.memberMessage, b.model.replyIntent, isKeeperMaterial);
       b.pendingRevision = undefined;
       b.awaitingConfirm = false;
       if (intent === 'dispute') { b.reply = REOPEN_RESEEING; return; } // rejected → keep their door(s), humbly
@@ -373,7 +376,7 @@ const doorsStage: StageDef = {
       return;
     }
     // (3) Normal insight confirm. The insight was OFFERED as a check (precise-and-humble). Model-signaled, regex fallback.
-    const intent = resolveGapConfirm(b.memberMessage, b.model.replyIntent); // dispute | addition | done
+    const intent = resolveConfirmCorroborated(b.memberMessage, b.model.replyIntent, isKeeperMaterial); // dispute | addition | done
     if (intent === 'dispute') {
       b.awaitingConfirm = false;
       b.reply = REOPEN_DOOR; // they rejected the insight — take it, don't defend it
@@ -431,9 +434,12 @@ const DRIFT_MORE_VARIANTS = [
   'And how far are you from that version of you right now — a little dusty, or a stranger? Don\'t soften it to feel better.',
   "What did the drift take that you've stopped even noticing is gone?",
 ];
+// Rotate on how many times WE have spoken, not on how many of our lines contained a '?'. The question-mark count
+// freezes the moment a reply without one is emitted (the reflect fallbacks have none), so the same variant came
+// back forever — Jennifer's walk saw one line three times running. An agent-message count can only ever grow.
 function driftMore(history: ConvMessage[]): string {
-  const asked = history.filter((h) => h.role === 'agent' && /\?/.test(h.text)).length;
-  return DRIFT_MORE_VARIANTS[asked % DRIFT_MORE_VARIANTS.length]!;
+  const said = history.filter((h) => h.role === 'agent').length;
+  return DRIFT_MORE_VARIANTS[said % DRIFT_MORE_VARIANTS.length]!;
 }
 const DRIFT_CONFIRM = 'Does that name the shape of it — or is it different?';
 function reflectDrift(modelText: string): string {
@@ -471,11 +477,14 @@ const driftStage: StageDef = {
       b.reply = withQuestion(b.modelText, driftMore(b.history));
     } else {
       b.reply = reflectDrift(b.modelText);
-      b.awaitingConfirm = true;
+      // Only wait for a confirm if we actually REFLECTED. With no model text there is no shape to check, so
+      // reflectDrift honestly asks for more instead — and entering the confirm state behind a "tell me more" leaves
+      // the engine listening for the answer to a question it never asked, which is how the same line came back twice.
+      b.awaitingConfirm = !!b.modelText.trim();
     }
   },
   confirm(b) {
-    const intent = resolveGapConfirm(b.memberMessage, b.model.replyIntent);
+    const intent = resolveConfirmCorroborated(b.memberMessage, b.model.replyIntent, isKeeperMaterial);
     if (intent === 'dispute') {
       b.awaitingConfirm = false;
       b.reply = REOPEN_DRIFT; // they rejected the pattern — take it, don't defend
@@ -517,9 +526,12 @@ const WINDOW_MORE_VARIANTS = [
   'Make it ordinary and real — the morning, not the highlight. What does that day actually feel like?',
   "What's the smallest piece of that Tuesday you'd feel if it were already here?",
 ];
+// Rotate on how many times WE have spoken, not on how many of our lines contained a '?'. The question-mark count
+// freezes the moment a reply without one is emitted (the reflect fallbacks have none), so the same variant came
+// back forever — Jennifer's walk saw one line three times running. An agent-message count can only ever grow.
 function windowMore(history: ConvMessage[]): string {
-  const asked = history.filter((h) => h.role === 'agent' && /\?/.test(h.text)).length;
-  return WINDOW_MORE_VARIANTS[asked % WINDOW_MORE_VARIANTS.length]!;
+  const said = history.filter((h) => h.role === 'agent').length;
+  return WINDOW_MORE_VARIANTS[said % WINDOW_MORE_VARIANTS.length]!;
 }
 const WINDOW_CONFIRM = 'Is that the one worth chasing — or not quite it yet?';
 function reflectWindow(modelText: string): string {
@@ -553,11 +565,11 @@ const windowStage: StageDef = {
       b.reply = withQuestion(b.modelText, windowMore(b.history));
     } else {
       b.reply = reflectWindow(b.modelText);
-      b.awaitingConfirm = true;
+      b.awaitingConfirm = !!b.modelText.trim(); // see driftStage — no reflection means nothing to confirm
     }
   },
   confirm(b) {
-    const intent = resolveGapConfirm(b.memberMessage, b.model.replyIntent);
+    const intent = resolveConfirmCorroborated(b.memberMessage, b.model.replyIntent, isKeeperMaterial);
     if (intent === 'dispute') {
       b.awaitingConfirm = false;
       b.reply = REOPEN_WINDOW; // not the right vision yet — keep looking, don't force it

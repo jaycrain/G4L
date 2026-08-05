@@ -62,7 +62,7 @@ import {
   memberClosingReclaim,
   memberDeflecting,
   memberSignalsGapComplete,
-  resolveGapConfirm,
+  resolveConfirmCorroborated,
   resolveReclaimConfirm,
   shouldCaptureStagedGap,
   shouldCaptureStagedReclaim,
@@ -1408,11 +1408,9 @@ const gapStage: StageDef = {
     // it has moved on, runs the next stage's conversation itself (Jay's walk: the reclaim BUILDER never fired and the
     // old conversational extraction came back). Same "a guess promoted over a clear signal" pattern as the capture
     // discipline: an 'addition' must be corroborated by actual new content, not asserted.
-    const deterministic = resolveGapConfirm(b.memberMessage, undefined);
-    const intent =
-      deterministic === 'done' && b.model.replyIntent === 'more' && !shouldCaptureStagedGap(b.memberMessage)
-        ? 'done'
-        : resolveGapConfirm(b.memberMessage, b.model.replyIntent);
+    // (Extracted to resolveConfirmCorroborated so Reconnect's confirms share ONE implementation — they had none,
+    // and a member's "Yes." was re-asked three times. The gap's own material test is what counts as "new" here.)
+    const intent = resolveConfirmCorroborated(b.memberMessage, b.model.replyIntent, shouldCaptureStagedGap);
     if (intent === 'dispute') {
       // wrong, no new content → reopen, but KEEP the gap + Doors (never wipe). ANTI-LOOP: count the bounce like
       // identity's confirm does — a member who keeps disputing must hit the SHARED ceiling and be moved on, not
@@ -1810,7 +1808,11 @@ export function runArcTurn(
 
   // GENERAL no-verbatim-repeat guard: never emit the exact line we just said. A static opener/nudge falling
   // through twice reads as a broken loop. Prepend a short rotating warm lead. (Mid-conversation only.)
-  if (!b.complete && !b.awaitingConfirm && b.reply === lastAgentReply(history)) {
+  //
+  // This used to skip while awaitingConfirm — which is precisely the state where repeats happen, because a confirm
+  // that isn't resolved re-emits the same reflection fallback. Jennifer's walk shipped one line three times running.
+  // A guard whose job is "never say the same thing twice" cannot have an exemption for the case that says it twice.
+  if (!b.complete && b.reply === lastAgentReply(history)) {
     const leads = ['Take whatever time you need.', 'No rush at all.', "Whenever you're ready.", "There's no wrong way in."];
     b.reply = `${leads[history.length % leads.length]} ${b.reply}`;
   }
