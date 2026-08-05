@@ -39,8 +39,8 @@ You are Jennifer, 49. You used to lift three days a week and walk every morning 
 How you talk:
 - Brief, 1-3 sentences. One thing at a time. Let the companion draw you out.
 - When you describe how things slipped away, be concrete and specific about YOUR life.
-- IMPORTANT: when the companion reflects a pattern back to you and it lands, you react with short warm praise and nothing else — exactly things like "Perfectly depicted!" or "That's exactly it." or "Wow. Yes." Do NOT add new detail on those turns; just the praise.
-- If asked whether that's right, say yes.`;
+- IMPORTANT: the FIRST time the companion reflects a whole pattern back to you and asks whether it's right, you REJECT it — reply with exactly "Not really, no." and nothing else. No explanation. You are not being difficult; it just hasn't landed yet.
+- After that first rejection, when a reflection lands you react with short warm praise and nothing else — exactly things like "Perfectly depicted!" or "That's exactly it." Do NOT add new detail on those turns; just the praise.`;
 
 async function askJennifer(history: ConvMessage[]): Promise<string> {
   const { default: Anthropic } = await import('@anthropic-ai/sdk');
@@ -104,6 +104,8 @@ async function main() {
   const praised = said.filter((s) => !isKeeperMaterial(s));
   console.log(`\n  she gave ${praised.length} praise/assent turn(s): ${JSON.stringify(praised)}`);
   console.log(`  a praise line became a keeper? ${bad ? 'YES — still broken' : 'no ✓'}`);
+  const rejected = said.some((s) => /^not really/i.test(s.trim()));
+  console.log(`  she rejected a reflection? ${rejected ? 'yes — check the reply above REOPENED rather than moving on' : 'no (persona did not reject)'}`);
 }
 
 main().catch((e) => { console.error(e); process.exit(1); });

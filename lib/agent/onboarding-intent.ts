@@ -123,6 +123,61 @@ export function memberDisputesGap(message: string): boolean {
   return GAP_DISPUTE_RE.test((message ?? '').replace(/[‘’]/g, "'"));
 }
 
+// …BUT THAT CONSERVATISM ONLY HOLDS FOR THE "is there more?" QUESTION.
+//
+// The same predicate was reused at four confirms that ask the OPPOSITE thing — "does that name the shape of it?",
+// "is that the one worth chasing?", "is that truer?" — where a bare "no" doesn't mean "no more", it means WE GOT IT
+// WRONG. Measured against real dispute phrasings, 9 of 12 were read as `done`: the member pushes back and the engine
+// records agreement. That is the most expensive failure this product has — she said "that's not me" and we committed
+// it anyway — and unlike a missed capture it can't be recovered, because nothing looks wrong afterwards.
+//
+// It cannot be fixed by widening GAP_DISPUTE_RE. The families overlap word for word:
+//     "Not really, no."            → dispute      "Not really, that covers it."  → done
+//     "No, that's not it."         → dispute      "No, that's it."               → done
+// Same opening, opposite meaning, and only the QUESTION tells them apart. So the question becomes an argument.
+const REFLECTION_REJECT_RE =
+  /\b(miss(es|ed)? (the point|it)|you'?(ve| have)? missed|would ?n'?t put it (that|like that) way|would ?n'?t say that|that'?s wrong|off (the mark|base)|not me\b|not how i'?d (say|put) it)\b/i;
+const LEADING_NEGATION_RE = /^(no|nope|nah|not really|not quite|not exactly|hmm+[\s,.!—–-]*(no|not)\b)/i;
+
+/**
+ * Does the member REJECT the reflection we just offered? For confirms that ask "is this right?", not "is there more?".
+ *
+ * BIAS TO DISPUTE, deliberately — the asymmetry runs the other way from the gap's. Over-reading a dispute costs a
+ * re-open and more drawing-out, which is the program doing its job. Under-reading one commits something they turned
+ * down. A confirm that opens with a negation ("No, that's it") is still a confirm: the negation is answering an
+ * implied "anything to change?", so an explicit completeness or confirm phrase wins over the leading "no".
+ */
+// The phrase regexes here were written against contractions ("that's wrong", "that's everything"), so a member who
+// types it out in full — "that is wrong", "nope, that is everything" — misses every one of them. Normalising first
+// is cheaper and safer than teaching a dozen patterns to spell both ways.
+function normalizeContractions(text: string): string {
+  return (text ?? '')
+    .replace(/[‘’]/g, "'")
+    // NEGATIONS FIRST. Folding "I would" → "I'd" ahead of this eats the "would" out of "I would not put it that
+    // way", leaving "I'd not put it…" which matches nothing — the rejection disappears into the normaliser.
+    .replace(/\b(is|was|were|does|did|do|would|could|should|has|have|had)\s+not\b/gi, "$1n't")
+    .replace(/\b(that|it|there|what|he|she|who)\s+is\b/gi, "$1's")
+    .replace(/\b(i|you|we|they)\s+would\b/gi, "$1'd");
+}
+
+// "Not exactly" / "not quite right" contain a CONFIRM word behind a negation. Without this, the confirm-word guard
+// below reads the "exactly" and hands back a confirm — the exact reply that means the opposite.
+const NEGATED_CONFIRM_RE = /\bnot\s+(exactly|quite|really|right|it|me|correct|the one|spot on)\b/i;
+
+export function memberRejectsReflection(message: string): boolean {
+  const m = normalizeContractions((message ?? '').trim());
+  if (!m) return false;
+  GAP_CONFIRM_WORDS_RE.lastIndex = 0; // /g regex — a stale lastIndex makes this alternate true/false between calls
+  // An explicit COMPLETENESS phrase always outranks a leading negation — "Not really, that covers it" closes the
+  // beat even though it opens like a rejection, because "that covers it" is a separate, unambiguous statement.
+  if (memberSignalsGapComplete(m)) return false;
+  // A confirm WORD is weaker: "not exactly" and "not quite right" contain one behind a negation, and reading it as
+  // a confirm hands back the opposite of what she said. So this guard stands down when the word is negated.
+  if (!NEGATED_CONFIRM_RE.test(m) && GAP_CONFIRM_WORDS_RE.test(m)) return false;
+  if (memberDisputesGap(m)) return true;
+  return LEADING_NEGATION_RE.test(m) || REFLECTION_REJECT_RE.test(m);
+}
+
 // At the gap reflect-confirm we ask "…does it land, or is there more to it?" — so an answer that ADDS material
 // ("yeah, there was work too") is a MORE signal, NOT a move-on. Detection = strip the acknowledgement, see what's
 // LEFT. A confirmation ("yes, you've got it", "that lands", "exactly right") is nothing but affirmation + a meta-
@@ -262,9 +317,23 @@ export function isAcceptanceFade(text: string): boolean {
 // This is the intent half of "model proposes, engine disposes": the engine bounds it (the confirm only exists
 // AFTER a floor/cap-bounded, verbatim-quoting reflect), so a signal can't skip the draw-out.
 export type GapConfirmIntent = 'dispute' | 'addition' | 'done';
-export function resolveGapConfirm(message: string, replyIntent?: ReplyIntent): GapConfirmIntent {
+
+/**
+ * WHICH QUESTION DID WE JUST ASK? A negation means opposite things depending on it, so the caller must say.
+ *  - 'anything_more'  — "…or is there more to it?" (the gap reflect). A bare "no" = no more = DONE.
+ *  - 'is_this_right'  — "does that name the shape of it?" (drift, window, the Door insight, a re-seeing offer).
+ *                       A bare "no" = we got it WRONG = dispute.
+ */
+export type ConfirmQuestion = 'anything_more' | 'is_this_right';
+
+export function resolveGapConfirm(
+  message: string,
+  replyIntent?: ReplyIntent,
+  question: ConfirmQuestion = 'anything_more',
+): GapConfirmIntent {
   if (replyIntent) return replyIntent === 'dispute' ? 'dispute' : replyIntent === 'more' ? 'addition' : 'done';
-  if (memberDisputesGap(message)) return 'dispute';
+  const rejects = question === 'is_this_right' ? memberRejectsReflection : memberDisputesGap;
+  if (rejects(message)) return 'dispute';
   if (memberAddingMoreGap(message)) return 'addition';
   return 'done';
 }
@@ -289,10 +358,14 @@ export function resolveConfirmCorroborated(
   message: string,
   replyIntent: ReplyIntent | undefined,
   carriesMaterial: (m: string) => boolean,
+  question: ConfirmQuestion = 'anything_more',
 ): GapConfirmIntent {
-  const deterministic = resolveGapConfirm(message, undefined);
+  const deterministic = resolveGapConfirm(message, undefined, question);
+  // A REJECTION IS NEVER OVERRULED, in either direction: the model can't talk us out of one the member plainly gave,
+  // and the corroboration below only ever converts 'more' → 'done'. A member pushing back is always heard.
+  if (deterministic === 'dispute') return 'dispute';
   if (deterministic === 'done' && replyIntent === 'more' && !bringsSomethingNew(message, carriesMaterial)) return 'done';
-  return resolveGapConfirm(message, replyIntent);
+  return resolveGapConfirm(message, replyIntent, question);
 
   // Measured AFTER a leading affirmation, because members answer a confirm and then keep going in the same breath:
   // "That's it — though the mornings matter more than the lifting does." Testing the raw string lets the opening

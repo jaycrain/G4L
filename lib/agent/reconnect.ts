@@ -346,7 +346,7 @@ const doorsStage: StageDef = {
     // a swap they can wave off is cheap; a re-seeing they accepted but we failed to commit is the expensive miss.
     if (b.pendingRevision) {
       const rev = b.pendingRevision;
-      const intent = resolveConfirmCorroborated(b.memberMessage, b.model.replyIntent, isKeeperMaterial);
+      const intent = resolveConfirmCorroborated(b.memberMessage, b.model.replyIntent, isKeeperMaterial, 'is_this_right');
       b.pendingRevision = undefined;
       b.awaitingConfirm = false;
       if (intent === 'dispute') { b.reply = REOPEN_RESEEING; return; } // rejected → keep their door(s), humbly
@@ -376,7 +376,7 @@ const doorsStage: StageDef = {
       return;
     }
     // (3) Normal insight confirm. The insight was OFFERED as a check (precise-and-humble). Model-signaled, regex fallback.
-    const intent = resolveConfirmCorroborated(b.memberMessage, b.model.replyIntent, isKeeperMaterial); // dispute | addition | done
+    const intent = resolveConfirmCorroborated(b.memberMessage, b.model.replyIntent, isKeeperMaterial, 'is_this_right'); // dispute | addition | done
     if (intent === 'dispute') {
       b.awaitingConfirm = false;
       b.reply = REOPEN_DOOR; // they rejected the insight — take it, don't defend it
@@ -484,7 +484,7 @@ const driftStage: StageDef = {
     }
   },
   confirm(b) {
-    const intent = resolveConfirmCorroborated(b.memberMessage, b.model.replyIntent, isKeeperMaterial);
+    const intent = resolveConfirmCorroborated(b.memberMessage, b.model.replyIntent, isKeeperMaterial, 'is_this_right');
     if (intent === 'dispute') {
       b.awaitingConfirm = false;
       b.reply = REOPEN_DRIFT; // they rejected the pattern — take it, don't defend
@@ -569,7 +569,7 @@ const windowStage: StageDef = {
     }
   },
   confirm(b) {
-    const intent = resolveConfirmCorroborated(b.memberMessage, b.model.replyIntent, isKeeperMaterial);
+    const intent = resolveConfirmCorroborated(b.memberMessage, b.model.replyIntent, isKeeperMaterial, 'is_this_right');
     if (intent === 'dispute') {
       b.awaitingConfirm = false;
       b.reply = REOPEN_WINDOW; // not the right vision yet — keep looking, don't force it
