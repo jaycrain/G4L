@@ -161,7 +161,9 @@ export type PendingReclaimShape =
   | { kind: 'overlap'; keep: string; drop: string }
   | { kind: 'vision'; item: string }
   | { kind: 'identity'; item: string }
-  | { kind: 'multiwant'; item: string };
+  // `parts` is present when the member ENUMERATED the wants themselves ("1. … 2. … 3. …"): we can offer the split
+  // outright instead of asking them to pick one, so nothing they named gets dropped.
+  | { kind: 'multiwant'; item: string; parts?: string[] };
 
 // A harvest candidate the engine queued (drained by the action → emitHarvestMoment). keeperType is a plain string to
 // avoid a cycle with harvest.ts (which imports Collected from here); the action maps it to the KeeperType enum.

@@ -47,7 +47,8 @@ import {
   type Stage,
   type Turn,
 } from './onboarding.ts';
-import { reconcileReclaimShapes, shapeKey } from './reclaim-shape.ts';
+import { reconcileReclaimShapes, shapeKey, splitInlineEnumeration } from './reclaim-shape.ts';
+import { filterDoorsByAttribution } from './door-attribution.ts';
 import { detectCrisis, CRISIS_RESPONSE_US } from './governance.ts';
 import { captureCreate } from './capture-model.ts';
 // The intent layer — the one place that decides what a member's utterance MEANS (see onboarding-intent.ts).
@@ -572,7 +573,15 @@ const SHAPE_PROPOSAL = {
     `“${item}” sounds like who you are, not one goal on a list. I’d hold onto it as part of your identity and keep the list for the concrete things you’re taking back — want me to do that?`,
   multiwant: (item: string) =>
     `You named a few things in “${item}.” Which one do you most want back? We’ll start there — the rest aren’t going anywhere.`,
+  // When the member enumerated the wants themselves, asking them to pick ONE would throw away the ones they didn't
+  // pick. They already did the separating; all we need is permission to store it that way.
+  multiwantSplit: (parts: string[]) =>
+    `That came through as one entry, but you named ${numberWord(parts.length)} things in it: ${parts.map((p) => `“${p}”`).join(', ')}. Want me to list them separately?`,
 } as const;
+
+function numberWord(n: number): string {
+  return ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten'][n] ?? String(n);
+}
 
 // Run the reconciliation over the assembled list; if an unaddressed shape exists, set it pending + return the
 // member-facing proposal. Otherwise null (the list is clean — proceed to the normal confirm).
@@ -590,6 +599,14 @@ function gateNextShape(b: Beat): string | null {
   if (issue.kind === 'identity') {
     b.pendingReclaimShape = { kind: 'identity', item: issue.item };
     return SHAPE_PROPOSAL.identity(issue.item);
+  }
+  // If the member numbered the wants inside the item, offer the SPLIT rather than the draw-out. The draw-out asks
+  // "which one do you most want back?" and keeps only that answer — correct when a want is tangled up in prose, but
+  // lossy when the member has already told us there are three separate things.
+  const parts = splitInlineEnumeration(issue.item);
+  if (parts && parts.length >= 2) {
+    b.pendingReclaimShape = { kind: 'multiwant', item: issue.item, parts };
+    return SHAPE_PROPOSAL.multiwantSplit(parts);
   }
   b.pendingReclaimShape = { kind: 'multiwant', item: issue.item };
   return SHAPE_PROPOSAL.multiwant(issue.item);
@@ -652,6 +669,16 @@ function resolvePendingShape(b: Beat, pending: PendingReclaimShape): string {
   // multiwant: the member's message IS their distilled want (draw-out answer). Replace the paragraph with it when
   // it reads as a real want; otherwise leave the paragraph (they can edit on the card).
   markResolved(shapeKey({ kind: 'multiwant', index: 0, item: pending.item }));
+  // The SPLIT branch: they enumerated the wants and we offered to separate them. On yes, every part becomes its own
+  // item — nothing they named is dropped. On no, the entry stays exactly as they wrote it.
+  if (pending.parts?.length) {
+    if (yes) {
+      removeReclaimItem(b.collected, pending.item);
+      for (const part of pending.parts) appendReclaim(b.collected, part);
+      return `Done — they’re ${pending.parts.length} separate items now.`;
+    }
+    return 'Okay — I’ll leave it as you wrote it.';
+  }
   const distilled = stripReclaimPreamble(b.memberMessage);
   // Contract 3: a meta reply to the multi-want (a protest / "you're glitching" / "not an item") is NOT their distilled
   // want — never echo it as "Perfect — X it is" and re-pose (Donna's #17 loop). The shape is already markResolved above,
@@ -781,7 +808,12 @@ export function parseReclaimListSubmission(message: string): string[] {
   return (message ?? '')
     .split(/\r?\n+/)
     .map((line) => line.replace(/^\s*(?:[([]?\d{1,2}[.):\]–-]|[-•*])\s*/, '').trim())
-    .filter((line) => line.length > 0);
+    .filter((line) => line.length > 0)
+    // A member can put a whole numbered list INSIDE one field ("My goals: 1. … 2. … 3. …"). Splitting on newlines
+    // alone turned that into a single blob item, and the goals inside it were unreachable — nothing downstream could
+    // see them, tick them off, or notice when the member later re-typed one by hand as a duplicate. They enumerated
+    // it themselves; take them at their word rather than making them re-enter it. (Jennifer, 2026-08-05.)
+    .flatMap((line) => splitInlineEnumeration(line) ?? [line]);
 }
 
 // Is this turn a structured Reclaim-builder submission? The builder (app/onboarding/reclaim-list-builder.tsx) submits
@@ -798,7 +830,10 @@ function isBuilderSubmission(message: string): boolean {
 const LIST_LINE_RE = /^[ \t]*(?:[-•*]|\(?\d{1,2}[.):\]])\s+\S/;
 export function isListBlock(message: string): boolean {
   const marked = (message ?? '').split(/\r?\n/).filter((l) => LIST_LINE_RE.test(l));
-  return marked.length >= 2;
+  if (marked.length >= 2) return true;
+  // …or the same list typed on ONE line ("1. lifting 2. walk daily 3. sleep"). Line-led markers were the only shape
+  // this recognised, so an inline list fell through to free-text and was captured whole.
+  return (message ?? '').split(/\r?\n/).some((l) => splitInlineEnumeration(l) !== null);
 }
 
 // The structured Reclaim List builder is an onboarding-only turn: whenever the machine is in the reclaim stage (and not
@@ -827,8 +862,21 @@ export function affirmsReflection(message: string): boolean {
 // --- capture merge (the per-field tools' result, merged into Collected) ---------------------------------
 // The model's turn carries the per-field captures already merged into a Partial<Collected> (parseStagedTurn
 // does this on the live path; fixtures provide it directly). Only the early-beat fields exist in slice a.
-function mergeStaged(prev: Collected, rec?: Partial<Collected>): Collected {
+function mergeStaged(prev: Collected, rec?: Partial<Collected>, memberMaterial = ''): Collected {
   if (!rec) return prev;
+  // WHOSE LIFE — drop a Door the member's own words contradict before it is ever stored. The model tagged Jennifer
+  // with Marriage from her FATHER'S divorce, in a story where she also said "My marriage is fine"; the prompt rule
+  // alone did not hold. Doors are shown to the member at intake, so a mis-attributed one tells them to their face
+  // that the wrong thing opened their Fade. Evidence is the member's material only — never the model's reflections.
+  // Filter the ACCUMULATED set, not just the incoming one. The model tags a Door the moment it hears a cue — often
+  // turns before the member gets to "…that was his marriage, not mine". Filtering only on the way in meant Jennifer's
+  // Marriage tag was already stored by the time she said it, and nothing looked at it again. The member's words
+  // outrank the guess whenever they arrive, so this re-runs every turn against everything they've told us.
+  const material = [prev.gap ?? '', rec.gap ?? '', memberMaterial].filter(Boolean).join('\n');
+  const union = rec.doors !== undefined || prev.doors !== undefined
+    ? Array.from(new Set<DoorSlug>([...(prev.doors ?? []), ...(rec.doors ?? [])]))
+    : undefined;
+  const tagged = union !== undefined ? filterDoorsByAttribution(union, material) : undefined;
   const next: Collected = {
     ...prev,
     ...(rec.athleticPast !== undefined && { athleticPast: rec.athleticPast }),
@@ -836,7 +884,7 @@ function mergeStaged(prev: Collected, rec?: Partial<Collected>): Collected {
     ...(rec.identitySkipped === true && { identitySkipped: true }),
     ...(rec.gap !== undefined && rec.gap !== '' && { gap: rec.gap }),
     // Doors accumulate — one note_door call per Door; union with what we already have (never drop one).
-    ...(rec.doors !== undefined && { doors: Array.from(new Set<DoorSlug>([...(prev.doors ?? []), ...rec.doors])) }),
+    ...(tagged !== undefined && { doors: tagged }),
   };
   // Reclaim items accumulate in lockstep with their categories, DEDUPED — an item volunteered early (front-loader)
   // parks here in the moment (never lost, re-surfaced at its stage), and a model re-tag of a listed want is a no-op.
@@ -1632,7 +1680,7 @@ export function runArcTurn(
   if (detectCrisis(memberMessage).flagged) {
     return { reply: CRISIS_RESPONSE_US, state, complete: false, crisis: true };
   }
-  const collected = mergeStaged({ ...state.collected }, model.record);
+  const collected = mergeStaged({ ...state.collected }, model.record, memberMessage);
   // Light-touch measurability: the model sharpens a vague want by REPLACING its most-recent item in place —
   // never a second entry. Dedupe after, in case the sharpened text collides with an earlier want.
   const refinedThisTurn = !!model.refineReclaim && (collected.reclaimList?.length ?? 0) > 0;
@@ -2046,6 +2094,15 @@ distinct life event you recognize. A story can carry several. Map by meaning, in
   • a diagnosis / health scare → diagnosis;  the body saying no → body
   • a divorce or a marriage drifting into coexisting → marriage
   • losing someone close (death) → loss;  friendships/social world fading → vanishing
+WHOSE LIFE — a Door is an event in THE MEMBER'S OWN life. Their story is full of other people, and those people
+have divorces, illnesses and job losses of their own. "My dad's second marriage fell apart" is not the member's
+Marriage; "my sister got laid off" is not their Career Cliff. Tag the event only when it happened TO THEM. When
+someone else's event changed the member's own life, tag the Door that names what it did to THEM (a parent's
+illness → aging_parents; that parent dying → loss) — never the Door that belongs to the other person's story.
+A DEATH IS ALWAYS ITS OWN DOOR. If someone close to them died, call note_door('loss') — even when you have
+already tagged the illness or decline that came before it. A parent who got sick and then died is BOTH
+aging_parents AND loss — separate events, each with its own Door. Never let the caregiving Door stand in
+for the death.
 Tag what's THERE — zero is fine (recognition, not routing), and never force one. But do not let a clearly-
 named event go un-tagged. Depth means going deeper into the story they gave, NOT interrogating for more Doors —
 don't turn it into a checklist. One Door, several, or none are all complete.

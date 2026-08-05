@@ -18,7 +18,7 @@ import { identityLabel } from '../member/identity.ts';
 import type { Db } from '../db/schema.ts';
 import { MEMBER_AGENT_SYSTEM_PROMPT } from './system-prompt.ts';
 import { resolveGapConfirm, memberWantsToAdvance } from './onboarding-intent.ts';
-import { runArcTurn, administeredStage, drawoutShouldReflect, receiveThen, isProcessMetaOrAssent, type ArcConfig, type StageDef } from './onboarding-staged.ts';
+import { runArcTurn, administeredStage, drawoutShouldReflect, receiveThen, isProcessMetaOrAssent, affirmsReflection, type ArcConfig, type StageDef } from './onboarding-staged.ts';
 import { captureCreate } from './capture-model.ts';
 import { CHECKPOINT_GRIT_ITEMS, grintaStem } from '../grinta/survey/instrument.ts';
 import type { Collected, ConvMessage, ConvState, DoorRevision, ModelTurn, ReplyIntent, Turn, Stage } from './onboarding.ts';
@@ -222,6 +222,26 @@ function revisionIsGrounded(memberMessage: string): boolean {
   const t = (memberMessage ?? '').trim();
   return t.length >= 12 && !isProcessMetaOrAssent(t);
 }
+// A KEEPER is the member's own material about their life — never their reaction to our reflection. The turn a
+// draw-out advances on is exactly where a member says "Perfectly depicted!" or "that's it exactly", because the
+// reflection just landed — and taking that turn's message wholesale wrote those two words into the Playbook under
+// "The drift", a keeper that says nothing about them. (Greg's walk, then Jennifer's — same shape twice, so it's the
+// pattern that gets fixed, not the instance.) Same family as revisionIsGrounded: agreement is not material.
+const PRAISE_REACTION_RE =
+  /^\s*(?:(?:that|this|it|you)(?:'?s| is| are| were)?\s+)?(?:so\s+|very\s+|really\s+|pretty\s+|absolutely\s+|exactly\s+)*(?:perfect(?:ly)?|great|beautiful(?:ly)?|wonderful(?:ly)?|nice(?:ly)?|well)?\s*(?:said|put|depicted|described|captured|nailed|right|true|it|spot\s*on|correct|accurate)?[\s.!,]*$/i;
+export function isKeeperMaterial(text: string): boolean {
+  const t = (text ?? '').trim();
+  if (!t) return false;
+  if (isProcessMetaOrAssent(t) || affirmsReflection(t)) return false;
+  // A drift declaration or a Tuesday worth keeping is a sentence about their life. "Perfectly depicted!" is two words.
+  if (t.split(/\s+/).length < 5) return false;
+  return !PRAISE_REACTION_RE.test(t);
+}
+/** Hold the latest member line that carried real material; leave the previous one in place when this turn didn't. */
+function keepIfMaterial(b: { memberMessage: string; driftPayload?: string }): void {
+  if (isKeeperMaterial(b.memberMessage)) b.driftPayload = b.memberMessage.trim();
+}
+
 function reseeingLanded(toSlug: DoorSlug, kind: DoorRevision['kind']): string {
   const name = DOORS.find((d) => d.slug === toSlug)?.displayName ?? 'that';
   if (kind === 'correct') return `${name}, then — that's the one. That changes the shape of it. Let me sit with what it means, and we'll keep going from there.`;
@@ -443,12 +463,13 @@ const driftStage: StageDef = {
     sc.driftDepth = (sc.driftDepth ?? 0) + 1;
     // Model-judged depth (reflect_drift → depthReady), bounded by a FLOOR (no pattern on thin material) and CAP.
     const advance = drawoutShouldReflect(b.modelText, b.model.depthReady, sc.driftDepth, DRIFT_MIN_DEPTH, DRIFT_MAX_DEPTH, memberWantsToAdvance(b.memberMessage));
+    // Capture the member's drift DECLARATION (their own words — preserve declarations) for the keeper; carry it to
+    // the confirm turn, where the keeper is queued once they affirm the pattern. Runs on EVERY gather turn so the
+    // last SUBSTANTIVE line is what we hold — see keepIfMaterial.
+    keepIfMaterial(b);
     if (!advance) {
       b.reply = withQuestion(b.modelText, driftMore(b.history));
     } else {
-      // Capture the member's drift DECLARATION (their own words — preserve declarations) for the keeper; carry it to
-      // the confirm turn, where the keeper is queued once they affirm the pattern.
-      if (b.memberMessage.trim()) b.driftPayload = b.memberMessage.trim();
       b.reply = reflectDrift(b.modelText);
       b.awaitingConfirm = true;
     }
@@ -525,11 +546,12 @@ const windowStage: StageDef = {
     const sc = b.scratch as { windowDepth?: number };
     sc.windowDepth = (sc.windowDepth ?? 0) + 1;
     const advance = drawoutShouldReflect(b.modelText, b.model.depthReady, sc.windowDepth, WINDOW_MIN_DEPTH, WINDOW_MAX_DEPTH, memberWantsToAdvance(b.memberMessage));
+    // Capture the member's Tuesday vision (their words) for the keeper; carried to the confirm turn. Same rule as
+    // the drift: hold the last line that carried real material, not their reaction to the reflection.
+    keepIfMaterial(b);
     if (!advance) {
       b.reply = withQuestion(b.modelText, windowMore(b.history));
     } else {
-      // Capture the member's SECOND-Tuesday vision (their words) for the keeper; carry it to the confirm turn.
-      if (b.memberMessage.trim()) b.driftPayload = b.memberMessage.trim();
       b.reply = reflectWindow(b.modelText);
       b.awaitingConfirm = true;
     }

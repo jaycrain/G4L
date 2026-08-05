@@ -13,6 +13,10 @@ const FILLER = new Set([
   'maybe', 'like', 'just', 'really', 'also', 'more', 'get', 'getting', 'want', 'wanting', 'wanted', 'need',
   'would', 'love', 'to', 'a', 'an', 'the', 'my', 'our', 'of', 'for', 'with', 'and', 'or', 'i', "i'd", 'back',
   'again', 'bit', 'little', 'least', 'at', 'in', 'on', 'so', 'that', 'this', 'it', 'be', 'is', 'am', 'do',
+  // A frequency COUNT word carries no want — "3x a week" and "3 times a week" are the same commitment, and scoring
+  // them apart is what let a re-typed duplicate through ("Back to lifting 3x a week" vs "Get back to lifting 3 times
+  // a week" scored 0.4). Plural only: bare "time" is often substantive ("more time with my kids").
+  'times', 'tim',
 ]);
 
 // light stem so tense/plural forms AND same-intent synonyms collapse to a shared token. The synonym map matters for
@@ -20,6 +24,8 @@ const FILLER = new Set([
 // (The 0.6 Jaccard threshold still protects against over-merge — "cut alcohol" vs "lose 40 lbs" shares only "lose".)
 function stem(w: string): string {
   const s = w.toLowerCase().replace(/[^a-z0-9$]/g, '');
+  const nx = s.match(/^(\d{1,2})x$/); // "3x a week" → the same count as "3 times a week"
+  if (nx) return nx[1]!;
   if (/^(los(e|ing|es|t)|drop(ping|ped|s)?|shed(ding|s)?|cut(ting|s)?|trim(ming|s)?|shave|shaving)$/.test(s)) return 'lose';
   if (/^(gain(ing|ed|s)?|add(ing|ed|s)?|puts?|build(ing)?)$/.test(s)) return 'gain';
   if (/^(lbs?|pounds?)$/.test(s)) return 'lb'; // same unit, different word
@@ -35,7 +41,9 @@ export function contentTokens(text: string): Set<string> {
     if (FILLER.has(raw)) continue;
     const s = stem(raw);
     if (s && s.length >= 2 && !FILLER.has(s)) out.add(s);
-    else if (/^[\d$]/.test(raw)) out.add(raw); // keep bare numbers/amounts
+    // Keep bare numbers/amounts — but the STEMMED form, so "3x" and "3 times" land on the same token. Adding the raw
+    // word here quietly undid the stem for every single-character result, which is exactly the numeric case.
+    else if (/^[\d$]/.test(raw)) out.add(s || raw);
   }
   return out;
 }
@@ -71,6 +79,56 @@ export function isMultiWantParagraph(text: string): boolean {
   if (!t.includes(',')) return false;
   const commaChunks = t.split(/,| and /i).map((s) => s.trim()).filter((s) => contentTokens(s).size >= 1);
   return commaChunks.length >= 3 && t.split(/\s+/).length >= 8;
+}
+
+// ── 1b) AN INLINE ENUMERATION ──────────────────────────────────────────────────────────────────────────────────
+// A member who types "My goals: 1. Back to lifting 3x a week 2. Lose 8 lbs 3. Walk daily with Sarah" HAS given us a
+// list — it just isn't on separate lines, so every line-based splitter sees one blob (Jennifer, 2026-08-05: her whole
+// list arrived as one 539-character item, and the two goals she later re-typed by hand became duplicates of prose
+// buried inside it). The wants are right there, numbered by the member; nothing needs guessing.
+//
+// Precision comes from requiring a real RUN: markers that start at 1 and ascend by one. A stray "2." mid-sentence has
+// no "1." ahead of it in sequence, so it can't trip this. Returns the parts (preamble first, if it carries content),
+// or null when there is no enumeration to split.
+const ENUM_MARKER_RE = /(?:^|[\s;:.!?)"'”’])\(?(\d{1,2})[.):\]]\s+(?=\S)/g;
+export function splitInlineEnumeration(text: string): string[] | null {
+  const t = (text ?? '').trim();
+  if (!t) return null;
+  const marks: { at: number; end: number; n: number }[] = [];
+  ENUM_MARKER_RE.lastIndex = 0;
+  for (let m = ENUM_MARKER_RE.exec(t); m; m = ENUM_MARKER_RE.exec(t)) {
+    // The match may consume a leading separator char; the marker itself starts at the digit.
+    const at = m.index + m[0].search(/\(?\d/);
+    marks.push({ at, end: m.index + m[0].length, n: Number(m[1]) });
+  }
+  // Keep only the ascending-from-1 run (1, 2, 3, …). Anything out of sequence ends it.
+  const run: typeof marks = [];
+  for (const mk of marks) {
+    if (mk.n === run.length + 1) run.push(mk);
+    else if (run.length >= 2) break;
+    else if (mk.n === 1) { run.length = 0; run.push(mk); }
+  }
+  if (run.length < 2) return null;
+
+  const parts: string[] = [];
+  let preamble = t.slice(0, run[0]!.at).replace(/[\s:;,.–—-]+$/, '').trim();
+  // A lead-in usually ends with the label that introduces the list ("…before Dad got sick. My goals"). Keeping the
+  // sentence is right; keeping the dangling label is not — it read as a want on Jennifer's card. Drop a trailing
+  // clause only when it is too thin to be a want on its own.
+  const lastBreak = Math.max(preamble.lastIndexOf('. '), preamble.lastIndexOf('? '), preamble.lastIndexOf('! '));
+  if (lastBreak > 0 && contentTokens(preamble.slice(lastBreak + 1)).size < 3) {
+    preamble = preamble.slice(0, lastBreak + 1).trim();
+  }
+  // "My goals:" is scaffolding; "I want to feel like myself again before Dad got sick" is a want. Keep the preamble
+  // only when it says something — never drop what they gave you, never keep a label.
+  if (contentTokens(preamble).size >= 3) parts.push(preamble);
+  for (let i = 0; i < run.length; i++) {
+    const from = run[i]!.end;
+    const to = i + 1 < run.length ? run[i + 1]!.at : t.length;
+    const piece = t.slice(from, to).replace(/[\s;,]+$/, '').trim();
+    if (piece) parts.push(piece);
+  }
+  return parts.length >= 2 ? parts : null;
 }
 
 // ── 2) LIFE-VISION STATEMENT ─────────────────────────────────────────────────────────────────────────────────
