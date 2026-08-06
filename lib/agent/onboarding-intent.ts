@@ -89,7 +89,10 @@ export function memberClosingReclaim(message: string): boolean {
 // confirm ("yes, that's perfect", "yeah exactly right", "yes but that's fine") must still CONFIRM, or we'd trap
 // members in an adjust loop, which is its own failure.
 const CHANGE_REQUEST_RE =
-  /\b(can (we|you)|could (we|you)|would you|i'?(d| would) (like|prefer|rather)|i want|let'?s (make|change|do)|make (it|that|them)|change|swap|instead|rather than|add |remove|drop |take out|tweak|adjust|shorten|lengthen|only thing|one thing|except that|other than)\b/i;
+  // "let's do it" / "let's do this" is a member saying GO, not asking for a change — but `let'?s (make|change|do)`
+  // swallowed it, so the most enthusiastic possible confirm was read as a revision request at every commit gate.
+  // The lookahead keeps "let's do something different" / "let's do three days" firing.
+  /\b(can (we|you)|could (we|you)|would you|i'?(d| would) (like|prefer|rather)|i want|let'?s (make|change|do(?! (it|this|that)\b))|make (it|that|them)|change|swap|instead|rather than|add |remove|drop |take out|tweak|adjust|shorten|lengthen|only thing|one thing|except that|other than)\b/i;
 const CONTRAST_RE = /\b(but|although|though|however|except)\b/i;
 
 /**
@@ -111,6 +114,70 @@ export function hasRevisionTail(message: string): boolean {
 /** A plain, whole-message confirm: the predicate says yes AND there's no revision riding along. */
 export function isPlainConfirm(message: string, predicate: (m: string) => boolean): boolean {
   return predicate(message) && !hasRevisionTail(message);
+}
+
+// ── THE COMMIT GATE: one vocabulary, every arc ────────────────────────────────────────────────────────────────
+//
+// Every arc that proposes an artifact and asks "commit this?" grew its OWN hand-rolled confirm regex — Rebuild B3,
+// Reclaim C1, Reclaim C3, the reclaim shape gate. They were forked from each other, so they share a shape but differ
+// in vocabulary, and every one of them has different holes. Measured against one corpus of ordinary confirms, each gate
+// missed 14 of 18. A miss is not cosmetic: the member says yes and is answered with "tell me what you'd change",
+// which reads as the product not listening. Greg hit it on 2026-08-06 with the single most natural reply available —
+// "lock in" — after the Companion itself offered "Want to lock them in, or tweak one?".
+//
+// So the vocabulary lives here, once, and every gate uses it. New gates inherit it for free; a gap found at any gate
+// gets fixed for all of them. tests/confirm-corpus.test.ts asserts the SAME corpus against EVERY gate, which is what
+// stops the next fork from drifting.
+//
+// BIAS AT A COMMIT GATE: a confirm must be UNAMBIGUOUS. A false confirm commits something the member never agreed
+// to — silent and unrecoverable. A missed confirm costs one more turn. So the guards below stay strict even as the
+// vocabulary widens.
+const CONFIRM_CORE_RE = new RegExp(
+  '^(?:' +
+    [
+      "yes|yeah|yep|yup|aye|uh[ -]?huh",
+      "sure|ok(?:ay)?|alright|all right|fine",
+      "absolutely|definitely|totally|certainly|exactly|precisely|of course|for sure",
+      "perfect|great|good|nice|excellent|brilliant|love it|like it",
+      // deictic acceptance — "that's it", "that's the one", "this works"
+      "th(?:at|is)(?:'?s| is)?\\s+(?:it|the one|right|good|great|perfect|correct|us|me)",
+      "th(?:at|is)\\s+works",
+      "works(?:\\s+for\\s+me)?",
+      "sounds?\\s+(?:good|right|great|perfect)",
+      "looks?\\s+(?:good|right|great)",
+      "all\\s+good",
+      // imperatives — the member telling us to proceed
+      "do it|go ahead|go for it|let'?s\\s+(?:do it|go)|send it|run it|start",
+      // commit verbs. "lock in" (no object) is the one Greg used and the one every fork was missing.
+      "lock(?:ed)?(?:\\s+(?:it|them|'?em|these|those))?(?:\\s+in)?",
+      "sav(?:e|ed)(?:\\s+(?:it|that|them|these))?",
+      "keep(?:\\s+(?:it|that|them|these))?",
+      "commit(?:\\s+it)?|confirm(?:ed)?|done|agreed",
+      "i'?m\\s+(?:in|good|ready|happy)|good\\s+(?:with that|to go)|ready|happy with that",
+      "please(?:\\s+do)?|yes\\s+please",
+    ].join('|') +
+    ')\\b',
+  'i',
+);
+
+/**
+ * Does this message COMMIT to the artifact we just proposed?
+ *
+ * @param also  extra vocabulary specific to one gate, matched anywhere (not anchored) — e.g. the reclaim shape
+ *              gate's "merge" / "combine" / "as one", which are answers to ITS proposal and nobody else's.
+ */
+export function confirmsProposal(message: string, also?: RegExp): boolean {
+  const m = (message ?? '').replace(/[‘’]/g, "'").trim().replace(/[.,!]+$/, '');
+  if (!m) return false;
+  // A QUESTION IS NEVER A COMMIT. Greg's next message after the missed confirm was "How will I track it?" — asking
+  // how to do the thing is not agreeing to do it, and a vocabulary this wide would otherwise start swallowing
+  // questions that happen to open with "good" or "ok". (What a gate SHOULD do with a question is a separate,
+  // unbuilt decision; refusing to read it as a yes is the part that belongs here.)
+  if (m.endsWith('?')) return false;
+  // "yes, but make it twice a week" is a CHANGE, not a confirm (CAT-34) — the leading token is a guess about the
+  // whole message, and acting on it commits the un-tweaked artifact and silently drops what they asked for.
+  if (hasRevisionTail(m)) return false;
+  return CONFIRM_CORE_RE.test(m) || (also?.test(m) ?? false);
 }
 
 

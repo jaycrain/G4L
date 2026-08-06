@@ -20,7 +20,7 @@ import {
   skillHighlights,
 } from '../rebuild/skills-instrument.ts';
 import { grintaStem, CHECKPOINT_CONTROL_ITEMS } from '../grinta/survey/instrument.ts';
-import { hasRevisionTail } from './onboarding-intent.ts';
+import { confirmsProposal } from './onboarding-intent.ts';
 
 export function rebuildEnabled(): boolean {
   return process.env.REBUILD === 'staged';
@@ -212,14 +212,13 @@ function pilotCoachNudge(activity: string, diet: string): string {
     "sugary drink for water, a fruit with breakfast. What feels doable?"
   );
 }
-// "lock them in" is the natural reply to TWO changes (and the chip the UI offers) — match it, not just "lock it".
-const PILOT_CONFIRM_RE =
-  /^(yes|yeah|yep|yup|please(?: do)?|go ahead|sure|ok(?:ay)?|lock (?:it|them|'?em)(?: in)?|that'?s it|that works|that'?s good|perfect|good|sounds good|do it|let'?s do it|i'?m in|ready|confirm(ed)?|keep it)\b/i;
-function pilotConfirms(msg: string): boolean {
-  // CAT-34: a confirm must be a WHOLE-message intent — 'yes, but make it twice a week' is a CHANGE, not a
-  // confirm. Without this the leading 'yes' committed the un-tweaked artifact and silently dropped the change.
-  if (hasRevisionTail(msg)) return false;
-  return PILOT_CONFIRM_RE.test(msg.trim().replace(/[.,!?]+$/, ''));
+// The commit gate now uses the SHARED confirm vocabulary (confirmsProposal). This regex was local, and was forked
+// into Reclaim twice; each copy drifted and each had different holes. Greg's walk (2026-08-06) died on "lock in" —
+// the bare form with no object — which this gate missed even though the Companion had just offered "Want to lock
+// them in, or tweak one?". He was answered with "tell me what you'd change", and looped. See
+// tests/confirm-corpus.test.ts, which asserts one corpus against every gate so the forks can't drift again.
+export function pilotConfirms(msg: string): boolean {
+  return confirmsProposal(msg);
 }
 
 // The coach stage — the model coaches; the engine accumulates the locked fields, proposes the whole plan when both

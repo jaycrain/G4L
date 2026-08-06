@@ -63,6 +63,7 @@ import {
   memberDeflecting,
   memberSignalsGapComplete,
   resolveConfirmCorroborated,
+  confirmsProposal,
   resolveReclaimConfirm,
   shouldCaptureStagedGap,
   shouldCaptureStagedReclaim,
@@ -549,9 +550,19 @@ export function stripReclaimPreamble(msg: string): string {
 }
 
 // ── Decision II: the reclaim shape gate (propose/confirm, no silent rewrites) ─────────────────────────────────
-const SHAPE_YES_RE = /\b(yes|yeah|yep|yup|sure|ok|okay|please|go ahead|do it|sounds?\s+(good|right)|that'?s?\s+right|correct|merge|combine|same|as one|one goal|move it)\b/i;
+// The SHAPE-specific half of a yes here — the verbs that only ever answer THIS proposal ("merge them", "as one",
+// "move it to the Playbook"). Matched anywhere, not anchored, because they arrive mid-sentence ("yeah, merge them").
+// The generic half ("absolutely", "that works", "go for it") comes from the shared commit vocabulary, which every
+// gate now uses — this one was missing 10 of 12 ordinary confirms on its own.
+const SHAPE_YES_RE = /\b(merge|combine|same|as one|one goal|move it)\b/i;
+// A NO always wins over a yes here: the proposal is "shall I collapse/move this?", and any signal that they want
+// both kept is a refusal, however warmly it's phrased. Losing a want is the expensive direction.
 const SHAPE_NO_RE = /\b(no|nope|nah|different|separate|distinct|two goals?|keep both|leave (it|them|both)|it'?s a goal|keep it|not the same)\b/i;
-function saysYes(msg: string): boolean { const m = (msg ?? '').toLowerCase(); return SHAPE_YES_RE.test(m) && !SHAPE_NO_RE.test(m); }
+export function saysYes(msg: string): boolean {
+  const m = (msg ?? '').toLowerCase();
+  if (SHAPE_NO_RE.test(m)) return false;
+  return confirmsProposal(m, SHAPE_YES_RE);
+}
 
 // Remove the first item matching `item` (and its parallel category), returning true if one was removed.
 function removeReclaimItem(c: Collected, item: string): boolean {

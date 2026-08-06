@@ -14,7 +14,7 @@ import { TIER_LABEL, REFINE_TIERS, isTier, type Tier } from '../reclaim/refineme
 import { AUDIT_ITEMS, AUDIT_ITEM_COUNT, AUDIT_SCALE_MAX, AUDIT_DOMAIN_STARTS, AUDIT_DOMAIN_LABEL, AUDIT_DOMAIN_INTRO } from '../reclaim/bigger-world-instrument.ts';
 import { scoreAudit } from '../reclaim/bigger-world-scoring.ts';
 import { grintaStem, CHECKPOINT_CHALLENGE_ITEMS } from '../grinta/survey/instrument.ts';
-import { hasRevisionTail } from './onboarding-intent.ts';
+import { confirmsProposal } from './onboarding-intent.ts';
 
 export function reclaimEnabled(): boolean {
   return process.env.RECLAIM?.trim() === 'staged';
@@ -94,13 +94,10 @@ function proposeRefinement(ref: NonNullable<Collected['pendingRefinement']>): st
   return `Here's your list, refined:\n\n${byTier}${top3Line}${BEAT_SEP}Want me to save this as your Reclaim List, or tweak something first?`;
 }
 
-const REFINE_CONFIRM_RE =
-  /^(yes|yeah|yep|yup|please(?: do)?|go ahead|sure|ok(?:ay)?|save it|save that|lock it in|lock it|that'?s it|that works|perfect|good|sounds good|do it|looks good|keep it|commit|confirm(ed)?)\b/i;
-function refineConfirms(msg: string): boolean {
-  // CAT-34: a confirm must be a WHOLE-message intent — 'yes, but make it twice a week' is a CHANGE, not a
-  // confirm. Without this the leading 'yes' committed the un-tweaked artifact and silently dropped the change.
-  if (hasRevisionTail(msg)) return false;
-  return REFINE_CONFIRM_RE.test(msg.trim().replace(/[.,!?]+$/, ''));
+// Shared commit vocabulary — see confirmsProposal. This was a fork of Rebuild's B3 gate and had drifted from it,
+// so the same ordinary reply confirmed at one gate and dead-ended at the other.
+export function refineConfirms(msg: string): boolean {
+  return confirmsProposal(msg);
 }
 // Keep only refined items with a valid tier — the sanitized snapshot the engine holds + the action commits.
 function sanitizeRefinement(r: ModelTurn['refinement']): Collected['pendingRefinement'] | undefined {
@@ -388,13 +385,9 @@ function proposeQualityDay(q: QDCapture): string {
   ].filter(Boolean).join('\n\n');
   return `Here's your Quality Day:\n\n${parts}${BEAT_SEP}Want me to save this and start your week of tracking, or adjust it first?`;
 }
-const C3_CONFIRM_RE =
-  /^(yes|yeah|yep|yup|please(?: do)?|go ahead|sure|ok(?:ay)?|save it|save that|start|let'?s go|that'?s it|that works|perfect|good|sounds good|do it|looks good|keep it|confirm(ed)?)\b/i;
-function c3Confirms(msg: string): boolean {
-  // CAT-34: a confirm must be a WHOLE-message intent — 'yes, but make it twice a week' is a CHANGE, not a
-  // confirm. Without this the leading 'yes' committed the un-tweaked artifact and silently dropped the change.
-  if (hasRevisionTail(msg)) return false;
-  return C3_CONFIRM_RE.test(msg.trim().replace(/[.,!?]+$/, ''));
+// Shared commit vocabulary — see confirmsProposal. A third fork of the same gate, drifted a third way.
+export function c3Confirms(msg: string): boolean {
+  return confirmsProposal(msg);
 }
 
 const qualityStage: StageDef = {
