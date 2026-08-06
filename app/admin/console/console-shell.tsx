@@ -119,22 +119,28 @@ function NeedsYouPanel({
       </div>
 
       <div className="card" style={{ marginTop: 18 }}>
-        <div className="fc-eyebrow">Activity</div>
-        <h3 className="fc-h">
-          What moved
-          {/* The count he came to check, visible without opening anything. Reading the console does NOT
-              clear it — a glance would silently swallow the news. Clearing is the deliberate tap below. */}
-          {unseen > 0 && <span className="fc-new">{unseen} new</span>}
-        </h3>
-        {/* THE TAP LIVES WHERE THE COUNT IS. It used to live only on the Activity tab, so the number here
-            could never move: Jay watched the same "10 new" for three days, because the one control that
-            could clear it was on a page he wasn't looking at. "A render is not an intention" is still true —
-            this is a tap, not a side effect — it just has to be reachable from the thing making the claim. */}
-        {unseen > 0 && (
-          <form action={markActivitySeenAction} className="fc-seen-row">
-            <button type="submit" className="fca-seen-btn">Mark all seen</button>
-          </form>
-        )}
+        {/* Heading left, control top-right — the same shape as the Companion's own header (.fc-hero-h),
+            so the two panels put their one action in the same place. */}
+        <div className="fc-card-head">
+          <div className="fc-card-head-t">
+            <div className="fc-eyebrow">Activity</div>
+            <h3 className="fc-h">
+              What moved
+              {/* The count he came to check, visible without opening anything. Reading the console does NOT
+                  clear it — a glance would silently swallow the news. Clearing is the tap beside it. */}
+              {unseen > 0 && <span className="fc-new">{unseen} new</span>}
+            </h3>
+          </div>
+          {/* THE TAP LIVES WHERE THE COUNT IS. It used to live only on the Activity tab, so the number here
+              could never move: Jay watched the same "10 new" for three days, because the one control that
+              could clear it was on a page he wasn't looking at. "A render is not an intention" is still true —
+              this is a tap, not a side effect — it just has to be reachable from the thing making the claim. */}
+          {unseen > 0 && (
+            <form action={markActivitySeenAction} className="fc-seen-row">
+              <button type="submit" className="fca-seen-btn">Mark all seen</button>
+            </form>
+          )}
+        </div>
         {feed.length === 0 ? (
           <p className="muted" style={{ margin: 0 }}>Nothing yet today.</p>
         ) : (

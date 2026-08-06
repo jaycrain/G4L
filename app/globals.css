@@ -2600,8 +2600,15 @@ button.fcs-tab { font-family: inherit; cursor: pointer; }
    or the number can never move (Jay watched the same "10 new" for three days, 2026-08-06).
    Margin is set EXPLICITLY: the global `button { margin-top: 1.5rem }` would otherwise shove it half a panel
    from the list it clears. That rule is exactly how the Founder composer ended up 12px off its Send button. */
-.fc-seen-row { margin: 10px 0 0; }
-.fc-seen-row .fca-seen-btn { margin-top: 0; }
+/* Heading block left, the one action top-right — mirrors .fc-hero-h so both panels put their control in the
+   same corner. align-items:flex-start keeps the button level with the eyebrow, not floated down beside the
+   h3, and min-width:0 lets the heading wrap instead of shoving the button off the panel on a narrow flank. */
+.fc-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.fc-card-head-t { min-width: 0; }
+.fc-seen-row { margin: 0; flex: none; }
+/* Margin set EXPLICITLY: the global `button { margin-top: 1.5rem }` would drop it well below the heading it
+   belongs to. That rule is exactly how the Founder composer ended up 12px off its Send button. */
+.fc-seen-row .fca-seen-btn { margin-top: 0; white-space: nowrap; }
 
 
 /* ═══════════════════════════════════════════════════════════════════════════════════════════════════════
