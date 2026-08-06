@@ -1,3 +1,4 @@
+import { softRead } from '../../../lib/db/degrade.ts';
 import { notFound, redirect } from 'next/navigation';
 import { getDb } from '../../../lib/db/index.ts';
 import { authorizeMember } from '../../authz.ts';
@@ -42,17 +43,17 @@ export default async function MomentumPage({ params }: { params: Promise<{ membe
   if (!(await authorizeMember(memberId))) redirect('/login');
   const db = (await getDb()) as unknown as Db;
   await logEvent(db, memberId, 'page_view', { surface: 'momentum' });
-  const beats = await pulseBeats(db, memberId).catch(() => []);
+  const beats = await softRead('momentum.pulseBeats', memberId, () => pulseBeats(db, memberId), []);
   // Offer the OPTIONAL commitment tag on each call, labelled from the member's STANDING commitments (0060/0061) — shown
   // whenever they exist, not just during the one-week pilot. Drift-hardened: a read hiccup simply omits the tag.
-  const commitmentsRaw = await commitmentTexts(db, memberId).catch(() => ({} as { activity?: string; diet?: string }));
+  const commitmentsRaw = await softRead('momentum.commitmentTexts', memberId, () => commitmentTexts(db, memberId), {} as { activity?: string; diet?: string });
   const commitments: Commitments | null = commitmentsRaw.activity || commitmentsRaw.diet ? commitmentsRaw : null;
   // Per-commitment progress (last two weeks) — how each is actually going, reflected warmly (never a scoreboard).
-  const tally = commitments ? await domainTally(db, memberId).catch(() => null) : null;
+  const tally = commitments ? await softRead('momentum.domainTally', memberId, () => domainTally(db, memberId), null) : null;
   // W-25 — the active practice week's "this week" line, shown here as context (Momentum is its home now, not the hero).
   const practiceLine = await practicePanelLine(db, memberId);
   // The member's own log — where every call they make gets saved (Jay: "where does this get placed?").
-  const log = await recentCalls(db, memberId).catch(() => []);
+  const log = await softRead('momentum.recentCalls', memberId, () => recentCalls(db, memberId), []);
   const todayISO = new Date().toISOString().slice(0, 10);
 
   return (

@@ -1,5 +1,6 @@
 'use server';
 
+import { softRead } from '../../lib/db/degrade.ts';
 import { getDb } from '../../lib/db/index.ts';
 import { getDashboard } from '../../lib/gateway/flow.ts';
 import {
@@ -59,7 +60,7 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
   // The member's logged calls and standing commitments MUST reach the companion even if a supplementary read degrades
   // the rest of the context — otherwise the companion insists it "can't see your Momentum calls" while they sit right
   // there in the log (Jay's walk: 4 Good Calls logged, companion blind, because the context had collapsed to minimal).
-  const momentumCalls = await recentCalls(db, memberId, 12).catch(() => []);
+  const momentumCalls = await softRead('checkin.recentCalls', memberId, () => recentCalls(db, memberId, 12), []);
   const activeCmts = await activeCommitments(db, memberId).catch(() => []);
   const todayISO = new Date().toLocaleDateString('en-CA');
   const yestISO = new Date(Date.now() - 86_400_000).toLocaleDateString('en-CA');

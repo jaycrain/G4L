@@ -1,3 +1,4 @@
+import { softRead } from '../../lib/db/degrade.ts';
 import Link from 'next/link';
 import type { Db } from '../../lib/db/schema.ts';
 import type { Dashboard } from '../../lib/gateway/flow.ts';
@@ -63,7 +64,7 @@ export default async function RedesignDashboard({ db, memberId, dash }: { db: Db
     getActivityPanel(db, memberId, dash.identityNoun),
     getPassport(db, memberId),
     getFacets(db, memberId),
-    pulseBeats(db, memberId).catch(() => []),
+    softRead('redesignDashboard.pulseBeats', memberId, () => pulseBeats(db, memberId), []),
   ]);
 
   // When Reclaim is gated (the Loop), render its ring 'locked' (dim) rather than the bright 'current' — matches the hero.

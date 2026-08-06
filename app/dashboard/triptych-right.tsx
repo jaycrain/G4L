@@ -1,3 +1,4 @@
+import { softRead } from '../../lib/db/degrade.ts';
 import Link from 'next/link';
 import type { Db } from '../../lib/db/schema.ts';
 import type { Dashboard } from '../../lib/gateway/flow.ts';
@@ -27,7 +28,7 @@ export default async function TriptychRight({
   momentumCta?: { label: string; href: string } | null;
 }) {
   const [pulse, activity] = await Promise.all([
-    pulseBeats(db, memberId).catch(() => []),
+    softRead('triptychRight.pulseBeats', memberId, () => pulseBeats(db, memberId), []),
     getActivityPanel(db, memberId, dash.identityNoun),
   ]);
 

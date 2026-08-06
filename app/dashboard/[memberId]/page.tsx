@@ -1,3 +1,4 @@
+import { softRead } from '../../../lib/db/degrade.ts';
 import Link from 'next/link';
 import { getDb } from '../../../lib/db/index.ts';
 import { getDashboard } from '../../../lib/gateway/flow.ts';
@@ -245,7 +246,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
   const practiceLine = rewireEnabled() || rebuildEnabled() ? await practicePanelLine(db, memberId) : null;
   // Momentum pulse data (Slice 1) — the last 14 days of logged calls → beats. Flag-gated + drift-hardened (empty on a
   // missing 0049), so prod is untouched and never crashes.
-  const pulseData = rewireEnabled() ? await pulseBeats(db, memberId).catch(() => []) : [];
+  const pulseData = rewireEnabled() ? await softRead('dashboard.pulseBeats', memberId, () => pulseBeats(db, memberId), []) : [];
   const heroMessage = litCurrent
     ? `Your next step is ready — ${litCurrent.title}.${litCurrent.summary ? ` ${litCurrent.summary}` : ''}`
     : 'Whenever you’re ready, tell me what’s on your mind — or one thing you want to move toward today.';

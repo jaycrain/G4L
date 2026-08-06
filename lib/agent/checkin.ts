@@ -692,8 +692,20 @@ async function liveReply(
   const called: string[] = []; // client tools the model actually invoked this turn (for the engine backstop)
   const { default: Anthropic } = await import('@anthropic-ai/sdk');
   // One bounded attempt with a single quick retry — never the 40–60s retry stack that made turns
-  // feel like the companion stalled. Stays within the route's 30s maxDuration.
+  // feel like the companion stalled.
+  //
+  // THE BUDGET IS THE WHOLE TURN, NOT ONE CALL. This comment used to claim it "stays within the route's 30s
+  // maxDuration" — true of a single request, false of the tool loop below, where four rounds at 26s (each with a
+  // retry) can run well past a minute. When the route's maxDuration kills the function mid-flight, the server action
+  // never returns AT ALL: the client's `finally` never runs and the composer sits on "Thinking" forever. Greg hit
+  // exactly this on 2026-08-06 re-running a play from his Playbook — a heavy multi-tool turn.
+  //
+  // So the loop is bounded by WALL CLOCK against a deadline, and each request is given only what is actually left.
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, timeout: 26000, maxRetries: 1 });
+  const TURN_BUDGET_MS = 24_000; // headroom under the route's 30s for the tool executors (DB) + serialising the reply
+  const MIN_ROUND_MS = 7_000; // starting a round with less left than this cannot finish — don't begin it
+  const startedAt = Date.now();
+  const msLeft = () => TURN_BUDGET_MS - (Date.now() - startedAt);
   const messages: any[] = [
     ...history.map((m) => ({ role: (m.role === 'agent' ? 'assistant' : 'user') as 'assistant' | 'user', content: m.text })),
     { role: 'user' as const, content: userText },
@@ -726,13 +738,16 @@ async function liveReply(
       .trim();
   const create = async (max_tokens: number) => {
     const tools = toolsFor();
+    // Per-REQUEST ceiling = whatever is left of the turn. Without this the SDK's own 26s applies to every round
+    // independently, so the loop's worst case is a multiple of the route's budget rather than bounded by it.
+    const opts = { timeout: Math.max(MIN_ROUND_MS, msLeft()) };
     try {
-      return await client.messages.create({ model, max_tokens, system, messages, ...(tools ? { tools: tools as any } : {}) });
+      return await client.messages.create({ model, max_tokens, system, messages, ...(tools ? { tools: tools as any } : {}) }, opts);
     } catch (e) {
       if (useFetch) {
         useFetch = false; // never let link-reading break the companion — drop it and retry this turn
         const t = toolsFor();
-        return await client.messages.create({ model, max_tokens, system, messages, ...(t ? { tools: t as any } : {}) });
+        return await client.messages.create({ model, max_tokens, system, messages, ...(t ? { tools: t as any } : {}) }, { timeout: Math.max(MIN_ROUND_MS, msLeft()) });
       }
       throw e;
     }
@@ -741,6 +756,9 @@ async function liveReply(
   // Tool loop: client tools (refine/mark/playbook) we execute; the server web_fetch runs inline and
   // may pause_turn (we resume). Capped.
   for (let i = 0; i < 4; i++) {
+    // Never START a round we cannot finish inside the turn budget. Overrunning doesn't degrade — it kills the
+    // function, and a killed function returns nothing, which the client renders as a permanent "Thinking".
+    if (i > 0 && msLeft() < MIN_ROUND_MS) break;
     const res = await create(500);
     if ((res.stop_reason as string) === 'pause_turn') {
       messages.push({ role: 'assistant', content: res.content }); // resume the server tool loop
@@ -759,8 +777,13 @@ async function liveReply(
     }
     messages.push({ role: 'user', content: results });
   }
-  // Loop exhausted: one final text-only turn so we never return empty.
-  const fin = await client.messages.create({ model, max_tokens: 400, system, messages });
+  // Loop exhausted (or out of budget): one final text-only turn so we never return empty. Bounded by what's left —
+  // and if even that can't fit, say something true rather than risking the silent kill. The member's tool calls have
+  // already been executed and persisted by this point, so nothing they did is lost by answering short.
+  if (msLeft() < MIN_ROUND_MS) {
+    return { reply: 'I got that — give me a moment and ask me again, and I’ll pick it up from here.', toolNames: called };
+  }
+  const fin = await client.messages.create({ model, max_tokens: 400, system, messages }, { timeout: Math.max(MIN_ROUND_MS, msLeft()) });
   return { reply: textOf(fin.content), toolNames: called };
 }
 
