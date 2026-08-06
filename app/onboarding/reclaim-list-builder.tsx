@@ -75,10 +75,16 @@ export default function ReclaimListBuilder({
         </button>
       </div>
       <div className="rlb-foot">
+        {/* "One at a time" is stated OUT LOUD, not just implied by a singular placeholder and an Add button.
+            Jennifer asked for it directly (2026-08-04: "please specify that you need to add one at a time")
+            and Jay raised it again independently. The splitter above now rescues a member who pastes a whole
+            list anyway — but that fixes the failure, and this is about setting the expectation before it. Two
+            people arriving at the same note from different directions is the signal that the affordance was
+            legible to us and not to them. */}
         <span className="rlb-hint">
           {belowAim
-            ? `Add a few — ${expects.min} to start is plenty. You can always add more later.`
-            : 'Add more if you like — or you’re set.'}
+            ? `One at a time — ${expects.min} to start is plenty. You can always add more later.`
+            : 'Add another if you like — or you’re set.'}
         </span>
         <button type="button" className="rlb-done" onClick={() => canSubmit && onSubmit(items)} disabled={!canSubmit}>
           This is my list →
