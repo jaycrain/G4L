@@ -2596,6 +2596,12 @@ button.fcs-tab { font-family: inherit; cursor: pointer; }
 .fca-seen-btn { font-family: inherit; font-size: 12px; font-weight: 600; cursor: pointer; padding: .25rem .7rem;
   color: var(--teal-text); background: #fff; border: 1px solid var(--teal); border-radius: 999px; }
 .fca-seen-btn:hover { color: #fff; background: var(--teal-text); }
+/* The same control, now ALSO on the Console's "What moved" panel — the tap has to live where the count is,
+   or the number can never move (Jay watched the same "10 new" for three days, 2026-08-06).
+   Margin is set EXPLICITLY: the global `button { margin-top: 1.5rem }` would otherwise shove it half a panel
+   from the list it clears. That rule is exactly how the Founder composer ended up 12px off its Send button. */
+.fc-seen-row { margin: 10px 0 0; }
+.fc-seen-row .fca-seen-btn { margin-top: 0; }
 
 
 /* ═══════════════════════════════════════════════════════════════════════════════════════════════════════

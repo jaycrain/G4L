@@ -36,8 +36,11 @@ export default async function AdminHome({ searchParams }: { searchParams?: Promi
   // page, so the table is never lost — the console links to it, and a console that can't answer something
   // must not become a dead end.
   if (founderConsoleEnabled() && sp?.view !== 'roster') {
-    // The console SHOWS the unseen count but never stamps it — only opening Activity marks things seen.
-    // Otherwise a glance at the dashboard would silently clear the thing he came to check.
+    // The console SHOWS the unseen count and never stamps it ON RENDER — a glance must not silently clear the
+    // thing he came to check. But it now carries its own "Mark all seen", because the previous cut left the
+    // only clear affordance on the Activity tab: Jay watched "10 things moved since you last looked" sit
+    // unchanged for three days (2026-08-06). A panel that promises a delta needs a way to move the line.
+    // `seenAt` rides along so the Companion's opener can say WHEN he last looked instead of just asserting it.
     const [rawFeed, seenAt, theme] = await Promise.all([activityFeed(db), getActivitySeenAt(db), getConsoleTheme(db)]);
     const { feed, unseen } = markUnseen(rawFeed, seenAt);
     const cohort = cohortView(roster, summary, now);
@@ -55,6 +58,7 @@ export default async function AdminHome({ searchParams }: { searchParams?: Promi
         attention={attention}
         feed={feed}
         unseen={unseen}
+        seenAt={seenAt}
         theme={theme}
         now={now}
         pane={pane}

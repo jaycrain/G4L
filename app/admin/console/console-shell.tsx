@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import type { CohortView, AttentionRow, FeedItem } from '../../../lib/admin/console.ts';
 import FounderCompanion from './founder-companion.tsx';
+import { markActivitySeenAction } from '../activity/actions.ts';
 import ConsoleHeader from './console-header.tsx';
 import ConsolePanes from './console-panes.tsx';
 import type { PaneKey } from './nav-items.ts';
@@ -26,10 +27,10 @@ const TONE: Record<FeedItem['tone'], string> = { work: 'var(--teal)', win: 'var(
  * win is that the Companion's composer is always where you left it instead of somewhere down the page.
  */
 export default function ConsoleShell({
-  cohort, attention, feed, unseen, now, theme, pane,
+  cohort, attention, feed, unseen, seenAt, now, theme, pane,
 }: {
   cohort: CohortView; attention: AttentionRow[]; feed: FeedItem[]; unseen: number;
-  now: number; theme: 'dark' | 'light'; pane?: PaneKey;
+  seenAt: string | null; now: number; theme: 'dark' | 'light'; pane?: PaneKey;
 }) {
   return (
     <div className="fc-app">
@@ -41,7 +42,7 @@ export default function ConsoleShell({
       <ConsolePanes
         initialPane={pane}
         left={<CohortPanel cohort={cohort} />}
-        centre={<FounderCompanion cohort={cohort} attention={attention} unseen={unseen} />}
+        centre={<FounderCompanion cohort={cohort} attention={attention} unseen={unseen} seenAt={seenAt} now={now} />}
         right={<NeedsYouPanel attention={attention} feed={feed} unseen={unseen} now={now} />}
       />
     </div>
@@ -122,9 +123,18 @@ function NeedsYouPanel({
         <h3 className="fc-h">
           What moved
           {/* The count he came to check, visible without opening anything. Reading the console does NOT
-              clear it — only opening Activity does, or a glance would silently swallow the news. */}
+              clear it — a glance would silently swallow the news. Clearing is the deliberate tap below. */}
           {unseen > 0 && <span className="fc-new">{unseen} new</span>}
         </h3>
+        {/* THE TAP LIVES WHERE THE COUNT IS. It used to live only on the Activity tab, so the number here
+            could never move: Jay watched the same "10 new" for three days, because the one control that
+            could clear it was on a page he wasn't looking at. "A render is not an intention" is still true —
+            this is a tap, not a side effect — it just has to be reachable from the thing making the claim. */}
+        {unseen > 0 && (
+          <form action={markActivitySeenAction} className="fc-seen-row">
+            <button type="submit" className="fca-seen-btn">Mark all seen</button>
+          </form>
+        )}
         {feed.length === 0 ? (
           <p className="muted" style={{ margin: 0 }}>Nothing yet today.</p>
         ) : (

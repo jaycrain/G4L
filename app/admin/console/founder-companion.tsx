@@ -74,9 +74,19 @@ function withEmphasis(text: string): React.ReactNode {
   return parts.map((p, i) => (i % 2 === 1 ? <strong key={i}>{p}</strong> : p));
 }
 
+/** "3 days ago" — long form on purpose: this dates a claim, and "3d" reads like a data point, not a date. */
+function sinceWhen(iso: string, now: number): string {
+  const m = Math.max(1, Math.round((now - new Date(iso).getTime()) / 60000));
+  if (m < 60) return `${m} minute${m === 1 ? '' : 's'} ago`;
+  const h = Math.round(m / 60);
+  if (h < 24) return `${h} hour${h === 1 ? '' : 's'} ago`;
+  const d = Math.round(h / 24);
+  return `${d} day${d === 1 ? '' : 's'} ago`;
+}
+
 export default function FounderCompanion({
-  cohort, attention, unseen = 0,
-}: { cohort: CohortView; attention: AttentionRow[]; unseen?: number }) {
+  cohort, attention, unseen = 0, seenAt = null, now = Date.now(),
+}: { cohort: CohortView; attention: AttentionRow[]; unseen?: number; seenAt?: string | null; now?: number }) {
   // Starts EMPTY, then restores after mount. Reading sessionStorage during the initial render would make the
   // client markup disagree with the server's and trip a hydration error.
   const [thread, setThread] = useState<Turn[]>([]);
@@ -145,10 +155,18 @@ export default function FounderCompanion({
   // promises a change while the text underneath reports a snapshot is a small lie told on every load. It uses
   // the SAME unseen count as the Activity panel (one marker, one definition of "last looked"), so the two can
   // never disagree about what's new.
+  //
+  // AND IT DATES ITSELF. The line used to assert "since you last looked" without ever saying when that was, so
+  // once the marker stopped moving the sentence stayed true-sounding and wrong — Jay read "10 things moved
+  // since you last looked" three days running (2026-08-06) with no way to see it was the same ten. A delta
+  // that names its own baseline shows a stuck baseline for free.
   const needs = attention.filter((a) => a.count > 0);
-  const moved = unseen > 0
-    ? `${unseen} thing${unseen === 1 ? '' : 's'} moved since you last looked.`
-    : 'Nothing new since you last looked.';
+  const since = seenAt ? `, ${sinceWhen(seenAt, now)}` : '';
+  const moved = !seenAt
+    ? `${unseen} thing${unseen === 1 ? '' : 's'} here — this is your first look.`
+    : unseen > 0
+      ? `${unseen} thing${unseen === 1 ? '' : 's'} moved since you last looked${since}.`
+      : `Nothing new since you last looked${since}.`;
   const opener = needs.length === 0
     ? `${moved} Nothing needs you.`
     : `${moved} ${needs.length === 1 ? 'One thing needs' : `${needs.length} things need`} a look: ${needs.map((n) => n.label).join('; ')}.`;
