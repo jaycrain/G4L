@@ -25,14 +25,15 @@ the code**, asset by asset.
 
 ---
 
-# 1. The headline: Greg's Level 1/2/3 already exists, in writing
+# 1. The headline: the level structure already exists, and Greg has now given it durations
 
-He wrote it in **all four** wing docs, in the same sentence:
+Every asset has a level. Greg wrote the gradient into **all four** wing docs, in the same sentence:
 
 > *"Consistent with the flow in other R's, the three tasks or activities progress from **Aware to Prepare to Engage**
 > to build capacity."*
 
-And each wing names its own three layers on top of it:
+Each wing then names its own three layers on top of it — these are Greg's, from the `Layer` row of each asset's
+attribute table, not ours:
 
 | | Aware | Prepare | Engage |
 |---|---|---|---|
@@ -43,17 +44,59 @@ And each wing names its own three layers on top of it:
 
 W3's memo states it three separate times: *"This is the Application step of ReWire."*
 
-**In the product: absent.** Not in the engine, not in the curriculum registry, not in any member-facing copy. Nothing
-tells a member that B1 is an awareness step and B3 is a week of practice. This is precisely Greg's "we need
-conceptual differences between the Level 1, 2 and 3 activities" — and the answer is that he already specified them
-and we flattened them into twelve same-feeling chats.
+## …and on 2026-08-05 he named the same gradient "Level 1/2/3" — with times attached
 
-**This is a finding, not a new design task.** Before the group invents a Level 1/2/3 model, read this one back to
-him and confirm Aware→Prepare→Engage *is* the model.
+From *Refinements and Comments – ReBuild B2*:
+
+> *"We retained the novel names for the activities but they were categorized as level 1, 2 or 3 to provide a building
+> progression on the topic."*
+
+| | Focus | What it requires |
+|---|---|---|
+| **Level 1** | awareness | *"a bit of reading or review of ideas to provide a foundation"* |
+| **Level 2** | exploration and depth | *"reflection and engagement over **at least 3-4 days**"* |
+| **Level 3** | self-monitoring | *"at least **a week** of monitoring with summary reflections"* |
+
+**This is the same three-step gradient under a third name — but it is NOT redundant.** Aware/Prepare/Engage is a
+taxonomy; Level 1/2/3 is a *spec*, because it is the only version that carries **duration**. Fold the vocabulary
+together by all means; do not discard the durations with the name.
+
+**Two differences that matter when reconciling:**
+
+1. **The scope is not the same.** Aware→Prepare→Engage is stated for all four Rs. Level 1/2/3 is scoped explicitly
+   *"across the 3 programatic R's (**ReWire, ReBuild, and ReClaim**)"* — Reconnect is excluded. Treating them as a
+   pure rename would silently import Levels into Reconnect, which Greg did not do.
+2. **We are already at three internal vocabularies, and all three are Greg's** — the spine, the per-R layer names,
+   and now the Levels. None was invented on our side.
+
+**None of this is member-facing.** `G4L_Terminology_Framing_Running_Inventory.md:19` flags the spine 🆕 — proposed,
+never blessed for members — and members get prose instead. So there is no member-facing naming decision to make
+here. What a member experiences is **pacing they feel**, not a label they read. (Minor: that inventory entry calls
+it "the Rewire spine naming"; it is in all four wing docs, so the entry is under-scoped.)
+
+## What this means for the build
+
+| Level | Assets | Greg's duration | Built today |
+|---|---|---|---|
+| **1** | W1 · B1 · C1 | reading / review to build a foundation | **no reading layer anywhere** |
+| **2** | W2 · B2 · C2 | at least 3-4 days | **a single sitting** |
+| **3** | W3 · B3 · C3 | a week + summary reflections | **week opens, never closes** |
+
+**Nine of the twelve assets have a duration the product does not give them.** And Level 1 is where Greg's "B1 needs
+to be stronger on the information/education side" comes from — it is not a B1 problem, it is that **no Level 1 tier
+exists**. This supersedes the "five weeks" framing in §2 below: W2 and B2 are 3-4 day assets, not full weeks, and
+C2 joins them.
+
+**Two questions to close with Greg, and they are short:**
+1. The durations — reading / 3-4 days / a week — are what we build to. Confirmed?
+2. Levels apply to Rewire, Rebuild and Reclaim. Does Reconnect stay out?
 
 ---
 
-# 2. The structural gap: five weeks open, none of them close
+# 2. The structural gap: the weeks open and none of them close
+
+*(Written before §1's Level table. Under Levels, W2 and B2 are 3-4 day assets rather than full weeks — the finding
+below is unchanged, the durations are refined. The three true weeks are the Level 3 assets: W3 · B3 · C3.)*
 
 Greg specifies a one-week practice period with an **end-of-week review** for five assets:
 
@@ -181,14 +224,51 @@ Full contradiction lists per asset are in `docs/greg-library/extracted/`.
 
 ---
 
-# 6. What I'd recommend
+# 6. Greg's B2 doc is a worked example — and he says so
 
-**One build, five assets:** the practice-week **close** — a daily check-in beat and an end-of-week review, driven
-per-asset by config. Greg specifies it near-identically for W2, W3, B2, B3, C3, the scaffold already exists, and it
-is the thing his B3 test actually hit. Everything else is smaller.
+*Refinements and Comments – ReBuild B2* (2026-08-05) is not a B2 note. He states its purpose plainly:
 
-**Then, in order:** B1's didactic layer (the content is already written in the Science Check); C2 Steps 2–3; the
-per-asset tracker fields; Aware→Prepare→Engage made legible in the UI.
+> *"It might help to take a deeper dive like this with each Gated Asset using the framing outlined above."*
 
-**Before any of it:** put §5 to Greg. Several are one-line answers from him that would otherwise be one-week
-rebuilds for us.
+It is what a properly-built asset looks like, done once, against the four source docs per asset (Gated Asset V4 +
+Science Check + Companion Memo + Engineering Memo). For B2 specifically it gives us, concretely:
+
+- **Show the scored profile.** Keep the Predisposing / Enabling / Reinforcing labels — *"they are more accurate and
+  also more descriptive"* — normalised to percentages (*"PA: 32 out of 48 points would be 67%"*), as **a report with
+  plots**, per meta-category.
+- **Define the skills first, as a referenceable list**, then task the member with logging where each showed up.
+- **Verbatim conversation flows for Phase I and Phase II**, plus teaching content for all three categories with
+  sample phrasing, and a habit-formation bridge into B3.
+- **Revised "Why it matters" copy, verbatim**, with the new sentence marked.
+
+**Two of his notes there apply to every asset, not just B2:**
+
+1. *"I think the prompt for all activities as it is often not clear when the end is approach. **'Let me know if you
+   have questions or if you are ready to move to the next activity'** is important."* — this is the same thing he
+   got stuck on in B3.
+2. From his 08/04 doc, a naming change on Momentum's stoplight: Good Call = Green, **"On Track" (replacing "Quiet
+   Day")** = Yellow, False Start = Red.
+
+---
+
+# 7. What I'd recommend
+
+**Ask Greg the two questions in §1 first.** They are one sentence each, and the answers decide whether the work
+below is "add a practice week" or "give nine assets the shape they are specified to have."
+
+**Then one build, three assets — the Level 3 close.** A daily beat and an end-of-week summary reflection for
+W3 · B3 · C3, driven per-asset by config. The practice-week scaffold already exists, Greg specifies the close
+near-identically for all three, and it is what his B3 test actually hit. **Greg's tracking grid is its face** — he
+drew it with his own B3 goals, and he is explicit it is *not* Momentum (*"we can use that as more of a behavioral
+cue tracker / habit formation tool"*).
+
+**Then, in order:**
+- **Level 1 — the reading tier** (W1 · B1 · C1). This is Greg's "B1 needs more education", and the content is
+  already written in the Science Checks, including a member-facing in-app summary per asset.
+- **Level 2 — the 3-4 day shape** (W2 · B2 · C2), with B2 built to his worked example above.
+- **C2 Steps 2–3** (cross-domain sorting, priority classification) — roughly half of C2 is unbuilt.
+- **The "ready to move on?" prompt** at every activity close, and the Quiet Day → On Track rename.
+- **The Legacy Letter into Reconnect R3**, where Greg moved it, so it can seed W2.
+
+**Throughout:** put §5 to Greg. Several are one-line answers from him that would otherwise be week-long rebuilds
+for us.
