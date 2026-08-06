@@ -118,6 +118,11 @@ the close · the Door · the Fade · the Reclaim List · the Loop · Member Agen
 - **Three feedbacks:** the **ID Score** (the mirror) · the **Grinta Index** (grit, its own /5 scale) · the **Journey**
   (place on the 4Rs + Reclaim List movement — *never a score*).
 - The **4Rs:** Reconnect (gateway) → Rewire (mind) + Rebuild (body, in parallel) → Reclaim (the outcome state).
+- **NEVER camel-case the four Rs.** It is **Reconnect · Rewire · Rebuild · Reclaim** — one capital, the ordinary
+  capitalisation of a word. Not ReConnect, ReWire, ReBuild, ReClaim; not Re-Build or Re-Claim. (Jay's call as brand
+  owner, 2026-08-06.) Greg's science documents camel-case them throughout — that is HIS house style. Preserve it
+  inside verbatim quotations of his work; everywhere else ours wins. Enforced by `tests/naming-guard.test.ts`, so a
+  camel-cased R cannot reach `lib/` or `app/`.
 - **Do not introduce** invented terms: no "Horizon," "pillar," "track." "Journey" capitalized is a real feature; avoid
   lowercase "journey" as filler.
 

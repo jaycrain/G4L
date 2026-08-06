@@ -36,10 +36,10 @@ And each wing names its own three layers on top of it:
 
 | | Aware | Prepare | Engage |
 |---|---|---|---|
-| **ReConnect** | R1 Recognition | R2 Excavation | R3 Spark |
-| **ReWire** | W1 Affirmation | W2 Visualization | W3 Focus |
-| **ReBuild** | B1 Foundation | B2 Structure | B3 Elevation |
-| **ReClaim** | C1 Readiness | C2 Emergence | C3 Extension |
+| **Reconnect** | R1 Recognition | R2 Excavation | R3 Spark |
+| **Rewire** | W1 Affirmation | W2 Visualization | W3 Focus |
+| **Rebuild** | B1 Foundation | B2 Structure | B3 Elevation |
+| **Reclaim** | C1 Readiness | C2 Emergence | C3 Extension |
 
 W3's memo states it three separate times: *"This is the Application step of ReWire."*
 
@@ -105,16 +105,19 @@ Cowork's map implied several of these were wrong. Verified against Greg's Gated 
 
 Legend: **[verified]** = checked in code · **[unverified]** = needs a live walk.
 
-## ReConnect
+## Reconnect
 - **R1** — IDQ is live. Greg's Gated Assets V4 R1 is **18 items in 3 parts**; our frozen contract is **24 items × 4
   dimensions**. These are different instruments. Greg also specifies a **quarterly/90-day** retake; our frozen
   contract says **60 days**. Both need his ruling, not a code change. **[verified: mismatch is real]**
 - **R2** — Greg contradicts himself: front matter says *"guided for a week"*, his own attribute table says
   *"Time \| 15–20 minutes"*. No relevance rating (1–3 per Door) and no temporal reflection built. **[verified]**
-- **R3** — Legacy Letter is not captured as a reusable artifact and does not seed W2, which Greg requires.
-  **[unverified — needs a live walk to confirm what the Playbook stores]**
+- **R3** — **the Legacy Letter is in the wrong phase, and unbuilt.** Greg moved it forward deliberately: R3 is *"a
+  combination of the Drift Quiz an the Legacy Letter (originally in ReClaim)"*. We left it in Reclaim as `RCL-LEG`,
+  which our own code calls *"a defined asset, not wired into the live arc"*; our Spark slot is The Window instead.
+  So Greg's "the letter seeds W2" is impossible by construction — it would be written three phases too late. The
+  Drift and Window beats themselves both work and both capture keepers. **[verified: live walk 2026-08-06]**
 
-## ReWire
+## Rewire
 - **W1** — no affirmation-builder closure. Greg: *"For each disinformation statement you drafted, create a more
   positive affirmation."* **[unverified]**
 - **W2** — practice week opens; the daily 5-minute image practice, the add-detail-each-day progression, and the
@@ -123,7 +126,7 @@ Legend: **[verified]** = checked in code · **[unverified]** = needs a live walk
   was present · what happened after · mindfulness moment · recovery) is not the shape we log. His **optional**
   dashboard markers we largely have; his **required** Companion journaling layer we don't. **[verified]**
 
-## ReBuild
+## Rebuild
 - **B1** — didactic latitude unused. Greg explicitly permits teaching (quality-of-motivation, motivational shift,
   process-vs-product, dual-domain) and the Science Check carries ~1,500 words of exactly that content, including a
   member-facing in-app summary. We deliver the 12 items and a close, no teaching. **This is Greg's "B1 needs to be
@@ -134,10 +137,15 @@ Legend: **[verified]** = checked in code · **[unverified]** = needs a live walk
   review are absent. Two conversational bugs found in Greg's own screenshot were fixed today (`b5ee465`, `d4dd991`).
   **[verified]**
 
-## ReClaim
-- **C1** — Greg's six revision questions (enduring / de-prioritized / borrowed / concretized / emergent / reorder)
-  are specified as a staged sequence; we run a freer coach conversation with tiers. Then-vs-now history is kept.
-  **[unverified — needs a live walk]**
+## Reclaim
+- **C1** — **coverage of Greg's six is a matter of luck, not design.** Two live walks, same member and same list:
+  one covered 5 of 6 (missed *enduring*), the other 4 of 6 (missed *concretized* and *emergent*). Because ours is a
+  free coach conversation rather than his staged sequence, which questions a member gets varies per run. The
+  conversation itself is good — it drew out "someone else's handwriting" and "protect my sleep" unprompted — and it
+  does form the tiered proposal and a real top-3. **[verified: two live walks 2026-08-06]**
+  - Separate bug found in the same walk: a duplicate item kept reappearing in the propose loop regardless of what
+    was agreed, and the member said so in-band — *"the duplicate keeps coming back no matter what we agree on."*
+    Same "won't take yes for an answer" family as the confirm-gate work. Not yet fixed.
 - **C2** — **Steps 2 and 3 are missing entirely.** We built Step 1's five ratings per domain (20 items). Greg
   specifies 8 questions per domain (32 — we skip the gap checklist, the obstacle, and the early action), then
   **Step 2 cross-domain priority sorting** (5 elections) and **Step 3 priority classification** (Primary /
@@ -159,7 +167,7 @@ These are defects in the source documents. We should not guess at them, and seve
 3. **R2 duration** — *"guided for a week"* vs. its own *"15–20 minutes"*.
 4. **C2 internal scoring logic is literally empty** in the source: *"Behind the scenes try to rank priorities
    using:"* followed by nothing. Two ranking formulas are missing.
-5. **The Grinta Change formula is mathematically broken** in both the ReConnect and ReClaim wing docs:
+5. **The Grinta Change formula is mathematically broken** in both the Reconnect and Reclaim wing docs:
    `[(Ave1/Ave2)/Ave1]*100` reduces to `100/Ave2`. Intent is clearly `[(Ave2−Ave1)/Ave1]*100`.
 6. **B1 scoring ends with a bare, undefined line: `Relative`.** No formula anywhere. A stub.
 7. **Streaks vs. never-penalize** — W2/W3/B3/C3 memos all require streak tracking *and* forbid presenting a streak

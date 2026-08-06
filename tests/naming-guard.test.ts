@@ -20,6 +20,18 @@ const BANNED: { re: RegExp; why: string }[] = [
     re: /\b(?:\d{1,2}|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\s+doors\b/i,
     why: 'do not hardcode a door count — say "the Doors"; the count has been wrong twice and changes again',
   },
+  // The four Rs are ordinary words with ONE capital (Jay's call as brand owner, 2026-08-06). Guarded rather than
+  // left to care because the camel-cased spelling arrives with every science document we read — Greg's house style
+  // is ReConnect / ReWire / ReBuild / ReClaim throughout, so it is easy to echo without noticing. His spelling is
+  // his to keep inside verbatim quotation; docs/ isn't scanned. Ours governs anything a member could ever see.
+  {
+    re: /\bRe(?:Connect|Wire|Build|Claim)\b/,
+    why: 'never camel-case the four Rs — it is Reconnect, Rewire, Rebuild, Reclaim (Greg\'s docs use ReBuild etc: his house style, not ours)',
+  },
+  {
+    re: /\bRe-(?:connect|wire|build|claim)\b/i,
+    why: 'no hyphen either — Reconnect, Rewire, Rebuild, Reclaim',
+  },
 ];
 
 const ROOTS = ['lib', 'app'];
