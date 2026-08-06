@@ -365,8 +365,10 @@ function c3Opening(): string {
 
 const C3_REVISE_NUDGE = "No problem — tell me what you'd change, and we'll adjust it.";
 const C3_NUDGE = "Take your time — what makes a day feel healthy, meaningful, and worth it to you? We'll sort it into what's essential, what helps, and what pulls a day down.";
-const C3_COMMITTED_1 = "Great work identifying what makes up your Quality Day, and what takes away from it. For the next week, each day I'll ask how much the day felt like a quality one. You can share which of these elements showed up to make it that way.";
-const C3_COMMITTED_2 = "It's all about noticing what actually makes your days yours. You can log any day from your dashboard.";
+// Same correction as B3's close: this promised "each day I'll ask how much the day felt like a quality one", and no
+// such daily ask is sent. The member does the logging, from their dashboard, whenever they're there.
+const C3_COMMITTED_1 = "Great work identifying what makes up your Quality Day, and what takes away from it. For the next week, log each day from your dashboard — how much it felt like a quality one, and which of these elements showed up to make it that way.";
+const C3_COMMITTED_2 = "It's all about noticing what actually makes your days yours.";
 
 type QDCapture = NonNullable<Collected['pendingQualityDay']>;
 function sanitizeQualityDay(q: ModelTurn['qualityDay']): QDCapture | undefined {

@@ -186,8 +186,15 @@ function b3Opening(): string {
 
 const B3_PLAN_CONFIRMED_1 =
   "Your Lifestyle Pilot is locked in. You've committed to one small change in movement, one in eating, for next week.";
+// THIS USED TO PROMISE "I'll check in on you every day." We don't. The daily nudge needs a browser push opt-in most
+// members never give, holds a 72-hour cooldown, and deliberately skips anyone active in the last 24 hours — so for
+// someone actually working the program it can never arrive. Greg finished B3 and waited for it (2026-08-06). A
+// member who is told to expect contact and gets none reads it as being dropped, and we did that to them.
+// So: tell them what to do, where, and when — the shape W3's close already uses — and promise nothing we don't send.
 const B3_PLAN_CONFIRMED_2 =
-  "I'll check in on you every day. It's a good time to talk with other Community members too. Your plan's on your dashboard.";
+  "Start tomorrow. Go to the Momentum card on your dashboard each day and log how it went — a good call, a false " +
+  "start, or a quiet one. It's a good time to talk with other Community members too. After a week of it, the Rebuild " +
+  "Checkpoint is where this Phase closes.";
 const PILOT_REVISE_NUDGE = "No problem — tell me what you'd change, and we'll adjust it.";
 
 // The engine-owned plan reflection (propose-confirm) — reflects BOTH changes back in the member's words, then the
