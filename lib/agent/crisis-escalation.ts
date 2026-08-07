@@ -120,5 +120,26 @@ export async function escalateCrisis(
     console.error(`CRISIS ALERT THREW for member=${memberId}:`, (e as Error).message);
   }
 
+  // STAMP THE OUTCOME ONTO THE EVENT. Without this, "we recorded a crisis" and "a human was actually told" are
+  // indistinguishable after the fact — which is precisely the state we were in on 2026-08-07, when the alert
+  // address was never set and the only evidence was a server log nobody reads. Best-effort update: the record
+  // already exists, and failing to annotate it must not undo that.
+  try {
+    await db.query(
+      `update member_event set meta = meta || $2::jsonb
+        where member_id = $1 and kind = 'crisis_flagged'
+          and created_at = (select max(created_at) from member_event where member_id = $1 and kind = 'crisis_flagged')`,
+      [memberId, JSON.stringify({ alerted: out.alerted })],
+    );
+  } catch (e) {
+    console.error(`could not stamp the alert outcome for member=${memberId}:`, (e as Error).message);
+  }
+
   return out;
+}
+
+/** Is out-of-band crisis alerting actually configured? Surfaced on the console so a missing address is visible
+ *  BEFORE it matters, rather than discovered when a real member is in trouble. */
+export function crisisAlertingConfigured(): boolean {
+  return Boolean(process.env.CRISIS_ALERT_EMAIL?.trim() && process.env.RESEND_API_KEY && process.env.EMAIL_FROM);
 }
