@@ -21,7 +21,7 @@ import {
 } from '../rebuild/skills-instrument.ts';
 import { grintaStem, CHECKPOINT_CONTROL_ITEMS } from '../grinta/survey/instrument.ts';
 import { confirmsProposal } from './onboarding-intent.ts';
-import { proposalSignature, shouldPropose, markProposed, type CoachGate } from './coach-gate.ts';
+import { proposalSignature, shouldPropose, markProposed, confirmOutranksRerecord, markRevisionAsked, type CoachGate } from './coach-gate.ts';
 
 export function rebuildEnabled(): boolean {
   return process.env.REBUILD === 'staged';
@@ -202,9 +202,11 @@ const PILOT_HOLD_NUDGE = "That's your week as it stands. Change either one, or t
 
 // The engine-owned plan reflection (propose-confirm) — reflects BOTH changes back in the member's words, then the
 // confirm gate. Not the model's text: the plan is shown consistently, from what was locked.
-function proposePlan(activity: string, diet: string): string {
+function proposePlan(activity: string, diet: string, activityDays?: number, dietDays?: number): string {
+  // The target reads as the member's own aim, appended only when they gave one — never a default we supplied.
+  const aim = (n?: number) => (n ? ` — ${n} ${n === 1 ? 'day' : 'days'}` : '');
   return (
-    `Here's your week, then — small and yours:\n\nMovement: ${activity}\nEating: ${diet}\n\n` +
+    `Here's your week, then — small and yours:\n\nMovement: ${activity}${aim(activityDays)}\nEating: ${diet}${aim(dietDays)}\n\n` +
     `Both are things you can practice on a normal week, not just your best one. Want to lock them in, or tweak one?`
   );
 }
@@ -246,15 +248,33 @@ const pilotStage: StageDef = {
     // Accumulate the model's locked fields (a field appears only once the model judged it specific + right-sized).
     if (b.model.plan?.activityChange) b.collected.pilotActivity = b.model.plan.activityChange.trim();
     if (b.model.plan?.dietChange) b.collected.pilotDiet = b.model.plan.dietChange.trim();
+    if (b.model.plan?.activityDays) b.collected.pilotActivityDays = b.model.plan.activityDays;
+    if (b.model.plan?.dietDays) b.collected.pilotDietDays = b.model.plan.dietDays;
     const activity = (b.collected.pilotActivity ?? '').trim();
     const diet = (b.collected.pilotDiet ?? '').trim();
+    const activityDays = b.collected.pilotActivityDays;
+    const dietDays = b.collected.pilotDietDays;
 
     // CHANGE FIRST, then the confirm gate — see coach-gate.ts on why this order is load-bearing. A plan the
     // member has already seen is NEVER printed again; only a genuinely different one earns a fresh proposal.
-    const sig = proposalSignature({ activity, diet });
+    // CONFIRM FIRST — before the change-check. Greg's live walk (8/7): shown his plan, he said "Lock them in" and the
+    // model re-called record_plan on that same turn with a paraphrase of its own capture. The signature moved, the
+    // change-check fired, and he was handed the plan again — his original complaint, reintroduced by its own fix.
+    // His words outrank a model re-record. A genuine edit isn't a confirm (revision tails fail pilotConfirms), so it
+    // still falls through and re-proposes below.
+    const sig = proposalSignature({ activity, diet, activityDays, dietDays });
+    if (confirmOutranksRerecord(sc, pilotConfirms(b.memberMessage), sig)) {
+      b.stage = 'complete';
+      b.complete = true;
+      b.reply = `${B3_PLAN_CONFIRMED_1}${BEAT_SEP}${B3_PLAN_CONFIRMED_2}`;
+      return;
+    }
+
+    // The days are IN the signature: without them, a member changing "5 days" to "4" would alter the plan and never
+    // see it put back to them — the silent-drop direction the coach gate exists to prevent.
     if (shouldPropose(sc, !!(activity && diet), sig)) {
       markProposed(sc, sig);
-      b.reply = proposePlan(activity, diet);
+      b.reply = proposePlan(activity, diet, activityDays, dietDays);
       return;
     }
 
@@ -269,6 +289,10 @@ const pilotStage: StageDef = {
       // Not a confirm — a tweak the model hasn't recorded yet, or a question. Let the model carry the turn and
       // KEEP THE GATE OPEN: closing it here is what made Greg say "lock in" to a Companion that had stopped
       // listening for it. Anything he changes re-proposes above; anything he asks gets answered here.
+      //
+      // If it was an ASK for a change (not merely a question), remember it: their next "that works" is agreeing to
+      // a revision they've only heard described, so it must be re-proposed rather than committed behind them.
+      markRevisionAsked(sc);
       b.reply = (b.modelText || PILOT_HOLD_NUDGE).trim();
       return;
     }
@@ -344,12 +368,16 @@ const RECORD_PLAN_TOOL = {
   name: 'record_plan',
   description:
     "Lock a plan field once it is specific, right-sized, and the member has affirmed it. Pass activityChange for the " +
-    "movement change and/or dietChange for the eating change, each in the member's own words.",
+    "movement change and/or dietChange for the eating change, each in the member's own words. Once a change is " +
+    "locked, ask how many days that week they're aiming for and pass activityDays / dietDays — THEIR number, never " +
+    "one you suggest. If they'd rather not put a number on it, leave it out and move on; it is optional.",
   input_schema: {
     type: 'object' as const,
     properties: {
       activityChange: { type: 'string', description: "The member's committed small movement change — specific + trackable." },
       dietChange: { type: 'string', description: "The member's committed small eating change — specific + trackable." },
+      activityDays: { type: 'integer', description: "Days this week the member is aiming for on the movement change (1-7). Their number. Omit if they didn't give one." },
+      dietDays: { type: 'integer', description: "Days this week the member is aiming for on the eating change (1-7). Their number. Omit if they didn't give one." },
     },
   },
 };
@@ -369,26 +397,47 @@ function b3Context(c: Collected): string {
 function b3StageNote(state: ConvState): string {
   const activity = (state.collected?.pilotActivity ?? '').trim();
   const diet = (state.collected?.pilotDiet ?? '').trim();
+  const activityDays = state.collected?.pilotActivityDays;
+  const dietDays = state.collected?.pilotDietDays;
+  // The day target is named HERE, in the per-turn steering, not only in the tool description. A live walk (8/7) had
+  // the model ask for the movement target and silently skip the eating one — the instruction existed, but only in a
+  // place it wasn't reading at the moment it mattered. Per-turn state belongs in the per-turn note.
   if (!activity)
-    return "\n\nRIGHT NOW: coach the MOVEMENT change — one small, specific, trackable thing they're not already doing. When it's real and they've affirmed it, call record_plan(activityChange). Then DON'T STOP — in the same reply, briefly acknowledge it and move straight into coaching the EATING change (there are two; never end your turn on just an acknowledgment).";
+    return "\n\nRIGHT NOW: coach the MOVEMENT change — one small, specific, trackable thing they're not already doing. When it's real and they've affirmed it, call record_plan(activityChange), and ask in the same breath how many days this week they're aiming for. Then DON'T STOP — briefly acknowledge it and move straight into coaching the EATING change (there are two; never end your turn on just an acknowledgment).";
   if (!diet)
-    return "\n\nRIGHT NOW: the movement change is locked. Now coach the EATING change — one small upgrade. When it's real and affirmed, call record_plan(dietChange).";
-  return "\n\nRIGHT NOW: both changes are locked. Give a brief warm acknowledgment; the app will show the plan to confirm.";
+    return `\n\nRIGHT NOW: the movement change is locked${activityDays ? ` at ${activityDays} days` : ''}. Now coach the EATING change — one small upgrade. When it's real and affirmed, call record_plan(dietChange) AND ask how many days they're aiming for, the same way you did for movement. Don't skip the number — but if they'd rather not give one, take that and move on.`;
+  if (!dietDays && !activityDays)
+    return "\n\nRIGHT NOW: both changes are locked but neither has a day target. In ONE short question, ask how many days a week they're aiming for — theirs to choose, and fine to decline.";
+  if (!dietDays || !activityDays)
+    return `\n\nRIGHT NOW: both changes are locked. One is still missing its day target — the ${!activityDays ? 'MOVEMENT' : 'EATING'} one. Ask for that number in one short question; theirs to choose, and fine to decline.`;
+  return "\n\nRIGHT NOW: both changes are locked with their day targets. Give a brief warm acknowledgment; the app will show the plan to confirm.";
 }
 
 // Parse an Anthropic response into a ModelTurn (prose + any record_plan locks). Pure below this line lives in the arc.
-function parseB3Model(content: readonly unknown[]): ModelTurn {
+// Exported for tests: the 1-7 target guard lives HERE, at the tool boundary, and a unit test over the arc would
+// never exercise it.
+export function parseB3Model(content: readonly unknown[]): ModelTurn {
   let text = '';
-  const plan: { activityChange?: string; dietChange?: string } = {};
+  const plan: { activityChange?: string; dietChange?: string; activityDays?: number; dietDays?: number } = {};
+  // A target outside 1-7 is not a target for a seven-day week — drop it rather than store a number the grid can't
+  // draw. Silently ignoring a bad value is right here: the plan itself is still good, and nagging the member about
+  // the model's arithmetic would be absurd.
+  const days = (v: unknown): number | undefined => {
+    const n = typeof v === 'number' ? v : typeof v === 'string' ? Number(v) : NaN;
+    return Number.isInteger(n) && n >= 1 && n <= 7 ? n : undefined;
+  };
   for (const raw of content) {
-    const bl = raw as { type: string; text?: string; name?: string; input?: { activityChange?: unknown; dietChange?: unknown } };
+    const bl = raw as { type: string; text?: string; name?: string; input?: Record<string, unknown> };
     if (bl.type === 'text') text += bl.text ?? '';
     if (bl.type === 'tool_use' && bl.name === 'record_plan') {
       if (typeof bl.input?.activityChange === 'string') plan.activityChange = bl.input.activityChange;
       if (typeof bl.input?.dietChange === 'string') plan.dietChange = bl.input.dietChange;
+      const ad = days(bl.input?.activityDays); if (ad) plan.activityDays = ad;
+      const dd = days(bl.input?.dietDays); if (dd) plan.dietDays = dd;
     }
   }
-  return { text: text.trim(), ...(plan.activityChange || plan.dietChange ? { plan } : {}) };
+  const any = plan.activityChange || plan.dietChange || plan.activityDays || plan.dietDays;
+  return { text: text.trim(), ...(any ? { plan } : {}) };
 }
 
 export async function liveTurnRebuildB3(state: ConvState, history: ConvMessage[], memberMessage: string): Promise<Turn> {

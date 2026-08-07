@@ -28,6 +28,7 @@ import { scaleExpects, type ArcConfig } from '../../lib/agent/onboarding-staged.
 import { saveArcSession, loadArcSession, clearArcSession } from '../../lib/agent/arc-session.ts';
 import { persistWhyReading, persistSkillsReading } from '../../lib/rebuild/store.ts';
 import { persistCoachingPlan } from '../../lib/rebuild/plan-store.ts';
+import { setPilotCommitments } from '../../lib/practice/mark.ts';
 import { WHY_ITEM_COUNT } from '../../lib/rebuild/why-instrument.ts';
 import { SKILLS_ITEM_COUNT } from '../../lib/rebuild/skills-instrument.ts';
 import { startPracticeWeek } from '../../lib/practice/store.ts';
@@ -210,9 +211,23 @@ export async function rebuildTurnAction(
           }
           // Persist the plan artifact (coaching_plan) + a Playbook keeper (§5 — the two small changes, their words).
           try {
-            await persistCoachingPlan(db, memberId, 'rebuild', { activityChange: activity, dietChange: diet });
+            const days = { activityDays: turn.state.collected?.pilotActivityDays, dietDays: turn.state.collected?.pilotDietDays };
+            await persistCoachingPlan(db, memberId, 'rebuild', { activityChange: activity, dietChange: diet, ...days });
+            // The week grid's ROWS (Greg's tracker). Separate try from the plan above, deliberately: a failure here
+            // must not lose the plan itself. Same lesson as the Playbook harvest silent-drop, where one throw inside
+            // a shared try aborted a commit that had already succeeded.
           } catch {
             /* swallow — best-effort; the member still committed their plan */
+          }
+          try {
+            await setPilotCommitments(db, memberId, {
+              activityChange: activity,
+              dietChange: diet,
+              activityDays: turn.state.collected?.pilotActivityDays,
+              dietDays: turn.state.collected?.pilotDietDays,
+            });
+          } catch (e) {
+            console.error(`B3: could not write practice commitments for member=${memberId}:`, e);
           }
           // harvestSignal commits the Lifestyle Pilot keeper even if the QI moment-emit fails (the prod silent-drop
           // that lost session keepers) — and logs on failure instead of swallowing blind.

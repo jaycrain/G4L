@@ -14,7 +14,7 @@ import { AUDIT_ITEMS, AUDIT_ITEM_COUNT, AUDIT_SCALE_MAX, AUDIT_DOMAIN_STARTS, AU
 import { scoreAudit } from '../reclaim/bigger-world-scoring.ts';
 import { grintaStem, CHECKPOINT_CHALLENGE_ITEMS } from '../grinta/survey/instrument.ts';
 import { confirmsProposal } from './onboarding-intent.ts';
-import { proposalSignature, shouldPropose, markProposed, type CoachGate } from './coach-gate.ts';
+import { proposalSignature, shouldPropose, markProposed, confirmOutranksRerecord, markRevisionAsked, type CoachGate } from './coach-gate.ts';
 
 export function reclaimEnabled(): boolean {
   return process.env.RECLAIM?.trim() === 'staged';
@@ -112,9 +112,18 @@ const refineStage: StageDef = {
     // nicety must never be able to trap someone.
     const ready = !!ref && ref.items.length > 0;
 
-    // CHANGE FIRST, then the confirm gate — see coach-gate.ts. A list they have already seen is never printed
-    // again; only a genuinely different one earns a fresh proposal.
+    // CONFIRM FIRST — a member's plain "save it" outranks a model re-record on the same turn (see
+    // confirmOutranksRerecord; found in B3's live walk, fixed across all three coach stages at once).
     const sig = proposalSignature(ref);
+    if (confirmOutranksRerecord(sc, refineConfirms(b.memberMessage), sig)) {
+      b.stage = 'complete';
+      b.complete = true;
+      b.reply = `${REFINE_COMMITTED_1}${BEAT_SEP}${REFINE_COMMITTED_2}`;
+      return;
+    }
+
+    // THEN the change-check, then the hold. A list they have already seen is never printed again; only a genuinely
+    // different one earns a fresh proposal.
     if (shouldPropose(sc, ready, sig)) {
       // The refined list is captured and DIFFERENT from anything already shown → PROPOSE it (engine-owned
       // reflection), then the confirm gate.
@@ -134,6 +143,8 @@ const refineStage: StageDef = {
       // Not a confirm — a tweak the model hasn't recorded yet, or a question. Carry the turn and KEEP THE GATE
       // OPEN. (Caught by the C1 persona harness, scripts/c1-refine-walk.ts: "the duplicate keeps coming back no
       // matter what we agree on." A scripted member, not a real one — the harness found it, nobody suffered it.)
+      // An ASK for a change is remembered, so the revised list is put back to them rather than saved unseen.
+      markRevisionAsked(sc);
       b.reply = (b.modelText || REFINE_HOLD_NUDGE).trim();
       return;
     }
@@ -401,9 +412,18 @@ const qualityStage: StageDef = {
     const qd = b.collected.pendingQualityDay;
     const ready = !!qd && qd.nonNegotiables.length > 0;
 
-    // CHANGE FIRST, then the confirm gate — see coach-gate.ts. Jay sat 25 messages deep in this loop with the
-    // Quality Day captured and unchanged the whole way (2026-08-06); it is never re-printed now.
+    // CONFIRM FIRST — a member's plain confirm outranks a model re-record on the same turn (see
+    // confirmOutranksRerecord; found in B3's live walk, fixed across all three coach stages at once).
     const sig = proposalSignature(qd);
+    if (confirmOutranksRerecord(sc, c3Confirms(b.memberMessage), sig)) {
+      b.stage = 'complete';
+      b.complete = true;
+      b.reply = `${C3_COMMITTED_1}${BEAT_SEP}${C3_COMMITTED_2}`;
+      return;
+    }
+
+    // THEN the change-check. Jay sat 25 messages deep in this loop with the Quality Day captured and unchanged the
+    // whole way (2026-08-06); it is never re-printed now.
     if (shouldPropose(sc, ready, sig)) {
       markProposed(sc, sig);
       b.reply = proposeQualityDay(qd!);
@@ -418,6 +438,8 @@ const qualityStage: StageDef = {
         return;
       }
       // Not a confirm — a tweak not yet recorded, or a question. Carry the turn, KEEP THE GATE OPEN.
+      // An ASK for a change is remembered, so the revised Quality Day is re-proposed rather than saved unseen.
+      markRevisionAsked(sc);
       b.reply = (b.modelText || C3_HOLD_NUDGE).trim();
       return;
     }

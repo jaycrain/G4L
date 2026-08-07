@@ -23,7 +23,13 @@
 // question at the gate, which is what Greg was doing.
 
 /** Per-stage scratch for a propose→confirm coach gate. */
-export type CoachGate = { proposed?: boolean; proposedSig?: string };
+export type CoachGate = {
+  proposed?: boolean;
+  proposedSig?: string;
+  /** The member has ASKED for a change since the last proposal, so the next artifact they see may not be the one
+   *  they were shown. Cleared every time a proposal is put on screen. */
+  revisionAsked?: boolean;
+};
 
 /** A stable fingerprint of the artifact as PROPOSED. Key order is normalised so a re-record that changes
  *  nothing the member can see doesn't read as a change and re-trigger the proposal. */
@@ -49,10 +55,54 @@ export function shouldPropose(gate: CoachGate, ready: boolean, signature: string
   return ready && gate.proposedSig !== signature;
 }
 
+/**
+ * Does the member's CONFIRM take precedence over a change the model recorded on the same turn?
+ *
+ * Yes — and this is the second half of the fix, found by a live walk on 2026-08-07 in Greg's own scenario. He was
+ * shown his plan, said "Lock them in", and got the plan back AGAIN. His original complaint, reintroduced by the
+ * repair for it.
+ *
+ * What happened: on the confirm turn the model ALSO re-called record_plan, paraphrasing its own capture
+ * ("…core work" → "…core work, mixed movements"). The signature changed, change-check-first fired, and the engine
+ * re-proposed over the top of his answer. The artifact was not different in any way he could see or asked for —
+ * the model simply rewrote its own note while he was saying yes.
+ *
+ * The rule: a member's plain confirm outranks a model re-record. It's the same principle as the recurring capture
+ * failure — the deterministic read of what the member SAID beats a model signal that contradicts it, and a
+ * contradicting signal needs corroborating material. A paraphrase is not corroboration. A real edit is not a
+ * confirm either: "yes but make it 3 days" carries a revision tail, so confirmsProposal returns false and it falls
+ * through to the change-check and re-proposes properly.
+ *
+ * So the order is now: accumulate → CONFIRM WINS → change-check → hold. Change-check still precedes the hold, so a
+ * genuine edit is never silently dropped.
+ */
+export function confirmOutranksRerecord(gate: CoachGate, memberConfirms: boolean, currentSignature: string): boolean {
+  if (!gate.proposed || !memberConfirms) return false;
+  // A confirm loses ONLY when both are true: the artifact actually moved since they were shown it, AND they had
+  // asked for a change. Either alone is not enough, and getting that wrong breaks a different case each way:
+  //
+  //   · changed but NOT asked for  → Greg. The model paraphrased its own note while he said "Lock them in".
+  //     Nothing he could see was different. His word wins.
+  //   · asked for AND changed      → "actually make the walk 10 minutes" … "that works". He is agreeing to a
+  //     revision he has only heard DESCRIBED. Committing here saves a plan he was never shown. Re-propose.
+  //   · asked for but NOT changed  → he questioned or paused at the gate and the artifact is identical. His later
+  //     "yes" must still commit, or we rebuild the exact dead end this whole gate exists to remove.
+  //
+  // That last row is why `revisionAsked` can be set generously on any non-confirm: it only bites in combination.
+  const changedSinceProposal = gate.proposedSig !== currentSignature;
+  return !(changedSinceProposal && gate.revisionAsked);
+}
+
+/** Note that the member has asked for a change while the gate is open. */
+export function markRevisionAsked(gate: CoachGate): void {
+  gate.revisionAsked = true;
+}
+
 /** Record that this exact artifact has now been put to the member, and open the confirm gate. */
 export function markProposed(gate: CoachGate, signature: string): void {
   gate.proposed = true;
   gate.proposedSig = signature;
+  gate.revisionAsked = false; // they are looking at the current artifact again
 }
 
 // ORDER MATTERS, and getting it wrong costs the fix.

@@ -38,11 +38,17 @@ function awaitingConfirm(): { state: ConvState; history: ConvMessage[] } {
   return { state, history: [{ role: 'agent', text: 'Want to lock them in, or tweak one?' }] };
 }
 
-test('A SESSION ALREADY AT THE GATE WHEN THIS SHIPPED: one more proposal, then correct', () => {
-  // Jay was mid-C3 with `{ proposed: true }` and no signature when the fix deployed. There is no way to know
-  // which plan he was last shown, so the honest move is to show it once — which is what a returning member
-  // needs anyway — and record the signature. From the next turn on, the loop is closed. Deliberate, not
-  // accidental: the alternative is assuming he saw something he may not have.
+test('A GATE WITH NO RECORDED SIGNATURE still commits on the member’s confirm', () => {
+  // REVERSED 2026-08-07, one day after I wrote the opposite, and worth saying why rather than quietly editing.
+  //
+  // Yesterday this asserted that a gate carrying `{proposed:true}` with no signature should re-propose ONCE before
+  // committing — reasoning that "there is no way to know which plan he was last shown". That reasoning was wrong.
+  // A missing signature doesn't mean the artifact is unknown; it means we never fingerprinted it. The artifact is
+  // right there in `collected`, unchanged, and it is exactly what generated the proposal the member is answering.
+  //
+  // So making them say "lock them in" twice bought no safety at all — it just reproduced Greg's complaint for the
+  // sake of a caution that protected nothing. Confirm-first (confirmOutranksRerecord) makes this case correct for
+  // free. The transitional state it guarded is also 24 hours in the past and empty.
   const state = {
     stage: 'pilot',
     collected: { pilotActivity: ACTIVITY, pilotDiet: DIET },
@@ -50,11 +56,36 @@ test('A SESSION ALREADY AT THE GATE WHEN THIS SHIPPED: one more proposal, then c
   } as unknown as ConvState;
   const history: ConvMessage[] = [{ role: 'agent', text: 'Want to lock them in, or tweak one?' }];
 
-  const first = applyRebuildB3Turn(state, history, 'lock them in', { text: '' });
-  assert.match(first.reply, /Here's your week, then/, 'the one re-orienting proposal');
+  const turn = applyRebuildB3Turn(state, history, 'lock them in', { text: '' });
+  assert.equal(turn.complete, true, 'their word is enough — they are answering a plan they can see');
+  assert.match(turn.reply, /locked in/i);
+  assert.doesNotMatch(turn.reply, /Here's your week, then/, 'and they are not handed it a second time');
+});
 
-  const after = applyRebuildB3Turn(first.state, [...history, { role: 'agent', text: first.reply }], 'lock them in', { text: '' });
-  assert.equal(after.complete, true, 'and from here it commits — the loop does not resume');
+test('GREG’S LIVE WALK, 8/7: a model re-record on the confirm turn must not re-propose over him', () => {
+  // The exact failure the live walk caught. He was shown the plan, said "Lock them in", and the model called
+  // record_plan again on that same turn with a paraphrase of its own capture ("…core work" → "…core work, mixed
+  // movements"). The signature moved, change-check-first fired, and he got the plan back. His original complaint,
+  // reintroduced by the repair for it. His words outrank the model rewriting its own note.
+  const { state, history } = awaitingConfirm();
+  const turn = applyRebuildB3Turn(state, history, 'Lock them in.', {
+    text: '',
+    plan: { activityChange: `${ACTIVITY}, mixed movements`, dietChange: DIET },
+  } as never);
+  assert.equal(turn.complete, true, 'the confirm wins over the paraphrase');
+  assert.doesNotMatch(turn.reply, /Here's your week, then/);
+});
+
+test('but a REAL edit on the confirm turn still re-proposes (the expensive direction)', () => {
+  // The guard that keeps confirm-first honest: an actual change must never be swallowed by it. "yes but make it 3
+  // days" carries a revision tail, so it is not a confirm, and it falls through to the change-check.
+  const { state, history } = awaitingConfirm();
+  const turn = applyRebuildB3Turn(state, history, 'yes but make it 3 days', {
+    text: '',
+    plan: { activityChange: ACTIVITY, dietChange: DIET, activityDays: 3 },
+  } as never);
+  assert.equal(turn.complete, false, 'not committed behind their back');
+  assert.match(turn.reply, /3 days/, 'the changed plan is put back to them');
 });
 
 test('the fixture really is at the confirm gate (guard against a false pass)', () => {
@@ -96,4 +127,65 @@ test('HIS SECOND MESSAGE: a question is not a confirm', () => {
   const { state, history } = awaitingConfirm();
   const turn = applyRebuildB3Turn(state, history, 'How will I track it?', { text: '' });
   assert.equal(turn.complete, false, 'asking how to do the thing is not agreeing to it');
+});
+
+// ── the day target (Greg's grid needs a number to close against) ───────────────────────────────────────────────
+
+test('the target rides the EXISTING gate — no second confirm to get wrong', async () => {
+  // Greg's sample grid carries "5 days in the week" per row. Capturing it must not add a second propose→confirm
+  // step: the loop he actually hit came from gate mechanics, and a second gate is a second chance to build the same
+  // bug. So days ride record_plan and appear inside the ONE proposal he already confirms.
+  const { applyRebuildB3Turn } = await import('../lib/agent/rebuild.ts');
+  const state = { stage: 'pilot', collected: {}, stageScratch: {} } as unknown as ConvState;
+
+  const proposed = applyRebuildB3Turn(state, [], 'both of those', {
+    text: '',
+    plan: { activityChange: 'Walk 15 minutes', dietChange: 'Fruit at breakfast', activityDays: 5, dietDays: 6 },
+  } as never);
+  assert.match(proposed.reply, /Walk 15 minutes — 5 days/, "the member's own number, in the proposal");
+  assert.match(proposed.reply, /Fruit at breakfast — 6 days/);
+  assert.equal(proposed.complete, false, 'proposing is still not completing');
+
+  const done = applyRebuildB3Turn(proposed.state, [], 'lock them in', { text: '' });
+  assert.equal(done.complete, true, 'and the SAME single confirm still commits');
+  assert.equal(done.state.collected?.pilotActivityDays, 5, 'the target survives to the commit');
+  assert.equal(done.state.collected?.pilotDietDays, 6);
+});
+
+test('CHANGING JUST THE NUMBER re-proposes — it must not slip through silently', async () => {
+  // The expensive direction: a member says "make it 4 days", the plan changes, and they never see it put back to
+  // them. The day targets are in the proposal signature precisely to stop that.
+  const { applyRebuildB3Turn } = await import('../lib/agent/rebuild.ts');
+  const first = applyRebuildB3Turn({ stage: 'pilot', collected: {}, stageScratch: {} } as unknown as ConvState, [], 'yes', {
+    text: '', plan: { activityChange: 'Walk 15 minutes', dietChange: 'Fruit at breakfast', activityDays: 5, dietDays: 5 },
+  } as never);
+  const changed = applyRebuildB3Turn(first.state, [], 'make the walking 3 days', {
+    text: '', plan: { activityChange: 'Walk 15 minutes', dietChange: 'Fruit at breakfast', activityDays: 3, dietDays: 5 },
+  } as never);
+  assert.match(changed.reply, /Walk 15 minutes — 3 days/, 'the changed plan is put back to them');
+  assert.equal(changed.complete, false);
+});
+
+test('a member who WON’T pick a number still commits a plan', async () => {
+  // The target is optional at every layer. Blocking a commitment on a number they declined to give would turn a
+  // nicety into a gate — the exact trap CAT-36 was about.
+  const { applyRebuildB3Turn } = await import('../lib/agent/rebuild.ts');
+  const proposed = applyRebuildB3Turn({ stage: 'pilot', collected: {}, stageScratch: {} } as unknown as ConvState, [], 'both', {
+    text: '', plan: { activityChange: 'Walk 15 minutes', dietChange: 'Fruit at breakfast' },
+  } as never);
+  assert.doesNotMatch(proposed.reply, /\bdays\b/, 'no invented "5 days" they never chose');
+  const done = applyRebuildB3Turn(proposed.state, [], 'yes', { text: '' });
+  assert.equal(done.complete, true);
+  assert.equal(done.state.collected?.pilotActivityDays, undefined);
+});
+
+test('a nonsense target is dropped, and the plan is unharmed', async () => {
+  const { parseB3Model } = await import('../lib/agent/rebuild.ts');
+  for (const bad of [0, 8, 99, -1, 3.5, 'lots']) {
+    const t = parseB3Model([{ type: 'tool_use', name: 'record_plan', input: { activityChange: 'Walk', activityDays: bad } }] as never);
+    assert.equal(t.plan?.activityChange, 'Walk', `the change survives a bad target (${bad})`);
+    assert.equal(t.plan?.activityDays, undefined, `${bad} is not a day count for a seven-day week`);
+  }
+  const good = parseB3Model([{ type: 'tool_use', name: 'record_plan', input: { activityChange: 'Walk', activityDays: 5 } }] as never);
+  assert.equal(good.plan?.activityDays, 5);
 });

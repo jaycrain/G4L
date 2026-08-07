@@ -81,3 +81,27 @@ export async function toggleMark(
   );
   return { ok: true, on: true };
 }
+
+/** Write the week's grid ROWS from a committed B3 plan. Upsert on (member, kind, slot) so re-running B3 refreshes
+ *  the same two rows rather than accumulating a new pair every cycle. Best-effort at the caller: a member who
+ *  committed a plan must never be blocked because the grid couldn't be set up. */
+export async function setPilotCommitments(
+  db: Db,
+  memberId: string,
+  plan: { activityChange: string; dietChange: string; activityDays?: number; dietDays?: number },
+): Promise<void> {
+  const rows: [string, string, number | null, number][] = [
+    ['activity', plan.activityChange, plan.activityDays ?? null, 0],
+    ['diet', plan.dietChange, plan.dietDays ?? null, 1],
+  ];
+  for (const [slot, label, target, sort] of rows) {
+    if (!label?.trim()) continue;
+    await db.query(
+      `insert into practice_commitment (member_id, kind, slot, label, target_days, sort_order)
+       values ($1,'b3_pilot',$2,$3,$4,$5)
+       on conflict (member_id, kind, slot)
+       do update set label = excluded.label, target_days = excluded.target_days, updated_at = now()`,
+      [memberId, slot, label.trim(), target, sort],
+    );
+  }
+}

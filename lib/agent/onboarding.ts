@@ -105,6 +105,10 @@ export type Collected = {
   // set by the ENGINE from the model's record_plan locks (not mergeStaged), then persisted to the coaching_plan artifact.
   pilotActivity?: string;
   pilotDiet?: string;
+  // The member's own day target per change ("5 days a week") — Greg's grid row target. Optional throughout: a
+  // member who won't put a number on it still commits a plan, it just has nothing to close against.
+  pilotActivityDays?: number;
+  pilotDietDays?: number;
   // Reclaim C1 Step 2 (coach mode). The refined Reclaim List awaiting the member's confirm — the snapshot. Set by the
   // ENGINE from the model's record_refinement; the action commits it to the live list on confirm (never before).
   pendingRefinement?: { items: { original: string; text: string; tier: string; reclaimItemId?: string }[]; top3: string[] };
@@ -823,7 +827,7 @@ export type ModelTurn = { text: string; record?: Partial<Collected> & { complete
   // v2.4 Rebuild B3 (coach mode, Decision PP) — the model's LOCKED plan fields this turn (from the record_plan tool).
   // A field appears only once the model judges it specific + right-sized + member-affirmed; the engine gates completion
   // on both being present. A separate channel from `record` (which is onboarding-Collected-shaped, merged by mergeStaged).
-  plan?: { activityChange?: string; dietChange?: string };
+  plan?: { activityChange?: string; dietChange?: string; activityDays?: number; dietDays?: number };
   // v2.5 Reclaim C1 Step 2 (coach mode) — the member's CONFIRMED-in-conversation refined Reclaim List (from the
   // record_refinement tool): each item's original + refined text + tier, plus the top-3. Coached in a snapshot; the
   // engine proposes it, and only the member's confirm commits it back to the live list (propose→confirm→commit).

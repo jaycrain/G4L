@@ -1,0 +1,117 @@
+# For Greg — running list, 2026-08-07
+
+Jay emails this at end of day. **I append as I go; nothing here is sent until Jay says.**
+Three sections: what changed because he asked, where we deliberately diverged from his spec (and why), and what we
+need from him.
+
+---
+
+## 1 · Shipped today, from his 8/7 email
+
+**C1's evidence self-check is gone.** All fifteen items, held for Cycle 2 exactly as he asked. Cheap to remove
+because those answers were formative — never scored, never stored — so no data was lost and nothing needs
+migrating. His items are preserved verbatim in the codebase, unwired, waiting for Cycle 2.
+
+*Also removed with it, and worth him knowing:* "If you rated yourself a 4 or 5 on most of these… you're ready for
+the Reclaim phase." That line handed the member a verdict about themselves, which sits badly against our
+governance posture (never grade, never a verdict). We'd want to rewrite rather than restore it if Cycle 2 brings
+the assessment back.
+
+**C1 is now "Looking Forward"** everywhere a member or the Companion reads it — the session header, the Program
+route, the name the Companion speaks. The *layer* stays Readiness, as in his V4.
+
+**"Explore the Science" is live on C1.** His six foundations, behind a tap next to "Why this matters." See §2 for
+what we changed about it and §3 for the question.
+
+**The B3 dead end he hit is fixed** and he's since finished the whole cycle — all four checkpoints crossed.
+
+---
+
+## 2 · Where we deliberately diverged (all defensible, all his call to overrule)
+
+**The tracking grid has no red and no "missed" state.** His sample sheet uses red for structure. We render an
+untouched day as simply blank — not amber, not a dash. The practice week is a productive default and never a gate,
+and the product's whole posture is normalize-don't-grade ("a hundred reasonable decisions, not a failing"). A grid
+that scolds is a grid people stop opening, and then we lose both the data and the member.
+
+**No denominator where the member never set one.** His B3 commitments carry a target, so they read "3 / 5".
+Quality-Day elements and W3's daily notice have no target, so they show a bare count. Rendering a "/ 7" they never
+chose would invent a standard and then quietly hold them to it.
+
+**The grid is read-only for W3 and C3.** For B3 a cell *is* the whole record, so it's tappable and a mis-tap is
+undoable. For W3 a cell means "you logged this day" and the entry underneath carries the member's own written
+note; for C3 it's one element inside an entry holding a score and two reflections. Un-ticking would have to delete
+what they wrote. So those two mirror the log rather than edit it.
+
+**"Explore the Science" is his content in our voice.** He flagged it himself — "it is still a b[i]t 'researchy'."
+We kept every one of his six points and the probabilistic framing, and dropped the construct names: no
+"self-concordant", no "psychologically coherent". Those belong in his documents, not on a member's screen. Nothing
+scientific was softened — worth him checking we didn't lose a nuance.
+
+**Note also:** all six of his C1 points were *already* in our "Why this matters" for C1, compressed into four
+sentences he voice-passed in July. So Explore isn't new information — it's the same argument at a resolution you
+can point at, which is what he wants it for.
+
+---
+
+**The B3 coach now asks for the day target.** "How many days this week are you aiming for?" — the member's number,
+which then becomes the target on their grid row. It is optional at every layer: a member who won't put a number on it
+still commits their plan, and their row simply shows a count with no denominator.
+
+**And a second dead end, found and fixed the same day.** Building the above, a live walk reproduced his EXACT
+complaint: shown the plan, he said "Lock them in", and the Companion handed him the plan again. Different cause this
+time — the model quietly re-worded its own note of the plan on the same turn he confirmed, so the engine read it as a
+change and re-proposed. His words now outrank the model rewriting its own note. (A real edit still gets re-proposed
+before saving, so nothing is ever committed that he hasn't seen.)
+
+## 3 · Questions / needs a decision
+
+**Do members ever see "Aware / Prepare / Engage"?** He spec'd the Levels in all four wing documents and they are
+absent from the product entirely. If they're an internal organising scheme, nothing changes. If they're
+member-facing, that's an information-architecture change across twelve assets. This is the single biggest open
+item and it changes the size of the next build.
+
+**Should we do "Explore the Science" for the other eleven?** He offered ("It wouldn't be too hard… I already
+drafted the foundations in the Science Check files"). We built C1 only, on purpose, so he and Jay can see one real
+one before committing to eleven. If yes, we need the foundations per asset in the same shape.
+
+**Who sets the day target — the member or the spec?** His sheet says "5 days a week". We're having the B3 coach
+ask the member for their own number, because a number they chose is the one they'll hold to. Confirm that's the
+intent and not a departure.
+
+**The "6 week experience for Cycle 1" is a promise we can't yet keep.** He proposed stating it on the front end.
+Nothing in the engine currently paces a member — he did the whole cycle in seven days. Building the week close is
+the first step toward making it real, but the front-end claim shouldn't ship before the pacing does.
+
+**B1's Relative Autonomous Motivation.** His formula is in the V4 doc and we have never computed it — a comment in
+our code says he "gives no formula", which was our misreading of an equation our text extraction dropped. We can
+add it in an hour. Does he want it stored, surfaced, or both?
+
+---
+
+## 4 · Two real defects in his documents
+
+**The Grinta Change formula.** As written, `[(Ave1/Ave2)/Ave1]*100` reduces to `100/Ave2` — Ave1 cancels out
+entirely, so the "change" doesn't depend on the starting value at all. Almost certainly meant to be
+`[(Ave2−Ave1)/Ave1]*100`. Worth confirming before anything is computed from it.
+
+**Reconnect's table of contents** has a "Tracking (NEW)" entry pointing at a bookmark that exists nowhere in the
+document. Either a section was cut, or one is missing.
+
+*(And a correction we owe him: three other "defects" reported earlier this week were ours, not his — our document
+extraction silently dropped his equations. The C2 scoring, the C1 Step 2 list and B1's formula were all present
+and correct.)*
+
+**A small one:** his edited V4 now reads "The C1 Asset (**Looking Readiness**)" in the overview — a find/replace
+that caught half the phrase.
+
+---
+
+## 5 · Also worth mentioning
+
+**He answered all twenty C2 items.** His Bigger World Audit took 73 seconds, which looked like a click-through —
+it wasn't, the full response set is stored. What still hasn't been checked by anyone is whether the resulting
+PriorityScore *ranking* comes out sensible. That's a five-minute check, not a rebuild.
+
+**The attachment question is closed.** The V4 he sent Wednesday was byte-identical to the copy we already had; the
+one he sent Thursday is genuinely edited. No action needed.

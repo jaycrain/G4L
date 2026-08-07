@@ -5,7 +5,10 @@
 import type { Db } from '../db/schema.ts';
 
 export type CoachingPhase = 'rebuild' | 'reclaim' | 'cycle2';
-export type RebuildPilotPayload = { activityChange: string; dietChange: string };
+// activityDays / dietDays are the MEMBER's number ("5 days a week"), captured by the B3 coach — Greg's sample grid
+// carries a target per row, and without one a practice week has nothing to close against. OPTIONAL on purpose: a
+// plan with no target is still a plan, and a member who won't pick a number must never be blocked from committing.
+export type RebuildPilotPayload = { activityChange: string; dietChange: string; activityDays?: number; dietDays?: number };
 export type CoachingPlan<P = Record<string, unknown>> = {
   id: string;
   phase: CoachingPhase;

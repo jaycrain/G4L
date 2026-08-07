@@ -17,7 +17,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { proposalSignature, shouldPropose, markProposed, type CoachGate } from '../lib/agent/coach-gate.ts';
+import { proposalSignature, shouldPropose, markProposed, confirmOutranksRerecord, markRevisionAsked, type CoachGate } from '../lib/agent/coach-gate.ts';
 import { applyRebuildB3Turn } from '../lib/agent/rebuild.ts';
 import type { ConvMessage, ConvState } from '../lib/agent/onboarding.ts';
 
@@ -115,4 +115,51 @@ test('THE LOOP CANNOT RUN: ten non-confirm turns, the plan appears at most once'
     state = turn.state;
   }
   assert.equal(printed, 0, `the already-seen plan was reprinted ${printed}× across ten turns`);
+});
+
+// ── confirm vs re-record: the three rows that must each behave differently ────────────────────────────────────
+//
+// Found by a LIVE walk on 2026-08-07, not by a unit test — Greg said "Lock them in", the model paraphrased its own
+// capture on that same turn, the signature moved, and he got the plan back. His original complaint, reintroduced by
+// its own fix. The rule needs BOTH conditions; my first cut used only one and an existing test caught it.
+
+test('CHANGED but not asked for → the member’s confirm wins (Greg’s live walk)', () => {
+  const gate: CoachGate = {};
+  markProposed(gate, proposalSignature({ a: '15 minutes of functional fitness' }));
+  const paraphrase = proposalSignature({ a: '15 minutes of functional fitness, mixing it up' });
+  assert.equal(confirmOutranksRerecord(gate, true, paraphrase), true, 'the model rewrote its own note — that is not his edit');
+});
+
+test('ASKED FOR and changed → re-propose; never save what they haven’t seen', () => {
+  const gate: CoachGate = {};
+  markProposed(gate, proposalSignature({ a: 'a 15-minute walk' }));
+  markRevisionAsked(gate); // "actually make the walk 10 minutes"
+  const revised = proposalSignature({ a: 'a 10-minute walk' });
+  assert.equal(confirmOutranksRerecord(gate, true, revised), false, 'they are agreeing to something only described to them');
+});
+
+test('ASKED FOR but unchanged → the confirm STILL commits (or we rebuild the dead end)', () => {
+  // The row that makes revisionAsked safe to set generously. A member who questions or pauses at the gate and then
+  // says yes must commit — that is Greg's original bug, and the reason this gate exists at all.
+  const gate: CoachGate = {};
+  const sig = proposalSignature({ a: 'a 15-minute walk' });
+  markProposed(gate, sig);
+  markRevisionAsked(gate);
+  assert.equal(confirmOutranksRerecord(gate, true, sig), true);
+});
+
+test('a non-confirm never commits, whatever the flags say', () => {
+  const gate: CoachGate = {};
+  const sig = proposalSignature({ a: 'x' });
+  markProposed(gate, sig);
+  assert.equal(confirmOutranksRerecord(gate, false, sig), false);
+  assert.equal(confirmOutranksRerecord({}, true, sig), false, 'and nothing commits before anything was proposed');
+});
+
+test('re-proposing clears the revision flag — they are looking at the current artifact again', () => {
+  const gate: CoachGate = {};
+  markProposed(gate, proposalSignature({ a: 'one' }));
+  markRevisionAsked(gate);
+  markProposed(gate, proposalSignature({ a: 'two' }));
+  assert.equal(gate.revisionAsked, false);
 });
