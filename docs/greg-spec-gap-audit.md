@@ -3,7 +3,7 @@
 **Started 2026-08-07** on Jay's instruction: *"if there's anything you haven't read thoroughly in ANY of them
 and applied to the app, we should. It ultimately makes our job easier."*
 
-**Status: 2 of 12 assets VERIFIED (B1, B2). 2 more are UNVERIFIED LEADS (R1, R2). 8 not started.**
+**Status: 4 of 12 VERIFIED BY ME (B1, B2, R1, R3). 1 UNVERIFIED LEAD (R2). 7 not started.**
 
 **READ THE PROVENANCE LINE ON EVERY CLAIM BELOW.** Jay, 2026-08-07, after I proposed scaling this with a fleet
 of agents: *"Using agents is where things have gone wrong in the past, over and over. This is foundational stuff
@@ -100,6 +100,41 @@ still describes Reconnect as *"R1 IDQ · R2 Doors · R3 Drift+Legacy"*.
 So the Legacy Letter is described in one place and built in another, with different seeds. That is a real
 placement conflict, it changes what capture R1 needs, and it should go to Greg rather than be resolved quietly on
 our side.
+
+---
+
+## R3 — VERIFIED BY ME 2026-08-07. No gap against Greg. One real defect against ourselves.
+
+Greg specifies R3 as **one activity, two parts in sequence**: *"the Drift Quiz first, then the Legacy Letter"*,
+with both committed to `prior_module_context` for W2.
+
+**Our build splits that pair, on purpose.** The Drift Quiz is built as a draw-out beat inside the Reconnect arc
+(`RCN-DFT`, §2d Visioning), paired with **The Window** — the two-Tuesdays vision. The Legacy Letter lives in
+Reclaim as the capstone. The code states the decision outright (`lib/agent/onboarding.ts:34`):
+
+> "§2d Visioning is TWO draw-out beats (V3): 'drift' (the Drift Quiz, RCN-DFT) then 'window' (The Window,
+> RCN-WIN — the two-Tuesdays vision) … **(The Legacy Letter is a Reclaim-phase capstone, NOT this beat.)**"
+
+**This is a decision, not a gap**, and a defensible one: CLAUDE.md makes Reconnect a short gateway, so a
+forward-looking capstone letter belongs at the end of the program rather than in the first week. Filed as a
+divergence to confirm with Greg, not a defect to fix.
+
+### The real defect it exposed — in our own copy
+
+`lib/content/summaries.ts` (canon, rendered to members on the workspace "Why this matters" panel and the Program
+page) still describes R3 as:
+
+> "Two moves in one. The Drift Quiz … **Then the Legacy Letter turns you forward** … You keep the letter, and
+> come back to it."
+
+So a member in Reconnect is told they are about to write a Legacy Letter and keep it — and gets The Window
+instead. Meanwhile **The Window is described in no summary at all.** One activity promised and not delivered,
+another delivered and never described.
+
+Same family as the "Spark space" line we retired this morning: copy describing something the build does not do.
+
+**Not fixing unilaterally** — this is canon copy originating with Greg, and the R3 pairing is his design. It goes
+to him with the Legacy Letter placement question, since both have the same root.
 
 ---
 
