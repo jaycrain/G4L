@@ -35,7 +35,7 @@ closing paragraph.
 | --- | --- | --- |
 | B1 | 5 stages: engagement → activity elicitation → eating elicitation → didactic informing → consolidation | `stageOrder: ['why']` — 12 items, one canned close |
 | B2 | 5 stages: engagement → assessment support → evocation → didactic informing → consolidation | `stageOrder: ['skills']` — 24 items, one canned close |
-| R1 *(UNVERIFIED — subagent)* | 7-step per-domain loop + 4-step closure; capture of values / hopes / fears / remembered-self as `prior_module_context` for R2 and R3 | 24 items, one closing turn, no capture |
+| R1 *(VERIFIED — partly real, see below)* | 7-step per-domain loop + 4-step closure; capture of values / hopes / fears / remembered-self as `prior_module_context` for R2 and R3 | 24 items, one closing turn, no capture |
 | R2 *(UNVERIFIED — subagent)* | Per-door 1–3 relevance ratings; temporal reflection (which door came first / biggest impact / still open / what it changes) | Primary-door excavation only, then straight to measurement |
 
 The B1 finding has its own write-up: `docs/b1-closure-findings.md`. It also carries the correction that Greg does
@@ -48,17 +48,58 @@ around it*. We built to V4 and under-read the memos. That is a reading habit, no
 
 ---
 
-## The most promising LEAD so far (unverified): R1 may starve R2 and R3
+## R1 — VERIFIED BY ME 2026-08-07 (re-check of the subagent lead)
 
-R1 is specified to capture the member's own language — their remembered fuller self, the hopes inside it, the
-fears in the gap — and hand it forward as `prior_module_context`. Greg states R3's Legacy Letter is seeded from
-it.
+Jay asked me to re-verify before building anything on it. The lead was **partly real and materially overstated**,
+and checking it surfaced a question the subagent missed entirely. This is the argument for doing it this way.
 
-We capture 24 numbers and nothing else. So the downstream assets have no material to build on, and every later
-"we already know this about you" moment has to be reconstructed or invented.
+### What holds (verified in Greg's text and in our code)
 
-If it holds up, this is probably the first thing to build. **It has not been verified by me yet** — the claim
-comes from a subagent whose other findings included two that were flatly wrong. Check it before believing it.
+His requirements are real and quoted correctly:
+- Per-domain, step 6 of the seven-step loop: *"Captures values, hopes, and fears embedded in the Member's
+  language (free text, tagged)"*
+- *"On exit, all captured ratings, reflections, values, and personal meanings are committed to
+  `prior_module_context` for R2 and R3."*
+- *"Remembered-self language structured for R3's Legacy Letter (the version of the Member they remember is the
+  seed of the letter)"*
+
+And our side:
+- `idq_retake` (migration 0001) stores `responses` (24 Likert) plus four dimension sums. **No free text.**
+- **`prior_module_context` has ZERO references** in the entire codebase.
+- **No "remembered fuller self" capture exists anywhere.** Searched several phrasings; the only hits are a doors
+  keyword list, a W1 prompt, and a fallback label — none of them capture anything.
+
+### What was overstated — and it matters
+
+The subagent concluded *"R2 and R3 have no material to build on"* and called it CRITICAL. **That is false.** It
+looked at `idq_retake`, found no values column, and generalised. The member's own language is captured
+extensively, just not by R1:
+
+- `member_profile.intake_gap` — their gap, in their own first-person words
+- `member_profile.identity_noun` — their chosen identity word
+- the Reclaim List — their entries, verbatim, via the structured builder
+- `member_door` — their doors
+- `arc_session.messages` (0056) — full per-turn Reconnect transcripts
+- `agent_memory` — the folded memory the Companion actually reads
+
+So downstream is **fed, just not from R1 and not in his structure.** "Starving" would have sent us building a
+capture layer we substantially already have by another route.
+
+### The real, narrower finding
+
+**No "remembered fuller self" language is captured anywhere** — and that specific thing is what Greg names as the
+Legacy Letter's seed. That one is genuinely missing, and it is the piece worth building.
+
+### The question the subagent missed — for Greg, not for us to settle
+
+Greg places the **Legacy Letter in R3** (Reconnect), seeded by R1's remembered-self language. **Our build places
+it in Reclaim** — `lib/curriculum/content/reclaim.ts:202`, layer 'Legacy' — seeded by C4's success story
+(`reclaim.ts:51`: *"your success story (seed for the Legacy Letter)"*). Meanwhile `lib/content/summaries.ts:24`
+still describes Reconnect as *"R1 IDQ · R2 Doors · R3 Drift+Legacy"*.
+
+So the Legacy Letter is described in one place and built in another, with different seeds. That is a real
+placement conflict, it changes what capture R1 needs, and it should go to Greg rather than be resolved quietly on
+our side.
 
 ---
 
