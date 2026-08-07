@@ -153,7 +153,8 @@ const refineStage: StageDef = {
         return;
       }
       // Not a confirm — a tweak the model hasn't recorded yet, or a question. Carry the turn and KEEP THE GATE
-      // OPEN. (Dana's live walk: "the duplicate keeps coming back no matter what we agree on.")
+      // OPEN. (Caught by the C1 persona harness, scripts/c1-refine-walk.ts: "the duplicate keeps coming back no
+      // matter what we agree on." A scripted member, not a real one — the harness found it, nobody suffered it.)
       b.reply = (b.modelText || REFINE_HOLD_NUDGE).trim();
       return;
     }

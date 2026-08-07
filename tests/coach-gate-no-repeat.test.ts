@@ -11,7 +11,8 @@
 //
 // Reported three times from three directions before it was understood as one bug:
 //   · Greg, B3 — asked "How will I track it?" and got the entire plan block back.
-//   · Dana, C1 (live walk) — "the duplicate keeps coming back no matter what we agree on."
+//   · C1 — the same loop, found by our OWN persona harness (scripts/c1-refine-walk.ts). "Dana" is a scripted
+//     member, NOT a real one; the harness caught this before a member had to report it.
 //   · Jay, C3 — 25 messages deep with the artifact captured and unchanged throughout.
 
 import { test } from 'node:test';

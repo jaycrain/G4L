@@ -13,7 +13,8 @@
 //
 // Seen three times from three directions before it was understood:
 //   · Greg, B3 (2026-08-06) — asked "How will I track it?" and got the whole plan block back, verbatim.
-//   · Dana, C1 (a live walk) — "the duplicate keeps coming back no matter what we agree on."
+//   · C1 — the same loop, found by our OWN persona harness (scripts/c1-refine-walk.ts). "Dana" is a scripted
+//     member, NOT a real one; never cite her as a member report.
 //   · Jay, C3 (2026-08-06) — 25 messages deep, artifact captured and unchanged the whole way.
 //
 // The fix: remember WHAT was proposed, not just THAT something was. Re-propose only when the artifact has

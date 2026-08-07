@@ -106,7 +106,7 @@ test('THE COUNTERS NOW AGREE: 3 sessions + 1 checkpoint reads as 4 completions, 
 });
 
 test('a checkpoint closed BEFORE this shipped still crosses cleanly (no double-count on the backfill)', async () => {
-  // Greg and Dana already have gates set and no progress row. The first call after deploy must record the row
+  // Greg (a real member) already has gates set and no progress row. The first call after deploy must record the row
   // WITHOUT emitting a second crossing for a gateway they crossed days ago... except we cannot tell that state
   // apart from a genuine first crossing, so it emits. That is deliberate: an event that fires once too often for a
   // pre-existing account is recoverable; a completion that never records is not. Documented, not accidental.
