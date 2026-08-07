@@ -86,7 +86,8 @@ test('an out-of-taxonomy tier is dropped from the snapshot (only valid tiers com
 });
 
 // ── the seam that can strand a real person ────────────────────────────────────────────────────────────────────
-// Greg, Dana and Jay all had live C1 sessions when this shipped. A session persisted at stage:'evidence' now points at
+// Greg had a live C1 session when this shipped, and other members may too. A session persisted at stage:'evidence'
+// now points at
 // a stage the arc no longer defines — arc.stages['evidence'] is undefined, so the kernel would run a turn with no
 // stage definition. Unit-testing the new one-stage arc proves nothing about THEM; this does.
 
