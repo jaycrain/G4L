@@ -1191,6 +1191,41 @@ html:has(.companion-hero), body:has(.companion-hero) { overflow-anchor: none; }
 .witness-row { margin-bottom: 1rem; }
 /* W-25: the active practice week's compact "this week" line on the Momentum panel (relocated off the hero) -- a quiet
    teal-tinted strip, present enough to be inviting, small enough that it no longer owns the surface. */
+/* ---- The week grid (Greg's tracker, 2026-08-07): rows x 7 days, ticked when done ----
+   NO RED AND NO "MISSED" STATE — an untouched day is simply blank. The practice week is a productive default and
+   never a gate (Decision MM/R1), and a grid that scolds is a grid people stop opening. Today's column is OUTLINED
+   rather than filled, so "where am I" reads without a legend. Deliberate divergence from his spreadsheet's red. */
+.wk-grid { margin: 0 0 1rem; padding: 0.85rem 0.9rem 0.6rem; background: var(--white); border: 1px solid #e3e2df; border-radius: 12px; }
+.wk-grid.wk-saving { opacity: .85; }
+.wk-head { display: flex; justify-content: flex-end; margin-bottom: 6px; }
+.wk-day { font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--muted-grey); }
+.wk-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+.wk-table th { font-size: 10.5px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--muted-grey); padding: 0 0 5px; text-align: center; }
+.wk-table th.wk-today { color: var(--teal-text); }
+.wk-table th.wk-lab, .wk-table td.wk-lab { width: 38%; text-align: left; }
+.wk-table th.wk-aim, .wk-table td.wk-aim { width: 13%; text-align: right; }
+.wk-table td { padding: 3px 0; text-align: center; }
+.wk-table td.wk-lab { font-size: 12.5px; line-height: 1.3; color: var(--charcoal, #2A2A2A); padding-right: 8px; }
+.wk-table td.wk-aim { font-size: 12px; font-weight: 700; color: var(--navy); white-space: nowrap; }
+.wk-table td.wk-aim span { font-weight: 400; color: var(--muted-grey); }
+.wk-cell { width: 26px; height: 26px; padding: 0; border: 1px solid #e3e2df; border-radius: 6px; background: var(--white); cursor: pointer; font-family: inherit; font-size: 13px; font-weight: 700; line-height: 1; color: transparent; }
+.wk-cell:hover:not(:disabled) { border-color: var(--olive); }
+/* The FILL is --olive-text, not --olive. A white check on brand olive measures 3.2:1 and fails; on this darker
+   olive it is 4.76:1. Using the palette's existing contrast variant rather than inventing a shade — it is named
+   "-text" because that was its first use, but the VALUE is the sanctioned darker olive and this is what it is for.
+   (The alternative, an indigo check on brand olive, reaches 5.55:1 but a dark tick reads far less like "done".) */
+.wk-cell.on { background: var(--olive-text); border-color: var(--olive-text); color: #fff; }
+.wk-cell.today { border: 2px solid var(--teal); }
+.wk-cell.ahead { background: #fafaf9; border-color: #f1efee; cursor: default; }
+.wk-cell.wk-readonly { cursor: default; }          /* W3/C3 mirror a log with the member's own notes — never editable from here */
+.wk-cell:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+.wk-foot { margin: 9px 0 0; font-size: 11.5px; color: var(--muted-grey); }
+@media (max-width: 480px) {
+  .wk-table th.wk-lab, .wk-table td.wk-lab { width: 32%; }
+  .wk-table td.wk-lab { font-size: 11.5px; }
+  .wk-cell { width: 22px; height: 22px; font-size: 11px; }
+}
+
 .practice-strip { margin: 0 0 0.75rem; padding: 0.6rem 0.8rem; background: rgba(59, 148, 149, 0.15); border-radius: 8px; font-size: 0.92rem; line-height: 1.45; color: var(--navy); font-weight: 600; }
 .see-more-inline { color: var(--teal-text); font-weight: 700; text-decoration: none; white-space: nowrap; }
 .see-more-inline:hover { text-decoration: underline; }

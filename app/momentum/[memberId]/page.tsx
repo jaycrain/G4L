@@ -5,6 +5,8 @@ import { authorizeMember } from '../../authz.ts';
 import { logEvent } from '../../../lib/telemetry/store.ts';
 import { rewireEnabled } from '../../../lib/agent/rewire.ts';
 import { pulseBeats, recentCalls, domainTally, type CallType, type CallDomain } from '../../../lib/momentum/store.ts';
+import { weekGrid } from '../../../lib/practice/grid.ts';
+import WeekGridPanel from '../week-grid.tsx';
 import { practicePanelLine } from '../../../lib/practice/store.ts';
 import { commitmentTexts } from '../../../lib/commitments/store.ts';
 import ResiliencePulse from '../../dashboard/resilience-pulse.tsx';
@@ -52,6 +54,9 @@ export default async function MomentumPage({ params }: { params: Promise<{ membe
   const tally = commitments ? await softRead('momentum.domainTally', memberId, () => domainTally(db, memberId), null) : null;
   // W-25 — the active practice week's "this week" line, shown here as context (Momentum is its home now, not the hero).
   const practiceLine = await practicePanelLine(db, memberId);
+  // Greg's week grid — rows × 7 days, right under the "this week" line it elaborates. weekGrid degrades to null on a
+  // missing 0072 or a read hiccup, so the panel renders normally on a DB that hasn't caught up.
+  const grid = await weekGrid(db, memberId);
   // The member's own log — where every call they make gets saved (Jay: "where does this get placed?").
   const log = await softRead('momentum.recentCalls', memberId, () => recentCalls(db, memberId), []);
   const todayISO = new Date().toISOString().slice(0, 10);
@@ -62,6 +67,7 @@ export default async function MomentumPage({ params }: { params: Promise<{ membe
       <div className="card">
         <p className="card-subtitle">The minute-to-minute decisions you make are what add up to change. Here you can track your good calls, false starts — and even quiet days where nothing much happened — and begin to understand how your patterns impact your progress.</p>
         {practiceLine && <p className="practice-strip">{practiceLine}</p>}
+        {grid && <WeekGridPanel memberId={memberId} grid={grid} />}
         {commitments && (
           <div className="commitment-progress">
             <div className="commitment-progress-h">What you’re holding yourself to</div>

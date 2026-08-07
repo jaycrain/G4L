@@ -170,3 +170,57 @@ test("QUALITY-DAY DATES: a day logged today reads back as today, not yesterday",
   assert.equal(entry!.loggedOn, today, `logged today (${today}) but read back as ${entry!.loggedOn}`);
   assert.match(entry!.loggedOn, /^\d{4}-\d{2}-\d{2}$/, 'and it is a plain ISO date, not a locale string');
 });
+
+// ── writing a cell: what the grid is allowed to touch ─────────────────────────────────────────────────────────
+
+test('THE GRID CANNOT DELETE WHAT THE MEMBER WROTE (W3/C3 are read-only)', async () => {
+  // A W3 cell means "you logged this day", and the momentum_call underneath carries the member's own note. An
+  // un-tick would have to delete that row. Destroying something a member wrote because they mis-tapped a box on a
+  // summary grid is not a trade we make — so those kinds are a mirror, not an input, and the UI asks isTappable
+  // rather than assuming. Same for C3, where a cell is one element inside an entry holding a score and two written
+  // reflections.
+  const { isTappable, toggleMark } = await import('../lib/practice/mark.ts');
+  assert.equal(isTappable('b3_pilot'), true);
+  assert.equal(isTappable('b2_noticing'), true);
+  assert.equal(isTappable('w3_logging'), false);
+  assert.equal(isTappable('c3_quality'), false);
+
+  const { db, memberId } = await seed();
+  await startPracticeWeek(db, memberId, 'w3_logging');
+  const { logCall, recentCalls } = await import('../lib/momentum/store.ts');
+  await logCall(db, memberId, { type: 'good_call', note: 'the note I would lose', source: 'momentum_page' });
+
+  const pw = { kind: 'w3_logging' as const, startedAt: new Date().toISOString(), day: 1 };
+  const res = await toggleMark(db, memberId, pw, 'logged', 0, 'grid');
+  assert.equal(res.ok, false, 'the write is refused, not silently ignored');
+  assert.match(res.error!, /edit it where you wrote it/i, 'and it says why, in the member’s terms');
+  const calls = await recentCalls(db, memberId);
+  assert.equal(calls.length, 1, 'the call survives');
+  assert.equal(calls[0]!.note, 'the note I would lose');
+});
+
+test('a tick is addressed by DAY INDEX, resolved against the week’s own clock', async () => {
+  // Never a date from the browser: a client clock in another timezone would write the mark onto the wrong day.
+  const { dateForDay } = await import('../lib/practice/mark.ts');
+  assert.equal(dateForDay('2026-08-03T09:00:00Z', 0), '2026-08-03');
+  assert.equal(dateForDay('2026-08-03T23:59:00Z', 3), '2026-08-06', 'a late-evening start still counts day 4 correctly');
+  assert.equal(dateForDay(new Date('2026-08-03T09:00:00Z'), 6), '2026-08-09');
+});
+
+test('toggle is a round trip — tick, un-tick, and the row is gone', async () => {
+  const { toggleMark } = await import('../lib/practice/mark.ts');
+  const { db, memberId } = await seed();
+  await startPracticeWeek(db, memberId, 'b3_pilot');
+  await db.query(
+    `insert into practice_commitment (member_id,kind,slot,label,target_days) values ($1,'b3_pilot','activity','walk',5)`,
+    [memberId],
+  );
+  const { activePracticeWeek } = await import('../lib/practice/store.ts');
+  const active = (await activePracticeWeek(db, memberId))!;
+  assert.ok(active, 'the week must be open for a tick to mean anything');
+
+  assert.deepEqual(await toggleMark(db, memberId, active, 'activity', 0, 'grid'), { ok: true, on: true });
+  assert.equal((await weekGrid(db, memberId))!.rows[0]!.done, 1);
+  assert.deepEqual(await toggleMark(db, memberId, active, 'activity', 0, 'companion'), { ok: true, on: false });
+  assert.equal((await weekGrid(db, memberId))!.rows[0]!.done, 0, 'a mis-tap must be undoable');
+});

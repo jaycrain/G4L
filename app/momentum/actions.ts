@@ -5,6 +5,8 @@ import { authorizeMember } from '../authz.ts';
 import type { Db } from '../../lib/db/schema.ts';
 import { rewireEnabled } from '../../lib/agent/rewire.ts';
 import { logCall, isCallType, isCallDomain, type CallType, type CallDomain } from '../../lib/momentum/store.ts';
+import { activePracticeWeek, PRACTICE_WINDOW_DAYS } from '../../lib/practice/store.ts';
+import { toggleMark } from '../../lib/practice/mark.ts';
 
 // Log a Momentum call from the /momentum quick-log (source 'momentum_page') — the SAME primitive the rail's log_call
 // uses (no wrong door, Decision FF). `domain` is OPTIONAL (activity/diet — Decision OO, tagged during the B3 pilot; an
@@ -19,5 +21,26 @@ export async function logCallAction(memberId: string, type: CallType, note?: str
     return { ok: true };
   } catch {
     return { ok: false, error: 'Could not log — please try again.' };
+  }
+}
+
+// Tick (or un-tick) one cell of the week grid. The member owns their own record, so this is a TOGGLE, not an
+// append — a mis-tap has to be undoable without asking anyone.
+//
+// The day is addressed by INDEX INTO THE WINDOW, not by a date from the browser: a client clock that is wrong, or
+// simply in another timezone, would otherwise write the mark onto the wrong day. The server resolves index → date
+// from the week's own started_at, which is the only clock that matters here.
+export async function toggleMarkAction(memberId: string, slot: string, dayIndex: number): Promise<{ ok: boolean; on?: boolean; error?: string }> {
+  if (!(await authorizeMember(memberId))) return { ok: false, error: 'Not authorized.' };
+  if (!Number.isInteger(dayIndex) || dayIndex < 0 || dayIndex >= PRACTICE_WINDOW_DAYS) return { ok: false, error: 'Not a day in this week.' };
+  try {
+    const db = (await getDb()) as unknown as Db;
+    const pw = await activePracticeWeek(db, memberId);
+    if (!pw) return { ok: false, error: 'No practice week is open.' };
+    if (dayIndex > pw.day - 1) return { ok: false, error: "That day hasn't happened yet." };
+    return await toggleMark(db, memberId, pw, slot, dayIndex, 'grid');
+  } catch (e) {
+    console.error(`toggleMarkAction failed member=${memberId} slot=${slot} day=${dayIndex}:`, e);
+    return { ok: false, error: 'Could not save that — please try again.' };
   }
 }
