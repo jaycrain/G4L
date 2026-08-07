@@ -3,7 +3,7 @@
 **Started 2026-08-07** on Jay's instruction: *"if there's anything you haven't read thoroughly in ANY of them
 and applied to the app, we should. It ultimately makes our job easier."*
 
-**Status: 4 of 12 VERIFIED BY ME (B1, B2, R1, R3). 1 UNVERIFIED LEAD (R2). 7 not started.**
+**Status: 5 of 12 VERIFIED BY ME (B1, B2, R1, R3, W1). 1 UNVERIFIED LEAD (R2). 6 not started.**
 
 **READ THE PROVENANCE LINE ON EVERY CLAIM BELOW.** Jay, 2026-08-07, after I proposed scaling this with a fleet
 of agents: *"Using agents is where things have gone wrong in the past, over and over. This is foundational stuff
@@ -135,6 +135,59 @@ Same family as the "Spark space" line we retired this morning: copy describing s
 
 **Not fixing unilaterally** — this is canon copy originating with Greg, and the R3 pairing is his design. It goes
 to him with the Legacy Letter placement question, since both have the same root.
+
+---
+
+## W1 — VERIFIED BY ME 2026-08-07. Largely right. One real gap, one doc contradiction.
+
+The best-matching asset so far, which fits: W1 was built as a draw-out conversation from the start rather than
+an instrument with a close bolted on.
+
+**Domains — correct.** Greg: *"the five domains — body, habits, time, identity, and future"*, presented *"one at
+a time, not all at once."* Our `W1_DOMAINS` is exactly those five in that order, advanced one per turn.
+
+**Closure — 4 of Greg's 5 steps.** His sequence is identify the most active statement → build the affirmation →
+test it → repeat for the others → retain. We do four of them, and the copy maps cleanly:
+- *"take the lie that stung most"* = step 1
+- the member writes their true line = step 2
+- *"Here's another that stood out"* = step 4
+- the `principle` keeper + `W1_CLOSE` = step 5
+
+**THE REAL GAP — step 3, "Test it."** Verbatim:
+
+> *"Does that feel true? If not, let's adjust it until it does. **An affirmation you don't believe will be the
+> first thing your mind throws out when things get hard.**"*
+> Testable as: *"A 'no, that doesn't feel true' reply loops back to rebuild rather than advancing."*
+
+Our affirm stage says *"Kept — that's yours"* and moves to the next line. No credibility check, no loop-back.
+
+His rationale is the point: W1's whole output is the counter-campaign the member reaches for when the old voice
+starts. A line written to satisfy the Companion rather than because it is believed produces a keepsake, not a
+tool. **Small to build** — one confirm beat per line, using the existing coach-gate helpers (and it must use them:
+this is exactly the shape that produced the B3/C1/C3 re-proposal loop we fixed this morning).
+
+### Feed-forward: NOT a gap — satisfied by a better route
+
+Greg specifies W1's outputs commit to `prior_module_context` for W2 and W3. That symbol has zero references in
+our codebase — but the material does reach forward, through the keeper + keeper-recall pattern (Decision MM #2).
+W1's lines are stored as `keeperType: 'principle'`, which keeper-recall labels *"true line — a line they wrote to
+answer a specific lie"*, and serves back when the old voice resurfaces in what the member says.
+
+That is arguably better than a context blob: the tool is returned at the moment it is needed, matched by
+function. **Second time this check has changed a verdict** — the same thing happened with R1. "Does not commit to
+`prior_module_context`" is not the same claim as "does not feed forward", and only the second one matters.
+
+### A contradiction in Greg's own documents — for him, not us
+
+**B1's Companion Memo says W1 has didactic latitude:** *"B1 is one of the assets (with W1) where the Companion has
+appropriate latitude to share brief, measured rationale."*
+
+**W1's own documents say the opposite:** *"W1 has NO didactic latitude — the Companion does not teach the
+through-line or supply doctrine… nothing in the three docs grants W1 didactic latitude."*
+
+Worth flagging that I repeated B1's version to Jay as fact before reading W1's own docs. Reading each asset's own
+trilogy is what caught it. Both are derivative memos, so the precedence rule does not settle which wins — Greg
+does.
 
 ---
 
