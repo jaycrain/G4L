@@ -117,6 +117,51 @@ Roughly a day, and mostly Greg's own words. **Not a rewrite of B1 — a wrapper 
 
 ---
 
+---
+
+## THE CLASS (checked 2026-08-07, after Jay asked whether these are the Companion docs)
+
+They are. **Every one of the twelve assets has a trilogy** — a Science Check, an *AI Companion Guidance Memo*,
+and an *AI Engineering Memo … Companion Behavior*. Two of the three are about how the Companion should behave.
+That is twenty-four behavioural documents, ~70,000 words of source, and 1,065 extracted requirements.
+
+**His guidance is not spread evenly — it is concentrated, and the concentration is the finding.** Counting
+didactic references per asset (a crude grep of our extraction, so directional rather than exact):
+
+| Asset | Didactic spec | What we built |
+| --- | --- | --- |
+| **B1** | **63 refs, 5-stage conversation** | `stageOrder: ['why']` — administered only, no system prompt |
+| **B2** | **52 refs, 5-stage conversation** | `stageOrder: ['skills']` — administered only, no system prompt |
+| C3 | 17 | coach mode ✓ |
+| C2 | 10 | administered — partial gap |
+| B3 | 9 | coach mode ✓ |
+| C1 | 5 | coach mode ✓ |
+| W2 / W1 | 3 / 2 | draw-out stages with system prompts |
+| R1, R2, R3, W3 | 0 | nothing specified, nothing missed |
+
+**The irony is exact: we built conversation where he asked for least of it, and a clipboard where he asked for
+most.** B3, C1 and C3 got coach mode; B1 and B2 — the two heaviest Companion specs in the whole library — are
+bare instruments.
+
+That is not a coincidence, and it explains itself. Greg wrote the most Companion guidance for the ASSESSMENT
+assets precisely because an assessment without conversation around it feels like a clipboard. We built the
+clipboards.
+
+**B2's own completion checklist**, verbatim, shows how far the gap runs:
+> "Five-stage conversation sequence implemented (engagement → assessment support → evocation → didactic
+> informing → consolidation) / One major question per turn enforced during evocation / OARS response generation
+> constraints active / Didactic latitude enabled — four permitted didactic points available, max one per turn,
+> always followed by return to elicitation / Barrier-handling logic wired for the six B2 barrier signals /
+> Profile displayed as a development map, not a score"
+
+Note the last line: **B2 differs from B1** — Greg wants B2's profile *displayed*, as a development map. So the
+"don't show it" rule is B1-specific, not general, and each asset needs reading on its own terms.
+
+**Scope: two assets, possibly three.** Not twelve. B1 and B2 are the real gap; C2 is worth a look. Everything
+else either has its conversational layer or was never specified to have one.
+
+---
+
 ## What needs Jay before building
 
 1. **Confirm the reading**: keep the twelve-item instrument exactly as-is (V4 is source), and add the
