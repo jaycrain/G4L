@@ -154,3 +154,30 @@ test('a logging failure never takes down the surface it observes — but it is L
   assert.equal(errs.length, 1, 'the failure must be reported, not swallowed');
   assert.match(String(errs[0]), /NOT RECORDED/, 'and it must say what was lost');
 });
+
+// ── the seam ──────────────────────────────────────────────────────────────────────────────────────────────────
+
+test('THE READ HALF HAS A CALLER — a log nobody can read is a table, not accountability', async () => {
+  // Jennifer's infinite loop was dead code: propose and resolve both existed, both were unit-tested, and nothing
+  // ever wired them together. Exactly the same trap is available here — recordMemberAccess could happily write
+  // for months while accessesForMember was never called from a page, and every test above would still pass.
+  //
+  // So: grep for real callers. Not elegant, but it asserts the property that unit tests structurally cannot.
+  const { readdirSync, statSync, readFileSync } = await import('node:fs');
+  const { join } = await import('node:path');
+  const walk = (d: string, out: string[] = []): string[] => {
+    for (const n of readdirSync(d)) {
+      if (n === 'node_modules' || n === '.next') continue;
+      const p = join(d, n);
+      if (statSync(p).isDirectory()) walk(p, out);
+      else if (p.endsWith('.ts') || p.endsWith('.tsx')) out.push(p);
+    }
+    return out;
+  };
+  const files = [...walk('app'), ...walk('lib')].filter((f) => !f.endsWith('lib/admin/access-log.ts'));
+  const callers = (fn: string) => files.filter((f) => new RegExp(`\\b${fn}\\s*\\(`).test(readFileSync(f, 'utf8')));
+
+  assert.ok(callers('recordMemberAccess').length >= 3, 'all three open-a-member chokepoints must write to the log');
+  assert.ok(callers('accessesForMember').length >= 1, 'nothing renders "who opened this member" — the read half is dead code');
+  assert.ok(callers('accessesByOperator').length >= 1, 'nothing renders "what did this operator open" — the offboarding view is dead code');
+});

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { addOperatorAction, setOperatorEnabledAction } from './actions.ts';
 
-type Row = { id: string; name: string; email: string; disabledAt: string | null };
+type Row = { id: string; name: string; email: string; disabledAt: string | null; opens: number | null };
 
 export default function OperatorsClient({ operators }: { operators: Row[] }) {
   const router = useRouter();
@@ -49,6 +49,7 @@ export default function OperatorsClient({ operators }: { operators: Row[] }) {
           {live.map((o) => (
             <li key={o.id}>
               <strong>{o.name}</strong> <span className="muted">{o.email}</span>{' '}
+              <span className="muted">{o.opens === null ? '· opens unavailable' : `· opened ${o.opens} member ${o.opens === 1 ? 'record' : 'records'}`}</span>{' '}
               <button type="button" onClick={() => toggle(o.id, false)}>Disable</button>
             </li>
           ))}
@@ -62,7 +63,10 @@ export default function OperatorsClient({ operators }: { operators: Row[] }) {
             <ul className="plain">
               {retired.map((o) => (
                 <li key={o.id}>
-                  <span className="muted">{o.name} · {o.email}</span>{' '}
+                  <span className="muted">
+                    {o.name} · {o.email}
+                    {o.opens === null ? ' · opens unavailable' : ` · opened ${o.opens}`}
+                  </span>{' '}
                   <button type="button" onClick={() => toggle(o.id, true)}>Restore</button>
                 </li>
               ))}

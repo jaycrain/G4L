@@ -19,6 +19,7 @@ import { recordMemberAccess } from '../../../../lib/admin/access-log.ts';
 import DraftReview from '../../draft-review.tsx';
 import PushNudgeButton from '../push-nudge-button.tsx';
 import ConsoleSubpage from '../../console/subpage.tsx';
+import AccessPanel from '../../access-panel.tsx';
 
 export default async function AdminMember({ params }: { params: Promise<{ memberId: string }> }) {
   if (!(await isAdmin())) redirect('/admin/login');
@@ -429,6 +430,8 @@ export default async function AdminMember({ params }: { params: Promise<{ member
           </details>
         ),
       )}
+      {/* Last, not first: this is a governance record, not the reason you came to the page. */}
+      <AccessPanel db={db} memberId={memberId} />
     </ConsoleSubpage>
   );
 }
