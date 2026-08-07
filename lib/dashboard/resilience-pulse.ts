@@ -1,4 +1,5 @@
-// The Resilience Pulse — the dashboard's "daily momentum" register. Pure geometry so the SVG is deterministic +
+// "Track your rhythm" (member-facing name; this module keeps the old filename — see the component). The
+// dashboard's "daily momentum" register. Pure geometry so the SVG is deterministic +
 // testable, and so the EARLY state (one pulsing beat) and the POPULATED state (a rolling window of beats) are the
 // SAME component, just fed different data.
 //

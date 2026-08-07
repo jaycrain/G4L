@@ -120,19 +120,40 @@ add it in an hour. Does he want it stored, surfaced, or both?
 
 ## 3b · Three conflicts between his documents and what we ship
 
-**"Smart Choices" vs "Good Calls" — a naming fork.** His B3 in-app summary says the member will track *"Smart
-Choices, False Starts, obstacles, thoughts, feelings"*. Our product says **Good Calls** — on the Momentum log button,
-in the Companion's vocabulary, and in our B3 copy. "Smart Choice" appears nowhere in the app. One of the two has to
-give, and it matters beyond the app: Cowork quotes this material into marketing and the book, so a fork here
-propagates. (Jay's call as brand owner. "Good Calls" is what members have actually seen.)
+**"Smart Choices" vs "Good Calls" — DECIDED: Good Calls stays, and we'd ask him to change his one sentence.**
+His B3 in-app summary says the member tracks *"Smart Choices, False Starts"*. Everywhere a member actually looks, we
+say **Good Calls** — the Momentum button, the Companion's vocabulary, the dashboard captions, our B3 copy.
+
+Two reasons this is the cheap direction. First, it's fifteen member-facing strings on our side against one sentence
+on his — and ours is what members have already used. Second, **he himself writes "Good Call" in his own Refinements
+doc** ("Good Call: Green"), so "Smart Choices" reads like the older of two terms he's used rather than a considered
+choice.
+
+There's also a voice reason worth him knowing: *good call* praises the judgement, *smart choice* has "smart" in it,
+and its unspoken opposite is "dumb". We tell members the Fade is a hundred reasonable decisions, not a failing — so
+the less evaluative word is the safer one.
 
 **The IDQ retake cadence: his R1 says 90 days, ours says 60.** His R1 Science Check states a ~90-day revisit and
 "quarterly intervals" in two places. Our frozen data contract is 60 days. This is a real disagreement, not a
 paraphrase artifact — and since the IDQ schema and cadence are frozen, it needs his ruling rather than a silent pick
 on our side.
 
-**His R2 summary names the "Spark space" twice.** We un-hardcoded that term as sweep-provisional. If it's staying,
-we should stop treating it as provisional; if it's going, his summary needs the replacement.
+**"Spark space" doesn't exist.** Checked: it appears in exactly ONE member-facing string in our app (R2's "Why this
+matters" — *"in the Spark space, you'll see these doors are a shared pattern"*) and nowhere else. No route, no
+screen, no table. His R2 summary names it twice as somewhere to go and share a door.
+
+So both his copy and ours currently point a member at a destination that isn't there. What it *describes* — where you
+discover the doors are a shared pattern — shipped as **the Community**. Simplest fix is to say Community in both,
+and retire "Spark space" as a name that never launched. Flagging rather than fixing, since it's his copy too.
+
+**And on Quiet Day, he has already told us — twice.** From his Refinements doc: *"I don't see a need to log a 'Quiet
+Day'"*, and *"I wasn't clear on the use of Quiet Days and think it might be better to have them code 'On Track' as an
+average day or average effort."* With a colour scheme: Good Call green, On Track yellow, False Start red.
+
+We agree on the rename and would do it (Quiet Day → On Track reads better and is less of a shrug). **We would not
+take the traffic lights.** Red for a false start makes the log a scoreboard, and the week grid deliberately has no red
+for the same reason — a surface that scolds is one people stop opening, and then we lose the data as well as the
+member. Worth him pushing back if he disagrees, because it's a posture question rather than a colour one.
 
 ## 4 · Two real defects in his documents
 

@@ -12,7 +12,11 @@ import {
   type PulseTone,
 } from '../../lib/dashboard/resilience-pulse.ts';
 
-// The Resilience Pulse dashboard card. ONE component, two states: EARLY (no beats → a flat baseline + one pulsing
+// "Track your rhythm" — the dashboard's momentum card. Renamed from "the Resilience Pulse" (Jay, 2026-08-07:
+// "keeps slipping through the cracks"). Two words of jargon a member has to decode before they know what they're
+// looking at, where four plain ones say it. The FILE and the CSS class keep the old name deliberately — renaming
+// those is churn with regression risk and no member value, the same call as lib/connect/* keeping its name after
+// Connect became the Community. ONE component, two states: EARLY (no beats → a flat baseline + one pulsing
 // "today" beat, "it's already beating") and POPULATED (a rolling window of beats). Today is always the right-edge
 // live point (orange, animated ring). On-brand (G4L palette); the behavioral register only — never a number/score.
 const TEAL = '#3B9495';
@@ -39,7 +43,7 @@ export default function ResiliencePulse({ beats = [], bare = false }: { beats?: 
     <div className={bare ? 'resilience-pulse resilience-pulse-bare' : 'card resilience-pulse'}>
       {!bare && (
         <h3 style={{ marginBottom: '0.25rem' }}>
-          Your momentum <span style={{ color: 'var(--muted, #6b7683)', fontWeight: 400 }}>· the Resilience Pulse</span>
+          Your momentum <span style={{ color: 'var(--muted, #6b7683)', fontWeight: 400 }}>· track your rhythm</span>
         </h3>
       )}
       <svg
@@ -48,8 +52,8 @@ export default function ResiliencePulse({ beats = [], bare = false }: { beats?: 
         role="img"
         aria-label={
           empty
-            ? "The Resilience Pulse: a flat baseline with one live, pulsing point at today. It fills as you log your calls."
-            : "The Resilience Pulse: a rolling two-week rhythm, call by call — an up-beat for a good call, a dip for a false start, flat for a quiet day, ending on today's live point."
+            ? 'Your rhythm: a flat baseline with one live, pulsing point at today. It fills as you log your calls.'
+            : "Your rhythm over two weeks, call by call — an up-beat for a good call, a dip for a false start, flat for a quiet day, ending on today's live point."
         }
       >
         <line x1={g.padX} y1={g.baselineY} x2={g.width - g.padX} y2={g.baselineY} stroke={QUIET} strokeWidth="1" strokeDasharray="2 5" opacity="0.5" />

@@ -10,7 +10,10 @@ import { join } from 'node:path';
 //
 // Scope: lib/ + app/ source (+ this file is excluded). Docs are intentionally allowed to reference
 // the old terms historically (the open-issues / flow write-ups), so they're not scanned.
-const BANNED: { re: RegExp; why: string }[] = [
+// `codeOnly` skips COMMENT lines. Most rules here ban a term outright — a retired concept shouldn't survive even in
+// prose. But a rule that only retires a member-facing NAME has to let the code explain WHY it was retired, or the
+// guard fires on its own rationale (which is exactly what happened when this was added).
+const BANNED: { re: RegExp; why: string; codeOnly?: boolean }[] = [
   { re: /Fade Doors?/i, why: 'use "the Doors" — the "Fade Door(s)" label is retired (member-facing AND internal)' },
   { re: /\bBKQ\b/, why: 'the Book Quiz (RCN-BKQ) is retired — no beat/reflection/id should reference it' },
   // Count-guard (count-AGNOSTIC, not just eight/nine/ten): a hardcoded door count has been wrong twice
@@ -34,6 +37,14 @@ const BANNED: { re: RegExp; why: string }[] = [
   },
   // C1 was retitled "Looking Forward" (Greg, 2026-08-07) — "the term Readiness may not be a good fit anymore."
   { re: /Readiness Assessment/i, why: 'C1 is "Looking Forward" now — "Readiness Assessment" is the retired title' },
+  // "The Resilience Pulse" is retired as a member-facing NAME (Jay, 2026-08-07: "keeps slipping through the
+  // cracks"). It's "track your rhythm" now. The FILE and CSS class keep the old name on purpose — this rule only
+  // guards strings a member could read, so a comment or an import path is fine.
+  {
+    re: /\bResilience Pulse\b/,
+    why: '"the Resilience Pulse" is retired member-facing — say "track your rhythm" (the filename/CSS class may keep it)',
+    codeOnly: true,
+  },
 ];
 
 const ROOTS = ['lib', 'app'];
@@ -57,7 +68,9 @@ test('retired terms (Fade Door / BKQ) and hardcoded door counts never reappear i
     for (const file of walk(root)) {
       const lines = readFileSync(file, 'utf8').split('\n');
       lines.forEach((line, i) => {
-        for (const { re, why } of BANNED) {
+        const isComment = /^\s*(\/\/|\*|\/\*|\{\/\*|--)/.test(line);
+        for (const { re, why, codeOnly } of BANNED) {
+          if (codeOnly && isComment) continue;
           if (re.test(line)) offenders.push(`${file}:${i + 1} — ${re} (${why})\n    ${line.trim().slice(0, 120)}`);
         }
       });

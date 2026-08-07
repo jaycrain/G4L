@@ -467,7 +467,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
         </div>
       </div>
 
-      {/* The Resilience Pulse now lives UNDER the Momentum panel (its visual) — see the priority pair above. */}
+      {/* The rhythm card now lives UNDER the Momentum panel (its visual) — see the priority pair above. */}
 
       {/* Connect — the community surface, slotted right under the metrics strip */}
       <ConnectPanel memberId={memberId} />
