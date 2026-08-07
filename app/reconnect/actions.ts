@@ -1,6 +1,8 @@
 'use server';
 
 import { getDb } from '../../lib/db/index.ts';
+import { detectCrisis } from '../../lib/agent/governance.ts';
+import { escalateCrisis } from '../../lib/agent/crisis-escalation.ts';
 import { authorizeMember } from '../authz.ts';
 import { logEvent } from '../../lib/telemetry/store.ts';
 import { maybeTriggerDraft } from '../../lib/founder/triggers.ts';
@@ -291,6 +293,14 @@ export async function reconnectTurnAction(
 ): Promise<{ ok: boolean; reply?: string; state?: ConvState; expects?: Expectation; error?: string }> {
   if (!reconnectEnabled()) return { ok: false, error: 'Reconnect is not enabled.' };
   if (!(await authorizeMember(memberId))) return { ok: false, error: 'Not authorized.' };
+  // GOVERNANCE — ESCALATE TO A HUMAN. The engine already short-circuits this turn to the 988 protocol
+  // (runArcTurn); that is the member's immediate help and it is unchanged. This is the other half of the rule
+  // the Framework states and our own prohibitions spell out ("Route to 988 and escalate to a human within
+  // 24h") — until 2026-08-07 nothing recorded a crisis anywhere, so no human could have followed up on one.
+  // Checked here with the SAME predicate the engine uses, so the two can never disagree about what counts.
+  if (detectCrisis(message).flagged) {
+    await escalateCrisis((await getDb()) as unknown as Db, memberId, { surface: 'session', message });
+  }
   try {
     // Every turn (INCLUDING entry) is a live model turn — the entry stage RECEIVES the member's answer to the callback
     // in the model's voice (listen-first), then the engine hands into the Doors excavation as a second beat. (Was

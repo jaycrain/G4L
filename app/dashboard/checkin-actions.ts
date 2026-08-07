@@ -53,6 +53,8 @@ import { getConnectSummaryForAgent } from '../../lib/connect/agent.ts';
 import { awayHistory } from '../../lib/outreach/store.ts';
 import { foldAwayEpisodes, awayRecallLine } from '../../lib/outreach/episodes.ts';
 import { authorizeMember } from '../authz.ts';
+import { detectCrisis } from '../../lib/agent/governance.ts';
+import { escalateCrisis } from '../../lib/agent/crisis-escalation.ts';
 import { logEvent } from '../../lib/telemetry/store.ts';
 import type { Db } from '../../lib/db/schema.ts';
 
@@ -365,6 +367,12 @@ export async function sendCheckin(memberId: string, memberMessage: string): Prom
   if (!(await authorizeMember(memberId))) return { reply: 'Not authorized.' };
   try {
     const db = (await getDb()) as unknown as Db;
+    // GOVERNANCE — ESCALATE TO A HUMAN (see lib/agent/crisis-escalation.ts). The reply itself is already
+    // handled downstream by the engine's own detectCrisis short-circuit; this records the event and alerts a
+    // human, which is the half of the rule that did not exist before 2026-08-07. Same predicate as the engine.
+    if (detectCrisis(memberMessage).flagged) {
+      await escalateCrisis(db, memberId, { surface: 'companion', message: memberMessage });
+    }
     const ctx = await buildContext(db, memberId);
     if (!ctx) return { reply: "I can't reach your profile right now — try again in a moment." };
     const history = (await loadConversation(db, memberId)).slice(-40); // bound the agent context (deeper recall)

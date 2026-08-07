@@ -11,10 +11,18 @@ export const AI_DISCLOSURE =
 
 // 988 crisis routing — always on, from v1. (US default; locale routing is a P3 multi-tenant add.)
 export const CRISIS_HOTLINE_US = '988';
+// THE MOST SENSITIVE STRING IN THE PRODUCT. It has to do three things at once, in this order:
+//   1. Put 988 FIRST. That is the actual help, and it must never sit below anything we say about ourselves.
+//   2. Be honest about what this is — the AI does not counsel, and says so.
+//   3. Disclose the escalation (Jay, 2026-08-07). A human is now genuinely told (crisis-escalation.ts), so the
+//      member hears it from us rather than discovering it later. Deliberately plain: no response-time promise
+//      for them to hold in that moment, no interpretation of their state (governance: never label, never
+//      diagnose), and nothing that would read as being reported rather than cared about.
 export const CRISIS_RESPONSE_US =
   "If you're in crisis, please call or text 988 for the Suicide and Crisis Lifeline. " +
   "You can reach a real person there any time. I'm not able to help with this directly, " +
-  'but they can.';
+  'but they can. ' +
+  "I've also let Jay know, so someone here can check in with you.";
 
 // Non-negotiable prohibitions (Framework v2.0). The system prompt declares these; this list
 // is the canonical machine-readable copy for prompt-assembly + change validation.
