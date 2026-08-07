@@ -109,7 +109,7 @@ const meta = (
 export const CURRICULUM: Asset[] = [
   // ── Reconnect ── (Sessions authored from the framework; the IDQ is a measurement; the Checkpoint is the firm gate)
   ...RECONNECT_SESSIONS,
-  meta('RCN-IDQ', 'The IDQ', 'reconnect', 'Recognition', 'measurement', 2, 'The mirror — your starting read across four dimensions. Retakes every 60 days.', { produces: 'your ID Score (baseline measurement)' }),
+  meta('RCN-IDQ', 'The IDQ', 'reconnect', 'Recognition', 'measurement', 2, 'The mirror — your starting read across four dimensions. Comes round again about every 60 days.', { produces: 'your ID Score (baseline measurement)' }),
   IDENTITY_EXCAVATION,
   meta('RCN-CHK', 'The Reconnect Checkpoint', 'reconnect', 'Checkpoint', 'checkpoint', 8, 'The reconnection milestone — have you found yourself? Firm gate; opens Rewire.', { close_type: 'milestone', earns: 'reconnect-milestone', gating: 'reconnect_core_complete' }),
   // ── Rewire ── v2.3 conversational flow when staged (W1→W2→W3→Checkpoint), else the old Atlas Sessions + soft gate.
@@ -139,7 +139,7 @@ export const CURRICULUM: Asset[] = [
   meta('DLY-SLEEP', 'Sleep check-in', 'reconnect', 'Daily', 'pulse', 3, 'A quick nightly check on recovery.'),
   meta('DLY-MILES', 'First 1,000 Miles', 'reconnect', 'Daily', 'tracker', 4, 'The optional Rebuild-track mileage tool.'),
   meta('DLY-GOALS', 'Goal trackers', 'reconnect', 'Daily', 'tracker', 5, 'Your numbers — weight, dollars, miles — logged conversationally.'),
-  meta('DLY-IDQ', 'The IDQ retake', 'reconnect', 'Daily', 'measurement', 6, 'The identity-distance read, retaken every 60 days.'),
+  meta('DLY-IDQ', 'The IDQ retake', 'reconnect', 'Daily', 'measurement', 6, 'The identity-distance read, offered again about every 60 days.'),
 ];
 
 const badge = (id: string, name: string, category: BadgeCategory, icon: string, earn_rule: string, ceremony: boolean, visibility: Badge['visibility'] = 'known'): Badge => ({

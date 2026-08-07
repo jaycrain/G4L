@@ -141,8 +141,25 @@ There's also a voice reason worth him knowing: *good call* praises the judgement
 and its unspoken opposite is "dumb". We tell members the Fade is a hundred reasonable decisions, not a failing — so
 the less evaluative word is the safer one.
 
-**The IDQ retake cadence: his R1 says 90 days, ours says 60.** His R1 Science Check states a ~90-day revisit and
-"quarterly intervals" in two places. Our frozen data contract is 60 days. This is a real disagreement, not a
+**The IDQ retake cadence — RESOLVED 2026-08-07: 60 stays, as a DEFAULT.**
+
+Greg's ruling was to drop the cadence entirely: *"I don't think we need a formalized cadence. I would favor
+letting that be up to the member and dependent on how fast they move into Cycle 2."* Jay's call is to keep 60 as
+the default while honouring the autonomy principle — because a cadence of "whenever" means nothing ever prompts a
+retake, and the ID Score is the longitudinal metric. Member-paced timing is a Cycle 2 idea, once we can actually
+signal to someone that they can move at their own speed.
+
+**The product already worked this way, which is the reassuring part.** `/idq` has no cadence gate — the only
+checks are authentication. Sixty days is a NUDGE threshold ("Your IDQ is ready again") and a dashboard label,
+never a lock. A member who wants to retake on day 30 always could.
+
+So the only thing that needed changing was two strings that read like an imposed schedule ("Retakes every 60
+days"). They now read as a rhythm we offer. The /score explanation was left alone — it already says "about every
+60 days" and gives the reason, which is the right register for this.
+
+**The frozen data contract is unchanged at 60**, so CLAUDE.md stays accurate.
+
+*Original disagreement, for the record:* his R1 Science Check states a ~90-day revisit and
 paraphrase artifact — and since the IDQ schema and cadence are frozen, it needs his ruling rather than a silent pick
 on our side.
 
