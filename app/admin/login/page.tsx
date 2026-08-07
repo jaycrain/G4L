@@ -9,7 +9,7 @@ export default async function AdminLoginPage() {
   return (
     <>
       <h1>Operator console</h1>
-      <p className="muted">Enter the admin password to continue.</p>
+      <p className="muted">Sign in with your own email and password. Leave the email blank to use the shared password.</p>
       <AdminLoginForm />
     </>
   );

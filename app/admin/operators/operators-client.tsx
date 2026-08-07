@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { addOperatorAction, setOperatorEnabledAction } from './actions.ts';
+import PasswordField from '../../password-field.tsx';
 
 type Row = { id: string; name: string; email: string; disabledAt: string | null; opens: number | null };
 
@@ -83,7 +84,7 @@ export default function OperatorsClient({ operators }: { operators: Row[] }) {
           <label htmlFor="op-email">Email</label>
           <input id="op-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
           <label htmlFor="op-password">Password</label>
-          <input id="op-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={12} />
+          <PasswordField id="op-password" value={password} onChange={setPassword} autoComplete="new-password" required minLength={12} />
           <p className="muted">At least 12 characters. This password reads every member&rsquo;s story.</p>
           {msg && <p className={msg.startsWith('Added') ? 'muted' : 'error'}>{msg}</p>}
           <button type="submit" disabled={pending}>{pending ? 'Adding…' : 'Add operator'}</button>

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { adminLoginAction } from './actions.ts';
+import PasswordField from '../../password-field.tsx';
 
 // TWO WAYS IN, one form. Email + password signs you in as a NAMED operator, which is what makes the access log
 // able to say who did something. Leaving the email blank falls back to the shared ADMIN_PASSWORD, logged as
@@ -44,14 +45,7 @@ export default function AdminLoginForm() {
         placeholder="leave blank to use the shared password"
       />
       <label htmlFor="password">Password</label>
-      <input
-        id="password"
-        type="password"
-        required
-        autoComplete="current-password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-      />
+      <PasswordField id="password" value={password} onChange={setPassword} autoComplete="current-password" required />
       {error && <p className="error">{error}</p>}
       <button type="submit" disabled={pending}>
         {pending ? 'Checking…' : 'Enter'}
