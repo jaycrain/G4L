@@ -176,7 +176,9 @@ export async function reclaimTurnAction(
       await persistReclaimArcSession(db, memberId, session, history, message, turn.reply, turn);
       return { ok: true, reply: turn.reply, state: turn.state, expects: turn.expects, earnedBadge: c3Badge };
     }
-    // C1 · Step 1 (evidence) is administered (deterministic); Step 2 (refine) is the live coaching turn.
+    // C1 · Looking Forward is a single coaching stage now (Greg cut the evidence self-check, 8/7). The else branch is
+    // no longer a second live stage — it only catches a session persisted mid-'evidence', which applyReclaimC1Turn
+    // migrates onto 'refine' deterministically. See RETIRED_C1_STAGES.
     const turn = state.stage === 'refine' ? await liveTurnReclaimRefine(state, history, message) : applyReclaimC1Turn(state, history, message);
     const db = (await getDb()) as unknown as Db;
 

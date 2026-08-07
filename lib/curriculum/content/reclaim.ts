@@ -241,8 +241,11 @@ export const RECLAIM_SESSIONS: Asset[] = [
 // after the Rebuild ceremony; C2→C3→C4 follow in order. Mirrors REBUILD_V24. C4 is the CAPSTONE (closes Cycle 1).
 export const RECLAIM_V25: Asset[] = [
   {
-    id: 'RCL-C1', title: 'Readiness Assessment', phase: 'reclaim', layer: 'Readiness', kind: 'session', order: 1,
-    summary: 'See the evidence that you’ve changed — then revisit your Reclaim List with clearer eyes.',
+    // Retitled "Looking Forward" (Greg, 2026-08-07): "I also think the term Readiness may not be a good fit anymore. I
+    // proposed a new title of 'Looking Forward' to somewhat reflect the process of reclaiming." The LAYER stays
+    // Readiness — his V4 renames the asset only. The old summary led with the evidence self-check, which he cut.
+    id: 'RCL-C1', title: 'Looking Forward', phase: 'reclaim', layer: 'Readiness', kind: 'session', order: 1,
+    summary: 'Revisit your Reclaim List with clearer eyes, now that you know yourself better.',
     close_type: 'reflect', produces: "the member's refined Reclaim List (re-tiered, member-confirmed)", route: '/reclaim/{memberId}/c1', gating: 'rebuild_checkpoint_passed',
   },
   {

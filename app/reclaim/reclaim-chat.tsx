@@ -21,7 +21,7 @@ const agentBubbles = (text: string): ConvMessage[] =>
 const RECLAIM_HAND_HOME = "Head back whenever you’re ready — I’m right here if you want to keep going.";
 const RECLAIM_C3_HAND_HOME = "Your Quality Days are set. This week you live them — I’ll be here as you go.";
 
-// v2.5 Reclaim chat — C1 (Readiness Assessment). Mirrors the Rebuild chat; the C4 ceremony overlay is added in a
+// v2.5 Reclaim chat — C1 (Looking Forward). Mirrors the Rebuild chat; the C4 ceremony overlay is added in a
 // later slice. State is held client-side for the walk.
 export default function ReclaimChat({ memberId, session = 'c1' }: { memberId: string; session?: ReclaimSession }) {
   const router = useRouter();

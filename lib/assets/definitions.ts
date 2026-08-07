@@ -15,7 +15,7 @@ export const ASSET_NAMES: Record<string, string> = {
   'B-2': 'Appreciating Your Strengths and Weaknesses',
   'B-3': 'First 1,000 Miles',
   'B-5': 'Fuel Plan',
-  'C-1': 'Reclaim Readiness Assessment',
+  'C-1': 'Looking Forward',
   'C-3': 'Adventure Planning Worksheet',
   'C-5': 'Your Success Story',
 };

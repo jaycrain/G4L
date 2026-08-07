@@ -3,7 +3,7 @@ import { reclaimEnabled } from '../../../../lib/agent/reclaim.ts';
 import ReclaimChat from '../../reclaim-chat.tsx';
 import { authorizeMember } from '../../../authz.ts';
 
-// v2.5 Reclaim — C1 · Readiness Assessment (Step 1: the evidence self-check). Flag-gated (RECLAIM); the route doesn't
+// v2.5 Reclaim — C1 · Looking Forward (the Reclaim List refinement). Flag-gated (RECLAIM); the route doesn't
 // exist in prod until the v2.5 flip. An administered, FORMATIVE evidence read → the reflective "are you in Reclaim"
 // mirror. (Step 2, the Reclaim List refinement, lands in a follow-up slice.)
 export default async function Page({ params }: { params: Promise<{ memberId: string }> }) {

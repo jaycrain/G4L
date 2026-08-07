@@ -115,3 +115,8 @@ export function sessionSummary(key: SessionKey): Summary | null {
 export function phaseSummary(phase: PhaseKey): Summary {
   return PHASE_SUMMARIES[phase];
 }
+
+/** The asset a session maps to, for the tiers that hang off the same key (see content/explore.ts). */
+export function sessionAsset(key: SessionKey): AssetId | undefined {
+  return SESSION_ASSET[key];
+}

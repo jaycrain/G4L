@@ -1,15 +1,14 @@
 // Reclaim (v2.5, Phase 4 — Challenge / "the bigger world"). Config #5 on the shared arc kernel. Spec of record:
 // G4L_Reclaim_Build_Approach_v0.2 + Greg's RECLAIM Gated Assets V4. The Cycle-1 capstone — closes the loop, hands to
 // Community. Almost entirely REUSE (coaching mode, administered factory, Momentum, the checkpoint+ceremony pattern).
-// SLICE 1 = C1 · Readiness Assessment: Step 1 (evidence) → Step 2 (refine). Step 1 = the 15-item evidence self-check,
-// administered + FORMATIVE (RC-2: not scored, not persisted). Step 2 = the Reclaim List refinement, COACH mode: the
+// SLICE 1 = C1 · Looking Forward — one stage: the Reclaim List refinement, COACH mode. (Was two; Greg cut the opening
+// evidence self-check on 2026-08-07 and held it for Cycle 2 — see the C1 section below.) COACH mode: the
 // model coaches the re-read/reflect/refine/re-prioritize, the engine proposes the refined list, and only the member's
 // confirm commits it back to the live list (propose→confirm→commit, Decision L — never silent mutation). Flag-gated by
 // RECLAIM (Decision JJ) — gated; flipped to Production 2026-07-10 (v2.5, all four Rs live).
 
 import { runArcTurn, administeredStage, scaleExpects, type ArcConfig, type StageDef } from './onboarding-staged.ts';
 import { BEAT_SEP, type Collected, type ConvMessage, type ConvState, type ModelTurn, type Turn } from './onboarding.ts';
-import { EVIDENCE_ITEMS, EVIDENCE_ITEM_COUNT, EVIDENCE_PART_STARTS, EVIDENCE_PART_LABEL } from '../reclaim/evidence-instrument.ts';
 import { TIER_LABEL, REFINE_TIERS, isTier, type Tier } from '../reclaim/refinement-store.ts';
 import { AUDIT_ITEMS, AUDIT_ITEM_COUNT, AUDIT_SCALE_MAX, AUDIT_DOMAIN_STARTS, AUDIT_DOMAIN_LABEL, AUDIT_DOMAIN_INTRO } from '../reclaim/bigger-world-instrument.ts';
 import { scoreAudit } from '../reclaim/bigger-world-scoring.ts';
@@ -21,45 +20,24 @@ export function reclaimEnabled(): boolean {
   return process.env.RECLAIM?.trim() === 'staged';
 }
 
-// ══ C1 · Readiness Assessment · Step 1 — Reflecting on Progress ═══════════════════════════════════════════════
+// ══ C1 · Looking Forward — revisiting the Reclaim List (COACH mode) ═══════════════════════════════════════════
+//
+// STEP 1 IS GONE (Greg, 2026-08-07). C1 used to open with a 15-item evidence self-check (Physical / Relational /
+// Identity) before the refinement. He cut it and held it for Cycle 2: "the questions at the beginning of C1 may be
+// hard for people to comment on in Cycle 1 (since it is intentionally short) … I had tried to retain the survey items
+// and added on to it with a Step 2 component but I don't think they fit together." In the V4 doc C1's Type changes
+// Assessment → Reflection and the asset is retitled "Looking Forward". Cheap to remove because RC-2 made those
+// responses FORMATIVE — never scored, never persisted, nothing read them. His items are preserved verbatim in
+// lib/reclaim/evidence-instrument.ts, unwired, waiting for Cycle 2.
+//
+// Deleted with it: "If you rated yourself a 4 or 5 on most of these … you're ready for the Reclaim phase." That was a
+// verdict handed to the member about themselves, which we should not have been shipping regardless.
+//
+// The one line worth keeping from the old opener is Greg's own, and it now opens the asset.
 const C1_OPEN =
-  "You are the only one who can declare that you are ready for Reclaim. It's something you recognize in yourself. Here " +
-  "we'll take a look back at how the work you've done through Reconnect, Rewire, and Rebuild is showing up for you. " +
-  "It's how you feel but, even more importantly, it's in how you're living. Rate each statement from 1 (strongly " +
-  "disagree) to 5 (strongly agree). We'll do it in three parts: your body, your relationships, and who you are.";
-// The close (Greg's "Guide to Member after Step 1") — reflective, all-or-nothing explicitly rejected.
-const C1_STEP1_CLOSE =
-  "If you rated yourself a 4 or 5 on most of these, great work, you're ready for the Reclaim phase. If your ratings " +
-  "were mixed, that's honest too: Reclaim isn't all-or-nothing. You can be in Reclaim in your body and still in " +
-  "Rebuild in your relationships. The G4L program is a cycle, not a linear checklist.";
+  "Reclaim isn't something anyone else declares for you. It's something you recognize in yourself.";
 
-function evidenceDeliver(index: number): string {
-  const item = EVIDENCE_ITEMS[index]!;
-  const partStart = EVIDENCE_PART_STARTS[index];
-  if (partStart) return `${EVIDENCE_PART_LABEL[partStart]}\n\n${item.stem}`;
-  return item.stem;
-}
-function evidenceOpener(): string {
-  return `${C1_OPEN}\n\n${evidenceDeliver(0)}`;
-}
-
-const evidenceStage: StageDef = administeredStage({
-  id: 'evidence',
-  itemCount: EVIDENCE_ITEM_COUNT, // 15 (scaleMax defaults to 5)
-  minLabel: 'not at all', // W-24: chip anchors — the frozen Grinta 1–5 poles
-  maxLabel: 'completely',
-  opener: () => evidenceOpener(),
-  deliverItem: (n) => evidenceDeliver(n),
-  reprompt: (n) => `Just a number, 1 to 5 — how true does that feel?\n\n${evidenceDeliver(n)}`,
-  onComplete: (b) => {
-    // FORMATIVE (RC-2): the 15 responses are NOT scored or persisted — nothing reads b.administeredResponses. Close on
-    // the reflective mirror, then hand into Step 2 (the refinement), presenting the member's current Reclaim List.
-    b.stage = 'refine';
-    b.reply = `${C1_STEP1_CLOSE}${BEAT_SEP}${refineOpener(b.collected)}`;
-  },
-});
-
-// ══ C1 · Step 2 — Revisiting the Reclaim List (COACH mode) ════════════════════════════════════════════════════
+// ══ Revisiting the Reclaim List ═══════════════════════════════════════════════════════════════════════════════
 // The transition (Greg's member-facing copy) + the member's CURRENT list, presented for the re-read. The list is
 // seeded into collected.reclaimList by the opening action, so the arc stays pure.
 function currentList(c: Collected): string[] {
@@ -69,6 +47,7 @@ function refineOpener(c: Collected): string {
   const list = currentList(c);
   const shown = list.length ? list.map((t) => `• ${t}`).join('\n') : '(your list is empty — we can build it here)';
   return (
+    `${C1_OPEN}${BEAT_SEP}` +
     "At the start, you built this Reclaim List from who you were then. But, you've done a lot of work since then. " +
     "You've reconnected with who you are, seen what pulls you off course, and learned how your habits work. Let's " +
     `revisit it now to make sure it still fits the person you're becoming.${BEAT_SEP}Here's your list as it stands:\n\n${shown}${BEAT_SEP}Before changing anything, ` +
@@ -164,29 +143,35 @@ const refineStage: StageDef = {
   },
 };
 
+// One stage now. The arc kernel still owns the turn (crisis routing, no-repeat, persistence) — see runArcTurn.
 export const RECLAIM_C1_ARC: ArcConfig = {
   id: 'reclaim-c1',
-  stageOrder: ['evidence', 'refine'],
-  stages: { evidence: evidenceStage, refine: refineStage },
+  stageOrder: ['refine'],
+  stages: { refine: refineStage },
   onComplete: () => REFINE_COMMITTED_1,
 };
 
+// A session persisted mid-'evidence' when Step 1 was removed. `arc.stages['evidence']` is now undefined, so the kernel
+// would run the turn with no stage definition — a stranded member on a page that answers nothing. Anyone part-way
+// through the retired instrument is moved to the activity that replaced it and re-opened there, with their list shown.
+// Cheap and lossless: RC-2 never persisted those responses, so there is nothing to carry across.
+const RETIRED_C1_STAGES = new Set(['evidence']);
+
 export function applyReclaimC1Turn(state: ConvState, history: ConvMessage[], memberMessage: string, model: ModelTurn = { text: '' }): Turn {
-  // Evidence turns pass the default empty model (administered ignores it); refine turns pass the parsed model turn.
+  if (RETIRED_C1_STAGES.has(state.stage)) {
+    const collected = state.collected ?? {};
+    return { reply: refineOpener(collected), state: { ...state, stage: 'refine', collected }, complete: false };
+  }
   return runArcTurn(RECLAIM_C1_ARC, state, history, memberMessage, model);
 }
 
-// The opening seeds the member's CURRENT Reclaim List into collected (loaded by the action) so Step 2 can present it.
+// The opening seeds the member's CURRENT Reclaim List into collected (loaded by the action) so the coach can present it.
 export function reclaimC1Opening(listTexts: string[] = []): Turn {
-  return { reply: evidenceOpener(), state: { stage: 'evidence', collected: { reclaimList: listTexts.filter(Boolean) } }, complete: false, expects: scaleExpects(RECLAIM_C1_ARC, 'evidence', false) };
+  const collected: Collected = { reclaimList: listTexts.filter(Boolean) };
+  return { reply: refineOpener(collected), state: { stage: 'refine', collected }, complete: false };
 }
 
-// Step 1 (evidence) is administered → deterministic, no model call.
-export function liveTurnReclaimC1(state: ConvState, history: ConvMessage[], memberMessage: string): Turn {
-  return applyReclaimC1Turn(state, history, memberMessage);
-}
-
-// ── Step 2 (refine) live surface — the model COACHES the refinement and records the result via record_refinement ──
+// ── The live surface — the model COACHES the refinement and records the result via record_refinement ──
 const REFINE_SYSTEM =
   "You are the G4L Companion running C1 Step 2 — revisiting the member's Reclaim List in Reclaim (Phase 4). The list " +
   "was built at the very start; now, after Reconnect/Rewire/Rebuild, you help them re-read it THROUGH A CHANGED SELF " +

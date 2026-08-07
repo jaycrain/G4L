@@ -60,7 +60,7 @@ const PHASES: PhaseRow[] = [
     key: 'reclaim', num: 4, name: 'Reclaim',
     blurb: 'Grow into a bigger life as who you want to be.',
     sessions: [
-      'Readiness Assessment — Revisit your Reclaim List now that you know yourself better.',
+      'Looking Forward — Revisit your Reclaim List now that you know yourself better.',
       'Bigger World Audit — Check in on how your world has expanded from where you started',
       'Quality Days — Track the days that feel like the life you’re building.',
       'Transition — your Success Story',

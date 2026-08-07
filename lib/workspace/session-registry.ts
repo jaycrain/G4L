@@ -69,7 +69,7 @@ export const SESSION_REGISTRY: SessionDef[] = [
   { id: 'b4', phase: 'rebuild', label: 'Rebuild Checkpoint', kind: 'checkpoint', segments: ['B', 'E'] },
 
   // ── Reclaim — 3 sessions + checkpoint ──
-  { id: 'c1', phase: 'reclaim', label: 'Readiness Assessment', kind: 'session', segments: ['B', 'F'], note: 'evidence self-check then coach Reclaim-List refine' },
+  { id: 'c1', phase: 'reclaim', label: 'Looking Forward', kind: 'session', segments: ['F'], note: 'coach Reclaim-List refine (the evidence self-check was cut 8/7, held for Cycle 2)' },
   { id: 'c2', phase: 'reclaim', label: 'Bigger World Audit', kind: 'session', segments: ['B'] },
   { id: 'c3', phase: 'reclaim', label: 'Quality Days', kind: 'session', segments: ['F', 'C'], note: 'coach QD-profile then c3_quality practice week' },
   { id: 'c4', phase: 'reclaim', label: 'Reclaim Checkpoint', kind: 'checkpoint', segments: ['B', 'E'], note: 'the ceremony half is "The Transition" (Success Story → Community)' },

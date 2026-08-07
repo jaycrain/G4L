@@ -32,6 +32,8 @@ const BANNED: { re: RegExp; why: string }[] = [
     re: /\bRe-(?:connect|wire|build|claim)\b/i,
     why: 'no hyphen either — Reconnect, Rewire, Rebuild, Reclaim',
   },
+  // C1 was retitled "Looking Forward" (Greg, 2026-08-07) — "the term Readiness may not be a good fit anymore."
+  { re: /Readiness Assessment/i, why: 'C1 is "Looking Forward" now — "Readiness Assessment" is the retired title' },
 ];
 
 const ROOTS = ['lib', 'app'];
@@ -119,4 +121,40 @@ test('soft watch: idle "honest"/"real" in member copy (flags, never fails)', (t)
     t.diagnostic(`Soft voice watch — ${flags.length} candidate(s) to eyeball (NOT a failure):\n${flags.join('\n')}`);
   }
   assert.ok(true, 'soft lint never fails — it only surfaces candidates');
+});
+
+// ── "Readiness" means FIVE different things; only one of them was renamed ────────────────────────────────────
+//
+// C1 became "Looking Forward" (Greg, 2026-08-07). The banned-term guard above stops the retired title coming back.
+// This is the other half: the four senses that legitimately survive. A find/replace on "Readiness" would silently
+// break Greg's own scoring formula and the Loop gate, and neither failure would look like a naming bug — the audit
+// would just start ranking domains wrong. Pin them.
+test('the surviving senses of "readiness" are intact (a find/replace would break Greg\'s scoring)', async () => {
+  // 1 · C2's Readiness FACET — a rating dimension AND a term in RC-1's PriorityScore. Greg's science vocabulary.
+  const { AUDIT_FACETS } = await import('../lib/reclaim/bigger-world-instrument.ts');
+  assert.ok(AUDIT_FACETS.includes('readiness'), 'the C2 audit lost its readiness facet');
+  const { scoreAudit } = await import('../lib/reclaim/bigger-world-scoring.ts');
+  const { AUDIT_ITEMS } = await import('../lib/reclaim/bigger-world-instrument.ts');
+  // Two domains identical except readiness → the higher-readiness one must win the Momentum Lever.
+  const responses = AUDIT_ITEMS.map((it) =>
+    it.facet === 'current' ? 3 : it.facet === 'desired' ? 8 : it.facet === 'importance' ? 5
+      : it.facet === 'readiness' ? (it.domain === 'social' ? 9 : 2) : 5);
+  assert.equal(scoreAudit(responses).momentumLever, 'social', 'the Momentum Lever no longer follows readiness');
+
+  // 2 · The Loop gate — "is Reclaim open yet". Internal predicate, nothing member-facing.
+  const gate = await import('../lib/reclaim/readiness.ts');
+  assert.equal(typeof gate.reclaimReadiness, 'function', 'the Loop gate predicate went missing');
+
+  // 3 · The Beats engine's per-beat `readiness` predicate arrays (config, invisible to members).
+  const { allBeats } = await import('../lib/beats/registry.ts');
+  assert.ok(allBeats().some((b) => Array.isArray(b.readiness)), 'beats lost their readiness predicates');
+
+  // 4 · RCL-RDY "Reclaim Readiness" — a DIFFERENT asset (layer Emergence, its own steps + daily reflections), not
+  //     C1. It kept its name on purpose; renaming C1 must not have swept it up.
+  const { RECLAIM_SESSIONS } = await import('../lib/curriculum/content/reclaim.ts');
+  assert.ok(RECLAIM_SESSIONS.some((a) => a.id === 'RCL-RDY' && a.title === 'Reclaim Readiness'), 'RCL-RDY was renamed by mistake — it is not C1');
+
+  // …and C1 itself did change.
+  const { RECLAIM_V25 } = await import('../lib/curriculum/content/reclaim.ts');
+  assert.equal(RECLAIM_V25.find((a) => a.id === 'RCL-C1')?.title, 'Looking Forward');
 });

@@ -11,6 +11,7 @@ import { isSessionKey } from '../../../../lib/workspace/session-key.ts';
 import { sessionById, sessionsForPhase, PHASES, type Phase } from '../../../../lib/workspace/session-registry.ts';
 import { phaseEngineEnabled } from '../../../../lib/workspace/phase-enabled.ts';
 import { reclaimReadiness } from '../../../../lib/reclaim/readiness.ts';
+import RedesignTopbar from '../../../dashboard/redesign-topbar.tsx';
 import WorkspaceSession from '../../workspace-session.tsx';
 
 // Give the arc's live turns room to finish (the Member Agent call is the long pole).
@@ -83,6 +84,10 @@ export default async function WorkspacePage({
       artifact={artifact}
       wayfinding={{ phaseLabel, phaseOrdinal, positionLabel, progressPct, rings, ringCenter: phaseLabel, ringSub }}
       review={review}
+      // The SHARED app topbar (brand · Program · Field Guide · Playbook · account). RedesignTopbar is an async server
+      // component and WorkspaceSession is a client component, so it's rendered here and passed down as a node — the
+      // workspace previously hand-rolled a brand-only bar, which is why it was the one member surface without the nav.
+      topbar={<RedesignTopbar memberId={memberId} />}
     />
   );
 }

@@ -1687,6 +1687,61 @@ body.redesign-on .confidential-footer { display: none; } /* full-bleed app — n
   .ws-way-ss { font-size: 13px; margin-top: 1px; }
   .ws-way-bar { margin-top: 6px; }
 }
+/* ---- Session header decrowding (Jay, 2026-08-07: "the top of the page is already crowded and a bit of a UX
+   shitshow"). Was 7 stacked rows and 3 routes out; now 4 rows and 2. The shared RedesignTopbar replaced a
+   hand-rolled brand-only bar (which is why Program/Field Guide/Playbook were missing here), "The Program →" went
+   with it as a duplicate, and phase + position moved onto one line. "← Dashboard" STAYS, above the wayfinding —
+   SubpageShell puts it on all 11 subpages, so removing it here would have made the workspace the odd one out. */
+.ws-col-head .ws-back { margin: 2px 0 4px; }
+/* Phase and position on one line; the position drops to its own line only when there isn't room. */
+.ws-way-ph { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 10px; }
+.ws-col-head .ws-way-ss { margin-top: 0; font-weight: 400; }
+/* A hairline, not a band — it reports progress, it isn't the headline. */
+.ws-col-head .ws-way-bar { height: 3px; margin-top: 7px; }
+
+/* ---- The two framing tiers, side by side on one row (depth costs no vertical space) ---- */
+.ws-why-row { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+/* The big filled teal pill became a text control — it was the loudest thing on a page whose point is the
+   conversation. Same target size, far less weight. */
+.ws-col-head .ws-why-toggle {
+  padding: 4px 0; background: none; border: none; color: var(--teal-text);
+  font-size: 13px; font-weight: 700; letter-spacing: .01em; text-transform: none;
+}
+.ws-col-head .ws-why-toggle:hover, .ws-col-head .ws-why.open .ws-why-toggle { background: none; color: #2f7a7b; text-decoration: underline; }
+.ws-col-head .ws-why-caret { font-size: 11px; }
+/* Distinct glyph (↗ vs ▸) because the two behave differently: one expands in place, one opens a panel. */
+.ws-explore-open {
+  padding: 4px 0; margin: 0; background: none; border: none; cursor: pointer; font-family: inherit;
+  font-size: 13px; font-weight: 700; color: var(--orange-text); display: inline-flex; align-items: center; gap: 6px;
+}
+.ws-explore-open:hover { text-decoration: underline; }
+
+/* ---- "Explore the Science" — an overlay, so opening it never changes the header's height ---- */
+.ws-explore-scrim {
+  position: fixed; inset: 0; z-index: 70; display: flex; align-items: center; justify-content: center;
+  padding: 24px; background: rgba(55, 79, 99, .55); animation: ws-endcard-in .2s ease;
+}
+.ws-explore {
+  width: min(640px, 100%); max-height: min(78vh, 720px); display: flex; flex-direction: column;
+  background: var(--white); border-radius: 14px; box-shadow: 0 18px 48px rgba(0, 0, 0, .28); overflow: hidden;
+}
+.ws-explore-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 20px 24px 14px; border-bottom: 1px solid #ecebe8; }
+.ws-explore-title { margin: 0; font-size: 19px; font-weight: 800; color: var(--navy); }
+.ws-explore-lede { margin: 3px 0 0; font-size: 13.5px; color: var(--muted-grey); }
+.ws-explore-x { flex: 0 0 auto; padding: 2px 8px; background: none; border: none; cursor: pointer; font-size: 18px; line-height: 1; color: var(--muted-grey); font-family: inherit; }
+.ws-explore-x:hover { color: var(--navy); }
+.ws-explore-x:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; border-radius: 6px; }
+/* Scrolls INSIDE the panel — the member is reading, so scrolling must not dismiss anything. */
+.ws-explore-body { overflow-y: auto; padding: 18px 24px 22px; -webkit-overflow-scrolling: touch; }
+.ws-explore-pt + .ws-explore-pt { margin-top: 16px; }
+.ws-explore-pt-head { margin: 0 0 3px; font-size: 14.5px; font-weight: 700; color: var(--navy); }
+.ws-explore-pt-body { margin: 0; font-size: 14px; line-height: 1.6; color: #4a5560; }
+/* Below 1000px it becomes a full-height sheet rather than a floating card. */
+@media (max-width: 1000px) {
+  .ws-explore-scrim { padding: 0; align-items: stretch; }
+  .ws-explore { width: 100%; max-height: 100%; border-radius: 0; }
+}
+
 /* Kept chips — the running "here's what you've accomplished" row, grows as the conversation commits answers. */
 /* One horizontal-scroll row (no wrap) so the running "kept" stays one line however many chips there are. */
 .ws-kept { display: flex; flex-wrap: nowrap; align-items: center; gap: 8px; margin: 6px 0 3px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }

@@ -1,14 +1,16 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, type ReactNode } from 'react';
 import Link from 'next/link';
 import { readArtifactAction } from './actions.ts';
 import { ARTIFACT_REFRESH_EVENT, SESSION_COMPLETE_EVENT } from '../components/artifact-refresh.ts';
 import { chatDispatch, type SessionKey } from '../../lib/workspace/session-key.ts';
-import { sessionSummary } from '../../lib/content/summaries.ts';
+import { sessionSummary, sessionAsset } from '../../lib/content/summaries.ts';
+import { exploreFor } from '../../lib/content/explore.ts';
 import type { Artifact } from '../../lib/workspace/artifact.ts';
 import type { RingPhaseState } from '../../lib/workspace/ring-state.ts';
 import RedesignChrome from '../dashboard/redesign-chrome.tsx';
+import ExplorePanel from './explore-panel.tsx';
 import ReconnectChat from '../reconnect/reconnect-chat.tsx';
 import RewireChat from '../rewire/rewire-chat.tsx';
 import RebuildChat from '../rebuild/rebuild-chat.tsx';
@@ -45,15 +47,21 @@ export default function WorkspaceSession({
   artifact: initial,
   wayfinding,
   review = false,
+  topbar,
 }: {
   memberId: string;
   sessionKey: SessionKey;
   artifact: Artifact;
   wayfinding: Wayfinding;
   review?: boolean; // read-only revisit of a COMPLETED session — the summary card, no live conversation
+  topbar?: ReactNode; // the shared RedesignTopbar, rendered by the server page (async server component)
 }) {
   const [artifact, setArtifact] = useState<Artifact>(initial);
   const summary = sessionSummary(sessionKey);
+  // Tier 3 — the evidence base, behind its own tap. Only some assets have one; the link doesn't render without it.
+  const asset = sessionAsset(sessionKey);
+  const explore = asset ? exploreFor(asset) : undefined;
+  const [exploreOpen, setExploreOpen] = useState(false);
   // "Why this matters" starts COLLAPSED at every width now (Jay 7/28): the conversation is the point, so it gets full
   // height immediately; the pinned "Why this matters ▶" pill (the header never scrolls) invites a tap to read the
   // framing, which the Companion's opening beat echoes anyway. (Was open-on-landing, which squeezed the chat — worst on
@@ -117,14 +125,9 @@ export default function WorkspaceSession({
   return (
     <>
       <RedesignChrome />
-      <div className="redesign-topbar">
-        <Link href="/" className="rt-brand" aria-label="Go to your G4L home">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img className="rt-logo-mark" src="/brand/g4l-rings.svg" alt="" aria-hidden="true" />
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img className="rt-wordmark" src="/brand/g4l-wordmark.svg" alt="Grinta for Life" />
-        </Link>
-      </div>
+      {/* The SHARED app topbar. This surface used to hand-roll a brand-only bar, making the workspace the one member
+          page without Program / Field Guide / Playbook — the same gap SubpageShell fixed for the subpages. */}
+      {topbar}
 
       <div className={`ws-col${review ? ' ws-review' : ''}`}>
         <header className="ws-col-head">
@@ -140,27 +143,41 @@ export default function WorkspaceSession({
             </>
           ) : (
             <>
-              {/* Slim wayfinding — left-aligned phase + progress, full route on the right. No ring (redundant with the
-                  topbar bullseye, and its label can't render legibly small anyway). Back nav sits BELOW it. */}
+              {/* Back nav FIRST, matching SubpageShell — every other member page puts "← Dashboard" directly under the
+                  topbar, and the workspace was the outlier. (Jay, 8/7: "it's on EVERY sub page.") */}
+              <Link href={`/dashboard/${memberId}`} className="ws-back">← Dashboard</Link>
+              {/* Wayfinding on ONE line — phase and position were stacked, and "The Program →" sat alongside them as a
+                  third route out. It's dropped: the shared topbar carries Program, so it was a duplicate of a link
+                  now two rows above it. */}
               <div className="ws-col-way">
                 <div className="ws-way-pos">
-                  <div className="ws-way-ph">Phase {wayfinding.phaseOrdinal} · {wayfinding.phaseLabel}</div>
-                  <div className="ws-way-ss">{wayfinding.positionLabel}</div>
+                  <div className="ws-way-ph">
+                    Phase {wayfinding.phaseOrdinal} · {wayfinding.phaseLabel}
+                    <span className="ws-way-ss">{wayfinding.positionLabel}</span>
+                  </div>
                   <div className="ws-way-bar"><span className="ws-way-fill" style={{ width: `${wayfinding.progressPct}%` }} /></div>
                 </div>
-                <Link href={`/program/${memberId}?from=${sessionKey}`} className="ws-way-route">The Program →</Link>
               </div>
-              <Link href={`/dashboard/${memberId}`} className="ws-back">← Dashboard</Link>
             </>
           )}
 
-          {/* "Why this matters" — compact: just the tap, the full expands inline. The short framing line is echoed in
-              the Companion's opening beat anyway, so it doesn't need to sit pinned. */}
+          {/* The two framing tiers, on ONE row so depth costs no height.
+              · "Why this matters" (~70 words) expands INLINE and auto-collapses on scroll.
+              · "Explore the Science" (~300) opens an OVERLAY — see explore-panel.tsx.
+              Peers rather than nested: the Why panel closes itself the moment the member scrolls, so hanging the
+              science link inside it would put it behind a door that shuts. The glyphs say which one moves the page. */}
           {summary && !review && (
             <div className={`ws-why${whyOpen ? ' open' : ''}`}>
-              <button type="button" className="ws-why-toggle" onClick={() => setWhyOpen((v) => !v)} aria-expanded={whyOpen}>
-                Why this matters <span className="ws-why-caret" aria-hidden="true">{whyOpen ? '▼' : '▶'}</span>
-              </button>
+              <div className="ws-why-row">
+                <button type="button" className="ws-why-toggle" onClick={() => setWhyOpen((v) => !v)} aria-expanded={whyOpen}>
+                  Why this matters <span className="ws-why-caret" aria-hidden="true">{whyOpen ? '▾' : '▸'}</span>
+                </button>
+                {explore && (
+                  <button type="button" className="ws-explore-open" onClick={() => setExploreOpen(true)} aria-haspopup="dialog">
+                    Explore the Science <span aria-hidden="true">↗</span>
+                  </button>
+                )}
+              </div>
               {whyOpen && <p className="ws-why-full">{summary.full}</p>}
             </div>
           )}
@@ -224,6 +241,11 @@ export default function WorkspaceSession({
             <button type="button" className="ws-endcard-cta" onClick={() => setEndCard(false)}>Continue →</button>
           </div>
         </div>
+      )}
+
+      {/* Tier 3. Mounted at the root, not inside the header, so opening it can never change the header's height. */}
+      {exploreOpen && explore && (
+        <ExplorePanel explore={explore} title={wayfinding.positionLabel} onClose={() => setExploreOpen(false)} />
       )}
     </>
   );

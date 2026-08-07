@@ -1,3 +1,9 @@
+// ⚠ HELD FOR CYCLE 2 — NOT WIRED TO ANY ARC (Greg, 2026-08-07). This ran as C1 Step 1 until he cut it: "the questions
+// at the beginning of C1 may be hard for people to comment on in Cycle 1 (since it is intentionally short). Thus, we
+// may want to hold this assessment to Cycle 2." Kept verbatim rather than deleted because it is his instrument and the
+// intent is to bring it back one cycle later, not to abandon it. Nothing imports this today — if you are here because
+// you are building Cycle 2, this is the instrument you want.
+//
 // C1 · "Reflecting on Progress" — the Reclaim Readiness evidence self-check (Greg's Gated Assets V4). Fifteen items
 // across three kinds of evidence (Physical / Relational / Identity), 1–5. Item stems are Greg's VERBATIM wording,
 // except a member-facing tense fix (Jay's proof pass 2026-07-23, rides without Greg sign-off): the first physical item

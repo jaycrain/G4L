@@ -16,8 +16,8 @@
 //   node --experimental-strip-types --env-file=.env.local scripts/c1-refine-walk.ts
 // Real API on both sides. No DB.
 
-import { liveTurnReclaimRefine } from '../lib/agent/reclaim.ts';
-import { BEAT_SEP, type Collected, type ConvMessage, type ConvState } from '../lib/agent/onboarding.ts';
+import { liveTurnReclaimRefine, reclaimC1Opening } from '../lib/agent/reclaim.ts';
+import { BEAT_SEP, type ConvMessage, type ConvState } from '../lib/agent/onboarding.ts';
 
 const readable = (s: string) => s.split(BEAT_SEP).map((t) => t.trim()).filter(Boolean).join('\n');
 
@@ -66,10 +66,13 @@ const STAGES: { id: string; label: string; re: RegExp }[] = [
 ];
 
 async function main() {
-  const collected: Collected = { reclaimList: [...LIST] };
-  let state: ConvState = { stage: 'refine', collected };
-  const opener = 'Here’s your list as it stands. Before changing anything, just notice it. What still feels true, what feels different, and what feels newly important?';
-  const history: ConvMessage[] = [{ role: 'agent', text: opener }];
+  // Start from the REAL entry point rather than a hand-written approximation. Since 2026-08-07 this opener is also the
+  // FIRST thing a member sees in C1 (Greg cut the evidence self-check that used to precede it), so it is load-bearing
+  // in a way it wasn't when this harness was written.
+  const open = reclaimC1Opening([...LIST]);
+  let state: ConvState = open.state;
+  const opener = readable(open.reply);
+  const history: ConvMessage[] = [{ role: 'agent', text: open.reply }];
   console.log('COMPANION:', opener, '\n');
 
   const asked = new Map<string, string>(); // stage id → the companion line that raised it
