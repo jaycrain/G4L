@@ -127,6 +127,9 @@ const MIGRATIONS: Array<{ file: string; sentinel: Sentinel }> = [
   { file: 'migrations/0069_founder_state.sql', sentinel: 'founder_state' },
   { file: 'migrations/0070_console_theme.sql', sentinel: { table: 'founder_state', column: 'theme' } },
   { file: 'migrations/0071_draft_rejected_at.sql', sentinel: { table: 'founder_agent_drafts', column: 'rejected_at' } },
+  // The sentinel is the LAST thing 0072 creates (practice_week.closed_at), not the first — a run that died part-way
+  // must still read as unapplied, or the tail gets skipped forever.
+  { file: 'migrations/0072_practice_commitment.sql', sentinel: { table: 'practice_week', column: 'closed_at' } },
 ];
 export const SEED_SQL = () => sqlFile('seed/0001_reference_data.sql');
 

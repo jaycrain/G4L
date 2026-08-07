@@ -71,7 +71,12 @@ export async function logQualityDay(
 export async function recentQualityDays(db: Db, memberId: string, days = 7): Promise<QualityDayEntry[]> {
   const rows = (
     await db.query<{ logged_on: string; score: number; present: unknown; most_valuable: string | null; most_missing: string | null }>(
-      `select logged_on, score, present, most_valuable, most_missing
+      // ::text in SQL, NOT String(row) in JS. A `date` comes back as a JS Date at UTC midnight, so String() renders it
+      // in LOCAL time — the PREVIOUS calendar day for anyone west of Greenwich. A day the member logged on the 7th was
+      // read back, and shown to them, as the 6th. Postgres formats it correctly and timezone-free; momentum/store.ts
+      // already does exactly this, which is why its dates were right. (Found 2026-08-07 building the week grid — the
+      // grid put a Quality Day in the wrong column and the date was the reason.)
+      `select logged_on::text as logged_on, score, present, most_valuable, most_missing
          from quality_day_log
         where member_id=$1 and logged_on >= current_date - ($2::int - 1)
         order by logged_on asc`,
