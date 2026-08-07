@@ -1,6 +1,7 @@
 import BrandHome from '../../components/brand-home.tsx';
 import AdminAutoRefresh from '../auto-refresh.tsx';
 import ThemeToggle from './theme-toggle.tsx';
+import SignOut from './sign-out.tsx';
 
 // THE CONSOLE'S OWN HEADER — one row, worn by the console and every subpage alike.
 //
@@ -32,6 +33,7 @@ export default function ConsoleHeader({ theme }: { theme: 'dark' | 'light' }) {
             session forward, so it has to be on every console surface, not just the home. */}
         <AdminAutoRefresh />
         <ThemeToggle theme={theme} />
+        <SignOut />
       </div>
     </header>
   );

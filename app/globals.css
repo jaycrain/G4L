@@ -2882,6 +2882,17 @@ body:has(.fc-dark) .brand-wordmark,
 .fc-dark .fc-theme-toggle { background: transparent; color: rgba(255,255,255,.62); border-color: rgba(255,255,255,.18); }
 .fc-dark .fc-theme-toggle:hover { color: #fff; border-color: var(--teal-text); }
 
+/* Sign out — same pill as the theme toggle, and the same restated background for the same reason (the global
+   button:hover would otherwise paint navy behind the text). Deliberately quiet: leaving the console is a
+   rare action, and it sits next to two controls you press constantly. */
+.fch-signout { font-family: inherit; font-size: 12px; font-weight: 600; cursor: pointer; margin: 0;
+  padding: .25rem .7rem; border-radius: 999px; color: var(--navy); background: #fff;
+  border: 1px solid var(--light-grey, #E8E6E6); white-space: nowrap; }
+.fch-signout:hover { background: #fff; border-color: var(--teal-text); color: var(--teal-text); }
+.fch-signout:disabled { opacity: .6; cursor: default; }
+.fc-dark .fch-signout { background: transparent; color: rgba(255,255,255,.62); border-color: rgba(255,255,255,.18); }
+.fc-dark .fch-signout:hover { color: #fff; border-color: var(--teal-text); }
+
 /* ── NO INPUT UNDER 16px ON A TOUCH SCREEN ──────────────────────────────────────────────────────────────────
    iOS Safari auto-zooms the page when you focus an input smaller than 16px, and does NOT zoom back when you
    dismiss it. The layout viewport stays wider than the visual one, so content clips off the LEFT edge and a

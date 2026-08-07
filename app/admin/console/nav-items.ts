@@ -16,6 +16,7 @@ export const CONSOLE_NAV: NavItem[] = [
   { label: 'Moderation', href: '/admin/moderation' },
   { label: 'AI surfaces', href: '/admin/health' },
   { label: 'Feedback', href: '/admin/feedback' },
+  { label: 'Operators', href: '/admin/operators' },
 ];
 
 /** The console's three columns. BELOW THE FOLD these join the same row as the sections above.
