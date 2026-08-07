@@ -19,7 +19,7 @@ import { TOTAL_ITEMS } from '../../lib/idq/instrument.ts';
 import { BASELINE_GRIT_ITEMS, CHECKPOINT_GRIT_ITEMS } from '../../lib/grinta/survey/instrument.ts';
 import { scoreCheckpointGrit, grintaChangePct } from '../../lib/grinta/survey/scoring.ts';
 import { persistGrintaReading, checkpointResponsesMap, getGrintaBaselineReading, latestGrintaReading } from '../../lib/grinta/survey/store.ts';
-import { setGate, earnBadge, markSessionClosed } from '../../lib/curriculum/store.ts';
+import { setGate, earnBadge, markSessionClosed, markCheckpointClosed } from '../../lib/curriculum/store.ts';
 
 // v2.2 Reconnect server actions. Flag-gated. The callback (entry) READS committed captures and opens; the DOORS
 // excavation (§2b) is a live model turn (draw-out + insight + the re-seeing revision). Conversation state is
@@ -166,8 +166,8 @@ async function persistReconnectSessionCloses(db: Db, memberId: string, prev: Con
 async function persistReconnectComplete(db: Db, memberId: string, prev: ConvState, turn: Turn): Promise<void> {
   try {
     if (turn.state.stage !== 'ceremony' || prev.stage === 'ceremony') return; // only on the crossing into the Ceremony
-    await setGate(db, memberId, 'reconnect_checkpoint_passed'); // → activePhaseIndex 1 (Rewire is now "You're here")
-    await logEvent(db, memberId, 'checkpoint_cross', { surface: 'checkpoint', ref: 'RCN-CHK', meta: { phase: 'reconnect' } });
+    // → activePhaseIndex 1 (Rewire is now "You're here"). Records the completion + crosses ONCE (markCheckpointClosed).
+    await markCheckpointClosed(db, memberId, { assetId: 'RCN-CHK', eventRef: 'RCN-CHK', phase: 'reconnect' });
     // Finishing the REAL arc must earn the same milestone the old RCN-CHK checkpoint awarded (registry: RCN-CHK
     // earns 'reconnect-milestone'). The v2.2 arc bypasses the checkpoint action, so award it here on the crossing.
     await earnBadge(db, memberId, 'reconnect-milestone');

@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { getDb } from '../../../../lib/db/index.ts';
 import { authorizeMember } from '../../../authz.ts';
 import { getAsset, getBadge, listCurriculum, PHASE_ORDER } from '../../../../lib/curriculum/registry.ts';
-import { setGate, earnBadge, listFacets } from '../../../../lib/curriculum/store.ts';
+import { setGate, earnBadge, listFacets, markCheckpointClosed } from '../../../../lib/curriculum/store.ts';
 import { checkpointAffirmation, checkpointHold, type CheckpointCtx } from '../../../../lib/agent/checkpoint-guide.ts';
 import { getPlaybookSynthesis, refreshPlaybookSynthesis } from '../../../../lib/agent/playbook-synthesis.ts';
 import { getReclaimItems, markReclaimReclaimedByText } from '../../../../lib/beats/store.ts';
@@ -95,9 +95,10 @@ export async function declareReconnected(memberId: string, checkpointId: string,
     const db = (await getDb()) as unknown as Db;
     const idx = PHASE_ORDER.indexOf(asset.phase);
     const next = PHASE_ORDER[idx + 1];
-    await setGate(db, memberId, `${asset.phase}_checkpoint_passed`);
+    // Records the completion in session_progress, sets the gate, and crosses ONCE. Here the asset id IS the event ref
+    // (this route is driven by the curriculum id), unlike the arc paths — see markCheckpointClosed.
+    await markCheckpointClosed(db, memberId, { assetId: checkpointId, eventRef: checkpointId, phase: asset.phase });
     if (next) await setGate(db, memberId, `${next}_unlocked`);
-    await logEvent(db, memberId, 'checkpoint_cross', { surface: 'checkpoint', ref: checkpointId, meta: { phase: asset.phase } });
     let badgeName: string | null = null;
     if (asset.earns) {
       await earnBadge(db, memberId, asset.earns);

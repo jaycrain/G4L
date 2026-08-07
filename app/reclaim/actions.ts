@@ -34,7 +34,7 @@ import { startPracticeWeek } from '../../lib/practice/store.ts';
 import { getGrintaBaselineReading, latestGrintaReading, persistGrintaReading, challengeCheckpointResponsesMap } from '../../lib/grinta/survey/store.ts';
 import { scoreCheckpointStrand, grintaChangePct, directionOf } from '../../lib/grinta/survey/scoring.ts';
 import { BASELINE_CHALLENGE_ITEMS, CHECKPOINT_CHALLENGE_ITEMS } from '../../lib/grinta/survey/instrument.ts';
-import { setGate, markSessionClosed } from '../../lib/curriculum/store.ts';
+import { setGate, markSessionClosed, markCheckpointClosed } from '../../lib/curriculum/store.ts';
 import { acknowledgeSessionBadge } from '../../lib/curriculum/view.ts';
 import type { ReclaimCeremonyData } from '../../lib/ceremony/reclaim-ceremony-beats.ts';
 import { earnedBadgeReveal } from '../../lib/ceremony/badge-reveal.ts';
@@ -274,8 +274,9 @@ async function persistReclaimCheckpoint(db: Db, memberId: string, prev: ConvStat
     };
     const cp = scoreCheckpointStrand({ target: 'reclaim', baselineValues, newValues: challenge, carriedStrands: carried });
     await persistGrintaReading(db, memberId, { source: 'checkpoint', responses: challengeCheckpointResponsesMap(challenge), score: cp.score });
-    await setGate(db, memberId, 'reclaim_checkpoint_passed'); // the capstone — closes Cycle 1 (the Loop)
-    await logEvent(db, memberId, 'checkpoint_cross', { surface: 'checkpoint', ref: 'RCL-CHK', meta: { phase: 'reclaim' } });
+    // The capstone — closes Cycle 1 (the Loop). Greg's fired TWICE on 2026-08-07 (04:09 and again at 04:44) because
+    // the cross was unguarded; markCheckpointClosed emits it on the first crossing only.
+    await markCheckpointClosed(db, memberId, { assetId: 'RCL-C4', eventRef: 'RCL-CHK', phase: 'reclaim' });
     await maybeTriggerDraft(db, memberId, { kind: 'milestone', assetCode: 'RCL-CHK', assetName: 'The Reclaim Checkpoint' });
   } catch {
     // swallow — best-effort; the conversation turn already succeeded.

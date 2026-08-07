@@ -35,7 +35,7 @@ import { harvestSignal } from '../../lib/agent/harvest.ts';
 import { getGrintaBaselineReading, latestGrintaReading, persistGrintaReading, controlCheckpointResponsesMap } from '../../lib/grinta/survey/store.ts';
 import { scoreCheckpointStrand, grintaChangePct, directionOf } from '../../lib/grinta/survey/scoring.ts';
 import { BASELINE_CONTROL_ITEMS, CHECKPOINT_CONTROL_ITEMS, pairwiseAverage } from '../../lib/grinta/survey/instrument.ts';
-import { setGate, markSessionClosed } from '../../lib/curriculum/store.ts';
+import { setGate, markSessionClosed, markCheckpointClosed } from '../../lib/curriculum/store.ts';
 import { acknowledgeSessionBadge } from '../../lib/curriculum/view.ts';
 import type { RebuildCeremonyData } from '../../lib/ceremony/rebuild-ceremony-beats.ts';
 import { earnedBadgeReveal } from '../../lib/ceremony/badge-reveal.ts';
@@ -83,8 +83,8 @@ async function persistRebuildCheckpoint(db: Db, memberId: string, prev: ConvStat
     const scored = pairwiseAverage(control); // 12 → 6 (the one B4 factory addition)
     const cp = scoreCheckpointStrand({ target: 'rebuild', baselineValues, newValues: scored, carriedStrands: carried });
     await persistGrintaReading(db, memberId, { source: 'checkpoint', responses: controlCheckpointResponsesMap(control), score: cp.score });
-    await setGate(db, memberId, 'rebuild_checkpoint_passed'); // → activePhaseIndex 3 (Reclaim is now "You're here")
-    await logEvent(db, memberId, 'checkpoint_cross', { surface: 'checkpoint', ref: 'RBD-CHK', meta: { phase: 'rebuild' } });
+    // → activePhaseIndex 3 (Reclaim is now "You're here"). assetId/eventRef differ here — see markCheckpointClosed.
+    await markCheckpointClosed(db, memberId, { assetId: 'RBLD-B4', eventRef: 'RBD-CHK', phase: 'rebuild' });
     await maybeTriggerDraft(db, memberId, { kind: 'milestone', assetCode: 'RBD-CHK', assetName: 'The Rebuild Checkpoint' });
   } catch {
     // swallow — best-effort; the conversation turn already succeeded.

@@ -127,6 +127,13 @@ const REPORT_SQL = `select jsonb_build_object(
      'motivation',      (select coalesce(jsonb_agg(to_jsonb(x)), '[]') from motivation_reading x      where x.member_id = $1),
      'self_management', (select coalesce(jsonb_agg(to_jsonb(x)), '[]') from self_management_reading x where x.member_id = $1),
      'coaching_plan',   (select coalesce(jsonb_agg(to_jsonb(x)), '[]') from coaching_plan x           where x.member_id = $1)),
+  -- Reclaim's durable readings. C2's was MISSING here until 2026-08-07, which is how "did Greg actually answer the
+  -- Bigger World Audit, or did he click through it in 73 seconds?" became unanswerable from this report — the one
+  -- question the report exists to answer. An absent register and an absent LOOK are indistinguishable to the reader,
+  -- so anything a member's record holds has to be visible here.
+  'reclaim_readings', jsonb_build_object(
+     'bigger_world',   (select coalesce(jsonb_agg(to_jsonb(x)), '[]') from bigger_world_reading x where x.member_id = $1),
+     'quality_day',    (select coalesce(jsonb_agg(to_jsonb(x)), '[]') from quality_day_log x      where x.member_id = $1)),
   'movement', jsonb_build_object(
      'connection', (select to_jsonb(c) - 'access_token_enc' - 'refresh_token_enc' from activity_connection c where c.member_id = $1),
      'event_count', (select count(*) from activity_event where member_id = $1),
@@ -157,6 +164,31 @@ const REPORT_SQL = `select jsonb_build_object(
      -- grinta_reading means the frozen baseline silently failed to persist. Surface it rather than leaving it unread.
      'no_grinta_baseline',         case when not exists (select 1 from grinta_reading where member_id = $1 and source = 'onboarding') then true end,
      'sessions_stuck_in_progress', (select case when count(*) > 0 then jsonb_agg(session_id) end from session_progress where member_id = $1 and status = 'in_progress'),
+     -- TELEMETRY vs TRUTH. Two records of the same fact must agree: session_progress is what the product reads, the
+     -- member_event log is what QI measures. When they diverge, the product looks right and the measurement lies —
+     -- which is exactly what happened on Greg's walk (12 sessions closed, 9 session_close events; 4 checkpoints
+     -- crossed, 0 progress rows). Finding that took an afternoon of forensics. These make it a line in the report.
+     'closed_without_close_event', (select case when count(*) > 0 then jsonb_agg(s.session_id) end
+        from session_progress s where s.member_id = $1 and s.status = 'closed'
+        and not exists (select 1 from member_event e where e.member_id = $1 and e.ref = s.session_id
+                        and e.kind in ('session_close','checkpoint_cross'))),
+     'close_event_without_progress_row', (select case when count(*) > 0 then jsonb_agg(distinct e.ref) end
+        from member_event e where e.member_id = $1 and e.kind in ('session_close','checkpoint_cross') and e.ref is not null
+        and not exists (select 1 from session_progress s where s.member_id = $1 and s.session_id = e.ref)),
+     -- A gateway between the Rs is crossed once per cycle. More than one event for the same ref means an unguarded
+     -- emit somewhere (the shape that double-counted Greg's capstone 35 minutes apart).
+     'checkpoint_crossed_more_than_once', (select case when count(*) > 0 then jsonb_object_agg(ref, n) end
+        from (select ref, count(*) n from member_event where member_id = $1 and kind = 'checkpoint_cross' and ref is not null
+              group by ref having count(*) > 1) d),
+     -- The gate is what the forecast believes; the progress row is what the counters read. Passing a gate with no
+     -- closed row means the member's completion is REAL but INVISIBLE — Greg had all four. The gate→asset pairing is
+     -- a fixed four-row map, so it's spelled out rather than derived from the gate string.
+     'checkpoint_gate_without_progress_row', (select case when count(*) > 0 then jsonb_agg(m.gate) end
+        from (values ('reconnect_checkpoint_passed','RCN-CHK'), ('rewire_checkpoint_passed','RWR-CHK'),
+                     ('rebuild_checkpoint_passed','RBLD-B4'), ('reclaim_checkpoint_passed','RCL-C4')) as m(gate, asset_id)
+        where exists (select 1 from phase_gate g where g.member_id = $1 and g.gate = m.gate)
+        and not exists (select 1 from session_progress s
+                        where s.member_id = $1 and s.session_id = m.asset_id and s.status = 'closed')),
      'rebuild_underway_without_reconnect_core', case when exists (select 1 from phase_gate where member_id = $1 and gate = 'rebuild_underway')
                                                      and not exists (select 1 from phase_gate where member_id = $1 and gate = 'reconnect_core_complete') then true end
   )))

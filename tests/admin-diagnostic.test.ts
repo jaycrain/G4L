@@ -34,6 +34,10 @@ async function seedCleanWalk(db: Db, memberId: string): Promise<void> {
   await db.query(`insert into grinta_reading (member_id, source, sequence_no, responses, composite) values ($1,'onboarding',0,'{}'::jsonb,3.08)`, [memberId]);
   await db.query(`insert into phase_gate (member_id, gate) values ($1,'reconnect_core_complete'),($1,'rewire_threshold_met'),($1,'rebuild_underway')`, [memberId]);
   await db.query(`insert into member_event (member_id, kind, ref, step) values ($1,'session_step','RCN-EXC',3),($1,'session_close','RCN-EXC',null)`, [memberId]);
+  // A real close writes the progress ROW and the EVENT — markSessionClosed does both, in that order. This fixture
+  // emitted only the event, and the new telemetry-vs-truth flags called it out the first time they ran: a "clean
+  // walk" no live close path could actually produce. The fixture was wrong, not the flag.
+  await db.query(`insert into session_progress (member_id, session_id, status, closed_at) values ($1,'RCN-EXC','closed',now())`, [memberId]);
 }
 
 test('runMemberDiagnostic reports a clean walk with an empty FLAGS block', async () => {

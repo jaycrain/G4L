@@ -75,6 +75,52 @@ export async function markSessionClosed(db: Db, memberId: string, sessionId: str
   if (!alreadyClosed) await logEvent(db, memberId, 'session_close', { surface: 'session', ref: sessionId });
 }
 
+// Close a CHECKPOINT — the sibling of markSessionClosed, and for a long time the missing one.
+//
+// Checkpoints were completed by five separate sites that each did `setGate` + an unguarded `logEvent`, and NONE of
+// them recorded the completion in session_progress. Two consequences, both found in Greg's walk on 2026-08-07:
+//   · He crossed four checkpoints and session_progress held ZERO rows for them, so four of his thirteen completions
+//     were invisible — "sessions closed" undercounts by one per phase, and checkpoint completion can't be measured.
+//   · Re-entering a completed checkpoint re-emitted checkpoint_cross. His Reclaim capstone fired TWICE, 35 minutes
+//     apart. A capstone that happens twice is worse than one that isn't recorded — it's a false event in QI.
+//
+// The data contract in CLAUDE.md requires started / completed / time-on-asset / drop-off for every asset, and a
+// checkpoint is an asset. So: one function, idempotent, mirroring markSessionClosed exactly.
+// NOTE the two ids. A checkpoint is known by THREE different names in here and they do not agree:
+//   · the curriculum asset id   RCN-CHK · RWR-CHK · RBLD-B4 · RCL-C4   ← what getForecast's isDone matches on
+//   · the event ref             RCN-CHK · RWR-CHK · RBD-CHK · RCL-CHK  ← what's already in every member's event log
+//   · the workspace session key reconnect · rewire-checkpoint · b4 · c4
+// The progress row must use the ASSET id or `closed.has(a.id)` never sees it; the event must keep its existing REF or
+// deriveCheckpointTelemetry splits one checkpoint's history across two group keys. So both are passed explicitly
+// rather than derived. Unifying the namespaces is a data migration and a separate decision — this does not paper
+// over it, it just refuses to make it worse.
+//
+// The PRODUCT is already right: isDone treats the phase gate as truth for a checkpoint, so nothing about a member's
+// experience is broken today. What's broken is only our ability to SEE it.
+export async function markCheckpointClosed(
+  db: Db,
+  memberId: string,
+  { assetId, eventRef, phase }: { assetId: string; eventRef: string; phase: string },
+): Promise<void> {
+  const prior = await db.query<{ status: string }>(
+    `select status from session_progress where member_id = $1 and session_id = $2`,
+    [memberId, assetId],
+  );
+  const alreadyClosed = prior.rows[0]?.status === 'closed';
+  await db.query(
+    `insert into session_progress (member_id, session_id, status, closed_at)
+     values ($1, $2, 'closed', now())
+     on conflict (member_id, session_id) do update set status = 'closed', closed_at = now(), updated_at = now()`,
+    [memberId, assetId],
+  );
+  await setGate(db, memberId, `${phase}_checkpoint_passed`);
+  // FIRST crossing only. Crossing a gateway between the Rs is a once-per-cycle event; re-reading the ceremony is not
+  // a second crossing.
+  if (!alreadyClosed) {
+    await logEvent(db, memberId, 'checkpoint_cross', { surface: 'checkpoint', ref: eventRef, meta: { phase } });
+  }
+}
+
 export async function isSessionClosed(db: Db, memberId: string, sessionId: string): Promise<boolean> {
   const { rows } = await db.query<{ status: string }>(
     'select status from session_progress where member_id=$1 and session_id=$2',

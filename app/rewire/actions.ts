@@ -31,7 +31,7 @@ import { startPracticeWeek, latestImageKeeper } from '../../lib/practice/store.t
 import { getGrintaBaselineReading, latestGrintaReading, persistGrintaReading, commitmentCheckpointResponsesMap } from '../../lib/grinta/survey/store.ts';
 import { scoreCheckpointStrand, grintaChangePct, directionOf } from '../../lib/grinta/survey/scoring.ts';
 import { BASELINE_COMMITMENT_ITEMS, CHECKPOINT_COMMITMENT_ITEMS } from '../../lib/grinta/survey/instrument.ts';
-import { setGate, markSessionClosed } from '../../lib/curriculum/store.ts';
+import { setGate, markSessionClosed, markCheckpointClosed } from '../../lib/curriculum/store.ts';
 import { acknowledgeSessionBadge } from '../../lib/curriculum/view.ts';
 import type { RewireCeremonyData } from '../../lib/ceremony/rewire-ceremony-beats.ts';
 import { earnedBadgeReveal } from '../../lib/ceremony/badge-reveal.ts';
@@ -117,8 +117,8 @@ async function persistRewireCheckpoint(db: Db, memberId: string, prev: ConvState
     const carried = { reconnect: latest?.strands.reconnect ?? base?.strands.reconnect, rebuild: latest?.strands.rebuild ?? base?.strands.rebuild, reclaim: latest?.strands.reclaim ?? base?.strands.reclaim };
     const cp = scoreCheckpointStrand({ target: 'rewire', baselineValues, newValues: commitment, carriedStrands: carried });
     await persistGrintaReading(db, memberId, { source: 'checkpoint', responses: commitmentCheckpointResponsesMap(commitment), score: cp.score });
-    await setGate(db, memberId, 'rewire_checkpoint_passed'); // → activePhaseIndex 2 (Rebuild is now "You're here")
-    await logEvent(db, memberId, 'checkpoint_cross', { surface: 'checkpoint', ref: 'RWR-CHK', meta: { phase: 'rewire' } });
+    // → activePhaseIndex 2 (Rebuild is now "You're here"). Records the completion + crosses ONCE (markCheckpointClosed).
+    await markCheckpointClosed(db, memberId, { assetId: 'RWR-CHK', eventRef: 'RWR-CHK', phase: 'rewire' });
     await maybeTriggerDraft(db, memberId, { kind: 'milestone', assetCode: 'RWR-CHK', assetName: 'The Rewire Checkpoint' });
   } catch {
     // swallow — best-effort; the conversation turn already succeeded.
