@@ -143,6 +143,18 @@ const REPORT_SQL = `select jsonb_build_object(
         'started_at', a.started_at, 'distance_m', a.distance_m, 'moving_time_s', a.moving_time_s, 'created_at', a.created_at
       ) order by a.started_at desc), '[]')
       from (select * from activity_event where member_id = $1 order by started_at desc limit 15) a)),
+  -- The practice week, as the member sees it on their grid. Added the SAME DAY the grid shipped, because this morning
+  -- the identical gap (C2's reading missing here) made "did Greg actually answer it?" unanswerable from the one tool
+  -- built to answer it. Shipping a member-facing surface whose state can't be inspected just moves the forensics to
+  -- later, when it costs more.
+  'practice', jsonb_build_object(
+     'weeks',       (select coalesce(jsonb_agg(to_jsonb(w)), '[]') from practice_week w where w.member_id = $1),
+     'commitments', (select coalesce(jsonb_agg(to_jsonb(c) order by c.kind, c.sort_order), '[]') from practice_commitment c where c.member_id = $1),
+     -- Marks roll up per (kind, commitment) rather than listing every row: the question is always "how many days,
+     -- and which", never the individual row ids.
+     'marks',       (select coalesce(jsonb_agg(m), '[]') from (
+                       select kind, commitment_id, count(*) as days, min(marked_on)::text as first_on, max(marked_on)::text as last_on
+                         from practice_mark where member_id = $1 group by kind, commitment_id) m)),
   'event_summary', (select coalesce(jsonb_object_agg(kind, n), '{}') from (select kind, count(*) n from member_event where member_id = $1 group by kind) t),
   'furthest_step_by_session', (select coalesce(jsonb_object_agg(ref, mx), '{}') from (select ref, max(step) mx from member_event where member_id = $1 and step is not null and ref is not null group by ref) t),
   'recent_events', (select coalesce(jsonb_agg(to_jsonb(e) order by e.created_at desc), '[]') from (select kind, surface, ref, step, created_at from member_event where member_id = $1 order by created_at desc limit 25) e),
@@ -163,6 +175,12 @@ const REPORT_SQL = `select jsonb_build_object(
      -- Every member who finishes intake takes the Grinta baseline survey, so a committed member with no onboarding
      -- grinta_reading means the frozen baseline silently failed to persist. Surface it rather than leaving it unread.
      'no_grinta_baseline',         case when not exists (select 1 from grinta_reading where member_id = $1 and source = 'onboarding') then true end,
+     -- A week whose window elapsed and that nothing closed. Before closed_at this state was invisible AND permanent;
+     -- now it should only ever be transient (the next Companion turn reviews and closes it), so a lingering one means
+     -- the close beat isn't firing for that member.
+     'practice_week_overdue_to_close', (select case when count(*) > 0 then jsonb_agg(kind) end
+        from practice_week where member_id = $1 and closed_at is null
+        and started_at < now() - interval '7 days'),
      'sessions_stuck_in_progress', (select case when count(*) > 0 then jsonb_agg(session_id) end from session_progress where member_id = $1 and status = 'in_progress'),
      -- TELEMETRY vs TRUTH. Two records of the same fact must agree: session_progress is what the product reads, the
      -- member_event log is what QI measures. When they diverge, the product looks right and the measurement lies —
