@@ -15,6 +15,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { applyRebuildB3Turn } from '../lib/agent/rebuild.ts';
+import { proposalSignature } from '../lib/agent/coach-gate.ts';
 import type { ConvMessage, ConvState } from '../lib/agent/onboarding.ts';
 
 // His plan, verbatim from the screenshot.
@@ -29,10 +30,32 @@ function awaitingConfirm(): { state: ConvState; history: ConvMessage[] } {
   const state = {
     stage: 'pilot',
     collected: { pilotActivity: ACTIVITY, pilotDiet: DIET },
-    stageScratch: { pilot: { proposed: true } },
+    // `proposedSig` records WHICH plan was put to him, so the engine never prints one he's already seen
+    // (coach-gate.ts). A gate opened before that shipped has `proposed` but no signature — see the migration
+    // test below for what that member experiences.
+    stageScratch: { pilot: { proposed: true, proposedSig: proposalSignature({ activity: ACTIVITY, diet: DIET }) } },
   } as unknown as ConvState;
   return { state, history: [{ role: 'agent', text: 'Want to lock them in, or tweak one?' }] };
 }
+
+test('A SESSION ALREADY AT THE GATE WHEN THIS SHIPPED: one more proposal, then correct', () => {
+  // Jay was mid-C3 with `{ proposed: true }` and no signature when the fix deployed. There is no way to know
+  // which plan he was last shown, so the honest move is to show it once — which is what a returning member
+  // needs anyway — and record the signature. From the next turn on, the loop is closed. Deliberate, not
+  // accidental: the alternative is assuming he saw something he may not have.
+  const state = {
+    stage: 'pilot',
+    collected: { pilotActivity: ACTIVITY, pilotDiet: DIET },
+    stageScratch: { pilot: { proposed: true } }, // pre-fix shape: no proposedSig
+  } as unknown as ConvState;
+  const history: ConvMessage[] = [{ role: 'agent', text: 'Want to lock them in, or tweak one?' }];
+
+  const first = applyRebuildB3Turn(state, history, 'lock them in', { text: '' });
+  assert.match(first.reply, /Here's your week, then/, 'the one re-orienting proposal');
+
+  const after = applyRebuildB3Turn(first.state, [...history, { role: 'agent', text: first.reply }], 'lock them in', { text: '' });
+  assert.equal(after.complete, true, 'and from here it commits — the loop does not resume');
+});
 
 test('the fixture really is at the confirm gate (guard against a false pass)', () => {
   // If this ever re-proposes the plan instead, every other test in this file is meaningless.

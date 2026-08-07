@@ -21,6 +21,7 @@ import {
 } from '../rebuild/skills-instrument.ts';
 import { grintaStem, CHECKPOINT_CONTROL_ITEMS } from '../grinta/survey/instrument.ts';
 import { confirmsProposal } from './onboarding-intent.ts';
+import { proposalSignature, shouldPropose, markProposed, type CoachGate } from './coach-gate.ts';
 
 export function rebuildEnabled(): boolean {
   return process.env.REBUILD === 'staged';
@@ -195,7 +196,9 @@ const B3_PLAN_CONFIRMED_2 =
   "Start tomorrow. Go to the Momentum card on your dashboard each day and log how it went — a good call, a false " +
   "start, or a quiet one. It's a good time to talk with other Community members too. After a week of it, the Rebuild " +
   "Checkpoint is where this Phase closes.";
-const PILOT_REVISE_NUDGE = "No problem — tell me what you'd change, and we'll adjust it.";
+// Said when the plan is locked and UNCHANGED since we showed it — see coach-gate.ts. Nothing new to put on
+// screen, so say that plainly instead of reprinting the plan.
+const PILOT_HOLD_NUDGE = "That's your week as it stands. Change either one, or tell me to lock it in.";
 
 // The engine-owned plan reflection (propose-confirm) — reflects BOTH changes back in the member's words, then the
 // confirm gate. Not the model's text: the plan is shown consistently, from what was locked.
@@ -239,12 +242,21 @@ const pilotStage: StageDef = {
   gather() {},
   confirm() {},
   coach(b) {
-    const sc = b.scratch as { proposed?: boolean };
+    const sc = b.scratch as CoachGate;
     // Accumulate the model's locked fields (a field appears only once the model judged it specific + right-sized).
     if (b.model.plan?.activityChange) b.collected.pilotActivity = b.model.plan.activityChange.trim();
     if (b.model.plan?.dietChange) b.collected.pilotDiet = b.model.plan.dietChange.trim();
     const activity = (b.collected.pilotActivity ?? '').trim();
     const diet = (b.collected.pilotDiet ?? '').trim();
+
+    // CHANGE FIRST, then the confirm gate — see coach-gate.ts on why this order is load-bearing. A plan the
+    // member has already seen is NEVER printed again; only a genuinely different one earns a fresh proposal.
+    const sig = proposalSignature({ activity, diet });
+    if (shouldPropose(sc, !!(activity && diet), sig)) {
+      markProposed(sc, sig);
+      b.reply = proposePlan(activity, diet);
+      return;
+    }
 
     if (sc.proposed) {
       // Awaiting the member's confirm on the whole plan.
@@ -254,16 +266,10 @@ const pilotStage: StageDef = {
         b.reply = `${B3_PLAN_CONFIRMED_1}${BEAT_SEP}${B3_PLAN_CONFIRMED_2}`;
         return;
       }
-      // Not a confirm → the member is tweaking. Re-open coaching; the model re-locks the changed field next turn.
-      sc.proposed = false;
-      b.reply = (b.modelText || PILOT_REVISE_NUDGE).trim();
-      return;
-    }
-
-    if (activity && diet) {
-      // Both changes locked → PROPOSE the whole plan (engine-owned reflection).
-      sc.proposed = true;
-      b.reply = proposePlan(activity, diet);
+      // Not a confirm — a tweak the model hasn't recorded yet, or a question. Let the model carry the turn and
+      // KEEP THE GATE OPEN: closing it here is what made Greg say "lock in" to a Companion that had stopped
+      // listening for it. Anything he changes re-proposes above; anything he asks gets answered here.
+      b.reply = (b.modelText || PILOT_HOLD_NUDGE).trim();
       return;
     }
 

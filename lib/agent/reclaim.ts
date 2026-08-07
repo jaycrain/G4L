@@ -15,6 +15,7 @@ import { AUDIT_ITEMS, AUDIT_ITEM_COUNT, AUDIT_SCALE_MAX, AUDIT_DOMAIN_STARTS, AU
 import { scoreAudit } from '../reclaim/bigger-world-scoring.ts';
 import { grintaStem, CHECKPOINT_CHALLENGE_ITEMS } from '../grinta/survey/instrument.ts';
 import { confirmsProposal } from './onboarding-intent.ts';
+import { proposalSignature, shouldPropose, markProposed, type CoachGate } from './coach-gate.ts';
 
 export function reclaimEnabled(): boolean {
   return process.env.RECLAIM?.trim() === 'staged';
@@ -75,8 +76,10 @@ function refineOpener(c: Collected): string {
   );
 }
 
-const REFINE_REVISE_NUDGE = "No problem — tell me what you'd change, and we'll adjust it.";
 const REFINE_NUDGE = "Take your time. Which items still matter most, which feel different now, and what's newly important?";
+// Said when the refined list is captured and UNCHANGED since we showed it — see coach-gate.ts. The engine has
+// nothing new to put on screen, so it says so rather than reprinting the list.
+const REFINE_HOLD_NUDGE = "That's your list as it stands. Change anything you want, or tell me to save it.";
 const REFINE_COMMITTED_1 = "Done — your Reclaim List now reflects where you actually are, sorted by what matters most right now.";
 const REFINE_COMMITTED_2 = "I've kept a snapshot of where it was, too — so you can always see how it's shifted. You can revisit it anytime by asking for your Reclaim List.";
 
@@ -118,7 +121,7 @@ const refineStage: StageDef = {
   gather() {},
   confirm() {},
   coach(b) {
-    const sc = b.scratch as { proposed?: boolean };
+    const sc = b.scratch as CoachGate;
     // Capture the model's refined list (the whole result) into the snapshot — no live-list mutation here.
     const captured = sanitizeRefinement(b.model.refinement);
     if (captured) b.collected.pendingRefinement = captured;
@@ -130,6 +133,17 @@ const refineStage: StageDef = {
     // nicety must never be able to trap someone.
     const ready = !!ref && ref.items.length > 0;
 
+    // CHANGE FIRST, then the confirm gate — see coach-gate.ts. A list they have already seen is never printed
+    // again; only a genuinely different one earns a fresh proposal.
+    const sig = proposalSignature(ref);
+    if (shouldPropose(sc, ready, sig)) {
+      // The refined list is captured and DIFFERENT from anything already shown → PROPOSE it (engine-owned
+      // reflection), then the confirm gate.
+      markProposed(sc, sig);
+      b.reply = proposeRefinement(ref!);
+      return;
+    }
+
     if (sc.proposed) {
       if (refineConfirms(b.memberMessage)) {
         // Member confirmed → COMPLETE. The ACTION commits the snapshot to the live list (member-authorized).
@@ -138,16 +152,9 @@ const refineStage: StageDef = {
         b.reply = `${REFINE_COMMITTED_1}${BEAT_SEP}${REFINE_COMMITTED_2}`;
         return;
       }
-      // Not a confirm → the member is tweaking; re-open coaching (the model re-records the adjusted result).
-      sc.proposed = false;
-      b.reply = (b.modelText || REFINE_REVISE_NUDGE).trim();
-      return;
-    }
-
-    if (ready) {
-      // The refined list is captured → PROPOSE it (engine-owned reflection), then the confirm gate.
-      sc.proposed = true;
-      b.reply = proposeRefinement(ref!);
+      // Not a confirm — a tweak the model hasn't recorded yet, or a question. Carry the turn and KEEP THE GATE
+      // OPEN. (Dana's live walk: "the duplicate keeps coming back no matter what we agree on.")
+      b.reply = (b.modelText || REFINE_HOLD_NUDGE).trim();
       return;
     }
 
@@ -363,8 +370,10 @@ function c3Opening(): string {
   return `${C3_OPEN_1}${BEAT_SEP}${C3_OPEN_2}${BEAT_SEP}${C3_OPEN_3}`;
 }
 
-const C3_REVISE_NUDGE = "No problem — tell me what you'd change, and we'll adjust it.";
 const C3_NUDGE = "Take your time — what makes a day feel healthy, meaningful, and worth it to you? We'll sort it into what's essential, what helps, and what pulls a day down.";
+// Said when the Quality Day is captured and UNCHANGED since we showed it. The engine has nothing new to put on
+// screen, so it says so plainly instead of re-printing the same block (see coach-gate.ts).
+const C3_HOLD_NUDGE = "That's your Quality Day as it stands. Change anything you want, or tell me to save it.";
 // Same correction as B3's close: this promised "each day I'll ask how much the day felt like a quality one", and no
 // such daily ask is sent. The member does the logging, from their dashboard, whenever they're there.
 const C3_COMMITTED_1 = "Great work identifying what makes up your Quality Day, and what takes away from it. For the next week, log each day from your dashboard — how much it felt like a quality one, and which of these elements showed up to make it that way.";
@@ -400,11 +409,20 @@ const qualityStage: StageDef = {
   gather() {},
   confirm() {},
   coach(b) {
-    const sc = b.scratch as { proposed?: boolean };
+    const sc = b.scratch as CoachGate;
     const captured = sanitizeQualityDay(b.model.qualityDay);
     if (captured) b.collected.pendingQualityDay = captured;
     const qd = b.collected.pendingQualityDay;
     const ready = !!qd && qd.nonNegotiables.length > 0;
+
+    // CHANGE FIRST, then the confirm gate — see coach-gate.ts. Jay sat 25 messages deep in this loop with the
+    // Quality Day captured and unchanged the whole way (2026-08-06); it is never re-printed now.
+    const sig = proposalSignature(qd);
+    if (shouldPropose(sc, ready, sig)) {
+      markProposed(sc, sig);
+      b.reply = proposeQualityDay(qd!);
+      return;
+    }
 
     if (sc.proposed) {
       if (c3Confirms(b.memberMessage)) {
@@ -413,13 +431,8 @@ const qualityStage: StageDef = {
         b.reply = `${C3_COMMITTED_1}${BEAT_SEP}${C3_COMMITTED_2}`;
         return;
       }
-      sc.proposed = false;
-      b.reply = (b.modelText || C3_REVISE_NUDGE).trim();
-      return;
-    }
-    if (ready) {
-      sc.proposed = true;
-      b.reply = proposeQualityDay(qd!);
+      // Not a confirm — a tweak not yet recorded, or a question. Carry the turn, KEEP THE GATE OPEN.
+      b.reply = (b.modelText || C3_HOLD_NUDGE).trim();
       return;
     }
     b.reply = (b.modelText || C3_NUDGE).trim();
