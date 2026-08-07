@@ -82,6 +82,17 @@ or a telling-off: *"which might mean it was a hard week, or just that logging sl
 This is also the piece that makes his "about a 6 week experience for Cycle 1" framing possible at all — a cycle can
 only have a length once its weeks can finish.
 
+**"Explore the Science" is now on all twelve.** Built from the "Scientific scaffolding" section of each of his
+Science Checks — his principles, his counts (six for most, five for B2, four for W1/W2/W3/B1; we didn't pad the short
+ones, since that would mean writing science he didn't). The register changed, not the content: second person, and the
+construct names stay in his documents — no "self-discrepancy theory", no "self-concordance", no "PRECEDE-PROCEED", no
+"broaden-and-build". A member shouldn't have to look a word up to read their own screen. Nothing scientific was
+softened, and it's all probabilistic — but he should read a couple and tell us if a nuance went missing.
+
+**And we compared his twelve "In-app summaries" against our "Why this matters".** They say the same things, which is
+expected — ours were derived from his and he voice-passed them in July. Ours run 30–50% shorter. No content gap
+found. Three specific conflicts did surface, below.
+
 ## 3 · Questions / needs a decision
 
 **Do members ever see "Aware / Prepare / Engage"?** He spec'd the Levels in all four wing documents and they are
@@ -106,6 +117,22 @@ our code says he "gives no formula", which was our misreading of an equation our
 add it in an hour. Does he want it stored, surfaced, or both?
 
 ---
+
+## 3b · Three conflicts between his documents and what we ship
+
+**"Smart Choices" vs "Good Calls" — a naming fork.** His B3 in-app summary says the member will track *"Smart
+Choices, False Starts, obstacles, thoughts, feelings"*. Our product says **Good Calls** — on the Momentum log button,
+in the Companion's vocabulary, and in our B3 copy. "Smart Choice" appears nowhere in the app. One of the two has to
+give, and it matters beyond the app: Cowork quotes this material into marketing and the book, so a fork here
+propagates. (Jay's call as brand owner. "Good Calls" is what members have actually seen.)
+
+**The IDQ retake cadence: his R1 says 90 days, ours says 60.** His R1 Science Check states a ~90-day revisit and
+"quarterly intervals" in two places. Our frozen data contract is 60 days. This is a real disagreement, not a
+paraphrase artifact — and since the IDQ schema and cadence are frozen, it needs his ruling rather than a silent pick
+on our side.
+
+**His R2 summary names the "Spark space" twice.** We un-hardcoded that term as sweep-provisional. If it's staying,
+we should stop treating it as provisional; if it's going, his summary needs the replacement.
 
 ## 4 · Two real defects in his documents
 
