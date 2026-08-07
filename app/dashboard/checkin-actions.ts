@@ -21,6 +21,9 @@ import { logCall, isCallType, isCallDomain, domainTally, recentCalls } from '../
 import { setCommitment, activeCommitments, isCommitmentDomain, DOMAIN_WORD } from '../../lib/commitments/store.ts';
 import { logMovement, isMovementKind, movementLogSummary } from '../../lib/movement/store.ts';
 import { redesignEnabled } from '../../lib/dashboard/redesign.ts';
+import { weekGrid } from '../../lib/practice/grid.ts';
+import { isTappable, toggleMark } from '../../lib/practice/mark.ts';
+import { activePracticeWeek } from '../../lib/practice/store.ts';
 import { phaseSummary, type PhaseKey } from '../../lib/content/summaries.ts';
 
 const isPhaseKey = (k: string | null): k is PhaseKey =>
@@ -98,7 +101,7 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
   // "best-effort" but was UNGUARDED — and it runs a memory-fold (API/query) BEFORE everything else, so if it threw it
   // sank the entire context to minimal (this is why the companion still couldn't see momentum after the first pass).
   await maybeFoldMemory(db, memberId).catch((e) => console.warn('maybeFoldMemory failed (non-fatal):', (e as Error).message));
-  const [grinta, grintaReading, whyReading, skillsReading, pilotPlan, pilotTally, biggerWorld, qdProfile, qdRecent, consumedBites, profRows, idqRows, reclaimItems, beatRows, playbook, measures, linkedMeasureRows, facets, closedIds, lastClosedRows, forecast, experience, passport] = await Promise.all([
+  const [grinta, grintaReading, whyReading, skillsReading, pilotPlan, pilotTally, biggerWorld, qdProfile, qdRecent, practiceGrid, consumedBites, profRows, idqRows, reclaimItems, beatRows, playbook, measures, linkedMeasureRows, facets, closedIds, lastClosedRows, forecast, experience, passport] = await Promise.all([
     getGrinta(db, memberId, dash.identityNoun).catch(() => ({ score: null, direction: null }) as unknown as Awaited<ReturnType<typeof getGrinta>>),
     // Rebuild/Reclaim REGISTERS — all SUPPLEMENTARY context ("the agent knows X"), each null-safe downstream. Guard
     // EVERY one with .catch: a single missing/drifted register table (prod migrations don't auto-apply) must NEVER
@@ -112,6 +115,7 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
     latestBiggerWorldReading(db, memberId).catch(() => null), // Reclaim C2 — the member's chosen priorities (primary + momentum lever)
     activeQualityDayProfile(db, memberId).catch(() => null), // Reclaim C3 — the Quality-Day profile
     recentQualityDays(db, memberId).catch(() => []), // Reclaim C3 — recent Quality-Day logs
+    weekGrid(db, memberId).catch(() => null), // the practice-week grid the member sees on Momentum
 
     // These were UNGUARDED — and a single throw here collapsed the WHOLE context to `minimal` (Jay's walk: the
     // companion said it could only see Reclaim List / ID Score / Doors — the minimal fields — because a supplementary
@@ -260,6 +264,22 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
     reclaimPriorities: biggerWorld
       ? { primary: AUDIT_DOMAIN_LABEL[biggerWorld.priorities.primary], momentumLever: AUDIT_DOMAIN_LABEL[biggerWorld.priorities.momentumLever] }
       : null, // Reclaim C2 — the member's chosen priority + momentum lever (plain language)
+    // The grid, as the member reads it. todayDone is computed HERE, not in the prompt: an agent asked to work out
+    // "is today already marked" from a boolean array will sometimes get it wrong and ask them for something they've
+    // already done — which is the most deflating possible thing for a practice week to do.
+    practiceWeek: practiceGrid && practiceGrid.rows.length
+      ? {
+          kind: practiceGrid.kind,
+          day: practiceGrid.day,
+          rows: practiceGrid.rows.map((r) => ({
+            label: r.label,
+            target: r.target,
+            done: r.done,
+            todayDone: r.marks[practiceGrid.day - 1] === true,
+          })),
+          tappable: isTappable(practiceGrid.kind),
+        }
+      : null,
     qualityDay: qdProfile
       ? {
           nonNegotiables: qdProfile.nonNegotiables,
@@ -529,6 +549,43 @@ export async function sendCheckin(memberId: string, memberMessage: string): Prom
           return { ok: true, message: `Retired "${res.label}" — its history is kept and it can come back anytime. Acknowledge it warmly; retiring a tracker is never a failure.` };
         }
         return { ok: false, message: "Couldn't find a tracker by that name to retire." };
+      }
+      if (name === 'mark_practice_day') {
+        // The grid tells the member "or just tell me and I'll mark it". This is what makes that true — without it
+        // the UI prints a promise the Companion cannot keep.
+        const label = typeof input.commitment === 'string' ? input.commitment.trim() : '';
+        if (!label) return { ok: false, message: 'Not marked — no commitment was named.' };
+        const pw = await activePracticeWeek(db, memberId);
+        if (!pw) return { ok: false, message: 'Not marked — no practice week is open right now.' };
+        if (!isTappable(pw.kind)) {
+          return { ok: false, message: "This week mirrors a log they keep themselves — point them to it rather than marking it here." };
+        }
+        // Match the label the model passed against their real commitments. Loose but ANCHORED: exact, then prefix,
+        // then containment — never a fuzzy nearest-neighbour, because marking the WRONG commitment is a quiet lie
+        // about their week and they may never notice it.
+        const { rows: commitments } = await db.query<{ slot: string; label: string }>(
+          'select slot, label from practice_commitment where member_id=$1 and kind=$2',
+          [memberId, pw.kind],
+        );
+        const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim();
+        const want = norm(label);
+        const hit =
+          commitments.find((c) => norm(c.label) === want) ??
+          commitments.find((c) => norm(c.label).startsWith(want) || want.startsWith(norm(c.label))) ??
+          commitments.find((c) => norm(c.label).includes(want) || want.includes(norm(c.label)));
+        if (!hit) {
+          return { ok: false, message: `Not marked — "${label}" doesn't match anything on their week. Ask which one they mean rather than guessing.` };
+        }
+        const res = await toggleMark(db, memberId, pw, hit.slot, pw.day - 1, 'companion');
+        if (!res.ok) return { ok: false, message: res.error ?? 'Not marked.' };
+        if (res.on === false) {
+          // toggleMark is a TOGGLE: if today was already marked it just un-marked it. Put it straight back — the
+          // member said they DID the thing, and "I did my walk" must never quietly erase the tick they already had.
+          await toggleMark(db, memberId, pw, hit.slot, pw.day - 1, 'companion');
+          return { ok: true, message: `That was already marked for today — nothing changed. Acknowledge it warmly and don't make them repeat themselves.` };
+        }
+        mutated = true;
+        return { ok: true, message: `Marked "${hit.label}" done for today. Reflect it back briefly and warmly — noticing, never a score.` };
       }
       if (name === 'log_call') {
         // Momentum logging (REWIRE-gated). A call is self-monitoring, never scored; a false start is honest data.

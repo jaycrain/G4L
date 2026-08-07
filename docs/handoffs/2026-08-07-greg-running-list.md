@@ -64,6 +64,10 @@ time — the model quietly re-worded its own note of the plan on the same turn h
 change and re-proposed. His words now outrank the model rewriting its own note. (A real edit still gets re-proposed
 before saving, so nothing is ever committed that he hasn't seen.)
 
+**The Companion can now see the week, and mark it.** The grid tells the member "tap a day — or just tell me and I'll
+mark it", so saying "did my fifteen minutes" now actually ticks the box. It's framed to the agent as noticing rather
+than compliance: a blank day is a day, never a miss, and when today is already marked it's told not to ask again.
+
 ## 3 · Questions / needs a decision
 
 **Do members ever see "Aware / Prepare / Engage"?** He spec'd the Levels in all four wing documents and they are

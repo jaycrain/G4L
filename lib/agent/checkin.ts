@@ -90,6 +90,15 @@ export type CheckinContext = {
   reclaimPriorities?: { primary: string; momentumLever: string } | null;
   // Reclaim C3 Quality Days — the member's Quality-Day non-negotiables + recent logged scores. The agent supports the
   // practice: help them notice what makes a day theirs; never a compliance score.
+  // THE PRACTICE WEEK, as the member sees it on their grid. Added 2026-08-07 when a sweep found the gap: the grid
+  // shipped that morning and the Companion couldn't see it — a member could be looking at "3 / 5" while the agent
+  // knew nothing about the week at all. CLAUDE.md's rule is that no data the member can see is invisible here.
+  practiceWeek?: {
+    kind: string;
+    day: number; // 1..7
+    rows: { label: string; target: number | null; done: number; todayDone: boolean }[];
+    tappable: boolean; // can the agent mark a day, or is this week a mirror of a log they wrote?
+  } | null;
   qualityDay?: { nonNegotiables: string[]; recentAvg: number | null; days: number } | null;
   beatsDone?: number; // Beats worked so far
   // The Playbook (the two-way loop): kept keepers + recent journal notes. Used to help — never
@@ -176,6 +185,28 @@ export function recallKeeper(message: string, keepers: RecallKeeper[] = []): Rec
 }
 
 // The four Grinta strands, spelled out for the agent's context (one per R). Empty when none are present.
+
+// The practice week, said the way the member would say it. Deliberately NOT a compliance report: it names what they
+// aimed for and what's happened so far, and tells the agent to hold it as noticing rather than scoring. A blank day
+// is a day, never a miss — the same rule the grid itself renders by.
+function practiceWeekLine(c: CheckinContext): string | null {
+  const pw = c.practiceWeek;
+  if (!pw || !pw.rows.length) return null;
+  const rows = pw.rows
+    .map((r) => `${r.label} — ${r.done}${r.target ? ` of the ${r.target} they aimed for` : ' so far'}${r.todayDone ? ', already marked today' : ''}`)
+    .join('; ');
+  const openToday = pw.rows.some((r) => !r.todayDone);
+  return (
+    `Their practice week is on day ${pw.day} of 7: ${rows}. ` +
+    (pw.tappable
+      ? openToday
+        ? 'If they tell you they did one today, mark it with mark_practice_day — the grid tells them you will, so words alone are not enough. '
+        : "Everything for today is already marked. Don't ask again — nothing is more deflating than being asked for something you already did. "
+      : 'This week mirrors a log they keep themselves; reflect it, never edit it. ') +
+    'NEVER present this as compliance or a score. A blank day is a day, not a miss, and the whole point is noticing what helps — not hitting a number.'
+  );
+}
+
 function grintaStrandsLine(s: CheckinContext['grintaStrands']): string {
   if (!s) return '';
   const parts = (['reconnect', 'rewire', 'rebuild', 'reclaim'] as const)
@@ -293,6 +324,7 @@ export function contextBlock(c: CheckinContext): string {
     c.reclaimPriorities
       ? `Their Bigger World priorities (Reclaim C2) — the area they chose to focus on is their ${c.reclaimPriorities.primary.toLowerCase()} life; the easiest place to build momentum is their ${c.reclaimPriorities.momentumLever.toLowerCase()} life. Support that chosen focus warmly; it's their priority, not a ranking to grade.`
       : null,
+    practiceWeekLine(c),
     c.qualityDay && c.qualityDay.nonNegotiables.length
       ? `Their Quality Day (Reclaim C3) — the non-negotiables they named: ${c.qualityDay.nonNegotiables.join(', ')}.${c.qualityDay.days ? ` They've logged ${c.qualityDay.days} day${c.qualityDay.days === 1 ? '' : 's'} lately, averaging ${c.qualityDay.recentAvg}/10.` : ''} Support the practice — help them notice what actually makes a day theirs; a Quality-Day score is self-monitoring, never a grade.`
       : null,
@@ -639,6 +671,28 @@ const LOG_CALL_TOOL = {
 
 // Movement logging — an activity the member did OFF any connected device, told to the companion in conversation. Lands
 // in their Movement history (source 'companion'). Offered only when REDESIGN is staged (that's where Movement lives).
+
+// "Tap a day when you do one — or just tell me and I'll mark it." That sentence is printed on the member's grid, so
+// this tool is not a nicety: without it the UI makes a promise the Companion can't keep. Offered only for weeks
+// whose cells the member owns outright (B3/B2) — a W3 or C3 cell mirrors an entry carrying their own written note,
+// and the agent must not be able to overwrite that from a chat message (see lib/practice/mark.ts).
+const MARK_PRACTICE_DAY_TOOL = {
+  name: 'mark_practice_day',
+  description:
+    "Mark TODAY done on one of the member's practice-week commitments when they tell you they did it ('did my 15 " +
+    "minutes', 'got the fruit in today', 'walked this morning'). Pass the commitment's label as it appears in " +
+    "MEMBER CONTEXT (or close to it). Only for today — if they mention an earlier day, tell them they can tap it on " +
+    "the grid. Words alone don't mark it: you MUST call this tool and only say it's marked once it succeeds. If " +
+    "they say they DIDN'T do something, don't call this at all and don't make anything of it — a blank day is a day.",
+  input_schema: {
+    type: 'object',
+    properties: {
+      commitment: { type: 'string', description: "the commitment label from MEMBER CONTEXT, e.g. '15 minutes of functional fitness'" },
+    },
+    required: ['commitment'],
+  },
+};
+
 const LOG_MOVEMENT_TOOL = {
   name: 'log_movement',
   description:
@@ -692,6 +746,10 @@ async function liveReply(
   history: CheckinMessage[],
   userText: string,
   executor?: ToolExecutor,
+  // A capability, not the whole context: liveReply gets a RENDERED system string, and reaching back into
+  // CheckinContext from here would couple the transport to the content. It only needs to know whether a markable
+  // week is open — an agent holding a tool it cannot use will find a way to narrate using it.
+  canMarkPracticeDay = false,
 ): Promise<{ reply: string; toolNames: string[] }> {
   const called: string[] = []; // client tools the model actually invoked this turn (for the engine backstop)
   const { default: Anthropic } = await import('@anthropic-ai/sdk');
@@ -728,6 +786,8 @@ async function liveReply(
     ...(rewireEnabled() ? [LOG_CALL_TOOL] : []),
     ...(redesignEnabled() ? [LOG_MOVEMENT_TOOL] : []),
     ...(rebuildEnabled() ? [SET_COMMITMENT_TOOL] : []),
+    // Only when a tappable week is actually open — an agent holding a tool it can't use invites it to narrate one.
+    ...(canMarkPracticeDay ? [MARK_PRACTICE_DAY_TOOL] : []),
   ];
   const toolsFor = () => (executor ? (useFetch ? [...clientTools, WEB_FETCH_TOOL] : clientTools) : undefined);
   const model = process.env.ANTHROPIC_MODEL ?? 'claude-sonnet-4-6';
@@ -886,7 +946,7 @@ export async function checkinReply(
   if (detectCrisis(memberMessage).flagged) return { reply: CRISIS_RESPONSE_US, crisis: true };
   if (process.env.ANTHROPIC_API_KEY) {
     try {
-      const { reply, toolNames } = await liveReply(checkinSystem(c), history, memberMessage, executor);
+      const { reply, toolNames } = await liveReply(checkinSystem(c), history, memberMessage, executor, Boolean(c.practiceWeek?.tappable));
       // ENGINE GUARD (#6): the member clearly asked to ADD a want but the model didn't call add_reclaim_item —
       // it acknowledged in prose and moved on ("that's a good one — anything else?"), silently losing the add.
       // Backstop-capture through the SAME validated primitive (fog rejected, dups folded), so an add-intent is
