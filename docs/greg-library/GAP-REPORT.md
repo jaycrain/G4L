@@ -87,9 +87,28 @@ to be stronger on the information/education side" comes from — it is not a B1 
 exists**. This supersedes the "five weeks" framing in §2 below: W2 and B2 are 3-4 day assets, not full weeks, and
 C2 joins them.
 
-**Two questions to close with Greg, and they are short:**
-1. The durations — reading / 3-4 days / a week — are what we build to. Confirmed?
-2. Levels apply to Rewire, Rebuild and Reclaim. Does Reconnect stay out?
+**Both questions are now ANSWERED by Greg (2026-08-07):**
+1. **Durations confirmed** — *"Yes, I think the durations are about right."* Plus a new framing to build to:
+   *"We can fine-tune and explain on the front end that it is about a **6 week experience for Cycle 1**."*
+2. **Reconnect stays out** — *"Yes, I somewhat view ReConnect as a different stage. I like that it is more
+   reflective and open-ended."*
+
+And a third, which settles §5's biggest open question:
+3. **C2 is the Audit** — the four IDQ domains on 1–10, which is what we built. The five-dimension version in the
+   memos is superseded.
+
+**THE PRECEDENCE RULE, in his words — this resolves a whole class of contradictions at once:**
+
+> *"the AI Companion Guide and the AI Engineering Memo were also developed AFTER the Science check document.
+> Thus, I fed my AI agent the V4 document and the Science Check to ensure that it is also built into the Memo
+> and Guide."*
+
+So the memos are **derivative**, generated from the wing doc + Science Check. Where a memo conflicts with the
+Gated Assets V4 doc, **V4 wins** — it is the source, not a third opinion. Every "the memos say X but the wing doc
+says Y" item in §5 collapses under this.
+
+He also grants explicit latitude: *"Give Claude some freedom to build on and refine what is there if relevant as
+he knows the big picture. After we refine the assets we can take another pass through them."*
 
 ---
 
@@ -201,6 +220,17 @@ Legend: **[verified]** = checked in code · **[unverified]** = needs a live walk
 
 # 5. Greg's own contradictions — these need HIS ruling, not our engineering
 
+> **CORRECTION, 2026-08-07.** Three items originally listed here were WRONG, and all three failed the same way:
+> they were **absence** claims ("this block is empty", "no formula anywhere") taken from the Drive connector's
+> text rendering, which silently drops OMML equation objects and some list content. Re-checked against the raw
+> `word/document.xml` inside the .docx, the content is present. The extraction contract guaranteed that anything
+> QUOTED was verbatim; it guaranteed nothing about what was missed. **An extraction proves presence, never
+> absence** — a claim that something is missing needs a second, different read before it is reported, especially
+> before it is reported to the person who wrote the document.
+>
+> Struck: C2's "empty" scoring logic · C1 Step 2's "empty three dimensions list" · B1's "bare `Relative`".
+> Re-verified and still true: the Grinta Change formula, and Reconnect's dangling "Tracking (NEW)" TOC entry.
+
 These are defects in the source documents. We should not guess at them, and several are load-bearing.
 
 1. **R1 instrument** — 18 items / 3 parts (Gated Assets V4) vs. our frozen 24 items / 4 dimensions. And **90-day**
@@ -208,11 +238,20 @@ These are defects in the source documents. We should not guess at them, and seve
 2. **C2 has two incompatible specs** — 4 IDQ domains on 1–10 (wing doc, what we built) vs. 5 expansion dimensions
    (both memos). One of them has to go.
 3. **R2 duration** — *"guided for a week"* vs. its own *"15–20 minutes"*.
-4. **C2 internal scoring logic is literally empty** in the source: *"Behind the scenes try to rank priorities
-   using:"* followed by nothing. Two ranking formulas are missing.
+4. ~~C2 internal scoring logic is empty~~ — **WRONG, struck.** Both formulas are in the source:
+   `Gap = Desired − Current`, then `PriorityScore = (Gap × Importance) + Readiness + RippleEffect`. **This is a
+   BUILD ITEM, not a defect** — it is the ranking behind C2 Step 3's priority classification, and we have none.
 5. **The Grinta Change formula is mathematically broken** in both the Reconnect and Reclaim wing docs:
    `[(Ave1/Ave2)/Ave1]*100` reduces to `100/Ave2`. Intent is clearly `[(Ave2−Ave1)/Ave1]*100`.
-6. **B1 scoring ends with a bare, undefined line: `Relative`.** No formula anywhere. A stub.
+   *(Re-verified against the raw XML — this one is real.)*
+6. ~~B1 scoring ends with a bare `Relative`~~ — **WRONG, struck.** It is a full equation, stored as an OMML object
+   that flat text extraction collapses into digit soup:
+   **`Relative Autonomous Motivation = (1+2+3)/3 − (4+5)/2`** for activity, and `(7+8+9)/3 − (10+11)/2` for diet.
+   **Also a BUILD ITEM:** `lib/rebuild/why-instrument.ts:53` records the same misreading — *"Greg's sheet notes a
+   'Relative' autonomy figure but gives no formula"* — so we have never computed it. We should.
+6b. **Reconnect's "Tracking (NEW)"** is a TOC entry pointing at bookmark `_Toc233490841`, which exists nowhere in
+   the document; there is no such section and the body ends at R4's conclusion. *(Re-verified — real. Ask Greg
+   whether content was meant to be there.)*
 7. **Streaks vs. never-penalize** — W2/W3/B3/C3 memos all require streak tracking *and* forbid presenting a streak
    as the reward. Never resolved for how a broken week renders.
 8. **B2 skill count** — 12 asserted (and enumerated in the wing doc, which we built), but the Science Check
