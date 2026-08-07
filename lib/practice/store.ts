@@ -76,7 +76,7 @@ export function practicePrompt(
   }
   if (kind === 'w3_logging') {
     // The Momentum log nudge (Slice 4) — one ask, no pressure, no "you missed" (MM/R1 productive-default, EE cadence).
-    return `How'd today go — a good call, a false start, or a quiet one?`;
+    return `How'd today go — a good call, a false start, or on track?`;
   }
   if (kind === 'b2_noticing') {
     // Rebuild B2 Part B — a week of NOTICING which self-management skills helped or hindered (not changing behavior).
@@ -88,9 +88,9 @@ export function practicePrompt(
     // Degrades to a generic ask if the plan isn't loaded. Productive-default, non-judgmental (MM/R1, HH).
     const plan = payload.plan;
     if (plan?.activityChange && plan?.dietChange) {
-      return `How'd the pilot go today — ${plan.activityChange.toLowerCase()}, and ${plan.dietChange.toLowerCase()}? A good call, a false start, or a quiet one?`;
+      return `How'd the pilot go today — ${plan.activityChange.toLowerCase()}, and ${plan.dietChange.toLowerCase()}? A good call, a false start, or on track?`;
     }
-    return `How'd your two changes go today — a good call, a false start, or a quiet one?`;
+    return `How'd your two changes go today — a good call, a false start, or on track?`;
   }
   if (kind === 'c3_quality') {
     // Reclaim C3 — the daily Quality-Day check-in. Observational, non-judgmental (MM/R1); the point is noticing what

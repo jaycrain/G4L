@@ -96,7 +96,9 @@ export async function domainTally(db: Db, memberId: string, days = MOMENTUM_WIND
 // (honesty first). The model's log_call tool handles the fuzzier cases; this catches the ones it misses.
 const FALSE_START_RE = /\b(false start|fell off( the wagon)?|blew it( today| again)?|slipped( up)?( again)?|off the wagon)\b/i;
 const GOOD_CALL_RE = /\b(good call|won today|showed up today|nailed (it|today)|logged a good one)\b/i;
-const QUIET_DAY_RE = /\b(quiet day|quiet one|rest day|nothing to log)\b/i;
+// Accepts BOTH vocabularies on purpose. The label is "On Track" now, but members who learned "quiet day" — and
+// anyone who just says "rest day" — must still be understood. A rename should never make the parser deafer.
+const QUIET_DAY_RE = /\b(on track|quiet day|quiet one|rest day|steady day|nothing to log)\b/i;
 export function logCallIntent(message: string): CallType | null {
   const m = (message ?? '').trim();
   if (FALSE_START_RE.test(m)) return 'false_start';

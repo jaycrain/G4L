@@ -5,12 +5,16 @@ import { useRouter } from 'next/navigation';
 import { logCallAction } from './actions.ts';
 import type { CallType, CallDomain } from '../../lib/momentum/store.ts';
 
-// The /momentum quick-log — tap Good Call / False Start / Quiet day (+ optional note). Same record as the rail's
+// The /momentum quick-log — tap Good Call / False Start / On Track (+ optional note). Same record as the rail's
 // log_call (no wrong door, FF). Warm + non-judgmental: a false start logs as honest, never a scold (Decision HH/EE).
 const OPTIONS: { type: CallType; label: string; done: string }[] = [
   { type: 'good_call', label: 'Good Call', done: "Logged — nice one." },
   { type: 'false_start', label: 'False Start', done: "Logged — that's an honest call. Your protocol's there when you want it." },
-  { type: 'quiet_day', label: 'Quiet Day', done: 'Logged — quiet counts too.' },
+  // "On Track" is Greg's (Refinements): "I don't see a need to log a 'Quiet Day'… better to have them code 'On
+  // Track' as an average day or average effort." He's right that it reads better — a quiet day sounds like nothing
+  // happened, on track says you held the line. The STORED value stays `quiet_day`: it's an internal key nobody sees,
+  // and renaming it would be a data migration across every existing row for zero member benefit.
+  { type: 'quiet_day', label: 'On Track', done: 'Logged — holding steady counts.' },
 ];
 
 // The member's active COMMITMENTS (0060/0061) — the standing movement/eating changes, shown whenever they exist (NOT
@@ -44,7 +48,7 @@ export default function MomentumLog({ memberId, commitments }: { memberId: strin
 
   return (
     <div className="momentum-log">
-      <p className="card-subtitle">How'd it go? Log a call — no pressure, and quiet days count.</p>
+      <p className="card-subtitle">How'd it go? Log a call — no pressure, and steady days count.</p>
       {commitments && (commitments.activity || commitments.diet) && (
         <div className="momentum-log-domain">
           <span className="momentum-log-domain-label">Which commitment is this about? (optional)</span>

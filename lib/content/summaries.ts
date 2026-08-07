@@ -8,9 +8,14 @@
 // tap text. The `short` lines were reconciled to Donna's 7/28 Program-page rev (Jay-approved) so the canvas threshold,
 // the Program route, the phase-entry beat, and the Companion all say the SAME wording (the Program page formats the
 // asset shorts as "Name — …" bullets; here they're proper standalone sentences).
-// Member-facing LABELS are sweep-provisional (the Fade, the Spark space, Good Calls/False Starts, Quality Days, the
+// Member-facing LABELS are sweep-provisional (the Fade, Good Calls/False Starts, Quality Days, the
 // Reclaim List): they live only as prose inside these strings, never as structural tokens — so the sweep edits words
-// here without touching any wiring. "The Spark space" in particular is a placeholder and may change.
+// here without touching any wiring.
+//
+// "The Spark space" is GONE (2026-08-07). R2 told members that in the Spark space they'd see the doors were a
+// shared pattern — and there was no Spark space: no route, no screen, no table, one string in the entire app. It was
+// a placeholder name that outlived the placeholder. What it described shipped as the Community, so R2 now points
+// there. Greg's own R2 summary still names it twice; flagged to him.
 
 import type { SessionKey } from '../workspace/session-key.ts';
 
@@ -27,7 +32,7 @@ export const ASSET_SUMMARIES: Record<AssetId, Summary> = {
   },
   r2: {
     short: 'Identify the doors you walked through that caused you to Fade.',
-    full: 'The Fade rarely arrives all at once. It comes through doors — a relationship, a shrinking social world, autopilot, and others — usually several at the same time. Here you mark which ones are yours, then look at which opened first, which shaped you most, and which is still open. Research suggests people move through life change more steadily when they can put it in a clear story rather than carry it as fog. And in the Spark space, you’ll see these doors are a shared pattern.',
+    full: 'The Fade rarely arrives all at once. It comes through doors — a relationship, a shrinking social world, autopilot, and others — usually several at the same time. Here you mark which ones are yours, then look at which opened first, which shaped you most, and which is still open. Research suggests people move through life change more steadily when they can put it in a clear story rather than carry it as fog. And in the Community, you’ll see these doors are a shared pattern.',
   },
   r3: {
     short: 'See your drift clearly, then put words to who you’re becoming.',

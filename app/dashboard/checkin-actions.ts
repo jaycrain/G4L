@@ -72,7 +72,8 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
   const yestISO = new Date(Date.now() - 86_400_000).toLocaleDateString('en-CA');
   const whenLabel = (iso: string): string =>
     iso === todayISO ? 'today' : iso === yestISO ? 'yesterday' : new Date(`${iso}T00:00:00`).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  const CALL_LABEL = { good_call: 'Good Call', false_start: 'False Start', quiet_day: 'Quiet Day' } as const;
+  // The Companion must speak the label the member SEES. The stored enum is still `quiet_day`; the word is "On Track".
+  const CALL_LABEL = { good_call: 'Good Call', false_start: 'False Start', quiet_day: 'On Track' } as const;
   const momentumLog = momentumCalls.length
     ? momentumCalls.map((e) => ({ label: CALL_LABEL[e.type], domain: e.domain ? (DOMAIN_WORD[e.domain] as 'movement' | 'eating') : null, note: e.note, when: whenLabel(e.loggedOn) }))
     : null;
@@ -612,7 +613,7 @@ export async function sendCheckin(memberId: string, memberMessage: string): Prom
               "their own words — Redirect, Reframe, Restart. If they have no such keeper, just a warm ack, no phantom protocol."
             : type === 'good_call'
               ? "Logged as a good call. Mark it lightly — it's on their Momentum now."
-              : "Logged as a quiet day. No pressure — quiet counts too.";
+              : "Logged as on track. No pressure — a steady day counts too.";
         return { ok: true, message: ack };
       }
       if (name === 'log_movement') {

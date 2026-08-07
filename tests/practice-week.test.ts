@@ -105,5 +105,5 @@ test('practiceHeroMessage · a w3_logging window surfaces the Momentum log nudge
   const m = await seedMember(db);
   await startPracticeWeek(db, m, 'w3_logging');
   const msg = await practiceHeroMessage(db, m);
-  assert.match(msg!, /good call, a false start, or a quiet one/i, 'the daily log nudge, one ask, no pressure');
+  assert.match(msg!, /good call, a false start, or on track/i, 'the daily log nudge, one ask, no pressure');
 });

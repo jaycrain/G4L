@@ -595,7 +595,7 @@ const W3_RESTART =
 // ── Step 3 — The week of noticing (Momentum turns on — the LOGGING mechanic is the Momentum slice) ──
 const W3_STEP3_1 =
   `Here's your work this week: don't try to change anything yet. Just notice. Go to the Momentum card on your ` +
-  `dashboard every day and log your good calls, your false starts and even quiet days where not much happened.`;
+  `dashboard every day and log your good calls, your false starts and the on-track days where not much happened.`;
 const W3_STEP3_2 =
   `And when a false start happens — it will — run your protocol. Redirect, Reframe, Restart.`;
 // ── Close — harvest + hand-off ──

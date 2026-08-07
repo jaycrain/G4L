@@ -39,7 +39,7 @@ export default async function TriptychRight({
         <div className="rreg-eyebrow">Momentum</div>
         <div className="rc-sub">The calls you make, one at a time.</div>
         <div className="rreg-mom-viz"><ResiliencePulse beats={pulse} bare /></div>
-        <p className="rreg-mom-cap">Good Calls · False Starts · Quiet Days</p>
+        <p className="rreg-mom-cap">Good Calls · False Starts · On Track</p>
         {/* During a practice week the log CTA lives HERE (Jay), not the hero — replacing the plain See-more. */}
         <Link href={momentumCta?.href ?? `/momentum/${memberId}`} className="rreg-more">
           {momentumCta?.label ?? 'See more →'}

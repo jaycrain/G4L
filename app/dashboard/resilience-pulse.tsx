@@ -53,7 +53,7 @@ export default function ResiliencePulse({ beats = [], bare = false }: { beats?: 
         aria-label={
           empty
             ? 'Your rhythm: a flat baseline with one live, pulsing point at today. It fills as you log your calls.'
-            : "Your rhythm over two weeks, call by call — an up-beat for a good call, a dip for a false start, flat for a quiet day, ending on today's live point."
+            : "Your rhythm over two weeks, call by call — an up-beat for a good call, a dip for a false start, flat for an on-track day, ending on today's live point."
         }
       >
         <line x1={g.padX} y1={g.baselineY} x2={g.width - g.padX} y2={g.baselineY} stroke={QUIET} strokeWidth="1" strokeDasharray="2 5" opacity="0.5" />
@@ -89,13 +89,13 @@ export default function ResiliencePulse({ beats = [], bare = false }: { beats?: 
       </svg>
 
       {/* Legend + the explanatory detail live only on the full (subpage) variant — the compact dashboard panel is
-          just the graphic, and carries its own "Good Calls · False Starts · Quiet Days" caption. */}
+          just the graphic, and carries its own "Good Calls · False Starts · On Trays" caption. */}
       {!bare && (
         <>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px 18px', fontSize: '12.5px', color: 'var(--muted, #6b7683)', margin: '0.5rem 0 0.25rem' }}>
             <LegendDot color={TEAL} label="Good Call — up-beat" />
             <LegendDot color={RED} label="False Start — dip" />
-            <LegendDot color={QUIET} label="Quiet Day — flat" />
+            <LegendDot color={QUIET} label="On Track — flat" />
             <LegendDot color={ORANGE} label="Today — live" />
           </div>
           <p style={{ fontSize: '14px', lineHeight: 1.55, color: 'var(--navy, #374F63)', margin: '0.4rem 0 0' }}>

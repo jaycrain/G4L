@@ -75,7 +75,7 @@ export type CheckinContext = {
   // companion can reflect the pattern (evidence-based, Pillar 3). Present only during an active pilot; false starts are
   // honest data, never a mark.
   pilotCalls?: { activity: { good: number; false: number }; diet: { good: number; false: number } } | null;
-  // Rebuild Momentum calls — the member's OWN logged entries (Good Call / False Start / Quiet Day + their free-text
+  // Rebuild Momentum calls — the member's OWN logged entries (Good Call / False Start / On Track + their free-text
   // notes), newest first. The dashboard shows these in "Your log"; the companion MUST see them too (CLAUDE.md: nothing
   // the member sees is invisible to the MA) so it can genuinely notice a specific entry ("did you see my ride?") and
   // connect a call to the pilot commitments. Present regardless of an active pilot, and includes untagged calls (the
@@ -948,7 +948,7 @@ export async function backstopLogCall(
         ? "Logged — that one's an honest call."
         : type === 'good_call'
           ? 'Logged that as a good call.'
-          : 'Logged — a quiet day counts too.';
+          : 'Logged — holding steady counts too.';
     return `${reply}\n\n${line}`.trim();
   } catch {
     return reply; // best-effort — a backstop failure never breaks the turn

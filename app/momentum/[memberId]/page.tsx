@@ -14,7 +14,8 @@ import MomentumLog, { type Commitments } from '../momentum-log.tsx';
 import type { Db } from '../../../lib/db/schema.ts';
 import SubpageShell from '../../dashboard/subpage-shell.tsx';
 
-const CALL_LABEL: Record<CallType, string> = { good_call: 'Good Call', false_start: 'False Start', quiet_day: 'Quiet Day' };
+// The stored enum stays `quiet_day` (prod rows depend on it); only what the member READS changed. See momentum-log.tsx.
+const CALL_LABEL: Record<CallType, string> = { good_call: 'Good Call', false_start: 'False Start', quiet_day: 'On Track' };
 const DOMAIN_LABEL: Record<CallDomain, string> = { activity: 'Movement', diet: 'Eating' };
 
 // A warm, non-scoreboard progress line for one commitment (last two weeks of tagged calls). Never a grade — a false
@@ -65,7 +66,7 @@ export default async function MomentumPage({ params }: { params: Promise<{ membe
     <SubpageShell memberId={memberId}>
       <div className="hero"><h1>Momentum</h1></div>
       <div className="card">
-        <p className="card-subtitle">The minute-to-minute decisions you make are what add up to change. Here you can track your good calls, false starts — and even quiet days where nothing much happened — and begin to understand how your patterns impact your progress.</p>
+        <p className="card-subtitle">The minute-to-minute decisions you make are what add up to change. Here you can track your good calls, false starts — and the on-track days where nothing much happened — and begin to understand how your patterns impact your progress.</p>
         {practiceLine && <p className="practice-strip">{practiceLine}</p>}
         {grid && <WeekGridPanel memberId={memberId} grid={grid} />}
         {commitments && (

@@ -45,6 +45,27 @@ const BANNED: { re: RegExp; why: string; codeOnly?: boolean }[] = [
     why: '"the Resilience Pulse" is retired member-facing — say "track your rhythm" (the filename/CSS class may keep it)',
     codeOnly: true,
   },
+  // "Quiet Day" → "On Track" (Greg's Refinements, twice: "I don't see a need to log a 'Quiet Day'… better to have
+  // them code 'On Track' as an average day"). CASE-SENSITIVE and label-shaped on purpose, because two LOWERCASE
+  // uses are load-bearing and must not be swept up by this rule:
+  //   · the stored enum `quiet_day` — prod rows depend on it; only the WORD changed, never the data
+  //   · store.ts's accept-regex, which still matches "quiet day" so members who learned the old word are understood
+  // The rule exists because this rename nearly shipped HALF DONE. The prose changed on both /momentum and the
+  // Companion's context builder while the enum→label maps two lines away still said 'Quiet Day' — so the button
+  // would have read "On Track" while the Companion said "Quiet Day" back to the same member. A rename is not done
+  // when the sentences change; it's done when the LABEL MAPS change.
+  {
+    re: /\bQuiet Days?\b/,
+    why: 'the member-facing label is "On Track" — the stored enum stays quiet_day, and lowercase "quiet day" is still ACCEPTED as input',
+    codeOnly: true,
+  },
+  // "The Spark space" never existed: one string in the whole app pointed members at a destination with no route,
+  // no screen and no table behind it. What it described shipped as the Community.
+  {
+    re: /\bSpark space\b/i,
+    why: '"the Spark space" is not a place — it is the Community',
+    codeOnly: true,
+  },
 ];
 
 const ROOTS = ['lib', 'app'];

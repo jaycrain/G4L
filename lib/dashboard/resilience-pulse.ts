@@ -108,7 +108,7 @@ export function buildPulseAnnotations(points: PulsePoint[], g: PulseGeom = DEFAU
   }
   for (const run of runsOf(points, 'quiet', 3)) {
     const mid = points[Math.floor((run.start + run.end) / 2)]!;
-    if (!mid.today) events.push({ text: 'Quiet Days', x: mid.x, y: g.baselineY - 12, tone: 'quiet', priority: 1 });
+    if (!mid.today) events.push({ text: 'On Track', x: mid.x, y: g.baselineY - 12, tone: 'quiet', priority: 1 });
   }
   for (const run of runsOf(points, 'good', 3)) {
     if (points[run.start - 1]?.kind === 'false_start') continue; // that's the recovery — already labelled

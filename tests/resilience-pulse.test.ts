@@ -51,9 +51,11 @@ test('resilience pulse labels · RECOVERY is the hero — a dip then rising beat
   assert.ok(!anns.some((a) => a.text === 'False Start'), 'the crowding False Start yields to the higher-priority bounce');
 });
 
-test('resilience pulse labels · a lone dip (no recovery) shows "False Start"; a quiet run shows "Quiet Days"', () => {
+test('rhythm labels · a lone dip shows "False Start"; a steady run shows "On Track"', () => {
   assert.ok(G(['good', 'false_start', 'quiet', 'quiet']).some((a) => a.text === 'False Start'));
-  assert.ok(G(['good', 'quiet', 'quiet', 'quiet', 'quiet', 'good']).some((a) => a.text === 'Quiet Days'));
+  // "On Track" is Greg's word for it (2026-08-07). The underlying tone stays 'quiet' — that's the internal key,
+  // like the stored quiet_day value, and renaming keys for a label change buys nothing.
+  assert.ok(G(['good', 'quiet', 'quiet', 'quiet', 'quiet', 'good']).some((a) => a.text === 'On Track'));
 });
 
 test('resilience pulse labels · CAPPED — never more than today + 2 events, however busy', () => {

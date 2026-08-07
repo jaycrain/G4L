@@ -82,7 +82,7 @@ export function resolveHomeState(i: HomeInputs): HomeState {
     return {
       kind: 'practice', kicker: `${i.phaseLabel} · this week`, headline: 'Keep the rhythm.',
       sub: 'No grade — just catching what happened.', cta: { label: 'Log today with me →', href: i.ctaHref },
-      badge: false, tense, seed: 'How did today go? One honest note is plenty — a quiet day counts too.',
+      badge: false, tense, seed: 'How did today go? One honest note is plenty — an on-track day counts too.',
     };
   }
   if (i.openOutreach) {
@@ -99,7 +99,7 @@ export function resolveHomeState(i: HomeInputs): HomeState {
   // Nothing pressing — the lightest touch. The Companion does not nag; the field stays open.
   return {
     kind: 'quiet', kicker: null, headline: 'Nothing to chase today.', sub: 'And that counts too.',
-    cta: null, badge: false, tense, seed: "A quiet day is part of the rhythm, not a gap in it — I'm here if you want me.",
+    cta: null, badge: false, tense, seed: "A steady day is part of the rhythm, not a gap in it — I'm here if you want me.",
   };
 }
 
