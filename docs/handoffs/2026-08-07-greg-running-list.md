@@ -142,18 +142,26 @@ on our side.
 matters" — *"in the Spark space, you'll see these doors are a shared pattern"*) and nowhere else. No route, no
 screen, no table. His R2 summary names it twice as somewhere to go and share a door.
 
-So both his copy and ours currently point a member at a destination that isn't there. What it *describes* — where you
-discover the doors are a shared pattern — shipped as **the Community**. Simplest fix is to say Community in both,
-and retire "Spark space" as a name that never launched. Flagging rather than fixing, since it's his copy too.
+So both his copy and ours pointed a member at a destination that isn't there. What it *describes* — where you
+discover the doors are a shared pattern — shipped as **the Community**.
 
-**And on Quiet Day, he has already told us — twice.** From his Refinements doc: *"I don't see a need to log a 'Quiet
+**Fixed on our side today:** R2 now says the Community. His R2 summary still names the Spark space twice, so that
+sentence is his to change — and we'd retire the name entirely rather than build the thing, since the thing exists
+and already has a name.
+
+**And on Quiet Day, he had already told us — twice.** From his Refinements doc: *"I don't see a need to log a 'Quiet
 Day'"*, and *"I wasn't clear on the use of Quiet Days and think it might be better to have them code 'On Track' as an
 average day or average effort."* With a colour scheme: Good Call green, On Track yellow, False Start red.
 
-We agree on the rename and would do it (Quiet Day → On Track reads better and is less of a shrug). **We would not
-take the traffic lights.** Red for a false start makes the log a scoreboard, and the week grid deliberately has no red
-for the same reason — a surface that scolds is one people stop opening, and then we lose the data as well as the
-member. Worth him pushing back if he disagrees, because it's a posture question rather than a colour one.
+**Shipped today: it says On Track.** The log button, the history, the dashboard captions, the pulse legend, the daily
+asks, the close copy, and the Companion's own vocabulary. He's right that it reads better — "quiet day" is a shrug,
+"on track" is the member telling you something. The stored data is untouched (still `quiet_day` underneath), and a
+member who types "quiet day" is still understood, so nobody who learned the old word gets a blank look.
+
+**We did not take the traffic lights.** Red for a false start makes the log a scoreboard, and the week grid
+deliberately has no red for the same reason — a surface that scolds is one people stop opening, and then we lose the
+data as well as the member. Worth him pushing back if he disagrees, because it's a posture question rather than a
+colour one.
 
 ## 4 · Two real defects in his documents
 

@@ -94,6 +94,15 @@ try {
     for (const sub of ['score', 'grinta', 'reclaim-list', 'movement', 'badges', 'playbook']) {
       await open(`/${sub}/${memberId}`);
     }
+
+    // /momentum — never smoke-checked before, and it is the one surface where a member VOCABULARY change lands in
+    // three places at once (the log buttons, the history chips, the pulse legend). This asserts the WORD, not just
+    // a 200, because the "Quiet Day" → "On Track" rename nearly shipped half done: the prose changed while the
+    // enum→label maps still said Quiet Day, which no status code would ever have caught.
+    await open(`/momentum/${memberId}`);
+    const momentum = (await page.locator('body').textContent())?.replace(/\s+/g, ' ') ?? '';
+    check(momentum.includes('On Track'), '/momentum says "On Track"');
+    check(!/Quiet Day/i.test(momentum), '/momentum has no "Quiet Day" left', momentum.match(/.{0,40}Quiet Day.{0,40}/i)?.[0] ?? '');
   }
 
   // 4. No server errors anywhere in the run.
