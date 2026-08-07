@@ -118,3 +118,21 @@ test('a checkpoint closed BEFORE this shipped still crosses cleanly (no double-c
   await markCheckpointClosed(db, memberId, { assetId: 'RWR-CHK', eventRef: 'RWR-CHK', phase: 'rewire' });
   assert.equal(await crossCount(db, memberId, 'RWR-CHK'), 1, 'and every call after it is silent');
 });
+
+test('THE FLAGS DO NOT CRY WOLF over the id split they were built alongside', async () => {
+  // Shipped, then watched both new flags fire on Greg within the hour — not on a bug, but on the deliberate
+  // asset-id/event-ref divergence documented in markCheckpointClosed. A flag that reports a known-good state forever
+  // is worse than no flag: it teaches you to skim past the real one sitting next to it. So the map lives in the
+  // queries too, and this pins BOTH halves — the noise silenced AND the genuine findings still biting.
+  const { db, memberId } = await seedMember();
+  const { runMemberDiagnostic } = await import('../lib/admin/diagnostic.ts');
+
+  await markCheckpointClosed(db, memberId, { assetId: 'RBLD-B4', eventRef: 'RBD-CHK', phase: 'rebuild' });
+  await markCheckpointClosed(db, memberId, { assetId: 'RCL-C4', eventRef: 'RCL-CHK', phase: 'reclaim' });
+  // …and one genuine hole: a closed row with no event anywhere (the shape the flag exists to catch).
+  await db.query(`insert into session_progress (member_id, session_id, status, closed_at) values ($1,'RCN-EXC','closed',now())`, [memberId]);
+
+  const f = (await runMemberDiagnostic(db, memberId)).FLAGS;
+  assert.deepEqual(f.closed_without_close_event, ['RCN-EXC'], 'the alias pairs must not be reported, the real hole must');
+  assert.equal(f.close_event_without_progress_row, undefined, 'RBD-CHK/RCL-CHK resolve through the map');
+});

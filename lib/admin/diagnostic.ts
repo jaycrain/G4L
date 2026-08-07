@@ -168,13 +168,22 @@ const REPORT_SQL = `select jsonb_build_object(
      -- member_event log is what QI measures. When they diverge, the product looks right and the measurement lies —
      -- which is exactly what happened on Greg's walk (12 sessions closed, 9 session_close events; 4 checkpoints
      -- crossed, 0 progress rows). Finding that took an afternoon of forensics. These make it a line in the report.
+     -- Both sides must speak through the ALIAS MAP. Two checkpoints record their progress row under the curriculum id
+     -- and their event under a different historical ref (RBLD-B4/RBD-CHK, RCL-C4/RCL-CHK — see markCheckpointClosed).
+     -- Without the map these two flags fire on that divergence forever, for every member who finishes Rebuild or
+     -- Reclaim. They did, on Greg, within an hour of shipping: a flag that cries wolf on a known-good state is worse
+     -- than no flag, because it trains you to skim past the real ones sitting next to it.
      'closed_without_close_event', (select case when count(*) > 0 then jsonb_agg(s.session_id) end
         from session_progress s where s.member_id = $1 and s.status = 'closed'
-        and not exists (select 1 from member_event e where e.member_id = $1 and e.ref = s.session_id
-                        and e.kind in ('session_close','checkpoint_cross'))),
+        and not exists (select 1 from member_event e where e.member_id = $1
+                        and e.kind in ('session_close','checkpoint_cross')
+                        and e.ref in (s.session_id, (select alias from (values
+                             ('RBLD-B4','RBD-CHK'), ('RCL-C4','RCL-CHK')) as a(id, alias) where a.id = s.session_id)))),
      'close_event_without_progress_row', (select case when count(*) > 0 then jsonb_agg(distinct e.ref) end
         from member_event e where e.member_id = $1 and e.kind in ('session_close','checkpoint_cross') and e.ref is not null
-        and not exists (select 1 from session_progress s where s.member_id = $1 and s.session_id = e.ref)),
+        and not exists (select 1 from session_progress s where s.member_id = $1
+                        and s.session_id in (e.ref, (select id from (values
+                             ('RBLD-B4','RBD-CHK'), ('RCL-C4','RCL-CHK')) as a(id, alias) where a.alias = e.ref)))),
      -- A gateway between the Rs is crossed once per cycle. More than one event for the same ref means an unguarded
      -- emit somewhere (the shape that double-counted Greg's capstone 35 minutes apart).
      'checkpoint_crossed_more_than_once', (select case when count(*) > 0 then jsonb_object_agg(ref, n) end
