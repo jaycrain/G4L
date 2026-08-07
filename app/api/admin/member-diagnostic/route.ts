@@ -9,6 +9,7 @@ import {
   isSpecificEnough,
   DIAGNOSTIC_MIN_QUERY,
 } from '../../../../lib/admin/diagnostic.ts';
+import { recordMemberAccess } from '../../../../lib/admin/access-log.ts';
 
 // Read-only operator diagnostic: returns a member's cross-phase backend state + an anomaly FLAGS block,
 // so a member's walk (onboarding → Rebuild → …) can be inspected for data issues without hand-run SQL.
@@ -73,6 +74,15 @@ export async function GET(req: Request): Promise<Response> {
     });
   }
 
+  // AUDIT: this endpoint returns a member's full cross-phase state. It authenticates with a shared bearer token
+  // rather than an operator session, so there is no named human to attribute it to — the log says so plainly
+  // instead of leaving the actor blank.
+  await recordMemberAccess(db, {
+    operatorId: null,
+    operatorLabel: 'diagnostic token (no named operator)',
+    memberId: named.memberId,
+    surface: 'diagnostic_api',
+  });
   const report = await runMemberDiagnostic(db, named.memberId);
   return NextResponse.json({ query: q, matchCount: matches.length, matches, inFlight, reportFor: named, report });
 }

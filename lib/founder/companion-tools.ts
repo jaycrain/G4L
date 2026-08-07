@@ -30,6 +30,7 @@ import { QUIET_AFTER_DAYS, isStalled, isQuiet } from '../admin/console.ts';
 import { buildFounderContext } from './context.ts';
 import { generateDraft, MOMENTS, type OperatingMoment } from './draft.ts';
 import { createDraft } from './store.ts';
+import { recordMemberAccess } from '../admin/access-log.ts';
 
 const DAY = 24 * 60 * 60 * 1000;
 
@@ -176,6 +177,9 @@ export async function runFounderTool(
   input: Record<string, unknown>,
   now = Date.now(),
   budget?: TurnBudget,
+  // WHO is asking. Optional so every existing caller and test keeps compiling, but the console passes it — an
+  // unattributed entry in the access log is a worse outcome than a slightly wider signature.
+  operator?: { id: string | null; label: string },
 ): Promise<ToolResult> {
   const roster = (await getRoster(db)).filter((r) => !r.isDemo);
   const age = (iso: string | null) => (iso ? now - new Date(iso).getTime() : Infinity);
@@ -234,6 +238,18 @@ export async function runFounderTool(
       }
       budget.openedMembers.add(hit.memberId);
     }
+
+    // AUDIT: this is the same act the console's member page performs — opening ONE person's private record —
+    // so it lands in the same log. It goes inside the `!has(memberId)` branch deliberately: re-opening someone
+    // already open in this turn is the same access, and logging it twice would inflate the record of what
+    // actually happened. The cap has always counted this moment; now it also remembers it.
+    await recordMemberAccess(db, {
+      operatorId: operator?.id ?? null,
+      operatorLabel: operator?.label ?? 'founder companion (unattributed)',
+      memberId: hit.memberId,
+      surface: 'founder_companion',
+      note: `asked about "${input.name}"`,
+    });
 
     // GRINTA — the second of the three feedbacks, and the Companion could not see it.
     //

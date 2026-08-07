@@ -1,6 +1,6 @@
 'use server';
 
-import { isAdmin } from '../../authz.ts';
+import { isAdmin, currentOperator } from '../../authz.ts';
 import { getDb } from '../../../lib/db/index.ts';
 import { FOUNDER_COMPANION_SYSTEM, cohortContext } from '../../../lib/founder/companion.ts';
 import { FOUNDER_TOOLS, runFounderTool, newTurnBudget } from '../../../lib/founder/companion-tools.ts';
@@ -53,6 +53,9 @@ export async function askFounderCompanionAction(
   history: PriorTurn[] = [],
 ): Promise<{ reply: string; looked: string[]; cards: Card[] }> {
   if (!(await isAdmin())) return { reply: 'Not authorized.', looked: [], cards: [] };
+  // Resolved once per turn, not per tool call — one operator asks one question, however many members the
+  // Companion ends up opening while answering it.
+  const who = await currentOperator();
   const q = (question ?? '').trim().slice(0, 2000);
   if (!q) return { reply: '', looked: [], cards: [] };
 
@@ -124,7 +127,7 @@ ${cohortContext(cohort, attention)}`;
         calls.map(async (c) => {
           looked.push(c.name);
           const input = (c.input ?? {}) as Record<string, unknown>;
-          const out = await runFounderTool(db, c.name, input, Date.now(), budget).catch((e) => ({
+          const out = await runFounderTool(db, c.name, input, Date.now(), budget, who).catch((e) => ({
             error: `That lookup failed: ${e instanceof Error ? e.message : 'unknown'}. Say the lookup failed — do not answer as if the result were empty.`,
           }));
           // A failed lookup gets NO card. An empty table under "the read failed" would be the same confident

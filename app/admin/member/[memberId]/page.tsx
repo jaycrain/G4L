@@ -14,7 +14,8 @@ import { getSession, getAsset } from '../../../../lib/curriculum/registry.ts';
 import { redirect } from 'next/navigation';
 import type { Db } from '../../../../lib/db/schema.ts';
 import { generateDraftAction } from '../../actions.ts';
-import { isAdmin } from '../../../authz.ts';
+import { isAdmin, currentOperator } from '../../../authz.ts';
+import { recordMemberAccess } from '../../../../lib/admin/access-log.ts';
 import DraftReview from '../../draft-review.tsx';
 import PushNudgeButton from '../push-nudge-button.tsx';
 import ConsoleSubpage from '../../console/subpage.tsx';
@@ -25,6 +26,14 @@ export default async function AdminMember({ params }: { params: Promise<{ member
   const db = (await getDb()) as unknown as Db;
   const dash = await getDashboard(db, memberId);
   if (!dash) return <p className="error">Member not found. <Link href="/admin">Back</Link></p>;
+
+  // AUDIT: an operator opened ONE member's record. Logged after the existence check, so a typo'd URL doesn't
+  // manufacture an access that never happened. Best-effort and never awaited into the render path's failure
+  // modes — the log observes the page, it does not gate it (lib/admin/access-log.ts).
+  const who = await currentOperator();
+  await recordMemberAccess(db, {
+    operatorId: who.id, operatorLabel: who.label, memberId, surface: 'admin_member_page',
+  });
 
   const drafts = await listForMember(db, memberId);
   const pushCount = await countSubscriptions(db, memberId);
