@@ -63,30 +63,11 @@ export async function requestPasswordResetAction(email: string): Promise<{ ok: t
   return { ok: true, message: GENERIC };
 }
 
-/**
- * Send the "confirm your email" link. Called best-effort at signup — it must NEVER fail the account creation,
- * because the member has just finished telling us their story and losing that to a mail outage is unthinkable.
- */
-export async function sendVerificationEmail(email: string, memberId: string): Promise<void> {
-  const addr = (email ?? '').trim().toLowerCase();
-  if (!addr) return;
-  try {
-    const db = (await getDb()) as unknown as Db;
-    const token = await issueToken(db, 'verify_email', addr, memberId);
-    const base = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, '') || 'https://g4l-ten.vercel.app';
-    await sendEmail({
-      to: addr,
-      subject: 'Confirm your email — Grinta for Life',
-      text:
-        `Welcome to Grinta for Life.\n\n` +
-        `Confirm this is your address so you can always get back into your account:\n` +
-        `${base}/login/verify?token=${encodeURIComponent(token)}\n\n` +
-        `You don't need to do this before you start — it just means we can help you if you ever lose your password.\n`,
-    });
-  } catch (e) {
-    console.warn('verification email not sent (non-fatal):', (e as Error).message);
-  }
-}
+// sendVerificationEmail MOVED OUT of this file → lib/auth/verify-email.ts (2026-08-07).
+// It had no client caller and never needed to be an action, but `export` in a `'use server'` module publishes an
+// RPC endpoint — so it was an unauthenticated, unthrottled "mail any address on our behalf" handler. The reasoning
+// is written up in full at the top of the new file. THE RULE FOR THIS FILE: an export here is a public endpoint;
+// if the only caller is other server code, it belongs in lib/.
 
 /** Redeem a verification link. Returns false for expired/used/unknown — never says why (it is unauthenticated). */
 export async function confirmEmailAction(token: string): Promise<{ ok: boolean }> {

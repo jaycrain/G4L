@@ -26,7 +26,7 @@ import { proposeEntry, addOwnEntry } from '../../lib/playbook/store.ts';
 import { addFacet } from '../../lib/curriculum/store.ts';
 import { consolidateReclaim } from '../../lib/member/reclaim.ts';
 import { createCredential, hasCredential } from '../../lib/auth/store.ts';
-import { sendVerificationEmail } from '../login/reset-actions.ts';
+import { sendVerificationEmail } from '../../lib/auth/verify-email.ts';
 import { hashPassword } from '../../lib/auth/password.ts';
 import { startSession } from '../auth.ts';
 import { stagedEngineEnabled } from '../../lib/agent/onboarding-staged.ts';
