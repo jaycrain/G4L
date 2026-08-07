@@ -68,6 +68,20 @@ before saving, so nothing is ever committed that he hasn't seen.)
 mark it", so saying "did my fifteen minutes" now actually ticks the box. It's framed to the agent as noticing rather
 than compliance: a blank day is a day, never a miss, and when today is already marked it's told not to ask again.
 
+**The week can now END.** This is his ask, twice over: a practice week used to open and then age out silently —
+nothing reviewed it, nothing recorded it, and the member was never told it was over. Now, on day 7, the Companion
+opens with the review in the member's own numbers ("4 of the 5 you aimed for"), keeps it in their Playbook, and asks
+his question — ready for the next activity, run the same week again, or talk about it first. Their call; we don't push
+one.
+
+Tone is deliberate and he may want to push on it: **a shortfall is stated and then left alone.** No "only", no
+"just", no consolation and no silver lining — each of those tells a member you think they failed. Hitting the number
+isn't praised either, just noticed. And a week where nothing got marked gets the honest line rather than a cheer-up
+or a telling-off: *"which might mean it was a hard week, or just that logging slipped."*
+
+This is also the piece that makes his "about a 6 week experience for Cycle 1" framing possible at all — a cycle can
+only have a length once its weeks can finish.
+
 ## 3 · Questions / needs a decision
 
 **Do members ever see "Aware / Prepare / Engage"?** He spec'd the Levels in all four wing documents and they are

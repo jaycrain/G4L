@@ -22,6 +22,9 @@ import { setCommitment, activeCommitments, isCommitmentDomain, DOMAIN_WORD } fro
 import { logMovement, isMovementKind, movementLogSummary } from '../../lib/movement/store.ts';
 import { redesignEnabled } from '../../lib/dashboard/redesign.ts';
 import { weekGrid } from '../../lib/practice/grid.ts';
+import { isClosable, buildReview, closeWeek, keeperBodyFrom } from '../../lib/practice/close.ts';
+import { harvestSignal } from '../../lib/agent/harvest.ts';
+import type { PracticeKind } from '../../lib/practice/store.ts';
 import { isTappable, toggleMark } from '../../lib/practice/mark.ts';
 import { activePracticeWeek } from '../../lib/practice/store.ts';
 import { phaseSummary, type PhaseKey } from '../../lib/content/summaries.ts';
@@ -278,6 +281,10 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
             todayDone: r.marks[practiceGrid.day - 1] === true,
           })),
           tappable: isTappable(practiceGrid.kind),
+          // The window has elapsed and nothing closed it. The review is built HERE rather than described to the
+          // model, so the member's numbers are ours and the phrasing is testable (lib/practice/close.ts).
+          readyToClose: isClosable(practiceGrid),
+          review: isClosable(practiceGrid) ? (({ opener, lines }) => ({ opener, lines }))(buildReview(practiceGrid)) : null,
         }
       : null,
     qualityDay: qdProfile
@@ -649,6 +656,38 @@ export async function sendCheckin(memberId: string, memberMessage: string): Prom
       { role: 'member', text: memberMessage },
       { role: 'agent', text: r.reply },
     ]);
+    // THE WEEK ENDS HERE. If this turn carried the close review, mark the week closed and keep it — so it is
+    // reviewed exactly once, and the member has it in their Playbook afterwards rather than only in a chat scroll.
+    //
+    // Closing AFTER the reply, not before, is deliberate: if the turn had thrown, the week would still be open and
+    // they would get the review next time. Late is recoverable; a week that closed unseen is not.
+    //
+    // Independent try, and it LOGS. A keeper that throws must not take the close with it, and a close that throws
+    // must not take the member's reply with it — that shared-swallowed-try shape is what silently dropped every
+    // session keeper on prod once already.
+    const finishing = ctx.practiceWeek;
+    if (finishing?.readyToClose && finishing.review) {
+      try {
+        const closed = await closeWeek(db, memberId, finishing.kind as PracticeKind);
+        if (closed) {
+          await harvestSignal(
+            db,
+            memberId,
+            {
+              kind: 'practice_week',
+              ref: finishing.kind,
+              keeperType: 'plan',
+              destinationIntent: 'keeper',
+              payloadRef: keeperBodyFrom(finishing.review.lines),
+              label: 'Your practice week',
+            },
+            'companion',
+          );
+        }
+      } catch (e) {
+        console.error(`practice-week close failed for member=${memberId} kind=${finishing.kind}:`, e);
+      }
+    }
     return { ...r, mutated };
   } catch (e) {
     console.error('sendCheckin failed:', (e as Error).message);

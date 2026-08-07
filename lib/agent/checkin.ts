@@ -98,6 +98,10 @@ export type CheckinContext = {
     day: number; // 1..7
     rows: { label: string; target: number | null; done: number; todayDone: boolean }[];
     tappable: boolean; // can the agent mark a day, or is this week a mirror of a log they wrote?
+    // The window has elapsed and nothing has closed it yet. When true, the review lines below are the FIRST thing
+    // the Companion should raise — a week that ends in silence is the thing this whole slice exists to stop.
+    readyToClose: boolean;
+    review?: { opener: string; lines: string[] } | null;
   } | null;
   qualityDay?: { nonNegotiables: string[]; recentAvg: number | null; days: number } | null;
   beatsDone?: number; // Beats worked so far
@@ -192,6 +196,20 @@ export function recallKeeper(message: string, keepers: RecallKeeper[] = []): Rec
 function practiceWeekLine(c: CheckinContext): string | null {
   const pw = c.practiceWeek;
   if (!pw || !pw.rows.length) return null;
+  // THE WEEK IS OVER. This outranks the ordinary in-week line: a member who finished their week and hears nothing
+  // has been left to notice it themselves, which is how the practice week has always ended until now.
+  if (pw.readyToClose && pw.review) {
+    return (
+      `THEIR PRACTICE WEEK HAS FINISHED and they have not been told yet. Open with it, before anything else. ` +
+      `Say it in your own voice, but keep their numbers exactly as they are: "${pw.review.opener}" then, one per ` +
+      `line: ${pw.review.lines.map((l) => `"${l}"`).join(' ')} ` +
+      `Then ask ONE question — whether they're ready to move on to the next activity, want to run the same week ` +
+      `again, or want to talk about how it went first. Their call entirely; don't push one. ` +
+      `TONE: this is a review, NEVER a report card. State a shortfall plainly and then LEAVE IT ALONE — no "only", ` +
+      `no "just", no consolation and no silver lining, all of which tell them you think they failed. Don't praise ` +
+      `hitting the number either; notice it. A week is seven reasonable decisions, not a test they sat.`
+    );
+  }
   const rows = pw.rows
     .map((r) => `${r.label} — ${r.done}${r.target ? ` of the ${r.target} they aimed for` : ' so far'}${r.todayDone ? ', already marked today' : ''}`)
     .join('; ');
