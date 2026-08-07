@@ -1,5 +1,12 @@
 # Path B — security & privacy before real members
 
+> ⚠ **STALE as of 2026-08-07 — read `docs/security-sweep-scope.md` instead.**
+> Several unchecked boxes below are ALREADY BUILT: login rate-limiting (migration 0062), session rotation on
+> password change (0064, SEC-14), password reset (live), and session tokens hashed at rest (0064/0068). On
+> 2026-08-07 this file was used to conclude that security was the biggest unbuilt risk and should be the next
+> build — a code inventory the same afternoon showed the opposite, and the recommendation reversed.
+> The scope doc carries the verified state with file:line. Reconciling this file is Phase 4 there.
+
 Path A (preview, closed feedback group) is live. This is what must land **before onboarding real
 members** (the charter/public cohort). Per CLAUDE.md, security + the data model are senior-reviewed.
 
