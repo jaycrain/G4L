@@ -1,6 +1,14 @@
 # For Greg — running list, 2026-08-07
 
-Jay emails this at end of day. **I append as I go; nothing here is sent until Jay says.**
+**SENT 2026-08-07**, as a reply on the "ReClaim observations and ideas" thread. This file is the working ledger the
+email was drawn from — it stays as the record of what we told him and what we're waiting on.
+
+**Waiting on five answers.** Only #1 blocks anything: *do members ever see Aware / Prepare / Engage?* If internal,
+the next build is PW-7 (editable Aim) and the C1 emergent-goal fix. If member-facing, it's an IA pass across twelve
+assets. The prepared counter-argument lives in memory as `levels-stay-internal-stance` — the short version is that
+Greg's own source confirms only W3 = Engage and we derived the rest, and the counter-offer is Explore the Science,
+which already shipped.
+
 Three sections: what changed because he asked, where we deliberately diverged from his spec (and why), and what we
 need from him.
 
