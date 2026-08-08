@@ -30,6 +30,7 @@ import { saveArcSession, loadArcSession, clearArcSession } from '../../lib/agent
 import { loadReconnectCaptures } from '../../lib/agent/reconnect.ts';
 import { drainHarvest } from '../../lib/agent/harvest.ts';
 import { startPracticeWeek, latestImageKeeper } from '../../lib/practice/store.ts';
+import { saveW3Triggers } from '../../lib/rewire/w3-triggers.ts';
 import { getGrintaBaselineReading, latestGrintaReading, persistGrintaReading, commitmentCheckpointResponsesMap } from '../../lib/grinta/survey/store.ts';
 import { scoreCheckpointStrand, grintaChangePct, directionOf } from '../../lib/grinta/survey/scoring.ts';
 import { BASELINE_COMMITMENT_ITEMS, CHECKPOINT_COMMITMENT_ITEMS } from '../../lib/grinta/survey/instrument.ts';
@@ -270,6 +271,20 @@ export async function rewireTurnAction(
           await startPracticeWeek(db, memberId, session === 'w3' ? 'w3_logging' : 'w2_image');
         } catch {
           /* swallow — the session still completed; the nudge is a bonus, not load-bearing */
+        }
+      }
+      // W3's triggers become the ROWS of the monitoring week (lib/rewire/w3-triggers.ts). They already survive as
+      // prose inside the recovery_move keeper, which is right for recall and useless as a picker — and Greg's
+      // tracker needs "which named trigger" as a choosable list. Their own words, verbatim; the system never
+      // supplies or rewords a trigger. SEPARATE try from the week above: a failure here must not cost the member
+      // their practice week, and vice versa (the harvest silent-drop taught us to stop sharing a swallowed try).
+      if (session === 'w3') {
+        try {
+          const named = (turn.state?.collected?.w3Triggers ?? []) as string[];
+          const n = await saveW3Triggers(db, memberId, named);
+          if (named.length && !n) console.error(`w3 triggers: member=${memberId} named ${named.length}, saved 0`);
+        } catch (e) {
+          console.error(`w3 triggers persist failed for member=${memberId}:`, e);
         }
       }
     }
