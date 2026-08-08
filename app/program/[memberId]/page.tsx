@@ -100,32 +100,6 @@ export default async function ProgramPage({
         <Link href={sessionBack} className="ws-back program-session-back">← Session</Link>
       )}
 
-      {/* REVISIT A SESSION — Cowork's note says this belongs on the Playbook ("the member picking up the tools
-          they've built"), and Jay agreed. NOT moved yet, because it is not a lift-and-drop: the Playbook already
-          has "Run it again with your Companion →" on individual plays, which is a DIFFERENT action (re-run the
-          session) from this one (read the final state, unchanged). Two similar-looking links a tab apart would
-          confuse both. Which tab it lands in, and how the two read side by side, is a design call — open.
-
-          What DID move: it now sits BELOW the lead. It was above it, which put a utility list where the page's
-          first sentence belongs. */}
-      {reviewable.length > 0 && (
-        <div className="card program-revisit">
-          <h3>Revisit a session</h3>
-          <p className="muted">Look back at any session you’ve finished — the final state you kept, read-only. Nothing changes.</p>
-          <ul className="revisit-list">
-            {reviewable.map((s) => (
-              <li key={s.key}>
-                <Link href={`/workspace/${memberId}/${s.key}?review=1`} className="revisit-link">
-                  <span className="revisit-name">{s.label}</span>
-                  <span className="revisit-phase">{REVIEW_PHASE_LABEL[s.phase] ?? s.phase}</span>
-                  <span className="revisit-arrow" aria-hidden="true">→</span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
       {/* THE TOP OF THE PROGRAM PAGE — Cowork's copy, placed verbatim (2026-08-08, "Program page — top-of-page copy
           for CC"). It frames the WHY and the spine, then hands off; it deliberately does NOT re-list the phases or
           repeat the Session/Checkpoint mechanic, because the Outline below already carries both. That scoping is
@@ -198,6 +172,34 @@ export default async function ProgramPage({
           <p className="route-loop">→ and the loop comes back around. Grinta for Life.</p>
         </div>
       </div>
+      {/* REVISIT A SESSION — LAST on the page, deliberately. It is a utility for someone who has already done the
+          work; it has no business above the sentence that explains what the Program IS (Jay, 2026-08-08: "it
+          shouldn't be at the top"). It also only renders for a member with finished Sessions, which is exactly
+          why it sat wrong for so long — on a fresh account it is invisible, so nobody walking a new member ever
+          saw it in the wrong place.
+
+          Cowork's note proposes moving it to the Playbook and attributes that to Jay. Not done, and it is not a
+          lift-and-drop: the Playbook already carries "Run it again with your Companion →" on individual plays,
+          which is a DIFFERENT action (re-run the session) from this one (read the final state you kept,
+          unchanged). Two near-identical links a tab apart would muddle both. Which tab, and how the two read side
+          by side, is an open design call. */}
+      {reviewable.length > 0 && (
+        <div className="card program-revisit">
+          <h3>Revisit a session</h3>
+          <p className="muted">Look back at any session you’ve finished — the final state you kept, read-only. Nothing changes.</p>
+          <ul className="revisit-list">
+            {reviewable.map((s) => (
+              <li key={s.key}>
+                <Link href={`/workspace/${memberId}/${s.key}?review=1`} className="revisit-link">
+                  <span className="revisit-name">{s.label}</span>
+                  <span className="revisit-phase">{REVIEW_PHASE_LABEL[s.phase] ?? s.phase}</span>
+                  <span className="revisit-arrow" aria-hidden="true">→</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </SubpageShell>
   );
 }
