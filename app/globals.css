@@ -2277,7 +2277,11 @@ body.onbwel-bleed main { max-width: none; margin: 0; padding: 0; }
 }
 
 /* ============ Dashboard triptych (reflect ← Companion → act) — light theme, docs/dashboard-triptych-spec.md ============ */
-.tri-app { height: calc(100dvh - 56px); overflow: hidden; display: flex; flex-direction: column; padding: 24px; gap: 16px; background: #f5f4f1; }
+/* --conf-h reserves the fixed proprietary strip. WITHOUT it the strip sits ON TOP of the last row of the
+   triptych — on a phone that means the composer, its textarea and Send, so a member cannot type to their
+   Companion at all. Caught on prod at 390x844 before anyone hit it; the desktop symptom was milder (a flank
+   card clipped), which is exactly why checking one viewport would not have found it. */
+.tri-app { height: calc(100dvh - 56px - var(--conf-h, 0px)); overflow: hidden; display: flex; flex-direction: column; padding: 24px; gap: 16px; background: #f5f4f1; }
 .tri-seg { display: none; } /* mobile only */
 .tri-main { flex: 1 1 auto; min-height: 0; display: flex; gap: 20px; }
 .tri-flank { flex: 0 0 280px; width: 280px; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; -webkit-overflow-scrolling: touch; }
