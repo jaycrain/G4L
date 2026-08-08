@@ -1,4 +1,4 @@
-# Strings EXCLUDED from the member transcript (app @ bb69b44 · 2026-08-01)
+# Strings EXCLUDED from the member transcript (app @ 0af7e94 · 2026-08-08)
 # Not member copy: system prompts, multi-line fragments, code artifacts. Review when a real line goes missing.
 
 [lib/agent/onboarding-staged.ts] you’re trying to reclaim. We can always change it later.
@@ -41,6 +41,9 @@
 [lib/agent/onboarding-staged.ts] “${item}” reads more like the bigger picture of the life you’re reclaiming than a single goal. I’d keep it in your Playbook for that work and leave the goal list for the concrete steps — want me to do that?
 [lib/agent/onboarding-staged.ts] “${item}” sounds like who you are, not one goal on a list. I’d hold onto it as part of your identity and keep the list for the concrete things you’re taking back — want me to do that?
 [lib/agent/onboarding-staged.ts] You named a few things in “${item}.” Which one do you most want back? We’ll start there — the rest aren’t going anywhere.
+[lib/agent/onboarding-staged.ts] That came through as one entry, but you named ${numberWord(parts.length)} things in it: ${parts.map((p) =>
+[lib/agent/onboarding-staged.ts] ).join(', ')}. Want me to list them separately?
+[lib/agent/onboarding-staged.ts] Done — they’re ${pending.parts.length} separate items now.
 [lib/agent/onboarding-staged.ts] Perfect — “${distilled}” it is.
 [lib/agent/onboarding-staged.ts] ?t know|nothing( else)?|that
 [lib/agent/onboarding-staged.ts] ?re|they are|those are|it
@@ -341,7 +344,7 @@
 [lib/agent/rewire.ts] slip: "A false start is the cost of changing, not proof I can't." Say it your way.
 [lib/agent/rewire.ts] in the goal you named. The campaign can't compete with a picture that real.
 [lib/agent/rewire.ts] Here's your work this week: don't try to change anything yet. Just notice. Go to the Momentum card on your
-[lib/agent/rewire.ts] dashboard every day and log your good calls, your false starts and even quiet days where not much happened.
+[lib/agent/rewire.ts] dashboard every day and log your good calls, your false starts and the on-track days where not much happened.
 [lib/agent/rewire.ts] that turns a slip into a comeback. That's Rewire. Next, we put it into the body.
 [lib/agent/rewire.ts] ?s| did| does)?\s+(that|this|it)\s+com|that
 [lib/agent/rewire.ts] Good — let's get it exactly how you'd say it.${BEAT_SEP}${reframeFallback(c)}
@@ -424,10 +427,11 @@
 [lib/agent/rebuild.ts] Movement first.  ${line}
 [lib/agent/rebuild.ts] A number from 1 to 4 — 1 is strongly disagree, 4 is strongly agree.  ${skillsDeliver(n)}
 [lib/agent/rebuild.ts] you're not already doing and small enough to actually stick.
-[lib/agent/rebuild.ts] Here's your week, then — small and yours:  Movement: ${activity} Eating: ${diet}
+[lib/agent/rebuild.ts] start, or on track. It's a good time to talk with other Community members too. After a week of it, the Rebuild
+[lib/agent/rebuild.ts] — ${n} ${n === 1 ? 'day' : 'days'}
+[lib/agent/rebuild.ts] Here's your week, then — small and yours:  Movement: ${activity}${aim(activityDays)} Eating: ${diet}${aim(dietDays)}
 [lib/agent/rebuild.ts] doing. A 10-minute walk after dinner, five minutes of stretching, one short strength session. Small and real.
 [lib/agent/rebuild.ts] sugary drink for water, a fruit with breakfast. What feels doable?
-[lib/agent/rebuild.ts] ?em)(?: in)?|that
 [lib/agent/rebuild.ts] Let's leave it there for today — you've got ${activity && diet ? 'both pieces' : 'one piece'} down
 [lib/agent/rebuild.ts] ${activity ?
 [lib/agent/rebuild.ts] : ''}${activity && diet ?
@@ -448,10 +452,15 @@
 [lib/agent/rebuild.ts] brief warm acknowledgment — the app shows the member their plan to confirm. If a distress or crisis signal appears,
 [lib/agent/rebuild.ts] drop the exercise and route to support (988 US / local) and a human — always on.
 [lib/agent/rebuild.ts] Lock a plan field once it is specific, right-sized, and the member has affirmed it. Pass activityChange for the
+[lib/agent/rebuild.ts] locked, ask how many days that week they're aiming for and pass activityDays / dietDays — THEIR number, never
+[lib/agent/rebuild.ts] one you suggest. If they'd rather not put a number on it, leave it out and move on; it is optional.
 [lib/agent/rebuild.ts] Their Reclaim List (what they're taking back — you HAVE this; never say you can't see it): ${reclaim.join('; ')}
 [lib/agent/rebuild.ts] MEMBER CONTEXT (what you already know — never say you don't): ${lines.join(' ')}
-[lib/agent/rebuild.ts] RIGHT NOW: coach the MOVEMENT change — one small, specific, trackable thing they're not already doing. When it's real and they've affirmed it, call record_plan(activityChange). Then DON'T STOP — in the same reply, briefly acknowledge it and move straight into coaching the EATING change (there are two; never end your turn on just an acknowledgment).
-[lib/agent/rebuild.ts] RIGHT NOW: the movement change is locked. Now coach the EATING change — one small upgrade. When it's real and affirmed, call record_plan(dietChange).
+[lib/agent/rebuild.ts] RIGHT NOW: coach the MOVEMENT change — one small, specific, trackable thing they're not already doing. When it's real and they've affirmed it, call record_plan(activityChange), and ask in the same breath how many days this week they're aiming for. Then DON'T STOP — briefly acknowledge it and move straight into coaching the EATING change (there are two; never end your turn on just an acknowledgment).
+[lib/agent/rebuild.ts] RIGHT NOW: the movement change is locked${activityDays ?
+[lib/agent/rebuild.ts] : ''}. Now coach the EATING change — one small upgrade. When it's real and affirmed, call record_plan(dietChange) AND ask how many days they're aiming for, the same way you did for movement. Don't skip the number — but if they'd rather not give one, take that and move on.
+[lib/agent/rebuild.ts] RIGHT NOW: both changes are locked. One is still missing its day target — the ${!activityDays ? 'MOVEMENT' : 'EATING'} one. Ask for that number in one short question; theirs to choose, and fine to decline.
+[lib/agent/rebuild.ts] = 1 && n
 [lib/agent/rebuild.ts] Movement — ${activity} Eating — ${diet}
 [lib/agent/rebuild.ts] You did the real work of Rebuild — you found your why, took honest stock of your skills, and ran the pilot in your
 [lib/agent/rebuild.ts] own life. Before we close the Phase, a quick read on where your control sits now. A dozen of these, one to five. No
@@ -466,12 +475,6 @@
 [lib/rebuild/skills-instrument.ts] scoreSkills expects ${SKILLS_ITEM_COUNT} responses, got ${responses.length}
 [lib/rebuild/skills-instrument.ts] B2-PA${s.no}
 [lib/rebuild/skills-instrument.ts] B2-DI${s.no}
-[lib/agent/reclaim.ts] we'll take a look back at how the work you've done through Reconnect, Rewire, and Rebuild is showing up for you.
-[lib/agent/reclaim.ts] disagree) to 5 (strongly agree). We'll do it in three parts: your body, your relationships, and who you are.
-[lib/agent/reclaim.ts] were mixed, that's honest too: Reclaim isn't all-or-nothing. You can be in Reclaim in your body and still in
-[lib/agent/reclaim.ts] ${EVIDENCE_PART_LABEL[partStart]}  ${item.stem}
-[lib/agent/reclaim.ts] Just a number, 1 to 5 — how true does that feel?  ${evidenceDeliver(n)}
-[lib/agent/reclaim.ts] ${C1_STEP1_CLOSE}${BEAT_SEP}${refineOpener(b.collected)}
 [lib/agent/reclaim.ts] revisit it now to make sure it still fits the person you're becoming.${BEAT_SEP}Here's your list as it stands:  ${shown}${BEAT_SEP}Before changing anything,
 [lib/agent/reclaim.ts] just notice it. What still feels true, what feels different, and what feels newly important?
 [lib/agent/reclaim.ts] pendingRefinement
@@ -514,7 +517,6 @@
 [lib/agent/reclaim.ts] Strong contributors: ${list(q.contributors)}
 [lib/agent/reclaim.ts] And what tends to pull a day down for you: ${list(q.disruptors)}
 [lib/agent/reclaim.ts] Here's your Quality Day:  ${parts}${BEAT_SEP}Want me to save this and start your week of tracking, or adjust it first?
-[lib/agent/reclaim.ts] ?s go|that
 [lib/agent/reclaim.ts] You are the G4L Companion running C3, Quality Days, in Reclaim (Phase 4). You help the member DEFINE what makes a
 [lib/agent/reclaim.ts] day a 'quality day' for them — a warm, member-owned coaching conversation (not a survey). Walk them: (1) elicit
 [lib/agent/reclaim.ts] what's present when a day feels genuinely good — solid, healthy, meaningful, aligned (offer examples only if they're
@@ -627,8 +629,10 @@
 [app/badges/[memberId]/page.tsx] Badges
 [app/badges/[memberId]/page.tsx] bd-phase-h ${g.key}
 [app/badges/[memberId]/page.tsx] bd-badge${b.earned ? ' earned' : ''}
-[app/badges/[memberId]/page.tsx] Earned
 [app/badges/[memberId]/page.tsx] Ahead
+[app/badges/[memberId]/page.tsx] you're ahead
+[app/badges/[memberId]/page.tsx] Earned
+[app/badges/[memberId]/page.tsx] Earned when you ${b.earn_rule.replace(/^You /, '').replace(/\.$/, '')}.
 [app/badges/[memberId]/page.tsx] so far.
 [app/badges/[memberId]/page.tsx] Milestones
 [app/badges/[memberId]/page.tsx] Hardiness
@@ -645,6 +649,7 @@
 [app/dashboard/redesign-dashboard.tsx] Rewire
 [app/dashboard/redesign-dashboard.tsx] Rebuild
 [app/dashboard/redesign-dashboard.tsx] Reclaim
+[app/dashboard/redesign-dashboard.tsx] redesignDashboard.pulseBeats
 [app/dashboard/redesign-dashboard.tsx] Session ${curSessionIdx + 1} of ${phaseSessions.length}
 [app/dashboard/redesign-dashboard.tsx] ${Math.min(activeRing.done, phaseSessions.length)} of ${phaseSessions.length}
 [app/dashboard/redesign-dashboard.tsx] the ${dash.identityNoun}
@@ -670,6 +675,34 @@
 [app/dashboard/redesign-dashboard.tsx] ${grinta.changePct > 0 ? '+' : ''}${grinta.changePct}%
 [app/dashboard/redesign-dashboard.tsx] Momentum
 [app/dashboard/redesign-dashboard.tsx] Badges
+[app/dashboard/triptych-center.tsx] your Lifestyle Pilot
+[app/dashboard/triptych-center.tsx] something you’re keeping
+[app/dashboard/triptych-center.tsx] ${Math.min(el.scrollHeight, 160)}px
+[app/dashboard/triptych-center.tsx] come back N times
+[app/dashboard/triptych-center.tsx] tri-companion tri-navy${hasSent ? ' is-conversing' : ''}
+[app/dashboard/triptych-center.tsx] s the first line of the Companion
+[app/dashboard/triptych-center.tsx] rmsg ${m.role}
+[app/dashboard/triptych-center.tsx] Thinking…
+[app/dashboard/triptych-center.tsx] s OWN kept line, held in the Companion
+[app/dashboard/triptych-center.tsx] Enter
+[app/dashboard/triptych-left.tsx] Reconnect
+[app/dashboard/triptych-left.tsx] Rewire
+[app/dashboard/triptych-left.tsx] Rebuild
+[app/dashboard/triptych-left.tsx] Reclaim
+[app/dashboard/triptych-left.tsx] Physical
+[app/dashboard/triptych-left.tsx] Self
+[app/dashboard/triptych-left.tsx] Social
+[app/dashboard/triptych-left.tsx] Outlook
+[app/dashboard/triptych-left.tsx] select max(taken_at) as last from idq_retake where member_id=$1 and cycle_indicator=1
+[app/dashboard/triptych-left.tsx] en-US
+[app/dashboard/triptych-left.tsx] how am I doing
+[app/dashboard/triptych-left.tsx] rreg-dir dir-${dash.score.direction}
+[app/dashboard/triptych-left.tsx] ${dash.score.delta > 0 ? '+' : ''}${Math.round(dash.score.delta)}
+[app/dashboard/triptych-left.tsx] Total
+[app/dashboard/triptych-left.tsx] rreg-dir dir-${grinta.direction}
+[app/dashboard/triptych-left.tsx] ${grinta.changePct > 0 ? '+' : ''}${grinta.changePct}%
+[app/dashboard/triptych-left.tsx] Badges
+[app/dashboard/triptych-right.tsx] triptychRight.pulseBeats
 [app/dashboard/triptych-right.tsx] Momentum
 [app/dashboard/triptych-right.tsx] Movement
 [app/dashboard/triptych-right.tsx] Strava
@@ -704,6 +737,10 @@
 [app/momentum/[memberId]/page.tsx] T00:00:00
 [app/momentum/[memberId]/page.tsx] T00:00:00
 [app/momentum/[memberId]/page.tsx] Yesterday
+[app/momentum/[memberId]/page.tsx] momentum.pulseBeats
+[app/momentum/[memberId]/page.tsx] momentum.commitmentTexts
+[app/momentum/[memberId]/page.tsx] momentum.domainTally
+[app/momentum/[memberId]/page.tsx] momentum.recentCalls
 [app/momentum/[memberId]/page.tsx] Momentum
 [app/momentum/[memberId]/page.tsx] What you’re holding yourself to
 [app/momentum/[memberId]/page.tsx] Movement
@@ -712,18 +749,6 @@
 [app/momentum/momentum-log.tsx] momentum-domain-btn${domain === 'activity' ? ' is-on' : ''}
 [app/momentum/momentum-log.tsx] momentum-domain-btn${domain === 'diet' ? ' is-on' : ''}
 [app/momentum/momentum-log.tsx] momentum-log-btn is-${o.type}
-[app/field-guide/[memberId]/page.tsx] Reconnect
-[app/field-guide/[memberId]/page.tsx] Rewire
-[app/field-guide/[memberId]/page.tsx] Rebuild
-[app/field-guide/[memberId]/page.tsx] Reclaim
-[app/field-guide/[memberId]/page.tsx] Companion
-[app/field-guide/[memberId]/page.tsx] Program
-[app/field-guide/[memberId]/page.tsx] Checkpoints
-[app/field-guide/[memberId]/page.tsx] Momentum
-[app/field-guide/[memberId]/page.tsx] Playbook
-[app/field-guide/[memberId]/page.tsx] Community
-[app/field-guide/[memberId]/page.tsx] Badges
-[app/field-guide/[memberId]/page.tsx] Movement
 [app/score/[memberId]/page.tsx] Physical
 [app/score/[memberId]/page.tsx] Self
 [app/score/[memberId]/page.tsx] Social
@@ -737,3 +762,103 @@
 [app/grinta/[memberId]/page.tsx] Rebuild
 [app/grinta/[memberId]/page.tsx] Reclaim
 [app/grinta/[memberId]/page.tsx] Where the name comes from
+[app/movement/[memberId]/page.tsx] Walk
+[app/movement/[memberId]/page.tsx] Ride
+[app/movement/[memberId]/page.tsx] Hike
+[app/movement/[memberId]/page.tsx] Swim
+[app/movement/[memberId]/page.tsx] Workout
+[app/movement/[memberId]/page.tsx] Other
+[app/movement/[memberId]/page.tsx] Fitbit
+[app/movement/[memberId]/page.tsx] Garmin
+[app/movement/[memberId]/page.tsx] Withings
+[app/movement/[memberId]/page.tsx] Peloton
+[app/movement/[memberId]/page.tsx] select identity_noun from member_profile where member_id=$1
+[app/movement/[memberId]/page.tsx] ${e.daysAgo}d ago
+[app/movement/[memberId]/page.tsx] Movement
+[app/movement/[memberId]/page.tsx] Strava
+[app/movement/[memberId]/page.tsx] Connected
+[app/movement/[memberId]/page.tsx] Soon
+[app/movement/[memberId]/page.tsx] Soon
+[app/movement/[memberId]/page.tsx] Strava
+[app/movement/[memberId]/page.tsx] Connected
+[app/movement/[memberId]/page.tsx] mv-dot ${e.provenance}
+[app/movement/[memberId]/page.tsx] Strava
+[app/movement/[memberId]/page.tsx] Companion
+[app/reclaim-list/[memberId]/page.tsx] reclaim-row${item.reclaimed ? ' reclaimed' : ''}
+[app/reclaim-list/[memberId]/page.tsx] Reclaimed
+[app/reclaim-list/[memberId]/page.tsx] s lede ("What you
+[app/connect/[memberId]/page.tsx] ${Math.round(hrs / 24)}d ago
+[app/connect/[memberId]/page.tsx] select display_name from member_profile where member_id = $1
+[app/connect/[memberId]/page.tsx] 0.6rem 0.9rem
+[app/connect/[memberId]/page.tsx] 1.25rem
+[app/connect/[memberId]/page.tsx] 0.7rem
+[app/connect/[memberId]/page.tsx] 0.55rem 0.6rem
+[app/connect/[memberId]/page.tsx] rgba(59, 148, 149, 0.07)
+[app/connect/[memberId]/page.tsx] 0.78rem
+[app/connect/[memberId]/page.tsx] 1.25rem
+[app/connect/[memberId]/page.tsx] 0.95rem 0.8rem
+[app/connect/[memberId]/page.tsx] 0.85rem
+[app/connect/[memberId]/page.tsx] showName
+[app/connect/[memberId]/page.tsx] Share
+[app/connect/[memberId]/page.tsx] 1.25rem
+[app/connect/[memberId]/page.tsx] Topics
+[app/connect/[memberId]/page.tsx] post-${p.id}
+[app/connect/[memberId]/page.tsx] 0.9rem
+[app/connect/[memberId]/page.tsx] 0.9rem
+[app/connect/[memberId]/page.tsx] 0.5rem
+[app/connect/[memberId]/page.tsx] 0.8rem
+[app/connect/[memberId]/page.tsx] 0.35rem 0 0
+[app/connect/[memberId]/page.tsx] 0.4rem 0 0.6rem
+[app/connect/[memberId]/page.tsx] 0.85rem
+[app/connect/[memberId]/page.tsx] 0.15rem 0 0.15rem 0.7rem
+[app/connect/[memberId]/page.tsx] 0.35rem 0
+[app/connect/[memberId]/page.tsx] 0.78rem
+[app/connect/[memberId]/page.tsx] · ${p.cheerCount}
+[app/connect/[memberId]/page.tsx] 0.8rem
+[app/connect/[memberId]/page.tsx] showName
+[app/connect/[memberId]/page.tsx] Reply…
+[app/connect/[memberId]/page.tsx] Reply
+[app/connect/[memberId]/page.tsx] 0.78rem
+[app/connect/[memberId]/page.tsx] 8px 0 4px
+[app/connect/[memberId]/page.tsx] 0.8rem
+[app/connect/[memberId]/page.tsx] 5px 0
+[app/connect/[memberId]/page.tsx] Report
+[app/connect/[memberId]/page.tsx] 1.25rem
+[app/connect/[memberId]/page.tsx] 0.7rem
+[app/connect/[memberId]/page.tsx] 0.7rem
+[app/connect/[memberId]/page.tsx] 0.5rem
+[app/connect/[memberId]/page.tsx] 2px 0 0
+[app/connect/[memberId]/page.tsx] 0.85rem
+[app/connect/[memberId]/page.tsx] ${rm.hereNow} here now ·
+[app/connect/[memberId]/page.tsx] Join
+[app/connect/[memberId]/page.tsx] 0.95rem 0.8rem
+[app/connect/[memberId]/page.tsx] 1.25rem
+[app/connect/[memberId]/page.tsx] 0.7rem
+[app/connect/[memberId]/page.tsx] 0.4rem
+[app/connect/[memberId]/page.tsx] 0.7rem
+[app/connect/[memberId]/page.tsx] You told ${it.otherName} you'd ${it.commitment}.
+[app/connect/[memberId]/page.tsx] You're holding ${it.otherName} to: ${it.commitment}.
+[app/connect/[memberId]/page.tsx] Check in
+[app/playbook/[memberId]/redesign-playbook-view.tsx] Who you are
+[app/playbook/[memberId]/redesign-playbook-view.tsx] Who you are
+[app/playbook/[memberId]/redesign-playbook-view.tsx] Promise
+[app/playbook/[memberId]/redesign-playbook-view.tsx] Gathered ${r.proposed} from your work — keep what rings true below.
+[app/playbook/[memberId]/redesign-playbook-view.tsx] Science
+[app/playbook/[memberId]/redesign-playbook-view.tsx] Save
+[app/playbook/[memberId]/redesign-playbook-view.tsx] Cancel
+[app/playbook/[memberId]/redesign-playbook-view.tsx] Pinned
+[app/playbook/[memberId]/redesign-playbook-view.tsx] en-US
+[app/playbook/[memberId]/redesign-playbook-view.tsx] pb-chip${e.source.kind === 'science' ? ' sci' : ''}
+[app/playbook/[memberId]/redesign-playbook-view.tsx] Unpin
+[app/playbook/[memberId]/redesign-playbook-view.tsx] Edit
+[app/playbook/[memberId]/redesign-playbook-view.tsx] Remove
+[app/playbook/[memberId]/redesign-playbook-view.tsx] · last ${new Date(stats.last).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+[app/playbook/[memberId]/redesign-playbook-view.tsx] Keep it
+[app/playbook/[memberId]/redesign-playbook-view.tsx] 0 ? c.items.map(entryCard) :
+[app/account/page.tsx] select display_name, email, avatar_url from member_profile where member_id = $1
+[app/account/page.tsx] Profile
+[app/account/page.tsx] 0.85rem
+[app/account/page.tsx] Password
+[app/account/page.tsx] Movement
+[app/account/page.tsx] Community
+[app/account/page.tsx] Sessions

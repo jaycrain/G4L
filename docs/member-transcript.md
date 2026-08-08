@@ -1,6 +1,6 @@
 # G4L — Member Transcript (authored copy, verbatim)
 
-Stamp: `app @ bb69b44 · 2026-08-01` · PART 1 of the Cowork release bundle.
+Stamp: `app @ 0af7e94 · 2026-08-08` · PART 1 of the Cowork release bundle.
 
 **Quote from this.** Every line below is authored, fixed copy a member reads, in reading order by surface. It does
 **not** include the Companion's in-the-moment reflections (those are model-generated and vary per member — describe
@@ -51,6 +51,7 @@ _source: lib/agent/onboarding-staged.ts_
 - Kept — it’s in your Playbook for the bigger-picture work.
 - Okay — I’ll leave it on your list.
 - Kept — it’s part of who you are, held in your Playbook.
+- Okay — I’ll leave it as you wrote it.
 - No rush — we can shape that one together anytime.
 - ?s (the end|it for now|all for now|enough( for now)?)|i
 - ?re (broke|broken|bugg(y|ing)|malfunction(ing)?|not (working|listening))|document(ing)? an? (item|entry)|not (a|an) (reclaim[- ]?)?(item|entry|goal)\b|hey,? (g4l|companion)\b|g4l companion|trying to (tell|say) you|talking (to|at) you|you (misunderstood|did\s?n[
@@ -85,6 +86,7 @@ _source: lib/agent/onboarding-staged.ts_
 - 'lose weight'; '2-3 rides a week' after 'ride my bike'; 'a few days a week there too' after 'core work'). Fold
 - REPLACE the reclaim item you MOST RECENTLY added with a sharper, more complete version — pass the WHOLE new
 - ('ride my bike more' → 'ride my bike a couple times a week'); (2) whenever their reply just adds an amount,
+- My dad's second marriage fell apart
 - ALWAYS end your turn with your single forward question — your drawing-out ask while gathering ("was there more
 - RECEIVE it: reflect it back, feel what it means to them, and (if vague) drill it concrete — then, and only then,
 - MAKE EACH WANT CONCRETE (light touch): a Reclaim item should be something they could actually notice
@@ -364,7 +366,7 @@ _source: lib/ceremony/rewire-ceremony-beats.ts_
 - Your Rewire held steady — a solid line to build from. The real move was Rewire itself — the tools you built. The climb comes as you use them.
 - Here's what you're taking with you. Everything you built is in your Playbook: the true lines that answer your lies, the picture of where you're headed, and the protocol that turns a slip into a comeback. That's your kit — reach for it anytime.
 - Everything you build in Rewire lives in your Playbook — your kit, ready to reach for.
-- Rewire was the mind. Rebuild is the body — where you take all of this and put it to work. When you’re ready.
+- Rewire is for the mind. Rebuild is for the body — where you take all of this and put it to work. When you’re ready.
 - Start Rebuilding →
 
 
@@ -381,12 +383,12 @@ _source: lib/agent/rebuild.ts_
 - You'll pick one small movement change, and one small healthier eating change to try for a week. Just two things
 - We'll start with movement — what's one small change you could try this week?
 - Your Lifestyle Pilot is locked in. You've committed to one small change in movement, one in eating, for next week.
-- I'll check in on you every day. It's a good time to talk with other Community members too. Your plan's on your dashboard.
-- No problem — tell me what you'd change, and we'll adjust it.
+- Start tomorrow. Go to the Momentum card on your dashboard each day and log how it went — a good call, a false
+- Checkpoint is where this Phase closes.
+- That's your week as it stands. Change either one, or tell me to lock it in.
 - Both are things you can practice on a normal week, not just your best one. Want to lock them in, or tweak one?
 - Let's start with movement. One small physical thing you could add this week — something you're not already
 - Now — one small change to how you eat, an upgrade rather than an overhaul. A vegetable at dinner, swapping one
-- ?s good|perfect|good|sounds good|do it|let
 - : diet ?
 - The rest can wait until it's clearer. I'll keep this with me and we can pick it up whenever you want.
 - Let's leave this one for now — nothing's lost, and there's no right answer waiting to be found today.
@@ -394,7 +396,10 @@ _source: lib/agent/rebuild.ts_
 - HOW TO COACH: one change at a time — movement first, then eating. One question per turn. Elicit their idea; if it's
 - The member's committed small movement change — specific + trackable.
 - The member's committed small eating change — specific + trackable.
-- RIGHT NOW: both changes are locked. Give a brief warm acknowledgment; the app will show the plan to confirm.
+- Days this week the member is aiming for on the movement change (1-7). Their number. Omit if they didn't give one.
+- Days this week the member is aiming for on the eating change (1-7). Their number. Omit if they didn't give one.
+- RIGHT NOW: both changes are locked but neither has a day target. In ONE short question, ask how many days a week they're aiming for — theirs to choose, and fine to decline.
+- RIGHT NOW: both changes are locked with their day targets. Give a brief warm acknowledgment; the app will show the plan to confirm.
 - That's the read. Hold on — let me show you what you just built.
 - Hold on — let me show you what you just built.
 
@@ -467,15 +472,12 @@ _source: lib/ceremony/rebuild-ceremony-beats.ts_
 
 _source: lib/agent/reclaim.ts_
 
-- You are the only one who can declare that you are ready for Reclaim. It's something you recognize in yourself. Here
-- It's how you feel but, even more importantly, it's in how you're living. Rate each statement from 1 (strongly
-- If you rated yourself a 4 or 5 on most of these, great work, you're ready for the Reclaim phase. If your ratings
-- Rebuild in your relationships. The G4L program is a cycle, not a linear checklist.
+- Reclaim isn't something anyone else declares for you. It's something you recognize in yourself.
 - (your list is empty — we can build it here)
 - At the start, you built this Reclaim List from who you were then. But, you've done a lot of work since then.
 - You've reconnected with who you are, seen what pulls you off course, and learned how your habits work. Let's
-- No problem — tell me what you'd change, and we'll adjust it.
 - Take your time. Which items still matter most, which feel different now, and what's newly important?
+- That's your list as it stands. Change anything you want, or tell me to save it.
 - Done — your Reclaim List now reflects where you actually are, sorted by what matters most right now.
 - I've kept a snapshot of where it was, too — so you can always see how it's shifted. You can revisit it anytime by asking for your Reclaim List.
 - ('feel physically capable and steady again'), and merge items that belong together; (4) re-prioritize into four
@@ -490,8 +492,9 @@ _source: lib/agent/reclaim.ts_
 - We're going to define what a quality day actually looks like for YOU then track it for a week. You'll notice what
 - When a day feels genuinely good to you — solid, healthy, meaningful, aligned — what tends to be present?
 - Take your time — what makes a day feel healthy, meaningful, and worth it to you? We'll sort it into what's essential, what helps, and what pulls a day down.
-- Great work identifying what makes up your Quality Day, and what takes away from it. For the next week, each day I'll ask how much the day felt like a quality one. You can share which of these elements showed up to make it that way.
-- It's all about noticing what actually makes your days yours. You can log any day from your dashboard.
+- That's your Quality Day as it stands. Change anything you want, or tell me to save it.
+- Great work identifying what makes up your Quality Day, and what takes away from it. For the next week, log each day from your dashboard — how much it felt like a quality one, and which of these elements showed up to make it that way.
+- It's all about noticing what actually makes your days yours.
 - NEXT 3 contributors (they strongly help), and the TOP 2 disruptors (what most often pulls a day down); (3) play
 - RECORDING: once the definition is settled, call record_quality_day with nonNegotiables (up to 3), contributors (up
 - (988 US / local) and a human — always on.
@@ -591,7 +594,7 @@ _source: lib/content/summaries.ts_
 - Measure the distance between who you are and who you want to be.
 - You rate yourself across the areas of your life, comparing where you are now to the fuller version of you that you remember. The point is a clear starting line — an honest look at the distance, in your own hand. Research suggests that measuring your present self against a self that matters to you can sharpen the motivation for the work ahead. Retake it later, and the space between the two readings becomes your own measuring stick.
 - Identify the doors you walked through that caused you to Fade.
-- The Fade rarely arrives all at once. It comes through doors — a relationship, a shrinking social world, autopilot, and others — usually several at the same time. Here you mark which ones are yours, then look at which opened first, which shaped you most, and which is still open. Research suggests people move through life change more steadily when they can put it in a clear story rather than carry it as fog. And in the Spark space, you’ll see these doors are a shared pattern.
+- The Fade rarely arrives all at once. It comes through doors — a relationship, a shrinking social world, autopilot, and others — usually several at the same time. Here you mark which ones are yours, then look at which opened first, which shaped you most, and which is still open. Research suggests people move through life change more steadily when they can put it in a clear story rather than carry it as fog. And in the Community, you’ll see these doors are a shared pattern.
 - See your drift clearly, then put words to who you’re becoming.
 - Two moves in one. The Drift Quiz holds up a mirror to how the Fade shows up in small daily choices — a place to see patterns, with no wrong answers. Then the Legacy Letter turns you forward, to name the person you want to become and what the next chapter stands for. Research suggests we’re more motivated when we can picture our future self clearly, and that writing intentions down makes them stick. You keep the letter, and come back to it.
 - Catch the reasonable-sounding lies that keep you stuck — and craft answers to dispel them.
@@ -605,7 +608,7 @@ _source: lib/content/summaries.ts_
 - Evaluate your skills that can make change stick.
 - Motivation alone doesn’t create change. It’s the practical skills: planning, setting goals, handling barriers, tracking progress, recovering from setbacks, that make a difference. Here you’ll respond to statements that measure where your skills are strong and where they could grow. They’re sorted into three simple jobs: getting ready, taking action, and staying consistent. Research suggests lasting change leans on all three. You’ll come away with a map of what to build on and where support and practice can help.
 - Watch your everyday choices for a week and learn how your lifestyle actually works.
-- This week, you’ll pick one small movement habit and one small eating habit to practice, then watch how they actually play out. It’s a week of just noticing. Research suggests self-monitoring sharpens your awareness and makes the next change more realistic. You can track the Good Calls, the False Starts, the obstacles you didn’t see coming, in your Movement screen. At the end of the week you’ll have a clearer picture of what helps, what gets in your way, and what to adjust.
+- This week, you’ll pick one small movement habit and one small eating habit to practice, then watch how they actually play out. It’s a week of just noticing. Research suggests self-monitoring sharpens your awareness and makes the next change more realistic. You can track the Good Calls, the False Starts, the obstacles you didn’t see coming, on your Momentum card. At the end of the week you’ll have a clearer picture of what helps, what gets in your way, and what to adjust.
 - Revisit your Reclaim List now that you know yourself better.
 - The goals you named at the start aren’t always the ones that stay most meaningful once you’ve done the work. After looking hard at your identity, your patterns, and your habits, you revisit your Reclaim List — some goals now feel more real and more possible, others feel borrowed or vague. Research suggests goals hold best when they’re truly yours and fit who you’re becoming. You refine the list so your next moves are grounded in what actually matters to you.
 - Check in on how your world has expanded from where you started.
@@ -645,7 +648,7 @@ _source: lib/curriculum/registry.ts_
 - Name it — one phrase you can put on, like a title you wear. Natural case: “the Elite Cyclist”, “the Builder”. The self you’re reclaiming.
 - Make it yours — self-chosen, not a role someone else assigned you. What’s the version underneath?
 - The IDQ
-- The mirror — your starting read across four dimensions. Retakes every 60 days.
+- The mirror — your starting read across four dimensions. Comes round again about every 60 days.
 - The Reconnect Checkpoint
 - The reconnection milestone — have you found yourself? Firm gate; opens Rewire.
 - The Rewire Checkpoint
@@ -663,7 +666,7 @@ _source: lib/curriculum/registry.ts_
 - Goal trackers
 - Your numbers — weight, dollars, miles — logged conversationally.
 - The IDQ retake
-- The identity-distance read, retaken every 60 days.
+- The identity-distance read, offered again about every 60 days.
 - Onboarding Courage
 - Named Yourself
 - Goal Reclaimed
@@ -679,6 +682,10 @@ _source: lib/curriculum/registry.ts_
 
 _source: app/badges/[memberId]/page.tsx_
 
+- Earned when you cross the Reconnect checkpoint.
+- Earned when you cross the Rewire checkpoint.
+- Earned when you cross the Rebuild checkpoint.
+- Earned when you close the cycle at the Reclaim checkpoint.
 - You identified the doors you walked through, the life events that created the distance between who are you and who you want to be.
 - You measured the distance between who you were, who you are, and who you want to be.
 - You completed the first phase of the G4L program.
@@ -697,6 +704,8 @@ _source: app/badges/[memberId]/page.tsx_
 - You made it all of the way through a Grinta for Life cycle.
 - Your Comeback
 - ← Dashboard
+- Not yet
+- You completed the second phase
 - More about your Badges
 - You’ve earned
 - Your Badges are the receipts — proof, in one place, of the real things you’ve actually done. Think passport stamps, not trophies: every one is the same size, each with its own color and design, and the point was never any single one. The point is how many you stack.
@@ -708,7 +717,7 @@ _source: app/badges/[memberId]/page.tsx_
 - Still to earn
 
 
-## Dashboard, Field Guide & subpages (UI copy)
+## Dashboard & subpages (UI copy)
 
 _source: app/dashboard/redesign-dashboard.tsx_
 
@@ -717,7 +726,6 @@ _source: app/dashboard/redesign-dashboard.tsx_
 - Doors are common life changes that happen to almost all midlifers. Your Doors show the ones you walked through that started the Fade away from who you were to who you are now, and provide meaningful insights for your comeback.
 - Go to your G4L home
 - Grinta for Life
-- Field Guide
 - Your account
 - Your full story →
 - Or take the Checkpoint
@@ -738,14 +746,39 @@ _source: app/dashboard/redesign-dashboard.tsx_
 - Grit. Stronger each Phase.
 - Blank for now — your grit baseline lands when you finish the intro.
 - The calls you make, one at a time.
-- Good Calls · False Starts · Quiet Days
+- Good Calls · False Starts · On Track
 - Earned for real accomplishments — revealed when you get there.
 - Locked badges show what’s ahead.
+
+_source: app/dashboard/triptych-center.tsx_
+
+- I’m here. What’s on your mind?
+- I’m here. Something hiccupped loading our thread — send a message and we’ll go.
+- Sorry — that didn’t go through. Try again in a moment.
+- Phase 4 · Reclaim
+- See the Program →
+- Where you stand
+- Tell me what's going on…
+
+_source: app/dashboard/triptych-left.tsx_
+
+- Your Playbook
+- What you&rsquo;ve built.
+- Most run
+- Open your Playbook →
+- ID Score
+- Your Identity Distance. Measures the gap between who you are and where you want to end up.
+- Blank for now — it fills the moment you start Reconnect.
+- See more →
+- Grinta Index
+- Grit. Stronger each Phase.
+- Blank for now — your grit baseline lands when you finish the intro.
+- Earned for real accomplishments — revealed when you get there.
 
 _source: app/dashboard/triptych-right.tsx_
 
 - The calls you make, one at a time.
-- Good Calls · False Starts · Quiet Days
+- Good Calls · False Starts · On Track
 - See more →
 - Connect with other members →
 - All your activity, in one place.
@@ -758,13 +791,13 @@ _source: app/dashboard/triptych-right.tsx_
 
 _source: app/dashboard/resilience-pulse.tsx_
 
-- · the Resilience Pulse
-- The Resilience Pulse: a flat baseline with one live, pulsing point at today. It fills as you log your calls.
-- The Resilience Pulse: a rolling two-week rhythm, call by call — an up-beat for a good call, a dip for a false start, flat for a quiet day, ending on today's live point.
-- Good Calls · False Starts · Quiet Days
+- · track your rhythm
+- Your rhythm: a flat baseline with one live, pulsing point at today. It fills as you log your calls.
+- Your rhythm over two weeks, call by call — an up-beat for a good call, a dip for a false start, flat for an on-track day, ending on today's live point.
+- Good Calls · False Starts · On Trays
 - Good Call — up-beat
 - False Start — dip
-- Quiet Day — flat
+- On Track — flat
 - Today — live
 - Every call you make moves the line — starting with your first.
 - A bounce after a dip is evidence of the comeback and that your protocol is working. Keep going.
@@ -773,10 +806,14 @@ _source: app/momentum/[memberId]/page.tsx_
 
 - Good Call
 - False Start
-- Quiet Day
-- The minute-to-minute decisions you make are what add up to change. Here you can track your good calls, false starts — and even quiet days where nothing much happened — and begin to understand how your patterns impact your progress.
+- On Track
+- The minute-to-minute decisions you make are what add up to change. Here you can track your good calls, false starts — and the on-track days where nothing much happened — and begin to understand how your patterns impact your progress.
 - Your log
 - Nothing logged yet. Every call you make — good, false start, or quiet — lands here, in order.
+- More about
+- More about Momentum
+- A single day tells you very little. A few weeks of them tell you what your rhythm actually is, which is the thing worth knowing while you’re still building it.
+- You can log here, or just say it to your Companion. It reads everything on this page, so you can ask it what it’s seeing.
 - ← Dashboard
 
 _source: app/momentum/momentum-log.tsx_
@@ -785,44 +822,12 @@ _source: app/momentum/momentum-log.tsx_
 - Logged — nice one.
 - False Start
 - Logged — that's an honest call. Your protocol's there when you want it.
-- Quiet Day
-- Logged — quiet counts too.
+- On Track
+- Logged — holding steady counts.
 - Could not log.
-- How'd it go? Log a call — no pressure, and quiet days count.
+- How'd it go? Log a call — no pressure, and steady days count.
 - Which commitment is this about? (optional)
 - Add a note (optional)
-
-_source: app/field-guide/[memberId]/page.tsx_
-
-- Field Guide
-- The G4L program explained
-- Somewhere along the way, a distance grew between who you are right now and who you still are underneath. It’s a loss of identity that happens in midlife. The Fade that caused it didn’t happen all at once but through a hundred reasonable decisions you make in response to life events.
-- Grinta for Life is where you reclaim your identity. It’s a practice that reconnects you to the parts of you that faded, and builds the grit to hold the line when life pushes back.
-- At the center of all of it is your AI G4L Companion. It’s who you talk to — the primary way you use Grinta for Life — your onboarding, what’s on your dashboard, and it remembers every conversation you’ve had with it. The Companion guides you through the four Phases of the Program alongside proof that you’re actually changing (your scores, your Playbook, your Reclaim List). You set the pace; it keeps the map.
-- How G4L works
-- You’ll work through four Phases and can clip back into them again and again, because identity slips and life keeps moving. That’s why it’s Grinta for Life.
-- — your starting point. See where you are, remember who you were before life talked you out of it, and find the spark worth chasing.
-- — the mind. Take apart the old stories your mind tells to keep you comfortable, and build new ones you can act on.
-- — the body. Put it into the body: how you move, eat, sleep, and recover, built back one small decision at a time.
-- — the life. Go after the things that make you feel like you again, on purpose, out in the world.
-- Underneath all four Phases is Grinta — the grit you build by doing the work. Every Phase you close adds to it.
-- The elements of G4L
-- Everything on your dashboard works toward helping you reclaim your identity to live longer, healthier, and happier. Here’s what each one does, and how to get the most from them.
-- — the AI G4L Companion sits at the center of your dashboard. Conversations with it will guide you through the program. It will remember everything you ever tell it, will show you what’s next and, at any time, you can ask it a question. It sees everything and lets you know if there’s something for you to do. You start a Session at the top of your dashboard; everything else is something your Companion helps you see and do.
-- — the entire G4L at-a-glance, so you always know what’s next. Each step is a Session — a guided conversation, or an assessment.
-- — the moment at the end of each Phase where you look back and measure progress reflected in your Grinta Index.
-- — track the calls you make, one at a time, and see a rhythm in how they add up. Good calls, false starts, or even quiet days build into a line you can watch move.
-- ID Score
-- — reflects answers to questions you answer across four parts of your identity: Physical, Self, Social, and Outlook. It measures the distance from where you are at that point in time to where you want to end up. It updates when you retake the IDQ.
-- Grinta Index
-- — Grinta means grit. The Index measures the resilience and determination you demonstrate and build as you go through each Phase. You get your first reading right at the start, and it grows as you do the work to finish each Phase. It’s recalculated at each Checkpoint.
-- Reclaim List
-- — goals you set and work toward as you work through the program. Add or refine items just by talking to your Companion. You can add a tracker to individual items to monitor progress.
-- — your Companion saves the story you’re writing as you go, plus the best lines, reframes, and science that hold it up. It deepens every time you close a Session. Reach for it whenever you need a reminder. Pin what matters, edit or remove what doesn’t.
-- — a place to connect with like-minded midlifers doing this work alongside you. Share the wins and the hard parts, and keep each other honest. Post a topic, cheer someone on, reply, or start a live room. Report or block anything that doesn’t belong.
-- — no participation trophies here, this is earned acknowledgement of the hard work you’re doing.
-- Connect Strava and your rides, runs, and workouts flow in on their own.
-- Take the tour →
 
 _source: app/score/[memberId]/page.tsx_
 
@@ -847,4 +852,111 @@ _source: app/grinta/[memberId]/page.tsx_
 - — Eros Poli, GRINTA!
 - What it measures
 - How it grows
+
+_source: app/movement/[memberId]/page.tsx_
+
+- Steps · heart rate · sleep
+- Rides · runs · training
+- Weight · blood pressure
+- Via your other apps
+- ← Dashboard
+- Connect apps you use to make it simple to track your movement.
+- Connect your sources
+- Rides · runs · activities
+- Apple Health
+- Weight · sleep · steps
+- Oura, Whoop, Google Health &amp; 400 more — one connection covers them all, with the app.
+- This week = Monday–Sunday, same as Strava.
+- Movement &amp; Activity Log
+- A chronological record, all in one place.
+- Once you connect a source, log an activity above, or tell your Companion about a walk, it lands here — in order.
+- More about
+- More about Movement
+- Movement is everything you’re doing for your body, in one place — what you log here, and whatever comes in from a source you’ve connected.
+- It feeds the same picture your Companion is building, so what lands here shows up when you talk about how the body work is going.
+
+_source: app/reclaim-list/[memberId]/page.tsx_
+
+- We couldn&apos;t find that member.
+- Reclaim List
+- Your list lands here once you name what you’re reclaiming with your Companion.
+- No Longer Central
+- You set these aside while refining your list. They’re kept here — tell your Companion if you want to bring one back.
+- More about
+
+_source: app/connect/[memberId]/page.tsx_
+
+- G4L Community — Grinta for Life
+- G4L Community
+- Reach out. Share the wins and the hard parts. Keep each other honest.
+- Mark all as read
+- Nothing yet — when someone replies to or cheers your posts, it&apos;ll show up here.
+- Start a Topic
+- Title (optional)
+- Share a win, a setback, or a question with the group…
+- No topics yet — be the first to share something.
+- 2px solid #E8E6E6
+- ♥ Cheered
+- ♡ Cheer
+- Report or block
+- What's wrong with this post?
+- Block this person
+- No live rooms right now — start one below.
+- Start a room — what's it about?
+- Start a room →
+- Your Accountability
+- No commitments yet.
+- More about
+- More about the Community
+- The Community is everyone else doing this work — midlifers on the same stretch of road, at different points along it.
+- Report or block anything that doesn’t belong. Every report is read by a person.
+
+_source: app/playbook/[memberId]/redesign-playbook-view.tsx_
+
+- Your plays
+- A reference of what is truly working for you.
+- Your reframes and comeback moves get kept here — your go-to plays.
+- A reminder of who you were, and who you hope to be again.
+- The identities you reclaim land here as you name them.
+- What lights you up
+- Where you found excitement and motivation. What moves you gets kept here.
+- What still moves you gets kept here — your spark, in your words.
+- Your tells
+- The patterns worth catching early.
+- The signs you’re drifting land here, so you can catch them sooner.
+- Why it works
+- The science that convinced you, in plain language.
+- Facts that resonated with you get kept here.
+- Lights you up
+- Nothing new to gather yet — keep working, and there’ll be more to pull from.
+- Run it again with your Companion →
+- Not now
+- G4L Playbook
+- Find inspiration, confidence, and strength based on the real work you’re doing — most of it in your own words. Your Companion keeps these here for you as you go through.
+- Gathering from your work…
+- You’ve already built real material. Let’s gather it into your Playbook.
+- Gather from your work →
+- The short version
+- Your story so far
+- A living read your companion re-weaves each time you close a Session.
+- To review
+- Your companion noticed these. Keep what rings true — it files itself under the right chapter.
+- Your journal
+- Thoughts and feelings in your own words, timestamped to where you are. For a lot of people this is the most freeing thing here — a place to think on the page and understand yourself. Your companion reads it and pulls keepers up into your plays, but the writing itself is the point — it only replies if you ask.
+- Write your own entry…
+- Add note
+- Gather from recent work →
+- Your companion gathers these as you go and flags keepers — you decide what stays. Edit, pin, or remove anything. Over time this becomes the raw material for your Legacy Letter and Success Story.
+
+_source: app/account/page.tsx_
+
+- Your account — Grinta for Life
+- Account Settings
+- Changing your email isn’t available yet — it’s coming with email verification.
+- The tour
+- A quick walk through what each part of your dashboard does.
+- Take the tour again →
+- Signed in on this device.
+- Log out →
+- Log out everywhere →
 
