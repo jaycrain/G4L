@@ -132,6 +132,8 @@ const MIGRATIONS: Array<{ file: string; sentinel: Sentinel }> = [
   { file: 'migrations/0072_practice_commitment.sql', sentinel: { table: 'practice_week', column: 'closed_at' } },
   // Same rule as 0072: the sentinel is the LAST table 0073 creates, so a half-applied run still reads as unapplied.
   { file: 'migrations/0073_operator_and_access_log.sql', sentinel: 'member_access_log' },
+  // 0074 creates one table, so the table IS the last thing — no partial-run subtlety to guard against here.
+  { file: 'migrations/0074_w3_daily_entry.sql', sentinel: 'w3_daily_entry' },
 ];
 export const SEED_SQL = () => sqlFile('seed/0001_reference_data.sql');
 
