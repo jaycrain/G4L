@@ -85,6 +85,16 @@ try {
     await open(`/program/${memberId}`);
     const h1 = (await page.locator('h1').first().textContent())?.trim();
     check(h1 === 'Program', '/program heading', h1 || 'missing');
+    // The lead (Cowork copy, placed 2026-08-08). Three assertions, each for a different failure:
+    //   · the heading — the page leads with the WHY, not a utility list;
+    //   · the AI disclosure — a governance line, and the one Cowork's placement note told me to cut. If a future
+    //     copy pass drops it again, this is what catches it, because nothing else on the page says it;
+    //   · the shared vocabulary — "a tracked week" has to read the same here as on the Playbook cards. Two
+    //     surfaces teaching one vocabulary is only true while both actually say it.
+    const prog = (await page.locator('body').textContent())?.replace(/\s+/g, ' ') ?? '';
+    check(prog.includes('Midlife Identity Loss — and the Comeback'), '/program leads with the why');
+    check(prog.includes('guided conversation with your AI G4L Companion'), '/program discloses the AI (governance)');
+    check(prog.includes('A read, a tool, a tracked week'), '/program teaches the same vocabulary as the cards');
 
     // The Field Guide was RETIRED (Jay, 2026-08-08) — every surface explains itself in context now. The route
     // survives only as a redirect, for members holding a bookmark, so what this asserts is the REDIRECT: land on
