@@ -29,6 +29,59 @@ an old lie you tell yourself, the Companion serves *your own past line* back. Bu
 (keyword-triggered mid-chat), modest, and invisible as a feature. It's the seed of the vision, pointed
 at the wrong moment.
 
+## AMENDMENT 2026-08-07 — a fourth gap, found auditing all twelve of Greg's assets
+
+This proposal is right and its thesis stands. But it treats the Playbook's contents as **plays**, and the audit
+(`docs/greg-audit-epiphanies.md`) found that plays are only one of **three** things a Session produces.
+
+**Greg's Levels are a typology of output**, not a label:
+
+| Level | What the activity is | What the member ends up holding | Is it a play? |
+| --- | --- | --- | --- |
+| 1 · Aware | an administered instrument | a **reading** — where they actually stand | **no** |
+| 2 · Prepare | a draw-out / coach conversation | a **tool** — true lines, the image, the protocol, the plan | **yes** — this is what this doc calls a play |
+| 3 · Engage | a week-long practice | a **tracked week** — days, marks, a review | sort of — a play you *ran* |
+
+**The fourth gap: a reading is not a play, and it has nowhere to live at all.**
+
+Level 2 is captured (as keepers) and merely presented badly. Level 3 is captured (practice weeks, Momentum) and
+its closed weeks scroll away. **Level 1 is not captured for the member at all** — B1's motivation profile is
+stored and never shown, B2's skills map does not exist, C1's list is fed to the model and never displayed.
+
+**And this completes the metaphor rather than complicating it.** A real playbook is not only plays. It is plays
+**plus the scouting report** — the read on the situation that tells you *which play to call*. That is exactly what
+the Level 1 readings are: not another move to run, but the thing that says which move fits.
+
+Which means the Playbook's forward dimension — this doc's third gap, *"what do I do about what I'm facing now"* —
+**needs the readings to answer well.** "Your maintenance skills are the thin ones" is what makes "run the False
+Start protocol" the right call rather than a guess. Without the reads, the Playbook can offer plays but cannot
+say which.
+
+**Why Level 1 is missing, which is worth naming so we don't repeat it.** We hold a governance rule — never a bare
+number, never a verdict — and we applied it to a *display* question as a reason to display nothing. Greg asks for
+both, every time: *"displayed as a development map, **not a score**"*; *"visible in the dashboard… **without using
+the dashboard as a scold**"*. The resolution is already written in `lib/workspace/artifact.ts` — a
+*"governance-safe qualitative frame"* — and the rule that makes it safe is:
+
+> **A reading shows what the member SAID, organised. Never what we computed about them.** The computation stays
+> internal, feeding the Companion's interpretation.
+
+**Two adjustments to this doc's plan:**
+
+1. **Sessions POST; the Companion does not merely LIFT.** Today keepers are lifted opportunistically out of
+   conversation. Jay's framing (2026-08-07) is stronger and should be the contract: *every* Session posts its
+   output to the Playbook — reading, tool, or week. Opportunistic capture is why Level 1 was never noticed as
+   missing.
+2. **Phasing gains a strand.** Alongside making plays runnable and wiring the Loop, the readings need a home and
+   a rendering. `docs/artifact-destination-design.md` proposes starting with **B2's development map** — the only
+   reading whose data we already hold, whose display Greg has specified, and which our own member-facing copy
+   already promises ("you'll come away with a map").
+
+*(Related: `docs/greg-audit-epiphanies.md` for the full structural read, `docs/summaries-promise-sweep.md` for
+what our copy currently promises.)*
+
+---
+
 ## The three gaps between today and the vision
 
 1. **The Loop isn't wired in.** When a member finishes a cycle and a new Door opens, *nothing* reaches
