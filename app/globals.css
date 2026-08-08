@@ -1469,13 +1469,19 @@ body.redesign-on .back-dash { display: none; }
 body.redesign-on .confidential-footer {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
   max-width: none; margin: 0;
-  padding: 5px 14px calc(5px + env(safe-area-inset-bottom));
-  font-size: 0.62rem; line-height: 1.35;
+  /* HEIGHT IS PINNED TO --conf-h, and that is the whole point. The first version set padding and let the box
+     size itself, then reserved a number I picked (22px). On a phone the notice WRAPS to two lines and rendered
+     at 38px, so it sat 16px over the last row — which on mobile is the composer. Reserved and actual are now the
+     same value by construction, so they cannot drift apart again. */
+  box-sizing: border-box; height: var(--conf-h);
+  display: flex; align-items: center; justify-content: center; overflow: hidden;
+  padding: 0 14px env(safe-area-inset-bottom);
+  font-size: 0.62rem; line-height: 1.3;
   background: var(--white); border-top: 1px solid var(--grey);
 }
-/* Reserve the strip's height so the fixed bar never covers the last row of a column. Two values because the
-   safe-area inset is 0 on desktop and non-zero on a notched phone. */
-body.redesign-on { --conf-h: calc(22px + env(safe-area-inset-bottom)); }
+/* One line where it fits, two where it wraps. env() is 0 on desktop and non-zero on a notched phone. */
+body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
+@media (max-width: 760px) { body.redesign-on { --conf-h: calc(42px + env(safe-area-inset-bottom)); } }
 
 .redesign-topbar {
   position: sticky; top: 0; z-index: 5; height: 56px;
