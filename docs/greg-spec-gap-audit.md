@@ -3,7 +3,7 @@
 **Started 2026-08-07** on Jay's instruction: *"if there's anything you haven't read thoroughly in ANY of them
 and applied to the app, we should. It ultimately makes our job easier."*
 
-**Status: 5 of 12 VERIFIED BY ME (B1, B2, R1, R3, W1). 1 UNVERIFIED LEAD (R2). 6 not started.**
+**Status: 6 of 12 VERIFIED BY ME (B1, B2, R1, R3, W1, W2). 1 UNVERIFIED LEAD (R2). 5 not started.**
 
 **READ THE PROVENANCE LINE ON EVERY CLAIM BELOW.** Jay, 2026-08-07, after I proposed scaling this with a fleet
 of agents: *"Using agents is where things have gone wrong in the past, over and over. This is foundational stuff
@@ -188,6 +188,55 @@ through-line or supply doctrine… nothing in the three docs grants W1 didactic 
 Worth flagging that I repeated B1's version to Jay as fact before reading W1's own docs. Reading each asset's own
 trilogy is what caught it. Both are derivative memos, so the precedence rule does not settle which wins — Greg
 does.
+
+---
+
+## W2 — VERIFIED BY ME 2026-08-07. The close is near-verbatim. The build-up is restructured.
+
+Greg specifies seven steps: adjectives → how they move through the world → the ordinary Tuesday scene → the
+good conversation → the window moment → name the most real part → establish the daily practice.
+
+### Step 7 (the daily practice) — MATCHES, near-verbatim, all four elements
+
+Someone built this straight from his memo, and it shows:
+
+| Greg | Ours |
+| --- | --- |
+| "Spend five minutes each morning this week sitting with this image" | "five minutes each morning, sit with that image" |
+| "Close your eyes. Make it vivid. Feel it… Don't rush it." | "Close your eyes, make it vivid — the light, the effort, the feeling. Don't rush it." |
+| "When the disinformation campaign fires, go back to the image. The image is based on someone real. The campaign is based on a lie." | "when the old voice starts up… you go back to the image. The lie is a story. The image is real — you built it from your own life." |
+| "Add detail each day. The scene should get more vivid, not less." | "Add a little more detail each day. By the end of the week, you should be able to close your eyes and step right into it." |
+
+### Steps 1–6 — restructured, and one inversion is worth Jay's attention
+
+Ours is `anchor → image → hold`: the member picks an anchor **from their Reclaim List**, builds one scene around
+it in four prompts (where are you / look at yourself / who's with you / the feeling underneath), gets the
+recognition beat, then the practice.
+
+**Greg's step 6 is the inversion.** He has the member build five distinct scenes and only THEN asks which part is
+*most real* — and that answer becomes the anchor for the daily practice. We choose the anchor first, from a list.
+
+His order is arguably stronger: you discover what is most real out of lived imagery rather than declaring it up
+front. Ours is better integrated — it ties W2 to the Reclaim List, which is the product's spine. **Both are
+defensible; only one is deliberate**, and I could find no comment recording the choice. Worth confirming rather
+than leaving as drift.
+
+**Genuinely missing beats:** step 1 (adjectives for the person they were or aspire to be) and step 4 — *"someone
+asks how you're doing and the truth is good"*, probed for who, what you say, how it feels. That fourth one is a
+concrete social-connection moment and our prompts have nothing like it; "who's with you" is adjacent but not the
+same beat.
+
+### Step 3's Tuesday lives in Reconnect, not W2 — and that is deliberate
+
+Greg's step 3 is "the ordinary Tuesday scene". Our Reconnect §2d beat 2 (`reconnect.ts:507`) is **The Window** —
+*"an ordinary Tuesday a year out where you've DONE the work and the things on your Reclaim List are real."*
+Documented, including a further cut: *"(Donna, 2026-07-28: the old 'first Tuesday where nothing changes' beat was
+cut — we only walk the member through the OTHER Tuesday.)"*
+
+So the Tuesday moved from Rewire into the gateway. **Not duplicated** — our W2 opens on a generic "where are
+you?" rather than a second Tuesday. But a member does a future-scene visualisation in Reconnect and another in
+W2, and whether that reads as reinforcement or repetition is a design question worth a live walk rather than a
+code read.
 
 ---
 
