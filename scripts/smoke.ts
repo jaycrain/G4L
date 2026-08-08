@@ -99,6 +99,18 @@ try {
       await open(`/${sub}/${memberId}`);
     }
 
+    // /playbook — the three outcome cards. A 200 here proves the ROUTE, not the FEATURE: outcomes() catches its own
+    // read failure and returns [], which renders nothing at all. That degrade is deliberate (better silence than a
+    // wrong claim about someone's work) but it means a drifted practice_week table on prod would take the cards
+    // away and every status code would stay green. So assert the words. Heading AND a product name, because the
+    // heading alone would survive an empty grid.
+    await open(`/playbook/${memberId}`);
+    const pb = (await page.locator('body').textContent())?.replace(/\s+/g, ' ') ?? '';
+    check(pb.includes('What you’re building'), '/playbook shows the outcome strip');
+    check(/Mindfulness/.test(pb) && /Fitness/.test(pb) && /Wellness/.test(pb), '/playbook names all three outcomes');
+    // The honesty rule, checked where a member can actually read it: the cards may never tally themselves.
+    check(!/\b\d\s*(of|\/)\s*3\b/.test(pb), '/playbook outcome cards are not a score', pb.match(/.{0,40}\d\s*(of|\/)\s*3.{0,40}/)?.[0] ?? '');
+
     // /momentum — never smoke-checked before, and it is the one surface where a member VOCABULARY change lands in
     // three places at once (the log buttons, the history chips, the pulse legend). This asserts the WORD, not just
     // a 200, because the "Quiet Day" → "On Track" rename nearly shipped half done: the prose changed while the
