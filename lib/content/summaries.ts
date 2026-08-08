@@ -60,7 +60,7 @@ export const ASSET_SUMMARIES: Record<AssetId, Summary> = {
   },
   b3: {
     short: 'Watch your everyday choices for a week and learn how your lifestyle actually works.',
-    full: 'This week, you’ll pick one small movement habit and one small eating habit to practice, then watch how they actually play out. It’s a week of just noticing. Research suggests self-monitoring sharpens your awareness and makes the next change more realistic. You can track the Good Calls, the False Starts, the obstacles you didn’t see coming, in your Movement screen. At the end of the week you’ll have a clearer picture of what helps, what gets in your way, and what to adjust.',
+    full: 'This week, you’ll pick one small movement habit and one small eating habit to practice, then watch how they actually play out. It’s a week of just noticing. Research suggests self-monitoring sharpens your awareness and makes the next change more realistic. You can track the Good Calls, the False Starts, the obstacles you didn’t see coming, on your Momentum card. At the end of the week you’ll have a clearer picture of what helps, what gets in your way, and what to adjust.',
   },
   c1: {
     short: 'Revisit your Reclaim List now that you know yourself better.',
