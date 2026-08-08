@@ -65,9 +65,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </Suspense>
           {children}
         </main>
+        {/* THE PROPRIETARY NOTICE — on every screen, which it had silently stopped being (Jay, 2026-08-08).
+            One CSS rule (body.redesign-on) hid it on every LOGGED-IN surface while leaving it on /login and
+            /onboarding, so it appeared exactly where there was nothing to protect and vanished everywhere a
+            member's material is. Introduced by 8a64b68 "confidentiality footer on every screen (evaluation
+            build)" — accurate then, when the app was something you showed evaluators. Prod has real members now.
+            WORDING: it asserts ownership, names WHAT is proprietary (the program, the assessments, the content —
+            the defensible things), and draws the line at the member's own writing, because claiming that would
+            contradict everything else this product says. No ® — the mark is not registered. */}
         <footer className="confidential-footer">
-          Confidential — © 2026 Adjacent Lab, LLC. Prepared for evaluation only. Do not copy, distribute, or disclose
-          without written permission.
+          © 2026 Adjacent Lab, LLC. All rights reserved. The Grinta for Life program, its assessments and its
+          content are proprietary. What you write here stays yours.
         </footer>
         <PwaClient />
         {/* Send Feedback pill dropped for now (Jay, 2026-07-23) — reinstate by uncommenting this + the import above. */}
