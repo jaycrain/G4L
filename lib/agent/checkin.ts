@@ -103,6 +103,7 @@ export type CheckinContext = {
     day: number; // 1..7
     rows: { label: string; target: number | null; done: number; todayDone: boolean }[];
     tappable: boolean; // can the agent mark a day, or is this week a mirror of a log they wrote?
+    triggers?: string[]; // W3 only — the triggers the MEMBER named, so the agent can ask which one fired
     // The window has elapsed and nothing has closed it yet. When true, the review lines below are the FIRST thing
     // the Companion should raise — a week that ends in silence is the thing this whole slice exists to stop.
     readyToClose: boolean;
@@ -226,6 +227,16 @@ function practiceWeekLine(c: CheckinContext): string | null {
         ? 'If they tell you they did one today, mark it with mark_practice_day — the grid tells them you will, so words alone are not enough. '
         : "Everything for today is already marked. Don't ask again — nothing is more deflating than being asked for something you already did. "
       : 'This week mirrors a log they keep themselves; reflect it, never edit it. ') +
+    // W3 ONLY: their named triggers, so the model can ask "which one?" in their words and pass a label back.
+    // Without this it cannot fill trigger_fired at all, and Greg's tracker loses the field that connects a slip to
+    // the protocol they wrote. Deliberately an instruction to ASK, not to infer — a trigger they did not name is
+    // 'new', never our best guess at which of theirs it resembles.
+    (pw.kind === 'w3_logging'
+      ? `The triggers THEY named, in their words: ${pw.triggers?.length ? pw.triggers.join('; ') : '(none named)'}. ` +
+        'When they tell you about a slip, ask lightly which one it was — their words, not a menu you invented — and ' +
+        "record the day with record_w3_day. If it was something they never named, that is 'new', a real answer and " +
+        'not a gap. Never decide for them which trigger fired. '
+      : '') +
     'NEVER present this as compliance or a score. A blank day is a day, not a miss, and the whole point is noticing what helps — not hitting a number.'
   );
 }
@@ -721,6 +732,41 @@ const MARK_PRACTICE_DAY_TOOL = {
   },
 };
 
+// W3's monitoring week is a DIFFERENT act from marking a grid cell, and the distinction is the whole reason this
+// tool exists rather than reusing mark_practice_day. W3 is not tappable — its cells mirror a log the member keeps —
+// but Greg makes the daily CONVERSATION the primary way that log gets written: "Daily or near-daily check-ins
+// create a sustained relationship rhythm … curious about what triggered a False Start, attentive to what made a
+// Smart Choice easy." So the Companion is not ticking a box on their behalf; it is writing down what they just
+// said, which is what a coach doing a check-in does.
+//
+// THE SAFETY PROPERTY: it records their words, never a judgement about them. Nothing here scores, counts, or
+// decides whether the day was good. Greg's disallowed affirmations are the shape to avoid — "Great, you avoided
+// False Starts today!" — so the tool captures observations and the reply reflects them, and neither adds a verdict.
+const RECORD_W3_DAY_TOOL = {
+  name: 'record_w3_day',
+  description:
+    "Record TODAY in the member's monitoring week when they tell you how it went. Pass their OWN words, trimmed, " +
+    "never your summary or a tidied version. Every field is optional — a day with only a good call, or only a " +
+    "false start, is a complete entry and you must not fish for the rest. good_calls: what went well that they " +
+    "noticed. false_starts: what didn't. trigger: which of their NAMED triggers fired (use the exact label from " +
+    "MEMBER CONTEXT), or 'new' if it was something they hadn't named — leave it out if no trigger came up. " +
+    "old_voice: what the old story said to them, if they mention it. recovery_used: true/false ONLY if they say " +
+    "either way; leave it out otherwise. reflection: anything else they want kept from the day. A false start is " +
+    "DATA, not failure — record it exactly as evenly as a good call, and never treat one as better news.",
+  input_schema: {
+    type: 'object',
+    properties: {
+      good_calls: { type: 'string', description: "their words for what went well today" },
+      false_starts: { type: 'string', description: "their words for what didn't" },
+      trigger: { type: 'string', description: "the exact label of one of their named triggers, or 'new'" },
+      old_voice: { type: 'string', description: 'what the old story said, in their words' },
+      recovery_used: { type: 'boolean', description: 'only if they actually say whether they used their prepared response' },
+      reflection: { type: 'string', description: 'anything else worth keeping from the day' },
+    },
+    required: [],
+  },
+};
+
 const LOG_MOVEMENT_TOOL = {
   name: 'log_movement',
   description:
@@ -778,6 +824,9 @@ async function liveReply(
   // CheckinContext from here would couple the transport to the content. It only needs to know whether a markable
   // week is open — an agent holding a tool it cannot use will find a way to narrate using it.
   canMarkPracticeDay = false,
+  // Whether the member's W3 monitoring week is open. Same reasoning as above: an agent holding record_w3_day
+  // outside that week would find a way to narrate having used it.
+  canRecordW3Day = false,
 ): Promise<{ reply: string; toolNames: string[] }> {
   const called: string[] = []; // client tools the model actually invoked this turn (for the engine backstop)
   const { default: Anthropic } = await import('@anthropic-ai/sdk');
@@ -816,6 +865,8 @@ async function liveReply(
     ...(rebuildEnabled() ? [SET_COMMITMENT_TOOL] : []),
     // Only when a tappable week is actually open — an agent holding a tool it can't use invites it to narrate one.
     ...(canMarkPracticeDay ? [MARK_PRACTICE_DAY_TOOL] : []),
+    // Same discipline for W3: offered ONLY while the monitoring week is running.
+    ...(canRecordW3Day ? [RECORD_W3_DAY_TOOL] : []),
   ];
   const toolsFor = () => (executor ? (useFetch ? [...clientTools, WEB_FETCH_TOOL] : clientTools) : undefined);
   const model = process.env.ANTHROPIC_MODEL ?? 'claude-sonnet-4-6';
@@ -977,7 +1028,11 @@ export async function checkinReply(
   if (detectCrisis(memberMessage).flagged) return { reply: CRISIS_RESPONSE_US, crisis: true };
   if (process.env.ANTHROPIC_API_KEY) {
     try {
-      const { reply, toolNames } = await liveReply(checkinSystem(c), history, memberMessage, executor, Boolean(c.practiceWeek?.tappable));
+      const { reply, toolNames } = await liveReply(
+        checkinSystem(c), history, memberMessage, executor,
+        Boolean(c.practiceWeek?.tappable),
+        c.practiceWeek?.kind === 'w3_logging',
+      );
       // ENGINE GUARD (#6): the member clearly asked to ADD a want but the model didn't call add_reclaim_item —
       // it acknowledged in prose and moved on ("that's a good one — anything else?"), silently losing the add.
       // Backstop-capture through the SAME validated primitive (fog rejected, dups folded), so an add-intent is

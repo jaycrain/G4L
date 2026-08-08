@@ -29,6 +29,8 @@ import { harvestSignal } from '../../lib/agent/harvest.ts';
 import type { PracticeKind } from '../../lib/practice/store.ts';
 import { isTappable, toggleMark } from '../../lib/practice/mark.ts';
 import { activePracticeWeek } from '../../lib/practice/store.ts';
+import { recordW3Entry } from '../../lib/rewire/w3-entry.ts';
+import { w3Triggers } from '../../lib/rewire/w3-triggers.ts';
 import { phaseSummary, type PhaseKey } from '../../lib/content/summaries.ts';
 
 const isPhaseKey = (k: string | null): k is PhaseKey =>
@@ -289,6 +291,12 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
             todayDone: r.marks[practiceGrid.day - 1] === true,
           })),
           tappable: isTappable(practiceGrid.kind),
+          // W3 ONLY: the triggers the member named, so the agent can ask which one fired using THEIR words. The
+          // grid's row labels already carry them, minus row 1 ("Noticed the day") which is the tracking row, not a
+          // trigger. Derived from the grid rather than re-queried so the two can never disagree about the list.
+          triggers: practiceGrid.kind === 'w3_logging'
+            ? practiceGrid.rows.filter((r) => r.slot !== 'logged').map((r) => r.label)
+            : undefined,
           // The window has elapsed and nothing closed it. The review is built HERE rather than described to the
           // model, so the member's numbers are ours and the phrasing is testable (lib/practice/close.ts).
           readyToClose: isClosable(practiceGrid),
@@ -607,6 +615,47 @@ export async function sendCheckin(memberId: string, memberMessage: string): Prom
         }
         mutated = true;
         return { ok: true, message: `Marked "${hit.label}" done for today. Reflect it back briefly and warmly — noticing, never a score.` };
+      }
+      if (name === 'record_w3_day') {
+        // W3's log is written by CONVERSATION — Greg makes the daily check-in the primary interface, so this is the
+        // Companion writing down what the member just said, not ticking a box on their behalf. Guarded to an open
+        // W3 week: outside it, there is nothing to record and the tool should not have been offered at all.
+        const pw = await activePracticeWeek(db, memberId);
+        if (!pw || pw.kind !== 'w3_logging') {
+          return { ok: false, message: 'Not recorded — their monitoring week is not open right now.' };
+        }
+        const str = (v: unknown) => (typeof v === 'string' && v.trim() ? v.trim() : undefined);
+        // The trigger arrives as a LABEL (their own words, as the model saw them in context). Resolve it to the
+        // stored slot; anything unrecognised becomes 'new', which is a first-class answer in Greg's spec — never a
+        // silent drop, and never a guess at which named trigger they meant.
+        const named = await w3Triggers(db, memberId);
+        const rawTrigger = str(input.trigger);
+        const norm = (t: string) => t.toLowerCase().replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim();
+        const triggerSlot = rawTrigger
+          ? (named.find((t) => norm(t.label) === norm(rawTrigger))?.slot ??
+             named.find((t) => norm(t.label).includes(norm(rawTrigger)) || norm(rawTrigger).includes(norm(t.label)))?.slot ??
+             'new')
+          : undefined;
+        const wrote = await recordW3Entry(db, memberId, {
+          goodCalls: str(input.good_calls),
+          falseStarts: str(input.false_starts),
+          triggerSlot,
+          oldVoice: str(input.old_voice),
+          recoveryUsed: typeof input.recovery_used === 'boolean' ? input.recovery_used : undefined,
+          reflection: str(input.reflection),
+        });
+        if (!wrote) return { ok: false, message: "Nothing to record yet — they haven't said what today held." };
+        mutated = true;
+        // The acknowledgement instruction carries Greg's affirmation rule, because this is the exact moment it gets
+        // broken: affirmations must target CONSISTENCY OF TRACKING, honesty of observation, and use of the recovery
+        // skill — never the absence of false starts. "Great, you avoided False Starts today!" is disallowed outright.
+        return {
+          ok: true,
+          message:
+            "Recorded for today. Reflect it back briefly in their own words. Affirm the NOTICING — that they tracked " +
+            "it honestly, or used their recovery move — never the absence of a false start, and never a tally. A false " +
+            "start is data, not failure: meet it as evenly as a good call, with no consoling and no reframe rushed on top.",
+        };
       }
       if (name === 'log_call') {
         // Momentum logging (REWIRE-gated). A call is self-monitoring, never scored; a false start is honest data.

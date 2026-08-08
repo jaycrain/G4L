@@ -75,8 +75,13 @@ export function practicePrompt(
     return `Your five minutes: ${goal}. Close your eyes and stand in it. The picture's real — the lie isn't.`;
   }
   if (kind === 'w3_logging') {
-    // The Momentum log nudge (Slice 4) — one ask, no pressure, no "you missed" (MM/R1 productive-default, EE cadence).
-    return `How'd today go — a good call, a false start, or on track?`;
+    // W3 · Mindful Monitoring. REWRITTEN 2026-08-08 — this used to be the MOMENTUM ask ("a good call, a false
+    // start, or on track?"), which borrowed the ongoing tracker's three call types and quietly made W3 a Momentum
+    // week. Greg's week is a different instrument: the member notices what showed up, and which of the triggers
+    // THEY named was behind it. The ask now opens that, and the Companion records it with record_w3_day.
+    // Deliberately asks for BOTH halves in one line, evenly weighted — a false start is data, not failure, and
+    // leading with either one first would tilt the answer.
+    return `What showed up today — a good call, a false start, or both? And if something set it off, which one was it?`;
   }
   if (kind === 'b2_noticing') {
     // Rebuild B2 Part B — a week of NOTICING which self-management skills helped or hindered (not changing behavior).

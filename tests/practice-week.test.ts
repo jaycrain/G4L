@@ -99,11 +99,19 @@ test('practiceHeroMessage · active W2 window + a saved image → the step-into-
   assert.equal(await latestImageKeeper(db, m2), null);
 });
 
-test('practiceHeroMessage · a w3_logging window surfaces the Momentum log nudge (Slice 4)', async () => {
+// REWRITTEN 2026-08-08. This asserted the MOMENTUM vocabulary ("a good call, a false start, or on track") — the
+// ongoing tracker's three call types, which had quietly made W3 a Momentum week. Greg's W3 is a different
+// instrument: notice what showed up, and which of the triggers THEY named was behind it.
+test('practiceHeroMessage · a w3_logging window asks what showed up AND which trigger', async () => {
   const db = new PGlite() as unknown as Db;
   await applySchema(db);
   const m = await seedMember(db);
   await startPracticeWeek(db, m, 'w3_logging');
   const msg = await practiceHeroMessage(db, m);
-  assert.match(msg!, /good call, a false start, or on track/i, 'the daily log nudge, one ask, no pressure');
+  assert.match(msg!, /what showed up today/i, 'the ask opens on noticing, not on a call type');
+  assert.match(msg!, /which one was it/i, 'and reaches for the trigger — the field that ties a slip to their protocol');
+  // Both halves in ONE line, evenly weighted: leading with either would tilt the answer, and a false start is
+  // data rather than the bad option.
+  assert.match(msg!, /a good call, a false start, or both/i);
+  assert.doesNotMatch(msg!, /on track/i, 'the Momentum third option belongs to the ongoing tracker, not this week');
 });
