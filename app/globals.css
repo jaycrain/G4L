@@ -1206,7 +1206,12 @@ html:has(.companion-hero), body:has(.companion-hero) { overflow-anchor: none; }
 .wk-table th.wk-lab, .wk-table td.wk-lab { width: 38%; text-align: left; }
 .wk-table th.wk-aim, .wk-table td.wk-aim { width: 13%; text-align: right; }
 .wk-table td { padding: 3px 0; text-align: center; }
-.wk-table td.wk-lab { font-size: 12.5px; line-height: 1.3; color: var(--charcoal, #2A2A2A); padding-right: 8px; }
+/* Row labels are the MEMBER's own words — B3's commitments, C3's Quality-Day elements, and (since 2026-08-08)
+   W3's triggers, which arrive verbatim from the draw-out and can be a full sentence: "late nights after a rough
+   day at work". Clamp to two lines so the grid stays scannable; the full text stays in the title attribute and in
+   each cell's aria-label. Truncating for DISPLAY is fine — rewriting what they said is not. */
+.wk-table td.wk-lab { font-size: 12.5px; line-height: 1.3; color: var(--charcoal, #2A2A2A); padding-right: 8px;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .wk-table td.wk-aim { font-size: 12px; font-weight: 700; color: var(--navy); white-space: nowrap; }
 .wk-table td.wk-aim span { font-weight: 400; color: var(--muted-grey); }
 .wk-cell { width: 26px; height: 26px; padding: 0; border: 1px solid #e3e2df; border-radius: 6px; background: var(--white); cursor: pointer; font-family: inherit; font-size: 13px; font-weight: 700; line-height: 1; color: transparent; }

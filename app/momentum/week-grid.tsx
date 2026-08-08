@@ -78,7 +78,7 @@ export default function WeekGridPanel({ memberId, grid }: { memberId: string; gr
             const done = marks.filter(Boolean).length;
             return (
               <tr key={r.slot}>
-                <td className="wk-lab">{r.label}</td>
+                <td className="wk-lab" title={r.label}>{r.label}</td>
                 {marks.map((on, i) => (
                   <td key={i}>
                     <button
