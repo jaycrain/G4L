@@ -4,6 +4,7 @@ import { softRead } from '../../lib/db/degrade.ts';
 import { getDb } from '../../lib/db/index.ts';
 import { heroCard } from '../../lib/dashboard/hero-card.ts';
 import { standingUpdate } from '../../lib/dashboard/standing-update.ts';
+import { outcomes } from '../../lib/dashboard/outcomes.ts';
 import { getDashboard } from '../../lib/gateway/flow.ts';
 import {
   checkinOpening,
@@ -111,7 +112,7 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
   // "best-effort" but was UNGUARDED — and it runs a memory-fold (API/query) BEFORE everything else, so if it threw it
   // sank the entire context to minimal (this is why the companion still couldn't see momentum after the first pass).
   await maybeFoldMemory(db, memberId).catch((e) => console.warn('maybeFoldMemory failed (non-fatal):', (e as Error).message));
-  const [grinta, grintaReading, whyReading, skillsReading, pilotPlan, pilotTally, biggerWorld, qdProfile, qdRecent, practiceGrid, consumedBites, profRows, idqRows, reclaimItems, beatRows, playbook, measures, linkedMeasureRows, facets, closedIds, lastClosedRows, forecast, experience, passport] = await Promise.all([
+  const [grinta, grintaReading, whyReading, skillsReading, pilotPlan, pilotTally, biggerWorld, qdProfile, qdRecent, practiceGrid, consumedBites, profRows, idqRows, reclaimItems, beatRows, playbook, measures, linkedMeasureRows, facets, closedIds, lastClosedRows, forecast, experience, passport, outcomeCards] = await Promise.all([
     getGrinta(db, memberId, dash.identityNoun).catch(() => ({ score: null, direction: null }) as unknown as Awaited<ReturnType<typeof getGrinta>>),
     // Rebuild/Reclaim REGISTERS — all SUPPLEMENTARY context ("the agent knows X"), each null-safe downstream. Guard
     // EVERY one with .catch: a single missing/drifted register table (prod migrations don't auto-apply) must NEVER
@@ -168,6 +169,9 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
     getMemberExperience(db, memberId, (id) => getAsset(id)?.title ?? id).catch(() => ({ summary: '' }) as Awaited<ReturnType<typeof getMemberExperience>>),
     // The 16-milestone Passport — the member SEES these badges, so the agent must know them (CAT-37).
     getPassport(db, memberId).catch(() => ({ earned: 0, total: 0, badges: [], placeholders: 0 }) as Awaited<ReturnType<typeof getPassport>>),
+    // The three outcome cards the member sees at the head of their Playbook (mindfulness · fitness · wellness).
+    // Same read the page uses, so the agent can never disagree with the cards in front of them (CAT-37).
+    outcomes(db, memberId).catch(() => []),
   ]);
   // W3 close extras — how many days they used the protocol they wrote. That count lives in the daily entries, not
   // in the grid's marks, and it is the one thing Greg permits an affirmation to target that the grid cannot see.
@@ -327,6 +331,7 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
           recentAvg: qdRecent.length ? Math.round((qdRecent.reduce((s, r) => s + r.score, 0) / qdRecent.length) * 10) / 10 : null,
         }
       : null, // Reclaim C3 — the Quality-Day profile + recent logged average
+    outcomes: outcomeCards,
     consumedBites,
     // The narrative from onboarding — so the agent can reference what the member actually shared,
     // not just the dashboard facts. This is what makes the first interaction feel "it knows me."

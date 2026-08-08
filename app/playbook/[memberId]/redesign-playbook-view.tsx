@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import type { PlaybookEntry } from '../../../lib/playbook/store.ts';
+import type { Outcome } from '../../../lib/dashboard/outcomes.ts';
+import OutcomeCards from './outcome-cards.tsx';
 import { runnablePlay, playSituation } from '../../../lib/playbook/runnable.ts';
 import {
   loadPlaybookAction,
@@ -81,12 +83,14 @@ export default function RedesignPlaybookView({
   hasHistory,
   synthesis,
   rerunStats,
+  outcomes = [],
 }: {
   memberId: string;
   initial: PlaybookEntry[];
   hasHistory: boolean;
   synthesis?: string | null;
   rerunStats?: Record<string, { n: number; last: string }>;
+  outcomes?: Outcome[];
 }) {
   const [entries, setEntries] = useState<PlaybookEntry[]>(initial);
   // Tab state lives in the URL so the back button works and a member can be sent straight to a tab. Read once on
@@ -235,6 +239,11 @@ export default function RedesignPlaybookView({
         </div>
       ) : null}
       {gatherMsg && <p className="pb-gather-msg">{gatherMsg}</p>}
+
+      {/* THE THREE OUTCOMES — what the cycle is actually building, and what "built" means. Heads the page above
+          everything else because it is the ORIENTATION: a member landing here should see the shape of the whole
+          thing before the detail of what they've kept so far. */}
+      <OutcomeCards outcomes={outcomes} />
 
       {/* FRONT MATTER — the short version: the pinned lines you reach for most. ABOVE the tabs on purpose; it is
           the one thing worth seeing whichever tab you land on. */}

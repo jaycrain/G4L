@@ -8,6 +8,7 @@ import type { Db } from '../../../lib/db/schema.ts';
 import PlaybookView from './playbook-view.tsx';
 import RedesignPlaybookView from './redesign-playbook-view.tsx';
 import { redesignEnabled } from '../../../lib/dashboard/redesign.ts';
+import { outcomes } from '../../../lib/dashboard/outcomes.ts';
 import SubpageShell from '../../dashboard/subpage-shell.tsx';
 
 export const metadata = { title: 'Your G4L Playbook — Grinta for Life' };
@@ -40,9 +41,12 @@ export default async function PlaybookPage({ params }: { params: Promise<{ membe
   const rerunStats: Record<string, { n: number; last: string }> = {};
   for (const r of rerunRows) rerunStats[r.ref] = { n: r.n, last: r.last };
   const props = { memberId, initial: entries, hasHistory, synthesis };
+  // The three outcomes (mindfulness · fitness · wellness) head the redesign Playbook. Redesign-only: the pre-v3
+  // view has no place for them and prod runs the redesign.
+  const cards = redesignEnabled() ? await outcomes(db, memberId) : [];
   return redesignEnabled() ? (
     <SubpageShell memberId={memberId}>
-      <RedesignPlaybookView {...props} rerunStats={rerunStats} />
+      <RedesignPlaybookView {...props} rerunStats={rerunStats} outcomes={cards} />
     </SubpageShell>
   ) : <PlaybookView {...props} />;
 }

@@ -13,6 +13,7 @@ import { rebuildEnabled } from './rebuild.ts';
 import { logCallIntent } from '../momentum/store.ts';
 import { redesignEnabled } from '../dashboard/redesign.ts';
 import { connectContextLines, type ConnectAgentSummary } from '../connect/agent.ts';
+import type { Outcome } from '../dashboard/outcomes.ts';
 import type { Direction } from '../idq/scoring.ts';
 
 export type CheckinContext = {
@@ -110,6 +111,10 @@ export type CheckinContext = {
     review?: { opener: string; lines: string[] } | null;
   } | null;
   qualityDay?: { nonNegotiables: string[]; recentAvg: number | null; days: number } | null;
+  // THE THREE OUTCOMES the member sees at the head of their Playbook — mindfulness · fitness · wellness, each made
+  // of a read, a tool and a tracked week. Same read the page uses, so the agent can never disagree with the cards
+  // in front of them. Structural, not derived here: what "built" means is decided in lib/dashboard/outcomes.ts.
+  outcomes?: Outcome[];
   beatsDone?: number; // Beats worked so far
   // The Playbook (the two-way loop): kept keepers + recent journal notes. Used to help — never
   // quoted back coldly or weaponized. Capped/summarized upstream. keeperType (0046) lets the recall
@@ -241,6 +246,34 @@ function practiceWeekLine(c: CheckinContext): string | null {
   );
 }
 
+// THE THREE OUTCOMES, as the member sees them at the head of their Playbook (mindfulness · fitness · wellness).
+// The agent must know these because the member is looking at them — but the risk here is specific and worth naming:
+// three cards with ticks on them are one careless sentence away from becoming a progress report. So the line hands
+// over the STATE and then forbids the two ways it goes wrong — counting it, and claiming they now possess the
+// outcome. Greg: the cycle builds the skills; you practise the shot, not the winning.
+function outcomesLine(c: CheckinContext): string | null {
+  const o = c.outcomes;
+  if (!o || !o.length) return null;
+  const built = o.filter((x) => x.built);
+  const running = o.flatMap((x) => x.parts.filter((p) => p.running).map((p) => `${p.label} (${p.running})`));
+  const body = o
+    .map((x) => {
+      const have = x.parts.filter((p) => p.done).map((p) => p.label);
+      return `${x.product.toLowerCase()} — ${have.length ? `they have ${have.join(', ')}` : 'nothing yet'}${x.built ? ' (all three)' : ''}`;
+    })
+    .join('; ');
+  return (
+    `The three outcomes on their Playbook — what the cycle builds. Each is made of a read, a tool and a tracked ` +
+    `week: ${body}.${running.length ? ` Running right now: ${running.join(', ')}.` : ''} ` +
+    `You know this because they can see it; reference it naturally if it helps them place themselves. ` +
+    `NEVER count it, rank the three, or say how many are left — it is three named things, not a score, and ` +
+    `"two of three" is exactly the sentence to avoid. NEVER tell them they ARE mindful, fit or well, even when all ` +
+    `three are built${built.length ? ` (${built.map((x) => x.product.toLowerCase()).join(' and ')} ${built.length === 1 ? 'is' : 'are'} built for them now)` : ''} — ` +
+    `the cycle builds the skill, it does not hand anyone the outcome. What is not built yet is road ahead, not debt: ` +
+    `do not chase them through it, and never open a conversation with what is missing.`
+  );
+}
+
 function grintaStrandsLine(s: CheckinContext['grintaStrands']): string {
   if (!s) return '';
   const parts = (['reconnect', 'rewire', 'rebuild', 'reclaim'] as const)
@@ -364,6 +397,7 @@ export function contextBlock(c: CheckinContext): string {
       ? `Their Bigger World priorities (Reclaim C2) — the area they chose to focus on is their ${c.reclaimPriorities.primary.toLowerCase()} life; the easiest place to build momentum is their ${c.reclaimPriorities.momentumLever.toLowerCase()} life. Support that chosen focus warmly; it's their priority, not a ranking to grade.`
       : null,
     practiceWeekLine(c),
+    outcomesLine(c),
     c.qualityDay && c.qualityDay.nonNegotiables.length
       ? `Their Quality Day (Reclaim C3) — the non-negotiables they named: ${c.qualityDay.nonNegotiables.join(', ')}.${c.qualityDay.days ? ` They've logged ${c.qualityDay.days} day${c.qualityDay.days === 1 ? '' : 's'} lately, averaging ${c.qualityDay.recentAvg}/10.` : ''} Support the practice — help them notice what actually makes a day theirs; a Quality-Day score is self-monitoring, never a grade.`
       : null,
