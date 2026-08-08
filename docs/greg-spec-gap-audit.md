@@ -3,7 +3,9 @@
 **Started 2026-08-07** on Jay's instruction: *"if there's anything you haven't read thoroughly in ANY of them
 and applied to the app, we should. It ultimately makes our job easier."*
 
-**Status: 6 of 12 VERIFIED BY ME (B1, B2, R1, R3, W1, W2). 1 UNVERIFIED LEAD (R2). 5 not started.**
+**Status: 7 of 12 VERIFIED BY ME (B1, B2, R1, R3, W1, W2, W3). 1 UNVERIFIED LEAD (R2). 4 not started.**
+
+**⚠ THE MOST IMPORTANT FINDING IS NOW THE COPY, NOT THE CODE — see 'summaries.ts is a promise ledger' below.**
 
 **READ THE PROVENANCE LINE ON EVERY CLAIM BELOW.** Jay, 2026-08-07, after I proposed scaling this with a fleet
 of agents: *"Using agents is where things have gone wrong in the past, over and over. This is foundational stuff
@@ -237,6 +239,65 @@ So the Tuesday moved from Rewire into the gateway. **Not duplicated** — our W2
 you?" rather than a second Tuesday. But a member does a future-scene visualisation in Reconnect and another in
 W2, and whether that reads as reinforcement or repetition is a design question worth a live walk rather than a
 code read.
+
+---
+
+## W3 — VERIFIED BY ME 2026-08-07. Strongest protocol match yet. Second component missing.
+
+**The False Start protocol is close to exact.** Greg's step 1 wants triggers across four categories — situations,
+emotions, cognitive lies, time of day. Our `W3_TRIGGER_AREAS` covers all four, and deliberately as *"guidance for
+the model's follow-ups, NEVER listed or counted to the member"* — coverage without a checklist, which suits the
+draw-out posture better than enumeration would.
+
+His step 2 wants a three-part prepared response: recognition, the recovery move, and **a return to the W2
+visualization**. Ours is Redirect / Reframe / Restart, and the code says it outright: *"the Reframe builds a
+W1-style true line, the Restart reaches for the W2 image."* That is his three parts, and it wires W1 and W2
+together as he asks. The whole protocol harvests as a `recovery_move` keeper, so keeper-recall serves it back on
+a later slip.
+
+Steps 3 and 4 are substantially there: the Momentum card is the monitoring target, logging is domain-tagged
+(activity/eating), and the both-are-data frame runs through the copy. The two asks I could not find are
+*willingness* and *natural check-in time* — the latter may be served by the separate `/rhythm` surface rather
+than by W3 itself.
+
+### THE GAP: the second component does not exist
+
+Greg is explicit that W3 is **two components and both must be present**: *"The second part of W3, the mindfulness
+practice, strengthens the person's ability to use those relapse prevention skills in real time"* — because
+*"many setbacks are not conscious decisions so much as automatic slides under stress, fatigue, discouragement, or
+overload. A mindfulness practice helps make those moments more visible."*
+
+We ship the protocol and a week of noticing. The noticing week is **self-monitoring via logging**, which is
+adjacent but is not a practice the member performs. Checked several phrasings against a positive control:
+`mindful` appears three times (twice in summaries, once in a file header), and no breath/grounding/body-scan
+practice exists in the W3 arc.
+
+---
+
+## ⚠ THE CLASS FINDING: `summaries.ts` is a promise ledger written against the SPEC, not the BUILD
+
+This is the most important thing in this file, and W3 is the second instance in a row.
+
+`lib/content/summaries.ts` is canon and renders to members on the workspace "Why this matters" panel and the
+Program page. It was derived from Greg's own in-app summaries. **So wherever our build diverges from his spec,
+the summary still describes his version** — and the divergence becomes a member-facing promise we do not keep.
+
+| Asset | The summary promises | We deliver |
+| --- | --- | --- |
+| R3 | *"Then the Legacy Letter turns you forward… You keep the letter"* | The Window (Legacy Letter moved to Reclaim) |
+| W3 | *"the mindfulness practice helps you catch stress, discouragement, and old habits"* | the protocol + a week of noticing |
+| R2 | *"in the Spark space…"* (FIXED 2026-08-07) | the Community |
+
+Three for three, in the three assets where we diverged. This is not coincidence — it is structural. Every design
+decision we made against Greg's spec silently created a copy defect, because the copy was written from the spec.
+
+**This reframes the audit.** The question worth answering is not only "what did we skip" but **"what are we
+telling members we do, that we don't?"** — and that one is cheap to answer: twelve summary entries, read against
+the build. Every mismatch is a member-facing promise we break, which is worse than a missing feature because the
+member notices and we don't.
+
+**Recommended: do the summaries.ts sweep next, before any more spec auditing.** It is the highest ratio of
+member-facing harm to effort in this whole exercise.
 
 ---
 
