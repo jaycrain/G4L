@@ -134,7 +134,22 @@ export default async function ProgramPage({
           Two things here are member-facing for the FIRST time and are therefore load-bearing:
             · the ~six weeks for Cycle 1 (Greg's front-end promise, which we had never stated anywhere), and
             · "a read · a tool · a tracked week" — the same vocabulary the outcome cards use on the Playbook.
-          If either changes, it changes in both places and goes back to canon. */}
+          If either changes, it changes in both places and goes back to canon.
+
+          THE HEALTHSPAN STAT — SOURCED, because it is our first checkable external claim in member copy and it
+          will be quoted by the marketing site and the book. Verified 2026-08-08 against the paper itself:
+
+            Garmany A, Terzic A. "Global Healthspan-Lifespan Gaps Among 183 World Health Organization Member
+            States." JAMA Network Open. 2024;7(12):e2450241. doi:10.1001/jamanetworkopen.2024.50241
+
+          The paper: "The largest healthspan-lifespan gaps were observed in the US (12.4 years), Australia (12.1),
+          New Zealand (11.8)". 12.4 is the US figure OVERALL (women 13.7, men ~11.1), and the US is the largest of
+          all 183 states — so "the widest of any nation studied" is exact, and "studied" is the right hedge because
+          the sample is the 183 WHO member states, not every nation.
+
+          ONE PRECISION CAVEAT, deliberately left as written: the underlying data year is 2019, published 2024.
+          "has grown to about 12.4 years" is defensible (it did), and "about" carries the hedge — but if a
+          fact-checker ever presses, that is the seam. Do not sharpen the sentence to a present-tense claim. */}
       <div className="card sub-copy prog-lead">
         <h2 className="prog-h">Midlife Identity Loss — and the Comeback</h2>
         <p>It rarely happens all at once. Career, kids, caregiving, a body that changes the rules. A hundred reasonable decisions, not one of them a failing — and slowly you drift from the person you used to be. That drift is Midlife Identity Loss. We call it the Fade. Most people never notice it, because it looks like getting older.</p>
