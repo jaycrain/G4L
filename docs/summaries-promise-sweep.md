@@ -1,6 +1,6 @@
 # The promise sweep — what our copy tells members vs what the build does
 
-**Done by hand 2026-08-07.** All 16 entries in `lib/content/summaries.ts` (12 assets + 4 phases), read against
+**Done by hand 2026-08-07. 7 findings stand, 1 withdrawn on re-check (R1).** All 16 entries in `lib/content/summaries.ts` (12 assets + 4 phases), read against
 the build. Every claim below was checked in code, with a positive control on the absence checks.
 
 **Why this matters more than a missing feature.** A member reads these on the "Why this matters" panel *before*
@@ -50,6 +50,8 @@ is his design.
 
 ## MEDIUM — a specific, checkable claim that is wrong
 
+*(One item here — R1 — was WITHDRAWN on re-check. Left in place with the reasoning, because how it was wrong matters.)*
+
 **B3 — points the member at the wrong screen.**
 > *"You can track the Good Calls, the False Starts, the obstacles you didn't see coming, **in your Movement
 > screen**."*
@@ -58,16 +60,29 @@ The build says *"Go to the **Momentum card** on your dashboard"* (`rebuild.ts:19
 real* screen in our app. A member following this copy goes somewhere that has no logging and finds nothing.
 **Fix: one word. Cheapest item here and the most concretely wrong.**
 
-**R1 — promises a comparison the instrument never makes.**
-> *"You rate yourself across the areas of your life, **comparing where you are now to the fuller version of you
-> that you remember**."*
+**R1 — WITHDRAWN 2026-08-07. I was wrong; the framing is there.**
 
-The 24 items are present-state statements — *"Your body feels like it belongs to you"* — and neither "fuller" nor
-"remember" appears anywhere in the IDQ conversation (0 hits, positive control passed). The member is told they
-are measuring a distance from a remembered self; they are actually rating agreement with statements.
+I originally listed this as a defect: the summary promises *"comparing where you are now to the fuller version of
+you that you remember"*, and I found zero hits for "fuller" or "remember" in the IDQ conversation.
 
-This one is a defect against **both** our copy and Greg's spec — he specifies the now-vs-remembered frame too.
-**Fix: frame it in the IDQ opening.** Small, and it makes the copy true.
+**The framing exists, in our own words.** The IDQ opening reads:
+
+> *"Think of the whole thing as a mirror. You hold it up, you look, and you see **the distance between who you
+> are today and who you know you still are underneath.**"*
+
+That is the same comparison. My check searched for the SUMMARY'S vocabulary inside OUR code, and a miss on two
+words got read as an absence of the idea — the same mistake as hunting `prior_module_context` and concluding
+nothing feeds forward. **When checking whether a concept exists, search the concept, not the other document's
+nouns.**
+
+What remains is a much softer, genuinely arguable point: Greg specifies the comparison be framed *per rating*
+(*"Each rating prompt explicitly frames the comparison as now-vs-remembered-fuller-self"*), while we state it once
+up front and then present 24 present-state items. Re-framing all 24 would be tedious to read and probably worse.
+**Design choice, not a defect. No change recommended.**
+
+One nuance worth a note if the copy is ever revised: the summary says "the fuller version of you that you
+**remember**" (past) and the IDQ says "who you know you **still are underneath**" (latent). Same referent, slightly
+different flavour. Not worth touching on its own.
 
 **R2 — promises a temporal reflection we don't run.**
 > *"Here you mark which ones are yours, then look at **which opened first, which shaped you most, and which is
@@ -102,7 +117,7 @@ than line by line, so call those "no mismatch found" rather than "verified clean
 ## Recommended order
 
 1. **B3's "Movement screen" → "Momentum card."** One word, unambiguous, actively misdirects a member today.
-2. **R1's remembered-self framing.** Small, and it satisfies Greg's spec at the same time.
+2. ~~R1's remembered-self framing~~ — **withdrawn, no change needed.**
 3. **R3 + W3 clauses** — go to Greg with the Legacy Letter and mindfulness questions; the copy fix follows his answer.
 4. **B1 wrapper and B2's map** — real builds, already on the list, now with member-facing justification.
 5. **W2's "spark"** — sweep it up with anything else in that file.
