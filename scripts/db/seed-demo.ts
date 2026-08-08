@@ -11,6 +11,7 @@ import { completeAsset } from '../../lib/assets/engine.ts';
 import { assignVariant } from '../../lib/assets/variant.ts';
 import { seedActivityFor, type Persona } from './seed-activity.ts';
 import { seedConnectDemo } from '../../lib/connect/seed.ts';
+import { proposeEntry } from '../../lib/playbook/store.ts';
 
 // A member's PAST — closed Sessions and practice weeks. Added 2026-08-08 because the seeder produced only
 // brand-new accounts, which meant the entire member-with-history half of the app had never been walked locally:
@@ -43,6 +44,10 @@ type Demo = {
   /** Session ids to mark closed, in the order they'd have happened. */
   closedSessions?: string[];
   weeks?: PracticeSeed[];
+  /** Playbook lines. `keep: true` = already kept (fills the tabs); otherwise it lands in the intake tray as a
+   *  pending decision. A member with a QUEUE is its own state — the tray's whole design turns on how many are
+   *  waiting, and with none seeded it could only ever be looked at empty. */
+  playbook?: Array<{ section: 'what_works' | 'why_works' | 'own_words' | 'journal'; body: string; keep?: boolean }>;
 };
 
 const r7 = (a: string[]) => a;
@@ -99,6 +104,21 @@ const DEMOS: Demo[] = [
         marks: { activity: [0, 2], diet: [0, 1] },
       },
     ],
+    // A REAL PLAYBOOK: some lines already kept (so the tabs have content) and FOUR still queued (so the intake
+    // tray has a stack to fold). Jay's prod walk found six waiting, which made the tray the whole page — that
+    // state has to be reachable here or the fix can only ever be looked at empty.
+    playbook: [
+      { section: 'what_works', body: 'When the alarm argues with me, I put the shoes on first and decide after.', keep: true },
+      { section: 'own_words', body: 'I am not starting over. I am picking back up.', keep: true },
+      { section: 'why_works', body: 'A missed day is data, not a verdict — the streak was never the point.', keep: true },
+      { section: 'own_words', body: 'The diagnosis took the running. It did not take the runner.' },
+      { section: 'own_words', body: 'I keep waiting to feel ready. Ready seems to arrive after, not before.' },
+      { section: 'what_works', body: 'Laying kit out the night before removes the whole argument.' },
+      // KEPT, not proposed: a journal note is the member's OWN writing. Nothing should ask them to approve a
+      // line they wrote themselves — and a journal entry has no chapter, so it would also have skewed the tray's
+      // "mostly ___" read toward nothing.
+      { section: 'journal', body: 'Slept badly, walked anyway. Not heroic, just done.', keep: true },
+    ],
   },
 ];
 
@@ -113,6 +133,9 @@ async function seedHistory(db: Awaited<ReturnType<typeof getDb>>, memberId: stri
        on conflict (member_id, session_id) do update set status = 'closed', closed_at = now()`,
       [memberId, id],
     );
+  }
+  for (const pb of d.playbook ?? []) {
+    await proposeEntry(db, memberId, { section: pb.section, body: pb.body, keep: pb.keep });
   }
   for (const w of d.weeks ?? []) {
     await db.query(

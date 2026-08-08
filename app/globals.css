@@ -2043,7 +2043,21 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
 .pb-fm-item { display: flex; gap: 12px; align-items: baseline; }
 .pb-fm-tag { flex: 0 0 auto; font-size: 10.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; color: var(--navy); background: rgba(255,255,255,.9); padding: 3px 9px; border-radius: 100px; white-space: nowrap; }
 .pb-fm-line { font-size: 15.5px; line-height: 1.4; color: #fff; }
-.pb-tray { border: 1px solid #d4d8b0; background: #fbfcf3; border-radius: 14px; padding: 18px 20px; margin: 1.2rem 0; }
+/* THE INTAKE TRAY, folded. At rest it is ONE ROW — the count, what the queue is mostly about, and a caret. The
+   olive tint stays (it is still the Companion's, not the member's) but the padding collapses so it reads as a
+   line of business to attend to rather than the page's main event. */
+.pb-tray { border: 1px solid #d4d8b0; background: #fbfcf3; border-radius: 14px; margin: 1.2rem 0; overflow: hidden; }
+.pb-tray.open { padding-bottom: 18px; }
+.pb-tray-bar { display: flex; align-items: center; gap: 10px; width: 100%; background: none; border: 0; cursor: pointer;
+  font-family: inherit; text-align: left; padding: 12px 18px; color: var(--navy); }
+.pb-tray-bar:hover { background: rgba(145,149,54,.07); }
+/* The count is the pull — it is the only reason a folded row gets opened, so it carries the weight. */
+.pb-tray-n { flex: none; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 11px; background: var(--olive-text);
+  color: #fff; font-size: 12px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; }
+.pb-tray-say { flex: 1 1 auto; font-size: 13.5px; font-weight: 600; }
+.pb-tray-caret { flex: none; font-size: 11px; color: var(--muted-grey); }
+.pb-tray-body { padding: 0 18px; }
+.pb-tray-body .pb-sec-d { margin-bottom: 12px; }
 .pb-pin-dot { margin-right: 6px; font-size: 0.85em; }
 
 /* "See the Program →" — the ring's wayfinder, centered beneath the bullseye (replaced the old "what's the ring?"

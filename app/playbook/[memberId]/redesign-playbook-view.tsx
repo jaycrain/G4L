@@ -108,6 +108,10 @@ export default function RedesignPlaybookView({
       window.history.replaceState(null, '', u);
     }
   };
+  // A single flag opens on sight — it's a glance, not a chore. Two or more stay folded so the queue can't take
+  // over the page. Derived from `initial` on mount rather than kept in sync: once a member opens it, keeping it
+  // open while they work through the stack is the right behaviour.
+  const [trayOpen, setTrayOpen] = useState(() => initial.filter((e) => e.state === 'proposed').length === 1);
   const [busy, setBusy] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState('');
@@ -220,6 +224,17 @@ export default function RedesignPlaybookView({
 
   const kept = entries.filter((e) => e.state === 'kept');
   const proposed = entries.filter((e) => e.state === 'proposed');
+  // Where the queue mostly wants to go, so the collapsed bar says something rather than just counting. Only named
+  // when one chapter actually dominates — "mostly who you are" is useful; "mostly" across an even spread is noise.
+  const proposedWhere = (() => {
+    const tally = new Map<ChapterKey, number>();
+    for (const e of proposed) {
+      const ck = chapterKey(e);
+      if (ck) tally.set(ck, (tally.get(ck) ?? 0) + 1);
+    }
+    const top = [...tally.entries()].sort((a, b) => b[1] - a[1])[0];
+    return top && top[1] > proposed.length / 2 ? CHAPTER_LABEL[top[0]] : null;
+  })();
   const pinned = kept.filter((e) => e.pinned).slice(0, 3);
   const journal = kept.filter((e) => e.section === 'journal');
   const chapters = CHAPTERS.map((c) => ({ ...c, items: kept.filter((e) => e.section !== 'journal' && chapterKey(e) === c.key) }));
@@ -264,13 +279,29 @@ export default function RedesignPlaybookView({
         </section>
       )}
 
-      {/* INTAKE TRAY — also above the tabs, because it is an ACTION with a decision pending. Filed under a tab it
-          would be missed by a member who never opens that tab, and the Companion's flags would rot unreviewed. */}
+      {/* INTAKE TRAY — COLLAPSED BY DEFAULT (Jay's prod walk, 2026-08-08).
+          It still sits above the tabs, because a flag filed inside a tab rots unreviewed by a member who never
+          opens that tab — that reason hasn't changed. What changed is the size: with six flags queued the tray WAS
+          the page. Jay scrolled two full screens of pending decisions before reaching the Playbook itself, which
+          inverts what this page is for — you plan FROM a playbook, and an inbox stacked on top of the instrument
+          is the wrong shape.
+          One line at rest with the count doing the pulling; the whole queue one tap away. Open by default when
+          there is only ONE, because a single flag is a glance, not a chore. */}
       {proposed.length > 0 && (
-        <section className="pb-tray">
-          <div className="pb-sec">To review</div>
-          <div className="pb-sec-d">Your companion noticed these. Keep what rings true — it files itself under the right chapter.</div>
-          {proposed.map(proposedCard)}
+        <section className={`pb-tray${trayOpen ? ' open' : ''}`}>
+          <button type="button" className="pb-tray-bar" aria-expanded={trayOpen} onClick={() => setTrayOpen((v) => !v)}>
+            <span className="pb-tray-n">{proposed.length}</span>
+            <span className="pb-tray-say">
+              your companion flagged{proposedWhere ? ` · mostly ${proposedWhere.toLowerCase()}` : ''}
+            </span>
+            <span className="pb-tray-caret" aria-hidden="true">{trayOpen ? '▾' : '▸'}</span>
+          </button>
+          {trayOpen && (
+            <div className="pb-tray-body">
+              <div className="pb-sec-d">Keep what rings true — it files itself under the right chapter.</div>
+              {proposed.map(proposedCard)}
+            </div>
+          )}
         </section>
       )}
 
