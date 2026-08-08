@@ -12,6 +12,7 @@ import { deriveRingState } from '../workspace/ring-state.ts';
 import { heroView } from './hero-copy.ts';
 import { keyFromForecast } from '../workspace/session-key.ts';
 import { sessionsForPhase } from '../workspace/session-registry.ts';
+import { lastAccomplishment } from './last-accomplishment.ts';
 
 const R_STRANDS = [
   { key: 'reconnect', label: 'Reconnect' },
@@ -22,8 +23,22 @@ const R_STRANDS = [
 
 export type HeroCard = {
   eyebrow: string;
+  /** The breadcrumb, structured rather than a joined string so the centre can style the first crumb as the
+   *  anchor and the rest as position (Jay, 2026-08-08: "Program ... still needs to pay off and connect with
+   *  the app"). Leading with "Program" makes the marketing word do in-product work as the FRAME a member is
+   *  inside, which is also what stops it competing with the Playbook for the same job. eyebrow stays for the
+   *  surfaces that haven't adopted crumbs. */
+  crumbs: string[];
+  /** The live state at the end of the trail ("Checkpoint ready"), kept SEPARATE from the crumbs rather than
+   *  being "the last crumb". Styling the last crumb as the state highlighted the PHASE for anyone who had no
+   *  state — Reconnect rendered in the state colour, saying nothing. A state is a different kind of thing from
+   *  a position, so it gets its own field. */
+  crumbState: string | null;
   title: string;
   copy: string;
+  /** "You closed your practice week — 4 of the 5 you aimed for." The last thing they actually finished, shown
+   *  under the title so the hero isn't purely forward-facing. Null for a member with nothing closed yet. */
+  accomplishment: string | null;
   ctaLabel: string;
   ctaHref: string | null; // null when the state is a non-link (reclaim-locked "opens…" marker)
   kind: string;
@@ -37,10 +52,12 @@ export type HeroCard = {
 };
 
 export async function heroCard(db: Db, memberId: string): Promise<HeroCard> {
-  const [forecast, { state: heroState }] = await Promise.all([
+  const [forecast, { state: heroState }, done] = await Promise.all([
     getForecast(db, memberId),
     resolveHero(db, memberId),
+    lastAccomplishment(db, memberId),
   ]);
+  const accomplishment = done?.text ?? null;
 
   const rings = deriveRingState(forecast, heroState.kind === 'reclaim-locked' ? 'reclaim' : undefined);
   const activeRing = rings.find((r) => r.state === 'current') ?? rings.find((r) => r.state === 'locked') ?? rings[0]!;
@@ -75,6 +92,11 @@ export async function heroCard(db: Db, memberId: string): Promise<HeroCard> {
           ? `${Math.min(activeRing.done, phaseSessions.length)} of ${phaseSessions.length}`
           : null;
 
+  // The breadcrumb: "Program › Reclaim › 3 of 4 sessions › Checkpoint ready". Always anchored on "Program" so the
+  // word names the frame the member is inside. The state crumb is appended per-return below, since only the hero
+  // state knows whether they're mid-week, checkpoint-ready, or simply next-up.
+  const baseCrumbs = ['Program', phaseLabel, ...(sessionPosition ? [sessionPosition.replace(/^Session /, '')] : [])];
+
   // Practice-week split (Jay, 2026-07-22): the hero shows the next SESSION; the log becomes a Momentum-panel action.
   if (heroState.kind === 'mid-week-practice') {
     const momentumCta = { label: 'Log today with me →', href: `/momentum/${memberId}` };
@@ -82,7 +104,10 @@ export async function heroCard(db: Db, memberId: string): Promise<HeroCard> {
       const isCheckpoint = cur.kind === 'checkpoint';
       return {
         eyebrow: `Phase ${phaseOrdinal} · ${phaseLabel}${sessionPosition ? ` · ${sessionPosition}` : ''}`,
+        crumbs: baseCrumbs,
+        crumbState: 'practice week running',
         title: cur.title,
+        accomplishment,
         copy: "Here's your next step, ready whenever you are. You're mid-week on your practice — keep logging as you go.",
         ctaLabel: isCheckpoint ? 'Take the Checkpoint' : 'Open this Session',
         ctaHref: pathHref,
@@ -96,7 +121,10 @@ export async function heroCard(db: Db, memberId: string): Promise<HeroCard> {
     // No openable next step yet (waiting out the week) — a soft forward line, log still on Momentum.
     return {
       eyebrow: `Phase ${phaseOrdinal} · ${phaseLabel}`,
+      crumbs: baseCrumbs,
+      crumbState: 'practice week running',
       title: 'Your week is running',
+      accomplishment,
       copy: 'Keep noticing what happens — no grade, just catching it. Your next step opens as the week completes.',
       ctaLabel: 'See the Program',
       ctaHref: `/program/${memberId}`,
@@ -111,7 +139,10 @@ export async function heroCard(db: Db, memberId: string): Promise<HeroCard> {
   const hero = heroView(heroState, { phaseLabel, phaseOrdinal, sessionPosition });
   return {
     eyebrow: hero.eyebrow,
+    crumbs: baseCrumbs,
+    crumbState: ringSub === 'checkpoint' ? 'Checkpoint ready' : ringSub === 'coming' ? 'opens later' : null,
     title: hero.title,
+    accomplishment,
     copy: hero.copy,
     ctaLabel: hero.ctaLabel,
     ctaHref: heroState.kind === 'reclaim-locked' ? null : pathHref,

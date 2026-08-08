@@ -214,9 +214,35 @@ export default function TriptychCenter({
       {hero && (
         <div className="tri-hero" data-tour="program">
           <div className="tri-hero-text">
-            <span className="tri-hero-eyebrow">{hero.eyebrow}</span>
+            {/* The breadcrumb replaces the old "Phase 4 · Reclaim" eyebrow (Jay, 2026-08-08). Leading with
+                Program is the point: it makes the marketing word name the FRAME the member is inside rather
+                than a page they visit, which is what stops it competing with the Playbook. The first crumb
+                links; the rest are position, not navigation. */}
+            <span className="tri-hero-eyebrow">
+              {hero.crumbs.map((c, i) => (
+                <span key={c}>
+                  {i > 0 && <span className="tri-crumb-sep" aria-hidden="true"> › </span>}
+                  {i === 0 ? (
+                    <Link href={`/program/${memberId}`} className="tri-crumb-home">{c}</Link>
+                  ) : (
+                    <span>{c}</span>
+                  )}
+                </span>
+              ))}
+              {hero.crumbState && (
+                <>
+                  <span className="tri-crumb-sep" aria-hidden="true"> › </span>
+                  <span className="tri-crumb-state">{hero.crumbState}</span>
+                </>
+              )}
+            </span>
             <h1 className="tri-hero-title">{hero.title}</h1>
-            <p className="tri-hero-copy">{hero.copy}</p>
+            {/* The subhead is what they last FINISHED, and it REPLACES the generic forward line rather than
+                stacking above it (Jay: "subhead indicating last accomplishment"). The generic copy — "Here's
+                your next step, ready whenever you are" — is filler next to a specific, true sentence about
+                their own week, and the state it used to carry now lives in the breadcrumb. Falls back to copy
+                for a member with nothing closed yet, rather than inventing an achievement. */}
+            <p className="tri-hero-copy">{hero.accomplishment ?? hero.copy}</p>
             <div className="tri-hero-ctarow">
               {hero.ctaHref ? (
                 <Link href={hero.ctaHref} className="tri-hero-cta" data-tour="next-step">

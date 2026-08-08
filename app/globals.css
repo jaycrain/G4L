@@ -36,6 +36,7 @@
      which the scan caught immediately. 5.34:1 on navy. */
   --muted-on-navy: #c9cdd1;
   --teal-on-navy: #a8d2d3;   /* 5.21:1 on navy — the accent, lifted rather than darkened */
+  --orange-on-navy: #ffb38a; /* 4.90:1 on navy — brand orange is 2.58:1 there and fails outright; lifted, not darkened */
   /* Main panel outline — navy-tinted, darkened a notch past the 0.38 accent level (one place to tune). */
   --panel-line: rgba(55, 79, 99, 0.55);
   /* Data-entry field outline — the standard (solid navy); one knob so every field reads the same. */
@@ -372,7 +373,7 @@ ul.reclaim li.reclaimed { color: var(--navy); }
   background: var(--teal-text); color: #fff; border: none; border-radius: 6px;
 }
 .measure-log button:disabled { opacity: 0.5; cursor: default; }
-.measure-meta { font-size: 0.7rem; margin-top: 0.5rem; padding-top: 0.4rem; border-top: 1px solid var(--light-grey); opacity: 0.6; }
+.measure-meta { font-size: 0.7rem; margin-top: 0.5rem; padding-top: 0.4rem; border-top: 1px solid var(--grey); opacity: 0.6; }
 .measure-error { color: var(--deep-red); font-size: 0.76rem; margin: 0.3rem 0 0; }
 .measure-saved { color: var(--teal-text); font-size: 0.78rem; font-weight: 600; margin: 0.3rem 0 0; }
 /* "Track this" affordance — the deterministic offer on a numbered goal with no tracker yet. */
@@ -2328,7 +2329,23 @@ body.onbwel-bleed main { max-width: none; margin: 0; padding: 0; }
 /* The navy hero — headline + guiding line + CTA, with the merged 4R ring beside it (phase + progress). */
 .tri-hero { flex: 0 0 auto; padding: 20px 24px 22px; border-bottom: 1px solid rgba(255, 255, 255, 0.10); display: flex; gap: 20px; align-items: center; }
 .tri-hero-text { flex: 1; min-width: 0; }
-.tri-hero-eyebrow { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.07em; color: var(--teal-on-navy); }
+/* The hero BREADCRUMB (Jay 2026-08-08) — was an uppercase teal eyebrow ("PHASE 4 · RECLAIM"). Uppercase is wrong
+   for a breadcrumb: it's mixed content ending in a state, and shouting the whole trail flattens the hierarchy the
+   trail exists to show. Normal case, muted, with only the two ends carrying colour — the "Program" anchor and the
+   live state. */
+.tri-hero-eyebrow { font-size: 12px; font-weight: 600; letter-spacing: 0; color: rgba(255, 255, 255, 0.62); }
+.tri-crumb-sep { color: rgba(255, 255, 255, 0.32); }
+.tri-crumb-home { color: #fff; text-decoration: none; font-weight: 700; }
+.tri-crumb-home:hover { text-decoration: underline; }
+.tri-crumb-state { color: var(--orange-on-navy); font-weight: 700; }
+
+/* Your Playbook panel (left flank). The count carries the panel — orange, because it is the one number here that
+   only ever goes UP, and it is a tally of things they made rather than a measure of them. "Most run" names the
+   play they keep coming back to: the proven one, which is more useful than the most recent. */
+.rreg-plays { color: var(--orange-text); }
+.pb-mostrun { display: flex; flex-direction: column; gap: 2px; margin-top: 10px; padding-top: 9px; border-top: 1px solid var(--light-grey); }
+.pb-mostrun-label { font-size: 10.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted-grey); }
+.pb-mostrun-name { font-size: 13px; line-height: 1.3; color: var(--charcoal); }
 .tri-hero-title { margin: 6px 0 0; font-size: 27px; line-height: 1.1; font-weight: 800; color: #fff; }
 .tri-hero-copy { margin: 10px 0 0; font-size: 14.5px; line-height: 1.5; color: rgba(255, 255, 255, 0.78); max-width: 52ch; }
 .tri-hero-ctarow { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; margin-top: 16px; }

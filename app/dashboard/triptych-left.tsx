@@ -4,6 +4,7 @@ import type { Dashboard } from '../../lib/gateway/flow.ts';
 import { latestGrintaReading } from '../../lib/grinta/survey/store.ts';
 import { getPassport } from '../../lib/curriculum/view.ts';
 import BadgeStamp, { BadgeStampPlaceholder } from './badge-stamp.tsx';
+import { playbookSummary } from '../../lib/playbook/summary.ts';
 
 // Triptych LEFT flank — "Where You Are" (reflect / the mirrors): ID Score · Grinta Index · Badges. Server component: the
 // panels are moved from redesign-dashboard AS-IS (same .rcard/.rreg-*/.r-badges classes, same See-more foot links), just
@@ -28,13 +29,14 @@ const IDQ_DIMS = [
 ] as const;
 
 export default async function TriptychLeft({ db, memberId, dash }: { db: Db; memberId: string; dash: Dashboard }) {
-  const [grinta, passport, idqRows] = await Promise.all([
+  const [grinta, passport, idqRows, playbook] = await Promise.all([
     latestGrintaReading(db, memberId),
     getPassport(db, memberId),
     // Last completed IDQ → the next one is due 60 days on (the frozen cadence). Drift-hardened: any hiccup hides the line.
     db
       .query<{ last: unknown }>('select max(taken_at) as last from idq_retake where member_id=$1 and cycle_indicator=1', [memberId])
       .catch(() => ({ rows: [] as { last: unknown }[] })),
+    playbookSummary(db, memberId),
   ]);
   const lastIdq = idqRows.rows[0]?.last ? new Date(idqRows.rows[0].last as string) : null;
   const nextIdqLabel = lastIdq
@@ -49,6 +51,27 @@ export default async function TriptychLeft({ db, memberId, dash }: { db: Db; mem
 
   return (
     <div className="tri-stack">
+      {/* Your Playbook — LEADS the reflect column (Jay, 2026-08-08). Above ID Score and Grinta on purpose: the
+          first thing in the "how am I doing" column is now what you've BUILT, not how you SCORE — the same
+          correction the Greg audit produced (outcomes ahead of metrics), showing up in layout rather than copy.
+          Hidden until there's something in it, so it never reads as an empty promise to a brand-new member. */}
+      {playbook && playbook.plays > 0 && (
+        <div className="rcard r-reg" data-tour="playbook">
+          <div className="rreg-eyebrow">Your Playbook</div>
+          <div className="rc-sub">What you&rsquo;ve built.</div>
+          <div className="rreg-big rreg-plays">
+            {playbook.plays}<span className="rreg-unit"> {playbook.plays === 1 ? 'play' : 'plays'}</span>
+          </div>
+          {playbook.mostRun && (
+            <div className="pb-mostrun">
+              <span className="pb-mostrun-label">Most run</span>
+              <span className="pb-mostrun-name">{playbook.mostRun}</span>
+            </div>
+          )}
+          <Link href={`/playbook/${memberId}`} className="see-more" prefetch={false}>Open your Playbook →</Link>
+        </div>
+      )}
+
       {/* ID Score — the mirror */}
       <div className="rcard r-reg" data-tour="idscore">
         <div className="rreg-eyebrow">ID Score</div>
