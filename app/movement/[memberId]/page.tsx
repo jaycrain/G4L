@@ -154,6 +154,14 @@ export default async function MovementPage({ params }: { params: Promise<{ membe
             ))
           )}
         </div>
+        {/* "More about" — explained in context rather than from the retired Field Guide page (Jay 8/8).
+            No Strava line here: the connect-apps card above already covers it, and repeating it is the same
+            redundancy that made a separate Field Guide page a maintenance liability in the first place. */}
+        <div className="card sub-copy">
+          <h3>More about Movement</h3>
+          <p>Movement is everything you’re doing for your body, in one place — what you log here, and whatever comes in from a source you’ve connected.</p>
+          <p>It feeds the same picture your Companion is building, so what lands here shows up when you talk about how the body work is going.</p>
+        </div>
       </div>
     </>
   );

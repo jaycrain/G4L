@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getDb } from '../../lib/db/index.ts';
 import { currentMemberId } from '../auth.ts';
@@ -89,6 +90,17 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
           />
         </div>
       )}
+
+      {/* The Opening Tour's only re-run entry point. It used to hang off the Field Guide; when that page was
+          retired (Jay 8/8) the tour would have been orphaned, so it lands here with the other things you do
+          to your account rather than to your program. */}
+      <div className="card">
+        <h3>The tour</h3>
+        <p className="muted">A quick walk through what each part of your dashboard does.</p>
+        <div className="draft-actions">
+          <Link href={`/dashboard/${memberId}?tour=1`} className="connect-cta">Take the tour again →</Link>
+        </div>
+      </div>
 
       <div className="card">
         <h3>Sessions</h3>

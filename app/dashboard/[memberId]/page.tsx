@@ -301,7 +301,6 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
           <button type="submit" className="logout-link">Log out</button>
         </form>
         <span className="greeting-actions">
-          <Link href={`/field-guide/${memberId}`} className="greeting-nav" prefetch={false}>Field Guide</Link>
           <Link href={`/playbook/${memberId}`} className="greeting-nav" prefetch={false}>Playbook</Link>
         </span>
       </div>

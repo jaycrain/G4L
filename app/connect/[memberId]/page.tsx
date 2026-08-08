@@ -236,6 +236,12 @@ export default async function ConnectPage({
           ))
         )}
       </div>
+      {/* "More about" — explained in context rather than from the retired Field Guide page (Jay 8/8). */}
+      <div className="card sub-copy">
+        <h3>More about the Community</h3>
+        <p>The Community is everyone else doing this work — midlifers on the same stretch of road, at different points along it.</p>
+        <p>Report or block anything that doesn’t belong. Every report is read by a person.</p>
+      </div>
     </SubpageShell>
   );
 }

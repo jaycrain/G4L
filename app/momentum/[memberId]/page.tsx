@@ -112,6 +112,13 @@ export default async function MomentumPage({ params }: { params: Promise<{ membe
           </ul>
         )}
       </div>
+      {/* "More about" — the surface explains itself here rather than from a separate Field Guide page (Jay 8/8:
+          it was "rendered unnecessary by expanded panels and subpages"). Matches /score, /grinta, /badges. */}
+      <div className="card sub-copy">
+        <h3>More about Momentum</h3>
+        <p>A single day tells you very little. A few weeks of them tell you what your rhythm actually is, which is the thing worth knowing while you’re still building it.</p>
+        <p>You can log here, or just say it to your Companion. It reads everything on this page, so you can ask it what it’s seeing.</p>
+      </div>
       {/* No foot nav here (Jay 7/29): the global "← Dashboard" affordance already covers getting back, so a second
           pair of way-out buttons at the bottom read as confusing and unnecessary. */}
     </SubpageShell>

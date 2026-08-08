@@ -73,6 +73,11 @@ export default async function ReclaimListPage({ params }: { params: Promise<{ me
         </div>
       )}
 
+      {/* NO "More about" block here on purpose. The Field Guide retirement (Jay 8/8) moved each element's
+          explanation onto its own surface — but this page's lede ("What you're taking back. These are your
+          intentions. Talk to your Companion to add or refine the list or to add a tracker.") already says
+          everything the Field Guide entry said. A second telling directly beneath it is noise, not help. */}
+
     </SubpageShell>
   );
 }

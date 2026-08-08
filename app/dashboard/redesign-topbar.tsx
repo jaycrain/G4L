@@ -32,7 +32,6 @@ export default async function RedesignTopbar({ memberId }: { memberId: string })
       <div className="rt-who">
         <span className="rt-nav">
           <Link href={`/program/${memberId}`} prefetch={false}>Program</Link>
-          <Link href={`/field-guide/${memberId}`} prefetch={false}>Field Guide</Link>
           <Link href={`/playbook/${memberId}`} prefetch={false}>Playbook</Link>
         </span>
         <span className="rt-account-group">
