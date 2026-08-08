@@ -270,14 +270,6 @@ export default function TriptychCenter({
 
       {/* Keeper + thread scroll beneath the pinned hero. */}
       <div ref={chatRef} className="tri-comp-scroll">
-      {/* A surfaced keeper — the member's OWN kept line, held in the Companion's voice (Scott's "KEPT · your true line"). */}
-      {keeper && (
-        <div className="tri-keeper">
-          <span className="tri-keeper-eyebrow">Kept · {keeperLabel(keeper.keeperType)}</span>
-          <p className="tri-keeper-body">“{keeper.body}”</p>
-        </div>
-      )}
-
       <div className="tri-comp-stream">
         {messages.map((m, i) => (
           <div key={i} className={`rmsg ${m.role}`}>
@@ -295,6 +287,19 @@ export default function TriptychCenter({
         {pending && <div className="rmsg typing">Thinking…</div>}
       </div>
       </div>
+      {/* A surfaced keeper — the member's OWN kept line, held in the Companion's voice (Scott's "KEPT · your
+          true line"). PINNED here for the same reason as the standing update below it, and it is the older half
+          of that bug: it has lived inside the autoscrolling thread since the triptych shipped, which means any
+          member with a conversation of real length has never seen it. Jay, on being told: "I've never seen it
+          work myself." It sits ABOVE the standing update because it is ambient rather than actionable — their
+          own words first, then where they stand, then the place they type. */}
+      {keeper && (
+        <div className="tri-keeper">
+          <span className="tri-keeper-eyebrow">Kept · {keeperLabel(keeper.keeperType)}</span>
+          <p className="tri-keeper-body">“{keeper.body}”</p>
+        </div>
+      )}
+
       {/* WHERE YOU STAND — PINNED above the composer, deliberately OUTSIDE .tri-comp-scroll.
           It first shipped at the top of the scroll region and was effectively invisible: the thread autoscrolls
           to the newest message on load, so anything above it is pushed off-screen (Jay: "took me forever to
