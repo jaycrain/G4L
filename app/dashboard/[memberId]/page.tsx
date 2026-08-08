@@ -46,6 +46,7 @@ import { redirect } from 'next/navigation';
 import { redesignEnabled, dashboardTriptychEnabled } from '../../../lib/dashboard/redesign.ts';
 import { heroCard } from '../../../lib/dashboard/hero-card.ts';
 import { centerKeeper } from '../../../lib/dashboard/center-keeper.ts';
+import { standingUpdate } from '../../../lib/dashboard/standing-update.ts';
 import { ceremonyTourData } from '../../../lib/dashboard/ceremony-tour.ts';
 import RedesignDashboard from '../redesign-dashboard.tsx';
 import DashboardTriptych from '../dashboard-triptych.tsx';
@@ -99,6 +100,9 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
         getFacets(db, memberId).catch(() => [] as string[]),
         getForecast(db, memberId).catch(() => null),
       ]);
+      // "Where you stand" — computed from the hero + committed state, never asked of the model (see
+      // lib/dashboard/standing-update.ts). Sequenced after the Promise.all because it reads the hero.
+      const standing = await standingUpdate(db, memberId, hero);
       // The MEMBER strip (Jay: the one panel the triptych dropped) — who they are + what they're reclaiming + the Phase
       // they're in, with the "My Story" nav. identitySelves prefers their named selves, else "the {identityNoun}".
       const identitySelves = facets.length ? facets.join(' · ') : dash.identityNoun ? `the ${dash.identityNoun}` : null;
@@ -128,6 +132,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
             phaseLabel={phaseLabel}
             hasStory={!!dash.identityParagraph}
             hero={hero}
+            standing={standing}
             keeper={keeper}
             left={<TriptychLeft db={db} memberId={memberId} dash={dash} />}
             right={<TriptychRight db={db} memberId={memberId} dash={dash} momentumCta={hero.momentumCta} />}

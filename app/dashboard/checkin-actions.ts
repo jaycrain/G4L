@@ -2,6 +2,8 @@
 
 import { softRead } from '../../lib/db/degrade.ts';
 import { getDb } from '../../lib/db/index.ts';
+import { heroCard } from '../../lib/dashboard/hero-card.ts';
+import { standingUpdate } from '../../lib/dashboard/standing-update.ts';
 import { getDashboard } from '../../lib/gateway/flow.ts';
 import {
   checkinOpening,
@@ -238,6 +240,9 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
     today: new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }),
     // Earned badges — member-visible, so agent-visible (CLAUDE.md cornerstone). Names only. (CAT-37)
     earnedBadges: passport.badges.filter((b) => b.earned).map((b) => b.name),
+    // The SAME standing update the member is reading above the thread — recomputed here rather than passed in,
+    // because this context is built server-side for a turn and must not depend on what the client last rendered.
+    standingUpdate: await standingUpdate(db, memberId, await heroCard(db, memberId).catch(() => null)).catch(() => null),
     displayName: dash.displayName,
     identityNoun: dash.identityNoun,
     namedSelves,

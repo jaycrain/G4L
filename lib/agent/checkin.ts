@@ -32,6 +32,11 @@ export type CheckinContext = {
   // session close — so the agent MUST know them too (CLAUDE.md: no data the member can see is invisible to the
   // agent). Names only; acknowledge warmly as earned, never grade or gamify. (CAT-37)
   earnedBadges?: string[] | null;
+  // "Where you stand" — the standing update the member is looking at RIGHT NOW, above this thread. The agent must
+  // know it verbatim (CLAUDE.md: no data the member can see is invisible to the agent). Without it, a member who
+  // replies "what do you mean nothing needs me?" is talking about a sentence the Companion cannot see — and its
+  // only options are to confabulate or go vague, which is the exact failure the `degraded` flag exists to avoid.
+  standingUpdate?: string | null;
   doorDisplayNames: string[];
   idScore: number | null;
   direction: Direction | null;
@@ -287,6 +292,11 @@ export function contextBlock(c: CheckinContext): string {
     `Member: ${c.displayName}`,
     // Badges the member has EARNED — they see them, so you know them. Acknowledge as earned work when it's relevant;
     // never grade, gamify, or dangle them as a carrot. (CAT-37)
+    c.standingUpdate
+      ? `ON SCREEN ABOVE THIS THREAD, they can see your standing update, word for word: "${c.standingUpdate}". It is ` +
+        'computed from their committed state, so it is true — do not contradict it, and do not repeat it back at them ' +
+        'unprompted. If they ask about it, explain what it is drawn from.'
+      : null,
     c.earnedBadges && c.earnedBadges.length
       ? `Badges they've earned: ${c.earnedBadges.join(', ')} (earned acknowledgement — never a grade or a carrot)`
       : null,

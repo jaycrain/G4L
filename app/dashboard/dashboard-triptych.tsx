@@ -31,6 +31,7 @@ export default function DashboardTriptych({
   hasStory,
   hero,
   keeper,
+  standing,
   left,
   right,
 }: {
@@ -43,6 +44,7 @@ export default function DashboardTriptych({
   hasStory?: boolean; // show the "My Story" nav only once their narrative exists
   hero: HeroCard | null;
   keeper: CenterKeeper | null;
+  standing?: string | null;
   left: React.ReactNode; // "Where You Are" — server-rendered panels passed in (same pattern as RedesignShell's children)
   right: React.ReactNode; // "What's Next" — server-rendered panels
 }) {
@@ -147,7 +149,7 @@ export default function DashboardTriptych({
             {left}
           </aside>
           <section className="tri-center" aria-label="Your G4L Companion">
-            <TriptychCenter memberId={memberId} hero={hero} keeper={keeper} />
+            <TriptychCenter memberId={memberId} hero={hero} keeper={keeper} standing={standing} />
           </section>
           <aside className="tri-flank tri-right" aria-label="What's next">
             {right}

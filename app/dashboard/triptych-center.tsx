@@ -35,11 +35,16 @@ export default function TriptychCenter({
   memberId,
   hero,
   keeper,
+  standing,
   seed,
 }: {
   memberId: string;
   hero?: HeroCard | null;
   keeper?: CenterKeeper | null;
+  /** "Where you stand" — computed server-side every visit (lib/dashboard/standing-update.ts). Deliberately NOT a
+   *  thread message: appending it would pollute the conversation and go stale the moment anything changed. It
+   *  renders above the thread and is recomputed on each load, so it is always current by construction. */
+  standing?: string | null;
   seed?: string | null;
 }) {
   const router = useRouter();
@@ -264,6 +269,16 @@ export default function TriptychCenter({
 
       {/* Keeper + thread scroll beneath the pinned hero. */}
       <div ref={chatRef} className="tri-comp-scroll">
+      {/* WHERE YOU STAND — the Companion's standing update, above the keeper and the thread. It answers "what's
+          my situation" before the member has to ask, which is what gives the centre column a reason to be read
+          on a day when nothing is due — most days. Computed, never model-written, so it cannot invent. */}
+      {standing && (
+        <div className="tri-standing">
+          <span className="tri-standing-eyebrow">Where you stand</span>
+          <p className="tri-standing-body">{standing}</p>
+        </div>
+      )}
+
       {/* A surfaced keeper — the member's OWN kept line, held in the Companion's voice (Scott's "KEPT · your true line"). */}
       {keeper && (
         <div className="tri-keeper">
