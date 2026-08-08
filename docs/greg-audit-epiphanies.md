@@ -113,14 +113,79 @@ Options worth holding open until the audit is done, none chosen:
 
 ---
 
+## EPIPHANY 5 — the root cause: we turned "never a verdict" into "never visible"
+
+This is the one that explains everything else, and it only appeared once all twelve were read.
+
+Greg's position is consistent and it is **not** ambiguous. He asks for the work to be **visible** and for it never
+to be a **score**. Both, every time:
+
+- **B3:** *"the member's tracked Smart Choices, False Starts and reflections must be **visible in the dashboard**,
+  and the Companion connects lived experience to what is shown."*
+- **C3:** *"Tracked Quality Days must be **visible in the dashboard**, and the Companion connects the member's
+  lived experience to what they see there — **without using the dashboard as a scold**."* … and *"the intended
+  output is the member's growing awareness … **not a wellness score**."*
+- **C2:** *"must make gradual, normalized contraction **visible**"* and *"turning prior work into **visible
+  momentum**."*
+- **C1:** *"the original list is **loaded and displayed**, and the Member is prompted to re-read it."*
+- **B2:** *"Profile **displayed as a development map, not a score**."*
+- **B1:** *"no numeric motivation level, gauge, or progress bar"* — and *"the data should be shared with prompts
+  by the Companion to help them interpret it."*
+
+**Show the work. Never a verdict.** Those are not in tension — but we resolved the tension by showing nothing.
+
+Our governance rule ("never a bare number, never a verdict") is right and load-bearing. Applied to a display
+question it became a reason not to display. B1's own code says it plainly: *"stored but NOT displayed … a raw
+read of 'controlled / amotivation' could deflate a member."* True about the number, and then generalised to the
+whole artifact.
+
+**The design had already solved this correctly.** `artifact.ts`: *"Administered / checkpoint sessions → a
+governance-safe QUALITATIVE FRAME (never a bare number/score)."* Someone worked out how to be visible without
+being a verdict — and the frames are authored for every session (`c1: 'Your Reclaim List, refined'`,
+`c2: 'Your bigger world'`, `c3: 'Your Quality Day'`). Then the surface they render on was dropped.
+
+This also independently explains **W-27** in the charter ledger — Jay's own walk finding that *"assess without
+reveal underdelivers"* — and Greg's *"I actually felt this activity needed some closure."* Two people hit the same
+wall from opposite directions, and the wall is this rule mis-applied.
+
+---
+
+## The completed typology — all 12
+
+| Phase | L1 · Aware (a reading) | L2 · Prepare (a tool) | L3 · Engage (a tracked week) |
+| --- | --- | --- | --- |
+| Rewire | W1 true lines | W2 the image | W3 protocol + noticing |
+| Rebuild | B1 the why | B2 skills map | B3 the pilot week |
+| Reclaim | C1 refined list | C2 bigger-world audit | C3 Quality Days |
+
+**Reconnect sits outside it** — R1/R2/R3 produce understanding, and conversation is the complete form. Greg's
+own docs place Reconnect outside the Levels too.
+
+**Where the artifact actually lives today:**
+
+| | Surface exists? |
+| --- | --- |
+| **L3 practices** | ✅ Momentum + the week grid — the one type we finished, and the one Greg points at as the model |
+| **L2 tools** | ⚠️ Playbook keepers — durable and recallable, but a scrapbook, not a workspace |
+| **L1 readings** | ❌ nothing. B1 stored-not-shown, B2 no map, C1's list fed to the model but never displayed |
+
+**The gap is a diagonal, not a list.** Level 3 is done, Level 2 is half-done, Level 1 is absent — consistently,
+across all three practice phases.
+
+---
+
 ## Status and method
 
-**Audited: 7 of 12** (B1, B2, R1, R3, W1, W2, W3). **Remaining: B3, C1, C2, C3** — plus re-verifying R2, which is
+**Audited: 12 of 12** (B1, B2, R1, R3, W1, W2, W3). **Remaining: B3, C1, C2, C3** — plus re-verifying R2, which is
 still an unverified subagent lead.
 
-**Epiphanies 1–4 are a HYPOTHESIS drawn from seven assets.** The remaining five are the test: if B3, C1, C2 and C3
-also sort cleanly into reading / tool / tracked-week, the typology holds and the UI question is the right one. If
-they do not, the hypothesis needs revising before anything is built on it.
+**The hypothesis held.** B3, C1, C2 and C3 sorted cleanly into reading / tool / tracked-week, and Greg's own
+Reclaim table states the mapping outright (Aware→C1, Prepare→C2, Engage→C3). Three of the four also demand
+visibility in his own words, which is what produced Epiphany 5.
+
+**Still outstanding:** R2 remains an unverified subagent lead, though the promise sweep independently confirmed
+its one real finding (the missing temporal reflection). Per-requirement detail for B3/C1/C2/C3 was not exhausted
+— the artifact lens was the priority, and the detail is for after the structural decision.
 
 **From here the audit lens changes.** For each remaining asset, ask first: *what does this activity produce, where
 does that thing live afterwards, and can the member return to it?* — then the per-requirement gaps, which are
