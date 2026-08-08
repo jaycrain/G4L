@@ -86,9 +86,13 @@ try {
     const h1 = (await page.locator('h1').first().textContent())?.trim();
     check(h1 === 'Program', '/program heading', h1 || 'missing');
 
+    // The Field Guide was RETIRED (Jay, 2026-08-08) — every surface explains itself in context now. The route
+    // survives only as a redirect, for members holding a bookmark, so what this asserts is the REDIRECT: land on
+    // the dashboard, not a 404 and not the old page. This check earned its keep the day of the change: it was
+    // still asserting the old heading and went red against a healthy prod, which is exactly its job.
     await open(`/field-guide/${memberId}`);
-    const fgH1 = (await page.locator('h1').first().textContent())?.trim();
-    check(fgH1 === 'Field Guide', '/field-guide heading', fgH1 || 'missing');
+    const fgPath = new URL(page.url()).pathname;
+    check(fgPath.startsWith('/dashboard/'), '/field-guide redirects to the dashboard', fgPath);
 
     // The first-class subpages the triptych elevated — each must render for a logged-in member (open() asserts <400).
     for (const sub of ['score', 'grinta', 'reclaim-list', 'movement', 'badges', 'playbook']) {
