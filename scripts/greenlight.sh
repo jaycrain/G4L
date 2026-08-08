@@ -33,9 +33,9 @@ URL="${1:-https://g4l-ten.vercel.app}"
 # belt-and-braces — but EVERY tell must pass, so the un-minified spelling could never match and the gate
 # reported RED on a healthy prod. A tell is an exact literal against the BUILT stylesheet: check the built
 # form, don't hedge across variants.
-# 432b3eb — Cowork's copy placed (Program lead + the landed card vocabulary). `pb-oc-detail` is new in THIS push;
-# the previous tell (pb-oc-eyebrow) shipped an hour ago and would now green-light the build we're replacing.
-CSS_TELLS=(".pb-oc-detail")
+# eeb3183 — the intake tray folds. `pb-tray-bar` is new in THIS push; the previous tell (pb-oc-detail) is already
+# on prod and would green-light the build we are replacing — the false-green trap described above.
+CSS_TELLS=(".pb-tray-bar")
 JS_TELLS=()
 
 # COMMIT CHECK — the authoritative proof for an ENGINE-ONLY push (server logic, no bundle change), where no static
