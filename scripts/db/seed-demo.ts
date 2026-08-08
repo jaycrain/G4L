@@ -12,11 +12,37 @@ import { assignVariant } from '../../lib/assets/variant.ts';
 import { seedActivityFor, type Persona } from './seed-activity.ts';
 import { seedConnectDemo } from '../../lib/connect/seed.ts';
 
+// A member's PAST — closed Sessions and practice weeks. Added 2026-08-08 because the seeder produced only
+// brand-new accounts, which meant the entire member-with-history half of the app had never been walked locally:
+// "Revisit a session", a built outcome card, the finished-moment line, a running week's "day 3 of 7". All of it
+// is conditional on history nobody could seed, so all of it rendered as nothing and every walk quietly passed.
+//
+// That cost a real bug the same day: a block was moved to the wrong place on the Program page and reported as
+// fixed, because it renders only for a member with finished Sessions and no such member existed.
+//
+// Session ids are the STAGED program's. With the phase flags off the registry uses different ids, nothing
+// matches, and the members read as fresh — a correct degrade, and worth knowing before you debug a "missing"
+// history on an unflagged checkout.
+type PracticeSeed = {
+  kind: string;
+  /** Backdated so the week sits where you want it: 2 → "day 3 of 7". 7+ → the window has elapsed. */
+  startedDaysAgo: number;
+  /** Close it, which is what makes an outcome card BUILT. An open week is deliberately never "built". */
+  close?: boolean;
+  commitments: Array<{ slot: string; label: string; target: number | null }>;
+  /** slot → 0-based day indexes marked. Deliberately imperfect: a 7/7 week is not the common case and a grid
+   *  with gaps is the one worth looking at, since blank days are the thing our copy must never scold. */
+  marks: Record<string, number[]>;
+};
+
 type Demo = {
   fields: Parameters<typeof runOnboarding>[2];
   responses: number[];
   completeR4?: boolean;
   persona?: Persona;
+  /** Session ids to mark closed, in the order they'd have happened. */
+  closedSessions?: string[];
+  weeks?: PracticeSeed[];
 };
 
 const r7 = (a: string[]) => a;
@@ -40,8 +66,83 @@ const DEMOS: Demo[] = [
     },
     persona: 'runner',
     responses: Array.from({ length: 24 }, () => 3), // flat 60
+    // RESHMA IS THE MEMBER WITH A PAST. Tom stays brand-new on purpose — the empty states are real states and
+    // somebody has to render them — so between the two you can see both halves of every conditional surface.
+    //
+    // She has finished Reconnect and all of Rewire, which makes the Mindfulness outcome card BUILT and fires the
+    // finished-moment line. Rebuild is underway: B1 and B2 closed, the Lifestyle Pilot running at day 3 of 7, so
+    // the Fitness card shows two ticks and a live week. Reclaim is untouched, so Wellness stays fully unbuilt.
+    // One card in each state, which is the whole point.
+    closedSessions: ['RCN-EXC', 'RCN-IDQ', 'RCN-CHK', 'RWR-W1', 'RWR-W2', 'RWR-W3', 'RWR-CHK', 'RBLD-B1', 'RBLD-B2'],
+    weeks: [
+      {
+        // Her Rewire monitoring week, done and closed — this is what makes Mindfulness read BUILT.
+        kind: 'w3_logging',
+        startedDaysAgo: 12,
+        close: true,
+        commitments: [
+          { slot: 'logged', label: 'Noticed the day', target: null },
+          { slot: 'trigger_1', label: 'Scrolling after dinner', target: null },
+          { slot: 'trigger_2', label: 'The 3pm slump at work', target: null },
+        ],
+        marks: { logged: [0, 1, 2, 3, 5, 6], trigger_1: [1, 3, 5], trigger_2: [0, 4] },
+      },
+      {
+        // The Lifestyle Pilot, LIVE. startedDaysAgo:2 puts her on day 3 of 7 — the running state the outcome card
+        // and the grid both have to handle, and the one no seeded member could reach before.
+        kind: 'b3_pilot',
+        startedDaysAgo: 2,
+        commitments: [
+          { slot: 'activity', label: '20 minutes of walking', target: 5 },
+          { slot: 'diet', label: 'Protein at breakfast', target: 5 },
+        ],
+        marks: { activity: [0, 2], diet: [0, 1] },
+      },
+    ],
   },
 ];
+
+/** Write a member's closed Sessions + practice weeks. Straight SQL rather than the app's helpers because this
+ *  has to BACKDATE — startPracticeWeek() stamps now(), and a week that started now can never be day 3 of 7 or
+ *  closed, which is exactly the state we're here to produce. */
+async function seedHistory(db: Awaited<ReturnType<typeof getDb>>, memberId: string, d: Demo): Promise<void> {
+  for (const id of d.closedSessions ?? []) {
+    await db.query(
+      `insert into session_progress (member_id, session_id, status, closed_at)
+       values ($1, $2, 'closed', now())
+       on conflict (member_id, session_id) do update set status = 'closed', closed_at = now()`,
+      [memberId, id],
+    );
+  }
+  for (const w of d.weeks ?? []) {
+    await db.query(
+      `insert into practice_week (member_id, kind, started_at, closed_at)
+       values ($1, $2, now() - ($3 || ' days')::interval, ${w.close ? `now() - ($3 || ' days')::interval + interval '7 days'` : 'null'})
+       on conflict (member_id, kind) do update set started_at = excluded.started_at, closed_at = excluded.closed_at`,
+      [memberId, w.kind, String(w.startedDaysAgo)],
+    );
+    for (const [i, c] of w.commitments.entries()) {
+      const { rows } = await db.query<{ id: string }>(
+        `insert into practice_commitment (member_id, kind, slot, label, target_days, sort_order)
+         values ($1, $2, $3, $4, $5, $6)
+         on conflict (member_id, kind, slot) do update set label = excluded.label, target_days = excluded.target_days
+         returning id`,
+        [memberId, w.kind, c.slot, c.label, c.target, i],
+      );
+      const commitmentId = rows[0]!.id;
+      for (const day of w.marks[c.slot] ?? []) {
+        // marked_on is the calendar date of that day of the week — the same key toggleMark writes, so the grid
+        // reads seeded marks and real taps identically.
+        await db.query(
+          `insert into practice_mark (member_id, kind, commitment_id, marked_on, source)
+           values ($1, $2, $3, (now() - ($4 || ' days')::interval)::date, 'grid')
+           on conflict do nothing`,
+          [memberId, w.kind, commitmentId, String(w.startedDaysAgo - day)],
+        );
+      }
+    }
+  }
+}
 
 // Reusable seeding routine. Callable in-process (e.g. the dev-only /dev preview page) as well as
 // from the CLI below. Returns the seeded members so a caller can link straight to their dashboards.
@@ -60,6 +161,7 @@ export async function seedDemoMembers(
       await completeAsset(db, { memberId: ob.memberId, code: 'R-4', variant: assignVariant(ob.memberId, 'R-4'), version: '0.1-draft', outputs: { excavated: ['the racer'] } });
     }
     if (d.persona) await seedActivityFor(db, ob.memberId, d.persona);
+    await seedHistory(db, ob.memberId, d);
     seeded.push({ name: d.fields.displayName, memberId: ob.memberId });
   }
   const byName: Record<string, string> = {};
