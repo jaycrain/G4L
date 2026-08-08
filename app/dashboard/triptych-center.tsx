@@ -43,7 +43,8 @@ export default function TriptychCenter({
   keeper?: CenterKeeper | null;
   /** "Where you stand" — computed server-side every visit (lib/dashboard/standing-update.ts). Deliberately NOT a
    *  thread message: appending it would pollute the conversation and go stale the moment anything changed. It
-   *  renders above the thread and is recomputed on each load, so it is always current by construction. */
+   *  renders PINNED above the composer, outside the scrolling thread, so it is both always visible and always
+   *  current — see the placement comment at the render site for why it is not at the top. */
   standing?: string | null;
   seed?: string | null;
 }) {
@@ -269,16 +270,6 @@ export default function TriptychCenter({
 
       {/* Keeper + thread scroll beneath the pinned hero. */}
       <div ref={chatRef} className="tri-comp-scroll">
-      {/* WHERE YOU STAND — the Companion's standing update, above the keeper and the thread. It answers "what's
-          my situation" before the member has to ask, which is what gives the centre column a reason to be read
-          on a day when nothing is due — most days. Computed, never model-written, so it cannot invent. */}
-      {standing && (
-        <div className="tri-standing">
-          <span className="tri-standing-eyebrow">Where you stand</span>
-          <p className="tri-standing-body">{standing}</p>
-        </div>
-      )}
-
       {/* A surfaced keeper — the member's OWN kept line, held in the Companion's voice (Scott's "KEPT · your true line"). */}
       {keeper && (
         <div className="tri-keeper">
@@ -304,6 +295,21 @@ export default function TriptychCenter({
         {pending && <div className="rmsg typing">Thinking…</div>}
       </div>
       </div>
+      {/* WHERE YOU STAND — PINNED above the composer, deliberately OUTSIDE .tri-comp-scroll.
+          It first shipped at the top of the scroll region and was effectively invisible: the thread autoscrolls
+          to the newest message on load, so anything above it is pushed off-screen (Jay: "took me forever to
+          realize I needed to scroll to the top to see it"). Note the keeper card still has this problem.
+          His instinct was to move it to the bottom, "inline with the current conversation" — bottom is right,
+          because that is where the eye already is, but a MESSAGE is wrong: it would sit under the member's last
+          line as though the Companion spoke and they ignored it, and it would blur a computed status into
+          something the Companion said. Pinned above the composer gets the attention without the confusion, and
+          it sits exactly where they are about to type. */}
+      {standing && (
+        <div className="tri-standing">
+          <span className="tri-standing-eyebrow">Where you stand</span>
+          <p className="tri-standing-body">{standing}</p>
+        </div>
+      )}
       <form className="tri-comp-composer" onSubmit={send}>
         <textarea
           ref={inputRef}
