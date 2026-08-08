@@ -57,9 +57,39 @@ export function keeperBodyFrom(lines: string[]): string {
   return ['Your practice week:', ...lines.map((l) => `• ${l}`)].join('\n');
 }
 
-export function buildReview(grid: Pick<WeekGrid, 'kind' | 'rows'>): WeekReview {
+/** W3 ONLY — how many days they used the response they prepared. Greg names this as one of the three things
+ *  affirmations MAY target ("consistency of tracking, honesty of observation, and use of the recovery skill"),
+ *  and it is the only one the grid alone cannot see. Null when they never said either way. */
+export type W3CloseExtras = { recoveryUsed: number; daysLogged: number } | null;
+
+export function buildReview(grid: Pick<WeekGrid, 'kind' | 'rows'>, w3?: W3CloseExtras): WeekReview {
   const lines = grid.rows.map(reviewLine);
   const anyMarked = grid.rows.some((r) => r.done > 0);
+
+  // W3 · Mindful Monitoring gets its OWN frame, because the generic one asks the wrong question of it. "Here's how
+  // it actually went" invites a verdict on the week, and W3's week is explicitly not about performance — Greg:
+  // "The week is explicitly NOT about changing behavior — that is B3's work." What it was about is NOTICING, so
+  // that is what the close reflects back.
+  if (grid.kind === 'w3_logging') {
+    const opener = anyMarked
+      ? "That's the week. Here's what you noticed —"
+      : "That's the week done. Nothing got written down — which might mean a hard week, or just that the noticing " +
+        'slipped. Either is worth knowing.';
+    // The ONE affirmation the close is allowed to make, and only when it is true. Greg's disallowed list is
+    // explicit — "Great, you avoided False Starts today!", "You only had two Smart Choices this week" — so nothing
+    // here counts good calls against false starts, and nothing praises an absence. Using the protocol they wrote
+    // IS the competence W3 builds, which makes it the honest thing to name.
+    const extra: string[] = [];
+    if (w3 && w3.recoveryUsed > 0) {
+      extra.push(
+        w3.recoveryUsed === 1
+          ? 'You used the protocol you wrote once. That is the skill this week was for.'
+          : `You used the protocol you wrote ${w3.recoveryUsed} times. That is the skill this week was for.`,
+      );
+    }
+    return { kind: grid.kind, lines: [...lines, ...extra], opener, keeperBody: keeperBodyFrom([...lines, ...extra]) };
+  }
+
   const opener = anyMarked
     ? "That's your week. Here's how it actually went —"
     : // The hardest case to get right. A week with nothing marked is where a product is most tempted to console or

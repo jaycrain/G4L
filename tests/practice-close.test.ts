@@ -140,3 +140,65 @@ test('a closed week disappears from the grid, so the review cannot fire twice', 
   assert.equal(after!.closed, true, 'the grid now knows it ended');
   assert.equal(isClosable(after!), false, 'and it will never be reviewed a second time');
 });
+
+// ── W3 · Mindful Monitoring — the close has its own frame and its own rules ───────────────────────────────────
+//
+// Greg is unusually prescriptive about this moment, and every rule is about what the close must NOT do:
+// "Affirmations must target consistency of tracking, honesty of observation, and use of the recovery skill — not
+// the absence of False Starts. Disallowed: 'Great — you avoided False Starts today!' / 'You only had two Smart
+// Choices this week.' / 'You need to avoid False Starts.'"
+
+const w3Row = (label: string, done: number) =>
+  buildRow(label, label, null, '2026-08-03', Array.from({ length: done }, (_, i) => `2026-08-0${3 + i}`));
+
+test('W3 · the close asks what they NOTICED, not how the week went', () => {
+  // "Here's how it actually went" invites a verdict on a week that was explicitly not about performance.
+  const r = buildReview({ kind: 'w3_logging', rows: [w3Row('Noticed the day', 4), w3Row('late nights', 2)] });
+  assert.match(r.opener, /what you noticed/i);
+  assert.doesNotMatch(r.opener, /how it actually went/i);
+});
+
+test('W3 · using the protocol IS named — the one affirmation allowed', () => {
+  const rows = [w3Row('Noticed the day', 5), w3Row('late nights', 3)];
+  const r = buildReview({ kind: 'w3_logging', rows }, { recoveryUsed: 2, daysLogged: 5 });
+  assert.match(r.lines.join(' '), /used the protocol you wrote 2 times/i);
+  assert.match(r.lines.join(' '), /that is the skill this week was for/i);
+});
+
+test('W3 · a week with no recovery used says NOTHING about it', () => {
+  // The absence must not be remarked on. Silence is the correct treatment.
+  const r = buildReview({ kind: 'w3_logging', rows: [w3Row('Noticed the day', 3)] }, { recoveryUsed: 0, daysLogged: 3 });
+  assert.doesNotMatch(r.lines.join(' '), /protocol/i);
+  assert.doesNotMatch(r.lines.join(' '), /didn't use|never used|no recovery/i);
+});
+
+test('W3 · the close NEVER praises the absence of false starts', () => {
+  // A clean week is the exact case where a product reaches for "great, no false starts!" — Greg forbids it.
+  const r = buildReview(
+    { kind: 'w3_logging', rows: [w3Row('Noticed the day', 7), w3Row('late nights', 0), w3Row('travel', 0)] },
+    { recoveryUsed: 0, daysLogged: 7 },
+  );
+  const all = `${r.opener} ${r.lines.join(' ')}`;
+  assert.doesNotMatch(all, /avoided|no false starts|clean week|great|well done|nice work|proud/i);
+  assert.doesNotMatch(all, /\bonly\b/i, '"you only had two" is on the disallowed list');
+  assert.doesNotMatch(all, /should|need to|try to|next time/i, 'no corrective advice at the close');
+});
+
+test('W3 · a trigger that never fired reads as a fact, not a win or a miss', () => {
+  const r = buildReview({ kind: 'w3_logging', rows: [w3Row('travel', 0)] });
+  assert.match(r.lines[0]!, /travel — no days marked\./);
+  assert.doesNotMatch(r.lines[0]!, /good|bad|well|miss|fail/i);
+});
+
+test('W3 · an empty week is met without consoling and without scolding', () => {
+  const r = buildReview({ kind: 'w3_logging', rows: [w3Row('Noticed the day', 0)] });
+  assert.match(r.opener, /nothing got written down/i);
+  assert.match(r.opener, /either is worth knowing/i, 'both explanations are left standing');
+  assert.doesNotMatch(r.opener, /don't worry|it's okay|next week|try again/i);
+});
+
+test('W3 · no other week inherits the W3 frame', () => {
+  const b3 = buildReview({ kind: 'b3_pilot', rows: [buildRow('walk', 'walk', 5, '2026-08-03', ['2026-08-03'])] });
+  assert.match(b3.opener, /how it actually went/i, 'B3 keeps the generic opener');
+  assert.doesNotMatch(b3.lines.join(' '), /protocol you wrote/i);
+});

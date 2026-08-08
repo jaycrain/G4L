@@ -29,7 +29,7 @@ import { harvestSignal } from '../../lib/agent/harvest.ts';
 import type { PracticeKind } from '../../lib/practice/store.ts';
 import { isTappable, toggleMark } from '../../lib/practice/mark.ts';
 import { activePracticeWeek } from '../../lib/practice/store.ts';
-import { recordW3Entry } from '../../lib/rewire/w3-entry.ts';
+import { recordW3Entry, w3Entries } from '../../lib/rewire/w3-entry.ts';
 import { w3Triggers } from '../../lib/rewire/w3-triggers.ts';
 import { phaseSummary, type PhaseKey } from '../../lib/content/summaries.ts';
 
@@ -169,6 +169,18 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
     // The 16-milestone Passport — the member SEES these badges, so the agent must know them (CAT-37).
     getPassport(db, memberId).catch(() => ({ earned: 0, total: 0, badges: [], placeholders: 0 }) as Awaited<ReturnType<typeof getPassport>>),
   ]);
+  // W3 close extras — how many days they used the protocol they wrote. That count lives in the daily entries, not
+  // in the grid's marks, and it is the one thing Greg permits an affirmation to target that the grid cannot see.
+  // Scoped tightly: fetched ONLY when a W3 week is genuinely ready to close, never on an ordinary turn.
+  const w3Extras =
+    practiceGrid && practiceGrid.kind === 'w3_logging' && isClosable(practiceGrid)
+      ? await w3Entries(db, memberId, 7)
+          .then((entries) => ({
+            recoveryUsed: entries.filter((e) => e.recoveryUsed === true).length,
+            daysLogged: entries.length,
+          }))
+          .catch(() => null)
+      : null;
   const prof = profRows.rows[0];
 
   // Curriculum awareness — the named selves (identity strip) + completed Sessions, so the companion
@@ -300,7 +312,12 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
           // The window has elapsed and nothing closed it. The review is built HERE rather than described to the
           // model, so the member's numbers are ours and the phrasing is testable (lib/practice/close.ts).
           readyToClose: isClosable(practiceGrid),
-          review: isClosable(practiceGrid) ? (({ opener, lines }) => ({ opener, lines }))(buildReview(practiceGrid)) : null,
+          // W3's close names the recovery skill — the one thing Greg allows an affirmation to target that the grid
+          // cannot see (it lives in the daily entries, not the marks). Read only when the week is actually W3 and
+          // actually closable, so no other week pays for it.
+          review: isClosable(practiceGrid)
+            ? (({ opener, lines }) => ({ opener, lines }))(buildReview(practiceGrid, w3Extras))
+            : null,
         }
       : null,
     qualityDay: qdProfile
