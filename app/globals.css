@@ -1949,6 +1949,18 @@ body.redesign-on .confidential-footer { display: none; } /* full-bleed app — n
 }
 
 /* REDESIGN · Playbook restructure (Decision ZZ) — front matter + intake tray + chapters. Reuses .pb-* base classes. */
+/* THE PLAYBOOK TAB ROW — the Founder Console's one-row pattern brought to a member surface (Jay 2026-08-08).
+   Scrolls horizontally on a phone rather than wrapping, so the row stays one row at every width and the page
+   needs no separate mobile layout. The count is the pull: a tab that says how much is behind it is worth opening. */
+.pb-tabs { display: flex; gap: 6px; overflow-x: auto; padding: 0 0 12px; margin: 0 0 14px; border-bottom: 1px solid var(--grey);
+  -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+.pb-tabs::-webkit-scrollbar { display: none; }
+.pb-tab { flex: 0 0 auto; background: #f2f1ef; border: 0; color: #4a5d6b; font-family: inherit; font-size: 13px; font-weight: 600;
+  padding: 7px 14px; border-radius: 20px; cursor: pointer; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
+.pb-tab:hover { background: #e8e6e6; }
+.pb-tab.on { background: var(--navy); color: #fff; }
+.pb-tab-n { font-size: 11px; font-weight: 700; opacity: .72; }
+
 .pb-frontmatter { background: var(--navy); color: #fff; border-radius: 14px; padding: 20px 22px; margin: 1.2rem 0; }
 .pb-fm-title { font-weight: 800; text-transform: uppercase; letter-spacing: .06em; font-size: 12px; color: #9fd0d1; margin-bottom: 12px; }
 .pb-fm-items { display: flex; flex-direction: column; gap: 12px; }

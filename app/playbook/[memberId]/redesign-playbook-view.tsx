@@ -19,6 +19,30 @@ import {
 // journal as free-write intake. Flag-gated at the page → prod keeps the section-based view. Every action is reused
 // unchanged; this is a presentation refactor over the same stateful data.
 
+// THE TABS (2026-08-08, docs/playbook-shell-spec.md). Nine stacked sections became FIVE tabs, and the collapse
+// came from one question: which Session is this built from? Three of the old chapters had no Session of their own —
+// "Why it works" is the science that landed, so it belongs inside a Read next to the thing it explains; "Your
+// tells" IS a read (a tell is literally what tells you which play to call); and "What lights you up" is part of
+// who you are. No content was dropped; it stopped being nine top-level choices.
+//
+// "This week" (the live practice week) is the FIFTH tab and is deliberately absent until the practice weeks move
+// off Momentum in one step — showing the same week in two places is worse than either arrangement.
+type TabKey = 'plays' | 'reads' | 'who' | 'journal';
+const TABS: { key: TabKey; label: string }[] = [
+  { key: 'plays', label: 'Plays' },
+  { key: 'reads', label: 'Reads' },
+  { key: 'who', label: 'Who you are' },
+  { key: 'journal', label: 'Journal' },
+];
+/** Which tab a kept line belongs under. Chapters survive INSIDE tabs — this is the grouping above them. */
+const TAB_FOR_CHAPTER: Record<ChapterKey, TabKey> = {
+  plays: 'plays',
+  tells: 'reads', // a tell tells you which play to call — that is a read, not a keepsake
+  why: 'reads', // the science sits beside the thing it explains
+  who: 'who',
+  lights: 'who', // what still moves you is part of who you are
+};
+
 type ChapterKey = 'who' | 'lights' | 'tells' | 'plays' | 'why';
 // Plays lead — they're the heart of an operating manual (Jay: the Playbook's real value is "how did I handle this
 // before?"). The rest follow: who you are, what lights you up, your tells, why it works.
@@ -65,6 +89,21 @@ export default function RedesignPlaybookView({
   rerunStats?: Record<string, { n: number; last: string }>;
 }) {
   const [entries, setEntries] = useState<PlaybookEntry[]>(initial);
+  // Tab state lives in the URL so the back button works and a member can be sent straight to a tab. Read once on
+  // mount rather than via useSearchParams, which would force a Suspense boundary for no gain here.
+  const [tab, setTab] = useState<TabKey>(() => {
+    if (typeof window === 'undefined') return 'plays';
+    const t = new URLSearchParams(window.location.search).get('tab');
+    return TABS.some((x) => x.key === t) ? (t as TabKey) : 'plays';
+  });
+  const goTab = (k: TabKey) => {
+    setTab(k);
+    if (typeof window !== 'undefined') {
+      const u = new URL(window.location.href);
+      u.searchParams.set('tab', k);
+      window.history.replaceState(null, '', u);
+    }
+  };
   const [busy, setBusy] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState('');
@@ -197,7 +236,8 @@ export default function RedesignPlaybookView({
       ) : null}
       {gatherMsg && <p className="pb-gather-msg">{gatherMsg}</p>}
 
-      {/* FRONT MATTER — the short version: the pinned lines you reach for most. */}
+      {/* FRONT MATTER — the short version: the pinned lines you reach for most. ABOVE the tabs on purpose; it is
+          the one thing worth seeing whichever tab you land on. */}
       {pinned.length > 0 && (
         <section className="pb-frontmatter">
           <div className="pb-fm-title">The short version</div>
@@ -215,8 +255,42 @@ export default function RedesignPlaybookView({
         </section>
       )}
 
-      {/* STORY SO FAR — the living synthesis. */}
-      {synthesis && (
+      {/* INTAKE TRAY — also above the tabs, because it is an ACTION with a decision pending. Filed under a tab it
+          would be missed by a member who never opens that tab, and the Companion's flags would rot unreviewed. */}
+      {proposed.length > 0 && (
+        <section className="pb-tray">
+          <div className="pb-sec">To review</div>
+          <div className="pb-sec-d">Your companion noticed these. Keep what rings true — it files itself under the right chapter.</div>
+          {proposed.map(proposedCard)}
+        </section>
+      )}
+
+      {/* THE TAB ROW — the Founder Console's one-row pattern (Jay: "a great way to fly through a variety of
+          different content"). Scrolls horizontally on a phone, one tab at a time, which is how the FC row and the
+          triptych fold already behave — so this needs no separate mobile design. */}
+      <nav className="pb-tabs" aria-label="Playbook">
+        {TABS.map((t) => {
+          const n = t.key === 'journal' ? journal.length : chapters.filter((c) => TAB_FOR_CHAPTER[c.key] === t.key).reduce((a, c) => a + c.items.length, 0);
+          return (
+            <button
+              key={t.key}
+              type="button"
+              className={`pb-tab${tab === t.key ? ' on' : ''}`}
+              aria-pressed={tab === t.key}
+              onClick={() => goTab(t.key)}
+            >
+              {t.label}
+              {n > 0 && <span className="pb-tab-n">{n}</span>}
+            </button>
+          );
+        })}
+      </nav>
+
+      {/* WHO YOU ARE opens with the synthesis — the arc the Companion re-weaves at every Session close. It used to
+          sit above everything as "Your story so far", and "My Story" (the identity read) was a separate DASHBOARD
+          page. Jay moved that here 2026-08-08. They are two stored narratives but one thing to a member: this is
+          me, and this is where I have got to. Two tabs would have made them look like two stories. */}
+      {tab === 'who' && synthesis && (
         <section className="pb-card pb-hero">
           <div className="pb-sec">Your story so far</div>
           <div className="pb-sec-d">A living read your companion re-weaves each time you close a Session.</div>
@@ -226,36 +300,32 @@ export default function RedesignPlaybookView({
         </section>
       )}
 
-      {/* INTAKE TRAY — everything the Companion flagged, in one place, files under a chapter on keep. */}
-      {proposed.length > 0 && (
-        <section className="pb-tray">
-          <div className="pb-sec">To review</div>
-          <div className="pb-sec-d">Your companion noticed these. Keep what rings true — it files itself under the right chapter.</div>
-          {proposed.map(proposedCard)}
+      {/* The chapters survive as SECTIONS inside their tab — the grouping changed, the content did not. */}
+      {tab !== 'journal' &&
+        chapters
+          .filter((c) => TAB_FOR_CHAPTER[c.key] === tab)
+          .map((c) => (
+            <section key={c.key} className="pb-card pb-chapter">
+              <div className="pb-sec">{c.title}</div>
+              <div className="pb-sec-d">{c.sub}</div>
+              {c.items.length > 0 ? c.items.map(entryCard) : <p className="pb-empty">{c.empty}</p>}
+            </section>
+          ))}
+
+      {/* JOURNAL — a first-class reflective tool, not a footnote (Jay, twice). Thoughts + feelings in the member's
+          own words, timestamped. Two respected jobs: feedstock (the Companion pulls keepers up into the plays) AND
+          its own reward — the writing is the point whether or not anything gets promoted. */}
+      {tab === 'journal' && (
+        <section className="pb-card pb-journal">
+          <div className="pb-sec">Your journal</div>
+          <div className="pb-sec-d">Thoughts and feelings in your own words, timestamped to where you are. For a lot of people this is the most freeing thing here — a place to think on the page and understand yourself. Your companion reads it and pulls keepers up into your plays, but the writing itself is the point — it only replies if you ask.</div>
+          {journal.map(entryCard)}
+          <div className="pb-add">
+            <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2} placeholder="Write your own entry…" disabled={busy} />
+            <button type="button" className="pb-btn keep" disabled={busy || !note.trim()} onClick={addNote}>Add note</button>
+          </div>
         </section>
       )}
-
-      {/* THE FIVE CHAPTERS — by what each line is for. */}
-      {chapters.map((c) => (
-        <section key={c.key} className="pb-card pb-chapter">
-          <div className="pb-sec">{c.title}</div>
-          <div className="pb-sec-d">{c.sub}</div>
-          {c.items.length > 0 ? c.items.map(entryCard) : <p className="pb-empty">{c.empty}</p>}
-        </section>
-      ))}
-
-      {/* JOURNAL — a first-class reflective tool, not a footnote (Jay): thoughts + feelings in the member's own words,
-          timestamped to where they are. Two respected jobs — it's feedstock (the Companion pulls keepers up into the
-          plays above) AND its own reward (the writing is the point, whether or not anything gets promoted). */}
-      <section className="pb-card pb-journal">
-        <div className="pb-sec">Your journal</div>
-        <div className="pb-sec-d">Thoughts and feelings in your own words, timestamped to where you are. For a lot of people this is the most freeing thing here — a place to think on the page and understand yourself. Your companion reads it and pulls keepers up into your plays, but the writing itself is the point — it only replies if you ask.</div>
-        {journal.map(entryCard)}
-        <div className="pb-add">
-          <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2} placeholder="Write your own entry…" disabled={busy} />
-          <button type="button" className="pb-btn keep" disabled={busy || !note.trim()} onClick={addNote}>Add note</button>
-        </div>
-      </section>
 
       {entries.length > 0 && hasHistory && !gathering && (
         <p className="pb-gather-link"><button type="button" className="pb-linkbtn" onClick={gather}>Gather from recent work →</button></p>
