@@ -263,8 +263,9 @@ function outcomesLine(c: CheckinContext): string | null {
     })
     .join('; ');
   return (
-    `The three outcomes on their Playbook — what the cycle builds. Each is made of a read, a tool and a tracked ` +
-    `week: ${body}.${running.length ? ` Running right now: ${running.join(', ')}.` : ''} ` +
+    `The three outcomes on their Playbook — what the cycle builds. Each is made of a read (what you know), a tool ` +
+    `(what you keep) and a tracked week (what you practise) — that vocabulary is on their Program page too, so use ` +
+    `those words rather than inventing your own: ${body}.${running.length ? ` Running right now: ${running.join(', ')}.` : ''} ` +
     `You know this because they can see it; reference it naturally if it helps them place themselves. ` +
     `NEVER count it, rank the three, or say how many are left — it is three named things, not a score, and ` +
     `"two of three" is exactly the sentence to avoid. NEVER tell them they ARE mindful, fit or well, even when all ` +

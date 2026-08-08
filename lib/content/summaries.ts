@@ -82,7 +82,7 @@ export const PHASE_SUMMARIES: Record<PhaseKey, Summary> = {
     full: 'Here, you’ll explore where you are now and excavate who you were before. You’ll recognize events that opened Doors you came through that caused you to Fade from your true self. You’ll put words to the life you want to reclaim. And you’ll answer questions that measure the distance you need to close to get there. Go at your own pace, there are no right or wrong answers, only clarity.',
   },
   rewire: {
-    short: 'Rewire your brain to do the work. You’ll identify the stories your mind uses to keep you comfortable, and build new ones you can act on and affect change.',
+    short: 'Rewire your brain to do the work. You’ll identify the stories your mind uses to keep you comfortable, and build new ones you can act on and effect change.',
     full: 'Your mind has a script for staying stuck, and it sounds reasonable every time. Rewire is where you take that script apart. You catch the excuses and the quiet lies, write truer lines to stand in their place, build a vivid picture of who you’re becoming, and learn to recover fast when you slip. This is mindfulness with teeth — seeing what’s really running the show, so your effort stops arguing with an inside voice and starts working with one.',
   },
   rebuild: {

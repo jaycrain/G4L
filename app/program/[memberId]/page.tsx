@@ -36,7 +36,7 @@ const PHASES: PhaseRow[] = [
   },
   {
     key: 'rewire', num: 2, name: 'Rewire',
-    blurb: 'Rewire your brain to do the work. You’ll identify the stories your mind uses to keep you comfortable, and build new ones you can act on and affect change.',
+    blurb: 'Rewire your brain to do the work. You’ll identify the stories your mind uses to keep you comfortable, and build new ones you can act on and effect change.',
     sessions: [
       'Disinformation Audit — Catch the reasonable-sounding lies that keep you stuck — and craft answers to dispel them.',
       'Visualization Workshop — Build a picture of who you’re becoming vivid enough to pull you forward.',
@@ -100,6 +100,14 @@ export default async function ProgramPage({
         <Link href={sessionBack} className="ws-back program-session-back">← Session</Link>
       )}
 
+      {/* REVISIT A SESSION — Cowork's note says this belongs on the Playbook ("the member picking up the tools
+          they've built"), and Jay agreed. NOT moved yet, because it is not a lift-and-drop: the Playbook already
+          has "Run it again with your Companion →" on individual plays, which is a DIFFERENT action (re-run the
+          session) from this one (read the final state, unchanged). Two similar-looking links a tab apart would
+          confuse both. Which tab it lands in, and how the two read side by side, is a design call — open.
+
+          What DID move: it now sits BELOW the lead. It was above it, which put a utility list where the page's
+          first sentence belongs. */}
       {reviewable.length > 0 && (
         <div className="card program-revisit">
           <h3>Revisit a session</h3>
@@ -118,9 +126,34 @@ export default async function ProgramPage({
         </div>
       )}
 
-      <div className="card sub-copy">
-        <p>The Grinta for Life program has four phases—Reconnect, Rewire, Rebuild, Reclaim—and infinite loops, because identity slips and life keeps moving. That’s why it’s <em>for life</em>.</p>
-        <p>Every Phase has three Sessions (each a guided conversation with your AI G4L Companion), some work, a Checkpoint, and an earned reveal that moves you to the next Phase. You go one Session at a time, at your own pace.</p>
+      {/* THE TOP OF THE PROGRAM PAGE — Cowork's copy, placed verbatim (2026-08-08, "Program page — top-of-page copy
+          for CC"). It frames the WHY and the spine, then hands off; it deliberately does NOT re-list the phases or
+          repeat the Session/Checkpoint mechanic, because the Outline below already carries both. That scoping is
+          hers — an earlier draft did duplicate the route, and this one was written against the live page.
+
+          Two things here are member-facing for the FIRST time and are therefore load-bearing:
+            · the ~six weeks for Cycle 1 (Greg's front-end promise, which we had never stated anywhere), and
+            · "a read · a tool · a tracked week" — the same vocabulary the outcome cards use on the Playbook.
+          If either changes, it changes in both places and goes back to canon. */}
+      <div className="card sub-copy prog-lead">
+        <h2 className="prog-h">Midlife Identity Loss — and the Comeback</h2>
+        <p>It rarely happens all at once. Career, kids, caregiving, a body that changes the rules. A hundred reasonable decisions, not one of them a failing — and slowly you drift from the person you used to be. That drift is Midlife Identity Loss. We call it the Fade. Most people never notice it, because it looks like getting older.</p>
+        <p>Identity and health are tied together. Stop being someone in particular, and you stop doing the things that keep you well. It shows up in your healthspan — the years you live in good health, not just the years you live. In the U.S. that gap has grown to about 12.4 years, the widest of any nation studied. Wellness is how you feel about your life. So closing the identity gap and getting healthier are the same work.</p>
+        <p>The Program is how you do it — four phases, the 4Rs, each one building on the last.</p>
+
+        <h3 className="prog-h3">How it works</h3>
+        <p>Change holds when it’s built on skills you can practice. The Program builds your self-management skills — the practical ones every healthy life runs on: setting goals, planning, handling what gets in the way, watching how it’s going, getting back on after a slip. Like any skill, they get stronger with use. That’s the real thing you’re building, and it outlasts any single habit.</p>
+        <p>One principle runs under all of it: practice the process, and the product follows. Move, eat, reflect, notice — do the behaviors, and over time they build three things you keep. Rewire builds mindfulness. Rebuild builds fitness. Reclaim builds the wellness those two feed. (Reconnect comes first, the gateway — you see clearly before you build.) Wellness is the outcome, what the work produces over time.</p>
+        <p>Each building phase runs the same three moves. You take a read — a clear look at where you stand. You build a tool you keep — a true line, a picture, a plan. You practise it for a week, in real life. A read, a tool, a tracked week — the same three, every phase.</p>
+        <p>Your identity is four strands wound into one — your body, your sense of self, your people, your outlook. The Fade thins some more than others. The <Link href={`/score/${memberId}`}>ID Score</Link> reads all four as one, so you can watch the whole get stronger as you close the distance.</p>
+
+        <p className="prog-bridge">You start with Cycle 1, the foundation. One pass through all four phases, built to take about six weeks. A few stretches run a full week, on purpose — some things only change by being lived. Go at the pace that’s real for you.</p>
+        {/* KEPT FROM THE OLD LEAD, on purpose. Cowork's note says the Outline below already carries the
+            Session/Checkpoint mechanic — it does not; it lists the Sessions without ever saying what one IS. Cutting
+            this paragraph would have taken with it the only place on the page that tells a member a Session is a
+            conversation with an AI, which is a governance line (AI is always disclosed), not a stylistic one. Trimmed
+            to the two facts the Outline genuinely can't carry, and sent back to canon. */}
+        <p>Every phase has three Sessions — each a guided conversation with your AI G4L Companion — then a Checkpoint, and a reveal that moves you on. One Session at a time.</p>
 
         <div className="route">
           {PHASES.map((p) => {

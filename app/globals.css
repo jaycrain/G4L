@@ -234,6 +234,14 @@ button:hover, .btn:hover { background: var(--navy); }
 .grinta-origin-quote cite { display: block; margin-top: 0.5rem; font-size: 0.9rem; font-style: normal; font-weight: 600; color: var(--muted, #6B7680); }
 .sub-copy h3 { color: var(--navy); font-size: 1.08rem; margin: 1.6rem 0 0.55rem; }
 .sub-copy h3:first-of-type { margin-top: 0.5rem; }
+/* PROGRAM PAGE LEAD (Cowork copy, 2026-08-08) — the framing above the Cycle 1 Outline. The heading is the page's
+   real first sentence, so it outranks the "Program" hero chip above it in weight. */
+.prog-lead .prog-h { font-size: 1.5rem; font-weight: 800; color: var(--navy); line-height: 1.22; margin: 0 0 0.85rem; }
+.prog-lead .prog-h3 { color: var(--navy); font-size: 1.08rem; margin: 1.7rem 0 0.55rem; }
+/* The bridge sentence hands off to the Outline, so it reads as a lead-in rather than another body paragraph. */
+.prog-lead .prog-bridge { margin-top: 1.7rem; font-weight: 600; }
+@media (max-width: 640px) { .prog-lead .prog-h { font-size: 1.28rem; } }
+
 .sub-copy ul.sub-list { margin: 0 0 0.9rem; padding-left: 1.1rem; }
 .sub-copy ul.sub-list li { line-height: 1.55; margin-bottom: 0.45rem; }
 /* ID Score identity radar */
@@ -2002,8 +2010,13 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
 .pb-oc.rebuild .pb-oc-eyebrow { color: var(--olive-text); }
 .pb-oc.reclaim .pb-oc-eyebrow { color: var(--orange-text); }
 .pb-oc-name { font-size: 18px; font-weight: 800; color: var(--navy); margin: 3px 0 0; line-height: 1.2; }
+/* Each part now carries a description line, so the parts lists are tall and unequal and the old trick of
+   bottom-aligning them (margin-top:auto) just moved the raggedness to the top. Reserving three lines for the blurb
+   lines the DIVIDERS up instead, which is the edge the eye actually reads across. Desktop only — stacked, there is
+   nothing to align to and the reserve would be dead space. */
 .pb-oc-blurb { font-size: 13px; color: #5f6a73; line-height: 1.45; margin: 5px 0 11px; font-style: normal; }
-.pb-oc-parts { list-style: none; margin: auto 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px;
+@media (min-width: 561px) { .pb-oc-blurb { min-height: 3.7em; } }
+.pb-oc-parts { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px;
   border-top: 1px solid #efeeec; padding-top: 11px; }
 .pb-oc-parts li { display: flex; gap: 9px; align-items: flex-start; opacity: .58; }
 .pb-oc-parts li.on, .pb-oc-parts li.running { opacity: 1; }
@@ -2011,9 +2024,14 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
 .pb-oc-parts li.on .pb-oc-mark { color: var(--teal-text); }
 .pb-oc-part { display: flex; flex-direction: column; min-width: 0; }
 .pb-oc-label { font-size: 13.5px; font-weight: 700; color: var(--navy); line-height: 1.3; }
-.pb-oc-sub { font-size: 11.5px; color: var(--muted-grey); }
-.pb-oc-parts li.running .pb-oc-sub { color: var(--teal-text); font-weight: 700; }
-.pb-oc-fed { font-size: 11.5px; color: var(--muted-grey); font-style: italic; margin: -4px 0 11px; }
+.pb-oc-detail { font-size: 12px; color: #5f6a73; line-height: 1.4; margin-top: 1px; }
+/* The running week says so on its own line-end rather than in place of the detail — a member mid-week should
+   still be able to read what the week IS. */
+.pb-oc-run { color: var(--teal-text); font-weight: 800; }
+/* The finished moment. Tinted rather than loud: the card has already changed state at the eyebrow, so this is the
+   sentence, not a banner. */
+.pb-oc-done { margin: 12px 0 0; padding-top: 11px; border-top: 1px solid #efeeec; font-size: 12.5px;
+  color: var(--navy); line-height: 1.5; }
 /* Two columns then one, rather than a horizontal scroller: these are three things to READ, not a row to flick
    through, and the wellness card is the one that must not fall off the edge unseen. */
 @media (max-width: 860px) { .pb-oc-grid { grid-template-columns: 1fr 1fr; } .pb-oc.fed { grid-column: 1 / -1; } }

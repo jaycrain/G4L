@@ -26,11 +26,19 @@
 
 import type { Db } from '../db/schema.ts';
 
+/** The three shapes, in the landed member-facing words (Cowork, 2026-08-08). "A read / a tool / a tracked week" is
+ *  the plain-language form of Greg's Levels, and it is the SAME phrasing the Program page uses — the two surfaces
+ *  teach one vocabulary or they teach none. */
+export type PartKind = 'A read' | 'A tool' | 'A tracked week';
+
 export type OutcomePart = {
-  /** The member-facing name of the thing they made. */
+  kind: PartKind;
+  /** The member-facing name of the thing they made ("your true lines"). Lower-case: it reads as the tail of the
+   *  kind, "A read — your true lines", which is how the copy was written. */
   label: string;
-  /** Plain-language Level: what you know / hold / practise. Greg's Levels without shipping his internal words. */
-  sub: 'what you know' | 'what you hold' | 'what you practise';
+  /** What that part actually is, in one line. This is the answer to Jay's "more detailed and understandable in
+   *  terms of how they are completed" — a name alone told a member nothing. */
+  detail: string;
   done: boolean;
   /** Set only for the tracked week while it is RUNNING — "day 3 of 7". Never shown once closed. */
   running?: string;
@@ -40,41 +48,56 @@ export type Outcome = {
   phase: 'rewire' | 'rebuild' | 'reclaim';
   /** mindfulness · fitness · wellness — Greg's words, and nouns on purpose. */
   product: string;
-  /** One line on what the outcome IS, in the member's terms rather than the construct's. */
+  /** What the outcome IS, in the member's terms rather than the construct's. */
   blurb: string;
   parts: OutcomePart[];
   built: boolean;
+  /** Shown ONLY once all three are done. The moment a phase completes is a real one and we had nothing for it;
+   *  this is that line. It names the three things they did and hands forward — it never says they are now well. */
+  builtLine: string;
   /** Reclaim only: the one the other two feed. Rendered differently so the hierarchy reads without a diagram. */
   fedByOthers?: boolean;
+};
+
+/** The glosses, kept beside the type they explain so the strip's intro can never drift from the parts. */
+export const PART_GLOSS: Record<PartKind, string> = {
+  'A read': 'what you know',
+  'A tool': 'what you keep',
+  'A tracked week': 'what you practise',
 };
 
 // Asset ids are the STAGED program's (RWR-W1, RBLD-B1, RCL-C1 …), which is what prod runs. With the phase flags
 // off the unflagged registry uses different ids entirely, so nothing matches and every card reads unbuilt — a
 // correct degrade rather than a wrong claim, and the reason this is worth stating out loud.
+// COPY IS COWORK'S, PLACED VERBATIM (2026-08-08, "Playbook + outcome-card copy for CC"). Under the standing sync
+// protocol the app is the source of truth, so a line changed here has to go back to canon — don't edit in passing.
 const SHAPE = [
   {
     phase: 'rewire' as const,
     product: 'Mindfulness',
-    blurb: 'Catching the story before it drives.',
-    read: { id: 'RWR-W1', label: 'Your true lines' },
-    tool: { id: 'RWR-W2', label: 'Your picture' },
-    week: { kind: 'w3_logging', label: 'Mindful Monitoring' },
+    blurb: 'Mindfulness is catching what your mind is doing before it decides for you.',
+    read: { id: 'RWR-W1', label: 'your true lines', detail: 'The stories you tell yourself, caught and answered.' },
+    tool: { id: 'RWR-W2', label: 'your picture', detail: 'Who you’re becoming, vivid enough to reach for.' },
+    week: { kind: 'w3_logging', label: 'Mindful Monitoring', detail: 'Noticing the slips early and clipping back in.' },
+    builtLine: 'You caught the stories, built the picture, practised the week. That skill is yours now, and it feeds what comes next.',
   },
   {
     phase: 'rebuild' as const,
     product: 'Fitness',
-    blurb: 'Moving, eating and sleeping like you mean it.',
-    read: { id: 'RBLD-B1', label: 'Your why' },
-    tool: { id: 'RBLD-B2', label: 'Your map' },
-    week: { kind: 'b3_pilot', label: 'The Lifestyle Pilot' },
+    blurb: 'Fitness is your body doing what you ask of it.',
+    read: { id: 'RBLD-B1', label: 'your why', detail: 'The reasons to care for your body that actually last.' },
+    tool: { id: 'RBLD-B2', label: 'your map', detail: 'Where your skills are strong, and where they’ll grow.' },
+    week: { kind: 'b3_pilot', label: 'the Lifestyle Pilot', detail: 'A week of watching how your choices really play out.' },
+    builtLine: 'You found your why, mapped your skills, ran the week. Real ground — and it feeds what comes next.',
   },
   {
     phase: 'reclaim' as const,
     product: 'Wellness',
-    blurb: 'The life the other two are for.',
-    read: { id: 'RCL-C1', label: 'Your list, refined' },
-    tool: { id: 'RCL-C2', label: 'Your bigger world' },
-    week: { kind: 'c3_quality', label: 'Quality Days' },
+    blurb: 'Wellness is how your life actually feels — the outcome the other two feed.',
+    read: { id: 'RCL-C1', label: 'your list, refined', detail: 'What you’re reclaiming, now that you know yourself better.' },
+    tool: { id: 'RCL-C2', label: 'your bigger world', detail: 'Where your life is opening up, and where it’s still narrow.' },
+    week: { kind: 'c3_quality', label: 'Quality Days', detail: 'Tracking the days that feel like the life you’re building.' },
+    builtLine: 'Mindfulness and fitness brought you here. You’ve walked the whole arc once. You keep it by living it.',
   },
 ];
 
@@ -105,9 +128,9 @@ export async function outcomes(db: Db, memberId: string): Promise<Outcome[]> {
       const weekDone = !!w?.closed_at;
       const running = w && !w.closed_at && w.day >= 1 && w.day <= 7 ? `day ${w.day} of 7` : undefined;
       const parts: OutcomePart[] = [
-        { label: s.read.label, sub: 'what you know', done: done.has(s.read.id) },
-        { label: s.tool.label, sub: 'what you hold', done: done.has(s.tool.id) },
-        { label: s.week.label, sub: 'what you practise', done: weekDone, running },
+        { kind: 'A read', label: s.read.label, detail: s.read.detail, done: done.has(s.read.id) },
+        { kind: 'A tool', label: s.tool.label, detail: s.tool.detail, done: done.has(s.tool.id) },
+        { kind: 'A tracked week', label: s.week.label, detail: s.week.detail, done: weekDone, running },
       ];
       return {
         phase: s.phase,
@@ -115,6 +138,7 @@ export async function outcomes(db: Db, memberId: string): Promise<Outcome[]> {
         blurb: s.blurb,
         parts,
         built: parts.every((p) => p.done),
+        builtLine: s.builtLine,
         fedByOthers: s.phase === 'reclaim' || undefined,
       };
     });

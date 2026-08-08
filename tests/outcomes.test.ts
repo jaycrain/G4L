@@ -33,12 +33,15 @@ test('a brand-new member gets three cards, all unbuilt, and no false claim', asy
   assert.ok(o.every((x) => x.parts.every((p) => !p.done)));
 });
 
-test('the same three Levels in every phase — know, hold, practise', async () => {
+test('the same three shapes in every phase — a read, a tool, a tracked week', async () => {
   // Greg asked for "a parallel structure for the Level 1, 2 and 3 activities in W, B and C". This is that,
-  // asserted, so a later edit cannot quietly give one phase a different shape.
+  // asserted, so a later edit cannot quietly give one phase a different shape. The words are Cowork's landed
+  // vocabulary and are shared with the Program page — changing them here means changing them there.
   const { db, memberId } = await freshDb();
   for (const o of await outcomes(db, memberId)) {
-    assert.deepEqual(o.parts.map((p) => p.sub), ['what you know', 'what you hold', 'what you practise'], o.product);
+    assert.deepEqual(o.parts.map((p) => p.kind), ['A read', 'A tool', 'A tracked week'], o.product);
+    // Every part explains itself. A bare name ("your map") told a member nothing, which is the gap Jay named.
+    assert.ok(o.parts.every((p) => p.detail.length > 10), o.product);
   }
 });
 
@@ -76,6 +79,20 @@ test('phases are independent — finishing Rewire claims nothing about Rebuild',
   assert.equal(o.find((x) => x.phase === 'rewire')!.built, true);
   assert.equal(o.find((x) => x.phase === 'rebuild')!.built, false);
   assert.equal(o.find((x) => x.phase === 'reclaim')!.built, false);
+});
+
+test('the finished moment names what they DID — it never says they are now well', async () => {
+  // The moment a phase completes is a real one and we had nothing for it. It is also the single most likely place
+  // for the honesty rule to break, because it is the only warm sentence on the strip. Cowork wrote all three;
+  // this pins the shape so a later rewrite cannot turn "you practised the week" into "you are mindful now".
+  const { db, memberId } = await freshDb();
+  for (const o of await outcomes(db, memberId)) {
+    assert.ok(o.builtLine.length > 0, o.product);
+    assert.doesNotMatch(o.builtLine, /\byou are (now )?(mindful|fit|well)\b|you have achieved|congratulations/i, o.product);
+    // Wellness is the arc's end, so its line is the one that must NOT promise the work is over.
+    if (o.phase === 'reclaim') assert.match(o.builtLine, /keep it by living it/i);
+    else assert.match(o.builtLine, /feeds what comes next/i, `${o.product} hands forward`);
+  }
 });
 
 test('wellness is marked as the one the other two feed — and only wellness', async () => {
