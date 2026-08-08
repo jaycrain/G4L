@@ -116,14 +116,24 @@ test('C3 · rows come from the QD profile and marks from quality_day_log — no 
   assert.equal(copies.rows.length, 0, 'C3 must READ quality_day_log, not duplicate it into practice_mark');
 });
 
-test('W3 · one row, read from momentum_call', async () => {
+// W3 MOVED OFF momentum_call on 2026-08-08 (migration 0074). This test asserted the old behaviour and failed the
+// moment w3Rows changed — which is the suite doing its job. Greg wants the bounded monitoring week kept SEPARATE
+// from the ongoing tracker for Cycle 1, and his seven-field tracker cannot fit in a typed call plus a note.
+// Fuller assertions live in tests/w3-triggers.test.ts; this keeps the per-kind adapter coverage in one place.
+test('W3 · reads its OWN daily entries, not momentum_call', async () => {
   const { db, memberId } = await seed();
   await startPracticeWeek(db, memberId, 'w3_logging');
   const { logCall } = await import('../lib/momentum/store.ts');
-  await logCall(db, memberId, { type: 'good_call', note: 'took the stairs', source: 'quick_log' });
+  const { recordW3Entry } = await import('../lib/rewire/w3-entry.ts');
 
+  // A Momentum call during W3 week must NOT tick the week — that is the separation, asserted.
+  await logCall(db, memberId, { type: 'good_call', note: 'took the stairs', source: 'quick_log' });
+  assert.equal((await weekGrid(db, memberId))!.rows[0]!.done, 0, 'a Momentum call is not a W3 entry');
+
+  // A real W3 entry does.
+  await recordW3Entry(db, memberId, { goodCalls: 'caught the pull and named it' });
   const g = (await weekGrid(db, memberId))!;
-  assert.equal(g.rows.length, 1);
+  assert.equal(g.rows[0]!.label, 'Noticed the day');
   assert.equal(g.rows[0]!.done, 1);
   assert.equal((await db.query(`select 1 from practice_mark where member_id=$1`, [memberId])).rows.length, 0, 'no duplicate');
 });

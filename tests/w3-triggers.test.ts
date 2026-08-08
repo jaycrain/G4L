@@ -6,6 +6,7 @@ import { applySchema, type Db } from '../lib/db/schema.ts';
 import { saveW3Triggers, w3Triggers } from '../lib/rewire/w3-triggers.ts';
 import { weekGrid } from '../lib/practice/grid.ts';
 import { startPracticeWeek } from '../lib/practice/store.ts';
+import { recordW3Entry } from '../lib/rewire/w3-entry.ts';
 
 // W3's triggers as the ROWS of the monitoring week.
 //
@@ -66,20 +67,75 @@ test('a member who named nothing gets no rows and no error', async () => {
 });
 
 // ── THE SEAM ─────────────────────────────────────────────────────────────────────────────────────────────────
-// Storing rows is only useful if the WEEK renders them. Today w3Rows ignores commitments entirely and derives a
-// single binary row from Momentum calls — so this test documents the CURRENT behaviour and is the one that flips
-// in the next slice. Written now, deliberately, so the slice that changes w3Rows has to confront it.
-test('SEAM: the W3 week does not yet render the triggers as rows — this is the next slice', async () => {
+// This assertion was written INVERTED one slice ago, asserting the old single-row behaviour, precisely so the
+// slice that changed w3Rows had to come here and confront it rather than quietly diverge. It did. This is the
+// flipped version.
+
+test('SEAM: the week renders "Noticed the day" first, then one row per NAMED trigger', async () => {
   const { db, memberId } = await freshDb();
   await saveW3Triggers(db, memberId, ['late nights', 'travel']);
   await startPracticeWeek(db, memberId, 'w3_logging');
 
   const grid = await weekGrid(db, memberId);
-  assert.ok(grid, 'the week itself opens');
+  assert.ok(grid, 'the week opens');
   assert.equal(grid.kind, 'w3_logging');
-  // CURRENT: one binary "Noticed the day" row sourced from Momentum calls.
-  // NEXT SLICE: one row per named trigger, and this assertion inverts to deepEqual on the labels.
-  assert.equal(grid.rows.length, 1, 'still the single Momentum-derived row');
-  assert.equal(grid.rows[0]!.label, 'Noticed the day');
-  assert.equal(grid.rows[0]!.target, null, 'whatever it renders, it must never carry a target');
+  assert.deepEqual(
+    grid.rows.map((r) => r.label),
+    ['Noticed the day', 'late nights', 'travel'],
+    'row 1 is tracking consistency; the triggers are their own words, in the order they named them',
+  );
+  assert.ok(grid.rows.every((r) => r.target === null), 'no adherence target anywhere in W3');
+});
+
+test('SEAM: a day logged with NO trigger still marks "Noticed the day"', async () => {
+  // The reason row 1 survives. If rows were only triggers, a day the member sat down and recorded a good call
+  // would render as an empty column — the grid reporting nothing happened on a day they showed up, and quietly
+  // becoming a record of things going wrong.
+  const { db, memberId } = await freshDb();
+  await saveW3Triggers(db, memberId, ['late nights']);
+  await startPracticeWeek(db, memberId, 'w3_logging');
+  await recordW3Entry(db, memberId, { goodCalls: 'walked instead of driving' }); // no trigger fired
+
+  const grid = await weekGrid(db, memberId);
+  const noticed = grid!.rows.find((r) => r.label === 'Noticed the day')!;
+  const trigger = grid!.rows.find((r) => r.label === 'late nights')!;
+  assert.equal(noticed.done, 1, 'they logged today — the grid must show it');
+  assert.equal(trigger.done, 0, 'and must NOT claim a trigger fired when none did');
+});
+
+test('SEAM: a fired trigger ticks its own row, and only its own', async () => {
+  const { db, memberId } = await freshDb();
+  await saveW3Triggers(db, memberId, ['late nights', 'travel']);
+  await startPracticeWeek(db, memberId, 'w3_logging');
+  await recordW3Entry(db, memberId, { falseStarts: 'ordered in', triggerSlot: 'trigger-1' });
+
+  const grid = await weekGrid(db, memberId);
+  const byLabel = Object.fromEntries(grid!.rows.map((r) => [r.label, r.done]));
+  assert.equal(byLabel['Noticed the day'], 1);
+  assert.equal(byLabel['late nights'], 1, 'trigger-1 is the first they named');
+  assert.equal(byLabel['travel'], 0);
+});
+
+test('SEAM: the week no longer reads Momentum — a call logged there does not tick the W3 grid', async () => {
+  // Greg's separation, asserted. A member using Momentum during W3 week must not have it appear here; the
+  // bounded monitoring week and the ongoing tracker are different instruments for Cycle 1.
+  const { db, memberId } = await freshDb();
+  await saveW3Triggers(db, memberId, ['late nights']);
+  await startPracticeWeek(db, memberId, 'w3_logging');
+  const { logCall } = await import('../lib/momentum/store.ts');
+  await logCall(db, memberId, { type: 'good', note: 'went for a walk', source: 'grid' });
+
+  const grid = await weekGrid(db, memberId);
+  const noticed = grid!.rows.find((r) => r.label === 'Noticed the day')!;
+  assert.equal(noticed.done, 0, 'a Momentum call is not a W3 monitoring entry');
+});
+
+test('a member who named no triggers still gets a usable week', async () => {
+  const { db, memberId } = await freshDb();
+  await startPracticeWeek(db, memberId, 'w3_logging');
+  await recordW3Entry(db, memberId, { goodCalls: 'noticed the pull and said no' });
+
+  const grid = await weekGrid(db, memberId);
+  assert.deepEqual(grid!.rows.map((r) => r.label), ['Noticed the day'], 'no invented placeholder rows');
+  assert.equal(grid!.rows[0]!.done, 1);
 });

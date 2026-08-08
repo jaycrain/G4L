@@ -7,10 +7,15 @@
 // THE ONE DESIGN DECISION WORTH DEFENDING. The obvious build is a single practice_mark table every week writes to,
 // and it is wrong, because two of the three ALREADY hold their per-day record:
 //   · C3 — quality_day_log.present[] is exactly "which elements were true on which day"
-//   · W3 — momentum_call is a typed entry per day
+//   · W3 — momentum_call is a typed entry per day  ← NO LONGER TRUE, see below
 // Copying those into a second table would create two records of one fact, and two records of one fact drift. That is
 // this morning's checkpoint bug (a gate said done, a progress row said nothing) restated one day later. So the grid
 // is a READ MODEL with a per-kind adapter, and new storage exists only for B3, which genuinely had none.
+//
+// W3 MOVED OFF MOMENTUM on 2026-08-08 (migration 0074, w3_daily_entry). Greg wants the bounded monitoring week kept
+// separate from the ongoing tracker for Cycle 1, and his seven-field tracker cannot fit in a typed call plus a note.
+// The principle above still stands — this is not a second record of the same fact, it is a different fact — but the
+// example is now wrong, and a stale example is how the next person re-derives the thing we just undid.
 //
 // The cost is that this file has to know three shapes. That is the honest price of not duplicating member data, and
 // it is paid once, here, behind one function.
@@ -98,11 +103,47 @@ async function c3Rows(db: Db, memberId: string, startedAt: string | Date): Promi
   );
 }
 
-/** W3 · the False Start Protocol — one row, because what's tracked is "did you log the day at all", not a checklist. */
+/** W3 · Mindful Monitoring. Rows = "Noticed the day" + one per trigger the member NAMED.
+ *
+ *  CHANGED 2026-08-08, and it is a deliberate reversal of what this file said above. W3 used to read from
+ *  momentum_call — a single binary row, "did you log at all". Two reasons it moved:
+ *
+ *    1. Greg, asked what W3's week should be: a bounded 1-week grid, kept SEPARATE from the ongoing Momentum
+ *       tracker until members have learned the vocabulary ("we should focus on getting through Cycle 1").
+ *       Deriving W3's week from Momentum calls IS the conflation he asked us to avoid.
+ *    2. His tracker needs `trigger_fired` — "which named trigger, or 'new'" — which momentum_call cannot express.
+ *
+ *  WHY "Noticed the day" SURVIVES as row 1 rather than being replaced by the triggers. If rows were ONLY
+ *  triggers, a day the member logged a good call and no trigger fired would show as a completely empty column —
+ *  the grid would report nothing happened on a day they actually sat down and wrote. Worse, it would make the
+ *  grid a record of things going WRONG, which inverts the whole posture. Row 1 is the tracking-consistency row,
+ *  and consistency of tracking is exactly what Greg says the affirmations must target ("not the absence of False
+ *  Starts"). The trigger rows add the detail underneath it.
+ *
+ *  No targets anywhere — W3 has no adherence measure in the asset. */
 async function w3Rows(db: Db, memberId: string, startedAt: string | Date): Promise<GridRow[]> {
-  const { recentCalls } = await import('../momentum/store.ts');
-  const calls = await recentCalls(db, memberId, 60);
-  return [buildRow('logged', 'Noticed the day', null, startedAt, calls.map((c) => c.loggedOn))];
+  const [{ w3Entries }, { w3Triggers }] = await Promise.all([
+    import('../rewire/w3-entry.ts'),
+    import('../rewire/w3-triggers.ts'),
+  ]);
+  const [entries, triggers] = await Promise.all([
+    w3Entries(db, memberId, PRACTICE_WINDOW_DAYS),
+    w3Triggers(db, memberId),
+  ]);
+
+  const noticed = buildRow('logged', 'Noticed the day', null, startedAt, entries.map((e) => e.entryDate));
+  // One row per trigger, in the order the member named them, ticked on the days that trigger fired. A member who
+  // named none (skipped, or the capture missed) simply gets the one row — never a placeholder we invented.
+  const triggerRows = triggers.map((t) =>
+    buildRow(
+      t.slot,
+      t.label,
+      null,
+      startedAt,
+      entries.filter((e) => e.triggerSlot === t.slot).map((e) => e.entryDate),
+    ),
+  );
+  return [noticed, ...triggerRows];
 }
 
 /** B2 · the noticing week — day-level notes, no commitments (its answer had nowhere to land before 0072). */
