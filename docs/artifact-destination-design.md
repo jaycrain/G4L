@@ -1,5 +1,54 @@
 # The artifact destination — design proposal
 
+## ⚠ SUPERSEDED IN PART, 2026-08-07 — the Playbook is not where work POSTS. It is the tool you WORK FROM.
+
+Jay, correcting the model below:
+
+> *"A Playbook isn't a historical archive. It's an active tool. Football teams don't create a Playbook after the
+> season and put it on a shelf. They write it before the season and plan games with it, and modify it when things
+> don't work or new things get figured out. They are super sophisticated in the NFL now and live on iPads."*
+
+**What I had wrong.** I proposed Sessions → artifacts → "post" to the Playbook, with the Playbook as the place
+finished work lives. That is still an archive; I had only improved its filing. Even the word "post" — which I took
+from Jay and ran with — points backward.
+
+**The inversion.** The Playbook is not the output of the work. **It is the instrument the work is done with.**
+
+| I proposed | What it actually is |
+| --- | --- |
+| fills up as you complete Sessions | **exists from the start**, and gets richer |
+| holds what you finished | holds **what you can run**, and **what you are running now** |
+| you read it | you **plan from it**, before the week |
+| entries are records | plays are **revised when they don't work** |
+| a destination you visit | a tool you **use in the moment** — the iPad on the sideline |
+
+**Four consequences that change the build:**
+
+1. **It cannot start empty.** A member finishing Reconnect should already have a Playbook — their identity, their
+   doors, their Reclaim List are the opening plays. Today it fills only as keepers are lifted at Session close,
+   so the most valuable thing we produce is emptiest exactly when a member is newest.
+
+2. **"What am I running right now" is a first-class state.** An open practice week is not something that posts
+   when it closes — it is **the play currently on the field**. That resolves the active-vs-closed question I was
+   about to design around: both belong here, because running one *is* using the Playbook.
+
+3. **Revision is a feature, not an edit.** *"Modify it when things don't work"* is the whole loop — W1's
+   affirmations adjusted when they don't hold, B3's plan changed after a week that didn't land, C1's Reclaim List
+   revised. The program already generates revisions constantly and the Playbook records none of them. A play that
+   changed, and why, is more useful than the play alone.
+
+4. **Planning is the missing verb.** *"Plan games with it."* Before a hard week, travel, the holidays — which
+   plays do I call? That is this doc's "forward dimension" made concrete, and it is what the readings are FOR: the
+   scouting report that says which play fits.
+
+**What survives from below:** the typology (reading / tool / tracked week), the rule that a reading shows what the
+member said rather than what we computed, the Companion as interpreter, and B2's map as the first reading to
+build. **What does not survive:** the framing of the Playbook as where finished work lands, and the
+active-vs-closed split I was about to propose.
+
+---
+
+
 **2026-08-07.** Follows `docs/greg-audit-epiphanies.md` (all 12 assets audited). Jay's steer:
 
 > *"a mobile UI restriction led us down this design pattern, but that doesn't make it wrong. People are
