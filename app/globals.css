@@ -238,8 +238,6 @@ button:hover, .btn:hover { background: var(--navy); }
    real first sentence, so it outranks the "Program" hero chip above it in weight. */
 .prog-lead .prog-h { font-size: 1.5rem; font-weight: 800; color: var(--navy); line-height: 1.22; margin: 0 0 0.85rem; }
 .prog-lead .prog-h3 { color: var(--navy); font-size: 1.08rem; margin: 1.7rem 0 0.55rem; }
-/* The bridge sentence hands off to the Outline, so it reads as a lead-in rather than another body paragraph. */
-.prog-lead .prog-bridge { margin-top: 1.7rem; font-weight: 600; }
 @media (max-width: 640px) { .prog-lead .prog-h { font-size: 1.28rem; } }
 
 .sub-copy ul.sub-list { margin: 0 0 0.9rem; padding-left: 1.1rem; }
