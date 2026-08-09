@@ -21,7 +21,12 @@ const sqlFile = (rel: string) => readFileSync(join(process.cwd(), 'supabase', re
 // Each migration with a sentinel so we can apply only the ones a database is missing.
 // A string sentinel is a table name; a {table,column} sentinel is a column (for ALTERs).
 type Sentinel = string | { table: string; column: string } | { sql: string };
-const MIGRATIONS: Array<{ file: string; sentinel: Sentinel }> = [
+// EXPORTED so `scripts/db/gen-migration-drift.mjs` can build the prod drift-check SQL from THIS list rather than
+// keeping its own copy. It used to keep one, and that copy silently stopped at 0055 while the repo shipped to
+// 0074 — so the check that tells us whether prod is missing a migration (and therefore whether a table holding
+// member material is missing its RLS) reported a clean database while inspecting none of the recent work.
+// One list, one place. Adding a migration here is now the only thing anyone has to remember.
+export const MIGRATIONS: Array<{ file: string; sentinel: Sentinel }> = [
   { file: 'migrations/0001_gateway_schema.sql', sentinel: 'door' },
   { file: 'migrations/0002_assets.sql', sentinel: 'asset_completion' },
   { file: 'migrations/0003_founder_agent.sql', sentinel: 'founder_agent_drafts' },
