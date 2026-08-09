@@ -181,8 +181,13 @@ export default async function RedesignDashboard({ db, memberId, dash }: { db: Db
           <img className="rt-wordmark" src="/brand/g4l-wordmark.svg" alt="Grinta for Life" />
         </Link>
         <div className="rt-who">
+          {/* ONE nav item (Jay, 2026-08-08). Program is a syllabus and is already reachable from the hero
+              breadcrumb AND "See the Program →" on this very page — it was linked three times. The Playbook stays:
+              it is the daily instrument, and subpages carry only "← Dashboard" otherwise.
+              NOTE: this bar is DUPLICATED in redesign-topbar.tsx and redesign-dashboard.tsx, despite the topbar
+              claiming to be the single source. Changing one changes a third of the app — which is exactly how this
+              edit first appeared to do nothing. Worth collapsing to the shared component. */}
           <span className="rt-nav">
-            <Link href={`/program/${memberId}`} prefetch={false}>Program</Link>
             <Link href={`/playbook/${memberId}`} prefetch={false}>Playbook</Link>
           </span>
           {/* Avatar + greeting → Your Account (which holds Log out — no need to duplicate it in the header). */}

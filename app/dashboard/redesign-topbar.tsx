@@ -3,7 +3,7 @@ import { getDb } from '../../lib/db/index.ts';
 import { initials } from '../../lib/member/avatar.ts';
 import type { Db } from '../../lib/db/schema.ts';
 
-// The shared app topbar (brand · Program · Field Guide · Playbook · account). ONE source so every member surface — the
+// The shared app topbar (brand · Playbook · account). ONE source so every member surface — the
 // dashboard, the workspace, and every subpage (Movement, Badges, …) — carries the same header (Jay's walk: the subpages
 // were missing it). Self-fetching async SERVER component: pass ONLY memberId and it reads its own name/avatar, so any
 // subpage is a one-line drop-in with no data wiring. Sticky, 64px; the account link → /account (which holds Log out).
@@ -30,8 +30,15 @@ export default async function RedesignTopbar({ memberId }: { memberId: string })
         <img className="rt-wordmark" src="/brand/g4l-wordmark.svg" alt="Grinta for Life" />
       </Link>
       <div className="rt-who">
+        {/* ONE nav item, not two (Jay, 2026-08-08). Program came out because it is a SYLLABUS — read occasionally,
+            and already reachable from the dashboard hero breadcrumb ("Program › Reclaim › …"), which is better
+            placement than nav: it sits in the context of where the member actually is.
+            The Playbook STAYS, and that asymmetry is the point. It is the daily instrument now — This week, the
+            queue waiting on them, the plays to run — and subpages carry only "← Dashboard" otherwise, so dropping
+            it too would make the most-used surface two taps from anywhere but home.
+            Nothing replaces Program here. The header's job is brand · the daily thing · account, and it does all
+            three; sparse is correct for a product whose centre is a conversation. */}
         <span className="rt-nav">
-          <Link href={`/program/${memberId}`} prefetch={false}>Program</Link>
           <Link href={`/playbook/${memberId}`} prefetch={false}>Playbook</Link>
         </span>
         <span className="rt-account-group">
