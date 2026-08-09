@@ -10,6 +10,7 @@ import RedesignPlaybookView from './redesign-playbook-view.tsx';
 import { redesignEnabled } from '../../../lib/dashboard/redesign.ts';
 import { outcomes } from '../../../lib/dashboard/outcomes.ts';
 import { memberReads } from '../../../lib/playbook/reads.ts';
+import { weekGrid } from '../../../lib/practice/grid.ts';
 import SubpageShell from '../../dashboard/subpage-shell.tsx';
 
 export const metadata = { title: 'Your G4L Playbook — Grinta for Life' };
@@ -48,9 +49,12 @@ export default async function PlaybookPage({ params }: { params: Promise<{ membe
   // The Reads tab's real content — the member's assessment outputs, which the Companion has always seen and the
   // member never could. Guarded inside memberReads: a drifted register hides one card, not the tab.
   const reads = redesignEnabled() ? await memberReads(db, memberId) : [];
+  // The LIVE practice week — this tab is its new home (it left Momentum in the same commit). Guarded: no week, or
+  // a read hiccup, shows the empty state rather than taking the Playbook down.
+  const grid = redesignEnabled() ? await weekGrid(db, memberId).catch(() => null) : null;
   return redesignEnabled() ? (
     <SubpageShell memberId={memberId}>
-      <RedesignPlaybookView {...props} rerunStats={rerunStats} outcomes={cards} reads={reads} />
+      <RedesignPlaybookView {...props} rerunStats={rerunStats} outcomes={cards} reads={reads} grid={grid} />
     </SubpageShell>
   ) : <PlaybookView {...props} />;
 }

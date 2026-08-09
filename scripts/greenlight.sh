@@ -33,8 +33,8 @@ URL="${1:-https://g4l-ten.vercel.app}"
 # belt-and-braces — but EVERY tell must pass, so the un-minified spelling could never match and the gate
 # reported RED on a healthy prod. A tell is an exact literal against the BUILT stylesheet: check the built
 # form, don't hedge across variants.
-# Your Reads. `pb-read-from` is new in THIS push (the provenance line on a read card).
-CSS_TELLS=(".pb-read-from")
+# "This week" — the practice week moves into the Playbook. `pb-thisweek` is new in THIS push.
+CSS_TELLS=(".pb-thisweek")
 JS_TELLS=()
 
 # COMMIT CHECK — the authoritative proof for an ENGINE-ONLY push (server logic, no bundle change), where no static

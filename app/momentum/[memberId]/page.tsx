@@ -6,7 +6,6 @@ import { logEvent } from '../../../lib/telemetry/store.ts';
 import { rewireEnabled } from '../../../lib/agent/rewire.ts';
 import { pulseBeats, recentCalls, domainTally, type CallType, type CallDomain } from '../../../lib/momentum/store.ts';
 import { weekGrid } from '../../../lib/practice/grid.ts';
-import WeekGridPanel from '../week-grid.tsx';
 import { practicePanelLine } from '../../../lib/practice/store.ts';
 import { commitmentTexts } from '../../../lib/commitments/store.ts';
 import ResiliencePulse from '../../dashboard/resilience-pulse.tsx';
@@ -68,7 +67,18 @@ export default async function MomentumPage({ params }: { params: Promise<{ membe
       <div className="card">
         <p className="card-subtitle">The minute-to-minute decisions you make are what add up to change. Here you can track your good calls, false starts — and the on-track days where nothing much happened — and begin to understand how your patterns impact your progress.</p>
         {practiceLine && <p className="practice-strip">{practiceLine}</p>}
-        {grid && <WeekGridPanel memberId={memberId} grid={grid} />}
+        {/* THE WEEK GRID MOVED TO THE PLAYBOOK'S "This week" TAB (2026-08-08). It belongs in the instrument you
+            plan FROM, not in a separate tool — and showing the same week in two places is worse than either
+            arrangement, which is why the move and the new tab landed in one commit.
+            Momentum keeps its own job, which Jay and Greg reached independently: it is the LONG view — the
+            cross-cycle tracker you RE-TURN to after Cycle 1 — not the daily surface. A pointer, not a duplicate. */}
+        {grid && (
+          <a className="pb-waiting" href={`/playbook/${memberId}?tab=thisweek`}>
+            <span className="pb-waiting-n">{grid.day}</span>
+            <span>Day {grid.day} of 7 — your week lives in your Playbook now</span>
+            <span aria-hidden="true">→</span>
+          </a>
+        )}
         {commitments && (
           <div className="commitment-progress">
             <div className="commitment-progress-h">What you’re holding yourself to</div>

@@ -1219,11 +1219,27 @@ html:has(.companion-hero), body:has(.companion-hero) { overflow-anchor: none; }
    day at work". Clamp to two lines so the grid stays scannable; the full text stays in the title attribute and in
    each cell's aria-label. Truncating for DISPLAY is fine — rewriting what they said is not. */
 .wk-table td.wk-lab { font-size: 12.5px; line-height: 1.3; color: var(--charcoal, #2A2A2A); padding-right: 8px;
-  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  /* CLAMPED BY MAX-HEIGHT, NOT -webkit-line-clamp. `display: -webkit-box` takes the cell OUT of table layout, so
+     it stopped participating in its own column: the header cell measured 86px while the data cell collapsed to
+     28px on a phone, and the member's own commitment rendered as two clipped characters. Latent since the grid
+     shipped; found when This week became the Playbook's first tab. Two lines' worth of height, cell stays a cell. */
+  max-height: 2.6em; overflow: hidden; }
 .wk-table td.wk-aim { font-size: 12px; font-weight: 700; color: var(--navy); white-space: nowrap; }
 .wk-table td.wk-aim span { font-weight: 400; color: var(--muted-grey); }
 .wk-cell { width: 26px; height: 26px; padding: 0; border: 1px solid #e3e2df; border-radius: 6px; background: var(--white); cursor: pointer; font-family: inherit; font-size: 13px; font-weight: 700; line-height: 1; color: transparent; }
 .wk-cell:hover:not(:disabled) { border-color: var(--olive); }
+/* NARROW SCREENS. `table-layout: fixed` gives the label column 38% — but seven 26px tick cells plus their padding
+   need more than the remaining 62% on a phone, so the label got squeezed to whatever was left: 28px at 375px, i.e.
+   the member could not read their own commitment ("20 minutes of walking" rendered as two clipped characters).
+   Found when This week became the Playbook's FIRST tab and this stopped being a secondary surface.
+   The cells shrink instead of the words. 22px is still a comfortable tap target at this density, and the label
+   keeps enough room for two real lines. */
+@media (max-width: 560px) {
+  .wk-cell { width: 22px; height: 22px; font-size: 12px; }
+  .wk-table th.wk-lab, .wk-table td.wk-lab { width: 42%; }
+  .wk-table td.wk-lab { font-size: 12px; max-height: 3.9em; }
+  .wk-table th.wk-aim, .wk-table td.wk-aim { width: 11%; }
+}
 /* The FILL is --olive-text, not --olive. A white check on brand olive measures 3.2:1 and fails; on this darker
    olive it is 4.76:1. Using the palette's existing contrast variant rather than inventing a shade — it is named
    "-text" because that was its first use, but the VALUE is the sanctioned darker olive and this is what it is for.

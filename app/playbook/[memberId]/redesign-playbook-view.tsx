@@ -4,6 +4,8 @@ import { useState } from 'react';
 import type { PlaybookEntry } from '../../../lib/playbook/store.ts';
 import type { Outcome } from '../../../lib/dashboard/outcomes.ts';
 import type { Read } from '../../../lib/playbook/reads.ts';
+import type { WeekGrid } from '../../../lib/practice/grid.ts';
+import WeekGridPanel from '../../momentum/week-grid.tsx';
 import OutcomeCards from './outcome-cards.tsx';
 import { runnablePlay, playSituation } from '../../../lib/playbook/runnable.ts';
 import {
@@ -31,8 +33,9 @@ import {
 //
 // "This week" (the live practice week) is the FIFTH tab and is deliberately absent until the practice weeks move
 // off Momentum in one step — showing the same week in two places is worse than either arrangement.
-type TabKey = 'plays' | 'reads' | 'who' | 'journal';
+type TabKey = 'thisweek' | 'plays' | 'reads' | 'who' | 'journal';
 const TABS: { key: TabKey; label: string }[] = [
+  { key: 'thisweek', label: 'This week' },
   { key: 'plays', label: 'Plays' },
   { key: 'reads', label: 'Reads' },
   { key: 'who', label: 'Who you are' },
@@ -87,6 +90,7 @@ export default function RedesignPlaybookView({
   rerunStats,
   outcomes = [],
   reads = [],
+  grid = null,
 }: {
   memberId: string;
   initial: PlaybookEntry[];
@@ -96,14 +100,20 @@ export default function RedesignPlaybookView({
   outcomes?: Outcome[];
   /** The member's assessment reads — what their own Sessions said, in plain language. */
   reads?: Read[];
+  /** The LIVE practice week, if one is running. It moved here from Momentum in the same step that added this tab —
+   *  the same week in two places is worse than either arrangement. */
+  grid?: WeekGrid | null;
 }) {
   const [entries, setEntries] = useState<PlaybookEntry[]>(initial);
   // Tab state lives in the URL so the back button works and a member can be sent straight to a tab. Read once on
   // mount rather than via useSearchParams, which would force a Suspense boundary for no gain here.
+  // A running week LEADS. If they're mid-practice, that is what they came for; otherwise Plays, which is the
+  // Playbook's heart. An explicit ?tab= always wins so a link can point anywhere.
   const [tab, setTab] = useState<TabKey>(() => {
-    if (typeof window === 'undefined') return 'plays';
+    const fallback: TabKey = grid ? 'thisweek' : 'plays';
+    if (typeof window === 'undefined') return fallback;
     const t = new URLSearchParams(window.location.search).get('tab');
-    return TABS.some((x) => x.key === t) ? (t as TabKey) : 'plays';
+    return TABS.some((x) => x.key === t) ? (t as TabKey) : fallback;
   });
   const goTab = (k: TabKey) => {
     setTab(k);
@@ -360,6 +370,32 @@ export default function RedesignPlaybookView({
           <div className="pb-narr">
             {synthesis.split(/\n\n+/).map((p) => p.trim()).filter(Boolean).map((para, k) => (<p key={k}>{para}</p>))}
           </div>
+        </section>
+      )}
+
+      {/* THIS WEEK — the play on the field. Greg's tracker, moved off Momentum so the live week lives in the
+          instrument you plan from rather than in a separate tool. Momentum keeps its cross-cycle job (Jay + Greg
+          both landed there independently: it is the LONG view, the tracker you RE-TURN to after Cycle 1).
+          The grid component is reused unchanged — this is a relocation, not a rewrite. */}
+      {tab === 'thisweek' && (
+        <section className="pb-card pb-thisweek">
+          {grid ? (
+            <>
+              <div className="pb-sec">This week</div>
+              <div className="pb-sec-d">
+                Day {grid.day} of 7. A blank day is a day — this is for noticing what helps, never a score.
+              </div>
+              <WeekGridPanel memberId={memberId} grid={grid} />
+            </>
+          ) : (
+            <>
+              <div className="pb-sec">This week</div>
+              <p className="pb-empty">
+                No week running right now. A Session starts one when you’re ready to practise something for
+                real — that’s when this fills in.
+              </p>
+            </>
+          )}
         </section>
       )}
 
