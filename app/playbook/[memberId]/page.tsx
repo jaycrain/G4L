@@ -48,7 +48,10 @@ export default async function PlaybookPage({ params }: { params: Promise<{ membe
   const cards = redesignEnabled() ? await outcomes(db, memberId) : [];
   // The Reads tab's real content — the member's assessment outputs, which the Companion has always seen and the
   // member never could. Guarded inside memberReads: a drifted register hides one card, not the tab.
-  const reads = redesignEnabled() ? await memberReads(db, memberId) : [];
+  // .catch AT THE CALL SITE TOO. memberReads guards internally, but the Playbook is a member-facing route and a
+  // throw anywhere inside it renders the error page — which is exactly what happened on 2026-08-08 (an unmapped
+  // domain key reached .toLowerCase()). Internal guards are the fix; this is the seatbelt, and it costs nothing.
+  const reads = redesignEnabled() ? await memberReads(db, memberId).catch(() => []) : [];
   // The LIVE practice week — this tab is its new home (it left Momentum in the same commit). Guarded: no week, or
   // a read hiccup, shows the empty state rather than taking the Playbook down.
   const grid = redesignEnabled() ? await weekGrid(db, memberId).catch(() => null) : null;

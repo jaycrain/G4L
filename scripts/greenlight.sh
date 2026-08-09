@@ -33,8 +33,10 @@ URL="${1:-https://g4l-ten.vercel.app}"
 # belt-and-braces — but EVERY tell must pass, so the un-minified spelling could never match and the gate
 # reported RED on a healthy prod. A tell is an exact literal against the BUILT stylesheet: check the built
 # form, don't hedge across variants.
-# "This week" — the practice week moves into the Playbook. `pb-thisweek` is new in THIS push.
-CSS_TELLS=(".pb-thisweek")
+# Two fixes from Jay's walk. `pb-waiting-sm` is new in THIS push (the cue in its new home on the flank).
+# NOTE: the last tell (`pb-thisweek`) was a class used ONLY in JSX with no CSS rule — this gate greps the built
+# STYLESHEET, so it reported a false RED. A tell must be a class that actually has a rule.
+CSS_TELLS=(".pb-waiting-sm")
 JS_TELLS=()
 
 # COMMIT CHECK — the authoritative proof for an ENGINE-ONLY push (server logic, no bundle change), where no static

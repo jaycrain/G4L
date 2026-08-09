@@ -99,3 +99,30 @@ test('reads arrive in program order, and one drifted register cannot empty the t
   const reads = await memberReads(db, memberId);
   assert.deepEqual(reads.map((r) => r.label), ['your map', 'your bigger world'], 'Rebuild before Reclaim');
 });
+
+test('an UNKNOWN domain key yields no card — never a crash, never "your undefined life"', async () => {
+  // THE BUG JAY HIT. `AUDIT_DOMAIN_LABEL[key]` returns undefined for a key not in the map, and the copy called
+  // .toLowerCase() on it OUTSIDE the guard — so the whole /playbook route threw and he got the error page on his
+  // own account minutes after deploy. The query was guarded; the RENDERING of it was not.
+  const { db, memberId } = await freshDb();
+  await db.query(
+    `insert into bigger_world_reading (member_id, source, sequence_no, taken_on, priorities, responses) values ($1,'c2',1,now(),$2,$3)`,
+    [memberId, JSON.stringify({ primary: 'spiritual', momentumLever: 'physical' }), JSON.stringify(Array(16).fill(3))],
+  );
+  const reads = await memberReads(db, memberId); // must not throw
+  assert.deepEqual(reads, [], 'no card beats a broken page');
+});
+
+test('one unreadable read never takes the OTHER one down with it', async () => {
+  const { db, memberId } = await freshDb();
+  await db.query(
+    `insert into self_management_reading (member_id, source, sequence_no, taken_on, scores, responses) values ($1,'b2',1,now(),$2,$3)`,
+    [memberId, JSON.stringify({ perSkill: [{ no: 1, skill: 'Planning ahead', mean: 4 }] }), JSON.stringify(Array(24).fill(3))],
+  );
+  await db.query(
+    `insert into bigger_world_reading (member_id, source, sequence_no, taken_on, priorities, responses) values ($1,'c2',1,now(),$2,$3)`,
+    [memberId, JSON.stringify({ primary: 'not_a_domain', momentumLever: 'nope' }), JSON.stringify(Array(16).fill(3))],
+  );
+  const reads = await memberReads(db, memberId);
+  assert.deepEqual(reads.map((r) => r.label), ['your map']);
+});

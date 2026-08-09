@@ -35,6 +35,9 @@ export type Read = {
 
 /** The member's reads, in program order. Empty until they've done the Session that produces one — an absent read
  *  is simply not yet, and the tab says so rather than inventing a placeholder. */
+/** Lower-case a label that MIGHT be missing. A read is prose; a hole in it is better than a crash. */
+const lower = (v: string | undefined | null): string => (v ?? '').toLowerCase();
+
 /** Run a derivation over stored data without letting a drifted row take the surface down. */
 function tryOr<T>(fn: () => T, fallback: T): T {
   try {
@@ -47,36 +50,51 @@ function tryOr<T>(fn: () => T, fallback: T): T {
 
 export async function memberReads(db: Db, memberId: string): Promise<Read[]> {
   const out: Read[] = [];
-  // Each read is guarded independently: a drifted register hides ONE card rather than emptying the tab. Same
-  // posture as the Companion's context, and for the same reason — partial truth beats a blank page.
+
+  // EVERY read is BUILT inside the guard, not just its DB call. The first version guarded the query and the
+  // skills derivation but left the bigger-world card's copy outside — and `AUDIT_DOMAIN_LABEL[key]` returns
+  // undefined for any key not in the map, so `.toLowerCase()` threw and took the whole Playbook route down with
+  // it. Jay hit the error page on his own account within minutes of the deploy.
+  //
+  // Guarding the read but not the RENDERING of it is the same half-measure twice in one file. The lesson is the
+  // shape, not the line: a surface built from stored data has to treat the DERIVATION as untrusted too, because
+  // that is where an unexpected value actually lands.
+
   const skills = await latestSkillsReading(db, memberId).catch(() => null);
-  // The DERIVATION is guarded too, not just the read. skillHighlights sorts score.perSkill and throws on a row
-  // whose shape has drifted — which would have emptied the whole tab, exactly the thing the comment above says
-  // cannot happen. Caught by its own test on the first run.
-  const h = skills ? tryOr(() => skillHighlights(skills.scores), null) : null;
-  if (h) {
-    out.push({
-      label: 'your map',
-      from: 'Strengths & Weaknesses',
-      lines: [
-        `Where you're strongest: ${h.strongest.toLowerCase()}.`,
-        `Where there's the most room: ${h.growthEdge.toLowerCase()}.`,
-        'A skill with room is simply the next one to practise.',
-      ],
-    });
+  if (skills) {
+    const read = tryOr<Read | null>(() => {
+      const h = skillHighlights(skills.scores);
+      return {
+        label: 'your map',
+        from: 'Strengths & Weaknesses',
+        lines: [
+          `Where you're strongest: ${lower(h.strongest)}.`,
+          `Where there's the most room: ${lower(h.growthEdge)}.`,
+          'A skill with room is simply the next one to practise.',
+        ],
+      };
+    }, null);
+    if (read) out.push(read);
   }
 
   const bw = await latestBiggerWorldReading(db, memberId).catch(() => null);
   if (bw) {
-    out.push({
-      label: 'your bigger world',
-      from: 'Bigger World Audit',
-      lines: [
-        `The area you chose to focus on: your ${AUDIT_DOMAIN_LABEL[bw.priorities.primary].toLowerCase()} life.`,
-        `Where momentum comes easiest: your ${AUDIT_DOMAIN_LABEL[bw.priorities.momentumLever].toLowerCase()} life.`,
-        'You chose these — they are where you decided the effort goes.',
-      ],
-    });
+    const read = tryOr<Read | null>(() => {
+      // An unknown domain key yields no card rather than "your undefined life" — and never a throw.
+      const primary = AUDIT_DOMAIN_LABEL[bw.priorities.primary];
+      const lever = AUDIT_DOMAIN_LABEL[bw.priorities.momentumLever];
+      if (!primary || !lever) return null;
+      return {
+        label: 'your bigger world',
+        from: 'Bigger World Audit',
+        lines: [
+          `The area you chose to focus on: your ${lower(primary)} life.`,
+          `Where momentum comes easiest: your ${lower(lever)} life.`,
+          'You chose these — they are where you decided the effort goes.',
+        ],
+      };
+    }, null);
+    if (read) out.push(read);
   }
 
   return out;

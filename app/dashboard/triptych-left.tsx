@@ -28,7 +28,7 @@ const IDQ_DIMS = [
   { key: 'outlook', label: 'Outlook' },
 ] as const;
 
-export default async function TriptychLeft({ db, memberId, dash }: { db: Db; memberId: string; dash: Dashboard }) {
+export default async function TriptychLeft({ db, memberId, dash, waitingCount = 0 }: { db: Db; memberId: string; dash: Dashboard; waitingCount?: number }) {
   const [grinta, passport, idqRows, playbook] = await Promise.all([
     latestGrintaReading(db, memberId),
     getPassport(db, memberId),
@@ -67,6 +67,15 @@ export default async function TriptychLeft({ db, memberId, dash }: { db: Db; mem
               <span className="pb-mostrun-label">Most run</span>
               <span className="pb-mostrun-name">{playbook.mostRun}</span>
             </div>
+          )}
+          {/* Lines they SAID in a Session, waiting in the Journal — the daily reason to come back. It sits with
+              the Playbook because that is where it goes, and OFF the Companion thread because three pinned items
+              above the composer crowded out the conversation itself. */}
+          {waitingCount > 0 && (
+            <Link href={`/playbook/${memberId}?tab=journal`} className="pb-waiting pb-waiting-sm" prefetch={false}>
+              <span className="pb-waiting-n">{waitingCount}</span>
+              <span>{waitingCount === 1 ? 'thing you said is waiting' : 'things you said are waiting'}</span>
+            </Link>
           )}
           <Link href={`/playbook/${memberId}`} className="see-more" prefetch={false}>Open your Playbook →</Link>
         </div>

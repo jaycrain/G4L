@@ -142,9 +142,8 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
             hasStory={!!dash.identityParagraph}
             hero={hero}
             standing={standing}
-            waitingCount={waitingCount}
             keeper={keeper}
-            left={<TriptychLeft db={db} memberId={memberId} dash={dash} />}
+            left={<TriptychLeft db={db} memberId={memberId} dash={dash} waitingCount={waitingCount} />}
             right={<TriptychRight db={db} memberId={memberId} dash={dash} momentumCta={hero.momentumCta} />}
           />
         </>

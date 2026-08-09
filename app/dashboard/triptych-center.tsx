@@ -36,7 +36,6 @@ export default function TriptychCenter({
   hero,
   keeper,
   standing,
-  waitingCount = 0,
   seed,
 }: {
   memberId: string;
@@ -47,8 +46,6 @@ export default function TriptychCenter({
    *  renders PINNED above the composer, outside the scrolling thread, so it is both always visible and always
    *  current — see the placement comment at the render site for why it is not at the top. */
   standing?: string | null;
-  /** How many lines the member SAID in a Session are waiting in their Journal for a decision. */
-  waitingCount?: number;
   seed?: string | null;
 }) {
   const router = useRouter();
@@ -318,20 +315,12 @@ export default function TriptychCenter({
           <p className="tri-standing-body">{standing}</p>
         </div>
       )}
-      {/* WAITING IN YOUR JOURNAL — the daily reason to come back (Jay, 2026-08-08: "this is the new daily prompt
-          for members, replacing the existing Momentum functionality"). Lines the member SAID in a Session, held
-          for them to keep, write into, or let go.
-          It joins the keeper and the standing update in the pinned zone because it is the one item here with a
-          DECISION attached — and it sits LOWEST, closest to the composer, because it is the only one that asks
-          them to go somewhere. Ambient first, then status, then the thing to do. */}
-      {waitingCount > 0 && (
-        <a className="tri-waiting" href={`/playbook/${memberId}?tab=journal`}>
-          <span className="tri-waiting-n">{waitingCount}</span>
-          <span>{waitingCount === 1 ? 'thing you said is waiting in your Journal' : 'things you said are waiting in your Journal'}</span>
-          <span aria-hidden="true">→</span>
-        </a>
-      )}
-
+      {/* THE JOURNAL CUE LIVES ON THE FLANK NOW, in the Playbook panel (Jay's prod walk, 2026-08-08:
+          "Companion thread is getting crowded"). He was right, and the pinned zone was where I put the pressure:
+          keeper + standing update + cue + hero left about four messages of actual conversation visible.
+          The keeper and the standing update EARN the pinned spot — they are about this conversation, and both
+          were invisible before being pinned. The cue is a pointer to another page; it belongs beside the Playbook
+          panel that already links there. Same dashboard, same visibility, none of the crowding. */}
       <form className="tri-comp-composer" onSubmit={send}>
         <textarea
           ref={inputRef}

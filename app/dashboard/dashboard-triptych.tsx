@@ -32,7 +32,6 @@ export default function DashboardTriptych({
   hero,
   keeper,
   standing,
-  waitingCount,
   left,
   right,
 }: {
@@ -152,7 +151,7 @@ export default function DashboardTriptych({
             {left}
           </aside>
           <section className="tri-center" aria-label="Your G4L Companion">
-            <TriptychCenter memberId={memberId} hero={hero} keeper={keeper} standing={standing} waitingCount={waitingCount} />
+            <TriptychCenter memberId={memberId} hero={hero} keeper={keeper} standing={standing} />
           </section>
           <aside className="tri-flank tri-right" aria-label="What's next">
             {right}

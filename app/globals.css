@@ -2088,6 +2088,8 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
   font-family: inherit; font-size: 13.5px; font-weight: 600; color: var(--navy); text-align: left; }
 .pb-waiting:hover { background: #f6f8e8; }
 /* The count is the pull — it is the only reason this row gets clicked, so it carries the weight. */
+/* The flank version: smaller, no arrow, sits inside the Playbook panel above its See-more link. */
+.pb-waiting-sm { margin: 12px 0 4px; padding: 8px 11px; font-size: 12.5px; text-decoration: none; }
 .pb-waiting-n { flex: none; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 11px; background: var(--olive-text);
   color: #fff; font-size: 12px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; }
 
