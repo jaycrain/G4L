@@ -114,18 +114,18 @@ export default function DashboardTriptych({
       </div>
 
       <div className={`tri-app pane-${pane}`}>
-        {/* The MEMBER strip — the one panel the triptych originally dropped (Jay): who they are + what they're
-            reclaiming + the Phase they're in, with the My Story nav. Full-width, always visible above the columns. */}
-        {(identitySelves || hasStory) && (
+        {/* The MEMBER strip — who they are + what they're reclaiming. Full-width, above the columns.
+            TRIMMED 2026-08-08 (Jay), and both cuts remove a DUPLICATE rather than a feature:
+              · the PHASE chip — the Companion hero right below it already reads "Program › Reclaim › …", so the
+                chip was the same fact twice, six inches apart;
+              · the MY STORY link — My Story now lives in the Playbook's "Who you are" tab, beside the story-so-far.
+                It is the description of whose Playbook it is; next to a greeting it was just a nav item.
+            The strip keeps the one thing nothing else says: who they're reclaiming. */}
+        {identitySelves && (
           <div className="tri-member">
             <div className="tri-member-id">
               <span className="tri-member-name">Hi {firstName}!</span>
-              {identitySelves && <span className="tri-member-reclaim">Reclaiming {identitySelves}</span>}
-              {/* The Phase they're in — computed and passed all along but never rendered (dead prop + orphan CSS). (CAT-48) */}
-              {phaseLabel && <span className="tri-member-phase">{phaseLabel}</span>}
-              {hasStory && (
-                <Link href={`/story/${memberId}`} className="tri-member-story" prefetch={false}>My Story →</Link>
-              )}
+              <span className="tri-member-reclaim">Reclaiming {identitySelves}</span>
             </div>
           </div>
         )}

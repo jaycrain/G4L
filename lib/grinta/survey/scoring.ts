@@ -130,6 +130,14 @@ export type Direction = 'up' | 'down' | 'flat';
 /**
  * Percent change of a value against a prior reading, signed up-positive: (current − prior) / prior × 100.
  * Returns null on a first reading (no prior). Rounded to 2dp.
+ *
+ * DO NOT "CORRECT" THIS TOWARD GREG'S WING DOCS. Both the Reconnect and Reclaim wing docs print the formula as
+ * `[(Ave1/Ave2)/Ave1]*100`, which algebraically reduces to `100/Ave2` — it has no dependence on the current
+ * reading at all, so it cannot express change. Greg has ACKNOWLEDGED the error (Jay, 2026-08-08); the intent is
+ * and always was `[(Ave2−Ave1)/Ave1]*100`, which is what this computes.
+ *
+ * Flagged here because the failure mode is a future reader diffing this against the source doc and "fixing" the
+ * mismatch in the wrong direction. The doc is wrong; this is right.
  */
 export function grintaChangePct(current: number, prior: number | null): number | null {
   if (prior == null || prior === 0) return null;

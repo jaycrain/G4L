@@ -50,6 +50,8 @@ const TAB_FOR_CHAPTER: Record<ChapterKey, TabKey> = {
   lights: 'who', // what still moves you is part of who you are
 };
 
+const REVIEW_PHASE_LABEL: Record<string, string> = { reconnect: 'Reconnect', rewire: 'Rewire', rebuild: 'Rebuild', reclaim: 'Reclaim' };
+
 type ChapterKey = 'who' | 'lights' | 'tells' | 'plays' | 'why';
 // Plays lead — they're the heart of an operating manual (Jay: the Playbook's real value is "how did I handle this
 // before?"). The rest follow: who you are, what lights you up, your tells, why it works.
@@ -87,15 +89,21 @@ export default function RedesignPlaybookView({
   initial,
   hasHistory,
   synthesis,
+  identityParagraph,
   rerunStats,
   outcomes = [],
   reads = [],
   grid = null,
+  reviewable = [],
 }: {
   memberId: string;
   initial: PlaybookEntry[];
   hasHistory: boolean;
   synthesis?: string | null;
+  /** MY STORY — the identity read, written once. Moved here from the dashboard header (Jay, 2026-08-08): it is
+   *  the description of whose Playbook this is, and it belongs beside the story-so-far rather than next to a
+   *  greeting. Two stored narratives, one thing to a member. */
+  identityParagraph?: string | null;
   rerunStats?: Record<string, { n: number; last: string }>;
   outcomes?: Outcome[];
   /** The member's assessment reads — what their own Sessions said, in plain language. */
@@ -103,6 +111,9 @@ export default function RedesignPlaybookView({
   /** The LIVE practice week, if one is running. It moved here from Momentum in the same step that added this tab —
    *  the same week in two places is worse than either arrangement. */
   grid?: WeekGrid | null;
+  /** Sessions they've finished, revisitable read-only. Moved off the Program page — that page describes the
+   *  CURRENT cycle, so a Cycle-1 list goes stale there the moment Cycle 2 opens. */
+  reviewable?: { key: string; label: string; phase: string }[];
 }) {
   const [entries, setEntries] = useState<PlaybookEntry[]>(initial);
   // Tab state lives in the URL so the back button works and a member can be sent straight to a tab. Read once on
@@ -355,6 +366,19 @@ export default function RedesignPlaybookView({
           sit above everything as "Your story so far", and "My Story" (the identity read) was a separate DASHBOARD
           page. Jay moved that here 2026-08-08. They are two stored narratives but one thing to a member: this is
           me, and this is where I have got to. Two tabs would have made them look like two stories. */}
+      {/* MY STORY leads "Who you are" — it is who they ARE (written once, at the start). The synthesis below is
+          where they've GOT to (re-woven at every Session close). In that order on purpose: the fixed thing first,
+          then the moving one. */}
+      {tab === 'who' && identityParagraph && (
+        <section className="pb-card pb-hero">
+          <div className="pb-sec">My Story</div>
+          <div className="pb-sec-d">Who you are, in the words you landed on.</div>
+          <div className="pb-narr">
+            {identityParagraph.split(/\n\n+/).map((p) => p.trim()).filter(Boolean).map((para, k) => (<p key={k}>{para}</p>))}
+          </div>
+        </section>
+      )}
+
       {tab === 'who' && synthesis && (
         <section className="pb-card pb-hero">
           <div className="pb-sec">Your story so far</div>
@@ -436,6 +460,30 @@ export default function RedesignPlaybookView({
               {c.items.length > 0 ? c.items.map(entryCard) : <p className="pb-empty">{c.empty}</p>}
             </section>
           ))}
+
+      {/* REVISIT A SESSION — at the foot of PLAYS, because it is the same intent one level up: not "run this
+          line again" but "go back through the whole Session that produced it".
+          The two affordances are deliberately worded apart. A play says "Run it again with your Companion →" —
+          a live re-run. This says "read the final state you kept" — nothing changes. Same neighbourhood, different
+          verbs, and if they ever merge it should be into one control with two modes rather than two links that
+          look alike. */}
+      {tab === 'plays' && reviewable.length > 0 && (
+        <section className="pb-card pb-revisit">
+          <div className="pb-sec">Revisit a Session</div>
+          <div className="pb-sec-d">Any Session you’ve finished — the final state you kept, read-only. Nothing changes.</div>
+          <ul className="revisit-list">
+            {reviewable.map((s2) => (
+              <li key={s2.key}>
+                <a href={`/workspace/${memberId}/${s2.key}?review=1`} className="revisit-link">
+                  <span className="revisit-name">{s2.label}</span>
+                  <span className="revisit-phase">{REVIEW_PHASE_LABEL[s2.phase] ?? s2.phase}</span>
+                  <span className="revisit-arrow" aria-hidden="true">→</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {/* JOURNAL — a first-class reflective tool, not a footnote (Jay, twice). Thoughts + feelings in the member's
           own words, timestamped. Two respected jobs: feedstock (the Companion pulls keepers up into the plays) AND

@@ -143,8 +143,8 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
             hero={hero}
             standing={standing}
             keeper={keeper}
-            left={<TriptychLeft db={db} memberId={memberId} dash={dash} waitingCount={waitingCount} />}
-            right={<TriptychRight db={db} memberId={memberId} dash={dash} momentumCta={hero.momentumCta} />}
+            left={<TriptychLeft db={db} memberId={memberId} dash={dash} />}
+            right={<TriptychRight db={db} memberId={memberId} dash={dash} waitingCount={waitingCount} momentumCta={hero.momentumCta} />}
           />
         </>
       );

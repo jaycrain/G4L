@@ -6,11 +6,8 @@ import { getForecast } from '../../../lib/curriculum/view.ts';
 import { logEvent } from '../../../lib/telemetry/store.ts';
 import { redesignEnabled } from '../../../lib/dashboard/redesign.ts';
 import SubpageShell from '../../dashboard/subpage-shell.tsx';
-import { completedReviewSessions } from '../../../lib/workspace/review.ts';
 import { reclaimReadiness } from '../../../lib/reclaim/readiness.ts';
 import type { Db } from '../../../lib/db/schema.ts';
-
-const REVIEW_PHASE_LABEL: Record<string, string> = { reconnect: 'Reconnect', rewire: 'Rewire', rebuild: 'Rebuild', reclaim: 'Reclaim' };
 
 // The Program — the whole four-Phase route. All four Phases are LIVE (v3.2 — the four Rs shipped), so none render as
 // "coming"; the "you're here" marker wires to the member's active Phase from the forecast. Copy is Donna's 7/28
@@ -90,8 +87,6 @@ export default async function ProgramPage({
   const completed = new Set(forecast.phases.filter((p) => p.status === 'Complete').map((p) => p.phase));
   // The Loop gate — when Reclaim is at the boundary but not yet ready, mark it "Opens …" instead of "Coming".
   const reclaimReady = await reclaimReadiness(db, memberId);
-  // The member's completed sessions, revisitable read-only (redesign only — the review surface is the workspace).
-  const reviewable = redesignEnabled() ? completedReviewSessions(forecast) : [];
 
   return (
     <SubpageShell memberId={memberId}>
@@ -172,34 +167,11 @@ export default async function ProgramPage({
           <p className="route-loop">→ and the loop comes back around. Grinta for Life.</p>
         </div>
       </div>
-      {/* REVISIT A SESSION — LAST on the page, deliberately. It is a utility for someone who has already done the
-          work; it has no business above the sentence that explains what the Program IS (Jay, 2026-08-08: "it
-          shouldn't be at the top"). It also only renders for a member with finished Sessions, which is exactly
-          why it sat wrong for so long — on a fresh account it is invisible, so nobody walking a new member ever
-          saw it in the wrong place.
-
-          Cowork's note proposes moving it to the Playbook and attributes that to Jay. Not done, and it is not a
-          lift-and-drop: the Playbook already carries "Run it again with your Companion →" on individual plays,
-          which is a DIFFERENT action (re-run the session) from this one (read the final state you kept,
-          unchanged). Two near-identical links a tab apart would muddle both. Which tab, and how the two read side
-          by side, is an open design call. */}
-      {reviewable.length > 0 && (
-        <div className="card program-revisit">
-          <h3>Revisit a session</h3>
-          <p className="muted">Look back at any session you’ve finished — the final state you kept, read-only. Nothing changes.</p>
-          <ul className="revisit-list">
-            {reviewable.map((s) => (
-              <li key={s.key}>
-                <Link href={`/workspace/${memberId}/${s.key}?review=1`} className="revisit-link">
-                  <span className="revisit-name">{s.label}</span>
-                  <span className="revisit-phase">{REVIEW_PHASE_LABEL[s.phase] ?? s.phase}</span>
-                  <span className="revisit-arrow" aria-hidden="true">→</span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+      {/* REVISIT A SESSION MOVED TO THE PLAYBOOK (2026-08-08). Two reasons, and the second decided it:
+          it is the re-run of something that worked, which is the Playbook's job; and THIS page describes the
+          CURRENT cycle, so a Cycle-1 session list goes stale here the moment Cycle 2 opens. The Playbook is the
+          only surface that survives a cycle boundary. Nothing replaces it here — the Outline below already lists
+          every Session, and a second list of the same Sessions is not wayfinding. */}
     </SubpageShell>
   );
 }

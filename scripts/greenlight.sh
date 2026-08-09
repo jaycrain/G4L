@@ -33,11 +33,10 @@ URL="${1:-https://g4l-ten.vercel.app}"
 # belt-and-braces — but EVERY tell must pass, so the un-minified spelling could never match and the gate
 # reported RED on a healthy prod. A tell is an exact literal against the BUILT stylesheet: check the built
 # form, don't hedge across variants.
-# EMPTY IS CORRECT HERE: this push only REMOVES a strip and adds copy inside an existing card — no new class, so
-# there is no honest static tell. The commit-timestamp check is the proof (see the note above about that).
+# The Playbook consolidation. `pb-revisit` is new in THIS push (Revisit a Session in its new home).
 # NOTE: the last tell (`pb-thisweek`) was a class used ONLY in JSX with no CSS rule — this gate greps the built
 # STYLESHEET, so it reported a false RED. A tell must be a class that actually has a rule.
-CSS_TELLS=()
+CSS_TELLS=(".pb-revisit")
 JS_TELLS=()
 
 # COMMIT CHECK — the authoritative proof for an ENGINE-ONLY push (server logic, no bundle change), where no static

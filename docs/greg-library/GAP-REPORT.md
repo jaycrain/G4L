@@ -241,9 +241,11 @@ These are defects in the source documents. We should not guess at them, and seve
 4. ~~C2 internal scoring logic is empty~~ — **WRONG, struck.** Both formulas are in the source:
    `Gap = Desired − Current`, then `PriorityScore = (Gap × Importance) + Readiness + RippleEffect`. **This is a
    BUILD ITEM, not a defect** — it is the ranking behind C2 Step 3's priority classification, and we have none.
-5. **The Grinta Change formula is mathematically broken** in both the Reconnect and Reclaim wing docs:
-   `[(Ave1/Ave2)/Ave1]*100` reduces to `100/Ave2`. Intent is clearly `[(Ave2−Ave1)/Ave1]*100`.
-   *(Re-verified against the raw XML — this one is real.)*
+5. ~~**The Grinta Change formula is mathematically broken**~~ — **CLOSED 2026-08-08.** Greg acknowledged the
+   error. Both wing docs print `[(Ave1/Ave2)/Ave1]*100`, which reduces to `100/Ave2`; intent is
+   `[(Ave2−Ave1)/Ave1]*100`. **No code change was needed** — `grintaChangePct` in
+   `lib/grinta/survey/scoring.ts` already computed the correct form, i.e. whoever built it read through to
+   intent rather than transcribing. A comment now guards it against being "corrected" toward the doc.
 6. ~~B1 scoring ends with a bare `Relative`~~ — **WRONG, struck.** It is a full equation, stored as an OMML object
    that flat text extraction collapses into digit soup:
    **`Relative Autonomous Motivation = (1+2+3)/3 − (4+5)/2`** for activity, and `(7+8+9)/3 − (10+11)/2` for diet.

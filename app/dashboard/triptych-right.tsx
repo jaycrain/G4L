@@ -1,5 +1,6 @@
 import { softRead } from '../../lib/db/degrade.ts';
 import Link from 'next/link';
+import { playbookSummary } from '../../lib/playbook/summary.ts';
 import type { Db } from '../../lib/db/schema.ts';
 import type { Dashboard } from '../../lib/gateway/flow.ts';
 import { pulseBeats } from '../../lib/momentum/store.ts';
@@ -20,20 +21,58 @@ export default async function TriptychRight({
   db,
   memberId,
   dash,
+  waitingCount = 0,
   momentumCta,
 }: {
   db: Db;
   memberId: string;
   dash: Dashboard;
+  /** Lines said in a Session, waiting in the Journal — rendered inside the Playbook panel. */
+  waitingCount?: number;
   momentumCta?: { label: string; href: string } | null;
 }) {
-  const [pulse, activity] = await Promise.all([
+  const [pulse, activity, playbook] = await Promise.all([
     softRead('triptychRight.pulseBeats', memberId, () => pulseBeats(db, memberId), []),
     getActivityPanel(db, memberId, dash.identityNoun),
+    playbookSummary(db, memberId),
   ]);
 
   return (
     <div className="tri-stack">
+      {/* YOUR PLAYBOOK — LEADS the act column (Jay, 2026-08-08). It sat at the top of the REFLECT column until
+          tonight, on the reasoning that "what you've built" should come before "how you score". That was right
+          while the Playbook was a RECORD.
+          It stopped being one: it now holds This week, the queue waiting on you, and the plays to run. That is
+          not reflection, it is the next action — and the mobile tab for this column is literally "What's next".
+          The panel follows the artifact. Left keeps the three measures; this column leads with the instrument.
+          Hidden until there's something in it, so it never reads as an empty promise to a brand-new member. */}
+      {playbook && playbook.plays > 0 && (
+        <div className="rcard r-reg" data-tour="playbook">
+          <div className="rreg-eyebrow">Your Playbook</div>
+          <div className="rc-sub">What you&rsquo;ve built.</div>
+          <div className="rreg-big rreg-plays">
+            {playbook.plays}<span className="rreg-unit"> {playbook.plays === 1 ? 'play' : 'plays'}</span>
+          </div>
+          {playbook.mostRun && (
+            <div className="pb-mostrun">
+              <span className="pb-mostrun-label">Most run</span>
+              <span className="pb-mostrun-name">{playbook.mostRun}</span>
+            </div>
+          )}
+          {/* Lines they SAID in a Session, waiting in the Journal — the daily reason to come back. It sits with
+              the Playbook because that is where it goes, and OFF the Companion thread because three pinned items
+              above the composer crowded out the conversation itself. */}
+          {waitingCount > 0 && (
+            <Link href={`/playbook/${memberId}?tab=journal`} className="pb-waiting pb-waiting-sm" prefetch={false}>
+              <span className="pb-waiting-n">{waitingCount}</span>
+              <span>{waitingCount === 1 ? 'thing you said is waiting' : 'things you said are waiting'}</span>
+            </Link>
+          )}
+          <Link href={`/playbook/${memberId}`} className="see-more" prefetch={false}>Open your Playbook →</Link>
+        </div>
+      )}
+
+
       {/* Momentum — the calls you make */}
       <div className="rcard r-reg" data-tour="momentum">
         <div className="rreg-eyebrow">Momentum</div>

@@ -3,6 +3,7 @@ import { authorizeMember } from '../../authz.ts';
 import { getDb } from '../../../lib/db/index.ts';
 import { listPlaybook } from '../../../lib/playbook/store.ts';
 import { getPlaybookSynthesis } from '../../../lib/agent/playbook-synthesis.ts';
+import { getDashboard } from '../../../lib/gateway/flow.ts';
 import { logEvent } from '../../../lib/telemetry/store.ts';
 import type { Db } from '../../../lib/db/schema.ts';
 import PlaybookView from './playbook-view.tsx';
@@ -11,6 +12,8 @@ import { redesignEnabled } from '../../../lib/dashboard/redesign.ts';
 import { outcomes } from '../../../lib/dashboard/outcomes.ts';
 import { memberReads } from '../../../lib/playbook/reads.ts';
 import { weekGrid } from '../../../lib/practice/grid.ts';
+import { getForecast } from '../../../lib/curriculum/view.ts';
+import { completedReviewSessions } from '../../../lib/workspace/review.ts';
 import SubpageShell from '../../dashboard/subpage-shell.tsx';
 
 export const metadata = { title: 'Your G4L Playbook — Grinta for Life' };
@@ -30,6 +33,10 @@ export default async function PlaybookPage({ params }: { params: Promise<{ membe
   );
   const hasHistory = (hist.rows[0]?.n ?? 0) > 0;
   const synthesis = await getPlaybookSynthesis(db, memberId);
+  // MY STORY moves here from the dashboard header (Jay, 2026-08-08): it is the description of WHOSE Playbook this
+  // is. Rendered in "Who you are" alongside the synthesis — two stored narratives, one thing to a member: this is
+  // me, and this is where I've got to. Read before the header link is removed, so it is never orphaned.
+  const identityParagraph = (await getDashboard(db, memberId).catch(() => null))?.identityParagraph ?? null;
   // Per-Session re-run counts (Phase 2B) — how often the member has hit "Run it again" on a play → the "come back N
   // times" signal. Keyed by the Session id the play re-runs. Drift-hardened: any hiccup just hides the counts.
   const rerunRows = (
@@ -42,7 +49,7 @@ export default async function PlaybookPage({ params }: { params: Promise<{ membe
   ).rows;
   const rerunStats: Record<string, { n: number; last: string }> = {};
   for (const r of rerunRows) rerunStats[r.ref] = { n: r.n, last: r.last };
-  const props = { memberId, initial: entries, hasHistory, synthesis };
+  const props = { memberId, initial: entries, hasHistory, synthesis, identityParagraph };
   // The three outcomes (mindfulness · fitness · wellness) head the redesign Playbook. Redesign-only: the pre-v3
   // view has no place for them and prod runs the redesign.
   const cards = redesignEnabled() ? await outcomes(db, memberId) : [];
@@ -55,9 +62,16 @@ export default async function PlaybookPage({ params }: { params: Promise<{ membe
   // The LIVE practice week — this tab is its new home (it left Momentum in the same commit). Guarded: no week, or
   // a read hiccup, shows the empty state rather than taking the Playbook down.
   const grid = redesignEnabled() ? await weekGrid(db, memberId).catch(() => null) : null;
+  // REVISIT A SESSION moves here from the Program page (Jay, 2026-08-08). Two reasons, and the second is the
+  // decisive one: it is the re-run of something that worked, which is the Playbook's whole job; and the Program
+  // page describes the CURRENT cycle, so a Cycle-1 session list goes stale there the moment Cycle 2 opens. The
+  // Playbook is the only surface that survives a cycle boundary.
+  const reviewable = redesignEnabled()
+    ? completedReviewSessions(await getForecast(db, memberId).catch(() => ({ phases: [], current: null }) as any))
+    : [];
   return redesignEnabled() ? (
     <SubpageShell memberId={memberId}>
-      <RedesignPlaybookView {...props} rerunStats={rerunStats} outcomes={cards} reads={reads} grid={grid} />
+      <RedesignPlaybookView {...props} rerunStats={rerunStats} outcomes={cards} reads={reads} grid={grid} reviewable={reviewable} />
     </SubpageShell>
   ) : <PlaybookView {...props} />;
 }
