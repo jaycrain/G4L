@@ -2056,6 +2056,17 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
 .tri-waiting-n { flex: none; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 11px; background: var(--olive-text);
   color: #fff; font-size: 12px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; }
 
+/* YOUR READS — the assessment outputs on the Reads tab. Plain statements, never a score; styled as prose the
+   member can read rather than a panel of metrics, because that is exactly what it must not become. */
+.pb-read { border-top: 1px solid #efeeec; padding-top: 13px; margin-top: 13px; }
+.pb-read:first-of-type { border-top: 0; padding-top: 0; margin-top: 4px; }
+.pb-read-h { font-size: 13.5px; font-weight: 800; color: var(--navy); margin-bottom: 6px; }
+.pb-read-from { font-weight: 600; color: var(--muted-grey); }
+.pb-read-line { font-size: 14.5px; line-height: 1.55; color: #5f6a73; margin: 0 0 4px; }
+/* The last line of each read is the posture line ("a skill with room is one to practise") — it carries the
+   governance, so it reads as an aside rather than another finding. */
+.pb-read-line:last-child { font-style: italic; font-size: 13px; color: var(--muted-grey); margin-top: 6px; }
+
 .pb-waiting { display: flex; align-items: center; gap: 9px; width: 100%; margin: 1.1rem 0; padding: 11px 16px;
   border: 1px solid #d4d8b0; background: #fbfcf3; border-radius: 12px; cursor: pointer;
   font-family: inherit; font-size: 13.5px; font-weight: 600; color: var(--navy); text-align: left; }

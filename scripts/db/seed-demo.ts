@@ -44,6 +44,11 @@ type Demo = {
   /** Session ids to mark closed, in the order they'd have happened. */
   closedSessions?: string[];
   weeks?: PracticeSeed[];
+  /** Assessment REGISTERS — what a Session actually produces. Marking a session closed does NOT write these, so
+   *  a member could have "Strengths & Weaknesses" in their Revisit list and no skills read anywhere: the Reads tab
+   *  rendered empty for the one member who should have had it. Third time tonight that a surface was unreachable
+   *  because the fixture stopped at the session row. */
+  readings?: { skills?: { perSkill: Array<{ no: number; skill: string; mean: number }> } };
   /** Playbook lines. `keep: true` = already kept (fills the tabs); otherwise it lands in the intake tray as a
    *  pending decision. A member with a QUEUE is its own state — the tray's whole design turns on how many are
    *  waiting, and with none seeded it could only ever be looked at empty. */
@@ -89,6 +94,19 @@ const DEMOS: Demo[] = [
     // the Fitness card shows two ticks and a live week. Reclaim is untouched, so Wellness stays fully unbuilt.
     // One card in each state, which is the whole point.
     closedSessions: ['RCN-EXC', 'RCN-IDQ', 'RCN-CHK', 'RWR-W1', 'RWR-W2', 'RWR-W3', 'RWR-CHK', 'RBLD-B1', 'RBLD-B2'],
+    // She finished Strengths & Weaknesses, so she HAS a skills read — the Reads tab's real content. Her bigger
+    // world stays absent because she hasn't reached C2, which is the honest half of the tab's empty state.
+    readings: {
+      skills: {
+        perSkill: [
+          { no: 1, skill: 'Monitoring how it is going', mean: 4.6 },
+          { no: 2, skill: 'Setting goals', mean: 4.1 },
+          { no: 3, skill: 'Planning ahead', mean: 3.4 },
+          { no: 4, skill: 'Getting back on after a slip', mean: 3.1 },
+          { no: 5, skill: 'Handling what gets in the way', mean: 2.5 },
+        ],
+      },
+    },
     weeks: [
       {
         // Her Rewire monitoring week, done and closed — this is what makes Mindfulness read BUILT.
@@ -142,6 +160,13 @@ async function seedHistory(db: Awaited<ReturnType<typeof getDb>>, memberId: stri
        values ($1, $2, 'closed', now())
        on conflict (member_id, session_id) do update set status = 'closed', closed_at = now()`,
       [memberId, id],
+    );
+  }
+  if (d.readings?.skills) {
+    await db.query(
+      `insert into self_management_reading (member_id, source, sequence_no, taken_on, scores, responses)
+       values ($1,'b2',1,now(),$2,$3) on conflict do nothing`,
+      [memberId, JSON.stringify(d.readings.skills), JSON.stringify(Array(24).fill(3))],
     );
   }
   for (const pb of d.playbook ?? []) {

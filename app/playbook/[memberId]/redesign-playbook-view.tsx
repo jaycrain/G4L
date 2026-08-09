@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import type { PlaybookEntry } from '../../../lib/playbook/store.ts';
 import type { Outcome } from '../../../lib/dashboard/outcomes.ts';
+import type { Read } from '../../../lib/playbook/reads.ts';
 import OutcomeCards from './outcome-cards.tsx';
 import { runnablePlay, playSituation } from '../../../lib/playbook/runnable.ts';
 import {
@@ -85,6 +86,7 @@ export default function RedesignPlaybookView({
   synthesis,
   rerunStats,
   outcomes = [],
+  reads = [],
 }: {
   memberId: string;
   initial: PlaybookEntry[];
@@ -92,6 +94,8 @@ export default function RedesignPlaybookView({
   synthesis?: string | null;
   rerunStats?: Record<string, { n: number; last: string }>;
   outcomes?: Outcome[];
+  /** The member's assessment reads — what their own Sessions said, in plain language. */
+  reads?: Read[];
 }) {
   const [entries, setEntries] = useState<PlaybookEntry[]>(initial);
   // Tab state lives in the URL so the back button works and a member can be sent straight to a tab. Read once on
@@ -356,6 +360,27 @@ export default function RedesignPlaybookView({
           <div className="pb-narr">
             {synthesis.split(/\n\n+/).map((p) => p.trim()).filter(Boolean).map((para, k) => (<p key={k}>{para}</p>))}
           </div>
+        </section>
+      )}
+
+      {/* YOUR READS — the assessment outputs, which until now only the Companion could see. This is what makes
+          Reads a tab rather than a leftover: it holds what the member's own Sessions said about them, in the same
+          plain language the Companion uses, with no number anywhere. Renders ABOVE the kept tells because a tell
+          is something they noticed; a read is something they answered. */}
+      {tab === 'reads' && reads.length > 0 && (
+        <section className="pb-card pb-reads">
+          <div className="pb-sec">Your reads</div>
+          <div className="pb-sec-d">What your own answers said, laid out. Never a score — you told us this.</div>
+          {reads.map((r) => (
+            <div key={r.label} className="pb-read">
+              <div className="pb-read-h">
+                A read — {r.label} <span className="pb-read-from">· {r.from}</span>
+              </div>
+              {r.lines.map((l, i) => (
+                <p key={i} className="pb-read-line">{l}</p>
+              ))}
+            </div>
+          ))}
         </section>
       )}
 

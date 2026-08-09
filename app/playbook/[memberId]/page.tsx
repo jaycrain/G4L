@@ -9,6 +9,7 @@ import PlaybookView from './playbook-view.tsx';
 import RedesignPlaybookView from './redesign-playbook-view.tsx';
 import { redesignEnabled } from '../../../lib/dashboard/redesign.ts';
 import { outcomes } from '../../../lib/dashboard/outcomes.ts';
+import { memberReads } from '../../../lib/playbook/reads.ts';
 import SubpageShell from '../../dashboard/subpage-shell.tsx';
 
 export const metadata = { title: 'Your G4L Playbook — Grinta for Life' };
@@ -44,9 +45,12 @@ export default async function PlaybookPage({ params }: { params: Promise<{ membe
   // The three outcomes (mindfulness · fitness · wellness) head the redesign Playbook. Redesign-only: the pre-v3
   // view has no place for them and prod runs the redesign.
   const cards = redesignEnabled() ? await outcomes(db, memberId) : [];
+  // The Reads tab's real content — the member's assessment outputs, which the Companion has always seen and the
+  // member never could. Guarded inside memberReads: a drifted register hides one card, not the tab.
+  const reads = redesignEnabled() ? await memberReads(db, memberId) : [];
   return redesignEnabled() ? (
     <SubpageShell memberId={memberId}>
-      <RedesignPlaybookView {...props} rerunStats={rerunStats} outcomes={cards} />
+      <RedesignPlaybookView {...props} rerunStats={rerunStats} outcomes={cards} reads={reads} />
     </SubpageShell>
   ) : <PlaybookView {...props} />;
 }
