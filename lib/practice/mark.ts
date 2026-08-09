@@ -25,6 +25,28 @@ export function isTappable(kind: PracticeKind): boolean {
   return kind === 'b3_pilot' || kind === 'b2_noticing';
 }
 
+/**
+ * For a MIRROR week, where does the member actually write the record?
+ *
+ * `isTappable` above answers "can this cell be written here" and the answer for W3/C3 is no. That was only ever half
+ * an answer, and the missing half cost us: the C3 daily log lives at /quality-day/<id>, it has been built and live
+ * since v2.5 — and NOTHING IN THE APP LINKED TO IT. The only occurrence of that path outside its own directory was
+ * the route redirecting to itself. So C3 told a member "we'll track it for a week", opened the week, and then gave
+ * them nowhere to go. Jay found it the obvious way, by tapping the grid on his own account and having nothing happen
+ * (2026-08-09). A read-only cell that leads nowhere reads as a broken checkbox, not as a mirror.
+ *
+ * So the rule in this file is now stated in full: a cell the member cannot write HERE must say where they CAN.
+ *
+ *   · C3 — a dedicated form (score 1–10, which elements were present, most valuable / most missing). Needs a link.
+ *   · W3 — the Companion writes w3_daily_entry from the check-in thread, so the member's route is a conversation,
+ *     not a page. Returning null is CORRECT here, not an omission; the foot copy points at the Companion instead.
+ *   · B3 / B2 — tappable, so the grid is the surface. No elsewhere to point to.
+ */
+export function logSurfaceFor(kind: PracticeKind, memberId: string): { href: string; label: string } | null {
+  if (kind === 'c3_quality') return { href: `/quality-day/${memberId}`, label: 'Log today' };
+  return null;
+}
+
 /** Resolve a day index within the window to a calendar date, using the WEEK's clock — never the browser's. */
 export function dateForDay(startedAt: string | Date, dayIndex: number): string {
   const iso = startedAt instanceof Date ? startedAt.toISOString() : String(startedAt);

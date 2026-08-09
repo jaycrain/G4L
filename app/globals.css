@@ -1204,7 +1204,15 @@ html:has(.companion-hero), body:has(.companion-hero) { overflow-anchor: none; }
    rather than filled, so "where am I" reads without a legend. Deliberate divergence from his spreadsheet's red. */
 .wk-grid { margin: 0 0 1rem; padding: 0.85rem 0.9rem 0.6rem; background: var(--white); border: 1px solid #e3e2df; border-radius: 12px; }
 .wk-grid.wk-saving { opacity: .85; }
-.wk-head { display: flex; justify-content: flex-end; margin-bottom: 6px; }
+/* The row now carries "Log today →" on the left as well as the day count on the right — but ONLY for C3, so the
+   layout has to work with one child or two. `margin-left:auto` on the day count does that with no :has() and no
+   modifier class: alone it pushes itself right (the old look, unchanged for B3/B2/W3); with a link beside it, the
+   link sits left and the count still lands right. */
+.wk-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 6px; }
+.wk-day { margin-left: auto; }
+/* The named way in to the daily log. The grid is tappable for this too, but a tap is only discoverable by trying it. */
+.wk-log { font-size: 12px; font-weight: 700; color: var(--teal-text); text-decoration: none; }
+.wk-log:hover { text-decoration: underline; }
 .wk-day { font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--muted-grey); }
 .wk-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
 .wk-table th { font-size: 10.5px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--muted-grey); padding: 0 0 5px; text-align: center; }
@@ -1246,6 +1254,11 @@ html:has(.companion-hero), body:has(.companion-hero) { overflow-anchor: none; }
 .wk-cell.today { border: 2px solid var(--teal); }
 .wk-cell.ahead { background: #fafaf9; border-color: #f1efee; cursor: default; }
 .wk-cell.wk-readonly { cursor: default; }          /* W3/C3 mirror a log with the member's own notes — never editable from here */
+/* ...unless the mirror has somewhere to send them. A C3 cell is an <a> to /quality-day: not editable in place, but no
+   longer a dead box either. It has to sit like the <button> it replaces — an anchor is inline and would otherwise
+   collapse the cell and drop the ✓ off centre. */
+.wk-cell-link { display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; cursor: pointer; text-decoration: none; }
+.wk-cell-link:hover { border-color: var(--teal); }
 .wk-cell:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
 .wk-foot { margin: 9px 0 0; font-size: 11.5px; color: var(--muted-grey); }
 @media (max-width: 480px) {

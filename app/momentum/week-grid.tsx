@@ -2,7 +2,8 @@
 
 import { useState, useTransition } from 'react';
 import type { WeekGrid as Grid } from '../../lib/practice/grid.ts';
-import { isTappable } from '../../lib/practice/mark.ts';
+import Link from 'next/link';
+import { isTappable, logSurfaceFor } from '../../lib/practice/mark.ts';
 import { toggleMarkAction } from './actions.ts';
 
 // THE WEEK GRID — Greg's tracker (2026-08-07): the member's committed goals as rows, seven day columns, ticked when
@@ -43,6 +44,10 @@ export default function WeekGridPanel({ memberId, grid }: { memberId: string; gr
   // W3 and C3 grids MIRROR a log the member wrote notes into; un-ticking would have to delete that. Read-only there
   // — and the UI must not offer a tap it can't honour, so it asks rather than assumes (see lib/practice/mark.ts).
   const tappable = isTappable(grid.kind);
+  // ...and where it CAN'T honour a tap, it now says where the member should go. C3's daily log existed for weeks
+  // with no link to it anywhere in the app, so this grid was the whole feature as far as a member could tell.
+  // A mirror cell now navigates to the surface that owns the record instead of silently refusing (Jay, 2026-08-09).
+  const logTo = tappable ? null : logSurfaceFor(grid.kind, memberId);
 
   if (!grid.rows.length) return null; // W2 has nothing countable — no grid rather than an empty one
 
@@ -61,6 +66,8 @@ export default function WeekGridPanel({ memberId, grid }: { memberId: string; gr
     <div className={`wk-grid${pending ? ' wk-saving' : ''}`}>
       <div className="wk-head">
         <span className="wk-day">Day {grid.day} of 7</span>
+        {/* Tapping the grid is discoverable only if you try it — Jay did, most won't. The named action carries it. */}
+        {logTo && !grid.closed && <Link href={logTo.href} className="wk-log">{logTo.label} →</Link>}
       </div>
       <table className="wk-table">
         <thead>
@@ -79,20 +86,35 @@ export default function WeekGridPanel({ memberId, grid }: { memberId: string; gr
             return (
               <tr key={r.slot}>
                 <td className="wk-lab" title={r.label}>{r.label}</td>
-                {marks.map((on, i) => (
-                  <td key={i}>
-                    <button
-                      type="button"
-                      className={`wk-cell${on ? ' on' : ''}${i === today ? ' today' : ''}${i > today ? ' ahead' : ''}${tappable ? '' : ' wk-readonly'}`}
-                      onClick={() => toggle(r.slot, i)}
-                      disabled={!tappable || i > today}
-                      aria-pressed={tappable ? on : undefined}
-                      aria-label={`${r.label} — day ${i + 1}${on ? ', done' : ''}`}
-                    >
-                      {on ? '✓' : ''}
-                    </button>
-                  </td>
-                ))}
+                {marks.map((on, i) => {
+                  const cls = `wk-cell${on ? ' on' : ''}${i === today ? ' today' : ''}${i > today ? ' ahead' : ''}${tappable ? '' : ' wk-readonly'}`;
+                  // A day that hasn't happened is never a target — not to tick, not to navigate to.
+                  const ahead = i > today;
+                  return (
+                    <td key={i}>
+                      {logTo && !ahead && !grid.closed ? (
+                        <Link
+                          href={logTo.href}
+                          className={`${cls} wk-cell-link`}
+                          aria-label={`${r.label} — day ${i + 1}${on ? ', logged' : ''}. Open your log.`}
+                        >
+                          {on ? '✓' : ''}
+                        </Link>
+                      ) : (
+                        <button
+                          type="button"
+                          className={cls}
+                          onClick={() => toggle(r.slot, i)}
+                          disabled={!tappable || ahead}
+                          aria-pressed={tappable ? on : undefined}
+                          aria-label={`${r.label} — day ${i + 1}${on ? ', done' : ''}`}
+                        >
+                          {on ? '✓' : ''}
+                        </button>
+                      )}
+                    </td>
+                  );
+                })}
                 <td className="wk-aim">
                   {r.target ? <>{done}<span> / {r.target}</span></> : done ? <>{done}</> : ''}
                 </td>
@@ -104,7 +126,9 @@ export default function WeekGridPanel({ memberId, grid }: { memberId: string; gr
       <p className="wk-foot">
         {tappable
           ? 'Tap a day when you do one — or just tell me and I\u2019ll mark it.'
-          : 'This mirrors what you\u2019ve logged, so you can see the week at a glance.'}
+          : logTo
+            ? 'Tap any day to open your log — the grid mirrors what you write there.'
+            : 'This mirrors what you\u2019ve told your companion, so you can see the week at a glance.'}
       </p>
     </div>
   );
