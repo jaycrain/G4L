@@ -17,12 +17,35 @@ export type CoachingPlan<P = Record<string, unknown>> = {
   weekStart: string;
 };
 
-// Persist a new active coaching plan (most-recent-active-wins — a re-run supersedes rather than mutating). Generic;
-// the caller supplies the phase + the payload shape. Best-effort at the caller (a write hiccup never breaks the close).
+// Persist a new active coaching plan — a re-run SUPERSEDES rather than mutating. Generic; the caller supplies the
+// phase + the payload shape. Best-effort at the caller (a write hiccup never breaks the close).
+//
+// "Most-recent-active-wins" used to be enforced ONLY by the reader's `order by created_at desc limit 1`, while every
+// superseded row stayed marked 'active' forever. That makes the invariant a property of how we ASK rather than of the
+// data: with two rows sharing a created_at, the tie is broken by whatever the heap returns, and the STALE plan can
+// win. It did — `tests/c3-recovery.test.ts` caught the Quality-Day version of this intermittently (2026-08-09), which
+// is the same bug wearing a different payload. Now exactly one row is ever 'active' and the reader's ORDER BY is a
+// safety net instead of the mechanism.
+//
+// INSERT FIRST, THEN RETIRE THE OTHERS — the order is load-bearing, because both statements are best-effort and can
+// fail independently (there is no transaction here):
+//   · retire-then-insert, insert fails  → the member has NO active plan. Strictly worse than the bug being fixed.
+//   · insert-then-retire, insert fails  → nothing changed, their existing plan still stands.
+//   · insert-then-retire, retire fails  → two actives, newest-wins by ORDER BY. Exactly today's behaviour.
+// So every failure path degrades to "no worse than before" rather than to data loss.
 export async function persistCoachingPlan<P>(db: Db, memberId: string, phase: CoachingPhase, payload: P): Promise<void> {
-  await db.query(
-    `insert into coaching_plan (member_id, phase, payload, status) values ($1, $2, $3::jsonb, 'active')`,
+  const { rows } = await db.query<{ id: string }>(
+    `insert into coaching_plan (member_id, phase, payload, status) values ($1, $2, $3::jsonb, 'active') returning id`,
     [memberId, phase, JSON.stringify(payload)],
+  );
+  const id = rows[0]?.id;
+  if (!id) return; // no id back = nothing to retire against; leave the prior plan alone rather than guess
+  // Scoped to the SAME predicate the reader uses (member + phase + active), so it can never retire a row the reader
+  // wouldn't have considered. `id <> $3` protects the row we just wrote if its created_at ties with an older one.
+  await db.query(
+    `update coaching_plan set status='superseded', updated_at=now()
+      where member_id=$1 and phase=$2 and status='active' and id <> $3`,
+    [memberId, phase, id],
   );
 }
 

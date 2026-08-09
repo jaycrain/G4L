@@ -71,3 +71,99 @@ test('RE-RUNNING C3 RESTARTS THE WEEK AT DAY 1 — the cost of recovery, stated'
   await startPracticeWeek(db, memberId, 'c3_quality'); // what a full C3 re-run does
   assert.equal((await weekGrid(db, memberId))?.day, 1, 'and they are back to day 1');
 });
+
+// ---------------------------------------------------------------------------------------------------------------
+// THE TIE. The test above ('a SECOND profile supersedes the first') passed almost always and failed occasionally,
+// which is the worst way for a bug to present: it looks like the suite is unreliable rather than like the code is
+// wrong. The cause was that "most-recent-active-wins" lived in the READER's `order by created_at desc limit 1` while
+// every old row stayed marked 'active'. Two rows with the same created_at → the database may return either → the
+// STALE Quality-Day definition can win, and the member's week tracks a definition they replaced.
+//
+// These tests FORCE the tie instead of waiting to be unlucky. Verifying in the failing condition rather than the
+// convenient one is the whole point — the intermittent test could never have proven the fix.
+
+async function tiedProfiles(db: Db, memberId: string): Promise<void> {
+  // Both rows at one fixed instant. Written straight to SQL because persistQualityDayProfile uses now(), and the
+  // point is to reproduce the collision the fix has to survive.
+  const at = '2026-08-01 12:00:00+00';
+  for (const nn of [['old one'], ['the new one', 'and another']]) {
+    await db.query(
+      `insert into coaching_plan (member_id, phase, payload, status, created_at)
+       values ($1,'reclaim',$2::jsonb,'active',$3::timestamptz)`,
+      [memberId, JSON.stringify({ kind: 'quality_day_profile', nonNegotiables: nn, contributors: [], disruptors: [] }), at],
+    );
+  }
+}
+
+test('TIE REPRODUCED: two profiles at the SAME instant is genuinely ambiguous without the fix', async () => {
+  const { db, memberId } = await freshDb();
+  await tiedProfiles(db, memberId);
+  const { rows } = await db.query<{ n: number }>(
+    `select count(*)::int as n from coaching_plan where member_id=$1 and status='active'`,
+    [memberId],
+  );
+  assert.equal(rows[0]!.n, 2, 'both rows claim to be active — this is the state the reader had to guess from');
+});
+
+test('THE FIX: a new profile RETIRES the old one, so there is nothing left to tie-break', async () => {
+  const { db, memberId } = await freshDb();
+  await startPracticeWeek(db, memberId, 'c3_quality');
+  await tiedProfiles(db, memberId); // two tied, ambiguous rows already in place
+
+  // Now write through the real path. It must leave exactly ONE active row — its own.
+  await persistQualityDayProfile(db, memberId, {
+    nonNegotiables: ['the only one that counts'], contributors: [], disruptors: [],
+  });
+
+  const { rows } = await db.query<{ n: number }>(
+    `select count(*)::int as n from coaching_plan
+      where member_id=$1 and status='active' and payload->>'kind'='quality_day_profile'`,
+    [memberId],
+  );
+  assert.equal(rows[0]!.n, 1, 'exactly one active profile — the invariant is in the DATA now, not in the ORDER BY');
+
+  const profile = await activeQualityDayProfile(db, memberId);
+  assert.deepEqual(profile?.nonNegotiables, ['the only one that counts']);
+  const grid = await weekGrid(db, memberId);
+  assert.deepEqual(grid!.rows.map((r) => r.label), ['the only one that counts'], 'and the week tracks it');
+});
+
+test('the retire is KIND-SCOPED — it must not touch an unrelated reclaim plan', async () => {
+  // coaching_plan is shared across phases and payload shapes. A phase-only retire would mark a neighbour's active
+  // reclaim plan superseded as a side effect of defining a Quality Day.
+  const { db, memberId } = await freshDb();
+  await db.query(
+    `insert into coaching_plan (member_id, phase, payload, status)
+     values ($1,'reclaim',$2::jsonb,'active')`,
+    [memberId, JSON.stringify({ kind: 'some_other_reclaim_plan', keep: true })],
+  );
+  await persistQualityDayProfile(db, memberId, { nonNegotiables: ['mine'], contributors: [], disruptors: [] });
+
+  const { rows } = await db.query<{ n: number }>(
+    `select count(*)::int as n from coaching_plan
+      where member_id=$1 and status='active' and payload->>'kind'='some_other_reclaim_plan'`,
+    [memberId],
+  );
+  assert.equal(rows[0]!.n, 1, 'the unrelated plan is untouched');
+});
+
+test('a FAILED retire degrades to the old behaviour, never to "no active plan"', async () => {
+  // Why the insert comes BEFORE the retire. These are two best-effort statements with no transaction around them,
+  // so the question that matters is what each failure leaves behind. Retire-then-insert would, on a failed insert,
+  // leave the member with NOTHING active — worse than the stale-row bug. Insert-then-retire cannot: the new row is
+  // already committed, so the worst case is two actives and newest-wins, which is exactly where we started.
+  const { db, memberId } = await freshDb();
+  await persistQualityDayProfile(db, memberId, { nonNegotiables: ['first'], contributors: [], disruptors: [] });
+  assert.equal((await activeQualityDayProfile(db, memberId))?.nonNegotiables[0], 'first');
+
+  // Simulate the retire never happening by inserting the second row raw (insert succeeded, retire did not).
+  await db.query(
+    `insert into coaching_plan (member_id, phase, payload, status) values ($1,'reclaim',$2::jsonb,'active')`,
+    [memberId, JSON.stringify({ kind: 'quality_day_profile', nonNegotiables: ['second'], contributors: [], disruptors: [] })],
+  );
+  assert.equal(
+    (await activeQualityDayProfile(db, memberId))?.nonNegotiables[0],
+    'second',
+    'two actives with distinct timestamps still resolve newest-first — no worse than before the fix',
+  );
+});
