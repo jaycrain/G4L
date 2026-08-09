@@ -60,6 +60,32 @@ reconciles against:
   legal error in the app (a mis-sourced statistic, a governance breach) — flag those and they get fixed at the
   source. Jay remains arbiter.
 
+### The working model this comes from (Jay's rationale, 2026-08-08 — in his words)
+
+> *"My first instinct when making small tweaks, fixes, or even new features is to run it by you. I may from
+> time-to-time ask her to help spec or write a feature but then give it to you for the two of us to fit into the
+> app. If we make any final tweaks she needs to know, so any marketing material, social posts, or book material
+> for the 2nd edition of the book match the app."*
+
+Three roles fall out of that, and they are not symmetric:
+
+1. **Jay → CC is the default path** for tweaks, fixes, and new features. That is where the product gets decided.
+2. **Cowork is commissioned upstream, occasionally** — asked to spec or write a feature. What she hands back is
+   **input to the build, not the shipped state.** Jay and CC fit it into the app, and it changes in the fitting.
+3. **CC → Cowork is the reporting path, and it is MANDATORY.** Every final tweak goes back to her, because the
+   marketing site, social posts, and the 2nd-edition book all quote the app. A book prints permanent words.
+
+**So the real obligation created by "the app is the source of truth" lands on CC, not on Cowork.** If the app
+leads, then an unreported change is a silent desync — canon keeps describing a product that no longer exists,
+and the error surfaces in print where it cannot be fixed. Cowork cannot check our work; she can only document
+what we tell her.
+
+**The failure mode to guard, stated plainly:** it is not Cowork over-producing. It is CC deciding a change is too
+small to report. Small copy tweaks are exactly the ones that feel unworthy of a note and exactly the ones that
+break a verbatim quote. **If a member-facing string changed, it goes in the next note — no size threshold.**
+Reporting it inaccurately is worse than not reporting it; on 2026-08-08 CC told Cowork a two-part document was
+placed when only one part was, which is how canon acquires a line the product does not have.
+
 **Why it moved:** v1.0 was written before the product had a settled voice, when the glossary was ahead of the
 app. That stopped being true. In practice the app now leads every week and the canon-leads clause only
 generated work in the wrong direction.

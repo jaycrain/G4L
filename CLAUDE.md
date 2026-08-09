@@ -272,6 +272,19 @@ we didn't ask about are out of scope. Where app and canon disagree, **the app wi
 the sole exception being a factual or legal error in the app (a mis-sourced stat, a governance breach), which
 gets fixed at the source. **v3.2.1 was the baseline bundle**; the bundle still drops at every version bump.
 
+**The working model (Jay's rationale, 8/8):** his first instinct on a tweak, fix, or new feature is to **run it
+by CC** — that's the default path. He may occasionally **commission Cowork to spec or write a feature**, but what
+she hands back is **input to the build, not the shipped state**; he and CC fit it into the app and it changes in
+the fitting. Then **CC reports every final tweak back to her**, so marketing, social, and the 2nd-edition book
+match the app.
+
+**So the obligation created by "the app is the source of truth" lands on ME, not on Cowork.** If the app leads,
+an unreported change is a silent desync — canon keeps describing a product that no longer exists, and it
+surfaces in print where it can't be fixed. She can't check my work; she can only document what I tell her.
+**The failure mode to guard is not her over-producing — it's me deciding a change is too small to report.**
+If a member-facing string changed, it goes in the next note; **no size threshold**. And reporting inaccurately
+is worse than not reporting: on 8/8 I told her a two-part doc was "placed" when only one part was.
+
 Practical consequence for how I write to Cowork: a sync note is a **record of decisions, not a consultation**.
 Don't invite her version of a line we've already shipped, and don't leave a shipped decision sounding
 provisional — that is what invites the next round of proposals.

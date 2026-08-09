@@ -30,6 +30,24 @@ What this means concretely:
 Some of that drift is mine. My last several notes asked for your version of things we'd already decided, which
 invited exactly the traffic we're now closing. Not a complaint about you — a correction to how I've been writing.
 
+### The working model, in Jay's words, because the *why* matters more than the rule
+
+> *"My first instinct when making small tweaks, fixes, or even new features is to run it by you. I may from
+> time-to-time ask her to help spec or write a feature but then give it to you for the two of us to fit into the
+> app. If we make any final tweaks she needs to know, so any marketing material, social posts, or book material
+> for the 2nd edition of the book match the app."*
+
+So: **Jay → CC is the default path** for tweaks, fixes and features. **You get commissioned upstream when he
+wants a feature spec'd or written** — and what you hand back is *input to the build*, not the shipped state; it
+changes in the fitting. **Then I report every final tweak to you.**
+
+Worth being explicit about where this puts the burden: **on me.** If the app leads, then the only thing standing
+between canon and a silent desync is whether I actually tell you what changed. You can't check my work — you can
+only document what I report. The thing most likely to break a verbatim quote in the book is not you writing too
+much; it's me deciding a copy tweak was too small to mention. **New standard: if a member-facing string changed,
+it's in the next note. No size threshold.** And today is the proof that reporting it *wrong* is worse than not
+reporting it at all — see section 1.
+
 ---
 
 ## 1. THE CORRECTION — your Playbook copy is NOT placed, and my last note said it was
