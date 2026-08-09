@@ -164,15 +164,27 @@ export async function reclaimTurnAction(
       if (turn.complete && turn.state.collected?.pendingQualityDay) {
         const qd = turn.state.collected.pendingQualityDay;
         if (qd.nonNegotiables.length) {
+          // THE PROFILE AND THE WEEK ARE COUPLED. They used to be two independent swallowed try blocks, and that
+          // produced exactly the state Jay hit on prod: the week OPENED, the profile did NOT store, and his
+          // "This week" was a running day-3-of-7 with no rows — forever, because the rows ARE the profile.
+          //
+          // A Quality Days week without its profile is strictly worse than no week: the grid can never fill, and
+          // the outcome card advertises a tracked week that can never complete. So the week now opens only if the
+          // profile actually landed, and a failure is LOGGED rather than swallowed — a silent write failure that
+          // leaves dependent state behind is invisible data loss (same family as the harvest silent-drop).
+          let profileStored = false;
           try {
             await persistQualityDayProfile(db, memberId, qd);
-          } catch {
-            /* swallow — the member saw the confirm; the stored profile is best-effort */
+            profileStored = true;
+          } catch (e) {
+            console.error(`C3 quality-day profile FAILED to persist for member=${memberId}:`, (e as Error).message);
           }
-          try {
-            await startPracticeWeek(db, memberId, 'c3_quality');
-          } catch {
-            /* swallow — the logging nudge is a bonus */
+          if (profileStored) {
+            try {
+              await startPracticeWeek(db, memberId, 'c3_quality');
+            } catch (e) {
+              console.error(`C3 practice week failed to open for member=${memberId}:`, (e as Error).message);
+            }
           }
           try {
             // Close the session for the forecast, but do NOT earn/surface the "quality-days" badge here — it now

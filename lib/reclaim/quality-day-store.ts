@@ -41,7 +41,11 @@ export async function activeQualityDayProfile(db: Db, memberId: string): Promise
       contributors: Array.isArray(p.contributors) ? p.contributors : [],
       disruptors: Array.isArray(p.disruptors) ? p.disruptors : [],
     };
-  } catch {
+  } catch (e) {
+    // LOG, don't just swallow. A read failure here is INDISTINGUISHABLE from "no profile" — both render an empty
+    // Quality Days grid — so a silent catch turns a broken read into a confident "you never set one up". Third
+    // time this shape has cost us; the rule is assert-or-log, never a bare catch on a read the UI trusts.
+    console.error(`activeQualityDayProfile read failed for member=${memberId}:`, (e as Error).message);
     return null;
   }
 }
