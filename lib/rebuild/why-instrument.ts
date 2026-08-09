@@ -41,7 +41,15 @@ export const WHY_ITEMS: WhyItem[] = [
 export const WHY_ITEM_COUNT = WHY_ITEMS.length; // 12
 export const WHY_DOMAIN_SPLIT = 6; // 0-based index where the diet domain begins (the domain-transition frame)
 
-export type WhyDomainScore = { autonomous: number; controlled: number; amotivation: number };
+export type WhyDomainScore = {
+  autonomous: number;
+  controlled: number;
+  amotivation: number;
+  /** RELATIVE AUTONOMOUS MOTIVATION — Greg's `(1+2+3)/3 − (4+5)/2`, i.e. autonomous minus controlled.
+   *  Positive = what pulls them is mostly their OWN reasons. Negative = mostly outside pressure.
+   *  Signed on a 1–7 scale, so the range is −6…+6 and ZERO IS MEANINGFUL (the two pulls are even). */
+  relativeAutonomous: number;
+};
 export type WhyScore = { activity: WhyDomainScore; diet: WhyDomainScore };
 
 const mean = (ns: number[]): number => Math.round((ns.reduce((a, b) => a + b, 0) / ns.length) * 100) / 100;
@@ -50,8 +58,15 @@ const mean = (ns: number[]): number => Math.round((ns.reduce((a, b) => a + b, 0)
 //   autonomous  = mean of the 3 autonomous items
 //   controlled  = mean of the 2 controlled items
 //   amotivation = the single amotivation item
-// computed SEPARATELY for activity and diet. (Greg's sheet notes a "Relative" autonomy figure but gives no formula;
-// it is deliberately HELD for Greg rather than invented — we store the three canonical subscores, not a guessed RAI.)
+//   relativeAutonomous = autonomous − controlled          ← Greg's `(1+2+3)/3 − (4+5)/2`
+// computed SEPARATELY for activity and diet.
+//
+// THE COMMENT THAT USED TO BE HERE WAS WRONG, and it cost us the measure. It said Greg "notes a 'Relative'
+// autonomy figure but gives no formula", so we deliberately held it rather than invent one. He DID give the
+// formula — `(1+2+3)/3 − (4+5)/2` for activity, `(7+8+9)/3 − (10+11)/2` for diet — stored as an OMML equation
+// that flat text extraction collapses into digit soup. The gap was in our extraction, not his work.
+// It reduces to autonomous − controlled given the item order above (1–3 autonomous, 4–5 controlled per domain),
+// which is asserted in the tests rather than assumed from the numbering.
 export function scoreWhy(responses: number[]): WhyScore {
   if (responses.length !== WHY_ITEM_COUNT) {
     throw new Error(`scoreWhy expects ${WHY_ITEM_COUNT} responses, got ${responses.length}`);
@@ -60,11 +75,16 @@ export function scoreWhy(responses: number[]): WhyScore {
     WHY_ITEMS.map((it, i) => ({ it, v: responses[i]! }))
       .filter(({ it }) => it.domain === domain && it.facet === facet)
       .map(({ v }) => v);
-  const domainScore = (domain: WhyDomain): WhyDomainScore => ({
-    autonomous: mean(facetValues(domain, 'autonomous')),
-    controlled: mean(facetValues(domain, 'controlled')),
-    amotivation: mean(facetValues(domain, 'amotivation')),
-  });
+  const domainScore = (domain: WhyDomain): WhyDomainScore => {
+    const autonomous = mean(facetValues(domain, 'autonomous'));
+    const controlled = mean(facetValues(domain, 'controlled'));
+    return {
+      autonomous,
+      controlled,
+      amotivation: mean(facetValues(domain, 'amotivation')),
+      relativeAutonomous: Math.round((autonomous - controlled) * 100) / 100,
+    };
+  };
   return { activity: domainScore('activity'), diet: domainScore('diet') };
 }
 
@@ -76,4 +96,24 @@ export function whyResponsesMap(responses: number[]): Record<string, number> {
     if (responses[i] != null) map[it.code] = responses[i]!;
   });
   return map;
+}
+
+/** WHAT RELATIVE AUTONOMOUS MOTIVATION MEANS, in the member's terms — never the number.
+ *
+ *  Greg is explicit that B1 is "stored as a starting point, deliberately NOT scored or shown as a number", so the
+ *  score never reaches a surface: it picks a SENTENCE. Same pattern the Reads tab already proves for B2 — score →
+ *  plain-language read → actionable — and the same posture the Companion is held to on the identical data.
+ *
+ *  The bands are deliberately coarse. RAM runs −6…+6 on a 1–7 scale and a member's answers are self-reported on a
+ *  day; carving that into fine gradations would imply a precision the instrument does not have. Three states is
+ *  what the measure can honestly support: your own reasons lead, the two are even, or outside pressure leads.
+ *
+ *  NOTHING HERE IS A VERDICT. "Outside pressure leads" is a description of what is currently pulling, not a
+ *  judgement about the member — and it is the most USEFUL of the three to know, because motivation that comes
+ *  from outside is the kind that stops working when nobody is watching.
+ */
+export function relativeAutonomyRead(ram: number): string {
+  if (ram >= 1) return 'mostly your own reasons';
+  if (ram <= -1) return 'mostly pressure from outside';
+  return 'your own reasons and outside pressure, about evenly';
 }

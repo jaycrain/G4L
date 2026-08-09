@@ -19,7 +19,8 @@
 //   · The member's own answers, organised. We computed the ordering; we did not decide who they are.
 
 import type { Db } from '../db/schema.ts';
-import { latestSkillsReading } from '../rebuild/store.ts';
+import { latestSkillsReading, latestWhyReading } from '../rebuild/store.ts';
+import { relativeAutonomyRead } from '../rebuild/why-instrument.ts';
 import { skillHighlights } from '../rebuild/skills-instrument.ts';
 import { latestBiggerWorldReading } from '../reclaim/bigger-world-store.ts';
 import { AUDIT_DOMAIN_LABEL } from '../reclaim/bigger-world-instrument.ts';
@@ -59,6 +60,28 @@ export async function memberReads(db: Db, memberId: string): Promise<Read[]> {
   // Guarding the read but not the RENDERING of it is the same half-measure twice in one file. The lesson is the
   // shape, not the line: a surface built from stored data has to treat the DERIVATION as untrusted too, because
   // that is where an unexpected value actually lands.
+
+  // YOUR WHY (B1) — first, because Rebuild runs B1 before B2. This is Greg's Relative Autonomous Motivation,
+  // computed from responses we have always stored and never used: what actually PULLS them, their own reasons or
+  // outside pressure. Rendered as a sentence, never the number — B1 is explicitly "stored, not scored or shown".
+  const why = await latestWhyReading(db, memberId).catch(() => null);
+  if (why) {
+    const read = tryOr<Read | null>(() => {
+      const a = why.scores.activity.relativeAutonomous;
+      const d = why.scores.diet.relativeAutonomous;
+      if (typeof a !== 'number' || typeof d !== 'number') return null; // an older reading, stored before RAM existed
+      return {
+        label: 'your why',
+        from: 'What’s Your Why?',
+        lines: [
+          `Moving your body: ${relativeAutonomyRead(a)}.`,
+          `Eating well: ${relativeAutonomyRead(d)}.`,
+          'Reasons that are yours tend to hold when nobody is watching.',
+        ],
+      };
+    }, null);
+    if (read) out.push(read);
+  }
 
   const skills = await latestSkillsReading(db, memberId).catch(() => null);
   if (skills) {

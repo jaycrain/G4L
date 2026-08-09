@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { PGlite } from '@electric-sql/pglite';
 import { applySchema, type Db } from '../lib/db/schema.ts';
 import { memberReads } from '../lib/playbook/reads.ts';
+import { scoreWhy, relativeAutonomyRead } from '../lib/rebuild/why-instrument.ts';
 
 // YOUR READS — the Reads tab's real content.
 //
@@ -125,4 +126,66 @@ test('one unreadable read never takes the OTHER one down with it', async () => {
   );
   const reads = await memberReads(db, memberId);
   assert.deepEqual(reads.map((r) => r.label), ['your map']);
+});
+
+// ─── B1 · RELATIVE AUTONOMOUS MOTIVATION ────────────────────────────────────
+// Greg's formula, specified and unbuilt until now: (1+2+3)/3 − (4+5)/2 per domain. The old code comment claimed
+// he "gives no formula" — that was our flat-text extraction collapsing an OMML equation, not a gap in his work.
+
+test('RAM is autonomous MINUS controlled — Greg’s formula, not a re-derivation', () => {
+  // Pinned against the ITEM ORDER, not the numbering: items 1–3 are the autonomous facet and 4–5 the controlled
+  // one, which is what makes (1+2+3)/3 − (4+5)/2 equal autonomous − controlled. If that order ever changes, this
+  // fails rather than silently computing a different statistic.
+  const r = [7, 7, 7, 1, 1, 1, /* diet */ 2, 2, 2, 6, 6, 7];
+  const s = scoreWhy(r);
+  assert.equal(s.activity.autonomous, 7);
+  assert.equal(s.activity.controlled, 1);
+  assert.equal(s.activity.relativeAutonomous, 6, 'the top of the range: all own reasons, no pressure');
+  assert.equal(s.diet.relativeAutonomous, -4, 'signed, and negative when pressure leads');
+});
+
+test('the read is a SENTENCE, never the number — B1 is stored, not scored', () => {
+  assert.equal(relativeAutonomyRead(6), 'mostly your own reasons');
+  assert.equal(relativeAutonomyRead(-4), 'mostly pressure from outside');
+  assert.equal(relativeAutonomyRead(0), 'your own reasons and outside pressure, about evenly');
+  for (const v of [-6, -1, 0, 1, 6]) {
+    assert.doesNotMatch(relativeAutonomyRead(v), /\d/, 'no number reaches a member');
+    assert.doesNotMatch(relativeAutonomyRead(v), /low|poor|weak|bad|fail/i, 'a description, never a verdict');
+  }
+});
+
+test('"your why" reaches the Reads tab, with no digit in it', async () => {
+  const { db, memberId } = await freshDb();
+  await db.query(
+    `insert into motivation_reading (member_id, source, sequence_no, taken_on, scores, responses)
+     values ($1,'b1',1,now(),$2,$3)`,
+    [
+      memberId,
+      JSON.stringify(scoreWhy([7, 6, 7, 2, 1, 1, 3, 3, 2, 6, 6, 5])),
+      JSON.stringify([7, 6, 7, 2, 1, 1, 3, 3, 2, 6, 6, 5]),
+    ],
+  );
+  const reads = await memberReads(db, memberId);
+  const why = reads.find((r) => r.label === 'your why');
+  assert.ok(why, 'B1 now produces a read');
+  assert.equal(why!.from, 'What’s Your Why?');
+  const text = why!.lines.join(' ');
+  assert.match(text, /Moving your body: mostly your own reasons/);
+  assert.match(text, /Eating well: mostly pressure from outside/);
+  assert.doesNotMatch(text, /\d/);
+});
+
+test('a reading stored BEFORE RAM existed yields no card, not a broken one', async () => {
+  // Every B1 reading already in production predates this field. They must degrade to silence.
+  const { db, memberId } = await freshDb();
+  await db.query(
+    `insert into motivation_reading (member_id, source, sequence_no, taken_on, scores, responses)
+     values ($1,'b1',1,now(),$2,$3)`,
+    [
+      memberId,
+      JSON.stringify({ activity: { autonomous: 6, controlled: 2, amotivation: 1 }, diet: { autonomous: 5, controlled: 3, amotivation: 2 } }),
+      JSON.stringify(Array(12).fill(4)),
+    ],
+  );
+  assert.equal((await memberReads(db, memberId)).find((r) => r.label === 'your why'), undefined);
 });
