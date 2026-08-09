@@ -325,18 +325,10 @@ export default function RedesignPlaybookView({
         </section>
       )}
 
-      {/* THE POINTER — what used to be the intake tray. The queue itself moved INTO the Journal (Jay,
-          2026-08-08), because a flagged keeper is a thing the member SAID and the Journal is the timestamped
-          record of things they said; we had one substance in two places. What stays here is a pointer, because
-          a queue filed inside a tab goes unseen for weeks — that risk is exactly why the tray sat on top, and it
-          did not go away, it just stopped being worth two screens of page. */}
-      {proposed.length > 0 && tab !== 'journal' && (
-        <button type="button" className="pb-waiting" onClick={() => goTab('journal')}>
-          <span className="pb-waiting-n">{proposed.length}</span>
-          {proposed.length === 1 ? 'thing you said is waiting in your Journal' : 'things you said are waiting in your Journal'}
-          <span aria-hidden="true"> →</span>
-        </button>
-      )}
+      {/* NO POINTER ABOVE THE TABS. There was one, and Jay killed it in a sentence: "do we still need the tray if
+          the number is on the tab?" No — the Journal tab carries the count, which was my own argument for putting
+          a count there. A strip saying the same thing three inches above it is the same information twice in one
+          eyeline. The DASHBOARD cue stays: that is a different page, and it has no tabs. */}
 
       {/* THE TAB ROW — the Founder Console's one-row pattern (Jay: "a great way to fly through a variety of
           different content"). Scrolls horizontally on a phone, one tab at a time, which is how the FC row and the
@@ -379,13 +371,26 @@ export default function RedesignPlaybookView({
           The grid component is reused unchanged — this is a relocation, not a rewrite. */}
       {tab === 'thisweek' && (
         <section className="pb-card pb-thisweek">
-          {grid ? (
+          {grid && grid.rows.length > 0 ? (
             <>
               <div className="pb-sec">This week</div>
               <div className="pb-sec-d">
                 Day {grid.day} of 7. A blank day is a day — this is for noticing what helps, never a score.
               </div>
               <WeekGridPanel memberId={memberId} grid={grid} />
+            </>
+          ) : grid ? (
+            /* A WEEK IS RUNNING BUT HAS NOTHING TO SHOW. Not hypothetical — Jay's own Quality Days week rendered
+               as a header over an empty box, because c3Rows returns [] until the Session has stored the profile
+               that defines the rows (same for W3 before triggers are named, and w2_image always). Saying so is
+               better than a blank: the member can see the week is live and that the rows come from the Session. */
+            <>
+              <div className="pb-sec">This week</div>
+              <div className="pb-sec-d">Day {grid.day} of 7 — your week is running.</div>
+              <p className="pb-empty">
+                Nothing to mark here yet. The rows come from the Session that opened this week — once it’s set up
+                what you’re tracking, they show up here.
+              </p>
             </>
           ) : (
             <>

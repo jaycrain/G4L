@@ -77,6 +77,10 @@ const DEMOS: Demo[] = [
     responses: [2, 2, 3, 2, 2, 3, 4, 4, 3, 4, 4, 3, 3, 2, 3, 3, 2, 3, 4, 4, 3, 4, 3, 4], // mixed; lower Physical
     completeR4: true,
     persona: 'cyclist',
+    // A RUNNING WEEK WITH NO ROWS — the state Jay hit on his own account, where "This week" rendered a header over
+    // an empty box. w2_image is rowless BY DESIGN ("five minutes in a picture — nothing countable"), so it is the
+    // permanent, honest fixture for it. Reshma covers the week WITH rows; between them both branches are walkable.
+    weeks: [{ kind: 'w2_image', startedDaysAgo: 1, commitments: [], marks: {} }],
   },
   {
     fields: {
