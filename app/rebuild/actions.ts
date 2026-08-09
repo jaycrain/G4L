@@ -280,8 +280,11 @@ export async function rebuildTurnAction(
         if (r.length === SKILLS_ITEM_COUNT) {
           try {
             await persistSkillsReading(db, memberId, r);
-          } catch {
-            /* swallow — the member still completed B2; the stored reading is best-effort */
+          } catch (e) {
+            // Swallowed so a write hiccup never breaks the member's close — but LOGGED. A silent swallow here is
+            // invisible until a member reports a missing Read on the Playbook (Jay, 2026-08-08). The Playbook
+            // harvest drop was this exact shape: a write that threw on prod-postgres ONLY, inside a bare catch.
+            console.error(`B2 self-management reading FAILED to persist for member=${memberId}:`, (e as Error).message);
           }
         }
         try {
@@ -295,8 +298,9 @@ export async function rebuildTurnAction(
         if (r.length === WHY_ITEM_COUNT) {
           try {
             await persistWhyReading(db, memberId, r);
-          } catch {
-            /* swallow — the member still completed B1; the stored reading is best-effort */
+          } catch (e) {
+            // Logged, not silent — see the B2 note above. This register is what "your why" reads from.
+            console.error(`B1 motivation reading FAILED to persist for member=${memberId}:`, (e as Error).message);
           }
         }
       }

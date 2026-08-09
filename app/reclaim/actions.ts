@@ -142,8 +142,10 @@ export async function reclaimTurnAction(
         if (responses.length === AUDIT_ITEM_COUNT) {
           try {
             await persistBiggerWorldReading(db, memberId, responses);
-          } catch {
-            /* swallow — the member saw the summary; the durable reading is best-effort */
+          } catch (e) {
+            // Logged, not silent — the member saw the summary, but this register is the ONLY durable copy, and it
+            // is what "your bigger world" reads from on the Playbook.
+            console.error(`C2 bigger-world reading FAILED to persist for member=${memberId}:`, (e as Error).message);
           }
         }
         try {
