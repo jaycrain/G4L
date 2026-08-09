@@ -2043,21 +2043,36 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
 .pb-fm-item { display: flex; gap: 12px; align-items: baseline; }
 .pb-fm-tag { flex: 0 0 auto; font-size: 10.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; color: var(--navy); background: rgba(255,255,255,.9); padding: 3px 9px; border-radius: 100px; white-space: nowrap; }
 .pb-fm-line { font-size: 15.5px; line-height: 1.4; color: #fff; }
-/* THE INTAKE TRAY, folded. At rest it is ONE ROW — the count, what the queue is mostly about, and a caret. The
-   olive tint stays (it is still the Companion's, not the member's) but the padding collapses so it reads as a
-   line of business to attend to rather than the page's main event. */
-.pb-tray { border: 1px solid #d4d8b0; background: #fbfcf3; border-radius: 14px; margin: 1.2rem 0; overflow: hidden; }
-.pb-tray.open { padding-bottom: 18px; }
-.pb-tray-bar { display: flex; align-items: center; gap: 10px; width: 100%; background: none; border: 0; cursor: pointer;
-  font-family: inherit; text-align: left; padding: 12px 18px; color: var(--navy); }
-.pb-tray-bar:hover { background: rgba(145,149,54,.07); }
-/* The count is the pull — it is the only reason a folded row gets opened, so it carries the weight. */
-.pb-tray-n { flex: none; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 11px; background: var(--olive-text);
+/* THE POINTER — what the intake tray became once the queue moved into the Journal (2026-08-08). One row, one
+   job: say how many of your own lines are waiting and get you there. It is a BUTTON, not a banner, because the
+   only thing to do with it is go. */
+/* THE DAILY CUE, in the dashboard's pinned zone with the keeper and the standing update. Lowest of the three,
+   right on top of the composer, because it is the only one that asks the member to GO somewhere — ambient first,
+   then status, then the thing to do. Olive-tinted like its Playbook twin so the two read as one feature. */
+.tri-waiting { display: flex; align-items: center; gap: 9px; margin: 0 0 10px; padding: 10px 14px;
+  border: 1px solid #d4d8b0; background: #fbfcf3; border-radius: 12px; text-decoration: none;
+  font-size: 13.5px; font-weight: 600; color: var(--navy); }
+.tri-waiting:hover { background: #f6f8e8; }
+.tri-waiting-n { flex: none; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 11px; background: var(--olive-text);
   color: #fff; font-size: 12px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; }
-.pb-tray-say { flex: 1 1 auto; font-size: 13.5px; font-weight: 600; }
-.pb-tray-caret { flex: none; font-size: 11px; color: var(--muted-grey); }
-.pb-tray-body { padding: 0 18px; }
-.pb-tray-body .pb-sec-d { margin-bottom: 12px; }
+
+.pb-waiting { display: flex; align-items: center; gap: 9px; width: 100%; margin: 1.1rem 0; padding: 11px 16px;
+  border: 1px solid #d4d8b0; background: #fbfcf3; border-radius: 12px; cursor: pointer;
+  font-family: inherit; font-size: 13.5px; font-weight: 600; color: var(--navy); text-align: left; }
+.pb-waiting:hover { background: #f6f8e8; }
+/* The count is the pull — it is the only reason this row gets clicked, so it carries the weight. */
+.pb-waiting-n { flex: none; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 11px; background: var(--olive-text);
+  color: #fff; font-size: 12px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; }
+
+/* THE QUEUE, inside the Journal. Tinted so it reads as the one part of the page with a decision attached, but
+   NOT as a different room — these are the member's own words and the entries below them are too. */
+.pb-jq { border: 1px solid #e4e7c8; background: #fcfdf6; border-radius: 14px; padding: 16px 18px; margin: 0 0 20px; }
+.pb-jq-h { font-weight: 800; text-transform: uppercase; letter-spacing: .06em; font-size: 11.5px; color: var(--olive-text); }
+.pb-jq-d { font-size: 13px; color: #5f6a73; line-height: 1.5; margin: 5px 0 14px; }
+/* The expand composer sits inside the card it grew from, so the line stays visible while they write into it —
+   that line IS the prompt, and hiding it would take the prompt away. */
+.pb-expand textarea { width: 100%; box-sizing: border-box; font-family: inherit; font-size: 15px; line-height: 1.55;
+  padding: 11px 13px; border: 1px solid #cfd6da; border-radius: 10px; resize: vertical; }
 .pb-pin-dot { margin-right: 6px; font-size: 0.85em; }
 
 /* "See the Program →" — the ring's wayfinder, centered beneath the bullseye (replaced the old "what's the ring?"

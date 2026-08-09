@@ -41,6 +41,9 @@ export type StandingFacts = {
   openWeek: { day: number; of: number; markedToday: number; rows: number } | null;
   /** Days since their previous visit — the delta's baseline. Null on a first visit. */
   daysSinceLastVisit: number | null;
+  /** Lines said in a Session, waiting in the Journal. NOT restated in the copy — the cue below says it better —
+   *  but it suppresses "Nothing needs you today", which would otherwise contradict the cue in one eyeline. */
+  waiting: number;
 };
 
 /** Days between two instants, floored. Exported for the test that pins the boundary wording. */
@@ -90,7 +93,12 @@ export function buildStandingLine(f: StandingFacts): string {
   //    to dread. The delta names its own baseline (lesson 2) so a stuck marker is visible rather than disguised.
   const seen = f.daysSinceLastVisit;
   if (seen !== null && seen >= 3) bits.push(`Good to see you — it's been ${sinceWhen(seen)}.`);
-  const needsThem = f.checkpointReady || (f.openWeek !== null && f.openWeek.markedToday === 0 && f.openWeek.rows > 0);
+  // The waiting queue counts as something needing them. Without this the update said "Nothing needs you today"
+  // directly above a cue reading "2 things you said are waiting in your Journal" — a contradiction in one eyeline,
+  // and the fastest way to teach a member that this line is decoration. Deliberately NOT restated here: the cue
+  // sits immediately below and says it better. Staying SILENT is the honest move; claiming idleness is not.
+  const needsThem =
+    f.checkpointReady || f.waiting > 0 || (f.openWeek !== null && f.openWeek.markedToday === 0 && f.openWeek.rows > 0);
   if (!needsThem) bits.push('Nothing needs you today.');
 
   return bits.join(' ');
@@ -106,16 +114,22 @@ export async function standingUpdate(
 ): Promise<string | null> {
   if (!hero) return null;
   try {
-    const [finishedRes, grid, lastVisit] = await Promise.all([
+    const [finishedRes, grid, lastVisit, waitingRes] = await Promise.all([
       lastAccomplishment(db, memberId, now),
       weekGrid(db, memberId).catch(() => null),
       previousVisit(db, memberId),
+      // Lines waiting in the Journal. Read here so the update can't claim idleness while the cue below it says
+      // otherwise. Guarded: a hiccup degrades to 0, which is the pre-existing behaviour.
+      db
+        .query<{ n: number }>("select count(*)::int n from playbook_entry where member_id=$1 and state='proposed'", [memberId])
+        .catch(() => ({ rows: [{ n: 0 }] })),
     ]);
 
     // ringSub carries "2 of 3" for a multi-session phase; parse rather than recompute so the update and the ring
     // can never disagree about the same number in the same eyeline.
     const m = /^(\d+) of (\d+)$/.exec(hero.ringSub ?? '');
     const facts: StandingFacts = {
+      waiting: waitingRes.rows[0]?.n ?? 0,
       phase: hero.ringTop,
       position: m ? { done: Number(m[1]), of: Number(m[2]) } : null,
       checkpointReady: hero.ringSub === 'checkpoint',

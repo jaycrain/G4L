@@ -93,13 +93,22 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
       // non-triptych dashboard + the /badges detail both do this, so the triptych shelf must too, or it under-counts
       // (Donna's #7: 1 of 16 on the dashboard vs 3 in the detail). Idempotent + drift-hardened.
       await reconcileRedesignBadges(db, memberId).catch(() => {});
-      const [hero, keeper, ct, facets, forecast] = await Promise.all([
+      const [hero, keeper, ct, facets, forecast, waitingRows] = await Promise.all([
         heroCard(db, memberId),
         centerKeeper(db, memberId),
         ceremonyTourData(db, memberId, dash),
         getFacets(db, memberId).catch(() => [] as string[]),
         getForecast(db, memberId).catch(() => null),
+        // Lines the member SAID in a Session, waiting in their Journal for a decision — the daily cue. Guarded
+        // like every other supplementary read: a hiccup hides the cue rather than taking the dashboard down.
+        db
+          .query<{ n: number }>(
+            "select count(*)::int n from playbook_entry where member_id=$1 and state='proposed'",
+            [memberId],
+          )
+          .catch(() => ({ rows: [{ n: 0 }] })),
       ]);
+      const waitingCount = waitingRows.rows[0]?.n ?? 0;
       // "Where you stand" — computed from the hero + committed state, never asked of the model (see
       // lib/dashboard/standing-update.ts). Sequenced after the Promise.all because it reads the hero.
       const standing = await standingUpdate(db, memberId, hero);
@@ -133,6 +142,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
             hasStory={!!dash.identityParagraph}
             hero={hero}
             standing={standing}
+            waitingCount={waitingCount}
             keeper={keeper}
             left={<TriptychLeft db={db} memberId={memberId} dash={dash} />}
             right={<TriptychRight db={db} memberId={memberId} dash={dash} momentumCta={hero.momentumCta} />}

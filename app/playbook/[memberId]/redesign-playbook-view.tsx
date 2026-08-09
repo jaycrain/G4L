@@ -12,6 +12,7 @@ import {
   dismissEntryAction,
   pinEntryAction,
   editEntryAction,
+  expandEntryAction,
   removeEntryAction,
   gatherFromHistoryAction,
 } from './actions.ts';
@@ -108,12 +109,9 @@ export default function RedesignPlaybookView({
       window.history.replaceState(null, '', u);
     }
   };
-  // A single flag opens on sight — it's a glance, not a chore. Two or more stay folded so the queue can't take
-  // over the page. Derived from `initial` on mount rather than kept in sync: once a member opens it, keeping it
-  // open while they work through the stack is the right behaviour.
-  const [trayOpen, setTrayOpen] = useState(() => initial.filter((e) => e.state === 'proposed').length === 1);
   const [busy, setBusy] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [expandingId, setExpandingId] = useState<string | null>(null);
   const [draft, setDraft] = useState('');
   const [note, setNote] = useState('');
   const [gathering, setGathering] = useState(false);
@@ -149,6 +147,13 @@ export default function RedesignPlaybookView({
     if (!body) return;
     await run(() => editEntryAction(memberId, id, body));
     setEditingId(null);
+    setDraft('');
+  }
+  async function saveExpand(id: string) {
+    const body = draft.trim();
+    if (!body) return;
+    await run(() => expandEntryAction(memberId, id, body));
+    setExpandingId(null);
     setDraft('');
   }
   async function addNote() {
@@ -208,16 +213,43 @@ export default function RedesignPlaybookView({
     );
   }
 
+  // A LINE THEY SAID, waiting in the Journal. The header is the whole design: "You said this" — not "your
+  // companion flagged this", which made the Companion the sender and turned the Journal into an inbox. Jay:
+  // "all the mail is from YOU." Provenance (which Session, what day) is what makes it their record rather than
+  // a notification. Three ways out, and every one of them empties the slot.
   function proposedCard(e: PlaybookEntry) {
     const ck = chapterKey(e);
+    const from = e.source.label && e.source.kind !== 'own' ? e.source.label : null;
+    const when = new Date(e.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const writing = expandingId === e.id;
     return (
       <div key={e.id} className="pb-proposed">
-        <div className="pb-prop-head">Your companion flagged this{ck ? ` · files under ${CHAPTER_LABEL[ck]}` : ''} — keep it?</div>
+        <div className="pb-prop-head">You said this{from ? ` — ${from}` : ''} · {when}</div>
         <p className="pb-line">{e.body}</p>
-        <div className="pb-actions">
-          <button type="button" className="pb-btn keep" disabled={busy} onClick={() => run(() => keepEntryAction(memberId, e.id))}>Keep it</button>
-          <button type="button" className="pb-btn ghost" disabled={busy} onClick={() => run(() => dismissEntryAction(memberId, e.id))}>Not now</button>
-        </div>
+        {writing ? (
+          <div className="pb-edit pb-expand">
+            <textarea
+              value={draft}
+              onChange={(ev) => setDraft(ev.target.value)}
+              rows={4}
+              autoFocus
+              placeholder="What does this bring up? Write as much or as little as you want…"
+            />
+            <div className="pb-actions">
+              <button type="button" className="pb-btn keep" disabled={busy || !draft.trim()} onClick={() => saveExpand(e.id)}>Save to your Journal</button>
+              <button type="button" className="pb-btn ghost" onClick={() => { setExpandingId(null); setDraft(''); }}>Cancel</button>
+            </div>
+          </div>
+        ) : (
+          <div className="pb-actions">
+            {/* Keep still files it to its tab — the Journal is where you review, not where a keeper ends up. */}
+            <button type="button" className="pb-btn keep" disabled={busy} onClick={() => run(() => keepEntryAction(memberId, e.id))}>
+              Keep{ck ? ` in ${CHAPTER_LABEL[ck]}` : ''}
+            </button>
+            <button type="button" className="pb-btn" disabled={busy} onClick={() => { setExpandingId(e.id); setDraft(''); }}>Write about this →</button>
+            <button type="button" className="pb-btn ghost" disabled={busy} onClick={() => run(() => dismissEntryAction(memberId, e.id))}>Delete</button>
+          </div>
+        )}
       </div>
     );
   }
@@ -279,30 +311,17 @@ export default function RedesignPlaybookView({
         </section>
       )}
 
-      {/* INTAKE TRAY — COLLAPSED BY DEFAULT (Jay's prod walk, 2026-08-08).
-          It still sits above the tabs, because a flag filed inside a tab rots unreviewed by a member who never
-          opens that tab — that reason hasn't changed. What changed is the size: with six flags queued the tray WAS
-          the page. Jay scrolled two full screens of pending decisions before reaching the Playbook itself, which
-          inverts what this page is for — you plan FROM a playbook, and an inbox stacked on top of the instrument
-          is the wrong shape.
-          One line at rest with the count doing the pulling; the whole queue one tap away. Open by default when
-          there is only ONE, because a single flag is a glance, not a chore. */}
-      {proposed.length > 0 && (
-        <section className={`pb-tray${trayOpen ? ' open' : ''}`}>
-          <button type="button" className="pb-tray-bar" aria-expanded={trayOpen} onClick={() => setTrayOpen((v) => !v)}>
-            <span className="pb-tray-n">{proposed.length}</span>
-            <span className="pb-tray-say">
-              your companion flagged{proposedWhere ? ` · mostly ${proposedWhere.toLowerCase()}` : ''}
-            </span>
-            <span className="pb-tray-caret" aria-hidden="true">{trayOpen ? '▾' : '▸'}</span>
-          </button>
-          {trayOpen && (
-            <div className="pb-tray-body">
-              <div className="pb-sec-d">Keep what rings true — it files itself under the right chapter.</div>
-              {proposed.map(proposedCard)}
-            </div>
-          )}
-        </section>
+      {/* THE POINTER — what used to be the intake tray. The queue itself moved INTO the Journal (Jay,
+          2026-08-08), because a flagged keeper is a thing the member SAID and the Journal is the timestamped
+          record of things they said; we had one substance in two places. What stays here is a pointer, because
+          a queue filed inside a tab goes unseen for weeks — that risk is exactly why the tray sat on top, and it
+          did not go away, it just stopped being worth two screens of page. */}
+      {proposed.length > 0 && tab !== 'journal' && (
+        <button type="button" className="pb-waiting" onClick={() => goTab('journal')}>
+          <span className="pb-waiting-n">{proposed.length}</span>
+          {proposed.length === 1 ? 'thing you said is waiting in your Journal' : 'things you said are waiting in your Journal'}
+          <span aria-hidden="true"> →</span>
+        </button>
       )}
 
       {/* THE TAB ROW — the Founder Console's one-row pattern (Jay: "a great way to fly through a variety of
@@ -310,7 +329,7 @@ export default function RedesignPlaybookView({
           triptych fold already behave — so this needs no separate mobile design. */}
       <nav className="pb-tabs" aria-label="Playbook">
         {TABS.map((t) => {
-          const n = t.key === 'journal' ? journal.length : chapters.filter((c) => TAB_FOR_CHAPTER[c.key] === t.key).reduce((a, c) => a + c.items.length, 0);
+          const n = t.key === 'journal' ? journal.length + proposed.length : chapters.filter((c) => TAB_FOR_CHAPTER[c.key] === t.key).reduce((a, c) => a + c.items.length, 0);
           return (
             <button
               key={t.key}
@@ -359,6 +378,15 @@ export default function RedesignPlaybookView({
         <section className="pb-card pb-journal">
           <div className="pb-sec">Your journal</div>
           <div className="pb-sec-d">Thoughts and feelings in your own words, timestamped to where you are. For a lot of people this is the most freeing thing here — a place to think on the page and understand yourself. Your companion reads it and pulls keepers up into your plays, but the writing itself is the point — it only replies if you ask.</div>
+          {/* THE QUEUE, in the room it belongs to. Above the member's own entries because it is the only part
+              of this page with a decision attached; everything below is already settled. */}
+          {proposed.length > 0 && (
+            <div className="pb-jq">
+              <div className="pb-jq-h">Waiting on you</div>
+              <div className="pb-jq-d">Things you said in a Session, kept exactly as you said them. Keep one, write into it, or let it go.</div>
+              {proposed.map(proposedCard)}
+            </div>
+          )}
           {journal.map(entryCard)}
           <div className="pb-add">
             <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2} placeholder="Write your own entry…" disabled={busy} />

@@ -47,7 +47,17 @@ type Demo = {
   /** Playbook lines. `keep: true` = already kept (fills the tabs); otherwise it lands in the intake tray as a
    *  pending decision. A member with a QUEUE is its own state — the tray's whole design turns on how many are
    *  waiting, and with none seeded it could only ever be looked at empty. */
-  playbook?: Array<{ section: 'what_works' | 'why_works' | 'own_words' | 'journal'; body: string; keep?: boolean }>;
+  playbook?: Array<{
+    section: 'what_works' | 'why_works' | 'own_words' | 'journal';
+    body: string;
+    keep?: boolean;
+    /** The Session this line came from. Real keepers ALWAYS carry one (session-harvest sets it) and the Journal
+     *  shows it as provenance — "You said this — Disinformation Audit". Without it the line renders in its
+     *  degraded form, date only, which was the only form anyone had ever looked at. */
+    from?: string;
+    /** What the line IS — routes a kept line to its tab. proposeEntry doesn't take it, so it's set directly. */
+    keeperType?: string;
+  }>;
 };
 
 const r7 = (a: string[]) => a;
@@ -111,9 +121,9 @@ const DEMOS: Demo[] = [
       { section: 'what_works', body: 'When the alarm argues with me, I put the shoes on first and decide after.', keep: true },
       { section: 'own_words', body: 'I am not starting over. I am picking back up.', keep: true },
       { section: 'why_works', body: 'A missed day is data, not a verdict — the streak was never the point.', keep: true },
-      { section: 'own_words', body: 'The diagnosis took the running. It did not take the runner.' },
-      { section: 'own_words', body: 'I keep waiting to feel ready. Ready seems to arrive after, not before.' },
-      { section: 'what_works', body: 'Laying kit out the night before removes the whole argument.' },
+      { section: 'own_words', body: 'The diagnosis took the running. It did not take the runner.', from: 'Disinformation Audit', keeperType: 'definition' },
+      { section: 'own_words', body: 'I keep waiting to feel ready. Ready seems to arrive after, not before.', from: 'Visualization Workshop', keeperType: 'tell' },
+      { section: 'what_works', body: 'Laying kit out the night before removes the whole argument.', from: 'The Lifestyle Pilot', keeperType: 'recovery_move' },
       // KEPT, not proposed: a journal note is the member's OWN writing. Nothing should ask them to approve a
       // line they wrote themselves — and a journal entry has no chapter, so it would also have skewed the tray's
       // "mostly ___" read toward nothing.
@@ -135,7 +145,13 @@ async function seedHistory(db: Awaited<ReturnType<typeof getDb>>, memberId: stri
     );
   }
   for (const pb of d.playbook ?? []) {
-    await proposeEntry(db, memberId, { section: pb.section, body: pb.body, keep: pb.keep });
+    const { entry } = await proposeEntry(db, memberId, {
+      section: pb.section,
+      body: pb.body,
+      keep: pb.keep,
+      source: pb.from ? { kind: 'session', label: pb.from } : undefined,
+    });
+    if (pb.keeperType) await db.query('update playbook_entry set keeper_type = $2 where id = $1', [entry.id, pb.keeperType]);
   }
   for (const w of d.weeks ?? []) {
     await db.query(

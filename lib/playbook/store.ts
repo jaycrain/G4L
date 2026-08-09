@@ -100,12 +100,19 @@ export async function addOwnEntry(
   memberId: string,
   body: string,
   section: PlaybookSection = 'journal',
+  /** The keeper this entry was written ABOUT (Journal intake, 2026-08-08). Set when a member takes a line they
+   *  said in a Session and writes into it: the keeper is the line, the entry is the thinking, and the link is what
+   *  lets the Journal show one as the seed of the other rather than two unrelated rows on the same day. */
+  fromEntryId?: string,
 ): Promise<PlaybookEntry> {
   const sort = await nextSortOrder(db, memberId, section);
   const { rows } = await db.query<any>(
-    `insert into playbook_entry (member_id, section, body, authorship, state, source_kind, source_label, sort_order)
-     values ($1,$2,$3,'authored','kept','own','your own',$4) returning *`,
-    [memberId, section, body.trim(), sort],
+    `insert into playbook_entry (member_id, section, body, authorship, state, source_kind, source_ref, source_label, sort_order)
+     values ($1,$2,$3,'authored','kept',$4,$5,$6,$7) returning *`,
+    // source_kind stays 'own' either way — an expansion IS the member's own writing, which is what 'own' means,
+    // and source_ref is already the column for linking back. Adding a 'keeper' kind would have meant a CHECK
+    // constraint migration and a prod apply step for no gain; the LINK carries the distinction on its own.
+    [memberId, section, body.trim(), 'own', fromEntryId ?? null, fromEntryId ? 'you wrote into this' : 'your own', sort],
   );
   return rowToEntry(rows[0]);
 }

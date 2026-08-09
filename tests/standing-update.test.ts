@@ -61,6 +61,20 @@ test('a quiet member is told nothing needs them — the sentence that makes it t
   assert.equal(line, "You're in Reclaim. Nothing needs you today.");
 });
 
+test('it does NOT claim idleness while lines are waiting in the Journal', () => {
+  // Caught on a real walk, 2026-08-08: the update read "Nothing needs you today" DIRECTLY ABOVE a cue reading
+  // "2 things you said are waiting in your Journal". Two sentences, one eyeline, flatly contradicting each other
+  // — and the fastest way to teach a member this line is decoration.
+  //
+  // The fix is SILENCE, not a restatement: the cue sits immediately below and says it better, so the update just
+  // stops claiming nothing is outstanding. Asserted both ways so a later edit can't quietly resurrect either the
+  // contradiction or a duplicate sentence.
+  const withQueue = buildStandingLine(facts({ waiting: 2 }));
+  assert.doesNotMatch(withQueue, /Nothing needs you today/, 'it must not claim idleness while a queue is waiting');
+  assert.doesNotMatch(withQueue, /waiting|Journal/i, 'and it must not restate the cue sitting right below it');
+  assert.equal(buildStandingLine(facts({ waiting: 0 })), "You're in Reclaim. Nothing needs you today.");
+});
+
 test('a long absence is greeted warmly and DATES ITSELF', () => {
   // The FC's hard-won lesson: a delta that never says when the baseline was lets a stuck marker read as fresh.
   const line = buildStandingLine(facts({ daysSinceLastVisit: 9 }));

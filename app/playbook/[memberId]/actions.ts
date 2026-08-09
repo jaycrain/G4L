@@ -36,6 +36,23 @@ export async function addOwnEntryAction(memberId: string, body: string): Promise
   return { ok: true };
 }
 
+/** EXPAND — the member takes a line they said in a Session and writes into it (Journal intake, 2026-08-08).
+ *  Two effects, on purpose:
+ *    · the writing becomes a timestamped Journal entry, linked back to the line it grew from; and
+ *    · the ORIGINAL is kept, so it still files to its tab.
+ *  Writing about something is the strongest signal a member can give that it matters, so leaving the line pending
+ *  afterwards would be perverse — and it would mean the queue stayed full while they did the work. All three
+ *  actions have to shrink the queue or it stops being a queue. */
+export async function expandEntryAction(memberId: string, id: string, body: string): Promise<{ ok: boolean }> {
+  if (!(await authorizeMember(memberId))) return { ok: false };
+  const text = (body ?? '').trim();
+  if (!text) return { ok: false };
+  const conn = await db();
+  await addOwnEntry(conn, memberId, text, 'journal', id);
+  await keepEntry(conn, memberId, id);
+  return { ok: true };
+}
+
 export async function keepEntryAction(memberId: string, id: string): Promise<{ ok: boolean }> {
   if (!(await authorizeMember(memberId))) return { ok: false };
   return { ok: await keepEntry(await db(), memberId, id) };
