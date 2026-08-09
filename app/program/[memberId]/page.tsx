@@ -131,6 +131,15 @@ export default async function ProgramPage({
         <p>Each building phase runs the same three moves. You take a read — a clear look at where you stand. You build a tool you keep — a true line, a picture, a plan. You practise it for a week, in real life. A read, a tool, a tracked week — the same three, every phase.</p>
         <p>Your identity is four strands wound into one — your body, your sense of self, your people, your outlook. The Fade thins some more than others. The <Link href={`/score/${memberId}`}>ID Score</Link> reads all four as one, so you can watch the whole get stronger as you close the distance.</p>
 
+      </div>
+
+      {/* CYCLE 1 — its own panel (Jay, 2026-08-08). The page carries two different jobs and they were sharing one
+          card: the top is the WHY (what Midlife Identity Loss is, how the program works, what the ID Score reads)
+          and holds true in any cycle; this one is the CURRENT cycle and will be replaced wholesale when Cycle 2
+          opens. Splitting them means that replacement is a panel swap rather than surgery inside a card.
+          Same heading typography as the lead — these are peers, not a section and its subsection. */}
+      <div className="card sub-copy prog-lead">
+        <h2 className="prog-h">Cycle 1 · The Foundation</h2>
         <p className="prog-bridge">You start with Cycle 1, the foundation. One pass through all four phases, built to take about six weeks. A few stretches run a full week, on purpose — some things only change by being lived. Go at the pace that’s real for you.</p>
         {/* KEPT FROM THE OLD LEAD, on purpose. Cowork's note says the Outline below already carries the
             Session/Checkpoint mechanic — it does not; it lists the Sessions without ever saying what one IS. Cutting
