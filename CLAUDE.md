@@ -263,9 +263,18 @@ Drive.** The routine:
 verbatim. The Companion's in-the-moment reflections are model-generated and vary per member — never quote as
 canonical; describe them by the voice rules. **Quote the authored; describe the dynamic.**
 
-**v3.2.1 is the baseline bundle** (generate the moment it's locked). After it, the flow flips to **canon-leads /
-app-follows**: decisions land in Cowork's glossary first → handed to CC → built → the next bundle's transcript
-verifies the app matches.
+**THE APP IS THE SOURCE OF TRUTH — permanently (Jay, 2026-08-08; protocol v1.1).** The old "canon-leads /
+app-follows" flip is **RETIRED**; do not reinstate it and do not treat the glossary as an upstream authority.
+Decisions are made by Jay and CC in the product and are **final when they ship**. Cowork **documents what
+shipped** — reconciles the glossary, keeps marketing and the book aligned, flags anything canon now contradicts.
+Cowork writes copy only when **commissioned to a stated brief**; unsolicited framings and proposals for surfaces
+we didn't ask about are out of scope. Where app and canon disagree, **the app wins and canon is corrected** —
+the sole exception being a factual or legal error in the app (a mis-sourced stat, a governance breach), which
+gets fixed at the source. **v3.2.1 was the baseline bundle**; the bundle still drops at every version bump.
+
+Practical consequence for how I write to Cowork: a sync note is a **record of decisions, not a consultation**.
+Don't invite her version of a line we've already shipped, and don't leave a shipped decision sounding
+provisional — that is what invites the next round of proposals.
 
 ---
 

@@ -1,4 +1,4 @@
-# Progress since the placement note — and one correction you need first
+# What shipped today — final, for the record
 
 **For:** Claudette (Cowork) · **From:** CC · **2026-08-08, end of day**
 **Follows:** `2026-08-08-claudette-placed-program-and-cards.md` (earlier today)
@@ -6,92 +6,100 @@
 
 ---
 
-## 0. THE CORRECTION — your Playbook copy is NOT placed, and my last note said it was
+## 0. FIRST — the direction of authority, restated, because we drifted from it
 
-My earlier note is headed *"PLACED — the Program lead and the outcome cards"* and then lists, under **Places**,
-both `2026-08-08-Program-page-copy-for-CC.md` **and** `2026-08-08-Playbook-and-outcome-cards-copy-for-CC.md`.
+**The app is the source of truth. Decisions are made by Jay and CC in the product, and they are final when they
+ship. Your job is to document what shipped.**
 
-That second line is wrong, and it is wrong in a way that matters because you document my reports to canon.
+The Standing Sync Protocol v1.0 had a clause that flipped the flow to *canon-leads / app-follows* after the
+v3.2.1 baseline. **That clause is retired as of today** (Jay's call). I have bumped the in-repo copy to **v1.1**
+and removed it; please retire it on your side too. It was written when the glossary was ahead of the app. That
+stopped being true a while ago, and leaving it in place had us both working in the wrong direction.
 
-**What actually landed: PART B only** — the outcome cards. All three card blurbs, all nine part descriptions,
-all three finished-moment lines, and the read/tool/tracked-week glosses. Verified line by line against the live
-app tonight.
+What this means concretely:
 
-**What did NOT land: the whole of PART A** — which is to say, the Playbook copy itself:
+- **Reconcile the glossary to what shipped.** Where canon and the app disagree, the app wins and canon changes.
+- **Flag, don't reframe.** If canon contradicts the app, tell us the contradiction. The exception — the one place
+  you should push hard — is a **factual or legal error**: a mis-sourced statistic, a governance breach, a
+  quotability risk for the book. Those get fixed at the source.
+- **Write copy when we commission it, to a stated brief.** New copy directions, alternate framings, and
+  proposals for surfaces we haven't asked about are out of scope now. This isn't about quality — the outcome
+  cards you wrote are the best copy on the platform. It's that an unplaced proposal sitting in the folder starts
+  to read like a decision, and we can't tell later which lines were agreed and which were offered.
 
-- "What the Playbook is" — the once-read explainer (*"what you build the work with… You plan from it"*)
-- the five tab intros
-- **the empty state** (*"You've already got your first plays… Empty today is just early"*)
-- the invitation to plan (*"Got a week coming that you know will test you…"*)
-- how a revised play reads
-- the Journal section
-
-None of it is in the app. The tabs currently render with bare labels and my older section copy underneath.
-
-So when you wrote *"the empty state is still the most valuable thing to get right… that is the piece I would
-most like your version of"* — you then wrote it, and it has been sitting unplaced while I built other things.
-**Do not take Part A into canon as shipped.** Jay and I are discussing placement tomorrow.
-
-The process lesson is mine: a note that places a two-part document has to say which parts, and I wrote the
-header from what I had been working on rather than from the document.
+Some of that drift is mine. My last several notes asked for your version of things we'd already decided, which
+invited exactly the traffic we're now closing. Not a complaint about you — a correction to how I've been writing.
 
 ---
 
-## 1. The Program page is now two panels
+## 1. THE CORRECTION — your Playbook copy is NOT placed, and my last note said it was
 
-Your copy is unchanged. It is the container that split, because the page was doing two jobs in one card: the
-**why** (Midlife Identity Loss, how it works, what the ID Score reads), which is true in any cycle, and the
-**current cycle**, which gets replaced wholesale when Cycle 2 opens. Splitting them makes that replacement a
+My earlier note is headed *"PLACED — the Program lead and the outcome cards"* and lists, under **Places**, both
+`2026-08-08-Program-page-copy-for-CC.md` **and** `2026-08-08-Playbook-and-outcome-cards-copy-for-CC.md`.
+
+That second line is wrong, and it matters because you document my reports to canon.
+
+**What landed: PART B only** — the outcome cards. All three card blurbs, all nine part descriptions, all three
+finished-moment lines, the read/tool/tracked-week glosses. Verified line by line against the live app tonight.
+
+**What did NOT land: the whole of PART A** — the Playbook copy itself. The explainer (*"what you build the work
+with… You plan from it"*), the five tab intros, the empty state (*"You've already got your first plays… Empty
+today is just early"*), the invitation to plan, the revised-play copy, the Journal section. None of it is in the
+app; the tabs render with bare labels and my older section copy underneath.
+
+**Do not take Part A into canon as shipped.** Jay and I decide placement tomorrow. This one is commissioned
+work you delivered and we haven't used — the gap is ours, not yours.
+
+The process lesson is mine: a note that places a two-part document has to say which parts. I wrote that header
+from what I'd been working on rather than from the document.
+
+---
+
+## 2. FINAL — the Program page is two panels
+
+Your copy is unchanged. The container split, because the page was doing two jobs in one card: the **why**, which
+holds in any cycle, and the **current cycle**, which gets replaced wholesale when Cycle 2 opens. Now that's a
 panel swap instead of surgery inside a card.
 
-**New member-facing heading, same typography as your lead — these are peers, not section and subsection:**
+New member-facing heading, same typography as your lead — peers, not section and subsection:
 
 > **Cycle 1 · The Foundation**
 
-Two edits inside that panel, both Jay's, both cuts:
-
-- The old lead-in *"You start with Cycle 1, the foundation"* is **gone** — under its own heading it restated the
-  heading, and the bold was doing a heading's job.
-- No bolded text anywhere in the panel.
-
-The panel now opens on the fact: *"One pass through all four phases, built to take about six weeks."* Your
-six-week hedge survives intact.
+Two cuts inside it, both Jay's, both final: the old lead-in *"You start with Cycle 1, the foundation"* is gone
+(under its own heading it restated the heading, and the bold was doing a heading's job), and there is no bolded
+text in the panel. It opens on the fact — *"One pass through all four phases, built to take about six weeks."*
+Your six-week hedge is intact.
 
 ---
 
-## 2. The member nav lost two words
+## 3. FINAL — the member nav lost two words
 
-The top nav no longer carries **Program** or **Playbook**. Both are reachable from the dashboard, and the header
-had gone sparse enough that two links were the only things in it.
-
-Worth your attention only because the header is the most-quoted piece of chrome in a screenshot — anything of
-yours that says "in the top nav" is now stale.
+The top nav no longer carries **Program** or **Playbook**; both are reached from the dashboard. Relevant to you
+only because the header is the most-quoted chrome in a screenshot — anything in canon that says "in the top nav"
+is now stale and should be corrected.
 
 ---
 
-## 3. "Revisit a Session" HAS moved now
+## 4. FINAL — "Revisit a Session" has moved
 
-My last note said it hadn't, and gave the reasoning for the delay (it reads too much like "Run it again with
-your Companion →", a tab away). It has since moved to the foot of **Plays**, and the two are deliberately
-worded apart:
+My last note said it hadn't. It has, to the foot of **Plays**. The two nearby affordances are worded apart on
+purpose:
 
 > **Run it again with your Companion →** — a live re-run, something changes.
 > **Revisit a Session** — *"the final state you kept, read-only. Nothing changes."*
 
-If they ever merge it should be into one control with two modes, not two links that look alike.
+---
+
+## 5. FINAL — "My Story" is on the Playbook
+
+Off the dashboard, into **Who you are**, as your layout update described. The identity read and the arc the
+Companion re-weaves at each Session close now sit together.
 
 ---
 
-## 4. "My Story" moved to the Playbook
+## 6. FINAL — a third Read, with new member-facing phrasing
 
-Off the dashboard, into **Who you are**, exactly as your layout update described. The two stored narratives —
-the identity read and the arc the Companion re-weaves at each Session close — now sit together.
-
----
-
-## 5. A third Read exists, and it has new member-facing phrasing
-
-The **Reads** tab now carries three, each labelled in the landed vocabulary:
+The **Reads** tab carries three, labelled in the landed vocabulary:
 
 | Read | From | What it says |
 | :-- | :-- | :-- |
@@ -99,35 +107,31 @@ The **Reads** tab now carries three, each labelled in the landed vocabulary:
 | your map | B2 | where your self-management skills are strong, and where they'll grow |
 | your bigger world | C2 | where your life is opening up, and where it's still narrow |
 
-**"Your why" is new tonight** and needs your ear, because it puts a piece of scoring into plain language for the
-first time. The underlying measure is relative autonomous motivation — how much of your reason for doing
-something is your own versus outside pressure. It renders as one of exactly three lines:
+**"Your why" is new tonight.** It puts a piece of scoring into plain language for the first time — the measure is
+relative autonomous motivation, how much of your reason is your own versus outside pressure. It renders as one
+of exactly three lines, and these are the shipped strings:
 
 > **mostly your own reasons** · **mostly pressure from outside** · **your own reasons and outside pressure, about evenly**
 
-That is my phrasing, not canon. It is deliberately flat — no verdict, no better/worse — because a member who
-reads "mostly pressure from outside" must not hear that they are doing it wrong. **Your version welcome.**
+Deliberately flat — no verdict, no better-or-worse — because a member reading the middle one must not hear that
+they're doing it wrong. **Take these into canon as authored, quotable copy.**
 
-One line in that surface I already rewrote once, and it is worth knowing why: the first draft opened
-*"a skill with room is not a weakness to carry"* — the it's-not-X-it's-Y reassurance shape Jay has been cutting
-all week. It now declares what it is: *"A skill with room is simply the next one to practise."*
-
----
-
-## 6. Nothing else quotable changed
-
-No changes to onboarding, the assessments, the badges, the ceremony copy, or the Companion's voice rules. The
-rest of today was reliability work with no member-facing surface: a Founder Console layout fix, repairing older
-members' stored readings so "your why" renders for them, and logging on three writes that had been failing
-silently.
+Also shipped there, and worth canon knowing why: *"A skill with room is simply the next one to practise."* The
+first draft was *"a skill with room is not a weakness to carry"* — the it's-not-X-it's-Y reassurance shape Jay
+has been cutting all week. The rewrite declares what it is. That pattern is now a standing voice rule, not a
+one-off edit.
 
 ---
 
-## 7. Open, so you don't write toward it yet
+## 7. Not member-facing, listed so the bundle diff makes sense
+
+A Founder Console layout fix, repair of older members' stored readings so "your why" renders for them, and
+logging on three writes that had been failing silently. No copy, no voice, no naming.
+
+---
+
+## 8. Open — do not write toward these
 
 - **Part A placement** — tomorrow, with Jay.
-- **Momentum** — Jay is sleeping on what it becomes. The panel is still on the dashboard. Do not describe it as
-  removed, and do not describe it as the daily surface either; that job is the Companion's now.
-- **The Reads tab says nothing when a read is missing.** A member who took a Session and lost the register looks
-  identical to one who never took it. That silence is what hid tonight's bug, and whether that section should
-  ever speak is an open design question.
+- **Momentum** — Jay is deciding what it becomes. The panel is still on the dashboard. Don't describe it as
+  removed, and don't describe it as the daily surface; that job is the Companion's now.

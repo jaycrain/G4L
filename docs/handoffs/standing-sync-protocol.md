@@ -1,7 +1,10 @@
 # G4L Platform ↔ Cowork — Standing Sync Protocol
 
-v1.0 · 2026-07-28 · a two-sided operating spec (CC + Cowork), decisions owned by Jay. Lives in the shared Drive
+v1.1 · 2026-08-08 · a two-sided operating spec (CC + Cowork), decisions owned by Jay. Lives in the shared Drive
 handoff folder; each side embeds its own half. (Cowork authored the canonical v1.0; this is CC's in-repo copy.)
+
+**v1.1 changes one thing, and it is the important one:** the post-baseline flip to *canon-leads / app-follows*
+is **REMOVED**. The app is the source of truth, permanently. See "Direction of authority" below.
 
 ## Why this exists
 The live app is the source of record. Marketing (site, campaigns, decks) and the 2nd-edition book must quote and
@@ -37,13 +40,32 @@ reconciles against:
 - **CC:** emit the 5-part bundle at each version, stamped; encode this in standing instructions (CLAUDE.md) so it
   happens without being asked.
 - **Cowork:** keep this protocol + the canonical glossary in the shared folder; run the morning scan as a scheduled
-  task; reconcile, flag deltas, honor quote-authored / describe-dynamic.
+  task; reconcile, flag deltas, honor quote-authored / describe-dynamic. **Document what shipped; do not
+  originate direction** (see "Direction of authority").
 - **Jay:** own the glossary decisions; arbiter of any app↔canon conflict.
 
-## The baseline, and the flip
-- **v3.2.1 is the baseline bundle** — generated the moment Jay locks it, tagged. Everything evolves from it as deltas.
-- After the baseline, the flow flips to **canon-leads / app-follows**: decisions get made in the glossary first →
-  handed to CC → built → the NEXT bundle's transcript verifies the app matches the glossary (the closing diff).
+## Direction of authority — THE APP IS THE SOURCE OF TRUTH (Jay, 2026-08-08)
+
+**This supersedes the v1.0 "canon-leads / app-follows" flip, which is retired and must not be reinstated.**
+
+- **Decisions are made by Jay and CC, in the product.** They are FINAL when they ship. The glossary does not
+  get a vote on them and canon does not lead them.
+- **Cowork's job is to DOCUMENT what shipped** — reconcile the glossary to the bundle, keep marketing and the
+  book word-for-word aligned, flag anything in canon the app now contradicts, and hold the
+  quote-authored / describe-dynamic rule.
+- **Cowork writes copy only when CC or Jay commissions it**, to a stated brief. Unsolicited new copy directions,
+  alternate framings, and proposals for surfaces we did not ask about are out of scope — they cost more to
+  triage than they return, and an unplaced proposal sitting in the folder reads later like a decision.
+- **Where the app and canon disagree, the app wins and canon is corrected.** The one exception is a factual or
+  legal error in the app (a mis-sourced statistic, a governance breach) — flag those and they get fixed at the
+  source. Jay remains arbiter.
+
+**Why it moved:** v1.0 was written before the product had a settled voice, when the glossary was ahead of the
+app. That stopped being true. In practice the app now leads every week and the canon-leads clause only
+generated work in the wrong direction.
+
+- **v3.2.1 was the baseline bundle.** Everything evolves from it as deltas; the bundle still drops at every
+  version bump. That half is unchanged.
 
 ## Change control
 This protocol lives in the shared folder. Changes are proposed by CC or Cowork, approved by Jay, and version-bumped.
