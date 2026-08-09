@@ -4,7 +4,7 @@
 // it never shows the number.
 
 import type { Db } from '../db/schema.ts';
-import { scoreWhy, whyResponsesMap, type WhyScore } from './why-instrument.ts';
+import { scoreWhy, whyResponsesMap, WHY_ITEM_COUNT, type WhyScore } from './why-instrument.ts';
 import { scoreSkills, skillResponsesMap, type SkillScore } from './skills-instrument.ts';
 
 export type WhyReading = { sequenceNo: number; takenOn: string; scores: WhyScore };
@@ -34,13 +34,24 @@ export async function persistWhyReading(db: Db, memberId: string, responses: num
 // null if none / on error (drift-hardened, same posture as the other agent-context reads).
 export async function latestWhyReading(db: Db, memberId: string): Promise<WhyReading | null> {
   try {
-    const { rows } = await db.query<{ sequence_no: number; taken_on: string; scores: WhyScore }>(
-      `select sequence_no, taken_on, scores from motivation_reading
+    // `responses` comes back too, purely so an OLD reading can be brought forward. Every B1 reading written before
+    // 2026-08-08 has `scores` without relativeAutonomous — Greg's RAM, which we only started computing that day.
+    // Rather than migrate production rows, RE-SCORE from the raw responses at read time: they have always been
+    // stored, the scoring function is pure, and this makes the measure appear for every existing member at once
+    // with no data touched. A backfill would have done the same thing more dangerously and only once.
+    const { rows } = await db.query<{ sequence_no: number; taken_on: string; scores: WhyScore; responses: number[] }>(
+      `select sequence_no, taken_on, scores, responses from motivation_reading
         where member_id=$1 and source='b1' order by sequence_no desc limit 1`,
       [memberId],
     );
     const r = rows[0];
-    return r ? { sequenceNo: r.sequence_no, takenOn: String(r.taken_on), scores: r.scores } : null;
+    if (!r) return null;
+    const stale = typeof r.scores?.activity?.relativeAutonomous !== 'number';
+    const responses = typeof r.responses === 'string' ? JSON.parse(r.responses) : r.responses;
+    const scores = stale && Array.isArray(responses) && responses.length === WHY_ITEM_COUNT
+      ? scoreWhy(responses)
+      : r.scores;
+    return { sequenceNo: r.sequence_no, takenOn: String(r.taken_on), scores };
   } catch {
     return null;
   }

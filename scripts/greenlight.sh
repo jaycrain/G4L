@@ -33,13 +33,15 @@ URL="${1:-https://g4l-ten.vercel.app}"
 # belt-and-braces — but EVERY tell must pass, so the un-minified spelling could never match and the gate
 # reported RED on a healthy prod. A tell is an exact literal against the BUILT stylesheet: check the built
 # form, don't hedge across variants.
-# EIGHT commits since the last verified deploy (Playbook consolidation → header trim → B1's RAM). No single new
-# class covers the batch, so the tell is `.pb-read-from` — the Reads card, which THIS batch extends with a third
-# read. It is not new-in-batch, so treat the COMMIT CHECK as the authoritative proof here and the smoke below as
-# the real verification; the tell only confirms the Playbook CSS is present at all.
-# NOTE: the last tell (`pb-thisweek`) was a class used ONLY in JSX with no CSS rule — this gate greps the built
-# STYLESHEET, so it reported a false RED. A tell must be a class that actually has a rule.
-CSS_TELLS=(".pb-read-from")
+# THIS PUSH: the Founder Console footer fix + B1's RAM re-score. The tell is the FULL DECLARATION
+# `.brand-bar{display:none}`, which is new-in-batch: the console's brand bar had been PINNED to the bottom
+# (its selector was joined to the fixed .confidential-footer rule) rather than hidden, and every other
+# brand-bar hide in the sheet is a multi-selector rule that ends on `.back-dash` or `.confidential-footer`,
+# never on `.brand-bar` — so this exact string cannot match the previous build.
+# The RAM half is server-side and has no honest static tell; the COMMIT CHECK is its proof.
+# NOTE: a tell must be a class that actually has a CSS RULE — this gate greps the built STYLESHEET, and a
+# JSX-only class (`pb-thisweek`, last time) reports a false RED.
+CSS_TELLS=(".brand-bar{display:none}")
 JS_TELLS=()
 
 # COMMIT CHECK — the authoritative proof for an ENGINE-ONLY push (server logic, no bundle change), where no static

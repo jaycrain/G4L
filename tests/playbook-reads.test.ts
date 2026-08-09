@@ -175,8 +175,29 @@ test('"your why" reaches the Reads tab, with no digit in it', async () => {
   assert.doesNotMatch(text, /\d/);
 });
 
-test('a reading stored BEFORE RAM existed yields no card, not a broken one', async () => {
-  // Every B1 reading already in production predates this field. They must degrade to silence.
+test('a reading stored BEFORE RAM existed is RE-SCORED from its responses, not skipped', async () => {
+  // Every B1 reading in production predates relativeAutonomous. The first version of this test asserted they
+  // degrade to no card — true, and a waste: the raw responses have always been stored and scoreWhy is pure, so
+  // the measure can simply be recomputed on read. That fixes every existing member at once with no migration.
+  const { db, memberId } = await freshDb();
+  await db.query(
+    `insert into motivation_reading (member_id, source, sequence_no, taken_on, scores, responses)
+     values ($1,'b1',1,now(),$2,$3)`,
+    [
+      memberId,
+      // the OLD shape — three subscores, no relativeAutonomous
+      JSON.stringify({ activity: { autonomous: 6, controlled: 2, amotivation: 1 }, diet: { autonomous: 5, controlled: 3, amotivation: 2 } }),
+      JSON.stringify([7, 6, 7, 2, 1, 1, 3, 3, 2, 6, 6, 5]),
+    ],
+  );
+  const why = (await memberReads(db, memberId)).find((r) => r.label === 'your why');
+  assert.ok(why, 'an old reading still produces the card');
+  assert.match(why!.lines.join(' '), /Moving your body: mostly your own reasons/);
+});
+
+test('an old reading with UNUSABLE responses degrades to no card, never a wrong one', async () => {
+  // The recompute is a bonus, not a guarantee. If the responses are missing or the wrong length there is nothing
+  // honest to say, and silence beats inventing a motivation profile for someone.
   const { db, memberId } = await freshDb();
   await db.query(
     `insert into motivation_reading (member_id, source, sequence_no, taken_on, scores, responses)
@@ -184,7 +205,7 @@ test('a reading stored BEFORE RAM existed yields no card, not a broken one', asy
     [
       memberId,
       JSON.stringify({ activity: { autonomous: 6, controlled: 2, amotivation: 1 }, diet: { autonomous: 5, controlled: 3, amotivation: 2 } }),
-      JSON.stringify(Array(12).fill(4)),
+      JSON.stringify([1, 2, 3]), // truncated — not the 12 the instrument needs
     ],
   );
   assert.equal((await memberReads(db, memberId)).find((r) => r.label === 'your why'), undefined);

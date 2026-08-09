@@ -2593,23 +2593,39 @@ body.onbwel-bleed main { max-width: none; margin: 0; padding: 0; }
    100dvh, NOT 100vh. On iPhone Safari `vh` ignores the URL bar, so a locked layout puts the composer behind
    it — the same class of bug as the 16px input zoom, and Jay runs this on a phone. */
 body:has(.fc-app) { overflow: hidden; }
-body:has(.fc-app) main { max-width: none; margin: 0; padding: 0; height: 100dvh; }
-/* The console wears its OWN header (app/admin/console/console-header.tsx), so the shared brand bar and the
-   page footer would be a second, redundant band of chrome above and below a viewport-locked app. */
-body:has(.fc-app) .brand-bar,
-/* The Founder Console is an operator surface, and every screen means this one too. Same fixed strip; the
-   .fc-dark rule below recolours it for the dark theme. */
+body:has(.fc-app) main { max-width: none; margin: 0; padding: 0; height: calc(100dvh - var(--conf-h, 0px)); }
+/* The console wears its OWN header (app/admin/console/console-header.tsx), so the shared brand bar is a second,
+   redundant band of chrome on a viewport-locked app. HIDE it — which is what the comment here always said, but
+   not what the code did: the selector was joined to the .confidential-footer rule below, so instead of being
+   removed the brand bar was PINNED TO THE BOTTOM alongside the copyright. Both landed in the same band, which is
+   the "weird footer thing" Jay hit on the iPad — a giant GRINTA wordmark and the rings sharing a strip with the
+   proprietary notice. Not iPad-specific; it was every FC screen, just most obvious there. */
+body:has(.fc-app) .brand-bar { display: none; }
+/* The Founder Console is an operator surface, and "every screen" means this one too — the proprietary notice
+   stays, as its own fixed strip. The .fc-dark rule below recolours it for the dark theme.
+
+   PINNED TO --conf-h, for the same reason the member app is (see the comment at body.redesign-on
+   .confidential-footer). This rule originally set padding and let the box size itself while the console
+   reserved NOTHING for it — so the strip sat on top of the last row of the panes, and on an iPad, where the
+   notice wraps to two lines, it covered twice as much. Reserved and actual are the same value by
+   construction here, so they cannot drift. */
+body:has(.fc-app) { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
+@media (max-width: 900px) { body:has(.fc-app) { --conf-h: calc(42px + env(safe-area-inset-bottom)); } }
 body:has(.fc-app) .confidential-footer {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; max-width: none; margin: 0;
-  padding: 5px 14px calc(5px + env(safe-area-inset-bottom));
-  font-size: 0.62rem; line-height: 1.35; border-top: 1px solid var(--grey);
+  box-sizing: border-box; height: var(--conf-h);
+  display: flex; align-items: center; justify-content: center; overflow: hidden;
+  padding: 0 14px env(safe-area-inset-bottom);
+  font-size: 0.62rem; line-height: 1.3; border-top: 1px solid var(--grey);
 }
 /* The admin layout's scope div sits between <main> and the shell; it has to pass the height through rather
    than bleeding past padding the way it did on the old page-scrolled console. */
-.fc-scope:has(.fc-app) { height: 100dvh; min-height: 0; margin: 0; padding: 0; overflow: hidden; }
+.fc-scope:has(.fc-app) { height: calc(100dvh - var(--conf-h, 0px)); min-height: 0; margin: 0; padding: 0; overflow: hidden; }
 
 .fc-app {
-  height: 100dvh; display: flex; flex-direction: column; overflow: hidden;
+  /* 100dvh MINUS the fixed proprietary strip — the console is a locked, non-scrolling app, so anything the
+     strip overlaps is unreachable rather than merely covered. */
+  height: calc(100dvh - var(--conf-h, 0px)); display: flex; flex-direction: column; overflow: hidden;
   padding: 0 20px; box-sizing: border-box;
 }
 .fc-app > * { flex: 0 0 auto; }
