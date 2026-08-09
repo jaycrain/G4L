@@ -33,10 +33,13 @@ URL="${1:-https://g4l-ten.vercel.app}"
 # belt-and-braces — but EVERY tell must pass, so the un-minified spelling could never match and the gate
 # reported RED on a healthy prod. A tell is an exact literal against the BUILT stylesheet: check the built
 # form, don't hedge across variants.
-# The Playbook consolidation. `pb-revisit` is new in THIS push (Revisit a Session in its new home).
+# EIGHT commits since the last verified deploy (Playbook consolidation → header trim → B1's RAM). No single new
+# class covers the batch, so the tell is `.pb-read-from` — the Reads card, which THIS batch extends with a third
+# read. It is not new-in-batch, so treat the COMMIT CHECK as the authoritative proof here and the smoke below as
+# the real verification; the tell only confirms the Playbook CSS is present at all.
 # NOTE: the last tell (`pb-thisweek`) was a class used ONLY in JSX with no CSS rule — this gate greps the built
 # STYLESHEET, so it reported a false RED. A tell must be a class that actually has a rule.
-CSS_TELLS=(".pb-revisit")
+CSS_TELLS=(".pb-read-from")
 JS_TELLS=()
 
 # COMMIT CHECK — the authoritative proof for an ENGINE-ONLY push (server logic, no bundle change), where no static
