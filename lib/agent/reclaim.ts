@@ -18,6 +18,7 @@ import {
 import { scoreAudit } from '../reclaim/bigger-world-scoring.ts';
 import { grintaStem, CHECKPOINT_CHALLENGE_ITEMS } from '../grinta/survey/instrument.ts';
 import { confirmsProposal } from './onboarding-intent.ts';
+import { groundToMemberWords } from './member-words.ts';
 import { proposalSignature, shouldPropose, markProposed, confirmOutranksRerecord, markRevisionAsked, type CoachGate } from './coach-gate.ts';
 
 export function reclaimEnabled(): boolean {
@@ -594,9 +595,24 @@ const C3_COMMITTED_1 = "Great work identifying what makes up your Quality Day, a
 const C3_COMMITTED_2 = "It's all about noticing what actually makes your days yours.";
 
 type QDCapture = NonNullable<Collected['pendingQualityDay']>;
-function sanitizeQualityDay(q: ModelTurn['qualityDay']): QDCapture | undefined {
+/**
+ * The member's Quality Day, IN THEIR OWN WORDS.
+ *
+ * The model records this, and left to itself it tidies: sentence-cases for a bulleted list, contracts, and
+ * compresses for a chip label — "a walk with Rosie before the house wakes" came back as "Morning walk with Rosie"
+ * in a live walk (2026-08-09). Each edit is defensible; the sum is a generic wellness checklist where the member's
+ * own life used to be. Jay: "keep it verbatim, we're giving them their own words back."
+ *
+ * So the model PROPOSES and the ENGINE decides — every item is grounded back to the span they actually typed. An
+ * item they never said is kept as-is rather than force-matched onto something they did say: inventing a memory in
+ * their own voice is far worse than an awkward label, and they confirm the whole list before it saves.
+ */
+function sanitizeQualityDay(q: ModelTurn['qualityDay'], memberTexts: readonly string[]): QDCapture | undefined {
   if (!q) return undefined;
-  const clean = (a: unknown): string[] => (Array.isArray(a) ? a.filter((s): s is string => typeof s === 'string' && !!s.trim()).map((s) => s.trim()) : []);
+  const clean = (a: unknown): string[] =>
+    (Array.isArray(a) ? a.filter((s): s is string => typeof s === 'string' && !!s.trim()) : [])
+      .map((s) => groundToMemberWords(s, memberTexts).text.trim())
+      .filter(Boolean);
   const nonNegotiables = clean(q.nonNegotiables);
   if (!nonNegotiables.length) return undefined; // the non-negotiables are the floor — nothing to propose without them
   return { nonNegotiables, contributors: clean(q.contributors), disruptors: clean(q.disruptors) };
@@ -624,7 +640,10 @@ const qualityStage: StageDef = {
   confirm() {},
   coach(b) {
     const sc = b.scratch as CoachGate;
-    const captured = sanitizeQualityDay(b.model.qualityDay);
+    // EVERYTHING they have said this session, including this turn — the model often records on the same turn the
+    // member supplies the material, so leaving out b.memberMessage would fail to ground the newest items.
+    const memberTexts = [...b.history.filter((h) => h.role === 'member').map((h) => h.text), b.memberMessage];
+    const captured = sanitizeQualityDay(b.model.qualityDay, memberTexts);
     if (captured) b.collected.pendingQualityDay = captured;
     const qd = b.collected.pendingQualityDay;
     const ready = !!qd && qd.nonNegotiables.length > 0;
@@ -688,7 +707,10 @@ const C3_SYSTEM =
   "their own words back. Anchor elements (movement, eating, rest) usually belong in the non-negotiables, but it's " +
   "theirs to decide — never impose.\n\n" +
   "RECORDING: once the definition is settled, call record_quality_day with nonNegotiables (up to 3), contributors (up " +
-  "to 3), and disruptors (up to 2) — the member's own words. Only call it when it's settled; the app then shows them " +
+  "to 3), and disruptors (up to 2) — THEIR EXACT WORDS, COPIED. Do not tidy them: do not capitalise, do not shorten " +
+  "for neatness, do not turn 'a walk with Rosie before the house wakes' into 'Morning walk with Rosie'. The detail " +
+  "you would trim is the part that makes it theirs, and they are going to read this back as their own. Copy the span " +
+  "they said and nothing else. Only call it when it's settled; the app then shows them " +
   "the profile to confirm before saving. If a distress or crisis signal appears, drop the exercise and route to support " +
   "(988 US / local) and a human — always on.";
 

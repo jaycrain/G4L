@@ -47,21 +47,24 @@ const CONTRIBUTORS = [
   'a real conversation with Marcus',
 ];
 const DISRUPTORS = ['opening email before I have had coffee', 'saying yes to a late meeting'];
-// WHAT WE ASSERT SURVIVES — the distinctive CONTENT, not the exact string.
+// WHAT WE ASSERT SURVIVES — the member's EXACT words.
 //
-// The model renders these as list items and legitimately tidies them: it sentence-cases ("seven" → "Seven"),
-// contracts ("I have had" → "I've had"), and compresses for a button label ("walk with Rosie before the house
-// wakes" → "Morning walk with Rosie"). A byte-exact assertion fails on every one of those and would make this walk
-// cry wolf — which is how a walk stops being run.
+// This started looser. The model tidies when left to itself — sentence-cases for a list, contracts "I have had" to
+// "I've had", compresses "a walk with Rosie before the house wakes" into "Morning walk with Rosie" — and the first
+// version of this walk accepted that, asserting only that a distinctive token ("Rosie") survived.
 //
-// So each item carries the token that CANNOT be lost without the member's own life going with it. "Rosie",
-// "piano", "Marcus", "grazing" are irreplaceable; a paraphrase that keeps them is fine, one that turns "walk with
-// Rosie" into "morning movement" is the real failure this is here to catch. Matched case-insensitively.
-const SURVIVES = {
-  nonNegotiable: 'Rosie',
-  contributor: 'grazing',
-  contributor2: 'piano',
-  disruptor: 'coffee',
+// Jay's call, 2026-08-09: "keep it verbatim, we're giving them their own words back." So the engine now grounds
+// every recorded item to the span the member actually typed (lib/agent/member-words.ts), and this walk holds it to
+// that — byte-exact, because a near-miss here means the grounding silently stopped working and the member is being
+// handed a tidied version of their own life.
+//
+// These are the spans as the member types them below. Lowercase where they said it mid-sentence: their casing, not
+// the model's list formatting.
+const VERBATIM = {
+  nonNegotiable: 'walk with Rosie before the house wakes',
+  contributor: 'cooking something properly instead of grazing',
+  contributor2: 'ten minutes on the piano',
+  disruptor: 'opening email before I have had coffee',
 } as const;
 // The score we log, and the reflections. The page reports the week's average, so with exactly one logged day the
 // average IS this number — which makes the assertion exact rather than "some number appeared".
@@ -188,11 +191,11 @@ async function main(): Promise<void> {
   // Print the proposal on ANY miss. A bare "never came back" sends you hunting the engine when the answer — the
   // model's paraphrase — is right there on screen.
   const proposalText = said.match(/Here's your Quality Day:[\s\S]*?(?:adjust it first\?|$)/i)?.[0] ?? '';
-  const lower = said.toLowerCase();
   const missed: string[] = [];
-  for (const [label, token] of Object.entries(SURVIVES)) {
-    if (lower.includes(token.toLowerCase())) ok(`the proposal keeps their ${label} ("${token}")`);
-    else { bad(`the proposal lost their ${label} — "${token}" never came back`); missed.push(label); }
+  for (const [label, span] of Object.entries(VERBATIM)) {
+    // EXACT. Not case-insensitive, not a token — the contract is the member's own words, unedited.
+    if (said.includes(span)) ok(`the proposal gives back their ${label} verbatim`);
+    else { bad(`the proposal EDITED their ${label} — expected "${span}"`); missed.push(label); }
   }
   if (missed.length) console.log(`\n      THE PROPOSAL AS SHOWN:\n${proposalText.replace(/^/gm, '      ')}\n`);
 
@@ -216,16 +219,15 @@ async function main(): Promise<void> {
   const elementButtons = norm((await page.locator('.qd-el-btn').allTextContents()).join(' | '));
   // profileElements() = nonNegotiables + contributors (disruptors are deliberately NOT tappable — you log what
   // showed UP, not what dragged the day down). So these two tokens are the ones that must be here.
-  const elementsLower = elementButtons.toLowerCase();
   const elementMiss: string[] = [];
   for (const label of ['nonNegotiable', 'contributor', 'contributor2'] as const) {
-    const token = SURVIVES[label];
-    if (elementsLower.includes(token.toLowerCase())) ok(`their ${label} ("${token}") is offered as a tappable element`);
-    else { bad(`their ${label} ("${token}") is not among the log's elements`); elementMiss.push(label); }
+    const span = VERBATIM[label];
+    if (elementButtons.includes(span)) ok(`their ${label} is tappable, in their own words`);
+    else { bad(`their ${label} reached the log EDITED — expected "${span}"`); elementMiss.push(label); }
   }
   // A disruptor appearing here would be a real bug — it would ask the member to tick the thing that ruined the day
   // as though it were something good.
-  if (elementsLower.includes(SURVIVES.disruptor.toLowerCase())) bad('a DISRUPTOR is offered as a tappable element — the log asks what showed up, not what went wrong');
+  if (elementButtons.includes(VERBATIM.disruptor)) bad('a DISRUPTOR is offered as a tappable element — the log asks what showed up, not what went wrong');
   else ok('and the disruptor is correctly NOT tappable');
   // Printing turns a "missing" into "here is exactly what got stored" — a report rather than a hunt.
   if (elementMiss.length) console.log(`\n      THE ELEMENTS ACTUALLY OFFERED:\n      ${elementButtons.split(' | ').join('\n      ')}\n`);
@@ -234,7 +236,7 @@ async function main(): Promise<void> {
   await page.locator('.qd-score-btn').filter({ hasText: new RegExp(`^${SCORE}$`) }).first().click();
   // Match the token, not the full sentence — the button carries the model's tidied label ("Morning walk with
   // Rosie"), so filtering on the phrase the member typed finds nothing and the walk dies on a 30s timeout.
-  await page.locator('.qd-el-btn').filter({ hasText: new RegExp(SURVIVES.nonNegotiable, 'i') }).first().click();
+  await page.locator('.qd-el-btn').filter({ hasText: VERBATIM.nonNegotiable }).first().click();
   await page.locator('textarea.momentum-log-note').first().fill(MOST_VALUABLE);
   await page.locator('.momentum-log-btn').first().click();
 
