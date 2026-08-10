@@ -175,5 +175,17 @@ scoring, the sequencing, and the twenty ratings — all of which are correct.
 **Not a regression.** Before this build C2 stored no reflections at all, so this is an incomplete improvement
 rather than a step back: the close simply omits what it doesn't have, and the ratings half is untouched.
 
-**Nothing here changes the questions, their wording, or their order** — so §§1–5 above stand. It is a plumbing
-fault between one turn and the next, and it is the next thing we fix.
+**Now reproducible on demand.** `npm run walk:c2` drives the whole 37-turn audit in a real browser and checks the
+close. It reports, every time:
+
+```
+✓ the audit reaches its close
+✓ the close leads with the domain the MEMBER chose, not the computed one
+✓ the divergence is named plainly
+✗ the close does NOT give back their obstacle
+✗ the close does NOT give back their first move
+```
+
+So the cross-domain sort answer survives the audit; the per-domain reflections do not reach the close. The
+questions, their wording and their order are all correct — **§§1–5 above stand.** It is a plumbing fault between
+one turn and the next, and the walk now fails on it until it is fixed.
