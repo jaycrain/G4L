@@ -150,3 +150,30 @@ session. There is a test that walks C2 specifically to prove it.
 Every member who finishes C2 will have answered all 32 questions and the 5 sorting questions. There is no
 ratings-only path. See §3.3 — we had built one and took it out.
 
+
+---
+
+## 6 · KNOWN DEFECT — do not walk C2 for content yet (2026-08-09)
+
+**The reflection answers are not reliably saved.** The questions are asked correctly, in your order, and the
+member answers them — but only some answers survive to storage. In a careful manual walk where all twelve were
+answered, two were stored.
+
+**What we know precisely.** Instrumented live, every turn:
+
+```
+self/gap      OUT  {physical:{…}, self:{gapNote:"…"}}   ← the engine writes it
+self/obstacle IN   {physical:{…}}                        ← the next turn arrives without it
+self/obstacle OUT  {physical:{…}, self:{obstacle:"…"}}
+self/action   IN   {physical:{…}}                        ← wiped again
+```
+
+The engine records the answer every time. The following turn arrives missing the CURRENT domain's entry, while
+earlier domains persist. Ruled out: a timing/render artefact (reproduced with turns seconds apart), the
+scoring, the sequencing, and the twenty ratings — all of which are correct.
+
+**Not a regression.** Before this build C2 stored no reflections at all, so this is an incomplete improvement
+rather than a step back: the close simply omits what it doesn't have, and the ratings half is untouched.
+
+**Nothing here changes the questions, their wording, or their order** — so §§1–5 above stand. It is a plumbing
+fault between one turn and the next, and it is the next thing we fix.
