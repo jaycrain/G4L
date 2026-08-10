@@ -28,16 +28,18 @@ function walk(answers: string[]): { turns: Turn[]; final: Turn } {
   return { turns, final: t };
 }
 
-/** Ratings for one domain, then "next" three times to skip its reflection. */
+/** Ratings for one domain. */
 const ratings = (n: number): string[] => Array.from({ length: 5 }, () => String(n));
-const skipReflection = ['next', 'next', 'next'];
+// V4's reflection questions are REQUIRED — "next" no longer advances (Jay, 2026-08-09: the completeness of a
+// validated instrument is Greg's call, not ours). These stand in for a member who answers briefly.
+const answerReflection = ['a gap', 'an obstacle', 'a first move'];
 
 test('a full walk completes: 20 ratings + 4 reflections + 5 sort answers', () => {
   const answers = [
-    ...ratings(3), ...skipReflection,
-    ...ratings(4), ...skipReflection,
-    ...ratings(5), ...skipReflection,
-    ...ratings(6), ...skipReflection,
+    ...ratings(3), ...answerReflection,
+    ...ratings(4), ...answerReflection,
+    ...ratings(5), ...answerReflection,
+    ...ratings(6), ...answerReflection,
     'physical', 'self', 'social', 'outlook', 'self',
   ];
   const { final } = walk(answers);
@@ -62,27 +64,27 @@ test('reflections are asked between domains, not all at the end', () => {
   assert.match(turns.at(-1)!.reply, /1 to 10|rate yourself/i, 'and then we are back to rating the NEXT domain');
 });
 
-test('the member’s words are captured, and a skip captures nothing', () => {
+test('every one of the member’s words is captured, in the right slot', () => {
   const answers = [
-    ...ratings(3), 'I stopped moving entirely', 'next', 'Walk at lunch',
-    ...ratings(4), ...skipReflection,
-    ...ratings(5), ...skipReflection,
-    ...ratings(6), ...skipReflection,
+    ...ratings(3), 'I stopped moving entirely', 'Evenings vanish', 'Walk at lunch',
+    ...ratings(4), ...answerReflection,
+    ...ratings(5), ...answerReflection,
+    ...ratings(6), ...answerReflection,
     'physical', 'physical', 'physical', 'physical', 'physical',
   ];
   const { final } = walk(answers);
   const refl = (final.state as ConvState).collected.auditReflections!;
   assert.equal(refl.domains.physical?.gapNote, 'I stopped moving entirely');
+  assert.equal(refl.domains.physical?.obstacle, 'Evenings vanish');
   assert.equal(refl.domains.physical?.earlyAction, 'Walk at lunch');
-  assert.equal('obstacle' in (refl.domains.physical ?? {}), false, 'the skipped obstacle is ABSENT, not ""');
 });
 
 test('a named sub-issue is recorded — and only when the member actually said it', () => {
   const answers = [
-    ...ratings(3), 'Mostly sleep, and my nutrition is a mess', 'next', 'next',
-    ...ratings(4), ...skipReflection,
-    ...ratings(5), ...skipReflection,
-    ...ratings(6), ...skipReflection,
+    ...ratings(3), 'Mostly sleep, and my nutrition is a mess', 'no time', 'walk more',
+    ...ratings(4), ...answerReflection,
+    ...ratings(5), ...answerReflection,
+    ...ratings(6), ...answerReflection,
     'physical', 'physical', 'physical', 'physical', 'physical',
   ];
   const { final } = walk(answers);
@@ -97,8 +99,8 @@ test('the reflection step counter RESETS between domains', () => {
   const answers = [
     ...ratings(3), 'physical gap', 'physical obstacle', 'physical action',
     ...ratings(4), 'self gap', 'self obstacle', 'self action',
-    ...ratings(5), ...skipReflection,
-    ...ratings(6), ...skipReflection,
+    ...ratings(5), ...answerReflection,
+    ...ratings(6), ...answerReflection,
     'self', 'self', 'self', 'self', 'self',
   ];
   const { final } = walk(answers);
@@ -113,10 +115,10 @@ test('THE DIVERGENCE READS AS REFLECTION, NOT CORRECTION', () => {
   const physicalHeavy = ['2', '10', '10', '3', '8'];
   const flat = ['7', '8', '4', '9', '4'];
   const answers = [
-    ...physicalHeavy, ...skipReflection,
-    ...flat, ...skipReflection,
+    ...physicalHeavy, ...answerReflection,
+    ...flat, ...answerReflection,
     ...flat, 'People drifted', 'I cancel a lot', 'Call my brother',
-    ...flat, ...skipReflection,
+    ...flat, ...answerReflection,
     'physical', 'social', 'social', 'social', 'social',
   ];
   const { final } = walk(answers);
@@ -129,10 +131,10 @@ test('THE DIVERGENCE READS AS REFLECTION, NOT CORRECTION', () => {
 
 test('all 20 ratings survive the split — the bag is not reset between domains', () => {
   const answers = [
-    ...ratings(1), ...skipReflection,
-    ...ratings(2), ...skipReflection,
-    ...ratings(3), ...skipReflection,
-    ...ratings(4), ...skipReflection,
+    ...ratings(1), ...answerReflection,
+    ...ratings(2), ...answerReflection,
+    ...ratings(3), ...answerReflection,
+    ...ratings(4), ...answerReflection,
     ...AUDIT_SORT_QUESTIONS.map(() => 'self'),
   ];
   const { final } = walk(answers);
@@ -150,9 +152,9 @@ test('EVERY answer survives the whole arc — reflections are not wiped by the r
   // domain started — and the close would quietly have less to say, which reads as "the member skipped it".
   const answers = [
     ...ratings(3), 'sleep and nutrition', 'physical obstacle', 'physical action',
-    ...ratings(4), ...skipReflection,
+    ...ratings(4), ...answerReflection,
     ...ratings(5), 'people drifted', 'I cancel a lot', 'Call my brother',
-    ...ratings(6), ...skipReflection,
+    ...ratings(6), ...answerReflection,
     'physical', 'physical', 'social', 'physical', 'social',
   ];
   const { final } = walk(answers);
@@ -169,4 +171,41 @@ test('EVERY answer survives the whole arc — reflections are not wiped by the r
     costliest: 'physical', identity: 'physical', readiest: 'social', ripple: 'physical', focus: 'social',
   });
   assert.equal(final.complete, true);
+});
+
+test('A REFLECTION CANNOT BE SKIPPED — "next" re-asks instead of advancing', () => {
+  // The instrument's completeness belongs to the person who validated it. We briefly allowed a skip because 32
+  // questions sat awkwardly against Greg's 15-minute note; that was our judgement substituted for his.
+  const { final } = walk([...ratings(3), 'next']);
+  assert.equal(final.complete, false);
+  assert.match(final.reply, /biggest difference/i, 'the SAME question comes back');
+  const refl = (final.state as ConvState).collected.auditReflections;
+  assert.equal(refl?.domains?.physical?.gapNote, undefined, 'and "next" is never stored as their answer');
+});
+
+test('an empty answer re-asks, and never stores a blank', () => {
+  const { final } = walk([...ratings(3), '   ']);
+  assert.equal(final.complete, false);
+  assert.equal((final.state as ConvState).collected.auditReflections?.domains?.physical, undefined);
+});
+
+test('AFTER REPEATED NON-ANSWERS THE WAY OUT IS NAMED — required, but never a trap', () => {
+  // The Independence Guarantee survives the removal of the skip. A question that can only be answered, with no
+  // stated exit, is a trap — so after a few tries we say plainly that they can leave and their place is saved.
+  // This is the administered loop's CAT-31 lesson, reused.
+  const { final } = walk([...ratings(3), 'next', 'next', 'next']);
+  assert.match(final.reply, /come back whenever you like|place is saved/i, 'the exit is stated');
+  assert.match(final.reply, /biggest difference/i, 'and the question is still the one being asked');
+  assert.equal(final.complete, false, 'it never advances on a non-answer');
+});
+
+test('"no" and "nothing" are ANSWERS, not refusals', () => {
+  // Narrow on purpose: to "anything specific?" or "what gets in the way?", these are real replies. Treating them
+  // as non-answers would be the same error as treating the question as optional — deciding a member's words
+  // don't count.
+  const { final } = walk([...ratings(3), 'nothing specific comes to mind', 'no', 'walk at lunch']);
+  const d = (final.state as ConvState).collected.auditReflections?.domains?.physical;
+  assert.equal(d?.gapNote, 'nothing specific comes to mind');
+  assert.equal(d?.obstacle, 'no');
+  assert.equal(d?.earlyAction, 'walk at lunch');
 });

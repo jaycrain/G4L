@@ -24,8 +24,8 @@ test('RC-3 · parseLikert now reads "10" on a 1–10 scale (and clamps out-of-ra
 
 test('C2 arc · warm frame → 20 items in four domains (headers) → RC-1 summary close', () => {
   // v3.3: the 20 ratings are unchanged in content and order, but they now run in four stages with Greg's
-  // reflection questions between them (V4 interleaves on purpose). So the walk answers ratings AND skips the three
-  // reflections per domain, then answers the five cross-domain sort questions. The header assertions still pin that
+  // reflection questions between them (V4 interleaves on purpose). So the walk answers the ratings AND the three
+  // reflections per domain, then the five cross-domain sort questions. The header assertions still pin that
   // each domain announces itself at the right item.
   let t = reclaimC2Opening();
   assert.equal(t.state.stage, 'audit-physical');
@@ -43,7 +43,8 @@ test('C2 arc · warm frame → 20 items in four domains (headers) → RC-1 summa
       answered++;
     }
     assert.equal(t.complete, false, `after domain ${d + 1}'s ratings the audit is not over`);
-    for (let k = 0; k < 3; k++) t = applyReclaimC2Turn(t.state, [], 'next'); // skip Q3/Q7/Q8
+    // Q3/Q7/Q8 are REQUIRED (Jay, 2026-08-09) — "next" re-asks rather than advancing, so the walk answers them.
+    for (const a of ['a gap', 'an obstacle', 'a first move']) t = applyReclaimC2Turn(t.state, [], a);
   }
   assert.equal(answered, AUDIT_ITEM_COUNT, 'all 20 items were administered');
   assert.equal(t.complete, false, 'the cross-domain sort still has to happen');

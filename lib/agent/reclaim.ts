@@ -341,8 +341,29 @@ function auditSummary(responses: number[], c?: Collected): string {
 //
 // What did NOT change: the twenty items, their order, their wording, and the scoring. This is sequencing only.
 
-const REFLECT_SKIP =
-  /^\s*(skip|pass|next|none|nothing|nah|n\/a|no thanks|move on|not now|rather not|prefer not|dunno|don'?t know)\b/i;
+// V4's eight questions per domain are the instrument, and an instrument is not a menu. We briefly let Q3/Q7/Q8 be
+// skipped — CC's call, made by weighing 32 questions against Greg's 15-minute note. That was the wrong call and the
+// wrong person making it (Jay, 2026-08-09): "Greg's been administering these kinds of tests his entire career, and
+// he knows what makes an assessment psychometrically sound." Reserving a validated instrument's completeness to the
+// person who validated it. Skippability is GONE.
+//
+// What survives is the Independence Guarantee, because that is governance rather than preference — and the
+// administered ratings already resolve the same tension: they never skip an item and never invent a value, but after
+// a few unreadable answers they say plainly that the member can leave and their place is saved. Required question,
+// open door. Same shape here.
+//
+// An open question has no UNREADABLE answer, only an ABSENT one — so the only non-answers are an empty message and
+// the bare skip tokens we ourselves used to invite. Deliberately narrow: "no" and "nothing" are NOT in here, because
+// to "anything specific?" or "what gets in the way?" those are real answers, and deciding a member's words don't
+// count is the same error as deciding the question doesn't.
+const BARE_NON_ANSWER = /^\s*(skip|next|pass|n\/?a)\s*[.!]?\s*$/i;
+const REFLECT_HELP_AFTER = 3;
+function reflectStuckHelp(): string {
+  return (
+    "There's no wrong answer here — whatever comes to mind first is usually the true one, even if it's a few words. " +
+    "And if now isn't the moment, you can leave this and come back whenever you like; your place is saved."
+  );
+}
 
 const ratingsStageId = (d: AuditDomain): Stage => `audit-${d}`;
 const reflectStageId = (d: AuditDomain): Stage => `reflect-${d}`;
@@ -353,9 +374,9 @@ type ReflectStep = (typeof REFLECT_STEPS)[number];
 
 function reflectPrompt(d: AuditDomain, step: ReflectStep): string {
   const p = AUDIT_REFLECTION_PROMPTS[d][step];
-  if (step !== 'gap') return `${p}\n\n(Or say "next" to move on.)`;
+  if (step !== 'gap') return p;
   // Q3 carries both asks in one turn — see the instrument's note on why we don't split it into two.
-  return `${p}\n\n${AUDIT_SUB_ISSUE_ASK[d]}\n\n${AUDIT_SUB_ISSUES[d].join(' · ')}\n\n(Say more in your own words, or just say "next".)`;
+  return `${p}\n\n${AUDIT_SUB_ISSUE_ASK[d]}\n\n${AUDIT_SUB_ISSUES[d].join(' · ')}`;
 }
 
 /** Which of Greg's named sub-issues did their answer actually mention? Substring match on his labels — never inferred. */
@@ -378,22 +399,29 @@ function stashReflection(c: Collected, d: AuditDomain, patch: Record<string, unk
  */
 function reflectionStage(d: AuditDomain, nextStage: Stage): StageDef {
   const advance: StageDef['gather'] = (b) => {
-    const sc = b.scratch as { step?: number };
+    const sc = b.scratch as { step?: number; unanswered?: number };
     const i = sc.step ?? 0;
     const step = REFLECT_STEPS[i]!;
     const said = (b.memberMessage ?? '').trim();
-    const skipped = !said || REFLECT_SKIP.test(said);
 
-    // A SKIP STORES NOTHING. An empty string here comes back later quoted as their obstacle.
-    if (!skipped) {
-      if (step === 'gap') {
-        const subs = pickSubIssues(d, said);
-        stashReflection(b.collected, d, { gapNote: said, ...(subs.length ? { subIssues: subs } : {}) });
-      } else if (step === 'obstacle') {
-        stashReflection(b.collected, d, { obstacle: said });
-      } else {
-        stashReflection(b.collected, d, { earlyAction: said });
-      }
+    // NOT AN ANSWER → re-ask. Never advance, never store a blank, never invent one. After a few tries, name the way
+    // out rather than repeating the question into silence (the administered loop's CAT-31 lesson: an item that can
+    // only be answered, with no stated exit, is a trap).
+    if (!said || BARE_NON_ANSWER.test(said)) {
+      sc.unanswered = (sc.unanswered ?? 0) + 1;
+      const base = reflectPrompt(d, step);
+      b.reply = sc.unanswered >= REFLECT_HELP_AFTER ? `${base}${BEAT_SEP}${reflectStuckHelp()}` : base;
+      return;
+    }
+    sc.unanswered = 0;
+
+    if (step === 'gap') {
+      const subs = pickSubIssues(d, said);
+      stashReflection(b.collected, d, { gapNote: said, ...(subs.length ? { subIssues: subs } : {}) });
+    } else if (step === 'obstacle') {
+      stashReflection(b.collected, d, { obstacle: said });
+    } else {
+      stashReflection(b.collected, d, { earlyAction: said });
     }
 
     if (i + 1 < REFLECT_STEPS.length) {

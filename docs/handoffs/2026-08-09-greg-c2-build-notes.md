@@ -59,14 +59,25 @@ already have two better ways to say it.
 V4's Q3 carries two asks: the open reflection *and* the checklist. We kept them in a single turn rather than
 splitting. Splitting would add four more turns to an activity your own header budgets at **15 minutes**.
 
-### 3.3 · The three open questions are skippable
-Q3, Q7 and Q8 can be passed with a word. **Reason:** 4 domains × 8 questions is 32 turns, plus 5 more for the
-sort. Twelve of those are free text. That is not a fifteen-minute activity for most people, and our governance
-posture says the member sets the depth and can stop at any point. Skipping stores nothing — an unanswered
-question is absent, never an empty answer we might later quote back at them.
+### 3.3 · ~~The three open questions are skippable~~ — WITHDRAWN, they are required
+We briefly made Q3, Q7 and Q8 skippable, reasoning that 32 questions plus a five-question sort did not fit the
+15 minutes your header allows. **We have withdrawn that** — Jay's call, and the right one:
 
-**This is the divergence most worth your attention.** If you would rather the audit insist on all twelve, we can
-make them required — but then the 15-minute figure needs to change, and we should say so on the front end.
+> *"If you're just creating that option because you don't think the time allotment allows for it, that's not
+> our call to make. Greg's been administering these kinds of tests his entire career, and he knows what makes an
+> assessment psychometrically sound."*
+
+**All eight questions per domain are now asked and answered.** A non-answer re-asks rather than advancing, and
+nothing is ever stored blank. The completeness of your instrument is yours to set; if the timing needs to give,
+that is a separate conversation and the 15-minute figure is what should move.
+
+**One thing we kept, because it is governance rather than preference:** after a few non-answers the Companion
+says plainly that the member can leave and their place is saved. It never skips the question and never invents
+an answer — this is the same behaviour your rating items already have when someone can't give a number. Required
+question, open door.
+
+Consequence you should know: **the audit is now roughly 37 turns.** If that is too long for one sitting, the
+lever is the instrument's shape — yours — not our willingness to ask.
 
 ### 3.4 · When the member's choice disagrees with the arithmetic, the member wins
 Step 2 asks outright: *"If you could make meaningful progress in only one area over the next 30 days, which one
@@ -91,7 +102,8 @@ something to the wrong part of their life.
 
 ## 4 · Open questions for you
 
-1. **§3.3** — required or skippable? If required, the 15-minute estimate needs revising.
+1. **§3.3 is now settled: required.** The open question is the 15-minute estimate — roughly 37 turns will not fit
+   it. Do we revise the figure on the front end, or do you want to shorten the instrument?
 2. **The felt-gap rating.** V4's Q3 in the wing doc includes a "how big does the distance feel" rating, but RC-1
    says the formula uses the computed gap. We ask Q3 as reflection only and never rate it. Confirm that is right.
 3. **Re-taking C2.** The register is longitudinal, so a member can re-run the audit in a later cycle. Should a
@@ -129,9 +141,7 @@ Worth stating explicitly since C2 asks people what is missing from their lives: 
 of this, and a crisis message anywhere in the audit routes to 988 without recording a rating or advancing the
 session. There is a test that walks C2 specifically to prove it.
 
-### 5.6 · One thing you may want to change
-A member who skips every reflection can still finish the audit on ratings alone — 20 numbers, 5 sort answers.
-That is the fifteen-minute path. A member who answers everything gives us far more. **We chose to let them
-choose.** If you would rather the audit hold them to at least the obstacle and the early action for their chosen
-focus, that is a small change and we'll make it — it just moves the floor.
+### 5.6 · The audit cannot be part-completed
+Every member who finishes C2 will have answered all 32 questions and the 5 sorting questions. There is no
+ratings-only path. See §3.3 — we had built one and took it out.
 
