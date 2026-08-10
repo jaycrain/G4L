@@ -211,9 +211,20 @@ export async function getDashboard(db: Db, memberId: string): Promise<Dashboard 
   if (!m) return null;
 
   // The full Door set; fall back to named_door for legacy members with no member_door rows.
-  const doorRows = (await db.query<any>(
-    `select door_slug, is_primary from member_door where member_id=$1 order by sort_order, is_primary desc`,
-    [memberId])).rows;
+  // Degrade-not-crash (W-13 class): getDashboard is the ESSENTIAL upstream of the cornerstone companion
+  // (buildContext reads it BEFORE its own try/catch), so a supplementary read that rejects here would 500 the
+  // whole rail. member_door is SUPPLEMENTARY — on a read failure, degrade to [] and let the named_door fallback
+  // below carry the primary Door rather than taking the dashboard down.
+  const doorRows = await db
+    .query<any>(
+      `select door_slug, is_primary from member_door where member_id=$1 order by sort_order, is_primary desc`,
+      [memberId],
+    )
+    .then((r) => r.rows)
+    .catch((e) => {
+      console.warn('member_door read failed — degrading to named_door fallback:', (e as Error).message);
+      return [] as any[];
+    });
   let doors: DoorRef[] = doorRows
     .filter((r: any) => isDoorSlug(r.door_slug))
     .map((r: any) => ({ slug: r.door_slug, displayName: doorName(r.door_slug), isPrimary: r.is_primary === true }));
@@ -245,13 +256,27 @@ export async function getDashboard(db: Db, memberId: string): Promise<Dashboard 
   const reclaimItems = allItems.filter((i) => !i.released).map(({ id, text, reclaimed }) => ({ id, text, reclaimed }));
   const releasedReclaimItems = allItems.filter((i) => i.released).map(({ id, text, reclaimed }) => ({ id, text, reclaimed }));
   const reclaimList = reclaimItems.map((i) => i.text);
-  const measures = await listMeasures(db, memberId);
+  // Measures + score are SUPPLEMENTARY to the dashboard hero (name + identity + doors + reclaim list render
+  // without them). Guard both so a drifted/transient read degrades — measures → [], score → null — instead of
+  // crashing the dashboard (and, through buildContext, the companion). Both are null-safe downstream.
+  const measures = await listMeasures(db, memberId).catch((e) => {
+    console.warn('listMeasures read failed — degrading to no measures:', (e as Error).message);
+    return [] as MeasureView[];
+  });
 
-  const latest = (await db.query<any>(
-    `select id_score, physical_score, self_score, social_score, outlook_score,
+  const latest = await db
+    .query<any>(
+      `select id_score, physical_score, self_score, social_score, outlook_score,
             delta_from_baseline, delta_from_previous, direction
      from idq_retake where member_id=$1 and cycle_indicator=1
-     order by sequence_no desc limit 1`, [memberId])).rows[0];
+     order by sequence_no desc limit 1`,
+      [memberId],
+    )
+    .then((r) => r.rows[0])
+    .catch((e) => {
+      console.warn('idq_retake read failed — degrading to no score:', (e as Error).message);
+      return undefined;
+    });
 
   let score: Dashboard['score'] = null;
   let focus: Dashboard['currentFocus'] = null;

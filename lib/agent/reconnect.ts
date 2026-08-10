@@ -107,13 +107,20 @@ export async function loadReconnectCaptures(db: Db, memberId: string): Promise<C
   if (!m) return null;
 
   // The full recognized Door set, PRIMARY FIRST (recognition, not a routing set). Fall back to named_door.
-  const doorRows = (
-    await db.query<{ door_slug: string; is_primary: boolean }>(
+  // Degrade-not-crash: this read is SUPPLEMENTARY (the named_door fallback below carries the primary) and uses
+  // removed_at (migration 0043) — a column a drifted DB may lack. On any read failure, degrade to [] so the arc
+  // still opens on the named_door primary instead of throwing out of the (unguarded) arc-entry callers.
+  const doorRows = await db
+    .query<{ door_slug: string; is_primary: boolean }>(
       // ACTIVE Doors only — a re-seeing soft-removes the old Door (removed_at), so it must not reload as current.
       'select door_slug, is_primary from member_door where member_id = $1 and removed_at is null order by is_primary desc, sort_order',
       [memberId],
     )
-  ).rows;
+    .then((r) => r.rows)
+    .catch((e) => {
+      console.warn('member_door read failed (0043 removed_at unapplied?) — degrading to named_door:', (e as Error).message);
+      return [] as { door_slug: string; is_primary: boolean }[];
+    });
   let doors: DoorSlug[] = doorRows.filter((r) => isDoorSlug(r.door_slug)).map((r) => r.door_slug as DoorSlug);
   if (doors.length === 0 && isDoorSlug(m.named_door)) doors = [m.named_door as DoorSlug];
 

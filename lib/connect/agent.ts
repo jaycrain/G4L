@@ -22,16 +22,19 @@ export type ConnectAgentSummary = {
 };
 
 export async function getConnectSummaryForAgent(db: Db, memberId: string): Promise<ConnectAgentSummary> {
+  // Every read here is SUPPLEMENTARY community awareness — the companion (buildContext) folds this summary into its
+  // context, so a single drifted/transient Connect table must NOT collapse the whole context to minimal (W-13 class).
+  // Guard each read to a safe empty default: a failure degrades that one signal to "no activity yet", never a throw.
   const [profile, notifications, unreadCount, postRows, pactRows] = await Promise.all([
-    getConnectProfile(db, memberId),
-    getNotifications(db, memberId, 5),
-    unreadNotificationCount(db, memberId),
+    getConnectProfile(db, memberId).catch(() => null),
+    getNotifications(db, memberId, 5).catch(() => []),
+    unreadNotificationCount(db, memberId).catch(() => 0),
     db.query<{ label: string }>(
       `select coalesce(title, left(body, 60)) as label
          from connect_post where author_id = $1 and status = 'visible'
         order by created_at desc limit 3`,
       [memberId],
-    ),
+    ).catch(() => ({ rows: [] as { label: string }[] })),
     db.query<{
       direction: 'i_committed' | 'holding';
       commitment: string;
@@ -51,7 +54,15 @@ export async function getConnectSummaryForAgent(db: Db, memberId: string): Promi
         where (pact.doer_id = $1 or pact.partner_id = $1) and pact.status = 'active'
         order by pact.created_at desc`,
       [memberId],
-    ),
+    ).catch(() => ({
+      rows: [] as {
+        direction: 'i_committed' | 'holding';
+        commitment: string;
+        other_name: string;
+        reclaim_text: string | null;
+        last_checkin: string | null;
+      }[],
+    })),
   ]);
 
   const recentEngagement = notifications.map((n) => ({
