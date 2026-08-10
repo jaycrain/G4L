@@ -165,4 +165,23 @@ if (problems.length) {
   console.error('\nNothing was published. Fix these and re-run — an incomplete bundle is worse than a late one.');
   process.exit(1);
 }
+// ── Keep Cowork's mount fresh ─────────────────────────────────────────────────────────────────────────────────
+// She reads a LOCAL folder: /Users/jaycrain/g4l-platform/docs/canon. Work happens in a git worktree and pushes to
+// main, so the primary checkout goes stale and her folder silently keeps serving the old version — which is
+// exactly how she was left reading 60-commit-old canon on 2026-08-10. Publishing is not finished until the
+// checkout she is mounted on actually has the new version in it.
+const PRIMARY = '/Users/jaycrain/g4l-platform';
+try {
+  const here = git('rev-parse', '--show-toplevel');
+  if (here !== PRIMARY && existsSync(join(PRIMARY, '.git'))) {
+    execFileSync('git', ['-C', PRIMARY, 'pull', '--ff-only', '--quiet', 'origin', 'main'], { stdio: 'pipe' });
+    const landed = existsSync(join(PRIMARY, CANON, 'MANIFEST.md'));
+    console.log(landed
+      ? `  ✓ synced Cowork's mount — v${version} is live at ${PRIMARY}/docs/canon`
+      : `  ! ${PRIMARY} pulled but v${version} is not there yet — push this commit, then re-run the sync`);
+  }
+} catch (e) {
+  console.warn(`  ! could not sync ${PRIMARY} (${e.message.split('\n')[0]}) — pull it manually or Cowork reads stale canon`);
+}
+
 console.log(`\nComplete. Commit ${CANON} and tag v${version}.`);
