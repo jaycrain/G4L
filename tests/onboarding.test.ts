@@ -340,6 +340,44 @@ test('§7.2 collision — Load-Bearer yields to the specific load Door (Aging Pa
   assert.equal(withFullHouse.includes('load_bearer'), false, 'Load-Bearer yields to the specific Full House Door');
 });
 
+// ── The Acceptance: ACKNOWLEDGING age is not ACCEPTING it (OPEN — recorded 2026-08-09, fix deferred) ──────────
+//
+// The Acceptance is "the quiet surrender to age — deciding that slower, softer and less capable is simply how it
+// goes now, and expecting nothing else." It is a STANCE of having stopped expecting more. Noticing that you are
+// older is not that. Most healthy midlife people say "I'm not as fast as I was" and are still training.
+//
+// The cue list currently mixes the two registers in one bucket. Surrender cues ("resigned myself", "made peace
+// with", "settled for less", "my best years are behind me") sit alongside plain acknowledgment ("getting older",
+// "at my age", "slowing down", "not as young as I used to be") — so acknowledgment alone tags the Door.
+//
+// The Body/Acceptance tiebreaker (EXPLICIT_SETTLED, lib/doors.ts) already knows the difference, but it only fires
+// when a PHYSICAL cue is also present. With no Body cue, mere acknowledgment tags The Acceptance unopposed.
+//
+// Why this matters beyond tidiness: the Door is shown to the member at intake WITH its metaphor
+// ([[doors-presented-at-intake]]), so a false positive hands someone a label about their own stance that they did
+// not intend — and the two false cases below are members who are explicitly still working at it.
+//
+// LEFT OPEN DELIBERATELY (Jay, 2026-08-09) — recorded as todo rather than fixed, so the cases live in code with
+// the rest of the taxonomy instead of in a note. The likely shape: require a SURRENDER cue to tag, and demote the
+// acknowledgment cues to corroboration only. Do NOT just delete the soft cues — a member who says only "at my age,
+// what do you expect" is the real thing, and that is what makes this a judgement rather than a regex tweak.
+// This half is CORRECT today and is a real assertion, not a todo — it is the guard for whoever fixes the other
+// half. The obvious "fix" is to delete the soft cues, which would take the true positives with them.
+test('§7.4 The Acceptance — a surrender STANCE tags the Door (must survive the fix below)', () => {
+  assert.ok(matchDoors('it is what it is, my best years are behind me').includes('acceptance'));
+  assert.ok(matchDoors("I've made peace with being past my prime").includes('acceptance'));
+  assert.ok(matchDoors('what do you expect at my age, I resigned myself to it').includes('acceptance'),
+    'and a surrender stance carried ONLY by the soft cues plus "resigned myself"');
+});
+
+test('§7.4 The Acceptance — merely NOTICING age does NOT tag the Door', { todo: 'OPEN: both cases currently tag acceptance' }, () => {
+  const striving = matchDoors('I am not as young as I used to be, but I am working on it');
+  assert.equal(striving.includes('acceptance'), false, 'she is explicitly still working at it — that is not surrender');
+
+  const noticing = matchDoors('I am slowing down a bit these days');
+  assert.equal(noticing.includes('acceptance'), false, 'an observation about pace is not a decision to expect nothing more');
+});
+
 test('§7.3 no-map — a real Fade whose story maps to no Door completes (null routing), with own-words recognition', () => {
   const gap = 'It crept in over years — the version of me that took risks just quietly went silent, and I let it.';
   assert.deepEqual(matchDoors(gap), [], 'this story maps to no canonical Door');
