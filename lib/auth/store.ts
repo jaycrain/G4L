@@ -22,10 +22,15 @@ export function hashSessionToken(token: string): string {
 // FOR EVERYONE in the window between the deploy and the hand-applied migration. A security fix that takes the
 // product down is not a security fix.
 //
-// The shim has done its job: 0064 is applied everywhere and the plaintext `token` column is dropped, so the
-// fallback branches were unreachable and are gone. THE LESSON STAYS EVEN THOUGH THE CODE DIDN'T — prod
-// migrations here are applied by hand, so any future schema-dependent change must work on BOTH shapes and be
-// tested on both. See docs/security-hardening-ledger.md.
+// The shim has done its job and the fallback branches are gone. THE LESSON STAYS EVEN THOUGH THE CODE DIDN'T —
+// prod migrations here are applied by hand, so any future schema-dependent change must work on BOTH shapes and
+// be tested on both. See docs/security-hardening-ledger.md.
+//
+// This comment used to assert that the plaintext column "is dropped". It wasn't — 0068 was written, committed,
+// and then sat unapplied on prod for weeks while this file said otherwise. When Jay finally ran it (2026-08-09)
+// the table still held SIX plaintext bearer tokens, all six unexpired: working keys to real accounts, in a
+// column nothing read. Applied now, prod verified 74/74. The habit worth keeping: a comment may only describe
+// the code in this repo, never the state of a database it cannot see.
 
 
 export const SESSION_TTL_DAYS = 30;
