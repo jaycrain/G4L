@@ -58,5 +58,17 @@ export async function POST(req: Request): Promise<NextResponse> {
   // C2's durable register, so the walk starts from no reading rather than appending a second sequence.
   if (session === 'c2') await db.query('delete from bigger_world_reading where member_id = $1', [memberId]);
 
+  // C3's durable registers. Without these a second run finds an existing profile, so the log surface renders
+  // already-defined and the DEFINING half of the walk is never exercised — the walk would pass while testing half
+  // the feature. Scoped by payload kind, not just phase: `coaching_plan` hosts more than one reclaim payload shape
+  // (C1's refinement snapshots live here too), and a phase-only delete would take an unrelated plan with it.
+  if (session === 'c3') {
+    await db.query(
+      `delete from coaching_plan where member_id = $1 and phase = 'reclaim' and payload->>'kind' = 'quality_day_profile'`,
+      [memberId],
+    );
+    await db.query('delete from quality_day_log where member_id = $1', [memberId]);
+  }
+
   return NextResponse.json({ ok: true, session, memberId });
 }

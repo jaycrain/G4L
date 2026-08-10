@@ -24,7 +24,8 @@
     "smoke": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/smoke.ts",
     "typecheck": "tsc --noEmit",
     "crisis-drill": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/crisis-drill.ts",
-    "walk:c2": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/c2-audit-walk.ts"
+    "walk:c2": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/c2-audit-walk.ts",
+    "walk:c3": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/c3-quality-walk.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.40.0",
