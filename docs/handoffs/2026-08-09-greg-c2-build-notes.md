@@ -76,8 +76,12 @@ says plainly that the member can leave and their place is saved. It never skips 
 an answer — this is the same behaviour your rating items already have when someone can't give a number. Required
 question, open door.
 
-Consequence you should know: **the audit is now roughly 37 turns.** If that is too long for one sitting, the
-lever is the instrument's shape — yours — not our willingness to ask.
+**And our timing objection does not survive the arithmetic either.** The audit is ~37 turns, but they are not
+equal: 20 are chip taps on a 1–10 scale (seconds each), 5 are picking one of four domains, and only 12 are free
+text — and your prompts invite a phrase, not a paragraph ("one small change", "what tends to keep this gap in
+place"). That lands around **9–15 minutes**. Your estimate looks right, and it works precisely *because* the
+ratings are nearly free. We had priced all 37 turns the same, which is how we talked ourselves into cutting
+questions that did not need cutting.
 
 ### 3.4 · When the member's choice disagrees with the arithmetic, the member wins
 Step 2 asks outright: *"If you could make meaningful progress in only one area over the next 30 days, which one
@@ -102,8 +106,9 @@ something to the wrong part of their life.
 
 ## 4 · Open questions for you
 
-1. **§3.3 is now settled: required.** The open question is the 15-minute estimate — roughly 37 turns will not fit
-   it. Do we revise the figure on the front end, or do you want to shorten the instrument?
+1. **§3.3 is settled: required.** No question for you here — just a check. We make it ~9–15 minutes for a member
+   answering briefly (20 chip taps, 5 picks, 12 short written answers). If that matches what you have seen
+   administering it, nothing changes.
 2. **The felt-gap rating.** V4's Q3 in the wing doc includes a "how big does the distance feel" rating, but RC-1
    says the formula uses the computed gap. We ask Q3 as reflection only and never rate it. Confirm that is right.
 3. **Re-taking C2.** The register is longitudinal, so a member can re-run the audit in a later cycle. Should a
