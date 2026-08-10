@@ -61,3 +61,87 @@ export const AUDIT_DOMAIN_INTRO: Record<AuditDomain, string> = {
   social: 'Your relationships — connection, belonging, presence with others.',
   outlook: 'Your outlook — hope, direction, purpose, belief in what’s possible.',
 };
+
+// ═══ THE REFLECTION HALF (V4 Q3 / Q7 / Q8, plus Audit Step 2) ════════════════════════════════════════════════
+//
+// The header of this file used to say the felt-gap was "deferred to conversation". It was — along with Q7 and Q8
+// and the whole cross-domain sort, and the deferral outlived its note: it hardened into a belief that C2 was
+// unbuilt, which reached Greg in an email telling him we hadn't implemented his PriorityScore. We had, on 9 July,
+// to the letter. What we had NOT built was this half — the part that makes C2 a facilitated audit rather than a
+// rating exercise (Jay, 2026-08-09: "Cycle 1 needs to mean something, and every member, charter to 10,000, is
+// most likely going to use it").
+//
+// Everything here is Greg's wording. Two deliberate normalisations, both worth knowing:
+//
+//  1. His sub-issue lists trail off inconsistently — "Other?", "Other…", "No", "No…" — because they were written
+//     as a designer's shorthand, not as UI. We render only the NAMED issues as chips and let the member write
+//     their own or move on; "Other" and "No" are what the free text and the skip already are. Adding chips that
+//     mean "none of these" invites a tap that says nothing.
+//  2. Q3 in V4 is one prompt carrying two asks (the open reflection AND the checklist). We keep it as one turn
+//     with both, rather than splitting it — splitting would add four more turns to an activity Greg budgeted at
+//     fifteen minutes.
+
+/** The named sub-issues Greg lists under each domain's Q3. Chips; the member may also write their own, or skip. */
+export const AUDIT_SUB_ISSUES: Record<AuditDomain, readonly string[]> = {
+  physical: ['Weight status', 'Strength', 'Endurance', 'Balance', 'Nutrition', 'Sleep'],
+  self: ['Discipline', 'Focus'], // V4: "Discipline", "Inability to Focus" — stated as the thing, not the lack
+  social: ['Spouse', 'Children', 'Friend', 'Coworker'],
+  outlook: ['Visioning', 'Finding purpose', 'Mindfulness'],
+};
+
+export type AuditReflectionKind = 'gap' | 'obstacle' | 'action';
+
+/** Greg's Q3 / Q7 / Q8, verbatim, per domain. */
+export const AUDIT_REFLECTION_PROMPTS: Record<AuditDomain, Record<AuditReflectionKind, string>> = {
+  physical: {
+    gap: 'What feels like the biggest difference between where you are now and where you want to be physically?',
+    obstacle: 'What tends to keep this gap in place?',
+    action: 'What is one small change that would begin moving this area in the right direction?',
+  },
+  self: {
+    gap: 'What feels most out of alignment between your current self and your desired self?',
+    obstacle: 'What most often pulls you away from being the person you want to be?',
+    action: 'What is one behavior or practice that would help you feel more aligned with yourself this week?',
+  },
+  social: {
+    gap: 'What feels like the biggest gap between the social life you have and the social life you want?',
+    obstacle: 'What tends to get in the way here?',
+    action: 'What is one action that could begin improving this area soon?',
+  },
+  outlook: {
+    gap: 'What feels most missing right now between where you are and where you want to be in your outlook?',
+    obstacle: 'What most keeps you stuck or foggy here?',
+    action: 'What is one step that would help you feel more forward-moving?',
+  },
+};
+
+/** The second half of Q3 — the invitation to name specifics. Greg's phrasing varies by domain; kept. */
+export const AUDIT_SUB_ISSUE_ASK: Record<AuditDomain, string> = {
+  physical: 'Any specific issues? Pick the ones that feel most important — or tell me in your own words.',
+  self: 'Anything specific that you think is a priority?',
+  social: 'Any specific issue or relationship that you want to focus on?',
+  outlook: 'Anything specific?',
+};
+
+// ═══ AUDIT STEP 2 — cross-domain priority sorting ════════════════════════════════════════════════════════════
+//
+// Asked once, after all four domains. Note what these are: FOUR of them ask the member to say in words what the
+// ratings already compute (most costly, most important, most ready, biggest ripple). That is not redundancy to
+// engineer away — it is the member reading their own numbers back and deciding. Where the two disagree, the
+// member's answer wins and the arithmetic is shown as reflection, never as correction (Jay, 2026-08-09). A
+// program whose whole posture is "never a verdict" cannot then tell a member their own priority is wrong.
+export type AuditSortKey = 'costliest' | 'identity' | 'readiest' | 'ripple' | 'focus';
+
+export const AUDIT_SORT_QUESTIONS: { key: AuditSortKey; prompt: string }[] = [
+  { key: 'costliest', prompt: 'Looking across these four areas, which gap feels most painful or costly to leave unaddressed?' },
+  { key: 'identity', prompt: 'Which area feels most important to your identity right now?' },
+  { key: 'readiest', prompt: 'Which area are you actually most ready to work on, even if it isn’t the biggest gap?' },
+  { key: 'ripple', prompt: 'Which area, if it improved, would create the biggest ripple effect in the rest of your life?' },
+  // THE DECIDING ONE. `focus` is what becomes First Focus, and therefore which domain's obstacle and early action
+  // become Key Obstacle and First Action in the close.
+  { key: 'focus', prompt: 'If you could make meaningful progress in only one area over the next 30 days, which one would you choose?' },
+];
+
+export const AUDIT_SORT_INTRO =
+  'Now that we’ve looked at all four areas, we can try to find some synergies and priorities. The goal is not to fix ' +
+  'everything at once but to identify what matters most right now and where progress would create the biggest shift.';

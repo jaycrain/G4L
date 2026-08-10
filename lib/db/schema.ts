@@ -139,6 +139,7 @@ export const MIGRATIONS: Array<{ file: string; sentinel: Sentinel }> = [
   { file: 'migrations/0073_operator_and_access_log.sql', sentinel: 'member_access_log' },
   // 0074 creates one table, so the table IS the last thing — no partial-run subtlety to guard against here.
   { file: 'migrations/0074_w3_daily_entry.sql', sentinel: 'w3_daily_entry' },
+  { file: 'migrations/0075_bigger_world_reflections.sql', sentinel: { table: 'bigger_world_reading', column: 'reflections' } },
 ];
 export const SEED_SQL = () => sqlFile('seed/0001_reference_data.sql');
 
