@@ -13,6 +13,7 @@
 //   node --experimental-strip-types scripts/c2-audit-walk.ts [baseUrl]
 //
 // Demo-only, like smoke.ts: reads SMOKE_EMAIL / SMOKE_PASSWORD and refuses any non-.test account.
+// Re-runnable: it clears any in-flight audit first (dev-only route), so you can run it back to back.
 //
 // THE ASSERTION IS THE CLOSE, NOT THE DATABASE. If the member's obstacle and first move come back to them in the
 // summary, the whole chain worked — captured, carried across 30-odd turns, stored, and read back. Asserting on a
@@ -162,6 +163,18 @@ async function main(): Promise<void> {
   if (!memberId) { bad('could not resolve the member id after login'); await browser.close(); return finish(); }
   ok('logged in as the demo member');
 
+  // START FROM A CLEAN AUDIT. C2 resumes an in-flight session (correctly), so without this a second run — or any
+  // earlier crashed one — begins mid-conversation. Clearing it used to mean wiping the local DB, re-seeding, resetting
+  // the demo password and restarting the server, four commands deep, every time. The walk now asks the SERVER to
+  // clear it (app/dev/reset-session), because the dev server holds the PGlite directory open and a script that
+  // reaches into it from outside corrupts the data dir.
+  //
+  // page.request shares the browser's cookies, so this runs as the member we just logged in as. The route is
+  // dev-gated, POST-only, and refuses anything that is not a .test account.
+  const reset = await page.request.post(`${base}/dev/reset-session?session=c2`);
+  if (reset.ok()) ok('cleared any in-flight audit — starting fresh');
+  else bad(`could not reset the audit (${reset.status()}) — a resumed session will make the checks below meaningless`);
+
   await page.goto(`${base}/reclaim/${memberId}/c2`, { waitUntil: 'domcontentloaded' });
   await page.waitForSelector('.scale-chip, textarea', { timeout: 20000 });
 
@@ -174,7 +187,7 @@ async function main(): Promise<void> {
   // sits above it — the guard fired on a perfectly fresh audit.
   const memberSaid = await page.locator('.chat .bubble.member').count();
   if (memberSaid > 0) {
-    bad('C2 resumed an in-flight session — this walk needs a fresh audit. Stop the dev server, run `npm run db:seed-demo`, restart, and try again.');
+    bad('C2 still resumed an in-flight session even after the reset — check that /dev/reset-session is reachable (it 404s unless NODE_ENV is non-production AND DATABASE_URL is unset).');
     await browser.close();
     return finish();
   }
