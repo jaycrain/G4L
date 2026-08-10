@@ -8,9 +8,13 @@
 // RECLAIM (Decision JJ) — gated; flipped to Production 2026-07-10 (v2.5, all four Rs live).
 
 import { runArcTurn, administeredStage, scaleExpects, type ArcConfig, type StageDef } from './onboarding-staged.ts';
-import { BEAT_SEP, type Collected, type ConvMessage, type ConvState, type ModelTurn, type Turn } from './onboarding.ts';
+import { BEAT_SEP, type Collected, type ConvMessage, type ConvState, type ModelTurn, type Stage, type Turn } from './onboarding.ts';
 import { TIER_LABEL, REFINE_TIERS, isTier, type Tier } from '../reclaim/refinement-store.ts';
-import { AUDIT_ITEMS, AUDIT_ITEM_COUNT, AUDIT_SCALE_MAX, AUDIT_DOMAIN_STARTS, AUDIT_DOMAIN_LABEL, AUDIT_DOMAIN_INTRO } from '../reclaim/bigger-world-instrument.ts';
+import {
+  AUDIT_ITEMS, AUDIT_ITEM_COUNT, AUDIT_SCALE_MAX, AUDIT_DOMAIN_STARTS, AUDIT_DOMAIN_LABEL, AUDIT_DOMAIN_INTRO,
+  AUDIT_DOMAINS, AUDIT_SUB_ISSUES, AUDIT_REFLECTION_PROMPTS, AUDIT_SUB_ISSUE_ASK, AUDIT_SORT_QUESTIONS, AUDIT_SORT_INTRO,
+  type AuditDomain,
+} from '../reclaim/bigger-world-instrument.ts';
 import { scoreAudit } from '../reclaim/bigger-world-scoring.ts';
 import { grintaStem, CHECKPOINT_CHALLENGE_ITEMS } from '../grinta/survey/instrument.ts';
 import { confirmsProposal } from './onboarding-intent.ts';
@@ -297,43 +301,204 @@ function auditOpener(): string {
 }
 
 // The RC-1 classification summary (member-facing, non-judgmental) — names the Primary focus + the Momentum Lever.
-function auditSummary(responses: number[]): string {
+function auditSummary(responses: number[], c?: Collected): string {
   const s = scoreAudit(responses);
-  const primary = AUDIT_DOMAIN_LABEL[s.primary];
+  // THE MEMBER'S CHOICE LEADS. Step 2 asks outright which single area they'd move on; the ratings compute a Primary
+  // independently. When they differ the member wins and the ranking is shown as reflection, never as correction
+  // (Jay, 2026-08-09) — a program whose posture is "never a verdict" cannot tell someone their own priority is wrong.
+  const chosen = c?.auditReflections?.sort?.focus as AuditDomain | undefined;
+  const primary = AUDIT_DOMAIN_LABEL[chosen ?? s.primary];
   const lever = AUDIT_DOMAIN_LABEL[s.momentumLever];
   const leverLine =
     s.momentumLever === s.primary
       ? ` It's also where you feel most ready to move — a strong place to start.`
       : ` And if you want an easier place to build momentum first, ${lever} is where you're most ready.`;
+  // Remark on a divergence only when there IS one, and never as a correction.
+  const divergence =
+    chosen && chosen !== s.primary
+      ? ` The ratings leaned toward ${AUDIT_DOMAIN_LABEL[s.primary]}; you chose ${AUDIT_DOMAIN_LABEL[chosen]}, and that's what we'll go with.`
+      : '';
+  const r = chosen ? c?.auditReflections?.domains?.[chosen] : undefined;
+  // Their own words, quoted only when they gave them. Silence beats borrowing an obstacle they named about a
+  // different part of their life.
+  const obstacleLine = r?.obstacle ? `${BEAT_SEP}You named what tends to get in the way: “${r.obstacle}”.` : '';
+  const actionLine = r?.earlyAction ? ` And the move you'd start with: “${r.earlyAction}”.` : '';
   return (
     `Here's what stands out. Your best next focus looks like your ${primary} life because it matters to you and ` +
-    `progress there would ripple into the rest of your life.${leverLine}` +
+    `progress there would ripple into the rest of your life.${divergence}${leverLine}` +
+    `${obstacleLine}${actionLine}` +
     `${BEAT_SEP}This was about finding the priority, not judging any of it. It's saved — you can come back to it anytime.`
   );
 }
 
-const auditStage: StageDef = administeredStage({
-  id: 'audit',
-  itemCount: AUDIT_ITEM_COUNT, // 20
-  scaleMax: AUDIT_SCALE_MAX, // 10 (the scale-param)
-  minLabel: 'low', // W-24: chip anchors — a 1–10 rating whose meaning shifts per item (standing / importance / readiness / ripple), so neutral poles
-  maxLabel: 'high',
-  opener: () => auditOpener(),
-  deliverItem: (n) => auditDeliver(n),
-  reprompt: (n) => `A number from 1 to 10 — where would you put it?\n\n${auditDeliver(n)}`,
-  onComplete: (b) => {
-    // All 20 ratings are in b.administeredResponses. Summarize the RC-1 priorities in-engine (pure); the ACTION scores
-    // + persists the durable reading (RC-4).
+// ── The arc: four (ratings → reflection) pairs, then the cross-domain sort ────────────────────────────────────
+//
+// Greg's V4 interleaves these on purpose — you reflect on a domain while it is still live in your head, not after
+// rating all four. Honouring that means the 20 ratings can no longer be ONE administered stage, because an
+// administered stage cannot hold a free-text turn. So the instrument splits across four administered stages with
+// CUMULATIVE targets (5, 10, 15, 20) checked against the shared response bag, each handing off to that domain's
+// reflection. `displayTotal` keeps the member-facing counter saying "of 20" rather than "of 10".
+//
+// What did NOT change: the twenty items, their order, their wording, and the scoring. This is sequencing only.
+
+const REFLECT_SKIP =
+  /^\s*(skip|pass|next|none|nothing|nah|n\/a|no thanks|move on|not now|rather not|prefer not|dunno|don'?t know)\b/i;
+
+const ratingsStageId = (d: AuditDomain): Stage => `audit-${d}`;
+const reflectStageId = (d: AuditDomain): Stage => `reflect-${d}`;
+
+/** A domain's three reflection turns, in Greg's order. */
+const REFLECT_STEPS = ['gap', 'obstacle', 'action'] as const;
+type ReflectStep = (typeof REFLECT_STEPS)[number];
+
+function reflectPrompt(d: AuditDomain, step: ReflectStep): string {
+  const p = AUDIT_REFLECTION_PROMPTS[d][step];
+  if (step !== 'gap') return `${p}\n\n(Or say "next" to move on.)`;
+  // Q3 carries both asks in one turn — see the instrument's note on why we don't split it into two.
+  return `${p}\n\n${AUDIT_SUB_ISSUE_ASK[d]}\n\n${AUDIT_SUB_ISSUES[d].join(' · ')}\n\n(Say more in your own words, or just say "next".)`;
+}
+
+/** Which of Greg's named sub-issues did their answer actually mention? Substring match on his labels — never inferred. */
+function pickSubIssues(d: AuditDomain, msg: string): string[] {
+  const m = (msg ?? '').toLowerCase();
+  return AUDIT_SUB_ISSUES[d].filter((x) => m.includes(x.toLowerCase()));
+}
+
+function stashReflection(c: Collected, d: AuditDomain, patch: Record<string, unknown>): void {
+  const r = (c.auditReflections ??= { domains: {} });
+  r.domains[d] = { ...(r.domains[d] ?? {}), ...patch };
+}
+
+/**
+ * A domain's reflection stage: Q3 → Q7 → Q8, each skippable.
+ *
+ * Deterministic — C2 makes no model call, so `gather` does the work and sets its own reply. It still runs through
+ * runArcTurn, and that is deliberate: crisis routing lives at the top of the kernel, and this is a session where a
+ * member describes what is missing from their life. A hand-rolled loop outside the kernel would silently drop it.
+ */
+function reflectionStage(d: AuditDomain, nextStage: Stage): StageDef {
+  const advance: StageDef['gather'] = (b) => {
+    const sc = b.scratch as { step?: number };
+    const i = sc.step ?? 0;
+    const step = REFLECT_STEPS[i]!;
+    const said = (b.memberMessage ?? '').trim();
+    const skipped = !said || REFLECT_SKIP.test(said);
+
+    // A SKIP STORES NOTHING. An empty string here comes back later quoted as their obstacle.
+    if (!skipped) {
+      if (step === 'gap') {
+        const subs = pickSubIssues(d, said);
+        stashReflection(b.collected, d, { gapNote: said, ...(subs.length ? { subIssues: subs } : {}) });
+      } else if (step === 'obstacle') {
+        stashReflection(b.collected, d, { obstacle: said });
+      } else {
+        stashReflection(b.collected, d, { earlyAction: said });
+      }
+    }
+
+    if (i + 1 < REFLECT_STEPS.length) {
+      sc.step = i + 1;
+      b.reply = reflectPrompt(d, REFLECT_STEPS[i + 1]!);
+      return;
+    }
+    // Done with this domain. Reset the step counter so the NEXT domain's reflection starts at Q3 rather than
+    // inheriting this one's position — the shared scratch is the obvious place for that bug to live.
+    sc.step = 0;
+    b.stage = nextStage;
+    b.reply =
+      nextStage === 'sort' ? sortOpener() : auditDeliver((AUDIT_DOMAINS.indexOf(d) + 1) * 5);
+  };
+  return {
+    id: reflectStageId(d),
+    mode: 'drawout',
+    opener: () => reflectPrompt(d, 'gap'),
+    offersSubstance: () => true,
+    gather: advance,
+    confirm: advance, // a reflection is recorded as given, never negotiated — no confirm step
+  };
+}
+
+// ── Audit Step 2 — the cross-domain sort ─────────────────────────────────────────────────────────────────────
+function sortOpener(): string {
+  return `${AUDIT_SORT_INTRO}${BEAT_SEP}${AUDIT_SORT_QUESTIONS[0]!.prompt}`;
+}
+
+/** Read a domain out of a free answer. Nothing is stored when they name none — we do not guess a priority. */
+function parseAuditDomain(msg: string): AuditDomain | undefined {
+  const m = (msg ?? '').toLowerCase();
+  const named = AUDIT_DOMAINS.find((d) => m.includes(d));
+  if (named) return named;
+  if (/\b(body|bodily|health|fitness|energy|sleep)\b/.test(m)) return 'physical';
+  if (/\b(relationship|relationships|people|friends|family|connection)\b/.test(m)) return 'social';
+  if (/\b(purpose|hope|direction|future|meaning)\b/.test(m)) return 'outlook';
+  if (/\b(discipline|self-respect|steadiness|identity)\b/.test(m)) return 'self';
+  return undefined;
+}
+
+const sortStage: StageDef = (() => {
+  const advance: StageDef['gather'] = (b) => {
+    const sc = b.scratch as { q?: number };
+    const i = sc.q ?? 0;
+    const q = AUDIT_SORT_QUESTIONS[i]!;
+    const picked = parseAuditDomain(b.memberMessage);
+    if (picked) {
+      const r = (b.collected.auditReflections ??= { domains: {} });
+      (r.sort ??= {})[q.key] = picked;
+    }
+    if (i + 1 < AUDIT_SORT_QUESTIONS.length) {
+      sc.q = i + 1;
+      b.reply = AUDIT_SORT_QUESTIONS[i + 1]!.prompt;
+      return;
+    }
     b.stage = 'complete';
     b.complete = true;
-    b.reply = auditSummary(b.administeredResponses.slice(0, AUDIT_ITEM_COUNT));
-  },
-});
+    b.reply = auditSummary(b.administeredResponses.slice(0, AUDIT_ITEM_COUNT), b.collected);
+  };
+  return {
+    id: 'sort',
+    mode: 'drawout',
+    opener: () => sortOpener(),
+    offersSubstance: () => true,
+    gather: advance,
+    confirm: advance,
+  };
+})();
+
+/** One administered stage per domain. `itemCount` is CUMULATIVE — it is compared against the shared bag. */
+function ratingsStage(d: AuditDomain): StageDef {
+  const idx = AUDIT_DOMAINS.indexOf(d);
+  return administeredStage({
+    id: ratingsStageId(d),
+    itemCount: (idx + 1) * 5, // cumulative: 5, 10, 15, 20
+    displayTotal: AUDIT_ITEM_COUNT, // always "of 20"
+    scaleMax: AUDIT_SCALE_MAX,
+    minLabel: 'low',
+    maxLabel: 'high',
+    opener: () => (idx === 0 ? auditOpener() : auditDeliver(idx * 5)),
+    deliverItem: (n) => auditDeliver(n),
+    reprompt: (n) => `A number from 1 to 10 — where would you put it?\n\n${auditDeliver(n)}`,
+    onComplete: (b) => {
+      b.stage = reflectStageId(d);
+      b.reply = reflectPrompt(d, 'gap');
+    },
+  });
+}
+
+const C2_STAGE_ORDER: Stage[] = [...AUDIT_DOMAINS.flatMap((d) => [ratingsStageId(d), reflectStageId(d)]), 'sort'];
 
 export const RECLAIM_C2_ARC: ArcConfig = {
   id: 'reclaim-c2',
-  stageOrder: ['audit'],
-  stages: { audit: auditStage },
+  stageOrder: C2_STAGE_ORDER,
+  stages: Object.fromEntries([
+    ...AUDIT_DOMAINS.flatMap((d, i) => {
+      const next: Stage = i + 1 < AUDIT_DOMAINS.length ? ratingsStageId(AUDIT_DOMAINS[i + 1]!) : 'sort';
+      return [
+        [ratingsStageId(d), ratingsStage(d)],
+        [reflectStageId(d), reflectionStage(d, next)],
+      ];
+    }),
+    ['sort', sortStage],
+  ]),
   onComplete: () => 'Here’s what stands out from the audit.',
 };
 
@@ -343,7 +508,8 @@ export function applyReclaimC2Turn(state: ConvState, history: ConvMessage[], mem
 }
 
 export function reclaimC2Opening(): Turn {
-  return { reply: auditOpener(), state: { stage: 'audit', collected: {} }, complete: false, expects: scaleExpects(RECLAIM_C2_ARC, 'audit', false) };
+  const first = ratingsStageId(AUDIT_DOMAINS[0]!);
+  return { reply: auditOpener(), state: { stage: first, collected: {} }, complete: false, expects: scaleExpects(RECLAIM_C2_ARC, first, false) };
 }
 
 export function liveTurnReclaimC2(state: ConvState, history: ConvMessage[], memberMessage: string): Turn {

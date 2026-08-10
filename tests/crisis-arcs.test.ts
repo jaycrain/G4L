@@ -22,7 +22,9 @@ test('crisis · administered arc (Reclaim C2) → 988, does not record or advanc
   const t = applyReclaimC2Turn(reclaimC2Opening().state, [], CRISIS);
   assert.equal(t.crisis, true);
   assert.equal(t.reply, CRISIS_RESPONSE_US);
-  assert.equal(t.state.stage, 'audit', 'the arc did not advance past the crisis');
+  // 'audit-physical', not 'audit': v3.3 split C2's 20 ratings across four stages so Greg's reflection questions
+  // land while each domain is still live. The ASSERTION is unchanged in substance — the arc must not advance.
+  assert.equal(t.state.stage, 'audit-physical', 'the arc did not advance past the crisis');
   assert.equal((t.state.administeredResponses ?? []).length, 0, 'the crisis message was never recorded as a rating');
 });
 

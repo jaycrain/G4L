@@ -1,0 +1,137 @@
+# C2 — the Bigger World Audit: what we built, and where we diverged from V4
+
+**For:** Greg · **From:** Jay + CC · **started 2026-08-09, updated as we build**
+**Source of record:** `G4L_RECLAIM - Gated Assets V4.docx`, Asset C2
+
+A running list, so nothing surprises you when you walk it. Every divergence is listed with its reason. If any of
+them is wrong, say so and we change it — none of this is precious.
+
+---
+
+## 0 · First, a correction we owe you
+
+Our email of 8 August said C2 "doesn't ask for Importance, Readiness and RippleEffect" and that PriorityScore was
+the thing we needed you for. **That was wrong.** C2 has asked all five ratings per domain — in your verbatim
+wording — since 9 July, and PriorityScore has been computed exactly as V4 specifies:
+
+```
+Gap = Desired − Current
+PriorityScore = (Gap × Importance) + Readiness + RippleEffect
+```
+
+Domains are ranked by that score into Primary and Secondary, and the Momentum Lever is the highest-Readiness
+domain. So the eight-question sequence you wrote out on 9 August confirmed our reading was right, but you should
+not have had to write it. Our records said "unbuilt" and nobody checked the code. Sorry for the wasted evening.
+
+**What was genuinely missing is the reflection half** — Q3, Q7, Q8 and the cross-domain sort. That is what this
+document covers.
+
+---
+
+## 1 · What was already live (unchanged)
+
+- Four domains, in your order: Physical → Self → Social → Outlook.
+- Five 1–10 ratings each (Q1 Current, Q2 Desired, Q4 Importance, Q5 Readiness, Q6 Ripple), verbatim.
+- `Gap = Desired − Current`, computed — **not** the member's felt-gap rating. Per your RC-1 note.
+- PriorityScore, the Primary / Secondary ranking, and the Momentum Lever.
+- Stored longitudinally (RC-4) so a member can ask the Companion for their past priorities.
+
+## 2 · What we are adding now (V4, previously deferred)
+
+- **Q3** — the gap reflection, plus your named sub-issues per domain.
+- **Q7** — the obstacle.
+- **Q8** — the early action.
+- **Audit Step 2** — the five cross-domain sorting questions.
+- **Audit Step 3** — Key Obstacle and First Action added to the close (Primary / Secondary / Momentum Lever were
+  already there, so the classification goes from three of five to five of five).
+
+---
+
+## 3 · Divergences from V4, with reasons
+
+### 3.1 · "Other" and "No" are not offered as choices
+Your sub-issue lists end with "Other?", "Other…", "No", "No…". We render only the **named** issues as tappable
+chips — Weight status, Strength, Endurance, Balance, Nutrition, Sleep, and so on — and let the member type
+anything else or move on. A chip meaning "none of these" invites a tap that carries no information, and we
+already have two better ways to say it.
+
+### 3.2 · Q3 stays one turn, not two
+V4's Q3 carries two asks: the open reflection *and* the checklist. We kept them in a single turn rather than
+splitting. Splitting would add four more turns to an activity your own header budgets at **15 minutes**.
+
+### 3.3 · The three open questions are skippable
+Q3, Q7 and Q8 can be passed with a word. **Reason:** 4 domains × 8 questions is 32 turns, plus 5 more for the
+sort. Twelve of those are free text. That is not a fifteen-minute activity for most people, and our governance
+posture says the member sets the depth and can stop at any point. Skipping stores nothing — an unanswered
+question is absent, never an empty answer we might later quote back at them.
+
+**This is the divergence most worth your attention.** If you would rather the audit insist on all twelve, we can
+make them required — but then the 15-minute figure needs to change, and we should say so on the front end.
+
+### 3.4 · When the member's choice disagrees with the arithmetic, the member wins
+Step 2 asks outright: *"If you could make meaningful progress in only one area over the next 30 days, which one
+would you choose?"* The ratings independently compute a Primary. **These can disagree** — a member may have the
+largest gap in Physical and still choose Social.
+
+We take **the member's answer** as First Focus, and show the computed ranking alongside it as reflection, never
+as correction. The summary can say "the numbers leaned Physical; you chose Social" — which is interesting
+material, not an error to resolve. The program's posture is that we never hand back a verdict, and telling
+someone their own stated priority is wrong would break that.
+
+Consequence: **Key Obstacle and First Action are taken from whichever domain the member chose** — their Q7 and Q8
+answers for that domain, in their words. We deliberately do *not* ask a model to synthesise a "main" obstacle
+across all four; that would be a guess presented as a finding.
+
+### 3.5 · A skipped answer produces silence, not a substitute
+If the member chooses Social as their focus but skipped Social's obstacle question, the close says nothing about
+an obstacle. It does not borrow the obstacle they gave for Physical. Better to say less than to attribute
+something to the wrong part of their life.
+
+---
+
+## 4 · Open questions for you
+
+1. **§3.3** — required or skippable? If required, the 15-minute estimate needs revising.
+2. **The felt-gap rating.** V4's Q3 in the wing doc includes a "how big does the distance feel" rating, but RC-1
+   says the formula uses the computed gap. We ask Q3 as reflection only and never rate it. Confirm that is right.
+3. **Re-taking C2.** The register is longitudinal, so a member can re-run the audit in a later cycle. Should a
+   second audit re-ask all 32, or only the domains that changed?
+
+---
+
+## 5 · Appended 2026-08-09 — the conversation is built
+
+### 5.1 · What a member now experiences, in order
+Physical ratings (5) → Physical Q3/Q7/Q8 → Self ratings (5) → Self Q3/Q7/Q8 → Social → Outlook → the five sorting
+questions → the summary. **Your interleaving is honoured**: each domain's reflection lands while that domain is
+still live, not after all four are rated.
+
+The counter a member sees still reads **"of 20"** throughout, because that is the instrument's length. It does not
+reset per domain.
+
+### 5.2 · The 20 ratings are untouched
+Same items, same order, same wording, same scoring. What changed is only that they are delivered in four groups
+instead of one — a free-text turn cannot live inside a rating block, so the block had to be split to let your Q3
+land where you put it.
+
+### 5.3 · Sub-issues are matched from what they actually say
+When a member answers Q3, we look for your named issues in their own sentence — "mostly sleep, and my nutrition is
+a mess" records **Sleep** and **Nutrition**. We never infer one they didn't say. They can also just describe it in
+their own words and pick nothing.
+
+### 5.4 · The summary now quotes them
+When the member names an obstacle and an early action for the domain they chose, the close reads those back in
+their own words. If they skipped either, the close simply doesn't mention it — rather than reaching for what they
+said about a different domain.
+
+### 5.5 · Crisis routing is intact
+Worth stating explicitly since C2 asks people what is missing from their lives: distress detection sits above all
+of this, and a crisis message anywhere in the audit routes to 988 without recording a rating or advancing the
+session. There is a test that walks C2 specifically to prove it.
+
+### 5.6 · One thing you may want to change
+A member who skips every reflection can still finish the audit on ratings alone — 20 numbers, 5 sort answers.
+That is the fifteen-minute path. A member who answers everything gives us far more. **We chose to let them
+choose.** If you would rather the audit hold them to at least the obstacle and the early action for their chosen
+focus, that is a small change and we'll make it — it just moves the floor.
+

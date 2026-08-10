@@ -1082,6 +1082,12 @@ export type AdministeredConfig = {
   id: StageId;
   itemCount: number;
   scaleMax?: number; // the Likert ceiling — defaults to 5 (IDQ/Grinta); B1's SDT instrument passes 7
+  // THE INSTRUMENT'S FULL LENGTH, when it differs from this stage's completion target. `itemCount` answers "when is
+  // this STAGE done" and is compared against the shared response bag, so an instrument split across several stages
+  // uses CUMULATIVE targets (5, 10, 15, 20). But the member-facing "Question n of y" must always say the whole
+  // instrument's length, or C2's second domain would announce itself as "of 10". Defaults to itemCount, so every
+  // single-stage instrument (the IDQ, Grinta, B1, B2, C4) is untouched.
+  displayTotal?: number;
   minLabel?: string; // W-24: the low-pole anchor shown under the "1" chip (e.g. "not at all true"); defaults to "1"
   maxLabel?: string; // W-24: the high-pole anchor shown under the top chip (e.g. "very true"); defaults to the number
   opener: (c: Collected) => string; // the warm open + item 0, delivered when the prior stage hands in
@@ -1103,7 +1109,7 @@ export function administeredStage(cfg: AdministeredConfig): StageDef {
   return {
     id: cfg.id,
     mode: 'administered',
-    scale: { max, minLabel: cfg.minLabel ?? '1', maxLabel: cfg.maxLabel ?? String(max), itemCount: cfg.itemCount }, // W-24/W-48: the chip surface's scale + anchors + length
+    scale: { max, minLabel: cfg.minLabel ?? '1', maxLabel: cfg.maxLabel ?? String(max), itemCount: cfg.displayTotal ?? cfg.itemCount }, // W-24/W-48: the chip surface's scale + anchors + length
     opener: cfg.opener,
     offersSubstance: () => true,
     gather() {},

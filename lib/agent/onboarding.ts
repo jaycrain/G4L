@@ -66,6 +66,13 @@ export type Stage = 'identity' | 'identity_name' | 'reclaim' | 'door' | 'complet
   | 'evidence'
   | 'refine'
   | 'audit'
+  // v3.3 — C2 splits the 20 ratings across four stages so Greg's Q3/Q7/Q8 can land WHILE each domain is still live
+  // in the member's head (V4 interleaves them; a single administered stage cannot hold a free-text turn). Template
+  // literals rather than eight hand-written members: the domain list is the source of truth, and a typo in one of
+  // eight near-identical strings is exactly the bug nobody spots in review.
+  | `audit-${'physical' | 'self' | 'social' | 'outlook'}`
+  | `reflect-${'physical' | 'self' | 'social' | 'outlook'}`
+  | 'sort'
   // C3 · Quality Days — 'quality' (coach mode: define the Quality Day → confirm → store + open the logging week).
   | 'quality';
 
@@ -84,6 +91,14 @@ export type Collected = {
   // to the Playbook (Window/Legacy work) at finalize rather than living as a goal. Member-confirmed before the move.
   visionKeepers?: string[];
   gap?: string; // Step 3 free-text: how the gap opened (member's words)
+  // Reclaim C2's reflection half (V4 Q3/Q7/Q8 + the cross-domain sort), accumulated across the arc's stages and
+  // handed to the action at completion. Declared STRUCTURALLY rather than importing AuditReflections from
+  // lib/reclaim: Collected is onboarding's type and a dependency from here into a phase module would invert the
+  // direction the rest of the codebase runs in. Structurally compatible; the action narrows it at the boundary.
+  auditReflections?: {
+    domains: Record<string, { subIssues?: string[]; gapNote?: string; obstacle?: string; earlyAction?: string }>;
+    sort?: Record<string, string>;
+  };
   doors?: DoorSlug[]; // one or more
   // The Grinta baseline — set when the "Introduction to Grinta" survey completes (composite + the 4 strand means).
   // Stashed here so the completion card can render the number and the action can persist it without re-scoring.
@@ -590,6 +605,18 @@ const STAGE_PROMPT: Record<Stage, string> = {
   refine: 'Looking at your list with clearer eyes — what still feels true, and what feels different now?',
   // v2.5 Reclaim C2 — administered (off the depth kernel), never actually used; a 1–10 re-ask for type completeness.
   audit: 'A number from 1 to 10 — where would you put it?',
+  // v3.3 C2 — the rating stages are administered (off the depth kernel), so these fallbacks are never actually
+  // used; present for type completeness, scale-matched. The REFLECT fallbacks are real safety nets though: those
+  // stages are drawout, and a blank reply there would read as the Companion having stalled mid-audit.
+  'audit-physical': 'A number from 1 to 10 — where would you put it?',
+  'audit-self': 'A number from 1 to 10 — where would you put it?',
+  'audit-social': 'A number from 1 to 10 — where would you put it?',
+  'audit-outlook': 'A number from 1 to 10 — where would you put it?',
+  'reflect-physical': 'Say as much or as little as you like about that — or just say “next”.',
+  'reflect-self': 'Say as much or as little as you like about that — or just say “next”.',
+  'reflect-social': 'Say as much or as little as you like about that — or just say “next”.',
+  'reflect-outlook': 'Say as much or as little as you like about that — or just say “next”.',
+  sort: 'Which of the four — Physical, Self, Social, or Outlook?',
   // v2.5 Reclaim C3 — coach mode supplies its own coaching text; a neutral fallback for type completeness.
   quality: 'When a day feels genuinely good to you, what tends to be present?',
 };

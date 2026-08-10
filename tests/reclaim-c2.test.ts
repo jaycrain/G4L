@@ -23,19 +23,33 @@ test('RC-3 · parseLikert now reads "10" on a 1–10 scale (and clamps out-of-ra
 });
 
 test('C2 arc · warm frame → 20 items in four domains (headers) → RC-1 summary close', () => {
+  // v3.3: the 20 ratings are unchanged in content and order, but they now run in four stages with Greg's
+  // reflection questions between them (V4 interleaves on purpose). So the walk answers ratings AND skips the three
+  // reflections per domain, then answers the five cross-domain sort questions. The header assertions still pin that
+  // each domain announces itself at the right item.
   let t = reclaimC2Opening();
-  assert.equal(t.state.stage, 'audit');
+  assert.equal(t.state.stage, 'audit-physical');
   assert.match(t.reply, /world to get BIGGER/i, 'the frame');
   assert.match(t.reply, /Physical —/i, 'the first domain header');
   assert.ok(t.reply.includes(AUDIT_ITEMS[0]!.prompt), 'item 0 verbatim');
 
-  for (let i = 0; i < AUDIT_ITEM_COUNT; i++) {
-    assert.equal(t.state.stage, 'audit', `administering item ${i}`);
-    if (i === 5) assert.match(t.reply, new RegExp(`${AUDIT_DOMAIN_LABEL[AUDIT_DOMAIN_STARTS[5]!]} —`, 'i'), 'Self header at 5');
-    if (i === 15) assert.match(t.reply, new RegExp(`${AUDIT_DOMAIN_LABEL[AUDIT_DOMAIN_STARTS[15]!]} —`, 'i'), 'Outlook header at 15');
-    t = applyReclaimC2Turn(t.state, [], '7');
+  let answered = 0;
+  for (let d = 0; d < 4; d++) {
+    for (let i = 0; i < 5; i++) {
+      const absolute = d * 5 + i;
+      if (absolute === 5) assert.match(t.reply, new RegExp(`${AUDIT_DOMAIN_LABEL[AUDIT_DOMAIN_STARTS[5]!]} —`, 'i'), 'Self header at 5');
+      if (absolute === 15) assert.match(t.reply, new RegExp(`${AUDIT_DOMAIN_LABEL[AUDIT_DOMAIN_STARTS[15]!]} —`, 'i'), 'Outlook header at 15');
+      t = applyReclaimC2Turn(t.state, [], '7');
+      answered++;
+    }
+    assert.equal(t.complete, false, `after domain ${d + 1}'s ratings the audit is not over`);
+    for (let k = 0; k < 3; k++) t = applyReclaimC2Turn(t.state, [], 'next'); // skip Q3/Q7/Q8
   }
-  assert.equal(t.complete, true, 'after the 20th, C2 completes');
+  assert.equal(answered, AUDIT_ITEM_COUNT, 'all 20 items were administered');
+  assert.equal(t.complete, false, 'the cross-domain sort still has to happen');
+  for (let q = 0; q < 5; q++) t = applyReclaimC2Turn(t.state, [], 'physical');
+
+  assert.equal(t.complete, true, 'after the sort, C2 completes');
   assert.equal((t.state.administeredResponses ?? []).length, 20, 'all 20 ratings captured');
   assert.match(t.reply, /best next focus/i, 'the RC-1 priority summary');
 });
