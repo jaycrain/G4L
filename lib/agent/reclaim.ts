@@ -385,9 +385,30 @@ function pickSubIssues(d: AuditDomain, msg: string): string[] {
   return AUDIT_SUB_ISSUES[d].filter((x) => m.includes(x.toLowerCase()));
 }
 
+/**
+ * Record one reflection answer — by REPLACING, never by mutating.
+ *
+ * THIS IS THE BUG THAT ATE C2's REFLECTIONS (found 2026-08-09 via scripts/c2-audit-walk.ts). The earlier version
+ * did `(c.auditReflections ??= { domains: {} }).domains[d] = {...}` — it mutated the object IN PLACE. That looks
+ * harmless and is not, because `runArcTurn` builds this turn's collected with a SHALLOW copy
+ * (`mergeStaged({ ...state.collected }, …)`), so `c.auditReflections` is THE SAME OBJECT the client just sent us.
+ * Mutating it means the value we hand back is a slice of the caller's own input, and the turn's write never
+ * reaches the client — every turn arrived carrying the same frozen snapshot while the stage advanced correctly
+ * around it.
+ *
+ * The give-away in the logs was precise: only the FIRST answer of the whole audit ever survived — the one turn
+ * where `??=` allocates a genuinely new object rather than mutating an existing one.
+ *
+ * So: build a new object at every level we touch. The engine's own replay tests could never catch this — they
+ * hold one object across turns, where mutation and replacement are indistinguishable. Only a real client can
+ * tell the difference, which is why the walk exists.
+ */
 function stashReflection(c: Collected, d: AuditDomain, patch: Record<string, unknown>): void {
-  const r = (c.auditReflections ??= { domains: {} });
-  r.domains[d] = { ...(r.domains[d] ?? {}), ...patch };
+  const prev = c.auditReflections ?? { domains: {} };
+  c.auditReflections = {
+    ...prev,
+    domains: { ...prev.domains, [d]: { ...(prev.domains[d] ?? {}), ...patch } },
+  };
 }
 
 /**
@@ -470,8 +491,10 @@ const sortStage: StageDef = (() => {
     const q = AUDIT_SORT_QUESTIONS[i]!;
     const picked = parseAuditDomain(b.memberMessage);
     if (picked) {
-      const r = (b.collected.auditReflections ??= { domains: {} });
-      (r.sort ??= {})[q.key] = picked;
+      // Replace, don't mutate — same reason as stashReflection above. The sort answers appeared to survive only
+      // because the LAST one is written on the turn that completes, so it never has to cross the wire again.
+      const prev = b.collected.auditReflections ?? { domains: {} };
+      b.collected.auditReflections = { ...prev, sort: { ...(prev.sort ?? {}), [q.key]: picked } };
     }
     if (i + 1 < AUDIT_SORT_QUESTIONS.length) {
       sc.q = i + 1;

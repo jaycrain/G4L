@@ -242,12 +242,16 @@ async function main(): Promise<void> {
   // reporting that the audit never reached its close, which is impossible. The transcript contains the MEMBER'S
   // OWN bubbles, so it matched the answer they had just typed. The check could not fail. Reading the agent's
   // bubbles only is the difference between proving the close gives their words back and proving they said them.
-  const agentText = await page
+  // ALL the agent's bubbles, not a trailing window. The first version took the last four — a number tuned, by
+  // accident, to how long the close was WHILE IT WAS BROKEN. The moment the fix landed and the close grew (it now
+  // quotes the member's obstacle and first move), the window slid past "best next focus" and three assertions went
+  // red on working code. Every string checked below appears only in the close, so the whole agent side is both
+  // safer and honest. A window sized to today's output is a trap for tomorrow's.
+  const close = await page
     .locator('.chat .bubble.agent')
     .allTextContents()
-    .then((all) => all.slice(-4).join('\n'))
+    .then((all) => all.join('\n'))
     .catch(() => '');
-  const close = agentText;
   if (navigatedAway) bad('page navigated away mid-walk — treat every assertion below as unproven');
 
   if (/best next focus/i.test(close)) ok('the audit reached its close');

@@ -153,39 +153,25 @@ ratings-only path. See §3.3 — we had built one and took it out.
 
 ---
 
-## 6 · KNOWN DEFECT — do not walk C2 for content yet (2026-08-09)
+## 6 · The defect that ate the reflections — FOUND AND FIXED (2026-08-09)
 
-**The reflection answers are not reliably saved.** The questions are asked correctly, in your order, and the
-member answers them — but only some answers survive to storage. In a careful manual walk where all twelve were
-answered, two were stored.
-
-**What we know precisely.** Instrumented live, every turn:
+Earlier today this section said the reflection answers were not reliably saved. **They are now.** A full walk in a
+real browser — `npm run walk:c2`, 37 turns — passes every check, including the two that matter:
 
 ```
-self/gap      OUT  {physical:{…}, self:{gapNote:"…"}}   ← the engine writes it
-self/obstacle IN   {physical:{…}}                        ← the next turn arrives without it
-self/obstacle OUT  {physical:{…}, self:{obstacle:"…"}}
-self/action   IN   {physical:{…}}                        ← wiped again
-```
-
-The engine records the answer every time. The following turn arrives missing the CURRENT domain's entry, while
-earlier domains persist. Ruled out: a timing/render artefact (reproduced with turns seconds apart), the
-scoring, the sequencing, and the twenty ratings — all of which are correct.
-
-**Not a regression.** Before this build C2 stored no reflections at all, so this is an incomplete improvement
-rather than a step back: the close simply omits what it doesn't have, and the ratings half is untouched.
-
-**Now reproducible on demand.** `npm run walk:c2` drives the whole 37-turn audit in a real browser and checks the
-close. It reports, every time:
-
-```
-✓ the audit reaches its close
+✓ the close gives back their obstacle, in their words: "I keep cancelling on the people I miss"
+✓ the close gives back their first move: "Ring my brother on Sunday"
+✓ and it does not borrow an obstacle from a domain they did not choose
 ✓ the close leads with the domain the MEMBER chose, not the computed one
 ✓ the divergence is named plainly
-✗ the close does NOT give back their obstacle
-✗ the close does NOT give back their first move
 ```
 
-So the cross-domain sort answer survives the audit; the per-domain reflections do not reach the close. The
-questions, their wording and their order are all correct — **§§1–5 above stand.** It is a plumbing fault between
-one turn and the next, and the walk now fails on it until it is fixed.
+**The cause, for the record, because it is instructive.** The code that recorded each answer *modified* the
+existing record instead of building a new one. That is normally harmless, but the object it modified was the same
+one the member's browser had just sent us — so what we handed back was a piece of the browser's own message, and
+the browser saw no change. Every turn arrived carrying the same frozen snapshot while the conversation advanced
+correctly around it. Only the very first answer of the audit ever survived, because that one turn creates a fresh
+record rather than editing one.
+
+**Nothing about your instrument changed.** The questions, their wording, their order, the scoring, the 1–10
+items — all untouched. This was plumbing between one turn and the next.
