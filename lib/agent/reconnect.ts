@@ -449,11 +449,13 @@ function driftMore(history: ConvMessage[]): string {
   return DRIFT_MORE_VARIANTS[said % DRIFT_MORE_VARIANTS.length]!;
 }
 const DRIFT_CONFIRM = 'Does that name the shape of it — or is it different?';
-function reflectDrift(modelText: string): string {
+// NULL means "the model gave us nothing to reflect". Returning a fixed sentence here instead was the bug: the caller
+// then had a constant to emit, and a constant re-emits VERBATIM for as long as the model keeps coming back empty.
+function reflectDrift(modelText: string): string | null {
   const t = (modelText ?? '').trim();
-  if (t && /\?\s*$/.test(t)) return t;
-  if (t) return `${t}\n\n${DRIFT_CONFIRM}`;
-  return "I don't want to put a shape on this before it's yours — tell me more about what it cost, and how far it's run.";
+  if (!t) return null;
+  if (/\?\s*$/.test(t)) return t;
+  return `${t}\n\n${DRIFT_CONFIRM}`;
 }
 const REOPEN_DRIFT = "Then I've not got it yet — say it your way. What's the real shape of what the drift cost you?";
 // The BRIDGE (V3): the turn toward hope, at the drift→window seam. LIFT starts HERE — the bridge hands straight into
@@ -483,11 +485,14 @@ const driftStage: StageDef = {
     if (!advance) {
       b.reply = withQuestion(b.modelText, driftMore(b.history));
     } else {
-      b.reply = reflectDrift(b.modelText);
-      // Only wait for a confirm if we actually REFLECTED. With no model text there is no shape to check, so
-      // reflectDrift honestly asks for more instead — and entering the confirm state behind a "tell me more" leaves
-      // the engine listening for the answer to a question it never asked, which is how the same line came back twice.
-      b.awaitingConfirm = !!b.modelText.trim();
+      // Only wait for a confirm if we actually REFLECTED. With no model text there is no shape to check — entering
+      // the confirm state behind a "tell me more" leaves the engine listening for the answer to a question it never
+      // asked. And when there is nothing to reflect we fall back to the ROTATING probe, never a fixed line: a
+      // constant here is how the identical sentence came back three turns running in Jennifer's walk (2026-08-09),
+      // with the member telling us four times that she was done.
+      const reflected = reflectDrift(b.modelText);
+      b.reply = reflected ?? driftMore(b.history);
+      b.awaitingConfirm = reflected !== null;
     }
   },
   confirm(b) {
@@ -541,11 +546,12 @@ function windowMore(history: ConvMessage[]): string {
   return WINDOW_MORE_VARIANTS[said % WINDOW_MORE_VARIANTS.length]!;
 }
 const WINDOW_CONFIRM = 'Is that the one worth chasing — or not quite it yet?';
-function reflectWindow(modelText: string): string {
+// NULL means nothing to reflect — see reflectDrift. Same contract, same reason.
+function reflectWindow(modelText: string): string | null {
   const t = (modelText ?? '').trim();
-  if (t && /\?\s*$/.test(t)) return t;
-  if (t) return `${t}\n\n${WINDOW_CONFIRM}`;
-  return "Stay with that Tuesday a moment — tell me more about what's different, and we'll find the spark in it.";
+  if (!t) return null;
+  if (/\?\s*$/.test(t)) return t;
+  return `${t}\n\n${WINDOW_CONFIRM}`;
 }
 const REOPEN_WINDOW = "Then it's not quite the one yet — say more. What would the Tuesday worth chasing actually look like?";
 // The close — name that Tuesday as the spark, and hold onto it. Ends on HOPE; hands to the Checkpoint.
@@ -571,8 +577,10 @@ const windowStage: StageDef = {
     if (!advance) {
       b.reply = withQuestion(b.modelText, windowMore(b.history));
     } else {
-      b.reply = reflectWindow(b.modelText);
-      b.awaitingConfirm = !!b.modelText.trim(); // see driftStage — no reflection means nothing to confirm
+      // See driftStage — no reflection means nothing to confirm, and the fallback rotates rather than repeating.
+      const reflected = reflectWindow(b.modelText);
+      b.reply = reflected ?? windowMore(b.history);
+      b.awaitingConfirm = reflected !== null;
     }
   },
   confirm(b) {
@@ -821,7 +829,8 @@ export const RECONNECT_TOOLS = [
       "cost — and you have a real INSIGHT to reflect (the cost they normalized, how it targeted who they were, the " +
       "sequence). NEVER on the first mention. If the material is still thin, do NOT call it — keep drawing out; a " +
       "manufactured insight is worse than none. On the same turn you call it, reflect that insight in THEIR words, " +
-      "offered as a check they can reject.",
+      "offered as a yes/no check they can simply affirm or wave off — do NOT stack another open question onto the " +
+      "reflect. The point is to let them land it, not to keep drawing once it's landed.",
     input_schema: { type: 'object' as const, properties: {}, required: [] },
   },
   {
@@ -830,7 +839,8 @@ export const RECONNECT_TOOLS = [
       "§2d Drift beat: call ONLY once the member has genuinely drawn out the DRIFT — what the Fade cost, and how far " +
       "it has run — and you can reflect the PATTERN of it (the recurring shape, the quiet thing they've stopped " +
       "noticing is gone), offered as a check they can reject. NEVER on the first mention; if it's still thin, keep " +
-      "drawing out. On the same turn you call it, reflect that pattern in THEIR words. (Same depth signal as reflect_door.)",
+      "drawing out. On the same turn you call it, reflect that pattern in THEIR words, ending on a yes/no check they " +
+      "can simply affirm or wave off — do NOT stack another open question onto it. (Same depth signal as reflect_door.)",
     input_schema: { type: 'object' as const, properties: {}, required: [] },
   },
   {
@@ -845,8 +855,12 @@ export const RECONNECT_TOOLS = [
   {
     name: 'member_reply',
     description:
-      "At an insight reflect-confirm, classify the member's reply: 'done' (it landed / they're satisfied), 'more' " +
-      "(there's more, or they're adding), 'dispute' (the insight was off — they're correcting it).",
+      "At an insight reflect-confirm, classify the member's reply. 'done' — they CONFIRMED it: any clear yes ('yeah, " +
+      "that's exactly it', 'that's the shape of it', 'you nailed it'), INCLUDING a warm or emphatic agreement, even " +
+      "one that echoes the insight back in their own words. A confirmation is 'done' — do NOT read agreement as an " +
+      "invitation to keep drawing. 'more' — ONLY when they add genuinely NEW material still to draw out, not mere " +
+      "agreement or a restatement of the same point. 'dispute' — the insight was off / they're correcting it. When " +
+      "they've clearly landed it, choose 'done' and let the beat move on.",
     input_schema: { type: 'object' as const, properties: { intent: { type: 'string', enum: ['done', 'more', 'dispute'] } }, required: ['intent'] },
   },
   {
@@ -968,6 +982,14 @@ question or railroad back to the door you opened on. "It sounds like the marriag
 now — let's go there." (This is different from a re-seeing below: they're not saying the label was wrong, they're
 telling you which door to work.)
 
+ACCEPT THE LANDING (hard rule): the insight reflect is a CHECK, not a new door. Reflect it and end on something they
+can simply affirm or wave off ("does that land — or is it not quite it?") — never a second open question ("…and how
+long has it been running?") tacked onto it. The MOMENT they confirm it ("yeah, that's exactly the shape of it"), you
+are DONE with this beat: call member_reply(intent='done') and let it move on — do NOT reflect it back to them again,
+and do NOT ask another question. Once they've landed it, drawing MORE is over-circling: it makes them re-do work they
+already finished and reads as not having heard them. Keep going ONLY if they genuinely add NEW material ('more') or
+push back ('dispute'); a warm agreement is not new material.
+
 RE-SEEING THE DOOR (the deepest insight — Decision L): as you draw the door out, the story sometimes points to a
 DIFFERENT Door than the one they named — the label they came in with isn't quite it ("you came in calling it The
 Marriage, but everything you've said is about carrying the load — I wonder if the real door is The Load-Bearer").
@@ -1010,7 +1032,8 @@ function stageInstructionReconnect(stage?: Stage): string {
       'INSIGHT (the normalized cost / how it targeted who they were / the sequence) IN THEIR WORDS, offered as a ' +
       'check they can reject. Call reflect_door ONLY once it is genuinely drawn out and the insight is earned. If the ' +
       'story points to a truer Door than the one they named, you may propose that re-seeing (propose_correction), ' +
-      'offered — never asserted — and only when the material earns it.'
+      'offered — never asserted — and only when the material earns it. Once they confirm the insight, accept it and ' +
+      'let the beat move — do not reflect it again or ask a further question.'
     );
   if (stage === 'drift')
     return (
@@ -1018,7 +1041,8 @@ function stageInstructionReconnect(stage?: Stage): string {
       'inventory, in their words. This is formative and reflective, never scored. After a couple of exchanges, reflect ' +
       'the PATTERN of the drift (the recurring shape, the quiet thing they stopped noticing) IN THEIR WORDS, offered as ' +
       'a check — call reflect_drift ONLY once it is genuinely drawn out; if thin, keep drawing out (never manufacture a ' +
-      'pattern). Name it to push OFF from, not to sit in. Do not diagnose.'
+      'pattern). Name it to push OFF from, not to sit in. Once they confirm the pattern, accept it and let the beat ' +
+      'move — do not reflect it again or ask a further question. Do not diagnose.'
     );
   if (stage === 'window')
     return (

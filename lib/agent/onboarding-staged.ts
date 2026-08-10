@@ -1808,6 +1808,19 @@ export function runArcTurn(
   if (stageDef) {
     const early = b.awaitingConfirm ? stageDef.confirm(b) : stageDef.gather(b);
     if (early) return early;
+    // A STAGE TRANSITION CLEARS THE CONFIRM GATE (systemic invariant).
+    //
+    // A handler that changes b.stage has just emitted the NEW stage's OPENER as its reply. Nothing is pending a
+    // check across that seam, so the member's next message is an answer to that opener — it must reach the new
+    // stage's gather(), never its confirm().
+    //
+    // Left to each handler this is one fact restated at every transition site, and it was already wrong at six of
+    // Reconnect's seven. The live cost: drift's confirm handed into The Window with awaitingConfirm still true, so
+    // the member's FIRST Tuesday answer was routed to windowStage.confirm(). Read as assent, the Window closed on
+    // the spot — the whole §2d beat skipped — and since driftPayload had just been cleared there was no payload to
+    // queue, so the spark keeper was silently lost. Jennifer's walk (2026-08-09) ended with one keeper where there
+    // should have been two, and the vision she had just described was thrown away.
+    if (b.stage !== stageAtEntry) b.awaitingConfirm = false;
   } else {
     // CONFIRM-ONLY CARD (Jay's call): the card sits at the terminal 'complete' stage, and the reclaim work is DONE
     // by here. New wants are NOT captured post-card — the earlier "add at the card" path was buggy (silent loss +
