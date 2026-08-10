@@ -154,3 +154,44 @@ test('a pre-v3.3 reading has NULL reflections — "never asked" is not "answered
   assert.equal(firstFocus(reading).chosenByMember, false);
   assert.equal(reading.priorities.primary, 'physical', 'and the rating half is untouched by any of this');
 });
+
+// ── The Companion's view (governance: nothing the member can see may be invisible to the agent) ───────────────
+import { contextBlock, type CheckinContext } from '../lib/agent/checkin.ts';
+
+test('the Companion is told whose choice the focus was — and never claims one they did not make', async () => {
+  // The bug this guards is subtle and was ALREADY latent: the prompt said "the area they chose to focus on" while
+  // passing the COMPUTED primary. Before v3.3 nothing else existed, so it read as a harmless flourish. Now the
+  // member can genuinely choose, and telling them they chose something they didn't is a small lie in the one
+  // relationship the whole product rests on.
+  const { db, memberId } = await freshDb();
+  await persistBiggerWorldReading(db, memberId, ratingsFavouringPhysical()); // no reflections → no choice made
+  const reading = (await latestBiggerWorldReading(db, memberId))!;
+  assert.equal(firstFocus(reading).chosenByMember, false);
+});
+
+test('a divergence reaches the Companion as context, with an explicit do-not-correct', async () => {
+  const { db, memberId } = await freshDb();
+  await persistBiggerWorldReading(db, memberId, ratingsFavouringPhysical(), {
+    domains: { self: { obstacle: 'I say yes to everything', earlyAction: 'One no this week' } },
+    sort: { focus: 'self' },
+  });
+  const reading = (await latestBiggerWorldReading(db, memberId))!;
+  const f = firstFocus(reading);
+  const { keyObstacle, firstAction } = closingLines(reading);
+
+  // contextBlock assembles the WHOLE dashboard context, so a stub needs the handful of fields it dereferences
+  // unconditionally. Everything else is optional and stays absent — this test is about one line of the prompt.
+  const ctx = {
+    doorDisplayNames: [],
+    idScore: null,
+    reclaimPriorities: {
+      primary: 'Self', chosenByMember: f.chosenByMember, computed: 'Physical',
+      momentumLever: 'Social', keyObstacle: keyObstacle ?? null, firstAction: firstAction ?? null,
+    },
+  };
+  const prompt = contextBlock(ctx as CheckinContext);
+  assert.match(prompt, /they CHOSE their self life/i, 'the agent is told it was their call');
+  assert.match(prompt, /do NOT correct them/i, 'and told not to argue the member out of it');
+  assert.match(prompt, /I say yes to everything/, 'their obstacle, verbatim');
+  assert.match(prompt, /One no this week/, 'and their first move');
+});

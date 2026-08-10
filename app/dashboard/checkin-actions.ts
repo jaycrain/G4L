@@ -45,7 +45,7 @@ import { latestGrintaReading } from '../../lib/grinta/survey/store.ts';
 import { latestWhyReading, latestSkillsReading } from '../../lib/rebuild/store.ts';
 import { skillHighlights } from '../../lib/rebuild/skills-instrument.ts';
 import { activeCoachingPlan, type RebuildPilotPayload } from '../../lib/rebuild/plan-store.ts';
-import { latestBiggerWorldReading } from '../../lib/reclaim/bigger-world-store.ts';
+import { latestBiggerWorldReading, firstFocus, closingLines } from '../../lib/reclaim/bigger-world-store.ts';
 import { AUDIT_DOMAIN_LABEL } from '../../lib/reclaim/bigger-world-instrument.ts';
 import { activeQualityDayProfile, recentQualityDays } from '../../lib/reclaim/quality-day-store.ts';
 import { listFacets, closedSessionIds } from '../../lib/curriculum/store.ts';
@@ -290,9 +290,25 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
     pilotCalls: pilotPlan ? pilotTally : null, // per-domain call tally, only while a pilot is active (OO)
     momentumLog, // computed up front — present here AND in the minimal fallback, so the companion never goes blind to it
     commitments, // ditto — the accountability spine survives a context degrade
+    // Reclaim C2 — the member's focus + momentum lever, plus what they said in their own words.
+    // `primary` USED TO BE THE COMPUTED PRIMARY while the prompt described it as "the area they chose". That was
+    // loose before v3.3 and would now be plainly wrong: the audit asks outright which area they'd move on, and the
+    // member's answer can differ from the arithmetic. firstFocus() resolves it their way and reports which it was,
+    // so the Companion can say "the one you chose" only when they actually chose it.
     reclaimPriorities: biggerWorld
-      ? { primary: AUDIT_DOMAIN_LABEL[biggerWorld.priorities.primary], momentumLever: AUDIT_DOMAIN_LABEL[biggerWorld.priorities.momentumLever] }
-      : null, // Reclaim C2 — the member's chosen priority + momentum lever (plain language)
+      ? (() => {
+          const f = firstFocus(biggerWorld);
+          const { keyObstacle, firstAction } = closingLines(biggerWorld);
+          return {
+            primary: AUDIT_DOMAIN_LABEL[f.domain],
+            chosenByMember: f.chosenByMember,
+            computed: AUDIT_DOMAIN_LABEL[biggerWorld.priorities.primary],
+            momentumLever: AUDIT_DOMAIN_LABEL[biggerWorld.priorities.momentumLever],
+            keyObstacle: keyObstacle ?? null,
+            firstAction: firstAction ?? null,
+          };
+        })()
+      : null,
     // The grid, as the member reads it. todayDone is computed HERE, not in the prompt: an agent asked to work out
     // "is today already marked" from a boolean array will sometimes get it wrong and ask them for something they've
     // already done — which is the most deflating possible thing for a practice week to do.

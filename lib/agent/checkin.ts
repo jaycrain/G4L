@@ -93,7 +93,14 @@ export type CheckinContext = {
   commitments?: { domain: 'movement' | 'eating'; text: string; serves: string | null }[] | null;
   // Reclaim C2 Bigger World Audit — the member's chosen priorities: the primary focus area + the momentum lever. The
   // agent knows these so it can support their chosen priority (never a ranking to grade or weaponize).
-  reclaimPriorities?: { primary: string; momentumLever: string } | null;
+  reclaimPriorities?: {
+    primary: string; // the FOCUS — the member's own choice when they made one, else the computed ranking
+    chosenByMember: boolean;
+    computed: string; // what the ratings ranked first, so a divergence can be named rather than hidden
+    momentumLever: string;
+    keyObstacle: string | null; // their words, from the focus domain — null when they skipped it
+    firstAction: string | null;
+  } | null;
   // Reclaim C3 Quality Days — the member's Quality-Day non-negotiables + recent logged scores. The agent supports the
   // practice: help them notice what makes a day theirs; never a compliance score.
   // THE PRACTICE WEEK, as the member sees it on their grid. Added 2026-08-07 when a sweep found the gap: the grid
@@ -395,7 +402,19 @@ export function contextBlock(c: CheckinContext): string {
       ? `Off-device movement they've logged (Movement page or told you) — ${c.movementLog}. It's real evidence of the identity coming back; reflect it warmly when relevant, never as a number or a target. If they mention doing an activity off-device that isn't here, log it with the log_movement tool.`
       : null,
     c.reclaimPriorities
-      ? `Their Bigger World priorities (Reclaim C2) — the area they chose to focus on is their ${c.reclaimPriorities.primary.toLowerCase()} life; the easiest place to build momentum is their ${c.reclaimPriorities.momentumLever.toLowerCase()} life. Support that chosen focus warmly; it's their priority, not a ranking to grade.`
+      ? `Their Bigger World priorities (Reclaim C2) — ${
+          c.reclaimPriorities.chosenByMember
+            ? `they CHOSE their ${c.reclaimPriorities.primary.toLowerCase()} life as the one area to move on${
+                c.reclaimPriorities.computed !== c.reclaimPriorities.primary
+                  ? ` (the ratings had ranked ${c.reclaimPriorities.computed.toLowerCase()} first — do NOT correct them; their choice stands, and the difference is worth being curious about, not resolving)`
+                  : ''
+              }`
+            : `the ratings point to their ${c.reclaimPriorities.primary.toLowerCase()} life (they did not name a choice themselves — so never say "the one you chose")`
+        }; the easiest place to build momentum is their ${c.reclaimPriorities.momentumLever.toLowerCase()} life.${
+          c.reclaimPriorities.keyObstacle ? ` What they said gets in the way, in their words: "${c.reclaimPriorities.keyObstacle}".` : ''
+        }${
+          c.reclaimPriorities.firstAction ? ` The first move they named: "${c.reclaimPriorities.firstAction}".` : ''
+        } Support that focus warmly; it's their priority, not a ranking to grade.`
       : null,
     practiceWeekLine(c),
     outcomesLine(c),

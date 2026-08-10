@@ -29,7 +29,7 @@ import { scaleExpects, type ArcConfig } from '../../lib/agent/onboarding-staged.
 import { saveArcSession, loadArcSession, clearArcSession } from '../../lib/agent/arc-session.ts';
 import { getReclaimItems, liveReclaimTexts } from '../../lib/beats/store.ts';
 import { commitRefinement, resolveRefinement, isTier, type Tier } from '../../lib/reclaim/refinement-store.ts';
-import { persistBiggerWorldReading } from '../../lib/reclaim/bigger-world-store.ts';
+import { persistBiggerWorldReading, type AuditReflections } from '../../lib/reclaim/bigger-world-store.ts';
 import { AUDIT_ITEM_COUNT } from '../../lib/reclaim/bigger-world-instrument.ts';
 import { persistQualityDayProfile } from '../../lib/reclaim/quality-day-store.ts';
 import { startPracticeWeek } from '../../lib/practice/store.ts';
@@ -141,7 +141,11 @@ export async function reclaimTurnAction(
         const responses = (turn.state.administeredResponses ?? []).slice(0, AUDIT_ITEM_COUNT);
         if (responses.length === AUDIT_ITEM_COUNT) {
           try {
-            await persistBiggerWorldReading(db, memberId, responses);
+            // The reflection half rides in the arc's collected state (V4 Q3/Q7/Q8 + the cross-domain sort). It is
+            // typed structurally on Collected to avoid an onboarding→reclaim dependency, so it narrows here at the
+            // boundary — this cast is the ONE place the two shapes meet.
+            const reflections = turn.state.collected?.auditReflections as AuditReflections | undefined;
+            await persistBiggerWorldReading(db, memberId, responses, reflections);
           } catch (e) {
             // Logged, not silent — the member saw the summary, but this register is the ONLY durable copy, and it
             // is what "your bigger world" reads from on the Playbook.

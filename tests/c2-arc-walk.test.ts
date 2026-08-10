@@ -12,11 +12,17 @@ import type { ConvState, Turn } from '../lib/agent/onboarding.ts';
 // the shared response bag mis-counted, or with the reflection's step counter leaking from one domain into the next.
 // The only way to know is to walk it. (Jennifer's infinite loop was dead code that every unit test passed.)
 
+// STATE IS SERIALISED BETWEEN EVERY TURN, deliberately. Live, the state goes out to the client and comes back as
+// JSON on the next request (and through jsonb if the session is resumed), so passing the object straight through —
+// which this helper used to do — tests a path no member takes. Anything that survives only by object identity, or
+// any Map/Set/undefined-vs-absent subtlety, is invisible without this. It costs one JSON.parse per turn.
+const overTheWire = (s: ConvState): ConvState => JSON.parse(JSON.stringify(s)) as ConvState;
+
 function walk(answers: string[]): { turns: Turn[]; final: Turn } {
   let t = reclaimC2Opening();
   const turns: Turn[] = [t];
   for (const a of answers) {
-    t = applyReclaimC2Turn(t.state as ConvState, [], a);
+    t = applyReclaimC2Turn(overTheWire(t.state as ConvState), [], a);
     turns.push(t);
   }
   return { turns, final: t };
@@ -135,4 +141,32 @@ test('all 20 ratings survive the split — the bag is not reset between domains'
   assert.equal(bag.length, AUDIT_ITEM_COUNT, 'twenty ratings reached the end intact');
   assert.deepEqual(bag.slice(0, 5), [1, 1, 1, 1, 1], 'domain one’s answers are still first');
   assert.deepEqual(bag.slice(15), [4, 4, 4, 4, 4], 'domain four’s are last');
+});
+
+test('EVERY answer survives the whole arc — reflections are not wiped by the rating stages between them', () => {
+  // The shape this guards is the one a browser walk could not settle: a domain's reflection is followed by the NEXT
+  // domain's five administered ratings, and administered turns run off the depth kernel on a different code path.
+  // If `collected` did not carry across that boundary, each domain's answers would vanish as soon as the next
+  // domain started — and the close would quietly have less to say, which reads as "the member skipped it".
+  const answers = [
+    ...ratings(3), 'sleep and nutrition', 'physical obstacle', 'physical action',
+    ...ratings(4), ...skipReflection,
+    ...ratings(5), 'people drifted', 'I cancel a lot', 'Call my brother',
+    ...ratings(6), ...skipReflection,
+    'physical', 'physical', 'social', 'physical', 'social',
+  ];
+  const { final } = walk(answers);
+  const r = (final.state as ConvState).collected.auditReflections!;
+
+  // Physical was captured FIRST and had to survive fifteen later ratings plus two other reflections.
+  assert.equal(r.domains.physical?.obstacle, 'physical obstacle');
+  assert.equal(r.domains.physical?.earlyAction, 'physical action');
+  assert.deepEqual(r.domains.physical?.subIssues?.sort(), ['Nutrition', 'Sleep']);
+  assert.equal(r.domains.social?.earlyAction, 'Call my brother');
+
+  // And every sort answer accumulates — not just the last one written.
+  assert.deepEqual(r.sort, {
+    costliest: 'physical', identity: 'physical', readiest: 'social', ripple: 'physical', focus: 'social',
+  });
+  assert.equal(final.complete, true);
 });
