@@ -1,0 +1,75 @@
+# Canon guard — a tagged release cannot ship an incomplete bundle.
+#
+# The bundle used to be hand-copied into a shared Drive folder, and it broke SILENTLY twice (2026-08-08 and
+# 2026-08-10): large files never arrived, nothing errored, and the folder still looked complete. Cowork found it
+# both times, days later. The publish step now writes into the repo, and this job is the thing that was missing
+# from the old process entirely — a check that runs on the release itself and goes RED at us.
+#
+# Deliberately a GUARD, not a generator. Regenerating the transcript needs the app running with a seeded demo
+# member (for the screenshots), which is a bigger job; until that exists, `scripts/publish-canon.mjs` is run
+# locally and its output committed. This job verifies the committed result — which is exactly the failure that
+# actually happened. A generator that nobody checks is how we got here.
+
+name: canon
+
+on:
+  push:
+    tags: ['v*']
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: The tag must have a canon bundle
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          DIR="docs/canon/v${VERSION}"
+          if [ ! -d "$DIR" ]; then
+            echo "::error::Tag ${GITHUB_REF_NAME} has no canon bundle at ${DIR}."
+            echo "Run: node scripts/publish-canon.mjs ${VERSION} — then commit it and re-tag."
+            exit 1
+          fi
+          echo "DIR=$DIR" >> "$GITHUB_ENV"
+
+      - name: Every part present, non-empty, and matching its checksum
+        run: |
+          set -euo pipefail
+          MISSING=0
+
+          # The MANIFEST is the contract: it names each part with a byte count and a sha256 prefix. Verifying
+          # against it catches BOTH a missing file and a file that was silently truncated in transit.
+          if [ ! -f "$DIR/MANIFEST.md" ]; then
+            echo "::error::${DIR}/MANIFEST.md is missing — nothing to verify against."
+            exit 1
+          fi
+
+          for PART in member-transcript.md CHANGES.md sync-note.md voice-rules.md founder-emails.md member-facing-strings.txt; do
+            if [ ! -s "$DIR/$PART" ]; then
+              echo "::error::${DIR}/${PART} is missing or empty."
+              MISSING=1
+              continue
+            fi
+            WANT=$(grep -oE "\`${PART}\` \| [0-9,]+ \| \`[0-9a-f]{16}\`" "$DIR/MANIFEST.md" | grep -oE '[0-9a-f]{16}' || true)
+            GOT=$(sha256sum "$DIR/$PART" | cut -c1-16)
+            if [ -n "$WANT" ] && [ "$WANT" != "$GOT" ]; then
+              echo "::error::${PART} checksum mismatch — manifest says ${WANT}, file is ${GOT}. The bundle is stale or corrupt."
+              MISSING=1
+            fi
+            echo "  ok  ${PART}  ($(wc -c < "$DIR/$PART") bytes)"
+          done
+
+          SHOTS=$(find "$DIR/screenshots" -name '*.jpg' 2>/dev/null | wc -l | tr -d ' ')
+          if [ "$SHOTS" -eq 0 ]; then
+            echo "::error::${DIR}/screenshots has no images — run scripts/bundle-screenshots.ts before publishing."
+            MISSING=1
+          else
+            echo "  ok  screenshots/  (${SHOTS} files)"
+          fi
+
+          if [ "$MISSING" -ne 0 ]; then
+            echo "::error::Canon bundle for ${GITHUB_REF_NAME} is INCOMPLETE. This is the failure that shipped twice — do not release."
+            exit 1
+          fi
+          echo "Canon ${GITHUB_REF_NAME} is complete."
