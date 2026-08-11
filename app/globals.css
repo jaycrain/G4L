@@ -1822,7 +1822,12 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
   padding: 5px 0; margin: 0; background: none; border: none; cursor: pointer; font-family: inherit;
   font-size: 13px; font-weight: 700; color: var(--orange-text); display: inline-flex; align-items: center; gap: 6px;
 }
-.ws-explore-open:hover { text-decoration: underline; }
+/* THE LIT STATE. A global `button:hover { background: var(--navy) }` (line ~149) was filling this text-style
+   control navy while the label stayed --orange-text — #c35127 on #374f63 is 1.84:1, against a 4.5:1 floor. It was
+   effectively unreadable the moment you pointed at it. Its sibling .ws-why-toggle already overrides that global;
+   this one never did, so the default won by omission.
+   Same treatment as the sibling now: no fill, darken the ink, underline. #a5441f is 6.09:1 on white. */
+.ws-explore-open:hover, .ws-explore-open:focus-visible { background: none; color: #a5441f; text-decoration: underline; }
 
 /* ---- "Explore the Science" — an overlay, so opening it never changes the header's height ---- */
 .ws-explore-scrim {
@@ -3186,3 +3191,23 @@ body:has(.fc-dark) .brand-wordmark,
 /* The Playbook panel at zero — a forecast, not a void. Shown instead of hiding the panel, because the welcome
    pact has already promised the member a Playbook and an absent panel makes that a broken promise. */
 .pb-forecast { font-size: 0.8rem; color: var(--navy); opacity: 0.75; margin-top: 2px; }
+
+/* ── The global-hover leak (found 2026-08-11 chasing the Explore lit state) ───────────────────────────────────
+   `button:hover, .btn:hover { background: var(--navy) }` near the top of this file assumes every <button> is a
+   FILLED button. Text-style controls — link-buttons, ✕ closes, skip links — are bare <button> elements too, so
+   they inherit a navy fill on hover while keeping their own ink. Measured against the 4.5:1 floor:
+
+     .teaser-x     navy on navy      1.00:1   the glyph disappears completely
+     .pb-linkbtn   teal on navy      1.70:1
+     .noti-edit    teal on navy      1.70:1
+     .rail-x       #AEB3B8 on navy   4.04:1
+     .tour-skip    #AEB3B8 on navy   4.04:1
+
+   Overridden individually rather than narrowing the global to `.btn:hover`, which is the real fix: every bare
+   <button> that legitimately WANTS the navy fill would silently lose it, and finding those needs a sweep of every
+   surface rather than a mid-walk edit. Recorded so that pass has its list. */
+.teaser-x:hover, .pb-linkbtn:hover, .noti-edit:hover, .rail-x:hover, .tour-skip:hover,
+.teaser-x:focus-visible, .pb-linkbtn:focus-visible, .noti-edit:focus-visible, .rail-x:focus-visible, .tour-skip:focus-visible {
+  background: none;
+  text-decoration: underline;
+}
