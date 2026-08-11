@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
 // Regression guard for the Jun-2026 naming sweep (patterns, not patches): the retired Book Quiz
@@ -208,4 +208,48 @@ test('the surviving senses of "readiness" are intact (a find/replace would break
   // …and C1 itself did change.
   const { RECLAIM_V25 } = await import('../lib/curriculum/content/reclaim.ts');
   assert.equal(RECLAIM_V25.find((a) => a.id === 'RCL-C1')?.title, 'Looking Forward');
+});
+
+// ── COPY MAY NOT DENY WHAT THE ENGINE DOES ──────────────────────────────────────────────────────────────────────
+// The Reconnect Checkpoint told members "No score here, and it won't show up on your dashboard." Both halves were
+// false: the action scores and persists that reading, the Ceremony reveals the movement, and the Grinta Index sits
+// on the dashboard. We bought an honest answer with a promise we broke a minute later — on the one surface whose
+// entire value is that it is safe to be honest (Jay, 2026-08-11: "They are scoring themselves, we're just
+// reporting it").
+//
+// DELIBERATELY NARROW. "No right answers", "nothing to study for", "nothing to pass" are all TRUE and stay — there
+// is no correct answer to an IDQ item. What is banned is denying that a reading is TAKEN, KEPT, or SHOWN. The line
+// is between lowering the stakes (fine) and disclaiming the mechanics (a lie the member can catch).
+test('member copy never denies that a reading is scored, kept, or shown', () => {
+  const DENIALS = [
+    /no score here/i,
+    /(won't|will not|doesn't|does not) show up on your dashboard/i,
+    /(this )?(isn't|is not|won't be|will not be) (scored|recorded|saved|kept|tracked)/i,
+    /nothing (is|gets) (recorded|saved|kept|scored) here/i,
+  ];
+  // Where member-facing copy actually lives. Model INSTRUCTIONS are excluded: a system prompt telling the model
+  // "never say 'not a test'" legitimately contains the banned phrasing.
+  const roots = ['lib/agent', 'lib/curriculum', 'lib/content', 'lib/rebuild', 'lib/reclaim', 'lib/grinta', 'lib/idq'];
+  const GUIDES = /(guide|system-prompt)\.ts$/;
+
+  const hits: string[] = [];
+  for (const root of roots) {
+    if (!existsSync(root)) continue;
+    for (const file of walk(root)) {
+      if (GUIDES.test(file)) continue;
+      // Track console.* statements across their (often multi-line) arguments. An OPERATOR log is not member copy,
+      // and the distinction is load-bearing: crisis-escalation.ts logs "CRISIS NOT RECORDED" to alert US that an
+      // escalation failed to persist. That line is correct, urgent, and must never be softened by a copy guard.
+      let inLog = false;
+      readFileSync(file, 'utf8').split('\n').forEach((line, i) => {
+        if (/console\.(log|warn|error|info|debug)\s*\(/.test(line)) inLog = true;
+        const wasLog = inLog;
+        if (inLog && /\)\s*;?\s*$/.test(line)) inLog = false;
+        if (wasLog) return;
+        if (line.trim().startsWith('//') || line.trim().startsWith('*')) return; // comments explain the ban
+        for (const re of DENIALS) if (re.test(line)) hits.push(`${file}:${i + 1} — ${line.trim().slice(0, 120)}`);
+      });
+    }
+  }
+  assert.deepEqual(hits, [], `copy denies what the engine actually does:\n${hits.join('\n')}`);
 });

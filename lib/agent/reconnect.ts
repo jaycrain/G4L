@@ -730,10 +730,23 @@ const measurementStage: StageDef = administeredStage({
 // grinta moves (the ACTION scores + persists the Checkpoint reading, then the Ceremony reveals the movement). Off the
 // depth kernel (administered mode), on the SHARED factory. Grinta is NOT named to the member here — this reads as a
 // check-in; the number surfaces in the Ceremony. DIRECTIONAL copy (for Jay's wordsmithing).
+// This used to say "No score here, and it won't show up on your dashboard." Both halves were false. The action
+// scores and PERSISTS this reading, the Ceremony reveals the movement it produced, and the Grinta Index sits on the
+// dashboard's left flank. We were buying an honest answer with a promise we break sixty seconds later — the worst
+// possible trade on the one surface whose whole value is that it is safe to be honest.
+//
+// Jay, 2026-08-11: "It's absolutely a score we give them, and it absolutely shows up on their Dashboard. Gotta
+// soften this language and not be so afraid of scores. They are scoring themselves, we're just reporting it."
+//
+// So keep the JOB the old line was doing — lower the stakes so the answers are true rather than performed — and do
+// it with something that stays true. Ownership does that work better than denial: it is their read, we only report
+// it back. Note this also brings the copy in line with our own voice rule, which already bans exactly this
+// reassurance-tic ("no grade here", "not a test") in checkpoint-guide.ts — declare what a thing IS.
+// Grinta is still deliberately NOT named here; the number surfaces in the Ceremony, which follows immediately.
 const CHECKPOINT_OPEN =
-  'A quick check-in before we close. Six short statements about what this work is making you think about. No score ' +
-  "here, and it won't show up on your dashboard. Same as before: just tell me how true each feels right now. 1—not " +
-  'at all. 5—completely.';
+  'A quick check-in before we close. Six short statements about what this work is making you think about. ' +
+  "You're the one scoring these — it's your read on yourself, and I'll show you where it lands in a moment. " +
+  'Same as before: just tell me how true each feels right now. 1—not at all. 5—completely.';
 function checkpointDeliver(index: number): string {
   return grintaStem(CHECKPOINT_GRIT_ITEMS[index]!);
 }
