@@ -471,7 +471,7 @@ ul.program { list-style: none; padding: 0; margin: 0; }
    verbatim), so this reads as a confident, low-pressure chooser, not a form. On-brand: teal chips, calm skip links. */
 .idp { margin-top: 0.5rem; }
 .idp-chips { display: flex; flex-wrap: wrap; gap: 8px; }
-.idp-chip { margin: 0; padding: 9px 16px; background: #fff; color: var(--navy, #374f63); border: 1.5px solid var(--teal, #3b9495); border-radius: 999px; font-size: 15px; font-weight: 700; cursor: pointer; }
+.idp-chip { margin: 0; padding: 9px 16px; background: #fff; color: var(--navy, #374f63); border: 1.5px solid var(--teal, #3b9495); border-radius: 8px; font-size: 15px; font-weight: 700; cursor: pointer; }
 .idp-chip:hover:not(:disabled) { background: var(--teal, #3b9495); color: #fff; }
 .idp-chip:disabled { opacity: 0.5; cursor: default; }
 .idp-own { margin: 0.7rem 0 0; padding: 0; background: none; border: none; color: var(--teal, #3b9495); font-size: 13.5px; font-weight: 600; text-decoration: underline; cursor: pointer; display: block; }
@@ -1404,7 +1404,7 @@ html:has(.companion-hero), body:has(.companion-hero) { overflow-anchor: none; }
 .momentum-log-options { display: flex; flex-wrap: wrap; gap: 0.6rem; margin: 0.5rem 0 0.75rem; }
 .momentum-log-btn {
   font-family: inherit; font-size: 0.9rem; font-weight: 600; color: var(--navy);
-  background: transparent; border: 1.5px solid var(--navy); border-radius: 999px;
+  background: transparent; border: 1.5px solid var(--navy); border-radius: 8px;
   padding: 0.5rem 1.05rem; cursor: pointer; transition: background 0.12s ease, color 0.12s ease;
 }
 .momentum-log-btn:hover:not(:disabled) { background: var(--navy); color: #fff; }
@@ -1415,7 +1415,7 @@ html:has(.companion-hero), body:has(.companion-hero) { overflow-anchor: none; }
 .momentum-log-btn.is-picked { background: var(--navy); border-color: var(--navy); color: #fff; }
 .momentum-log-btn.is-picked:hover:not(:disabled) { background: var(--navy); color: #fff; }
 .momentum-log-commit {
-  display: block; margin-top: 0.75rem; padding: 0.6rem 1.4rem; border: 0; border-radius: 999px;
+  display: block; margin-top: 0.75rem; padding: 0.6rem 1.4rem; border: 0; border-radius: 8px;
   background: var(--teal-text); color: #fff; font-family: inherit; font-size: 14px; font-weight: 700; cursor: pointer;
 }
 .momentum-log-commit:hover:not(:disabled) { background: #327f7e; }
@@ -1457,7 +1457,7 @@ html:has(.companion-hero), body:has(.companion-hero) { overflow-anchor: none; }
 .momentum-log-domain-opts { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.35rem; }
 .momentum-domain-btn {
   font-family: inherit; font-size: 0.82rem; font-weight: 600; color: var(--navy);
-  background: transparent; border: 1.5px solid var(--light-grey, #e8e6e6); border-radius: 999px;
+  background: transparent; border: 1.5px solid var(--light-grey, #e8e6e6); border-radius: 8px;
   padding: 0.35rem 0.85rem; cursor: pointer; transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
 }
 .momentum-domain-btn:hover:not(:disabled) { border-color: var(--teal-text); }
@@ -1470,7 +1470,7 @@ html:has(.companion-hero), body:has(.companion-hero) { overflow-anchor: none; }
 .qd-score { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.4rem 0 0.8rem; }
 .qd-score-btn {
   font-family: inherit; font-size: 0.9rem; font-weight: 600; color: var(--navy);
-  background: transparent; border: 1.5px solid var(--light-grey, #e8e6e6); border-radius: 999px;
+  background: transparent; border: 1.5px solid var(--light-grey, #e8e6e6); border-radius: 8px;
   width: 2.1rem; height: 2.1rem; cursor: pointer; transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
 }
 .qd-score-btn:hover:not(:disabled) { border-color: var(--teal-text); }
@@ -1481,7 +1481,7 @@ html:has(.companion-hero), body:has(.companion-hero) { overflow-anchor: none; }
 .qd-elements-opts { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.35rem; }
 .qd-el-btn {
   font-family: inherit; font-size: 0.82rem; font-weight: 600; color: var(--navy);
-  background: transparent; border: 1.5px solid var(--light-grey, #e8e6e6); border-radius: 999px;
+  background: transparent; border: 1.5px solid var(--light-grey, #e8e6e6); border-radius: 8px;
   padding: 0.35rem 0.85rem; cursor: pointer; transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
 }
 .qd-el-btn:hover:not(:disabled) { border-color: var(--teal-text); }
@@ -2045,11 +2045,15 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
 /* THE PLAYBOOK TAB ROW — the Founder Console's one-row pattern brought to a member surface (Jay 2026-08-08).
    Scrolls horizontally on a phone rather than wrapping, so the row stays one row at every width and the page
    needs no separate mobile layout. The count is the pull: a tab that says how much is behind it is worth opening. */
-.pb-tabs { display: flex; gap: 6px; overflow-x: auto; padding: 0 0 12px; margin: 0 0 14px; border-bottom: 1px solid var(--grey);
+.pb-tabs { display: flex; gap: 6px; overflow-x: auto; padding: 3px 3px 12px; margin: 0 -3px 14px; border-bottom: 1px solid var(--grey);
   -webkit-overflow-scrolling: touch; scrollbar-width: none; }
 .pb-tabs::-webkit-scrollbar { display: none; }
+/* SQUARED, like every other control (Jay, 2026-08-11: "we've had you change every pill you started with to our
+   squared-off standard button"). 8px is that standard — .btn-rect and .ws-endcard-cta already use it.
+   The side padding on .pb-tabs above exists because this row SCROLLS: with none, the first tab's focus ring was
+   clipped flat against the container edge ("notice how it's cut off on the left side of This week"). */
 .pb-tab { flex: 0 0 auto; background: #f2f1ef; border: 0; color: #4a5d6b; font-family: inherit; font-size: 13px; font-weight: 600;
-  padding: 7px 14px; border-radius: 20px; cursor: pointer; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
+  padding: 7px 14px; border-radius: 8px; cursor: pointer; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
 .pb-tab:hover { background: #e8e6e6; }
 .pb-tab.on { background: var(--navy); color: #fff; }
 .pb-tab-n { font-size: 11px; font-weight: 700; opacity: .72; }
@@ -3178,36 +3182,6 @@ body:has(.fc-dark) .brand-wordmark,
   input:not([type='checkbox']):not([type='radio']), textarea, select { font-size: 16px !important; }
 }
 
-/* ── Momentum · the long view ─────────────────────────────────────────────────────────────────────────────────
-   Momentum zoomed out — week / 2 weeks / month / year. Palette only, and the colour assignment is a governance
-   decision rather than a style one: a false start is logged as HONEST (it is the member noticing, which is the
-   skill the phase teaches), so it is drawn in NAVY, not Deep Red. Red would code it as failure and turn a mirror
-   into a report card. Good calls are Olive; on-track days Light grey, because a steady day is a day, not an absence. */
-.mlv-zoom { display: flex; gap: 6px; margin: 10px 0 4px; flex-wrap: wrap; }
-.mlv-z {
-  font-size: 0.78rem; font-weight: 600; padding: 4px 11px; border-radius: 999px;
-  background: var(--grey); color: var(--navy); text-decoration: none; border: 1px solid transparent;
-}
-.mlv-z:hover { border-color: var(--navy); }
-.mlv-z.on { background: var(--navy); color: #fff; }
-.mlv-sum { font-size: 0.9rem; color: var(--charcoal); margin: 8px 0 12px; }
-
-.mlv-chart {
-  display: flex; align-items: flex-end; gap: 3px; height: 132px;
-  padding: 6px 2px 0; border-bottom: 1px solid var(--grey); overflow-x: auto;
-}
-.mlv-col { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; min-width: 14px; flex: 1 1 0; height: 100%; }
-/* The stack grows from the bottom; each band flex-grows by its own count, so one column reads as its own mix. */
-.mlv-stack { display: flex; flex-direction: column-reverse; width: 100%; max-width: 26px; min-height: 3px; border-radius: 3px; overflow: hidden; }
-.mlv-b { display: block; width: 100%; min-height: 3px; }
-.mlv-b.g { background: var(--olive); }
-.mlv-b.m { background: var(--navy); }
-.mlv-b.q { background: var(--grey); }
-.mlv-lab { font-size: 0.62rem; color: var(--navy); opacity: 0.7; margin-top: 4px; white-space: nowrap; }
-
-.mlv-key { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 10px; font-size: 0.76rem; color: var(--navy); }
-.mlv-key span { display: inline-flex; align-items: center; gap: 5px; }
-.mlv-key i { width: 10px; height: 10px; border-radius: 2px; }
 
 /* The Playbook panel at zero — a forecast, not a void. Shown instead of hiding the panel, because the welcome
    pact has already promised the member a Playbook and an absent panel makes that a broken promise. */

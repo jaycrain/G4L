@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useEffect, useRef, useState, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
 import type { WeekGrid as Grid } from '../../lib/practice/grid.ts';
 import Link from 'next/link';
 import { isTappable, logSurfaceFor } from '../../lib/practice/mark.ts';
@@ -39,6 +40,23 @@ export default function WeekGridPanel({ memberId, grid }: { memberId: string; gr
     Object.fromEntries(grid.rows.map((r) => [r.slot, r.marks])),
   );
   const [pending, startTransition] = useTransition();
+  const router = useRouter();
+  // THE TICK SAVED AND THEN LOOKED LIKE IT HADN'T. `local` is seeded by a useState INITIALISER, which runs once per
+  // mount, and nothing refreshed the server data after a toggle. So: tap → row written → prop still stale → switch
+  // tabs (the Playbook unmounts this panel) → come back → re-seeded from the stale prop → the tick is gone, while
+  // the mark sits in the database (Jay, 2026-08-11: "while it registers a click, when you click on another tab and
+  // come back, it's gone").
+  //
+  // That is a successful write rendering as a failure — worse than the reverse, because the member re-ticks a day
+  // that was already recorded and learns the tool cannot be trusted. Refresh after a save so the server catches up,
+  // and re-seed when the grid it returns actually differs.
+  const serverMarks = JSON.stringify(grid.rows.map((r) => [r.slot, r.marks]));
+  const lastServer = useRef(serverMarks);
+  useEffect(() => {
+    if (lastServer.current === serverMarks) return;
+    lastServer.current = serverMarks;
+    setLocal(Object.fromEntries(grid.rows.map((r) => [r.slot, r.marks])));
+  }, [serverMarks, grid.rows]);
   const letters = dayLetters(grid.startedAt);
   const today = grid.day - 1; // 0-based
   // W3 and C3 grids MIRROR a log the member wrote notes into; un-ticking would have to delete that. Read-only there
@@ -58,7 +76,8 @@ export default function WeekGridPanel({ memberId, grid }: { memberId: string; gr
     startTransition(async () => {
       const res = await toggleMarkAction(memberId, slot, dayIdx);
       // Server disagreed (a stale tab, a lost row) → snap back rather than show a tick that didn't save.
-      if (!res.ok) setLocal((cur) => ({ ...cur, [slot]: cur[slot]!.map((v, i) => (i === dayIdx ? !v : v)) }));
+      if (!res.ok) return setLocal((cur) => ({ ...cur, [slot]: cur[slot]!.map((v, i) => (i === dayIdx ? !v : v)) }));
+      router.refresh(); // the saved mark becomes the SERVER's truth, so a remount re-seeds from it and not from stale props
     });
   };
 
