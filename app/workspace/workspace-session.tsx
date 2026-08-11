@@ -6,7 +6,7 @@ import { readArtifactAction } from './actions.ts';
 import { ARTIFACT_REFRESH_EVENT, SESSION_COMPLETE_EVENT } from '../components/artifact-refresh.ts';
 import { chatDispatch, type SessionKey } from '../../lib/workspace/session-key.ts';
 import { sessionSummary, sessionAsset } from '../../lib/content/summaries.ts';
-import { exploreFor } from '../../lib/content/explore.ts';
+import { exploreFor, exploreForReconnectStage } from '../../lib/content/explore.ts';
 import type { Artifact } from '../../lib/workspace/artifact.ts';
 import type { RingPhaseState } from '../../lib/workspace/ring-state.ts';
 import RedesignChrome from '../dashboard/redesign-chrome.tsx';
@@ -33,9 +33,18 @@ export interface Wayfinding {
 }
 
 // The guided conversation for this session — the existing arc chat client, unchanged (no arc-engine touch).
-function SessionConversation({ memberId, sessionKey }: { memberId: string; sessionKey: SessionKey }) {
+function SessionConversation({
+  memberId,
+  sessionKey,
+  onReconnectStage,
+}: {
+  memberId: string;
+  sessionKey: SessionKey;
+  /** Reconnect only — reports which beat the arc is on so the header can show the matching Science Check. */
+  onReconnectStage?: (stage: string | null) => void;
+}) {
   const { arc, session } = chatDispatch(sessionKey);
-  if (arc === 'reconnect') return <ReconnectChat memberId={memberId} />;
+  if (arc === 'reconnect') return <ReconnectChat memberId={memberId} onStage={onReconnectStage} />;
   if (arc === 'rewire') return <RewireChat memberId={memberId} session={session as 'w1' | 'w2' | 'w3' | 'checkpoint'} />;
   if (arc === 'rebuild') return <RebuildChat memberId={memberId} session={session as 'b1' | 'b2' | 'b3' | 'checkpoint'} />;
   return <ReclaimChat memberId={memberId} session={session as 'c1' | 'c2' | 'c3' | 'checkpoint'} />;
@@ -60,7 +69,12 @@ export default function WorkspaceSession({
   const summary = sessionSummary(sessionKey);
   // Tier 3 — the evidence base, behind its own tap. Only some assets have one; the link doesn't render without it.
   const asset = sessionAsset(sessionKey);
-  const explore = asset ? exploreFor(asset) : undefined;
+  // RECONNECT RESOLVES ITS SCIENCE CHECK BY BEAT. Greg wrote three (r1/r2/r3) for what the member experiences as
+  // ONE session, so keyed by session id it found nothing and the button silently never drew — the content was
+  // there the whole time. The nine other sessions are 1:1 with an asset and resolve normally.
+  const [reconnectStage, setReconnectStage] = useState<string | null>(null);
+  const isReconnect = chatDispatch(sessionKey).arc === 'reconnect';
+  const explore = isReconnect ? exploreForReconnectStage(reconnectStage) : asset ? exploreFor(asset) : undefined;
   const [exploreOpen, setExploreOpen] = useState(false);
   // "Why this matters" starts COLLAPSED at every width now (Jay 7/28): the conversation is the point, so it gets full
   // height immediately; the pinned "Why this matters ▶" pill (the header never scrolls) invites a tap to read the
@@ -214,7 +228,7 @@ export default function WorkspaceSession({
               <p className="ws-built-foot">Saved in your Playbook — yours to return to anytime.</p>
             </div>
           ) : (
-            <SessionConversation memberId={memberId} sessionKey={sessionKey} />
+            <SessionConversation memberId={memberId} sessionKey={sessionKey} onReconnectStage={setReconnectStage} />
           )}
         </div>
       </div>

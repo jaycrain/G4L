@@ -22,7 +22,19 @@ const doorName = (slug?: string) => DOORS.find((d) => d.slug === slug)?.displayN
 // v2.2 Reconnect SKELETON chat — minimal on purpose. Shows the callback (§2a) and lets the member reply once to
 // reach the Doors stub. State is held client-side for the walk (the session store + live model turn arrive with
 // §2b). Reuses the onboarding chat's classes so it looks native.
-export default function ReconnectChat({ memberId, mobile = false }: { memberId: string; mobile?: boolean }) {
+export default function ReconnectChat({
+  memberId,
+  mobile = false,
+  onStage,
+}: {
+  memberId: string;
+  mobile?: boolean;
+  /** REPORT-ONLY. Fires when the arc's beat changes, so the workspace header can show the Science Check for where
+   *  the member actually IS (Greg wrote three for this one session). Deliberately a pure notification — it reads
+   *  state and changes nothing about the turn, because this is the live capture loop and it does not get logic
+   *  added to it for a header's benefit. */
+  onStage?: (stage: string | null) => void;
+}) {
   const [messages, setMessages] = useState<ConvMessage[]>([]);
   const [state, setState] = useState<ConvState | null>(null);
   const [input, setInput] = useState('');
@@ -30,6 +42,8 @@ export default function ReconnectChat({ memberId, mobile = false }: { memberId: 
   const [expects, setExpects] = useState<Expectation | null>(null); // W-24: administered turn (IDQ / §2e grit) → render the scale chips
   const [error, setError] = useState<string | null>(null);
   const [ceremony, setCeremony] = useState<ReconnectCeremonyData | null>(null); // §2f: set when the arc reaches 'ceremony'
+  // Tell the shell which beat we're on. Report-only; see the prop's note.
+  useEffect(() => { onStage?.(state?.stage ?? null); }, [state?.stage, onStage]);
   const started = useRef(false);
   const chatRef = useChatAutoscroll([messages.length, pending, expects]);
 

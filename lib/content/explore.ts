@@ -260,3 +260,32 @@ export const ASSET_EXPLORE: Partial<Record<AssetId, Explore>> = {
 export function exploreFor(asset: AssetId): Explore | undefined {
   return ASSET_EXPLORE[asset];
 }
+
+/**
+ * RECONNECT resolves its Science Check by BEAT, not by session.
+ *
+ * The other nine sessions are 1:1 with an asset (SESSION_ASSET in content/summaries.ts), so `exploreFor` finds
+ * them. Reconnect is one continuous arc carrying three of Greg's Science Checks — r1/r2/r3 — for beats inside it,
+ * so keyed by session id it resolved to nothing and the "Explore the Science" button silently never rendered.
+ * The content was there the whole time; the surface just could not find it.
+ *
+ * Mapped to what each entry actually SAYS, rather than to stage order:
+ *   r1 "why looking honestly at the distance comes first"          → the way in, and the Doors
+ *   r2 "why naming how it happened changes what you can do"        → the drift, what it cost
+ *   r3 "why an honest mirror and a direction belong together"      → the measure (mirror) and the window (direction)
+ */
+const RECONNECT_STAGE_EXPLORE: Record<string, AssetId> = {
+  entry: 'r1',
+  doors: 'r1',
+  drift: 'r2',
+  measurement: 'r3',
+  window: 'r3',
+  checkpoint: 'r3',
+  ceremony: 'r3',
+};
+
+/** The Science Check for where the member currently IS in Reconnect. Falls back to r1 — the session's opening
+ *  beat — so a stage we have not mapped shows the right thing rather than nothing. */
+export function exploreForReconnectStage(stage?: string | null): Explore | undefined {
+  return ASSET_EXPLORE[(stage && RECONNECT_STAGE_EXPLORE[stage]) || 'r1'];
+}
