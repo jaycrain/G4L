@@ -35,7 +35,7 @@ export default async function Home() {
         </p>
         <p>
           Grinta for Life is how you find your way back. Together we’ll name who you’ve drifted from, look at how it
-          happened — everyone walks through a door or two into the fade — and get clear on who you want to reclaim.
+          happened — everyone walks through a Door or two into the Fade — and get clear on who you want to reclaim.
           Then we build the way back.
         </p>
         {/* The endpoint, HINTED but not named (2026-08-10 reframe). "Playbook" is held for the welcome pact, where

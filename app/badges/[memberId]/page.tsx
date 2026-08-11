@@ -41,7 +41,7 @@ const BADGE_UNEARNED: Record<string, string> = {
 };
 
 const BADGE_MEANING: Record<string, string> = {
-  'named-yourself': 'You identified the doors you walked through, the life events that created the distance between who are you and who you want to be.',
+  'named-yourself': 'You identified the Doors you walked through, the life events that created the distance between who are you and who you want to be.',
   'starting-line': 'You measured the distance between who you were, who you are, and who you want to be.',
   'reconnect-milestone': 'You completed the first phase of the G4L program.',
   'turned-voice': 'You caught the lies you tell yourself — and practiced turning them into truths.',

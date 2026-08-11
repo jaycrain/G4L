@@ -110,7 +110,7 @@ export default function ReconnectChat({
     <div className="reconnect-chat">
       {doorList.length > 0 && (
         <div className="reconnect-doorbar" style={{ marginBottom: '0.75rem', fontSize: '0.85rem', color: 'var(--navy, #374F63)' }}>
-          Your door{doorList.length > 1 ? 's' : ''}: <strong>{doorList.join(' · ')}</strong>
+          Your Door{doorList.length > 1 ? 's' : ''}: <strong>{doorList.join(' · ')}</strong>
           {lastReseen && (
             <span style={{ color: 'var(--teal, #3B9495)', marginLeft: '0.5rem' }}>
               ✓ re-seen from {doorName(lastReseen.fromSlug)}

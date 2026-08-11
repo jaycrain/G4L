@@ -23,7 +23,7 @@ const PHASES: PhaseRow[] = [
     key: 'reconnect', num: 1, name: 'Reconnect',
     blurb: 'Think about who you were before life got in the way.',
     sessions: [
-      'Doors — identify the doors you walked through that caused you to Fade',
+      'Doors — identify the Doors you walked through that caused you to Fade',
       'IDQ — Measure the distance between who you are and who you want to be',
       'Visioning — See your drift clearly, then put words to who you’re becoming.',
       'Checkpoint — take stock of how it’s going, see progress in your Grinta Index',
