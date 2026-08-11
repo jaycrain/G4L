@@ -21,7 +21,8 @@ test('just-finished — congratulates, NAMES the next session', () => {
   );
   assert.match(v.title, /Nice work — the Disinformation Audit/);
   assert.match(v.copy, /Visualization Workshop is next/);
-  assert.equal(v.ctaLabel, 'Start the next Session');
+  // "next" left the CTA on 2026-08-11: the subhead directly above now names the session, so the word did no work.
+  assert.equal(v.ctaLabel, 'Start the Session');
 });
 
 test('just-finished — after the LAST session, names + routes to the Checkpoint (no dead end)', () => {
