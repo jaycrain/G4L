@@ -52,9 +52,26 @@ export type WeekReview = {
   keeperBody: string;
 };
 
+/**
+ * What a finished week is CALLED once it reaches the Playbook.
+ *
+ * Every closed week used to land as "Your practice week", so a member who had run three of them saw three
+ * identical headings under What worked with no way to tell them apart — a pile, not an operating manual. These
+ * are the names they have already read on the outcome cards, so the Playbook agrees with the surface that sent
+ * them there.
+ */
+export const PRACTICE_KEEPER_NAME: Record<PracticeKind, string> = {
+  w2_image: 'Your picture',
+  w3_logging: 'Mindful Monitoring',
+  b2_noticing: 'Your map',
+  b3_pilot: 'The Lifestyle Pilot',
+  c3_quality: 'Quality Days',
+};
+
 /** The Playbook body for a finished week. One definition, so the keeper can't drift from the review the member read. */
-export function keeperBodyFrom(lines: string[]): string {
-  return ['Your practice week:', ...lines.map((l) => `• ${l}`)].join('\n');
+export function keeperBodyFrom(lines: string[], kind?: PracticeKind): string {
+  const head = (kind && PRACTICE_KEEPER_NAME[kind]) ?? 'Your practice week';
+  return [`${head}:`, ...lines.map((l) => `• ${l}`)].join('\n');
 }
 
 /** W3 ONLY — how many days they used the response they prepared. Greg names this as one of the three things

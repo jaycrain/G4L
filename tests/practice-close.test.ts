@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { PGlite } from '@electric-sql/pglite';
 import { applySchema, type Db } from '../lib/db/schema.ts';
 import { startPracticeWeek, PRACTICE_WINDOW_DAYS } from '../lib/practice/store.ts';
-import { buildReview, reviewLine, isClosable, closeWeek } from '../lib/practice/close.ts';
+import { buildReview, reviewLine, isClosable, closeWeek, keeperBodyFrom, PRACTICE_KEEPER_NAME } from '../lib/practice/close.ts';
 import { buildRow } from '../lib/practice/grid.ts';
 
 // CLOSING THE WEEK. Until now a week aged out silently — nothing reviewed it, nothing recorded it, and the member
@@ -201,4 +201,31 @@ test('W3 · no other week inherits the W3 frame', () => {
   const b3 = buildReview({ kind: 'b3_pilot', rows: [buildRow('walk', 'walk', 5, '2026-08-03', ['2026-08-03'])] });
   assert.match(b3.opener, /how it actually went/i, 'B3 keeps the generic opener');
   assert.doesNotMatch(b3.lines.join(' '), /protocol you wrote/i);
+});
+
+// ── The keeper says WHICH week it was ────────────────────────────────────────────────────────────────────────
+// Every closed week used to land in the Playbook headed "Your practice week". Run three of them and What worked
+// shows three identical headings — a pile rather than an operating manual, which is the exact failure the
+// Playbook exists to avoid. The names below are the ones the member already read on the outcome cards, so the
+// two surfaces agree.
+test('a closed week is named after the tool the member actually ran', () => {
+  assert.match(keeperBodyFrom(['walked 5 of 7'], 'c3_quality'), /^Quality Days:/);
+  assert.match(keeperBodyFrom(['caught it twice'], 'w3_logging'), /^Mindful Monitoring:/);
+  assert.match(keeperBodyFrom(['two changes held'], 'b3_pilot'), /^The Lifestyle Pilot:/);
+  assert.match(keeperBodyFrom(['saw it clearly'], 'w2_image'), /^Your picture:/);
+  assert.match(keeperBodyFrom(['strengths landed'], 'b2_noticing'), /^Your map:/);
+});
+
+test('every practice kind HAS a name — a new kind cannot silently fall back to the generic heading', () => {
+  // The failure this guards is quiet: add a sixth PracticeKind, forget the name, and its keeper rejoins the
+  // anonymous pile with nothing red to show for it.
+  for (const kind of ['w2_image', 'w3_logging', 'b2_noticing', 'b3_pilot', 'c3_quality'] as const) {
+    assert.ok(PRACTICE_KEEPER_NAME[kind], `${kind} has no keeper name`);
+    assert.doesNotMatch(keeperBodyFrom(['x'], kind), /^Your practice week:/, `${kind} fell back to the generic heading`);
+  }
+});
+
+test('the member’s own lines survive the naming, unchanged', () => {
+  const body = keeperBodyFrom(['walk with Rosie before the house wakes'], 'c3_quality');
+  assert.match(body, /• walk with Rosie before the house wakes/, 'their words, verbatim, still bulleted under it');
 });

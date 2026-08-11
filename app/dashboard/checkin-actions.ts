@@ -25,7 +25,7 @@ import { setCommitment, activeCommitments, isCommitmentDomain, DOMAIN_WORD } fro
 import { logMovement, isMovementKind, movementLogSummary } from '../../lib/movement/store.ts';
 import { redesignEnabled } from '../../lib/dashboard/redesign.ts';
 import { weekGrid } from '../../lib/practice/grid.ts';
-import { isClosable, buildReview, closeWeek, keeperBodyFrom } from '../../lib/practice/close.ts';
+import { isClosable, buildReview, closeWeek, keeperBodyFrom, PRACTICE_KEEPER_NAME } from '../../lib/practice/close.ts';
 import { harvestSignal } from '../../lib/agent/harvest.ts';
 import type { PracticeKind } from '../../lib/practice/store.ts';
 import { isTappable, toggleMark } from '../../lib/practice/mark.ts';
@@ -779,8 +779,8 @@ export async function sendCheckin(memberId: string, memberMessage: string): Prom
               ref: finishing.kind,
               keeperType: 'plan',
               destinationIntent: 'keeper',
-              payloadRef: keeperBodyFrom(finishing.review.lines),
-              label: 'Your practice week',
+              payloadRef: keeperBodyFrom(finishing.review.lines, finishing.kind as PracticeKind),
+              label: PRACTICE_KEEPER_NAME[finishing.kind as PracticeKind] ?? 'Your practice week',
             },
             'companion',
           );
