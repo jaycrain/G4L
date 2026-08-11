@@ -1409,6 +1409,18 @@ html:has(.companion-hero), body:has(.companion-hero) { overflow-anchor: none; }
 }
 .momentum-log-btn:hover:not(:disabled) { background: var(--navy); color: #fff; }
 .momentum-log-btn:disabled { opacity: 0.5; cursor: default; }
+/* PICKED, not logged. The tap now selects and "Log it" commits, so the chosen call has to READ as chosen while the
+   member types the note — otherwise nothing on screen says which one is about to be written. Matches the domain
+   chips' is-on treatment (filled navy) so the two selectable rows behave alike. */
+.momentum-log-btn.is-picked { background: var(--navy); border-color: var(--navy); color: #fff; }
+.momentum-log-btn.is-picked:hover:not(:disabled) { background: var(--navy); color: #fff; }
+.momentum-log-commit {
+  display: block; margin-top: 0.75rem; padding: 0.6rem 1.4rem; border: 0; border-radius: 999px;
+  background: var(--teal-text); color: #fff; font-family: inherit; font-size: 14px; font-weight: 700; cursor: pointer;
+}
+.momentum-log-commit:hover:not(:disabled) { background: #327f7e; }
+/* Disabled until a call is picked — the affordance itself teaches the order (pick, then detail, then log). */
+.momentum-log-commit:disabled { opacity: 0.45; cursor: default; }
 .momentum-log-note {
   width: 100%; box-sizing: border-box; font-family: inherit; font-size: 0.9rem; color: var(--charcoal);
   border: 1px solid var(--light-grey, #e8e6e6); border-radius: 8px; padding: 0.55rem 0.7rem; resize: vertical;

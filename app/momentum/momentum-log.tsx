@@ -25,12 +25,17 @@ export type Commitments = { activity?: string; diet?: string };
 export default function MomentumLog({ memberId, commitments }: { memberId: string; commitments?: Commitments | null }) {
   const [note, setNote] = useState('');
   const [domain, setDomain] = useState<CallDomain | null>(null);
+  // The call the member has PICKED but not yet logged. Selecting is not committing: nothing is written until they
+  // press "Log it", which is what lets the note be typed after the call is chosen (Jay, 2026-08-11).
+  const [picked, setPicked] = useState<CallType | null>(null);
   const [done, setDone] = useState<CallType | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
   const router = useRouter();
 
-  function log(type: CallType) {
+  function log() {
+    const type = picked;
+    if (!type) return; // the button is disabled without a pick; this is the belt to that suspenders
     setError(null);
     start(async () => {
       // quiet days aren't about one change — never carry a domain tag.
@@ -40,6 +45,7 @@ export default function MomentumLog({ memberId, commitments }: { memberId: strin
       setDone(type);
       setNote('');
       setDomain(null);
+      setPicked(null);
       router.refresh(); // the pulse above re-reads
     });
   }
@@ -66,8 +72,25 @@ export default function MomentumLog({ memberId, commitments }: { memberId: strin
           </div>
         </div>
       )}
-      {/* The optional note sits ABOVE the call buttons — you jot the context first, then tap the call (Donna: tapping
-          first then entering the note read out of order). The tap is the commit, so it stays last. */}
+      {/* PICK THE CALL, THEN ADD THE DETAIL (Jay, 2026-08-11). This reverses Donna's earlier order, which put the
+          note first because tapping and then typing "read out of order" — true while the tap was the COMMIT.
+          It could not be a straight reorder: the tap used to write the call immediately with whatever note existed
+          at that instant, so pills-on-top would have silently dropped every note typed after them. So the tap now
+          SELECTS and "Log it" commits — nothing is written until the member says so. */}
+      <div className="momentum-log-options">
+        {OPTIONS.map((o) => (
+          <button
+            key={o.type}
+            type="button"
+            className={`momentum-log-btn is-${o.type}${picked === o.type ? ' is-picked' : ''}`}
+            aria-pressed={picked === o.type}
+            disabled={pending}
+            onClick={() => setPicked((p) => (p === o.type ? null : o.type))}
+          >
+            {o.label}
+          </button>
+        ))}
+      </div>
       <textarea
         className="momentum-log-note"
         value={note}
@@ -75,13 +98,9 @@ export default function MomentumLog({ memberId, commitments }: { memberId: strin
         placeholder="Add a note (optional)"
         rows={2}
       />
-      <div className="momentum-log-options">
-        {OPTIONS.map((o) => (
-          <button key={o.type} type="button" className={`momentum-log-btn is-${o.type}`} disabled={pending} onClick={() => log(o.type)}>
-            {o.label}
-          </button>
-        ))}
-      </div>
+      <button type="button" className="momentum-log-commit" disabled={!picked || pending} onClick={log}>
+        {pending ? 'Logging…' : 'Log it'}
+      </button>
       {doneLine && <p className="momentum-log-done">{doneLine}</p>}
       {error && <p className="error">{error}</p>}
     </div>
