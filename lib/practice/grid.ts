@@ -160,6 +160,44 @@ async function noteRows(db: Db, memberId: string, kind: PracticeKind, startedAt:
 
 /** The member's active practice week as a grid, or null. Drift-hardened like the rest of lib/practice: a missing
  *  table or a read hiccup degrades to null (no grid) rather than taking a panel down. */
+/** Build ONE week's grid from an already-resolved week. Shared by weekGrid and weekGrids so the per-kind adapters
+ *  live in exactly one place. */
+async function gridFor(db: Db, memberId: string, pw: { kind: PracticeKind; startedAt: string | Date; day: number }): Promise<WeekGrid> {
+  const closed = (
+    await db.query<{ closed_at: string | null }>(
+      `select closed_at from practice_week where member_id = $1 and kind = $2`,
+      [memberId, pw.kind],
+    )
+  ).rows[0]?.closed_at != null;
+  const rows =
+    pw.kind === 'b3_pilot' ? await b3Rows(db, memberId, pw.startedAt)
+    : pw.kind === 'c3_quality' ? await c3Rows(db, memberId, pw.startedAt)
+    : pw.kind === 'w3_logging' ? await w3Rows(db, memberId, pw.startedAt)
+    : pw.kind === 'b2_noticing' ? await noteRows(db, memberId, 'b2_noticing', pw.startedAt, 'Noticed a skill')
+    : []; // w2_image is five minutes in a picture — nothing countable, and forcing a grid onto it would be noise
+  return { kind: pw.kind, startedAt: String(pw.startedAt), day: pw.day, rows, closed };
+}
+
+/**
+ * EVERY open week, as grids — newest first, and the ones with nothing countable dropped.
+ *
+ * The Playbook shows all of them. A member several Sessions in is legitimately running more than one (Jay, in
+ * Reclaim, had four live and could see one): "hell yes that's ok, that's what Greg wants! If all you have to do is
+ * click four boxes a day, or not, that's not too much to ask." Anything that shows a single week hides work the
+ * member agreed to do, and hides it silently.
+ */
+export async function weekGrids(db: Db, memberId: string): Promise<WeekGrid[]> {
+  try {
+    const { activePracticeWeeks } = await import('./store.ts');
+    const weeks = await activePracticeWeeks(db, memberId);
+    const grids = await Promise.all(weeks.map((pw) => gridFor(db, memberId, pw)));
+    return grids.filter((g) => g.rows.length > 0);
+  } catch (e) {
+    console.error(`weekGrids failed for member=${memberId}:`, e);
+    return [];
+  }
+}
+
 export async function weekGrid(db: Db, memberId: string): Promise<WeekGrid | null> {
   try {
     const { activePracticeWeek } = await import('./store.ts');

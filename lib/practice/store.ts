@@ -42,6 +42,39 @@ export async function activePracticeWeek(db: Db, memberId: string): Promise<Acti
   return { kind: row.kind as PracticeKind, startedAt: row.started_at, day };
 }
 
+/**
+ * EVERY practice week still inside its window — newest first.
+ *
+ * A member can legitimately be running several at once: each Session that closes opens its own (W2 → the picture,
+ * W3 → logging, B2 → noticing, B3 → the pilot, C3 → quality days), and they overlap because the Sessions do.
+ * activePracticeWeek() returns only the newest, which is right for a single "what are you on" read and WRONG for
+ * the Playbook — a member deep in Reclaim had four weeks live and could see one, with three collecting nothing in
+ * silence (Jay, 2026-08-11).
+ *
+ * Jay's call when shown it: "hell yes that's ok, that's what Greg wants! If all you have to do is click four boxes
+ * a day, or not, that's not too much to ask. And exactly what we're trying to do to stay engaged with members
+ * daily, on their terms." So the surface shows all of them.
+ */
+export async function activePracticeWeeks(db: Db, memberId: string): Promise<ActivePractice[]> {
+  const { rows } = await db.query<{ kind: string; started_at: string; day: number }>(
+    `select kind, started_at, (date_part('day', now() - started_at))::int + 1 as day
+       from practice_week
+      where member_id = $1 and started_at > now() - ($2 || ' days')::interval
+      order by started_at desc`,
+    [memberId, String(PRACTICE_WINDOW_DAYS)],
+  );
+  return rows.map((row) => ({
+    kind: row.kind as PracticeKind,
+    startedAt: row.started_at,
+    day: Math.min(Math.max(row.day, 1), PRACTICE_WINDOW_DAYS),
+  }));
+}
+
+/** One specific open week, by kind — how a tap addresses the grid it was made in. */
+export async function practiceWeekOfKind(db: Db, memberId: string, kind: PracticeKind): Promise<ActivePractice | null> {
+  return (await activePracticeWeeks(db, memberId)).find((w) => w.kind === kind) ?? null;
+}
+
 // The member's most recent saved "image" keeper (W2's Visualization Workshop output) — what the W2 practice surfaces.
 export async function latestImageKeeper(db: Db, memberId: string): Promise<string | null> {
   const row = (

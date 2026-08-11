@@ -8,6 +8,16 @@ import type { Outcome } from '../../../lib/dashboard/outcomes.ts';
 import type { Read } from '../../../lib/playbook/reads.ts';
 import type { WeekGrid } from '../../../lib/practice/grid.ts';
 import WeekGridPanel from '../../momentum/week-grid.tsx';
+
+// Which Session opened each week. Shown only when several are running, so the member can tell them apart —
+// otherwise four unlabelled grids read as one confusing table.
+const WEEK_LABEL: Record<string, string> = {
+  w2_image: 'Your picture',
+  w3_logging: 'Noticing your days',
+  b2_noticing: 'Noticing your skills',
+  b3_pilot: 'Your Lifestyle Pilot',
+  c3_quality: 'Your Quality Days',
+};
 import OutcomeCards from './outcome-cards.tsx';
 import { runnablePlay, playSituation } from '../../../lib/playbook/runnable.ts';
 import {
@@ -77,7 +87,7 @@ export default function RedesignPlaybookView({
   rerunStats,
   outcomes = [],
   reads = [],
-  grid = null,
+  grids = [],
   reviewable = [],
 }: {
   memberId: string;
@@ -94,7 +104,7 @@ export default function RedesignPlaybookView({
   reads?: Read[];
   /** The LIVE practice week, if one is running. It moved here from Momentum in the same step that added this tab —
    *  the same week in two places is worse than either arrangement. */
-  grid?: WeekGrid | null;
+  grids?: WeekGrid[];
   /** Sessions they've finished, revisitable read-only. Moved off the Program page — that page describes the
    *  CURRENT cycle, so a Cycle-1 list goes stale there the moment Cycle 2 opens. */
   reviewable?: { key: string; label: string; phase: string }[];
@@ -105,7 +115,7 @@ export default function RedesignPlaybookView({
   // A running week LEADS. If they're mid-practice, that is what they came for; otherwise Plays, which is the
   // Playbook's heart. An explicit ?tab= always wins so a link can point anywhere.
   const [tab, setTab] = useState<TabKey>(() => {
-    const fallback: TabKey = grid ? 'thisweek' : 'worked';
+    const fallback: TabKey = grids.length ? 'thisweek' : 'worked';
     if (typeof window === 'undefined') return fallback;
     const t = new URLSearchParams(window.location.search).get('tab');
     return TABS.some((x) => x.key === t) ? (t as TabKey) : fallback;
@@ -385,34 +395,39 @@ export default function RedesignPlaybookView({
           The grid component is reused unchanged — this is a relocation, not a rewrite. */}
       {tab === 'thisweek' && (
         <section className="pb-card pb-thisweek">
-          {grid && grid.rows.length > 0 ? (
-            <>
-              <div className="pb-sec">This week</div>
-              <div className="pb-sec-d">
-                Day {grid.day} of 7. A blank day is a day — this is for noticing what helps, never a score.
-              </div>
-              <WeekGridPanel memberId={memberId} grid={grid} />
-            </>
-          ) : grid ? (
-            /* A WEEK IS RUNNING BUT HAS NOTHING TO SHOW. Not hypothetical — Jay's own Quality Days week rendered
-               as a header over an empty box, because c3Rows returns [] until the Session has stored the profile
-               that defines the rows (same for W3 before triggers are named, and w2_image always). Saying so is
-               better than a blank: the member can see the week is live and that the rows come from the Session. */
-            <>
-              <div className="pb-sec">This week</div>
-              <div className="pb-sec-d">Day {grid.day} of 7 — your week is running.</div>
-              <p className="pb-empty">
-                Nothing to mark here yet. The rows come from the Session that opened this week — once it’s set up
-                what you’re tracking, they show up here.
-              </p>
-            </>
-          ) : (
+          {/* EVERY open week, not just the newest. Each Session that closes opens its own, and they overlap because
+              the Sessions do — a member in Reclaim had four live and saw one, with three collecting nothing in
+              silence. Jay's call: "hell yes that's ok, that's what Greg wants! If all you have to do is click four
+              boxes a day, or not, that's not too much to ask. And exactly what we're trying to do to stay engaged
+              with members daily, on their terms." */}
+          {grids.length === 0 ? (
             <>
               <div className="pb-sec">This week</div>
               <p className="pb-empty">
                 No week running right now. A Session starts one when you’re ready to practise something for
                 real — that’s when this fills in.
               </p>
+            </>
+          ) : (
+            <>
+              <div className="pb-sec">This week</div>
+              <div className="pb-sec-d">
+                {grids.length === 1
+                  ? `Day ${grids[0]!.day} of 7. A blank day is a day — this is for noticing what helps, never a score.`
+                  : `${grids.length} weeks running. A blank day is a day — this is for noticing what helps, never a score.`}
+              </div>
+              {grids.map((g) => (
+                <div key={g.kind} className="pb-week">
+                  {/* Name the week when there is more than one, so a member knows which Session each came from and
+                      which row they are ticking. With one, the heading above already said it. */}
+                  {grids.length > 1 && (
+                    <div className="pb-week-h">
+                      {WEEK_LABEL[g.kind] ?? 'This week'} <span className="pb-week-day">Day {g.day} of 7</span>
+                    </div>
+                  )}
+                  <WeekGridPanel memberId={memberId} grid={g} />
+                </div>
+              ))}
             </>
           )}
         </section>

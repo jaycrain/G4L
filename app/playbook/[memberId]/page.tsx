@@ -11,7 +11,7 @@ import RedesignPlaybookView from './redesign-playbook-view.tsx';
 import { redesignEnabled } from '../../../lib/dashboard/redesign.ts';
 import { outcomes } from '../../../lib/dashboard/outcomes.ts';
 import { memberReads } from '../../../lib/playbook/reads.ts';
-import { weekGrid } from '../../../lib/practice/grid.ts';
+import { weekGrids } from '../../../lib/practice/grid.ts';
 import { getForecast } from '../../../lib/curriculum/view.ts';
 import { completedReviewSessions } from '../../../lib/workspace/review.ts';
 import SubpageShell from '../../dashboard/subpage-shell.tsx';
@@ -61,7 +61,8 @@ export default async function PlaybookPage({ params }: { params: Promise<{ membe
   const reads = redesignEnabled() ? await memberReads(db, memberId).catch(() => []) : [];
   // The LIVE practice week — this tab is its new home (it left Momentum in the same commit). Guarded: no week, or
   // a read hiccup, shows the empty state rather than taking the Playbook down.
-  const grid = redesignEnabled() ? await weekGrid(db, memberId).catch(() => null) : null;
+  // ALL open weeks — a member can be running several at once and the Playbook shows every one.
+  const grids = redesignEnabled() ? await weekGrids(db, memberId).catch(() => []) : [];
   // REVISIT A SESSION moves here from the Program page (Jay, 2026-08-08). Two reasons, and the second is the
   // decisive one: it is the re-run of something that worked, which is the Playbook's whole job; and the Program
   // page describes the CURRENT cycle, so a Cycle-1 session list goes stale there the moment Cycle 2 opens. The
@@ -71,7 +72,7 @@ export default async function PlaybookPage({ params }: { params: Promise<{ membe
     : [];
   return redesignEnabled() ? (
     <SubpageShell memberId={memberId}>
-      <RedesignPlaybookView {...props} rerunStats={rerunStats} outcomes={cards} reads={reads} grid={grid} reviewable={reviewable} />
+      <RedesignPlaybookView {...props} rerunStats={rerunStats} outcomes={cards} reads={reads} grids={grids} reviewable={reviewable} />
     </SubpageShell>
   ) : <PlaybookView {...props} />;
 }

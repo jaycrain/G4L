@@ -74,7 +74,7 @@ export default function WeekGridPanel({ memberId, grid }: { memberId: string; gr
     const next = { ...local, [slot]: local[slot]!.map((v, i) => (i === dayIdx ? !v : v)) };
     setLocal(next);
     startTransition(async () => {
-      const res = await toggleMarkAction(memberId, slot, dayIdx);
+      const res = await toggleMarkAction(memberId, slot, dayIdx, grid.kind);
       // Server disagreed (a stale tab, a lost row) → snap back rather than show a tick that didn't save.
       if (!res.ok) return setLocal((cur) => ({ ...cur, [slot]: cur[slot]!.map((v, i) => (i === dayIdx ? !v : v)) }));
       router.refresh(); // the saved mark becomes the SERVER's truth, so a remount re-seeds from it and not from stale props

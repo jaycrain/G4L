@@ -5,7 +5,7 @@ import { authorizeMember } from '../authz.ts';
 import type { Db } from '../../lib/db/schema.ts';
 import { rewireEnabled } from '../../lib/agent/rewire.ts';
 import { logCall, isCallType, isCallDomain, type CallType, type CallDomain } from '../../lib/momentum/store.ts';
-import { activePracticeWeek, PRACTICE_WINDOW_DAYS } from '../../lib/practice/store.ts';
+import { activePracticeWeek, practiceWeekOfKind, PRACTICE_WINDOW_DAYS, type PracticeKind } from '../../lib/practice/store.ts';
 import { toggleMark } from '../../lib/practice/mark.ts';
 
 // Log a Momentum call from the /momentum quick-log (source 'momentum_page') — the SAME primitive the rail's log_call
@@ -30,12 +30,21 @@ export async function logCallAction(memberId: string, type: CallType, note?: str
 // The day is addressed by INDEX INTO THE WINDOW, not by a date from the browser: a client clock that is wrong, or
 // simply in another timezone, would otherwise write the mark onto the wrong day. The server resolves index → date
 // from the week's own started_at, which is the only clock that matters here.
-export async function toggleMarkAction(memberId: string, slot: string, dayIndex: number): Promise<{ ok: boolean; on?: boolean; error?: string }> {
+export async function toggleMarkAction(
+  memberId: string,
+  slot: string,
+  dayIndex: number,
+  /** WHICH week this tap was made in. Optional only so an older client can't 500; always sent by the grid.
+   *  Without it the server fell back to the NEWEST week — fine while one grid rendered, and a cross-write the
+   *  moment the Playbook shows several (Jay's four live weeks, 2026-08-11). A tap must land in the grid it was
+   *  made in, so the grid names it. */
+  kind?: PracticeKind,
+): Promise<{ ok: boolean; on?: boolean; error?: string }> {
   if (!(await authorizeMember(memberId))) return { ok: false, error: 'Not authorized.' };
   if (!Number.isInteger(dayIndex) || dayIndex < 0 || dayIndex >= PRACTICE_WINDOW_DAYS) return { ok: false, error: 'Not a day in this week.' };
   try {
     const db = (await getDb()) as unknown as Db;
-    const pw = await activePracticeWeek(db, memberId);
+    const pw = kind ? await practiceWeekOfKind(db, memberId, kind) : await activePracticeWeek(db, memberId);
     if (!pw) return { ok: false, error: 'No practice week is open.' };
     if (dayIndex > pw.day - 1) return { ok: false, error: "That day hasn't happened yet." };
     return await toggleMark(db, memberId, pw, slot, dayIndex, 'grid');
