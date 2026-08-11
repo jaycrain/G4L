@@ -59,7 +59,7 @@ export const RECONNECT_CEREMONY_COPY = {
   playbookEmpty: 'Your words will begin to frame the way forward — your Playbook fills from here.',
   // 5 — reveal: the Door(s)
   doors:
-    "These are the doors you came through — the ones you first named, and what you saw when you dug deeper. They don't get to play in the dark anymore.",
+    "These are the Doors you came through — the ones you first named, and what you saw when you dug deeper. They don't get to play in the dark anymore.",
   // 5b — fallback when no Door was ever tagged (a real-Fade member can route to none)
   doorsNone: 'You told the story of how the distance opened — in your words, no label needed.',
   // 6 — reveal: the Journey, Rewire lit

@@ -16,6 +16,23 @@ import { join } from 'node:path';
 const BANNED: { re: RegExp; why: string; codeOnly?: boolean }[] = [
   { re: /Fade Doors?/i, why: 'use "the Doors" — the "Fade Door(s)" label is retired (member-facing AND internal)' },
   { re: /\bBKQ\b/, why: 'the Book Quiz (RCN-BKQ) is retired — no beat/reflection/id should reference it' },
+  // BRAND CAPITALS (Jay, 2026-08-11: "stay consistent with capitalizing branded terms"). "the Doors" is a named
+  // thing in the lexicon, like the Fade and the Reclaim List — lowercase turns it back into furniture. It had
+  // drifted in four places at once, including a line on the Program page that capitalised Fade and not Doors in
+  // the same sentence, so this guards the CLASS rather than the four instances.
+  //
+  // Case-SENSITIVE by design: "the Doors" must pass, "the doors" must not. codeOnly so the comment explaining
+  // the rule doesn't trip it.
+  //
+  // NOT GUARDED HERE: lowercase "the fade". Every occurrence in lib/ and app/ today is internal — model-prompt
+  // text ("draw out the fade story"), a TS comment, a theme key, an admin screen. A rule banning it would fire
+  // ten times on the engine's own instructions to itself, and a guard that cries wolf is a guard someone deletes.
+  // If "the fade" ever reaches member copy, that is what a walk is for.
+  {
+    re: /\b(?:the|your) doors\b/,
+    why: 'capitalise it — "the Doors" is a named term in the lexicon, not furniture',
+    codeOnly: true,
+  },
   // Count-guard (count-AGNOSTIC, not just eight/nine/ten): a hardcoded door count has been wrong twice
   // and moves again (we're at 11). Say "the Doors" / "a door", never "one of N doors". Matches a number
   // word or digit immediately before "doors"; "the Doors" (no count) is fine and never matches.

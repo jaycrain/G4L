@@ -31,7 +31,7 @@ export const ASSET_SUMMARIES: Record<AssetId, Summary> = {
     full: 'You rate yourself across the areas of your life, comparing where you are now to the fuller version of you that you remember. The point is a clear starting line — an honest look at the distance, in your own hand. Research suggests that measuring your present self against a self that matters to you can sharpen the motivation for the work ahead. Retake it later, and the space between the two readings becomes your own measuring stick.',
   },
   r2: {
-    short: 'Identify the doors you walked through that caused you to Fade.',
+    short: 'Identify the Doors you walked through that caused you to Fade.',
     full: 'The Fade rarely arrives all at once. It comes through doors — a relationship, a shrinking social world, autopilot, and others — usually several at the same time. Here you mark which ones are yours, then look at which opened first, which shaped you most, and which is still open. Research suggests people move through life change more steadily when they can put it in a clear story rather than carry it as fog. And in the Community, you’ll see these doors are a shared pattern.',
   },
   r3: {
