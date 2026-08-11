@@ -65,7 +65,9 @@ type ChapterKey = 'who' | 'lights' | 'tells' | 'plays' | 'why';
 // Plays lead — they're the heart of an operating manual (Jay: the Playbook's real value is "how did I handle this
 // before?"). The rest follow: who you are, what lights you up, your tells, why it works.
 const CHAPTERS: { key: ChapterKey; title: string; sub: string; empty: string }[] = [
-  { key: 'plays', title: 'Your plays', sub: 'A reference of what is truly working for you.', empty: 'Your reframes and comeback moves get kept here — your go-to plays.' },
+  // The "tell your Companion" line is a PROMISE, and it only went in once retire_play existed — a page that
+  // offers a capability the Companion does not have is worse than a page that offers nothing.
+  { key: 'plays', title: 'Your plays', sub: 'The moves you tried and kept because they worked — run them again. When one stops working, tell your Companion and it comes off the list.', empty: 'Finish a practice week and what worked lands here — your go-to plays, in your words.' },
   { key: 'who', title: 'Who you are', sub: 'A reminder of who you were, and who you hope to be again.', empty: 'The identities you reclaim land here as you name them.' },
   { key: 'lights', title: 'What lights you up', sub: 'Where you found excitement and motivation. What moves you gets kept here.', empty: 'What still moves you gets kept here — your spark, in your words.' },
   { key: 'tells', title: 'Your tells', sub: 'The patterns worth catching early.', empty: 'The signs you’re drifting land here, so you can catch them sooner.' },

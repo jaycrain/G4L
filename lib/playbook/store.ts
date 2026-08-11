@@ -195,3 +195,35 @@ export async function playbookForAgent(
   ).rows.map((r) => r.body);
   return { keepers: kept, recentNotes };
 }
+
+/**
+ * Find the ONE kept entry a member means when they name it in conversation ("the false-start thing isn't working").
+ *
+ * ANCHORED, never a fuzzy nearest-neighbour, and it refuses rather than guesses. Retiring the wrong play is a
+ * silent edit to the member's own operating manual — they may not notice for weeks, and when they do, the thing
+ * they trusted to hold their words got one wrong. An ambiguous match returns `ambiguous` so the Companion asks
+ * which one instead of picking. Same discipline as marking a practice day against the wrong commitment.
+ *
+ * Three tiers, best first: exact body, then prefix, then containment. Ties WITHIN a tier are ambiguous; a single
+ * hit in a better tier beats several in a worse one.
+ */
+export function matchKeptEntry(
+  entries: PlaybookEntry[],
+  phrase: string,
+): { entry: PlaybookEntry | null; ambiguous: boolean } {
+  const norm = (s: string) => s.toLowerCase().replace(/\s+/g, ' ').trim();
+  const q = norm(phrase);
+  if (!q) return { entry: null, ambiguous: false };
+  const kept = entries.filter((e) => e.state === 'kept' && e.section !== 'journal');
+
+  for (const tier of [
+    (b: string) => b === q,
+    (b: string) => b.startsWith(q) || q.startsWith(b),
+    (b: string) => b.includes(q) || q.includes(b),
+  ]) {
+    const hits = kept.filter((e) => tier(norm(e.body)));
+    if (hits.length === 1) return { entry: hits[0]!, ambiguous: false };
+    if (hits.length > 1) return { entry: null, ambiguous: true };
+  }
+  return { entry: null, ambiguous: false };
+}

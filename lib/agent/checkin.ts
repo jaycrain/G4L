@@ -725,6 +725,23 @@ const REFINE_TOOLS = [
     },
   },
   {
+    name: 'retire_play',
+    description:
+      "Retire a kept play from their Playbook when the member says it has stopped working for them ('the false " +
+      "start thing isn't helping anymore', 'drop that one'). The Playbook promises they can change it when it " +
+      "stops working — this is what makes that true. Pass `play` as the words they used for it. It is a RETIRE, " +
+      "never a delete: the entry is kept and can come back. Only call it once they have clearly said so, and if " +
+      "you are not certain WHICH play they mean, ask instead of guessing — getting it wrong quietly edits their " +
+      "own manual. Reflect it back plainly; a play that stopped working is information, never a failure.",
+    input_schema: {
+      type: 'object',
+      properties: {
+        play: { type: 'string', description: 'the play to retire, in the member’s own words' },
+      },
+      required: ['play'],
+    },
+  },
+  {
     name: 'retire_tracker',
     description:
       "Stop tracking a number when the member is done with it ('I don't want to track my weight anymore', 'you can drop the miles tracker'). Only call it once they've clearly said so. It RETIRES the tracker — the history is kept and it can be brought back later, never a permanent delete. Confirm it's what they want, then reflect it back warmly; retiring a tracker is never a failure.",

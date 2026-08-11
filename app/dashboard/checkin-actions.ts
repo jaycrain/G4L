@@ -18,7 +18,7 @@ import { recentConsumedTitles } from '../../lib/bites/store.ts';
 import { getReclaimItems } from '../../lib/beats/store.ts';
 import { addReclaimItemForMember, addDoorForMember } from '../../lib/member/refine.ts';
 import { markReclaimReclaimedByText, unmarkReclaimReclaimedByText, refineReclaimItemByText, removeReclaimItemByText, reorderReclaimList } from '../../lib/beats/store.ts';
-import { proposeEntry, playbookForAgent, isPlaybookSection } from '../../lib/playbook/store.ts';
+import { proposeEntry, playbookForAgent, isPlaybookSection, listPlaybook, matchKeptEntry, dismissEntry } from '../../lib/playbook/store.ts';
 import { createMeasure, logReadingByLabel, updateMeasure, archiveMeasure, measuresForAgent, findReclaimItemId, looksTrackable } from '../../lib/measure/store.ts';
 import { logCall, isCallType, isCallDomain, domainTally, recentCalls } from '../../lib/momentum/store.ts';
 import { setCommitment, activeCommitments, isCommitmentDomain, DOMAIN_WORD } from '../../lib/commitments/store.ts';
@@ -607,6 +607,26 @@ export async function sendCheckin(memberId: string, memberMessage: string): Prom
         }
         if (res.reason === 'nochange') return { ok: false, message: 'Nothing to change — ask what they want the new target to be, then call it again.' };
         return { ok: false, message: "Couldn't find a tracker by that name to update." };
+      }
+      if (name === 'retire_play') {
+        // Makes the Playbook's own promise true — "when something stops working, tell your Companion and change
+        // it". Without this the page printed a capability the Companion did not have.
+        //
+        // A RETIRE, not a delete: state goes to 'dismissed', the row and its history stay, and it can come back.
+        // And it REFUSES on an ambiguous name rather than picking — retiring the wrong play is a silent edit to
+        // the member's own operating manual, which they may not notice for weeks.
+        const phrase = String(input.play ?? '').trim();
+        if (!phrase) return { ok: false, message: 'Not retired — ask which play they mean, then call it again.' };
+        const all = await listPlaybook(db, memberId);
+        const { entry, ambiguous } = matchKeptEntry(all, phrase);
+        if (ambiguous) {
+          return { ok: false, message: 'More than one play matches that. Ask which one they mean — name them back — then call it again. Do not guess.' };
+        }
+        if (!entry) return { ok: false, message: "Couldn't find a kept play by that name. Ask them to say which one, in their words." };
+        const done = await dismissEntry(db, memberId, entry.id);
+        if (!done) return { ok: false, message: 'Not retired — try once more, or tell them it did not save.' };
+        mutated = true;
+        return { ok: true, message: `Retired "${entry.body.slice(0, 60)}" — it is kept and can come back anytime. Reflect it back plainly; a play that stopped working is information, never a failure.` };
       }
       if (name === 'retire_tracker') {
         // #79 — retire (archive) a tracker: kept as history + restorable, NEVER a hard delete.
