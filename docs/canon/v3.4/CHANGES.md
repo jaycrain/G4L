@@ -1,6 +1,6 @@
 # CHANGES — authored copy, v3.4 (since v3.3)
 
-App @ `d2f5ae9`. 12 added · 8 removed, out of 838 authored strings.
+App @ `5520481`. 12 added · 8 removed, out of 838 authored strings.
 
 **This is the reconciliation list.** A line that appears in both ADDED and REMOVED in a similar form is an
 edit, not a pair of separate changes — read them together.

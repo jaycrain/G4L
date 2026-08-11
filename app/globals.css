@@ -1816,6 +1816,15 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
    — the arrow was pushing its own button taller (Jay: "vertically center Why this matters and Explore the Science
    in their space"). Fixing the box to the label's height lets it read large without moving anything. */
 .ws-col-head .ws-why-caret { font-size: 17px; height: 13px; line-height: 13px; }
+/* OPTICAL CENTRING — measured, not eyeballed. Flexbox centres BOXES; the eye centres INK, and for a glyph whose ink
+   sits differently in its em box than the label's does, those are not the same line. Painted-ink measurement of this
+   row at 8x: both labels ink 9.38 → ~21.44 (ascender to descender), visual mass centred ~15.35, while the caret and
+   the arrow — perfectly box-centred — landed at 14.25 and 14.31. About 1.1px high, both of them, which is what reads
+   as "not centred" on a row where every align-items is already center (Jay: "vertical centering got worse").
+   ONE rule for both glyphs: it is one problem, and two copies of a magic number drift apart. Scoped to .ws-col-head
+   because the offset is calibrated to THIS label — the filled teal pill elsewhere is 12.5px uppercase with no
+   descenders, so its ink centre is a different number and this nudge would push it off. */
+.ws-col-head .ws-head-glyph { position: relative; top: 1.1px; }
 /* Distinct glyph (↗ vs ▸) because the two behave differently: one expands in place, one opens a panel. */
 .ws-explore-open {
   /* Same 5px vertical padding as .ws-why-toggle so neither control drives the row height and both sit centred. */

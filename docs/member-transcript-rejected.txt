@@ -1,4 +1,4 @@
-# Strings EXCLUDED from the member transcript (app @ d2f5ae9 · 2026-08-11)
+# Strings EXCLUDED from the member transcript (app @ 5520481 · 2026-08-11)
 # Not member copy: system prompts, multi-line fragments, code artifacts. Review when a real line goes missing.
 
 [lib/agent/onboarding-staged.ts] you’re trying to reclaim. We can always change it later.

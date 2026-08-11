@@ -184,11 +184,11 @@ export default function WorkspaceSession({
             <div className={`ws-why${whyOpen ? ' open' : ''}`}>
               <div className="ws-why-row">
                 <button type="button" className="ws-why-toggle" onClick={() => setWhyOpen((v) => !v)} aria-expanded={whyOpen}>
-                  Why this matters <span className={`ws-why-caret${whyOpen ? ' is-open' : ''}`} aria-hidden="true">▾</span>
+                  Why this matters <span className={`ws-why-caret ws-head-glyph${whyOpen ? ' is-open' : ''}`} aria-hidden="true">▾</span>
                 </button>
                 {explore && (
                   <button type="button" className="ws-explore-open" onClick={() => setExploreOpen(true)} aria-haspopup="dialog">
-                    Explore the Science <span aria-hidden="true">↗</span>
+                    Explore the Science <span className="ws-head-glyph" aria-hidden="true">↗</span>
                   </button>
                 )}
               </div>

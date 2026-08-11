@@ -16,48 +16,14 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { execSync } from 'node:child_process';
 
+import { SECTIONS } from './transcript-sources.mjs';
+
 const ROOT = process.cwd();
 // Every string the filters threw out — REPORTED, never silent. A quotability guarantee you can't audit isn't one.
 const REJECTED = [];
 const OUT = process.argv[2] || 'docs/member-transcript.md';
 
 // Reading-order surfaces. Each section pulls authored strings from its file(s), in file/line order.
-const SECTIONS = [
-  { title: 'Onboarding', files: ['lib/agent/onboarding-staged.ts'] },
-  { title: 'Reconnect — the gateway', files: ['lib/agent/reconnect.ts', 'lib/idq/instrument.ts', 'lib/ceremony/reconnect-ceremony-beats.ts'] },
-  { title: 'Rewire — mind', files: ['lib/agent/rewire.ts', 'lib/curriculum/content/rewire.ts', 'lib/ceremony/rewire-ceremony-beats.ts'] },
-  { title: 'Rebuild — body', files: ['lib/agent/rebuild.ts', 'lib/rebuild/why-instrument.ts', 'lib/rebuild/skills-instrument.ts', 'lib/ceremony/rebuild-ceremony-beats.ts'] },
-  { title: 'Reclaim — the outcome', files: ['lib/agent/reclaim.ts', 'lib/reclaim/bigger-world-instrument.ts', 'lib/ceremony/reclaim-ceremony-beats.ts'] },
-  { title: 'Grinta baseline (the 12-item survey)', files: ['lib/grinta/survey/instrument.ts'] },
-  { title: 'Session & phase summaries ("Why this matters")', files: ['lib/content/summaries.ts'] },
-  { title: 'Badges', files: ['lib/curriculum/registry.ts', 'app/badges/[memberId]/page.tsx'] },
-  // THIS LIST IS HAND-MAINTAINED, WHICH MEANS IT GOES STALE SILENTLY — and it had. Audited 2026-08-08 while
-  // cutting v3.3 and found the transcript, the artifact marketing and the BOOK quote from, was missing the
-  // CENTRE of the dashboard: triptych-right was listed but triptych-center (the Companion hero, the standing
-  // update) and triptych-left (the panels) never were. It also still listed the Field Guide, which is now an
-  // empty redirect. Under-reporting is the dangerous direction: a missing surface reads as "no copy there"
-  // rather than as an error, so Claudette writes around a gap she can't see.
-  // WHEN A NEW MEMBER-FACING SURFACE SHIPS, ADD IT HERE. That is the whole maintenance contract.
-  {
-    title: 'Dashboard & subpages (UI copy)',
-    files: [
-      'app/dashboard/redesign-dashboard.tsx',
-      'app/dashboard/triptych-center.tsx', // the Companion hero, breadcrumb, keeper + "Where you stand"
-      'app/dashboard/triptych-left.tsx', // Your Playbook · ID Score · Grinta · Badges
-      'app/dashboard/triptych-right.tsx',
-      'app/dashboard/resilience-pulse.tsx',
-      'app/momentum/[memberId]/page.tsx',
-      'app/momentum/momentum-log.tsx',
-      'app/score/[memberId]/page.tsx',
-      'app/grinta/[memberId]/page.tsx',
-      'app/movement/[memberId]/page.tsx',
-      'app/reclaim-list/[memberId]/page.tsx',
-      'app/connect/[memberId]/page.tsx', // the Community (route name only — never "Connect" to a member)
-      'app/playbook/[memberId]/redesign-playbook-view.tsx',
-      'app/account/page.tsx',
-    ],
-  },
-];
 
 // Same "is it member copy?" heuristic as the raw extractor (kept independent so the two can't drift apart silently).
 function isMemberCopy(s) {

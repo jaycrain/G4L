@@ -26,6 +26,7 @@ import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { SECTIONS } from './transcript-sources.mjs';
 
 const version = process.argv[2];
 if (!version || !/^\d+\.\d+(\.\d+)?$/.test(version)) {
@@ -59,11 +60,15 @@ const PARTS = [
 
 // ── FRESHNESS, before anything else ──────────────────────────────────────────────────────────────────────────
 // This script COPIES the transcript; it does not build it. So if nobody ran build-release-bundle first, it will
-// happily publish the PREVIOUS version's copy, every part present, every checksum valid, CHANGES.md reporting
-// zero changes — and the verify pass would call it complete. That is the same silent-staleness this file exists
-// to prevent, wearing a different disguise; it happened on the first v3.4 attempt (2026-08-11).
+// happily publish the PREVIOUS version's copy — every part present, every checksum valid, CHANGES.md reporting
+// zero changes — and the verify pass below would call that complete. It happened on the first v3.4 attempt
+// (2026-08-11): 74,313 bytes, byte-identical to v3.3. The old failure mode this script was written for was a part
+// MISSING; this one is a part PRESENT AND WRONG, which is harder to see because nothing looks empty.
 //
-// The transcript stamps the commit it was built from. If that is not HEAD, the copy is stale, full stop.
+// "Stale" is NOT simply "the stamp isn't HEAD" — publishing the canon itself advances HEAD, so a bare HEAD
+// comparison would fail the very next run with nothing actually wrong. What matters is whether any file the
+// transcript is BUILT FROM changed after it was built. That list is imported rather than copied, so a surface
+// added to it is covered here for free.
 const stamp = existsSync('docs/member-transcript.md')
   ? /app @ ([0-9a-f]{7,})/.exec(readFileSync('docs/member-transcript.md', 'utf8'))?.[1]
   : null;
@@ -71,9 +76,18 @@ if (!stamp) {
   console.error('docs/member-transcript.md is missing or carries no build stamp — run scripts/build-release-bundle.mjs first.');
   process.exit(1);
 }
-if (!commit.startsWith(stamp) && !stamp.startsWith(commit)) {
-  console.error(`\nSTALE: the transcript was built at ${stamp}, HEAD is ${commit}.`);
-  console.error(`Publishing now would ship the previous version's copy with this version's number on it.`);
+let touched = [];
+try {
+  touched = git('diff', '--name-only', stamp, 'HEAD', '--', ...SECTIONS.flatMap((s) => s.files))
+    .split('\n').filter(Boolean);
+} catch {
+  console.error(`Could not diff ${stamp}..HEAD — is the stamped commit present in this clone?`);
+  process.exit(1);
+}
+if (touched.length) {
+  console.error(`\nSTALE: the transcript was built at ${stamp}, and ${touched.length} member-copy file(s) changed since:`);
+  for (const f of touched.slice(0, 10)) console.error(`  \u00b7 ${f}`);
+  console.error(`Publishing now would ship copy that no longer matches the app.`);
   console.error(`Run:  node scripts/build-release-bundle.mjs ${version}   then re-run this.`);
   process.exit(1);
 }
