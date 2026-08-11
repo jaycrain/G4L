@@ -4,9 +4,7 @@ import { getDb } from '../../../lib/db/index.ts';
 import { authorizeMember } from '../../authz.ts';
 import { logEvent } from '../../../lib/telemetry/store.ts';
 import { rewireEnabled } from '../../../lib/agent/rewire.ts';
-import { pulseBeats, recentCalls, domainTally, callsByDay, type CallType, type CallDomain } from '../../../lib/momentum/store.ts';
-import { isRange, RANGES, type Range } from '../../../lib/momentum/trend.ts';
-import MomentumLongView from '../long-view.tsx';
+import { pulseBeats, recentCalls, domainTally, type CallType, type CallDomain } from '../../../lib/momentum/store.ts';
 import { weekGrid } from '../../../lib/practice/grid.ts';
 import { practicePanelLine } from '../../../lib/practice/store.ts';
 import { commitmentTexts } from '../../../lib/commitments/store.ts';
@@ -41,25 +39,13 @@ function dayLabel(loggedOn: string, todayISO: string): string {
 
 // The Momentum quick-log surface (Slice 2) — the second logging door (FF). Flag-gated (REWIRE); the route does not
 // exist in prod until the v2.3 flip. Shows the rolling-14-day pulse + a tap-to-log. Drift-hardened (empty on 0049).
-export default async function MomentumPage({
-  params,
-  searchParams,
-}: {
-  params: Promise<{ memberId: string }>;
-  searchParams?: Promise<Record<string, string | string[] | undefined>>;
-}) {
+export default async function MomentumPage({ params }: { params: Promise<{ memberId: string }> }) {
   if (!rewireEnabled()) notFound();
   const { memberId } = await params;
   if (!(await authorizeMember(memberId))) redirect('/login');
   const db = (await getDb()) as unknown as Db;
   await logEvent(db, memberId, 'page_view', { surface: 'momentum' });
   const beats = await softRead('momentum.pulseBeats', memberId, () => pulseBeats(db, memberId), []);
-  // THE LONG VIEW's zoom, from the URL — validated against the four known ranges rather than trusted, because it
-  // reaches a query as a day count. Anything else falls back to 2 weeks, which is Momentum's own window.
-  const rawRange = (await searchParams)?.range;
-  const range: Range = isRange(rawRange) ? rawRange : '14';
-  const rangeDays = RANGES.find((r) => r.key === range)!.days;
-  const trendDays = await softRead('momentum.callsByDay', memberId, () => callsByDay(db, memberId, rangeDays), []);
   // Offer the OPTIONAL commitment tag on each call, labelled from the member's STANDING commitments (0060/0061) — shown
   // whenever they exist, not just during the one-week pilot. Drift-hardened: a read hiccup simply omits the tag.
   const commitmentsRaw = await softRead('momentum.commitmentTexts', memberId, () => commitmentTexts(db, memberId), {} as { activity?: string; diet?: string });
@@ -78,8 +64,17 @@ export default async function MomentumPage({
   return (
     <SubpageShell memberId={memberId}>
       <div className="hero"><h1>Momentum</h1></div>
+      {/* "More about" LEADS the page now (Jay, 2026-08-11: the page "is a cluster"). It used to sit at the bottom,
+          under the log, which meant the member met the tools before anything said what they were for — and the
+          page's own intro said a THIRD thing higher up. One explanation, first, then the instrument.
+          The old intro's two lines open it: they say what this is for, which is the right thing to read first. */}
+      <div className="card sub-copy">
+        <h3>More about Momentum</h3>
+        <p>The minute-to-minute decisions you make are what add up to change. Here you can track your good calls, false starts — and the on-track days where nothing much happened — and begin to understand how your patterns impact your progress.</p>
+        <p>A single day tells you very little. A few weeks of them tell you what your rhythm actually is, which is the thing worth knowing while you’re still building it.</p>
+        <p>You can log here, or just say it to your Companion. It reads everything on this page, so you can ask it what it’s seeing.</p>
+      </div>
       <div className="card">
-        <p className="card-subtitle">The minute-to-minute decisions you make are what add up to change. Here you can track your good calls, false starts — and the on-track days where nothing much happened — and begin to understand how your patterns impact your progress.</p>
         {practiceLine && <p className="practice-strip">{practiceLine}</p>}
         {/* THE WEEK GRID MOVED TO THE PLAYBOOK'S "This week" TAB (2026-08-08). It belongs in the instrument you
             plan FROM, not in a separate tool — and showing the same week in two places is worse than either
@@ -110,9 +105,6 @@ export default async function MomentumPage({
           </div>
         )}
         <ResiliencePulse beats={beats} />
-        {/* THE LONG VIEW sits directly under the 14-day pulse: same data, zoomed out. This is what earns Momentum
-            its own surface rather than folding into "This week" — a 7-day grid cannot show a phase-long shape. */}
-        <MomentumLongView memberId={memberId} days={trendDays} range={range} />
         <MomentumLog memberId={memberId} commitments={commitments} />
       </div>
 
@@ -138,13 +130,6 @@ export default async function MomentumPage({
             ))}
           </ul>
         )}
-      </div>
-      {/* "More about" — the surface explains itself here rather than from a separate Field Guide page (Jay 8/8:
-          it was "rendered unnecessary by expanded panels and subpages"). Matches /score, /grinta, /badges. */}
-      <div className="card sub-copy">
-        <h3>More about Momentum</h3>
-        <p>A single day tells you very little. A few weeks of them tell you what your rhythm actually is, which is the thing worth knowing while you’re still building it.</p>
-        <p>You can log here, or just say it to your Companion. It reads everything on this page, so you can ask it what it’s seeing.</p>
       </div>
       {/* No foot nav here (Jay 7/29): the global "← Dashboard" affordance already covers getting back, so a second
           pair of way-out buttons at the bottom read as confusing and unnecessary. */}
