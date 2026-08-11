@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import type { PlaybookEntry } from '../../../lib/playbook/store.ts';
+// ONE copy of the session->tab routing, in lib so it can be tested (tests/playbook-session-routing.test.ts).
+import { chapterKey, TAB_FOR_CHAPTER, type ChapterKey, type TabKey } from '../../../lib/playbook/tabs.ts';
 import type { Outcome } from '../../../lib/dashboard/outcomes.ts';
 import type { Read } from '../../../lib/playbook/reads.ts';
 import type { WeekGrid } from '../../../lib/practice/grid.ts';
@@ -43,25 +45,15 @@ import {
 //
 // Momentum deliberately did NOT become a tab. It is a record of what happened; the Playbook is what you run.
 // It stays on the dashboard — a daily act belongs zero-click from home — with its subpage for the long view.
-type TabKey = 'thisweek' | 'worked' | 'learned' | 'journal';
 const TABS: { key: TabKey; label: string }[] = [
   { key: 'thisweek', label: 'This week' },
   { key: 'worked', label: 'What worked' },
   { key: 'learned', label: "What you've learned" },
   { key: 'journal', label: 'Journal' },
 ];
-/** Which tab a kept line belongs under. Chapters survive INSIDE tabs — this is the grouping above them. */
-const TAB_FOR_CHAPTER: Record<ChapterKey, TabKey> = {
-  plays: 'worked',
-  tells: 'learned', // a tell is something you noticed about yourself — that is a learning
-  why: 'learned', // the science sits beside what it explains
-  who: 'learned',
-  lights: 'learned', // what still moves you is something you learned about yourself
-};
 
 const REVIEW_PHASE_LABEL: Record<string, string> = { reconnect: 'Reconnect', rewire: 'Rewire', rebuild: 'Rebuild', reclaim: 'Reclaim' };
 
-type ChapterKey = 'who' | 'lights' | 'tells' | 'plays' | 'why';
 // Plays lead — they're the heart of an operating manual (Jay: the Playbook's real value is "how did I handle this
 // before?"). The rest follow: who you are, what lights you up, your tells, why it works.
 const CHAPTERS: { key: ChapterKey; title: string; sub: string; empty: string }[] = [
@@ -75,25 +67,6 @@ const CHAPTERS: { key: ChapterKey; title: string; sub: string; empty: string }[]
 ];
 const CHAPTER_LABEL: Record<ChapterKey, string> = { who: 'Who you are', lights: 'Lights you up', tells: 'Your tells', plays: 'Your plays', why: 'Why it works' };
 
-// What a kept line IS → its chapter. Keeper-type is authoritative; section is the fallback for older entries with none.
-function chapterKey(e: PlaybookEntry): ChapterKey | null {
-  if (e.section === 'journal') return null; // journal is intake, not a chapter
-  switch (e.keeperType) {
-    case 'definition':
-      return 'who';
-    case 'lights_you_up':
-      return 'lights';
-    case 'tell':
-      return 'tells';
-    case 'principle':
-    case 'recovery_move':
-    case 'plan':
-      return 'plays';
-  }
-  if (e.section === 'why_works') return 'why';
-  if (e.section === 'what_works') return 'plays';
-  return 'who';
-}
 
 export default function RedesignPlaybookView({
   memberId,
