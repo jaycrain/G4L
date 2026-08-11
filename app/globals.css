@@ -3142,3 +3142,34 @@ body:has(.fc-dark) .brand-wordmark,
 @media (max-width: 1100px) {
   input:not([type='checkbox']):not([type='radio']), textarea, select { font-size: 16px !important; }
 }
+
+/* ── Momentum · the long view ─────────────────────────────────────────────────────────────────────────────────
+   Momentum zoomed out — week / 2 weeks / month / year. Palette only, and the colour assignment is a governance
+   decision rather than a style one: a false start is logged as HONEST (it is the member noticing, which is the
+   skill the phase teaches), so it is drawn in NAVY, not Deep Red. Red would code it as failure and turn a mirror
+   into a report card. Good calls are Olive; on-track days Light grey, because a steady day is a day, not an absence. */
+.mlv-zoom { display: flex; gap: 6px; margin: 10px 0 4px; flex-wrap: wrap; }
+.mlv-z {
+  font-size: 0.78rem; font-weight: 600; padding: 4px 11px; border-radius: 999px;
+  background: var(--grey); color: var(--navy); text-decoration: none; border: 1px solid transparent;
+}
+.mlv-z:hover { border-color: var(--navy); }
+.mlv-z.on { background: var(--navy); color: #fff; }
+.mlv-sum { font-size: 0.9rem; color: var(--charcoal); margin: 8px 0 12px; }
+
+.mlv-chart {
+  display: flex; align-items: flex-end; gap: 3px; height: 132px;
+  padding: 6px 2px 0; border-bottom: 1px solid var(--grey); overflow-x: auto;
+}
+.mlv-col { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; min-width: 14px; flex: 1 1 0; height: 100%; }
+/* The stack grows from the bottom; each band flex-grows by its own count, so one column reads as its own mix. */
+.mlv-stack { display: flex; flex-direction: column-reverse; width: 100%; max-width: 26px; min-height: 3px; border-radius: 3px; overflow: hidden; }
+.mlv-b { display: block; width: 100%; min-height: 3px; }
+.mlv-b.g { background: var(--olive); }
+.mlv-b.m { background: var(--navy); }
+.mlv-b.q { background: var(--grey); }
+.mlv-lab { font-size: 0.62rem; color: var(--navy); opacity: 0.7; margin-top: 4px; white-space: nowrap; }
+
+.mlv-key { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 10px; font-size: 0.76rem; color: var(--navy); }
+.mlv-key span { display: inline-flex; align-items: center; gap: 5px; }
+.mlv-key i { width: 10px; height: 10px; border-radius: 2px; }

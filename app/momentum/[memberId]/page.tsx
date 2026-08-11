@@ -4,7 +4,9 @@ import { getDb } from '../../../lib/db/index.ts';
 import { authorizeMember } from '../../authz.ts';
 import { logEvent } from '../../../lib/telemetry/store.ts';
 import { rewireEnabled } from '../../../lib/agent/rewire.ts';
-import { pulseBeats, recentCalls, domainTally, type CallType, type CallDomain } from '../../../lib/momentum/store.ts';
+import { pulseBeats, recentCalls, domainTally, callsByDay, type CallType, type CallDomain } from '../../../lib/momentum/store.ts';
+import { isRange, RANGES, type Range } from '../../../lib/momentum/trend.ts';
+import MomentumLongView from '../long-view.tsx';
 import { weekGrid } from '../../../lib/practice/grid.ts';
 import { practicePanelLine } from '../../../lib/practice/store.ts';
 import { commitmentTexts } from '../../../lib/commitments/store.ts';
@@ -39,13 +41,25 @@ function dayLabel(loggedOn: string, todayISO: string): string {
 
 // The Momentum quick-log surface (Slice 2) — the second logging door (FF). Flag-gated (REWIRE); the route does not
 // exist in prod until the v2.3 flip. Shows the rolling-14-day pulse + a tap-to-log. Drift-hardened (empty on 0049).
-export default async function MomentumPage({ params }: { params: Promise<{ memberId: string }> }) {
+export default async function MomentumPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ memberId: string }>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+}) {
   if (!rewireEnabled()) notFound();
   const { memberId } = await params;
   if (!(await authorizeMember(memberId))) redirect('/login');
   const db = (await getDb()) as unknown as Db;
   await logEvent(db, memberId, 'page_view', { surface: 'momentum' });
   const beats = await softRead('momentum.pulseBeats', memberId, () => pulseBeats(db, memberId), []);
+  // THE LONG VIEW's zoom, from the URL — validated against the four known ranges rather than trusted, because it
+  // reaches a query as a day count. Anything else falls back to 2 weeks, which is Momentum's own window.
+  const rawRange = (await searchParams)?.range;
+  const range: Range = isRange(rawRange) ? rawRange : '14';
+  const rangeDays = RANGES.find((r) => r.key === range)!.days;
+  const trendDays = await softRead('momentum.callsByDay', memberId, () => callsByDay(db, memberId, rangeDays), []);
   // Offer the OPTIONAL commitment tag on each call, labelled from the member's STANDING commitments (0060/0061) — shown
   // whenever they exist, not just during the one-week pilot. Drift-hardened: a read hiccup simply omits the tag.
   const commitmentsRaw = await softRead('momentum.commitmentTexts', memberId, () => commitmentTexts(db, memberId), {} as { activity?: string; diet?: string });
@@ -96,6 +110,9 @@ export default async function MomentumPage({ params }: { params: Promise<{ membe
           </div>
         )}
         <ResiliencePulse beats={beats} />
+        {/* THE LONG VIEW sits directly under the 14-day pulse: same data, zoomed out. This is what earns Momentum
+            its own surface rather than folding into "This week" — a 7-day grid cannot show a phase-long shape. */}
+        <MomentumLongView memberId={memberId} days={trendDays} range={range} />
         <MomentumLog memberId={memberId} commitments={commitments} />
       </div>
 

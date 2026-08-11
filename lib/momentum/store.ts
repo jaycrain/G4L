@@ -106,3 +106,34 @@ export function logCallIntent(message: string): CallType | null {
   if (QUIET_DAY_RE.test(m)) return 'quiet_day';
   return null;
 }
+
+/** One day's calls, dated — the raw material for the long view. Oldest first. */
+export type DayCount = { day: string; good: number; missed: number; quiet: number };
+
+/**
+ * Dated per-day counts over a window. `pulseBeats` deliberately drops the dates because the 14-day pulse is a
+ * texture, not a chart — but the long view needs to know WHEN, so it can bucket by week or month without
+ * pretending a year of beats fits on one strip.
+ *
+ * Days with no calls are absent rather than zero-filled: a day the member did not log is not a day they failed,
+ * and the bucketing decides how to treat a gap. Drift-hardened by the caller.
+ */
+export async function callsByDay(db: Db, memberId: string, days: number): Promise<DayCount[]> {
+  const { rows } = await db.query<{ day: string; type: CallType; n: number }>(
+    `select logged_on::text as day, type, count(*)::int as n
+       from momentum_call
+      where member_id = $1 and logged_on >= current_date - ($2::int - 1)
+      group by logged_on, type
+      order by logged_on asc`,
+    [memberId, Math.max(1, Math.floor(days))],
+  );
+  const byDay = new Map<string, DayCount>();
+  for (const r of rows) {
+    const d = byDay.get(r.day) ?? { day: r.day, good: 0, missed: 0, quiet: 0 };
+    if (r.type === 'good_call') d.good += r.n;
+    else if (r.type === 'false_start') d.missed += r.n;
+    else d.quiet += r.n;
+    byDay.set(r.day, d);
+  }
+  return [...byDay.values()];
+}
