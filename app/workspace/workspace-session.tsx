@@ -6,7 +6,7 @@ import { readArtifactAction } from './actions.ts';
 import { ARTIFACT_REFRESH_EVENT, SESSION_COMPLETE_EVENT } from '../components/artifact-refresh.ts';
 import { chatDispatch, type SessionKey } from '../../lib/workspace/session-key.ts';
 import { sessionSummary, sessionAsset } from '../../lib/content/summaries.ts';
-import { exploreFor, exploreForReconnectStage } from '../../lib/content/explore.ts';
+import { exploreFor, exploreForReconnectStage, reconnectStageTitle } from '../../lib/content/explore.ts';
 import type { Artifact } from '../../lib/workspace/artifact.ts';
 import type { RingPhaseState } from '../../lib/workspace/ring-state.ts';
 import RedesignChrome from '../dashboard/redesign-chrome.tsx';
@@ -167,7 +167,7 @@ export default function WorkspaceSession({
                 <div className="ws-way-pos">
                   <div className="ws-way-ph">
                     Phase {wayfinding.phaseOrdinal} · {wayfinding.phaseLabel}
-                    <span className="ws-way-ss">{wayfinding.positionLabel}</span>
+                    <span className="ws-way-ss">{isReconnect ? reconnectStageTitle(reconnectStage) : wayfinding.positionLabel}</span>
                   </div>
                   <div className="ws-way-bar"><span className="ws-way-fill" style={{ width: `${wayfinding.progressPct}%` }} /></div>
                 </div>
@@ -184,7 +184,7 @@ export default function WorkspaceSession({
             <div className={`ws-why${whyOpen ? ' open' : ''}`}>
               <div className="ws-why-row">
                 <button type="button" className="ws-why-toggle" onClick={() => setWhyOpen((v) => !v)} aria-expanded={whyOpen}>
-                  Why this matters <span className="ws-why-caret" aria-hidden="true">{whyOpen ? '▾' : '▸'}</span>
+                  Why this matters <span className={`ws-why-caret${whyOpen ? ' is-open' : ''}`} aria-hidden="true">▾</span>
                 </button>
                 {explore && (
                   <button type="button" className="ws-explore-open" onClick={() => setExploreOpen(true)} aria-haspopup="dialog">
@@ -196,15 +196,11 @@ export default function WorkspaceSession({
             </div>
           )}
 
-          {/* Kept chips — grow live as the conversation commits answers (the member's running accomplishment). */}
-          {!review && filled.length > 0 && (
-            <div className="ws-kept" aria-label="What you've kept so far">
-              <span className="ws-kept-lab">Kept</span>
-              {filled.map((s, i) => (
-                <span key={i} className="ws-kept-chip"><span className="ws-kept-tick" aria-hidden="true">✓</span>{s.label}</span>
-              ))}
-            </div>
-          )}
+          {/* KEPT CHIPS REMOVED (Jay, 2026-08-11: "the Kept row doesn't do anything for the member either, does
+              it? Your doors, does."). He is right, and the distinction is worth keeping: "Your doors: The Career
+              Cliff · The Marriage · The Load-Bearer" is HIS material, named back to him. "Kept ✓ The self you're
+              reclaiming ✓ The Doors you named" is OUR progress bookkeeping wearing his vocabulary — it tells him
+              the machine recorded something, which is our concern, not his. The header keeps what is his. */}
         </header>
 
         <div className="ws-col-body" ref={bodyRef}>

@@ -63,14 +63,19 @@ export default async function WorkspacePage({
   const phaseLabel = PHASE_LABEL[def.phase];
   const sessions = sessionsForPhase(def.phase).filter((s) => s.kind === 'session');
   const idx = sessions.findIndex((s) => s.id === def.id);
+  // THE SESSION'S OWN NAME, not the phase again (Jay, 2026-08-11: "We don't need Reconnect side-by-side in the
+  // title row. And we're missing the actual Session name.").
+  //
+  // The row above already reads "Phase 1 · Reconnect", so repeating the phase label here said the same word twice
+  // and left no room for the thing the member actually came to do. Dropped "· the gateway" with it: that came from
+  // CLAUDE.md's ARCHITECTURE description of Reconnect, not from the brand lexicon, and it was only ever filling
+  // the slot where multi-session phases print "Session 2 of 3". It told the member nothing.
   const positionLabel =
     def.kind === 'checkpoint'
       ? `${def.label} · the phase Checkpoint`
       : sessions.length > 1 && idx >= 0
         ? `${def.label} · Session ${idx + 1} of ${sessions.length}`
-        : def.phase === 'reconnect'
-          ? `${def.label} · the gateway`
-          : def.label;
+        : def.label;
   const activeRing = rings.find((r) => r.phase === def.phase);
   const progressPct = Math.round((activeRing?.fill ?? 0) * 100);
   const ringSub = def.kind === 'checkpoint' ? 'checkpoint' : sessions.length > 1 && idx >= 0 ? `${idx + 1} of ${sessions.length}` : null;

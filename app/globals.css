@@ -1752,7 +1752,11 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
 .ws-why-toggle { margin: 0; padding: 6px 13px; background: var(--teal-text); border: 1px solid var(--teal); border-radius: 8px; cursor: pointer; font-family: inherit; font-size: 12.5px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: #fff; display: inline-flex; align-items: center; gap: 7px; }
 .ws-why-toggle:hover { background: #327f7e; border-color: #327f7e; }
 .ws-why.open .ws-why-toggle { background: #327f7e; border-color: #327f7e; color: #fff; }
-.ws-why-caret { font-size: 14px; line-height: 1; margin-left: 1px; }
+/* OPTION A (Jay, 2026-08-11: "the disclosure arrow is too small"). Same pill he designed — the caret just had no
+   weight at 14px against 14px label text, so it read as punctuation rather than a control. 20px and a rotation
+   instead of swapping the glyph: one shape that turns, which is what a disclosure arrow is supposed to do. */
+.ws-why-caret { font-size: 20px; line-height: 1; margin-left: 3px; display: inline-block; transform: rotate(-90deg); transition: transform 140ms ease; }
+.ws-why-caret.is-open { transform: rotate(0deg); }
 .ws-why-full { margin: 12px 0 0; padding: 12px 15px; background: #f5f4f1; border-left: 4px solid var(--teal); border-radius: 0 10px 10px 0; font-size: 14.5px; line-height: 1.6; color: #4a5560; }
 .ws-slots { margin-top: 22px; display: flex; flex-direction: column; gap: 14px; }
 .ws-slot { border: 1px solid #e3e2df; border-left: 4px solid #e3e2df; border-radius: 12px; padding: 16px 18px; background: #f5f4f1; transition: .3s; }
@@ -1807,7 +1811,7 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
   font-size: 13px; font-weight: 700; letter-spacing: .01em; text-transform: none;
 }
 .ws-col-head .ws-why-toggle:hover, .ws-col-head .ws-why.open .ws-why-toggle { background: none; color: #2f7a7b; text-decoration: underline; }
-.ws-col-head .ws-why-caret { font-size: 11px; }
+.ws-col-head .ws-why-caret { font-size: 17px; }  /* narrow column — smaller, but still a control, not punctuation */
 /* Distinct glyph (↗ vs ▸) because the two behave differently: one expands in place, one opens a panel. */
 .ws-explore-open {
   padding: 4px 0; margin: 0; background: none; border: none; cursor: pointer; font-family: inherit;

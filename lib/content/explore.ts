@@ -289,3 +289,28 @@ const RECONNECT_STAGE_EXPLORE: Record<string, AssetId> = {
 export function exploreForReconnectStage(stage?: string | null): Explore | undefined {
   return ASSET_EXPLORE[(stage && RECONNECT_STAGE_EXPLORE[stage]) || 'r1'];
 }
+
+/**
+ * The Session name to show in the workspace header while a member is inside Reconnect.
+ *
+ * The header used to print "Reconnect · the gateway" — the phase again, next to a row that already said
+ * "Phase 1 · Reconnect", plus a word from our architecture notes. It never named the thing the member came to do
+ * (Jay, 2026-08-11: "we're missing the actual Session name, 'The Doors'").
+ *
+ * These are the CURRICULUM's own titles (lib/curriculum/content/reconnect.ts), not new labels — the dashboard
+ * hero already says "The Doors", and the header now agrees with it instead of inventing a parallel vocabulary.
+ */
+const RECONNECT_STAGE_TITLE: Record<string, string> = {
+  entry: 'The Doors',
+  doors: 'The Doors',
+  drift: 'The Drift Quiz',
+  measurement: 'The Drift Quiz',
+  window: 'The Window',
+  checkpoint: 'Your Checkpoint',
+  ceremony: 'Your Threshold',
+};
+
+/** What to call the beat the member is on. Falls back to the opening Session rather than to nothing. */
+export function reconnectStageTitle(stage?: string | null): string {
+  return (stage && RECONNECT_STAGE_TITLE[stage]) || 'The Doors';
+}
