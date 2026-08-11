@@ -31,6 +31,17 @@ const KEEPERS_TOOL = {
           type: 'object',
           properties: {
             section: { type: 'string', enum: ['what_works', 'why_works', 'own_words'] },
+            keeper_type: {
+              type: 'string',
+              enum: ['definition', 'lights_you_up', 'tell', 'principle', 'recovery_move'],
+              description:
+                "What this line IS — it decides which chapter of their Playbook it lands in, so choose carefully. " +
+                "definition = who they are or were ('I was a competitive cyclist'). lights_you_up = what still moves " +
+                "them, what they light up about. tell = a sign they're drifting, a pattern worth catching early. " +
+                "principle = a reframe or truth they landed on that they can use again. recovery_move = a concrete " +
+                "move that gets them back on track. If a line is a GOAL or something they want back, do not return " +
+                "it — that belongs on their Reclaim List, not the Playbook.",
+            },
             body: { type: 'string' },
             source_label: { type: 'string' },
           },
@@ -72,6 +83,7 @@ export async function curateKeepersFromOnboarding(
     .slice(0, 5)
     .map((k) => ({
       section: k.section as CuratedKeeper['section'],
+      keeperType: typeof k.keeper_type === 'string' ? k.keeper_type : null,
       body: String(k.body).trim(),
       sourceLabel: typeof k.source_label === 'string' && k.source_label.trim() ? k.source_label.trim() : 'From your onboarding',
     }));

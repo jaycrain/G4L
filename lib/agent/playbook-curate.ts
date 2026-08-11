@@ -4,7 +4,9 @@
 
 const SECTIONS = ['what_works', 'why_works', 'own_words'] as const;
 export type CuratedSection = (typeof SECTIONS)[number];
-export type CuratedKeeper = { section: CuratedSection; body: string; sourceLabel?: string };
+/** `keeperType` is what the line IS, and it decides the Playbook chapter — section is only the legacy fallback.
+ *  Null means "the curator didn't say", which is not neutral: the line falls through to the "Who you are" chapter. */
+export type CuratedKeeper = { section: CuratedSection; body: string; sourceLabel?: string; keeperType?: string | null };
 
 export type BeatMaterial = { title: string; content: string; closeType: string; response: string };
 

@@ -62,7 +62,12 @@ async function nextSortOrder(db: Db, memberId: string, section: PlaybookSection)
 export async function proposeEntry(
   db: Db,
   memberId: string,
-  input: { section: PlaybookSection; body: string; source?: PlaybookSource; keep?: boolean },
+  /** `keeperType` is what the line IS (definition / lights_you_up / tell / principle / recovery_move / plan). It is
+   *  AUTHORITATIVE for which Playbook chapter the line lands in — section is only the legacy fallback. Omitting it
+   *  is not neutral: an untyped line falls through to the "Who you are" chapter, which is how a race goal and a
+   *  what-lights-you-up line both ended up filed as identity statements on prod (Jay's onboarding, 2026-08-11).
+   *  Pass it wherever the writer knows what the line is. */
+  input: { section: PlaybookSection; body: string; source?: PlaybookSource; keep?: boolean; keeperType?: string | null },
 ): Promise<{ created: boolean; entry: PlaybookEntry }> {
   const body = input.body.trim();
   const state: PlaybookState = input.keep ? 'kept' : 'proposed';
@@ -87,9 +92,9 @@ export async function proposeEntry(
 
   const sort = await nextSortOrder(db, memberId, input.section);
   const { rows } = await db.query<any>(
-    `insert into playbook_entry (member_id, section, body, authorship, state, source_kind, source_ref, source_label, sort_order)
-     values ($1,$2,$3,'gathered',$4,$5,$6,$7,$8) returning *`,
-    [memberId, input.section, body, state, input.source?.kind ?? null, input.source?.ref ?? null, input.source?.label ?? null, sort],
+    `insert into playbook_entry (member_id, section, body, authorship, state, source_kind, source_ref, source_label, sort_order, keeper_type)
+     values ($1,$2,$3,'gathered',$4,$5,$6,$7,$8,$9) returning *`,
+    [memberId, input.section, body, state, input.source?.kind ?? null, input.source?.ref ?? null, input.source?.label ?? null, sort, input.keeperType ?? null],
   );
   return { created: true, entry: rowToEntry(rows[0]) };
 }
@@ -104,15 +109,17 @@ export async function addOwnEntry(
    *  said in a Session and writes into it: the keeper is the line, the entry is the thinking, and the link is what
    *  lets the Journal show one as the seed of the other rather than two unrelated rows on the same day. */
   fromEntryId?: string,
+  /** See proposeEntry — what the line IS, and the thing that decides its chapter. */
+  keeperType?: string | null,
 ): Promise<PlaybookEntry> {
   const sort = await nextSortOrder(db, memberId, section);
   const { rows } = await db.query<any>(
-    `insert into playbook_entry (member_id, section, body, authorship, state, source_kind, source_ref, source_label, sort_order)
-     values ($1,$2,$3,'authored','kept',$4,$5,$6,$7) returning *`,
+    `insert into playbook_entry (member_id, section, body, authorship, state, source_kind, source_ref, source_label, sort_order, keeper_type)
+     values ($1,$2,$3,'authored','kept',$4,$5,$6,$7,$8) returning *`,
     // source_kind stays 'own' either way — an expansion IS the member's own writing, which is what 'own' means,
     // and source_ref is already the column for linking back. Adding a 'keeper' kind would have meant a CHECK
     // constraint migration and a prod apply step for no gain; the LINK carries the distinction on its own.
-    [memberId, section, body.trim(), 'own', fromEntryId ?? null, fromEntryId ? 'you wrote into this' : 'your own', sort],
+    [memberId, section, body.trim(), 'own', fromEntryId ?? null, fromEntryId ? 'you wrote into this' : 'your own', sort, keeperType ?? null],
   );
   return rowToEntry(rows[0]);
 }

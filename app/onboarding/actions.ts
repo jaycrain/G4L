@@ -214,7 +214,7 @@ export async function finalizeOnboardingAction(input: FinalizeInput): Promise<Fi
       if (session?.messages?.length) {
         const keepers = await curateKeepersFromOnboarding(input.state.collected.identityNoun ?? null, session.messages);
         for (const k of keepers) {
-          await proposeEntry(db, res.memberId, { section: k.section, body: k.body, source: { kind: 'checkpoint', label: k.sourceLabel } });
+          await proposeEntry(db, res.memberId, { section: k.section, body: k.body, keeperType: k.keeperType ?? null, source: { kind: 'checkpoint', label: k.sourceLabel } });
         }
       }
     } catch (e) {
