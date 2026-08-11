@@ -107,7 +107,11 @@ export async function respondToStep(input: {
       `Session: ${input.sessionTitle}\nMember: ${input.displayName}\n` +
       (input.memory ? `What you remember: ${input.memory}\n` : '') +
       (input.existingDoors?.length
-        ? `Their committed Doors (named at onboarding): ${input.existingDoors.join(', ')}. If they ask what their Doors were, or seem to have lost the thread, STATE them plainly — you DO remember. Never say you have "no record" or that they're "starting fresh".\n`
+        // NOT "(named at onboarding)". This is the CURRENT Door set, and a Reconnect Session can add to it or swap
+        // one out — so that label was a claim the data stopped supporting the moment the program worked (see
+        // door-provenance.ts). This surface has no entry snapshot to prove which Door came from where, so it states
+        // what they hold today and attributes nothing.
+        ? `Their committed Doors, as they stand today: ${input.existingDoors.join(', ')}. If they ask what their Doors were, or seem to have lost the thread, STATE them plainly — you DO remember. Never say you have "no record" or that they're "starting fresh". Do NOT say they named these at onboarding — some may have surfaced in a later Session.\n`
         : '') +
       `Earlier in this Session:\n${prior}\n\n` +
       `CURRENT step — "${input.step.title}"\nThe question: ${input.step.prompt}\nDepth-probe (use if you press): ${input.step.probe}\n\n` +

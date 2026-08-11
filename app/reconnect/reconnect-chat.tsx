@@ -111,11 +111,22 @@ export default function ReconnectChat({
       {doorList.length > 0 && (
         <div className="reconnect-doorbar" style={{ marginBottom: '0.75rem', fontSize: '0.85rem', color: 'var(--navy, #374F63)' }}>
           Your Door{doorList.length > 1 ? 's' : ''}: <strong>{doorList.join(' · ')}</strong>
-          {lastReseen && (
-            <span style={{ color: 'var(--teal, #3B9495)', marginLeft: '0.5rem' }}>
-              ✓ re-seen from {doorName(lastReseen.fromSlug)}
-            </span>
-          )}
+          {/* A revision is one of two different things, and this chip said only one of them. A CORRECT carries a
+              from→to pair ("that was really a different Door"). An ADD carries only a `to` — nothing was replaced,
+              the Session simply surfaced one more. The chip assumed a `from` always existed, so on an add it
+              rendered "✓ re-seen from" and then stopped, because doorName(undefined) is null (Jay, 2026-08-11:
+              "What does 're-seen from' mean?" — on his walk it meant nothing; it was a sentence cut in half).
+              Each case now says its own true thing, and names the Door so the chip stands alone. */}
+          {lastReseen &&
+            (doorName(lastReseen.fromSlug) ? (
+              <span style={{ color: 'var(--teal, #3B9495)', marginLeft: '0.5rem' }}>
+                ✓ re-seen from {doorName(lastReseen.fromSlug)}
+              </span>
+            ) : (
+              <span style={{ color: 'var(--teal, #3B9495)', marginLeft: '0.5rem' }}>
+                ✓ {doorName(lastReseen.toSlug)} surfaced here
+              </span>
+            ))}
         </div>
       )}
       <div className="chat" ref={chatRef}>

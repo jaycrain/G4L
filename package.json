@@ -18,6 +18,7 @@
     "walk:focus": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/focus-ring-walk.ts",
     "walk:console": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/console-walk.ts",
     "walk:ink": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/head-ink-walk.ts",
+    "walk:provenance": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/door-provenance-walk.ts",
     "walk:companion": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/founder-companion-walk.ts",
     "db:seed-demo": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/db/seed-demo.ts",
     "agent:check": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/agent/check.ts",

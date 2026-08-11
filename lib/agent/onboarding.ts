@@ -159,6 +159,13 @@ export type ConvState = {
   // mislabel) emits one. Slice 1 records the intent here; the persistence layer (later slice) reads it to emit the
   // member_event harvest_moment (from→to in meta). Default-emit: present unless the model flagged flatMislabel.
   reseeingTells?: ReseeingTell[];
+  // The Door set as it stood when THIS arc opened — the only record of what the member walked in with, because
+  // `collected.doors` is mutated the moment a re-seeing commits. Read by door-provenance.ts so a context line can
+  // say "named at onboarding" without lying once the Session has done its job (Jay's own walk, 2026-08-11: he named
+  // three, the Session drew out a fourth, and the close credited him with all four "at the start").
+  // OPTIONAL on purpose: a session persisted before this field existed resumes without it, and the engine must then
+  // decline to attribute rather than guess.
+  doorsAtEntry?: DoorSlug[];
   // §2c Measurement (administered mode): the fixed-scale responses accumulated across the administered beat, in item
   // order. The engine gathers them off the depth kernel; the action submits the baseline (submitIdq) when the set is
   // complete. Reusable for any administered instrument (IDQ now; Grit later).

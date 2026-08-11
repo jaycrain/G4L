@@ -15,6 +15,7 @@ import { DOORS, matchDoors, isDoorSlug, type DoorSlug } from '../doors.ts';
 import { TOTAL_ITEMS, itemStem, DIMENSIONS, type Dimension } from '../idq/instrument.ts';
 import { scoreIdq } from '../idq/scoring.ts';
 import { identityLabel } from '../member/identity.ts';
+import { doorProvenance } from './door-provenance.ts';
 import type { Db } from '../db/schema.ts';
 import { MEMBER_AGENT_SYSTEM_PROMPT } from './system-prompt.ts';
 import { resolveConfirmCorroborated, memberWantsToAdvance } from './onboarding-intent.ts';
@@ -90,7 +91,13 @@ const RECONNECT_FORECAST =
 // The Reconnect opening turn (parallels stagedOpening): the callback message + the arc's initial state, with the
 // COMMITTED captures pre-loaded into `collected`. Stage 'entry' handles the member's response to the callback.
 export function reconnectOpening(committed: Collected): Turn {
-  return { reply: reconnectCallback(committed), state: { stage: 'entry', collected: committed }, complete: false };
+  // Snapshot the Door set AS IT STANDS NOW, before this session can revise it. This is the only moment the
+  // distinction is free — after §2b commits an add, `collected.doors` no longer remembers what they walked in with.
+  return {
+    reply: reconnectCallback(committed),
+    state: { stage: 'entry', collected: committed, doorsAtEntry: [...(committed.doors ?? [])] },
+    complete: false,
+  };
 }
 
 // --- the live read: reconstruct the COMMITTED captures from member_profile (never the transcript) -----------
@@ -426,7 +433,10 @@ export function driftOpen(c: Collected): string {
   const wants = (c.reclaimList ?? []).map((s) => s.trim()).filter(Boolean);
   if (wants.length >= 2) {
     return (
-      `Back at the start, you named what you want back — ${serveReclaim(wants)}. Let's stay with those a moment — ` +
+      // "Back at the start" was a temporal claim over a REVISABLE list — items can be added or set aside from the
+      // rail at any time, so an item added last week was being dated to onboarding. "You've named" keeps the recall
+      // warmth and the ownership ("these are yours, I remember them") without dating them.
+      `You've named what you want back — ${serveReclaim(wants)}. Let's stay with those a moment — ` +
       `not a new list, the real weight of it. Of the things you named, which do you feel the distance from most right now?`
     );
   }
@@ -933,17 +943,45 @@ export function parseReconnectTurn(content: readonly unknown[]): ModelTurn {
 
 // What the model already KNOWS about the member (committed captures, loaded at arc entry) — so recall is precise
 // and it never says "no record". Never the transcript.
-function reconnectContext(c: Collected): string {
+export function reconnectContext(c: Collected, doorsAtEntry?: readonly DoorSlug[]): string {
   const identity = identityLabel(c.identityNoun);
-  const doorNames = (c.doors ?? []).map((s) => DOORS.find((d) => d.slug === s)?.displayName).filter(Boolean);
+  const name = (s: DoorSlug) => DOORS.find((d) => d.slug === s)?.displayName;
+  const names = (ds: readonly DoorSlug[]) => ds.map(name).filter(Boolean).join(', ');
+  const doors = (c.doors ?? []) as DoorSlug[];
   const reclaim = (c.reclaimList ?? []).map((s) => (s ?? '').trim()).filter(Boolean);
+
+  // PROVENANCE, EARNED NOT ASSUMED (see door-provenance.ts). This block used to be one line reading
+  // "The Door(s) they named at onboarding: …" built from the CURRENT set — which §2b mutates the instant a
+  // re-seeing commits. Jay named three and the Session drew out a fourth, and the close then told him he had named
+  // all four "at the start". We put that sentence in the model's mouth. So: state what is true now, and only
+  // attribute a Door to onboarding when the entry snapshot proves it.
+  const { carried, surfacedHere, provable } = doorProvenance(doors, doorsAtEntry);
+  const doorLines = !doors.length
+    ? []
+    : !provable
+      ? // A session resumed from before the snapshot existed. Say what they have; claim nothing about when.
+        [`Their Door(s) right now: ${names(doors)} (you do NOT know which of these were named at onboarding versus surfaced later — never say "you named these at the start")`]
+      : [
+          `Their Door(s) right now: ${names(doors)}`,
+          carried.length ? `Named at onboarding: ${names(carried)}` : `They named no Door at onboarding.`,
+          // The Session's actual work. Naming it lets the close CREDIT the member for going deeper, which is the
+          // whole point of the beat — rather than flattening it into "you knew this already".
+          surfacedHere.length
+            ? `Surfaced in THIS conversation, NOT named at onboarding: ${names(surfacedHere)}. They did not walk in with this one — it came out of the work you just did together. Never say they named it at the start; if you summarise, credit it as something this conversation drew out.`
+            : '',
+        ].filter(Boolean);
+
   const lines = [
     identity ? `Who they're reclaiming: ${identity}` : '',
-    doorNames.length ? `The Door(s) they named at onboarding: ${doorNames.join(', ')}` : '',
+    ...doorLines,
+    // `intake_gap` is written once at intake and never updated, so this provenance claim is one the engine can
+    // actually keep. It is the counter-example that makes the rule concrete — not every "first" is a lie.
     (c.gap ?? '').trim() ? `How they first described the gap opening: ${c.gap!.trim()}` : '',
     // Their Reclaim List — the thing the whole program works toward. It MUST be in context: without it the model
     // truthfully told a member "I can't pull it directly" when asked about their own list (backbone violation).
-    reclaim.length ? `Their Reclaim List (what they're taking back — you HAVE this; never say you can't see it): ${reclaim.join('; ')}` : '',
+    // Stated WITHOUT a "back at the start" framing: the list is revisable from the rail, so its contents today are
+    // not necessarily what they first wrote.
+    reclaim.length ? `Their Reclaim List as it stands today (what they're taking back — you HAVE this; never say you can't see it): ${reclaim.join('; ')}` : '',
   ].filter(Boolean);
   return lines.length ? `\n\nMEMBER CONTEXT (what you already know — never say you don't):\n${lines.join('\n')}` : '';
 }
@@ -956,7 +994,8 @@ const RECONNECT_SYSTEM = `${MEMBER_AGENT_SYSTEM_PROMPT}
 
 OPERATING MOMENT: Reconnect — the DOORS EXCAVATION (Recognition).
 You are NOT meeting this person for the first time. You already know them (see MEMBER CONTEXT): their reclaimed
-identity, the Door(s) they named at onboarding, and how they first described the gap opening. This beat goes DEEPER
+identity, their current Door(s) — MEMBER CONTEXT tells you which were named at onboarding and which surfaced later,
+and you must never blur the two — and how they first described the gap opening. This beat goes DEEPER
 into the primary Door.
 
 YOUR JOB IS INSIGHT, NOT RECALL. Reciting what they told you earns nothing — the recall is the floor. Draw the door
@@ -1078,7 +1117,7 @@ export async function liveTurnReconnect(state: ConvState, history: ConvMessage[]
   const res = await captureCreate((model) => client.messages.create({
     model,
     max_tokens: 600,
-    system: RECONNECT_SYSTEM + reconnectContext(state.collected) + stageInstructionReconnect(state.stage),
+    system: RECONNECT_SYSTEM + reconnectContext(state.collected, state.doorsAtEntry) + stageInstructionReconnect(state.stage),
     tools: RECONNECT_TOOLS,
     messages,
   }));
