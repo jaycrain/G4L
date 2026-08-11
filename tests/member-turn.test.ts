@@ -65,3 +65,16 @@ test("the picture beat keeps the member's scene, and not their reaction to it", 
   // ...but the same words INSIDE a described scene are content, not a reaction. Whole-message intent, again.
   assert.ok(isMemberContent('The light is powerful there and it fills the whole street'));
 });
+
+// ── W3 · THE REFRAME ────────────────────────────────────────────────────────────────────────────────────────────
+// The Companion offers the member's real true line and asks "want that as your bad-day line, or write a new one?".
+// Jay answered "I like it" — an acceptance that was not on W3_CONFIRM_OFFER_RE's list, so it was read as a NEW line,
+// stored as his bad-day Reframe AND harvested as a keeper. Third instance of one shape in a day; the general truth
+// is that a reply carrying no content of its own cannot be a new line.
+test('accepting the offered bad-day line is never stored as a new one', () => {
+  for (const yes of ['I like it', 'I love it', "that's me", 'perfect', 'yeah', 'nice', 'wow'])
+    assert.ok(!isMemberContent(yes), `"${yes}" accepts the offer; it is not a new line`);
+  // A real bad-day line must still be taken verbatim — including one that merely CONTAINS a soft word.
+  for (const line of ["I'm not broken but I'm tired", 'I am still that guy', "That's the whole reason I ride"])
+    assert.ok(isMemberContent(line), `"${line}" is the member writing, not accepting`);
+});

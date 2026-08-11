@@ -662,7 +662,16 @@ const W3_CONFIRM_OFFER_RE =
 function resolveReframe(msg: string, c: Collected): { line: string; reused: boolean } {
   const line0 = firstTrueLine(c);
   const m = msg.trim().replace(/[.,!?]+$/, '');
-  if (line0 && W3_CONFIRM_OFFER_RE.test(m)) return { line: line0, reused: true };
+  // TWO TESTS, because one list of "yes" phrasings will always be incomplete. W3_CONFIRM_OFFER_RE enumerates the
+  // ways a member accepts an offer — "use it", "that one", "perfect", "sounds good" — and Jay said "I like it",
+  // which was not on it. So his acceptance was read as a NEW bad-day line and stored, and harvested as a keeper
+  // ("Reframe — 'I like it'" on his card, 2026-08-11).
+  //
+  // Patching the list would be the third fix of this shape today. The general truth underneath it: a reply that
+  // carries no content of its own CANNOT be a new true line. If there is a line on the table and they answered with
+  // a reaction, they accepted it. So the enumeration stays for the phrasings it gets right, and isMemberContent —
+  // the same vocabulary W1 and W2 now use — covers everything it doesn't.
+  if (line0 && (W3_CONFIRM_OFFER_RE.test(m) || !isMemberContent(msg))) return { line: line0, reused: true };
   return { line: msg.trim(), reused: false };
 }
 // A DISPUTE at the Reframe — the member says the offered line wasn't theirs ("I didn't write this / where did that come
@@ -767,6 +776,12 @@ const protocolStage: StageDef = {
       // ("I'm not broken but I'm tired") is still taken verbatim.
       if (W3_CONFIRM_OFFER_RE.test(msg.trim().replace(/[.,!?]+$/, '')) && hasRevisionTail(msg)) {
         b.reply = w3ReframeTweak(b.collected);
+        return;
+      }
+      // No line on the table AND nothing in what they wrote — re-offer rather than keep a reaction as their bad-day
+      // line. Without this the same reaction still lands whenever W1 left no true line to reuse.
+      if (!isMemberContent(msg) && !firstTrueLine(b.collected)) {
+        b.reply = reframeFallback(b.collected);
         return;
       }
       const r = resolveReframe(msg, b.collected);
