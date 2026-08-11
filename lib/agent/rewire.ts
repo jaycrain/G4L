@@ -618,10 +618,10 @@ const W3_REFRAME_PROMPT =
 const W3_RESTART =
   `And Restart — when the old voice gets loud, you go back to the picture you built of where you're headed, standing ` +
   `in the goal you named. The campaign can't compete with a picture that real.`;
-// ── Step 3 — The week of noticing (Momentum turns on — the LOGGING mechanic is the Momentum slice) ──
+// ── Step 3 — The week of noticing (the week is logged in the Playbook's "This week" tab, moved there 2026-08-08) ──
 const W3_STEP3_1 =
-  `Here's your work this week: don't try to change anything yet. Just notice. Go to the Momentum card on your ` +
-  `dashboard every day and log your good calls, your false starts and the on-track days where not much happened.`;
+  `Here's your work this week: don't try to change anything yet. Just notice. Open This week in your Playbook ` +
+  `every day and log your good calls, your false starts and the on-track days where not much happened.`;
 const W3_STEP3_2 =
   `And when a false start happens — it will — run your protocol. Redirect, Reframe, Restart.`;
 // ── Close — harvest + hand-off ──

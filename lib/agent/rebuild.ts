@@ -193,7 +193,7 @@ const B3_PLAN_CONFIRMED_1 =
 // member who is told to expect contact and gets none reads it as being dropped, and we did that to them.
 // So: tell them what to do, where, and when — the shape W3's close already uses — and promise nothing we don't send.
 const B3_PLAN_CONFIRMED_2 =
-  "Start tomorrow. Go to the Momentum card on your dashboard each day and log how it went — a good call, a false " +
+  "Start tomorrow. Open This week in your Playbook each day and log how it went — a good call, a false " +
   "start, or on track. It's a good time to talk with other Community members too. After a week of it, the Rebuild " +
   "Checkpoint is where this Phase closes.";
 // Said when the plan is locked and UNCHANGED since we showed it — see coach-gate.ts. Nothing new to put on

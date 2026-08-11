@@ -17,6 +17,7 @@
     "dev:bootstrap": "npm run db:seed-demo && npm run db:set-demo-password",
     "walk:focus": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/focus-ring-walk.ts",
     "walk:console": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/console-walk.ts",
+    "dev:seed-week": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/dev/seed-practice-week.ts",
     "walk:ink": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/head-ink-walk.ts",
     "walk:provenance": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/door-provenance-walk.ts",
     "walk:companion": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/founder-companion-walk.ts",
