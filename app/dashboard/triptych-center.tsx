@@ -224,12 +224,20 @@ export default function TriptychCenter({
               )}
             </span>
             <h1 className="tri-hero-title">{hero.title}</h1>
-            {/* The subhead is what they last FINISHED, and it REPLACES the generic forward line rather than
-                stacking above it (Jay: "subhead indicating last accomplishment"). The generic copy — "Here's
-                your next step, ready whenever you are" — is filler next to a specific, true sentence about
-                their own week, and the state it used to carry now lives in the breadcrumb. Falls back to copy
-                for a member with nothing closed yet, rather than inventing an achievement. */}
-            <p className="tri-hero-copy">{hero.accomplishment ?? hero.copy}</p>
+            {/* THE SUBHEAD SAYS THE OTHER THING FROM THE HEADLINE.
+                Normally the headline is forward ("Your week is running", the Session's name) and the subhead is
+                what they last FINISHED — Jay's earlier call, because the generic forward line ("Here's your next
+                step, ready whenever you are") is filler beside a true sentence about their own week.
+                But when they JUST finished something the headline already says so ("Nice work — Rebuild
+                Checkpoint"), and repeating it in the subhead spent the whole card on the past: two lines about
+                what is behind you and nothing naming what is next. Jay got lost twice in his own program that
+                way — he believed he was in Reclaim while sitting in the Rebuild Checkpoint, and he built this.
+                So in that one state the subhead carries the FORWARD line, which there is specific ("Next up:
+                Looking Forward, whenever you're ready") rather than filler. Headline = what you finished,
+                subhead = what's next, button = start it. */}
+            <p className="tri-hero-copy">
+              {hero.kind === 'just-finished' ? hero.copy : (hero.accomplishment ?? hero.copy)}
+            </p>
             <div className="tri-hero-ctarow">
               {hero.ctaHref ? (
                 <Link href={hero.ctaHref} className="tri-hero-cta" data-tour="next-step">

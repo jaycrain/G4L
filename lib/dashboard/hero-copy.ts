@@ -43,7 +43,9 @@ export function heroView(state: HeroState, ctx: HeroContext): HeroView {
                 ? "Next up is one of the most fulfilling exercises in the entire G4L program, Quality Days. Whenever you're ready."
                 : `Next up: ${state.next.label}, whenever you're ready.`
           : `Take a breath — the next step will be here when you are.`,
-        ctaLabel: state.next ? (state.next.isCheckpoint ? 'Take the Checkpoint' : 'Start the next Session') : 'Back to your path',
+        // "Start the Session", not "Start the next Session": the subhead directly above now NAMES it, so "next"
+        // is the only word in the sentence doing no work (Jay, 2026-08-11).
+        ctaLabel: state.next ? (state.next.isCheckpoint ? 'Take the Checkpoint' : 'Start the Session') : 'Back to your path',
       };
     case 'reclaim-locked':
       return {
