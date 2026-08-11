@@ -25,29 +25,38 @@ import {
 // journal as free-write intake. Flag-gated at the page → prod keeps the section-based view. Every action is reused
 // unchanged; this is a presentation refactor over the same stateful data.
 
-// THE TABS (2026-08-08, docs/playbook-shell-spec.md). Nine stacked sections became FIVE tabs, and the collapse
-// came from one question: which Session is this built from? Three of the old chapters had no Session of their own —
-// "Why it works" is the science that landed, so it belongs inside a Read next to the thing it explains; "Your
-// tells" IS a read (a tell is literally what tells you which play to call); and "What lights you up" is part of
-// who you are. No content was dropped; it stopped being nine top-level choices.
+// THE TABS. Nine stacked sections became five (2026-08-08, docs/playbook-shell-spec.md) by asking of each one:
+// which Session is this built from? Three old chapters had no Session of their own, so they moved inside others.
+// No content was dropped; it stopped being nine top-level choices.
 //
-// "This week" (the live practice week) is the FIFTH tab and is deliberately absent until the practice weeks move
-// off Momentum in one step — showing the same week in two places is worse than either arrangement.
-type TabKey = 'thisweek' | 'plays' | 'reads' | 'who' | 'journal';
+// FIVE THEN BECAME FOUR (2026-08-10, the Playbook-as-endpoint reframe).
+//
+// "Plays" → "WHAT WORKED", past tense on purpose: the member's own verdict, already earned, not a menu we handed
+// them.
+//
+// "Who you are" → "WHAT YOU'VE LEARNED", and this rename is load-bearing rather than cosmetic. The tab now holds
+// the instrument READS (B1's motivation, B2's skills, C2's world) beside the identity keepers. A read is
+// probabilistic by rule — Greg's science-check language — and an identity is never named without the member's
+// confirmation. A tab called "Who you are" turns a reading into a verdict about the self, which is the thing
+// governance forbids. "What you've learned" holds both honestly: what an instrument suggested, and what they
+// decided about themselves, without either claiming to BE them.
+//
+// Momentum deliberately did NOT become a tab. It is a record of what happened; the Playbook is what you run.
+// It stays on the dashboard — a daily act belongs zero-click from home — with its subpage for the long view.
+type TabKey = 'thisweek' | 'worked' | 'learned' | 'journal';
 const TABS: { key: TabKey; label: string }[] = [
   { key: 'thisweek', label: 'This week' },
-  { key: 'plays', label: 'Plays' },
-  { key: 'reads', label: 'Reads' },
-  { key: 'who', label: 'Who you are' },
+  { key: 'worked', label: 'What worked' },
+  { key: 'learned', label: "What you've learned" },
   { key: 'journal', label: 'Journal' },
 ];
 /** Which tab a kept line belongs under. Chapters survive INSIDE tabs — this is the grouping above them. */
 const TAB_FOR_CHAPTER: Record<ChapterKey, TabKey> = {
-  plays: 'plays',
-  tells: 'reads', // a tell tells you which play to call — that is a read, not a keepsake
-  why: 'reads', // the science sits beside the thing it explains
-  who: 'who',
-  lights: 'who', // what still moves you is part of who you are
+  plays: 'worked',
+  tells: 'learned', // a tell is something you noticed about yourself — that is a learning
+  why: 'learned', // the science sits beside what it explains
+  who: 'learned',
+  lights: 'learned', // what still moves you is something you learned about yourself
 };
 
 const REVIEW_PHASE_LABEL: Record<string, string> = { reconnect: 'Reconnect', rewire: 'Rewire', rebuild: 'Rebuild', reclaim: 'Reclaim' };
@@ -121,7 +130,7 @@ export default function RedesignPlaybookView({
   // A running week LEADS. If they're mid-practice, that is what they came for; otherwise Plays, which is the
   // Playbook's heart. An explicit ?tab= always wins so a link can point anywhere.
   const [tab, setTab] = useState<TabKey>(() => {
-    const fallback: TabKey = grid ? 'thisweek' : 'plays';
+    const fallback: TabKey = grid ? 'thisweek' : 'worked';
     if (typeof window === 'undefined') return fallback;
     const t = new URLSearchParams(window.location.search).get('tab');
     return TABS.some((x) => x.key === t) ? (t as TabKey) : fallback;
@@ -369,7 +378,7 @@ export default function RedesignPlaybookView({
       {/* MY STORY leads "Who you are" — it is who they ARE (written once, at the start). The synthesis below is
           where they've GOT to (re-woven at every Session close). In that order on purpose: the fixed thing first,
           then the moving one. */}
-      {tab === 'who' && identityParagraph && (
+      {tab === 'learned' && identityParagraph && (
         <section className="pb-card pb-hero">
           <div className="pb-sec">My Story</div>
           <div className="pb-sec-d">Who you are, in the words you landed on.</div>
@@ -379,7 +388,7 @@ export default function RedesignPlaybookView({
         </section>
       )}
 
-      {tab === 'who' && synthesis && (
+      {tab === 'learned' && synthesis && (
         <section className="pb-card pb-hero">
           <div className="pb-sec">Your story so far</div>
           <div className="pb-sec-d">A living read your companion re-weaves each time you close a Session.</div>
@@ -432,7 +441,7 @@ export default function RedesignPlaybookView({
           Reads a tab rather than a leftover: it holds what the member's own Sessions said about them, in the same
           plain language the Companion uses, with no number anywhere. Renders ABOVE the kept tells because a tell
           is something they noticed; a read is something they answered. */}
-      {tab === 'reads' && reads.length > 0 && (
+      {tab === 'learned' && reads.length > 0 && (
         <section className="pb-card pb-reads">
           <div className="pb-sec">Your reads</div>
           <div className="pb-sec-d">What your own answers said, laid out. Never a score — you told us this.</div>
@@ -467,7 +476,7 @@ export default function RedesignPlaybookView({
           a live re-run. This says "read the final state you kept" — nothing changes. Same neighbourhood, different
           verbs, and if they ever merge it should be into one control with two modes rather than two links that
           look alike. */}
-      {tab === 'plays' && reviewable.length > 0 && (
+      {tab === 'worked' && reviewable.length > 0 && (
         <section className="pb-card pb-revisit">
           <div className="pb-sec">Revisit a Session</div>
           <div className="pb-sec-d">Any Session you’ve finished — the final state you kept, read-only. Nothing changes.</div>
