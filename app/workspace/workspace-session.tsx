@@ -157,7 +157,11 @@ export default function WorkspaceSession({
         <header className="ws-col-head">
           {review ? (
             <>
-              <Link href={`/program/${memberId}`} className="ws-back">← The Program</Link>
+              {/* A revisit is reached from the PLAYBOOK — that "Revisit" link is the only route into ?review=1 — so
+                  back belongs there, not on the Program. Sending them to the Program dropped them somewhere they
+                  hadn't been and made them re-find the entry they were reading (Jay's walk, 2026-08-11). If a second
+                  entry point ever appears, this should carry the origin rather than pick a new hardcoded guess. */}
+              <Link href={`/playbook/${memberId}`} className="ws-back">← The Playbook</Link>
               <div className="ws-col-way">
                 <div className="ws-way-pos">
                   <div className="ws-way-ph">Phase {wayfinding.phaseOrdinal} · {wayfinding.phaseLabel} · Completed</div>
