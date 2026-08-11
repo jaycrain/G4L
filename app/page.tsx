@@ -38,7 +38,14 @@ export default async function Home() {
           happened — everyone walks through a door or two into the fade — and get clear on who you want to reclaim.
           Then we build the way back.
         </p>
-        <p>It starts with a real conversation. Just you and a companion built for this one thing, and nothing else.</p>
+        {/* The endpoint, HINTED but not named (2026-08-10 reframe). "Playbook" is held for the welcome pact, where
+            there is room to say what it is — naming it here spends the word before it means anything. All this
+            line does is promise the work leaves something behind, which is what makes the arc read as one thing
+            rather than a program you attend. */}
+        <p>
+          It starts with a real conversation. Just you and a companion built for this one thing, and nothing else.
+          What you build from there is yours to keep.
+        </p>
       </div>
       <p>
         <Link className="btn" href="/onboarding">

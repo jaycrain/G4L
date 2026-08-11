@@ -51,6 +51,25 @@ const BEATS: Beat[] = [
     ],
     cta: 'Show me →',
   },
+  // THE PACT — the one place we name the endpoint, said before any work starts (2026-08-10 reframe).
+  //
+  // The whole product already manufactures a Playbook; it just never told the member that was the point, so G4L
+  // read as a bin of parts rather than one arc: the Fade took the person, the Comeback gets them back, the
+  // Program is how you do the work, and the Playbook is what the work leaves in your hands.
+  //
+  // It goes HERE rather than on a new screen. This sequence already exists and already earns its place, so the
+  // reveal costs no extra navigation at the exact moment someone has just decided to act. Said once, plainly —
+  // over-narrating it later turns it into a gimmick.
+  {
+    kick: '',
+    head: ['You’ll build a Playbook.', 'It’s yours to keep.'],
+    body: [
+      'Everything you do here goes into it — the moves that actually work for you, and what you learn about yourself along the way. Your ',
+      { b: 'Playbook' },
+      ' isn’t ours to hand you. It’s already in you, and we help you draw it out. You’ll use it again and again.',
+    ],
+    cta: 'Let’s start →',
+  },
   {
     kick: '',
     head: ['One more', 'step'],
