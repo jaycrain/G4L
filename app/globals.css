@@ -3173,3 +3173,7 @@ body:has(.fc-dark) .brand-wordmark,
 .mlv-key { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 10px; font-size: 0.76rem; color: var(--navy); }
 .mlv-key span { display: inline-flex; align-items: center; gap: 5px; }
 .mlv-key i { width: 10px; height: 10px; border-radius: 2px; }
+
+/* The Playbook panel at zero — a forecast, not a void. Shown instead of hiding the panel, because the welcome
+   pact has already promised the member a Playbook and an absent panel makes that a broken promise. */
+.pb-forecast { font-size: 0.8rem; color: var(--navy); opacity: 0.75; margin-top: 2px; }

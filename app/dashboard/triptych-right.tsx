@@ -45,14 +45,24 @@ export default async function TriptychRight({
           It stopped being one: it now holds This week, the queue waiting on you, and the plays to run. That is
           not reflection, it is the next action — and the mobile tab for this column is literally "What's next".
           The panel follows the artifact. Left keeps the three measures; this column leads with the instrument.
-          Hidden until there's something in it, so it never reads as an empty promise to a brand-new member. */}
-      {playbook && playbook.plays > 0 && (
+
+          IT USED TO HIDE AT ZERO — "so it never reads as an empty promise to a brand-new member." That was right
+          when nothing had promised them a Playbook yet. The 2026-08-10 reframe makes the promise explicitly, at
+          the welcome pact, before any work starts: "You'll build a Playbook. It's yours to keep." Hiding the panel
+          after saying that is what breaks the promise — we name the destination and then the destination is not
+          on screen. It cost the Opening Tour its Playbook stop too, silently: the tour filters out any stop whose
+          target element is absent, so a brand-new member was never told the Playbook existed.
+
+          So it always renders, and at zero it FORECASTS. Same call as the tab counts: a visible zero reads as
+          "this fills up"; absence reads as "this isn't for you." (Jay's walk, 2026-08-11.) */}
+      {playbook && (
         <div className="rcard r-reg" data-tour="playbook">
           <div className="rreg-eyebrow">Your Playbook</div>
-          <div className="rc-sub">What you&rsquo;ve built.</div>
+          <div className="rc-sub">{playbook.plays > 0 ? 'What you’ve built.' : 'Where your Comeback gets kept.'}</div>
           <div className="rreg-big rreg-plays">
             {playbook.plays}<span className="rreg-unit"> {playbook.plays === 1 ? 'play' : 'plays'}</span>
           </div>
+          {playbook.plays === 0 && <div className="pb-forecast">Your first one lands when you finish a Session.</div>}
           {playbook.mostRun && (
             <div className="pb-mostrun">
               <span className="pb-mostrun-label">Most run</span>

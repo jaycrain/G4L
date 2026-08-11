@@ -58,6 +58,17 @@ export default function PostCeremonyTour({
       target: 'program',
       line: 'This section will always let you know where you are in the program. You can kick off the next phase by clicking the Open this Session button.',
     },
+    // THE PLAYBOOK STOP, and it goes SECOND — right after Program, because Program → Playbook is the arc: the
+    // Program is how you do the work, the Playbook is what the work leaves in your hands.
+    //
+    // It was missing entirely until Jay's walk (2026-08-11). Worse, its absence was invisible: the tour filters
+    // out stops whose target element isn't on the page, and the Playbook panel used to hide itself at zero plays.
+    // So a brand-new member — the only member who ever sees this tour — was the exact member who never got told
+    // the Playbook exists, moments after the welcome pact promised it to them.
+    {
+      target: 'playbook',
+      line: 'Your Playbook — the thing we said we’d build together. Everything you keep along the way lands here: the moves that work for you, and what you learn about yourself. It starts empty and fills as you go, and it’s yours.',
+    },
     { target: 'idscore', line: 'Identity Distance (ID) establishes a number that shows the space between who you are and who you want to be. It’s derived from questions you answer periodically. It will show progress you make as you close that distance.' },
     { target: 'grinta', line: 'Your Grinta Index — your grit, on its own scale. It gets a little stronger with each Phase you come through.' },
     { target: 'badges', line: 'Your Badges — earned for real milestones, and revealed the moment you reach them.' },
