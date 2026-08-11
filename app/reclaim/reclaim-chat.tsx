@@ -80,7 +80,10 @@ export default function ReclaimChat({ memberId, session = 'c1' }: { memberId: st
       const badgeBeat = r.earnedBadge ? [{ role: 'agent' as const, text: `You earned another badge! “${r.earnedBadge.name}.” I added it to your collection.` }] : [];
       setMessages((m) => [...m, ...agentBubbles(r.reply!), ...badgeBeat, { role: 'agent', text: handHome }]);
       setDone(true);
-      notifySessionComplete(); // → the workspace shows the "here's what you built" card before the hand-home
+      // The end card is NOT raised here. It used to fire on this same tick, so it landed on top of the Companion's
+      // close, the badge beat and the hand-home before any of them could be read — the receipt arriving before the
+      // wrap it is a receipt FOR (Jay's walk, 2026-08-11: "This triggered too quickly and didn't show me the
+      // Companion's wrap up of the Session"). The member now reads the close, then asks for the card by continuing.
     } else {
       setMessages((m) => [...m, ...agentBubbles(r.reply!)]);
     }
@@ -141,7 +144,7 @@ export default function ReclaimChat({ memberId, session = 'c1' }: { memberId: st
       {/* W-21 — the hand-home CTA: C3 routes into its logging week; C1/C2 hand back to the companion-home. */}
       {done && (
         <div className="chat-continue">
-          <button type="button" onClick={() => { router.refresh(); router.push(`/dashboard/${memberId}`); }}>
+          <button type="button" onClick={() => notifySessionComplete()}>
             {session === 'c3' ? 'Start the week →' : 'Continue →'}
           </button>
         </div>

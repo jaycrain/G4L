@@ -82,7 +82,10 @@ export default function RewireChat({ memberId, session = 'w1' }: { memberId: str
       const badgeBeat = r.earnedBadge ? [{ role: 'agent' as const, text: `You earned another badge! “${r.earnedBadge.name}.” I added it to your collection.` }] : [];
       setMessages((m) => [...m, ...agentBubbles(r.reply!), ...badgeBeat, { role: 'agent', text: REWIRE_HAND_HOME }]);
       setDone(true); // session done — the keeper(s) are in the Playbook
-      notifySessionComplete(); // → the workspace shows the "here's what you built" card before the hand-home
+      // The end card is NOT raised here. It used to fire on this same tick, so it landed on top of the Companion's
+      // close, the badge beat and the hand-home before any of them could be read — the receipt arriving before the
+      // wrap it is a receipt FOR (Jay's walk, 2026-08-11: "This triggered too quickly and didn't show me the
+      // Companion's wrap up of the Session"). The member now reads the close, then asks for the card by continuing.
     } else {
       setMessages((m) => [...m, ...agentBubbles(r.reply!)]);
     }
@@ -143,7 +146,7 @@ export default function RewireChat({ memberId, session = 'w1' }: { memberId: str
       {/* W-21 — the hand-home CTA: the session is saved; return the member to their companion-home (next step lit). */}
       {done && (
         <div className="chat-continue">
-          <button type="button" onClick={() => { router.refresh(); router.push(`/dashboard/${memberId}`); }}>
+          <button type="button" onClick={() => notifySessionComplete()}>
             Continue →
           </button>
         </div>

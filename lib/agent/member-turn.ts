@@ -1,4 +1,4 @@
-// IS THIS A TRUE LINE, OR THE MEMBER TALKING TO ME ABOUT THE CONVERSATION?
+// IS THIS MEMBER TURN CONTENT, OR THE MEMBER TALKING TO ME ABOUT THE CONVERSATION?
 //
 // W1's affirm stage stored EVERY member message wholesale as a true line. So when the Companion asked "is there one
 // that still feels unfinished — one you want to tighten before we close?" and Jay answered "No, that felt good",
@@ -26,17 +26,17 @@ const LEADING_NEGATION = /^(no|nope|nah|not really|not quite|not exactly)\b[\s,.
 
 /** Pure reaction: assent to a reflection, or a verdict on how the conversation went. Never a belief about oneself. */
 const REACTION =
-  /^(that'?s (me|it|right|all|good|great|perfect|the one|correct)|yep|yes|yeah|sure|ok(ay)?|got it|exactly|correct|agreed|((that|this|it) )?(felt|feels|sound|sounds|looks|was|is) (good|great|right|fine|nice|better)|(i )?(like|love) (it|that)|good|great|perfect|nice|cool|thanks?( you)?|done|all good|i'?m good|makes sense)\b[\s.!]*$/i;
+  /^(that'?s (me|it|right|all|good|great|perfect|the one|correct|powerful|beautiful|intense|a lot|heavy|true)|wow|whoa|woah|damn|hm+|huh|oof|yikes|amazing|powerful|beautiful|yep|yes|yeah|sure|ok(ay)?|got it|exactly|correct|agreed|((that|this|it) )?(felt|feels|sound|sounds|looks|was|is) (good|great|right|fine|nice|better)|(i )?(like|love) (it|that)|good|great|perfect|nice|cool|thanks?( you)?|done|all good|i'?m good|makes sense)\b[\s.!]*$/i;
 
 /**
- * Should this member message be kept as a true line?
+ * Did this member turn CARRY something — a true line, a piece of the picture — or was it only a reply?
  *
  * Returns false ONLY for messages that are entirely a reply to the Companion — a decline, an assent, or a verdict
  * on the exchange. A leading "no" alone is not disqualifying: "No, the real line is that I still race" carries an
  * assertion behind the negation and must be kept. That mirrors the whole-message-intent rule the arcs already hold
  * ("a leading word is a GUESS about the whole message" — onboarding-intent.ts).
  */
-export function isTrueLineMaterial(message: string): boolean {
+export function isMemberContent(message: string): boolean {
   const t = (message ?? '').replace(/[‘’]/g, "'").trim();
   if (t.length < 3) return false;
   if (REACTION.test(t)) return false; // "That's me", "yep", "sounds good"

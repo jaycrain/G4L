@@ -9,7 +9,7 @@
 // COPY: final, Jay-approved. "Jay" stays third-person, named (founder presence).
 
 import { runArcTurn, administeredStage, scaleExpects, type ArcConfig, type StageDef } from './onboarding-staged.ts';
-import { isTrueLineMaterial, isDeclineReply } from './true-line.ts';
+import { isMemberContent, isDeclineReply } from './member-turn.ts';
 import { memberClosingReclaim } from './onboarding-intent.ts';
 import { identityLabel } from '../member/identity.ts';
 import { consolidateReclaimList } from '../member/reclaim.ts';
@@ -181,7 +181,7 @@ const affirmStage: StageDef = {
     }
     // A reaction mid-beat ("That's me", "nice") is not a line and is not a decline either — skip storing it and
     // keep going, rather than closing the session out from under work they haven't finished.
-    if (!isTrueLineMaterial(line)) {
+    if (!isMemberContent(line)) {
       b.reply = (b.modelText ?? '').trim() || W1_AFFIRM_ACK;
       return;
     }
@@ -449,6 +449,17 @@ const holdStage: StageDef = {
   opener: () => W2_RECOGNITION,
   offersSubstance: () => true,
   gather(b) {
+    // NEVER DROP WHAT THEY GAVE YOU. This beat's opener ends "When you're ready, tell me what comes up" — an explicit
+    // ask — and this handler used to compose the picture from what was ALREADY collected without ever reading
+    // b.memberMessage. So the answer to the last and most inviting question in the session was discarded. On Jay's
+    // walk that cost the richest thing he said: "The energy of a thousand other racers around me and them behind the
+    // barriers cheering. The noise, I love that noise and anticipation" — while "Big Sugar for sure" and "No, the
+    // Starting Line" made the card ("Should have probably pulled this one").
+    //
+    // A beat that asks a question owns the answer. isMemberContent keeps it from swallowing a bare reaction ("wow",
+    // "that's powerful") as scene material, and is biased to keep, so real detail always lands.
+    const lastPiece = (b.memberMessage ?? '').trim();
+    if (isMemberContent(lastPiece)) (b.collected.w2Image ??= []).push(lastPiece);
     // Same close discipline as W3: the model's line is a receipt, so strip a trailing question before the wrap beats.
     const reflected = dropTrailingQuestion(b.modelText ?? '');
     b.pendingHarvest.push({

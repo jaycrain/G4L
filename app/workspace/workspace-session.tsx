@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, type ReactNode } from 'react';
 import Link from 'next/link';
 import { readArtifactAction } from './actions.ts';
+import { useRouter } from 'next/navigation';
 import { ARTIFACT_REFRESH_EVENT, SESSION_COMPLETE_EVENT } from '../components/artifact-refresh.ts';
 import { chatDispatch, type SessionKey } from '../../lib/workspace/session-key.ts';
 import { sessionSummary, sessionAsset } from '../../lib/content/summaries.ts';
@@ -94,9 +95,10 @@ export default function WorkspaceSession({
       el.removeEventListener('touchmove', collapse);
     };
   }, [review]);
-  // The "here's what you built" card — shown when the conversation reaches its close (SESSION_COMPLETE_EVENT), over the
-  // hand-home beat. "Continue →" dismisses it, revealing the hand-home/next-step underneath. Not the close itself.
+  // The "here's what you built" card — the RECEIPT for the session, raised when the member continues from the
+  // finished conversation, not the instant the arc completes.
   const [endCard, setEndCard] = useState(false);
+  const router = useRouter();
 
   // Fill from committed state: an immediate PUSH after each turn (the chat fires ARTIFACT_REFRESH_EVENT once its turn —
   // including any keeper commit — has landed) + a slow POLL backstop. In REVIEW the artifact is final, so nothing polls.
@@ -108,11 +110,19 @@ export default function WorkspaceSession({
       if (!cancelled && next) setArtifact(next);
     };
     const onCommitted = () => void refresh();
-    // Session close: read the final artifact, then raise the summary card over the hand-home.
+    // The member finished reading the close and hit Continue: read the final artifact, then raise the receipt.
     const onComplete = async () => {
       const next = await readArtifactAction(memberId, sessionKey);
       if (cancelled) return;
       if (next) setArtifact(next);
+      // NO DEAD END. The card is what the Continue button now asks for, so when there is nothing to show it — a
+      // session that kept nothing — the click must still take them home rather than doing visibly nothing.
+      const hasSomething = (next ?? artifact).slots.some((sl) => (sl.value ?? '').trim().length > 0);
+      if (!hasSomething) {
+        router.refresh();
+        router.push(`/dashboard/${memberId}`);
+        return;
+      }
       setEndCard(true);
     };
     if (typeof window !== 'undefined') {
@@ -229,8 +239,10 @@ export default function WorkspaceSession({
         </div>
       </div>
 
-      {/* End card — raised over the hand-home at the session's close: every answer the member built, in one place.
-          "Continue →" dismisses it, revealing the conversation's hand-home / next-step underneath. Not the close. */}
+      {/* End card — the receipt for the session: every answer the member built, in one place.
+          It is raised when the member CONTINUES from the finished conversation, not the instant the arc completes.
+          Firing it on completion put it on top of the Companion's close before that close could be read; the wrap
+          earns the receipt, so it comes first. From here "Continue →" leaves for the dashboard. */}
       {endCard && !review && filled.length > 0 && (
         <div className="ws-endcard-scrim" role="dialog" aria-modal="true" aria-label="What you built">
           <div className="ws-endcard">
@@ -248,7 +260,13 @@ export default function WorkspaceSession({
                 </div>
               ))}
             </div>
-            <button type="button" className="ws-endcard-cta" onClick={() => setEndCard(false)}>Continue →</button>
+            <button
+              type="button"
+              className="ws-endcard-cta"
+              onClick={() => { router.refresh(); router.push(`/dashboard/${memberId}`); }}
+            >
+              Continue →
+            </button>
           </div>
         </div>
       )}
