@@ -309,7 +309,9 @@ export default function RedesignPlaybookView({
     <>
       {/* Navy hero banner — same treatment every other subpage carries (Jay's walk: Playbook was missing it). */}
       <div className="hero"><h1>G4L Playbook</h1></div>
-      <p className="pb-sub">Find inspiration, confidence, and strength based on the real work you’re doing — most of it in your own words. Your Companion keeps these here for you as you go through.</p>
+      {/* THE PROMISE, moved to the top of the page (2026-08-10 reframe) and matched to the pact said at welcome.
+          It has one job: say what this page IS in a sentence, so the tabs below read as parts of one thing. */}
+      <p className="pb-sub">Where your Comeback gets kept, so you can use it again and again — the moves that worked for you, and the person you’re reclaiming, in one place. It grows every week, and it’s yours.</p>
 
       {gathering ? (
         <div className="pb-gather"><span className="typing">Gathering from your work…</span></div>
@@ -365,7 +367,11 @@ export default function RedesignPlaybookView({
               onClick={() => goTab(t.key)}
             >
               {t.label}
-              {n > 0 && <span className="pb-tab-n">{n}</span>}
+              {/* SHOW THE ZERO (Jay, 2026-08-10). It used to be suppressed, which read as "this tab is nothing";
+                  a visible 0 reads as "this fills up" — the tab is a forecast of where the work lands, not a
+                  container that happens to be empty. "This week" is exempt: it holds a live grid rather than a
+                  countable pile, and a 0 there would be wrong rather than early. */}
+              {t.key !== 'thisweek' && <span className="pb-tab-n">{n}</span>}
             </button>
           );
         })}
