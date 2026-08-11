@@ -57,6 +57,27 @@ const PARTS = [
     note: 'full raw dump, traceability backstop. **Do NOT quote** — contains system/model-instruction strings.' },
 ];
 
+// ── FRESHNESS, before anything else ──────────────────────────────────────────────────────────────────────────
+// This script COPIES the transcript; it does not build it. So if nobody ran build-release-bundle first, it will
+// happily publish the PREVIOUS version's copy, every part present, every checksum valid, CHANGES.md reporting
+// zero changes — and the verify pass would call it complete. That is the same silent-staleness this file exists
+// to prevent, wearing a different disguise; it happened on the first v3.4 attempt (2026-08-11).
+//
+// The transcript stamps the commit it was built from. If that is not HEAD, the copy is stale, full stop.
+const stamp = existsSync('docs/member-transcript.md')
+  ? /app @ ([0-9a-f]{7,})/.exec(readFileSync('docs/member-transcript.md', 'utf8'))?.[1]
+  : null;
+if (!stamp) {
+  console.error('docs/member-transcript.md is missing or carries no build stamp — run scripts/build-release-bundle.mjs first.');
+  process.exit(1);
+}
+if (!commit.startsWith(stamp) && !stamp.startsWith(commit)) {
+  console.error(`\nSTALE: the transcript was built at ${stamp}, HEAD is ${commit}.`);
+  console.error(`Publishing now would ship the previous version's copy with this version's number on it.`);
+  console.error(`Run:  node scripts/build-release-bundle.mjs ${version}   then re-run this.`);
+  process.exit(1);
+}
+
 mkdirSync(CANON, { recursive: true });
 
 // ── CHANGES.md — the diff, which is the part Cowork actually works from ──────────────────────────────────────

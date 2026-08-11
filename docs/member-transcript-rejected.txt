@@ -1,4 +1,4 @@
-# Strings EXCLUDED from the member transcript (app @ 0af7e94 · 2026-08-08)
+# Strings EXCLUDED from the member transcript (app @ d2f5ae9 · 2026-08-11)
 # Not member copy: system prompts, multi-line fragments, code artifacts. Review when a real line goes missing.
 
 [lib/agent/onboarding-staged.ts] you’re trying to reclaim. We can always change it later.
@@ -168,6 +168,7 @@
 [lib/agent/reconnect.ts] next phase begins. One thing at a time, at your pace — you set the depth, and you can stop whenever you want.
 [lib/agent/reconnect.ts] select identity_noun, named_door, intake_gap, reclaim_list from member_profile where member_id = $1
 [lib/agent/reconnect.ts] select door_slug, is_primary from member_door where member_id = $1 and removed_at is null order by is_primary desc, sort_order
+[lib/agent/reconnect.ts] member_door read failed (0043 removed_at unapplied?) — degrading to named_door:
 [lib/agent/reconnect.ts] We'll get to the other${others > 1 ? 's' : ''} — this is just where we start.
 [lib/agent/reconnect.ts] Let's start with ${doorName} — ${others > 0 ? 'one of the ones you named' : 'the one you named'}.${held} Not the label, the real thing: take me
 [lib/agent/reconnect.ts] back to how it actually happened${identity ?
@@ -205,16 +206,21 @@
 [lib/agent/reconnect.ts] cost — and you have a real INSIGHT to reflect (the cost they normalized, how it targeted who they were, the
 [lib/agent/reconnect.ts] sequence). NEVER on the first mention. If the material is still thin, do NOT call it — keep drawing out; a
 [lib/agent/reconnect.ts] manufactured insight is worse than none. On the same turn you call it, reflect that insight in THEIR words,
-[lib/agent/reconnect.ts] offered as a check they can reject.
+[lib/agent/reconnect.ts] reflect. The point is to let them land it, not to keep drawing once it's landed.
 [lib/agent/reconnect.ts] §2d Drift beat: call ONLY once the member has genuinely drawn out the DRIFT — what the Fade cost, and how far
 [lib/agent/reconnect.ts] it has run — and you can reflect the PATTERN of it (the recurring shape, the quiet thing they've stopped
 [lib/agent/reconnect.ts] noticing is gone), offered as a check they can reject. NEVER on the first mention; if it's still thin, keep
-[lib/agent/reconnect.ts] drawing out. On the same turn you call it, reflect that pattern in THEIR words. (Same depth signal as reflect_door.)
+[lib/agent/reconnect.ts] can simply affirm or wave off — do NOT stack another open question onto it. (Same depth signal as reflect_door.)
 [lib/agent/reconnect.ts] §2d The Window beat: call ONLY once the member has pictured the future Tuesday — a year out, where they've done
 [lib/agent/reconnect.ts] the work and their Reclaim List is real — and you can reflect the SPARK (that ordinary, reclaimed day) back in
 [lib/agent/reconnect.ts] THEIR words, offered as a check. NEVER before it's drawn out; if thin, keep drawing out. This beat LIFTS — the
 [lib/agent/reconnect.ts] spark is the reclaimed ordinary day worth chasing. (Same depth signal as reflect_door.)
-[lib/agent/reconnect.ts] At an insight reflect-confirm, classify the member's reply: 'done' (it landed / they're satisfied), 'more'
+[lib/agent/reconnect.ts] At an insight reflect-confirm, classify the member's reply. 'done' — they CONFIRMED it: any clear yes ('yeah,
+[lib/agent/reconnect.ts] that's exactly it', 'that's the shape of it', 'you nailed it'), INCLUDING a warm or emphatic agreement, even
+[lib/agent/reconnect.ts] one that echoes the insight back in their own words. A confirmation is 'done' — do NOT read agreement as an
+[lib/agent/reconnect.ts] invitation to keep drawing. 'more' — ONLY when they add genuinely NEW material still to draw out, not mere
+[lib/agent/reconnect.ts] agreement or a restatement of the same point. 'dispute' — the insight was off / they're correcting it. When
+[lib/agent/reconnect.ts] they've clearly landed it, choose 'done' and let the beat move on.
 [lib/agent/reconnect.ts] Use ONLY when the drawn-out story genuinely points to a DIFFERENT canonical Door than the one they named as
 [lib/agent/reconnect.ts] primary — a real RE-SEEING, not a synonym or a second door. Propose it in THEIR words, OFFERED as a check they
 [lib/agent/reconnect.ts] can reject (never asserted): name the shift and why the story fits the truer door, then let them decide. Pass
@@ -232,6 +238,7 @@
 [lib/agent/reconnect.ts] - ${d.displayName} (${d.slug}): ${d.descriptor}
 [lib/agent/reconnect.ts] does it feel like the real cost was X — or is that not it?
 [lib/agent/reconnect.ts] s go there." (This is different from a re-seeing below: they
+[lib/agent/reconnect.ts] does that land — or is it not quite it?
 [lib/agent/reconnect.ts] it was really about X
 [lib/agent/reconnect.ts] that's the truer one
 [lib/agent/reconnect.ts] no, it really is the marriage
@@ -240,12 +247,14 @@
 [lib/agent/reconnect.ts] INSIGHT (the normalized cost / how it targeted who they were / the sequence) IN THEIR WORDS, offered as a
 [lib/agent/reconnect.ts] check they can reject. Call reflect_door ONLY once it is genuinely drawn out and the insight is earned. If the
 [lib/agent/reconnect.ts] story points to a truer Door than the one they named, you may propose that re-seeing (propose_correction),
-[lib/agent/reconnect.ts] offered — never asserted — and only when the material earns it.
+[lib/agent/reconnect.ts] offered — never asserted — and only when the material earns it. Once they confirm the insight, accept it and
+[lib/agent/reconnect.ts] let the beat move — do not reflect it again or ask a further question.
 [lib/agent/reconnect.ts] CURRENT STAGE: the Drift beat (§2d Visioning). Draw out what the Fade COST and how far it has run — their
 [lib/agent/reconnect.ts] inventory, in their words. This is formative and reflective, never scored. After a couple of exchanges, reflect
 [lib/agent/reconnect.ts] the PATTERN of the drift (the recurring shape, the quiet thing they stopped noticing) IN THEIR WORDS, offered as
 [lib/agent/reconnect.ts] a check — call reflect_drift ONLY once it is genuinely drawn out; if thin, keep drawing out (never manufacture a
-[lib/agent/reconnect.ts] pattern). Name it to push OFF from, not to sit in. Do not diagnose.
+[lib/agent/reconnect.ts] pattern). Name it to push OFF from, not to sit in. Once they confirm the pattern, accept it and let the beat
+[lib/agent/reconnect.ts] move — do not reflect it again or ask a further question. Do not diagnose.
 [lib/agent/reconnect.ts] CURRENT STAGE: The Window (§2d Visioning, beat 2) — the turn toward HOPE. Draw out ONE day: an ordinary
 [lib/agent/reconnect.ts] Tuesday a year out where they have DONE the work and the things on their Reclaim List are real (ordinary and
 [lib/agent/reconnect.ts] real — the morning, not the medal). Do NOT ask them to picture a "nothing changes" version first. Then reflect
@@ -467,6 +476,7 @@
 [lib/agent/rebuild.ts] passing score — just an honest gauge of what you've built.
 [lib/agent/rebuild.ts] Just a number, 1 to 5 — how true does that feel right now?  ${rebuildCheckpointDeliver(n)}
 [lib/rebuild/why-instrument.ts] scoreWhy expects ${WHY_ITEM_COUNT} responses, got ${responses.length}
+[lib/rebuild/why-instrument.ts] your own reasons and outside pressure, about evenly
 [lib/rebuild/skills-instrument.ts] Self-assessment
 [lib/rebuild/skills-instrument.ts] Self-monitoring
 [lib/rebuild/skills-instrument.ts] Self-planning
@@ -505,9 +515,14 @@
 [lib/agent/reclaim.ts] is about finding priorities, not judging yourself.
 [lib/agent/reclaim.ts] ${AUDIT_DOMAIN_LABEL[domainStart]} — ${AUDIT_DOMAIN_INTRO[domainStart]}  ${item.prompt}
 [lib/agent/reclaim.ts] And if you want an easier place to build momentum first, ${lever} is where you're most ready.
+[lib/agent/reclaim.ts] The ratings leaned toward ${AUDIT_DOMAIN_LABEL[s.primary]}; you chose ${AUDIT_DOMAIN_LABEL[chosen]}, and that's what we'll go with.
+[lib/agent/reclaim.ts] ${BEAT_SEP}You named what tends to get in the way: “${r.obstacle}”.
+[lib/agent/reclaim.ts] And the move you'd start with: “${r.earlyAction}”.
 [lib/agent/reclaim.ts] Here's what stands out. Your best next focus looks like your ${primary} life because it matters to you and
-[lib/agent/reclaim.ts] progress there would ripple into the rest of your life.${leverLine}
+[lib/agent/reclaim.ts] progress there would ripple into the rest of your life.${divergence}${leverLine}
 [lib/agent/reclaim.ts] ${BEAT_SEP}This was about finding the priority, not judging any of it. It's saved — you can come back to it anytime.
+[lib/agent/reclaim.ts] ${p}  ${AUDIT_SUB_ISSUE_ASK[d]}  ${AUDIT_SUB_ISSUES[d].join(' · ')}
+[lib/agent/reclaim.ts] ${AUDIT_SORT_INTRO}${BEAT_SEP}${AUDIT_SORT_QUESTIONS[0]!.prompt}
 [lib/agent/reclaim.ts] A number from 1 to 10 — where would you put it?  ${auditDeliver(n)}
 [lib/agent/reclaim.ts] possible.
 [lib/agent/reclaim.ts] makes a day feel like yours. Let's start by defining your quality day.
@@ -524,7 +539,10 @@
 [lib/agent/reclaim.ts] sort it into Greg's simple ranking — the TOP 3 non-negotiables (a day is hard to call quality without these), the
 [lib/agent/reclaim.ts] their own words back. Anchor elements (movement, eating, rest) usually belong in the non-negotiables, but it's
 [lib/agent/reclaim.ts] theirs to decide — never impose.
-[lib/agent/reclaim.ts] to 3), and disruptors (up to 2) — the member's own words. Only call it when it's settled; the app then shows them
+[lib/agent/reclaim.ts] to 3), and disruptors (up to 2) — THEIR EXACT WORDS, COPIED. Do not tidy them: do not capitalise, do not shorten
+[lib/agent/reclaim.ts] for neatness, do not turn 'a walk with Rosie before the house wakes' into 'Morning walk with Rosie'. The detail
+[lib/agent/reclaim.ts] you would trim is the part that makes it theirs, and they are going to read this back as their own. Copy the span
+[lib/agent/reclaim.ts] they said and nothing else. Only call it when it's settled; the app then shows them
 [lib/agent/reclaim.ts] the profile to confirm before saving. If a distress or crisis signal appears, drop the exercise and route to support
 [lib/agent/reclaim.ts] top 3 — a day is hard to call quality without these
 [lib/agent/reclaim.ts] next 3 — strongly improve the day
@@ -538,6 +556,21 @@
 [lib/reclaim/bigger-world-instrument.ts] Self
 [lib/reclaim/bigger-world-instrument.ts] Social
 [lib/reclaim/bigger-world-instrument.ts] Outlook
+[lib/reclaim/bigger-world-instrument.ts] Strength
+[lib/reclaim/bigger-world-instrument.ts] Endurance
+[lib/reclaim/bigger-world-instrument.ts] Balance
+[lib/reclaim/bigger-world-instrument.ts] Nutrition
+[lib/reclaim/bigger-world-instrument.ts] Sleep
+[lib/reclaim/bigger-world-instrument.ts] Discipline
+[lib/reclaim/bigger-world-instrument.ts] Focus
+[lib/reclaim/bigger-world-instrument.ts] Discipline
+[lib/reclaim/bigger-world-instrument.ts] Spouse
+[lib/reclaim/bigger-world-instrument.ts] Children
+[lib/reclaim/bigger-world-instrument.ts] Friend
+[lib/reclaim/bigger-world-instrument.ts] Coworker
+[lib/reclaim/bigger-world-instrument.ts] Visioning
+[lib/reclaim/bigger-world-instrument.ts] Mindfulness
+[lib/reclaim/bigger-world-instrument.ts] everything at once but to identify what matters most right now and where progress would create the biggest shift.
 [lib/grinta/survey/instrument.ts] I have a general sense of what I am doing and why I am doing it
 [lib/grinta/survey/instrument.ts] B1Q2a
 [lib/grinta/survey/instrument.ts] B1Q2b
@@ -655,7 +688,6 @@
 [app/dashboard/redesign-dashboard.tsx] the ${dash.identityNoun}
 [app/dashboard/redesign-dashboard.tsx] ${HERO_VERB[activePhase] ?? 'Reconnecting'} ${identitySelves}
 [app/dashboard/redesign-dashboard.tsx] select threshold_crossed_at, tour_completed_at from member_profile where member_id=$1
-[app/dashboard/redesign-dashboard.tsx] Program
 [app/dashboard/redesign-dashboard.tsx] Playbook
 [app/dashboard/redesign-dashboard.tsx] Or move on to ${practiceNext.label}
 [app/dashboard/redesign-dashboard.tsx] Reclaimed
@@ -675,15 +707,13 @@
 [app/dashboard/redesign-dashboard.tsx] ${grinta.changePct > 0 ? '+' : ''}${grinta.changePct}%
 [app/dashboard/redesign-dashboard.tsx] Momentum
 [app/dashboard/redesign-dashboard.tsx] Badges
-[app/dashboard/triptych-center.tsx] your Lifestyle Pilot
-[app/dashboard/triptych-center.tsx] something you’re keeping
 [app/dashboard/triptych-center.tsx] ${Math.min(el.scrollHeight, 160)}px
 [app/dashboard/triptych-center.tsx] come back N times
 [app/dashboard/triptych-center.tsx] tri-companion tri-navy${hasSent ? ' is-conversing' : ''}
 [app/dashboard/triptych-center.tsx] s the first line of the Companion
 [app/dashboard/triptych-center.tsx] rmsg ${m.role}
 [app/dashboard/triptych-center.tsx] Thinking…
-[app/dashboard/triptych-center.tsx] s OWN kept line, held in the Companion
+[app/dashboard/triptych-center.tsx] t scroll, plus there
 [app/dashboard/triptych-center.tsx] Enter
 [app/dashboard/triptych-left.tsx] Reconnect
 [app/dashboard/triptych-left.tsx] Rewire
@@ -695,7 +725,6 @@
 [app/dashboard/triptych-left.tsx] Outlook
 [app/dashboard/triptych-left.tsx] select max(taken_at) as last from idq_retake where member_id=$1 and cycle_indicator=1
 [app/dashboard/triptych-left.tsx] en-US
-[app/dashboard/triptych-left.tsx] how am I doing
 [app/dashboard/triptych-left.tsx] rreg-dir dir-${dash.score.direction}
 [app/dashboard/triptych-left.tsx] ${dash.score.delta > 0 ? '+' : ''}${Math.round(dash.score.delta)}
 [app/dashboard/triptych-left.tsx] Total
@@ -703,6 +732,9 @@
 [app/dashboard/triptych-left.tsx] ${grinta.changePct > 0 ? '+' : ''}${grinta.changePct}%
 [app/dashboard/triptych-left.tsx] Badges
 [app/dashboard/triptych-right.tsx] triptychRight.pulseBeats
+[app/dashboard/triptych-right.tsx] what you've built
+[app/dashboard/triptych-right.tsx] so it never reads as an empty promise to a brand-new member.
+[app/dashboard/triptych-right.tsx] this isn't for you.
 [app/dashboard/triptych-right.tsx] Momentum
 [app/dashboard/triptych-right.tsx] Movement
 [app/dashboard/triptych-right.tsx] Strava
@@ -738,6 +770,7 @@
 [app/momentum/[memberId]/page.tsx] T00:00:00
 [app/momentum/[memberId]/page.tsx] Yesterday
 [app/momentum/[memberId]/page.tsx] momentum.pulseBeats
+[app/momentum/[memberId]/page.tsx] momentum.callsByDay
 [app/momentum/[memberId]/page.tsx] momentum.commitmentTexts
 [app/momentum/[memberId]/page.tsx] momentum.domainTally
 [app/momentum/[memberId]/page.tsx] momentum.recentCalls
@@ -839,6 +872,11 @@
 [app/connect/[memberId]/page.tsx] You told ${it.otherName} you'd ${it.commitment}.
 [app/connect/[memberId]/page.tsx] You're holding ${it.otherName} to: ${it.commitment}.
 [app/connect/[memberId]/page.tsx] Check in
+[app/playbook/[memberId]/redesign-playbook-view.tsx] Journal
+[app/playbook/[memberId]/redesign-playbook-view.tsx] Reconnect
+[app/playbook/[memberId]/redesign-playbook-view.tsx] Rewire
+[app/playbook/[memberId]/redesign-playbook-view.tsx] Rebuild
+[app/playbook/[memberId]/redesign-playbook-view.tsx] Reclaim
 [app/playbook/[memberId]/redesign-playbook-view.tsx] Who you are
 [app/playbook/[memberId]/redesign-playbook-view.tsx] Who you are
 [app/playbook/[memberId]/redesign-playbook-view.tsx] Promise
@@ -853,8 +891,14 @@
 [app/playbook/[memberId]/redesign-playbook-view.tsx] Edit
 [app/playbook/[memberId]/redesign-playbook-view.tsx] Remove
 [app/playbook/[memberId]/redesign-playbook-view.tsx] · last ${new Date(stats.last).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-[app/playbook/[memberId]/redesign-playbook-view.tsx] Keep it
+[app/playbook/[memberId]/redesign-playbook-view.tsx] en-US
+[app/playbook/[memberId]/redesign-playbook-view.tsx] Cancel
+[app/playbook/[memberId]/redesign-playbook-view.tsx] Delete
+[app/playbook/[memberId]/redesign-playbook-view.tsx] Playbook
+[app/playbook/[memberId]/redesign-playbook-view.tsx] pb-tab${tab === t.key ? ' on' : ''}
+[app/playbook/[memberId]/redesign-playbook-view.tsx] Who you are
 [app/playbook/[memberId]/redesign-playbook-view.tsx] 0 ? c.items.map(entryCard) :
+[app/playbook/[memberId]/redesign-playbook-view.tsx] Waiting on you
 [app/account/page.tsx] select display_name, email, avatar_url from member_profile where member_id = $1
 [app/account/page.tsx] Profile
 [app/account/page.tsx] 0.85rem
