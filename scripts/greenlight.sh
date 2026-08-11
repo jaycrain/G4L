@@ -42,6 +42,11 @@ URL="${1:-https://g4l-ten.vercel.app}"
 # NOTE: a tell must be a class that actually has a CSS RULE — this gate greps the built STYLESHEET, and a
 # JSX-only class (`pb-thisweek`, last time) reports a false RED.
 CSS_TELLS=(".brand-bar{display:none}")
+# NOTE, learned the hard way (2026-08-11): a tell here is only visible if it lives in a chunk /onboarding LINKS TO.
+# I added "surfaced here" from the Reconnect doorbar — an AUTH-GATED surface — and the gate reported RED for two
+# builds on perfectly good code, because the chunk is never referenced from the public page it scans. A check that
+# CANNOT PASS is the same failure as one that cannot fail. Keep tells to public surfaces; verify gated ones by
+# logging in.
 JS_TELLS=()
 
 # COMMIT CHECK — the authoritative proof for an ENGINE-ONLY push (server logic, no bundle change), where no static
