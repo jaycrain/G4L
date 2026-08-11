@@ -17,7 +17,7 @@ export type ReconnectCeremonyReveal =
   | { kind: 'playbook'; keepers: string[] } // the §2d keepers (the drift recognition + the spark)
   | { kind: 'doors'; doors: string[] } // the member's Door(s), as they stand after any re-seeing
   | { kind: 'journey_rewire' } // the 4Rs Journey — Reconnect complete, Rewire lit
-  | { kind: 'badge'; name: string }; // the earned milestone medal (redesign; Decision WW)
+  | { kind: 'badge'; name: string; badgeId: string }; // the earned milestone medal (redesign; Decision WW)
 
 export type GrintaStrands = { reconnect?: number; rewire?: number; rebuild?: number; reclaim?: number };
 
@@ -96,7 +96,7 @@ export function buildReconnectCeremonyBeats(d: ReconnectCeremonyData): Reconnect
   );
   beats.push({ text: c.journey, reveal: { kind: 'journey_rewire' } });
   // The climax (redesign): the earned milestone medal, right before the hand-off.
-  if (d.badge) beats.push({ text: BADGE_BEAT_COPY, reveal: { kind: 'badge', name: d.badge.name } });
+  if (d.badge) beats.push({ text: BADGE_BEAT_COPY, reveal: { kind: 'badge', name: d.badge.name, badgeId: d.badge.badgeId } });
   beats.push({ text: c.handoff });
   return beats;
 }

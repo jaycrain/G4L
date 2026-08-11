@@ -29,7 +29,7 @@ export default function ReclaimCeremony({ memberId, data }: { memberId: string; 
   }
 
   function renderReveal(r: ReclaimCeremonyReveal): ReactNode {
-    if (r.kind === 'badge') return <BadgeReveal name={r.name} />;
+    if (r.kind === 'badge') return <BadgeReveal name={r.name} badgeId={r.badgeId} />;
     if (r.kind === 'grinta') {
       const dir = r.direction;
       return (

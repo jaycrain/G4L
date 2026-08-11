@@ -17,7 +17,7 @@ export type ReclaimCeremonyReveal =
     }
   | { kind: 'playbook'; keepers: string[] } // what they clarified in Reclaim (their top priorities), in their words
   | { kind: 'cycle_complete' } // the 4Rs Journey — all four complete, the Loop begins again
-  | { kind: 'badge'; name: string }; // the earned milestone medal (redesign; Decision WW)
+  | { kind: 'badge'; name: string; badgeId: string }; // the earned milestone medal (redesign; Decision WW)
 
 export type ReclaimCeremonyBeat = { text: string; small?: boolean; reveal?: ReclaimCeremonyReveal };
 
@@ -74,7 +74,7 @@ export function buildReclaimCeremonyBeats(d: ReclaimCeremonyData): ReclaimCeremo
   beats.push({ text: c.legacy });
   // Cycle complete + the Community Success Story invite + the CTA.
   beats.push({ text: c.cycle, reveal: { kind: 'cycle_complete' } });
-  if (d.badge) beats.push({ text: BADGE_BEAT_COPY, reveal: { kind: 'badge', name: d.badge.name } });
+  if (d.badge) beats.push({ text: BADGE_BEAT_COPY, reveal: { kind: 'badge', name: d.badge.name, badgeId: d.badge.badgeId } });
   return beats;
 }
 

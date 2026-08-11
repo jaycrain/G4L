@@ -18,7 +18,7 @@ export type RewireCeremonyReveal =
     }
   | { kind: 'playbook'; keepers: string[] } // the three tools (true lines · picture · protocol), already keepers
   | { kind: 'journey_rebuild' } // the 4Rs Journey — Rewire complete, Rebuild lit
-  | { kind: 'badge'; name: string }; // the earned milestone medal (redesign; Decision WW)
+  | { kind: 'badge'; name: string; badgeId: string }; // the earned milestone medal (redesign; Decision WW)
 
 export type RewireCeremonyBeat = { text: string; small?: boolean; reveal?: RewireCeremonyReveal };
 
@@ -71,7 +71,7 @@ export function buildRewireCeremonyBeats(d: RewireCeremonyData): RewireCeremonyB
   );
   // Light Rebuild + the CTA.
   beats.push({ text: c.rebuild, reveal: { kind: 'journey_rebuild' } });
-  if (d.badge) beats.push({ text: BADGE_BEAT_COPY, reveal: { kind: 'badge', name: d.badge.name } });
+  if (d.badge) beats.push({ text: BADGE_BEAT_COPY, reveal: { kind: 'badge', name: d.badge.name, badgeId: d.badge.badgeId } });
   return beats;
 }
 

@@ -17,7 +17,7 @@ export type RebuildCeremonyReveal =
     }
   | { kind: 'playbook'; keepers: string[] } // their why + their plan, in their own words
   | { kind: 'journey_reclaim' } // the 4Rs Journey — Rebuild complete, Reclaim lit
-  | { kind: 'badge'; name: string }; // the earned milestone medal (redesign; Decision WW)
+  | { kind: 'badge'; name: string; badgeId: string }; // the earned milestone medal (redesign; Decision WW)
 
 export type RebuildCeremonyBeat = { text: string; small?: boolean; reveal?: RebuildCeremonyReveal };
 
@@ -66,7 +66,7 @@ export function buildRebuildCeremonyBeats(d: RebuildCeremonyData): RebuildCeremo
   );
   // Light Reclaim + the CTA.
   beats.push({ text: c.reclaim, reveal: { kind: 'journey_reclaim' } });
-  if (d.badge) beats.push({ text: BADGE_BEAT_COPY, reveal: { kind: 'badge', name: d.badge.name } });
+  if (d.badge) beats.push({ text: BADGE_BEAT_COPY, reveal: { kind: 'badge', name: d.badge.name, badgeId: d.badge.badgeId } });
   return beats;
 }
 

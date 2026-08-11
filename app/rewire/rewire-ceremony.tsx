@@ -29,7 +29,7 @@ export default function RewireCeremony({ memberId, data }: { memberId: string; d
   }
 
   function renderReveal(r: RewireCeremonyReveal): ReactNode {
-    if (r.kind === 'badge') return <BadgeReveal name={r.name} />;
+    if (r.kind === 'badge') return <BadgeReveal name={r.name} badgeId={r.badgeId} />;
     if (r.kind === 'grinta') {
       const dir = r.direction;
       return (

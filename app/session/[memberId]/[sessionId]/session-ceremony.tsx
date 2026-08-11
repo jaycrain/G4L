@@ -5,14 +5,13 @@ import { useRouter } from 'next/navigation';
 import CeremonySurface from '../../../dashboard/ceremony-surface.tsx';
 import { COMPANION_LABEL } from '../../../../lib/ceremony/threshold-beats.ts';
 import { buildCloseBeats, CLOSE_RESOLVE_LABEL, type CloseReveal } from '../../../../lib/ceremony/close-beats.ts';
-import { getBadge, CATEGORY_COLOR } from '../../../../lib/curriculum/registry.ts';
+import { getBadge } from '../../../../lib/curriculum/registry.ts';
+import BadgeStamp from '../../../dashboard/badge-stamp.tsx';
 
-const GLYPH: Record<string, string> = {
-  star: 'M12 2l2.4 6.9L22 9.2l-5.5 4.6L18.2 22 12 18l-6.2 4 1.7-8.2L2 9.2l7.6-.3z',
-  flag: 'M6 21V4M6 4h11l-2 4 2 4H6',
-  up: 'M12 19V6M6 12l6-6 6 6',
-  flame: 'M12 3c1 3-2 4-2 7a2 2 0 104 0c0-1-.4-2 .5-3 .8 2 2.5 3 2.5 6a5 5 0 11-10 0c0-4 4-5 5-10z',
-};
+// The private GLYPH map and CATEGORY_COLOR lookup that used to live here are gone. A badge had three renderings —
+// this one, BadgeStamp, and the phase-ceremony medal — and they disagreed: this map held FOUR glyphs for sixteen
+// badges, so anything outside it silently fell back to the flag. Sharing BadgeStamp means Scott's final art lands
+// once (Jay, 2026-08-11, on the phase reveal: "All the badges look the same in the mini-ceremony").
 
 // The felt-weight close: a milestone Session close fires the Companion Ceremony, revealing the facet
 // and the badge, then hands back to the dashboard (which already shows both).
@@ -32,13 +31,9 @@ export default function SessionCeremony({ memberId, facet, badgeId, badgeName }:
       );
     }
     const b = getBadge(r.badgeId);
-    const color = b ? CATEGORY_COLOR[b.category] : '#374F63';
-    const d = GLYPH[b?.icon ?? 'flag'] ?? GLYPH.flag;
     return (
       <div className="cer-badge-reveal">
-        <span className="cer-badge-stamp" style={{ background: color }}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d={d} /></svg>
-        </span>
+        {b ? <BadgeStamp badge={{ ...b, earned: true }} size="lg" /> : <span className="cer-badge-medal" aria-hidden="true">◉</span>}
         <span className="cer-badge-name">{r.name}</span>
       </div>
     );

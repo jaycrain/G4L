@@ -90,7 +90,7 @@ export default function ReconnectCeremony({ memberId, data, mobile = false }: { 
         </div>
       );
     }
-    if (r.kind === 'badge') return <BadgeReveal name={r.name} />;
+    if (r.kind === 'badge') return <BadgeReveal name={r.name} badgeId={r.badgeId} />;
     // journey_rewire — Reconnect is behind them (done), Rewire is lit (next).
     return (
       <div className="cer-journey">
