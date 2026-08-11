@@ -253,3 +253,23 @@ test('member copy never denies that a reading is scored, kept, or shown', () => 
   }
   assert.deepEqual(hits, [], `copy denies what the engine actually does:\n${hits.join('\n')}`);
 });
+
+// ── ONE BADGE, ONE ANNOUNCEMENT ─────────────────────────────────────────────────────────────────────────────────
+// Every arc chat client appends a generic beat when a turn returns an earnedBadge. W1's close ALSO hardcoded its
+// own congratulations, so the member was congratulated twice in consecutive bubbles, and the badge's name was
+// duplicated where a rename would leave it stale (Jay's walk, 2026-08-11).
+test('arc copy never hardcodes a badge announcement — the client beat owns it', () => {
+  const hits: string[] = [];
+  for (const root of ['lib/agent', 'lib/curriculum', 'lib/content', 'lib/rebuild', 'lib/reclaim']) {
+    if (!existsSync(root)) continue;
+    for (const file of walk(root)) {
+      readFileSync(file, 'utf8').split('\n').forEach((line, i) => {
+        if (line.trim().startsWith('//') || line.trim().startsWith('*')) return;
+        if (/(earned you a badge|you a badge:|earned another badge)/i.test(line)) {
+          hits.push(`${file}:${i + 1} — ${line.trim().slice(0, 110)}`);
+        }
+      });
+    }
+  }
+  assert.deepEqual(hits, [], `a second badge announcement lives here:\n${hits.join('\n')}`);
+});

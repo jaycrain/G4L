@@ -9,6 +9,7 @@
 // COPY: final, Jay-approved. "Jay" stays third-person, named (founder presence).
 
 import { runArcTurn, administeredStage, scaleExpects, type ArcConfig, type StageDef } from './onboarding-staged.ts';
+import { isTrueLineMaterial, isDeclineReply } from './true-line.ts';
 import { memberClosingReclaim } from './onboarding-intent.ts';
 import { identityLabel } from '../member/identity.ts';
 import { consolidateReclaimList } from '../member/reclaim.ts';
@@ -93,9 +94,13 @@ const W1_AFFIRM_ACK = "Kept — that's yours. Here's another that stood out — 
 const W1_AFFIRM_NUDGE = "Even one is enough — take the lie that stung most and write the honest line back.";
 // Donna's Rewire edits (2026-07-26). The pre-list summary ("Here's your counter-campaign, saved to your Playbook")
 // is the model's own reflection of the true lines; this is the fixed CLOSE that follows the list.
+// The badge is NOT announced here. Every arc chat client (rewire / rebuild / reclaim) already appends a generic
+// beat — `You earned another badge! "<name>." I added it to your collection.` — whenever a turn returns an
+// earnedBadge. W1 was the only arc that ALSO hardcoded its own announcement, so it congratulated the member twice
+// in consecutive bubbles (Jay's walk, 2026-08-11). It hardcoded the badge's NAME too, which would go quietly stale
+// the day that badge is renamed. One announcement, one source: the registry, via the client beat.
 const W1_CLOSE =
-  `These true lines will be the first thing you reach for when the old voice starts back with the lies and excuses.\n\n` +
-  `And, congrats — your grit and resilience here earned you a badge: "True Line."`;
+  `These true lines will be the first thing you reach for when the old voice starts back with the lies and excuses.`;
 
 function w1Opening(): string {
   return `${W1_STORY}${BEAT_SEP}${W1_FRAME}${BEAT_SEP}${W1_DOMAINS[0]}`;
@@ -160,7 +165,11 @@ const affirmStage: StageDef = {
   gather(b) {
     const line = b.memberMessage.trim();
     const wroteAny = (b.pendingHarvest ?? []).some((h) => h.kind === 'affirmation');
-    if (memberClosingAffirm(b.memberMessage) || line.length < 3) {
+    // A reply to the Companion is not a true line. The stage used to store EVERY message wholesale, so a decline to
+    // the close-check ("No, that felt good") and an assent ("That's me") were filed in the Playbook as beliefs the
+    // member holds about himself. isTrueLineMaterial is biased to KEEP — it rejects only what is purely a reaction,
+    // so a short assertion like "You're a bad ass" still lands.
+    if (memberClosingAffirm(b.memberMessage) || line.length < 3 || isDeclineReply(line)) {
       if (wroteAny) {
         b.reply = W1_CLOSE;
         b.stage = 'complete'; // beatState persists b.stage — the chat hides the input on stage==='complete'
@@ -168,6 +177,12 @@ const affirmStage: StageDef = {
       } else {
         b.reply = W1_AFFIRM_NUDGE;
       }
+      return;
+    }
+    // A reaction mid-beat ("That's me", "nice") is not a line and is not a decline either — skip storing it and
+    // keep going, rather than closing the session out from under work they haven't finished.
+    if (!isTrueLineMaterial(line)) {
+      b.reply = (b.modelText ?? '').trim() || W1_AFFIRM_ACK;
       return;
     }
     b.pendingHarvest.push({ kind: 'affirmation', keeperType: 'principle', destinationIntent: 'keeper', payloadRef: line, label: 'Your true line' });
