@@ -9,7 +9,6 @@ import { fetchReadyOutreach, respondToOutreach } from './outreach-actions.ts';
 import { rerunAsk } from '../../lib/playbook/runnable.ts';
 import RedesignRing from './redesign-ring.tsx';
 import type { HeroCard } from '../../lib/dashboard/hero-card.ts';
-import type { CenterKeeper } from '../../lib/dashboard/center-keeper.ts';
 
 // Triptych center — the NAVY Companion hero, the dashboard's default landing (Jay: "the entire center panel navy, the
 // hero concept from the current design"). The current navy hero (headline + guiding line + CTA + the merged 4R ring,
@@ -20,32 +19,14 @@ import type { CenterKeeper } from '../../lib/dashboard/center-keeper.ts';
 
 type Msg = { role: 'agent' | 'member'; text: string };
 
-// keeperType → a SHORT display label for the "KEPT · …" eyebrow (the verbose keeperFunctionLabel is agent-context copy).
-const KEEPER_LABEL: Record<string, string> = {
-  principle: 'your true line',
-  lights_you_up: 'your picture',
-  recovery_move: 'your recovery move',
-  definition: 'a reframe that landed',
-  tell: 'a pattern you named',
-  plan: 'your Lifestyle Pilot',
-};
-const keeperLabel = (t?: string | null) => (t && KEEPER_LABEL[t]) || 'something you’re keeping';
 
 export default function TriptychCenter({
   memberId,
   hero,
-  keeper,
-  standing,
   seed,
 }: {
   memberId: string;
   hero?: HeroCard | null;
-  keeper?: CenterKeeper | null;
-  /** "Where you stand" — computed server-side every visit (lib/dashboard/standing-update.ts). Deliberately NOT a
-   *  thread message: appending it would pollute the conversation and go stale the moment anything changed. It
-   *  renders PINNED above the composer, outside the scrolling thread, so it is both always visible and always
-   *  current — see the placement comment at the render site for why it is not at the top. */
-  standing?: string | null;
   seed?: string | null;
 }) {
   const router = useRouter();
@@ -287,34 +268,19 @@ export default function TriptychCenter({
         {pending && <div className="rmsg typing">Thinking…</div>}
       </div>
       </div>
-      {/* A surfaced keeper — the member's OWN kept line, held in the Companion's voice (Scott's "KEPT · your
-          true line"). PINNED here for the same reason as the standing update below it, and it is the older half
-          of that bug: it has lived inside the autoscrolling thread since the triptych shipped, which means any
-          member with a conversation of real length has never seen it. Jay, on being told: "I've never seen it
-          work myself." It sits ABOVE the standing update because it is ambient rather than actionable — their
-          own words first, then where they stand, then the place they type. */}
-      {keeper && (
-        <div className="tri-keeper">
-          <span className="tri-keeper-eyebrow">Kept · {keeperLabel(keeper.keeperType)}</span>
-          <p className="tri-keeper-body">“{keeper.body}”</p>
-        </div>
-      )}
+      {/* THE PINNED ZONE IS GONE (Jay, 2026-08-11: "Hero was jammed, couldn't scroll, plus there's just too much
+          going on there... Need to free up the Companion and maximize its real estate").
 
-      {/* WHERE YOU STAND — PINNED above the composer, deliberately OUTSIDE .tri-comp-scroll.
-          It first shipped at the top of the scroll region and was effectively invisible: the thread autoscrolls
-          to the newest message on load, so anything above it is pushed off-screen (Jay: "took me forever to
-          realize I needed to scroll to the top to see it"). Note the keeper card still has this problem.
-          His instinct was to move it to the bottom, "inline with the current conversation" — bottom is right,
-          because that is where the eye already is, but a MESSAGE is wrong: it would sit under the member's last
-          line as though the Companion spoke and they ignored it, and it would blur a computed status into
-          something the Companion said. Pinned above the composer gets the attention without the confusion, and
-          it sits exactly where they are about to type. */}
-      {standing && (
-        <div className="tri-standing">
-          <span className="tri-standing-eyebrow">Where you stand</span>
-          <p className="tri-standing-body">{standing}</p>
-        </div>
-      )}
+          Two cards used to sit here — the member's kept line and the standing update — and I put them here on
+          08-08 arguing they "earned" the pinned spot because both were invisible inside the autoscrolling
+          thread. That reasoning solved visibility by spending the one thing the Companion actually needs:
+          height. Hero + keeper + standing + composer left roughly four messages of conversation on screen, and
+          on a short viewport the scroll region collapsed entirely.
+
+          Invisible-in-the-thread was a real problem; stealing the conversation's space was the wrong fix. The
+          kept line lives in the Playbook, which is now named and linked from the dashboard — that is where a
+          member goes looking for what they kept. */}
+
       {/* THE JOURNAL CUE LIVES ON THE FLANK NOW, in the Playbook panel (Jay's prod walk, 2026-08-08:
           "Companion thread is getting crowded"). He was right, and the pinned zone was where I put the pressure:
           keeper + standing update + cue + hero left about four messages of actual conversation visible.

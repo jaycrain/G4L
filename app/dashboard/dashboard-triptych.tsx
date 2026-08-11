@@ -6,7 +6,6 @@ import RedesignChrome from './redesign-chrome.tsx';
 import TriptychCenter from './triptych-center.tsx';
 import { initials } from '../../lib/member/avatar.ts';
 import type { HeroCard } from '../../lib/dashboard/hero-card.ts';
-import type { CenterKeeper } from '../../lib/dashboard/center-keeper.ts';
 
 // Dashboard triptych — the reflect ← Companion → act layout (docs/dashboard-triptych-spec.md). PHASE 1: the SHELL only.
 // Desktop = three columns (Where You Are · G4L Companion [elevated] · What's Next), fixed to the viewport, each region
@@ -30,8 +29,6 @@ export default function DashboardTriptych({
   phaseLabel,
   hasStory,
   hero,
-  keeper,
-  standing,
   left,
   right,
 }: {
@@ -43,8 +40,6 @@ export default function DashboardTriptych({
   phaseLabel?: string | null; // the R they're in now, e.g. "Rebuild"
   hasStory?: boolean; // show the "My Story" nav only once their narrative exists
   hero: HeroCard | null;
-  keeper: CenterKeeper | null;
-  standing?: string | null;
   /** Lines said in a Session, waiting in the Journal for a decision — the daily cue. */
   waitingCount?: number;
   left: React.ReactNode; // "Where You Are" — server-rendered panels passed in (same pattern as RedesignShell's children)
@@ -156,7 +151,7 @@ export default function DashboardTriptych({
             {left}
           </aside>
           <section className="tri-center" aria-label="Your G4L Companion">
-            <TriptychCenter memberId={memberId} hero={hero} keeper={keeper} standing={standing} />
+            <TriptychCenter memberId={memberId} hero={hero} />
           </section>
           <aside className="tri-flank tri-right" aria-label="What's next">
             {right}
