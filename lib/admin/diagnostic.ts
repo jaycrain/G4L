@@ -223,8 +223,58 @@ const REPORT_SQL = `select jsonb_build_object(
 
 export type MemberDiagnostic = Record<string, unknown> & { FLAGS: Record<string, unknown> };
 
-/** The full read-only report for one member. */
+/**
+ * The full read-only report for one member — the SQL snapshot plus `renders`, which runs the real read models.
+ *
+ * `renders` exists because of 2026-08-11. Jay finished Quality Days and reported no tracker on the Playbook's
+ * "This week". The SQL said both halves were there — the profile and the c3_quality week — and a live walk on a
+ * demo account said the grid renders. Both were true and neither answered the question, because what the Playbook
+ * shows is not the rows, it is `weekGrids(rows)`: a read model with per-kind adapters, a joins-the-profile step,
+ * and a `rows.length > 0` filter that silently drops a week whose adapter came back empty.
+ *
+ * So the report now includes what the member's surface would actually RENDER, not just what it reads from. This is
+ * [[existence-is-not-the-assertion]] built into the instrument: a row existing is not the assertion, the grid
+ * appearing is.
+ */
 export async function runMemberDiagnostic(db: Db, memberId: string): Promise<MemberDiagnostic> {
   const { rows } = await db.query<{ report: MemberDiagnostic }>(REPORT_SQL, [memberId]);
-  return rows[0]!.report;
+  const report = rows[0]!.report;
+  report.renders = await memberRenders(db, memberId);
+  return report;
+}
+
+/**
+ * What the member's surfaces would render right now, through the same read models the pages call.
+ *
+ * Each one is caught SEPARATELY and reports its own error string. A shared catch here would collapse "this grid
+ * came back empty" and "the whole read threw" into one indistinguishable null — which is the exact confusion this
+ * block was added to end.
+ */
+async function memberRenders(db: Db, memberId: string): Promise<Record<string, unknown>> {
+  const out: Record<string, unknown> = {};
+  try {
+    const { weekGrids } = await import('../practice/grid.ts');
+    const grids = await weekGrids(db, memberId);
+    // The shape a "why is my tracker missing" question needs: which weeks made it through, and with what rows.
+    out.playbook_this_week = grids.map((g) => ({ kind: g.kind, day: g.day, rows: g.rows.map((r) => r.label) }));
+  } catch (e) {
+    out.playbook_this_week = { ERROR: (e as Error).message };
+  }
+  try {
+    const { activePracticeWeeks } = await import('../practice/store.ts');
+    const open = await activePracticeWeeks(db, memberId);
+    // Every OPEN week, so a week that opened and then rendered nothing is visible as the gap between the two lists
+    // rather than as an absence you have to notice.
+    out.open_weeks = open.map((w) => ({ kind: w.kind, day: w.day }));
+  } catch (e) {
+    out.open_weeks = { ERROR: (e as Error).message };
+  }
+  try {
+    const { activeQualityDayProfile, profileElements } = await import('../reclaim/quality-day-store.ts');
+    const p = await activeQualityDayProfile(db, memberId);
+    out.quality_day_profile = p ? { elements: profileElements(p), disruptors: p.disruptors } : null;
+  } catch (e) {
+    out.quality_day_profile = { ERROR: (e as Error).message };
+  }
+  return out;
 }
