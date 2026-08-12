@@ -276,5 +276,47 @@ async function memberRenders(db: Db, memberId: string): Promise<Record<string, u
   } catch (e) {
     out.quality_day_profile = { ERROR: (e as Error).message };
   }
+  out.jsonb_shape = await jsonbShape(db, memberId);
+  return out;
+}
+
+/**
+ * IS EACH jsonb COLUMN AN OBJECT, OR A STRING THAT LOOKS LIKE ONE?
+ *
+ * A jsonb column written by JSON.stringify can land as a jsonb SCALAR STRING rather than an object. Every JS
+ * reader survives it — they all do `typeof x === 'string' ? JSON.parse(x) : x` — so the value reads correctly in
+ * the app and looks fine in a dump. What dies is every predicate that reaches into it FROM SQL:
+ * `payload->>'kind' = '…'` on a jsonb string is NULL, so the row silently fails to match and the query returns
+ * nothing. No error, no empty-catch, no log — just a filter that can never be true.
+ *
+ * That is how a member finished Quality Days, had both the profile and the week in the database, and had no
+ * tracker: `activeQualityDayProfile` filters on `payload->>'kind'`, matched nothing, returned null, and the grid
+ * was dropped by the `rows.length > 0` filter as "a week with nothing to show".
+ *
+ * `jsonb_typeof` is the only thing that tells them apart, so it goes in the report next to the values. Local
+ * PGlite and hosted Postgres do not have to agree here — which is exactly why this cannot be caught locally.
+ */
+async function jsonbShape(db: Db, memberId: string): Promise<Record<string, unknown>> {
+  const cols: [string, string, string][] = [
+    ['coaching_plan', 'payload', 'coaching_plan.payload'],
+    ['bigger_world_reading', 'priorities', 'bigger_world_reading.priorities'],
+    ['bigger_world_reading', 'reflections', 'bigger_world_reading.reflections'],
+    ['practice_week', 'payload', 'practice_week.payload'],
+  ];
+  const out: Record<string, unknown> = {};
+  for (const [table, col, label] of cols) {
+    try {
+      const { rows } = await db.query<{ t: string; n: number }>(
+        `select jsonb_typeof(${col}) as t, count(*)::int as n from ${table}
+          where member_id = $1 and ${col} is not null group by 1`,
+        [memberId],
+      );
+      if (rows.length) out[label] = Object.fromEntries(rows.map((r) => [r.t, r.n]));
+    } catch (e) {
+      // A column that doesn't exist on this schema version is not an error worth reporting as one.
+      const msg = (e as Error).message;
+      if (!/does not exist/i.test(msg)) out[label] = { ERROR: msg };
+    }
+  }
   return out;
 }
