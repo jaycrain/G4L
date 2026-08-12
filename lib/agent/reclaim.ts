@@ -677,7 +677,10 @@ const C3_NUDGE = "Take your time — what makes a day feel healthy, meaningful, 
 const C3_HOLD_NUDGE = "That's your Quality Day as it stands. Change anything you want, or tell me to save it.";
 // Same correction as B3's close: this promised "each day I'll ask how much the day felt like a quality one", and no
 // such daily ask is sent. The member does the logging, from their dashboard, whenever they're there.
-const C3_COMMITTED_1 = "Great work identifying what makes up your Quality Day, and what takes away from it. For the next week, log each day from your dashboard — how much it felt like a quality one, and which of these elements showed up to make it that way.";
+// "from your dashboard" was true until the practice week moved to the Playbook's This week tab (2026-08-08); the
+// copy was never updated, so C3 sent members to a surface that does not carry the log. Same stale-destination
+// shape as b2Close. The Quality Day log is reached from the grid there — "Log today →".
+const C3_COMMITTED_1 = "Great work identifying what makes up your Quality Day, and what takes away from it. For the next week, open This week in your Playbook and log each day — how much it felt like a quality one, and which of these elements showed up to make it that way.";
 const C3_COMMITTED_2 = "It's all about noticing what actually makes your days yours.";
 
 type QDCapture = NonNullable<Collected['pendingQualityDay']>;

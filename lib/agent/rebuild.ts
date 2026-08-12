@@ -105,13 +105,17 @@ const B2_OPEN =
   "let's take stock of your current state. Review these statements and rate each one 1-strongly disagree to 4-strongly " +
   "agree.\n\nLet's start with Movement.";
 const B2_DIET_TURN = "That's movement. Same skills now, for eating.";
+// HAND THEM TO THE WEEK THIS CLOSE JUST OPENED. It used to end "you can find it at the top of your Dashboard",
+// which was true until 2026-08-08, when the practice week moved to the Playbook's This week tab — so the close
+// went on pointing at a place the thing is not. A member who follows the instruction and finds nothing concludes
+// the tool is broken, and they are not wrong.
 function b2Close(strongest: string, growthEdge: string): string {
   return (
     `Right now it looks like ${strongest.toLowerCase()} is a strength of yours. The skill with the most room to grow ` +
     `is ${growthEdge.toLowerCase()}. Neither is fixed; a skill is just something you practice and improve. This week ` +
     `you don't have to change anything — just notice these showing up: when a strong skill carries you, and when a ` +
-    `weaker one trips you. That's the work. Just notice. We'll kick that off in your next step. You can find it at the ` +
-    `top of your Dashboard.`
+    `weaker one trips you. That's the work. Just notice. Open This week in your Playbook each day and tick the ` +
+    `days you catch one.`
   );
 }
 
