@@ -8,6 +8,7 @@ import type { Outcome } from '../../../lib/dashboard/outcomes.ts';
 import type { Read } from '../../../lib/playbook/reads.ts';
 import type { WeekGrid } from '../../../lib/practice/grid.ts';
 import WeekGridPanel from '../../momentum/week-grid.tsx';
+import RichText from '../../rich-text.tsx';
 
 // Which Session opened each week. Shown only when several are running, so the member can tell them apart —
 // otherwise four unlabelled grids read as one confusing table.
@@ -374,7 +375,7 @@ export default function RedesignPlaybookView({
           <div className="pb-sec">My Story</div>
           <div className="pb-sec-d">Who you are, in the words you landed on.</div>
           <div className="pb-narr">
-            {identityParagraph.split(/\n\n+/).map((p) => p.trim()).filter(Boolean).map((para, k) => (<p key={k}>{para}</p>))}
+            <RichText text={identityParagraph} />
           </div>
         </section>
       )}
@@ -384,7 +385,7 @@ export default function RedesignPlaybookView({
           <div className="pb-sec">Your story so far</div>
           <div className="pb-sec-d">A living read your companion re-weaves each time you close a Session.</div>
           <div className="pb-narr">
-            {synthesis.split(/\n\n+/).map((p) => p.trim()).filter(Boolean).map((para, k) => (<p key={k}>{para}</p>))}
+            <RichText text={synthesis} />
           </div>
         </section>
       )}

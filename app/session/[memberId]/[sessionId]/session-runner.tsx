@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useTransition, useEffect, useRef } from 'react';
+import RichText from '../../../rich-text.tsx';
 import { useRouter } from 'next/navigation';
 import { frameForStep, replyToStep, saveStep, closeSessionAction, type CloseResult } from './session-actions.ts';
 import SessionCeremony from './session-ceremony.tsx';
@@ -174,7 +175,8 @@ export default function SessionRunner({
                 ) : (
                   <div className="sess-bubble" key={i}>
                     <div className="sess-agent">Your G4L companion</div>
-                    {m.text}
+                    {/* Model-written — through RichText so its light markdown renders instead of showing the member asterisks. */}
+                    <RichText text={m.text} />
                   </div>
                 ),
               )}

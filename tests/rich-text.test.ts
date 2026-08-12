@@ -44,3 +44,41 @@ test('no dangerouslySetInnerHTML anywhere near the chat renderer', () => {
   // of this test failed on that sentence — a check that reads prose instead of code.
   assert.doesNotMatch(readFileSync('app/rich-text.tsx', 'utf8'), /dangerouslySetInnerHTML\s*=/);
 });
+
+// ── THE WHOLE SWEEP, not just the chat clients ──────────────────────────────────────────────────────────────────
+// Jay: "Sweep the .md thing across the entire app if you haven't already." The chat clients were only where he
+// SAW it. Model-authored prose also reaches the member as the Playbook's two narratives (My Story, Your story so
+// far), the guided-session bubbles, and the legacy checkpoint opening. Each was rendering raw, or hand-splitting
+// on blank lines only — paragraphs handled, emphasis leaking.
+//
+// This asserts the RULE rather than a list of files: anything that renders one of these known model-written values
+// must hand it to RichText. Templated strings (nudges) and authored copy (ceremony beats) are excluded because
+// they contain no model output — verified by their sources having no messages.create call.
+test('every surface that renders model-authored prose routes it through RichText', () => {
+  const bad: string[] = [];
+
+  // (a) Values that are ONLY ever model output — a bare {var} render is always wrong.
+  const ONLY_MODEL: [string, string[]][] = [
+    ['app/playbook/[memberId]/redesign-playbook-view.tsx', ['identityParagraph', 'synthesis']],
+    ['app/checkpoint/[memberId]/[checkpointId]/checkpoint-ceremony.tsx', ['opening']],
+  ];
+  for (const [file, vars] of ONLY_MODEL) {
+    const src = readFileSync(file, 'utf8');
+    for (const v of vars) {
+      // `<RichText text={v} />` contains `{v}`, so exclude the prop form — a naive match flagged the FIX as the bug.
+      if (new RegExp(`(?<!text=)\\{\\s*${v}\\s*\\}`).test(src)) bad.push(`${file} — renders {${v}} raw`);
+    }
+  }
+
+  // (b) Threads where ONE variable carries both roles. Member text must stay raw — they wrote it — so the check is
+  // that the AGENT branch hands off to RichText, not that the variable never appears bare.
+  for (const file of [
+    'app/session/[memberId]/[sessionId]/session-runner.tsx',
+    'app/dashboard/triptych-center.tsx',
+  ]) {
+    const src = readFileSync(file, 'utf8');
+    if (!/RichText/.test(src)) bad.push(`${file} — agent text never reaches RichText`);
+  }
+
+  assert.deepEqual(bad, [], `model-written prose rendered raw:\n${bad.join('\n')}`);
+});

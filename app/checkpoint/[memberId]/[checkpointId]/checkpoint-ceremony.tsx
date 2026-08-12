@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
+import RichText from '../../../rich-text.tsx';
 import { useRouter } from 'next/navigation';
 import { declareReconnected, holdNotYet, reconcileReclaim, type DeclareResult, type ReclaimDisposition } from './checkpoint-actions.ts';
 
@@ -123,7 +124,7 @@ export default function CheckpointCeremony({
             {reconMsg && <p className="ckpt-recon-msg">{reconMsg}</p>}
             <div className="ckpt-bubble">
               <div className="ckpt-agent">Your G4L companion</div>
-              {opening}
+              <RichText text={opening} />
             </div>
             {facets.length > 0 && (
               <p className="ckpt-facets">What you&apos;ve named: <strong>{facets.join('  ·  ')}</strong></p>
