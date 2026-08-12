@@ -17,6 +17,7 @@
 // So the grid is a mirror for W3 and C3, and an input for B3 and B2. The UI must not offer a tap it can't honour —
 // `isTappable` is exported so the client asks rather than assumes.
 
+import { addDays } from '../time/member-clock.ts';
 import type { Db } from '../db/schema.ts';
 import type { ActivePractice, PracticeKind } from './store.ts';
 
@@ -61,12 +62,10 @@ export function logSurfaceFor(kind: PracticeKind, memberId: string): { href: str
   return null;
 }
 
-/** Resolve a day index within the window to a calendar date, using the WEEK's clock — never the browser's. */
-export function dateForDay(startedAt: string | Date, dayIndex: number): string {
-  const iso = startedAt instanceof Date ? startedAt.toISOString() : String(startedAt);
-  const start = new Date(`${iso.slice(0, 10)}T00:00:00Z`);
-  start.setUTCDate(start.getUTCDate() + dayIndex);
-  return start.toISOString().slice(0, 10);
+/** Resolve a day index within a window to a calendar date. The window's start is already a member-local date,
+ *  so this is plain calendar arithmetic — no zone applied a second time. */
+export function dateForDay(window: { start: string }, dayIndex: number): string {
+  return addDays(window.start, dayIndex);
 }
 
 /** Toggle one cell. Returns the resulting state so an optimistic UI can reconcile rather than guess. */
@@ -82,7 +81,7 @@ export async function toggleMark(
     // Not a user error — the UI shouldn't have offered it. Say so plainly rather than failing silently.
     return { ok: false, error: 'This week is a mirror of your log — edit it where you wrote it.' };
   }
-  const markedOn = dateForDay(pw.startedAt, dayIndex);
+  const markedOn = dateForDay(pw.window, dayIndex);
 
   // W3 lives in its own register — Greg's seven-field daily entry, not practice_mark. The grid's two row shapes map
   // onto two of those fields exactly: the 'logged' row is "an entry exists for this date", a trigger row is

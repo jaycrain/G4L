@@ -89,6 +89,7 @@ const SIZE_ONLY_OVERRIDES: Record<string, string> = {
   '.avatar-lg': '.avatar-initials',
   '.avatar-sm': '.avatar-initials',
   '.wk-cell': '.wk-cell', // the base rule centres; the two media queries only shrink it
+  '.wk-table-mini .wk-cell': '.wk-cell', // the read-only "first days" strip — smaller cells, same centred base
 };
 
 function centres(selector: string): boolean {

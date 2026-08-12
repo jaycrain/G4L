@@ -58,12 +58,23 @@ test('the window EXPIRES after N days (a nudge, not forever)', async () => {
   await applySchema(db);
   const m = await seedMember(db);
   await startPracticeWeek(db, m, 'w2_image');
-  // age the row past the window
-  await db.query(`update practice_week set started_at = now() - ($1 || ' days')::interval where member_id=$2`, [
-    String(PRACTICE_WINDOW_DAYS + 1),
-    m,
-  ]);
-  assert.equal(await activePracticeWeek(db, m), null, 'past the window → no active practice');
+  // Age the row past the whole run. NOT seven days + 1 any more: a run is a partial first week plus a full
+  // Monday-Sunday, so it can legitimately still be open on day 8. Fifteen clears the longest possible run (13).
+  await db.query(`update practice_week set started_at = now() - ($1 || ' days')::interval where member_id=$2`, ['15', m]);
+  assert.equal(await activePracticeWeek(db, m), null, 'past the run → no active practice');
+});
+
+test('EIGHT DAYS IN IS NOT NECESSARILY OVER — the run outlives the old fixed seven', async () => {
+  // The consequence of "partial first week, then Mon-Sun" (Jay, 2026-08-12): a Session closed midweek runs its
+  // stub and then a full week. Under the old fixed-7 rule this week would already have aged out silently.
+  const db = new PGlite() as unknown as Db;
+  await applySchema(db);
+  const m = await seedMember(db);
+  await startPracticeWeek(db, m, 'w2_image');
+  const { resolvePractice } = await import('../lib/practice/store.ts');
+  const run = resolvePractice('w2_image', '2026-08-05', '2026-08-13'); // Wed close, the following Thursday
+  assert.equal(run.window.start, '2026-08-10', 'by day 9 they are in the full Monday-Sunday week');
+  assert.equal(run.prior?.start, '2026-08-05', 'and the stub they ticked is still shown above it');
 });
 
 test('overlapping windows · the MOST-RECENT session’s payload wins on the hero (Decision MM add)', async () => {

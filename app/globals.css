@@ -1225,6 +1225,14 @@ html:has(.companion-hero), body:has(.companion-hero) { overflow-anchor: none; }
    modifier class: alone it pushes itself right (the old look, unchanged for B3/B2/W3); with a link beside it, the
    link sits left and the count still lands right. */
 .wk-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 6px; }
+
+/* THE FINISHED FIRST DAYS, above the current week. Deliberately quieter than the live grid — smaller cells, muted
+   label, no hover — because it is a record, not somewhere to act. It exists so a member whose Session closed
+   midweek does not open the grid on Monday to an empty one (Jay, 2026-08-12). */
+.wk-prior { margin: 0 0 0.7rem; padding: 0 0 0.6rem; border-bottom: 1px dashed #e3e2df; }
+.wk-prior-lab { display: block; font-size: 0.72rem; letter-spacing: 0.04em; text-transform: uppercase; color: #6b6b6b; margin-bottom: 4px; }
+.wk-table-mini .wk-cell { width: 18px; height: 18px; font-size: 0.7rem; opacity: 0.75; }
+.wk-table-mini .wk-lab { font-size: 0.8rem; color: #6b6b6b; }
 .wk-day { margin-left: auto; }
 /* The named way in to the daily log. The grid is tappable for this too, but a tap is only discoverable by trying it. */
 .wk-log { font-size: 12px; font-weight: 700; color: var(--teal-text); text-decoration: none; }

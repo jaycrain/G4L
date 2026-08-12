@@ -112,20 +112,48 @@ export type MemberWeek = {
 };
 
 /**
- * The week a member is in, given when their practice started and what day it is for them.
+ * The whole life of one tracker, fixed the moment its Session closes.
  *
  * THE SHAPE (Jay, 2026-08-12): "show the partial week for the first week then immediately roll to Mon-Sun". So a
- * Session closed on Thursday draws Thu–Sun, then every week after is a full Monday–Sunday.
+ * Session closed on Thursday draws Thu–Sun, then one full Monday–Sunday.
+ *
+ * IT IS TWO WINDOWS, NOT A ROLLING ONE. The first version of this answered "what week is it now", which meant a
+ * tracker never ended — every Monday it silently produced a fresh week and the thing would have run forever. A
+ * practice week is BOUNDED; that is the whole point of it. So the run is computed once from the start date and
+ * has a last day.
  */
-export function memberWeek(startedOn: string, today: string): MemberWeek {
-  const firstMonday = addDays(weekStart(startedOn), mondayIndex(startedOn) === 0 ? 0 : 7);
-  // Started ON a Monday → no stub at all; the first week is already a full one.
-  if (mondayIndex(startedOn) === 0 || today >= firstMonday) {
-    const start = weekStart(today);
-    return { start, end: addDays(start, 6), days: 7, partial: false };
+export type TrackerRun = {
+  /** The partial first week, or null when the Session closed on a Monday and there is nothing to stub. */
+  stub: MemberWeek | null;
+  /** The full Monday–Sunday week that carries the review. Always seven days. */
+  main: MemberWeek;
+};
+
+export function trackerRun(startedOn: string): TrackerRun {
+  if (mondayIndex(startedOn) === 0) {
+    return { stub: null, main: { start: startedOn, end: addDays(startedOn, 6), days: 7, partial: false } };
   }
-  const end = addDays(firstMonday, -1); // the Sunday before the first full week
-  return { start: startedOn, end, days: daysBetween(startedOn, end) + 1, partial: true };
+  const firstMonday = addDays(weekStart(startedOn), 7);
+  const stubEnd = addDays(firstMonday, -1); // the Sunday before the first full week
+  return {
+    stub: { start: startedOn, end: stubEnd, days: daysBetween(startedOn, stubEnd) + 1, partial: true },
+    main: { start: firstMonday, end: addDays(firstMonday, 6), days: 7, partial: false },
+  };
+}
+
+/** The window the member is ticking TODAY. */
+export function currentWindow(run: TrackerRun, today: string): MemberWeek {
+  return run.stub && today < run.main.start ? run.stub : run.main;
+}
+
+/**
+ * The finished stub, once the run has rolled past it — null while it is still the current window.
+ *
+ * Jay's call (2026-08-12) when shown that a member who ticked four days Thu–Sun would open the grid on Monday to
+ * an empty one: keep it visible above the new week. Ticks a member made must never appear to vanish.
+ */
+export function priorWindow(run: TrackerRun, today: string): MemberWeek | null {
+  return run.stub && today >= run.main.start ? run.stub : null;
 }
 
 /** Whole days from `a` to `b`, both YYYY-MM-DD. Negative when b is before a. */
@@ -143,16 +171,15 @@ export function columnFor(week: MemberWeek, date: string): number | null {
 }
 
 /**
- * Is this week finished — i.e. has the member's local date passed its last day?
+ * Is the whole run finished — i.e. has the member's local date passed the main week's Sunday?
  *
- * A PARTIAL WEEK IS NEVER "finished" for review purposes. That is the rule Jay accepted: a Session closed on
- * Sunday afternoon would otherwise produce a one-day week and immediately review it. The first FULL Monday–Sunday
- * carries the review, so every review lands on a Sunday.
+ * THE STUB NEVER CARRIES THE REVIEW. A Session closed on Sunday afternoon would otherwise produce a one-day week
+ * and immediately review it. The full Monday–Sunday carries it, so every review lands on a Sunday.
  *
  * THE CONSEQUENCE, STATED PLAINLY: a tracker now lives longer than seven days. Close on a Monday and it is the
- * seven days it always was; close on a Tuesday and it is six partial days plus a full week — thirteen. That is
- * the price of "partial first week, then Mon–Sun", and it is a deliberate trade, not an oversight.
+ * seven days it always was; close on a Tuesday and it is six stub days plus a full week — thirteen. That is the
+ * price of "partial first week, then Mon–Sun", and it is a deliberate trade, not an oversight.
  */
-export function weekIsOver(week: MemberWeek, today: string): boolean {
-  return !week.partial && today > week.end;
+export function runIsOver(run: TrackerRun, today: string): boolean {
+  return today > run.main.end;
 }

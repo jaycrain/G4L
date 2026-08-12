@@ -5,7 +5,7 @@ import { PGlite } from '@electric-sql/pglite';
 import { applySchema, type Db } from '../lib/db/schema.ts';
 import { isTappable, toggleMark, logSurfaceFor } from '../lib/practice/mark.ts';
 import { recordW3Entry, w3Entries, readW3Day } from '../lib/rewire/w3-entry.ts';
-import type { ActivePractice } from '../lib/practice/store.ts';
+import { resolvePractice, type ActivePractice } from '../lib/practice/store.ts';
 
 // W3'S GRID CAN BE WRITTEN FROM (2026-08-12).
 //
@@ -17,7 +17,10 @@ import type { ActivePractice } from '../lib/practice/store.ts';
 // wrote, and a second trigger must MOVE the record rather than silently add a second (Greg's `trigger_fired` is
 // singular). Everything else is plumbing.
 
-const WEEK: ActivePractice = { kind: 'w3_logging', startedAt: '2026-08-10T00:00:00.000Z', day: 3 };
+// 2026-08-10 is a Monday, so this is a full Mon-Sun window and day 3 is the Wednesday — the same week these
+// tests always used. Built through the real constructor so a change to how a week resolves cannot pass here
+// while breaking in the product.
+const WEEK: ActivePractice = resolvePractice('w3_logging', '2026-08-10', '2026-08-12');
 const DAY0 = '2026-08-10'; // dayIndex 0 of that week
 
 async function freshDb(): Promise<{ db: Db; memberId: string }> {

@@ -66,10 +66,14 @@ test('RE-RUNNING C3 RESTARTS THE WEEK AT DAY 1 — the cost of recovery, stated'
     `insert into practice_week (member_id, kind, started_at) values ($1,'c3_quality', now() - interval '3 days')`,
     [memberId],
   );
-  assert.equal((await weekGrid(db, memberId))?.day, 4, 'three days in');
+  // Asserted as a CONTRAST rather than "day 4": which column today is now depends on the weekday they closed on,
+  // so a fixed number here would have been a test that passes on Wednesdays.
+  const before = (await weekGrid(db, memberId))!;
 
   await startPracticeWeek(db, memberId, 'c3_quality'); // what a full C3 re-run does
-  assert.equal((await weekGrid(db, memberId))?.day, 1, 'and they are back to day 1');
+  const after = (await weekGrid(db, memberId))!;
+  assert.equal(after.day, 1, 'they are back to day 1');
+  assert.notEqual(after.startedAt, before.startedAt, 'the start moved to now — the days before it are gone');
 });
 
 // ---------------------------------------------------------------------------------------------------------------

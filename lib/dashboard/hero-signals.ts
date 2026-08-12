@@ -10,7 +10,7 @@ import type { Db } from '../db/schema.ts';
 import { getForecast, type Forecast } from '../curriculum/view.ts';
 import { closedSessionIds, getSessionProgress, recentlyClosedSession, listGates } from '../curriculum/store.ts';
 import { latestArcSession } from '../agent/arc-session.ts';
-import { activePracticeWeek, PRACTICE_WINDOW_DAYS, type PracticeKind } from '../practice/store.ts';
+import { activePracticeWeek, type PracticeKind } from '../practice/store.ts';
 import { resolveHeroState, type HeroSignals, type HeroState } from './resume-hero.ts';
 import { reclaimReadiness } from '../reclaim/readiness.ts';
 
@@ -120,7 +120,7 @@ export async function gatherHeroSignals(db: Db, memberId: string): Promise<HeroS
   const pwStale = pw ? gateSet.has(`${PRACTICE_PHASE[pw.kind]}_checkpoint_passed`) : false;
   const activePractice =
     pw && !pwStale
-      ? { kind: pw.kind, label: PRACTICE_LABEL[pw.kind] ?? "This week's practice", day: pw.day, total: PRACTICE_WINDOW_DAYS }
+      ? { kind: pw.kind, label: PRACTICE_LABEL[pw.kind] ?? "This week's practice", day: pw.day, total: pw.window.days }
       : null;
 
   // "Started" = any closed session, an in-flight arc, a crossed checkpoint (a gate), OR completed onboarding (a named

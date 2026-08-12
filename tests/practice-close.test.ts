@@ -1,3 +1,4 @@
+import { trackerRun } from '../lib/time/member-clock.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { PGlite } from '@electric-sql/pglite';
@@ -5,6 +6,9 @@ import { applySchema, type Db } from '../lib/db/schema.ts';
 import { startPracticeWeek, PRACTICE_WINDOW_DAYS } from '../lib/practice/store.ts';
 import { buildReview, reviewLine, isClosable, closeWeek, keeperBodyFrom, PRACTICE_KEEPER_NAME } from '../lib/practice/close.ts';
 import { buildRow } from '../lib/practice/grid.ts';
+
+// 2026-08-03 is a Monday — the same seven-day window these tests always used.
+const WEEK = trackerRun('2026-08-03').main;
 
 // CLOSING THE WEEK. Until now a week aged out silently — nothing reviewed it, nothing recorded it, and the member
 // was never told it was over. Greg asked twice for the "ready for the next activity" prompt at the end, and a cycle
@@ -14,7 +18,7 @@ import { buildRow } from '../lib/practice/grid.ts';
 // turns a practice into a performance, and the member stops logging honestly — which costs us the data too.
 
 const row = (label: string, target: number | null, done: number) =>
-  buildRow(label, label, target, '2026-08-03', Array.from({ length: done }, (_, i) => `2026-08-0${3 + i}`));
+  buildRow(label, label, target, WEEK, Array.from({ length: done }, (_, i) => `2026-08-0${3 + i}`));
 
 // ── the phrasing, line by line ────────────────────────────────────────────────────────────────────────────────
 
@@ -71,10 +75,16 @@ test('A WEEK WITH NOTHING MARKED gets the truth, not consolation and not a scold
 
 test('a week is closable only once its window has elapsed', () => {
   const rows = [row('Walk', 5, 2)];
-  assert.equal(isClosable({ day: 3, closed: false, rows }), false, 'mid-week is not over');
-  assert.equal(isClosable({ day: PRACTICE_WINDOW_DAYS, closed: false, rows }), true);
-  assert.equal(isClosable({ day: PRACTICE_WINDOW_DAYS, closed: true, rows }), false, 'and never twice');
-  assert.equal(isClosable({ day: PRACTICE_WINDOW_DAYS, closed: false, rows: [] }), false, 'nothing to review');
+  assert.equal(isClosable({ day: 3, closed: false, rows, window: WEEK }), false, 'mid-week is not over');
+  assert.equal(isClosable({ day: WEEK.days, closed: false, rows, window: WEEK }), true);
+  assert.equal(isClosable({ day: WEEK.days, closed: true, rows, window: WEEK }), false, 'and never twice');
+  assert.equal(isClosable({ day: WEEK.days, closed: false, rows: [], window: WEEK }), false, 'nothing to review');
+
+  // THE RULE JAY ACCEPTED: a Session closed on a Sunday makes a one-day stub, and reviewing that would read as
+  // the program mocking them. The full Monday-Sunday that follows carries the review.
+  const stub = trackerRun('2026-08-09').stub!; // Sunday close
+  assert.equal(stub.days, 1);
+  assert.equal(isClosable({ day: 1, closed: false, rows, window: stub }), false, 'a partial week is never closable');
 });
 
 test('closeWeek is idempotent — a close beat cannot fire twice', async () => {
@@ -109,10 +119,13 @@ test('a closed week disappears from the grid, so the review cannot fire twice', 
     )
   ).rows[0]!.member_id;
 
-  // A week that opened 6 days ago -> today is day 7, the last day.
+  // PINNED TO REAL DATES, not "six days ago". A review now only lands on a Sunday, so a test that lets the real
+  // clock decide would pass six days a week and fail on the seventh — which reads as a flaky suite rather than a
+  // broken product. Monday 2026-08-10 opens it; Sunday 2026-08-16 is day 7.
+  const OPENED = '2026-08-10', SUNDAY = '2026-08-16';
   await db.query(
-    `insert into practice_week (member_id, kind, started_at) values ($1,'b3_pilot', now() - interval '6 days')`,
-    [memberId],
+    `insert into practice_week (member_id, kind, started_at) values ($1,'b3_pilot', $2::date)`,
+    [memberId, OPENED],
   );
   const c = (
     await db.query<{ id: string }>(
@@ -122,21 +135,21 @@ test('a closed week disappears from the grid, so the review cannot fire twice', 
   ).rows[0]!.id;
   for (const back of [6, 5, 3, 1]) {
     await db.query(
-      `insert into practice_mark (member_id,kind,commitment_id,marked_on,source) values ($1,'b3_pilot',$2, current_date - $3::int,'grid')`,
-      [memberId, c, back],
+      `insert into practice_mark (member_id,kind,commitment_id,marked_on,source) values ($1,'b3_pilot',$2, $4::date - $3::int,'grid')`,
+      [memberId, c, back, SUNDAY],
     );
   }
 
   const { weekGrid } = await import('../lib/practice/grid.ts');
-  const before = (await weekGrid(db, memberId))!;
-  assert.equal(before.day, PRACTICE_WINDOW_DAYS, 'day 7');
+  const before = (await weekGrid(db, memberId, SUNDAY))!;
+  assert.equal(before.day, 7, 'the Sunday is day 7');
   assert.equal(before.closed, false);
   assert.equal(isClosable(before), true, 'the week is ready to be reviewed');
   assert.deepEqual(buildReview(before).lines, ['Walk 15 minutes — 4 of the 5 you aimed for.']);
 
   assert.equal(await closeWeek(db, memberId, 'b3_pilot'), true);
 
-  const after = await weekGrid(db, memberId);
+  const after = await weekGrid(db, memberId, SUNDAY);
   assert.equal(after!.closed, true, 'the grid now knows it ended');
   assert.equal(isClosable(after!), false, 'and it will never be reviewed a second time');
 });
@@ -149,7 +162,7 @@ test('a closed week disappears from the grid, so the review cannot fire twice', 
 // Choices this week.' / 'You need to avoid False Starts.'"
 
 const w3Row = (label: string, done: number) =>
-  buildRow(label, label, null, '2026-08-03', Array.from({ length: done }, (_, i) => `2026-08-0${3 + i}`));
+  buildRow(label, label, null, WEEK, Array.from({ length: done }, (_, i) => `2026-08-0${3 + i}`));
 
 test('W3 · the close asks what they NOTICED, not how the week went', () => {
   // "Here's how it actually went" invites a verdict on a week that was explicitly not about performance.
@@ -198,7 +211,7 @@ test('W3 · an empty week is met without consoling and without scolding', () => 
 });
 
 test('W3 · no other week inherits the W3 frame', () => {
-  const b3 = buildReview({ kind: 'b3_pilot', rows: [buildRow('walk', 'walk', 5, '2026-08-03', ['2026-08-03'])] });
+  const b3 = buildReview({ kind: 'b3_pilot', rows: [buildRow('walk', 'walk', 5, WEEK, ['2026-08-03'])] });
   assert.match(b3.opener, /how it actually went/i, 'B3 keeps the generic opener');
   assert.doesNotMatch(b3.lines.join(' '), /protocol you wrote/i);
 });

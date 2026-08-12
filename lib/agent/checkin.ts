@@ -22,7 +22,9 @@ export type PracticeWeekCtx = {
   label: string;
 
     kind: string;
-    day: number; // 1..7
+    day: number; // 1..days
+    /** How wide this window is — 7, or fewer for a partial first week. Never assume seven. */
+    days: number;
     rows: { label: string; target: number | null; done: number; todayDone: boolean }[];
     tappable: boolean; // can the agent mark a day, or is this week a mirror of a log they wrote?
     triggers?: string[]; // W3 only — the triggers the MEMBER named, so the agent can ask which one fired
@@ -243,7 +245,7 @@ function otherWeeksLine(c: CheckinContext): string {
   const each = others
     .map((w) => {
       const open = w.rows.filter((r) => !r.todayDone).map((r) => r.label);
-      return `${w.label} (day ${w.day} of 7 — ${open.length ? `still open today: ${open.join(', ')}` : 'all marked today'})`;
+      return `${w.label} (day ${w.day} of ${w.days} — ${open.length ? `still open today: ${open.join(', ')}` : 'all marked today'})`;
     })
     .join('; ');
   return (
@@ -277,7 +279,7 @@ function practiceWeekLine(c: CheckinContext): string | null {
     .join('; ');
   const openToday = pw.rows.some((r) => !r.todayDone);
   return (
-    `Their practice week is on day ${pw.day} of 7: ${rows}. ` +
+    `Their practice week is on day ${pw.day} of ${pw.days}: ${rows}. ` +
     (pw.tappable
       ? openToday
         ? 'If they tell you they did one today, mark it with mark_practice_day — the grid tells them you will, so words alone are not enough. '

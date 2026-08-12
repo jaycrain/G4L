@@ -27,11 +27,17 @@ import { toggleMarkAction } from './actions.ts';
 
 const DAY_INITIALS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
-/** Column letters starting from the day the week actually opened — a week that began on Thursday reads T F S S M T W. */
-function dayLetters(startedAt: string): string[] {
-  const d = new Date(startedAt);
+/**
+ * Column letters for a window. A full week reads M T W T F S S; a partial first week that opened on a Thursday
+ * reads T F S S and stops — it has four columns, not seven rotated round.
+ *
+ * Reads the window's own start date (already a member-local calendar date) rather than the started_at timestamp,
+ * which is an instant and would shift the letters for anyone west of Greenwich.
+ */
+function dayLetters(window: { start: string; days: number }): string[] {
+  const d = new Date(`${window.start}T00:00:00Z`);
   const startIdx = Number.isNaN(d.getTime()) ? 0 : (d.getUTCDay() + 6) % 7; // JS Sunday=0 → Monday=0
-  return Array.from({ length: 7 }, (_, i) => DAY_INITIALS[(startIdx + i) % 7]!);
+  return Array.from({ length: window.days }, (_, i) => DAY_INITIALS[(startIdx + i) % 7]!);
 }
 
 export default function WeekGridPanel({ memberId, grid }: { memberId: string; grid: Grid }) {
@@ -58,7 +64,7 @@ export default function WeekGridPanel({ memberId, grid }: { memberId: string; gr
     lastServer.current = serverMarks;
     setLocal(Object.fromEntries(grid.rows.map((r) => [r.slot, r.marks])));
   }, [serverMarks, grid.rows]);
-  const letters = dayLetters(grid.startedAt);
+  const letters = dayLetters(grid.window);
   const today = grid.day - 1; // 0-based
   // W3 and C3 grids MIRROR a log the member wrote notes into; un-ticking would have to delete that. Read-only there
   // — and the UI must not offer a tap it can't honour, so it asks rather than assumes (see lib/practice/mark.ts).
@@ -103,8 +109,33 @@ export default function WeekGridPanel({ memberId, grid }: { memberId: string; gr
 
   return (
     <div className={`wk-grid${pending ? ' wk-saving' : ''}`}>
+      {/* THE FIRST FEW DAYS, KEPT ON SCREEN. A Session that closed midweek runs a short stub to the Sunday and
+          then rolls into a full Monday–Sunday. Without this, a member who ticked four days Thu–Sun would open the
+          grid on Monday to an empty one and reasonably conclude the app lost their week (Jay, 2026-08-12).
+          Read-only: those days are done, and offering a tick would invite editing history. */}
+      {grid.prior && (
+        <div className="wk-prior">
+          <span className="wk-prior-lab">First days</span>
+          <table className="wk-table wk-table-mini">
+            <tbody>
+              {grid.prior.rows.map((r) => (
+                <tr key={r.slot}>
+                  <td className="wk-lab" title={r.label}>{r.label}</td>
+                  {r.marks.map((on, i) => (
+                    <td key={i}>
+                      <span className={`wk-cell wk-readonly${on ? ' on' : ''}`} aria-label={`${r.label} — ${on ? 'logged' : 'not logged'}`}>
+                        {on ? '✓' : ''}
+                      </span>
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
       <div className="wk-head">
-        <span className="wk-day">Day {grid.day} of 7</span>
+        <span className="wk-day">Day {grid.day} of {grid.window.days}</span>
         {/* Tapping the grid is discoverable only if you try it — Jay did, most won't. The named action carries it. */}
         {logTo && !grid.closed && <Link href={logTo.href} className="wk-log">{logTo.label} →</Link>}
       </div>

@@ -18,6 +18,7 @@ const week = (kind: string, label: string, day: number, over = false): PracticeW
   kind,
   label,
   day,
+  days: 7,
   rows: [{ label: `${label} row`, target: null, done: 1, todayDone: false }],
   tappable: true,
   readyToClose: over,

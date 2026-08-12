@@ -6,13 +6,38 @@
 
 import type { Db } from '../db/schema.ts';
 import { activeCoachingPlan, type RebuildPilotPayload } from '../rebuild/plan-store.ts';
+import { memberZone } from '../time/zone-store.ts';
+import { localDate, trackerRun, currentWindow, priorWindow, runIsOver, columnFor,
+         type MemberWeek, type TrackerRun } from '../time/member-clock.ts';
 
 // W3 opens the logging window (payload lands with the Momentum slice); b2_noticing is Rebuild B2's skill-noticing
 // week; b3_pilot is Rebuild B3's daily health-decision logging; c3_quality is Reclaim C3's Quality-Day logging week.
 export type PracticeKind = 'w2_image' | 'w3_logging' | 'b2_noticing' | 'b3_pilot' | 'c3_quality';
 export const PRACTICE_WINDOW_DAYS = 7;
 
-export type ActivePractice = { kind: PracticeKind; startedAt: string; day: number }; // day = 1..PRACTICE_WINDOW_DAYS
+export type ActivePractice = {
+  kind: PracticeKind;
+  startedAt: string;
+  /** The member's LOCAL calendar date of startedAt — the day they would say the Session closed. */
+  startedOn: string;
+  /** The whole run, fixed at close: the partial stub (if any) plus the full Monday–Sunday that carries the review. */
+  run: TrackerRun;
+  /** The window being ticked today — the stub before the first Monday, the full week after. */
+  window: MemberWeek;
+  /** The finished stub once it has rolled, so a member's early ticks stay on screen. Null otherwise. */
+  prior: MemberWeek | null;
+  /** 1..window.days — which column today is. */
+  day: number;
+};
+
+/**
+ * How far back to LOOK for a week that might still be running.
+ *
+ * A run is at most a six-day stub plus seven days = 13, so 21 is comfortably clear of it. This is a SQL prefilter
+ * only — whether a week is actually still open is decided in JS by runIsOver(), because the answer depends on the
+ * member's timezone and Postgres has no idea what day it is where they live.
+ */
+const LOOKBACK_DAYS = 21;
 
 // Open (or restart) a practice window — called when a Rewire session completes. Upsert on (member, kind): re-doing
 // the session refreshes started_at (a fresh week). Caller runs it best-effort; it never blocks a conversation turn.
@@ -24,22 +49,10 @@ export async function startPracticeWeek(db: Db, memberId: string, kind: Practice
   );
 }
 
-// The member's ACTIVE practice window, if any — the one whose window (started_at + N days) still contains today.
+// The member's ACTIVE practice window, if any — the newest run that has not yet passed its Sunday.
 // MOST-RECENT started_at WINS when two are active (Decision MM: the latest session's payload leads on the hero).
-export async function activePracticeWeek(db: Db, memberId: string): Promise<ActivePractice | null> {
-  const row = (
-    await db.query<{ kind: string; started_at: string; day: number }>(
-      `select kind, started_at, (date_part('day', now() - started_at))::int + 1 as day
-         from practice_week
-        where member_id = $1 and started_at > now() - ($2 || ' days')::interval
-        order by started_at desc
-        limit 1`,
-      [memberId, String(PRACTICE_WINDOW_DAYS)],
-    )
-  ).rows[0];
-  if (!row) return null;
-  const day = Math.min(Math.max(row.day, 1), PRACTICE_WINDOW_DAYS);
-  return { kind: row.kind as PracticeKind, startedAt: row.started_at, day };
+export async function activePracticeWeek(db: Db, memberId: string, today?: string): Promise<ActivePractice | null> {
+  return (await activePracticeWeeks(db, memberId, today))[0] ?? null;
 }
 
 /**
@@ -55,19 +68,49 @@ export async function activePracticeWeek(db: Db, memberId: string): Promise<Acti
  * a day, or not, that's not too much to ask. And exactly what we're trying to do to stay engaged with members
  * daily, on their terms." So the surface shows all of them.
  */
-export async function activePracticeWeeks(db: Db, memberId: string): Promise<ActivePractice[]> {
-  const { rows } = await db.query<{ kind: string; started_at: string; day: number }>(
-    `select kind, started_at, (date_part('day', now() - started_at))::int + 1 as day
+/**
+ * Build the resolved week from a start date and the member's today. Pure, and the ONE place that decides which
+ * window a member is in — so the read path, the tests and anything later that needs to reason about a week all
+ * agree by construction rather than by three people remembering the same rule.
+ */
+export function resolvePractice(kind: PracticeKind, startedOn: string, today: string, startedAt?: string): ActivePractice {
+  const run = trackerRun(startedOn);
+  const window = currentWindow(run, today);
+  return {
+    kind,
+    startedAt: startedAt ?? `${startedOn}T00:00:00.000Z`,
+    startedOn,
+    run,
+    window,
+    prior: priorWindow(run, today),
+    // columnFor returns null for a date outside the window; today is inside it by construction for an open run,
+    // but a clock skew must degrade to "day 1" rather than NaN.
+    day: (columnFor(window, today) ?? 0) + 1,
+  };
+}
+
+export async function activePracticeWeeks(db: Db, memberId: string, todayOverride?: string): Promise<ActivePractice[]> {
+  // The zone is read ONCE for the whole set rather than per week — this runs on the dashboard's hot path.
+  const zone = await memberZone(db, memberId);
+  // `todayOverride` exists for TESTS, and it earns its keep. A review can now only land on a Sunday, so a test
+  // that lets the real clock decide passes six days a week and fails on the seventh — which reads as a flaky
+  // suite rather than as a broken product. Nothing in the app passes it.
+  const today = todayOverride ?? localDate(zone);
+  const { rows } = await db.query<{ kind: string; started_at: string }>(
+    `select kind, started_at
        from practice_week
       where member_id = $1 and started_at > now() - ($2 || ' days')::interval
       order by started_at desc`,
-    [memberId, String(PRACTICE_WINDOW_DAYS)],
+    [memberId, String(LOOKBACK_DAYS)],
   );
-  return rows.map((row) => ({
-    kind: row.kind as PracticeKind,
-    startedAt: row.started_at,
-    day: Math.min(Math.max(row.day, 1), PRACTICE_WINDOW_DAYS),
-  }));
+  // WHETHER A WEEK IS STILL OPEN IS DECIDED HERE, NOT IN SQL. Postgres does not know what day it is where the
+  // member lives, and a run's length now depends on which weekday it started (7 days, or 8–13). The SQL above is
+  // only a generous prefilter. Same rule as the jsonb reads: decide in JS, never in a SQL predicate.
+  return rows.flatMap((row) => {
+    const startedOn = localDate(zone, new Date(row.started_at));
+    if (runIsOver(trackerRun(startedOn), today)) return [];
+    return [resolvePractice(row.kind as PracticeKind, startedOn, today, row.started_at)];
+  });
 }
 
 /** One specific open week, by kind — how a tap addresses the grid it was made in. */

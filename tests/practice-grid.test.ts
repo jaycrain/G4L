@@ -23,25 +23,41 @@ async function seed(): Promise<{ db: Db; memberId: string }> {
   return { db, memberId };
 }
 
+import { trackerRun } from '../lib/time/member-clock.ts';
+
+// 2026-08-03 is a MONDAY, so this is the same seven-day window these tests always used — the numbers below are
+// unchanged. What changed is that a window is now an explicit object rather than "start date plus seven".
+const WEEK = trackerRun('2026-08-03').main;
+
 // ── the pure day maths ────────────────────────────────────────────────────────────────────────────────────────
 
 test('dayIndex maps a logged date onto the window, and rejects what falls outside', () => {
-  const start = '2026-08-03T09:14:00Z'; // a Monday, mid-morning
-  assert.equal(dayIndex(start, '2026-08-03'), 0, 'the start day is day 1');
-  assert.equal(dayIndex(start, '2026-08-09'), 6, 'the seventh day is the last');
-  assert.equal(dayIndex(start, '2026-08-10'), -1, 'day 8 is outside the window');
-  assert.equal(dayIndex(start, '2026-08-02'), -1, 'and so is the day before it opened');
+  assert.equal(dayIndex(WEEK, '2026-08-03'), 0, 'the start day is day 1');
+  assert.equal(dayIndex(WEEK, '2026-08-09'), 6, 'the seventh day is the last');
+  assert.equal(dayIndex(WEEK, '2026-08-10'), -1, 'day 8 is outside the window');
+  assert.equal(dayIndex(WEEK, '2026-08-02'), -1, 'and so is the day before it opened');
 });
 
 test('a late-evening log lands on TODAY, not tomorrow', () => {
-  // Both sides truncate to a calendar day before differencing. Without that, an 11pm tick could cross a day boundary
-  // once timezones enter and silently mark the wrong column.
-  assert.equal(dayIndex('2026-08-03T23:58:00Z', '2026-08-03'), 0);
-  assert.equal(dayIndex('2026-08-03T00:01:00Z', '2026-08-03'), 0);
+  // A timestamp is truncated to its calendar day before being placed, so an 11pm tick cannot roll into the next
+  // column. WHICH day that timestamp belongs to is now the member clock's job (localDate), not this function's —
+  // this only proves the truncation still happens here.
+  assert.equal(dayIndex(WEEK, '2026-08-03T23:58:00Z'), 0);
+  assert.equal(dayIndex(WEEK, '2026-08-03T00:01:00Z'), 0);
+});
+
+test('A PARTIAL FIRST WEEK IS NARROWER, and the columns start on the day they closed', () => {
+  const stub = trackerRun('2026-08-06').stub!; // a Thursday close
+  assert.equal(stub.days, 4, 'Thu, Fri, Sat, Sun');
+  assert.equal(dayIndex(stub, '2026-08-06'), 0, 'Thursday is column 0 — not Monday');
+  assert.equal(dayIndex(stub, '2026-08-09'), 3, 'Sunday is the last column');
+  assert.equal(dayIndex(stub, '2026-08-10'), -1, 'the Monday after belongs to the next window');
+  const row = buildRow('x', 'walk', null, stub, ['2026-08-06', '2026-08-08']);
+  assert.equal(row.marks.length, 4, 'a partial week draws four boxes, not seven');
 });
 
 test('buildRow keeps `done` and `marks` in lockstep, and ignores out-of-window dates', () => {
-  const r = buildRow('activity', '15 minutes', 5, '2026-08-03', ['2026-08-03', '2026-08-05', '2026-08-05', '2026-07-30']);
+  const r = buildRow('activity', '15 minutes', 5, WEEK, ['2026-08-03', '2026-08-05', '2026-08-05', '2026-07-30']);
   assert.equal(r.marks.length, PRACTICE_WINDOW_DAYS);
   assert.deepEqual(r.marks.map(Number), [1, 0, 1, 0, 0, 0, 0], 'the duplicate collapses, the stray is dropped');
   assert.equal(r.done, 2, 'done is derived, never a second source of truth');
@@ -154,13 +170,13 @@ test('no active week reads as null, not as an empty grid', async () => {
 test('targetSummary counts only rows that HAVE a target', () => {
   assert.deepEqual(
     targetSummary([
-      buildRow('a', 'walk', 5, '2026-08-03', ['2026-08-03', '2026-08-04', '2026-08-05', '2026-08-06', '2026-08-07']),
-      buildRow('b', 'fruit', 5, '2026-08-03', ['2026-08-03']),
+      buildRow('a', 'walk', 5, WEEK, ['2026-08-03', '2026-08-04', '2026-08-05', '2026-08-06', '2026-08-07']),
+      buildRow('b', 'fruit', 5, WEEK, ['2026-08-03']),
     ]),
     { met: 1, of: 2 },
   );
   // A week of pure noticing never reports a score it was never keeping.
-  assert.equal(targetSummary([buildRow('x', 'Moved my body', null, '2026-08-03', ['2026-08-03'])]), null);
+  assert.equal(targetSummary([buildRow('x', 'Moved my body', null, WEEK, ['2026-08-03'])]), null);
 });
 
 // ── the pre-existing bug this build uncovered ─────────────────────────────────────────────────────────────────
@@ -202,8 +218,9 @@ test('THE GRID CANNOT DELETE WHAT THE MEMBER WROTE', async () => {
   const { db, memberId } = await seed();
   await startPracticeWeek(db, memberId, 'w3_logging');
   const { recordW3Entry, w3Entries } = await import('../lib/rewire/w3-entry.ts');
-  const pw = { kind: 'w3_logging' as const, startedAt: new Date().toISOString(), day: 1 };
+  const { resolvePractice } = await import('../lib/practice/store.ts');
   const today = new Date().toISOString().slice(0, 10);
+  const pw = resolvePractice('w3_logging', today, today);
   await recordW3Entry(db, memberId, { entryDate: today, reflection: 'the words I would lose' });
 
   const res = await toggleMark(db, memberId, pw, 'logged', 0, 'grid');
@@ -217,9 +234,11 @@ test('THE GRID CANNOT DELETE WHAT THE MEMBER WROTE', async () => {
 test('a tick is addressed by DAY INDEX, resolved against the week’s own clock', async () => {
   // Never a date from the browser: a client clock in another timezone would write the mark onto the wrong day.
   const { dateForDay } = await import('../lib/practice/mark.ts');
-  assert.equal(dateForDay('2026-08-03T09:00:00Z', 0), '2026-08-03');
-  assert.equal(dateForDay('2026-08-03T23:59:00Z', 3), '2026-08-06', 'a late-evening start still counts day 4 correctly');
-  assert.equal(dateForDay(new Date('2026-08-03T09:00:00Z'), 6), '2026-08-09');
+  assert.equal(dateForDay(WEEK, 0), '2026-08-03');
+  assert.equal(dateForDay(WEEK, 3), '2026-08-06');
+  assert.equal(dateForDay(WEEK, 6), '2026-08-09');
+  // And in a partial week the same index means a different date, which is the whole reason it takes the window.
+  assert.equal(dateForDay(trackerRun('2026-08-06').stub!, 0), '2026-08-06');
 });
 
 test('toggle is a round trip — tick, un-tick, and the row is gone', async () => {

@@ -23,6 +23,7 @@ const withWeek = (over: Partial<NonNullable<CheckinContext['practiceWeek']>> = {
     practiceWeek: {
       kind: 'b3_pilot',
       day: 4,
+      days: 7,
       tappable: true,
       rows: [
         { label: '15 minutes of functional fitness', target: 5, done: 2, todayDone: false },

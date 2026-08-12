@@ -16,11 +16,18 @@
 
 import type { Db } from '../db/schema.ts';
 import type { GridRow, WeekGrid } from './grid.ts';
-import { PRACTICE_WINDOW_DAYS, type PracticeKind } from './store.ts';
+import { type PracticeKind } from './store.ts';
 
-/** A week is closable once its window has elapsed and it hasn't already been closed. */
-export function isClosable(grid: Pick<WeekGrid, 'day' | 'closed' | 'rows'>): boolean {
-  return !grid.closed && grid.day >= PRACTICE_WINDOW_DAYS && grid.rows.length > 0;
+/**
+ * A week is closable once its window has elapsed and it hasn't already been closed.
+ *
+ * THE PARTIAL FIRST WEEK IS NEVER CLOSABLE. A Session closed on a Sunday afternoon produces a one-day stub, and
+ * reviewing that would read as the program mocking the member. The full Monday–Sunday that follows carries the
+ * review, so every review lands on a Sunday (Jay, 2026-08-12).
+ */
+export function isClosable(grid: Pick<WeekGrid, 'day' | 'closed' | 'rows' | 'window'>): boolean {
+  if (grid.window.partial) return false;
+  return !grid.closed && grid.day >= grid.window.days && grid.rows.length > 0;
 }
 
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;

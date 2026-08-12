@@ -84,7 +84,11 @@ test('an active practice week (nothing else pending) → mid-week-practice', asy
   assert.equal(state.kind, 'mid-week-practice');
   assert.equal(signals.activePractice?.kind, 'w2_image');
   assert.equal(signals.activePractice?.day, 1);
-  assert.equal(signals.activePractice?.total, 7);
+  // The window runs from today THROUGH SUNDAY, so its width depends on what day it is: a Monday close is the full
+  // 7, a Saturday close is 2. Derived here independently of the implementation rather than hardcoding 7 (which is
+  // what this line used to do, and what quietly stopped being true).
+  const dow = new Date(`${new Date().toISOString().slice(0, 10)}T00:00:00Z`).getUTCDay(); // 0 = Sunday
+  assert.equal(signals.activePractice?.total, dow === 0 ? 1 : 8 - dow);
 });
 
 test('onboarding captures alone count as started → next-step, not "brand new / fresh"', async () => {

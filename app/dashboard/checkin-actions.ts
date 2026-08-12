@@ -102,6 +102,7 @@ function weekCtx(g: WeekGrid, w3Extras: Parameters<typeof buildReview>[1]): Prac
     // the Lifestyle Pilot and Quality Days at the same time — the Companion has to be able to say which one.
     label: PRACTICE_KEEPER_NAME[g.kind] ?? 'Your practice week',
     day: g.day,
+    days: g.window.days,
     rows: g.rows.map((r) => ({
       label: r.label,
       target: r.target,

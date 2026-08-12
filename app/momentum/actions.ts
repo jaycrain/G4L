@@ -5,7 +5,7 @@ import { authorizeMember } from '../authz.ts';
 import type { Db } from '../../lib/db/schema.ts';
 import { rewireEnabled } from '../../lib/agent/rewire.ts';
 import { logCall, isCallType, isCallDomain, type CallType, type CallDomain } from '../../lib/momentum/store.ts';
-import { activePracticeWeek, practiceWeekOfKind, PRACTICE_WINDOW_DAYS, type PracticeKind } from '../../lib/practice/store.ts';
+import { activePracticeWeek, practiceWeekOfKind, type PracticeKind } from '../../lib/practice/store.ts';
 import { toggleMark } from '../../lib/practice/mark.ts';
 
 // Log a Momentum call from the /momentum quick-log (source 'momentum_page') — the SAME primitive the rail's log_call
@@ -41,11 +41,14 @@ export async function toggleMarkAction(
   kind?: PracticeKind,
 ): Promise<{ ok: boolean; on?: boolean; error?: string }> {
   if (!(await authorizeMember(memberId))) return { ok: false, error: 'Not authorized.' };
-  if (!Number.isInteger(dayIndex) || dayIndex < 0 || dayIndex >= PRACTICE_WINDOW_DAYS) return { ok: false, error: 'Not a day in this week.' };
+  if (!Number.isInteger(dayIndex) || dayIndex < 0) return { ok: false, error: 'Not a day in this week.' };
   try {
     const db = (await getDb()) as unknown as Db;
     const pw = kind ? await practiceWeekOfKind(db, memberId, kind) : await activePracticeWeek(db, memberId);
     if (!pw) return { ok: false, error: 'No practice week is open.' };
+    // The upper bound is THIS week's width, not a constant 7 — a partial first week has fewer columns, and a
+    // hardcoded seven would accept a tap on a day the grid never drew.
+    if (dayIndex >= pw.window.days) return { ok: false, error: 'Not a day in this week.' };
     if (dayIndex > pw.day - 1) return { ok: false, error: "That day hasn't happened yet." };
     return await toggleMark(db, memberId, pw, slot, dayIndex, 'grid');
   } catch (e) {
