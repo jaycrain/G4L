@@ -241,12 +241,17 @@ function otherWeeksLine(c: CheckinContext): string {
   const others = (c.practiceWeeks ?? []).filter((w) => w.kind !== c.practiceWeek?.kind && w.rows.length);
   if (!others.length) return '';
   const each = others
-    .map((w) => `${w.label} (day ${w.day} of 7${w.rows.every((r) => r.todayDone) ? ', all marked today' : ''})`)
+    .map((w) => {
+      const open = w.rows.filter((r) => !r.todayDone).map((r) => r.label);
+      return `${w.label} (day ${w.day} of 7 — ${open.length ? `still open today: ${open.join(', ')}` : 'all marked today'})`;
+    })
     .join('; ');
   return (
-    ` ALSO RUNNING, and they can see all of these: ${each}. ` +
-    `Hold them; do NOT ask about each one — a check-in is not a roll call. If they raise one, or a day of theirs is ` +
-    `plainly about one, work with that week and name it so they know which you mean.`
+    ` THEIR OTHER OPEN WEEKS, and ask about these too: ${each}. ` +
+    `Cover every one that still has a day open — a member running four weeks chose four, and asking is how the ` +
+    `day gets marked when they would not have opened the app to tick a box. Ask about them TOGETHER, in one beat, ` +
+    `not as four separate questions with four separate replies. Name each week, because with several running ` +
+    `"did you do it" is not answerable. A week already fully marked today gets acknowledged, never re-asked.`
   );
 }
 

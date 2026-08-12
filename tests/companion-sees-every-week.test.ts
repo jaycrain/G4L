@@ -44,13 +44,27 @@ test('EVERY OPEN WEEK IS NAMED — the agent cannot be blind to three of four', 
   }
 });
 
-test('...BUT FOUR WEEKS ARE NOT FOUR QUESTIONS', () => {
-  // A check-in that recites every open week is a roll call, which is the opposite of what the daily ask is for.
+test('AND IT ASKS ABOUT ALL OF THEM — Jay overruled my "ask about one"', () => {
+  // I shipped this asking about a single week, on the reasoning that four would be a roll call. Jay, same day:
+  // "I don't think the roll call is a bad thing. You might be a little too concerned about that, feedback and
+  // interaction is a good thing." Asking IS the engagement — a member running four weeks chose four.
   const line = practiceLine(
     ctx([week('c3_quality', 'Quality Days', 1), week('b3_pilot', 'The Lifestyle Pilot', 3), week('b2_noticing', 'Your map', 5)]),
   );
-  assert.match(line, /do NOT ask about each one/i, 'the others are state, not prompts');
-  assert.match(line, /name it so they know which/i, 'and if one comes up, it gets named');
+  assert.match(line, /ask about these too/i, 'the other weeks carry an ask, not just state');
+  assert.doesNotMatch(line, /do NOT ask about each one/i, 'the old restraint is gone');
+  assert.match(line, /Cover every one that still has a day open/i);
+  // What survived is craft, not scope.
+  assert.match(line, /in one beat/i, 'one beat, not four separate questions');
+  assert.match(line, /never re-asked/i, 'a week already marked today is acknowledged, not asked again');
+});
+
+test('a week already fully marked today is reported as marked, not as an open ask', () => {
+  const done = week('b3_pilot', 'The Lifestyle Pilot', 3);
+  done.rows = [{ label: 'walk', target: null, done: 1, todayDone: true }];
+  const line = practiceLine(ctx([week('c3_quality', 'Quality Days', 1), done]));
+  assert.match(line, /The Lifestyle Pilot \(day 3 of 7 — all marked today\)/);
+  assert.doesNotMatch(line, /still open today: walk/);
 });
 
 test('a member with ONE week gets no "also running" clause at all', () => {
