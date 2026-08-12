@@ -1,6 +1,6 @@
 # G4L — Member Transcript (authored copy, verbatim)
 
-Stamp: `app @ 5520481 · 2026-08-11` · PART 1 of the Cowork release bundle.
+Stamp: `app @ 4beccec · 2026-08-12` · PART 1 of the Cowork release bundle.
 
 **Quote from this.** Every line below is authored, fixed copy a member reads, in reading order by surface. It does
 **not** include the Companion's in-the-moment reflections (those are model-generated and vary per member — describe
@@ -139,11 +139,14 @@ _source: lib/agent/reconnect.ts_
 - That's the whole check-in — thank you for staying with it. I've got your baseline now. You'll see it take shape
 - Premature close
 - They named no specific Door.
-- A quick check-in before we close. Six short statements about what this work is making you think about. No score
+- A quick check-in before we close. Six short statements about what this work is making you think about.
+- You're the one scoring these — it's your read on yourself, and I'll show you where it lands in a moment.
+- Same as before: just tell me how true each feels right now. 1—not at all. 5—completely.
 - That's it — you named what this stirred in you. Hold on, don't go anywhere yet.
 - Before you go anywhere — stop for a second. I want to show you what you just did.
 - ONLY if it's an unambiguous tag-fix — they simply misspoke the label — NOT a genuine re-seeing; when in any
 - Use when the drawn-out story surfaces an ADDITIONAL canonical Door alongside the one they named — the Fade went
+- They named no Door at onboarding.
 - ) tacked onto it. The MOMENT they confirm it (
 
 _source: lib/idq/instrument.ts_
@@ -215,7 +218,6 @@ _source: lib/agent/rewire.ts_
 - Kept — that's yours. Here's another that stood out — what's the true line you'd put in its place? Or tell me that's your set.
 - Even one is enough — take the lie that stung most and write the honest line back.
 - These true lines will be the first thing you reach for when the old voice starts back with the lies and excuses.
-- And, congrats — your grit and resilience here earned you a badge: "True Line."
 - Your true line
 - RIGHT NOW: the member just wrote a TRUE LINE (their honest counter to a lie). In ONE turn: (1) acknowledge
 - RIGHT NOW: the member just named their FIFTH and last self-lie — often the most vulnerable. Respond in ONE
@@ -246,6 +248,7 @@ _source: lib/agent/rewire.ts_
 - First, Redirect — the thing you do instead. When you don't want to do the work, the rule is five minutes: start,
 - the block, call someone, leave the room. What's yours?
 - And Restart — when the old voice gets loud, you go back to the picture you built of where you're headed, standing
+- Here's your work this week: don't try to change anything yet. Just notice. Open This week in your Playbook
 - And when a false start happens — it will — run your protocol. Redirect, Reframe, Restart.
 - Grit isn't never falling. It's getting back on — now, today, the next meal, the next ride, the next morning.
 - That's Grinta, and it's the most important thing you build in here.
@@ -381,7 +384,7 @@ _source: lib/agent/rebuild.ts_
 - You'll pick one small movement change, and one small healthier eating change to try for a week. Just two things
 - We'll start with movement — what's one small change you could try this week?
 - Your Lifestyle Pilot is locked in. You've committed to one small change in movement, one in eating, for next week.
-- Start tomorrow. Go to the Momentum card on your dashboard each day and log how it went — a good call, a false
+- Start tomorrow. Open This week in your Playbook each day and log how it went — a good call, a false
 - Checkpoint is where this Phase closes.
 - That's your week as it stands. Change either one, or tell me to lock it in.
 - Both are things you can practice on a normal week, not just your best one. Want to lock them in, or tweak one?
@@ -487,6 +490,7 @@ _source: lib/agent/reclaim.ts_
 - It's also where you feel most ready to move — a strong place to start.
 - There's no wrong answer here — whatever comes to mind first is usually the true one, even if it's a few words.
 - And if now isn't the moment, you can leave this and come back whenever you like; your place is saved.
+- And if now isn’t the moment, you can leave this and come back whenever you like; your place is saved.
 - Here’s what stands out from the audit.
 - The idea is simple but powerful: quality days lead to a quality life, and a quality life makes more quality days
 - We're going to define what a quality day actually looks like for YOU then track it for a week. You'll notice what
@@ -565,6 +569,37 @@ _source: lib/ceremony/reclaim-ceremony-beats.ts_
 - Share your story →
 
 
+## The practice week & Playbook reads
+
+_source: lib/rewire/w3-entry.ts_
+
+- You wrote something into that day — open it with your companion to change it.
+
+_source: lib/practice/mark.ts_
+
+- Log today
+- This week is a mirror of your log — edit it where you wrote it.
+- That commitment is no longer on your week.
+
+_source: app/momentum/week-grid.tsx_
+
+- Could not save that — please try again.
+- : done ?
+- Tap a day when you do one — or just tell me and I\u2019ll mark it.
+- Tap any day to open your log — the grid mirrors what you write there.
+- This mirrors what you\u2019ve told your companion, so you can see the week at a glance.
+
+_source: lib/playbook/reads.ts_
+
+- What’s Your Why?
+- Reasons that are yours tend to hold when nobody is watching.
+- Strengths & Weaknesses
+- A skill with room is simply the next one to practise.
+- Bigger World Audit
+- You chose this — it is where you decided the effort goes.
+- You did not name a single area, so this is the ratings’ read, not your call.
+
+
 ## Grinta baseline (the 12-item survey)
 
 _source: lib/grinta/survey/instrument.ts_
@@ -633,7 +668,7 @@ _source: lib/content/summaries.ts_
 - Evaluate your skills that can make change stick.
 - Motivation alone doesn’t create change. It’s the practical skills: planning, setting goals, handling barriers, tracking progress, recovering from setbacks, that make a difference. Here you’ll respond to statements that measure where your skills are strong and where they could grow. They’re sorted into three simple jobs: getting ready, taking action, and staying consistent. Research suggests lasting change leans on all three. You’ll come away with a map of what to build on and where support and practice can help.
 - Watch your everyday choices for a week and learn how your lifestyle actually works.
-- This week, you’ll pick one small movement habit and one small eating habit to practice, then watch how they actually play out. It’s a week of just noticing. Research suggests self-monitoring sharpens your awareness and makes the next change more realistic. You can track the Good Calls, the False Starts, the obstacles you didn’t see coming, on your Momentum card. At the end of the week you’ll have a clearer picture of what helps, what gets in your way, and what to adjust.
+- This week, you’ll pick one small movement habit and one small eating habit to practice, then watch how they actually play out. It’s a week of just noticing. Research suggests self-monitoring sharpens your awareness and makes the next change more realistic. You can track the Good Calls, the False Starts, the obstacles you didn’t see coming, in This week in your Playbook. At the end of the week you’ll have a clearer picture of what helps, what gets in your way, and what to adjust.
 - Revisit your Reclaim List now that you know yourself better.
 - The goals you named at the start aren’t always the ones that stay most meaningful once you’ve done the work. After looking hard at your identity, your patterns, and your habits, you revisit your Reclaim List — some goals now feel more real and more possible, others feel borrowed or vague. Research suggests goals hold best when they’re truly yours and fit who you’re becoming. You refine the list so your next moves are grounded in what actually matters to you.
 - Check in on how your world has expanded from where you started.
@@ -782,6 +817,7 @@ _source: app/dashboard/triptych-center.tsx_
 - I’m here. Something hiccupped loading our thread — send a message and we’ll go.
 - Sorry — that didn’t go through. Try again in a moment.
 - Phase 4 · Reclaim
+- Your week is running
 - See the Program →
 - Companion thread is getting crowded
 - Tell me what's going on…
@@ -806,7 +842,7 @@ _source: app/dashboard/triptych-right.tsx_
 - Where your Comeback gets kept.
 - Your first one lands when you finish a Session.
 - Most run
-- Open your Playbook →
+- Open Your Playbook →
 - The calls you make, one at a time.
 - Good Calls · False Starts · On Track
 - See more →
@@ -837,14 +873,13 @@ _source: app/momentum/[memberId]/page.tsx_
 - Good Call
 - False Start
 - On Track
-- The minute-to-minute decisions you make are what add up to change. Here you can track your good calls, false starts — and the on-track days where nothing much happened — and begin to understand how your patterns impact your progress.
-- This week
-- Your log
-- Nothing logged yet. Every call you make — good, false start, or quiet — lands here, in order.
 - More about
 - More about Momentum
+- The minute-to-minute decisions you make are what add up to change. Here you can track your good calls, false starts — and the on-track days where nothing much happened — and begin to understand how your patterns impact your progress.
 - A single day tells you very little. A few weeks of them tell you what your rhythm actually is, which is the thing worth knowing while you’re still building it.
 - You can log here, or just say it to your Companion. It reads everything on this page, so you can ask it what it’s seeing.
+- Your log
+- Nothing logged yet. Every call you make — good, false start, or quiet — lands here, in order.
 - ← Dashboard
 
 _source: app/momentum/momentum-log.tsx_
@@ -857,7 +892,6 @@ _source: app/momentum/momentum-log.tsx_
 - Logged — holding steady counts.
 - Could not log.
 - How'd it go? Log a call — no pressure, and steady days count.
-- Which commitment is this about? (optional)
 - Add a note (optional)
 
 _source: app/score/[memberId]/page.tsx_
@@ -944,6 +978,11 @@ _source: app/connect/[memberId]/page.tsx_
 
 _source: app/playbook/[memberId]/redesign-playbook-view.tsx_
 
+- Your picture
+- Noticing your days
+- Noticing your skills
+- Your Lifestyle Pilot
+- Your Quality Days
 - This week
 - What worked
 - What you've learned
@@ -967,7 +1006,7 @@ _source: app/playbook/[memberId]/redesign-playbook-view.tsx_
 - What does this bring up? Write as much or as little as you want…
 - Save to your Journal
 - Write about this →
-- G4L Playbook
+- Your Playbook
 - Where your Comeback gets kept, so you can use it again and again — the moves that worked for you, and the person you’re reclaiming, in one place. It grows every week, and it’s yours.
 - Gathering from your work…
 - You’ve already built real material. Let’s gather it into your Playbook.

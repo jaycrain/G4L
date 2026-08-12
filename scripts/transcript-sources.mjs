@@ -11,6 +11,10 @@ export const SECTIONS = [
   { title: 'Rewire — mind', files: ['lib/agent/rewire.ts', 'lib/curriculum/content/rewire.ts', 'lib/ceremony/rewire-ceremony-beats.ts'] },
   { title: 'Rebuild — body', files: ['lib/agent/rebuild.ts', 'lib/rebuild/why-instrument.ts', 'lib/rebuild/skills-instrument.ts', 'lib/ceremony/rebuild-ceremony-beats.ts'] },
   { title: 'Reclaim — the outcome', files: ['lib/agent/reclaim.ts', 'lib/reclaim/bigger-world-instrument.ts', 'lib/ceremony/reclaim-ceremony-beats.ts'] },
+  // The practice week a member ticks daily, and the reads their Playbook shows them back. Added 2026-08-12: these
+  // carry real member-facing copy (the refusal when a tick would delete their own writing; "Where your ratings
+  // point") and were in NO section, so the transcript was quietly missing them rather than reporting them absent.
+  { title: 'The practice week & Playbook reads', files: ['lib/rewire/w3-entry.ts', 'lib/practice/mark.ts', 'app/momentum/week-grid.tsx', 'lib/playbook/reads.ts'] },
   { title: 'Grinta baseline (the 12-item survey)', files: ['lib/grinta/survey/instrument.ts'] },
   { title: 'Session & phase summaries ("Why this matters")', files: ['lib/content/summaries.ts'] },
   { title: 'Badges', files: ['lib/curriculum/registry.ts', 'app/badges/[memberId]/page.tsx'] },

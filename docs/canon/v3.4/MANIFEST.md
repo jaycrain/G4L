@@ -1,6 +1,6 @@
 # Canon — v3.4
 
-**Stamp:** `v3.4 · app @ 5520481`
+**Stamp:** `v3.4 · app @ 4beccec`
 
 Published by `scripts/publish-canon.mjs`. The destination is this repository, not a shared drive: a commit
 either contains every part or it does not, so a bundle can never again look complete while missing its
@@ -10,12 +10,12 @@ contents. Verify the checksums below before you start — if any row does not ma
 
 | Part | Bytes | sha256 (16) | What it is |
 | :-- | --: | :-- | :-- |
-| `member-transcript.md` | 74,584 | `857ede399de5bad4` | clean authored copy, reading order. **QUOTE FROM THIS.** |
-| `CHANGES.md` | 1,968 | `97e3269bdc4b3d89` | what the authored copy ADDED / REMOVED since the previous version. **START HERE.** |
-| `sync-note.md` | 7,130 | `d684ea51b05c3053` | the Marketing Alignment Brief — what changed in voice / naming / story / function. |
+| `member-transcript.md` | 76,020 | `02c5ee28fb27f5e4` | clean authored copy, reading order. **QUOTE FROM THIS.** |
+| `CHANGES.md` | 4,945 | `1e3583af242495ee` | what the authored copy ADDED / REMOVED since the previous version. **START HERE.** |
+| `sync-note.md` | 8,483 | `c0dfa4e40fb0a987` | the Marketing Alignment Brief — what changed in voice / naming / story / function. |
 | `voice-rules.md` | 15,059 | `318d9b69948035d9` | the brand + voice doc governing the DYNAMIC (model-generated) Companion copy. Describe, don't quote. |
-| `founder-emails.md` | 9,969 | `9753e4600363d6f2` | the Founder Agent's drafted messages. Samples are quotable; live drafts vary. Never auto-sent. |
-| `member-facing-strings.txt` | 510,717 | `145db10c2fb34f6f` | full raw dump, traceability backstop. **Do NOT quote** — contains system/model-instruction strings. |
+| `founder-emails.md` | 9,969 | `cf5358293a1b3abb` | the Founder Agent's drafted messages. Samples are quotable; live drafts vary. Never auto-sent. |
+| `member-facing-strings.txt` | 518,305 | `efe34a89deec68db` | full raw dump, traceability backstop. **Do NOT quote** — contains system/model-instruction strings. |
 | `screenshots/` | 12 files | — | key member surfaces at 1440px |
 
 ## Read in this order

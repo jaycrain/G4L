@@ -1,4 +1,4 @@
-# Strings EXCLUDED from the member transcript (app @ 5520481 · 2026-08-11)
+# Strings EXCLUDED from the member transcript (app @ 4beccec · 2026-08-12)
 # Not member copy: system prompts, multi-line fragments, code artifacts. Review when a real line goes missing.
 
 [lib/agent/onboarding-staged.ts] you’re trying to reclaim. We can always change it later.
@@ -176,7 +176,7 @@
 [lib/agent/reconnect.ts] ${name}, too — I'll hold that alongside the one you named. Both are part of it. Let's keep going.
 [lib/agent/reconnect.ts] Hold on — it sounds like you're taking me to ${to}, more than ${from}. Should we start there instead — is ${to} closer to where it really began?
 [lib/agent/reconnect.ts] ${xs.slice(0, -1).join(', ')}, and ${xs[xs.length - 1]}
-[lib/agent/reconnect.ts] Back at the start, you named what you want back — ${serveReclaim(wants)}. Let's stay with those a moment —
+[lib/agent/reconnect.ts] You've named what you want back — ${serveReclaim(wants)}. Let's stay with those a moment —
 [lib/agent/reconnect.ts] not a new list, the real weight of it. Of the things you named, which do you feel the distance from most right now?
 [lib/agent/reconnect.ts] That's your inventory — what it cost, how far the drift ran. Not to sit in — to push off from; I've kept it for
 [lib/agent/reconnect.ts] you.  Now we look the other way — at the version of you that's still in there.
@@ -199,8 +199,6 @@
 [lib/agent/reconnect.ts] Door(s) they named: ${doorNames.join(', ')}.
 [lib/agent/reconnect.ts] ${idLine} ${doorLine} Baseline shape: lowest area is ${DIM_FRIENDLY[shape.lowest]}; highest is ${DIM_FRIENDLY[shape.highest]}. Reflect this as their starting picture, tie the lowest to their Door(s) ONLY if it genuinely fits, and close warmly. No numbers, no grades.
 [lib/agent/reconnect.ts] ${idqClose()}${BEAT_SEP}${driftOpen(b.collected)}
-[lib/agent/reconnect.ts] here, and it won't show up on your dashboard. Same as before: just tell me how true each feels right now. 1—not
-[lib/agent/reconnect.ts] at all. 5—completely.
 [lib/agent/reconnect.ts] Just a number, 1 to 5 — how true does that feel right now?  ${checkpointDeliver(index)}
 [lib/agent/reconnect.ts] Call ONLY once you have GENUINELY drawn out the door — how it actually opened, the sequence, what it quietly
 [lib/agent/reconnect.ts] cost — and you have a real INSIGHT to reflect (the cost they normalized, how it targeted who they were, the
@@ -231,9 +229,11 @@
 [lib/agent/reconnect.ts] in THEIR words, OFFERED as a check they can reject, only when the material genuinely earns it. Pass slug (the
 [lib/agent/reconnect.ts] canonical Door to add). Set mechanical=true ONLY for a routine add that carries no real new understanding — when
 [lib/agent/reconnect.ts] it's a genuine re-seeing, leave it off.
-[lib/agent/reconnect.ts] The Door(s) they named at onboarding: ${doorNames.join(', ')}
+[lib/agent/reconnect.ts] Their Door(s) right now: ${names(doors)} (you do NOT know which of these were named at onboarding versus surfaced later — never say "you named these at the start")
+[lib/agent/reconnect.ts] Their Door(s) right now: ${names(doors)}
+[lib/agent/reconnect.ts] Surfaced in THIS conversation, NOT named at onboarding: ${names(surfacedHere)}. They did not walk in with this one — it came out of the work you just did together. Never say they named it at the start; if you summarise, credit it as something this conversation drew out.
 [lib/agent/reconnect.ts] How they first described the gap opening: ${c.gap!.trim()}
-[lib/agent/reconnect.ts] Their Reclaim List (what they're taking back — you HAVE this; never say you can't see it): ${reclaim.join('; ')}
+[lib/agent/reconnect.ts] Their Reclaim List as it stands today (what they're taking back — you HAVE this; never say you can't see it): ${reclaim.join('; ')}
 [lib/agent/reconnect.ts] MEMBER CONTEXT (what you already know — never say you don't): ${lines.join(' ')}
 [lib/agent/reconnect.ts] - ${d.displayName} (${d.slug}): ${d.descriptor}
 [lib/agent/reconnect.ts] does it feel like the real cost was X — or is that not it?
@@ -352,8 +352,7 @@
 [lib/agent/rewire.ts] Now Reframe — the true line for a bad day. You've written lines that answer your lies before; here's one for a
 [lib/agent/rewire.ts] slip: "A false start is the cost of changing, not proof I can't." Say it your way.
 [lib/agent/rewire.ts] in the goal you named. The campaign can't compete with a picture that real.
-[lib/agent/rewire.ts] Here's your work this week: don't try to change anything yet. Just notice. Go to the Momentum card on your
-[lib/agent/rewire.ts] dashboard every day and log your good calls, your false starts and the on-track days where not much happened.
+[lib/agent/rewire.ts] every day and log your good calls, your false starts and the on-track days where not much happened.
 [lib/agent/rewire.ts] that turns a slip into a comeback. That's Rewire. Next, we put it into the body.
 [lib/agent/rewire.ts] ?s| did| does)?\s+(that|this|it)\s+com|that
 [lib/agent/rewire.ts] Good — let's get it exactly how you'd say it.${BEAT_SEP}${reframeFallback(c)}
@@ -516,13 +515,18 @@
 [lib/agent/reclaim.ts] ${AUDIT_DOMAIN_LABEL[domainStart]} — ${AUDIT_DOMAIN_INTRO[domainStart]}  ${item.prompt}
 [lib/agent/reclaim.ts] And if you want an easier place to build momentum first, ${lever} is where you're most ready.
 [lib/agent/reclaim.ts] The ratings leaned toward ${AUDIT_DOMAIN_LABEL[s.primary]}; you chose ${AUDIT_DOMAIN_LABEL[chosen]}, and that's what we'll go with.
+[lib/agent/reclaim.ts] Second in line is ${AUDIT_DOMAIN_LABEL[s.secondary]} — worth knowing, not something to take on yet.
 [lib/agent/reclaim.ts] ${BEAT_SEP}You named what tends to get in the way: “${r.obstacle}”.
 [lib/agent/reclaim.ts] And the move you'd start with: “${r.earlyAction}”.
 [lib/agent/reclaim.ts] Here's what stands out. Your best next focus looks like your ${primary} life because it matters to you and
-[lib/agent/reclaim.ts] progress there would ripple into the rest of your life.${divergence}${leverLine}
+[lib/agent/reclaim.ts] progress there would ripple into the rest of your life.${divergence}${secondaryLine}${leverLine}
 [lib/agent/reclaim.ts] ${BEAT_SEP}This was about finding the priority, not judging any of it. It's saved — you can come back to it anytime.
 [lib/agent/reclaim.ts] ${p}  ${AUDIT_SUB_ISSUE_ASK[d]}  ${AUDIT_SUB_ISSUES[d].join(' · ')}
 [lib/agent/reclaim.ts] ${AUDIT_SORT_INTRO}${BEAT_SEP}${AUDIT_SORT_QUESTIONS[0]!.prompt}
+[lib/agent/reclaim.ts] Whichever of the four fits best — ${domainList('or')}.
+[lib/agent/reclaim.ts] There's no wrong pick here, and nothing is locked in by it — ${domainList('or')}.
+[lib/agent/reclaim.ts] ${q.prompt}${BEAT_SEP}${SORT_STUCK_HELP}
+[lib/agent/reclaim.ts] ${q.prompt}${BEAT_SEP}${SORT_CLARIFY}
 [lib/agent/reclaim.ts] A number from 1 to 10 — where would you put it?  ${auditDeliver(n)}
 [lib/agent/reclaim.ts] possible.
 [lib/agent/reclaim.ts] makes a day feel like yours. Let's start by defining your quality day.
@@ -570,7 +574,30 @@
 [lib/reclaim/bigger-world-instrument.ts] Coworker
 [lib/reclaim/bigger-world-instrument.ts] Visioning
 [lib/reclaim/bigger-world-instrument.ts] Mindfulness
+[lib/reclaim/bigger-world-instrument.ts] ${names.slice(0, -1).join(', ')}, ${conj} ${names.at(-1)}
 [lib/reclaim/bigger-world-instrument.ts] everything at once but to identify what matters most right now and where progress would create the biggest shift.
+[lib/reclaim/bigger-world-instrument.ts] The four areas, again: ${domainList('and')}.
+[lib/rewire/w3-entry.ts] entryDate
+[lib/rewire/w3-entry.ts] recordW3Entry failed for member=${memberId} date=${e.entryDate}:
+[lib/rewire/w3-entry.ts] w3_daily_entry.source
+[lib/practice/mark.ts] ${iso.slice(0, 10)}T00:00:00Z
+[lib/practice/mark.ts] delete from practice_mark where member_id=$1 and kind=$2 and commitment_id is null and marked_on=$3 returning id
+[lib/practice/mark.ts] insert into practice_mark (member_id, kind, marked_on, source) values ($1,$2,$3,$4) on conflict do nothing
+[lib/practice/mark.ts] select id from practice_commitment where member_id=$1 and kind=$2 and slot=$3
+[lib/practice/mark.ts] delete from practice_mark where member_id=$1 and commitment_id=$2 and marked_on=$3 returning id
+[app/momentum/week-grid.tsx] wk-grid${pending ? ' wk-saving' : ''}
+[app/momentum/week-grid.tsx] Today
+[app/momentum/week-grid.tsx] wk-cell${on ? ' on' : ''}${i === today ? ' today' : ''}${i > today ? ' ahead' : ''}${tappable ? '' : ' wk-readonly'}
+[app/momentum/week-grid.tsx] ${r.label} — day ${i + 1}${on ? ', logged' : ''}. Open your log.
+[app/momentum/week-grid.tsx] ${r.label} — day ${i + 1}${on ? ', done' : ''}
+[lib/playbook/reads.ts] read derivation failed, hiding one card:
+[lib/playbook/reads.ts] Moving your body: ${relativeAutonomyRead(a)}.
+[lib/playbook/reads.ts] Eating well: ${relativeAutonomyRead(d)}.
+[lib/playbook/reads.ts] Where you're strongest: ${lower(h.strongest)}.
+[lib/playbook/reads.ts] Where there's the most room: ${lower(h.growthEdge)}.
+[lib/playbook/reads.ts] The area you chose to focus on: your ${lower(primary)} life.
+[lib/playbook/reads.ts] Where your ratings point: your ${lower(primary)} life.
+[lib/playbook/reads.ts] Where momentum comes easiest: your ${lower(lever)} life.
 [lib/grinta/survey/instrument.ts] I have a general sense of what I am doing and why I am doing it
 [lib/grinta/survey/instrument.ts] B1Q2a
 [lib/grinta/survey/instrument.ts] B1Q2b
@@ -711,6 +738,7 @@
 [app/dashboard/triptych-center.tsx] come back N times
 [app/dashboard/triptych-center.tsx] tri-companion tri-navy${hasSent ? ' is-conversing' : ''}
 [app/dashboard/triptych-center.tsx] s the first line of the Companion
+[app/dashboard/triptych-center.tsx] s earlier call, because the generic forward line ("Here
 [app/dashboard/triptych-center.tsx] rmsg ${m.role}
 [app/dashboard/triptych-center.tsx] Thinking…
 [app/dashboard/triptych-center.tsx] t scroll, plus there
@@ -763,25 +791,20 @@
 [app/dashboard/resilience-pulse.tsx] 0.4rem 0 0
 [app/momentum/[memberId]/page.tsx] Movement
 [app/momentum/[memberId]/page.tsx] Eating
-[app/momentum/[memberId]/page.tsx] ${t.good} good
-[app/momentum/[memberId]/page.tsx] ${t.false} false start${t.false === 1 ? '' : 's'}
 [app/momentum/[memberId]/page.tsx] Today
 [app/momentum/[memberId]/page.tsx] T00:00:00
 [app/momentum/[memberId]/page.tsx] T00:00:00
 [app/momentum/[memberId]/page.tsx] Yesterday
 [app/momentum/[memberId]/page.tsx] momentum.pulseBeats
-[app/momentum/[memberId]/page.tsx] momentum.callsByDay
-[app/momentum/[memberId]/page.tsx] momentum.commitmentTexts
-[app/momentum/[memberId]/page.tsx] momentum.domainTally
 [app/momentum/[memberId]/page.tsx] momentum.recentCalls
 [app/momentum/[memberId]/page.tsx] Momentum
-[app/momentum/[memberId]/page.tsx] What you’re holding yourself to
-[app/momentum/[memberId]/page.tsx] Movement
-[app/momentum/[memberId]/page.tsx] Eating
+[app/momentum/[memberId]/page.tsx] pure repetition of the Playbook, seems unnecessary
+[app/momentum/[memberId]/page.tsx] What you're holding yourself to
 [app/momentum/[memberId]/page.tsx] mlog-row is-${c.type}
-[app/momentum/momentum-log.tsx] momentum-domain-btn${domain === 'activity' ? ' is-on' : ''}
-[app/momentum/momentum-log.tsx] momentum-domain-btn${domain === 'diet' ? ' is-on' : ''}
-[app/momentum/momentum-log.tsx] momentum-log-btn is-${o.type}
+[app/momentum/momentum-log.tsx] Log it
+[app/momentum/momentum-log.tsx] momentum-log-btn is-${o.type}${picked === o.type ? ' is-picked' : ''}
+[app/momentum/momentum-log.tsx] Logging…
+[app/momentum/momentum-log.tsx] Log it
 [app/score/[memberId]/page.tsx] Physical
 [app/score/[memberId]/page.tsx] Self
 [app/score/[memberId]/page.tsx] Social
@@ -897,6 +920,10 @@
 [app/playbook/[memberId]/redesign-playbook-view.tsx] Playbook
 [app/playbook/[memberId]/redesign-playbook-view.tsx] pb-tab${tab === t.key ? ' on' : ''}
 [app/playbook/[memberId]/redesign-playbook-view.tsx] Who you are
+[app/playbook/[memberId]/redesign-playbook-view.tsx] s call: "hell yes that
+[app/playbook/[memberId]/redesign-playbook-view.tsx] s not too much to ask. And exactly what we
+[app/playbook/[memberId]/redesign-playbook-view.tsx] Day ${grids[0]!.day} of 7. A blank day is a day — this is for noticing what helps, never a score.
+[app/playbook/[memberId]/redesign-playbook-view.tsx] ${grids.length} weeks running. A blank day is a day — this is for noticing what helps, never a score.
 [app/playbook/[memberId]/redesign-playbook-view.tsx] 0 ? c.items.map(entryCard) :
 [app/playbook/[memberId]/redesign-playbook-view.tsx] Waiting on you
 [app/account/page.tsx] select display_name, email, avatar_url from member_profile where member_id = $1
