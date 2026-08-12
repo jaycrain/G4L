@@ -143,6 +143,18 @@ export const MIGRATIONS: Array<{ file: string; sentinel: Sentinel }> = [
   // 0076 adds a column to TWO tables. The sentinel is the SECOND one, so a run that got half way still reads as
   // unapplied and gets re-run — the same rule as 0072/0073, and the reason the checker derives from this file.
   { file: 'migrations/0076_tracker_source.sql', sentinel: { table: 'quality_day_log', column: 'source' } },
+  // 0077 changes DATA, not shape, so there is no table or column to look for. The sentinel asks the question the
+  // migration exists to answer: is any jsonb still a scalar string? On a fresh database the answer is trivially no
+  // (no rows), so it is skipped — correct, since there is nothing to unwrap.
+  {
+    file: 'migrations/0077_unwrap_double_encoded_jsonb.sql',
+    sentinel: {
+      sql: `select not exists (
+              select 1 from coaching_plan where jsonb_typeof(payload) = 'string'
+              union all select 1 from bigger_world_reading where jsonb_typeof(priorities) = 'string'
+            ) as e`,
+    },
+  },
 ];
 export const SEED_SQL = () => sqlFile('seed/0001_reference_data.sql');
 
