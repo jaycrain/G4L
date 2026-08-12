@@ -78,3 +78,4 @@ test('accepting the offered bad-day line is never stored as a new one', () => {
   for (const line of ["I'm not broken but I'm tired", 'I am still that guy', "That's the whole reason I ride"])
     assert.ok(isMemberContent(line), `"${line}" is the member writing, not accepting`);
 });
+

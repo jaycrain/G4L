@@ -1259,7 +1259,15 @@ html:has(.companion-hero), body:has(.companion-hero) { overflow-anchor: none; }
 .wk-cell.on { background: var(--olive-text); border-color: var(--olive-text); color: #fff; }
 .wk-cell.today { border: 2px solid var(--teal); }
 .wk-cell.ahead { background: #fafaf9; border-color: #f1efee; cursor: default; }
-.wk-cell.wk-readonly { cursor: default; }          /* W3/C3 mirror a log with the member's own notes — never editable from here */
+/* A MIRROR CELL MUST NOT LOOK LIKE A CONTROL. W3/C3 mirror a log written elsewhere and were only marked by
+   `cursor: default` — which is nothing on a phone, and nothing at all on the TODAY cell, since that kept the solid
+   2px teal ring a live control uses. Jay tapped it and nothing happened ("Can't get the click to stick in this
+   one"). The ring stays, because today is worth marking, but it goes DASHED — the same "not yet / not yours to
+   press" language the locked badge tiles already use — over a faintly recessed face. Where the record IS made is
+   said underneath the grid, and for C3 also by its "Log today →" link. */
+.wk-cell.wk-readonly { cursor: default; background: #fbfbfa; }
+.wk-cell.wk-readonly.today { border: 2px dashed var(--teal); }
+.wk-cell.wk-readonly.on { background: var(--olive-text); }  /* a logged day still reads as logged, not as disabled */
 /* ...unless the mirror has somewhere to send them. A C3 cell is an <a> to /quality-day: not editable in place, but no
    longer a dead box either. It has to sit like the <button> it replaces — an anchor is inline and would otherwise
    collapse the cell and drop the ✓ off centre. */
