@@ -1,0 +1,24 @@
+-- 0078 — THE MEMBER'S TIMEZONE.
+--
+-- There was none, anywhere, so every date decision in the product ran on UTC: `today` in the Companion's context
+-- (server local, which is UTC on Vercel), `current_date` in Postgres (which stamps a Quality Day, a W3 entry, a
+-- momentum call), and dateForDay (which column of the week grid a tick lands on).
+--
+-- For a member in Denver that means ANYTHING AFTER 6PM LOCAL WAS RECORDED AS TOMORROW. Nothing errored; the day
+-- was just wrong, streaks broke in the wrong place, and "did I mark today" answered no when they had. Confirmed
+-- against Jay's own rows — his C3 close reads 2026-08-12T00:42Z, which was 6:42pm on the 11th where he was.
+--
+-- AN IANA NAME, NEVER AN OFFSET. Boulder is UTC-6 in August and UTC-7 in December. A stored offset is correct for
+-- half the year, which is worse than storing nothing, because it looks right whenever you check it in summer.
+--
+-- NULLABLE, NO DEFAULT, NO BACKFILL. Null means "we have not detected this member's zone yet" and falls back to
+-- UTC — exactly the behaviour they have today, so nobody is made worse off by the column existing. Filling it
+-- with a guess would be inventing a fact about where someone lives.
+--
+-- EXISTING ROWS KEEP THEIR UTC DATES (Jay's call). We do not shift history to fix a display: a mark a member made
+-- is a mark they made, and re-dating their record to tidy a grid is how you lose their trust in it.
+--
+-- This is member data — it says something about where a person is — so it stays behind the same RLS as the rest
+-- of member_profile, and it is used ONLY to decide what day it is for them.
+
+alter table member_profile add column if not exists timezone text; -- IANA, e.g. 'America/Denver'

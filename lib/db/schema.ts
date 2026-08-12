@@ -155,6 +155,7 @@ export const MIGRATIONS: Array<{ file: string; sentinel: Sentinel }> = [
             ) as e`,
     },
   },
+  { file: 'migrations/0078_member_timezone.sql', sentinel: { table: 'member_profile', column: 'timezone' } },
 ];
 export const SEED_SQL = () => sqlFile('seed/0001_reference_data.sql');
 
