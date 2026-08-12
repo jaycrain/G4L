@@ -273,7 +273,17 @@ async function memberRenders(db: Db, memberId: string): Promise<Record<string, u
     const open = await activePracticeWeeks(db, memberId);
     // Every OPEN week, so a week that opened and then rendered nothing is visible as the gap between the two lists
     // rather than as an absence you have to notice.
-    out.open_weeks = open.map((w) => ({ kind: w.kind, day: w.day }));
+    // The WINDOW, not just the day. "day 2" alone is unreadable once a week can be 6 days or 7 and can be a
+    // partial first stub — and this endpoint is how prod gets inspected at all, so an instrument that reports
+    // half the model is how the next wrong date goes unnoticed.
+    out.open_weeks = open.map((w) => ({
+      kind: w.kind,
+      day: w.day,
+      startedOn: w.startedOn,
+      window: { start: w.window.start, end: w.window.end, days: w.window.days, partial: w.window.partial },
+      reviewOn: w.run.main.end,
+      prior: w.prior ? { start: w.prior.start, end: w.prior.end, days: w.prior.days } : null,
+    }));
   } catch (e) {
     out.open_weeks = { ERROR: (e as Error).message };
   }
@@ -283,6 +293,24 @@ async function memberRenders(db: Db, memberId: string): Promise<Record<string, u
     out.quality_day_profile = p ? { elements: profileElements(p), disruptors: p.disruptors } : null;
   } catch (e) {
     out.quality_day_profile = { ERROR: (e as Error).message };
+  }
+  try {
+    // WHAT DAY IS IT FOR THIS MEMBER — the first question behind any wrong-date report, and until now the only
+    // way to answer it was to read their zone out of the profile blob and do the arithmetic by hand.
+    const { memberZone } = await import('../time/zone-store.ts');
+    const { localDate } = await import('../time/member-clock.ts');
+    const zone = await memberZone(db, memberId);
+    const now = new Date();
+    out.member_clock = {
+      zone: zone ?? null, // null = never detected; everything falls back to UTC, which is the pre-0078 behaviour
+      today: localDate(zone, now),
+      utc_today: localDate(null, now),
+      // The two disagree for part of every day west of Greenwich. When they do, a date that looks "off by one"
+      // is this, and is expected.
+      diverged: localDate(zone, now) !== localDate(null, now),
+    };
+  } catch (e) {
+    out.member_clock = { ERROR: (e as Error).message };
   }
   out.jsonb_shape = await jsonbShape(db, memberId);
   out.jsonb_binding = await jsonbBinding(db);
