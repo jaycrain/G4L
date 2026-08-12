@@ -5,7 +5,6 @@ import { authorizeMember } from '../../authz.ts';
 import { logEvent } from '../../../lib/telemetry/store.ts';
 import { rewireEnabled } from '../../../lib/agent/rewire.ts';
 import { pulseBeats, recentCalls, domainTally, type CallType, type CallDomain } from '../../../lib/momentum/store.ts';
-import { weekGrid } from '../../../lib/practice/grid.ts';
 import { practicePanelLine } from '../../../lib/practice/store.ts';
 import { commitmentTexts } from '../../../lib/commitments/store.ts';
 import ResiliencePulse from '../../dashboard/resilience-pulse.tsx';
@@ -19,14 +18,6 @@ const DOMAIN_LABEL: Record<CallDomain, string> = { activity: 'Movement', diet: '
 
 // A warm, non-scoreboard progress line for one commitment (last two weeks of tagged calls). Never a grade — a false
 // start is honest data; "nothing logged yet" is neutral, not a scold.
-function commitmentProgress(tally: { activity: { good: number; false: number }; diet: { good: number; false: number } } | null, domain: 'activity' | 'diet'): string {
-  const t = tally?.[domain];
-  if (!t || (t.good === 0 && t.false === 0)) return 'nothing logged yet';
-  const parts: string[] = [];
-  if (t.good) parts.push(`${t.good} good`);
-  if (t.false) parts.push(`${t.false} false start${t.false === 1 ? '' : 's'}`);
-  return parts.join(' · ');
-}
 
 // "Today" / "Yesterday" / a short date — a friendly day label for the history, from a YYYY-MM-DD string vs. today.
 function dayLabel(loggedOn: string, todayISO: string): string {
@@ -51,12 +42,7 @@ export default async function MomentumPage({ params }: { params: Promise<{ membe
   const commitmentsRaw = await softRead('momentum.commitmentTexts', memberId, () => commitmentTexts(db, memberId), {} as { activity?: string; diet?: string });
   const commitments: Commitments | null = commitmentsRaw.activity || commitmentsRaw.diet ? commitmentsRaw : null;
   // Per-commitment progress (last two weeks) — how each is actually going, reflected warmly (never a scoreboard).
-  const tally = commitments ? await softRead('momentum.domainTally', memberId, () => domainTally(db, memberId), null) : null;
   // W-25 — the active practice week's "this week" line, shown here as context (Momentum is its home now, not the hero).
-  const practiceLine = await practicePanelLine(db, memberId);
-  // Greg's week grid — rows × 7 days, right under the "this week" line it elaborates. weekGrid degrades to null on a
-  // missing 0072 or a read hiccup, so the panel renders normally on a DB that hasn't caught up.
-  const grid = await weekGrid(db, memberId);
   // The member's own log — where every call they make gets saved (Jay: "where does this get placed?").
   const log = await softRead('momentum.recentCalls', memberId, () => recentCalls(db, memberId), []);
   const todayISO = new Date().toISOString().slice(0, 10);
@@ -74,36 +60,24 @@ export default async function MomentumPage({ params }: { params: Promise<{ membe
         <p>A single day tells you very little. A few weeks of them tell you what your rhythm actually is, which is the thing worth knowing while you’re still building it.</p>
         <p>You can log here, or just say it to your Companion. It reads everything on this page, so you can ask it what it’s seeing.</p>
       </div>
+      {/* THREE BLOCKS REMOVED HERE (Jay, 2026-08-12: "pure repetition of the Playbook, seems unnecessary").
+          The week grid moved to the Playbook's This week tab on 2026-08-08 and these were what got left behind:
+          a status line about the week, a pointer to where the week now lives, and the member's commitments with
+          counts beside them.
+
+          The first two are signposts to a place the dashboard's Playbook panel already links to — a third
+          signpost is not navigation, it is noise.
+
+          The third was worse than repetition. "What you're holding yourself to" listed the same two commitments
+          the Playbook's grid shows as rows, with a count beside each — but the count here came from momentum
+          CALLS tagged to that domain, while the grid counts practice MARKS. So a member who ticked both boxes
+          this morning read "nothing logged yet" here and "1" there, about the same commitment on the same day.
+          Two numbers that look like the same number and are not. Deleting the surface removes the contradiction;
+          if a commitment ever needs a count outside the grid, it has to come from the grid's own source.
+
+          Momentum keeps its own job, which Jay and Greg reached independently: the LONG view — the cross-cycle
+          rhythm you return to — not a second copy of this week. */}
       <div className="card">
-        {practiceLine && <p className="practice-strip">{practiceLine}</p>}
-        {/* THE WEEK GRID MOVED TO THE PLAYBOOK'S "This week" TAB (2026-08-08). It belongs in the instrument you
-            plan FROM, not in a separate tool — and showing the same week in two places is worse than either
-            arrangement, which is why the move and the new tab landed in one commit.
-            Momentum keeps its own job, which Jay and Greg reached independently: it is the LONG view — the
-            cross-cycle tracker you RE-TURN to after Cycle 1 — not the daily surface. A pointer, not a duplicate. */}
-        {grid && (
-          <a className="pb-waiting" href={`/playbook/${memberId}?tab=thisweek`}>
-            <span className="pb-waiting-n">{grid.day}</span>
-            <span>Day {grid.day} of 7 — your week lives in your Playbook now</span>
-            <span aria-hidden="true">→</span>
-          </a>
-        )}
-        {commitments && (
-          <div className="commitment-progress">
-            <div className="commitment-progress-h">What you’re holding yourself to</div>
-            <ul className="commitment-progress-list">
-              {(['activity', 'diet'] as const).map((d) =>
-                commitments[d] ? (
-                  <li key={d}>
-                    <span className="cp-domain">{d === 'activity' ? 'Movement' : 'Eating'}</span>
-                    <span className="cp-text">{commitments[d]}</span>
-                    <span className="cp-count">{commitmentProgress(tally, d)}</span>
-                  </li>
-                ) : null,
-              )}
-            </ul>
-          </div>
-        )}
         <ResiliencePulse beats={beats} />
         <MomentumLog memberId={memberId} commitments={commitments} />
       </div>

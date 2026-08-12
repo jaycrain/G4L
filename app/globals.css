@@ -1016,7 +1016,10 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .metric .metric-body { flex: 1; }
 .metric .metric-center { display: flex; flex-direction: column; align-items: center; justify-content: center; }
 .metric .metric-foot { font-size: 0.8rem; margin-top: 0.7rem; }
-.see-more { margin-top: 0.9rem; align-self: flex-start; font-size: 0.85rem; font-weight: 600; color: var(--teal-text); text-decoration: none; }
+/* 700, not 600: this is the panel's one action, and at 0.85rem a 600 reads as body weight rather than as
+   something to press. Changed on the CLASS, not on one link — every panel's foot link is the same affordance and
+   they should not start diverging (docs/dashboard-ui-standards.md). */
+.see-more { margin-top: 0.9rem; align-self: flex-start; font-size: 0.85rem; font-weight: 700; color: var(--teal-text); text-decoration: none; }
 .see-more:hover { text-decoration: underline; }
 /* Connect CTAs: quiet teal text like .see-more, for buttons and links (Reply stays a real button). */
 .connect-cta { background: none; border: none; border-radius: 0; padding: 0; margin: 0; font: inherit; font-size: 0.85rem; font-weight: 600; color: var(--teal-text); text-decoration: none; cursor: pointer; }
@@ -2086,7 +2089,7 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
 .pb-tabframe > .pb-card { border: 0; border-radius: 0; margin: 0; }
 /* Several chapters can render inside one tab — a hairline keeps them apart now the boxes are gone. */
 .pb-tabframe > .pb-card + .pb-card { border-top: 1px solid var(--grey); }
-.pb-tabs { display: flex; gap: 6px; overflow-x: auto; padding: 12px 12px 0; margin: 0 0 12px; border-bottom: 1px solid var(--grey);
+.pb-tabs { display: flex; gap: 6px; overflow-x: auto; padding: 12px; margin: 0 0 12px; border-bottom: 1px solid var(--grey);
   -webkit-overflow-scrolling: touch; scrollbar-width: none; }
 .pb-tabs::-webkit-scrollbar { display: none; }
 /* SQUARED, like every other control (Jay, 2026-08-11: "we've had you change every pill you started with to our

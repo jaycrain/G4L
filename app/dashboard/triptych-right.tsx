@@ -78,7 +78,7 @@ export default async function TriptychRight({
               <span>{waitingCount === 1 ? 'thing you said is waiting' : 'things you said are waiting'}</span>
             </Link>
           )}
-          <Link href={`/playbook/${memberId}`} className="see-more" prefetch={false}>Open your Playbook →</Link>
+          <Link href={`/playbook/${memberId}`} className="see-more" prefetch={false}>Open Your Playbook →</Link>
         </div>
       )}
 
