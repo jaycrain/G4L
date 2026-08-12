@@ -19,6 +19,7 @@
 
 import type { Db } from '../db/schema.ts';
 import { tagBestEffort } from '../db/best-effort.ts';
+import { memberToday } from '../time/zone-store.ts';
 
 export type W3Entry = {
   entryDate: string; // YYYY-MM-DD
@@ -47,7 +48,7 @@ const clean = (s: string | null | undefined): string | null => {
  *  is a form they opened, and writing it would mark the day on the grid without the member having said anything. */
 export async function recordW3Entry(db: Db, memberId: string, input: W3EntryInput): Promise<boolean> {
   const e: W3Entry = {
-    entryDate: input.entryDate ?? new Date().toISOString().slice(0, 10),
+    entryDate: input.entryDate ?? (await memberToday(db, memberId)),
     goodCalls: clean(input.goodCalls),
     falseStarts: clean(input.falseStarts),
     triggerSlot: clean(input.triggerSlot),
@@ -97,9 +98,9 @@ export async function w3Entries(db: Db, memberId: string, days = 7): Promise<W3E
     }>(
       `select entry_date::text as entry_date, good_calls, false_starts, trigger_slot, old_voice, recovery_used, reflection
          from w3_daily_entry
-        where member_id = $1 and entry_date > current_date - ($2 || ' days')::interval
+        where member_id = $1 and entry_date > ($3::date - ($2 || ' days')::interval)
         order by entry_date desc`,
-      [memberId, String(days)],
+      [memberId, String(days), await memberToday(db, memberId)],
     );
     return rows.map((r) => ({
       entryDate: r.entry_date,

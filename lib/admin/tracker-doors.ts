@@ -21,6 +21,11 @@ import type { Db } from '../db/schema.ts';
 
 export type DoorCount = { tracker: string; source: string; days: number };
 
+// `current_date` HERE IS DELIBERATE — one of the few places it survives the member-timezone pass (2026-08-12).
+// This is a 30-day aggregate across ALL members, so there is no single person whose zone applies; a six-hour
+// boundary shift on a 30-day count changes nothing about "do members tap or tell". Per-MEMBER windows are a
+// different matter and all moved to memberToday(). If this ever narrows to one member, it moves too.
+
 /** Days logged per tracker per door, over the last N days. Drift-hardened — a hiccup hides the card, not the page. */
 export async function trackerDoors(db: Db, days = 30): Promise<DoorCount[]> {
   try {

@@ -4,6 +4,7 @@
 // built from; if a member has none, the engine holds (never invents a reason to reach out). Ordering is trigger-biased
 // (a reclaim_milestone leads with the list; a post_log leads with the pattern) but the set is always real data.
 
+import { memberToday } from '../time/zone-store.ts';
 import type { Db } from '../db/schema.ts';
 import type { Provenance, OutreachTrigger } from './config.ts';
 import { activeCommitments } from '../commitments/store.ts';
@@ -63,9 +64,11 @@ function describeCalls(counts: Record<string, number>): string | null {
 export async function momentumPattern(db: Db, memberId: string): Promise<Provenance[]> {
   const { rows } = await db.query<{ type: string; n: string }>(
     `select type, count(*)::text n from momentum_call
-      where member_id = $1 and logged_on >= current_date - 7
+      where member_id = $1 and logged_on >= $2::date - 7
       group by type`,
-    [memberId],
+    // Seven of the MEMBER'S days. On UTC this said "the last 7 days" while quietly meaning something else to
+    // anyone west of Greenwich, and outreach quotes the count back to them as fact.
+    [memberId, await memberToday(db, memberId)],
   );
   const counts: Record<string, number> = {};
   for (const r of rows) counts[r.type] = Number(r.n);
@@ -83,9 +86,9 @@ export async function commitmentSources(db: Db, memberId: string): Promise<Prove
   if (!commitments.length) return [];
   const { rows } = await db.query<{ domain: string; type: string; n: string }>(
     `select domain, type, count(*)::text n from momentum_call
-      where member_id = $1 and logged_on >= current_date - 6 and domain in ('activity','diet') and type in ('good_call','false_start')
+      where member_id = $1 and logged_on >= $2::date - 6 and domain in ('activity','diet') and type in ('good_call','false_start')
       group by domain, type`,
-    [memberId],
+    [memberId, await memberToday(db, memberId)],
   );
   const good: Record<string, number> = {}, bad: Record<string, number> = {};
   for (const r of rows) (r.type === 'good_call' ? good : bad)[r.domain] = Number(r.n);

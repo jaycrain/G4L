@@ -1,4 +1,5 @@
 import { softRead } from '../../../lib/db/degrade.ts';
+import { memberToday } from '../../../lib/time/zone-store.ts';
 import { notFound, redirect } from 'next/navigation';
 import { getDb } from '../../../lib/db/index.ts';
 import { authorizeMember } from '../../authz.ts';
@@ -44,7 +45,7 @@ export default async function MomentumPage({ params }: { params: Promise<{ membe
   // W-25 — the active practice week's "this week" line, shown here as context (Momentum is its home now, not the hero).
   // The member's own log — where every call they make gets saved (Jay: "where does this get placed?").
   const log = await softRead('momentum.recentCalls', memberId, () => recentCalls(db, memberId), []);
-  const todayISO = new Date().toISOString().slice(0, 10);
+  const todayISO = await memberToday(db, memberId); // the MEMBER'S day, not the server's UTC one
 
   return (
     <SubpageShell memberId={memberId}>

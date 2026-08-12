@@ -5,6 +5,7 @@
 // REWIRE at the callers; prod stays v2.
 
 import type { Db } from '../db/schema.ts';
+import { memberToday } from '../time/zone-store.ts';
 import type { PulseBeat, PulseKind } from '../dashboard/resilience-pulse.ts';
 
 export type CallType = 'good_call' | 'false_start' | 'quiet_day';
@@ -26,8 +27,8 @@ export async function logCall(
 ): Promise<{ ok: boolean; type: CallType }> {
   await db.query(
     `insert into momentum_call (member_id, type, logged_on, note, domain, source)
-     values ($1, $2, coalesce($3::date, current_date), $4, $5, $6)`,
-    [memberId, c.type, c.loggedOn ?? null, c.note?.trim() || null, c.domain ?? null, c.source],
+     values ($1, $2, $3::date, $4, $5, $6)`,
+    [memberId, c.type, c.loggedOn ?? (await memberToday(db, memberId)), c.note?.trim() || null, c.domain ?? null, c.source],
   );
   return { ok: true, type: c.type };
 }
@@ -59,9 +60,9 @@ export async function pulseBeats(db: Db, memberId: string, days = MOMENTUM_WINDO
     await db.query<{ type: CallType }>(
       `select type
          from momentum_call
-        where member_id = $1 and logged_on >= current_date - ($2::int - 1)
+        where member_id = $1 and logged_on >= ($3::date - ($2::int - 1))
         order by logged_on asc, created_at asc`,
-      [memberId, days],
+      [memberId, days, await memberToday(db, memberId)],
     )
   ).rows;
   return rows.map((r) => ({ kind: callKind(r.type) }));
@@ -76,10 +77,10 @@ export async function domainTally(db: Db, memberId: string, days = MOMENTUM_WIND
     await db.query<{ domain: string; type: string; n: number }>(
       `select domain, type, count(*)::int as n
          from momentum_call
-        where member_id = $1 and logged_on >= current_date - ($2::int - 1)
+        where member_id = $1 and logged_on >= ($3::date - ($2::int - 1))
           and domain in ('activity', 'diet') and type in ('good_call', 'false_start')
         group by domain, type`,
-      [memberId, days],
+      [memberId, days, await memberToday(db, memberId)],
     )
   ).rows;
   const t: DomainTally = { activity: { good: 0, false: 0 }, diet: { good: 0, false: 0 } };
@@ -122,10 +123,10 @@ export async function callsByDay(db: Db, memberId: string, days: number): Promis
   const { rows } = await db.query<{ day: string; type: CallType; n: number }>(
     `select logged_on::text as day, type, count(*)::int as n
        from momentum_call
-      where member_id = $1 and logged_on >= current_date - ($2::int - 1)
+      where member_id = $1 and logged_on >= ($3::date - ($2::int - 1))
       group by logged_on, type
       order by logged_on asc`,
-    [memberId, Math.max(1, Math.floor(days))],
+    [memberId, Math.max(1, Math.floor(days)), await memberToday(db, memberId)],
   );
   const byDay = new Map<string, DayCount>();
   for (const r of rows) {

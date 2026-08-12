@@ -3,6 +3,7 @@
 // starting value toward a target. The Member Agent creates measures and logs readings; the dashboard
 // renders them. Measures never touch the ID Score or GRINTA! Index — their own surface.
 import type { Db } from '../db/schema.ts';
+import { memberToday } from '../time/zone-store.ts';
 
 export type MeasureDirection = 'down' | 'up';
 
@@ -271,10 +272,11 @@ export async function archiveMeasure(
 }
 
 async function upsertReading(db: Db, memberId: string, measureId: string, value: number, notedOn?: string) {
-  const day = notedOn && /^\d{4}-\d{2}-\d{2}$/.test(notedOn) ? notedOn : null;
+  // The MEMBER'S today. Was `coalesce($4::date, current_date)` — UTC — so an evening reading landed on tomorrow.
+  const day = notedOn && /^\d{4}-\d{2}-\d{2}$/.test(notedOn) ? notedOn : await memberToday(db, memberId);
   await db.query(
     `insert into measure_reading (measure_id, member_id, value, noted_on)
-     values ($1,$2,$3, coalesce($4::date, current_date))
+     values ($1,$2,$3, $4::date)
      on conflict (measure_id, noted_on) do update set value = excluded.value, created_at = now()`,
     [measureId, memberId, value, day],
   );

@@ -1,6 +1,8 @@
 'use server';
 
 import { softRead } from '../../lib/db/degrade.ts';
+import { memberToday } from '../../lib/time/zone-store.ts';
+import { addDays, longDate, shortDate } from '../../lib/time/member-clock.ts';
 import { groundToMemberWords } from '../../lib/agent/member-words.ts';
 import { getDb } from '../../lib/db/index.ts';
 import { heroCard } from '../../lib/dashboard/hero-card.ts';
@@ -125,10 +127,13 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
   // there in the log (Jay's walk: 4 Good Calls logged, companion blind, because the context had collapsed to minimal).
   const momentumCalls = await softRead('checkin.recentCalls', memberId, () => recentCalls(db, memberId, 12), []);
   const activeCmts = await activeCommitments(db, memberId).catch(() => []);
-  const todayISO = new Date().toLocaleDateString('en-CA');
-  const yestISO = new Date(Date.now() - 86_400_000).toLocaleDateString('en-CA');
+  // THE MEMBER'S date, read once and used for every date decision in this context. Was the server's — which is
+  // UTC on Vercel — so after 6pm in Boulder the Companion called a call logged an hour ago "yesterday", and told
+  // the member it was already tomorrow.
+  const todayISO = await memberToday(db, memberId);
+  const yestISO = addDays(todayISO, -1);
   const whenLabel = (iso: string): string =>
-    iso === todayISO ? 'today' : iso === yestISO ? 'yesterday' : new Date(`${iso}T00:00:00`).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    iso === todayISO ? 'today' : iso === yestISO ? 'yesterday' : shortDate(iso);
   // The Companion must speak the label the member SEES. The stored enum is still `quiet_day`; the word is "On Track".
   const CALL_LABEL = { good_call: 'Good Call', false_start: 'False Start', quiet_day: 'On Track' } as const;
   const momentumLog = momentumCalls.length
@@ -154,9 +159,11 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
     reclaimList: dash.reclaimList,
     momentumLog,
     commitments,
-    // `today` depends on NO db read, so it is free to always supply. Omitting it here let the prompt's
-    // "NEVER GUESS THE DATE" instruction fire with no date — risking a mis-dated reading/milestone. (CAT-39)
-    today: new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }),
+    // `today` is ALWAYS supplied, even here in the degraded path. Omitting it let the prompt's "NEVER GUESS THE
+    // DATE" instruction fire with no date — risking a mis-dated reading/milestone. (CAT-39) It now costs one
+    // indexed read (the member's zone), but memberToday cannot throw: a failed zone read falls back to UTC,
+    // which is exactly the behaviour this line had before.
+    today: longDate(todayISO),
   };
   try {
   // "best-effort" but was UNGUARDED — and it runs a memory-fold (API/query) BEFORE everything else, so if it threw it
@@ -251,7 +258,7 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
   const activePhaseKey = forecast.phases.find((p) => p.status === "You're here")?.phase ?? null;
   const nextStep = forecast.current ? { title: forecast.current.title, kind: forecast.current.kind, openable: forecast.current.openable } : null;
   // Today's Daily Beat — so the companion knows the reflection on their dashboard if they bring it up.
-  const dailyBeat = (await getDailyBeat(db, memberId, activePhaseKey, new Date().toLocaleDateString('en-CA')).catch(() => null))?.text ?? null;
+  const dailyBeat = (await getDailyBeat(db, memberId, activePhaseKey, todayISO).catch(() => null))?.text ?? null;
 
   // Pillar 2 — change-detection: diff the member's key signals against the last interaction's
   // snapshot, then persist the new snapshot for next time. So the companion notices what moved.
@@ -308,7 +315,7 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
   const movementLog = redesignEnabled() ? await movementLogSummary(db, memberId).catch(() => '') : '';
   // momentumLog + commitments were computed UP FRONT (folded into `minimal` too) — see the top of buildContext.
   return {
-    today: new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }),
+    today: longDate(todayISO),
     // Earned badges — member-visible, so agent-visible (CLAUDE.md cornerstone). Names only. (CAT-37)
     earnedBadges: passport.badges.filter((b) => b.earned).map((b) => b.name),
     // The SAME standing update the member is reading above the thread — recomputed here rather than passed in,

@@ -6,6 +6,7 @@
 import type { Db } from '../db/schema.ts';
 import { readJson, payloadKind } from '../db/jsonb.ts';
 import { tagBestEffort } from '../db/best-effort.ts';
+import { memberToday } from '../time/zone-store.ts';
 
 export type QualityDayProfile = {
   nonNegotiables: string[]; // top 3 — a day is hard to call "quality" without these
@@ -95,14 +96,14 @@ export async function logQualityDay(
     // THE MEMBER'S RECORD KNOWS NOTHING ABOUT TELEMETRY. `source` is tagged on afterwards, best-effort, so a column
     // that has not been migrated yet costs a measurement and never their day. See lib/db/best-effort.ts.
     `insert into quality_day_log (member_id, logged_on, score, present, most_valuable, most_missing)
-     values ($1, coalesce($2::date, current_date), $3, $4::text::jsonb, $5, $6)
+     values ($1, $2::date, $3, $4::text::jsonb, $5, $6)
      on conflict (member_id, logged_on) do update set
        score = excluded.score, present = excluded.present,
        most_valuable = excluded.most_valuable, most_missing = excluded.most_missing, updated_at = now()`,
-    [memberId, entry.loggedOn ?? null, entry.score, JSON.stringify(entry.present ?? []), entry.mostValuable?.trim() || null, entry.mostMissing?.trim() || null],
+    [memberId, entry.loggedOn ?? (await memberToday(db, memberId)), entry.score, JSON.stringify(entry.present ?? []), entry.mostValuable?.trim() || null, entry.mostMissing?.trim() || null],
   );
-  await tagBestEffort(db, 'quality_day_log.source', `update quality_day_log set source=$3 where member_id=$1 and logged_on=coalesce($2::date, current_date)`,
-    [memberId, entry.loggedOn ?? null, entry.source ?? 'form']);
+  await tagBestEffort(db, 'quality_day_log.source', `update quality_day_log set source=$3 where member_id=$1 and logged_on=$2::date`,
+    [memberId, entry.loggedOn ?? (await memberToday(db, memberId)), entry.source ?? 'form']);
   return { ok: true };
 }
 
@@ -118,9 +119,11 @@ export async function recentQualityDays(db: Db, memberId: string, days = 7): Pro
       // grid put a Quality Day in the wrong column and the date was the reason.)
       `select logged_on::text as logged_on, score, present, most_valuable, most_missing
          from quality_day_log
-        where member_id=$1 and logged_on >= current_date - ($2::int - 1)
+        where member_id=$1 and logged_on >= ($3::date - ($2::int - 1))
         order by logged_on asc`,
-      [memberId, days],
+      // The window is measured from the MEMBER'S today, not the server's — otherwise "the last 7 days" starts and
+      // ends six hours early for anyone west of Greenwich, and a day drops off the edge of their own grid.
+      [memberId, days, await memberToday(db, memberId)],
     )
   ).rows;
   return rows.map((r) => ({

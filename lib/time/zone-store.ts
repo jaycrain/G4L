@@ -67,3 +67,16 @@ export async function setZone(db: Db, memberId: string, zone: string): Promise<{
     return { ok: false, error: 'Could not save that — please try again.' };
   }
 }
+
+/**
+ * The member's local calendar date, YYYY-MM-DD. The one call every write and window should make.
+ *
+ * It costs an indexed single-row read per use. That is the right trade against the alternative — passing a date
+ * down through every signature — because the caller most likely to get it wrong is the one furthest from the
+ * member, and a date is not the kind of thing a function should be trusted to work out for itself. Twenty-six
+ * places doing exactly that is what put a member's Quality Day on the wrong day.
+ */
+export async function memberToday(db: Db, memberId: string, at: Date = new Date()): Promise<string> {
+  const { localDate } = await import('./member-clock.ts');
+  return localDate(await memberZone(db, memberId), at);
+}

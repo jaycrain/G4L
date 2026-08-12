@@ -48,6 +48,27 @@ export function localDate(zone: Zone, at: Date = new Date()): string {
   }).format(at);
 }
 
+// FORMATTING A CALENDAR DATE IS NOT FORMATTING AN INSTANT.
+//
+// Once we have "the member's local date" as YYYY-MM-DD, the zone has already been applied and its job is done.
+// Formatting it must NOT apply a zone a second time — `new Date('2026-08-12').toLocaleDateString()` on a machine
+// west of Greenwich renders August 11, which is how a date can be computed correctly and still display wrong.
+// So both of these parse at UTC midnight and format in UTC: pure calendar arithmetic, no instants involved.
+
+function fmt(date: string, opts: Intl.DateTimeFormatOptions): string {
+  return new Intl.DateTimeFormat('en-US', { timeZone: UTC, ...opts }).format(new Date(`${date}T00:00:00Z`));
+}
+
+/** "Wednesday, August 12, 2026" — what the Companion is told the date is. */
+export function longDate(date: string): string {
+  return fmt(date, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+}
+
+/** "Aug 12" — for labelling a logged entry that is neither today nor yesterday. */
+export function shortDate(date: string): string {
+  return fmt(date, { month: 'short', day: 'numeric' });
+}
+
 /** Day of week for a YYYY-MM-DD, Monday = 0 … Sunday = 6. Weeks run Monday–Sunday (Jay, 2026-08-12). */
 export function mondayIndex(date: string): number {
   // Parsed as UTC midnight deliberately: `date` is ALREADY a local calendar date, so re-interpreting it in a zone

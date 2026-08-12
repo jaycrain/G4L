@@ -11,8 +11,10 @@ const KIND_LABEL: Record<string, string> = {
   walk: 'Walk', ride: 'Ride', run: 'Run', hike: 'Hike', swim: 'Swim', workout: 'Workout', other: 'Other',
 };
 
-export default function LogActivity({ memberId }: { memberId: string }) {
-  const today = new Date().toISOString().slice(0, 10);
+// `today` comes from the SERVER, not `new Date()` here. The browser's date is usually right and occasionally
+// isn't — a member who set their zone deliberately (travelling, a work laptop pinned elsewhere) would otherwise
+// get a default date that disagrees with every other surface. One authority, passed in.
+export default function LogActivity({ memberId, today }: { memberId: string; today: string }) {
   const [type, setType] = useState<string>('walk');
   const [note, setNote] = useState('');
   const [on, setOn] = useState(today);

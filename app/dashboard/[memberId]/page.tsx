@@ -1,4 +1,5 @@
 import { softRead } from '../../../lib/db/degrade.ts';
+import { memberToday } from '../../../lib/time/zone-store.ts';
 import Link from 'next/link';
 import { getDb } from '../../../lib/db/index.ts';
 import { getDashboard } from '../../../lib/gateway/flow.ts';
@@ -180,8 +181,9 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
   );
 
   // The Daily Beat — one rotating reflection a day, phase-weighted to where they are. Persisted so it's
-  // stable on refresh. (Local day via server tz; member tz isn't tracked yet.)
-  const today = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD
+  // stable on refresh — and stable on the MEMBER'S day now that we track their zone (0078), so the beat turns
+  // over at their midnight rather than at 6pm the evening before.
+  const today = await memberToday(db, memberId);
   const dailyBeat = await getDailyBeat(db, memberId, activePhase, today);
   const dailyBeatKept = dailyBeat
     ? (await db.query<{ one: number }>(

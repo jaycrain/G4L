@@ -13,6 +13,7 @@ import RedesignChrome from '../../dashboard/redesign-chrome.tsx';
 import RedesignTopbar from '../../dashboard/redesign-topbar.tsx';
 import StravaConnect from '../../account/strava-connect.tsx';
 import LogActivity from '../log-activity.tsx';
+import { memberToday } from '../../../lib/time/zone-store.ts';
 import SyncNow from '../sync-now.tsx';
 
 const KIND_LABEL: Record<string, string> = { walk: 'Walk', ride: 'Ride', run: 'Run', hike: 'Hike', swim: 'Swim', workout: 'Workout', other: 'Other' };
@@ -125,7 +126,7 @@ export default async function MovementPage({ params }: { params: Promise<{ membe
         )}
 
         {/* Log an activity done off-device */}
-        <LogActivity memberId={memberId} />
+        <LogActivity memberId={memberId} today={await memberToday(db, memberId)} />
 
         {/* History — synced + self-logged, merged */}
         <div className="mv-history">
