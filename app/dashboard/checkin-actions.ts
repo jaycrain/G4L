@@ -13,6 +13,7 @@ import {
   type CheckinContext,
   type CheckinMessage,
   type ToolExecutor,
+  type PracticeWeekCtx,
 } from '../../lib/agent/checkin.ts';
 import { loadConversation, appendMessages } from '../../lib/agent/conversation.ts';
 import { recentConsumedTitles } from '../../lib/bites/store.ts';
@@ -25,12 +26,12 @@ import { logCall, isCallType, isCallDomain, domainTally, recentCalls } from '../
 import { setCommitment, activeCommitments, isCommitmentDomain, DOMAIN_WORD } from '../../lib/commitments/store.ts';
 import { logMovement, isMovementKind, movementLogSummary } from '../../lib/movement/store.ts';
 import { redesignEnabled } from '../../lib/dashboard/redesign.ts';
-import { weekGrid } from '../../lib/practice/grid.ts';
+import { weekGrids, type WeekGrid } from '../../lib/practice/grid.ts';
 import { isClosable, buildReview, closeWeek, keeperBodyFrom, PRACTICE_KEEPER_NAME } from '../../lib/practice/close.ts';
 import { harvestSignal } from '../../lib/agent/harvest.ts';
 import type { PracticeKind } from '../../lib/practice/store.ts';
 import { isTappable, toggleMark } from '../../lib/practice/mark.ts';
-import { activePracticeWeek } from '../../lib/practice/store.ts';
+import { activePracticeWeek, activePracticeWeeks } from '../../lib/practice/store.ts';
 import { recordW3Entry, w3Entries } from '../../lib/rewire/w3-entry.ts';
 import { w3Triggers } from '../../lib/rewire/w3-triggers.ts';
 import { phaseSummary, type PhaseKey } from '../../lib/content/summaries.ts';
@@ -88,6 +89,32 @@ function derive<T>(label: string, fn: () => T, failures?: string[]): T | null {
   }
 }
 
+/**
+ * One week grid → the shape the Companion reads. ONE mapper, used for every open week and for the singular
+ * "week that needs attention", so those two can never describe the same week differently.
+ */
+function weekCtx(g: WeekGrid, w3Extras: Parameters<typeof buildReview>[1]): PracticeWeekCtx {
+  return {
+    kind: g.kind,
+    // NAMED, because there can be four. "Day 3 of 7" is meaningless when a member is running Mindful Monitoring,
+    // the Lifestyle Pilot and Quality Days at the same time — the Companion has to be able to say which one.
+    label: PRACTICE_KEEPER_NAME[g.kind] ?? 'Your practice week',
+    day: g.day,
+    rows: g.rows.map((r) => ({
+      label: r.label,
+      target: r.target,
+      done: r.done,
+      // Computed HERE, not in the prompt: an agent asked to work out "is today already marked" from a boolean
+      // array will sometimes get it wrong and ask them for something they have already done.
+      todayDone: r.marks[g.day - 1] === true,
+    })),
+    tappable: isTappable(g.kind),
+    triggers: g.kind === 'w3_logging' ? g.rows.filter((r) => r.slot !== 'logged').map((r) => r.label) : undefined,
+    readyToClose: isClosable(g),
+    review: isClosable(g) ? (({ opener, lines }) => ({ opener, lines }))(buildReview(g, w3Extras)) : null,
+  };
+}
+
 async function buildContext(db: Db, memberId: string): Promise<CheckinContext | null> {
   const dash = await getDashboard(db, memberId);
   if (!dash) return null;
@@ -135,7 +162,7 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
   // "best-effort" but was UNGUARDED — and it runs a memory-fold (API/query) BEFORE everything else, so if it threw it
   // sank the entire context to minimal (this is why the companion still couldn't see momentum after the first pass).
   await maybeFoldMemory(db, memberId).catch((e) => console.warn('maybeFoldMemory failed (non-fatal):', (e as Error).message));
-  const [grinta, grintaReading, whyReading, skillsReading, pilotPlan, pilotTally, biggerWorld, qdProfile, qdRecent, practiceGrid, consumedBites, profRows, idqRows, reclaimItems, beatRows, playbook, measures, linkedMeasureRows, facets, closedIds, lastClosedRows, forecast, experience, passport, outcomeCards] = await Promise.all([
+  const [grinta, grintaReading, whyReading, skillsReading, pilotPlan, pilotTally, biggerWorld, qdProfile, qdRecent, practiceGrids, consumedBites, profRows, idqRows, reclaimItems, beatRows, playbook, measures, linkedMeasureRows, facets, closedIds, lastClosedRows, forecast, experience, passport, outcomeCards] = await Promise.all([
     getGrinta(db, memberId, dash.identityNoun).catch(() => ({ score: null, direction: null }) as unknown as Awaited<ReturnType<typeof getGrinta>>),
     // Rebuild/Reclaim REGISTERS — all SUPPLEMENTARY context ("the agent knows X"), each null-safe downstream. Guard
     // EVERY one with .catch: a single missing/drifted register table (prod migrations don't auto-apply) must NEVER
@@ -149,7 +176,7 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
     latestBiggerWorldReading(db, memberId).catch(() => null), // Reclaim C2 — the member's chosen priorities (primary + momentum lever)
     activeQualityDayProfile(db, memberId).catch(() => null), // Reclaim C3 — the Quality-Day profile
     recentQualityDays(db, memberId).catch(() => []), // Reclaim C3 — recent Quality-Day logs
-    weekGrid(db, memberId).catch(() => null), // the practice-week grid the member sees on Momentum
+    weekGrids(db, memberId).catch(() => []), // EVERY open week — a member can be running four at once
 
     // These were UNGUARDED — and a single throw here collapsed the WHOLE context to `minimal` (Jay's walk: the
     // companion said it could only see Reclaim List / ID Score / Doors — the minimal fields — because a supplementary
@@ -199,8 +226,11 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
   // W3 close extras — how many days they used the protocol they wrote. That count lives in the daily entries, not
   // in the grid's marks, and it is the one thing Greg permits an affirmation to target that the grid cannot see.
   // Scoped tightly: fetched ONLY when a W3 week is genuinely ready to close, never on an ordinary turn.
+  // FIND the W3 week among however many are open — with four running, "the practice week" is not a thing that
+  // exists, and asking whether THE week is W3 silently skipped these extras whenever W3 was not the newest.
+  const w3Week = practiceGrids.find((g) => g.kind === 'w3_logging');
   const w3Extras =
-    practiceGrid && practiceGrid.kind === 'w3_logging' && isClosable(practiceGrid)
+    w3Week && isClosable(w3Week)
       ? await w3Entries(db, memberId, 7)
           .then((entries) => ({
             recoveryUsed: entries.filter((e) => e.recoveryUsed === true).length,
@@ -336,34 +366,18 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
     // The grid, as the member reads it. todayDone is computed HERE, not in the prompt: an agent asked to work out
     // "is today already marked" from a boolean array will sometimes get it wrong and ask them for something they've
     // already done — which is the most deflating possible thing for a practice week to do.
-    practiceWeek: derive('practiceWeek', () => practiceGrid && practiceGrid.rows.length
-      ? {
-          kind: practiceGrid.kind,
-          day: practiceGrid.day,
-          rows: practiceGrid.rows.map((r) => ({
-            label: r.label,
-            target: r.target,
-            done: r.done,
-            todayDone: r.marks[practiceGrid.day - 1] === true,
-          })),
-          tappable: isTappable(practiceGrid.kind),
-          // W3 ONLY: the triggers the member named, so the agent can ask which one fired using THEIR words. The
-          // grid's row labels already carry them, minus row 1 ("Noticed the day") which is the tracking row, not a
-          // trigger. Derived from the grid rather than re-queried so the two can never disagree about the list.
-          triggers: practiceGrid.kind === 'w3_logging'
-            ? practiceGrid.rows.filter((r) => r.slot !== 'logged').map((r) => r.label)
-            : undefined,
-          // The window has elapsed and nothing closed it. The review is built HERE rather than described to the
-          // model, so the member's numbers are ours and the phrasing is testable (lib/practice/close.ts).
-          readyToClose: isClosable(practiceGrid),
-          // W3's close names the recovery skill — the one thing Greg allows an affirmation to target that the grid
-          // cannot see (it lives in the daily entries, not the marks). Read only when the week is actually W3 and
-          // actually closable, so no other week pays for it.
-          review: isClosable(practiceGrid)
-            ? (({ opener, lines }) => ({ opener, lines }))(buildReview(practiceGrid, w3Extras))
-            : null,
-        }
-      : null),
+    practiceWeeks: derive('practiceWeeks', () => practiceGrids.map((g) => weekCtx(g, w3Extras))) ?? [],
+    // THE ONE THAT NEEDS ATTENTION — a finished week first, else the newest. Not a duplicate of the list above:
+    // naming every week is a VISIBILITY question, acting on one is a PACING question, and they have different
+    // answers. A member with four open weeks should hear about all four and be asked about one.
+    //
+    // "Finished first" matters precisely BECAUSE several run at once: weeks start on different days, so the one
+    // that elapsed is often not the newest — and under the old newest-only read a week could finish and never be
+    // reviewed at all.
+    practiceWeek: derive('practiceWeek', () => {
+      const all = practiceGrids.map((g) => weekCtx(g, w3Extras));
+      return all.find((w) => w.readyToClose && w.review) ?? all[0] ?? null;
+    }),
     qualityDay: qdProfile
       ? {
           nonNegotiables: qdProfile.nonNegotiables,
@@ -699,17 +713,28 @@ export async function sendCheckin(memberId: string, memberMessage: string): Prom
         // the UI prints a promise the Companion cannot keep.
         const label = typeof input.commitment === 'string' ? input.commitment.trim() : '';
         if (!label) return { ok: false, message: 'Not marked — no commitment was named.' };
-        const pw = await activePracticeWeek(db, memberId);
-        if (!pw) return { ok: false, message: 'Not marked — no practice week is open right now.' };
-        if (!isTappable(pw.kind)) {
-          return { ok: false, message: "This week mirrors a log they keep themselves — point them to it rather than marking it here." };
+        // THE COMMITMENT NAMES ITS WEEK — not "the newest week", which is what this used to assume.
+        //
+        // With four weeks open (Jay's, and intended), matching only against the NEWEST week's commitments meant a
+        // member saying "did my walk" was told it "doesn't match anything on their week" whenever the walk lived
+        // in an older one. A refusal that reads as though we lost their commitment. Same shape as the grid tap
+        // that used to cross-write: the thing the member addressed decides the week, never recency.
+        const open = (await activePracticeWeeks(db, memberId)).filter((w) => isTappable(w.kind));
+        if (!open.length) {
+          const anyOpen = await activePracticeWeek(db, memberId);
+          return {
+            ok: false,
+            message: anyOpen
+              ? "Their open week mirrors a log they keep themselves — point them to it rather than marking it here."
+              : 'Not marked — no practice week is open right now.',
+          };
         }
-        // Match the label the model passed against their real commitments. Loose but ANCHORED: exact, then prefix,
-        // then containment — never a fuzzy nearest-neighbour, because marking the WRONG commitment is a quiet lie
-        // about their week and they may never notice it.
-        const { rows: commitments } = await db.query<{ slot: string; label: string }>(
-          'select slot, label from practice_commitment where member_id=$1 and kind=$2',
-          [memberId, pw.kind],
+        // Match the label the model passed against their real commitments, ACROSS every tappable week. Loose but
+        // ANCHORED: exact, then prefix, then containment — never a fuzzy nearest-neighbour, because marking the
+        // WRONG commitment is a quiet lie about their week and they may never notice it.
+        const { rows: commitments } = await db.query<{ slot: string; label: string; kind: string }>(
+          'select slot, label, kind from practice_commitment where member_id=$1 and kind = any($2::text[])',
+          [memberId, open.map((w) => w.kind)],
         );
         const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim();
         const want = norm(label);
@@ -718,8 +743,16 @@ export async function sendCheckin(memberId: string, memberMessage: string): Prom
           commitments.find((c) => norm(c.label).startsWith(want) || want.startsWith(norm(c.label))) ??
           commitments.find((c) => norm(c.label).includes(want) || want.includes(norm(c.label)));
         if (!hit) {
-          return { ok: false, message: `Not marked — "${label}" doesn't match anything on their week. Ask which one they mean rather than guessing.` };
+          return { ok: false, message: `Not marked — "${label}" doesn't match anything on their open weeks. Ask which one they mean rather than guessing.` };
         }
+        // AMBIGUITY REFUSES. Two weeks can hold a similar label, and picking one would silently mark a day on a
+        // week the member was not talking about — invisible to them, and wrong in their own record.
+        const sameLabel = commitments.filter((c) => norm(c.label) === norm(hit.label));
+        if (sameLabel.length > 1) {
+          return { ok: false, message: `More than one of their weeks has a "${hit.label}". Ask which week they mean — name them — then call it again. Do not guess.` };
+        }
+        const pw = open.find((w) => w.kind === hit.kind);
+        if (!pw) return { ok: false, message: 'Not marked — that week is no longer open.' };
         const res = await toggleMark(db, memberId, pw, hit.slot, pw.day - 1, 'companion');
         if (!res.ok) return { ok: false, message: res.error ?? 'Not marked.' };
         if (res.on === false) {
@@ -729,7 +762,10 @@ export async function sendCheckin(memberId: string, memberMessage: string): Prom
           return { ok: true, message: `That was already marked for today — nothing changed. Acknowledge it warmly and don't make them repeat themselves.` };
         }
         mutated = true;
-        return { ok: true, message: `Marked "${hit.label}" done for today. Reflect it back briefly and warmly — noticing, never a score.` };
+        // NAME THE WEEK back. With several running, "marked it" leaves the member to work out which — and the
+        // whole reason the grid names its own week is that guessing here is invisible to them.
+        const weekName = PRACTICE_KEEPER_NAME[hit.kind as PracticeKind] ?? 'their week';
+        return { ok: true, message: `Marked "${hit.label}" done for today on ${weekName}. Reflect it back briefly and warmly, naming the week so they know which — noticing, never a score.` };
       }
       if (name === 'record_w3_day') {
         // W3's log is written by CONVERSATION — Greg makes the daily check-in the primary interface, so this is the

@@ -16,6 +16,22 @@ import { connectContextLines, type ConnectAgentSummary } from '../connect/agent.
 import type { Outcome } from '../dashboard/outcomes.ts';
 import type { Direction } from '../idq/scoring.ts';
 
+/** One practice week, as the member reads it on their Playbook grid. */
+export type PracticeWeekCtx = {
+  /** The Session that opened it, in the member's language — so the Companion can say WHICH week it means. */
+  label: string;
+
+    kind: string;
+    day: number; // 1..7
+    rows: { label: string; target: number | null; done: number; todayDone: boolean }[];
+    tappable: boolean; // can the agent mark a day, or is this week a mirror of a log they wrote?
+    triggers?: string[]; // W3 only — the triggers the MEMBER named, so the agent can ask which one fired
+    // The window has elapsed and nothing has closed it yet. When true, the review lines below are the FIRST thing
+    // the Companion should raise — a week that ends in silence is the thing this whole slice exists to stop.
+    readyToClose: boolean;
+    review?: { opener: string; lines: string[] } | null;
+  };
+
 export type CheckinContext = {
   // CAT-38 — TRUE when this context is the degraded fallback (a supplementary read failed). The prompt HARD-FORBIDS
   // denying that you remember the member, which is right — but on a degrade the agent was still instructed to behave
@@ -107,17 +123,17 @@ export type CheckinContext = {
   // THE PRACTICE WEEK, as the member sees it on their grid. Added 2026-08-07 when a sweep found the gap: the grid
   // shipped that morning and the Companion couldn't see it — a member could be looking at "3 / 5" while the agent
   // knew nothing about the week at all. CLAUDE.md's rule is that no data the member can see is invisible here.
-  practiceWeek?: {
-    kind: string;
-    day: number; // 1..7
-    rows: { label: string; target: number | null; done: number; todayDone: boolean }[];
-    tappable: boolean; // can the agent mark a day, or is this week a mirror of a log they wrote?
-    triggers?: string[]; // W3 only — the triggers the MEMBER named, so the agent can ask which one fired
-    // The window has elapsed and nothing has closed it yet. When true, the review lines below are the FIRST thing
-    // the Companion should raise — a week that ends in silence is the thing this whole slice exists to stop.
-    readyToClose: boolean;
-    review?: { opener: string; lines: string[] } | null;
-  } | null;
+  // EVERY OPEN WEEK, not just the newest. A member in Reclaim legitimately has four running at once — Jay's call,
+  // 2026-08-11: "hell yes that's ok, that's what Greg wants! If all you have to do is click four boxes a day, or
+  // not, that's not too much to ask." The Playbook was fixed to render them all; this context still saw one, so
+  // the Companion could be blind to three weeks the member is looking at. CLAUDE.md's rule is that no data the
+  // member can see is invisible here.
+  //
+  // `practiceWeek` (singular, below) SURVIVES and is not a duplicate: it is the ONE week that most needs
+  // attention — a finished week first, else the newest — and it is what the close/review flow acts on. Naming all
+  // of them is a visibility question; acting on one is a pacing question, and they have different answers.
+  practiceWeeks?: PracticeWeekCtx[];
+  practiceWeek?: PracticeWeekCtx | null;
   qualityDay?: { nonNegotiables: string[]; recentAvg: number | null; days: number } | null;
   // THE THREE OUTCOMES the member sees at the head of their Playbook — mindfulness · fitness · wellness, each made
   // of a read, a tool and a tracked week. Same read the page uses, so the agent can never disagree with the cards
@@ -212,6 +228,28 @@ export function recallKeeper(message: string, keepers: RecallKeeper[] = []): Rec
 // The practice week, said the way the member would say it. Deliberately NOT a compliance report: it names what they
 // aimed for and what's happened so far, and tells the agent to hold it as noticing rather than scoring. A blank day
 // is a day, never a miss — the same rule the grid itself renders by.
+/**
+ * NAME EVERY OPEN WEEK, ASK ABOUT ONE.
+ *
+ * A member in Reclaim legitimately runs four at once (Jay, 2026-08-11), and until now this line described only the
+ * newest — so the Companion could be confidently blind to three weeks sitting on the member's Playbook. But four
+ * weeks must not become four questions: that turns a check-in into a checklist recital, which is the opposite of
+ * what the daily ask is for. So the OTHERS are named as state the Companion holds, and only `practiceWeek` — the
+ * one that most needs attention — carries an ask.
+ */
+function otherWeeksLine(c: CheckinContext): string {
+  const others = (c.practiceWeeks ?? []).filter((w) => w.kind !== c.practiceWeek?.kind && w.rows.length);
+  if (!others.length) return '';
+  const each = others
+    .map((w) => `${w.label} (day ${w.day} of 7${w.rows.every((r) => r.todayDone) ? ', all marked today' : ''})`)
+    .join('; ');
+  return (
+    ` ALSO RUNNING, and they can see all of these: ${each}. ` +
+    `Hold them; do NOT ask about each one — a check-in is not a roll call. If they raise one, or a day of theirs is ` +
+    `plainly about one, work with that week and name it so they know which you mean.`
+  );
+}
+
 function practiceWeekLine(c: CheckinContext): string | null {
   const pw = c.practiceWeek;
   if (!pw || !pw.rows.length) return null;
@@ -251,7 +289,7 @@ function practiceWeekLine(c: CheckinContext): string | null {
         'not a gap. Never decide for them which trigger fired. '
       : '') +
     'NEVER present this as compliance or a score. A blank day is a day, not a miss, and the whole point is noticing what helps — not hitting a number.'
-  );
+  ) + otherWeeksLine(c);
 }
 
 // THE THREE OUTCOMES, as the member sees them at the head of their Playbook (mindfulness · fitness · wellness).
