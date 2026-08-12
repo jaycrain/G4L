@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import RichText from '../rich-text.tsx';
 import { useRouter } from 'next/navigation';
 import { onboardingTurn, finalizeOnboardingAction, loadOnboardingSessionAction } from './actions.ts';
 import ScaleChips from '../components/scale-chips.tsx';
@@ -347,7 +348,11 @@ export default function OnboardingChat({ welcomeEnabled = false }: { welcomeEnab
       <div className="chat">
         {messages.map((m, i) => (
           <div key={i} className={`bubble ${m.role}`}>
-            {m.text}
+            {/* Agent text goes through RichText — it emits light markdown (**bold**, blank lines between beats) and a
+                raw render shows the member literal asterisks. Its own header calls it "the system-wide fix from one
+                place"; it had reached three of six chat clients, and this was one of the three it missed (Jay,
+                2026-08-11: "Still getting some .md showing through"). MEMBER text stays raw — they wrote it. */}
+            {m.role === 'agent' ? <RichText text={m.text} /> : m.text}
           </div>
         ))}
         {pending && <div className="typing">Thinking…</div>}
