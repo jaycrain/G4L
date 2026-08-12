@@ -124,3 +124,21 @@ test('THE EXEMPTIONS ARE REAL — each one names a base rule that actually centr
     assert.ok(centres(base), `${sel} is exempt because ${base} centres — but ${base} does not`);
   }
 });
+
+test('timezone detection is mounted GLOBALLY, not inside a dashboard branch', () => {
+  // It shipped once mounted in app/dashboard/[memberId]/page.tsx, below the triptych's early return — dead code
+  // for every member on prod. The feature looked shipped, the tests were green, and not one zone was ever
+  // recorded. The dashboard has three render branches; anything that must run for every member belongs in the
+  // one place they all pass through.
+  const layout = readFileSync('app/layout.tsx', 'utf8');
+  assert.match(layout, /<DetectZone\s*\/>/, 'DetectZone must be mounted in the root layout');
+
+  const page = readFileSync('app/dashboard/[memberId]/page.tsx', 'utf8');
+  assert.doesNotMatch(page, /DetectZone/, 'and NOT in the dashboard page, which returns early three ways');
+});
+
+test('the zone action takes no memberId — the session says who it is', () => {
+  // A server action that accepted a memberId from the client would let anyone rewrite anyone else's dates.
+  const actions = readFileSync('app/dashboard/zone-actions.ts', 'utf8');
+  assert.match(actions, /export async function recordZone\(zone: string\)/, 'recordZone must not take a memberId');
+});

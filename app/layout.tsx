@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { Suspense } from 'react';
 import './globals.css';
 import PwaClient from './pwa-client.tsx';
+import DetectZone from './dashboard/detect-zone.tsx';
 // import FeedbackLauncher from './feedback-launcher.tsx'; // Send Feedback pill — dropped for now (reinstate with the render below)
 import BackToDashboard from './components/back-to-dashboard.tsx';
 import BrandHome from './components/brand-home.tsx';
@@ -78,6 +79,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           content are proprietary. What you write here stays yours.
         </footer>
         <PwaClient />
+        {/* Records the member's timezone from the browser, once per session, so every date in the product is
+            their date and not UTC. Lives here rather than on the dashboard because the dashboard has three
+            render branches and the first version was mounted below the one prod actually uses. */}
+        <DetectZone />
         {/* Send Feedback pill dropped for now (Jay, 2026-07-23) — reinstate by uncommenting this + the import above. */}
         {/* <FeedbackLauncher /> */}
       </body>
