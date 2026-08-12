@@ -1247,7 +1247,11 @@ html:has(.companion-hero), body:has(.companion-hero) { overflow-anchor: none; }
 .wk-table td.wk-aim span { font-weight: 400; color: var(--muted-grey); }
 /* inline-GRID, not inline-block: a hard 26px square inheriting the global button's inline-block leaves the tick
    sitting on its baseline rather than in the middle of the box. Same fix as .qd-score-btn — see the note there. */
-.wk-cell { width: 26px; height: 26px; padding: 0; border: 1px solid #e3e2df; border-radius: 6px; background: var(--white); cursor: pointer; font-family: inherit; font-size: 13px; font-weight: 700; line-height: 1; color: transparent; display: inline-grid; place-items: center; margin-top: 0; }
+.wk-cell { width: 26px; height: 26px; padding: 0; border: 1px solid #e3e2df; border-radius: 6px; background: var(--white); cursor: pointer; font-family: inherit; font-size: 13px; font-weight: 700; line-height: 1; color: transparent; display: inline-grid; place-items: center; margin-top: 0; vertical-align: middle; }
+/* vertical-align is LOAD-BEARING, not tidying. A ticked cell contains a "✓" and an empty one contains nothing, and
+   an inline box with no content baselines off its bottom margin edge while one with text baselines off the glyph —
+   so the ticked days sat ~18px above their own row (Jay, 2026-08-12). I introduced it hours earlier by switching
+   these to inline-grid to centre the tick; the rule is that a box's POSITION must never depend on its CONTENTS. */
 .wk-cell:hover:not(:disabled) { border-color: var(--olive); }
 /* NARROW SCREENS. `table-layout: fixed` gives the label column 38% — but seven 26px tick cells plus their padding
    need more than the remaining 62% on a phone, so the label got squeezed to whatever was left: 28px at 375px, i.e.
@@ -2075,16 +2079,28 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
 /* THE PLAYBOOK TAB ROW — the Founder Console's one-row pattern brought to a member surface (Jay 2026-08-08).
    Scrolls horizontally on a phone rather than wrapping, so the row stays one row at every width and the page
    needs no separate mobile layout. The count is the pull: a tab that says how much is behind it is worth opening. */
-.pb-tabs { display: flex; gap: 6px; overflow-x: auto; padding: 3px 3px 12px; margin: 0 -3px 14px; border-bottom: 1px solid var(--grey);
+/* ONE PANEL, TABS AT ITS TOP EDGE. The row used to float above a separate card, so it read as page chrome rather
+   than as this panel's own controls. The frame carries the border now and the tab bodies sit inside it — which
+   also means the bodies must NOT draw their own, or every tab looks like a box inside a box. */
+.pb-tabframe { background: var(--white); border: 1px solid var(--panel-line); border-radius: 14px; margin-bottom: 1rem; overflow: hidden; }
+.pb-tabframe > .pb-card { border: 0; border-radius: 0; margin: 0; }
+/* Several chapters can render inside one tab — a hairline keeps them apart now the boxes are gone. */
+.pb-tabframe > .pb-card + .pb-card { border-top: 1px solid var(--grey); }
+.pb-tabs { display: flex; gap: 6px; overflow-x: auto; padding: 12px 12px 0; margin: 0 0 12px; border-bottom: 1px solid var(--grey);
   -webkit-overflow-scrolling: touch; scrollbar-width: none; }
 .pb-tabs::-webkit-scrollbar { display: none; }
 /* SQUARED, like every other control (Jay, 2026-08-11: "we've had you change every pill you started with to our
    squared-off standard button"). 8px is that standard — .btn-rect and .ws-endcard-cta already use it.
    The side padding on .pb-tabs above exists because this row SCROLLS: with none, the first tab's focus ring was
    clipped flat against the container edge ("notice how it's cut off on the left side of This week"). */
-.pb-tab { flex: 0 0 auto; background: #f2f1ef; border: 0; color: #4a5d6b; font-family: inherit; font-size: 13px; font-weight: 600;
+/* EVENLY SPREAD (Jay, 2026-08-12): equal shares of the panel width, so the row reads as one control with four
+   positions rather than four buttons that happen to be adjacent. min-width:0 lets a long label shrink rather than
+   force the row to overflow — without it flex refuses to go below the text's intrinsic width and the "evenly"
+   quietly stops being true. */
+.pb-tab { flex: 1 1 0; min-width: 0; justify-content: center; background: #f2f1ef; border: 0; color: #4a5d6b; font-family: inherit; font-size: 13px; font-weight: 600;
   padding: 7px 14px; border-radius: 8px; cursor: pointer; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
 .pb-tab:hover { background: #e8e6e6; }
+@media (max-width: 700px) { .pb-tab { flex: 0 0 auto; } }
 .pb-tab.on { background: var(--navy); color: #fff; }
 .pb-tab-n { font-size: 11px; font-weight: 700; opacity: .72; }
 

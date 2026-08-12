@@ -338,9 +338,13 @@ export default function RedesignPlaybookView({
           a count there. A strip saying the same thing three inches above it is the same information twice in one
           eyeline. The DASHBOARD cue stays: that is a different page, and it has no tabs. */}
 
-      {/* THE TAB ROW — the Founder Console's one-row pattern (Jay: "a great way to fly through a variety of
-          different content"). Scrolls horizontally on a phone, one tab at a time, which is how the FC row and the
-          triptych fold already behave — so this needs no separate mobile design. */}
+      {/* ONE PANEL AROUND THE WHOLE THING (Jay, 2026-08-12): the tabs sit at the top edge of the panel that holds
+          what they switch between, so the row reads as this panel's controls rather than as free-floating chrome
+          above an unrelated card. Everything from here to the end of the tab bodies lives inside .pb-tabframe.
+          THE TAB ROW — the Founder Console's one-row pattern (Jay: "a great way to fly through a variety of
+          different content"). Evenly spread across the panel; it still scrolls one-at-a-time on a phone, where
+          four equal shares would leave four unreadable stubs. */}
+      <div className="pb-tabframe">
       <nav className="pb-tabs" aria-label="Playbook">
         {TABS.map((t) => {
           const n = t.key === 'journal' ? journal.length + proposed.length : chapters.filter((c) => TAB_FOR_CHAPTER[c.key] === t.key).reduce((a, c) => a + c.items.length, 0);
@@ -514,6 +518,8 @@ export default function RedesignPlaybookView({
           </div>
         </section>
       )}
+
+      </div>
 
       {entries.length > 0 && hasHistory && !gathering && (
         <p className="pb-gather-link"><button type="button" className="pb-linkbtn" onClick={gather}>Gather from recent work →</button></p>

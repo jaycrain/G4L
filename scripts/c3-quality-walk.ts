@@ -323,6 +323,40 @@ async function main(): Promise<void> {
   if (pageTitle === 'Your Playbook') ok('the Playbook calls itself "Your Playbook" here too');
   else bad(`the Playbook hero says "${pageTitle}" — one place, one name`);
 
+  // EVERY CELL IN A ROW SITS ON THE SAME LINE.
+  //
+  // A ticked cell holds a "✓" and an empty one holds nothing, and an inline box with no content baselines off its
+  // bottom margin edge while one with text baselines off the glyph — so the ticked days floated ~18px above their
+  // own row. Measured, not asserted against the stylesheet: the stylesheet is where I put the bug.
+  const rowSkew = await page.locator('.wk-table tbody tr').evaluateAll((rows) =>
+    rows
+      .map((tr) => {
+        const tops = [...tr.querySelectorAll('.wk-cell')].map((c) => c.getBoundingClientRect().top);
+        if (tops.length < 2) return null;
+        const spread = +(Math.max(...tops) - Math.min(...tops)).toFixed(2);
+        return spread > 1 ? { label: (tr.querySelector('.wk-lab')?.textContent ?? '').trim(), spread } : null;
+      })
+      .filter(Boolean),
+  );
+  if (rowSkew.length) {
+    bad(`${rowSkew.length} row(s) have cells at different heights — a ticked box must not move`);
+    rowSkew.slice(0, 3).forEach((r: any) => console.log(`      "${r.label}" cells spread over ${r.spread}px`));
+  } else {
+    ok('every cell in a row sits on the same line, ticked or not');
+  }
+
+  // The tabs are the panel's own controls, evenly spread across it.
+  const tabGeom = await page.evaluate(() => {
+    const frame = document.querySelector('.pb-tabframe');
+    const tabs = [...document.querySelectorAll('.pb-tab')].map((t) => +t.getBoundingClientRect().width.toFixed(1));
+    return { framed: !!frame?.querySelector('.pb-tabs'), tabs };
+  });
+  if (tabGeom.framed) ok('the tab row sits inside the panel it controls');
+  else bad('the tab row is not inside the panel — it still floats above a separate card');
+  const spread = tabGeom.tabs.length ? Math.max(...tabGeom.tabs) - Math.min(...tabGeom.tabs) : 0;
+  if (tabGeom.tabs.length > 1 && spread <= 1) ok(`the ${tabGeom.tabs.length} tabs share the width evenly`);
+  else bad(`the tabs are uneven — widths ${tabGeom.tabs.join(', ')}`);
+
   const gridCount = await page.locator('.wk-grid').count();
   if (gridCount === 0) {
     bad('the Playbook shows NO week grids at all — the member just opened a week and cannot see it');
