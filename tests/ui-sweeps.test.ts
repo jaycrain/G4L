@@ -142,3 +142,48 @@ test('the zone action takes no memberId — the session says who it is', () => {
   const actions = readFileSync('app/dashboard/zone-actions.ts', 'utf8');
   assert.match(actions, /export async function recordZone\(zone: string\)/, 'recordZone must not take a memberId');
 });
+
+test('the anchor survives the dashboard projection and reaches the agent', () => {
+  // getDashboard read `tier`, used it to compute `released`, and then DROPPED it one line before building
+  // reclaimItems — which is why the anchor was invisible on the Reclaim List subpage and to the Companion at the
+  // same time. One projection, two symptoms.
+  const flow = readFileSync('lib/gateway/flow.ts', 'utf8');
+  assert.match(flow, /reclaimAnchor/, 'getDashboard must expose the anchor');
+  assert.match(flow, /anchor: isAnchorTier\(r\.tier\)/, 'and carry it onto each item');
+
+  // The standing rule: no data the member can see should be invisible to the agent. The member sees a star.
+  const actions = readFileSync('app/dashboard/checkin-actions.ts', 'utf8');
+  // Counted as LINES, not occurrences — `reclaimAnchor: dash.reclaimAnchor` is one site and two matches, and the
+  // first version of this assertion got that wrong and failed against correct code.
+  const sites = actions.split('\n').filter((l) => l.includes('reclaimAnchor')).length;
+  assert.equal(sites, 2, 'both the full AND the degraded context must carry the anchor — it must not vanish when a read degrades');
+});
+
+test('the anchor rule lives in ONE place', () => {
+  // The card and the subpage and the dashboard all need "which item is the anchor". Restated three times it is
+  // one rule and two wrong copies waiting.
+  const artifact = readFileSync('lib/workspace/artifact.ts', 'utf8');
+  assert.match(artifact, /anchorFirst|isAnchorTier/, 'the C1 card must use the shared helper');
+  assert.doesNotMatch(artifact, /tier === 'top'/, 'and not carry its own copy of the comparison');
+});
+
+// Ground-aware exemptions: a raw brand colour IS correct as text on a dark panel. Naming the ground is the price
+// of the exemption, because guessing an element's background is exactly how this gets fixed in the wrong
+// direction — lightening text that was already on navy.
+const RAW_COLOR_ON_DARK: Record<string, string> = {};
+
+test('brand colours are never used raw as TEXT — the -text twins exist for this', () => {
+  // --orange #ec6233 is 2.9:1 on white and fails AA. Jay picked --orange-text #c35127 (4.64:1) on 2026-08-02 as
+  // the closest passing colour to brand; --teal-text and --olive-text likewise. Reaching for the raw token for a
+  // `color:` is always a mistake unless the ground is dark — I did it on the Reclaim List anchor star and caught
+  // it only because a memory note said orange fails on white.
+  const bad: string[] = [];
+  for (const m of CSS.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+    const sel = m[1]!.trim().split('\n').pop()!.trim();
+    if (sel in RAW_COLOR_ON_DARK) continue;
+    // `(?<![-\w])color` so border-color / background-color / caret-color don't trip it.
+    const hit = /(?<![-\w])color:\s*var\(--(orange|teal|olive)\)/.exec(m[2]!);
+    if (hit) bad.push(`${sel} uses raw --${hit[1]} as text; use --${hit[1]}-text`);
+  }
+  assert.deepEqual(bad, [], `\n${bad.join('\n')}\n`);
+});

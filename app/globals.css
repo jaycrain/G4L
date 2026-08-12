@@ -1643,6 +1643,9 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
 .rr-text { font-size: 16px; color: var(--charcoal); }
 .r-reclaim-list li.reclaimed .rr-text { color: var(--muted-grey); }
 .rr-check { color: var(--olive-text); font-weight: 700; margin-right: 8px; }
+/* The anchor's star. Orange because it is the one item that outranks the others, and this is the only place on
+   the page anything is singled out — matches the ★ the C1 session card leads with. */
+.rr-anchor { color: var(--orange-text); font-weight: 700; margin-right: 8px; }
 
 /* Movement */
 .rm-head { display: flex; justify-content: space-between; align-items: flex-start; }

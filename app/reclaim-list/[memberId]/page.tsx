@@ -44,6 +44,10 @@ export default async function ReclaimListPage({ params }: { params: Promise<{ me
                 <li key={i} className={`reclaim-row${item.reclaimed ? ' reclaimed' : ''}`}>
                   <div className="reclaim-row-text">
                     {item.reclaimed && <span className="rr-check" aria-label="reclaimed" title="Reclaimed">✓</span>}
+                    {/* The anchor — the one item C1 marked as what the rest organises around. It already leads the
+                        Session card and the list arrives anchor-first; this is the page a member opens to LOOK at
+                        their list, so it was the one place the star was missing. */}
+                    {item.anchor && <span className="rr-anchor" aria-label="Your anchor" title="Your anchor — what the rest of this list is in service of">★</span>}
                     {item.text}
                   </div>
                   {linked.map((m) => (

@@ -2,6 +2,7 @@
 // thinly wrapped by Next.js server actions. Onboarding -> IDQ -> dashboard, against any Db
 // (local pglite now, hosted Supabase later). Governance + scoring + dosing wired in.
 
+import { anchorFirst, isAnchorTier } from '../reclaim/anchor.ts';
 import type { Db } from '../db/schema.ts';
 import { writeAsActor } from '../db/actor.ts';
 import type { AgentProvider, OnboardingInput } from '../agent/provider.ts';
@@ -196,8 +197,10 @@ export type Dashboard = {
   identityParagraph: string | null;
   door: { slug: string; displayName: string } | null; // primary (back-compat single-value reads)
   doors: DoorRef[]; // the full set, primary first
-  reclaimList: string[]; // text only, ACTIVE items (back-compat for the agent context + legacy reads)
-  reclaimItems: { id: string | null; text: string; reclaimed: boolean }[]; // ACTIVE items (excludes "No Longer Central") — every dashboard/hero/MA surface reads this
+  reclaimList: string[]; // text only, ACTIVE items, ANCHOR FIRST (back-compat for the agent context + legacy reads)
+  /** The `top`-tier item C1 named as the one the rest organises around, or null before/without a refinement. */
+  reclaimAnchor: string | null;
+  reclaimItems: { id: string | null; text: string; reclaimed: boolean; anchor: boolean }[]; // ACTIVE items (excludes "No Longer Central"), anchor first — every dashboard/hero/MA surface reads this
   releasedReclaimItems: { id: string | null; text: string; reclaimed: boolean }[]; // C1-refinement "No Longer Central" — kept + restorable, shown ONLY on the subpage, never among active priorities
   measures: MeasureView[]; // numbers the member watches; linked ones carry reclaimItemId
   score: (ScorePresentation & { dimensions: DimensionScores }) | null;
@@ -251,11 +254,21 @@ export async function getDashboard(db: Db, memberId: string): Promise<Dashboard 
   // "we eliminated these in the Session, they still showed at the bottom"). The Session's own summary already filters it
   // out (workspace/artifact); this makes every dashboard/hero/MA surface match. The subpage surfaces the released set.
   const allItems = riRows.length
-    ? riRows.map((r) => ({ id: r.id, text: r.text, reclaimed: r.state === 'reclaimed', released: r.tier === 'no_longer_central' }))
-    : (Array.isArray(m.reclaim_list) ? (m.reclaim_list as string[]) : []).map((text) => ({ id: null, text, reclaimed: false, released: false }));
-  const reclaimItems = allItems.filter((i) => !i.released).map(({ id, text, reclaimed }) => ({ id, text, reclaimed }));
+    ? riRows.map((r) => ({ id: r.id, text: r.text, reclaimed: r.state === 'reclaimed', released: r.tier === 'no_longer_central', anchor: isAnchorTier(r.tier) }))
+    // The legacy jsonb list predates tiers entirely, so nothing in it can be an anchor — false, not a guess.
+    : (Array.isArray(m.reclaim_list) ? (m.reclaim_list as string[]) : []).map((text) => ({ id: null, text, reclaimed: false, released: false, anchor: false }));
+  // `anchor` RIDES ALONG. This projection used to drop the tier here after using it to compute `released`, which
+  // is why the anchor was invisible on the Reclaim List subpage and to the Companion — both read this object, and
+  // the one bit of the C1 refinement that says which item leads was thrown away one line before they got it.
+  const reclaimItems = anchorFirst(
+    allItems.filter((i) => !i.released).map(({ id, text, reclaimed, anchor }) => ({ id, text, reclaimed, anchor })),
+    (i) => i.anchor,
+  );
   const releasedReclaimItems = allItems.filter((i) => i.released).map(({ id, text, reclaimed }) => ({ id, text, reclaimed }));
+  // Anchor-first, because this is the ordering every downstream reader inherits — including the Companion's
+  // reclaimList and the offline opening line, which names item [0].
   const reclaimList = reclaimItems.map((i) => i.text);
+  const reclaimAnchor = reclaimItems.find((i) => i.anchor)?.text ?? null;
   // Measures + score are SUPPLEMENTARY to the dashboard hero (name + identity + doors + reclaim list render
   // without them). Guard both so a drifted/transient read degrades — measures → [], score → null — instead of
   // crashing the dashboard (and, through buildContext, the companion). Both are null-safe downstream.
@@ -301,6 +314,7 @@ export async function getDashboard(db: Db, memberId: string): Promise<Dashboard 
     door: primary ? { slug: primary.slug, displayName: primary.displayName } : null,
     doors,
     reclaimList,
+    reclaimAnchor,
     reclaimItems,
     releasedReclaimItems,
     measures,

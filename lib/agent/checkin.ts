@@ -62,7 +62,15 @@ export type CheckinContext = {
   currentFocus: string | null;
   currentPhaseWhy?: string | null; // the "why this matters" for the active phase, in the exact words the member sees on the canvas
   lastCompletedAsset: string | null;
-  reclaimList: string[];
+  reclaimList: string[]; // anchor first
+  /**
+   * The `top`-tier Reclaim List item C1 named — the one the rest of the list organises around.
+   *
+   * The member can see a star on it; before this the agent could not, which broke the standing rule that no data
+   * the member can see is invisible to the agent. It is stated as a FACT and nothing here tells the model how hard
+   * to lean on it — how much the anchor should steer nudges and openers is Jay's call, deliberately not made here.
+   */
+  reclaimAnchor?: string | null;
   grintaScore?: number | null; // the daily activity register (the Daily Call) — for awareness, not to pitch
   grintaTrend?: 'up' | 'down' | 'flat' | null;
   // The SURVEY Grinta Index (Decision DD) — the member's grit baseline (onboarding) → Checkpoints, on a 1–5
@@ -381,6 +389,11 @@ export function contextBlock(c: CheckinContext): string {
     c.idScoreHistory && c.idScoreHistory.length > 1
       ? `ID Score trend (oldest→newest): ${c.idScoreHistory.join(' → ')}`
       : null;
+  // Named separately rather than only implied by list order: "it is first" is not the same as "it is the anchor",
+  // and an ordering cue is exactly the kind of thing a model infers wrongly.
+  const anchor = c.reclaimAnchor
+    ? `Their anchor (the item Looking Forward marked as the one the rest of the list is in service of): ${c.reclaimAnchor}`
+    : null;
   const reclaim =
     c.reclaimDetail && c.reclaimDetail.length
       ? `Reclaim List with progress (tracker = has a number tracker):\n${c.reclaimDetail.map((r) => `  • ${r.text} [${r.category}] — ${r.state}${r.tracked ? ' · tracker' : ''}`).join('\n')}`
@@ -497,6 +510,7 @@ export function contextBlock(c: CheckinContext): string {
     // (CAT-38). The plumbing stays so the surface can return without re-wiring; the PROMPT stays honest.
     null,
     reclaim,
+    anchor,
     c.pastSelf ? `Who they were, in their own words: "${c.pastSelf}"` : null,
     c.gapStory ? `How the gap opened, in their own words: "${c.gapStory}"` : null,
     c.identityParagraph ? `Their story, synthesized: ${c.identityParagraph}` : null,

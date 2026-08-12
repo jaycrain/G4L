@@ -158,6 +158,7 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
     currentFocus: dash.currentFocus?.label ?? null,
     lastCompletedAsset: null,
     reclaimList: dash.reclaimList,
+    reclaimAnchor: dash.reclaimAnchor,
     momentumLog,
     commitments,
     // `today` is ALWAYS supplied, even here in the degraded path. Omitting it let the prompt's "NEVER GUESS THE
@@ -337,6 +338,7 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
     currentPhaseWhy: isPhaseKey(activePhaseKey) ? phaseSummary(activePhaseKey).short : null,
     lastCompletedAsset, // most-recently completed curriculum Session (Identity Excavation, …)
     reclaimList: dash.reclaimList,
+    reclaimAnchor: dash.reclaimAnchor,
     grintaScore: grinta.score,
     grintaTrend: grinta.direction,
     // The SURVEY Grinta Index (grit baseline → Checkpoints) — the number the member sees on the dashboard card,
