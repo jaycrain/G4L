@@ -285,6 +285,7 @@ async function memberRenders(db: Db, memberId: string): Promise<Record<string, u
     out.quality_day_profile = { ERROR: (e as Error).message };
   }
   out.jsonb_shape = await jsonbShape(db, memberId);
+  out.jsonb_binding = await jsonbBinding(db);
   try {
     // NOT member state — the database's. It rides here because this endpoint is how prod gets inspected at all,
     // and "is the schema this code expects actually present" is the first question behind half the bugs that
@@ -314,6 +315,40 @@ async function memberRenders(db: Db, memberId: string): Promise<Record<string, u
  * `jsonb_typeof` is the only thing that tells them apart, so it goes in the report next to the values. Local
  * PGlite and hosted Postgres do not have to agree here — which is exactly why this cannot be caught locally.
  */
+/**
+ * HOW DOES THIS DRIVER BIND A jsonb PARAMETER? Read-only, no writes, no member data.
+ *
+ * Every jsonb value on prod is a scalar STRING and we do not know which link in the chain does it. The theory is
+ * that `$n::jsonb` resolves the PARAMETER's type to jsonb, so postgres.js serialises the value it was handed — and
+ * we hand it a JSON string, so it is encoded twice. That is a theory, and the last two times I reasoned about this
+ * shape instead of measuring it I was wrong in a way that cost hours.
+ *
+ * So: ask the database, with the exact binding patterns our writes use. Three probes, no mutation, and the answer
+ * is unambiguous — `object` means the pattern is fine, `string` means it is the one double-encoding.
+ * Delete this once the write is fixed; it exists to settle one question.
+ */
+async function jsonbBinding(db: Db): Promise<Record<string, unknown>> {
+  const payload = JSON.stringify({ probe: true });
+  const probes: [string, string, unknown[]][] = [
+    // What every one of our writes does today.
+    ['cast_stringified', 'select jsonb_typeof($1::jsonb) as t', [payload]],
+    // Candidate fix A: force the parameter to TEXT first, so the column/cast parses it rather than the driver.
+    ['text_then_cast', 'select jsonb_typeof($1::text::jsonb) as t', [payload]],
+    // Control: this MUST be 'string'. If it is not, the probe itself is wrong and nothing here can be trusted.
+    ['control_to_jsonb_text', 'select jsonb_typeof(to_jsonb($1::text)) as t', [payload]],
+  ];
+  const out: Record<string, unknown> = {};
+  for (const [label, sql, params] of probes) {
+    try {
+      const { rows } = await db.query<{ t: string }>(sql, params);
+      out[label] = rows[0]?.t ?? null;
+    } catch (e) {
+      out[label] = { ERROR: (e as Error).message };
+    }
+  }
+  return out;
+}
+
 async function jsonbShape(db: Db, memberId: string): Promise<Record<string, unknown>> {
   const cols: [string, string, string][] = [
     ['coaching_plan', 'payload', 'coaching_plan.payload'],
