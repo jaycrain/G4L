@@ -46,7 +46,7 @@ export async function logEvent(db: Db, memberId: string, kind: EventKind, opts: 
     };
     await db.query(
       `insert into member_event (member_id, kind, surface, ref, step, meta)
-       values ($1,$2,$3,$4,$5,$6::jsonb)`,
+       values ($1,$2,$3,$4,$5,$6::text::jsonb)`,
       [memberId, kind, opts.surface ?? null, opts.ref ?? null, opts.step ?? null, JSON.stringify(meta)],
     );
   } catch (e) {

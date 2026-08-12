@@ -126,7 +126,7 @@ export async function escalateCrisis(
   // already exists, and failing to annotate it must not undo that.
   try {
     await db.query(
-      `update member_event set meta = meta || $2::jsonb
+      `update member_event set meta = meta || $2::text::jsonb
         where member_id = $1 and kind = 'crisis_flagged'
           and created_at = (select max(created_at) from member_event where member_id = $1 and kind = 'crisis_flagged')`,
       [memberId, JSON.stringify({ alerted: out.alerted })],

@@ -242,7 +242,7 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
     recentChanges = []; // a malformed stored snapshot must not sink the whole context
   }
   await db
-    .query('update member_profile set dashboard_snapshot=$1::jsonb, dashboard_snapshot_at=now() where member_id=$2', [
+    .query('update member_profile set dashboard_snapshot=$1::text::jsonb, dashboard_snapshot_at=now() where member_id=$2', [
       JSON.stringify(currSnapshot),
       memberId,
     ])

@@ -80,12 +80,12 @@ export async function runOnboarding(
         `insert into member_profile
          (display_name, email, named_door, identity_noun, identity_paragraph,
           intake_athletic_past, intake_gap, intake_right_now, reclaim_list, ai_consent_granted_at)
-       values ($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb, now())
+       values ($1,$2,$3,$4,$5,$6,$7,$8,$9::text::jsonb, now())
        returning member_id`,
         // A SKIPPED identity persists as NULL (genuinely absent → recovered at Identity Excavation), never '' — so a
         // "never named" is distinguishable from a lost capture, and downstream reads treat it as absent cleanly.
         [input.displayName, f.email.trim(), primaryDoor, input.identityNoun ? displayIdentityNoun(input.identityNoun) : null, identityParagraph,
-         input.athleticPast, input.gap, '', f.reclaimList],
+         input.athleticPast, input.gap, '', JSON.stringify(f.reclaimList)],
       ),
     );
     const memberId = rows[0]!.member_id;
@@ -154,8 +154,8 @@ export async function submitIdq(db: Db, memberId: string, responses: number[]): 
        (member_id, cycle_indicator, sequence_no, responses,
         physical_score, self_score, social_score, outlook_score, id_score_raw, id_score,
         delta_from_baseline, delta_from_previous, direction)
-     values ($1,1,$2,$3::jsonb,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
-    [memberId, sequenceNo, responses,
+     values ($1,1,$2,$3::text::jsonb,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
+    [memberId, sequenceNo, JSON.stringify(responses),
      score.dimensions.physical, score.dimensions.self, score.dimensions.social, score.dimensions.outlook,
      score.idScoreRaw, score.idScore,
      movement.deltaFromBaseline, movement.deltaFromPrevious, movement.direction],

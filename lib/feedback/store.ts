@@ -30,7 +30,7 @@ export async function logFeedback(db: Db, input: FeedbackInput): Promise<boolean
   if (!body || !isKind(input.kind)) return false;
   await db.query(
     `insert into member_feedback (member_id, author, kind, body, surface, context)
-     values ($1,$2,$3,$4,$5,$6::jsonb)`,
+     values ($1,$2,$3,$4,$5,$6::text::jsonb)`,
     [
       input.memberId,
       input.author ?? null,

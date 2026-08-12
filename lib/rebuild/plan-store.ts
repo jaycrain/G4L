@@ -35,7 +35,7 @@ export type CoachingPlan<P = Record<string, unknown>> = {
 // So every failure path degrades to "no worse than before" rather than to data loss.
 export async function persistCoachingPlan<P>(db: Db, memberId: string, phase: CoachingPhase, payload: P): Promise<void> {
   const { rows } = await db.query<{ id: string }>(
-    `insert into coaching_plan (member_id, phase, payload, status) values ($1, $2, $3::jsonb, 'active') returning id`,
+    `insert into coaching_plan (member_id, phase, payload, status) values ($1, $2, $3::text::jsonb, 'active') returning id`,
     [memberId, phase, JSON.stringify(payload)],
   );
   const id = rows[0]?.id;

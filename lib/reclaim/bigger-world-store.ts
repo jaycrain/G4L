@@ -77,7 +77,7 @@ export async function persistBiggerWorldReading(
   const tidied = tidyReflections(reflections);
   await db.query(
     `insert into bigger_world_reading (member_id, source, sequence_no, responses, priorities, reflections)
-     values ($1, 'c2', $2, $3::jsonb, $4::jsonb, $5::jsonb)
+     values ($1, 'c2', $2, $3::text::jsonb, $4::text::jsonb, $5::text::jsonb)
      on conflict (member_id, source, sequence_no) do nothing`,
     [
       memberId,

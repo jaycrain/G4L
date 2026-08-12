@@ -90,7 +90,7 @@ export async function persistGrintaReading(db: Db, memberId: string, input: Grin
       `insert into grinta_reading
          (member_id, source, sequence_no, responses, composite,
           reconnect_score, rewire_score, rebuild_score, reclaim_score, change_pct, direction)
-       values ($1,$2,$3,$4::jsonb,$5,$6,$7,$8,$9,$10,$11)
+       values ($1,$2,$3,$4::text::jsonb,$5,$6,$7,$8,$9,$10,$11)
        on conflict (member_id, sequence_no) do nothing`,
       [
         memberId, input.source, seq, JSON.stringify(input.responses), input.score.composite,

@@ -41,7 +41,7 @@ export async function emitHarvestMoment(db: Db, memberId: string, m: HarvestMome
   const { rows } = await db.query<{ moment_id: string }>(
     `insert into member_event (member_id, kind, surface, ref, meta)
      values ($1, 'harvest_moment', $4, $2,
-             jsonb_set($3::jsonb, '{momentId}', to_jsonb(gen_random_uuid()::text)))
+             jsonb_set($3::text::jsonb, '{momentId}', to_jsonb(gen_random_uuid()::text)))
      returning meta->>'momentId' as moment_id`,
     [memberId, m.sourceRef.ref ?? null, JSON.stringify(meta), m.surface ?? 'onboarding'],
   );

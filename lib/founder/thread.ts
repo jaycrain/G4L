@@ -45,7 +45,7 @@ export async function appendFounderTurns(db: Db, turns: FounderTurn[], operator 
   try {
     for (const t of turns) {
       await db.query(
-        `insert into founder_message (operator, role, text, looked) values ($1,$2,$3,$4::jsonb)`,
+        `insert into founder_message (operator, role, text, looked) values ($1,$2,$3,$4::text::jsonb)`,
         [operator, t.role, t.text, JSON.stringify(t.looked ?? [])],
       );
     }

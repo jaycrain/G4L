@@ -79,7 +79,7 @@ export async function commitRefinement(db: Db, memberId: string, result: Refinem
   // (1) history snapshot — the pre-state + the refinement, kept for RC-4 retrieval. status 'complete' (a record, not
   // an active plan), so it never collides with an active coaching_plan.
   await db.query(
-    `insert into coaching_plan (member_id, phase, payload, status) values ($1, 'reclaim', $2::jsonb, 'complete')`,
+    `insert into coaching_plan (member_id, phase, payload, status) values ($1, 'reclaim', $2::text::jsonb, 'complete')`,
     [
       memberId,
       JSON.stringify({

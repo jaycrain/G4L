@@ -24,7 +24,7 @@ export async function persistWhyReading(db: Db, memberId: string, responses: num
   const sequenceNo = rows[0]?.n ?? 0;
   await db.query(
     `insert into motivation_reading (member_id, source, sequence_no, responses, scores)
-     values ($1, 'b1', $2, $3::jsonb, $4::jsonb)
+     values ($1, 'b1', $2, $3::text::jsonb, $4::text::jsonb)
      on conflict (member_id, source, sequence_no) do nothing`,
     [memberId, sequenceNo, JSON.stringify(whyResponsesMap(responses)), JSON.stringify(scores)],
   );
@@ -68,7 +68,7 @@ export async function persistSkillsReading(db: Db, memberId: string, responses: 
   const sequenceNo = rows[0]?.n ?? 0;
   await db.query(
     `insert into self_management_reading (member_id, source, sequence_no, responses, scores)
-     values ($1, 'b2', $2, $3::jsonb, $4::jsonb)
+     values ($1, 'b2', $2, $3::text::jsonb, $4::text::jsonb)
      on conflict (member_id, source, sequence_no) do nothing`,
     [memberId, sequenceNo, JSON.stringify(skillResponsesMap(responses)), JSON.stringify(scores)],
   );

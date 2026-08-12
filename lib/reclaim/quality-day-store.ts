@@ -34,7 +34,7 @@ export function profileElements(p: QualityDayProfile): string[] {
 export async function persistQualityDayProfile(db: Db, memberId: string, profile: QualityDayProfile): Promise<void> {
   const { rows } = await db.query<{ id: string }>(
     `insert into coaching_plan (member_id, phase, payload, status)
-     values ($1, 'reclaim', $2::jsonb, 'active') returning id`,
+     values ($1, 'reclaim', $2::text::jsonb, 'active') returning id`,
     [memberId, JSON.stringify({ kind: 'quality_day_profile', ...profile })],
   );
   const id = rows[0]?.id;
@@ -95,7 +95,7 @@ export async function logQualityDay(
     // THE MEMBER'S RECORD KNOWS NOTHING ABOUT TELEMETRY. `source` is tagged on afterwards, best-effort, so a column
     // that has not been migrated yet costs a measurement and never their day. See lib/db/best-effort.ts.
     `insert into quality_day_log (member_id, logged_on, score, present, most_valuable, most_missing)
-     values ($1, coalesce($2::date, current_date), $3, $4::jsonb, $5, $6)
+     values ($1, coalesce($2::date, current_date), $3, $4::text::jsonb, $5, $6)
      on conflict (member_id, logged_on) do update set
        score = excluded.score, present = excluded.present,
        most_valuable = excluded.most_valuable, most_missing = excluded.most_missing, updated_at = now()`,

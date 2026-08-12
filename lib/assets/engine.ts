@@ -13,8 +13,8 @@ async function emitEvent(
 ): Promise<void> {
   await db.query(
     `insert into asset_event (member_id, asset_code, event_type, time_on_asset_ms, drop_off_point, variant, payload)
-     values ($1,$2,$3,$4,$5,$6,$7::jsonb)`,
-    [p.memberId, p.code, p.type, p.timeMs ?? null, p.point ?? null, p.variant ?? null, p.payload ?? {}],
+     values ($1,$2,$3,$4,$5,$6,$7::text::jsonb)`,
+    [p.memberId, p.code, p.type, p.timeMs ?? null, p.point ?? null, p.variant ?? null, JSON.stringify(p.payload ?? {})],
   );
 }
 
@@ -43,11 +43,11 @@ export async function completeAsset(
 ): Promise<{ ok: true }> {
   await db.query(
     `insert into asset_completion (member_id, cycle_indicator, asset_code, variant, asset_version, outputs, reflection)
-     values ($1,1,$2,$3,$4,$5::jsonb,$6)
+     values ($1,1,$2,$3,$4,$5::text::jsonb,$6)
      on conflict (member_id, cycle_indicator, asset_code) do update
        set variant = excluded.variant, asset_version = excluded.asset_version,
            outputs = excluded.outputs, reflection = excluded.reflection, completed_at = now()`,
-    [p.memberId, p.code, p.variant ?? null, p.version, p.outputs ?? {}, p.reflection ?? null],
+    [p.memberId, p.code, p.variant ?? null, p.version, JSON.stringify(p.outputs ?? {}), p.reflection ?? null],
   );
   await emitEvent(db, { memberId: p.memberId, code: p.code, type: 'completed', variant: p.variant, timeMs: p.timeMs });
   return { ok: true };
