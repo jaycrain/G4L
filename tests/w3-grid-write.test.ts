@@ -156,3 +156,25 @@ test('a door we never recorded reads as "not recorded", never folded into a real
   const w3 = rows.filter((r) => r.tracker === 'Noticing your days');
   assert.deepEqual(w3.map((r) => r.source), ['not recorded'], 'counting it as companion would invent a finding');
 });
+
+test('A MISSING TELEMETRY COLUMN COSTS A MEASUREMENT, NEVER THE MEMBER’S DAY', async () => {
+  // The window between a deploy and a hand-applied migration is real: 0076 shipped in code before it was pasted
+  // into prod, and with `source` inside the INSERT every Quality Day log would have thrown "column source does not
+  // exist" and told the member "Could not log — please try again." A metric taking down a working feature.
+  //
+  // Simulated by DROPPING the column, which is the honest way to test it — the alternative is trusting that I
+  // reasoned about the failure correctly.
+  const { db, memberId } = await freshDb();
+  await db.query('alter table w3_daily_entry drop column source');
+  await db.query('alter table quality_day_log drop column source');
+
+  const tick = await toggleMark(db, memberId, WEEK, 'logged', 0, 'grid');
+  assert.deepEqual(tick, { ok: true, on: true }, 'the tick still saves');
+  assert.equal((await w3Entries(db, memberId, 7)).length, 1, 'and the day is really there');
+
+  assert.equal(await recordW3Entry(db, memberId, { entryDate: '2026-08-11', reflection: 'still works' }), true);
+
+  const { logQualityDay } = await import('../lib/reclaim/quality-day-store.ts');
+  const logged = await logQualityDay(db, memberId, { score: 8, present: ['bike ride'] });
+  assert.deepEqual(logged, { ok: true }, 'and a Quality Day still logs');
+});

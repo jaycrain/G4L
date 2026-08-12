@@ -18,6 +18,7 @@
 //   · NO TARGET, NO COUNT, NO STREAK. W3 has no adherence measure anywhere in the asset.
 
 import type { Db } from '../db/schema.ts';
+import { tagBestEffort } from '../db/best-effort.ts';
 
 export type W3Entry = {
   entryDate: string; // YYYY-MM-DD
@@ -62,8 +63,8 @@ export async function recordW3Entry(db: Db, memberId: string, input: W3EntryInpu
   try {
     await db.query(
       `insert into w3_daily_entry
-         (member_id, entry_date, good_calls, false_starts, trigger_slot, old_voice, recovery_used, reflection, source)
-       values ($1, $2::date, $3, $4, $5, $6, $7, $8, $9)
+         (member_id, entry_date, good_calls, false_starts, trigger_slot, old_voice, recovery_used, reflection)
+       values ($1, $2::date, $3, $4, $5, $6, $7, $8)
        on conflict (member_id, entry_date) do update set
          -- COALESCE so an amendment ADDS without erasing. A member who logs a good call in the morning and a
          -- false start at night must end the day with both; a naive overwrite would silently drop the morning.
@@ -73,11 +74,10 @@ export async function recordW3Entry(db: Db, memberId: string, input: W3EntryInpu
          old_voice     = coalesce(excluded.old_voice, w3_daily_entry.old_voice),
          recovery_used = coalesce(excluded.recovery_used, w3_daily_entry.recovery_used),
          reflection    = coalesce(excluded.reflection, w3_daily_entry.reflection),
-         source        = coalesce(excluded.source, w3_daily_entry.source),
          updated_at    = now()`,
-      [memberId, e.entryDate, e.goodCalls, e.falseStarts, e.triggerSlot, e.oldVoice, e.recoveryUsed, e.reflection,
-       input.source ?? 'companion'],
+      [memberId, e.entryDate, e.goodCalls, e.falseStarts, e.triggerSlot, e.oldVoice, e.recoveryUsed, e.reflection],
     );
+    await tagW3Source(db, memberId, e.entryDate, input.source ?? 'companion');
     return true;
   } catch (err) {
     // LOUD. A swallowed write here loses the member's day and renders as "you didn't log" — a confident lie about
@@ -158,10 +158,16 @@ export async function readW3Day(db: Db, memberId: string, date: string): Promise
 /** Mark the day as noticed — a bare entry, which is a real answer to "did you check in today". */
 export async function ensureW3Day(db: Db, memberId: string, date: string, source: string): Promise<void> {
   await db.query(
-    `insert into w3_daily_entry (member_id, entry_date, source) values ($1, $2::date, $3)
+    `insert into w3_daily_entry (member_id, entry_date) values ($1, $2::date)
      on conflict (member_id, entry_date) do update set updated_at = now()`,
-    [memberId, date, source],
+    [memberId, date],
   );
+  await tagW3Source(db, memberId, date, source);
+}
+
+/** The telemetry tag, always AFTER the member's row and never able to fail it. See lib/db/best-effort.ts. */
+async function tagW3Source(db: Db, memberId: string, date: string, source: string): Promise<void> {
+  await tagBestEffort(db, 'w3_daily_entry.source', `update w3_daily_entry set source=$3 where member_id=$1 and entry_date=$2::date`, [memberId, date, source]);
 }
 
 /**
@@ -174,10 +180,11 @@ export async function ensureW3Day(db: Db, memberId: string, date: string, source
  */
 export async function setW3Trigger(db: Db, memberId: string, date: string, slot: string | null, source: string): Promise<void> {
   await db.query(
-    `insert into w3_daily_entry (member_id, entry_date, trigger_slot, source) values ($1, $2::date, $3, $4)
+    `insert into w3_daily_entry (member_id, entry_date, trigger_slot) values ($1, $2::date, $3)
      on conflict (member_id, entry_date) do update set trigger_slot = $3, updated_at = now()`,
-    [memberId, date, slot, source],
+    [memberId, date, slot],
   );
+  await tagW3Source(db, memberId, date, source);
 }
 
 /** Un-tick a day. REFUSES when the member wrote anything into it — a checkbox must not delete prose. */

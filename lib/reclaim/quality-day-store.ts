@@ -5,6 +5,7 @@
 
 import type { Db } from '../db/schema.ts';
 import { readJson, payloadKind } from '../db/jsonb.ts';
+import { tagBestEffort } from '../db/best-effort.ts';
 
 export type QualityDayProfile = {
   nonNegotiables: string[]; // top 3 — a day is hard to call "quality" without these
@@ -91,14 +92,17 @@ export async function logQualityDay(
   entry: { score: number; present?: string[]; mostValuable?: string; mostMissing?: string; loggedOn?: string; source?: string },
 ): Promise<{ ok: boolean }> {
   await db.query(
-    `insert into quality_day_log (member_id, logged_on, score, present, most_valuable, most_missing, source)
-     values ($1, coalesce($2::date, current_date), $3, $4::jsonb, $5, $6, $7)
+    // THE MEMBER'S RECORD KNOWS NOTHING ABOUT TELEMETRY. `source` is tagged on afterwards, best-effort, so a column
+    // that has not been migrated yet costs a measurement and never their day. See lib/db/best-effort.ts.
+    `insert into quality_day_log (member_id, logged_on, score, present, most_valuable, most_missing)
+     values ($1, coalesce($2::date, current_date), $3, $4::jsonb, $5, $6)
      on conflict (member_id, logged_on) do update set
        score = excluded.score, present = excluded.present,
-       most_valuable = excluded.most_valuable, most_missing = excluded.most_missing,
-       source = excluded.source, updated_at = now()`,
-    [memberId, entry.loggedOn ?? null, entry.score, JSON.stringify(entry.present ?? []), entry.mostValuable?.trim() || null, entry.mostMissing?.trim() || null, entry.source ?? 'form'],
+       most_valuable = excluded.most_valuable, most_missing = excluded.most_missing, updated_at = now()`,
+    [memberId, entry.loggedOn ?? null, entry.score, JSON.stringify(entry.present ?? []), entry.mostValuable?.trim() || null, entry.mostMissing?.trim() || null],
   );
+  await tagBestEffort(db, 'quality_day_log.source', `update quality_day_log set source=$3 where member_id=$1 and logged_on=coalesce($2::date, current_date)`,
+    [memberId, entry.loggedOn ?? null, entry.source ?? 'form']);
   return { ok: true };
 }
 
