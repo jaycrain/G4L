@@ -10,6 +10,7 @@ import {
 import {
   AUDIT_ITEM_COUNT, AUDIT_SUB_ISSUES, AUDIT_REFLECTION_PROMPTS, AUDIT_SORT_QUESTIONS, AUDIT_DOMAINS,
 } from '../lib/reclaim/bigger-world-instrument.ts';
+import { memberReads } from '../lib/playbook/reads.ts';
 
 // C2'S REFLECTION HALF — Greg's Q3/Q7/Q8 and the cross-domain sort.
 //
@@ -185,7 +186,7 @@ test('a divergence reaches the Companion as context, with an explicit do-not-cor
     doorDisplayNames: [],
     idScore: null,
     reclaimPriorities: {
-      primary: 'Self', chosenByMember: f.chosenByMember, computed: 'Physical',
+      primary: 'Self', chosenByMember: f.chosenByMember, computed: 'Physical', secondary: 'Outlook',
       momentumLever: 'Social', keyObstacle: keyObstacle ?? null, firstAction: firstAction ?? null,
     },
   };
@@ -194,4 +195,30 @@ test('a divergence reaches the Companion as context, with an explicit do-not-cor
   assert.match(prompt, /do NOT correct them/i, 'and told not to argue the member out of it');
   assert.match(prompt, /I say yes to everything/, 'their obstacle, verbatim');
   assert.match(prompt, /One no this week/, 'and their first move');
+  // The close names the Secondary out loud (v3.3), so the agent has to know it — otherwise a member asks "what was
+  // second?" and the Companion, which can see everything else about the audit, has to guess.
+  assert.match(prompt, /second in the ranking is their outlook life/i, 'the Secondary reaches the agent');
+});
+
+test('THE PLAYBOOK READ HONOURS THE MEMBER’S CHOICE, not the ratings', async () => {
+  // The card said "the area you chose to focus on" and printed the COMPUTED primary — so a member who chose Social
+  // read that they had chosen Physical. The rule was honoured in the close and in the Companion's context and
+  // dropped at the third site. Same fact, three places, one of them lying.
+  const { db, memberId } = await freshDb();
+  await persistBiggerWorldReading(db, memberId, ratingsFavouringPhysical(), {
+    domains: { self: { obstacle: 'I say yes to everything' } },
+    sort: { focus: 'self' },
+  });
+  const card = (await memberReads(db, memberId)).find((r) => r.from === 'Bigger World Audit');
+  assert.ok(card, 'the card renders');
+  assert.match(card!.lines[0]!, /chose to focus on: your self life/i, 'their choice, not the ranking');
+  assert.doesNotMatch(card!.lines[0]!, /physical/i, 'never the computed primary dressed as their choice');
+});
+
+test('with no chosen focus the card says whose read it is, and never claims a choice', async () => {
+  const { db, memberId } = await freshDb();
+  await persistBiggerWorldReading(db, memberId, ratingsFavouringPhysical(), { domains: {} });
+  const card = (await memberReads(db, memberId)).find((r) => r.from === 'Bigger World Audit')!;
+  assert.match(card.lines[0]!, /your ratings point/i);
+  assert.doesNotMatch(card.lines.join(' '), /you chose this/i, 'no invented choice');
 });

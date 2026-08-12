@@ -71,7 +71,9 @@ export type Stage = 'identity' | 'identity_name' | 'reclaim' | 'door' | 'complet
   // literals rather than eight hand-written members: the domain list is the source of truth, and a typo in one of
   // eight near-identical strings is exactly the bug nobody spots in review.
   | `audit-${'physical' | 'self' | 'social' | 'outlook'}`
+  | `audit-b-${'physical' | 'self' | 'social' | 'outlook'}`
   | `reflect-${'physical' | 'self' | 'social' | 'outlook'}`
+  | `reflect-close-${'physical' | 'self' | 'social' | 'outlook'}`
   | 'sort'
   // C3 · Quality Days — 'quality' (coach mode: define the Quality Day → confirm → store + open the logging week).
   | 'quality';
@@ -619,10 +621,18 @@ const STAGE_PROMPT: Record<Stage, string> = {
   'audit-self': 'A number from 1 to 10 — where would you put it?',
   'audit-social': 'A number from 1 to 10 — where would you put it?',
   'audit-outlook': 'A number from 1 to 10 — where would you put it?',
+  'audit-b-physical': 'A number from 1 to 10 — where would you put it?',
+  'audit-b-self': 'A number from 1 to 10 — where would you put it?',
+  'audit-b-social': 'A number from 1 to 10 — where would you put it?',
+  'audit-b-outlook': 'A number from 1 to 10 — where would you put it?',
   'reflect-physical': 'Whatever comes to mind first — even a few words.',
   'reflect-self': 'Whatever comes to mind first — even a few words.',
   'reflect-social': 'Whatever comes to mind first — even a few words.',
   'reflect-outlook': 'Whatever comes to mind first — even a few words.',
+  'reflect-close-physical': 'Whatever comes to mind first — even a few words.',
+  'reflect-close-self': 'Whatever comes to mind first — even a few words.',
+  'reflect-close-social': 'Whatever comes to mind first — even a few words.',
+  'reflect-close-outlook': 'Whatever comes to mind first — even a few words.',
   sort: 'Which of the four — Physical, Self, Social, or Outlook?',
   // v2.5 Reclaim C3 — coach mode supplies its own coaching text; a neutral fallback for type completeness.
   quality: 'When a day feels genuinely good to you, what tends to be present?',

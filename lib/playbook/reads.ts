@@ -22,7 +22,7 @@ import type { Db } from '../db/schema.ts';
 import { latestSkillsReading, latestWhyReading } from '../rebuild/store.ts';
 import { relativeAutonomyRead } from '../rebuild/why-instrument.ts';
 import { skillHighlights } from '../rebuild/skills-instrument.ts';
-import { latestBiggerWorldReading } from '../reclaim/bigger-world-store.ts';
+import { latestBiggerWorldReading, firstFocus } from '../reclaim/bigger-world-store.ts';
 import { AUDIT_DOMAIN_LABEL } from '../reclaim/bigger-world-instrument.ts';
 
 export type Read = {
@@ -104,16 +104,26 @@ export async function memberReads(db: Db, memberId: string): Promise<Read[]> {
   if (bw) {
     const read = tryOr<Read | null>(() => {
       // An unknown domain key yields no card rather than "your undefined life" — and never a throw.
-      const primary = AUDIT_DOMAIN_LABEL[bw.priorities.primary];
+      //
+      // FIRST FOCUS, NOT THE COMPUTED PRIMARY. This card said "the area you chose to focus on" and then printed the
+      // domain the RATINGS ranked first — so a member who chose Social read a card telling them they'd chosen
+      // Physical. The one rule C2 has is that the member's choice leads (Jay, 2026-08-09); it was honoured in the
+      // close and in the Companion's context and dropped here. One fact, three sites, one of them wrong.
+      const focus = firstFocus(bw);
+      const primary = AUDIT_DOMAIN_LABEL[focus.domain];
       const lever = AUDIT_DOMAIN_LABEL[bw.priorities.momentumLever];
       if (!primary || !lever) return null;
       return {
         label: 'your bigger world',
         from: 'Bigger World Audit',
         lines: [
-          `The area you chose to focus on: your ${lower(primary)} life.`,
+          focus.chosenByMember
+            ? `The area you chose to focus on: your ${lower(primary)} life.`
+            : `Where your ratings point: your ${lower(primary)} life.`,
           `Where momentum comes easiest: your ${lower(lever)} life.`,
-          'You chose these — they are where you decided the effort goes.',
+          focus.chosenByMember
+            ? 'You chose this — it is where you decided the effort goes.'
+            : 'You did not name a single area, so this is the ratings’ read, not your call.',
         ],
       };
     }, null);

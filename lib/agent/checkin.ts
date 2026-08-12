@@ -97,6 +97,7 @@ export type CheckinContext = {
     primary: string; // the FOCUS — the member's own choice when they made one, else the computed ranking
     chosenByMember: boolean;
     computed: string; // what the ratings ranked first, so a divergence can be named rather than hidden
+    secondary: string; // second in the ranking — said out loud in the close since v3.3, so the agent must know it
     momentumLever: string;
     keyObstacle: string | null; // their words, from the focus domain — null when they skipped it
     firstAction: string | null;
@@ -410,7 +411,7 @@ export function contextBlock(c: CheckinContext): string {
                   : ''
               }`
             : `the ratings point to their ${c.reclaimPriorities.primary.toLowerCase()} life (they did not name a choice themselves — so never say "the one you chose")`
-        }; the easiest place to build momentum is their ${c.reclaimPriorities.momentumLever.toLowerCase()} life.${
+        }; second in the ranking is their ${c.reclaimPriorities.secondary.toLowerCase()} life, and the easiest place to build momentum is their ${c.reclaimPriorities.momentumLever.toLowerCase()} life.${
           c.reclaimPriorities.keyObstacle ? ` What they said gets in the way, in their words: "${c.reclaimPriorities.keyObstacle}".` : ''
         }${
           c.reclaimPriorities.firstAction ? ` The first move they named: "${c.reclaimPriorities.firstAction}".` : ''

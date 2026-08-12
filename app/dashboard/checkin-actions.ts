@@ -303,6 +303,7 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
             primary: AUDIT_DOMAIN_LABEL[f.domain],
             chosenByMember: f.chosenByMember,
             computed: AUDIT_DOMAIN_LABEL[biggerWorld.priorities.primary],
+            secondary: AUDIT_DOMAIN_LABEL[biggerWorld.priorities.secondary],
             momentumLever: AUDIT_DOMAIN_LABEL[biggerWorld.priorities.momentumLever],
             keyObstacle: keyObstacle ?? null,
             firstAction: firstAction ?? null,

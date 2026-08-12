@@ -70,21 +70,43 @@ test('a DRIFTED register hides one card, it does not empty the tab', async () =>
   assert.deepEqual(reads.map((r) => r.label), ['your bigger world'], 'the good read survives the bad one');
 });
 
-test('the bigger-world read frames a CHOICE, not a ranking', async () => {
+test('the bigger-world read frames a CHOICE, not a ranking — WHEN there was one', async () => {
   // The member picked these. Copy that implies we ranked their life would be both wrong and a verdict.
+  //
+  // This test used to assert "You chose these" against a fixture with NO sort answer — so it pinned the card
+  // claiming a choice the member had never made, and pinned it against the COMPUTED primary at that. The rule C2
+  // exists to hold is that the member's choice leads; a test can encode the bug as easily as the code can.
+  const { db, memberId } = await freshDb();
+  await db.query(
+    `insert into bigger_world_reading (member_id, source, sequence_no, taken_on, priorities, responses, reflections)
+     values ($1,'c2',1,now(),$2,$3,$4)`,
+    [
+      memberId,
+      JSON.stringify({ primary: 'outlook', secondary: 'self', momentumLever: 'physical' }),
+      JSON.stringify(Array(16).fill(3)),
+      JSON.stringify({ domains: {}, sort: { focus: 'social' } }),
+    ],
+  );
+  const [r] = await memberReads(db, memberId);
+  assert.equal(r!.label, 'your bigger world');
+  const text = r!.lines.join(' ');
+  assert.match(text, /chose to focus on: your social life/i, 'THEIR pick, not the computed primary');
+  assert.doesNotMatch(text, /outlook/i, 'the ranking is never dressed up as their choice');
+  assert.match(text, /You chose this/, 'attribution stays with the member');
+  assert.doesNotMatch(text, /not a ranking|isn't a ranking/, 'declare what it is; do not reassure about what it is not');
+  assert.doesNotMatch(text, /\d/);
+});
+
+test('and with NO choice on file it says so, rather than inventing one', async () => {
   const { db, memberId } = await freshDb();
   await db.query(
     `insert into bigger_world_reading (member_id, source, sequence_no, taken_on, priorities, responses)
      values ($1,'c2',1,now(),$2,$3)`,
     [memberId, JSON.stringify({ primary: 'social', momentumLever: 'physical' }), JSON.stringify(Array(16).fill(3))],
   );
-  const [r] = await memberReads(db, memberId);
-  assert.equal(r!.label, 'your bigger world');
-  const text = r!.lines.join(' ');
-  assert.match(text, /social life/i);
-  assert.match(text, /You chose these/, 'attribution stays with the member');
-  assert.doesNotMatch(text, /not a ranking|isn't a ranking/, 'declare what it is; do not reassure about what it is not');
-  assert.doesNotMatch(text, /\d/);
+  const text = (await memberReads(db, memberId))[0]!.lines.join(' ');
+  assert.match(text, /Where your ratings point: your social life/i);
+  assert.doesNotMatch(text, /you chose/i, 'never tell someone they made a call they were never asked to make');
 });
 
 test('reads arrive in program order, and one drifted register cannot empty the tab', async () => {

@@ -33,18 +33,26 @@ test('C2 arc · warm frame → 20 items in four domains (headers) → RC-1 summa
   assert.match(t.reply, /Physical —/i, 'the first domain header');
   assert.ok(t.reply.includes(AUDIT_ITEMS[0]!.prompt), 'item 0 verbatim');
 
+  // GREG'S ORDER (v3.3, restored): Q1,Q2 → Q3 the gap → Q4,Q5,Q6 → Q7 obstacle, Q8 early action. The domain header
+  // still rides the first item of each domain, so it now announces itself on the turn that FOLLOWS the previous
+  // domain's Q8 rather than its Q6.
   let answered = 0;
   for (let d = 0; d < 4; d++) {
-    for (let i = 0; i < 5; i++) {
-      const absolute = d * 5 + i;
-      if (absolute === 5) assert.match(t.reply, new RegExp(`${AUDIT_DOMAIN_LABEL[AUDIT_DOMAIN_STARTS[5]!]} —`, 'i'), 'Self header at 5');
-      if (absolute === 15) assert.match(t.reply, new RegExp(`${AUDIT_DOMAIN_LABEL[AUDIT_DOMAIN_STARTS[15]!]} —`, 'i'), 'Outlook header at 15');
-      t = applyReclaimC2Turn(t.state, [], '7');
-      answered++;
-    }
+    const rate = (n: number) => {
+      for (let i = 0; i < n; i++) {
+        const absolute = answered;
+        if (absolute === 5) assert.match(t.reply, new RegExp(`${AUDIT_DOMAIN_LABEL[AUDIT_DOMAIN_STARTS[5]!]} —`, 'i'), 'Self header at 5');
+        if (absolute === 15) assert.match(t.reply, new RegExp(`${AUDIT_DOMAIN_LABEL[AUDIT_DOMAIN_STARTS[15]!]} —`, 'i'), 'Outlook header at 15');
+        t = applyReclaimC2Turn(t.state, [], '7');
+        answered++;
+      }
+    };
+    rate(2); // Q1 Current, Q2 Desired
+    t = applyReclaimC2Turn(t.state, [], 'a gap'); // Q3 — INSIDE the ratings, which is the whole point
+    rate(3); // Q4 Importance, Q5 Readiness, Q6 Ripple — rated against the gap they just named
     assert.equal(t.complete, false, `after domain ${d + 1}'s ratings the audit is not over`);
-    // Q3/Q7/Q8 are REQUIRED (Jay, 2026-08-09) — "next" re-asks rather than advancing, so the walk answers them.
-    for (const a of ['a gap', 'an obstacle', 'a first move']) t = applyReclaimC2Turn(t.state, [], a);
+    // Q7/Q8 are REQUIRED (Jay, 2026-08-09) — "next" re-asks rather than advancing, so the walk answers them.
+    for (const a of ['an obstacle', 'a first move']) t = applyReclaimC2Turn(t.state, [], a);
   }
   assert.equal(answered, AUDIT_ITEM_COUNT, 'all 20 items were administered');
   assert.equal(t.complete, false, 'the cross-domain sort still has to happen');

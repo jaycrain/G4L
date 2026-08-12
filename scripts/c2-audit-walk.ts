@@ -1,6 +1,6 @@
 // Does a member's Bigger World Audit actually KEEP what they say?
 //
-// C2 is now a 37-turn conversation — four (ratings → reflection) pairs and a cross-domain sort — and it had no
+// C2 is now a 37-turn conversation — four domains run as Q1,Q2 → Q3 → Q4,Q5,Q6 → Q7,Q8, then a cross-domain sort — and it had no
 // end-to-end coverage. The offline suite proves the engine: given state, it records every answer. That is not the
 // same question. Between one turn and the next the state crosses a server-action boundary, and on 2026-08-09 a
 // hand walk suggested answers were being lost there. Three eval-driven browser attempts produced three DIFFERENT
@@ -212,29 +212,54 @@ async function main(): Promise<void> {
   let turns = 0;
   const trail: string[] = [];
   let derailed = false;
-  for (const domain of ['physical', 'self', 'social', 'outlook']) {
-    if (derailed) break;
-    const before = fails.length;
-    for (const v of RATINGS[domain]!) {
+  // GREG'S ORDER, walked live: Q1,Q2 → Q3 the gap → Q4,Q5,Q6 → Q7 obstacle → Q8 early action. The offline suite
+  // pins the sequence in the engine; this pins it through the real chat, where the chips-vs-composer swap is what a
+  // member actually experiences. If the reorder ever regressed, the walk would find itself on chips when it expects
+  // to type — which is exactly the "odd Session" Jay hit, made mechanical.
+  const rateN = async (domain: string, values: number[]): Promise<boolean> => {
+    for (const v of values) {
       if (!(await isRatingTurn(page))) {
         bad(`expected a rating turn in ${domain}, got: "${(await currentQuestion(page)).slice(0, 70)}"`);
-        derailed = true; break;
+        return false;
       }
       trail.push(`${domain}/rate ${v}`);
       await rate(page, v);
       turns++;
     }
-    if (derailed) break;
-    for (const text of REFLECT[domain]!) {
-      if (await isRatingTurn(page)) { bad(`expected a reflection turn in ${domain}, still on chips`); derailed = true; break; }
+    return true;
+  };
+  const reflect = async (domain: string, texts: string[]): Promise<boolean> => {
+    for (const text of texts) {
+      if (await isRatingTurn(page)) { bad(`expected a reflection turn in ${domain}, still on chips`); return false; }
       trail.push(`${domain}/reflect → "${(await currentQuestion(page)).slice(0, 46)}"`);
       await answer(page, text);
       turns++;
     }
+    return true;
+  };
+
+  for (const domain of ['physical', 'self', 'social', 'outlook']) {
+    if (derailed) break;
+    const before = fails.length;
+    const [gap, obstacle, action] = REFLECT[domain]!;
+    const r = RATINGS[domain]!;
+
+    if (!(await rateN(domain, r.slice(0, 2)))) { derailed = true; break; }   // Q1, Q2
+    // Q3 must be the question in front of them NOW — not after all five ratings. Checked on the physical domain
+    // only; once it holds for one it holds for all four (the arc is assembled from one factory).
+    if (domain === 'physical') {
+      const q3 = await currentQuestion(page);
+      if (/biggest difference/i.test(q3)) ok('Q3 (the gap) lands after two ratings — Greg’s order, live');
+      else bad(`Q3 did not follow Q2 — the question after two ratings was: "${q3.slice(0, 70)}"`);
+    }
+    if (!(await reflect(domain, [gap!]))) { derailed = true; break; }        // Q3
+    if (!(await rateN(domain, r.slice(2)))) { derailed = true; break; }      // Q4, Q5, Q6
+    if (!(await reflect(domain, [obstacle!, action!]))) { derailed = true; break; } // Q7, Q8
+
     if (navigatedAway) { bad(`the page navigated away during ${domain} (nav: ${navLog.join(' → ')})`); derailed = true; break; }
     // Only claim the domain if nothing went wrong IN it — an unconditional ok() after a bad() is the same
     // dishonesty as a test that cannot fail.
-    if (fails.length === before) ok(`${domain}: 5 ratings + 3 reflections`);
+    if (fails.length === before) ok(`${domain}: Q1,Q2 → gap → Q4,Q5,Q6 → obstacle, action`);
   }
   if (derailed) { console.log('  turn trail:'); trail.slice(-8).forEach((t) => console.log(`    · ${t}`)); }
 
@@ -284,6 +309,12 @@ async function main(): Promise<void> {
   else bad('the close did not lead with the member’s chosen focus');
   if (/ratings leaned toward Physical/i.test(close)) ok('the divergence is named plainly');
   else bad('the divergence between ratings and choice was not named');
+  // Secondary Priority — computed since C2 shipped and never said out loud until v3.3. THIS walk's ratings make the
+  // secondary (Social) the same domain the member chose and the momentum lever, so the right behaviour here is
+  // SILENCE: naming it would put Social in three clauses of one paragraph. The unit suite covers the case where it
+  // is a fourth domain and gets named. Asserting "it appears" here would have been a check that cannot pass.
+  if (!/Second in line is/i.test(close)) ok('the Secondary is not repeated — it is the domain they already chose');
+  else bad('the close named the Secondary even though it is already the chosen focus');
 
   await browser.close();
   finish();

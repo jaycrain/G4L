@@ -319,6 +319,14 @@ function auditSummary(responses: number[], c?: Collected): string {
     chosen && chosen !== s.primary
       ? ` The ratings leaned toward ${AUDIT_DOMAIN_LABEL[s.primary]}; you chose ${AUDIT_DOMAIN_LABEL[chosen]}, and that's what we'll go with.`
       : '';
+  // SECONDARY PRIORITY — computed since C2 shipped, never once said out loud. V4 reads out a Primary AND a Secondary;
+  // we surfaced the Primary and the momentum lever and quietly dropped the second-ranked domain, so a member who
+  // rated twenty items got one domain back. Named plainly, and only when it isn't already in the sentence: if the
+  // secondary is also the lever or the domain in the divergence line, repeating it turns a read into a list.
+  const alreadyNamed = new Set<AuditDomain>([chosen ?? s.primary, s.momentumLever, ...(chosen && chosen !== s.primary ? [s.primary] : [])]);
+  const secondaryLine = alreadyNamed.has(s.secondary)
+    ? ''
+    : ` Second in line is ${AUDIT_DOMAIN_LABEL[s.secondary]} — worth knowing, not something to take on yet.`;
   const r = chosen ? c?.auditReflections?.domains?.[chosen] : undefined;
   // Their own words, quoted only when they gave them. Silence beats borrowing an obstacle they named about a
   // different part of their life.
@@ -326,7 +334,7 @@ function auditSummary(responses: number[], c?: Collected): string {
   const actionLine = r?.earlyAction ? ` And the move you'd start with: “${r.earlyAction}”.` : '';
   return (
     `Here's what stands out. Your best next focus looks like your ${primary} life because it matters to you and ` +
-    `progress there would ripple into the rest of your life.${divergence}${leverLine}` +
+    `progress there would ripple into the rest of your life.${divergence}${secondaryLine}${leverLine}` +
     `${obstacleLine}${actionLine}` +
     `${BEAT_SEP}This was about finding the priority, not judging any of it. It's saved — you can come back to it anytime.`
   );
@@ -366,12 +374,33 @@ function reflectStuckHelp(): string {
   );
 }
 
-const ratingsStageId = (d: AuditDomain): Stage => `audit-${d}`;
-const reflectStageId = (d: AuditDomain): Stage => `reflect-${d}`;
+// Each domain's five ratings split at Q3: chunk A is Q1–Q2, chunk B is Q4–Q6. Targets stay CUMULATIVE against the
+// shared bag — 2,5 · 7,10 · 12,15 · 17,20 — so the member-facing counter still counts one run of 20.
+//
+// Chunk A keeps the OLD `audit-${d}` id and the gap keeps `reflect-${d}` on purpose: a session stored mid-C2 under the
+// pre-split arc still resolves to a real stage instead of stranding. Only the two new steps get new ids.
+const rateAId = (d: AuditDomain): Stage => `audit-${d}`;
+const rateBId = (d: AuditDomain): Stage => `audit-b-${d}`;
+const gapStageId = (d: AuditDomain): Stage => `reflect-${d}`;
+const closeStageId = (d: AuditDomain): Stage => `reflect-close-${d}`;
 
 /** A domain's three reflection turns, in Greg's order. */
-const REFLECT_STEPS = ['gap', 'obstacle', 'action'] as const;
-type ReflectStep = (typeof REFLECT_STEPS)[number];
+// GREG'S ORDER, restored. V4 runs Q1 Current, Q2 Desired, Q3 GAP REFLECTION, Q4 Importance, Q5 Readiness,
+// Q6 Ripple, Q7 Obstacle, Q8 Early action. We had the five RATINGS as one block and then Q3→Q7→Q8 after them, which
+// put Q3 ("what's the biggest difference…") immediately before Q7 ("what keeps this gap in place?") — two
+// describe-the-gap questions back to back. That is the pair Jay hit: "this Session was odd, it actually kind of
+// sucked. ONLY one that felt like that."
+//
+// It is not only a rhythm problem. In Greg's order Q3 is where the member puts the gap into words, and Q4/Q5/Q6 then
+// rate THAT. Behind the ratings, they are scoring importance and readiness on a gap they have not yet articulated,
+// and then describing it twice.
+//
+// This is the same lesson as 2026-08-09, one layer along: we restored the instrument's COMPLETENESS and left its
+// ORDER alone. Order is part of a validated instrument too. Jay then: "Greg's been administering these kinds of
+// tests his entire career, and he knows what makes an assessment psychometrically sound."
+const REFLECT_GAP = ['gap'] as const;       // Q3 — between Q2 and Q4
+const REFLECT_CLOSE = ['obstacle', 'action'] as const; // Q7, Q8 — after Q6
+type ReflectStep = 'gap' | 'obstacle' | 'action';
 
 function reflectPrompt(d: AuditDomain, step: ReflectStep): string {
   const p = AUDIT_REFLECTION_PROMPTS[d][step];
@@ -419,11 +448,11 @@ function stashReflection(c: Collected, d: AuditDomain, patch: Record<string, unk
  * runArcTurn, and that is deliberate: crisis routing lives at the top of the kernel, and this is a session where a
  * member describes what is missing from their life. A hand-rolled loop outside the kernel would silently drop it.
  */
-function reflectionStage(d: AuditDomain, nextStage: Stage): StageDef {
+function reflectionStage(d: AuditDomain, steps: readonly ReflectStep[], nextStage: Stage, nextReply: () => string): StageDef {
   const advance: StageDef['gather'] = (b) => {
     const sc = b.scratch as { step?: number; unanswered?: number };
     const i = sc.step ?? 0;
-    const step = REFLECT_STEPS[i]!;
+    const step = steps[i]!;
     const said = (b.memberMessage ?? '').trim();
 
     // NOT AN ANSWER → re-ask. Never advance, never store a blank, never invent one. After a few tries, name the way
@@ -446,22 +475,21 @@ function reflectionStage(d: AuditDomain, nextStage: Stage): StageDef {
       stashReflection(b.collected, d, { earlyAction: said });
     }
 
-    if (i + 1 < REFLECT_STEPS.length) {
+    if (i + 1 < steps.length) {
       sc.step = i + 1;
-      b.reply = reflectPrompt(d, REFLECT_STEPS[i + 1]!);
+      b.reply = reflectPrompt(d, steps[i + 1]!);
       return;
     }
     // Done with this domain. Reset the step counter so the NEXT domain's reflection starts at Q3 rather than
     // inheriting this one's position — the shared scratch is the obvious place for that bug to live.
     sc.step = 0;
     b.stage = nextStage;
-    b.reply =
-      nextStage === 'sort' ? sortOpener() : auditDeliver((AUDIT_DOMAINS.indexOf(d) + 1) * 5);
+    b.reply = nextReply();
   };
   return {
-    id: reflectStageId(d),
+    id: (steps[0] === 'gap' ? gapStageId(d) : closeStageId(d)),
     mode: 'drawout',
-    opener: () => reflectPrompt(d, 'gap'),
+    opener: () => reflectPrompt(d, steps[0]!),
     offersSubstance: () => true,
     gather: advance,
     confirm: advance, // a reflection is recorded as given, never negotiated — no confirm step
@@ -472,6 +500,19 @@ function reflectionStage(d: AuditDomain, nextStage: Stage): StageDef {
 function sortOpener(): string {
   return `${AUDIT_SORT_INTRO}${BEAT_SEP}${AUDIT_SORT_QUESTIONS[0]!.prompt}`;
 }
+
+/**
+ * A QUESTION ABOUT THE QUESTION IS NOT AN ANSWER TO IT.
+ *
+ * `parseAuditDomain` matches domain words anywhere in the message, so "what do you mean by identity?" scored as a
+ * pick of Self — the member asked for help and the engine recorded a priority they never chose. That is the
+ * recurring shape from the other direction: the engine deciding what the member meant instead of reading what they
+ * said (see [[member-words-outrank-model-guess]]).
+ *
+ * Deliberately narrow — a trailing "?" alone is not enough, because "physical?" is a hedged pick and re-asking it
+ * would read as the Companion ignoring them. It takes an interrogative opening AND a question mark.
+ */
+const ASKING_NOT_PICKING = /^\s*(what|why|how|which|who|when|can|could|do|does|did|is|are|should|would)\b[\s\S]*\?\s*$/i;
 
 /** Read a domain out of a free answer. Nothing is stored when they name none — we do not guess a priority. */
 function parseAuditDomain(msg: string): AuditDomain | undefined {
@@ -485,19 +526,43 @@ function parseAuditDomain(msg: string): AuditDomain | undefined {
   return undefined;
 }
 
+// Re-ask copy for the sort. Names the four in the member's own vocabulary — a question they can't parse is our
+// wording problem, not their failure to answer.
+const SORT_CLARIFY = 'Whichever of the four fits best — Physical, Self, Social, or Outlook.';
+const SORT_STUCK_HELP =
+  "There's no wrong pick here, and nothing is locked in by it — Physical, Self, Social, or Outlook. " +
+  'And if now isn’t the moment, you can leave this and come back whenever you like; your place is saved.';
+
 const sortStage: StageDef = (() => {
   const advance: StageDef['gather'] = (b) => {
-    const sc = b.scratch as { q?: number };
+    const sc = b.scratch as { q?: number; unparsed?: number };
     const i = sc.q ?? 0;
     const q = AUDIT_SORT_QUESTIONS[i]!;
-    const picked = parseAuditDomain(b.memberMessage);
-    if (picked) {
-      // Replace, don't mutate — same reason as stashReflection above. The sort answers appeared to survive only
-      // because the LAST one is written on the turn that completes, so it never has to cross the wire again.
-      const prev = b.collected.auditReflections ?? { domains: {} };
-      b.collected.auditReflections = { ...prev, sort: { ...(prev.sort ?? {}), [q.key]: picked } };
+    const asked = ASKING_NOT_PICKING.test(b.memberMessage ?? '');
+    const picked = asked ? undefined : parseAuditDomain(b.memberMessage);
+
+    // NO DOMAIN NAMED → RE-ASK. It used to advance regardless, so a member who asked "what do you mean by identity?"
+    // — or answered in words the parser doesn't know — lost that question entirely AND was moved past it. Five of
+    // these feed the Primary/Secondary read, so a dropped one changes the close and nothing tells anybody.
+    //
+    // This is the reflection loop's rule at the last stage that lacked it: never advance on a non-answer, and after
+    // a few tries name the way through rather than repeating into silence.
+    if (!picked) {
+      sc.unparsed = (sc.unparsed ?? 0) + 1;
+      b.reply =
+        sc.unparsed >= REFLECT_HELP_AFTER
+          ? `${q.prompt}${BEAT_SEP}${SORT_STUCK_HELP}`
+          : `${q.prompt}${BEAT_SEP}${SORT_CLARIFY}`;
+      return;
     }
+    sc.unparsed = 0;
+    // Replace, don't mutate — same reason as stashReflection above. The sort answers appeared to survive only
+    // because the LAST one is written on the turn that completes, so it never has to cross the wire again.
+    const prev = b.collected.auditReflections ?? { domains: {} };
+    b.collected.auditReflections = { ...prev, sort: { ...(prev.sort ?? {}), [q.key]: picked } };
+
     if (i + 1 < AUDIT_SORT_QUESTIONS.length) {
+      sc.unparsed = 0;
       sc.q = i + 1;
       b.reply = AUDIT_SORT_QUESTIONS[i + 1]!.prompt;
       return;
@@ -517,36 +582,57 @@ const sortStage: StageDef = (() => {
 })();
 
 /** One administered stage per domain. `itemCount` is CUMULATIVE — it is compared against the shared bag. */
-function ratingsStage(d: AuditDomain): StageDef {
+function ratingsStage(d: AuditDomain, half: 'a' | 'b'): StageDef {
   const idx = AUDIT_DOMAINS.indexOf(d);
+  const base = idx * 5;
+  const first = half === 'a' ? base : base + 2;      // a: Q1,Q2   b: Q4,Q5,Q6
+  const target = half === 'a' ? base + 2 : base + 5; // cumulative against the shared bag
   return administeredStage({
-    id: ratingsStageId(d),
-    itemCount: (idx + 1) * 5, // cumulative: 5, 10, 15, 20
-    displayTotal: AUDIT_ITEM_COUNT, // always "of 20"
+    id: half === 'a' ? rateAId(d) : rateBId(d),
+    itemCount: target,
+    displayTotal: AUDIT_ITEM_COUNT, // always "of 20" — the split is Greg's order, not a longer instrument
     scaleMax: AUDIT_SCALE_MAX,
     minLabel: 'low',
     maxLabel: 'high',
-    opener: () => (idx === 0 ? auditOpener() : auditDeliver(idx * 5)),
+    opener: () => (idx === 0 && half === 'a' ? auditOpener() : auditDeliver(first)),
     deliverItem: (n) => auditDeliver(n),
     reprompt: (n) => `A number from 1 to 10 — where would you put it?\n\n${auditDeliver(n)}`,
     onComplete: (b) => {
-      b.stage = reflectStageId(d);
-      b.reply = reflectPrompt(d, 'gap');
+      if (half === 'a') {
+        b.stage = gapStageId(d); // Q3 — before the importance/readiness/ripple ratings, as V4 has it
+        b.reply = reflectPrompt(d, 'gap');
+      } else {
+        b.stage = closeStageId(d); // Q7, Q8
+        b.reply = reflectPrompt(d, 'obstacle');
+      }
     },
   });
 }
 
-const C2_STAGE_ORDER: Stage[] = [...AUDIT_DOMAINS.flatMap((d) => [ratingsStageId(d), reflectStageId(d)]), 'sort'];
+const C2_STAGE_ORDER: Stage[] = [
+  ...AUDIT_DOMAINS.flatMap((d) => [rateAId(d), gapStageId(d), rateBId(d), closeStageId(d)]),
+  'sort',
+];
 
 export const RECLAIM_C2_ARC: ArcConfig = {
   id: 'reclaim-c2',
   stageOrder: C2_STAGE_ORDER,
   stages: Object.fromEntries([
     ...AUDIT_DOMAINS.flatMap((d, i) => {
-      const next: Stage = i + 1 < AUDIT_DOMAINS.length ? ratingsStageId(AUDIT_DOMAINS[i + 1]!) : 'sort';
+      const idx = AUDIT_DOMAINS.indexOf(d);
+      const nextDomain = AUDIT_DOMAINS[i + 1];
+      const afterClose: Stage = nextDomain ? rateAId(nextDomain) : 'sort';
       return [
-        [ratingsStageId(d), ratingsStage(d)],
-        [reflectStageId(d), reflectionStage(d, next)],
+        [rateAId(d), ratingsStage(d, 'a')],
+        // Q3 hands BACK to this domain's own ratings — the whole point of the reorder.
+        [gapStageId(d), reflectionStage(d, REFLECT_GAP, rateBId(d), () => auditDeliver(idx * 5 + 2))],
+        [rateBId(d), ratingsStage(d, 'b')],
+        [
+          closeStageId(d),
+          reflectionStage(d, REFLECT_CLOSE, afterClose, () =>
+            nextDomain ? auditDeliver((i + 1) * 5) : sortOpener(),
+          ),
+        ],
       ];
     }),
     ['sort', sortStage],
@@ -560,7 +646,7 @@ export function applyReclaimC2Turn(state: ConvState, history: ConvMessage[], mem
 }
 
 export function reclaimC2Opening(): Turn {
-  const first = ratingsStageId(AUDIT_DOMAINS[0]!);
+  const first = rateAId(AUDIT_DOMAINS[0]!);
   return { reply: auditOpener(), state: { stage: first, collected: {} }, complete: false, expects: scaleExpects(RECLAIM_C2_ARC, first, false) };
 }
 
