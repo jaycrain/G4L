@@ -1,4 +1,5 @@
 import { softRead } from '../../../lib/db/degrade.ts';
+import DetectZone from '../detect-zone.tsx';
 import { memberToday } from '../../../lib/time/zone-store.ts';
 import Link from 'next/link';
 import { getDb } from '../../../lib/db/index.ts';
@@ -274,6 +275,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
   return (
     <>
       <DashboardSync />
+      <DetectZone memberId={memberId} />
       {!thresholdCrossed && <Threshold memberId={memberId} data={thresholdData} />}
       {thresholdCrossed && (
         <PostCeremonyTour

@@ -56,11 +56,21 @@ export async function detectZone(db: Db, memberId: string, zone: string): Promis
   }
 }
 
-/** The member choosing, from the account page. This one DOES overwrite — it is the deliberate act. */
+/**
+ * The member choosing, from the account page. This one DOES overwrite — it is the deliberate act.
+ *
+ * Written as the 'member' actor so the audit trail (migration 0032, which iterates every changed column and so
+ * picks `timezone` up for free) records who decided. Detection above deliberately does NOT: it is the system
+ * observing a browser, and logging that as the member's own choice would be a small lie in the one record that
+ * exists to say who changed what.
+ */
 export async function setZone(db: Db, memberId: string, zone: string): Promise<{ ok: boolean; error?: string }> {
   if (!isValidZone(zone)) return { ok: false, error: 'That is not a timezone we recognise.' };
   try {
-    await db.query('update member_profile set timezone = $2 where member_id = $1', [memberId, zone]);
+    const { writeAsActor } = await import('../db/actor.ts');
+    await writeAsActor(db, 'member', (tx) =>
+      tx.query('update member_profile set timezone = $2 where member_id = $1', [memberId, zone]),
+    );
     return { ok: true };
   } catch (e) {
     console.error(`setZone failed for member=${memberId}:`, (e as Error).message);
