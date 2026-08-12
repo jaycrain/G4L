@@ -130,7 +130,16 @@ async function build(db: Db, memberId: string, key: SessionKey): Promise<Artifac
     case 'c1': {
       const items = await getReclaimItems(db, memberId);
       const line = (i: { text: string; tier?: string | null }) => (i.tier === 'top' ? `★ ${i.text}` : i.text);
-      const kept = items.filter((i) => i.tier !== 'no_longer_central');
+      // THE ANCHOR LEADS. C1 exists to find the one thing the rest of the list organises itself around, and the card
+      // was showing it in whatever position it happened to hold in the list — Jay's sat fourth. "Shouldn't the
+      // starred item be on top. That was the whole point of Looking Forward." Naming the anchor and then burying it
+      // undoes the Session on the very card that reports it.
+      // Stable: only the starred ones move up; everything else keeps the order the member put it in.
+      const kept = items
+        .filter((i) => i.tier !== 'no_longer_central')
+        .map((i, idx) => ({ i, idx }))
+        .sort((a, b) => Number(b.i.tier === 'top') - Number(a.i.tier === 'top') || a.idx - b.idx)
+        .map((x) => x.i);
       return base([{ label: 'What you’re taking back', value: kept.length ? kept.map(line).join('\n') : null }]);
     }
     case 'c3': {
