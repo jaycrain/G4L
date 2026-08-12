@@ -25,6 +25,7 @@ import {
   RECLAIM_C3_ARC,
   RECLAIM_CHECKPOINT_ARC,
   composeQualityDay,
+  composeRefinedList,
 } from '../../lib/agent/reclaim.ts';
 import { BEAT_SEP } from '../../lib/agent/onboarding.ts';
 import { scaleExpects, type ArcConfig } from '../../lib/agent/onboarding-staged.ts';
@@ -127,6 +128,11 @@ export async function reclaimTurnAction(
   try {
     // C4 · The Reclaim Checkpoint — administered (deterministic Likert). On the checkpoint→ceremony crossing it scores
     // the Challenge component + persists the reading + sets the capstone gate.
+    // C4 WRITES NO PLAY EITHER, for a different reason (2026-08-12). Its close produces a Grinta checkpoint
+    // READING — a score. A play is the member's own language, and C4 captures none: composing prose to make one
+    // would mean writing a sentence in their voice that they never said, which is the rule we tightened this week.
+    // The Reclaim ceremony revisits their Legacy Letter and Success Story, and those are kept where they were
+    // written. A capstone play would have to come from a member's words, so it waits for a beat that captures some.
     if (session === 'checkpoint') {
       const turn = liveTurnReclaimCheckpoint(state, history, message);
       const db = (await getDb()) as unknown as Db;
@@ -154,6 +160,11 @@ export async function reclaimTurnAction(
             console.error(`C2 bigger-world reading FAILED to persist for member=${memberId}:`, (e as Error).message);
           }
         }
+        // C2 WRITES NO PLAY, AND THAT IS A DECISION (2026-08-12). Its output — First Focus, the momentum lever,
+        // their key obstacle and first action — is ALREADY on the Playbook as a computed read ("your bigger
+        // world", lib/playbook/reads.ts). A read is derived and always current; a play is a frozen keeper. Having
+        // both would put the same fact on the page twice and let them drift apart, which is exactly the defect we
+        // deleted off Momentum this morning. If C2's read ever stops being rendered, THAT is when it needs a play.
         try {
           await markSessionClosed(db, memberId, 'RCL-C2');
           c2Badge = await acknowledgeSessionBadge(db, memberId, 'RCL-C2'); // newly-earned milestone → named at the close
@@ -296,6 +307,21 @@ export async function reclaimTurnAction(
           }
         } catch (e) {
           console.error('CAT-36: C1 refinement commit THREW after the member confirmed:', (e as Error).message);
+        }
+        // THE PLAY — the short answer to "what am I taking back", in the order the member put it. Its own try,
+        // after the commit: the refinement is the thing that matters and a keeper failure must not touch it.
+        try {
+          const body = composeRefinedList(p.top3 ?? []);
+          if (body) {
+            await harvestSignal(
+              db,
+              memberId,
+              { kind: 'plan', ref: 'c1', keeperType: 'plan', destinationIntent: 'keeper', payloadRef: body, label: 'Your Reclaim List, refined' },
+              'reclaim',
+            );
+          }
+        } catch (e) {
+          console.error(`C1 Playbook play failed for member=${memberId}:`, (e as Error).message);
         }
       }
       try {

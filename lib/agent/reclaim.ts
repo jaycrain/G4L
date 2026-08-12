@@ -807,6 +807,24 @@ export function composeQualityDay(p: { nonNegotiables: string[]; contributors: s
     .join('\n');
 }
 
+/**
+ * Compose C1's refined Reclaim List into ONE Playbook play — what they said they are taking back.
+ *
+ * `top3` is the member's OWN ordering of their own refined wording (RefinementResult), so the anchor leads by
+ * construction — which is the whole point of Looking Forward (Jay, 2026-08-11: "Shouldn't the starred item be on
+ * top. That was the whole point"). Nothing is re-sorted here; re-deciding their order in a second place is how
+ * two surfaces start disagreeing about which item matters most.
+ *
+ * ONLY the top tier. The refined list holds four tiers and the full list already lives on the Reclaim List page —
+ * a play that reprinted all of it would be a duplicate of a surface that is always current, which is the mistake
+ * we removed from Momentum this morning. What earns a kept play is the SHORT answer to "what am I taking back".
+ */
+export function composeRefinedList(top3: readonly string[]): string | null {
+  const kept = top3.map((t) => (t ?? '').trim()).filter(Boolean);
+  if (!kept.length) return null; // nothing confirmed → no play, never an empty heading
+  return `Taking back — ${kept.join(' · ')}`;
+}
+
 export function reclaimC3Opening(): Turn {
   return { reply: c3Opening(), state: { stage: 'quality', collected: {} }, complete: false };
 }

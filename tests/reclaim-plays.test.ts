@@ -2,7 +2,7 @@ import './helpers/with-phase-flags.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { composeQualityDay } from '../lib/agent/reclaim.ts';
+import { composeQualityDay, composeRefinedList } from '../lib/agent/reclaim.ts';
 
 // RECLAIM HAS TO PUT SOMETHING IN THE PLAYBOOK.
 //
@@ -60,4 +60,36 @@ test('C3 COMMITS THE PLAY AT ITS CLOSE — and cannot cost the profile or the we
   // Each in its OWN try — a shared one is how a later failure eats an earlier success.
   const between = c3.slice(weekAt, playAt);
   assert.match(between, /try \{/, 'the play has its own try, not the week’s');
+});
+
+test('C1 COMMITS A PLAY — in the order the member put their list', () => {
+  const raw = readFileSync(new URL('../app/reclaim/actions.ts', import.meta.url), 'utf8');
+  const src = raw.replace(/\/\/[^\n]*/g, '').replace(/\/\*[\s\S]*?\*\//g, '');
+  assert.match(src, /composeRefinedList\(/, 'C1 writes its refined list as a play');
+  assert.match(src, /label: 'Your Reclaim List, refined'/);
+});
+
+test('the play keeps THEIR order — top3 is the member’s own, and nothing re-sorts it', () => {
+  // Looking Forward exists to put the starred item on top. Re-deciding that order in a second place is how two
+  // surfaces start disagreeing about which item matters most.
+  const body = composeRefinedList(['Finish top 20% at Big Sugar', 'Hard training rides', 'Core work']);
+  assert.equal(body, 'Taking back — Finish top 20% at Big Sugar · Hard training rides · Core work');
+});
+
+test('nothing confirmed means NO play — never an empty heading', () => {
+  assert.equal(composeRefinedList([]), null);
+  assert.equal(composeRefinedList(['', '   ']), null);
+});
+
+test('C2 AND C4 WRITE NO PLAY — recorded as decisions, not left as gaps', () => {
+  // Both are deliberate and both have a stated trigger for revisiting. Asserted so a later reader does not "fix"
+  // the absence: C2's output is already a computed read (a play would duplicate an always-current surface), and
+  // C4 produces a SCORE, so a play would mean composing member words they never said.
+  const raw = readFileSync(new URL('../app/reclaim/actions.ts', import.meta.url), 'utf8');
+  assert.match(raw, /C2 WRITES NO PLAY, AND THAT IS A DECISION/, 'C2’s reason is written down');
+  assert.match(raw, /C4 WRITES NO PLAY EITHER/, 'and so is C4’s');
+
+  const src = raw.replace(/\/\/[^\n]*/g, '').replace(/\/\*[\s\S]*?\*\//g, '');
+  const c2 = src.slice(src.indexOf("if (session === 'c2')"), src.indexOf("if (session === 'c3')"));
+  assert.doesNotMatch(c2, /await harvestSignal\(/, 'C2 really does not commit one');
 });
