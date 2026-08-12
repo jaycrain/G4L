@@ -16,7 +16,7 @@ import { getForecast } from '../../../lib/curriculum/view.ts';
 import { completedReviewSessions } from '../../../lib/workspace/review.ts';
 import SubpageShell from '../../dashboard/subpage-shell.tsx';
 
-export const metadata = { title: 'Your G4L Playbook — Grinta for Life' };
+export const metadata = { title: 'Your Playbook — Grinta for Life' };
 // The "Gather from your work" action runs a live curation pass; give the function room.
 export const maxDuration = 30;
 

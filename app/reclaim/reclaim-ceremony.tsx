@@ -50,7 +50,7 @@ export default function ReclaimCeremony({ memberId, data }: { memberId: string; 
     if (r.kind === 'playbook') {
       return (
         <div className="cer-seeds">
-          <p className="cer-seed-tag">Your G4L Playbook · Reclaim</p>
+          <p className="cer-seed-tag">Your Playbook · Reclaim</p>
           {r.keepers.map((k, i) => (
             <p key={i} className="cer-seed">{k}</p>
           ))}

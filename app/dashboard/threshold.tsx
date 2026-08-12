@@ -56,7 +56,7 @@ export default function Threshold({ memberId, data }: { memberId: string; data: 
     if (r.kind === 'seeds') {
       return (
         <div className="cer-seeds">
-          <p className="cer-seed-tag">Your G4L Playbook · just started</p>
+          <p className="cer-seed-tag">Your Playbook · just started</p>
           {r.seeds.map((s, k) => (
             <p key={k} className="cer-seed">{s}</p>
           ))}

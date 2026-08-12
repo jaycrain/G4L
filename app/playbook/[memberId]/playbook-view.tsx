@@ -183,7 +183,7 @@ export default function PlaybookView({
 
   return (
     <>
-      <h1 className="pb-page-title">Your G4L Playbook</h1>
+      <h1 className="pb-page-title">Your Playbook</h1>
       <p className="pb-sub">The story you’re telling about yourself — and the plays that back it up</p>
       <p className="pb-intro">
         Your companion keeps two things here: the story you’re writing as you go, and the handful of reframes, science,

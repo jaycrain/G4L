@@ -161,7 +161,7 @@ export default function WorkspaceSession({
                   back belongs there, not on the Program. Sending them to the Program dropped them somewhere they
                   hadn't been and made them re-find the entry they were reading (Jay's walk, 2026-08-11). If a second
                   entry point ever appears, this should carry the origin rather than pick a new hardcoded guess. */}
-              <Link href={`/playbook/${memberId}`} className="ws-back">← The Playbook</Link>
+              <Link href={`/playbook/${memberId}`} className="ws-back">← Your Playbook</Link>
               <div className="ws-col-way">
                 <div className="ws-way-pos">
                   <div className="ws-way-ph">Phase {wayfinding.phaseOrdinal} · {wayfinding.phaseLabel} · Completed</div>

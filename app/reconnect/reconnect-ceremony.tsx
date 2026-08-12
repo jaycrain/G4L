@@ -74,7 +74,7 @@ export default function ReconnectCeremony({ memberId, data, mobile = false }: { 
     if (r.kind === 'playbook') {
       return (
         <div className="cer-seeds">
-          <p className="cer-seed-tag">Your G4L Playbook · Reconnect</p>
+          <p className="cer-seed-tag">Your Playbook · Reconnect</p>
           {r.keepers.map((k, i) => (
             <p key={i} className="cer-seed">{k}</p>
           ))}

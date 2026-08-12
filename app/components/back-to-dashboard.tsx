@@ -9,6 +9,11 @@ import { usePathname, useSearchParams } from 'next/navigation';
 // "back" to (the dashboard itself, login, onboarding, admin). Query use → wrap in <Suspense> at the layout (Next 15).
 const UUID_RE = /[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/;
 
+// Routes whose "back" is a SUBPAGE rather than the dashboard, because that is where the member came from.
+const PARENTS: { test: RegExp; href: (id: string) => string; label: string }[] = [
+  { test: /^\/quality-day\//, href: (id) => `/playbook/${id}`, label: 'Your Playbook' },
+];
+
 export default function BackToDashboard() {
   const pathname = usePathname() ?? '';
   const search = useSearchParams();
@@ -25,6 +30,20 @@ export default function BackToDashboard() {
   // Sub-sub pages carry their OWN single back-nav to the parent subpage — e.g. a Community room shows only
   // "← G4L Community" (Jay, 2026-07-28). Suppress the global "← Dashboard" there so there's just one back affordance.
   if (/^\/connect\/[^/]+\/room\//.test(pathname)) return null;
+
+  // SOME PAGES HANG OFF A SUBPAGE, NOT OFF HOME, and "back" should mean the place you came from. The Quality Days
+  // log is reached by tapping "Log today →" on the Playbook's This week grid; sending the member to the dashboard
+  // afterwards makes them navigate back into the Playbook to see the box they just ticked (Jay, 2026-08-12).
+  // A TABLE, not another `if`. This is the third route to want a non-dashboard parent and the second to be given
+  // one by hand; the next practice-week log surface should be one line here, not a new branch to discover.
+  const parent = PARENTS.find((p) => p.test.test(pathname));
+  if (parent) {
+    return (
+      <Link href={parent.href(memberId)} className="back-dash" aria-label={`Back to ${parent.label}`}>
+        ← {parent.label}
+      </Link>
+    );
+  }
 
   // When a subpage was reached FROM a workspace session (e.g. Full route → carries ?from=<sessionKey>), also offer a
   // "← Session" hop back to that session, so the member doesn't have to route Dashboard → back into the session. Same

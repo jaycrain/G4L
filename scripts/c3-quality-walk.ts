@@ -261,16 +261,67 @@ async function main(): Promise<void> {
     bad(`the logged day did not come back after reload — the page says: "${summary.slice(0, 160)}"`);
   }
 
+  // ---- 4b. THE CONTROLS ARE LEGIBLE AND STRAIGHT -------------------------------------------------------------
+  //
+  // Both of these are things only a real browser can answer, and both were reported off Jay's own screen
+  // (2026-08-12). Asserting the stylesheet would just read my own fix back to me.
+  //
+  // HOVER: a global `button:hover { background: var(--navy) }` filled these chips navy while their own :hover rule
+  // only touched the border — so navy text on navy ground, contrast 1.0, the label gone under the cursor.
+  const chip = page.locator('.qd-el-btn').first();
+  await chip.hover();
+  const hovered = await chip.evaluate((el) => {
+    const cs = getComputedStyle(el);
+    return { bg: cs.backgroundColor, color: cs.color };
+  });
+  if (hovered.bg === hovered.color) bad(`the chip is invisible on hover — text and background are both ${hovered.bg}`);
+  else ok(`the chip stays legible on hover (${hovered.color} on ${hovered.bg})`);
+
+  // CENTRING: a hard 2.1rem square inheriting the global button's 0.7rem padding pushes the digit off-centre, and
+  // off-centre DIFFERENTLY for "1" than for "10". Measure the painted glyph against the box rather than trusting
+  // the declaration — a Range around the text node gives the real ink.
+  const offsets = await page.locator('.qd-score-btn').evaluateAll((els) =>
+    els.map((el) => {
+      const box = el.getBoundingClientRect();
+      const r = document.createRange();
+      r.selectNodeContents(el);
+      const t = r.getBoundingClientRect();
+      return {
+        label: (el.textContent ?? '').trim(),
+        dx: +(t.left + t.width / 2 - (box.left + box.width / 2)).toFixed(2),
+        dy: +(t.top + t.height / 2 - (box.top + box.height / 2)).toFixed(2),
+      };
+    }),
+  );
+  const skewed = offsets.filter((o) => Math.abs(o.dx) > 1 || Math.abs(o.dy) > 1);
+  if (skewed.length) {
+    bad(`${skewed.length} of ${offsets.length} score buttons have their number off-centre`);
+    skewed.slice(0, 4).forEach((o) => console.log(`      "${o.label}" off by ${o.dx}px across, ${o.dy}px down`));
+  } else {
+    ok(`all ${offsets.length} score numbers sit centred in their box (within 1px)`);
+  }
+
   // ---- 5. THE PLACE THE MEMBER ACTUALLY LOOKS ----------------------------------------------------------------
   //
   // Jay finished C3 on his own account and reported "no tracker was set up" (2026-08-11). The database had both the
   // profile and the week; steps 3 and 4 above were green. What none of them covered is the Playbook's "This week" —
   // the surface the member goes to for their trackers. Proving the log page works is not proving the tracker
   // APPEARS, and this walk stopped one page short of the thing that was reported.
+  // BACK GOES WHERE THEY CAME FROM. This page is reached by tapping "Log today →" on the Playbook's This week
+  // grid; "← Dashboard" made the member navigate back into the Playbook to see the box they had just ticked.
+  const backText = ((await page.locator('.back-dash').first().textContent().catch(() => '')) ?? '').trim();
+  const backHref = (await page.locator('.back-dash').first().getAttribute('href').catch(() => '')) ?? '';
+  if (/Your Playbook/.test(backText) && backHref.includes('/playbook/')) ok(`back goes to the Playbook — "${backText}"`);
+  else bad(`the Quality Days back link is "${backText}" → ${backHref} — it should return to the Playbook`);
+
   await page.goto(`${base}/playbook/${memberId}`, { waitUntil: 'domcontentloaded' });
   const onThisWeek = await page.locator('.pb-tab', { hasText: /^This week$/ }).first().click().then(() => true).catch(() => false);
   if (!onThisWeek) bad('the Playbook has no "This week" tab');
   await page.waitForSelector('.wk-grid, .pb-sec', { timeout: 15000 }).catch(() => {});
+
+  const pageTitle = ((await page.locator('.hero h1').first().textContent().catch(() => '')) ?? '').trim();
+  if (pageTitle === 'Your Playbook') ok('the Playbook calls itself "Your Playbook" here too');
+  else bad(`the Playbook hero says "${pageTitle}" — one place, one name`);
 
   const gridCount = await page.locator('.wk-grid').count();
   if (gridCount === 0) {

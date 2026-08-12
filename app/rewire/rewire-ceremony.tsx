@@ -54,7 +54,7 @@ export default function RewireCeremony({ memberId, data }: { memberId: string; d
     if (r.kind === 'playbook') {
       return (
         <div className="cer-seeds">
-          <p className="cer-seed-tag">Your G4L Playbook · Rewire</p>
+          <p className="cer-seed-tag">Your Playbook · Rewire</p>
           {r.keepers.map((k, i) => (
             <p key={i} className="cer-seed">{k}</p>
           ))}

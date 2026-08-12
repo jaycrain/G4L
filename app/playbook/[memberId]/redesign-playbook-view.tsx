@@ -294,7 +294,7 @@ export default function RedesignPlaybookView({
   return (
     <>
       {/* Navy hero banner — same treatment every other subpage carries (Jay's walk: Playbook was missing it). */}
-      <div className="hero"><h1>G4L Playbook</h1></div>
+      <div className="hero"><h1>Your Playbook</h1></div>
       {/* THE PROMISE, moved to the top of the page (2026-08-10 reframe) and matched to the pact said at welcome.
           It has one job: say what this page IS in a sentence, so the tabs below read as parts of one thing. */}
       <p className="pb-sub">Where your Comeback gets kept, so you can use it again and again — the moves that worked for you, and the person you’re reclaiming, in one place. It grows every week, and it’s yours.</p>

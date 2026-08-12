@@ -146,17 +146,24 @@ button, .btn {
   cursor: pointer;
   text-decoration: none;
 }
-button:hover, .btn:hover { background: var(--navy); }
+/* THE HOVER BACKGROUND IS A VARIABLE, NOT A HARDCODED NAVY.
+   This used to be `button:hover { background: var(--navy) }` plus a central opt-out list, and the list's own comment
+   said a new button "only has to join this list rather than rediscover the bug." Buttons kept rediscovering it —
+   four times now, most recently the Quality Days score and element chips, which went navy-on-navy and vanished
+   under the cursor while their own :hover rule only touched the border.
+   The opt-out list WAS the bug: the fix lived far away from the button, so writing a correct new button required
+   knowing about a rule you had no reason to look at. Now the default is declared once and any button overrides it
+   in its OWN rule, one line, next to the rest of its styling. Nothing to join, nothing to remember. */
+button, .btn { --btn-hover-bg: var(--navy); }
+button:hover, .btn:hover { background: var(--btn-hover-bg); }
 
-/* GHOST / LINK buttons — the global `button:hover { background: navy }` above paints a navy block behind any
-   button styled as a plain link, making its text unreadable (dark-on-dark) on rollover. Every link-style button
-   opts out here in ONE place, so a new one only has to join this list rather than rediscover the bug. (CAT-44) */
-.idp-own:hover, .idp-skip:hover,
-.onboard-fresh button:hover,
-.rlb-remove:hover,
-.pb-tools button:hover,
-.fb-status-row button:hover {
-  background: none;
+/* GHOST / LINK buttons — a plain-link button keeps its background on hover and shows the state some other way. */
+.idp-own, .idp-skip,
+.onboard-fresh button,
+.rlb-remove,
+.pb-tools button,
+.fb-status-row button {
+  --btn-hover-bg: none;
 }
 .idp-own:hover:not(:disabled) { color: var(--navy); }
 .idp-skip:hover:not(:disabled) { color: var(--navy); text-decoration: underline; }
@@ -1238,7 +1245,9 @@ html:has(.companion-hero), body:has(.companion-hero) { overflow-anchor: none; }
   max-height: 2.6em; overflow: hidden; }
 .wk-table td.wk-aim { font-size: 12px; font-weight: 700; color: var(--navy); white-space: nowrap; }
 .wk-table td.wk-aim span { font-weight: 400; color: var(--muted-grey); }
-.wk-cell { width: 26px; height: 26px; padding: 0; border: 1px solid #e3e2df; border-radius: 6px; background: var(--white); cursor: pointer; font-family: inherit; font-size: 13px; font-weight: 700; line-height: 1; color: transparent; }
+/* inline-GRID, not inline-block: a hard 26px square inheriting the global button's inline-block leaves the tick
+   sitting on its baseline rather than in the middle of the box. Same fix as .qd-score-btn — see the note there. */
+.wk-cell { width: 26px; height: 26px; padding: 0; border: 1px solid #e3e2df; border-radius: 6px; background: var(--white); cursor: pointer; font-family: inherit; font-size: 13px; font-weight: 700; line-height: 1; color: transparent; display: inline-grid; place-items: center; margin-top: 0; }
 .wk-cell:hover:not(:disabled) { border-color: var(--olive); }
 /* NARROW SCREENS. `table-layout: fixed` gives the label column 38% — but seven 26px tick cells plus their padding
    need more than the remaining 62% on a phone, so the label got squeezed to whatever was left: 28px at 375px, i.e.
@@ -1486,9 +1495,14 @@ html:has(.companion-hero), body:has(.companion-hero) { overflow-anchor: none; }
   font-family: inherit; font-size: 0.9rem; font-weight: 600; color: var(--navy);
   background: transparent; border: 1.5px solid var(--light-grey, #e8e6e6); border-radius: 8px;
   width: 2.1rem; height: 2.1rem; cursor: pointer; transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+  /* A FIXED-SIZE BOX WITH A NUMBER IN IT NEEDS TO SAY SO. The global button rule is inline-block with 0.7rem/1.4rem
+     padding; against a hard 2.1rem square that padding pushes the digit off-centre and "10" off-centre differently
+     from "1". Grid centring ignores the inherited padding entirely, so the digit sits in the middle whatever it is. */
+  display: inline-grid; place-items: center; padding: 0; margin-top: 0; line-height: 1;
+  --btn-hover-bg: transparent; /* the hover state is the teal border, not a fill */
 }
 .qd-score-btn:hover:not(:disabled) { border-color: var(--teal-text); }
-.qd-score-btn.is-on { background: var(--teal-text); border-color: var(--teal-text); color: #fff; }
+.qd-score-btn.is-on { background: var(--teal-text); border-color: var(--teal-text); color: #fff; --btn-hover-bg: var(--teal-text); }
 .qd-score-btn:disabled { opacity: 0.5; cursor: default; }
 .qd-elements { margin: 0.3rem 0 0.6rem; }
 .qd-elements-label { font-size: 0.82rem; color: var(--navy); opacity: 0.7; }
@@ -1497,9 +1511,11 @@ html:has(.companion-hero), body:has(.companion-hero) { overflow-anchor: none; }
   font-family: inherit; font-size: 0.82rem; font-weight: 600; color: var(--navy);
   background: transparent; border: 1.5px solid var(--light-grey, #e8e6e6); border-radius: 8px;
   padding: 0.35rem 0.85rem; cursor: pointer; transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+  margin-top: 0;
+  --btn-hover-bg: transparent; /* navy-on-navy made these chips disappear under the cursor */
 }
 .qd-el-btn:hover:not(:disabled) { border-color: var(--teal-text); }
-.qd-el-btn.is-on { background: var(--teal-text); border-color: var(--teal-text); color: #fff; }
+.qd-el-btn.is-on { background: var(--teal-text); border-color: var(--teal-text); color: #fff; --btn-hover-bg: var(--teal-text); }
 .qd-el-btn:disabled { opacity: 0.5; cursor: default; }
 
 /* R4 Rewire ceremony — the component is the hero; these two lines are quiet context (the starting line + the overall
@@ -3201,8 +3217,8 @@ body:has(.fc-dark) .brand-wordmark,
    pact has already promised the member a Playbook and an absent panel makes that a broken promise. */
 .pb-forecast { font-size: 0.8rem; color: var(--navy); opacity: 0.75; margin-top: 2px; }
 
-/* ── The global-hover leak (found 2026-08-11 chasing the Explore lit state) ───────────────────────────────────
-   `button:hover, .btn:hover { background: var(--navy) }` near the top of this file assumes every <button> is a
+/* ── The global-hover leak (found 2026-08-11 chasing the Explore lit state; the mechanism changed 2026-08-12) ──
+   The global hover near the top of this file assumes every <button> is a
    FILLED button. Text-style controls — link-buttons, ✕ closes, skip links — are bare <button> elements too, so
    they inherit a navy fill on hover while keeping their own ink. Measured against the 4.5:1 floor:
 

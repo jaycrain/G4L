@@ -53,7 +53,7 @@ export default function RebuildCeremony({ memberId, data }: { memberId: string; 
     if (r.kind === 'playbook') {
       return (
         <div className="cer-seeds">
-          <p className="cer-seed-tag">Your G4L Playbook · Rebuild</p>
+          <p className="cer-seed-tag">Your Playbook · Rebuild</p>
           {r.keepers.map((k, i) => (
             <p key={i} className="cer-seed">{k}</p>
           ))}
