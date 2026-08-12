@@ -357,6 +357,19 @@ async function main(): Promise<void> {
   if (tabGeom.tabs.length > 1 && spread <= 1) ok(`the ${tabGeom.tabs.length} tabs share the width evenly`);
   else bad(`the tabs are uneven — widths ${tabGeom.tabs.join(', ')}`);
 
+  // THE PLAY. Reclaim used to commit nothing to the Playbook — Jay ran C1 through C4 and watched his count sit at
+  // 14. Asserting the GRID is not asserting this: the week and the play are two different writes, and until today
+  // only one of them happened. Checked on the tab a member would actually open.
+  await page.locator('.pb-tab', { hasText: /What worked/ }).first().click();
+  await page.waitForTimeout(600);
+  const worked = await page.locator('.pb-tabframe').innerText().catch(() => '');
+  if (/Your Quality Days/i.test(worked)) ok('the Quality Day landed on What worked as a play');
+  else bad('C3 closed without writing a play — the Playbook count will not move');
+  if (worked.includes(VERBATIM.nonNegotiable)) ok(`and the play carries their words: "${VERBATIM.nonNegotiable}"`);
+  else bad('the play does not quote what they actually said');
+
+  await page.locator('.pb-tab', { hasText: /^This week$/ }).first().click();
+  await page.waitForTimeout(400);
   const gridCount = await page.locator('.wk-grid').count();
   if (gridCount === 0) {
     bad('the Playbook shows NO week grids at all — the member just opened a week and cannot see it');

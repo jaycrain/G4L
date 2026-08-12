@@ -779,6 +779,34 @@ export const RECLAIM_C3_ARC: ArcConfig = {
 export function applyReclaimC3Turn(state: ConvState, history: ConvMessage[], memberMessage: string, model: ModelTurn = { text: '' }): Turn {
   return runArcTurn(RECLAIM_C3_ARC, state, history, memberMessage, model);
 }
+/**
+ * Compose the Quality-Day profile into ONE Playbook play — the member's own words, nothing added.
+ *
+ * Reclaim was writing NOTHING to the Playbook. A member could finish C1, C2, C3 and C4 and their play count would
+ * not move (Jay, 2026-08-12: "even though things are being added, I've been stuck on 14 for awhile"). Rewire and
+ * Rebuild each commit a keeper at their close; Reclaim's arc route committed none. This is the first of them, and
+ * it is deliberately the SAME shape as composePilotPlan rather than a new idea — a Quality Day is the Reclaim-phase
+ * sibling of the Lifestyle Pilot, and it should read like one on the page.
+ *
+ * THEIR WORDS, JOINED — never summarised, never re-phrased. The labels are ours; every element between them is
+ * exactly what they typed at the C3 coach ([[their-own-words-back]]). Disruptors are included because a member who
+ * named what wrecks a day is telling you as much as one who named what makes it.
+ *
+ * A section with nothing in it is OMITTED rather than rendered as an empty heading — the profile is theirs to fill
+ * as far as they wanted to, and a blank "What gets in the way —" reads as something they failed to do.
+ */
+export function composeQualityDay(p: { nonNegotiables: string[]; contributors: string[]; disruptors: string[] }): string {
+  const line = (label: string, xs: string[]): string | null =>
+    xs.filter((x) => x && x.trim()).length ? `${label} — ${xs.filter((x) => x && x.trim()).map((x) => x.trim()).join(' · ')}` : null;
+  return [
+    line('Non-negotiable', p.nonNegotiables),
+    line('Helps', p.contributors),
+    line('Gets in the way', p.disruptors),
+  ]
+    .filter(Boolean)
+    .join('\n');
+}
+
 export function reclaimC3Opening(): Turn {
   return { reply: c3Opening(), state: { stage: 'quality', collected: {} }, complete: false };
 }

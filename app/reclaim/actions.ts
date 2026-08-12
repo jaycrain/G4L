@@ -1,6 +1,7 @@
 'use server';
 
 import { getDb } from '../../lib/db/index.ts';
+import { harvestSignal } from '../../lib/agent/harvest.ts';
 import { detectCrisis } from '../../lib/agent/governance.ts';
 import { escalateCrisis } from '../../lib/agent/crisis-escalation.ts';
 import { authorizeMember } from '../authz.ts';
@@ -23,6 +24,7 @@ import {
   RECLAIM_C2_ARC,
   RECLAIM_C3_ARC,
   RECLAIM_CHECKPOINT_ARC,
+  composeQualityDay,
 } from '../../lib/agent/reclaim.ts';
 import { BEAT_SEP } from '../../lib/agent/onboarding.ts';
 import { scaleExpects, type ArcConfig } from '../../lib/agent/onboarding-staged.ts';
@@ -190,6 +192,31 @@ export async function reclaimTurnAction(
               await startPracticeWeek(db, memberId, 'c3_quality');
             } catch (e) {
               console.error(`C3 practice week failed to open for member=${memberId}:`, (e as Error).message);
+            }
+            // THE PLAY. Reclaim was committing nothing to the Playbook — a member could finish C1 through C4 and
+            // watch their count sit still, which is what Jay hit on his own account. Rewire and Rebuild each write
+            // a keeper at their close; this is Reclaim's first, and it is the same call B3 makes so the two read
+            // alike on the page (keeperType 'plan' → the "What worked" tab).
+            //
+            // SEPARATE try, and AFTER the week. harvestSignal commits the keeper even when the QI moment-emit
+            // fails — that is the prod silent-drop lesson — but a failure here must not cost the profile or the
+            // week that already landed.
+            try {
+              await harvestSignal(
+                db,
+                memberId,
+                {
+                  kind: 'plan',
+                  ref: 'c3',
+                  keeperType: 'plan',
+                  destinationIntent: 'keeper',
+                  payloadRef: composeQualityDay(qd),
+                  label: 'Your Quality Days',
+                },
+                'reclaim',
+              );
+            } catch (e) {
+              console.error(`C3 Playbook play failed for member=${memberId}:`, (e as Error).message);
             }
           }
           try {
