@@ -140,6 +140,9 @@ export const MIGRATIONS: Array<{ file: string; sentinel: Sentinel }> = [
   // 0074 creates one table, so the table IS the last thing — no partial-run subtlety to guard against here.
   { file: 'migrations/0074_w3_daily_entry.sql', sentinel: 'w3_daily_entry' },
   { file: 'migrations/0075_bigger_world_reflections.sql', sentinel: { table: 'bigger_world_reading', column: 'reflections' } },
+  // 0076 adds a column to TWO tables. The sentinel is the SECOND one, so a run that got half way still reads as
+  // unapplied and gets re-run — the same rule as 0072/0073, and the reason the checker derives from this file.
+  { file: 'migrations/0076_tracker_source.sql', sentinel: { table: 'quality_day_log', column: 'source' } },
 ];
 export const SEED_SQL = () => sqlFile('seed/0001_reference_data.sql');
 

@@ -39,6 +39,7 @@ export default function WeekGridPanel({ memberId, grid }: { memberId: string; gr
   const [local, setLocal] = useState<Record<string, boolean[]>>(() =>
     Object.fromEntries(grid.rows.map((r) => [r.slot, r.marks])),
   );
+  const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const router = useRouter();
   // THE TICK SAVED AND THEN LOOKED LIKE IT HADN'T. `local` is seeded by a useState INITIALISER, which runs once per
@@ -69,14 +70,33 @@ export default function WeekGridPanel({ memberId, grid }: { memberId: string; gr
 
   if (!grid.rows.length) return null; // W2 has nothing countable — no grid rather than an empty one
 
+  // W3's trigger rows are MUTUALLY EXCLUSIVE within a day: Greg's field is `trigger_fired`, singular — "which named
+  // trigger, or 'new'". So ticking a second one MOVES the record. The optimistic update has to move it too, or the
+  // member sees two ticks for a moment and learns the grid is approximate. 'logged' is the day itself, not a trigger.
+  const exclusiveRow = (slot: string) => grid.kind === 'w3_logging' && slot !== 'logged';
+
   const toggle = (slot: string, dayIdx: number) => {
     if (!tappable || dayIdx > today) return; // you can't tick a day that hasn't happened
-    const next = { ...local, [slot]: local[slot]!.map((v, i) => (i === dayIdx ? !v : v)) };
+    const before = local;
+    const turningOn = !local[slot]![dayIdx];
+    const next: Record<string, boolean[]> = { ...local, [slot]: local[slot]!.map((v, i) => (i === dayIdx ? !v : v)) };
+    if (turningOn && exclusiveRow(slot)) {
+      for (const r of grid.rows) {
+        if (r.slot === slot || !exclusiveRow(r.slot)) continue;
+        next[r.slot] = next[r.slot]!.map((v, i) => (i === dayIdx ? false : v));
+      }
+    }
+    setError(null);
     setLocal(next);
     startTransition(async () => {
       const res = await toggleMarkAction(memberId, slot, dayIdx, grid.kind);
-      // Server disagreed (a stale tab, a lost row) → snap back rather than show a tick that didn't save.
-      if (!res.ok) return setLocal((cur) => ({ ...cur, [slot]: cur[slot]!.map((v, i) => (i === dayIdx ? !v : v)) }));
+      if (!res.ok) {
+        // SNAP BACK **AND SAY WHY**. Silently reverting is how a member concludes the tool is broken; the refusal
+        // that matters here — "you wrote something into that day" — is information, not an error to hide.
+        setLocal(before);
+        setError(res.error ?? 'Could not save that — please try again.');
+        return;
+      }
       router.refresh(); // the saved mark becomes the SERVER's truth, so a remount re-seeds from it and not from stale props
     });
   };
@@ -142,6 +162,7 @@ export default function WeekGridPanel({ memberId, grid }: { memberId: string; gr
           })}
         </tbody>
       </table>
+      {error && <p className="wk-refusal">{error}</p>}
       <p className="wk-foot">
         {tappable
           ? 'Tap a day when you do one — or just tell me and I\u2019ll mark it.'

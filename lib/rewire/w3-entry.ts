@@ -30,7 +30,9 @@ export type W3Entry = {
   reflection: string | null;
 };
 
-export type W3EntryInput = Partial<Omit<W3Entry, 'entryDate'>> & { entryDate?: string };
+/** `source` records which route the day came in by — see migration 0076. Defaults to the conversation, which is
+ *  where this function is called from; the grid has its own primitives below. */
+export type W3EntryInput = Partial<Omit<W3Entry, 'entryDate'>> & { entryDate?: string; source?: string };
 
 const clean = (s: string | null | undefined): string | null => {
   const t = (s ?? '').trim();
@@ -60,8 +62,8 @@ export async function recordW3Entry(db: Db, memberId: string, input: W3EntryInpu
   try {
     await db.query(
       `insert into w3_daily_entry
-         (member_id, entry_date, good_calls, false_starts, trigger_slot, old_voice, recovery_used, reflection)
-       values ($1, $2::date, $3, $4, $5, $6, $7, $8)
+         (member_id, entry_date, good_calls, false_starts, trigger_slot, old_voice, recovery_used, reflection, source)
+       values ($1, $2::date, $3, $4, $5, $6, $7, $8, $9)
        on conflict (member_id, entry_date) do update set
          -- COALESCE so an amendment ADDS without erasing. A member who logs a good call in the morning and a
          -- false start at night must end the day with both; a naive overwrite would silently drop the morning.
@@ -71,8 +73,10 @@ export async function recordW3Entry(db: Db, memberId: string, input: W3EntryInpu
          old_voice     = coalesce(excluded.old_voice, w3_daily_entry.old_voice),
          recovery_used = coalesce(excluded.recovery_used, w3_daily_entry.recovery_used),
          reflection    = coalesce(excluded.reflection, w3_daily_entry.reflection),
+         source        = coalesce(excluded.source, w3_daily_entry.source),
          updated_at    = now()`,
-      [memberId, e.entryDate, e.goodCalls, e.falseStarts, e.triggerSlot, e.oldVoice, e.recoveryUsed, e.reflection],
+      [memberId, e.entryDate, e.goodCalls, e.falseStarts, e.triggerSlot, e.oldVoice, e.recoveryUsed, e.reflection,
+       input.source ?? 'companion'],
     );
     return true;
   } catch (err) {
@@ -110,4 +114,79 @@ export async function w3Entries(db: Db, memberId: string, days = 7): Promise<W3E
     console.error(`w3Entries read failed for member=${memberId}:`, e);
     return [];
   }
+}
+
+// ── THE GRID'S WRITE PATH (2026-08-12) ────────────────────────────────────────────────────────────────────────
+//
+// W3's week was a read-only mirror: the Companion wrote the day from the check-in thread and the grid showed it.
+// Jay tapped those boxes three times across two days and nothing happened. Going back to Greg's Engineering Memo,
+// "the Companion writes it" is OURS — his ten UX requirements ask for "3. Quick check-in interface — LOW-FRICTION
+// DAILY ENTRY" and for the Companion to support the habit "through anchoring, FRICTION REDUCTION, and streak
+// reinforcement." A checkbox that does nothing is friction with nothing on the other side of it.
+//
+// A tick is a faithful entry, not a degraded one. The grid's rows already carry two of his seven fields — the
+// "Noticed the day" row IS "an entry exists for this date", and a trigger row IS `trigger_fired` — and he is
+// explicit that everything except the date is optional, because his bar is that a day completes in under a
+// minute: "a required field is how that breaks."
+//
+// WHAT A TICK MAY NEVER DO IS DESTROY WRITING. Un-ticking a day the member wrote into would delete their own
+// words behind a checkbox, so `clearW3Day` refuses and says why. Only an otherwise-empty day can be un-ticked.
+
+/** The fields that carry the member's own words. `trigger_slot` is deliberately NOT one of them — it is a pick. */
+export type W3DayContent = { hasWriting: boolean; triggerSlot: string | null; exists: boolean };
+
+export async function readW3Day(db: Db, memberId: string, date: string): Promise<W3DayContent> {
+  const { rows } = await db.query<{
+    good_calls: string | null; false_starts: string | null; old_voice: string | null;
+    recovery_used: boolean | null; reflection: string | null; trigger_slot: string | null;
+  }>(
+    `select good_calls, false_starts, old_voice, recovery_used, reflection, trigger_slot
+       from w3_daily_entry where member_id=$1 and entry_date=$2::date`,
+    [memberId, date],
+  );
+  const r = rows[0];
+  if (!r) return { hasWriting: false, triggerSlot: null, exists: false };
+  return {
+    hasWriting:
+      r.good_calls !== null || r.false_starts !== null || r.old_voice !== null ||
+      r.recovery_used !== null || r.reflection !== null,
+    triggerSlot: r.trigger_slot,
+    exists: true,
+  };
+}
+
+/** Mark the day as noticed — a bare entry, which is a real answer to "did you check in today". */
+export async function ensureW3Day(db: Db, memberId: string, date: string, source: string): Promise<void> {
+  await db.query(
+    `insert into w3_daily_entry (member_id, entry_date, source) values ($1, $2::date, $3)
+     on conflict (member_id, entry_date) do update set updated_at = now()`,
+    [memberId, date, source],
+  );
+}
+
+/**
+ * Record which trigger fired — or clear it.
+ *
+ * ONE PER DAY, because that is Greg's field: `trigger_fired` is "which named trigger, or 'new'", singular. So
+ * ticking a second trigger MOVES the mark rather than adding one, which is the member correcting which one it
+ * was. That is visible on the grid the moment it re-renders — the first row's tick disappears — and a silent
+ * second row would be the lie, not the move.
+ */
+export async function setW3Trigger(db: Db, memberId: string, date: string, slot: string | null, source: string): Promise<void> {
+  await db.query(
+    `insert into w3_daily_entry (member_id, entry_date, trigger_slot, source) values ($1, $2::date, $3, $4)
+     on conflict (member_id, entry_date) do update set trigger_slot = $3, updated_at = now()`,
+    [memberId, date, slot, source],
+  );
+}
+
+/** Un-tick a day. REFUSES when the member wrote anything into it — a checkbox must not delete prose. */
+export async function clearW3Day(db: Db, memberId: string, date: string): Promise<{ ok: boolean; error?: string }> {
+  const day = await readW3Day(db, memberId, date);
+  if (!day.exists) return { ok: true };
+  if (day.hasWriting) {
+    return { ok: false, error: 'You wrote something into that day — open it with your companion to change it.' };
+  }
+  await db.query(`delete from w3_daily_entry where member_id=$1 and entry_date=$2::date`, [memberId, date]);
+  return { ok: true };
 }

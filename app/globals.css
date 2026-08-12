@@ -1297,6 +1297,8 @@ html:has(.companion-hero), body:has(.companion-hero) { overflow-anchor: none; }
   .wk-cell { width: 22px; height: 22px; font-size: 11px; }
 }
 
+/* A refused tick says why, in the grid, in the member's line of sight — not a toast, not a console line. */
+.wk-refusal { margin: 0.5rem 0 0; font-size: 0.82rem; line-height: 1.45; color: var(--navy); }
 .practice-strip { margin: 0 0 0.75rem; padding: 0.6rem 0.8rem; background: rgba(59, 148, 149, 0.15); border-radius: 8px; font-size: 0.92rem; line-height: 1.45; color: var(--navy); font-weight: 600; }
 .see-more-inline { color: var(--teal-text); font-weight: 700; text-decoration: none; white-space: nowrap; }
 .see-more-inline:hover { text-decoration: underline; }

@@ -183,30 +183,35 @@ test("QUALITY-DAY DATES: a day logged today reads back as today, not yesterday",
 
 // ── writing a cell: what the grid is allowed to touch ─────────────────────────────────────────────────────────
 
-test('THE GRID CANNOT DELETE WHAT THE MEMBER WROTE (W3/C3 are read-only)', async () => {
-  // A W3 cell means "you logged this day", and the momentum_call underneath carries the member's own note. An
-  // un-tick would have to delete that row. Destroying something a member wrote because they mis-tapped a box on a
-  // summary grid is not a trade we make — so those kinds are a mirror, not an input, and the UI asks isTappable
-  // rather than assuming. Same for C3, where a cell is one element inside an entry holding a score and two written
-  // reflections.
+test('THE GRID CANNOT DELETE WHAT THE MEMBER WROTE', async () => {
+  // THE RULE SURVIVED; THE MECHANISM DID NOT. This test used to enforce the rule by making W3 and C3 read-only,
+  // and it justified that with a momentum_call carrying the member's note — which had ALREADY stopped being true
+  // when W3 moved to w3_daily_entry on 2026-08-08. So it was asserting a real principle through a stale fact,
+  // and it would have gone on passing either way.
+  //
+  // W3's grid is tappable now (Greg's Engineering Memo asks for "low-friction daily entry"; Jay tapped the dead
+  // boxes three times). The protection moved to where it belongs: the write itself refuses to delete a day the
+  // member wrote into, so the rule is enforced by the thing that would do the damage rather than by withholding
+  // the whole surface. C3 stays a link because its record needs a 1–10 score the grid cannot ask for.
   const { isTappable, toggleMark } = await import('../lib/practice/mark.ts');
   assert.equal(isTappable('b3_pilot'), true);
   assert.equal(isTappable('b2_noticing'), true);
-  assert.equal(isTappable('w3_logging'), false);
-  assert.equal(isTappable('c3_quality'), false);
+  assert.equal(isTappable('w3_logging'), true, 'a low-friction daily entry, per Greg');
+  assert.equal(isTappable('c3_quality'), false, 'a Quality Day needs a score, so its cell links to the form');
 
   const { db, memberId } = await seed();
   await startPracticeWeek(db, memberId, 'w3_logging');
-  const { logCall, recentCalls } = await import('../lib/momentum/store.ts');
-  await logCall(db, memberId, { type: 'good_call', note: 'the note I would lose', source: 'momentum_page' });
-
+  const { recordW3Entry, w3Entries } = await import('../lib/rewire/w3-entry.ts');
   const pw = { kind: 'w3_logging' as const, startedAt: new Date().toISOString(), day: 1 };
+  const today = new Date().toISOString().slice(0, 10);
+  await recordW3Entry(db, memberId, { entryDate: today, reflection: 'the words I would lose' });
+
   const res = await toggleMark(db, memberId, pw, 'logged', 0, 'grid');
-  assert.equal(res.ok, false, 'the write is refused, not silently ignored');
-  assert.match(res.error!, /edit it where you wrote it/i, 'and it says why, in the member’s terms');
-  const calls = await recentCalls(db, memberId);
-  assert.equal(calls.length, 1, 'the call survives');
-  assert.equal(calls[0]!.note, 'the note I would lose');
+  assert.equal(res.ok, false, 'the un-tick is refused, not silently performed');
+  assert.match(res.error!, /wrote something/i, 'and it says why, in the member’s terms');
+  const entries = await w3Entries(db, memberId, 7);
+  assert.equal(entries.length, 1, 'the day survives');
+  assert.equal(entries[0]!.reflection, 'the words I would lose');
 });
 
 test('a tick is addressed by DAY INDEX, resolved against the week’s own clock', async () => {

@@ -86,15 +86,18 @@ export type QualityDayEntry = { loggedOn: string; score: number; present: string
 export async function logQualityDay(
   db: Db,
   memberId: string,
-  entry: { score: number; present?: string[]; mostValuable?: string; mostMissing?: string; loggedOn?: string },
+  /** `source` records WHICH ROUTE the member took — the form, or the Companion. See 0076: metadata about
+   *  the interaction, never anything more about what they said. Defaults to the form, which is the only route today. */
+  entry: { score: number; present?: string[]; mostValuable?: string; mostMissing?: string; loggedOn?: string; source?: string },
 ): Promise<{ ok: boolean }> {
   await db.query(
-    `insert into quality_day_log (member_id, logged_on, score, present, most_valuable, most_missing)
-     values ($1, coalesce($2::date, current_date), $3, $4::jsonb, $5, $6)
+    `insert into quality_day_log (member_id, logged_on, score, present, most_valuable, most_missing, source)
+     values ($1, coalesce($2::date, current_date), $3, $4::jsonb, $5, $6, $7)
      on conflict (member_id, logged_on) do update set
        score = excluded.score, present = excluded.present,
-       most_valuable = excluded.most_valuable, most_missing = excluded.most_missing, updated_at = now()`,
-    [memberId, entry.loggedOn ?? null, entry.score, JSON.stringify(entry.present ?? []), entry.mostValuable?.trim() || null, entry.mostMissing?.trim() || null],
+       most_valuable = excluded.most_valuable, most_missing = excluded.most_missing,
+       source = excluded.source, updated_at = now()`,
+    [memberId, entry.loggedOn ?? null, entry.score, JSON.stringify(entry.present ?? []), entry.mostValuable?.trim() || null, entry.mostMissing?.trim() || null, entry.source ?? 'form'],
   );
   return { ok: true };
 }

@@ -7,6 +7,7 @@ import { markActivitySeenAction } from './actions.ts';
 import { isAdmin } from '../../authz.ts';
 import ConsoleSubpage from '../console/subpage.tsx';
 import { relativeTime } from '../../../lib/admin/roster.ts';
+import { trackerDoors } from '../../../lib/admin/tracker-doors.ts';
 import type { Db } from '../../../lib/db/schema.ts';
 
 // THE ACTIVITY SUBPAGE — the console's twelve most recent events, without the twelve.
@@ -34,6 +35,7 @@ export default async function ActivityPage() {
   const db = (await getDb()) as unknown as Db;
   const now = Date.now();
   const raw = await activityFeed(db, 200);
+  const doors = await trackerDoors(db, 30);
 
   // SINCE YOU LAST LOOKED — and the page does NOT stamp the marker.
   //
@@ -108,6 +110,26 @@ export default async function ActivityPage() {
         Showing the most recent 200 events. Page views aren&apos;t news, so they aren&apos;t here — and demo
         personas are excluded everywhere in the console.
       </p>
+      {/* DO THEY TAP, OR TELL? — Greg's friction-reduction question, answered with counts rather than guesses.
+          Aggregate on purpose: this reads no member identifier and returns none, and no content of any kind.
+          It says a day was logged and by what route, which is the whole of what 0076 set out to record. */}
+      {doors.length > 0 && (
+        <div className="card" style={{ marginTop: 18 }}>
+          <h3>How members log — last 30 days</h3>
+          <p className="muted" style={{ marginTop: 0 }}>
+            Days recorded, by the route they came in by. Greg asks the Companion to reduce friction; this is
+            whether it does. Counts only — no member is identifiable here.
+          </p>
+          <ul className="mlog-list">
+            {doors.map((d) => (
+              <li key={`${d.tracker}-${d.source}`} className="mlog-row">
+                <span className="mlog-text">{d.tracker} · <strong>{d.source}</strong></span>
+                <span className="mlog-when">{d.days} {d.days === 1 ? 'day' : 'days'}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </ConsoleSubpage>
   );
 }

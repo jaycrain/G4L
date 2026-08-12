@@ -20,9 +20,22 @@
 import type { Db } from '../db/schema.ts';
 import type { ActivePractice, PracticeKind } from './store.ts';
 
-/** Kinds whose grid cells the member can tap directly, because the cell IS the whole record. */
+/**
+ * Kinds whose grid cells the member can write from directly.
+ *
+ * W3 JOINED THIS LIST 2026-08-12. It was a mirror on the reasoning that "the Companion writes it" — which, going
+ * back to Greg's Engineering Memo, is ours and not his. His ten UX requirements ask for a "Quick check-in
+ * interface — low-friction daily entry" and for the Companion to support the habit "through anchoring, friction
+ * reduction, and streak reinforcement". Jay tapped the boxes three times across two days; a checkbox that refuses
+ * is friction with nothing on the other side. The conversation stays — this is a second way IN to the same record,
+ * not a replacement for the coach.
+ *
+ * C3 IS STILL NOT HERE, and that is not an oversight: a Quality Day carries a 1–10 score the grid has no way to
+ * ask for, so its cells link to the form that can. The rule is the same one either way — a cell either writes the
+ * record or says where the record is written.
+ */
 export function isTappable(kind: PracticeKind): boolean {
-  return kind === 'b3_pilot' || kind === 'b2_noticing';
+  return kind === 'b3_pilot' || kind === 'b2_noticing' || kind === 'w3_logging';
 }
 
 /**
@@ -38,8 +51,9 @@ export function isTappable(kind: PracticeKind): boolean {
  * So the rule in this file is now stated in full: a cell the member cannot write HERE must say where they CAN.
  *
  *   · C3 — a dedicated form (score 1–10, which elements were present, most valuable / most missing). Needs a link.
- *   · W3 — the Companion writes w3_daily_entry from the check-in thread, so the member's route is a conversation,
- *     not a page. Returning null is CORRECT here, not an omission; the foot copy points at the Companion instead.
+ *   · W3 — TAPPABLE since 2026-08-12, so there is nothing to point at: the cell writes the entry. The check-in
+ *     conversation still writes the richer day (good calls, the old voice, a reflection); the grid writes the two
+ *     fields it can express honestly. Two ways in, one record.
  *   · B3 / B2 — tappable, so the grid is the surface. No elsewhere to point to.
  */
 export function logSurfaceFor(kind: PracticeKind, memberId: string): { href: string; label: string } | null {
@@ -69,6 +83,28 @@ export async function toggleMark(
     return { ok: false, error: 'This week is a mirror of your log — edit it where you wrote it.' };
   }
   const markedOn = dateForDay(pw.startedAt, dayIndex);
+
+  // W3 lives in its own register — Greg's seven-field daily entry, not practice_mark. The grid's two row shapes map
+  // onto two of those fields exactly: the 'logged' row is "an entry exists for this date", a trigger row is
+  // `trigger_fired`. Everything else on the day stays untouched, and an un-tick that would delete the member's
+  // writing is refused rather than performed.
+  if (pw.kind === 'w3_logging') {
+    const { readW3Day, ensureW3Day, setW3Trigger, clearW3Day } = await import('../rewire/w3-entry.ts');
+    const day = await readW3Day(db, memberId, markedOn);
+    if (slot === 'logged') {
+      if (day.exists) {
+        const cleared = await clearW3Day(db, memberId, markedOn);
+        return cleared.ok ? { ok: true, on: false } : { ok: false, error: cleared.error };
+      }
+      await ensureW3Day(db, memberId, markedOn, source);
+      return { ok: true, on: true };
+    }
+    // A trigger row. Ticking the one already recorded clears it; ticking a different one moves the record, which
+    // is the member correcting which trigger it was — singular is Greg's design, not a limitation to work around.
+    const on = day.triggerSlot !== slot;
+    await setW3Trigger(db, memberId, markedOn, on ? slot : null, source);
+    return { ok: true, on };
+  }
 
   if (pw.kind === 'b2_noticing') {
     const del = await db.query(

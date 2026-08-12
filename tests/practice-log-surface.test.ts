@@ -39,13 +39,29 @@ test('the route C3 points at EXISTS on disk — a link to a 404 is worse than no
   assert.ok(files.includes('[memberId]'), 'app/quality-day/[memberId] must exist to serve /quality-day/<id>');
 });
 
-test('W3 returning null is a DECISION, not an omission — the Companion owns its record', () => {
-  // W3's daily entry is written by the check-in thread (app/dashboard/checkin-actions.ts → recordW3Entry), so its
-  // "surface" is a conversation and there is no page to link. Asserted so a later reader does not "fix" the null by
-  // inventing a /w3-log route.
+test('W3 returning null is still a DECISION — but a different one since 2026-08-12', () => {
+  // THE ASSERTION SURVIVED A REVERSAL OF ITS OWN REASONING, so the reasoning is rewritten rather than left to
+  // mislead. It used to be "the Companion owns this record, so there is no page to link". W3's grid is now
+  // TAPPABLE: the cell writes the entry, which is why there is nothing to point at. Same null, opposite cause.
+  //
+  // The rule underneath is what actually holds: a cell either WRITES the record or SAYS WHERE it is written.
+  // Never neither — that is the dead checkbox Jay hit three times.
   assert.equal(logSurfaceFor('w3_logging', MEMBER), null);
+  assert.equal(isTappable('w3_logging'), true, 'and it is null because the grid writes it');
+  // The conversation still writes the richer day. If that ever stops, W3 needs a form the way C3 has one.
   const checkin = readFileSync(new URL('../app/dashboard/checkin-actions.ts', import.meta.url), 'utf8');
-  assert.match(checkin, /recordW3Entry/, 'if the Companion stops writing W3 entries, W3 needs a surface like C3 got');
+  assert.match(checkin, /recordW3Entry/, 'the Companion remains a door, not the only one');
+});
+
+test('THE RULE ITSELF: every kind either writes from the grid or names where to write', () => {
+  // Stated once, over all kinds, so a new practice week cannot ship as a checkbox that does nothing.
+  for (const kind of ALL) {
+    const writes = isTappable(kind);
+    const points = logSurfaceFor(kind, MEMBER) !== null;
+    if (kind === 'w2_image') continue; // no countable rows, so no grid renders at all
+    assert.ok(writes || points, `${kind} offers a cell that neither writes nor points anywhere`);
+    assert.ok(!(writes && points), `${kind} both writes and redirects — a cell must do one thing`);
+  }
 });
 
 test('tappable kinds get no redirect — the grid IS their surface', () => {
