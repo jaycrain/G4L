@@ -117,3 +117,28 @@ test('the retire still supersedes ONLY prior profiles, through the double-encode
   const profiles = rows.filter((r) => payloadKind(r.payload) === 'quality_day_profile');
   assert.equal(profiles.filter((r) => r.status === 'active').length, 1, 'exactly one profile is active');
 });
+
+test('THE MIGRATION CHECKER AGREES WITH THE APPLIER, because it is the same registry', async () => {
+  // Every previous version of this answer was a SECOND list that drifted from the real one, and a checker that can
+  // disagree with the applier is worse than none — it is a confident wrong answer. So: after applySchema (which is
+  // ensureSchema's own loop), nothing may be pending.
+  const { migrationState } = await import('../lib/db/schema.ts');
+  const pg = new PGlite();
+  const db = pg as unknown as Db;
+  await applySchema(db);
+  const st = await migrationState(db);
+  assert.deepEqual(st.pending, [], 'a freshly built database has nothing outstanding');
+  assert.ok(st.applied.length > 70, `and it reports the real count (saw ${st.applied.length})`);
+});
+
+test('a migration that has NOT run is reported pending, not quietly counted as applied', async () => {
+  const { migrationState } = await import('../lib/db/schema.ts');
+  const pg = new PGlite();
+  const db = pg as unknown as Db;
+  await applySchema(db);
+  // Undo exactly what 0076 did. The sentinel is quality_day_log.source, so this must read as pending again —
+  // otherwise the checker cannot tell a landed migration from an unlanded one, which is its whole job.
+  await db.query('alter table quality_day_log drop column source');
+  const st = await migrationState(db);
+  assert.ok(st.pending.includes('0076_tracker_source'), `0076 must read as pending (pending: ${st.pending.join(', ') || 'none'})`);
+});

@@ -177,6 +177,30 @@ async function isApplied(db: Db, s: Sentinel): Promise<boolean> {
   return columnExists(db, s.table, s.column);
 }
 
+/**
+ * WHICH MIGRATIONS HAVE LANDED ON THIS DATABASE — read-only, derived from MIGRATIONS above.
+ *
+ * Prod does not auto-apply: migrations are pasted into the Supabase SQL Editor by hand, and "I ran it" and "it
+ * landed" are different claims. Every previous way of answering this has been a separate list that drifted from
+ * the real one — which is why this reads the SAME registry `ensureSchema` runs from, using the SAME sentinel test.
+ * A checker that can disagree with the applier is worse than no checker; it is a confident wrong answer.
+ *
+ * Exposed through the read-only member diagnostic so the question "did 0076 land?" costs one call rather than a
+ * deploy or a guess.
+ */
+export async function migrationState(db: Db): Promise<{ applied: string[]; pending: string[] }> {
+  const applied: string[] = [];
+  const pending: string[] = [];
+  for (const m of MIGRATIONS) {
+    const name = m.file.replace(/^migrations\//, '').replace(/\.sql$/, '');
+    // A sentinel that THROWS is not "applied" — it is unknown, and reporting unknown as applied is the exact
+    // failure this replaces.
+    const ok = await isApplied(db, m.sentinel).catch(() => false);
+    (ok ? applied : pending).push(name);
+  }
+  return { applied, pending };
+}
+
 /** Apply any not-yet-applied migrations, then (idempotently) re-seed. Safe on every boot. */
 export async function ensureSchema(db: Db): Promise<void> {
   for (const m of MIGRATIONS) {

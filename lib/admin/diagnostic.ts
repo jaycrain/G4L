@@ -277,6 +277,16 @@ async function memberRenders(db: Db, memberId: string): Promise<Record<string, u
     out.quality_day_profile = { ERROR: (e as Error).message };
   }
   out.jsonb_shape = await jsonbShape(db, memberId);
+  try {
+    // NOT member state — the database's. It rides here because this endpoint is how prod gets inspected at all,
+    // and "is the schema this code expects actually present" is the first question behind half the bugs that
+    // reach a member (a Quality Days tracker that vanished, a write that reports "please try again").
+    const { migrationState } = await import('../db/schema.ts');
+    const st = await migrationState(db);
+    out.migrations = { applied: st.applied.length, pending: st.pending };
+  } catch (e) {
+    out.migrations = { ERROR: (e as Error).message };
+  }
   return out;
 }
 
