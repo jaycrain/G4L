@@ -303,6 +303,19 @@ function momentumLogLine(log: NonNullable<CheckinContext['momentumLog']>): strin
     .join('; ');
 }
 
+/**
+ * A CONTEXT LINE MAY NEVER THROW ON A MISSING FIELD.
+ *
+ * `c.reclaimPriorities.momentumLever.toLowerCase()` assumed every part of a stored reading survives the trip. On
+ * prod one of them did not (a jsonb column read raw — see lib/db/jsonb.ts), so the whole context collapsed to the
+ * degraded fallback and the Companion told a member it could not see his Playbook. The Playbook was fine.
+ *
+ * The store bug is fixed. This is the second line of defence, and the rule it encodes is the general one: a signal
+ * that is ABSENT is dropped from the sentence, never rendered as "undefined" and never allowed to throw. The
+ * Companion knowing three things out of four is normal; the Companion knowing nothing because of the fourth is not.
+ */
+const lower = (v: string | null | undefined): string => (typeof v === 'string' && v ? v.toLowerCase() : '');
+
 export function contextBlock(c: CheckinContext): string {
   // CAT-38 — say it OUT LOUD when the context is degraded. The memory rule below (never deny that you remember)
   // is right and stays; the failure was that on a degrade the agent was still told to behave omnisciently over a
@@ -390,6 +403,11 @@ export function contextBlock(c: CheckinContext): string {
     c.pilotPlan
       ? `Their Lifestyle Pilot this week (Rebuild B3) — Movement: ${c.pilotPlan.activityChange}. Eating: ${c.pilotPlan.dietChange}. Support it: ask how the calls are going, warmly and plan-aware, never grading. A false start is met, not marked (HH) — offer their own recovery move if they slip. It's THEIR plan; if they want to change it, help them, never rewrite it silently.`
       : null,
+    // GOING QUIET BY DESIGN (2026-08-12). The commitment chips left the Momentum page, so new calls arrive
+    // untagged unless the Companion tags one from the rail. This line therefore thins out — and that is the right
+    // trade: the Playbook's week grid records a MARK per commitment per day, which is a day rather than an opinion
+    // about a day, and it already reaches the agent through `practiceWeek`. Kept because a tagged call still says
+    // something the grid cannot (the member's note), and it renders only when there is something to render.
     c.pilotCalls && (c.pilotCalls.activity.good + c.pilotCalls.activity.false + c.pilotCalls.diet.good + c.pilotCalls.diet.false) > 0
       ? `How the pilot's actually going (last two weeks, their own logged calls) — Movement: ${c.pilotCalls.activity.good} good, ${c.pilotCalls.activity.false} false starts. Eating: ${c.pilotCalls.diet.good} good, ${c.pilotCalls.diet.false} false starts. If it helps them see the pattern, reflect it warmly ("movement's been landing; eating's been the tougher one") — never a scoreboard, never a grade; a false start is honest data. Only raise it if it's useful to them.`
       : '',
@@ -405,13 +423,15 @@ export function contextBlock(c: CheckinContext): string {
     c.reclaimPriorities
       ? `Their Bigger World priorities (Reclaim C2) — ${
           c.reclaimPriorities.chosenByMember
-            ? `they CHOSE their ${c.reclaimPriorities.primary.toLowerCase()} life as the one area to move on${
+            ? `they CHOSE their ${lower(c.reclaimPriorities.primary)} life as the one area to move on${
                 c.reclaimPriorities.computed !== c.reclaimPriorities.primary
-                  ? ` (the ratings had ranked ${c.reclaimPriorities.computed.toLowerCase()} first — do NOT correct them; their choice stands, and the difference is worth being curious about, not resolving)`
+                  ? ` (the ratings had ranked ${lower(c.reclaimPriorities.computed)} first — do NOT correct them; their choice stands, and the difference is worth being curious about, not resolving)`
                   : ''
               }`
-            : `the ratings point to their ${c.reclaimPriorities.primary.toLowerCase()} life (they did not name a choice themselves — so never say "the one you chose")`
-        }; second in the ranking is their ${c.reclaimPriorities.secondary.toLowerCase()} life, and the easiest place to build momentum is their ${c.reclaimPriorities.momentumLever.toLowerCase()} life.${
+            : `the ratings point to their ${lower(c.reclaimPriorities.primary)} life (they did not name a choice themselves — so never say "the one you chose")`
+        }.${lower(c.reclaimPriorities.secondary) ? ` Second in the ranking is their ${lower(c.reclaimPriorities.secondary)} life.` : ''}${
+          lower(c.reclaimPriorities.momentumLever) ? ` The easiest place to build momentum is their ${lower(c.reclaimPriorities.momentumLever)} life.` : ''
+        }${
           c.reclaimPriorities.keyObstacle ? ` What they said gets in the way, in their words: "${c.reclaimPriorities.keyObstacle}".` : ''
         }${
           c.reclaimPriorities.firstAction ? ` The first move they named: "${c.reclaimPriorities.firstAction}".` : ''

@@ -65,6 +65,26 @@ import type { Db } from '../../lib/db/schema.ts';
 
 // Build the agent's context: dashboard facts + GRINTA! Index/trend + what they've recently read.
 // The agent is AWARE of these (to reference naturally); it does not serve content into the chat.
+/**
+ * A DERIVED FIELD THAT CANNOT TAKE THE WHOLE CONTEXT DOWN.
+ *
+ * Every supplementary READ in buildContext is already `.catch`-guarded, one field each — that lesson was learned
+ * on Jay's earlier walk. The DERIVATIONS built from those reads were not, and they all sat inside one outer try,
+ * so a single bad dereference collapsed the entire durable record to `minimal` and the Companion told Jay it could
+ * not see his Playbook (2026-08-12). The Playbook read had SUCCEEDED. Something three fields away had not.
+ *
+ * The blast radius was the bug, not the throw. Each derivation now fails alone, loudly and BY NAME, so the next
+ * one costs one signal instead of the member's whole history — and so the log says which one it was.
+ */
+function derive<T>(label: string, fn: () => T): T | null {
+  try {
+    return fn();
+  } catch (e) {
+    console.error(`buildContext derivation FAILED — ${label}: ${(e as Error)?.message ?? e}`);
+    return null;
+  }
+}
+
 async function buildContext(db: Db, memberId: string): Promise<CheckinContext | null> {
   const dash = await getDashboard(db, memberId);
   if (!dash) return null;
@@ -295,7 +315,7 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
     // loose before v3.3 and would now be plainly wrong: the audit asks outright which area they'd move on, and the
     // member's answer can differ from the arithmetic. firstFocus() resolves it their way and reports which it was,
     // so the Companion can say "the one you chose" only when they actually chose it.
-    reclaimPriorities: biggerWorld
+    reclaimPriorities: derive('reclaimPriorities', () => biggerWorld
       ? (() => {
           const f = firstFocus(biggerWorld);
           const { keyObstacle, firstAction } = closingLines(biggerWorld);
@@ -309,11 +329,11 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
             firstAction: firstAction ?? null,
           };
         })()
-      : null,
+      : null),
     // The grid, as the member reads it. todayDone is computed HERE, not in the prompt: an agent asked to work out
     // "is today already marked" from a boolean array will sometimes get it wrong and ask them for something they've
     // already done — which is the most deflating possible thing for a practice week to do.
-    practiceWeek: practiceGrid && practiceGrid.rows.length
+    practiceWeek: derive('practiceWeek', () => practiceGrid && practiceGrid.rows.length
       ? {
           kind: practiceGrid.kind,
           day: practiceGrid.day,
@@ -340,7 +360,7 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
             ? (({ opener, lines }) => ({ opener, lines }))(buildReview(practiceGrid, w3Extras))
             : null,
         }
-      : null,
+      : null),
     qualityDay: qdProfile
       ? {
           nonNegotiables: qdProfile.nonNegotiables,

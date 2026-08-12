@@ -3,6 +3,7 @@
 // can revisit their priorities across cycles. Parallel register, NEVER in Grinta (C4 owns the Challenge component).
 
 import type { Db } from '../db/schema.ts';
+import { readJson } from '../db/jsonb.ts';
 import { scoreAudit, auditResponsesMap, type AuditScore } from './bigger-world-scoring.ts';
 import { AUDIT_DOMAINS, type AuditDomain, type AuditSortKey } from './bigger-world-instrument.ts';
 
@@ -105,14 +106,20 @@ export async function latestBiggerWorldReading(db: Db, memberId: string): Promis
     );
     const r = rows[0];
     if (!r) return null;
-    // pg returns jsonb as an object; PGlite has handed back a string in places. Parse defensively rather than
-    // assume — the same shape that bit latestWhyReading.
-    const refl = typeof r.reflections === 'string' ? (JSON.parse(r.reflections) as AuditReflections) : r.reflections;
+    // NORMALISE EVERY jsonb COLUMN, not the one somebody remembered.
+    //
+    // `reflections` was parsed here and `priorities` was not, and that asymmetry was live for a member: prod stores
+    // both as jsonb STRINGS (see lib/db/jsonb.ts), so `priorities.momentumLever` came back undefined and the
+    // Companion's context line did `.toLowerCase()` on it. Jay asked what it noticed in his Playbook and was told
+    // "I can't see it fully at the moment" — the Playbook read had SUCCEEDED; a field three signals away had not.
+    //
+    // A defensive parse applied to SOME of the columns it returns is not a defensive parse, it is a coin flip.
+    // readJson normalises an object, a JSON string and a double-encoded one alike, so this cannot be half-done.
     return {
       sequenceNo: r.sequence_no,
       takenOn: String(r.taken_on),
-      priorities: r.priorities,
-      reflections: refl ?? null,
+      priorities: readJson<AuditScore>(r.priorities) ?? r.priorities,
+      reflections: readJson<AuditReflections>(r.reflections),
     };
   } catch (e) {
     console.error(`latestBiggerWorldReading failed for member=${memberId}:`, (e as Error).message);

@@ -222,3 +222,50 @@ test('with no chosen focus the card says whose read it is, and never claims a ch
   assert.match(card.lines[0]!, /your ratings point/i);
   assert.doesNotMatch(card.lines.join(' '), /you chose this/i, 'no invented choice');
 });
+
+test('THE PROD jsonb SHAPE DOES NOT BLIND THE COMPANION', async () => {
+  // Jay asked the Companion what it noticed in his Playbook and was told "I can't see it fully at the moment".
+  // The Playbook read had SUCCEEDED. `bigger_world_reading.priorities` is a jsonb STRING on prod and this reader
+  // normalised `reflections` but not `priorities`, so `priorities.momentumLever` was undefined and the context
+  // line did `.toLowerCase()` on it — one field taking down the whole durable record.
+  //
+  // Written in the PROD shape (double-encoded), because a fixture in the shape that works proves nothing.
+  const { db, memberId } = await freshDb();
+  await db.query(
+    `insert into bigger_world_reading (member_id, source, sequence_no, taken_on, responses, priorities, reflections)
+     values ($1,'c2',1,now(),$2::jsonb,$3::jsonb,$4::jsonb)`,
+    [
+      memberId,
+      JSON.stringify(JSON.stringify(Array(20).fill(7))),
+      JSON.stringify(JSON.stringify({ primary: 'self', secondary: 'social', momentumLever: 'physical', domains: [] })),
+      JSON.stringify(JSON.stringify({ domains: {}, sort: { focus: 'self' } })),
+    ],
+  );
+
+  const reading = (await latestBiggerWorldReading(db, memberId))!;
+  assert.ok(reading, 'the reading comes back');
+  assert.equal(reading.priorities.momentumLever, 'physical', 'priorities is normalised, not handed over raw');
+  assert.equal(reading.priorities.secondary, 'social');
+  assert.equal(reading.reflections?.sort?.focus, 'self', 'and reflections still is too');
+});
+
+test('a context line DROPS an absent signal — it never throws and never prints "undefined"', () => {
+  // Second line of defence. The store bug is fixed; this is the rule that keeps the next one cheap: the Companion
+  // knowing three things out of four is normal, the Companion knowing NOTHING because of the fourth is not.
+  const ctx = {
+    doorDisplayNames: [],
+    idScore: null,
+    reclaimPriorities: {
+      primary: 'Self', chosenByMember: true, computed: 'Self',
+      secondary: undefined as unknown as string, momentumLever: undefined as unknown as string,
+      keyObstacle: null, firstAction: null,
+    },
+  };
+  // Scoped to the LINE under test. The whole block legitimately contains other placeholders for a stub context,
+  // and asserting over all of it would be a check that fails for the wrong reason — or passes for one.
+  const line = contextBlock(ctx as CheckinContext).split('\n').find((l) => /Bigger World priorities/.test(l)) ?? '';
+  assert.match(line, /they CHOSE their self life/i, 'what IS known is still said');
+  assert.doesNotMatch(line, /undefined/, 'and what is not known is simply absent');
+  assert.doesNotMatch(line, /second in the ranking/i);
+  assert.doesNotMatch(line, /easiest place to build momentum/i);
+});

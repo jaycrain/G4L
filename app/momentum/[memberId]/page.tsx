@@ -4,17 +4,20 @@ import { getDb } from '../../../lib/db/index.ts';
 import { authorizeMember } from '../../authz.ts';
 import { logEvent } from '../../../lib/telemetry/store.ts';
 import { rewireEnabled } from '../../../lib/agent/rewire.ts';
-import { pulseBeats, recentCalls, domainTally, type CallType, type CallDomain } from '../../../lib/momentum/store.ts';
+import { pulseBeats, recentCalls, type CallType, type CallDomain } from '../../../lib/momentum/store.ts';
 import { practicePanelLine } from '../../../lib/practice/store.ts';
-import { commitmentTexts } from '../../../lib/commitments/store.ts';
 import ResiliencePulse from '../../dashboard/resilience-pulse.tsx';
 import MomentumLog, { type Commitments } from '../momentum-log.tsx';
 import type { Db } from '../../../lib/db/schema.ts';
 import SubpageShell from '../../dashboard/subpage-shell.tsx';
 
 // The stored enum stays `quiet_day` (prod rows depend on it); only what the member READS changed. See momentum-log.tsx.
-const CALL_LABEL: Record<CallType, string> = { good_call: 'Good Call', false_start: 'False Start', quiet_day: 'On Track' };
+// The log still SHOWS a commitment tag when a call carries one. The chips that let you set it here are gone (the
+// Playbook's grid is where a commitment gets recorded now), but the Companion can still tag a call from the rail —
+// there it is reading what the member actually said rather than offering a form field. Rendering the tag when it
+// exists costs nothing; hiding it would make old entries lose detail they legitimately have.
 const DOMAIN_LABEL: Record<CallDomain, string> = { activity: 'Movement', diet: 'Eating' };
+const CALL_LABEL: Record<CallType, string> = { good_call: 'Good Call', false_start: 'False Start', quiet_day: 'On Track' };
 
 // A warm, non-scoreboard progress line for one commitment (last two weeks of tagged calls). Never a grade — a false
 // start is honest data; "nothing logged yet" is neutral, not a scold.
@@ -37,10 +40,6 @@ export default async function MomentumPage({ params }: { params: Promise<{ membe
   const db = (await getDb()) as unknown as Db;
   await logEvent(db, memberId, 'page_view', { surface: 'momentum' });
   const beats = await softRead('momentum.pulseBeats', memberId, () => pulseBeats(db, memberId), []);
-  // Offer the OPTIONAL commitment tag on each call, labelled from the member's STANDING commitments (0060/0061) — shown
-  // whenever they exist, not just during the one-week pilot. Drift-hardened: a read hiccup simply omits the tag.
-  const commitmentsRaw = await softRead('momentum.commitmentTexts', memberId, () => commitmentTexts(db, memberId), {} as { activity?: string; diet?: string });
-  const commitments: Commitments | null = commitmentsRaw.activity || commitmentsRaw.diet ? commitmentsRaw : null;
   // Per-commitment progress (last two weeks) — how each is actually going, reflected warmly (never a scoreboard).
   // W-25 — the active practice week's "this week" line, shown here as context (Momentum is its home now, not the hero).
   // The member's own log — where every call they make gets saved (Jay: "where does this get placed?").
@@ -79,7 +78,7 @@ export default async function MomentumPage({ params }: { params: Promise<{ membe
           rhythm you return to — not a second copy of this week. */}
       <div className="card">
         <ResiliencePulse beats={beats} />
-        <MomentumLog memberId={memberId} commitments={commitments} />
+        <MomentumLog memberId={memberId} />
       </div>
 
       {/* Your log — the saved history, so a logged call has a visible home, not a dead end. */}

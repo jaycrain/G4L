@@ -17,14 +17,23 @@ const OPTIONS: { type: CallType; label: string; done: string }[] = [
   { type: 'quiet_day', label: 'On Track', done: 'Logged — holding steady counts.' },
 ];
 
-// The member's active COMMITMENTS (0060/0061) — the standing movement/eating changes, shown whenever they exist (NOT
-// gated on the one-week pilot anymore). When present, the member can OPTIONALLY tag which commitment a call is about;
-// untagged is always fine (never a gate, MM/R1). Either domain may be absent (a member can hold just one).
+// THE COMMITMENT CHIPS ARE GONE FROM THIS SURFACE (Jay, 2026-08-12: "Movement and Eating no longer need to live
+// here"). They asked which standing commitment a call was about, and the answer now lives somewhere better: the
+// Playbook's This week grid records a MARK per commitment per day. A mark is a day; a tagged call was an opinion
+// about a day. Two records of the same thing, and the weaker one was on the page that also showed a count derived
+// from it that disagreed with the grid.
+//
+// It also honours Greg's line on W3, which applies just as well here: keep the bounded practice week SEPARATE from
+// the ongoing Momentum tracker until members have learned the vocabulary. Tagging calls to commitments was exactly
+// the conflation he asked us to avoid.
+//
+// The TYPE and the action's `domain` parameter both stay: the Companion can still tag a call from the rail, where
+// the member is talking about a specific commitment and the tag is a reading of what they said rather than a form
+// field. What goes quiet is the per-domain tally line in the agent's context — see the note there.
 export type Commitments = { activity?: string; diet?: string };
 
-export default function MomentumLog({ memberId, commitments }: { memberId: string; commitments?: Commitments | null }) {
+export default function MomentumLog({ memberId }: { memberId: string }) {
   const [note, setNote] = useState('');
-  const [domain, setDomain] = useState<CallDomain | null>(null);
   // The call the member has PICKED but not yet logged. Selecting is not committing: nothing is written until they
   // press "Log it", which is what lets the note be typed after the call is chosen (Jay, 2026-08-11).
   const [picked, setPicked] = useState<CallType | null>(null);
@@ -38,13 +47,12 @@ export default function MomentumLog({ memberId, commitments }: { memberId: strin
     if (!type) return; // the button is disabled without a pick; this is the belt to that suspenders
     setError(null);
     start(async () => {
-      // quiet days aren't about one change — never carry a domain tag.
-      const tag = type === 'quiet_day' ? undefined : domain ?? undefined;
-      const r = await logCallAction(memberId, type, note.trim() || undefined, tag);
+      // No domain from this surface any more — the commitment chips moved to the Playbook's grid. The action still
+      // accepts one because the Companion tags calls from the rail, where it is reading what the member said.
+      const r = await logCallAction(memberId, type, note.trim() || undefined, undefined);
       if (!r.ok) return setError(r.error ?? 'Could not log.');
       setDone(type);
       setNote('');
-      setDomain(null);
       setPicked(null);
       router.refresh(); // the pulse above re-reads
     });
@@ -55,23 +63,6 @@ export default function MomentumLog({ memberId, commitments }: { memberId: strin
   return (
     <div className="momentum-log">
       <p className="card-subtitle">How'd it go? Log a call — no pressure, and steady days count.</p>
-      {commitments && (commitments.activity || commitments.diet) && (
-        <div className="momentum-log-domain">
-          <span className="momentum-log-domain-label">Which commitment is this about? (optional)</span>
-          <div className="momentum-log-domain-opts">
-            {commitments.activity && (
-              <button type="button" className={`momentum-domain-btn${domain === 'activity' ? ' is-on' : ''}`} disabled={pending} onClick={() => setDomain((d) => (d === 'activity' ? null : 'activity'))}>
-                Movement — {commitments.activity}
-              </button>
-            )}
-            {commitments.diet && (
-              <button type="button" className={`momentum-domain-btn${domain === 'diet' ? ' is-on' : ''}`} disabled={pending} onClick={() => setDomain((d) => (d === 'diet' ? null : 'diet'))}>
-                Eating — {commitments.diet}
-              </button>
-            )}
-          </div>
-        </div>
-      )}
       {/* PICK THE CALL, THEN ADD THE DETAIL (Jay, 2026-08-11). This reverses Donna's earlier order, which put the
           note first because tapping and then typing "read out of order" — true while the tap was the COMMIT.
           It could not be a straight reorder: the tap used to write the call immediately with whatever note existed
