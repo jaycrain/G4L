@@ -147,8 +147,11 @@ export function columnFor(week: MemberWeek, date: string): number | null {
  *
  * A PARTIAL WEEK IS NEVER "finished" for review purposes. That is the rule Jay accepted: a Session closed on
  * Sunday afternoon would otherwise produce a one-day week and immediately review it. The first FULL Monday–Sunday
- * carries the review, so a member gets between four and ten days of tracking first and every review lands on a
- * Sunday.
+ * carries the review, so every review lands on a Sunday.
+ *
+ * THE CONSEQUENCE, STATED PLAINLY: a tracker now lives longer than seven days. Close on a Monday and it is the
+ * seven days it always was; close on a Tuesday and it is six partial days plus a full week — thirteen. That is
+ * the price of "partial first week, then Mon–Sun", and it is a deliberate trade, not an oversight.
  */
 export function weekIsOver(week: MemberWeek, today: string): boolean {
   return !week.partial && today > week.end;
