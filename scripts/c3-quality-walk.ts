@@ -21,6 +21,10 @@
 //      stored fine but doesn't reach the log leaves the member a page saying "define your Quality Day first" the
 //      morning after they defined it.
 //   4. A logged day is actually recorded — the page comes back reporting the score across one day.
+//   5. **The tracker appears on the Playbook's "This week"** — the surface a member goes to for their trackers.
+//      Added 2026-08-11 after Jay finished C3 and reported no tracker, with both the profile and the week sitting
+//      in the database. Steps 3 and 4 were green throughout: proving the log page works is not proving the week
+//      SHOWS UP, and this walk stopped one page short of the thing that got reported.
 //
 // Deliberately NOT asserted against the database. The dev server holds PGlite open (docs/runbooks), and a row
 // proves storage while leaving the member-facing half — the only half a member has — untested.
@@ -255,6 +259,38 @@ async function main(): Promise<void> {
     ok(`the day survived a reload — "${summary.match(/This week so far:[^.]*day/)?.[0]}"`);
   } else {
     bad(`the logged day did not come back after reload — the page says: "${summary.slice(0, 160)}"`);
+  }
+
+  // ---- 5. THE PLACE THE MEMBER ACTUALLY LOOKS ----------------------------------------------------------------
+  //
+  // Jay finished C3 on his own account and reported "no tracker was set up" (2026-08-11). The database had both the
+  // profile and the week; steps 3 and 4 above were green. What none of them covered is the Playbook's "This week" —
+  // the surface the member goes to for their trackers. Proving the log page works is not proving the tracker
+  // APPEARS, and this walk stopped one page short of the thing that was reported.
+  await page.goto(`${base}/playbook/${memberId}`, { waitUntil: 'domcontentloaded' });
+  const onThisWeek = await page.locator('.pb-tab', { hasText: /^This week$/ }).first().click().then(() => true).catch(() => false);
+  if (!onThisWeek) bad('the Playbook has no "This week" tab');
+  await page.waitForSelector('.wk-grid, .pb-sec', { timeout: 15000 }).catch(() => {});
+
+  const gridCount = await page.locator('.wk-grid').count();
+  if (gridCount === 0) {
+    bad('the Playbook shows NO week grids at all — the member just opened a week and cannot see it');
+  } else {
+    ok(`the Playbook renders ${gridCount} week grid${gridCount === 1 ? '' : 's'}`);
+    // THE QUALITY DAYS GRID SPECIFICALLY. With several weeks running, "a grid rendered" is a check that cannot
+    // fail — B2's or B3's would satisfy it while C3's is missing entirely.
+    const labels = norm((await page.locator('.wk-lab').allTextContents()).join(' | '));
+    if (labels.includes(VERBATIM.nonNegotiable)) {
+      ok(`their Quality Day is a row on the grid, in their words — "${VERBATIM.nonNegotiable}"`);
+    } else {
+      bad('the Quality Days grid is NOT on the Playbook — their week opened somewhere they cannot see it');
+      console.log(`\n      THE ROWS ACTUALLY SHOWN:\n      ${labels.split(' | ').join('\n      ')}\n`);
+    }
+    // And it must be NAMED. With more than one week running, an unlabelled grid is four tables the member has to
+    // tell apart by their row text.
+    const heads = norm((await page.locator('.pb-week-h').allTextContents()).join(' | '));
+    if (gridCount > 1 && !/quality days/i.test(heads)) bad(`the grid is not named "Your Quality Days" — heads were: ${heads}`);
+    else if (gridCount > 1) ok('and it is named, so it is tellable from the other weeks running');
   }
 
   await browser.close();
