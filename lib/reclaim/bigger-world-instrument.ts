@@ -142,6 +142,22 @@ export const AUDIT_SORT_QUESTIONS: { key: AuditSortKey; prompt: string }[] = [
   { key: 'focus', prompt: 'If you could make meaningful progress in only one area over the next 30 days, which one would you choose?' },
 ];
 
+/**
+ * The four areas, written out. ONE source — the Step 2 intro says them and the sort's re-ask says them, and a rule
+ * restated at two call sites is one wrong copy waiting to happen.
+ */
+export const domainList = (conj: 'and' | 'or'): string => {
+  const names = AUDIT_DOMAINS.map((d) => AUDIT_DOMAIN_LABEL[d]);
+  return `${names.slice(0, -1).join(', ')}, ${conj} ${names.at(-1)}`;
+};
+
+// Greg's two sentences, verbatim, plus one line NAMING the four again.
+//
+// Step 2 asks "looking across these four areas" — roughly thirty questions after the only place they were named.
+// Jay, who designed the program, could not recall them at that point ("need the 4 areas resurfaced, hell I couldn't
+// remember them", 2026-08-11), and answered the first sort question by asking what they were. Nothing is added to
+// or taken from his items; the member is just told again what they are being asked to choose between.
 export const AUDIT_SORT_INTRO =
   'Now that we’ve looked at all four areas, we can try to find some synergies and priorities. The goal is not to fix ' +
-  'everything at once but to identify what matters most right now and where progress would create the biggest shift.';
+  'everything at once but to identify what matters most right now and where progress would create the biggest shift.' +
+  `\n\nThe four areas, again: ${domainList('and')}.`;

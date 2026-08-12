@@ -288,3 +288,12 @@ test('the secondary is NOT repeated when it is already in the sentence', () => {
   const hits = final.reply.match(/Physical/g) ?? [];
   assert.ok(hits.length <= 2, `Physical is not repeated across three clauses (saw ${hits.length})`);
 });
+
+test('STEP 2 NAMES THE FOUR AREAS AGAIN before asking you to choose between them', () => {
+  // "Looking across these four areas" arrives ~30 questions after the only place they were named. Jay, who designed
+  // the program, could not recall them there and answered by asking what they were.
+  const answers = [...domain(3), ...domain(4), ...domain(5), ...domain(6)];
+  const { final } = walk(answers);
+  assert.match(final.reply, /Physical, Self, Social, and Outlook/, 'the four, right before the sort');
+  assert.ok(final.reply.includes(AUDIT_SORT_QUESTIONS[0]!.prompt), 'and the first sort question still follows');
+});

@@ -12,7 +12,7 @@ import { BEAT_SEP, type Collected, type ConvMessage, type ConvState, type ModelT
 import { TIER_LABEL, REFINE_TIERS, isTier, type Tier } from '../reclaim/refinement-store.ts';
 import {
   AUDIT_ITEMS, AUDIT_ITEM_COUNT, AUDIT_SCALE_MAX, AUDIT_DOMAIN_STARTS, AUDIT_DOMAIN_LABEL, AUDIT_DOMAIN_INTRO,
-  AUDIT_DOMAINS, AUDIT_SUB_ISSUES, AUDIT_REFLECTION_PROMPTS, AUDIT_SUB_ISSUE_ASK, AUDIT_SORT_QUESTIONS, AUDIT_SORT_INTRO,
+  AUDIT_DOMAINS, AUDIT_SUB_ISSUES, AUDIT_REFLECTION_PROMPTS, AUDIT_SUB_ISSUE_ASK, AUDIT_SORT_QUESTIONS, AUDIT_SORT_INTRO, domainList,
   type AuditDomain,
 } from '../reclaim/bigger-world-instrument.ts';
 import { scoreAudit } from '../reclaim/bigger-world-scoring.ts';
@@ -528,9 +528,9 @@ function parseAuditDomain(msg: string): AuditDomain | undefined {
 
 // Re-ask copy for the sort. Names the four in the member's own vocabulary — a question they can't parse is our
 // wording problem, not their failure to answer.
-const SORT_CLARIFY = 'Whichever of the four fits best — Physical, Self, Social, or Outlook.';
+const SORT_CLARIFY = `Whichever of the four fits best — ${domainList('or')}.`;
 const SORT_STUCK_HELP =
-  "There's no wrong pick here, and nothing is locked in by it — Physical, Self, Social, or Outlook. " +
+  `There's no wrong pick here, and nothing is locked in by it — ${domainList('or')}. ` +
   'And if now isn’t the moment, you can leave this and come back whenever you like; your place is saved.';
 
 const sortStage: StageDef = (() => {
