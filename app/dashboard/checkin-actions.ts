@@ -1,6 +1,7 @@
 'use server';
 
 import { softRead } from '../../lib/db/degrade.ts';
+import { groundToMemberWords } from '../../lib/agent/member-words.ts';
 import { getDb } from '../../lib/db/index.ts';
 import { heroCard } from '../../lib/dashboard/hero-card.ts';
 import { standingUpdate } from '../../lib/dashboard/standing-update.ts';
@@ -76,11 +77,13 @@ import type { Db } from '../../lib/db/schema.ts';
  * The blast radius was the bug, not the throw. Each derivation now fails alone, loudly and BY NAME, so the next
  * one costs one signal instead of the member's whole history — and so the log says which one it was.
  */
-function derive<T>(label: string, fn: () => T): T | null {
+function derive<T>(label: string, fn: () => T, failures?: string[]): T | null {
   try {
     return fn();
   } catch (e) {
-    console.error(`buildContext derivation FAILED — ${label}: ${(e as Error)?.message ?? e}`);
+    const msg = `${label}: ${(e as Error)?.message ?? e}`;
+    failures?.push(msg);
+    console.error(`buildContext derivation FAILED — ${msg}`);
     return null;
   }
 }
@@ -400,7 +403,14 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
     // prompt (rightly) forbids denying that we remember the member. Unflagged, the agent's only options were to
     // confabulate specifics or go blandly generic. The flag lets it say "I'm not pulling everything up this
     // minute" without ever claiming memory doesn't persist.
-    console.warn('buildContext degraded to minimal — a supplementary read failed:', (e as Error).message);
+    // RECORD IT WHERE IT CAN BE READ. A console line on a serverless instance answered nobody: Jay hit this twice
+    // and both diagnoses were guesswork off a screenshot. The message goes into the member's event stream, which
+    // the diagnostic already surfaces — so "why is the Companion blind" costs one call instead of an afternoon.
+    // Never blocks the fallback: a telemetry write must not be able to make a bad state worse.
+    const why = (e as Error)?.message ?? String(e);
+    console.warn('buildContext degraded to minimal — a supplementary read failed:', why);
+    void logEvent(db, memberId, 'context_degraded', { surface: 'companion', meta: { message: why.slice(0, 400) } })
+      .catch(() => {});
     return { ...minimal, degraded: true };
   }
 }
@@ -559,9 +569,35 @@ export async function sendCheckin(memberId: string, memberMessage: string): Prom
       }
       if (name === 'propose_playbook_entry') {
         const section = String(input.section ?? '');
-        const body = String(input.body ?? '').trim();
-        if (!isPlaybookSection(section) || section === 'journal' || !body) {
+        const proposed = String(input.body ?? '').trim();
+        if (!isPlaybookSection(section) || section === 'journal' || !proposed) {
           return { ok: false, message: 'Not saved — a valid section (what_works | why_works | own_words) and body are required.' };
+        }
+        // THE ENGINE GROUNDS IT TO WHAT THEY ACTUALLY TYPED — the prompt asks, this enforces.
+        //
+        // Jay, 2026-08-12: the Companion offered to keep a sentence it had WRITTEN — "Visualization Sessions are
+        // feeding my fast rides and PRs — and those are killing the cravings. The loop is real." — in first person,
+        // as his. He confirms it and his own record now holds a line he never said. The propose→confirm gate makes
+        // that survivable, not right: a member approving our sentence is not the same as us keeping theirs.
+        //
+        // why_works is EXEMPT and that is deliberate: it holds a piece of the program's science that landed for
+        // them, which was never going to be their phrasing. The other two are claims about what they said, so they
+        // have to be. If we cannot find it in their words, we do not quietly store ours — we hand it back and ask
+        // the model to quote them. See lib/agent/member-words.ts and [[their-own-words-back]].
+        let body = proposed;
+        if (section !== 'why_works') {
+          const said = [...history.filter((m) => m.role === 'member').map((m) => m.text), memberMessage];
+          const g = groundToMemberWords(proposed, said);
+          if (g.grounded === 'none') {
+            return {
+              ok: false,
+              message:
+                'Not saved — that wording is yours, not theirs. Their Playbook holds what THEY said. Quote the ' +
+                'strongest single thing they actually typed (you may fix spelling/punctuation and trim a lead-in), ' +
+                'and propose that instead. If nothing they said carries it yet, ask them how they would put it.',
+            };
+          }
+          body = g.text;
         }
         const confirmed = input.confirmed === true;
         const r = await proposeEntry(db, memberId, {

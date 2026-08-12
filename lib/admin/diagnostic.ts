@@ -158,6 +158,14 @@ const REPORT_SQL = `select jsonb_build_object(
   'event_summary', (select coalesce(jsonb_object_agg(kind, n), '{}') from (select kind, count(*) n from member_event where member_id = $1 group by kind) t),
   'furthest_step_by_session', (select coalesce(jsonb_object_agg(ref, mx), '{}') from (select ref, max(step) mx from member_event where member_id = $1 and step is not null and ref is not null group by ref) t),
   'recent_events', (select coalesce(jsonb_agg(to_jsonb(e) order by e.created_at desc), '[]') from (select kind, surface, ref, step, created_at from member_event where member_id = $1 order by created_at desc limit 25) e),
+  -- WHY THE COMPANION WENT BLIND. recent_events deliberately drops meta (it is a timeline, not a dump), so a
+  -- context_degraded row would appear there as a bare word with the reason stripped off — visible and useless.
+  -- This block carries the message. The Companion telling a member "I can't see your record this minute" is the
+  -- most serious quiet failure we have, and it was diagnosed twice off a screenshot before this existed.
+  -- (No backticks in this comment: the SQL lives inside a TS template literal and one would end the string.)
+  'context_degraded', (select coalesce(jsonb_agg(to_jsonb(e) order by e.created_at desc), '[]')
+     from (select created_at, meta->>'message' as message from member_event
+            where member_id = $1 and kind = 'context_degraded' order by created_at desc limit 10) e),
   'FLAGS', (select jsonb_strip_nulls(jsonb_build_object(
      'identity_noun_missing',      case when (select identity_noun from member_profile where member_id = $1) is null then true end,
      'identity_paragraph_missing', case when (select identity_paragraph from member_profile where member_id = $1) is null then true end,

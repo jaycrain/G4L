@@ -19,6 +19,12 @@ export type EventKind =
   | 'idq_complete'
   | 'onboarding_confirmed' // member confirmed the summary card → IDQ; meta holds the card snapshot + cardReturns
   | 'play_rerun' // member hit "Run it again" on a Playbook play; ref = the Session id the Companion re-runs
+  // THE COMPANION'S CONTEXT FELL BACK TO MINIMAL. The single most serious silent failure we have: the member is
+  // told, honestly, that we cannot see their record this minute — and until now the REASON existed only in a
+  // console line on a serverless instance nobody reads. Jay hit it twice on his own account and both times the
+  // diagnosis was guesswork. meta carries the thrown message and, when a named derivation failed, which one.
+  // An event, not a log, because the question is "has this been happening" and a log cannot answer that.
+  | 'context_degraded'
   | 'page_view';
 
 export type LogOpts = { surface?: string | null; ref?: string | null; step?: number | null; meta?: Record<string, unknown> };
