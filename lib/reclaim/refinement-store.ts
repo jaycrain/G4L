@@ -6,6 +6,7 @@
 // never a delete (releasing an item stays a separate explicit member action).
 
 import type { Db } from '../db/schema.ts';
+import { readJson, payloadKind } from '../db/jsonb.ts';
 import { getReclaimItems } from '../beats/store.ts';
 
 export type Tier = 'top' | 'important' | 'emerging' | 'no_longer_central';
@@ -151,20 +152,22 @@ export type RefinementHistory = {
 // (getReclaimItems now carries `tier`); this is the prior state, for "show me where my list used to be."
 export async function latestRefinement(db: Db, memberId: string): Promise<RefinementHistory | null> {
   try {
+    // KIND IS MATCHED IN JS, NOT SQL. `payload->>'kind'` is NULL on a jsonb string, and prod stores these as
+    // strings — so this filter matched nothing there while passing every local test. See lib/db/jsonb.ts.
     const { rows } = await db.query<{ payload: unknown; created_at: string }>(
       `select payload, created_at from coaching_plan
-        where member_id=$1 and phase='reclaim' and payload->>'kind'='c1_refinement'
-        order by created_at desc limit 1`,
+        where member_id=$1 and phase='reclaim'
+        order by created_at desc`,
       [memberId],
     );
-    const r = rows[0];
+    const r = rows.find((row) => payloadKind(row.payload) === 'c1_refinement');
     if (!r) return null;
-    const p = (typeof r.payload === 'string' ? JSON.parse(r.payload) : r.payload) as {
-      preRefinement?: RefinementHistory['preRefinement'];
-      refinement: RefinementResult;
-    };
+    const p = readJson<{ preRefinement?: RefinementHistory['preRefinement']; refinement: RefinementResult }>(r.payload);
+    if (!p?.refinement) return null;
     return { preRefinement: p.preRefinement ?? [], refinement: p.refinement, takenAt: String(r.created_at) };
-  } catch {
+  } catch (e) {
+    // LOG. A failed read here is indistinguishable from "they never refined" — the caller shows nothing either way.
+    console.error(`latestRefinement read failed for member=${memberId}:`, (e as Error).message);
     return null;
   }
 }

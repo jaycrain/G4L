@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { payloadKind } from '../../../lib/db/jsonb.ts';
 import { getDb } from '../../../lib/db/index.ts';
 import { currentMemberId } from '../../auth.ts';
 import { assertDevOnly } from '../guard.ts';
@@ -63,10 +64,14 @@ export async function POST(req: Request): Promise<NextResponse> {
   // the feature. Scoped by payload kind, not just phase: `coaching_plan` hosts more than one reclaim payload shape
   // (C1's refinement snapshots live here too), and a phase-only delete would take an unrelated plan with it.
   if (session === 'c3') {
-    await db.query(
-      `delete from coaching_plan where member_id = $1 and phase = 'reclaim' and payload->>'kind' = 'quality_day_profile'`,
+    // Kind matched in JS for the same reason as the readers — `payload->>'kind'` is NULL on a jsonb string, so
+    // this delete quietly cleared nothing on a Postgres-backed dev DB. See lib/db/jsonb.ts.
+    const { rows: plans } = await db.query<{ id: string; payload: unknown }>(
+      `select id, payload from coaching_plan where member_id = $1 and phase = 'reclaim'`,
       [memberId],
     );
+    const ids = plans.filter((r) => payloadKind(r.payload) === 'quality_day_profile').map((r) => r.id);
+    if (ids.length) await db.query('delete from coaching_plan where id = any($1::uuid[])', [ids]);
     await db.query('delete from quality_day_log where member_id = $1', [memberId]);
   }
 

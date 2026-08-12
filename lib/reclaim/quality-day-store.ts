@@ -4,6 +4,7 @@
 // one row per day. Both durable + retrievable (RC-4). Manual logging only (OO).
 
 import type { Db } from '../db/schema.ts';
+import { readJson, payloadKind } from '../db/jsonb.ts';
 
 export type QualityDayProfile = {
   nonNegotiables: string[]; // top 3 — a day is hard to call "quality" without these
@@ -37,26 +38,33 @@ export async function persistQualityDayProfile(db: Db, memberId: string, profile
   );
   const id = rows[0]?.id;
   if (!id) return; // nothing to retire against — leave the prior profile standing rather than guess
-  await db.query(
-    `update coaching_plan set status='superseded', updated_at=now()
-      where member_id=$1 and phase='reclaim' and status='active'
-        and payload->>'kind'='quality_day_profile' and id <> $2`,
-    [memberId, id],
+  // WHICH ROWS ARE PROFILES IS DECIDED IN JS. `payload->>'kind'` is NULL on a jsonb string (see lib/db/jsonb.ts),
+  // which made this retire a no-op on prod — harmless-looking, but it left several rows marked active and put the
+  // reader back on "whichever created_at the database felt like", the exact bug the retire was added to kill.
+  const { rows: siblings } = await db.query<{ id: string; payload: unknown }>(
+    `select id, payload from coaching_plan where member_id=$1 and phase='reclaim' and status='active'`,
+    [memberId],
   );
+  const retire = siblings.filter((r) => r.id !== id && payloadKind(r.payload) === 'quality_day_profile').map((r) => r.id);
+  if (!retire.length) return;
+  await db.query(`update coaching_plan set status='superseded', updated_at=now() where id = any($1::uuid[])`, [retire]);
 }
 
 // The member's active Quality-Day profile (most recent). Null on none / error (drift-hardened).
 export async function activeQualityDayProfile(db: Db, memberId: string): Promise<QualityDayProfile | null> {
   try {
+    // THE ONE THAT COST A MEMBER THEIR TRACKER. This filtered on `payload->>'kind'`, which is NULL for a jsonb
+    // string — the shape prod stores — so it returned nothing while the profile sat in the table. c3Rows then
+    // produced no rows and weekGrids dropped the week as empty. Kind is matched in JS now; see lib/db/jsonb.ts.
     const { rows } = await db.query<{ payload: unknown }>(
       `select payload from coaching_plan
-        where member_id=$1 and phase='reclaim' and status='active' and payload->>'kind'='quality_day_profile'
-        order by created_at desc limit 1`,
+        where member_id=$1 and phase='reclaim' and status='active'
+        order by created_at desc`,
       [memberId],
     );
-    const r = rows[0];
+    const r = rows.find((row) => payloadKind(row.payload) === 'quality_day_profile');
     if (!r) return null;
-    const p = (typeof r.payload === 'string' ? JSON.parse(r.payload) : r.payload) as Partial<QualityDayProfile>;
+    const p = readJson<Partial<QualityDayProfile>>(r.payload) ?? {};
     return {
       nonNegotiables: Array.isArray(p.nonNegotiables) ? p.nonNegotiables : [],
       contributors: Array.isArray(p.contributors) ? p.contributors : [],
