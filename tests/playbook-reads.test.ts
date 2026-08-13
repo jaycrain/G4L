@@ -51,7 +51,7 @@ test('the skills read speaks plain language and never a number', async () => {
   // The posture line DECLARES what a growth edge is rather than reassuring about what it isn't — the
   // "it's not X, it's Y" tic is one Jay has been cutting from member copy all week, and the strict assertion
   // above is what caught my first draft using it ("not a weakness to carry").
-  assert.match(text, /simply the next one to practise/, 'the posture line is part of the read, not decoration');
+  assert.match(text, /simply the next one to practice/, 'the posture line is part of the read, not decoration');
 });
 
 test('a DRIFTED register hides one card, it does not empty the tab', async () => {

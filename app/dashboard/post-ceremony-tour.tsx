@@ -39,7 +39,7 @@ export default function PostCeremonyTour({
   // settle rises back up to the companion's home. Stops whose anchor isn't on this dashboard are filtered
   // out below (daily/doors live on the old dashboard; the triptych folds them into other surfaces).
   // CAT-46 — which triptych pane each stop lives in, so the tour can reveal it on the mobile fold. Anything not
-  // listed is centre/legacy and needs no switch.
+  // listed is center/legacy and needs no switch.
   const PANE_OF: Record<string, 'left' | 'center' | 'right'> = {
     companion: 'center',
     idscore: 'left',
@@ -59,7 +59,7 @@ export default function PostCeremonyTour({
     // at it. The Companion is the product; the tour introduced every panel around it and never it.
     {
       target: 'companion',
-      line: 'Your Companion is right here. The same one you just talked to — always in the centre, always listening. Ask it anything, anytime. It remembers everything.',
+      line: 'Your Companion is right here. The same one you just talked to — always in the center, always listening. Ask it anything, anytime. It remembers everything.',
     },
     {
       target: 'program',
@@ -90,7 +90,7 @@ export default function PostCeremonyTour({
   ];
   // CAT-46 — DON'T SILENTLY DROP 7 OF 9 STOPS ON A PHONE.
   // This filtered to anchors with width > 0. On the triptych's mobile fold the two inactive panes are
-  // display:none (width 0), so a brand-new member onboarding on a phone got a gutted tour — only the centre
+  // display:none (width 0), so a brand-new member onboarding on a phone got a gutted tour — only the center
   // stop — and never met their ID Score, Grinta, Badges, Momentum, Community, Movement or Reclaim List. Because
   // the tour is marked complete and runs once per member, those introductions were lost PERMANENTLY. The
   // once-only design is right; combining it with a silent visibility filter is what made the loss unrecoverable.

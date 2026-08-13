@@ -11,7 +11,7 @@ import type { Zone } from './member-clock.ts';
 // office, a fortnight in another country — with no way to correct it is a worse trap than not detecting at all,
 // because the member cannot tell that the wrongness is fixable. A manual choice is never overwritten by detection.
 
-/** Anything the browser hands us that Intl does not recognise is discarded rather than stored. */
+/** Anything the browser hands us that Intl does not recognize is discarded rather than stored. */
 export function isValidZone(zone: string): boolean {
   if (!zone || zone.length > 64 || !/^[A-Za-z0-9+_\-/]+$/.test(zone)) return false;
   try {
@@ -65,7 +65,7 @@ export async function detectZone(db: Db, memberId: string, zone: string): Promis
  * exists to say who changed what.
  */
 export async function setZone(db: Db, memberId: string, zone: string): Promise<{ ok: boolean; error?: string }> {
-  if (!isValidZone(zone)) return { ok: false, error: 'That is not a timezone we recognise.' };
+  if (!isValidZone(zone)) return { ok: false, error: 'That is not a timezone we recognize.' };
   try {
     const { writeAsActor } = await import('../db/actor.ts');
     await writeAsActor(db, 'member', (tx) =>

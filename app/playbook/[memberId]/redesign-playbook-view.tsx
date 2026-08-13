@@ -409,7 +409,7 @@ export default function RedesignPlaybookView({
             <>
               <div className="pb-sec">This week</div>
               <p className="pb-empty">
-                No week running right now. A Session starts one when you’re ready to practise something for
+                No week running right now. A Session starts one when you’re ready to practice something for
                 real — that’s when this fills in.
               </p>
             </>

@@ -10,13 +10,13 @@
 //
 //     a READ     — what you know      (L1)
 //     a TOOL     — what you hold      (L2)
-//     a TRACKED WEEK — what you practise (L3)
+//     a TRACKED WEEK — what you practice (L3)
 //
 // So an outcome is BUILT when a member holds all three and has run the week to its end. That is checkable in
 // code rather than asserted, which is the whole reason this file exists instead of a decorative strip.
 //
 // THE HONESTY RULE, and it is the one that will get bent first. Cycle 1 builds the SKILLS; it does not hand
-// anyone wellness. Greg's analogy: you practise free throws, you do not practise winning. So every label here
+// anyone wellness. Greg's analogy: you practice free throws, you do not practice winning. So every label here
 // describes what the member has BUILT TOWARD the outcome — never that they now possess it. `built` means "the
 // three components exist", not "you are a mindful person now", and nothing downstream may phrase it that way.
 //
@@ -63,7 +63,7 @@ export type Outcome = {
 export const PART_GLOSS: Record<PartKind, string> = {
   'A read': 'what you know',
   'A tool': 'what you keep',
-  'A tracked week': 'what you practise',
+  'A tracked week': 'what you practice',
 };
 
 // Asset ids are the STAGED program's (RWR-W1, RBLD-B1, RCL-C1 …), which is what prod runs. With the phase flags
@@ -79,7 +79,7 @@ const SHAPE = [
     read: { id: 'RWR-W1', label: 'your true lines', detail: 'The stories you tell yourself, caught and answered.' },
     tool: { id: 'RWR-W2', label: 'your picture', detail: 'Who you’re becoming, vivid enough to reach for.' },
     week: { kind: 'w3_logging', label: 'Mindful Monitoring', detail: 'Noticing the slips early and clipping back in.' },
-    builtLine: 'You caught the stories, built the picture, practised the week. That skill is yours now, and it feeds what comes next.',
+    builtLine: 'You caught the stories, built the picture, practiced the week. That skill is yours now, and it feeds what comes next.',
   },
   {
     phase: 'rebuild' as const,

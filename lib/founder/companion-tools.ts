@@ -75,7 +75,7 @@ export const FOUNDER_TOOLS = [
   {
     name: 'member_detail',
     description:
-      "Everything about ONE member, including their Reclaim List and how the distance opened in their own words — the same view as opening their page. Use ONLY when Jay asks about a specific person by name. Never call this to add colour to a cohort answer.",
+      "Everything about ONE member, including their Reclaim List and how the distance opened in their own words — the same view as opening their page. Use ONLY when Jay asks about a specific person by name. Never call this to add color to a cohort answer.",
     input_schema: {
       type: 'object' as const,
       properties: { name: { type: 'string', description: 'Their name or email, as Jay said it' } },

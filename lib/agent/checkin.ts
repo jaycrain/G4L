@@ -64,7 +64,7 @@ export type CheckinContext = {
   lastCompletedAsset: string | null;
   reclaimList: string[]; // anchor first
   /**
-   * The `top`-tier Reclaim List item C1 named — the one the rest of the list organises around.
+   * The `top`-tier Reclaim List item C1 named — the one the rest of the list organizes around.
    *
    * The member can see a star on it; before this the agent could not, which broke the standing rule that no data
    * the member can see is invisible to the agent. It is stated as a FACT and nothing here tells the model how hard
@@ -311,7 +311,7 @@ function practiceWeekLine(c: CheckinContext): string | null {
 // The agent must know these because the member is looking at them — but the risk here is specific and worth naming:
 // three cards with ticks on them are one careless sentence away from becoming a progress report. So the line hands
 // over the STATE and then forbids the two ways it goes wrong — counting it, and claiming they now possess the
-// outcome. Greg: the cycle builds the skills; you practise the shot, not the winning.
+// outcome. Greg: the cycle builds the skills; you practice the shot, not the winning.
 function outcomesLine(c: CheckinContext): string | null {
   const o = c.outcomes;
   if (!o || !o.length) return null;
@@ -325,7 +325,7 @@ function outcomesLine(c: CheckinContext): string | null {
     .join('; ');
   return (
     `The three outcomes on their Playbook — what the cycle builds. Each is made of a read (what you know), a tool ` +
-    `(what you keep) and a tracked week (what you practise) — that vocabulary is on their Program page too, so use ` +
+    `(what you keep) and a tracked week (what you practice) — that vocabulary is on their Program page too, so use ` +
     `those words rather than inventing your own: ${body}.${running.length ? ` Running right now: ${running.join(', ')}.` : ''} ` +
     `You know this because they can see it; reference it naturally if it helps them place themselves. ` +
     `NEVER count it, rank the three, or say how many are left — it is three named things, not a score, and ` +
@@ -422,7 +422,7 @@ export function contextBlock(c: CheckinContext): string {
         'unprompted. If they ask about it, explain what it is drawn from.'
       : null,
     c.earnedBadges && c.earnedBadges.length
-      ? `Badges they've earned: ${c.earnedBadges.join(', ')} (earned acknowledgement — never a grade or a carrot)`
+      ? `Badges they've earned: ${c.earnedBadges.join(', ')} (earned acknowledgment — never a grade or a carrot)`
       : null,
     c.namedSelves && c.namedSelves.length
       ? `Reclaimed selves they've named: ${c.namedSelves.join(', ')} (speak to all of them, not just one)`
@@ -901,7 +901,7 @@ const MARK_PRACTICE_DAY_TOOL = {
 // Smart Choice easy." So the Companion is not ticking a box on their behalf; it is writing down what they just
 // said, which is what a coach doing a check-in does.
 //
-// THE SAFETY PROPERTY: it records their words, never a judgement about them. Nothing here scores, counts, or
+// THE SAFETY PROPERTY: it records their words, never a judgment about them. Nothing here scores, counts, or
 // decides whether the day was good. Greg's disallowed affirmations are the shape to avoid — "Great, you avoided
 // False Starts today!" — so the tool captures observations and the reply reflects them, and neither adds a verdict.
 const RECORD_W3_DAY_TOOL = {

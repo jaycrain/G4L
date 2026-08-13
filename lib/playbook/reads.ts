@@ -14,9 +14,9 @@
 // GOVERNANCE — the reason this is a read and not a report card:
 //   · NEVER a number. B1's motivation reading is explicitly "stored, deliberately NOT scored or shown as a
 //     number"; B2's skills are "never a grade or a number". These render as plain language or not at all.
-//   · NEVER a verdict. A "growth edge" is a skill to practise, never a failing — the same posture the Companion
+//   · NEVER a verdict. A "growth edge" is a skill to practice, never a failing — the same posture the Companion
 //     is held to when it reflects the identical data.
-//   · The member's own answers, organised. We computed the ordering; we did not decide who they are.
+//   · The member's own answers, organized. We computed the ordering; we did not decide who they are.
 
 import type { Db } from '../db/schema.ts';
 import { latestSkillsReading, latestWhyReading } from '../rebuild/store.ts';
@@ -93,7 +93,7 @@ export async function memberReads(db: Db, memberId: string): Promise<Read[]> {
         lines: [
           `Where you're strongest: ${lower(h.strongest)}.`,
           `Where there's the most room: ${lower(h.growthEdge)}.`,
-          'A skill with room is simply the next one to practise.',
+          'A skill with room is simply the next one to practice.',
         ],
       };
     }, null);
