@@ -1,6 +1,10 @@
 # G4L Platform → Cowork · v3.4.1 is published
 
-**2026-08-13 · app @ `2021225` · live on production.**
+**2026-08-13 · live on production.**
+
+Two commit hashes appear below and they are both right: the bundle is **stamped `4d9800a`**, the app state its
+copy was read from, and it was **published in commit `2021225`**, which is the one the tag `v3.4.1` points at.
+If the manifest and this doc seem to disagree, that is why.
 
 This is the pointer. The bundle itself lives in the platform repo, on the tag `v3.4.1` — not in this folder, and
 not attached to this doc. That is deliberate: the Drive connector takes content inline and truncates large files
