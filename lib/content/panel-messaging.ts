@@ -25,7 +25,25 @@ export type PanelMessaging = {
   sub: string;
   /** How it works. Null where the header already carries it — an intro that restates the sub is noise. */
   intro: string | null;
+  /**
+   * ONE extra sentence the Opening Tour says and no other surface does — what you actually DO here. Optional;
+   * most panels don't need it, because title + sub already say the thing.
+   */
+  tourExtra?: string;
 };
+
+/**
+ * The TOUR rung, COMPOSED — never stored.
+ *
+ * The tour used to hold its own hand-written line for every panel, which meant this file and the tour were two
+ * copies of one idea. Jay edited the copy here on 2026-08-13 and then watched the tour on prod say the old
+ * words: "some of the copy didn't have my last edits." Composing the line means an edit to `title` or `sub`
+ * reaches the tour with no second place to remember.
+ */
+export function tourLine(key: PanelKey): string {
+  const m = PANEL_MESSAGING[key];
+  return [m.title, m.sub, 'tourExtra' in m ? m.tourExtra : null].filter(Boolean).join(' ');
+}
 
 export const PANEL_MESSAGING = {
   program: {
@@ -35,6 +53,7 @@ export const PANEL_MESSAGING = {
       'Your Comeback runs in four phases — Reconnect, Rewire, Rebuild, Reclaim. Each is built from a few Sessions: ' +
       'guided conversations with your Companion, one at a time, at your pace. Finish a phase’s Sessions and a ' +
       'Checkpoint opens the next. Everything you do here builds your Playbook.',
+    tourExtra: 'You start the next one right here.',
   },
   idScore: {
     title: 'ID Score — the distance you’re closing.',
@@ -71,6 +90,8 @@ export const PANEL_MESSAGING = {
     intro:
       'Everything worth keeping lands here in your own words — the moves you’ll run again, and what you’re learning ' +
       'about yourself. It grows every week.',
+    // A brand-new member is looking at zeros while the tour says this. Say so before they wonder.
+    tourExtra: 'It starts empty and fills as you go.',
   },
   reclaimList: {
     title: 'Reclaim List — what you’re taking back.',

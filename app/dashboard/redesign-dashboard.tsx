@@ -14,7 +14,8 @@ import { getActivityPanel, syncIfStale } from '../../lib/activity/store.ts';
 import { stravaConfigured } from '../../lib/activity/strava.ts';
 import { looksTrackable, suggestTracker } from '../../lib/measure/store.ts';
 import { formatDistance, formatDuration, typeLabel, relativeDay } from '../../lib/activity/summary.ts';
-import { firstName, initials } from '../../lib/member/avatar.ts';
+import { firstName } from '../../lib/member/avatar.ts';
+import TopbarView from './topbar-view.tsx';
 import RedesignShell from './redesign-shell.tsx';
 import RedesignChrome from './redesign-chrome.tsx';
 import RedesignRing from './redesign-ring.tsx';
@@ -172,38 +173,9 @@ export default async function RedesignDashboard({ db, memberId, dash }: { db: Db
           autoStart={!tourCompleted}
         />
       )}
-      {/* Top bar — brand left, member + nav right (build spec §3 #1–2, carried over). */}
-      <div className="redesign-topbar">
-        <Link href="/" className="rt-brand" aria-label="Go to your G4L home">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img className="rt-logo-mark" src="/brand/g4l-rings.svg" alt="" aria-hidden="true" />
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img className="rt-wordmark" src="/brand/g4l-wordmark.svg" alt="Grinta for Life" />
-        </Link>
-        <div className="rt-who">
-          {/* ONE nav item (Jay, 2026-08-08). Program is a syllabus and is already reachable from the hero
-              breadcrumb AND "See the Program →" on this very page — it was linked three times. The Playbook stays:
-              it is the daily instrument, and subpages carry only "← Dashboard" otherwise.
-              NOTE: this bar is DUPLICATED in redesign-topbar.tsx and redesign-dashboard.tsx, despite the topbar
-              claiming to be the single source. Changing one changes a third of the app — which is exactly how this
-              edit first appeared to do nothing. Worth collapsing to the shared component. */}
-          <span className="rt-nav">
-            <Link href={`/playbook/${memberId}`} prefetch={false}>Playbook</Link>
-          </span>
-          {/* Avatar + greeting → Your Account (which holds Log out — no need to duplicate it in the header). */}
-          <span className="rt-account-group">
-            <Link href="/account" className="rt-account" aria-label="Your account">
-              {dash.avatarUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img className="rt-av" src={dash.avatarUrl} alt={dash.displayName} />
-              ) : (
-                <span className="rt-av rt-av-initials" aria-hidden="true">{initials(dash.displayName)}</span>
-              )}
-              <span className="rt-hi">Hi, {firstName(dash.displayName)}</span>
-            </Link>
-          </span>
-        </div>
-      </div>
+      {/* Top bar — the shared definition (build spec §3 #1–2). Hand-rolled here until 2026-08-13, when the third
+          copy of it swallowed the tour's Account stop. */}
+      <TopbarView memberId={memberId} displayName={dash.displayName} avatarUrl={dash.avatarUrl} greeting />
 
       <RedesignShell memberId={memberId} homeState={homeState}>
         {/* Identity strip — the Doors are NOT shown here (privacy: sensitive if someone's looking over the member's

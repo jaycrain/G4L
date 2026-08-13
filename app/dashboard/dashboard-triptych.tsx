@@ -1,10 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
 import RedesignChrome from './redesign-chrome.tsx';
 import TriptychCenter from './triptych-center.tsx';
-import { initials } from '../../lib/member/avatar.ts';
+import TopbarView from './topbar-view.tsx';
 import type { HeroCard } from '../../lib/dashboard/hero-card.ts';
 
 // Dashboard triptych — the reflect ← Companion → act layout (docs/dashboard-triptych-spec.md). PHASE 1: the SHELL only.
@@ -82,36 +81,10 @@ export default function DashboardTriptych({
   return (
     <>
       <RedesignChrome />
-      {/* Full topbar — matches redesign-dashboard: brand home + Program/Field Guide/Playbook nav + account. */}
-      <div className="redesign-topbar">
-        <Link href="/" className="rt-brand" aria-label="Go to your G4L home">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img className="rt-logo-mark" src="/brand/g4l-rings.svg" alt="" aria-hidden="true" />
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img className="rt-wordmark" src="/brand/g4l-wordmark.svg" alt="Grinta for Life" />
-        </Link>
-        <div className="rt-who">
-          {/* ONE nav item (Jay, 2026-08-08). Program is a syllabus and is already reachable from the hero
-              breadcrumb AND "See the Program →" on this very page — it was linked three times. The Playbook stays:
-              it is the daily instrument, and subpages carry only "← Dashboard" otherwise.
-              NOTE: this bar is DUPLICATED in redesign-topbar.tsx and redesign-dashboard.tsx, despite the topbar
-              claiming to be the single source. Changing one changes a third of the app — which is exactly how this
-              edit first appeared to do nothing. Worth collapsing to the shared component. */}
-          <span className="rt-nav">
-            <Link href={`/playbook/${memberId}`} prefetch={false}>Playbook</Link>
-          </span>
-          <span className="rt-account-group">
-            <Link href="/account" className="rt-account" aria-label="Your account">
-              {avatarUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img className="rt-av" src={avatarUrl} alt={displayName} />
-              ) : (
-                <span className="rt-av rt-av-initials" aria-hidden="true">{initials(displayName)}</span>
-              )}
-            </Link>
-          </span>
-        </div>
-      </div>
+      {/* The shared topbar. It used to be hand-rolled here, in redesign-dashboard AND in redesign-topbar — and
+          that duplication is what lost the tour's Account stop, which was anchored in the one copy the tour never
+          renders. One definition now. */}
+      <TopbarView memberId={memberId} displayName={displayName} avatarUrl={avatarUrl ?? null} />
 
       <div className={`tri-app pane-${pane}`}>
         {/* The MEMBER strip — who they are + what they're reclaiming. Full-width, above the columns.

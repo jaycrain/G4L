@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { completeTourAction } from './threshold-actions.ts';
+import { tourLine } from '../../lib/content/panel-messaging.ts';
+import { placeCoach } from '../../lib/dashboard/coach-placement.ts';
 
 // Post-Ceremony Tour (back-half of the Companion Ceremony). After the Threshold, the companion doesn't
 // drop the member on a static dashboard — it tours the real Slice 1 surfaces, points at the one next
@@ -32,6 +34,11 @@ export default function PostCeremonyTour({
   const [rect, setRect] = useState<DOMRect | null>(null);
   const [settleRect, setSettleRect] = useState<DOMRect | null>(null);
   const [landed, setLanded] = useState(false);
+  // The card's REAL height. Placement has to know it — the old code assumed 200px, the card is 250–320px, and the
+  // difference is precisely how far it overshot onto the panel. 300 is the first-paint estimate; the effect below
+  // replaces it with the measurement before the member reads the line.
+  const cardRef = useRef<HTMLDivElement | null>(null);
+  const [cardH, setCardH] = useState(300);
 
   // The spotlight walk — fixed sequence, words filled from the member's data. §7 voice (declare what it
   // is; no definitional negation). Covers EVERY panel a member sees: center (where you are) → left flank
@@ -54,37 +61,36 @@ export default function PostCeremonyTour({
     doors: 'center',
   };
 
+  // EVERY PANEL'S LINE COMES FROM THE MESSAGING LADDER, not from here. These used to be hand-written twice —
+  // once in lib/content/panel-messaging.ts and once here — so Jay's copy edits landed on the panels and the tour
+  // went on saying the old words (his walk, 2026-08-13: "some of the copy didn't have my last edits"). Only the
+  // three targets with no panel of their own still carry a line locally.
   const allStops: Stop[] = [
     // THE COMPANION GOES FIRST, and it had no stop at all until 2026-08-13 — the anchor existed, nothing pointed
-    // at it. The Companion is the product; the tour introduced every panel around it and never it.
+    // at it. The Companion is the product; the tour introduced every panel around it and never it. Its line is
+    // local because the Companion has no subpage, so it has no rung in the ladder to inherit.
     {
       target: 'companion',
       line: 'Your Companion is right here. The same one you just talked to — always in the center, always listening. Ask it anything, anytime. It remembers everything.',
     },
-    {
-      target: 'program',
-      line: 'This section will always let you know where you are in the program. You can kick off the next phase by clicking the Open this Session button.',
-    },
-    // THE PLAYBOOK STOP, and it goes SECOND — right after Program, because Program → Playbook is the arc: the
-    // Program is how you do the work, the Playbook is what the work leaves in your hands.
+    { target: 'program', line: tourLine('program') },
+    // THE PLAYBOOK STOP goes SECOND — right after Program, because Program → Playbook is the arc: the Program is
+    // how you do the work, the Playbook is what the work leaves in your hands.
     //
     // It was missing entirely until Jay's walk (2026-08-11). Worse, its absence was invisible: the tour filters
     // out stops whose target element isn't on the page, and the Playbook panel used to hide itself at zero plays.
     // So a brand-new member — the only member who ever sees this tour — was the exact member who never got told
     // the Playbook exists, moments after the welcome pact promised it to them.
-    {
-      target: 'playbook',
-      line: 'Your Playbook — the thing we said we’d build together. Everything you keep along the way lands here: the moves that work for you, and what you learn about yourself. It starts empty and fills as you go, and it’s yours.',
-    },
-    { target: 'idscore', line: 'Identity Distance (ID) establishes a number that shows the space between who you are and who you want to be. It’s derived from questions you answer periodically. It will show progress you make as you close that distance.' },
-    { target: 'grinta', line: 'Your Grinta Index — your grit, on its own scale. It gets a little stronger with each Phase you come through.' },
-    { target: 'badges', line: 'Your Badges — earned for real milestones, and revealed the moment you reach them.' },
-    { target: 'momentum', line: 'Momentum — the small calls you make between Sessions. You log them one at a time, and they add up.' },
-    { target: 'connect', line: 'The Community — other members walking the same road. A place to receive and offer support with people who get it.' },
-    { target: 'movement', line: 'Movement — your activity shows up here once you connect an app: quiet evidence of the work coming back in your body.' },
-    { target: 'reclaim', line: 'Your Reclaim List shows the goals you’re working toward in your comeback.' },
+    { target: 'playbook', line: tourLine('playbook') },
+    { target: 'idscore', line: tourLine('idScore') },
+    { target: 'grinta', line: tourLine('grinta') },
+    { target: 'badges', line: tourLine('badges') },
+    { target: 'momentum', line: tourLine('momentum') },
+    { target: 'connect', line: tourLine('community') },
+    { target: 'movement', line: tourLine('movement') },
+    { target: 'reclaim', line: tourLine('reclaimList') },
     // Account — the topbar, not a panel, so it comes after the panels rather than in the middle of the flanks.
-    { target: 'account', line: 'Your account is up in the corner — your name, your reminders, your privacy. Set it once, change it anytime.' },
+    { target: 'account', line: tourLine('account') },
     { target: 'daily', line: 'Your Daily Beat — the heartbeat between Sessions. One thought, one small move, every day.' },
     { target: 'doors', line: doorsLine },
   ];
@@ -102,6 +108,17 @@ export default function PostCeremonyTour({
     typeof document !== 'undefined'
       ? allStops.filter((s) => !!document.querySelector(`[data-tour="${s.target}"]`))
       : allStops;
+
+  // SAY WHICH STOPS WERE DROPPED. The filter above is load-bearing and correct — a stop with no anchor can't be
+  // spotlighted — but it is SILENT, and a silent filter has now hidden two introductions from the only member who
+  // ever sees this tour: the Playbook (2026-08-11) and the Account (2026-08-13). Both times the anchor existed
+  // somewhere in the codebase, just not on the rendered dashboard, so reading the source told you it was fine.
+  // A line in the console is what turns "it didn't come up" into a five-second answer.
+  useEffect(() => {
+    const missing = allStops.filter((s) => !document.querySelector(`[data-tour="${s.target}"]`)).map((s) => s.target);
+    if (missing.length) console.warn(`[tour] no anchor on this page, stop skipped: ${missing.join(', ')}`);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase]);
 
   // Run on first post-Threshold landing (autoStart) or a Field-Guide replay (?tour=1).
   useEffect(() => {
@@ -148,6 +165,13 @@ export default function PostCeremonyTour({
     if (phase === 'next') return measure('next-step');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, step, measure]);
+
+  // Measure the card once it has rendered this step's line, and re-place if the height changed. Lines differ by
+  // ~70px between the shortest and longest stop, which is enough to turn a clean placement into an overlap.
+  useEffect(() => {
+    const h = cardRef.current?.offsetHeight;
+    if (h && Math.abs(h - cardH) > 2) setCardH(h);
+  });
 
   // Keep the spotlight glued to its target on resize/scroll.
   useEffect(() => {
@@ -221,7 +245,7 @@ export default function PostCeremonyTour({
             style={{ top: rect.top - 8, left: rect.left - 8, width: rect.width + 16, height: rect.height + 16 }}
           />
         )}
-        <div className="tour-card tour-coach" style={coachStyle(rect)}>
+        <div ref={cardRef} className="tour-card tour-coach" style={coachStyle(rect, cardH)}>
           <Mark />
           <p className="tour-line">{line}</p>
           <div className="tour-foot">
@@ -264,14 +288,16 @@ export default function PostCeremonyTour({
   );
 }
 
-// Place the coachmark just below the spotlight (or above if it'd run off the bottom), clamped to the viewport.
-function coachStyle(rect: DOMRect | null): React.CSSProperties {
+const CARD_W = 320;
+
+// Thin adapter over the pure placer — the decision lives in lib/dashboard/coach-placement.ts, where it can be
+// tested against the real measurements from a 1512×900 walk instead of by watching a tour.
+function coachStyle(rect: DOMRect | null, cardH: number): React.CSSProperties {
   if (typeof window === 'undefined' || !rect) return { top: '50%', left: '50%', transform: 'translate(-50%, -50%)' };
-  const cardW = 320;
-  const below = rect.bottom + 14;
-  const above = rect.top - 14;
-  const room = window.innerHeight - rect.bottom;
-  const left = Math.min(Math.max(rect.left + rect.width / 2 - cardW / 2, 12), window.innerWidth - cardW - 12);
-  if (room > 220) return { top: below, left, width: cardW };
-  return { top: Math.max(above - 200, 12), left, width: cardW };
+  const p = placeCoach(
+    { top: rect.top, left: rect.left, width: rect.width, height: rect.height },
+    { width: window.innerWidth, height: window.innerHeight },
+    { width: CARD_W, height: cardH },
+  );
+  return { top: p.top, left: p.left, width: p.width };
 }
