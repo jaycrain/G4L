@@ -20,7 +20,16 @@
 // Re-running RESETS this member to newborn (that is the point: the tour is one-shot, so seeing it twice means
 // wiping it). It only ever deletes rows belonging to this one .test member.
 //
-// Run: SMOKE_FRESH_EMAIL=... SMOKE_FRESH_PASSWORD=... npm run db:seed-fresh
+// HOW TO RUN IT — a TERMINAL command, from the repo root. NOT the Supabase SQL Editor.
+//
+// Saying so because it went wrong once: prod database work on this project normally arrives as paste-ready SQL
+// for the SQL Editor, so a bare shell invocation with no label got pasted there and errored on line 1. The
+// convention is the reason the mistake was reasonable; the fix is to name the surface every time.
+//
+//   local:  SMOKE_FRESH_EMAIL=fresh@grintaforlife.test SMOKE_FRESH_PASSWORD=... npm run db:seed-fresh
+//   prod:   DATABASE_URL='<prod>' SMOKE_FRESH_EMAIL=... SMOKE_FRESH_PASSWORD=... npm run db:seed-fresh
+//
+// There is no SQL-Editor equivalent: the login needs a hashed credential, and the hash is computed in JS.
 import { getDb } from '../../lib/db/index.ts';
 import type { Db } from '../../lib/db/schema.ts';
 import { hashPassword } from '../../lib/auth/password.ts';
