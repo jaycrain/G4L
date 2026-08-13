@@ -23,6 +23,7 @@
     "walk:companion": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/founder-companion-walk.ts",
     "db:seed-demo": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/db/seed-demo.ts",
     "agent:check": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/agent/check.ts",
+    "db:seed-fresh": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/db/seed-fresh-member.ts",
     "db:set-demo-password": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/db/set-demo-password.ts",
     "smoke": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/smoke.ts",
     "typecheck": "tsc --noEmit",
