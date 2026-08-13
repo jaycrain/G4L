@@ -23,7 +23,11 @@
      NOTE this mostly ratifies drift that had already happened without a decision: #2F7A7B was already in this
      stylesheet 8 times before today, because the brand teal wasn't readable in those spots and whoever was
      working reached for something darker. Now it has a name and a rule. */
-  --teal-text: #2f7a7b;    /* 5.01:1 on white */
+  /* DARKENED 2026-08-13 from #2f7a7b. The old value was chosen against WHITE (5.01:1) and documented that way —
+     but our light grounds are not white, and on the Playbook's tab pill (#f2f1ef) it came out at 4.44:1, under
+     AA, with 4.03:1 on hover (#e8e6e6). Jay caught it on the tab counts the hour they shipped. This value clears
+     every light ground we actually use: 5.98 on white, 5.30 on the pill, 4.81 on its hover. */
+  --teal-text: #2a6d6e;
   --orange-text: #c35127;  /* 4.64:1 on white — Jay's pick 2026-08-02: the closest to brand of the options that pass */
   --olive-text: #74772b;   /* 4.76:1 */
 
