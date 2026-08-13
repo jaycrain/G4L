@@ -17,8 +17,23 @@ export default function PwaClient() {
   const [show, setShow] = useState(false);
 
   useEffect(() => {
+    // NOT IN DEVELOPMENT. The service worker caches assets by design, and in dev that means it serves a STALE
+    // globals.css and stale JS chunks — surviving a reload, a server restart, and rm -rf .next. The failure is
+    // vicious because the browser reports your change as absent while the dev server is serving it correctly, so
+    // you debug the edit instead of the cache. It has cost real time more than once (2026-08-13: a layout fix
+    // measured as "not applied" three times while curl showed the server returning it).
+    //
+    // Registering here also actively unregisters any worker left over from a previous dev session — otherwise the
+    // stale one keeps controlling the page and turning this off would appear to change nothing.
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js').catch(() => {});
+      if (process.env.NODE_ENV === 'development') {
+        void navigator.serviceWorker.getRegistrations()
+          .then((rs) => Promise.all(rs.map((r) => r.unregister())))
+          .then(() => caches?.keys().then((ks) => Promise.all(ks.map((k) => caches.delete(k)))))
+          .catch(() => {});
+      } else {
+        navigator.serviceWorker.register('/sw.js').catch(() => {});
+      }
     }
 
     // The install affordance is only worthwhile on mobile (home screen + push). On desktop,
