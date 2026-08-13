@@ -56,8 +56,9 @@ export default async function MomentumPage({ params }: { params: Promise<{ membe
           page's own intro said a THIRD thing higher up. One explanation, first, then the instrument.
           The old intro's two lines open it: they say what this is for, which is the right thing to read first. */}
       <div className="card sub-copy">
-        <h3>More about Momentum</h3>
-        <p>The minute-to-minute decisions you make are what add up to change. Here you can track your good calls, false starts — and the on-track days where nothing much happened — and begin to understand how your patterns impact your progress.</p>
+        {/* The "More about X" heading is the convention the header rung replaces, and the opening sentence
+            restated "the small daily choices". Both paragraphs below are the intro rung and they earn it. */}
+        <p>Here you can track your good calls, false starts — and the on-track days where nothing much happened — and begin to understand how your patterns impact your progress.</p>
         <p>A single day tells you very little. A few weeks of them tell you what your rhythm actually is, which is the thing worth knowing while you’re still building it.</p>
         <p>You can log here, or just say it to your Companion. It reads everything on this page, so you can ask it what it’s seeing.</p>
       </div>

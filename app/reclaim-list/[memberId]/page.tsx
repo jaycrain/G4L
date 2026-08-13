@@ -30,10 +30,9 @@ export default async function ReclaimListPage({ params }: { params: Promise<{ me
     <SubpageShell memberId={memberId}>
       <PanelHeader k="reclaimList" />
       <div className="card">
-        <p className="card-subtitle">
-          What you’re taking back. These are your intentions. Talk to your Companion to add or refine the list or to add
-          a tracker.
-        </p>
+        {/* Trimmed 2026-08-13: the header now carries "what you're taking back" AND "add or refine anytime with
+            your Companion", so this said both again four lines later. The tracker is the one thing it added. */}
+        <p className="card-subtitle">Ask your Companion to add a tracker to any of these.</p>
         {dash.reclaimItems.length === 0 ? (
           <p className="muted">Your list lands here once you name what you’re reclaiming with your Companion.</p>
         ) : (

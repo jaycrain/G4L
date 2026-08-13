@@ -78,7 +78,8 @@ export default async function MovementPage({ params }: { params: Promise<{ membe
       <div className="mv-wrap">
         <Link href={`/dashboard/${memberId}`} className="ws-back">← Dashboard</Link>
         <PanelHeader k="movement" />
-        <p className="mv-lede">Connect apps you use to make it simple to track your movement.</p>
+        {/* Lede cut 2026-08-13: the header says "Connect a source and your activity lands here" and the next
+            heading is "Connect your sources" — this sat between two statements of itself. */}
 
         {/* Connect sources */}
         <div className="mv-sources">

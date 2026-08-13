@@ -81,10 +81,9 @@ function redesignView(memberId: string, passport: PassportView) {
       <div className="bd-wrap">
         <Link href={`/dashboard/${memberId}`} className="ws-back">← Dashboard</Link>
         <PanelHeader k="badges" />
-        <p className="bd-lede">
-          G4L believes in being rewarded for your hard work. You’ll earn each badge as you demonstrate grit and make
-          your way through the program.
-        </p>
+        {/* REWRITTEN, not trimmed. The old lede said members are "rewarded for your hard work" four lines under
+            a header that says "not trophies" — two different claims about what a badge is. */}
+        <p className="bd-lede">You earn these by doing the work — one for each real milestone, across all four phases.</p>
         <div className="bd-count"><b>{passport.earned}</b> of {passport.total} earned</div>
 
         {byPhase.map((g) => (

@@ -50,7 +50,9 @@ export default async function ScoreMorePage({ params }: { params: Promise<{ memb
         ) : (
           <p className="sub-personal">You don’t have an ID Score yet. Your first one lands when you take the IDQ, in Reconnect.</p>
         )}
-        <p>Your ID Score is a 0–100 read of how close you are to the person you’re reclaiming, drawn from four corners of a life.</p>
+        {/* Trimmed: the header states the 0–100 read verbatim. "Four corners of a life" is the part it cannot
+            carry, so that survives as its own sentence. */}
+        <p>It’s drawn from four corners of a life.</p>
 
         <h3>The shape of you</h3>
         {/* The heading used to stand over an empty space: the radar is `{dims && …}` and the dimension values are
