@@ -126,7 +126,11 @@ try {
     check(pb.includes('What you’re building'), '/playbook shows the outcome strip');
     check(/Mindfulness/.test(pb) && /Fitness/.test(pb) && /Wellness/.test(pb), '/playbook names all three outcomes');
     // The honesty rule, checked where a member can actually read it: the cards may never tally themselves.
-    check(!/\b\d\s*(of|\/)\s*3\b/.test(pb), '/playbook outcome cards are not a score', pb.match(/.{0,40}\d\s*(of|\/)\s*3.{0,40}/)?.[0] ?? '');
+    // NO LEADING \b. It was there, and it let a real tally through: the strip's screen-reader text rendered as
+    // "Mindfulness0 of 3 built", and there is no word boundary between "s" and "0", so the check passed while a
+    // score was being read aloud to the one audience that cannot see we never show one. The rule is about the
+    // WORDS, not about how they happen to be concatenated in the DOM.
+    check(!/\d\s*(of|\/)\s*3\b/.test(pb), '/playbook outcome cards are not a score', pb.match(/.{0,40}\d\s*(of|\/)\s*3.{0,40}/)?.[0] ?? '');
 
     // /momentum — never smoke-checked before, and it is the one surface where a member VOCABULARY change lands in
     // three places at once (the log buttons, the history chips, the pulse legend). This asserts the WORD, not just

@@ -324,6 +324,10 @@ export default function RedesignPlaybookView({
           Dots are the three parts: a read · a tool · a tracked week. */}
       {outcomes.length > 0 && (
         <section className="pb-strip">
+          {/* THE LABEL STAYS OUT OF THE COLLAPSE. "What you're building" used to head the cards; with the cards
+              closed by default a member landed on three names and some dots with nothing saying what they were.
+              The post-deploy smoke caught it the same hour, which is the assertion doing its job. */}
+          <div className="pb-strip-label">What you’re building</div>
           <button
             type="button"
             className="pb-strip-row"
@@ -338,8 +342,12 @@ export default function RedesignPlaybookView({
                     <span key={i} className={`pb-dot${part.done ? ' on' : ''}`} />
                   ))}
                 </span>
+                {/* NAMED, NOT COUNTED. This read "N of 3 built" — a tally, and the outcome cards may never tally
+                    themselves (it is not a score). It slipped the smoke's honesty check only because the regex
+                    wants a word boundary before the digit and "Mindfulness0" has none. Screen-reader users would
+                    have been read the one thing sighted members are deliberately never shown. */}
                 <span className="sr-only">
-                  {o.parts.filter((x) => x.done).length} of {o.parts.length} built
+                  {o.parts.filter((x) => x.done).map((x) => x.kind).join(', ') || 'nothing yet'} built
                 </span>
               </span>
             ))}
