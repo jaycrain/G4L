@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { PGlite } from '@electric-sql/pglite';
 import { applySchema, type Db } from '../lib/db/schema.ts';
-import { seedFreshMember } from '../scripts/db/seed-fresh-member.ts';
+import { seedFreshMember, FRESH_EMAIL } from '../lib/demo/fresh-member.ts';
 import { getDashboard } from '../lib/gateway/flow.ts';
 
 // DOES THE FIXTURE ACTUALLY PRODUCE A NEWBORN?
@@ -15,6 +15,13 @@ import { getDashboard } from '../lib/gateway/flow.ts';
 // who has just arrived, verified against an account that arrived months ago.
 
 const EMAIL = 'fresh-fixture@grintaforlife.test';
+
+test('THE OPERATOR BUTTON HAS NO INPUT — the constant is the whole guard', () => {
+  // /admin/fresh takes no address; it passes FRESH_EMAIL. So the only way that button could ever reach a real
+  // member is if this constant stopped being .test — at which point the seeder's own guard would refuse it and
+  // the button would simply stop working. That is the intended failure direction, and this pins it.
+  assert.match(FRESH_EMAIL, /\.test$/, 'the fixture address must stay a .test address');
+});
 
 async function fresh(): Promise<{ db: Db; memberId: string }> {
   const pg = new PGlite();
