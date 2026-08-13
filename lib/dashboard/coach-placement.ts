@@ -84,12 +84,15 @@ export function placeCoach(anchor: Box | null, vp: Viewport, card: { width: numb
     }
   }
 
-  // Nothing fits — a spotlight that fills the screen. Overlap is now unavoidable, so put the card as far from the
-  // anchor's centre as the viewport allows and keep it fully on screen. Better a card over the middle of a panel
-  // than a card half off the bottom edge, which is what used to happen.
+  // NOTHING FITS. On a phone this is the normal case, not the exotic one: the Companion is a full-width column
+  // 622px tall on a 812px screen, so there is no above, no below and no beside. Overlap is unavoidable.
+  //
+  // So the rule becomes WHERE it overlaps, and the answer is the bottom — because the thing a member needs to
+  // still see is the panel's heading, which is at the top. That is literally the complaint being fixed ("several
+  // of the cards covered the panel title"), and leaving it to chance is how it comes back.
   const anchorMidX = anchor.left + anchor.width / 2;
   return {
-    top: clamp(Math.round(vp.height - card.height - EDGE), EDGE, Math.max(EDGE, vp.height - card.height - EDGE)),
+    top: Math.max(EDGE, Math.round(vp.height - card.height - EDGE)),
     left: anchorMidX < vp.width / 2 ? Math.round(vp.width - card.width - EDGE) : EDGE,
     width: card.width,
     side: 'opposite',

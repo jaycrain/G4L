@@ -9,7 +9,20 @@ import { placeCoach } from '../../lib/dashboard/coach-placement.ts';
 // drop the member on a static dashboard — it tours the real Slice 1 surfaces, points at the one next
 // step, and visibly SETTLES into its resting spot: the "The G4L Companion" hero panel (NOT an edge
 // handle — that was removed). Once per member, skippable, re-runnable from the Field Guide (?tour=1).
-type Stop = { target: string; line: string };
+type Pane = 'left' | 'center' | 'right';
+/**
+ * `pane` is REQUIRED, and that is the whole point.
+ *
+ * It used to live in a separate PANE_OF map — a second list of the same stops — and both stops added since then
+ * were added to the stop list and forgotten in the map: the Playbook (2026-08-11) and the Account (2026-08-13).
+ * On the phone fold the other panes are display:none, so a stop whose pane never swaps in measures 0×0 and the
+ * spotlight lands on a 16px sliver at the top of the screen, pointing at nothing. Desktop shows all three panes,
+ * so neither was visible there — which is why it survived a desktop walk this morning.
+ *
+ * As a field on the stop, the compiler asks the question for you. `null` means "not inside a pane at all" — the
+ * Account lives in the topbar, which is always on screen.
+ */
+type Stop = { target: string; line: string; pane: Pane | null };
 
 const Mark = () => (
   // eslint-disable-next-line @next/next/no-img-element
@@ -45,22 +58,6 @@ export default function PostCeremonyTour({
   // (the mirrors) → right flank (the actions), ending on the Reclaim List, then the one next step — so the
   // settle rises back up to the companion's home. Stops whose anchor isn't on this dashboard are filtered
   // out below (daily/doors live on the old dashboard; the triptych folds them into other surfaces).
-  // CAT-46 — which triptych pane each stop lives in, so the tour can reveal it on the mobile fold. Anything not
-  // listed is center/legacy and needs no switch.
-  const PANE_OF: Record<string, 'left' | 'center' | 'right'> = {
-    companion: 'center',
-    idscore: 'left',
-    grinta: 'left',
-    badges: 'left',
-    momentum: 'right',
-    connect: 'right',
-    movement: 'right',
-    reclaim: 'right',
-    program: 'center',
-    daily: 'center',
-    doors: 'center',
-  };
-
   // EVERY PANEL'S LINE COMES FROM THE MESSAGING LADDER, not from here. These used to be hand-written twice —
   // once in lib/content/panel-messaging.ts and once here — so Jay's copy edits landed on the panels and the tour
   // went on saying the old words (his walk, 2026-08-13: "some of the copy didn't have my last edits"). Only the
@@ -71,9 +68,10 @@ export default function PostCeremonyTour({
     // local because the Companion has no subpage, so it has no rung in the ladder to inherit.
     {
       target: 'companion',
+      pane: 'center',
       line: 'Your Companion is right here. The same one you just talked to — always in the center, always listening. Ask it anything, anytime. It remembers everything.',
     },
-    { target: 'program', line: tourLine('program') },
+    { target: 'program', pane: 'center', line: tourLine('program') },
     // THE PLAYBOOK STOP goes SECOND — right after Program, because Program → Playbook is the arc: the Program is
     // how you do the work, the Playbook is what the work leaves in your hands.
     //
@@ -81,18 +79,19 @@ export default function PostCeremonyTour({
     // out stops whose target element isn't on the page, and the Playbook panel used to hide itself at zero plays.
     // So a brand-new member — the only member who ever sees this tour — was the exact member who never got told
     // the Playbook exists, moments after the welcome pact promised it to them.
-    { target: 'playbook', line: tourLine('playbook') },
-    { target: 'idscore', line: tourLine('idScore') },
-    { target: 'grinta', line: tourLine('grinta') },
-    { target: 'badges', line: tourLine('badges') },
-    { target: 'momentum', line: tourLine('momentum') },
-    { target: 'connect', line: tourLine('community') },
-    { target: 'movement', line: tourLine('movement') },
-    { target: 'reclaim', line: tourLine('reclaimList') },
-    // Account — the topbar, not a panel, so it comes after the panels rather than in the middle of the flanks.
-    { target: 'account', line: tourLine('account') },
-    { target: 'daily', line: 'Your Daily Beat — the heartbeat between Sessions. One thought, one small move, every day.' },
-    { target: 'doors', line: doorsLine },
+    { target: 'playbook', pane: 'right', line: tourLine('playbook') },
+    { target: 'idscore', pane: 'left', line: tourLine('idScore') },
+    { target: 'grinta', pane: 'left', line: tourLine('grinta') },
+    { target: 'badges', pane: 'left', line: tourLine('badges') },
+    { target: 'momentum', pane: 'right', line: tourLine('momentum') },
+    { target: 'connect', pane: 'right', line: tourLine('community') },
+    { target: 'movement', pane: 'right', line: tourLine('movement') },
+    { target: 'reclaim', pane: 'right', line: tourLine('reclaimList') },
+    // Account — the TOPBAR, not a panel, so it comes after the panels rather than in the middle of the flanks,
+    // and it needs no pane: the topbar sits above the fold and is on screen whichever pane is showing.
+    { target: 'account', pane: null, line: tourLine('account') },
+    { target: 'daily', pane: 'center', line: 'Your Daily Beat — the heartbeat between Sessions. One thought, one small move, every day.' },
+    { target: 'doors', pane: 'center', line: doorsLine },
   ];
   // CAT-46 — DON'T SILENTLY DROP 7 OF 9 STOPS ON A PHONE.
   // This filtered to anchors with width > 0. On the triptych's mobile fold the two inactive panes are
@@ -143,26 +142,56 @@ export default function PostCeremonyTour({
     void completeTourAction(memberId); // idempotent; finish() marks it too
   }, [autoStart, memberId]);
 
+  // WAIT FOR A BOX, DON'T GUESS A DELAY.
+  //
+  // On the mobile fold the flanks are display:none until the pane swaps in, so an anchor measures 0×0 until the
+  // swap lays out. The old code waited a fixed 90ms and measured whatever it got — which on a 375px walk put the
+  // spotlight on a 16px sliver at the top of the screen for the first stop after every pane change (the Playbook,
+  // and the closing "start here"). Both looked like the tour pointing at nothing.
+  //
+  // A fixed delay is a guess about a machine you don't own. Polling for the condition is not.
   const measure = useCallback((key: string) => {
-    const el = document.querySelector(`[data-tour="${key}"]`) as HTMLElement | null;
-    if (!el) return setRect(null);
-    el.scrollIntoView({ block: 'center', behavior: 'smooth' });
-    // let the smooth-scroll settle before measuring
-    const t = setTimeout(() => setRect(el.getBoundingClientRect()), 320);
-    return () => clearTimeout(t);
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout>;
+    const attempt = (tries: number, scrolled: boolean) => {
+      if (cancelled) return;
+      const el = document.querySelector(`[data-tour="${key}"]`) as HTMLElement | null;
+      if (!el) return setRect(null);
+      const r = el.getBoundingClientRect();
+      if ((r.width === 0 || r.height === 0) && tries < 12) {
+        timer = setTimeout(() => attempt(tries + 1, scrolled), 60); // still hidden — give the pane another frame
+        return;
+      }
+      if (!scrolled) {
+        el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        timer = setTimeout(() => attempt(tries, true), 320); // let the smooth scroll settle, then take the real rect
+        return;
+      }
+      setRect(el.getBoundingClientRect());
+    };
+    attempt(0, false);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
   }, []);
 
   useEffect(() => {
     if (phase === 'walk') {
       // CAT-46: bring the pane to the stop before measuring. On the mobile fold the flank panes are display:none,
       // so without this the anchor measures 0×0 and the member never meets that surface at all. Desktop shows all
-      // three panes, so the request is a no-op there. One frame for the pane swap to lay out, then measure.
-      const pane = PANE_OF[stops[step]!.target];
+      // three panes, so the request is a no-op there. measure() then waits for the anchor to actually have a box
+      // rather than assuming the swap has landed in some fixed number of milliseconds.
+      const pane = stops[step]!.pane;
       if (pane) window.dispatchEvent(new CustomEvent('g4l:show-pane', { detail: pane }));
-      const t = setTimeout(() => measure(stops[step]!.target), pane ? 90 : 0);
-      return () => clearTimeout(t);
+      return measure(stops[step]!.target);
     }
-    if (phase === 'next') return measure('next-step');
+    if (phase === 'next') {
+      // The closing "start here" points at the hero, which lives in the centre pane — and the tour has just come
+      // off the Account stop with the right pane showing. Without this it measured 0×0 on a phone.
+      window.dispatchEvent(new CustomEvent('g4l:show-pane', { detail: 'center' }));
+      return measure('next-step');
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, step, measure]);
 
