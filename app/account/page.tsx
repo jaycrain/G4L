@@ -1,3 +1,4 @@
+import PanelHeader from '../components/panel-header.tsx';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getDb } from '../../lib/db/index.ts';
@@ -43,7 +44,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
     <SubpageShell memberId={memberId}>
       {/* Navy hero banner — same treatment every other subpage carries (Jay's walk: Account was missing it).
           The topbar already shows the avatar + "Hi, {name}", so the banner is the title, not a second greeting. */}
-      <div className="hero"><h1>Account Settings</h1></div>
+      <PanelHeader k="account" />
 
       <div className="card">
         <h3>Profile</h3>

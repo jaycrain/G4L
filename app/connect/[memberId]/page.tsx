@@ -1,3 +1,4 @@
+import PanelHeader from '../../components/panel-header.tsx';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getDb } from '../../../lib/db/index.ts';
@@ -62,10 +63,10 @@ export default async function ConnectPage({
 
   return (
     <SubpageShell memberId={memberId}>
-      <div className="hero">
-        <h1>G4L Community</h1>
-        <p className="heromore">Reach out. Share the wins and the hard parts. Keep each other honest.</p>
-      </div>
+      <PanelHeader k="community" />
+      {/* The doc marks Community's intro "not needed — the header carries it", but this line already shipped and
+          does the intro's job better than a generic one would: it says HOW, in specifics. Kept. */}
+      <p className="muted">Reach out. Share the wins and the hard parts. Keep each other honest.</p>
 
       {care && (
         <div className="crisis" role="alert" style={{ marginBottom: '1rem' }}>{CRISIS_RESPONSE_US}</div>

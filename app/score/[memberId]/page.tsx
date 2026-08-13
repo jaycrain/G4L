@@ -1,3 +1,4 @@
+import PanelHeader from '../../components/panel-header.tsx';
 import { redirect } from 'next/navigation';
 import { getDb } from '../../../lib/db/index.ts';
 import { getDashboard } from '../../../lib/gateway/flow.ts';
@@ -39,7 +40,7 @@ export default async function ScoreMorePage({ params }: { params: Promise<{ memb
 
   return (
     <SubpageShell memberId={memberId}>
-      <div className="hero"><h1>More about your ID Score</h1></div>
+      <PanelHeader k="idScore" />
       <div className="card sub-copy">
         {dash?.score && (
           <p className="sub-personal">Your ID Score right now is <strong>{Math.round(dash.score.score)}</strong>. {dash.score.context}</p>

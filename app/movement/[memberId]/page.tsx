@@ -1,3 +1,4 @@
+import PanelHeader from '../../components/panel-header.tsx';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getDb } from '../../../lib/db/index.ts';
@@ -76,7 +77,7 @@ export default async function MovementPage({ params }: { params: Promise<{ membe
       <RedesignTopbar memberId={memberId} />
       <div className="mv-wrap">
         <Link href={`/dashboard/${memberId}`} className="ws-back">← Dashboard</Link>
-        <div className="hero"><h1>Movement</h1></div>
+        <PanelHeader k="movement" />
         <p className="mv-lede">Connect apps you use to make it simple to track your movement.</p>
 
         {/* Connect sources */}

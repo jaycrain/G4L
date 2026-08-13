@@ -1,3 +1,4 @@
+import PanelHeader from '../../components/panel-header.tsx';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getDb } from '../../../lib/db/index.ts';
@@ -66,6 +67,10 @@ const PHASES: PhaseRow[] = [
   },
 ];
 
+const PHASE_TITLE: Record<string, string> = {
+  reconnect: 'Reconnect', rewire: 'Rewire', rebuild: 'Rebuild', reclaim: 'Reclaim',
+};
+
 export default async function ProgramPage({
   params,
   searchParams,
@@ -90,7 +95,7 @@ export default async function ProgramPage({
 
   return (
     <SubpageShell memberId={memberId}>
-      <div className="hero"><h1>Program</h1></div>
+      <PanelHeader k="program" extra={`You’re in ${PHASE_TITLE[activePhase] ?? activePhase}.`} />
       {sessionBack && (
         <Link href={sessionBack} className="ws-back program-session-back">← Session</Link>
       )}

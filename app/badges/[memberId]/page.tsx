@@ -1,3 +1,4 @@
+import PanelHeader from '../../components/panel-header.tsx';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getDb } from '../../../lib/db/index.ts';
@@ -79,7 +80,7 @@ function redesignView(memberId: string, passport: PassportView) {
       <RedesignTopbar memberId={memberId} />
       <div className="bd-wrap">
         <Link href={`/dashboard/${memberId}`} className="ws-back">← Dashboard</Link>
-        <div className="hero"><h1>Badges</h1></div>
+        <PanelHeader k="badges" />
         <p className="bd-lede">
           G4L believes in being rewarded for your hard work. You’ll earn each badge as you demonstrate grit and make
           your way through the program.

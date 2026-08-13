@@ -1,3 +1,4 @@
+import PanelHeader from '../../components/panel-header.tsx';
 import { softRead } from '../../../lib/db/degrade.ts';
 import { memberToday } from '../../../lib/time/zone-store.ts';
 import { notFound, redirect } from 'next/navigation';
@@ -49,7 +50,7 @@ export default async function MomentumPage({ params }: { params: Promise<{ membe
 
   return (
     <SubpageShell memberId={memberId}>
-      <div className="hero"><h1>Momentum</h1></div>
+      <PanelHeader k="momentum" />
       {/* "More about" LEADS the page now (Jay, 2026-08-11: the page "is a cluster"). It used to sit at the bottom,
           under the log, which meant the member met the tools before anything said what they were for — and the
           page's own intro said a THIRD thing higher up. One explanation, first, then the instrument.

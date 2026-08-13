@@ -1,3 +1,4 @@
+import PanelHeader from '../../components/panel-header.tsx';
 import { redirect } from 'next/navigation';
 import { getDb } from '../../../lib/db/index.ts';
 import { latestGrintaReading } from '../../../lib/grinta/survey/store.ts';
@@ -25,7 +26,7 @@ export default async function GrintaMorePage({ params }: { params: Promise<{ mem
 
   return (
     <SubpageShell memberId={memberId}>
-      <div className="hero"><h1>More about your Grinta Index</h1></div>
+      <PanelHeader k="grinta" />
 
       {reading && (
         <div className="card metric grinta">

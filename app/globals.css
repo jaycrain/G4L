@@ -295,6 +295,12 @@ button:hover, .btn:hover { background: var(--btn-hover-bg); }
 .onboard-fresh button { background: none; border: none; padding: 0; font: inherit; color: var(--teal-text); font-weight: 700; cursor: pointer; text-decoration: underline; }
 
 .hero { background: var(--navy); color: var(--white); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; }
+/* The line under a subpage title — the ladder's "header" rung, where the label becomes a purpose.
+   THE GROUND HERE IS NAVY, not white: .hero is a navy panel with white text. A muted GREY here would be
+   dark-on-dark, which is the contrast mistake that gets made by assuming every surface is a white card. Softened
+   white instead, same treatment as the navy onboarding billboard.
+   (.heromore, used on two Community pages, never had a CSS rule at all; this replaces it.) */
+.hero-sub { margin: 0.35rem 0 0; color: rgba(255, 255, 255, 0.82); font-size: 0.95rem; line-height: 1.45; }
 .hero h1 { color: var(--white); }
 .hero-intro p { margin: 0.5rem 0 0; }
 .hero-intro.collapsed p { display: -webkit-box; -webkit-line-clamp: 1; line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }

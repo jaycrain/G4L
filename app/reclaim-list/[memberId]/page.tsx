@@ -1,3 +1,4 @@
+import PanelHeader from '../../components/panel-header.tsx';
 import { notFound, redirect } from 'next/navigation';
 import { getDb } from '../../../lib/db/index.ts';
 import { authorizeMember } from '../../authz.ts';
@@ -27,7 +28,7 @@ export default async function ReclaimListPage({ params }: { params: Promise<{ me
 
   return (
     <SubpageShell memberId={memberId}>
-      <div className="hero"><h1>Reclaim List</h1></div>
+      <PanelHeader k="reclaimList" />
       <div className="card">
         <p className="card-subtitle">
           What you’re taking back. These are your intentions. Talk to your Companion to add or refine the list or to add
