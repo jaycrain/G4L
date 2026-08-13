@@ -2112,7 +2112,23 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
 /* ONE PANEL, TABS AT ITS TOP EDGE. The row used to float above a separate card, so it read as page chrome rather
    than as this panel's own controls. The frame carries the border now and the tab bodies sit inside it — which
    also means the bodies must NOT draw their own, or every tab looks like a box inside a box. */
-.pb-tabframe { background: var(--white); border: 1px solid var(--panel-line); border-radius: 14px; margin-bottom: 1rem; overflow: hidden; }
+/* The active tab's one-line intro. Sits between the tab row and the content: the tab names the place, this
+   names the errand. (Cowork §4, 2026-08-13.) */
+.pb-tab-intro { margin: 0.75rem 0 1rem; color: var(--muted-grey); font-size: 0.95rem; line-height: 1.5; }
+
+/* §3 — bigger tab type, and on mobile the row SCROLLS rather than wrapping or cramming five tabs into a grid. */
+.pb-tab { font-size: 1rem; }
+@media (max-width: 700px) {
+  .pb-tabs { display: flex; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  .pb-tabs::-webkit-scrollbar { display: none; }
+  .pb-tab { flex: 0 0 auto; }
+}
+/* The count is its own chip, not part of the tab's name — and it inverts on the dark active tab so it stays
+   legible instead of going dark-on-dark. */
+.pb-tab-n { display: inline-block; margin-left: 8px; padding: 1px 7px; border-radius: 10px; font-size: 0.8rem; background: var(--grey); color: var(--charcoal); }
+.pb-tab.on .pb-tab-n { background: rgba(255, 255, 255, 0.22); color: #fff; }
+
+.pb-tabframe.pb-tabframe { background: var(--white); border: 1px solid var(--panel-line); border-radius: 14px; margin-bottom: 1rem; overflow: hidden; }
 .pb-tabframe > .pb-card { border: 0; border-radius: 0; margin: 0; }
 /* Several chapters can render inside one tab — a hairline keeps them apart now the boxes are gone. */
 .pb-tabframe > .pb-card + .pb-card { border-top: 1px solid var(--grey); }

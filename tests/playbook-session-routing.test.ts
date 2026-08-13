@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
-import { tabFor, chapterKey, TAB_FOR_CHAPTER } from '../lib/playbook/tabs.ts';
+import { tabFor, chapterKey, TAB_FOR_CHAPTER, type ChapterKey } from '../lib/playbook/tabs.ts';
 
 // ARE THE SESSIONS ACTUALLY HOOKED UP TO THE PLAYBOOK?
 //
@@ -14,13 +14,13 @@ import { tabFor, chapterKey, TAB_FOR_CHAPTER } from '../lib/playbook/tabs.ts';
 test('SESSION OUTPUT LANDS WHERE THE MEMBER IS TOLD TO LOOK', () => {
   // Each row is a real emit point in the app, not a hypothetical.
   const routes: [string, string, string][] = [
-    ['onboarding · the identity they named', 'definition', 'learned'],
+    ['onboarding · the identity they named', 'definition', 'who'],
     ['Reconnect §2b · a Door re-seeing', 'tell', 'learned'],
     ['Rebuild B3 · the Lifestyle Pilot', 'plan', 'worked'],
     ['any practice week, on close', 'plan', 'worked'],
     ['a reframe the member kept', 'principle', 'worked'],
     ['a comeback move', 'recovery_move', 'worked'],
-    ['what still moves them', 'lights_you_up', 'learned'],
+    ['what still moves them', 'lights_you_up', 'who'],
   ];
   for (const [what, keeperType, expected] of routes) {
     assert.equal(tabFor({ keeperType, section: 'what_works' }), expected, `${what} (${keeperType}) belongs under "${expected}"`);
@@ -36,7 +36,7 @@ test('legacy entries written before keeper types still route by section', () => 
   // 0046 added keeper types; anything older has only a section, and must not vanish.
   assert.equal(tabFor({ keeperType: null, section: 'what_works' }), 'worked');
   assert.equal(tabFor({ keeperType: null, section: 'why_works' }), 'learned');
-  assert.equal(tabFor({ keeperType: null, section: 'own_words' }), 'learned');
+  assert.equal(tabFor({ keeperType: null, section: 'own_words' }), 'who');
 });
 
 test('every chapter has a tab — a chapter cannot become unreachable', () => {
@@ -76,4 +76,24 @@ test('NO SESSION EMITS A KEEPER TYPE THE PLAYBOOK CANNOT PLACE', () => {
     (t) => chapterKey({ keeperType: t, section: 'what_works' }) !== chapterKey({ keeperType: t, section: 'why_works' }),
   );
   assert.deepEqual(unplaceable, [], `these keeper types are emitted but not mapped — they fall through to the default tab: ${unplaceable.join(', ')}`);
+});
+
+test('NO INSTRUMENT READ EVER LANDS UNDER "Who you are"', () => {
+  // The governance line, held in code rather than in a comment.
+  //
+  // "Who you are" was merged into "What you've learned" on 2026-08-10 for exactly one reason: that tab had come to
+  // hold instrument READS (B1 motivation, B2 skills, C2 world) beside identity keepers, and a tab called "Who you
+  // are" sitting over a probabilistic reading turns that reading into a verdict about the self. Governance forbids
+  // that. Splitting the tabs (2026-08-13) fixes it at the root — but only while the split holds.
+  //
+  // So: the 'who' tab may contain ONLY things the member authored about themselves. If a read ever routes there,
+  // this fails, and the merge argument comes back.
+  const memberAuthored: ChapterKey[] = ['who', 'lights'];
+  for (const c of memberAuthored) {
+    assert.equal(TAB_FOR_CHAPTER[c], 'who', `${c} is the member's own words and belongs under "Who you are"`);
+  }
+  const readBearing: ChapterKey[] = ['tells', 'why'];
+  for (const c of readBearing) {
+    assert.notEqual(TAB_FOR_CHAPTER[c], 'who', `${c} carries an instrument read and must NOT sit under "Who you are"`);
+  }
 });

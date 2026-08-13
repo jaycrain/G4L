@@ -1,4 +1,5 @@
 import PanelHeader from '../../components/panel-header.tsx';
+import { PANEL_MESSAGING } from '../../../lib/content/panel-messaging.ts';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getDb } from '../../../lib/db/index.ts';
@@ -81,9 +82,10 @@ function redesignView(memberId: string, passport: PassportView) {
       <div className="bd-wrap">
         <Link href={`/dashboard/${memberId}`} className="ws-back">← Dashboard</Link>
         <PanelHeader k="badges" />
-        {/* REWRITTEN, not trimmed. The old lede said members are "rewarded for your hard work" four lines under
-            a header that says "not trophies" — two different claims about what a badge is. */}
-        <p className="bd-lede">You earn these by doing the work — one for each real milestone, across all four phases.</p>
+        {/* The ladder's own intro rung, read from the one source rather than restated here. My first pass wrote a
+            replacement line; the spec (Cowork §5) says use this one, and it is better — it names what earns a
+            badge instead of asserting that something does. */}
+        <p className="bd-lede">{PANEL_MESSAGING.badges.intro}</p>
         <div className="bd-count"><b>{passport.earned}</b> of {passport.total} earned</div>
 
         {byPhase.map((g) => (

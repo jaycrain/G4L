@@ -29,7 +29,7 @@ test('proposeEntry PERSISTS the keeper type, and it survives the read back', asy
   await proposeEntry(d, M, { section: 'own_words', body: 'what still moves me', keeperType: 'lights_you_up', keep: true });
   const [e] = await listPlaybook(d, M);
   assert.equal(e!.keeperType, 'lights_you_up', 'the type reached the column, not just the argument');
-  assert.equal(tabFor(e!), 'learned');
+  assert.equal(tabFor(e!), 'who');
 });
 
 test('addOwnEntry persists it too', async () => {
@@ -51,8 +51,8 @@ test('THE REGRESSION, in the exact shape it shipped: a typed line no longer land
   // first version of this test failed on its own arithmetic rather than on the behaviour.
   const byBody = new Map((await listPlaybook(d, M)).map((e) => [e.body, e]));
   const expect: [string, string, string][] = [
-    ['riding makes me feel like the athlete I am', 'lights_you_up', 'learned'],
-    ['I was a competitive cyclist', 'definition', 'learned'],
+    ['riding makes me feel like the athlete I am', 'lights_you_up', 'who'],
+    ['I was a competitive cyclist', 'definition', 'who'],
     ['the training stopped, not the riding', 'principle', 'worked'],
   ];
   for (const [body, type, tab] of expect) {
@@ -71,5 +71,5 @@ test('an untyped entry is still accepted — legacy rows and unclassifiable line
   await proposeEntry(d, M, { section: 'own_words', body: 'no type given', keep: true });
   const [e] = await listPlaybook(d, M);
   assert.equal(e!.keeperType, null, 'null is allowed');
-  assert.equal(tabFor(e!), 'learned', 'and it falls back to the documented default rather than erroring');
+  assert.equal(tabFor(e!), 'who', 'and it falls back to the documented default rather than erroring');
 });

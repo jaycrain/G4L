@@ -56,11 +56,17 @@ import {
 //
 // Momentum deliberately did NOT become a tab. It is a record of what happened; the Playbook is what you run.
 // It stays on the dashboard — a daily act belongs zero-click from home — with its subpage for the long view.
-const TABS: { key: TabKey; label: string }[] = [
-  { key: 'thisweek', label: 'This week' },
-  { key: 'worked', label: 'What worked' },
-  { key: 'learned', label: "What you've learned" },
-  { key: 'journal', label: 'Journal' },
+// FIVE TABS (2026-08-13, Cowork §4/§8). "Who you are" is restored as its own tab — see lib/playbook/tabs.ts for
+// why that does NOT reopen the governance problem the 8/10 merge was solving.
+//
+// Each carries a one-line intro. The tab IS the title, so no panel repeats its own name inside itself; the intro
+// gives the errand instead. Five clean beats four muddy.
+const TABS: { key: TabKey; label: string; intro: string }[] = [
+  { key: 'thisweek', label: 'This week', intro: 'The week you’re practicing now.' },
+  { key: 'worked', label: 'What worked', intro: 'The moves that worked. Run them again.' },
+  { key: 'who', label: 'Who you are', intro: 'The self you’re reclaiming, in your words.' },
+  { key: 'learned', label: "What you've learned", intro: 'Your reads: your patterns, your reasons, what convinced you.' },
+  { key: 'journal', label: 'Journal', intro: 'A page of your own.' },
 ];
 
 const REVIEW_PHASE_LABEL: Record<string, string> = { reconnect: 'Reconnect', rewire: 'Rewire', rebuild: 'Rebuild', reclaim: 'Reclaim' };
@@ -374,7 +380,11 @@ export default function RedesignPlaybookView({
       {/* MY STORY leads "Who you are" — it is who they ARE (written once, at the start). The synthesis below is
           where they've GOT to (re-woven at every Session close). In that order on purpose: the fixed thing first,
           then the moving one. */}
-      {tab === 'learned' && identityParagraph && (
+      {/* The active tab's one line. The tab is the title, so nothing inside repeats its own name — this says
+          what the tab is FOR instead (Cowork §3/§4). */}
+      <p className="pb-tab-intro">{TABS.find((t) => t.key === tab)?.intro}</p>
+
+      {tab === 'who' && identityParagraph && (
         <section className="pb-card pb-hero">
           <div className="pb-sec">My Story</div>
           <div className="pb-sec-d">Who you are, in the words you landed on.</div>
@@ -384,7 +394,7 @@ export default function RedesignPlaybookView({
         </section>
       )}
 
-      {tab === 'learned' && synthesis && (
+      {tab === 'who' && synthesis && (
         <section className="pb-card pb-hero">
           <div className="pb-sec">Your story so far</div>
           <div className="pb-sec-d">A living read your companion re-weaves each time you close a Session.</div>
@@ -477,23 +487,10 @@ export default function RedesignPlaybookView({
           a live re-run. This says "read the final state you kept" — nothing changes. Same neighbourhood, different
           verbs, and if they ever merge it should be into one control with two modes rather than two links that
           look alike. */}
-      {tab === 'worked' && reviewable.length > 0 && (
-        <section className="pb-card pb-revisit">
-          <div className="pb-sec">Revisit a Session</div>
-          <div className="pb-sec-d">Any Session you’ve finished — the final state you kept, read-only. Nothing changes.</div>
-          <ul className="revisit-list">
-            {reviewable.map((s2) => (
-              <li key={s2.key}>
-                <a href={`/workspace/${memberId}/${s2.key}?review=1`} className="revisit-link">
-                  <span className="revisit-name">{s2.label}</span>
-                  <span className="revisit-phase">{REVIEW_PHASE_LABEL[s2.phase] ?? s2.phase}</span>
-                  <span className="revisit-arrow" aria-hidden="true">→</span>
-                </a>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
+      {/* "Revisit a Session" lived here and was REMOVED 2026-08-13 (Cowork §8). It is an archive of finished
+          Sessions — a different errand from "the moves that worked, run them again" — and it is reachable from the
+          Program, which is where a member goes to think about Sessions. The Playbook is what you run, not where
+          you browse history. `reviewable` is still passed in; the Program surface is its home. */}
 
       {/* JOURNAL — a first-class reflective tool, not a footnote (Jay, twice). Thoughts + feelings in the member's
           own words, timestamped. Two respected jobs: feedstock (the Companion pulls keepers up into the plays) AND
