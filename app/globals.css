@@ -679,6 +679,11 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .cer-btn:disabled { opacity: 0.6; cursor: default; }
 
 /* Confidentiality footer — evaluation build; appears on every screen (root layout) */
+/* The version + build ref, sat with the proprietary notice. Quieter than the notice itself — a member should be
+   able to FIND it and read it back when something goes wrong, and otherwise never notice it. Monospace so a
+   commit ref can be transcribed without ambiguity (l/1, O/0). */
+.app-version { font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace); opacity: 0.75; white-space: nowrap; }
+
 .confidential-footer {
   max-width: 880px;
   margin: 2.5rem auto 0;

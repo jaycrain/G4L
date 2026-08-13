@@ -229,3 +229,15 @@ test('the metric pages say so when the member has no number yet', () => {
   const grinta = readFileSync('app/grinta/[memberId]/page.tsx', 'utf8');
   assert.match(grinta, /\{!reading &&/, 'the Grinta page must have a no-reading branch');
 });
+
+test('the footer version is a real string, and only lives in one place', () => {
+  // Added for Charter: a member reporting a problem can read this back. A version that lags a flip is worse than
+  // none — it tells the member, and the founder reading their report, something confidently false. So there is
+  // exactly one definition and the footer reads it rather than restating it.
+  const version = readFileSync('lib/version.ts', 'utf8');
+  assert.match(version, /export const APP_VERSION = 'v\d+\.\d+(\.\d+)?'/, 'APP_VERSION must be a vN.N string');
+
+  const layout = readFileSync('app/layout.tsx', 'utf8');
+  assert.match(layout, /versionLabel\(\)/, 'the footer must CALL the helper');
+  assert.doesNotMatch(layout, /v\d+\.\d+/, 'and must not hardcode a version of its own');
+});

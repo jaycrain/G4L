@@ -5,6 +5,7 @@ import { Suspense } from 'react';
 import './globals.css';
 import PwaClient from './pwa-client.tsx';
 import DetectZone from './dashboard/detect-zone.tsx';
+import { versionLabel } from '../lib/version.ts';
 // import FeedbackLauncher from './feedback-launcher.tsx'; // Send Feedback pill — dropped for now (reinstate with the render below)
 import BackToDashboard from './components/back-to-dashboard.tsx';
 import BrandHome from './components/brand-home.tsx';
@@ -77,6 +78,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <footer className="confidential-footer">
           © 2026 Adjacent Lab, LLC. All rights reserved. The Grinta for Life program, its assessments and its
           content are proprietary. What you write here stays yours.
+          {/* The version + build, for Charter. A member reporting something can read this back, and it says which
+              BUILD they were on — the version alone spans dozens of deploys. Quiet by design: it sits with the
+              notice rather than in the chrome, because it is for the rare moment something goes wrong. */}
+          <span className="app-version"> · {versionLabel()}</span>
         </footer>
         <PwaClient />
         {/* Records the member's timezone from the browser, once per session, so every date in the product is

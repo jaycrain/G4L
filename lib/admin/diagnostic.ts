@@ -312,6 +312,15 @@ async function memberRenders(db: Db, memberId: string): Promise<Record<string, u
   } catch (e) {
     out.member_clock = { ERROR: (e as Error).message };
   }
+  try {
+    // WHICH BUILD IS ANSWERING. The operator read and the member's footer must agree — when they don't, the
+    // answer is almost always a stale deploy or a stale alias, which has been suspect #1 for "the fix isn't live"
+    // more than once. Cheap to report, and it makes that check a glance instead of an investigation.
+    const { versionLabel } = await import('../version.ts');
+    out.build = versionLabel();
+  } catch (e) {
+    out.build = { ERROR: (e as Error).message };
+  }
   out.jsonb_shape = await jsonbShape(db, memberId);
   out.jsonb_binding = await jsonbBinding(db);
   try {
