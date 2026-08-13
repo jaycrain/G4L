@@ -34,7 +34,9 @@ function assertHandsToGrinta(turn: Turn) {
   // Copy v2: the Phases intro and the pre-survey framing are TWO beats (two bubbles), split on BEAT_SEP.
   const bubbles = turn.reply.split(BEAT_SEP);
   assert.equal(bubbles.length, 2, 'the opener is two beats — the Phases intro | the pre-survey framing + first item');
-  assert.match(bubbles[0]!, /first assessment/i, 'bubble 1 = the Grinta assessment intro (Donna edit)');
+  // Anchored on "twelve questions" rather than a stylistic phrase: it identifies bubble 1 as the baseline intro
+  // AND guards the count the member is promised, which must match ONBOARDING_BASELINE_ITEMS.length.
+  assert.match(bubbles[0]!, /twelve questions/i, 'bubble 1 = the Grinta baseline intro');
   assert.match(bubbles[1]!, /1 \(not at all\) to 5/i, 'bubble 2 = the pre-survey framing + the first item');
 }
 // Answer the 12-item survey with `val` (default 3); returns the final (completing) turn.

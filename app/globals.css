@@ -274,6 +274,9 @@ button:hover, .btn:hover { background: var(--btn-hover-bg); }
 .fg-pieces em { color: var(--navy); opacity: 0.85; }
 
 .onboard-intro { margin: 0 0 1.4rem; }
+/* The member-facing progress marker — same "X of Y" pattern as the rest of the platform, so onboarding tells you
+   where you are the way every other surface does. Teal on white, so it uses the text-safe token. */
+.onboard-part { color: var(--teal-text); font-size: 0.78rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; margin: 0 0 0.4rem; }
 .onboard-intro p { line-height: 1.6; margin: 0 0 0.85rem; color: var(--charcoal); }
 .onboard-disclosure { margin: 0 0 1.4rem; line-height: 1.55; } /* plain-text AI disclosure (governance) — no color box on this screen */
 /* Password field with a show/hide eye toggle (the toggle sits inside the field, right-aligned). */

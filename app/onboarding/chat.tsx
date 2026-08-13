@@ -33,7 +33,7 @@ export default function OnboardingChat({ welcomeEnabled = false }: { welcomeEnab
   // The welcome comes BEFORE the gate (forecast + safety first, so signing up reads as a good decision). A fresh
   // visitor with the flag on opens on 'welcome'; a returner is bumped to the gate in the mount effect (they've met the
   // Companion already); flag-off prod opens on the gate exactly as before.
-  const [phase, setPhase] = useState<'welcome' | 'gate' | 'chat'>(welcomeEnabled ? 'welcome' : 'gate');
+  const [phase, setPhase] = useState<'welcome' | 'gate' | 'ramp' | 'chat'>(welcomeEnabled ? 'welcome' : 'gate');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   // Decision Z: the password is collected UPFRONT at the gate (one clean signup moment) but held only in memory —
@@ -134,7 +134,14 @@ export default function OnboardingChat({ welcomeEnabled = false }: { welcomeEnab
     ls.set(LS.name, ctx.name); // remember so a return visit pre-fills name + email (Decision Z) — never the password
     ls.set(LS.email, ctx.email);
     setError(null);
-    void startChat(); // the welcome (if any) already ran before the gate; the gate goes straight into the conversation
+    // THE RAMP sits between the account and the first question (Cowork/Jay, 2026-08-13): a beat that says what the
+    // conversation is and that the identity word is a handle, not a verdict. Only for a member who saw the welcome —
+    // a returner is mid-conversation and does not need re-briefing, and the flag-off funnel is unchanged.
+    if (welcomeEnabled && !resumable) {
+      setPhase('ramp');
+      return;
+    }
+    void startChat();
   }
 
   // Start (or resume) the live onboarding conversation. Reached straight from the gate (flag off / returner) or from
@@ -271,6 +278,27 @@ export default function OnboardingChat({ welcomeEnabled = false }: { welcomeEnab
     return <OnboardingWelcome onBegin={() => setPhase('gate')} />;
   }
 
+  if (phase === 'ramp') {
+    return (
+      <>
+        <p className="onboard-part">Part 2 of 4 · Getting to know you</p>
+        <h1>Getting to know you.</h1>
+        <div className="onboard-intro">
+          <p>A real conversation with your Companion — the start of your Comeback.</p>
+          <p>
+            You begin by looking back: when you felt most like yourself. From there you’ll work toward one word for
+            that identity, the one you’re reclaiming. That word rarely comes on the first try. It’s a handle for now,
+            and it can broaden or change as you move through the phases.
+          </p>
+          {/* THE SAFETY LINE. It used to open the welcome billboard, four screens before anyone spoke; it belongs
+              here, in the last beat before the first question, where it actually does its work. */}
+          <p>The more honest you are, the better your Companion gets to know you.</p>
+        </div>
+        <button type="button" className="btn" onClick={() => void startChat()}>Start the conversation →</button>
+      </>
+    );
+  }
+
   if (phase === 'gate') {
     return (
       <>
@@ -287,10 +315,10 @@ export default function OnboardingChat({ welcomeEnabled = false }: { welcomeEnab
           <>
             {/* Sign Up — Onboarding Copy v3 (Jay 2026-07-26, the deck rework): short + warm; the welcome hero already
                 carried the "what this is." Plain text, no color backgrounds (Jay's note for this screen). */}
-            <h1>Welcome.</h1>
+            <p className="onboard-part">Part 2 of 4 · Getting to know you</p>
+            <h1>First, your account.</h1>
             <div className="onboard-intro">
-              <p>Starting your comeback is as simple as sharing your name and email. Find a comfortable place before you start. Be honest. Have fun.</p>
-              <p>Your Companion will be with you all along the way.</p>
+              <p>Name, email, a password — that’s all it takes to start. One account, private to you. Your Companion remembers everything you share from here, so you never start over.</p>
             </div>
             {/* AI disclosure (governance HARD rule — the member always knows it's an AI before the first conversation).
                 Kept as plain muted text, not the colored note box, per "all simple text, no color backgrounds" here. */}

@@ -121,9 +121,16 @@ const renderBody = (segs: Seg[]) =>
 // The navy billboard beats — shared by both platforms (they follow the hero on desktop and mobile alike).
 function NavyBeats({ onDone }: { onDone: () => void }) {
   const [i, setI] = useState(0);
-  const beat = BEATS[i]!;
-  const last = i === BEATS.length - 1;
-  const advance = () => (last ? onDone() : setI((n) => n + 1));
+  // CLAMPED, because two clicks can land in the SAME React batch — an impatient double-tap, or a tap that
+  // registers twice on a slow phone. `advance` closes over `last` from the render that drew the button, so both
+  // clicks saw last === false, both incremented, and `i` ran off the end of BEATS. The next render then read a
+  // property of undefined and blew up the very first screen a member ever sees. Found by driving it in a browser.
+  const beat = BEATS[Math.min(i, BEATS.length - 1)]!;
+  const last = i >= BEATS.length - 1;
+  const advance = () => {
+    if (last) { onDone(); return; }
+    setI((n) => Math.min(n + 1, BEATS.length - 1));
+  };
 
   return (
     <div className="onbwel">

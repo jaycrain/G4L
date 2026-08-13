@@ -1573,17 +1573,19 @@ function answerPendingShape(b: Beat): Turn {
 // Score here — that's earned in Reconnect. Built on the shared administeredStage() factory; copy lives here.
 // Introduce the four Phases HERE — the first time the member meets the framework — right before the baseline
 // survey, so the Card's "each Phase"/"first Phase" has a referent. Onboarding Copy v2 (Jay's voice pass, verbatim).
+// Tightened in the 2026-08-13 messaging pass. The old version took six sentences to say "twelve questions, a
+// couple of minutes, it's a starting line" — and never actually told the member how long it would take, which is
+// the one thing someone deciding whether to keep going wants to know.
 const GRINTA_OPEN =
-  'Great work! Now you’re ready to take the first assessment. This is a series of 12 questions that will establish ' +
-  'a baseline for your Grinta Index. As you know, Grinta means grit, so we’re doing an initial measurement of your ' +
-  'resilience and hardiness. We know there’s no way you’ve made it to this point in your life without weathering ' +
-  'your share of tough times. This just shows a starting point with a number we expect you will see rise as you go ' +
-  'through the G4L program. We’ll track this over time.';
+  'Before we go further, a quick baseline — twelve questions, a minute or two.' +
+  '\n\nThis sets your starting Grinta Index. Grinta is grit, and you don’t get to midlife without it — this just ' +
+  'marks where yours stands today, so you can watch it climb.';
 // The WHY before the scale (a mirror; sets the starting Grinta to watch climb), then how to answer + the 1–5 scale.
+// The honesty line lives on the RAMP now (the last screen before the conversation starts), so repeating it here
+// would be the third time a member has been told to be honest before answering anything.
 const GRINTA_SCALE =
-  'Answer this as the person you actually are right now, not the one you wish you were or where you want to end up. ' +
-  'Remember, the more honest you are, the more the work will benefit you. For each question, tell me how true it ' +
-  'feels — 1 (not at all) to 5 (completely).\n\nToday:';
+  'Answer as you actually are right now, not who you’re aiming to be. For each, how true does it feel — 1 (not at ' +
+  'all) to 5 (completely)?\n\nToday:';
 // The full survey opener as TWO beats (two bubbles): the Phases intro (orientation), then the pre-survey framing +
 // the first item (the survey instruction). Two jobs — let each breathe (same reason as the drift-beat split).
 function grintaSurveyOpener(): string {
