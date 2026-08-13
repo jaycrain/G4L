@@ -6,7 +6,22 @@
 // one copy — a guard that quietly narrows is worse than no guard, because it still reports green.
 
 export const SECTIONS = [
-  { title: 'Onboarding', files: ['lib/agent/onboarding-staged.ts'] },
+  { title: 'Onboarding', files: ['lib/agent/onboarding-staged.ts', 'app/onboarding/welcome.tsx'] },
+  // THE FIRST DAY — and it had NEVER been in a bundle, through v3.2.1, v3.3 and v3.4.
+  //
+  // The Threshold ceremony is the seven beats a member reads the moment they finish onboarding, and the Opening
+  // Tour is the twelve stops that introduce the product to them. Between them they are the most quotable copy we
+  // have — the first words the program says to someone who has just admitted what they lost — and marketing and
+  // the book have been working without them, unable to tell they were missing. Found 2026-08-13 while cutting
+  // v3.4.1, when three topbar strings disappeared from the diff and the reason turned out to be this list.
+  {
+    title: 'The first day — the Threshold ceremony & the Opening Tour',
+    files: ['lib/ceremony/threshold-beats.ts', 'app/dashboard/post-ceremony-tour.tsx'],
+  },
+  // The messaging ladder: one idea per feature, said as a tour line, a panel, a header and an intro. It is the
+  // SOURCE for the subpage headers and (since 2026-08-13) for the tour lines too, so it has to be read here or
+  // the copy Jay actually edits is invisible to canon.
+  { title: 'The messaging ladder (panel · header · intro)', files: ['lib/content/panel-messaging.ts'] },
   { title: 'Reconnect — the gateway', files: ['lib/agent/reconnect.ts', 'lib/idq/instrument.ts', 'lib/ceremony/reconnect-ceremony-beats.ts'] },
   { title: 'Rewire — mind', files: ['lib/agent/rewire.ts', 'lib/curriculum/content/rewire.ts', 'lib/ceremony/rewire-ceremony-beats.ts'] },
   { title: 'Rebuild — body', files: ['lib/agent/rebuild.ts', 'lib/rebuild/why-instrument.ts', 'lib/rebuild/skills-instrument.ts', 'lib/ceremony/rebuild-ceremony-beats.ts'] },
@@ -29,6 +44,8 @@ export const SECTIONS = [
     title: 'Dashboard & subpages (UI copy)',
     files: [
       'app/dashboard/redesign-dashboard.tsx',
+      'app/dashboard/topbar-view.tsx', // brand · Playbook · account — on every logged-in screen
+      'app/dashboard/dashboard-triptych.tsx', // the mobile fold's pane labels: Where You Are · G4L Companion · What's Next
       'app/dashboard/triptych-center.tsx', // the Companion hero, breadcrumb, keeper + "Where you stand"
       'app/dashboard/triptych-left.tsx', // Your Playbook · ID Score · Grinta · Badges
       'app/dashboard/triptych-right.tsx',

@@ -1,4 +1,4 @@
-# Strings EXCLUDED from the member transcript (app @ 4beccec · 2026-08-12)
+# Strings EXCLUDED from the member transcript (app @ 4d9800a · 2026-08-13)
 # Not member copy: system prompts, multi-line fragments, code artifacts. Review when a real line goes missing.
 
 [lib/agent/onboarding-staged.ts] you’re trying to reclaim. We can always change it later.
@@ -59,12 +59,9 @@
 [lib/agent/onboarding-staged.ts] ${SKIP_ACK}  ${gapOpen(b.collected)}
 [lib/agent/onboarding-staged.ts] ${SKIP_ACK}  ${gapOpen(b.collected)}
 [lib/agent/onboarding-staged.ts] ${ack}${BEAT_SEP}${turn.reply}
-[lib/agent/onboarding-staged.ts] a baseline for your Grinta Index. As you know, Grinta means grit, so we’re doing an initial measurement of your
-[lib/agent/onboarding-staged.ts] resilience and hardiness. We know there’s no way you’ve made it to this point in your life without weathering
-[lib/agent/onboarding-staged.ts] your share of tough times. This just shows a starting point with a number we expect you will see rise as you go
-[lib/agent/onboarding-staged.ts] through the G4L program. We’ll track this over time.
-[lib/agent/onboarding-staged.ts] Remember, the more honest you are, the more the work will benefit you. For each question, tell me how true it
-[lib/agent/onboarding-staged.ts] feels — 1 (not at all) to 5 (completely).  Today:
+[lib/agent/onboarding-staged.ts] marks where yours stands today, so you can watch it climb.
+[lib/agent/onboarding-staged.ts] Answer as you actually are right now, not who you’re aiming to be. For each, how true does it feel — 1 (not at
+[lib/agent/onboarding-staged.ts] all) to 5 (completely)?  Today:
 [lib/agent/onboarding-staged.ts] A number from 1 to 5 is all I need here — 1 is “not at all,” 5 is “completely.”  ${grintaDeliver(index)}
 [lib/agent/onboarding-staged.ts] “${grintaStem(ONBOARDING_BASELINE_ITEMS[index]!)}”
 [lib/agent/onboarding-staged.ts] Your starting Grinta Index is ${composite} out of 5. This is just where you stand today. You will build it in
@@ -158,6 +155,60 @@
 [lib/agent/onboarding-staged.ts] mechanics — never say "let me make that concrete" or "before I capture that": just DO it (reflect + one
 [lib/agent/onboarding-staged.ts] sharpening question, or acknowledge their answer and invite the next), in-line and in plain language.
 [lib/agent/onboarding-staged.ts] CURRENT STAGE: identity — who they were at their best, and the one-word handle (or skip).
+[app/onboarding/welcome.tsx] Meet your
+[app/onboarding/welcome.tsx] Companion
+[app/onboarding/welcome.tsx] Reconnect
+[app/onboarding/welcome.tsx] start looking at who you are.
+[app/onboarding/welcome.tsx] Rewire
+[app/onboarding/welcome.tsx] get your head right.
+[app/onboarding/welcome.tsx] Rebuild
+[app/onboarding/welcome.tsx] get your body back.
+[app/onboarding/welcome.tsx] Reclaim
+[app/onboarding/welcome.tsx] step all the way in.
+[app/onboarding/welcome.tsx] Grinta
+[app/onboarding/welcome.tsx] is Italian for grit — it’s what you build along the way.
+[app/onboarding/welcome.tsx] you’ll hear.
+[app/onboarding/welcome.tsx] always there, remembers everything, helps you see what you can’t always see alone.
+[app/onboarding/welcome.tsx] closing the distance back to who you are.
+[app/onboarding/welcome.tsx] your way back: four phases, your pace.
+[app/onboarding/welcome.tsx] home base, where everything you do is kept.
+[app/onboarding/welcome.tsx] what you build; how you watch yourself change.
+[app/onboarding/welcome.tsx] two ways to see it: how far you’ve got to go, and the grit you’re growing.
+[app/onboarding/welcome.tsx] Everything you do here goes into it — the moves that actually work for you, and what you learn about yourself along the way. Your
+[app/onboarding/welcome.tsx] Playbook
+[app/onboarding/welcome.tsx] isn’t ours to hand you. It’s already in you, and we help you draw it out. You’ll use it again and again.
+[app/onboarding/welcome.tsx] today goes.
+[app/onboarding/welcome.tsx] you’re in it.
+[app/onboarding/welcome.tsx] Getting to know you
+[app/onboarding/welcome.tsx] see what surfaced.
+[app/onboarding/welcome.tsx] (typeof s === 'string' ?
+[app/onboarding/welcome.tsx] onbwel-dot${x === i ? ' on' : ''}
+[app/onboarding/welcome.tsx] onbwel-heart${beat.list ? ' onbwel-heart-list' : ''}
+[app/onboarding/welcome.tsx] starts here.
+[app/onboarding/welcome.tsx] Log in
+[lib/ceremony/threshold-beats.ts] Athlete
+[lib/ceremony/threshold-beats.ts] everything worth keeping lands there, ready when you need it. It’s uniquely yours.
+[app/dashboard/post-ceremony-tour.tsx] idScore
+[app/dashboard/post-ceremony-tour.tsx] reclaimList
+[app/dashboard/post-ceremony-tour.tsx] [data-tour="${s.target}"]
+[app/dashboard/post-ceremony-tour.tsx] [data-tour="${s.target}"]
+[app/dashboard/post-ceremony-tour.tsx] [tour] no anchor on this page, stop skipped: ${missing.join(', ')}
+[app/dashboard/post-ceremony-tour.tsx] g4l:show-pane
+[app/dashboard/post-ceremony-tour.tsx] g4l:show-pane
+[app/dashboard/post-ceremony-tour.tsx] tour-dot${(isNext ? stops.length : step) === i ? ' on' : ''}
+[app/dashboard/post-ceremony-tour.tsx] Skip
+[app/dashboard/post-ceremony-tour.tsx] tour-settle-mark${landed ? ' landed' : ''}
+[app/dashboard/post-ceremony-tour.tsx] translate(-50%, -50%)
+[lib/content/panel-messaging.ts] tourExtra
+[lib/content/panel-messaging.ts] guided conversations with your Companion, one at a time, at your pace. Finish a phase’s Sessions and a
+[lib/content/panel-messaging.ts] It comes from the IDQ — twenty-four questions, about every 60 days. It moves slowly on purpose, so when it
+[lib/content/panel-messaging.ts] moves, you know you earned it.
+[lib/content/panel-messaging.ts] yourself getting stronger.
+[lib/content/panel-messaging.ts] reclaiming something on your list, coming back after a miss. A passport that fills is a life being won back.
+[lib/content/panel-messaging.ts] while you’re still building it.
+[lib/content/panel-messaging.ts] about yourself. It grows every week.
+[lib/content/panel-messaging.ts] how the body work is going.
+[lib/content/panel-messaging.ts] nudges as helps, and no more.
 [lib/agent/reconnect.ts] the Player
 [lib/agent/reconnect.ts] ${identity ?
 [lib/agent/reconnect.ts] felt like the distance started with ${doorPhrase}. This time, we go deeper into all of it.
@@ -429,8 +480,8 @@
 [lib/agent/rebuild.ts] Right now it looks like ${strongest.toLowerCase()} is a strength of yours. The skill with the most room to grow
 [lib/agent/rebuild.ts] is ${growthEdge.toLowerCase()}. Neither is fixed; a skill is just something you practice and improve. This week
 [lib/agent/rebuild.ts] you don't have to change anything — just notice these showing up: when a strong skill carries you, and when a
-[lib/agent/rebuild.ts] weaker one trips you. That's the work. Just notice. We'll kick that off in your next step. You can find it at the
-[lib/agent/rebuild.ts] top of your Dashboard.
+[lib/agent/rebuild.ts] weaker one trips you. That's the work. Just notice. Open This week in your Playbook each day and tick the
+[lib/agent/rebuild.ts] days you catch one.
 [lib/agent/rebuild.ts] ${item.skill}: ${item.stem}
 [lib/agent/rebuild.ts] Movement first.  ${line}
 [lib/agent/rebuild.ts] A number from 1 to 4 — 1 is strongly disagree, 4 is strongly agree.  ${skillsDeliver(n)}
@@ -536,6 +587,10 @@
 [lib/agent/reclaim.ts] Strong contributors: ${list(q.contributors)}
 [lib/agent/reclaim.ts] And what tends to pull a day down for you: ${list(q.disruptors)}
 [lib/agent/reclaim.ts] Here's your Quality Day:  ${parts}${BEAT_SEP}Want me to save this and start your week of tracking, or adjust it first?
+[lib/agent/reclaim.ts] ${label} — ${xs.filter((x) => x && x.trim()).map((x) => x.trim()).join(' · ')}
+[lib/agent/reclaim.ts] Non-negotiable
+[lib/agent/reclaim.ts] Helps
+[lib/agent/reclaim.ts] Taking back — ${kept.join(' · ')}
 [lib/agent/reclaim.ts] You are the G4L Companion running C3, Quality Days, in Reclaim (Phase 4). You help the member DEFINE what makes a
 [lib/agent/reclaim.ts] day a 'quality day' for them — a warm, member-owned coaching conversation (not a survey). Walk them: (1) elicit
 [lib/agent/reclaim.ts] what's present when a day feels genuinely good — solid, healthy, meaningful, aligned (offer examples only if they're
@@ -580,12 +635,14 @@
 [lib/rewire/w3-entry.ts] entryDate
 [lib/rewire/w3-entry.ts] recordW3Entry failed for member=${memberId} date=${e.entryDate}:
 [lib/rewire/w3-entry.ts] w3_daily_entry.source
-[lib/practice/mark.ts] ${iso.slice(0, 10)}T00:00:00Z
 [lib/practice/mark.ts] delete from practice_mark where member_id=$1 and kind=$2 and commitment_id is null and marked_on=$3 returning id
 [lib/practice/mark.ts] insert into practice_mark (member_id, kind, marked_on, source) values ($1,$2,$3,$4) on conflict do nothing
 [lib/practice/mark.ts] select id from practice_commitment where member_id=$1 and kind=$2 and slot=$3
 [lib/practice/mark.ts] delete from practice_mark where member_id=$1 and commitment_id=$2 and marked_on=$3 returning id
+[app/momentum/week-grid.tsx] ${window.start}T00:00:00Z
 [app/momentum/week-grid.tsx] wk-grid${pending ? ' wk-saving' : ''}
+[app/momentum/week-grid.tsx] wk-cell wk-readonly${on ? ' on' : ''}
+[app/momentum/week-grid.tsx] ${r.label} — ${on ? 'logged' : 'not logged'}
 [app/momentum/week-grid.tsx] Today
 [app/momentum/week-grid.tsx] wk-cell${on ? ' on' : ''}${i === today ? ' today' : ''}${i > today ? ' ahead' : ''}${tappable ? '' : ' wk-readonly'}
 [app/momentum/week-grid.tsx] ${r.label} — day ${i + 1}${on ? ', logged' : ''}. Open your log.
@@ -686,7 +743,6 @@
 [app/badges/[memberId]/page.tsx] Rewire
 [app/badges/[memberId]/page.tsx] Rebuild
 [app/badges/[memberId]/page.tsx] Reclaim
-[app/badges/[memberId]/page.tsx] Badges
 [app/badges/[memberId]/page.tsx] bd-phase-h ${g.key}
 [app/badges/[memberId]/page.tsx] bd-badge${b.earned ? ' earned' : ''}
 [app/badges/[memberId]/page.tsx] Ahead
@@ -715,7 +771,6 @@
 [app/dashboard/redesign-dashboard.tsx] the ${dash.identityNoun}
 [app/dashboard/redesign-dashboard.tsx] ${HERO_VERB[activePhase] ?? 'Reconnecting'} ${identitySelves}
 [app/dashboard/redesign-dashboard.tsx] select threshold_crossed_at, tour_completed_at from member_profile where member_id=$1
-[app/dashboard/redesign-dashboard.tsx] Playbook
 [app/dashboard/redesign-dashboard.tsx] Or move on to ${practiceNext.label}
 [app/dashboard/redesign-dashboard.tsx] Reclaimed
 [app/dashboard/redesign-dashboard.tsx] Movement
@@ -734,6 +789,16 @@
 [app/dashboard/redesign-dashboard.tsx] ${grinta.changePct > 0 ? '+' : ''}${grinta.changePct}%
 [app/dashboard/redesign-dashboard.tsx] Momentum
 [app/dashboard/redesign-dashboard.tsx] Badges
+[app/dashboard/topbar-view.tsx] Playbook
+[app/dashboard/dashboard-triptych.tsx] Where You Are
+[app/dashboard/dashboard-triptych.tsx] the Athlete
+[app/dashboard/dashboard-triptych.tsx] Rebuild
+[app/dashboard/dashboard-triptych.tsx] Where You Are
+[app/dashboard/dashboard-triptych.tsx] g4l:show-pane
+[app/dashboard/dashboard-triptych.tsx] g4l:show-pane
+[app/dashboard/dashboard-triptych.tsx] Who you are
+[app/dashboard/dashboard-triptych.tsx] tri-seg-btn${pane === p.key ? ' on' : ''}
+[app/dashboard/dashboard-triptych.tsx] Where you are
 [app/dashboard/triptych-center.tsx] ${Math.min(el.scrollHeight, 160)}px
 [app/dashboard/triptych-center.tsx] come back N times
 [app/dashboard/triptych-center.tsx] tri-companion tri-navy${hasSent ? ' is-conversing' : ''}
@@ -760,9 +825,15 @@
 [app/dashboard/triptych-left.tsx] ${grinta.changePct > 0 ? '+' : ''}${grinta.changePct}%
 [app/dashboard/triptych-left.tsx] Badges
 [app/dashboard/triptych-right.tsx] triptychRight.pulseBeats
+[app/dashboard/triptych-right.tsx] triptychRight.outcomes
+[app/dashboard/triptych-right.tsx] triptychRight.openWeeks
+[app/dashboard/triptych-right.tsx] ${PRACTICE_KEEPER_NAME[w.kind] ?? 'Your practice week'} · day ${w.day} of ${w.window.days}
 [app/dashboard/triptych-right.tsx] what you've built
 [app/dashboard/triptych-right.tsx] so it never reads as an empty promise to a brand-new member.
 [app/dashboard/triptych-right.tsx] this isn't for you.
+[app/dashboard/triptych-right.tsx] Move
+[app/dashboard/triptych-right.tsx] Moves
+[app/dashboard/triptych-right.tsx] pb-dot${part.done ? ' on' : ''}
 [app/dashboard/triptych-right.tsx] Momentum
 [app/dashboard/triptych-right.tsx] Movement
 [app/dashboard/triptych-right.tsx] Strava
@@ -797,7 +868,6 @@
 [app/momentum/[memberId]/page.tsx] Yesterday
 [app/momentum/[memberId]/page.tsx] momentum.pulseBeats
 [app/momentum/[memberId]/page.tsx] momentum.recentCalls
-[app/momentum/[memberId]/page.tsx] Momentum
 [app/momentum/[memberId]/page.tsx] pure repetition of the Playbook, seems unnecessary
 [app/momentum/[memberId]/page.tsx] What you're holding yourself to
 [app/momentum/[memberId]/page.tsx] mlog-row is-${c.type}
@@ -809,6 +879,8 @@
 [app/score/[memberId]/page.tsx] Self
 [app/score/[memberId]/page.tsx] Social
 [app/score/[memberId]/page.tsx] Outlook
+[app/score/[memberId]/page.tsx] idScore
+[app/score/[memberId]/page.tsx] a 0–100 read
 [app/score/[memberId]/page.tsx] Your ID Score right now is
 [app/score/[memberId]/page.tsx] The shape of you
 [app/score/[memberId]/page.tsx] now ·
@@ -830,7 +902,6 @@
 [app/movement/[memberId]/page.tsx] Peloton
 [app/movement/[memberId]/page.tsx] select identity_noun from member_profile where member_id=$1
 [app/movement/[memberId]/page.tsx] ${e.daysAgo}d ago
-[app/movement/[memberId]/page.tsx] Movement
 [app/movement/[memberId]/page.tsx] Strava
 [app/movement/[memberId]/page.tsx] Connected
 [app/movement/[memberId]/page.tsx] Soon
@@ -840,11 +911,15 @@
 [app/movement/[memberId]/page.tsx] mv-dot ${e.provenance}
 [app/movement/[memberId]/page.tsx] Strava
 [app/movement/[memberId]/page.tsx] Companion
+[app/reclaim-list/[memberId]/page.tsx] reclaimList
+[app/reclaim-list/[memberId]/page.tsx] what you're taking back
 [app/reclaim-list/[memberId]/page.tsx] reclaim-row${item.reclaimed ? ' reclaimed' : ''}
 [app/reclaim-list/[memberId]/page.tsx] Reclaimed
+[app/reclaim-list/[memberId]/page.tsx] Your anchor — what the rest of this list is in service of
 [app/reclaim-list/[memberId]/page.tsx] s lede ("What you
 [app/connect/[memberId]/page.tsx] ${Math.round(hrs / 24)}d ago
 [app/connect/[memberId]/page.tsx] select display_name from member_profile where member_id = $1
+[app/connect/[memberId]/page.tsx] not needed — the header carries it
 [app/connect/[memberId]/page.tsx] 0.6rem 0.9rem
 [app/connect/[memberId]/page.tsx] 1.25rem
 [app/connect/[memberId]/page.tsx] 0.7rem
@@ -895,6 +970,7 @@
 [app/connect/[memberId]/page.tsx] You told ${it.otherName} you'd ${it.commitment}.
 [app/connect/[memberId]/page.tsx] You're holding ${it.otherName} to: ${it.commitment}.
 [app/connect/[memberId]/page.tsx] Check in
+[app/playbook/[memberId]/redesign-playbook-view.tsx] Who you are
 [app/playbook/[memberId]/redesign-playbook-view.tsx] Journal
 [app/playbook/[memberId]/redesign-playbook-view.tsx] Reconnect
 [app/playbook/[memberId]/redesign-playbook-view.tsx] Rewire
@@ -917,6 +993,8 @@
 [app/playbook/[memberId]/redesign-playbook-view.tsx] en-US
 [app/playbook/[memberId]/redesign-playbook-view.tsx] Cancel
 [app/playbook/[memberId]/redesign-playbook-view.tsx] Delete
+[app/playbook/[memberId]/redesign-playbook-view.tsx] pb-dot${part.done ? ' on' : ''}
+[app/playbook/[memberId]/redesign-playbook-view.tsx] Mindfulness0
 [app/playbook/[memberId]/redesign-playbook-view.tsx] Playbook
 [app/playbook/[memberId]/redesign-playbook-view.tsx] pb-tab${tab === t.key ? ' on' : ''}
 [app/playbook/[memberId]/redesign-playbook-view.tsx] Who you are
@@ -925,6 +1003,7 @@
 [app/playbook/[memberId]/redesign-playbook-view.tsx] Day ${grids[0]!.day} of 7. A blank day is a day — this is for noticing what helps, never a score.
 [app/playbook/[memberId]/redesign-playbook-view.tsx] ${grids.length} weeks running. A blank day is a day — this is for noticing what helps, never a score.
 [app/playbook/[memberId]/redesign-playbook-view.tsx] 0 ? c.items.map(entryCard) :
+[app/playbook/[memberId]/redesign-playbook-view.tsx] the moves that worked, run them again
 [app/playbook/[memberId]/redesign-playbook-view.tsx] Waiting on you
 [app/account/page.tsx] select display_name, email, avatar_url from member_profile where member_id = $1
 [app/account/page.tsx] Profile

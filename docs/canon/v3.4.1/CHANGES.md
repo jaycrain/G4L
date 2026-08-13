@@ -1,0 +1,135 @@
+# CHANGES — authored copy, v3.4.1 (since v3.4)
+
+App @ `4d9800a`. 106 added · 17 removed, out of 949 authored strings.
+
+**This is the reconciliation list.** A line that appears in both ADDED and REMOVED in a similar form is an
+edit, not a pair of separate changes — read them together.
+
+## Added (106)
+
+- Before we go further, a quick baseline — twelve questions, a minute or two.
+- This sets your starting Grinta Index. Grinta is grit, and you don’t get to midlife without it — this just
+- Part 1 of 4 · Getting ready
+- There’s probably no one else in your life like this. Always listening, always here, holding everything you share. It might catch what you’ve stopped seeing in yourself.
+- Ask anything, anytime.
+- Next →
+- Four phases.
+- Your pace.
+- The G4L Program and your Comeback runs in four phases:
+- You move through them one at a time, as fast or slow as your life allows.
+- A few words
+- New places have their own language. Here’s ours, plainly — you’ll see all of it in action soon.
+- Your Companion
+- The Program
+- Your Dashboard
+- ID Score & Grinta Index
+- You’ll build a Playbook.
+- It’s yours to keep.
+- Here’s how
+- Four short parts, and you can stop between any of them — nothing’s lost.
+- Getting ready
+- a conversation with your Companion. About 20 minutes.
+- What you found
+- A look around
+- a quick tour to show you where it all lives.
+- This first sitting is the biggest one. After today, it’s a few minutes a day. Reclaiming who you are takes real time — it starts here.
+- Let’s go →
+- Start looking →
+- Stop for a second.
+- Most people never do that kind of excavation in a lifetime. You just did it in one sitting.
+- Here's what you found:
+- Your first pages are written.
+- These aren't answers to a form. They're the start of your Playbook — the record of what's working, which fills as you go.
+- Your Comeback starts with Reconnect — your first Session’s ready whenever you are.
+- Your answers, in your own words, filled the first pages of your Playbook. From here it keeps building itself —
+- Clipping in, like when you lock your foot into your bike pedal before you take off for a ride, is a commitment to get, and keep, going.
+- Clip in →
+- Your G4L Companion
+- Your Companion is right here. The same one you just talked to — always in the center, always listening. Ask it anything, anytime. It remembers everything.
+- Your Daily Beat — the heartbeat between Sessions. One thought, one small move, every day.
+- Show me around →
+- Skip the tour
+- Start here when you're ready — your first Session's waiting.
+- Got it →
+- One last thing →
+- This is home base — I&apos;m right here.
+- The Program — your way back.
+- Four phases, your pace.
+- Your Comeback runs in four phases — Reconnect, Rewire, Rebuild, Reclaim. Each is built from a few Sessions:
+- Checkpoint opens the next. Everything you do here builds your Playbook.
+- You start the next one right here.
+- ID Score — the distance you’re closing.
+- How close you are to the person you’re reclaiming, 0–100.
+- Grinta Index — the grit you’re building.
+- Your resilience, measured — and it grows with every phase.
+- Grit is what carries you past where you stopped before. It climbs as you close phases, so you can watch
+- Badges — proof of what you’ve actually done.
+- Passport stamps, not trophies — the count is the point.
+- You don’t get one for showing up. You get one for the moves that count — passing a stretch of grit,
+- Momentum — your rhythm, one call at a time.
+- The small daily choices, and the pattern they make.
+- A single day tells you little. A few weeks tell you what your rhythm actually is — the thing worth seeing
+- Your Playbook — how you watch yourself change.
+- The moves that work for you, and the person you’re reclaiming, in one place.
+- Everything worth keeping lands here in your own words — the moves you’ll run again, and what you’re learning
+- It starts empty and fills as you go.
+- Reclaim List — what you’re taking back.
+- The goals where your Comeback is aimed. Add or refine anytime with your Companion.
+- Movement — the work, showing up in your body.
+- Connect a source and your activity lands here.
+- It feeds the same picture your Companion is building — so what shows up here shows up when you talk about
+- Community — others walking the same road.
+- Give and get support from people who get it.
+- Your Account — yours to set.
+- Your details, your reminders, and your privacy, in one place.
+- What you write here stays yours — export it or close your account anytime. Set reminders to get as many
+- Great work identifying what makes up your Quality Day, and what takes away from it. For the next week, open This week in your Playbook and log each day — how much it felt like a quality one, and which of these elements showed up to make it that way.
+- Gets in the way
+- First days
+- A skill with room is simply the next one to practice.
+- Program › Reclaim › …
+- G4L Companion
+- What's Next
+- Dashboard sections
+- S day, not the server
+- More about X
+- Here you can track your good calls, false starts — and the on-track days where nothing much happened — and begin to understand how your patterns impact your progress.
+- You don’t have an ID Score yet. Your first one lands when you take the IDQ, in Reconnect.
+- Four corners of a life
+- It’s drawn from four corners of a life.
+- Yours fills in with your first IDQ.
+- Your Grinta baseline lands when you finish the intro conversation.
+- Connect a source and your activity lands here
+- Ask your Companion to add a tracker to any of these.
+- Your anchor
+- The week you’re practicing now.
+- The moves that worked. Run them again.
+- The self you’re reclaiming, in your words.
+- Your reads: your patterns, your reasons, what convinced you.
+- A page of your own.
+- Your Moves
+- Finish a practice week and what worked lands here — your go-to Moves, in your words.
+- What you're building
+- What you’re building
+- N of 3 built
+- Thoughts and feelings in your own words, timestamped to where you are. For a lot of people this is the most freeing thing here — a place to think on the page and understand yourself. Your companion reads it and pulls keepers up into your Moves, but the writing itself is the point — it only replies if you ask.
+
+## Removed (17)
+
+- Great work! Now you’re ready to take the first assessment. This is a series of 12 questions that will establish
+- Answer this as the person you actually are right now, not the one you wish you were or where you want to end up.
+- Great work identifying what makes up your Quality Day, and what takes away from it. For the next week, log each day from your dashboard — how much it felt like a quality one, and which of these elements showed up to make it that way.
+- A skill with room is simply the next one to practise.
+- More about Momentum
+- The minute-to-minute decisions you make are what add up to change. Here you can track your good calls, false starts — and the on-track days where nothing much happened — and begin to understand how your patterns impact your progress.
+- More about your ID Score
+- Your ID Score is a 0–100 read of how close you are to the person you’re reclaiming, drawn from four corners of a life.
+- Your score is built from four dimensions. Seeing them together shows you where you’re whole and where the distance runs widest.
+- More about your Grinta Index
+- Connect apps you use to make it simple to track your movement.
+- G4L Community
+- Your plays
+- Finish a practice week and what worked lands here — your go-to plays, in your words.
+- Any Session you’ve finished — the final state you kept, read-only. Nothing changes.
+- Thoughts and feelings in your own words, timestamped to where you are. For a lot of people this is the most freeing thing here — a place to think on the page and understand yourself. Your companion reads it and pulls keepers up into your plays, but the writing itself is the point — it only replies if you ask.
+- Account Settings
