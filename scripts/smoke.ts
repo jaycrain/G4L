@@ -80,11 +80,18 @@ try {
   const companion = await page.locator('[data-tour="companion"], [class*="companion"]').count();
   check(companion > 0, 'companion present');
 
-  // 3. Sub-pages render (headings reflect the consolidated terminology: "Program", not "The Program").
+  // 3. Sub-pages render. The headings now carry the messaging ladder's header rung (2026-08-13): a title that
+  //    names the PURPOSE, plus a sub line under it. This assertion previously required the bare label "Program"
+  //    and caught the change the day it shipped — which is the point of it, so it is updated rather than relaxed.
+  //    Both halves are asserted: a title with no sub is the old bare label wearing a longer name.
   if (memberId) {
     await open(`/program/${memberId}`);
     const h1 = (await page.locator('h1').first().textContent())?.trim();
-    check(h1 === 'Program', '/program heading', h1 || 'missing');
+    check(h1 === 'The Program — your way back.', '/program heading', h1 || 'missing');
+    const sub = (await page.locator('.hero-sub').first().textContent())?.trim() ?? '';
+    check(sub.startsWith('Four phases, your pace.'), '/program sub line', sub || 'missing');
+    // Live state, not copy: the header tells the member which phase they are actually in.
+    check(/You’re in \w+\./.test(sub), '/program names the current phase', sub || 'missing');
     // The lead (Cowork copy, placed 2026-08-08). Three assertions, each for a different failure:
     //   · the heading — the page leads with the WHY, not a utility list;
     //   · the AI disclosure — a governance line, and the one Cowork's placement note told me to cut. If a future
