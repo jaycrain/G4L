@@ -213,3 +213,19 @@ test('every Opening Tour stop points at an anchor that actually exists', () => {
   const orphans = stops.filter((s) => !anchors.has(s));
   assert.deepEqual(orphans, [], `tour stops with no anchor anywhere: ${orphans.join(', ')}`);
 });
+
+test('the metric pages say so when the member has no number yet', () => {
+  // Both pages gate their headline number on a bare `&&`, which renders NOTHING when it is absent — so a member
+  // before their first IDQ read a page describing a 0–100 score they did not have, under a heading promising a
+  // "shape" with no shape beneath it.
+  //
+  // WHAT THIS PROVES AND WHAT IT DOESN'T: it catches the empty-state copy being deleted or the branch being
+  // "simplified" back to `&&`. It does NOT prove the page renders — these are auth-gated server components, and
+  // the only thing that sees them for real is the post-deploy smoke.
+  const score = readFileSync('app/score/[memberId]/page.tsx', 'utf8');
+  assert.match(score, /don’t have an ID Score yet/, 'the ID Score page must say when there is no score');
+  assert.match(score, /dash\?\.score \? \(/, 'and branch on it, rather than rendering nothing');
+
+  const grinta = readFileSync('app/grinta/[memberId]/page.tsx', 'utf8');
+  assert.match(grinta, /\{!reading &&/, 'the Grinta page must have a no-reading branch');
+});

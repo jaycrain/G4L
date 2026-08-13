@@ -42,13 +42,23 @@ export default async function ScoreMorePage({ params }: { params: Promise<{ memb
     <SubpageShell memberId={memberId}>
       <PanelHeader k="idScore" />
       <div className="card sub-copy">
-        {dash?.score && (
+        {/* SAY WHEN IT IS EMPTY. This was a bare `&&`, so a member who has not taken the IDQ got the whole page —
+            "a 0–100 read", "the shape of you" — describing a number that was not there, with nothing saying so.
+            The IDQ is submitted inside Reconnect (submitIdq, sequence_no = 0), so the wording is accurate. */}
+        {dash?.score ? (
           <p className="sub-personal">Your ID Score right now is <strong>{Math.round(dash.score.score)}</strong>. {dash.score.context}</p>
+        ) : (
+          <p className="sub-personal">You don’t have an ID Score yet. Your first one lands when you take the IDQ, in Reconnect.</p>
         )}
         <p>Your ID Score is a 0–100 read of how close you are to the person you’re reclaiming, drawn from four corners of a life.</p>
 
         <h3>The shape of you</h3>
-        <p>Your score is built from four dimensions. Seeing them together shows you where you’re whole and where the distance runs widest.</p>
+        {/* The heading used to stand over an empty space: the radar is `{dims && …}` and the dimension values are
+            too, so before a first IDQ this section announced a shape and then showed none. */}
+        <p>
+          Your score is built from four dimensions. Seeing them together shows you where you’re whole and where the
+          distance runs widest.{!dims && ' Yours fills in with your first IDQ.'}
+        </p>
 
         {dims && (
           <div className="radar-wrap">

@@ -47,6 +47,13 @@ export default async function GrintaMorePage({ params }: { params: Promise<{ mem
           </div>
         </div>
       )}
+      {/* SAY IT WHEN THERE IS NO READING. Every member gets a baseline from the twelve items at onboarding, so
+          this should be rare — but latestGrintaReading is drift-hardened and returns null on a failed read, which
+          means a database hiccup rendered a page with a heading and nothing under it. A blank surface is the
+          member's problem to interpret; a sentence is ours. */}
+      {!reading && (
+        <p className="muted">Your Grinta baseline lands when you finish the intro conversation.</p>
+      )}
 
       <div className="card sub-copy">
         <h3>Where the name comes from</h3>
