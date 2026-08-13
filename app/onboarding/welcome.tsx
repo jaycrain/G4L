@@ -6,82 +6,119 @@ import { useEffect, useState } from 'react';
 // what to expect + establish safety FIRST, so identifying yourself reads as a good decision, not a risk. The opening
 // hero (photo billboard) now shows on BOTH desktop and mobile (Jay 2026-07-26: fold the hero into mobile) — so every
 // visitor gets the "what this is" framing before the navy billboard beats.
-//   Hero → five navy beats: already-done-the-hard-part → meet the Companion → the four Phases → the Dashboard →
-//   one more step → hand off to the gate. No name yet — the gate is still ahead — so nothing is personalized.
+//   Hero → five navy beats: meet the Companion → the four phases → the vocabulary → the Playbook pact → how today
+//   goes → hand off to the gate. No name yet — the gate is still ahead — so nothing is personalized.
 // Rendered as two CSS-toggled tracks (≤1000px = mobile) so there's no hydration flash; both now run hero → beats.
 // Flag-gated (ONBOARDING_WELCOME). onBegin hands to the gate.
 
 type Seg = string | { b: string };
-type Beat = { kick: string; head: string[]; body: Seg[]; cta: string };
+/**
+ * `kick` carries the member-facing progress marker ("Part 1 of 4 · Getting ready") — the same "X of Y" pattern
+ * used everywhere else in the platform. The field already existed and was empty on every beat.
+ *
+ * `list` exists because two of the screens are genuinely lists — the glossary and the four-part forecast — and
+ * flattening them into a paragraph is what made the old "Four phases" beat a run-on sentence of four dashes.
+ * `ordered` picks <ol> over <ul>; `term` bolds the leading phrase for the glossary's term — gloss shape.
+ */
+type Beat = {
+  kick: string;
+  head: string[];
+  body: Seg[];
+  list?: { term?: string; text: string }[];
+  ordered?: boolean;
+  tail?: Seg[]; // copy that sits AFTER the list (the forecast's "this first sitting is the biggest one")
+  cta: string;
+};
 
+// PART 1 OF 4 · GETTING READY — Jay + Cowork's messaging pass (2026-08-13).
+//
+// WHAT CHANGED AND WHY, since two beats went away and their content did NOT:
+//   · "You've already done the hard part" — its real payload was the safety line (no wrong answers, honesty pays).
+//     That now lands in Part 2's ramp, immediately before the member actually starts talking, which is where it
+//     does its work rather than four screens early.
+//   · "You show up. We keep track." — the Dashboard is now defined in the glossary beat below, alongside the rest
+//     of the vocabulary, instead of spending a whole screen on one noun.
 const BEATS: Beat[] = [
   {
-    kick: '',
-    head: ['You’ve already', 'done the', 'hard part.'],
-    body: [
-      'There’s no version of your answers that’s wrong — only versions that are true or aren’t. The more honest you are, the more useful this gets.',
-    ],
-    cta: 'Next →',
-  },
-  {
-    kick: '',
+    kick: 'Part 1 of 4 · Getting ready',
     head: ['Meet your', 'Companion'],
     body: [
-      'There’s probably no one else in your life like this. Always listening. Always here. Remembers everything. Might see things in you that you hadn’t seen yourself. You can ask any question, any time.',
+      'There’s probably no one else in your life like this. Always listening, always here, holding everything you share. It might catch what you’ve stopped seeing in yourself.',
+      ' Ask anything, anytime.',
     ],
     cta: 'Next →',
   },
   {
-    kick: '',
+    kick: 'Part 1 of 4 · Getting ready',
     head: ['Four phases.', 'Your pace.'],
-    body: [
-      'Reconnect — find who you are again. Rewire — get your head right. Rebuild — get your body back. Reclaim — step all the way into it. ',
+    body: ['The G4L Program and your Comeback runs in four phases:'],
+    list: [
+      { term: 'Reconnect', text: 'start looking at who you are.' },
+      { term: 'Rewire', text: 'get your head right.' },
+      { term: 'Rebuild', text: 'get your body back.' },
+      { term: 'Reclaim', text: 'step all the way in.' },
+    ],
+    tail: [
+      'You move through them one at a time, as fast or slow as your life allows. ',
       { b: 'Grinta' },
-      ' is Italian for grit, and it’s exactly what you’ll build as you go through the program, one Phase at a time.',
+      ' is Italian for grit — it’s what you build along the way.',
     ],
-    cta: 'I’m in →',
+    cta: 'Next →',
   },
   {
-    kick: '',
-    head: ['You show up.', 'We keep track.'],
-    body: [
-      'Every conversation with your Companion, every assessment you take, is kept on your ',
-      { b: 'Dashboard' },
-      '. One place to go to see what you’ve done, where you are, and what’s next.',
+    kick: 'Part 1 of 4 · Getting ready',
+    head: ['A few words', 'you’ll hear.'],
+    body: ['New places have their own language. Here’s ours, plainly — you’ll see all of it in action soon.'],
+    list: [
+      { term: 'Your Companion', text: 'always there, remembers everything, helps you see what you can’t always see alone.' },
+      { term: 'Your Comeback', text: 'closing the distance back to who you are.' },
+      { term: 'The Program', text: 'your way back: four phases, your pace.' },
+      { term: 'Your Dashboard', text: 'home base, where everything you do is kept.' },
+      { term: 'Your Playbook', text: 'what you build; how you watch yourself change.' },
+      { term: 'ID Score & Grinta Index', text: 'two ways to see it: how far you’ve got to go, and the grit you’re growing.' },
     ],
-    cta: 'Show me →',
+    cta: 'Next →',
   },
-  // THE PACT — the one place we name the endpoint, said before any work starts (2026-08-10 reframe).
+  // THE PACT — KEPT DELIBERATELY through the 2026-08-13 messaging pass, which had no equivalent screen.
   //
-  // The whole product already manufactures a Playbook; it just never told the member that was the point, so G4L
-  // read as a bin of parts rather than one arc: the Fade took the person, the Comeback gets them back, the
-  // Program is how you do the work, and the Playbook is what the work leaves in your hands.
+  // It is the one place we name the endpoint before any work starts (2026-08-10 reframe): the product already
+  // manufactures a Playbook, it just never told the member that was the point, so G4L read as a bin of parts
+  // rather than one arc. Dropping it also strands the Opening Tour's Playbook stop, which opens "the thing we
+  // said we'd build together" — a line that only parses if this promise was made.
   //
-  // It goes HERE rather than on a new screen. This sequence already exists and already earns its place, so the
-  // reveal costs no extra navigation at the exact moment someone has just decided to act. Said once, plainly —
-  // over-narrating it later turns it into a gimmick.
+  // Positioning here is DRAFT, not canon (Jay, 2026-08-13): #134 is still open, so the wording may move.
   {
-    kick: '',
+    kick: 'Part 1 of 4 · Getting ready',
     head: ['You’ll build a Playbook.', 'It’s yours to keep.'],
     body: [
       'Everything you do here goes into it — the moves that actually work for you, and what you learn about yourself along the way. Your ',
       { b: 'Playbook' },
       ' isn’t ours to hand you. It’s already in you, and we help you draw it out. You’ll use it again and again.',
     ],
-    cta: 'Let’s start →',
+    cta: 'Next →',
   },
   {
-    kick: '',
-    head: ['One more', 'step'],
-    body: ['Your comeback begins with a conversation between you and your G4L Companion.'],
-    cta: 'Start my comeback →',
+    kick: 'Part 1 of 4 · Getting ready',
+    head: ['Here’s how', 'today goes.'],
+    body: ['Four short parts, and you can stop between any of them — nothing’s lost.'],
+    ordered: true,
+    list: [
+      { term: 'Getting ready', text: 'you’re in it.' },
+      { term: 'Getting to know you', text: 'a conversation with your Companion. About 20 minutes.' },
+      { term: 'What you found', text: 'see what surfaced.' },
+      { term: 'A look around', text: 'a quick tour to show you where it all lives.' },
+    ],
+    tail: [
+      'This first sitting is the biggest one. After today, it’s a few minutes a day. Reclaiming who you are takes real time — it starts here.',
+    ],
+    cta: 'Let’s go →',
   },
 ];
 
 const renderBody = (segs: Seg[]) =>
   segs.map((s, i) => (typeof s === 'string' ? <span key={i}>{s}</span> : <strong key={i}>{s.b}</strong>));
 
-// The five navy billboard beats — shared by both platforms (they follow the hero on desktop and mobile alike).
+// The navy billboard beats — shared by both platforms (they follow the hero on desktop and mobile alike).
 function NavyBeats({ onDone }: { onDone: () => void }) {
   const [i, setI] = useState(0);
   const beat = BEATS[i]!;
@@ -96,7 +133,7 @@ function NavyBeats({ onDone }: { onDone: () => void }) {
             <span key={x} className={`onbwel-dot${x === i ? ' on' : ''}`} />
           ))}
         </div>
-        <div className="onbwel-heart">
+        <div className={`onbwel-heart${beat.list ? ' onbwel-heart-list' : ''}`}>
           {beat.kick && <div className="onbwel-kick">{beat.kick}</div>}
           <h1 className="onbwel-head">
             {beat.head.map((line, x) => (
@@ -104,8 +141,24 @@ function NavyBeats({ onDone }: { onDone: () => void }) {
             ))}
           </h1>
           <p className="onbwel-body">{renderBody(beat.body)}</p>
+          {beat.list &&
+            (beat.ordered ? (
+              <ol className="onbwel-list onbwel-list-num">
+                {beat.list.map((it, x) => (
+                  <li key={x}>{it.term && <strong>{it.term}</strong>}{it.term ? ' — ' : ''}{it.text}</li>
+                ))}
+              </ol>
+            ) : (
+              <ul className="onbwel-list">
+                {beat.list.map((it, x) => (
+                  <li key={x}>{it.term && <strong>{it.term}</strong>}{it.term ? ' — ' : ''}{it.text}</li>
+                ))}
+              </ul>
+            ))}
+          {beat.tail && <p className="onbwel-body">{renderBody(beat.tail)}</p>}
           <button type="button" className="onbwel-cta" onClick={advance}>{beat.cta}</button>
-          {last && <p className="onbwel-reassure">Takes about 20 minutes. Take all the time you need.</p>}
+          {/* The forecast beat now states the 20 minutes itself, in context, so the old blanket reassurance under
+              the final CTA would say it twice. */}
         </div>
       </div>
     </div>
@@ -121,21 +174,16 @@ function WelcomeHero({ onNext }: { onNext: () => void }) {
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img className="onbwel-d-wordmark" src="/brand/g4l-wordmark.svg" alt="Grinta for Life" />
       <div className="onbwel-d-heart">
-        <h1 className="onbwel-d-head">Welcome midlifer.<br />Your comeback<br />begins today.</h1>
+        <h1 className="onbwel-d-head">Your comeback<br />starts here.</h1>
         <p className="onbwel-d-sub">
-          You’re still in there. The person you were before life got loud — before the job, the obligations, the
-          hundred reasonable trade-offs that added up to someone you don’t quite recognize. That person didn’t
-          disappear. They got crowded out.
+          You didn’t lose yourself — who you are got crowded out by a hundred reasonable trade-offs. A career that
+          changed, a marriage that drifted, years of carrying everyone. That’s the Fade. And you’re still in there.
         </p>
         <p className="onbwel-d-sub">
-          <strong>Grinta for Life</strong> is how you come back. Together we’ll explore who you used to be, look at
-          what caused your Fade away from them, and get clear on who and what you want to reclaim. Then we’ll build
-          your way back from identity loss to a healthier and happier rest of your life.
+          <strong>Grinta for Life</strong> is how you start looking again: a real conversation with your AI
+          Companion, then a program that closes the distance back to yourself.
         </p>
-        <p className="onbwel-d-sub">
-          It starts with a real conversation with your AI G4L Companion that’s as easy as a chat with a friend.
-        </p>
-        <button type="button" className="onbwel-d-cta" onClick={onNext}>Sign up →</button>
+        <button type="button" className="onbwel-d-cta" onClick={onNext}>Start looking →</button>
         {/* "/" now lands here, so this hero is the FRONT DOOR — a returning member must have a way through it. */}
         <p className="onbwel-d-signin">
           Already a member? <a href="/login">Log in</a>.

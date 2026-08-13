@@ -2404,7 +2404,7 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
 .rhythm-confirm:disabled { opacity: 0.6; cursor: default; }
 
 /* ============ Onboarding welcome (Slice B) — the meet-the-Companion billboard (desktop + mobile) ============ */
-.onbwel { min-height: 100dvh; display: flex; align-items: center; background: radial-gradient(120% 55% at 82% 6%, rgba(59, 148, 149, 0.24), transparent 55%), linear-gradient(180deg, #3d566b, var(--navy) 34%, #2c4152); }
+.onbwel { min-height: 100dvh; display: flex; align-items: safe center; background: radial-gradient(120% 55% at 82% 6%, rgba(59, 148, 149, 0.24), transparent 55%), linear-gradient(180deg, #3d566b, var(--navy) 34%, #2c4152); }
 .onbwel-wrap { width: 100%; max-width: 640px; margin: 0 auto; padding: calc(env(safe-area-inset-top, 0px) + 40px) 28px calc(env(safe-area-inset-bottom, 0px) + 34px); }
 .onbwel-dots { display: flex; gap: 8px; margin-bottom: 30px; }
 .onbwel-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255, 255, 255, 0.22); transition: 0.3s; }
@@ -2418,6 +2418,26 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
 .onbwel-road-step { color: #fff; font-weight: 700; font-size: 13px; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.18); border-radius: 100px; padding: 6px 14px; }
 .onbwel-body { color: rgba(255, 255, 255, 0.86); font-size: 18px; line-height: 1.55; margin-top: 24px; max-width: 540px; }
 .onbwel-body strong { color: #fff; font-weight: 700; }
+
+/* The glossary and the four-part forecast are genuinely LISTS. Rendering them as a paragraph is what turned the
+   old "Four phases" beat into a run-on of four dashes. On the navy billboard, so the colours mirror .onbwel-body. */
+.onbwel-list { color: rgba(255, 255, 255, 0.86); font-size: 17px; line-height: 1.5; margin: 18px 0 0; padding-left: 1.1em; max-width: 540px; }
+.onbwel-list li { margin-bottom: 10px; }
+.onbwel-list li:last-child { margin-bottom: 0; }
+.onbwel-list strong { color: #fff; font-weight: 700; }
+.onbwel-list-num { list-style: decimal; }
+/* A list followed by tail copy needs the tail to read as a new paragraph, not as another item. */
+.onbwel-list + .onbwel-body { margin-top: 20px; }
+
+/* A LIST BEAT HAS TO FIT. The billboard headline is clamp(46px..76px), which is right for a three-word beat and
+   wrong for one carrying six glossary entries: at full size the glossary pushed its own "Next →" below the fold,
+   so on that one screen the button appeared to vanish. Measured on a 734px viewport — the beat needed 824px.
+   Trim the headline and tighten the list ONLY on these beats; the short beats keep the drama. */
+.onbwel-heart-list .onbwel-head { font-size: clamp(34px, 6vw, 52px); }
+.onbwel-heart-list .onbwel-body { font-size: 16px; margin-top: 16px; }
+.onbwel-heart-list .onbwel-list { font-size: 15.5px; line-height: 1.45; margin-top: 14px; }
+.onbwel-heart-list .onbwel-list li { margin-bottom: 7px; }
+.onbwel-heart-list .onbwel-cta { margin-top: 20px; }
 .onbwel-cta { margin-top: 30px; display: inline-flex; align-items: center; background: var(--teal-text); color: #fff; font-family: inherit; font-weight: 700; font-size: 18px; padding: 16px 32px; border: none; border-radius: 8px; cursor: pointer; box-shadow: 0 12px 30px rgba(59, 148, 149, 0.4); transition: 0.15s; }
 .onbwel-cta:hover { background: var(--teal-d, #2f7a7b); }
 .onbwel-reassure { margin-top: 18px; color: rgba(255, 255, 255, 0.55); font-size: 14px; }
