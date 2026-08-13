@@ -20,6 +20,7 @@ const WEEK_LABEL: Record<string, string> = {
   c3_quality: 'Your Quality Days',
 };
 import OutcomeCards from './outcome-cards.tsx';
+import { PANEL_MESSAGING } from '../../../lib/content/panel-messaging.ts';
 import { runnablePlay, playSituation } from '../../../lib/playbook/runnable.ts';
 import {
   loadPlaybookAction,
@@ -302,11 +303,17 @@ export default function RedesignPlaybookView({
 
   return (
     <>
-      {/* Navy hero banner — same treatment every other subpage carries (Jay's walk: Playbook was missing it). */}
-      <div className="hero"><h1>Your Playbook</h1></div>
-      {/* THE PROMISE, moved to the top of the page (2026-08-10 reframe) and matched to the pact said at welcome.
-          It has one job: say what this page IS in a sentence, so the tabs below read as parts of one thing. */}
-      <p className="pb-sub">Where your Comeback gets kept, so you can use it again and again — the moves that worked for you, and the person you’re reclaiming, in one place. It grows every week, and it’s yours.</p>
+      {/* Navy hero banner — same treatment every other subpage carries (Jay's walk: Playbook was missing it).
+          THE PROMISE NOW LIVES IN THE HERO, as the sub. It was a separate italic paragraph below the banner, so
+          this was the one subpage whose hero had a title and nothing under it while every other one carries a
+          sub. Jay, 2026-08-13: "there's no subhead. If it's a matter of intro or subhead I want the subhead."
+          So the sub, from the ladder — and the paragraph is gone rather than restated underneath.
+          The TITLE stays "Your Playbook" and does NOT take the ladder's title: that line is draft while #134 is
+          open, and Jay asked for a subhead, not a rename. */}
+      <div className="hero">
+        <h1>Your Playbook</h1>
+        <p className="hero-sub">{PANEL_MESSAGING.playbook.sub}</p>
+      </div>
 
       {gathering ? (
         <div className="pb-gather"><span className="typing">Gathering from your work…</span></div>
@@ -368,6 +375,10 @@ export default function RedesignPlaybookView({
           THE TAB ROW — the Founder Console's one-row pattern (Jay: "a great way to fly through a variety of
           different content"). Evenly spread across the panel; it still scrolls one-at-a-time on a phone, where
           four equal shares would leave four unreadable stubs. */}
+      {/* The active tab's line, as this section's TITLE and ABOVE the row (Jay, 2026-08-13). It used to sit under
+          the tabs in grey, where it read as a caption on the content rather than a heading for the section. It
+          matches "What you're building" above, so the page reads as two named sections. */}
+      <div className="pb-section-title">{TABS.find((t) => t.key === tab)?.intro}</div>
       <div className="pb-tabframe">
       <nav className="pb-tabs" aria-label="Playbook">
         {TABS.map((t) => {
@@ -418,9 +429,6 @@ export default function RedesignPlaybookView({
       {/* MY STORY leads "Who you are" — it is who they ARE (written once, at the start). The synthesis below is
           where they've GOT to (re-woven at every Session close). In that order on purpose: the fixed thing first,
           then the moving one. */}
-      {/* The active tab's one line. The tab is the title, so nothing inside repeats its own name — this says
-          what the tab is FOR instead (Cowork §3/§4). */}
-      <p className="pb-tab-intro">{TABS.find((t) => t.key === tab)?.intro}</p>
 
       {tab === 'who' && identityParagraph && (
         <section className="pb-card pb-hero">
@@ -435,7 +443,7 @@ export default function RedesignPlaybookView({
       {tab === 'who' && synthesis && (
         <section className="pb-card pb-hero">
           <div className="pb-sec">Your story so far</div>
-          <div className="pb-sec-d">A living read your companion re-weaves each time you close a Session.</div>
+          <div className="pb-sec-d">A living read your Companion re-weaves each time you close a Session.</div>
           <div className="pb-narr">
             <RichText text={synthesis} />
           </div>
@@ -536,7 +544,7 @@ export default function RedesignPlaybookView({
       {tab === 'journal' && (
         <section className="pb-card pb-journal">
           <div className="pb-sec">Your journal</div>
-          <div className="pb-sec-d">Thoughts and feelings in your own words, timestamped to where you are. For a lot of people this is the most freeing thing here — a place to think on the page and understand yourself. Your companion reads it and pulls keepers up into your Moves, but the writing itself is the point — it only replies if you ask.</div>
+          <div className="pb-sec-d">Thoughts and feelings in your own words, timestamped to where you are. For a lot of people this is the most freeing thing here — a place to think on the page and understand yourself. Your Companion reads it and pulls keepers up into your Moves, but the writing itself is the point — it only replies if you ask.</div>
           {/* THE QUEUE, in the room it belongs to. Above the member's own entries because it is the only part
               of this page with a decision attached; everything below is already settled. */}
           {proposed.length > 0 && (
@@ -559,7 +567,7 @@ export default function RedesignPlaybookView({
       {entries.length > 0 && hasHistory && !gathering && (
         <p className="pb-gather-link"><button type="button" className="pb-linkbtn" onClick={gather}>Gather from recent work →</button></p>
       )}
-      <p className="pb-foot">Your companion gathers these as you go and flags keepers — you decide what stays. Edit, pin, or remove anything. Over time this becomes the raw material for your Legacy Letter and Success Story.</p>
+      <p className="pb-foot">Your Companion gathers these as you go and flags keepers — you decide what stays. Edit, pin, or remove anything. Over time this becomes the raw material for your Legacy Letter and Success Story.</p>
     </>
   );
 }

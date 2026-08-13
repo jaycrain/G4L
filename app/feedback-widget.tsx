@@ -68,7 +68,7 @@ export default function FeedbackWidget({ onboarding }: { onboarding?: { name: st
                 <strong>Send feedback</strong>
                 <button type="button" className="fb-x" aria-label="Close" onClick={() => { setOpen(false); reset(); }}>×</button>
               </div>
-              <p className="fb-hint">Spotted a bug, have a question, or an idea? Tell us — this goes to the team, not your companion.</p>
+              <p className="fb-hint">Spotted a bug, have a question, or an idea? Tell us — this goes to the team, not your Companion.</p>
               <div className="fb-kinds">
                 {KINDS.map((k) => (
                   <button

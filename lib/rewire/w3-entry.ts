@@ -193,7 +193,7 @@ export async function clearW3Day(db: Db, memberId: string, date: string): Promis
   const day = await readW3Day(db, memberId, date);
   if (!day.exists) return { ok: true };
   if (day.hasWriting) {
-    return { ok: false, error: 'You wrote something into that day — open it with your companion to change it.' };
+    return { ok: false, error: 'You wrote something into that day — open it with your Companion to change it.' };
   }
   await db.query(`delete from w3_daily_entry where member_id=$1 and entry_date=$2::date`, [memberId, date]);
   return { ok: true };

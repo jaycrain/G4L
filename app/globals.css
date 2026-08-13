@@ -1983,7 +1983,10 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
 .bd-wrap { max-width: 780px; margin: 0 auto; padding: 28px 28px 70px; }
 .bd-eyebrow { font-weight: 800; text-transform: uppercase; letter-spacing: .07em; font-size: 12px; color: var(--teal-text); }
 .bd-title { font-weight: 800; font-size: 28px; color: var(--navy); margin: 6px 0 4px; line-height: 1.2; }
-.bd-lede { font-size: 15px; color: var(--muted-grey); line-height: 1.5; max-width: 62ch; }
+/* No measure cap. The 62ch limit was ~500px inside a 720px column, so the paragraph stopped well short of the
+   navy hero above it and broke into three ragged lines that read as a wrapping bug rather than a text column
+   (Jay, 2026-08-13: "the intro text is wrapping incorrectly"). The wrapper already provides the measure. */
+.bd-lede { font-size: 15px; color: var(--muted-grey); line-height: 1.5; }
 .bd-count { margin-top: 14px; font-size: 13px; color: var(--muted-grey); }
 .bd-count b { color: var(--navy); font-size: 16px; }
 .bd-phase { margin-top: 30px; }
@@ -2112,15 +2115,21 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
 /* ONE PANEL, TABS AT ITS TOP EDGE. The row used to float above a separate card, so it read as page chrome rather
    than as this panel's own controls. The frame carries the border now and the tab bodies sit inside it — which
    also means the bodies must NOT draw their own, or every tab looks like a box inside a box. */
-/* §2 — the same dot language on the dashboard panel, so the panel and the Playbook agree at a glance. Wraps,
-   because three names plus dots do not fit one flank column on a narrow screen. */
-.pb-panel-outcomes { display: flex; flex-wrap: wrap; gap: 10px 16px; margin-top: 0.6rem; }
+/* §2 — the same dot language on the dashboard panel, so the panel and the Playbook agree at a glance.
+   ONE PER ROW, NAMES AND DOTS IN COLUMNS. It used to wrap, which fitted Mindfulness and Fitness on one line and
+   pushed Wellness onto the next — three equal things rendered as two-then-one (Jay, 2026-08-13: "return Fitness
+   so it lines up"). A grid also aligns the dot groups with each other, which flex-wrap never could: the dots
+   started wherever each name happened to end. */
+.pb-panel-outcomes { display: grid; grid-template-columns: max-content max-content; gap: 6px 12px; align-items: center; margin-top: 0.6rem; }
+.pb-panel-outcomes .pb-strip-item { display: contents; }
 .pb-panel-week { margin-top: 0.5rem; font-size: 0.85rem; color: var(--muted-grey); }
 
 /* THE OUTCOMES STRIP (Cowork §1) — one row, tap to expand into the full cards. Slim on purpose: it is the
    orientation, not the content, and it used to push the tabs below a wall of cards. */
 .pb-strip { margin: 0 0 1rem; }
-.pb-strip-label { font-size: 0.78rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted-grey); margin: 0 0 0.4rem; }
+/* Was a small grey uppercase label. Promoted to match the tab section's title so the two sections are siblings
+   rather than one shouting eyebrow and one heading. */
+.pb-strip-label { font-size: 1.05rem; font-weight: 800; color: var(--navy); line-height: 1.3; margin: 0 0 0.5rem; }
 .pb-strip-row { display: flex; align-items: center; gap: 18px; width: 100%; text-align: left; padding: 0.7rem 0.9rem; background: var(--white); border: 1px solid var(--panel-line, #e3e2df); border-radius: 12px; cursor: pointer; flex-wrap: wrap; }
 .pb-strip-item { display: inline-flex; align-items: center; gap: 8px; }
 .pb-strip-name { font-weight: 700; font-size: 0.9rem; text-transform: capitalize; }
@@ -2131,9 +2140,14 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
 .pb-strip-toggle { margin-left: auto; font-size: 1.1rem; color: var(--muted-grey); line-height: 1; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
-/* The active tab's one-line intro. Sits between the tab row and the content: the tab names the place, this
-   names the errand. (Cowork §4, 2026-08-13.) */
-.pb-tab-intro { margin: 0.75rem 0 1rem; color: var(--muted-grey); font-size: 0.95rem; line-height: 1.5; }
+/* TWO SECTIONS, TWO MATCHING TITLES (Jay, 2026-08-13: make the tab line "a title style above the tabs", and
+   "work out how it plays with What You're Building").
+   The page has exactly two things on it — what you're building, and what you've kept — so they get the same
+   title treatment and read as siblings. The tab line was a grey sentence UNDER the tab row, which made it look
+   like a caption belonging to the content rather than a heading for the section. */
+.pb-section-title { font-size: 1.05rem; font-weight: 800; color: var(--navy); line-height: 1.3; margin: 0 0 0.5rem; }
+.pb-section-title + .pb-tabframe { margin-top: 0; }
+/* .pb-tab-intro is retired with the line it styled — kept out rather than left as a rule nothing selects. */
 
 /* §3 — bigger tab type, and on mobile the row SCROLLS rather than wrapping or cramming five tabs into a grid. */
 .pb-tab { font-size: 1rem; }
@@ -2142,10 +2156,13 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
   .pb-tabs::-webkit-scrollbar { display: none; }
   .pb-tab { flex: 0 0 auto; }
 }
-/* The count is its own chip, not part of the tab's name — and it inverts on the dark active tab so it stays
-   legible instead of going dark-on-dark. */
-.pb-tab-n { display: inline-block; margin-left: 8px; padding: 1px 7px; border-radius: 10px; font-size: 0.8rem; background: var(--grey); color: var(--charcoal); }
-.pb-tab.on .pb-tab-n { background: rgba(255, 255, 255, 0.22); color: #fff; }
+/* THE COUNT — one rule, and a colour.
+   It was declared TWICE (a grey chip here, then a smaller dimmer number 40 lines below), so what shipped was the
+   chip's padding and background wearing the second rule's 11px/.72-opacity type: a washed-out pill that sat off
+   the label's centre. Jay, 2026-08-13: "the numbers for each tab are misaligned, also wanted those to be a colour
+   so they stand out more." Teal-text rather than raw teal — the raw token fails contrast on a light ground. */
+.pb-tab-n { font-size: 12px; font-weight: 800; line-height: 1; color: var(--teal-text); }
+.pb-tab.on .pb-tab-n { color: #fff; }
 
 .pb-tabframe.pb-tabframe { background: var(--white); border: 1px solid var(--panel-line); border-radius: 14px; margin-bottom: 1rem; overflow: hidden; }
 .pb-tabframe > .pb-card { border: 0; border-radius: 0; margin: 0; }
@@ -2167,7 +2184,6 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
 .pb-tab:hover { background: #e8e6e6; }
 @media (max-width: 700px) { .pb-tab { flex: 0 0 auto; } }
 .pb-tab.on { background: var(--navy); color: #fff; }
-.pb-tab-n { font-size: 11px; font-weight: 700; opacity: .72; }
 
 /* THE THREE OUTCOME CARDS (2026-08-08) — mindfulness · fitness · wellness, each made of a read, a tool and a
    tracked week. Phase colours are the badge grid's (.bd-phase-h), on purpose: the same three hues have meant the

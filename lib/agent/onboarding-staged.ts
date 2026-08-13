@@ -334,7 +334,7 @@ function reclaimMore(history: ConvMessage[]): string {
 // The confirm-only card reply when a member tries to add a want AFTER the summary card. Nothing lands here — so we
 // say that plainly, and point them to where adding DOES work (the first session + the companion rail). Never "Added".
 const CARD_LIST_SET =
-  "Your Reclaim List is set for now — no need to add more here. You'll be able to add to it and change it in your first session, or anytime just by talking with your companion. Take a look at the summary below whenever you're ready.";
+  "Your Reclaim List is set for now — no need to add more here. You'll be able to add to it and change it in your first session, or anytime just by talking with your Companion. Take a look at the summary below whenever you're ready.";
 
 // Never-trap nudge: said ONCE when the member signals done below the minimum. It does not re-ask the same
 // way — it lowers the bar (small things count) to unlock one more, then the engine stops nudging.

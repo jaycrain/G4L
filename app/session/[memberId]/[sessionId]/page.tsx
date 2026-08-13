@@ -33,7 +33,7 @@ export default async function SessionPage({ params }: { params: Promise<{ member
     return (
       <>
         {crumb}
-        <div className="card"><p className="muted">This Session isn&apos;t available yet — your companion will walk it with you soon.</p></div>
+        <div className="card"><p className="muted">This Session isn&apos;t available yet — your Companion will walk it with you soon.</p></div>
       </>
     );
   }

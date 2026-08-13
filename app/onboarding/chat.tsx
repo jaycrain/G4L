@@ -413,7 +413,7 @@ export default function OnboardingChat({ welcomeEnabled = false }: { welcomeEnab
           return (
             <div className="onboard-summary">
               <h2>Here’s what you shared.</h2>
-              <p className="muted">This is your starting point — Reconnect is where we go deeper on all of it. You can shape your list anytime, just by talking with your companion.</p>
+              <p className="muted">This is your starting point — Reconnect is where we go deeper on all of it. You can shape your list anytime, just by talking with your Companion.</p>
               <dl className="summary-list">
                 <dt>Who you’re reclaiming</dt>
                 <dd>{card.identityLabel ?? 'You’ll name this through the work — that part comes soon.'}</dd>
@@ -438,7 +438,7 @@ export default function OnboardingChat({ welcomeEnabled = false }: { welcomeEnab
                       {card.reclaimList.map((it, i) => (<li key={i}>{it}</li>))}
                     </ul>
                   ) : (
-                    'You’ll shape this with your companion — it starts in your first session.'
+                    'You’ll shape this with your Companion — it starts in your first session.'
                   )}
                 </dd>
               </dl>

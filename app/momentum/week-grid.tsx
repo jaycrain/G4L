@@ -199,7 +199,7 @@ export default function WeekGridPanel({ memberId, grid }: { memberId: string; gr
           ? 'Tap a day when you do one — or just tell me and I\u2019ll mark it.'
           : logTo
             ? 'Tap any day to open your log — the grid mirrors what you write there.'
-            : 'This mirrors what you\u2019ve told your companion, so you can see the week at a glance.'}
+            : 'This mirrors what you\u2019ve told your Companion, so you can see the week at a glance.'}
       </p>
     </div>
   );

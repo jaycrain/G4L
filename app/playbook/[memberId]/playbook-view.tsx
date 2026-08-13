@@ -23,14 +23,14 @@ const SECTIONS: SectionMeta[] = [
     title: 'In your own words',
     sub: 'Things you said that are worth keeping.',
     empty:
-      'Lines you say that are worth holding onto land here — your companion keeps the ones that matter, and you decide what stays.',
+      'Lines you say that are worth holding onto land here — your Companion keeps the ones that matter, and you decide what stays.',
   },
   {
     key: 'what_works',
     title: 'What works for you',
     sub: 'The reframes and tactics that stuck — in your words.',
     empty:
-      'Here’s how this fills: as reframes and tactics start working for you, your companion offers them here — keep the ones that ring true. They become your go-to Moves.',
+      'Here’s how this fills: as reframes and tactics start working for you, your Companion offers them here — keep the ones that ring true. They become your go-to Moves.',
   },
   {
     key: 'why_works',
@@ -44,7 +44,7 @@ const SECTIONS: SectionMeta[] = [
     title: 'Your own entries',
     sub: 'Your space to write—a little or a lot, anytime.',
     empty:
-      'Write your own entry anytime. This is your space — your companion reads it to understand you better, and only responds if you ask.',
+      'Write your own entry anytime. This is your space — your Companion reads it to understand you better, and only responds if you ask.',
   },
 ];
 
@@ -167,7 +167,7 @@ export default function PlaybookView({
   function proposedCard(e: PlaybookEntry) {
     return (
       <div key={e.id} className="pb-proposed">
-        <div className="pb-prop-head">Your companion noticed this — keep it?</div>
+        <div className="pb-prop-head">Your Companion noticed this — keep it?</div>
         <p className="pb-line">{e.body}</p>
         <div className="pb-actions">
           <button type="button" className="pb-btn keep" disabled={busy} onClick={() => run(() => keepEntryAction(memberId, e.id))}>
@@ -186,7 +186,7 @@ export default function PlaybookView({
       <h1 className="pb-page-title">Your Playbook</h1>
       <p className="pb-sub">The story you’re telling about yourself — and the Moves that back it up</p>
       <p className="pb-intro">
-        Your companion keeps two things here: the story you’re writing as you go, and the handful of reframes, science,
+        Your Companion keeps two things here: the story you’re writing as you go, and the handful of reframes, science,
         and your own best lines that hold it up. Re-woven every time you close a Session. Reach for it whenever you need it.
       </p>
 
@@ -204,7 +204,7 @@ export default function PlaybookView({
       {synthesis && (
         <section className="pb-card pb-hero">
           <div className="pb-sec">Your story so far</div>
-          <div className="pb-sec-d">A living read your companion re-weaves each time you close a Session.</div>
+          <div className="pb-sec-d">A living read your Companion re-weaves each time you close a Session.</div>
           <div className="pb-narr">
             {synthesis.split(/\n\n+/).map((p) => p.trim()).filter(Boolean).map((para, k) => (
               <p key={k}>{para}</p>
@@ -256,7 +256,7 @@ export default function PlaybookView({
       )}
 
       <p className="pb-foot">
-        Your companion gathers these as you go and flags keepers — you decide what stays. Edit, pin, or remove anything.
+        Your Companion gathers these as you go and flags keepers — you decide what stays. Edit, pin, or remove anything.
         Over time this becomes the raw material for your Legacy Letter and Success Story.
       </p>
     </>
