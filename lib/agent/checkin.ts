@@ -823,11 +823,11 @@ const REFINE_TOOLS = [
       "stops working — this is what makes that true. Pass `play` as the words they used for it. It is a RETIRE, " +
       "never a delete: the entry is kept and can come back. Only call it once they have clearly said so, and if " +
       "you are not certain WHICH play they mean, ask instead of guessing — getting it wrong quietly edits their " +
-      "own manual. Reflect it back plainly; a play that stopped working is information, never a failure.",
+      "own manual. Reflect it back plainly; a Move that stopped working is information, never a failure.",
     input_schema: {
       type: 'object',
       properties: {
-        play: { type: 'string', description: 'the play to retire, in the member’s own words' },
+        play: { type: 'string', description: 'the Move to retire, in the member’s own words' },
       },
       required: ['play'],
     },

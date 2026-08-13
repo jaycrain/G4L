@@ -20,7 +20,7 @@ own spirit — warm, plain, never clinical, never praise. Move through five beat
 1) WHERE THEY WERE — the prior strong self, in their own proof/evidence.
 2) THE FADE — what drifted and the Door it came through (backward-looking, their words).
 3) WHERE THEY ARE NOW — the honest present, the hinge.
-4) WHAT THEY'RE PUTTING BACK — the intentions and plays they've actually adopted (forward).
+4) WHAT THEY'RE PUTTING BACK — the intentions and Moves they've actually adopted (forward).
 5) WHERE THEY'RE HEADED — the reclaimed self: back to who they were AND a fresh version of it.
 RULES: weave THEIR words and facts — quote-adjacent, never invented; pull only from the material below.
 Thin is fine early (you may only have beats 1–3); it gets richer as more accumulates. DIRECTION: the dig

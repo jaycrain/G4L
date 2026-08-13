@@ -17,6 +17,9 @@ import ConnectPanel from './connect-panel.tsx';
 // premium, so the nav must read as clearly tappable. The Reclaim List is Companion-edited (no subpage), so it keeps its
 // "talk to your Companion" foot line rather than a fake See-more. NOT next-Session — that's the center hero's CTA.
 
+// §2 (Cowork, 2026-08-13) — the panel became a COMPACT STATUS rather than a single big number. Both reads are
+// done here because this is a server component: threading them down from the page would add two props to a
+// signature that already has five, for data only this panel uses.
 export default async function TriptychRight({
   db,
   memberId,
@@ -31,11 +34,20 @@ export default async function TriptychRight({
   waitingCount?: number;
   momentumCta?: { label: string; href: string } | null;
 }) {
-  const [pulse, activity, playbook] = await Promise.all([
+  const { outcomes } = await import('../../lib/dashboard/outcomes.ts');
+  const { activePracticeWeeks } = await import('../../lib/practice/store.ts');
+  const { PRACTICE_KEEPER_NAME } = await import('../../lib/practice/close.ts');
+  const [pulse, activity, playbook, panelOutcomes, openWeeks] = await Promise.all([
     softRead('triptychRight.pulseBeats', memberId, () => pulseBeats(db, memberId), []),
     getActivityPanel(db, memberId, dash.identityNoun),
     playbookSummary(db, memberId),
+    softRead('triptychRight.outcomes', memberId, () => outcomes(db, memberId), []),
+    softRead('triptychRight.openWeeks', memberId, () => activePracticeWeeks(db, memberId), []),
   ]);
+  // The week that needs attention today. NAMED, because a member can be running four at once and "day 3 of 6"
+  // alone never said which one (Jay, 2026-08-11).
+  const w = openWeeks[0];
+  const panelWeek = w ? `${PRACTICE_KEEPER_NAME[w.kind] ?? 'Your practice week'} · day ${w.day} of ${w.window.days}` : null;
 
   return (
     <div className="tri-stack">
@@ -55,14 +67,32 @@ export default async function TriptychRight({
 
           So it always renders, and at zero it FORECASTS. Same call as the tab counts: a visible zero reads as
           "this fills up"; absence reads as "this isn't for you." (Jay's walk, 2026-08-11.) */}
+      {/* Read here, not passed in — see the note on the signature above. Both degrade to nothing rather than
+          taking the flank down: a missing strip is a smaller loss than a missing panel. */}
       {playbook && (
         <div className="rcard r-reg" data-tour="playbook">
           <div className="rreg-eyebrow">Your Playbook</div>
           <div className="rc-sub">{playbook.plays > 0 ? 'What you’ve built.' : 'Where your Comeback gets kept.'}</div>
           <div className="rreg-big rreg-plays">
-            {playbook.plays}<span className="rreg-unit"> {playbook.plays === 1 ? 'play' : 'plays'}</span>
+            {playbook.plays}<span className="rreg-unit"> {playbook.plays === 1 ? 'Move' : 'Moves'}</span>
           </div>
           {playbook.plays === 0 && <div className="pb-forecast">Your first one lands when you finish a Session.</div>}
+          {/* The three outcomes as dots — the same read as the Playbook's strip, so the panel and the page agree
+              at a glance rather than telling two versions of where the member is. */}
+          {panelOutcomes.length > 0 && (
+            <div className="pb-panel-outcomes">
+              {panelOutcomes.map((o) => (
+                <span key={o.phase} className="pb-strip-item">
+                  <span className="pb-strip-name">{o.product}</span>
+                  <span className="pb-strip-dots" aria-hidden="true">
+                    {o.parts.map((part, i) => <span key={i} className={`pb-dot${part.done ? ' on' : ''}`} />)}
+                  </span>
+                </span>
+              ))}
+            </div>
+          )}
+          {/* The live week, named. "day 3 of 6" alone never said WHICH week — and a member can be running four. */}
+          {panelWeek && <div className="pb-panel-week">This week: {panelWeek}</div>}
           {playbook.mostRun && (
             <div className="pb-mostrun">
               <span className="pb-mostrun-label">Most run</span>

@@ -76,13 +76,13 @@ const REVIEW_PHASE_LABEL: Record<string, string> = { reconnect: 'Reconnect', rew
 const CHAPTERS: { key: ChapterKey; title: string; sub: string; empty: string }[] = [
   // The "tell your Companion" line is a PROMISE, and it only went in once retire_play existed — a page that
   // offers a capability the Companion does not have is worse than a page that offers nothing.
-  { key: 'plays', title: 'Your plays', sub: 'The moves you tried and kept because they worked — run them again. When one stops working, tell your Companion and it comes off the list.', empty: 'Finish a practice week and what worked lands here — your go-to plays, in your words.' },
+  { key: 'plays', title: 'Your Moves', sub: 'The moves you tried and kept because they worked — run them again. When one stops working, tell your Companion and it comes off the list.', empty: 'Finish a practice week and what worked lands here — your go-to Moves, in your words.' },
   { key: 'who', title: 'Who you are', sub: 'A reminder of who you were, and who you hope to be again.', empty: 'The identities you reclaim land here as you name them.' },
   { key: 'lights', title: 'What lights you up', sub: 'Where you found excitement and motivation. What moves you gets kept here.', empty: 'What still moves you gets kept here — your spark, in your words.' },
   { key: 'tells', title: 'Your tells', sub: 'The patterns worth catching early.', empty: 'The signs you’re drifting land here, so you can catch them sooner.' },
   { key: 'why', title: 'Why it works', sub: 'The science that convinced you, in plain language.', empty: 'Facts that resonated with you get kept here.' },
 ];
-const CHAPTER_LABEL: Record<ChapterKey, string> = { who: 'Who you are', lights: 'Lights you up', tells: 'Your tells', plays: 'Your plays', why: 'Why it works' };
+const CHAPTER_LABEL: Record<ChapterKey, string> = { who: 'Who you are', lights: 'Lights you up', tells: 'Your tells', plays: 'Your Moves', why: 'Why it works' };
 
 
 export default function RedesignPlaybookView({
@@ -117,6 +117,9 @@ export default function RedesignPlaybookView({
   reviewable?: { key: string; label: string; phase: string }[];
 }) {
   const [entries, setEntries] = useState<PlaybookEntry[]>(initial);
+  // The outcomes strip starts CLOSED. A member opening the Playbook wants the tabs; the three outcomes are
+  // orientation they need once, not scaffolding to scroll past every visit (Cowork §1).
+  const [outcomesOpen, setOutcomesOpen] = useState(false);
   // Tab state lives in the URL so the back button works and a member can be sent straight to a tab. Read once on
   // mount rather than via useSearchParams, which would force a Suspense boundary for no gain here.
   // A running week LEADS. If they're mid-practice, that is what they came for; otherwise Plays, which is the
@@ -315,27 +318,34 @@ export default function RedesignPlaybookView({
       ) : null}
       {gatherMsg && <p className="pb-gather-msg">{gatherMsg}</p>}
 
-      {/* THE THREE OUTCOMES — what the cycle is actually building, and what "built" means. Heads the page above
-          everything else because it is the ORIENTATION: a member landing here should see the shape of the whole
-          thing before the detail of what they've kept so far. */}
-      <OutcomeCards outcomes={outcomes} />
-
-      {/* FRONT MATTER — the short version: the pinned lines you reach for most. ABOVE the tabs on purpose; it is
-          the one thing worth seeing whichever tab you land on. */}
-      {pinned.length > 0 && (
-        <section className="pb-frontmatter">
-          <div className="pb-fm-title">The short version</div>
-          <div className="pb-fm-items">
-            {pinned.map((e) => {
-              const ck = chapterKey(e);
-              return (
-                <div key={e.id} className="pb-fm-item">
-                  {ck && <span className="pb-fm-tag">{CHAPTER_LABEL[ck]}</span>}
-                  <span className="pb-fm-line">{e.body}</span>
-                </div>
-              );
-            })}
-          </div>
+      {/* THE THREE OUTCOMES, now a SLIM STRIP that expands (Cowork §1). Still the orientation — a member landing
+          here sees the shape of the whole thing first — but as one row rather than three cards, so the tabs sit
+          near the top of the page instead of below a wall of scaffolding. The detail is one tap away, unchanged.
+          Dots are the three parts: a read · a tool · a tracked week. */}
+      {outcomes.length > 0 && (
+        <section className="pb-strip">
+          <button
+            type="button"
+            className="pb-strip-row"
+            aria-expanded={outcomesOpen}
+            onClick={() => setOutcomesOpen((v) => !v)}
+          >
+            {outcomes.map((o) => (
+              <span key={o.phase} className="pb-strip-item">
+                <span className="pb-strip-name">{o.product}</span>
+                <span className="pb-strip-dots" aria-hidden="true">
+                  {o.parts.map((part, i) => (
+                    <span key={i} className={`pb-dot${part.done ? ' on' : ''}`} />
+                  ))}
+                </span>
+                <span className="sr-only">
+                  {o.parts.filter((x) => x.done).length} of {o.parts.length} built
+                </span>
+              </span>
+            ))}
+            <span className="pb-strip-toggle" aria-hidden="true">{outcomesOpen ? '−' : '+'}</span>
+          </button>
+          {outcomesOpen && <OutcomeCards outcomes={outcomes} />}
         </section>
       )}
 
@@ -372,6 +382,26 @@ export default function RedesignPlaybookView({
           );
         })}
       </nav>
+
+      {/* FRONT MATTER — the short version: the pinned lines you reach for most. ABOVE the tabs on purpose; it is
+          the one thing worth seeing whichever tab you land on. */}
+      {pinned.length > 0 && (
+        <section className="pb-frontmatter">
+          <div className="pb-fm-title">The short version</div>
+          <div className="pb-fm-items">
+            {pinned.map((e) => {
+              const ck = chapterKey(e);
+              return (
+                <div key={e.id} className="pb-fm-item">
+                  {ck && <span className="pb-fm-tag">{CHAPTER_LABEL[ck]}</span>}
+                  <span className="pb-fm-line">{e.body}</span>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
 
       {/* WHO YOU ARE opens with the synthesis — the arc the Companion re-weaves at every Session close. It used to
           sit above everything as "Your story so far", and "My Story" (the identity read) was a separate DASHBOARD
@@ -498,7 +528,7 @@ export default function RedesignPlaybookView({
       {tab === 'journal' && (
         <section className="pb-card pb-journal">
           <div className="pb-sec">Your journal</div>
-          <div className="pb-sec-d">Thoughts and feelings in your own words, timestamped to where you are. For a lot of people this is the most freeing thing here — a place to think on the page and understand yourself. Your companion reads it and pulls keepers up into your plays, but the writing itself is the point — it only replies if you ask.</div>
+          <div className="pb-sec-d">Thoughts and feelings in your own words, timestamped to where you are. For a lot of people this is the most freeing thing here — a place to think on the page and understand yourself. Your companion reads it and pulls keepers up into your Moves, but the writing itself is the point — it only replies if you ask.</div>
           {/* THE QUEUE, in the room it belongs to. Above the member's own entries because it is the only part
               of this page with a decision attached; everything below is already settled. */}
           {proposed.length > 0 && (

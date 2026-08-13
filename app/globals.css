@@ -2112,6 +2112,24 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
 /* ONE PANEL, TABS AT ITS TOP EDGE. The row used to float above a separate card, so it read as page chrome rather
    than as this panel's own controls. The frame carries the border now and the tab bodies sit inside it — which
    also means the bodies must NOT draw their own, or every tab looks like a box inside a box. */
+/* §2 — the same dot language on the dashboard panel, so the panel and the Playbook agree at a glance. Wraps,
+   because three names plus dots do not fit one flank column on a narrow screen. */
+.pb-panel-outcomes { display: flex; flex-wrap: wrap; gap: 10px 16px; margin-top: 0.6rem; }
+.pb-panel-week { margin-top: 0.5rem; font-size: 0.85rem; color: var(--muted-grey); }
+
+/* THE OUTCOMES STRIP (Cowork §1) — one row, tap to expand into the full cards. Slim on purpose: it is the
+   orientation, not the content, and it used to push the tabs below a wall of cards. */
+.pb-strip { margin: 0 0 1rem; }
+.pb-strip-row { display: flex; align-items: center; gap: 18px; width: 100%; text-align: left; padding: 0.7rem 0.9rem; background: var(--white); border: 1px solid var(--panel-line, #e3e2df); border-radius: 12px; cursor: pointer; flex-wrap: wrap; }
+.pb-strip-item { display: inline-flex; align-items: center; gap: 8px; }
+.pb-strip-name { font-weight: 700; font-size: 0.9rem; text-transform: capitalize; }
+.pb-strip-dots { display: inline-flex; gap: 4px; }
+/* ● = built, ○ = still ahead. Olive rather than a raw brand token: it reads as progress on white. */
+.pb-dot { width: 9px; height: 9px; border-radius: 50%; border: 1.5px solid var(--olive-text); }
+.pb-dot.on { background: var(--olive-text); }
+.pb-strip-toggle { margin-left: auto; font-size: 1.1rem; color: var(--muted-grey); line-height: 1; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
 /* The active tab's one-line intro. Sits between the tab row and the content: the tab names the place, this
    names the errand. (Cowork §4, 2026-08-13.) */
 .pb-tab-intro { margin: 0.75rem 0 1rem; color: var(--muted-grey); font-size: 0.95rem; line-height: 1.5; }

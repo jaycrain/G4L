@@ -30,7 +30,7 @@ const SECTIONS: SectionMeta[] = [
     title: 'What works for you',
     sub: 'The reframes and tactics that stuck — in your words.',
     empty:
-      'Here’s how this fills: as reframes and tactics start working for you, your companion offers them here — keep the ones that ring true. They become your go-to plays.',
+      'Here’s how this fills: as reframes and tactics start working for you, your companion offers them here — keep the ones that ring true. They become your go-to Moves.',
   },
   {
     key: 'why_works',
@@ -184,7 +184,7 @@ export default function PlaybookView({
   return (
     <>
       <h1 className="pb-page-title">Your Playbook</h1>
-      <p className="pb-sub">The story you’re telling about yourself — and the plays that back it up</p>
+      <p className="pb-sub">The story you’re telling about yourself — and the Moves that back it up</p>
       <p className="pb-intro">
         Your companion keeps two things here: the story you’re writing as you go, and the handful of reframes, science,
         and your own best lines that hold it up. Re-woven every time you close a Session. Reach for it whenever you need it.

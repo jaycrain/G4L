@@ -707,7 +707,7 @@ export async function sendCheckin(memberId: string, memberMessage: string): Prom
         const done = await dismissEntry(db, memberId, entry.id);
         if (!done) return { ok: false, message: 'Not retired — try once more, or tell them it did not save.' };
         mutated = true;
-        return { ok: true, message: `Retired "${entry.body.slice(0, 60)}" — it is kept and can come back anytime. Reflect it back plainly; a play that stopped working is information, never a failure.` };
+        return { ok: true, message: `Retired "${entry.body.slice(0, 60)}" — it is kept and can come back anytime. Reflect it back plainly; a Move that stopped working is information, never a failure.` };
       }
       if (name === 'retire_tracker') {
         // #79 — retire (archive) a tracker: kept as history + restorable, NEVER a hard delete.
