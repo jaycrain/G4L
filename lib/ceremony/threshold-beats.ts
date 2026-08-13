@@ -29,19 +29,25 @@ export const THRESHOLD_COPY = {
   // 1 — lands alone, dashboard dimmed behind
   stop: 'Stop for a second.',
   // 2 — honor the work just done
-  honor: 'Most people never do that kind of excavation in a lifetime — and you just did it in one sitting.',
+  honor: 'Most people never do that kind of excavation in a lifetime. You just did it in one sitting.',
   // 3 — reveal: the Reclaimed Identity, Door(s), "N to win back", baseline ID Score
-  uncovered: "Here's what you uncovered:",
+  // "found", not "uncovered" — Part 3 of the walk is called "What you found", and the beat that opens it should
+  // use the same word the member just read at the top of it.
+  uncovered: "Here's what you found:",
   // 4a — reveal: 2–3 harvested Playbook lines (when the onboarding harvest produced seeds)
-  playbookSeeded: 'Your answers, your words, filled in the first pages of your Playbook on your behalf.',
+  playbookSeeded: 'Your first pages are written.',
   // 4b — fallback when there are no seeds yet (no empty Playbook frame)
   playbookNoSeeds:
     "These aren't answers to a form. They're the start of your Playbook — the record of what's working, which fills as you go.",
   // 5 — reveal: the 4Rs (Reconnect lit). The line is now a plain "get to work" transition (the standalone Journey
   //     panel is merged into the Companion center — Jay 2026-07-26), reordered AFTER the Playbook beat below.
-  journey: 'Time to get to work through the Phases of the G4L program. It starts with Reconnect.',
+  // The doc's version ends "…and that's where we're headed now." Dropped: the ceremony already runs ON the
+  // dashboard, so narrating a journey to where they are standing reads as filler.
+  journey: 'Your Comeback starts with Reconnect — your first Session’s ready whenever you are.',
   // 6 — the Playbook, described plainly. Reordered to run BEFORE the "get to work" beat (Donna's Reconnect edits).
-  lasts: 'Your Playbook tracks the work for you as we go. It’s an automatic reference for things you’ve said, and highlights insights that you’ll want to revisit.',
+  lasts:
+    'Your answers, in your own words, filled the first pages of your Playbook. From here it keeps building itself — ' +
+    'everything worth keeping lands there, ready when you need it. It’s uniquely yours.',
   // 7 — the hand-off; this beat carries the clip-in metaphor (Donna's Reconnect edits — no first-move mention now).
   clipIn: 'Clipping in, like when you lock your foot into your bike pedal before you take off for a ride, is a commitment to get, and keep, going.',
   // Donna dropped the per-member "first move" tail; keep the signature so callers don't change, ignore the arg.

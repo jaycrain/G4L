@@ -41,6 +41,7 @@ export default function PostCeremonyTour({
   // CAT-46 — which triptych pane each stop lives in, so the tour can reveal it on the mobile fold. Anything not
   // listed is centre/legacy and needs no switch.
   const PANE_OF: Record<string, 'left' | 'center' | 'right'> = {
+    companion: 'center',
     idscore: 'left',
     grinta: 'left',
     badges: 'left',
@@ -54,6 +55,12 @@ export default function PostCeremonyTour({
   };
 
   const allStops: Stop[] = [
+    // THE COMPANION GOES FIRST, and it had no stop at all until 2026-08-13 — the anchor existed, nothing pointed
+    // at it. The Companion is the product; the tour introduced every panel around it and never it.
+    {
+      target: 'companion',
+      line: 'Your Companion is right here. The same one you just talked to — always in the centre, always listening. Ask it anything, anytime. It remembers everything.',
+    },
     {
       target: 'program',
       line: 'This section will always let you know where you are in the program. You can kick off the next phase by clicking the Open this Session button.',
@@ -76,6 +83,8 @@ export default function PostCeremonyTour({
     { target: 'connect', line: 'The Community — other members walking the same road. A place to receive and offer support with people who get it.' },
     { target: 'movement', line: 'Movement — your activity shows up here once you connect an app: quiet evidence of the work coming back in your body.' },
     { target: 'reclaim', line: 'Your Reclaim List shows the goals you’re working toward in your comeback.' },
+    // Account — the topbar, not a panel, so it comes after the panels rather than in the middle of the flanks.
+    { target: 'account', line: 'Your account is up in the corner — your name, your reminders, your privacy. Set it once, change it anytime.' },
     { target: 'daily', line: 'Your Daily Beat — the heartbeat between Sessions. One thought, one small move, every day.' },
     { target: 'doors', line: doorsLine },
   ];

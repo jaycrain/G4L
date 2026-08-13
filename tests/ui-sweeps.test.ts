@@ -187,3 +187,29 @@ test('brand colours are never used raw as TEXT — the -text twins exist for thi
   }
   assert.deepEqual(bad, [], `\n${bad.join('\n')}\n`);
 });
+
+test('every Opening Tour stop points at an anchor that actually exists', () => {
+  // A stop whose anchor is missing is DROPPED SILENTLY — the tour filters by presence, and it runs once per
+  // member, so the introduction is lost permanently rather than deferred (CAT-46). That is how the Playbook stop
+  // went missing before Jay's 8/11 walk, and how the Companion had an anchor with no stop until 8/13.
+  const tour = readFileSync('app/dashboard/post-ceremony-tour.tsx', 'utf8');
+  const stops = [...tour.matchAll(/target:\s*'([a-z]+)'/g)].map((m) => m[1]!);
+  assert.ok(stops.length >= 10, `expected the full stop list, found ${stops.length}`);
+
+  const files: string[] = [];
+  const walkApp = (dir: string) => {
+    for (const name of readdirSync(dir)) {
+      if (name.startsWith('.') || name === 'node_modules') continue;
+      const full = join(dir, name);
+      if (statSync(full).isDirectory()) walkApp(full);
+      else if (full.endsWith('.tsx')) files.push(full);
+    }
+  };
+  walkApp('app');
+  const anchors = new Set<string>();
+  for (const f of files) {
+    for (const m of readFileSync(f, 'utf8').matchAll(/data-tour="([a-z]+)"/g)) anchors.add(m[1]!);
+  }
+  const orphans = stops.filter((s) => !anchors.has(s));
+  assert.deepEqual(orphans, [], `tour stops with no anchor anywhere: ${orphans.join(', ')}`);
+});

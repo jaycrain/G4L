@@ -41,7 +41,9 @@ export default async function RedesignTopbar({ memberId }: { memberId: string })
         <span className="rt-nav">
           <Link href={`/playbook/${memberId}`} prefetch={false}>Playbook</Link>
         </span>
-        <span className="rt-account-group">
+        {/* data-tour: the Opening Tour's Account stop. The topbar is the ONLY place a member meets their account,
+            and the tour never mentioned it — so reminders and privacy were things you had to go looking for. */}
+        <span className="rt-account-group" data-tour="account">
           <Link href="/account" className="rt-account" aria-label="Your account">
             {avatarUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
