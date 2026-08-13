@@ -2134,7 +2134,14 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
 /* Was a small grey uppercase label. Promoted to match the tab section's title so the two sections are siblings
    rather than one shouting eyebrow and one heading. */
 .pb-strip-label { font-size: 1.05rem; font-weight: 800; color: var(--navy); line-height: 1.3; margin: 0 0 0.5rem; }
-.pb-strip-row { display: flex; align-items: center; gap: 18px; width: 100%; text-align: left; padding: 0.7rem 0.9rem; background: var(--white); border: 1px solid var(--panel-line, #e3e2df); border-radius: 12px; cursor: pointer; flex-wrap: wrap; }
+/* THE NAMES WERE INVISIBLE. This row is a <button>, so it inherited `color: var(--white)` from the global button
+   rule — and it overrode the BACKGROUND to white without ever setting the text colour. White on white: Mindfulness,
+   Fitness and Wellness were unreadable in the resting state and only appeared on hover, when the default navy
+   hover background arrived behind them. Jay walked past it twice while I kept measuring the tab counts beside it.
+   Two lines fix it, and the second one matters as much: the navy hover ALSO put the olive dots on a dark ground.
+   This strip is a container that happens to be a button — it should not wear the CTA's hover at all. */
+.pb-strip-row { display: flex; align-items: center; gap: 18px; width: 100%; text-align: left; padding: 0.7rem 0.9rem; background: var(--white); border: 1px solid var(--panel-line, #e3e2df); border-radius: 12px; cursor: pointer; flex-wrap: wrap;
+  color: var(--navy); --btn-hover-bg: #f6f5f3; }
 .pb-strip-item { display: inline-flex; align-items: center; gap: 8px; }
 .pb-strip-name { font-weight: 700; font-size: 0.9rem; text-transform: capitalize; }
 .pb-strip-dots { display: inline-flex; gap: 4px; }

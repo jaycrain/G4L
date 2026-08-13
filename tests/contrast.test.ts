@@ -74,3 +74,46 @@ test('THE GUARD CAN FAIL — the exact colour Jay caught is still detected as fa
   assert.ok(contrast('#2f7a7b', '#f2f1ef') < 4.5, 'the old teal must still measure as a failure');
   assert.ok(contrast('#2f7a7b', '#ffffff') >= 4.5, '...and must still pass on white, which is why it was missed');
 });
+
+// A BUTTON THAT REPAINTS ITS BACKGROUND MUST REPAINT ITS TEXT.
+//
+// The global rule gives every button `color: var(--white)`, which is right for a filled CTA. A control that
+// overrides the BACKGROUND to something light and says nothing about colour therefore renders white-on-light —
+// invisible. That is what happened to the Playbook's outcomes strip: Mindfulness / Fitness / Wellness were
+// unreadable at rest and only appeared on hover, when the default navy hover background arrived behind them.
+//
+// Jay pointed at that strip twice while I measured the tab counts next to it, because "contrast problem" reads
+// as "a colour is too light" and this was text that wasn't there at all.
+const BUTTONISH = /(^|\s|\.)(btn|button)|-(row|tab|cta|chip|pill)\b/i;
+const LIGHT_BG = /background:\s*(var\(--white\)|#fff\b|#ffffff|var\(--grey\)|#f[0-9a-f]{5}|#e[0-9a-f]{5})/i;
+
+/** Every selector that declares a text colour, so a state modifier can be credited to its base rule. */
+function selectorsThatSetColour(): Set<string> {
+  const set = new Set<string>();
+  for (const m of CSS.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+    if (/(?<![-\w])color:/.test(m[2]!)) set.add(m[1]!.trim().split('\n').pop()!.trim());
+  }
+  return set;
+}
+
+test('no control paints itself a light background while inheriting white text', () => {
+  const coloured = selectorsThatSetColour();
+  const offenders: string[] = [];
+  for (const m of CSS.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+    const sel = m[1]!.trim().split('\n').pop()!.trim();
+    const body = m[2]!;
+    if (sel.startsWith('@') || sel.includes(':hover')) continue; // a hover rule inherits its base rule's colour
+    if (!BUTTONISH.test(sel) || !LIGHT_BG.test(body)) continue;
+    if (/(?<![-\w])color:/.test(body)) continue; // it says what colour its text is — fine
+    // A STATE MODIFIER inherits from its base: `.rm-chip.on` only repaints the background of a `.rm-chip` that
+    // already declares navy. Credit the base rather than reporting a chip that is perfectly readable.
+    const base = sel.match(/^\.[a-z0-9-]+/i)?.[0];
+    if (base && base !== sel && coloured.has(base)) continue;
+    offenders.push(sel);
+  }
+  assert.deepEqual(
+    offenders,
+    [],
+    `\nThese set a light background but never a text colour, so they inherit white from the global button rule:\n${offenders.join('\n')}\n`,
+  );
+});

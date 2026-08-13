@@ -174,16 +174,23 @@ export function correctDoors(doors: DoorSlug[], narrative: string): DoorSlug[] {
     doors.includes('full_house') ||
     matchDoors(m).includes('full_house') ||
     /\b(had kids|having kids|when we had|after (we )?had kids|after kids|young kids|small kids|little kids|new baby|babies|a toddler|raising (the |our )?kids)\b/.test(m);
-  const agingParentsSignal = /\b(aging parent|elderly|my (mom|dad|mother|father|parents)|caring for (my|a|an|his|her|aging) ?(mom|dad|mother|father|parent|parents)?)\b/.test(m);
   const emptyNestSignal = /\b(empty nest|moved out|left (home|the house|the nest)|kids? (are )?(grown|gone|all gone|all left|out of the house)|off to college|last one (gone|left))\b/.test(m);
 
   const set = new Set<DoorSlug>(doors);
   if (fullHouseSignal) {
-    // OPEN (CAT-07, needs Jay's product call): dropping aging_parents here fixes Scott's mis-tag walk, but Full House
-    // and Aging Parents are NOT logically contradictory (the sandwich generation) — so a member who names a parent's
-    // decline in one turn and young kids in another can lose the Door they named. Empty Nest genuinely IS
-    // contradictory with Full House. Left as-is pending that decision; do not "fix" one walk by breaking the other.
-    if (!agingParentsSignal) set.delete('aging_parents');
+    // CAT-07 — SETTLED (Jay, 2026-08-13): "Yes they can coexist, completely different things."
+    //
+    // Full House used to delete Aging Parents unless parent-care language appeared in the SAME message. The
+    // comment here already named the cost — a member who names a parent's decline in one turn and young kids in
+    // another loses the Door they named — and then it did exactly that to Jay on his own account: The Marriage ·
+    // The Full House · The Grind on his record, and the mother he cares for nowhere.
+    //
+    // A young family and a declining parent are two different loads, and carrying both at once is the most
+    // common midlife shape there is. The rule went in to fix a mis-tag on Scott's walk; a WRONG Aging Parents
+    // tag is a mis-tag to fix where it is made, not something to solve by deleting a Door a member named. Losing
+    // a Door someone gave you is the worse failure — it is silent, and the member cannot tell it happened.
+    //
+    // Empty Nest still yields: the house is either full or it is empty, so those two genuinely cannot both hold.
     if (!emptyNestSignal) set.delete('empty_nest');
     set.add('full_house');
   }

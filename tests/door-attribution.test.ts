@@ -12,6 +12,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { doorContradictedByMember, filterDoorsByAttribution } from '../lib/agent/door-attribution.ts';
+import { matchDoors, correctDoors } from '../lib/doors.ts';
 
 // Her gap, close to verbatim from the live walk.
 const JENNIFER_GAP =
@@ -81,4 +82,41 @@ test('empty material and unknown slugs are inert', () => {
   assert.equal(doorContradictedByMember('marriage', ''), false);
   assert.equal(doorContradictedByMember('not_a_door', JENNIFER_GAP), false);
   assert.deepEqual(filterDoorsByAttribution([], JENNIFER_GAP), []);
+});
+
+// THE SANDWICH GENERATION KEEPS BOTH DOORS (Jay, 2026-08-13: "Yes they can coexist, completely different things").
+//
+// matchDoors carried a precedence rule: when Full House fired, Aging Parents was DELETED unless parent-care
+// language appeared in the SAME message. The comment above it had already named the cost — "a member who names a
+// parent's decline in one turn and young kids in another can lose the Door they named" — and left it open as
+// CAT-07, pending this decision.
+//
+// It then did exactly that on Jay's own walk: The Marriage · The Full House · The Grind on his record, and the
+// mother he cares for nowhere, after he served it up. A young family and a declining parent are two different
+// loads, and carrying both at once is the most common midlife shape there is. The rule went in to fix a mis-tag
+// on Scott's walk; a wrong Aging Parents tag is now a mis-tag to fix at its source, not something to solve by
+// deleting a Door a member named.
+//
+// Empty Nest still yields to Full House — those two ARE contradictory (the house is either full or it isn't).
+test('Full House and Aging Parents COEXIST — a parent in decline and kids at home are two different loads', () => {
+  // The phrase must be one the alias list actually recognises — it needs a caregiving verb, deliberately, so a
+  // passing "my mom" never trips the Door. My first draft used "driving out to my mother", which the matcher is
+  // right to ignore. That was the test being wrong, not the rule; the thing under test here is the PRECEDENCE.
+  const both = matchDoors('we had young kids at home and I was taking care of my mother every weekend');
+  assert.ok(both.includes('full_house'), 'young kids at home is The Full House');
+  assert.ok(both.includes('aging_parents'), 'caring for a parent is The Aging Parents — it must survive alongside');
+});
+
+test('...and it survives when the two loads are named in SEPARATE turns, which is what bit Jay', () => {
+  // The failing shape: Aging Parents already on the record, then a later turn carries full-house language and no
+  // parent language. That later turn must not be able to delete the earlier Door.
+  const later = correctDoors(['aging_parents', 'marriage'], 'we had young kids at home back then');
+  assert.ok(later.includes('aging_parents'), 'a full-house turn must not strip a Door named in an earlier one');
+  assert.ok(later.includes('full_house'), 'and the new Door still lands');
+});
+
+test('Empty Nest still yields to Full House — those two genuinely cannot both be true', () => {
+  const set = correctDoors(['empty_nest'], 'we had young kids at home, everyone needing something');
+  assert.ok(set.includes('full_house'));
+  assert.ok(!set.includes('empty_nest'), 'the house is either full or it is empty');
 });
