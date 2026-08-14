@@ -25,6 +25,7 @@ import { cleanIdentityNoun, displayIdentityNoun, identityLabel, sanitizeCoinedId
 import { isDoorSlug, matchDoors, type DoorSlug } from '../doors.ts';
 import { RECLAIM_LIST_FLOOR, RECLAIM_LIST_MIN, RECLAIM_LIST_TARGET, reclaimAddIntent, isReclaimMetaFragment } from '../member/reclaim.ts';
 import { nextFollowUp } from './follow-up.ts';
+import type { SessionVisual } from './session-visual.ts';
 import { gapIsNarrative, hasIdentity } from './onboarding-contract.ts';
 import { ONBOARDING_BASELINE_ITEMS, grintaStem } from '../grinta/survey/instrument.ts';
 import { scoreGrinta } from '../grinta/survey/scoring.ts';
@@ -1031,6 +1032,9 @@ interface Beat {
   reclaimShapesResolved: string[]; // Decision II: keys of shapes already ruled on — never re-proposed
   pendingIdentityPick?: string[]; // identity tap-to-pick: candidate words offered LAST turn, awaiting the member's choice
   expects?: Expectation; // a structured turn a handler emits directly (identity chips); else nextExpects() computes it
+  // A picture this stage wants drawn beside its text. Set by the stage; passed straight through to the Turn and
+  // then stored on the message, because it is part of what was said (lib/agent/session-visual.ts).
+  visual?: SessionVisual;
 }
 
 // A stage handler mutates the Beat (sets b.reply etc.) or returns a terminal Turn. `resolveConfirm`'s CONTRACT
@@ -1808,7 +1812,7 @@ export function runArcTurn(
     const early = stageDef.administer(b);
     if (early) return early;
     const expects = nextExpects(arc, b.stage, b.complete, b.administeredResponses.length, b.collected); // W-24/W-48: next item → chips (+ "n of y"); completed → prose close
-    return { reply: b.reply, state: beatState(b), complete: b.complete, ...(b.declined ? { declined: true } : {}), ...(expects && { expects }) };
+    return { reply: b.reply, state: beatState(b), complete: b.complete, ...(b.declined ? { declined: true } : {}), ...(expects && { expects }), ...(b.visual && { visual: b.visual }) };
   }
 
   // COACH stages (§B3, Decision PP) also run OFF the depth kernel: the model owns the coaching conversation and the
@@ -1831,11 +1835,11 @@ export function runArcTurn(
       if (forced) return forced;
       // forceProgress may mutate-and-fall-through (the usual shape) — if it ended the stage, emit that, don't
       // hand the turn back to the coach and overwrite its exit line.
-      if (b.complete) return { reply: b.reply, state: beatState(b), complete: true };
+      if (b.complete) return { reply: b.reply, state: beatState(b), complete: true, ...(b.visual && { visual: b.visual }) };
     }
     const early = stageDef.coach(b);
     if (early) return early;
-    return { reply: b.reply, state: beatState(b), complete: b.complete, ...(b.declined ? { declined: true } : {}) };
+    return { reply: b.reply, state: beatState(b), complete: b.complete, ...(b.declined ? { declined: true } : {}), ...(b.visual && { visual: b.visual }) };
   }
 
   // PROGRESS vs STALL: the member CONTRIBUTED this turn if a captured field grew, OR they offered usable

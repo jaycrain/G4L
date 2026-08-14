@@ -203,7 +203,12 @@ export type HarvestSignal = {
   private?: boolean; // e.g. the Legacy Letter body — the event carries a reference, not the text
   label?: string;
 };
-export type ConvMessage = { role: 'agent' | 'member'; text: string };
+// `visual` rides on the message so a mid-Session RESUME redraws what the member was looking at. No migration:
+// arc_session.messages is already jsonb, so the payload travels inside the array that is already stored.
+// (A COMPLETED session is different — see the note on priorityBarsVisual: a revisit is a summary card, and the
+// bars there are rebuilt from that run's bigger_world_reading row, which is append-only and therefore a faithful
+// snapshot rather than mutable history.)
+export type ConvMessage = { role: 'agent' | 'member'; text: string; visual?: SessionVisual };
 export type Ctx = { name: string; email: string };
 
 // A door revision (Decision L). `correct` = the primary was really a different Door (from→to, retires the old).
@@ -231,9 +236,13 @@ export type ReclaimListExpectation = { kind: 'reclaim_list'; min: number; seeded
 // your own" field, and the member's choice is captured VERBATIM. The story-reflection still precedes it, so the vibe is
 // untouched — only the mechanical word-choice becomes reliable.
 export type IdentityPickExpectation = { kind: 'identity_pick'; candidates: string[] };
+import type { SessionVisual } from './session-visual.ts';
+
 export type Expectation = ScaleExpectation | ReclaimListExpectation | IdentityPickExpectation;
 
-export type Turn = { reply: string; state: ConvState; complete: boolean; crisis?: boolean; declined?: boolean; expects?: Expectation };
+// `visual` is the SIBLING of `expects`, not a member of it: Expectation means "what I want back from you", a
+// visual asks for nothing and simply renders. See lib/agent/session-visual.ts.
+export type Turn = { reply: string; state: ConvState; complete: boolean; crisis?: boolean; declined?: boolean; expects?: Expectation; visual?: SessionVisual };
 
 export const INITIAL_STATE: ConvState = { stage: 'identity', collected: {} };
 

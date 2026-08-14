@@ -16,6 +16,7 @@ import {
   type AuditDomain,
 } from '../reclaim/bigger-world-instrument.ts';
 import { scoreAudit } from '../reclaim/bigger-world-scoring.ts';
+import type { SessionVisual } from './session-visual.ts';
 import { grintaStem, CHECKPOINT_CHALLENGE_ITEMS } from '../grinta/survey/instrument.ts';
 import { confirmsProposal } from './onboarding-intent.ts';
 import { groundToMemberWords } from './member-words.ts';
@@ -448,7 +449,52 @@ function stashReflection(c: Collected, d: AuditDomain, patch: Record<string, unk
  * runArcTurn, and that is deliberate: crisis routing lives at the top of the kernel, and this is a session where a
  * member describes what is missing from their life. A hand-rolled loop outside the kernel would silently drop it.
  */
-function reflectionStage(d: AuditDomain, steps: readonly ReflectStep[], nextStage: Stage, nextReply: () => string): StageDef {
+/**
+ * THE STEP-2 PRIORITY BARS — the first Session visual (#163).
+ *
+ * One horizontal bar per life domain, drawn from the member's own twenty answers, shown after the ratings and
+ * before they prioritise. Greg (2026-08-13): help the member see the pattern before prioritizing, and let the
+ * Companion see when Readiness or Ripple is the better target even at a lower Priority.
+ *
+ * LENGTH IS THE PRIORITY SCORE, UNSCALED — and that matters more than it sounds. Status reaches 90 (Gap 9 ×
+ * Importance 10) while Readiness and Ripple cap at 10, so a long bar really is mostly Status and Readiness can be
+ * a four-percent sliver. Greg's mock draws the three segments as comparable, which only happens at tiny gaps.
+ * We draw it true and print all three numbers instead, because the sliver is the POINT: the shortest bar is often
+ * the one with the most Readiness, which is exactly the signal this exists to surface. Rescaling to make it look
+ * tidy would flatter the picture and lie about the arithmetic.
+ *
+ * THE LEAD IS A READ, NEVER A RANKING. Four ordered bars of someone's life is one step from a scoreboard, so the
+ * sentence names two facts and stops: where the distance is widest, and where they are most ready. It never says
+ * "worst", never grades, and never tells the member which to choose — the next question asks them.
+ */
+function priorityBarsVisual(responses: readonly number[]): SessionVisual {
+  const scored = scoreAudit([...responses]);
+  const widest = scored.domains.reduce((a, b) => (b.priorityScore > a.priorityScore ? b : a));
+  const readiest = scored.domains.reduce((a, b) => (b.readiness > a.readiness ? b : a));
+  const name = (d: AuditDomain) => AUDIT_DOMAIN_LABEL[d].toLowerCase();
+  const lead =
+    widest.domain === readiest.domain
+      ? `Your ${name(widest.domain)} life is both where the distance runs widest and where you feel most ready.`
+      : `Your ${name(widest.domain)} life is where the distance runs widest. Your ${name(readiest.domain)} life is where you feel most ready to move.`;
+  return {
+    kind: 'priority-bars',
+    lead,
+    // Longest first — the eye should land on the widest distance. Ties keep domain order (sort is stable).
+    rows: [...scored.domains]
+      .sort((a, b) => b.priorityScore - a.priorityScore)
+      .map((d) => ({
+        label: AUDIT_DOMAIN_LABEL[d.domain],
+        status: d.status,
+        readiness: d.readiness,
+        ripple: d.ripple,
+        total: d.priorityScore,
+      })),
+  };
+}
+
+// `nextReply` takes the BEAT so a hand-off can attach a SessionVisual to the turn it produces — the C2 sort
+// handoff draws the priority bars. Reply-only would have meant a second mechanism for "and also show this".
+function reflectionStage(d: AuditDomain, steps: readonly ReflectStep[], nextStage: Stage, nextReply: (b: Parameters<StageDef['gather']>[0]) => string): StageDef {
   const advance: StageDef['gather'] = (b) => {
     const sc = b.scratch as { step?: number; unanswered?: number };
     const i = sc.step ?? 0;
@@ -484,7 +530,7 @@ function reflectionStage(d: AuditDomain, steps: readonly ReflectStep[], nextStag
     // inheriting this one's position — the shared scratch is the obvious place for that bug to live.
     sc.step = 0;
     b.stage = nextStage;
-    b.reply = nextReply();
+    b.reply = nextReply(b);
   };
   return {
     id: (steps[0] === 'gap' ? gapStageId(d) : closeStageId(d)),
@@ -629,9 +675,13 @@ export const RECLAIM_C2_ARC: ArcConfig = {
         [rateBId(d), ratingsStage(d, 'b')],
         [
           closeStageId(d),
-          reflectionStage(d, REFLECT_CLOSE, afterClose, () =>
-            nextDomain ? auditDeliver((i + 1) * 5) : sortOpener(),
-          ),
+          reflectionStage(d, REFLECT_CLOSE, afterClose, (b) => {
+            if (nextDomain) return auditDeliver((i + 1) * 5);
+            // LAST DOMAIN → the sort. The member has answered all twenty; show them the shape of their own
+            // answers before asking which area gets the effort, so they choose from the pattern and not memory.
+            b.visual = priorityBarsVisual(b.administeredResponses.slice(0, AUDIT_ITEM_COUNT));
+            return sortOpener();
+          }),
         ],
       ];
     }),
