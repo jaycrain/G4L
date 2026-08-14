@@ -46,7 +46,18 @@ const NOT_MEMBER_AREAS = [
   'lib/telemetry/',
 ];
 
-const isExcludedArea = (rel) => NOT_MEMBER_AREAS.some((a) => rel.startsWith(a));
+/**
+ * Individual files that are instructions TO THE MODEL rather than copy a member reads.
+ *
+ * Named one by one, with a reason, because a wrong entry here hides real copy — the same caution as the areas
+ * above. system-prompt.ts is the Companion's own briefing: it QUOTES member-facing phrasing to teach voice
+ * ("Great." is a receipt, "Great answer." is a verdict), which reads as member copy to the extractor and is the
+ * one thing that must never reach the transcript marketing quotes from — it would put our instructions in the
+ * book as if a member had been told them.
+ */
+const NOT_MEMBER_FILES = new Set(['lib/agent/system-prompt.ts']);
+
+const isExcludedArea = (rel) => NOT_MEMBER_AREAS.some((a) => rel.startsWith(a)) || NOT_MEMBER_FILES.has(rel);
 
 function walk(dir, out = []) {
   for (const entry of readdirSync(dir)) {
