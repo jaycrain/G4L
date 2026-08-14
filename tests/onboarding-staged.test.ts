@@ -31,13 +31,20 @@ function assertHandsToGrinta(turn: Turn) {
   // W-48: the "n of 12" cue moved from the bubble to the chip signal — the opener is the first item (Question 1 of 12).
   assert.equal(turn.expects?.index, 1, 'chip signal: first item');
   assert.equal(turn.expects?.total, 12, 'chip signal: 12-item length');
-  // Copy v2: the Phases intro and the pre-survey framing are TWO beats (two bubbles), split on BEAT_SEP.
+  // THREE beats now, not two. The first is the RECEIPT — Jay, 2026-08-14: he typed his Reclaim List and the next
+  // bubble was "Before we go further, a quick baseline", with no sign we had read it. Receiving before you move
+  // is its own job, so it gets its own bubble, the same way the Phases intro and the framing do.
   const bubbles = turn.reply.split(BEAT_SEP);
-  assert.equal(bubbles.length, 2, 'the opener is two beats — the Phases intro | the pre-survey framing + first item');
-  // Anchored on "twelve questions" rather than a stylistic phrase: it identifies bubble 1 as the baseline intro
-  // AND guards the count the member is promised, which must match ONBOARDING_BASELINE_ITEMS.length.
-  assert.match(bubbles[0]!, /twelve questions/i, 'bubble 1 = the Grinta baseline intro');
-  assert.match(bubbles[1]!, /1 \(not at all\) to 5/i, 'bubble 2 = the pre-survey framing + the first item');
+  assert.equal(bubbles.length, 3, 'receipt | the Phases intro | the pre-survey framing + first item');
+  // Bubble 1 is a RECEIPT, from whichever source has one: the model's own in-voice acknowledgment when it wrote
+  // something ("Mm.", "Okay."), and the engine reciting their list back when it didn't — which is the common
+  // case, because the list arrives from the structured builder with no prose attached. What must never happen
+  // is what Jay saw: the scripted frame first, as if nothing had been typed.
+  assert.doesNotMatch(bubbles[0]!, /twelve questions/i, 'something must be said before the baseline frame');
+  // Anchored on "twelve questions" rather than a stylistic phrase: it identifies the baseline intro AND guards
+  // the count the member is promised, which must match ONBOARDING_BASELINE_ITEMS.length.
+  assert.match(bubbles[1]!, /twelve questions/i, 'bubble 2 = the Grinta baseline intro');
+  assert.match(bubbles[2]!, /1 \(not at all\) to 5/i, 'bubble 3 = the pre-survey framing + the first item');
 }
 // Answer the 12-item survey with `val` (default 3); returns the final (completing) turn.
 function walkSurvey(state: ConvState, history: ConvMessage[] = [], val = 3): Turn {

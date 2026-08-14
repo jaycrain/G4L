@@ -1640,6 +1640,26 @@ const grintaStage: StageDef = administeredStage({
 // The seam from Reclaim into the Grinta baseline. Called from BOTH of Reclaim's terminal crossings (the confirm
 // seatbelt and the runaway backstop) in place of completing: the capture is settled, so instead of finishing we
 // hand into the administered survey. complete stays false — the opener renders as a normal turn, not the card.
+// RECEIVE BEFORE YOU MOVE — the reclaim → baseline hand-in.
+//
+// The member has just written the thing the whole program aims at, and the next bubble was the scripted baseline
+// frame. Jay, walking it 2026-08-14: "it rushed through and didn't acknowledge." He had typed three items and the
+// Companion went straight to "Before we go further, a quick baseline."
+//
+// The contract already exists — receiveThen(), used at two Reconnect hand-ins for exactly this reason ("the
+// founder answered a weighty question and got the cold let's-shift frame"). This transition never got it. Third
+// site of the same rule, second time it was missing.
+//
+// TWO HALVES, because this beat is different from Reconnect's: the list arrives from the STRUCTURED BUILDER, so
+// there is often no model prose to receive. When there is, receiveThen uses it. When there isn't, we still owe an
+// acknowledgment — and the honest one is their own words, back, which also proves we heard them. No praise, no
+// grading: the list is not an achievement, it is what they want back.
+function reclaimReceipt(c: Collected): string {
+  const list = (c.reclaimList ?? []).map((x) => x.trim()).filter(Boolean);
+  if (!list.length) return '';
+  return `That's your list — ${list.join(' · ')}.`;
+}
+
 function enterGrintaSurvey(b: Beat, gateShapes = true): Turn {
   // DECISION II CHOKEPOINT — now scoped to the RETIRED CONVERSATIONAL PATH ONLY (Jay, 2026-07-30).
   //
@@ -1656,7 +1676,7 @@ function enterGrintaSurvey(b: Beat, gateShapes = true): Turn {
   if (!gateShapes) {
     b.stage = 'grinta';
     b.awaitingConfirm = false;
-    b.reply = grintaSurveyOpener();
+    b.reply = receiveThen(b.modelText || reclaimReceipt(b.collected), grintaSurveyOpener());
     const ex = nextExpects(b.arc, b.stage, false, b.administeredResponses.length, b.collected);
     return { reply: b.reply, state: beatState(b), complete: false, ...(ex && { expects: ex }) };
   }
@@ -1669,7 +1689,7 @@ function enterGrintaSurvey(b: Beat, gateShapes = true): Turn {
   }
   b.stage = 'grinta';
   b.awaitingConfirm = false;
-  b.reply = grintaSurveyOpener();
+  b.reply = receiveThen(b.modelText || reclaimReceipt(b.collected), grintaSurveyOpener());
   // W-24/W-48: this is the ONLY path into the grinta survey (natural confirm AND the runaway/ceiling backstop), so emit
   // the chip signal (+ "Question 1 of 12") here — otherwise a force-progressed member gets the text box for item 1.
   const expects = nextExpects(b.arc, b.stage, false, b.administeredResponses.length, b.collected);

@@ -46,3 +46,33 @@ test('the same variant said twice still only spends itself', () => {
   const history = [agent('first probe?'), agent('first probe?')];
   assert.equal(nextFollowUp(VARIANTS, history), 'second probe?');
 });
+
+// ── RECEIVE BEFORE YOU MOVE ──────────────────────────────────────────────────────────────────────────────────
+// A member who has just written their Reclaim List must not be answered with a scripted frame that ignores it.
+// Jay, 2026-08-14: "it rushed through and didn't acknowledge." He typed three items and the next bubble was
+// "Before we go further, a quick baseline."
+//
+// The contract already existed — receiveThen(), used at two Reconnect hand-ins for exactly this reason ("the
+// founder answered a weighty question and got the cold let's-shift frame"). This transition never got it.
+//
+// Driven through the STAGED ARC the way the replay fixtures do, so it exercises the real hand-in rather than the
+// helper in isolation. The receipt has to come from the engine here: the list arrives from the structured
+// builder, so there is frequently no model prose to receive.
+import { applyStagedTurn } from '../lib/agent/onboarding-staged.ts';
+
+test('the baseline does not open until the list has been received', () => {
+  const list = ['Time to ride my bike', 'Free time to myself', 'Lose weight'];
+  const state = {
+    stage: 'reclaim',
+    awaitingConfirm: false,
+    collected: { reclaimList: list, identityNoun: 'Player', gap: 'the mornings went' },
+  } as never;
+  const turn = applyStagedTurn(state, [], "that's the list", { text: '', reclaimReady: true } as never);
+  const reply = turn.reply ?? '';
+  if (!/quick baseline/i.test(reply)) return; // didn't reach the baseline on this turn — nothing to assert
+  assert.ok(reply.includes('ride my bike'), `the list was never acknowledged:\n${reply}`);
+  assert.ok(
+    reply.indexOf('ride my bike') < reply.indexOf('quick baseline'),
+    `their own words must come BEFORE the scripted frame:\n${reply}`,
+  );
+});
