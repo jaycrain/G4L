@@ -19,6 +19,10 @@ export type EventKind =
   | 'idq_complete'
   | 'onboarding_confirmed' // member confirmed the summary card → IDQ; meta holds the card snapshot + cardReturns
   | 'play_rerun' // member hit "Run it again" on a Playbook play; ref = the Session id the Companion re-runs
+  // A member opened a weekly practice from their own Reclaim List (#155) — the first practice week not started
+  // by a Session. Worth its own kind because it answers a question nothing else can: do members actually take
+  // the cadence offer, and for which goals? meta carries the item id and the parsed target.
+  | 'cadence_week_started'
   // THE COMPANION'S CONTEXT FELL BACK TO MINIMAL. The single most serious silent failure we have: the member is
   // told, honestly, that we cannot see their record this minute — and until now the REASON existed only in a
   // console line on a serverless instance nobody reads. Jay hit it twice on his own account and both times the

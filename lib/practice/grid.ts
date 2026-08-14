@@ -84,19 +84,26 @@ export function buildRow(slot: string, label: string, target: number | null, win
 
 // ── per-kind adapters ─────────────────────────────────────────────────────────────────────────────────────────
 
-/** B3 · the Lifestyle Pilot — the only kind with its own storage, because it's the only one that had none. */
-async function b3Rows(db: Db, memberId: string, window: MemberWeek): Promise<GridRow[]> {
+/**
+ * Kinds whose rows ARE practice_commitment rows — B3's Lifestyle Pilot and, since 2026-08-14, a cadence a member
+ * starts from their own Reclaim List.
+ *
+ * PARAMETERISED BY KIND rather than copied. This function had `'b3_pilot'` written into it twice, and adding a
+ * second commitment-backed kind by duplicating it would have made two copies of one query that must agree — the
+ * shape that has cost real time on this codebase. The kind is now an argument and there is still one query.
+ */
+async function commitmentRows(db: Db, memberId: string, kind: PracticeKind, window: MemberWeek): Promise<GridRow[]> {
   const { rows } = await db.query<{ id: string; slot: string; label: string; target_days: number | null }>(
     `select id, slot, label, target_days from practice_commitment
-      where member_id = $1 and kind = 'b3_pilot' order by sort_order, created_at`,
-    [memberId],
+      where member_id = $1 and kind = $2 order by sort_order, created_at`,
+    [memberId, kind],
   );
   if (!rows.length) return [];
   const marks = (
     await db.query<{ commitment_id: string; marked_on: string }>(
       `select commitment_id, marked_on::text as marked_on from practice_mark
-        where member_id = $1 and kind = 'b3_pilot' and commitment_id is not null`,
-      [memberId],
+        where member_id = $1 and kind = $2 and commitment_id is not null`,
+      [memberId, kind],
     )
   ).rows;
   return rows.map((c) =>
@@ -177,7 +184,7 @@ async function noteRows(db: Db, memberId: string, kind: PracticeKind, window: Me
 /** Build ONE week's grid from an already-resolved week. Shared by weekGrid and weekGrids so the per-kind adapters
  *  live in exactly one place. */
 async function rowsFor(db: Db, memberId: string, kind: PracticeKind, window: MemberWeek): Promise<GridRow[]> {
-  return kind === 'b3_pilot' ? b3Rows(db, memberId, window)
+  return kind === 'b3_pilot' || kind === 'reclaim_item' ? commitmentRows(db, memberId, kind, window)
     : kind === 'c3_quality' ? c3Rows(db, memberId, window)
     : kind === 'w3_logging' ? w3Rows(db, memberId, window)
     : kind === 'b2_noticing' ? noteRows(db, memberId, 'b2_noticing', window, 'Noticed a skill')

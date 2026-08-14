@@ -55,6 +55,11 @@ export const SECTIONS = [
       // never in canon either — invisible in both directions. The guard caught it the moment the file changed.
       // Exactly the blind spot the ratchet exists for: not a file someone decided to leave out, a file nobody saw.
       'lib/activity/summary.ts',
+      // The cadence pair (#155, 2026-08-14): the control a member taps to start a weekly practice from their
+      // Reclaim List, and the Companion's note when they do. The guard caught the second one the moment it was
+      // written — it IS member copy, so it belongs in canon rather than in an exclusion list.
+      'app/dashboard/track-weekly.tsx',
+      'app/dashboard/cadence-actions.ts',
       'app/momentum/[memberId]/page.tsx',
       'app/momentum/momentum-log.tsx',
       'app/score/[memberId]/page.tsx',

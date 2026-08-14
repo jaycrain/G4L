@@ -1675,6 +1675,19 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
    the page anything is singled out — matches the ★ the C1 session card leads with. */
 .rr-anchor { color: var(--orange-text); font-weight: 700; margin-right: 8px; }
 
+/* THE CADENCE CONTROL (#155) — the weekly-practice sibling of "Track this" on a Reclaim item.
+   Deliberately QUIETER than the tracker form it sits beside: one tap, no fields, so it reads as "start this"
+   rather than "fill this in". Teal ground because it opens a practice week, which is the teal instrument
+   throughout; --teal-text is the AA-checked pair (tests/contrast.test.ts), not the raw brand teal. */
+.rr-cadence { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 4px; }
+.rr-cadence-btn { background: var(--teal-text); color: #fff; border: 0; font-family: inherit; font-size: 14px;
+  font-weight: 600; padding: 8px 14px; cursor: pointer; --btn-hover-bg: #245b5c; }
+.rr-cadence-btn:hover:not(:disabled) { background: var(--btn-hover-bg); }
+.rr-cadence-btn:disabled { opacity: 0.6; cursor: default; }
+/* Their own number, said back before they commit — so a misparse is visible at the moment it still costs nothing. */
+.rr-cadence-aim { font-size: 13px; font-weight: 600; color: var(--navy); }
+.rr-cadence-err { font-size: 13px; color: var(--deep-red); } /* the same red .error uses — no new variable */
+
 /* Movement */
 .rm-head { display: flex; justify-content: space-between; align-items: flex-start; }
 .rm-seeall { color: var(--teal-text); font-weight: 700; font-size: 13px; text-decoration: none; }

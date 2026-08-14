@@ -95,3 +95,41 @@ export function classifyGoal(text: string): GoalKind {
   if (MEASURE_PATTERNS.some((re) => re.test(t))) return 'measure';
   return 'none';
 }
+
+const WORD_VALUE: Record<string, number> = {
+  a: 1, an: 1, one: 1, once: 1, two: 2, twice: 2, three: 3, thrice: 3, four: 4,
+  five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10, eleven: 11, twelve: 12,
+};
+
+/**
+ * How many days a week the member is aiming for — `practice_commitment.target_days`.
+ *
+ * NULL is a real and correct answer, not a failure: a commitment with no target renders as a row you tick with
+ * no "3/7" beside it, which is exactly what C3's Quality-Day rows already do. Showing a quota a member never set
+ * would invent a standard and then grade them against it.
+ *
+ * Two deliberate nulls:
+ *   · MONTHLY cadences ("two long rides a month"). The grid is a WEEK. Forcing a monthly count into seven days
+ *     would either overstate the aim or silently divide it; better to track the rhythm without a number.
+ *   · Anything over 7 — a week has seven days, so a bigger number is a misparse, not an ambition.
+ */
+export function cadenceTarget(text: string): number | null {
+  const t = (text ?? '').trim().toLowerCase();
+  if (!t) return null;
+  // A bare daily rhythm means every day — the member said "every", so the target is the whole week.
+  if (/\b(?:daily|nightly|every\s+(?:day|morning|evening|night)|each\s+(?:day|morning))\b/.test(t)) return 7;
+  // A weekly rhythm with no count ("every week", "weekly") is once.
+  if (/\b(?:weekly|every\s+(?:week|weekend)|each\s+week)\b/.test(t) && !new RegExp(`\\b${COUNT}\\b`).test(t)) return 1;
+
+  const per = new RegExp(`\\b(\\d+|${WORD_NUMBER}|${MULTIPLIER})\\s+(?:\\w+[\\s-]+){0,4}?(?:times?\\s+)?(?:per|a|each|every)\\s+(${PERIOD})\\b`, 'i');
+  const x = /\b(\d+)\s?x\s?(?:\/|\s)?\s?(day|week|weekend|month|wk)\b/i;
+  const m = per.exec(t) ?? x.exec(t);
+  if (!m) return null;
+
+  const rawCount = (m[1] ?? '').toLowerCase();
+  const period = (m[2] ?? '').toLowerCase();
+  if (/^month/.test(period)) return null; // the grid is a week — see above
+  const n = /^\d+$/.test(rawCount) ? Number(rawCount) : WORD_VALUE[rawCount];
+  if (!n || n < 1 || n > 7) return null;
+  return n;
+}

@@ -26,15 +26,24 @@ const PRACTICE_LABEL: Record<PracticeKind, string> = {
   b2_noticing: 'Notice your skills',
   b3_pilot: 'Your two changes',
   c3_quality: 'Living your Quality Days',
+  reclaim_item: 'Your weekly commitment',
 };
 
-// The phase each practice week belongs to — so a week goes stale once that phase's Checkpoint is crossed.
-const PRACTICE_PHASE: Record<PracticeKind, string> = {
+/**
+ * The phase each practice week belongs to — so a week goes stale once that phase's Checkpoint is crossed.
+ *
+ * NULL MEANS "belongs to no phase, so it never goes stale that way", and `reclaim_item` is the first of those.
+ * A week the member started themselves from their Reclaim List is not an artifact of a Session and has no
+ * Checkpoint to be finished by; expiring it when they cross Reclaim would quietly cancel a commitment they made
+ * on their own terms. Filling this in with 'reclaim' to satisfy the type would have done exactly that.
+ */
+const PRACTICE_PHASE: Record<PracticeKind, string | null> = {
   w2_image: 'rewire',
   w3_logging: 'rewire',
   b2_noticing: 'rebuild',
   b3_pilot: 'rebuild',
   c3_quality: 'reclaim',
+  reclaim_item: null,
 };
 
 // Did onboarding produce real captures? A named identity, a Door, or a committed Reclaim List all mean intake is done —
@@ -117,7 +126,8 @@ export async function gatherHeroSignals(db: Db, memberId: string): Promise<HeroS
   // linger inside its 7-day window and strand the hero on "Log today" while the member has already moved to the next
   // phase. Ignore it for the hero (it stays loggable on the Momentum page); only surface a week for the CURRENT phase.
   const pw = await soft('practice week', activePracticeWeek(db, memberId), null);
-  const pwStale = pw ? gateSet.has(`${PRACTICE_PHASE[pw.kind]}_checkpoint_passed`) : false;
+  const pwPhase = pw ? PRACTICE_PHASE[pw.kind] : null;
+  const pwStale = pwPhase ? gateSet.has(`${pwPhase}_checkpoint_passed`) : false;
   const activePractice =
     pw && !pwStale
       ? { kind: pw.kind, label: PRACTICE_LABEL[pw.kind] ?? "This week's practice", day: pw.day, total: pw.window.days }

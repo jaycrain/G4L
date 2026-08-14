@@ -5,7 +5,10 @@ import { authorizeMember } from '../../authz.ts';
 import { logEvent } from '../../../lib/telemetry/store.ts';
 import { getDashboard } from '../../../lib/gateway/flow.ts';
 import { dashboardTriptychEnabled } from '../../../lib/dashboard/redesign.ts';
-import { looksTrackable, suggestTracker } from '../../../lib/measure/store.ts';
+import { suggestTracker } from '../../../lib/measure/store.ts';
+import { classifyGoal, cadenceTarget } from '../../../lib/reclaim/goal-kind.ts';
+import { trackedReclaimItemIds } from '../../../lib/practice/mark.ts';
+import TrackWeekly from '../../dashboard/track-weekly.tsx';
 import MeasureCard from '../../dashboard/measure-card.tsx';
 import SubpageShell from '../../dashboard/subpage-shell.tsx';
 import TrackThis from '../../dashboard/track-this.tsx';
@@ -23,6 +26,9 @@ export default async function ReclaimListPage({ params }: { params: Promise<{ me
   if (!(await authorizeMember(memberId))) redirect('/login');
   const db = (await getDb()) as unknown as Db;
   const dash = await getDashboard(db, memberId);
+  // Which items already have a week open, so a tracked item stops re-offering. Drift-hardened: if this read
+  // fails the page still renders — the worst case is an offer shown twice, and trackReclaimItem is idempotent.
+  const tracked = await trackedReclaimItemIds(db, memberId).catch(() => new Set<string>());
   if (!dash) return <p className="error">We couldn&apos;t find that member.</p>;
   await logEvent(db, memberId, 'page_view', { surface: 'reclaim-list' });
 
@@ -39,7 +45,13 @@ export default async function ReclaimListPage({ params }: { params: Promise<{ me
           <ul className="reclaim-list-full">
             {dash.reclaimItems.map((item, i) => {
               const linked = item.id ? dash.measures.filter((m) => m.reclaimItemId === item.id) : [];
-              const offerTrack = item.id && !item.reclaimed && linked.length === 0 && looksTrackable(item.text);
+              // ONE AFFORDANCE PER KIND OF GOAL (#155). This used to be a single `looksTrackable` test, which
+              // offered a trend tracker on a one-time race placing and nothing at all on "3 times per week".
+              // The classifier decides; a measure gets the tracker form, a cadence gets the week, an outcome
+              // and a plain intention get nothing — which is the right answer, not a gap.
+              const kind = item.id && !item.reclaimed ? classifyGoal(item.text) : 'none';
+              const offerTrack = kind === 'measure' && linked.length === 0;
+              const offerWeekly = kind === 'cadence' && !tracked.has(item.id!);
               return (
                 <li key={i} className={`reclaim-row${item.reclaimed ? ' reclaimed' : ''}`}>
                   <div className="reclaim-row-text">
@@ -55,6 +67,9 @@ export default async function ReclaimListPage({ params }: { params: Promise<{ me
                   ))}
                   {offerTrack && (
                     <TrackThis memberId={memberId} reclaimItemId={item.id!} itemText={item.text} suggestion={suggestTracker(item.text)} />
+                  )}
+                  {offerWeekly && (
+                    <TrackWeekly memberId={memberId} reclaimItemId={item.id!} itemText={item.text} target={cadenceTarget(item.text)} />
                   )}
                 </li>
               );

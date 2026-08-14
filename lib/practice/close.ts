@@ -73,6 +73,7 @@ export const PRACTICE_KEEPER_NAME: Record<PracticeKind, string> = {
   b2_noticing: 'Your map',
   b3_pilot: 'The Lifestyle Pilot',
   c3_quality: 'Quality Days',
+  reclaim_item: 'From your Reclaim List',
 };
 
 /** The Playbook body for a finished week. One definition, so the keeper can't drift from the review the member read. */

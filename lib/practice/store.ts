@@ -12,7 +12,10 @@ import { localDate, trackerRun, currentWindow, priorWindow, runIsOver, columnFor
 
 // W3 opens the logging window (payload lands with the Momentum slice); b2_noticing is Rebuild B2's skill-noticing
 // week; b3_pilot is Rebuild B3's daily health-decision logging; c3_quality is Reclaim C3's Quality-Day logging week.
-export type PracticeKind = 'w2_image' | 'w3_logging' | 'b2_noticing' | 'b3_pilot' | 'c3_quality';
+// reclaim_item is the FIRST kind not opened by a Session — the member starts it from their own Reclaim List
+// when an item is a CADENCE ("3 times per week"). Everything else about it is the same mechanic, which is the
+// point: the week, the grid, the marks, the close and the keeper all already work per-kind.
+export type PracticeKind = 'w2_image' | 'w3_logging' | 'b2_noticing' | 'b3_pilot' | 'c3_quality' | 'reclaim_item';
 export const PRACTICE_WINDOW_DAYS = 7;
 
 export type ActivePractice = {

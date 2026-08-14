@@ -91,3 +91,34 @@ test('empty and junk are none, never a crash', () => {
   assert.equal(classifyGoal('   '), 'none');
   assert.equal(classifyGoal(undefined as unknown as string), 'none');
 });
+
+// ── THE TARGET — how many days a week, for practice_commitment.target_days ────────────────────────────────────
+
+import { cadenceTarget } from '../lib/reclaim/goal-kind.ts';
+
+test("Jay's two cadence items carry the numbers he actually wrote", () => {
+  assert.equal(cadenceTarget(JAY.yoga), 3, '"3 times per week" is three days');
+  assert.equal(cadenceTarget(JAY.climb), 1, '"One … per weekend" is one day — the number is a word');
+});
+
+test('word counts, digit counts, and shorthand all resolve', () => {
+  assert.equal(cadenceTarget('twice a week'), 2);
+  assert.equal(cadenceTarget('Lift four times each week'), 4);
+  assert.equal(cadenceTarget('ride 3x/week'), 3);
+  assert.equal(cadenceTarget('Walk every morning'), 7, 'every day means the whole week');
+  assert.equal(cadenceTarget('Read daily'), 7);
+});
+
+test('NULL is a correct answer, not a failure', () => {
+  // A commitment with no target renders as a row you tick with no "3/7" beside it — exactly what C3's
+  // Quality-Day rows already do. Inventing a quota would grade the member against a standard they never set.
+  assert.equal(cadenceTarget('Two long rides a month'), null, 'the grid is a WEEK; a monthly count does not fit it');
+  assert.equal(cadenceTarget('Ride more often'), null, 'a rhythm with no number');
+  assert.equal(cadenceTarget('Run 5 miles'), null, 'a measure is not a cadence');
+  assert.equal(cadenceTarget(''), null);
+});
+
+test('a nonsense count does not become a target', () => {
+  // "12 times per week" is a misparse or a typo, not an ambition — a week has seven days.
+  assert.equal(cadenceTarget('12 times per week'), null);
+});

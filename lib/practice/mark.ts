@@ -36,7 +36,7 @@ import type { ActivePractice, PracticeKind } from './store.ts';
  * record or says where the record is written.
  */
 export function isTappable(kind: PracticeKind): boolean {
-  return kind === 'b3_pilot' || kind === 'b2_noticing' || kind === 'w3_logging';
+  return kind === 'b3_pilot' || kind === 'b2_noticing' || kind === 'w3_logging' || kind === 'reclaim_item';
 }
 
 /**
@@ -161,4 +161,46 @@ export async function setPilotCommitments(
       [memberId, slot, label.trim(), target, sort],
     );
   }
+}
+
+/**
+ * Open a practice week for ONE Reclaim List item — the cadence path (#155).
+ *
+ * THE FIRST WEEK A MEMBER STARTS THEMSELVES. Every other kind is opened by a Session closing; this one is opened
+ * from their own list, because "Yoga and kettlebell work 3 times per week" is a commitment they already made and
+ * the week grid is the instrument that helps them keep it.
+ *
+ * SLOT IS THE RECLAIM ITEM'S ID, which is doing real work: `practice_commitment` is unique on
+ * (member_id, kind, slot), so the item id gives each tracked item exactly one row, makes starting the same item
+ * twice idempotent, and links the commitment back to the item WITHOUT a new column. No migration for any of it.
+ *
+ * Re-running refreshes the label and target (the member may have reworded the item) and re-opens the window,
+ * which is the same upsert posture as setPilotCommitments above.
+ */
+export async function trackReclaimItem(
+  db: Db,
+  memberId: string,
+  item: { id: string; text: string },
+): Promise<void> {
+  const label = (item.text ?? '').trim();
+  if (!item.id || !label) return; // nothing to track, and a blank label would render an empty grid row
+  const { startPracticeWeek } = await import('./store.ts');
+  const { cadenceTarget } = await import('../reclaim/goal-kind.ts');
+  await startPracticeWeek(db, memberId, 'reclaim_item');
+  await db.query(
+    `insert into practice_commitment (member_id, kind, slot, label, target_days, sort_order)
+     values ($1,'reclaim_item',$2,$3,$4,0)
+     on conflict (member_id, kind, slot)
+     do update set label = excluded.label, target_days = excluded.target_days, updated_at = now()`,
+    [memberId, item.id, label, cadenceTarget(label)],
+  );
+}
+
+/** The Reclaim item ids that already have a commitment — so the affordance reads "tracking" instead of re-offering. */
+export async function trackedReclaimItemIds(db: Db, memberId: string): Promise<Set<string>> {
+  const { rows } = await db.query<{ slot: string }>(
+    `select slot from practice_commitment where member_id = $1 and kind = 'reclaim_item'`,
+    [memberId],
+  );
+  return new Set(rows.map((r) => r.slot));
 }
