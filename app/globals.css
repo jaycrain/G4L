@@ -1688,6 +1688,14 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
 .rr-cadence-aim { font-size: 13px; font-weight: 600; color: var(--navy); }
 .rr-cadence-err { font-size: 13px; color: var(--deep-red); } /* the same red .error uses — no new variable */
 
+/* TRACKED — what stands where the button was. A measure has had MeasureCard here all along; a cadence had
+   nothing, so tapping the offer made the row look emptied. Quiet by design: a state, not a second control. */
+.rr-tracking { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+.rr-tracking-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--teal-text); flex: 0 0 auto; }
+.rr-tracking-state { font-size: 13px; font-weight: 600; color: var(--navy); }
+.rr-tracking-link { font-size: 13px; font-weight: 600; color: var(--teal-text); text-decoration: none; }
+.rr-tracking-link:hover { text-decoration: underline; }
+
 /* Movement */
 .rm-head { display: flex; justify-content: space-between; align-items: flex-start; }
 .rm-seeall { color: var(--teal-text); font-weight: 700; font-size: 13px; text-decoration: none; }

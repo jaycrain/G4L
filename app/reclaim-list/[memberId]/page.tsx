@@ -8,6 +8,8 @@ import { dashboardTriptychEnabled } from '../../../lib/dashboard/redesign.ts';
 import { suggestTracker } from '../../../lib/measure/store.ts';
 import { classifyGoal, cadenceTarget } from '../../../lib/reclaim/goal-kind.ts';
 import { trackedReclaimItemIds } from '../../../lib/practice/mark.ts';
+import { weekGrids } from '../../../lib/practice/grid.ts';
+import Link from 'next/link';
 import TrackWeekly from '../../dashboard/track-weekly.tsx';
 import MeasureCard from '../../dashboard/measure-card.tsx';
 import SubpageShell from '../../dashboard/subpage-shell.tsx';
@@ -29,6 +31,17 @@ export default async function ReclaimListPage({ params }: { params: Promise<{ me
   // Which items already have a week open, so a tracked item stops re-offering. Drift-hardened: if this read
   // fails the page still renders — the worst case is an offer shown twice, and trackReclaimItem is idempotent.
   const tracked = await trackedReclaimItemIds(db, memberId).catch(() => new Set<string>());
+  // THE LIVE STATE OF A TRACKED ITEM, not just "is it tracked". Jay tapped "Track this week" on two items and
+  // the page went BLANK where the buttons had been — the offer removed itself and nothing took its place, so it
+  // read as "my trackers were deleted". A measure has always had MeasureCard standing in that spot; a cadence
+  // had nothing. The row is keyed by slot, which is the Reclaim item's id.
+  const cadenceRows = new Map<string, { done: number; target: number | null; days: number }>();
+  try {
+    const g = (await weekGrids(db, memberId)).find((w) => w.kind === 'reclaim_item');
+    for (const r of g?.rows ?? []) cadenceRows.set(r.slot, { done: r.done, target: r.target, days: g!.window.days });
+  } catch {
+    /* the row state is a nicety; a failed read must not take the list down */
+  }
   if (!dash) return <p className="error">We couldn&apos;t find that member.</p>;
   await logEvent(db, memberId, 'page_view', { surface: 'reclaim-list' });
 
@@ -71,6 +84,22 @@ export default async function ReclaimListPage({ params }: { params: Promise<{ me
                   {offerWeekly && (
                     <TrackWeekly memberId={memberId} reclaimItemId={item.id!} itemText={item.text} target={cadenceTarget(item.text)} />
                   )}
+                  {/* TRACKED — the counterpart to MeasureCard. Says it is running, how the week is going, and
+                      where the grid lives. Without this the row simply lost its button and looked broken. */}
+                  {kind === 'cadence' && tracked.has(item.id!) && (() => {
+                    const r = cadenceRows.get(item.id!);
+                    return (
+                      <div className="rr-tracking">
+                        <span className="rr-tracking-dot" aria-hidden="true" />
+                        <span className="rr-tracking-state">
+                          {r
+                            ? `Tracking this week · ${r.done} of ${r.target ?? r.days}`
+                            : 'Tracking this week'}
+                        </span>
+                        <Link className="rr-tracking-link" href={`/playbook/${memberId}?tab=thisweek`}>Open the week →</Link>
+                      </div>
+                    );
+                  })()}
                 </li>
               );
             })}

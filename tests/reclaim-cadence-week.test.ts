@@ -100,3 +100,37 @@ test('a blank label is refused — an empty grid row is worse than no row', asyn
   await trackReclaimItem(db, memberId, { id: YOGA.id, text: '   ' });
   assert.equal((await trackedReclaimItemIds(db, memberId)).size, 0);
 });
+
+// ── THE SEAM THAT BROKE ──────────────────────────────────────────────────────────────────────────────────────
+//
+// Jay tapped "Track this week" on two items and the page went BLANK where the buttons had been. Nothing was
+// wrong with the data — both commitments saved. The bug was that the Reclaim List had no render branch for a
+// TRACKED cadence, so the offer removed itself and left an empty row that read as "you deleted my tracker".
+//
+// The data-level invariant underneath it: the id the page uses to decide "is this tracked" MUST be the same id
+// the grid row is keyed by, or the state renders with no numbers in it. Two lookups, one key.
+
+test('the tracked id and the grid row key are THE SAME id — one key, two lookups', async () => {
+  const { db, memberId } = await member();
+  await trackReclaimItem(db, memberId, YOGA);
+  await trackReclaimItem(db, memberId, CLIMB);
+
+  const tracked = await trackedReclaimItemIds(db, memberId);
+  const g = (await weekGrids(db, memberId)).find((x) => x.kind === 'reclaim_item');
+  const slots = new Set((g?.rows ?? []).map((r) => r.slot));
+
+  for (const id of tracked) {
+    assert.ok(slots.has(id), `item ${id} reads as tracked but has no grid row — its state would render blank`);
+  }
+  assert.equal(slots.size, tracked.size, 'and no grid row exists that the page would not know is tracked');
+});
+
+test('a tracked item has the numbers the row needs — done, target, days', async () => {
+  const { db, memberId } = await member();
+  await trackReclaimItem(db, memberId, YOGA);
+  const g = (await weekGrids(db, memberId)).find((x) => x.kind === 'reclaim_item');
+  const row = g!.rows[0]!;
+  assert.equal(typeof row.done, 'number', '"0 of 3" needs done');
+  assert.equal(row.target, 3, 'and the target');
+  assert.ok(g!.window.days >= 1, 'and a window to fall back to when there is no target');
+});
