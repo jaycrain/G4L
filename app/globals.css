@@ -1263,8 +1263,8 @@ html:has(.companion-hero), body:has(.companion-hero) { overflow-anchor: none; }
 .wk-table-mini .wk-lab { font-size: 0.8rem; color: #6b6b6b; }
 .wk-day { margin-left: auto; }
 /* The named way in to the daily log. The grid is tappable for this too, but a tap is only discoverable by trying it. */
-.wk-log { font-size: 12px; font-weight: 700; color: var(--teal-text); text-decoration: none; }
-.wk-log:hover { text-decoration: underline; }
+/* .wk-log is RETIRED — the named action moved to the foot and now uses .see-more like every other foot link.
+   Removed rather than left behind: a rule nothing selects is a trap for the next person styling this grid. */
 .wk-day { font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--muted-grey); }
 .wk-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
 .wk-table th { font-size: 10.5px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--muted-grey); padding: 0 0 5px; text-align: center; }

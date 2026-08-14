@@ -74,5 +74,13 @@ test('THE REGRESSION GUARD: the quality-day route is reachable from the grid com
   // feature quietly becoming unreachable again for another few weeks.
   const grid = readFileSync(new URL('../app/momentum/week-grid.tsx', import.meta.url), 'utf8');
   assert.match(grid, /logSurfaceFor/, 'the grid must ask where the log lives');
-  assert.match(grid, /wk-log/, 'and render the named "Log today" affordance, not only a tappable cell');
+  // ASSERT THE AFFORDANCE, NOT ITS CLASS. This used to match /wk-log/, and it failed on 2026-08-14 when the link
+  // moved from the header to the foot and adopted the house `.see-more` style — the feature was fine, the test
+  // was pinned to a styling hook. What must hold is that the grid renders logTo's LABEL as a link, so the log is
+  // reachable by name and not only by guessing that a cell is tappable.
+  assert.match(
+    grid,
+    /<Link[^>]*href=\{logTo\.href\}[^>]*>\{logTo\.label\}/,
+    'the grid must render the named log affordance as a link, wherever it is placed',
+  );
 });

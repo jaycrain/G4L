@@ -136,8 +136,7 @@ export default function WeekGridPanel({ memberId, grid }: { memberId: string; gr
       )}
       <div className="wk-head">
         <span className="wk-day">Day {grid.day} of {grid.window.days}</span>
-        {/* Tapping the grid is discoverable only if you try it — Jay did, most won't. The named action carries it. */}
-        {logTo && !grid.closed && <Link href={logTo.href} className="wk-log">{logTo.label} →</Link>}
+        {/* The named action MOVED to the foot (Jay, 2026-08-14) — see the note down there. */}
       </div>
       <table className="wk-table">
         <thead>
@@ -206,6 +205,15 @@ export default function WeekGridPanel({ memberId, grid }: { memberId: string; gr
           track another, stop one. Only for this kind: every other week originates in a Session, and pointing
           those at the Reclaim List would be a link to somewhere they did not come from. Uses the house
           `.see-more` foot-link pattern rather than inventing a control. */}
+      {/* THE NAMED ACTION, in the house position (Jay, 2026-08-14: "move Log today down to the lower left like
+          where our standard nav links live"). It sat top-right beside "Day 4 of 6", which is a status area, not
+          a place a member looks for something to DO. Tapping the grid is discoverable only if you try it — Jay
+          did, most won't — so this link carries the affordance and belongs where every other foot link lives.
+          Mutually exclusive with the Reclaim List link below: logTo only exists when the grid is NOT tappable,
+          and reclaim_item is tappable, so these two never stack. */}
+      {logTo && !grid.closed && (
+        <Link className="see-more" href={logTo.href}>{logTo.label} →</Link>
+      )}
       {grid.kind === 'reclaim_item' && (
         <Link className="see-more" href={`/reclaim-list/${memberId}`}>Your Reclaim List →</Link>
       )}
