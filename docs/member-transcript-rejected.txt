@@ -1,4 +1,4 @@
-# Strings EXCLUDED from the member transcript (app @ ab63238 · 2026-08-13)
+# Strings EXCLUDED from the member transcript (app @ 381cd8d · 2026-08-14)
 # Not member copy: system prompts, multi-line fragments, code artifacts. Review when a real line goes missing.
 
 [lib/agent/onboarding-staged.ts] you’re trying to reclaim. We can always change it later.
@@ -19,7 +19,6 @@
 [lib/agent/onboarding-staged.ts] Then let's find out what happened to ${label}. The distance from ${label} rarely opens all at once — more often
 [lib/agent/onboarding-staged.ts] it's an accumulation of what we call Doors: moments and seasons you walk through and barely notice, each one
 [lib/agent/onboarding-staged.ts] widening the gap. So how did it go — what pulled you away from ${label}? Take me through it.
-[lib/agent/onboarding-staged.ts] was there more?
 [lib/agent/onboarding-staged.ts] you're reaching forward, not trying to find your way back to someone you've lost. That's a genuinely good place
 [lib/agent/onboarding-staged.ts] to be, and it would be dishonest of me to manufacture a problem you don't have. G4L is for the season when that
 [lib/agent/onboarding-staged.ts] changes — when something real has pulled you away from who you were. If that day comes, this door stays open
@@ -66,6 +65,7 @@
 [lib/agent/onboarding-staged.ts] “${grintaStem(ONBOARDING_BASELINE_ITEMS[index]!)}”
 [lib/agent/onboarding-staged.ts] Your starting Grinta Index is ${composite} out of 5. This is just where you stand today. You will build it in
 [lib/agent/onboarding-staged.ts] of G4L — Reconnect. Well done!
+[lib/agent/onboarding-staged.ts] That's your list — ${list.join(' · ')}.
 [lib/agent/onboarding-staged.ts] ${leads[history.length % leads.length]} ${b.reply}
 [lib/agent/onboarding-staged.ts] conversation (e.g. after they describe racing bikes and chasing summits: ["Athlete", "Cyclist", "Competitor"]).
 [lib/agent/onboarding-staged.ts] Call this ONCE you've genuinely drawn out the past self — it hands the member a tap-to-pick chooser (chips + a
@@ -174,6 +174,8 @@
 [app/onboarding/welcome.tsx] home base, where everything you do is kept.
 [app/onboarding/welcome.tsx] what you build; how you watch yourself change.
 [app/onboarding/welcome.tsx] two ways to see it: how far you’ve got to go, and the grit you’re growing.
+[app/onboarding/welcome.tsx] Clip in
+[app/onboarding/welcome.tsx] cyclists lock their shoes to the pedals when they mean it — committed, in for the long ride. Everyone falls at least once; you clip back in and keep going.
 [app/onboarding/welcome.tsx] Everything you do here goes into it — the moves that actually work for you, and what you learn about yourself along the way. Your
 [app/onboarding/welcome.tsx] Playbook
 [app/onboarding/welcome.tsx] isn’t ours to hand you. It’s already in you, and we help you draw it out. You’ll use it again and again.
@@ -221,8 +223,8 @@
 [lib/agent/reconnect.ts] select door_slug, is_primary from member_door where member_id = $1 and removed_at is null order by is_primary desc, sort_order
 [lib/agent/reconnect.ts] member_door read failed (0043 removed_at unapplied?) — degrading to named_door:
 [lib/agent/reconnect.ts] We'll get to the other${others > 1 ? 's' : ''} — this is just where we start.
-[lib/agent/reconnect.ts] Let's start with ${doorName} — ${others > 0 ? 'one of the ones you named' : 'the one you named'}.${held} Not the label, the real thing: take me
-[lib/agent/reconnect.ts] back to how it actually happened${identity ?
+[lib/agent/reconnect.ts] Let's start with ${doorName} — ${others > 0 ? 'one of the ones you named' : 'the one you named'}.${held} Not the name — the real thing: take me
+[lib/agent/reconnect.ts] back to how it actually happened, and what it quietly cost you. Start wherever it's most vivid.
 [lib/agent/reconnect.ts] ${name}, then — that's the one. That changes the shape of it. Let me sit with what it means, and we'll keep going from there.
 [lib/agent/reconnect.ts] ${name}, too — I'll hold that alongside the one you named. Both are part of it. Let's keep going.
 [lib/agent/reconnect.ts] Hold on — it sounds like you're taking me to ${to}, more than ${from}. Should we start there instead — is ${to} closer to where it really began?
@@ -993,8 +995,10 @@
 [app/playbook/[memberId]/redesign-playbook-view.tsx] en-US
 [app/playbook/[memberId]/redesign-playbook-view.tsx] Cancel
 [app/playbook/[memberId]/redesign-playbook-view.tsx] Delete
+[app/playbook/[memberId]/redesign-playbook-view.tsx] there's no subhead. If it's a matter of intro or subhead I want the subhead.
 [app/playbook/[memberId]/redesign-playbook-view.tsx] pb-dot${part.done ? ' on' : ''}
 [app/playbook/[memberId]/redesign-playbook-view.tsx] Mindfulness0
+[app/playbook/[memberId]/redesign-playbook-view.tsx] s line, as this section
 [app/playbook/[memberId]/redesign-playbook-view.tsx] Playbook
 [app/playbook/[memberId]/redesign-playbook-view.tsx] pb-tab${tab === t.key ? ' on' : ''}
 [app/playbook/[memberId]/redesign-playbook-view.tsx] Who you are

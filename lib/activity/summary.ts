@@ -2,11 +2,17 @@
 
 import type { ActivityType, WeekStats } from './types.ts';
 
-/** The one reflective line on the panel — witnesses the identity, never scores it. */
-export function framingLine(identityNoun: string | null, thisWeek: WeekStats): string {
+/**
+ * The one reflective line on the panel — witnesses the member, never scores them.
+ *
+ * ALWAYS "you" (Cowork + Jay, 2026-08-14). This read "The Runner has been showing up" — the member talked ABOUT
+ * in the third person on their own dashboard. Their claimed Identity is something they ARE, not a category the
+ * system files them under, and routine third-person use is what turns the one into the other. `identityNoun` is
+ * no longer read; the parameter stays so callers don't change and so the reason sits next to the code.
+ */
+export function framingLine(_identityNoun: string | null, thisWeek: WeekStats): string {
   if (thisWeek.count === 0) return 'A quiet week — that is part of it too.';
-  const noun = identityNoun ? `The ${identityNoun}` : 'You';
-  return `${noun} has been showing up.`;
+  return 'You have been showing up.';
 }
 
 // Imperial (US) — miles over ~a tenth of a mile, else feet. (Charter audience is US; a per-member unit

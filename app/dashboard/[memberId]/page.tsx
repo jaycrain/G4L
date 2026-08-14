@@ -224,7 +224,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ memb
   const thresholdData = {
     identityNoun: dash.identityNoun,
     doors: dash.doors.map((d) => d.displayName),
-    winCount: dash.reclaimList.length,
+    reclaimItems: dash.reclaimList,
     idScore: dash.score?.score ?? null,
     dimensions: dash.score?.dimensions ?? null,
     seeds: playbookSeeds,

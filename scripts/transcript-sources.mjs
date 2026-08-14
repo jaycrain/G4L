@@ -50,6 +50,11 @@ export const SECTIONS = [
       'app/dashboard/triptych-left.tsx', // Your Playbook · ID Score · Grinta · Badges
       'app/dashboard/triptych-right.tsx',
       'app/dashboard/resilience-pulse.tsx',
+      // The Activity Panel's reflective line ("A quiet week — that is part of it too."). Member copy that sat
+      // just UNDER the coverage guard's 3-string floor until 2026-08-14, so it was never a listed omission and
+      // never in canon either — invisible in both directions. The guard caught it the moment the file changed.
+      // Exactly the blind spot the ratchet exists for: not a file someone decided to leave out, a file nobody saw.
+      'lib/activity/summary.ts',
       'app/momentum/[memberId]/page.tsx',
       'app/momentum/momentum-log.tsx',
       'app/score/[memberId]/page.tsx',

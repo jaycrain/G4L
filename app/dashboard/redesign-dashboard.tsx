@@ -153,7 +153,7 @@ export default async function RedesignDashboard({ db, memberId, dash }: { db: Db
   const thresholdData = {
     identityNoun: dash.identityNoun,
     doors: doorNames,
-    winCount: dash.reclaimList.length,
+    reclaimItems: dash.reclaimList,
     idScore: dash.score?.score ?? null,
     dimensions: dash.score?.dimensions ?? null,
     seeds: playbookSeeds,

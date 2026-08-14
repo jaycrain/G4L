@@ -1,6 +1,6 @@
 # G4L — Member Transcript (authored copy, verbatim)
 
-Stamp: `app @ 4d9800a · 2026-08-13` · PART 1 of the Cowork release bundle.
+Stamp: `app @ 381cd8d · 2026-08-14` · PART 1 of the Cowork release bundle.
 
 **Quote from this.** Every line below is authored, fixed copy a member reads, in reading order by surface. It does
 **not** include the Companion's in-the-moment reflections (those are model-generated and vary per member — describe
@@ -40,10 +40,11 @@ _source: lib/agent/onboarding-staged.ts_
 - What else? Anything that comes — big or small.
 - What else would you want back? No wrong answers here — small things count.
 - Anything else on your mind — even something small you miss?
-- Your Reclaim List is set for now — no need to add more here. You'll be able to add to it and change it in your first session, or anytime just by talking with your companion. Take a look at the summary below whenever you're ready.
+- Your Reclaim List is set for now — no need to add more here. You'll be able to add to it and change it in your first session, or anytime just by talking with your Companion. Take a look at the summary below whenever you're ready.
 - Even one or two more — and they can be small: sleeping through the night, an old hobby, a friend you've
 - Great job getting here. Here’s what I’ve captured from our conversation — take a look. Does this look like you?
 - Nothing’s saved yet, so if anything’s missing or off, we’ll fix it.
+- Take your time — say more whenever you're ready.
 - Got it — that’s a strong list to build from. Want to make any edits to those, or does that feel like the shape of what you’d want back?
 - Theme —
 - Good — I’ll keep them as one.
@@ -64,6 +65,7 @@ _source: lib/agent/onboarding-staged.ts_
 - That’s the whole check-in. Thanks for staying with it.
 - the G4L program by working through the four Phases — Reconnect, Rewire, Rebuild, and Reclaim.
 - Take a look below at what I captured from our conversation so far. You are now officially into the first Phase
+- That was me asking it badly — let me try again. Say it however it comes to you, in your own words, and I'll follow.
 - Take whatever time you need.
 - No rush at all.
 - Whenever you're ready.
@@ -121,8 +123,8 @@ _source: app/onboarding/welcome.tsx_
 - What you found
 - A look around
 - a quick tour to show you where it all lives.
-- This first sitting is the biggest one. After today, it’s a few minutes a day. Reclaiming who you are takes real time — it starts here.
-- Let’s go →
+- This one goes deep, so give yourself the time. Reclaiming who you are takes real time — it starts here.
+- Clip in →
 - Grinta for Life
 - Start looking →
 
@@ -200,7 +202,7 @@ _source: lib/agent/reconnect.ts_
 - Does it still feel the way it did — or has it moved?
 - No rush — start wherever it feels true.
 - Here's the shape of it: we'll walk back through the Door — or Doors — the distance came in through, take a fresh
-- : ''}. Start wherever it's most vivid.
+- Take your time — say more whenever you're ready.
 - Let's go into how the distance opened — the real thing, not a summary. Take me back to how it actually happened, and what it quietly cost you. Start wherever it's most vivid.
 - Stay with that a moment — what did it actually cost you, the part you maybe stopped counting?
 - What was underneath that — when did you first feel it, and what did it quietly take?
@@ -670,7 +672,7 @@ _source: lib/ceremony/reclaim-ceremony-beats.ts_
 
 _source: lib/rewire/w3-entry.ts_
 
-- You wrote something into that day — open it with your companion to change it.
+- You wrote something into that day — open it with your Companion to change it.
 
 _source: lib/practice/mark.ts_
 
@@ -685,7 +687,7 @@ _source: app/momentum/week-grid.tsx_
 - : done ?
 - Tap a day when you do one — or just tell me and I\u2019ll mark it.
 - Tap any day to open your log — the grid mirrors what you write there.
-- This mirrors what you\u2019ve told your companion, so you can see the week at a glance.
+- This mirrors what you\u2019ve told your Companion, so you can see the week at a glance.
 
 _source: lib/playbook/reads.ts_
 
@@ -844,7 +846,7 @@ _source: app/badges/[memberId]/page.tsx_
 - Earned when you cross the Rewire checkpoint.
 - Earned when you cross the Rebuild checkpoint.
 - Earned when you close the cycle at the Reclaim checkpoint.
-- You identified the Doors you walked through, the life events that created the distance between who are you and who you want to be.
+- You identified the Doors you walked through, the life events that created the distance between who you are and who you want to be.
 - You measured the distance between who you were, who you are, and who you want to be.
 - You completed the first phase of the G4L program.
 - You caught the lies you tell yourself — and practiced turning them into truths.
@@ -868,7 +870,7 @@ _source: app/badges/[memberId]/page.tsx_
 - You’ve earned
 - Your Badges are the receipts — proof, in one place, of the real things you’ve actually done. Think passport stamps, not trophies: every one is the same size, each with its own color and design, and the point was never any single one. The point is how many you stack.
 - A grid that fills as you go. The ones you’ve earned are lit; the ones still ahead are greyed in, so you can see what’s possible. Color tells you the kind — Milestones, Hardiness (stretches of grit), Goals reclaimed, and Comebacks (a real return after a slump). Some you can see coming. Some you won’t see until they land — earned, not expected.
-- You don’t get one for showing up or logging in. You get one for the plays that count — passing a stretch of grit, reclaiming something on your list, coming back after a miss, crossing a Checkpoint. They’re meant to be hard. The accumulation is the whole game: a passport that fills is a life being won back.
+- You don’t get one for showing up or logging in. You get one for the moves that count — passing a stretch of grit, reclaiming something on your list, coming back after a miss, crossing a Checkpoint. They’re meant to be hard. The accumulation is the whole game: a passport that fills is a life being won back.
 - So don’t measure yourself against the one you don’t have yet. Look at the density — a board crowding with color is the story, told in stamps.
 - Your first was the hardest to see coming: getting through onboarding and into this room. That one took facing yourself. The rest, you’ll stack.
 - Goals reclaimed
@@ -1125,7 +1127,6 @@ _source: app/playbook/[memberId]/redesign-playbook-view.tsx_
 - Save to your Journal
 - Write about this →
 - Your Playbook
-- Where your Comeback gets kept, so you can use it again and again — the moves that worked for you, and the person you’re reclaiming, in one place. It grows every week, and it’s yours.
 - Gathering from your work…
 - You’ve already built real material. Let’s gather it into your Playbook.
 - Gather from your work →
@@ -1136,17 +1137,17 @@ _source: app/playbook/[memberId]/redesign-playbook-view.tsx_
 - Your story so far
 - My Story
 - Who you are, in the words you landed on.
-- A living read your companion re-weaves each time you close a Session.
+- A living read your Companion re-weaves each time you close a Session.
 - Your reads
 - What your own answers said, laid out. Never a score — you told us this.
 - Revisit a Session
 - Your journal
-- Thoughts and feelings in your own words, timestamped to where you are. For a lot of people this is the most freeing thing here — a place to think on the page and understand yourself. Your companion reads it and pulls keepers up into your Moves, but the writing itself is the point — it only replies if you ask.
+- Thoughts and feelings in your own words, timestamped to where you are. For a lot of people this is the most freeing thing here — a place to think on the page and understand yourself. Your Companion reads it and pulls keepers up into your Moves, but the writing itself is the point — it only replies if you ask.
 - Things you said in a Session, kept exactly as you said them. Keep one, write into it, or let it go.
 - Write your own entry…
 - Add note
 - Gather from recent work →
-- Your companion gathers these as you go and flags keepers — you decide what stays. Edit, pin, or remove anything. Over time this becomes the raw material for your Legacy Letter and Success Story.
+- Your Companion gathers these as you go and flags keepers — you decide what stays. Edit, pin, or remove anything. Over time this becomes the raw material for your Legacy Letter and Success Story.
 
 _source: app/account/page.tsx_
 

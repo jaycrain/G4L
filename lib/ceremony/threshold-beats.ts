@@ -4,7 +4,7 @@
 
 export type Dimensions = { physical: number; self: number; social: number; outlook: number };
 export type ThresholdReveal =
-  | { kind: 'uncovered'; identity: string | null; doors: string[]; winCount: number; idScore: number | null; dimensions: Dimensions | null }
+  | { kind: 'uncovered'; identity: string | null; doors: string[]; reclaimItems: string[]; idScore: number | null; dimensions: Dimensions | null }
   | { kind: 'seeds'; seeds: string[] }
   | { kind: 'journey' };
 
@@ -13,7 +13,11 @@ export type CeremonyBeat = { text: string; small?: boolean; reveal?: ThresholdRe
 export type ThresholdData = {
   identityNoun: string | null; // natural-case noun, e.g. "Athlete"
   doors: string[]; // display names
-  winCount: number; // Reclaim List length
+  // THE ITEMS, NOT A COUNT (Cowork + Jay, 2026-08-14). This was `winCount: number`, and the card rendered
+  // "3 on your Reclaim List" — a tally standing in front of the three things the member actually said they
+  // want back, on the one beat whose whole job is to hand them their goals. A count is also a second copy of
+  // a fact we already hold; anything that needs the number reads reclaimItems.length.
+  reclaimItems: string[]; // the Reclaim List, in the member's own words
   idScore: number | null; // baseline ID Score
   dimensions: Dimensions | null; // the four subscores (each /30) — for the "distance runs widest" read
   seeds: string[]; // 2–3 onboarding-harvested Playbook lines
@@ -48,10 +52,19 @@ export const THRESHOLD_COPY = {
   lasts:
     'Your answers, in your own words, filled the first pages of your Playbook. From here it keeps building itself — ' +
     'everything worth keeping lands there, ready when you need it. It’s uniquely yours.',
-  // 7 — the hand-off; this beat carries the clip-in metaphor (Donna's Reconnect edits — no first-move mention now).
-  clipIn: 'Clipping in, like when you lock your foot into your bike pedal before you take off for a ride, is a commitment to get, and keep, going.',
+  // 7 — the hand-off. THIS BEAT NO LONGER EXPLAINS "clip in" (Cowork + Jay, 2026-08-14).
+  //
+  // The word stays everywhere — the daily clip-in, the clip-back-in move, the Grinta lines, the closer. What was
+  // wrong was teaching it HERE. This is the threshold: the beat where a member steps through. Stopping to gloss a
+  // cycling metaphor at the moment of commitment breaks the moment to run a footnote. It is now defined once,
+  // upstream, on the "A few words you'll hear" language screen — where they are still learning the vocabulary and
+  // nothing is being asked of them yet — and the button below it reads "Clip in →". Downstream just USES the word.
+  //
+  // JAY: this replacement line is Cowork's draft, and she marked it "Jay to confirm". It is the one string in this
+  // batch nobody has signed off on. Say the word and it changes.
+  clipIn: 'This is where it starts — a commitment to get going, and keep going.',
   // Donna dropped the per-member "first move" tail; keep the signature so callers don't change, ignore the arg.
-  clipInWithMove: (_firstMove: string) => 'Clipping in, like when you lock your foot into your bike pedal before you take off for a ride, is a commitment to get, and keep, going.',
+  clipInWithMove: (_firstMove: string) => 'This is where it starts — a commitment to get going, and keep going.',
 } as const;
 
 export function buildThresholdBeats(d: ThresholdData): CeremonyBeat[] {
@@ -59,7 +72,7 @@ export function buildThresholdBeats(d: ThresholdData): CeremonyBeat[] {
   return [
     { text: c.stop },
     { text: c.honor, small: true },
-    { text: c.uncovered, reveal: { kind: 'uncovered', identity: d.identityNoun, doors: d.doors, winCount: d.winCount, idScore: d.idScore, dimensions: d.dimensions } },
+    { text: c.uncovered, reveal: { kind: 'uncovered', identity: d.identityNoun, doors: d.doors, reclaimItems: d.reclaimItems, idScore: d.idScore, dimensions: d.dimensions } },
     // Beat 4 — seeds reveal only if the harvest produced any; otherwise the softer no-seeds line.
     d.seeds.length > 0
       ? { text: c.playbookSeeded, reveal: { kind: 'seeds', seeds: d.seeds.slice(0, 3) } }

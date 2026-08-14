@@ -106,6 +106,22 @@ Two parts:
   one. So: cut "an honest look/read/take of X" and "honestly" as an adverb; **keep** every "be honest with yourself /
   an honest read of where YOU are / honest stock of your own skills."
 - **The north star: safe to be honest with yourself.** Never judge, grade, fix, or pathologize. Normalize, don't praise.
+- **Address the member as "you" — never by their Identity.** (Cowork + Jay, 2026-08-14.) The Identity handle ("the
+  Player", "the Runner") may be used at the moment they claim it, at a deliberate milestone re-meeting, and as the
+  name of what they are RECLAIMING ("the Player is who we're bringing back"). It may NOT stand in for them as the
+  subject of their own experience — not "what it quietly cost the Player", not "the Runner has been showing up",
+  not "let's find out what happened to the Athlete". The test is subject vs object: naming the goal is fine, using
+  their word instead of "you" is not. Rare and earned, the name carries weight; routine, it turns the word they
+  chose into a label the system files them under — and that is the thing that always read as slightly off.
+- **"The Fade", never "the drift" as a noun.** The Fade is the protected term for the identity distance. Verb uses
+  ("how far you'd drifted", "the signs you're drifting") and the product name "Drift Quiz" are correct and stay.
+- **"Clip in" is defined once, upstream, and explained nowhere else.** The word is core vocabulary (the daily
+  clip-in, the clip-back-in move, the Grinta lines, the closer) and it stays everywhere. Its one definition lives on
+  the onboarding "A few words you'll hear" screen. Never re-explain the cycling metaphor mid-experience — teaching a
+  word at the moment of commitment breaks the moment to run a footnote. The full origin story belongs to marketing.
+- **A kept Playbook item is a Move, never a "play".** Capitalized as the label and the count ("16 Moves"), lowercase
+  in running prose ("the moves that worked"). This includes the tool descriptions the Companion reads, since the
+  model paraphrases them out loud — the code's `retire_play`/`plays` identifiers are wire names and stay.
 - **Encouragement is not praise — and "don't praise" must never be read as "be flat."** (Jay, 2026-08-14: "let's not
   take the soul out of the Companion. I like the vibe and feel of the conversations right now.") The line is:
   **acknowledge the moment, never appraise the person or their answer.** "Great." and "Good — keep going." are

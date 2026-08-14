@@ -76,6 +76,16 @@ const BEATS: Beat[] = [
       { term: 'Your Dashboard', text: 'home base, where everything you do is kept.' },
       { term: 'Your Playbook', text: 'what you build; how you watch yourself change.' },
       { term: 'ID Score & Grinta Index', text: 'two ways to see it: how far you’ve got to go, and the grit you’re growing.' },
+      // CLIP IN IS DEFINED HERE AND NOWHERE ELSE (Cowork + Jay, 2026-08-14). The word is core vocabulary — the
+      // daily clip-in, the clip-back-in move, the Grinta lines, the closer — so it stays. What was wrong was
+      // EXPLAINING it mid-experience, in the Threshold ceremony, at the moment the member should be stepping
+      // through. Define it once, upstream, where they are still learning the language; downstream just uses it.
+      //
+      // Deliberately shorter than the brief's draft. Cowork's own item (e) rules that the full origin story —
+      // the both-strokes payoff, the fall, the untangling — lives in MARKETING, not the app, but the draft copy
+      // then told that story in full. Kept: the source of the metaphor, the commitment, and the clip-BACK-in,
+      // which downstream copy (the False Start Protocol) depends on the member already understanding.
+      { term: 'Clip in', text: 'cyclists lock their shoes to the pedals when they mean it — committed, in for the long ride. Everyone falls at least once; you clip back in and keep going.' },
     ],
     cta: 'Next →',
   },
@@ -108,10 +118,13 @@ const BEATS: Beat[] = [
       { term: 'What you found', text: 'see what surfaced.' },
       { term: 'A look around', text: 'a quick tour to show you where it all lives.' },
     ],
-    tail: [
-      'This first sitting is the biggest one. After today, it’s a few minutes a day. Reclaiming who you are takes real time — it starts here.',
-    ],
-    cta: 'Let’s go →',
+    // NO DAILY-TIME FORECAST, ANYWHERE. The old close promised "after today, it's a few minutes a day" — which is
+    // false (Sessions run 20-30 minutes) and contradicts the upstream "as fast or slow as your life allows". Item 2
+    // in the list above already sizes today honestly, so nothing here needs to forecast tomorrow.
+    tail: ['This one goes deep, so give yourself the time. Reclaiming who you are takes real time — it starts here.'],
+    // "Clip in →" rather than "Let's go →": the language screen defined the word a moment ago, and this is the
+    // button where they do it. The word is never explained again after this.
+    cta: 'Clip in →',
   },
 ];
 

@@ -695,15 +695,16 @@ export async function sendCheckin(memberId: string, memberMessage: string): Prom
         //
         // A RETIRE, not a delete: state goes to 'dismissed', the row and its history stay, and it can come back.
         // And it REFUSES on an ambiguous name rather than picking — retiring the wrong play is a silent edit to
-        // the member's own operating manual, which they may not notice for weeks.
+        // the member's own operating manual, which they may not notice for weeks. The messages below are read by the
+        // MODEL and paraphrased to the member, so they say Move, not "play" (Cowork addendum, 2026-08-14).
         const phrase = String(input.play ?? '').trim();
-        if (!phrase) return { ok: false, message: 'Not retired — ask which play they mean, then call it again.' };
+        if (!phrase) return { ok: false, message: 'Not retired — ask which Move they mean, then call it again.' };
         const all = await listPlaybook(db, memberId);
         const { entry, ambiguous } = matchKeptEntry(all, phrase);
         if (ambiguous) {
-          return { ok: false, message: 'More than one play matches that. Ask which one they mean — name them back — then call it again. Do not guess.' };
+          return { ok: false, message: 'More than one Move matches that. Ask which one they mean — name them back — then call it again. Do not guess.' };
         }
-        if (!entry) return { ok: false, message: "Couldn't find a kept play by that name. Ask them to say which one, in their words." };
+        if (!entry) return { ok: false, message: "Couldn't find a kept Move by that name. Ask them to say which one, in their words." };
         const done = await dismissEntry(db, memberId, entry.id);
         if (!done) return { ok: false, message: 'Not retired — try once more, or tell them it did not save.' };
         mutated = true;

@@ -81,7 +81,11 @@ test('STAGED identity — breathe floor (1a): gather → PROBE the person → re
   assert.match(turns[2]!.reply, /did I get|right\?/i);
   // turn 4: affirm → advance, BRIDGING from the named identity into how the gap opened (not a cold switch).
   assert.equal(finalState.stage, 'gap', 'advances to the gap stage on confirm');
-  assert.match(turns[3]!.reply, /what happened to the Athlete|pulled you away from the Athlete/i, 'bridges from the named identity');
+  // INVERTED (Cowork + Jay, 2026-08-14): this beat used to carry "the Athlete" three times and now must carry
+  // it none. The bridge is still a bridge — it opens on "Then", straight off the naming — but it addresses the
+  // person who just did the naming instead of discussing them in the third person.
+  assert.match(turns[3]!.reply, /^Then let's find out what happened/, 'still bridges off the naming beat');
+  assert.doesNotMatch(turns[3]!.reply, /the Athlete/i, 'never refers to the member in the third person by their Identity');
   assert.match(turns[3]!.reply, /Doors/, 'introduces Doors at first use');
   assert.equal(finalState.collected.identityNoun, 'Athlete');
 });
@@ -669,7 +673,11 @@ test('STAGED gap→reclaim — a WARM bridge off the gap, not a cold pivot (Phas
   const turn = applyStagedTurn(atGapConfirm, [], "that's the whole of it", { text: 'Okay.' });
   assert.equal(turn.state.stage, 'reclaim', 'advances into reclaim');
   assert.match(turn.reply, /carrying|been waiting|the turn/i, 'bridges FROM the weight of the gap');
-  assert.match(turn.reply, /the Racer/, 'references the identity');
+  // INVERTED, same rule: the warm bridge no longer says "no wonder the Racer got quiet" — it says "that part of
+  // you". The Identity may be named as what they are RECLAIMING; it may not stand in for them as the person who
+  // lived it. The warmth is what the surrounding assertions protect, and it survives.
+  assert.doesNotMatch(turn.reply, /the Racer/, 'never refers to the member in the third person by their Identity');
+  assert.match(turn.reply, /that part of you/i, 'still lands on what went quiet — in the second person');
   assert.doesNotMatch(turn.reply, /Now, the good part/i, 'no cold pivot');
   assert.match(turn.reply, /want back|first thing/i, 'still opens the reclaim ask');
 });

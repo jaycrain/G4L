@@ -37,11 +37,19 @@ export default function Threshold({ memberId, data }: { memberId: string; data: 
   function renderReveal(r: ThresholdReveal) {
     if (r.kind === 'uncovered') {
       return (
+        // THE GOALS ARE THE HERO (Cowork + Jay, 2026-08-14).
+        //
+        // This card used to be four chips, one of which read "3 on your Reclaim List" — a tally standing in
+        // front of the three things the member had just told us they want their life back for. On the one beat
+        // whose entire job is the first "here are your goals, in your face" moment, we showed them a number.
+        //
+        // So: the items render by name, last and largest. Identity, Doors and the ID Score demote to quiet
+        // context above them. The order is deliberate — the beat is titled "Here's what you found", and it now
+        // ENDS on what they are reclaiming (forward) rather than on the Doors (the wound).
         <>
           <div className="cer-chips">
             {r.identity && <span className="cer-chip">the {r.identity}</span>}
             {r.doors.length > 0 && <span className="cer-chip">Door{r.doors.length > 1 ? 's' : ''}: {r.doors.join(' · ')}</span>}
-            {r.winCount > 0 && <span className="cer-chip">{r.winCount} on your Reclaim List</span>}
             {r.idScore !== null && <span className="cer-chip score">ID Score {Math.round(r.idScore)}</span>}
           </div>
           {r.dimensions && (
@@ -49,6 +57,16 @@ export default function Threshold({ memberId, data }: { memberId: string; data: 
               Right now the distance runs widest in <strong>{widestDimension(r.dimensions)}</strong>
               {r.doors[0] ? <> — about where the {r.doors[0]} tends to land</> : null}. That’s where the work pays off first.
             </p>
+          )}
+          {r.reclaimItems.length > 0 && (
+            <div className="cer-reclaim">
+              <p className="cer-seed-tag">What you’re taking back</p>
+              <ul className="cer-reclaim-list">
+                {r.reclaimItems.map((item, k) => (
+                  <li key={k}>{item}</li>
+                ))}
+              </ul>
+            </div>
           )}
         </>
       );

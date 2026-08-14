@@ -46,7 +46,7 @@ export async function ceremonyTourData(db: Db, memberId: string, dash: Dashboard
     thresholdData: {
       identityNoun: dash.identityNoun,
       doors: doorNames,
-      winCount: dash.reclaimList.length,
+      reclaimItems: dash.reclaimList,
       idScore: dash.score?.score ?? null,
       dimensions: dash.score?.dimensions ?? null,
       seeds: playbookSeeds,

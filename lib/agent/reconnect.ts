@@ -175,9 +175,14 @@ function withQuestion(modelText: string, probe: string | null): string {
 //   • the CAP is hit (anti-loop).
 // This means the engine stops circling once the Companion has reflected, whether or not it remembered the tool call.
 
-// The excavation opener — from the committed PRIMARY door (loaded at arc entry). Not the label, the real thing.
+// The excavation opener — from the committed PRIMARY door (loaded at arc entry). Not the name, the real thing.
+//
+// TWO FIXES FROM JAY'S WALK (Cowork, 2026-08-14), both about who we sound like we are talking to:
+//   "label" → "name". The member GAVE this Door its name; "label" is our insider word for it, and calling their
+//   word a label puts a filing-system between them and their own story.
+//   "what it quietly cost {the Player}" → "cost you". Addressing a member in the third person by their claimed
+//   Identity is the voice break Jay could always feel but not place. See addressTheMember() below.
 function doorOpen(c: Collected): string {
-  const identity = identityLabel(c.identityNoun);
   const doors = c.doors ?? [];
   const primary = doors[0];
   const doorName = primary ? DOORS.find((d) => d.slug === primary)?.displayName ?? null : null;
@@ -186,8 +191,8 @@ function doorOpen(c: Collected): string {
     // Start with one Door, but HOLD the others (Jay + Greg: rarely one Door — never imply it was the only one).
     const held = others > 0 ? ` We'll get to the other${others > 1 ? 's' : ''} — this is just where we start.` : '';
     return (
-      `Let's start with ${doorName} — ${others > 0 ? 'one of the ones you named' : 'the one you named'}.${held} Not the label, the real thing: take me ` +
-      `back to how it actually happened${identity ? `, and what it quietly cost ${identity}` : ''}. Start wherever it's most vivid.`
+      `Let's start with ${doorName} — ${others > 0 ? 'one of the ones you named' : 'the one you named'}.${held} Not the name — the real thing: take me ` +
+      `back to how it actually happened, and what it quietly cost you. Start wherever it's most vivid.`
     );
   }
   return `Let's go into how the distance opened — the real thing, not a summary. Take me back to how it actually happened, and what it quietly cost you. Start wherever it's most vivid.`;
@@ -454,7 +459,11 @@ export function driftOpen(c: Collected): string {
 const DRIFT_MORE_VARIANTS = [
   "Past the obvious — what's the quiet one you don't usually let yourself miss?",
   'And how far are you from that version of you right now — a little dusty, or a stranger? Don\'t soften it to feel better.',
-  "What did the drift take that you've stopped even noticing is gone?",
+  // "the Fade", not "the drift" (Cowork, 2026-08-14). The Fade is the protected term for exactly this thing, and
+  // the take-stock opener four lines up already says "what has the Fade quietly cost you" — so a member met both
+  // names for one idea inside a single beat. Also unstacks the doubled clause Jay flagged on his walk: "stopped
+  // even noticing is gone" made you parse a negation and an absence at once.
+  "What did the Fade take that you've stopped even missing?",
 ];
 // Rotate on how many times WE have spoken, not on how many of our lines contained a '?'. The question-mark count
 // freezes the moment a reply without one is emitted (the reflect fallbacks have none), so the same variant came
@@ -471,7 +480,7 @@ function reflectDrift(modelText: string): string | null {
   if (/\?\s*$/.test(t)) return t;
   return `${t}\n\n${DRIFT_CONFIRM}`;
 }
-const REOPEN_DRIFT = "Then I've not got it yet — say it your way. What's the real shape of what the drift cost you?";
+const REOPEN_DRIFT = "Then I've not got it yet — say it your way. What's the real shape of what the Fade cost you?";
 // The BRIDGE (V3): the turn toward hope, at the drift→window seam. LIFT starts HERE — the bridge hands straight into
 // The Window's opener (so it's one motion: push off from the drift, look through the window).
 function driftToWindowBridge(c: Collected): string {
@@ -534,7 +543,9 @@ const driftStage: StageDef = {
       // done → the drift RECOGNITION is a KEEPER (default-emit; the action drains pendingHarvest → emitHarvestMoment).
       const payload = (b.driftPayload ?? '').trim();
       if (payload) {
-        b.pendingHarvest.push({ kind: 'drift', keeperType: 'tell', destinationIntent: 'keeper', payloadRef: payload, label: 'The drift' });
+        // LABEL, not kind: 'drift' stays as the internal keeper kind (it keys the §2d harvest and a stored
+        // source_ref); only the words the member reads in their Playbook change to the protected term.
+        b.pendingHarvest.push({ kind: 'drift', keeperType: 'tell', destinationIntent: 'keeper', payloadRef: payload, label: 'The Fade' });
       }
       b.driftPayload = undefined;
       b.stage = 'window'; // hand into The Window (beat 2) via the turn-toward-hope BRIDGE (which opens the window)

@@ -237,7 +237,16 @@ interaction and outranks any copy edit — do not let it drift:
   normalizing and reflective, not motivational-pep or corrective.
 - **Names are real, scaffolding is not.** Use: 4Rs, IDQ, ID Score, Grinta Index, the Journey,
   the Atlas, the Beat, the close, the Door, the Fade, the Reclaim List, the Loop, Member Agent,
-  Founder Agent. Do **not** introduce invented framing terms (no "Horizon," "pillar," "track").
+  Founder Agent, **Move(s)** (a kept Playbook item — a tactic that worked, run again; capitalized as the
+  label and the count, lowercase in running prose). **"Plays" is RETIRED member-facing** (2026-08-14) —
+  playbook/plays is a tired pairing; the code keeps `plays`/`retire_play` as wire identifiers, same call as
+  connect_*/Community. Do **not** introduce invented framing terms (no "Horizon," "pillar," "track").
+- **The Companion addresses the member as "you" — never by their Identity.** The Identity ("the Player") may
+  be named as what they are RECLAIMING, at the moment they claim it, and at a real milestone re-meeting —
+  nowhere else. Never "what it cost the Player" or "the Runner has been showing up". Rare and earned it
+  carries weight; routine, it turns the word they chose into a label the system files them under.
+- **"The Fade" is the term for the identity distance — never "the drift" as a noun.** Verb uses ("how far
+  you'd drifted", "the signs you're drifting") and the product name "Drift Quiz" are fine.
   **The Fade** = the identity distance the IDQ measures; **the Door** = the life event that opened
   it. **Three feedbacks:** the ID Score (mirror), the Grinta Index (grit), the Journey (place on
   the 4Rs + Reclaim List movement — never a score). A member's reclaimed identity renders in

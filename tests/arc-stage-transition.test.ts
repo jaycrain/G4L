@@ -61,6 +61,6 @@ test('the drift keeper still commits on the way through — the fix did not cost
   const handoff = applyReconnectTurn(pending, history(), "yeah, that's the shape of it", { text: '', replyIntent: 'done' });
   const queued = (handoff.state as { pendingHarvest?: { label: string; payloadRef: string }[] }).pendingHarvest ?? [];
   assert.equal(queued.length, 1);
-  assert.equal(queued[0]!.label, 'The drift');
+  assert.equal(queued[0]!.label, 'The Fade'); // the protected term — "the drift" was an off-canon second name for it
   assert.equal(queued[0]!.payloadRef, 'I stopped riding and stopped noticing');
 });

@@ -646,6 +646,16 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .cer-badge-name { font-size: 1.05rem; font-weight: 700; color: #fff; }
 .cer-seed-tag { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted, #6B7680); margin: 0 0 8px; }
 .cer-seed { border-left: 3px solid var(--teal); padding: 6px 0 6px 14px; margin: 8px 0; font-size: 0.95rem; font-style: italic; color: var(--navy); line-height: 1.45; }
+
+/* THE RECLAIM ITEMS ON THE THRESHOLD CARD (Cowork + Jay, 2026-08-14) — the hero of "Here's what you found",
+   replacing the "3 on your Reclaim List" chip. Larger than the chips above it and larger than body copy,
+   because this is the first time the product puts a member's own goals in front of them; the card had empty
+   space and was spending it on a count. NOT italic (unlike .cer-seed, which is quoting a Playbook line back) —
+   these are the member's stated intentions, so they read as a list, not as a quotation. */
+.cer-reclaim { margin: 1rem 0 0; }
+.cer-reclaim-list { margin: 0; padding: 0; list-style: none; }
+.cer-reclaim-list li { position: relative; padding: 7px 0 7px 20px; font-size: 1.05rem; font-weight: 600; color: var(--navy); line-height: 1.4; }
+.cer-reclaim-list li::before { content: ''; position: absolute; left: 0; top: 15px; width: 8px; height: 8px; border-radius: 50%; background: var(--orange); }
 /* §2e Grinta movement reveal — the Grinta Index on its own /5 scale (olive, distinct from the teal ID Score), the
    first movement, and the four strands with grit stepped up. */
 .cer-grinta { display: flex; flex-direction: column; align-items: center; gap: 14px; }
@@ -2190,8 +2200,13 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
    positions rather than four buttons that happen to be adjacent. min-width:0 lets a long label shrink rather than
    force the row to overflow — without it flex refuses to go below the text's intrinsic width and the "evenly"
    quietly stops being true. */
+/* ROOMIER (Cowork + Jay's walk, 2026-08-14): the pills read cramped. Padding is set ONCE here and .pb-tab.on
+   only swaps background/color, so every tab — selected or not — already carries identical box metrics; the
+   uneven-pill-width failure the brief warned about cannot occur from this rule. The bump is vertical-led: on
+   desktop the row is flex:1 1 0 (equal shares), so horizontal padding changes almost nothing there, while on
+   mobile the tabs are flex:0 0 auto and it widens the scroll track — see the media query below. */
 .pb-tab { flex: 1 1 0; min-width: 0; justify-content: center; background: #f2f1ef; border: 0; color: #4a5d6b; font-family: inherit; font-size: 13px; font-weight: 600;
-  padding: 7px 14px; border-radius: 8px; cursor: pointer; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
+  padding: 10px 16px; border-radius: 8px; cursor: pointer; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
 .pb-tab:hover { background: #e8e6e6; }
 @media (max-width: 700px) { .pb-tab { flex: 0 0 auto; } }
 .pb-tab.on { background: var(--navy); color: #fff; }

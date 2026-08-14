@@ -818,11 +818,15 @@ const REFINE_TOOLS = [
   {
     name: 'retire_play',
     description:
-      "Retire a kept play from their Playbook when the member says it has stopped working for them ('the false " +
+      // The member-facing word is MOVE, never "play" (Cowork addendum, 2026-08-14). The tool name and the `play`
+      // input stay as wire identifiers — renaming them is churn with real regression risk and zero member value,
+      // the same call we made for connect_*/Community. But every SENTENCE here is prose the model reads and then
+      // paraphrases out loud, so "which play do you mean" reaches a member as surely as if we had authored it.
+      "Retire a kept Move from their Playbook when the member says it has stopped working for them ('the false " +
       "start thing isn't helping anymore', 'drop that one'). The Playbook promises they can change it when it " +
       "stops working — this is what makes that true. Pass `play` as the words they used for it. It is a RETIRE, " +
       "never a delete: the entry is kept and can come back. Only call it once they have clearly said so, and if " +
-      "you are not certain WHICH play they mean, ask instead of guessing — getting it wrong quietly edits their " +
+      "you are not certain WHICH Move they mean, ask instead of guessing — getting it wrong quietly edits their " +
       "own manual. Reflect it back plainly; a Move that stopped working is information, never a failure.",
     input_schema: {
       type: 'object',

@@ -74,12 +74,20 @@ test('panel buckets this week vs last (calendar Mon–Sun) and frames by identit
   assert.equal(p2.thisWeek.count, 2, 'two rides fall in this Mon–Sun week');
   assert.equal(p2.lastWeek.count, 1, 'the Saturday ride is last week');
   assert.equal(p2.thisWeek.distanceM, 52000);
-  assert.equal(p2.line, 'The Cyclist has been showing up.'); // natural case
+  // ALWAYS SECOND PERSON (Cowork + Jay, 2026-08-14). 'Cyclist' is still passed in — the point of the assertion
+  // is that supplying an identity does NOT make the panel talk about the member in the third person.
+  assert.equal(p2.line, 'You have been showing up.');
+  assert.doesNotMatch(p2.line, /Cyclist/, 'the member is never referred to by their Identity on their own dashboard');
 });
 
 test('framing + format helpers', () => {
   assert.equal(framingLine('cyclist', { count: 0, distanceM: 0, movingTimeS: 0 }), 'A quiet week — that is part of it too.');
-  assert.equal(framingLine(null, { count: 2, distanceM: 1, movingTimeS: 1 }), 'You has been showing up.');
+  // Was 'You has been showing up.' — a LIVE GRAMMAR BUG this test had frozen in place. The old line built the
+  // subject by interpolation ("The Cyclist"/"You") in front of a hard-coded "has", so every member who skipped
+  // naming an identity read a broken sentence. Going second-person everywhere removed the interpolation and the
+  // bug with it. Both identities and no identity now produce the same correct sentence.
+  assert.equal(framingLine(null, { count: 2, distanceM: 1, movingTimeS: 1 }), 'You have been showing up.');
+  assert.equal(framingLine('cyclist', { count: 2, distanceM: 1, movingTimeS: 1 }), 'You have been showing up.');
   assert.equal(formatDistance(47200), '29.3 mi'); // imperial (US)
   assert.equal(formatDistance(800), '0.5 mi');
   assert.equal(formatDistance(120), '394 ft'); // under a tenth of a mile → feet

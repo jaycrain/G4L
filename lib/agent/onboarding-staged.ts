@@ -251,11 +251,15 @@ function gapOpen(c: Collected, history: ConvMessage[] = []): string {
 // Falls back to the standalone gapOpen when identity was skipped (no name to bridge from).
 function gapBridge(c: Collected): string {
   if (!c.identityNoun) return gapOpen(c);
-  const label = identityLabel(c.identityNoun) || 'that person';
+  // SECOND PERSON (Cowork + Jay, 2026-08-14). This carried the Identity handle THREE times in one paragraph
+  // ("what happened to the Athlete … the distance from the Athlete … pulled you away from the Athlete") — the
+  // densest instance in the product of a member being discussed in the third person to their face. They claimed
+  // that word one beat ago; saying it back AT them now reads as filing rather than recognition. The bridge is
+  // still a bridge — "Then" carries it — this beat just addresses the person who did the naming.
   return (
-    `Then let's find out what happened to ${label}. The distance from ${label} rarely opens all at once — more often ` +
+    `Then let's find out what happened. That distance rarely opens all at once — more often ` +
     `it's an accumulation of what we call Doors: moments and seasons you walk through and barely notice, each one ` +
-    `widening the gap. So how did it go — what pulled you away from ${label}? Take me through it.`
+    `widening the gap. So how did it go — what pulled you away from yourself? Take me through it.`
   );
 }
 
@@ -307,9 +311,12 @@ function reclaimOpen(c: Collected): string {
   // STRUCTURED builder (Jay, 2026-07-29): the warm line, then hand OFF to the list-builder UI (rendered below by the
   // reclaim_list expectation). The member types each item and it's captured verbatim — no extraction, so nothing drops.
   return (
-    `That's a lot to have been carrying${identity ? ` — no wonder ${identity} got quiet under all of it` : ''}. ` +
+    // SECOND PERSON (Cowork + Jay, 2026-08-14): "no wonder the Athlete got quiet" and "the Athlete's life" made
+    // the member the OBJECT of a sentence about their own experience. The Identity may still be named as the thing
+    // they are reclaiming (the product's actual promise); it may not stand in for them as the one who lived it.
+    `That's a lot to have been carrying${identity ? ` — no wonder that part of you got quiet under all of it` : ''}. ` +
     `Here's the turn, though: none of it is gone. It's been waiting for you. Let's write down what you want back — ` +
-    `your Reclaim List, the thing the whole program works toward${identity ? `: the pieces of ${identity}'s life you miss most` : ''}. ` +
+    `your Reclaim List, the thing the whole program works toward${identity ? `: the pieces of that life you miss most` : ''}. ` +
     `Add each thing below — big or small. Three to start is plenty, and you can always add more later. Take your time.`
   );
 }

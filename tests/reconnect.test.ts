@@ -311,7 +311,7 @@ test('reconnect drift · confirm queues the drift KEEPER (tell) and BRIDGES towa
   assert.equal(turn.state.stage, 'window', 'hands into The Window (beat 2)');
   assert.match(turn.reply, /look the other way/i, 'the turn-toward-hope bridge (LIFT at the seam)');
   assert.match(turn.reply, /Tuesday|window/i, 'and hands straight into The Window opener');
-  assert.deepEqual(turn.state.pendingHarvest, [{ kind: 'drift', keeperType: 'tell', destinationIntent: 'keeper', payloadRef: 'I stopped riding and stopped noticing', label: 'The drift' }], 'a drift-recognition keeper is queued (default-emit)');
+  assert.deepEqual(turn.state.pendingHarvest, [{ kind: 'drift', keeperType: 'tell', destinationIntent: 'keeper', payloadRef: 'I stopped riding and stopped noticing', label: 'The Fade' }], 'a drift-recognition keeper is queued (default-emit), labelled with the protected term');
   assert.equal(turn.state.driftPayload, undefined, 'payload cleared after queueing');
 });
 
