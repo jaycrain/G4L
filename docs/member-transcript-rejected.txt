@@ -1,4 +1,4 @@
-# Strings EXCLUDED from the member transcript (app @ d7de618 · 2026-08-14)
+# Strings EXCLUDED from the member transcript (app @ 24ce9ed · 2026-08-14)
 # Not member copy: system prompts, multi-line fragments, code artifacts. Review when a real line goes missing.
 
 [lib/agent/onboarding-staged.ts] you’re trying to reclaim. We can always change it later.
@@ -639,6 +639,7 @@
 [lib/practice/mark.ts] insert into practice_mark (member_id, kind, marked_on, source) values ($1,$2,$3,$4) on conflict do nothing
 [lib/practice/mark.ts] select id from practice_commitment where member_id=$1 and kind=$2 and slot=$3
 [lib/practice/mark.ts] delete from practice_mark where member_id=$1 and commitment_id=$2 and marked_on=$3 returning id
+[lib/practice/mark.ts] select slot from practice_commitment where member_id = $1 and kind = 'reclaim_item'
 [app/momentum/week-grid.tsx] ${window.start}T00:00:00Z
 [app/momentum/week-grid.tsx] wk-grid${pending ? ' wk-saving' : ''}
 [app/momentum/week-grid.tsx] wk-cell wk-readonly${on ? ' on' : ''}
@@ -647,6 +648,8 @@
 [app/momentum/week-grid.tsx] wk-cell${on ? ' on' : ''}${i === today ? ' today' : ''}${i > today ? ' ahead' : ''}${tappable ? '' : ' wk-readonly'}
 [app/momentum/week-grid.tsx] ${r.label} — day ${i + 1}${on ? ', logged' : ''}. Open your log.
 [app/momentum/week-grid.tsx] ${r.label} — day ${i + 1}${on ? ', done' : ''}
+[app/momentum/week-grid.tsx] you can't get right back to the subpage easily
+[app/momentum/week-grid.tsx] ). It sat top-right beside
 [lib/playbook/reads.ts] read derivation failed, hiding one card:
 [lib/playbook/reads.ts] Moving your body: ${relativeAutonomyRead(a)}.
 [lib/playbook/reads.ts] Eating well: ${relativeAutonomyRead(d)}.
@@ -656,31 +659,6 @@
 [lib/playbook/reads.ts] Where your ratings point: your ${lower(primary)} life.
 [lib/playbook/reads.ts] Where momentum comes easiest: your ${lower(lever)} life.
 [lib/grinta/survey/instrument.ts] I have a general sense of what I am doing and why I am doing it
-[lib/grinta/survey/instrument.ts] B1Q2a
-[lib/grinta/survey/instrument.ts] B1Q2b
-[lib/grinta/survey/instrument.ts] B1Q3a
-[lib/grinta/survey/instrument.ts] B1Q3b
-[lib/grinta/survey/instrument.ts] B2Q2a
-[lib/grinta/survey/instrument.ts] B2Q2b
-[lib/grinta/survey/instrument.ts] B2Q3a
-[lib/grinta/survey/instrument.ts] B2Q3b
-[lib/grinta/survey/instrument.ts] B3Q2a
-[lib/grinta/survey/instrument.ts] B3Q2b
-[lib/grinta/survey/instrument.ts] B3Q3a
-[lib/grinta/survey/instrument.ts] B3Q3b
-[lib/grinta/survey/instrument.ts] B1Q2a
-[lib/grinta/survey/instrument.ts] B1Q2b
-[lib/grinta/survey/instrument.ts] B1Q3a
-[lib/grinta/survey/instrument.ts] B1Q3b
-[lib/grinta/survey/instrument.ts] B2Q2a
-[lib/grinta/survey/instrument.ts] B2Q2b
-[lib/grinta/survey/instrument.ts] B2Q3a
-[lib/grinta/survey/instrument.ts] B2Q3b
-[lib/grinta/survey/instrument.ts] B3Q2a
-[lib/grinta/survey/instrument.ts] B3Q2b
-[lib/grinta/survey/instrument.ts] B3Q3a
-[lib/grinta/survey/instrument.ts] B3Q3b
-[lib/grinta/survey/instrument.ts] pairwiseAverage expects an even count, got ${responses.length}
 [lib/grinta/survey/instrument.ts] unknown Grinta item code: ${code}
 [lib/grinta/survey/instrument.ts] unknown Grinta item code: ${code}
 [lib/curriculum/registry.ts] light (did-you / yes-no)
@@ -867,6 +845,9 @@
 [lib/activity/summary.ts] ${twMi.toFixed(0)} mi this week — past your ${goalMi}.
 [lib/activity/summary.ts] ${twMi.toFixed(0)} of your ${goalMi} mi this week.
 [lib/activity/summary.ts] ${Math.floor(hrs / 24)}d ago
+[app/dashboard/track-weekly.tsx] Starting…
+[app/dashboard/cadence-actions.ts] select 1 as one from agent_message where member_id=$1 limit 1
+[app/dashboard/cadence-actions.ts] Added to your week — “${text}”.${aim ?
 [app/momentum/[memberId]/page.tsx] Movement
 [app/momentum/[memberId]/page.tsx] Eating
 [app/momentum/[memberId]/page.tsx] Today
@@ -918,11 +899,13 @@
 [app/movement/[memberId]/page.tsx] mv-dot ${e.provenance}
 [app/movement/[memberId]/page.tsx] Strava
 [app/movement/[memberId]/page.tsx] Companion
+[app/reclaim-list/[memberId]/page.tsx] new Set
 [app/reclaim-list/[memberId]/page.tsx] reclaimList
 [app/reclaim-list/[memberId]/page.tsx] what you're taking back
 [app/reclaim-list/[memberId]/page.tsx] reclaim-row${item.reclaimed ? ' reclaimed' : ''}
 [app/reclaim-list/[memberId]/page.tsx] Reclaimed
 [app/reclaim-list/[memberId]/page.tsx] Your anchor — what the rest of this list is in service of
+[app/reclaim-list/[memberId]/page.tsx] Tracking this week · ${r.done} of ${r.target ?? r.days}
 [app/reclaim-list/[memberId]/page.tsx] s lede ("What you
 [app/connect/[memberId]/page.tsx] ${Math.round(hrs / 24)}d ago
 [app/connect/[memberId]/page.tsx] select display_name from member_profile where member_id = $1
