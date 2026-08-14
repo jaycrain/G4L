@@ -76,9 +76,21 @@ if (!stamp) {
   console.error('docs/member-transcript.md is missing or carries no build stamp — run scripts/build-release-bundle.mjs first.');
   process.exit(1);
 }
+// THE TRANSCRIPT'S SOURCES ARE NOT THE ONLY SOURCES. SECTIONS covers what feeds member-transcript.md, but the
+// bundle has two other parts built from files OUTSIDE it, and a change to those was invisible here:
+//   voice-rules.md    <- docs/brand-ui-standards.md
+//   founder-emails.md <- lib/founder/draft.ts
+// That hole cost a bad publish on 2026-08-14: the Identity voice rule was rewritten, publish-canon was re-run,
+// and it re-copied the PREVIOUS voice-rules.md while printing a green check on all seven parts — because the
+// file existed and was non-empty, which is all the verify pass below asks. Same shape as the 2026-08-11 bug
+// this guard was written for ("a part PRESENT AND WRONG, harder to see because nothing looks empty"), one step
+// further out than the guard reached. Any new bundle part built from a file outside SECTIONS belongs in this
+// list, or the same failure returns under a different filename.
+const EXTRA_SOURCES = ['docs/brand-ui-standards.md', 'lib/founder/draft.ts'];
+
 let touched = [];
 try {
-  touched = git('diff', '--name-only', stamp, 'HEAD', '--', ...SECTIONS.flatMap((s) => s.files))
+  touched = git('diff', '--name-only', stamp, 'HEAD', '--', ...SECTIONS.flatMap((s) => s.files), ...EXTRA_SOURCES)
     .split('\n').filter(Boolean);
 } catch {
   console.error(`Could not diff ${stamp}..HEAD — is the stamped commit present in this clone?`);

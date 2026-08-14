@@ -26,6 +26,11 @@ could always feel and never place.
 > Player is who we're bringing back"). It may **not** stand in for them as the subject of their own
 > experience.
 
+> **SUPERSEDED IN PART — read §8 before using this section.** Cowork sent a third addendum ("Identity voice,
+> the 'keep' example") at 15:16 with the guardrail for this sweep, and I shipped at 15:20 without reading it.
+> The authored sweep below is correct and unchanged — every line was re-checked against her four tests. What
+> changed is the RULE now in the Companion's instructions, which was too absolute as first written. §8 has it.
+
 **The test is subject vs object.** Naming the goal is right — it is the product's actual promise. Using their
 word in place of "you" is wrong. So these went:
 
@@ -188,3 +193,38 @@ directions. It is three lines, and they are now quotable.
 **Verification:** full suite 1598 passing, typecheck clean, deployed and smoke-tested on production. The
 Threshold card and the ramp screens have **not** been eyeballed in a browser at v3.4.2 — they are covered by
 tests and by the render path, but if a screenshot matters for your work, ask and I will walk them.
+
+---
+
+## 8 · CORRECTION to §1 — the Identity rule now carries its boundary
+
+**What happened:** Cowork's third addendum (*"Addendum: Identity voice, the 'keep' example"*, 15:16) opens
+*"READ BEFORE running the sweep — it's the guardrail so the sweep doesn't overshoot."* I had read the handoff
+folder at 14:54 and shipped at 15:20 without re-checking it. Jay surfaced it by sending the screenshot.
+
+**The authored sweep did not overshoot.** Every line in §1's table was re-checked against her four tests, and
+all four fail all four — "what it cost the Player" is her own FIX example, the gap bridge carried the handle
+three times in one paragraph, the Activity line was routine dashboard address. Her KEEP example is *dynamic*
+copy the authored sweep never touched.
+
+**The exposure was the rule, not the strings.** As first written it led with "ALWAYS ADDRESS THEM AS 'YOU' —
+never by their Identity" in caps, carried three vivid negative examples against one thin positive, and omitted
+the two subtlest parts of her guardrail. It now leads with her rule of thumb:
+
+> The Identity is something you **RETURN TO** the member at a threshold — never a way you **ADDRESS** them in
+> passing.
+
+and carries her reference line verbatim, the instruction never to rewrite it to "you're still there", and all
+four tests as a checklist:
+
+1. at a milestone or checkpoint — earned, not routine;
+2. rare — one beat, not a running form of address;
+3. framed as **their** act ("you named him"), so it reads as something they claimed, not a label we applied;
+4. pivots straight back to second person.
+
+Fails any one → say "you". Guarded by `tests/identity-voice.test.ts`, because deleting the carve-out fails
+silently: the model just stops producing the beat and nothing errors.
+
+**The pattern worth both of us holding.** This is the second time in one day a rule shipped without its
+boundary and read as a ban — "normalize, don't praise" reading as "go flat" (§7), and now this. When we write
+a rule against overuse, it needs its exemplar in the same breath, or the next reader implements the ban.

@@ -106,13 +106,21 @@ Two parts:
   one. So: cut "an honest look/read/take of X" and "honestly" as an adverb; **keep** every "be honest with yourself /
   an honest read of where YOU are / honest stock of your own skills."
 - **The north star: safe to be honest with yourself.** Never judge, grade, fix, or pathologize. Normalize, don't praise.
-- **Address the member as "you" — never by their Identity.** (Cowork + Jay, 2026-08-14.) The Identity handle ("the
-  Player", "the Runner") may be used at the moment they claim it, at a deliberate milestone re-meeting, and as the
-  name of what they are RECLAIMING ("the Player is who we're bringing back"). It may NOT stand in for them as the
-  subject of their own experience — not "what it quietly cost the Player", not "the Runner has been showing up",
-  not "let's find out what happened to the Athlete". The test is subject vs object: naming the goal is fine, using
-  their word instead of "you" is not. Rare and earned, the name carries weight; routine, it turns the word they
-  chose into a label the system files them under — and that is the thing that always read as slightly off.
+- **The Identity is something you RETURN TO the member at a threshold — never a way you ADDRESS them in passing.**
+  (Cowork + Jay, 2026-08-14.) Not "what it quietly cost the Player", not "the Runner has been showing up", not
+  "let's find out what happened to the Athlete" — those are routine address, and they turn the word the member
+  chose into a label the system files them under. That is the thing that always read as slightly off.
+  **But do not flatten the good use** — handing the Identity back at a real moment is some of the best work the
+  Companion does. The reference example, which Jay called "perfect application of using the Identity back to the
+  member" (Rewire · Disinformation Audit, post-Checkpoint):
+
+  > "And underneath all of it — **the Player is still there. You named him.** That's what Reconnect was for."
+
+  Never rewrite that to "you're still there"; the beat depends on naming the Identity. **Four tests, all of them:**
+  (1) at a milestone or checkpoint — earned, not routine; (2) rare — one beat, not a running form of address;
+  (3) framed as THEIR act ("you named him"), so it reads as something they claimed rather than a label we applied;
+  (4) pivots straight back to second person. Fails any one → sweep it to "you". Guarded by
+  `tests/identity-voice.test.ts`, because deleting the carve-out fails silently.
 - **"The Fade", never "the drift" as a noun.** The Fade is the protected term for the identity distance. Verb uses
   ("how far you'd drifted", "the signs you're drifting") and the product name "Drift Quiz" are correct and stay.
 - **"Clip in" is defined once, upstream, and explained nowhere else.** The word is core vocabulary (the daily
