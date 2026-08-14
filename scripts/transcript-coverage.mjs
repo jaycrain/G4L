@@ -55,7 +55,14 @@ const NOT_MEMBER_AREAS = [
  * one thing that must never reach the transcript marketing quotes from — it would put our instructions in the
  * book as if a member had been told them.
  */
-const NOT_MEMBER_FILES = new Set(['lib/agent/system-prompt.ts']);
+const NOT_MEMBER_FILES = new Set([
+  'lib/agent/system-prompt.ts',
+  // goal-kind.ts is a pure classifier. What the extractor finds in it are three REGEX FRAGMENTS held as string
+  // constants — "(?:once|twice|thrice)" and friends — not copy. Checked before excluding, per the caution above.
+  // IF A THIRD REGEX-HOLDING FILE TRIPS THIS, stop naming files and teach the extractor to skip regex-shaped
+  // strings instead; two is a coincidence, three is a shape.
+  'lib/reclaim/goal-kind.ts',
+]);
 
 const isExcludedArea = (rel) => NOT_MEMBER_AREAS.some((a) => rel.startsWith(a)) || NOT_MEMBER_FILES.has(rel);
 
