@@ -1,4 +1,4 @@
-# Strings EXCLUDED from the member transcript (app @ 381cd8d · 2026-08-14)
+# Strings EXCLUDED from the member transcript (app @ 843b6dc · 2026-08-14)
 # Not member copy: system prompts, multi-line fragments, code artifacts. Review when a real line goes missing.
 
 [lib/agent/onboarding-staged.ts] you’re trying to reclaim. We can always change it later.
@@ -16,16 +16,14 @@
 [lib/agent/onboarding-staged.ts] a diagnosis, a move, a job that swallowed you. More often it’s slower: an accumulation of what we call Doors — moments
 [lib/agent/onboarding-staged.ts] and seasons you walk through and barely notice, each one widening the gap. What’s been happening that caused that
 [lib/agent/onboarding-staged.ts] version of you to Fade? Tell me how it went for you.
-[lib/agent/onboarding-staged.ts] Then let's find out what happened to ${label}. The distance from ${label} rarely opens all at once — more often
 [lib/agent/onboarding-staged.ts] it's an accumulation of what we call Doors: moments and seasons you walk through and barely notice, each one
-[lib/agent/onboarding-staged.ts] widening the gap. So how did it go — what pulled you away from ${label}? Take me through it.
+[lib/agent/onboarding-staged.ts] widening the gap. So how did it go — what pulled you away from yourself? Take me through it.
 [lib/agent/onboarding-staged.ts] you're reaching forward, not trying to find your way back to someone you've lost. That's a genuinely good place
 [lib/agent/onboarding-staged.ts] to be, and it would be dishonest of me to manufacture a problem you don't have. G4L is for the season when that
 [lib/agent/onboarding-staged.ts] changes — when something real has pulled you away from who you were. If that day comes, this door stays open
 [lib/agent/onboarding-staged.ts] and I'll be right here. Until then — keep building.
 [lib/agent/onboarding-staged.ts] That's a lot to have been carrying${identity ?
 [lib/agent/onboarding-staged.ts] your Reclaim List, the thing the whole program works toward${identity ?
-[lib/agent/onboarding-staged.ts] s life you miss most` :
 [lib/agent/onboarding-staged.ts] lost touch with, ten quiet minutes that are yours. What comes to mind?
 [lib/agent/onboarding-staged.ts] That's a real start, and there's no rush — your list is never locked, and you can add to it any time as
 [lib/agent/onboarding-staged.ts] more comes back to you. If even one more surfaces right now, tell me; if not, that's completely okay.
@@ -862,6 +860,13 @@
 [app/dashboard/resilience-pulse.tsx] 12.5px
 [app/dashboard/resilience-pulse.tsx] 0.5rem 0 0.25rem
 [app/dashboard/resilience-pulse.tsx] 0.4rem 0 0
+[lib/activity/summary.ts] ${(m / METERS_PER_MILE).toFixed(1)} mi
+[lib/activity/summary.ts] ${Math.round(m * 3.28084)} ft
+[lib/activity/summary.ts] ${diffMi.toFixed(0)} mi more than last week.
+[lib/activity/summary.ts] ${diffMi.toFixed(0)} mi less than last week.
+[lib/activity/summary.ts] ${twMi.toFixed(0)} mi this week — past your ${goalMi}.
+[lib/activity/summary.ts] ${twMi.toFixed(0)} of your ${goalMi} mi this week.
+[lib/activity/summary.ts] ${Math.floor(hrs / 24)}d ago
 [app/momentum/[memberId]/page.tsx] Movement
 [app/momentum/[memberId]/page.tsx] Eating
 [app/momentum/[memberId]/page.tsx] Today
