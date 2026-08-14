@@ -15,6 +15,7 @@ import { DOORS, matchDoors, isDoorSlug, type DoorSlug } from '../doors.ts';
 import { TOTAL_ITEMS, itemStem, DIMENSIONS, type Dimension } from '../idq/instrument.ts';
 import { scoreIdq } from '../idq/scoring.ts';
 import { identityLabel } from '../member/identity.ts';
+import { nextFollowUp } from './follow-up.ts';
 import { doorProvenance } from './door-provenance.ts';
 import type { Db } from '../db/schema.ts';
 import { MEMBER_AGENT_SYSTEM_PROMPT } from './system-prompt.ts';
@@ -150,9 +151,14 @@ const DOOR_MIN_DEPTH = 2; // never reflect an insight before this many real draw
 const DOOR_MAX_DEPTH = 5; // anti-loop cap
 
 // Ensure the turn ends on a forward question (same helper as the onboarding kernel — kept local to avoid exporting).
-function withQuestion(modelText: string, probe: string): string {
+// `probe` is NULL once every follow-up for this beat has been said — see nextFollowUp. Then the model's own text
+// is the whole reply, which is where the draw-out's questions are meant to come from anyway. The terminal line
+// exists for the one case that would otherwise emit nothing: no model text AND no probe left.
+const NOTHING_LEFT_TO_ASK = 'Take your time — say more whenever you\'re ready.';
+function withQuestion(modelText: string, probe: string | null): string {
   const t = (modelText ?? '').trim();
-  if (!t) return probe;
+  if (!t) return probe ?? NOTHING_LEFT_TO_ASK;
+  if (!probe) return t;
   if (/\?\s*$/.test(t)) return t;
   const lastQ = t.lastIndexOf('?');
   if (lastQ !== -1 && t.length - lastQ <= 60) return t;
@@ -196,9 +202,8 @@ const DOOR_MORE_VARIANTS = [
 // Rotate on how many times WE have spoken, not on how many of our lines contained a '?'. The question-mark count
 // freezes the moment a reply without one is emitted (the reflect fallbacks have none), so the same variant came
 // back forever — Jennifer's walk saw one line three times running. An agent-message count can only ever grow.
-function doorMore(history: ConvMessage[]): string {
-  const said = history.filter((h) => h.role === 'agent').length;
-  return DOOR_MORE_VARIANTS[said % DOOR_MORE_VARIANTS.length]!;
+function doorMore(history: ConvMessage[]): string | null {
+  return nextFollowUp(DOOR_MORE_VARIANTS, history);
 }
 
 // The INSIGHT reflect: trust the model's synthesis (the prompt makes it offer a connection, in their words, as a
@@ -454,9 +459,8 @@ const DRIFT_MORE_VARIANTS = [
 // Rotate on how many times WE have spoken, not on how many of our lines contained a '?'. The question-mark count
 // freezes the moment a reply without one is emitted (the reflect fallbacks have none), so the same variant came
 // back forever — Jennifer's walk saw one line three times running. An agent-message count can only ever grow.
-function driftMore(history: ConvMessage[]): string {
-  const said = history.filter((h) => h.role === 'agent').length;
-  return DRIFT_MORE_VARIANTS[said % DRIFT_MORE_VARIANTS.length]!;
+function driftMore(history: ConvMessage[]): string | null {
+  return nextFollowUp(DRIFT_MORE_VARIANTS, history);
 }
 const DRIFT_CONFIRM = 'Does that name the shape of it — or is it different?';
 // NULL means "the model gave us nothing to reflect". Returning a fixed sentence here instead was the bug: the caller
@@ -501,8 +505,21 @@ const driftStage: StageDef = {
       // constant here is how the identical sentence came back three turns running in Jennifer's walk (2026-08-09),
       // with the member telling us four times that she was done.
       const reflected = reflectDrift(b.modelText);
-      b.reply = reflected ?? driftMore(b.history);
-      b.awaitingConfirm = reflected !== null;
+      const probe = reflected ? null : driftMore(b.history);
+      if (reflected) {
+        b.reply = reflected;
+        b.awaitingConfirm = true;
+      } else if (probe) {
+        b.reply = probe;
+        b.awaitingConfirm = false;
+      } else {
+        // NOTHING TO REFLECT AND NOTHING LEFT TO ASK. Speaking again here is what trapped Jennifer — she said she
+        // was finished three times and got the same sentence back. So the beat STOPS drawing out and hands
+        // forward with what it has, rather than inventing another prompt or repeating a terminal line forever.
+        b.stage = 'window';
+        b.reply = driftToWindowBridge(b.collected);
+        b.awaitingConfirm = false;
+      }
     }
   },
   confirm(b) {
@@ -551,9 +568,8 @@ const WINDOW_MORE_VARIANTS = [
 // Rotate on how many times WE have spoken, not on how many of our lines contained a '?'. The question-mark count
 // freezes the moment a reply without one is emitted (the reflect fallbacks have none), so the same variant came
 // back forever — Jennifer's walk saw one line three times running. An agent-message count can only ever grow.
-function windowMore(history: ConvMessage[]): string {
-  const said = history.filter((h) => h.role === 'agent').length;
-  return WINDOW_MORE_VARIANTS[said % WINDOW_MORE_VARIANTS.length]!;
+function windowMore(history: ConvMessage[]): string | null {
+  return nextFollowUp(WINDOW_MORE_VARIANTS, history);
 }
 const WINDOW_CONFIRM = 'Is that the one worth chasing — or not quite it yet?';
 // NULL means nothing to reflect — see reflectDrift. Same contract, same reason.
@@ -589,8 +605,21 @@ const windowStage: StageDef = {
     } else {
       // See driftStage — no reflection means nothing to confirm, and the fallback rotates rather than repeating.
       const reflected = reflectWindow(b.modelText);
-      b.reply = reflected ?? windowMore(b.history);
-      b.awaitingConfirm = reflected !== null;
+      const probe = reflected ? null : windowMore(b.history);
+      if (reflected) {
+        b.reply = reflected;
+        b.awaitingConfirm = true;
+      } else if (probe) {
+        b.reply = probe;
+        b.awaitingConfirm = false;
+      } else {
+        // Same contract as the drift beat: out of probes and nothing to reflect → close the beat rather than
+        // keep asking. The Window hands into the Checkpoint.
+        b.stage = 'checkpoint';
+        b.administeredResponses = [];
+        b.reply = `${windowClose()}\n\n${checkpointOpener()}`;
+        b.awaitingConfirm = false;
+      }
     }
   },
   confirm(b) {

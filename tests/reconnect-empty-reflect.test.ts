@@ -49,16 +49,33 @@ for (const stage of ['drift', 'window'] as const) {
   });
 
   test(`${stage} · consecutive empty model turns do NOT repeat the same sentence verbatim`, () => {
-    // THE REGRESSION. Before the fix both turns returned the identical hardcoded fallback string.
+    // THE REGRESSION. Before the first fix both turns returned the identical hardcoded fallback string.
+    //
+    // THE HARNESS NOW FEEDS OUR OWN REPLIES BACK, because that is what production does — persistArcSession
+    // writes `[...history, member turn, ...beatBubbles(reply)]`, so the next turn's engine sees what it just
+    // said. The old harness grew the history with synthetic "probe N" lines and never included the replies,
+    // which let an implementation that counted MESSAGES pass while one that reads what was actually SAID
+    // failed. That flattered the counter and hid the real bug: counting wraps, and on the fourth ask the
+    // member hears the first line again (Jay's walk, 2026-08-13: "Second time it's asked me this").
+    //
+    // SIX turns, not three: three variants, so a wrap can only show up on the fourth.
     let state: ConvState = { stage, stageScratch: { [stage]: { [depthKey]: 2 } }, collected: { doors: ['grind'] } };
+    let h: ConvMessage[] = history(3);
     const seen: string[] = [];
-    for (let i = 0; i < 3; i++) {
-      const h = history(3 + i);
-      const turn = applyReconnectTurn(state, h, 'there is more to it than that', { text: '', depthReady: true });
+    for (let i = 0; i < 6; i++) {
+      const member = 'there is more to it than that';
+      const turn = applyReconnectTurn(state, h, member, { text: '', depthReady: true });
+      // STOP AT THE HAND-OFF. The invariant belongs to the DRAW-OUT: never say the same thing twice while
+      // drawing a member out. Once the beat gives up and hands forward, the next stage is an administered
+      // instrument, and an instrument re-asking "just a number, 1 to 5" until it gets one is correct — that
+      // repetition is the design, not the bug.
+      if (turn.state.stage !== stage) break;
       seen.push(turn.reply.trim());
+      h = [...h, { role: 'member', text: member }, { role: 'agent', text: turn.reply }];
       state = turn.state;
     }
-    assert.equal(new Set(seen).size, seen.length, `the beat repeated itself verbatim: ${JSON.stringify(seen)}`);
+    const dupes = seen.filter((t, i) => seen.indexOf(t) !== i);
+    assert.deepEqual(dupes, [], `the beat repeated itself verbatim: ${JSON.stringify(seen)}`);
   });
 
   test(`${stage} · a model turn WITH prose still reflects and awaits the check (the fix did not break the good path)`, () => {

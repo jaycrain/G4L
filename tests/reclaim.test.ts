@@ -123,11 +123,18 @@ test('matchDoors maps free text to one or more Doors in canonical order', () => 
   assert.ok(matchDoors("honestly I've just settled for less these days").includes('acceptance'));
 });
 
-test('correctDoors fixes the marriage/young-kids mis-tag (Full House, not Empty Nest / Aging Parents)', () => {
+test('correctDoors fixes the young-kids/Empty-Nest mis-tag, and NO LONGER touches Aging Parents', () => {
   // Scott's story: married, then kids, wife's struggles became his to carry — the model wrongly tagged
-  // aging_parents + empty_nest. Neither has any signal here, so both are corrected to The Full House.
+  // aging_parents + empty_nest.
+  //
+  // CHANGED 2026-08-13 (Jay: "Yes they can coexist, completely different things"). Empty Nest is still
+  // corrected — a house cannot be full and empty at once. Aging Parents is NOT, and the cost is visible right
+  // here: Scott's wrong tag now SURVIVES this narrative. That is the accepted trade. Deleting it also deleted
+  // the Door of every sandwich-generation member who mentioned a parent in a different turn from their kids —
+  // which is what happened to Jay on his own account, silently, where he could not see it. A wrong tag is
+  // visible to the member and correctable; a deleted one is neither.
   const narrative = 'When I got married. Then we had kids and she suffered and the responsibility fell on me. New job, alimony, gained weight.';
-  assert.deepEqual(correctDoors(['aging_parents', 'empty_nest'], narrative), ['full_house']);
+  assert.deepEqual(correctDoors(['aging_parents', 'empty_nest'], narrative), ['aging_parents', 'full_house']);
   // It keeps legitimately-signaled Doors alongside, and adds Full House.
   assert.deepEqual(correctDoors(['body'], narrative), ['body', 'full_house']);
   // It does NOT touch a genuine Empty Nest / Aging Parents story (their own signal is present).

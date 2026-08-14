@@ -24,6 +24,7 @@
 import { cleanIdentityNoun, displayIdentityNoun, identityLabel, sanitizeCoinedIdentity } from '../member/identity.ts';
 import { isDoorSlug, matchDoors, type DoorSlug } from '../doors.ts';
 import { RECLAIM_LIST_FLOOR, RECLAIM_LIST_MIN, RECLAIM_LIST_TARGET, reclaimAddIntent, isReclaimMetaFragment } from '../member/reclaim.ts';
+import { nextFollowUp } from './follow-up.ts';
 import { gapIsNarrative, hasIdentity } from './onboarding-contract.ts';
 import { ONBOARDING_BASELINE_ITEMS, grintaStem } from '../grinta/survey/instrument.ts';
 import { scoreGrinta } from '../grinta/survey/scoring.ts';
@@ -277,13 +278,11 @@ const GAP_MORE_VARIANTS = [
   'I hear you. Was anything else tangled up in that same period, or does that capture the shape of how the distance opened?',
   'That helps me understand. Did anything else pile on around then — or do we have the heart of it now?',
 ];
-const GAP_MORE_MAX = GAP_MORE_VARIANTS.length; // after this many "was there more?" asks, reflect instead of re-asking
-// How many times we've already asked for more in this gap stage (by the variants' shared signature in history).
-function gapMoreAsks(history: ConvMessage[]): number {
-  return history.filter((h) => h.role === 'agent' && /\b(was there (more|anything)|anything else|pile on|tangled up)\b/i.test(h.text)).length;
-}
-function gapMore(history: ConvMessage[]): string {
-  return GAP_MORE_VARIANTS[gapMoreAsks(history) % GAP_MORE_VARIANTS.length]!;
+// THE CAP WAS A COMMENT, NOT CODE. GAP_MORE_MAX was declared here and never referenced — the chooser indexed
+// `asks % length`, which wraps, so "capped at N asks, then reflect" never happened. Now the list genuinely runs
+// out: nextFollowUp returns null and the caller stops asking rather than starting again at the top.
+function gapMore(history: ConvMessage[]): string | null {
+  return nextFollowUp(GAP_MORE_VARIANTS, history);
 }
 
 // DECISION E FORK (v2.1, Increment 2) — supersedes the Jun-26 admit-at-floor + `note_no_fade`. A "no obvious
@@ -323,12 +322,8 @@ const RECLAIM_MORE_VARIANTS = [
   'Anything else on your mind — even something small you miss?',
 ];
 const RECLAIM_MORE = RECLAIM_MORE_VARIANTS[0]!; // the soft-close / recite-mismatch nudge (a single ask, not a loop)
-// How many times the "what else?" backstop has already been appended this stage — by the variants' shared signature.
-function reclaimMoreAsks(history: ConvMessage[]): number {
-  return history.filter((h) => h.role === 'agent' && /\b(what else|anything else|want back|something small you miss)\b/i.test(h.text)).length;
-}
-function reclaimMore(history: ConvMessage[]): string {
-  return RECLAIM_MORE_VARIANTS[reclaimMoreAsks(history) % RECLAIM_MORE_VARIANTS.length]!;
+function reclaimMore(history: ConvMessage[]): string | null {
+  return nextFollowUp(RECLAIM_MORE_VARIANTS, history);
 }
 
 // The confirm-only card reply when a member tries to add a want AFTER the summary card. Nothing lands here — so we
@@ -398,9 +393,14 @@ export function drawoutShouldReflect(
 // model's reflection AND guarantees a closing question: model ends on a question → use it; model reflected but
 // trailed into a statement → keep it, append the stage probe; nothing usable → the probe alone.
 // Exported: a shared draw-out primitive the arcs reuse (Reconnect has its own copy; Rewire imports this one).
-export function withQuestion(modelText: string, probe: string): string {
+// `probe` is NULL once every follow-up for this beat has been said (nextFollowUp). Then the model's own text IS
+// the turn — which is the drawout rule anyway: the model owns the question, the engine never appends its own.
+// NOTHING_LEFT_TO_ASK covers the one combination that would otherwise emit an empty reply.
+export const NOTHING_LEFT_TO_ASK = "Take your time — say more whenever you're ready.";
+export function withQuestion(modelText: string, probe: string | null): string {
   const t = (modelText ?? '').trim();
-  if (!t) return probe;
+  if (!t) return probe ?? NOTHING_LEFT_TO_ASK;
+  if (!probe) return t;
   // Did the model already lead the turn with a forward question? Look at the whole LAST PARAGRAPH, not just the
   // last N characters. The model routinely asks its question and then adds an invitation coda in the same breath
   // ("…what did that look like for you? Give me a glimpse of what that version of you was doing."). A char-window
