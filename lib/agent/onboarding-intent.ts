@@ -383,6 +383,39 @@ export function isAcceptanceFade(text: string): boolean {
 // model doesn't signal — so the phrase corpus still holds, and a mis-signal is still caught by the card seatbelt.
 // This is the intent half of "model proposes, engine disposes": the engine bounds it (the confirm only exists
 // AFTER a floor/cap-bounded, verbatim-quoting reflect), so a signal can't skip the draw-out.
+// "I DON'T UNDERSTAND" IS NOT "YES".
+//
+// The confirm gates classify a reply as dispute / addition / done, and everything unrecognised falls to done —
+// deliberately (see the BIAS TO ADVANCE note above: a false "more" loops the beat, and Jay has reported the
+// "won't take yes" failure). That bias is right for a hedge or a terse add, both of which the card catches.
+//
+// It is wrong for exactly one family: a member saying they did not follow us. Jay hit it walking his own account
+// — the Companion emitted its graceful fallback, he asked "What do you mean", and the engine read that as
+// agreement and ended the Doors excavation into the 24-item IDQ.
+//
+// So this matcher is deliberately TIGHT rather than clever. It wants a short, meta reply about the utterance —
+// "what do you mean", "say that again". A long answer that happens to contain "I don't understand" is a member
+// telling us something about their life ("I don't understand why I let it go"), and must never be intercepted.
+// Two families, kept apart because they fail differently.
+//  BARE — the whole message is the confusion: "huh?", "what?", "sorry?", "wdym". Anchored to the WHOLE string,
+//  because "What I mean is the mornings were the part I lost" opens with "what" and is an answer.
+const CONFUSED_BARE_RE = /^((sorry|wait|hang on)[\s,]*)?(wdym|huh+|what|sorry|eh|pardon)[\s,.!?]*$/i;
+//  PHRASED — an explicit request to rephrase. The trailing object is optional AND so is the space before it,
+//  which is what made a plain "I don't understand" slip through the first version of this.
+const CONFUSED_PHRASE_RE =
+  /\b(what do you mean|what'?s that mean|i (don'?t|do not) (understand|follow|get)( (that|this|you|what you mean))?|not sure what you'?re asking|say that again|said that again|come again|repeat that|you'?ve lost me|you lost me|i'?m lost|didn'?t follow|no idea what you)\b/i;
+/** Roughly how much the member said beyond the confusion itself — a real answer is not a request to repeat. */
+const CONFUSION_WORD_CAP = 12;
+export function memberIsConfused(message: string): boolean {
+  const m = (message ?? '').replace(/[\u2018\u2019]/g, "'").trim();
+  if (!m) return false;
+  if (!CONFUSED_BARE_RE.test(m) && !CONFUSED_PHRASE_RE.test(m)) return false;
+  if (CONFUSED_BARE_RE.test(m)) return true; // the whole message is the question — length is already proven
+  // "I don't understand why I let it go" is an ANSWER. Length is the cheap, honest separator: a request to
+  // rephrase is short. Anything longer is content, and content must reach the gate unintercepted.
+  return m.split(/\s+/).length <= CONFUSION_WORD_CAP;
+}
+
 export type GapConfirmIntent = 'dispute' | 'addition' | 'done';
 
 /**

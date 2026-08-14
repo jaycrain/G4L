@@ -68,6 +68,7 @@ import {
   resolveReclaimConfirm,
   shouldCaptureStagedGap,
   shouldCaptureStagedReclaim,
+  memberIsConfused,
 } from './onboarding-intent.ts';
 
 // Re-exported so existing callers/tests can keep importing it from the engine surface.
@@ -1683,6 +1684,14 @@ const ONBOARDING_ARC: ArcConfig = {
 };
 
 // --- the generic kernel: run one turn of ANY arc -------------------------------------------------------
+// The rephrase. It takes the blame, invites their own words, and adds NOTHING about their life — inventing
+// content for a member who just said they were lost is the worst available move. Kept as one line so
+// alreadyClarified can find it in the transcript; a second confusion after this one proceeds.
+export const CLARIFY_REPLY =
+  "That was me asking it badly — let me try again. Say it however it comes to you, in your own words, and I'll follow.";
+const alreadyClarified = (history: ConvMessage[]): boolean =>
+  history.some((h) => h.role === 'agent' && (h.text ?? '').includes(CLARIFY_REPLY));
+
 export function runArcTurn(
   arc: ArcConfig,
   state: ConvState,
@@ -1696,6 +1705,22 @@ export function runArcTurn(
   // so a future arc can't forget it. (Onboarding handles its own crisis upstream in onboardingNextTurn.)
   if (detectCrisis(memberMessage).flagged) {
     return { reply: CRISIS_RESPONSE_US, state, complete: false, crisis: true };
+  }
+  // "I DON'T UNDERSTAND" IS NOT A CONFIRMATION — held here, beside crisis, for the same reason: it is a rule that
+  // must hold in every arc, and a rule enforced at each confirm() is a rule some future stage forgets.
+  //
+  // The confirm gates classify a reply as dispute / addition / done and let everything unrecognised fall to done.
+  // That bias is deliberate and mostly right. It is wrong when the member has told us they did not follow us:
+  // Jay's walk (2026-08-13) had the Companion emit its graceful fallback, Jay ask "What do you mean", and the
+  // engine read that as agreement and end the Doors excavation into the 24-item IDQ.
+  //
+  // ONLY AT A GATE (awaitingConfirm), because that is where a reply is being read as consent. Mid-draw-out the
+  // model handles a confused member itself, and intercepting there would talk over it.
+  //
+  // ONCE. If we already asked for a rephrase and they are still stuck, the beat proceeds rather than trapping
+  // them in a loop — the failure in the other direction, and the reason the advance-bias exists at all.
+  if ((state.awaitingConfirm ?? false) && memberIsConfused(memberMessage) && !alreadyClarified(history)) {
+    return { reply: CLARIFY_REPLY, state, complete: false };
   }
   const collected = mergeStaged({ ...state.collected }, model.record, memberMessage);
   // Light-touch measurability: the model sharpens a vague want by REPLACING its most-recent item in place —
