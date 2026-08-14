@@ -201,6 +201,14 @@ export default function WeekGridPanel({ memberId, grid }: { memberId: string; gr
             ? 'Tap any day to open your log — the grid mirrors what you write there.'
             : 'This mirrors what you\u2019ve told your Companion, so you can see the week at a glance.'}
       </p>
+      {/* THE WAY BACK (Jay, 2026-08-14: "you can't get right back to the subpage easily"). These rows came FROM
+          the Reclaim List, so the list is where a member goes to change what is being tracked — reword an item,
+          track another, stop one. Only for this kind: every other week originates in a Session, and pointing
+          those at the Reclaim List would be a link to somewhere they did not come from. Uses the house
+          `.see-more` foot-link pattern rather than inventing a control. */}
+      {grid.kind === 'reclaim_item' && (
+        <Link className="see-more" href={`/reclaim-list/${memberId}`}>Your Reclaim List →</Link>
+      )}
     </div>
   );
 }

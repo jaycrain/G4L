@@ -1327,6 +1327,9 @@ html:has(.companion-hero), body:has(.companion-hero) { overflow-anchor: none; }
 .wk-cell-link:hover { border-color: var(--teal); }
 .wk-cell:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
 .wk-foot { margin: 9px 0 0; font-size: 11.5px; color: var(--muted-grey); }
+/* The Reclaim-List way-back under a reclaim_item grid. .see-more carries align-self:flex-start for the flex
+   panels it was written for; this container is not flex, so pin it as a block instead of inheriting nothing. */
+.wk-grid .see-more { display: inline-block; margin-top: 10px; }
 @media (max-width: 480px) {
   .wk-table th.wk-lab, .wk-table td.wk-lab { width: 32%; }
   .wk-table td.wk-lab { font-size: 11.5px; }
