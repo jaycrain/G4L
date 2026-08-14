@@ -271,7 +271,15 @@ Drive.** The routine:
    Companion copy; **MANIFEST.md** — stamped `version · commit · date` + glossary version.
 2. CC adds **(3)** the `sync-note` (Marketing Alignment Brief format — what changed in voice/naming/story/function)
    and **(4)** `screenshots/` of key surfaces (via the preview tools).
-3. CC **pushes the folder to the shared Drive folder** via the Drive connector (headless scripts can't).
+3. CC **publishes to CANON IN THE REPO** — `node scripts/publish-canon.mjs <version> --since v<prev>` writes
+   `docs/canon/v<version>/` (adding **CHANGES.md**, the added/removed copy diff, and a per-part sha256 in the
+   MANIFEST), then FAILS LOUDLY if any declared part is missing or empty; commit + tag. **The old "push the
+   folder to Drive" step is RETIRED.** The connector accepts inline content only, so anything past a few KB
+   never arrived — and it failed *silently*: twice (2026-08-08, 2026-08-10) it dropped the member transcript,
+   the one file marketing and the book quote from, while the folder still listed and the MANIFEST still
+   promised it. Git has no partial state that looks complete. Drive gets a short **pointer** doc so the trail
+   stays continuous — and after ANY Drive write, **read the file back**: the create response's `fileSize` is
+   not evidence (a Docs conversion reports `1` for a fully-populated document).
 
 **Quotability rule (protects the book):** authored copy (transcript, assessment items, UI, badges) is fixed — quote
 verbatim. The Companion's in-the-moment reflections are model-generated and vary per member — never quote as
