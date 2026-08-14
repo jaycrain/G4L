@@ -60,8 +60,9 @@ export const THRESHOLD_COPY = {
   // upstream, on the "A few words you'll hear" language screen — where they are still learning the vocabulary and
   // nothing is being asked of them yet — and the button below it reads "Clip in →". Downstream just USES the word.
   //
-  // JAY: this replacement line is Cowork's draft, and she marked it "Jay to confirm". It is the one string in this
-  // batch nobody has signed off on. Say the word and it changes.
+  // CONFIRMED BY JAY, 2026-08-14. Cowork drafted this line and marked it "Jay to confirm"; it shipped ahead of
+  // that sign-off and was the one unconfirmed string in the batch. It is now settled copy — treat it like any
+  // other authored line, and quotable as canon.
   clipIn: 'This is where it starts — a commitment to get going, and keep going.',
   // Donna dropped the per-member "first move" tail; keep the signature so callers don't change, ignore the arg.
   clipInWithMove: (_firstMove: string) => 'This is where it starts — a commitment to get going, and keep going.',
