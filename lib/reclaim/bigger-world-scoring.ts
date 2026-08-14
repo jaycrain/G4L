@@ -13,8 +13,13 @@ export type DomainScore = {
   importance: number;
   readiness: number;
   ripple: number;
-  computedGap: number; // Desired − Current (the formula gap, RC-1)
-  priorityScore: number; // (computedGap × Importance) + Readiness + Ripple
+  computedGap: number; // Gap = Desired − Current (the formula gap, RC-1)
+  // STATUS = Gap × Importance. Greg named this intermediary on 2026-08-13: "you have the formula correct but
+  // let's use these variable names." It was inlined inside priorityScore, which meant the product had no name —
+  // so neither the Companion nor a member-facing explanation could refer to it, and the stacked bar below has no
+  // first segment to label. Naming it changes no arithmetic; it makes the middle step speakable.
+  status: number;
+  priorityScore: number; // Status + Readiness + Ripple
 };
 export type AuditScore = {
   domains: DomainScore[]; // in domain order (Physical/Self/Social/Outlook)
@@ -36,9 +41,10 @@ export function scoreAudit(responses: number[]): AuditScore {
     const importance = val(domain, 'importance');
     const readiness = val(domain, 'readiness');
     const ripple = val(domain, 'ripple');
-    const computedGap = desired - current; // RC-1: computed, not the felt gap
-    const priorityScore = computedGap * importance + readiness + ripple;
-    return { domain, current, desired, importance, readiness, ripple, computedGap, priorityScore };
+    const computedGap = desired - current; // Gap — RC-1: computed, not the felt gap
+    const status = computedGap * importance; // Status = Gap × Importance
+    const priorityScore = status + readiness + ripple; // Priority Score = Status + Readiness + Ripple
+    return { domain, current, desired, importance, readiness, ripple, computedGap, status, priorityScore };
   });
 
   // Rank by PriorityScore (desc); ties resolve to domain order (Array.sort is stable, `domains` is in domain order).

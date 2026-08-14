@@ -93,3 +93,39 @@ test('scoreAudit · ties resolve to domain order; guards a wrong response count'
   assert.throws(() => scoreAudit([1, 2, 3]), /expects 20/);
   assert.equal(Object.keys(auditResponsesMap(AUDIT_ITEMS.map(() => 5))).length, 20, 'response map keys by code');
 });
+
+// ── GREG'S VARIABLE NAMES (2026-08-13) ───────────────────────────────────────────────────────────────────────
+//
+// "You have the formula correct but let's use these variable names": Gap = Desired − Current, Status = Gap ×
+// Importance, Priority Score = Status + Readiness + Ripple. The arithmetic did not change; the middle step got a
+// name so the Companion and the Step-2 bar can refer to it.
+
+import { scoreAudit as scoreAuditNamed } from '../lib/reclaim/bigger-world-scoring.ts';
+
+test('Status is Gap × Importance, and Priority Score is Status + Readiness + Ripple', () => {
+  // Physical: current 3, desired 8, importance 7, readiness 6, ripple 5 → Gap 5, Status 35, Priority 46.
+  const responses = [
+    3, 8, 7, 6, 5, // physical
+    5, 6, 4, 3, 2, // self
+    2, 9, 5, 8, 4, // social
+    6, 7, 3, 5, 6, // outlook
+  ];
+  const s = scoreAuditNamed(responses);
+  const physical = s.domains[0]!;
+  assert.equal(physical.computedGap, 5, 'Gap = Desired − Current');
+  assert.equal(physical.status, 35, 'Status = Gap × Importance');
+  assert.equal(physical.priorityScore, 46, 'Priority Score = Status + Readiness + Ripple');
+});
+
+test('naming Status changed no arithmetic — Priority still equals the old inlined expression', () => {
+  // The guard against a rename that quietly becomes a re-spec. Every domain must satisfy the ORIGINAL formula.
+  const responses = [4, 9, 6, 7, 3, 2, 8, 9, 4, 5, 7, 7, 2, 6, 8, 1, 10, 5, 2, 9];
+  for (const d of scoreAuditNamed(responses).domains) {
+    assert.equal(
+      d.priorityScore,
+      (d.desired - d.current) * d.importance + d.readiness + d.ripple,
+      `${d.domain}: Priority Score drifted from (Gap × Importance) + Readiness + Ripple`,
+    );
+    assert.equal(d.status, d.computedGap * d.importance, `${d.domain}: Status is not Gap × Importance`);
+  }
+});
