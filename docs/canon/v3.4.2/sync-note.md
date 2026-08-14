@@ -79,9 +79,9 @@ Kept: the source of the metaphor, the commitment, and the clip-**back**-in (whic
 depends on the member already understanding). Dropped to marketing: "a cycling term our founder uses", the
 both-strokes payoff, "transforms the ride". **The above is the shipped string — quote that one.**
 
-**ACTION — one string is unconfirmed.** Your suggested Threshold replacement, *"This is where it starts — a
-commitment to get going, and keep going."*, is live but you marked it "Jay to confirm" and he has not. It is
-the only string in this release nobody has signed off. Treat it as provisional in canon until I confirm.
+**RESOLVED — Jay confirmed it, 2026-08-14.** Your Threshold replacement, *"This is where it starts — a
+commitment to get going, and keep going."*, was live ahead of sign-off and I flagged it here as provisional.
+He has now confirmed it. It is **settled, quotable canon** — no longer an open item, nothing owed back.
 
 ---
 

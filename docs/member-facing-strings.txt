@@ -58,7 +58,7 @@
 [app/rewire/rewire-ceremony.tsx:21] Get Rebuilt →
 [app/rebuild/rebuild-ceremony.tsx:20] Get Reclaimed →
 [app/reconnect/reconnect-ceremony.tsx:21] Get Rewired →
-[lib/ceremony/threshold-beats.ts:80] get to work → Reconnect
+[lib/ceremony/threshold-beats.ts:81] get to work → Reconnect
 [app/onboarding/chat.tsx:375 +1] Getting to Know You
 [app/dashboard/redesign-shell.tsx:207] Go to Dashboard ↓
 [app/dashboard/topbar-view.tsx:30 +1] Go to your G4L home
@@ -1765,7 +1765,7 @@
 [app/rewire/rewire-ceremony.tsx:21] Get Rebuilt →
 [app/rebuild/rebuild-ceremony.tsx:20] Get Reclaimed →
 [app/reconnect/reconnect-ceremony.tsx:21] Get Rewired →
-[lib/ceremony/threshold-beats.ts:80] get to work → Reconnect
+[lib/ceremony/threshold-beats.ts:81] get to work → Reconnect
 [app/onboarding/welcome.tsx:58] get your body back.
 [app/onboarding/welcome.tsx:57] get your head right.
 [lib/agent/reclaim.ts:807] Gets in the way
@@ -4535,7 +4535,7 @@
 [lib/agent/checkin.ts:1119] This is the member's VERY FIRST conversation with you — moments after a personal onboarding, now looking at a dashboard full of new numbers and panels for the first time. Write ONLY your warm welcome — begin DIRECTLY with your greeting to the member. Do NOT write, quote, or narrate the AI disclosure or ANY instruction to yourself (never a line like "This is the first AI disclosure — include it now, verbatim…", never "—-" delimiters) — the disclosure is added for you automatically as the clean first line above your message. In your own warm voice (a short paragraph, never a script or a bulleted list), do three things:\n
 [lib/content/retention.ts:33] This is the product. It is their record of their own comeback, and a keeper is something they chose to save.
 [lib/ceremony/close-beats.ts:15] This is the self you’re reclaiming:
-[lib/ceremony/threshold-beats.ts:65 +1] This is where it starts — a commitment to get going, and keep going.
+[lib/ceremony/threshold-beats.ts:66 +1] This is where it starts — a commitment to get going, and keep going.
 [lib/dashboard/hero-copy.ts:86] This is where it starts — a short first conversation to see yourself clearly. No prep, just honesty.
 [lib/agent/governance.ts:108] This is your starting point — a baseline to grow from.
 [app/onboarding/chat.tsx:416] This is your starting point — Reconnect is where we go deeper on all of it. You can shape your list anytime, just by talking with your Companion.
