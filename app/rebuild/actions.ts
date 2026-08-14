@@ -37,7 +37,7 @@ import { startPracticeWeek } from '../../lib/practice/store.ts';
 import { harvestSignal } from '../../lib/agent/harvest.ts';
 import { getGrintaBaselineReading, latestGrintaReading, persistGrintaReading, controlCheckpointResponsesMap } from '../../lib/grinta/survey/store.ts';
 import { scoreCheckpointStrand, grintaChangePct, directionOf } from '../../lib/grinta/survey/scoring.ts';
-import { BASELINE_CONTROL_ITEMS, CHECKPOINT_CONTROL_ITEMS, pairwiseAverage } from '../../lib/grinta/survey/instrument.ts';
+import { BASELINE_CONTROL_ITEMS, CHECKPOINT_CONTROL_ITEMS } from '../../lib/grinta/survey/instrument.ts';
 import { setGate, markSessionClosed, markCheckpointClosed } from '../../lib/curriculum/store.ts';
 import { acknowledgeSessionBadge } from '../../lib/curriculum/view.ts';
 import type { RebuildCeremonyData } from '../../lib/ceremony/rebuild-ceremony-beats.ts';
@@ -83,8 +83,9 @@ async function persistRebuildCheckpoint(db: Db, memberId: string, prev: ConvStat
       rewire: latest?.strands.rewire ?? base?.strands.rewire,
       reclaim: latest?.strands.reclaim ?? base?.strands.reclaim,
     };
-    const scored = pairwiseAverage(control); // 12 → 6 (the one B4 factory addition)
-    const cp = scoreCheckpointStrand({ target: 'rebuild', baselineValues, newValues: scored, carriedStrands: carried });
+    // NO REDUCTION STEP since V5 (2026-08-14): B4 administers six items and scores those six. The pairwise
+    // 12→6 average is gone with the a/b pairs it existed to collapse — what is asked is now what is scored.
+    const cp = scoreCheckpointStrand({ target: 'rebuild', baselineValues, newValues: control, carriedStrands: carried });
     await persistGrintaReading(db, memberId, { source: 'checkpoint', responses: controlCheckpointResponsesMap(control), score: cp.score });
     // → activePhaseIndex 3 (Reclaim is now "You're here"). assetId/eventRef differ here — see markCheckpointClosed.
     await markCheckpointClosed(db, memberId, { assetId: 'RBLD-B4', eventRef: 'RBD-CHK', phase: 'rebuild' });

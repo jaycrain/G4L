@@ -83,29 +83,37 @@ export const GRINTA_ITEMS: Record<string, GrintaItem> = {
   W3Q2: { code: 'W3Q2', strand: 'rewire', subscale: 'W3', stem: 'I can counter triggers that challenge my behavior change efforts' },
   W3Q3: { code: 'W3Q3', strand: 'rewire', subscale: 'W3', stem: 'I am confident that I can maintain physical activity habits and healthy eating patterns over time' },
 
-  // §B4 Rebuild Checkpoint — twelve MORE control items (control → Rebuild), an activity/diet PAIR per layer question.
-  // VERBATIM current-state items from Greg's Measurement Canvas V4b (RB-2 RESOLVED, 7/9 — use these, NOT the "I am
-  // more…" phrasing in the Gated Assets doc); do NOT reword. The 'a'/'b' halves average pairwise to 6 scored items
-  // (B1Q2, B1Q3, B2Q2, B2Q3, B3Q2, B3Q3) which, with the three baseline control items (B1Q1/B2Q1/B3Q1), give the
-  // 9-item control read at the Rebuild close.
-  // Foundation (from B1)
-  B1Q2a: { code: 'B1Q2a', strand: 'rebuild', subscale: 'B1', stem: 'I am aware of my physical activity behaviors and how they relate to recommended guidelines' },
-  B1Q2b: { code: 'B1Q2b', strand: 'rebuild', subscale: 'B1', stem: 'I am aware of my dietary habits and how they relate to recommended guidelines' },
-  B1Q3a: { code: 'B1Q3a', strand: 'rebuild', subscale: 'B1', stem: 'I am aware of how sleep and stress can influence my lifestyle choices and my mood' },
-  // Proof pass (Jay 2026-07-23): "my lifestyles influence" → "my lifestyle influences" (number agreement; a person has
-  // one lifestyle, and the sibling items 92/103 use singular). Member-facing grammar fix, meaning unchanged — Jay
-  // confirmed the proof-pass corrections ride without Greg sign-off.
-  B1Q3b: { code: 'B1Q3b', strand: 'rebuild', subscale: 'B1', stem: 'I am aware of how my lifestyle influences various health indicators' },
-  // Structure (from B2)
-  B2Q2a: { code: 'B2Q2a', strand: 'rebuild', subscale: 'B2', stem: 'I am skilled at self-monitoring my lifestyle behaviors' },
-  B2Q2b: { code: 'B2Q2b', strand: 'rebuild', subscale: 'B2', stem: 'I am skilled at using self-planning and time management skills to manage my behaviors' },
-  B2Q3a: { code: 'B2Q3a', strand: 'rebuild', subscale: 'B2', stem: 'I am skilled at overcoming barriers and recovering from short relapses' },
-  B2Q3b: { code: 'B2Q3b', strand: 'rebuild', subscale: 'B2', stem: 'I am skilled at managing my attitudes and staying motivated on healthy living' },
-  // Elevation (from B3)
-  B3Q2a: { code: 'B3Q2a', strand: 'rebuild', subscale: 'B3', stem: 'I have a consistent movement practice' },
-  B3Q2b: { code: 'B3Q2b', strand: 'rebuild', subscale: 'B3', stem: 'I eat intentionally more often than I eat reactively' },
-  B3Q3a: { code: 'B3Q3a', strand: 'rebuild', subscale: 'B3', stem: 'I can appreciate how physical activity, dietary behaviors and sleep patterns interact together' },
-  B3Q3b: { code: 'B3Q3b', strand: 'rebuild', subscale: 'B3', stem: 'I can see how lifestyle behaviors influence my health, function, and quality of life' },
+  // §B4 Rebuild Checkpoint — six control items (control → Rebuild), two per layer.
+  //
+  // REPLACED 2026-08-14, from Greg's Measurement Model Canvas V5, which supersedes V4b for these codes (his note: refined measurement
+  // items for Rebuild and Reclaim in the Checkpoint Survey — his docs camel-case the Rs; ours never do). This was TWELVE items as activity/diet
+  // 'a'/'b' pairs averaged 12→6. Three reasons the new cut is better, not merely newer:
+  //
+  //   1. IT ANSWERS #146. Foundation now asks about personal MOTIVATIONS, which is what B1 actually teaches (the
+  //      SDT why-instrument). The old items asked about awareness of behaviour versus recommended guidelines —
+  //      content B1 no longer covers, which is exactly the "B4 recaps a retired B1" complaint.
+  //   2. IT KEEPS THE MOVE/EAT SPLIT WHERE IT IS REAL — Elevation, where the construct is behavioural: B3Q2 is
+  //      activity, B3Q3 is diet, each with its OWN score instead of being averaged into one.
+  //   3. IT STOPS AVERAGING NON-EQUIVALENT ITEMS. Only two of the six old pairs were genuinely activity/diet. The
+  //      rest paired DIFFERENT concepts and meaned them — B2Q2a "self-monitoring" with B2Q2b "self-planning and
+  //      time management" — so a member strong at tracking and weak at planning scored identically to the reverse
+  //      and we could not tell them apart. That is a worse measurement error than the one it was avoiding.
+  //
+  // Same six scored codes as before, so nothing downstream re-keys. Six questions instead of twelve, which also
+  // halves a Checkpoint that was already the longest in Rebuild.
+  //
+  // Verbatim from V5 except two proof-pass corrections, which ride without Greg's sign-off per the 7/23 precedent
+  // below: "dietarty" → "dietary", and "self management" → "self-management" to match V5's own B2Q2 four words
+  // earlier. Meaning unchanged in both.
+  // Foundation (from B1) — the WHY. Motivations, and that motivations drive whether a change survives.
+  B1Q2: { code: 'B1Q2', strand: 'rebuild', subscale: 'B1', stem: 'I am aware of my personal motivations related to physical activity and dietary behaviors' },
+  B1Q3: { code: 'B1Q3', strand: 'rebuild', subscale: 'B1', stem: 'I understand that my personal motivations influence my ability to adopt and sustain lifestyles' },
+  // Structure (from B2) — the SKILLS. Explain them, then locate yourself honestly within them.
+  B2Q2: { code: 'B2Q2', strand: 'rebuild', subscale: 'B2', stem: 'I can explain how self-management skills influence lifestyles' },
+  B2Q3: { code: 'B2Q3', strand: 'rebuild', subscale: 'B2', stem: 'I can appreciate my strengths and limitations in various self-management skills' },
+  // Elevation (from B3) — the BEHAVIOUR, and the one layer where move and eat stay separate on purpose.
+  B3Q2: { code: 'B3Q2', strand: 'rebuild', subscale: 'B3', stem: 'I can monitor my physical activity behaviors relative to personal goals for moving' },
+  B3Q3: { code: 'B3Q3', strand: 'rebuild', subscale: 'B3', stem: 'I can monitor my dietary habits relative to personal goals for healthy eating' },
 
   // §C4 Reclaim Checkpoint — six MORE challenge items (challenge → Reclaim), two per layer. VERBATIM current-state
   // items from Greg's RECLAIM Gated Assets V4 (RC-7: the doc mislabels these "Based on B1/B2/B3" — they are C1/C2/C3,
@@ -113,9 +121,13 @@ export const GRINTA_ITEMS: Record<string, GrintaItem> = {
   // baseline challenge items (C1Q1/C2Q1/C3Q1) they give the 9-item challenge read at the Reclaim close.
   // Readiness (from C1)
   C1Q2: { code: 'C1Q2', strand: 'reclaim', subscale: 'C1', stem: 'I am aware of what I want to work towards in the future' },
-  C1Q3: { code: 'C1Q3', strand: 'reclaim', subscale: 'C1', stem: 'I am aware of the importance of focusing to achieve my goals' },
+  // V5 (2026-08-14) — was 'I am aware of the importance of focusing to achieve my goals'. Agency, not focus.
+  C1Q3: { code: 'C1Q3', strand: 'reclaim', subscale: 'C1', stem: 'I understand that I have personal agency over achieving my goal' },
   // Emergence (from C2)
-  C2Q2: { code: 'C2Q2', strand: 'reclaim', subscale: 'C2', stem: 'I have an optimistic view of the future and what it holds for me' },
+  // V5 (2026-08-14) — was 'I have an optimistic view of the future and what it holds for me'. V5 labels this row
+  // 'B2Q2', which is a typo: every sibling is C2*, the layer is Challenge/Emergence, and B2Q2 is already Rebuild's
+  // self-management item. Read as C2Q2.
+  C2Q2: { code: 'C2Q2', strand: 'reclaim', subscale: 'C2', stem: 'I can appreciate distinctions between various aspects of my identity' },
   C2Q3: { code: 'C2Q3', strand: 'reclaim', subscale: 'C2', stem: 'I can prioritize aspects of my life that matter to me' },
   // Extension (from C3)
   C3Q2: { code: 'C3Q2', strand: 'reclaim', subscale: 'C3', stem: 'I am able to determine elements in my daily life that have the strongest impact on my quality of life' },
@@ -135,16 +147,18 @@ export const CHECKPOINT_COMMITMENT_ITEMS: readonly string[] = ['W1Q2', 'W1Q3', '
 
 // The three baseline CONTROL items (administered at onboarding) — the Rebuild strand's Ave1 at the B4 Checkpoint.
 export const BASELINE_CONTROL_ITEMS: readonly string[] = ['B1Q1', 'B2Q1', 'B3Q1'];
-// The §B4 Rebuild Checkpoint reading — the TWELVE current-state control items, in administration order (Foundation →
-// Structure → Elevation, each Q2 then Q3, activity 'a' then diet 'b'). These average PAIRWISE (12 → 6) before scoring.
+// The §B4 Rebuild Checkpoint reading — six control items in administration order (Foundation → Structure →
+// Elevation, Q2 then Q3). A CLEAN 6 since V5 (2026-08-14): what is administered is what is scored, so there is no
+// longer a reduction step between them and no way for the two lists to drift out of step.
 export const CHECKPOINT_CONTROL_ITEMS: readonly string[] = [
-  'B1Q2a', 'B1Q2b', 'B1Q3a', 'B1Q3b', // Foundation
-  'B2Q2a', 'B2Q2b', 'B2Q3a', 'B2Q3b', // Structure
-  'B3Q2a', 'B3Q2b', 'B3Q3a', 'B3Q3b', // Elevation
+  'B1Q2', 'B1Q3', // Foundation — motivations, and that motivations decide whether a change survives
+  'B2Q2', 'B2Q3', // Structure — explain the skills, then locate yourself in them
+  'B3Q2', 'B3Q3', // Elevation — monitor moving · monitor eating (the move/eat split, each scored on its own)
 ];
-// The six SCORED control items after pairwise averaging (Q2 = mean(a,b), Q3 = mean(a,b) per layer). Order matches the
-// pairwise reduction of CHECKPOINT_CONTROL_ITEMS.
-export const CHECKPOINT_CONTROL_SCORED: readonly string[] = ['B1Q2', 'B1Q3', 'B2Q2', 'B2Q3', 'B3Q2', 'B3Q3'];
+// Kept as a named export because callers ask for "the scored set" by name, and that stays true and readable even
+// now that it is the same list. Aliased rather than duplicated — two literals that must match is the shape that
+// drifts, and the whole point of the V5 cut is that administered === scored.
+export const CHECKPOINT_CONTROL_SCORED: readonly string[] = CHECKPOINT_CONTROL_ITEMS;
 
 // The three baseline CHALLENGE items (administered at onboarding) — the Reclaim strand's Ave1 at the C4 Checkpoint.
 export const BASELINE_CHALLENGE_ITEMS: readonly string[] = ['C1Q1', 'C2Q1', 'C3Q1'];
@@ -152,16 +166,10 @@ export const BASELINE_CHALLENGE_ITEMS: readonly string[] = ['C1Q1', 'C2Q1', 'C3Q
 // Q2 then Q3). A CLEAN 6 — no pairwise averaging (unlike Rebuild's 12).
 export const CHECKPOINT_CHALLENGE_ITEMS: readonly string[] = ['C1Q2', 'C1Q3', 'C2Q2', 'C2Q3', 'C3Q2', 'C3Q3'];
 
-// Pairwise-average an even-length response array into consecutive pairs → half the length. B4's one genuine factory
-// addition (Greg 7/9: "average the pair to retain the meaning of the summary construct"): the 12 activity/diet halves
-// collapse to 6 scored items before the standard checkpoint scoring runs. Result values are non-integer means (valid —
-// scoreCheckpointStrand only means them, it doesn't re-validate the Likert integer constraint).
-export function pairwiseAverage(responses: readonly number[]): number[] {
-  if (responses.length % 2 !== 0) throw new Error(`pairwiseAverage expects an even count, got ${responses.length}`);
-  const out: number[] = [];
-  for (let i = 0; i < responses.length; i += 2) out.push(Math.round(((responses[i]! + responses[i + 1]!) / 2) * 100) / 100);
-  return out;
-}
+// pairwiseAverage IS RETIRED (2026-08-14). It existed for one caller — B4's 12 activity/diet halves — and V5
+// removed the pairs, so it had no callers left. Deleted rather than kept "in case": a generic-looking helper that
+// silently halves an array is exactly the thing someone reaches for later without knowing it encoded a
+// measurement decision we deliberately reversed. It is in git if it is ever wanted back.
 
 // The onboarding BASELINE reading — the twelve "*Q1" items, administered in R order (grit→commitment→control→
 // challenge = Reconnect→Rewire→Rebuild→Reclaim). Item index in the administered array maps to this list.

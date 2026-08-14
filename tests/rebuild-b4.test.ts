@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import { rebuildCheckpointOpening, applyRebuildCheckpointTurn } from '../lib/agent/rebuild.ts';
 import {
   CHECKPOINT_CONTROL_ITEMS,
+  CHECKPOINT_CONTROL_SCORED,
   BASELINE_CONTROL_ITEMS,
-  pairwiseAverage,
   grintaStem,
 } from '../lib/grinta/survey/instrument.ts';
 import { scoreCheckpointStrand } from '../lib/grinta/survey/scoring.ts';
@@ -14,10 +14,14 @@ import {
   type RebuildCeremonyData,
 } from '../lib/ceremony/rebuild-ceremony-beats.ts';
 
-// B4 · The Rebuild Checkpoint — the administered Control arc (12 items → pairwise 12→6), the Control scoring (reuses
-// scoreCheckpointStrand, target 'rebuild'), and the branched Rebuild ceremony (Control component foregrounded).
+// B4 · The Rebuild Checkpoint — the administered Control arc, the Control scoring (reuses scoreCheckpointStrand,
+// target 'rebuild'), and the branched Rebuild ceremony (Control component foregrounded).
+//
+// SIX ITEMS, NOT TWELVE, since Greg's V5 (2026-08-14). The activity/diet a/b pairs and the pairwise 12→6 average
+// are gone: what is administered is now what is scored. These tests count off CHECKPOINT_CONTROL_ITEMS.length
+// rather than a literal, so the next change to the instrument does not need a test edit to go with it.
 
-test('B4 checkpoint arc · warm frame → 12 administered items → hands into the ceremony', () => {
+test('B4 checkpoint arc · warm frame → every administered item → hands into the ceremony', () => {
   let t = rebuildCheckpointOpening();
   assert.equal(t.state.stage, 'checkpoint');
   assert.match(t.reply, /real work of Rebuild/i, 'the frame in');
@@ -26,8 +30,12 @@ test('B4 checkpoint arc · warm frame → 12 administered items → hands into t
     assert.equal(t.state.stage, 'checkpoint', 'still administering');
     t = applyRebuildCheckpointTurn(t.state, [], '4', { text: '' } as never);
   }
-  assert.equal(t.state.stage, 'ceremony', 'after the 12th, crosses into the ceremony');
-  assert.equal((t.state.administeredResponses ?? []).length, 12, 'all 12 control responses captured');
+  assert.equal(t.state.stage, 'ceremony', 'after the last item, crosses into the ceremony');
+  assert.equal(
+    (t.state.administeredResponses ?? []).length,
+    CHECKPOINT_CONTROL_ITEMS.length,
+    'every control response captured — six since V5',
+  );
   assert.match(t.reply, /show you what you just built/i, 'the close hands into the reveal');
 });
 
@@ -38,21 +46,23 @@ test('B4 checkpoint arc · a non-number is re-prompted (instrument fidelity), no
   assert.match(bad.reply, /1 to 5/i, 're-prompts for a number');
 });
 
-test('pairwiseAverage · 12 → 6, consecutive pairs (the B4 factory addition)', () => {
-  const twelve = [4, 2, 5, 5, 3, 3, 4, 2, 5, 1, 2, 4];
-  const six = pairwiseAverage(twelve);
-  assert.deepEqual(six, [3, 5, 3, 3, 3, 3], 'mean of each consecutive a/b pair');
-  assert.throws(() => pairwiseAverage([1, 2, 3]), /even/);
+test('the administered set IS the scored set — no reduction step to drift', () => {
+  // The V5 cut's real safety property. While B4 administered 12 and scored 6, two lists had to stay in step and
+  // nothing enforced it; a wrong-length reduction would have silently mis-scored the strand.
+  assert.equal(CHECKPOINT_CONTROL_ITEMS.length, 6, 'six administered');
+  assert.deepEqual([...CHECKPOINT_CONTROL_SCORED], [...CHECKPOINT_CONTROL_ITEMS], 'and the same six scored');
+  assert.ok(!CHECKPOINT_CONTROL_ITEMS.some((c) => /[ab]$/.test(c)), 'no a/b halves remain');
 });
 
 test('B4 scoring · reuses scoreCheckpointStrand for the CONTROL strand, EE sign, composite re-average', () => {
-  // baseline control = [3,3,3] → Ave1 = 3; checkpoint 12 all 4s → pairwise 6 all 4s → Ave2 = mean(3,3,3,4,4,4,4,4,4) = 3.67
-  const control12 = Array(12).fill(4);
-  const scored6 = pairwiseAverage(control12);
+  // baseline control = [3,3,3] → Ave1 = 3; checkpoint six all 4s → Ave2 = mean(3,3,3,4,4,4,4,4,4) = 3.67.
+  // The Ave2 is unchanged by the V5 cut, which is the point: six 4s and twelve 4s-averaged-to-six are the same
+  // nine-item read. Greg's accumulation model is untouched; only how the six are collected changed.
+  const control6 = Array(CHECKPOINT_CONTROL_ITEMS.length).fill(4);
   const cp = scoreCheckpointStrand({
     target: 'rebuild',
     baselineValues: [3, 3, 3],
-    newValues: scored6,
+    newValues: control6,
     carriedStrands: { reconnect: 3, rewire: 3, reclaim: 3 },
   });
   assert.equal(cp.baseline, 3, 'Control Ave1');
@@ -63,7 +73,8 @@ test('B4 scoring · reuses scoreCheckpointStrand for the CONTROL strand, EE sign
   assert.equal(cp.score.composite, 3.17, 'composite re-averages the four'); // mean(3.67,3,3,3)
 
   assert.equal(BASELINE_CONTROL_ITEMS.length, 3);
-  assert.equal(CHECKPOINT_CONTROL_ITEMS.length, 12);
+  // SIX since V5 — was 12 when the checkpoint administered activity/diet halves.
+  assert.equal(CHECKPOINT_CONTROL_ITEMS.length, 6);
 });
 
 const withGrinta = (dir: 'up' | 'down' | 'flat', now: number, baseline: number, changePct: number): RebuildCeremonyData => ({
