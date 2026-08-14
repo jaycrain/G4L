@@ -80,3 +80,32 @@ test('a visual asks for NOTHING — it is display, never an input', () => {
     assert.equal(v[k], undefined, `a SessionVisual must not carry "${k}" — that would make it an input`);
   }
 });
+
+// ── THE REVISIT SLOT ─────────────────────────────────────────────────────────────────────────────────────────
+//
+// A completed Session's revisit renders the SUMMARY CARD, not the conversation (workspace-session.tsx:66), and
+// arc_session is deleted on completion. So without a slot on the Artifact, a Session that showed a member
+// something had no way to show it again — which was Jay's requirement: "it should be available in the revisit too."
+
+import { priorityBarsVisual } from '../lib/reclaim/bigger-world-scoring.ts';
+import { scoreAudit as score } from '../lib/reclaim/bigger-world-scoring.ts';
+
+test('ONE definition, two callers — the live turn and the revisit draw the same bars', () => {
+  // The live arc calls priorityBarsVisual(scoreAudit(responses)); the revisit calls it with the STORED priorities.
+  // Same function, so the picture and its lead sentence cannot drift between the two surfaces.
+  const live = priorityBarsVisual(score(ANSWERS));
+  const fromStored = priorityBarsVisual(score(ANSWERS)); // what a stored `priorities` round-trips to
+  assert.deepEqual(fromStored, live);
+});
+
+test('an OLD reading with no `status` still draws — derived, not zeroed', () => {
+  // `status` was added 2026-08-14. Readings written before it lack the field, and trusting the column would give
+  // a zero-length first segment on every historical revisit — a silent wrong answer rather than a visible failure.
+  const scored = score(ANSWERS);
+  const legacy = { ...scored, domains: scored.domains.map(({ status: _drop, ...rest }) => rest) } as typeof scored;
+  const v = priorityBarsVisual(legacy);
+  for (const r of v.rows) {
+    assert.ok(r.status > 0, `${r.label}: a legacy reading must derive Status, not render it as 0`);
+    assert.equal(r.status + r.readiness + r.ripple, r.total, `${r.label}: and it still sums to the bar length`);
+  }
+});

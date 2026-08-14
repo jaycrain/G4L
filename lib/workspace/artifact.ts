@@ -17,9 +17,12 @@ import { activeCoachingPlan, type RebuildPilotPayload } from '../rebuild/plan-st
 import { loadArcSession } from '../agent/arc-session.ts';
 import { getReclaimItems } from '../beats/store.ts';
 import { activeQualityDayProfile } from '../reclaim/quality-day-store.ts';
+import type { SessionVisual } from '../agent/session-visual.ts';
 
 export type ArtifactSlot = { label: string; value: string | null };
-export type Artifact = { title: string; lede: string; slots: ArtifactSlot[]; foot: string };
+// `visual` is the revisit's picture slot (#163). A completed Session's revisit renders this card, not the
+// conversation — so without a slot here, a Session that SHOWED a member something had no way to show it again.
+export type Artifact = { title: string; lede: string; slots: ArtifactSlot[]; foot: string; visual?: SessionVisual };
 
 const FOOT = 'You go one prompt at a time, at your own pace. Nothing here is scored — it lands in your Playbook.';
 const FRAME_FOOT = 'This is a measure, not a test — an honest read at your own pace. Your Companion holds what it means.';
@@ -76,7 +79,7 @@ export async function readArtifact(db: Db, memberId: string, key: SessionKey): P
 
 async function build(db: Db, memberId: string, key: SessionKey): Promise<Artifact> {
   const m = META[key] ?? { title: sessionById(key)?.label ?? 'Your session', lede: '' };
-  const base = (slots: ArtifactSlot[]): Artifact => ({ title: m.title, lede: m.lede, slots, foot: m.foot ?? FOOT });
+  const base = (slots: ArtifactSlot[], visual?: SessionVisual): Artifact => ({ title: m.title, lede: m.lede, slots, foot: m.foot ?? FOOT, ...(visual && { visual }) });
 
   switch (key) {
     case 'reconnect': {
@@ -156,7 +159,15 @@ async function build(db: Db, memberId: string, key: SessionKey): Promise<Artifac
     // Administered instruments + checkpoints (B/E): a qualitative frame — never a bare score (governance).
     case 'b1':
     case 'b2':
-    case 'c2':
+    case 'c2': {
+      // THE REVISIT'S BARS — rebuilt from THAT RUN's own reading, not recomputed from anything current.
+      // bigger_world_reading is append-only per sequence_no, so each C2 is its own row and a past run's picture is
+      // a faithful snapshot rather than mutable history. That is why this can re-derive where the live turn stores.
+      const { latestBiggerWorldReading } = await import('../reclaim/bigger-world-store.ts');
+      const { priorityBarsVisual } = await import('../reclaim/bigger-world-scoring.ts');
+      const reading = await latestBiggerWorldReading(db, memberId);
+      return base([], reading?.priorities ? priorityBarsVisual(reading.priorities) : undefined);
+    }
     case 'rewire-checkpoint':
     case 'b4':
     case 'c4':

@@ -16,6 +16,7 @@ import ReconnectChat from '../reconnect/reconnect-chat.tsx';
 import RewireChat from '../rewire/rewire-chat.tsx';
 import RebuildChat from '../rebuild/rebuild-chat.tsx';
 import ReclaimChat from '../reclaim/reclaim-chat.tsx';
+import SessionVisualView from './session-visual.tsx';
 
 // Redesign Layer 3 — the PROGRAM WORKSPACE, now SINGLE-COLUMN (2026-07-21, direction A). A Session is ONE conversation,
 // not a two-pane canvas+rail: a slim wayfinding header sits over the guided conversation, and answers are kept inline as
@@ -223,6 +224,9 @@ export default function WorkspaceSession({
             <div className="ws-built">
               <h1 className="ws-built-title">{artifact.title}</h1>
               <p className="ws-built-lede">{artifact.lede}</p>
+              {/* The picture the Session showed, shown again. Above the slots because it is the thing the member
+                  was looking at when they decided — the slots are what came out of that. */}
+              {artifact.visual && <SessionVisualView visual={artifact.visual} />}
               <div className="ws-built-slots">
                 {filled.map((s, i) => (
                   <div key={i} className="ws-built-slot">

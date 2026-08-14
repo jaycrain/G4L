@@ -4,7 +4,8 @@
 // Domains are ranked by PriorityScore → Primary / Secondary; the Momentum Lever is the highest-Readiness domain (the
 // easiest high-value place to start). Pure + deterministic; the arc/action just persist + reflect.
 
-import { AUDIT_ITEMS, AUDIT_DOMAINS, type AuditDomain, type AuditFacet } from './bigger-world-instrument.ts';
+import { AUDIT_DOMAIN_LABEL, AUDIT_ITEMS, AUDIT_DOMAINS, type AuditDomain, type AuditFacet } from './bigger-world-instrument.ts';
+import type { SessionVisual } from '../agent/session-visual.ts';
 
 export type DomainScore = {
   domain: AuditDomain;
@@ -66,4 +67,54 @@ export function auditResponsesMap(responses: number[]): Record<string, number> {
     if (responses[i] != null) map[it.code] = responses[i]!;
   });
   return map;
+}
+
+/**
+ * THE STEP-2 PRIORITY BARS — the first Session visual (#163).
+ *
+ * ONE DEFINITION, TWO CALLERS: the C2 arc draws it live, and the completed-session revisit card rebuilds it from
+ * that run's stored reading. Keeping the lead sentence in one place is the point — two copies of a framing line is
+ * two chances for the picture and the words to disagree.
+ *
+ * One horizontal bar per life domain, drawn from the member's own twenty answers, shown after the ratings and
+ * before they prioritise. Greg (2026-08-13): help the member see the pattern before prioritizing, and let the
+ * Companion see when Readiness or Ripple is the better target even at a lower Priority.
+ *
+ * LENGTH IS THE PRIORITY SCORE, UNSCALED — and that matters more than it sounds. Status reaches 90 (Gap 9 ×
+ * Importance 10) while Readiness and Ripple cap at 10, so a long bar really is mostly Status and Readiness can be
+ * a four-percent sliver. Greg's mock draws the three segments as comparable, which only happens at tiny gaps.
+ * We draw it true and print all three numbers instead, because the sliver is the POINT: the shortest bar is often
+ * the one with the most Readiness, which is exactly the signal this exists to surface. Rescaling to make it look
+ * tidy would flatter the picture and lie about the arithmetic.
+ *
+ * THE LEAD IS A READ, NEVER A RANKING. Four ordered bars of someone's life is one step from a scoreboard, so the
+ * sentence names two facts and stops: where the distance is widest, and where they are most ready. It never says
+ * "worst", never grades, and never tells the member which to choose — the next question asks them.
+ */
+export function priorityBarsVisual(scored: AuditScore): SessionVisual {
+  // `status` is new as of 2026-08-14. Readings written before it exist and would render a zero-length first
+  // segment — so derive it when absent rather than trusting the column. An older row is missing a field, not
+  // reporting a zero, and drawing the difference wrong is how a silent read becomes a confident lie.
+  const domains = scored.domains.map((d) => ({ ...d, status: d.status ?? d.computedGap * d.importance }));
+  const widest = domains.reduce((a, b) => (b.priorityScore > a.priorityScore ? b : a));
+  const readiest = domains.reduce((a, b) => (b.readiness > a.readiness ? b : a));
+  const name = (d: AuditDomain) => AUDIT_DOMAIN_LABEL[d].toLowerCase();
+  const lead =
+    widest.domain === readiest.domain
+      ? `Your ${name(widest.domain)} life is both where the distance runs widest and where you feel most ready.`
+      : `Your ${name(widest.domain)} life is where the distance runs widest. Your ${name(readiest.domain)} life is where you feel most ready to move.`;
+  return {
+    kind: 'priority-bars',
+    lead,
+    // Longest first — the eye should land on the widest distance. Ties keep domain order (sort is stable).
+    rows: [...domains]
+      .sort((a, b) => b.priorityScore - a.priorityScore)
+      .map((d) => ({
+        label: AUDIT_DOMAIN_LABEL[d.domain],
+        status: d.status,
+        readiness: d.readiness,
+        ripple: d.ripple,
+        total: d.priorityScore,
+      })),
+  };
 }
