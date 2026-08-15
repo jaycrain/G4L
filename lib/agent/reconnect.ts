@@ -485,7 +485,10 @@ const REOPEN_DRIFT = "Then I've not got it yet — say it your way. What's the r
 // The Window's opener (so it's one motion: push off from the drift, look through the window).
 function driftToWindowBridge(c: Collected): string {
   return (
-    "That's your inventory — what it cost, how far the drift ran. Not to sit in — to push off from; I've kept it for " +
+    // "the drift" as a NOUN was the Fade under a second name (Jay, 2026-08-15). This is the LIVE line — the
+    // twin in lib/curriculum/content/reconnect.ts is read only by Explore the Science. Verb uses and the Drift
+    // Quiz are untouched; see the function name above, which describes a seam rather than addressing a member.
+    "That's your inventory — what it cost, how far the Fade ran. Not to sit in — to push off from; I've kept it for " +
     "you.\n\nNow we look the other way — at the version of you that's still in there.\n\n" +
     windowOpen(c)
   );

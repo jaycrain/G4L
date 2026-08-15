@@ -83,7 +83,11 @@ export const RECONNECT_SESSIONS: Asset[] = [
       },
     ],
     close: {
-      companion: 'That\'s your inventory — what it cost, and how far the drift ran. Not to sit in, to push off from. I\'ve put it in your Playbook to keep or cut.',
+      // "the drift" as a NOUN standing in for the Fade — the last one in authored Session copy (Jay, 2026-08-15;
+      // the two remaining are in the onboarding prompt and are deliberately left alone, since wording there
+      // changes how the model asks rather than what a member reads). The Fade is the identity distance; "drift"
+      // stays the Drift Quiz and the verb.
+      companion: 'That\'s your inventory — what it cost, and how far the Fade ran. Not to sit in, to push off from. I\'ve put it in your Playbook to keep or cut.',
       prompt: 'Ready to see what\'s on the other side?',
       options: ['Yes', 'Give me a second'],
       to_playbook: true,
