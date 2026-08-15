@@ -273,7 +273,10 @@ const doorPrompt = () =>
   'One more thing before we start the work — and it might matter most. Somewhere, the gap began to open.\n\n' +
   'Sometimes it’s one clear thing — a loss, a diagnosis, a move, a job that swallowed you. More often it’s ' +
   'slower: a season that quietly took more than it gave. There’s no wrong story here. Tell me how it went ' +
-  'for you — when you first felt the drift, and what it quietly cost you.';
+  // "the drift" as a NOUN was the Fade under a second name. The Fade is the main character (Jay, 2026-08-15);
+  // drifting is what it DOES to you, which is why the verb stays fine and the noun does not. An AUTHORED string
+  // — printed, never generated — so this changes what a member reads and nothing about how the model behaves.
+  'for you — when you first felt the Fade, and what it quietly cost you.';
 
 // Shared Reclaim ask — the picture + the forecast (what the list IS and that the program points at it) +
 // the ask. Prepended by the identity-lock connecting line (or the skip line) so it reads as one beat.
@@ -1155,7 +1158,8 @@ export function applyModelTurn(
     // Vary the widen question by turn so it can NEVER repeat verbatim (the "asked the same thing twice"
     // bug), and escalate toward closing rather than circling.
     const forward = needGap
-      ? 'Help me understand how that opened — when did you first feel the drift, and what did it quietly cost you?'
+      // Authored, like doorPrompt above — same noun fix, same reason.
+      ? 'Help me understand how that opened — when did you first feel the Fade, and what did it quietly cost you?'
       : signalsMore || awaitingMore
         ? 'I’m listening — tell me the rest of how it opened.'
         : doorTurns <= 1

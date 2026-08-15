@@ -40,7 +40,13 @@ export const ASSET_SUMMARIES: Record<AssetId, Summary> = {
     // his to change. Jay settled it as brand owner and has told Greg directly (via Cowork, 2026-08-15). "drift"
     // stays reserved for the instrument (the Drift Quiz, named in `full` just below) and for verb uses.
     short: 'See your Fade clearly, then put words to who you’re becoming.',
-    full: 'Two moves in one. The Drift Quiz holds up a mirror to how the Fade shows up in small daily choices — a place to see patterns, with no wrong answers. Then the Legacy Letter turns you forward, to name the person you want to become and what the next chapter stands for. Research suggests we’re more motivated when we can picture our future self clearly, and that writing intentions down makes them stick. You keep the letter, and come back to it.',
+    // THE ONE PLACE THE TWO NAMES MEET, so it is the one place the relationship gets said (Jay, 2026-08-15):
+    // "It's how far the Fade made you drift." The Fade is the force and the main character; drifting is what it
+    // does to you, which is why a Session can be called the Drift Quiz without ever letting "the drift" become a
+    // second noun competing with the Fade. Not a new position — the asset's own summary in
+    // lib/curriculum/content/reconnect.ts already reads "what the Fade cost, and how far you've drifted"; this
+    // line just never carried it. Aligning two of Greg's own lines rather than overriding him.
+    full: 'Two moves in one. The Drift Quiz holds up a mirror to how far the Fade has made you drift — the small daily choices where the distance shows. A place to see patterns, with no wrong answers. Then the Legacy Letter turns you forward, to name the person you want to become and what the next chapter stands for. Research suggests we’re more motivated when we can picture our future self clearly, and that writing intentions down makes them stick. You keep the letter, and come back to it.',
   },
   w1: {
     short: 'Catch the reasonable-sounding lies that keep you stuck — and craft answers to dispel them.',
