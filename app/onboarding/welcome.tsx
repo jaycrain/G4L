@@ -81,11 +81,17 @@ const BEATS: Beat[] = [
       // EXPLAINING it mid-experience, in the Threshold ceremony, at the moment the member should be stepping
       // through. Define it once, upstream, where they are still learning the language; downstream just uses it.
       //
-      // Deliberately shorter than the brief's draft. Cowork's own item (e) rules that the full origin story —
-      // the both-strokes payoff, the fall, the untangling — lives in MARKETING, not the app, but the draft copy
-      // then told that story in full. Kept: the source of the metaphor, the commitment, and the clip-BACK-in,
-      // which downstream copy (the False Start Protocol) depends on the member already understanding.
-      { term: 'Clip in', text: 'cyclists lock their shoes to the pedals when they mean it — committed, in for the long ride. Everyone falls at least once; you clip back in and keep going.' },
+      // RESTORED TO THE APPROVED STRING (Cowork's correction, 2026-08-15; Jay approved the wording).
+      //
+      // I had trimmed this, reading her item (e) — "the full origin story lives in marketing" — as ruling out
+      // the both-strokes payoff. That cut the wrong layer. (e) means the deeper NARRATIVE: the fall on the
+      // asphalt, the embarrassment, needing help untangling, the riders who never recover and go back to tennis
+      // shoes. The LOFT belongs here, and is the reason this sits on the language screen at all: a flat
+      // dictionary line would not earn the word downstream, where the False Start Protocol leans on it.
+      //
+      // The lesson worth keeping: when two items in a brief look contradictory, the resolution is to ask which
+      // LAYER each governs — not to split the difference by shortening.
+      { term: 'Clip in', text: 'a cycling term our founder uses as a metaphor, one that carries more than “let’s go.” Cyclists lock their shoes to the pedals when they mean it: committed, in for the long ride. Everyone falls at least once. But push through and it transforms the ride, every stroke counts now, up and down, and you go farther and stronger. Fall, and you clip back in.' },
     ],
     cta: 'Next →',
   },

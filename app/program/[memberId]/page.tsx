@@ -26,7 +26,8 @@ const PHASES: PhaseRow[] = [
     sessions: [
       'Doors — identify the Doors you walked through that caused you to Fade',
       'IDQ — Measure the distance between who you are and who you want to be',
-      'Visioning — See your drift clearly, then put words to who you’re becoming.',
+      // Kept in step with lib/content/summaries.ts r3 — see the note there for why "drift" became "Fade".
+      'Visioning — See your Fade clearly, then put words to who you’re becoming.',
       'Checkpoint — take stock of how it’s going, see progress in your Grinta Index',
     ],
     reveal: 'Ceremony — the earned reveal, move to Rewire',

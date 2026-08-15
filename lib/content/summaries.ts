@@ -35,7 +35,11 @@ export const ASSET_SUMMARIES: Record<AssetId, Summary> = {
     full: 'The Fade rarely arrives all at once. It comes through doors — a relationship, a shrinking social world, autopilot, and others — usually several at the same time. Here you mark which ones are yours, then look at which opened first, which shaped you most, and which is still open. Research suggests people move through life change more steadily when they can put it in a clear story rather than carry it as fog. And in the Community, you’ll see these doors are a shared pattern.',
   },
   r3: {
-    short: 'See your drift clearly, then put words to who you’re becoming.',
+    // "the Fade" is the protected noun for the identity distance; "your drift" was the same idea under a second
+    // name. This is Greg's authored summary, which is why it survived the earlier drift→Fade sweep — I left it as
+    // his to change. Jay settled it as brand owner and has told Greg directly (via Cowork, 2026-08-15). "drift"
+    // stays reserved for the instrument (the Drift Quiz, named in `full` just below) and for verb uses.
+    short: 'See your Fade clearly, then put words to who you’re becoming.',
     full: 'Two moves in one. The Drift Quiz holds up a mirror to how the Fade shows up in small daily choices — a place to see patterns, with no wrong answers. Then the Legacy Letter turns you forward, to name the person you want to become and what the next chapter stands for. Research suggests we’re more motivated when we can picture our future self clearly, and that writing intentions down makes them stick. You keep the letter, and come back to it.',
   },
   w1: {
