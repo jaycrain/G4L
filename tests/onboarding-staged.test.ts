@@ -800,9 +800,11 @@ test('STAGED fade gate — note_no_fade → DECLINE even over an incidentally-ta
   assert.equal(turn.complete, false);
 });
 
-test('STAGED fade gate — RESIGNED (Acceptance) is NOT declined: routes to The Acceptance Door as a real Fade', () => {
+test('STAGED fade gate — a RESIGNED member is admitted as a real Fade, and is NOT labelled', () => {
   const atGap: ConvState = { stage: 'gap', collected: { athleticPast: 'a runner', identityNoun: 'Runner' } };
-  // No dramatic event — the fade is the surrender itself. Decision E: a REAL Fade, entered through The Acceptance.
+  // No dramatic event — the fade is the surrender itself. Decision E admits her. Since Decision C (2026-08-15)
+  // she is admitted WITHOUT being tagged: resignation is an intake signal, not a Door. This is the case that
+  // makes C worth doing — she gets in, and the product never tells her she surrendered.
   const resigned = 'Nothing really happened. I just got older, slowed down, and made peace with it — this is just who I am now, at my age.';
   const { turns } = replayStaged(
     [
@@ -813,7 +815,8 @@ test('STAGED fade gate — RESIGNED (Acceptance) is NOT declined: routes to The 
   );
   assert.notEqual(turns.at(-1)!.declined, true, 'a resigned member is NOT declined');
   assert.equal(turns[0]!.state.stageScratch?.gap?.noFade ?? false, false, 'reclassified as a real Fade, not no-fade');
-  assert.ok((turns[0]!.state.collected.doors ?? []).includes('acceptance'), 'routed to The Acceptance Door');
+  assert.equal((turns[0]!.state.collected.doors ?? []).includes('acceptance'), false,
+    'admitted on the resignation SIGNAL — never stamped with a surrender Door');
   assert.equal(turns[1]!.state.awaitingConfirm, true, 'proceeds to reflect-confirm like any real fade');
 });
 

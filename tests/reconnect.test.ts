@@ -222,10 +222,10 @@ test('reconnect revision · confirming a WIDEN adds the Door (keeps primary) + e
 });
 
 test('reconnect revision · NAME adds a quiet Door; a MECHANICAL add commits but emits NO tell', () => {
-  const named: ConvState = { stage: 'doors', awaitingConfirm: true, pendingRevision: { kind: 'name', toSlug: 'acceptance' }, collected: { doors: ['body'] } };
+  const named: ConvState = { stage: 'doors', awaitingConfirm: true, pendingRevision: { kind: 'name', toSlug: 'vanishing' }, collected: { doors: ['body'] } };
   const t1 = applyReconnectTurn(named, [], "yeah — that's the quiet one, I never named it", { text: '', replyIntent: 'done' });
-  assert.deepEqual(t1.state.collected.doors, ['body', 'acceptance'], 'the quiet Door is named and added');
-  assert.deepEqual(t1.state.reseeingTells, [{ toSlug: 'acceptance' }], 'a genuine naming is a re-seeing → tell');
+  assert.deepEqual(t1.state.collected.doors, ['body', 'vanishing'], 'the quiet Door is named and added');
+  assert.deepEqual(t1.state.reseeingTells, [{ toSlug: 'vanishing' }], 'a genuine naming is a re-seeing → tell');
 
   const mech: ConvState = { stage: 'doors', awaitingConfirm: true, pendingRevision: { kind: 'widen', toSlug: 'full_house', mechanical: true }, collected: { doors: ['grind'] } };
   const t2 = applyReconnectTurn(mech, [], 'sure, add it', { text: '', replyIntent: 'done' });

@@ -1,8 +1,11 @@
 // The Doors — canonical set, locked to the pitch deck (docs/CONTRACTS.md §3) + the taxonomy spec.
 // v1.0 (Jun 2026): The Grind and The Load-Bearer added; The Vanishing tightened.
-// v2.0 (Jun 30 2026): The Acceptance added (#12) — the one door the member *chose*: resigning to
-// age-related decline as destiny. Crosses The Body on aging-body language; the line is event vs stance
-// (see the Body-vs-Acceptance precedence in matchDoors).
+// v2.0 (Jun 30 2026): The Acceptance added (#12).
+// v3.0 (Aug 15 2026): The Acceptance RETIRED as a Door (Decision C, Jay). It was a stance in a taxonomy of
+// events, and no matcher can separate striving from surrender when both open with the same words. Its cues
+// live on as RESIGNATION_CUES — an intake signal only, never a label. The `door` table keeps its row so
+// existing member_door rows stay valid; the code simply never derives it. Do not reintroduce a hardcoded
+// Door COUNT anywhere: it has been wrong twice, and the naming guard enforces it.
 // Shared source of truth for the app and for validation. Mirrors the DB seed
 // (supabase/seed/0001_reference_data.sql); the DB `door` table is the runtime source,
 // this constant is for type-safety, validation, and seeding parity.
@@ -20,7 +23,6 @@ export const DOORS = [
   { slug: 'full_house',    displayName: 'The Full House',    descriptor: 'The active-family season — marriage, young kids, everyone needing you — and no space left for yourself.' },
   { slug: 'grind',         displayName: 'The Grind',         descriptor: 'The work or ambition that grew until it crowded out the person underneath.' },
   { slug: 'load_bearer',   displayName: 'The Load-Bearer',   descriptor: 'Becoming the one who carries everyone — the household, the money, the needs — until there’s no room left for you.' },
-  { slug: 'acceptance',    displayName: 'The Acceptance',    descriptor: 'The quiet surrender to age — deciding that slower, softer, and less capable is simply how it goes now, and expecting nothing else.' },
 ] as const;
 
 export type DoorSlug = (typeof DOORS)[number]['slug'];
@@ -70,10 +72,40 @@ const DOOR_ALIASES: Partial<Record<DoorSlug, string[]>> = {
   // The Load-Bearer = carrying everyone's load (household/money/needs), outside parent-care or the
   // active-family season — incl. a partner's abdicated share.
   load_bearer: ['carrying everyone', 'carry everyone', 'carry the load', 'carrying the load', 'held the financial', 'hold everything together', 'holding everything together', 'everyone leans on me', 'everyone needs me', 'on my shoulders', 'fell on me', 'more than my fair share', 'carry more than', 'left me holding', 'the one holding everything', 'carrying the household', 'do it all', 'sole breadwinner', 'breadwinner', 'sole earner', 'the only earner', 'paying all the bills', 'all the bills fell', 'carried us financially', 'kept us afloat', "didn't step up"],
-  // The Acceptance = resigning to age-related decline AS DESTINY — the one Door the member chose. The
-  // stance, not an event (see the Body-vs-Acceptance precedence below). Triggers per taxonomy spec v2.0.
-  acceptance: ['getting older', 'at my age', 'just my age', 'past my prime', 'not as young as i used to be', 'not as capable', 'slowing down', 'downhill from here', 'it is what it is', 'made peace with', 'accepted that', 'this is just who i am now', 'my best years are behind me', 'what do you expect at my age', 'these things happen when you get older', 'resigned myself', 'settled for less', 'settled for this'],
 };
+
+/**
+ * RESIGNATION — a real Fade signal, and NOT a Door (Decision C, Jay 2026-08-15).
+ *
+ * This list used to be `DOOR_CUES.acceptance`. The Acceptance was the only entry in a taxonomy of EVENTS that
+ * was a STANCE — the other eleven are things that happened to someone, this was something they concluded — and
+ * the category error is why it could never be matched reliably. Striving and surrender open with identical
+ * words: "I'm not as young as I used to be" begins both.
+ *
+ * It fired on Donna's "at my age and in this economy, I was virtually unhireable" — a woman describing being
+ * shut out of the job market, told by the product that she had quietly surrendered to aging. Six of seven
+ * ordinary midlife sentences tripped it, including "I'm past my prime BUT I REFUSE TO ACCEPT THAT".
+ *
+ * WHAT IT IS STILL GOOD AT, and why the cues are kept verbatim rather than deleted: recognising that a resigned
+ * member has a REAL Fade and must be admitted (the Stage-0 gate, onboarding-staged.ts). That job never needed a
+ * Door — it needed a yes/no. Same cues, same admissions, no label. See docs/acceptance-door-retirement.md.
+ *
+ * Deliberately NOT narrowed to the "surrender only" subset. Narrowing it would tighten intake, which is a
+ * separate decision nobody has made, and the quietest members we have are the ones it would turn away.
+ */
+export const RESIGNATION_CUES: readonly string[] = [
+  'getting older', 'at my age', 'just my age', 'past my prime', 'not as young as i used to be',
+  'not as capable', 'slowing down', 'downhill from here', 'it is what it is', 'made peace with',
+  'accepted that', 'this is just who i am now', 'my best years are behind me',
+  'what do you expect at my age', 'these things happen when you get older', 'resigned myself',
+  'settled for less', 'settled for this',
+];
+
+/** Does this read as resignation to age-decline? The intake signal — never a Door, never shown to a member. */
+export function hasResignationLanguage(message: string): boolean {
+  const m = (message || '').toLowerCase().replace(/[‘’]/g, "'");
+  return RESIGNATION_CUES.some((c) => m.includes(c));
+}
 
 // Bereavement pattern for The Loss (used in matchDoors) — losing a parent/family member/loved one, or a
 // summary of stacking losses. A loved-one object (not "job"/"weight") keeps it specific enough that "lost my
@@ -91,15 +123,13 @@ export function matchDoors(message: string): DoorSlug[] {
   // never matched, so the precedence rule deleted it alongside aging_parents).
   const m = (message || '').toLowerCase().replace(/[‘’]/g, "'");
   const found = new Set<DoorSlug>();
-  // The Body / The Acceptance are read from the member's OWN physical language (event vs stance), computed once. A
+  // The Body is read from the member's OWN physical language, computed once. A
   // NAMED physical event/change (knees, bad back, an injury, can't do X, "throw my back out", "wear and tear") is
   // The Body; a bare "settled" framing is The Acceptance. Promoting the event language to a PRIMARY signal (not just
   // the old body-vs-acceptance tiebreaker) is what catches The Body when the literal word "body" is absent — milie's
   // walk tagged NO body from "my knee hurts, I can't run anymore, I throw my back out."
   const CONCRETE_PHYSICAL_EVENT =
     /\b(knees?|hips?|shoulders?|joints?|my back|bad (knee|back|hip|shoulder)|injur(y|ed|ies)|blew out|gave out|went out|surgery|torn|tore|sprained|can'?t (run|lift|walk|climb|play|keep up)|quit the sport|throw(s|ing)? my back out|threw my back out|wear and tear)\b/.test(m);
-  const EXPLICIT_SETTLED =
-    /\b(made peace with|it is what it is|resigned myself|these things happen|what do you expect at my age|my best years are behind|this is just who i am now|settled for)\b/.test(m);
   // Numbered selection ("5", "1 and 3") maps to a Door by position — but ONLY when the whole message
   // IS a numeric pick. Otherwise an incidental number in prose ("3 walks a week", "lose 30 lbs") gets
   // misread as "pick Door 3" — which silently tagged Joanne with The Empty Nest (Door #3) from her
@@ -133,7 +163,11 @@ export function matchDoors(message: string): DoorSlug[] {
   if (BEREAVEMENT_LOSS.test(m)) found.add('loss');
   // A named physical event is The Body even without the word "body" (see the const above). The Body/Acceptance
   // precedence below resolves the overlap when a "settled" stance ALSO fired.
-  if (CONCRETE_PHYSICAL_EVENT && !EXPLICIT_SETTLED) found.add('body');
+  // A named physical event is The Body even without the word "body". It used to be suppressed by a settled
+  // framing so the story could route to The Acceptance instead — with that Door retired there is nothing to
+  // route to, and suppressing it would leave "my knee went out and I've made peace with it" with NO Door at
+  // all. Her knee is the Door; what she concluded about it is not.
+  if (CONCRETE_PHYSICAL_EVENT) found.add('body');
   // Precedence among LOAD doors (taxonomy spec §4): Aging Parents (parent care) and Full House
   // (active-family season) own their load; The Load-Bearer is the catch-all for OTHER load, so it
   // yields to them — it never redundantly re-tags a load a specific Door already owns. (Genuine
@@ -146,16 +180,6 @@ export function matchDoors(message: string): DoorSlug[] {
     /\b(breadwinner|sole (earner|provider)|the only earner|all the bills|paying all the bills|carried us financially|kept us afloat|held the financial|did(n'?t| not) step up|wouldn'?t step up|savings (are |were |is )?(gone|going|wiped)|house (is |was )?at risk|lose the house|losing the house)\b/.test(m);
   if (found.has('load_bearer') && (found.has('aging_parents') || found.has('full_house')) && !STRONG_FINANCIAL_LOAD) {
     found.delete('load_bearer');
-  }
-  // Precedence — The Body vs The Acceptance (taxonomy spec v2.0): aging-body language crosses them, and
-  // the line is EVENT vs STANCE. A named concrete physical event/change is The Body — more specific
-  // (knees went, bad back, an injury, can't do X, quit the sport). The bare surrender — no event named,
-  // or an explicit "settled" framing — is The Acceptance (the fade is the choosing, not a change). Only
-  // resolves when both literally fired (Body fires on the word "body"); the live agent maps richer
-  // stories itself.
-  if (found.has('acceptance') && found.has('body')) {
-    if (CONCRETE_PHYSICAL_EVENT && !EXPLICIT_SETTLED) found.delete('acceptance'); // named event → The Body
-    else found.delete('body'); // surrender / settled stance → The Acceptance
   }
   return DOORS.filter((d) => found.has(d.slug)).map((d) => d.slug);
 }

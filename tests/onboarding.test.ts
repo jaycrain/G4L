@@ -21,7 +21,7 @@ import {
   type ConvState,
   type Collected,
 } from '../lib/agent/onboarding.ts';
-import { matchDoors } from '../lib/doors.ts';
+import { matchDoors, hasResignationLanguage } from '../lib/doors.ts';
 import { contractMet, contractGaps, buildSummaryCard } from '../lib/agent/onboarding-contract.ts';
 
 const ctx = { name: 'Tom Miller', email: 'tom@example.com' };
@@ -357,25 +357,34 @@ test('§7.2 collision — Load-Bearer yields to the specific load Door (Aging Pa
 // ([[doors-presented-at-intake]]), so a false positive hands someone a label about their own stance that they did
 // not intend — and the two false cases below are members who are explicitly still working at it.
 //
-// LEFT OPEN DELIBERATELY (Jay, 2026-08-09) — recorded as todo rather than fixed, so the cases live in code with
-// the rest of the taxonomy instead of in a note. The likely shape: require a SURRENDER cue to tag, and demote the
-// acknowledgment cues to corroboration only. Do NOT just delete the soft cues — a member who says only "at my age,
-// what do you expect" is the real thing, and that is what makes this a judgement rather than a regex tweak.
-// This half is CORRECT today and is a real assertion, not a todo — it is the guard for whoever fixes the other
-// half. The obvious "fix" is to delete the soft cues, which would take the true positives with them.
-test('§7.4 The Acceptance — a surrender STANCE tags the Door (must survive the fix below)', () => {
-  assert.ok(matchDoors('it is what it is, my best years are behind me').includes('acceptance'));
-  assert.ok(matchDoors("I've made peace with being past my prime").includes('acceptance'));
-  assert.ok(matchDoors('what do you expect at my age, I resigned myself to it').includes('acceptance'),
-    'and a surrender stance carried ONLY by the soft cues plus "resigned myself"');
+// §7.4 THE ACCEPTANCE — CLOSED (Decision C, Jay 2026-08-15).
+//
+// This pair sat open since 2026-08-09 as the only todo in the suite: the matcher could not tell NOTICING age from
+// SURRENDERING to it, and the obvious fix (delete the soft cues) would have taken the true positives with them.
+//
+// The resolution was not a better matcher. It was recognising that the Door was one construct doing two jobs —
+// admitting a resigned member (good) and labelling her as having surrendered (bad) — and that only the first
+// needed to exist. The cues are unchanged; they no longer produce a Door. See docs/acceptance-door-retirement.md.
+test('§7.4 a surrender stance still ADMITS — the intake signal is unchanged', () => {
+  for (const stance of [
+    'it is what it is, my best years are behind me',
+    "I've made peace with being past my prime",
+    'what do you expect at my age, I resigned myself to it',
+  ]) {
+    assert.equal(hasResignationLanguage(stance), true, `still a real Fade: "${stance}"`);
+  }
 });
 
-test('§7.4 The Acceptance — merely NOTICING age does NOT tag the Door', { todo: 'OPEN: both cases currently tag acceptance' }, () => {
-  const striving = matchDoors('I am not as young as I used to be, but I am working on it');
-  assert.equal(striving.includes('acceptance'), false, 'she is explicitly still working at it — that is not surrender');
+test('§7.4 merely NOTICING age does not label anyone — and never blocks them either', () => {
+  // The case that kept this open. She is explicitly still working at it; before C she was tagged as having
+  // surrendered. Now she is admitted on the signal and labelled with nothing — which is the honest read of
+  // someone who said "but I am working on it".
+  const striving = 'I am not as young as I used to be, but I am working on it';
+  assert.equal(matchDoors(striving).includes('acceptance' as never), false, 'not called a surrender');
+  assert.equal(hasResignationLanguage(striving), true, 'and still admitted — her Fade is real');
 
-  const noticing = matchDoors('I am slowing down a bit these days');
-  assert.equal(noticing.includes('acceptance'), false, 'an observation about pace is not a decision to expect nothing more');
+  const noticing = 'I am slowing down a bit these days';
+  assert.equal(matchDoors(noticing).includes('acceptance' as never), false, 'an observation about pace is not a verdict');
 });
 
 test('§7.3 no-map — a real Fade whose story maps to no Door completes (null routing), with own-words recognition', () => {

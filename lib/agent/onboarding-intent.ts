@@ -19,7 +19,7 @@
 //   C. Fade & scope — is this a real Fade (loss/drift), forward ambition (decline), or Acceptance (resignation)?
 //   D. Resolvers — compose the primitives into the single decision a stage needs (e.g. resolveGapConfirm).
 
-import { matchDoors } from '../doors.ts';
+import { matchDoors, hasResignationLanguage } from '../doors.ts';
 import { gapIsNarrative } from './onboarding-contract.ts';
 import { confirmsWhole, isAffirmation, memberWantsToWrap, type ReplyIntent } from './onboarding.ts';
 
@@ -362,9 +362,16 @@ export function hasLossSignal(text: string): boolean {
 export function isRealFade(text: string): boolean {
   return gapIsNarrative(text, []) && !isForwardAmbition(text);
 }
-// Resignation to age-decline = The Acceptance (a REAL Fade, not no-fade). Read from the whole gap-stage corpus.
+// Resignation to age-decline is a REAL Fade (not no-fade) — this admits them at the Stage-0 gate.
+//
+// Reads RESIGNATION_CUES directly rather than going through matchDoors, because The Acceptance is no longer a
+// Door (Decision C, 2026-08-15). The cue list is UNCHANGED, so admissions are byte-identical to before; what
+// changed is that being recognised here no longer stamps a member as having surrendered.
+//
+// The name is kept: it is referenced by the Stage-0 gate and the Decision E rescue, and renaming it during a
+// change that moves the scope gate would make the diff harder to read than it needs to be.
 export function isAcceptanceFade(text: string): boolean {
-  return matchDoors(text ?? '').includes('acceptance');
+  return hasResignationLanguage(text ?? '');
 }
 
 // =======================================================================================================

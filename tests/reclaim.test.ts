@@ -9,7 +9,7 @@ import {
   consolidateReclaimList,
   isReclaimMetaFragment,
 } from '../lib/member/reclaim.ts';
-import { DOOR_SLUGS, matchDoors, correctDoors } from '../lib/doors.ts';
+import { DOOR_SLUGS, matchDoors, hasResignationLanguage, correctDoors } from '../lib/doors.ts';
 
 const five = ['a', 'b', 'c', 'd', 'e'];
 
@@ -58,7 +58,10 @@ test('reclaim list finalize floor is >=1 (Gate-1 decision); >=3 stays the soft a
 });
 
 test('canonical doors validate; unknown do not; empty is valid (null routing, Taxonomy Spec §1)', () => {
-  assert.equal(DOOR_SLUGS.length, 12); // 8 original + Full House + Grind + Load-Bearer (taxonomy v1.0) + The Acceptance (v2.0)
+  // NO HARDCODED COUNT — the naming guard forbids one, and it has been wrong twice. Assert the SHAPE: every
+  // slug is unique, and The Acceptance is gone as a Door (Decision C, 2026-08-15).
+  assert.equal(new Set(DOOR_SLUGS).size, DOOR_SLUGS.length, 'slugs are unique');
+  assert.equal(DOOR_SLUGS.includes('acceptance' as never), false, 'retired as a Door — intake signal only');
   assert.equal(validateDoors(['full_house']).ok, true);
   assert.equal(validateDoors(['grind']).ok, true);
   assert.equal(validateDoors(['load_bearer']).ok, true);
@@ -108,19 +111,25 @@ test('matchDoors maps free text to one or more Doors in canonical order', () => 
     matchDoors('my husband didn’t step up, the savings are gone and the house is at risk, and my mother is declining so I’m her caretaker'),
     ['aging_parents', 'load_bearer'],
   );
-  // The Acceptance (taxonomy v2.0) — the surrender-to-age STANCE, in the member's own words.
-  assert.ok(matchDoors("honestly it is what it is, I'm not as young as I used to be").includes('acceptance'));
-  assert.ok(matchDoors("I've made peace with slowing down at my age").includes('acceptance'));
-  // Body vs Acceptance = EVENT vs STANCE. A named concrete physical event is The Body (deletes the stance)…
+  // RESIGNATION — admitted, never labelled (Decision C, 2026-08-15). The Acceptance was the only Door that was
+  // a STANCE rather than an event, and no matcher can separate striving from surrender when both open with the
+  // same words. Its cues now admit a member at the Stage-0 gate and derive NOTHING.
+  for (const stance of [
+    "honestly it is what it is, I'm not as young as I used to be",
+    "I've made peace with slowing down at my age",
+    "honestly I've just settled for less these days",
+  ]) {
+    assert.equal(hasResignationLanguage(stance), true, `still recognised as a real Fade: "${stance}"`);
+    assert.deepEqual(matchDoors(stance), [], 'and no Door is invented from a stance');
+  }
+  // A NAMED PHYSICAL EVENT IS THE BODY — settled framing no longer suppresses it. Before C, "the knees went …
+  // but I've made peace with it" routed to The Acceptance; with that Door retired, suppressing The Body would
+  // have left this member with NO Door at all. Her knees are the Door; what she concluded about them is not.
   assert.deepEqual(matchDoors('getting older I guess, but really my knees went and my body can’t keep up'), ['body']);
-  // …a general aging-body surrender with NO event is The Acceptance (Body's literal word yields to the stance)…
-  assert.deepEqual(matchDoors('my body is just slowing down, downhill from here'), ['acceptance']);
-  // …and an explicit "settled" framing keeps The Acceptance even when a concrete event is also named.
-  assert.deepEqual(matchDoors('my body — the knees went, the back aches — but I’ve made peace with it, it is what it is'), ['acceptance']);
-  // `settled` is tightened to the surrender phrasing (v2.1 orientation) — a life that "settled down" no
-  // longer false-fires The Acceptance; "settled for less/this" still does.
-  assert.equal(matchDoors('we finally settled down and had kids').includes('acceptance'), false);
-  assert.ok(matchDoors("honestly I've just settled for less these days").includes('acceptance'));
+  assert.deepEqual(matchDoors('my body — the knees went, the back aches — but I’ve made peace with it, it is what it is'), ['body']);
+  assert.deepEqual(matchDoors('my body is just slowing down, downhill from here'), ['body']);
+  // The `settled` tightening still holds: a life that "settled down" is not resignation.
+  assert.equal(hasResignationLanguage('we finally settled down and had kids'), false);
 });
 
 test('correctDoors fixes the young-kids/Empty-Nest mis-tag, and NO LONGER touches Aging Parents', () => {
