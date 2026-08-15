@@ -181,3 +181,42 @@ test('the keyword heuristic is what a throw degrades TO — documented, includin
   assert.equal(inferCategory(OCEAN), 'self', 'still the known miss offline');
   assert.equal(inferCategory('Sunday dinner with the kids'), 'social');
 });
+
+// ── THE ORDERING PROPERTY: no model call between two halves of an account ──────────────────────────────────────
+
+test('a HANGING categoriser cannot half-create a member', async (t) => {
+  // THE REGRESSION THIS EXISTS FOR (prod, 2026-08-15 20:39). categorizeReclaimItems sat between the
+  // member_profile insert and addReclaimItems. It hung, the serverless function died mid-signup, and what
+  // survived was a member row with four Doors, ZERO Reclaim items and no credential — a person told "you already
+  // have an account" at signup and "email or password is incorrect" at login, locked out of an account she could
+  // neither use nor replace.
+  //
+  // A throw was already guarded. A HANG is the harder case: there is no catch to run, so the only defence is
+  // ordering — resolve every model call BEFORE the first write. Then a hang delays the signup and fails it
+  // cleanly, and a clean failure is retryable in a way that half an account never is.
+  //
+  // Simulated with a never-resolving stub + a race, because a real hang would just stall this test.
+  t.mock.module('../lib/beats/categorize.ts', {
+    namedExports: {
+      categorizeReclaimItems: () => new Promise(() => {}), // never settles — the prod failure mode
+    },
+  });
+
+  const { runOnboarding } = await import('../lib/gateway/flow.ts?seam=hang');
+  const db = await freshDb();
+  const started = runOnboarding(db, scriptedProvider, {
+    ...BASE,
+    email: 'joanne.hang@example.com',
+    reclaimList: LIST,
+  });
+
+  // Let it run as far as it can, then look at what it managed to write.
+  const outcome = await Promise.race([started, new Promise((r) => setTimeout(() => r('STILL_HANGING'), 300))]);
+  assert.equal(outcome, 'STILL_HANGING', 'it should be stuck in the categoriser, not finished');
+
+  const { rows } = await db.query<{ n: number }>('select count(*)::int as n from member_profile');
+  assert.equal(
+    rows[0]!.n, 0,
+    'NOTHING may be written while a model call is outstanding — a hang must leave no half-built member behind',
+  );
+});

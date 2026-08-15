@@ -176,11 +176,27 @@ export async function finalizeOnboardingAction(input: FinalizeInput): Promise<Fi
     const errors = 'errors' in res ? res.errors : ['Could not save your intake — please try again.'];
     return { ok: false, errors };
   }
-  // Decision Z: create the ACCOUNT here, at the commit — the credential from the password collected upfront at the
-  // gate — and start the session, so the card hands straight to the Ceremony with no /account/setup interruption.
-  // A returner whose account already exists is routed to /login instead of getting a second account (email-unique).
-  // Persist the GRINTA baseline (staged flow only — it's set on collected.grintaBaseline by the survey stage).
-  // Best-effort: the member + captures are already committed, so a reading write must never fail the signup.
+  // THE CREDENTIAL COMES FIRST — IMMEDIATELY AFTER THE MEMBER ROW (moved 2026-08-15).
+  //
+  // Decision Z: the account is created here, at the commit, from the password collected upfront at the gate, so
+  // the card hands straight to the Ceremony with no /account/setup interruption.
+  //
+  // What changed is the ORDER, and it is the whole fix. This used to run after the Grinta write; a member row
+  // and its credential were four steps apart, and anything that died in between left a person with an account
+  // they could never enter — signup saying "you already have an account", login saying "email or password is
+  // incorrect", and no way to use either. That happened to a real tester today.
+  //
+  // A member row without a credential is the single worst state this product can produce: it is unrecoverable
+  // BY THE MEMBER. Everything else here (Grinta, keepers, telemetry) is data we could backfill or live without.
+  // So nothing optional gets to run between those two writes, ever.
+  if (await hasCredential(db, res.memberId)) {
+    return { ok: false, code: 'exists', error: 'That email already has an account — please log in.' };
+  }
+  await createCredential(db, res.memberId, input.ctx.email.trim(), await hashPassword(input.password));
+
+  // Now the optional work. Persist the GRINTA baseline (staged flow only — set on collected.grintaBaseline by the
+  // survey stage). Best-effort: the member and their credential both exist by this point, so they can always get
+  // back in even if this fails — which is exactly why it belongs below the credential and not above it.
   const g = collected.grintaBaseline;
   const gResponses = input.state.administeredResponses;
   if (g && gResponses?.length) {
@@ -194,10 +210,6 @@ export async function finalizeOnboardingAction(input: FinalizeInput): Promise<Fi
       console.warn('onboarding grinta baseline write failed — non-fatal:', (e as Error).message);
     }
   }
-  if (await hasCredential(db, res.memberId)) {
-    return { ok: false, code: 'exists', error: 'That email already has an account — please log in.' };
-  }
-  await createCredential(db, res.memberId, input.ctx.email.trim(), await hashPassword(input.password));
   // SEC-08: send the proof-of-control link. NOT a gate — they go straight to the Ceremony either way; this just
   // means a member who later forgets their password has a way back to their own story. Never fails the signup.
   void sendVerificationEmail(input.ctx.email, res.memberId);

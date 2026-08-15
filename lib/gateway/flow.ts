@@ -76,6 +76,33 @@ export async function runOnboarding(
   };
   const identityParagraph = await provider.composeIdentityParagraph(input);
 
+  // EVERY MODEL CALL HAPPENS BEFORE THE FIRST WRITE. THIS ORDERING IS THE SAFETY PROPERTY (2026-08-15).
+  //
+  // This used to sit between the member_profile insert and addReclaimItems, and it stranded a real person the
+  // same day it shipped. The categoriser hung; the function died mid-signup; and what survived was a member row
+  // with her Doors written, ZERO Reclaim items, and no credential. She was then told "you already have an account"
+  // signup and "email or password is incorrect" at login — locked out of an account she could not use and could
+  // not replace. (Prod, 20:39:22 — the timestamps show writes stopping 150ms in, exactly at this call.)
+  //
+  // The bug was never really the hang. It was that a slow, third-party, failure-prone call sat BETWEEN two halves
+  // of a member's account. composeIdentityParagraph above was already on the right side of that line; this
+  // wasn't. Now nothing is written until every model call has resolved, so the worst a hang can do is delay the
+  // signup and fail it cleanly — which the member can retry. A half-created account cannot be retried.
+  //
+  // KEEP IT THAT WAY: if you ever need another model call in here, put it above this comment, never below.
+  const cats = f.reclaimList.map((_, i) => f.reclaimCategories?.[i]);
+  let resolved: Array<Category | undefined>;
+  if (cats.every(isCategory)) {
+    resolved = cats as Category[];
+  } else {
+    try {
+      resolved = await categorizeReclaimItems(f.reclaimList);
+    } catch (e) {
+      console.warn('reclaim categorize threw — falling back to keywords:', (e as Error)?.message);
+      resolved = [];
+    }
+  }
+
   try {
     const { rows } = await writeAsActor(db, 'member', (tx) =>
       tx.query<{ member_id: string }>(
@@ -99,36 +126,9 @@ export async function runOnboarding(
         [memberId, doors[i], i === 0, i],
       );
     }
-    // Reclaim List as categorized rows for the Beat engine.
-    //
-    // THE AGENT-INFERRED UPGRADE, FINALLY WIRED (2026-08-15). The comment here used to promise it "upgrades to
-    // agent-inferred in the onboarding shaping conversation" — and the prompt does ask for it — but the Reclaim
-    // List became a structured builder, and the builder sets every category to '' with the note "assigned
-    // later". There was no later, so every list fell through to the v1 keyword heuristic. Caught when a persona
-    // walk tagged an open-water swimmer's "Getting in the ocean regularly" as `self`: the keyword list has
-    // `swim`, not `ocean`, and category selects the Beats she gets served.
-    //
-    // Only ask the model when something is actually missing — a list that arrived categorised (the tool-call
-    // path) is already better than anything we would infer, and re-deriving it would be a second opinion
-    // overwriting a first-hand one.
-    //
-    // WRAPPED AT THE SEAM, not trusted to the callee. categorizeReclaimItems catches its own failures — but a
-    // guarantee this expensive ("a category can never cost a member their signup") must not rest on another
-    // module's internal discipline, and its keyword fallback runs OUTSIDE that catch. A test proved the gap:
-    // stub it to throw and runOnboarding rejects, so the member finishes onboarding and gets no account. The
-    // consequence lives here, so the guard lives here.
-    const cats = f.reclaimList.map((_, i) => f.reclaimCategories?.[i]);
-    let resolved: Array<Category | undefined>;
-    if (cats.every(isCategory)) {
-      resolved = cats as Category[];
-    } else {
-      try {
-        resolved = await categorizeReclaimItems(f.reclaimList);
-      } catch (e) {
-        console.warn('reclaim categorize threw at the seam — falling back to keywords:', (e as Error)?.message);
-        resolved = [];
-      }
-    }
+    // Reclaim List as categorized rows for the Beat engine. `resolved` was computed ABOVE, before the first
+    // write — see the ordering note there. Nothing in this block talks to a model, which is the point: from the
+    // member_profile insert to the end of this function there is no third-party call that can hang.
     await addReclaimItems(
       db,
       memberId,
