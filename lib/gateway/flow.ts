@@ -111,10 +111,24 @@ export async function runOnboarding(
     // Only ask the model when something is actually missing — a list that arrived categorised (the tool-call
     // path) is already better than anything we would infer, and re-deriving it would be a second opinion
     // overwriting a first-hand one.
+    //
+    // WRAPPED AT THE SEAM, not trusted to the callee. categorizeReclaimItems catches its own failures — but a
+    // guarantee this expensive ("a category can never cost a member their signup") must not rest on another
+    // module's internal discipline, and its keyword fallback runs OUTSIDE that catch. A test proved the gap:
+    // stub it to throw and runOnboarding rejects, so the member finishes onboarding and gets no account. The
+    // consequence lives here, so the guard lives here.
     const cats = f.reclaimList.map((_, i) => f.reclaimCategories?.[i]);
-    const resolved = cats.every(isCategory)
-      ? (cats as Category[])
-      : await categorizeReclaimItems(f.reclaimList);
+    let resolved: Array<Category | undefined>;
+    if (cats.every(isCategory)) {
+      resolved = cats as Category[];
+    } else {
+      try {
+        resolved = await categorizeReclaimItems(f.reclaimList);
+      } catch (e) {
+        console.warn('reclaim categorize threw at the seam — falling back to keywords:', (e as Error)?.message);
+        resolved = [];
+      }
+    }
     await addReclaimItems(
       db,
       memberId,

@@ -41,7 +41,16 @@ if (cleared.length) {
 
 const child = spawn(
   process.execPath,
-  ['--experimental-strip-types', '--test', ...process.argv.slice(2).length ? process.argv.slice(2) : ['tests/*.test.ts']],
+  // --experimental-test-module-mocks: needed by tests that must prove a collaborator was actually CALLED, not
+  // merely that the result looked right. The reclaim categoriser is the case that forced it — offline it returns
+  // the same values as the keyword fallback, so "the model agreed" and "the model never ran" are byte-identical.
+  // That ambiguity already fooled me once for real (2026-08-15); a stub removes it instead of relying on care.
+  [
+    '--experimental-strip-types',
+    '--experimental-test-module-mocks',
+    '--test',
+    ...(process.argv.slice(2).length ? process.argv.slice(2) : ['tests/*.test.ts']),
+  ],
   { stdio: 'inherit', env, shell: true },
 );
 child.on('exit', (code) => process.exit(code ?? 1));

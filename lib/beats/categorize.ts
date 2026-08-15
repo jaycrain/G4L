@@ -22,6 +22,12 @@
 // A category is metadata. No key, a timeout, a malformed answer, the wrong number of items — every one of those
 // degrades to the keyword heuristic for the items it could not resolve, and the member's list is written either
 // way. Same rule as telemetry: a measurement may fail, the member's record may not (lib/db/best-effort.ts).
+//
+// That guarantee is enforced TWICE, on purpose. This function catches its own failures, AND lib/gateway/flow.ts
+// wraps the call site. The belt-and-braces is not paranoia: the claim above was written before it was true —
+// tests/reclaim-category-seam.test.ts stubbed this to throw and runOnboarding rejected, so a member would have
+// finished onboarding and received no account. A promise this expensive should not live in one module's
+// discipline, especially not one whose own fallback (inferCategory, above the try) sits outside its catch.
 
 import { CATEGORIES, isCategory, type Category } from './registry.ts';
 import { inferCategory } from './category.ts';
@@ -48,7 +54,12 @@ export async function categorizeReclaimItems(texts: string[]): Promise<Category[
 
   try {
     const { default: Anthropic } = await import('@anthropic-ai/sdk');
-    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, timeout: 16000, maxRetries: 1 });
+    // BOUNDED HARD, BECAUSE OF WHERE THIS RUNS. The caller is runOnboarding, under app/onboarding/page.tsx's
+    // `maxDuration = 30`. The original 16s timeout with one retry meant a worst case of 32s from this call
+    // alone — over the whole request's budget, at the single moment in the product with no recovery: the
+    // member has finished onboarding and the account is being created. 8s and no retry keeps the worst case
+    // comfortably inside the budget. A category is worth waiting a moment for; it is not worth a lost signup.
+    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, timeout: 8000, maxRetries: 0 });
     const model = process.env.ANTHROPIC_MODEL ?? 'claude-sonnet-4-6';
     const sys =
       'You tag each item on a member\'s Reclaim List with the ONE area it belongs to. Judge the item by what the ' +
