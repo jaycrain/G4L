@@ -6,11 +6,25 @@ import { logQualityDayAction } from './actions.ts';
 
 // The daily Quality-Day check-in (Reclaim C3). A 1–10 score, the elements that showed up today (from the member's own
 // profile), and two short reflections. Warm + non-judgmental — not a compliance scoreboard (the point is noticing).
-export default function QualityDayLog({ memberId, elements }: { memberId: string; elements: string[] }) {
-  const [score, setScore] = useState<number | null>(null);
-  const [present, setPresent] = useState<Set<string>>(new Set());
-  const [valuable, setValuable] = useState('');
-  const [missing, setMissing] = useState('');
+/** Today's entry if one exists — the form EDITS it rather than starting blank. See the note on the page. */
+export type QualityDayToday = { score: number; present: string[]; mostValuable?: string | null; mostMissing?: string | null } | null;
+
+export default function QualityDayLog({
+  memberId,
+  elements,
+  today = null,
+}: {
+  memberId: string;
+  elements: string[];
+  today?: QualityDayToday;
+}) {
+  // SEEDED FROM TODAY. The write replaces the day's record, so the form must arrive holding the whole record —
+  // otherwise a second visit submits a partial one and erases the rest. Seeding is what makes replace correct,
+  // and it is also what lets a member UNTICK something, which a server-side merge would have taken away.
+  const [score, setScore] = useState<number | null>(today?.score ?? null);
+  const [present, setPresent] = useState<Set<string>>(new Set(today?.present ?? []));
+  const [valuable, setValuable] = useState(today?.mostValuable ?? '');
+  const [missing, setMissing] = useState(today?.mostMissing ?? '');
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
@@ -35,7 +49,9 @@ export default function QualityDayLog({ memberId, elements }: { memberId: string
     });
   }
 
-  if (done) return <p className="momentum-log-done">Logged — that’s today. See you tomorrow.</p>;
+  // "See you tomorrow" was true only while a day could be logged once. It is editable now, so the receipt says
+  // what happened and leaves the door open.
+  if (done) return <p className="momentum-log-done">Saved — that’s today. Come back and change it anytime.</p>;
 
   return (
     <div className="qd-log">
