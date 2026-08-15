@@ -30,6 +30,7 @@
     "crisis-drill": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/crisis-drill.ts",
     "walk:c2": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/c2-audit-walk.ts",
     "walk:c3": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/c3-quality-walk.ts",
+    "walk:qd2": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/qd-second-visit-walk.ts",
     "walk:w3": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/w3-grid-walk.ts"
   },
   "dependencies": {

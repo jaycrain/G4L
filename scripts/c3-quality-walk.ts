@@ -237,7 +237,21 @@ async function main(): Promise<void> {
   if (elementMiss.length) console.log(`\n      THE ELEMENTS ACTUALLY OFFERED:\n      ${elementButtons.split(' | ').join('\n      ')}\n`);
 
   // ---- 4. LOG A DAY -------------------------------------------------------------------------------------------
+  // WAIT FOR HYDRATION FIRST. A click on an un-hydrated button does nothing at all; the form then refuses with
+  // "Pick a score from 1 to 10" and this walk reports "logging the day did not confirm" — a FALSE product
+  // failure. It only appears against prod, which hydrates slower than local. On 2026-08-15 it sent me hunting a
+  // prod-only logging bug that did not exist. Assert the tap REGISTERED rather than trusting the click landed.
+  await page.waitForFunction(
+    () => {
+      const el = document.querySelector('.qd-score-btn');
+      return !!el && Object.keys(el).some((k) => k.startsWith('__reactProps$'));
+    },
+    null,
+    { timeout: 20000 },
+  ).catch(() => {});
   await page.locator('.qd-score-btn').filter({ hasText: new RegExp(`^${SCORE}$`) }).first().click();
+  const scoreTapped = (await page.locator('.qd-score-btn.is-on').first().textContent().catch(() => null))?.trim();
+  if (scoreTapped !== String(SCORE)) bad(`the score tap did not register (shows ${scoreTapped ?? 'nothing'}) — the page was not interactive yet`);
   // Match the token, not the full sentence — the button carries the model's tidied label ("Morning walk with
   // Rosie"), so filtering on the phrase the member typed finds nothing and the walk dies on a 30s timeout.
   await page.locator('.qd-el-btn').filter({ hasText: VERBATIM.nonNegotiable }).first().click();
