@@ -158,6 +158,21 @@ button, .btn {
    The opt-out list WAS the bug: the fix lived far away from the button, so writing a correct new button required
    knowing about a rule you had no reason to look at. Now the default is declared once and any button overrides it
    in its OWN rule, one line, next to the rest of its styling. Nothing to join, nothing to remember. */
+/* THE DEFAULT ITSELF IS THE REMAINING BUG — READ THIS BEFORE PATCHING A FIFTH BUTTON.
+ *
+ * `var(--navy)` assumes every button is a navy CTA with white text. Most are not, and `button:hover` (0,1,1)
+ * outranks a class's own `background` (0,1,0), so ANY button that does not override this fills navy on hover —
+ * dark text on a dark ground, and on touch the state sticks after a tap. Four classes have now patched around it
+ * one at a time: .qd-score-btn, .qd-el-btn, .noti-opt, .rhythm-opt.
+ *
+ * Measured 2026-08-15: 81 of 86 button classes in app/ do not override this. Most happen to look fine; nothing
+ * makes them fine, and no test asks.
+ *
+ * The fix is to stop SWAPPING in a fixed colour and instead shift the button relative to its own — a hover that
+ * cannot invert contrast because it moves text and ground together:
+ *     button:hover, .btn:hover { filter: brightness(0.94); }
+ * with the handful that genuinely want a colour change opting in. Deliberately NOT done on 2026-08-15: it
+ * restyles every hover in the app, and Jay and Donna were mid-test. It is queued, not forgotten. */
 button, .btn { --btn-hover-bg: var(--navy); }
 button:hover, .btn:hover { background: var(--btn-hover-bg); }
 
@@ -2478,6 +2493,20 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
 .noti-group { border: 1px solid var(--panel-line, #E8E6E6); border-radius: 13px; overflow: hidden; }
 .noti-opt { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; padding: 13px 14px; cursor: pointer; border: none; border-bottom: 1px solid var(--panel-line, #E8E6E6); background: #fff; font-family: inherit; }
 .noti-opt:last-child { border-bottom: none; }
+/* ILLEGIBLE ON HOVER/TAP (Jay, 2026-08-15, sat on it for a while — a legibility bug should never wait that long).
+   `button { --btn-hover-bg: var(--navy) }` is the app-wide default and `button:hover` outranks a class's own
+   background, so this row filled NAVY on hover while .noti-ti is also navy — the title vanished completely and
+   only the grey subtitle survived, barely. On iPad :hover sticks after a tap, so it stayed that way.
+   This is a LIST ROW, not a navy CTA: it gets a tint, and the text keeps its own colour. Same fix shape as
+   .qd-el-btn and .qd-score-btn — see the note at `button, .btn` about the default itself being the real bug.
+
+   THE TINT IS MEASURED, NOT PICKED. --muted-grey is documented 4.80:1 and that is against WHITE; the first tint
+   here (#f6f5f3) pushed the 12px subtitle to 4.26 and quietly broke a second thing while fixing the first. These
+   values keep it above 4.5 with the ground it actually sits on — sub 4.56, navy title 8.11. Darken them and the
+   subtitle fails again. */
+.noti-opt { --btn-hover-bg: #faf9f7; }
+/* The chosen row reads as chosen without depending on hover, which a touch device cannot express. */
+.noti-opt.sel { background: #f7fafa; --btn-hover-bg: #f2f7f7; }
 .noti-radio { width: 21px; height: 21px; border-radius: 50%; border: 2px solid #c7ccd1; flex: 0 0 auto; display: flex; align-items: center; justify-content: center; }
 .noti-opt.sel .noti-radio { background: var(--teal); border-color: var(--teal-text); }
 .noti-radio svg { width: 11px; height: 11px; stroke: #fff; fill: none; stroke-width: 3.4; stroke-linecap: round; stroke-linejoin: round; opacity: 0; }
@@ -2568,6 +2597,10 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
 .rhythm-ask { color: #fff; font-weight: 700; font-size: 18px; margin: 26px 0 14px; }
 .rhythm-opt { display: flex; width: 100%; text-align: left; align-items: center; gap: 14px; background: rgba(255, 255, 255, 0.05); border: 1.5px solid rgba(255, 255, 255, 0.13); border-radius: 16px; padding: 15px 16px; margin-bottom: 11px; cursor: pointer; transition: 0.15s; font-family: inherit; }
 .rhythm-opt.sel { background: rgba(59, 148, 149, 0.18); border-color: var(--teal-text); }
+/* The same control, on the dark onboarding ground — fixed in the same breath rather than waiting for someone to
+   report it twice. A navy fill here is near-invisible against the navy backdrop AND kills the selected teal. */
+.rhythm-opt { --btn-hover-bg: rgba(255, 255, 255, 0.12); }
+.rhythm-opt.sel { --btn-hover-bg: rgba(59, 148, 149, 0.26); }
 .rhythm-radio { width: 24px; height: 24px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, 0.35); flex: 0 0 auto; display: flex; align-items: center; justify-content: center; transition: 0.15s; }
 .rhythm-opt.sel .rhythm-radio { background: var(--teal); border-color: var(--teal-text); }
 .rhythm-radio svg { width: 13px; height: 13px; stroke: #fff; fill: none; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; opacity: 0; }
