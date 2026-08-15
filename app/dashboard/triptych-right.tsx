@@ -105,18 +105,17 @@ export default async function TriptychRight({
           {waitingCount > 0 && (
             <Link href={`/playbook/${memberId}?tab=journal`} className="pb-waiting pb-waiting-sm" prefetch={false}>
               <span className="pb-waiting-n">{waitingCount}</span>
-              <span>{waitingCount === 1 ? 'thing you said is waiting' : 'things you said are waiting'}</span>
+              {/* Capitalised because the count is a BADGE, not the first word of the sentence — the phrase starts
+                  here. Lowercase read as a sentence fragment hanging off a number (Jay, 2026-08-15). */}
+              <span>{waitingCount === 1 ? 'Thing you said is waiting' : 'Things you said are waiting'}</span>
             </Link>
           )}
-          {/* WHEN SOMETHING IS WAITING, THIS LINK GOES TO IT (Jay, 2026-08-15). The panel says "4 things you said
-              are waiting" and then offered a link that landed on This week — so the named thing and the way in
-              pointed at different places, and the obvious big link was the wrong one. With nothing waiting the
-              Playbook's own default stands (a running week leads; see redesign-playbook-view). */}
-          <Link
-            href={waitingCount > 0 ? `/playbook/${memberId}?tab=journal` : `/playbook/${memberId}`}
-            className="see-more"
-            prefetch={false}
-          >
+          {/* TWO LINKS, TWO DESTINATIONS, ON PURPOSE (Jay, 2026-08-15). The waiting card above goes to the
+              Journal, because that is where those lines are. This one opens This week — the general way in, and
+              the tab a member is here to act on. I briefly pointed this at the Journal too; Jay's correction:
+              they are different doors and should stay different. Explicit ?tab= rather than relying on the
+              Playbook's own default, which falls back to What worked when no week is running. */}
+          <Link href={`/playbook/${memberId}?tab=thisweek`} className="see-more" prefetch={false}>
             Open Your Playbook →
           </Link>
         </div>
