@@ -25,6 +25,7 @@ import { logEvent } from '../../lib/telemetry/store.ts';
 import { proposeEntry, addOwnEntry } from '../../lib/playbook/store.ts';
 import { addFacet } from '../../lib/curriculum/store.ts';
 import { consolidateReclaim } from '../../lib/member/reclaim.ts';
+import { escalateProspectCrisis } from '../../lib/agent/crisis-escalation.ts';
 import { createCredential, hasCredential } from '../../lib/auth/store.ts';
 import { sendVerificationEmail } from '../../lib/auth/verify-email.ts';
 import { hashPassword } from '../../lib/auth/password.ts';
@@ -119,6 +120,25 @@ export async function onboardingTurn(input: TurnInput): Promise<TurnOutput> {
       await saveOnboardingSession(db, email, input.token, turn.state, messages);
     } catch (e) {
       console.warn('onboarding session save failed (non-fatal):', (e as Error).message);
+    }
+  }
+
+  // ESCALATE TO A HUMAN — the half of the crisis rule this surface never had (2026-08-15).
+  //
+  // The engine already returned the 988 response; that half has always worked. What never happened is anyone
+  // being told. escalateCrisis takes a member_id and there is no member here, so onboarding was skipped when the
+  // other five surfaces were wired — and the guard test that exists to catch exactly that missed it, because it
+  // enumerated by function name and this export is `onboardingTurn`, not `onboardingTurnAction`.
+  //
+  // AFTER the save, deliberately: the escalation flags the session row, so the row has to exist first. Awaited
+  // rather than fired-and-forgotten — a serverless function can be frozen the moment the response is returned,
+  // and a dropped crisis alert is the one thing here worth a few hundred milliseconds.
+  if (turn.crisis && email) {
+    try {
+      await escalateProspectCrisis(db, email, { message: input.memberMessage ?? '' });
+    } catch (e) {
+      // Never let alerting cost them the reply that carries the 988 number.
+      console.error('PROSPECT CRISIS ESCALATION THREW — they still got the 988 response:', (e as Error).message);
     }
   }
 

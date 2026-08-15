@@ -5,7 +5,7 @@ import RichText from '../rich-text.tsx';
 import { useRouter } from 'next/navigation';
 import { idqOpening, idqRespond, type IdqConvState } from '../../lib/agent/idq-conversation.ts';
 import { TOTAL_ITEMS } from '../../lib/idq/instrument.ts';
-import { submitIdqResponses } from './actions.ts';
+import { submitIdqResponses, reportIdqCrisis } from './actions.ts';
 import ScaleChips from '../components/scale-chips.tsx';
 import type { ScaleExpectation } from '../../lib/agent/onboarding.ts';
 
@@ -33,6 +33,14 @@ export default function IdqChat({ memberId }: { memberId: string }) {
     const t = idqRespond(state, text);
     setState(t.state);
     setMessages([...prior, { role: 'agent', text: t.reply }]);
+
+    // The 988 response is already on screen — idqRespond returned it synchronously, and that must never wait on
+    // the network. This is the OTHER half of the rule: tell a human. Fire-and-forget so a slow or failed alert
+    // cannot stall the conversation, and .catch'd because an unhandled rejection here would surface to the
+    // member as an error at the worst possible moment.
+    if (t.crisis) {
+      void reportIdqCrisis(memberId, text).catch(() => {});
+    }
 
     if (t.complete && t.responses) {
       setPending(true);

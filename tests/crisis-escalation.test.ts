@@ -11,7 +11,7 @@ import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { PGlite } from '@electric-sql/pglite';
 import { applySchema, type Db } from '../lib/db/schema.ts';
-import { escalateCrisis } from '../lib/agent/crisis-escalation.ts';
+import { escalateCrisis, escalateProspectCrisis } from '../lib/agent/crisis-escalation.ts';
 import { detectCrisis, CRISIS_RESPONSE_US } from '../lib/agent/governance.ts';
 
 async function db(): Promise<Db> {
@@ -109,30 +109,146 @@ test('988 still comes FIRST, and the escalation is disclosed', () => {
 
 // ── the seam: every conversational surface must escalate ───────────────────────────────────────────────────────
 
-test('EVERY member-conversation action escalates — a new arc cannot quietly forget', () => {
-  // The failure this prevents is specific and was real an hour ago: runArcTurn flagged the crisis, returned
-  // `crisis: true`, and all four arc actions dropped it on the floor. Nothing in a unit test would ever notice,
-  // because each half worked. Only an enumeration catches a missing wire.
-  const walk = (d: string, out: string[] = []): string[] => {
-    for (const n of readdirSync(d)) {
-      if (n === 'node_modules' || n === '.next') continue;
-      const p = join(d, n);
-      if (statSync(p).isDirectory()) walk(p, out);
-      else if (p.endsWith('.ts')) out.push(p);
-    }
-    return out;
-  };
-  // Files holding a *TurnAction / sendCheckin — i.e. somewhere a member's free text reaches the engine.
-  const conversational = walk('app').filter((f) => {
-    const s = readFileSync(f, 'utf8');
-    return /export async function (\w+TurnAction|sendCheckin)\b/.test(s);
-  });
-  assert.ok(conversational.length >= 5, `expected the 4 arcs + the Companion, found ${conversational.length} — the enumeration broke`);
+// THIS GUARD REPLACED ONE THAT WAS DEFEATED BY A RENAME (2026-08-15).
+//
+// The previous version enumerated files declaring `export async function \w+TurnAction | sendCheckin`. It found
+// five files and passed — while THREE declared crisis surfaces escalated nothing at all. Onboarding escaped it
+// because its export is named `onboardingTurn`, not `onboardingTurnAction`. A guard written specifically to
+// catch "both halves work, the seam doesn't exist" was itself defeated by a seam it couldn't see.
+//
+// So the enumeration no longer guesses at file names. It reads the CrisisSurface union — the type that DECLARES
+// where a crisis can happen — and demands each member of it prove a human is actually reached. A new surface is
+// added by editing that union, which is exactly the moment this should start failing.
+function walkTs(d: string, out: string[] = []): string[] {
+  for (const n of readdirSync(d)) {
+    if (n === 'node_modules' || n === '.next') continue;
+    const p = join(d, n);
+    if (statSync(p).isDirectory()) walkTs(p, out);
+    else if (p.endsWith('.ts') || p.endsWith('.tsx')) out.push(p);
+  }
+  return out;
+}
 
-  const missing = conversational.filter((f) => !/escalateCrisis\s*\(/.test(readFileSync(f, 'utf8')));
+// A surface may reach a human by a route OTHER than escalateCrisis — but only if it is declared here, with the
+// mechanism named. Silence is not an exemption; an undeclared surface fails.
+const ALTERNATIVE_ROUTE: Record<string, { calls: string; why: string }> = {
+  onboarding: {
+    calls: 'escalateProspectCrisis',
+    why:
+      'There is no member_id during onboarding — the row is created only at the final "This is me" tap — so ' +
+      'escalateCrisis (which writes member_event) cannot be used. escalateProspectCrisis flags the ' +
+      'onboarding_session row by email and sends the same alert. Same governance outcome, different key.',
+  },
+  community: {
+    calls: 'fileCrisisReport',
+    why:
+      'Community content routes through lib/connect/write.ts + rooms.ts, which file a crisis REPORT into the ' +
+      'moderation queue a human already works, rather than emailing. Different mechanism, same governance ' +
+      'outcome: 988 to the member now, a human afterwards. Approved posture (connect-safety-posture-approved).',
+  },
+};
+
+test('EVERY declared crisis surface actually reaches a human — the union is the enumeration', () => {
+  const escSrc = readFileSync('lib/agent/crisis-escalation.ts', 'utf8');
+  const union = escSrc.match(/export type CrisisSurface\s*=\s*([^;]+);/)?.[1];
+  assert.ok(union, 'could not read the CrisisSurface union — this guard is blind, fix it before shipping');
+
+  const surfaces = [...union!.matchAll(/'([a-z_]+)'/g)].map((m) => m[1]!);
+  assert.ok(surfaces.length >= 5, `expected the declared surfaces, parsed ${surfaces.length} — the parse broke`);
+
+  const files = [...walkTs('app'), ...walkTs('lib')].filter((f) => !f.endsWith('crisis-escalation.ts'));
+  const sources = new Map(files.map((f) => [f, readFileSync(f, 'utf8')]));
+
+  const unreached = surfaces.filter((s) => {
+    const alt = ALTERNATIVE_ROUTE[s];
+    if (alt) return ![...sources.values()].some((src) => src.includes(`${alt.calls}(`));
+    // An escalateCrisis call carrying this surface, anywhere. Checked within a small window after the call so
+    // an unrelated `surface: 'x'` (logEvent uses the same key — that is what fooled the first investigation
+    // of this bug) cannot be mistaken for an escalation.
+    return ![...sources.values()].some((src) => {
+      for (const m of src.matchAll(/escalateCrisis\s*\(/g)) {
+        if (new RegExp(`surface:\\s*'${s}'`).test(src.slice(m.index!, m.index! + 400))) return true;
+      }
+      return false;
+    });
+  });
+
   assert.deepEqual(
-    missing, [],
-    `These take a member's message and never escalate a crisis:\n  ${missing.join('\n  ')}\n` +
-    `Add: if (detectCrisis(message).flagged) await escalateCrisis(db, memberId, { surface, message });`,
+    unreached, [],
+    `CrisisSurface declares these, and NO human is ever reached on them:\n  ${unreached.join('\n  ')}\n\n` +
+    `The member still gets 988 — that half always works. Nobody gets told.\n` +
+    `Fix by calling escalateCrisis (or escalateProspectCrisis where there is no member yet), or declare an ` +
+    `ALTERNATIVE_ROUTE above naming the mechanism.`,
   );
+});
+
+// ── the prospect path: someone in crisis who has no account yet ────────────────────────────────────────────────
+
+async function prospectDb(email = 'p@x.test'): Promise<Db> {
+  const d = new PGlite() as unknown as Db;
+  await applySchema(d);
+  await d.query(
+    `insert into onboarding_session (email, token, state, messages) values ($1,'tok','{}'::jsonb,'[]'::jsonb)`,
+    [email],
+  );
+  return d;
+}
+
+test('a PROSPECT crisis is recorded against their session — no member row required', async () => {
+  const d = await prospectDb();
+  const r = await escalateProspectCrisis(d, 'p@x.test', { message: 'I want to die' });
+  assert.equal(r.recorded, true, 'the session is flagged even though no member exists');
+  const { rows } = await d.query<{ n: number }>(
+    'select count(*)::int as n from onboarding_session where email=$1 and crisis_flagged_at is not null',
+    ['p@x.test'],
+  );
+  assert.equal(rows[0]!.n, 1);
+});
+
+test('the prospect email is matched case-insensitively — a capital must not lose the flag', async () => {
+  // THE FIXTURE IS MIXED CASE ON PURPOSE. The first version of this test seeded a lowercase row and passed
+  // against an implementation that used `where email = $1` — proving nothing, because the condition it claimed
+  // to test never occurred. saveOnboardingSession stores what the member typed, verbatim, into a case-sensitive
+  // primary key; a real "Donna@Gmail.com" would have silently failed to flag.
+  const d = await prospectDb('MiXeD@X.test');
+  const r = await escalateProspectCrisis(d, '  mixed@x.TEST  ', { message: 'I want to die' });
+  assert.equal(r.recorded, true, 'the stored row is mixed case and still matched');
+  const { rows } = await d.query<{ n: number }>(
+    'select count(*)::int as n from onboarding_session where crisis_flagged_at is not null',
+  );
+  assert.equal(rows[0]!.n, 1, 'and the flag landed on the row that actually exists');
+});
+
+test('repeat messages in one episode are ONE prospect alert, not five', async () => {
+  const d = await prospectDb();
+  const first = await escalateProspectCrisis(d, 'p@x.test', { message: 'I want to die' });
+  const second = await escalateProspectCrisis(d, 'p@x.test', { message: 'I really mean it' });
+  assert.equal(first.recorded, true);
+  assert.equal(second.deduped, true, 'a person sending three messages is one human to reach, not three emails');
+  assert.equal(second.recorded, false);
+});
+
+test('NO session row is loud, not silent — the operator would have nothing to open', async () => {
+  const d = new PGlite() as unknown as Db;
+  await applySchema(d);
+  const r = await escalateProspectCrisis(d, 'ghost@x.test', { message: 'I want to die' });
+  // Nothing recorded, and crucially `recorded` is false rather than a clean-looking success. The distinction
+  // matters because a silent no-op here is indistinguishable from "nobody was in crisis".
+  assert.equal(r.recorded, false);
+  assert.equal(r.deduped, false, 'not deduped — there was never anything to dedupe against');
+});
+
+test('IT NEVER THROWS for a prospect either — a broken database must not cost them the 988 line', async () => {
+  const broken = { query: async () => { throw new Error('db down'); } } as unknown as Db;
+  let result: unknown;
+  await assert.doesNotReject(async () => {
+    result = await escalateProspectCrisis(broken, 'p@x.test', { message: 'help' });
+  });
+  assert.deepEqual(result, { recorded: false, alerted: false, deduped: false });
+});
+
+test('an empty address is reported rather than silently doing nothing', async () => {
+  const d = await prospectDb();
+  const r = await escalateProspectCrisis(d, '   ', { message: 'I want to die' });
+  assert.equal(r.recorded, false, 'no address means no row to flag — and that is logged, not swallowed');
 });

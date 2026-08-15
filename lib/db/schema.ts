@@ -164,6 +164,7 @@ export const MIGRATIONS: Array<{ file: string; sentinel: Sentinel }> = [
       sql: "select exists (select 1 from pg_trigger where tgname='playbook_entry_audit_upd') as e",
     },
   },
+  { file: 'migrations/0080_prospect_crisis.sql', sentinel: { table: 'onboarding_session', column: 'crisis_flagged_at' } },
 ];
 export const SEED_SQL = () => sqlFile('seed/0001_reference_data.sql');
 

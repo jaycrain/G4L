@@ -138,6 +138,101 @@ export async function escalateCrisis(
   return out;
 }
 
+/**
+ * THE SAME RULE, FOR SOMEONE WHO IS NOT A MEMBER YET (2026-08-15).
+ *
+ * escalateCrisis needs a member_id, and during onboarding there isn't one — the row is created only at the final
+ * "This is me" tap. That is the entire reason onboarding was never wired: `CrisisSurface` has listed 'onboarding'
+ * since it was written, with nothing behind it. The member-facing half worked the whole time (988 is delivered);
+ * it was the human who never got told.
+ *
+ * This is the surface where that matters most. Someone disclosing that they want to stop existing is most likely
+ * to do it in their FIRST conversation, before they have an account — and that was the one conversation with
+ * nobody watching.
+ *
+ * Keyed by EMAIL, because that is the only durable identifier a prospect has. Everything else mirrors
+ * escalateCrisis: record first and independently of the alert, dedupe on a 6h window, never throw.
+ */
+export async function escalateProspectCrisis(
+  db: Db,
+  email: string,
+  opts: { message: string },
+): Promise<{ recorded: boolean; alerted: boolean; deduped: boolean }> {
+  const out = { recorded: false, alerted: false, deduped: false };
+  const addr = (email ?? '').trim().toLowerCase();
+  if (!addr) {
+    // No address means no row to flag and nothing an operator could act on. Say so rather than returning a
+    // clean-looking zero — a silent no-op here is indistinguishable from "nobody was in crisis".
+    console.error('PROSPECT CRISIS with no email — the person DID get the 988 response, but nothing was recorded.');
+    return out;
+  }
+
+  // RECORD + DEDUPE IN ONE STATEMENT. The flag is the dedupe: the update only matches a row that has not been
+  // flagged inside the window, so a person sending five messages in a row raises one alert, not five. Doing it
+  // as a single conditional UPDATE avoids the read-then-write race that two concurrent turns would otherwise hit.
+  try {
+    // lower(email), NOT email. saveOnboardingSession stores whatever the member typed at the gate, verbatim,
+    // into a case-sensitive `text primary key` — so a person who typed "Donna@Gmail.com" has a row this would
+    // never have matched. The failure would have been near-invisible: the flag silently not set, and the
+    // "no onboarding_session row exists" branch below firing a misleading error about a different problem.
+    const { rows } = await db.query<{ email: string }>(
+      `update onboarding_session
+          set crisis_flagged_at = now()
+        where lower(email) = $1
+          and (crisis_flagged_at is null or crisis_flagged_at < now() - ($2 || ' hours')::interval)
+        returning email`,
+      [addr, String(DEDUPE_WINDOW_HOURS)],
+    );
+    if (rows.length) out.recorded = true;
+    else {
+      // Either already flagged inside the window (dedupe — fine) or there is no session row at all (NOT fine:
+      // it means the turn that detected this never saved, and an operator has nothing to open).
+      const { rows: exists } = await db.query<{ n: number }>(
+        'select count(*)::int as n from onboarding_session where lower(email) = $1',
+        [addr],
+      );
+      if (exists[0]?.n) out.deduped = true;
+      else console.error(`PROSPECT CRISIS for ${addr} but no onboarding_session row exists — nothing to open.`);
+    }
+  } catch (e) {
+    console.error(`PROSPECT CRISIS NOT RECORDED for ${addr} — they DID get the 988 response:`, (e as Error).message);
+  }
+
+  if (out.deduped) return out;
+
+  const to = process.env.CRISIS_ALERT_EMAIL?.trim();
+  if (!to) {
+    console.error(
+      `PROSPECT CRISIS ALERT NOT SENT for ${addr}: CRISIS_ALERT_EMAIL is unset. The session is flagged, but ` +
+      `no one has been notified out of band.`,
+    );
+    return out;
+  }
+
+  try {
+    const res = await sendEmail({
+      to,
+      subject: 'G4L — someone in onboarding may be in crisis',
+      // Same restraint as the member alert: who and where to look, not the words themselves. One addition — that
+      // this person has NO ACCOUNT — because it changes what the responder can do. There is no dashboard to open
+      // and no history to read; the only handle is the email address, and they may never come back.
+      text:
+        `Someone's message tripped the crisis check DURING ONBOARDING and they were given the 988 line.\n\n` +
+        `Email: ${addr}\n` +
+        `Where: onboarding — they do NOT have an account yet.\n\n` +
+        `Their in-flight session is flagged in the console. They may never return, so this address may be the ` +
+        `only way to reach them.\n` +
+        `Governance commitment: a human follows up within 24 hours.\n`,
+    });
+    out.alerted = res.ok;
+    if (!res.ok) console.error(`PROSPECT CRISIS ALERT FAILED TO SEND for ${addr}:`, res.error ?? 'unknown');
+  } catch (e) {
+    console.error(`PROSPECT CRISIS ALERT THREW for ${addr}:`, (e as Error).message);
+  }
+
+  return out;
+}
+
 /** Is out-of-band crisis alerting actually configured? Surfaced on the console so a missing address is visible
  *  BEFORE it matters, rather than discovered when a real member is in trouble. */
 export function crisisAlertingConfigured(): boolean {
