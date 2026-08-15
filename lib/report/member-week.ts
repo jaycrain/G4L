@@ -38,7 +38,7 @@
 // see `historyFrom`.
 
 import type { Db } from '../db/schema.ts';
-import { addDays, type MemberWeek as Window } from '../time/member-clock.ts';
+import { addDays, weekStart, weekEnd, type MemberWeek as Window } from '../time/member-clock.ts';
 
 /** The first date for which playbook-entry transitions are knowable — when 0079's trigger went live on prod. */
 export const PLAYBOOK_HISTORY_FROM = '2026-08-15';
@@ -70,10 +70,34 @@ export type MemberWeekReport = {
   commitments: CommitmentReport[];
   qualityDays: { points: QualityDayPoint[]; logged: number; average: number | null };
   moves: { kept: number; changes: MoveChange[]; reruns: number; historyComplete: boolean };
-  sessionsClosed: string[];
+  /**
+   * Sessions closed in the window, DEDUPED WITH A COUNT.
+   *
+   * Re-running a Session is a real thing a member does, so the events legitimately repeat — but rendering
+   * "RCL-C3, RCL-C3, RCL-C3, …" eight times reads as noise and buries the one that only happened once. Caught
+   * by looking at the thing rendered with real data rather than at the array.
+   */
+  sessionsClosed: { ref: string; times: number }[];
   /** Assessments taken IN the window — the thing that makes a month-over-month read possible. */
   readings: { kind: string; at: string }[];
 };
+
+/**
+ * The last `count` Mon–Sun weeks, newest first, ending with the week `today` falls in.
+ *
+ * Calendar weeks rather than each tracker's own run: the report compares a member against THEMSELVES over time,
+ * and two commitments started on different days would otherwise be measured against windows that do not line
+ * up. The week grid still draws each run's own window — that is a different question ("how is this practice
+ * going") from this one ("how was my week").
+ */
+export function recentWeeks(today: string, count: number): Window[] {
+  const out: Window[] = [];
+  for (let i = 0; i < count; i++) {
+    const start = weekStart(addDays(today, -7 * i));
+    out.push({ start, end: weekEnd(start), days: 7, partial: false } as unknown as Window);
+  }
+  return out;
+}
 
 /** Inclusive day list for a window — the spine every series is aligned to. */
 function daysOf(w: Window): string[] {
@@ -99,12 +123,15 @@ export async function memberWeekReport(db: Db, memberId: string, window: Window)
   // Commitments joined to their marks. A commitment with no marks still appears: "you committed and it did not
   // happen" is a fact worth seeing, and dropping the row would quietly flatter the week.
   const { rows: commitRows } = await db.query<{ id: string; kind: string; slot: string; label: string; target_days: number | null }>(
+    // ONLY COMMITMENTS THAT EXISTED IN THIS WINDOW. Without the date bound, a week in July listed commitments
+    // made in August at "0 of 5" — which reads as "they committed and did nothing" about a week before they
+    // had committed to anything. Found by looking at four real weeks rendered, not by reading the query.
     `select pc.id, pw.kind, pc.slot, pc.label, pc.target_days
        from practice_commitment pc
        join practice_week pw on pw.member_id = pc.member_id and pw.kind = pc.kind
-      where pc.member_id = $1
+      where pc.member_id = $1 and pc.created_at < ($2::date + 1)
       order by pw.kind, pc.sort_order, pc.slot`,
-    [memberId],
+    [memberId, last],
   );
   // A mark points at its COMMITMENT (commitment_id), not at a slot string — a slot is only unique within a
   // kind, and the id is what survives a re-run mapping onto the same row. Joining on slot silently mixed
@@ -210,9 +237,16 @@ export async function memberWeekReport(db: Db, memberId: string, window: Window)
       reruns: rerunRows[0]?.n ?? 0,
       historyComplete: historyFrom(window),
     },
-    sessionsClosed: sessRows.map((s) => s.ref).filter((r): r is string => !!r),
+    sessionsClosed: countRefs(sessRows.map((s) => s.ref).filter((r): r is string => !!r)),
     readings,
   };
+}
+
+/** First-seen order preserved — the sequence a member moved through is part of the story. */
+function countRefs(refs: string[]): { ref: string; times: number }[] {
+  const seen = new Map<string, number>();
+  for (const r of refs) seen.set(r, (seen.get(r) ?? 0) + 1);
+  return [...seen.entries()].map(([ref, times]) => ({ ref, times }));
 }
 
 function safeArray(s: string): unknown[] {

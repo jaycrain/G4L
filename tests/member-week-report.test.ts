@@ -111,6 +111,41 @@ test('a week before the audit existed is flagged, NOT reported as quiet', async 
   assert.equal(after.moves.historyComplete, true, 'a week from the trigger onward can');
 });
 
+test('a week BEFORE a commitment existed does not report it at zero', async () => {
+  // The lie: listing every commitment in every window meant a July week showed August's commitments at
+  // "0 of 5" — "they committed and did nothing", about a week before they had committed to anything.
+  const { db, memberId } = await member();
+  await db.query("insert into practice_week (member_id, kind, started_at) values ($1,'b3_pilot',now())", [memberId]);
+  await db.query(
+    `insert into practice_commitment (member_id, kind, slot, label, target_days, created_at)
+     values ($1,'b3_pilot','s1','Walk',5,'2026-08-17'::date)`,
+    [memberId],
+  );
+  const earlier = await memberWeekReport(db, memberId, { start: '2026-08-03', days: 7 } as never);
+  assert.deepEqual(earlier.commitments, [], 'it did not exist yet, so it is not reported');
+
+  const current = await memberWeekReport(db, memberId, WINDOW);
+  assert.equal(current.commitments.length, 1, 'but the week it was made in does report it');
+});
+
+test('a Session re-run is counted, not repeated', async () => {
+  // Found by LOOKING at the rendered report, not by reading the array: a member who re-ran C3 produced
+  // "RCL-C3, RCL-C3, RCL-C3, …" eight times, which buried the session that happened once. Re-running is real,
+  // so the honest rendering is a count.
+  const { db, memberId } = await member();
+  for (const ref of ['RCL-C3', 'RCL-C3', 'RCL-C2', 'RCL-C3']) {
+    await db.query(
+      "insert into member_event (member_id, kind, ref, created_at) values ($1,'session_close',$2,'2026-08-18'::date)",
+      [memberId, ref],
+    );
+  }
+  const r = await memberWeekReport(db, memberId, WINDOW);
+  assert.deepEqual(r.sessionsClosed, [
+    { ref: 'RCL-C3', times: 3 },
+    { ref: 'RCL-C2', times: 1 },
+  ], 'deduped with counts, in first-seen order');
+});
+
 test('an empty week is empty, not broken', async () => {
   const { db, memberId } = await member();
   const r = await memberWeekReport(db, memberId, WINDOW);

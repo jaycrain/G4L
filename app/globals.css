@@ -3540,3 +3540,38 @@ body:has(.fc-dark) .brand-wordmark,
 @media (max-width: 560px) {
   .sv-row { grid-template-columns: 1fr; grid-template-areas: 'dom' 'bar' 'nums'; gap: 4px; }
 }
+
+/* ── THE WEEK-BY-WEEK REPORT (Founder Console) ──────────────────────────────────────────────────────────────
+   "How is everything they entered going, week to week" — the question a charter member asked (Jay,
+   2026-08-15). Written to be READ BY THE MEMBER eventually, which is what keeps the operator-dashboard
+   instincts out: no RAG traffic lights, no percentage badges, no streak flames. A number is a fact; a colour
+   is a verdict, and this data is somebody's life rather than a pipeline. */
+.wr { margin-top: 1.6rem; }
+.wr-h { margin: 0 0 .2rem; font-size: 1rem; }
+.wr-lede { margin: 0 0 .9rem; font-size: 12px; color: var(--muted-grey); }
+.wr-week { border: 1px solid var(--panel-line, #E8E6E6); border-radius: 12px; padding: .75rem .9rem; margin-bottom: .6rem; background: var(--white); }
+.wr-week-h { display: flex; align-items: baseline; gap: .5rem; margin-bottom: .5rem; }
+.wr-range { font-size: 13px; font-weight: 600; color: var(--navy); }
+.wr-now { font-size: 11px; color: var(--teal-text); }
+.wr-quiet { margin: 0; font-size: 12.5px; color: var(--muted-grey); }
+.wr-row { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; padding: .3rem 0; border-top: 1px solid #f2f1ef; }
+.wr-row:first-of-type { border-top: 0; }
+.wr-lab { flex: 1 1 40%; min-width: 0; font-size: 12.5px; color: var(--navy); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wr-val { font-size: 12.5px; font-weight: 600; color: var(--navy); display: flex; align-items: center; gap: .4rem; }
+.wr-sub { font-weight: 400; color: var(--muted-grey); }
+/* Direction and size, never "better" or "worse" — whether a quieter week is worse is not a table's call. */
+.wr-delta { font-size: 11px; font-weight: 600; padding: 1px 6px; border-radius: 10px; }
+.wr-up { color: #3B6D11; background: #EAF3DE; }
+.wr-down { color: #854F0B; background: #FAEEDA; }
+.wr-flat { color: var(--muted-grey); background: #f2f1ef; }
+.wr-series { display: flex; gap: 3px; }
+.wr-pt { min-width: 18px; text-align: center; font-size: 11px; font-weight: 600; color: #fff; background: var(--navy); border-radius: 4px; padding: 1px 3px; }
+.wr-days { display: flex; gap: 3px; }
+.wr-day { width: 8px; height: 8px; border-radius: 50%; background: #dedcd7; }
+.wr-day.on { background: var(--olive, #919536); }
+.wr-changes { display: flex; gap: 4px; flex-wrap: wrap; }
+.wr-chg { font-size: 10.5px; padding: 1px 7px; border-radius: 10px; background: #f2f1ef; color: var(--navy); }
+.wr-chg-dropped { background: #FAECE7; color: #993C1D; }
+.wr-chg-added, .wr-chg-kept { background: #EAF3DE; color: #3B6D11; }
+/* The footnote that stops silence reading as a fact. See historyComplete in lib/report/member-week.ts. */
+.wr-gap { margin: .5rem 0 0; font-size: 11px; color: var(--muted-grey); font-style: italic; }

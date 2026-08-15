@@ -20,6 +20,9 @@ import DraftReview from '../../draft-review.tsx';
 import PushNudgeButton from '../push-nudge-button.tsx';
 import ConsoleSubpage from '../../console/subpage.tsx';
 import AccessPanel from '../../access-panel.tsx';
+import WeekReport from './week-report.tsx';
+import { memberWeekReport, recentWeeks } from '../../../../lib/report/member-week.ts';
+import { memberToday } from '../../../../lib/time/zone-store.ts';
 
 export default async function AdminMember({ params }: { params: Promise<{ memberId: string }> }) {
   if (!(await isAdmin())) redirect('/admin/login');
@@ -79,6 +82,18 @@ export default async function AdminMember({ params }: { params: Promise<{ member
   const obDerivedNames = (obCard?.doors ?? []).filter((d) => d.slug && obDerived.includes(d.slug)).map((d) => d.displayName);
   const now = Date.now();
   const checkpointTitle = (id: string) => getAsset(id)?.title ?? id;
+  // FOUR WEEKS: enough to see a shape, few enough that the page stays readable. Anchored to the MEMBER'S
+  // today, not the server's — a report that starts the week six hours early for anyone west of Greenwich is
+  // the bug we already paid for once (lib/time). Drift-hardened: a report that cannot be built must not take
+  // the operational page down with it, since the page's first job is still "who is this and are they okay".
+  const reportToday = await memberToday(db, memberId).catch(() => null);
+  const weekReports = reportToday
+    ? await Promise.all(recentWeeks(reportToday, 4).map((w) => memberWeekReport(db, memberId, w))).catch((e) => {
+        console.error(`week report failed for member=${memberId}:`, (e as Error).message);
+        return [];
+      })
+    : [];
+
   const fmtMin = (ms: number) => Math.max(1, Math.round(ms / 60000));
   const STATUS_LABEL: Record<string, string> = { closed: 'closed', in_progress: 'in progress', locked: 'locked' };
 
@@ -430,6 +445,11 @@ export default async function AdminMember({ params }: { params: Promise<{ member
           </details>
         ),
       )}
+      {/* WEEK BY WEEK — "how is everything they entered going", the question a member actually asked (Jay,
+          2026-08-15). Below the operational blocks because you orient before you read a history; above the
+          access panel because this IS the reason you came. Reads the same model a member-facing "see my
+          reports" will use, so what Jay sees and what they would see cannot drift apart. */}
+      <WeekReport weeks={weekReports} />
       {/* Last, not first: this is a governance record, not the reason you came to the page. */}
       <AccessPanel db={db} memberId={memberId} />
     </ConsoleSubpage>
