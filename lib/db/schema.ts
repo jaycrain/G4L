@@ -156,6 +156,14 @@ export const MIGRATIONS: Array<{ file: string; sentinel: Sentinel }> = [
     },
   },
   { file: 'migrations/0078_member_timezone.sql', sentinel: { table: 'member_profile', column: 'timezone' } },
+  // A TRIGGER, so the sentinel is the trigger's existence — there is no new table or column to point at, and
+  // "the file ran" is not the same claim as "the trigger is attached" (a re-run of an older dump would drop it).
+  {
+    file: 'migrations/0079_playbook_entry_audit.sql',
+    sentinel: {
+      sql: "select exists (select 1 from pg_trigger where tgname='playbook_entry_audit_upd') as e",
+    },
+  },
 ];
 export const SEED_SQL = () => sqlFile('seed/0001_reference_data.sql');
 
