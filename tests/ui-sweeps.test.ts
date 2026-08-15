@@ -65,14 +65,30 @@ test('the global button hover reads a variable, so a button can override it wher
   );
 });
 
-test('EVERY DARK-TEXT CHIP DECLARES ITS OWN HOVER BACKGROUND', () => {
-  // The specific shape that made the Quality Days chips disappear: navy text, no background of its own, and a
-  // :hover rule that only touched the border — so the global filled it navy and the label went navy-on-navy.
-  for (const sel of ['.qd-score-btn', '.qd-el-btn']) {
-    const rule = CSS.match(new RegExp(`\\${sel}\\s*\\{([^}]*)\\}`))?.[1] ?? '';
-    assert.ok(rule, `${sel} exists`);
-    assert.match(rule, /--btn-hover-bg:/, `${sel} must say what its hover background is, not inherit navy`);
-  }
+// SUPERSEDED 2026-08-15. This used to assert that every dark-text chip DECLARES its own hover background — the
+// right guard while the default was a navy fill, because each chip had to opt out of it by hand. It was the
+// fourth patch of that shape, and Jay's Account Settings rows were the fifth site, waiting to be found.
+//
+// The default is no longer a colour. Hover now shifts a button relative to its OWN colour, so a chip that
+// declares nothing is safe by construction. Keeping the old requirement would force every new button to perform
+// a ritual that no longer protects anything — and rituals whose reason has gone are how a codebase gets heavy.
+//
+// The invariant below is what makes all of that true, so it is the one worth guarding.
+test('the global hover CANNOT invert contrast — it shifts, it does not swap', () => {
+  assert.match(
+    CSS,
+    /button:hover,\s*\.btn:hover\s*\{\s*filter:\s*brightness\(/,
+    'hover must move the button relative to its own colour (filter), so text and ground move together',
+  );
+  // The failure mode this replaced: a fixed colour as the DEFAULT, which any dark-text button disappears under.
+  const dflt = CSS.match(/button,\s*\.btn\s*\{\s*--btn-hover-bg:\s*([^;]+);/)?.[1]?.trim();
+  assert.ok(dflt, 'the opt-in variable still has a declared default');
+  assert.doesNotMatch(
+    dflt!,
+    /var\(--(navy|charcoal|indigo|teal|orange|olive|deep-red)\)|#[0-9a-f]{3,6}/i,
+    `the default hover background must not be a colour — it was "${dflt}", and every button with dark text ` +
+      'vanishes under it. A button that wants a colour swap opts in; the default stays inert.',
+  );
 });
 
 // ── 3 · A NUMBER IN A FIXED BOX IS CENTRED ──────────────────────────────────────────────────────────────────

@@ -108,7 +108,17 @@ export default async function TriptychRight({
               <span>{waitingCount === 1 ? 'thing you said is waiting' : 'things you said are waiting'}</span>
             </Link>
           )}
-          <Link href={`/playbook/${memberId}`} className="see-more" prefetch={false}>Open Your Playbook →</Link>
+          {/* WHEN SOMETHING IS WAITING, THIS LINK GOES TO IT (Jay, 2026-08-15). The panel says "4 things you said
+              are waiting" and then offered a link that landed on This week — so the named thing and the way in
+              pointed at different places, and the obvious big link was the wrong one. With nothing waiting the
+              Playbook's own default stands (a running week leads; see redesign-playbook-view). */}
+          <Link
+            href={waitingCount > 0 ? `/playbook/${memberId}?tab=journal` : `/playbook/${memberId}`}
+            className="see-more"
+            prefetch={false}
+          >
+            Open Your Playbook →
+          </Link>
         </div>
       )}
 

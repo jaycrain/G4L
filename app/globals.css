@@ -168,13 +168,26 @@ button, .btn {
  * Measured 2026-08-15: 81 of 86 button classes in app/ do not override this. Most happen to look fine; nothing
  * makes them fine, and no test asks.
  *
- * The fix is to stop SWAPPING in a fixed colour and instead shift the button relative to its own — a hover that
- * cannot invert contrast because it moves text and ground together:
- *     button:hover, .btn:hover { filter: brightness(0.94); }
- * with the handful that genuinely want a colour change opting in. Deliberately NOT done on 2026-08-15: it
- * restyles every hover in the app, and Jay and Donna were mid-test. It is queued, not forgotten. */
-button, .btn { --btn-hover-bg: var(--navy); }
+ * FIXED 2026-08-15 (Jay: "Do it now, haven't started testing yet"). Hover no longer SWAPS in a fixed colour. It
+ * shifts the button relative to whatever colour it already is, which cannot invert contrast because it moves the
+ * text and the ground together — a navy CTA darkens, a white list row darkens, and neither can ever end up dark
+ * on dark. The bug class is gone rather than patched a fifth time.
+ *
+ * --btn-hover-bg SURVIVES as an OPT-IN for the handful of buttons that genuinely want a colour change on hover
+ * (a ghost button filling in, a segmented control). It simply is not the default any more. A button that wants
+ * one sets it; a button that says nothing gets the safe behaviour.
+ *
+ * `filter` also applies to descendants, which is what makes it correct here: a row's title, subtitle and radio
+ * all move together, so a ratio that passed at rest still passes on hover. Measured before and after on the
+ * Account Settings cadence rows — titles 13.64 / 8.13, subtitles 4.56 / 4.57, all above 4.5. */
+button, .btn { --btn-hover-bg: none; }
+button:hover, .btn:hover { filter: brightness(0.94); }
+/* The opt-in: only fires for a button that actually declares a colour. `none` is not a valid background-color,
+   so the declaration is dropped and the element keeps its own — no fill, no override, nothing to remember. */
 button:hover, .btn:hover { background: var(--btn-hover-bg); }
+/* Disabled buttons already say "not now" through opacity; darkening them too reads as a response to a press
+   that did not happen. */
+button:disabled:hover, .btn:disabled:hover { filter: none; }
 
 /* GHOST / LINK buttons — a plain-link button keeps its background on hover and shows the state some other way. */
 .idp-own, .idp-skip,
@@ -1596,7 +1609,8 @@ html:has(.companion-hero), body:has(.companion-hero) { overflow-anchor: none; }
      padding; against a hard 2.1rem square that padding pushes the digit off-centre and "10" off-centre differently
      from "1". Grid centring ignores the inherited padding entirely, so the digit sits in the middle whatever it is. */
   display: inline-grid; place-items: center; padding: 0; margin-top: 0; line-height: 1;
-  --btn-hover-bg: transparent; /* the hover state is the teal border, not a fill */
+  /* was `--btn-hover-bg: transparent` to cancel the old navy default — unnecessary now, and it would
+     CLEAR the button's own white background. The hover state here is the teal border, not a fill. */
 }
 .qd-score-btn:hover:not(:disabled) { border-color: var(--teal-text); }
 .qd-score-btn.is-on { background: var(--teal-text); border-color: var(--teal-text); color: #fff; --btn-hover-bg: var(--teal-text); }
@@ -1609,7 +1623,7 @@ html:has(.companion-hero), body:has(.companion-hero) { overflow-anchor: none; }
   background: transparent; border: 1.5px solid var(--light-grey, #e8e6e6); border-radius: 8px;
   padding: 0.35rem 0.85rem; cursor: pointer; transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
   margin-top: 0;
-  --btn-hover-bg: transparent; /* navy-on-navy made these chips disappear under the cursor */
+  /* was `--btn-hover-bg: transparent` to cancel the old navy default — see .qd-score-btn above. */
 }
 .qd-el-btn:hover:not(:disabled) { border-color: var(--teal-text); }
 .qd-el-btn.is-on { background: var(--teal-text); border-color: var(--teal-text); color: #fff; --btn-hover-bg: var(--teal-text); }
@@ -2493,20 +2507,17 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
 .noti-group { border: 1px solid var(--panel-line, #E8E6E6); border-radius: 13px; overflow: hidden; }
 .noti-opt { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; padding: 13px 14px; cursor: pointer; border: none; border-bottom: 1px solid var(--panel-line, #E8E6E6); background: #fff; font-family: inherit; }
 .noti-opt:last-child { border-bottom: none; }
-/* ILLEGIBLE ON HOVER/TAP (Jay, 2026-08-15, sat on it for a while — a legibility bug should never wait that long).
-   `button { --btn-hover-bg: var(--navy) }` is the app-wide default and `button:hover` outranks a class's own
-   background, so this row filled NAVY on hover while .noti-ti is also navy — the title vanished completely and
-   only the grey subtitle survived, barely. On iPad :hover sticks after a tap, so it stayed that way.
-   This is a LIST ROW, not a navy CTA: it gets a tint, and the text keeps its own colour. Same fix shape as
-   .qd-el-btn and .qd-score-btn — see the note at `button, .btn` about the default itself being the real bug.
+/* ILLEGIBLE ON HOVER/TAP (Jay, 2026-08-15, sat on it a while — a legibility bug should never wait that long).
+   The old app-wide default filled every button NAVY on hover, and .noti-ti is also navy, so the title vanished
+   completely and only the grey subtitle survived. On iPad :hover sticks after a tap, so it stayed that way.
 
-   THE TINT IS MEASURED, NOT PICKED. --muted-grey is documented 4.80:1 and that is against WHITE; the first tint
-   here (#f6f5f3) pushed the 12px subtitle to 4.26 and quietly broke a second thing while fixing the first. These
-   values keep it above 4.5 with the ground it actually sits on — sub 4.56, navy title 8.11. Darken them and the
-   subtitle fails again. */
-.noti-opt { --btn-hover-bg: #faf9f7; }
-/* The chosen row reads as chosen without depending on hover, which a touch device cannot express. */
-.noti-opt.sel { background: #f7fafa; --btn-hover-bg: #f2f7f7; }
+   NOT FIXED HERE ANY MORE. The first fix was a per-class tint, which was the fourth patch of this shape — and
+   the tint I picked quietly pushed the 12px subtitle to 4.26:1, fixing the title and breaking the subtitle,
+   because --muted-grey's documented 4.80:1 is against WHITE. The real fix is at `button, .btn`: hover is now
+   `filter: brightness()`, which moves the row and its text together, so a ratio that passes at rest cannot fail
+   on hover. Nothing to tune per class, and nothing to get wrong the next time. */
+/* The chosen row reads as chosen WITHOUT depending on hover, which a touch device cannot express. */
+.noti-opt.sel { background: #f7fafa; }
 .noti-radio { width: 21px; height: 21px; border-radius: 50%; border: 2px solid #c7ccd1; flex: 0 0 auto; display: flex; align-items: center; justify-content: center; }
 .noti-opt.sel .noti-radio { background: var(--teal); border-color: var(--teal-text); }
 .noti-radio svg { width: 11px; height: 11px; stroke: #fff; fill: none; stroke-width: 3.4; stroke-linecap: round; stroke-linejoin: round; opacity: 0; }
