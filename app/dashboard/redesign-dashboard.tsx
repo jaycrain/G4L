@@ -175,7 +175,7 @@ export default async function RedesignDashboard({ db, memberId, dash }: { db: Db
       )}
       {/* Top bar — the shared definition (build spec §3 #1–2). Hand-rolled here until 2026-08-13, when the third
           copy of it swallowed the tour's Account stop. */}
-      <TopbarView memberId={memberId} displayName={dash.displayName} avatarUrl={dash.avatarUrl} greeting />
+      <TopbarView displayName={dash.displayName} avatarUrl={dash.avatarUrl} greeting />
 
       <RedesignShell memberId={memberId} homeState={homeState}>
         {/* Identity strip — the Doors are NOT shown here (privacy: sensitive if someone's looking over the member's

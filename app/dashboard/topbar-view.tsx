@@ -14,12 +14,10 @@ import { firstName, initials } from '../../lib/member/avatar.ts';
 // client triptych alike. Whoever has the member's name and avatar passes them in.
 
 export default function TopbarView({
-  memberId,
   displayName,
   avatarUrl,
   greeting = false,
 }: {
-  memberId: string;
   displayName: string;
   avatarUrl: string | null;
   /** The dashboard says hello; subpages don't (the member strip below already greets them there). */
@@ -34,14 +32,15 @@ export default function TopbarView({
         <img className="rt-wordmark" src="/brand/g4l-wordmark.svg" alt="Grinta for Life" />
       </Link>
       <div className="rt-who">
-        {/* ONE nav item, not two (Jay, 2026-08-08). Program came out because it is a SYLLABUS — read occasionally,
-            and already reachable from the dashboard hero breadcrumb ("Program › Reclaim › …"), which is better
-            placement than nav: it sits in the context of where the member actually is.
-            The Playbook STAYS, and that asymmetry is the point. It is the daily instrument now, and subpages carry
-            only "← Dashboard" otherwise, so dropping it too would make the most-used surface two taps from home. */}
-        <span className="rt-nav">
-          <Link href={`/playbook/${memberId}`} prefetch={false}>Playbook</Link>
-        </span>
+        {/* NO NAV ITEM AT ALL (Jay, 2026-08-15: "I don't even really think we need Playbook up there").
+            Program came out on 8/8 as a syllabus better reached from the hero breadcrumb; the Playbook stayed
+            because it is the daily instrument. What changed is the HEADER'S JOB. With the app-wide Companion
+            dock decided against the same day, Playbook was the only thing up here doing something different
+            from everything else: the logo and the avatar answer "where am I / how do I get home / who am I",
+            and a destination link answers none of those. A header that means one thing beats a saved tap.
+            The cost, stated plainly: from a Session or a subpage the Playbook is now home-then-Playbook. That
+            only bites mid-Session — where a member arguably should not be leaving from anyway — and the
+            dashboard routes there prominently with its own panel and "Open Your Playbook →". */}
         {/* data-tour: the Opening Tour's Account stop. The topbar is the ONLY place a member meets their account,
             and the tour never mentioned it — so reminders and privacy were things you had to go looking for. */}
         <span className="rt-account-group" data-tour="account">

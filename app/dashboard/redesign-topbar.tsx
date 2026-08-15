@@ -18,6 +18,6 @@ export default async function RedesignTopbar({ memberId }: { memberId: string })
   ).rows[0];
 
   return (
-    <TopbarView memberId={memberId} displayName={row?.display_name ?? ''} avatarUrl={row?.avatar_url ?? null} />
+    <TopbarView displayName={row?.display_name ?? ''} avatarUrl={row?.avatar_url ?? null} />
   );
 }

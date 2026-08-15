@@ -84,7 +84,7 @@ export default function DashboardTriptych({
       {/* The shared topbar. It used to be hand-rolled here, in redesign-dashboard AND in redesign-topbar — and
           that duplication is what lost the tour's Account stop, which was anchored in the one copy the tour never
           renders. One definition now. */}
-      <TopbarView memberId={memberId} displayName={displayName} avatarUrl={avatarUrl ?? null} />
+      <TopbarView displayName={displayName} avatarUrl={avatarUrl ?? null} />
 
       <div className={`tri-app pane-${pane}`}>
         {/* The MEMBER strip — who they are + what they're reclaiming. Full-width, above the columns.

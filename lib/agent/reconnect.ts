@@ -1134,7 +1134,10 @@ function stageInstructionReconnect(stage?: Stage): string {
     return (
       '\n\nCURRENT STAGE: the Drift beat (§2d Visioning). Draw out what the Fade COST and how far it has run — their ' +
       'inventory, in their words. This is formative and reflective, never scored. After a couple of exchanges, reflect ' +
-      'the PATTERN of the drift (the recurring shape, the quiet thing they stopped noticing) IN THEIR WORDS, offered as ' +
+      // Was "the PATTERN of the drift", which contradicted its own instruction two lines up ("what the Fade
+      // COST"). The Fade is the noun; drifting is what it does to you. `reflect_drift` stays as-is — a wire
+      // identifier, same call as keeping connect_*/lib/connect after the Community rename.
+      'the PATTERN of the Fade (the recurring shape, the quiet thing they stopped noticing) IN THEIR WORDS, offered as ' +
       'a check — call reflect_drift ONLY once it is genuinely drawn out; if thin, keep drawing out (never manufacture a ' +
       'pattern). Name it to push OFF from, not to sit in. Once they confirm the pattern, accept it and let the beat ' +
       'move — do not reflect it again or ask a further question. Do not diagnose.'
