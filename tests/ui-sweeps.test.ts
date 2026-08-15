@@ -254,6 +254,19 @@ test('the footer version is a real string, and only lives in one place', () => {
   assert.match(version, /export const APP_VERSION = 'v\d+\.\d+(\.\d+)?'/, 'APP_VERSION must be a vN.N string');
 
   const layout = readFileSync('app/layout.tsx', 'utf8');
-  assert.match(layout, /versionLabel\(\)/, 'the footer must CALL the helper');
+  // The footer sets the two halves separately now — the version in Barlow, the build ref in mono — so it reads
+  // the pieces rather than the joined helper. The invariant is unchanged: it must READ them, never restate them.
+  assert.match(layout, /\{APP_VERSION\}/, 'the footer must read APP_VERSION, not its own copy');
+  assert.match(layout, /\{buildRef\(\)\}/, 'and call buildRef() for the exact build');
   assert.doesNotMatch(layout, /v\d+\.\d+/, 'and must not hardcode a version of its own');
+
+  // ONLY the hash is monospace. Setting the whole line in mono made the version read as a foreign object in the
+  // footer; setting NONE of it loses the reason mono is there at all (0/O and 1/l in a string read back to us).
+  const css = readFileSync('app/globals.css', 'utf8');
+  assert.match(css, /\.app-build\s*\{[^}]*--font-mono/, '.app-build carries the mono face');
+  assert.doesNotMatch(
+    css.match(/\.app-version\s*\{([^}]*)\}/)?.[1] ?? '',
+    /font-family/,
+    '.app-version must inherit the page face — the version is chrome, not a diagnostic string',
+  );
 });

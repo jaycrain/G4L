@@ -1,11 +1,11 @@
 import type { Metadata, Viewport } from 'next';
-import { Barlow, Barlow_Condensed } from 'next/font/google';
+import { Barlow, Barlow_Condensed, IBM_Plex_Mono } from 'next/font/google';
 import Link from 'next/link';
 import { Suspense } from 'react';
 import './globals.css';
 import PwaClient from './pwa-client.tsx';
 import DetectZone from './dashboard/detect-zone.tsx';
-import { versionLabel } from '../lib/version.ts';
+import { APP_VERSION, buildRef } from '../lib/version.ts';
 // import FeedbackLauncher from './feedback-launcher.tsx'; // Send Feedback pill — dropped for now (reinstate with the render below)
 import BackToDashboard from './components/back-to-dashboard.tsx';
 import BrandHome from './components/brand-home.tsx';
@@ -21,6 +21,27 @@ const barlowCondensed = Barlow_Condensed({
   subsets: ['latin'],
   weight: ['800', '900'],
   variable: '--font-condensed',
+});
+
+/**
+ * THE ONE MONOSPACE (Jay picked it, 2026-08-15).
+ *
+ * `--font-mono` was referenced by the footer's build hash and never declared, so the browser fell past it to
+ * whatever the device happened to own — SF Mono on Apple, Consolas on Windows, a lottery on Android. Nobody had
+ * chosen it; the fallback had.
+ *
+ * IBM Plex Mono over JetBrains Mono on Jay's call: it is humanist and sits closer to Barlow, and it still has
+ * the slashed zero, which is the whole reason the hash is monospace — so a member can read a build back without
+ * 0/O or 1/l ambiguity when something goes wrong. Warmth over forensics, at almost no cost.
+ *
+ * 400 only: this appears at 11px in a footer. A second weight would be bytes for a face nothing emphasises.
+ * Loaded through next/font like Barlow — self-hosted at build time, so no third-party request and no flash of
+ * fallback text before it swaps.
+ */
+const plexMono = IBM_Plex_Mono({
+  subsets: ['latin'],
+  weight: ['400'],
+  variable: '--font-mono',
 });
 
 export const metadata: Metadata = {
@@ -43,7 +64,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${barlow.variable} ${barlowCondensed.variable}`}>
+    <html lang="en" className={`${barlow.variable} ${barlowCondensed.variable} ${plexMono.variable}`}>
       <body>
         <main>
           <div className="brand-bar">
@@ -81,7 +102,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           {/* The version + build, for Charter. A member reporting something can read this back, and it says which
               BUILD they were on — the version alone spans dozens of deploys. Quiet by design: it sits with the
               notice rather than in the chrome, because it is for the rare moment something goes wrong. */}
-          <span className="app-version"> · {versionLabel()}</span>
+          {/* SPLIT (Jay, 2026-08-15). The version is chrome and reads as part of the notice, so it stays in
+              Barlow. Only the BUILD REF goes monospace — it is the half someone reads back over a phone, and the
+              only half where 0/O or 1/l costs anything. Setting the whole line in mono made the version look
+              like a foreign object in the footer. */}
+          <span className="app-version"> · {APP_VERSION} · <span className="app-build">{buildRef()}</span></span>
         </footer>
         <PwaClient />
         {/* Records the member's timezone from the browser, once per session, so every date in the product is

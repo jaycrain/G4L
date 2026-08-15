@@ -724,7 +724,13 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 /* The version + build ref, sat with the proprietary notice. Quieter than the notice itself — a member should be
    able to FIND it and read it back when something goes wrong, and otherwise never notice it. Monospace so a
    commit ref can be transcribed without ambiguity (l/1, O/0). */
-.app-version { font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace); opacity: 0.75; white-space: nowrap; }
+/* The version stays in the page's own face — it is chrome, not a diagnostic string. */
+.app-version { opacity: 0.75; white-space: nowrap; }
+/* THE BUILD REF, and the only monospace in the app. IBM Plex Mono, declared in layout.tsx via next/font so the
+   token is a decision rather than a fallback (it used to be `var(--font-mono, …)` against a variable nobody had
+   defined, so each device picked its own). Slashed zero is the point: this is the string a member reads back
+   when something goes wrong, and 0/O or 1/l ambiguity there costs real time. */
+.app-build { font-family: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, monospace; }
 
 .confidential-footer {
   max-width: 880px;
