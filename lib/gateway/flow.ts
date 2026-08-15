@@ -13,7 +13,8 @@ import { cleanIdentityNoun, displayIdentityNoun } from '../member/identity.ts';
 import { addReclaimItems, seedOnboardingBeats } from '../beats/store.ts';
 import { harvestIdentityKeeper } from '../agent/harvest.ts';
 import { inferCategory } from '../beats/category.ts';
-import { isCategory } from '../beats/registry.ts';
+import { isCategory, type Category } from '../beats/registry.ts';
+import { categorizeReclaimItems } from '../beats/categorize.ts';
 import { scoreIdq, computeMovement, type DimensionScores } from '../idq/scoring.ts';
 import { listMeasures, type MeasureView } from '../measure/store.ts';
 import { validateResponses, DIMENSIONS, type Dimension } from '../idq/instrument.ts';
@@ -98,15 +99,26 @@ export async function runOnboarding(
         [memberId, doors[i], i === 0, i],
       );
     }
-    // Reclaim List as categorized rows for the Beat engine (category v1: keyword-inferred;
-    // upgrades to agent-inferred in the onboarding shaping conversation).
+    // Reclaim List as categorized rows for the Beat engine.
+    //
+    // THE AGENT-INFERRED UPGRADE, FINALLY WIRED (2026-08-15). The comment here used to promise it "upgrades to
+    // agent-inferred in the onboarding shaping conversation" — and the prompt does ask for it — but the Reclaim
+    // List became a structured builder, and the builder sets every category to '' with the note "assigned
+    // later". There was no later, so every list fell through to the v1 keyword heuristic. Caught when a persona
+    // walk tagged an open-water swimmer's "Getting in the ocean regularly" as `self`: the keyword list has
+    // `swim`, not `ocean`, and category selects the Beats she gets served.
+    //
+    // Only ask the model when something is actually missing — a list that arrived categorised (the tool-call
+    // path) is already better than anything we would infer, and re-deriving it would be a second opinion
+    // overwriting a first-hand one.
+    const cats = f.reclaimList.map((_, i) => f.reclaimCategories?.[i]);
+    const resolved = cats.every(isCategory)
+      ? (cats as Category[])
+      : await categorizeReclaimItems(f.reclaimList);
     await addReclaimItems(
       db,
       memberId,
-      f.reclaimList.map((text, i) => {
-        const agentCat = f.reclaimCategories?.[i];
-        return { text, category: isCategory(agentCat) ? agentCat : inferCategory(text) };
-      }),
+      f.reclaimList.map((text, i) => ({ text, category: resolved[i] ?? inferCategory(text) })),
     );
     // Harvest the confirmed identity as a seed 'definition' keeper (v2.1 Increment 4 — light, opportunistic).
     // Best-effort: a harvest failure must never fail the signup; the captures above are already persisted.
