@@ -2326,8 +2326,14 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
    uneven-pill-width failure the brief warned about cannot occur from this rule. The bump is vertical-led: on
    desktop the row is flex:1 1 0 (equal shares), so horizontal padding changes almost nothing there, while on
    mobile the tabs are flex:0 0 auto and it widens the scroll track — see the media query below. */
-.pb-tab { flex: 1 1 0; min-width: 0; justify-content: center; background: #f2f1ef; border: 0; color: #4a5d6b; font-family: inherit; font-size: 13px; font-weight: 600;
-  padding: 10px 16px; border-radius: 8px; cursor: pointer; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
+/* STILL TOO TIGHT ON THE LONG ONE (Jay, 2026-08-15) — and the padding value was never the problem.
+   `flex: 1 1 0` with `min-width: 0` gives every tab an EQUAL SHARE regardless of its label, so "What you've
+   learned" got the same width as "Journal" and its text sat hard against the edges while the short tabs had
+   room to spare. Raising the padding could not fix that: with a zero flex-basis the box ignores its content.
+   `flex: 1 1 auto` sizes each tab from its own content FIRST and then shares out what is left, so every tab
+   keeps its real padding and the row still spans the panel — Jay's 8/12 "one control, five positions" holds. */
+.pb-tab { flex: 1 1 auto; justify-content: center; background: #f2f1ef; border: 0; color: #4a5d6b; font-family: inherit; font-size: 13px; font-weight: 600;
+  padding: 10px 18px; border-radius: 8px; cursor: pointer; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
 .pb-tab:hover { background: #e8e6e6; }
 @media (max-width: 700px) { .pb-tab { flex: 0 0 auto; } }
 .pb-tab.on { background: var(--navy); color: #fff; }

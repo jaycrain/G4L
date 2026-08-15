@@ -20,8 +20,25 @@ export const metadata = { title: 'Your Playbook — Grinta for Life' };
 // The "Gather from your work" action runs a live curation pass; give the function room.
 export const maxDuration = 30;
 
-export default async function PlaybookPage({ params }: { params: Promise<{ memberId: string }> }) {
+export default async function PlaybookPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ memberId: string }>;
+  searchParams: Promise<{ tab?: string }>;
+}) {
   const { memberId } = await params;
+  // WHICH TAB, DECIDED ON THE SERVER (Jay, 2026-08-15: "I'm not seeing 'Things you said' opening to the Journal").
+  //
+  // The view used to read `window.location.search` in a useState initializer. That is correct on a HARD load and
+  // unreliable on a CLICK: during an App Router soft navigation the new tree renders before the URL is
+  // guaranteed to be committed, so the initializer read the OLD location, found no ?tab=, and fell back. Which is
+  // why the deep link passed when I typed it and failed when Jay tapped the card — I had tested the URL, not the
+  // journey, and those are different tests.
+  //
+  // The server always has the real query. Passing it down also avoids useSearchParams, which would force a
+  // Suspense boundary here for nothing — the reason the original avoided the hook.
+  const { tab } = await searchParams;
   if (!(await authorizeMember(memberId))) redirect('/login');
   const db = (await getDb()) as unknown as Db;
   await logEvent(db, memberId, 'page_view', { surface: 'playbook' });
@@ -72,7 +89,7 @@ export default async function PlaybookPage({ params }: { params: Promise<{ membe
     : [];
   return redesignEnabled() ? (
     <SubpageShell memberId={memberId}>
-      <RedesignPlaybookView {...props} rerunStats={rerunStats} outcomes={cards} reads={reads} grids={grids} reviewable={reviewable} />
+      <RedesignPlaybookView {...props} rerunStats={rerunStats} outcomes={cards} reads={reads} grids={grids} reviewable={reviewable} initialTab={tab} />
     </SubpageShell>
   ) : <PlaybookView {...props} />;
 }

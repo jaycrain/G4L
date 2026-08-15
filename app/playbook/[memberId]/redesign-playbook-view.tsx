@@ -97,6 +97,7 @@ export default function RedesignPlaybookView({
   reads = [],
   grids = [],
   reviewable = [],
+  initialTab,
 }: {
   memberId: string;
   initial: PlaybookEntry[];
@@ -116,20 +117,29 @@ export default function RedesignPlaybookView({
   /** Sessions they've finished, revisitable read-only. Moved off the Program page — that page describes the
    *  CURRENT cycle, so a Cycle-1 list goes stale there the moment Cycle 2 opens. */
   reviewable?: { key: string; label: string; phase: string }[];
+  /** ?tab= as the SERVER saw it — reliable on a click, unlike window.location at mount. See the note below. */
+  initialTab?: string;
 }) {
   const [entries, setEntries] = useState<PlaybookEntry[]>(initial);
   // The outcomes strip starts CLOSED. A member opening the Playbook wants the tabs; the three outcomes are
   // orientation they need once, not scaffolding to scroll past every visit (Cowork §1).
   const [outcomesOpen, setOutcomesOpen] = useState(false);
-  // Tab state lives in the URL so the back button works and a member can be sent straight to a tab. Read once on
-  // mount rather than via useSearchParams, which would force a Suspense boundary for no gain here.
-  // A running week LEADS. If they're mid-practice, that is what they came for; otherwise Plays, which is the
+  // Tab state lives in the URL so the back button works and a member can be sent straight to a tab.
+  //
+  // THE SERVER RESOLVES IT AND HANDS IT DOWN (`initialTab`). This used to read window.location.search here, which
+  // is right on a hard load and WRONG on a click: during an App Router soft navigation this initializer can run
+  // before the new URL is committed, so it read the previous page's query, found no ?tab=, and fell back. Jay
+  // tapped "Things you said are waiting" and landed on This week instead of the Journal.
+  //
+  // window.location is kept only as a fallback for any render where the prop is absent.
+  //
+  // A running week LEADS otherwise. If they're mid-practice, that is what they came for; else What worked, the
   // Playbook's heart. An explicit ?tab= always wins so a link can point anywhere.
   const [tab, setTab] = useState<TabKey>(() => {
     const fallback: TabKey = grids.length ? 'thisweek' : 'worked';
-    if (typeof window === 'undefined') return fallback;
-    const t = new URLSearchParams(window.location.search).get('tab');
-    return TABS.some((x) => x.key === t) ? (t as TabKey) : fallback;
+    const fromUrl = typeof window === 'undefined' ? null : new URLSearchParams(window.location.search).get('tab');
+    const asked = initialTab ?? fromUrl;
+    return TABS.some((x) => x.key === asked) ? (asked as TabKey) : fallback;
   });
   const goTab = (k: TabKey) => {
     setTab(k);
