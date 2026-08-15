@@ -28,6 +28,31 @@ export type AccessEntry = {
   note: string | null;
 };
 
+/**
+ * The same log, for someone who has no member row yet (2026-08-15).
+ *
+ * A prospect's onboarding transcript is the most vulnerable text in the product — their gap, in their own
+ * first-person words, from a person who never finished signing up and never agreed to anything. Reading it is
+ * a deliberate act that leaves a record, and the record lands in THIS table rather than a new one: two logs
+ * would mean "has anyone read this person's story?" needs two queries, and the day someone runs only one is
+ * the day the answer is quietly wrong.
+ *
+ * NOT best-effort — and that is the deliberate difference from recordMemberAccess below. There, a failed log
+ * must not block an operator doing their job on an existing member. Here, a failed log must ABORT the reveal:
+ * an unlogged read of a non-member's disclosure is the exact event this exists to prevent. So it throws, and
+ * the caller shows an error instead of opening the door quietly.
+ */
+export async function recordProspectAccess(
+  db: Db,
+  entry: { operatorId: string | null; operatorLabel: string; email: string; note?: string },
+): Promise<void> {
+  await db.query(
+    `insert into member_access_log (operator_id, operator_label, member_id, prospect_email, surface, note)
+     values ($1, $2, null, $3, 'admin_prospect_reveal', $4)`,
+    [entry.operatorId, entry.operatorLabel, entry.email.trim().toLowerCase(), entry.note ?? null],
+  );
+}
+
 /** Record an open. Best-effort, loud on failure, never throws into the caller. */
 export async function recordMemberAccess(
   db: Db,

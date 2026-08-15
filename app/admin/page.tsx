@@ -12,6 +12,8 @@ import { founderConsoleEnabled } from '../../lib/dashboard/redesign.ts';
 import { cohortView, rosterAttention, activityFeed, markUnseen } from '../../lib/admin/console.ts';
 import { getActivitySeenAt, getConsoleTheme } from '../../lib/founder/state.ts';
 import ConsoleShell from './console/console-shell.tsx';
+import ProspectsPanel from './prospects-panel.tsx';
+import { listProspects, summarizeProspects, dropOffLabel } from '../../lib/admin/prospects.ts';
 import { isPaneKey } from './console/nav-items.ts';
 import { HealthSection, ModerationSection, ReviewSection, MembersSection, FeedbackSection } from './sections/index.tsx';
 import type { Db } from '../../lib/db/schema.ts';
@@ -31,6 +33,14 @@ export default async function AdminHome({ searchParams }: { searchParams?: Promi
   const modCount = await openReportCount(db);
   const now = Date.now();
   const summary = summarizeRoster(roster, now);
+  // PEOPLE MID-ONBOARDING. Nothing in the console could see them before 2026-08-15 — every other read joins
+  // member_profile, and that row appears only at the final tap. Shape only; the words stay behind the reveal.
+  const prospectRows = await listProspects(db);
+  const prospectSummary = summarizeProspects(prospectRows);
+  const prospects = prospectRows.map((p) => ({
+    email: p.email, turns: p.turns, hoursAgo: p.hoursAgo, identityNoun: p.identityNoun,
+    status: p.status, dropOff: dropOffLabel(p),
+  }));
 
   // THE FOUNDER CONSOLE (flag-gated). Unset → today's page, untouched. `?view=roster` always reaches the old
   // page, so the table is never lost — the console links to it, and a console that can't answer something
@@ -76,6 +86,17 @@ export default async function AdminHome({ searchParams }: { searchParams?: Promi
       <HealthSection health={aiHealth} now={now} />
       <ModerationSection queue={modQueue} count={modCount} now={now} />
       <ReviewSection pending={pending} />
+      <section className="card">
+        <h2>Started, not finished</h2>
+        <p className="muted">
+          {prospectSummary.total === 0
+            ? 'Nobody is mid-onboarding right now.'
+            : `${prospectSummary.total} in the conversation — ${prospectSummary.ready} finished without signing up`
+              + (prospectSummary.crisis ? `, ${prospectSummary.crisis} needing a human` : '') + '.'}
+        </p>
+        <p className="muted small">Not members yet. They have no account and never agreed to be read.</p>
+        <ProspectsPanel prospects={prospects} />
+      </section>
       <MembersSection roster={roster} summary={summary} onboardingStats={onboardingStats} now={now} />
       <FeedbackSection feedback={feedback} now={now} />
     </>

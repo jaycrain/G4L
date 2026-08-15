@@ -3575,3 +3575,27 @@ body:has(.fc-dark) .brand-wordmark,
 .wr-chg-added, .wr-chg-kept { background: #EAF3DE; color: #3B6D11; }
 /* The footnote that stops silence reading as a fact. See historyComplete in lib/report/member-week.ts. */
 .wr-gap { margin: .5rem 0 0; font-size: 11px; color: var(--muted-grey); font-style: italic; }
+
+/* ── Started, not finished: people mid-onboarding (FC) ─────────────────────────────────────────────────── */
+/* Deliberately quieter than the member roster. These are not members, and the surface should not invite the
+   same ambient scanning — the point is to notice the two rows that need something, not to browse strangers. */
+.pros-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.pros-row { border: 1px solid var(--line, #E8E6E6); border-radius: 8px; padding: 10px 12px; }
+.pros-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; }
+.pros-email { font-weight: 600; }
+.pros-meta { color: var(--muted-grey); font-size: 12px; }
+.pros-drop { margin: 4px 0 8px; font-size: 14px; }
+.pros-tag { font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; padding: 2px 7px; border-radius: 999px; border: 1px solid currentColor; }
+/* Deep Red is reserved for the one status with a governance clock on it. Everything else stays neutral so the
+   red keeps meaning "a human owes this person a follow-up" rather than fading into decoration. */
+.pros-tag-crisis   { color: #BB2127; }
+.pros-tag-ready    { color: #EC6233; }
+.pros-tag-active   { color: #3B9495; }
+.pros-tag-stalled  { color: var(--muted-grey); }
+.pros-tag-declined { color: var(--muted-grey); }
+.pros-crisis { border-color: #BB2127; }
+.pros-reveal { font-size: 13px; }
+.pros-transcript { margin-top: 8px; border-left: 2px solid var(--line, #E8E6E6); padding-left: 10px; max-height: 320px; overflow-y: auto; }
+.pros-transcript p { margin: 0 0 6px; font-size: 13px; }
+.pros-said { color: var(--ink, #2A2A2A); }
+.pros-agent { color: var(--muted-grey); }

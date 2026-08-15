@@ -62,6 +62,15 @@ const NOT_MEMBER_FILES = new Set([
   // IF A THIRD REGEX-HOLDING FILE TRIPS THIS, stop naming files and teach the extractor to skip regex-shaped
   // strings instead; two is a coincidence, three is a shape.
   'lib/reclaim/goal-kind.ts',
+  // The Founder Console's prospect read model. Its strings are drop-off labels an OPERATOR reads — "Turned away
+  // at the scope gate", "Finished the conversation — never tapped 'This is me'". No member ever sees them, and
+  // shipping them would put console diagnostics into the artifact marketing and the book quote from.
+  //
+  // Named as ONE FILE rather than excluding lib/admin/ wholesale, deliberately: lib/admin/tracker-doors.ts sits
+  // in that same folder and holds real member-facing labels ("Noticing your days"). A blanket area rule would
+  // have silently dropped it from the backlog — the exact wrong-exclusion failure the caution above describes,
+  // and it would have looked like paying debt down rather than hiding it.
+  'lib/admin/prospects.ts',
 ]);
 
 const isExcludedArea = (rel) => NOT_MEMBER_AREAS.some((a) => rel.startsWith(a)) || NOT_MEMBER_FILES.has(rel);
