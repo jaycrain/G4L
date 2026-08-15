@@ -30,6 +30,8 @@ if (!/\.test$/i.test(email)) { console.error(`Refusing: ${email} is not a demo (
 const fails: string[] = [];
 const ok = (m: string) => console.log(`  ok   ${m}`);
 const bad = (m: string) => { fails.push(m); console.log(`  FAIL ${m}`); };
+/** Neither pass nor fail — a condition the fixture put us in, said out loud so a skipped check is never silent. */
+const log = (m: string) => console.log(`  --   ${m}`);
 
 /** The element labels currently rendered as ON. This is the whole measurement. */
 async function tickedNow(page: Page): Promise<string[]> {
@@ -168,8 +170,17 @@ async function main(): Promise<void> {
   await page.goto(`${base}/playbook/${memberId}`, { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(2200);
   const scoreCells = (await page.locator('.wk-score').allTextContents()).map((s) => s.trim());
-  if (scoreCells.includes('8') && scoreCells.includes('4')) ok(`the grid shows both scores — ${JSON.stringify(scoreCells)}`);
-  else bad(`the grid does not show both scores — found ${JSON.stringify(scoreCells)}, expected 8 and 4`);
+  // TODAY'S score must be on the grid — that is the change this walk exists to prove.
+  if (scoreCells.includes('8')) ok(`the score reaches the grid — ${JSON.stringify(scoreCells)}`);
+  else bad(`today's score is missing from the grid — found ${JSON.stringify(scoreCells)}, expected an 8`);
+  // YESTERDAY'S only if yesterday is INSIDE the tracking week. A week that opened today legitimately has no
+  // column for yesterday, and the first version of this check called that a product failure — it is the fixture.
+  // The row is still written and still correct; the grid simply does not draw days before its own window.
+  const dayHead = (await page.locator('.wk-day').first().textContent().catch(() => ''))?.trim() ?? '';
+  const startedToday = /Day 1 of/i.test(dayHead);
+  if (startedToday) log(`yesterday is before this week's window (${dayHead}) — not expecting a column for it`);
+  else if (scoreCells.includes('4')) ok('and yesterday\'s back-filled score sits in its own column');
+  else bad(`yesterday is inside the window (${dayHead}) but its score is missing — found ${JSON.stringify(scoreCells)}`);
   const dots = await page.locator('.wk-dot').count();
   if (dots > 0) ok(`elements render as ${dots} dots, not tappable boxes`);
   else bad('no .wk-dot found — the C3 grid is still drawing switch-like cells');
