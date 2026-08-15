@@ -129,6 +129,51 @@ async function main(): Promise<void> {
   if (kept.length === 2) ok(`visit 3: BOTH elements survived — ${JSON.stringify(afterSecond)}`);
   else bad(`visit 3: only ${kept.length}/2 survived — ticked now: ${JSON.stringify(afterSecond)}. THIS IS JAY'S BUG.`);
 
+  // ---- A SECOND DAY. The other half of what Jay reported, and the half no test covered: every grid cell used to
+  // link to the same dateless URL, so tapping yesterday wrote TODAY and yesterday stayed blank.
+  const yesterday = await page.evaluate(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 1);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  });
+  await page.goto(`${base}/quality-day/${memberId}?on=${yesterday}`, { waitUntil: 'domcontentloaded' });
+  await page.locator('.qd-log').waitFor({ timeout: 20000 });
+  const dayName = (await page.locator('.qd-dayname').first().textContent().catch(() => ''))?.trim() ?? '';
+  if (/yesterday/i.test(dayName)) ok(`yesterday: the form says "${dayName}"`);
+  else bad(`yesterday: the day bar reads "${dayName}" — it should name yesterday`);
+  const btn = (await page.getByRole('button', { name: /^log /i }).first().textContent().catch(() => ''))?.trim();
+  if (btn && !/log today/i.test(btn)) ok(`yesterday: the button says "${btn}", not "Log today"`);
+  else bad(`yesterday: the button still says "${btn}" — a member cannot tell which day they are writing`);
+
+  await page.waitForFunction(() => {
+    const el = document.querySelector('.qd-score-btn');
+    return !!el && Object.keys(el).some((k) => k.startsWith('__reactProps$'));
+  }, null, { timeout: 20000 }).catch(() => {});
+  await page.locator('.qd-score-btn').filter({ hasText: /^4$/ }).first().click();
+  if (!(await tickedNow(page)).includes(first)) await page.locator('.qd-el-btn').filter({ hasText: first }).first().click();
+  await page.getByRole('button', { name: /^log /i }).first().click();
+  await page.locator('.momentum-log-done').waitFor({ timeout: 20000 });
+  ok('yesterday: logged score 4');
+
+  // ---- THE ASSERTION THAT MATTERS: two days, two different scores, both standing.
+  await page.goto(`${base}/quality-day/${memberId}?on=${yesterday}`, { waitUntil: 'domcontentloaded' });
+  await page.locator('.qd-log').waitFor({ timeout: 20000 });
+  const yScore = (await page.locator('.qd-score-btn.is-on').first().textContent().catch(() => null))?.trim();
+  await openLog(page, memberId);
+  const tScore = (await page.locator('.qd-score-btn.is-on').first().textContent().catch(() => null))?.trim();
+  if (yScore === '4' && tScore === '8') ok(`two days stand apart — yesterday ${yScore}, today ${tScore}`);
+  else bad(`two days did NOT stand apart — yesterday ${yScore ?? 'nothing'}, today ${tScore ?? 'nothing'} (expected 4 and 8). Writing one day overwrote the other.`);
+
+  // ---- AND THE SCORE REACHES THE GRID — the whole point of the redesign.
+  await page.goto(`${base}/playbook/${memberId}`, { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(2200);
+  const scoreCells = (await page.locator('.wk-score').allTextContents()).map((s) => s.trim());
+  if (scoreCells.includes('8') && scoreCells.includes('4')) ok(`the grid shows both scores — ${JSON.stringify(scoreCells)}`);
+  else bad(`the grid does not show both scores — found ${JSON.stringify(scoreCells)}, expected 8 and 4`);
+  const dots = await page.locator('.wk-dot').count();
+  if (dots > 0) ok(`elements render as ${dots} dots, not tappable boxes`);
+  else bad('no .wk-dot found — the C3 grid is still drawing switch-like cells');
+
   await browser.close();
   finish();
 }

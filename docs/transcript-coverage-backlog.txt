@@ -64,7 +64,6 @@ app/playbook/[memberId]/playbook-view.tsx
 app/program/[memberId]/page.tsx
 app/pwa-client.tsx
 app/quality-day/actions.ts
-app/quality-day/quality-day-log.tsx
 app/rebuild/actions.ts
 app/rebuild/rebuild-chat.tsx
 app/reclaim/actions.ts

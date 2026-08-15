@@ -57,9 +57,25 @@ export function isTappable(kind: PracticeKind): boolean {
  *     fields it can express honestly. Two ways in, one record.
  *   · B3 / B2 — tappable, so the grid is the surface. No elsewhere to point to.
  */
-export function logSurfaceFor(kind: PracticeKind, memberId: string): { href: string; label: string } | null {
-  if (kind === 'c3_quality') return { href: `/quality-day/${memberId}`, label: 'Log today' };
-  return null;
+export function logSurfaceFor(kind: PracticeKind, memberId: string, on?: string | null): { href: string; label: string } | null {
+  // THE CELL CARRIES ITS DATE (Jay, 2026-08-15). Every cell used to link to the same dateless URL while the form
+  // behind it always wrote TODAY — so tapping Thursday logged Saturday and left Thursday blank. A member reads
+  // that as "it won't save a second day", which is what Jay reported. The date travels in the link now; the page
+  // re-validates it rather than trusting a query string.
+  if (kind !== 'c3_quality') return null;
+  return { href: on ? `/quality-day/${memberId}?on=${on}` : `/quality-day/${memberId}`, label: 'Log today' };
+}
+
+/**
+ * May this date still be logged? Today, or yesterday — nothing else.
+ *
+ * Jay chose yesterday-only over the whole open week (2026-08-15). Quality Days is a NOTICING practice: rating
+ * Thursday on Sunday is recall, not noticing, and recalled scores drift toward "fine" — let members fill a week
+ * and the measure quietly becomes softer than the asset Greg designed. Missing a day and catching it next
+ * morning is real life; reconstructing Tuesday on Sunday is inventing data.
+ */
+export function canLogOn(date: string, today: string): boolean {
+  return date === today || date === addDays(today, -1);
 }
 
 /** Resolve a day index within a window to a calendar date. The window's start is already a member-local date,

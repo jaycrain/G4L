@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import type { WeekGrid as Grid } from '../../lib/practice/grid.ts';
 import Link from 'next/link';
-import { isTappable, logSurfaceFor } from '../../lib/practice/mark.ts';
+import { isTappable, logSurfaceFor, dateForDay, canLogOn } from '../../lib/practice/mark.ts';
 import { toggleMarkAction } from './actions.ts';
 
 // THE WEEK GRID — Greg's tracker (2026-08-07): the member's committed goals as rows, seven day columns, ticked when
@@ -73,6 +73,21 @@ export default function WeekGridPanel({ memberId, grid }: { memberId: string; gr
   // with no link to it anywhere in the app, so this grid was the whole feature as far as a member could tell.
   // A mirror cell now navigates to the surface that owns the record instead of silently refusing (Jay, 2026-08-09).
   const logTo = tappable ? null : logSurfaceFor(grid.kind, memberId);
+  // C3 ONLY, and deliberately unlike the other four grids (Jay, 2026-08-15).
+  //
+  // The other grids are element×day matrices where a cell IS the fact — tap it, it's true. C3's record is one row
+  // PER DAY: a 1–10 score plus the set of elements that showed up. The grid rendered only the elements, as boxes
+  // that looked exactly like the tappable ones next to them, so Jay logged a week believing he was scoring "bike
+  // ride" individually. Five grids that look identical while one behaves completely differently is the trap.
+  //
+  // So for C3 the DAY is the unit: a score row across the top (the measure, previously invisible), element cells
+  // rendered as dots rather than switches, and the whole column as the target. It looks different because it IS
+  // different — consistency that misleads is worse than a considered departure.
+  const dayLed = grid.kind === 'c3_quality' && !!logTo;
+  const scores = grid.scores ?? null;
+  // The member's today, derived from the window rather than the browser clock — the server already resolved their
+  // zone to build this window, and asking the device again is how a date drifts by one between the two.
+  const todayDate = dateForDay(grid.window, today);
 
   if (!grid.rows.length) return null; // W2 has nothing countable — no grid rather than an empty one
 
@@ -149,6 +164,39 @@ export default function WeekGridPanel({ memberId, grid }: { memberId: string; gr
           </tr>
         </thead>
         <tbody>
+          {/* THE SCORE ROW — the measure C3 exists to take, and it was not on this surface at all. A member could
+              log all week and never see the number they gave a day; the elements read as the whole point. Placed
+              FIRST, above a rule, because "how the day felt" is the record and the elements describe it. */}
+          {dayLed && scores && (
+            <tr className="wk-score-row">
+              <td className="wk-lab">How the day felt</td>
+              {scores.map((s, i) => {
+                const on = dateForDay(grid.window, i);
+                const openable = !grid.closed && i <= today && canLogOn(on, todayDate);
+                const cell = s != null
+                  ? <span className="wk-score">{s}</span>
+                  : i > today
+                    ? <span className="wk-score-none" aria-hidden="true">·</span>
+                    : openable
+                      ? <span className="wk-score-add">+</span>
+                      : <span className="wk-score-none" aria-hidden="true">—</span>;
+                return (
+                  <td key={i} className={i === today ? 'wk-today-col' : undefined}>
+                    {openable && logTo ? (
+                      <Link
+                        href={logSurfaceFor(grid.kind, memberId, on)!.href}
+                        className="wk-score-link"
+                        aria-label={s != null ? `Day ${i + 1} scored ${s} of 10. Open that day's log.` : `Day ${i + 1} not logged. Open that day's log.`}
+                      >
+                        {cell}
+                      </Link>
+                    ) : cell}
+                  </td>
+                );
+              })}
+              <td className="wk-aim" />
+            </tr>
+          )}
           {grid.rows.map((r) => {
             const marks = local[r.slot] ?? r.marks;
             const done = marks.filter(Boolean).length;
@@ -159,11 +207,24 @@ export default function WeekGridPanel({ memberId, grid }: { memberId: string; gr
                   const cls = `wk-cell${on ? ' on' : ''}${i === today ? ' today' : ''}${i > today ? ' ahead' : ''}${tappable ? '' : ' wk-readonly'}`;
                   // A day that hasn't happened is never a target — not to tick, not to navigate to.
                   const ahead = i > today;
+                  // C3: a READOUT, not a switch. A bordered box invites a tap and Jay took it — he logged a week
+                  // believing each box scored its own element. A dot states what the day's record already says
+                  // and offers nothing to press; the score row above owns the action.
+                  if (dayLed) {
+                    return (
+                      <td key={i} className={i === today ? 'wk-today-col' : undefined}>
+                        <span
+                          className={`wk-dot${on ? ' on' : ''}${ahead ? ' ahead' : ''}`}
+                          aria-label={`${r.label} — day ${i + 1}: ${ahead ? 'not yet' : on ? 'showed up' : 'not recorded'}`}
+                        />
+                      </td>
+                    );
+                  }
                   return (
                     <td key={i}>
                       {logTo && !ahead && !grid.closed ? (
                         <Link
-                          href={logTo.href}
+                          href={logSurfaceFor(grid.kind, memberId, dateForDay(grid.window, i))!.href}
                           className={`${cls} wk-cell-link`}
                           aria-label={`${r.label} — day ${i + 1}${on ? ', logged' : ''}. Open your log.`}
                         >
@@ -196,6 +257,8 @@ export default function WeekGridPanel({ memberId, grid }: { memberId: string; gr
       <p className="wk-foot">
         {tappable
           ? 'Tap a day when you do one — or just tell me and I\u2019ll mark it.'
+          : dayLed
+            ? 'Tap a day to rate it and mark what showed up.'
           : logTo
             ? 'Tap any day to open your log — the grid mirrors what you write there.'
             : 'This mirrors what you\u2019ve told your Companion, so you can see the week at a glance.'}

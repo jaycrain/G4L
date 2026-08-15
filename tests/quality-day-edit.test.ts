@@ -1,9 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
 import { PGlite } from '@electric-sql/pglite';
 import { applySchema, type Db } from '../lib/db/schema.ts';
 import { logQualityDay, recentQualityDays } from '../lib/reclaim/quality-day-store.ts';
+import { canLogOn } from '../lib/practice/mark.ts';
 
 // A SECOND LOG ON THE SAME DAY MUST NOT ERASE THE FIRST.
 //
@@ -64,14 +64,37 @@ test('separate days stay separate — the grid can show more than one column', a
   assert.equal(rows.length, 2, 'two days, two rows');
 });
 
-test('THE WIRING: the form seeds from today, and the page passes it', () => {
-  // The data tests above pass whether or not the form is wired — the bug lived in the CLIENT starting empty.
-  // So assert the seam itself, or these tests would have gone green against the broken product.
-  const form = readFileSync(new URL('../app/quality-day/quality-day-log.tsx', import.meta.url), 'utf8');
-  assert.match(form, /useState<Set<string>>\(new Set\(today\?\.present \?\? \[\]\)\)/, 'elements seed from today');
-  assert.match(form, /useState<number \| null>\(today\?\.score \?\? null\)/, 'score seeds from today');
-  assert.match(form, /useState\(today\?\.mostValuable \?\? ''\)/, 'and the reflections seed too');
+// WHY THIS TEST WAS REWRITTEN (2026-08-15).
+//
+// It used to read the two source files and assert that certain characters appeared in them — that the form said
+// `useState(today?.score ?? null)` and the page said `today={todayEntry}`. It passed against a product Jay was
+// watching lose his data, because a prop being PASSED in the source proves nothing about it ever having a value
+// at runtime, and renaming a variable broke the test while the behaviour was fine. A test that greps for a prop
+// is not a test that the prop has a value.
+//
+// What replaces it is the decision the bug actually turned on, exercised as code: given a date and the member's
+// today, which day does the write land on? That is `canLogOn`, and it is the same function the page and the
+// server action both call — so this covers the seam rather than a spelling of it.
+test('canLogOn: today and yesterday only — never a future day, never further back', () => {
+  const today = '2026-08-15';
+  assert.equal(canLogOn('2026-08-15', today), true, 'today');
+  assert.equal(canLogOn('2026-08-14', today), true, 'yesterday — missing a day and catching it next morning');
+  assert.equal(canLogOn('2026-08-13', today), false, 'two days back is recall, not noticing');
+  assert.equal(canLogOn('2026-08-16', today), false, 'a day that has not happened');
+  // Month and year boundaries, because the date is string arithmetic and off-by-one there is silent.
+  assert.equal(canLogOn('2026-07-31', '2026-08-01'), true, 'across a month boundary');
+  assert.equal(canLogOn('2025-12-31', '2026-01-01'), true, 'across a year boundary');
+});
 
-  const page = readFileSync(new URL('../app/quality-day/[memberId]/page.tsx', import.meta.url), 'utf8');
-  assert.match(page, /today=\{todayEntry\}/, 'the page passes today’s entry into the form');
+test('a back-filled day does not disturb the day beside it', async () => {
+  // Jay's report in one assertion: log today, then fill in yesterday, and today must be untouched. The old
+  // dateless link made every write land on today, so the second log silently replaced the first.
+  const { db, memberId } = await member();
+  await logQualityDay(db, memberId, { score: 8, present: ['bike ride'], loggedOn: '2026-08-15' });
+  await logQualityDay(db, memberId, { score: 4, present: ['Maple'], loggedOn: '2026-08-14' });
+  const rows = await recentQualityDays(db, memberId, 7);
+  const byDate = new Map(rows.map((r) => [r.loggedOn, r]));
+  assert.equal(byDate.get('2026-08-15')?.score, 8, "today's score survived the back-fill");
+  assert.equal(byDate.get('2026-08-14')?.score, 4, 'and yesterday landed on its own day');
+  assert.deepEqual(byDate.get('2026-08-15')?.present, ['bike ride'], "today's elements are untouched");
 });

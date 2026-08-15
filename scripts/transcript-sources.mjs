@@ -29,7 +29,11 @@ export const SECTIONS = [
   // The practice week a member ticks daily, and the reads their Playbook shows them back. Added 2026-08-12: these
   // carry real member-facing copy (the refusal when a tick would delete their own writing; "Where your ratings
   // point") and were in NO section, so the transcript was quietly missing them rather than reporting them absent.
-  { title: 'The practice week & Playbook reads', files: ['lib/rewire/w3-entry.ts', 'lib/practice/mark.ts', 'app/momentum/week-grid.tsx', 'lib/playbook/reads.ts'] },
+  // The Quality-Day log joined this section on 2026-08-15, when the C3 rework moved the practice's own sentence
+  // ("Noticing and defining a quality day, one day at a time") into the page's hero and added the day labels a
+  // member reads while back-filling. Listed the same day the copy landed — the guard caught it before the bundle
+  // could ship a version of Quality Days that no longer matched the app.
+  { title: 'The practice week & Playbook reads', files: ['lib/rewire/w3-entry.ts', 'lib/practice/mark.ts', 'app/momentum/week-grid.tsx', 'lib/playbook/reads.ts', 'app/quality-day/[memberId]/page.tsx', 'app/quality-day/quality-day-log.tsx'] },
   { title: 'Grinta baseline (the 12-item survey)', files: ['lib/grinta/survey/instrument.ts'] },
   { title: 'Session & phase summaries ("Why this matters")', files: ['lib/content/summaries.ts'] },
   { title: 'Badges', files: ['lib/curriculum/registry.ts', 'app/badges/[memberId]/page.tsx'] },

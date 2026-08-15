@@ -22,7 +22,7 @@
 
 import type { Db } from '../db/schema.ts';
 import { PRACTICE_WINDOW_DAYS, type PracticeKind, type ActivePractice } from './store.ts';
-import { columnFor, type MemberWeek } from '../time/member-clock.ts';
+import { columnFor, addDays, type MemberWeek } from '../time/member-clock.ts';
 
 // A run can span a six-day stub plus a full week, so "the last seven days" no longer covers it. Fetch generously
 // and let columnFor decide what belongs in which window — the alternative is a stub whose ticks quietly fall out
@@ -53,6 +53,20 @@ export type WeekGrid = {
    * one: keep it visible. Ticks a member made must never appear to vanish. Null unless the run has rolled.
    */
   prior: { window: MemberWeek; rows: GridRow[] } | null;
+  /**
+   * C3 ONLY — the 1–10 score the member gave each day, indexed like `marks` (null = no log that day).
+   *
+   * WHY IT IS HERE AT ALL (Jay, 2026-08-15, on his own account). C3's grid showed the ELEMENTS and nothing else,
+   * so the day's score — the actual measure the asset exists to take — was invisible on the surface a member
+   * looks at every morning. The consequence was not cosmetic: Jay read the element boxes as individually
+   * scoreable and logged a week thinking he was rating "bike ride" rather than the day. If the founder mis-reads
+   * the model, a member has no chance. Showing the score is what makes "rate the day, then mark what showed up"
+   * legible without a word of instruction.
+   *
+   * Left undefined for every other kind: no other week has a per-day scalar, and an optional field they all
+   * carry as null would invite a UI that renders an empty row for them.
+   */
+  scores?: (number | null)[];
 };
 
 /**
@@ -109,6 +123,14 @@ async function commitmentRows(db: Db, memberId: string, kind: PracticeKind, wind
   return rows.map((c) =>
     buildRow(c.slot, c.label, c.target_days, window, marks.filter((m) => m.commitment_id === c.id).map((m) => m.marked_on)),
   );
+}
+
+/** C3 · Quality Days — the day's 1–10 score per column (null where the day was not logged). See WeekGrid.scores. */
+export async function c3Scores(db: Db, memberId: string, window: MemberWeek): Promise<(number | null)[]> {
+  const { recentQualityDays } = await import('../reclaim/quality-day-store.ts');
+  const entries = await recentQualityDays(db, memberId, RUN_LOOKBACK_DAYS);
+  const byDate = new Map(entries.map((e) => [e.loggedOn, e.score]));
+  return Array.from({ length: window.days }, (_, i) => byDate.get(addDays(window.start, i)) ?? null);
 }
 
 /** C3 · Quality Days — rows are the member's OWN Quality-Day elements; the per-day record is already in the log. */
@@ -212,6 +234,9 @@ async function gridFor(db: Db, memberId: string, pw: ActivePractice): Promise<We
     // Only carried when the member actually ticked something in it. An empty strip above the grid is clutter
     // that says nothing — the point is not losing marks they made, not commemorating a week they skipped.
     prior: pw.prior && priorRows.some((r) => r.done > 0) ? { window: pw.prior, rows: priorRows } : null,
+    // Only C3 has a per-day score. Read it even when rows came back empty — an unlogged profile is a different
+    // state from an unscored week, and the grid decides what to say about each.
+    ...(pw.kind === 'c3_quality' ? { scores: await c3Scores(db, memberId, pw.window) } : {}),
   };
 }
 
