@@ -36,12 +36,17 @@ test('addReclaimItemForMember: a specific item is saved, categorized, and append
   assert.ok(after[1]!.sortOrder > after[0]!.sortOrder);
 });
 
-test('addReclaimItemForMember: fog is refused (the Beat engine could never bind it)', async () => {
+test('addReclaimItemForMember: fog SAVES — it is caught downstream, not at the door', async () => {
+  // INVERTED 2026-08-16. This used to assert fog was refused. That refusal cost a real member her own sentence
+  // ("...that don't feel like they're always in jeopardy" — \bfeel\b), and because the plainer version passed,
+  // every time she added detail the rejection got MORE certain. See tests/reclaim-vagueness-gate.test.ts.
+  //
+  // The Beat engine never could bind a foggy item, and still can't — bindGoalItem filters it. That is the right
+  // place for the check: it costs a goal-close, not the member's words.
   const { db, memberId } = await seedMember();
   const r = await addReclaimItemForMember(db, memberId, 'be happier and more confident');
-  assert.equal(r.ok, false);
-  if (!r.ok) assert.equal(r.reason, 'vague');
-  assert.equal((await getReclaimItems(db, memberId)).length, 0);
+  assert.equal(r.ok, true, 'her words are hers');
+  assert.equal((await getReclaimItems(db, memberId)).length, 1, 'and they are on her list');
 });
 
 test('addReclaimItemForMember: empty and duplicate are refused', async () => {

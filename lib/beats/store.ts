@@ -4,7 +4,6 @@
 
 import type { Db } from '../db/schema.ts';
 import { allBeats, beatById, isCategory, type Beat, type Category, type CloseType, type RGroup, type Rhythm } from './registry.ts';
-import { isVagueReclaim } from './category.ts';
 import { isReady } from './readiness.ts';
 import { selectNextBeat } from './select.ts';
 import { bindGoalItem, effectiveCloseType, renderClose } from './serves.ts';
@@ -180,8 +179,7 @@ export async function unmarkReclaimReclaimedByText(
 /**
  * Refine the WORDING of an existing Reclaim item (the "Refine" half of add/refine). Keeps the item's
  * id, state, progress (closer_count), bindings, and category — only the text changes — so it's the
- * SAFE edit (the risky delete / progress-losing edits stay deferred). Refuses fog (must stay
- * specific & observable). Optionally updates category if the agent says it genuinely changed.
+ * SAFE edit (the risky delete / progress-losing edits stay deferred). Optionally updates category if the agent says it genuinely changed.
  */
 export async function refineReclaimItemByText(
   db: Db,
@@ -189,11 +187,12 @@ export async function refineReclaimItemByText(
   query: string,
   newText: string,
   agentCategory?: string,
-): Promise<{ ok: boolean; oldText?: string; newText?: string; reason?: 'empty' | 'vague' | 'nomatch' | 'duplicate' }> {
+): Promise<{ ok: boolean; oldText?: string; newText?: string; reason?: 'empty' | 'nomatch' | 'duplicate' }> {
   const q = (query ?? '').trim().toLowerCase();
   const text = (newText ?? '').trim();
   if (!q || !text) return { ok: false, reason: 'empty' };
-  if (isVagueReclaim(text)) return { ok: false, reason: 'vague' };
+  // No fog gate — see lib/member/refine.ts for the full note. A member rewording her own item into her own
+  // fuller sentence must never be refused; fog is handled downstream in bindGoalItem.
   const rows = (
     await db.query<{ id: string; text: string; category: string }>(
       'select id, text, category from reclaim_item where member_id=$1 and removed_at is null order by sort_order, created_at',

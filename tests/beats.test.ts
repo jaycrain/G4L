@@ -184,10 +184,14 @@ test('any-goal: companion marks a life item reclaimed — Journey ticks, not sho
   const refined = after.find((i) => i.text.includes('Brainard'))!;
   assert.equal(refined.category, 'physical'); // category preserved
   assert.ok(!after.some((i) => i.text === 'ride before work')); // old wording gone
-  // refining to fog is refused
+  // REFINING TO FOG IS ALLOWED (changed 2026-08-16). It used to be refused, and that cost a member her own
+  // sentence — see tests/reclaim-vagueness-gate.test.ts. Her wording is hers; fog is caught downstream in
+  // bindGoalItem, which simply never binds a goal-close to it.
   const fog = await refineReclaimItemByText(db, memberId, 'Brainard', 'just feel better about riding');
-  assert.equal(fog.ok, false);
-  if (!fog.ok) assert.equal(fog.reason, 'vague');
+  assert.equal(fog.ok, true, 'a member may reword her own item however she wants');
+  assert.equal(bindGoalItem({ close_type: 'goal', serves: ['physical'] } as never,
+    (await getReclaimItems(db, memberId)).filter((i) => i.text.includes('feel better')) as never), null,
+    'and the foggy wording simply never binds a goal Beat');
 });
 
 // ---- DB-backed slice proof (Tom) ------------------------------------------------------

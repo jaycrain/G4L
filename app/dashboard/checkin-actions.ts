@@ -20,6 +20,7 @@ import {
 import { loadConversation, appendMessages } from '../../lib/agent/conversation.ts';
 import { recentConsumedTitles } from '../../lib/bites/store.ts';
 import { getReclaimItems } from '../../lib/beats/store.ts';
+import { isVagueReclaim } from '../../lib/beats/category.ts';
 import { addReclaimItemForMember, addDoorForMember } from '../../lib/member/refine.ts';
 import { markReclaimReclaimedByText, unmarkReclaimReclaimedByText, refineReclaimItemByText, removeReclaimItemByText, reorderReclaimList } from '../../lib/beats/store.ts';
 import { proposeEntry, playbookForAgent, isPlaybookSection, listPlaybook, matchKeptEntry, dismissEntry } from '../../lib/playbook/store.ts';
@@ -492,10 +493,13 @@ export async function sendCheckin(memberId: string, memberMessage: string): Prom
           const trackNudge = looksTrackable(res.text)
             ? ' This goal has a measurable number in it — consider OFFERING to set up a tracker for it (ask first, never force).'
             : '';
-          return { ok: true, message: `Saved "${res.text}" to their Reclaim List (category: ${res.category}). It now shows on their dashboard and the Beat engine can work toward it — acknowledge it briefly and warmly.${trackNudge}` };
-        }
-        if (res.reason === 'vague') {
-          return { ok: false, message: 'Not saved — that is a feeling/inner state, not something you could both watch happen in an ordinary week. Ask what it would look like on a Tuesday, sharpen it WITH them, then call add_reclaim_item again with the observable version.' };
+          // FOG IS A NOTE NOW, NOT A REFUSAL (2026-08-16). This used to reject the write and tell the model to
+          // "sharpen it WITH them, then call again" — which built an unescapable loop for a member whose wording
+          // contained "feel". Saved either way; the model is simply told not to expect a goal-close yet.
+          const fogNote = isVagueReclaim(res.text)
+            ? ' NOTE (do not raise this unprompted): it is worded as an inner state, so no goal-close will bind to it yet — it advances as a plain rep. That is fine. It IS saved, their wording stands, and you must NEVER ask them to rephrase it as a condition of keeping it. If a natural moment comes much later you may help them make it concrete.'
+            : '';
+          return { ok: true, message: `Saved "${res.text}" to their Reclaim List (category: ${res.category}). It now shows on their dashboard and the Beat engine can work toward it — acknowledge it briefly and warmly.${trackNudge}${fogNote}` };
         }
         if (res.reason === 'duplicate') {
           return { ok: false, message: 'Not saved — that is already on their Reclaim List. Let them know it is already there.' };
@@ -542,9 +546,6 @@ export async function sendCheckin(memberId: string, memberMessage: string): Prom
             ? ' It now has a measurable number — if there is no tracker on it yet, consider OFFERING to set one up (ask first).'
             : '';
           return { ok: true, message: `Updated their Reclaim List item to "${res.newText}" (kept its progress). Reflect the new wording back so they know it took.${refineTrackNudge}` };
-        }
-        if (res.reason === 'vague') {
-          return { ok: false, message: 'Not changed — the new wording is a feeling, not something you could both watch happen. Sharpen it WITH them, then call refine_reclaim_item again.' };
         }
         if (res.reason === 'duplicate') {
           return { ok: false, message: 'Not changed — that wording matches another item already on their list.' };

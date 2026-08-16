@@ -6,7 +6,7 @@
 import type { Db } from '../db/schema.ts';
 import { writeAsActor } from '../db/actor.ts';
 import { addReclaimItems, getReclaimItems } from '../beats/store.ts';
-import { inferCategory, isVagueReclaim } from '../beats/category.ts';
+import { inferCategory } from '../beats/category.ts';
 import { isCategory, type Category } from '../beats/registry.ts';
 import { DOORS, DOOR_SLUGS, matchDoors, isDoorSlug, type DoorSlug } from '../doors.ts';
 
@@ -110,7 +110,7 @@ export async function reconcileDoors(conversation: string, current: DoorSlug[]):
 
 export type AddReclaimResult =
   | { ok: true; text: string; category: string }
-  | { ok: false; reason: 'empty' | 'vague' | 'duplicate' };
+  | { ok: false; reason: 'empty' | 'duplicate' };
 
 /**
  * Add ONE item to the member's Reclaim List. Refuses fog (a feeling/inner state) so the Beat engine
@@ -125,7 +125,17 @@ export async function addReclaimItemForMember(
 ): Promise<AddReclaimResult> {
   const text = (rawText ?? '').trim();
   if (!text) return { ok: false, reason: 'empty' };
-  if (isVagueReclaim(text)) return { ok: false, reason: 'vague' };
+  // NO FOG GATE HERE — REMOVED 2026-08-16. isVagueReclaim used to refuse the write, and it cost a member her
+  // own sentence: "Have peace and stability that don't feel like they're always in jeopardy" matched \bfeel\b
+  // and was rejected over and over. Her phrase is a NEGATION describing an observable absence of conflict —
+  // exactly what she was being asked for — and the plainer version PASSED, so every time she added detail the
+  // refusal got more certain. The loop could not break, and the Companion ended up telling her "the system
+  // keeps rejecting it".
+  //
+  // The pattern was never the defect; the PLACEMENT was. isVagueReclaim's own comment accepts false positives
+  // "because a false positive just loses the goal-close (still a valid rep)" — a trade that is only sane where
+  // the cost is small. Here the cost was a member's words. Fog is still caught in bindGoalItem, where it was
+  // designed to be caught: the item saves, and simply never binds a goal Beat until it sharpens.
   const existing = await getReclaimItems(db, memberId);
   if (existing.some((i) => i.text.trim().toLowerCase() === text.toLowerCase())) {
     return { ok: false, reason: 'duplicate' };
