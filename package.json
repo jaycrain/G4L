@@ -12,7 +12,7 @@
     "start": "next start",
     "test": "node scripts/run-tests.mjs",
     "db:verify": "node --experimental-strip-types scripts/db/verify.ts",
-    "db:reset": "rm -rf .pglite && echo 'local dev DB wiped \u2014 restart the dev server to recreate it'",
+    "db:reset": "rm -rf .pglite && echo 'local dev DB wiped — restart the dev server to recreate it'",
     "db:migrate": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/db/migrate.ts",
     "dev:bootstrap": "npm run db:seed-demo && npm run db:set-demo-password",
     "walk:focus": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/focus-ring-walk.ts",
@@ -31,7 +31,8 @@
     "walk:c2": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/c2-audit-walk.ts",
     "walk:c3": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/c3-quality-walk.ts",
     "walk:qd2": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/qd-second-visit-walk.ts",
-    "walk:w3": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/w3-grid-walk.ts"
+    "walk:w3": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/w3-grid-walk.ts",
+    "canon:sync": "node scripts/sync-canon-mount.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.40.0",

@@ -212,23 +212,21 @@ if (problems.length) {
   console.error('\nNothing was published. Fix these and re-run — an incomplete bundle is worse than a late one.');
   process.exit(1);
 }
-// ── Keep Cowork's mount fresh ─────────────────────────────────────────────────────────────────────────────────
-// She reads a LOCAL folder: /Users/jaycrain/g4l-platform/docs/canon. Work happens in a git worktree and pushes to
-// main, so the primary checkout goes stale and her folder silently keeps serving the old version — which is
-// exactly how she was left reading 60-commit-old canon on 2026-08-10. Publishing is not finished until the
-// checkout she is mounted on actually has the new version in it.
-const PRIMARY = '/Users/jaycrain/g4l-platform';
-try {
-  const here = git('rev-parse', '--show-toplevel');
-  if (here !== PRIMARY && existsSync(join(PRIMARY, '.git'))) {
-    execFileSync('git', ['-C', PRIMARY, 'pull', '--ff-only', '--quiet', 'origin', 'main'], { stdio: 'pipe' });
-    const landed = existsSync(join(PRIMARY, CANON, 'MANIFEST.md'));
-    console.log(landed
-      ? `  ✓ synced Cowork's mount — v${version} is live at ${PRIMARY}/docs/canon`
-      : `  ! ${PRIMARY} pulled but v${version} is not there yet — push this commit, then re-run the sync`);
-  }
-} catch (e) {
-  console.warn(`  ! could not sync ${PRIMARY} (${e.message.split('\n')[0]}) — pull it manually or Cowork reads stale canon`);
-}
+// ── The pointer Cowork reconciles against ─────────────────────────────────────────────────────────────────────
+// One line at the canon root naming the current version. She compares it against the newest folder she can see:
+// equal means the drop is complete, different means her mount is mid-sync. Without it, "missing" and "not synced
+// yet" look identical from her side — which is why every late bundle turned into Jay relaying messages.
+writeFileSync(join('docs', 'canon', 'LATEST'), `v${version} · app @ ${commit}\n`);
 
-console.log(`\nComplete. Commit ${CANON} and tag v${version}.`);
+// ── Publishing is NOT finished here ───────────────────────────────────────────────────────────────────────────
+// This script used to try to sync Cowork's mount itself, and it could not work: it ran `git pull` BEFORE the
+// canon commit existed (see step 1 below — it is created after this script exits). So it pulled, found nothing,
+// printed a warning, and the warning got scrolled past. v3.4.4 was published, tagged and PUSHED on 2026-08-16
+// and was still invisible to Cowork an hour later for exactly that reason. The sync is a separate command
+// because it belongs after the push, and it exits non-zero when the bundle is not really there.
+console.log(`\nComplete here — but the bundle is NOT published until all three of these are done:`);
+console.log(`  1. git add ${CANON} docs/canon/LATEST   (then commit)`);
+console.log(`  2. push to main, and tag v${version}`);
+console.log(`  3. npm run canon:sync                   ← lands it where Cowork actually reads`);
+console.log(`\nStep 3 cannot happen in this script: Cowork reads a flat file-sync of the primary checkout, and`);
+console.log(`this runs before step 1 exists. Committed is not published. Pushed is not published.`);
