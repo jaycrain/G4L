@@ -638,6 +638,112 @@ C1/C2/C3 where the Companion may teach nothing at all.
 
 ---
 
+## PART 2 — THE AI ENGINEERING MEMOS
+
+**These are a different genre from the Guidance memos, and it matters.** The Guidance memos instruct the *Companion*;
+the Engineering memos are addressed to **whoever builds the app** — i.e. to us. They contain data models, staged
+flow specs, constrained follow-up taxonomies, UX requirements and an implementation checklist. Where a Guidance memo
+says "the Companion should draw this out," the Engineering memo says which field to store it in.
+
+Precedence note: these are still DERIVATIVE ([[greg-doc-precedence-and-levels]]) — Gated Assets V4 and the Science
+Checks are SOURCE. But on questions of *implementation shape* (staging, storage, filtering) they are the only
+document that speaks at all, so they are the best available authority on HOW, while V4 remains the authority on WHAT.
+
+---
+
+### C1 — ReClaim Readiness · AI Engineering Memo
+
+**Read 2026-08-16.** Local copy: `~/Desktop/Development/Program_Content/Dr.Welk/AI Engineering Memo for ReClaim
+Science - C1.docx` (one of the only 2 of 36 on local disk). Read from the .docx XML, not Drive — Drive was 503ing.
+
+#### The interaction is EIGHT stages, not six questions
+
+The Guidance memo's six core questions are the middle. The Engineering memo brackets them:
+
+1. **Reorientation** — restate the purpose; remind them they are revisiting through what they have learned
+2–7. the six questions (enduring · de-prioritized · ownership/vagueness · concretization · emergent · reordering)
+8. **Summary and confirmation** — present a refined summary, allow confirm / revise / keep reflecting
+
+> "This staged structure should be **visible in the dialogue logic**, even if the user experience feels natural
+> rather than rigid."
+
+That is our own cornerstone stated back to us — **engine owns STRUCTURE, model owns CONTENT**
+([[arc-reliability-hardening]]). Turn management must "maintain question state, know which stage is active, track
+whether enough user response was provided, select the next follow-up or next stage."
+
+#### NEW — Rule 4 is a data contract we probably violate
+
+> **"Distinguish ownership, clarity, and priority. These are separate dimensions and should not collapse into one."**
+
+Greg wants three independent axes per Reclaim item. A goal can be fully owned but vague; concrete but borrowed;
+important but unclear. **CHECK: our Reclaim items carry a category and an order — I do not believe we model ownership
+or clarity at all**, which would collapse all three into "where it sits in the list."
+
+The recommended per-item fields, verbatim:
+
+`original_text` · `current_status` (still-important / less-important / revised / removed / uncertain) ·
+`ownership_flag` (owned / partly borrowed / unclear) · `clarity_flag` (concrete / somewhat vague / very vague) ·
+`priority_rank_current` · `change_reason` · `linked_module_source` (reconnect / rewire / rebuild / mixed / unclear) ·
+`member_notes`
+
+And for emergent items: `new_goal_text` · `emergence_source` (identity / self-talk / habit-awareness /
+health-decisions / mixed) · `priority_rank_current` · `member_notes`.
+
+> "The app should **not store only the final revised list.** It should preserve revision structure." · "Treat the
+> original list as a **meaningful prior artifact, not disposable input.**"
+
+Note `linked_module_source` and `emergence_source` — the carry-forward spine showing up a third time, now as a
+stored field rather than a conversational move.
+
+#### NEW — follow-ups are a CONSTRAINED TAXONOMY, not free model choice
+
+Follow-ups must be selected from six categories: **clarify meaning · compare then vs now · test ownership · assess
+concreteness · assess priority · identify source of change.** And the hard limit: "They should not infer hidden
+motives unless the Member already states them." Disallowed exemplars are specific — "that goal was never authentic,"
+"this proves you were motivated by pressure."
+
+This is the same shape as [[member-words-outrank-model-guess]]: the model may probe, but it may not conclude past
+what the member said.
+
+#### NEW — overclaim filtering is specified as a FILTER, not a prompt instruction
+
+> "If the app uses template-based generation, these constraints should be included in the generation policy. If it
+> uses model prompts, these should be explicit style guardrails." · "**Hard-assertion phrasing should be filtered
+> out.**"
+
+Disallowed list: *this proves · this reveals your true self · this fixes · this guarantees · this unlocks · now you
+know exactly · this permanently changes · this is the reason you struggle.* Preferred: *can help · may help · is
+designed to help · can clarify · may be showing you · can bring into view.* Worth considering as a shared
+post-generation check across all twelve assets rather than per-asset prompt copy — [[one-fact-many-sites]].
+
+#### UX requirements — and one that speaks to a settled decision of ours
+
+> "**Support both conversational and structured interaction.** Some Members will reflect better through dialogue.
+> Others will benefit from visible list-editing controls. **Ideally, the system should combine both** — AI-guided
+> dialogue + structured editable list state."
+
+Plus: show the original list **visibly during reflection** ("reduces memory burden and reinforces revisiting rather
+than reinventing"), allow inline tag/move/rewrite/remove/add, and preserve a **"then vs now"** view (original text ·
+current edit · note on what changed) to "make development visible."
+
+This is independent support for where we already landed on the Reclaim List being a structured builder rather than
+pure conversational extraction ([[reclaim-list-writing-switch-pending]]) — Greg asks for **both**, not either.
+The "then vs now" view is the piece we have nothing like.
+
+#### A testable rubric — the first one in the corpus
+
+The memo ends with on-target / off-target criteria and a 10-item implementation checklist. **Off-target** is the
+useful half, because it is falsifiable: "sounds like generic coaching · pushes the user toward a predefined type of
+answer · **treats every shift as breakthrough** · overstates what the system knows · uses deterministic science
+language · **collapses reflection into a simple survey response.**"
+
+> "The technology is not there to announce the Member's truth back to them."
+
+**Do not act on this yet** — the standing rule at the top of this file still holds until the reading is done. But of
+everything read so far this is the most directly actionable document in the corpus.
+
+---
+
 ## THE CARRY-FORWARD SPINE (closed over all twelve Guidance memos)
 
 `prior_module_context` is not an R1 detail. **Every one of the twelve memos specifies carry-forward as a named
