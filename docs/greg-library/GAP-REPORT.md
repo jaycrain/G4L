@@ -18,8 +18,8 @@
 > (`prior_module_context` appears nowhere; "spine" here means the unrelated Aware/Prepare/Engage gradient) and the
 > **posture axes** (one stray B1 note, nothing systematic). Both are in `PER-ASSET-NOTES.md`, from a direct re-read.
 >
-> The re-audit that replaces this report's conclusions is tracked as **#185**; its quotes carry forward, its
-> conclusions do not.
+> The re-audit that replaces this report's conclusions is scoped in `docs/dev-todo.md` ("Greg library — re-audit").
+> Its quotes carry forward, its conclusions do not.
 
 # Greg's science library vs. what we built — gap report (findings UNVERIFIED — see provenance above)
 

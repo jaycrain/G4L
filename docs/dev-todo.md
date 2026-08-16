@@ -6,6 +6,32 @@ context to resume cold. Add to the top; move to "Done" or delete when shipped.
 
 ---
 
+## Greg library — re-audit (replaces `docs/greg-library/GAP-REPORT.md`'s conclusions)
+**Status:** READY. Blocked only by the corpus reading, which is now 29 of 36 and past the point that mattered.
+
+**Why.** `GAP-REPORT.md` (2026-08-06) says "verified" in its title, but its spec side was extracted **one subagent
+per asset** — the fan-out banned 8/7 ([[no-agent-fanout-on-foundations]]). Its **verbatim quotes are trustworthy**
+(spot-checked 8/16 against C1's Engineering Memo read directly — data model, stage count and numbering all matched).
+Its **gap findings are not**: a subagent carries none of the decision history, so it cannot tell a gap from a
+decision. It got two wrong that we know of — the 90-day IDQ cadence (Jay had ruled 60 hours earlier) and the "Spark
+space" community share (a retired name). A provenance header now sits on the report; this task replaces its body.
+
+**Do.**
+1. Re-derive every candidate gap **against the frozen contracts and the decision log first** — that check is what
+   converts a spec difference into a real gap. Keep the quotes, discard the conclusions.
+2. Verify the carried CHECKs from the re-read (listed in `docs/greg-library/PER-ASSET-NOTES.md` under RESUME HERE)
+   against the code — none is a finding yet. SOURCE-backed and most likely real: **B3 stores no `activity_backup` /
+   `dietary_backup` / `anticipated_obstacles` / `thoughts_feelings`.**
+3. Reconcile our practice-week rails against the **one sustained-monitoring engine** finding — W3/B3/C3 are one
+   spec with a per-asset config, and the parameter table is in PER-ASSET-NOTES.md.
+4. Route the three Greg-only questions to Greg rather than deciding them: IDQ 60-vs-90 cadence · whether R1's
+   permitted domain-skipping extends to the frozen scored items · R1's domain count (6 vs 3 vs our 4 dimensions).
+
+**Do not** treat anything in the old report as settled, and do not re-open decisions it flagged as gaps without
+checking the decision log first.
+
+---
+
 ## False Start Protocol — make it a GATE + nudge/notification sign-up (product decision, not copy)
 **Status:** TABLED for Jay/Greg (Donna flagged it on her 2026-07-27 charter walk — "not really her call," Jay).
 **What Donna raised (New Edits 7_27_C):** the False Start Protocol close (Rewire W3, "run your protocol —

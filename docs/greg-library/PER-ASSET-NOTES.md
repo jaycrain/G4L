@@ -53,8 +53,9 @@ The Step-2 question is **ANSWERED** — see "The Engineering Memos are one spec,
 1. **The 7 remaining Engineering Memos** (R2 · R3 · W1 · W2 · B1 · B2 · C2) — all single-session assets. Read to
    test the recorded hypothesis that they form a *second* shared template. Lower urgency now that the architectural
    question is settled; the quote index covers their content densely.
-2. **#185, the re-audit** — unblocked, and now the higher-value work. Rebuild the gap findings against the frozen
-   contracts and the decision log, keeping the Aug 6 quotes and discarding its conclusions.
+2. **The re-audit** — unblocked, and now the higher-value work. Scoped in `docs/dev-todo.md` ("Greg library —
+   re-audit"). Rebuild the gap findings against the frozen contracts and the decision log, keeping the Aug 6 quotes
+   and discarding its conclusions.
 
 Use `extracted/<ASSET>.md` as the per-asset checklist while reading, so the re-read keeps adding the layer that is
 missing rather than duplicating the layer that exists.
@@ -72,8 +73,13 @@ whether R1's explicitly-permitted domain skipping extends to the frozen scored I
 Drive ids are recorded in each section below. To list the folder:
 `parentId = '10tBuyKxNxxrt0tFmwv9zU2ZWG9-pDmF7'` via the Drive search tool. Only 2 of the 36 are on local disk.
 
-Do not act on #185 (the re-audit) until the reading is done — I made a confident structural claim on a partial
+Do not act on the re-audit until the reading is done — I made a confident structural claim on a partial
 corpus once already today and it was wrong.
+
+> **Note (8/16): this line originally read "#185 (the re-audit)". There is no #185** — not a GitHub issue, not a
+> task, not in any backlog. The number was invented in an earlier session and I then propagated it into two more
+> documents, including a header asserting the re-audit was "tracked as #185". A number-shaped reference reads as
+> authoritative whether or not it has a referent. Fixed; the re-audit now has a real home in `docs/dev-todo.md`.
 
 Precedence reminder ([[greg-doc-precedence-and-levels]]): Gated Assets V4 + Science Check are SOURCE; the Guide
 and Memo are DERIVATIVE. Where they disagree, V4 wins.
