@@ -780,6 +780,110 @@ everything read so far this is the most directly actionable document in the corp
 
 ---
 
+## PART 3 — THE SCIENCE CHECKS (SOURCE)
+
+Read directly 2026-08-16, after Drive recovered. These are **SOURCE** ([[greg-doc-precedence-and-levels]]) and, per
+`GAP-REPORT.md`, had never been read by a human before Aug 6 — their only prior reading was the banned fan-out. Every
+one follows the same five-part shape: Description and Foundation · Why this activity works · Scientific scaffolding
+(six numbered foundations) · In-app summary · **Positioning note for internal use** · Suggested citations.
+
+### ⚠ THE TWO ITEMS THE FAN-OUT GOT WRONG — now read at source, and correctly classified
+
+Both live in Reconnect, and both are in my memory as the specific failures of 8/7. Reading the source settles them:
+
+**1. R1 says 90 days. Our contract says 60. This is a DECISION, not a gap — do not re-open.**
+
+> "Members are encouraged to retake the questionnaire after roughly **90 days** and again at the start of later
+> cycles."
+
+The text really does say 90. The 8/7 subagent flagged this as a gap and recommended adopting it — and it collides
+with a **frozen data contract** (IDQ cadence = 60 days, CLAUDE.md) that **Jay had ruled on hours earlier**. This is
+the textbook case of [[no-agent-fanout-on-foundations]]: *a subagent cannot tell a gap from a decision.* Recorded
+here so the next reader meets the ruling at the same moment they meet the discrepancy. **60 stands.** If it is ever
+re-opened it is Greg+Jay's call, not an engineering one.
+
+**2. R2's "Spark space" — the NAME is retired, but the SUBSTANCE is a real gap. Split them.**
+
+The Science Check names it twice: the exercise "closes with an invitation to share a door in the **Spark space**,"
+and scaffolding #5 grounds it in the normalizing function of shared recognition. The 8/7 subagent flagged the Spark
+space as missing — and it is missing because **it was retired: no route, no screen, no table.** Building to that
+finding builds a place that does not exist.
+
+But the correct read is not "therefore ignore it." Greg's *design intent* is a community share at the end of R2, and
+he rates it highly: "one of the most powerful early community experiences — the recognition that the Fade is a shared
+pattern rather than a personal failure." **We have the Community.** So:
+
+> **Name → dead** (`Spark space` never ships; the Community is the surface, per [[connect-native-not-circle]]).
+> **Substance → live gap**, and independently confirmed by R2's Companion memo. Cheap to build, high value for a
+> Charter cohort arriving together.
+
+That split — retire the name, keep the intent — is the distinction the fan-out could not make in either direction.
+
+### R1 — Identity Distance Questionnaire
+
+- **"The pattern of highs and lows that emerges is more useful than any single score."** Worth sitting with: our
+  headline feedback is the ID Score, a single number. Greg's stated value is the *profile*. Not a contradiction (we
+  show dimensions too) but it argues the four-dimension shape should lead and the composite follow.
+- **"Recognition is not diagnosis."** · "It asks the member to compare their present self with the version of
+  themselves they recognize as more whole" — the reference is the **remembered self**, never a population norm,
+  clinical threshold, or cultural ideal. Scaffolding #4 makes this the load-bearing design choice: "the member is not
+  failing against a chart, they are distant from a version of themselves they can still feel."
+- **"A member does not graduate from recognition; they keep returning to it with a sharper eye."** — the Loop, stated
+  at SOURCE.
+- The Science Check does **not** enumerate the rating domains. So the three-way mismatch in my open questions (memo's
+  six prose domains · V4's three parts · our frozen 24-item/4-dimension IDQ) is **not adjudicated here**. V4 remains
+  the place to resolve it, and the IDQ schema is frozen regardless.
+
+### R2 — Fade Doors Exercise
+
+**Confirms #183 at SOURCE level**, not just from the derivative memo: "For each door, the member rates its relevance
+to their personal Fade on a simple **three-point scale** and is explicitly invited to **mark more than one**, because
+most people walk through several doors." Plus the temporal frame — first · biggest impact · **still open** — with the
+scientific reason attached (scaffolding #2, narrative coherence; #3, attribution).
+
+The attribution balance is the sharpest idea in the document and it is a governance-shaped constraint:
+
+> "pure self-blame undermines motivation, while pure externalization removes it." The doors "name real external
+> precipitants… and the reflection prompts ask which doors are still open," so the member "locate[s] external causes
+> without surrendering agency."
+
+### R3 — Drift Quiz and Legacy Letter
+
+- **The Drift Quiz is "a mirror, not a test… there are no wrong answers, only patterns to see."** Non-judgmental by
+  design, "because the goal is to surface the pattern, not to add shame to the weight the member is already carrying."
+- **The Legacy Letter is LONGITUDINAL, and more broadly than the Guidance memo said.** The memo routed it to W2. The
+  Science Check routes it much further: revisited "at the start of ReWire, at the ReBuild checkpoint, and on later
+  cycles through ReConnect," and — the big one — "the member can read what they wrote at the start of ReConnect and
+  **measure the distance between that aspiration and who they have become by the time they reach ReClaim.**" That
+  makes the letter a Reconnect→Reclaim artifact spanning the whole program, not a one-hop handoff. Add it to the web.
+- **On the draft question:** SOURCE says "member-authored" and "in their own words" but does **not** contain the
+  7/19 memo's prohibition on the system supplying content. So Jay's ruling (the draft stays; the revise loop and the
+  voice rules make it theirs) is **not contradicted by SOURCE**. Closed.
+- The pairing rationale survives to SOURCE, in the same words: "Vision without truth becomes fantasy, and truth
+  without vision becomes discouragement."
+
+### NEW CROSS-ASSET FINDING — every Science Check ends with a CLAIMS constraint, and it is not an engineering note
+
+Each document closes with a **"Positioning note for internal use"** in near-identical form:
+
+> "The strongest scientific position is **not to claim that the exact [asset] has already been directly validated in
+> this branded G4L form.** A more accurate and defensible statement is that the activity is **informed by** established
+> research on […]. That gives the activity a strong scientific base while keeping the G4L framing original."
+
+And each adds a causal nuance: R1 — "not that the IDQ automatically causes change by itself, but that it increases
+honest self-awareness"; R2 — "not that naming the doors automatically resolves the Fade"; R3 — "not that the
+combination automatically causes change, but that it strengthens the conditions that make change more likely."
+
+**This is the source of the probabilistic-language rule** that the Companion memos restate per asset
+([[greg-science-check-system]]) — but it is wider than Companion copy. It constrains **what the product, the
+marketing site, and the book may claim** about the science. Under the Cowork protocol the app is the source of truth
+*except* for "a factual or legal error… (a mis-sourced stat)" — and an over-claim of validation is exactly that
+class. **These positioning notes belong in the next Cowork sync note**, and the citation lists (Higgins; Duval &
+Wicklund; Campbell; Markus & Nurius; Oyserman; Hershfield; McAdams; Pennebaker; Weiner; Craik & Lockhart) are the
+sourcing backstop for any claim the book makes.
+
+---
+
 ## THE CARRY-FORWARD SPINE (closed over all twelve Guidance memos)
 
 `prior_module_context` is not an R1 detail. **Every one of the twelve memos specifies carry-forward as a named

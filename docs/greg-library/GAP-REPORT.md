@@ -1,6 +1,29 @@
-# Greg's science library vs. what we built — verified gap report
+> # ⚠ PROVENANCE — read before quoting anything below
+>
+> **Added 2026-08-16.** The title says "verified." **The findings in this report are NOT verified and must not be
+> quoted as settled.** By its own Method section, the spec side was extracted **"one agent per asset"** — the
+> subagent fan-out Jay banned the next day, 8/7: *"Using agents is where things have gone wrong in the past, over
+> and over. This is foundational stuff — I don't think it should be handled casually."*
+> ([[no-agent-fanout-on-foundations]])
+>
+> Treat this document in two halves:
+>
+> | Half | Status | Why |
+> | :-- | :-- | :-- |
+> | **Greg's verbatim quotes**, here and in `extracted/*.md` | **Trustworthy — use them** | Mechanical and checkable. Spot-checked 8/16 against C1's Engineering Memo read directly: data model, stage count and stage numbering all matched exactly. Fan-out is fine for this. |
+> | **Every gap, delta, contradiction and recommendation** | **UNVERIFIED LEADS — re-derive before acting** | The known defect: a subagent reads the spec faithfully and carries **none of the decision history** — not the frozen contracts, not CLAUDE.md, not the rulings. **It cannot tell a gap from a decision, and its output looks identical either way.** Section 5 ("Greg's own contradictions") is exactly where that failure lands. |
+>
+> **Known blind spot:** twelve agents each holding one asset means **nobody saw the corpus whole.** Verified by grep,
+> not assumed — this report contains neither of the two biggest cross-asset findings: the **carry-forward web**
+> (`prior_module_context` appears nowhere; "spine" here means the unrelated Aware/Prepare/Engage gradient) and the
+> **posture axes** (one stray B1 note, nothing systematic). Both are in `PER-ASSET-NOTES.md`, from a direct re-read.
+>
+> The re-audit that replaces this report's conclusions is tracked as **#185**; its quotes carry forward, its
+> conclusions do not.
 
-**Date:** 2026-08-06 · **By:** Claude Code (platform build)
+# Greg's science library vs. what we built — gap report (findings UNVERIFIED — see provenance above)
+
+**Date:** 2026-08-06 · **By:** Claude Code (platform build), via one subagent per asset
 **Supersedes the "live" column of** `G4L_Spec_vs_Built_Gap_Map_v0.1.md`, which stated honestly that its built-side
 column was *"inferred… not from me operating each asset in the running app."* That column is now **verified against
 the code**, asset by asset.
