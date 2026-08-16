@@ -21,6 +21,8 @@ import { loadConversation, appendMessages } from '../../lib/agent/conversation.t
 import { recentConsumedTitles } from '../../lib/bites/store.ts';
 import { getReclaimItems } from '../../lib/beats/store.ts';
 import { addReclaimItemForMember, addDoorForMember } from '../../lib/member/refine.ts';
+import { disconnectionContext } from '../../lib/agent/disconnection.ts';
+import { loadRaisedNotices, markNoticeRaised } from '../../lib/agent/disconnection-store.ts';
 import { markReclaimReclaimedByText, unmarkReclaimReclaimedByText, refineReclaimItemByText, removeReclaimItemByText, reorderReclaimList } from '../../lib/beats/store.ts';
 import { proposeEntry, playbookForAgent, isPlaybookSection, listPlaybook, matchKeptEntry, dismissEntry } from '../../lib/playbook/store.ts';
 import { createMeasure, logReadingByLabel, updateMeasure, archiveMeasure, measuresForAgent, findReclaimItemId, looksTrackable } from '../../lib/measure/store.ts';
@@ -304,6 +306,35 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
       }
     : null;
   const idScoreHistory = idqRows.rows.map((r) => Math.round(Number(r.id_score)));
+
+  // ── SOMETHING THAT DOESN'T CONNECT ──────────────────────────────────────────────────────────────────────────
+  // The engine half of "hold the whole picture" (WHAT_YOU_ARE_FOR). Everything it needs is already computed above
+  // — dimensions, the list with categories, their identity, their commitments — which is the point: this is not
+  // new data, it is the comparison nobody was making. See lib/agent/disconnection.ts for why the ENGINE decides
+  // whether it is true and the MODEL only decides how to say it.
+  const reclaimDetail = reclaimItems.map((r) => ({
+    text: r.text, category: r.category, state: r.state, tracked: linkedIds.has(r.id),
+  }));
+  let disconnectionLine: string | null = null;
+  try {
+    const raisedAlready = await loadRaisedNotices(db, memberId);
+    const found = disconnectionContext({
+      dimensions,
+      items: reclaimDetail,
+      identityNoun: dash.identityNoun ?? null,
+      commitments,
+      alreadyRaised: raisedAlready,
+    });
+    if (found) {
+      disconnectionLine = found.line;
+      await markNoticeRaised(db, memberId, found.raised); // marked on SERVE — see the store's note on that trade
+    }
+  } catch (e) {
+    // If companion_notice is not applied on this database yet, the READ throws and we land here with null: the
+    // Companion simply raises nothing. That is the correct failure. The dangerous one would be an empty
+    // raised-list read as "never asked", which would re-raise a settled observation on every single turn.
+    console.warn('disconnection notice skipped (raising nothing this turn):', (e as Error)?.message);
+  }
   const responses: unknown = latest?.responses;
   const idqAnswers = Array.isArray(responses)
     ? responses.map((score: number, i: number) => ({ dimension: dimensionForIndex(i), stem: itemStem(i), score }))
@@ -405,7 +436,7 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
     dimensions,
     idScoreHistory,
     idqAnswers,
-    reclaimDetail: reclaimItems.map((r) => ({ text: r.text, category: r.category, state: r.state, tracked: linkedIds.has(r.id) })),
+    reclaimDetail: reclaimDetail,
     movementLog: movementLog || undefined,
     beatsDone: beatRows.rows[0]?.n ?? 0,
     playbookKeepers: playbook.keepers,
@@ -420,6 +451,12 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
     // a failure here degrades the context honestly (CAT-38) rather than silently telling the Companion it has
     // never reached out — which would be a confident false memory about whether we showed up.
     awayRecall,
+    // SOMETHING THAT DOESN'T CONNECT — the engine half of WHAT_YOU_ARE_FOR's "hold the whole picture". Computed
+    // deterministically (lib/agent/disconnection.ts) and marked raised on serve, so it is offered once and their
+    // answer settles it. `softRead` on purpose: if companion_notice has not been applied on this database yet,
+    // the read fails, we get null, and the Companion simply does not raise anything — the WRONG failure would be
+    // an empty raised-list read as "never asked", which would re-raise a settled observation every session.
+    disconnection: disconnectionLine,
   };
   } catch (e) {
     // A supplementary read threw (prod drift / transient). Serve the minimal context so the cornerstone never 500s.

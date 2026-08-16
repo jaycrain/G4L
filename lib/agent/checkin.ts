@@ -179,6 +179,11 @@ export type CheckinContext = {
   // "you were away around this time last April" sayable at all. Carries its own voice guard, because recall
   // is exactly where praise sneaks in.
   awayRecall?: string | null;
+  // SOMETHING THAT DOESN'T CONNECT — the engine half of WHAT_YOU_ARE_FOR's "hold the whole picture". Computed
+  // deterministically in lib/agent/disconnection.ts (never inferred by the model from raw numbers), already
+  // deduped to at most ONE per turn, and already filtered against what has been raised before. When present it
+  // is a fully-formed instruction; the model decides only whether this conversation has room for it.
+  disconnection?: string | null;
 };
 
 export type CheckinMessage = { role: 'agent' | 'member'; text: string };
@@ -409,6 +414,8 @@ export function contextBlock(c: CheckinContext): string {
   return [
     degraded, // CAT-38: first, so the model reads the caveat before the (incomplete) facts
     c.today ? `Today is ${c.today}.` : null,
+    // Placed LAST among the facts, not here — a disconnection read before the member's own history would invite
+    // the model to open on it, and this is an observation offered in passing, never an agenda. See the tail.
     c.awayRecall ?? null,
     c.recentChanges && c.recentChanges.length
       ? `Since they last talked with you, their dashboard moved:\n${c.recentChanges.map((x) => `  • ${x}`).join('\n')}`
@@ -545,6 +552,12 @@ export function contextBlock(c: CheckinContext): string {
           .join('\n')}`
       : null,
     c.connect ? connectContextLines(c.connect) : null,
+    // LAST, deliberately. It arrives AFTER everything the member has actually said and done, because a
+    // disconnection read before their own history invites the model to lead with it — and this is an observation
+    // offered in passing, never an agenda. Already deduped to one and already filtered against what has been
+    // raised before, so by the time it appears here the only remaining decision is whether the conversation has
+    // room for it.
+    c.disconnection ?? null,
   ].filter(Boolean).join('\n');
 }
 
