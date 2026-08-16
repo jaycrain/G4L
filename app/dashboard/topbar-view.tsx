@@ -32,7 +32,7 @@ export default function TopbarView({
         <img className="rt-wordmark" src="/brand/g4l-wordmark.svg" alt="Grinta for Life" />
       </Link>
       <div className="rt-who">
-        {/* NO NAV ITEM AT ALL (Jay, 2026-08-15: "I don't even really think we need Playbook up there").
+        {/* NO NAV ITEM AT ALL — Jay dropped Playbook from the header on 2026-08-15.
             Program came out on 8/8 as a syllabus better reached from the hero breadcrumb; the Playbook stayed
             because it is the daily instrument. What changed is the HEADER'S JOB. With the app-wide Companion
             dock decided against the same day, Playbook was the only thing up here doing something different

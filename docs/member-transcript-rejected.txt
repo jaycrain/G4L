@@ -1,4 +1,4 @@
-# Strings EXCLUDED from the member transcript (app @ 24ce9ed · 2026-08-14)
+# Strings EXCLUDED from the member transcript (app @ 2d470e3 · 2026-08-16)
 # Not member copy: system prompts, multi-line fragments, code artifacts. Review when a real line goes missing.
 
 [lib/agent/onboarding-staged.ts] you’re trying to reclaim. We can always change it later.
@@ -173,7 +173,6 @@
 [app/onboarding/welcome.tsx] what you build; how you watch yourself change.
 [app/onboarding/welcome.tsx] two ways to see it: how far you’ve got to go, and the grit you’re growing.
 [app/onboarding/welcome.tsx] Clip in
-[app/onboarding/welcome.tsx] cyclists lock their shoes to the pedals when they mean it — committed, in for the long ride. Everyone falls at least once; you clip back in and keep going.
 [app/onboarding/welcome.tsx] Everything you do here goes into it — the moves that actually work for you, and what you learn about yourself along the way. Your
 [app/onboarding/welcome.tsx] Playbook
 [app/onboarding/welcome.tsx] isn’t ours to hand you. It’s already in you, and we help you draw it out. You’ll use it again and again.
@@ -229,7 +228,7 @@
 [lib/agent/reconnect.ts] ${xs.slice(0, -1).join(', ')}, and ${xs[xs.length - 1]}
 [lib/agent/reconnect.ts] You've named what you want back — ${serveReclaim(wants)}. Let's stay with those a moment —
 [lib/agent/reconnect.ts] not a new list, the real weight of it. Of the things you named, which do you feel the distance from most right now?
-[lib/agent/reconnect.ts] That's your inventory — what it cost, how far the drift ran. Not to sit in — to push off from; I've kept it for
+[lib/agent/reconnect.ts] That's your inventory — what it cost, how far the Fade ran. Not to sit in — to push off from; I've kept it for
 [lib/agent/reconnect.ts] you.  Now we look the other way — at the version of you that's still in there.
 [lib/agent/reconnect.ts] it. Today you look. Picture an ordinary Tuesday a year from now — but you've done the work, and the things on
 [lib/agent/reconnect.ts] your Reclaim List are real. How do you wake up, what do you reach for? Not the highlight reel — the ordinary
@@ -302,7 +301,7 @@
 [lib/agent/reconnect.ts] let the beat move — do not reflect it again or ask a further question.
 [lib/agent/reconnect.ts] CURRENT STAGE: the Drift beat (§2d Visioning). Draw out what the Fade COST and how far it has run — their
 [lib/agent/reconnect.ts] inventory, in their words. This is formative and reflective, never scored. After a couple of exchanges, reflect
-[lib/agent/reconnect.ts] the PATTERN of the drift (the recurring shape, the quiet thing they stopped noticing) IN THEIR WORDS, offered as
+[lib/agent/reconnect.ts] the PATTERN of the Fade (the recurring shape, the quiet thing they stopped noticing) IN THEIR WORDS, offered as
 [lib/agent/reconnect.ts] a check — call reflect_drift ONLY once it is genuinely drawn out; if thin, keep drawing out (never manufacture a
 [lib/agent/reconnect.ts] pattern). Name it to push OFF from, not to sit in. Once they confirm the pattern, accept it and let the beat
 [lib/agent/reconnect.ts] move — do not reflect it again or ask a further question. Do not diagnose.
@@ -645,7 +644,11 @@
 [app/momentum/week-grid.tsx] wk-cell wk-readonly${on ? ' on' : ''}
 [app/momentum/week-grid.tsx] ${r.label} — ${on ? 'logged' : 'not logged'}
 [app/momentum/week-grid.tsx] Today
+[app/momentum/week-grid.tsx] Day ${i + 1} scored ${s} of 10. Open that day's log.
+[app/momentum/week-grid.tsx] Day ${i + 1} not logged. Open that day's log.
 [app/momentum/week-grid.tsx] wk-cell${on ? ' on' : ''}${i === today ? ' today' : ''}${i > today ? ' ahead' : ''}${tappable ? '' : ' wk-readonly'}
+[app/momentum/week-grid.tsx] wk-dot${on ? ' on' : ''}${ahead ? ' ahead' : ''}
+[app/momentum/week-grid.tsx] ${r.label} — day ${i + 1}: ${ahead ? 'not yet' : on ? 'showed up' : 'not recorded'}
 [app/momentum/week-grid.tsx] ${r.label} — day ${i + 1}${on ? ', logged' : ''}. Open your log.
 [app/momentum/week-grid.tsx] ${r.label} — day ${i + 1}${on ? ', done' : ''}
 [app/momentum/week-grid.tsx] you can't get right back to the subpage easily
@@ -658,6 +661,13 @@
 [lib/playbook/reads.ts] The area you chose to focus on: your ${lower(primary)} life.
 [lib/playbook/reads.ts] Where your ratings point: your ${lower(primary)} life.
 [lib/playbook/reads.ts] Where momentum comes easiest: your ${lower(lever)} life.
+[app/quality-day/[memberId]/page.tsx] en-GB
+[app/quality-day/[memberId]/page.tsx] Today
+[app/quality-day/quality-day-log.tsx] en-GB
+[app/quality-day/quality-day-log.tsx] qd-score-btn${score === n ? ' is-on' : ''}
+[app/quality-day/quality-day-log.tsx] qd-el-btn${present.has(el) ? ' is-on' : ''}
+[app/quality-day/quality-day-log.tsx] What added the most value ${when}?
+[app/quality-day/quality-day-log.tsx] What was most missing ${when}?
 [lib/grinta/survey/instrument.ts] I have a general sense of what I am doing and why I am doing it
 [lib/grinta/survey/instrument.ts] unknown Grinta item code: ${code}
 [lib/grinta/survey/instrument.ts] unknown Grinta item code: ${code}
@@ -767,7 +777,7 @@
 [app/dashboard/redesign-dashboard.tsx] ${grinta.changePct > 0 ? '+' : ''}${grinta.changePct}%
 [app/dashboard/redesign-dashboard.tsx] Momentum
 [app/dashboard/redesign-dashboard.tsx] Badges
-[app/dashboard/topbar-view.tsx] Playbook
+[app/dashboard/topbar-view.tsx] where am I / how do I get home / who am I
 [app/dashboard/dashboard-triptych.tsx] Where You Are
 [app/dashboard/dashboard-triptych.tsx] the Athlete
 [app/dashboard/dashboard-triptych.tsx] Rebuild

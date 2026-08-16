@@ -50,8 +50,8 @@ export default async function ScoreMorePage({ params }: { params: Promise<{ memb
         ) : (
           <p className="sub-personal">You don’t have an ID Score yet. Your first one lands when you take the IDQ, in Reconnect.</p>
         )}
-        {/* Trimmed: the header states the 0–100 read verbatim. "Four corners of a life" is the part it cannot
-            carry, so that survives as its own sentence. */}
+        {/* Trimmed: the header states the 0-100 read verbatim. The four-corners framing is the part it cannot
+            carry, so that survives as its own sentence below. */}
         <p>It’s drawn from four corners of a life.</p>
 
         <h3>The shape of you</h3>
