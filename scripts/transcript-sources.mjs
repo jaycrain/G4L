@@ -22,7 +22,11 @@ export const SECTIONS = [
   // SOURCE for the subpage headers and (since 2026-08-13) for the tour lines too, so it has to be read here or
   // the copy Jay actually edits is invisible to canon.
   { title: 'The messaging ladder (panel · header · intro)', files: ['lib/content/panel-messaging.ts'] },
-  { title: 'Reconnect — the gateway', files: ['lib/agent/reconnect.ts', 'lib/idq/instrument.ts', 'lib/ceremony/reconnect-ceremony-beats.ts'] },
+  // legacy-letter.ts joined 2026-08-16, the day it was written — it carries Greg's six Legacy Letter prompts
+  // verbatim, and a member reads every one of them. Listed the same day the copy landed, because the guard
+  // caught it: this is the file being added to the list BEFORE it could ship missing from a bundle, which is
+  // exactly the failure the coverage ratchet exists to prevent.
+  { title: 'Reconnect — the gateway', files: ['lib/agent/reconnect.ts', 'lib/idq/instrument.ts', 'lib/ceremony/reconnect-ceremony-beats.ts', 'lib/reconnect/legacy-letter.ts'] },
   { title: 'Rewire — mind', files: ['lib/agent/rewire.ts', 'lib/curriculum/content/rewire.ts', 'lib/ceremony/rewire-ceremony-beats.ts'] },
   { title: 'Rebuild — body', files: ['lib/agent/rebuild.ts', 'lib/rebuild/why-instrument.ts', 'lib/rebuild/skills-instrument.ts', 'lib/ceremony/rebuild-ceremony-beats.ts'] },
   { title: 'Reclaim — the outcome', files: ['lib/agent/reclaim.ts', 'lib/reclaim/bigger-world-instrument.ts', 'lib/ceremony/reclaim-ceremony-beats.ts'] },
