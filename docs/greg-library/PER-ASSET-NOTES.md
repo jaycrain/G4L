@@ -14,13 +14,49 @@ incomplete search. All twelve assets have all three documents.
 Reading the **Companion Guidance** memos first — they instruct the Companion directly and bear hardest on
 WHAT_YOU_ARE_FOR. Notes are written as each is read, so nothing is lost to a context boundary.
 
+### ⚠ READ THIS FIRST — the corpus was ALREADY extracted on 2026-08-06. This file is a RE-read, and here is why.
+
+Discovered 2026-08-16, mid-reading: **`docs/greg-library/extracted/` already holds all 36 documents, extracted into
+1,065 atomic requirements** (R1.md … C3.md), each with Greg's verbatim words and a source, plus a code-verified
+`GAP-REPORT.md`. The line above about "only 2 of the 36 on local disk" is true of the **.docx sources** and false in
+spirit — it reads as though the corpus were unread. It is not.
+
+**So why re-read at all?** Because of *how* that extraction was made. `GAP-REPORT.md` states its own method:
+"Extraction was done **one agent per asset**." That is the fan-out Jay banned the following day
+([[no-agent-fanout-on-foundations]], 8/7: *"Using agents is where things have gone wrong in the past, over and over.
+This is foundational stuff."*). The standing rule from that ruling is the calibration to use here:
+
+| The extraction's… | Trust | Why |
+| :-- | :-- | :-- |
+| **verbatim quotes** | **HIGH — use them, don't redo them** | Mechanical and checkable. Spot-checked 8/16 against C1's Engineering Memo read directly: the eight-field data model, the 8-stage sequence and the stage numbering all match exactly. |
+| **per-asset open questions** | high | Several are sharper than my own prose notes (e.g. "*which* Reclaim List does C1 load — the onboarding-frozen one or the current, drifted one?"). |
+| **gap findings / contradictions** | **UNVERIFIED LEADS, not findings** | The known defect: "a subagent reads the spec faithfully and carries **none of the decision history** — it cannot distinguish a gap from a decision, and its output looks identical either way." |
+
+**And the thing a per-asset fan-out structurally CANNOT produce: cross-asset synthesis.** Twelve agents each holding
+one asset means nobody saw the corpus whole. Confirmed by grep, not assumed — `GAP-REPORT.md` contains **neither**
+of this file's two biggest findings: the **carry-forward web** (`prior_module_context` appears nowhere in it; its
+"spine" refers to the unrelated Aware/Prepare/Engage gradient) and the **posture axes** (only a single stray B1 note
+that didactic latitude is unused). Both findings exist only because one reader held all twelve at once.
+
+**That is what this re-read is for, and it should be scoped to it** — not to re-transcribe 1,065 requirements a
+quote index already holds.
+
 ### RESUME HERE
 
-**Read (12 of 36):** R1 · R2 · R3 · W1 · W2 · W3 · B1 · B2 · B3 · C1 · C2 · C3 — **the Companion Guidance set is
-COMPLETE.** The posture table and the carry-forward table at the bottom of this file are now closed over all twelve
+**Read directly (13 of 36):** all 12 **Companion Guidance memos** (R1 · R2 · R3 · W1 · W2 · W3 · B1 · B2 · B3 · C1 ·
+C2 · C3) + **C1's Engineering Memo**. The posture table and the carry-forward table below are closed over all twelve
 assets, not extrapolated.
-**Next:** the 12 **AI Engineering Memos**, then the 12 **Science Checks** (the Science Checks are SOURCE per
-[[greg-doc-precedence-and-levels]], so read them before settling anything the Guidance memos raised).
+
+**Next — and the priority is now precedence-driven, not sequential:**
+1. **The 12 Science Checks.** Highest value by two independent arguments: they are **SOURCE**
+   ([[greg-doc-precedence-and-levels]]), and per `GAP-REPORT.md` they had "**never been read before**" Aug 6 — so
+   their *only* reading, ever, was by the banned method. Everything the Guidance memos raised should be settled
+   against these.
+2. **The 11 remaining Engineering Memos** — lower priority. They are DERIVATIVE, and the quote index covers their
+   content densely (C1 alone: 43 Engineering-sourced requirements). Read for cross-asset shape, not for content.
+
+Use `extracted/<ASSET>.md` as the per-asset checklist while reading, so the re-read adds the layer that is missing
+rather than duplicating the layer that exists.
 
 Drive ids are recorded in each section below. To list the folder:
 `parentId = '10tBuyKxNxxrt0tFmwv9zU2ZWG9-pDmF7'` via the Drive search tool. Only 2 of the 36 are on local disk.
