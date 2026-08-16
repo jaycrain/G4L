@@ -148,6 +148,29 @@ const ALTERNATIVE_ROUTE: Record<string, { calls: string; why: string }> = {
   },
 };
 
+/**
+ * A surface whose escalation exists but sits on a route NO MEMBER CAN REACH.
+ *
+ * This category was added 2026-08-16 because the guard above was quietly satisfied by dead code. On 8/15 I "fixed"
+ * the IDQ crisis gap by wiring escalateCrisis into app/idq/actions.ts — and app/idq is orphaned: its only entry
+ * point is the v1 branch of `stagedEngineEnabled() ? '/dashboard' : '/idq'`, and prod runs staged. So a guard
+ * written specifically to catch "both halves work, the seam doesn't exist" was reporting all-clear on an empty
+ * room, one day after a naming difference defeated its predecessor. Twice in two days, same shape.
+ *
+ * Being parked is therefore NOT an exemption. Each entry must also name where the LIVE equivalent of that
+ * conversation is covered — and the guard checks that claim, so a parked surface can never hide a real gap.
+ */
+const PARKED: Record<string, { why: string; liveEquivalentSurface: string }> = {
+  idq: {
+    why:
+      'The IDQ moved into Reconnect; app/idq/* is the parked seed for the Cycle 2 retake (Jay, 2026-08-16) and is ' +
+      'linked from nowhere. Kept deliberately — it is the only working implementation of the retake conversation, ' +
+      'and the dashboard already promises members a next IDQ date.',
+    // The live IDQ is administered inside the Reconnect arc, whose action escalates as a session.
+    liveEquivalentSurface: 'session',
+  },
+};
+
 test('EVERY declared crisis surface actually reaches a human — the union is the enumeration', () => {
   const escSrc = readFileSync('lib/agent/crisis-escalation.ts', 'utf8');
   const union = escSrc.match(/export type CrisisSurface\s*=\s*([^;]+);/)?.[1];
@@ -159,7 +182,26 @@ test('EVERY declared crisis surface actually reaches a human — the union is th
   const files = [...walkTs('app'), ...walkTs('lib')].filter((f) => !f.endsWith('crisis-escalation.ts'));
   const sources = new Map(files.map((f) => [f, readFileSync(f, 'utf8')]));
 
+  const escalatesAs = (surface: string) =>
+    [...sources.values()].some((src) => {
+      for (const m of src.matchAll(/escalateCrisis\s*\(/g)) {
+        if (new RegExp(`surface:\\s*'${surface}'`).test(src.slice(m.index!, m.index! + 400))) return true;
+      }
+      return false;
+    });
+
+  // A parked surface must name where the live conversation is covered, and that claim is CHECKED — otherwise
+  // "parked" becomes the same silent pass the dead route already gave us.
+  for (const [surface, p] of Object.entries(PARKED)) {
+    assert.ok(
+      escalatesAs(p.liveEquivalentSurface),
+      `${surface} is parked and claims the live path is covered as '${p.liveEquivalentSurface}' — but nothing ` +
+      `escalates on that surface. The parking note is now a lie; fix the live path before trusting it.`,
+    );
+  }
+
   const unreached = surfaces.filter((s) => {
+    if (PARKED[s]) return false; // declared above, and its live equivalent was just verified
     const alt = ALTERNATIVE_ROUTE[s];
     if (alt) return ![...sources.values()].some((src) => src.includes(`${alt.calls}(`));
     // An escalateCrisis call carrying this surface, anywhere. Checked within a small window after the call so
