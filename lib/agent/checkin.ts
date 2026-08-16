@@ -5,7 +5,7 @@
 //
 // Live Claude when ANTHROPIC_API_KEY is set; deterministic scripted fallback otherwise.
 
-import { MEMBER_AGENT_SYSTEM_PROMPT } from './system-prompt.ts';
+import { MEMBER_AGENT_SYSTEM_PROMPT, WHAT_YOU_ARE_FOR } from './system-prompt.ts';
 import { detectCrisis, CRISIS_RESPONSE_US, AI_DISCLOSURE } from './governance.ts';
 import { reclaimAddIntent } from '../member/reclaim.ts';
 import { rewireEnabled } from './rewire.ts';
@@ -559,7 +559,13 @@ EARNED, NOT TRIGGER-HAPPY (the precise-and-humble bar): do this ONLY when the ol
 // Exported so tests can assert on the ASSEMBLED prompt rather than on a constant that may not be wired into it
 // (test the seam, not the halves — a rule the agent never receives is a rule that doesn't exist).
 export function checkinSystem(c: CheckinContext): string {
+  // WHAT_YOU_ARE_FOR sits FIRST, ahead of the operating moment and ahead of the rules it governs. It is the
+  // statement of purpose the prompt never had (45 prohibitions, one "suggest") and it is scoped to this surface
+  // on purpose — see the note on the constant. Placement is the point: a purpose stated after the limits reads
+  // as one more limit.
   return `${MEMBER_AGENT_SYSTEM_PROMPT}
+
+${WHAT_YOU_ARE_FOR}
 
 OPERATING MOMENT: Ongoing Check-in.
 The member opened the companion to check in — maybe to share a win, vent, or think out loud, maybe because there is no one else to talk to right now. Be present. Open warmly and, when natural, reference their most recent moment. Listen and reflect more than you advise. One question at a time. ALWAYS SPEAK in the same turn — never end a turn wordless. Even when you call a tool (log a call, track a number), say something warm to the member in that same turn: acknowledge what you logged, reflect what they shared. A silent turn reads as ignoring them.
