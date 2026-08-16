@@ -692,6 +692,84 @@ document that speaks at all, so they are the best available authority on HOW, wh
 
 ---
 
+### ⚠ CORRECTION — W3's "missing mindfulness half" was MY error, caught by reading the third document
+
+From the W3 **Science Check** I flagged: *"W3 has TWO parts at SOURCE — the False Start protocol AND a mindfulness
+practice… our `w3_logging` may be only the first half."* I marked it CHECK, not finding. Good, because it is wrong.
+
+W3's **Engineering Memo** states the product objective in three numbered items — build the protocol · **track Smart
+Choices, False Starts, triggers fired, campaign events and recovery over a monitoring week** · review the patterns.
+There is no separate meditation practice anywhere in it. **The "mindfulness practice" IS the daily noticing
+discipline, operationalized as the tracker.** The asset is called Mindful *Monitoring* for that reason.
+
+So `w3_logging` is plausibly both halves already. **CHECK downgraded**: verify the daily check-in asks the noticing
+questions (what fired, what the campaign said, whether the prepared response was used), not that a meditation
+feature is missing.
+
+**Why this is worth recording as a method note, not just a correction.** The Science Check's phrase "the second part
+of W3, the mindfulness practice" reads unambiguously as a second component. One document was enough to produce a
+confident wrong gap — the same failure mode as the fan-out, just slower. **A gap claim needs all three of an asset's
+documents before it is a finding.** Cf. [[extraction-proves-presence-not-absence]].
+
+### ⚠ A REAL TENSION: streaks. The two memos appear to contradict, and the resolution is a fine line.
+
+- **Companion Guidance (W3, B3, C3):** "The reward here is **not a streak or a score.**"
+- **Engineering (W3):** track `consecutive_streak` (current and longest); "**Generate streak affirmations at
+  milestones (3, 5, 7 days)**"; UX req 4 "**Streak and pattern visibility** — the Member can see their tracking
+  rhythm."
+
+They resolve, but only precisely:
+
+> **A streak may be tracked, shown, and affirmed as a RHYTHM. It may never be the reward, a score, or a grade.**
+> The engineering off-target list forbids "a compliance score, mindfulness score, or **percentage**" — a streak is
+> none of those. The allowed affirmation is Greg's own: *"You've checked in five days in a row — that's a real
+> rhythm."* The forbidden move is making the number the point, or affirming it above honesty and recovery use.
+
+Flattening this in either direction is wrong: ripping streaks out obeys the Guidance memo and breaks the Engineering
+memo's habit-formation spec; making the streak a headline metric does the reverse. **Relevant to our Momentum and
+practice-week surfaces** — see [[momentum-is-the-long-view]].
+
+### R1 — Identity Distance Questionnaire · AI Engineering Memo
+
+**Confirms the house pattern** (see below). R1-specific engineering worth having:
+
+- **Silence is a first-class engineering concern with a specified algorithm**, and it is the nicest piece of design
+  in the corpus: do not fill silence with suggested ratings → gentle re-prompt (*"Take your time — sometimes the slow
+  ones are the real ones"*) → after a second silence, offer to skip the domain → **never frame silence as refusal or
+  failure.** `silence_events` is tracked as conversation metadata. "Silence is expected and **is itself data.**"
+- **⚠ SKIPPING IS EXPLICITLY PERMITTED IN R1 — and this needs Jay+Greg, not me.** "allow the Member to skip a domain
+  if they have nothing to share there"; `domains_skipped` is a stored output; "treats skipped domains as failure" is
+  listed as **off-target**. But our IDQ is a **frozen 24-item instrument** whose scoring presumably requires
+  completion, and I have been wrong here before by relaxing Greg's instrument on my own authority
+  ([[dont-relax-the-experts-instrument]]). **I am not resolving this.** Flagging that Greg's own engineering memo
+  permits skipping the conversational domain ratings, which may or may not extend to the scored IDQ items — a
+  question for Greg, with the scoring arithmetic computed first.
+- **The ID Score line, read correctly this time.** The must-not is "**compute a score from the Member's ratings and
+  present it as a verdict**" — the operative words are *as a verdict*, not *compute*. The 8/7 subagent read this as a
+  governance violation in our showing an ID Score. It is not. It is a constraint on **framing**, and we already hold
+  it. Recorded because the misreading is easy and was made once.
+- The six domains appear again: **identity · body · energy · relationships · work · outlook.** So *both* derivative
+  documents say six, V4 says three, our frozen IDQ is four dimensions × 24 items. The open question is now sharper,
+  and V4 (SOURCE) still decides it.
+- **90 days** appears again (UX req 9). Consistent across all three R1 documents. Our 60 is the ruling; see above.
+
+### W3 — Mindful Monitoring · AI Engineering Memo
+
+The **sustained-asset variant** of the house pattern, adding four sections the single-session assets don't have:
+**Habit formation engineering** (the six principles mapped to concrete engineering actions), **Habit formation
+state**, **Barrier handling logic** (an 8-row Explore/Reflect/Collaborate table), and a **tracker field spec** with
+design constraints.
+
+The tracker constraints are the load-bearing part and they are testable:
+
+> "The Member **self-classifies** a choice as Smart or False Start — **the system never does**." · "Both… are logged
+> the same way — **as data, not verdicts**." · "usable in **under 60 seconds**." · "The tracker **must not display a
+> running score, percentage, or compliance grade**."
+
+**W3 loads FIVE upstream assets** — `prior_module_context` = R1 IDQ · R2 Fade Doors · R3 Legacy Letter · W1
+disinformation statements + captured values · W2 visualization text + anchor element. That is wider than B3's three
+and C3's two. The web is denser than the Guidance memos implied.
+
 ### C1 — ReClaim Readiness · AI Engineering Memo
 
 **Read 2026-08-16.** Local copy: `~/Desktop/Development/Program_Content/Dr.Welk/AI Engineering Memo for ReClaim
