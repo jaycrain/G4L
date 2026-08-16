@@ -14,6 +14,18 @@ incomplete search. All twelve assets have all three documents.
 Reading the **Companion Guidance** memos first — they instruct the Companion directly and bear hardest on
 WHAT_YOU_ARE_FOR. Notes are written as each is read, so nothing is lost to a context boundary.
 
+### RESUME HERE
+
+**Read (8):** R1 · R2 · R3 · W1 · W2 · W3 · B1 · B2 — all Companion Guidance memos.
+**Next:** B3, then C1 · C2 · C3 (finishing the Companion Guidance set), then the 12 AI Engineering Memos, then the
+12 Science Checks.
+
+Drive ids are recorded in each section below. To list the folder:
+`parentId = '10tBuyKxNxxrt0tFmwv9zU2ZWG9-pDmF7'` via the Drive search tool. Only 2 of the 36 are on local disk.
+
+Do not act on #185 (the re-audit) until the reading is done — I made a confident structural claim on a partial
+corpus once already today and it was wrong.
+
 Precedence reminder ([[greg-doc-precedence-and-levels]]): Gated Assets V4 + Science Check are SOURCE; the Guide
 and Memo are DERIVATIVE. Where they disagree, V4 wins.
 
@@ -344,6 +356,50 @@ Rule 10: **"A False Start followed by a return to the protocol is a win, not a f
 
 ---
 
+### B1 — What Is Your Why? · AI Companion Guidance Memo
+
+**Read 2026-08-16.** Drive id `1JmxhjJR4r32_MJkffh1cSXpPsBtcTBoe`.
+
+**Coach from the start, with DIDACTIC LATITUDE** — a third stance. Justified by the MI Guidebook's framing of the
+Health Coach as "**the bridge between information and behavior.**" Autonomy primary.
+
+**The non-judgmental baseline principle** is the memo's most important rule. The motivational baseline is "a
+reference point, not a verdict… valid wherever it starts — intrinsic, extrinsic, mixed, or uncertain." Never praise
+high intrinsic motivation as better, never frame external as less-than. "Wherever you are right now is the place
+to start." · "Mixed motivation is normal."
+
+**Four things the Companion MAY teach** (share briefly, then return to elicitation): quality vs amount of
+motivation · motivation shifts over time · the CFW process/product principle (activity and eating are the PROCESS;
+fitness, health, wellness are the PRODUCTS) · activity and eating are related but distinct domains.
+
+**A barrier table** — member performs "good" motivation / feels shame about external motivation / is uncertain /
+is flat / resists — each with an MI response. Same structure appears in B2; likely in all twelve. Worth extracting
+as a shared pattern rather than per-asset copy.
+
+---
+
+### B2 — Appreciating Your Strengths and Weaknesses · AI Companion Guidance Memo
+
+**Read 2026-08-16.** Drive id `1FXG5InrwaxTLuvISh9YqPd_yz3RLrzNy`.
+
+Coach + didactic latitude again, but **competence is primary here** (autonomy was primary in B1) — the SDT anchor
+shifts per asset even when the posture doesn't.
+
+**"A development map, not a verdict"** — the profile is learnable skills, not fixed traits; weaknesses are
+"planning information, not character flaws." This one we appear to have: our `skillProfile` context line already
+says "a development map, not a verdict."
+
+The three-factor teaching (Predisposing / Enabling / Reinforcing) is specified with sample phrasing for each.
+
+**Confirms provenance:** this memo is what Greg pasted into "Refinements and Comments - ReBuild B2" (8/5) when he
+said B2 "seemed too brief and ended too abruptly." So that Refinements note was him quoting his own memo back at
+us — the depth he wanted was already written down here, eleven documents away.
+
+**Habit formation is seeded, not central** — "some of these skills, especially the planning and self-monitoring
+ones, are the same skills we'll be using in the next activity." Full habit work is B3.
+
+---
+
 ## THE POSTURE TABLE (emerging — six assets in)
 
 `companion_mode` is assigned per asset, and it is not constant within an asset. What we have so far:
@@ -357,7 +413,8 @@ Rule 10: **"A False Start followed by a return to the protocol is a win, not a f
 | W2 | **guide → coach** | transitions at the boundary between front-end session and practice week |
 | W3 | **coach from first interaction** | no guide phase; "the front-end protocol shapes everything" |
 
-| B1 | **coach from the start, with DIDACTIC LATITUDE** | breaks the prediction below |
+| B1 | **coach from the start, with DIDACTIC LATITUDE** | breaks the prediction below · autonomy primary |
+| B2 | coach + didactic latitude | **competence** primary (not autonomy) |
 
 **PREDICTION FAILED — recorded because it was made.** I predicted B1/B2 guide and only the third asset coach.
 B1 is explicitly "Pivot to coach at the start of B1." So posture is NOT a function of position in the R. What B1
