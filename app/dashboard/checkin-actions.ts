@@ -20,7 +20,6 @@ import {
 import { loadConversation, appendMessages } from '../../lib/agent/conversation.ts';
 import { recentConsumedTitles } from '../../lib/bites/store.ts';
 import { getReclaimItems } from '../../lib/beats/store.ts';
-import { isVagueReclaim } from '../../lib/beats/category.ts';
 import { addReclaimItemForMember, addDoorForMember } from '../../lib/member/refine.ts';
 import { markReclaimReclaimedByText, unmarkReclaimReclaimedByText, refineReclaimItemByText, removeReclaimItemByText, reorderReclaimList } from '../../lib/beats/store.ts';
 import { proposeEntry, playbookForAgent, isPlaybookSection, listPlaybook, matchKeptEntry, dismissEntry } from '../../lib/playbook/store.ts';
@@ -493,13 +492,12 @@ export async function sendCheckin(memberId: string, memberMessage: string): Prom
           const trackNudge = looksTrackable(res.text)
             ? ' This goal has a measurable number in it — consider OFFERING to set up a tracker for it (ask first, never force).'
             : '';
-          // FOG IS A NOTE NOW, NOT A REFUSAL (2026-08-16). This used to reject the write and tell the model to
-          // "sharpen it WITH them, then call again" — which built an unescapable loop for a member whose wording
-          // contained "feel". Saved either way; the model is simply told not to expect a goal-close yet.
-          const fogNote = isVagueReclaim(res.text)
-            ? ' NOTE (do not raise this unprompted): it is worded as an inner state, so no goal-close will bind to it yet — it advances as a plain rep. That is fine. It IS saved, their wording stands, and you must NEVER ask them to rephrase it as a condition of keeping it. If a natural moment comes much later you may help them make it concrete.'
-            : '';
-          return { ok: true, message: `Saved "${res.text}" to their Reclaim List (category: ${res.category}). It now shows on their dashboard and the Beat engine can work toward it — acknowledge it briefly and warmly.${trackNudge}${fogNote}` };
+          // THE FOG NOTE IS GONE (2026-08-16, second half). It existed only to warn the model that an
+          // inner-state item would never bind to a goal close — a consequence of the filter in
+          // lib/beats/serves.ts, which is now removed. Keeping it would make it a LIE: these items bind
+          // like any other now. A note describing behaviour we no longer have is worse than no note,
+          // because the model acts on it. One fact, one site.
+          return { ok: true, message: `Saved "${res.text}" to their Reclaim List (category: ${res.category}). It now shows on their dashboard and the Beat engine can work toward it — acknowledge it briefly and warmly.${trackNudge}` };
         }
         if (res.reason === 'duplicate') {
           return { ok: false, message: 'Not saved — that is already on their Reclaim List. Let them know it is already there.' };

@@ -91,20 +91,28 @@ test('resolveClose: components per Decision 4, and the reclaimed threshold', () 
   assert.deepEqual({ c: rep.feedsConsistency, reach: rep.feedsReach, item: rep.itemUpdate }, { c: true, reach: false, item: null });
 });
 
-test('vague Reclaim items are caught, so a goal Beat never points a close at fog', () => {
+test('isVagueReclaim still classifies — it just no longer gates anything', () => {
+  // The function is intact and its judgement is unchanged. What changed (2026-08-16) is that NOTHING acts on
+  // it: not the write paths, and no longer bindGoalItem either. Kept because the classification may yet be a
+  // useful soft signal somewhere honest, and because deleting it would lose the record of what it got wrong.
   assert.equal(isVagueReclaim('feeling better about myself'), true);
   assert.equal(isVagueReclaim('be happier'), true);
   assert.equal(isVagueReclaim('ride before work without dreading it'), false);
   assert.equal(isVagueReclaim('get body weight down to 190'), false);
+});
+
+test('an inner-state item binds a goal Beat, and ordering is unaffected', () => {
   const goal = beatById('RWR-FOO-02')!; // goal, serves physical
-  // only a vague item in the category → no bind → close degrades to rep (no "did this move you toward fog")
-  const vagueOnly = [item({ category: 'physical', text: 'feel better about myself' })];
-  assert.equal(bindGoalItem(goal, vagueOnly), null);
-  assert.equal(effectiveCloseType(goal, vagueOnly), 'rep');
-  // a specific item in the category still binds normally
-  const withSpecific = [vagueOnly[0]!, item({ id: 'p2', category: 'physical', text: 'ride before work' })];
-  assert.equal(bindGoalItem(goal, withSpecific)!.text, 'ride before work');
-  assert.equal(effectiveCloseType(goal, withSpecific), 'goal');
+  // Used to assert null here — "no 'did this move you toward fog'". But that close IS answerable, and the
+  // regex matches Greg's own examples of good refinement, so refusing to bind withheld the goal close from
+  // the most personal items on a member's list. See tests/reclaim-vagueness-gate.test.ts.
+  const innerOnly = [item({ category: 'physical', text: 'feel better about myself' })];
+  assert.equal(bindGoalItem(goal, innerOnly)!.text, 'feel better about myself');
+  assert.equal(effectiveCloseType(goal, innerOnly), 'goal', 'no longer degrades to rep');
+  // Ordering is unchanged: least-recently-served first, ties by entry order — not by wording.
+  const both = [innerOnly[0]!, item({ id: 'p2', category: 'physical', text: 'ride before work' })];
+  assert.equal(bindGoalItem(goal, both)!.text, 'feel better about myself', 'first by sortOrder, not by style');
+  assert.equal(effectiveCloseType(goal, both), 'goal');
 });
 
 test('inferCategory maps to an IDQ dimension, defaulting to self', () => {
@@ -184,14 +192,16 @@ test('any-goal: companion marks a life item reclaimed — Journey ticks, not sho
   const refined = after.find((i) => i.text.includes('Brainard'))!;
   assert.equal(refined.category, 'physical'); // category preserved
   assert.ok(!after.some((i) => i.text === 'ride before work')); // old wording gone
-  // REFINING TO FOG IS ALLOWED (changed 2026-08-16). It used to be refused, and that cost a member her own
-  // sentence — see tests/reclaim-vagueness-gate.test.ts. Her wording is hers; fog is caught downstream in
-  // bindGoalItem, which simply never binds a goal-close to it.
+  // REFINING TO AN INNER STATE IS ALLOWED — AND IT STILL BINDS (2026-08-16, both halves of one fix).
+  // Morning: the write path stopped refusing it; that refusal had cost a member her own sentence.
+  // Afternoon: bindGoalItem stopped skipping it too. Greg's worked examples of a WELL-refined item are worded
+  // exactly this way ("feel physically capable and steady again"), so skipping them meant declining to serve
+  // the goals the curriculum teaches members to write. See tests/reclaim-vagueness-gate.test.ts.
   const fog = await refineReclaimItemByText(db, memberId, 'Brainard', 'just feel better about riding');
   assert.equal(fog.ok, true, 'a member may reword her own item however she wants');
-  assert.equal(bindGoalItem({ close_type: 'goal', serves: ['physical'] } as never,
-    (await getReclaimItems(db, memberId)).filter((i) => i.text.includes('feel better')) as never), null,
-    'and the foggy wording simply never binds a goal Beat');
+  assert.ok(bindGoalItem({ close_type: 'goal', serves: ['physical'] } as never,
+    (await getReclaimItems(db, memberId)).filter((i) => i.text.includes('feel better')) as never),
+    'and it binds to a goal Beat — "did that move you toward it?" is answerable');
 });
 
 // ---- DB-backed slice proof (Tom) ------------------------------------------------------

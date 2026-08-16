@@ -15,8 +15,23 @@
 // the cost is a member losing her own sentence.
 //
 // So the fix is not a smarter regex — the next member will phrase it differently. The fix is that the write
-// paths stop consulting it at all. Fog is still caught downstream in bindGoalItem, exactly where it was
-// designed to be caught, and the item is still SAVED.
+// paths stop consulting it at all.
+//
+// ── AND THEN THE SECOND HALF, LATER THE SAME DAY ───────────────────────────────────────────────────────────
+// The morning's fix claimed fog was "still caught downstream in bindGoalItem, exactly where it was designed to
+// be caught." That was the surviving half of the same wrong idea, and it survived because nothing failed
+// loudly: the item saved, and then silently never bound to a goal close.
+//
+// Greg's RECLAIM Gated Assets V4 (substep 2.3, "Refine the list") settled it. His worked examples of a WELL-
+// refined Reclaim item — the OUTPUT the program is designed to produce — are:
+//     "feel physically capable and steady again"
+//     "feel more connected to people I care about"
+// Both match the fog regex. The filter was refusing to serve precisely the goals the curriculum teaches members
+// to write. And the premise was wrong as well as the placement: "did this move you toward feeling better about
+// yourself?" is not unanswerable — it is close kin to the questions C1 is built out of.
+//
+// bindGoalItem no longer consults isVagueReclaim. The function survives (it shares a module with inferCategory,
+// and may yet be a useful soft signal somewhere honest), but nothing gates a member's own words on it.
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -66,19 +81,51 @@ test('rewording is not a hostage either', async () => {
   assert.equal((await getReclaimItems(db, id))[0]!.text, DONNA);
 });
 
-test('fog is still caught — downstream, where it was designed to be caught', async () => {
-  // The safety net is not weakened, it is restored to its intended place. A genuinely foggy item saves, and
-  // then simply never binds to a goal Beat (it falls through to a "did you do it?" rep until sharpened).
+test('an inner-state goal BINDS — the second half of the same fix', async () => {
+  // Reversed 2026-08-16. This used to assert `bound === null`, on the theory that a fog close is unanswerable.
+  // It isn't, and the filter was silently withholding the goal close from her most personal item.
   const { db, id } = await member();
   await addReclaimItemForMember(db, id, 'feel better about myself');
   const items = await getReclaimItems(db, id);
   assert.equal(items.length, 1, 'saved — the member is not blocked');
-  assert.equal(isVagueReclaim(items[0]!.text), true, 'still recognised as fog');
-  const bound = bindGoalItem(
-    { close_type: 'goal', serves: ['self'] } as never,
-    items as never,
-  );
-  assert.equal(bound, null, 'and no goal-close binds to it — the real safety net, unchanged');
+  assert.equal(isVagueReclaim(items[0]!.text), true, 'the regex still matches it — that is no longer decisive');
+  const bound = bindGoalItem({ close_type: 'goal', serves: ['self'] } as never, items as never);
+  assert.ok(bound, 'and it BINDS: "did that move you toward feeling better about yourself?" is answerable');
+  assert.equal(bound!.text, 'feel better about myself');
+});
+
+test("GREG'S OWN EXEMPLAR of a well-refined item must be servable", async () => {
+  // RECLAIM Gated Assets V4, substep 2.3 — his model of what refinement should PRODUCE. If the engine cannot
+  // serve these, the curriculum teaches members to write goals the product then declines to work toward.
+  const GREG_REFINED = ['feel physically capable and steady again', 'feel more connected to people I care about'];
+  for (const text of GREG_REFINED) {
+    const { db, id } = await member();
+    await addReclaimItemForMember(db, id, text);
+    const items = await getReclaimItems(db, id);
+    assert.equal(isVagueReclaim(text), true, `precondition: "${text}" trips the old fog regex`);
+    const bound = bindGoalItem({ close_type: 'goal', serves: ['any'] } as never, items as never);
+    assert.ok(bound, `Greg's refined exemplar must bind to a goal Beat: "${text}"`);
+  }
+});
+
+test("Donna's own sentence binds to a goal Beat", async () => {
+  // The whole point, end to end: her words save, AND the engine will work toward them.
+  const { db, id } = await member();
+  await addReclaimItems(db, id, [{ text: DONNA, category: 'outlook' }]);
+  const items = await getReclaimItems(db, id);
+  const bound = bindGoalItem({ close_type: 'goal', serves: ['outlook'] } as never, items as never);
+  assert.ok(bound, 'her item is servable, not just storable');
+  assert.equal(bound!.text, DONNA, 'and it is still her sentence, verbatim');
+});
+
+test("'life' items still never bind — that exclusion is unrelated and stands", async () => {
+  // Guard against over-correcting: the fix removed the FOG filter, not the life-category rule. Life items are
+  // tracked and witnessed, never coached (docs/reclaim-anygoal.md), and they advance via the companion mark.
+  const { db, id } = await member();
+  await addReclaimItems(db, id, [{ text: 'a creative role that pays the bills', category: 'life' }]);
+  const items = await getReclaimItems(db, id);
+  const bound = bindGoalItem({ close_type: 'goal', serves: ['any'] } as never, items as never);
+  assert.equal(bound, null, 'life items are still not coached by a goal Beat');
 });
 
 test('the genuinely empty case is still refused — this is not a free-for-all', async () => {
