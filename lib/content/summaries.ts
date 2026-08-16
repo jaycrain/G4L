@@ -74,11 +74,11 @@ export const ASSET_SUMMARIES: Record<AssetId, Summary> = {
   },
   c1: {
     short: 'Revisit your Reclaim List now that you know yourself better.',
-    full: 'The goals you named at the start aren’t always the ones that stay most meaningful once you’ve done the work. After looking hard at your identity, your patterns, and your habits, you revisit your Reclaim List — some goals now feel more real and more possible, others feel borrowed or vague. Research suggests goals hold best when they’re truly yours and fit who you’re becoming. You refine the list so your next moves are grounded in what actually matters to you.',
+    full: 'The goals you named at the start aren’t always the ones that stay most meaningful once you’ve done the work. After looking hard at your identity, your patterns, and your habits, you revisit your Reclaim List — some goals now feel sharper, some feel bigger than when you wrote them, others feel borrowed or vague. Research suggests goals hold best when they’re truly yours and fit who you’re becoming. You refine the list so your next moves are grounded in what actually matters to you.',
   },
   c2: {
     short: 'Check in on how your world has expanded from where you started.',
-    full: 'Struggle isn’t always loud — often it looks like a life quietly shrinking: pulling back, exploring less, imagining less. This is a look at the opposite. Is your world getting more open, more active, more connected, more full of what’s possible? Research suggests people do better when they stay engaged with what matters and keep moving toward a wider life. You come away with a clearer read on whether you’re reclaiming range and participation, not only progress.',
+    full: 'Struggle isn’t always loud — often it looks like a life quietly shrinking: pulling back, exploring less, imagining less. This is a look at the opposite. Is your world getting wider — more open, more willing, more connected to what matters? A bigger world doesn’t have to mean a busier one. Research suggests people do better when they stay engaged with what matters and keep moving toward a wider life. You come away with a clearer read on whether you’re reclaiming range and participation, not only progress.',
   },
   c3: {
     short: 'Track the days that feel like the life you’re building.',
