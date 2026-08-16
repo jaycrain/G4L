@@ -16,9 +16,11 @@ WHAT_YOU_ARE_FOR. Notes are written as each is read, so nothing is lost to a con
 
 ### RESUME HERE
 
-**Read (9):** R1 · R2 · R3 · W1 · W2 · W3 · B1 · B2 · B3 — all Companion Guidance memos.
-**Next:** C1 · C2 · C3 (finishing the Companion Guidance set), then the 12 AI Engineering Memos, then the
-12 Science Checks.
+**Read (12 of 36):** R1 · R2 · R3 · W1 · W2 · W3 · B1 · B2 · B3 · C1 · C2 · C3 — **the Companion Guidance set is
+COMPLETE.** The posture table and the carry-forward table at the bottom of this file are now closed over all twelve
+assets, not extrapolated.
+**Next:** the 12 **AI Engineering Memos**, then the 12 **Science Checks** (the Science Checks are SOURCE per
+[[greg-doc-precedence-and-levels]], so read them before settling anything the Guidance memos raised).
 
 Drive ids are recorded in each section below. To list the folder:
 `parentId = '10tBuyKxNxxrt0tFmwv9zU2ZWG9-pDmF7'` via the Drive search tool. Only 2 of the 36 are on local disk.
@@ -445,43 +447,201 @@ days and product = wellness.
 
 ---
 
-## THE POSTURE TABLE (emerging — six assets in)
+### C1 — ReClaim Readiness · AI Companion Guidance Memo
 
-`companion_mode` is assigned per asset, and it is not constant within an asset. What we have so far:
+**Read 2026-08-16.** Drive id `1baL_I9h0qSmDb7mTuWbnQn7TvpZWHRU8`.
 
-| Asset | Posture | Note |
-| :-- | :-- | :-- |
-| R1 | guide | "readiness to elevate to coach if the Member signals they want to act" |
-| R2 | guide | |
-| R3 | guide + "generative edge" | forward-writing, still not coach |
-| W1 | guide | same elevation clause as R1 |
-| W2 | **guide → coach** | transitions at the boundary between front-end session and practice week |
-| W3 | **coach from first interaction** | no guide phase; "the front-end protocol shapes everything" |
+#### RESOLVES the B1 cross-reference — and it means the posture table needs TWO axes
 
-| B1 | **coach from the start, with DIDACTIC LATITUDE** | breaks the prediction below · autonomy primary |
-| B2 | coach + didactic latitude | **competence** primary (not autonomy) |
+B1's memo said that in C1/C2/C3 "the Companion stayed almost entirely in **evocative** mode." Read directly, C1 says
+something more precise: **"the pivot happens at the start of the C1 activity"** — it IS coach — but "the coaching
+stance here is **evocative and reflective, not directive or persuasive.**"
 
-**PREDICTION FAILED — recorded because it was made.** I predicted B1/B2 guide and only the third asset coach.
-B1 is explicitly "Pivot to coach at the start of B1." So posture is NOT a function of position in the R. What B1
-adds instead is a distinct third stance: **coach + didactic latitude**, justified by the MI Guidebook's framing of
-the Health Coach as "the bridge between information and behavior."
+So *evocative* was never a third value of `companion_mode`. It is a **second, orthogonal axis**: what the coach is
+allowed to bring. B1/B2 are coach + **didactic latitude** (may teach four named things); C1/C2/C3 are coach +
+**evocative only** (may teach nothing). Same mode, opposite permission. A single enum cannot carry this — see the
+rebuilt table below.
 
-B1's memo also tells us about Reclaim without my having read it yet: "This is what makes B1's coaching stance
-distinct from C1, C2, and C3. **In those assets, the Companion stayed almost entirely in evocative mode.**" So
-Reclaim leans evocative/guide — to be confirmed against the C memos.
+Autonomy **primary**, competence supporting, and the reason is stated: the member is "returning to an earlier set of
+aspirations through a more informed version of themselves."
 
-So there are at least three postures, assigned per asset for stated reasons, and the assignment must be read from
-each memo rather than derived.
+#### The six core questions, with Greg's phrasing and follow-ups
 
-**We have two modes (conversation, coach) and no `guide`.** Whatever we build should model the transition, not
-just a starting value.
+We built C1 around revisiting the Reclaim List; Greg specifies the interrogation exactly. Each has a *function* and a
+*follow-up*, and the follow-ups are where the work is:
+
+1. **Which still matter most?** — "which items still feel most alive?" → "Has its meaning changed, or just its priority?"
+2. **Which feel less important?** — de-prioritize without shame → "Did this goal lose meaning, or did something else
+   become more important?"
+3. **Which were vague, borrowed, or aspirational?** — the **self-concordance test** → *"Would this still matter if no
+   one else expected it of you?"*
+4. **Which feel more concrete now?** → "What would this look like in an ordinary day?"
+5. **Which new priorities have emerged?** → "Does this feel durable, or newly forming?"
+6. **What belongs at the top now?** → "What makes it more central than the others right now?"
+
+**CHECK against what we shipped.** Q3 is the sharpest and the one most likely absent — it is a test for a *borrowed*
+goal, and it is the only question in the set that can remove an item for a reason other than "it stopped mattering."
+Also note Q5: C1 must ADD, not just edit. If our C1 only re-ranks and prunes, half the instrument is missing.
+
+#### Rules
+
+- **"Do not become the arbiter of the Member's priorities."**
+- Treat the earlier list as "a valid earlier draft, not an error"; revision is **development, not inconsistency**.
+- Affirm the discernment, never the choice: "You're not just editing words — you're asking which of these is actually
+  yours." Avoid "Great choice — that's definitely the right priority."
+- Habit anchoring is a **light touch** only; save it for B3/C3.
+
+Barrier table (5 rows), best one: **member wants to keep everything and rank nothing lower** → normalize the
+difficulty, then "ask what they would notice if they had to choose."
 
 ---
 
-## THE PATTERN ACROSS ALL FOUR SO FAR
+### C2 — The Bigger World Audit · AI Companion Guidance Memo
 
-`prior_module_context` is not an R1 detail. **Every memo so far specifies carry-forward as a named mechanism**, and
-each names its downstream consumer:
+**Read 2026-08-16.** Drive id `1Ndqczzv2a62jlijGsb6_MSIlGLQbr0lp`.
+
+Coach, evocative, **affirming of approach-oriented growth**. **Competence primary** (autonomy supporting) — the
+audit's job is to let the member recognise their own growth as evidence of capability, "without inflating it."
+
+#### ⚠ SAME SHAPE AS R3 — the memo's question list is not the instrument's
+
+This memo gives **six** core questions. Greg's C2 instrument (Gated Assets V4, SOURCE) is **Q1–Q8**, and their
+**order is load-bearing** — running them out of order is the bug we already shipped and fixed once
+([[instrument-order-is-part-of-the-instrument]]).
+
+> **Do not reconcile C2 toward this memo.** Precedence says V4 wins ([[greg-doc-precedence-and-levels]]), and we have
+> already paid for getting C2's sequence wrong. The memo's six are useful as **follow-up and reflection material**
+> layered onto V4's eight — never as a replacement list. This is the second memo (after R3) whose prompt list
+> contradicts V4; treat "the Guidance memo lists different prompts" as an expected, resolved condition, not a finding.
+
+#### The five dimensions of expansion
+
+movement · connection · curiosity · willingness · future possibility. Named as what the audit *examines* — worth
+checking whether our C2 surfaces them as the frame or leaves the member to infer it.
+
+#### NEW — "support dashboard engagement" is a listed coaching function, with a hard limit
+
+> Do: "In your activity log, you've been moving more consistently. **Does that feel like part of a bigger shift, or
+> is it still just a habit?**"
+> Don't: "Your step count is up 20%, **so your world is objectively bigger.**"
+
+This is the cleanest statement anywhere in the corpus of how the Companion may use our own telemetry about a member:
+**as a question offered back, never as evidence that settles the question.** "The Member's perception of their own
+life's shape **is the data** — the Companion does not overrule it with theoretical claims." That belongs in the
+governance posture generally, not just C2.
+
+#### The two barriers that are live risks for us
+
+- **Member minimizes expansion ("that doesn't count")** → reflect "You may be discounting things that are actually
+  signs of movement," then **ask what would count.**
+- **Member overstates expansion to please the Companion** → "ask for the concrete version; **resist mirroring the
+  inflation.**" A Companion that mirrors enthusiasm manufactures a result — and C2 is the asset where that would
+  corrupt an outcome measure.
+
+Contraction is explicitly a valid finding: "Contraction is not framed as failure; expansion is not framed as a
+requirement." Never imply the member "should" be further along.
+
+---
+
+### C3 — Quality Days · AI Companion Guidance Memo
+
+**Read 2026-08-16.** Drive id `1jCyR7UlN_uYNfaRhI5i1459t9NiDe22w`.
+
+Coach **from the first interaction**, sustained across the whole monitoring period. **Competence and autonomy
+CO-primary.** Habit formation central. Structurally the sibling of B3 — and Greg says so outright: the process/product
+parallel is "the same logic as tracking physical activity to build fitness."
+
+#### The five-step front-end sequence (before any tracking starts)
+
+1. **Elicit their own language** — "When you think of a day that felt like a good day — not perfect, just good — what
+   was in it?"
+2. **Make it concrete** — name two or three things.
+3. **Test for manageability** — "Does it feel like too much, or about right? Would a simpler version be easier to
+   sustain?"
+4. **Connect to prior learning** — to **B3** and **C2** explicitly.
+5. **Commit to tracking** — "not perfectly, just consistently. When would be a natural time?"
+
+**The member authors the definition; the system may never supply one.** "A Quality Day for one Member may center on
+movement and connection; for another, on calm, sleep, and meaningful work." Explicitly forbidden: "A Quality Day
+should include physical activity, healthy eating, stress management, and meaningful connection."
+
+#### THE WEB AGAIN — step 4 is B3's step 6
+
+B3 reached back to B1 + B2 + W3. C3 reaches back to B3 + C2. Two of the twelve assets contain an authored
+"connect to prior learning" step that reads from **multiple** upstream assets. This is now a confirmed pattern with
+two instances, not a B3 curiosity — and per the standing rule, the second occurrence of a shape is the signal to fix
+the abstraction rather than hand-wire another link.
+
+#### The grading barrier appears in BOTH B3 and C3 — it is the recurring one
+
+> **Member grades days as good/bad** → "Reframe — the goal is **noticing, not judging**; ask what was in the day, not
+> whether it passed."
+
+Second occurrence, same words, different asset. Our week grids and the Quality Days surface are exactly where a
+member is invited to grade a day, so this is a UI risk as much as a copy risk. Pair it with the W3/B3 line, restated
+here in reward terms:
+
+> Reward = "the feeling of understanding their day, noticing a pattern, or recognizing quality" — **not** a count and
+> **not** a streak.
+
+Affirm consistency and honesty of observation, **never the number of Quality Days**: "Even on the day that didn't feel
+like quality, you still noticed what was in it. **That's the habit.**" Avoid both "Great — you had a Quality Day!"
+and "You only had two this week, so let's try to do better."
+
+#### The MI phases CYCLE, they do not progress
+
+Unique to the sustained assets: "Each check-in **re-engages, refocuses briefly, evokes observation, and adapts
+planning** as needed." Same structure Greg gives W3 and B3. So a practice-week check-in is not a scaled-down version
+of the front-end session — it is its own four-beat loop, and "adapt the plan" (change the definition, the rhythm, or
+the focus mid-week) is a first-class move we should confirm is possible in our week.
+
+**Disruption is pre-normalized:** "There will be days you forget. That's not failure — **it's just a missed rep.**
+The next check-in is what matters."
+
+---
+
+## THE POSTURE TABLE (COMPLETE — all twelve assets)
+
+Posture is assigned per asset, for stated reasons, and it is **two independent things** — which the C memos forced.
+Axis 1 is the **mode** (how much the Companion drives). Axis 2 is the **stance** (what the Companion may bring):
+*evocative* = draw out only, teach nothing; *didactic latitude* = may teach a short, named list then return to
+elicitation. B1/B2 are the only assets granted didactic latitude, and B1 says so by contrast with Reclaim.
+
+| Asset | Mode | Stance | Primary SDT need | Note |
+| :-- | :-- | :-- | :-- | :-- |
+| R1 | guide | evocative | — | "readiness to elevate to coach if the Member signals they want to act" |
+| R2 | guide | evocative | — | |
+| R3 | guide + "generative edge" | evocative | **autonomy** | forward-writing, still not coach |
+| W1 | guide | evocative | — | same elevation clause as R1 |
+| W2 | **guide → coach** | evocative | — | transitions at the front-end session → practice-week boundary |
+| W3 | **coach from first interaction** | evocative | competence (autonomy co-) | "the front-end protocol shapes everything" |
+| B1 | coach from the start | **didactic latitude** | **autonomy** | "the bridge between information and behavior" |
+| B2 | coach | **didactic latitude** | **competence** | SDT anchor shifts even though posture doesn't |
+| B3 | coach from first interaction | evocative | competence (autonomy co-) | habit formation central |
+| C1 | coach (pivot at activity start) | evocative | **autonomy** | "evocative and reflective, not directive or persuasive" |
+| C2 | coach | evocative | **competence** | "affirming of approach-oriented growth" |
+| C3 | coach from first interaction | evocative | **competence + autonomy co-primary** | habit formation central |
+
+**Reading the completed table:** `guide` is the **awareness** posture — it covers exactly the Reconnect assets plus
+W1 and W2's front end, i.e. everything before the member is asked to *do* something. `coach` starts the moment an
+asset asks for a behaviour, and never reverts. So the split is by **what the asset asks of the member**, not by
+position within an R.
+
+**PREDICTION FAILED — recorded because it was made.** I predicted B1/B2 guide with only the third asset coaching.
+B1 is explicitly "Pivot to coach at the start of B1," and C1/C2 are coach too. Posture is not a function of position.
+Read it from the memo; do not derive it.
+
+**Where we stand:** we have two modes (conversation, coach) and **no `guide`** — so the entire awareness half of the
+program runs in the wrong posture today. Anything we build must model (a) the missing `guide` mode, (b) W2's
+mid-asset **transition**, and (c) the stance axis, which is what stops B1/B2's teaching permission from leaking into
+C1/C2/C3 where the Companion may teach nothing at all.
+
+---
+
+## THE CARRY-FORWARD SPINE (closed over all twelve Guidance memos)
+
+`prior_module_context` is not an R1 detail. **Every one of the twelve memos specifies carry-forward as a named
+mechanism**, and each names its downstream consumer:
 
 | Asset | Captures | Feeds |
 | :-- | :-- | :-- |
@@ -489,16 +649,37 @@ each names its downstream consumer:
 | R2 | door relevance + the temporal pattern (first / biggest / **still open**) | R3's spark |
 | R3 | the Legacy Letter itself | **W2's visualization** |
 | W1 | disinformation statements + affirmations + values/identities/fears/hopes | W2, **W3** (built ✓) |
+| W2 | the image, anchored on "the part that lands hardest" | **W3** (built ✓) |
+| W3 | the False Start Protocol — triggers + written responses | **B3** |
+| B1 | the "why" — the motivational baseline, non-judgmentally | **B3** |
+| B2 | the self-management skill profile (a development map) | **B3** |
+| B3 | the pilot plan + what the week taught | **C3** |
+| C1 | the refined, self-concordant Reclaim List | C2, **C3** |
+| C2 | where life is opening / still narrow, across the five dimensions | **C3** |
+| C3 | the member's own definition of a Quality Day + the tracked week | the Loop |
 
-We implement this **ad hoc** — one real link (W1 affirmations → W3 keeper-recall), the rest absent. Greg designed a
-spine; we built one vertebra. This is the single biggest structural finding of the reading so far, and it is
-probably the thing to fix before any individual asset gap.
+**It is a WEB, not a chain — and that is now proven twice, not inferred.** B3 has an authored step that reads B1 +
+B2 + W3 simultaneously; C3 has the same step reading B3 + C2. Every other link above is one-to-one, but the two
+culminating assets are the ones that fan in — which makes sense, and which means the mechanism cannot be a
+`previousAsset` pointer.
+
+We implement this **ad hoc** — one real link (W1 affirmations → W3 keeper-recall, plus W2's image through the same
+keeper-recall rail), the rest absent. Greg designed a spine; we built one vertebra. **This remains the single biggest
+structural finding of the reading**, and having now seen all twelve, the fix is a general mechanism — an asset
+declares what it retains and which upstream assets it reads — not eleven bespoke links.
 
 ---
 
-### Open question this raises
+### Open questions this raises
 
-Greg's R1 rating domains are listed as "identity, body, energy, relationships, work, outlook" — six, in prose.
-Our frozen IDQ is 24 items across four dimensions (Physical, Self, Social, Outlook). Not necessarily a conflict —
-this memo describes the activity loosely — but the Gated Assets V4 R1 section had **three** parts (Physical,
-Identity, Relational). Three descriptions, three shapes. Worth resolving against V4, which is SOURCE.
+1. **R1's rating domains.** Greg's memo lists "identity, body, energy, relationships, work, outlook" — six, in prose.
+   Our frozen IDQ is 24 items across four dimensions (Physical, Self, Social, Outlook). The Gated Assets V4 R1
+   section had **three** parts (Physical, Identity, Relational). Three descriptions, three shapes. Resolve against
+   V4, which is SOURCE — and note the IDQ schema itself is **frozen** and not up for revision either way.
+2. **The Guidance memos' prompt lists disagree with V4 in at least two assets** (R3's five prompts, C2's six
+   questions). Both are RULED in V4's favour. When the Engineering Memos and Science Checks are read, expect the
+   same divergence and apply the same precedence rather than re-litigating each one.
+3. **The barrier table.** Explicitly present in B1, B2, C1, C2, C3 (the memos I can point at). B1 predicted it
+   recurs; the shape is the same each time — Explore → Reflect → Collaborate. Two barriers repeat across assets
+   verbatim (**grading days good/bad** in B3 + C3; **flat or disengaged** in nearly all), which argues for a shared
+   barrier library with per-asset additions rather than twelve copies.
