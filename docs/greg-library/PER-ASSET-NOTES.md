@@ -862,6 +862,59 @@ The attribution balance is the sharpest idea in the document and it is a governa
 - The pairing rationale survives to SOURCE, in the same words: "Vision without truth becomes fantasy, and truth
   without vision becomes discouragement."
 
+### W1 — Disinformation Audit
+
+**Note the shape change: W1/W2/W3 have FOUR scientific scaffolds, not six.** The Reconnect trio have six each. Not a
+defect — the Rewire checks are simply shorter documents — but it means "scaffolding #5/#6" cross-references only
+exist in some assets.
+
+- The five domains are confirmed at SOURCE: **body · habits · time · identity · future.**
+- Affirmation criteria: "credible, self-supportive, and forward moving" — **three here; the Companion memo adds
+  "specific" as a fourth.** Memo is derivative, so treat "specific" as guidance rather than SOURCE requirement.
+- The credibility **test** ("Does that feel true? …an affirmation you don't believe will be the first thing your mind
+  throws out") is **memo-only** — it is not in the Science Check. Still worth building; just note it is not SOURCE.
+- The load-bearing framing, and the reason this asset is not positive thinking: "It is **not about replacing honesty
+  with forced positivity.** It is about replacing resignation, avoidance, and distortion with a more grounded and
+  empowering interpretation of what is still possible." · "unexamined rationalizations… **stop sounding like defenses
+  and start sounding like truth.**"
+
+### W2 — Visualization Workshop
+
+- **Confirms the R3→W2 link at SOURCE**, twice: the activity works "by asking the person to **return to earlier
+  reflections** and turn them into a clearer internal image," and again "encouraging the person to return to earlier
+  reflections and create a clearer sense of who they are becoming." Our W2 does not read the Legacy Letter. This is
+  now a SOURCE-backed gap, not a memo-only one.
+- **The closing nuance is a real design constraint, and it cuts against a naive reading of "visualization":**
+  > "the strongest visualization language is usually **not about fantasizing vaguely about success**, but about
+  > building a meaningful, identity-linked image that helps effort feel coherent."
+
+  So W2 is anti-fantasy by design. Copy that invites the member to picture success or imagine winning is off-spec;
+  copy that builds a *specific identity-linked image* is on-spec. This also lines up with W2's Companion-memo voice
+  rule (affirm the practice and the gradual vividness, never whether it is "working").
+- The delayed-reward argument is the asset's job: "many of the benefits… are delayed. People often abandon the
+  process **not because it is ineffective, but because the future payoff is not vivid enough to compete with present
+  discomfort.**"
+
+### W3 — Mindful Monitoring
+
+- **The thesis, and it is the best single line in Rewire:** "The real danger is often **not the lapse itself, but the
+  interpretation of the lapse.**" Relapse prevention "teaches **recovery as a skill.**"
+- **⚠ CHECK — W3 has TWO parts at SOURCE, and I think we built one.** The Science Check is explicit that W3 =
+  **the False Start protocol** *plus* **a mindfulness practice**, and it argues they are load-bearing together:
+  "relapse prevention gives the person a cognitive-behavioral recovery framework, while **mindfulness helps them
+  access and apply that framework under stress.** One teaches what to do with setbacks. The other helps create the
+  awareness required to do it."
+
+  Our W3 is `w3_logging` — Smart Choices / False Starts tracking. **Does it contain a mindfulness practice at all?**
+  If not, this is the same shape as B2's missing noticing week: half an asset. Flagging as a CHECK, not a finding —
+  it needs verifying against the code in the re-audit, and the asset name ("Mindful Monitoring") suggests the
+  intent was there.
+- The mechanism to preserve: mindfulness creates "a small but important gap between experience and response…
+  [letting the person] notice stress, craving, discouragement, or self-criticism as **events happening in the mind
+  rather than commands that must be obeyed.**"
+- Causal honesty: "not that mindfulness prevents every lapse, but that it helps people **notice earlier, react less
+  automatically, and recover more skillfully.**"
+
 ### NEW CROSS-ASSET FINDING — every Science Check ends with a CLAIMS constraint, and it is not an engineering note
 
 Each document closes with a **"Positioning note for internal use"** in near-identical form:
