@@ -915,6 +915,64 @@ exist in some assets.
 - Causal honesty: "not that mindfulness prevents every lapse, but that it helps people **notice earlier, react less
   automatically, and recover more skillfully.**"
 
+### B1 — What Is Your Why?
+
+Confirms the Companion memo's non-judgmental baseline **at SOURCE**, which matters because it is the rule most
+likely to be softened into praise-for-intrinsic-motivation:
+
+> "the goal is **not to insist that every person starts from pure intrinsic enjoyment.** Rather, the goal is to help
+> them internalize the reason for change so that it increasingly feels like their own." · the framing nuance: "not
+> that all motives must be purely intrinsic from the start, but that the activity helps people **move toward** more
+> internalized and self-endorsed motivation."
+
+Also SOURCE for the **dual-domain** requirement: activity and eating "are often driven by overlapping but distinct
+motives," and B1 must address both "in a balanced way."
+
+### B2 — Appreciating Your Strengths and Weaknesses
+
+**SOURCE enumerates the three-factor skill list** — worth checking our `skillProfile` against it item by item:
+
+| Factor | Skills named |
+| :-- | :-- |
+| **Predisposing** (getting ready) | knowledge · confidence · motivation · overcoming barriers · balancing attitudes |
+| **Enabling** (taking action) | self-assessment · goal setting · planning · coping · consumer awareness · performance skill · time management |
+| **Reinforcing** (staying consistent) | self-monitoring · social support · conflict resolution · relapse prevention |
+
+Two things I had not picked up from the memo:
+
+- **Category scoring is expected.** "That makes the **category scoring** especially valuable, because it can help
+  clarify whether a person mainly needs help getting ready, taking action, or sustaining." So B2 should produce three
+  category reads, not one profile — and the *shape* of the profile is the output, not a total.
+- **⚠ CHECK — the profile may need to be per-domain.** "self-management skill may not show up in the same way across
+  different behaviors. A person may be **good at planning movement but poor at managing eating cues**, or disciplined
+  with food choices but inconsistent in exercise routines." Same dual-domain requirement as B1. If our profile is
+  behaviour-agnostic, it collapses a distinction Greg calls a "distinctive strength."
+
+The reframe to preserve: weaknesses are "**information about which skills may be underdeveloped or less reliable
+under stress**," not a character flaw — the SOURCE form of "a development map, not a verdict."
+
+### B3 — Monitoring Health Decisions
+
+**Confirms at SOURCE the gap I flagged from the memo.** Backups and obstacles are not memo colour; they are in the
+scientific scaffolding (#3, action planning / implementation intentions):
+
+> "helping the person choose one small physical activity habit and one small dietary habit, **define backup versions,
+> and anticipate likely obstacles.** This increases the odds that the plan **can survive a normal week instead of
+> only an ideal one.**"
+
+Our `pilotPlan` holds `activityChange` and `dietChange` only. **Backups and anticipated obstacles are a real,
+SOURCE-backed gap** — and per Greg's own reasoning, the backup is the mechanism that keeps the week alive after the
+first miss.
+
+- **What B3 tracks is wider than we capture:** "Smart Choices, False Starts, obstacles, **thoughts, feelings**, and
+  how eating and movement influence one another." Thoughts and feelings are named in the in-app summary itself.
+- **"Fuel to move" is SOURCE**, and its purpose is integration: "one healthy decision can reinforce another, while
+  one disruption can spill into multiple areas."
+- The anti-grading thesis, again, and this is now the third asset to state it: "many people interpret their health
+  behavior **too globally.** They remember the week as either good or bad, disciplined or undisciplined." B3's job is
+  to defeat that summary. Same risk our week grids carry.
+- "self-monitoring is not just record-keeping. It is part of **learning how to adjust** behavior over time."
+
 ### NEW CROSS-ASSET FINDING — every Science Check ends with a CLAIMS constraint, and it is not an engineering note
 
 Each document closes with a **"Positioning note for internal use"** in near-identical form:
