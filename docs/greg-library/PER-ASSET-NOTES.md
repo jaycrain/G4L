@@ -16,8 +16,8 @@ WHAT_YOU_ARE_FOR. Notes are written as each is read, so nothing is lost to a con
 
 ### RESUME HERE
 
-**Read (8):** R1 · R2 · R3 · W1 · W2 · W3 · B1 · B2 — all Companion Guidance memos.
-**Next:** B3, then C1 · C2 · C3 (finishing the Companion Guidance set), then the 12 AI Engineering Memos, then the
+**Read (9):** R1 · R2 · R3 · W1 · W2 · W3 · B1 · B2 · B3 — all Companion Guidance memos.
+**Next:** C1 · C2 · C3 (finishing the Companion Guidance set), then the 12 AI Engineering Memos, then the
 12 Science Checks.
 
 Drive ids are recorded in each section below. To list the folder:
@@ -397,6 +397,51 @@ us — the depth he wanted was already written down here, eleven documents away.
 
 **Habit formation is seeded, not central** — "some of these skills, especially the planning and self-monitoring
 ones, are the same skills we'll be using in the next activity." Full habit work is B3.
+
+---
+
+### B3 — Monitoring Health Decisions · AI Companion Guidance Memo
+
+**Read 2026-08-16.** Drive id `1xlRQ1uTM8_vG8cJDVEN_4WwrBUgSlbPU`.
+
+Coach from the first interaction; habit formation central. Competence primary, autonomy co-primary. Structurally
+near-identical to W3 — same phase cycling, same six habit principles, same "the reward is not a streak or a score."
+
+#### THE SPINE IS A WEB, NOT A CHAIN
+
+The seven-step front-end planning sequence has a **Step 6: Connect to prior learning**, and it reaches back to
+THREE assets at once:
+
+> "Does this connect to the motivation you captured in **B1** — your 'why'?"
+> "Does this reflect the self-management skills you appraised in **B2** — the ones you wanted to build?"
+> "Does this reflect the False Start Protocol you built in **W3** — the triggers and responses you already named?"
+
+So carry-forward is not a series of one-to-one handoffs. B3 draws on B1, B2 and W3 simultaneously, and C3 will
+extend B3's own logic. Any mechanism we build has to let an asset read from **several** upstream assets, not just
+its immediate predecessor.
+
+#### The plan has parts we don't capture
+
+Seven steps: elicit the two habits · make them specific (what, when, where) · **define BACKUP VERSIONS for each** ·
+anticipate known obstacles for the week · test for manageability ("a normal week, not a perfect week") · connect to
+prior learning · commit to tracking. Our `pilotPlan` holds `activityChange` and `dietChange`. **No backups, no
+anticipated obstacles.** The backup is the thing that keeps a week alive after the first miss.
+
+#### The best barrier in the list
+
+> **Member grading days as good/bad** — Reflect: "It sounds like you're evaluating the day rather than noticing
+> it." Collaborate: "What if we just described what happened — Smart Choices and False Starts — without the label?"
+
+That is the whole non-judgement posture in one exchange, and it is a live risk on our week grids.
+
+#### The process–product principle, named as the spine
+
+Process = monitoring decisions. Product = fitness and health. "Tracking your decisions this week doesn't create
+fitness or health directly. But paying attention to how your choices actually unfold can help you notice and
+reinforce the patterns that, over time, build fitness and health." Same shape in C3, where process = monitoring
+days and product = wellness.
+
+**Fuel-to-move is invited, never forced** — "You don't have to find a connection every day."
 
 ---
 
