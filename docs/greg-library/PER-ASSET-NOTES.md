@@ -43,20 +43,25 @@ quote index already holds.
 
 ### RESUME HERE
 
-**Read directly (13 of 36):** all 12 **Companion Guidance memos** (R1 · R2 · R3 · W1 · W2 · W3 · B1 · B2 · B3 · C1 ·
-C2 · C3) + **C1's Engineering Memo**. The posture table and the carry-forward table below are closed over all twelve
-assets, not extrapolated.
+**Read directly (25 of 36):** all 12 **Companion Guidance memos** · all 12 **Science Checks (SOURCE — complete)** ·
+**C1's Engineering Memo**. Every cross-asset table below is closed over the whole corpus, not extrapolated.
 
-**Next — and the priority is now precedence-driven, not sequential:**
-1. **The 12 Science Checks.** Highest value by two independent arguments: they are **SOURCE**
-   ([[greg-doc-precedence-and-levels]]), and per `GAP-REPORT.md` they had "**never been read before**" Aug 6 — so
-   their *only* reading, ever, was by the banned method. Everything the Guidance memos raised should be settled
-   against these.
-2. **The 11 remaining Engineering Memos** — lower priority. They are DERIVATIVE, and the quote index covers their
-   content densely (C1 alone: 43 Engineering-sourced requirements). Read for cross-asset shape, not for content.
+**Next:**
+1. **The 11 remaining Engineering Memos** (R1 R2 R3 · W1 W2 W3 · B1 B2 B3 · C2 C3). Lower value per document — they
+   are DERIVATIVE and the quote index covers them densely (C1 alone: 43 Engineering-sourced requirements). **Read for
+   cross-asset shape, not content**: whether C1's staged flow, constrained follow-up taxonomy, overclaim filter and
+   per-item data model recur as a *house pattern* across all twelve, or were bespoke to C1. If they recur, they are
+   one engine, not twelve.
+2. **Then #185, the re-audit** — now unblocked. Rebuild the gap findings against the frozen contracts and the
+   decision log, keeping the Aug 6 quotes and discarding its conclusions.
 
-Use `extracted/<ASSET>.md` as the per-asset checklist while reading, so the re-read adds the layer that is missing
-rather than duplicating the layer that exists.
+Use `extracted/<ASSET>.md` as the per-asset checklist while reading, so the re-read keeps adding the layer that is
+missing rather than duplicating the layer that exists.
+
+**Carried CHECKs for the re-audit** (raised by SOURCE, each needs verifying against code — none is a finding yet):
+W3's missing mindfulness half · B3's missing backups + anticipated obstacles + thoughts/feelings · B2's category
+scoring and possible per-domain profile · C1's subtractive-only refinement · C3's missing second precept · W2 not
+reading the Legacy Letter · R2's community share (substance, under the Community name).
 
 Drive ids are recorded in each section below. To list the folder:
 `parentId = '10tBuyKxNxxrt0tFmwv9zU2ZWG9-pDmF7'` via the Drive search tool. Only 2 of the 36 are on local disk.
@@ -973,6 +978,84 @@ first miss.
   to defeat that summary. Same risk our week grids carry.
 - "self-monitoring is not just record-keeping. It is part of **learning how to adjust** behavior over time."
 
+### C1 — Readiness
+
+**⚠ THE CLOSING NUANCE IS A DESIGN CONSTRAINT, and it cuts against how a refinement UI naturally gets built:**
+
+> "the strongest scientific framing is **not that revisiting goals always leads to smaller or easier goals**, but
+> that it often leads to better-aligned goals. Sometimes refinement makes a goal more concrete and attainable.
+> **Other times it makes a goal more ambitious** because it now feels more authentic and more worth the effort. The
+> scientific point is that reflective reassessment can **improve the quality of goal commitment, not merely reduce
+> difficulty.**"
+
+Every affordance we would reach for by default — prune, deprioritize, remove, simplify — biases toward reduction.
+**CHECK: can a member leave C1 with a BIGGER list, or a harder goal, than they came in with?** If the only moves are
+subtractive, the asset is half-built and quietly teaches that growth means wanting less.
+
+- **C1 is named "an integrative checkpoint"** — it must "synthesize what they learned about who they are, how they
+  think, and how they act." SOURCE confirmation of the multi-upstream read that C1's Engineering Memo encodes as
+  `linked_module_source`.
+- The self-concordance case, at SOURCE: "many people carry goals that are **only partly their own**… inherited from
+  family, culture, comparison, fear, or an earlier version of themselves. Those goals **can still produce effort**,
+  but they often do not sustain meaningful engagement."
+- Revision is development: "a changed self may naturally see the old list differently and **this is a sign of
+  development rather than inconsistency.**"
+
+### C2 — The Bigger World Audit
+
+**⚠ THE CLOSING NUANCE AGAIN, and it forbids the most tempting implementation:**
+
+> "the strongest scientific framing is **not that a bigger world always means doing more, being more social, or
+> feeling good all the time.** A bigger world can also mean becoming **more willing, more open, more engaged, and
+> more able to act** in ways that matter **even when life is still imperfect.**"
+
+Read alongside the Companion memo's "Don't: *your step count is up 20%, so your world is objectively bigger*", this
+closes the door on deriving expansion from telemetry — activity counts, Community posts, session streaks. **Expansion
+is a member-reported disposition, not a computed metric.** Any C2 surface that scores it from our data contradicts
+both documents.
+
+- The contraction it names is worth quoting for the copy: "They stop exploring, stop initiating, stop risking
+  discomfort, stop imagining alternatives, and **begin to interpret limitation as identity.**"
+- Growth is measured as *participation*, not mood: "A person may not feel perfect, yet still be living in a larger
+  world — showing up more, trying more, connecting more, moving more, and seeing more possibility."
+
+### C3 — Quality Days **and Quality Living**
+
+**NEW — the asset has a second half the Companion memo never names.** SOURCE titles it *"Quality Days and Quality
+Living"* and builds it on **two linked precepts**:
+
+> 1. **Quality Days lead to a Quality Life.**
+> 2. **Quality Living leads to Quality Days.**
+>
+> "These precepts are not contradictory. They describe a **reciprocal loop**… the day is **both a unit of practice
+> and a unit of outcome**" (scaffolding #5, upward spirals).
+
+The Companion memo gives only direction 1 (track days → wellness follows). Direction 2 — that arranging your life
+around quality makes good days easier to have — is absent from it and is half the asset's logic. Worth checking what
+we shipped; if C3 is only a day-tracker, the loop is missing.
+
+**⚠ A REAL TENSION between SOURCE and the Companion memo — and it resolves, but only if you read both.**
+
+The Science Check names what a Quality Day contains: "a day with **movement, sound nutrition, decent sleep,
+meaningful connection, manageable stress, and a sense of purpose**." The Companion memo explicitly *forbids* the
+Companion from saying almost exactly that: "**Don't:** A Quality Day should include physical activity, healthy
+eating, stress management, and meaningful connection."
+
+They are compatible, but only under a clear rule, and it is the kind of thing a per-asset reader gets wrong in
+either direction (build a fixed checklist / discard the dimensions entirely):
+
+> **The six dimensions are INTERNAL scaffolding — the scientific reason the asset works, and the design basis for
+> HRQoL coverage. They are NEVER a prescribed list shown to the member.** The member authors their own definition
+> (autonomy is co-primary in C3); the dimensions tell *us* why a self-authored definition tends to span them.
+
+- **C3 is the program's spine, per Greg himself:** it is "the program's clearest translation of a core principle from
+  Concepts of Fitness and Wellness: **if you do the process, the product follows to the extent possible for you.**"
+  B3 applied it to activity/eating → fitness; C3 extends it "upward" to days → wellness. "This parallel is **not
+  metaphorical.**"
+- Causal honesty: "not that every Quality Day must be perfect, nor that wellness follows automatically from
+  tracking… **to the extent possible for that person.**" That last clause is load-bearing and should survive into
+  member-facing copy.
+
 ### NEW CROSS-ASSET FINDING — every Science Check ends with a CLAIMS constraint, and it is not an engineering note
 
 Each document closes with a **"Positioning note for internal use"** in near-identical form:
@@ -984,6 +1067,25 @@ Each document closes with a **"Positioning note for internal use"** in near-iden
 And each adds a causal nuance: R1 — "not that the IDQ automatically causes change by itself, but that it increases
 honest self-awareness"; R2 — "not that naming the doors automatically resolves the Fade"; R3 — "not that the
 combination automatically causes change, but that it strengthens the conditions that make change more likely."
+
+### NEW CROSS-ASSET FINDING — the LAST paragraph of each Science Check is where the sharpest constraint hides
+
+Every Science Check ends with a short unheaded paragraph beginning *"A useful nuance for the final version…"*. It
+reads like an editorial note Greg left himself, and it is the easiest thing in the corpus to skim past. **It is where
+several of the hardest design constraints actually live** — in four cases the nuance forbids the most natural
+implementation of the asset:
+
+| Asset | The nuance says NOT… | Which forbids |
+| :-- | :-- | :-- |
+| **W2** | "not about fantasizing vaguely about success" | success-imagery copy; picture-yourself-winning |
+| **W3** | "not that mindfulness prevents every lapse" | any framing where the practice is judged by lapse count |
+| **C1** | "not that revisiting goals always leads to smaller or easier goals" | a purely subtractive refinement UI |
+| **C2** | "not that a bigger world always means doing more, being more social" | deriving expansion from telemetry |
+| **C3** | "nor that wellness follows automatically from tracking" | promising the product from the process |
+| **B1** | "not that all motives must be purely intrinsic from the start" | treating intrinsic motivation as the target |
+
+**Read the last paragraph of every Greg document.** Same lesson as [[levels-stay-internal-stance]] — the
+consequential content was past the point where the question had been answered.
 
 **This is the source of the probabilistic-language rule** that the Companion memos restate per asset
 ([[greg-science-check-system]]) — but it is wider than Companion copy. It constrains **what the product, the
