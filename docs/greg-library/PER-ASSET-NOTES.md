@@ -43,25 +43,31 @@ quote index already holds.
 
 ### RESUME HERE
 
-**Read directly (25 of 36):** all 12 **Companion Guidance memos** · all 12 **Science Checks (SOURCE — complete)** ·
-**C1's Engineering Memo**. Every cross-asset table below is closed over the whole corpus, not extrapolated.
+**Read directly (29 of 36):** all 12 **Companion Guidance memos** · all 12 **Science Checks (SOURCE — complete)** ·
+**5 Engineering Memos** (R1 · W3 · B3 · C3 · C1). Every cross-asset table below is closed over the whole corpus.
+
+The Step-2 question is **ANSWERED** — see "The Engineering Memos are one spec, not twelve" below. The sustained trio
+(W3/B3/C3) is one document with the nouns swapped; the house skeleton holds across all five read.
 
 **Next:**
-1. **The 11 remaining Engineering Memos** (R1 R2 R3 · W1 W2 W3 · B1 B2 B3 · C2 C3). Lower value per document — they
-   are DERIVATIVE and the quote index covers them densely (C1 alone: 43 Engineering-sourced requirements). **Read for
-   cross-asset shape, not content**: whether C1's staged flow, constrained follow-up taxonomy, overclaim filter and
-   per-item data model recur as a *house pattern* across all twelve, or were bespoke to C1. If they recur, they are
-   one engine, not twelve.
-2. **Then #185, the re-audit** — now unblocked. Rebuild the gap findings against the frozen contracts and the
-   decision log, keeping the Aug 6 quotes and discarding its conclusions.
+1. **The 7 remaining Engineering Memos** (R2 · R3 · W1 · W2 · B1 · B2 · C2) — all single-session assets. Read to
+   test the recorded hypothesis that they form a *second* shared template. Lower urgency now that the architectural
+   question is settled; the quote index covers their content densely.
+2. **#185, the re-audit** — unblocked, and now the higher-value work. Rebuild the gap findings against the frozen
+   contracts and the decision log, keeping the Aug 6 quotes and discarding its conclusions.
 
 Use `extracted/<ASSET>.md` as the per-asset checklist while reading, so the re-read keeps adding the layer that is
 missing rather than duplicating the layer that exists.
 
-**Carried CHECKs for the re-audit** (raised by SOURCE, each needs verifying against code — none is a finding yet):
-W3's missing mindfulness half · B3's missing backups + anticipated obstacles + thoughts/feelings · B2's category
-scoring and possible per-domain profile · C1's subtractive-only refinement · C3's missing second precept · W2 not
-reading the Legacy Letter · R2's community share (substance, under the Community name).
+**Carried CHECKs for the re-audit** (each needs verifying against code — **none is a finding yet**):
+B3's missing backups + anticipated obstacles + thoughts/feelings (SOURCE-backed) · B2's category scoring and possible
+per-domain profile · C1's subtractive-only refinement · C3's missing second precept · W2 not reading the Legacy
+Letter · R2's community share (substance, under the Community name) · W3's noticing questions in the daily check-in
+(**downgraded** — see the correction below; the original "missing mindfulness half" was my error).
+
+**Open for Greg, not for me:** the IDQ 60-vs-90-day cadence (ruled 60; his docs say 90 in all three R1 documents) ·
+whether R1's explicitly-permitted domain skipping extends to the frozen scored IDQ items · R1's domain count
+(six in both derivative docs, three in V4, four dimensions in our frozen instrument).
 
 Drive ids are recorded in each section below. To list the folder:
 `parentId = '10tBuyKxNxxrt0tFmwv9zU2ZWG9-pDmF7'` via the Drive search tool. Only 2 of the 36 are on local disk.
@@ -860,6 +866,52 @@ language · **collapses reflection into a simple survey response.**"
 
 **Do not act on this yet** — the standing rule at the top of this file still holds until the reading is done. But of
 everything read so far this is the most directly actionable document in the corpus.
+
+---
+
+## ★ THE ENGINEERING MEMOS ARE ONE SPEC, NOT TWELVE — and W3/B3/C3 are literally one document
+
+This is the answer to the question Step 2 was for, and it is stronger than expected.
+
+**Every Engineering Memo has the identical section skeleton**, in the same order: Purpose · Product objective ·
+Trigger/pivot/exit conditions · SDT-aligned design constraints (as **must / must not** lists) · MI behavior
+constraints (PACE) · OARS implementation · **Activity phase structure** (numbered stages) · Response generation
+constraints (tone-of-causality · length by phase · personalization) · Data model (input/output **field tables**) ·
+State and memory requirements (**Minimum / Preferred**) · UX requirements (numbered) · Quality guardrails
+(**on-target / off-target**) · Implementation checklist. Verified across R1 · W3 · B3 · C3 · C1 — spanning all four
+Rs and both asset types.
+
+**And the three sustained assets are the same document with the nouns swapped.** W3, B3 and C3 share, often
+verbatim: the three-phase structure (`front_end` → `monitoring` → `review`) and all eight stages; the identical
+conversation-metadata set; the six-row habit-formation table; the barrier table (6 of its rows word-for-word
+identical across all three, including *"It sounds like you're evaluating the day rather than noticing it"*); the
+five tracker design constraints verbatim; the Minimum/Preferred memory split; and the on-target/off-target lists.
+
+Everything that differs is a **parameter**:
+
+| Parameter | W3 | B3 | C3 |
+| :-- | :-- | :-- | :-- |
+| What the member authors up front | False Start protocol (triggers × 4 categories + written responses) | two habits + **backups** + anticipated obstacles | their own Quality Day definition + 2–3 components |
+| Daily entry fields | smart_choices · false_starts · trigger_fired · disinformation_campaign · recovery_used | smart_choices · false_starts · what_contributed · obstacles · thoughts_feelings · fuel_to_move | quality_present · what_was_good · what_got_in_way |
+| The light optional 3rd question | "what did the old voice say?" | "did eating and movement affect each other?" | — |
+| Revisable mid-week | `protocol_revisions` | `plan_revisions` | `definition_revisions` |
+| Closing bridge | → B3 | → C3 (process/product: fitness) | → the Loop (process/product: wellness) |
+| Upstream context loaded | **5 assets** (R1 R2 R3 W1 W2) | **6** (identity, B1, B2, W1, W2, W3) | **5** (identity, motivation, self-management, C1 list, C2 audit) |
+
+> **CONCLUSION: build ONE sustained-monitoring engine with a per-asset config, not three features.** The invariants
+> (self-classification, no score/percentage/grade, <60s entry, streak-as-rhythm, missed-day = missed rep, revisable
+> mid-week, one question per check-in, phase cycling) belong in the engine; only the table above is per-asset.
+
+This vindicates the instinct already in the codebase — [[practice-week-and-keeper-recall-rails]] ("reusable rails;
+W3/Momentum **plug in**, don't rebuild"). Greg's documents independently specify the same parameterization, and
+supply the exact parameter list. **Where our rails and this table disagree, this table is the spec to reconcile
+toward** — see especially B3's `backups` / `anticipated_obstacles` / `thoughts_feelings`, which we do not store.
+
+**Not yet verified:** R2 · R3 · W1 · W2 · B1 · B2 · C2 Engineering Memos (7 of 12) are unread. My hypothesis is that
+the single-session assets are a second shared template (as R1 and C1 already suggest — both have the phase/stage
+structure but no habit-formation or tracker sections). **Recorded as a hypothesis, not a finding** — I predicted
+wrongly on the posture table earlier in this same reading, and the point of writing predictions down is that they
+get checked.
 
 ---
 
