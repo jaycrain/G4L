@@ -8,6 +8,7 @@ import { ARTIFACT_REFRESH_EVENT, SESSION_COMPLETE_EVENT } from '../components/ar
 import { chatDispatch, type SessionKey } from '../../lib/workspace/session-key.ts';
 import { reconnectStageTitle } from '../../lib/content/explore.ts';
 import type { Artifact } from '../../lib/workspace/artifact.ts';
+import type { PostSessionNudge } from '../../lib/connect/post-session-nudge.ts';
 import type { RingPhaseState } from '../../lib/workspace/ring-state.ts';
 import RedesignChrome from '../dashboard/redesign-chrome.tsx';
 import ReconnectChat from '../reconnect/reconnect-chat.tsx';
@@ -57,6 +58,7 @@ export default function WorkspaceSession({
   wayfinding,
   review = false,
   topbar,
+  nudge = null,
 }: {
   memberId: string;
   sessionKey: SessionKey;
@@ -64,6 +66,10 @@ export default function WorkspaceSession({
   wayfinding: Wayfinding;
   review?: boolean; // read-only revisit of a COMPLETED session — the summary card, no live conversation
   topbar?: ReactNode; // the shared RedesignTopbar, rendered by the server page (async server component)
+  // The moment after a Session — one line pointing at a real person in the Community, or null. Resolved on the
+  // SERVER (lib/connect/post-session-nudge.ts) because it reads their pacts and unread replies; null when there
+  // is nothing true to say, which is most of the time and is the point.
+  nudge?: PostSessionNudge | null;
 }) {
   const [artifact, setArtifact] = useState<Artifact>(initial);
   // RECONNECT RESOLVES ITS SCIENCE CHECK BY BEAT. Greg wrote three (r1/r2/r3) for what the member experiences as
@@ -234,6 +240,19 @@ export default function WorkspaceSession({
                 </div>
               ))}
             </div>
+            {/* THE HUMAN STEP. Jay, 2026-08-17: "we want to emphasize the human side that exists on the app, and
+                it's a credibility builder for the Companion to encourage human interaction. Loss of connection is
+                a huge factor in midlife loneliness and identity loss."
+
+                It sits ABOVE Continue on purpose — after Continue it is a footnote nobody reads (Donna: it "needs
+                to be more visually prominent so it actually stands out"). And it is a quiet second option, not a
+                competing CTA: they have just finished something, and the way out is still one tap. */}
+            {nudge && (
+              <div className="ws-endcard-human">
+                <p className="ws-endcard-human-line">{nudge.text}</p>
+                <a className="ws-endcard-human-cta" href={nudge.href}>{nudge.cta} →</a>
+              </div>
+            )}
             <button
               type="button"
               className="ws-endcard-cta"

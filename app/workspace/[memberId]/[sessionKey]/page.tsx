@@ -12,6 +12,8 @@ import { sessionById, sessionsForPhase, PHASES, type Phase } from '../../../../l
 import { phaseEngineEnabled } from '../../../../lib/workspace/phase-enabled.ts';
 import { reclaimReadiness } from '../../../../lib/reclaim/readiness.ts';
 import RedesignTopbar from '../../../dashboard/redesign-topbar.tsx';
+import { postSessionNudge } from '../../../../lib/connect/post-session-nudge.ts';
+import { getConnectSummaryForAgent } from '../../../../lib/connect/agent.ts';
 import WorkspaceSession from '../../workspace-session.tsx';
 
 // Give the arc's live turns room to finish (the Member Agent call is the long pole).
@@ -81,6 +83,10 @@ export default async function WorkspacePage({
   const ringSub = def.kind === 'checkpoint' ? 'checkpoint' : sessions.length > 1 && idx >= 0 ? `${idx + 1} of ${sessions.length}` : null;
 
   const artifact = await readArtifact(db, memberId, sessionKey);
+  // THE HUMAN STEP after the Session (Jay, 2026-08-17). Resolved here rather than in the client because it reads
+  // their pacts and unread replies. Guarded like every supplementary read — losing it costs the one line, never
+  // the Session — and it is null far more often than not, which is the design: nothing true to say, say nothing.
+  const nudge = postSessionNudge(await getConnectSummaryForAgent(db, memberId).catch(() => null));
 
   return (
     <WorkspaceSession
@@ -89,6 +95,7 @@ export default async function WorkspacePage({
       artifact={artifact}
       wayfinding={{ phaseLabel, phaseOrdinal, positionLabel, progressPct, rings, ringCenter: phaseLabel, ringSub }}
       review={review}
+      nudge={nudge}
       // The SHARED app topbar (brand · Program · Field Guide · Playbook · account). RedesignTopbar is an async server
       // component and WorkspaceSession is a client component, so it's rendered here and passed down as a node — the
       // workspace previously hand-rolled a brand-only bar, which is why it was the one member surface without the nav.

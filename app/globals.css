@@ -2042,6 +2042,23 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
 .ws-endcard-title { font-family: var(--font-condensed), var(--font-barlow), sans-serif; font-weight: 900; font-size: 34px; color: var(--navy); margin: 6px 0 2px; text-transform: uppercase; letter-spacing: 0.5px; }
 .ws-endcard-cta { margin-top: 24px; display: inline-flex; align-items: center; background: var(--teal-text); color: #fff; font-weight: 700; font-size: 16px; border: none; border-radius: 8px; padding: 14px 28px; cursor: pointer; box-shadow: 0 10px 26px rgba(59, 148, 149, 0.4); }
 
+/* THE HUMAN STEP on the session end card — one line pointing at a real person, above Continue.
+   Jay, 2026-08-17: the human side of the app is a credibility builder for the Companion, and loss of connection
+   is a huge factor in midlife loneliness. So it gets real presence — a tinted panel and a rule in the brand
+   orange — without becoming a second primary button competing with the way out. The CTA below stays the only
+   filled button on the card; this one is a text link, deliberately quieter than the thing it sits above. */
+.ws-endcard-human {
+  margin-top: 22px; padding: 14px 16px; border-radius: 10px;
+  background: #f5f4f1; border-left: 3px solid var(--orange);
+  text-align: left;
+}
+.ws-endcard-human-line { margin: 0; color: var(--charcoal); font-size: 15px; line-height: 1.45; }
+.ws-endcard-human-cta {
+  display: inline-block; margin-top: 8px; color: var(--teal-text);
+  font-weight: 700; font-size: 14px; text-decoration: none;
+}
+.ws-endcard-human-cta:hover { text-decoration: underline; }
+
 /* The rail hosts the existing arc chat client — make it fill the sticky rail and scroll internally. */
 .ws-rail { padding: 0; }
 .ws-rail > div { display: flex; flex-direction: column; flex: 1; min-height: 0; padding: 16px 18px; overflow: hidden; }

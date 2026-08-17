@@ -49,6 +49,10 @@ export const SECTIONS = [
   // that reads as a finding about them, which is exactly the kind marketing and the book quote.
   { title: "B2 — the development map ('your map')", files: ['lib/rebuild/skills-map.ts'] },
   { title: 'Badges', files: ['lib/curriculum/registry.ts', 'app/badges/[memberId]/page.tsx'] },
+  // The human step after a Session — the line that points a member at a real person in the Community. Small, but
+  // it is the Companion's north star (bridging toward real people) said out loud, so marketing and the book will
+  // want the exact words.
+  { title: 'The human step after a Session', files: ['lib/connect/post-session-nudge.ts'] },
   // THIS LIST IS HAND-MAINTAINED, WHICH MEANS IT GOES STALE SILENTLY — and it had. Audited 2026-08-08 while
   // cutting v3.3 and found the transcript, the artifact marketing and the BOOK quote from, was missing the
   // CENTRE of the dashboard: triptych-right was listed but triptych-center (the Companion hero, the standing
