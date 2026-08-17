@@ -255,9 +255,19 @@ today it promises the first and delivers the second.
    **This detaches it from R2 entirely.** It is not a Reconnect gap — it is a Community prompting/encouragement
    feature, drawing on material that already exists (keepers, kept reads, Session reactions, Reclaim List
    movement). Re-file it as such; it should not be sequenced behind Reconnect work.
-4. **The carry-forward web** — the biggest structural finding of the reading, and untouched. Greg specifies per
-   asset which upstream assets each reads; we hand-wire two links. B3 reads B1+B2+W3 and C3 reads B3+C2, so a
-   `previousAsset` pointer cannot express it.
+4. **The carry-forward web — MECHANISM + THE TWO FAN-INS SHIPPED 2026-08-17.** `lib/curriculum/retention.ts`.
+   B3 now reads B1+B2+W3 and C3 reads B3+C2 — the two culminating assets, which are the case a `previousAsset`
+   pointer cannot express. Absent upstreams are **silent** (Jay's call): Rewire and Rebuild run in parallel, so a
+   missing W3 is a choice, never a gap to name.
+
+   **The finding was mis-stated in my first pass and the correction matters.** I said several upstream sides were
+   "authored copy rather than stored structure." Wrong — I checked all twelve and **every** output is stored
+   (W1's affirmation and W2's image live in the keeper store with a `keeperType`). The real problem was that
+   twelve assets store into **ten different shapes behind ten different readers**, so each link had to be
+   hand-written. That is why we built one and stopped, and why the fix is one uniform question per asset.
+
+   **REMAINING: the other ten links** — R1→R2/R3 · R3→W2 · W1→W2 · C1→C2/C3. Each is now a registry entry plus a
+   `UPSTREAM` line, not a bespoke join. The Reconnect ones still warrant the usual care.
 5. ~~**The Teaching Layer's shown-once rule for Reconnect**~~ **SHIPPED** — keyed to the ASSET and rendered at its
    last beat, so three cards across seven beats and no member meets one twice (`tests/teaching.test.ts`).
 
