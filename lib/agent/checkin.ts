@@ -61,6 +61,8 @@ export type CheckinContext = {
   /** R2's Door profile as one line, or null when they've never said anything about them. NULL MEANS OMIT — see
    *  the context builder; an empty profile must produce no line at all. */
   doorProfileLine?: string | null;
+  /** R3's Legacy Letter — theirs, to themselves. Null until they write one. */
+  legacyLetter?: { body: string; datedFor: string } | null;
   idScore: number | null;
   direction: Direction | null;
   currentFocus: string | null;
@@ -470,6 +472,13 @@ export function contextBlock(c: CheckinContext): string {
     // returns null on an empty profile precisely so this line disappears rather than asserting an absence: a
     // model handed "still open: none" will reflect that back as a fact about their life, which is the failure in
     // context-must-not-claim-what-it-stopped-tracking.
+    // THE LEGACY LETTER — the member's own first-person words to themselves, visible to them in their Playbook,
+    // so it cannot be invisible here. Handed over WHOLE rather than summarized: a paraphrase of the one thing
+    // they wrote in their own voice is worth nothing, and this is the material the companion should recognise
+    // when they say "I read my letter again".
+    c.legacyLetter?.body
+      ? `THEIR LEGACY LETTER (they wrote it to themselves, addressed to ${c.legacyLetter.datedFor}; it lives in their Playbook under "Who you are"):\n${c.legacyLetter.body}\nIf they ask for it, point them there or read it back. Do NOT quote it at them unprompted — a letter someone wrote to themselves is not a lever, and producing it uninvited turns something private into something we are holding over them. They can change it whenever it stops being true.`
+      : null,
     c.doorProfileLine ? `What they've said about those Doors — ${c.doorProfileLine}. Use it to understand what still weighs on them; never recite it, never quote a number back, and never treat an unmentioned Door as settled.` : null,
     c.idScore !== null ? `Latest ID Score: ${c.idScore}${c.direction ? ` (${c.direction})` : ''}` : 'No IDQ yet',
     dims,
