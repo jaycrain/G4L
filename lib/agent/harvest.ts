@@ -55,7 +55,10 @@ export async function commitKeeper(
   memberId: string,
   k: {
     momentId: string;
-    keeperType: KeeperType;
+    /** Optional BY DESIGN. `keeper_type` is nullable, and chapterKey() switches on it FIRST — so a science read,
+     *  which must reach the `why` chapter via section 'why_works' alone, has to commit WITHOUT one. Typing this as
+     *  required forced an `as never` cast at that call site, which hid the intent behind a smell. */
+    keeperType?: KeeperType;
     section: string;
     body: string;
     state?: 'proposed' | 'kept';

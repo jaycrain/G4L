@@ -20,6 +20,7 @@
 
 import { chromium, type Page } from 'playwright';
 import { ASSET_SUMMARIES } from '../lib/content/summaries.ts';
+import { exploreFor } from '../lib/content/explore.ts';
 
 const base = process.argv[2]?.replace(/\/$/, '') ?? 'http://localhost:3100';
 const email = process.env.SMOKE_EMAIL?.trim();
@@ -202,6 +203,28 @@ async function main(): Promise<void> {
 
   await page.screenshot({ path: 'docs/screenshots/teaching-close-w1.png', fullPage: false });
   ok('screenshot → docs/screenshots/teaching-close-w1.png');
+
+  // ---- 6 · ④ KEEP — THE PROMISE ON THE CARD MUST BE TRUE ---------------------------------------------------------
+  // The card says "we'll keep the takeaway in your Playbook". That is a promise made to the member in their own
+  // view, and this path has broken it before: on 2026-07-27 prod silently dropped EVERY session keeper and a member
+  // completed six Sessions with nothing filed. So the walk goes and LOOKS.
+  await page.waitForTimeout(1200); // the keep is fire-and-forget from the client
+  await page.goto(`${base}/playbook/${memberId}`, { waitUntil: 'domcontentloaded' });
+  // NB: each tab button contains its label AND a count span, so an anchored /^label$/ never matches the node text.
+  await page.locator('.pb-tab').filter({ hasText: "What you've learned" }).first().click();
+  await page.waitForTimeout(600);
+
+  const lede = exploreFor('w1')!.lede; // the default takeaway is the Explore lede
+  const kptCount = await page.getByText(lede, { exact: false }).count();
+  if (kptCount > 0) ok(`the takeaway is in the Playbook — the card told the truth ("${lede.slice(0, 44)}…")`);
+  else bad('the takeaway is NOT in the Playbook — the card promised something we did not do');
+
+  // ROUTING: it must be under "What you've learned" (Reads), never "What worked" (Moves).
+  await page.locator('.pb-tab').filter({ hasText: 'What worked' }).first().click();
+  await page.waitForTimeout(500);
+  const wrongTab = await page.getByText(lede!, { exact: false }).count();
+  if (wrongTab === 0) ok('it is NOT under "What worked" — Reads and Moves stayed separate');
+  else bad('the science read leaked into "What worked" — the routing rule broke');
 
   await browser.close();
   finish();

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import RichText from '../rich-text.tsx';
 import { useRouter } from 'next/navigation';
 import { startRewireAction, rewireTurnAction, rewireCeremonyDataAction, loadRewireSessionAction, type RewireSession } from './actions.ts';
+import { keepScienceAction } from '../workspace/actions.ts';
 import RewireCeremony from './rewire-ceremony.tsx';
 import ScaleChips from '../components/scale-chips.tsx';
 import { useChatAutoscroll } from '../components/use-chat-autoscroll.ts';
@@ -18,6 +19,13 @@ import { BEAT_SEP } from '../../lib/agent/onboarding.ts';
 // W-21 — the conversational hand-home. A completed session used to hide the input and render nothing (a hard dead-end).
 // Now the companion speaks one last parting line (its own voice, in the thread) and hands the member back to their
 // companion-home, where the next step is lit. Copy: Cowork Copy Pack v0.2.
+// The source label on a kept read — "from Disinformation Audit · Rewire" on the Playbook card.
+const SESSION_LABEL: Partial<Record<string, string>> = {
+  w1: 'Disinformation Audit',
+  w2: 'Visualization Workshop',
+  w3: 'Mindful Monitoring',
+};
+
 const REWIRE_HAND_HOME = "Head back whenever you’re ready — I’m right here if you want to keep going.";
 
 // A turn may hand over more than one beat (a reflection + the next ask), joined by BEAT_SEP — render each as its OWN
@@ -142,7 +150,18 @@ export default function RewireChat({ memberId, session = 'w1' }: { memberId: str
         {/* ③ UNDERSTAND — after the Companion's close, before the member can leave. The Companion hands off to it
             ("before we close, here's why what you just did holds up"); the card carries the science so no chat
             bubble has to recite it, which is what keeps the Companion inside Greg's evocative posture. */}
-        {done && <TeachingUnderstand sessionKey={sessionKey} onAcknowledge={() => setTaught(true)} />}
+        {done && (
+          <TeachingUnderstand
+            sessionKey={sessionKey}
+            onAcknowledge={() => {
+              setTaught(true); // release the hand-home immediately — the keep is not something to wait on
+              // Fire-and-forget: a filing hiccup must never trap the member at a finished Session. It logs loudly
+              // server-side and verifies its own write, so a silent drop surfaces there rather than here.
+              void keepScienceAction(memberId, sessionKey, `${SESSION_LABEL[sessionKey] ?? sessionKey} · Rewire`);
+              notifyArtifactCommitted();
+            }}
+          />
+        )}
         {/* The parting line, rendered AFTER the card rather than pushed into `messages`. Appending it to the thread
             put it back ABOVE the science — the card renders after every message, so a bubble added later still
             paints higher. The first version of this passed its test anyway, because the test counted the bubble
