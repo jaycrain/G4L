@@ -72,6 +72,41 @@ const CRISIS_PATTERNS: readonly RegExp[] = [
   /\b(plan(ning)?|going)\s+to\s+end\s+(it|my\s+life|everything)\b/i,
 ];
 
+/**
+ * AMBIGUOUS patterns — the ones that describe DYING without naming who, or who is acting.
+ *
+ * Everything else in the set above is self-referential on its face ("kill myself", "my life", "give up on
+ * myself"). These four are not: "going to die" is as true of a father on a ventilator as of the member. They are
+ * the only patterns the guards below may suppress, and that scoping is the whole safety argument — the explicit
+ * self-harm set is never touched, so the net is not loosened where it matters.
+ */
+const AMBIGUOUS: readonly RegExp[] = [
+  /\b(want|going)\s+to\s+die\b/i,
+  /\bbetter\s+off\s+(dead|without\s+me)\b/i,
+  /\btired\s+of\s+(living|being\s+(here|alive)|it\s+all)\b/i,
+  /\bcan'?t\s+(go\s+on|do\s+this\s+anymore)\b/i,
+];
+
+/**
+ * Is this match about SOMEONE ELSE? Looks at the words immediately before it for a third party.
+ *
+ * From Donna's walk, 2026-08-17: she described her father on a ventilator — "we thought my dad was going to
+ * die" — and the 988 protocol fired. The product told a frightened daughter it was worried about HER, then
+ * escalated to a human. That is not a small copy problem: it is the safeguard misreading grief as ideation at
+ * the exact moment someone needed to be heard.
+ */
+const THIRD_PARTY = /\b(my|his|her|their|our)\s+(dad|father|mom|mother|husband|wife|partner|son|daughter|brother|sister|friend|grandma|grandmother|grandpa|grandfather|parent|parents|aunt|uncle|cousin|boss|colleague|neighbou?r|dog|cat)\b|\b(he|she|they|we)\s+(was|were|is|are|might|may|could|would)\b/i;
+
+/**
+ * Is the match NEGATED? "I didn't want to die."
+ *
+ * THIS IS THE ONE THAT MADE IT UNRECOVERABLE. When Donna clarified she was not the one in crisis, her exact
+ * words — "I didn't want to die" — matched `want to die` and fired the identical boilerplate a second time.
+ * The member's DENIAL of crisis was read as crisis, so no clarification could ever get her out of the loop. It
+ * took a third message before the conversation resumed.
+ */
+const NEGATED_BEFORE = /\b(didn'?t|did\s+not|don'?t|do\s+not|doesn'?t|never|wasn'?t|was\s+not|weren'?t|not)\s+(\w+\s+){0,2}$/i;
+
 export type CrisisCheck = { flagged: boolean; matched: string[] };
 
 /** Scan member text for distress signals. If flagged, the runtime shifts to the 988 protocol. */
@@ -79,7 +114,17 @@ export function detectCrisis(text: string): CrisisCheck {
   const matched: string[] = [];
   for (const re of CRISIS_PATTERNS) {
     const m = text.match(re);
-    if (m) matched.push(m[0]);
+    if (!m) continue;
+    // The guards apply ONLY to the ambiguous patterns. An explicit self-harm phrase flags regardless of who the
+    // sentence appears to be about or whether it is negated — the cost of a false positive there is a careful
+    // question; the cost of a false negative is not comparable.
+    if (AMBIGUOUS.some((a) => a.source === re.source)) {
+      const before = text.slice(0, m.index ?? 0);
+      // Same sentence only: a third party two sentences back says nothing about who THIS one is about.
+      const sentence = before.split(/[.!?]\s+/).pop() ?? '';
+      if (THIRD_PARTY.test(sentence) || NEGATED_BEFORE.test(sentence)) continue;
+    }
+    matched.push(m[0]);
   }
   return { flagged: matched.length > 0, matched };
 }
