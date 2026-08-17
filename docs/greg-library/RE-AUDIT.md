@@ -266,8 +266,29 @@ today it promises the first and delivers the second.
    twelve assets store into **ten different shapes behind ten different readers**, so each link had to be
    hand-written. That is why we built one and stopped, and why the fix is one uniform question per asset.
 
-   **REMAINING: the other ten links** — R1→R2/R3 · R3→W2 · W1→W2 · C1→C2/C3. Each is now a registry entry plus a
-   `UPSTREAM` line, not a bespoke join. The Reconnect ones still warrant the usual care.
+   **REMAINING — and the count in this doc was wrong twice, so read the caveat.** I wrote "ten links" without
+   counting; the table has 15, of which 7 are built (W1→W3 and W2→W3 before today, plus today's five). That leaves
+   **eight**: R1→R2 · R1→R3 · R2→R3 · R3→W2 · W1→W2 · C1→C2 · C1→C3 · C3→the Loop.
+
+   **BUT EIGHT IS A FLOOR, NOT A COUNT.** The table closes over the twelve *Guidance* memos. The *Engineering*
+   memo for W3 is wider, and PER-ASSET-NOTES records it: "**W3 loads FIVE upstream assets** — R1 IDQ · R2 Doors ·
+   R3 Legacy Letter · W1 · W2. That is wider than B3's three and C3's two. **The web is denser than the Guidance
+   memos implied.**" So other assets likely declare more upstreams than this table shows.
+
+   **PROVENANCE.** What shipped is backed by VERBATIM Greg text (B3's Step 6 names B1/B2/W3 in three quoted
+   questions; C3's step 4 is the second instance). The wider table is **my synthesis**, and the claim "every one
+   of the twelve memos specifies carry-forward" is a summary sentence — `prior_module_context` appears five times
+   in the notes, not twelve. All of it sits in the DERIVATIVE tier (Guidance + Engineering memos), not SOURCE
+   (Science Check + Gated Assets V4).
+
+   **DO NOT BUILD THE REMAINING LINKS FROM THIS TABLE.** Re-open the relevant Engineering Memos and read their
+   actual `prior_module_context` lines first — building from a lossy summary of the documents that hold the spec
+   is how a mechanism ends up faithful to my notes instead of to Greg.
+
+   Three of the eight (R1→R2, R2→R3, R1→R3) may need little or nothing: Reconnect is ONE arc of seven beats, so
+   those are within a single conversation the model already holds — the same reason W1→W3 was cheap (it rides
+   `state.collected`, see `w3Context()`). Inspect before building. C3→the Loop is blocked on the Loop rule, which
+   is an open Greg+Jay question, not engineering.
 5. ~~**The Teaching Layer's shown-once rule for Reconnect**~~ **SHIPPED** — keyed to the ASSET and rendered at its
    last beat, so three cards across seven beats and no member meets one twice (`tests/teaching.test.ts`).
 
