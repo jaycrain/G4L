@@ -77,12 +77,22 @@ a *tier for an existing item*, not a slot for a new one — easy to mistake for 
 The R3 memo routes the letter to W2 as `prior_module_context`.
 
 **Built:** `lib/reconnect/legacy-letter-store.ts` exports `getLegacyLetter` / `saveLegacyLetter` / `shareLegacyLine`
-/ `markLegacyOpened` — and **has no importer anywhere in `lib/` or `app/`. Only `tests/`.** The commit that added it
-says so in its subject: *"The Legacy Letter — foundation (NOT yet reachable by a member)."*
+/ `markLegacyOpened`, and `lib/reconnect/legacy-letter.ts` holds the pure engine — Greg's six prompts verbatim,
+`letterDateFor`, `remainingPrompts`, `readyToDraft` (four honest answers beat six forced ones) and
+`draftInstruction` with its voice rules. Tested. The commit that added it says the rest in its subject: *"The
+Legacy Letter — foundation (NOT yet reachable by a member)."*
 
-**Verdict: not a gap — a deliberate staged state.** "W2 doesn't read the letter" is downstream of "the letter isn't
-live." It becomes a real wiring task the moment the letter ships, and should be picked up **then**, in the same
-change. Recorded here because this is exactly the shape a per-asset reader files as a missing link.
+**Verdict: not a gap — a deliberate staged state.** What is missing is the ARC WIRING, not the design: no R3 beat
+asks the remaining prompts, drafts, or takes a revision, and nothing calls `saveLegacyLetter`. `legacy-letter.ts`
+still has no importer at all.
+
+> **UPDATED 2026-08-17 — the READ side went live today, and this changes the shape of the task.** The
+> carry-forward spine (`lib/curriculum/retention.ts`) now imports `getLegacyLetter` as R3's reader, so **W1, W2,
+> W3 and C1 all carry the Legacy Letter forward** — for a letter no member can write. It resolves to `null` and
+> renders nothing, which is the silent-when-absent rule working as designed, so nothing is broken and nothing
+> lies. But four Sessions now have an inert link, and the day the letter ships they all light up at once with no
+> further work. The old note here said the store had "no importer anywhere in `lib/` or `app/`" — that is no
+> longer true, and W2 reading the letter is no longer a separate follow-up task.
 
 ## NOT A GAP · B2's category scoring and per-domain profile are BOTH built
 
