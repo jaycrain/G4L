@@ -129,3 +129,96 @@ test('getReclaimItems collapses pre-existing exact-text duplicate rows (defense 
   const items = await getReclaimItems(db, m);
   assert.equal(items.length, 1, 'exact-text duplicate rows collapse to one');
 });
+
+// ── ADDITIONS — Greg's C1 question 5, "which new priorities have emerged?" ────────────────────────────────────
+// The re-audit found C1 could re-rank and re-word what was already there but could not ADMIT a goal that was not
+// on the list. `emerging` looked like coverage and is not — it is a tier for an EXISTING item.
+
+async function freshList(db: Db, email: string): Promise<string> {
+  const m = await seedMember(db, email);
+  await addItem(db, m, 'Ride the loop again', 0);
+  await addItem(db, m, 'Sleep like I used to', 1);
+  await addItem(db, m, 'See my brother more', 2);
+  return m;
+}
+
+test('C1 additions · a new goal lands on the list, tiered, without disturbing the existing items', async () => {
+  const db = new PGlite() as unknown as Db;
+  await applySchema(db);
+  const m = await freshList(db, 'add@x.test');
+
+  await commitRefinement(db, m, {
+    items: [
+      { original: 'Ride the loop again', text: 'Ride the loop again', tier: 'top' },
+      { original: 'Sleep like I used to', text: 'Sleep like I used to', tier: 'important' },
+      { original: 'See my brother more', text: 'See my brother more', tier: 'important' },
+    ],
+    top3: ['Ride the loop again'],
+    added: [{ text: 'Get back on the water', tier: 'top', emergedFrom: 'talking about the summers' }],
+  });
+
+  const after = await getReclaimItems(db, m);
+  assert.equal(after.length, 4, 'the new goal is on the list');
+  const fresh = after.find((i) => i.text === 'Get back on the water');
+  assert.ok(fresh, 'the added item exists');
+  assert.equal(fresh!.tier, 'top', 'it carries the tier the member placed it in');
+  // NEVER REMOVES — the contract the whole commit path is built around.
+  for (const t of ['Ride the loop again', 'Sleep like I used to', 'See my brother more']) {
+    assert.ok(after.some((i) => i.text === t), `${t} survived`);
+  }
+});
+
+test('C1 additions · a new item does NOT leapfrog the member\'s own top-3 ordering', async () => {
+  // reclaim_item.sort_order defaults to 0, so an addition that skips the reorder pass silently outranks the three
+  // items they just named as their top priorities. Caught by writing this test, not by the typechecker.
+  const db = new PGlite() as unknown as Db;
+  await applySchema(db);
+  const m = await freshList(db, 'order@x.test');
+
+  await commitRefinement(db, m, {
+    items: [
+      { original: 'Ride the loop again', text: 'Ride the loop again', tier: 'top' },
+      { original: 'Sleep like I used to', text: 'Sleep like I used to', tier: 'top' },
+      { original: 'See my brother more', text: 'See my brother more', tier: 'important' },
+    ],
+    top3: ['Ride the loop again', 'Sleep like I used to'],
+    added: [{ text: 'Get back on the water', tier: 'important' }],
+  });
+
+  const after = await getReclaimItems(db, m);
+  assert.equal(after[0]!.text, 'Ride the loop again', 'their first choice leads');
+  assert.equal(after[1]!.text, 'Sleep like I used to', 'their second follows');
+  assert.ok(after.findIndex((i) => i.text === 'Get back on the water') >= 2, 'the new item sits below the named top-3');
+});
+
+test('C1 additions · a duplicate is a reword the model mis-filed, not a second row', async () => {
+  const db = new PGlite() as unknown as Db;
+  await applySchema(db);
+  const m = await freshList(db, 'dupe@x.test');
+
+  await commitRefinement(db, m, {
+    items: [{ original: 'Ride the loop again', text: 'Ride the loop again', tier: 'top' }],
+    top3: [],
+    added: [{ text: 'ride the loop again', tier: 'important' }], // same goal, different case
+  });
+
+  const after = await getReclaimItems(db, m);
+  assert.equal(after.filter((i) => i.text.toLowerCase() === 'ride the loop again').length, 1, 'no duplicate row');
+  assert.equal(after.length, 3, 'the list did not grow');
+});
+
+test('C1 additions · absent `added` behaves exactly as before', async () => {
+  // Most refinements add nothing. An absent list must read as "nothing new came up", never as a malformed call.
+  const db = new PGlite() as unknown as Db;
+  await applySchema(db);
+  const m = await freshList(db, 'none@x.test');
+
+  const r = await commitRefinement(db, m, {
+    items: [{ original: 'Ride the loop again', text: 'Ride the loop again, properly', tier: 'top' }],
+    top3: ['Ride the loop again, properly'],
+  });
+  assert.equal(r.ok, true);
+  const after = await getReclaimItems(db, m);
+  assert.equal(after.length, 3, 'no phantom item');
+  assert.ok(after.some((i) => i.text === 'Ride the loop again, properly'), 'the reword applied');
+});

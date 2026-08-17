@@ -134,7 +134,7 @@ export type Collected = {
   pilotObstacles?: string;
   // Reclaim C1 Step 2 (coach mode). The refined Reclaim List awaiting the member's confirm — the snapshot. Set by the
   // ENGINE from the model's record_refinement; the action commits it to the live list on confirm (never before).
-  pendingRefinement?: { items: { original: string; text: string; tier: string; reclaimItemId?: string }[]; top3: string[] };
+  pendingRefinement?: { items: { original: string; text: string; tier: string; reclaimItemId?: string }[]; top3: string[]; added?: { text: string; tier: string; emergedFrom?: string }[] };
   // Reclaim C3 (coach mode). The Quality-Day definition awaiting the member's confirm. Set by the ENGINE from the
   // model's record_quality_day; the action stores it + opens the logging week on confirm.
   pendingQualityDay?: { nonNegotiables: string[]; contributors: string[]; disruptors: string[] };
@@ -897,7 +897,9 @@ export type ModelTurn = { text: string; record?: Partial<Collected> & { complete
   // v2.5 Reclaim C1 Step 2 (coach mode) — the member's CONFIRMED-in-conversation refined Reclaim List (from the
   // record_refinement tool): each item's original + refined text + tier, plus the top-3. Coached in a snapshot; the
   // engine proposes it, and only the member's confirm commits it back to the live list (propose→confirm→commit).
-  refinement?: { items: { original: string; text: string; tier: string }[]; top3: string[] };
+  // `added` — goals the member named that were NOT already on their list (Greg's C1 question 5). Optional: most
+  // refinements add nothing, and an absent list must read as "nothing new came up", not as a malformed call.
+  refinement?: { items: { original: string; text: string; tier: string }[]; top3: string[]; added?: { text: string; tier: string; emergedFrom?: string }[] };
   // v2.5 Reclaim C3 (coach mode) — the member's Quality-Day definition (from record_quality_day): top-3
   // non-negotiables / next-3 contributors / top-2 disruptors. Coached, proposed, and committed on confirm.
   qualityDay?: { nonNegotiables: string[]; contributors: string[]; disruptors: string[] };

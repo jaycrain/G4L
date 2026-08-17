@@ -6,6 +6,7 @@
 // never a delete (releasing an item stays a separate explicit member action).
 
 import type { Db } from '../db/schema.ts';
+import { addReclaimItemForMember } from '../member/refine.ts';
 import { readJson, payloadKind } from '../db/jsonb.ts';
 import { getReclaimItems } from '../beats/store.ts';
 
@@ -30,7 +31,28 @@ export type RefinedItem = {
    *  means anything that survives to the confirmation is guaranteed to apply. */
   reclaimItemId?: string;
 };
-export type RefinementResult = { items: RefinedItem[]; top3: string[] }; // top3 = the refined texts, member's order
+/**
+ * A goal that was NOT on the list before — Greg's C1 question 5, "which new priorities have emerged?"
+ *
+ * WHY THIS IS A SEPARATE SHAPE and not a RefinedItem with a null id. RefinedItem carries `original` (must match a
+ * live item) and `reclaimItemId` (resolved at PROPOSE time). That resolution is a deliberate fix: the model's
+ * invented wording used to be the join key at commit, so a phrasing it made up matched nothing and applied 0 rows
+ * — while the member was told their list now reflected them. A nullable id on the same type would re-open exactly
+ * that hole, because "no match" and "new item" would become indistinguishable at the point of writing.
+ */
+export type AddedItem = {
+  text: string;
+  tier: Tier;
+  /** Greg's `emergence_source` — what brought it into view. Free text, the member's words, optional. */
+  emergedFrom?: string;
+};
+
+export type RefinementResult = {
+  items: RefinedItem[];
+  top3: string[]; // the refined texts, member's order
+  /** C1 must be able to ADMIT a goal, not only re-rank and re-word. Optional: most refinements add nothing. */
+  added?: AddedItem[];
+};
 
 const norm = (s: string): string => (s ?? '').trim().toLowerCase();
 
@@ -125,13 +147,38 @@ export async function commitRefinement(db: Db, memberId: string, result: Refinem
     applied += 1;
   }
 
+  // (2b) ADD — the goals that were not on the list before. AFTER the refinement pass, so a new item can never
+  // collide with a rewording in flight, and via addReclaimItemForMember so it inherits the duplicate guard and the
+  // category inference rather than re-implementing either. An addition that duplicates an existing item is a
+  // reword the model mis-filed; dropping it silently is right, and it is COUNTED so `applied` stays honest.
+  const addedIds: string[] = [];
+  for (const a of result.added ?? []) {
+    const text = (a.text ?? '').trim();
+    if (!text || !isTier(a.tier)) continue;
+    const r = await addReclaimItemForMember(db, memberId, text);
+    if (!r.ok) continue; // duplicate or empty — already on the list, nothing to add
+    const { rows } = await db.query<{ id: string }>(
+      'select id from reclaim_item where member_id=$1 and text=$2 order by created_at desc limit 1',
+      [memberId, text],
+    );
+    const id = rows[0]?.id;
+    if (!id) continue;
+    await db.query('update reclaim_item set tier=$3 where member_id=$1 and id=$2', [memberId, id, a.tier]);
+    idTier[id] = a.tier;
+    textToId[norm(text)] = id; // so a top-3 naming a NEW item resolves
+    addedIds.push(id);
+    applied += 1;
+  }
+
   // (3) reorder — top-3 first (member's order), then the rest by tier (stable within a tier: `live` preserves prior order).
   const top3Ids: string[] = [];
   for (const t of result.top3) {
     const id = textToId[norm(t)] ?? matchId(t);
     if (id && !top3Ids.includes(id)) top3Ids.push(id);
   }
-  const rest = live.map((i) => i.id).filter((id) => !top3Ids.includes(id));
+  // Added ids join `live` here. Without this they keep the default sort_order 0 and leapfrog the member's own
+  // ordering — a new item silently outranking the three they just named as top priorities.
+  const rest = [...live.map((i) => i.id), ...addedIds].filter((id) => !top3Ids.includes(id));
   rest.sort((a, b) => TIER_ORDER[idTier[a] ?? 'important'] - TIER_ORDER[idTier[b] ?? 'important']);
   const ordered = [...top3Ids, ...rest];
   for (let i = 0; i < ordered.length; i++) {

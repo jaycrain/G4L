@@ -72,10 +72,16 @@ const REFINE_COMMITTED_2 = "I've kept a snapshot of where it was, too — so you
 const TIER_DISPLAY_ORDER: Tier[] = [...REFINE_TIERS];
 // The engine-owned proposal — reflect the refined list back, grouped by tier, with the top-3, then the confirm gate.
 function proposeRefinement(ref: NonNullable<Collected['pendingRefinement']>): string {
+  // ADDITIONS APPEAR IN THEIR TIER, marked as new. A member cannot confirm what they cannot see, and an addition
+  // is the one change here that puts a line on their list which was never there — the exact thing that must not
+  // arrive silently. Marked rather than listed separately, so the confirmation shows the list AS IT WILL BE.
+  const added = ref.added ?? [];
   const byTier = TIER_DISPLAY_ORDER.map((tier) => {
-    const items = ref.items.filter((i) => i.tier === tier);
-    if (!items.length) return '';
-    return `${TIER_LABEL[tier]}:\n${items.map((i) => `  • ${i.text}`).join('\n')}`;
+    const items = ref.items.filter((i) => i.tier === tier).map((i) => `  • ${i.text}`);
+    const news = added.filter((a) => a.tier === tier).map((a) => `  • ${a.text}  (new)`);
+    const all = [...items, ...news];
+    if (!all.length) return '';
+    return `${TIER_LABEL[tier]}:\n${all.join('\n')}`;
   }).filter(Boolean).join('\n\n');
   const top3 = ref.top3.filter(Boolean);
   const top3Line = top3.length ? `\n\nThe three you'd move on next: ${top3.join(' · ')}.` : '';
@@ -95,7 +101,17 @@ function sanitizeRefinement(r: ModelTurn['refinement']): Collected['pendingRefin
     .map((i) => ({ original: i.original.trim(), text: i.text.trim(), tier: i.tier }));
   if (!items.length) return undefined;
   const top3 = (Array.isArray(r.top3) ? r.top3 : []).filter((t): t is string => typeof t === 'string' && !!t.trim()).map((t) => t.trim());
-  return { items, top3 };
+  // Additions are sanitised on the SAME terms as refinements — text plus a valid tier, or they do not survive.
+  // Deliberately not required: most refinements add nothing, and an empty `added` must read as "nothing new came
+  // up" rather than as a malformed call.
+  const added = (Array.isArray(r.added) ? r.added : [])
+    .filter((a) => a && typeof a.text === 'string' && !!a.text.trim() && isTier(a.tier))
+    .map((a) => ({
+      text: a.text.trim(),
+      tier: a.tier,
+      ...(typeof a.emergedFrom === 'string' && a.emergedFrom.trim() ? { emergedFrom: a.emergedFrom.trim() } : {}),
+    }));
+  return added.length ? { items, top3, added } : { items, top3 };
 }
 
 const refineStage: StageDef = {
@@ -225,6 +241,21 @@ const RECORD_REFINEMENT_TOOL = {
             tier: { type: 'string', enum: [...REFINE_TIERS], description: 'the tier the member placed it in' },
           },
           required: ['original', 'text', 'tier'],
+        },
+      },
+      added: {
+        type: 'array',
+        description:
+          "goals the member named that were NOT already on their list — Greg's question 5, what has newly emerged. " +
+          'Only include something they actually said they want; never invent one to fill this out. Omit entirely if nothing new came up, which is the common case.',
+        items: {
+          type: 'object',
+          properties: {
+            text: { type: 'string', description: "the new goal in the MEMBER'S OWN words" },
+            tier: { type: 'string', enum: [...REFINE_TIERS], description: 'where they placed it' },
+            emergedFrom: { type: 'string', description: 'what brought it into view, if they said — their words. Optional.' },
+          },
+          required: ['text', 'tier'],
         },
       },
       top3: { type: 'array', items: { type: 'string' }, description: 'the three refined texts the member would move on next' },
