@@ -1,4 +1,4 @@
-# Strings EXCLUDED from the member transcript (app @ 4d15c44 · 2026-08-17)
+# Strings EXCLUDED from the member transcript (app @ 4f37844 · 2026-08-17)
 # Not member copy: system prompts, multi-line fragments, code artifacts. Review when a real line goes missing.
 
 [lib/agent/onboarding-staged.ts] you’re trying to reclaim. We can always change it later.
@@ -136,6 +136,9 @@
 [lib/agent/onboarding-staged.ts] reciting a set of items. Invite what they want back gently, and let them lead. When they name one,
 [lib/agent/onboarding-staged.ts] invite the next. One want at a time, with care; never a rote "what else?" march. Aim for a few; never pressure
 [lib/agent/onboarding-staged.ts] or interrogate — small things count.
+[lib/agent/onboarding-staged.ts] deserves" its own moment unless you then address EVERY item before moving on. The safer move is not to
+[lib/agent/onboarding-staged.ts] promise a review at all: receive each want as it lands, and close by telling them the whole list is on
+[lib/agent/onboarding-staged.ts] their dashboard and theirs to change anytime. If you DO reflect the list back, name every item you tagged
 [lib/agent/onboarding-staged.ts] TAG EVERY WANT — this is load-bearing. Call add_reclaim_item the MOMENT a want is named, including any they
 [lib/agent/onboarding-staged.ts] volunteered earlier in the conversation (the gap beat). The Reclaim List is built ONLY from your tool calls,
 [lib/agent/onboarding-staged.ts] never from your prose — so if you reflect or list wants back to the member, EVERY item you name must already
@@ -173,6 +176,7 @@
 [app/onboarding/welcome.tsx] what you build; how you watch yourself change.
 [app/onboarding/welcome.tsx] two ways to see it: how far you’ve got to go, and the grit you’re growing.
 [app/onboarding/welcome.tsx] Clip in
+[app/onboarding/welcome.tsx] our founder’s cycling metaphor, and more than “let’s go.” Shoes locked to your pedals is a commitment. Every stroke drives power, and you ride farther and stronger. Everyone forgets to unclip and falls down once. You get up and clip back in.
 [app/onboarding/welcome.tsx] Everything you do here goes into it — the moves that actually work for you, and what you learn about yourself along the way. Your
 [app/onboarding/welcome.tsx] Playbook
 [app/onboarding/welcome.tsx] isn’t ours to hand you. It’s already in you, and we help you draw it out. You’ll use it again and again.
@@ -233,6 +237,8 @@
 [lib/agent/reconnect.ts] it. Today you look. Picture an ordinary Tuesday a year from now — but you've done the work, and the things on
 [lib/agent/reconnect.ts] your Reclaim List are real. How do you wake up, what do you reach for? Not the highlight reel — the ordinary
 [lib/agent/reconnect.ts] morning. Sit with that Tuesday for a second, and tell me what you see.
+[lib/agent/reconnect.ts] ${windowClose()}  ${legacyOpener(b.collected)}
+[lib/agent/reconnect.ts] ${windowClose()}  ${legacyOpener(b.collected)}
 [lib/agent/reconnect.ts] We've gone deep into what created the distance. Now, we're going to go through questions that determine your
 [lib/agent/reconnect.ts] Identity Distance (ID) Score. This will establish a baseline and allow us to watch it close that gap as you
 [lib/agent/reconnect.ts] progress through G4L. For the following short statements, just tell me how true each feels right now. 1 for not
@@ -248,8 +254,16 @@
 [lib/agent/reconnect.ts] Who they're reclaiming: ${identity}.
 [lib/agent/reconnect.ts] Door(s) they named: ${doorNames.join(', ')}.
 [lib/agent/reconnect.ts] ${idLine} ${doorLine} Baseline shape: lowest area is ${DIM_FRIENDLY[shape.lowest]}; highest is ${DIM_FRIENDLY[shape.highest]}. Reflect this as their starting picture, tie the lowest to their Door(s) ONLY if it genuinely fits, and close warmly. No numbers, no grades.
+[lib/agent/reconnect.ts] One last thing.${SEP}I'd like you to write a letter — to yourself, a year from today.
+[lib/agent/reconnect.ts] Not a plan and not a pep talk. The letter you'd want to be handed in a year by the version of you who kept going.${SEP}
+[lib/agent/reconnect.ts] ${b.model.legacyBody}${BEAT_SEP}${LEGACY_ASK_REVISION}
+[lib/agent/reconnect.ts] ${b.model.legacyBody}${BEAT_SEP}${LEGACY_CAP_REACHED}
+[lib/agent/reconnect.ts] ${b.model.legacyBody}${BEAT_SEP}${LEGACY_ASK_REVISION}
 [lib/agent/reconnect.ts] ${idqClose()}${BEAT_SEP}${driftOpen(b.collected)}
 [lib/agent/reconnect.ts] Just a number, 1 to 5 — how true does that feel right now?  ${checkpointDeliver(index)}
+[lib/agent/reconnect.ts] Call this ONLY when you are writing the member's Legacy Letter — after they have answered enough of the
+[lib/agent/reconnect.ts] prompts (four of the six is plenty; four honest answers beat six forced ones). Put the whole letter in
+[lib/agent/reconnect.ts] the letter itself, in the member's own first-person voice
 [lib/agent/reconnect.ts] Call ONLY once you have GENUINELY drawn out the door — how it actually opened, the sequence, what it quietly
 [lib/agent/reconnect.ts] cost — and you have a real INSIGHT to reflect (the cost they normalized, how it targeted who they were, the
 [lib/agent/reconnect.ts] sequence). NEVER on the first mention. If the material is still thin, do NOT call it — keep drawing out; a
@@ -305,6 +319,20 @@
 [lib/agent/reconnect.ts] a check — call reflect_drift ONLY once it is genuinely drawn out; if thin, keep drawing out (never manufacture a
 [lib/agent/reconnect.ts] pattern). Name it to push OFF from, not to sit in. Once they confirm the pattern, accept it and let the beat
 [lib/agent/reconnect.ts] move — do not reflect it again or ask a further question. Do not diagnose.
+[lib/agent/reconnect.ts] CURRENT STAGE: THE LEGACY LETTER — the last thing they make in Reconnect. They are writing a letter to
+[lib/agent/reconnect.ts] in this conversation:
+[lib/agent/reconnect.ts] (They ALREADY answered 1 in the Window beat: "${tuesday}" — do not ask it again; use it.)
+[lib/agent/reconnect.ts] ${i + 1}. ${p.prompt}
+[lib/agent/reconnect.ts] FOUR OF THE SIX IS PLENTY — four honest answers beat six forced ones. Once you have four, or once they
+[lib/agent/reconnect.ts] signal they are done answering, WRITE THE LETTER and call record_legacy_letter with it as `body`, with no
+[lib/agent/reconnect.ts] other text in that turn.
+[lib/agent/reconnect.ts] THE FORM: first person, from them to the version of them who kept going, half a page. Not a summary of
+[lib/agent/reconnect.ts] their answers and not a plan — the letter that person would want to read.
+[lib/agent/reconnect.ts] they gave them, and keep their phrasing even where it is plain or awkward. Do not upgrade their vocabulary,
+[lib/agent/reconnect.ts] do not add inspirational cadence, do not write a sentence they would not say out loud. NEVER praise them,
+[lib/agent/reconnect.ts] grade an answer, promise an outcome, or add anything they did not say — no "you've got this", no "imagine
+[lib/agent/reconnect.ts] AFTER THE DRAFT: they will tell you what to change. Redraft in full and call the tool again — do not argue
+[lib/agent/reconnect.ts] for your wording, and do not ask whether they like it. It is theirs.
 [lib/agent/reconnect.ts] CURRENT STAGE: The Window (§2d Visioning, beat 2) — the turn toward HOPE. Draw out ONE day: an ordinary
 [lib/agent/reconnect.ts] Tuesday a year out where they have DONE the work and the things on their Reclaim List are real (ordinary and
 [lib/agent/reconnect.ts] real — the morning, not the medal). Do NOT ask them to picture a "nothing changes" version first. Then reflect
@@ -547,8 +575,9 @@
 [lib/agent/reclaim.ts] revisit it now to make sure it still fits the person you're becoming.${BEAT_SEP}Here's your list as it stands:  ${shown}${BEAT_SEP}Before changing anything,
 [lib/agent/reclaim.ts] just notice it. What still feels true, what feels different, and what feels newly important?
 [lib/agent/reclaim.ts] pendingRefinement
-[lib/agent/reclaim.ts] ${TIER_LABEL[tier]}: ${items.map((i) =>
-[lib/agent/reclaim.ts] ).join(' ')}
+[lib/agent/reclaim.ts] • ${i.text}
+[lib/agent/reclaim.ts] • ${a.text}  (new)
+[lib/agent/reclaim.ts] ${TIER_LABEL[tier]}: ${all.join(' ')}
 [lib/agent/reclaim.ts] The three you'd move on next: ${top3.join(' · ')}.
 [lib/agent/reclaim.ts] Here's your list, refined:  ${byTier}${top3Line}${BEAT_SEP}Want me to save this as your Reclaim List, or tweak something first?
 [lib/agent/reclaim.ts] pendingRefinement
@@ -560,12 +589,20 @@
 [lib/agent/reclaim.ts] tiers — Top Priorities Now, Important but Not First, Emerging Priorities, No Longer Central — then name the three
 [lib/agent/reclaim.ts] they'd move on next. Play their own words back; never impose. Do NOT rewrite their list yourself — you propose,
 [lib/agent/reclaim.ts] they decide.
-[lib/agent/reclaim.ts] if unchanged), tier} — plus top3 (the three refined texts they'd move on next). Only call it when the refinement is
+[lib/agent/reclaim.ts] if unchanged), tier} — plus top3 (the three refined texts they'd move on next).
+[lib/agent/reclaim.ts] it in `added` as {text (their own words), tier, emergedFrom (what brought it into view, if they said)}. Do NOT put
+[lib/agent/reclaim.ts] a new goal in `items`: `original` there must match a line already on their list, so a new one silently matches
+[lib/agent/reclaim.ts] nothing and is lost. Only what they actually said they want; never invent one, and omit `added` entirely when
+[lib/agent/reclaim.ts] nothing new came up, which is the common case.
+[lib/agent/reclaim.ts] Only call it when the refinement is
 [lib/agent/reclaim.ts] settled; the app then shows them the result to confirm before anything is saved. 'No Longer Central' just means
 [lib/agent/reclaim.ts] lowest priority for this season — it does NOT delete the item. If a distress or crisis signal appears, drop the
 [lib/agent/reclaim.ts] exercise and route to support (988 US / local) and a human — always on.
 [lib/agent/reclaim.ts] as {original, text, tier} and the top3 refined texts. Only call once the refinement is settled in conversation.
 [lib/agent/reclaim.ts] the refined list — one entry per current item
+[lib/agent/reclaim.ts] goals the member named that were NOT already on their list — Greg's question 5, what has newly emerged.
+[lib/agent/reclaim.ts] the new goal in the MEMBER'S OWN words
+[lib/agent/reclaim.ts] what brought it into view, if they said — their words. Optional.
 [lib/agent/reclaim.ts] RIGHT NOW: the member's current Reclaim List is: ${list.map((t) =>
 [lib/agent/reclaim.ts] ).join(' ') || '(empty)'}  Coach the refinement one step at a time; when it's settled, call record_refinement with the whole refined list.
 [lib/agent/reclaim.ts] you want your world to get BIGGER, and which area to push on first. I'll walk you through four areas — Physical,
@@ -580,7 +617,7 @@
 [lib/agent/reclaim.ts] And the move you'd start with: “${r.earlyAction}”.
 [lib/agent/reclaim.ts] Here's what stands out. Your best next focus looks like your ${primary} life because it matters to you and
 [lib/agent/reclaim.ts] progress there would ripple into the rest of your life.${divergence}${secondaryLine}${leverLine}
-[lib/agent/reclaim.ts] ${BEAT_SEP}This was about finding the priority, not judging any of it. It's saved — you can come back to it anytime.
+[lib/agent/reclaim.ts] ${BEAT_SEP}That's your first focus now. I'll work from it, and it's what we'll build your Quality Days around.
 [lib/agent/reclaim.ts] ${p}  ${AUDIT_SUB_ISSUE_ASK[d]}  ${AUDIT_SUB_ISSUES[d].join(' · ')}
 [lib/agent/reclaim.ts] ${AUDIT_SORT_INTRO}${BEAT_SEP}${AUDIT_SORT_QUESTIONS[0]!.prompt}
 [lib/agent/reclaim.ts] Whichever of the four fits best — ${domainList('or')}.
@@ -666,8 +703,6 @@
 [lib/playbook/reads.ts] read derivation failed, hiding one card:
 [lib/playbook/reads.ts] Moving your body: ${relativeAutonomyRead(a)}.
 [lib/playbook/reads.ts] Eating well: ${relativeAutonomyRead(d)}.
-[lib/playbook/reads.ts] Where you're strongest: ${lower(h.strongest)}.
-[lib/playbook/reads.ts] Where there's the most room: ${lower(h.growthEdge)}.
 [lib/playbook/reads.ts] The area you chose to focus on: your ${lower(primary)} life.
 [lib/playbook/reads.ts] Where your ratings point: your ${lower(primary)} life.
 [lib/playbook/reads.ts] Where momentum comes easiest: your ${lower(lever)} life.
@@ -681,6 +716,20 @@
 [lib/grinta/survey/instrument.ts] I have a general sense of what I am doing and why I am doing it
 [lib/grinta/survey/instrument.ts] unknown Grinta item code: ${code}
 [lib/grinta/survey/instrument.ts] unknown Grinta item code: ${code}
+[lib/content/teaching.ts] the IDQ
+[lib/content/teaching.ts] the Doors
+[lib/content/teaching.ts] the Drift Quiz
+[lib/content/teaching.ts] the Bigger World Audit
+[lib/content/teaching.ts] Reconnect
+[lib/content/teaching.ts] Rewire
+[lib/content/teaching.ts] Rebuild
+[lib/content/teaching.ts] Reclaim
+[lib/content/teaching.ts] the Program
+[lib/content/teaching.ts] ${ASSET_TITLE[asset] ?? asset} · ${PHASE_TITLE[asset[0]!] ?? ''}
+[lib/rebuild/skills-map.ts] Staying with it
+[lib/rebuild/skills-map.ts] ${map.strongest} is your strongest single skill.
+[lib/rebuild/skills-map.ts] ${best}Your three families read evenly. The skills below are the ones with the most room.
+[lib/rebuild/skills-map.ts] ${best}You are steadiest at ${steady}. ${FAMILY_LABEL[map.thinnest].name} is the thinnest of the three, and where practice would pay most.
 [lib/curriculum/registry.ts] light (did-you / yes-no)
 [lib/curriculum/registry.ts] milestone + gate
 [lib/curriculum/registry.ts] Excavation
@@ -751,6 +800,14 @@
 [app/badges/[memberId]/page.tsx] Milestones
 [app/badges/[memberId]/page.tsx] Hardiness
 [app/badges/[memberId]/page.tsx] Comebacks
+[lib/connect/post-session-nudge.ts] ${quiet.other} is holding you to ${what}. It's been ${quiet.lastCheckinDays} days since you two checked in.
+[lib/connect/post-session-nudge.ts] You told ${quiet.other} you'd ${what}. It's been ${quiet.lastCheckinDays} days since you checked in.
+[lib/connect/post-session-nudge.ts] Check in
+[lib/connect/post-session-nudge.ts] ${unread.length} people responded to what you wrote.
+[lib/connect/post-session-nudge.ts] ${e.actor} replied to what you wrote about ${e.postLabel}.
+[lib/connect/post-session-nudge.ts] ${e.actor} saw what you wrote about ${e.postLabel}.
+[lib/connect/post-session-nudge.ts] Go read it
+[lib/connect/post-session-nudge.ts] Look in
 [app/dashboard/redesign-dashboard.tsx] Reconnecting
 [app/dashboard/redesign-dashboard.tsx] Rewiring
 [app/dashboard/redesign-dashboard.tsx] Rebuilding
@@ -988,6 +1045,18 @@
 [app/playbook/[memberId]/redesign-playbook-view.tsx] Reclaim
 [app/playbook/[memberId]/redesign-playbook-view.tsx] Who you are
 [app/playbook/[memberId]/redesign-playbook-view.tsx] Who you are
+[app/playbook/[memberId]/redesign-playbook-view.tsx] January
+[app/playbook/[memberId]/redesign-playbook-view.tsx] February
+[app/playbook/[memberId]/redesign-playbook-view.tsx] March
+[app/playbook/[memberId]/redesign-playbook-view.tsx] April
+[app/playbook/[memberId]/redesign-playbook-view.tsx] June
+[app/playbook/[memberId]/redesign-playbook-view.tsx] July
+[app/playbook/[memberId]/redesign-playbook-view.tsx] August
+[app/playbook/[memberId]/redesign-playbook-view.tsx] September
+[app/playbook/[memberId]/redesign-playbook-view.tsx] October
+[app/playbook/[memberId]/redesign-playbook-view.tsx] November
+[app/playbook/[memberId]/redesign-playbook-view.tsx] December
+[app/playbook/[memberId]/redesign-playbook-view.tsx] ${MONTHS[m - 1] ?? ''} ${y}
 [app/playbook/[memberId]/redesign-playbook-view.tsx] Promise
 [app/playbook/[memberId]/redesign-playbook-view.tsx] Gathered ${r.proposed} from your work — keep what rings true below.
 [app/playbook/[memberId]/redesign-playbook-view.tsx] Science
@@ -1012,8 +1081,11 @@
 [app/playbook/[memberId]/redesign-playbook-view.tsx] Who you are
 [app/playbook/[memberId]/redesign-playbook-view.tsx] s call: "hell yes that
 [app/playbook/[memberId]/redesign-playbook-view.tsx] s not too much to ask. And exactly what we
-[app/playbook/[memberId]/redesign-playbook-view.tsx] Day ${grids[0]!.day} of 7. A blank day is a day — this is for noticing what helps, never a score.
-[app/playbook/[memberId]/redesign-playbook-view.tsx] ${grids.length} weeks running. A blank day is a day — this is for noticing what helps, never a score.
+[app/playbook/[memberId]/redesign-playbook-view.tsx] Day ${grids[0]!.day} of 7. A blank day is a day. This is for noticing what helps.
+[app/playbook/[memberId]/redesign-playbook-view.tsx] ${grids.length} weeks running. A blank day is a day. This is for noticing what helps.
+[app/playbook/[memberId]/redesign-playbook-view.tsx] s map. Greg
+[app/playbook/[memberId]/redesign-playbook-view.tsx] pb-map-tag${row.steady ? ' is-steady' : ''}
+[app/playbook/[memberId]/redesign-playbook-view.tsx] pb-map-tag${row.steady ? ' is-steady' : ''}
 [app/playbook/[memberId]/redesign-playbook-view.tsx] 0 ? c.items.map(entryCard) :
 [app/playbook/[memberId]/redesign-playbook-view.tsx] the moves that worked, run them again
 [app/playbook/[memberId]/redesign-playbook-view.tsx] Waiting on you

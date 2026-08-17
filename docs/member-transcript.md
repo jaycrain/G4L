@@ -1,6 +1,6 @@
 # G4L — Member Transcript (authored copy, verbatim)
 
-Stamp: `app @ 4d15c44 · 2026-08-17` · PART 1 of the Cowork release bundle.
+Stamp: `app @ 4f37844 · 2026-08-17` · PART 1 of the Cowork release bundle.
 
 **Quote from this.** Every line below is authored, fixed copy a member reads, in reading order by surface. It does
 **not** include the Companion's in-the-moment reflections (those are model-generated and vary per member — describe
@@ -92,6 +92,8 @@ _source: lib/agent/onboarding-staged.ts_
 - My dad's second marriage fell apart
 - ALWAYS end your turn with your single forward question — your drawing-out ask while gathering ("was there more
 - RECEIVE it: reflect it back, feel what it means to them, and (if vague) drill it concrete — then, and only then,
+- FINISH WHAT YOU PROMISE. Never say you will go through their wants "one at a time" or that "each one
+- — a partial read-back tells them you were only half listening.
 - MAKE EACH WANT CONCRETE (light touch): a Reclaim item should be something they could actually notice
 - THEIR WORDS to replace the vague one (do NOT add a second item). When they answer with a cadence, number,
 - ("lose 25 lbs") need no sharpening — leave them.
@@ -115,9 +117,8 @@ _source: app/onboarding/welcome.tsx_
 - Your Dashboard
 - Your Playbook
 - ID Score & Grinta Index
-- a cycling term our founder uses as a metaphor, one that carries more than “let’s go.” Cyclists lock their shoes to the pedals when they mean it: committed, in for the long ride. Everyone falls at least once. But push through and it transforms the ride, every stroke counts now, up and down, and you go farther and stronger. Fall, and you clip back in.
 - You’ll build a Playbook.
-- It’s yours to keep.
+- It stays yours.
 - Here’s how
 - Four short parts, and you can stop between any of them — nothing’s lost.
 - Getting ready
@@ -239,15 +240,26 @@ _source: lib/agent/reconnect.ts_
 - That's the whole check-in — thank you for staying with it. I've got your baseline now. You'll see it take shape
 - Premature close
 - They named no specific Door.
+- I'll ask you a few things and then draft it in your words, and you can change anything that isn't right.
+- Saved — dated a year from today, and addressed to you.
+- It lives in your Playbook, under Who you are — you can read it whenever you want, and change it whenever it stops being true.
+- That's yours now. You can keep shaping it any time from your Playbook — for now, want me to save it?
+- Read it back. What's not right — a line that isn't how you'd say it, or something missing?
 - A quick check-in before we close. Six short statements about what this work is making you think about.
 - You're the one scoring these — it's your read on yourself, and I'll show you where it lands in a moment.
 - Same as before: just tell me how true each feels right now. 1—not at all. 5—completely.
 - That's it — you named what this stirred in you. Hold on, don't go anywhere yet.
 - Before you go anywhere — stop for a second. I want to show you what you just did.
+- `body` and NOTHING else in your reply — the engine shows it to them and asks what they want changed.
+- Do not call it while you are still asking questions, and do not call it twice in a turn.
 - ONLY if it's an unambiguous tag-fix — they simply misspoke the label — NOT a genuine re-seeing; when in any
 - Use when the drawn-out story surfaces an ADDITIONAL canonical Door alongside the one they named — the Fade went
 - They named no Door at onboarding.
 - ) tacked onto it. The MOMENT they confirm it (
+- THEMSELVES, dated one year from today. Ask these, ONE PER TURN, in this order, skipping any already answered
+- VOICE IS THE WHOLE POINT: it must sound like THEM, not like us. Use their own words and images wherever
+- the possibilities". If they left something unanswered, leave that ground alone rather than inventing it.
+- End on the unfinished business if they named one; it is meant to stay open.
 
 _source: lib/idq/instrument.ts_
 
@@ -596,9 +608,11 @@ _source: lib/agent/reclaim.ts_
 - I've kept a snapshot of where it was, too — so you can always see how it's shifted. You can revisit it anytime by asking for your Reclaim List.
 - ('feel physically capable and steady again'), and merge items that belong together; (4) re-prioritize into four
 - RECORDING: once you've walked the refinement and the member has settled it, call record_refinement with the WHOLE
+- IF THEY NAMED SOMETHING THAT IS NOT ALREADY ON THE LIST — a goal that has newly emerged, which is step (2) — pass
 - Record the member's settled, refined Reclaim List so the app can show it back for confirmation. Pass every item
 - the item's CURRENT wording (to match the live list)
 - the refined wording (or the same if unchanged)
+- Only include something they actually said they want; never invent one to fill this out. Omit entirely if nothing new came up, which is the common case.
 - In Reconnect, the IDQ showed how far you'd drifted across four areas of life. This is the other side of it — where
 - It's also where you feel most ready to move — a strong place to start.
 - There's no wrong answer here — whatever comes to mind first is usually the true one, even if it's a few words.
@@ -701,7 +715,7 @@ _source: app/momentum/week-grid.tsx_
 - First days
 - How the day felt
 - : done ?
-- Tap a day when you do one — or just tell me and I\u2019ll mark it.
+- Tap the day beside a line when you did that one — or tell me and I\u2019ll mark it.
 - Tap a day to rate it and mark what showed up.
 - Tap any day to open your log — the grid mirrors what you write there.
 - This mirrors what you\u2019ve told your Companion, so you can see the week at a glance.
@@ -712,7 +726,7 @@ _source: lib/playbook/reads.ts_
 - What’s Your Why?
 - Reasons that are yours tend to hold when nobody is watching.
 - Strengths & Weaknesses
-- A skill with room is simply the next one to practice.
+- Every one of these is learnable.
 - Bigger World Audit
 - You chose this — it is where you decided the effort goes.
 - You did not name a single area, so this is the ratings’ read, not your call.
@@ -814,6 +828,47 @@ _source: lib/content/summaries.ts_
 - Reclaim is where it widens out. You revisit what you set out to take back — now that you know yourself better — and check that your world is genuinely getting bigger: more open, more connected, more alive. You track the days that feel like the life you’re building, so a good day becomes something you can repeat on purpose. This is the wellness the whole arc was pointing at: a life you’ve grown back into, and keep growing.
 
 
+## The in-Session teaching layer (Frame · Understand)
+
+_source: lib/content/teaching.ts_
+
+- Disinformation Audit
+- Visualization Workshop
+- Mindful Monitoring
+- What Is Your Why?
+- Strengths and Weaknesses
+- Monitoring Health Decisions
+- Reclaim Readiness
+- Quality Days
+- RECONNECT_BEAT_ORDER.indexOf(RECONNECT_LAST_BEAT_FOR_ASSET[a]!)
+
+_source: app/workspace/teaching-cards.tsx_
+
+- Why this matters
+- Why it works
+- We&rsquo;ll keep the takeaway in your Playbook.
+
+
+## B2 — the development map ('your map')
+
+_source: lib/rebuild/skills-map.ts_
+
+- Getting ready
+- Taking action
+- Sizing up what you need
+- Watching how it is going
+- Setting goals
+- Making a plan
+- The practical know-how
+- Staying positive about your efforts
+- Overcoming barriers
+- Finding good information
+- Asking people for support
+- Getting back on after a slip
+- Managing your time
+- Confidence and motivation
+
+
 ## Badges
 
 _source: lib/curriculum/registry.ts_
@@ -906,6 +961,15 @@ _source: app/badges/[memberId]/page.tsx_
 - Still to earn
 
 
+## The human step after a Session
+
+_source: lib/connect/post-session-nudge.ts_
+
+- Anything from today worth putting in front of the others?
+- Open the Community
+- There are people here doing this at the same time as you. You can read without saying anything.
+
+
 ## Dashboard & subpages (UI copy)
 
 _source: app/dashboard/redesign-dashboard.tsx_
@@ -959,6 +1023,7 @@ _source: app/dashboard/triptych-center.tsx_
 - Sorry — that didn’t go through. Try again in a moment.
 - Phase 4 · Reclaim
 - Your week is running
+- Your Progress
 - See the Program →
 - Companion thread is getting crowded
 - Tell me what's going on…
@@ -977,7 +1042,7 @@ _source: app/dashboard/triptych-left.tsx_
 _source: app/dashboard/triptych-right.tsx_
 
 - What's next
-- You'll build a Playbook. It's yours to keep.
+- You'll build a Playbook. It stays yours.
 - Your Playbook
 - What you’ve built.
 - Where your Comeback gets kept.
@@ -1142,8 +1207,8 @@ _source: app/connect/[memberId]/page.tsx_
 _source: app/playbook/[memberId]/redesign-playbook-view.tsx_
 
 - Your picture
-- Noticing your days
-- Noticing your skills
+- Your triggers this week
+- The skills you’re building
 - Your Lifestyle Pilot
 - Your Quality Days
 - This week
@@ -1185,9 +1250,10 @@ _source: app/playbook/[memberId]/redesign-playbook-view.tsx_
 - Your story so far
 - My Story
 - Who you are, in the words you landed on.
+- Your Legacy Letter
 - A living read your Companion re-weaves each time you close a Session.
 - Your reads
-- What your own answers said, laid out. Never a score — you told us this.
+- What your own answers said, laid out.
 - Revisit a Session
 - Your journal
 - Thoughts and feelings in your own words, timestamped to where you are. For a lot of people this is the most freeing thing here — a place to think on the page and understand yourself. Your Companion reads it and pulls keepers up into your Moves, but the writing itself is the point — it only replies if you ask.
@@ -1200,7 +1266,7 @@ _source: app/playbook/[memberId]/redesign-playbook-view.tsx_
 _source: app/account/page.tsx_
 
 - Your account — Grinta for Life
-- Changing your email isn’t available yet — it’s coming with email verification.
+- Changing your email isn’t available yet. Get in touch and we’ll move it for you.
 - The tour
 - A quick walk through what each part of your dashboard does.
 - Take the tour again →
