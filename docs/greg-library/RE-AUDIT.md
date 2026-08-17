@@ -99,12 +99,45 @@ readings don't exist anywhere — B1 computes and shows nothing, B2 has no map."
 > got applied as "never visible." The resolution Greg gives is a *shape*, not a number: which of the three families
 > is thin. That is showable without a score, and it is the single highest-value read in Rebuild.
 
+## NOT A GAP · C3's second precept is present — and the Teaching Layer is about to make it required
+
+My CHECK said the reciprocal loop ("Quality Living leads to Quality Days") was missing, since the C3 *summary*
+carries only direction 1. It is in the deeper tier, `lib/content/explore.ts:211`:
+
+> "Good days accumulate into a life shaped around them, and a life shaped that way tends to produce more of them.
+> Research on upward spirals describes this loop, and **it works in both directions.**"
+
+Correct, hedged, and grounded in the same literature Greg cites (scaffolding #5). **And it stops being optional the
+moment the Teaching Layer ships** — the explore tier becomes a required beat, so every member meets the loop
+instead of only those who tapped through. Worth noting as a concrete instance of what the Teaching Layer buys.
+
+## GAP · R2 — Doors are a SET, with no relevance, no continuum, and no temporal pattern
+
+**Greg (SOURCE, R2 Science Check):** "For each door, the member rates its relevance to their personal Fade on a
+**simple three-point scale**" and is "explicitly invited to **mark more than one**." Plus the temporal frame —
+which door came **first**, which has the **biggest impact**, which is **still open** ("a door that is still open is
+the active Fade"). And he went **further** on 2026-08-08, unprompted: "there isn't a singular door but rather **a
+continuum on each one** … a **profile of issues** instead of a singular one."
+
+**Built:** doors are a bare set of slugs — `doors: DoorSlug[]`, deduped through a `Set`
+(`lib/agent/onboarding.ts:868, 1020`). No relevance value per door. Verified no storage for the temporal frame
+either: no `firstDoor` / `stillOpen` / `biggestImpact` anywhere in `lib/`.
+
+**Three things are missing, not one:** per-door relevance (Greg now wants a continuum, not his own 3-point scale) ·
+the temporal pattern · the Community share. The temporal one is the most valuable and the cheapest to describe: a
+door closed years ago and a door being walked through this week mean completely different things, and the product
+cannot currently tell them apart.
+
+**Sequencing note:** this lands in Reconnect, which carries the live capture loop. Same caution as the Teaching
+Layer — worth doing, not worth doing casually.
+
 ---
 
 ## Still to verify
 
-C3's second precept ("Quality Living leads to Quality Days") ·
-R2's community share and Greg's *continuum per door* · the carry-forward web beyond the two above.
+The carry-forward web beyond the links above · R2's Community share as a build (direction is green-lit; the
+surface exists as the Community) · B1's reading, which Jay's 8/8 email flags alongside B2 ("B1 computes and shows
+nothing") and which this pass has **not** verified.
 
 **Already closed elsewhere, do not re-open:** W3's monitoring week (built 8/8, migration `0074`) · R2 multi-door
 direction (green-lit by Greg 8/8) · IDQ 60-day cadence (Jay's ruling; asked of Greg 8/16) · C2 question order
