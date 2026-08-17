@@ -939,7 +939,9 @@ function parseQualityDayModel(content: readonly unknown[]): ModelTurn {
   return { text: text.trim(), ...(qualityDay ? { qualityDay } : {}) };
 }
 
-export async function liveTurnReclaimC3(state: ConvState, history: ConvMessage[], memberMessage: string): Promise<Turn> {
+/** @param carryForward What B3 and C2 retained (lib/curriculum/retention.ts), rendered, or null. See the note on
+ *  liveTurnRebuildB3 — passed in to keep the engine pure, and null must add nothing at all. */
+export async function liveTurnReclaimC3(state: ConvState, history: ConvMessage[], memberMessage: string, carryForward?: string | null): Promise<Turn> {
   const { default: Anthropic } = await import('@anthropic-ai/sdk');
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, timeout: 25000, maxRetries: 2, defaultHeaders: { 'accept-encoding': 'identity' } });
   const messages = [
@@ -949,7 +951,7 @@ export async function liveTurnReclaimC3(state: ConvState, history: ConvMessage[]
   const res = await client.messages.create({
     model: process.env.ANTHROPIC_MODEL ?? 'claude-sonnet-4-6',
     max_tokens: 600,
-    system: C3_SYSTEM,
+    system: C3_SYSTEM + (carryForward ? `\n\n${carryForward}` : ''),
     tools: [RECORD_QUALITY_DAY_TOOL],
     messages,
   });

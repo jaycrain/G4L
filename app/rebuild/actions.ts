@@ -42,6 +42,7 @@ import { setGate, markSessionClosed, markCheckpointClosed } from '../../lib/curr
 import { acknowledgeSessionBadge } from '../../lib/curriculum/view.ts';
 import type { RebuildCeremonyData } from '../../lib/ceremony/rebuild-ceremony-beats.ts';
 import { earnedBadgeReveal } from '../../lib/ceremony/badge-reveal.ts';
+import { carryForward, describeCarryForward } from '../../lib/curriculum/retention.ts';
 
 // v2.4 Rebuild server actions. B1 (SDT) + B2 (self-management) are ADMINISTERED reads; B3 · "The Lifestyle Pilot" is
 // the LIVE coaching turn (COACH mode) → a confirmed plan; B4 · "The Rebuild Checkpoint" is the administered Control
@@ -203,8 +204,12 @@ export async function rebuildTurnAction(
     }
     // B3 is a LIVE coaching turn (COACH mode — the model coaches, the engine holds the completeness contract).
     if (session === 'b3') {
-      const turn = await liveTurnRebuildB3(state, history, message);
       const db = (await getDb()) as unknown as Db;
+      // THE CARRY-FORWARD FAN-IN — B3 reads B1 + B2 + W3 at once, which is the case Greg specifies and the reason
+      // a single `previousAsset` pointer cannot express this. Read here, at the boundary, so the engine stays
+      // pure. Guarded: losing the carry-forward must cost the connective tissue, never the Session.
+      const carried = await carryForward(db, memberId, 'b3').catch(() => []);
+      const turn = await liveTurnRebuildB3(state, history, message, describeCarryForward(carried));
       let b3Badge: { id: string; name: string } | null = null;
       if (turn.complete) {
         const activity = (turn.state.collected?.pilotActivity ?? '').trim();

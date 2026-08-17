@@ -464,7 +464,14 @@ export function parseB3Model(content: readonly unknown[]): ModelTurn {
   return { text: text.trim(), ...(any ? { plan } : {}) };
 }
 
-export async function liveTurnRebuildB3(state: ConvState, history: ConvMessage[], memberMessage: string): Promise<Turn> {
+/**
+ * @param carryForward What B1, B2 and W3 retained for this member (lib/curriculum/retention.ts), already rendered
+ * as a context block, or null. Passed IN rather than read here so the engine stays pure and replayable — the DB
+ * read belongs at the action boundary, like every other stored input to this arc. Null when none of the three has
+ * been done, and null must add NOTHING: Rewire and Rebuild run in parallel by design, so an absent W3 is a
+ * choice the member made, never a gap to point at.
+ */
+export async function liveTurnRebuildB3(state: ConvState, history: ConvMessage[], memberMessage: string, carryForward?: string | null): Promise<Turn> {
   const { default: Anthropic } = await import('@anthropic-ai/sdk');
   const client = new Anthropic({
     apiKey: process.env.ANTHROPIC_API_KEY,
@@ -479,7 +486,7 @@ export async function liveTurnRebuildB3(state: ConvState, history: ConvMessage[]
   const res = await client.messages.create({
     model: process.env.ANTHROPIC_MODEL ?? 'claude-sonnet-4-6',
     max_tokens: 400,
-    system: B3_SYSTEM + b3Context(state.collected) + b3StageNote(state),
+    system: B3_SYSTEM + b3Context(state.collected) + b3StageNote(state) + (carryForward ? `\n\n${carryForward}` : ''),
     tools: [RECORD_PLAN_TOOL],
     messages,
   });

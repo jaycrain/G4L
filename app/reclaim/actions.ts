@@ -43,6 +43,7 @@ import { setGate, markSessionClosed, markCheckpointClosed } from '../../lib/curr
 import { acknowledgeSessionBadge } from '../../lib/curriculum/view.ts';
 import type { ReclaimCeremonyData } from '../../lib/ceremony/reclaim-ceremony-beats.ts';
 import { earnedBadgeReveal } from '../../lib/ceremony/badge-reveal.ts';
+import { carryForward, describeCarryForward } from '../../lib/curriculum/retention.ts';
 
 // v2.5 Reclaim server actions. C1 · Readiness (evidence + refine→commit) + C2 · Bigger World Audit (administered →
 // RC-1, persisted) + C3 · Quality Days (coach-define → store + open the logging week) + C4 · The Reclaim Checkpoint
@@ -181,8 +182,11 @@ export async function reclaimTurnAction(
     }
     // C3 · Quality Days — a LIVE coaching turn. On confirm, store the Quality-Day profile + open the logging week.
     if (session === 'c3') {
-      const turn = await liveTurnReclaimC3(state, history, message);
       const db = (await getDb()) as unknown as Db;
+      // The second fan-in: C3 reads B3 + C2. Greg's C3 step is about the gap between what they PLANNED in the
+      // pilot and what the week actually held, so both halves of B3 (the plan and the entries) carry forward.
+      const carried = await carryForward(db, memberId, 'c3').catch(() => []);
+      const turn = await liveTurnReclaimC3(state, history, message, describeCarryForward(carried));
       let c3Badge: { id: string; name: string } | null = null;
       if (turn.complete && turn.state.collected?.pendingQualityDay) {
         const qd = turn.state.collected.pendingQualityDay;
