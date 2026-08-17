@@ -232,14 +232,20 @@ today it promises the first and delivers the second.
 
 1. ~~**B3's daily record is still a boolean tick.**~~ **STORAGE SHIPPED 8/17** — migration `0084_b3_daily_entry.sql`
    + `lib/rebuild/b3-entry.ts`, mirroring W3's proven shape (`0074`). All seven of Greg's fields round-trip, an
-   empty form is not a logged day, and an amendment adds rather than erases. **The UI is not wired yet** and the
-   migration **still needs hand-applying to prod** — it will silently do nothing until then.
+   empty form is not a logged day, and an amendment adds rather than erases. **Capture shipped 8/17 too** — the
+   Companion writes the day through `record_b3_day`, mirroring W3's conversational path (Greg makes the daily
+   check-in the primary interface, so it is not a form). The migration **still needs hand-applying to prod**.
 2. ~~**R2's Doors**~~ **SHIPPED 8/17** — migration `0085_door_profile.sql` + `lib/reconnect/door-profile.ts` +
    the `note_door_detail` Companion tool. Relevance on a 1–10 continuum and the full temporal pattern, captured in
    conversation and read back into the agent's context. See the section above for the rules the tests pin. Also
    pending the prod migration.
-3. **R2's Community share** — direction green-lit by Greg; the surface exists as the Community. Cheap, and high
-   value for a Charter cohort arriving together. Also Reconnect.
+3. **R2's Community share — NEEDS JAY, not more building.** Direction green-lit by Greg and the surface exists,
+   but the thing being shared is a member's **Door**: how their life came apart. Putting that in front of other
+   members is a privacy decision, not an implementation detail, and CLAUDE.md is explicit that a wrong guess on
+   privacy is the expensive kind. **Three questions before any code:** (a) what is shared — the Door LABEL only,
+   or their words about it? (b) is it opt-in per share, or a standing setting? (c) is it attributed, pseudonymous,
+   or anonymous? The Community's existing posture (pseudonymous-but-identified) answers (c) by default but should
+   be confirmed for this specifically, since a Door is more exposing than a post.
 4. **The carry-forward web** — the biggest structural finding of the reading, and untouched. Greg specifies per
    asset which upstream assets each reads; we hand-wire two links. B3 reads B1+B2+W3 and C3 reads B3+C2, so a
    `previousAsset` pointer cannot express it.
