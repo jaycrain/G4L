@@ -49,7 +49,7 @@ URL="${1:-https://g4l-ten.vercel.app}"
 # The RAM half is server-side and has no honest static tell; the COMMIT CHECK is its proof.
 # NOTE: a tell must be a class that actually has a CSS RULE — this gate greps the built STYLESHEET, and a
 # JSX-only class (`pb-thisweek`, last time) reports a false RED.
-CSS_TELLS=(".brand-bar{display:none}" ".teach-eyebrow")  # .teach-eyebrow → v3.4.6 Teaching Layer (globals.css, loaded on every page)
+CSS_TELLS=(".brand-bar{display:none}" ".teach-eyebrow" ".pb-map-fam")  # .teach-eyebrow → v3.4.6 Teaching Layer · .pb-map-fam → v3.4.7 B2 map (both in globals.css, loaded on every page)
 # NOTE, learned the hard way (2026-08-11): a tell here is only visible if it lives in a chunk /onboarding LINKS TO.
 # I added "surfaced here" from the Reconnect doorbar — an AUTH-GATED surface — and the gate reported RED for two
 # builds on perfectly good code, because the chunk is never referenced from the public page it scans. A check that
