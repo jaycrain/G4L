@@ -23,8 +23,10 @@ space" community share (a retired name). A provenance header now sits on the rep
   documents after developing the AI Companion and AI engineering documents." V4 still wins for **instruments,
   scales and scoring**; do NOT apply it blindly to V4 intro/closure prose, and re-check anything closed on a
   recency argument.
-- **The CHECK list is shorter than it was.** W3's mindfulness half is answered (build a one-week grid modelled on
-  C3's); R2's multi-door is green-lit by Greg unprompted, at a *continuum* per door rather than a 3-point scale.
+- **The CHECK list is shorter than it was.** W3's mindfulness half is **CLOSED — the grid is already built**
+  (migration `0074_w3_daily_entry`, `w3Rows()` in `lib/practice/grid.ts`, shipped 8/8, the day Greg asked). Do not
+  re-open it; I twice wrote it up as outstanding without opening the file. R2's multi-door is green-lit by Greg
+  unprompted, at a *continuum* per door rather than a 3-point scale.
 
 **Do.**
 1. Re-derive every candidate gap **against the frozen contracts and the decision log first** — that check is what

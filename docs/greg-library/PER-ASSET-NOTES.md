@@ -67,8 +67,22 @@ the tracker." Greg had already answered the exact question on 8/8:
 > **CREATE A SIMPLE 1 WEEK GRID — SIMILAR TO THE NEW MOMENTUM ONE DEVELOPED FOR C3.** THUS, WE WOULD HAVE THE MEMBER
 > TRACK THIS WITH A SIMPLE INTERFACE TO BUILD SKILLS IN CYCLE 1."
 
-**This is a build instruction, not an open question.** W3 gets its own one-week grid modelled on C3's. It also
-independently confirms the one-engine finding — he is asking for the same parameterised grid across assets.
+**AND IT IS ALREADY BUILT — corrected 2026-08-16 by Jay, confirmed in code.** I wrote this up as a pending build
+instruction and told Jay it had "been sitting unactioned for eight days." False. Verified:
+
+- `w3_logging` is a first-class `PracticeKind` (`lib/practice/store.ts:18`)
+- `w3Rows()` adapter at `lib/practice/grid.ts:167`
+- migration **`0074_w3_daily_entry.sql`** — W3 moved off Momentum onto its own seven-field tracker
+- `grid.ts`'s header quotes Greg's request (2026-08-07) and dates the move **2026-08-08** — built the day he asked
+
+So the **W3 CHECK is fully CLOSED**, not merely downgraded: W3 has the False Start protocol *and* the daily
+seven-field tracker *and* a grid. There was never a missing half. It also confirms the one-engine finding from the
+other direction — `grid.ts` is already a read model with a per-kind adapter, which is exactly the parameterised
+shape the Engineering Memos specify.
+
+**This was my fourth instance of the same error in one day**, and I made it in the same message where I named the
+pattern: asserting build state from a document instead of opening the file. The email said "here is what I want";
+I never asked whether we'd already done it. [[build-state-comes-from-the-file]] — open it, same turn.
 
 **3 · R2's multi-door relevance (#183) — GREEN-LIT by Greg himself, unprompted.**
 
