@@ -2599,7 +2599,9 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
 .onbwel-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255, 255, 255, 0.22); transition: 0.3s; }
 .onbwel-dot.on { background: var(--teal); width: 24px; border-radius: 4px; }
 .onbwel-kick { color: #8fd0d1; font-size: 13px; font-weight: 700; letter-spacing: 1.8px; text-transform: uppercase; margin-bottom: 16px; }
-.onbwel-head { font-family: var(--font-condensed), var(--font-barlow), sans-serif; font-weight: 900; color: #fff; text-transform: uppercase; font-size: clamp(46px, 8.5vw, 76px); line-height: 0.9; letter-spacing: 0.5px; margin: 0; text-shadow: 0 2px 20px rgba(0, 0, 0, 0.22); }
+/* MIXED CASE, not all caps (Donna, 2026-08-17): the billboard headings were uppercased in CSS while the source
+   strings were sentence case, so every screen shouted. */
+.onbwel-head { font-family: var(--font-condensed), var(--font-barlow), sans-serif; font-weight: 900; color: #fff; font-size: clamp(46px, 8.5vw, 76px); line-height: 0.9; letter-spacing: 0.5px; margin: 0; text-shadow: 0 2px 20px rgba(0, 0, 0, 0.22); }
 .onbwel-head-line { display: block; }
 .onbwel-road { margin: 28px 0 4px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 16px; padding: 16px 16px 14px; }
 .onbwel-road-h { color: rgba(255, 255, 255, 0.55); font-size: 11px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; margin-bottom: 12px; }

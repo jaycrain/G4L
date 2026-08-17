@@ -43,7 +43,7 @@ const BEATS: Beat[] = [
     kick: 'Part 1 of 4 · Getting ready',
     head: ['Meet your', 'Companion'],
     body: [
-      'There’s probably no one else in your life like this. Always listening, always here, holding everything you share. It might catch what you’ve stopped seeing in yourself.',
+      'There’s probably no one else in your life like this. It’s AI, so it is always listening, always here, remembering everything you tell it. It might catch what you’ve stopped seeing in yourself.',
       ' Ask anything, anytime.',
     ],
     cta: 'Next →',
@@ -51,12 +51,12 @@ const BEATS: Beat[] = [
   {
     kick: 'Part 1 of 4 · Getting ready',
     head: ['Four phases.', 'Your pace.'],
-    body: ['The G4L Program and your Comeback runs in four phases:'],
+    body: ['The G4L Program runs in four phases:'],
     list: [
       { term: 'Reconnect', text: 'start looking at who you are.' },
       { term: 'Rewire', text: 'get your head right.' },
       { term: 'Rebuild', text: 'get your body back.' },
-      { term: 'Reclaim', text: 'step all the way in.' },
+      { term: 'Reclaim', text: 'complete your comeback.' },
     ],
     tail: [
       'You move through them one at a time, as fast or slow as your life allows. ',
@@ -65,56 +65,25 @@ const BEATS: Beat[] = [
     ],
     cta: 'Next →',
   },
+  // SCREENS 4 AND 5 ARE ONE SCREEN (Donna, 2026-08-17 "Opening screens"). The vocabulary list and the Playbook
+  // pact were separate beats; she merged them, and the merge is the point rather than a trim: what a member needs
+  // before signing up is what they will BUILD and how they will SEE it move, not a glossary. The four terms that
+  // dropped (Your Companion, Your Comeback, The Program, Your Dashboard) are all defined by the product itself
+  // within minutes of arriving — these three are not.
+  //
+  // The series is 5 screens now, not 6.
   {
     kick: 'Part 1 of 4 · Getting ready',
-    head: ['A few words', 'you’ll hear.'],
-    body: ['New places have their own language. Here’s ours, plainly — you’ll see all of it in action soon.'],
+    head: ['Along the way you’ll build a Playbook', '& track your progress'],
+    body: [],
     list: [
-      { term: 'Your Companion', text: 'always there, remembers everything, helps you see what you can’t always see alone.' },
-      { term: 'Your Comeback', text: 'closing the distance back to who you are.' },
-      { term: 'The Program', text: 'your way back: four phases, your pace.' },
-      { term: 'Your Dashboard', text: 'home base, where everything you do is kept.' },
-      { term: 'Your Playbook', text: 'what you build; how you watch yourself change.' },
-      { term: 'ID Score & Grinta Index', text: 'two ways to see it: how far you’ve got to go, and the grit you’re growing.' },
-      // CLIP IN IS DEFINED HERE AND NOWHERE ELSE (Cowork + Jay, 2026-08-14). The word is core vocabulary — the
-      // daily clip-in, the clip-back-in move, the Grinta lines, the closer — so it stays. What was wrong was
-      // EXPLAINING it mid-experience, in the Threshold ceremony, at the moment the member should be stepping
-      // through. Define it once, upstream, where they are still learning the language; downstream just uses it.
-      //
-      // RESTORED TO THE APPROVED STRING (Cowork's correction, 2026-08-15; Jay approved the wording).
-      //
-      // I had trimmed this, reading her item (e) — "the full origin story lives in marketing" — as ruling out
-      // the both-strokes payoff. That cut the wrong layer. (e) means the deeper NARRATIVE: the fall on the
-      // asphalt, the embarrassment, needing help untangling, the riders who never recover and go back to tennis
-      // shoes. The LOFT belongs here, and is the reason this sits on the language screen at all: a flat
-      // dictionary line would not earn the word downstream, where the False Start Protocol leans on it.
-      //
-      // The lesson worth keeping: when two items in a brief look contradictory, the resolution is to ask which
-      // LAYER each governs — not to split the difference by shortening.
-      // JAY'S OWN WORDS, 2026-08-17 — he wrote this definition himself and it replaces the previous draft. Two
-      // things it fixes: "everyone forgets to unclip and falls down once" is the thing that ACTUALLY happens to a
-      // cyclist (you stop, forget your shoes are locked in, and topple over), where "everyone falls at least
-      // once" blurred it into something vaguer and less true. And it drops the wordy middle. Founder's metaphor,
-      // founder's phrasing — treat it as settled copy and do not smooth it.
+      { term: 'Your Playbook', text: 'everything you do is recorded here. Your goals and progress recorded in your words, uniquely yours.' },
+      { term: 'ID Score & Grinta Index', text: 'you’ll see how far you’ve got to go and the grit you’re growing as you do it.' },
+      // CLIP IN — the LATER wording wins. Donna's draft of this screen carried a short version; Jay rewrote it at
+      // 12:50 and she tweaked it at 12:55, and this is that resolved text. The word is defined HERE and nowhere
+      // else: it is core vocabulary (the daily clip-in, the clip-back-in move, the closer), and the Threshold
+      // ceremony deliberately stopped explaining it so the moment of stepping through is not a footnote.
       { term: 'Clip in', text: 'our founder’s cycling metaphor, and more than “let’s go.” Shoes locked to your pedals is a commitment. Every stroke drives power, and you ride farther and stronger. Everyone forgets to unclip and falls down once. You get up and clip back in.' },
-    ],
-    cta: 'Next →',
-  },
-  // THE PACT — KEPT DELIBERATELY through the 2026-08-13 messaging pass, which had no equivalent screen.
-  //
-  // It is the one place we name the endpoint before any work starts (2026-08-10 reframe): the product already
-  // manufactures a Playbook, it just never told the member that was the point, so G4L read as a bin of parts
-  // rather than one arc. Dropping it also strands the Opening Tour's Playbook stop, which opens "the thing we
-  // said we'd build together" — a line that only parses if this promise was made.
-  //
-  // Positioning here is DRAFT, not canon (Jay, 2026-08-13): #134 is still open, so the wording may move.
-  {
-    kick: 'Part 1 of 4 · Getting ready',
-    head: ['You’ll build a Playbook.', 'It stays yours.'],
-    body: [
-      'Everything you do here goes into it — the moves that actually work for you, and what you learn about yourself along the way. Your ',
-      { b: 'Playbook' },
-      ' isn’t ours to hand you. It’s already in you, and we help you draw it out. You’ll use it again and again.',
     ],
     cta: 'Next →',
   },
@@ -125,14 +94,14 @@ const BEATS: Beat[] = [
     ordered: true,
     list: [
       { term: 'Getting ready', text: 'you’re in it.' },
-      { term: 'Getting to know you', text: 'a conversation with your Companion. About 20 minutes.' },
+      { term: 'Getting to know you', text: 'chat with your Companion and take an initial assessment. Plan for about 20 minutes.' },
       { term: 'What you found', text: 'see what surfaced.' },
       { term: 'A look around', text: 'a quick tour to show you where it all lives.' },
     ],
     // NO DAILY-TIME FORECAST, ANYWHERE. The old close promised "after today, it's a few minutes a day" — which is
     // false (Sessions run 20-30 minutes) and contradicts the upstream "as fast or slow as your life allows". Item 2
     // in the list above already sizes today honestly, so nothing here needs to forecast tomorrow.
-    tail: ['This one goes deep, so give yourself the time. Reclaiming who you are takes real time — it starts here.'],
+    tail: ['We go deep out of the gate, so make yourself comfortable and give yourself the time here. Congratulations on getting started on your comeback.'],
     // "Clip in →" rather than "Let's go →": the language screen defined the word a moment ago, and this is the
     // button where they do it. The word is never explained again after this.
     cta: 'Clip in →',
@@ -171,7 +140,7 @@ function NavyBeats({ onDone }: { onDone: () => void }) {
               <span key={x} className="onbwel-head-line">{line}</span>
             ))}
           </h1>
-          <p className="onbwel-body">{renderBody(beat.body)}</p>
+          {beat.body.length > 0 && <p className="onbwel-body">{renderBody(beat.body)}</p>}
           {beat.list &&
             (beat.ordered ? (
               <ol className="onbwel-list onbwel-list-num">
@@ -207,12 +176,13 @@ function WelcomeHero({ onNext }: { onNext: () => void }) {
       <div className="onbwel-d-heart">
         <h1 className="onbwel-d-head">Your comeback<br />starts here.</h1>
         <p className="onbwel-d-sub">
-          You didn’t lose yourself — who you are got crowded out by a hundred reasonable trade-offs. A career that
-          changed, a marriage that drifted, years of carrying everyone. That’s the Fade. And you’re still in there.
+          You didn’t lose yourself, you stopped looking. Who you are got crowded out by a hundred reasonable
+          trade-offs. A career that changed, a marriage that drifted, years of carrying everyone. That’s the Fade.
+          And you’re still in there.
         </p>
         <p className="onbwel-d-sub">
           <strong>Grinta for Life</strong> is how you start looking again: a real conversation with your AI
-          Companion, then a program that closes the distance back to yourself.
+          Companion, then a science-backed program that closes the distance back to yourself.
         </p>
         <button type="button" className="onbwel-d-cta" onClick={onNext}>Start looking →</button>
         {/* "/" now lands here, so this hero is the FRONT DOOR — a returning member must have a way through it. */}
