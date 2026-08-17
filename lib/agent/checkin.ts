@@ -91,9 +91,19 @@ export type CheckinContext = {
   idqAnswers?: { dimension: string; stem: string; score: number }[]; // the 24 answers, 1–5
   reclaimDetail?: { text: string; category: string; state: string; tracked: boolean }[]; // Reclaim items + progress + whether a tracker exists
   movementLog?: string; // recent OFF-device activity the member logged (Movement page or Companion) — so the MA knows their movement, per governance (the dashboard + agent are one surface)
-  // Rebuild B1 "What is Your Why?" — true once the member has named their motivation for movement + eating. The
-  // SDT profile is stored but NEVER shown as a number (Decision RB-1); the agent only KNOWS they've done it, so it
-  // references it as shared history and never re-asks. No score, no verdict — a starting point, by design.
+  // Rebuild B1 "What is Your Why?" — true once the member has completed it. The SDT profile is stored but NEVER
+  // shown as a number (Decision RB-1); the agent only KNOWS they've done it, so it references it as shared history
+  // and never re-administers. No score, no verdict — a starting point, by design.
+  //
+  // ⚠ A BOOLEAN IS ALL THERE IS, AND THE PROMPT MUST NOT PRETEND OTHERWISE. Until 2026-08-17 the instruction built
+  // from this flag told the model to "reflect it as their own words about why this matters". There are no words:
+  // B1 is ADMINISTERED-ONLY — 12 Likert items, "the administered wall, no draw-out" (lib/agent/rebuild.ts). The
+  // member never wrote a sentence. So the model could only deflect — the program visibly forgetting something it
+  // claims to remember — or invent a motivation and attribute it to them, which is a fabricated claim about who
+  // someone is. The instruction now says what the flag can support: ask them, never infer.
+  //
+  // The general rule, and this is the third instance on this codebase: the context must not claim to carry what it
+  // does not carry. Debug the context before the model. See [[context-must-not-claim-what-it-stopped-tracking]].
   whyNamed?: boolean;
   // Rebuild B2 "Strengths & Weaknesses" — the member's self-management skill profile, once assessed. The agent knows
   // their apparent strongest skill + growth edge (in plain language, never a number), so it can reflect the profile
@@ -460,7 +470,7 @@ export function contextBlock(c: CheckinContext): string {
     c.grintaIndex != null && c.grintaScore != null ? `Daily Call rhythm (their day-to-day momentum, not the Index): ${c.grintaScore}${c.grintaTrend ? ` (${c.grintaTrend} lately)` : ''}` : null,
     c.beatsDone ? `Program reps completed so far: ${c.beatsDone}` : null, // 0 is omitted, not announced
     c.whyNamed
-      ? `They've named their "why" for movement and eating (Rebuild B1) — stored as a starting point, deliberately NOT scored or shown as a number. You KNOW they've done this: treat it as shared history and never re-ask it; if it comes up, reflect it as their own words about why this matters, never as a motivation "type" or a verdict.`
+      ? `They've completed "What Is Your Why?" (Rebuild B1) — a 12-item scale on what drives their movement and eating. You KNOW they did it, and that is ALL you know: it is an instrument, not a conversation, so you do NOT have anything they wrote. Treat it as shared history and never re-administer it. If their "why" comes up, ASK them for it in their own words — never state, summarise or infer what their motivation is, and never name a motivation "type" or a score. Their reading is stored as a starting point and is deliberately not shown as a number (RB-1).`
       : null,
     c.skillProfile
       ? `They've assessed their self-management skills (Rebuild B2). Their apparent strongest is ${c.skillProfile.strongest.toLowerCase()}; the one with the most room is ${c.skillProfile.growthEdge.toLowerCase()}. Use this to help them SEE themselves and connect skills to their week — never as a grade or a number. A "weak" skill is just one to practice, never a failing. Don't re-administer.`
