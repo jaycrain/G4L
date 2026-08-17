@@ -107,3 +107,28 @@ test('no letter yet reads as null, not as an empty letter', async () => {
   const { db, id } = await member();
   assert.equal(await getLegacyLetter(db, id), null);
 });
+
+// THE SEAM — the letter is reachable end to end. Each half of this has been correct and disconnected before
+// (the store existed for a day with no importer at all), so what is asserted here is the WIRING.
+test('the letter is written by the arc, dated by the action, and rendered in the Playbook', async () => {
+  const { readFileSync } = await import('node:fs');
+
+  // 1. The beat exists and sits between the Window and the Checkpoint.
+  const arc = readFileSync('lib/agent/reconnect.ts', 'utf8');
+  assert.match(arc, /stageOrder: \['entry', 'doors', 'measurement', 'drift', 'window', 'legacy', 'checkpoint', 'ceremony'\]/,
+    'the legacy beat is in the sequence, after the Window');
+  assert.match(arc, /name: 'record_legacy_letter'/, 'the model has a tool to draft with');
+  assert.match(arc, /b\.stage = 'legacy'/, 'and the Window hands into it');
+
+  // 2. The action persists it — and stamps the date in the MEMBER's timezone, not the engine's.
+  const action = readFileSync('app/reconnect/actions.ts', 'utf8');
+  assert.match(action, /saveLegacyLetter\(db, memberId, \{ body, datedFor: letterDateFor\(today\) \}\)/, 'persisted');
+  assert.match(action, /const today = await memberToday\(db, memberId\)/, 'dated in THEIR timezone');
+
+  // 3. It renders, on the Who you are tab, and is not gated on its own date.
+  const view = readFileSync('app/playbook/[memberId]/redesign-playbook-view.tsx', 'utf8');
+  assert.match(view, /tab === 'who' && legacyLetter\?\.body/, 'renders on Who you are');
+  assert.doesNotMatch(view, /legacyLetter[^\n]*(?:new Date\(\)|Date\.now)/, 'never gated on today — the date is a dedication, not a timer');
+  const page = readFileSync('app/playbook/[memberId]/page.tsx', 'utf8');
+  assert.match(page, /getLegacyLetter\(db, memberId\)/, 'the page loads it');
+});

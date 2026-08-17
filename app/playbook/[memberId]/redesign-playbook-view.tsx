@@ -86,12 +86,27 @@ const CHAPTERS: { key: ChapterKey; title: string; sub: string; empty: string }[]
 const CHAPTER_LABEL: Record<ChapterKey, string> = { who: 'Who you are', lights: 'Lights you up', tells: 'Your tells', plays: 'Your Moves', why: 'Why it works' };
 
 
+/**
+ * The date the letter is addressed to, as a member would say it — "August 2027", not "2027-08-17".
+ *
+ * PARSED AS PARTS, NOT `new Date(iso)`. A bare "2027-08-17" is parsed as UTC midnight and then rendered in the
+ * viewer's local zone, which in Boulder is the evening of the 16th — the same off-by-one that made us build
+ * lib/time in the first place. Here it would silently retitle their letter by a day.
+ */
+function formatLetterDate(iso: string): string {
+  const [y, m] = (iso ?? '').split('-').map(Number);
+  if (!y || !m) return 'a year from when you wrote it';
+  const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  return `${MONTHS[m - 1] ?? ''} ${y}`.trim();
+}
+
 export default function RedesignPlaybookView({
   memberId,
   initial,
   hasHistory,
   synthesis,
   identityParagraph,
+  legacyLetter,
   rerunStats,
   outcomes = [],
   reads = [],
@@ -107,6 +122,7 @@ export default function RedesignPlaybookView({
    *  the description of whose Playbook this is, and it belongs beside the story-so-far rather than next to a
    *  greeting. Two stored narratives, one thing to a member. */
   identityParagraph?: string | null;
+  legacyLetter?: { body: string; datedFor: string } | null;
   rerunStats?: Record<string, { n: number; last: string }>;
   outcomes?: Outcome[];
   /** The member's assessment reads — what their own Sessions said, in plain language. */
@@ -446,6 +462,23 @@ export default function RedesignPlaybookView({
           <div className="pb-sec-d">Who you are, in the words you landed on.</div>
           <div className="pb-narr">
             <RichText text={identityParagraph} />
+          </div>
+        </section>
+      )}
+
+      {/* THE LEGACY LETTER — its own card, not a keeper line. Keepers are one-liners; this is half a page, and
+          folding a letter into a list of one-liners reads as a bug. It leads the tab because it is the only thing
+          here the member WROTE (we drafted, they revised) rather than something we observed about them.
+
+          NOT LOCKED until its date. Jay, 2026-08-17: keep it a year out but make it accessible — so the date is a
+          dedication, not a timer. A locked letter would also be unrevisable, and it has to stay editable: a member
+          who accepted a draft to end a long session must be able to fix it when they reread it cold. */}
+      {tab === 'who' && legacyLetter?.body && (
+        <section className="pb-card pb-hero">
+          <div className="pb-sec">Your Legacy Letter</div>
+          <div className="pb-sec-d">Written by you, to you — for {formatLetterDate(legacyLetter.datedFor)}.</div>
+          <div className="pb-narr">
+            <RichText text={legacyLetter.body} />
           </div>
         </section>
       )}

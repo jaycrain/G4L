@@ -9,6 +9,7 @@ import type { Db } from '../../../lib/db/schema.ts';
 import PlaybookView from './playbook-view.tsx';
 import RedesignPlaybookView from './redesign-playbook-view.tsx';
 import { redesignEnabled } from '../../../lib/dashboard/redesign.ts';
+import { getLegacyLetter } from '../../../lib/reconnect/legacy-letter-store.ts';
 import { outcomes } from '../../../lib/dashboard/outcomes.ts';
 import { memberReads } from '../../../lib/playbook/reads.ts';
 import { weekGrids } from '../../../lib/practice/grid.ts';
@@ -54,6 +55,9 @@ export default async function PlaybookPage({
   // is. Rendered in "Who you are" alongside the synthesis — two stored narratives, one thing to a member: this is
   // me, and this is where I've got to. Read before the header link is removed, so it is never orphaned.
   const identityParagraph = (await getDashboard(db, memberId).catch(() => null))?.identityParagraph ?? null;
+  // R3's Legacy Letter — theirs, to themselves, dated a year out. Guarded like every other supplementary read:
+  // a drifted table costs this one card, never the Playbook.
+  const legacyLetter = await getLegacyLetter(db, memberId).catch(() => null);
   // Per-Session re-run counts (Phase 2B) — how often the member has hit "Run it again" on a play → the "come back N
   // times" signal. Keyed by the Session id the play re-runs. Drift-hardened: any hiccup just hides the counts.
   const rerunRows = (
@@ -66,7 +70,7 @@ export default async function PlaybookPage({
   ).rows;
   const rerunStats: Record<string, { n: number; last: string }> = {};
   for (const r of rerunRows) rerunStats[r.ref] = { n: r.n, last: r.last };
-  const props = { memberId, initial: entries, hasHistory, synthesis, identityParagraph };
+  const props = { memberId, initial: entries, hasHistory, synthesis, identityParagraph, legacyLetter };
   // The three outcomes (mindfulness · fitness · wellness) head the redesign Playbook. Redesign-only: the pre-v3
   // view has no place for them and prod runs the redesign.
   const cards = redesignEnabled() ? await outcomes(db, memberId) : [];
