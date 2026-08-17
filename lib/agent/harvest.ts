@@ -70,7 +70,13 @@ export async function commitKeeper(
        (member_id, section, body, authorship, state, keeper_type, moment_id, source_kind, source_ref, source_label, sort_order)
      values ($1,$2,$3,'gathered',$4,$5,$6,$7,$8,$9,
        (select coalesce(max(sort_order), -1) + 1 from playbook_entry where member_id = $1 and section = $2))`,
-    [memberId, k.section, k.body.trim(), k.state ?? 'proposed', k.keeperType, k.momentId,
+    // `?? null` IS LOAD-BEARING, not defensive noise. keeperType became optional on 2026-08-17 so a science read
+    // could commit WITHOUT one (the only way to reach the `why` chapter — see lib/content/teaching-keep.ts). Every
+    // other caller passes a value, so this was the first `undefined` ever handed to this query — and undefined is
+    // not a parameter value: PGlite coerced it locally, prod's driver did not, and the insert failed on prod only.
+    // The card had already told the member "we'll keep the takeaway in your Playbook". Same family as the 7/27
+    // silent drop: worked everywhere except where it mattered. Pass an explicit null.
+    [memberId, k.section, k.body.trim(), k.state ?? 'proposed', k.keeperType ?? null, k.momentId,
      k.source?.kind ?? null, k.source?.ref ?? null, k.source?.label ?? null],
   );
 }
