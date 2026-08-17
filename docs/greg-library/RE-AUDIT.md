@@ -239,13 +239,22 @@ today it promises the first and delivers the second.
    the `note_door_detail` Companion tool. Relevance on a 1–10 continuum and the full temporal pattern, captured in
    conversation and read back into the agent's context. See the section above for the rules the tests pin. Also
    pending the prod migration.
-3. **R2's Community share — NEEDS JAY, not more building.** Direction green-lit by Greg and the surface exists,
-   but the thing being shared is a member's **Door**: how their life came apart. Putting that in front of other
-   members is a privacy decision, not an implementation detail, and CLAUDE.md is explicit that a wrong guess on
-   privacy is the expensive kind. **Three questions before any code:** (a) what is shared — the Door LABEL only,
-   or their words about it? (b) is it opt-in per share, or a standing setting? (c) is it attributed, pseudonymous,
-   or anonymous? The Community's existing posture (pseudonymous-but-identified) answers (c) by default but should
-   be confirmed for this specifically, since a Door is more exposing than a post.
+3. **The Community share — RE-SCOPED BY JAY 2026-08-17: it is NOT about Doors.** I had read Greg's R2 as asking
+   members to share their Door, raised the privacy problem, and Jay answered by moving the feature rather than
+   answering the question:
+
+   > "The Community share encouragement shouldn't start with sharing Doors, more about their story or positive
+   > outcomes or reactions to/from Sessions."
+
+   **Why this is the better design, not just the safer one.** A Door is the rawest thing a member owns — how their
+   life came apart — and asking for it as an opening move gets one of two bad outcomes: they decline and learn the
+   Community is a place that asks too much, or they overshare in week one and regret it. A story, a small win, or
+   a reaction to a Session is offerable *now*, and the depth arrives later because they chose it. The privacy
+   question I raised does not need answering, because the feature no longer asks for the thing that raised it.
+
+   **This detaches it from R2 entirely.** It is not a Reconnect gap — it is a Community prompting/encouragement
+   feature, drawing on material that already exists (keepers, kept reads, Session reactions, Reclaim List
+   movement). Re-file it as such; it should not be sequenced behind Reconnect work.
 4. **The carry-forward web** — the biggest structural finding of the reading, and untouched. Greg specifies per
    asset which upstream assets each reads; we hand-wire two links. B3 reads B1+B2+W3 and C3 reads B3+C2, so a
    `previousAsset` pointer cannot express it.

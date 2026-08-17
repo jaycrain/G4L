@@ -323,11 +323,17 @@ test('...but BEREAVEMENT ALONE never routes — answering grief with a hotline s
   }
 });
 
-test('the bare word "suicide" routes on its own — PRE-EXISTING, and deliberately NOT relaxed here', () => {
-  // Worth Jay seeing: a member who writes "she committed suicide" is routed to 988 purely on the word, even in
-  // plain bereavement. That is a standing governance decision older than the conjunction rule above, and
-  // loosening it is not a call to make while adding a detector — I found it by writing the case above and having
-  // it fail. Pinned so the behaviour is explicit rather than rediscovered, and so changing it has to be deliberate.
+test('the bare word "suicide" routes on its own — RULED, do not relax', () => {
+  // JAY, 2026-08-17, asked directly: "Probably should allow the bare word 'suicide' be a 988. It's traumatic for
+  // anyone around it."
+  //
+  // So a member who writes "she committed suicide" is routed even in plain bereavement, and that is now a
+  // decision rather than inherited behaviour. The reasoning is worth keeping because it cuts against the
+  // conjunction rule immediately above: proximity to a suicide is itself a harm, so the resources are relevant to
+  // the bereaved person, not only to someone at risk. The "bereavement alone must not route" guard therefore
+  // covers the phrasings that do NOT name it ("killed himself", "took his own life"), and naming it routes.
+  //
+  // A future instinct to tidy this into consistency should stop here. It is deliberately asymmetric.
   assert.equal(detectCrisis('she committed suicide and I still do not understand it').flagged, true);
 });
 
