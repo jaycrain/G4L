@@ -6,6 +6,14 @@
 # (even incognito) walk can land on the PREVIOUS build. This reads the REAL live bundle
 # and only says GREEN when today's new-code tells are present. Run it before any walk.
 #
+# ⚠ SCRIPTING THIS GATE? MATCH THE VERDICT, NOT THE BANNER. The first line of this script's own output is
+#   "GREEN-LIGHT — <url>"
+# so a wrapper doing `greenlight.sh | grep -q GREEN` matches the TITLE and reports success on a RED gate. That
+# happened on 2026-08-17: a deploy monitor announced the teaching layer was live while prod was still serving the
+# previous version. Grep for the verdict line ("NOT safe to walk") or, better, check the version stamp directly:
+#   curl -s "$URL/?cb=$(date +%s)" | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' | head -1
+# The stamp is unambiguous and is exactly what lib/version.ts exists for.
+#
 # Usage:  bash scripts/greenlight.sh [url]
 #   default url: https://g4l-ten.vercel.app
 #
