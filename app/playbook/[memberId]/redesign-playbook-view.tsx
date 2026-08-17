@@ -484,8 +484,8 @@ export default function RedesignPlaybookView({
               <div className="pb-sec">This week</div>
               <div className="pb-sec-d">
                 {grids.length === 1
-                  ? `Day ${grids[0]!.day} of 7. A blank day is a day — this is for noticing what helps, never a score.`
-                  : `${grids.length} weeks running. A blank day is a day — this is for noticing what helps, never a score.`}
+                  ? `Day ${grids[0]!.day} of 7. A blank day is a day. This is for noticing what helps.`
+                  : `${grids.length} weeks running. A blank day is a day. This is for noticing what helps.`}
               </div>
               {grids.map((g) => (
                 <div key={g.kind} className="pb-week">
@@ -521,7 +521,7 @@ export default function RedesignPlaybookView({
                 <p key={i} className="pb-read-line">{l}</p>
               ))}
               {/* B2's map. Greg's three families, in his order, with the growing edges leading inside each — the
-                  point of the read is what to practise, so it must not sit below the fold. No number renders:
+                  point of the read is what to practice, so it must not sit below the fold. No number renders:
                   "steady" is relative to THIS member's own profile (skills-map.ts), which is what makes the shape
                   showable at all. Taking action carries six skills, so its tail collapses behind a control that
                   names what is inside it rather than a bare "show more". */}
@@ -543,7 +543,7 @@ export default function RedesignPlaybookView({
                               {row.divergence && <span className="pb-map-split"> · {row.divergence}</span>}
                             </span>
                             <span className={`pb-map-tag${row.steady ? ' is-steady' : ''}`}>
-                              {row.steady ? 'steady' : 'worth practising'}
+                              {row.steady ? 'steady' : 'worth practicing'}
                             </span>
                           </div>
                         ))}
@@ -560,7 +560,7 @@ export default function RedesignPlaybookView({
                                   {row.divergence && <span className="pb-map-split"> · {row.divergence}</span>}
                                 </span>
                                 <span className={`pb-map-tag${row.steady ? ' is-steady' : ''}`}>
-                                  {row.steady ? 'steady' : 'worth practising'}
+                                  {row.steady ? 'steady' : 'worth practicing'}
                                 </span>
                               </div>
                             ))}

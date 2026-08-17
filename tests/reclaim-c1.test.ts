@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { reclaimC1Opening, applyReclaimC1Turn, RECLAIM_C1_ARC } from '../lib/agent/reclaim.ts';
+import { reclaimC1Opening, applyReclaimC1Turn, RECLAIM_C1_ARC, sanitizeRefinement } from '../lib/agent/reclaim.ts';
 import type { ConvState, ModelTurn } from '../lib/agent/onboarding.ts';
 
 // C1 · Looking Forward. ONE stage: the Reclaim List refinement (COACH mode) — the model coaches → the engine proposes
@@ -150,4 +150,45 @@ test('C1 has an Explore panel and it is voiced probabilistically', async () => {
   for (const jargon of [/self-concordan/i, /psychologically coherent/i, /self-regulation/i]) {
     assert.doesNotMatch(all, jargon, `untranslated construct name reached the member: ${jargon}`);
   }
+});
+
+// ── A TOP-3 NAME ON NO TIER IS A DROPPED ADDITION ────────────────────────────────────────────────────────────
+// Observed on a live C1 walk, 2026-08-17. The member named a goal that was not on their list; the model put it in
+// `top3` and left it out of BOTH `items` and `added`. The proposal then showed their stated top three including a
+// line that appeared in no tier, and commitRefinement silently skips a top-3 entry it cannot resolve — so they
+// confirmed a priority that quietly did not exist. This is the deterministic proof of the recovery; the live walk
+// is nondeterministic by nature and cannot be the thing that guards it.
+test('C1 sanitize · a top-3 entry on no tier is recovered as a new item, not dropped', () => {
+  const out = sanitizeRefinement({
+    items: [
+      { original: 'Ride the loop again', text: 'Ride the loop again', tier: 'top' },
+      { original: 'Sleep like I used to', text: 'Sleep well', tier: 'important' },
+    ],
+    top3: ['Ride the loop again', 'Get back on the water', 'Sleep well'],
+  });
+  assert.ok(out, 'the refinement survives sanitizing');
+  assert.equal(out!.added?.length, 1, 'exactly the unmatched name is recovered');
+  assert.equal(out!.added![0]!.text, 'Get back on the water');
+  assert.equal(out!.added![0]!.tier, 'top', 'named in the top three, so it is placed there');
+});
+
+test('C1 sanitize · a top-3 entry matching a REFINED wording is not mistaken for a new item', () => {
+  // top3 references the refined text, while `original` holds the pre-refinement wording. Matching only on
+  // `original` would invent a duplicate of an item that is already on the list.
+  const out = sanitizeRefinement({
+    items: [{ original: 'Sleep like I used to', text: 'Sleep well', tier: 'top' }],
+    top3: ['Sleep well'],
+  });
+  assert.equal(out!.added, undefined, 'nothing is added — it is the same item, reworded');
+});
+
+test('C1 sanitize · an explicit `added` item is kept and not duplicated by the top-3 sweep', () => {
+  const out = sanitizeRefinement({
+    items: [{ original: 'Ride the loop again', text: 'Ride the loop again', tier: 'top' }],
+    top3: ['Get back on the water'],
+    added: [{ text: 'Get back on the water', tier: 'important', emergedFrom: 'the summers' }],
+  });
+  assert.equal(out!.added?.length, 1, 'one entry, not two');
+  assert.equal(out!.added![0]!.tier, 'important', "the member's own placement wins over the top-3 default");
+  assert.equal(out!.added![0]!.emergedFrom, 'the summers');
 });

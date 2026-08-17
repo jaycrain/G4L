@@ -99,7 +99,7 @@ export function buildSkillsMap(score: SkillScore): SkillsMap {
       //      produces about a member — "you plan movement well and eating badly" is actionable in a way a family
       //      shape is not — and the first build buried the only one behind the collapsed tail, where its text did
       //      not even render. Rare by construction (a 2+ point gap), so promoting it costs nothing.
-      //   2. Then growing edges: the read exists to say what to practise, so it must not sit below the fold.
+      //   2. Then growing edges: the read exists to say what to practice, so it must not sit below the fold.
       .sort((a, b) =>
         Number(!!b.divergence) - Number(!!a.divergence) || Number(a.steady) - Number(b.steady) || a.no - b.no);
     return { key, name: FAMILY_LABEL[key].name, gloss: FAMILY_LABEL[key].gloss, rows };

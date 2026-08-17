@@ -94,7 +94,7 @@ export function refineConfirms(msg: string): boolean {
   return confirmsProposal(msg);
 }
 // Keep only refined items with a valid tier — the sanitized snapshot the engine holds + the action commits.
-function sanitizeRefinement(r: ModelTurn['refinement']): Collected['pendingRefinement'] | undefined {
+export function sanitizeRefinement(r: ModelTurn['refinement']): Collected['pendingRefinement'] | undefined {
   if (!r || !Array.isArray(r.items)) return undefined;
   const items = r.items
     .filter((i) => i && typeof i.original === 'string' && typeof i.text === 'string' && isTier(i.tier))
@@ -111,6 +111,21 @@ function sanitizeRefinement(r: ModelTurn['refinement']): Collected['pendingRefin
       tier: a.tier,
       ...(typeof a.emergedFrom === 'string' && a.emergedFrom.trim() ? { emergedFrom: a.emergedFrom.trim() } : {}),
     }));
+  // ── A TOP-3 NAME THAT IS ON NO TIER IS A DROPPED ADDITION ──────────────────────────────────────────────────
+  // Observed on a live walk, 2026-08-17: the member named a goal that was not on their list, and the model put it
+  // in `top3` while leaving it out of BOTH `items` and `added`. The proposal then showed a list where the member's
+  // stated top three included a line that appeared in no tier, and commitRefinement silently skips a top-3 entry
+  // it cannot resolve — so they confirmed a priority that quietly did not exist.
+  //
+  // Recovering it is not a guess: naming something among the three you would move on next is unambiguous evidence
+  // you want it. And it is not a silent write either — it becomes an `added` item, which the proposal renders as
+  // "(new)" in its tier, so the member SEES it before the confirm gate and can say no. Surface, never infer.
+  const known = new Set([...items.map((i) => i.text.toLowerCase()), ...items.map((i) => i.original.toLowerCase()), ...added.map((a) => a.text.toLowerCase())]);
+  for (const t of top3) {
+    if (known.has(t.toLowerCase())) continue;
+    added.push({ text: t, tier: 'top' }); // named in the top three, so 'top' is their own placement
+    known.add(t.toLowerCase());
+  }
   return added.length ? { items, top3, added } : { items, top3 };
 }
 
@@ -217,7 +232,16 @@ const REFINE_SYSTEM =
   "they decide.\n\n" +
   "RECORDING: once you've walked the refinement and the member has settled it, call record_refinement with the WHOLE " +
   "refined list — every item as {original (their current wording, to match), text (the refined wording, or the same " +
-  "if unchanged), tier} — plus top3 (the three refined texts they'd move on next). Only call it when the refinement is " +
+  "if unchanged), tier} — plus top3 (the three refined texts they'd move on next). " +
+  // ADDED 2026-08-17. `added` existed in the tool schema and nothing here mentioned it, so the model never used
+  // it — a live walk named a new goal and it vanished. Same failure as B3's eating day-target on 8/7: an
+  // instruction that lives only in a tool description is one the model skips at the moment it matters.
+  "IF THEY NAMED SOMETHING THAT IS NOT ALREADY ON THE LIST — a goal that has newly emerged, which is step (2) — pass " +
+  "it in `added` as {text (their own words), tier, emergedFrom (what brought it into view, if they said)}. Do NOT put " +
+  "a new goal in `items`: `original` there must match a line already on their list, so a new one silently matches " +
+  "nothing and is lost. Only what they actually said they want; never invent one, and omit `added` entirely when " +
+  "nothing new came up, which is the common case. " +
+  "Only call it when the refinement is " +
   "settled; the app then shows them the result to confirm before anything is saved. 'No Longer Central' just means " +
   "lowest priority for this season — it does NOT delete the item. If a distress or crisis signal appears, drop the " +
   "exercise and route to support (988 US / local) and a human — always on.";
