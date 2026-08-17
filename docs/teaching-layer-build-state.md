@@ -37,13 +37,46 @@ checking against the other past-cycle artifacts before build.
 
 **3 · Mobile rendering.** Not yet investigated.
 
-## Open decisions for Jay
+## Decisions — RULED by Jay, 2026-08-16
 
-- **The frame's two states.** `summaries.ts` has `short` and `full`. Rev 1's "show everything, no disclosure" was
-  written about *Why it works*; mockup 1's frame card shows only the short line. Does the frame show `full` too, or
-  keep a disclosure? Unresolved.
-- **Palette.** The mockup hexes (`#6fb2a4`, `#3f7d73`, `#28323f`) are tints/shades, off-brand. Treating the
-  mockups as IA/layout targets and implementing in the real palette, per [[v04-design-standards]].
+1. **The frame shows the FULL state.** Not pinned; it must scroll out of view so the conversation gets the screen.
+   "It's not that much content to need to be collapsed."
+2. **Use every established brand/visual standard.** "Claudette was pure IA" — the mockups define layout and flow
+   only. No mockup hex values.
+
+### ⚠ Decision 1 REVERSES a deliberate past choice — and the reversal is sound, because the cause is removed
+
+`workspace-session.tsx:81–85` records that "Why this matters" was made **collapsed at every width** (Jay, 7/28)
+because an open panel squeezed the chat — worst on a phone, where it "stranded the member on a question-less tail"
+(Jennifer's walk, 2026-07-27).
+
+**That finding is not being overruled; its cause is being removed.** The panel squeezed the conversation because it
+lived in the **pinned header, which never scrolls** — so an open panel cost screen height permanently. Moving the
+frame *into the scroll* means full content costs height once and then scrolls away. Jay's "as long as it's not
+pinned" is precisely this condition.
+
+**So the move is: out of the pinned header, into the body scroll — and only then open it fully.** Doing one without
+the other reintroduces Jennifer's bug. Whoever builds this must not open the panel in place.
+
+### ⚠ The mockup's core visual device does not map — our workspace is LIGHT
+
+The mockups render the Session as a **dark navy panel** with cream teaching cards, and the contrast carries the
+whole "app teaching vs Companion chatting" distinction. **Our real workspace is a light surface**: white page,
+`#ecebe8` rules, agent bubbles `var(--grey)` and member bubbles `var(--navy)`, both capped at 85% width
+(`globals.css:482–487`, `.ws-col*` 1988+). A cream-card-on-dark scheme would mean restyling the entire Session
+surface, which is not what was asked.
+
+**Keep the intent, change the device.** The distinction must survive; the way it's drawn must be ours. The
+established teaching language already exists in `.ws-why-full` (`globals.css:1971`) — light panel, **4px teal
+left-rule**, `#f5f4f1` ground. Extend that:
+
+- **Full-bleed width** — bubbles are capped at 85%, so a full-width block breaks the chat rhythm on its own.
+- **Teal left-rule + small uppercase teal eyebrow** ("WHY THIS MATTERS" / "WHY IT WORKS"), reusing the
+  `.ws-why-toggle` type treatment already in the file.
+- **Never a bubble radius** — bubbles carry an asymmetric corner (`border-bottom-left/right-radius: 4px`) that
+  reads as speech. Teaching cards stay square-cornered at 14px, matching `.ws-wayfind`.
+- Use `--teal-text` / `--navy` / `--panel-line` on the light ground. **Do not guess a ground** — teal, orange and
+  olive all fail 4.5:1 on white, which is why the `-text` variants exist ([[contrast-scan-and-ground-direction]]).
 
 ## Why Reconnect waits — now with a concrete reason, not just caution
 
