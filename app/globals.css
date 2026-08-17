@@ -2822,6 +2822,9 @@ body.onbwel-bleed main { max-width: none; margin: 0; padding: 0; }
 .tri-hero-program { color: rgba(255, 255, 255, 0.72); font-weight: 700; font-size: 13px; text-decoration: none; white-space: nowrap; text-align: center; }
 .tri-hero-program:hover { color: #fff; text-decoration: underline; }
 .tri-hero-ring { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+/* The ring sits on the navy hero, so the label takes the on-navy variant — brand navy text there is unreadable and
+   this is exactly the ground-guessing trap the contrast notes at the top of this file warn about. */
+.tri-hero-ring-lab { color: var(--muted-on-navy); font-size: 12px; font-weight: 600; letter-spacing: .04em; }
 
 /* Once the member starts talking, the guiding hero collapses to a slim strip (eyebrow + CTA) so the CONVERSATION owns
    the column — at EVERY width now (was mobile-only; Jay 7/28: the thread is the point, give it the room on desktop too).

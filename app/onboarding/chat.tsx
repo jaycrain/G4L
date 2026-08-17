@@ -28,6 +28,13 @@ const ls = {
 };
 const clearOnboardingStorage = () => { ls.del(LS.token); ls.del(LS.email); ls.del(LS.name); ls.del(LS.draft); };
 
+// A sentinel is an instruction to the engine, never a sentence the member wrote. Rendering one verbatim tells them
+// the machine leaked — and in the identity flow it lands at the exact moment they have admitted they are not ready.
+const SENTINEL_DISPLAY: Record<string, string> = {
+  __identity_skip__: "I'm not sure yet.",
+};
+const displayFor = (text: string): string => SENTINEL_DISPLAY[text.trim().toLowerCase()] ?? text;
+
 export default function OnboardingChat({ welcomeEnabled = false }: { welcomeEnabled?: boolean }) {
   const router = useRouter();
   // The welcome comes BEFORE the gate (forecast + safety first, so signing up reads as a good decision). A fresh
@@ -202,7 +209,11 @@ export default function OnboardingChat({ welcomeEnabled = false }: { welcomeEnab
   async function submit(text: string) {
     if (!text || pending) return;
     const prior = messages;
-    setMessages([...prior, { role: 'member', text }]);
+    // WHAT THE MEMBER SEES vs WHAT THE ENGINE RECEIVES. The identity picker's "not sure yet" button submits a
+    // sentinel, and echoing it verbatim printed `__identity_skip__` into the transcript as if the member had
+    // typed it (Donna's walk, 2026-08-17). The engine still needs the sentinel — it is how the skip is
+    // recognised — so only the DISPLAYED text changes. Anything the member did not type gets a human face here.
+    setMessages([...prior, { role: 'member', text: displayFor(text) }]);
     setInput('');
     setPending(true);
     setError(null);

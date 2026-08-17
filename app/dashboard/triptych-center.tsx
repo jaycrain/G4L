@@ -250,6 +250,8 @@ export default function TriptychCenter({
           </div>
           {hero.rings.length > 0 && (
             <div className="tri-hero-ring">
+              {/* Donna, 2026-08-17: the ring had no label, so what it measured was left to be inferred. */}
+              <span className="tri-hero-ring-lab">Your Progress</span>
               <RedesignRing rings={hero.rings} centerTop={hero.ringTop} centerSub={hero.ringSub} size={119} onDark />
               <Link href={`/program/${memberId}`} className="tri-hero-program">See the Program →</Link>
             </div>

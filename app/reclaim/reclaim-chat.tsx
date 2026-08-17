@@ -22,7 +22,12 @@ const agentBubbles = (text: string): ConvMessage[] =>
 
 // W-21 — the conversational hand-home on completion (no more dead-end). C3 · Quality Days routes into its logging week;
 // C1/C2 hand back to the companion-home. Copy: Cowork Copy Pack v0.2 (generic + practice-week variant).
-const RECLAIM_HAND_HOME = "Head back whenever you’re ready — I’m right here if you want to keep going.";
+// DONNA, 2026-08-17: the generic "Head back whenever you're ready — I'm right here if you want to keep going" is
+// GONE. It implied lingering was equally valid when the flow should point at Continue. Her ask supersedes this
+// morning's reorder, which had only moved it below the science card.
+//
+// The RECLAIM_C3_HAND_HOME line STAYS and is not the same thing: it points FORWARD into the practice week ("this week we live it")
+// rather than inviting the member to stop. Her note asks to audit for other "linger" language — this is not it.
 const RECLAIM_C3_HAND_HOME = "Your Quality Days are set. This week you live them — I’ll be here as you go.";
 
 // v2.5 Reclaim chat — C1 (Looking Forward). Mirrors the Rebuild chat; the C4 ceremony overlay is added in a
@@ -41,7 +46,7 @@ export default function ReclaimChat({ memberId, session = 'c1' }: { memberId: st
   const { teaches, taught, acknowledge } = useTeaching(memberId, sessionKey);
   // The parting line, hoisted: submit() needs it when the Session teaches nothing, the render needs it when
   // the member acknowledges. Two copies of this conditional is how the two paths drift apart.
-  const handHome = session === 'c3' ? RECLAIM_C3_HAND_HOME : RECLAIM_HAND_HOME;
+  const handHome = session === 'c3' ? RECLAIM_C3_HAND_HOME : null;
   const started = useRef(false);
   const chatRef = useChatAutoscroll([messages.length, pending, expects, done]);
 
@@ -88,8 +93,7 @@ export default function ReclaimChat({ memberId, session = 'c1' }: { memberId: st
       const badgeBeat = r.earnedBadge ? [{ role: 'agent' as const, text: `You earned another badge! “${r.earnedBadge.name}.” I added it to your collection.` }] : [];
       // The parting line now lands AFTER the science (Jay, 2026-08-17). A Session with nothing to teach has no
       // acknowledgment to wait for, so it keeps the line here — otherwise the goodbye never arrives.
-      setMessages((m) => [...m, ...agentBubbles(r.reply!), ...badgeBeat,
-        ...(teaches ? [] : [{ role: 'agent' as const, text: handHome }])]);
+      setMessages((m) => [...m, ...agentBubbles(r.reply!), ...badgeBeat]);
       setDone(true);
       // The end card is NOT raised here. It used to fire on this same tick, so it landed on top of the Companion's
       // close, the badge beat and the hand-home before any of them could be read — the receipt arriving before the
@@ -130,7 +134,10 @@ export default function ReclaimChat({ memberId, session = 'c1' }: { memberId: st
         {pending && <div className="typing">Thinking…</div>}
         {/* ③ Understand — after the close, before the member can leave. */}
         {done && <TeachingUnderstand sessionKey={sessionKey} onAcknowledge={acknowledge} />}
-        {done && taught && teaches && <div className="bubble agent">{handHome}</div>}
+        {/* The forward-pointing close, B3/C3 only — it hands the member INTO the practice week rather than
+            inviting them to linger, which is why it survived the 8/17 cut. Below the science card, so the
+            last thing they read before Continue is where they are going. */}
+        {done && taught && handHome && <div className="bubble agent">{handHome}</div>}
         {/* chips scroll WITH the thread (Jay's walk: not pinned) — they answer the question above, autosend. */}
         {!done && expects?.kind === 'scale' && <ScaleChips expects={expects} disabled={pending || !state} onPick={(n) => void submit(String(n))} />}
       </div>

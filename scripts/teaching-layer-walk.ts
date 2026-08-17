@@ -237,11 +237,13 @@ async function main(): Promise<void> {
   await page.screenshot({ path: `docs/screenshots/teaching-understand-${SESSION}.png`, fullPage: false });
   ok(`screenshot → teaching-understand-${SESSION}.png`);
 
-  // THE GOODBYE MUST NOT PRECEDE THE SCIENCE (Jay, 2026-08-17, option 1). Before the fix the Companion said
-  // "head back whenever you're ready" and the card appeared after it, reading as an afterthought.
-  const goodbyeBefore = await page.locator('.bubble.agent', { hasText: 'Head back whenever' }).count();
-  if (goodbyeBefore === 0) ok('the goodbye has NOT been said yet — the science comes first');
-  else bad('the Companion said goodbye before the science — the card reads as an afterthought');
+  // THE LINGER LINE IS GONE (Donna, 2026-08-17). "Head back whenever you're ready — I'm right here if you want to
+  // keep going" implied that stopping was as valid as continuing, on a screen whose job is to point at Continue.
+  // This assertion used to check it sat BELOW the science card; the line no longer exists on this arc at all, so
+  // the check becomes absence. B3 and C3 keep a DIFFERENT close that points forward into the practice week.
+  const lingerBefore = await page.locator('.bubble.agent', { hasText: 'Head back whenever' }).count();
+  if (lingerBefore === 0) ok('the linger line is gone from the close');
+  else bad('the "Head back whenever you\'re ready" line is still there');
 
   await page.locator('.teach-understand .teach-cta').click();
   await page.waitForTimeout(500);
@@ -249,19 +251,9 @@ async function main(): Promise<void> {
   if (continueAfter === 1) ok('"Got it →" releases the hand-home');
   else bad('after acknowledging, Continue → still did not appear — the member is stranded');
 
-  // ORDER, NOT EXISTENCE. The first version of this counted the bubble and passed while the goodbye still painted
-  // ABOVE the card — appending it to `messages` could never move it below, because the card renders after every
-  // message. Counting proved it existed, which was never the question. compareDocumentPosition is.
-  const order = await page.evaluate(() => {
-    const card = document.querySelector('.teach-understand');
-    const bubbles = Array.from(document.querySelectorAll('.bubble.agent'));
-    const bye = bubbles.find((b) => (b.textContent ?? '').includes('Head back whenever'));
-    if (!card || !bye) return null;
-    // Node.DOCUMENT_POSITION_FOLLOWING === 4 → `bye` comes after `card` in document order.
-    return { after: !!(card.compareDocumentPosition(bye) & 4) };
-  });
-  if (order?.after) ok('the goodbye sits BELOW the card in the DOM — genuinely last');
-  else bad(`the goodbye is not below the card (${JSON.stringify(order)}) — it still reads before the science`);
+  const lingerAfter = await page.locator('.bubble.agent', { hasText: 'Head back whenever' }).count();
+  if (lingerAfter === 0) ok('and it does not reappear after acknowledging');
+  else bad('the linger line came back after the acknowledgment');
 
   await page.screenshot({ path: `docs/screenshots/teaching-close-${SESSION}.png`, fullPage: false });
   ok(`screenshot → teaching-close-${SESSION}.png`);

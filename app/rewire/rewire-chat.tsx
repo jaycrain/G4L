@@ -15,10 +15,9 @@ import type { RewireCeremonyData } from '../../lib/ceremony/rewire-ceremony-beat
 import type { ConvMessage, ConvState, Expectation } from '../../lib/agent/onboarding.ts';
 import { BEAT_SEP } from '../../lib/agent/onboarding.ts';
 
-// W-21 — the conversational hand-home. A completed session used to hide the input and render nothing (a hard dead-end).
-// Now the companion speaks one last parting line (its own voice, in the thread) and hands the member back to their
-// companion-home, where the next step is lit. Copy: Cowork Copy Pack v0.2.
-const REWIRE_HAND_HOME = "Head back whenever you’re ready — I’m right here if you want to keep going.";
+// The conversational hand-home line was REMOVED 2026-08-17 (Donna): "Head back whenever you're ready — I'm right
+// here if you want to keep going" implied that lingering was as valid as continuing, when the flow should point at
+// Continue. Rewire had only that generic line; Rebuild and Reclaim keep their forward-pointing B3/C3 variants.
 
 // A turn may hand over more than one beat (a reflection + the next ask), joined by BEAT_SEP — render each as its OWN
 // bubble, one job each. Reuses the onboarding/reconnect chat classes so it looks native.
@@ -98,8 +97,7 @@ export default function RewireChat({ memberId, session = 'w1' }: { memberId: str
       // spec has the Companion turning TOWARD the science at the close, so the parting line is now appended when
       // the member acknowledges. A session with nothing to teach has no acknowledgment to wait for, so it keeps
       // the line here — otherwise the goodbye would never arrive on a checkpoint.
-      const handHome = teaches ? [] : [{ role: 'agent' as const, text: REWIRE_HAND_HOME }];
-      setMessages((m) => [...m, ...agentBubbles(r.reply!), ...badgeBeat, ...handHome]);
+      setMessages((m) => [...m, ...agentBubbles(r.reply!), ...badgeBeat]);
       setDone(true); // session done — the keeper(s) are in the Playbook
       // The end card is NOT raised here. It used to fire on this same tick, so it landed on top of the Companion's
       // close, the badge beat and the hand-home before any of them could be read — the receipt arriving before the
@@ -146,7 +144,6 @@ export default function RewireChat({ memberId, session = 'w1' }: { memberId: str
             put it back ABOVE the science — the card renders after every message, so a bubble added later still
             paints higher. The first version of this passed its test anyway, because the test counted the bubble
             instead of checking where it sat. Order is the whole point here, so it is now a sibling below the card. */}
-        {done && taught && teaches && <div className="bubble agent">{REWIRE_HAND_HOME}</div>}
       </div>
       {error && <p className="error">{error}</p>}
       {!done && (

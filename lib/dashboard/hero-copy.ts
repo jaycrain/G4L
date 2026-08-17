@@ -31,17 +31,20 @@ export function heroView(state: HeroState, ctx: HeroContext): HeroView {
         ctaLabel: 'Resume this Session',
       };
     case 'just-finished':
+      // ORIENT FORWARD, NOT BACK (Donna, 2026-08-17): "As users move through sessions, this top banner should
+      // orient them toward what's ahead, not recap what they just did." The headline named the session they had
+      // finished and the body named it AGAIN before getting to what was next — three mentions of the past, one of
+      // the future, on the surface whose whole job is the next step. The eyebrow still says "You just finished",
+      // so the acknowledgment is not lost; it simply stops being the headline.
       return {
         eyebrow: `${ctx.phaseLabel} · You just finished`,
-        title: `Nice work — ${state.session.label}`,
+        title: state.next ? `Nice work — ${state.next.label} is next` : 'Nice work',
         copy: state.next
           ? state.next.isCheckpoint
-            ? `You've walked the whole ${ctx.phaseLabel} phase. Next up: ${state.next.label}, whenever you're ready.`
-            : isRewire
-              ? `Great job completing ${state.session.label}. That was some hard work — take a break if you want, then pick back up here whenever you're ready. If you want to keep going, ${state.next.label} is next.`
-              : state.next.label === 'Quality Days'
-                ? "Next up is one of the most fulfilling exercises in the entire G4L program, Quality Days. Whenever you're ready."
-                : `Next up: ${state.next.label}, whenever you're ready.`
+            ? `You've walked the whole ${ctx.phaseLabel} phase. If you want to keep going, click the button.`
+            : state.next.label === 'Quality Days'
+              ? 'Quality Days is one of the most fulfilling exercises in the whole program. If you want to keep going, click the button.'
+              : 'If you want to keep going, click the button.'
           : `Take a breath — the next step will be here when you are.`,
         // "Start the Session", not "Start the next Session": the subhead directly above now NAMES it, so "next"
         // is the only word in the sentence doing no work (Jay, 2026-08-11).

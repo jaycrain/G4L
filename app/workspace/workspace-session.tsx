@@ -221,7 +221,7 @@ export default function WorkspaceSession({
         <div className="ws-endcard-scrim" role="dialog" aria-modal="true" aria-label="What you built">
           <div className="ws-endcard">
             <div className="ws-endcard-eyebrow">Session complete</div>
-            <h2 className="ws-endcard-title">Here’s what you built</h2>
+            <h2 className="ws-endcard-title">Here’s what you saw</h2>
             <div className="ws-built-slots">
               {filled.map((s, i) => (
                 <div key={i} className="ws-built-slot">
