@@ -1,4 +1,4 @@
-# Strings EXCLUDED from the member transcript (app @ 2d470e3 · 2026-08-16)
+# Strings EXCLUDED from the member transcript (app @ f4e7c1a · 2026-08-17)
 # Not member copy: system prompts, multi-line fragments, code artifacts. Review when a real line goes missing.
 
 [lib/agent/onboarding-staged.ts] you’re trying to reclaim. We can always change it later.
@@ -317,6 +317,12 @@
 [lib/agent/reconnect.ts] start excavating a Door — the next beat opens that work. Just land their answer so they feel heard.
 [lib/idq/instrument.ts] expected ${TOTAL_ITEMS} items, got ${responses.length}
 [lib/idq/instrument.ts] item ${i}: must be an integer (got ${JSON.stringify(r)})
+[lib/reconnect/legacy-letter.ts] carried from the Window beat when present
+[lib/reconnect/legacy-letter.ts] the social dimension, asked as a person rather than a score
+[lib/reconnect/legacy-letter.ts] contribution — and the bridge toward other people
+[lib/reconnect/legacy-letter.ts] their own evidence, chosen by them, not a metric we assign
+[lib/reconnect/legacy-letter.ts] - ${p.prompt}   THEY SAID: ${(answers[p.key] ?? '').trim()}
+[lib/reconnect/legacy-letter.ts] you've got this
 [lib/agent/rewire.ts] with it next month." The whole time his body was telling the truth — the weight, the hives, the blood markers.
 [lib/agent/rewire.ts] and avoidance contribute to the Fade and allow it to keep its hold.
 [lib/agent/rewire.ts] your body, your habits, your time, who you are, and what's still possible. You'll get honest about these
@@ -518,7 +524,11 @@
 [lib/agent/rebuild.ts] RIGHT NOW: the movement change is locked${activityDays ?
 [lib/agent/rebuild.ts] : ''}. Now coach the EATING change — one small upgrade. When it's real and affirmed, call record_plan(dietChange) AND ask how many days they're aiming for, the same way you did for movement. Don't skip the number — but if they'd rather not give one, take that and move on.
 [lib/agent/rebuild.ts] RIGHT NOW: both changes are locked. One is still missing its day target — the ${!activityDays ? 'MOVEMENT' : 'EATING'} one. Ask for that number in one short question; theirs to choose, and fine to decline.
+[lib/agent/rebuild.ts] RIGHT NOW: both changes are locked with their day targets. Before you close, ask for the BACKUP — the smaller version of each they'd do on a bad day instead of nothing. One short question covering both. Frame it as what keeps the week alive after a miss, never as doubt they'll manage. Call record_plan(activityBackup / dietBackup). If they'd rather not name one, take that and move on.
+[lib/agent/rebuild.ts] RIGHT NOW: the backups are down. Ask ONE short question about what they expect to get in the way this week — theirs to name, no list from you, and fine to decline. Call record_plan(obstacles). Then you're done.
 [lib/agent/rebuild.ts] = 1 && n
+[lib/agent/rebuild.ts] activityBackup
+[lib/agent/rebuild.ts] dietBackup
 [lib/agent/rebuild.ts] Movement — ${activity} Eating — ${diet}
 [lib/agent/rebuild.ts] You did the real work of Rebuild — you found your why, took honest stock of your skills, and ran the pilot in your
 [lib/agent/rebuild.ts] own life. Before we close the Phase, a quick read on where your control sits now. A dozen of these, one to five. No
