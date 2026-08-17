@@ -8,7 +8,7 @@
 // RECLAIM (Decision JJ) — gated; flipped to Production 2026-07-10 (v2.5, all four Rs live).
 
 import { runArcTurn, administeredStage, scaleExpects, type ArcConfig, type StageDef } from './onboarding-staged.ts';
-import { BEAT_SEP, type Collected, type ConvMessage, type ConvState, type ModelTurn, type Stage, type Turn } from './onboarding.ts';
+import { BEAT_SEP, type Collected, type ConvMessage, type ConvState, type Expectation, type ModelTurn, type Stage, type Turn } from './onboarding.ts';
 import { TIER_LABEL, REFINE_TIERS, isTier, type Tier } from '../reclaim/refinement-store.ts';
 import {
   AUDIT_ITEMS, AUDIT_ITEM_COUNT, AUDIT_SCALE_MAX, AUDIT_DOMAIN_STARTS, AUDIT_DOMAIN_LABEL, AUDIT_DOMAIN_INTRO,
@@ -395,7 +395,16 @@ function auditSummary(responses: number[], c?: Collected): string {
     `Here's what stands out. Your best next focus looks like your ${primary} life because it matters to you and ` +
     `progress there would ripple into the rest of your life.${divergence}${secondaryLine}${leverLine}` +
     `${obstacleLine}${actionLine}` +
-    `${BEAT_SEP}This was about finding the priority, not judging any of it. It's saved — you can come back to it anytime.`
+    // DONNA, 2026-08-17: the audit asks how ready you are "in the next 30 days" and then nothing ever refers to it
+    // again, so the horizon reads as a promise the product forgot. The 30 days is NOT ours to cut — it is inside
+    // Greg's scored readiness items, where it is the standard MI readiness ruler and the thing that makes a 1-10
+    // rating mean anything. What was missing is the other half: telling them what the area they chose actually
+    // DOES. It is real — it becomes their First Focus, the Companion carries it, and Quality Days is built on it.
+    // So the close now names the consequence instead of filing it.
+    //
+    // Also cut here: "this was about finding the priority, not judging any of it" — the reassurance tic (declare
+    // what a thing IS, never what it is not).
+    `${BEAT_SEP}That's your first focus now. I'll work from it, and it's what we'll build your Quality Days around.`
   );
 }
 
@@ -594,6 +603,8 @@ const SORT_STUCK_HELP =
   `There's no wrong pick here, and nothing is locked in by it — ${domainList('or')}. ` +
   'And if now isn’t the moment, you can leave this and come back whenever you like; your place is saved.';
 
+const domainPick = (): Expectation => ({ kind: 'domain_pick', options: AUDIT_DOMAINS.map((d) => AUDIT_DOMAIN_LABEL[d]) });
+
 const sortStage: StageDef = (() => {
   const advance: StageDef['gather'] = (b) => {
     const sc = b.scratch as { q?: number; unparsed?: number };
@@ -614,6 +625,7 @@ const sortStage: StageDef = (() => {
         sc.unparsed >= REFLECT_HELP_AFTER
           ? `${q.prompt}${BEAT_SEP}${SORT_STUCK_HELP}`
           : `${q.prompt}${BEAT_SEP}${SORT_CLARIFY}`;
+      b.expects = domainPick(); // re-ask carries the chips too — a member who mistyped should not have to type again
       return;
     }
     sc.unparsed = 0;
@@ -626,6 +638,7 @@ const sortStage: StageDef = (() => {
       sc.unparsed = 0;
       sc.q = i + 1;
       b.reply = AUDIT_SORT_QUESTIONS[i + 1]!.prompt;
+      b.expects = domainPick();
       return;
     }
     b.stage = 'complete';
@@ -695,6 +708,10 @@ export const RECLAIM_C2_ARC: ArcConfig = {
             // LAST DOMAIN → the sort. The member has answered all twenty; show them the shape of their own
             // answers before asking which area gets the effort, so they choose from the pattern and not memory.
             b.visual = priorityBarsVisual(scoreAudit(b.administeredResponses.slice(0, AUDIT_ITEM_COUNT)));
+            // The FIRST sort question needs its chips too. It arrives from this transition rather than from the
+            // sort stage's own advance, so without this the member types question 1 and taps 2 through 5 — which
+            // is a worse experience than either one done consistently.
+            b.expects = domainPick();
             return sortOpener();
           }),
         ],

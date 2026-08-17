@@ -256,7 +256,12 @@ export type ReclaimListExpectation = { kind: 'reclaim_list'; min: number; seeded
 export type IdentityPickExpectation = { kind: 'identity_pick'; candidates: string[] };
 import type { SessionVisual } from './session-visual.ts';
 
-export type Expectation = ScaleExpectation | ReclaimListExpectation | IdentityPickExpectation;
+// The four Bigger World areas, as chips. The member picks one instead of retyping the same word across five
+// consecutive sort questions (Donna, 2026-08-17). ADDITIVE — the chip submits the same label text the parser
+// already accepts, so typing still works and Greg's questions are unchanged.
+export type DomainPickExpectation = { kind: 'domain_pick'; options: string[] };
+
+export type Expectation = ScaleExpectation | ReclaimListExpectation | IdentityPickExpectation | DomainPickExpectation;
 
 // `visual` is the SIBLING of `expects`, not a member of it: Expectation means "what I want back from you", a
 // visual asks for nothing and simply renders. See lib/agent/session-visual.ts.

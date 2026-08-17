@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { startReclaimAction, reclaimTurnAction, reclaimCeremonyDataAction, loadReclaimSessionAction, type ReclaimSession } from './actions.ts';
 import ReclaimCeremony from './reclaim-ceremony.tsx';
 import ScaleChips from '../components/scale-chips.tsx';
+import DomainChips from '../components/domain-chips.tsx';
 import { useChatAutoscroll } from '../components/use-chat-autoscroll.ts';
 import { notifyArtifactCommitted, notifySessionComplete } from '../components/artifact-refresh.ts';
 import { TeachingFrame, TeachingUnderstand } from '../workspace/teaching-cards.tsx';
@@ -140,6 +141,10 @@ export default function ReclaimChat({ memberId, session = 'c1' }: { memberId: st
         {done && taught && handHome && <div className="bubble agent">{handHome}</div>}
         {/* chips scroll WITH the thread (Jay's walk: not pinned) — they answer the question above, autosend. */}
         {!done && expects?.kind === 'scale' && <ScaleChips expects={expects} disabled={pending || !state} onPick={(n) => void submit(String(n))} />}
+        {/* The four areas as chips (Donna, 2026-08-17) — the sort asks five questions answered with the same four
+            words, and retyping each one was friction with no value. The chip submits the label text, so the
+            engine's parser and the typed path are both unchanged. */}
+        {!done && expects?.kind === 'domain_pick' && <DomainChips expects={expects} disabled={pending || !state} onPick={(l) => void submit(l)} />}
       </div>
       {error && <p className="error">{error}</p>}
       {!done && (

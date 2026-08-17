@@ -129,3 +129,28 @@ test('naming Status changed no arithmetic — Priority still equals the old inli
     assert.equal(d.status, d.computedGap * d.importance, `${d.domain}: Status is not Gap × Importance`);
   }
 });
+
+test('the cross-domain sort offers the four areas as CHIPS on every question, including the first', () => {
+  // DONNA, 2026-08-17: five questions in a row answered with the same four words, each one typed by hand.
+  // The first question arrives from the last domain's close rather than from the sort stage's own advance, so it
+  // is the one that silently misses — and a member who types question 1 then taps 2-5 has a worse experience than
+  // either done consistently.
+  let st: ConvState = { stage: 'sort', collected: {}, administeredResponses: Array(AUDIT_ITEM_COUNT).fill(3) } as never;
+  const kinds: string[] = [];
+  for (let i = 0; i < 5; i++) {
+    const t = applyReclaimC2Turn(st, [], 'Physical');
+    st = t.state;
+    if (t.complete) break;
+    kinds.push(t.expects?.kind ?? 'NONE');
+  }
+  assert.ok(kinds.length >= 3, 'the sort ran');
+  assert.deepEqual([...new Set(kinds)], ['domain_pick'], 'every sort question carries the chips');
+});
+
+test('typing still works — the chips are ADDITIVE, and Greg\'s questions are unchanged', () => {
+  // The chip submits the same label text the parser already accepts. Changing HOW an answer is entered is ours;
+  // changing WHAT is asked is the expert's instrument and is not.
+  const st: ConvState = { stage: 'sort', collected: {}, administeredResponses: Array(AUDIT_ITEM_COUNT).fill(3) } as never;
+  const typed = applyReclaimC2Turn(st, [], 'the social one, I think');
+  assert.equal(typed.state.collected?.auditReflections?.sort?.costliest, 'social', 'a typed answer still parses');
+});
