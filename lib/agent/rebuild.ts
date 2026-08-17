@@ -330,7 +330,7 @@ const pilotStage: StageDef = {
         ? `Let's leave it there for today — you've got ${activity && diet ? 'both pieces' : 'one piece'} down` +
           `${activity ? `: ${activity}` : ''}${activity && diet ? `, and ${diet}` : diet ? `: ${diet}` : ''}. ` +
           `The rest can wait until it's clearer. I'll keep this with me and we can pick it up whenever you want.`
-        : `Let's leave this one for now — nothing's lost, and there's no right answer waiting to be found today. ` +
+        : `Let's leave this one for now — nothing's lost. ` +
           `Come back to it when something occurs to you; I'll be here and I'll still have the thread.`;
     // Mutate only — the kernel builds the Turn (it owns beatState).
   },

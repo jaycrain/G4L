@@ -289,8 +289,8 @@ const C2_OPEN =
   "In Reconnect, the IDQ showed how far you'd drifted across four areas of life. This is the other side of it — where " +
   "you want your world to get BIGGER, and which area to push on first. I'll walk you through four areas — Physical, " +
   "Self, Social, Outlook — and for each, a few quick reads, 1 to 10: where you are, where you want to be, how much it " +
-  "matters, how ready you feel, and how much progress there would lift the rest of your life. No wrong answers — this " +
-  "is about finding priorities, not judging yourself.";
+  "matters, how ready you feel, and how much progress there would lift the rest of your life. This is how you find " +
+  "which one to push on first.";
 
 function auditDeliver(index: number): string {
   const item = AUDIT_ITEMS[index]!;

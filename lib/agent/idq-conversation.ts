@@ -66,7 +66,7 @@ export function idqOpening(): IdqTurn {
     'Here’s how it goes. I’ll put twenty-four things in front of you — about your body, about who you are, about ' +
     'the people around you, and about where you’re headed. For each one, you tell me how true it feels right now: ' +
     '1 if it’s not landing at all, 5 if it’s dead-on.\n\n' +
-    'Nothing to study for. No right answers to find. A few of these are going to sting a little — and when one does, ' +
+    'Answer from where you actually are today. A few of these are going to sting a little — and when one does, ' +
     'that sting is the point. It means we found something real.\n\n' +
     'Think of the whole thing as a mirror. You hold it up, you look, and you see the distance between who you are ' +
     'today and who you know you still are underneath. We’ve got a name for that distance around here: the Fade. ' +

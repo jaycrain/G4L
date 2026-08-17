@@ -327,7 +327,7 @@ function reclaimOpen(c: Collected): string {
 // exactly this reason; reclaim now matches). After these, the turn logic reflects the list instead of re-asking.
 const RECLAIM_MORE_VARIANTS = [
   'What else? Anything that comes — big or small.',
-  'What else would you want back? No wrong answers here — small things count.',
+  'What else would you want back? Small things count.',
   'Anything else on your mind — even something small you miss?',
 ];
 const RECLAIM_MORE = RECLAIM_MORE_VARIANTS[0]!; // the soft-close / recite-mismatch nudge (a single ask, not a loop)
@@ -473,7 +473,7 @@ function reclaimOpening(c: Collected): string {
   // §5 re-surface — read the parked want(s) back. The single best trust moment: it proves nothing was dropped.
   return (
     `Now, the good part — and you've already started. Earlier you said you want ${items} back, so ` +
-    `${parked.length === 1 ? "that's" : "those are"} on your list. What else? Big or small, there are no wrong answers.`
+    `${parked.length === 1 ? "that's" : "those are"} on your list. What else? Big or small, both belong.`
   );
 }
 
@@ -2239,7 +2239,7 @@ export function stageInstruction(stage?: Stage): string {
   if (stage === 'reclaim')
     return (
       '\n\nCURRENT STAGE: what they want back — the Reclaim List (what the whole program measures against; big or ' +
-      'small, there are no wrong answers).\n' +
+      'small, both belong).\n' +
       // Revert of the W-46 "SEED FROM THE GAP FIRST" front-load (Jay 2026-07-26 — "vibe wins"): do NOT open the list
       // by mining the gap and proposing a batch of candidate items. That raced the drawing-out and made the list feel
       // pre-decided. DRAW IT OUT the way you drew out the gap instead.
