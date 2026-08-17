@@ -20,7 +20,9 @@ export const SKILLS_SCALE_MAX = 4; // 1 = strongly disagree → 4 = strongly agr
 export const SKILLS_SCALE_ANCHORS = '1 (strongly disagree) to 4 (strongly agree)';
 
 // Greg's meta-category grouping (skill numbers): Predisposing 6,7,12 · Enabling 1,3,4,5,8,11 · Reinforcing 2,9,10.
-const META_BY_SKILL: Record<number, SkillMeta> = {
+// Exported since 2026-08-17 for the member-facing map (skills-map.ts) — the grouping IS the read Greg asks for,
+// so it has to be readable outside the scorer. Still the single source; nothing re-declares it.
+export const META_BY_SKILL: Record<number, SkillMeta> = {
   1: 'enabling', 2: 'reinforcing', 3: 'enabling', 4: 'enabling', 5: 'enabling', 6: 'predisposing',
   7: 'predisposing', 8: 'enabling', 9: 'reinforcing', 10: 'reinforcing', 11: 'enabling', 12: 'predisposing',
 };
