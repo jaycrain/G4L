@@ -1,10 +1,10 @@
 # In-Session Teaching Layer — build state
 
-> **START HERE, next session.** Phase 0 is complete and the content resolver is in. What remains is the UI build —
-> **it needs a browser walk, not just a diff**, so start it with room to build *and* verify. Everything needed is
-> below: the two rulings, the two design findings, the close seam, the reusable `why` keeper kind, and the eight
-> steps. Read `docs/greg-library/PER-ASSET-NOTES.md` **RESUME HERE** first — it opens with what Greg already
-> answered by email, which shortened the open-question list.
+> **STATUS 2026-08-17: SHIPPED for the nine 1:1 Sessions, and walked.** Frame + Understand + Keep are live in
+> Rewire, Rebuild and Reclaim, verified end-to-end at desktop AND phone by `npm run walk:teaching`. **Not pushed.**
+> What remains: **Reconnect** (see "Why Reconnect waits") and the Playbook card's
+> "Run it again with your Companion" affordance. Everything below is the record of why it is built this way — the
+> two rulings and the two design findings are the load-bearing parts.
 
 **Spec:** Cowork's "In-Session Teaching Layer: build spec" + **"Revision 1"** (Drive, 2026-08-16). Rev 1 supersedes
 on three points: show all points inline (no disclosure), one acknowledgment (not ~63 per-line taps), one distilled
@@ -26,20 +26,29 @@ keeper per Session. **Mockups:** `G4L_Teaching_Layer_Mockups.html`.
 
 ## Confirm-items the spec asked for — answered
 
-**1 · The close seam.** `lib/agent/session-harvest.ts:89` → `harvestSessionToPlaybook(db, memberId, session,
-answers)`. That is where the science keeper folds in — **do not add a second close.** The visible confirmation is
-`session-runner.tsx:136–150`, an `ARTIFACT` map keyed by `result.closeKind`; the `playbook` entry ("Kept in your
-Playbook") is the one the teaching keeper lands under.
+**1 · The close seam. ⚠ THE ORIGINAL ANSWER HERE WAS WRONG — corrected 2026-08-17 while wiring it.**
+`harvestSessionToPlaybook` serves the **old Atlas session runner**, not the conversational arcs. The arcs push
+`HarvestSignal`s onto `pendingHarvest`, drained by `drainHarvest`, committing through `commitKeeper`.
+
+The science keeper does **not** ride that drain: it commits on the member's *acknowledgment*, not at completion, so
+a member who never saw the card cannot find a read in "What you have learned" they never learned. It lives in
+`lib/content/teaching-keep.ts`, called by `keepScienceAction`.
+
+> **THE ROUTING TRAP.** `chapterKey()` (`lib/playbook/tabs.ts`) switches on `keeper_type` **first** and only falls
+> through to `section`. So setting `keeperType: 'principle'` — the intuitive choice for a science line — routes the
+> read to `plays` and out to the **What worked** tab, exactly the Reads/Moves blur Rev 1's routing rule exists to
+> prevent. The `why` chapter is reachable **only** via `section: 'why_works'` with **no** keeper type.
+> `commitKeeper` was widened to make that expressible instead of casting `undefined as never`.
 
 > ⚠ **This path has silently dropped keepers in production before** — it threw on prod-postgres only, inside a
 > shared swallowed `try`, and every Session keeper vanished with no error. See [[playbook-harvest-silent-drop]].
 > When wiring the science keeper in: assert the row exists after the write, log in the catch, and verify **on
 > prod**, not just locally. A swallowed read renders as truth.
 
-**2 · Does "What you've learned" need cycle grouping built?** Partly — but **less new work than the spec assumed**:
-`lib/playbook/tabs.ts:37` already maps a **`why`** keeper kind to the `learned` tab, commented "the science sits
-beside what it explains." **Reuse the `why` kind; do not invent a new one.** Cycle grouping/collapse still needs
-checking against the other past-cycle artifacts before build.
+**2 · Does the learned tab need cycle grouping built?** Routing works — the walk asserts the takeaway lands there
+and does **not** leak into What worked. Cycle grouping/collapse is still unchecked against the other past-cycle
+artifacts. Note the correction above: `why` is a **ChapterKey**, not a keeper type; an earlier reading of
+`tabs.ts` had that backwards.
 
 **3 · Mobile rendering. DONE — verified at 390x844.** `npm run walk:teaching -- <url> w1 --mobile`, or
 `node --env-file-if-exists=.env.local --experimental-strip-types scripts/teaching-layer-walk.ts <url> w1 --mobile`.
@@ -97,16 +106,23 @@ Beyond the capture loop being load-bearing: Reconnect's seven beats collapse ont
 card twice** — at entry and again at doors. Solving that needs a shown-once rule keyed to the *asset*, not the
 beat, plus its own replay fixtures. That is a separate change on the most fragile surface we have.
 
-## Remaining in release 1
+## Done in release 1
 
-1. Move the two tiers out of the header (`workspace-session.tsx:198–212`, currently an inline expander + an
-   overlay) and into the scroll as beats. Retire `explore-panel.tsx`'s overlay role.
-2. Frame card with **"Clip in →"** (existing member-facing term — already used in onboarding welcome).
-3. Understand card, full content inline, **"Got it →"**, plus the optional skippable "which line stayed with you?".
-4. Fold the keeper into `harvestSessionToPlaybook` as a `why` read — with the write assertion above.
-5. Rename **"Explore the Science" → "Why it works"** across member-facing strings.
-6. Playbook card: the kept read with its source chip and **"Run it again with your Companion →"** — wire to the
-   existing keeper-recall rails, not a new mechanism. *This affordance is what keeps the tab an operating manual
-   rather than a scrapbook; it is not decoration.*
-7. Post-deploy: `npm run smoke`, then a real walk. "It deployed Ready" is not "it works."
-8. Cowork sync note — member-facing strings change (the rename), so it rides the next bundle. No size threshold.
+1. Both tiers moved out of the pinned header into the thread. `explore-panel.tsx` and ~5k of orphaned CSS deleted.
+2. Frame card, full summary, "Clip in".
+3. Understand card, all points inline, "Got it", gating the hand-home.
+4. Keeper — `teaching-keep.ts`, commits on acknowledgment, **verifies its own write**. This path silently dropped
+   every session keeper on prod 7/27; an insert that does not throw is not evidence of a row.
+5. "Explore the Science" retired along with the header row that carried it.
+6. Shared across all three arcs via `useTeaching` — in its own module, because a hook exported from a component
+   file creates the client-to-client cycle webpack-dev resolves to `undefined`.
+7. The parting line moved BELOW the card (Jay, option 1). *The first fix appended it to `messages` and did not
+   work — the card renders after every message, so a bubble added later still paints above it. The test passed
+   anyway, because it counted the bubble instead of checking where it sat.*
+
+## Still open
+
+- **Reconnect** — needs the shown-once rule; see above.
+- **The Playbook card affordance** ("Run it again with your Companion") — wire to the existing keeper-recall rails,
+  not a new mechanism. This is what keeps the tab an operating manual rather than a scrapbook; it is not decoration.
+- **Post-deploy:** `npm run smoke`, then a real walk. "It deployed Ready" is not "it works."
