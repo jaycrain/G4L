@@ -131,13 +131,47 @@ cannot currently tell them apart.
 **Sequencing note:** this lands in Reconnect, which carries the live capture loop. Same caution as the Teaching
 Layer — worth doing, not worth doing casually.
 
+## DECISION · B1's score is not shown — RB-1, and it is correct. Do not re-open.
+
+Jay's 8/8 email lists B1 with B2 ("B1 computes and shows nothing"), which reads like a gap. **It is not.** Greg's
+own B1 spec forbids display, and `docs/b1-closure-findings.md` (2026-08-07) already quotes him at length:
+
+> "No B1 turn or UI element scores, grades, or ranks the member's motivation." · "no numeric motivation level,
+> gauge, or progress bar is rendered." · "Never present a 'motivation level' as a verdict."
+
+That doc also records a previous session making **exactly the error I was about to make** — telling Jay that Greg
+wanted the profile surfaced — and correcting it. RB-1 (store, don't display) matches the source. Left alone.
+
+## GAP (and a live bug) · B1 — the Companion is told to reflect words it was never given
+
+This is the part underneath the decision, and it is not about the score.
+
+**Built:** the Companion's context carries `whyNamed?: boolean` — a flag, nothing else
+(`lib/agent/checkin.ts:97`, set at `app/dashboard/checkin-actions.ts:381`). And the instruction built from it says
+(`checkin.ts:463`):
+
+> "if it comes up, **reflect it as their own words about why this matters**, never as a motivation 'type' or a
+> verdict."
+
+**The model is instructed to reflect the member's own words and is handed a boolean.** It cannot comply. It will
+either deflect — the member sees the program forget something it explicitly claims to remember — or fill the gap
+itself, which means **fabricating a motivation and attributing it to them.** That is a governance problem, not a
+polish one.
+
+This is the recurring shape in [[context-must-not-claim-what-it-stopped-tracking]]: the engine tells the model it
+has something it does not, and the model repeats our claim. **Debug the context before the model.**
+
+**Two honest fixes, and the choice is a real one:** pass the member's actual words alongside the flag (best — it is
+what the instruction already promises, and Greg's 8/8 note asks for "the data shared with prompts by the Companion
+to help them interpret it"); or narrow the instruction to what a boolean can support. **Do not leave it as is** —
+today it promises the first and delivers the second.
+
 ---
 
 ## Still to verify
 
 The carry-forward web beyond the links above · R2's Community share as a build (direction is green-lit; the
-surface exists as the Community) · B1's reading, which Jay's 8/8 email flags alongside B2 ("B1 computes and shows
-nothing") and which this pass has **not** verified.
+surface exists as the Community).
 
 **Already closed elsewhere, do not re-open:** W3's monitoring week (built 8/8, migration `0074`) · R2 multi-door
 direction (green-lit by Greg 8/8) · IDQ 60-day cadence (Jay's ruling; asked of Greg 8/16) · C2 question order
