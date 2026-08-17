@@ -274,7 +274,10 @@ export function w1Context(c: Collected): string {
   return lines.length ? `\n\nMEMBER CONTEXT (what you already know — never say you don't):\n${lines.join('\n')}` : '';
 }
 
-export async function liveTurnRewire(state: ConvState, history: ConvMessage[], memberMessage: string): Promise<Turn> {
+/** @param carryForward What upstream assets retained (lib/curriculum/retention.ts), rendered, or null. Passed in
+ *  rather than read here so the engine stays pure and replayable; null must add NOTHING — an absent upstream is a
+ *  member's choice about order, never a gap to name. See liveTurnRebuildB3 for the full note. */
+export async function liveTurnRewire(state: ConvState, history: ConvMessage[], memberMessage: string, carryForward?: string | null): Promise<Turn> {
   const { default: Anthropic } = await import('@anthropic-ai/sdk');
   const client = new Anthropic({
     apiKey: process.env.ANTHROPIC_API_KEY,
@@ -289,7 +292,7 @@ export async function liveTurnRewire(state: ConvState, history: ConvMessage[], m
   const res = await client.messages.create({
     model: process.env.ANTHROPIC_MODEL ?? 'claude-sonnet-4-6',
     max_tokens: 300,
-    system: REWIRE_W1_SYSTEM + w1Context(state.collected) + rewireStageNote(state),
+    system: REWIRE_W1_SYSTEM + w1Context(state.collected) + rewireStageNote(state) + (carryForward ? `\n\n${carryForward}` : ''),
     messages,
   });
   const text = (res.content as Array<{ type: string; text?: string }>)
@@ -540,7 +543,10 @@ function rewireW2StageNote(state: ConvState): string {
   return "\n\nRIGHT NOW (hold): the member is sitting with the image you reflected. Receive their reaction in ONE warm sentence — no advice, no new question.";
 }
 
-export async function liveTurnRewireW2(state: ConvState, history: ConvMessage[], memberMessage: string): Promise<Turn> {
+/** @param carryForward What upstream assets retained (lib/curriculum/retention.ts), rendered, or null. Passed in
+ *  rather than read here so the engine stays pure and replayable; null must add NOTHING — an absent upstream is a
+ *  member's choice about order, never a gap to name. See liveTurnRebuildB3 for the full note. */
+export async function liveTurnRewireW2(state: ConvState, history: ConvMessage[], memberMessage: string, carryForward?: string | null): Promise<Turn> {
   const { default: Anthropic } = await import('@anthropic-ai/sdk');
   const client = new Anthropic({
     apiKey: process.env.ANTHROPIC_API_KEY,
@@ -555,7 +561,7 @@ export async function liveTurnRewireW2(state: ConvState, history: ConvMessage[],
   const res = await client.messages.create({
     model: process.env.ANTHROPIC_MODEL ?? 'claude-sonnet-4-6',
     max_tokens: 400,
-    system: REWIRE_W2_SYSTEM + w2Context(state.collected) + rewireW2StageNote(state),
+    system: REWIRE_W2_SYSTEM + w2Context(state.collected) + rewireW2StageNote(state) + (carryForward ? `\n\n${carryForward}` : ''),
     messages,
   });
   const text = (res.content as Array<{ type: string; text?: string }>)
@@ -918,7 +924,10 @@ function rewireW3StageNote(state: ConvState): string {
   );
 }
 
-export async function liveTurnRewireW3(state: ConvState, history: ConvMessage[], memberMessage: string): Promise<Turn> {
+/** @param carryForward What upstream assets retained (lib/curriculum/retention.ts), rendered, or null. Passed in
+ *  rather than read here so the engine stays pure and replayable; null must add NOTHING — an absent upstream is a
+ *  member's choice about order, never a gap to name. See liveTurnRebuildB3 for the full note. */
+export async function liveTurnRewireW3(state: ConvState, history: ConvMessage[], memberMessage: string, carryForward?: string | null): Promise<Turn> {
   const { default: Anthropic } = await import('@anthropic-ai/sdk');
   const client = new Anthropic({
     apiKey: process.env.ANTHROPIC_API_KEY,
@@ -933,7 +942,7 @@ export async function liveTurnRewireW3(state: ConvState, history: ConvMessage[],
   const res = await client.messages.create({
     model: process.env.ANTHROPIC_MODEL ?? 'claude-sonnet-4-6',
     max_tokens: 400,
-    system: REWIRE_W3_SYSTEM + w3Context(state.collected) + rewireW3StageNote(state),
+    system: REWIRE_W3_SYSTEM + w3Context(state.collected) + rewireW3StageNote(state) + (carryForward ? `\n\n${carryForward}` : ''),
     messages,
   });
   const text = (res.content as Array<{ type: string; text?: string }>)

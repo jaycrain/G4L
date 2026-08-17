@@ -38,6 +38,7 @@ import { setGate, markSessionClosed, markCheckpointClosed } from '../../lib/curr
 import { acknowledgeSessionBadge } from '../../lib/curriculum/view.ts';
 import type { RewireCeremonyData } from '../../lib/ceremony/rewire-ceremony-beats.ts';
 import { earnedBadgeReveal } from '../../lib/ceremony/badge-reveal.ts';
+import { carryForward, describeCarryForward } from '../../lib/curriculum/retention.ts';
 
 // Which Rewire session — W1/W2/W3 (the three Sessions) or the R4 'checkpoint' (the administered Commitment read →
 // ceremony). All ride the same flag + surface; W2 reads the Reclaim List, W3 pulls W1/W2 keepers forward, the
@@ -243,14 +244,18 @@ export async function rewireTurnAction(
       await persistRewireArcSession(db, memberId, session, history, message, turn.reply, turn);
       return { ok: true, reply: turn.reply, state: turn.state, expects: turn.expects };
     }
+    const db = (await getDb()) as unknown as Db;
+    // CARRY-FORWARD (lib/curriculum/retention.ts) — each Rewire Session loads what came before it, per its own
+    // Engineering Memo's `load prior module context` line: W1 loads Reconnect, W2 adds W1, W3 adds W2. Resolved
+    // here at the boundary so the engines stay pure. Guarded: losing it costs the connective tissue, not the turn.
+    const carried = describeCarryForward(await carryForward(db, memberId, session).catch(() => []));
     // Every session turn is a live model turn — the model supplies the reflection; the kernel sequences + harvests.
     const turn =
       session === 'w3'
-        ? await liveTurnRewireW3(state, history, message)
+        ? await liveTurnRewireW3(state, history, message, carried)
         : session === 'w2'
-          ? await liveTurnRewireW2(state, history, message)
-          : await liveTurnRewire(state, history, message);
-    const db = (await getDb()) as unknown as Db;
+          ? await liveTurnRewireW2(state, history, message, carried)
+          : await liveTurnRewire(state, history, message, carried);
     await persistRewireHarvest(db, memberId, state, turn); // true lines / image / protocol → Playbook keepers
     // On completion: (1) mark the Session CLOSED so the curriculum forecast advances the member W1→W2→W3→Checkpoint
     // (the v2.3 conversational sessions complete via the kernel, not the step player); (2) open the practice week

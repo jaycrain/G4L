@@ -313,7 +313,10 @@ function parseRefineModel(content: readonly unknown[]): ModelTurn {
   return { text: text.trim(), ...(refinement ? { refinement } : {}) };
 }
 
-export async function liveTurnReclaimRefine(state: ConvState, history: ConvMessage[], memberMessage: string): Promise<Turn> {
+/** @param carryForward What upstream assets retained (lib/curriculum/retention.ts), rendered, or null. Passed in
+ *  rather than read here so the engine stays pure and replayable; null must add NOTHING — an absent upstream is a
+ *  member's choice about order, never a gap to name. See liveTurnRebuildB3 for the full note. */
+export async function liveTurnReclaimRefine(state: ConvState, history: ConvMessage[], memberMessage: string, carryForward?: string | null): Promise<Turn> {
   const { default: Anthropic } = await import('@anthropic-ai/sdk');
   const client = new Anthropic({
     apiKey: process.env.ANTHROPIC_API_KEY,
@@ -328,7 +331,7 @@ export async function liveTurnReclaimRefine(state: ConvState, history: ConvMessa
   const res = await client.messages.create({
     model: process.env.ANTHROPIC_MODEL ?? 'claude-sonnet-4-6',
     max_tokens: 700,
-    system: REFINE_SYSTEM + refineStageNote(state),
+    system: REFINE_SYSTEM + refineStageNote(state) + (carryForward ? `\n\n${carryForward}` : ''),
     tools: [RECORD_REFINEMENT_TOOL],
     messages,
   });

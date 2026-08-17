@@ -117,13 +117,49 @@ test('THE SEAM — both fan-ins are actually wired into their Sessions, not just
   assert.match(rebuild, /carryForward\(db, memberId, 'b3'\)/, 'B3 resolves its upstreams');
   assert.match(rebuild, /liveTurnRebuildB3\(state, history, message, describeCarryForward/, 'and passes them in');
 
+  const rewire = readFileSync('app/rewire/actions.ts', 'utf8');
   const reclaim = readFileSync('app/reclaim/actions.ts', 'utf8');
   assert.match(reclaim, /carryForward\(db, memberId, 'c3'\)/, 'C3 resolves its upstreams');
   assert.match(reclaim, /liveTurnReclaimC3\(state, history, message, describeCarryForward/, 'and passes them in');
 
+  // Rewire resolves ONE block for whichever session is running — the session key doubles as the UPSTREAM key.
+  assert.match(rewire, /carryForward\(db, memberId, session\)/, 'W1/W2/W3 resolve their own upstreams');
+  for (const fn of ['liveTurnRewireW3', 'liveTurnRewireW2', 'liveTurnRewire']) {
+    assert.match(rewire, new RegExp(`${fn}\\(state, history, message, carried\\)`), `${fn} receives it`);
+  }
+  assert.match(reclaim, /carryForward\(db, memberId, 'c1'\)/, 'C1 resolves its upstreams');
+  assert.match(reclaim, /liveTurnReclaimRefine\(state, history, message, carriedC1\)/, 'and C1 receives it');
+
   // And the engines must APPEND it, or the parameter is decoration.
-  assert.match(readFileSync('lib/agent/rebuild.ts', 'utf8'), /carryForward \? `\\n\\n\$\{carryForward\}` : ''/);
-  assert.match(readFileSync('lib/agent/reclaim.ts', 'utf8'), /carryForward \? `\\n\\n\$\{carryForward\}` : ''/);
+  for (const f of ['lib/agent/rebuild.ts', 'lib/agent/reclaim.ts', 'lib/agent/rewire.ts']) {
+    const src = readFileSync(f, 'utf8');
+    assert.match(src, /carryForward \? `\\n\\n\$\{carryForward\}` : ''/, `${f} appends it to the system prompt`);
+  }
+  // rewire.ts has THREE model turns and each must append — one missed engine is a Session that silently forgets.
+  assert.equal(
+    (readFileSync('lib/agent/rewire.ts', 'utf8').match(/carryForward \? `\\n\\n\$\{carryForward\}` : ''/g) ?? []).length,
+    3, 'all three Rewire engines append the block',
+  );
+});
+
+test('B1, B2 and C2 are NOT wired — they have no model turn to wire into', () => {
+  // Their memos DO declare a prior_module_context load, so this looks like a gap and is not one: B1 (12 items),
+  // B2 (24) and C2 (20) are ADMINISTERED Likert reads. `liveTurnRebuildB1/B2` and `liveTurnReclaimC2` are
+  // synchronous and never call the model, so there is no system prompt for a carry-forward block to enter.
+  // Wiring them would mean giving those Sessions a conversational turn they deliberately do not have — a program
+  // decision, not a plumbing one. Recorded so the next reader does not "fix" it.
+  for (const [file, fn] of [
+    ['lib/agent/rebuild.ts', 'liveTurnRebuildB1'],
+    ['lib/agent/rebuild.ts', 'liveTurnRebuildB2'],
+    ['lib/agent/reclaim.ts', 'liveTurnReclaimC2'],
+  ]) {
+    const src = readFileSync(file!, 'utf8');
+    assert.match(src, new RegExp(`export function ${fn}\\(`), `${fn} is synchronous — an administered read`);
+  }
+  // And no UPSTREAM entry exists for them, so nothing resolves a block that could never be delivered.
+  for (const k of ['b1', 'b2', 'c2']) {
+    assert.ok(UPSTREAM[k], `${k} still DECLARES its upstreams (the map is complete)`);
+  }
 });
 
 test('EVERY reader in the registry actually carries — no silently dead links', async () => {
@@ -180,6 +216,12 @@ test('EVERY reader in the registry actually carries — no silently dead links',
   assert.deepEqual(b3.map((c) => c.asset), ['b1', 'b2', 'w1', 'w2', 'w3'], 'all five of B3\'s upstreams carry');
   assert.match(b3.find((c) => c.asset === 'w1')!.lines.join(' '), /picking it back up/, 'W1 verbatim');
   assert.match(b3.find((c) => c.asset === 'w2')!.lines.join(' '), /Cresting the hill/, 'W2 verbatim');
+
+  // THE NEWLY-WIRED SESSIONS resolve their own sets. The seam test greps source, which proves the call exists;
+  // this proves it returns the right thing. Rewire is cumulative across its own three Sessions.
+  assert.deepEqual((await carryForward(db, m, 'w1')).map((c) => c.asset), ['r2', 'r3'], 'W1 loads Reconnect');
+  assert.deepEqual((await carryForward(db, m, 'w2')).map((c) => c.asset), ['r2', 'r3', 'w1'], 'W2 adds W1');
+  assert.deepEqual((await carryForward(db, m, 'w3')).map((c) => c.asset), ['r2', 'r3', 'w1', 'w2'], 'W3 adds W2');
 
   // The Reconnect readers, exercised through C1 — which loads all three prior phases.
   const c1 = await carryForward(db, m, 'c1');

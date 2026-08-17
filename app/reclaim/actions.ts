@@ -253,8 +253,15 @@ export async function reclaimTurnAction(
     // C1 · Looking Forward is a single coaching stage now (Greg cut the evidence self-check, 8/7). The else branch is
     // no longer a second live stage — it only catches a session persisted mid-'evidence', which applyReclaimC1Turn
     // migrates onto 'refine' deterministically. See RETIRED_C1_STAGES.
-    const turn = state.stage === 'refine' ? await liveTurnReclaimRefine(state, history, message) : applyReclaimC1Turn(state, history, message);
     const db = (await getDb()) as unknown as Db;
+    // CARRY-FORWARD — C1 has no `load prior module context` line; its Inputs declare "prior_module_context
+    // (summaries from Reconnect, Rewire, Rebuild where available)", i.e. everything before it. That is the whole
+    // point of C1: the member re-reads a list they wrote as a different person, and the refinement is only honest
+    // if the Companion holds what changed them in between.
+    const carriedC1 = describeCarryForward(await carryForward(db, memberId, 'c1').catch(() => []));
+    const turn = state.stage === 'refine'
+      ? await liveTurnReclaimRefine(state, history, message, carriedC1)
+      : applyReclaimC1Turn(state, history, message);
 
     // CAT-36 (option b, Jay 2026-08-01) — VALIDATE BEFORE THE MEMBER IS ASKED TO CONFIRM.
     //
