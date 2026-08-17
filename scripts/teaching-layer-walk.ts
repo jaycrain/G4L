@@ -23,6 +23,10 @@ import { ASSET_SUMMARIES } from '../lib/content/summaries.ts';
 import { exploreFor } from '../lib/content/explore.ts';
 
 const base = process.argv[2]?.replace(/\/$/, '') ?? 'http://localhost:3100';
+// Which Session to walk. Defaults to W1 (the mockups' worked example); pass b1 or c1 to prove the other two arcs
+// carry the same beats. The three clients share a hook, but they are still three call sites — and the assertion
+// that matters (the gate not stranding a member) is exactly what a copy-paste drift would break.
+const SESSION = (process.argv[3] ?? 'w1').toLowerCase();
 const email = process.env.SMOKE_EMAIL?.trim();
 const password = process.env.SMOKE_PASSWORD;
 if (!email || !password) { console.error('Set SMOKE_EMAIL and SMOKE_PASSWORD.'); process.exit(2); }
@@ -39,7 +43,7 @@ const finish = () => {
 async function main(): Promise<void> {
   const browser = await chromium.launch();
   const page = await browser.newPage({ viewport: { width: 1280, height: 1000 } });
-  console.log(`TEACHING LAYER WALK — ${base}`);
+  console.log(`TEACHING LAYER WALK — ${SESSION.toUpperCase()} @ ${base}`);
 
   await page.goto(`${base}/login`, { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(
@@ -64,16 +68,16 @@ async function main(): Promise<void> {
 
   // Reset W1 so the walk is REPEATABLE. Without this the second run meets an already-closed session and silently
   // checks something different from the first — the kind of drift that makes a green walk stop meaning anything.
-  const reset = await page.request.post(`${base}/dev/reset-session?session=w1`);
-  if (reset.ok()) ok('reset W1 to a clean start');
-  else bad(`could not reset W1 (${reset.status()}) — the run may not be comparable`);
+  const reset = await page.request.post(`${base}/dev/reset-session?session=${SESSION}`);
+  if (reset.ok()) ok(`reset ${SESSION.toUpperCase()} to a clean start`);
+  else bad(`could not reset ${SESSION.toUpperCase()} (${reset.status()}) — the run may not be comparable`);
 
   // W1 — the Disinformation Audit. The mockups' worked example, and a 1:1 asset session (not a gate).
-  await page.goto(`${base}/workspace/${memberId}/w1`, { waitUntil: 'domcontentloaded' });
+  await page.goto(`${base}/workspace/${memberId}/${SESSION}`, { waitUntil: 'domcontentloaded' });
   const frame = page.locator('.teach-frame');
   const appeared = await frame.waitFor({ state: 'visible', timeout: 20000 }).then(() => true).catch(() => false);
-  if (!appeared) { bad('the Frame card never rendered on W1'); await browser.close(); return finish(); }
-  ok('the Frame card renders on W1');
+  if (!appeared) { bad(`the Frame card never rendered on ${SESSION.toUpperCase()}`); await browser.close(); return finish(); }
+  ok(`the Frame card renders on ${SESSION.toUpperCase()}`);
 
   // ---- 1 · INSIDE THE SCROLLER, NOT PINNED ----------------------------------------------------------------------
   const inChat = await frame.evaluate((el) => !!el.closest('.chat'));
@@ -106,7 +110,7 @@ async function main(): Promise<void> {
 
   // ---- 3 · THE FULL SUMMARY, NOT THE SHORT ONE ------------------------------------------------------------------
   const body = (await page.locator('.teach-frame .teach-body').innerText()).trim();
-  const w1 = ASSET_SUMMARIES.w1;
+  const w1 = ASSET_SUMMARIES[SESSION as keyof typeof ASSET_SUMMARIES]!;
   if (body === w1.full.trim()) ok('the Frame shows the FULL summary (Jay, 2026-08-16)');
   else if (body === w1.short.trim()) bad('the Frame is showing the SHORT summary — the ruling was full');
   else bad(`the Frame body matches neither summary state:\n      got: ${body.slice(0, 120)}…`);
@@ -120,29 +124,47 @@ async function main(): Promise<void> {
   if (/clip in/i.test(cta)) ok(`the CTA is the established term ("${cta}")`);
   else bad(`unexpected CTA: "${cta}"`);
 
-  await page.screenshot({ path: 'docs/screenshots/teaching-frame-w1.png', fullPage: false });
-  ok('screenshot → docs/screenshots/teaching-frame-w1.png');
+  await page.screenshot({ path: `docs/screenshots/teaching-frame-${SESSION}.png`, fullPage: false });
+  ok(`screenshot → teaching-frame-${SESSION}.png`);
 
   // ---- 5 · DRIVE THE SESSION TO ITS CLOSE, THEN CHECK THE UNDERSTAND BEAT ---------------------------------------
   // A real conversation, not a seeded state. The Understand card is the REQUIRED acknowledgment that gates the
   // hand-home, so the only verification worth having is the one that reaches it the way a member does.
-  console.log('  … driving W1 to its close (real turns)');
+  console.log(`  … driving ${SESSION.toUpperCase()} to its close (real turns)`);
   let turns = 0;
-  const REPLIES = [
-    "That I'll deal with it once work calms down.",
-    "I tell myself I'm too old to start over.",
-    "That there's no time in the day for me.",
-    "I've tried before and it didn't stick.",
-    "That it's too late to change now.",
-  ];
-  while (turns < 30) {
+  // REPLIES ARE PER-ARC, and that is not cosmetic. The first version fed W1's disinformation answers ("I'm too
+  // old to start over", "it's too late") into every Session. In C1 — a goal-REFINEMENT conversation — sixty turns
+  // of repeated hopelessness read as escalating distress and the Companion routed to crisis support, which is the
+  // right call on that input and made the walk look like a product failure.
+  //
+  // Worth recording from that dead end: the DETERMINISTIC gate is correctly scoped. detectCrisis() does NOT fire
+  // on "it's too late" or "I'm too old to start over" — verified directly. It could not, without misreading W1's
+  // own canonical disinformation statements as a crisis. The escalation was the model reading a whole
+  // conversation, not a keyword tripping a wire.
+  //
+  // Each list also carries AFFIRMATIVES, because the coach arcs gate on propose→confirm and a driver that never
+  // agrees to anything never reaches a close.
+  const BY_ARC: Record<string, string[]> = {
+    w: ["That I'll deal with it once work calms down.", 'I can start small this week, even on a bad day.',
+        "There's more time than I admit — I just spend it elsewhere.", 'Yes, that one lands.', "That's right."],
+    b: ['Feeling strong enough to keep up with my kids.', 'A short walk after dinner most days.',
+        'Yes, that sounds right.', 'One more vegetable at dinner.', "That's it exactly."],
+    c: ['Getting back on the bike on weekends.', 'That one still matters most to me.',
+        'Yes, that captures it.', 'The others feel less urgent now.', "That's right — keep it."],
+  };
+  const REPLIES = BY_ARC[SESSION[0]!] ?? BY_ARC.w!;
+  while (turns < 60) { // instruments run 12+ administered turns before their close
     if (await page.locator('.teach-understand').count()) break;
+    // ADMINISTERED TURNS COME FIRST. B1 and B2 are instruments — a 1-7 scale, not free text — and their textarea
+    // is present but DISABLED while a scale turn is up. Checking for the box before the chips made the driver sit
+    // on a disabled field until it timed out. Ask what the turn is, not what the page happens to contain.
+    const chips = page.locator('.scale-chip');
     const box = page.locator('.chat-input textarea');
-    if (await box.count()) {
+    if (await chips.count()) {
+      await chips.nth(3).click(); // a mid-scale answer; the content is irrelevant, reaching the close is the point
+    } else if ((await box.count()) && (await box.isEnabled().catch(() => false))) {
       await box.fill(REPLIES[turns % REPLIES.length]!);
       await page.locator('.chat-input button[type="submit"]').click();
-    } else if (await page.locator('.chip').count()) {
-      await page.locator('.chip').first().click(); // an administered turn — take any option
     } else {
       await page.waitForTimeout(1500);
     }
@@ -152,7 +174,15 @@ async function main(): Promise<void> {
   }
 
   const understand = page.locator('.teach-understand');
-  if (!(await understand.count())) { bad(`the Understand card never appeared after ${turns} turns`); await browser.close(); return finish(); }
+  if (!(await understand.count())) {
+    bad(`the Understand card never appeared after ${turns} turns`);
+    // Leave evidence rather than a bare failure — a stalled driver and a stalled ARC look identical from here.
+    await page.screenshot({ path: `docs/screenshots/teaching-STUCK-${SESSION}.png`, fullPage: false });
+    const tail = await page.locator('.bubble.agent').last().innerText().catch(() => '(none)');
+    console.log(`      last Companion turn: ${tail.slice(0, 220)}`);
+    await browser.close();
+    return finish();
+  }
   ok(`the Understand card appeared at the close (${turns} turns)`);
 
   const uInChat = await understand.evaluate((el) => !!el.closest('.chat'));
@@ -172,8 +202,8 @@ async function main(): Promise<void> {
   if (continueBefore === 0) ok('Continue → is gated until the science is acknowledged');
   else bad('Continue → is available BEFORE the acknowledgment — the beat is skippable');
 
-  await page.screenshot({ path: 'docs/screenshots/teaching-understand-w1.png', fullPage: false });
-  ok('screenshot → docs/screenshots/teaching-understand-w1.png');
+  await page.screenshot({ path: `docs/screenshots/teaching-understand-${SESSION}.png`, fullPage: false });
+  ok(`screenshot → teaching-understand-${SESSION}.png`);
 
   // THE GOODBYE MUST NOT PRECEDE THE SCIENCE (Jay, 2026-08-17, option 1). Before the fix the Companion said
   // "head back whenever you're ready" and the card appeared after it, reading as an afterthought.
@@ -201,8 +231,8 @@ async function main(): Promise<void> {
   if (order?.after) ok('the goodbye sits BELOW the card in the DOM — genuinely last');
   else bad(`the goodbye is not below the card (${JSON.stringify(order)}) — it still reads before the science`);
 
-  await page.screenshot({ path: 'docs/screenshots/teaching-close-w1.png', fullPage: false });
-  ok('screenshot → docs/screenshots/teaching-close-w1.png');
+  await page.screenshot({ path: `docs/screenshots/teaching-close-${SESSION}.png`, fullPage: false });
+  ok(`screenshot → teaching-close-${SESSION}.png`);
 
   // ---- 6 · ④ KEEP — THE PROMISE ON THE CARD MUST BE TRUE ---------------------------------------------------------
   // The card says "we'll keep the takeaway in your Playbook". That is a promise made to the member in their own
@@ -214,7 +244,7 @@ async function main(): Promise<void> {
   await page.locator('.pb-tab').filter({ hasText: "What you've learned" }).first().click();
   await page.waitForTimeout(600);
 
-  const lede = exploreFor('w1')!.lede; // the default takeaway is the Explore lede
+  const lede = exploreFor(SESSION as Parameters<typeof exploreFor>[0])!.lede; // the default takeaway is the Explore lede
   const kptCount = await page.getByText(lede, { exact: false }).count();
   if (kptCount > 0) ok(`the takeaway is in the Playbook — the card told the truth ("${lede.slice(0, 44)}…")`);
   else bad('the takeaway is NOT in the Playbook — the card promised something we did not do');

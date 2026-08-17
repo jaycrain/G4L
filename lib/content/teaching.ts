@@ -97,3 +97,31 @@ export function teachingKeeper(
 
   return { text, assetId: assetLabel, tab: 'learned' };
 }
+
+/** Asset titles for the kept read's provenance chip — "from Disinformation Audit · Rewire" (Rev 1's mockup). */
+const ASSET_TITLE: Record<string, string> = {
+  r1: 'the IDQ', r2: 'the Fade Doors', r3: 'the Drift Quiz',
+  w1: 'Disinformation Audit', w2: 'Visualization Workshop', w3: 'Mindful Monitoring',
+  b1: 'What Is Your Why?', b2: 'Strengths and Weaknesses', b3: 'Monitoring Health Decisions',
+  c1: 'ReClaim Readiness', c2: 'the Bigger World Audit', c3: 'Quality Days',
+};
+const PHASE_TITLE: Record<string, string> = { r: 'Reconnect', w: 'Rewire', b: 'Rebuild', c: 'Reclaim' };
+
+/**
+ * The provenance line shown on the kept read. Derived rather than passed in: three chat clients need the same
+ * string, and a label typed at each call site is three chances for them to disagree about what a Session is called.
+ */
+export function teachingSourceLabel(key: SessionKey, stage?: string | null): string {
+  // Reconnect is one arc over three assets, so the label follows the BEAT the science came from, not the session.
+  const asset = sessionAsset(key) ?? (key === 'reconnect' ? reconnectAssetForStage(stage) : undefined);
+  if (!asset) return 'the Program';
+  return `${ASSET_TITLE[asset] ?? asset} · ${PHASE_TITLE[asset[0]!] ?? ''}`.trim().replace(/ ·\s*$/, '');
+}
+
+/** Which Reconnect asset a beat's science belongs to — mirrors explore.ts's stage map, kept here for the label. */
+function reconnectAssetForStage(stage?: string | null): string | undefined {
+  if (!stage) return 'r1';
+  if (stage === 'drift') return 'r2';
+  if (['measurement', 'window', 'checkpoint', 'ceremony'].includes(stage)) return 'r3';
+  return 'r1';
+}

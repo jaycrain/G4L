@@ -8,6 +8,9 @@ import ReclaimCeremony from './reclaim-ceremony.tsx';
 import ScaleChips from '../components/scale-chips.tsx';
 import { useChatAutoscroll } from '../components/use-chat-autoscroll.ts';
 import { notifyArtifactCommitted, notifySessionComplete } from '../components/artifact-refresh.ts';
+import { TeachingFrame, TeachingUnderstand } from '../workspace/teaching-cards.tsx';
+import { useTeaching } from '../workspace/use-teaching.ts';
+import type { SessionKey } from '../../lib/workspace/session-key.ts';
 import type { ReclaimCeremonyData } from '../../lib/ceremony/reclaim-ceremony-beats.ts';
 import type { ConvMessage, ConvState, Expectation } from '../../lib/agent/onboarding.ts';
 import { BEAT_SEP } from '../../lib/agent/onboarding.ts';
@@ -34,6 +37,11 @@ export default function ReclaimChat({ memberId, session = 'c1' }: { memberId: st
   const [expects, setExpects] = useState<Expectation | null>(null); // W-24: administered turn → render the scale chips
   const [ceremony, setCeremony] = useState<ReclaimCeremonyData | null>(null); // C4: set when the checkpoint reaches 'ceremony'
   const [error, setError] = useState<string | null>(null);
+  const sessionKey: SessionKey = session === 'checkpoint' ? 'c4' : session;
+  const { teaches, taught, acknowledge } = useTeaching(memberId, sessionKey);
+  // The parting line, hoisted: submit() needs it when the Session teaches nothing, the render needs it when
+  // the member acknowledges. Two copies of this conditional is how the two paths drift apart.
+  const handHome = session === 'c3' ? RECLAIM_C3_HAND_HOME : RECLAIM_HAND_HOME;
   const started = useRef(false);
   const chatRef = useChatAutoscroll([messages.length, pending, expects, done]);
 
@@ -77,9 +85,11 @@ export default function ReclaimChat({ memberId, session = 'c1' }: { memberId: st
     notifyArtifactCommitted(); // push the workspace canvas to re-read now
     if (r.state.stage === 'complete') {
       // W-21 — hand the member home in the companion's voice, then show the CTA (C3 → its week; else → home).
-      const handHome = session === 'c3' ? RECLAIM_C3_HAND_HOME : RECLAIM_HAND_HOME;
       const badgeBeat = r.earnedBadge ? [{ role: 'agent' as const, text: `You earned another badge! “${r.earnedBadge.name}.” I added it to your collection.` }] : [];
-      setMessages((m) => [...m, ...agentBubbles(r.reply!), ...badgeBeat, { role: 'agent', text: handHome }]);
+      // The parting line now lands AFTER the science (Jay, 2026-08-17). A Session with nothing to teach has no
+      // acknowledgment to wait for, so it keeps the line here — otherwise the goodbye never arrives.
+      setMessages((m) => [...m, ...agentBubbles(r.reply!), ...badgeBeat,
+        ...(teaches ? [] : [{ role: 'agent' as const, text: handHome }])]);
       setDone(true);
       // The end card is NOT raised here. It used to fire on this same tick, so it landed on top of the Companion's
       // close, the badge beat and the hand-home before any of them could be read — the receipt arriving before the
@@ -106,6 +116,8 @@ export default function ReclaimChat({ memberId, session = 'c1' }: { memberId: st
   return (
     <div className="reconnect-chat">
       <div className="chat" ref={chatRef}>
+        {/* ① Frame — INSIDE the thread; `.chat` is the scroller, so hoisting this pins it. See teaching-cards.tsx. */}
+        <TeachingFrame sessionKey={sessionKey} onClipIn={() => chatRef.current?.scrollTo({ top: chatRef.current.scrollHeight, behavior: 'smooth' })} />
         {messages.map((m, i) => (
           <div key={i} className={`bubble ${m.role}`}>
             {/* Agent text goes through RichText — it emits light markdown (**bold**, blank lines between beats) and a
@@ -116,6 +128,9 @@ export default function ReclaimChat({ memberId, session = 'c1' }: { memberId: st
           </div>
         ))}
         {pending && <div className="typing">Thinking…</div>}
+        {/* ③ Understand — after the close, before the member can leave. */}
+        {done && <TeachingUnderstand sessionKey={sessionKey} onAcknowledge={acknowledge} />}
+        {done && taught && teaches && <div className="bubble agent">{handHome}</div>}
         {/* chips scroll WITH the thread (Jay's walk: not pinned) — they answer the question above, autosend. */}
         {!done && expects?.kind === 'scale' && <ScaleChips expects={expects} disabled={pending || !state} onPick={(n) => void submit(String(n))} />}
       </div>
@@ -147,7 +162,7 @@ export default function ReclaimChat({ memberId, session = 'c1' }: { memberId: st
         </>
       )}
       {/* W-21 — the hand-home CTA: C3 routes into its logging week; C1/C2 hand back to the companion-home. */}
-      {done && (
+      {done && taught && (
         <div className="chat-continue">
           <button type="button" onClick={() => notifySessionComplete()}>
             {session === 'c3' ? 'Start the week →' : 'Continue →'}
