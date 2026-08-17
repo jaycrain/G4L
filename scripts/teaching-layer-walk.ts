@@ -274,16 +274,22 @@ async function main(): Promise<void> {
   await page.goto(`${base}/playbook/${memberId}`, { waitUntil: 'domcontentloaded' });
   // NB: each tab button contains its label AND a count span, so an anchored /^label$/ never matches the node text.
   await page.locator('.pb-tab').filter({ hasText: "What you've learned" }).first().click();
-  await page.waitForTimeout(600);
 
   const lede = exploreFor(SESSION as Parameters<typeof exploreFor>[0])!.lede; // the default takeaway is the Explore lede
-  const kptCount = await page.getByText(lede, { exact: false }).count();
-  if (kptCount > 0) ok(`the takeaway is in the Playbook — the card told the truth ("${lede.slice(0, 44)}…")`);
+  // WAIT FOR THE CONDITION, NOT A DURATION. This was `waitForTimeout(600)` then an immediate count — enough on
+  // localhost, not enough against prod's round trip. It reported the takeaway MISSING while it was on the page,
+  // which is a false red on a working feature: the kind that gets you "fixing" code that was already correct.
+  const keptVisible = await page.getByText(lede, { exact: false }).first()
+    .waitFor({ state: 'visible', timeout: 15000 }).then(() => true).catch(() => false);
+  if (keptVisible) ok(`the takeaway is in the Playbook — the card told the truth ("${lede.slice(0, 44)}…")`);
   else bad('the takeaway is NOT in the Playbook — the card promised something we did not do');
 
   // ROUTING: it must be under "What you've learned" (Reads), never "What worked" (Moves).
   await page.locator('.pb-tab').filter({ hasText: 'What worked' }).first().click();
-  await page.waitForTimeout(500);
+  // An ABSENCE check does need a settle — there is no condition to wait for. Wait for the tab's own content to
+  // arrive first, so "not present" means "the tab rendered and it is not there" rather than "nothing rendered yet".
+  await page.locator('.pb-sec, .pb-card').first().waitFor({ state: 'visible', timeout: 15000 }).catch(() => {});
+  await page.waitForTimeout(400);
   const wrongTab = await page.getByText(lede!, { exact: false }).count();
   if (wrongTab === 0) ok('it is NOT under "What worked" — Reads and Moves stayed separate');
   else bad('the science read leaked into "What worked" — the routing rule broke');
