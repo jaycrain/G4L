@@ -1,5 +1,11 @@
 # In-Session Teaching Layer — build state
 
+> **START HERE, next session.** Phase 0 is complete and the content resolver is in. What remains is the UI build —
+> **it needs a browser walk, not just a diff**, so start it with room to build *and* verify. Everything needed is
+> below: the two rulings, the two design findings, the close seam, the reusable `why` keeper kind, and the eight
+> steps. Read `docs/greg-library/PER-ASSET-NOTES.md` **RESUME HERE** first — it opens with what Greg already
+> answered by email, which shortened the open-question list.
+
 **Spec:** Cowork's "In-Session Teaching Layer: build spec" + **"Revision 1"** (Drive, 2026-08-16). Rev 1 supersedes
 on three points: show all points inline (no disclosure), one acknowledgment (not ~63 per-line taps), one distilled
 keeper per Session. **Mockups:** `G4L_Teaching_Layer_Mockups.html`.

@@ -16,6 +16,16 @@ Its **gap findings are not**: a subagent carries none of the decision history, s
 decision. It got two wrong that we know of — the 90-day IDQ cadence (Jay had ruled 60 hours earlier) and the "Spark
 space" community share (a retired name). A provenance header now sits on the report; this task replaces its body.
 
+**⚠ UPDATED 2026-08-16 (evening) — three things changed after the Greg email thread was checked:**
+- **Check the EMAIL THREAD, not just the library.** Four findings were already answered by Greg on 8/8, eight days
+  before the corpus was read. The library is not the whole record.
+- **The precedence rule has a caveat.** Greg: he "didn't completely update the intro and closure in the V4
+  documents after developing the AI Companion and AI engineering documents." V4 still wins for **instruments,
+  scales and scoring**; do NOT apply it blindly to V4 intro/closure prose, and re-check anything closed on a
+  recency argument.
+- **The CHECK list is shorter than it was.** W3's mindfulness half is answered (build a one-week grid modelled on
+  C3's); R2's multi-door is green-lit by Greg unprompted, at a *continuum* per door rather than a 3-point scale.
+
 **Do.**
 1. Re-derive every candidate gap **against the frozen contracts and the decision log first** — that check is what
    converts a spec difference into a real gap. Keep the quotes, discard the conclusions.
