@@ -4,6 +4,12 @@ import { useEffect, useRef, useState } from 'react';
 import RichText from '../rich-text.tsx';
 import { startReconnectAction, reconnectTurnAction, reconnectCeremonyDataAction, loadReconnectSessionAction } from './actions.ts';
 import ScaleChips from '../components/scale-chips.tsx';
+import { TeachingFrame, TeachingUnderstand } from '../workspace/teaching-cards.tsx';
+import { reconnectTaughtSoFar } from '../../lib/content/teaching.ts';
+
+// Which beat each asset's card renders FOR — the card resolves its content by stage, so a past asset needs the
+// stage it closed at, not the member's current one.
+const LAST_BEAT: Record<string, string> = { r1: 'doors', r2: 'drift', r3: 'ceremony' };
 import { useChatAutoscroll } from '../components/use-chat-autoscroll.ts';
 import { notifyArtifactCommitted } from '../components/artifact-refresh.ts';
 import type { ConvMessage, ConvState, Expectation } from '../../lib/agent/onboarding.ts';
@@ -130,12 +136,21 @@ export default function ReconnectChat({
         </div>
       )}
       <div className="chat" ref={chatRef}>
+        {/* ① The frame — Reconnect's is the PHASE summary, because the arc spans three assets rather than one. */}
+        <TeachingFrame sessionKey="reconnect" onClipIn={() => chatRef.current?.scrollTo({ top: chatRef.current.scrollHeight, behavior: 'smooth' })} />
         {messages.map((m, i) => (
           <div key={i} className={`bubble ${m.role}`}>
             {m.role === 'agent' ? <RichText text={m.text} /> : m.text}
           </div>
         ))}
         {pending && <div className="typing">Thinking…</div>}
+        {/* ③ Understand — ONE card per asset, at the beat that closes it, and they stay as the arc moves on.
+            NOTHING IS GATED HERE. The other three arcs hold the hand-home until the member acknowledges; Reconnect
+            has no hand-home (it flows into the ceremony) and, more to the point, it carries the live capture loop.
+            A required tap mid-arc would interrupt the one conversation we have standing orders not to disturb. */}
+        {reconnectTaughtSoFar(state?.stage).map((a) => (
+          <TeachingUnderstand key={a} sessionKey="reconnect" stage={LAST_BEAT[a]} onAcknowledge={() => {}} />
+        ))}
         {/* W-32 chips scroll WITH the thread (Jay's walk: not pinned to the bottom) — they answer the question above, autosend. */}
         {expects?.kind === 'scale' && <ScaleChips expects={expects} disabled={pending || !state} onPick={(n) => void submit(String(n))} />}
       </div>

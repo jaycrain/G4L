@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { SESSION_KEYS } from '../lib/workspace/session-key.ts';
-import { teachingFor, teachingKeeper } from '../lib/content/teaching.ts';
+import { teachingFor, teachingKeeper, reconnectTaughtSoFar } from '../lib/content/teaching.ts';
 import { exploreFor } from '../lib/content/explore.ts';
 import { sessionAsset } from '../lib/content/summaries.ts';
 
@@ -36,30 +36,31 @@ test('the nine 1:1 Sessions bracket the work — frame and understand both resol
   }
 });
 
-test('Reconnect resolves its understand beat BY BEAT — three distinct panels across the arc', () => {
-  // Greg's structure: one continuous arc carrying three Science Checks. The frame opens the arc; the science
-  // resolves by beat as the member moves through it.
-  //
-  // The seven beats collapse onto THREE assets (entry/doors → r1, drift → r2, measurement/window/checkpoint/
-  // ceremony → r3). An earlier draft of this test asserted that adjacent beats differ; that was an assumption I
-  // invented, and the real map in explore.ts says otherwise. Assert the arc's actual shape instead.
-  const beats = ['entry', 'doors', 'drift', 'measurement', 'window'];
-  const panels = beats.map((b) => teachingFor('reconnect', b));
+test('Reconnect shows each asset\'s science ONCE, at that asset\'s last beat', () => {
+  // Reconnect is one arc across three Science Checks, and its seven beats collapse onto three assets: entry and
+  // doors both resolve R1, and measurement/window/checkpoint/ceremony all resolve R3. Rendering per BEAT would
+  // show the same card up to four times in one Session — the product visibly losing track of what it already
+  // told them. Keyed to the ASSET, shown at its LAST beat, so the science closes the activity rather than
+  // interrupting it. This is why Reconnect was held out of the teaching layer's first release.
+  const teaches = (stage: string) => !!teachingFor('reconnect', stage).understand;
 
-  assert.ok(panels.every((p) => p.frame), 'the frame opens the whole arc, on every beat');
-  assert.ok(panels.every((p) => p.understand), 'every beat resolves some science');
+  assert.equal(teaches('entry'), false, 'entry is mid-R1 — the activity is not finished');
+  assert.equal(teaches('doors'), true, "doors closes R1's work");
+  assert.equal(teaches('drift'), true, 'drift is R2');
+  assert.equal(teaches('measurement'), false, 'measurement is mid-R3');
+  assert.equal(teaches('window'), false, 'window is mid-R3');
+  assert.equal(teaches('checkpoint'), false, 'checkpoint is mid-R3');
+  assert.equal(teaches('ceremony'), true, "ceremony closes R3's work");
 
-  const distinct = new Set(panels.map((p) => p.understand!.lede));
-  assert.equal(distinct.size, 3, 'three Science Checks across the arc — R1, R2, R3');
+  // Exactly three cards across the whole arc, and all three distinct.
+  const ledes = ['entry', 'doors', 'drift', 'measurement', 'window', 'checkpoint', 'ceremony']
+    .map((b) => teachingFor('reconnect', b).understand?.lede)
+    .filter(Boolean);
+  assert.equal(ledes.length, 3, 'three cards across seven beats');
+  assert.equal(new Set(ledes).size, 3, 'and no member meets the same one twice');
 
-  // entry and doors deliberately share R1. This is why Reconnect is NOT in the teaching layer's first release:
-  // a member walking the arc would meet the same "Why it works" card twice. Solving that needs a shown-once
-  // rule keyed to the asset, not the beat — a separate change, on the surface carrying the live capture loop.
-  assert.equal(
-    teachingFor('reconnect', 'entry').understand!.lede,
-    teachingFor('reconnect', 'doors').understand!.lede,
-    'entry and doors share R1 — documented, and the reason Reconnect needs a shown-once rule',
-  );
+  // The frame still opens the whole arc, on every beat.
+  assert.ok(teachingFor('reconnect', 'entry').frame, 'the frame is not gated');
 });
 
 test('the kept read defaults to the lede, and a chosen line replaces it', () => {
@@ -90,4 +91,18 @@ test('gates keep nothing', () => {
   for (const k of SESSION_KEYS.filter((k) => k.endsWith('checkpoint') || k === 'b4' || k === 'c4')) {
     assert.equal(teachingKeeper(k, 'label'), null, `${k} is a gate — nothing to keep`);
   }
+});
+
+test('Reconnect cards PERSIST as the arc moves on, and never appear early', () => {
+  // Rendering only the current beat's card would make it vanish when the arc advanced — in a continuous thread
+  // that reads as the product retracting something it just said. Derived from the beat rather than held in
+  // component state, so a member who leaves and comes back sees the same thread.
+  const seen = (stage: string) => reconnectTaughtSoFar(stage);
+  assert.deepEqual(seen('entry'), [], 'nothing before R1 closes');
+  assert.deepEqual(seen('doors'), ['r1'], "R1's card lands when R1 closes");
+  assert.deepEqual(seen('drift'), ['r1', 'r2'], 'R1 stays visible while R2 lands');
+  assert.deepEqual(seen('window'), ['r1', 'r2'], 'both stay through the middle of R3');
+  assert.deepEqual(seen('ceremony'), ['r1', 'r2', 'r3'], 'all three by the close');
+  // An unknown beat must not silently show everything.
+  assert.deepEqual(seen('nonsense-beat'), [], 'an unmapped beat shows nothing rather than guessing');
 });

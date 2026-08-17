@@ -27,7 +27,7 @@
 // ROUTING IS FIXED. The kept read goes to "What you've learned" (Reads — what CONVINCED you) and NEVER to "What
 // worked" (Moves — what you DID). A science takeaway is understanding, not a tactic. See lib/playbook/tabs.ts.
 
-import { sessionSummary, sessionAsset, type Summary } from './summaries.ts';
+import { sessionSummary, sessionAsset, type Summary, type AssetId } from './summaries.ts';
 import { exploreFor, exploreForReconnectStage, type Explore } from './explore.ts';
 import type { SessionKey } from '../workspace/session-key.ts';
 
@@ -67,7 +67,13 @@ export function teachingFor(key: SessionKey, stage?: string | null): TeachingBea
   if (!frame) return { teaches: false };
 
   const asset = sessionAsset(key);
-  const understand = asset ? exploreFor(asset) : exploreForReconnectStage(stage);
+  // Reconnect resolves by beat AND shows each asset's science ONCE, at that asset's last beat — see the
+  // shown-once rule below. Every other Session is 1:1 and brackets its own work.
+  const understand = asset
+    ? exploreFor(asset)
+    : reconnectTeachesHere(stage)
+      ? exploreForReconnectStage(stage)
+      : undefined;
 
   return { frame, understand, teaches: true };
 }
@@ -116,6 +122,46 @@ export function teachingSourceLabel(key: SessionKey, stage?: string | null): str
   const asset = sessionAsset(key) ?? (key === 'reconnect' ? reconnectAssetForStage(stage) : undefined);
   if (!asset) return 'the Program';
   return `${ASSET_TITLE[asset] ?? asset} · ${PHASE_TITLE[asset[0]!] ?? ''}`.trim().replace(/ ·\s*$/, '');
+}
+
+/**
+ * THE SHOWN-ONCE RULE — why Reconnect could not have the teaching layer until now.
+ *
+ * Reconnect is ONE arc across three Science Checks, and its seven beats collapse onto three assets: entry and
+ * doors both resolve R1, and measurement/window/checkpoint/ceremony all resolve R3. Rendering "Why it works" per
+ * BEAT would show a member the same card up to four times in one Session — which reads as the product losing
+ * track of what it has already told them, and is worse than not teaching at all.
+ *
+ * Keyed to the ASSET, not the beat: the card shows at the LAST beat that maps to each asset, so the science
+ * arrives when that piece of work is finished rather than in the middle of it. Greg's structure is the reason —
+ * the Understand beat closes an activity, and R1's activity is not over at `entry`.
+ */
+const RECONNECT_LAST_BEAT_FOR_ASSET: Record<string, string> = { r1: 'doors', r2: 'drift', r3: 'ceremony' };
+
+/** True when this Reconnect beat is where its asset's science should appear — once per asset, at its close. */
+export function reconnectTeachesHere(stage?: string | null): boolean {
+  const asset = reconnectAssetForStage(stage);
+  return !!asset && RECONNECT_LAST_BEAT_FOR_ASSET[asset] === (stage ?? '');
+}
+
+/** Reconnect's beats in order — the arc's own sequence, used to decide what has already been taught. */
+const RECONNECT_BEAT_ORDER = ['entry', 'doors', 'drift', 'measurement', 'window', 'checkpoint', 'ceremony'];
+
+/**
+ * The science cards a member should be able to SEE at this point in Reconnect — every asset whose close they have
+ * already passed, in order.
+ *
+ * DERIVED, NOT REMEMBERED. Rendering only the card for the CURRENT beat would make it vanish the moment the arc
+ * moved on, which in a continuous thread reads as the product retracting something it just said. Holding it in
+ * component state instead would lose it on refresh — and Reconnect is the one arc a member is most likely to
+ * leave and come back to. Deriving it from the beat means the thread is the same after a reload as before it.
+ */
+export function reconnectTaughtSoFar(stage?: string | null): AssetId[] {
+  const at = RECONNECT_BEAT_ORDER.indexOf(stage ?? 'entry');
+  if (at < 0) return [];
+  return (['r1', 'r2', 'r3'] as AssetId[]).filter(
+    (a) => RECONNECT_BEAT_ORDER.indexOf(RECONNECT_LAST_BEAT_FOR_ASSET[a]!) <= at,
+  );
 }
 
 /** Which Reconnect asset a beat's science belongs to — mirrors explore.ts's stage map, kept here for the label. */
