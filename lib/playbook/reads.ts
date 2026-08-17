@@ -21,7 +21,7 @@
 import type { Db } from '../db/schema.ts';
 import { latestSkillsReading, latestWhyReading } from '../rebuild/store.ts';
 import { relativeAutonomyRead } from '../rebuild/why-instrument.ts';
-import { skillHighlights } from '../rebuild/skills-instrument.ts';
+import { buildSkillsMap, mapLead, type SkillsMap } from '../rebuild/skills-map.ts';
 import { latestBiggerWorldReading, firstFocus } from '../reclaim/bigger-world-store.ts';
 import { AUDIT_DOMAIN_LABEL } from '../reclaim/bigger-world-instrument.ts';
 
@@ -30,8 +30,10 @@ export type Read = {
   label: string;
   /** Which Session produced it — provenance, so it reads as their record rather than our assertion. */
   from: string;
-  /** What it says, in plain language. Never a score. */
+  /** What it says, in plain language. */
   lines: string[];
+  /** B2 only — the twelve skills grouped into Greg's three families, for the surface to lay out. See skills-map.ts. */
+  map?: SkillsMap;
 };
 
 /** The member's reads, in program order. Empty until they've done the Session that produces one — an absent read
@@ -86,15 +88,15 @@ export async function memberReads(db: Db, memberId: string): Promise<Read[]> {
   const skills = await latestSkillsReading(db, memberId).catch(() => null);
   if (skills) {
     const read = tryOr<Read | null>(() => {
-      const h = skillHighlights(skills.scores);
+      // WAS two skills of twelve — strongest and growth edge — with no families at all. Greg's B2 Science Check
+      // says the FAMILY grouping is the valuable part, because it clarifies whether someone needs help getting
+      // ready, taking action, or sustaining. That is what the map adds; the lead line names the shape.
+      const m = buildSkillsMap(skills.scores);
       return {
         label: 'your map',
         from: 'Strengths & Weaknesses',
-        lines: [
-          `Where you're strongest: ${lower(h.strongest)}.`,
-          `Where there's the most room: ${lower(h.growthEdge)}.`,
-          'A skill with room is simply the next one to practice.',
-        ],
+        lines: [mapLead(m), 'Every one of these is learnable.'],
+        map: m,
       };
     }, null);
     if (read) out.push(read);

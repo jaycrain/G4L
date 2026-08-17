@@ -76,15 +76,21 @@ My CHECK guessed these were missing. Both are there, and correctly:
   plus a `domainScore` per domain. This is exactly Greg's "good at planning movement but poor at managing eating
   cues" distinction, and we hold it.
 
-## GAP · B2 — the whole profile is computed and **none of it reaches the member**
+## GAP · B2 — ten of twelve skills, and all three families, never reach the member
+
+> **CORRECTED 2026-08-17.** This finding originally read "**none of it** reaches the member." That was overstated, and
+> I found it by opening the file I should have opened first: `lib/playbook/reads.ts` already builds a **"your map"**
+> read in the Playbook's Reads tab — their strongest skill and their biggest growing edge, in plain language. So a
+> member sees two of twelve skills. The real gap is the other ten and, more importantly, **the three families**,
+> which is the part Greg calls valuable. Same error class I spent the day catching: asserting absence without
+> opening the surface that renders it.
 
 **Greg (SOURCE, B2 Science Check closing nuance):** "That makes **the category scoring especially valuable**,
 because it can help clarify whether a person mainly needs help **getting ready, taking action, or sustaining**."
 
-**Built:** the full score is computed and stored — and what reaches the member is **two strings**. `skillHighlights`
-reduces it to `{strongest, growthEdge}`, handed to the Companion as context (`lib/agent/checkin.ts:465–466`,
-`app/dashboard/checkin-actions.ts:382`). Verified there is **no surface anywhere in `app/` that renders the twelve
-skills or the three categories** — no hits for the skill set or `skillsReading` in any `.tsx`.
+**Built:** the full score is computed and stored. `skillHighlights` reduces it to `{strongest, growthEdge}` — two
+skills — which reach both the Companion (`lib/agent/checkin.ts:465–466`) and the member, via the "your map" card in
+`lib/playbook/reads.ts:89`. **No surface renders the remaining ten skills or any of the three families.**
 
 **And the outcome strip tells the member they have a reading they cannot see.** `lib/dashboard/outcomes.ts:131`
 marks `{ kind: 'A read', … done: done.has(s.read.id) }` — where `done` is the set of **closed session ids**. So the

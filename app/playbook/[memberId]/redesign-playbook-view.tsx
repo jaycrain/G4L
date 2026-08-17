@@ -511,7 +511,7 @@ export default function RedesignPlaybookView({
       {tab === 'learned' && reads.length > 0 && (
         <section className="pb-card pb-reads">
           <div className="pb-sec">Your reads</div>
-          <div className="pb-sec-d">What your own answers said, laid out. Never a score — you told us this.</div>
+          <div className="pb-sec-d">What your own answers said, laid out.</div>
           {reads.map((r) => (
             <div key={r.label} className="pb-read">
               <div className="pb-read-h">
@@ -520,6 +520,57 @@ export default function RedesignPlaybookView({
               {r.lines.map((l, i) => (
                 <p key={i} className="pb-read-line">{l}</p>
               ))}
+              {/* B2's map. Greg's three families, in his order, with the growing edges leading inside each — the
+                  point of the read is what to practise, so it must not sit below the fold. No number renders:
+                  "steady" is relative to THIS member's own profile (skills-map.ts), which is what makes the shape
+                  showable at all. Taking action carries six skills, so its tail collapses behind a control that
+                  names what is inside it rather than a bare "show more". */}
+              {r.map && (
+                <div className="pb-map">
+                  {r.map.families.map((f) => {
+                    const lead = f.rows.slice(0, 3);
+                    const rest = f.rows.slice(3);
+                    return (
+                      <div key={f.key} className="pb-map-fam">
+                        <div className="pb-map-fam-h">
+                          <span className="pb-map-fam-n">{f.name}</span>
+                          <span className="pb-map-fam-g">{f.gloss}</span>
+                        </div>
+                        {lead.map((row) => (
+                          <div key={row.no} className="pb-map-row">
+                            <span className="pb-map-skill">
+                              {row.label}
+                              {row.divergence && <span className="pb-map-split"> · {row.divergence}</span>}
+                            </span>
+                            <span className={`pb-map-tag${row.steady ? ' is-steady' : ''}`}>
+                              {row.steady ? 'steady' : 'worth practising'}
+                            </span>
+                          </div>
+                        ))}
+                        {rest.length > 0 && (
+                          <details className="pb-map-more">
+                            <summary>
+                              Show the other {rest.length}
+                              <span className="pb-map-more-n">{rest.map((x) => x.label.toLowerCase()).join(' · ')}</span>
+                            </summary>
+                            {rest.map((row) => (
+                              <div key={row.no} className="pb-map-row">
+                                <span className="pb-map-skill">
+                                  {row.label}
+                                  {row.divergence && <span className="pb-map-split"> · {row.divergence}</span>}
+                                </span>
+                                <span className={`pb-map-tag${row.steady ? ' is-steady' : ''}`}>
+                                  {row.steady ? 'steady' : 'worth practising'}
+                                </span>
+                              </div>
+                            ))}
+                          </details>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           ))}
         </section>

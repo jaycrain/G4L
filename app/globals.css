@@ -3594,3 +3594,40 @@ body:has(.fc-dark) .brand-wordmark,
   font-family: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer; white-space: nowrap;
 }
 .teach-cta:hover { background: #245c5d; border-color: #245c5d; }
+
+/* ── B2's SELF-MANAGEMENT MAP — inside the Reads card, Playbook › What you've learned ──────────────────────────
+   Greg's three families with their skills. NO number renders: "steady" is relative to this member's own profile
+   (lib/rebuild/skills-map.ts), which is the property that makes a profile showable at all — there is no line to
+   fall below. Growing edges lead inside each family; the read exists to say what to practise.
+
+   The tag is the only colour, and only on the STEADY side. A red or amber marker on "worth practising" would turn
+   a development map into a report card, which is the one thing this read must not be. Neutral there is the whole
+   design. --teal-text, not --teal: the ground is white and brand teal is 3.59:1 there. */
+.pb-map { margin-top: 14px; display: flex; flex-direction: column; gap: 16px; }
+.pb-map-fam-h { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; margin-bottom: 7px; }
+.pb-map-fam-n { font-size: 15px; font-weight: 600; color: var(--navy); }
+.pb-map-fam-g { font-size: 13px; color: var(--navy); opacity: 0.72; }
+.pb-map-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 8px 12px; background: #f5f4f1; border-radius: 8px; margin-bottom: 6px;
+}
+.pb-map-skill { font-size: 14px; color: var(--charcoal); }
+.pb-map-split { font-size: 13px; color: var(--navy); opacity: 0.7; }
+.pb-map-tag {
+  font-size: 12px; padding: 3px 9px; border-radius: 8px; white-space: nowrap;
+  background: var(--white); border: 1px solid var(--panel-line); color: var(--navy);
+}
+.pb-map-tag.is-steady { background: #e8f2f0; border-color: #cfe3df; color: var(--teal-text); font-weight: 600; }
+/* The disclosure NAMES what is behind it (Jay, 2026-08-17: make the expansion more visible) — a bare "show more"
+   makes a member decide whether to spend a tap on an unknown. */
+.pb-map-more > summary {
+  cursor: pointer; list-style: none; padding: 9px 12px; border: 1px solid var(--panel-line); border-radius: 8px;
+  font-size: 13px; font-weight: 600; color: var(--navy);
+  display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap;
+}
+.pb-map-more > summary::-webkit-details-marker { display: none; }
+.pb-map-more > summary::after { content: '▾'; margin-left: auto; opacity: 0.7; }
+.pb-map-more[open] > summary::after { content: '▴'; }
+.pb-map-more > summary:hover { border-color: var(--field-line); }
+.pb-map-more-n { font-weight: 400; font-size: 12.5px; color: var(--navy); opacity: 0.72; }
+.pb-map-more[open] > summary { margin-bottom: 6px; }

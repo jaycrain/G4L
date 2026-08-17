@@ -76,3 +76,12 @@ test('growing edges sort to the top of their family', () => {
     assert.ok(f.rows.slice(firstSteady).every((r) => r.steady), `${f.name}: growing edges must lead`);
   }
 });
+
+test('the lead line names the thin family once, not twice', () => {
+  // The first version interpolated it twice — "Staying with it is the thinnest of the three, staying with it is
+  // where practice would pay most." Every assertion passed; the screenshot caught it. Read what you ship.
+  const lead = mapLead(buildSkillsMap(scoreSkills([...Array(12).fill(5).map((v, i) => ([1, 8, 9].includes(i) ? 1 : v)), ...Array(12).fill(5).map((v, i) => ([1, 8, 9].includes(i) ? 1 : v))])));
+  const name = FAMILY_LABEL.reinforcing.name.toLowerCase();
+  const hits = lead.toLowerCase().split(name).length - 1;
+  assert.equal(hits, 1, `the family should be named once — got ${hits} in: ${lead}`);
+});

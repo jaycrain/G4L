@@ -94,8 +94,14 @@ export function buildSkillsMap(score: SkillScore): SkillsMap {
             Math.abs(gap) >= DIVERGENCE_MIN ? (gap > 0 ? 'movement more than eating' : 'eating more than movement') : null,
         };
       })
-      // Growing edges first inside a family: the whole point is what to practise, so it should not be below the fold.
-      .sort((a, b) => Number(a.steady) - Number(b.steady) || a.no - b.no);
+      // ORDER INSIDE A FAMILY, and both halves were learned from walking it:
+      //   1. A row carrying a movement/eating SPLIT leads. That note is the most specific thing the instrument
+      //      produces about a member — "you plan movement well and eating badly" is actionable in a way a family
+      //      shape is not — and the first build buried the only one behind the collapsed tail, where its text did
+      //      not even render. Rare by construction (a 2+ point gap), so promoting it costs nothing.
+      //   2. Then growing edges: the read exists to say what to practise, so it must not sit below the fold.
+      .sort((a, b) =>
+        Number(!!b.divergence) - Number(!!a.divergence) || Number(a.steady) - Number(b.steady) || a.no - b.no);
     return { key, name: FAMILY_LABEL[key].name, gloss: FAMILY_LABEL[key].gloss, rows };
   });
 
@@ -121,7 +127,8 @@ export function mapLead(map: SkillsMap): string {
   if (!map.thinnest || !map.steadiest) {
     return 'Your three families read evenly. The skills below are the ones with the most room.';
   }
-  const thin = FAMILY_LABEL[map.thinnest].name.toLowerCase();
   const steady = FAMILY_LABEL[map.steadiest].name.toLowerCase();
-  return `You are steadiest at ${steady}. ${FAMILY_LABEL[map.thinnest].name} is the thinnest of the three — ${thin} is where practice would pay most.`;
+  // Name the thin family ONCE. The first version interpolated it twice and read "Staying with it is the thinnest
+  // of the three — staying with it is where practice would pay most" — which no test caught and the screenshot did.
+  return `You are steadiest at ${steady}. ${FAMILY_LABEL[map.thinnest].name} is the thinnest of the three, and where practice would pay most.`;
 }
