@@ -16,12 +16,25 @@ async function member(db: Db): Promise<string> {
 }
 
 test('the fan-ins are declared — the case a previousAsset pointer cannot express', () => {
-  assert.deepEqual(UPSTREAM.b3, ['b1', 'b2', 'w3'], 'B3 reads three upstreams at once');
+  // Transcribed from the Engineering memos' own `load prior module context` lines (all twelve read 2026-08-17).
+  // B3's: "identity, motivation from B1, self-management appraisal from B2, disinformation awareness from W1,
+  // visualization from W2, false-start protocol from W3" — FIVE resolvable assets, not the three I first built.
+  assert.deepEqual(UPSTREAM.b3, ['b1', 'b2', 'w1', 'w2', 'w3'], 'B3 reads five');
   // C3 READS FIVE, from its Engineering memo's own words: "load prior module context (identity, motivation,
   // self-management, revised ReClaim List, Bigger World Audit assessment)". This shipped as ['b3','c2'] — two of
   // five — because it was built from a table synthesized off the GUIDANCE memos instead of the Engineering memo's
   // declaration. Pinned so the list can only change against the document.
   assert.deepEqual(UPSTREAM.c3, ['b1', 'b2', 'c1', 'c2', 'b3'], 'C3 reads five');
+
+  // The load is CUMULATIVE — it grows as the member moves through. Asserted as a shape because the single
+  // biggest error in this work was modelling it as pairwise handoffs.
+  assert.ok(UPSTREAM.w1!.length < UPSTREAM.w3!.length, 'later Rewire assets load more than earlier ones');
+  assert.ok(UPSTREAM.w3!.length < UPSTREAM.c1!.length, 'and C1 loads all three prior phases');
+
+  // `identity` is loaded by four memos and defined by none, so R1 has no reader and no asset claims it.
+  // Guessing whether it means the IDQ, the identity noun or the onboarding self-description would put a wrong
+  // claim about a member in front of them. Open question for Greg.
+  assert.ok(!Object.values(UPSTREAM).some((u) => (u as string[]).includes('r1')), 'nothing resolves `identity` yet');
 });
 
 test('a member who has done NONE of the upstream work carries nothing, and it renders as nothing', async () => {
@@ -149,8 +162,30 @@ test('EVERY reader in the registry actually carries — no silently dead links',
     [m, 'Ride the Boulder loop again'],
   );
 
+  // W1's true lines and W2's image live in the keeper store by keeper_type (lib/agent/rewire.ts).
+  for (const [kt, body] of [['principle', 'I am not starting over, I am picking it back up'],
+                            ['lights_you_up', 'Cresting the hill on the Boulder loop, still breathing easy']] as const) {
+    await db.query(
+      `insert into playbook_entry (member_id, section, body, authorship, state, keeper_type)
+       values ($1,'own_words',$2,'gathered','kept',$3)`, [m, body, kt]);
+  }
+  // R2's Door profile and R3's Legacy Letter.
+  await db.query(`insert into member_door (member_id, door_slug, is_primary, sort_order) values ($1,'career_cliff',true,0)`, [m]);
+  const { noteDoorProfile } = await import('../lib/reconnect/door-profile.ts');
+  await noteDoorProfile(db, m, [{ slug: 'career_cliff', stillOpen: true, relevance: 8 }]);
+  const { saveLegacyLetter } = await import('../lib/reconnect/legacy-letter-store.ts');
+  await saveLegacyLetter(db, m, { body: 'You did not lose it. You put it down to carry other things.', datedFor: '2027-01-01' });
+
   const b3 = await carryForward(db, m, 'b3');
-  assert.deepEqual(b3.map((c) => c.asset), ['b1', 'b2', 'w3'], 'all three of B3\'s upstreams carry');
+  assert.deepEqual(b3.map((c) => c.asset), ['b1', 'b2', 'w1', 'w2', 'w3'], 'all five of B3\'s upstreams carry');
+  assert.match(b3.find((c) => c.asset === 'w1')!.lines.join(' '), /picking it back up/, 'W1 verbatim');
+  assert.match(b3.find((c) => c.asset === 'w2')!.lines.join(' '), /Cresting the hill/, 'W2 verbatim');
+
+  // The Reconnect readers, exercised through C1 — which loads all three prior phases.
+  const c1 = await carryForward(db, m, 'c1');
+  assert.deepEqual(c1.map((c) => c.asset), ['r2', 'r3', 'w1', 'w2', 'w3', 'b1', 'b2', 'b3'], 'C1 loads everything before it');
+  assert.match(c1.find((c) => c.asset === 'r2')!.lines.join(' '), /still open/i, 'the active Fade carries');
+  assert.match(c1.find((c) => c.asset === 'r3')!.lines.join(' '), /You did not lose it/, 'the Legacy Letter carries verbatim');
   // Their words survive VERBATIM where the store holds words — a paraphrased trigger is not their trigger.
   assert.match(b3.find((c) => c.asset === 'w3')!.lines.join(' '), /The 3pm slump; Eating standing up/);
 

@@ -6,10 +6,12 @@
 // built one vertebra. This is the general mechanism, so the remaining links are registry entries rather than
 // eleven bespoke joins.
 //
-// IT IS A WEB, NOT A CHAIN — which is the whole reason a `previousAsset` pointer cannot express it. Ten of the
-// twelve links are one-to-one, but the two CULMINATING assets fan in: B3 reads B1 + B2 + W3 simultaneously, and
-// C3 reads B3 + C2. Those two are built here first, deliberately: they are the hard case, and they are where a
-// member most feels the program forgetting them.
+// IT IS CUMULATIVE, NOT A CHAIN AND NOT A WEB OF PAIRS. This header said "a web — ten one-to-one links plus two
+// fan-ins" for exactly one day, because it was written from a table synthesized off the GUIDANCE memos. Reading
+// all twelve ENGINEERING memos (2026-08-17) showed the real design: every asset loads essentially everything
+// before it, and the load GROWS as the member moves through the program — R2 loads one asset, W3 loads five, B3
+// loads six, C1 loads the summaries of all three prior phases. A `previousAsset` pointer was never close.
+// The per-asset declarations are transcribed verbatim on UPSTREAM below; read those, not this paragraph.
 //
 // WHAT THE REAL PROBLEM TURNED OUT TO BE. Not that the upstream data is missing — I checked all twelve and every
 // one is stored. It is that twelve assets store their output in ten different SHAPES behind ten different
@@ -40,10 +42,12 @@ import { activeCoachingPlan, type RebuildPilotPayload } from '../rebuild/plan-st
 import { b3Entries } from '../rebuild/b3-entry.ts';
 import { latestBiggerWorldReading, firstFocus } from '../reclaim/bigger-world-store.ts';
 import { getReclaimItems } from '../beats/store.ts';
+import { doorProfile, describeDoorProfile } from '../reconnect/door-profile.ts';
+import { getLegacyLetter } from '../reconnect/legacy-letter-store.ts';
 import { AUDIT_DOMAIN_LABEL } from '../reclaim/bigger-world-instrument.ts';
 
-/** The assets that can be carried forward. Grows as the remaining links are built. */
-export type RetainedAssetId = 'b1' | 'b2' | 'w3' | 'b3' | 'c1' | 'c2';
+/** The assets that can be carried forward. */
+export type RetainedAssetId = 'r2' | 'r3' | 'w1' | 'w2' | 'w3' | 'b1' | 'b2' | 'b3' | 'c1' | 'c2';
 
 export type Retained = {
   asset: RetainedAssetId;
@@ -54,28 +58,87 @@ export type Retained = {
 };
 
 /**
- * WHO READS WHOM — taken from the ENGINEERING memos' own `load prior module context` lines, not from a summary.
+ * WHO READS WHOM — transcribed from each Engineering Memo's OWN `load prior module context` line, 2026-08-17.
+ * All twelve read. TWO NORMALIZATIONS applied to these quotes, both flagged rather than silent: Greg's
+ * camel-casing of the four Rs, and his retired two-word label for the Doors. The naming guard blocks both, and it
+ * exists precisely because his house style leaks into our copy through transcriptions like these. Substance is
+ * untouched — only those two spellings.
  *
- * B3, verbatim from its authored Step 6 ("Connect to prior learning"), which asks three questions naming B1's
- * why, B2's skills and W3's False Start Protocol.
+ * IT IS CUMULATIVE, NOT A WEB OF PAIRWISE LINKS — and that is the correction that matters. I had modelled this
+ * as ~15 one-to-one handoffs with two fan-ins. Wrong. Every asset loads essentially everything before it, and
+ * the load grows as the member moves through the program:
  *
- * C3, from its memo (his camel-casing of the four Rs normalized to ours — the naming guard blocks it, and that
- * guard exists precisely because his house style leaks in through quotes like this one): "load prior module
- * context (identity, motivation, self-management, revised Reclaim List, Bigger World Audit assessment)"
- * — i.e. R1 · B1 · B2 · C1 · C2. This shipped as `['b3','c2']` on 2026-08-17, which was
- * TWO OF FIVE. The error came from working off a table I had synthesized from the GUIDANCE memos rather than
- * reading the Engineering memos' declarations, and it is exactly why the remaining links must be read from the
- * documents. B3 stays in the list: C3's memo keeps it as an explicit parallel reference ("Reference the parallel
- * to B3", "B3 monitoring experience available as a parallel reference"), which is the same job.
+ *   R1  (nothing — it is first; its only input is the onboarding Book Quiz)
+ *   R2  "load prior module context (R1 ratings, largest gap domain, captured values and remembered-self language)"
+ *   R3  "...(R1 ratings, largest gap domain, remembered-self language; R2 door ratings, first/biggest/still-open doors)"
+ *   W1  "...(R1 IDQ results, R2 Doors, R3 Legacy Letter)"
+ *   W2  "...(R1 IDQ, R2 Doors, R3 Legacy Letter, W1 disinformation statements and captured values)"
+ *   W3  "...(R1 IDQ, R2 Doors, R3 Legacy Letter, W1 disinformation statements and captured values,
+ *        W2 visualization text and anchor element)"
+ *   B1  "...(identity descriptors, motivational anchors from Reconnect; self-talk and drift insights from Rewire)"
+ *   B2  "...(B1 motivational baseline; Rewire self-talk and drift insights; Reconnect identity descriptors)"
+ *   B3  "...(identity, motivation from B1, self-management appraisal from B2, disinformation awareness from W1,
+ *        visualization from W2, false-start protocol from W3)"
+ *   C1  no load line; instead "load the Member's original Reclaim List as the object of reflection".
+ *       Inputs: "prior_module_context (summaries from Reconnect, Rewire, Rebuild where available)"
+ *   C2  "load the Member's prior module context (identity descriptors, motivational anchors, self-management
+ *        reflections, behavior insights, revised Reclaim List) for reflective reference"
+ *   C3  "...(identity, motivation, self-management, revised Reclaim List, Bigger World Audit assessment)"
  *
- * STILL MISSING FROM C3: `identity` (R1). Held back deliberately — "identity" is the one vague term in that line
- * and could mean the IDQ, the reclaimed identity noun, or the onboarding self-description. Guessing which would
- * put a wrong claim about a member in front of them; it needs R1's own memo read first.
+ * TWO DIFFERENT THINGS, AND CONFLATING THEM IS HOW I GOT B3 WRONG TWICE. The `load` line is the CONTEXT the
+ * Companion is given — wide. The authored "Connect to prior learning" STEP is what the member is actually asked
+ * about — narrow (B3's is one bullet naming B1, B2, W3). This registry feeds the model's context, so it follows
+ * the LOAD line. The narrow step is a conversation-design question, not a data question.
+ *
+ * PHASE-LEVEL TERMS ARE RESOLVED TO THE ASSETS THAT HOLD THEM: "self-talk and drift insights from Rewire" → W1
+ * (the disinformation statements) + W2 (the image); "summaries from Rebuild" → B1, B2, B3. Where a term names no
+ * asset at all, see the note on `identity` below.
+ *
+ * `identity` IS DELIBERATELY UNRESOLVED. Four memos load it (B1, B3, C2, C3) and none says what it is — the IDQ
+ * scores, the reclaimed identity noun, or the onboarding self-description are all plausible. Guessing would put
+ * a wrong claim about a member in front of them, so R1 has no reader and no asset lists it. This is the one open
+ * question from the read, and it needs Greg.
  */
 export const UPSTREAM: Partial<Record<string, RetainedAssetId[]>> = {
-  b3: ['b1', 'b2', 'w3'],
+  // Reconnect's three beats live in ONE arc, so R2/R3 already hold R1 in the live thread. Listed for
+  // completeness of the map; wiring them is a separate question from whether the data is reachable.
+  r3: ['r2'],
+  w1: ['r2', 'r3'],
+  w2: ['r2', 'r3', 'w1'],
+  w3: ['r2', 'r3', 'w1', 'w2'],
+  b1: ['r2', 'r3', 'w1', 'w2'],
+  b2: ['b1', 'w1', 'w2'],
+  b3: ['b1', 'b2', 'w1', 'w2', 'w3'],
+  c1: ['r2', 'r3', 'w1', 'w2', 'w3', 'b1', 'b2', 'b3'],
+  c2: ['b1', 'b2', 'c1'],
+  // B3 is NOT in C3's load line, and is included anyway on the strength of the rest of the memo: "B3 monitoring
+  // experience available as a parallel reference" (State and memory requirements → Preferred) and, at Stage 7,
+  // "Reference the parallel to B3 (activity tracking for fitness)". Following one line over the document would
+  // have dropped the comparison C3's closing is built around.
   c3: ['b1', 'b2', 'c1', 'c2', 'b3'],
 };
+
+/**
+ * Kept keepers of one type, newest-relevant first, capped at two.
+ *
+ * Guarded like every other reader: a drifted `playbook_entry` costs this one line, not the Session. The cap is
+ * the point — a member deep in the program can hold a dozen true lines, and pouring all of them into a later
+ * Session's context is how "the program remembers you" turns into the program reciting you at yourself.
+ */
+async function keepersOfType(db: Db, memberId: string, keeperType: string): Promise<string[]> {
+  try {
+    const { rows } = await db.query<{ body: string }>(
+      `select body from playbook_entry
+        where member_id=$1 and state='kept' and keeper_type=$2
+        order by pinned desc, sort_order, created_at limit 2`,
+      [memberId, keeperType],
+    );
+    return rows.map((r) => (r.body ?? '').trim()).filter(Boolean);
+  } catch (err) {
+    console.error(`keepersOfType(${keeperType}) failed for member=${memberId}:`, err);
+    return [];
+  }
+}
 
 /** Trim, drop empties, cap. A carry-forward that dumps six lines stops being context and becomes a recital. */
 const lines = (...xs: (string | null | undefined)[]): string[] =>
@@ -87,6 +150,39 @@ const lines = (...xs: (string | null | undefined)[]): string[] =>
  * on a surface the member is already looking at.
  */
 const READERS: Record<RetainedAssetId, (db: Db, memberId: string) => Promise<Retained | null>> = {
+  // R2 — "door ratings, first/biggest/still-open doors" (R3's memo, verbatim). This is exactly the profile added
+  // in migration 0085 the day before this was written, so the field Greg names now exists. describeDoorProfile
+  // returns null when they've said nothing, which is what keeps an unasked profile out of the context entirely.
+  async r2(db, memberId) {
+    const line = describeDoorProfile(await doorProfile(db, memberId).catch(() => []));
+    return line ? { asset: 'r2', label: 'their Doors', lines: [line] } : null;
+  },
+
+  // R3 — the Legacy Letter. VERBATIM and UNSUMMARIZED: it is the single most personal artifact in the program,
+  // written in their own voice to their future self. Capped hard, because carrying the whole letter into every
+  // later Session would crowd out everything else — the opening is what makes it recognizable to them.
+  async r3(db, memberId) {
+    const letter = await getLegacyLetter(db, memberId).catch(() => null);
+    const body = (letter?.body ?? '').trim();
+    if (!body) return null;
+    const opening = body.length > 240 ? `${body.slice(0, 240).trimEnd()}…` : body;
+    return { asset: 'r3', label: 'their Legacy Letter', lines: [`In their own words: "${opening}"`] };
+  },
+
+  // W1 — the true lines they wrote against their own disinformation. Stored as keepers with keeper_type
+  // 'principle' (lib/agent/rewire.ts). VERBATIM: hearing their OWN line back is the entire mechanism, and a
+  // paraphrase of it is worth nothing.
+  async w1(db, memberId) {
+    const ks = await keepersOfType(db, memberId, 'principle');
+    return ks.length ? { asset: 'w1', label: 'their true lines', lines: [`Lines they wrote to answer their own: ${ks.map((k) => `“${k}”`).join(' · ')}`] } : null;
+  },
+
+  // W2 — the visualization. Same store, keeper_type 'lights_you_up'. Also verbatim, same reasoning.
+  async w2(db, memberId) {
+    const ks = await keepersOfType(db, memberId, 'lights_you_up');
+    return ks.length ? { asset: 'w2', label: 'the picture they built', lines: [`How they described where they're headed: “${ks[0]}”`] } : null;
+  },
+
   // B1 — the motivational baseline. SUMMARIZED, never scored: B1's own spec forbids showing a number, gauge or
   // verdict (RB-1), and that rule does not weaken just because the reader is another Session.
   async b1(db, memberId) {
