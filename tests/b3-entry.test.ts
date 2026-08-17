@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { PGlite } from '@electric-sql/pglite';
 import { applySchema, type Db } from '../lib/db/schema.ts';
 import { recordB3Entry, b3Entries } from '../lib/rebuild/b3-entry.ts';
@@ -83,4 +84,19 @@ test('the B3 week offers record_b3_day, and an open W3 week alongside it does no
   assert.match(handler, /name === 'record_b3_day'/, 'a declared tool with no handler is a dead call');
   assert.match(handler, /recordB3Entry\(/, 'and the handler reaches the store that the tests above prove');
   assert.ok(checkin, 'module loads');
+});
+
+test('WHAT THE COMPANION WRITES, THE COMPANION CAN READ — B3 is not write-only', () => {
+  // The audit question that found this (Jay, 2026-08-17: "is the Companion aware of all the new functionality?").
+  // record_b3_day let the Companion write a member's day and then never see it again — so someone who described
+  // Tuesday found it gone by Thursday, from the one thing in the product that promises to remember. Greg's seven
+  // fields are also the integrative material B3 exists to produce, and none of it reached the conversation that
+  // collected it.
+  const src = readFileSync('app/dashboard/checkin-actions.ts', 'utf8');
+  assert.match(src, /b3Entries\(db, memberId, 7\)/, 'the week is read into the companion context');
+  assert.match(src, /b3Recent:/, 'and handed over');
+
+  const ctx = readFileSync('lib/agent/checkin.ts', 'utf8');
+  assert.match(ctx, /c\.b3Recent\?\.length/, 'rendered only when they actually wrote something');
+  assert.match(ctx, /never read it back as a log or count the days/, 'and governed — B3 forbids tallies');
 });

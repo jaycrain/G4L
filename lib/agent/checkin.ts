@@ -63,6 +63,8 @@ export type CheckinContext = {
   doorProfileLine?: string | null;
   /** R3's Legacy Letter — theirs, to themselves. Null until they write one. */
   legacyLetter?: { body: string; datedFor: string } | null;
+  /** B3's Lifestyle Pilot week, in THEIR words — the last few days they wrote. Empty until they log one. */
+  b3Recent?: { entryDate: string; lines: string[] }[];
   idScore: number | null;
   direction: Direction | null;
   currentFocus: string | null;
@@ -476,6 +478,19 @@ export function contextBlock(c: CheckinContext): string {
     // so it cannot be invisible here. Handed over WHOLE rather than summarized: a paraphrase of the one thing
     // they wrote in their own voice is worth nothing, and this is the material the companion should recognise
     // when they say "I read my letter again".
+    // B3'S WEEK, IN THEIR WORDS. The Companion WRITES this week (record_b3_day) and, until now, could never read
+    // it back — so a member who told it about Tuesday found it gone by Thursday. That is the opposite of the one
+    // promise this agent makes. Greg's seven fields are also exactly the integrative material B3 exists to
+    // produce ("what contributed", "what was going through their mind", how eating and moving affect each other),
+    // and none of it was reaching the conversation that collected it.
+    //
+    // THREE DAYS, NOT SEVEN. Enough to notice a pattern across days without turning every turn into a diary
+    // recital — and the days they wrote most recently are the ones still live for them.
+    c.b3Recent?.length
+      ? `THEIR LIFESTYLE PILOT WEEK, in their own words (most recent first):\n${c.b3Recent
+          .map((d) => `- ${d.entryDate}: ${d.lines.join(' ')}`)
+          .join('\n')}\nUse it the way you would use anything they told you — notice what recurs, and never read it back as a log or count the days.`
+      : null,
     c.legacyLetter?.body
       ? `THEIR LEGACY LETTER (they wrote it to themselves, addressed to ${c.legacyLetter.datedFor}; it lives in their Playbook under "Who you are"):\n${c.legacyLetter.body}\nIf they ask for it, point them there or read it back. Do NOT quote it at them unprompted — a letter someone wrote to themselves is not a lever, and producing it uninvited turns something private into something we are holding over them. They can change it whenever it stops being true.`
       : null,

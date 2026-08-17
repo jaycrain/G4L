@@ -39,7 +39,7 @@ import type { PracticeKind } from '../../lib/practice/store.ts';
 import { isTappable, toggleMark } from '../../lib/practice/mark.ts';
 import { activePracticeWeek, activePracticeWeeks } from '../../lib/practice/store.ts';
 import { recordW3Entry, w3Entries } from '../../lib/rewire/w3-entry.ts';
-import { recordB3Entry } from '../../lib/rebuild/b3-entry.ts';
+import { recordB3Entry, b3Entries } from '../../lib/rebuild/b3-entry.ts';
 import { w3Triggers } from '../../lib/rewire/w3-triggers.ts';
 import { phaseSummary, type PhaseKey } from '../../lib/content/summaries.ts';
 
@@ -176,7 +176,7 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
   // "best-effort" but was UNGUARDED — and it runs a memory-fold (API/query) BEFORE everything else, so if it threw it
   // sank the entire context to minimal (this is why the companion still couldn't see momentum after the first pass).
   await maybeFoldMemory(db, memberId).catch((e) => console.warn('maybeFoldMemory failed (non-fatal):', (e as Error).message));
-  const [grinta, grintaReading, whyReading, skillsReading, pilotPlan, pilotTally, biggerWorld, qdProfile, qdRecent, practiceGrids, doorProfileRows, legacyLetterRow, consumedBites, profRows, idqRows, reclaimItems, beatRows, playbook, measures, linkedMeasureRows, facets, closedIds, lastClosedRows, forecast, experience, passport, outcomeCards] = await Promise.all([
+  const [grinta, grintaReading, whyReading, skillsReading, pilotPlan, pilotTally, biggerWorld, qdProfile, qdRecent, practiceGrids, doorProfileRows, legacyLetterRow, b3Rows, consumedBites, profRows, idqRows, reclaimItems, beatRows, playbook, measures, linkedMeasureRows, facets, closedIds, lastClosedRows, forecast, experience, passport, outcomeCards] = await Promise.all([
     getGrinta(db, memberId, dash.identityNoun).catch(() => ({ score: null, direction: null }) as unknown as Awaited<ReturnType<typeof getGrinta>>),
     // Rebuild/Reclaim REGISTERS — all SUPPLEMENTARY context ("the agent knows X"), each null-safe downstream. Guard
     // EVERY one with .catch: a single missing/drifted register table (prod migrations don't auto-apply) must NEVER
@@ -193,6 +193,7 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
     weekGrids(db, memberId).catch(() => []), // EVERY open week — a member can be running four at once
     doorProfile(db, memberId).catch(() => []), // Reconnect R2 — what they've said ABOUT their Doors (weight + still-open)
     getLegacyLetter(db, memberId).catch(() => null), // Reconnect R3 — their own letter to themselves
+    b3Entries(db, memberId, 7).catch(() => []), // Rebuild B3 — the week they wrote, so the Companion can read back what it recorded
 
     // These were UNGUARDED — and a single throw here collapsed the WHOLE context to `minimal` (Jay's walk: the
     // companion said it could only see Reclaim List / ID Score / Doors — the minimal fields — because a supplementary
@@ -368,6 +369,12 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
     doorDisplayNames: dash.doors.map((d) => d.displayName),
     doorProfileLine: describeDoorProfile(doorProfileRows),
     legacyLetter: legacyLetterRow ? { body: legacyLetterRow.body, datedFor: legacyLetterRow.datedFor } : null,
+    // Their words only — the empty fields of a sparse day would otherwise read as a form they half-filled.
+    b3Recent: b3Rows.slice(0, 3).map((e) => ({
+      entryDate: e.entryDate,
+      lines: [e.goodCalls, e.falseStarts, e.contributed, e.obstacles, e.thoughts, e.fuelToMove, e.reflection]
+        .map((v) => (v ?? '').trim()).filter(Boolean),
+    })).filter((d) => d.lines.length),
     idScore: dash.score?.score ?? null,
     direction: dash.score?.direction ?? null,
     currentFocus: dash.currentFocus?.label ?? null,
