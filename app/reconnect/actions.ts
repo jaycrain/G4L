@@ -15,6 +15,9 @@ import { softSetMemberDoors, getMemberDoorNames } from '../../lib/member/refine.
 import type { ReconnectCeremonyData } from '../../lib/ceremony/reconnect-ceremony-beats.ts';
 import { earnedBadgeReveal } from '../../lib/ceremony/badge-reveal.ts';
 import { emitHarvestMoment, drainHarvest, type KeeperType } from '../../lib/agent/harvest.ts';
+import { saveLegacyLetter } from '../../lib/reconnect/legacy-letter-store.ts';
+import { letterDateFor } from '../../lib/reconnect/legacy-letter.ts';
+import { memberToday } from '../../lib/time/zone-store.ts';
 import { DOORS } from '../../lib/doors.ts';
 import { submitIdq } from '../../lib/gateway/flow.ts';
 import { TOTAL_ITEMS } from '../../lib/idq/instrument.ts';
@@ -140,6 +143,30 @@ const RECONNECT_STAGE_ASSET: Record<string, string> = {
   doors: 'RCN-EXC',       // Identity Excavation — the Doors work
   measurement: 'RCN-IDQ', // The IDQ — the baseline ID Score
 };
+
+/**
+ * R3 — persist the Legacy Letter once the member has confirmed it.
+ *
+ * THE DATE IS STAMPED HERE, NOT IN THE ENGINE. The letter is addressed one year from the member's OWN today, and
+ * the engine is pure — computing it there would use server time and put a Boulder evening on tomorrow
+ * (lib/time is the one authority for this). So the engine hands over the body and this stamps the date.
+ *
+ * LOUD ON FAILURE. This is the one artifact in the product written in the member's own first person, and they
+ * have just been told it is saved. A swallowed write here means they go looking for it in their Playbook and it
+ * is not there — the product having lied about the most personal thing it holds.
+ */
+async function persistLegacyLetter(db: Db, memberId: string, turn: Turn): Promise<void> {
+  const letter = turn.state.legacyLetter;
+  const body = (letter?.body ?? '').trim();
+  if (!body) return;
+  try {
+    const today = await memberToday(db, memberId);
+    const res = await saveLegacyLetter(db, memberId, { body, datedFor: letterDateFor(today) });
+    if (!res.ok) console.error(`persistLegacyLetter refused for member=${memberId}: ${res.reason}`);
+  } catch (err) {
+    console.error(`persistLegacyLetter FAILED for member=${memberId} — they were told it was saved:`, err);
+  }
+}
 
 async function persistReconnectSessionCloses(db: Db, memberId: string, prev: ConvState, turn: Turn): Promise<void> {
   try {
@@ -311,6 +338,7 @@ export async function reconnectTurnAction(
     await persistRevision(db, memberId, state, turn);
     await persistHarvest(db, memberId, state, turn); // §2d drift keeper (and later legacy share)
     await persistCheckpoint(db, memberId, state, turn); // §2e Checkpoint — the first grinta movement
+    await persistLegacyLetter(db, memberId, turn); // R3 — the member's own letter, dated in THEIR timezone
     await persistReconnectSessionCloses(db, memberId, state, turn); // record the Session closes the arc bypass dropped
     await persistReconnectComplete(db, memberId, state, turn); // §2f — advance the dashboard phase (Reconnect → Rewire)
     // On IDQ completion this may return a personalized close (M3) that ties the baseline shape to their doors —

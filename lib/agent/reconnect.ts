@@ -20,6 +20,7 @@ import { doorProvenance } from './door-provenance.ts';
 import type { Db } from '../db/schema.ts';
 import { MEMBER_AGENT_SYSTEM_PROMPT } from './system-prompt.ts';
 import { resolveConfirmCorroborated, memberWantsToAdvance } from './onboarding-intent.ts';
+import { LEGACY_PROMPTS, letterDateFor } from '../reconnect/legacy-letter.ts';
 import { runArcTurn, administeredStage, drawoutShouldReflect, receiveThen, isProcessMetaOrAssent, affirmsReflection, type ArcConfig, type StageDef } from './onboarding-staged.ts';
 import { captureCreate } from './capture-model.ts';
 import { CHECKPOINT_GRIT_ITEMS, grintaStem } from '../grinta/survey/instrument.ts';
@@ -629,9 +630,8 @@ const windowStage: StageDef = {
       } else {
         // Same contract as the drift beat: out of probes and nothing to reflect → close the beat rather than
         // keep asking. The Window hands into the Checkpoint.
-        b.stage = 'checkpoint';
-        b.administeredResponses = [];
-        b.reply = `${windowClose()}\n\n${checkpointOpener()}`;
+        b.stage = 'legacy';
+        b.reply = `${windowClose()}\n\n${legacyOpener(b.collected)}`;
         b.awaitingConfirm = false;
       }
     }
@@ -650,10 +650,13 @@ const windowStage: StageDef = {
       if (payload) {
         b.pendingHarvest.push({ kind: 'window', keeperType: 'lights_you_up', destinationIntent: 'keeper', payloadRef: payload, label: 'The spark' });
       }
+      // CARRY THE TUESDAY. Their Window answer IS the letter's first prompt, so it moves across with them —
+      // asking a member to describe the same ordinary Tuesday twice in one session is the product not listening
+      // the first time. Stashed before driftPayload is cleared, or it is gone.
+      if (payload) b.legacyTuesday = payload;
       b.driftPayload = undefined;
-      b.stage = 'checkpoint'; // hand into the §2e Checkpoint (the administered grit beat)
-      b.administeredResponses = []; // reset the accumulator (held the 24 IDQ responses) for the Checkpoint instrument
-      b.reply = `${windowClose()}\n\n${checkpointOpener()}`;
+      b.stage = 'legacy'; // hand into R3's Legacy Letter — the last thing they MAKE before the Checkpoint
+      b.reply = `${windowClose()}\n\n${legacyOpener(b.collected)}`;
     }
   },
 };
@@ -753,6 +756,112 @@ but it NEVER grades or pathologizes. Hard rules:
 // instrument config; the parse→accumulate→deliver→complete loop lives in administeredStage(). On the last item it
 // hands into Visioning's first beat (Drift); the ACTION scores + writes the baseline (submitIdq) on that crossing,
 // and may UPGRADE this generic close to a personalized one (M3) — appending the Drift opener.
+
+// --- R3 · THE LEGACY LETTER ------------------------------------------------------------------------------------
+// WHY IT SITS HERE. Greg moved the letter out of Reclaim and into Reconnect: "it helps to end the activity on a
+// positive and to provide the vision early on", so the Success Story in Reclaim becomes a reflection on what was
+// accomplished. A member should leave the first R holding a destination, not just a diagnosis.
+//
+// WHY BETWEEN WINDOW AND CHECKPOINT, and not last. The Window beat draws out the ordinary Tuesday a year out —
+// which is the letter's own first prompt — so the letter composes from an answer still live in the thread rather
+// than re-asking for it. The alternative (after the Checkpoint, so it is literally the final beat) would have the
+// member write a first-person letter to themselves immediately after twelve Likert items, flattening the exact
+// lift the Window exists to create. This still "closes out Reconnect" in Greg's sense: it is the last thing they
+// MAKE. The ceremony then celebrates it instead of competing with it.
+//
+// THE DIVISION OF LABOUR. The MODEL asks the prompts (one per turn, its own rhythm) and writes the draft; the
+// ENGINE owns the gate, the revision cap, and the commit. That is the arc's standing split, and it is why there is
+// no per-prompt answer tracking here — the model has the conversation, and attributing each reply to a prompt key
+// would be brittle bookkeeping for no gain.
+//
+// THE CAP IS DELIBERATE. Greg's note says "prompt revisions until each Member has a structured half-page
+// manifesto" — "until" has no terminator, and an uncapped propose/revise loop is how B3, C1 and C3 each earned an
+// infinite re-proposal bug. Two rounds, then the letter is offered for saving with an explicit promise that it
+// stays editable. That promise is load-bearing: a member who accepts a draft to end a long session must be able to
+// fix it when they reread it cold, or we have shipped OUR letter with their name on it.
+const LEGACY_MAX_REVISIONS = 2;
+
+const LEGACY_OPEN =
+  "One last thing, and it's yours to keep.${SEP}I'd like you to write a letter — to yourself, a year from today. " +
+  "Not a plan and not a pep talk. The letter you'd want to be handed in a year by the version of you who kept going.${SEP}" +
+  "I'll ask you a few things and then draft it in your words, and you can change anything that isn't right.";
+
+const LEGACY_SAVED_1 = "Saved — dated a year from today, and addressed to you.";
+const LEGACY_SAVED_2 =
+  "It lives in your Playbook, under Who you are — you can read it whenever you want, and change it whenever it stops being true.";
+const LEGACY_CAP_REACHED =
+  "That's yours now. You can keep shaping it any time from your Playbook — for now, want me to save it?";
+
+function legacyOpener(c: Collected): string {
+  return LEGACY_OPEN.split('${SEP}').join(BEAT_SEP);
+}
+
+/** Shown with the draft. Never "is this good?" — an appraisal question invites a polite yes on the one artifact
+ *  that has to be theirs. */
+const LEGACY_ASK_REVISION = "Read it back. What's not right — a line that isn't how you'd say it, or something missing?";
+
+const legacyStage: StageDef = {
+  id: 'legacy',
+  mode: 'drawout',
+  opener: (c) => legacyOpener(c),
+  offersSubstance: (message) => message.trim().length >= 3,
+  gather(b) {
+    // The model drafted this turn → hold it and hand it to them. The draft is a PROPOSAL; nothing is stored until
+    // they confirm, so a draft they hate costs them one sentence and never reaches their record.
+    if (b.model.legacyBody) {
+      b.legacyDraft = b.model.legacyBody;
+      b.reply = `${b.model.legacyBody}${BEAT_SEP}${LEGACY_ASK_REVISION}`;
+      b.awaitingConfirm = true;
+      return;
+    }
+    // Otherwise the model is still asking its prompts — let its question stand. The engine never appends one of
+    // its own here (drawout rhythm: the model owns the single question per turn).
+    b.reply = b.modelText;
+  },
+  confirm(b) {
+    const intent = resolveConfirmCorroborated(b.memberMessage, b.model.replyIntent, () => false, 'is_this_right');
+    const rounds = b.legacyRevisions ?? 0;
+
+    // A REDRAFT arriving this turn supersedes everything — the member asked for a change and the model made it.
+    if (b.model.legacyBody) {
+      b.legacyDraft = b.model.legacyBody;
+      b.legacyRevisions = rounds + 1;
+      b.reply =
+        rounds + 1 >= LEGACY_MAX_REVISIONS
+          ? `${b.model.legacyBody}${BEAT_SEP}${LEGACY_CAP_REACHED}`
+          : `${b.model.legacyBody}${BEAT_SEP}${LEGACY_ASK_REVISION}`;
+      b.awaitingConfirm = true;
+      return;
+    }
+
+    if ((intent === 'dispute' || intent === 'addition') && rounds < LEGACY_MAX_REVISIONS) {
+      // They want a change and the model has not produced one yet — stay on the draft and let it ask what.
+      b.awaitingConfirm = true;
+      b.reply = b.modelText || LEGACY_ASK_REVISION;
+      return;
+    }
+
+    // COMMIT. Set the letter for the action to persist; nothing else in the engine writes to a member's records.
+    const body = (b.legacyDraft ?? '').trim();
+    if (body) {
+      // NO DATE IS COMPUTED HERE. The letter is dated one year from the MEMBER'S today, and this engine is pure —
+      // a `new Date()` fallback would stamp it in server time, which is how a Boulder evening lands on tomorrow
+      // (see lib/time, the one authority). The action stamps it via memberToday when it persists; the reply says
+      // "a year from today", which is true in every timezone.
+      b.legacyLetter = { body, datedFor: '' };
+      b.reply = `${LEGACY_SAVED_1}${BEAT_SEP}${LEGACY_SAVED_2}${BEAT_SEP}${checkpointOpener()}`;
+    } else {
+      // No draft ever landed (the model never called the tool). Do not strand them in the beat and do not claim a
+      // letter exists — move on quietly. A missing letter is recoverable; a false claim of one is not.
+      b.reply = checkpointOpener();
+    }
+    b.legacyDraft = undefined;
+    b.stage = 'checkpoint';
+    b.administeredResponses = [];
+    b.awaitingConfirm = false;
+  },
+};
+
 const measurementStage: StageDef = administeredStage({
   id: 'measurement',
   itemCount: TOTAL_ITEMS,
@@ -868,13 +977,14 @@ function handIntoDoors(modelText: string | undefined, c: Collected): string {
 
 export const RECONNECT_ARC: ArcConfig = {
   id: 'reconnect',
-  stageOrder: ['entry', 'doors', 'measurement', 'drift', 'window', 'checkpoint', 'ceremony'],
+  stageOrder: ['entry', 'doors', 'measurement', 'drift', 'window', 'legacy', 'checkpoint', 'ceremony'],
   stages: {
     entry: reconnectEntryStage,
     doors: doorsStage,
     measurement: measurementStage,
     drift: driftStage,
     window: windowStage,
+    legacy: legacyStage,
     checkpoint: checkpointStage,
     ceremony: reconnectCeremonyStage,
   },
@@ -888,6 +998,22 @@ export function applyReconnectTurn(state: ConvState, history: ConvMessage[], mem
 
 // --- live tool surface (the model draws out the door + signals depth/intent) ---------------------------------
 export const RECONNECT_TOOLS = [
+  {
+    // R3's Legacy Letter. Its own tool for the same reason B3's plan and C1's refinement have one: this is a
+    // member-voiced ARTIFACT, not conversational text, and the engine must be able to tell a draft from a reply
+    // deterministically rather than by guessing at prose.
+    name: 'record_legacy_letter',
+    description:
+      "Call this ONLY when you are writing the member's Legacy Letter — after they have answered enough of the " +
+      "prompts (four of the six is plenty; four honest answers beat six forced ones). Put the whole letter in " +
+      "`body` and NOTHING else in your reply — the engine shows it to them and asks what they want changed. " +
+      "Do not call it while you are still asking questions, and do not call it twice in a turn.",
+    input_schema: {
+      type: 'object' as const,
+      properties: { body: { type: 'string', description: "the letter itself, in the member's own first-person voice" } },
+      required: ['body'],
+    },
+  },
   {
     name: 'reflect_door',
     description:
@@ -967,10 +1093,14 @@ export function parseReconnectTurn(content: readonly unknown[]): ModelTurn {
   let depthReady = false;
   let replyIntent: ReplyIntent | undefined;
   let revision: DoorRevision | undefined;
+  let legacyBody: string | undefined;
   for (const b of content as Array<{ type: string; text?: string; name?: string; input?: Record<string, unknown> }>) {
     if (b.type === 'text' && typeof b.text === 'string') text += b.text;
     if (b.type === 'tool_use') {
       if (b.name === 'reflect_door' || b.name === 'reflect_drift' || b.name === 'reflect_window') depthReady = true; // shared depth signal (drawout)
+      if (b.name === 'record_legacy_letter' && typeof b.input?.body === 'string' && b.input.body.trim()) {
+        legacyBody = b.input.body.trim();
+      }
       if (b.name === 'member_reply' && typeof b.input?.intent === 'string') {
         const i = b.input.intent;
         if (i === 'done' || i === 'more' || i === 'dispute') replyIntent = i;
@@ -994,7 +1124,7 @@ export function parseReconnectTurn(content: readonly unknown[]): ModelTurn {
       }
     }
   }
-  return { text, depthReady, replyIntent, revision };
+  return { text, depthReady, replyIntent, revision, legacyBody };
 }
 
 // What the model already KNOWS about the member (committed captures, loaded at arc entry) — so recall is precise
@@ -1120,7 +1250,10 @@ insight reflect-confirm, call member_reply to classify their reply (done / more 
 Reflect first, then exactly ONE question per turn. Never diagnose, label, or pathologize. This is a place it is safe
 to be honest with yourself.`;
 
-function stageInstructionReconnect(stage?: Stage): string {
+function stageInstructionReconnect(stage?: Stage, st?: ConvState): string {
+  // Their Window answer, handed to the model so prompt 1 is never re-asked. Lives on ConvState (like driftPayload),
+  // not Collected — it is conversation state being threaded, not captured member data.
+  const tuesday = (st?.legacyTuesday ?? '').trim();
   if (stage === 'doors')
     return (
       '\n\nCURRENT STAGE: the Doors excavation. Draw out the primary Door over a few exchanges, then reflect an ' +
@@ -1141,6 +1274,27 @@ function stageInstructionReconnect(stage?: Stage): string {
       'a check — call reflect_drift ONLY once it is genuinely drawn out; if thin, keep drawing out (never manufacture a ' +
       'pattern). Name it to push OFF from, not to sit in. Once they confirm the pattern, accept it and let the beat ' +
       'move — do not reflect it again or ask a further question. Do not diagnose.'
+    );
+  if (stage === 'legacy')
+    return (
+      '\n\nCURRENT STAGE: THE LEGACY LETTER — the last thing they make in Reconnect. They are writing a letter to ' +
+      'THEMSELVES, dated one year from today. Ask these, ONE PER TURN, in this order, skipping any already answered ' +
+      'in this conversation:\n' +
+      (tuesday ? `(They ALREADY answered 1 in the Window beat: "${tuesday}" — do not ask it again; use it.)\n` : '') +
+      LEGACY_PROMPTS.map((p, i) => `${i + 1}. ${p.prompt}`).join('\n') +
+      '\nFOUR OF THE SIX IS PLENTY — four honest answers beat six forced ones. Once you have four, or once they ' +
+      'signal they are done answering, WRITE THE LETTER and call record_legacy_letter with it as `body`, with no ' +
+      'other text in that turn.\n' +
+      'THE FORM: first person, from them to the version of them who kept going, half a page. Not a summary of ' +
+      'their answers and not a plan — the letter that person would want to read.\n' +
+      'VOICE IS THE WHOLE POINT: it must sound like THEM, not like us. Use their own words and images wherever ' +
+      'they gave them, and keep their phrasing even where it is plain or awkward. Do not upgrade their vocabulary, ' +
+      'do not add inspirational cadence, do not write a sentence they would not say out loud. NEVER praise them, ' +
+      'grade an answer, promise an outcome, or add anything they did not say — no "you\'ve got this", no "imagine ' +
+      'the possibilities". If they left something unanswered, leave that ground alone rather than inventing it. ' +
+      'End on the unfinished business if they named one; it is meant to stay open.\n' +
+      'AFTER THE DRAFT: they will tell you what to change. Redraft in full and call the tool again — do not argue ' +
+      'for your wording, and do not ask whether they like it. It is theirs.'
     );
   if (stage === 'window')
     return (
@@ -1176,7 +1330,7 @@ export async function liveTurnReconnect(state: ConvState, history: ConvMessage[]
   const res = await captureCreate((model) => client.messages.create({
     model,
     max_tokens: 600,
-    system: RECONNECT_SYSTEM + reconnectContext(state.collected, state.doorsAtEntry) + stageInstructionReconnect(state.stage),
+    system: RECONNECT_SYSTEM + reconnectContext(state.collected, state.doorsAtEntry) + stageInstructionReconnect(state.stage, state),
     tools: RECONNECT_TOOLS,
     messages,
   }));

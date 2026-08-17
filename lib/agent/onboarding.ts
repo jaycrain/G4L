@@ -37,6 +37,9 @@ export type Stage = 'identity' | 'identity_name' | 'reclaim' | 'door' | 'complet
   | 'visioning'
   | 'drift'
   | 'window'
+  // R3's Legacy Letter — a letter from the member to themselves, dated a year out. Sits between the Window (which
+  // supplies its first prompt) and the Checkpoint, so it is the last thing the member MAKES in Reconnect.
+  | 'legacy'
   | 'checkpoint'
   | 'ceremony'
   // v2.3 Rewire arc (config #3 on the shared kernel): its stage ids. Slice 1 = W1 Disinformation Audit —
@@ -184,6 +187,15 @@ export type ConvState = {
   // words — the "preserve declarations" wall) from the reflect turn to the confirm turn, where the keeper is queued.
   pendingHarvest?: HarvestSignal[];
   driftPayload?: string;
+  // R3 · THE LEGACY LETTER (Greg relocated it from Reclaim into Reconnect so a member leaves the first R holding a
+  // destination, not just a diagnosis). legacyTuesday carries their Window answer forward so the letter's first
+  // prompt is never asked twice — asking a member to describe the same Tuesday twice in one session is the product
+  // not listening. legacyDraft is the model's draft awaiting THEIR revision; legacyRevisions caps the loop;
+  // legacyLetter is set only on their confirm and is what the action persists (propose → confirm → commit).
+  legacyTuesday?: string;
+  legacyDraft?: string;
+  legacyRevisions?: number;
+  legacyLetter?: { body: string; datedFor: string };
   // Decision II capture discipline: a reclaim-list SHAPE the engine surfaced for the member to confirm (an overlap
   // to merge, a vision to move to the Playbook, a paragraph to draw out), threaded across the propose→confirm turns.
   // reclaimShapesResolved carries the keys of shapes already addressed, so a "no, keep both" is never re-proposed.
@@ -596,6 +608,7 @@ const STAGE_PROMPT: Record<Stage, string> = {
   reclaim: `What are a few things you want back? Three to start, more if they keep coming.`,
   door: doorPrompt(),
   gap: doorPrompt(), // v1 never sets 'gap' (that's the v2.0 staged engine) — present only for type completeness
+  legacy: 'What does a Tuesday look like for you one year from now — the ordinary day, not the highlight reel?',
   // Administered (staged only) — off the depth kernel, so this fallback prompt is never actually used; present
   // for type completeness. A number-based re-ask, matching the survey's own reprompt.
   grinta: 'On a scale of 1 (not at all) to 5 (completely), how true does that feel today?',
@@ -900,6 +913,9 @@ export type ModelTurn = { text: string; record?: Partial<Collected> & { complete
   // `added` — goals the member named that were NOT already on their list (Greg's C1 question 5). Optional: most
   // refinements add nothing, and an absent list must read as "nothing new came up", not as a malformed call.
   refinement?: { items: { original: string; text: string; tier: string }[]; top3: string[]; added?: { text: string; tier: string; emergedFrom?: string }[] };
+  // R3 Legacy Letter — the drafted letter body (from record_legacy_letter). Its own channel, like `plan` and
+  // `refinement`: it is a member-voiced ARTIFACT the engine holds for confirmation, never conversational text.
+  legacyBody?: string;
   // v2.5 Reclaim C3 (coach mode) — the member's Quality-Day definition (from record_quality_day): top-3
   // non-negotiables / next-3 contributors / top-2 disruptors. Coached, proposed, and committed on confirm.
   qualityDay?: { nonNegotiables: string[]; contributors: string[]; disruptors: string[] };

@@ -1028,6 +1028,14 @@ interface Beat {
   administeredResponses: number[]; // §2c: fixed-scale responses accumulated by an administered stage (IDQ/Grit)
   pendingHarvest: HarvestSignal[]; // §2d: keeper/share candidates queued for the action to emit
   driftPayload?: string; // §2d: the member's drift declaration, carried reflect→confirm
+  // R3 Legacy Letter — threaded across the draft→revise→confirm turns, exactly like driftPayload. All three MUST
+  // appear in the write-back below or the draft vanishes between turns and the member is asked to revise a letter
+  // the engine no longer holds (mutating-state-vanishes-over-the-wire: the tell is that only the first write
+  // survives). legacyLetter is set ONLY on their confirm and is what the action persists.
+  legacyDraft?: string;
+  legacyRevisions?: number;
+  legacyTuesday?: string;
+  legacyLetter?: { body: string; datedFor: string };
   pendingReclaimShape?: PendingReclaimShape; // Decision II: a shape awaiting the member's confirm (merge/move/draw-out)
   reclaimShapesResolved: string[]; // Decision II: keys of shapes already ruled on — never re-proposed
   pendingIdentityPick?: string[]; // identity tap-to-pick: candidate words offered LAST turn, awaiting the member's choice
@@ -1190,6 +1198,10 @@ function beatState(b: Beat): ConvState {
     ...(b.administeredResponses.length > 0 && { administeredResponses: b.administeredResponses }),
     ...(b.pendingHarvest.length > 0 && { pendingHarvest: b.pendingHarvest }),
     ...(b.driftPayload !== undefined && { driftPayload: b.driftPayload }),
+    ...(b.legacyDraft !== undefined && { legacyDraft: b.legacyDraft }),
+    ...(b.legacyRevisions !== undefined && { legacyRevisions: b.legacyRevisions }),
+    ...(b.legacyLetter !== undefined && { legacyLetter: b.legacyLetter }),
+    ...(b.legacyTuesday !== undefined && { legacyTuesday: b.legacyTuesday }),
     ...(b.pendingReclaimShape && { pendingReclaimShape: b.pendingReclaimShape }),
     ...(b.reclaimShapesResolved.length > 0 && { reclaimShapesResolved: b.reclaimShapesResolved }),
     ...(b.pendingIdentityPick && b.pendingIdentityPick.length > 0 && { pendingIdentityPick: b.pendingIdentityPick }),
@@ -1798,6 +1810,10 @@ export function runArcTurn(
     administeredResponses: [...(state.administeredResponses ?? [])], // §2c administered responses, accumulated
     pendingHarvest: [...(state.pendingHarvest ?? [])], // §2d harvest queue, drained by the action
     driftPayload: state.driftPayload,
+    legacyDraft: state.legacyDraft,
+    legacyRevisions: state.legacyRevisions,
+    legacyLetter: state.legacyLetter,
+    legacyTuesday: state.legacyTuesday,
     pendingReclaimShape: state.pendingReclaimShape, // Decision II, threaded across the propose→confirm turns
     reclaimShapesResolved: [...(state.reclaimShapesResolved ?? [])],
     pendingIdentityPick: state.pendingIdentityPick, // identity chips: candidates offered last turn, this message is the pick

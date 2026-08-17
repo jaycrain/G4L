@@ -334,14 +334,16 @@ test('reconnect window · past the floor, reflect_window reflects the SPARK + ca
   assert.equal(turn.state.driftPayload, vision, "captures the member's second-Tuesday vision (their words) for the keeper");
 });
 
-test('reconnect window · confirm queues the VISION keeper (lights_you_up) and hands into the §2e Checkpoint', () => {
-  // seed a stale IDQ accumulator (the 24 from §2c) to prove the Checkpoint resets it for the grit instrument
+test('reconnect window · confirm queues the VISION keeper and hands into the LEGACY LETTER, carrying the Tuesday', () => {
+  // The Window used to hand straight into the §2e Checkpoint. R3's Legacy Letter now sits between them (Greg moved
+  // the letter into Reconnect so a member leaves the first R holding a destination, not just a diagnosis), and the
+  // Window's own answer IS the letter's first prompt — so it must travel with them or they get asked twice.
   const pending: ConvState = { stage: 'window', awaitingConfirm: true, driftPayload: 'the ride before the house wakes, home strong', collected: { doors: ['grind'] }, administeredResponses: [1, 2, 3] };
   const turn = applyReconnectTurn(pending, [], "yeah — that's the one", { text: '', replyIntent: 'done' });
-  assert.equal(turn.state.stage, 'checkpoint', 'hands into the §2e Checkpoint');
-  assert.match(turn.reply, /spark/i, 'the close names the spark (ends on hope)');
-  assert.match(turn.reply, /1—not at all/i, 'the Checkpoint opener + first grit item are delivered');
-  assert.equal(turn.state.administeredResponses?.length ?? 0, 0, 'the accumulator is reset from the IDQ responses for the grit instrument');
+  assert.equal(turn.state.stage, 'legacy', 'hands into the Legacy Letter, not the Checkpoint');
+  assert.match(turn.reply, /spark/i, 'the close still names the spark (ends on hope)');
+  assert.match(turn.reply, /letter/i, 'and opens the letter');
+  assert.equal(turn.state.legacyTuesday, 'the ride before the house wakes, home strong', 'their Tuesday travels with them');
   assert.deepEqual(turn.state.pendingHarvest, [{ kind: 'window', keeperType: 'lights_you_up', destinationIntent: 'keeper', payloadRef: 'the ride before the house wakes, home strong', label: 'The spark' }], 'the vision is queued as a lights_you_up keeper');
 });
 
@@ -415,4 +417,58 @@ test('reconnect §2e Checkpoint · administers the 6 grit items → Ceremony; gr
   assert.deepEqual(s.administeredResponses, [5, 5, 5, 5, 5, 5], 'the six grit responses are captured');
   assert.match(reply, /don’t go anywhere|show you what you just did/i, 'the close hands into the Ceremony lead');
   assert.doesNotMatch(reply, /grinta|hardiness/i, 'grinta is never named to the member here — it surfaces in the Ceremony');
+});
+
+// ══ R3 · THE LEGACY LETTER ════════════════════════════════════════════════════════════════════════════════════
+// Offline replay of the beat, because it lands in the live capture loop. The rules that matter: a draft is a
+// PROPOSAL (nothing is stored until they confirm), the revision loop is CAPPED, and a beat that never produced a
+// draft must not claim a letter exists.
+
+test('legacy · the drafted letter is shown for revision and NOTHING is stored yet', () => {
+  const st: ConvState = { stage: 'legacy', collected: {}, legacyTuesday: 'coffee on the porch, then out before it is hot' };
+  const turn = applyReconnectTurn(st, [], 'a trip to Utah with my brother', { text: '', legacyBody: 'Dear me — you kept going.' });
+  assert.equal(turn.state.stage, 'legacy', 'still in the beat');
+  assert.match(turn.reply, /Dear me — you kept going\./, 'they see the draft');
+  assert.equal(turn.state.legacyDraft, 'Dear me — you kept going.', 'held for revision');
+  assert.equal(turn.state.legacyLetter, undefined, 'NOT committed — a draft they hate must never reach their record');
+  assert.doesNotMatch(turn.reply, /is this good|do you like/i, 'never asks them to appraise it');
+});
+
+test('legacy · a redraft replaces the draft and still does not commit', () => {
+  const st: ConvState = { stage: 'legacy', awaitingConfirm: true, collected: {}, legacyDraft: 'first try' };
+  const turn = applyReconnectTurn(st, [], 'the middle bit is not how I talk', { text: '', legacyBody: 'second try' });
+  assert.equal(turn.state.legacyDraft, 'second try');
+  assert.equal(turn.state.legacyRevisions, 1);
+  assert.equal(turn.state.legacyLetter, undefined);
+});
+
+test('legacy · the revision loop is CAPPED — it offers to save rather than looping forever', () => {
+  // Greg's note says "prompt revisions UNTIL each Member has a manifesto" — "until" has no terminator, and an
+  // uncapped propose/revise loop is how B3, C1 and C3 each earned an infinite re-proposal bug.
+  const st: ConvState = { stage: 'legacy', awaitingConfirm: true, collected: {}, legacyDraft: 'v1', legacyRevisions: 1 };
+  const turn = applyReconnectTurn(st, [], 'one more change', { text: '', legacyBody: 'v2' });
+  assert.equal(turn.state.legacyRevisions, 2, 'at the cap');
+  assert.match(turn.reply, /save it\?/i, 'offers to save');
+  assert.match(turn.reply, /any time|anytime/i, 'and promises it stays editable — the reason a cap is fair');
+});
+
+test('legacy · confirm commits the letter and hands into the Checkpoint', () => {
+  const st: ConvState = { stage: 'legacy', awaitingConfirm: true, collected: {}, legacyDraft: 'the letter', administeredResponses: [1, 2, 3] };
+  const turn = applyReconnectTurn(st, [], 'yes, save it', { text: '', replyIntent: 'done' });
+  assert.equal(turn.state.legacyLetter?.body, 'the letter', 'committed for the action to persist');
+  assert.equal(turn.state.stage, 'checkpoint', 'hands into the §2e Checkpoint');
+  assert.equal(turn.state.administeredResponses?.length ?? 0, 0, 'the accumulator is reset for the grit instrument');
+  assert.equal(turn.state.legacyDraft, undefined, 'the draft is cleared once committed');
+  // The DATE is stamped by the action in the member's timezone — computing it in this pure engine would use
+  // server time and put a Boulder evening on tomorrow.
+  assert.equal(turn.state.legacyLetter?.datedFor, '', 'the engine does not date it');
+  assert.match(turn.reply, /a year from today/i, 'and says so in a way that is true in every timezone');
+});
+
+test('legacy · a beat that never drafted moves on QUIETLY — it never claims a letter exists', () => {
+  const st: ConvState = { stage: 'legacy', awaitingConfirm: true, collected: {} };
+  const turn = applyReconnectTurn(st, [], 'I would rather skip this', { text: '', replyIntent: 'done' });
+  assert.equal(turn.state.legacyLetter, undefined, 'nothing stored');
+  assert.equal(turn.state.stage, 'checkpoint', 'not stranded in the beat');
+  assert.doesNotMatch(turn.reply, /saved|your letter/i, 'a missing letter is recoverable; a false claim of one is not');
 });
