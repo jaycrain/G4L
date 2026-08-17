@@ -294,7 +294,7 @@ function practiceWeekLine(c: CheckinContext): string | null {
       `again, or want to talk about how it went first. Their call entirely; don't push one. ` +
       `TONE: this is a review, NEVER a report card. State a shortfall plainly and then LEAVE IT ALONE — no "only", ` +
       `no "just", no consolation and no silver lining, all of which tell them you think they failed. Don't praise ` +
-      `hitting the number either; notice it. A week is seven reasonable decisions, not a test they sat.`
+      `hitting the number either; notice it. A week is seven reasonable decisions.`
     );
   }
   const rows = pw.rows
@@ -343,7 +343,7 @@ function outcomesLine(c: CheckinContext): string | null {
     `(what you keep) and a tracked week (what you practice) — that vocabulary is on their Program page too, so use ` +
     `those words rather than inventing your own: ${body}.${running.length ? ` Running right now: ${running.join(', ')}.` : ''} ` +
     `You know this because they can see it; reference it naturally if it helps them place themselves. ` +
-    `NEVER count it, rank the three, or say how many are left — it is three named things, not a score, and ` +
+    `NEVER count it, rank the three, or say how many are left — they are three named things, and ` +
     `"two of three" is exactly the sentence to avoid. NEVER tell them they ARE mindful, fit or well, even when all ` +
     `three are built${built.length ? ` (${built.map((x) => x.product.toLowerCase()).join(' and ')} ${built.length === 1 ? 'is' : 'are'} built for them now)` : ''} — ` +
     `the cycle builds the skill, it does not hand anyone the outcome. What is not built yet is road ahead, not debt: ` +

@@ -50,7 +50,7 @@ export const RECONNECT_CEREMONY_COPY = {
   // must never read as failure. Jay's lines, approved.
   grinta: 'You just did the work in Reconnect — and your Grinta, your grit, went up because of it.',
   grintaDown:
-    "You just did the work in Reconnect — the kind of excavation most people never do. Your Grinta reads a little lower than your starting line, and that's not a step back: it means you're seeing yourself more clearly now. That honesty is the foundation everything builds on.",
+    "You just did the work in Reconnect — the kind of excavation most people never do. Your Grinta reads a little lower than your starting line. That is what a clearer look does to a first estimate, and it is the foundation everything else builds on.",
   grintaFlat:
     'You just did the work in Reconnect. Your Grinta held steady — a solid line to build from. The real move was the excavation itself; the climb comes as you keep going.',
   // 4 — reveal: the Playbook keepers (their own words)

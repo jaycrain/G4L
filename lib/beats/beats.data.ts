@@ -532,7 +532,7 @@ export const BEATS_DATA = {
       },
       "source": "asset_beat",
       "title": "Fuel, not comfort",
-      "content": "Quick gut check: when you eat off-plan, what's it usually doing for you — hunger, or comfort, reward, boredom? No shame in the answer. Naming food's real job in your day is the first move toward changing it.",
+      "content": "Quick gut check: when you eat off-plan, what's it usually doing for you — hunger, or comfort, reward, boredom? Naming food's real job in your day is the first move toward changing it.",
       "dose": "medium",
       "rhythm": "once",
       "channel": "in_app",

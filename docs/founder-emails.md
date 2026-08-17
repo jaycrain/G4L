@@ -1,6 +1,6 @@
 # Founder emails — the copy that goes out in Jay’s voice
 
-_Generated from `lib/founder/draft.ts` at commit `f4e7c1a`. Part 6 of the Cowork release bundle._
+_Generated from `lib/founder/draft.ts` at commit `4d15c44`. Part 6 of the Cowork release bundle._
 
 ## Read this first
 

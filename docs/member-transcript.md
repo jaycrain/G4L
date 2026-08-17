@@ -1,6 +1,6 @@
 # G4L — Member Transcript (authored copy, verbatim)
 
-Stamp: `app @ f4e7c1a · 2026-08-17` · PART 1 of the Cowork release bundle.
+Stamp: `app @ 4d15c44 · 2026-08-17` · PART 1 of the Cowork release bundle.
 
 **Quote from this.** Every line below is authored, fixed copy a member reads, in reading order by surface. It does
 **not** include the Companion's in-the-moment reflections (those are model-generated and vary per member — describe
@@ -39,7 +39,7 @@ _source: lib/agent/onboarding-staged.ts_
 - Here's the turn, though: none of it is gone. It's been waiting for you. Let's write down what you want back —
 - Add each thing below — big or small. Three to start is plenty, and you can always add more later. Take your time.
 - What else? Anything that comes — big or small.
-- What else would you want back? No wrong answers here — small things count.
+- What else would you want back? Small things count.
 - Anything else on your mind — even something small you miss?
 - Your Reclaim List is set for now — no need to add more here. You'll be able to add to it and change it in your first session, or anytime just by talking with your Companion. Take a look at the summary below whenever you're ready.
 - Even one or two more — and they can be small: sleeping through the night, an old hobby, a friend you've
@@ -282,7 +282,7 @@ _source: lib/ceremony/reconnect-ceremony-beats.ts_
 - You measured the distance to reclaim yourself, and you took the first step toward closing it.
 - Here it is, by the numbers — your starting line.
 - You just did the work in Reconnect — and your Grinta, your grit, went up because of it.
-- You just did the work in Reconnect — the kind of excavation most people never do. Your Grinta reads a little lower than your starting line, and that's not a step back: it means you're seeing yourself more clearly now. That honesty is the foundation everything builds on.
+- You just did the work in Reconnect — the kind of excavation most people never do. Your Grinta reads a little lower than your starting line. That is what a clearer look does to a first estimate, and it is the foundation everything else builds on.
 - You just did the work in Reconnect. Your Grinta held steady — a solid line to build from. The real move was the excavation itself; the climb comes as you keep going.
 - And these are your words — the ones that begin to frame the way forward.
 - Your words will begin to frame the way forward — your Playbook fills from here.
@@ -502,7 +502,7 @@ _source: lib/agent/rebuild.ts_
 - Now — one small change to how you eat, an upgrade rather than an overhaul. A vegetable at dinner, swapping one
 - : diet ?
 - The rest can wait until it's clearer. I'll keep this with me and we can pick it up whenever you want.
-- Let's leave this one for now — nothing's lost, and there's no right answer waiting to be found today.
+- Let's leave this one for now — nothing's lost.
 - Come back to it when something occurs to you; I'll be here and I'll still have the thread.
 - HOW TO COACH: one change at a time — movement first, then eating. One question per turn. Elicit their idea; if it's
 - The member's committed small movement change — specific + trackable.
@@ -785,7 +785,7 @@ _source: lib/content/summaries.ts_
 - Identify the Doors you walked through that caused you to Fade.
 - The Fade rarely arrives all at once. It comes through doors — a relationship, a shrinking social world, autopilot, and others — usually several at the same time. Here you mark which ones are yours, then look at which opened first, which shaped you most, and which is still open. Research suggests people move through life change more steadily when they can put it in a clear story rather than carry it as fog. And in the Community, you’ll see these doors are a shared pattern.
 - See your Fade clearly, then put words to who you’re becoming.
-- Two moves in one. The Drift Quiz holds up a mirror to how far the Fade has made you drift — the small daily choices where the distance shows. A place to see patterns, with no wrong answers. Then the Legacy Letter turns you forward, to name the person you want to become and what the next chapter stands for. Research suggests we’re more motivated when we can picture our future self clearly, and that writing intentions down makes them stick. You keep the letter, and come back to it.
+- Two moves in one. The Drift Quiz holds up a mirror to how far the Fade has made you drift — the small daily choices where the distance shows. A place to see the pattern plainly. Then the Legacy Letter turns you forward, to name the person you want to become and what the next chapter stands for. Research suggests we’re more motivated when we can picture our future self clearly, and that writing intentions down makes them stick. You keep the letter, and come back to it.
 - Catch the reasonable-sounding lies that keep you stuck — and craft answers to dispel them.
 - You tell yourself things about why change can wait, why it’s not that serious, why it might be too late. They sound reasonable, which is exactly what makes them powerful. Here you bring those lines into the open and write stronger, truer ones to stand in their place. Research suggests the way you talk to yourself shapes your motivation and your staying power when things get hard. The work builds an inner voice that backs your effort.
 - Build a picture of who you’re becoming vivid enough to pull you forward.

@@ -1,4 +1,4 @@
-# Strings EXCLUDED from the member transcript (app @ f4e7c1a · 2026-08-17)
+# Strings EXCLUDED from the member transcript (app @ 4d15c44 · 2026-08-17)
 # Not member copy: system prompts, multi-line fragments, code artifacts. Review when a real line goes missing.
 
 [lib/agent/onboarding-staged.ts] you’re trying to reclaim. We can always change it later.
@@ -33,7 +33,7 @@
 [lib/agent/onboarding-staged.ts] ${t}.
 [lib/agent/onboarding-staged.ts] “${x.trim()}”
 [lib/agent/onboarding-staged.ts] Now, the good part — and you've already started. Earlier you said you want ${items} back, so
-[lib/agent/onboarding-staged.ts] ${parked.length === 1 ? "that's" : "those are"} on your list. What else? Big or small, there are no wrong answers.
+[lib/agent/onboarding-staged.ts] ${parked.length === 1 ? "that's" : "those are"} on your list. What else? Big or small, both belong.
 [lib/agent/onboarding-staged.ts] “${drop}” and “${keep}” sound like the same thing to me — want me to keep them as one, or are they different?
 [lib/agent/onboarding-staged.ts] “${item}” reads more like the bigger picture of the life you’re reclaiming than a single goal. I’d keep it in your Playbook for that work and leave the goal list for the concrete steps — want me to do that?
 [lib/agent/onboarding-staged.ts] “${item}” sounds like who you are, not one goal on a list. I’d hold onto it as part of your identity and keep the list for the concrete things you’re taking back — want me to do that?
@@ -131,7 +131,7 @@
 [lib/agent/onboarding-staged.ts] ("does that land, or is there more to it?"). NEVER end on a bare reflection or wrap-up coda with no
 [lib/agent/onboarding-staged.ts] question ("let me make sure I have it right"), or the engine appends its own and the member sees a jumbled double-ask.
 [lib/agent/onboarding-staged.ts] CURRENT STAGE: what they want back — the Reclaim List (what the whole program measures against; big or
-[lib/agent/onboarding-staged.ts] small, there are no wrong answers).
+[lib/agent/onboarding-staged.ts] small, both belong).
 [lib/agent/onboarding-staged.ts] DRAW THIS OUT the way you drew out the gap — do NOT rush to collect a list, and do NOT open by proposing or
 [lib/agent/onboarding-staged.ts] reciting a set of items. Invite what they want back gently, and let them lead. When they name one,
 [lib/agent/onboarding-staged.ts] invite the next. One want at a time, with care; never a rote "what else?" march. Aim for a few; never pressure
@@ -570,8 +570,8 @@
 [lib/agent/reclaim.ts] ).join(' ') || '(empty)'}  Coach the refinement one step at a time; when it's settled, call record_refinement with the whole refined list.
 [lib/agent/reclaim.ts] you want your world to get BIGGER, and which area to push on first. I'll walk you through four areas — Physical,
 [lib/agent/reclaim.ts] Self, Social, Outlook — and for each, a few quick reads, 1 to 10: where you are, where you want to be, how much it
-[lib/agent/reclaim.ts] matters, how ready you feel, and how much progress there would lift the rest of your life. No wrong answers — this
-[lib/agent/reclaim.ts] is about finding priorities, not judging yourself.
+[lib/agent/reclaim.ts] matters, how ready you feel, and how much progress there would lift the rest of your life. This is how you find
+[lib/agent/reclaim.ts] which one to push on first.
 [lib/agent/reclaim.ts] ${AUDIT_DOMAIN_LABEL[domainStart]} — ${AUDIT_DOMAIN_INTRO[domainStart]}  ${item.prompt}
 [lib/agent/reclaim.ts] And if you want an easier place to build momentum first, ${lever} is where you're most ready.
 [lib/agent/reclaim.ts] The ratings leaned toward ${AUDIT_DOMAIN_LABEL[s.primary]}; you chose ${AUDIT_DOMAIN_LABEL[chosen]}, and that's what we'll go with.
