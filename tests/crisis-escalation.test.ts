@@ -294,3 +294,49 @@ test('an empty address is reported rather than silently doing nothing', async ()
   const r = await escalateProspectCrisis(d, '   ', { message: 'I want to die' });
   assert.equal(r.recorded, false, 'no address means no row to flag — and that is logged, not swallowed');
 });
+
+// A SUICIDE IN THE FAMILY, ECHOED IN THE FIRST PERSON — the shape that flagged nothing at all.
+//
+// Every explicit pattern is written first-person ("kill myself"), so "my brother killed himself" matched none of
+// them, and "I think about it too" is an ordinary sentence on its own. Both halves invisible; only the
+// conjunction is the signal. A suicide in the immediate family is one of the strongest known risk factors, so
+// this is close to the most direct thing a member can say short of naming a plan.
+test('a family suicide PLUS a first-person echo routes to crisis', () => {
+  for (const t of [
+    'my brother killed himself and I think about it too',
+    'My dad took his own life. Sometimes I feel the same way.',
+    'she committed suicide last year and honestly I have thought about it too',
+    'they died by suicide, and I have been there too',
+  ]) {
+    assert.equal(detectCrisis(t).flagged, true, `must route: ${t}`);
+  }
+});
+
+test('...but BEREAVEMENT ALONE never routes — answering grief with a hotline script is its own harm', () => {
+  // It tells a member the subject is too much for us, on the one subject they most need us to stay with.
+  for (const t of [
+    'my brother killed himself three years ago',
+    'My dad took his own life when I was twelve, and that is the door that opened all this.',
+    'she ended her own life and I still do not understand it',
+  ]) {
+    assert.equal(detectCrisis(t).flagged, false, `must NOT route: ${t}`);
+  }
+});
+
+test('the bare word "suicide" routes on its own — PRE-EXISTING, and deliberately NOT relaxed here', () => {
+  // Worth Jay seeing: a member who writes "she committed suicide" is routed to 988 purely on the word, even in
+  // plain bereavement. That is a standing governance decision older than the conjunction rule above, and
+  // loosening it is not a call to make while adding a detector — I found it by writing the case above and having
+  // it fail. Pinned so the behaviour is explicit rather than rediscovered, and so changing it has to be deliberate.
+  assert.equal(detectCrisis('she committed suicide and I still do not understand it').flagged, true);
+});
+
+test('...and the echo alone never routes, since "I think about it" is an ordinary sentence', () => {
+  for (const t of [
+    'I think about it too, that trip we never took',
+    'I have been there too — the first month back is brutal',
+    'I feel the same way about mornings',
+  ]) {
+    assert.equal(detectCrisis(t).flagged, false, `must NOT route: ${t}`);
+  }
+});

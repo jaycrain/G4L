@@ -107,6 +107,28 @@ const THIRD_PARTY = /\b(my|his|her|their|our)\s+(dad|father|mom|mother|husband|w
  */
 const NEGATED_BEFORE = /\b(didn'?t|did\s+not|don'?t|do\s+not|doesn'?t|never|wasn'?t|was\s+not|weren'?t|not)\s+(\w+\s+){0,2}$/i;
 
+/**
+ * A SUICIDE IN SOMEONE ELSE'S LIFE, ECHOED IN THE FIRST PERSON. The one shape the detector missed entirely.
+ *
+ * "My brother killed himself and I think about it too" flagged NOTHING. Every explicit pattern is written in the
+ * first person ("kill myself"), so a third-person verb matched none of them, and the first-person half is a bare
+ * "I think about it" that means nothing on its own. Each half was invisible; only the conjunction is the signal.
+ *
+ * This is not an edge case. A suicide in the immediate family is one of the strongest known risk factors, and
+ * disclosing it beside "me too" is close to the most direct thing a member can say short of a plan.
+ *
+ * BOTH HALVES ARE REQUIRED, and that is what keeps it safe to add. Bereavement alone must NOT route — a member
+ * telling us how their brother died is grieving, and answering that with a hotline script is its own harm; it
+ * tells them the subject is too much for us. The echo alone must not route either, since "I think about it" is
+ * an ordinary sentence. Only together, in one message.
+ */
+const THIRD_PARTY_SUICIDE =
+  /\b(he|she|they|my\s+\w+|his\s+\w+|her\s+\w+)\s+(killed\s+(him|her|them)self|took\s+(his|her|their)\s+own\s+life|committed\s+suicide|died\s+by\s+suicide|ended\s+(his|her|their)\s+own\s+life)\b/i;
+
+/** The first-person echo: "and I think about it too", "sometimes I feel the same", "I've been there too". */
+const SELF_ECHO =
+  /\bi(\s*'?ve|\s+have|\s+am|\s*'?m)?\s+(think|thought|thinking|feel|felt|been|wonder|wondered|consider(ed)?)\b[^.!?]{0,40}\b(too|as\s+well|the\s+same|same\s+way|about\s+(it|that|doing\s+that))\b/i;
+
 export type CrisisCheck = { flagged: boolean; matched: string[] };
 
 /** Scan member text for distress signals. If flagged, the runtime shifts to the 988 protocol. */
@@ -126,6 +148,14 @@ export function detectCrisis(text: string): CrisisCheck {
     }
     matched.push(m[0]);
   }
+
+  // The conjunction case, checked separately because NEITHER half is a crisis pattern on its own — a loop over
+  // single regexes structurally cannot see it. Deliberately not folded into CRISIS_PATTERNS for that reason.
+  if (!matched.length) {
+    const tps = text.match(THIRD_PARTY_SUICIDE);
+    if (tps && SELF_ECHO.test(text)) matched.push(tps[0]);
+  }
+
   return { flagged: matched.length > 0, matched };
 }
 
