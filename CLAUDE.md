@@ -372,3 +372,17 @@ file creates a client↔client cycle webpack-dev resolves to `undefined` — the
 
 Ask. This product holds vulnerable people's stories. A wrong guess on privacy, the
 review gate, or the data contracts is expensive. Flag it, don't infer it.
+
+## Local dev — two processes that must never run at once
+
+`next dev` and `npm run build` share `.next`, and PGlite's `.pglite` is single-writer. Running the second thing
+while the first holds the directory does not error usefully — it leaves a corrupted state whose symptoms point
+somewhere else entirely.
+
+- **Never `npm run build` while the dev server is running.** The production build wipes the dev manifests out from
+  under it and every page 500s with `ENOENT ... app-build-manifest.json`. Recovery: stop the server, `rm -rf .next`,
+  restart. (Done twice on 2026-08-17 — the second time while diagnosing an unrelated deploy problem, which is
+  exactly when a self-inflicted breakage costs the most.)
+- **Never run a script against `.pglite` while the dev server is up** — same shape, worse consequence, because the
+  data dir is what gets corrupted. See [[never-script-the-dev-db]].
+- To typecheck, use `npx tsc --noEmit`. It touches neither.
