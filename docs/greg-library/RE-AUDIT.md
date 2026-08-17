@@ -266,29 +266,32 @@ today it promises the first and delivers the second.
    twelve assets store into **ten different shapes behind ten different readers**, so each link had to be
    hand-written. That is why we built one and stopped, and why the fix is one uniform question per asset.
 
-   **REMAINING — and the count in this doc was wrong twice, so read the caveat.** I wrote "ten links" without
-   counting; the table has 15, of which 7 are built (W1→W3 and W2→W3 before today, plus today's five). That leaves
-   **eight**: R1→R2 · R1→R3 · R2→R3 · R3→W2 · W1→W2 · C1→C2 · C1→C3 · C3→the Loop.
+   **ALL TWELVE ENGINEERING MEMOS READ 2026-08-17 — and the model in this doc was wrong.** Not "15 links, ten
+   one-to-one plus two fan-ins". The carry-forward is **CUMULATIVE**: each asset's `load prior module context`
+   line pulls essentially everything before it, growing through the program (R2 loads one asset · W3 loads five ·
+   B3 loads six · C1 loads the summaries of all three prior phases). Every declaration is now transcribed
+   verbatim above `UPSTREAM` in `lib/curriculum/retention.ts`; the registry covers all ten resolvable assets.
 
-   **BUT EIGHT IS A FLOOR, NOT A COUNT.** The table closes over the twelve *Guidance* memos. The *Engineering*
-   memo for W3 is wider, and PER-ASSET-NOTES records it: "**W3 loads FIVE upstream assets** — R1 IDQ · R2 Doors ·
-   R3 Legacy Letter · W1 · W2. That is wider than B3's three and C3's two. **The web is denser than the Guidance
-   memos implied.**" So other assets likely declare more upstreams than this table shows.
+   **HOW THE ERROR HAPPENED, because it is the reusable part.** I built from a table I had synthesized off the
+   *Guidance* memos. The *Engineering* memos hold the actual declarations, and my own PER-ASSET-NOTES had already
+   recorded the discrepancy — "W3 loads FIVE upstream assets… the web is denser than the Guidance memos implied"
+   — which I then did not carry into the table I built from. **When the spec exists, read the spec.** A derived
+   table is a lossy copy that looks authoritative.
 
-   **PROVENANCE.** What shipped is backed by VERBATIM Greg text (B3's Step 6 names B1/B2/W3 in three quoted
-   questions; C3's step 4 is the second instance). The wider table is **my synthesis**, and the claim "every one
-   of the twelve memos specifies carry-forward" is a summary sentence — `prior_module_context` appears five times
-   in the notes, not twelve. All of it sits in the DERIVATIVE tier (Guidance + Engineering memos), not SOURCE
-   (Science Check + Gated Assets V4).
+   **TWO DISTINCTIONS THE MEMOS FORCE.** (1) The `load` line is the CONTEXT the Companion gets (wide); the
+   authored "Connect to prior learning" STEP is what the member is ASKED (narrow — B3's names only B1/B2/W3).
+   The registry feeds context, so it follows the load line. (2) Read the whole document, not the one line: C3's
+   load line omits B3, but the memo requires it elsewhere ("B3 monitoring experience available as a parallel
+   reference"), and following the line alone would have dropped the comparison C3's closing is built on.
 
-   **DO NOT BUILD THE REMAINING LINKS FROM THIS TABLE.** Re-open the relevant Engineering Memos and read their
-   actual `prior_module_context` lines first — building from a lossy summary of the documents that hold the spec
-   is how a mechanism ends up faithful to my notes instead of to Greg.
+   **THE ONE OPEN QUESTION — `identity`.** Four memos load it (B1, B3, C2, C3) and none defines it. It could mean
+   the IDQ scores, the reclaimed identity noun, or the onboarding self-description. R1 therefore has no reader
+   and no asset claims it, because guessing would put a wrong claim about a member in front of them. **Needs
+   Greg.**
 
-   Three of the eight (R1→R2, R2→R3, R1→R3) may need little or nothing: Reconnect is ONE arc of seven beats, so
-   those are within a single conversation the model already holds — the same reason W1→W3 was cheap (it rides
-   `state.collected`, see `w3Context()`). Inspect before building. C3→the Loop is blocked on the Loop rule, which
-   is an open Greg+Jay question, not engineering.
+   Still not wired into Sessions beyond B3 and C3: the other eight `UPSTREAM` entries are declared and their
+   readers are tested, but only B3 and C3 currently pass a carry-forward block into their turn. C3 -> the Loop
+   remains blocked on the Loop rule, an open Greg+Jay question, not engineering.
 5. ~~**The Teaching Layer's shown-once rule for Reconnect**~~ **SHIPPED** — keyed to the ASSET and rendered at its
    last beat, so three cards across seven beats and no member meets one twice (`tests/teaching.test.ts`).
 
