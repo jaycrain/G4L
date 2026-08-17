@@ -116,6 +116,64 @@ async function main(): Promise<void> {
   await page.screenshot({ path: 'docs/screenshots/teaching-frame-w1.png', fullPage: false });
   ok('screenshot → docs/screenshots/teaching-frame-w1.png');
 
+  // ---- 5 · DRIVE THE SESSION TO ITS CLOSE, THEN CHECK THE UNDERSTAND BEAT ---------------------------------------
+  // A real conversation, not a seeded state. The Understand card is the REQUIRED acknowledgment that gates the
+  // hand-home, so the only verification worth having is the one that reaches it the way a member does.
+  console.log('  … driving W1 to its close (real turns)');
+  let turns = 0;
+  const REPLIES = [
+    "That I'll deal with it once work calms down.",
+    "I tell myself I'm too old to start over.",
+    "That there's no time in the day for me.",
+    "I've tried before and it didn't stick.",
+    "That it's too late to change now.",
+  ];
+  while (turns < 30) {
+    if (await page.locator('.teach-understand').count()) break;
+    const box = page.locator('.chat-input textarea');
+    if (await box.count()) {
+      await box.fill(REPLIES[turns % REPLIES.length]!);
+      await page.locator('.chat-input button[type="submit"]').click();
+    } else if (await page.locator('.chip').count()) {
+      await page.locator('.chip').first().click(); // an administered turn — take any option
+    } else {
+      await page.waitForTimeout(1500);
+    }
+    await page.waitForFunction(() => !document.querySelector('.typing'), null, { timeout: 90000 }).catch(() => {});
+    await page.waitForTimeout(300);
+    turns += 1;
+  }
+
+  const understand = page.locator('.teach-understand');
+  if (!(await understand.count())) { bad(`the Understand card never appeared after ${turns} turns`); await browser.close(); return finish(); }
+  ok(`the Understand card appeared at the close (${turns} turns)`);
+
+  const uInChat = await understand.evaluate((el) => !!el.closest('.chat'));
+  if (uInChat) ok('the Understand card is inside .chat — it scrolls with the thread');
+  else bad('the Understand card is not inside .chat');
+
+  const pointCount = await page.locator('.teach-understand .teach-point').count();
+  if (pointCount >= 4) ok(`all points shown inline — ${pointCount}, no disclosure`);
+  else bad(`only ${pointCount} points rendered`);
+
+  const anyDisclosure = await page.locator('.teach-understand details, .teach-understand [aria-expanded]').count();
+  if (anyDisclosure === 0) ok('nothing is hidden behind an expander (Rev 1: show all)');
+  else bad('the Understand card has a disclosure control — Rev 1 removed it');
+
+  // THE GATE: Continue must not be reachable until the member acknowledges.
+  const continueBefore = await page.locator('.chat-continue button').count();
+  if (continueBefore === 0) ok('Continue → is gated until the science is acknowledged');
+  else bad('Continue → is available BEFORE the acknowledgment — the beat is skippable');
+
+  await page.screenshot({ path: 'docs/screenshots/teaching-understand-w1.png', fullPage: false });
+  ok('screenshot → docs/screenshots/teaching-understand-w1.png');
+
+  await page.locator('.teach-understand .teach-cta').click();
+  await page.waitForTimeout(400);
+  const continueAfter = await page.locator('.chat-continue button').count();
+  if (continueAfter === 1) ok('"Got it →" releases the hand-home');
+  else bad('after acknowledging, Continue → still did not appear — the member is stranded');
+
   await browser.close();
   finish();
 }
