@@ -77,3 +77,32 @@ SMOKE_EMAIL='demo-tom@grintaforlife.test' SMOKE_PASSWORD='<the secret>' \
 - Keep **demo and production as separate Supabase projects** so fake data never mixes with real.
 - `next build` is verified to pass locally, so Vercel builds the same way.
 - Secrets live only in Vercel's env settings and your local `.env.local` — never in the repo.
+
+## When a push doesn't deploy
+
+`git push` succeeding is NOT evidence that anything built. On 2026-08-17, two of three pushes to `main` created
+**no deployment at all** — no build, no queue, nothing — while prod quietly kept serving the previous release.
+
+**Check the version stamp after every push, not the push output:**
+
+```bash
+curl -s "https://g4l-ten.vercel.app/?cb=$(date +%s)" | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' | head -1
+```
+
+It should match `APP_VERSION` in `lib/version.ts`. If it doesn't, nothing shipped — regardless of what the push
+said. `vercel ls` confirms it: if the newest deployment is hours old, the push never triggered one.
+
+**Why it happens, and what to do.** Vercel integrates through a GitHub *App*, not a repo webhook (`gh api
+repos/.../hooks` returning `[]` is normal, not a fault). So a GitHub incident degrades push-event delivery and
+builds are simply never created. On 8/17 GitHub reported ~20% error rates on web and API traffic, which matched
+the observed intermittency precisely — an *empty* commit got through between two real ones that didn't.
+
+- **Remedy: push an empty commit.** `git commit --allow-empty -m "Nudge ..."` then push. Same sanctioned path, and
+  it is what the v3.0 flip used.
+- **NEVER `vercel deploy`** to force it. From a worktree it builds stale source, and it rolled prod back once.
+- Don't go reconfiguring the Vercel git connection on this evidence alone. If an empty commit builds, the
+  connection is fine and the problem is upstream delivery.
+
+**The trap this creates.** The failure is silent and looks like success, so you smoke-test the OLD build and
+conclude the new one is healthy. That happened on 8/17: a full smoke passed against the previous version while the
+release under test had never deployed. Verify the stamp first, then smoke.
