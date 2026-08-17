@@ -139,7 +139,7 @@ export default function SessionRunner({
       doors: { head: 'Added to Your Doors', line: <>What opened the gap is on the record now — your Companion will work from it.</> },
       reclaim: { head: 'On your Reclaim List', line: <>It’s on your dashboard now, ready to track and work toward.</> },
       tracker: { head: 'Ready to track', line: <>Turn it into a number you watch — clip in and we’ll follow it together.</> },
-      playbook: { head: 'Kept in your Playbook', line: <>Your Companion filed what surfaced — it’s yours to keep or cut.</> },
+      playbook: { head: 'Kept in your Playbook', line: <>Your Companion filed what surfaced — keep it or cut it.</> },
     };
     const a = ARTIFACT[result.closeKind] ?? ARTIFACT.playbook!;
     return (
@@ -231,7 +231,7 @@ export default function SessionRunner({
       <div className={`sess-close${atClose && allAnswered ? '' : ' locked'}`}>
         <p className="sess-ctag">⬢ Closes the Session</p>
         <p className="sess-ct">{session.earns ? 'Close it out' : 'Close the Session'}</p>
-        <p className="muted">When you finish the steps, your Companion reflects the Session back and files it in your Playbook{session.earns ? ', and you earn a badge' : ''}. One close — no scoring you, just marking what you did.</p>
+        <p className="muted">When you finish the steps, your Companion reflects the Session back and files it in your Playbook{session.earns ? ', and you earn a badge' : ''}. One close — it marks what you did.</p>
         {atClose && allAnswered ? (
           <button type="button" className="sess-next" onClick={close} disabled={pending}>{pending ? '…' : 'Close it →'}</button>
         ) : (

@@ -110,7 +110,7 @@ const BEATS: Beat[] = [
   // Positioning here is DRAFT, not canon (Jay, 2026-08-13): #134 is still open, so the wording may move.
   {
     kick: 'Part 1 of 4 · Getting ready',
-    head: ['You’ll build a Playbook.', 'It’s yours to keep.'],
+    head: ['You’ll build a Playbook.', 'It stays yours.'],
     body: [
       'Everything you do here goes into it — the moves that actually work for you, and what you learn about yourself along the way. Your ',
       { b: 'Playbook' },

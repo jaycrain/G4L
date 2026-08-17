@@ -218,7 +218,7 @@ export default function WorkspaceSession({
           Firing it on completion put it on top of the Companion's close before that close could be read; the wrap
           earns the receipt, so it comes first. From here "Continue →" leaves for the dashboard. */}
       {endCard && !review && filled.length > 0 && (
-        <div className="ws-endcard-scrim" role="dialog" aria-modal="true" aria-label="What you built">
+        <div className="ws-endcard-scrim" role="dialog" aria-modal="true" aria-label="What you saw">
           <div className="ws-endcard">
             <div className="ws-endcard-eyebrow">Session complete</div>
             <h2 className="ws-endcard-title">Here’s what you saw</h2>

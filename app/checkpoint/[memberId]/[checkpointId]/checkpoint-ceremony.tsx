@@ -92,7 +92,7 @@ export default function CheckpointCeremony({
           <>
             <div className="ckpt-bubble">
               <div className="ckpt-agent">Your G4L companion</div>
-              Before we close the cycle, let’s walk your Reclaim List — the things you set out to win back. For each one, where did it land? What you reclaimed is yours to keep; what’s still moving carries into the next lap.
+              Before we close the cycle, let’s walk your Reclaim List — the things you set out to win back. For each one, where did it land? What you reclaimed, you keep; what’s still moving carries into the next lap.
             </div>
             <div className="ckpt-reconcile">
               {reclaimItems.map((i) => (

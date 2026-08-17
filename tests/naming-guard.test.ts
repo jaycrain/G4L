@@ -16,6 +16,18 @@ import { join } from 'node:path';
 const BANNED: { re: RegExp; why: string; codeOnly?: boolean }[] = [
   { re: /Fade Doors?/i, why: 'use "the Doors" — the "Fade Door(s)" label is retired (member-facing AND internal)' },
   { re: /\bBKQ\b/, why: 'the Book Quiz (RCN-BKQ) is retired — no beat/reflection/id should reference it' },
+  // DONNA'S VOICE PASS, 2026-08-17 — phrases she found reading real Companion output, each an AI tell rather than
+  // our voice. Guarded because four of the five had already spread to multiple files by the time they were named,
+  // including the welcome pact and (that same day) a brand-new Session opener. codeOnly, so a comment explaining
+  // the removal does not trip the guard the way it did for the retired Doors label.
+  //
+  // NOT guarded here, deliberately: "quiet", "holding", "lands" and "honest" are ordinary English with legitimate
+  // uses ("quiet the noise" is fine, and honesty with themselves is what the program is FOR). A regex cannot tell
+  // the tell from the good use, and a guard that cries wolf gets ignored — those live in the prompt only.
+  { re: /yours to (keep|define|claim|hold)/i, why: '"it\'s yours to ___" is retired — say the thing plainly', codeOnly: true },
+  { re: /earned,? not given/i, why: 'a slogan, and slogans are the opposite of talking to someone', codeOnly: true },
+  { re: /\bno scor(es|ing)\b/i, why: 'the reassurance tic in another coat — never tell them what it is NOT', codeOnly: true },
+  { re: /holding space/i, why: 'an AI tell — say what you are actually doing', codeOnly: true },
   // BRAND CAPITALS (Jay, 2026-08-11: "stay consistent with capitalizing branded terms"). "the Doors" is a named
   // thing in the lexicon, like the Fade and the Reclaim List — lowercase turns it back into furniture. It had
   // drifted in four places at once, including a line on the Program page that capitalised Fade and not Doors in
@@ -106,7 +118,14 @@ test('retired terms (Fade Door / BKQ) and hardcoded door counts never reappear i
     for (const file of walk(root)) {
       const lines = readFileSync(file, 'utf8').split('\n');
       lines.forEach((line, i) => {
-        const isComment = /^\s*(\/\/|\*|\/\*|\{\/\*|--)/.test(line);
+        // A line that STATES a rule has to quote the phrase it bans, so it reads as an offender to a plain-text
+        // scan. Our rule bullets start with '·' — treat those as commentary, the same as a code comment. Without
+        // this the voice rules below cannot be written down at all, which is how the Greg-quote version of this
+        // guard fought me earlier the same day.
+        // The ADMIN console is not member voice — it is Jay reading his own operator surface, where "counts only,
+        // no scores" is the plainest way to say what a column holds. The voice rules govern what a MEMBER reads.
+        const isOperatorSurface = file.includes('/admin/');
+        const isComment = isOperatorSurface || /^\s*(\/\/|\*|\/\*|\{\/\*|--|·)/.test(line);
         for (const { re, why, codeOnly } of BANNED) {
           if (codeOnly && isComment) continue;
           if (re.test(line)) offenders.push(`${file}:${i + 1} — ${re} (${why})\n    ${line.trim().slice(0, 120)}`);

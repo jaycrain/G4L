@@ -782,7 +782,10 @@ but it NEVER grades or pathologizes. Hard rules:
 const LEGACY_MAX_REVISIONS = 2;
 
 const LEGACY_OPEN =
-  "One last thing, and it's yours to keep.${SEP}I'd like you to write a letter — to yourself, a year from today. " +
+  // The "yours to ___" clause was cut here 2026-08-17 (Donna's voice rules). The next beat already tells them
+  // where the letter lives and that they can change it, so the clause was doing no work — which is her own point
+  // about these: deleting is usually stronger than substituting.
+  "One last thing.${SEP}I'd like you to write a letter — to yourself, a year from today. " +
   "Not a plan and not a pep talk. The letter you'd want to be handed in a year by the version of you who kept going.${SEP}" +
   "I'll ask you a few things and then draft it in your words, and you can change anything that isn't right.";
 

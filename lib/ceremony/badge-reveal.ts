@@ -25,4 +25,4 @@ export function earnedBadgeReveal(phase: keyof typeof CEREMONY_BADGE): BadgeReve
 }
 
 // The spoken line that introduces the reveal — kept generic so all four ceremonies share it.
-export const BADGE_BEAT_COPY = 'And this one is yours now — earned, not given. It marks who you’re becoming.';
+export const BADGE_BEAT_COPY = 'And this one is yours now. It marks who you’re becoming.';
