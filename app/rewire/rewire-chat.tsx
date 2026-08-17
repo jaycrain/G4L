@@ -8,6 +8,9 @@ import RewireCeremony from './rewire-ceremony.tsx';
 import ScaleChips from '../components/scale-chips.tsx';
 import { useChatAutoscroll } from '../components/use-chat-autoscroll.ts';
 import { notifyArtifactCommitted, notifySessionComplete } from '../components/artifact-refresh.ts';
+import { TeachingFrame, TeachingUnderstand } from '../workspace/teaching-cards.tsx';
+import { teachingFor } from '../../lib/content/teaching.ts';
+import type { SessionKey } from '../../lib/workspace/session-key.ts';
 import type { RewireCeremonyData } from '../../lib/ceremony/rewire-ceremony-beats.ts';
 import type { ConvMessage, ConvState, Expectation } from '../../lib/agent/onboarding.ts';
 import { BEAT_SEP } from '../../lib/agent/onboarding.ts';
@@ -34,6 +37,15 @@ export default function RewireChat({ memberId, session = 'w1' }: { memberId: str
   const [expects, setExpects] = useState<Expectation | null>(null); // W-24: administered turn (§2e checkpoint) → render the scale chips
   const [ceremony, setCeremony] = useState<RewireCeremonyData | null>(null); // R4: set when the checkpoint reaches 'ceremony'
   const [error, setError] = useState<string | null>(null);
+  // The teaching beats. `taught` gates the hand-home: the member acknowledges the science before they can leave,
+  // which is the whole point of promoting it out of an opt-in widget. It is an acknowledgment, never a test — there
+  // is nothing here to get wrong, because a step you can fail grades the member (every one of Greg's twelve memos
+  // forbids that). Checkpoint sessions teach nothing, so the card returns null and this must not strand them.
+  const sessionKey: SessionKey = session === 'checkpoint' ? 'rewire-checkpoint' : session;
+  // NOTE the initial value: a session with nothing to teach starts ALREADY taught. Defaulting to false would gate
+  // the hand-home behind a card that never renders — the checkpoint has no Understand beat, so onAcknowledge would
+  // never fire and the member would sit at a finished session with no way out. A gate whose key is not issued.
+  const [taught, setTaught] = useState(() => !teachingFor(sessionKey).understand);
   const started = useRef(false);
   const chatRef = useChatAutoscroll([messages.length, pending, expects, done]);
 
@@ -107,6 +119,10 @@ export default function RewireChat({ memberId, session = 'w1' }: { memberId: str
   return (
     <div className="reconnect-chat">
       <div className="chat" ref={chatRef}>
+        {/* ① THE FRAME — inside the thread, never above it. `.chat` is the scroller (globals.css:2090), so this is
+            what lets the full summary show and then scroll away. Hoisting it to the workspace body would pin it and
+            re-create the squeeze Jennifer hit on 7/27. See teaching-cards.tsx. */}
+        <TeachingFrame sessionKey={sessionKey} onClipIn={() => chatRef.current?.scrollTo({ top: chatRef.current.scrollHeight, behavior: 'smooth' })} />
         {messages.map((m, i) => (
           <div key={i} className={`bubble ${m.role}`}>
             {m.role === 'agent' ? <RichText text={m.text} /> : m.text}
@@ -115,6 +131,10 @@ export default function RewireChat({ memberId, session = 'w1' }: { memberId: str
         {pending && <div className="typing">Thinking…</div>}
         {/* chips scroll WITH the thread (Jay's walk: not pinned) — they answer the question above, autosend. */}
         {!done && expects?.kind === 'scale' && <ScaleChips expects={expects} disabled={pending || !state} onPick={(n) => void submit(String(n))} />}
+        {/* ③ UNDERSTAND — after the Companion's close, before the member can leave. The Companion hands off to it
+            ("before we close, here's why what you just did holds up"); the card carries the science so no chat
+            bubble has to recite it, which is what keeps the Companion inside Greg's evocative posture. */}
+        {done && <TeachingUnderstand sessionKey={sessionKey} onAcknowledge={() => setTaught(true)} />}
       </div>
       {error && <p className="error">{error}</p>}
       {!done && (
@@ -144,7 +164,7 @@ export default function RewireChat({ memberId, session = 'w1' }: { memberId: str
         </>
       )}
       {/* W-21 — the hand-home CTA: the session is saved; return the member to their companion-home (next step lit). */}
-      {done && (
+      {done && taught && (
         <div className="chat-continue">
           <button type="button" onClick={() => notifySessionComplete()}>
             Continue →

@@ -6,12 +6,10 @@ import { readArtifactAction } from './actions.ts';
 import { useRouter } from 'next/navigation';
 import { ARTIFACT_REFRESH_EVENT, SESSION_COMPLETE_EVENT } from '../components/artifact-refresh.ts';
 import { chatDispatch, type SessionKey } from '../../lib/workspace/session-key.ts';
-import { sessionSummary, sessionAsset } from '../../lib/content/summaries.ts';
-import { exploreFor, exploreForReconnectStage, reconnectStageTitle } from '../../lib/content/explore.ts';
+import { reconnectStageTitle } from '../../lib/content/explore.ts';
 import type { Artifact } from '../../lib/workspace/artifact.ts';
 import type { RingPhaseState } from '../../lib/workspace/ring-state.ts';
 import RedesignChrome from '../dashboard/redesign-chrome.tsx';
-import ExplorePanel from './explore-panel.tsx';
 import ReconnectChat from '../reconnect/reconnect-chat.tsx';
 import RewireChat from '../rewire/rewire-chat.tsx';
 import RebuildChat from '../rebuild/rebuild-chat.tsx';
@@ -68,34 +66,16 @@ export default function WorkspaceSession({
   topbar?: ReactNode; // the shared RedesignTopbar, rendered by the server page (async server component)
 }) {
   const [artifact, setArtifact] = useState<Artifact>(initial);
-  const summary = sessionSummary(sessionKey);
-  // Tier 3 — the evidence base, behind its own tap. Only some assets have one; the link doesn't render without it.
-  const asset = sessionAsset(sessionKey);
   // RECONNECT RESOLVES ITS SCIENCE CHECK BY BEAT. Greg wrote three (r1/r2/r3) for what the member experiences as
   // ONE session, so keyed by session id it found nothing and the button silently never drew — the content was
-  // there the whole time. The nine other sessions are 1:1 with an asset and resolve normally.
+  // there the whole time. The nine other sessions are 1:1 with an asset and resolve normally. Still tracked here
+  // because the HEADER TITLE follows the beat (reconnectStageTitle); the teaching cards resolve their own content.
   const [reconnectStage, setReconnectStage] = useState<string | null>(null);
   const isReconnect = chatDispatch(sessionKey).arc === 'reconnect';
-  const explore = isReconnect ? exploreForReconnectStage(reconnectStage) : asset ? exploreFor(asset) : undefined;
-  const [exploreOpen, setExploreOpen] = useState(false);
-  // "Why this matters" starts COLLAPSED at every width now (Jay 7/28): the conversation is the point, so it gets full
-  // height immediately; the pinned "Why this matters ▶" pill (the header never scrolls) invites a tap to read the
-  // framing, which the Companion's opening beat echoes anyway. (Was open-on-landing, which squeezed the chat — worst on
-  // a phone, where it stranded the member on a question-less tail; Jennifer's walk, 2026-07-27.)
-  const [whyOpen, setWhyOpen] = useState(false);
   const bodyRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (review) return;
-    const el = bodyRef.current;
-    if (!el) return;
-    const collapse = () => setWhyOpen(false); // no-op re-render when already closed (React bails on same value)
-    el.addEventListener('wheel', collapse, { passive: true });
-    el.addEventListener('touchmove', collapse, { passive: true });
-    return () => {
-      el.removeEventListener('wheel', collapse);
-      el.removeEventListener('touchmove', collapse);
-    };
-  }, [review]);
+  // (Removed 2026-08-16: a wheel/touchmove listener that collapsed the framing panel on first scroll. It existed
+  //  because the panel was PINNED in this header and had to get out of the conversation's way. The panel now lives
+  //  in the thread and scrolls away on its own, so the listener had nothing left to close.)
   // The "here's what you built" card — the RECEIPT for the session, raised when the member continues from the
   // finished conversation, not the instant the arc completes.
   const [endCard, setEndCard] = useState(false);
@@ -190,26 +170,12 @@ export default function WorkspaceSession({
             </>
           )}
 
-          {/* The two framing tiers, on ONE row so depth costs no height.
-              · "Why this matters" (~70 words) expands INLINE and auto-collapses on scroll.
-              · "Explore the Science" (~300) opens an OVERLAY — see explore-panel.tsx.
-              Peers rather than nested: the Why panel closes itself the moment the member scrolls, so hanging the
-              science link inside it would put it behind a door that shuts. The glyphs say which one moves the page. */}
-          {summary && !review && (
-            <div className={`ws-why${whyOpen ? ' open' : ''}`}>
-              <div className="ws-why-row">
-                <button type="button" className="ws-why-toggle" onClick={() => setWhyOpen((v) => !v)} aria-expanded={whyOpen}>
-                  Why this matters <span className={`ws-why-caret ws-head-glyph${whyOpen ? ' is-open' : ''}`} aria-hidden="true">▾</span>
-                </button>
-                {explore && (
-                  <button type="button" className="ws-explore-open" onClick={() => setExploreOpen(true)} aria-haspopup="dialog">
-                    Explore the Science <span className="ws-head-glyph" aria-hidden="true">↗</span>
-                  </button>
-                )}
-              </div>
-              {whyOpen && <p className="ws-why-full">{summary.full}</p>}
-            </div>
-          )}
+          {/* THE FRAMING TIERS MOVED OUT OF THIS HEADER (2026-08-16). They used to live here as a "Why this matters"
+              inline expander plus an "Explore the Science" overlay link — optional content the member triggered from
+              a widget, and skipped, while the Checkpoints downstream read as though they hadn't.
+              They are now REQUIRED teaching beats rendered inside the thread: see app/workspace/teaching-cards.tsx.
+              Leaving the row here would have printed "Why this matters" twice on one screen — the walk's first
+              screenshot caught exactly that. The header keeps only wayfinding, which is what a fixed header is for. */}
 
           {/* KEPT CHIPS REMOVED (Jay, 2026-08-11: "the Kept row doesn't do anything for the member either, does
               it? Your doors, does."). He is right, and the distinction is worth keeping: "Your doors: The Career
@@ -277,11 +243,6 @@ export default function WorkspaceSession({
             </button>
           </div>
         </div>
-      )}
-
-      {/* Tier 3. Mounted at the root, not inside the header, so opening it can never change the header's height. */}
-      {exploreOpen && explore && (
-        <ExplorePanel explore={explore} title={wayfinding.positionLabel} onClose={() => setExploreOpen(false)} />
       )}
     </>
   );

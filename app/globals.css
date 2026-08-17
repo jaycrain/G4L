@@ -3599,3 +3599,59 @@ body:has(.fc-dark) .brand-wordmark,
 .pros-transcript p { margin: 0 0 6px; font-size: 13px; }
 .pros-said { color: var(--ink, #2A2A2A); }
 .pros-agent { color: var(--muted-grey); }
+
+/* ── THE TEACHING BEATS — the authored cards inside a Session ──────────────────────────────────────────────────
+   See app/workspace/teaching-cards.tsx for WHY these exist and why they render inside .chat rather than above it.
+
+   THE DESIGN PROBLEM. Cowork's mockups draw the Session as a dark navy panel with cream cards, and that light-on-
+   dark contrast is what makes "the app is teaching" legible against "the Companion is talking". Our workspace is
+   LIGHT — white page, .bubble.agent on --grey, .bubble.member on --navy, both capped at 85% width. So the intent
+   carries over and the device does not (their file is IA only — Jay, 2026-08-16).
+
+   WHAT SEPARATES A TEACHING CARD FROM A BUBBLE HERE, in order of how much work each does:
+     · FULL-BLEED WIDTH — bubbles stop at 85%; spanning the column breaks the chat rhythm on its own.
+     · A TEAL LEFT RULE — already the established teaching mark on this surface (.ws-why-full), so this reads as
+       the same voice the framing panel used, not a new one.
+     · SQUARE 14px CORNERS — matching .ws-wayfind. Bubbles carry an asymmetric 4px corner that reads as SPEECH;
+       giving a teaching card that corner would make the app look like it was talking. Never add one.
+     · AN UPPERCASE EYEBROW — names the card as authored material before a word of it is read.
+
+   COLOUR. --teal-text (#2a6d6e), not --teal: the ground is white and brand teal is 3.59:1 there, under the 4.5:1
+   bar. The -text variants exist for exactly this and the trap is guessing the ground (see the contrast notes at
+   the top of this file). Nothing here is off-palette. */
+.teach-card {
+  background: var(--white);
+  border: 1px solid var(--panel-line);
+  border-left: 4px solid var(--teal);
+  border-radius: 0 14px 14px 0;
+  padding: 15px 18px;
+  margin: 14px 0;
+  align-self: stretch; /* the flex column would otherwise shrink it toward the bubbles' width */
+}
+.teach-eyebrow {
+  margin: 0;
+  color: var(--teal-text);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.teach-body { margin: 7px 0 0; font-size: 15px; line-height: 1.55; color: var(--charcoal); }
+/* Reset the default h3 margin inside a card — the dashboard standard, same reason (docs/dashboard-ui-standards.md). */
+.teach-lede { margin: 6px 0 10px; font-size: 16.5px; line-height: 1.3; color: var(--navy); font-weight: 600; }
+.teach-points { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; }
+.teach-point { font-size: 14px; line-height: 1.5; color: var(--charcoal); }
+.teach-point-head { color: var(--navy); font-weight: 600; }
+.teach-foot {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--panel-line);
+}
+/* The frame has no note beside its button, so the foot has nothing to space against — keep the CTA left. */
+.teach-frame .teach-foot { justify-content: flex-start; border-top: 0; padding-top: 4px; }
+.teach-note { color: var(--navy); opacity: 0.82; font-size: 12.5px; }
+.teach-cta {
+  margin: 0; padding: 9px 20px; border: 1px solid var(--teal-text); border-radius: 8px;
+  background: var(--teal-text); color: var(--white);
+  font-family: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer; white-space: nowrap;
+}
+.teach-cta:hover { background: #245c5d; border-color: #245c5d; }
