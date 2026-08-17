@@ -21,6 +21,7 @@ import { loadConversation, appendMessages } from '../../lib/agent/conversation.t
 import { recentConsumedTitles } from '../../lib/bites/store.ts';
 import { getReclaimItems } from '../../lib/beats/store.ts';
 import { addReclaimItemForMember, addDoorForMember } from '../../lib/member/refine.ts';
+import { noteDoorProfile, doorProfile, describeDoorProfile } from '../../lib/reconnect/door-profile.ts';
 import { disconnectionContext } from '../../lib/agent/disconnection.ts';
 import { loadRaisedNotices, markNoticeRaised } from '../../lib/agent/disconnection-store.ts';
 import { markReclaimReclaimedByText, unmarkReclaimReclaimedByText, refineReclaimItemByText, removeReclaimItemByText, reorderReclaimList } from '../../lib/beats/store.ts';
@@ -173,7 +174,7 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
   // "best-effort" but was UNGUARDED — and it runs a memory-fold (API/query) BEFORE everything else, so if it threw it
   // sank the entire context to minimal (this is why the companion still couldn't see momentum after the first pass).
   await maybeFoldMemory(db, memberId).catch((e) => console.warn('maybeFoldMemory failed (non-fatal):', (e as Error).message));
-  const [grinta, grintaReading, whyReading, skillsReading, pilotPlan, pilotTally, biggerWorld, qdProfile, qdRecent, practiceGrids, consumedBites, profRows, idqRows, reclaimItems, beatRows, playbook, measures, linkedMeasureRows, facets, closedIds, lastClosedRows, forecast, experience, passport, outcomeCards] = await Promise.all([
+  const [grinta, grintaReading, whyReading, skillsReading, pilotPlan, pilotTally, biggerWorld, qdProfile, qdRecent, practiceGrids, doorProfileRows, consumedBites, profRows, idqRows, reclaimItems, beatRows, playbook, measures, linkedMeasureRows, facets, closedIds, lastClosedRows, forecast, experience, passport, outcomeCards] = await Promise.all([
     getGrinta(db, memberId, dash.identityNoun).catch(() => ({ score: null, direction: null }) as unknown as Awaited<ReturnType<typeof getGrinta>>),
     // Rebuild/Reclaim REGISTERS — all SUPPLEMENTARY context ("the agent knows X"), each null-safe downstream. Guard
     // EVERY one with .catch: a single missing/drifted register table (prod migrations don't auto-apply) must NEVER
@@ -188,6 +189,7 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
     activeQualityDayProfile(db, memberId).catch(() => null), // Reclaim C3 — the Quality-Day profile
     recentQualityDays(db, memberId).catch(() => []), // Reclaim C3 — recent Quality-Day logs
     weekGrids(db, memberId).catch(() => []), // EVERY open week — a member can be running four at once
+    doorProfile(db, memberId).catch(() => []), // Reconnect R2 — what they've said ABOUT their Doors (weight + still-open)
 
     // These were UNGUARDED — and a single throw here collapsed the WHOLE context to `minimal` (Jay's walk: the
     // companion said it could only see Reclaim List / ID Score / Doors — the minimal fields — because a supplementary
@@ -361,6 +363,7 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
     nextStep,
     dailyBeat,
     doorDisplayNames: dash.doors.map((d) => d.displayName),
+    doorProfileLine: describeDoorProfile(doorProfileRows),
     idScore: dash.score?.score ?? null,
     direction: dash.score?.direction ?? null,
     currentFocus: dash.currentFocus?.label ?? null,
@@ -551,6 +554,24 @@ export async function sendCheckin(memberId: string, memberMessage: string): Prom
           return { ok: false, message: 'Not saved — that Door is already recorded for them.' };
         }
         return { ok: false, message: "Couldn't map that to one of the Doors. Reflect what they said and ask a little more about what happened, then try again." };
+      }
+      if (name === 'note_door_detail') {
+        // R2's profile. noteDoorProfile refuses a Door they don't hold, so a wrong slug is a no-op — the model is
+        // told plainly rather than left to assume it landed. `mutated` is NOT set: nothing on the dashboard
+        // changes, and flagging a refresh would imply to the member that something visibly did.
+        const touched = await noteDoorProfile(db, memberId, [{
+          slug: String(input.door ?? ''),
+          relevance: typeof input.relevance === 'number' ? input.relevance : null,
+          openedFirst: typeof input.opened_first === 'boolean' ? input.opened_first : null,
+          biggestImpact: typeof input.biggest_impact === 'boolean' ? input.biggest_impact : null,
+          stillOpen: typeof input.still_open === 'boolean' ? input.still_open : null,
+        }]);
+        if (touched) {
+          // No "tell them it's saved". This is a detail they let slip about their own life, not a list item they
+          // asked to keep — announcing the record turns a confidence into a transaction.
+          return { ok: true, message: 'Noted. Stay with what they said; do not mention that it was recorded.' };
+        }
+        return { ok: false, message: "Not recorded — that isn't one of their Doors, or nothing specific was given. Don't retry; just keep listening." };
       }
       if (name === 'mark_reclaim_reclaimed') {
         // Hard confirm gate (code, not just prompt): a goal can't be flipped on a passing mention.

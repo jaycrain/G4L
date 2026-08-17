@@ -8,6 +8,7 @@
 import { MEMBER_AGENT_SYSTEM_PROMPT, WHAT_YOU_ARE_FOR } from './system-prompt.ts';
 import { detectCrisis, CRISIS_RESPONSE_US, AI_DISCLOSURE } from './governance.ts';
 import { reclaimAddIntent } from '../member/reclaim.ts';
+import { DOOR_SLUGS } from '../doors.ts';
 import { rewireEnabled } from './rewire.ts';
 import { rebuildEnabled } from './rebuild.ts';
 import { logCallIntent } from '../momentum/store.ts';
@@ -57,6 +58,9 @@ export type CheckinContext = {
   // only options are to confabulate or go vague, which is the exact failure the `degraded` flag exists to avoid.
   standingUpdate?: string | null;
   doorDisplayNames: string[];
+  /** R2's Door profile as one line, or null when they've never said anything about them. NULL MEANS OMIT — see
+   *  the context builder; an empty profile must produce no line at all. */
+  doorProfileLine?: string | null;
   idScore: number | null;
   direction: Direction | null;
   currentFocus: string | null;
@@ -453,6 +457,11 @@ export function contextBlock(c: CheckinContext): string {
         } — send them there when it fits.`
       : null,
     c.doorDisplayNames.length ? `Door${c.doorDisplayNames.length > 1 ? 's' : ''}: ${c.doorDisplayNames.join(', ')}` : null,
+    // What they've said ABOUT those Doors (R2's profile) — ONLY when they've said something. describeDoorProfile
+    // returns null on an empty profile precisely so this line disappears rather than asserting an absence: a
+    // model handed "still open: none" will reflect that back as a fact about their life, which is the failure in
+    // context-must-not-claim-what-it-stopped-tracking.
+    c.doorProfileLine ? `What they've said about those Doors — ${c.doorProfileLine}. Use it to understand what still weighs on them; never recite it, never quote a number back, and never treat an unmentioned Door as settled.` : null,
     c.idScore !== null ? `Latest ID Score: ${c.idScore}${c.direction ? ` (${c.direction})` : ''}` : 'No IDQ yet',
     dims,
     trend,
@@ -614,6 +623,7 @@ TENDING THEIR RECORDS (the member runs their own list — you can add, sharpen, 
 - remove_reclaim_item — when they clearly want an item off the list. It's THEIR list — taking something off is them in control, never a failure or a setback; keep the recovery-first tone, and it's reversible (it's set aside, not destroyed — "we can bring it back any time"). Confirm which one, then call it.
 - reorder_reclaim_list — when they want the list in a different order; pass the full list in the order they want.
 - add_door — when they genuinely name another Door (another way the gap opened), not when they're simply venting.
+- note_door_detail — when they say something about a Door they ALREADY have: which one started it, which weighs most now, whether one is still going on, or how much it actually bears on them. This one is DIFFERENT from the others: you never ask for it, you only catch it when they volunteer it. Do NOT ask them to rate a Door, do NOT walk them through their Doors one at a time, and do NOT confirm it back — just record it and stay in the conversation. Say nothing about having recorded it. Knowing which Door is still open is what lets you meet them where they actually are; announcing that you filed it turns something they let slip into a form they filled in.
 - mark_reclaim_reclaimed — when the member clearly says they've achieved an item ("I raised the round", "that one's done"). Confirm first ("Want me to mark that one reclaimed?"); a passing mention isn't a completion.
 COACH vs WITNESS (never named to the member): identity goals (body/self/people/outlook) advance through the Beats — that's the coached work, and you don't push those toward self-marking. Life goals (money/venture/etc.) have no Beats coaching them — they advance only when the member tells you they're done. Either way, if a member plainly declares any goal reclaimed, honor it (with the confirm). Never reveal that some goals are categorized differently — to them it's one list.
 HOW SAVING WORKS — READ CAREFULLY. The ONLY way anything is saved is by calling the tool. Writing "I've added that" or "it's on your list now" in your reply saves NOTHING — it is just text. So whenever you intend to add an item or a Door, you MUST emit the tool call (add_reclaim_item / add_door) in that turn. Reflect the wording back so they recognize it, and — once it is specific and observable — call the tool in the same turn; do not wait for a separate "yes" and do not promise to add it "later". After the tool returns success, then (and only then) acknowledge it's on their dashboard.
@@ -773,6 +783,32 @@ const REFINE_TOOLS = [
       type: 'object',
       properties: { description: { type: 'string', description: 'how that part of the gap opened, in their words' } },
       required: ['description'],
+    },
+  },
+  {
+    // The Door PROFILE (R2). Doors were a bare set — which of the eleven, one primary. This records what the
+    // member says ABOUT them: how much each one bears on their own Fade, and where each sits in time. It can only
+    // ever update a Door they already hold; it cannot create one (see lib/reconnect/door-profile.ts).
+    name: 'note_door_detail',
+    description:
+      'Record something the member says about a Door they ALREADY have — how much it weighs, or where it sits in ' +
+      'time. Use it when they volunteer it in their own words: "the career one is the big one", "that started it ' +
+      'all", "that one\'s still going on". ' +
+      'ONLY RECORD WHAT THEY ACTUALLY SAID. Never infer relevance from how long they talked about a Door, never ' +
+      'assume a Door is still open because it sounds recent, and never ask them to rate anything on a scale — if ' +
+      'they give a number, use it; otherwise translate their own emphasis ("the big one" is high, "that one\'s ' +
+      'mostly behind me" is low). Omit any field you are not sure about; leaving it out is always safe, and a ' +
+      'wrong value here is a claim about their life. Never read the recorded values back to them as data.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        door: { type: 'string', enum: [...DOOR_SLUGS], description: 'the Door they are talking about — must be one they already have' },
+        relevance: { type: 'number', description: 'optional. 1-10, how much this Door bears on their own Fade. Only if they made it clear.' },
+        opened_first: { type: 'boolean', description: 'optional. True only if they say this is the one that started it.' },
+        biggest_impact: { type: 'boolean', description: 'optional. True only if they say this is the one that weighs most today.' },
+        still_open: { type: 'boolean', description: 'optional. True if they say it is ongoing; false if they say it is behind them. Omit if unclear.' },
+      },
+      required: ['door'],
     },
   },
   {

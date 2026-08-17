@@ -141,6 +141,32 @@ Correct, hedged, and grounded in the same literature Greg cites (scaffolding #5)
 moment the Teaching Layer ships** — the explore tier becomes a required beat, so every member meets the loop
 instead of only those who tapped through. Worth noting as a concrete instance of what the Teaching Layer buys.
 
+## ~~GAP~~ · R2 — Doors are a SET → **the PROFILE shipped 2026-08-17** (storage + capture + the agent knows it)
+
+**Shipped:** migration `0085_door_profile.sql` adds `relevance` (1–10, a continuum per Greg's 8/8 email, not his
+documents' 3-point scale), `opened_first`, `biggest_impact`, `still_open`, `noted_at` to `member_door` — all
+nullable, because absent means *not asked*, never *not relevant*. `lib/reconnect/door-profile.ts` holds the write
+(`noteDoorProfile`) and the reads (`doorProfile` / `openDoors` / `describeDoorProfile`). The Companion captures it
+through a new `note_door_detail` tool and **reads it back in its own context**, so the agent isn't blind to data it
+collected (CLAUDE.md's reconciliation rule). 10 tests in `tests/door-profile.test.ts`.
+
+**The three rules the tests pin**, each one a way this could have gone wrong:
+1. **It can only UPDATE a Door the member already holds** — rating can never *create* one. Otherwise the model
+   could hand a member a life event they never named as a side effect of a scale.
+2. **Out of range is dropped, not clamped.** Coercing `0 → 1` would record someone as having said "barely
+   relevant" when they said nothing at all. A DB check constraint is the backstop.
+3. **An empty profile describes as `null`**, so no line reaches the model — a model handed "still open: none"
+   reflects that back as a fact about their life ([[context-must-not-claim-what-it-stopped-tracking]]).
+
+**Posture:** the Companion never *asks* for this and never confirms it back — it catches it when volunteered and
+says nothing about recording it. Announcing the record turns a confidence into a transaction.
+
+**Still open on R2:** the **Community share** (below), and the Reconnect *arc* does not itself capture this — the
+Drift beat is a deterministic kernel and I deliberately did not touch the live capture loop for it. Ongoing
+conversation is the capture path today. Original finding kept below.
+
+### (original finding)
+
 ## GAP · R2 — Doors are a SET, with no relevance, no continuum, and no temporal pattern
 
 **Greg (SOURCE, R2 Science Check):** "For each door, the member rates its relevance to their personal Fade on a
@@ -204,23 +230,30 @@ today it promises the first and delivers the second.
 
 ## STILL OPEN — the real remaining list (2026-08-17)
 
-1. **B3's daily record is still a boolean tick.** The plan now carries backups and obstacles, but the WEEK does
-   not carry Greg's seven fields — no `what_contributed`, `thoughts_feelings` or `fuel_to_move` per day. W3 already
-   has the rich version (migration `0074`), so this extends a proven pattern rather than designing one. **Cheapest
-   remaining item of real value.**
-2. **R2's Doors** — no relevance, no continuum, no temporal pattern (first / biggest / still open). Three things,
-   not one. Greg went further than his own documents on 8/8: a continuum per door, a profile rather than a
-   singular Door. **Lands in Reconnect, which carries the live capture loop.**
+1. ~~**B3's daily record is still a boolean tick.**~~ **STORAGE SHIPPED 8/17** — migration `0084_b3_daily_entry.sql`
+   + `lib/rebuild/b3-entry.ts`, mirroring W3's proven shape (`0074`). All seven of Greg's fields round-trip, an
+   empty form is not a logged day, and an amendment adds rather than erases. **The UI is not wired yet** and the
+   migration **still needs hand-applying to prod** — it will silently do nothing until then.
+2. ~~**R2's Doors**~~ **SHIPPED 8/17** — migration `0085_door_profile.sql` + `lib/reconnect/door-profile.ts` +
+   the `note_door_detail` Companion tool. Relevance on a 1–10 continuum and the full temporal pattern, captured in
+   conversation and read back into the agent's context. See the section above for the rules the tests pin. Also
+   pending the prod migration.
 3. **R2's Community share** — direction green-lit by Greg; the surface exists as the Community. Cheap, and high
    value for a Charter cohort arriving together. Also Reconnect.
 4. **The carry-forward web** — the biggest structural finding of the reading, and untouched. Greg specifies per
    asset which upstream assets each reads; we hand-wire two links. B3 reads B1+B2+W3 and C3 reads B3+C2, so a
    `previousAsset` pointer cannot express it.
-5. **The Teaching Layer's shown-once rule for Reconnect** — `entry` and `doors` both resolve R1, so a member would
-   meet the same "Why it works" card twice.
+5. ~~**The Teaching Layer's shown-once rule for Reconnect**~~ **SHIPPED** — keyed to the ASSET and rendered at its
+   last beat, so three cards across seven beats and no member meets one twice (`tests/teaching.test.ts`).
 
-**Sequencing note:** items 2, 3 and 5 all land in Reconnect. Doing them together, in one session with its own
-replay fixtures, is safer than three separate passes at the most fragile surface in the product.
+**Sequencing note (revised 8/17):** items 2 and 5 are done, and neither required touching the Reconnect capture
+kernel — 2 lands on the Companion, 5 in the resolver. Item 3 is the only Reconnect-side work left, and it is a
+surface addition rather than a change to the draw-out, so the "one careful session with replay fixtures" caution
+now applies only to the carry-forward web if it ever reaches Reconnect.
+
+**TWO MIGRATIONS ARE WAITING ON PROD: `0084` and `0085`.** Both are additive and idempotent. Until Jay runs them
+in the Supabase SQL Editor, both features degrade quietly rather than erroring — which is the design, but it also
+means "it deployed" will look identical to "it works."
 
 **Already closed elsewhere, do not re-open:** W3's monitoring week (built 8/8, migration `0074`) · R2 multi-door
 direction (green-lit by Greg 8/8) · IDQ 60-day cadence (Jay's ruling; asked of Greg 8/16) · C2 question order

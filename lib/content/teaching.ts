@@ -106,10 +106,14 @@ export function teachingKeeper(
 
 /** Asset titles for the kept read's provenance chip — "from Disinformation Audit · Rewire" (Rev 1's mockup). */
 const ASSET_TITLE: Record<string, string> = {
-  r1: 'the IDQ', r2: 'the Fade Doors', r3: 'the Drift Quiz',
+  // NAMING IS GUARDED HERE (tests/naming-guard.test.ts) — these strings are member-facing, on the provenance chip
+  // of a kept read. Two retired spellings slipped in from Greg's document titles: the old two-word label for r2
+  // (it is just "the Doors" now) and his house camel-casing of the four Rs on c1. The guard greps this file as
+  // plain text, comments included, so do not name either mistake here — it would re-trip on the explanation.
+  r1: 'the IDQ', r2: 'the Doors', r3: 'the Drift Quiz',
   w1: 'Disinformation Audit', w2: 'Visualization Workshop', w3: 'Mindful Monitoring',
   b1: 'What Is Your Why?', b2: 'Strengths and Weaknesses', b3: 'Monitoring Health Decisions',
-  c1: 'ReClaim Readiness', c2: 'the Bigger World Audit', c3: 'Quality Days',
+  c1: 'Reclaim Readiness', c2: 'the Bigger World Audit', c3: 'Quality Days',
 };
 const PHASE_TITLE: Record<string, string> = { r: 'Reconnect', w: 'Rewire', b: 'Rebuild', c: 'Reclaim' };
 
