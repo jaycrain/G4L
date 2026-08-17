@@ -41,6 +41,65 @@ that didactic latitude is unused). Both findings exist only because one reader h
 **That is what this re-read is for, and it should be scoped to it** — not to re-transcribe 1,065 requirements a
 quote index already holds.
 
+### ⚠⚠ GREG ALREADY ANSWERED SOME OF THIS — email thread, 2026-08-08. Read this before acting on anything below.
+
+Found 2026-08-16 while checking whether the three queued questions had been asked before (they hadn't). The thread
+**"What we found reading all twelve of your documents together"** (8/8, Jay → Greg, with Greg's reply) asked four
+adjacent questions and **got answers**. Several findings recorded in this file as open are already settled by him.
+
+**1 · THE PRECEDENCE RULE NEEDS A CAVEAT — in Greg's own words.** This file has applied
+[[greg-doc-precedence-and-levels]] all day: V4 is SOURCE, the memos are DERIVATIVE, V4 wins. Greg writes:
+
+> "my documents likely have gaps and inconsistencies too as I was initially building from some original assets and
+> **didn't completely update the intro and closure in the V4 documents after developing the AI Companion and AI
+> engineering documents.** Thus, this type of checking and tightening is part of the process."
+
+So for **intros and closures specifically, V4 may be OLDER than the memos** — the opposite of the recency argument
+used in this file to close the R3 prompts question ("right by precedence AND by recency"). **Precedence still holds
+for instruments, scales and scoring.** It should NOT be applied blindly to V4 intro/closure prose. Re-check anything
+resolved on a recency argument.
+
+**2 · W3's "missing mindfulness practice" — ANSWERED, and my correction was only half right.** I first read the
+Science Check as specifying a second component, then corrected myself off the Engineering Memo to "the practice IS
+the tracker." Greg had already answered the exact question on 8/8:
+
+> "THE REWIRE GATED ASSET V4 FILE DOES DOCUMENT THE PROCESS FOR SELF-MONITORING… MY VISION / SUGGESTION IS TO
+> **CREATE A SIMPLE 1 WEEK GRID — SIMILAR TO THE NEW MOMENTUM ONE DEVELOPED FOR C3.** THUS, WE WOULD HAVE THE MEMBER
+> TRACK THIS WITH A SIMPLE INTERFACE TO BUILD SKILLS IN CYCLE 1."
+
+**This is a build instruction, not an open question.** W3 gets its own one-week grid modelled on C3's. It also
+independently confirms the one-engine finding — he is asking for the same parameterised grid across assets.
+
+**3 · R2's multi-door relevance (#183) — GREEN-LIT by Greg himself, unprompted.**
+
+> "IT ISN'T BINARY EITHER. THERE ISN'T A SINGULAR DOOR BUT RATHER **A CONTINUUM ON EACH ONE.** RETAINING A
+> CONTINUOUS SCALE IS ALWAYS A GOAL IN RESEARCH INSTEAD OF CATEGORIZING SINCE IT RETAINS THE RANGE AND THE FULL
+> COMPLEXITY… ENABLE A PERSON TO REFLECT ON EACH ONE… AND PERHAPS HAVE **A PROFILE OF ISSUES INSTEAD OF A SINGULAR
+> ONE.**"
+
+Not a spec-vs-build discrepancy to raise — an approved direction we can build. Note he goes further than the
+documents: a *continuum* per door, not the 3-point scale.
+
+**4 · THE POSTURE TABLE MAY BE PART DRIFT, NOT ALL DESIGN.** This file records the guide/coach + evocative/didactic
+assignment as deliberate per-asset design. Jay asked Greg directly whether B1-vs-W1's teaching latitude was
+deliberate or document drift:
+
+> "THE B1 AND W1 PROCESS COULD BE REFINED FURTHER NOW THAT THERE IS CLARITY ON THE IMPORTANCE OF HAVING STANDARD
+> STRUCTURE. **MY DOCUMENTS WERE NOT INTENDED TO BE A FINAL PLAN** AS THEY ALSO EVOLVED A BIT AS I WORKED THROUGH
+> THEM. I THINK WE CAN ITERATE ON THIS TOGETHER."
+
+So **do not encode the posture table as fixed law.** The *pattern* (a per-asset posture + stance) is real and worth
+modelling; the specific B1/W1 divergence is explicitly open to iteration. Build it as configuration, which is what
+the architecture principle says anyway — and which is exactly why configuration is the right call here.
+
+**5 · R3's Legacy Letter — Greg likes it in Reclaim, and wants a teaser in R3:** "MAYBE WE CAN HAVE THE COMPANION
+PROMPT A BIT ABOUT 'WHAT DO YOU WANT THE NEXT 5 OR 10 YEARS TO BE ABOUT'… AS A TEASER." He also floats the Letter as
+**the gateway to joining the Community** — which pairs with R2's community-share finding.
+
+**Method note.** All four were answered in an email eight days before I read the corpus, and I recorded three of them
+as open findings. **The library is not the whole record — the email thread is part of the source.** Check it before
+writing a finding as open. Cf. [[build-state-comes-from-the-file]].
+
 ### RESUME HERE
 
 **Read directly (29 of 36):** all 12 **Companion Guidance memos** · all 12 **Science Checks (SOURCE — complete)** ·
