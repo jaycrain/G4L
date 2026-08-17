@@ -8,7 +8,28 @@ export type CoachingPhase = 'rebuild' | 'reclaim' | 'cycle2';
 // activityDays / dietDays are the MEMBER's number ("5 days a week"), captured by the B3 coach — Greg's sample grid
 // carries a target per row, and without one a practice week has nothing to close against. OPTIONAL on purpose: a
 // plan with no target is still a plan, and a member who won't pick a number must never be blocked from committing.
-export type RebuildPilotPayload = { activityChange: string; dietChange: string; activityDays?: number; dietDays?: number };
+// BACKUPS + OBSTACLES are Greg's, and they are the difference between a plan for a good week and a plan that
+// survives a real one. B3's Science Check puts them in the scientific scaffolding (#3, action planning /
+// implementation intentions), not in passing: "define backup versions, and anticipate likely obstacles. This
+// increases the odds that the plan can survive a NORMAL week instead of only an IDEAL one." His Engineering Memo
+// names the storage — activity_backup, dietary_backup, anticipated_obstacles.
+//
+// OPTIONAL, for the same reason the day targets are: a plan without a backup is still a plan, and a member who
+// won't name one must never be blocked from committing. The backup is what a member falls back TO after the first
+// miss — which is the moment B3 exists to teach recovery from, so it earns the prompt, not a requirement.
+//
+// No migration: coaching_plan.payload is jsonb and this type IS the shape. Plans written before 2026-08-17 simply
+// have the fields absent, which reads the same as a member declining them.
+export type RebuildPilotPayload = {
+  activityChange: string;
+  dietChange: string;
+  activityDays?: number;
+  dietDays?: number;
+  activityBackup?: string;
+  dietBackup?: string;
+  /** What they expect to get in the way this week — in their words, not a picklist. */
+  obstacles?: string;
+};
 export type CoachingPlan<P = Record<string, unknown>> = {
   id: string;
   phase: CoachingPhase;

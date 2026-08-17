@@ -254,6 +254,9 @@ const pilotStage: StageDef = {
     if (b.model.plan?.dietChange) b.collected.pilotDiet = b.model.plan.dietChange.trim();
     if (b.model.plan?.activityDays) b.collected.pilotActivityDays = b.model.plan.activityDays;
     if (b.model.plan?.dietDays) b.collected.pilotDietDays = b.model.plan.dietDays;
+    if (b.model.plan?.activityBackup) b.collected.pilotActivityBackup = b.model.plan.activityBackup.trim();
+    if (b.model.plan?.dietBackup) b.collected.pilotDietBackup = b.model.plan.dietBackup.trim();
+    if (b.model.plan?.obstacles) b.collected.pilotObstacles = b.model.plan.obstacles.trim();
     const activity = (b.collected.pilotActivity ?? '').trim();
     const diet = (b.collected.pilotDiet ?? '').trim();
     const activityDays = b.collected.pilotActivityDays;
@@ -382,6 +385,9 @@ const RECORD_PLAN_TOOL = {
       dietChange: { type: 'string', description: "The member's committed small eating change — specific + trackable." },
       activityDays: { type: 'integer', description: "Days this week the member is aiming for on the movement change (1-7). Their number. Omit if they didn't give one." },
       dietDays: { type: 'integer', description: "Days this week the member is aiming for on the eating change (1-7). Their number. Omit if they didn't give one." },
+      activityBackup: { type: 'string', description: "The member's smaller fallback for the MOVEMENT change — what they'd do on a bad day instead of nothing. Their words. Omit if they'd rather not name one." },
+      dietBackup: { type: 'string', description: "The member's smaller fallback for the EATING change, same rule." },
+      obstacles: { type: 'string', description: "What the member expects to get in the way this week, in their own words. Omit if they don't name anything." },
     },
   },
 };
@@ -414,7 +420,16 @@ function b3StageNote(state: ConvState): string {
     return "\n\nRIGHT NOW: both changes are locked but neither has a day target. In ONE short question, ask how many days a week they're aiming for — theirs to choose, and fine to decline.";
   if (!dietDays || !activityDays)
     return `\n\nRIGHT NOW: both changes are locked. One is still missing its day target — the ${!activityDays ? 'MOVEMENT' : 'EATING'} one. Ask for that number in one short question; theirs to choose, and fine to decline.`;
-  return "\n\nRIGHT NOW: both changes are locked with their day targets. Give a brief warm acknowledgment; the app will show the plan to confirm.";
+  // GREG'S STEP THAT WE SKIPPED. His scaffolding #3: "define backup versions, and anticipate likely obstacles —
+  // this increases the odds that the plan can survive a normal week instead of only an ideal one." Placed HERE, in
+  // the per-turn steering, for the reason the day-target note records: an instruction the model only meets in a
+  // tool description is one it skips at the moment it matters (a live walk on 8/7 lost the eating target that way).
+  const backups = state.collected?.pilotActivityBackup || state.collected?.pilotDietBackup;
+  if (!backups)
+    return "\n\nRIGHT NOW: both changes are locked with their day targets. Before you close, ask for the BACKUP — the smaller version of each they'd do on a bad day instead of nothing. One short question covering both. Frame it as what keeps the week alive after a miss, never as doubt they'll manage. Call record_plan(activityBackup / dietBackup). If they'd rather not name one, take that and move on.";
+  if (!state.collected?.pilotObstacles)
+    return "\n\nRIGHT NOW: the backups are down. Ask ONE short question about what they expect to get in the way this week — theirs to name, no list from you, and fine to decline. Call record_plan(obstacles). Then you're done.";
+  return "\n\nRIGHT NOW: the plan is complete — changes, day targets, backups and what might get in the way. Give a brief warm acknowledgment; the app will show the plan to confirm.";
 }
 
 // Parse an Anthropic response into a ModelTurn (prose + any record_plan locks). Pure below this line lives in the arc.
@@ -422,7 +437,8 @@ function b3StageNote(state: ConvState): string {
 // never exercise it.
 export function parseB3Model(content: readonly unknown[]): ModelTurn {
   let text = '';
-  const plan: { activityChange?: string; dietChange?: string; activityDays?: number; dietDays?: number } = {};
+  const plan: { activityChange?: string; dietChange?: string; activityDays?: number; dietDays?: number;
+    activityBackup?: string; dietBackup?: string; obstacles?: string } = {};
   // A target outside 1-7 is not a target for a seven-day week — drop it rather than store a number the grid can't
   // draw. Silently ignoring a bad value is right here: the plan itself is still good, and nagging the member about
   // the model's arithmetic would be absurd.
@@ -434,6 +450,10 @@ export function parseB3Model(content: readonly unknown[]): ModelTurn {
     const bl = raw as { type: string; text?: string; name?: string; input?: Record<string, unknown> };
     if (bl.type === 'text') text += bl.text ?? '';
     if (bl.type === 'tool_use' && bl.name === 'record_plan') {
+      for (const k of ['activityBackup', 'dietBackup', 'obstacles'] as const) {
+        const v = bl.input?.[k];
+        if (typeof v === 'string' && v.trim()) plan[k] = v.trim();
+      }
       if (typeof bl.input?.activityChange === 'string') plan.activityChange = bl.input.activityChange;
       if (typeof bl.input?.dietChange === 'string') plan.dietChange = bl.input.dietChange;
       const ad = days(bl.input?.activityDays); if (ad) plan.activityDays = ad;

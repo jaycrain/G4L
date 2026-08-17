@@ -222,8 +222,17 @@ export async function rebuildTurnAction(
           }
           // Persist the plan artifact (coaching_plan) + a Playbook keeper (§5 — the two small changes, their words).
           try {
-            const days = { activityDays: turn.state.collected?.pilotActivityDays, dietDays: turn.state.collected?.pilotDietDays };
-            await persistCoachingPlan(db, memberId, 'rebuild', { activityChange: activity, dietChange: diet, ...days });
+            const c = turn.state.collected;
+            const days = { activityDays: c?.pilotActivityDays, dietDays: c?.pilotDietDays };
+            // Greg's backups + anticipated obstacles ride the SAME payload — coaching_plan.payload is jsonb, so this
+            // needed no migration. Undefined keys simply don't serialise, so a member who declined them stores
+            // exactly what a pre-2026-08-17 plan stores.
+            const resilience = {
+              activityBackup: c?.pilotActivityBackup,
+              dietBackup: c?.pilotDietBackup,
+              obstacles: c?.pilotObstacles,
+            };
+            await persistCoachingPlan(db, memberId, 'rebuild', { activityChange: activity, dietChange: diet, ...days, ...resilience });
             // The week grid's ROWS (Greg's tracker). Separate try from the plan above, deliberately: a failure here
             // must not lose the plan itself. Same lesson as the Playbook harvest silent-drop, where one throw inside
             // a shared try aborted a commit that had already succeeded.

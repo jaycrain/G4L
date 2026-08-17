@@ -126,6 +126,12 @@ export type Collected = {
   // member who won't put a number on it still commits a plan, it just has nothing to close against.
   pilotActivityDays?: number;
   pilotDietDays?: number;
+  // The smaller fallback per change, and what they expect to get in the way — Greg's B3 scaffolding #3, the step
+  // that makes a plan "survive a normal week instead of only an ideal one". Optional like the day targets: a member
+  // who won't name a backup still commits a plan.
+  pilotActivityBackup?: string;
+  pilotDietBackup?: string;
+  pilotObstacles?: string;
   // Reclaim C1 Step 2 (coach mode). The refined Reclaim List awaiting the member's confirm — the snapshot. Set by the
   // ENGINE from the model's record_refinement; the action commits it to the live list on confirm (never before).
   pendingRefinement?: { items: { original: string; text: string; tier: string; reclaimItemId?: string }[]; top3: string[] };
@@ -883,7 +889,11 @@ export type ModelTurn = { text: string; record?: Partial<Collected> & { complete
   // v2.4 Rebuild B3 (coach mode, Decision PP) — the model's LOCKED plan fields this turn (from the record_plan tool).
   // A field appears only once the model judges it specific + right-sized + member-affirmed; the engine gates completion
   // on both being present. A separate channel from `record` (which is onboarding-Collected-shaped, merged by mergeStaged).
-  plan?: { activityChange?: string; dietChange?: string; activityDays?: number; dietDays?: number };
+  plan?: {
+    activityChange?: string; dietChange?: string; activityDays?: number; dietDays?: number;
+    // Greg's B3 step that lets a plan survive a normal week rather than an ideal one (Science Check, scaffolding #3).
+    activityBackup?: string; dietBackup?: string; obstacles?: string;
+  };
   // v2.5 Reclaim C1 Step 2 (coach mode) — the member's CONFIRMED-in-conversation refined Reclaim List (from the
   // record_refinement tool): each item's original + refined text + tier, plus the top-3. Coached in a snapshot; the
   // engine proposes it, and only the member's confirm commits it back to the live list (propose→confirm→commit).
