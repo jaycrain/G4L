@@ -17,7 +17,11 @@ async function member(db: Db): Promise<string> {
 
 test('the fan-ins are declared — the case a previousAsset pointer cannot express', () => {
   assert.deepEqual(UPSTREAM.b3, ['b1', 'b2', 'w3'], 'B3 reads three upstreams at once');
-  assert.deepEqual(UPSTREAM.c3, ['b3', 'c2'], 'and C3 reads two');
+  // C3 READS FIVE, from its Engineering memo's own words: "load prior module context (identity, motivation,
+  // self-management, revised ReClaim List, Bigger World Audit assessment)". This shipped as ['b3','c2'] — two of
+  // five — because it was built from a table synthesized off the GUIDANCE memos instead of the Engineering memo's
+  // declaration. Pinned so the list can only change against the document.
+  assert.deepEqual(UPSTREAM.c3, ['b1', 'b2', 'c1', 'c2', 'b3'], 'C3 reads five');
 });
 
 test('a member who has done NONE of the upstream work carries nothing, and it renders as nothing', async () => {
@@ -140,6 +144,10 @@ test('EVERY reader in the registry actually carries — no silently dead links',
   await persistCoachingPlan(db, m, 'rebuild', { activityChange: 'Walk after dinner', dietChange: 'Protein at breakfast' });
   assert.equal(await recordB3Entry(db, m, { contributed: 'Laying the shoes out the night before' }), true);
   await persistBiggerWorldReading(db, m, Array(20).fill(3));
+  await db.query(
+    `insert into reclaim_item (member_id, text, category, sort_order) values ($1,$2,'physical',0)`,
+    [m, 'Ride the Boulder loop again'],
+  );
 
   const b3 = await carryForward(db, m, 'b3');
   assert.deepEqual(b3.map((c) => c.asset), ['b1', 'b2', 'w3'], 'all three of B3\'s upstreams carry');
@@ -147,7 +155,7 @@ test('EVERY reader in the registry actually carries — no silently dead links',
   assert.match(b3.find((c) => c.asset === 'w3')!.lines.join(' '), /The 3pm slump; Eating standing up/);
 
   const c3 = await carryForward(db, m, 'c3');
-  assert.deepEqual(c3.map((c) => c.asset), ['b3', 'c2'], 'and both of C3\'s');
+  assert.deepEqual(c3.map((c) => c.asset), ['b1', 'b2', 'c1', 'c2', 'b3'], 'and all five of C3\'s');
   const b3line = c3.find((c) => c.asset === 'b3')!.lines.join(' ');
   assert.match(b3line, /Walk after dinner/, 'the plan they made');
   assert.match(b3line, /Laying the shoes out the night before/, 'and what the week taught, in their words');

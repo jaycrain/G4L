@@ -39,10 +39,11 @@ import { w3Triggers } from '../rewire/w3-triggers.ts';
 import { activeCoachingPlan, type RebuildPilotPayload } from '../rebuild/plan-store.ts';
 import { b3Entries } from '../rebuild/b3-entry.ts';
 import { latestBiggerWorldReading, firstFocus } from '../reclaim/bigger-world-store.ts';
+import { getReclaimItems } from '../beats/store.ts';
 import { AUDIT_DOMAIN_LABEL } from '../reclaim/bigger-world-instrument.ts';
 
 /** The assets that can be carried forward. Grows as the remaining links are built. */
-export type RetainedAssetId = 'b1' | 'b2' | 'w3' | 'b3' | 'c2';
+export type RetainedAssetId = 'b1' | 'b2' | 'w3' | 'b3' | 'c1' | 'c2';
 
 export type Retained = {
   asset: RetainedAssetId;
@@ -52,10 +53,28 @@ export type Retained = {
   lines: string[];
 };
 
-/** WHO READS WHOM. The two fan-ins Greg's memos specify — the case a single pointer cannot express. */
+/**
+ * WHO READS WHOM — taken from the ENGINEERING memos' own `load prior module context` lines, not from a summary.
+ *
+ * B3, verbatim from its authored Step 6 ("Connect to prior learning"), which asks three questions naming B1's
+ * why, B2's skills and W3's False Start Protocol.
+ *
+ * C3, from its memo (his camel-casing of the four Rs normalized to ours — the naming guard blocks it, and that
+ * guard exists precisely because his house style leaks in through quotes like this one): "load prior module
+ * context (identity, motivation, self-management, revised Reclaim List, Bigger World Audit assessment)"
+ * — i.e. R1 · B1 · B2 · C1 · C2. This shipped as `['b3','c2']` on 2026-08-17, which was
+ * TWO OF FIVE. The error came from working off a table I had synthesized from the GUIDANCE memos rather than
+ * reading the Engineering memos' declarations, and it is exactly why the remaining links must be read from the
+ * documents. B3 stays in the list: C3's memo keeps it as an explicit parallel reference ("Reference the parallel
+ * to B3", "B3 monitoring experience available as a parallel reference"), which is the same job.
+ *
+ * STILL MISSING FROM C3: `identity` (R1). Held back deliberately — "identity" is the one vague term in that line
+ * and could mean the IDQ, the reclaimed identity noun, or the onboarding self-description. Guessing which would
+ * put a wrong claim about a member in front of them; it needs R1's own memo read first.
+ */
 export const UPSTREAM: Partial<Record<string, RetainedAssetId[]>> = {
   b3: ['b1', 'b2', 'w3'],
-  c3: ['b3', 'c2'],
+  c3: ['b1', 'b2', 'c1', 'c2', 'b3'],
 };
 
 /** Trim, drop empties, cap. A carry-forward that dumps six lines stops being context and becomes a recital. */
@@ -124,6 +143,16 @@ const READERS: Record<RetainedAssetId, (db: Db, memberId: string) => Promise<Ret
       learned ? `From their week, in their words: "${learned}"` : null,
     );
     return body.length ? { asset: 'b3', label: 'their Lifestyle Pilot', lines: body } : null;
+  },
+
+  // C1 — the REFINED Reclaim List. Their words, exactly: this is the list they rewrote to be self-concordant, and
+  // C3 defines a Quality Day against it. Capped at three because the block is context, not a recital — and the
+  // list is theirs to read in full on their own dashboard.
+  async c1(db, memberId) {
+    const items = await getReclaimItems(db, memberId).catch(() => []);
+    const texts = items.map((i) => (i.text ?? '').trim()).filter(Boolean).slice(0, 3);
+    if (!texts.length) return null;
+    return { asset: 'c1', label: 'their Reclaim List', lines: [`What they want back: ${texts.join('; ')}.`] };
   },
 
   // C2 — where life is opening and where it is still narrow. FIRST FOCUS, not the computed primary: the member's
