@@ -316,9 +316,12 @@ provisional — that is what invites the next round of proposals.
 ## Dashboard & companion UI standards
 
 The member dashboard + companion patterns are settled — see **`docs/dashboard-ui-standards.md`** and
-match them rather than re-deriving. The load-bearing ones: the companion is **never a floating bot** —
-it's the dashboard's sticky hero panel + a docked rail (full-screen overlay below 1000px) reusing the
-persisted check-in thread; panels link to sub-pages via the **`.see-more` "Label →"** foot link
+match them rather than re-deriving. The load-bearing ones: the companion is **never a floating bot** — since
+**v3.2 it is the CENTERED Companion** (hero + thread), flanked reflect ← relate → act. **The "docked rail" is
+RETIRED (2026-08-17):** the triptych "replaces the docked-rail dashboard" and returns before `CompanionDock`
+ever renders, so no member has seen a rail since `REDESIGN` was staged on 7/15. `app/dashboard/companion-dock.tsx`
+and `.companion-rail` survive only on the pre-redesign path — do not describe them as live, and do not put new
+features "in the rail." Panels link to sub-pages via the **`.see-more` "Label →"** foot link
 (`/program`, `/story`, See more); reset the default `<h3>` margin inside cards. Two engineering rules that
 cost real time: **put shared React context/hooks in their own module** (importing a hook from a component
 file creates a client↔client cycle webpack-dev resolves to `undefined` — the "reading 'call'" error), and

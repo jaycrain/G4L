@@ -19,6 +19,13 @@ them rather than re-deriving. They live in `app/globals.css` + `app/dashboard/*`
   a visual state of the hero — same companion, same rail, no new data. Driven by a zero-height sentinel +
   `IntersectionObserver` that flips `.is-condensed` the instant the hero would engage stickiness (so it
   never overlaps content); the message collapses via `max-height`/`opacity` to animate.
+> **⚠ THE RAIL IS RETIRED (2026-08-17).** Everything in this section describes the v3.0 docked-rail dashboard,
+> which the **v3.2 triptych replaced** — its own code comment says it "replaces the docked-rail dashboard", and
+> `app/dashboard/[memberId]/page.tsx` returns inside the triptych branch long before `CompanionDock` renders. No
+> member has seen a rail since `REDESIGN` went to Production on 2026-07-15. The conversation now lives in the
+> **centered Companion** (hero + thread). Kept below because the pre-redesign path still compiles and because the
+> height/alignment lessons are real — but **do not build to this, and do not place a feature "in the rail."**
+
 - **The conversation opens as a docked rail** (desktop) reusing the persisted check-in thread
   (`agent_message` / `lib/agent/conversation.ts`) — no new store. Below **1000px it's a full-screen
   overlay**. Opens from the hero CTA / `?chat=1`; closes via ✕, Esc, or clicking the dashboard.
