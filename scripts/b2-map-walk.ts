@@ -46,7 +46,22 @@ async function main(): Promise<void> {
   await page.locator('.pb-tab').filter({ hasText: "What you've learned" }).first().click();
   const map = page.locator('.pb-map');
   const shown = await map.waitFor({ state: 'visible', timeout: 15000 }).then(() => true).catch(() => false);
-  if (!shown) { bad('the map never rendered'); await browser.close(); return finish(); }
+  if (!shown) {
+    // DISTINGUISH "no reading" FROM "broken". The map renders only for a member who has completed B2, and against
+    // prod there is no seed route (correctly — it is dev-only). Reporting that as a failure is a FALSE RED, and a
+    // walk that cries wolf on every prod run is one whose reds stop being read. Say what is actually true.
+    const hasMapCard = await page.locator('.pb-read', { hasText: 'your map' }).count();
+    if (!hasMapCard) {
+      console.log('  · this member has no B2 reading, so there is no map to render — NOT VERIFIED here.');
+      console.log('    Against prod that is expected: /dev/seed-b2 is dev-only. To verify on prod, walk an account');
+      console.log('    that has actually completed Strengths & Weaknesses.');
+      await browser.close();
+      return finish();
+    }
+    bad('the member HAS a "your map" read but the map did not render — this is a real break');
+    await browser.close();
+    return finish();
+  }
   ok('the map renders in "What you\'ve learned"');
 
   const fams = await page.locator('.pb-map-fam-n').allInnerTexts();
