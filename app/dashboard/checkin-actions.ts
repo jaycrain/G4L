@@ -38,6 +38,7 @@ import type { PracticeKind } from '../../lib/practice/store.ts';
 import { isTappable, toggleMark } from '../../lib/practice/mark.ts';
 import { activePracticeWeek, activePracticeWeeks } from '../../lib/practice/store.ts';
 import { recordW3Entry, w3Entries } from '../../lib/rewire/w3-entry.ts';
+import { recordB3Entry } from '../../lib/rebuild/b3-entry.ts';
 import { w3Triggers } from '../../lib/rewire/w3-triggers.ts';
 import { phaseSummary, type PhaseKey } from '../../lib/content/summaries.ts';
 
@@ -874,6 +875,39 @@ export async function sendCheckin(memberId: string, memberMessage: string): Prom
             "Recorded for today. Reflect it back briefly in their own words. Affirm the NOTICING — that they tracked " +
             "it honestly, or used their recovery move — never the absence of a false start, and never a tally. A false " +
             "start is data, not failure: meet it as evenly as a good call, with no consoling and no reframe rushed on top.",
+        };
+      }
+      if (name === 'record_b3_day') {
+        // B3's Lifestyle Pilot week, written by CONVERSATION — the same path as record_w3_day, because Greg's two
+        // Engineering Memos are one spec. Guarded to an open b3_pilot week: outside it there is nothing to record.
+        //
+        // NOT gated on the W3 week and not sharing its guard — a member can legitimately be running both, so a
+        // shared "is a monitoring week open" check would let a B3 entry land during a W3-only week.
+        const weeks = await weekGrids(db, memberId).catch(() => []);
+        if (!weeks.some((w) => w.kind === 'b3_pilot')) {
+          return { ok: false, message: 'Not recorded — their Lifestyle Pilot week is not open right now.' };
+        }
+        const str = (v: unknown) => (typeof v === 'string' && v.trim() ? v.trim() : undefined);
+        const wrote = await recordB3Entry(db, memberId, {
+          goodCalls: str(input.good_calls),
+          falseStarts: str(input.false_starts),
+          contributed: str(input.contributed),
+          obstacles: str(input.obstacles),
+          thoughts: str(input.thoughts),
+          fuelToMove: str(input.fuel_to_move),
+          reflection: str(input.reflection),
+        });
+        if (!wrote) return { ok: false, message: "Nothing to record yet — they haven't said what today held." };
+        mutated = true;
+        // Greg's affirmation rule, at the exact moment it gets broken. Affirm the TRACKING and the honesty of the
+        // observation — never the absence of a False Start, and never a tally. "Great, no false starts today!" is
+        // disallowed outright: it makes the next honest entry cost something.
+        return {
+          ok: true,
+          message:
+            'Recorded for today. Reflect it back briefly in their own words. Affirm the NOTICING — that they ' +
+            'tracked it honestly — never the absence of a False Start, and never a count. A False Start is data, ' +
+            'not failure: meet it as evenly as a Smart Choice, with no consoling and no reframe rushed on top.',
         };
       }
       if (name === 'log_call') {

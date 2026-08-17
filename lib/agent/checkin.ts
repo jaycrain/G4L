@@ -322,6 +322,15 @@ function practiceWeekLine(c: CheckinContext): string | null {
         "record the day with record_w3_day. If it was something they never named, that is 'new', a real answer and " +
         'not a gap. Never decide for them which trigger fired. '
       : '') +
+    // B3 ONLY: the same instrument for the body. Without this the model holds record_b3_day and no sense of when
+    // to use it, which is how a tool ends up either unused or fished for.
+    (pw.kind === 'b3_pilot'
+      ? 'When they tell you how a day went — a Smart Choice, a False Start, what got in the way, what was going ' +
+        'through their mind — write it down with record_b3_day, in their words. Take whatever they offer and stop ' +
+        'there: one Smart Choice is a complete day, and going back for the rest turns a conversation into a form. ' +
+        'If they mention that eating and moving affected each other, record that too — but never ask for it. ' +
+        "They don't have to find a connection every day. "
+      : '') +
     'NEVER present this as compliance or a score. A blank day is a day, not a miss, and the whole point is noticing what helps — not hitting a number.'
   ) + otherWeeksLine(c);
 }
@@ -998,6 +1007,37 @@ const RECORD_W3_DAY_TOOL = {
   },
 };
 
+// B3's monitoring week — the SAME instrument as W3, for the body instead of the mind. Greg's B3 and W3 Engineering
+// Memos are one spec, so this mirrors RECORD_W3_DAY_TOOL rather than inventing a second shape for the same job.
+// The fields differ exactly where his do: B3 adds `contributed` (what made it easy or hard) and `fuel_to_move`
+// (whether eating and moving affected each other), and has no trigger / old-voice pair.
+const RECORD_B3_DAY_TOOL = {
+  name: 'record_b3_day',
+  description:
+    "Record TODAY in the member's Lifestyle Pilot week when they tell you how it went. Pass their OWN words, " +
+    'trimmed, never your summary. Every field is optional — a day with only a Smart Choice, or only a False ' +
+    'Start, is a complete entry and you must not fish for the rest. good_calls: what went well that they ' +
+    "noticed. false_starts: what didn't. contributed: what made the good call easy or the false start hard — the " +
+    'conditions, not a cause. obstacles: what got in the way. thoughts: what was going through their mind, if ' +
+    'they say. fuel_to_move: whether eating and moving affected each other — RECORD ONLY IF THEY RAISE IT, and ' +
+    'never ask for it; they do not have to find a connection every day. reflection: anything else worth keeping. ' +
+    'A False Start is DATA, not failure — record it exactly as evenly as a good call, and never treat one as ' +
+    'better news.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      good_calls: { type: 'string', description: 'their words for what went well today' },
+      false_starts: { type: 'string', description: "their words for what didn't" },
+      contributed: { type: 'string', description: 'what made it easy or hard, in their words' },
+      obstacles: { type: 'string', description: 'what got in the way' },
+      thoughts: { type: 'string', description: 'what was going through their mind, if they mention it' },
+      fuel_to_move: { type: 'string', description: 'how eating and moving affected each other — only if THEY raise it' },
+      reflection: { type: 'string', description: 'anything else worth keeping from the day' },
+    },
+    required: [],
+  },
+};
+
 const LOG_MOVEMENT_TOOL = {
   name: 'log_movement',
   description:
@@ -1046,6 +1086,12 @@ const SET_COMMITMENT_TOOL = {
   },
 };
 
+/** Is a week of this kind open? Reads the FULL set — see the call site for why the singular is the wrong source. */
+function hasOpenWeek(c: CheckinContext, kind: string): boolean {
+  const all = c.practiceWeeks?.length ? c.practiceWeeks : c.practiceWeek ? [c.practiceWeek] : [];
+  return all.some((w) => w.kind === kind);
+}
+
 async function liveReply(
   system: string,
   history: CheckinMessage[],
@@ -1058,6 +1104,8 @@ async function liveReply(
   // Whether the member's W3 monitoring week is open. Same reasoning as above: an agent holding record_w3_day
   // outside that week would find a way to narrate having used it.
   canRecordW3Day = false,
+  // And whether B3's Lifestyle Pilot week is open. Independent of the W3 flag — both weeks can run at once.
+  canRecordB3Day = false,
 ): Promise<{ reply: string; toolNames: string[] }> {
   const called: string[] = []; // client tools the model actually invoked this turn (for the engine backstop)
   const { default: Anthropic } = await import('@anthropic-ai/sdk');
@@ -1098,6 +1146,9 @@ async function liveReply(
     ...(canMarkPracticeDay ? [MARK_PRACTICE_DAY_TOOL] : []),
     // Same discipline for W3: offered ONLY while the monitoring week is running.
     ...(canRecordW3Day ? [RECORD_W3_DAY_TOOL] : []),
+    // ...and for B3's Lifestyle Pilot week. The two weeks can BOTH be open at once — Jay is explicit that running
+    // several trackers at the same time is intended — so these are independent flags, never an either/or.
+    ...(canRecordB3Day ? [RECORD_B3_DAY_TOOL] : []),
   ];
   const toolsFor = () => (executor ? (useFetch ? [...clientTools, WEB_FETCH_TOOL] : clientTools) : undefined);
   const model = process.env.ANTHROPIC_MODEL ?? 'claude-sonnet-4-6';
@@ -1262,7 +1313,12 @@ export async function checkinReply(
       const { reply, toolNames } = await liveReply(
         checkinSystem(c), history, memberMessage, executor,
         Boolean(c.practiceWeek?.tappable),
-        c.practiceWeek?.kind === 'w3_logging',
+        // ASK EVERY OPEN WEEK, NOT THE ONE WE PICKED. `practiceWeek` (singular) is the week that most needs
+        // attention — a pacing decision. Whether a TOOL is available is a capability question, and answering it
+        // from the singular meant a member running W3 and B3 at once lost whichever tool did not win that pick.
+        // Overlapping weeks are intended (Jay, 2026-08-11), so both flags read the full set.
+        hasOpenWeek(c, 'w3_logging'),
+        hasOpenWeek(c, 'b3_pilot'),
       );
       // ENGINE GUARD (#6): the member clearly asked to ADD a want but the model didn't call add_reclaim_item —
       // it acknowledged in prose and moved on ("that's a good one — anything else?"), silently losing the add.

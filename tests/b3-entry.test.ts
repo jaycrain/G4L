@@ -63,3 +63,24 @@ test('fuel-to-move is optional — a day without it is still a logged day', asyn
   assert.equal(await recordB3Entry(db, m, { goodCalls: 'Moved at lunch' }), true);
   assert.equal((await b3Entries(db, m))[0]!.fuelToMove, null);
 });
+
+// THE SEAM, NOT THE HALVES. recordB3Entry is proven above and the tool is declared in checkin.ts — and both of
+// those were true of a pair that was never wired together once before (see the infinite-loop case in
+// tests/coach-gate). What actually has to hold is that a member in a B3 week gets offered the tool, that a member
+// in a W3 week ALSO keeps theirs, and that the handler exists to receive the call.
+test('the B3 week offers record_b3_day, and an open W3 week alongside it does not displace either', async () => {
+  const checkin = await import('../lib/agent/checkin.ts');
+  const src = await import('node:fs').then((fs) => fs.readFileSync('lib/agent/checkin.ts', 'utf8'));
+
+  assert.match(src, /name: 'record_b3_day'/, 'the tool is declared');
+  assert.match(src, /canRecordB3Day \? \[RECORD_B3_DAY_TOOL\]/, 'and gated into the tool list');
+  // Both flags are computed from the FULL week set. Reading the singular `practiceWeek` is what made a member
+  // running two weeks lose one of the two tools, silently, depending on which week happened to need attention.
+  assert.match(src, /hasOpenWeek\(c, 'w3_logging'\)/, 'W3 reads every open week');
+  assert.match(src, /hasOpenWeek\(c, 'b3_pilot'\)/, 'and so does B3');
+
+  const handler = await import('node:fs').then((fs) => fs.readFileSync('app/dashboard/checkin-actions.ts', 'utf8'));
+  assert.match(handler, /name === 'record_b3_day'/, 'a declared tool with no handler is a dead call');
+  assert.match(handler, /recordB3Entry\(/, 'and the handler reaches the store that the tests above prove');
+  assert.ok(checkin, 'module loads');
+});
