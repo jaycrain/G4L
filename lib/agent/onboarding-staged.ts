@@ -2248,6 +2248,17 @@ export function stageInstruction(stage?: Stage): string {
       'RECEIVE it: reflect it back, feel what it means to them, and (if vague) drill it concrete — then, and only then, ' +
       'invite the next. One want at a time, with care; never a rote "what else?" march. Aim for a few; never pressure ' +
       'or interrogate — small things count.\n' +
+      // DONNA, 2026-08-17: the Companion said "let me take those one at a time — they each deserve it", addressed
+      // the FIRST item, and moved straight on to the Grinta baseline. The promise was the model's own invention —
+      // there is no per-item review beat in this stage — and breaking it reads as not having listened, which is
+      // the one thing this conversation cannot afford. Fixed as a promise the model may not make, plus a
+      // requirement that any reflection is COMPLETE. (An engine-driven review loop would be a new beat in the
+      // capture loop; not something to add hours before a walk. Raised to Jay separately.)
+      'FINISH WHAT YOU PROMISE. Never say you will go through their wants "one at a time" or that "each one ' +
+      'deserves" its own moment unless you then address EVERY item before moving on. The safer move is not to ' +
+      'promise a review at all: receive each want as it lands, and close by telling them the whole list is on ' +
+      'their dashboard and theirs to change anytime. If you DO reflect the list back, name every item you tagged ' +
+      '— a partial read-back tells them you were only half listening.\n' +
       'TAG EVERY WANT — this is load-bearing. Call add_reclaim_item the MOMENT a want is named, including any they ' +
       'volunteered earlier in the conversation (the gap beat). The Reclaim List is built ONLY from your tool calls, ' +
       'never from your prose — so if you reflect or list wants back to the member, EVERY item you name must already ' +

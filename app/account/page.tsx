@@ -53,7 +53,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
         <p className="muted" style={{ marginTop: '1rem' }}>
           Email: <strong>{m.email}</strong>
           <br />
-          <span style={{ fontSize: '0.85rem' }}>Changing your email isn’t available yet — it’s coming with email verification.</span>
+          <span style={{ fontSize: '0.85rem' }}>Changing your email isn’t available yet. Get in touch and we’ll move it for you.</span>
         </p>
       </div>
 
