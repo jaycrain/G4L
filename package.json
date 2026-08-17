@@ -32,7 +32,8 @@
     "walk:c3": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/c3-quality-walk.ts",
     "walk:qd2": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/qd-second-visit-walk.ts",
     "walk:w3": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/w3-grid-walk.ts",
-    "canon:sync": "node scripts/sync-canon-mount.mjs"
+    "canon:sync": "node scripts/sync-canon-mount.mjs",
+    "walk:teaching": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/teaching-layer-walk.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.40.0",

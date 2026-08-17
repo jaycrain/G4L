@@ -27,6 +27,11 @@ const base = process.argv[2]?.replace(/\/$/, '') ?? 'http://localhost:3100';
 // carry the same beats. The three clients share a hook, but they are still three call sites — and the assertion
 // that matters (the gate not stranding a member) is exactly what a copy-paste drift would break.
 const SESSION = (process.argv[3] ?? 'w1').toLowerCase();
+// A phone pass. The teaching beats went in at 1280px, and the bug the whole "not pinned" ruling exists to prevent
+// (Jennifer, 2026-07-27) was WORST on a phone — a framing panel that ate the conversation's height. A card that
+// reads fine on a desktop column can still swallow a 390px screen, so the mobile check is not a formality.
+const MOBILE = process.argv.includes('--mobile');
+const VIEWPORT = MOBILE ? { width: 390, height: 844 } : { width: 1280, height: 1000 };
 const email = process.env.SMOKE_EMAIL?.trim();
 const password = process.env.SMOKE_PASSWORD;
 if (!email || !password) { console.error('Set SMOKE_EMAIL and SMOKE_PASSWORD.'); process.exit(2); }
@@ -42,8 +47,8 @@ const finish = () => {
 
 async function main(): Promise<void> {
   const browser = await chromium.launch();
-  const page = await browser.newPage({ viewport: { width: 1280, height: 1000 } });
-  console.log(`TEACHING LAYER WALK — ${SESSION.toUpperCase()} @ ${base}`);
+  const page = await browser.newPage({ viewport: VIEWPORT });
+  console.log(`TEACHING LAYER WALK — ${SESSION.toUpperCase()}${MOBILE ? ' · MOBILE 390x844' : ''} @ ${base}`);
 
   await page.goto(`${base}/login`, { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(
@@ -107,6 +112,28 @@ async function main(): Promise<void> {
   if (widths && widths.card / widths.chat > 0.9) ok(`the Frame spans the column (${Math.round(widths.card)}px of ${Math.round(widths.chat)}px)`);
   else bad(`the Frame does not span the column — it will read as a bubble (${JSON.stringify(widths)})`);
   if (widths?.bubble && widths.card > widths.bubble) ok('the Frame is wider than a chat bubble');
+
+  if (MOBILE) {
+    // 1 · NOTHING OVERFLOWS SIDEWAYS. A full-bleed card with padding is the classic way to introduce a horizontal
+    //     scrollbar on a phone, and it makes every surface feel broken, not just this one.
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+    if (overflow <= 1) ok('no horizontal overflow at 390px');
+    else bad(`the page scrolls sideways by ${overflow}px on a phone`);
+
+    // 2 · THE CARD DOES NOT SWALLOW THE SCREEN. This is the Jennifer failure in its mobile form: if the framing
+    //     panel fills the viewport, the member lands on a wall of text with no visible conversation.
+    const frac = await page.evaluate(() => {
+      const c = document.querySelector('.teach-frame') as HTMLElement | null;
+      return c ? c.getBoundingClientRect().height / window.innerHeight : 1;
+    });
+    if (frac < 0.75) ok(`the Frame leaves the conversation room (${Math.round(frac * 100)}% of the viewport)`);
+    else bad(`the Frame fills ${Math.round(frac * 100)}% of a phone screen — it swallows the conversation`);
+
+    // 3 · THE TAP TARGET IS REACHABLE. 44px is the iOS floor; below it the button is a coin toss with a thumb.
+    const cta = await page.locator('.teach-frame .teach-cta').boundingBox();
+    if (cta && cta.height >= 40) ok(`"Clip in →" is a real tap target (${Math.round(cta.height)}px)`);
+    else bad(`the CTA is only ${cta ? Math.round(cta.height) : 0}px tall — under the 44px thumb floor`);
+  }
 
   // ---- 3 · THE FULL SUMMARY, NOT THE SHORT ONE ------------------------------------------------------------------
   const body = (await page.locator('.teach-frame .teach-body').innerText()).trim();

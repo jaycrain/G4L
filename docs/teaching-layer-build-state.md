@@ -41,7 +41,13 @@ Playbook") is the one the teaching keeper lands under.
 beside what it explains." **Reuse the `why` kind; do not invent a new one.** Cycle grouping/collapse still needs
 checking against the other past-cycle artifacts before build.
 
-**3 · Mobile rendering.** Not yet investigated.
+**3 · Mobile rendering. DONE — verified at 390x844.** `npm run walk:teaching -- <url> w1 --mobile`, or
+`node --env-file-if-exists=.env.local --experimental-strip-types scripts/teaching-layer-walk.ts <url> w1 --mobile`.
+Three phone-specific assertions, and they are not formalities — the bug the "not pinned" ruling exists to prevent
+(Jennifer, 2026-07-27) was WORST on a phone:
+- no horizontal overflow at 390px (a full-bleed card with padding is the classic way to introduce one)
+- the Frame leaves the conversation room — **41% of the viewport**, asserted under 75%
+- "Clip in →" is a 40px tap target
 
 ## Decisions — RULED by Jay, 2026-08-16
 
