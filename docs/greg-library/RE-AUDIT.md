@@ -65,11 +65,45 @@ says so in its subject: *"The Legacy Letter — foundation (NOT yet reachable by
 live." It becomes a real wiring task the moment the letter ships, and should be picked up **then**, in the same
 change. Recorded here because this is exactly the shape a per-asset reader files as a missing link.
 
+## NOT A GAP · B2's category scoring and per-domain profile are BOTH built
+
+My CHECK guessed these were missing. Both are there, and correctly:
+
+- **Three-factor category scoring** — `lib/rebuild/skills-instrument.ts:81–93` computes `predisposing / enabling /
+  reinforcing` as `{sum, max, pct}`, using Greg's own grouping, quoted at line 22: "Predisposing 6,7,12 · Enabling
+  1,3,4,5,8,11 · Reinforcing 2,9,10."
+- **Per-domain** — `perSkill` carries `activity` and `diet` **separately** (`B2-PA{n}` / `B2-DI{n}`, line 75–79),
+  plus a `domainScore` per domain. This is exactly Greg's "good at planning movement but poor at managing eating
+  cues" distinction, and we hold it.
+
+## GAP · B2 — the whole profile is computed and **none of it reaches the member**
+
+**Greg (SOURCE, B2 Science Check closing nuance):** "That makes **the category scoring especially valuable**,
+because it can help clarify whether a person mainly needs help **getting ready, taking action, or sustaining**."
+
+**Built:** the full score is computed and stored — and what reaches the member is **two strings**. `skillHighlights`
+reduces it to `{strongest, growthEdge}`, handed to the Companion as context (`lib/agent/checkin.ts:465–466`,
+`app/dashboard/checkin-actions.ts:382`). Verified there is **no surface anywhere in `app/` that renders the twelve
+skills or the three categories** — no hits for the skill set or `skillsReading` in any `.tsx`.
+
+**And the outcome strip tells the member they have a reading they cannot see.** `lib/dashboard/outcomes.ts:131`
+marks `{ kind: 'A read', … done: done.has(s.read.id) }` — where `done` is the set of **closed session ids**. So the
+part completes because the member finished B2, not because a reading was ever shown. "A read — what you know" is
+displayed as done for a map that does not render.
+
+**This is the pattern Greg named on 2026-08-08 and it is still live for B2.** Jay's own email that day: *"the
+readings don't exist anywhere — B1 computes and shows nothing, B2 has no map."* Greg's reply asked for the profile
+"displayed as a development map, not a score." Eight days on, the computation is right and the display is absent.
+
+> **Not a governance conflict — governance is the reason it's missing.** "Never a bare number, never a verdict"
+> got applied as "never visible." The resolution Greg gives is a *shape*, not a number: which of the three families
+> is thin. That is showable without a score, and it is the single highest-value read in Rebuild.
+
 ---
 
 ## Still to verify
 
-B2's category scoring + possible per-domain profile · C3's second precept ("Quality Living leads to Quality Days") ·
+C3's second precept ("Quality Living leads to Quality Days") ·
 R2's community share and Greg's *continuum per door* · the carry-forward web beyond the two above.
 
 **Already closed elsewhere, do not re-open:** W3's monitoring week (built 8/8, migration `0074`) · R2 multi-door
