@@ -256,7 +256,7 @@ export default function WeekGridPanel({ memberId, grid }: { memberId: string; gr
       {error && <p className="wk-refusal">{error}</p>}
       <p className="wk-foot">
         {tappable
-          ? 'Tap a day when you do one — or just tell me and I\u2019ll mark it.'
+          ? 'Tap the day beside a line when you did that one — or tell me and I\u2019ll mark it.'
           : dayLed
             ? 'Tap a day to rate it and mark what showed up.'
           : logTo

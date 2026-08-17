@@ -196,3 +196,42 @@ test('A MISSING TELEMETRY COLUMN COSTS A MEASUREMENT, NEVER THE MEMBER’S DAY',
   const logged = await logQualityDay(db, memberId, { score: 8, present: ['bike ride'] });
   assert.deepEqual(logged, { ok: true }, 'and a Quality Day still logs');
 });
+
+test('B2\'s week tracks THEIR growing edges, not one generic line', async () => {
+  // DONNA, 2026-08-17: "Noticed a skill" sat beside a W3 row reading "When there is conflict with my husband",
+  // and she could not tell where the generic one came from. Jay: Greg will see it immediately, because B2 is his
+  // instrument and its whole point is that a member leaves knowing which skills to build. We already had the
+  // answer — B2 scores twelve skills and marks each steady or growing against the member's own median.
+  const { db, memberId } = await freshDb();
+  const { weekGrids } = await import('../lib/practice/grid.ts');
+  const { startPracticeWeek } = await import('../lib/practice/store.ts');
+  await db.query(
+    `insert into self_management_reading (member_id, source, sequence_no, taken_on, scores, responses)
+     values ($1,'b2',1,now(),$2,$3)`,
+    [memberId, JSON.stringify({ perSkill: [
+      { no: 1, skill: 'a', mean: 4.9 }, { no: 2, skill: 'b', mean: 4.8 }, { no: 3, skill: 'c', mean: 4.7 },
+      { no: 4, skill: 'd', mean: 4.6 }, { no: 5, skill: 'e', mean: 4.5 }, { no: 6, skill: 'f', mean: 4.4 },
+      { no: 7, skill: 'g', mean: 2.1 }, { no: 8, skill: 'h', mean: 2.0 }, { no: 9, skill: 'i', mean: 1.9 },
+      { no: 10, skill: 'j', mean: 4.3 }, { no: 11, skill: 'k', mean: 4.2 }, { no: 12, skill: 'l', mean: 4.1 },
+    ] }), JSON.stringify(Array(24).fill(3))],
+  );
+  await startPracticeWeek(db, memberId, 'b2_noticing');
+  const grid = (await weekGrids(db, memberId)).find((g) => g.kind === 'b2_noticing');
+
+  assert.ok(grid, 'the week renders');
+  assert.ok(grid.rows.length >= 2 && grid.rows.length <= 3, 'their thinnest few, not all twelve — a dozen rows is a chore');
+  assert.ok(!grid.rows.some((r) => /noticed a skill/i.test(r.label)), 'no generic row when a reading exists');
+  // The rows must be the LOW scorers (7, 8, 9), in our plain-language labels — never the raw instrument names.
+  assert.ok(grid.rows.every((r) => r.label.length > 6), 'named in plain language');
+});
+
+test('...and it falls back to a plain row when there is no B2 reading yet', async () => {
+  // A member can reach this week without a scored B2 — a drifted register, a legacy account. An empty grid would
+  // be worse than a plain one.
+  const { db, memberId } = await freshDb();
+  const { weekGrids } = await import('../lib/practice/grid.ts');
+  const { startPracticeWeek } = await import('../lib/practice/store.ts');
+  await startPracticeWeek(db, memberId, 'b2_noticing');
+  const grid = (await weekGrids(db, memberId)).find((g) => g.kind === 'b2_noticing');
+  assert.equal(grid?.rows.length, 1, 'one plain row rather than nothing');
+});

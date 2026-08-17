@@ -12,10 +12,15 @@ import RichText from '../../rich-text.tsx';
 
 // Which Session opened each week. Shown only when several are running, so the member can tell them apart —
 // otherwise four unlabelled grids read as one confusing table.
+// NAMED FOR WHAT EACH WEEK ACTUALLY TRACKS (2026-08-17). "Noticing your days" and "Noticing your skills" were
+// interchangeable-sounding and said nothing about the rows underneath — Donna could not tell where the items came
+// from, and Greg will read these against his own assets, where each week has a specific job. W3 tracks the
+// triggers the member NAMED and whether they caught the day; B2 tracks the skills their own appraisal marked as
+// growing edges. The names now say so.
 const WEEK_LABEL: Record<string, string> = {
   w2_image: 'Your picture',
-  w3_logging: 'Noticing your days',
-  b2_noticing: 'Noticing your skills',
+  w3_logging: 'Your triggers this week',
+  b2_noticing: 'The skills you’re building',
   b3_pilot: 'Your Lifestyle Pilot',
   c3_quality: 'Your Quality Days',
 };

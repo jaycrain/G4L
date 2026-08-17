@@ -199,6 +199,54 @@ async function noteRows(db: Db, memberId: string, kind: PracticeKind, window: Me
   return [buildRow('noticed', label, null, window, rows.map((r) => r.marked_on))];
 }
 
+/**
+ * B2 · the noticing week — rows are THE MEMBER'S OWN GROWING EDGES, not one generic line.
+ *
+ * DONNA, 2026-08-17: "these tracking items should be proposed based on the user's actual conversation with the
+ * Companion" — she saw "Noticed a skill" sitting next to a W3 row that read "When there is conflict with my
+ * husband" and asked, reasonably, where the generic one came from. Jay's sharper version: Greg will see this
+ * immediately, because B2 IS his instrument and the whole point of it is that a member leaves knowing WHICH
+ * skills to build.
+ *
+ * We already knew the answer and were not using it. B2 scores twelve skills; buildSkillsMap marks each one steady
+ * or growing against the member's own median (lib/rebuild/skills-map.ts). The growing edges are exactly "the ones
+ * you wanted to build" from Greg's own memo, in his order, in our plain-language labels — no new capture, no new
+ * question, no guess.
+ *
+ * THREE, NOT TWELVE. A week with a dozen rows is a chore, and Greg is explicit that the tracker must stay usable
+ * in under a minute. The three thinnest are where practice pays.
+ *
+ * FALLS BACK to the generic row when there is no reading yet — a member can reach this week without a scored B2
+ * (a drifted register, a legacy account), and an empty grid would be worse than a plain one.
+ */
+async function b2Rows(db: Db, memberId: string, window: MemberWeek): Promise<GridRow[]> {
+  try {
+    const { latestSkillsReading } = await import('../rebuild/store.ts');
+    const { buildSkillsMap } = await import('../rebuild/skills-map.ts');
+    const reading = await latestSkillsReading(db, memberId);
+    if (!reading) return noteRows(db, memberId, 'b2_noticing', window, 'Noticed a skill');
+    const edges = buildSkillsMap(reading.scores)
+      .families.flatMap((f) => f.rows)
+      .filter((r) => !r.steady)
+      .slice(0, 3);
+    if (!edges.length) return noteRows(db, memberId, 'b2_noticing', window, 'Noticed a skill');
+    const { rows } = await db.query<{ marked_on: string; commitment_id: string | null }>(
+      `select marked_on::text as marked_on, commitment_id from practice_mark
+        where member_id = $1 and kind = 'b2_noticing'`,
+      [memberId],
+    );
+    return edges.map((e) => {
+      const slot = `skill-${e.no}`;
+      const marks = rows.filter((r) => (r.commitment_id ?? 'noticed') === slot).map((r) => r.marked_on);
+      return buildRow(slot, e.label, null, window, marks);
+    });
+  } catch (err) {
+    // Same degrade posture as the rest of this file: one bad read costs the personalisation, never the grid.
+    console.error(`b2Rows failed for member=${memberId}:`, err);
+    return noteRows(db, memberId, 'b2_noticing', window, 'Noticed a skill');
+  }
+}
+
 // ── the one entry point ───────────────────────────────────────────────────────────────────────────────────────
 
 /** The member's active practice week as a grid, or null. Drift-hardened like the rest of lib/practice: a missing
@@ -209,7 +257,7 @@ async function rowsFor(db: Db, memberId: string, kind: PracticeKind, window: Mem
   return kind === 'b3_pilot' || kind === 'reclaim_item' ? commitmentRows(db, memberId, kind, window)
     : kind === 'c3_quality' ? c3Rows(db, memberId, window)
     : kind === 'w3_logging' ? w3Rows(db, memberId, window)
-    : kind === 'b2_noticing' ? noteRows(db, memberId, 'b2_noticing', window, 'Noticed a skill')
+    : kind === 'b2_noticing' ? b2Rows(db, memberId, window)
     : []; // w2_image is five minutes in a picture — nothing countable, and forcing a grid onto it would be noise
 }
 
