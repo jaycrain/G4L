@@ -140,6 +140,9 @@ async function keepersOfType(db: Db, memberId: string, keeperType: string): Prom
   }
 }
 
+/** Which assets are INSTRUMENT readings rather than the member's own words. See describeCarryForward. */
+const COMPUTED = new Set<RetainedAssetId>(['b1', 'b2', 'c2']);
+
 /** Trim, drop empties, cap. A carry-forward that dumps six lines stops being context and becomes a recital. */
 const lines = (...xs: (string | null | undefined)[]): string[] =>
   xs.map((s) => (s ?? '').trim()).filter(Boolean).slice(0, 3);
@@ -194,9 +197,15 @@ const READERS: Record<RetainedAssetId, (db: Db, memberId: string) => Promise<Ret
     // below is unconditional so that cannot recur.)
     const act = r.scores?.activity?.relativeAutonomous;
     const diet = r.scores?.diet?.relativeAutonomous;
+    // THIRD PERSON, DELIBERATELY. relativeAutonomyRead returns MEMBER-FACING second person ("mostly your own
+    // reasons") because it is also rendered on their own surfaces. Dropped into a sentence about them, it
+    // produced "what pulls THEM is mostly YOUR own reasons" — incoherent, and a live eval showed the model
+    // resolving the muddle by attributing the reading to the member's own speech ("since you said…"). They said
+    // no such thing; they answered twelve Likert items and we computed it.
+    const third = (v: number) => relativeAutonomyRead(v).replace(/\byour\b/g, 'their');
     const body = lines(
-      typeof act === 'number' ? `On movement, what pulls them is ${relativeAutonomyRead(act)}.` : null,
-      typeof diet === 'number' ? `On eating, ${relativeAutonomyRead(diet)}.` : null,
+      typeof act === 'number' ? `On movement, what pulls them is ${third(act)}.` : null,
+      typeof diet === 'number' ? `On eating, ${third(diet)}.` : null,
     );
     return body.length ? { asset: 'b1', label: 'their why', lines: body } : null;
   },
@@ -290,13 +299,27 @@ export async function carryForward(db: Db, memberId: string, sessionKey: string)
  */
 export function describeCarryForward(retained: Retained[]): string | null {
   if (!retained.length) return null;
-  const body = retained.map((r) => `- ${r.label}: ${r.lines.join(' ')}`).join('\n');
+  // COMPUTED vs THEIR OWN WORDS is marked per line, because the model cannot tell them apart and a live eval
+  // caught it saying "since you said movement comes from your own reasons" about a Likert result. Quoting a
+  // member's own line back is the feature; telling them they said something they never said corrodes the exact
+  // trust the memory is meant to build.
+  const body = retained
+    .map((r) => `- ${r.label} (${COMPUTED.has(r.asset) ? 'computed from an assessment — NOT their words' : 'their own words'}): ${r.lines.join(' ')}`)
+    .join('\n');
   return (
     'WHAT THEY ALREADY DID, AND WHAT IT SAID — connect this Session to it in your own words, early and briefly.\n' +
     `${body}\n` +
     'Use it to show the program remembers them: refer back to ONE of these where it genuinely bears on what they ' +
     'are doing now, in their words, not all of them and not as a recap. Do NOT list these back, do not mention ' +
     'any prior Session they have not done, and never imply they are behind — these run in the order that suits ' +
-    'them, and an absent one is a choice, not a gap.'
+    'them, and an absent one is a choice, not a gap.\n' +
+    'NAME ONE SPECIFICALLY OR SAY NOTHING. A vague gesture at their history ("both of those connect to real ' +
+    'things for you", "this ties into what you have worked on") is worse than silence: it claims to know them ' +
+    'and shows nothing, which is the sound of a system that has a file open rather than a memory. If nothing ' +
+    'here genuinely bears on this moment, say nothing about their prior work at all.\n' +
+    'For anything marked COMPUTED, never say they "said" or "told you" it — it came from an assessment they ' +
+    'completed, not from their mouth. Attribute it to the assessment and then USE it. Like this: "When you ' +
+    'looked at what drives your movement, it came out as mostly your own reasons — so this one gets to be ' +
+    'fully yours." Never as a number, and never as a verdict about them.'
   );
 }
