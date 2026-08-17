@@ -61,6 +61,12 @@ async function main(): Promise<void> {
   if (!memberId) { bad('could not resolve the member id'); await browser.close(); return finish(); }
   ok('logged in as the demo member');
 
+  // Reset W1 so the walk is REPEATABLE. Without this the second run meets an already-closed session and silently
+  // checks something different from the first — the kind of drift that makes a green walk stop meaning anything.
+  const reset = await page.request.post(`${base}/dev/reset-session?session=w1`);
+  if (reset.ok()) ok('reset W1 to a clean start');
+  else bad(`could not reset W1 (${reset.status()}) — the run may not be comparable`);
+
   // W1 — the Disinformation Audit. The mockups' worked example, and a 1:1 asset session (not a gate).
   await page.goto(`${base}/workspace/${memberId}/w1`, { waitUntil: 'domcontentloaded' });
   const frame = page.locator('.teach-frame');
@@ -168,11 +174,34 @@ async function main(): Promise<void> {
   await page.screenshot({ path: 'docs/screenshots/teaching-understand-w1.png', fullPage: false });
   ok('screenshot → docs/screenshots/teaching-understand-w1.png');
 
+  // THE GOODBYE MUST NOT PRECEDE THE SCIENCE (Jay, 2026-08-17, option 1). Before the fix the Companion said
+  // "head back whenever you're ready" and the card appeared after it, reading as an afterthought.
+  const goodbyeBefore = await page.locator('.bubble.agent', { hasText: 'Head back whenever' }).count();
+  if (goodbyeBefore === 0) ok('the goodbye has NOT been said yet — the science comes first');
+  else bad('the Companion said goodbye before the science — the card reads as an afterthought');
+
   await page.locator('.teach-understand .teach-cta').click();
-  await page.waitForTimeout(400);
+  await page.waitForTimeout(500);
   const continueAfter = await page.locator('.chat-continue button').count();
   if (continueAfter === 1) ok('"Got it →" releases the hand-home');
   else bad('after acknowledging, Continue → still did not appear — the member is stranded');
+
+  // ORDER, NOT EXISTENCE. The first version of this counted the bubble and passed while the goodbye still painted
+  // ABOVE the card — appending it to `messages` could never move it below, because the card renders after every
+  // message. Counting proved it existed, which was never the question. compareDocumentPosition is.
+  const order = await page.evaluate(() => {
+    const card = document.querySelector('.teach-understand');
+    const bubbles = Array.from(document.querySelectorAll('.bubble.agent'));
+    const bye = bubbles.find((b) => (b.textContent ?? '').includes('Head back whenever'));
+    if (!card || !bye) return null;
+    // Node.DOCUMENT_POSITION_FOLLOWING === 4 → `bye` comes after `card` in document order.
+    return { after: !!(card.compareDocumentPosition(bye) & 4) };
+  });
+  if (order?.after) ok('the goodbye sits BELOW the card in the DOM — genuinely last');
+  else bad(`the goodbye is not below the card (${JSON.stringify(order)}) — it still reads before the science`);
+
+  await page.screenshot({ path: 'docs/screenshots/teaching-close-w1.png', fullPage: false });
+  ok('screenshot → docs/screenshots/teaching-close-w1.png');
 
   await browser.close();
   finish();

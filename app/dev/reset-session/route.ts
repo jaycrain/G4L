@@ -25,7 +25,27 @@ import type { Db } from '../../../lib/db/schema.ts';
 // It clears working state (the in-flight arc session, this cycle's audit reading, the session-progress row). It
 // never deletes a member, credentials, or anything belonging to someone else.
 
-const CLEARABLE = new Set(['c1', 'c2', 'c3', 'c4']);
+// EXTENDED 2026-08-17 beyond Reclaim. This route was Reclaim-only — it hardcoded `reclaim:${session}` and
+// `RCL-${SESSION}` — so the teaching-layer walk could not reset W1 and its second run silently met an
+// already-closed session, checking something different from its first. A walk that is not repeatable stops
+// meaning anything, quietly. The arc and the curriculum id are now DERIVED from the session prefix rather than
+// assumed, so adding a session here cannot drift from how the app actually stores it:
+//   arc_session.arc      = `${arc}:${session}`      (lib/agent/arc-session.ts storageKey)
+//   session_progress.id  = `${PREFIX}-${SESSION}`   (lib/curriculum/registry.ts — RWR-W1 · RBD-B1 · RCL-C1)
+const ARCS = {
+  w: { arc: 'rewire', prefix: 'RWR' },
+  b: { arc: 'rebuild', prefix: 'RBD' },
+  c: { arc: 'reclaim', prefix: 'RCL' },
+} as const;
+
+const CLEARABLE = new Set(['w1', 'w2', 'w3', 'b1', 'b2', 'b3', 'c1', 'c2', 'c3', 'c4']);
+
+/** The storage names for a clearable session. Returns null for anything not in CLEARABLE. */
+function namesFor(session: string): { arcKey: string; progressId: string } | null {
+  const entry = ARCS[session[0] as keyof typeof ARCS];
+  if (!entry || !CLEARABLE.has(session)) return null;
+  return { arcKey: `${entry.arc}:${session}`, progressId: `${entry.prefix}-${session.toUpperCase()}` };
+}
 
 export async function POST(req: Request): Promise<NextResponse> {
   assertDevOnly();
@@ -51,10 +71,11 @@ export async function POST(req: Request): Promise<NextResponse> {
     return NextResponse.json({ ok: false, error: 'refusing: not a demo (.test) account' }, { status: 403 });
   }
 
-  await db.query('delete from arc_session where member_id = $1 and arc = $2', [memberId, `reclaim:${session}`]);
+  const names = namesFor(session)!; // CLEARABLE was checked above, so this cannot be null
+  await db.query('delete from arc_session where member_id = $1 and arc = $2', [memberId, names.arcKey]);
   await db.query('delete from session_progress where member_id = $1 and session_id = $2', [
     memberId,
-    `RCL-${session.toUpperCase()}`,
+    names.progressId,
   ]);
   // C2's durable register, so the walk starts from no reading rather than appending a second sequence.
   if (session === 'c2') await db.query('delete from bigger_world_reading where member_id = $1', [memberId]);

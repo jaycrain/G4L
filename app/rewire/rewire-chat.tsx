@@ -45,7 +45,8 @@ export default function RewireChat({ memberId, session = 'w1' }: { memberId: str
   // NOTE the initial value: a session with nothing to teach starts ALREADY taught. Defaulting to false would gate
   // the hand-home behind a card that never renders — the checkpoint has no Understand beat, so onAcknowledge would
   // never fire and the member would sit at a finished session with no way out. A gate whose key is not issued.
-  const [taught, setTaught] = useState(() => !teachingFor(sessionKey).understand);
+  const teaches = !!teachingFor(sessionKey).understand;
+  const [taught, setTaught] = useState(() => !teaches);
   const started = useRef(false);
   const chatRef = useChatAutoscroll([messages.length, pending, expects, done]);
 
@@ -92,7 +93,14 @@ export default function RewireChat({ memberId, session = 'w1' }: { memberId: str
       // W-21 — hand the member home in the companion's voice, then show the Continue → CTA (no more dead-end).
       // Badge acknowledgment (Jay's call): if this session just earned a milestone, the Companion names it at the close.
       const badgeBeat = r.earnedBadge ? [{ role: 'agent' as const, text: `You earned another badge! “${r.earnedBadge.name}.” I added it to your collection.` }] : [];
-      setMessages((m) => [...m, ...agentBubbles(r.reply!), ...badgeBeat, { role: 'agent', text: REWIRE_HAND_HOME }]);
+      // THE GOODBYE NOW LANDS AFTER THE SCIENCE, not before it (Jay, 2026-08-17 — option 1, a pure reorder; no
+      // copy changed). The walk's first screenshot showed the Companion saying "head back whenever you're ready"
+      // and THEN the Why-it-works card appearing, which read as an afterthought bolted on after the farewell. The
+      // spec has the Companion turning TOWARD the science at the close, so the parting line is now appended when
+      // the member acknowledges. A session with nothing to teach has no acknowledgment to wait for, so it keeps
+      // the line here — otherwise the goodbye would never arrive on a checkpoint.
+      const handHome = teaches ? [] : [{ role: 'agent' as const, text: REWIRE_HAND_HOME }];
+      setMessages((m) => [...m, ...agentBubbles(r.reply!), ...badgeBeat, ...handHome]);
       setDone(true); // session done — the keeper(s) are in the Playbook
       // The end card is NOT raised here. It used to fire on this same tick, so it landed on top of the Companion's
       // close, the badge beat and the hand-home before any of them could be read — the receipt arriving before the
@@ -135,6 +143,11 @@ export default function RewireChat({ memberId, session = 'w1' }: { memberId: str
             ("before we close, here's why what you just did holds up"); the card carries the science so no chat
             bubble has to recite it, which is what keeps the Companion inside Greg's evocative posture. */}
         {done && <TeachingUnderstand sessionKey={sessionKey} onAcknowledge={() => setTaught(true)} />}
+        {/* The parting line, rendered AFTER the card rather than pushed into `messages`. Appending it to the thread
+            put it back ABOVE the science — the card renders after every message, so a bubble added later still
+            paints higher. The first version of this passed its test anyway, because the test counted the bubble
+            instead of checking where it sat. Order is the whole point here, so it is now a sibling below the card. */}
+        {done && taught && teaches && <div className="bubble agent">{REWIRE_HAND_HOME}</div>}
       </div>
       {error && <p className="error">{error}</p>}
       {!done && (
