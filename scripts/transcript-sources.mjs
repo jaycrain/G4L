@@ -40,6 +40,14 @@ export const SECTIONS = [
   { title: 'The practice week & Playbook reads', files: ['lib/rewire/w3-entry.ts', 'lib/practice/mark.ts', 'app/momentum/week-grid.tsx', 'lib/playbook/reads.ts', 'app/quality-day/[memberId]/page.tsx', 'app/quality-day/quality-day-log.tsx'] },
   { title: 'Grinta baseline (the 12-item survey)', files: ['lib/grinta/survey/instrument.ts'] },
   { title: 'Session & phase summaries ("Why this matters")', files: ['lib/content/summaries.ts'] },
+  // The in-Session teaching layer (2026-08-17). "Why this matters" and "Explore the Science" stopped being
+  // optional header widgets and became required beats INSIDE each Session — so this copy is now something every
+  // member reads on the way through, not something a curious one opens. teaching.ts resolves the beats and holds
+  // the asset titles on the provenance chips; teaching-cards.tsx is the rendered copy.
+  { title: 'The in-Session teaching layer (Frame · Understand)', files: ['lib/content/teaching.ts', 'app/workspace/teaching-cards.tsx'] },
+  // B2's development map — the lead line naming their strongest skill and the family shape. Member-facing prose
+  // that reads as a finding about them, which is exactly the kind marketing and the book quote.
+  { title: "B2 — the development map ('your map')", files: ['lib/rebuild/skills-map.ts'] },
   { title: 'Badges', files: ['lib/curriculum/registry.ts', 'app/badges/[memberId]/page.tsx'] },
   // THIS LIST IS HAND-MAINTAINED, WHICH MEANS IT GOES STALE SILENTLY — and it had. Audited 2026-08-08 while
   // cutting v3.3 and found the transcript, the artifact marketing and the BOOK quote from, was missing the

@@ -47,11 +47,22 @@ test('the skills read speaks plain language and never a number', async () => {
   // THE RULE. Any digit here means a score reached a surface that promised not to show one.
   assert.doesNotMatch(text, /\d/, 'a read is plain language — no number, ever');
   assert.doesNotMatch(text, /weak|poor|low|failing|behind/i, 'a growth edge is a skill to practise, never a verdict');
-  assert.match(text, /monitoring/i, 'their strongest skill, named');
+  // Their strongest skill IS named — but in OUR words, not Greg's. This asserted /monitoring/i, the raw instrument
+  // name, which the plain-language labels deliberately replaced ("Monitoring" -> "Watching how it is going"). The
+  // intent of the assertion is that the read says something specific about this person rather than only naming a
+  // family shape; the intent survives, the spelling of it changed. Skill 1 is their highest here (mean 4.8).
+  assert.match(text, /sizing up what you need/i, 'their strongest skill, named — in plain language');
+  assert.doesNotMatch(text, /\bmonitoring\b/i, "and never Greg's raw instrument name, which is not how we speak to a member");
   // The posture line DECLARES what a growth edge is rather than reassuring about what it isn't — the
   // "it's not X, it's Y" tic is one Jay has been cutting from member copy all week, and the strict assertion
   // above is what caught my first draft using it ("not a weakness to carry").
-  assert.match(text, /simply the next one to practice/, 'the posture line is part of the read, not decoration');
+  //
+  // The WORDING changed with the map rewrite ("a growth edge is simply the next one to practice" -> "Every one of
+  // these is learnable"), because the lead already says where practice would pay and the two together read as the
+  // same sentence twice. What must not change is that a posture line is PRESENT and stays declarative, so that is
+  // what this asserts now — the line itself, plus the standing ban on reassurance phrasing.
+  assert.match(text, /every one of these is learnable/i, 'the posture line is part of the read, not decoration');
+  assert.doesNotMatch(text, /\bnot a (weakness|failing|verdict|score|grade)\b/i, 'declare what it IS — never reassure about what it is not');
 });
 
 test('a DRIFTED register hides one card, it does not empty the tab', async () => {

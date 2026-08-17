@@ -17,11 +17,26 @@ import { resolvePractice, type ActivePractice } from '../lib/practice/store.ts';
 // wrote, and a second trigger must MOVE the record rather than silently add a second (Greg's `trigger_fired` is
 // singular). Everything else is plumbing.
 
-// 2026-08-10 is a Monday, so this is a full Mon-Sun window and day 3 is the Wednesday — the same week these
-// tests always used. Built through the real constructor so a change to how a week resolves cannot pass here
-// while breaking in the product.
-const WEEK: ActivePractice = resolvePractice('w3_logging', '2026-08-10', '2026-08-12');
-const DAY0 = '2026-08-10'; // dayIndex 0 of that week
+// THE WEEK IS RELATIVE TO TODAY, AND THAT IS LOAD-BEARING — it used to be hardcoded to the Monday 2026-08-10.
+//
+// `w3Entries` reads a 7-day window with a STRICT `entry_date > today - 7 days`, so the hardcoded Monday sat inside
+// the window for exactly six days and then fell out of it. These five tests passed on 2026-08-16 and failed on
+// 2026-08-17 with nothing changed but the calendar — every one reporting "0 rows", which reads exactly like the
+// grid silently writing nothing. A time bomb that impersonates the most alarming bug in the file ("A TICK NEVER
+// DELETES WHAT THEY WROTE") is worse than no test, because it trains you to ignore it.
+//
+// Anchoring on the CURRENT week's Monday keeps day 0 at most six days back, so it is always inside the window, and
+// keeps the Mon-Sun shape the product actually uses. Still built through the real constructor so a change to how a
+// week resolves cannot pass here while breaking in the product.
+function mondayOfThisWeek(): string {
+  const now = new Date();
+  const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 6) % 7)); // Sunday (0) is the END of a Mon-Sun week, not the start
+  return d.toISOString().slice(0, 10);
+}
+const DAY0 = mondayOfThisWeek(); // dayIndex 0 of the current week
+const TODAY = new Date().toISOString().slice(0, 10);
+const WEEK: ActivePractice = resolvePractice('w3_logging', DAY0, TODAY);
 
 async function freshDb(): Promise<{ db: Db; memberId: string }> {
   const pg = new PGlite();

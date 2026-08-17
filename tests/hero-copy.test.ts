@@ -19,9 +19,11 @@ test('just-finished — congratulates, NAMES the next session', () => {
     { kind: 'just-finished', session: { id: 'w1', label: 'the Disinformation Audit' }, next: { id: 'w2', label: 'Visualization Workshop', isCheckpoint: false } },
     ctx,
   );
-  assert.match(v.title, /Nice work — the Disinformation Audit/);
-  assert.match(v.copy, /Visualization Workshop is next/);
-  // "next" left the CTA on 2026-08-11: the subhead directly above now names the session, so the word did no work.
+  // ORIENTED FORWARD (Donna, 2026-08-17): the NEXT session is the headline and the finished one moved to the
+  // eyebrow. These assertions used to read the other way round; see the note in hero-just-finished.test.ts.
+  assert.match(v.title, /Nice work — Visualization Workshop is next/);
+  assert.match(v.eyebrow, /You just finished/, 'the credit for finishing is not lost, it moved');
+  // "next" left the CTA on 2026-08-11: the line directly above now names the session, so the word did no work.
   assert.equal(v.ctaLabel, 'Start the Session');
 });
 
@@ -30,7 +32,10 @@ test('just-finished — after the LAST session, names + routes to the Checkpoint
     { kind: 'just-finished', session: { id: 'w3', label: 'The False Start Protocol' }, next: { id: 'rewire', label: 'The Rewire Checkpoint', isCheckpoint: true } },
     ctx,
   );
-  assert.match(v.copy, /Next up: The Rewire Checkpoint/);
+  // The route is what matters here — the member must not hit a dead end after the last Session. The Checkpoint is
+  // named in the headline now, and the subhead marks the phase as walked.
+  assert.match(v.title, /The Rewire Checkpoint is next/);
+  assert.match(v.copy, /walked the whole Rewire phase/);
   assert.equal(v.ctaLabel, 'Take the Checkpoint');
 });
 
@@ -57,8 +62,8 @@ test('just-finished (non-Rewire) — keeps the generic "Next up" hand-off, not D
     { kind: 'just-finished', session: { id: 'b1', label: 'What Is Your Why?' }, next: { id: 'b2', label: 'Your Strengths', isCheckpoint: false } },
     rebuildCtx,
   );
-  assert.match(v.copy, /Next up: Your Strengths/);
-  assert.doesNotMatch(v.copy, /some hard work/);
+  assert.match(v.title, /Your Strengths is next/);
+  assert.doesNotMatch(v.copy, /some hard work/, "Donna's Rewire-only line must not leak into another phase");
 });
 
 test('checkpoint-ready (non-Rewire) — keeps the generic Grinta-moves framing, phase-named', () => {

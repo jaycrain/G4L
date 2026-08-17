@@ -32,7 +32,12 @@ test('§2f ceremony · a DOWN checkpoint move reveals the clearer-seeing line, N
     keepers: ['x'], doors: ['The Grind'],
   });
   const grintaBeat = beats.find((b) => b.reveal?.kind === 'grinta')!;
-  assert.match(grintaBeat.text, /seeing yourself more clearly|not a step back/i, 'a dip reads as honest recalibration');
+  // The DECLARATIVE form of the same idea. This asserted /seeing yourself more clearly|not a step back/, and
+  // "not a step back" is precisely the reassure-about-what-it-isn't tic Jay had cut from member copy (2026-08-16)
+  // — so the copy moved to stating what the dip IS ("what a clearer look does to a first estimate"). The rule the
+  // test protects is unchanged: a dip is recalibration, never a failure. Only the reassurance phrasing is gone.
+  assert.match(grintaBeat.text, /clearer look|seeing yourself more clearly/i, 'a dip reads as honest recalibration');
+  assert.doesNotMatch(grintaBeat.text, /\bnot a (step back|failure|setback)\b/i, 'declare what it is — do not reassure about what it is not');
   assert.doesNotMatch(grintaBeat.text, /went up because of it/i, 'never the up-line on a down move');
   assert.doesNotMatch(grintaBeat.text, /\bfail|\bloss|\bbackward\b|worse/i, 'never framed as failure');
 });

@@ -65,6 +65,16 @@ export type SkillsMap = {
   thinnest: SkillMeta | null;
   /** The family with the fewest — the one they lead with. Null when flat. */
   steadiest: SkillMeta | null;
+  /**
+   * Their single highest-scoring skill, by label.
+   *
+   * WHY THIS SURVIVED THE REWRITE. The read used to name the strongest SKILL; the map rewrite replaced that with
+   * the family shape, because Greg's B2 Science Check says the grouping is the valuable part. It is — but the two
+   * are not substitutes, and dropping the skill quietly took away the one specific, personal thing the read said
+   * about them. "Getting ready is the thinnest of the three" is a shape; "Monitoring is your strongest" is a fact
+   * about a person. The lead now carries both, and a test asserts the skill is named.
+   */
+  strongest: string | null;
 };
 
 /**
@@ -111,10 +121,15 @@ export function buildSkillsMap(score: SkillScore): SkillsMap {
   const ranked = [...families].sort((a, b) => share(b) - share(a));
   const flat = share(ranked[0]!) === share(ranked[ranked.length - 1]!);
 
+  // Their best single skill. Ties break on the lower skill number so the same profile always names the same skill
+  // — a lead line that changed wording between two identical reads would read as the product being unsure.
+  const best = [...score.perSkill].sort((a, b) => b.mean - a.mean || a.no - b.no)[0];
+
   return {
     families,
     thinnest: flat ? null : ranked[0]!.key,
     steadiest: flat ? null : ranked[ranked.length - 1]!.key,
+    strongest: best ? (SKILL_LABEL[best.no] ?? best.skill) : null,
   };
 }
 
@@ -124,11 +139,14 @@ export function buildSkillsMap(score: SkillScore): SkillsMap {
  * to read it.
  */
 export function mapLead(map: SkillsMap): string {
+  // The strongest SKILL leads when we have it — it is the most specific thing the instrument knows about them, and
+  // the family shape is the frame around it rather than a replacement for it.
+  const best = map.strongest ? `${map.strongest} is your strongest single skill. ` : '';
   if (!map.thinnest || !map.steadiest) {
-    return 'Your three families read evenly. The skills below are the ones with the most room.';
+    return `${best}Your three families read evenly. The skills below are the ones with the most room.`;
   }
   const steady = FAMILY_LABEL[map.steadiest].name.toLowerCase();
   // Name the thin family ONCE. The first version interpolated it twice and read "Staying with it is the thinnest
   // of the three — staying with it is where practice would pay most" — which no test caught and the screenshot did.
-  return `You are steadiest at ${steady}. ${FAMILY_LABEL[map.thinnest].name} is the thinnest of the three, and where practice would pay most.`;
+  return `${best}You are steadiest at ${steady}. ${FAMILY_LABEL[map.thinnest].name} is the thinnest of the three, and where practice would pay most.`;
 }

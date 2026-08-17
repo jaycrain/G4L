@@ -3601,7 +3601,7 @@ body:has(.fc-dark) .brand-wordmark,
 /* ── B2's SELF-MANAGEMENT MAP — inside the Reads card, Playbook › What you've learned ──────────────────────────
    Greg's three families with their skills. NO number renders: "steady" is relative to this member's own profile
    (lib/rebuild/skills-map.ts), which is the property that makes a profile showable at all — there is no line to
-   fall below. Growing edges lead inside each family; the read exists to say what to practise.
+   fall below. Growing edges lead inside each family; the read exists to say what to practice.
 
    The tag is the only colour, and only on the STEADY side. A red or amber marker on "worth practising" would turn
    a development map into a report card, which is the one thing this read must not be. Neutral there is the whole
@@ -3613,6 +3613,11 @@ body:has(.fc-dark) .brand-wordmark,
 .pb-map-row {
   display: flex; align-items: center; justify-content: space-between; gap: 12px;
   padding: 8px 12px; background: #f5f4f1; border-radius: 8px; margin-bottom: 6px;
+  /* EXPLICIT, even though every child sets its own colour. A light background with no colour of its own inherits
+     white from the global button rule, so any text placed directly in this row — or any child added later that
+     forgets to set one — renders white on near-white and vanishes. The contrast guard flags exactly this pairing
+     (tests/contrast.test.ts); it is a latent trap, not a visible bug, which is why it needs the test. */
+  color: var(--charcoal);
 }
 .pb-map-skill { font-size: 14px; color: var(--charcoal); }
 .pb-map-split { font-size: 13px; color: var(--navy); opacity: 0.7; }
