@@ -289,9 +289,20 @@ today it promises the first and delivers the second.
    and no asset claims it, because guessing would put a wrong claim about a member in front of them. **Needs
    Greg.**
 
-   Still not wired into Sessions beyond B3 and C3: the other eight `UPSTREAM` entries are declared and their
-   readers are tested, but only B3 and C3 currently pass a carry-forward block into their turn. C3 -> the Loop
-   remains blocked on the Loop rule, an open Greg+Jay question, not engineering.
+   **WIRING COMPLETE 2026-08-17** for every Session that can take it: W1 · W2 · W3 · B3 · C1 · C3 all resolve and
+   pass a carry-forward block into their model turn.
+
+   **THREE ARE DELIBERATELY NOT WIRED, and this is the part worth remembering.** B1, B2 and C2 declare a
+   `prior_module_context` load in their memos, so their absence reads like an omission. It is not: they are
+   **administered Likert reads** (12, 24 and 20 items) whose turn functions are SYNCHRONOUS and never call the
+   model. There is no system prompt for a block to enter. Wiring them means giving those Sessions a conversational
+   turn they deliberately do not have — **a program decision for Jay and Greg, not plumbing.** A test pins the
+   reasoning so a later reader does not "fix" it.
+
+   **R3 is also held out.** Reconnect is one arc of seven beats, so R2's material is already in the live thread
+   when R3 runs; a block would tell the model what it can already read, on the surface carrying the capture loop.
+
+   C3 → the Loop remains blocked on the Loop rule — an open Greg+Jay question, not engineering.
 5. ~~**The Teaching Layer's shown-once rule for Reconnect**~~ **SHIPPED** — keyed to the ASSET and rendered at its
    last beat, so three cards across seven beats and no member meets one twice (`tests/teaching.test.ts`).
 
