@@ -91,7 +91,12 @@ const BEATS: Beat[] = [
       //
       // The lesson worth keeping: when two items in a brief look contradictory, the resolution is to ask which
       // LAYER each governs — not to split the difference by shortening.
-      { term: 'Clip in', text: 'a cycling term our founder uses as a metaphor, one that carries more than “let’s go.” Cyclists lock their shoes to the pedals when they mean it: committed, in for the long ride. Everyone falls at least once. But push through and it transforms the ride, every stroke counts now, up and down, and you go farther and stronger. Fall, and you clip back in.' },
+      // JAY'S OWN WORDS, 2026-08-17 — he wrote this definition himself and it replaces the previous draft. Two
+      // things it fixes: "everyone forgets to unclip and falls down once" is the thing that ACTUALLY happens to a
+      // cyclist (you stop, forget your shoes are locked in, and topple over), where "everyone falls at least
+      // once" blurred it into something vaguer and less true. And it drops the wordy middle. Founder's metaphor,
+      // founder's phrasing — treat it as settled copy and do not smooth it.
+      { term: 'Clip in', text: 'our founder’s cycling metaphor, and more than “let’s go.” Shoes locked to your pedals is a commitment. Every stroke drives power, and you ride farther and stronger. Everyone forgets to unclip and falls down once. You get up and clip back in.' },
     ],
     cta: 'Next →',
   },
