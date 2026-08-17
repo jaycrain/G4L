@@ -75,7 +75,12 @@ async function main(): Promise<void> {
   // checks something different from the first — the kind of drift that makes a green walk stop meaning anything.
   const reset = await page.request.post(`${base}/dev/reset-session?session=${SESSION}`);
   if (reset.ok()) ok(`reset ${SESSION.toUpperCase()} to a clean start`);
-  else bad(`could not reset ${SESSION.toUpperCase()} (${reset.status()}) — the run may not be comparable`);
+  else if (reset.status() === 404) {
+    // EXPECTED ON PROD, not a failure. /dev/reset-session is dev-only by design — assertDevOnly() 404s whenever
+    // DATABASE_URL is set, which is the gate that stops a reset route existing on Vercel at all. Reporting it red
+    // trains the reader to skim past red marks on the one run where a red mark matters most.
+    console.log('  · no reset (dev-only route) — expected against prod; the run is not repeatable here');
+  } else bad(`could not reset ${SESSION.toUpperCase()} (${reset.status()}) — the run may not be comparable`);
 
   // W1 — the Disinformation Audit. The mockups' worked example, and a 1:1 asset session (not a gate).
   await page.goto(`${base}/workspace/${memberId}/${SESSION}`, { waitUntil: 'domcontentloaded' });
