@@ -9,6 +9,7 @@ import {
   type Turn,
 } from '../lib/agent/onboarding.ts';
 import { contractMet } from '../lib/agent/onboarding-contract.ts';
+import { stageInstruction } from '../lib/agent/onboarding-staged.ts';
 
 // ============================================================================
 // ONBOARDING REPLAY HARNESS
@@ -336,4 +337,19 @@ test('REPLAY — Leg 3 reconciliation: a declined Door is set aside (never recor
   assert.deepEqual(finalState.collected.doors, ['career_cliff'], 'only the real Door remains');
   assert.equal(turns[turns.length - 1]!.complete, true, 'still completes after the member sets it aside');
   assertInvariants(turns);
+});
+
+test('the reclaim stage may not promise a per-item review it cannot finish', () => {
+  // DONNA, 2026-08-17: the Companion said "let me take those one at a time — they each deserve it", addressed the
+  // first want, and moved straight to the Grinta baseline. The promise was the model's OWN invention — there is no
+  // per-item review beat in that stage — and the reclaim → grinta transition is structurally the last turn, so it
+  // never had another turn to keep it.
+  //
+  // Fixed at the prompt (a4909c9) rather than by adding an engine beat to the capture loop. A prompt rule has no
+  // natural guard, though: it is one deletion away from silently going back, and the symptom would be a broken
+  // promise in the most delicate conversation we have. This is that guard.
+  const s = stageInstruction('reclaim');
+  assert.match(s, /FINISH WHAT YOU PROMISE/, 'the rule is still in the reclaim steering');
+  assert.match(s, /one at a time/, 'and still names the exact phrase that broke');
+  assert.match(s, /name every item you tagged|every item you tagged/i, 'a partial read-back is the same failure');
 });
