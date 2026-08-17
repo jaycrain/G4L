@@ -9,7 +9,10 @@ gap. Quotes from the Aug 6 extraction carry forward; its conclusions do not.
 
 ---
 
-## GAP · B3 — the plan has no backups and no anticipated obstacles
+## ✅ SHIPPED (was GAP) · B3 — the plan has no backups and no anticipated obstacles
+
+> **Closed 2026-08-17** (`272f390`). Both fields ride the existing jsonb payload, so no migration. Optional, like the
+> day targets. The prompt lives in the per-turn steering, not just the tool description.
 
 **Greg (SOURCE, B3 Science Check, scaffolding #3 on action planning / implementation intentions):**
 > "helping the person choose one small physical activity habit and one small dietary habit, **define backup
@@ -38,7 +41,11 @@ W3 its own seven-field daily entry precisely because "his seven-field tracker ca
 note" (`grid.ts` header). **B3 is behind W3 on the same requirement.** The fix is to extend a proven pattern, not
 to design one — and it is further evidence for the one-engine finding.
 
-## GAP · C1 — a genuinely NEW priority cannot be captured
+## ✅ SHIPPED (was GAP) · C1 — a genuinely NEW priority cannot be captured
+
+> **Closed 2026-08-17** (`3038a6a`, `cfdc469`). Additions are their own shape, shown as `(new)` in the proposal.
+> A live walk then found the model putting a new goal in `top3` alone, where `commitRefinement` silently dropped
+> it — now recovered into `added` so the member sees it before the gate.
 
 **Greg (SOURCE, C1 Science Check):** "**New priorities may also emerge.**" His Q5 is "Which new priorities have
 emerged?" and his Engineering Memo specifies `new_goal_text` + `emergence_source` for exactly this.
@@ -88,7 +95,12 @@ My CHECK guessed these were missing. Both are there, and correctly:
   plus a `domainScore` per domain. This is exactly Greg's "good at planning movement but poor at managing eating
   cues" distinction, and we hold it.
 
-## GAP · B2 — ten of twelve skills, and all three families, never reach the member
+## ✅ SHIPPED (was GAP) · B2 — ten of twelve skills, and all three families, never reach the member
+
+> **Closed 2026-08-17** (`48ffdf2`, `810ca5a`). The map renders in the Playbook's Reads tab: three families,
+> growing edges leading, the movement/eating split where it is real, no number anywhere. "Steady" is relative to
+> the member's own median, which is what makes a modest profile a map rather than twelve failures. Verified on
+> Jay's real prod data.
 
 > **CORRECTED 2026-08-17.** This finding originally read "**none of it** reaches the member." That was overstated, and
 > I found it by opening the file I should have opened first: `lib/playbook/reads.ts` already builds a **"your map"**
@@ -160,7 +172,11 @@ own B1 spec forbids display, and `docs/b1-closure-findings.md` (2026-08-07) alre
 That doc also records a previous session making **exactly the error I was about to make** — telling Jay that Greg
 wanted the profile surfaced — and correcting it. RB-1 (store, don't display) matches the source. Left alone.
 
-## GAP (and a live bug) · B1 — the Companion is told to reflect words it was never given
+## ✅ SHIPPED (was GAP) · B1 — the Companion is told to reflect words it was never given
+
+> **Closed 2026-08-17** (`35dece1`). B1 is administered-only — twelve Likert items, no words ever existed — so the
+> fix was to narrow the instruction, not to pass words. It now says: you know they did it, you have nothing they
+> wrote, ASK them.
 
 This is the part underneath the decision, and it is not about the score.
 
@@ -186,10 +202,25 @@ today it promises the first and delivers the second.
 
 ---
 
-## Still to verify
+## STILL OPEN — the real remaining list (2026-08-17)
 
-The carry-forward web beyond the links above · R2's Community share as a build (direction is green-lit; the
-surface exists as the Community).
+1. **B3's daily record is still a boolean tick.** The plan now carries backups and obstacles, but the WEEK does
+   not carry Greg's seven fields — no `what_contributed`, `thoughts_feelings` or `fuel_to_move` per day. W3 already
+   has the rich version (migration `0074`), so this extends a proven pattern rather than designing one. **Cheapest
+   remaining item of real value.**
+2. **R2's Doors** — no relevance, no continuum, no temporal pattern (first / biggest / still open). Three things,
+   not one. Greg went further than his own documents on 8/8: a continuum per door, a profile rather than a
+   singular Door. **Lands in Reconnect, which carries the live capture loop.**
+3. **R2's Community share** — direction green-lit by Greg; the surface exists as the Community. Cheap, and high
+   value for a Charter cohort arriving together. Also Reconnect.
+4. **The carry-forward web** — the biggest structural finding of the reading, and untouched. Greg specifies per
+   asset which upstream assets each reads; we hand-wire two links. B3 reads B1+B2+W3 and C3 reads B3+C2, so a
+   `previousAsset` pointer cannot express it.
+5. **The Teaching Layer's shown-once rule for Reconnect** — `entry` and `doors` both resolve R1, so a member would
+   meet the same "Why it works" card twice.
+
+**Sequencing note:** items 2, 3 and 5 all land in Reconnect. Doing them together, in one session with its own
+replay fixtures, is safer than three separate passes at the most fragile surface in the product.
 
 **Already closed elsewhere, do not re-open:** W3's monitoring week (built 8/8, migration `0074`) · R2 multi-door
 direction (green-lit by Greg 8/8) · IDQ 60-day cadence (Jay's ruling; asked of Greg 8/16) · C2 question order
