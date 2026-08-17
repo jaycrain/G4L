@@ -1,7 +1,11 @@
 # Retiring The Acceptance as a Door — keeping it as an intake signal
 
 **Decision:** Option C. Jay, 2026-08-15. Endorsed by Cowork the same evening.
-**Status:** design, awaiting review. No code changed.
+**Status: ✅ SHIPPED — commit `cd859b9` "The Acceptance: same gate, no label", on `main`.** Verified 2026-08-16:
+`lib/doors.ts` defines **11** Doors (`acceptance` is gone from the list), and the old `DOOR_CUES.acceptance` survives
+verbatim as `RESIGNATION`, feeding the Stage-0 admission gate as a yes/no with no label attached.
+*(This line previously read "design, awaiting review. No code changed." It was stale the same day — the
+implementation landed 8/15. Corrected rather than left to mislead the next reader.)*
 **One line:** same gate, no label.
 
 ---
