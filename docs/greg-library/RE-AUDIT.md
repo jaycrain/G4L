@@ -52,6 +52,18 @@ That is **wrong** — the four tiers (`top · important · emerging · no_longer
 re-rank and re-word what is already there, but cannot admit a goal that was not on the list.** Note `emerging` is
 a *tier for an existing item*, not a slot for a new one — easy to mistake for coverage of Q5, and it isn't.
 
+> **Design note for whoever builds this (added 2026-08-17, from reading the store).** An addition cannot ride the
+> existing structure. `RefinedItem` is `{original, text, tier, itemId}` where `original` must match a live item and
+> `itemId` is **resolved when the refinement is PROPOSED** — a deliberate fix (CAT-36) after the model's invented
+> wording matched nothing at commit time and applied 0 rows *while the member was told their list now reflected
+> them*. A new item has neither field by definition, so it needs its own path in the payload rather than a nullable
+> `itemId`, which would quietly re-open exactly that failure.
+>
+> It also lands on the **propose→confirm gate**, which is load-bearing: the ordering there is what killed the
+> infinite re-proposal loop in B3/C1/C3, and the gate must never close on a non-confirm. Greg's Engineering Memo
+> already names the storage — `new_goal_text` + `emergence_source` — so the shape is specified; the care needed is
+> in the commit path, not the design.
+
 ## NOT A GAP · W2 does not read the Legacy Letter — because nothing does, yet
 
 **Greg (SOURCE, W2 Science Check, twice):** W2 works "by asking the person to **return to earlier reflections**."
