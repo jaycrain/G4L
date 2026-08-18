@@ -60,7 +60,7 @@ export default async function TriptychRight({
 
           IT USED TO HIDE AT ZERO — "so it never reads as an empty promise to a brand-new member." That was right
           when nothing had promised them a Playbook yet. The 2026-08-10 reframe makes the promise explicitly, at
-          the welcome pact, before any work starts: "You'll build a Playbook. It stays yours." Hiding the panel
+          the welcome promise, before any work starts: "Your Playbook — everything you do is recorded here." Hiding the panel
           after saying that is what breaks the promise — we name the destination and then the destination is not
           on screen. It cost the Opening Tour its Playbook stop too, silently: the tour filters out any stop whose
           target element is absent, so a brand-new member was never told the Playbook existed.

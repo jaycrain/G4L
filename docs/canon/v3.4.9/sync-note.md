@@ -84,8 +84,11 @@ From Donna's pass over live Companion output. The Companion no longer uses:
 **DECLINED:** *"never end a sentence with a preposition."* Not an English rule, and enforcing it would push the
 Companion toward formality. *"What's that like for you?"* is the sentence we want.
 
-**THE WELCOME PACT CHANGED.** It now reads **"You'll build a Playbook. It stays yours."** (was *"It's yours to
-keep."*) This is load-bearing copy that appears in marketing — please update any quotation of it.
+**CORRECTION, same day.** An earlier version of this note told you the welcome pact now reads *"You'll build a
+Playbook. It stays yours."* **That screen no longer exists.** Donna's "Opening screens" pass merged it into a
+single screen (see below), so there is no pact line to quote. If you already updated marketing to "It stays
+yours", revert it — the promise is now made as a bullet on the merged screen: *"Your Playbook — everything you do
+is recorded here. Your goals and progress recorded in your words, uniquely yours."*
 
 Also retired: *"This was about finding the priority, not judging any of it"* at the Bigger World Audit close,
 replaced with what actually happens next (§5).
