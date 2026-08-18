@@ -262,6 +262,19 @@ async function runPersona(p: Persona): Promise<boolean> {
       break;
     }
   }
+  // PRINT THE CONVERSATION when something is wrong, behind --transcript.
+  //
+  // Five live runs were read as summaries alone before anyone looked at what the Companion actually SAID, and
+  // two of those summaries turned out to be harness artifacts rather than product bugs. A concern count is a
+  // pointer, never a diagnosis: the only thing that says WHY is the turn the member was reacting to.
+  if (process.argv.includes('--transcript')) {
+    console.log(`\n----- transcript: ${p.name} -----`);
+    for (const h of history) {
+      const who = h.role === 'agent' ? 'COMPANION' : 'MEMBER   ';
+      console.log(`${who} | ${(h.text ?? '').replace(/\n+/g, ' ⏎ ')}`);
+    }
+    console.log('----- end transcript -----');
+  }
   const turns = history.filter((h) => h.role === 'member').length;
   console.log(`\n### ${p.name} — ${issues.length ? '⚠ ' + issues.length + ' concern(s)' : '✓ clean'}  (member turns: ${turns}, complete: ${turn.complete})`);
   console.log('   doors  :', JSON.stringify(c.doors ?? []));

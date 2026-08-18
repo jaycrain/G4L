@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { applyStagedTurn, isProcessMetaOrAssent } from '../lib/agent/onboarding-staged.ts';
+import { applyStagedTurn, isProcessMetaOrAssent, stageInstruction } from '../lib/agent/onboarding-staged.ts';
 import { detectCrisis } from '../lib/agent/governance.ts';
 import { BEAT_SEP } from '../lib/agent/onboarding.ts';
 import type { ConvState, ConvMessage, ModelTurn, Turn } from '../lib/agent/onboarding.ts';
@@ -442,16 +442,9 @@ test('LIVE-WALK — every want the model records on a GAP turn is kept, never ju
 });
 
 // ---------------------------------------------------------------------------
-// STAGE AGREEMENT — the engine's stage and the model's turn must describe the same conversation.
-//
-// Donna's walk (2026-08-18, "The Rush"). The model asked "what do you want back?" while the engine still believed
-// it was drawing out the gap, so she built her entire Reclaim List in chat — and was then handed the builder for a
-// list she had already made: "Didn't we just do my Reclaim List?"
-//
-// This is the SEAM test. lib/agent/stage-agreement.ts is unit-tested on its own, but a resolver that is never
-// reached is the exact shape that produced an infinite loop from dead code once already — so this drives the real
-// engine and asserts the member's experience, not the module's return value.
-// ---------------------------------------------------------------------------
+
+
+
 
 const DONNA_GAP =
   'I lost my job two years ago — the thing I had been building toward, the team, the final say on set, all of it ' +
@@ -465,66 +458,6 @@ const atGapWithStory = (): ConvState => ({
     identityNoun: 'Maker',
     gap: DONNA_GAP,
   },
-});
-
-test('STAGE AGREEMENT — wants named to a run-ahead model are PARKED, and read back when the gap closes', () => {
-  const { turns, finalState } = replayStaged(
-    [
-      // The model closes the gap in its own words and pivots. The engine did not author this transition.
-      { member: 'It was primarily around those three things.', model: { text: 'Three things, close together. Now — what do you want back?' } },
-      // She is now answering the MODEL's question while the engine still believes it is in `gap`. Both of these
-      // were lost entirely before: the engine was not listening for wants, and the model recorded none.
-      { member: 'Firstly, I want financial stability.', model: { text: 'Financial stability — first and clearest. What else do you want back?' } },
-      { member: 'I want a real drop in conflict in my day-to-day.', model: { text: 'Less conflict day to day.' } },
-      // The gap runs its own reflect-confirm and closes. THIS is where the recovery has to show up.
-      { member: "No, that's it — that's the whole of it.", model: { text: 'Understood.', replyIntent: 'done' } },
-      { member: "Yes, you've got it.", model: { text: 'Thank you for trusting me with it.', replyIntent: 'done' } },
-    ],
-    atGapWithStory(),
-  );
-
-  const list = finalState.collected.reclaimList ?? [];
-  assert.ok(
-    list.some((x) => /financial stability/i.test(x)) && list.some((x) => /conflict/i.test(x)),
-    `both wants must survive the divergence, got ${JSON.stringify(list)}`,
-  );
-
-  // The opener must READ THEM BACK rather than open blank. Blank is the exact moment Donna asked
-  // "Didn't we just do my Reclaim List?" — the same screen, seeded, is the answer to that question.
-  const opener = turns[turns.length - 1]!.reply;
-  assert.match(opener, /earlier you said you want/i);
-  assert.doesNotMatch(opener, /let'?s write down what you want back/i);
-});
-
-test('STAGE AGREEMENT — the Reclaim opener is never replayed at a member who already built the list', () => {
-  const { turns } = replayStaged(
-    [
-      { member: 'It was primarily around those three things.', model: { text: 'Now — what do you want back?' } },
-      { member: 'Firstly, I want financial stability.', model: { text: 'Financial stability — first and clearest. What else?' } },
-      { member: 'I want a real drop in conflict in my day-to-day.', model: { text: 'Less conflict day to day. What else do you want back?' } },
-      { member: "No. Let's keep moving.", model: { text: 'Understood.' } },
-    ],
-    atGapWithStory(),
-  );
-  // "Let's write down what you want back" is the authored opener. Firing it AFTER she has listed her wants is the
-  // exact moment Donna asked "Didn't we just do my Reclaim List?".
-  const replayed = turns.filter((t) => /let'?s write down what you want back/i.test(t.reply));
-  assert.equal(replayed.length, 0, 'the builder opener must not be shown to a member who already listed their wants');
-});
-
-test('STAGE AGREEMENT — a model jumping ahead BEFORE a gap story exists cannot skip the gap', () => {
-  const { finalState } = replayStaged(
-    [
-      // The model opens Reclaim early. Nothing acts on it this turn — she has not answered it yet.
-      { member: 'It just crept up on me.', model: { text: 'Now — what do you want back?' } },
-      // NOW she is answering it, and the divergence is real. But no gap story exists, so the engine must HOLD.
-      { member: 'I want to get back in shape.', model: { text: 'What else do you want back?' } },
-    ],
-    { stage: 'gap', collected: { athleticPast: 'Active', identityNoun: 'Maker' } },
-  );
-  assert.equal(finalState.stage, 'gap', 'the gap must not be skipped just because the model ran ahead');
-  // ...but what she said is still not lost.
-  assert.ok((finalState.collected.reclaimList ?? []).length >= 1, 'her want must be captured even while the engine holds');
 });
 
 // THE BRIDGE EXISTS ON BOTH PATHS, OR IT DOES NOT EXIST.
@@ -544,10 +477,9 @@ test('the gap→reclaim bridge is on BOTH openers, and the cold pivot is gone fr
 
   const parked = replayStaged(
     [
-      // The model pivots to Reclaim on its own — this is what puts the tell in the PRIOR agent turn.
-      { member: 'It just kept going after that.', model: { text: 'Now — what do you want back?' } },
-      // ...so this answer is heard as a want and parked, even though the engine is still in `gap`.
-      { member: 'Firstly, I want financial stability.', model: { text: 'Financial stability — first and clearest.' } },
+      // The FRONT-LOADER path: she volunteers a want early and the MODEL records it, so it is parked before the
+      // reclaim stage opens. This is the real route into this branch — the engine does not mine wants itself.
+      { member: 'I just want to be able to pay the bills with creative work again.', model: { text: 'That is a real thing to want.', record: { reclaimList: ['pay the bills with creative work again'] } } },
       { member: "No, that's it — that's the whole of it.", model: { text: 'Understood.', replyIntent: 'done' } },
       { member: "Yes, you've got it.", model: { text: 'Thank you.', replyIntent: 'done' } },
     ],
@@ -571,16 +503,42 @@ test('the gap→reclaim bridge is on BOTH openers, and the cold pivot is gone fr
 // back?") appears ONCE, and the model's follow-ups are bare "What else?" — which is not a tell, and must not
 // become one (it is far too generic to prove which stage anyone is in). So detection has to persist: once the
 // model has demonstrably taken the member into Reclaim, they are still there next turn.
-test('STAGE AGREEMENT — every want survives, not just the one right after the tell', () => {
+
+// THE ENGINE MUST NOT OVERRULE THE MODEL IN SILENCE.
+//
+// The depth floor refuses an early reflect_gap and appends the engine's own drawing-out question to the model's
+// message. The model then reads that back as its own turn and concludes the gap closed — so it opens the Reclaim
+// List itself, while the engine is still in `gap`. Every "rush" report traces to this. The floor is RIGHT and is
+// unchanged; what changes is that the model is now TOLD, so it keeps drawing out instead of moving on.
+test('GAP FLOOR — a refused reflect_gap is recorded, so the next turn can tell the model', () => {
+  const { finalState } = replayStaged(
+    // gapReady on the very first turn with a story: below GAP_MIN_DEPTH, so the engine must refuse it.
+    [{ member: 'I lost my job two years ago and I have not felt like myself since.', model: { text: 'That is a lot.', gapReady: true, record: { gap: 'Lost the job two years ago; has not felt like himself since.' } } }],
+    { stage: 'gap', collected: { athleticPast: 'On set', identityNoun: 'Maker' } },
+  );
+  assert.equal(finalState.stage, 'gap', 'the floor must still hold the beat open');
+  assert.equal(finalState.stageScratch?.gap?.gapHeld, true, 'the refusal must be recorded for the next turn');
+});
+
+test('GAP FLOOR — the steering TELLS the model it was overruled, and forbids the pivot', () => {
+  const held = stageInstruction('gap', { gapHeld: true });
+  assert.match(held, /refused it/i);
+  assert.match(held, /is NOT closed/i);
+  assert.match(held, /do NOT ask what they want back/i);
+  // ...and says nothing when it was not overruled, so the normal turn is untouched.
+  const normal = stageInstruction('gap', { gapHeld: false });
+  assert.doesNotMatch(normal, /refused it/i);
+  assert.equal(normal, stageInstruction('gap'), 'no hold must be byte-identical to the old steering');
+});
+
+test('GAP FLOOR — the hold CLEARS once the story is genuinely drawn out', () => {
   const { finalState } = replayStaged(
     [
-      { member: 'It was primarily around those three things.', model: { text: 'Three things, close together. Now — what do you want back?' } },
-      { member: 'A creative role that covers the bills each month.', model: { text: 'That is concrete. What else?' } },
-      { member: "I've put on 20 lbs and lost strength and fitness.", model: { text: 'Getting that back. What else?' } },
-      { member: 'I want a real drop in conflict day to day.', model: { text: 'Less conflict.' } },
+      { member: 'I lost my job two years ago.', model: { text: 'That is a lot.', gapReady: true, record: { gap: 'Lost the job two years ago.' } } },
+      { member: 'And my father got very ill around the same time.', model: { text: 'Two things at once.', record: { gap: 'Lost the job; father critically ill months later.' } } },
+      { member: 'That was the whole of it.', model: { text: 'Here is what I have heard.', gapReady: true } },
     ],
-    atGapWithStory(),
+    { stage: 'gap', collected: { athleticPast: 'On set', identityNoun: 'Maker' } },
   );
-  const list = finalState.collected.reclaimList ?? [];
-  assert.equal(list.length, 3, `all three wants must be kept, got ${JSON.stringify(list)}`);
+  assert.notEqual(finalState.stageScratch?.gap?.gapHeld, true, 'a stale hold would nag the model forever');
 });

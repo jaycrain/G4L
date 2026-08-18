@@ -51,7 +51,6 @@ import {
 } from './onboarding.ts';
 import { reconcileReclaimShapes, shapeKey, splitInlineEnumeration } from './reclaim-shape.ts';
 import { filterDoorsByAttribution } from './door-attribution.ts';
-import { agentTurns, resolveStageAgreement } from './stage-agreement.ts';
 import { detectCrisis, CRISIS_RESPONSE_US } from './governance.ts';
 import { captureCreate } from './capture-model.ts';
 // The intent layer — the one place that decides what a member's utterance MEANS (see onboarding-intent.ts).
@@ -1018,7 +1017,22 @@ type StageScratch = Record<string, number | boolean | undefined>;
 interface IdentityScratch { identityTurns?: number; identityProbes?: number; confirmBounces?: number;
   /** CAT-54: failed pick re-prompts, so this beat can't loop forever like it did fifteen times in walk 3. */
   pickMisses?: number }
-interface GapScratch { gapTurns?: number; gapDepth?: number; noFade?: boolean; confirmBounces?: number }
+interface GapScratch {
+  gapTurns?: number;
+  gapDepth?: number;
+  noFade?: boolean;
+  confirmBounces?: number;
+  /**
+   * The engine REJECTED the model's reflect_gap and kept this beat open (the depth floor).
+   *
+   * Recorded because the override was previously INVISIBLE to the model: we take its turn, append our own
+   * drawing-out question to it, and send that. Next turn the model reads its own message back with our question
+   * attached as though it wrote it — so it believes the gap closed, and the next natural move is the Reclaim
+   * List. The engine is still in `gap`, so the authored bridge, the builder and the parked read-back all
+   * silently do not happen. Every onboarding "rush" today traces back here.
+   */
+  gapHeld?: boolean;
+}
 interface ReclaimScratch { reclaimNudged?: boolean; confirmBounces?: number }
 
 // SHARED anti-loop contract for the CONFIRM phase (torture harness, 2026-07-26). Every gather stage's GATHER phase is
@@ -1463,8 +1477,12 @@ const gapStage: StageDef = {
       const modelJudgedDone = b.model.gapReady && (s.gapDepth ?? 0) >= GAP_MIN_DEPTH;
       const advance = modelJudgedDone || memberPushedPast('gap', b.memberMessage, b.collected) || (s.gapDepth ?? 0) >= GAP_MAX_DEPTH;
       if (!advance) {
+        // TELL THE MODEL NEXT TURN. Overriding it silently is what produced the divergence; the floor itself is
+        // right and stays exactly as it is — nothing here shortens the draw-out.
+        s.gapHeld = b.model.gapReady === true;
         b.reply = withQuestion(b.modelText, gapMore(b.history));
       } else {
+        s.gapHeld = false;
         b.reply = reflectGap(b.modelText);
         b.awaitingConfirm = true;
       }
@@ -1852,33 +1870,6 @@ export function runArcTurn(
     reclaimShapesResolved: [...(state.reclaimShapesResolved ?? [])],
     pendingIdentityPick: state.pendingIdentityPick, // identity chips: candidates offered last turn, this message is the pick
   };
-  // STAGE AGREEMENT (lib/agent/stage-agreement.ts) — resolved BEFORE dispatch, because a divergence changes which
-  // stage should be handling this turn. When the model has already taken the member into a later stage, the member
-  // is answering THAT stage: capture there (never drop), and re-sync the engine to it WITHOUT firing its opener,
-  // since the member has already been through it. Donna's walk is the fixture — she built her Reclaim List in chat
-  // and was then handed the builder for it: "Didn't we just do my Reclaim List?"
-  const agreement = resolveStageAgreement({
-    engineStage: b.stage,
-    priorAgentTurns: agentTurns(b.history),
-    stageOrder: arc.stageOrder,
-  });
-  if (agreement.diverged) {
-    // NEVER DROP WHAT THEY GAVE YOU — capture even when we hold below, because the member answered the question
-    // they were actually asked. Same guards as the reclaim stage's own capture, so a protest or an assent cannot
-    // become a list item.
-    // Divergence is resolved from the PRIOR agent turn only, so by construction the member's message here is an
-    // answer to `modelStage` — see stage-agreement.ts on why this turn's model text must not count.
-    if (agreement.modelStage === 'reclaim') {
-      const distilled = stripReclaimPreamble(b.memberMessage);
-      if (shouldCaptureStagedReclaim(distilled) && !correctsReflection(b.memberMessage) && !isProcessMetaOrAssent(distilled)) {
-        appendReclaim(b.collected, distilled);
-      }
-    }
-    // The engine's STAGE is deliberately left alone — see stage-agreement.ts. Reclaim has no conversational mode,
-    // so advancing into it skips the builder and drops the member into the Grinta survey mid-sentence. Parking the
-    // want is the whole fix: the reclaim opener reads it back when the gap closes on its own.
-  }
-
   const stageDef = arc.stages[b.stage];
 
   // ADMINISTERED stages (§2c — validated instruments: IDQ, Grit) run entirely OFF the depth kernel: no idle/runaway
@@ -2297,9 +2288,23 @@ all. There is no next step to pitch: when the beats are done the member sees a s
 If you feel the pull to tell them what comes next, don't — just reflect what they gave you and ask your one
 question. Naming an instrument here breaks the spell and is off-spec.`;
 
-export function stageInstruction(stage?: Stage): string {
+/**
+ * The per-turn steering. `gapHeld` is the engine telling the model the truth about its OWN last turn — that its
+ * reflect_gap was refused and the beat is still open. Engine state → model, rather than the reverse: inferring the
+ * model's intent from its prose was tried (lib/agent/stage-agreement.ts) and could not be made to work, because
+ * the model rephrases the pivot every time and a pattern list is a guess about wording.
+ */
+export function stageInstruction(stage?: Stage, opts?: { gapHeld?: boolean }): string {
   if (stage === 'gap')
     return (
+      (opts?.gapHeld
+        ? '\n\nHOLD — READ THIS FIRST: last turn you called reflect_gap, and the engine REFUSED it because the ' +
+          'story is not drawn out yet. It kept the beat open and appended its own drawing-out question to your ' +
+          'message, so the turn you can see in the history is NOT the turn you wrote. The gap is NOT closed. Do ' +
+          'not summarise it as finished, and do NOT ask what they want back or name a Reclaim List — that beat ' +
+          'belongs to the engine and it will open it when this one is genuinely done. Keep drawing the story ' +
+          'out: what else landed around then, and what it cost them.'
+        : '') +
       '\n\nCURRENT STAGE: how the gap opened — the Door(s). EXPLORE, and EXPECT MORE THAN ONE: it is rare for a single ' +
       'thing to be the whole story — usually several pile up over time (a job, a move, an injury, a loss, kids, slow ' +
       'drift). Draw the story out over SEVERAL exchanges — the sequence, when they first felt it, what it cost. After ' +
@@ -2381,7 +2386,7 @@ export async function liveTurnStaged(
   const res = await captureCreate((model) => client.messages.create({
     model,
     max_tokens: 600,
-    system: STAGED_SYSTEM + stageInstruction(state.stage),
+    system: STAGED_SYSTEM + stageInstruction(state.stage, { gapHeld: state.stageScratch?.gap?.gapHeld === true }),
     tools: STAGED_TOOLS,
     messages,
   }));
