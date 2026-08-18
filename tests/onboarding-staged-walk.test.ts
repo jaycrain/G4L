@@ -564,3 +564,23 @@ test('the gap→reclaim bridge is on BOTH openers, and the cold pivot is gone fr
   assert.match(parked, /earlier you said you want/i);
   assert.match(parked, /add anything else below/i);
 });
+
+// DIVERGENCE IS STICKY, OR IT ONLY CATCHES THE FIRST WANT.
+//
+// Found by Donna's persona on the live model against v3.4.12: 1 of 3 wants captured. The tell ("what do you want
+// back?") appears ONCE, and the model's follow-ups are bare "What else?" — which is not a tell, and must not
+// become one (it is far too generic to prove which stage anyone is in). So detection has to persist: once the
+// model has demonstrably taken the member into Reclaim, they are still there next turn.
+test('STAGE AGREEMENT — every want survives, not just the one right after the tell', () => {
+  const { finalState } = replayStaged(
+    [
+      { member: 'It was primarily around those three things.', model: { text: 'Three things, close together. Now — what do you want back?' } },
+      { member: 'A creative role that covers the bills each month.', model: { text: 'That is concrete. What else?' } },
+      { member: "I've put on 20 lbs and lost strength and fitness.", model: { text: 'Getting that back. What else?' } },
+      { member: 'I want a real drop in conflict day to day.', model: { text: 'Less conflict.' } },
+    ],
+    atGapWithStory(),
+  );
+  const list = finalState.collected.reclaimList ?? [];
+  assert.equal(list.length, 3, `all three wants must be kept, got ${JSON.stringify(list)}`);
+});

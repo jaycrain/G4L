@@ -16,6 +16,17 @@ if (!process.env.ANTHROPIC_API_KEY) {
   process.exit(1);
 }
 
+// PIN THE ENGINE. onboardingNextTurn DISPATCHES on this env var, so without it every persona below silently
+// exercises the retired v1 engine and reports green about code no member has run since the staged cut-over.
+// A harness that cannot say which engine it tested is not evidence of anything.
+if (process.env.ONBOARDING_ENGINE !== 'staged') {
+  console.error(
+    `Refusing to run: ONBOARDING_ENGINE is ${JSON.stringify(process.env.ONBOARDING_ENGINE ?? null)}, not 'staged'.\n` +
+      'Production runs the staged engine; evaluating v1 would be a green report about code nobody runs.',
+  );
+  process.exit(1);
+}
+
 type Persona = { name: string; system: string; expect: (c: Collected, complete: boolean, memberText: string) => string[] };
 
 const PERSONAS: Persona[] = [
@@ -42,6 +53,65 @@ If asked how the gap opened, tell ALL of it (job, husband/household, parents) �
       if (!done) out.push('did not complete');
       // Gap-thin only counts when she raised >1 thread (a genuinely multi-event story we then under-captured).
       if (ritaRaisedDoors(memberText).size >= 2 && (c.gap ?? '').length < 120) out.push('gap is thin (multi-event story under-captured)');
+      return out;
+    },
+  },
+  {
+    name: 'donna',
+    // DONNA'S REAL WALK, 2026-08-18 ("The Rush"). Kept as a persona because her two complaints are the two
+    // failures this surface actually has, and both were found by a human rather than by us.
+    //
+    // WHY SHE IS DIFFERENT FROM THE OTHERS: rita/terse/no-fade all test whether we CAPTURE correctly. Donna
+    // tests whether we RUSH — and she is scripted to SAY SO, in fixed words, so a pacing failure produces a
+    // deterministic signal instead of a judgement call. Jay's standing constraint on this surface is that
+    // fixes here keep over-emphasising capture and eroding the unhurried feel, and that two such fixes have
+    // already been reverted ("vibe wins"). A harness that can only fail for under-capturing is a machine for
+    // causing exactly that. Her protests are the counterweight.
+    system: `You are role-playing "Donna", 54, in an onboarding conversation with a guide. Respond ONLY as Donna
+- 1-3 short sentences, one thought at a time, a little dry. Reveal your story progressively; do not dump it.
+
+Your story, in this order if drawn out:
+- You lost your job two years ago - you directed and produced creative work, and it was the thing you had been
+  building toward: the team, the final say on set. Gone.
+- A partnership you were counting on fell through around the same time.
+- About six months after the work ended, your father became critically ill - a coma, he nearly died.
+- When you have told all three and are asked whether there was more, close it by pointing BACK at what you
+  already said, in words like: "It was primarily around those three things." Do NOT say "no" or "that's it".
+- If you name who you were in one word, you'd say a Maker.
+
+What you want back, if asked, one at a time:
+- A creative role that at least covers the bills each month, then lets you rebuild savings and pay off the debt.
+- You put on 20 lbs and lost strength and fitness over the stress of the last two years.
+- A real drop in conflict day to day - peace and optimism.
+
+TWO THINGS YOU MUST DO, because you are a real person and you say when something is off:
+1. If the guide starts collecting a list, or names something like a "Reclaim List", WITHOUT having explained
+   what it is first, say EXACTLY this and nothing else: "that felt really rushed"
+2. If the guide asks you to do something you have already done in this conversation, say EXACTLY this and
+   nothing else: "didn't we just do that"
+Otherwise never use those phrases.`,
+    expect: (c, done, memberText) => {
+      const out: string[] = [];
+      const said = memberText.toLowerCase();
+
+      // THE PACING TRIPWIRES. The member telling us we rushed is the strongest evidence a walk can produce, and
+      // it costs nothing to detect. These are failures even when capture is perfect.
+      if (said.includes('that felt really rushed')) out.push('RUSHED — named a list she was never introduced to');
+      if (said.includes("didn't we just do that")) out.push('REPLAYED — asked her to redo something already done');
+
+      // ...and the capture half, so this persona still fails in the other direction too.
+      const list = (c.reclaimList ?? []).join(' | ').toLowerCase();
+      for (const [label, re] of [
+        ['financial/creative work', /bill|financ|savings|debt|role|work/],
+        ['fitness/weight', /lb|pound|weight|strength|fitness|shape/],
+        ['peace/less conflict', /conflict|peace|optimis|calm/],
+      ] as const) {
+        if (list && !re.test(list)) out.push(`want DROPPED: ${label}`);
+      }
+      if ((c.reclaimList?.length ?? 0) < 3) out.push(`only ${c.reclaimList?.length ?? 0} wants captured (she named 3)`);
+      // Her fade is three events across two years; a one-line gap means we under-captured a multi-event story.
+      if ((c.gap ?? '').length < 120) out.push('gap is thin (three-event story under-captured)');
+      if (!done) out.push('did not complete');
       return out;
     },
   },

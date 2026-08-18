@@ -33,7 +33,7 @@ test('a FORECAST of the list is not the model running it', () => {
 test('divergence: model in reclaim while the engine is still in gap', () => {
   const a = resolveStageAgreement({
     engineStage: 'gap',
-    priorAgentText: 'Three things, close together. Now — what do you want back?',
+    priorAgentTurns: ['Three things, close together. Now — what do you want back?'],
     stageOrder: ORDER,
   });
   assert.equal(a.diverged, true);
@@ -45,14 +45,14 @@ test('FORWARD ONLY — the engine is never pushed back to an earlier stage', () 
   // turn. Equal is agreement, not divergence — otherwise the engine would re-trigger on its own words forever.
   const a = resolveStageAgreement({
     engineStage: 'reclaim',
-    priorAgentText: "Then here's your Reclaim List as it stands:",
+    priorAgentTurns: ["Then here's your Reclaim List as it stands:"],
     stageOrder: ORDER,
   });
   assert.equal(a.diverged, false);
 
   const behind = resolveStageAgreement({
     engineStage: 'grinta',
-    priorAgentText: 'What else do you want back?',
+    priorAgentTurns: ['What else do you want back?'],
     stageOrder: ORDER,
   });
   assert.equal(behind.diverged, false, 'a model lagging the engine is normal, not a divergence');
@@ -61,7 +61,7 @@ test('FORWARD ONLY — the engine is never pushed back to an earlier stage', () 
 test('no tell means no divergence — silence is not evidence', () => {
   const a = resolveStageAgreement({
     engineStage: 'gap',
-    priorAgentText: 'Was your dad\'s illness the last of what landed in that stretch, or was there still more?',
+    priorAgentTurns: ['Was your dad\'s illness the last of what landed in that stretch, or was there still more?'],
     stageOrder: ORDER,
   });
   assert.equal(a.diverged, false);
@@ -73,8 +73,29 @@ test('a divergence that opens THIS turn is NOT acted on until the member has ans
   // the Grinta survey. One turn of lag costs nothing — the tell is still there when she replies to it.
   const a = resolveStageAgreement({
     engineStage: 'gap',
-    priorAgentText: 'Was that the whole of it?',
+    priorAgentTurns: ['Was that the whole of it?'],
     currentModelText: 'Three things. Now — what do you want back?',
+    stageOrder: ORDER,
+  });
+  assert.equal(a.diverged, false);
+});
+
+test('STICKY — a tell from EARLIER in the walk still counts, so every want is kept', () => {
+  // The model says it once, then follows up with bare "What else?" forever. Reading only the previous turn
+  // caught the first want and dropped the rest — Donna's persona scored 1 of 3 on the live model.
+  const a = resolveStageAgreement({
+    engineStage: 'gap',
+    priorAgentTurns: ['Now — what do you want back?', 'That is concrete. What else?', 'Getting that back. What else?'],
+    stageOrder: ORDER,
+  });
+  assert.equal(a.diverged, true);
+  assert.equal(a.diverged && a.modelStage, 'reclaim');
+});
+
+test('STICKY self-cancels — an old tell cannot haunt the walk once the engine catches up', () => {
+  const a = resolveStageAgreement({
+    engineStage: 'reclaim',
+    priorAgentTurns: ['Now — what do you want back?', 'What else?'],
     stageOrder: ORDER,
   });
   assert.equal(a.diverged, false);

@@ -74,13 +74,15 @@ export function detectModelStage(text: string): ModelStageEvidence | null {
   return null;
 }
 
+/** Everything the Companion has said so far, oldest first. */
+export function agentTurns(history: ConvMessage[]): string[] {
+  return history.filter((h) => h.role === 'agent').map((h) => h.text ?? '');
+}
+
 /** The most recent thing the Companion said — what the member's current message is replying TO. */
 export function lastAgentText(history: ConvMessage[]): string {
-  for (let i = history.length - 1; i >= 0; i--) {
-    const h = history[i];
-    if (h && h.role === 'agent') return h.text ?? '';
-  }
-  return '';
+  const turns = agentTurns(history);
+  return turns[turns.length - 1] ?? '';
 }
 
 export type StageAgreement =
@@ -95,8 +97,18 @@ export type StageAgreement =
 
 export interface StageAgreementInput {
   engineStage: StageId;
-  /** The Companion's PREVIOUS turn — the one the member is answering. This is the load-bearing signal. */
-  priorAgentText: string;
+  /**
+   * EVERY Companion turn so far, oldest first — not just the last one.
+   *
+   * DIVERGENCE IS STICKY, and this is why it has to be. The tell is said ONCE ("now — what do you want back?");
+   * every follow-up is a bare "What else?", which cannot be a tell — it is far too generic to prove which stage
+   * anybody is in. Reading only the previous turn therefore caught the FIRST want and lost every one after it:
+   * Donna's persona scored 1 of 3 against v3.4.12 on the live model, which is how this was found.
+   *
+   * Scanning the whole conversation needs no extra state and self-cancels: once the engine legitimately reaches
+   * that stage, `there <= here` stops reporting divergence, so an old tell cannot haunt the rest of the walk.
+   */
+  priorAgentTurns: string[];
   /**
    * This turn's model text. Accepted for symmetry and future detectors, but deliberately NOT read: see
    * resolveStageAgreement. A tell here has not reached the member yet.
@@ -112,13 +124,19 @@ export interface StageAgreementInput {
  * already in. A tell in this turn's model text describes a question they have not been asked yet.
  */
 export function resolveStageAgreement(input: StageAgreementInput): StageAgreement {
-  const { engineStage, priorAgentText, stageOrder } = input;
+  const { engineStage, priorAgentTurns, stageOrder } = input;
   // PRIOR TURN ONLY. A tell in THIS turn's model text means the member has not seen it yet — their message is still
   // answering the previous beat, and both acting on it and capturing it are wrong. Advancing on it handed the
   // member's message to the new stage's handler, which filed Donna's gap close as a Reclaim want and then ran
   // straight on into the Grinta survey. Waiting one turn costs nothing: nothing has been mis-captured yet, and the
   // divergence is still there to be found the moment she replies to it.
-  const evidence = detectModelStage(priorAgentText);
+  // The FURTHEST-ahead stage the Companion has demonstrably run. The current turn's text is excluded by the
+  // caller: a tell there has not reached the member yet, so their message still belongs to the previous beat.
+  let evidence: ModelStageEvidence | null = null;
+  for (const turn of priorAgentTurns) {
+    const found = detectModelStage(turn);
+    if (found && (!evidence || stageOrder.indexOf(found.stage) > stageOrder.indexOf(evidence.stage))) evidence = found;
+  }
   if (!evidence) return { diverged: false };
 
   const here = stageOrder.indexOf(engineStage);

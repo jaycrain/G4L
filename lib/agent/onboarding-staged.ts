@@ -51,7 +51,7 @@ import {
 } from './onboarding.ts';
 import { reconcileReclaimShapes, shapeKey, splitInlineEnumeration } from './reclaim-shape.ts';
 import { filterDoorsByAttribution } from './door-attribution.ts';
-import { lastAgentText, resolveStageAgreement } from './stage-agreement.ts';
+import { agentTurns, resolveStageAgreement } from './stage-agreement.ts';
 import { detectCrisis, CRISIS_RESPONSE_US } from './governance.ts';
 import { captureCreate } from './capture-model.ts';
 // The intent layer — the one place that decides what a member's utterance MEANS (see onboarding-intent.ts).
@@ -1846,7 +1846,7 @@ export function runArcTurn(
   // and was then handed the builder for it: "Didn't we just do my Reclaim List?"
   const agreement = resolveStageAgreement({
     engineStage: b.stage,
-    priorAgentText: lastAgentText(b.history),
+    priorAgentTurns: agentTurns(b.history),
     stageOrder: arc.stageOrder,
   });
   if (agreement.diverged) {
