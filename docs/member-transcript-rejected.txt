@@ -1,4 +1,4 @@
-# Strings EXCLUDED from the member transcript (app @ 4f37844 · 2026-08-17)
+# Strings EXCLUDED from the member transcript (app @ 08a2c41 · 2026-08-18)
 # Not member copy: system prompts, multi-line fragments, code artifacts. Review when a real line goes missing.
 
 [lib/agent/onboarding-staged.ts] you’re trying to reclaim. We can always change it later.
@@ -165,24 +165,18 @@
 [app/onboarding/welcome.tsx] Rebuild
 [app/onboarding/welcome.tsx] get your body back.
 [app/onboarding/welcome.tsx] Reclaim
-[app/onboarding/welcome.tsx] step all the way in.
+[app/onboarding/welcome.tsx] complete your comeback.
 [app/onboarding/welcome.tsx] Grinta
 [app/onboarding/welcome.tsx] is Italian for grit — it’s what you build along the way.
-[app/onboarding/welcome.tsx] you’ll hear.
-[app/onboarding/welcome.tsx] always there, remembers everything, helps you see what you can’t always see alone.
-[app/onboarding/welcome.tsx] closing the distance back to who you are.
-[app/onboarding/welcome.tsx] your way back: four phases, your pace.
-[app/onboarding/welcome.tsx] home base, where everything you do is kept.
-[app/onboarding/welcome.tsx] what you build; how you watch yourself change.
-[app/onboarding/welcome.tsx] two ways to see it: how far you’ve got to go, and the grit you’re growing.
+[app/onboarding/welcome.tsx] & track your progress
+[app/onboarding/welcome.tsx] everything you do is recorded here. Your goals and progress recorded in your words, uniquely yours.
+[app/onboarding/welcome.tsx] you’ll see how far you’ve got to go and the grit you’re growing as you do it.
 [app/onboarding/welcome.tsx] Clip in
 [app/onboarding/welcome.tsx] our founder’s cycling metaphor, and more than “let’s go.” Shoes locked to your pedals is a commitment. Every stroke drives power, and you ride farther and stronger. Everyone forgets to unclip and falls down once. You get up and clip back in.
-[app/onboarding/welcome.tsx] Everything you do here goes into it — the moves that actually work for you, and what you learn about yourself along the way. Your
-[app/onboarding/welcome.tsx] Playbook
-[app/onboarding/welcome.tsx] isn’t ours to hand you. It’s already in you, and we help you draw it out. You’ll use it again and again.
 [app/onboarding/welcome.tsx] today goes.
 [app/onboarding/welcome.tsx] you’re in it.
 [app/onboarding/welcome.tsx] Getting to know you
+[app/onboarding/welcome.tsx] chat with your Companion and take an initial assessment. Plan for about 20 minutes.
 [app/onboarding/welcome.tsx] see what surfaced.
 [app/onboarding/welcome.tsx] (typeof s === 'string' ?
 [app/onboarding/welcome.tsx] onbwel-dot${x === i ? ' on' : ''}

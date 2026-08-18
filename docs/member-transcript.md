@@ -1,6 +1,6 @@
 # G4L — Member Transcript (authored copy, verbatim)
 
-Stamp: `app @ 4f37844 · 2026-08-17` · PART 1 of the Cowork release bundle.
+Stamp: `app @ 08a2c41 · 2026-08-18` · PART 1 of the Cowork release bundle.
 
 **Quote from this.** Every line below is authored, fixed copy a member reads, in reading order by surface. It does
 **not** include the Companion's in-the-moment reflections (those are model-generated and vary per member — describe
@@ -102,33 +102,26 @@ _source: lib/agent/onboarding-staged.ts_
 _source: app/onboarding/welcome.tsx_
 
 - Part 1 of 4 · Getting ready
-- There’s probably no one else in your life like this. Always listening, always here, holding everything you share. It might catch what you’ve stopped seeing in yourself.
+- There’s probably no one else in your life like this. It’s AI, so it is always listening, always here, remembering everything you tell it. It might catch what you’ve stopped seeing in yourself.
 - Ask anything, anytime.
 - Next →
 - Four phases.
 - Your pace.
-- The G4L Program and your Comeback runs in four phases:
+- The G4L Program runs in four phases:
 - You move through them one at a time, as fast or slow as your life allows.
-- A few words
-- New places have their own language. Here’s ours, plainly — you’ll see all of it in action soon.
-- Your Companion
-- Your Comeback
-- The Program
-- Your Dashboard
+- Along the way you’ll build a Playbook
 - Your Playbook
 - ID Score & Grinta Index
-- You’ll build a Playbook.
-- It stays yours.
 - Here’s how
 - Four short parts, and you can stop between any of them — nothing’s lost.
 - Getting ready
-- a conversation with your Companion. About 20 minutes.
 - What you found
 - A look around
 - a quick tour to show you where it all lives.
-- This one goes deep, so give yourself the time. Reclaiming who you are takes real time — it starts here.
+- We go deep out of the gate, so make yourself comfortable and give yourself the time here. Congratulations on getting started on your comeback.
 - Clip in →
 - Grinta for Life
+- Your comeback
 - Start looking →
 
 
@@ -1042,7 +1035,7 @@ _source: app/dashboard/triptych-left.tsx_
 _source: app/dashboard/triptych-right.tsx_
 
 - What's next
-- You'll build a Playbook. It stays yours.
+- Your Playbook — everything you do is recorded here.
 - Your Playbook
 - What you’ve built.
 - Where your Comeback gets kept.
