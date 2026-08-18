@@ -51,6 +51,7 @@ import {
 } from './onboarding.ts';
 import { reconcileReclaimShapes, shapeKey, splitInlineEnumeration } from './reclaim-shape.ts';
 import { filterDoorsByAttribution } from './door-attribution.ts';
+import { lastAgentText, resolveStageAgreement } from './stage-agreement.ts';
 import { detectCrisis, CRISIS_RESPONSE_US } from './governance.ts';
 import { captureCreate } from './capture-model.ts';
 // The intent layer — the one place that decides what a member's utterance MEANS (see onboarding-intent.ts).
@@ -1818,6 +1819,33 @@ export function runArcTurn(
     reclaimShapesResolved: [...(state.reclaimShapesResolved ?? [])],
     pendingIdentityPick: state.pendingIdentityPick, // identity chips: candidates offered last turn, this message is the pick
   };
+  // STAGE AGREEMENT (lib/agent/stage-agreement.ts) — resolved BEFORE dispatch, because a divergence changes which
+  // stage should be handling this turn. When the model has already taken the member into a later stage, the member
+  // is answering THAT stage: capture there (never drop), and re-sync the engine to it WITHOUT firing its opener,
+  // since the member has already been through it. Donna's walk is the fixture — she built her Reclaim List in chat
+  // and was then handed the builder for it: "Didn't we just do my Reclaim List?"
+  const agreement = resolveStageAgreement({
+    engineStage: b.stage,
+    priorAgentText: lastAgentText(b.history),
+    stageOrder: arc.stageOrder,
+  });
+  if (agreement.diverged) {
+    // NEVER DROP WHAT THEY GAVE YOU — capture even when we hold below, because the member answered the question
+    // they were actually asked. Same guards as the reclaim stage's own capture, so a protest or an assent cannot
+    // become a list item.
+    // Divergence is resolved from the PRIOR agent turn only, so by construction the member's message here is an
+    // answer to `modelStage` — see stage-agreement.ts on why this turn's model text must not count.
+    if (agreement.modelStage === 'reclaim') {
+      const distilled = stripReclaimPreamble(b.memberMessage);
+      if (shouldCaptureStagedReclaim(distilled) && !correctsReflection(b.memberMessage) && !isProcessMetaOrAssent(distilled)) {
+        appendReclaim(b.collected, distilled);
+      }
+    }
+    // The engine's STAGE is deliberately left alone — see stage-agreement.ts. Reclaim has no conversational mode,
+    // so advancing into it skips the builder and drops the member into the Grinta survey mid-sentence. Parking the
+    // want is the whole fix: the reclaim opener reads it back when the gap closes on its own.
+  }
+
   const stageDef = arc.stages[b.stage];
 
   // ADMINISTERED stages (§2c — validated instruments: IDQ, Grit) run entirely OFF the depth kernel: no idle/runaway
