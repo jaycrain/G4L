@@ -1511,7 +1511,7 @@ const gapStage: StageDef = {
       if (confirmBounceExceeded(s)) {
         b.stage = 'reclaim';
         b.awaitingConfirm = false;
-        b.reply = reclaimOpening(b.collected);
+        b.reply = receiveThen(b.modelText, reclaimOpening(b.collected));
         return { reply: b.reply, state: beatState(b), complete: false, ...(nextExpects(b.arc, b.stage, false, 0, b.collected) ? { expects: nextExpects(b.arc, b.stage, false, 0, b.collected)! } : {}) };
       }
       b.awaitingConfirm = false;
@@ -1547,7 +1547,7 @@ const gapStage: StageDef = {
       // the card is the backstop for anything still missing.
       if (confirmBounceExceeded(s)) {
         b.stage = 'reclaim';
-        b.reply = reclaimOpening(b.collected);
+        b.reply = receiveThen(b.modelText, reclaimOpening(b.collected));
       } else {
         b.reply = withQuestion(b.modelText, gapMore(b.history));
       }
@@ -1555,7 +1555,20 @@ const gapStage: StageDef = {
       // done / affirm / bare "no more" → advance into reclaim (re-surfacing any parked wants).
       b.stage = 'reclaim';
       b.awaitingConfirm = false;
-      b.reply = reclaimOpening(b.collected);
+      // RECEIVE, THEN OPEN — the heaviest transition in onboarding, and the only hand-in that was not doing it.
+      // receiveThen() is already the contract at the Grinta hand-in and at two Reconnect hand-ins; this site
+      // discarded the model's turn entirely and substituted the scripted bridge.
+      //
+      // What that cost, from Donna's walk: she said her father had gone into a coma and nearly died, closed the
+      // story two turns later, and the very next thing she read was "Let's write down what you want back. Add
+      // each thing below." She said "that felt really rushed", and the Companion's own reply named it better
+      // than any of my diagnoses did — "You'd just told me your father nearly died, and I moved straight to a
+      // list. That deserved a beat, not a pivot."
+      //
+      // The beat it deserved was already written. The model had a reflection of exactly what she had just said,
+      // and the engine threw it away at the one moment in the conversation where a generic line cannot stand in
+      // for a specific one. Nothing here changes pacing or capture: same turn count, same builder, same floor.
+      b.reply = receiveThen(b.modelText, reclaimOpening(b.collected));
     }
   },
 };

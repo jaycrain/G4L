@@ -542,3 +542,27 @@ test('GAP FLOOR — the hold CLEARS once the story is genuinely drawn out', () =
   );
   assert.notEqual(finalState.stageScratch?.gap?.gapHeld, true, 'a stale hold would nag the model forever');
 });
+
+// RECEIVE BEFORE YOU OPEN — the gap→reclaim hand-in.
+//
+// Donna's walk: she said her father had gone into a coma and nearly died, closed the story two turns later, and
+// the next thing she read was "Let's write down what you want back." She said it felt rushed. The engine was
+// discarding the model's turn at this hand-in and substituting the scripted bridge — so at the one moment in the
+// conversation that needed a specific reflection, she got a generic one. receiveThen() was already the contract
+// at three other hand-ins; this was the one that never got it.
+test('the gap→reclaim hand-in RECEIVES what she just said before opening the list', () => {
+  const receipt = 'Three things inside two years, each one taking something the last one had not.';
+  const { last } = replayStaged(
+    [
+      { member: "That's the whole of it.", model: { text: 'Let me hold all of it.', replyIntent: 'done' } },
+      { member: 'It was primarily around those three things.', model: { text: receipt, replyIntent: 'done' } },
+    ],
+    atGapWithStory(),
+  );
+  assert.ok(last.reply.includes(receipt), `her moment must survive into the hand-in, got: ${last.reply.slice(0, 160)}`);
+  assert.match(last.reply, /let's write down what you want back/i, 'and the list still opens');
+  assert.ok(
+    last.reply.indexOf(receipt) < last.reply.search(/let's write down/i),
+    'the receipt must come FIRST — receiving after inviting is not receiving',
+  );
+});
