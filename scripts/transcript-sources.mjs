@@ -6,7 +6,13 @@
 // one copy — a guard that quietly narrows is worse than no guard, because it still reports green.
 
 export const SECTIONS = [
-  { title: 'Onboarding', files: ['lib/agent/onboarding-staged.ts', 'app/onboarding/welcome.tsx'] },
+  // THE FRONT DOOR AND THE FIRST DECISIONS. All four joined 2026-08-18, the day the extractor was taught to read
+  // multi-line JSX — they had always carried member copy and always looked empty, so nothing ever reported them
+  // missing. app/page.tsx is the PUBLIC landing page: the first words anyone reads, including everyone arriving
+  // from a marketing link, and it had never been in a bundle.
+  { title: 'The front door (public landing page)', files: ['app/page.tsx'] },
+  { title: 'Onboarding', files: ['lib/agent/onboarding-staged.ts', 'app/onboarding/welcome.tsx', 'app/onboarding/identity-picker.tsx'] },
+  { title: 'Email verification', files: ['app/login/verify/page.tsx'] },
   // THE FIRST DAY — and it had NEVER been in a bundle, through v3.2.1, v3.3 and v3.4.
   //
   // The Threshold ceremony is the seven beats a member reads the moment they finish onboarding, and the Opening
@@ -67,6 +73,7 @@ export const SECTIONS = [
       'app/dashboard/topbar-view.tsx', // brand · Playbook · account — on every logged-in screen
       'app/dashboard/dashboard-triptych.tsx', // the mobile fold's pane labels: Where You Are · G4L Companion · What's Next
       'app/dashboard/triptych-center.tsx', // the Companion hero, breadcrumb, keeper + "Where you stand"
+      'app/dashboard/companion-hero.tsx',
       'app/dashboard/triptych-left.tsx', // Your Playbook · ID Score · Grinta · Badges
       'app/dashboard/triptych-right.tsx',
       'app/dashboard/resilience-pulse.tsx',

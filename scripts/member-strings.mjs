@@ -83,18 +83,98 @@ function isCodeArtifact(s) {
   return false;
 }
 
+/**
+ * JSX TEXT THAT SPANS LINES — the gap that hid the front door.
+ *
+ * The per-line pass below already reads text between `>` and `<`, but only when both sit on the SAME line. Real
+ * JSX prose does not: a paragraph opens its tag on one line, runs for three, and closes on a fourth. So every
+ * multi-line member string in a .tsx file was invisible to the transcript — including the entire opening hero,
+ * the first words anybody reads. Marketing and the book have been quoting the product without them since the
+ * transcript existed. Found 2026-08-18 while checking why Donna's rewritten hero copy had not reached canon.
+ *
+ * The coverage guard could not catch this: welcome.tsx IS in the source list, so the file reads as covered. The
+ * hole was in EXTRACTION, not in the list — which is why "is this file listed?" and "did its copy arrive?" are
+ * different questions and both need asking.
+ *
+ * Deliberately conservative. A node containing `{` is skipped rather than guessed at: interpolated JSX is a
+ * template, and half a sentence with the variable removed is exactly the mangled fragment this file's other
+ * filters exist to reject. Entities are decoded because a member reads "we'll", not "we&rsquo;ll".
+ */
+function jsxTextNodes(src) {
+  const out = [];
+  // Strip block comments and JSX comment braces so prose inside them cannot be mistaken for copy.
+  const clean = src
+    .replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, ' '))
+    // INLINE FORMATTING TAGS ARE REMOVED FIRST, or every <strong> mid-sentence splits one thought into two
+    // fragments and both get rejected. That is how "then a science-backed program…" stayed out of canon: the
+    // sentence was whole on screen and in pieces to the parser. <br/> becomes a space, the rest simply vanish.
+    .replace(/<br\s*\/?>/g, ' ')
+    .replace(/<\/?(strong|em|b|i|a|code)(\s[^>]*)?>/g, '');
+  for (const m of clean.matchAll(/>([^<>]{12,})</g)) {
+    const raw = m[1];
+    if (raw.includes('{') || raw.includes('}')) continue; // interpolated — a template, not a finished sentence
+    // TYPESCRIPT GENERICS LOOK EXACTLY LIKE JSX TEXT to a regex: `useState<Stage>('hero'); const [x] = useState<`
+    // has a `>`, prose-length content, and a `<`. Reject on code punctuation a member sentence never contains.
+    if (/[;=`]|\b(const|let|var|function|return|useState|useRef|useEffect|await|import)\b/.test(raw)) continue;
+    const text = raw
+      .replace(/\s+/g, ' ')
+      .replace(/&rsquo;|&#8217;/g, '\u2019').replace(/&lsquo;/g, '\u2018')
+      .replace(/&ldquo;/g, '\u201C').replace(/&rdquo;/g, '\u201D')
+      .replace(/&apos;/g, "'").replace(/&amp;/g, '&').replace(/&nbsp;/g, ' ')
+      .replace(/&mdash;/g, '\u2014').replace(/&ndash;/g, '\u2013')
+      .trim();
+    if (!text.includes(' ')) continue; // a single word between tags is a label or a fragment, not copy
+    out.push({ text, at: clean.slice(0, m.index).split('\n').length });
+  }
+  return out;
+}
+
+/**
+ * `{ term, text }` PAIRS — emitted joined, the way they render.
+ *
+ * A glossary row is authored as two fields because the term is bolded and the text follows it. So the text
+ * deliberately starts lowercase — "our founder's cycling metaphor…" — and the fragment filter, correctly reading
+ * a lowercase opener as a mid-sentence slice, threw every one of them out. 27 strings from the onboarding welcome
+ * alone, including Jay's own Clip in definition, which the sync note had told Cowork to quote verbatim. The copy
+ * was on screen, in the source list, and absent from the artifact the book quotes.
+ *
+ * Joining is not a workaround for the filter — it is the honest rendering. A member never reads the text without
+ * its term, so neither should canon.
+ */
+function termTextPairs(src) {
+  const out = [];
+  const re = /\{\s*term:\s*(['"])((?:\\.|(?!\1).)*)\1\s*,\s*text:\s*(['"])((?:\\.|(?!\3).)*)\3/g;
+  for (const m of src.matchAll(re)) {
+    const term = m[2].replace(/\\'/g, "'").trim();
+    const text = m[4].replace(/\\'/g, "'").trim();
+    if (term && text) out.push({ text: `${term} — ${text}`, at: src.slice(0, m.index).split('\n').length });
+  }
+  return out;
+}
+
 function stringsInFile(rel, rejected) {
   let src;
   try { src = readFileSync(join(ROOT, rel), 'utf8'); } catch { return []; }
   const lines = src.split('\n');
   const out = [];
   const seen = new Set();
-  lines.forEach((line) => {
+  // Multi-line JSX prose, keyed by the line it starts on so it lands in reading order with the rest.
+  const spanning = new Map();
+  if (rel.endsWith('.tsx')) for (const n of jsxTextNodes(src)) {
+    if (!spanning.has(n.at)) spanning.set(n.at, []);
+    spanning.get(n.at).push(n.text);
+  }
+  for (const n of termTextPairs(src)) {
+    if (!spanning.has(n.at)) spanning.set(n.at, []);
+    spanning.get(n.at).push(n.text);
+  }
+  lines.forEach((line, idx) => {
     // skip comment-only lines
     if (/^\s*(\/\/|\*|\/\*)/.test(line)) return;
     const cands = [];
     for (const m of line.matchAll(/(['"`])((?:\\.|(?!\1).)*)\1/g)) cands.push(m[2]);
     for (const m of line.matchAll(/>\s*([^<>{}][^<>{}]*?)\s*</g)) cands.push(m[1]);
+    cands.push(...(spanning.get(idx + 1) ?? []));
     for (const raw of cands) {
       const t = raw.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/\\n/g, ' ').replace(/\\u001E/g, ' / ').trim();
       if (!isMemberCopy(t)) continue;

@@ -195,3 +195,28 @@ the v3.4.9 canon was cut, so if you reconciled from that bundle, **the opening c
 
 **For marketing:** the first-screen line is the strongest short statement of the product's premise we have written
 — *"You didn't lose yourself, you stopped looking."*
+
+---
+
+## 8 · THE TRANSCRIPT ITSELF WAS INCOMPLETE — please re-read it, not just the diff
+
+This bundle's transcript is **regenerated with a fixed extractor**, and it is the more important half of this drop.
+
+The extractor only ever read **quoted string literals**. Any member copy written as JSX text — the words between
+tags, which is how every page headline and paragraph in this app is authored — was invisible to it unless the
+opening and closing tag happened to sit on the same line. So multi-line prose had never reached canon at all.
+
+**What was missing, and had always been missing:**
+- **The public landing page** (`app/page.tsx`) — the first words anyone reads, including everyone arriving from a
+  marketing link. It had never been in a bundle.
+- **The onboarding hero** — "You didn't lose yourself, you stopped looking."
+- **Jay's own Clip in definition**, which the previous note told you to quote verbatim. It was in the rejected
+  pile, not the transcript.
+- The identity picker, the email-verification page, and the Companion hero.
+
+Also fixed: glossary rows are authored as a bolded term plus a lowercase continuation, so each row read as a
+sentence fragment and was thrown out. They are now joined the way a member reads them — *"Clip in — our founder's
+cycling metaphor…"*, *"Reconnect — start looking at who you are."*
+
+**What this means for you:** if you reconciled the glossary from any earlier bundle, you were working from a
+transcript missing its front door and its own vocabulary rows. Worth a fresh pass rather than a diff.

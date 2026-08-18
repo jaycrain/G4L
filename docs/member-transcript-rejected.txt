@@ -1,6 +1,8 @@
-# Strings EXCLUDED from the member transcript (app @ 08a2c41 · 2026-08-18)
+# Strings EXCLUDED from the member transcript (app @ 83422d5 · 2026-08-18)
 # Not member copy: system prompts, multi-line fragments, code artifacts. Review when a real line goes missing.
 
+[app/page.tsx] Playbook
+[app/page.tsx] Log in
 [lib/agent/onboarding-staged.ts] you’re trying to reclaim. We can always change it later.
 [lib/agent/onboarding-staged.ts] So tell me, when DID you feel most like yourself? Tell me about them. Not the job title or just the role for
 [lib/agent/onboarding-staged.ts] which everyone knows you. Who were they? What were they doing? How did it feel to be them?
@@ -183,6 +185,9 @@
 [app/onboarding/welcome.tsx] onbwel-heart${beat.list ? ' onbwel-heart-list' : ''}
 [app/onboarding/welcome.tsx] starts here.
 [app/onboarding/welcome.tsx] Log in
+[app/onboarding/identity-picker.tsx] Enter
+[app/login/verify/page.tsx] Log in
+[app/login/verify/page.tsx] and carry on — nothing is blocked.
 [lib/ceremony/threshold-beats.ts] Athlete
 [lib/ceremony/threshold-beats.ts] everything worth keeping lands there, ready when you need it. It’s uniquely yours.
 [app/dashboard/post-ceremony-tour.tsx] idScore
@@ -685,6 +690,7 @@
 [app/momentum/week-grid.tsx] wk-cell wk-readonly${on ? ' on' : ''}
 [app/momentum/week-grid.tsx] ${r.label} — ${on ? 'logged' : 'not logged'}
 [app/momentum/week-grid.tsx] Today
+[app/momentum/week-grid.tsx] today ?
 [app/momentum/week-grid.tsx] Day ${i + 1} scored ${s} of 10. Open that day's log.
 [app/momentum/week-grid.tsx] Day ${i + 1} not logged. Open that day's log.
 [app/momentum/week-grid.tsx] wk-cell${on ? ' on' : ''}${i === today ? ' today' : ''}${i > today ? ' ahead' : ''}${tappable ? '' : ' wk-readonly'}
@@ -857,6 +863,12 @@
 [app/dashboard/triptych-center.tsx] Thinking…
 [app/dashboard/triptych-center.tsx] t scroll, plus there
 [app/dashboard/triptych-center.tsx] Enter
+[app/dashboard/companion-hero.tsx] = 56 ? false : c) : top
+[app/dashboard/companion-hero.tsx] companion-hero${condensed ? ' is-condensed' : ''}
+[app/dashboard/companion-hero.tsx] currentColor
+[app/dashboard/companion-hero.tsx] currentColor
+[app/dashboard/companion-hero.tsx] currentColor
+[app/dashboard/companion-hero.tsx] currentColor
 [app/dashboard/triptych-left.tsx] Reconnect
 [app/dashboard/triptych-left.tsx] Rewire
 [app/dashboard/triptych-left.tsx] Rebuild
@@ -942,12 +954,15 @@
 [app/score/[memberId]/page.tsx] a 0–100 read
 [app/score/[memberId]/page.tsx] Your ID Score right now is
 [app/score/[memberId]/page.tsx] The shape of you
+[app/score/[memberId]/page.tsx] The shape of you
 [app/score/[memberId]/page.tsx] now ·
+[app/score/[memberId]/page.tsx] your last IDQ
 [app/score/[memberId]/page.tsx] your last IDQ
 [app/grinta/[memberId]/page.tsx] Reconnect
 [app/grinta/[memberId]/page.tsx] Rewire
 [app/grinta/[memberId]/page.tsx] Rebuild
 [app/grinta/[memberId]/page.tsx] Reclaim
+[app/grinta/[memberId]/page.tsx] Where the name comes from
 [app/grinta/[memberId]/page.tsx] Where the name comes from
 [app/movement/[memberId]/page.tsx] Walk
 [app/movement/[memberId]/page.tsx] Ride
@@ -1081,7 +1096,9 @@
 [app/playbook/[memberId]/redesign-playbook-view.tsx] pb-map-tag${row.steady ? ' is-steady' : ''}
 [app/playbook/[memberId]/redesign-playbook-view.tsx] pb-map-tag${row.steady ? ' is-steady' : ''}
 [app/playbook/[memberId]/redesign-playbook-view.tsx] 0 ? c.items.map(entryCard) :
+[app/playbook/[memberId]/redesign-playbook-view.tsx] 0 ? c.items.map(entryCard) :
 [app/playbook/[memberId]/redesign-playbook-view.tsx] the moves that worked, run them again
+[app/playbook/[memberId]/redesign-playbook-view.tsx] Waiting on you
 [app/playbook/[memberId]/redesign-playbook-view.tsx] Waiting on you
 [app/account/page.tsx] select display_name, email, avatar_url from member_profile where member_id = $1
 [app/account/page.tsx] Profile
