@@ -266,17 +266,26 @@ async function main(): Promise<void> {
   // The card says "we'll keep the takeaway in your Playbook". That is a promise made to the member in their own
   // view, and this path has broken it before: on 2026-07-27 prod silently dropped EVERY session keeper and a member
   // completed six Sessions with nothing filed. So the walk goes and LOOKS.
-  await page.waitForTimeout(1200); // the keep is fire-and-forget from the client
-  await page.goto(`${base}/playbook/${memberId}`, { waitUntil: 'domcontentloaded' });
-  // NB: each tab button contains its label AND a count span, so an anchored /^label$/ never matches the node text.
-  await page.locator('.pb-tab').filter({ hasText: "What you've learned" }).first().click();
-
   const lede = exploreFor(SESSION as Parameters<typeof exploreFor>[0])!.lede; // the default takeaway is the Explore lede
-  // WAIT FOR THE CONDITION, NOT A DURATION. This was `waitForTimeout(600)` then an immediate count — enough on
-  // localhost, not enough against prod's round trip. It reported the takeaway MISSING while it was on the page,
-  // which is a false red on a working feature: the kind that gets you "fixing" code that was already correct.
-  const keptVisible = await page.getByText(lede, { exact: false }).first()
-    .waitFor({ state: 'visible', timeout: 15000 }).then(() => true).catch(() => false);
+  // RELOAD UNTIL IT APPEARS, rather than waiting a fixed time and looking once.
+  //
+  // The line above this used to be `waitForTimeout(1200)` — and the comment two lines below it already warned that
+  // a FIXED DURATION is not enough against prod's round trip. It had been fixed in one place and left in the
+  // other. The keep is fire-and-forget from the client (useTeaching), so the server finishes it AFTER the page has
+  // navigated away: on localhost that always wins the race, on prod it does not, and the walk reported the
+  // takeaway missing on a feature that was working. A false red here is expensive — it sends you "fixing" a
+  // commit path that verifies its own write and is correct.
+  //
+  // Waiting on the already-loaded page cannot work either: a row written after the page rendered will never
+  // appear without a fetch. So this RELOADS and re-checks, and still fails honestly if it never lands.
+  let keptVisible = false;
+  for (let attempt = 0; attempt < 6 && !keptVisible; attempt++) {
+    await page.goto(`${base}/playbook/${memberId}`, { waitUntil: 'domcontentloaded' });
+    // NB: each tab button contains its label AND a count span, so an anchored /^label$/ never matches the node text.
+    await page.locator('.pb-tab').filter({ hasText: "What you've learned" }).first().click();
+    keptVisible = await page.getByText(lede, { exact: false }).first()
+      .waitFor({ state: 'visible', timeout: 3000 }).then(() => true).catch(() => false);
+  }
   if (keptVisible) ok(`the takeaway is in the Playbook — the card told the truth ("${lede.slice(0, 44)}…")`);
   else bad('the takeaway is NOT in the Playbook — the card promised something we did not do');
 
