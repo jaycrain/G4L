@@ -28,8 +28,18 @@ import type { SessionKey } from '../../lib/workspace/session-key.ts';
 // The Cowork mockups render the Session dark with cream cards; our workspace is light, so the contrast device is
 // ours, not theirs (their file is IA only — Jay, 2026-08-16).
 
-/** ① The frame. Full summary, then one tap into the work. Renders as the first thing in the thread. */
-export function TeachingFrame({ sessionKey, onClipIn }: { sessionKey: SessionKey; onClipIn: () => void }) {
+/**
+ * ① The frame. The full summary, and NOTHING ELSE — no button.
+ *
+ * IT USED TO CARRY "Clip in →" AND THAT WAS A DEAD CONTROL (Donna, 2026-08-17): it scrolled the thread to the
+ * bottom, which on a fresh Session is where you already are, so tapping it did nothing visible. A button that
+ * does nothing is worse than no button — it makes the member doubt the page rather than the button.
+ *
+ * The deeper reason it should not exist: the Session opens with this card and the Companion's first question
+ * directly beneath it. There is nothing to "clip in" TO — the work has already started. The word belongs on the
+ * onboarding language screen, where it is defined, and on the button that actually begins something.
+ */
+export function TeachingFrame({ sessionKey }: { sessionKey: SessionKey }) {
   const { frame } = teachingFor(sessionKey);
   if (!frame) return null; // gates (checkpoints, b4/c4) teach nothing
 
@@ -37,11 +47,6 @@ export function TeachingFrame({ sessionKey, onClipIn }: { sessionKey: SessionKey
     <section className="teach-card teach-frame" aria-label="Why this matters">
       <p className="teach-eyebrow">Why this matters</p>
       <p className="teach-body">{frame.full}</p>
-      <div className="teach-foot">
-        <button type="button" className="teach-cta" onClick={onClipIn}>
-          Clip in →
-        </button>
-      </div>
     </section>
   );
 }

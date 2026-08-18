@@ -127,7 +127,7 @@ export default function RewireChat({ memberId, session = 'w1' }: { memberId: str
         {/* ① THE FRAME — inside the thread, never above it. `.chat` is the scroller (globals.css:2090), so this is
             what lets the full summary show and then scroll away. Hoisting it to the workspace body would pin it and
             re-create the squeeze Jennifer hit on 7/27. See teaching-cards.tsx. */}
-        <TeachingFrame sessionKey={sessionKey} onClipIn={() => chatRef.current?.scrollTo({ top: chatRef.current.scrollHeight, behavior: 'smooth' })} />
+        <TeachingFrame sessionKey={sessionKey} />
         {messages.map((m, i) => (
           <div key={i} className={`bubble ${m.role}`}>
             {m.role === 'agent' ? <RichText text={m.text} /> : m.text}

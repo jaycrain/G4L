@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import RichText from '../rich-text.tsx';
 import { startReconnectAction, reconnectTurnAction, reconnectCeremonyDataAction, loadReconnectSessionAction } from './actions.ts';
 import ScaleChips from '../components/scale-chips.tsx';
@@ -52,6 +52,20 @@ export default function ReconnectChat({
   useEffect(() => { onStage?.(state?.stage ?? null); }, [state?.stage, onStage]);
   const started = useRef(false);
   const chatRef = useChatAutoscroll([messages.length, pending, expects]);
+
+  // WHERE each Understand card was earned — the message count at the moment its asset first became taught. The
+  // card's CONTENT is derived from the stage, but its POSITION is a fact about when it arrived that only this
+  // component can observe, so it is recorded rather than recomputed. Never reassigned once set: a card must not
+  // drift up the thread because the conversation grew underneath it.
+  const taught = reconnectTaughtSoFar(state?.stage);
+  const [cardAt, setCardAt] = useState<Record<string, number>>({});
+  useEffect(() => {
+    const missing = taught.filter((a) => cardAt[a] === undefined);
+    if (missing.length) {
+      setCardAt((prev) => ({ ...prev, ...Object.fromEntries(missing.map((a) => [a, messages.length])) }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [taught.join(','), messages.length]);
 
   useEffect(() => {
     if (started.current) return;
@@ -137,20 +151,39 @@ export default function ReconnectChat({
       )}
       <div className="chat" ref={chatRef}>
         {/* ① The frame — Reconnect's is the PHASE summary, because the arc spans three assets rather than one. */}
-        <TeachingFrame sessionKey="reconnect" onClipIn={() => chatRef.current?.scrollTo({ top: chatRef.current.scrollHeight, behavior: 'smooth' })} />
-        {messages.map((m, i) => (
-          <div key={i} className={`bubble ${m.role}`}>
-            {m.role === 'agent' ? <RichText text={m.text} /> : m.text}
-          </div>
-        ))}
-        {pending && <div className="typing">Thinking…</div>}
-        {/* ③ Understand — ONE card per asset, at the beat that closes it, and they stay as the arc moves on.
+        <TeachingFrame sessionKey="reconnect" />
+        {/* ③ Understand — ONE card per asset, INTERLEAVED where it was earned.
+
+            THIS USED TO RENDER AFTER EVERY MESSAGE and it scrambled the thread (Donna, 2026-08-17). Reconnect is
+            the only arc that accumulates several of these across one conversation, so it was the only one that
+            showed the fault: a card earned when R1 closed sat below every later message, new turns painted ABOVE
+            it, and on an administered turn the question sat above the card while the chips answering it sat
+            below. Her words: "questions appear above the field meant to answer them."
+
+            Each card is now placed after the message that was last on screen when its beat closed, so the thread
+            reads in the order it happened. `cardAt` is captured the first time an asset appears in
+            reconnectTaughtSoFar — the render is derived, the POSITION is a fact about when it arrived, and only
+            the component watching the conversation can know it.
+
             NOTHING IS GATED HERE. The other three arcs hold the hand-home until the member acknowledges; Reconnect
-            has no hand-home (it flows into the ceremony) and, more to the point, it carries the live capture loop.
-            A required tap mid-arc would interrupt the one conversation we have standing orders not to disturb. */}
-        {reconnectTaughtSoFar(state?.stage).map((a) => (
+            has no hand-home (it flows into the ceremony) and it carries the live capture loop, so a required tap
+            mid-arc would interrupt the one conversation we have standing orders not to disturb. */}
+        {messages.map((m, i) => (
+          <Fragment key={i}>
+            <div className={`bubble ${m.role}`}>
+              {m.role === 'agent' ? <RichText text={m.text} /> : m.text}
+            </div>
+            {taught.filter((a) => cardAt[a] === i + 1).map((a) => (
+              <TeachingUnderstand key={a} sessionKey="reconnect" stage={LAST_BEAT[a]} onAcknowledge={() => {}} />
+            ))}
+          </Fragment>
+        ))}
+        {/* Anything earned before the first message of a RESUMED thread — the position was not observed, so it
+            leads rather than being invented into the middle of a conversation it predates. */}
+        {taught.filter((a) => (cardAt[a] ?? 0) > messages.length).map((a) => (
           <TeachingUnderstand key={a} sessionKey="reconnect" stage={LAST_BEAT[a]} onAcknowledge={() => {}} />
         ))}
+        {pending && <div className="typing">Thinking…</div>}
         {/* W-32 chips scroll WITH the thread (Jay's walk: not pinned to the bottom) — they answer the question above, autosend. */}
         {expects?.kind === 'scale' && <ScaleChips expects={expects} disabled={pending || !state} onPick={(n) => void submit(String(n))} />}
       </div>

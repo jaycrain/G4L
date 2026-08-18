@@ -152,9 +152,13 @@ async function main(): Promise<void> {
   if (/why this matters/i.test(eyebrow)) ok(`the eyebrow names the card ("${eyebrow}")`);
   else bad(`unexpected eyebrow: "${eyebrow}"`);
 
-  const cta = (await page.locator('.teach-frame .teach-cta').innerText()).trim();
-  if (/clip in/i.test(cta)) ok(`the CTA is the established term ("${cta}")`);
-  else bad(`unexpected CTA: "${cta}"`);
+  // THE FRAME HAS NO BUTTON, and this asserts the absence (Donna, 2026-08-17). It used to carry "Clip in →",
+  // which scrolled the thread to the bottom — where a fresh Session already is, so the tap did nothing visible.
+  // A control that does nothing makes the member doubt the page rather than the button. There is also nothing to
+  // clip in TO here: the card opens the Session with the first question directly beneath it.
+  const frameButtons = await page.locator('.teach-frame button').count();
+  if (frameButtons === 0) ok('the frame carries NO button — the dead "Clip in →" is gone');
+  else bad(`the frame still has ${frameButtons} button(s); it should have none`);
 
   await page.screenshot({ path: `docs/screenshots/teaching-frame-${SESSION}.png`, fullPage: false });
   ok(`screenshot → teaching-frame-${SESSION}.png`);

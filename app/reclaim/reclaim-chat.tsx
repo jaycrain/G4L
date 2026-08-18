@@ -122,7 +122,7 @@ export default function ReclaimChat({ memberId, session = 'c1' }: { memberId: st
     <div className="reconnect-chat">
       <div className="chat" ref={chatRef}>
         {/* ① Frame — INSIDE the thread; `.chat` is the scroller, so hoisting this pins it. See teaching-cards.tsx. */}
-        <TeachingFrame sessionKey={sessionKey} onClipIn={() => chatRef.current?.scrollTo({ top: chatRef.current.scrollHeight, behavior: 'smooth' })} />
+        <TeachingFrame sessionKey={sessionKey} />
         {messages.map((m, i) => (
           <div key={i} className={`bubble ${m.role}`}>
             {/* Agent text goes through RichText — it emits light markdown (**bold**, blank lines between beats) and a
