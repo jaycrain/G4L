@@ -5,7 +5,8 @@ import RichText from '../rich-text.tsx';
 import { startReconnectAction, reconnectTurnAction, reconnectCeremonyDataAction, loadReconnectSessionAction } from './actions.ts';
 import ScaleChips from '../components/scale-chips.tsx';
 import { TeachingFrame, TeachingUnderstand } from '../workspace/teaching-cards.tsx';
-import { reconnectTaughtSoFar } from '../../lib/content/teaching.ts';
+import { keepScienceAction } from '../workspace/actions.ts';
+import { reconnectTaughtSoFar, teachingSourceLabel } from '../../lib/content/teaching.ts';
 
 // Which beat each asset's card renders FOR — the card resolves its content by stage, so a past asset needs the
 // stage it closed at, not the member's current one.
@@ -57,6 +58,23 @@ export default function ReconnectChat({
   // card's CONTENT is derived from the stage, but its POSITION is a fact about when it arrived that only this
   // component can observe, so it is recorded rather than recomputed. Never reassigned once set: a card must not
   // drift up the thread because the conversation grew underneath it.
+  // RECONNECT'S "Got it" USED TO BE A NO-OP — `onAcknowledge={() => {}}` — while the card above it read "We'll
+  // keep the takeaway in your Playbook." So the button did nothing, nothing was filed, and the promise on screen
+  // was false. Donna hit it on her walk ("the button itself wasn't working") and she was walking from the start,
+  // which is Reconnect.
+  //
+  // It stays a BUTTON and it stays gating the content (Jay, 2026-08-18) — the fault was never that it existed.
+  // Reconnect has no hand-home to hold, so what it gates is the acknowledgment itself; what it must do is FILE
+  // the read, which is the thing the member was told would happen.
+  //
+  // Keyed by STAGE, so the three cards file as three reads rather than colliding on one session key.
+  const keepReconnectScience = (stage: string | undefined) => {
+    if (!stage) return; // an unmapped asset has no beat to file against — never invent one
+    void keepScienceAction(memberId, 'reconnect', teachingSourceLabel('reconnect', stage), null, stage)
+      .catch((e) => console.error('[teaching] reconnect keep failed', e));
+    notifyArtifactCommitted();
+  };
+
   const taught = reconnectTaughtSoFar(state?.stage);
   const [cardAt, setCardAt] = useState<Record<string, number>>({});
   useEffect(() => {
@@ -174,14 +192,14 @@ export default function ReconnectChat({
               {m.role === 'agent' ? <RichText text={m.text} /> : m.text}
             </div>
             {taught.filter((a) => cardAt[a] === i + 1).map((a) => (
-              <TeachingUnderstand key={a} sessionKey="reconnect" stage={LAST_BEAT[a]} onAcknowledge={() => {}} />
+              <TeachingUnderstand key={a} sessionKey="reconnect" stage={LAST_BEAT[a]} onAcknowledge={() => keepReconnectScience(LAST_BEAT[a])} />
             ))}
           </Fragment>
         ))}
         {/* Anything earned before the first message of a RESUMED thread — the position was not observed, so it
             leads rather than being invented into the middle of a conversation it predates. */}
         {taught.filter((a) => (cardAt[a] ?? 0) > messages.length).map((a) => (
-          <TeachingUnderstand key={a} sessionKey="reconnect" stage={LAST_BEAT[a]} onAcknowledge={() => {}} />
+          <TeachingUnderstand key={a} sessionKey="reconnect" stage={LAST_BEAT[a]} onAcknowledge={() => keepReconnectScience(LAST_BEAT[a])} />
         ))}
         {pending && <div className="typing">Thinking…</div>}
         {/* W-32 chips scroll WITH the thread (Jay's walk: not pinned to the bottom) — they answer the question above, autosend. */}

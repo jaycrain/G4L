@@ -44,7 +44,7 @@ export function useTeaching(memberId: string, sessionKey: SessionKey, stage?: st
   const acknowledge = () => {
     setTaught(true); // release immediately — the filing is not something the member should wait on to READ
     // The action verifies its own write and logs server-side if the row vanished.
-    pending.current = keepScienceAction(memberId, sessionKey, teachingSourceLabel(sessionKey, stage))
+    pending.current = keepScienceAction(memberId, sessionKey, teachingSourceLabel(sessionKey, stage), null, stage)
       .catch((e) => console.error('[teaching] keep failed', e));
     notifyArtifactCommitted();
   };

@@ -106,3 +106,33 @@ test('Reconnect cards PERSIST as the arc moves on, and never appear early', () =
   // An unknown beat must not silently show everything.
   assert.deepEqual(seen('nonsense-beat'), [], 'an unmapped beat shows nothing rather than guessing');
 });
+
+test('Reconnect files THREE reads, one per asset — they cannot collide on one key', async () => {
+  // RECONNECT'S "Got it" WAS A NO-OP while the card promised "we'll keep the takeaway in your Playbook" — the
+  // button did nothing and nothing was filed (Donna, 2026-08-18: "the button itself wasn't working"). Wiring it
+  // exposed a second fault underneath: keepSessionScience keyed its idempotency check on the SESSION, and
+  // Reconnect files one read as each of R1, R2 and R3 closes. Keyed on 'reconnect' alone, the first would file
+  // and the other two would report success while writing nothing — the silent-drop shape, again.
+  const { keepSessionScience } = await import('../lib/content/teaching-keep.ts');
+  const { PGlite } = await import('@electric-sql/pglite');
+  const { applySchema } = await import('../lib/db/schema.ts');
+  const db = new PGlite() as never;
+  await applySchema(db);
+  const { rows } = await (db as never as { query: (s: string) => Promise<{ rows: { member_id: string }[] }> })
+    .query(`insert into member_profile (display_name, email) values ('R','r@x.test') returning member_id`);
+  const m = rows[0]!.member_id;
+
+  for (const stage of ['doors', 'drift', 'ceremony']) {
+    const r = await keepSessionScience(db, m, 'reconnect', 'Reconnect', null, stage);
+    assert.equal(r.ok, true, `${stage} filed`);
+  }
+  const kept = await (db as never as { query: (s: string, p: unknown[]) => Promise<{ rows: unknown[] }> })
+    .query(`select id from playbook_entry where member_id=$1 and source_kind='science'`, [m]);
+  assert.equal(kept.rows.length, 3, 'three distinct reads, not one');
+
+  // And still idempotent per card — re-acknowledging must not double-file.
+  await keepSessionScience(db, m, 'reconnect', 'Reconnect', null, 'doors');
+  const again = await (db as never as { query: (s: string, p: unknown[]) => Promise<{ rows: unknown[] }> })
+    .query(`select id from playbook_entry where member_id=$1 and source_kind='science'`, [m]);
+  assert.equal(again.rows.length, 3, 'still three');
+});

@@ -42,15 +42,21 @@ export async function keepSessionScience(
   sessionKey: SessionKey,
   sourceLabel: string,
   chosenLine?: string | null,
+  stage?: string | null,
 ): Promise<KeptScience> {
-  const keeper = teachingKeeper(sessionKey, sourceLabel, chosenLine);
+  const keeper = teachingKeeper(sessionKey, sourceLabel, chosenLine, stage);
   if (!keeper) return { ok: false, reason: 'nothing to keep for this session' };
+  // THE REF IS PER CARD, NOT PER SESSION. Nine Sessions file one read each and `sessionKey` is enough. RECONNECT
+  // files THREE — one as each of R1, R2 and R3 closes — and they are three different reads about three different
+  // assets. Keyed on the session alone they would collide on the idempotency check above, and only the first
+  // would ever be filed while the other two silently reported success.
+  const ref = stage ? `${sessionKey}:${stage}` : sessionKey;
 
   // Already filed? The member can re-open a closed Session and meet the card again.
   const existing = await db.query<{ id: string }>(
     `select id from playbook_entry
       where member_id = $1 and section = $2 and source_kind = 'science' and source_ref = $3 limit 1`,
-    [memberId, WHY_SECTION, sessionKey],
+    [memberId, WHY_SECTION, ref],
   );
   if (existing.rows.length) return { ok: true, body: keeper.text, reason: 'already kept' };
 
@@ -61,7 +67,7 @@ export async function keepSessionScience(
       section: WHY_SECTION,
       body: keeper.text,
       state: 'kept', // the member acknowledged it; it is not a proposal awaiting curation
-      source: { kind: 'science', ref: sessionKey, label: sourceLabel },
+      source: { kind: 'science', ref, label: sourceLabel },
     });
   } catch (e) {
     console.error(`[teaching] science keeper FAILED to commit for ${memberId}/${sessionKey}:`, e);
@@ -73,7 +79,7 @@ export async function keepSessionScience(
   const check = await db.query<{ id: string }>(
     `select id from playbook_entry
       where member_id = $1 and section = $2 and source_kind = 'science' and source_ref = $3 limit 1`,
-    [memberId, WHY_SECTION, sessionKey],
+    [memberId, WHY_SECTION, ref],
   );
   if (!check.rows.length) {
     console.error(`[teaching] science keeper VANISHED after commit for ${memberId}/${sessionKey} — the member was told it was kept`);

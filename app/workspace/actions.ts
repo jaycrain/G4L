@@ -33,11 +33,12 @@ export async function keepScienceAction(
   key: string,
   sourceLabel: string,
   chosenLine?: string | null,
+  stage?: string | null,
 ): Promise<{ ok: boolean; reason?: string }> {
   if (!(await authorizeMember(memberId))) return { ok: false, reason: 'not authorized' };
   if (!isSessionKey(key)) return { ok: false, reason: 'unknown session' };
   const db = (await getDb()) as unknown as Db;
   const { keepSessionScience } = await import('../../lib/content/teaching-keep.ts');
-  const r = await keepSessionScience(db, memberId, key, sourceLabel);
+  const r = await keepSessionScience(db, memberId, key, sourceLabel, chosenLine, stage);
   return { ok: r.ok, reason: r.reason };
 }
