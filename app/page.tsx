@@ -44,7 +44,7 @@ export default async function Home() {
             rather than a program you attend. */}
         <p>
           It starts with a real conversation. Just you and a companion built for this one thing, and nothing else.
-          What you build from there stays yours.
+          What you build here is private, and it stays with you.
         </p>
       </div>
       <p>

@@ -358,7 +358,7 @@ const W2_PRACTICE_3 =
   `into it.`;
 // ── Close — harvest ──
 const W2_CLOSE =
-  `I've saved your picture to your Playbook — yours to return to anytime. You've got both tools now: the lines that ` +
+  `I've saved your picture to your Playbook — there whenever you want it. You've got both tools now: the lines that ` +
   `answer the lies, and the image that's stronger than them. That's Rewire starting to hold.`;
 
 function w2Opening(): string {

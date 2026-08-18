@@ -176,7 +176,7 @@ function WelcomeHero({ onNext }: { onNext: () => void }) {
       <div className="onbwel-d-heart">
         <h1 className="onbwel-d-head">Your comeback<br />starts here.</h1>
         <p className="onbwel-d-sub">
-          You didn’t lose yourself, you stopped looking. Who you are got crowded out by a hundred reasonable
+          You didn’t lose yourself, you just stopped looking. Who you are got crowded out by a hundred reasonable
           trade-offs. A career that changed, a marriage that drifted, years of carrying everyone. That’s the Fade.
           And you’re still in there.
         </p>

@@ -90,7 +90,14 @@ export default function PostCeremonyTour({
     // Account — the TOPBAR, not a panel, so it comes after the panels rather than in the middle of the flanks,
     // and it needs no pane: the topbar sits above the fold and is on screen whichever pane is showing.
     { target: 'account', pane: null, line: tourLine('account') },
-    { target: 'daily', pane: 'center', line: 'Your Daily Beat — the heartbeat between Sessions. One thought, one small move, every day.' },
+    // THE 'daily' STOP IS GONE, and renaming it would have been the wrong fix (Cowork, 2026-08-18: "Daily Beat"
+    // is retired vocabulary, naming ledger #10). She is right about the word — but the PANEL it introduces was
+    // removed on 2026-07-31, and the live dashboard has no `data-tour="daily"` anchor at all. So the tour was
+    // walking a new member up to a surface that does not exist and describing its heartbeat.
+    //
+    // Renaming it to "Your daily clip-in" would have kept a stop that points at nothing, in better words. The
+    // description she wanted to preserve — "one thought, one small move, every day" — is not homeless: that is
+    // what Moves and the Playbook are, and the Playbook stop already introduces them.
     { target: 'doors', pane: 'center', line: doorsLine },
   ];
   // CAT-46 — DON'T SILENTLY DROP 7 OF 9 STOPS ON A PHONE.
@@ -249,9 +256,8 @@ export default function PostCeremonyTour({
         <div className="tour-card tour-intro">
           <Mark />
           <p className="tour-line">
-            Way to go! Hope you have already had some valuable insights and thought provoking moments. I’ve been
-            tracking everything we’ve talked about. Take a minute to look around your Dashboard where we’re keeping
-            everything we’ve done and more.
+            Way to go! Hope you have already had some valuable insights and thought provoking moments. I’ve kept
+            everything we’ve talked about. Take a minute to look around your Dashboard, where it all lives.
           </p>
           <div className="tour-cta">
             <button type="button" className="tour-next" onClick={() => { setStep(0); setPhase('walk'); }}>Show me around →</button>

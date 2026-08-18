@@ -111,10 +111,10 @@ export const PANEL_MESSAGING = {
     intro: null, // the sub carries it
   },
   account: {
-    title: 'Your Account — yours to set.',
+    title: 'Your Account — set it how you want.',
     sub: 'Your details, your reminders, and your privacy, in one place.',
     intro:
-      'What you write here stays yours — export it or close your account anytime. Set reminders to get as many ' +
+      'What you write here is private — export it or close your account anytime. Set reminders to get as many ' +
       'nudges as helps, and no more.',
   },
 } as const satisfies Record<string, PanelMessaging>;

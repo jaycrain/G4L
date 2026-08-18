@@ -98,7 +98,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             contradict everything else this product says. No ® — the mark is not registered. */}
         <footer className="confidential-footer">
           © 2026 Adjacent Lab, LLC. All rights reserved. The Grinta for Life program, its assessments and its
-          content are proprietary. What you write here stays yours.
+          content are proprietary. What you write here is private.
           {/* The version + build, for Charter. A member reporting something can read this back, and it says which
               BUILD they were on — the version alone spans dozens of deploys. Quiet by design: it sits with the
               notice rather than in the chrome, because it is for the rare moment something goes wrong. */}

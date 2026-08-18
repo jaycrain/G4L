@@ -211,7 +211,7 @@ export default function WorkspaceSession({
                   </div>
                 ))}
               </div>
-              <p className="ws-built-foot">Saved in your Playbook — yours to return to anytime.</p>
+              <p className="ws-built-foot">Saved in your Playbook — there whenever you want it.</p>
             </div>
           ) : (
             <SessionConversation memberId={memberId} sessionKey={sessionKey} onReconnectStage={setReconnectStage} />

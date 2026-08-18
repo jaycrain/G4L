@@ -24,7 +24,16 @@ const BANNED: { re: RegExp; why: string; codeOnly?: boolean }[] = [
   // NOT guarded here, deliberately: "quiet", "holding", "lands" and "honest" are ordinary English with legitimate
   // uses ("quiet the noise" is fine, and honesty with themselves is what the program is FOR). A regex cannot tell
   // the tell from the good use, and a guard that cries wolf gets ignored — those live in the prompt only.
-  { re: /yours to (keep|define|claim|hold)/i, why: '"it\'s yours to ___" is retired — say the thing plainly', codeOnly: true },
+  // WIDENED 2026-08-18 (Cowork): the retired thing is the whole POSSESSIVE-OF-THE-OBJECT framing, not four verbs.
+  // The narrow version listed keep/define/claim/hold and duly missed "it's yours to answer" in the checkpoint
+  // guide — a rule enumerated by instance always has the next instance outside it. Say what the thing DOES
+  // (private, portable, it stays with you); do not claim possession at the member.
+  { re: /yours to \w+/i, why: '"it\'s yours to ___" is retired — say what the thing does', codeOnly: true },
+  // "like it's yours" is EXEMPT and the distinction is the whole rule. What is retired is claiming possession of
+  // an OBJECT at the member — "the Playbook is yours", "what you write stays yours". Telling someone to say their
+  // own identity "like it's yours" is about how they speak, not a claim we are making on their behalf, and it is
+  // some of the better copy in the curriculum. A guard that cannot tell those apart would launder good writing.
+  { re: /stays yours|(?<!like )it'?s yours\b(?! to)/i, why: 'the ownership framing is retired — say it is private / stays with you', codeOnly: true },
   { re: /earned,? not given/i, why: 'a slogan, and slogans are the opposite of talking to someone', codeOnly: true },
   { re: /\bno scor(es|ing)\b/i, why: 'the reassurance tic in another coat — never tell them what it is NOT', codeOnly: true },
   { re: /holding space/i, why: 'an AI tell — say what you are actually doing', codeOnly: true },

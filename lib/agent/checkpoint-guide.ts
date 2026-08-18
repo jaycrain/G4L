@@ -46,7 +46,7 @@ function material(c: CheckpointCtx): string {
 /** Open the gate: pose the existential questions, grounded in their own reconnect material. */
 export function checkpointOpening(c: CheckpointCtx): Promise<string> {
   const fallback =
-    `You've done the excavation — you named who you're reclaiming. Before Rewire, the real question, and it's yours to answer: ` +
+    `You've done the excavation — you named who you're reclaiming. Before Rewire, the real question, and only you can answer it: ` +
     `have you found yourself again? Not all the way back — but have you remembered who that is? Let that land. What surfaced for you, and what does it mean?`;
   return say(
     VOICE +

@@ -790,7 +790,7 @@ export function scriptedTurn(state: ConvState, message: string): Turn {
       collected.reclaimList = items;
       return done(
         'door',
-        `That's a real list — practical, personal, honest. It's yours now; it'll be right there on your dashboard, and we'll knock them down one at a time.\n\n${doorPrompt()}`,
+        `That's a real list — practical, personal, honest. It'll be right there on your dashboard, and we'll knock them down one at a time.\n\n${doorPrompt()}`,
       );
     }
     case 'door': {

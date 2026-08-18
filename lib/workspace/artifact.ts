@@ -30,7 +30,7 @@ const FRAME_FOOT = 'This is a measure, not a test — an honest read at your own
 // Static frame (title + lede) per session. Slots are filled by the reader below (empty = the frame stands alone).
 const META: Record<SessionKey, { title: string; lede: string; foot?: string }> = {
   reconnect: { title: 'Who you’re reclaiming', lede: 'What Reconnect brings into focus — in your words. It becomes the ground the whole program works from.' },
-  w1: { title: 'The lines that beat the old voice', lede: 'Each excuse you turned into a truer line lands here — yours to reach for when the old voice gets loud.' },
+  w1: { title: 'The lines that beat the old voice', lede: 'Each excuse you turned into a truer line lands here — reach for one when the old voice gets loud.' },
   w2: { title: 'The picture you’re building', lede: 'The you a year from now, vivid enough the old voice can’t argue with it. It fills in your own words.' },
   w3: { title: 'Your way back in', lede: 'The move you reach for after a false start — not to avoid the slip, but to clip back in fast.' },
   b1: { title: 'Your Why', lede: 'The reason underneath the goal. You named it out loud — that’s what makes it carry when the how gets hard.', foot: FRAME_FOOT },
