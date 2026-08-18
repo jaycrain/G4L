@@ -848,7 +848,20 @@ function appendReclaimItems(c: Collected, message: string): boolean {
 export function parseReclaimListSubmission(message: string): string[] {
   return (message ?? '')
     .split(/\r?\n+/)
-    .map((line) => line.replace(/^\s*(?:[([]?\d{1,2}[.):\]–-]|[-•*])\s*/, '').trim())
+    // STRIP REPEATEDLY, not once. The builder prefixes every field with "• ", so a member who types their own
+    // dash inside a field submits "• - a creative role…" — one strip leaves the dash, and it then shows on her
+    // dashboard and gets quoted back to her by the Companion for the rest of the program. (Donna, 2026-08-18:
+    // two of her three items carried it.) Bounded so this can only ever remove list scaffolding, never words:
+    // a want that genuinely begins with a marker character does not survive three of them.
+    .map((line) => {
+      let t = line;
+      for (let i = 0; i < 3; i++) {
+        const stripped = t.replace(/^\s*(?:[([]?\d{1,2}[.):\]–-]|[-•*])\s*/, '');
+        if (stripped === t) break;
+        t = stripped;
+      }
+      return t.trim();
+    })
     .filter((line) => line.length > 0)
     // A member can put a whole numbered list INSIDE one field ("My goals: 1. … 2. … 3. …"). Splitting on newlines
     // alone turned that into a single blob item, and the goals inside it were unreachable — nothing downstream could

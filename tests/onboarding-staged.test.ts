@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { applyStagedTurn, stagedOpening, correctsReflection, tidyGapProse } from '../lib/agent/onboarding-staged.ts';
+import { applyStagedTurn, stagedOpening, correctsReflection, tidyGapProse, parseReclaimListSubmission } from '../lib/agent/onboarding-staged.ts';
 import { memberClosingReclaim } from '../lib/agent/onboarding-intent.ts';
 import { BEAT_SEP, type ConvMessage, type ConvState, type ModelTurn, type Turn } from '../lib/agent/onboarding.ts';
 
@@ -836,3 +836,23 @@ test('STAGED fade gate — does NOT misfire on a real fade that also mentions wa
   assert.equal(turns[1]!.state.awaitingConfirm, true, 'proceeds to reflect-confirm once the story is whole');
 });
 
+
+// DONNA, 2026-08-18 — the builder prefixes "• ", she typed her own "- " inside the field, and one strip left it.
+// Two of her three Reclaim items reached production reading "- A creative role that covers the bills…", which is
+// what her dashboard shows her and what the Companion quotes back for the rest of the program.
+test('a builder submission strips the member\'s own list marker as well as the builder\'s', () => {
+  const items = parseReclaimListSubmission(
+    '• - A creative role that covers the bills each month\n• - Lose the 20 lbs and rebuild strength\n• Less day-to-day conflict',
+  );
+  assert.deepEqual(items, [
+    'A creative role that covers the bills each month',
+    'Lose the 20 lbs and rebuild strength',
+    'Less day-to-day conflict',
+  ]);
+});
+
+test('stripping is bounded — it removes scaffolding, never the member\'s words', () => {
+  // A real want is never eaten: only leading markers go, and the text after them is untouched.
+  assert.deepEqual(parseReclaimListSubmission('• 1. ride my bike again'), ['ride my bike again']);
+  assert.deepEqual(parseReclaimListSubmission('• be 20-minutes-a-day consistent'), ['be 20-minutes-a-day consistent']);
+});
