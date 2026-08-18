@@ -526,3 +526,41 @@ test('STAGE AGREEMENT — a model jumping ahead BEFORE a gap story exists cannot
   // ...but what she said is still not lost.
   assert.ok((finalState.collected.reclaimList ?? []).length >= 1, 'her want must be captured even while the engine holds');
 });
+
+// THE BRIDGE EXISTS ON BOTH PATHS, OR IT DOES NOT EXIST.
+//
+// The gap→reclaim bridge was written for the blank opener ("we don't cold-pivot to 'Now, the good part'") and never
+// reached the parked-wants branch, so every front-loader got the cold version for weeks — invisibly, because the
+// branch nobody walks is the branch nobody reads. One fact, two call sites, one of them wrong. This asserts the
+// warmth on BOTH, so the next person to touch one cannot silently leave the other behind.
+test('the gap→reclaim bridge is on BOTH openers, and the cold pivot is gone from both', () => {
+  const blank = replayStaged(
+    [
+      { member: "No, that's it — that's the whole of it.", model: { text: 'Understood.', replyIntent: 'done' } },
+      { member: "Yes, you've got it.", model: { text: 'Thank you.', replyIntent: 'done' } },
+    ],
+    atGapWithStory(),
+  ).last.reply;
+
+  const parked = replayStaged(
+    [
+      // The model pivots to Reclaim on its own — this is what puts the tell in the PRIOR agent turn.
+      { member: 'It just kept going after that.', model: { text: 'Now — what do you want back?' } },
+      // ...so this answer is heard as a want and parked, even though the engine is still in `gap`.
+      { member: 'Firstly, I want financial stability.', model: { text: 'Financial stability — first and clearest.' } },
+      { member: "No, that's it — that's the whole of it.", model: { text: 'Understood.', replyIntent: 'done' } },
+      { member: "Yes, you've got it.", model: { text: 'Thank you.', replyIntent: 'done' } },
+    ],
+    atGapWithStory(),
+  ).last.reply;
+
+  for (const [label, reply] of [['blank', blank], ['parked', parked]] as const) {
+    assert.match(reply, /that's a lot to have been carrying/i, `${label} opener lost the bridge`);
+    assert.match(reply, /none of it is gone/i, `${label} opener lost the turn toward hope`);
+    assert.doesNotMatch(reply, /now, the good part/i, `${label} opener cold-pivots`);
+  }
+  // The parked branch must still prove nothing was dropped, and point at the builder rather than ending on a
+  // bare "What else?" with nowhere visible to answer.
+  assert.match(parked, /earlier you said you want/i);
+  assert.match(parked, /add anything else below/i);
+});

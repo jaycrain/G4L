@@ -308,16 +308,27 @@ const DECLINE_REPLY =
 // A warm BRIDGE from the gap into reclaim (Phase 2.3 / Cowork #5) — the gap beat is heavy, so we don't cold-pivot
 // to "Now, the good part." We land on the weight they just named, then turn it toward hope, referencing the
 // identity. Directional copy (Jay reacts on the walk).
+//
+// THE BRIDGE ITSELF, hoisted so it cannot exist on only one path again. It was written for the blank opener and
+// never reached the parked one, so every front-loader got the cold pivot this copy exists to replace — for weeks,
+// invisibly, because the branch nobody walks is the branch nobody reads. (Jay, 2026-08-18.)
+function gapToReclaimBridge(c: Collected): string {
+  const identity = identityLabel(c.identityNoun);
+  // SECOND PERSON (Cowork + Jay, 2026-08-14): "no wonder the Athlete got quiet" and "the Athlete's life" made
+  // the member the OBJECT of a sentence about their own experience. The Identity may still be named as the thing
+  // they are reclaiming (the product's actual promise); it may not stand in for them as the one who lived it.
+  return (
+    `That's a lot to have been carrying${identity ? ` — no wonder that part of you got quiet under all of it` : ''}. ` +
+    `Here's the turn, though: none of it is gone. It's been waiting for you.`
+  );
+}
+
 function reclaimOpen(c: Collected): string {
   const identity = identityLabel(c.identityNoun);
   // STRUCTURED builder (Jay, 2026-07-29): the warm line, then hand OFF to the list-builder UI (rendered below by the
   // reclaim_list expectation). The member types each item and it's captured verbatim — no extraction, so nothing drops.
   return (
-    // SECOND PERSON (Cowork + Jay, 2026-08-14): "no wonder the Athlete got quiet" and "the Athlete's life" made
-    // the member the OBJECT of a sentence about their own experience. The Identity may still be named as the thing
-    // they are reclaiming (the product's actual promise); it may not stand in for them as the one who lived it.
-    `That's a lot to have been carrying${identity ? ` — no wonder that part of you got quiet under all of it` : ''}. ` +
-    `Here's the turn, though: none of it is gone. It's been waiting for you. Let's write down what you want back — ` +
+    `${gapToReclaimBridge(c)} Let's write down what you want back — ` +
     `your Reclaim List, the thing the whole program works toward${identity ? `: the pieces of that life you miss most` : ''}. ` +
     `Add each thing below — big or small. Three to start is plenty, and you can always add more later. Take your time.`
   );
@@ -472,9 +483,18 @@ function reclaimOpening(c: Collected): string {
   if (parked.length === 0) return reclaimOpen(c);
   const items = parked.map((x) => `“${x.trim()}”`).join(parked.length === 2 ? ' and ' : ', ');
   // §5 re-surface — read the parked want(s) back. The single best trust moment: it proves nothing was dropped.
+  //
+  // THE BRIDGE COMES FIRST. This branch used to open "Now, the good part —", which is the EXACT cold pivot the
+  // bridge above was written to replace ("the gap beat is heavy, so we don't cold-pivot to 'Now, the good part.'").
+  // The member has just finished describing the worst decade of their life; the receipt for their wants is not
+  // the first thing they should hear. Warmth first, then the proof that nothing was dropped.
+  //
+  // It also now POINTS AT THE BUILDER. The old line ended on a bare "What else?" while the live surface is a
+  // list-builder UI — an invitation with nowhere visible to answer it.
   return (
-    `Now, the good part — and you've already started. Earlier you said you want ${items} back, so ` +
-    `${parked.length === 1 ? "that's" : "those are"} on your list. What else? Big or small, both belong.`
+    `${gapToReclaimBridge(c)} And you've already started — earlier you said you want ${items} back, so ` +
+    `${parked.length === 1 ? "that's" : "those are"} on your list. Add anything else below — big or small. ` +
+    `There's no rush, and you can always add more later.`
   );
 }
 

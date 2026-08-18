@@ -1,4 +1,4 @@
-# Strings EXCLUDED from the member transcript (app @ 1f5dc36 · 2026-08-18)
+# Strings EXCLUDED from the member transcript (app @ 4f42d97 · 2026-08-18)
 # Not member copy: system prompts, multi-line fragments, code artifacts. Review when a real line goes missing.
 
 [app/page.tsx] Playbook
@@ -25,6 +25,7 @@
 [lib/agent/onboarding-staged.ts] changes — when something real has pulled you away from who you were. If that day comes, this door stays open
 [lib/agent/onboarding-staged.ts] and I'll be right here. Until then — keep building.
 [lib/agent/onboarding-staged.ts] That's a lot to have been carrying${identity ?
+[lib/agent/onboarding-staged.ts] ${gapToReclaimBridge(c)} Let's write down what you want back —
 [lib/agent/onboarding-staged.ts] your Reclaim List, the thing the whole program works toward${identity ?
 [lib/agent/onboarding-staged.ts] lost touch with, ten quiet minutes that are yours. What comes to mind?
 [lib/agent/onboarding-staged.ts] That's a real start, and there's no rush — your list is never locked, and you can add to it any time as
@@ -34,8 +35,8 @@
 [lib/agent/onboarding-staged.ts] ${p}. ${n}
 [lib/agent/onboarding-staged.ts] ${t}.
 [lib/agent/onboarding-staged.ts] “${x.trim()}”
-[lib/agent/onboarding-staged.ts] Now, the good part — and you've already started. Earlier you said you want ${items} back, so
-[lib/agent/onboarding-staged.ts] ${parked.length === 1 ? "that's" : "those are"} on your list. What else? Big or small, both belong.
+[lib/agent/onboarding-staged.ts] ${gapToReclaimBridge(c)} And you've already started — earlier you said you want ${items} back, so
+[lib/agent/onboarding-staged.ts] ${parked.length === 1 ? "that's" : "those are"} on your list. Add anything else below — big or small.
 [lib/agent/onboarding-staged.ts] “${drop}” and “${keep}” sound like the same thing to me — want me to keep them as one, or are they different?
 [lib/agent/onboarding-staged.ts] “${item}” reads more like the bigger picture of the life you’re reclaiming than a single goal. I’d keep it in your Playbook for that work and leave the goal list for the concrete steps — want me to do that?
 [lib/agent/onboarding-staged.ts] “${item}” sounds like who you are, not one goal on a list. I’d hold onto it as part of your identity and keep the list for the concrete things you’re taking back — want me to do that?
