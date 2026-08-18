@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { isAdmin } from '../../authz.ts';
 import ConsoleSubpage from '../console/subpage.tsx';
 import FreshPanel from './fresh-panel.tsx';
+import PurgePanel from './purge-panel.tsx';
 
 // /admin/fresh — the one place in the product that can produce someone who just arrived.
 //
@@ -28,6 +29,20 @@ export default async function FreshMemberPage() {
           account, so seeing them again means making a new member.
         </p>
         <FreshPanel />
+      </div>
+
+      <div className="card">
+        <h3>Send a tester back to the front door</h3>
+        <p>
+          The fresh member above starts life <em>after</em> onboarding. To watch onboarding itself — the opening
+          screens, the conversation, the Reclaim List builder — a real tester has to arrive as a stranger, which
+          means their account has to be gone.
+        </p>
+        <p className="muted">
+          Only accounts we own can be wiped here; the list is fixed in code and checked again on the server. Their
+          feedback survives the wipe, so nothing they reported is lost with the account.
+        </p>
+        <PurgePanel />
       </div>
     </ConsoleSubpage>
   );

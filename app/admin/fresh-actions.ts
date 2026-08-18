@@ -3,8 +3,11 @@
 import { randomBytes } from 'node:crypto';
 import { getDb } from '../../lib/db/index.ts';
 import { seedFreshMember, FRESH_EMAIL } from '../../lib/demo/fresh-member.ts';
+import { purgeMemberByEmail } from '../../lib/demo/purge-member.ts';
 import { isAdmin } from '../authz.ts';
 import type { Db } from '../../lib/db/schema.ts';
+
+type Queryable = { query: <T = unknown>(sql: string, params?: unknown[]) => Promise<{ rows: T[] }> };
 
 export type FreshResult =
   | { ok: true; email: string; password: string; memberId: string }
@@ -33,6 +36,31 @@ export async function resetFreshMemberAction(): Promise<FreshResult> {
     return { ok: true, email: FRESH_EMAIL, password, memberId };
   } catch (e) {
     console.error('resetFreshMemberAction failed:', (e as Error).message);
+    return { ok: false, message: (e as Error).message };
+  }
+}
+
+export type PurgeActionResult = { ok: true; email: string } | { ok: false; message: string };
+
+/**
+ * Wipe a TESTER'S account so they hit the front door as a stranger again.
+ *
+ * WHY A BUTTON, not the SQL. Donna re-walks onboarding on every intake change, and each re-walk needs her account
+ * gone. That was three hand-runs of pasted SQL against production in a single day — each one an opportunity to
+ * mistype a WHERE clause on real member data, and none of it repeatable by anyone but whoever had the snippet.
+ *
+ * WHY NOT resetFreshMemberAction. That one is hard-wired to a `.test` constant and re-checks the suffix. Donna's
+ * account is a real Gmail, and weakening that guard to take an email would have turned the safest tool in the
+ * product into an arbitrary member-deleter. The allowlist in lib/demo/purge-member.ts constrains the input the
+ * same way instead: named accounts we own, and `.test`. Admin-gated on top, and `isAdmin()` fails closed.
+ */
+export async function purgeTesterAction(email: string): Promise<PurgeActionResult> {
+  if (!(await isAdmin())) return { ok: false, message: 'Not authorized.' };
+  try {
+    const res = await purgeMemberByEmail((await getDb()) as unknown as Queryable, email);
+    return res.ok ? { ok: true, email } : { ok: false, message: res.message };
+  } catch (e) {
+    console.error('purgeTesterAction failed:', (e as Error).message);
     return { ok: false, message: (e as Error).message };
   }
 }
