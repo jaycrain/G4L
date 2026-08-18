@@ -44,7 +44,7 @@ export default function RebuildChat({ memberId, session = 'b1' }: { memberId: st
   const [ceremony, setCeremony] = useState<RebuildCeremonyData | null>(null); // B4: set when the checkpoint reaches 'ceremony'
   const [error, setError] = useState<string | null>(null);
   const sessionKey: SessionKey = session === 'checkpoint' ? 'b4' : session;
-  const { teaches, taught, acknowledge } = useTeaching(memberId, sessionKey);
+  const { teaches, taught, acknowledge, flushKeep } = useTeaching(memberId, sessionKey);
   // The parting line, hoisted: submit() needs it when the Session teaches nothing, the render needs it when
   // the member acknowledges. Two copies of this conditional is how the two paths drift apart.
   const handHome = session === 'b3' ? REBUILD_B3_HAND_HOME : null;
@@ -174,7 +174,9 @@ export default function RebuildChat({ memberId, session = 'b1' }: { memberId: st
       {/* W-21 — the hand-home CTA: B3 routes into the pilot week (active on the dashboard); B1/B2 hand back home. */}
       {done && taught && (
         <div className="chat-continue">
-          <button type="button" onClick={() => notifySessionComplete()}>
+          {/* WAIT FOR THE FILING BEFORE LEAVING — see flushKeep in use-teaching.ts. Reading never waits; only
+              the click that navigates does, and almost always on an already-resolved promise. */}
+          <button type="button" onClick={() => { void flushKeep().then(() => notifySessionComplete()); }}>
             {session === 'b3' ? 'Start the week →' : 'Continue →'}
           </button>
         </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { teachingFor, teachingSourceLabel } from '../../lib/content/teaching.ts';
 import { keepScienceAction } from './actions.ts';
 import { notifyArtifactCommitted } from '../components/artifact-refresh.ts';
@@ -25,6 +25,11 @@ export type Teaching = {
   taught: boolean;
   /** Call from the Understand card's "Got it →". Releases the gate and files the read. */
   acknowledge: () => void;
+  /**
+   * Await the filing before leaving the Session. Resolves immediately when there is nothing in flight, which is
+   * the common case — the write has usually finished while the member was reading the card.
+   */
+  flushKeep: () => Promise<void>;
 };
 
 export function useTeaching(memberId: string, sessionKey: SessionKey, stage?: string | null): Teaching {
@@ -33,13 +38,36 @@ export function useTeaching(memberId: string, sessionKey: SessionKey, stage?: st
   // renders, which is a gate whose key is never issued.
   const [taught, setTaught] = useState(() => !teaches);
 
+  // The in-flight filing. Held so LEAVING can wait on it — see flushKeep.
+  const pending = useRef<Promise<unknown> | null>(null);
+
   const acknowledge = () => {
-    setTaught(true); // release immediately — the filing is not something the member should wait on
-    // Fire-and-forget. The action verifies its own write and logs server-side if the row vanished, so a silent
-    // drop surfaces in the logs rather than trapping someone at a finished Session.
-    void keepScienceAction(memberId, sessionKey, teachingSourceLabel(sessionKey, stage));
+    setTaught(true); // release immediately — the filing is not something the member should wait on to READ
+    // The action verifies its own write and logs server-side if the row vanished.
+    pending.current = keepScienceAction(memberId, sessionKey, teachingSourceLabel(sessionKey, stage))
+      .catch((e) => console.error('[teaching] keep failed', e));
     notifyArtifactCommitted();
   };
 
-  return { teaches, taught, acknowledge };
+  /**
+   * WHY LEAVING WAITS, WHEN READING DOES NOT (Jay, 2026-08-18).
+   *
+   * The filing used to be pure fire-and-forget, on the reasoning that a member should never wait for bookkeeping.
+   * That is right about reading and wrong about leaving: tapping "Got it" and immediately continuing raced the
+   * write against the navigation, so a member could open their Playbook and find the takeaway the card had just
+   * promised them absent — then present later. Jay: "some members may not be as patient/persistent as you in
+   * going back twice on something that wasn't showing up." A promise made in their own words on screen cannot be
+   * eventually true.
+   *
+   * So the gate still releases the instant they tap — nothing about reading changes — and only the click that
+   * NAVIGATES waits, almost always on an already-resolved promise. The 4s ceiling is deliberate: a member must
+   * never be trapped at a finished Session by a slow write, and the server-side verification + logging is what
+   * catches the write that genuinely failed.
+   */
+  const flushKeep = async () => {
+    if (!pending.current) return;
+    await Promise.race([pending.current, new Promise((r) => setTimeout(r, 4000))]);
+  };
+
+  return { teaches, taught, acknowledge, flushKeep };
 }

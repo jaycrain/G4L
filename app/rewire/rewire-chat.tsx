@@ -44,7 +44,7 @@ export default function RewireChat({ memberId, session = 'w1' }: { memberId: str
   // NOTE the initial value: a session with nothing to teach starts ALREADY taught. Defaulting to false would gate
   // the hand-home behind a card that never renders — the checkpoint has no Understand beat, so onAcknowledge would
   // never fire and the member would sit at a finished session with no way out. A gate whose key is not issued.
-  const { teaches, taught, acknowledge } = useTeaching(memberId, sessionKey);
+  const { teaches, taught, acknowledge, flushKeep } = useTeaching(memberId, sessionKey);
   const started = useRef(false);
   const chatRef = useChatAutoscroll([messages.length, pending, expects, done]);
 
@@ -175,7 +175,11 @@ export default function RewireChat({ memberId, session = 'w1' }: { memberId: str
       {/* W-21 — the hand-home CTA: the session is saved; return the member to their companion-home (next step lit). */}
       {done && taught && (
         <div className="chat-continue">
-          <button type="button" onClick={() => notifySessionComplete()}>
+          {/* WAIT FOR THE FILING BEFORE LEAVING — see flushKeep in use-teaching.ts. Reading never waits; only
+              the click that navigates does, and almost always on an already-resolved promise. Without this the
+              write raced the navigation and a member could open their Playbook to find the takeaway the card had
+              just promised them missing. */}
+          <button type="button" onClick={() => { void flushKeep().then(() => notifySessionComplete()); }}>
             Continue →
           </button>
         </div>
