@@ -281,6 +281,16 @@ Drive.** The routine:
    stays continuous — and after ANY Drive write, **read the file back**: the create response's `fileSize` is
    not evidence (a Docs conversion reports `1` for a fully-populated document).
 
+**The INBOUND half — `npm run handoffs`, at the START of a session, unasked.** Cowork hands work back through
+`~/g4l-handoffs/` (a **sibling** of the repo, not a directory inside it — I have searched the repo exhaustively and
+reported her file "missing" before). That folder is a git repo as of 2026-08-18, so the script reports what ARRIVED
+since the last commit. **Until then, the only thing that made an inbound handoff visible was Jay remembering to say
+"check the repo from Claudette"** — which put the founder in the loop as a message queue, and made an unremembered
+handoff indistinguishable from one never sent. Run it; don't wait to be told. After answering one, `git -C
+~/g4l-handoffs add -A && git commit` so ARRIVED goes quiet and stays meaningful. The second section (NO WRITTEN
+REPLY) is **advisory only** — most of her asks are answered by *building* the thing, which looks identical here to
+ignoring them.
+
 **Quotability rule (protects the book):** authored copy (transcript, assessment items, UI, badges) is fixed — quote
 verbatim. The Companion's in-the-moment reflections are model-generated and vary per member — never quote as
 canonical; describe them by the voice rules. **Quote the authored; describe the dynamic.**

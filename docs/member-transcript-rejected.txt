@@ -1,4 +1,4 @@
-# Strings EXCLUDED from the member transcript (app @ 83422d5 · 2026-08-18)
+# Strings EXCLUDED from the member transcript (app @ 1f5dc36 · 2026-08-18)
 # Not member copy: system prompts, multi-line fragments, code artifacts. Review when a real line goes missing.
 
 [app/page.tsx] Playbook
@@ -398,7 +398,7 @@
 [lib/agent/rewire.ts] you go back to the image. The lie is a story. The image is real — you built it from your own life. That's the
 [lib/agent/rewire.ts] whole move: the true line answers the lie, the image outlasts it.
 [lib/agent/rewire.ts] into it.
-[lib/agent/rewire.ts] I've saved your picture to your Playbook — yours to return to anytime. You've got both tools now: the lines that
+[lib/agent/rewire.ts] I've saved your picture to your Playbook — there whenever you want it. You've got both tools now: the lines that
 [lib/agent/rewire.ts] answer the lies, and the image that's stronger than them. That's Rewire starting to hold.
 [lib/agent/rewire.ts] ${receipt ?
 [lib/agent/rewire.ts] ${reflected ?

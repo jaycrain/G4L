@@ -33,6 +33,7 @@
     "walk:qd2": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/qd-second-visit-walk.ts",
     "walk:w3": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/w3-grid-walk.ts",
     "canon:sync": "node scripts/sync-canon-mount.mjs",
+    "handoffs": "node scripts/handoffs.mjs",
     "walk:teaching": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/teaching-layer-walk.ts"
   },
   "dependencies": {
