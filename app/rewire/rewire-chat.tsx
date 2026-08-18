@@ -78,11 +78,19 @@ export default function RewireChat({ memberId, session = 'w1' }: { memberId: str
     setMessages((m) => [...m, { role: 'member', text }]);
     setInput('');
     setPending(true);
+    // A NEW ATTEMPT CLEARS THE OLD FAILURE, and a failed one gives the member her words back. Without this the
+    // banner was permanent — it survived every later successful turn, so the only way out was a refresh — and the
+    // message was appended optimistically with the input already wiped, so a failed turn left it in the transcript
+    // with no reply, reading as the Companion ignoring her. Donna hit exactly this in Reconnect writing her Legacy
+    // Letter; the same code was waiting in all three phase chats she walks next. (2026-08-18.)
+    setError(null);
     const r = await rewireTurnAction(memberId, state, history, text, session);
     setPending(false);
     if (!r.ok || !r.reply || !r.state) {
       setExpects(null);
-      return setError(r.error ?? 'Something went wrong.');
+      setMessages((m) => (m[m.length - 1]?.role === 'member' && m[m.length - 1]?.text === text ? m.slice(0, -1) : m));
+      setInput(text);
+      return setError(r.error ?? 'That did not go through — your message is back in the box, try again.');
     }
     setState(r.state);
     setExpects(r.expects ?? null);
