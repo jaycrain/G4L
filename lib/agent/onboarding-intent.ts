@@ -53,7 +53,56 @@ const GAP_DONE_RE =
   /\b(that'?s (the )?(whole|all|it|everything|gist|story|picture|heart)|the (whole|full) (story|picture|thing|of it)|no(thing)? (more|else)|no more|that'?s how it (went|happened|unfolded)|that covers it|that'?s (about|more or less|pretty much|roughly|basically) it|that was (about|more or less|pretty much) it|more or less it|it for now|(that )?(about )?sums it up|that'?s most of it|pretty much it|that'?s the heart|that'?s (about |pretty much |roughly )?(the )?(size|shape) of it|(that'?s |that is )?the (size|shape) of it|that'?s the shape)\b/i;
 export function memberSignalsGapComplete(message: string): boolean {
   const m = (message ?? '').replace(/[‘’]/g, "'");
-  return confirmsWhole(m) || memberWantsToWrap(m) || GAP_DONE_RE.test(m);
+  return confirmsWhole(m) || memberWantsToWrap(m) || GAP_DONE_RE.test(m) || isAnaphoricClose(m);
+}
+
+// ANAPHORIC CLOSURE — closing the beat by POINTING BACK at what you already said.
+//
+// GAP_DONE_RE above is twenty alternations that all share one grammar: the closing is anchored on "that's ___"
+// ("that's it", "that's the whole story", "that's pretty much it"). Donna's walk (2026-08-18) closed a different
+// way — "It was primarily around those three things." — and every one of those twenty branches missed it, so the
+// engine read a CLOSE as an ADDITION, stayed in the gap stage, and the model (believing it had moved on) ran the
+// Reclaim conversation itself: no list builder, no authored bridge, just "what else do you want back?" three
+// times. That is the failure the corroboration gate was built for, arriving one layer BELOW the gate — the gate
+// only rescues a 'more' when the deterministic read is already 'done', and here the deterministic read was wrong.
+//
+// A 21st alternation would have fixed her sentence and not the next one. The SHAPE is what generalises: a reply
+// whose entire substance is a pointer to material already given. "Those three things" / "just what I mentioned" /
+// "mainly those" name nothing new — they quantify and bound what is already captured.
+//
+// Same subtractive idiom as memberAddingMoreGap: strip the affirmation, the scope hedge, and the back-reference,
+// then ask whether anything is LEFT. Nothing left = they are closing. A loss signal always wins, so "those three,
+// and then my mother died" keeps drawing out — the test can only ever close a beat that carries no new fade.
+const BACKREF_RE =
+  /\b(those|these|them|both)\b|\bthat('?s)? (one|it)\b|\bwhat i (already |just )?(said|mentioned|told you|went through)\b/i;
+const SCOPE_HEDGE_RE =
+  /\b(primarily|mainly|mostly|chiefly|largely|essentially|basically|generally|roughly|broadly|principally|pretty much|more or less|just|only|really|all|about|around|to do with|of it|of them)\b/gi;
+// Placeholder nouns carry no meaning on their own — they are the thing "those" is standing in for.
+const PLACEHOLDER_RE =
+  /\b(thing|things|one|ones|item|items|event|events|reason|reasons|area|areas|topic|topics|point|points|bit|bits|part|parts|piece|pieces|issue|issues|factor|factors)\b/gi;
+const NUMBER_WORD_RE = /\b(one|two|three|four|five|six|seven|eight|nine|ten|couple|few|several|first|second|third)\b/gi;
+const CLOSE_FILLER_RE =
+  /\b(it|that|this|they|was|were|is|are|be|been|and|but|so|then|i|we|my|the|a|an|of|in|on|at|for|with|there|here|had|have|has|did|do|really|yeah|yes|no|not|nothing|else|more|other|same|main|big|key)\b/gi;
+
+export function isAnaphoricClose(message: string): boolean {
+  const m = (message ?? '').replace(/[‘’]/g, "'").trim();
+  if (!m) return false;
+  // Real new fade material ALWAYS outranks the shape — never close a beat a member is still filling.
+  if (hasLossSignal(m)) return false;
+  // It has to actually point backwards. Without this, any short sentence would strip down to nothing and close.
+  if (!BACKREF_RE.test(m)) return false;
+  const residual = m
+    .replace(AFFIRM_PREFIX_RE, ' ')
+    .replace(GAP_CONFIRM_WORDS_RE, ' ')
+    .replace(BACKREF_RE, ' ')
+    .replace(SCOPE_HEDGE_RE, ' ')
+    .replace(PLACEHOLDER_RE, ' ')
+    .replace(NUMBER_WORD_RE, ' ')
+    .replace(CLOSE_FILLER_RE, ' ')
+    .replace(/[^a-z]+/gi, ' ')
+    .trim();
+  GAP_CONFIRM_WORDS_RE.lastIndex = 0; // /g regex — a stale lastIndex alternates true/false between calls
+  return residual.split(/\s+/).filter((w) => w.length >= 3).length === 0;
 }
 
 // Contract 2 (advance) — the Independence-Guarantee signal for a DRAW-OUT stage: the member is asking to move on, says

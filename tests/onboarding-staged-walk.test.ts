@@ -170,6 +170,45 @@ test('GAP CONFIRM — a plain close ("that\'s the brunt of it") advances to the 
   }
 });
 
+// ---------------------------------------------------------------------------
+// DONNA'S WALK (2026-08-18) — THE SAME BUG AS JAY'S, ONE SENTENCE OVER.
+//
+// Jay's fix above made the corroboration gate rescue a close the MODEL mislabelled. Donna's close was mislabelled
+// one layer lower — by the DETERMINISTIC read itself — so the gate never engaged: it only converts 'more' → 'done'
+// when the deterministic read is already 'done'. "It was primarily around those three things" closes by pointing
+// BACK, and every branch of GAP_DONE_RE is anchored on "that's ___", so it scored as a fresh chapter on length
+// alone. Same visible symptom Jay reported: no builder, and the model ran the reclaim conversation itself.
+//
+// Kept as its own fixture rather than another string in Jay's loop, because the two failed for DIFFERENT reasons
+// and a shared loop would hide that — Jay's exercises the gate, Donna's exercises the read underneath it.
+// ---------------------------------------------------------------------------
+test('GAP CONFIRM — a close that points BACK ("primarily around those three things") reaches the builder', () => {
+  const atGapConfirm = (): ConvState => ({
+    stage: 'gap',
+    awaitingConfirm: true,
+    collected: {
+      athleticPast: 'making things, on set',
+      identityNoun: 'Maker',
+      gap: 'I lost my job two years ago. Then the partnership fell through. Six months after the work ended my dad got really ill — a coma, almost gone.',
+      doors: ['career', 'caregiving'],
+    },
+  });
+  const hist: ConvMessage[] = [
+    { role: 'agent', text: "Was your dad's illness the last of what landed in that stretch, or was there still more?" },
+  ];
+  for (const replyIntent of [undefined, 'done' as const, 'more' as const]) {
+    const t = applyStagedTurn(atGapConfirm(), hist, 'It was primarily around those three things.', {
+      text: 'Three things, close together.',
+      ...(replyIntent ? { replyIntent } : {}),
+    });
+    assert.equal(t.state.stage, 'reclaim', `replyIntent=${replyIntent}: must advance out of gap`);
+    assert.equal(t.expects?.kind, 'reclaim_list', `replyIntent=${replyIntent}: the structured builder must fire`);
+    // The AUTHORED bridge must carry the handoff. Its whole job is that the heavy gap beat does not cold-pivot —
+    // Donna got "Now — what do you want back?", which is the model improvising because the engine never advanced.
+    assert.match(t.reply, /none of it is gone/, `replyIntent=${replyIntent}: the authored reclaim bridge must speak`);
+  }
+});
+
 test('GAP CONFIRM — a genuine ADDITION still keeps drawing out (the corroboration gate is not a blanket override)', () => {
   const t = applyStagedTurn(
     { stage: 'gap', awaitingConfirm: true, collected: { athleticPast: 'riding', identityNoun: 'Cyclist', gap: 'The job grew.', doors: ['grind'] } },

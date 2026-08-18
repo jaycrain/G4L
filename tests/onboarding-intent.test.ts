@@ -4,7 +4,9 @@ import {
   correctsReflection,
   hasGenuineLoss,
   isAcceptanceFade,
+  isAnaphoricClose,
   isForwardAmbition,
+  memberAddingMoreGap,
   memberClosingReclaim,
   memberDeflecting,
   memberSignalsGapComplete,
@@ -182,4 +184,41 @@ test('intent · shouldCaptureStagedGap — real fade captured, ambition/wrap rej
   assert.equal(shouldCaptureStagedGap('Knee. Then divorce.'), true); // terse but names Doors
   assert.equal(shouldCaptureStagedGap('I just want to pressure-test my SaaS idea and scale faster'), false);
   assert.equal(shouldCaptureStagedGap('yes'), false);
+});
+
+// --- anaphoric closure: closing the beat by pointing BACK ---------------------------------------------------
+// Donna's walk (2026-08-18). She closed the gap with "It was primarily around those three things." Every branch
+// of GAP_DONE_RE is anchored on "that's ___", so this read as an ADDITION: the engine held in the gap stage and
+// the model ran the Reclaim conversation itself — no builder, no authored bridge, "what else do you want back?"
+// three times. The fix is the SHAPE (substance is only a pointer to what was already given), not the sentence.
+test('intent · isAnaphoricClose — a back-reference with no new content closes the beat', () => {
+  for (const m of [
+    'It was primarily around those three things.',
+    'It was mainly those three things.',
+    'Mostly those two, really.',
+    'Just those.',
+    'It was pretty much all of them.',
+    "That's what I already mentioned.",
+    'Those were the main ones.',
+  ]) {
+    assert.equal(isAnaphoricClose(m), true, `should close: ${m}`);
+    assert.equal(memberSignalsGapComplete(m), true, `gap should be complete: ${m}`);
+    assert.equal(memberAddingMoreGap(m), false, `must not read as an addition: ${m}`);
+  }
+});
+
+test('intent · isAnaphoricClose — new fade material always outranks the shape', () => {
+  // A loss signal keeps the draw-out open even when the sentence LOOKS like a back-reference. The test may only
+  // ever close a beat that carries nothing new — a false close silently drops a Door the member was still naming.
+  for (const m of [
+    'Those three, and then my mother died that winter.',
+    'It was those things plus my knee gave out.',
+    'Those, and the divorce on top of it.',
+  ]) {
+    assert.equal(isAnaphoricClose(m), false, `must keep drawing out: ${m}`);
+  }
+  // No back-reference at all → this test must stand down and leave the existing logic alone.
+  assert.equal(isAnaphoricClose('It was mostly the divorce.'), false);
+  assert.equal(isAnaphoricClose('I lost my job two years ago.'), false);
+  assert.equal(isAnaphoricClose(''), false);
 });
