@@ -51,8 +51,25 @@ export function memberDeflecting(message: string): boolean {
 // surfaces (and its Doors with it) before we reflect and advance.
 const GAP_DONE_RE =
   /\b(that'?s (the )?(whole|all|it|everything|gist|story|picture|heart)|the (whole|full) (story|picture|thing|of it)|no(thing)? (more|else)|no more|that'?s how it (went|happened|unfolded)|that covers it|that'?s (about|more or less|pretty much|roughly|basically) it|that was (about|more or less|pretty much) it|more or less it|it for now|(that )?(about )?sums it up|that'?s most of it|pretty much it|that'?s the heart|that'?s (about |pretty much |roughly )?(the )?(size|shape) of it|(that'?s |that is )?the (size|shape) of it|that'?s the shape)\b/i;
+/**
+ * "I just said…" / "like I told you…" — a member REPEATING an answer we did not hear the first time.
+ *
+ * Stripped like a leading affirmation, and for the same reason: it is scaffolding around the answer, not the
+ * answer. Leaving it on inverted the meaning of the whole message. "it sounds great" resolved as done, but
+ * "I just said, it sounds great!" crossed the length-and-word-count threshold in memberAddingMoreGap and came
+ * back as an ADDITION — so we asked her again, which gave her more reason to repeat herself, more emphatically,
+ * which looked even more like new material. A loop that tightens the more frustrated the member gets.
+ *
+ * Donna's Legacy Letter, 2026-08-18: "Read it back. What's not right?" / "I just said, it sounds great!" — and
+ * the Companion's own answer was the diagnosis: "You did — I circled back one time too many."
+ */
+const REPEAT_PREFIX_RE =
+  /^\s*(?:(?:like|as) i (?:said|told you|mentioned)|i (?:just |already )?(?:said|told you|mentioned)|i've (?:already )?said)\b[\s,.:;—–-]*/i;
+
 export function memberSignalsGapComplete(message: string): boolean {
-  const m = (message ?? '').replace(/[‘’]/g, "'");
+  const raw = (message ?? '').replace(/[‘’]/g, "'");
+  // Judge what follows the repetition marker; if there is no marker this is the original string unchanged.
+  const m = raw.replace(REPEAT_PREFIX_RE, '').trim() || raw;
   return confirmsWhole(m) || memberWantsToWrap(m) || GAP_DONE_RE.test(m) || isAnaphoricClose(m);
 }
 
@@ -305,7 +322,7 @@ export function memberRejectsReflection(message: string): boolean {
 const AFFIRM_PREFIX_RE =
   /^(yeah|yes|yep|yup|sure|ok(ay)?|right|true|correct|exactly|totally|definitely|absolutely|for sure|i guess|kind of|sort of|mm+|uh[ -]?huh)[\s,.!—–-]*/i;
 const GAP_CONFIRM_WORDS_RE =
-  /\b(you'?(ve|d| have)?\s*(got|nailed)\s*(it|that)|that'?s (it|right|me|correct|the one|spot on)|(it|that) (lands|fits|works|tracks)|spot on|exactly( right)?|absolutely|totally|definitely|perfect(ly)?|precisely|nailed it|got it|makes sense|understood)\b/gi;
+  /\b(you'?(ve|d| have)?\s*(got|nailed)\s*(it|that)|that'?s (it|right|me|correct|the one|spot on)|(it|that) (lands|fits|works|tracks)|spot on|exactly( right)?|absolutely|totally|definitely|perfect(ly)?|precisely|nailed it|got it|makes sense|understood|(?:it |that )?sounds? (?:great|good|right|perfect)|(?:it |that )?looks? (?:great|good|right|perfect)|(?:i )?love it|that'?s great|reads (?:great|good|right))\b/gi;
 export function memberAddingMoreGap(message: string): boolean {
   const m = (message ?? '').replace(/[‘’]/g, "'").trim();
   if (!m) return false;

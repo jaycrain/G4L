@@ -1319,10 +1319,19 @@ function stageInstructionReconnect(stage?: Stage, st?: ConvState): string {
 // The live Reconnect turn — the model draws out the door + signals depth/intent; the kernel disposes.
 export async function liveTurnReconnect(state: ConvState, history: ConvMessage[], memberMessage: string): Promise<Turn> {
   const { default: Anthropic } = await import('@anthropic-ai/sdk');
+  // THE LEGACY TURN IS NOT A CONVERSATIONAL TURN. It has to produce half a page of first-person prose, which is
+  // ~500-600 tokens of letter BEFORE the model's spoken text or any other tool call — so on the shared 600-token
+  // budget it was at or over the cap every time, and slow enough to be killed. Donna's walk: the Companion stalled
+  // with no sign of life, errored, and needed a refresh; the letter only arrived when she prodded it a second time.
+  //
+  // ONE ATTEMPT, generously timed, rather than two short ones. Retrying a generation this long inside a 60s
+  // function is how you turn a slow turn into a dead one — the retry cannot finish either, and the member waits
+  // twice as long to be told it failed.
+  const writingLetter = state.stage === 'legacy';
   const client = new Anthropic({
     apiKey: process.env.ANTHROPIC_API_KEY,
-    timeout: 25000,
-    maxRetries: 2,
+    timeout: writingLetter ? 45000 : 25000,
+    maxRetries: writingLetter ? 0 : 2,
     defaultHeaders: { 'accept-encoding': 'identity' },
   });
   const messages = [
@@ -1332,7 +1341,7 @@ export async function liveTurnReconnect(state: ConvState, history: ConvMessage[]
   // Reconnect gateway (Doors excavation) → Opus by default, Sonnet fail-safe if Opus errors. See capture-model.ts.
   const res = await captureCreate((model) => client.messages.create({
     model,
-    max_tokens: 600,
+    max_tokens: writingLetter ? 1800 : 600,
     system: RECONNECT_SYSTEM + reconnectContext(state.collected, state.doorsAtEntry) + stageInstructionReconnect(state.stage, state),
     tools: RECONNECT_TOOLS,
     messages,

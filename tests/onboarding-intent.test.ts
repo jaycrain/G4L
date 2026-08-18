@@ -10,6 +10,7 @@ import {
   memberClosingReclaim,
   memberDeflecting,
   memberSignalsGapComplete,
+  resolveConfirmCorroborated,
   resolveGapConfirm,
   resolveReclaimConfirm,
   shouldCaptureStagedGap,
@@ -221,4 +222,45 @@ test('intent · isAnaphoricClose — new fade material always outranks the shape
   assert.equal(isAnaphoricClose('It was mostly the divorce.'), false);
   assert.equal(isAnaphoricClose('I lost my job two years ago.'), false);
   assert.equal(isAnaphoricClose(''), false);
+});
+
+// "WOULDN'T TAKE YES FOR AN ANSWER" — Donna's Legacy Letter, 2026-08-18.
+//
+//   COMPANION | Read it back. What's not right — a line that isn't how you'd say it, or something missing?
+//   MEMBER    | I just said, it sounds great!
+//   COMPANION | You did — I circled back one time too many.
+//
+// Two holes, and the second only showed up once the first was fixed. "I just said," is scaffolding around an
+// answer, not an answer — but leaving it on pushed the message past the length-and-word-count threshold, so a
+// member REPEATING herself read as new material and we asked again. And underneath that, the affirmation list
+// held every way of saying "you understood me" and no way of saying "I like it": "it sounds great" only ever
+// passed because it was under the 25-character floor. A loop that tightens the more frustrated the member gets.
+test('a repeated approval is still an approval — and a change request still is one', () => {
+  const done = [
+    'I just said, it sounds great!',
+    'As I told you, it sounds great',
+    'I already said it looks right',
+    'Like I said, that’s the whole of it',
+    'it sounds great',
+    'I love it',
+  ];
+  for (const m of done) {
+    assert.equal(resolveConfirmCorroborated(m, undefined, () => false, 'is_this_right'), 'done', `should close: ${m}`);
+  }
+  // The other direction is the load-bearing half: warmth in front of a change request must not swallow it.
+  assert.equal(
+    resolveConfirmCorroborated('It sounds great, but change the last line', undefined, () => false, 'is_this_right'),
+    'addition',
+    'an approval followed by a request is still a request',
+  );
+  assert.equal(
+    resolveConfirmCorroborated('I just said I want to change the second line', undefined, () => false, 'is_this_right'),
+    'addition',
+    'the repetition marker must not swallow real content behind it',
+  );
+  assert.equal(
+    resolveConfirmCorroborated('No, that reads wrong', undefined, () => false, 'is_this_right'),
+    'dispute',
+    'a rejection is never overruled',
+  );
 });

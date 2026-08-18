@@ -104,6 +104,25 @@ const REPORT_SQL = `select jsonb_build_object(
   'reclaim_count', (select count(*) from reclaim_item where member_id = $1),
   'reclaim_items', (select coalesce(jsonb_agg(to_jsonb(r) order by r.sort_order), '[]') from reclaim_item r where r.member_id = $1),
   'legacy_reclaim_list_jsonb', (select reclaim_list from member_profile where member_id = $1),
+  -- THE LEGACY LETTER (0083). It was invisible here until 2026-08-18: Donna finished Reconnect having written one
+  -- and this report could not say so, which makes a headline artifact unverifiable from the operator surface —
+  -- exactly the "you couldn't tell 'it never saved' from 'the diagnostic doesn't look'" failure the Grinta line
+  -- above was added for.
+  --
+  -- BODY AND ANSWERS ARE DELIBERATELY OMITTED. Every other row here drops the member's own words for the same
+  -- reason (idq_retake drops 'responses', arc_sessions reports msg_count, not messages), and this is the most
+  -- private thing the product holds — a letter someone wrote to themselves, dated a year out. Length is enough to
+  -- tell a real letter from an empty one; reading it is not an operational need.
+  'legacy_letter', (select jsonb_build_object(
+       'dated_for', l.dated_for,
+       'chars', length(l.body),
+       'answers_given', (select count(*) from jsonb_object_keys(coalesce(l.answers, '{}'::jsonb))),
+       'has_shared_line', l.shared_line is not null,
+       'opened_at', l.opened_at,
+       'created_at', l.created_at,
+       'updated_at', l.updated_at,
+       'revised', l.updated_at > l.created_at)
+     from legacy_letter l where l.member_id = $1),
   'doors', (select coalesce(jsonb_agg(to_jsonb(d) order by d.sort_order), '[]') from member_door d where d.member_id = $1),
   'facets', (select coalesce(jsonb_agg(to_jsonb(f) order by f.sort_order), '[]') from facet f where f.member_id = $1),
   'idq_retakes', (select coalesce(jsonb_agg((to_jsonb(i) - 'responses') order by i.sequence_no), '[]') from idq_retake i where i.member_id = $1),
@@ -180,6 +199,12 @@ const REPORT_SQL = `select jsonb_build_object(
                                        then jsonb_build_object('named_door', (select named_door from member_profile where member_id = $1),
                                             'primary_member_door', (select door_slug from member_door where member_id = $1 and is_primary limit 1)) end,
      'no_baseline_idq',            case when not exists (select 1 from idq_retake where member_id = $1 and sequence_no = 0) then true end,
+     -- R3 writes the Legacy Letter before the Checkpoint, so a member past reconnect_checkpoint_passed without one
+     -- means that beat ran and produced nothing. Scoped to members who actually finished the gateway, so it stays
+     -- silent for everyone still inside it rather than crying wolf on every new member.
+     'reconnect_done_no_legacy_letter', case when exists (select 1 from phase_gate where member_id = $1 and gate = 'reconnect_checkpoint_passed')
+                                              and not exists (select 1 from legacy_letter where member_id = $1)
+                                         then true end,
      -- Every member who finishes intake takes the Grinta baseline survey, so a committed member with no onboarding
      -- grinta_reading means the frozen baseline silently failed to persist. Surface it rather than leaving it unread.
      'no_grinta_baseline',         case when not exists (select 1 from grinta_reading where member_id = $1 and source = 'onboarding') then true end,

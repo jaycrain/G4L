@@ -115,11 +115,20 @@ export default function ReconnectChat({
     setMessages((m) => [...m, { role: 'member', text }]);
     setInput('');
     setPending(true);
+    // A NEW ATTEMPT CLEARS THE OLD FAILURE. Without this the banner was permanent: it survived every subsequent
+    // successful turn, so the only way out was a refresh. Donna hit exactly that writing her Legacy Letter.
+    setError(null);
     const r = await reconnectTurnAction(memberId, state, history, text);
     setPending(false);
     if (!r.ok || !r.reply || !r.state) {
       setExpects(null);
-      return setError(r.error ?? 'Something went wrong.');
+      // GIVE HER HER WORDS BACK. The member bubble was appended optimistically and the input was cleared, so a
+      // failed turn left her message sitting in the transcript with no reply — which reads as the Companion
+      // ignoring her — and nothing to resend. Roll both back so the retry is one tap, the way onboarding's
+      // outage path already works ("keeps their draft + state to resend — nothing is lost").
+      setMessages((m) => (m[m.length - 1]?.role === 'member' && m[m.length - 1]?.text === text ? m.slice(0, -1) : m));
+      setInput(text);
+      return setError(r.error ?? 'That did not go through — your message is back in the box, try again.');
     }
     setMessages((m) => [...m, ...agentBubbles(r.reply!)]);
     setState(r.state);
