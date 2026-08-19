@@ -61,6 +61,8 @@ export type CheckinContext = {
   /** R2's Door profile as one line, or null when they've never said anything about them. NULL MEANS OMIT — see
    *  the context builder; an empty profile must produce no line at all. */
   doorProfileLine?: string | null;
+  /** She claimed the quiet-drift card on the R2 board. NOT a Door — a stance she named about herself. */
+  quietDriftClaimed?: boolean;
   /** R3's Legacy Letter — theirs, to themselves. Null until they write one. */
   legacyLetter?: { body: string; datedFor: string } | null;
   /** B3's Lifestyle Pilot week, in THEIR words — the last few days they wrote. Empty until they log one. */
@@ -495,6 +497,13 @@ export function contextBlock(c: CheckinContext): string {
       ? `THEIR LEGACY LETTER (they wrote it to themselves, addressed to ${c.legacyLetter.datedFor}; it lives in their Playbook under "Who you are"):\n${c.legacyLetter.body}\nIf they ask for it, point them there or read it back. Do NOT quote it at them unprompted — a letter someone wrote to themselves is not a lever, and producing it uninvited turns something private into something we are holding over them. They can change it whenever it stops being true.`
       : null,
     c.doorProfileLine ? `What they've said about those Doors — ${c.doorProfileLine}. Use it to understand what still weighs on them; never recite it, never quote a number back, and never treat an unmentioned Door as settled.` : null,
+    // SHE SAID THIS ABOUT HERSELF, so the Companion cannot be the only one who does not know it. A member who
+    // marks the quiet-drift card is telling us nothing dramatic happened — no event, just years of not looking.
+    // It is the hardest thing to say and the easiest to feel ashamed of, which is exactly why it must never be
+    // recited back at her as a finding. Held, not used.
+    c.quietDriftClaimed
+      ? "They marked the quiet-drift card on the Doors board: no single event, just years of routine without looking up. That is a stance they named about themselves, NOT a Door, and it is the hardest of these to admit. Let it inform how you hear them — never name it back to them as a label, never treat it as less real than an event, and never imply they simply were not paying enough attention."
+      : null,
     c.idScore !== null ? `Latest ID Score: ${c.idScore}${c.direction ? ` (${c.direction})` : ''}` : 'No IDQ yet',
     dims,
     trend,

@@ -112,6 +112,8 @@ export default function RedesignPlaybookView({
   synthesis,
   identityParagraph,
   legacyLetter,
+  doorLines = [],
+  quietDrift = false,
   rerunStats,
   outcomes = [],
   reads = [],
@@ -128,6 +130,8 @@ export default function RedesignPlaybookView({
    *  greeting. Two stored narratives, one thing to a member. */
   identityParagraph?: string | null;
   legacyLetter?: { body: string; datedFor: string } | null;
+  doorLines?: { name: string; note: string | null }[];
+  quietDrift?: boolean;
   rerunStats?: Record<string, { n: number; last: string }>;
   outcomes?: Outcome[];
   /** The member's assessment reads — what their own Sessions said, in plain language. */
@@ -468,6 +472,37 @@ export default function RedesignPlaybookView({
           <div className="pb-narr">
             <RichText text={identityParagraph} />
           </div>
+        </section>
+      )}
+
+      {/* HER DOORS — how the distance opened, directly under My Story. Jay, 2026-08-18.
+          My Story is who she IS; this is what happened to her. They are one narrative to a member, which is why
+          this sits here rather than in its own tab.
+
+          IT IS IN "WHO YOU ARE" BECAUSE SHE CLAIMED IT. That tab holds only member-authored identity — every
+          instrument read stays under "What you've learned", since a probabilistic reading under a tab that claims
+          to say who someone is becomes a verdict about the self. Doors she marked and ordered herself on the R2
+          board are a statement by her, not an inference about her. Self-claim is what makes them eligible.
+
+          NO NUMBERS. She sees the words she chose, never a score — a rating of how much your own life happened to
+          you is not a thing to hand back. */}
+      {tab === 'who' && doorLines.length > 0 && (
+        <section className="pb-card pb-hero">
+          <div className="pb-sec">Your Doors</div>
+          <div className="pb-sec-d">How the distance opened — the ones you named.</div>
+          <ul className="pb-list" style={{ margin: '0.4rem 0 0', paddingLeft: '1.1rem' }}>
+            {doorLines.map((d) => (
+              <li key={d.name} style={{ marginBottom: '0.35rem', lineHeight: 1.7 }}>
+                {d.name}
+                {d.note && <span className="muted"> — {d.note}</span>}
+              </li>
+            ))}
+            {quietDrift && (
+              <li style={{ marginBottom: '0.35rem', lineHeight: 1.7 }}>
+                Autopilot<span className="muted"> — the quiet one, no single event</span>
+              </li>
+            )}
+          </ul>
         </section>
       )}
 

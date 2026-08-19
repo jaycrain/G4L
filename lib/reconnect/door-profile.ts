@@ -184,3 +184,27 @@ export function describeDoorProfile(doors: DoorProfile[]): string | null {
 
   return parts.length ? parts.join(' · ') : null;
 }
+
+/**
+ * Her Doors for the PLAYBOOK, under "Who you are". One line per Door, in the order she holds them.
+ *
+ * WHY THIS BELONGS IN "WHO YOU ARE" AT ALL. That tab holds ONLY member-authored identity — every instrument READ
+ * lives under "What you've learned", because a probabilistic reading sitting under a tab that claims to say who
+ * someone is turns it into a verdict about the self (lib/playbook/tabs.ts). Matcher-inferred Doors would break
+ * that rule. Doors she marked, rated and ordered HERSELF on the R2 board do not: self-claim converts an inference
+ * about her into a statement by her. The board is what makes them eligible.
+ *
+ * NO NUMBERS, EVER. She sees the anchor she chose, never "2/3" — a score about how much your own life happened to
+ * you is not a thing to hand back. And an unrated Door renders as the Door alone, never as a zero or a gap.
+ */
+export function playbookDoorLines(doors: DoorProfile[]): { name: string; note: string | null }[] {
+  return doors.map((d) => {
+    const bits: string[] = [];
+    if (d.openedFirst) bits.push('opened first');
+    if (d.biggestImpact) bits.push('weighs most today');
+    if (d.stillOpen === true) bits.push('still open');
+    const anchor = relevanceAnchor(d.relevance);
+    if (anchor && anchor !== 'not relevant') bits.push(anchor);
+    return { name: d.displayName, note: bits.length ? bits.join(' · ') : null };
+  });
+}

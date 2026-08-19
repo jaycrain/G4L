@@ -143,3 +143,38 @@ test('the database refuses a rating outside 1-10 even if a caller bypasses norma
     'the constraint is the backstop — a surface should never have to decide what a 47 means',
   );
 });
+
+// THE PLAYBOOK LINES — "Who you are" holds only member-authored identity, and no number ever reaches her.
+test('the Playbook shows the words she chose, never a score', async () => {
+  const { playbookDoorLines } = await import('../lib/reconnect/door-profile.ts');
+  const lines = playbookDoorLines([
+    { slug: 'career_cliff', displayName: 'The Career Cliff', isPrimary: true, relevance: 3, openedFirst: true, biggestImpact: true, stillOpen: false },
+    { slug: 'body', displayName: 'The Body', isPrimary: false, relevance: null, openedFirst: null, biggestImpact: null, stillOpen: true },
+  ] as never);
+
+  // A rating of how much your own life happened to you is not a thing to hand back.
+  for (const l of lines) assert.ok(!/\d/.test(`${l.name} ${l.note ?? ''}`), `a number reached her: ${JSON.stringify(l)}`);
+
+  assert.match(lines[0]!.note!, /opened first/);
+  assert.match(lines[0]!.note!, /weighs most today/);
+  assert.match(lines[0]!.note!, /very relevant/);
+  assert.ok(!/still open/.test(lines[0]!.note!), 'a closed Door must not read as open');
+  assert.match(lines[1]!.note!, /still open/);
+});
+
+test('an unrated Door renders as the Door alone — absence is never a gap on the page', async () => {
+  const { playbookDoorLines } = await import('../lib/reconnect/door-profile.ts');
+  const [l] = playbookDoorLines([
+    { slug: 'loss', displayName: 'The Loss', isPrimary: false, relevance: null, openedFirst: null, biggestImpact: null, stillOpen: null },
+  ] as never);
+  assert.equal(l!.name, 'The Loss');
+  assert.equal(l!.note, null, 'never "unrated", never "0" — just the Door');
+});
+
+test('"not relevant" is not annotated onto a Door in her own story', async () => {
+  const { playbookDoorLines } = await import('../lib/reconnect/door-profile.ts');
+  const [l] = playbookDoorLines([
+    { slug: 'grind', displayName: 'The Grind', isPrimary: false, relevance: 1, openedFirst: null, biggestImpact: null, stillOpen: null },
+  ] as never);
+  assert.equal(l!.note, null, 'telling her a Door of hers is "not relevant" is not a note worth printing');
+});

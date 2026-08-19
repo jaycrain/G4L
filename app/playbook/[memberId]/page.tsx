@@ -10,6 +10,8 @@ import PlaybookView from './playbook-view.tsx';
 import RedesignPlaybookView from './redesign-playbook-view.tsx';
 import { redesignEnabled } from '../../../lib/dashboard/redesign.ts';
 import { getLegacyLetter } from '../../../lib/reconnect/legacy-letter-store.ts';
+import { doorProfile, playbookDoorLines } from '../../../lib/reconnect/door-profile.ts';
+import { quietDriftClaim } from '../../../lib/reconnect/doors-board-claim.ts';
 import { outcomes } from '../../../lib/dashboard/outcomes.ts';
 import { memberReads } from '../../../lib/playbook/reads.ts';
 import { weekGrids } from '../../../lib/practice/grid.ts';
@@ -58,6 +60,11 @@ export default async function PlaybookPage({
   // R3's Legacy Letter — theirs, to themselves, dated a year out. Guarded like every other supplementary read:
   // a drifted table costs this one card, never the Playbook.
   const legacyLetter = await getLegacyLetter(db, memberId).catch(() => null);
+  // Her Doors, for "Who you are". A swallowed read here would render as "she has no Doors", which is a
+  // confident lie about her own story — so the catch returns [] and the section simply does not render,
+  // rather than showing an empty Doors card that says something false.
+  const doorLines = playbookDoorLines(await doorProfile(db, memberId).catch(() => []));
+  const quietDrift = await quietDriftClaim(db, memberId).catch(() => null);
   // Per-Session re-run counts (Phase 2B) — how often the member has hit "Run it again" on a play → the "come back N
   // times" signal. Keyed by the Session id the play re-runs. Drift-hardened: any hiccup just hides the counts.
   const rerunRows = (
@@ -70,7 +77,7 @@ export default async function PlaybookPage({
   ).rows;
   const rerunStats: Record<string, { n: number; last: string }> = {};
   for (const r of rerunRows) rerunStats[r.ref] = { n: r.n, last: r.last };
-  const props = { memberId, initial: entries, hasHistory, synthesis, identityParagraph, legacyLetter };
+  const props = { memberId, initial: entries, hasHistory, synthesis, identityParagraph, legacyLetter, doorLines, quietDrift: !!quietDrift };
   // The three outcomes (mindfulness · fitness · wellness) head the redesign Playbook. Redesign-only: the pre-v3
   // view has no place for them and prod runs the redesign.
   const cards = redesignEnabled() ? await outcomes(db, memberId) : [];

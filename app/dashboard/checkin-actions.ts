@@ -22,6 +22,7 @@ import { recentConsumedTitles } from '../../lib/bites/store.ts';
 import { getReclaimItems } from '../../lib/beats/store.ts';
 import { addReclaimItemForMember, addDoorForMember } from '../../lib/member/refine.ts';
 import { noteDoorProfile, doorProfile, describeDoorProfile } from '../../lib/reconnect/door-profile.ts';
+import { quietDriftClaim } from '../../lib/reconnect/doors-board-claim.ts';
 import { getLegacyLetter } from '../../lib/reconnect/legacy-letter-store.ts';
 import { disconnectionContext } from '../../lib/agent/disconnection.ts';
 import { loadRaisedNotices, markNoticeRaised } from '../../lib/agent/disconnection-store.ts';
@@ -176,7 +177,7 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
   // "best-effort" but was UNGUARDED — and it runs a memory-fold (API/query) BEFORE everything else, so if it threw it
   // sank the entire context to minimal (this is why the companion still couldn't see momentum after the first pass).
   await maybeFoldMemory(db, memberId).catch((e) => console.warn('maybeFoldMemory failed (non-fatal):', (e as Error).message));
-  const [grinta, grintaReading, whyReading, skillsReading, pilotPlan, pilotTally, biggerWorld, qdProfile, qdRecent, practiceGrids, doorProfileRows, legacyLetterRow, b3Rows, consumedBites, profRows, idqRows, reclaimItems, beatRows, playbook, measures, linkedMeasureRows, facets, closedIds, lastClosedRows, forecast, experience, passport, outcomeCards] = await Promise.all([
+  const [grinta, grintaReading, whyReading, skillsReading, pilotPlan, pilotTally, biggerWorld, qdProfile, qdRecent, practiceGrids, doorProfileRows, quietDriftClaimedAt, legacyLetterRow, b3Rows, consumedBites, profRows, idqRows, reclaimItems, beatRows, playbook, measures, linkedMeasureRows, facets, closedIds, lastClosedRows, forecast, experience, passport, outcomeCards] = await Promise.all([
     getGrinta(db, memberId, dash.identityNoun).catch(() => ({ score: null, direction: null }) as unknown as Awaited<ReturnType<typeof getGrinta>>),
     // Rebuild/Reclaim REGISTERS — all SUPPLEMENTARY context ("the agent knows X"), each null-safe downstream. Guard
     // EVERY one with .catch: a single missing/drifted register table (prod migrations don't auto-apply) must NEVER
@@ -192,6 +193,7 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
     recentQualityDays(db, memberId).catch(() => []), // Reclaim C3 — recent Quality-Day logs
     weekGrids(db, memberId).catch(() => []), // EVERY open week — a member can be running four at once
     doorProfile(db, memberId).catch(() => []), // Reconnect R2 — what they've said ABOUT their Doors (weight + still-open)
+    quietDriftClaim(db, memberId).catch(() => null), // the quiet-drift card — a stance she named, not a Door
     getLegacyLetter(db, memberId).catch(() => null), // Reconnect R3 — their own letter to themselves
     b3Entries(db, memberId, 7).catch(() => []), // Rebuild B3 — the week they wrote, so the Companion can read back what it recorded
 
@@ -368,6 +370,7 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
     dailyBeat,
     doorDisplayNames: dash.doors.map((d) => d.displayName),
     doorProfileLine: describeDoorProfile(doorProfileRows),
+    quietDriftClaimed: !!quietDriftClaimedAt,
     legacyLetter: legacyLetterRow ? { body: legacyLetterRow.body, datedFor: legacyLetterRow.datedFor } : null,
     // Their words only — the empty fields of a sparse day would otherwise read as a form they half-filled.
     b3Recent: b3Rows.slice(0, 3).map((e) => ({
