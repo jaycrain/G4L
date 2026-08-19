@@ -1,0 +1,86 @@
+// THE GAP CONFIRM BECOMES A TAP, NOT A GUESS.
+//
+// WHY THIS EXISTS. The beat asks "have I got the shape of it — or is there more?" and we classified her free-text
+// answer three ways with regex vocabulary. That took five patches in two days — "Yes." re-asked three times
+// (Jennifer), "It was primarily around those three things" (cost a day and a reverted module), "that's a fair
+// picture of it", "you've said it better than I could", "we've been over this" — and a live walk found two more in
+// three runs. One attempt matched "I said yes to the trip that summer", which would have closed the gap
+// mid-sentence. English has unlimited ways to say yes; the list cannot be finished.
+//
+// The product already answered this four times: the Reclaim List became a builder, the identity handle became
+// tap-to-pick, the Doors became a board, the instruments became chips. Every high-stakes capture that started as
+// free-text inference was replaced with a structured affordance. This is the one gate that never got converted,
+// and it is the one still producing bugs.
+//
+// A tap is a FACT. Everything else is a guess with better odds — including the model's own tag, which is why the
+// regexes exist at all (we built them to override it after Jennifer's walk). Upgrading the model is not available:
+// capture already runs on the strongest tier (lib/agent/capture-model.ts).
+//
+// THE TEXT BOX STAYS. She must be able to say something we did not offer, and typed replies still fall through to
+// the classifier — which becomes a fallback rather than the primary path. Nothing gets less expressive; the
+// ambiguous route just stops being the default one.
+
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import {
+  GAP_CONFIRM_CHOICES,
+  parseGapConfirmChoice,
+  serializeGapConfirmChoice,
+  type GapConfirmChoice,
+} from '../lib/agent/gap-confirm-choice.ts';
+
+test('the three choices are exhaustive and in the member-first order', () => {
+  assert.deepEqual(GAP_CONFIRM_CHOICES.map((c) => c.value), ['more', 'done', 'wrong']);
+
+  // "There's more" LEADS on purpose. The first option is the one the surface signals it expects, and this product
+  // never rushes a member off her own story — Greg's own framing is that most people walk through several Doors.
+  // Putting "that's it" first would quietly tell her we are ready to move on.
+  assert.equal(GAP_CONFIRM_CHOICES[0]!.value, 'more');
+
+  // Labels are in HER voice, not ours — things she would say, not commands we issue.
+  for (const c of GAP_CONFIRM_CHOICES) {
+    assert.ok(!/^(click|tap|select|choose|confirm|submit)/i.test(c.label), `a command, not her words: ${c.label}`);
+    assert.ok(c.label.length <= 28, `too long to read at a glance: ${c.label}`);
+  }
+});
+
+test('a tap round-trips exactly — the classification becomes a fact', () => {
+  for (const c of GAP_CONFIRM_CHOICES) {
+    assert.equal(parseGapConfirmChoice(serializeGapConfirmChoice(c.value)), c.value);
+  }
+});
+
+test('anything she TYPES is not a tap — it falls through to the classifier untouched', () => {
+  // The failure to avoid is the reverse of today's: her prose being read as a button press.
+  for (const typed of [
+    "That's it, that's the whole of it.",
+    'There is more actually — my sister that year.',
+    'no',
+    '',
+    'more',            // the bare word she might type is NOT the tap
+    "That's not quite right",
+  ]) {
+    assert.equal(parseGapConfirmChoice(typed), null, `typed prose read as a tap: ${typed}`);
+  }
+});
+
+test('an unknown or malformed tap is not guessed at', () => {
+  // A tap we cannot place must not become one we can. Silently coercing it would put a decision she never made
+  // onto the beat that decides whether her story is finished.
+  for (const bad of ['[gap-confirm]', '[gap-confirm] sideways', '[gap-confirm] DONE extra', '[gap-confirm]  ']) {
+    assert.equal(parseGapConfirmChoice(bad), null, `guessed at a malformed tap: ${bad}`);
+  }
+});
+
+test('every choice maps to an intent the engine already understands', () => {
+  // The point is to REPLACE the guess, not to add a fourth path through the beat. Each tap resolves to exactly the
+  // intent the confirm gate already routes on, so nothing downstream changes shape.
+  const expected: Record<GapConfirmChoice, 'done' | 'addition' | 'dispute'> = {
+    more: 'addition',
+    done: 'done',
+    wrong: 'dispute',
+  };
+  for (const c of GAP_CONFIRM_CHOICES) {
+    assert.equal(c.intent, expected[c.value], `${c.value} must route to ${expected[c.value]}`);
+  }
+});

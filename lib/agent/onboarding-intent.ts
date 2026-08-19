@@ -66,6 +66,44 @@ const GAP_DONE_RE =
 const REPEAT_PREFIX_RE =
   /^\s*(?:(?:like|as) i (?:said|told you|mentioned)|i (?:just |already )?(?:said|told you|mentioned)|i've (?:already )?said)\b[\s,.:;—–-]*/i;
 
+/**
+ * SHE IS TELLING US WE ARE REPEATING OURSELVES. Close the beat, wherever we are.
+ *
+ * This is the BACKSTOP for the agreement vocabulary, and it exists because that list cannot be finished. Agreement
+ * has endless phrasings — four separate patches went into it (Jennifer's "Yes.", "It was primarily around those
+ * three things", "that's a fair picture of it", "you've said it better than I could") and a live walk immediately
+ * found two more. Every miss looks the same from her side: she answers, we ask again.
+ *
+ * But there is one thing a member reliably does when that happens, and it is NOT open-ended — she says we already
+ * did this. That family is small, closed, and unambiguous: nobody says "we've been over this" unless we are
+ * looping. So it does not matter which agreement phrasing we failed to recognise; the next turn closes the beat.
+ *
+ * It fires at BOTH gates, which is the other half of the lesson: the gather path (memberPushedPast) and the
+ * confirm path (resolveGapConfirm) are two different close-detectors, and all four earlier patches went into the
+ * confirm one — so a member closing mid-draw-out was never covered at all.
+ *
+ * DELIBERATELY NARROW. It requires an explicit statement of repetition, not mere impatience ("can we move on"
+ * is a wrap, handled by memberWantsToWrap). Reading impatience as completion would end the beat on someone who
+ * is uncomfortable rather than finished, which is the opposite of letting her set the depth.
+ */
+export function memberSaysWeRepeated(message: string): boolean {
+  const m = normalizeContractions((message ?? '').replace(/[‘’]/g, "'").trim().toLowerCase());
+  if (!m) return false;
+  // HIGH PRECISION ON PURPOSE. A false positive here CLOSES THE GAP on someone still telling her story — the one
+  // direction that loses material rather than merely annoying her. A first attempt used a loose window and matched
+  // "I said yes to the trip that summer", which would have ended the beat mid-sentence. So every pattern needs an
+  // explicit marker of repetition (just / already / been over / and answered), never a bare verb.
+  return (
+    /\bbeen over (this|that|it)\b/.test(m) ||
+    /\bdidn't we (just|already)\b/.test(m) ||
+    /\bdid we not (just|already)\b/.test(m) ||
+    /\b(i|we|you)('ve| have)? ?(just|already) (asked|told|said|covered|answered|went through|gone through|been through)\b/.test(m) ||
+    /\btold you (this|that) already\b/.test(m) ||
+    /\basked and answered\b/.test(m) ||
+    /\b(you|we) keep (asking|repeating)\b/.test(m)
+  );
+}
+
 export function memberSignalsGapComplete(message: string): boolean {
   const raw = (message ?? '').replace(/[‘’]/g, "'");
   // Judge what follows the repetition marker; if there is no marker this is the original string unchanged.
@@ -336,7 +374,7 @@ const AFFIRM_PREFIX_RE =
 // it takes. What must still read as MORE is a reply that NAMES something new ("and my sister stopped speaking to
 // me that year") — those introduce an event; these only grade us.
 const GAP_CONFIRM_WORDS_RE =
-  /\b(you'?(ve|d| have)?\s*(got|nailed|captured|described|summed)\s*(it|that|them|this|up)?|that'?s (it|right|me|correct|the one|spot on|fair|accurate|about right)|(a|the|pretty much the) (fair|good|accurate|decent|full|whole|right) (picture|summary|read|account)( of (it|that))?|(it|that|you) (lands|fits|works|tracks|covers it|describes it|sums it up)|captured (it|that)|sums? (it|that) up|describes (it|that)|covers (everything|it all|most of it|the lot)|(said|put) it better( than i could)?|spot on|exactly( right)?|absolutely|totally|definitely|perfect(ly)?|precisely|nailed it|got it|makes sense|understood|(?:it |that )?sounds? (?:great|good|right|perfect)|(?:it |that )?looks? (?:great|good|right|perfect)|(?:i )?love it|that'?s great|reads (?:great|good|right))\b/gi;
+  /\b(you'?(ve|d| have)?\s*(got|nailed|captured|described|summed)\s*(it|that|them|this|up)?|that'?s (it|right|me|correct|the one|spot on|fair|accurate|about right)|(a|the|pretty much the) (fair|good|accurate|decent|full|whole|right) (picture|summary|read|account)( of (it|that))?|(it|that|you) (lands|fits|works|tracks|covers? it|describes? it|sums? it up)|captured (it|that)|sums? (it|that) up|describes (it|that)|covers (everything|it all|most of it|the lot)|(said|put) it better( than i could)?|spot on|exactly( right)?|absolutely|totally|definitely|perfect(ly)?|precisely|nailed it|got it|makes sense|understood|(?:it |that )?sounds? (?:great|good|right|perfect)|(?:it |that )?looks? (?:great|good|right|perfect)|(?:i )?love it|that'?s great|reads (?:great|good|right))\b/gi;
 export function memberAddingMoreGap(message: string): boolean {
   const m = (message ?? '').replace(/[‘’]/g, "'").trim();
   if (!m) return false;
@@ -519,6 +557,13 @@ export function resolveGapConfirm(
   question: ConfirmQuestion = 'anything_more',
 ): GapConfirmIntent {
   if (replyIntent) return replyIntent === 'dispute' ? 'dispute' : replyIntent === 'more' ? 'addition' : 'done';
+  // She says we already did this — that outranks everything, including a leading negation. Nobody says it unless
+  // we are looping, and continuing to ask is the one response that cannot be right.
+  //
+  // UNLESS SHE PUTS REAL CONTENT BEHIND IT. "I just said I want to change the second line" opens with the marker
+  // and then makes a request; closing on it would throw the request away. Same residue rule the leading-affirmation
+  // guard already uses — the marker closes the beat only when the marker IS the message.
+  if (memberSaysWeRepeated(message) && !hasRevisionTail(message)) return 'done';
   const rejects = question === 'is_this_right' ? memberRejectsReflection : memberDisputesGap;
   if (rejects(message)) return 'dispute';
   if (memberAddingMoreGap(message)) return 'addition';

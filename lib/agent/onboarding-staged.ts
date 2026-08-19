@@ -65,6 +65,7 @@ import {
   memberClosingReclaim,
   memberDeflecting,
   memberSignalsGapComplete,
+  memberSaysWeRepeated,
   resolveConfirmCorroborated,
   confirmsProposal,
   resolveReclaimConfirm,
@@ -1023,7 +1024,10 @@ function stageMaterialRich(stage: StagedStage, c: Collected): boolean {
 // won't add more. Advancing here honors them instead of trapping — the analog of v1's `memberDone`.
 function memberPushedPast(stage: StagedStage, message: string, c: Collected): boolean {
   if (stage === 'identity') return c.identitySkipped === true || memberDeflecting(message);
-  if (stage === 'gap') return memberSignalsGapComplete(message) || memberDeflecting(message);
+  // memberSaysWeRepeated fires here too: the GATHER gate and the CONFIRM gate are two different close
+  // detectors, and every earlier agreement fix went into the confirm one — so a member closing mid-draw-out was
+  // never covered. See lib/agent/onboarding-intent.ts.
+  if (stage === 'gap') return memberSignalsGapComplete(message) || memberSaysWeRepeated(message) || memberDeflecting(message);
   return memberClosingReclaim(message);
 }
 
