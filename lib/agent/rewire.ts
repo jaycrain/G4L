@@ -960,8 +960,8 @@ export async function liveTurnRewireW3(state: ConvState, history: ConvMessage[],
 // the rewire_checkpoint_passed gate. Items VERBATIM (CHECKPOINT_COMMITMENT_ITEMS). Copy: R4 doc (frame is ours).
 const W3_CHECKPOINT_OPEN =
   "You just did the real work of Rewire — you caught the lies, built the picture, wrote the protocol. Before we close " +
-  "the Phase, a quick read on where your commitment sits now. Six of these, one to five. No passing score — just an " +
-  "honest gauge of what you're building.";
+  "the Phase, a quick read on where your commitment sits now. Six of these, one to five. They set your Rewire read " +
+  "— you'll see how it moved your Grinta Index at the close.";
 const W3_CHECKPOINT_CLOSE = "That's the read. Hold on — let me show you what it means.";
 function rewireCheckpointDeliver(index: number): string {
   return grintaStem(CHECKPOINT_COMMITMENT_ITEMS[index]!);

@@ -1,4 +1,4 @@
-# Strings EXCLUDED from the member transcript (app @ 224bd26 · 2026-08-19)
+# Strings EXCLUDED from the member transcript (app @ 5b19ff4 · 2026-08-19)
 # Not member copy: system prompts, multi-line fragments, code artifacts. Review when a real line goes missing.
 
 [app/page.tsx] Playbook
@@ -120,6 +120,7 @@
 [lib/agent/gap-confirm-choice.ts] keep:
 [lib/agent/gap-confirm-choice.ts] keep:
 [app/components/keeper-offer.tsx] Keeping…
+[app/components/keeper-actions.ts] [keeper] keep failed for member=${memberId} (${proposal.label}):
 [app/login/verify/page.tsx] Log in
 [app/login/verify/page.tsx] and carry on — nothing is blocked.
 [lib/ceremony/threshold-beats.ts] Athlete
@@ -860,8 +861,6 @@
 [app/playbook/[memberId]/redesign-playbook-view.tsx] s map. Greg
 [app/playbook/[memberId]/redesign-playbook-view.tsx] pb-map-tag${row.steady ? ' is-steady' : ''}
 [app/playbook/[memberId]/redesign-playbook-view.tsx] pb-map-tag${row.steady ? ' is-steady' : ''}
-[app/playbook/[memberId]/redesign-playbook-view.tsx] 0 ? c.items.map(entryCard) :
-[app/playbook/[memberId]/redesign-playbook-view.tsx] 0 ? c.items.map(entryCard) :
 [app/playbook/[memberId]/redesign-playbook-view.tsx] the moves that worked, run them again
 [app/account/page.tsx] select display_name, email, avatar_url from member_profile where member_id = $1
 [app/account/page.tsx] Profile

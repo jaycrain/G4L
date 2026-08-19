@@ -1,6 +1,6 @@
 # G4L — Member Transcript (authored copy, verbatim)
 
-Stamp: `app @ 224bd26 · 2026-08-19` · PART 1 of the Cowork release bundle.
+Stamp: `app @ 5b19ff4 · 2026-08-19` · PART 1 of the Cowork release bundle.
 
 **Quote from this.** Every line below is authored, fixed copy a member reads, in reading order by surface. It does
 **not** include the Companion's in-the-moment reflections (those are model-generated and vary per member — describe
@@ -151,6 +151,12 @@ _source: app/components/keeper-offer.tsx_
 - Saved to your Playbook
 - Keep this in your Playbook?
 - Keep it
+
+_source: app/components/keeper-actions.ts_
+
+- Not authorized.
+- Nothing to keep.
+- Could not save that just now.
 
 
 ## Email verification
@@ -423,7 +429,7 @@ _source: lib/agent/rewire.ts_
 - Your true line for a bad day
 - Your False Start Protocol
 - a couple of concrete examples in the question if it helps them answer.
-- You just did the real work of Rewire — you caught the lies, built the picture, wrote the protocol. Before we close the Phase, a quick read on where your commitment sits now. Six of these, one to five. No passing score — just an honest gauge of what you're building.
+- You just did the real work of Rewire — you caught the lies, built the picture, wrote the protocol. Before we close the Phase, a quick read on where your commitment sits now. Six of these, one to five. They set your Rewire read — you'll see how it moved your Grinta Index at the close.
 - That's the read. Hold on — let me show you what it means.
 - Hold on — let me show you what you just built.
 
@@ -560,7 +566,7 @@ _source: lib/agent/rebuild.ts_
 - The member's smaller fallback for the MOVEMENT change — what they'd do on a bad day instead of nothing. Their words. Omit if they'd rather not name one.
 - The member's smaller fallback for the EATING change, same rule.
 - What the member expects to get in the way this week, in their own words. Omit if they don't name anything.
-- You did the real work of Rebuild — you found your why, took honest stock of your skills, and ran the pilot in your own life. Before we close the Phase, a quick read on where your control sits now. A dozen of these, one to five. No passing score — just an honest gauge of what you've built.
+- You did the real work of Rebuild — you found your why, took honest stock of your skills, and ran the pilot in your own life. Before we close the Phase, a quick read on where your control sits now. A dozen of these, one to five. They set your Rebuild read — you'll see how it moved your Grinta Index at the close.
 - That's the read. Hold on — let me show you what you just built.
 - Hold on — let me show you what you just built.
 
@@ -656,7 +662,7 @@ _source: lib/agent/reclaim.ts_
 - It's all about noticing what actually makes your days yours.
 - Gets in the way
 - Record the member's settled Quality-Day definition so the app can show it back to confirm. Their own words.
-- You did the real work of Reclaim — you revisited your list with clearer eyes, mapped where your world can get bigger, and defined what makes a day yours. Before we close the cycle, a quick read on where your challenge sits now — the pull toward what's possible. Six of these, one to five. No passing score — just an honest gauge.
+- You did the real work of Reclaim — you revisited your list with clearer eyes, mapped where your world can get bigger, and defined what makes a day yours. Before we close the cycle, a quick read on where your challenge sits now — the pull toward what's possible. Six of these, one to five. They set your Reclaim read — you'll see how it moved your Grinta Index at the close.
 - That's the read. Hold on — let me show you what you just built.
 - Hold on — let me show you what you just built.
 
@@ -1289,6 +1295,7 @@ _source: app/playbook/[memberId]/redesign-playbook-view.tsx_
 - Facts that resonated with you get kept here.
 - Lights you up
 - Nothing new to gather yet — keep working, and there’ll be more to pull from.
+- Your true lines
 - ) : ( tag &&
 - Run it again with your Companion →
 - What does this bring up? Write as much or as little as you want…
@@ -1313,6 +1320,7 @@ _source: app/playbook/[memberId]/redesign-playbook-view.tsx_
 - No week running right now. A Session starts one when you’re ready to practice something for real — that’s when this fills in.
 - Your reads
 - What your own answers said, laid out.
+- 0 ? groupedItems(c.key, c.items) :
 - Revisit a Session
 - Your journal
 - Thoughts and feelings in your own words, timestamped to where you are. For a lot of people this is the most freeing thing here — a place to think on the page and understand yourself. Your Companion reads it and pulls keepers up into your Moves, but the writing itself is the point — it only replies if you ask.
