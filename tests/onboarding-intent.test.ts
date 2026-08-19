@@ -281,6 +281,12 @@ test('a verdict on our accuracy is agreement, however many words it takes', () =
     'That describes it well.',
     'It was primarily around those three things.',
     "I think you've got it.",
+    // Comparative praise — the same verdict, phrased as a comparison rather than an adjective.
+    "You've said it better than I could.",
+    "I couldn't have put it better.",
+    // A leading "No" answering a compound question, whose actual content is agreement. Read as DISPUTE this
+    // reopens the beat and tells her we got her story wrong — worse than re-asking.
+    'No, I think that covers everything.',
   ]) {
     assert.equal(resolveConfirmCorroborated(m, 'more', shouldCaptureStagedGap, 'anything_more'), 'done', `re-asked after: ${m}`);
   }
@@ -296,5 +302,13 @@ test('...but naming something NEW still keeps the story open', () => {
     "Actually there's one more thing, my health went too.",
   ]) {
     assert.equal(resolveConfirmCorroborated(m, 'more', shouldCaptureStagedGap, 'anything_more'), 'addition', `stopped drawing out on: ${m}`);
+  }
+});
+
+test('a real rejection is still a rejection — the guard must not swallow disputes', () => {
+  // The cost of over-reading agreement is that a member who says we got it WRONG is told we heard yes. That is the
+  // failure in the other direction and it is worse, so it gets its own pin.
+  for (const m of ['No, that is not really it at all.', "That's not quite right — it was the other way round."]) {
+    assert.equal(resolveConfirmCorroborated(m, 'done', shouldCaptureStagedGap, 'is_this_right'), 'dispute', `swallowed a dispute: ${m}`);
   }
 });
