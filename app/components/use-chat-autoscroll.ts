@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { chooseScrollTarget } from '../../lib/teaching/scroll-target.ts';
 
 // Keep a chat thread anchored on the newest agent reply. Returns a ref to attach to the scrolling `.chat` container.
 //
@@ -21,16 +22,23 @@ export function useChatAutoscroll(deps: unknown[]) {
     if (!el) return;
 
     const bubbles = Array.from(el.querySelectorAll<HTMLElement>('.bubble'));
-    // The start of the newest agent turn = the first bubble after the member's most recent message (index 0 if the
-    // member hasn't spoken yet — the opener).
-    let lastMemberIdx = -1;
-    for (let i = bubbles.length - 1; i >= 0; i--) {
-      if (bubbles[i]!.classList.contains('member')) { lastMemberIdx = i; break; }
-    }
-    const anchor = bubbles[lastMemberIdx + 1];
     const chatIsScroller = el.scrollHeight > el.clientHeight + 4;
+    // The decision lives in lib/teaching/scroll-target.ts so it can be tested without a DOM. It used to anchor the
+    // OPENER on arrival, which scrolled the "Why this matters" card — rendered above the first bubble — off the
+    // top of the view (Donna, 2026-08-19). Now the first turn stays at the top: there is nothing to follow yet,
+    // and the framing is what the member is meant to read first.
+    const target = chooseScrollTarget(
+      bubbles.map((b) => (b.classList.contains('member') ? 'member' : 'agent')),
+    );
 
-    if (anchor && anchor.classList.contains('agent')) {
+    if (target.kind === 'top') {
+      if (chatIsScroller) el.scrollTop = 0;
+      else el.scrollIntoView({ block: 'start' });
+      return;
+    }
+
+    const anchor = target.kind === 'anchor' ? bubbles[target.index] : undefined;
+    if (anchor) {
       // Align the top of the newest agent turn just below the top edge, leaving a little breathing room. The browser
       // clamps if the thread can't scroll that far, so a short reply that already fits doesn't jump.
       const delta = anchor.getBoundingClientRect().top - el.getBoundingClientRect().top;
