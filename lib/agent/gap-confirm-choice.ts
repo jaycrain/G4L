@@ -49,8 +49,13 @@ export const GAP_CONFIRM_CHOICES: readonly GapConfirmOption[] = [
 // channel, and the engine must never mistake one for the other in either direction.
 const PREFIX = '[gap-confirm]';
 
-export function serializeGapConfirmChoice(choice: GapConfirmChoice): string {
-  return `${PREFIX} ${choice}`;
+/**
+ * @param keptDoors the Doors she LEFT ON after seeing what we heard. Omit entirely when the surface has no Doors
+ * to show — absent must never be read as "drop them all".
+ */
+export function serializeGapConfirmChoice(choice: GapConfirmChoice, keptDoors?: string[]): string {
+  const kept = keptDoors && keptDoors.length ? ` keep:${keptDoors.join(',')}` : keptDoors ? ' keep:' : '';
+  return `${PREFIX} ${choice}${kept}`;
 }
 
 /**
@@ -61,10 +66,25 @@ export function serializeGapConfirmChoice(choice: GapConfirmChoice): string {
 export function parseGapConfirmChoice(message: string): GapConfirmChoice | null {
   const m = (message ?? '').trim();
   if (!m.startsWith(PREFIX)) return null;
-  const rest = m.slice(PREFIX.length).trim();
+  const rest = m.slice(PREFIX.length).trim().split(/\s+/)[0] ?? '';
   const hit = GAP_CONFIRM_CHOICES.find((c) => c.value === rest);
   // An unrecognised or malformed tap is NOT guessed at — a tap we cannot place must not become one we can.
   return hit ? hit.value : null;
+}
+
+/**
+ * The Doors she left on, or `null` when the surface sent no list at all.
+ *
+ * NULL AND EMPTY MEAN DIFFERENT THINGS, and conflating them loses her story. `null` is "no Doors were shown, leave
+ * them alone"; `[]` is "she was shown Doors and took every one off", which is a real answer — Jennifer's case at
+ * its limit, where none of what we matched was hers.
+ */
+export function parseGapConfirmDoors(message: string): string[] | null {
+  const m = (message ?? '').trim();
+  if (!m.startsWith(PREFIX)) return null;
+  const tok = m.slice(PREFIX.length).trim().split(/\s+/).find((t) => t.startsWith('keep:'));
+  if (tok === undefined) return null;
+  return tok.slice('keep:'.length).split(',').map((x) => x.trim()).filter(Boolean);
 }
 
 /** The intent a tap resolves to. Exported so the engine never re-derives the mapping at a call site. */

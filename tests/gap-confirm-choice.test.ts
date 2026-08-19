@@ -169,3 +169,56 @@ test('SEAM · the model’s reflection still LEADS — the structure only carrie
     { text: 'Three things inside two years, each one taking something the last had not.', gapReady: true }).reply;
   assert.match(reply, /^Three things inside two years/, 'her story, in her words, comes first');
 });
+
+// ---------------------------------------------------------------------------------------------------------------
+// DOORS AT INTAKE — propose, then confirm. The riskiest inference in the product.
+//
+// We tag Doors by matching her prose and then ASSERT them. Jennifer got The Marriage from her FATHER'S divorce, in
+// a story where she also said "my marriage is fine". The retired Acceptance Door read "at my age and in this
+// economy, I was virtually unhireable" as having quietly surrendered to aging. Those are not near misses — they
+// are the product telling a member something false about her own life, in the beat where she is most exposed.
+// Guessing wrong is the worst thing this surface can do.
+//
+// The fix is not another matcher. She sees what we heard, and can take one off. Structure CONFIRMS what the
+// conversation elicited — it never asks her to classify herself from a list, which is what a Door picker at intake
+// would be, before the metaphor means anything to her. Adding a Door she did NOT tell us about belongs to R2's
+// board, where Greg's recognition copy does the work.
+// ---------------------------------------------------------------------------------------------------------------
+
+test('DOORS · the confirm shows her what we heard, so she can rule on it', () => {
+  const state: ConvState = { stage: 'gap', collected: { identityNoun: 'Maker', gap: GAP, doors: ['career_cliff', 'marriage'] } };
+  const t = applyStagedTurn(state, [], 'That was the shape of it.', { text: 'Here is what I heard.', gapReady: true });
+  const e = t.expects as { kind: string; doorsHeard?: { slug: string; name: string }[] };
+  assert.equal(e.kind, 'gap_confirm');
+  assert.deepEqual(e.doorsHeard?.map((d) => d.slug), ['career_cliff', 'marriage'], 'both, by name, before she agrees');
+  assert.equal(e.doorsHeard?.[0]!.name, 'The Career Cliff', 'named the way she will see it, not a slug');
+});
+
+test('DOORS · taking one off REMOVES it — her word outranks the matcher', () => {
+  // Jennifer's case exactly: the story is right, one Door is not hers.
+  const state: ConvState = { stage: 'gap', collected: { identityNoun: 'Maker', gap: GAP, doors: ['career_cliff', 'marriage'] }, awaitingConfirm: true };
+  const t = applyStagedTurn(state, [], serializeGapConfirmChoice('done', ['career_cliff']), { text: '' });
+  assert.deepEqual(t.state.collected.doors, ['career_cliff'], 'the one she kept');
+  assert.equal(t.state.stage, 'reclaim', 'and the beat still closes — correcting us is not a dispute');
+});
+
+test('DOORS · confirming keeps every Door, and never invents one', () => {
+  const state: ConvState = { stage: 'gap', collected: { identityNoun: 'Maker', gap: GAP, doors: ['career_cliff', 'marriage'] }, awaitingConfirm: true };
+  const t = applyStagedTurn(state, [], serializeGapConfirmChoice('done', ['career_cliff', 'marriage']), { text: '' });
+  assert.deepEqual(t.state.collected.doors, ['career_cliff', 'marriage']);
+});
+
+test('DOORS · she cannot ADD one here — intake confirms, R2 offers the whole set', () => {
+  // A Door she never mentioned has no business appearing at intake: that would be structure doing the eliciting,
+  // and it is what R2's board exists for, with Greg's recognition copy behind it.
+  const state: ConvState = { stage: 'gap', collected: { identityNoun: 'Maker', gap: GAP, doors: ['career_cliff'] }, awaitingConfirm: true };
+  const t = applyStagedTurn(state, [], serializeGapConfirmChoice('done', ['career_cliff', 'vanishing']), { text: '' });
+  assert.deepEqual(t.state.collected.doors, ['career_cliff'], 'a slug she was never offered is ignored, not added');
+});
+
+test('DOORS · a plain tap with no door list leaves them exactly as they were', () => {
+  // Backwards compatible on purpose: the surface may send no list at all, and silence must never mean "drop them".
+  const state: ConvState = { stage: 'gap', collected: { identityNoun: 'Maker', gap: GAP, doors: ['career_cliff', 'marriage'] }, awaitingConfirm: true };
+  const t = applyStagedTurn(state, [], serializeGapConfirmChoice('done'), { text: '' });
+  assert.deepEqual(t.state.collected.doors, ['career_cliff', 'marriage'], 'absent is not a removal');
+});

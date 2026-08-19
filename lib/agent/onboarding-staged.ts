@@ -51,7 +51,7 @@ import {
 } from './onboarding.ts';
 import { reconcileReclaimShapes, shapeKey, splitInlineEnumeration } from './reclaim-shape.ts';
 import { filterDoorsByAttribution } from './door-attribution.ts';
-import { GAP_CONFIRM_CHOICES, parseGapConfirmChoice, gapConfirmIntent } from './gap-confirm-choice.ts';
+import { GAP_CONFIRM_CHOICES, parseGapConfirmChoice, parseGapConfirmDoors, gapConfirmIntent } from './gap-confirm-choice.ts';
 import { doorsBoardExpectation } from './doors-board-expectation.ts';
 import { detectCrisis, CRISIS_RESPONSE_US } from './governance.ts';
 import { captureCreate } from './capture-model.ts';
@@ -947,7 +947,17 @@ function nextExpects(arc: ArcConfig, stageId: StageId, complete: boolean, answer
   // ONLY WHEN THE BEAT IS ACTUALLY WAITING ON HER. Mid-draw-out the question is the model's own, and offering
   // "that's the whole of it" while she is still telling it would be the surface asking her to stop.
   if (arc.id === 'onboarding' && stageId === 'gap' && awaitingConfirm && !complete) {
-    return { kind: 'gap_confirm', choices: GAP_CONFIRM_CHOICES.map((c) => ({ value: c.value, label: c.label })) };
+    // SHE SEES WHAT WE HEARD, by name, BEFORE she agrees. We tag Doors by matching her prose and then assert them;
+    // Jennifer got The Marriage from her FATHER'S divorce in a story where she also said "my marriage is fine".
+    // Showing them here turns the riskiest inference in the product into something she rules on.
+    return {
+      kind: 'gap_confirm',
+      choices: GAP_CONFIRM_CHOICES.map((c) => ({ value: c.value, label: c.label })),
+      doorsHeard: (collected.doors ?? []).map((slug) => ({
+        slug: slug as string,
+        name: DOORS.find((d) => d.slug === slug)?.displayName ?? (slug as string),
+      })),
+    };
   }
   if (arc.id === 'onboarding' && stageId === 'reclaim' && !complete) {
     return { kind: 'reclaim_list', min: RECLAIM_LIST_MIN, seeded: (collected.reclaimList ?? []).filter(Boolean) };
@@ -1575,6 +1585,16 @@ const gapStage: StageDef = {
     // answers and chose one; nothing we infer can be better evidence than that. Typed replies fall through to the
     // classifier exactly as before, so she is never forced through the chips.
     const tapped = parseGapConfirmChoice(b.memberMessage);
+    // SHE TOOK ONE OFF. Her word outranks the matcher, always — this is the same rule as the R2 board, applied at
+    // the moment we first guess rather than a phase later. Intersected with what she was actually shown, so a slug
+    // that was never offered cannot arrive through the wire and become part of her story.
+    if (tapped) {
+      const kept = parseGapConfirmDoors(b.memberMessage);
+      if (kept !== null) {
+        const shown = new Set(b.collected.doors ?? []);
+        b.collected.doors = (b.collected.doors ?? []).filter((d) => kept.includes(d) && shown.has(d));
+      }
+    }
     const intent = tapped
       ? gapConfirmIntent(tapped)
       : resolveConfirmCorroborated(b.memberMessage, b.model.replyIntent, shouldCaptureStagedGap);
