@@ -25,6 +25,7 @@ import { cleanIdentityNoun, displayIdentityNoun, identityLabel, sanitizeCoinedId
 import { isDoorSlug, matchDoors, DOORS, type DoorSlug } from '../doors.ts';
 import { RECLAIM_LIST_FLOOR, RECLAIM_LIST_MIN, RECLAIM_LIST_TARGET, reclaimAddIntent, isReclaimMetaFragment } from '../member/reclaim.ts';
 import { nextFollowUp } from './follow-up.ts';
+import { isModelVoiced } from './reclaim-voice.ts';
 import type { SessionVisual } from './session-visual.ts';
 import { gapIsNarrative, hasIdentity } from './onboarding-contract.ts';
 import { ONBOARDING_BASELINE_ITEMS, grintaStem } from '../grinta/survey/instrument.ts';
@@ -1017,7 +1018,15 @@ function mergeStaged(prev: Collected, rec?: Partial<Collected>, memberMaterial =
   // Reclaim items accumulate in lockstep with their categories, DEDUPED — an item volunteered early (front-loader)
   // parks here in the moment (never lost, re-surfaced at its stage), and a model re-tag of a listed want is a no-op.
   if (rec.reclaimList !== undefined) {
-    rec.reclaimList.forEach((item, i) => appendReclaim(next, item, rec.reclaimCategories?.[i] ?? ''));
+    // THE ONE PLACE MODEL-AUTHORED TEXT BECOMES A LIST ITEM — which is why the voice check lives HERE and not in
+    // appendReclaim. That function is shared: the retired conversational path and the runaway backstop both feed
+    // it the MEMBER'S own message text, and applying a "she'd never say this" rule to something she actually said
+    // would be the very inversion we keep having to undo. Provenance is the whole basis of the check, so it has
+    // to sit where provenance is known. (Donna, 2026-08-19 — see lib/agent/reclaim-voice.ts.)
+    rec.reclaimList.forEach((item, i) => {
+      if (isModelVoiced(item)) return; // the model drafted rather than quoted — drop the SEED, never her words
+      appendReclaim(next, item, rec.reclaimCategories?.[i] ?? '');
+    });
   }
   return next;
 }
@@ -2576,7 +2585,11 @@ export function stageInstruction(stage?: Stage, opts?: { gapHeld?: boolean }): s
       'get asked for the same thing twice.\n' +
       'ONCE IT IS OPEN, DRAW THEM OUT — in conversation, one want at a time, and call add_reclaim_item the moment ' +
       'each lands. Their words, exactly as they said them: do not sharpen, re-word, make it concrete, or split it ' +
-      'up. Do NOT propose or recite a set of items to them — not mined from their gap story, not from anywhere. ' +
+      // The tell, with the sentence that shipped. A want addressed to the member is one you wrote — and the
+      // engine now drops those, so this is not a style note: phrase it as your sentence and it is lost.
+      'up. **Never write a want in the second person** — "a role that lets YOU rebuild savings" is you talking to ' +
+      'them, not them talking about their life, and it will be discarded. Tag "rebuild my savings", as they said ' +
+      'it. Do NOT propose or recite a set of items to them — not mined from their gap story, not from anywhere. ' +
       'You are asking and receiving, never drafting. Ask about what they gave you, not what you expect to be ' +
       'missing.\n' +
       'THEN THE ENGINE OPENS A LIST-BUILDER, holding everything you tagged, and what they submit IS the list. It ' +
