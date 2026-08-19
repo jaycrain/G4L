@@ -733,7 +733,7 @@ function scriptedReply(c: CheckinContext, memberMessage: string): string {
           : r.reason === 'slip'
             ? "Before you're hard on yourself — here's what you set down for exactly this:"
             : "That's the old voice. Here's the line you wrote back to it:";
-      return `${lead}\n\n“${r.body}”\n\nSit with that a second — does it still hold?`;
+      return `${lead}\n\n“${r.body}”\n\nGive that a second — does it still hold?`;
     }
   }
   const m = memberMessage.toLowerCase();

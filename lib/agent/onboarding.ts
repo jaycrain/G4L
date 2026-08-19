@@ -670,7 +670,7 @@ const STAGE_PROMPT: Record<Stage, string> = {
   // v2.3 Rewire W2 — the Rewire engine supplies its own openers; neutral fallbacks here for type completeness.
   anchor: 'Which of the things you want back would you most want to stand inside?',
   image: 'Picture it — where are you, and what does it feel like to be there?',
-  hold: 'Sit with that image a moment — what comes up?',
+  hold: 'Give that image a minute — what does it make you think about?',
   triggers: "When are you most likely to slip — and what's going on when it happens?",
   protocol: "What's the plan for that moment — what do you do instead?",
   // v2.4 Rebuild B1/B2 — administered (off the depth kernel), so these are never actually used; scale-matched re-asks

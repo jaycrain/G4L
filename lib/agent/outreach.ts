@@ -40,7 +40,7 @@ function scriptedText(a: Provenance, tense: Tense, trigger: OutreachTrigger): st
   } else {
     // words — the member's own language; the tense sets where we meet them (§5), never a prescribed step.
     const tail =
-      tense === 'horizon' ? "where does that sit with who you're moving toward?"
+      tense === 'horizon' ? "how does that square with who you're moving toward?"
       : tense === 'practice' ? 'what is that looking like for you lately?'
       : "what's here in that for you today?";
     base = `You mentioned "${q}." ${tail.charAt(0).toUpperCase()}${tail.slice(1)}`;

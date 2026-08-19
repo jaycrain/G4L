@@ -344,10 +344,10 @@ const W2_IMAGE_NUDGE = `No rush — just picture it and tell me what you see. Ev
 // ── The recognition — the reveal (the weight) ──
 const W2_RECOGNITION =
   `That's not a wish. It's a goal you already named, with you standing in it, on the far side of the work. Look at ` +
-  `it for a second — that's what the work is for. Hold onto that. When you're ready, tell me what comes up.`;
+  `it for a second — that's what the work is for. Keep it. When you're ready, tell me how that feels.`;
 // ── The practice — the week + the W1 connection ──
 const W2_PRACTICE_1 =
-  `Here's your work this week, and it's small: five minutes each morning, sit with that image. Close your eyes, make ` +
+  `Here's your work this week, and it's small: five minutes each morning with that image. Close your eyes, make ` +
   `it vivid — the light, the effort, the feeling. Don't rush it.`;
 const W2_PRACTICE_2 =
   `And here's where it meets last session: when the old voice starts up — "this is stupid," "it'll never happen" — ` +
@@ -452,7 +452,7 @@ const holdStage: StageDef = {
   opener: () => W2_RECOGNITION,
   offersSubstance: () => true,
   gather(b) {
-    // NEVER DROP WHAT THEY GAVE YOU. This beat's opener ends "When you're ready, tell me what comes up" — an explicit
+    // NEVER DROP WHAT THEY GAVE YOU. This beat's opener ends "When you're ready, tell me how that feels" — an explicit
     // ask — and this handler used to compose the picture from what was ALREADY collected without ever reading
     // b.memberMessage. So the answer to the last and most inviting question in the session was discarded. On Jay's
     // walk that cost the richest thing he said: "The energy of a thousand other racers around me and them behind the
@@ -822,7 +822,7 @@ function reframeFallback(c: Collected): string {
 function restartFallback(c: Collected): string {
   const img = w3ImageOf(c);
   return img
-    ? `And Restart — when the old voice gets loud, go back to the picture you built:\n\n“${img}”\n\nSit with it a second — does it feel like enough to reach for on the hard day?`
+    ? `And Restart — when the old voice gets loud, go back to the picture you built:\n\n“${img}”\n\nGive it a second — does it feel like enough to reach for on the hard day?`
     : `${W3_RESTART} When you picture it — does it feel like enough to reach for on the hard day?`;
 }
 
@@ -902,8 +902,8 @@ function rewireW3StageNote(state: ConvState): string {
         "\n\nRIGHT NOW: the member just gave their bad-day line. Acknowledge it warmly in a line (don't rewrite it), " +
         "then pose the third move — NAME IT, open with 'Restart —' so they see the step: " +
         (img
-          ? `point them to the picture they built, quoting it: "Restart: when the old voice gets loud, go back to this — '${img}'." Then invite them to sit with it (a gentle question so it's not a dead end — e.g. does it feel like enough to reach for?).`
-          : "remind them to go back to the picture they built of where they're headed, and invite them to sit with it (a gentle question so it's not a dead end).")
+          ? `point them to the picture they built, quoting it: "Restart: when the old voice gets loud, go back to this — '${img}'." Then invite them to stay with it (a gentle question so it's not a dead end — e.g. does it feel like enough to reach for?).`
+          : "remind them to go back to the picture they built of where they're headed, and invite them to stay with it (a gentle question so it's not a dead end).")
       );
     }
     return "\n\nRIGHT NOW: the member is responding to the Restart. Receive their reaction warmly in ONE line — no new question; you're about to close.";

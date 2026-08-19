@@ -288,7 +288,7 @@ function keepIfMaterial(b: { memberMessage: string; driftPayload?: string }): vo
 
 function reseeingLanded(toSlug: DoorSlug, kind: DoorRevision['kind']): string {
   const name = DOORS.find((d) => d.slug === toSlug)?.displayName ?? 'that';
-  if (kind === 'correct') return `${name}, then — that's the one. That changes the shape of it. Let me sit with what it means, and we'll keep going from there.`;
+  if (kind === 'correct') return `${name}, then — that's the one. That changes the shape of it. Let me take in what it means, and we'll keep going from there.`;
   // widen / name ADD a Door rather than replace — acknowledge it as also true, not a correction of the first.
   return `${name}, too — I'll hold that alongside the one you named. Both are part of it. Let's keep going.`;
 }
@@ -650,7 +650,7 @@ function windowOpen(_c: Collected): string {
     "There's a window between who you are today and who you keep saying you'll be — most people never look through " +
     "it. Today you look. Picture an ordinary Tuesday a year from now — but you've done the work, and the things on " +
     'your Reclaim List are real. How do you wake up, what do you reach for? Not the highlight reel — the ordinary ' +
-    'morning. Sit with that Tuesday for a second, and tell me what you see.'
+    'morning. Give that Tuesday a second, and tell me what you see.'
   );
 }
 const WINDOW_MORE_VARIANTS = [

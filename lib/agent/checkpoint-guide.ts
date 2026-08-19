@@ -74,7 +74,7 @@ export function checkpointAffirmation(c: CheckpointCtx, firstRewireTitle: string
 export function checkpointHold(c: CheckpointCtx): Promise<string> {
   const fallback =
     `Not yet — and that honest answer matters more than a fast one. Here's the why, plainly: if you front this, nothing in Rewire sticks — you'd be building on sand and sleepwalking through it. ` +
-    `So stay in Reconnect a little longer: sit with the excavation, write more, answer in more detail. You don't have to do it alone — if you're genuinely stuck, someone can step in. I'm right here.`;
+    `So stay in Reconnect a little longer: stay with the excavation, write more, answer in more detail. You don't have to do it alone — if you're genuinely stuck, someone can step in. I'm right here.`;
   return say(
     VOICE +
       ' They said "not yet." Do NOT advance them. Hold warmly: validate the honesty, explain transparently why the gate holds (front it and nothing in Rewire sticks), offer a concrete next move back into Reconnect, and let them know a person can step in if they\'re genuinely stuck. 3–4 sentences. Output only what you say.',

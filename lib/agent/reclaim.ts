@@ -476,7 +476,20 @@ function reflectPrompt(d: AuditDomain, step: ReflectStep): string {
   const p = AUDIT_REFLECTION_PROMPTS[d][step];
   if (step !== 'gap') return p;
   // Q3 carries both asks in one turn — see the instrument's note on why we don't split it into two.
-  return `${p}\n\n${AUDIT_SUB_ISSUE_ASK[d]}\n\n${AUDIT_SUB_ISSUES[d].join(' · ')}`;
+  //
+  // THE LIST HAS TO SAY WHAT IT IS (Donna, 2026-08-19). "Weight status · Strength · Endurance · Balance ·
+  // Nutrition · Sleep" arrived with no framing at all: "it's not clear whether these are clickable options,
+  // examples, or something else."
+  //
+  // They are EXAMPLES. The instrument's own comment calls them chips and they have never rendered as chips —
+  // this is a ·-joined line inside a message bubble, so there is nothing to tap, and the physical domain's ask
+  // ("Pick the ones that feel most important") reads as an instruction she cannot follow. Naming them as
+  // examples makes the copy true to what is actually on screen. Building a real selection affordance is the
+  // other way to resolve it and a bigger change to a beat Greg budgeted at fifteen minutes; if we ever do, this
+  // lead-in is what comes out.
+  //
+  // Greg's prompts and his sub-issue lists are untouched.
+  return `${p}\n\n${AUDIT_SUB_ISSUE_ASK[d]}\n\nThings like: ${AUDIT_SUB_ISSUES[d].join(' · ')}`;
 }
 
 /** Which of Greg's named sub-issues did their answer actually mention? Substring match on his labels — never inferred. */
