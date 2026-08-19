@@ -253,6 +253,19 @@ function concatRuns(src) {
 function stringsInFile(rel, rejected) {
   let src;
   try { src = readFileSync(join(ROOT, rel), 'utf8'); } catch { return []; }
+  // BLOCK COMMENTS ARE BLANKED BEFORE ANYTHING IS READ, newlines preserved so line numbers still line up with
+  // `spanning`.
+  //
+  // The skip below is line-based — it drops a line that STARTS with //, * or /*. A multi-line comment's
+  // CONTINUATION lines start with neither, so the scanner read them as code and lifted any quoted text out of
+  // them. That is how `Still getting some .md showing through` — Jay's own walk feedback, quoted inside a JSX
+  // comment explaining a fix — was about to ship to Cowork as authored member copy.
+  //
+  // Fourth blind spot in this reader (multi-line JSX, concatenated fragments, pronoun endings, now comment
+  // continuations) and the same shape every time: it could only see the case it was written for, and everything
+  // else was silently wrong rather than reported. jsxTextNodes had already solved this exact problem twenty
+  // lines up; the string path never got the fix.
+  src = src.replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, ' '));
   const lines = src.split('\n');
   const out = [];
   const seen = new Set();

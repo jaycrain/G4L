@@ -42,6 +42,7 @@ export default function RebuildChat({ memberId, session = 'b1' }: { memberId: st
   const [done, setDone] = useState(false);
   const [expects, setExpects] = useState<Expectation | null>(null); // W-24: administered turn → render the scale chips
   const [ceremony, setCeremony] = useState<RebuildCeremonyData | null>(null); // B4: set when the checkpoint reaches 'ceremony'
+  const [pendingCeremony, setPendingCeremony] = useState<RebuildCeremonyData | null>(null); // loaded, waiting on her tap
   const [error, setError] = useState<string | null>(null);
   const sessionKey: SessionKey = session === 'checkpoint' ? 'b4' : session;
   const { teaches, taught, acknowledge, flushKeep } = useTeaching(memberId, sessionKey);
@@ -116,7 +117,13 @@ export default function RebuildChat({ memberId, session = 'b1' }: { memberId: st
     // B4 — the checkpoint reached the ceremony: load the reveal data and fire the full-screen overlay.
     if (r.state.stage === 'ceremony') {
       const c = await rebuildCeremonyDataAction(memberId);
-      if (c.ok && c.data) setCeremony(c.data);
+      // SHE OPENS THE CEREMONY; IT DOES NOT OPEN OVER HER (Donna, 2026-08-19).
+      //
+      // This used to paint the Companion's closing message and raise the full-screen overlay on the SAME tick, so
+      // the message was covered before it could be read "with no way to scroll back and see what was missed".
+      // Jay hit the identical shape on 2026-08-11 with the end card and it was fixed the same way -- the member
+      // asks for what comes next. The data is loaded now so the tap is instant; only the reveal waits.
+      if (c.ok && c.data) setPendingCeremony(c.data);
     }
   }
 
@@ -187,6 +194,16 @@ export default function RebuildChat({ memberId, session = 'b1' }: { memberId: st
           <button type="button" onClick={() => { void flushKeep().then(() => notifySessionComplete()); }}>
             {session === 'b3' ? 'Start the week →' : 'Continue →'}
           </button>
+        </div>
+      )}
+      {/* THE ONE TAP BETWEEN HER LAST MESSAGE AND THE REVEAL (Donna, 2026-08-19). The ceremony used to raise on
+          the same tick as the Companion's closing line, covering it "too quickly for the message to actually be
+          read — with no way to scroll back". So the thread STAYS on screen and the reveal waits behind a tap.
+          Rendered below the thread, deliberately: a gate that replaced the thread would hide the very message it
+          exists to give her time to read. The data is already loaded, so the tap is instant. */}
+      {pendingCeremony && !ceremony && (
+        <div className="chat-continue">
+          <button type="button" onClick={() => setCeremony(pendingCeremony)}>See where that landed →</button>
         </div>
       )}
     </div>

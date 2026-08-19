@@ -63,14 +63,10 @@ app/program/[memberId]/page.tsx
 app/pwa-client.tsx
 app/quality-day/actions.ts
 app/rebuild/actions.ts
-app/rebuild/rebuild-chat.tsx
 app/reclaim/actions.ts
-app/reclaim/reclaim-chat.tsx
 app/reconnect/actions.ts
 app/reconnect/reconnect-ceremony.tsx
-app/reconnect/reconnect-chat.tsx
 app/rewire/actions.ts
-app/rewire/rewire-chat.tsx
 app/rhythm/rhythm-setting.tsx
 app/session/[memberId]/[sessionId]/session-runner.tsx
 app/story/[memberId]/page.tsx

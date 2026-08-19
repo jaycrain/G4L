@@ -1,6 +1,6 @@
 # G4L — Member Transcript (authored copy, verbatim)
 
-Stamp: `app @ 5b19ff4 · 2026-08-19` · PART 1 of the Cowork release bundle.
+Stamp: `app @ d86e839 · 2026-08-19` · PART 1 of the Cowork release bundle.
 
 **Quote from this.** Every line below is authored, fixed copy a member reads, in reading order by surface. It does
 **not** include the Companion's in-the-moment reflections (those are model-generated and vary per member — describe
@@ -148,7 +148,6 @@ _source: lib/agent/gap-confirm-choice.ts_
 _source: app/components/keeper-offer.tsx_
 
 - In your Playbook.
-- Saved to your Playbook
 - Keep this in your Playbook?
 - Keep it
 
@@ -157,6 +156,45 @@ _source: app/components/keeper-actions.ts_
 - Not authorized.
 - Nothing to keep.
 - Could not save that just now.
+
+
+## The Session close (the four arc chats)
+
+_source: app/rewire/rewire-chat.tsx_
+
+- Could not start Rewire.
+- That did not go through — your message is back in the box, try again.
+- Type your reply here…
+- Continue →
+- See where that landed →
+
+_source: app/rebuild/rebuild-chat.tsx_
+
+- Your plan’s set. This week we live it — I’ll check in as you go.
+- Could not start Rebuild.
+- That did not go through — your message is back in the box, try again.
+- Type your reply here…
+- Start the week →
+- Continue →
+- See where that landed →
+
+_source: app/reclaim/reclaim-chat.tsx_
+
+- Your Quality Days are set. This week you live them — I’ll be here as you go.
+- Could not start Reclaim.
+- That did not go through — your message is back in the box, try again.
+- Type your reply here…
+- Start the week →
+- Continue →
+- See where that landed →
+
+_source: app/reconnect/reconnect-chat.tsx_
+
+- [teaching] reconnect keep failed
+- Could not start Reconnect.
+- That did not go through — your message is back in the box, try again.
+- Type your reply here…
+- See where that landed →
 
 
 ## Email verification
@@ -264,7 +302,7 @@ _source: lib/agent/reconnect.ts_
 - Then I've not got it yet — say it your way. What's the real shape of what the Fade cost you?
 - That's your inventory — what it cost, how far the Fade ran. Not to sit in — to push off from; I've kept it for you.  Now we look the other way — at the version of you that's still in there.
 - The Fade
-- There's a window between who you are today and who you keep saying you'll be — most people never look through it. Today you look. Picture an ordinary Tuesday a year from now — but you've done the work, and the things on your Reclaim List are real. How do you wake up, what do you reach for? Not the highlight reel — the ordinary morning. Sit with that Tuesday for a second, and tell me what you see.
+- There's a window between who you are today and who you keep saying you'll be — most people never look through it. Today you look. Picture an ordinary Tuesday a year from now — but you've done the work, and the things on your Reclaim List are real. How do you wake up, what do you reach for? Not the highlight reel — the ordinary morning. Give that Tuesday a second, and tell me what you see.
 - What else is different by 7am? Not the medal — the ordinary stuff: how you wake, what you reach for, how you move.
 - Make it ordinary and real — the morning, not the highlight. What does that day actually feel like?
 - What's the smallest piece of that Tuesday you'd feel if it were already here?
@@ -407,7 +445,7 @@ _source: lib/agent/rewire.ts_
 - Who's with you — who's there because you showed back up?
 - And the feeling you're really after, the one under all of it — what is it, right then?
 - No rush — just picture it and tell me what you see. Even a detail or two.
-- Here's your work this week, and it's small: five minutes each morning, sit with that image. Close your eyes, make
+- Here's your work this week, and it's small: five minutes each morning with that image. Close your eyes, make
 - And here's where it meets last session: when the old voice starts up — "this is stupid," "it'll never happen" —
 - Add a little more detail each day. By the end of the week, you should be able to close your eyes and step right
 - Your picture
@@ -984,7 +1022,6 @@ _source: app/badges/[memberId]/page.tsx_
 - Your Comeback
 - ← Dashboard
 - Not yet
-- You completed the second phase
 - More about your Badges
 - You’ve earned
 - Your Badges are the receipts — proof, in one place, of the real things you’ve actually done. Think passport stamps, not trophies: every one is the same size, each with its own color and design, and the point was never any single one. The point is how many you stack.
@@ -1043,7 +1080,6 @@ _source: app/dashboard/topbar-view.tsx_
 
 - Go to your G4L home
 - Grinta for Life
-- Open Your Playbook →
 - Your account
 
 _source: app/dashboard/dashboard-triptych.tsx_
@@ -1052,8 +1088,6 @@ _source: app/dashboard/dashboard-triptych.tsx_
 - G4L Companion
 - What's Next
 - My Story
-- Program › Reclaim › …
-- Who you are
 - Dashboard sections
 - Your G4L Companion
 
@@ -1062,12 +1096,9 @@ _source: app/dashboard/triptych-center.tsx_
 - I’m here. What’s on your mind?
 - I’m here. Something hiccupped loading our thread — send a message and we’ll go.
 - Sorry — that didn’t go through. Try again in a moment.
-- Phase 4 · Reclaim
-- Your week is running
 - Your Progress
 - See the Program →
 - Not now
-- Companion thread is getting crowded
 - Tell me what's going on…
 
 _source: app/dashboard/companion-hero.tsx_
@@ -1089,8 +1120,6 @@ _source: app/dashboard/triptych-left.tsx_
 
 _source: app/dashboard/triptych-right.tsx_
 
-- What's next
-- Your Playbook — everything you do is recorded here.
 - Your Playbook
 - What you’ve built.
 - Where your Comeback gets kept.
@@ -1116,10 +1145,6 @@ _source: app/dashboard/triptych-right.tsx_
 
 _source: app/dashboard/resilience-pulse.tsx_
 
-- · track your rhythm
-- Your rhythm: a flat baseline with one live, pulsing point at today. It fills as you log your calls.
-- Your rhythm over two weeks, call by call — an up-beat for a good call, a dip for a false start, flat for an on-track day, ending on today's live point.
-- Good Calls · False Starts · On Trays
 - Good Call — up-beat
 - False Start — dip
 - On Track — flat
@@ -1151,14 +1176,11 @@ _source: app/momentum/[memberId]/page.tsx_
 - False Start
 - On Track
 - S day, not the server
-- More about
-- More about X
 - Here you can track your good calls, false starts — and the on-track days where nothing much happened — and begin to understand how your patterns impact your progress.
 - A single day tells you very little. A few weeks of them tell you what your rhythm actually is, which is the thing worth knowing while you’re still building it.
 - You can log here, or just say it to your Companion. It reads everything on this page, so you can ask it what it’s seeing.
 - Your log
 - Nothing logged yet. Every call you make — good, false start, or quiet — lands here, in order.
-- ← Dashboard
 
 _source: app/momentum/momentum-log.tsx_
 
@@ -1170,8 +1192,8 @@ _source: app/momentum/momentum-log.tsx_
 - Logged — holding steady counts.
 - Could not log.
 - How'd it go? Log a call — no pressure, and steady days count.
-- Log it
 - Add a note (optional)
+- Log it
 
 _source: app/score/[memberId]/page.tsx_
 
@@ -1209,7 +1231,6 @@ _source: app/movement/[memberId]/page.tsx_
 - Weight · blood pressure
 - Via your other apps
 - ← Dashboard
-- Connect a source and your activity lands here
 - Connect your sources
 - Rides · runs · activities
 - Apple Health
@@ -1219,7 +1240,6 @@ _source: app/movement/[memberId]/page.tsx_
 - Movement &amp; Activity Log
 - A chronological record, all in one place.
 - Once you connect a source, log an activity above, or tell your Companion about a walk, it lands here — in order.
-- More about
 - More about Movement
 - Movement is everything you’re doing for your body, in one place — what you log here, and whatever comes in from a source you’ve connected.
 - It feeds the same picture your Companion is building, so what lands here shows up when you talk about how the body work is going.
@@ -1234,7 +1254,6 @@ _source: app/reclaim-list/[memberId]/page.tsx_
 - Open the week →
 - No Longer Central
 - You set these aside while refining your list. They’re kept here — tell your Companion if you want to bring one back.
-- More about
 
 _source: app/connect/[memberId]/page.tsx_
 
@@ -1261,7 +1280,6 @@ _source: app/connect/[memberId]/page.tsx_
 - More about the Community
 - The Community is everyone else doing this work — midlifers on the same stretch of road, at different points along it.
 - Report or block anything that doesn’t belong. Every report is read by a person.
-- More about
 
 _source: app/playbook/[memberId]/redesign-playbook-view.tsx_
 
@@ -1305,23 +1323,20 @@ _source: app/playbook/[memberId]/redesign-playbook-view.tsx_
 - Gathering from your work…
 - You’ve already built real material. Let’s gather it into your Playbook.
 - Gather from your work →
-- What you're building
 - What you’re building
-- N of 3 built
 - The short version
-- Your story so far
 - My Story
 - Who you are, in the words you landed on.
 - Your Doors
 - How the distance opened — the ones you named.
 - — the quiet one, no single event
 - Your Legacy Letter
+- Your story so far
 - A living read your Companion re-weaves each time you close a Session.
 - No week running right now. A Session starts one when you’re ready to practice something for real — that’s when this fills in.
 - Your reads
 - What your own answers said, laid out.
 - 0 ? groupedItems(c.key, c.items) :
-- Revisit a Session
 - Your journal
 - Thoughts and feelings in your own words, timestamped to where you are. For a lot of people this is the most freeing thing here — a place to think on the page and understand yourself. Your Companion reads it and pulls keepers up into your Moves, but the writing itself is the point — it only replies if you ask.
 - Waiting on you

@@ -1,7 +1,6 @@
-# Strings EXCLUDED from the member transcript (app @ 5b19ff4 · 2026-08-19)
+# Strings EXCLUDED from the member transcript (app @ d86e839 · 2026-08-19)
 # Not member copy: system prompts, multi-line fragments, code artifacts. Review when a real line goes missing.
 
-[app/page.tsx] Playbook
 [app/page.tsx] Log in
 [lib/agent/onboarding-staged.ts] ${Label} it is.  ${gapBridge(c)}
 [lib/agent/onboarding-staged.ts] Before we hold onto that word — take me back into being ${label}. What did it actually feel like, and when did it feel most true?
@@ -121,6 +120,25 @@
 [lib/agent/gap-confirm-choice.ts] keep:
 [app/components/keeper-offer.tsx] Keeping…
 [app/components/keeper-actions.ts] [keeper] keep failed for member=${memberId} (${proposal.label}):
+[app/rewire/rewire-chat.tsx] You earned another badge! “${r.earnedBadge.name}.” I added it to your collection.
+[app/rewire/rewire-chat.tsx] bubble ${m.role}
+[app/rewire/rewire-chat.tsx] Thinking…
+[app/rewire/rewire-chat.tsx] Enter
+[app/rebuild/rebuild-chat.tsx] You earned another badge! “${r.earnedBadge.name}.” I added it to your collection.
+[app/rebuild/rebuild-chat.tsx] bubble ${m.role}
+[app/rebuild/rebuild-chat.tsx] Thinking…
+[app/rebuild/rebuild-chat.tsx] Enter
+[app/reclaim/reclaim-chat.tsx] You earned another badge! “${r.earnedBadge.name}.” I added it to your collection.
+[app/reclaim/reclaim-chat.tsx] bubble ${m.role}
+[app/reclaim/reclaim-chat.tsx] Thinking…
+[app/reclaim/reclaim-chat.tsx] Enter
+[app/reconnect/reconnect-chat.tsx] 0.75rem
+[app/reconnect/reconnect-chat.tsx] 0.85rem
+[app/reconnect/reconnect-chat.tsx] 0.5rem
+[app/reconnect/reconnect-chat.tsx] 0.5rem
+[app/reconnect/reconnect-chat.tsx] bubble ${m.role}
+[app/reconnect/reconnect-chat.tsx] Thinking…
+[app/reconnect/reconnect-chat.tsx] Enter
 [app/login/verify/page.tsx] Log in
 [app/login/verify/page.tsx] and carry on — nothing is blocked.
 [lib/ceremony/threshold-beats.ts] Athlete
@@ -149,7 +167,7 @@
 [lib/agent/reconnect.ts] We'll get to the other${others > 1 ? 's' : ''} — this is just where we start.
 [lib/agent/reconnect.ts] Let's start with ${doorName} — ${others > 0 ? 'one of the ones you named' : 'the one you named'}.${held} Not the name — the real thing: take me
 [lib/agent/reconnect.ts] back to how it actually happened, and what it quietly cost you. Start wherever it's most vivid.
-[lib/agent/reconnect.ts] ${name}, then — that's the one. That changes the shape of it. Let me sit with what it means, and we'll keep going from there.
+[lib/agent/reconnect.ts] ${name}, then — that's the one. That changes the shape of it. Let me take in what it means, and we'll keep going from there.
 [lib/agent/reconnect.ts] ${name}, too — I'll hold that alongside the one you named. Both are part of it. Let's keep going.
 [lib/agent/reconnect.ts] Hold on — it sounds like you're taking me to ${to}, more than ${from}. Should we start there instead — is ${to} closer to where it really began?
 [lib/agent/reconnect.ts] ${marked.slice(0, -1).join(', ')} and ${marked[marked.length - 1]}
@@ -215,10 +233,8 @@
 [app/reconnect/doors-board.tsx] 0 0 0.9rem
 [app/reconnect/doors-board.tsx] 1px solid ${on ? 'var(--teal)' : 'rgba(0,0,0,0.12)'}
 [app/reconnect/doors-board.tsx] 0.7rem 0.9rem
-[app/reconnect/doors-board.tsx] More
 [app/reconnect/doors-board.tsx] 0.35rem 0 0
 [app/reconnect/doors-board.tsx] 0.95rem
-[app/reconnect/doors-board.tsx] onto its own line — leaving the option that means
 [app/reconnect/doors-board.tsx] 0.6rem
 [app/reconnect/doors-board.tsx] 0.8rem
 [app/reconnect/doors-board.tsx] 0.35rem
@@ -268,7 +284,7 @@
 [lib/agent/rewire.ts] Take your pick from what you want back — the one you'd most want to actually live. Or tell me you're not sure, and
 [lib/agent/rewire.ts] we'll find it together.
 [lib/agent/rewire.ts] That's not a wish. It's a goal you already named, with you standing in it, on the far side of the work. Look at
-[lib/agent/rewire.ts] it for a second — that's what the work is for. Hold onto that. When you're ready, tell me what comes up.
+[lib/agent/rewire.ts] it for a second — that's what the work is for. Keep it. When you're ready, tell me how that feels.
 [lib/agent/rewire.ts] it vivid — the light, the effort, the feeling. Don't rush it.
 [lib/agent/rewire.ts] you go back to the image. The lie is a story. The image is real — you built it from your own life. That's the
 [lib/agent/rewire.ts] whole move: the true line answers the lie, the image outlasts it.
@@ -310,7 +326,7 @@
 [lib/agent/rewire.ts] Reframe — “${c.w3Reframe!.trim()}”
 [lib/agent/rewire.ts] ${receipt ?
 [lib/agent/rewire.ts] Now Reframe — your true line for a bad day. Here's one you already wrote: “${line}” — want that as your bad-day line, or write a new one?
-[lib/agent/rewire.ts] And Restart — when the old voice gets loud, go back to the picture you built:  “${img}”  Sit with it a second — does it feel like enough to reach for on the hard day?
+[lib/agent/rewire.ts] And Restart — when the old voice gets loud, go back to the picture you built:  “${img}”  Give it a second — does it feel like enough to reach for on the hard day?
 [lib/agent/rewire.ts] ${W3_RESTART} When you picture it — does it feel like enough to reach for on the hard day?
 [lib/agent/rewire.ts] the actual words back, in quotes, in their own first-person voice — 'go back to the line you wrote: "[their exact
 [lib/agent/rewire.ts] line]"'. Hearing their OWN words at the moment of a slip is the whole point. NAMES: never say 'W1'/'W2'/'W3' — refer to earlier work descriptively. If a
@@ -320,8 +336,8 @@
 [lib/agent/rewire.ts] MEMBER CONTEXT (what you already know — never say you don't): ${ctx.join(' ')}
 [lib/agent/rewire.ts] offer THIS line they already wrote, verbatim — "Reframe: here's a line you wrote: '${line}' — want that as your bad-day line, or write your own?"
 [lib/agent/rewire.ts] ask for a true line for a bad day — a slip is the cost of changing, not proof they can't; invite them to write it their way.
-[lib/agent/rewire.ts] point them to the picture they built, quoting it: "Restart: when the old voice gets loud, go back to this — '${img}'." Then invite them to sit with it (a gentle question so it's not a dead end — e.g. does it feel like enough to reach for?).
-[lib/agent/rewire.ts] remind them to go back to the picture they built of where they're headed, and invite them to sit with it (a gentle question so it's not a dead end).
+[lib/agent/rewire.ts] point them to the picture they built, quoting it: "Restart: when the old voice gets loud, go back to this — '${img}'." Then invite them to stay with it (a gentle question so it's not a dead end — e.g. does it feel like enough to reach for?).
+[lib/agent/rewire.ts] remind them to go back to the picture they built of where they're headed, and invite them to stay with it (a gentle question so it's not a dead end).
 [lib/agent/rewire.ts] RIGHT NOW: the member is responding to the Restart. Receive their reaction warmly in ONE line — no new question; you're about to close.
 [lib/agent/rewire.ts] hasn't come up. Areas for YOUR guidance only (never list or count them to the member): ${W3_TRIGGER_AREAS} Offer
 [lib/agent/rewire.ts] Just a number, 1 to 5 — how true does that feel right now?  ${rewireCheckpointDeliver(n)}
@@ -411,7 +427,7 @@
 [lib/agent/reclaim.ts] Here's what stands out. Your best next focus looks like your ${primary} life because it matters to you and
 [lib/agent/reclaim.ts] progress there would ripple into the rest of your life.${divergence}${secondaryLine}${leverLine}
 [lib/agent/reclaim.ts] ${BEAT_SEP}That's your first focus now. I'll work from it, and it's what we'll build your Quality Days around.
-[lib/agent/reclaim.ts] ${p}  ${AUDIT_SUB_ISSUE_ASK[d]}  ${AUDIT_SUB_ISSUES[d].join(' · ')}
+[lib/agent/reclaim.ts] ${p}  ${AUDIT_SUB_ISSUE_ASK[d]}  Things like: ${AUDIT_SUB_ISSUES[d].join(' · ')}
 [lib/agent/reclaim.ts] ${AUDIT_SORT_INTRO}${BEAT_SEP}${AUDIT_SORT_QUESTIONS[0]!.prompt}
 [lib/agent/reclaim.ts] Whichever of the four fits best — ${domainList('or')}.
 [lib/agent/reclaim.ts] There's no wrong pick here, and nothing is locked in by it — ${domainList('or')}.
@@ -475,8 +491,6 @@
 [app/momentum/week-grid.tsx] ${r.label} — day ${i + 1}: ${ahead ? 'not yet' : on ? 'showed up' : 'not recorded'}
 [app/momentum/week-grid.tsx] ${r.label} — day ${i + 1}${on ? ', logged' : ''}. Open your log.
 [app/momentum/week-grid.tsx] ${r.label} — day ${i + 1}${on ? ', done' : ''}
-[app/momentum/week-grid.tsx] you can't get right back to the subpage easily
-[app/momentum/week-grid.tsx] ). It sat top-right beside
 [lib/playbook/reads.ts] read derivation failed, hiding one card:
 [lib/playbook/reads.ts] Moving your body: ${relativeAutonomyRead(a)}.
 [lib/playbook/reads.ts] Eating well: ${relativeAutonomyRead(d)}.
@@ -567,8 +581,6 @@
 [app/badges/[memberId]/page.tsx] Reclaim
 [app/badges/[memberId]/page.tsx] bd-phase-h ${g.key}
 [app/badges/[memberId]/page.tsx] bd-badge${b.earned ? ' earned' : ''}
-[app/badges/[memberId]/page.tsx] Ahead
-[app/badges/[memberId]/page.tsx] you're ahead
 [app/badges/[memberId]/page.tsx] Earned
 [app/badges/[memberId]/page.tsx] Earned when you ${b.earn_rule.replace(/^You /, '').replace(/\.$/, '')}.
 [app/badges/[memberId]/page.tsx] so far.
@@ -618,7 +630,6 @@
 [app/dashboard/redesign-dashboard.tsx] ${grinta.changePct > 0 ? '+' : ''}${grinta.changePct}%
 [app/dashboard/redesign-dashboard.tsx] Momentum
 [app/dashboard/redesign-dashboard.tsx] Badges
-[app/dashboard/topbar-view.tsx] where am I / how do I get home / who am I
 [app/dashboard/dashboard-triptych.tsx] the Athlete
 [app/dashboard/dashboard-triptych.tsx] Rebuild
 [app/dashboard/dashboard-triptych.tsx] g4l:show-pane
@@ -627,11 +638,8 @@
 [app/dashboard/triptych-center.tsx] ${Math.min(el.scrollHeight, 160)}px
 [app/dashboard/triptych-center.tsx] come back N times
 [app/dashboard/triptych-center.tsx] tri-companion tri-navy${hasSent ? ' is-conversing' : ''}
-[app/dashboard/triptych-center.tsx] s the first line of the Companion
-[app/dashboard/triptych-center.tsx] s earlier call, because the generic forward line ("Here
 [app/dashboard/triptych-center.tsx] rmsg ${m.role}
 [app/dashboard/triptych-center.tsx] Thinking…
-[app/dashboard/triptych-center.tsx] t scroll, plus there
 [app/dashboard/triptych-center.tsx] Enter
 [app/dashboard/companion-hero.tsx] = 56 ? false : c) : top
 [app/dashboard/companion-hero.tsx] companion-hero${condensed ? ' is-condensed' : ''}
@@ -659,9 +667,6 @@
 [app/dashboard/triptych-right.tsx] triptychRight.outcomes
 [app/dashboard/triptych-right.tsx] triptychRight.openWeeks
 [app/dashboard/triptych-right.tsx] ${PRACTICE_KEEPER_NAME[w.kind] ?? 'Your practice week'} · day ${w.day} of ${w.window.days}
-[app/dashboard/triptych-right.tsx] what you've built
-[app/dashboard/triptych-right.tsx] so it never reads as an empty promise to a brand-new member.
-[app/dashboard/triptych-right.tsx] this isn't for you.
 [app/dashboard/triptych-right.tsx] Move
 [app/dashboard/triptych-right.tsx] Moves
 [app/dashboard/triptych-right.tsx] pb-dot${part.done ? ' on' : ''}
@@ -677,8 +682,6 @@
 [app/dashboard/triptych-right.tsx] Soon
 [app/dashboard/triptych-right.tsx] + 400 more
 [app/dashboard/triptych-right.tsx] Reclaimed
-[app/dashboard/resilience-pulse.tsx] 0.25rem
-[app/dashboard/resilience-pulse.tsx] 0 0 ${g.width} ${H}
 [app/dashboard/resilience-pulse.tsx] 1.8s
 [app/dashboard/resilience-pulse.tsx] 1.8s
 [app/dashboard/resilience-pulse.tsx] 1.8s
@@ -709,8 +712,6 @@
 [app/momentum/[memberId]/page.tsx] Yesterday
 [app/momentum/[memberId]/page.tsx] momentum.pulseBeats
 [app/momentum/[memberId]/page.tsx] momentum.recentCalls
-[app/momentum/[memberId]/page.tsx] pure repetition of the Playbook, seems unnecessary
-[app/momentum/[memberId]/page.tsx] What you're holding yourself to
 [app/momentum/[memberId]/page.tsx] mlog-row is-${c.type}
 [app/momentum/momentum-log.tsx] momentum-log-btn is-${o.type}${picked === o.type ? ' is-picked' : ''}
 [app/momentum/momentum-log.tsx] Logging…
@@ -719,7 +720,6 @@
 [app/score/[memberId]/page.tsx] Social
 [app/score/[memberId]/page.tsx] Outlook
 [app/score/[memberId]/page.tsx] idScore
-[app/score/[memberId]/page.tsx] a 0–100 read
 [app/score/[memberId]/page.tsx] now ·
 [app/score/[memberId]/page.tsx] your last IDQ
 [app/score/[memberId]/page.tsx] your last IDQ
@@ -752,15 +752,12 @@
 [app/movement/[memberId]/page.tsx] Companion
 [app/reclaim-list/[memberId]/page.tsx] new Set
 [app/reclaim-list/[memberId]/page.tsx] reclaimList
-[app/reclaim-list/[memberId]/page.tsx] what you're taking back
 [app/reclaim-list/[memberId]/page.tsx] reclaim-row${item.reclaimed ? ' reclaimed' : ''}
 [app/reclaim-list/[memberId]/page.tsx] Reclaimed
 [app/reclaim-list/[memberId]/page.tsx] Your anchor — what the rest of this list is in service of
 [app/reclaim-list/[memberId]/page.tsx] Tracking this week · ${r.done} of ${r.target ?? r.days}
-[app/reclaim-list/[memberId]/page.tsx] s lede ("What you
 [app/connect/[memberId]/page.tsx] ${Math.round(hrs / 24)}d ago
 [app/connect/[memberId]/page.tsx] select display_name from member_profile where member_id = $1
-[app/connect/[memberId]/page.tsx] not needed — the header carries it
 [app/connect/[memberId]/page.tsx] 0.6rem 0.9rem
 [app/connect/[memberId]/page.tsx] 1.25rem
 [app/connect/[memberId]/page.tsx] 0.7rem
@@ -843,25 +840,17 @@
 [app/playbook/[memberId]/redesign-playbook-view.tsx] en-US
 [app/playbook/[memberId]/redesign-playbook-view.tsx] Cancel
 [app/playbook/[memberId]/redesign-playbook-view.tsx] Delete
-[app/playbook/[memberId]/redesign-playbook-view.tsx] there's no subhead. If it's a matter of intro or subhead I want the subhead.
 [app/playbook/[memberId]/redesign-playbook-view.tsx] pb-dot${part.done ? ' on' : ''}
-[app/playbook/[memberId]/redesign-playbook-view.tsx] Mindfulness0
-[app/playbook/[memberId]/redesign-playbook-view.tsx] s line, as this section
 [app/playbook/[memberId]/redesign-playbook-view.tsx] Playbook
 [app/playbook/[memberId]/redesign-playbook-view.tsx] pb-tab${tab === t.key ? ' on' : ''}
-[app/playbook/[memberId]/redesign-playbook-view.tsx] WHO YOU ARE
 [app/playbook/[memberId]/redesign-playbook-view.tsx] 0.4rem 0 0
 [app/playbook/[memberId]/redesign-playbook-view.tsx] 1.1rem
 [app/playbook/[memberId]/redesign-playbook-view.tsx] 0.35rem
 [app/playbook/[memberId]/redesign-playbook-view.tsx] 0.35rem
-[app/playbook/[memberId]/redesign-playbook-view.tsx] s call: "hell yes that
-[app/playbook/[memberId]/redesign-playbook-view.tsx] s not too much to ask. And exactly what we
 [app/playbook/[memberId]/redesign-playbook-view.tsx] Day ${grids[0]!.day} of 7. A blank day is a day. This is for noticing what helps.
 [app/playbook/[memberId]/redesign-playbook-view.tsx] ${grids.length} weeks running. A blank day is a day. This is for noticing what helps.
-[app/playbook/[memberId]/redesign-playbook-view.tsx] s map. Greg
 [app/playbook/[memberId]/redesign-playbook-view.tsx] pb-map-tag${row.steady ? ' is-steady' : ''}
 [app/playbook/[memberId]/redesign-playbook-view.tsx] pb-map-tag${row.steady ? ' is-steady' : ''}
-[app/playbook/[memberId]/redesign-playbook-view.tsx] the moves that worked, run them again
 [app/account/page.tsx] select display_name, email, avatar_url from member_profile where member_id = $1
 [app/account/page.tsx] Profile
 [app/account/page.tsx] 0.85rem

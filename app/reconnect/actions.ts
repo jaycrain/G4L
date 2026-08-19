@@ -16,6 +16,7 @@ import type { ReconnectCeremonyData } from '../../lib/ceremony/reconnect-ceremon
 import { earnedBadgeReveal } from '../../lib/ceremony/badge-reveal.ts';
 import { emitHarvestMoment, drainHarvest, type KeeperType, type KeeperProposal } from '../../lib/agent/harvest.ts';
 import { saveLegacyLetter } from '../../lib/reconnect/legacy-letter-store.ts';
+import { keptScienceStages } from '../../lib/content/teaching-keep.ts';
 import { claimDoorsFromBoard, setBiggestImpact, setQuietDriftClaim, type BoardSubmission } from '../../lib/reconnect/doors-board-claim.ts';
 import { noteDoorProfile } from '../../lib/reconnect/door-profile.ts';
 import { letterDateFor } from '../../lib/reconnect/legacy-letter.ts';
@@ -340,7 +341,7 @@ async function persistArcSession(db: Db, memberId: string, history: ConvMessage[
 // from the resumed stage, so a refresh mid-IDQ restores the scale chips), or null when there's nothing to resume.
 export async function loadReconnectSessionAction(
   memberId: string,
-): Promise<{ ok: boolean; session?: { state: ConvState; messages: ConvMessage[]; expects?: Expectation }; error?: string }> {
+): Promise<{ ok: boolean; session?: { state: ConvState; messages: ConvMessage[]; expects?: Expectation; scienceSeen?: string[] }; error?: string }> {
   if (!reconnectEnabled()) return { ok: false, error: 'Reconnect is not enabled.' };
   if (!(await authorizeMember(memberId))) return { ok: false, error: 'Not authorized.' };
   try {
@@ -348,7 +349,11 @@ export async function loadReconnectSessionAction(
     const saved = await loadArcSession(db, memberId, 'reconnect');
     if (!saved || saved.messages.length === 0) return { ok: true }; // nothing to resume → the client starts fresh
     const expects = scaleExpects(RECONNECT_ARC, saved.state.stage as never, false);
-    return { ok: true, session: { state: saved.state, messages: saved.messages, expects } };
+    // WHAT SHE HAS ALREADY SEEN. Which cards are "taught" is derived from the stage, which says how far she got —
+    // not what she was shown. On a resume the component has no memory of the earlier cards, so without this all
+    // three re-render at the end of the thread, after the Legacy Letter (Donna, 2026-08-19).
+    const scienceSeen = await keptScienceStages(db, memberId, 'reconnect');
+    return { ok: true, session: { state: saved.state, messages: saved.messages, expects, scienceSeen } };
   } catch {
     return { ok: false, error: 'Could not load your session.' };
   }

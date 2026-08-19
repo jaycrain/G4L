@@ -87,3 +87,35 @@ export async function keepSessionScience(
   }
   return { ok: true, body: keeper.text };
 }
+
+/**
+ * Which of a session's science reads this member has ALREADY been shown and filed.
+ *
+ * WHY THIS EXISTS (Donna, 2026-08-19): "After the Legacy Letter appeared, two 'Why It Works' content blocks were
+ * re-displayed that had already been shown to the member earlier in the program."
+ *
+ * Reconnect derives which cards are "taught" from the CURRENT STAGE alone, so it is a statement about how far she
+ * has got — not about what she has seen. That is correct within one sitting, where the component watches each card
+ * arrive. It breaks on RESUME: she comes back at a late stage, the component has no memory of the earlier ones, and
+ * all three cards are treated as newly earned and land together at the end of the thread — after the Legacy Letter,
+ * which is the most personal beat in the arc. Donna walked Reconnect across two sittings, which is why she hit it
+ * and a single-sitting walk would not.
+ *
+ * The read was filed the moment she acknowledged it, so the answer already exists in her Playbook. Returns the
+ * STAGES (the ref's suffix), which is what the chat keys its cards by.
+ */
+export async function keptScienceStages(db: Db, memberId: string, sessionKey: string): Promise<string[]> {
+  try {
+    const { rows } = await db.query<{ source_ref: string }>(
+      `select source_ref from playbook_entry
+        where member_id = $1 and section = $2 and source_kind = 'science' and source_ref like $3`,
+      [memberId, WHY_SECTION, `${sessionKey}:%`],
+    );
+    return rows.map((r) => r.source_ref.slice(sessionKey.length + 1)).filter(Boolean);
+  } catch (e) {
+    // A read failure must never HIDE a card — showing one she has seen is a papercut; swallowing the error and
+    // silently suppressing a card she has not seen would cost her the science entirely.
+    console.error(`[teaching] could not read kept science for ${memberId}/${sessionKey}:`, e);
+    return [];
+  }
+}

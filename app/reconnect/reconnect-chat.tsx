@@ -51,9 +51,13 @@ export default function ReconnectChat({
   const [input, setInput] = useState('');
   const [pending, setPending] = useState(false);
   const [offers, setOffers] = useState<KeeperProposal[]>([]);
+  // Stages whose science card she ALREADY acknowledged in an earlier sitting — never re-offered. Empty on a
+  // fresh start, which is correct: nothing has been seen yet.
+  const [scienceSeen, setScienceSeen] = useState<string[]>([]);
   const [expects, setExpects] = useState<Expectation | null>(null); // W-24: administered turn (IDQ / §2e grit) → render the scale chips
   const [error, setError] = useState<string | null>(null);
   const [ceremony, setCeremony] = useState<ReconnectCeremonyData | null>(null); // §2f: set when the arc reaches 'ceremony'
+  const [pendingCeremony, setPendingCeremony] = useState<ReconnectCeremonyData | null>(null); // loaded, waiting on her tap
   // Tell the shell which beat we're on. Report-only; see the prop's note.
   useEffect(() => { onStage?.(state?.stage ?? null); }, [state?.stage, onStage]);
   const started = useRef(false);
@@ -75,12 +79,16 @@ export default function ReconnectChat({
   // Keyed by STAGE, so the three cards file as three reads rather than colliding on one session key.
   const keepReconnectScience = (stage: string | undefined) => {
     if (!stage) return; // an unmapped asset has no beat to file against — never invent one
+    setScienceSeen((seen) => (seen.includes(stage) ? seen : [...seen, stage]));
     void keepScienceAction(memberId, 'reconnect', teachingSourceLabel('reconnect', stage), null, stage)
       .catch((e) => console.error('[teaching] reconnect keep failed', e));
     notifyArtifactCommitted();
   };
 
-  const taught = reconnectTaughtSoFar(state?.stage);
+  // A card she has already read is not re-offered. `reconnectTaughtSoFar` answers "how far has she got",
+  // which is not the same question as "what has she seen" — and on a resume the difference is every card
+  // she met in the previous sitting piling up after the Legacy Letter.
+  const taught = reconnectTaughtSoFar(state?.stage).filter((a) => !scienceSeen.includes(LAST_BEAT[a] ?? ''));
   const [cardAt, setCardAt] = useState<Record<string, number>>({});
   useEffect(() => {
     const missing = taught.filter((a) => cardAt[a] === undefined);
@@ -111,6 +119,7 @@ export default function ReconnectChat({
         setMessages(resumed.session.messages);
         setState(resumed.session.state);
         setExpects(resumed.session.expects ?? null);
+        setScienceSeen(resumed.session.scienceSeen ?? []);
         setPending(false);
         return;
       }
@@ -153,7 +162,13 @@ export default function ReconnectChat({
     // §2f — the arc reached the Ceremony: load the reveal data and fire the full-screen overlay.
     if (r.state.stage === 'ceremony') {
       const c = await reconnectCeremonyDataAction(memberId);
-      if (c.ok && c.data) setCeremony(c.data);
+      // SHE OPENS THE CEREMONY; IT DOES NOT OPEN OVER HER (Donna, 2026-08-19).
+      //
+      // This used to paint the Companion's closing message and raise the full-screen overlay on the SAME tick, so
+      // the message was covered before it could be read "with no way to scroll back and see what was missed".
+      // Jay hit the identical shape on 2026-08-11 with the end card and it was fixed the same way -- the member
+      // asks for what comes next. The data is loaded now so the tap is instant; only the reveal waits.
+      if (c.ok && c.data) setPendingCeremony(c.data);
     }
   }
 
@@ -262,6 +277,16 @@ export default function ReconnectChat({
             Send
           </button>
         </form>
+      )}
+      {/* THE ONE TAP BETWEEN HER LAST MESSAGE AND THE REVEAL (Donna, 2026-08-19). The ceremony used to raise on
+          the same tick as the Companion's closing line, covering it "too quickly for the message to actually be
+          read — with no way to scroll back". So the thread STAYS on screen and the reveal waits behind a tap.
+          Rendered below the thread, deliberately: a gate that replaced the thread would hide the very message it
+          exists to give her time to read. The data is already loaded, so the tap is instant. */}
+      {pendingCeremony && !ceremony && (
+        <div className="chat-continue">
+          <button type="button" onClick={() => setCeremony(pendingCeremony)}>See where that landed →</button>
+        </div>
       )}
     </div>
   );

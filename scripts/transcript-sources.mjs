@@ -21,6 +21,13 @@ export const SECTIONS = [
   // listing it beats excluding it: the guard's own warning is that a wrong exclusion hides real copy, and the day
   // someone surfaces that error is the day it becomes member-facing without anyone re-checking this list.
   { title: 'The keeper offer', files: ['app/components/keeper-offer.tsx', 'app/components/keeper-actions.ts'] },
+  // THE FOUR ARC CHATS. Off the backlog 2026-08-19: they carry authored copy a member reads at the close of every
+  // Session — the badge beat ("You earned another badge!"), the hand-home CTA, and the tap that opens a ceremony.
+  // Small in volume, high in visibility: these are the last words of a Session.
+  { title: 'The Session close (the four arc chats)', files: [
+    'app/rewire/rewire-chat.tsx', 'app/rebuild/rebuild-chat.tsx',
+    'app/reclaim/reclaim-chat.tsx', 'app/reconnect/reconnect-chat.tsx',
+  ] },
   { title: 'Email verification', files: ['app/login/verify/page.tsx'] },
   // THE FIRST DAY — and it had NEVER been in a bundle, through v3.2.1, v3.3 and v3.4.
   //
