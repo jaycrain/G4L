@@ -16,6 +16,8 @@ import type { ReconnectCeremonyData } from '../../lib/ceremony/reconnect-ceremon
 import { earnedBadgeReveal } from '../../lib/ceremony/badge-reveal.ts';
 import { emitHarvestMoment, drainHarvest, type KeeperType } from '../../lib/agent/harvest.ts';
 import { saveLegacyLetter } from '../../lib/reconnect/legacy-letter-store.ts';
+import { claimDoorsFromBoard, setBiggestImpact, setQuietDriftClaim, type BoardSubmission } from '../../lib/reconnect/doors-board-claim.ts';
+import { noteDoorProfile } from '../../lib/reconnect/door-profile.ts';
 import { letterDateFor } from '../../lib/reconnect/legacy-letter.ts';
 import { memberToday } from '../../lib/time/zone-store.ts';
 import { DOORS } from '../../lib/doors.ts';
@@ -155,6 +157,41 @@ const RECONNECT_STAGE_ASSET: Record<string, string> = {
  * have just been told it is saved. A swallowed write here means they go looking for it in their Playbook and it
  * is not there — the product having lied about the most personal thing it holds.
  */
+/**
+ * Persist the Doors board (D5). The ENGINE stays pure — it records what she chose onto the turn; every write is here.
+ *
+ * ORDER MATTERS. Claims first, because setBiggestImpact refuses a Door she does not hold and the board is exactly
+ * where a new one arrives. Then the temporal answers, then primary. A different order silently drops the Door she
+ * just added — which would look like the board working and her answer vanishing.
+ *
+ * LOUD ON FAILURE. She has just tapped through eleven cards and been answered by name. A swallowed write here
+ * means the Companion talks about Doors that are not in her record, and her Playbook never shows what she said.
+ */
+async function persistDoorsBoard(db: Db, memberId: string, turn: Turn): Promise<void> {
+  const board = (turn.state as { boardSubmission?: BoardSubmission }).boardSubmission;
+  if (!board) return;
+  try {
+    if (board.doors.length) {
+      const written = await claimDoorsFromBoard(db, memberId, board.doors.map((d) => ({ slug: d.slug, relevance: d.relevance })));
+      if (written.length !== board.doors.length) {
+        console.error(`persistDoorsBoard: member=${memberId} claimed ${board.doors.length} Doors, wrote ${written.length}`);
+      }
+    }
+    // The temporal answers go through the MODEL's update-only path deliberately: by now she holds every Door she
+    // marked, so there is nothing left to create, and using the narrower contract keeps the "only a tap creates a
+    // Door" rule true at every call site rather than only at the one that needed it.
+    const temporal = [
+      ...(board.first ? [{ slug: board.first, openedFirst: true }] : []),
+      ...board.stillOpen.map((slug) => ({ slug, stillOpen: true })),
+    ];
+    if (temporal.length) await noteDoorProfile(db, memberId, temporal);
+    if (board.biggest) await setBiggestImpact(db, memberId, board.biggest);
+    await setQuietDriftClaim(db, memberId, board.quietDrift);
+  } catch (err) {
+    console.error(`persistDoorsBoard FAILED for member=${memberId} — her taps did not reach her record:`, err);
+  }
+}
+
 async function persistLegacyLetter(db: Db, memberId: string, turn: Turn): Promise<void> {
   const letter = turn.state.legacyLetter;
   const body = (letter?.body ?? '').trim();
@@ -338,6 +375,7 @@ export async function reconnectTurnAction(
     await persistRevision(db, memberId, state, turn);
     await persistHarvest(db, memberId, state, turn); // §2d drift keeper (and later legacy share)
     await persistCheckpoint(db, memberId, state, turn); // §2e Checkpoint — the first grinta movement
+    await persistDoorsBoard(db, memberId, turn); // R2 — her Doors board taps, before anything reads the set
     await persistLegacyLetter(db, memberId, turn); // R3 — the member's own letter, dated in THEIR timezone
     await persistReconnectSessionCloses(db, memberId, state, turn); // record the Session closes the arc bypass dropped
     await persistReconnectComplete(db, memberId, state, turn); // §2f — advance the dashboard phase (Reconnect → Rewire)

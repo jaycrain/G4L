@@ -472,3 +472,65 @@ test('legacy · a beat that never drafted moves on QUIETLY — it never claims a
   assert.equal(turn.state.stage, 'checkpoint', 'not stranded in the beat');
   assert.doesNotMatch(turn.reply, /saved|your letter/i, 'a missing letter is recoverable; a false claim of one is not');
 });
+
+// ============================================================================================================
+// THE DOORS BOARD — the seam (D5, 2026-08-18).
+//
+// Every half of this passes on its own: the expectation builds, the parser parses, the write path writes. The
+// failure mode is that they are never joined — which is exactly how an earlier feature shipped as two tested
+// halves and an infinite loop. These drive the real arc.
+// ============================================================================================================
+
+test('BOARD · the doors stage opens with the board, pre-lit with the Doors she already holds', () => {
+  const state: ConvState = { stage: 'doors', collected: { identityNoun: 'Maker', doors: ['career_cliff', 'load_bearer'] } };
+  const turn = applyReconnectTurn(state, [], 'ok', { text: 'Here is where we go deeper.' });
+
+  assert.equal(turn.expects?.kind, 'doors_board', 'recognition comes before the conversation');
+  const e = turn.expects as { cards: { slug: string }[]; held: string[]; quietDrift: { name: string } };
+  assert.equal(e.cards.length, 11, 'every Door is shown, not just hers');
+  assert.equal(e.cards[0]!.slug, 'body', 'board order is the instrument, applied here and nowhere else');
+  assert.deepEqual(e.held, ['career_cliff', 'load_bearer'], 'the board recognises her rather than starting blank');
+  assert.equal(e.quietDrift.name, 'Autopilot', "Greg's quiet Door is on the board");
+});
+
+test('BOARD · her taps become Doors, primary follows biggest-impact, and the board does not reappear', () => {
+  const state: ConvState = { stage: 'doors', collected: { identityNoun: 'Maker', doors: ['career_cliff'] } };
+  // She marks a Door we never gave her, rates them, and says which weighs most.
+  const submission = '[board] door:career_cliff=3 door:vanishing=2 biggest:vanishing first:career_cliff open:vanishing';
+  const turn = applyReconnectTurn(state, [], submission, { text: '' });
+
+  assert.equal(turn.state.collected.boardDone, true);
+  assert.ok(turn.state.collected.doors?.includes('vanishing'), 'a Door she claimed is hers — her word outranks the matcher');
+  assert.equal(turn.state.collected.doors?.[0], 'vanishing', 'primary-first: biggest-impact leads (ruling #8)');
+  assert.notEqual(turn.expects?.kind, 'doors_board', 'the board must not reappear over the conversation that follows');
+
+  // The submission reaches the ACTION to persist — the engine itself writes nothing.
+  const handed = (turn.state as { boardSubmission?: { biggest?: string } }).boardSubmission;
+  assert.equal(handed?.biggest, 'vanishing', 'the action needs her choices, not a re-parse of the message');
+});
+
+test('BOARD · the reply names what she marked and leads with the one that weighs most', () => {
+  const state: ConvState = { stage: 'doors', collected: { identityNoun: 'Maker', doors: [] } };
+  const turn = applyReconnectTurn(state, [], '[board] door:body=3 door:loss=2 biggest:loss open:loss', { text: '' });
+
+  assert.match(turn.reply, /The Body/);
+  assert.match(turn.reply, /The Loss/);
+  // Chronology is context; the heaviest is where the excavation has something to find.
+  assert.ok(turn.reply.indexOf('weighs most') > 0, 'it leads on her own judgement, not on order');
+  assert.ok(!/still open/i.test(turn.reply), 'she answered still-open, so it must not be asked again');
+});
+
+test('BOARD · skipping still-open earns exactly ONE ask, in conversation, never a block', () => {
+  const state: ConvState = { stage: 'doors', collected: { identityNoun: 'Maker', doors: [] } };
+  const turn = applyReconnectTurn(state, [], '[board] door:body=3 door:loss=2 biggest:body', { text: '' });
+  assert.match(turn.reply, /still open/i, 'the field six Sessions read earns one honest ask');
+});
+
+test('BOARD · marking nothing is an ANSWER, not a failed step', () => {
+  const state: ConvState = { stage: 'doors', collected: { identityNoun: 'Maker', doors: [] } };
+  const turn = applyReconnectTurn(state, [], '[board] ', { text: '' });
+
+  assert.equal(turn.state.collected.boardDone, true, 'she answered; do not hand it back to her');
+  assert.match(turn.reply, /that's an answer/i);
+  assert.ok(!/still open/i.test(turn.reply), 'nothing to ask about when she marked nothing');
+});

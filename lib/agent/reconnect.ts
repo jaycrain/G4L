@@ -21,6 +21,7 @@ import type { Db } from '../db/schema.ts';
 import { MEMBER_AGENT_SYSTEM_PROMPT } from './system-prompt.ts';
 import { resolveConfirmCorroborated, memberWantsToAdvance } from './onboarding-intent.ts';
 import { LEGACY_PROMPTS, letterDateFor } from '../reconnect/legacy-letter.ts';
+import { parseBoardSubmission, boardIsEmpty, type BoardSubmission } from '../reconnect/doors-board-claim.ts';
 import { runArcTurn, administeredStage, drawoutShouldReflect, receiveThen, isProcessMetaOrAssent, affirmsReflection, type ArcConfig, type StageDef } from './onboarding-staged.ts';
 import { captureCreate } from './capture-model.ts';
 import { CHECKPOINT_GRIT_ITEMS, grintaStem } from '../grinta/survey/instrument.ts';
@@ -325,12 +326,74 @@ function proposeRedirect(fromSlug: DoorSlug, toSlug: DoorSlug): string {
   return `Hold on — it sounds like you're taking me to ${to}, more than ${from}. Should we start there instead — is ${to} closer to where it really began?`;
 }
 
+// WHAT SHE READS BACK after the board. R2-07: Greg asks for a WRITTEN response to each reflection, not a tap —
+// "after marking your doors, write a brief response to each of these". The taps capture the FIELDS six Sessions
+// read; the writing was the reflective work, and dropping it would leave us with her data and none of her meaning.
+// So the tap records and the conversation reflects: the Companion opens on what she marked, by name, and draws it
+// out from there. That is also what stops the excavation being a fishing expedition — it now starts from three
+// specific things she just told us.
+const BOARD_EMPTY_REPLY =
+  "Nothing there felt like yours — that's an answer, and a useful one. Then let's find it in your words instead. " +
+  'Take me back to when the distance started opening. What was going on?';
+
+function boardReceipt(board: BoardSubmission, c: Collected, askOpen: boolean): string {
+  const name = (slug: string) => DOORS.find((d) => d.slug === slug)?.displayName ?? slug;
+  const marked = board.doors.map((d) => name(d.slug));
+  const list = marked.length === 1 ? marked[0]! : `${marked.slice(0, -1).join(', ')} and ${marked[marked.length - 1]}`;
+
+  const parts: string[] = [];
+  parts.push(board.quietDrift && marked.length === 0
+    ? "You marked the quiet one — no single event, just years of it."
+    : board.quietDrift
+      ? `${list} — and the quiet one alongside them.`
+      : `${list}.`);
+
+  // Lead the conversation with the one she says WEIGHS MOST, not the one that came first. The heaviest is where
+  // the excavation has something to find; chronology is context, not the subject.
+  const lead = board.biggest ?? board.doors[0]?.slug;
+  if (lead) parts.push(`Let's start with ${name(lead)}${board.biggest ? ' — the one you said weighs most today' : ''}. Not the label, the real thing: take me back to how it actually went.`);
+
+  if (askOpen) {
+    // ONE ask, then it is let go. Never a second time, and never as a correction of what she did on the board.
+    parts.push(`And one thing I skipped past: is any of them still open — one you're walking through right now, not looking back at?`);
+  }
+  return parts.join(BEAT_SEP);
+}
+
 const doorsStage: StageDef = {
   id: 'doors',
   mode: 'drawout',
   opener: (c) => doorOpen(c),
   offersSubstance: (message) => message.trim().length >= 12,
   gather(b) {
+    // THE BOARD CAME BACK (D5). Her taps arrive as a machine-readable line, parsed by the one shared format —
+    // never interpreted as prose, and never mistaken for something she typed.
+    //
+    // The engine stays PURE: it records what she chose onto the turn and the ACTION writes it, the same split the
+    // Legacy Letter uses. A db call in here would make the whole arc untestable offline.
+    const board = parseBoardSubmission(b.memberMessage);
+    if (board) {
+      b.collected.boardDone = true;
+      b.boardSubmission = board;
+      // Her claims are Doors now, so the rest of the excavation talks about the set she just confirmed.
+      const marked = board.doors.map((d) => d.slug);
+      const union = Array.from(new Set([...(b.collected.doors ?? []), ...marked]));
+      // `c.doors` arrives PRIMARY-FIRST by convention, so ruling #8 — biggest-impact becomes primary — is
+      // expressed here as ordering, not a second field. The DB half (is_primary + named_door) is the action's.
+      b.collected.doors = board.biggest ? [board.biggest, ...union.filter((d) => d !== board.biggest)] : union;
+
+      // MARKING NOTHING IS AN ANSWER, and it must not read as a failed step. She gets the ordinary excavation.
+      if (boardIsEmpty(board)) {
+        b.reply = BOARD_EMPTY_REPLY;
+        return;
+      }
+      // RULING #7 — still-open is the one field six Sessions read, so it earns ONE ask if she skipped it. Asked
+      // here, in conversation, rather than blocking the board.
+      const askOpen = board.stillOpen.length === 0 && board.doors.length > 0;
+      b.reply = boardReceipt(board, b.collected, askOpen);
+      return;
+    }
+
     // Mid-draw-out RE-SEEING: the model proposes the primary Door is really a different one → offer it as a check
     // (never asserted). Holds until the member confirms next turn.
     if (b.model.revision && isDoorSlug(b.model.revision.toSlug) && revisionIsGrounded(b.memberMessage)) {

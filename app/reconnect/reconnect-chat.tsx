@@ -4,6 +4,7 @@ import { Fragment, useEffect, useRef, useState } from 'react';
 import RichText from '../rich-text.tsx';
 import { startReconnectAction, reconnectTurnAction, reconnectCeremonyDataAction, loadReconnectSessionAction } from './actions.ts';
 import ScaleChips from '../components/scale-chips.tsx';
+import DoorsBoard from './doors-board.tsx';
 import { TeachingFrame, TeachingUnderstand } from '../workspace/teaching-cards.tsx';
 import { keepScienceAction } from '../workspace/actions.ts';
 import { reconnectTaughtSoFar, teachingSourceLabel } from '../../lib/content/teaching.ts';
@@ -212,6 +213,7 @@ export default function ReconnectChat({
         ))}
         {pending && <div className="typing">Thinking…</div>}
         {/* W-32 chips scroll WITH the thread (Jay's walk: not pinned to the bottom) — they answer the question above, autosend. */}
+        {expects?.kind === 'doors_board' && <DoorsBoard expects={expects} disabled={pending || !state} onSubmit={(p) => void submit(p)} />}
         {expects?.kind === 'scale' && <ScaleChips expects={expects} disabled={pending || !state} onPick={(n) => void submit(String(n))} />}
       </div>
       {error && <p className="error">{error}</p>}

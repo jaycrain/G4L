@@ -87,6 +87,12 @@ export type Stage = 'identity' | 'identity_name' | 'reclaim' | 'door' | 'complet
 export const BEAT_SEP = '\u001E';
 
 export type Collected = {
+  /**
+   * She has submitted the R2 Doors board. Gates the expectation so the board does not reappear under every turn
+   * of the conversation that follows it — and so a member who marked nothing is not handed it again as if she
+   * had not answered. Marking nothing IS an answer (D5 ruling #7).
+   */
+  boardDone?: boolean;
   athleticPast?: string; // Step 1: the past self, in the member's own words
   identityNoun?: string; // the reclaimed identity, natural case (e.g. "Athlete")
   identitySkipped?: boolean; // the member chose not to name an identity yet (they'll find it at Identity Excavation)
@@ -193,6 +199,8 @@ export type ConvState = {
   // not listening. legacyDraft is the model's draft awaiting THEIR revision; legacyRevisions caps the loop;
   // legacyLetter is set only on their confirm and is what the action persists (propose → confirm → commit).
   legacyTuesday?: string;
+  /** D5: the Doors-board submission, handed across to the ACTION to persist. The engine writes nothing itself. */
+  boardSubmission?: unknown;
   legacyDraft?: string;
   legacyRevisions?: number;
   legacyLetter?: { body: string; datedFor: string };

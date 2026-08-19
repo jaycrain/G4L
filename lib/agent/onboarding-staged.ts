@@ -51,6 +51,7 @@ import {
 } from './onboarding.ts';
 import { reconcileReclaimShapes, shapeKey, splitInlineEnumeration } from './reclaim-shape.ts';
 import { filterDoorsByAttribution } from './door-attribution.ts';
+import { doorsBoardExpectation } from './doors-board-expectation.ts';
 import { detectCrisis, CRISIS_RESPONSE_US } from './governance.ts';
 import { captureCreate } from './capture-model.ts';
 // The intent layer — the one place that decides what a member's utterance MEANS (see onboarding-intent.ts).
@@ -897,6 +898,13 @@ function nextExpects(arc: ArcConfig, stageId: StageId, complete: boolean, answer
   if (arc.id === 'onboarding' && stageId === 'reclaim' && !complete) {
     return { kind: 'reclaim_list', min: RECLAIM_LIST_MIN, seeded: (collected.reclaimList ?? []).filter(Boolean) };
   }
+  // THE DOORS BOARD (D5). Reconnect's doors stage opens with the framing and the board TOGETHER — recognition
+  // before conversation, so the Companion draws out what she marked instead of fishing for it. Emitted only
+  // while the board is still unanswered: once she submits, `boardDone` is set and the stage becomes the ordinary
+  // draw-out, or the board would reappear under every subsequent turn of that conversation.
+  if (arc.id === 'reconnect' && stageId === 'doors' && !complete && !collected.boardDone) {
+    return doorsBoardExpectation(collected.doors ?? []);
+  }
   return scaleExpects(arc, stageId, complete, answered);
 }
 
@@ -1083,6 +1091,8 @@ interface Beat {
   legacyDraft?: string;
   legacyRevisions?: number;
   legacyTuesday?: string;
+  /** D5: her Doors-board submission, handed to the ACTION to persist (the engine stays pure). */
+  boardSubmission?: unknown;
   legacyLetter?: { body: string; datedFor: string };
   pendingReclaimShape?: PendingReclaimShape; // Decision II: a shape awaiting the member's confirm (merge/move/draw-out)
   reclaimShapesResolved: string[]; // Decision II: keys of shapes already ruled on — never re-proposed
@@ -1250,6 +1260,7 @@ function beatState(b: Beat): ConvState {
     ...(b.legacyRevisions !== undefined && { legacyRevisions: b.legacyRevisions }),
     ...(b.legacyLetter !== undefined && { legacyLetter: b.legacyLetter }),
     ...(b.legacyTuesday !== undefined && { legacyTuesday: b.legacyTuesday }),
+    ...(b.boardSubmission !== undefined && { boardSubmission: b.boardSubmission }),
     ...(b.pendingReclaimShape && { pendingReclaimShape: b.pendingReclaimShape }),
     ...(b.reclaimShapesResolved.length > 0 && { reclaimShapesResolved: b.reclaimShapesResolved }),
     ...(b.pendingIdentityPick && b.pendingIdentityPick.length > 0 && { pendingIdentityPick: b.pendingIdentityPick }),
@@ -1879,6 +1890,7 @@ export function runArcTurn(
     legacyRevisions: state.legacyRevisions,
     legacyLetter: state.legacyLetter,
     legacyTuesday: state.legacyTuesday,
+    boardSubmission: state.boardSubmission,
     pendingReclaimShape: state.pendingReclaimShape, // Decision II, threaded across the propose→confirm turns
     reclaimShapesResolved: [...(state.reclaimShapesResolved ?? [])],
     pendingIdentityPick: state.pendingIdentityPick, // identity chips: candidates offered last turn, this message is the pick
