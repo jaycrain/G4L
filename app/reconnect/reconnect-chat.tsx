@@ -8,6 +8,7 @@ import DoorsBoard from './doors-board.tsx';
 import { TeachingFrame, TeachingUnderstand } from '../workspace/teaching-cards.tsx';
 import { keepScienceAction } from '../workspace/actions.ts';
 import { reconnectTaughtSoFar, teachingSourceLabel } from '../../lib/content/teaching.ts';
+import { placeTeachingCards } from '../../lib/teaching/card-placement.ts';
 
 // Which beat each asset's card renders FOR — the card resolves its content by stage, so a past asset needs the
 // stage it closed at, not the member's current one.
@@ -85,6 +86,15 @@ export default function ReconnectChat({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [taught.join(','), messages.length]);
+
+  // WHERE EACH CARD RENDERS. `awaitingAnswer` is the half the first fix missed: when a structured control is
+  // pending it sits BELOW the whole thread, so a card at the final message splits the question from its answer.
+  const placement = placeTeachingCards({
+    taught,
+    cardAt,
+    messageCount: messages.length,
+    awaitingAnswer: expects?.kind === 'scale' || expects?.kind === 'doors_board',
+  });
 
   useEffect(() => {
     if (started.current) return;
@@ -196,20 +206,26 @@ export default function ReconnectChat({
             NOTHING IS GATED HERE. The other three arcs hold the hand-home until the member acknowledges; Reconnect
             has no hand-home (it flows into the ceremony) and it carries the live capture loop, so a required tap
             mid-arc would interrupt the one conversation we have standing orders not to disturb. */}
+        {/* ROUND TWO (Donna, 2026-08-19). The fix above handled cards vs MESSAGES and never considered cards vs
+            the ANSWER CONTROL, which renders at the bottom of this thread — so a card earned at the final message
+            still landed between the question and its scale, and she reported the same sentence a second time.
+            The rule now lives in lib/teaching/card-placement.ts with tests, because the inline version had none
+            and that is precisely how the second case survived the first fix. */}
+        {placement.leading.map((a) => (
+          <TeachingUnderstand key={a} sessionKey="reconnect" stage={LAST_BEAT[a]} onAcknowledge={() => keepReconnectScience(LAST_BEAT[a])} />
+        ))}
         {messages.map((m, i) => (
           <Fragment key={i}>
+            {(placement.before.get(i) ?? []).map((a) => (
+              <TeachingUnderstand key={a} sessionKey="reconnect" stage={LAST_BEAT[a]} onAcknowledge={() => keepReconnectScience(LAST_BEAT[a])} />
+            ))}
             <div className={`bubble ${m.role}`}>
               {m.role === 'agent' ? <RichText text={m.text} /> : m.text}
             </div>
-            {taught.filter((a) => cardAt[a] === i + 1).map((a) => (
+            {(placement.after.get(i) ?? []).map((a) => (
               <TeachingUnderstand key={a} sessionKey="reconnect" stage={LAST_BEAT[a]} onAcknowledge={() => keepReconnectScience(LAST_BEAT[a])} />
             ))}
           </Fragment>
-        ))}
-        {/* Anything earned before the first message of a RESUMED thread — the position was not observed, so it
-            leads rather than being invented into the middle of a conversation it predates. */}
-        {taught.filter((a) => (cardAt[a] ?? 0) > messages.length).map((a) => (
-          <TeachingUnderstand key={a} sessionKey="reconnect" stage={LAST_BEAT[a]} onAcknowledge={() => keepReconnectScience(LAST_BEAT[a])} />
         ))}
         {pending && <div className="typing">Thinking…</div>}
         {/* W-32 chips scroll WITH the thread (Jay's walk: not pinned to the bottom) — they answer the question above, autosend. */}
