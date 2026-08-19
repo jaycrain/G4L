@@ -18,7 +18,13 @@ export const DOORS = [
   { slug: 'vanishing',     displayName: 'The Vanishing',     descriptor: 'The relational world that knew you slipping away — friendships, the social self, being known.' },
   { slug: 'body',          displayName: 'The Body',          descriptor: 'The body that started saying no to what it used to do easily.' },
   { slug: 'diagnosis',     displayName: 'The Diagnosis',     descriptor: 'The mirror moment you couldn’t look away from.' },
-  { slug: 'marriage',      displayName: 'The Marriage',      descriptor: 'The drift from partnership into just coexisting.' },
+  // RENAMED 2026-08-18 (Donna, ruled by Jay): 'The Marriage' → 'The Relationship'. This RESTORES Greg's own
+  // name — Gated Assets V4 calls it The Relationship Door, and D5's crosswalk renamed it while claiming to keep
+  // his copy. The card contradicted itself: titled Marriage, opening "A relationship ended". His own examples are
+  // broader than marriage ("divorce, estrangement, the slow erosion of a marriage" — estrangement covers an adult
+  // child or a sibling), and Marriage left an unmarried partnership of twenty years with nowhere to stand. The
+  // SLUG stays `marriage`: display name and slug are separate on purpose, as with connect_* vs "the Community".
+  { slug: 'marriage',      displayName: 'The Relationship',  descriptor: 'The drift from partnership into just coexisting.' },
   { slug: 'loss',          displayName: 'The Loss',          descriptor: 'Losing someone close, and everything changing after.' },
   { slug: 'full_house',    displayName: 'The Full House',    descriptor: 'The active-family season — marriage, young kids, everyone needing you — and no space left for yourself.' },
   { slug: 'grind',         displayName: 'The Grind',         descriptor: 'The work or ambition that grew until it crowded out the person underneath.' },

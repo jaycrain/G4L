@@ -30,7 +30,7 @@ test('reconnect callback · MULTIPLE recognized Doors → primary named, the sec
   const committed: Collected = { identityNoun: 'Player', doors: ['grind', 'marriage'], gap: 'x' };
   const reply = reconnectCallback(committed);
   assert.match(reply, /The Grind/, 'the primary Door is named');
-  assert.match(reply, /The Marriage/, 'the second recognized Door is acknowledged, not silently dropped');
+  assert.match(reply, /The Relationship/, 'the second recognized Door is acknowledged, not silently dropped');
   assert.match(reply, /tangled up/i, 'lightly links them rather than listing');
   // three+ doors: primary named, the rest acknowledged as a group
   const many = reconnectCallback({ identityNoun: 'Player', doors: ['grind', 'marriage', 'body'], gap: 'x' });
@@ -50,7 +50,7 @@ test('reconnect callback · GRACEFUL DEGRADE — identity was skipped → no ide
   const committed: Collected = { identitySkipped: true, doors: ['marriage'], gap: 'The marriage drifted into coexisting.' };
   const reply = reconnectCallback(committed);
   assert.doesNotMatch(reply, /reclaiming —/, 'does not reference an identity the member never named');
-  assert.match(reply, /The Marriage/, 'still lands on the committed Door');
+  assert.match(reply, /The Relationship/, 'still lands on the committed Door');
 });
 
 test('reconnect callback · GRACEFUL DEGRADE — thin/null captures → a warm open that does NOT fake continuity', () => {
@@ -93,7 +93,7 @@ test('reconnect doors · entry hands into the excavation, opening on the committ
   const atEntry: ConvState = { stage: 'entry', collected: { identityNoun: 'Racer', doors: ['marriage', 'grind'], gap: 'The divorce took it.' } };
   const turn = applyReconnectTurn(atEntry, [], 'yeah, still the marriage', { text: '' });
   assert.equal(turn.state.stage, 'doors', 'advances into the Doors excavation');
-  assert.match(turn.reply, /The Marriage/, 'opens on the committed primary door, by name');
+  assert.match(turn.reply, /The Relationship/, 'opens on the committed primary door, by name');
   assert.match(turn.reply, /the real thing|actually happened|most vivid/i, 'invites the real story, not a summary');
 });
 
@@ -144,7 +144,7 @@ test('reconnect doors · confirm — "that\'s it" advances; a DISPUTE takes the 
 test('reconnect revision · PROPOSE ≠ COMMIT — a proposed re-seeing is offered, changes nothing until confirmed (R1)', () => {
   const atDoors: ConvState = { stage: 'doors', stageScratch: { doors: { doorDepth: 2 } }, collected: { identityNoun: 'Racer', doors: ['marriage'] } };
   const turn = applyReconnectTurn(atDoors, [], 'it was all about carrying everyone', {
-    text: 'You came in on The Marriage — but everything you just said is about carrying the load. Truer as The Load-Bearer?',
+    text: 'You came in on The Relationship — but everything you just said is about carrying the load. Truer as The Load-Bearer?',
     revision: { fromSlug: 'marriage', toSlug: 'load_bearer', kind: 'correct' },
   });
   assert.equal(turn.state.awaitingConfirm, true, 'offered as a check — awaits the member');
@@ -203,7 +203,7 @@ test('reconnect revision · a non-canonical or no-op swap is ignored (the engine
 test('reconnect revision · WIDEN is proposed, offered, and adds NOTHING until confirmed (R1)', () => {
   const atDoors: ConvState = { stage: 'doors', stageScratch: { doors: { doorDepth: 2 } }, collected: { doors: ['marriage'] } };
   const turn = applyReconnectTurn(atDoors, [], 'my father was failing right alongside all of it', {
-    text: 'The Marriage — and it sounds like The Aging Parents was open right beside it. Both at once?',
+    text: 'The Relationship — and it sounds like The Aging Parents was open right beside it. Both at once?',
     revision: { kind: 'widen', toSlug: 'aging_parents' },
   });
   assert.equal(turn.state.awaitingConfirm, true, 'offered as a check');

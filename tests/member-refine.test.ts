@@ -63,7 +63,7 @@ test('addDoorForMember: maps free text to a canonical Door, additive, no duplica
   const { db, memberId } = await seedMember();
   const r = await addDoorForMember(db, memberId, 'my wife and I were really struggling, the marriage took a hit');
   assert.equal(r.ok, true);
-  if (r.ok) assert.deepEqual(r.added, ['The Marriage']);
+  if (r.ok) assert.deepEqual(r.added, ['The Relationship']);
 
   const rows = (await db.query<{ door_slug: string }>('select door_slug from member_door where member_id=$1 order by sort_order', [memberId])).rows;
   assert.deepEqual(rows.map((x) => x.door_slug).sort(), ['body', 'marriage']);
@@ -129,8 +129,8 @@ test('emitHarvestMoment carries the re-seeing pair + reconnect surface (§2b R5 
   const { db, memberId } = await seedMember();
   const momentId = await emitHarvestMoment(db, memberId, {
     destinationIntent: 'keeper', keeperType: 'tell', surface: 'reconnect',
-    sourceRef: { kind: 'reconnect', ref: 'doors', label: 'Re-seeing · The Marriage → The Load-Bearer' },
-    payloadRef: 'The Marriage → The Load-Bearer',
+    sourceRef: { kind: 'reconnect', ref: 'doors', label: 'Re-seeing · The Relationship → The Load-Bearer' },
+    payloadRef: 'The Relationship → The Load-Bearer',
     pair: { fromSlug: 'marriage', toSlug: 'load_bearer' },
   });
   assert.ok(momentId, 'returns the correlation id');
