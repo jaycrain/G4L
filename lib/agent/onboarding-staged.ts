@@ -2347,20 +2347,35 @@ export function stageInstruction(stage?: Stage, opts?: { gapHeld?: boolean }): s
     return (
       '\n\nCURRENT STAGE: what they want back — the Reclaim List (what the whole program measures against; big or ' +
       'small, both belong).\n' +
-      // Revert of the W-46 "SEED FROM THE GAP FIRST" front-load (Jay 2026-07-26 — "vibe wins"): do NOT open the list
-      // by mining the gap and proposing a batch of candidate items. That raced the drawing-out and made the list feel
-      // pre-decided. DRAW IT OUT the way you drew out the gap instead.
-      'DRAW THIS OUT the way you drew out the gap — do NOT rush to collect a list, and do NOT open by proposing or ' +
-      'reciting a set of items. Invite what they want back gently, and let them lead. When they name one, ' +
-      'RECEIVE it: reflect it back, feel what it means to them, and (if vague) drill it concrete — then, and only then, ' +
-      'invite the next. One want at a time, with care; never a rote "what else?" march. Aim for a few; never pressure ' +
-      'or interrogate — small things count.\n' +
-      // DONNA, 2026-08-17: the Companion said "let me take those one at a time — they each deserve it", addressed
-      // the FIRST item, and moved straight on to the Grinta baseline. The promise was the model's own invention —
-      // there is no per-item review beat in this stage — and breaking it reads as not having listened, which is
-      // the one thing this conversation cannot afford. Fixed as a promise the model may not make, plus a
-      // requirement that any reflection is COMPLETE. (An engine-driven review loop would be a new beat in the
-      // capture loop; not something to add hours before a walk. Raised to Jay separately.)
+      // THIS BLOCK DESCRIBED THE PRE-BUILDER DESIGN FOR THREE WEEKS AFTER THE BUILDER SHIPPED (fixed 2026-08-19).
+      //
+      // Structured capture landed 2026-07-29: the Reclaim List is built in a list-builder UI because conversational
+      // extraction lost ~30% of what members said. The steering was never updated. It still told the model to "draw
+      // this out... one want at a time", to end every turn with "what else?", and to sharpen each item with
+      // refine_reclaim_item — a multi-turn elicitation the surface makes impossible, since the builder REPLACES the
+      // text box and its submission REPLACES anything the model tagged.
+      //
+      // DEAD STEERING IS NOT NEUTRAL. The model follows it. Told to invite wants one at a time, it opens the topic
+      // itself — and it cannot know the engine has not reached this stage yet. That is the run-ahead behind the
+      // "rushed" reports: it asks what she wants back while the engine is still in the gap, so the builder never
+      // renders, her list comes out of chat, and she is asked for it a second time. I spent a day chasing that as a
+      // stage-detection problem. We were instructing it.
+      //
+      // Sharpening is gone from here on purpose too — see enterGrintaSurvey: it MOVED to the Companion rail,
+      // member-initiated and non-blocking, instead of a gate standing between her and the rest of onboarding.
+      'THE LIST IS NOT BUILT IN CONVERSATION, AND NOT BY YOU. The engine opens a LIST-BUILDER: they type their own ' +
+      'items and submit them in one block, and those exact words ARE the list. So do NOT invite wants one at a ' +
+      'time, do NOT ask "what else?", do NOT gather them, and do NOT open by proposing or reciting a set of items ' +
+      '— not mined from their gap story, not from anywhere. Above all do NOT open this topic yourself: the engine ' +
+      'opens it. Asking what they want back before the builder appears is the single most common way this ' +
+      'beat fails: they answer you in chat, the builder never receives it, and they get asked for the same thing ' +
+      'twice.\n' +
+      'WHEN THEIR SUBMISSION ARRIVES, RECEIVE IT. Your words on that turn are what they read back, so reflect the ' +
+      'whole list — every item, in their words. A partial read-back tells them you were only half listening.\n' +
+      'TAG EVERY WANT THEY NAME EARLIER — this is load-bearing. If they name something they want back during an earlier beat — ' +
+      'the gap story especially — call add_reclaim_item the moment it lands. Those SEED the builder, so it opens ' +
+      'already holding what they told you and they never have to say it twice. That is what those calls are for; ' +
+      'the submission itself is authoritative and replaces the rest.\n' +
       'FINISH WHAT YOU PROMISE. Never say you will go through their wants "one at a time" or that "each one ' +
       'deserves" its own moment unless you then address EVERY item before moving on. The safer move is not to ' +
       'promise a review at all: receive each want as it lands, and close by telling them the whole list is on ' +
@@ -2370,22 +2385,8 @@ export function stageInstruction(stage?: Stage, opts?: { gapHeld?: boolean }): s
       'volunteered earlier in the conversation (the gap beat). The Reclaim List is built ONLY from your tool calls, ' +
       'never from your prose — so if you reflect or list wants back to the member, EVERY item you name must already ' +
       'be an add_reclaim_item call. Never recite a list you have not tagged, or it silently vanishes from their card.\n' +
-      'MAKE EACH WANT CONCRETE (light touch): a Reclaim item should be something they could actually notice ' +
-      'progress on. When a want is vague ("ride my bike more", "get in shape"), reflect it and ask ONE gentle ' +
-      'question toward something trackable — a rough cadence, a number, a specific anchor ("what would that look ' +
-      'like — a couple rides a week? weekends?"). Then call refine_reclaim_item with the sharper phrasing IN ' +
-      'THEIR WORDS to replace the vague one (do NOT add a second item). When they answer with a cadence, number, ' +
-      'amount, or detail ("2-3 times a week", "about 25 lbs"), THAT is the SAME want getting sharper — refine the tag ' +
-      'to fold it in ("run 2-3x a week", "lose about 25 lbs"), NEVER add_reclaim_item a second bullet for it, and ' +
-      'never leave the vague "My running" on the list. The captured item must be the concrete one, because the ' +
-      'whole program measures against this list. Take whatever they give — if they stay general, that\'s fine; ' +
-      'never force a metric, never turn it into a form, at most ONE sharpening per want. Already-concrete wants ' +
-      '("lose 25 lbs") need no sharpening — leave them.\n' +
-      'ALWAYS end your turn with your single forward question in your own words ("what else?" / "anything else ' +
-      'you\'d want back?"). NEVER end on a bare wrap-up coda with no question ("let me make sure I have all of ' +
-      'that captured"), or the engine stacks a second ask on top and it reads pushy. And do NOT ANNOUNCE the ' +
-      'mechanics — never say "let me make that concrete" or "before I capture that": just DO it (reflect + one ' +
-      'sharpening question, or acknowledge their answer and invite the next), in-line and in plain language.'
+      'NEVER ANNOUNCE THE MECHANICS — never say "let me make that concrete" or "before I capture that". Just ' +
+      'receive what they gave you, in plain language.'
     );
   return '\n\nCURRENT STAGE: identity — who they were at their best, and the one-word handle (or skip).';
 }
