@@ -18,6 +18,13 @@ import { serializeGapConfirmChoice, type GapConfirmChoice } from '../../lib/agen
 // shown, by name, with a way to take one off — and the one thing this must never become is a task. She should be
 // able to ignore this line entirely and answer the question; leaving them all on is the common, correct outcome.
 //
+// QUIET IS A RULING, NOT A DEFAULT (Jay, 2026-08-19). The louder alternative — a real row of tappable Door chips,
+// harder to miss — was put to him and declined: "I like quiet, the Sessions exist to drill deeper." That is the
+// general principle and it reaches past this surface. Onboarding does not have to get the Doors exhaustively
+// right, because R2 opens with the whole board and excavates the one she says weighs most. This line only has to
+// stop a WRONG Door being asserted silently. Anyone later tempted to make it more prominent — because a member
+// missed it, because the tagging looks thin — is solving it at the wrong beat. Turn up R2, not this.
+//
 // THE TEXT BOX STAYS. That is deliberate and it is the difference between an affordance and a gate: the chips make
 // the unambiguous path the easy one, they do not remove her ability to say something we didn't anticipate. A typed
 // reply falls through to the classifier exactly as before.
