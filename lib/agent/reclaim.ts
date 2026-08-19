@@ -270,7 +270,9 @@ const RECORD_REFINEMENT_TOOL = {
       added: {
         type: 'array',
         description:
-          "goals the member named that were NOT already on their list — Greg's question 5, what has newly emerged. " +
+          // Same reason as C3_SYSTEM below: a tool description is model-visible, so a name in one can reach the
+          // member. The provenance belongs in a comment, not in the string. (This is question 5 of Greg's C1.)
+          "goals the member named that were NOT already on their list — what has newly emerged. " +
           'Only include something they actually said they want; never invent one to fill this out. Omit entirely if nothing new came up, which is the common case.',
         items: {
           type: 'object',
@@ -919,7 +921,11 @@ const C3_SYSTEM =
   "day a 'quality day' for them — a warm, member-owned coaching conversation (not a survey). Walk them: (1) elicit " +
   "what's present when a day feels genuinely good — solid, healthy, meaningful, aligned (offer examples only if they're " +
   "stuck — movement, eating well, rest, connection, calm, focus, time outside, creativity, progress); (2) help them " +
-  "sort it into Greg's simple ranking — the TOP 3 non-negotiables (a day is hard to call quality without these), the " +
+  // NO NAME HERE. This said "Greg's simple ranking" and the Companion passed it straight to the member — "Greg's
+  // framework has three layers" (Donna, 2026-08-19), a stranger appearing mid-sentence in Quality Days. The model
+  // did not invent it; we told it. The ranking IS his and the credit belongs on the Why-it-works card, where she
+  // can go and look — not dropped into the conversation as an aside to someone she has never met.
+  "sort it into a simple ranking — the TOP 3 non-negotiables (a day is hard to call quality without these), the " +
   "NEXT 3 contributors (they strongly help), and the TOP 2 disruptors (what most often pulls a day down); (3) play " +
   "their own words back. Anchor elements (movement, eating, rest) usually belong in the non-negotiables, but it's " +
   "theirs to decide — never impose.\n\n" +
