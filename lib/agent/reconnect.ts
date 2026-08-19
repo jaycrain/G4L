@@ -1405,11 +1405,15 @@ export async function liveTurnReconnect(state: ConvState, history: ConvMessage[]
   // ONE ATTEMPT, generously timed, rather than two short ones. Retrying a generation this long inside a 60s
   // function is how you turn a slow turn into a dead one — the retry cannot finish either, and the member waits
   // twice as long to be told it failed.
+  //
+  // THE SAME ARITHMETIC APPLIES TO THE ORDINARY BRANCH, which had maxRetries: 2 — three attempts at 25s is 75s
+  // against a 60s ceiling, so the third could never run and the second could not finish. The reasoning above was
+  // written for the letter and never carried across to the line beneath it. One retry (50s) fits.
   const writingLetter = state.stage === 'legacy';
   const client = new Anthropic({
     apiKey: process.env.ANTHROPIC_API_KEY,
     timeout: writingLetter ? 45000 : 25000,
-    maxRetries: writingLetter ? 0 : 2,
+    maxRetries: writingLetter ? 0 : 1,
     defaultHeaders: { 'accept-encoding': 'identity' },
   });
   const messages = [

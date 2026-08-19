@@ -17,7 +17,7 @@ import { getConnectSummaryForAgent } from '../../../../lib/connect/agent.ts';
 import WorkspaceSession from '../../workspace-session.tsx';
 
 // Give the arc's live turns room to finish (the Member Agent call is the long pole).
-export const maxDuration = 30;
+export const maxDuration = 60;
 
 const PHASE_LABEL: Record<Phase, string> = { reconnect: 'Reconnect', rewire: 'Rewire', rebuild: 'Rebuild', reclaim: 'Reclaim' };
 

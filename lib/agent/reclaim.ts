@@ -321,7 +321,7 @@ export async function liveTurnReclaimRefine(state: ConvState, history: ConvMessa
   const client = new Anthropic({
     apiKey: process.env.ANTHROPIC_API_KEY,
     timeout: 25000,
-    maxRetries: 2,
+    maxRetries: 1,
     defaultHeaders: { 'accept-encoding': 'identity' },
   });
   const messages = [
@@ -963,7 +963,7 @@ function parseQualityDayModel(content: readonly unknown[]): ModelTurn {
  *  liveTurnRebuildB3 — passed in to keep the engine pure, and null must add nothing at all. */
 export async function liveTurnReclaimC3(state: ConvState, history: ConvMessage[], memberMessage: string, carryForward?: string | null): Promise<Turn> {
   const { default: Anthropic } = await import('@anthropic-ai/sdk');
-  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, timeout: 25000, maxRetries: 2, defaultHeaders: { 'accept-encoding': 'identity' } });
+  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, timeout: 25000, maxRetries: 1, defaultHeaders: { 'accept-encoding': 'identity' } });
   const messages = [
     ...history.map((mm) => ({ role: (mm.role === 'agent' ? 'assistant' : 'user') as 'assistant' | 'user', content: mm.text })),
     { role: 'user' as const, content: memberMessage },

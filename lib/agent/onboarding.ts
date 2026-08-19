@@ -995,7 +995,7 @@ async function liveTurn(
   const client = new Anthropic({
     apiKey: process.env.ANTHROPIC_API_KEY,
     timeout: 25000,
-    maxRetries: 2,
+    maxRetries: 1,
     defaultHeaders: { 'accept-encoding': 'identity' },
   });
   const messages = [

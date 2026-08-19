@@ -1169,7 +1169,12 @@ async function liveReply(
   //
   // So the loop is bounded by WALL CLOCK against a deadline, and each request is given only what is actually left.
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, timeout: 26000, maxRetries: 1 });
-  const TURN_BUDGET_MS = 24_000; // headroom under the route's 30s for the tool executors (DB) + serialising the reply
+  // The route's ceiling moved to 60s on 2026-08-19 (the retry-margin pass). This budget deliberately did NOT move
+  // with it: 24s is a UX choice, not a safety one — past roughly that, a member reads the pause as the Companion
+  // having stalled, and the graceful degrade here ("let me come back to that") beats a longer wait for a fuller
+  // answer. The extra ceiling is headroom against the HANG, which is what actually hurt Greg. Raising this is a
+  // product decision about perceived latency and belongs to Jay, not to a timeout fix.
+  const TURN_BUDGET_MS = 24_000; // tool executors (DB) + serialising the reply still have to fit under the ceiling
   const MIN_ROUND_MS = 7_000; // starting a round with less left than this cannot finish — don't begin it
   const startedAt = Date.now();
   const msLeft = () => TURN_BUDGET_MS - (Date.now() - startedAt);

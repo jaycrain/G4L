@@ -21,7 +21,7 @@ import SubpageShell from '../../dashboard/subpage-shell.tsx';
 
 export const metadata = { title: 'Your Playbook — Grinta for Life' };
 // The "Gather from your work" action runs a live curation pass; give the function room.
-export const maxDuration = 30;
+export const maxDuration = 60;
 
 export default async function PlaybookPage({
   params,

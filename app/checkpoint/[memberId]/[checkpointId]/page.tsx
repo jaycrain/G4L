@@ -14,7 +14,7 @@ import type { Db } from '../../../../lib/db/schema.ts';
 const doorName = (slug: string): string => DOORS.find((d) => d.slug === slug)?.displayName ?? slug;
 import CheckpointCeremony from './checkpoint-ceremony.tsx';
 
-export const maxDuration = 30;
+export const maxDuration = 60;
 
 // The Reconnect Checkpoint — the one firm gate, as a center-stage ceremony.
 export default async function CheckpointPage({ params }: { params: Promise<{ memberId: string; checkpointId: string }> }) {

@@ -282,7 +282,7 @@ export async function liveTurnRewire(state: ConvState, history: ConvMessage[], m
   const client = new Anthropic({
     apiKey: process.env.ANTHROPIC_API_KEY,
     timeout: 25000,
-    maxRetries: 2,
+    maxRetries: 1,
     defaultHeaders: { 'accept-encoding': 'identity' },
   });
   const messages = [
@@ -551,7 +551,7 @@ export async function liveTurnRewireW2(state: ConvState, history: ConvMessage[],
   const client = new Anthropic({
     apiKey: process.env.ANTHROPIC_API_KEY,
     timeout: 25000,
-    maxRetries: 2,
+    maxRetries: 1,
     defaultHeaders: { 'accept-encoding': 'identity' },
   });
   const messages = [
@@ -932,7 +932,7 @@ export async function liveTurnRewireW3(state: ConvState, history: ConvMessage[],
   const client = new Anthropic({
     apiKey: process.env.ANTHROPIC_API_KEY,
     timeout: 25000,
-    maxRetries: 2,
+    maxRetries: 1,
     defaultHeaders: { 'accept-encoding': 'identity' },
   });
   const messages = [

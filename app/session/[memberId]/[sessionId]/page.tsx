@@ -10,7 +10,7 @@ import SessionRunner from './session-runner.tsx';
 import { frameForStep } from './session-actions.ts';
 import { logEvent } from '../../../../lib/telemetry/store.ts';
 
-export const maxDuration = 30;
+export const maxDuration = 60;
 
 // The Session sub-page — the guided exercise, the companion threaded through, one section lit at a time.
 export default async function SessionPage({ params }: { params: Promise<{ memberId: string; sessionId: string }> }) {
