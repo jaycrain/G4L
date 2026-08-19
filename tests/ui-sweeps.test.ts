@@ -57,10 +57,30 @@ test('THE PLAYBOOK HAS ONE MEMBER-FACING NAME — "Your Playbook"', () => {
 
 test('the global button hover reads a variable, so a button can override it where it is defined', () => {
   assert.match(CSS, /button,\s*\.btn\s*\{\s*--btn-hover-bg:/, 'the default is declared once');
-  assert.match(CSS, /button:hover,\s*\.btn:hover\s*\{\s*background:\s*var\(--btn-hover-bg\)/, 'and the hover reads it');
+  // THE LONGHAND IS LOAD-BEARING — a correctness rule, not a style preference.
+  //
+  // As the SHORTHAND `background: var(--btn-hover-bg)`, the default value `none` is VALID (it is a
+  // background-image value) and the shorthand resets every background property — including background-color — to
+  // `transparent`. So every teal-FILLED button whose fill was not re-declared on :hover went see-through against a
+  // white page, at the exact moment the member moved to click it. Donna: "teal buttons turn white on hover,
+  // causing them to visually disappear" (2026-08-19). The rule's own comment had asserted the opposite for weeks.
+  //
+  // `background-color: none` is genuinely invalid, so the browser drops the declaration and the button keeps its
+  // own fill — which is what this rule always claimed to do. Measured in a live page, both directions: teal
+  // rgb(59,148,149) survives the longhand and becomes rgba(0,0,0,0) under the shorthand.
+  assert.match(
+    CSS,
+    /button:hover,\s*\.btn:hover\s*\{\s*background-color:\s*var\(--btn-hover-bg\)/,
+    'the hover reads it via the LONGHAND — the shorthand wipes the fill to transparent',
+  );
   assert.doesNotMatch(
     CSS,
-    /button:hover,\s*\.btn:hover\s*\{\s*background:\s*var\(--navy\)/,
+    /button:hover,\s*\.btn:hover\s*\{\s*background:\s*var\(--btn-hover-bg\)/,
+    'the shorthand is the disappearing-button bug — background-color, always',
+  );
+  assert.doesNotMatch(
+    CSS,
+    /button:hover,\s*\.btn:hover\s*\{\s*background(-color)?:\s*var\(--navy\)/,
     'never hardcode navy back into the global hover — that is the bug, four times over',
   );
 });

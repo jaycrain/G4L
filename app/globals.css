@@ -182,9 +182,19 @@ button, .btn {
  * Account Settings cadence rows — titles 13.64 / 8.13, subtitles 4.56 / 4.57, all above 4.5. */
 button, .btn { --btn-hover-bg: none; }
 button:hover, .btn:hover { filter: brightness(0.94); }
-/* The opt-in: only fires for a button that actually declares a colour. `none` is not a valid background-color,
-   so the declaration is dropped and the element keeps its own — no fill, no override, nothing to remember. */
-button:hover, .btn:hover { background: var(--btn-hover-bg); }
+/* The opt-in: only fires for a button that actually declares a colour. `none` is not a valid background-COLOR, so
+   the declaration is dropped and the element keeps its own — no fill, no override, nothing to remember.
+
+   IT MUST BE THE LONGHAND, and this was the bug Donna reported as "teal buttons turn white on hover, causing them
+   to visually disappear" (2026-08-19). Written as the SHORTHAND `background: none` the reasoning above is wrong:
+   `none` IS valid there (it is a background-image value) and the shorthand resets every background property,
+   including background-color, to its initial `transparent`. So every teal-filled button whose fill was not
+   re-declared on :hover went see-through against a white page, right at the moment the member moved to click it.
+   Measured, not reasoned: teal `rgb(59,148,149)` at rest → `rgba(0,0,0,0)` with the shorthand applied.
+
+   `background-color: none` is genuinely invalid, so the declaration is dropped and the element keeps its fill —
+   which is what the comment always claimed and what the longhand actually delivers. */
+button:hover, .btn:hover { background-color: var(--btn-hover-bg); }
 /* Disabled buttons already say "not now" through opacity; darkening them too reads as a response to a press
    that did not happen. */
 button:disabled:hover, .btn:disabled:hover { filter: none; }
