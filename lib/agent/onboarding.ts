@@ -287,7 +287,11 @@ export type DoorsBoardExpectation = {
   header: string;
 };
 
+/** The gap confirm's own answers — see lib/agent/gap-confirm-choice.ts for why this stopped being a guess. */
+export type GapConfirmExpectation = { kind: 'gap_confirm'; choices: { value: string; label: string }[] };
+
 export type Expectation =
+  | GapConfirmExpectation
   | ScaleExpectation
   | ReclaimListExpectation
   | IdentityPickExpectation

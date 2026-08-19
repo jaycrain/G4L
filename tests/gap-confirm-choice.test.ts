@@ -84,3 +84,88 @@ test('every choice maps to an intent the engine already understands', () => {
     assert.equal(c.intent, expected[c.value], `${c.value} must route to ${expected[c.value]}`);
   }
 });
+
+// ---------------------------------------------------------------------------------------------------------------
+// THE SEAM — the tap has to reach the gate, and the gate has to offer it.
+//
+// The pure layer passing proves nothing about the beat: a parser nobody calls and an expectation nobody emits is
+// the exact shape that let the Doors board write nothing while every unit test stayed green.
+// ---------------------------------------------------------------------------------------------------------------
+
+import { applyStagedTurn } from '../lib/agent/onboarding-staged.ts';
+import type { ConvState, ConvMessage, ModelTurn } from '../lib/agent/onboarding.ts';
+
+const GAP = 'I lost the job two years ago. A partnership fell through. Six months later my father nearly died.';
+const atGap = (): ConvState => ({ stage: 'gap', collected: { athleticPast: 'Making things', identityNoun: 'Maker', gap: GAP } });
+
+/** Draw out until the beat reflects and waits — that is where the choice belongs. */
+function toConfirm(): { state: ConvState; history: ConvMessage[]; expects: unknown } {
+  let state = atGap();
+  const history: ConvMessage[] = [];
+  let expects: unknown = null;
+  for (const [m, mt] of [
+    ['And the money got tight after that.', { text: 'That is a lot at once.' }],
+    ['That was the shape of it.', { text: 'Here is what I have heard.', gapReady: true }],
+  ] as [string, ModelTurn][]) {
+    const t = applyStagedTurn(state, history, m, mt);
+    history.push({ role: 'member', text: m }, { role: 'agent', text: t.reply });
+    state = t.state;
+    expects = t.expects;
+  }
+  return { state, history, expects };
+}
+
+test('SEAM · the confirm gate OFFERS the choice — it is not a question with no answers', () => {
+  const { state, expects } = toConfirm();
+  assert.equal(state.awaitingConfirm, true, 'precondition: the beat is waiting on her');
+  assert.equal((expects as { kind?: string })?.kind, 'gap_confirm', 'the gate must render its own answers');
+  assert.deepEqual((expects as { choices: { value: string }[] }).choices.map((c) => c.value), ['more', 'done', 'wrong']);
+});
+
+test('SEAM · a tap CLOSES the beat — no classifier involved', () => {
+  const { state, history } = toConfirm();
+  const t = applyStagedTurn(state, history, serializeGapConfirmChoice('done'), { text: '', replyIntent: 'more' });
+  // replyIntent 'more' is deliberately wrong here: a tap is a fact and must outrank the model's guess.
+  assert.equal(t.state.stage, 'reclaim', 'she said that is the whole of it');
+});
+
+test('SEAM · a tap of "there’s more" keeps the story open', () => {
+  const { state, history } = toConfirm();
+  const t = applyStagedTurn(state, history, serializeGapConfirmChoice('more'), { text: 'Tell me.', replyIntent: 'done' });
+  assert.equal(t.state.stage, 'gap', 'she said there is more — the model saying done must not close it');
+  assert.notEqual(t.state.awaitingConfirm, true, 'and we are drawing out again, not still waiting');
+});
+
+test('SEAM · "not quite right" reopens rather than advancing', () => {
+  const { state, history } = toConfirm();
+  const t = applyStagedTurn(state, history, serializeGapConfirmChoice('wrong'), { text: '', replyIntent: 'done' });
+  assert.equal(t.state.stage, 'gap');
+  assert.ok(t.state.collected.gap, 'a correction must never wipe what she already told us');
+});
+
+test('SEAM · typing still works — the classifier remains the fallback', () => {
+  const { state, history } = toConfirm();
+  const t = applyStagedTurn(state, history, "That's the whole of it.", { text: '', replyIntent: 'done' });
+  assert.equal(t.state.stage, 'reclaim', 'she must never be forced through the chips');
+});
+
+test('SEAM · the invitation is ONE question, and the chips are its answers', () => {
+  const { state, history, expects } = toConfirm();
+  const reply = applyStagedTurn(atGap(), history.slice(0, 2), 'That was the shape of it.',
+    { text: 'Here is what I have heard. What was that like for you?', gapReady: true }).reply;
+
+  // The model's own trailing question is dropped — otherwise her three options answer a different question than
+  // the one on screen, which is two asks around one decision.
+  assert.ok(!/what was that like/i.test(reply), "the model's competing question must not survive");
+  assert.equal((reply.match(/\?/g) ?? []).length, 1, 'exactly one question mark on the turn');
+  assert.match(reply, /does that land the way it happened — or is there more\?$/i);
+
+  // ...and every choice must actually answer it.
+  assert.ok(state.awaitingConfirm && (expects as { kind: string }).kind === 'gap_confirm');
+});
+
+test('SEAM · the model’s reflection still LEADS — the structure only carries the ending', () => {
+  const reply = applyStagedTurn(atGap(), [], 'That was the shape of it.',
+    { text: 'Three things inside two years, each one taking something the last had not.', gapReady: true }).reply;
+  assert.match(reply, /^Three things inside two years/, 'her story, in her words, comes first');
+});

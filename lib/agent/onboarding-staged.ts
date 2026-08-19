@@ -51,6 +51,7 @@ import {
 } from './onboarding.ts';
 import { reconcileReclaimShapes, shapeKey, splitInlineEnumeration } from './reclaim-shape.ts';
 import { filterDoorsByAttribution } from './door-attribution.ts';
+import { GAP_CONFIRM_CHOICES, parseGapConfirmChoice, gapConfirmIntent } from './gap-confirm-choice.ts';
 import { doorsBoardExpectation } from './doors-board-expectation.ts';
 import { detectCrisis, CRISIS_RESPONSE_US } from './governance.ts';
 import { captureCreate } from './capture-model.ts';
@@ -273,7 +274,11 @@ const GAP_REFLECT_LEAD = "Thank you for trusting me with that — that kind of d
 // Warm, clear, invites correction — replaces the old "for now this is plenty / we'll go deeper later / did I
 // understand the shape of how it went?" which read as dismissive AND generic on Jay's walk (he replied "the
 // shape of what?"). Under the model-judged flow the LEAD is the model's own drawn-out reflection in their words.
-const GAP_FORECAST_CONFIRM = 'Have we got a good handle on how it all happened — or is there more to it?';
+// THE INVITATION THE CHIPS ANSWER. All three of her options have to be a real answer to this one sentence, or the
+// question and the buttons are two separate asks — the exact shape that made a member say "didn't we just do that"
+// on the Doors board. "Does that land" is answered by "not quite right"; "is there more" by "there's more"; both
+// by "that's the whole of it". It stays a question in the Companion's voice, not a prompt to operate a control.
+const GAP_FORECAST_CONFIRM = 'Does that land the way it happened — or is there more?';
 const REOPEN_GAP = "I want to get this right — tell me how it really went, in your own words.";
 
 // Invite the REST of the story (a fade is often several things at once — job, then the household, then a
@@ -440,10 +445,17 @@ export function withQuestion(modelText: string, probe: string | null): string {
 // and read back the stalest early gap fragment — "Well, I got married and had kids" — dropping everything just
 // drawn out. Never read a stale fragment back as "here's what I'm holding.")
 function reflectGap(modelText: string): string {
+  // RECEIVE, THEN INVITE — and the invitation is always OURS now (2026-08-19).
+  //
+  // It used to keep the model's own trailing question when it had one, to avoid stacking two asks. That was right
+  // while her answer was free text. With the chips it inverts: her three options must answer the question actually
+  // on screen, and a model question ("what was that like?") leaves them answering something else. receiveThen
+  // strips the model's ask and keeps its reflection, so there is still exactly one question — ours, the one the
+  // chips are the answers to.
+  //
+  // The reflection still leads and is still the model's, in her words. The structure only carries the ending.
   const t = (modelText ?? '').trim();
-  if (t && /\?\s*$/.test(t)) return t; // reflected AND invited correction — use the whole turn
-  if (t) return `${t}\n\n${GAP_FORECAST_CONFIRM}`; // reflected but didn't invite correction — add the confirm
-  return `${GAP_REFLECT_LEAD}\n\n${GAP_FORECAST_CONFIRM}`; // no usable reflection — warm canned lead, not a fragment
+  return receiveThen(t || GAP_REFLECT_LEAD, GAP_FORECAST_CONFIRM);
 }
 
 // W-12: join accumulated gap chapters with a sentence boundary. When a member adds a chapter at the gap confirm, we
@@ -926,7 +938,17 @@ export function isListBlock(message: string): boolean {
 // yet complete), tell the client to render the list builder — pre-filled with any wants volunteered earlier — instead
 // of the text box or the scale chips. Once submitted, the stage advances to 'grinta', so this stops firing. Everything
 // else defers to the scale-chip expectation.
-function nextExpects(arc: ArcConfig, stageId: StageId, complete: boolean, answered: number, collected: Collected): Expectation | undefined {
+function nextExpects(arc: ArcConfig, stageId: StageId, complete: boolean, answered: number, collected: Collected, awaitingConfirm = false): Expectation | undefined {
+  // THE GAP CONFIRM OFFERS ITS OWN ANSWERS (2026-08-19). We reflect her whole story and ask "have I got the shape
+  // of it — or is there more?", then classified her free-text reply three ways with regex vocabulary. Five patches
+  // in two days and it still leaked; one attempt matched "I said yes to the trip that summer", which would have
+  // closed her story mid-sentence. A tap is a fact. See lib/agent/gap-confirm-choice.ts.
+  //
+  // ONLY WHEN THE BEAT IS ACTUALLY WAITING ON HER. Mid-draw-out the question is the model's own, and offering
+  // "that's the whole of it" while she is still telling it would be the surface asking her to stop.
+  if (arc.id === 'onboarding' && stageId === 'gap' && awaitingConfirm && !complete) {
+    return { kind: 'gap_confirm', choices: GAP_CONFIRM_CHOICES.map((c) => ({ value: c.value, label: c.label })) };
+  }
   if (arc.id === 'onboarding' && stageId === 'reclaim' && !complete) {
     return { kind: 'reclaim_list', min: RECLAIM_LIST_MIN, seeded: (collected.reclaimList ?? []).filter(Boolean) };
   }
@@ -1549,7 +1571,13 @@ const gapStage: StageDef = {
     // discipline: an 'addition' must be corroborated by actual new content, not asserted.
     // (Extracted to resolveConfirmCorroborated so Reconnect's confirms share ONE implementation — they had none,
     // and a member's "Yes." was re-asked three times. The gap's own material test is what counts as "new" here.)
-    const intent = resolveConfirmCorroborated(b.memberMessage, b.model.replyIntent, shouldCaptureStagedGap);
+    // A TAP IS A FACT and outranks everything — the classifier AND the model's own tag. She was offered three
+    // answers and chose one; nothing we infer can be better evidence than that. Typed replies fall through to the
+    // classifier exactly as before, so she is never forced through the chips.
+    const tapped = parseGapConfirmChoice(b.memberMessage);
+    const intent = tapped
+      ? gapConfirmIntent(tapped)
+      : resolveConfirmCorroborated(b.memberMessage, b.model.replyIntent, shouldCaptureStagedGap);
     if (intent === 'dispute') {
       // wrong, no new content → reopen, but KEEP the gap + Doors (never wipe). ANTI-LOOP: count the bounce like
       // identity's confirm does — a member who keeps disputing must hit the SHARED ceiling and be moved on, not
@@ -1811,7 +1839,7 @@ function enterGrintaSurvey(b: Beat, gateShapes = true): Turn {
     b.stage = 'grinta';
     b.awaitingConfirm = false;
     b.reply = receiveThen(b.modelText || reclaimReceipt(b.collected), grintaSurveyOpener());
-    const ex = nextExpects(b.arc, b.stage, false, b.administeredResponses.length, b.collected);
+    const ex = nextExpects(b.arc, b.stage, false, b.administeredResponses.length, b.collected, b.awaitingConfirm);
     return { reply: b.reply, state: beatState(b), complete: false, ...(ex && { expects: ex }) };
   }
   const proposal = gateNextShape(b);
@@ -1826,7 +1854,7 @@ function enterGrintaSurvey(b: Beat, gateShapes = true): Turn {
   b.reply = receiveThen(b.modelText || reclaimReceipt(b.collected), grintaSurveyOpener());
   // W-24/W-48: this is the ONLY path into the grinta survey (natural confirm AND the runaway/ceiling backstop), so emit
   // the chip signal (+ "Question 1 of 12") here — otherwise a force-progressed member gets the text box for item 1.
-  const expects = nextExpects(b.arc, b.stage, false, b.administeredResponses.length, b.collected);
+  const expects = nextExpects(b.arc, b.stage, false, b.administeredResponses.length, b.collected, b.awaitingConfirm);
   return { reply: b.reply, state: beatState(b), complete: false, ...(expects && { expects }) };
 }
 
@@ -2035,7 +2063,7 @@ export function runArcTurn(
 
   // A handler may have emitted a structured turn directly (identity tap-to-pick chips); that wins. Otherwise derive
   // the expectation from the resulting stage (W-24/W-48: a draw-out handing INTO an administered stage delivers item 0).
-  const expects = b.expects ?? nextExpects(arc, b.stage, b.complete, b.administeredResponses.length, b.collected);
+  const expects = b.expects ?? nextExpects(arc, b.stage, b.complete, b.administeredResponses.length, b.collected, b.awaitingConfirm);
   return { reply: b.reply, state: beatState(b), complete: b.complete, ...(b.declined ? { declined: true } : {}), ...(expects && { expects }) };
 }
 
