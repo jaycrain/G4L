@@ -809,6 +809,11 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .pb-card { background: var(--white); border: 1px solid var(--panel-line); border-radius: 14px; padding: 1.1rem 1.25rem; margin-bottom: 1rem; }
 .pb-sec { font-size: 0.8rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--navy); margin: 0 0 0.15rem; }
 .pb-sec-d { font-size: 0.88rem; color: var(--muted, #6B7680); margin: 0 0 0.9rem; }
+/* A subhead INSIDE a chapter — True Lines split from Moves in "Your Moves" (Donna, 2026-08-19). Deliberately
+   lighter than .pb-sec: it divides a chapter, it does not open one, and reading as a peer of the chapter title
+   would imply the five-tab structure had changed when it has not. */
+.pb-subsec { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--muted-grey); margin: 0.9rem 0 0.45rem; }
+.pb-subsec:first-of-type { margin-top: 0; }
 /* Playbook hero — the synthesis narrative leads the page; captures support it below. */
 .pb-hero { border-left: 5px solid var(--navy); }
 .pb-narr p { font-size: 1.05rem; line-height: 1.62; color: var(--charcoal); margin: 0 0 0.85rem; }

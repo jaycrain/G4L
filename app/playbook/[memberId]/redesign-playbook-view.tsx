@@ -228,6 +228,32 @@ export default function RedesignPlaybookView({
     setNote('');
   }
 
+  // TRUE LINES GET THEIR OWN SUBHEAD inside "Your Moves" (Donna, 2026-08-19). They were already labelled — each
+  // carries a "Your true line" chip — but folded in with recovery moves and plans they read as undifferentiated
+  // moves, and a member cannot tell what kind of thing she is looking at.
+  //
+  // A SUBSECTION, not a new tab or chapter. The five-tab structure is settled (2026-08-14) and this does not
+  // touch it: same tab, same chapter, one heading inside it. Jay confirmed that reading before I built it.
+  //
+  // Driven off the SOURCE LABEL rather than a new field, because the label is already the truth of what the line
+  // is and adding a parallel marker would give us two things to keep in sync. Anything without that label keeps
+  // the chapter's own ordering, so this can only ever add a heading — never hide an entry.
+  function groupedItems(key: ChapterKey, items: PlaybookEntry[]) {
+    if (key !== 'plays') return items.map(entryCard);
+    const isTrueLine = (e: PlaybookEntry) => /^your true line/i.test(e.source.label ?? '');
+    const lines = items.filter(isTrueLine);
+    const rest = items.filter((e) => !isTrueLine(e));
+    if (!lines.length) return items.map(entryCard); // no subhead when there is nothing to head
+    return (
+      <>
+        <div className="pb-subsec">Your true lines</div>
+        {lines.map(entryCard)}
+        {rest.length > 0 && <div className="pb-subsec">Your Moves</div>}
+        {rest.map(entryCard)}
+      </>
+    );
+  }
+
   function entryCard(e: PlaybookEntry) {
     const editing = editingId === e.id;
     const tag = e.section === 'journal' ? null : e.source.kind === 'science' ? 'Science' : e.source.label ?? null;
@@ -657,7 +683,7 @@ export default function RedesignPlaybookView({
             <section key={c.key} className="pb-card pb-chapter">
               <div className="pb-sec">{c.title}</div>
               <div className="pb-sec-d">{c.sub}</div>
-              {c.items.length > 0 ? c.items.map(entryCard) : <p className="pb-empty">{c.empty}</p>}
+              {c.items.length > 0 ? groupedItems(c.key, c.items) : <p className="pb-empty">{c.empty}</p>}
             </section>
           ))}
 
