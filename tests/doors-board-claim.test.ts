@@ -124,3 +124,63 @@ test('the quiet-drift claim is NOT a Door, and null means never asked', async ()
   await setQuietDriftClaim(db, m, false);
   assert.equal(await quietDriftClaim(db, m), null);
 });
+
+// THE WIRE FORMAT — round-trip, not halves.
+//
+// The board is a client component and the engine is server-side, so her selection crosses as a string. Testing a
+// serializer that passes and a parser that passes proves nothing about the pair; the failure mode is that they
+// drift and the member's taps silently reach nothing.
+
+test('the board submission round-trips exactly', async () => {
+  const { serializeBoardSubmission, parseBoardSubmission } = await import('../lib/reconnect/doors-board-claim.ts');
+  const sel = {
+    doors: [
+      { slug: 'body' as const, relevance: 9 },
+      { slug: 'loss' as const, relevance: null },
+      { slug: 'vanishing' as const, relevance: 3 },
+    ],
+    quietDrift: true,
+    first: 'loss' as const,
+    biggest: 'body' as const,
+    stillOpen: ['vanishing' as const],
+  };
+  assert.deepEqual(parseBoardSubmission(serializeBoardSubmission(sel)), sel);
+});
+
+test('an ordinary member message is NOT a board submission', async () => {
+  const { parseBoardSubmission } = await import('../lib/reconnect/doors-board-claim.ts');
+  // She must be able to type anything without the engine treating it as taps.
+  assert.equal(parseBoardSubmission('I think the body one is me, honestly'), null);
+  assert.equal(parseBoardSubmission(''), null);
+});
+
+test('a temporal answer about an UNMARKED Door is dropped', async () => {
+  const { parseBoardSubmission } = await import('../lib/reconnect/doors-board-claim.ts');
+  // The component clears these when she unmarks, but the engine must not trust a client to have done that.
+  const p = parseBoardSubmission('[board] door:body biggest:marriage open:grind first:body')!;
+  assert.equal(p.biggest, null, 'cannot weigh a Door she did not mark');
+  assert.deepEqual(p.stillOpen, []);
+  assert.equal(p.first, 'body', 'but a marked one stands');
+});
+
+test('an unknown slug is dropped, never guessed at', async () => {
+  const { parseBoardSubmission } = await import('../lib/reconnect/doors-board-claim.ts');
+  const p = parseBoardSubmission('[board] door:body door:acceptance door:not_a_door=7')!;
+  assert.deepEqual(p.doors.map((d) => d.slug), ['body'], 'the retired slug must not resurrect through the wire');
+});
+
+test('an empty board is a valid answer — she is never blocked (ruling 7)', async () => {
+  const { parseBoardSubmission, boardIsEmpty, serializeBoardSubmission } = await import('../lib/reconnect/doors-board-claim.ts');
+  const empty = { doors: [], quietDrift: false, first: null, biggest: null, stillOpen: [] };
+  const p = parseBoardSubmission(serializeBoardSubmission(empty))!;
+  assert.ok(p, 'an empty submission is still a submission, not an ordinary message');
+  assert.equal(boardIsEmpty(p), true);
+  assert.equal(boardIsEmpty(parseBoardSubmission('[board] quiet_drift')!), false, 'quiet drift alone is an answer');
+});
+
+test('an out-of-range rating becomes null, never a clamped guess', async () => {
+  const { parseBoardSubmission } = await import('../lib/reconnect/doors-board-claim.ts');
+  const p = parseBoardSubmission('[board] door:body=99 door:loss=0')!;
+  assert.equal(p.doors.find((d) => d.slug === 'body')!.relevance, null);
+  assert.equal(p.doors.find((d) => d.slug === 'loss')!.relevance, null);
+});

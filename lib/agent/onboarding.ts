@@ -261,7 +261,30 @@ import type { SessionVisual } from './session-visual.ts';
 // already accepts, so typing still works and Greg's questions are unchanged.
 export type DomainPickExpectation = { kind: 'domain_pick'; options: string[] };
 
-export type Expectation = ScaleExpectation | ReclaimListExpectation | IdentityPickExpectation | DomainPickExpectation;
+// THE DOORS BOARD (D5, 2026-08-18). R2 shows every Door and lets the member mark which are hers — recognition
+// before conversation, so the Companion draws out what she marked rather than fishing for it. `held` is pre-lit
+// from the Doors her story already produced: the board recognises her rather than starting blank.
+//
+// Structured for the same reason the Reclaim List and the identity handle are: the three temporal answers
+// (first / weighs most / still open) are the fields six Sessions read, and leaving them to an opportunistic
+// conversational ask is exactly why they are null for every member who has ever used the product.
+export type DoorsBoardExpectation = {
+  kind: 'doors_board';
+  /** Every Door, in prevalence order — the order is part of the instrument. */
+  cards: { slug: string; name: string; recognition: string }[];
+  /** Slugs she already holds, pre-lit. */
+  held: string[];
+  /** Greg's quiet-drift card. NOT a Door — claiming it writes the resignation signal (D5 ruling #9). */
+  quietDrift: { key: string; name: string; recognition: string };
+  header: string;
+};
+
+export type Expectation =
+  | ScaleExpectation
+  | ReclaimListExpectation
+  | IdentityPickExpectation
+  | DomainPickExpectation
+  | DoorsBoardExpectation;
 
 // `visual` is the SIBLING of `expects`, not a member of it: Expectation means "what I want back from you", a
 // visual asks for nothing and simply renders. See lib/agent/session-visual.ts.

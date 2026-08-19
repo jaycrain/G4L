@@ -123,3 +123,71 @@ export async function quietDriftClaim(db: Db, memberId: string): Promise<Date | 
 
 /** Every Door slug, board order applied by the caller — exported so a surface never hand-lists the taxonomy. */
 export const ALL_DOOR_SLUGS: readonly DoorSlug[] = DOORS.map((d) => d.slug);
+
+// ---------------------------------------------------------------------------------------------------------------
+// THE WIRE FORMAT — one serializer, one parser, defined together.
+//
+// The board is a client component and the engine is server-side, so her selection crosses as a message string. The
+// obvious way to build that is a template literal in the component and a regex in the engine — two implementations
+// of one format, in two files, edited months apart. They drift, and the failure is silent: the member taps, the
+// message sends, and the engine reads nothing.
+//
+// So the component imports serializeBoardSubmission and never writes the string itself, and the round-trip is
+// tested rather than the halves.
+// ---------------------------------------------------------------------------------------------------------------
+
+export type BoardSubmission = {
+  doors: { slug: DoorSlug; relevance: number | null }[];
+  quietDrift: boolean;
+  first: DoorSlug | null;
+  biggest: DoorSlug | null;
+  stillOpen: DoorSlug[];
+};
+
+const PREFIX = '[board]';
+
+export function serializeBoardSubmission(s: BoardSubmission): string {
+  const parts = [
+    ...s.doors.map((d) => `door:${d.slug}${d.relevance ? `=${d.relevance}` : ''}`),
+    ...(s.quietDrift ? ['quiet_drift'] : []),
+    ...(s.first ? [`first:${s.first}`] : []),
+    ...(s.biggest ? [`biggest:${s.biggest}`] : []),
+    ...s.stillOpen.map((x) => `open:${x}`),
+  ];
+  return `${PREFIX} ${parts.join(' ')}`.trim();
+}
+
+/** `null` when this is not a board submission at all — an ordinary member message must pass straight through. */
+export function parseBoardSubmission(message: string): BoardSubmission | null {
+  const m = (message ?? '').trim();
+  if (!m.startsWith(PREFIX)) return null;
+
+  const out: BoardSubmission = { doors: [], quietDrift: false, first: null, biggest: null, stillOpen: [] };
+  for (const tok of m.slice(PREFIX.length).trim().split(/\s+/).filter(Boolean)) {
+    if (tok === 'quiet_drift') { out.quietDrift = true; continue; }
+    const [key, rest] = tok.split(':', 2);
+    if (!rest) continue;
+    const [slug, rating] = rest.split('=', 2);
+    // An unknown slug is DROPPED, never guessed at. A board that sent something we cannot place is a bug to see
+    // in a test, not a Door to invent on her record.
+    if (!isDoorSlug(slug)) continue;
+    if (key === 'door') {
+      const n = Number(rating);
+      out.doors.push({ slug, relevance: Number.isFinite(n) && n >= 1 && n <= 10 ? n : null });
+    } else if (key === 'first') out.first = slug;
+    else if (key === 'biggest') out.biggest = slug;
+    else if (key === 'open') out.stillOpen.push(slug);
+  }
+  // A temporal answer about a Door she did not mark cannot be trusted — the component clears these when she
+  // unmarks, but the engine must not depend on a client having done that correctly.
+  const marked = new Set(out.doors.map((d) => d.slug));
+  if (out.first && !marked.has(out.first)) out.first = null;
+  if (out.biggest && !marked.has(out.biggest)) out.biggest = null;
+  out.stillOpen = out.stillOpen.filter((s) => marked.has(s));
+  return out;
+}
+
+/** Did she leave the board without marking anything? Ruling #7 — this is allowed, and the Companion asks once. */
+export function boardIsEmpty(s: BoardSubmission): boolean {
+  return s.doors.length === 0 && !s.quietDrift;
+}

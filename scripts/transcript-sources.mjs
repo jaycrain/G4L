@@ -35,7 +35,11 @@ export const SECTIONS = [
   // doors-board.ts joined 2026-08-18 with D5. It is the RECOGNITION copy for the R2 board — the paragraph a
   // member reads to decide whether a Door is hers — as distinct from lib/doors.ts's one-line taxonomy descriptor.
   // Listed the same day it was written, before it could ship missing from a bundle.
-  { title: 'Reconnect — the gateway', files: ['lib/agent/reconnect.ts', 'lib/idq/instrument.ts', 'lib/ceremony/reconnect-ceremony-beats.ts', 'lib/reconnect/legacy-letter.ts', 'lib/content/doors-board.ts'] },
+  { title: 'Reconnect — the gateway', files: ['lib/agent/reconnect.ts', 'lib/idq/instrument.ts', 'lib/ceremony/reconnect-ceremony-beats.ts', 'lib/reconnect/legacy-letter.ts', 'lib/content/doors-board.ts',
+    // The board's own UI copy — the rating prompt and the three temporal questions she reads while tapping.
+    // The CARD text lives in lib/content/doors-board.ts; these are the words around it, and a member reads
+    // both. Added 2026-08-18, the day the surface was written.
+    'app/reconnect/doors-board.tsx'] },
   { title: 'Rewire — mind', files: ['lib/agent/rewire.ts', 'lib/curriculum/content/rewire.ts', 'lib/ceremony/rewire-ceremony-beats.ts'] },
   { title: 'Rebuild — body', files: ['lib/agent/rebuild.ts', 'lib/rebuild/why-instrument.ts', 'lib/rebuild/skills-instrument.ts', 'lib/ceremony/rebuild-ceremony-beats.ts'] },
   { title: 'Reclaim — the outcome', files: ['lib/agent/reclaim.ts', 'lib/reclaim/bigger-world-instrument.ts', 'lib/ceremony/reclaim-ceremony-beats.ts'] },
