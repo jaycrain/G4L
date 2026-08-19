@@ -23,18 +23,12 @@ import { RELEVANCE_ANCHORS } from '../../lib/reconnect/door-profile.ts';
 // chore, and this is exactly the data where that would sting.
 
 
-/** The opening sentence — enough to recognise yourself in, without making the board eleven paragraphs long. */
-function firstLine(text: string): string {
-  const m = /^[^.!?]*[.!?]/.exec(text.trim());
-  return m ? m[0] : text;
-}
 
 type Props = { expects: DoorsBoardExpectation; disabled?: boolean; onSubmit: (payload: string) => void };
 
 export default function DoorsBoard({ expects, disabled, onSubmit }: Props) {
   const [marked, setMarked] = useState<Set<string>>(new Set(expects.held));
   const [ratings, setRatings] = useState<Record<string, number>>({});
-  const [open, setOpen] = useState<string | null>(null);
   const [quiet, setQuiet] = useState(false);
   const [first, setFirst] = useState<string | null>(null);
   const [biggest, setBiggest] = useState<string | null>(null);
@@ -75,7 +69,6 @@ export default function DoorsBoard({ expects, disabled, onSubmit }: Props) {
       <div style={{ display: 'grid', gap: 8 }}>
         {expects.cards.map((c) => {
           const on = marked.has(c.slug);
-          const expanded = open === c.slug;
           return (
             <div
               key={c.slug}
@@ -88,31 +81,21 @@ export default function DoorsBoard({ expects, disabled, onSubmit }: Props) {
                 padding: '0.7rem 0.9rem',
               }}
             >
+              {/* THE WHOLE CARD IS VISIBLE. It was a first line plus "More" — but the copy is four sentences, and
+                  hiding recognition copy behind a tap on the surface whose only job is recognition was solving a
+                  length problem that did not exist. The headline is always bold: it is the name of a room she is
+                  deciding whether she has been in, not a list item. */}
               <button
                 type="button"
                 onClick={() => toggle(c.slug)}
                 disabled={disabled}
                 aria-pressed={on}
-                style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'none', padding: 0, font: 'inherit', color: 'inherit', fontWeight: on ? 600 : 400, cursor: 'pointer' }}
+                style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'none', padding: 0, font: 'inherit', color: 'inherit', fontWeight: 600, cursor: 'pointer' }}
               >
                 {on ? '✓ ' : ''}{c.name}
               </button>
 
-              {/* THE FIRST LINE IS ALWAYS VISIBLE. Collapsed, the board was eleven labelled boxes and the
-                  recognition copy — the whole point of the surface — cost a tap per Door to read. Greg's design is
-                  BROWSE and mark; browsing should not be work. */}
-              <p style={{ margin: '0.35rem 0 0', lineHeight: 1.7, fontSize: '0.95rem' }}>
-                {expanded ? c.recognition : firstLine(c.recognition)}{' '}
-                <button
-                  type="button"
-                  className="connect-cta"
-                  onClick={() => setOpen(expanded ? null : c.slug)}
-                  disabled={disabled}
-                  aria-expanded={expanded}
-                >
-                  {expanded ? 'Less' : 'More →'}
-                </button>
-              </p>
+              <p style={{ margin: '0.35rem 0 0', lineHeight: 1.7, fontSize: '0.95rem' }}>{c.recognition}</p>
 
               {/* The label sits ABOVE the three, not beside them. Inline, the row wrapped and orphaned "very
                   relevant" onto its own line — leaving the option that means "this one is mine" looking like a
@@ -159,17 +142,12 @@ export default function DoorsBoard({ expects, disabled, onSubmit }: Props) {
               onClick={() => setQuiet((q) => !q)}
               disabled={disabled}
               aria-pressed={quiet}
-              style={{ flex: 1, textAlign: 'left', border: 'none', background: 'none', padding: 0, font: 'inherit', color: 'inherit', fontWeight: quiet ? 600 : 400, cursor: 'pointer' }}
+              style={{ flex: 1, textAlign: 'left', border: 'none', background: 'none', padding: 0, font: 'inherit', color: 'inherit', fontWeight: 600, cursor: 'pointer' }}
             >
               {quiet ? '✓ ' : ''}{expects.quietDrift.name}
             </button>
           </div>
-          <p style={{ margin: '0.35rem 0 0', lineHeight: 1.7, fontSize: '0.95rem' }}>
-            {open === '__quiet' ? expects.quietDrift.recognition : firstLine(expects.quietDrift.recognition)}{' '}
-            <button type="button" className="connect-cta" onClick={() => setOpen(open === '__quiet' ? null : '__quiet')} disabled={disabled} aria-expanded={open === '__quiet'}>
-              {open === '__quiet' ? 'Less' : 'More →'}
-            </button>
-          </p>
+          <p style={{ margin: '0.35rem 0 0', lineHeight: 1.7, fontSize: '0.95rem' }}>{expects.quietDrift.recognition}</p>
         </div>
       </div>
 
@@ -184,13 +162,13 @@ export default function DoorsBoard({ expects, disabled, onSubmit }: Props) {
                 <button
                   key={c.slug}
                   type="button"
-                  className="btn-pill"
+                  className={`scale-chip${stillOpen.has(c.slug) ? ' selected' : ''}`}
                   disabled={disabled}
                   aria-pressed={stillOpen.has(c.slug)}
                   onClick={() => setStillOpen((s) => { const t = new Set(s); t.has(c.slug) ? t.delete(c.slug) : t.add(c.slug); return t; })}
-                  style={{ fontSize: '0.85rem', fontWeight: stillOpen.has(c.slug) ? 600 : 400 }}
+                  style={{ flex: '0 1 auto', fontSize: '0.85rem', padding: '0.35rem 0.7rem' }}
                 >
-                  {stillOpen.has(c.slug) ? '✓ ' : ''}{c.name}
+                  {c.name}
                 </button>
               ))}
             </div>
@@ -198,8 +176,10 @@ export default function DoorsBoard({ expects, disabled, onSubmit }: Props) {
         </div>
       )}
 
-      <button type="button" className="btn-pill" onClick={submit} disabled={disabled} style={{ marginTop: '1.1rem' }}>
-        {marked.size || quiet ? 'Continue' : 'None of these — continue'}
+      {/* TEXT, NOT A PILL, BOTTOM LEFT — the .see-more standard the panels use for their foot link. A filled pill
+          here read as the loudest thing on a page whose job is quiet browsing. */}
+      <button type="button" className="see-more" onClick={submit} disabled={disabled} style={{ display: 'block', border: 'none', background: 'none', padding: 0, cursor: 'pointer', marginTop: '1.1rem' }}>
+        {marked.size || quiet ? 'Continue →' : 'None of these — continue →'}
       </button>
     </div>
   );
@@ -220,13 +200,13 @@ function Pick({ label, options, value, onPick, disabled }: {
           <button
             key={c.slug}
             type="button"
-            className="btn-pill"
+            className={`scale-chip${value === c.slug ? ' selected' : ''}`}
             disabled={disabled}
             aria-pressed={value === c.slug}
             onClick={() => onPick(value === c.slug ? null : c.slug)}
-            style={{ fontSize: '0.85rem', fontWeight: value === c.slug ? 600 : 400 }}
+            style={{ flex: '0 1 auto', fontSize: '0.85rem', padding: '0.35rem 0.7rem' }}
           >
-            {value === c.slug ? '✓ ' : ''}{c.name}
+            {c.name}
           </button>
         ))}
       </div>
