@@ -84,7 +84,6 @@ lib/agent/governance.ts
 lib/agent/idq-conversation.ts
 lib/agent/nudge.ts
 lib/agent/onboarding-harvest.ts
-lib/agent/onboarding-intent.ts
 lib/agent/onboarding.ts
 lib/agent/outreach.ts
 lib/agent/provider.ts
@@ -121,9 +120,7 @@ lib/grinta/index.ts
 lib/health/ai.ts
 lib/health/cron.ts
 lib/measure/store.ts
-lib/member/reclaim.ts
 lib/member/refine.ts
-lib/outreach/validate.ts
 lib/playbook/runnable.ts
 lib/practice/close.ts
 lib/practice/grid.ts

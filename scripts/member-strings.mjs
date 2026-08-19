@@ -48,7 +48,22 @@ function looksLikeSystemPrompt(s) {
 
 // A FRAGMENT of a multi-line template, not a member-readable string. This is the structural test that the
 // phrase denylist above can never cover on its own.
-const ENDS_MID_CLAUSE = /\b(the|a|an|and|or|but|their|your|his|her|its|of|to|in|on|for|with|that|which|so|if|when|as|at|by|from|is|are|was|were|be|been|it|they|you|we|not|no)$/i;
+// Words a sentence CANNOT end on — determiners, prepositions, coordinators. Nothing else.
+//
+// NARROWED 2026-08-19, third extractor blind spot in two weeks and the same shape as the other two: the filter
+// could only recognise copy shaped the way it expected, and what it could not recognise went MISSING rather than
+// reported. "That’s the whole of it" — one of three chip labels declared side by side in the same array — was
+// dropped while "There’s more" and "Not quite right" were kept, because it ends on "it". A complete sentence
+// ending on a pronoun is ordinary English ("that’s just how it is", "certainly not", "thank you", "the answer is
+// no"), and every one of those was unquotable. Cowork would have had two of the three answers a member taps at
+// the heaviest beat in onboarding, with nothing to indicate the third existed.
+//
+// NARROWED PRECISELY, and measured — the first attempt cut too deep. Dropping "that/be/was/so" as well let two
+// genuinely truncated lines through ("…A day, in the clothes you'll be"), which is the exact failure this rule
+// exists to catch and a worse outcome than the omission: Cowork quotes what it is given, so a half-sentence that
+// LOOKS whole gets printed. Only the four that carried real copy are exempt — it, you, is, are — and the words
+// that were doing honest work stay.
+const ENDS_MID_CLAUSE = /\b(the|a|an|and|or|but|their|your|his|her|its|of|to|in|on|for|with|that|which|so|if|when|as|at|by|from|was|were|be|been|they|we|not|no)$/i;
 function isFragment(s) {
   // Starts mid-sentence: a lowercase opener that isn't a legitimate sentence start.
   // The "the / a / an" exemption exists because real copy does start that way — but a genuine sentence also
@@ -57,7 +72,13 @@ function isFragment(s) {
   if (/^[a-z]/.test(s) && !/^(i\b|i'|the |a |an )/i.test(s)) return true;
   if (/^[a-z]/.test(s) && !/[.?!:"'\u2019\u201d)]$/.test(s)) return true;
   if (/\dT\d{2}:\d{2}|^T\d{2}:\d{2}/.test(s)) return true; // ISO timestamp shard
-  // Ends mid-clause: no terminal punctuation AND trails off on a function word.
+  // Ends mid-clause: no terminal punctuation AND trails off on a function word...
+  // ...unless the trailing word is a DEMONSTRATIVE closing a comparison rather than a subordinator opening a
+  // clause. "quieter than that" is finished; "the lines that" is cut off. Both end in "that", and the difference
+  // is entirely the word before it \u2014 a preposition or comparative makes it an object, a noun makes it a hinge.
+  // This is what was costing us Greg's quiet-drift card, the one option on the Doors board for a member who
+  // recognises none of the eleven.
+  if (/\b(than|like|of|with|about|at|in|on|to|from|by|as)\s+(that|it|this|you|us|them|me)$/i.test(s)) return false;
   if (!/[.!?:;,"'\u2019\u201d)\]]$/.test(s) && ENDS_MID_CLAUSE.test(s)) return true;
   return false;
 }
@@ -75,6 +96,13 @@ function isCodeArtifact(s) {
   if (/JSON\.|\bmust be an integer\b|\btypeof\b|\bundefined\b/.test(s)) return true;
   if (/^\)\.|\)\.join\(|=>|\bmap\(|\bfilter\(/.test(s)) return true;   // code tails
   if (/^[+\-*/=<>|&]/.test(s)) return true;                          // starts as an operator ("+ 400 more")
+  // REGEX SOURCE, sliced out of a matcher's alternation ("?re|they are|those are|it"). These were only ever
+  // rejected by ACCIDENT — they happened to end on a function word, so the fragment rule swallowed them and no
+  // one noticed they had no rule of their own. Narrowing that rule exposed them, which is the useful kind of
+  // regression: a filter should reject a thing for the reason it is wrong, not by luck of where it ends.
+  if (/^\?/.test(s)) return true;                                    // a sliced (?:…) group
+  if (/\|/.test(s)) return true;                                     // alternation — never in member prose
+  if (/\\[sdbwSDBW]|\(\?|\)\?/.test(s)) return true;                 // escape classes / optional groups
   // CSS: a value, a shorthand list of values, a duration, a dimension.
   if (/^-?[0-9.]+(rem|px|em|%|s|ms|vh|vw|fr|deg)?(\s+-?[0-9.]+(rem|px|em|%|s|ms|vh|vw|fr|deg)?)*$/.test(s)) return true;
   if (/^(#[0-9a-f]{3,8}|rgba?\(|hsla?\()/i.test(s)) return true;      // colours

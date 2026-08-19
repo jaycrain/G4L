@@ -1,6 +1,6 @@
 # G4L — Member Transcript (authored copy, verbatim)
 
-Stamp: `app @ f236cce · 2026-08-19` · PART 1 of the Cowork release bundle.
+Stamp: `app @ 7906a22 · 2026-08-19` · PART 1 of the Cowork release bundle.
 
 **Quote from this.** Every line below is authored, fixed copy a member reads, in reading order by surface. It does
 **not** include the Companion's in-the-moment reflections (those are model-generated and vary per member — describe
@@ -38,7 +38,7 @@ _source: lib/agent/onboarding-staged.ts_
 - a diagnosis, a move, a job that swallowed you. More often it’s slower: an accumulation of what we call Doors — moments and seasons you walk through and barely notice, each one widening the gap. What’s been happening that caused that version of you to Fade? Tell me how it went for you.
 - Then let's find out what happened. That distance rarely opens all at once — more often
 - Thank you for trusting me with that — that kind of distance rarely opens all at once.
-- Have we got a good handle on how it all happened — or is there more to it?
+- Does that land the way it happened — or is there more?
 - I want to get this right — tell me how it really went, in your own words.
 - Thank you for that. Was there more around that same stretch — other things that landed at the same time — or is that the heart of how it opened?
 - I hear you. Was anything else tangled up in that same period, or does that capture the shape of how the distance opened?
@@ -63,14 +63,13 @@ _source: lib/agent/onboarding-staged.ts_
 - Kept — it’s part of who you are, held in your Playbook.
 - Okay — I’ll leave it as you wrote it.
 - No rush — we can shape that one together anytime.
-- ?s (the end|it for now|all for now|enough( for now)?)|i
-- ?re (broke|broken|bugg(y|ing)|malfunction(ing)?|not (working|listening))|document(ing)? an? (item|entry)|not (a|an) (reclaim[- ]?)?(item|entry|goal)\b|hey,? (g4l|companion)\b|g4l companion|trying to (tell|say) you|talking (to|at) you|you (misunderstood|did\s?n[
 - 8 out of 10
 - 1 to 5
 - And if now isn't the moment for this, you can leave it and come back whenever you like — your place is saved.
 - I've kept those — they're the things you want back, and we'll build that list together in a minute. Right now I'm still with how it happened. Was there more to it?
+- } written down. Have a look — change the wording, add anything I missed, take one off. This is your list.
+- Put them down here in your own words — big or small, three to start is plenty. You can always add more later.
 - Before we go further, a quick baseline — twelve questions, a minute or two.  This sets your starting Grinta Index. Grinta is grit, and you don’t get to midlife without it — this just marks where yours stands today, so you can watch it climb.
-- Answer as you actually are right now, not who you’re aiming to be. For each, how true does it feel — 1 (not at all) to 5 (completely)?  Today:
 - That’s the whole check-in. Thanks for staying with it.
 - the G4L program by working through the four Phases — Reconnect, Rewire, Rebuild, and Reclaim.
 - Take a look below at what I captured from our conversation so far. You are now officially into the first Phase
@@ -83,6 +82,7 @@ _source: lib/agent/onboarding-staged.ts_
 - Record that the member chose NOT to name an identity yet (they will find it at Identity Excavation).
 - Call this ONLY once you have genuinely DRAWN OUT the fade story — never on the first mention of what happened. It means: you explored HOW the distance opened (the sequence, when they first felt it, what it quietly cost them), stayed with one thread until it's particular and real, and checked whether more than one Door stacked on. It signals you're ready to reflect their WHOLE story back in their own words and move on. Naming several things briefly ('married, kids, work') is BREADTH, not depth — do NOT call this until you have something specific and true to reflect. (The system won't let you close the beat before it has genuinely breathed.)
 - My dad's second marriage fell apart
+- ONE EXEMPTION: the turn they CLOSE the story. When they tell you that is the whole of it — "that was it", "it was mostly those three things", a bare "no" to your check — do NOT ask anything further. That turn is a RECEIPT: reflect what they actually just told you, in their words, specific to what they said, and STOP. It is the last thing they read before the next beat opens, and after a story like this one, moving straight on is the part that reads as not having listened. The engine opens what comes next — you do not have to.
 
 _source: app/onboarding/welcome.tsx_
 
@@ -108,6 +108,7 @@ _source: app/onboarding/welcome.tsx_
 - Four short parts, and you can stop between any of them — nothing’s lost.
 - Getting ready
 - Getting ready — you’re in it.
+- Getting to know you
 - Getting to know you — chat with your Companion and take an initial assessment. Plan for about 20 minutes.
 - What you found
 - What you found — see what surfaced.
@@ -130,6 +131,18 @@ _source: app/onboarding/identity-picker.tsx_
 - That’s the one →
 - None of these — I’ll write my own
 - Not sure yet — we’ll find it later
+
+_source: app/onboarding/gap-confirm.tsx_
+
+- What I heard open it:
+- Taken off — I won’t count it.
+- Take one off if it isn’t yours.
+
+_source: lib/agent/gap-confirm-choice.ts_
+
+- There’s more
+- That’s the whole of it
+- Not quite right
 
 
 ## Email verification
@@ -332,6 +345,7 @@ _source: lib/content/doors-board.ts_
 - Your work consumed you. The startup, the promotion, the demanding role. Mornings that used to start with movement started with email. Evenings that used to end with stretching ended with spreadsheets. You built something impressive and lost yourself inside it.
 - The one nobody talks about, because it's not dramatic enough for a diagnosis. Decades of routine without reflection. Work, eat, sleep, repeat. You didn't choose to lose yourself. You just stopped paying attention. And one day you woke up and realized you had no idea who you were beyond your obligations.
 - Explore each Door and mark how familiar it feels. Mark every one that resonates — most people walk through several. There's no hierarchy; the Fade doesn't care how you got here, only that you recognize the room.
+- None of these quite fit — it was quieter than that
 
 _source: app/reconnect/doors-board.tsx_
 
@@ -383,7 +397,6 @@ _source: lib/agent/rewire.ts_
 - Here's your work this week, and it's small: five minutes each morning, sit with that image. Close your eyes, make
 - And here's where it meets last session: when the old voice starts up — "this is stupid," "it'll never happen" —
 - Add a little more detail each day. By the end of the week, you should be able to close your eyes and step right
-- ?m| am)? not sure|not sure|i don
 - Your picture
 - RIGHT NOW (hold): the member is sitting with the image you reflected. Receive their reaction in ONE warm sentence — no advice, no new question.
 - Here's what nobody tells you: everybody slips. The people who make it aren't the ones with more willpower —
@@ -400,8 +413,6 @@ _source: lib/agent/rewire.ts_
 - Grit isn't never falling. It's getting back on — now, today, the next meal, the next ride, the next morning.
 - That's Grinta, and it's the most important thing you build in here.
 - You've got the full kit now: the true lines that answer the lies, the image that outlasts them, and the protocol
-- ?s (the one|it)|yes|yeah|yep|keep (it|that)|the first one|perfect|good|sounds good|i
-- ?t write|did not write|not (my|mine|what i (wrote|said))|isn
 - Restart — go back to your picture, standing in the goal you named.
 - Your true line for a bad day
 - Your False Start Protocol
@@ -420,6 +431,7 @@ _source: lib/curriculum/content/rewire.ts_
 - Write the lie you tell yourself most — in its own words, the way your head actually says it.
 - Your mind runs a quiet campaign to keep you comfortable — and comfortable, right now, means stuck. It tells you things that sound like facts: 'too late for me,' 'I don't have the time,' 'this is just what fifty looks like.' Let's catch the loudest one.
 - That's the cleaned-up version. What does it sound like at 6am when the alarm goes off? Say it rawer.
+- Cross-examine it
 - Two columns: what's the real evidence this is true? And what's the evidence it's not?
 - Now we put it on trial. A lie survives because no one ever asks it for evidence. What's the actual proof for it — and against it? 'Too old' is a story; the people who started at your age and didn't stop are the counter-evidence.
 - You found a lot against it and not much for it. So why have you been treating it like a verdict?
@@ -769,6 +781,7 @@ _source: lib/grinta/survey/instrument.ts_
 - I can persevere and achieve what is important to me
 - I can practice positive self-talk to get me through challenges
 - I know where my life is going and look forward to my future
+- I have a general sense of what I am doing and why I am doing it
 - I know what is needed to take care of my body and mind
 - I have skills needed to manage my physical health and well-being
 - I have confidence in my ability to control my lifestyle habits
@@ -867,6 +880,7 @@ _source: lib/rebuild/skills-map.ts_
 
 - Getting ready
 - Taking action
+- Staying with it
 - Sizing up what you need
 - Watching how it is going
 - Setting goals
@@ -977,6 +991,7 @@ _source: app/badges/[memberId]/page.tsx_
 
 _source: lib/connect/post-session-nudge.ts_
 
+- Go read it
 - Anything from today worth putting in front of the others?
 - Open the Community
 - There are people here doing this at the same time as you. You can read without saying anything.
@@ -1024,10 +1039,12 @@ _source: app/dashboard/topbar-view.tsx_
 
 _source: app/dashboard/dashboard-triptych.tsx_
 
+- Where You Are
 - G4L Companion
 - What's Next
 - My Story
 - Program › Reclaim › …
+- Who you are
 - Dashboard sections
 - Your G4L Companion
 
@@ -1144,6 +1161,7 @@ _source: app/momentum/momentum-log.tsx_
 - Logged — holding steady counts.
 - Could not log.
 - How'd it go? Log a call — no pressure, and steady days count.
+- Log it
 - Add a note (optional)
 
 _source: app/score/[memberId]/page.tsx_
@@ -1152,8 +1170,10 @@ _source: app/score/[memberId]/page.tsx_
 - Who you are to yourself — identity, confidence, the inner story.
 - Your people — connection, belonging, who’s in your corner.
 - How you see what’s ahead — purpose, hope, the road in front of you.
+- Your ID Score right now is
 - You don’t have an ID Score yet. Your first one lands when you take the IDQ, in Reconnect.
 - It’s drawn from four corners of a life.
+- The shape of you
 - Yours fills in with your first IDQ.
 - The big number is the whole picture; the four beneath it are the map. A lower number is a sign of where the work will pay off most.
 - Why it moves slowly
@@ -1245,6 +1265,7 @@ _source: app/playbook/[memberId]/redesign-playbook-view.tsx_
 - The week you’re practicing now.
 - What worked
 - The moves that worked. Run them again.
+- Who you are
 - The self you’re reclaiming, in your words.
 - What you've learned
 - Your reads: your patterns, your reasons, what convinced you.
@@ -1292,6 +1313,7 @@ _source: app/playbook/[memberId]/redesign-playbook-view.tsx_
 - Revisit a Session
 - Your journal
 - Thoughts and feelings in your own words, timestamped to where you are. For a lot of people this is the most freeing thing here — a place to think on the page and understand yourself. Your Companion reads it and pulls keepers up into your Moves, but the writing itself is the point — it only replies if you ask.
+- Waiting on you
 - Things you said in a Session, kept exactly as you said them. Keep one, write into it, or let it go.
 - Write your own entry…
 - Add note

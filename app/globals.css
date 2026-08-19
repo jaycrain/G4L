@@ -515,6 +515,37 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .rlb-done:hover:not(:disabled) { background: #327f7e; border-color: #327f7e; }
 .rlb-done:disabled, .rlb-addbtn:disabled { opacity: 0.5; cursor: default; }
 
+/* The gap confirm — chips + the Doors we heard, sitting ABOVE the composer (this is the one structured surface
+   that does not replace the box). The weighting is the design: the Doors are a quiet line of prose she can
+   correct, the chips are the answer. If the Doors ever read as a second question, they are too loud.
+   Note the explicit `color` on every button — the global button rule paints text white. */
+.gapc { margin: 0.15rem 0 0.6rem; }
+.gapc-doors { font-size: 13px; line-height: 1.9; color: var(--navy, #374f63); margin-bottom: 0.6rem; }
+.gapc-doors-lead { color: var(--muted-grey); }
+.gapc-door-sep { color: var(--muted-grey); }
+/* A Door and its ✕ never split across lines. On a phone "The Aging Parents" wrapped and left its ✕ on the next
+   row, close enough to the following Door to look like ITS control — a mis-tap that silently drops the wrong one
+   on the one surface built for her to correct our inference. */
+.gapc-door { display: inline-block; white-space: nowrap; }
+.gapc-door-name { font-weight: 700; }
+.gapc-door.off .gapc-door-name { text-decoration: line-through; color: var(--muted-grey); font-weight: 600; }
+.gapc-door-drop, .gapc-door-undo {
+  margin: 0 0 0 4px; padding: 1px 5px; background: transparent; border: none; border-radius: 5px;
+  color: #9aa2a8; font-family: inherit; font-size: 11.5px; line-height: 1; cursor: pointer; vertical-align: baseline;
+}
+.gapc-door-drop:hover:not(:disabled) { color: var(--deep-red, #bb2127); background: #eceae7; }
+.gapc-door-undo { color: var(--teal-text); font-weight: 700; }
+.gapc-door-undo:hover:not(:disabled) { background: #eceae7; }
+.gapc-doors-hint { display: block; font-size: 12.5px; color: var(--muted-grey); line-height: 1.5; margin-top: 0.15rem; }
+.gapc-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.gapc-chip {
+  margin: 0; padding: 0.55rem 0.95rem; border: 1.5px solid var(--teal); border-radius: 8px; background: #fff;
+  color: var(--teal-text); font-family: inherit; font-weight: 700; font-size: 14.5px; line-height: 1.2;
+  cursor: pointer; transition: background 0.12s ease;
+}
+.gapc-chip:hover:not(:disabled) { background: rgba(59, 148, 149, 0.12); }
+.gapc-chip:disabled { opacity: 0.5; cursor: default; }
+
 /* Identity tap-to-pick — the candidate handles as chips + a write-your-own path. The tap IS the choice (captured
    verbatim), so this reads as a confident, low-pressure chooser, not a form. On-brand: teal chips, calm skip links. */
 .idp { margin-top: 0.5rem; }

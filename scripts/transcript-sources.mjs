@@ -11,7 +11,10 @@ export const SECTIONS = [
   // missing. app/page.tsx is the PUBLIC landing page: the first words anyone reads, including everyone arriving
   // from a marketing link, and it had never been in a bundle.
   { title: 'The front door (public landing page)', files: ['app/page.tsx'] },
-  { title: 'Onboarding', files: ['lib/agent/onboarding-staged.ts', 'app/onboarding/welcome.tsx', 'app/onboarding/identity-picker.tsx'] },
+  // gap-confirm.tsx carries the three answers a member taps to close her own story, plus the line that shows her
+  // the Doors we inferred and tells her she can take one off. That is authored copy at the heaviest beat in
+  // onboarding, so it is quotable and it belongs in the bundle.
+  { title: 'Onboarding', files: ['lib/agent/onboarding-staged.ts', 'app/onboarding/welcome.tsx', 'app/onboarding/identity-picker.tsx', 'app/onboarding/gap-confirm.tsx', 'lib/agent/gap-confirm-choice.ts'] },
   { title: 'Email verification', files: ['app/login/verify/page.tsx'] },
   // THE FIRST DAY — and it had NEVER been in a bundle, through v3.2.1, v3.3 and v3.4.
   //

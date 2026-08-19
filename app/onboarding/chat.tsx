@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { onboardingTurn, finalizeOnboardingAction, loadOnboardingSessionAction } from './actions.ts';
 import ScaleChips from '../components/scale-chips.tsx';
 import ReclaimListBuilder from './reclaim-list-builder.tsx';
+import GapConfirm from './gap-confirm.tsx';
 import IdentityPicker from './identity-picker.tsx';
 import OnboardingWelcome from './welcome.tsx';
 import type { ConvState, ConvMessage, Expectation } from '../../lib/agent/onboarding.ts';
@@ -500,7 +501,13 @@ export default function OnboardingChat({ welcomeEnabled = false }: { welcomeEnab
           ) : expects?.kind === 'scale' ? (
             <ScaleChips expects={expects} disabled={pending} onPick={(n) => void submit(String(n))} />
           ) : (
-            <form className="chat-input" onSubmit={send}>
+            /* The gap confirm is the ONE structured surface that does not replace the box — the chips are the easy
+               path, not a gate, so anything she wants to say instead still goes where it always went. */
+            <>
+              {expects?.kind === 'gap_confirm' && (
+                <GapConfirm expects={expects} disabled={pending} onChoose={(m) => void submit(m)} />
+              )}
+              <form className="chat-input" onSubmit={send}>
               <textarea
                 ref={taRef}
                 rows={1}
@@ -524,7 +531,8 @@ export default function OnboardingChat({ welcomeEnabled = false }: { welcomeEnab
               <button type="submit" disabled={pending || !input.trim()}>
                 Send
               </button>
-            </form>
+              </form>
+            </>
           )}
         </>
       )}
