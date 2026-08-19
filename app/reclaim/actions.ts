@@ -231,6 +231,7 @@ export async function reclaimTurnAction(
                   destinationIntent: 'keeper',
                   payloadRef: composeQualityDay(qd),
                   label: 'Your Quality Days',
+                  confirmed: true, // she built and signed off this profile in-session
                 },
                 'reclaim',
               );
@@ -331,7 +332,7 @@ export async function reclaimTurnAction(
             await harvestSignal(
               db,
               memberId,
-              { kind: 'plan', ref: 'c1', keeperType: 'plan', destinationIntent: 'keeper', payloadRef: body, label: 'Your Reclaim List, refined' },
+              { kind: 'plan', ref: 'c1', keeperType: 'plan', destinationIntent: 'keeper', payloadRef: body, label: 'Your Reclaim List, refined', confirmed: true },
               'reclaim',
             );
           }

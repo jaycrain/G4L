@@ -9,6 +9,8 @@ import ScaleChips from '../components/scale-chips.tsx';
 import { useChatAutoscroll } from '../components/use-chat-autoscroll.ts';
 import { notifyArtifactCommitted, notifySessionComplete } from '../components/artifact-refresh.ts';
 import { TeachingFrame, TeachingUnderstand } from '../workspace/teaching-cards.tsx';
+import KeeperOffer from '../components/keeper-offer.tsx';
+import type { KeeperProposal } from '../../lib/agent/harvest.ts';
 import { useTeaching } from '../workspace/use-teaching.ts';
 import type { SessionKey } from '../../lib/workspace/session-key.ts';
 import type { RewireCeremonyData } from '../../lib/ceremony/rewire-ceremony-beats.ts';
@@ -29,6 +31,7 @@ const agentBubbles = (text: string): ConvMessage[] =>
 export default function RewireChat({ memberId, session = 'w1' }: { memberId: string; session?: RewireSession }) {
   const router = useRouter();
   const [messages, setMessages] = useState<ConvMessage[]>([]);
+  const [offers, setOffers] = useState<KeeperProposal[]>([]);
   const [state, setState] = useState<ConvState | null>(null);
   const [input, setInput] = useState('');
   const [pending, setPending] = useState(false);
@@ -94,6 +97,9 @@ export default function RewireChat({ memberId, session = 'w1' }: { memberId: str
     }
     setState(r.state);
     setExpects(r.expects ?? null);
+    // Keeper OFFERS from this turn. Nothing is in her Playbook yet — she taps Keep on the ones she wants and the
+    // rest evaporate when she moves on (Jay, 2026-08-19).
+    if (r.proposals?.length) setOffers((o) => [...o, ...r.proposals!]);
     notifyArtifactCommitted(); // push the workspace canvas to re-read now — a confirmed line lands on the left immediately
     if (r.state.stage === 'complete') {
       // W-21 — hand the member home in the companion's voice, then show the Continue → CTA (no more dead-end).
@@ -106,7 +112,7 @@ export default function RewireChat({ memberId, session = 'w1' }: { memberId: str
       // the member acknowledges. A session with nothing to teach has no acknowledgment to wait for, so it keeps
       // the line here — otherwise the goodbye would never arrive on a checkpoint.
       setMessages((m) => [...m, ...agentBubbles(r.reply!), ...badgeBeat]);
-      setDone(true); // session done — the keeper(s) are in the Playbook
+      setDone(true); // session done — any keeper is OFFERED below, and lands only if she keeps it
       // The end card is NOT raised here. It used to fire on this same tick, so it landed on top of the Companion's
       // close, the badge beat and the hand-home before any of them could be read — the receipt arriving before the
       // wrap it is a receipt FOR (Jay's walk, 2026-08-11: "This triggered too quickly and didn't show me the
@@ -140,6 +146,11 @@ export default function RewireChat({ memberId, session = 'w1' }: { memberId: str
           <div key={i} className={`bubble ${m.role}`}>
             {m.role === 'agent' ? <RichText text={m.text} /> : m.text}
           </div>
+        ))}
+        {/* KEEPER OFFERS — in the thread, where the line was said, not in a tray somewhere else. Rendered before
+            the pending indicator so a new turn stacks below them rather than shunting them off-screen. */}
+        {offers.map((p) => (
+          <KeeperOffer key={p.momentId} memberId={memberId} proposal={p} />
         ))}
         {pending && <div className="typing">Thinking…</div>}
         {/* chips scroll WITH the thread (Jay's walk: not pinned) — they answer the question above, autosend. */}

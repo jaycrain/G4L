@@ -15,6 +15,12 @@ export const SECTIONS = [
   // the Doors we inferred and tells her she can take one off. That is authored copy at the heaviest beat in
   // onboarding, so it is quotable and it belongs in the bundle.
   { title: 'Onboarding', files: ['lib/agent/onboarding-staged.ts', 'app/onboarding/welcome.tsx', 'app/onboarding/identity-picker.tsx', 'app/onboarding/gap-confirm.tsx', 'lib/agent/gap-confirm-choice.ts'] },
+  // The keeper OFFER — "Keep this in your Playbook?" and its receipt. Small, but it is the moment a member decides
+  // what the program is allowed to remember about her, so marketing and the book will want the exact words.
+  // keeper-actions.ts carries the failure copy. It is not rendered TODAY — the component only reads res.ok — but
+  // listing it beats excluding it: the guard's own warning is that a wrong exclusion hides real copy, and the day
+  // someone surfaces that error is the day it becomes member-facing without anyone re-checking this list.
+  { title: 'The keeper offer', files: ['app/components/keeper-offer.tsx', 'app/components/keeper-actions.ts'] },
   { title: 'Email verification', files: ['app/login/verify/page.tsx'] },
   // THE FIRST DAY — and it had NEVER been in a bundle, through v3.2.1, v3.3 and v3.4.
   //

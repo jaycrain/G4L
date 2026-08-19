@@ -515,6 +515,23 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .rlb-done:hover:not(:disabled) { background: #327f7e; border-color: #327f7e; }
 .rlb-done:disabled, .rlb-addbtn:disabled { opacity: 0.5; cursor: default; }
 
+/* The keeper OFFER — the Companion showing a line and asking whether to keep it. Reads as a card in the thread,
+   never as a receipt: nothing is in the Playbook until she taps. Deliberately quieter than a bubble (dashed edge,
+   no fill) so it reads as an aside about the conversation rather than as another thing the Companion said. */
+.keeper-offer { margin: 0.6rem 0; padding: 0.7rem 0.85rem; border: 1px dashed #cfd6da; border-radius: 10px; background: transparent; }
+.keeper-offer.kept { border-style: solid; border-color: #e3e2df; background: #f5f4f1; }
+.keeper-offer-label { display: block; font-size: 11.5px; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; color: var(--muted-grey); margin-bottom: 0.3rem; }
+.keeper-offer-body { margin: 0 0 0.55rem; font-size: 15px; line-height: 1.5; color: var(--navy); }
+.keeper-offer-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.keeper-offer-ask { font-size: 13px; color: var(--muted-grey); }
+.keeper-offer-btn {
+  margin: 0; padding: 0.4rem 0.8rem; border: 1.5px solid var(--teal); border-radius: 8px; background: #fff;
+  color: var(--teal-text); font-family: inherit; font-weight: 700; font-size: 13.5px; line-height: 1.2; cursor: pointer;
+}
+.keeper-offer-btn:hover:not(:disabled) { background: rgba(59, 148, 149, 0.12); }
+.keeper-offer-btn:disabled { opacity: 0.55; cursor: default; }
+.keeper-offer-done { font-size: 12.5px; font-weight: 700; color: var(--teal-text); }
+
 /* The gap confirm — chips + the Doors we heard, sitting ABOVE the composer (this is the one structured surface
    that does not replace the box). The weighting is the design: the Doors are a quiet line of prose she can
    correct, the chips are the answer. If the Doors ever read as a second question, they are too loud.

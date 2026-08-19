@@ -9,6 +9,8 @@ import { TeachingFrame, TeachingUnderstand } from '../workspace/teaching-cards.t
 import { keepScienceAction } from '../workspace/actions.ts';
 import { reconnectTaughtSoFar, teachingSourceLabel } from '../../lib/content/teaching.ts';
 import { placeTeachingCards } from '../../lib/teaching/card-placement.ts';
+import KeeperOffer from '../components/keeper-offer.tsx';
+import type { KeeperProposal } from '../../lib/agent/harvest.ts';
 
 // Which beat each asset's card renders FOR — the card resolves its content by stage, so a past asset needs the
 // stage it closed at, not the member's current one.
@@ -48,6 +50,7 @@ export default function ReconnectChat({
   const [state, setState] = useState<ConvState | null>(null);
   const [input, setInput] = useState('');
   const [pending, setPending] = useState(false);
+  const [offers, setOffers] = useState<KeeperProposal[]>([]);
   const [expects, setExpects] = useState<Expectation | null>(null); // W-24: administered turn (IDQ / §2e grit) → render the scale chips
   const [error, setError] = useState<string | null>(null);
   const [ceremony, setCeremony] = useState<ReconnectCeremonyData | null>(null); // §2f: set when the arc reaches 'ceremony'
@@ -144,6 +147,8 @@ export default function ReconnectChat({
     setMessages((m) => [...m, ...agentBubbles(r.reply!)]);
     setState(r.state);
     setExpects(r.expects ?? null);
+    // Keeper OFFERS from this turn — she keeps what she wants; the rest evaporate.
+    if (r.proposals?.length) setOffers((o) => [...o, ...r.proposals!]);
     notifyArtifactCommitted(); // push the workspace canvas to re-read now (identity/doors/list land on the left)
     // §2f — the arc reached the Ceremony: load the reveal data and fire the full-screen overlay.
     if (r.state.stage === 'ceremony') {
@@ -226,6 +231,10 @@ export default function ReconnectChat({
               <TeachingUnderstand key={a} sessionKey="reconnect" stage={LAST_BEAT[a]} onAcknowledge={() => keepReconnectScience(LAST_BEAT[a])} />
             ))}
           </Fragment>
+        ))}
+        {/* Keeper OFFERS — nothing is in her Playbook until she taps Keep. */}
+        {offers.map((p) => (
+          <KeeperOffer key={p.momentId} memberId={memberId} proposal={p} />
         ))}
         {pending && <div className="typing">Thinking…</div>}
         {/* W-32 chips scroll WITH the thread (Jay's walk: not pinned to the bottom) — they answer the question above, autosend. */}

@@ -28,7 +28,7 @@ import { BEAT_SEP } from '../../lib/agent/onboarding.ts';
 import { scaleExpects, type ArcConfig } from '../../lib/agent/onboarding-staged.ts';
 import { saveArcSession, loadArcSession, clearArcSession } from '../../lib/agent/arc-session.ts';
 import { loadReconnectCaptures } from '../../lib/agent/reconnect.ts';
-import { drainHarvest } from '../../lib/agent/harvest.ts';
+import { drainHarvest, type KeeperProposal } from '../../lib/agent/harvest.ts';
 import { startPracticeWeek, latestImageKeeper } from '../../lib/practice/store.ts';
 import { saveW3Triggers } from '../../lib/rewire/w3-triggers.ts';
 import { getGrintaBaselineReading, latestGrintaReading, persistGrintaReading, commitmentCheckpointResponsesMap } from '../../lib/grinta/survey/store.ts';
@@ -167,12 +167,16 @@ async function loadCeremonyKeepers(db: Db, memberId: string): Promise<string[]> 
   }
 }
 
-// Drain the NEW harvest signals this turn (the true lines) → a member_event moment + a kept Playbook entry in the
-// member's own words. Best-effort: a harvest hiccup never fails the conversation turn.
-async function persistRewireHarvest(db: Db, memberId: string, prev: ConvState, turn: Turn): Promise<void> {
-  // drainHarvest emits the QI moment + commits the keeper as INDEPENDENT best-effort steps (a moment-emit failure
-  // never costs the keeper — the prod silent-drop that lost Millie's session keepers), each guarded + logged.
-  await drainHarvest(db, memberId, prev, turn.state, 'rewire');
+// Drain the NEW harvest signals this turn (the true lines) → a member_event moment + an OFFER the member can keep.
+// Nothing reaches the Playbook here: she decides inline (Jay, 2026-08-19). Best-effort — a harvest hiccup never
+// fails the conversation turn, and losing an offer costs one line, never her words.
+async function rewireHarvestOffers(db: Db, memberId: string, prev: ConvState, turn: Turn): Promise<KeeperProposal[]> {
+  try {
+    return await drainHarvest(db, memberId, prev, turn.state, 'rewire');
+  } catch (e) {
+    console.error(`[rewire] harvest drain failed for member=${memberId}:`, e);
+    return [];
+  }
 }
 
 // Per-turn save/resume (the same W-15 pattern Reconnect uses, now per Rewire session). Keyed by (member, 'rewire', session)
@@ -223,7 +227,7 @@ export async function rewireTurnAction(
   history: ConvMessage[],
   message: string,
   session: RewireSession = 'w1',
-): Promise<{ ok: boolean; reply?: string; state?: ConvState; expects?: Expectation; error?: string; earnedBadge?: { id: string; name: string } | null }> {
+): Promise<{ ok: boolean; reply?: string; state?: ConvState; expects?: Expectation; error?: string; earnedBadge?: { id: string; name: string } | null; proposals?: KeeperProposal[] }> {
   if (!rewireEnabled()) return { ok: false, error: 'Rewire is not enabled.' };
   if (!(await authorizeMember(memberId))) return { ok: false, error: 'Not authorized.' };
   // GOVERNANCE — ESCALATE TO A HUMAN. The engine already short-circuits this turn to the 988 protocol
@@ -256,7 +260,7 @@ export async function rewireTurnAction(
         : session === 'w2'
           ? await liveTurnRewireW2(state, history, message, carried)
           : await liveTurnRewire(state, history, message, carried);
-    await persistRewireHarvest(db, memberId, state, turn); // true lines / image / protocol → Playbook keepers
+    const proposals = await rewireHarvestOffers(db, memberId, state, turn); // true lines / image / protocol → OFFERS
     // On completion: (1) mark the Session CLOSED so the curriculum forecast advances the member W1→W2→W3→Checkpoint
     // (the v2.3 conversational sessions complete via the kernel, not the step player); (2) open the practice week
     // (Decision MM R4). Both best-effort — a hiccup never fails the conversation turn.
@@ -294,7 +298,7 @@ export async function rewireTurnAction(
       }
     }
     await persistRewireArcSession(db, memberId, session, history, message, turn.reply, turn); // save transcript for resume (or clear on completion)
-    return { ok: true, reply: turn.reply, state: turn.state, expects: turn.expects, earnedBadge };
+    return { ok: true, reply: turn.reply, state: turn.state, expects: turn.expects, earnedBadge, proposals };
   } catch {
     return { ok: false, error: 'Something went wrong — please try again.' };
   }

@@ -259,7 +259,7 @@ export async function rebuildTurnAction(
           await harvestSignal(
             db,
             memberId,
-            { kind: 'plan', ref: 'b3', keeperType: 'plan', destinationIntent: 'keeper', payloadRef: composePilotPlan(activity, diet), label: 'Your Lifestyle Pilot' },
+            { kind: 'plan', ref: 'b3', keeperType: 'plan', destinationIntent: 'keeper', payloadRef: composePilotPlan(activity, diet), label: 'Your Lifestyle Pilot', confirmed: true },
             'rebuild',
           );
         }

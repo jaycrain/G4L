@@ -1011,6 +1011,7 @@ export async function sendCheckin(memberId: string, memberMessage: string): Prom
               destinationIntent: 'keeper',
               payloadRef: keeperBodyFrom(finishing.review.lines, finishing.kind as PracticeKind),
               label: PRACTICE_KEEPER_NAME[finishing.kind as PracticeKind] ?? 'Your practice week',
+              confirmed: true, // she reviewed and closed the week — this is its record, not a guess about her
             },
             'companion',
           );

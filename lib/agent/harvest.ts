@@ -48,6 +48,38 @@ export async function emitHarvestMoment(db: Db, memberId: string, m: HarvestMome
   return rows[0]!.moment_id;
 }
 
+/**
+ * A keeper the Companion is OFFERING. Nothing is in the Playbook yet — this crosses to the client, the member
+ * taps Keep, and only then does it commit.
+ *
+ * WHY THIS TYPE EXISTS (Donna, 2026-08-19). Her Visualization "picture" was stored as "Can you remind me what is
+ * on my Reclaim List?" — her own housekeeping question, filed as an insight about her. Most of what appeared
+ * under "What Lights You Up" was that kind of text. Her words: it "signals the app isn't actually working."
+ *
+ * The cause was not the model's judgement. `state: 'proposed' | 'kept' | 'dismissed'` already existed, this
+ * module's own doc already said the default was propose-then-confirm, and the store already knew how to promote a
+ * proposal rather than duplicate it. The arc path simply hardcoded `state: 'kept'` and walked around the gate we
+ * had built. So a member's aside became a permanent claim about her, and when she asked the Companion to fix it,
+ * it could only say no — the entry was already committed.
+ *
+ * Jay's ruling, 2026-08-19: "Let the member decide inline before it gets posted." NOTHING is written until she
+ * taps — not even a 'proposed' row. An ignored offer evaporates, which is the honest default: proposals that pile
+ * up in a curation queue reproduce the same full-of-junk panel one step removed.
+ *
+ * The QI moment still fires when the offer is MADE, best-effort and outside the write path. That is deliberate:
+ * it makes the decline rate measurable, which is the capture-quality signal we otherwise have no read on.
+ */
+export type KeeperProposal = {
+  /** Correlates the offer's QI moment with the entry, if she keeps it. */
+  momentId: string;
+  keeperType?: string;
+  /** The exact line being offered — shown to her verbatim, because she is ruling on these words. */
+  body: string;
+  /** What it IS ("Your picture", "Your true line") — the chip she sees. */
+  label: string;
+  ref: string;
+};
+
 /** Commit a keeper → playbook_entry (the stateful artifact). keeper_type is authoritative; moment_id links the
  *  event. Defaults to 'proposed' (propose-then-confirm); the caller passes 'kept' when it's already confirmed. */
 export async function commitKeeper(
@@ -91,9 +123,9 @@ export async function commitKeeper(
 export async function harvestSignal(
   db: Db,
   memberId: string,
-  s: { kind: string; ref?: string; keeperType?: string; destinationIntent: 'keeper' | 'share' | 'both'; payloadRef: string; label?: string; private?: boolean },
+  s: { kind: string; ref?: string; keeperType?: string; destinationIntent: 'keeper' | 'share' | 'both'; payloadRef: string; label?: string; private?: boolean; confirmed?: boolean },
   surface: string,
-): Promise<void> {
+): Promise<KeeperProposal | null> {
   const ref = s.ref ?? s.kind;
   let momentId: string;
   try {
@@ -106,11 +138,22 @@ export async function harvestSignal(
       private: s.private,
     });
   } catch (e) {
-    console.error(`[harvest] moment emit failed (${surface}/${s.kind}) — committing the keeper anyway:`, e);
-    momentId = randomUUID(); // the keeper still lands with a valid correlation id; only the QI moment row is lost
+    console.error(`[harvest] moment emit failed (${surface}/${s.kind}) — offering the keeper anyway:`, e);
+    momentId = randomUUID(); // the proposal still carries a valid correlation id; only the QI moment row is lost
   }
-  // A keeper-intent signal COMMITS a visible Playbook entry; a share-only or private signal does not.
-  if (s.destinationIntent !== 'share' && !s.private) {
+  // A keeper-intent signal is now OFFERED, not committed. Share-only and private signals never were.
+  if (s.destinationIntent === 'share' || s.private) return null;
+
+  // ALREADY CONFIRMED → commit, don't ask again.
+  //
+  // The line is whether the member EXPLICITLY AUTHORED this as the exercise's product and already signed off on
+  // it: her Quality Days profile, her refined Reclaim List, her Lifestyle Pilot. Re-asking "keep this?" about a
+  // thing she just deliberately built is friction that teaches her to tap past the question — which would blunt
+  // the offer exactly where it matters, on the conversational captures that produced Donna's report.
+  //
+  // The DEFAULT IS TO ASK. A new harvest site that forgets this flag offers rather than commits, so the failure
+  // mode of forgetting is a redundant question, not a silent claim about her.
+  if (s.confirmed) {
     try {
       await commitKeeper(db, memberId, {
         momentId,
@@ -123,7 +166,16 @@ export async function harvestSignal(
     } catch (e) {
       console.error(`[harvest] keeper commit failed (${surface}/${s.kind}):`, e);
     }
+    return null;
   }
+
+  return {
+    momentId,
+    keeperType: s.keeperType,
+    body: s.payloadRef,
+    label: s.label ?? s.kind,
+    ref,
+  };
 }
 
 /** Drain the harvest signals produced THIS turn — those the arc pushed beyond what the prior (client-sent) state
@@ -137,11 +189,31 @@ export async function drainHarvest(
   prev: { pendingHarvest?: readonly unknown[] },
   next: { pendingHarvest?: readonly { kind: string; ref?: string; keeperType?: string; destinationIntent: 'keeper' | 'share' | 'both'; payloadRef: string; label?: string; private?: boolean }[] },
   surface: string,
-): Promise<void> {
+): Promise<KeeperProposal[]> {
   const priorN = prev.pendingHarvest?.length ?? 0;
+  const out: KeeperProposal[] = [];
   for (const s of (next.pendingHarvest ?? []).slice(priorN)) {
-    await harvestSignal(db, memberId, s, surface);
+    const p = await harvestSignal(db, memberId, s, surface);
+    if (p) out.push(p);
   }
+  return out;
+}
+
+/**
+ * She tapped Keep. NOW it lands.
+ *
+ * The one place a conversational keeper becomes a Playbook entry, so there is exactly one answer to "how did this
+ * get in here?" — she put it there.
+ */
+export async function keepProposal(db: Db, memberId: string, p: KeeperProposal): Promise<void> {
+  await commitKeeper(db, memberId, {
+    momentId: p.momentId,
+    keeperType: p.keeperType as KeeperType,
+    section: 'own_words',
+    body: p.body,
+    state: 'kept',
+    source: { kind: 'own', ref: p.ref, label: p.label },
+  });
 }
 
 /** The ONE v2.1 detector (Decision R, minimal): a member-CONFIRMED identity phrase → a `definition` keeper,

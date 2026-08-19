@@ -14,7 +14,7 @@ import { saveArcSession, loadArcSession, clearArcSession } from '../../lib/agent
 import { softSetMemberDoors, getMemberDoorNames } from '../../lib/member/refine.ts';
 import type { ReconnectCeremonyData } from '../../lib/ceremony/reconnect-ceremony-beats.ts';
 import { earnedBadgeReveal } from '../../lib/ceremony/badge-reveal.ts';
-import { emitHarvestMoment, drainHarvest, type KeeperType } from '../../lib/agent/harvest.ts';
+import { emitHarvestMoment, drainHarvest, type KeeperType, type KeeperProposal } from '../../lib/agent/harvest.ts';
 import { saveLegacyLetter } from '../../lib/reconnect/legacy-letter-store.ts';
 import { claimDoorsFromBoard, setBiggestImpact, setQuietDriftClaim, type BoardSubmission } from '../../lib/reconnect/doors-board-claim.ts';
 import { noteDoorProfile } from '../../lib/reconnect/door-profile.ts';
@@ -244,10 +244,15 @@ async function persistReconnectComplete(db: Db, memberId: string, prev: ConvStat
 
 // §2d harvest: drain any NEW harvest candidates the engine queued this turn (drift keeper now; legacy share later) via
 // the existing member_event/emitHarvestMoment seam — same default-emit discipline as the §2b tell. Best-effort.
-async function persistHarvest(db: Db, memberId: string, prev: ConvState, turn: Turn): Promise<void> {
-  // drainHarvest emits the QI moment + commits the keeper as INDEPENDENT best-effort steps (a moment-emit failure
-  // never costs the keeper — the prod silent-drop that lost Millie's session keepers), each guarded + logged.
-  await drainHarvest(db, memberId, prev, turn.state, 'reconnect');
+async function reconnectHarvestOffers(db: Db, memberId: string, prev: ConvState, turn: Turn): Promise<KeeperProposal[]> {
+  // Nothing is committed here any more — these come back as OFFERS the member keeps inline. The QI moment still
+  // emits (best-effort, guarded) so a declined offer is measurable.
+  try {
+    return await drainHarvest(db, memberId, prev, turn.state, 'reconnect');
+  } catch (e) {
+    console.error(`[reconnect] harvest drain failed for member=${memberId}:`, e);
+    return [];
+  }
 }
 
 export async function startReconnectAction(memberId: string): Promise<{ ok: boolean; reply?: string; state?: ConvState; expects?: Expectation; error?: string }> {
@@ -354,7 +359,7 @@ export async function reconnectTurnAction(
   state: ConvState,
   history: ConvMessage[],
   message: string,
-): Promise<{ ok: boolean; reply?: string; state?: ConvState; expects?: Expectation; error?: string }> {
+): Promise<{ ok: boolean; reply?: string; state?: ConvState; expects?: Expectation; error?: string; proposals?: KeeperProposal[] }> {
   if (!reconnectEnabled()) return { ok: false, error: 'Reconnect is not enabled.' };
   if (!(await authorizeMember(memberId))) return { ok: false, error: 'Not authorized.' };
   // GOVERNANCE — ESCALATE TO A HUMAN. The engine already short-circuits this turn to the 988 protocol
@@ -373,7 +378,7 @@ export async function reconnectTurnAction(
     // Committed side-effects this turn persist to the DB (best-effort): a re-seeing (§2b) + a completed IDQ (§2c).
     const db = (await getDb()) as unknown as Db;
     await persistRevision(db, memberId, state, turn);
-    await persistHarvest(db, memberId, state, turn); // §2d drift keeper (and later legacy share)
+    const proposals = await reconnectHarvestOffers(db, memberId, state, turn); // §2d — offered, not committed
     await persistCheckpoint(db, memberId, state, turn); // §2e Checkpoint — the first grinta movement
     await persistDoorsBoard(db, memberId, turn); // R2 — her Doors board taps, before anything reads the set
     await persistLegacyLetter(db, memberId, turn); // R3 — the member's own letter, dated in THEIR timezone
@@ -384,7 +389,7 @@ export async function reconnectTurnAction(
     const closeOverride = await persistMeasurement(db, memberId, state, turn);
     const finalReply = closeOverride ?? turn.reply;
     await persistArcSession(db, memberId, history, message, finalReply, turn); // W-15 — save the transcript for resume (or clear at ceremony)
-    return { ok: true, reply: finalReply, state: turn.state, expects: turn.expects };
+    return { ok: true, reply: finalReply, state: turn.state, expects: turn.expects, proposals };
   } catch {
     return { ok: false, error: 'Something went wrong — please try again.' };
   }

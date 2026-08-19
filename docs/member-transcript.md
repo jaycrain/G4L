@@ -1,6 +1,6 @@
 # G4L — Member Transcript (authored copy, verbatim)
 
-Stamp: `app @ d891df6 · 2026-08-19` · PART 1 of the Cowork release bundle.
+Stamp: `app @ 224bd26 · 2026-08-19` · PART 1 of the Cowork release bundle.
 
 **Quote from this.** Every line below is authored, fixed copy a member reads, in reading order by surface. It does
 **not** include the Companion's in-the-moment reflections (those are model-generated and vary per member — describe
@@ -141,6 +141,16 @@ _source: lib/agent/gap-confirm-choice.ts_
 - There’s more
 - That’s the whole of it
 - Not quite right
+
+
+## The keeper offer
+
+_source: app/components/keeper-offer.tsx_
+
+- In your Playbook.
+- Saved to your Playbook
+- Keep this in your Playbook?
+- Keep it
 
 
 ## Email verification
