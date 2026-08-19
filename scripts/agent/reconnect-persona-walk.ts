@@ -16,6 +16,7 @@
 import { reconnectOpening, applyReconnectTurn, liveTurnReconnect } from '../../lib/agent/reconnect.ts';
 import type { Collected, ConvMessage, ConvState, Turn } from '../../lib/agent/onboarding.ts';
 import { TOTAL_ITEMS } from '../../lib/idq/instrument.ts';
+import { serializeBoardSubmission } from '../../lib/reconnect/doors-board-claim.ts';
 
 if (!process.env.ANTHROPIC_API_KEY) {
   console.error('Set ANTHROPIC_API_KEY (e.g. add it to .env.local) — this walk drives the real model.');
@@ -202,6 +203,22 @@ async function askYou(rl: { question: (q: string) => Promise<string> }): Promise
   return (ans ?? 'quit').trim();
 }
 
+/**
+ * What a member does with her fingers, as a submission. Marks the Doors she holds (pre-lit), rates the first
+ * "very relevant" and the rest "somewhat", says which came first and which weighs most today, and leaves
+ * still-open UNANSWERED — so the walk exercises the one-ask path rather than the tidy one.
+ */
+function tapBoard(e: { cards: { slug: string }[]; held: string[] }): string {
+  const held = e.held.length ? e.held : e.cards.slice(0, 2).map((c) => c.slug);
+  return serializeBoardSubmission({
+    doors: held.map((slug, i) => ({ slug, relevance: i === 0 ? 3 : 2 })) as never,
+    quietDrift: false,
+    first: (held[0] as never) ?? null,
+    biggest: ((held[1] ?? held[0]) as never) ?? null,
+    stillOpen: [],
+  });
+}
+
 async function runPersona(p: Persona, rl?: { question: (q: string) => Promise<string> }): Promise<void> {
   console.log(`\n══════════ ${rl ? 'interactive walk (you are the member)' : `persona: ${p.name}`} ══════════`);
   console.log(`seeded doors: ${JSON.stringify(p.committed.doors)}  identity: ${p.committed.identityNoun ?? '(skipped)'}`);
@@ -219,8 +236,16 @@ async function runPersona(p: Persona, rl?: { question: (q: string) => Promise<st
   for (let i = 0; i < 80 && !turn.complete && stageOf(state) !== 'ceremony'; i++) {
     const stageBefore = stageOf(state);
     const administered = stageBefore === 'entry' || stageBefore === 'measurement' || stageBefore === 'checkpoint';
-    const m = rl ? await askYou(rl) : await member(p.system, history);
-    if (rl && (m === '' || m.toLowerCase() === 'quit')) { console.log('\n(ended early)'); break; }
+    // THE BOARD IS A UI, SO THE HARNESS TAPS IT. A persona typing prose at a structured surface exercises a
+    // retired path no member takes and reports failures that are not real — that already happened once with the
+    // Reclaim List builder, and I nearly changed live steering on the strength of it. So when the engine asks for
+    // the board, simulate what a member does with her fingers. The model plays the CONVERSATION, not the taps.
+    const boardExpectation = turn.expects?.kind === 'doors_board' ? turn.expects : null;
+    const m = boardExpectation
+      ? tapBoard(boardExpectation)
+      : rl ? await askYou(rl) : await member(p.system, history);
+    if (boardExpectation) console.log(`[board · tapped] ${m}`);
+    if (rl && !boardExpectation && (m === '' || m.toLowerCase() === 'quit')) { console.log('\n(ended early)'); break; }
     // entry + administered measurement are deterministic (mirror the action); the draw-out beats call the live model.
     turn = administered ? applyReconnectTurn(state, history, m, { text: '' }) : await liveTurnReconnect(state, history, m);
     history.push({ role: 'member', text: m });

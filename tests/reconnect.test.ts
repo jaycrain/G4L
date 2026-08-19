@@ -81,7 +81,10 @@ test('reconnect · the callback is READ-ONLY — a first response hands into Doo
   // Listen-first: the model's acknowledgment of what they just said LEADS, then the Door excavation opens as its own
   // beat (the action now feeds a live model turn here, so this is no longer empty → it never jumps straight to the Door).
   assert.match(turn.reply, /That’s a real thread\./, 'the model ack leads');
-  assert.match(turn.reply, /The Grind/, 'then opens the real excavation on the primary door');
+  // D5: the excavation no longer opens on OUR primary Door — the board opens instead, and she chooses. What this
+  // test still pins is the listen-first order: her acknowledgment leads, the next beat follows it.
+  assert.equal(turn.expects?.kind, 'doors_board', 'the Door beat is now hers to open');
+  assert.match(turn.reply, /mark the ones that are yours/i, 'framing, not a Door we picked');
 });
 
 // ============================================================================================================
@@ -89,12 +92,23 @@ test('reconnect · the callback is READ-ONLY — a first response hands into Doo
 // model-judged depth floor/cap, the confirm routing, and graceful degradation (a StageDef on the kernel).
 // ============================================================================================================
 
-test('reconnect doors · entry hands into the excavation, opening on the committed PRIMARY door', () => {
+test('reconnect doors · entry hands into the BOARD, and does not pick a Door for her (D5)', () => {
+  // It used to open on the committed primary Door by name. The board replaced that: naming where we start AND
+  // handing her the full set to choose from, in the same breath, said "let's start with The Grind" before she
+  // marked anything — and then said it again with a different Door after she did. Found on the first live walk.
+  // The excavation opener is not lost; it moved to the board receipt, where it names the Door SHE said weighs
+  // most rather than the one our matcher put first.
   const atEntry: ConvState = { stage: 'entry', collected: { identityNoun: 'Racer', doors: ['marriage', 'grind'], gap: 'The divorce took it.' } };
   const turn = applyReconnectTurn(atEntry, [], 'yeah, still the marriage', { text: '' });
   assert.equal(turn.state.stage, 'doors', 'advances into the Doors excavation');
-  assert.match(turn.reply, /The Relationship/, 'opens on the committed primary door, by name');
-  assert.match(turn.reply, /the real thing|actually happened|most vivid/i, 'invites the real story, not a summary');
+  assert.equal(turn.expects?.kind, 'doors_board', 'the board comes with the framing');
+  assert.ok(!/let's start with/i.test(turn.reply), 'it must not choose her Door before she has');
+  assert.match(turn.reply, /mark the ones that are yours/i);
+
+  // ...and once she has marked them, the excavation opens on HER answer, by name.
+  const after = applyReconnectTurn(turn.state, [], '[board] door:marriage=3 door:grind=2 biggest:marriage', { text: '' });
+  assert.match(after.reply, /The Relationship/, 'now it names the Door, and it is the one she chose');
+  assert.match(after.reply, /the real thing|actually|weighs most/i, 'invites the real story, not a summary');
 });
 
 test('reconnect doors · DEPTH FLOOR holds — reflect_door on the first exchange does NOT reflect (no insight w/o material)', () => {

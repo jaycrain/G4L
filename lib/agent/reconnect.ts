@@ -185,6 +185,21 @@ function withQuestion(modelText: string, probe: string | null): string {
 //   "what it quietly cost {the Player}" → "cost you". Addressing a member in the third person by their claimed
 //   Identity is the voice break Jay could always feel but not place. See addressTheMember() below.
 function doorOpen(c: Collected): string {
+  // WHEN THE BOARD IS COMING, THIS IS FRAMING ONLY — it must not pick a Door or start the excavation.
+  //
+  // Found on the first live walk (2026-08-18): the opener said "Let's start with The Grind" and the board arrived
+  // underneath it, asking her to mark whichever were hers. She was told where we were starting and asked to
+  // choose, in the same breath — and then told a SECOND time after she chose, with a different Door. Two
+  // "let's start with"s around one decision is the shape that makes a member ask whether we were listening.
+  //
+  // The excavation opener is not deleted; it moves to boardReceipt, where it can name the Door SHE said weighs
+  // most instead of the one our matcher put first.
+  if (!c.boardDone) {
+    return (
+      'Before we go deeper, here is the whole set — every Door we see people come through. ' +
+      'Mark the ones that are yours. There is no wrong answer here, and most people mark more than one.'
+    );
+  }
   const doors = c.doors ?? [];
   const primary = doors[0];
   const doorName = primary ? DOORS.find((d) => d.slug === primary)?.displayName ?? null : null;
