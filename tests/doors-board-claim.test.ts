@@ -184,3 +184,14 @@ test('an out-of-range rating becomes null, never a clamped guess', async () => {
   assert.equal(p.doors.find((d) => d.slug === 'body')!.relevance, null);
   assert.equal(p.doors.find((d) => d.slug === 'loss')!.relevance, null);
 });
+
+test('a pre-lit Door submits with NO rating — recognition is not a judgement she made', async () => {
+  const { parseBoardSubmission } = await import('../lib/reconnect/doors-board-claim.ts');
+  // The board pre-lights the Doors her story produced, because they ARE hers. Seeding them with a value would
+  // submit "very relevant" as something she said, and she never said it.
+  const p = parseBoardSubmission('[board] door:aging_parents door:career_cliff')!;
+  assert.deepEqual(p.doors, [
+    { slug: 'aging_parents', relevance: null },
+    { slug: 'career_cliff', relevance: null },
+  ]);
+});

@@ -27,25 +27,39 @@ import { RELEVANCE_ANCHORS } from '../../lib/reconnect/door-profile.ts';
 type Props = { expects: DoorsBoardExpectation; disabled?: boolean; onSubmit: (payload: string) => void };
 
 export default function DoorsBoard({ expects, disabled, onSubmit }: Props) {
-  const [marked, setMarked] = useState<Set<string>>(new Set(expects.held));
+  // HER DOORS ARE DERIVED FROM THE RATINGS, not from a separate "marked" set.
+  //
+  // The board used to have a select step: tap the headline to mark, and only then did the rating control appear.
+  // Nothing said the headline was tappable, so the rating was invisible until she had done an invisible thing —
+  // and "not relevant" was unreachable, because she had to claim a Door before she could say it was not hers.
+  //
+  // Greg's instrument has no select step (R2-04: the three anchors, PER DOOR). Rating IS selecting: somewhat or
+  // very makes it hers, not relevant is an answer she gave rather than a blank. One control, nothing hidden.
   const [ratings, setRatings] = useState<Record<string, number>>({});
+
+  // PRE-LIT IS NOT A RATING. Her existing Doors arrive marked, because they ARE hers and the board should
+  // recognise her — but seeding them with a value would submit "very relevant" as something she said. She never
+  // said it. Unrated stays null all the way to the database, where absent already means "not asked".
+  //
+  // She can still take one off: rating a pre-lit Door "not relevant" removes it, because that is her correcting
+  // our matcher, which is the whole point of letting her claim them.
+  const marked = new Set([
+    ...expects.held.filter((slug) => (ratings[slug] ?? 2) >= 2),
+    ...Object.entries(ratings).filter(([, n]) => n >= 2).map(([slug]) => slug),
+  ]);
   const [quiet, setQuiet] = useState(false);
   const [first, setFirst] = useState<string | null>(null);
   const [biggest, setBiggest] = useState<string | null>(null);
   const [stillOpen, setStillOpen] = useState<Set<string>>(new Set());
 
-  const toggle = (slug: string) => {
-    setMarked((m) => {
-      const next = new Set(m);
-      if (next.has(slug)) {
-        next.delete(slug);
-        // Her temporal answers cannot outlive the Door they were about.
-        setFirst((f) => (f === slug ? null : f));
-        setBiggest((b) => (b === slug ? null : b));
-        setStillOpen((s) => { const t = new Set(s); t.delete(slug); return t; });
-      } else next.add(slug);
-      return next;
-    });
+  // Her temporal answers cannot outlive the Door they were about — dropping a Door to "not relevant" clears them.
+  const rate = (slug: string, n: number) => {
+    setRatings((r) => ({ ...r, [slug]: r[slug] === n ? 0 : n }));
+    if (n < 2) {
+      setFirst((f) => (f === slug ? null : f));
+      setBiggest((b) => (b === slug ? null : b));
+      setStillOpen((s) => { const t = new Set(s); t.delete(slug); return t; });
+    }
   };
 
   const mine = expects.cards.filter((c) => marked.has(c.slug));
@@ -85,23 +99,14 @@ export default function DoorsBoard({ expects, disabled, onSubmit }: Props) {
                   hiding recognition copy behind a tap on the surface whose only job is recognition was solving a
                   length problem that did not exist. The headline is always bold: it is the name of a room she is
                   deciding whether she has been in, not a list item. */}
-              <button
-                type="button"
-                onClick={() => toggle(c.slug)}
-                disabled={disabled}
-                aria-pressed={on}
-                style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'none', padding: 0, font: 'inherit', color: 'inherit', fontWeight: 600, cursor: 'pointer' }}
-              >
-                {on ? '✓ ' : ''}{c.name}
-              </button>
+              <div style={{ fontWeight: 600 }}>{on ? '✓ ' : ''}{c.name}</div>
 
               <p style={{ margin: '0.35rem 0 0', lineHeight: 1.7, fontSize: '0.95rem' }}>{c.recognition}</p>
 
               {/* The label sits ABOVE the three, not beside them. Inline, the row wrapped and orphaned "very
                   relevant" onto its own line — leaving the option that means "this one is mine" looking like a
                   separate control from the two that mean it is not. */}
-              {on && (
-                <div style={{ marginTop: '0.6rem' }}>
+              <div style={{ marginTop: '0.6rem' }}>
                   <div className="muted" style={{ fontSize: '0.8rem', marginBottom: '0.35rem' }}>How much is this yours?</div>
                   <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                   {RELEVANCE_ANCHORS.map((label, i) => {
@@ -111,7 +116,7 @@ export default function DoorsBoard({ expects, disabled, onSubmit }: Props) {
                       <button
                         key={n}
                         type="button"
-                        onClick={() => setRatings((r) => ({ ...r, [c.slug]: n }))}
+                        onClick={() => rate(c.slug, n)}
                         disabled={disabled}
                         aria-pressed={picked}
                         className={`scale-chip${picked ? ' selected' : ''}`}
@@ -122,8 +127,7 @@ export default function DoorsBoard({ expects, disabled, onSubmit }: Props) {
                     );
                   })}
                   </div>
-                </div>
-              )}
+              </div>
             </div>
           );
         })}
