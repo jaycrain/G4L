@@ -63,6 +63,8 @@ export type CheckinContext = {
   doorProfileLine?: string | null;
   /** She claimed the quiet-drift card on the R2 board. NOT a Door — a stance she named about herself. */
   quietDriftClaimed?: boolean;
+  /** Doors she says are STILL OPEN — Greg's active Fade. Display names, already filtered. */
+  openDoorNames?: string[];
   /** R3's Legacy Letter — theirs, to themselves. Null until they write one. */
   legacyLetter?: { body: string; datedFor: string } | null;
   /** B3's Lifestyle Pilot week, in THEIR words — the last few days they wrote. Empty until they log one. */
@@ -503,6 +505,20 @@ export function contextBlock(c: CheckinContext): string {
     // recited back at her as a finding. Held, not used.
     c.quietDriftClaimed
       ? "They marked the quiet-drift card on the Doors board: no single event, just years of routine without looking up. That is a stance they named about themselves, NOT a Door, and it is the hardest of these to admit. Let it inform how you hear them — never name it back to them as a label, never treat it as less real than an event, and never imply they simply were not paying enough attention."
+      : null,
+    // THE ACTIVE FADE. Greg, R2-11: "A door that closed years ago carries different meaning than a door the member
+    // is actively walking through right now. That distinction matters for everything that follows: a closed door
+    // can be mourned and learned from, while an open door is something the member can choose to step away from."
+    //
+    // Until now this reached the model only buried inside the profile prose, so the distinction Greg says matters
+    // for everything changed nothing. It is separated out because it governs what is REASONABLE TO ASK: someone
+    // rebuilding while the thing that took it is still taking is not the same person as someone rebuilding after.
+    //
+    // AND IT STOPS SHORT OF ADVICE. Greg is right that stepping away is available to her in a way it is not for a
+    // closed Door, but the agent asks before it advises — naming her exit for her, unprompted, is a prescription
+    // about her marriage or her caregiving that she did not come here for.
+    c.openDoorNames?.length
+      ? `STILL OPEN — they say they are walking through ${c.openDoorNames.join(' and ')} RIGHT NOW. This is the live part of their Fade, not history. A closed Door can be mourned and learned from; an open one is still taking from them this week, so anything you invite has to fit ALONGSIDE it — not assume the pressure has stopped. Do not tell them to step away from it or hint that they should; if they raise that themselves, help them see it clearly and leave the choice theirs.`
       : null,
     c.idScore !== null ? `Latest ID Score: ${c.idScore}${c.direction ? ` (${c.direction})` : ''}` : 'No IDQ yet',
     dims,

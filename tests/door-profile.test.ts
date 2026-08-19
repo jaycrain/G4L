@@ -178,3 +178,46 @@ test('"not relevant" is not annotated onto a Door in her own story', async () =>
   ] as never);
   assert.equal(l!.note, null, 'telling her a Door of hers is "not relevant" is not a note worth printing');
 });
+
+// THE ACTIVE FADE reaches the Companion as its own frame, not buried in profile prose.
+//
+// R2-11 is testable as "the closing reflection treats them differently". Until this wiring, still-open appeared
+// only inside describeDoorProfile's sentence, so the distinction Greg says "matters for everything that follows"
+// changed nothing that followed.
+const BASE_CTX = {
+  displayName: 'Donna',
+  identityNoun: 'Maker',
+  doorDisplayNames: ['The Career Cliff'],
+  idScore: null,
+  direction: null,
+  currentFocus: null,
+  lastCompletedAsset: null,
+  reclaimList: ['A creative role that covers the bills'],
+};
+
+test('an open Door reaches the model as the LIVE part of the Fade, and never as advice', async () => {
+  const { contextBlock } = await import('../lib/agent/checkin.ts');
+  const block = contextBlock({ ...BASE_CTX, openDoorNames: ['The Aging Parents'] } as never);
+
+  assert.match(block, /STILL OPEN/, 'the active Fade must be its own frame, not buried in profile prose');
+  assert.match(block, /The Aging Parents/);
+  assert.match(block, /alongside/i, 'it governs what is reasonable to ask of her');
+
+  // Greg is right that stepping away is available for an open Door in a way it is not for a closed one — but the
+  // agent asks before it advises, and naming her exit for her is a prescription about her caregiving.
+  assert.match(block, /do not tell them to step away/i);
+
+  // ...and it says nothing when nothing is open, rather than asserting everything is closed.
+  assert.ok(!/STILL OPEN/.test(contextBlock(BASE_CTX as never)), 'silence when unasked, never "all closed"');
+});
+
+test('openDoors returns only the Doors still taking from her', async () => {
+  const db = new PGlite() as unknown as Db;
+  await applySchema(db);
+  const m = await member(db, ['career_cliff', 'aging_parents']);
+  await noteDoorProfile(db, m, [
+    { slug: 'career_cliff', stillOpen: false },
+    { slug: 'aging_parents', stillOpen: true },
+  ]);
+  assert.deepEqual((await openDoors(db, m)).map((d) => d.slug), ['aging_parents']);
+});
