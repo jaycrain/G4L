@@ -36,8 +36,25 @@ function isMemberCopy(s) {
 // walked straight through. The replacement tests STRUCTURE instead, because the distinguishing property is not
 // vocabulary: a member string is a COMPLETE, RENDERABLE THOUGHT; a prompt fragment is a slice of a longer template.
 // A denylist can always be out-phrased. "Is this a whole sentence a person could read on a screen?" cannot.
+// MODEL STEERING OPENS IN CAPS; MEMBER COPY NEVER DOES.
+//
+// The denylist below is a list of PHRASES, and this was its fourth escape: `\bDo NOT\b` is case-sensitive, the
+// prompts say "do NOT ask" and "Do not offer", and so two steering blocks I wrote on 2026-08-19 sailed into the
+// transcript as quotable member copy — the artifact marketing and the BOOK quote verbatim. Five `RIGHT NOW:`
+// coaching instructions had been sitting in there already, unnoticed.
+//
+// Patching the casing would be the fifth patch. The durable signal is REGISTER: steering is addressed to the
+// model and shouts its imperative in full caps ("ONE EXEMPTION", "FINISH WHAT YOU PROMISE", "RIGHT NOW"). No
+// member-facing sentence in this product opens that way — we write plain and measured, by brand rule.
+//
+// Both words must be FULLY uppercase, which is what keeps brand names out: "G4L Companion" and "G4L Community"
+// both matched while the second word only had to be Capitalised, and both are real member copy. Measured before
+// shipping: exactly 7 strings move, all 7 steering.
+const CAPS_IMPERATIVE = /^["'“(]?[A-Z][A-Z0-9’'-]+(\s+[A-Z][A-Z0-9’'-]+){1,}/;
+
 function looksLikeSystemPrompt(s) {
   return (
+    CAPS_IMPERATIVE.test(s) ||
     /You are the G4L|You are running|MEMBER CONTEXT|CURRENT STAGE|HARD VOICE RULES|input_schema|Call ONLY|Call this tool|reflect[_-]|note_door|set_gap|record_plan|offer_identity|add_reclaim|\b(this|the) tool\b|tool_choice|tool call/i.test(s) ||
     /\bNEVER\b.*\bmember\b|\bDo NOT\b|\bnever (diagnose|grade|praise|extract)\b/.test(s) ||
     // Second person addressed to the MODEL about the member ("draw out THEIR …", "you reflected …").
@@ -100,6 +117,13 @@ function isCodeArtifact(s) {
   // rejected by ACCIDENT — they happened to end on a function word, so the fragment rule swallowed them and no
   // one noticed they had no rule of their own. Narrowing that rule exposed them, which is the useful kind of
   // regression: a filter should reject a thing for the reason it is wrong, not by luck of where it ends.
+  // TEMPLATE RESIDUE. A string starting with `}` is the TAIL of a sentence that began with an interpolation —
+  // `I've got ${…} written down. Have a look…` splits and leaves "} written down. Have a look…". No member
+  // sentence opens with a closing brace. Rejecting it stops canon shipping a visibly corrupted line; the copy
+  // itself is fine and is written out in full in the sync note, because the honest handling of a line the reader
+  // cannot see is to SAY SO, not to let it appear whole-but-wrong. (The general limitation — the extractor
+  // cannot capture a sentence that begins with an interpolation — is real and larger than this fix.)
+  if (/^\}/.test(s)) return true;
   if (/^\?/.test(s)) return true;                                    // a sliced (?:…) group
   if (/\|/.test(s)) return true;                                     // alternation — never in member prose
   if (/\\[sdbwSDBW]|\(\?|\)\?/.test(s)) return true;                 // escape classes / optional groups
