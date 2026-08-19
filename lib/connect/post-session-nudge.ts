@@ -51,8 +51,23 @@ const PACT_QUIET_DAYS = 3;
  * companion that notices and a product that nags. A member with an active pact they touched yesterday, no unread
  * replies and a fresh post has nothing here; that is success, not a gap.
  */
-export function postSessionNudge(c: ConnectAgentSummary | null | undefined): PostSessionNudge | null {
+// THE LINK IS BUILT ONCE, HERE. Every href below was the bare string '/connect', which is not a page: the route
+// is /connect/[memberId], so all four nudges 404'd for every member, every time. Donna hit it on the first
+// complete four-R walk (2026-08-19) — the one moment in the product whose entire job is to point someone at a
+// real person, and it led nowhere.
+//
+// Taking memberId as an argument rather than letting the four call sites each append it: a rule restated at N
+// sites has N-1 wrong copies, and this bug IS that rule, four times over.
+function connectHref(memberId: string): string {
+  return `/connect/${memberId}`;
+}
+
+export function postSessionNudge(
+  c: ConnectAgentSummary | null | undefined,
+  memberId: string,
+): PostSessionNudge | null {
   if (!c) return null;
+  const href = connectHref(memberId);
 
   // 1 — a person is waiting, and it is tied to something they said they wanted back.
   const quiet = c.pacts
@@ -66,7 +81,7 @@ export function postSessionNudge(c: ConnectAgentSummary | null | undefined): Pos
       quiet.direction === 'holding'
         ? `${quiet.other} is holding you to ${what}. It's been ${quiet.lastCheckinDays} days since you two checked in.`
         : `You told ${quiet.other} you'd ${what}. It's been ${quiet.lastCheckinDays} days since you checked in.`;
-    return { kind: 'pact_quiet', text: line, cta: 'Check in', href: '/connect' };
+    return { kind: 'pact_quiet', text: line, cta: 'Check in', href };
   }
 
   // 2 — someone already reached toward them. UNREAD only: telling them about a reply they have read is the
@@ -80,7 +95,7 @@ export function postSessionNudge(c: ConnectAgentSummary | null | undefined): Pos
         : e.kind === 'reply'
           ? `${e.actor} replied to what you wrote about ${e.postLabel}.`
           : `${e.actor} saw what you wrote about ${e.postLabel}.`;
-    return { kind: 'reply_waiting', text: line, cta: 'Go read it', href: '/connect' };
+    return { kind: 'reply_waiting', text: line, cta: 'Go read it', href };
   }
 
   // 3 — they know how this works. No explaining, no re-selling.
@@ -89,7 +104,7 @@ export function postSessionNudge(c: ConnectAgentSummary | null | undefined): Pos
       kind: 'posted_before',
       text: 'Anything from today worth putting in front of the others?',
       cta: 'Open the Community',
-      href: '/connect',
+      href,
     };
   }
 
@@ -99,7 +114,7 @@ export function postSessionNudge(c: ConnectAgentSummary | null | undefined): Pos
       kind: 'first_step',
       text: 'There are people here doing this at the same time as you. You can read without saying anything.',
       cta: 'Look in',
-      href: '/connect',
+      href,
     };
   }
 

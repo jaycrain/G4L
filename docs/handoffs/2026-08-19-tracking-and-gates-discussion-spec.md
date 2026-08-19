@@ -76,10 +76,14 @@ record, and an explicit next choice (continue self-directed · run it again · m
 time; let **member-initiated** ones (from the Reclaim List) stack freely; one Companion check-in able to touch
 several at once.
 
-> **CC flag:** this contradicts a ruling from 2026-08-11, where Jay said four simultaneous practice weeks is
-> INTENDED — "daily engagement on their terms." Donna is proposing the opposite for app-initiated weeks. Both
-> can be true (cap ours, let theirs stack), which is what she suggests, but Jay should confirm he is changing
-> his own earlier call.
+> **RULED (Jay, 2026-08-19), and it is neither of the above:** "there shouldn't be a limit to the KIND of weeks
+> running, just not multiple for any one kind." So the cap is **per-kind, not global** — a member may have a
+> Visualization week, a False Start week and a Quality Days week all open at once (Donna had five), but never
+> two False Start weeks at the same time.
+>
+> This does NOT reverse the 2026-08-11 ruling that several simultaneous weeks are intended — it refines it. The
+> thing to prevent is a duplicate of the same instrument, which is what a re-run of a Session could otherwise
+> open, and which would give the member two grids measuring the same practice.
 
 ---
 
