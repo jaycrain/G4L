@@ -53,3 +53,13 @@ test('gap stage instruction · the CLOSING turn is a receipt, not another questi
   assert.match(s, /do NOT ask anything further/i);
   assert.match(s, /RECEIPT/, 'that turn is what she reads before the next beat opens');
 });
+
+test('the gap steering tells the model to KEEP a want she volunteers — where it can act on it', () => {
+  const gap = stageInstruction('gap');
+  // The reclaim steering says "tag every want they name earlier — the gap story especially", but the model does
+  // not see that until the gap beat is OVER. An instruction to have already done something is not an instruction.
+  assert.match(gap, /call add_reclaim_item the moment it lands/i, 'seeding must be reachable during the gap');
+  // ...without turning the gap beat into the list beat. This is the rule that stops the run-ahead.
+  assert.match(gap, /do NOT rush on to what they want back/i);
+  assert.match(gap, /do NOT ask for more of them/i, 'keep what she offers; never solicit');
+});

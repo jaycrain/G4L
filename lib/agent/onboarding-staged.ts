@@ -2418,6 +2418,19 @@ export function stageInstruction(stage?: Stage, opts?: { gapHeld?: boolean }): s
       'drift). Draw the story out over SEVERAL exchanges — the sequence, when they first felt it, what it cost. After ' +
       'they name one door, RECEIVE it (reflect it back so they feel heard) and then ask what ELSE was going on around ' +
       'then — do NOT collapse it to one thread, and do NOT rush on to what they want back. This conversation earns its ' +
+      // IF A WANT LANDS HERE, TAG IT HERE — the instruction has to live where it can be acted on.
+      //
+      // The reclaim steering says "tag every want they name earlier... the gap story especially". The model never
+      // sees that until the reclaim stage, by which point this beat is over: it was being told, too late, to have
+      // done something. That is why seeding fired only by luck, and why members who volunteered a want mid-story
+      // were sometimes asked for it again at the builder.
+      //
+      // This does NOT invite wants — the sentence above still forbids that, and it is the rule that stops the
+      // run-ahead. It only says: if she offers one unprompted while telling you how it happened, keep it.
+      'IF SHE VOLUNTEERS SOMETHING SHE WANTS BACK WHILE TELLING YOU THIS — "I miss riding", "I want to sleep ' +
+      'again" — call add_reclaim_item the moment it lands, and carry on with the story. Do NOT ask for more of ' +
+      'them and do NOT change the subject to her list: this beat is still how it happened. Tagging it here is ' +
+      'what makes her Reclaim List open already holding it, so she never has to say the same thing twice.\n' +
       'time; do not compress it. Capture with set_gap as it grows, note_door for EACH door named (none is valid). Call ' +
       'reflect_gap ONLY once the FULLER picture is genuinely drawn out — usually after they have named more than one ' +
       'door or clearly told you that is the whole of it — and reflect their whole story back in their words on that turn. ' +
