@@ -158,7 +158,7 @@ const RECONNECT_STAGE_ASSET: Record<string, string> = {
  * is not there — the product having lied about the most personal thing it holds.
  */
 /**
- * Persist the Doors board (D5). The ENGINE stays pure — it records what she chose onto the turn; every write is here.
+ * Persist the Doors board. The ENGINE stays pure — it records what she chose onto the turn; every write is here.
  *
  * ORDER MATTERS. Claims first, because setBiggestImpact refuses a Door she does not hold and the board is exactly
  * where a new one arrives. Then the temporal answers, then primary. A different order silently drops the Door she

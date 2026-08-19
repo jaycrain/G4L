@@ -35,7 +35,7 @@ export const SECTIONS = [
   // verbatim, and a member reads every one of them. Listed the same day the copy landed, because the guard
   // caught it: this is the file being added to the list BEFORE it could ship missing from a bundle, which is
   // exactly the failure the coverage ratchet exists to prevent.
-  // doors-board.ts joined 2026-08-18 with D5. It is the RECOGNITION copy for the R2 board — the paragraph a
+  // doors-board.ts joined 2026-08-18 with the Doors board. It is the RECOGNITION copy for the R2 board — the paragraph a
   // member reads to decide whether a Door is hers — as distinct from lib/doors.ts's one-line taxonomy descriptor.
   // Listed the same day it was written, before it could ship missing from a bundle.
   { title: 'Reconnect — the gateway', files: ['lib/agent/reconnect.ts', 'lib/idq/instrument.ts', 'lib/ceremony/reconnect-ceremony-beats.ts', 'lib/reconnect/legacy-letter.ts', 'lib/content/doors-board.ts',

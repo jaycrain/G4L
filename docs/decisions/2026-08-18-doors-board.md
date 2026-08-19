@@ -1,8 +1,15 @@
-# D5 — The Doors board (R2). CLOSED 2026-08-18.
+# The Doors board (R2). CLOSED 2026-08-18.
 
-Decision D5 was opened by Cowork's `2026-08-04-Doors-Profile-reconcile-7-to-12` and sat open for two weeks on four
-questions to Jay that were never answered. It is closed here. Ruled by Jay, in conversation with CC, with a copy
-pass from Cowork.
+Opened by Cowork's `2026-08-04-Doors-Profile-reconcile-7-to-12` and sat open for two weeks on four questions to
+Jay that were never answered. It is closed here. Ruled by Jay, in conversation with CC, with a copy pass from
+Cowork.
+
+> **This was called "D5" until 2026-08-19.** That label came from the numbering inside Cowork's document — it was
+> never ours, and it collided: `docs/handoffs/2026-08-04-greg-walk-response.md` has a completely different **D5**
+> (a 30-day re-invitation to re-read the Story), dated the same day. Two decisions, one label, one repo. Renamed
+> because the failure mode is someone searching "D5" and confidently landing on the wrong one. Kept here as a
+> breadcrumb so anyone arriving with the old term still finds this. Don't reintroduce the shorthand: an external
+> document's numbering is not our vocabulary, and CLAUDE.md already rules out invented framing terms.
 
 **Why it mattered enough to finish:** the Door profile fields (relevance / opened-first / biggest-impact /
 still-open) were written into migration 0085 with no surface anywhere that collects them. `noteDoorProfile` is
@@ -62,7 +69,7 @@ Companion and the founder emails cannot disagree with each other.
 > upgrades that signal from **inferred to declared** — the member says it about herself instead of us concluding it
 > from cues. That is strictly better than what mis-fired on her.
 
-**Also settled:** 1–10 relevance (Greg's 2026-08-08 email supersedes D5's 1–3 — logged watch-item from Cowork:
+**Also settled:** 1–10 relevance (Greg's 2026-08-08 email supersedes Cowork's proposed 1–3 — logged watch-item from Cowork:
 check whether members use the range or cluster at the ends). The *"none of these — it was quieter than that"*
 free-text affordance stays. **No prevalence claims** — qualitative only.
 
@@ -70,7 +77,7 @@ free-text affordance stays. **No prevalence claims** — qualitative only.
 
 ## The copy
 
-Greg wrote recognition copy for **7 Doors**; we ship 11. D5's cards were measured against his Gated Assets V4 at
+Greg wrote recognition copy for **7 Doors**; we ship 11. Cowork's draft cards were measured against his Gated Assets V4 at
 **84–88% similarity** — edited in every case, in one direction: **his hard stops became commas, em-dashes and
 semicolons.** `Moved away. Got busy. Stopped calling.` → `Moved away, got busy, stopped calling.` Three separate
 griefs become inventory. Two word reversals also restored: `filled` → **`consumed`**, and `physical self` →

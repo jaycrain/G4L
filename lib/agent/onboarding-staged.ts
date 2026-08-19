@@ -965,7 +965,7 @@ function nextExpects(arc: ArcConfig, stageId: StageId, complete: boolean, answer
   if (arc.id === 'onboarding' && stageId === 'reclaim' && !complete && drawnOut) {
     return { kind: 'reclaim_list', min: RECLAIM_LIST_MIN, seeded: (collected.reclaimList ?? []).filter(Boolean) };
   }
-  // THE DOORS BOARD (D5). Reconnect's doors stage opens with the framing and the board TOGETHER — recognition
+  // THE DOORS BOARD. Reconnect's doors stage opens with the framing and the board TOGETHER — recognition
   // before conversation, so the Companion draws out what she marked instead of fishing for it. Emitted only
   // while the board is still unanswered: once she submits, `boardDone` is set and the stage becomes the ordinary
   // draw-out, or the board would reappear under every subsequent turn of that conversation.
@@ -1170,7 +1170,7 @@ interface Beat {
   legacyDraft?: string;
   legacyRevisions?: number;
   legacyTuesday?: string;
-  /** D5: her Doors-board submission, handed to the ACTION to persist (the engine stays pure). */
+  /** Doors board: her Doors-board submission, handed to the ACTION to persist (the engine stays pure). */
   boardSubmission?: unknown;
   legacyLetter?: { body: string; datedFor: string };
   pendingReclaimShape?: PendingReclaimShape; // Decision II: a shape awaiting the member's confirm (merge/move/draw-out)

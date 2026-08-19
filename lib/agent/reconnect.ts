@@ -381,7 +381,7 @@ const doorsStage: StageDef = {
   opener: (c) => doorOpen(c),
   offersSubstance: (message) => message.trim().length >= 12,
   gather(b) {
-    // THE BOARD CAME BACK (D5). Her taps arrive as a machine-readable line, parsed by the one shared format —
+    // THE BOARD CAME BACK. Her taps arrive as a machine-readable line, parsed by the one shared format —
     // never interpreted as prose, and never mistaken for something she typed.
     //
     // The engine stays PURE: it records what she chose onto the turn and the ACTION writes it, the same split the

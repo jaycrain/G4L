@@ -7,7 +7,7 @@ import { RELEVANCE_ANCHORS } from '../../lib/reconnect/door-profile.ts';
 
 // THE DOORS BOARD — every Door, and the member marks which are hers.
 //
-// D5 (docs/decisions/2026-08-18-doors-board-D5.md). A BOARD, NOT A WALK: she browses at her own pace rather than
+// The Doors-board decision (docs/decisions/2026-08-18-doors-board.md). A BOARD, NOT A WALK: she browses at her own pace rather than
 // being marched through eleven conversational turns. Greg's framing, and it is what a real member reached for
 // unprompted — Donna's R2 walk had her ask "what are all of the Doors?" before anything was built, and the
 // Companion answered with a wall of eleven bullets in a chat bubble. This is that moment, done properly.

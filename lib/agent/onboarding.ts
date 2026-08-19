@@ -90,7 +90,7 @@ export type Collected = {
   /**
    * She has submitted the R2 Doors board. Gates the expectation so the board does not reappear under every turn
    * of the conversation that follows it — and so a member who marked nothing is not handed it again as if she
-   * had not answered. Marking nothing IS an answer (D5 ruling #7).
+   * had not answered. Marking nothing IS an answer (Doors-board ruling #7).
    */
   boardDone?: boolean;
   athleticPast?: string; // Step 1: the past self, in the member's own words
@@ -199,7 +199,7 @@ export type ConvState = {
   // not listening. legacyDraft is the model's draft awaiting THEIR revision; legacyRevisions caps the loop;
   // legacyLetter is set only on their confirm and is what the action persists (propose → confirm → commit).
   legacyTuesday?: string;
-  /** D5: the Doors-board submission, handed across to the ACTION to persist. The engine writes nothing itself. */
+  /** Doors board: the Doors-board submission, handed across to the ACTION to persist. The engine writes nothing itself. */
   boardSubmission?: unknown;
   legacyDraft?: string;
   legacyRevisions?: number;
@@ -269,7 +269,7 @@ import type { SessionVisual } from './session-visual.ts';
 // already accepts, so typing still works and Greg's questions are unchanged.
 export type DomainPickExpectation = { kind: 'domain_pick'; options: string[] };
 
-// THE DOORS BOARD (D5, 2026-08-18). R2 shows every Door and lets the member mark which are hers — recognition
+// THE DOORS BOARD (2026-08-18). R2 shows every Door and lets the member mark which are hers — recognition
 // before conversation, so the Companion draws out what she marked rather than fishing for it. `held` is pre-lit
 // from the Doors her story already produced: the board recognises her rather than starting blank.
 //
@@ -282,7 +282,7 @@ export type DoorsBoardExpectation = {
   cards: { slug: string; name: string; recognition: string }[];
   /** Slugs she already holds, pre-lit. */
   held: string[];
-  /** Greg's quiet-drift card. NOT a Door — claiming it writes the resignation signal (D5 ruling #9). */
+  /** Greg's quiet-drift card. NOT a Door — claiming it writes the resignation signal (Doors-board ruling #9). */
   quietDrift: { key: string; name: string; recognition: string };
   header: string;
 };

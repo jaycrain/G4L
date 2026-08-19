@@ -1,6 +1,6 @@
 // THE DOORS BOARD — the recognition copy, and the order it is read in.
 //
-// D5, closed 2026-08-18 (docs/decisions/2026-08-18-doors-board-D5.md). R2 shows a member every Door and lets her
+// The Doors-board decision, closed 2026-08-18 (docs/decisions/2026-08-18-doors-board.md). R2 shows a member every Door and lets her
 // mark the ones that are hers. This file is the copy for that board and nothing else — the matcher lives in
 // lib/doors.ts and must never read from here.
 //
@@ -17,7 +17,7 @@
 // one does the same four things: opens on a short flat declarative, lists specifics as fragments, grounds it in
 // ordinary daily texture, and ends on the identity consequence — usually a reversal. "You didn't quit your sport.
 // Your body quit it for you." The HARD STOP is the mechanism: the reader hits a wall and gets turned around, and
-// that turn is the recognition. Cowork's D5 draft smoothed his stops into commas, em-dashes and semicolons in
+// that turn is the recognition. Cowork's draft smoothed his stops into commas, em-dashes and semicolons in
 // every single card (measured: 84-88% similarity to source, edits all in one direction) — "Moved away. Got busy.
 // Stopped calling." became one comma list, and three separate griefs became inventory. His stops are restored.
 //
@@ -99,7 +99,7 @@ export const DOOR_RECOGNITION: readonly DoorRecognition[] = [
       "contracted until you realized you hadn't had a real conversation with someone outside your family in months.",
   },
   {
-    // No Greg source: his Career Door is the OPPOSITE motion (work grew over you → The Grind). D5's open question
+    // No Greg source: his Career Door is the OPPOSITE motion (work grew over you → The Grind). the Doors-board decision's open question
     // #4 asked Jay to approve new copy for Diagnosis/Loss/Full House and never mentioned this one, so the Door
     // Donna actually holds had unapproved copy nobody had flagged.
     slug: 'career_cliff',

@@ -1,6 +1,6 @@
 // THE BOARD'S WRITE PATH — what happens when a MEMBER taps a card.
 //
-// D5, rulings #4 and #8 (docs/decisions/2026-08-18-doors-board-D5.md).
+// The Doors-board decision, rulings #4 and #8 (docs/decisions/2026-08-18-doors-board.md).
 //
 // WHY THIS IS A SEPARATE MODULE FROM noteDoorProfile, AND NOT AN `actor` FLAG.
 //
@@ -98,7 +98,7 @@ export async function setBiggestImpact(db: Db, memberId: string, slug: DoorSlug)
 }
 
 /**
- * She claimed the quiet-drift card. NOT a Door — see migration 0086 and D5 ruling #9.
+ * She claimed the quiet-drift card. NOT a Door — see migration 0086 and Doors-board ruling #9.
  *
  * Idempotent on purpose: the timestamp records WHEN she first said it, and re-tapping should not rewrite her
  * history. Un-claiming clears it, because a card she unmarks is a statement too.

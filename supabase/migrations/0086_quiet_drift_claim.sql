@@ -1,6 +1,6 @@
 -- THE QUIET-DRIFT CLAIM — the member declaring what we currently only infer.
 --
--- D5 ruling #9 (docs/decisions/2026-08-18-doors-board-D5.md). The R2 board carries a card for quiet drift, using
+-- Doors-board ruling #9 (docs/decisions/2026-08-18-doors-board.md). The R2 board carries a card for quiet drift, using
 -- Greg's Autopilot copy. Claiming it must NOT write a Door.
 --
 -- WHY NOT A DOOR. Decision C removed the `acceptance` slug on 2026-08-15 because it was the only STANCE in a

@@ -19,7 +19,7 @@ export const DOORS = [
   { slug: 'body',          displayName: 'The Body',          descriptor: 'The body that started saying no to what it used to do easily.' },
   { slug: 'diagnosis',     displayName: 'The Diagnosis',     descriptor: 'The mirror moment you couldn’t look away from.' },
   // RENAMED 2026-08-18 (Donna, ruled by Jay): 'The Marriage' → 'The Relationship'. This RESTORES Greg's own
-  // name — Gated Assets V4 calls it The Relationship Door, and D5's crosswalk renamed it while claiming to keep
+  // name — Gated Assets V4 calls it The Relationship Door, and Cowork's crosswalk renamed it while claiming to keep
   // his copy. The card contradicted itself: titled Marriage, opening "A relationship ended". His own examples are
   // broader than marriage ("divorce, estrangement, the slow erosion of a marriage" — estrangement covers an adult
   // child or a sibling), and Marriage left an unmarried partnership of twenty years with nowhere to stand. The

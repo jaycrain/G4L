@@ -81,7 +81,7 @@ test('reconnect · the callback is READ-ONLY — a first response hands into Doo
   // Listen-first: the model's acknowledgment of what they just said LEADS, then the Door excavation opens as its own
   // beat (the action now feeds a live model turn here, so this is no longer empty → it never jumps straight to the Door).
   assert.match(turn.reply, /That’s a real thread\./, 'the model ack leads');
-  // D5: the excavation no longer opens on OUR primary Door — the board opens instead, and she chooses. What this
+  // The Doors board: the excavation no longer opens on OUR primary Door — the board opens instead, and she chooses. What this
   // test still pins is the listen-first order: her acknowledgment leads, the next beat follows it.
   assert.equal(turn.expects?.kind, 'doors_board', 'the Door beat is now hers to open');
   assert.match(turn.reply, /mark the ones that are yours/i, 'framing, not a Door we picked');
@@ -92,7 +92,7 @@ test('reconnect · the callback is READ-ONLY — a first response hands into Doo
 // model-judged depth floor/cap, the confirm routing, and graceful degradation (a StageDef on the kernel).
 // ============================================================================================================
 
-test('reconnect doors · entry hands into the BOARD, and does not pick a Door for her (D5)', () => {
+test('reconnect doors · entry hands into the BOARD, and does not pick a Door for her', () => {
   // It used to open on the committed primary Door by name. The board replaced that: naming where we start AND
   // handing her the full set to choose from, in the same breath, said "let's start with The Grind" before she
   // marked anything — and then said it again with a different Door after she did. Found on the first live walk.
@@ -488,7 +488,7 @@ test('legacy · a beat that never drafted moves on QUIETLY — it never claims a
 });
 
 // ============================================================================================================
-// THE DOORS BOARD — the seam (D5, 2026-08-18).
+// THE DOORS BOARD — the seam (2026-08-18).
 //
 // Every half of this passes on its own: the expectation builds, the parser parses, the write path writes. The
 // failure mode is that they are never joined — which is exactly how an earlier feature shipped as two tested
