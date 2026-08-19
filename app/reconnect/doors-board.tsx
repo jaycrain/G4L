@@ -22,6 +22,13 @@ import { RELEVANCE_ANCHORS } from '../../lib/reconnect/door-profile.ts';
 // ABSENT IS NOT ZERO. An unrated Door shows no number at all. Rendering null as 0 would turn an invitation into a
 // chore, and this is exactly the data where that would sting.
 
+
+/** The opening sentence — enough to recognise yourself in, without making the board eleven paragraphs long. */
+function firstLine(text: string): string {
+  const m = /^[^.!?]*[.!?]/.exec(text.trim());
+  return m ? m[0] : text;
+}
+
 type Props = { expects: DoorsBoardExpectation; disabled?: boolean; onSubmit: (payload: string) => void };
 
 export default function DoorsBoard({ expects, disabled, onSubmit }: Props) {
@@ -73,41 +80,47 @@ export default function DoorsBoard({ expects, disabled, onSubmit }: Props) {
             <div
               key={c.slug}
               style={{
-                border: `1px solid ${on ? 'var(--g4l-teal, #3B9495)' : 'rgba(0,0,0,0.12)'}`,
+                border: `1px solid ${on ? 'var(--teal)' : 'rgba(0,0,0,0.12)'}`,
                 borderRadius: 8,
-                background: on ? 'rgba(59,148,149,0.06)' : 'transparent',
+                // LIT, NOT TINTED. This was a 6% teal wash — a shade, which the palette rule forbids outright.
+                // --grey is the palette's own light grey, so a marked card reads as chosen without inventing a colour.
+                background: on ? 'var(--grey)' : 'transparent',
                 padding: '0.7rem 0.9rem',
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <button
+                type="button"
+                onClick={() => toggle(c.slug)}
+                disabled={disabled}
+                aria-pressed={on}
+                style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'none', padding: 0, font: 'inherit', color: 'inherit', fontWeight: on ? 600 : 400, cursor: 'pointer' }}
+              >
+                {on ? '✓ ' : ''}{c.name}
+              </button>
+
+              {/* THE FIRST LINE IS ALWAYS VISIBLE. Collapsed, the board was eleven labelled boxes and the
+                  recognition copy — the whole point of the surface — cost a tap per Door to read. Greg's design is
+                  BROWSE and mark; browsing should not be work. */}
+              <p style={{ margin: '0.35rem 0 0', lineHeight: 1.7, fontSize: '0.95rem' }}>
+                {expanded ? c.recognition : firstLine(c.recognition)}{' '}
                 <button
                   type="button"
-                  onClick={() => toggle(c.slug)}
-                  disabled={disabled}
-                  aria-pressed={on}
-                  style={{ flex: 1, textAlign: 'left', border: 'none', background: 'none', padding: 0, font: 'inherit', color: 'inherit', fontWeight: on ? 600 : 400, cursor: 'pointer' }}
-                >
-                  {on ? '✓ ' : ''}{c.name}
-                </button>
-                <button
-                  type="button"
+                  className="connect-cta"
                   onClick={() => setOpen(expanded ? null : c.slug)}
                   disabled={disabled}
                   aria-expanded={expanded}
-                  className="btn-pill"
-                  style={{ fontSize: '0.8rem', padding: '0.15rem 0.6rem' }}
                 >
-                  {expanded ? 'Less' : 'More'}
+                  {expanded ? 'Less' : 'More →'}
                 </button>
-              </div>
+              </p>
 
-              {expanded && (
-                <p style={{ margin: '0.6rem 0 0', lineHeight: 1.7, fontSize: '0.95rem' }}>{c.recognition}</p>
-              )}
-
+              {/* The label sits ABOVE the three, not beside them. Inline, the row wrapped and orphaned "very
+                  relevant" onto its own line — leaving the option that means "this one is mine" looking like a
+                  separate control from the two that mean it is not. */}
               {on && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: '0.6rem', flexWrap: 'wrap' }}>
-                  <span className="muted" style={{ fontSize: '0.8rem' }}>How much is this yours?</span>
+                <div style={{ marginTop: '0.6rem' }}>
+                  <div className="muted" style={{ fontSize: '0.8rem', marginBottom: '0.35rem' }}>How much is this yours?</div>
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                   {RELEVANCE_ANCHORS.map((label, i) => {
                     const n = i + 1;
                     const picked = ratings[c.slug] === n;
@@ -118,18 +131,14 @@ export default function DoorsBoard({ expects, disabled, onSubmit }: Props) {
                         onClick={() => setRatings((r) => ({ ...r, [c.slug]: n }))}
                         disabled={disabled}
                         aria-pressed={picked}
-                        className="btn-pill"
-                        style={{
-                          fontSize: '0.82rem',
-                          fontWeight: picked ? 600 : 400,
-                          background: picked ? 'var(--g4l-teal, #3B9495)' : 'transparent',
-                          color: picked ? '#fff' : 'inherit',
-                        }}
+                        className={`scale-chip${picked ? ' selected' : ''}`}
+                        style={{ flex: '0 1 auto', fontSize: '0.82rem', padding: '0.35rem 0.7rem' }}
                       >
                         {label}
                       </button>
                     );
                   })}
+                  </div>
                 </div>
               )}
             </div>
@@ -138,9 +147,9 @@ export default function DoorsBoard({ expects, disabled, onSubmit }: Props) {
 
         <div
           style={{
-            border: `1px solid ${quiet ? 'var(--g4l-teal, #3B9495)' : 'rgba(0,0,0,0.12)'}`,
+            border: `1px solid ${quiet ? 'var(--teal)' : 'rgba(0,0,0,0.12)'}`,
             borderRadius: 8,
-            background: quiet ? 'rgba(59,148,149,0.06)' : 'transparent',
+            background: quiet ? 'var(--grey)' : 'transparent',
             padding: '0.7rem 0.9rem',
           }}
         >
@@ -154,13 +163,13 @@ export default function DoorsBoard({ expects, disabled, onSubmit }: Props) {
             >
               {quiet ? '✓ ' : ''}{expects.quietDrift.name}
             </button>
-            <button type="button" onClick={() => setOpen(open === '__quiet' ? null : '__quiet')} disabled={disabled} className="btn-pill" style={{ fontSize: '0.8rem', padding: '0.15rem 0.6rem' }}>
-              {open === '__quiet' ? 'Less' : 'More'}
-            </button>
           </div>
-          {open === '__quiet' && (
-            <p style={{ margin: '0.6rem 0 0', lineHeight: 1.7, fontSize: '0.95rem' }}>{expects.quietDrift.recognition}</p>
-          )}
+          <p style={{ margin: '0.35rem 0 0', lineHeight: 1.7, fontSize: '0.95rem' }}>
+            {open === '__quiet' ? expects.quietDrift.recognition : firstLine(expects.quietDrift.recognition)}{' '}
+            <button type="button" className="connect-cta" onClick={() => setOpen(open === '__quiet' ? null : '__quiet')} disabled={disabled} aria-expanded={open === '__quiet'}>
+              {open === '__quiet' ? 'Less' : 'More →'}
+            </button>
+          </p>
         </div>
       </div>
 
