@@ -95,6 +95,33 @@ not a rebuild — worth saying plainly so it is not scoped as one.
 
 ---
 
+## 3b · W3's daily log — three different answers, and Greg's is a third thing
+
+Donna reported the False Start week's tracker as vague, and proposed its rows become the three protocol moves:
+*I redirected · I reframed · I restarted*. Checking that against source turned up a genuine three-way mismatch,
+which is why it lands here rather than in a build ticket.
+
+- **Greg's Step 2 is real and we build it.** ReDirect / ReFrame / ReStart is verbatim in GATED-REWIRE, and the
+  live session teaches all three (`lib/agent/rewire.ts`), with his four trigger categories. Donna remembered
+  the session correctly.
+- **Our tracker logs Step 1.** The week's rows are "Noticed the day" plus one row per **trigger the member
+  named** — what went wrong, not what she did about it.
+- **Greg's own daily worksheet is neither.** Part 3 is "Daily Mindfulness Monitoring," and the verbatim item is
+  **"One good decision I made today: ___"**, aimed at "good decisions / false starts / obstacles" across
+  movement, eating, rest, screen use, stress responses, time use, delay-avoidance, alignment vs autopilot.
+
+There is a further wrinkle worth Greg seeing. On 2026-08-08 we **rewrote** this week away from "a good call, a
+false start, or on track?" on the reasoning that it had borrowed Momentum's three call types and quietly turned
+W3 into a Momentum week. Against the source, that older phrasing was arguably **closer to Greg's Part 3** than
+what replaced it. We may have corrected toward the wrong thing.
+
+**Question for Greg:** what should the member log each day during the False Start week — one good decision
+(your worksheet), the trigger that fired (what we built), or the protocol move she ran (Donna's proposal)? They
+measure different things: awareness of decision moments, trigger recognition, and protocol adherence
+respectively.
+
+---
+
 ## 4 · Community sub-groups by Door
 
 Donna asks whether the Community can be segmented by Door, so a member finds others working the same identity
