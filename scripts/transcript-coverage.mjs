@@ -44,6 +44,11 @@ const NOT_MEMBER_AREAS = [
   'lib/db/', // schema, migrations, adapters
   'lib/auth/', // credential plumbing
   'lib/telemetry/',
+  // The local-only preview tools. app/dev/guard.ts 404s every route here on a production build AND whenever
+  // DATABASE_URL is set, so no member can reach one. Added 2026-08-18 with the Doors board preview; the
+  // board's actual member copy lives in lib/content/doors-board.ts and app/reconnect/doors-board.tsx, both
+  // of which ARE listed — this excludes the dev harness around them, not the words she reads.
+  'app/dev/',
 ];
 
 /**

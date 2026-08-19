@@ -26,13 +26,13 @@ test('relevance and the temporal pattern round-trip', async () => {
   const m = await member(db, ['career_cliff', 'aging_parents']);
 
   assert.equal(await noteDoorProfile(db, m, [
-    { slug: 'career_cliff', relevance: 8, openedFirst: true, stillOpen: false },
-    { slug: 'aging_parents', relevance: 5, biggestImpact: true, stillOpen: true },
+    { slug: 'career_cliff', relevance: 2, openedFirst: true, stillOpen: false },
+    { slug: 'aging_parents', relevance: 3, biggestImpact: true, stillOpen: true },
   ]), 2);
 
   const p = await doorProfile(db, m);
   const career = p.find((d) => d.slug === 'career_cliff')!;
-  assert.equal(career.relevance, 8);
+  assert.equal(career.relevance, 2);
   assert.equal(typeof career.relevance, 'number', 'a string here would break every >= comparison downstream');
   assert.equal(career.openedFirst, true);
   assert.equal(career.stillOpen, false, 'false is a real answer and must not read as unasked');
@@ -47,11 +47,11 @@ test('a later turn ADDS to the profile instead of blanking it', async () => {
   await applySchema(db);
   const m = await member(db, ['career_cliff']);
 
-  await noteDoorProfile(db, m, [{ slug: 'career_cliff', relevance: 8 }]);
+  await noteDoorProfile(db, m, [{ slug: 'career_cliff', relevance: 2 }]);
   await noteDoorProfile(db, m, [{ slug: 'career_cliff', stillOpen: true }]);
 
   const [d] = await doorProfile(db, m);
-  assert.equal(d!.relevance, 8, 'the earlier rating survives the later fact');
+  assert.equal(d!.relevance, 2, 'the earlier rating survives the later fact');
   assert.equal(d!.stillOpen, true);
 });
 
@@ -62,7 +62,7 @@ test('rating a Door the member does not hold writes NOTHING — it never creates
   await applySchema(db);
   const m = await member(db, ['career_cliff']);
 
-  assert.equal(await noteDoorProfile(db, m, [{ slug: 'empty_nest', relevance: 9 }]), 0, 'no Doors touched');
+  assert.equal(await noteDoorProfile(db, m, [{ slug: 'empty_nest', relevance: 3 }]), 0, 'no Doors touched');
   assert.deepEqual((await doorProfile(db, m)).map((d) => d.slug), ['career_cliff'], 'still exactly one Door');
 });
 
@@ -72,17 +72,17 @@ test('a soft-removed Door is not ratable', async () => {
   const m = await member(db, ['career_cliff', 'aging_parents']);
   await db.query(`update member_door set removed_at = now() where member_id=$1 and door_slug='aging_parents'`, [m]);
 
-  assert.equal(await noteDoorProfile(db, m, [{ slug: 'aging_parents', relevance: 9 }]), 0);
+  assert.equal(await noteDoorProfile(db, m, [{ slug: 'aging_parents', relevance: 3 }]), 0);
   assert.equal((await doorProfile(db, m)).length, 1, 'and it stays out of the profile');
 });
 
 test('an out-of-range rating is dropped, not clamped', async () => {
   // Coercing 0 -> 1 would record a member as having said "barely relevant" when they said nothing of the sort.
   assert.equal(normalizeRelevance(0), null);
-  assert.equal(normalizeRelevance(11), null);
+  assert.equal(normalizeRelevance(4), null);
   assert.equal(normalizeRelevance('8'), null, 'a string is not a rating');
   assert.equal(normalizeRelevance(undefined), null);
-  assert.equal(normalizeRelevance(7.6), 8, 'but "about a 7 or 8" lands somewhere real');
+  assert.equal(normalizeRelevance(2.6), 3, 'but "somewhere between somewhat and very" lands on one');
 });
 
 test('saying nothing about a Door does not stamp it as asked', async () => {
@@ -99,7 +99,7 @@ test('an unrated Door reads as null, never 0', async () => {
   const db = new PGlite() as unknown as Db;
   await applySchema(db);
   const m = await member(db, ['career_cliff', 'aging_parents']);
-  await noteDoorProfile(db, m, [{ slug: 'career_cliff', relevance: 6 }]);
+  await noteDoorProfile(db, m, [{ slug: 'career_cliff', relevance: 1 }]);
 
   const other = (await doorProfile(db, m)).find((d) => d.slug === 'aging_parents')!;
   assert.equal(other.relevance, null, 'not asked is not "irrelevant"');
@@ -126,7 +126,7 @@ test('an empty profile describes as NOTHING, so the model cannot state an absenc
   ]), null, 'a Door with no profile yields no line — "no doors are still open" is not a thing we know');
 
   const line = describeDoorProfile([
-    { slug: 'career_cliff', displayName: 'The Career Cliff', isPrimary: true, relevance: 8, openedFirst: true, biggestImpact: null, stillOpen: false },
+    { slug: 'career_cliff', displayName: 'The Career Cliff', isPrimary: true, relevance: 2, openedFirst: true, biggestImpact: null, stillOpen: false },
     { slug: 'aging_parents', displayName: 'The Aging Parents', isPrimary: false, relevance: null, openedFirst: null, biggestImpact: null, stillOpen: true },
   ])!;
   assert.match(line, /opened first: The Career Cliff/);

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import type { DoorsBoardExpectation } from '../../lib/agent/onboarding.ts';
 import { serializeBoardSubmission } from '../../lib/reconnect/doors-board-claim.ts';
+import { RELEVANCE_ANCHORS } from '../../lib/reconnect/door-profile.ts';
 
 // THE DOORS BOARD — every Door, and the member marks which are hers.
 //
@@ -84,7 +85,7 @@ export default function DoorsBoard({ expects, disabled, onSubmit }: Props) {
                   onClick={() => toggle(c.slug)}
                   disabled={disabled}
                   aria-pressed={on}
-                  style={{ flex: 1, textAlign: 'left', border: 'none', background: 'none', padding: 0, font: 'inherit', fontWeight: on ? 600 : 400, cursor: 'pointer' }}
+                  style={{ flex: 1, textAlign: 'left', border: 'none', background: 'none', padding: 0, font: 'inherit', color: 'inherit', fontWeight: on ? 600 : 400, cursor: 'pointer' }}
                 >
                   {on ? '✓ ' : ''}{c.name}
                 </button>
@@ -107,24 +108,28 @@ export default function DoorsBoard({ expects, disabled, onSubmit }: Props) {
               {on && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: '0.6rem', flexWrap: 'wrap' }}>
                   <span className="muted" style={{ fontSize: '0.8rem' }}>How much is this yours?</span>
-                  {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
-                    <button
-                      key={n}
-                      type="button"
-                      onClick={() => setRatings((r) => ({ ...r, [c.slug]: n }))}
-                      disabled={disabled}
-                      aria-label={`${c.name}: ${n} of 10`}
-                      style={{
-                        width: 26, height: 26, borderRadius: 13, cursor: 'pointer',
-                        border: '1px solid rgba(0,0,0,0.15)',
-                        background: ratings[c.slug] === n ? 'var(--g4l-teal, #3B9495)' : 'transparent',
-                        color: ratings[c.slug] === n ? '#fff' : 'inherit',
-                        fontSize: '0.75rem',
-                      }}
-                    >
-                      {n}
-                    </button>
-                  ))}
+                  {RELEVANCE_ANCHORS.map((label, i) => {
+                    const n = i + 1;
+                    const picked = ratings[c.slug] === n;
+                    return (
+                      <button
+                        key={n}
+                        type="button"
+                        onClick={() => setRatings((r) => ({ ...r, [c.slug]: n }))}
+                        disabled={disabled}
+                        aria-pressed={picked}
+                        className="btn-pill"
+                        style={{
+                          fontSize: '0.82rem',
+                          fontWeight: picked ? 600 : 400,
+                          background: picked ? 'var(--g4l-teal, #3B9495)' : 'transparent',
+                          color: picked ? '#fff' : 'inherit',
+                        }}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -145,7 +150,7 @@ export default function DoorsBoard({ expects, disabled, onSubmit }: Props) {
               onClick={() => setQuiet((q) => !q)}
               disabled={disabled}
               aria-pressed={quiet}
-              style={{ flex: 1, textAlign: 'left', border: 'none', background: 'none', padding: 0, font: 'inherit', fontWeight: quiet ? 600 : 400, cursor: 'pointer' }}
+              style={{ flex: 1, textAlign: 'left', border: 'none', background: 'none', padding: 0, font: 'inherit', color: 'inherit', fontWeight: quiet ? 600 : 400, cursor: 'pointer' }}
             >
               {quiet ? '✓ ' : ''}{expects.quietDrift.name}
             </button>

@@ -33,13 +33,13 @@ test('MEMBER: marking a Door she does not hold CREATES it — her claim outranks
   await applySchema(db);
   const m = await member(db, ['career_cliff']);
 
-  const written = await claimDoorsFromBoard(db, m, [{ slug: 'vanishing', relevance: 9 }]);
+  const written = await claimDoorsFromBoard(db, m, [{ slug: 'vanishing', relevance: 3 }]);
   assert.deepEqual(written, ['vanishing']);
 
   const profile = await doorProfile(db, m);
   const v = profile.find((d) => d.slug === 'vanishing');
   assert.ok(v, 'she said The Vanishing is hers and it must be hers');
-  assert.equal(v!.relevance, 9);
+  assert.equal(v!.relevance, 3);
   // ...and it sits after the Doors her story produced, rather than jumping the list.
   assert.equal(profile[0]!.slug, 'career_cliff');
 });
@@ -51,7 +51,7 @@ test('MODEL: rating a Door she does not hold is still a NO-OP — the guard is u
 
   // The same act, through the model's path. It rates whatever it heard, and an insert here would let a misread
   // become a fact about her life.
-  const touched = await noteDoorProfile(db, m, [{ slug: 'vanishing', relevance: 9 }]);
+  const touched = await noteDoorProfile(db, m, [{ slug: 'vanishing', relevance: 3 }]);
   assert.equal(touched, 0, 'the model must never be able to add a Door by rating it');
   assert.equal((await doorProfile(db, m)).length, 1);
 });
@@ -70,10 +70,10 @@ test('re-claiming an existing Door updates it rather than duplicating', async ()
   const db = new PGlite() as unknown as Db;
   await applySchema(db);
   const m = await member(db, ['body']);
-  await claimDoorsFromBoard(db, m, [{ slug: 'body', relevance: 7 }]);
+  await claimDoorsFromBoard(db, m, [{ slug: 'body', relevance: 2 }]);
   const profile = await doorProfile(db, m);
   assert.equal(profile.length, 1, 'the upsert must not create a second row');
-  assert.equal(profile[0]!.relevance, 7);
+  assert.equal(profile[0]!.relevance, 2);
 });
 
 test('RULING 8: biggest-impact updates primary, and there is exactly ONE', async () => {
@@ -135,9 +135,9 @@ test('the board submission round-trips exactly', async () => {
   const { serializeBoardSubmission, parseBoardSubmission } = await import('../lib/reconnect/doors-board-claim.ts');
   const sel = {
     doors: [
-      { slug: 'body' as const, relevance: 9 },
+      { slug: 'body' as const, relevance: 3 },
       { slug: 'loss' as const, relevance: null },
-      { slug: 'vanishing' as const, relevance: 3 },
+      { slug: 'vanishing' as const, relevance: 1 },
     ],
     quietDrift: true,
     first: 'loss' as const,

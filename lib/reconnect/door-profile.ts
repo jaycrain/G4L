@@ -50,10 +50,27 @@ export type DoorProfileInput = {
  * having said "barely relevant" when they said nothing of the sort. Out-of-range becomes null — not asked — which
  * is the honest reading. Halves round to nearest so "about a 7 or 8" lands somewhere real.
  */
+// GREG'S THREE-POINT SCALE, and its anchors. R2-04, verbatim: "1 = not relevant, 2 = somewhat relevant,
+// 3 = very relevant", testable as "the rating control exposes exactly three options with those anchors, per door".
+//
+// It was briefly 1-10, from his 2026-08-08 email asking for a continuum — "a profile of issues instead of a
+// singular one". Jay ruled back to three on 2026-08-18 once the built board made the cost visible: ten dots wrap
+// to two rows PER MARKED CARD, so a member holding a few ends up facing thirty buttons on the surface whose job is
+// recognition. Three points still deliver what the email actually asked for, which was a profile ACROSS Doors
+// rather than one Door — that comes from marking several, not from the resolution of each.
+//
+// THE ANCHOR IS THE MEANING, not the number. Defined once here because it renders in two places that would
+// otherwise disagree.
+export const RELEVANCE_ANCHORS = ['not relevant', 'somewhat relevant', 'very relevant'] as const;
+
+export function relevanceAnchor(n: number | null): string | null {
+  return n && n >= 1 && n <= 3 ? RELEVANCE_ANCHORS[n - 1]! : null;
+}
+
 export function normalizeRelevance(v: unknown): number | null {
   if (typeof v !== 'number' || !Number.isFinite(v)) return null;
   const n = Math.round(v);
-  return n >= 1 && n <= 10 ? n : null;
+  return n >= 1 && n <= 3 ? n : null;
 }
 
 const bool = (v: unknown): boolean | null => (typeof v === 'boolean' ? v : null);
@@ -163,7 +180,7 @@ export function describeDoorProfile(doors: DoorProfile[]): string | null {
   if (first) parts.push(`opened first: ${first.displayName}`);
   if (biggest) parts.push(`weighs most today: ${biggest.displayName}`);
   if (open.length) parts.push(`still open: ${open.map((d) => d.displayName).join(', ')}`);
-  if (rated.length) parts.push(`rated ${rated.map((d) => `${d.displayName} ${d.relevance}/10`).join(', ')}`);
+  if (rated.length) parts.push(`rated ${rated.map((d) => `${d.displayName} ${relevanceAnchor(d.relevance)}`).join(', ')}`);
 
   return parts.length ? parts.join(' · ') : null;
 }

@@ -22,7 +22,7 @@ import { normalizeRelevance } from './door-profile.ts';
 
 export type BoardClaim = {
   slug: DoorSlug;
-  /** 1–10, or null when she marked the card without rating it. Marking and rating are separate acts (ruling #7). */
+  /** 1–3 on Greg's anchors, or null when she marked the card without rating it (ruling #7). */
   relevance?: number | null;
 };
 
@@ -173,7 +173,7 @@ export function parseBoardSubmission(message: string): BoardSubmission | null {
     if (!isDoorSlug(slug)) continue;
     if (key === 'door') {
       const n = Number(rating);
-      out.doors.push({ slug, relevance: Number.isFinite(n) && n >= 1 && n <= 10 ? n : null });
+      out.doors.push({ slug, relevance: Number.isFinite(n) && n >= 1 && n <= 3 ? n : null });
     } else if (key === 'first') out.first = slug;
     else if (key === 'biggest') out.biggest = slug;
     else if (key === 'open') out.stillOpen.push(slug);

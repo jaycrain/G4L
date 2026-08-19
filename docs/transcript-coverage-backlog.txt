@@ -36,8 +36,6 @@ app/dashboard/outreach-card.tsx
 app/dashboard/program-map.tsx
 app/dashboard/redesign-shell.tsx
 app/dashboard/track-this.tsx
-app/dev/page.tsx
-app/dev/seed-w3/route.ts
 app/error.tsx
 app/feedback-widget.tsx
 app/idq/idq-chat.tsx
