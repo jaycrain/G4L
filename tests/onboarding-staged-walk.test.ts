@@ -148,7 +148,18 @@ test('DECLINE/CAT-26 — a declined session stays terminal on resume; never drag
 // while the model, believing it had moved on, ran the OLD conversational reclaim itself. The structured builder
 // never fired. A close the member plainly stated must win over the model's contradicting guess.
 // ---------------------------------------------------------------------------
-test('GAP CONFIRM — a plain close ("that\'s the brunt of it") advances to the reclaim BUILDER even if the model says "more"', () => {
+// WHAT THESE TWO ASSERT CHANGED ON 2026-08-19, AND WHY IT IS NOT A WEAKENING.
+//
+// Both fixtures are real walks (Jay's, then Donna's) where a close was read as "there's more", so the engine stayed
+// in gap and the MODEL improvised the reclaim conversation. `expects.kind === 'reclaim_list'` was the proxy for "the
+// engine advanced" — true only because the builder used to open the instant reclaim began.
+//
+// The draw-out (2026-08-19) makes the builder arrive AFTER she has spoken, so that proxy now reads as a failure on
+// correct behaviour. The bug itself is unchanged and still fully covered: the engine must ADVANCE THE STAGE and
+// speak its own AUTHORED BRIDGE. What made Donna's walk wrong was not the absence of a form — it was the engine
+// sitting still while the model filled the silence. So each fixture now asserts the advance, the bridge, and that
+// the builder still arrives once she closes — which is strictly more of the beat than the single expects check was.
+test('GAP CONFIRM — a plain close ("that\'s the brunt of it") advances OUT OF GAP even if the model says "more"', () => {
   const atGapConfirm = (): ConvState => ({
     stage: 'gap',
     awaitingConfirm: true,
@@ -166,7 +177,15 @@ test('GAP CONFIRM — a plain close ("that\'s the brunt of it") advances to the 
       ...(replyIntent ? { replyIntent } : {}),
     });
     assert.equal(t.state.stage, 'reclaim', `model replyIntent=${replyIntent}: must advance out of gap`);
-    assert.equal(t.expects?.kind, 'reclaim_list', `model replyIntent=${replyIntent}: the structured builder must fire`);
+    assert.notEqual(t.expects?.kind, 'gap_confirm', `model replyIntent=${replyIntent}: the confirm must not re-open`);
+    // ...and once she has named her wants and closed, the builder still arrives to confirm them.
+    const closed = applyStagedTurn(
+      t.state,
+      [...hist, { role: 'member', text: "That's the brunt of it" }, { role: 'agent', text: t.reply }],
+      'I want to ride again, and to stop dreading the mornings.',
+      { text: 'Riding, and the mornings.', replyIntent: 'done', record: { reclaimList: ['ride again', 'stop dreading the mornings'] } },
+    );
+    assert.equal(closed.expects?.kind, 'reclaim_list', `model replyIntent=${replyIntent}: the builder confirms what she said`);
   }
 });
 
@@ -182,7 +201,7 @@ test('GAP CONFIRM — a plain close ("that\'s the brunt of it") advances to the 
 // Kept as its own fixture rather than another string in Jay's loop, because the two failed for DIFFERENT reasons
 // and a shared loop would hide that — Jay's exercises the gate, Donna's exercises the read underneath it.
 // ---------------------------------------------------------------------------
-test('GAP CONFIRM — a close that points BACK ("primarily around those three things") reaches the builder', () => {
+test('GAP CONFIRM — a close that points BACK ("primarily around those three things") advances out of gap', () => {
   const atGapConfirm = (): ConvState => ({
     stage: 'gap',
     awaitingConfirm: true,
@@ -202,10 +221,18 @@ test('GAP CONFIRM — a close that points BACK ("primarily around those three th
       ...(replyIntent ? { replyIntent } : {}),
     });
     assert.equal(t.state.stage, 'reclaim', `replyIntent=${replyIntent}: must advance out of gap`);
-    assert.equal(t.expects?.kind, 'reclaim_list', `replyIntent=${replyIntent}: the structured builder must fire`);
+    assert.notEqual(t.expects?.kind, 'gap_confirm', `replyIntent=${replyIntent}: the confirm must not re-open`);
     // The AUTHORED bridge must carry the handoff. Its whole job is that the heavy gap beat does not cold-pivot —
     // Donna got "Now — what do you want back?", which is the model improvising because the engine never advanced.
     assert.match(t.reply, /none of it is gone/, `replyIntent=${replyIntent}: the authored reclaim bridge must speak`);
+    // ...and the builder still arrives to confirm her wants once she has named them and closed.
+    const closed = applyStagedTurn(
+      t.state,
+      [...hist, { role: 'member', text: 'It was primarily around those three things.' }, { role: 'agent', text: t.reply }],
+      'I want to be making things again, and to see people.',
+      { text: 'Making, and people.', replyIntent: 'done', record: { reclaimList: ['making things again', 'see people'] } },
+    );
+    assert.equal(closed.expects?.kind, 'reclaim_list', `replyIntent=${replyIntent}: the builder confirms what she said`);
   }
 });
 

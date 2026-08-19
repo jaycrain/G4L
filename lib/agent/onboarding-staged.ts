@@ -938,7 +938,7 @@ export function isListBlock(message: string): boolean {
 // yet complete), tell the client to render the list builder — pre-filled with any wants volunteered earlier — instead
 // of the text box or the scale chips. Once submitted, the stage advances to 'grinta', so this stops firing. Everything
 // else defers to the scale-chip expectation.
-function nextExpects(arc: ArcConfig, stageId: StageId, complete: boolean, answered: number, collected: Collected, awaitingConfirm = false): Expectation | undefined {
+function nextExpects(arc: ArcConfig, stageId: StageId, complete: boolean, answered: number, collected: Collected, awaitingConfirm = false, drawnOut = false): Expectation | undefined {
   // THE GAP CONFIRM OFFERS ITS OWN ANSWERS (2026-08-19). We reflect her whole story and ask "have I got the shape
   // of it — or is there more?", then classified her free-text reply three ways with regex vocabulary. Five patches
   // in two days and it still leaked; one attempt matched "I said yes to the trip that summer", which would have
@@ -959,7 +959,10 @@ function nextExpects(arc: ArcConfig, stageId: StageId, complete: boolean, answer
       })),
     };
   }
-  if (arc.id === 'onboarding' && stageId === 'reclaim' && !complete) {
+  // THE BUILDER CONFIRMS; IT DOES NOT ASK (2026-08-19). It used to open on the same turn as the bridge — a form
+  // arriving before she had said anything, which is structure doing the ELICITING and the beat Donna twice called
+  // rushed. Now the Companion draws her out first and the builder arrives holding what she said.
+  if (arc.id === 'onboarding' && stageId === 'reclaim' && !complete && drawnOut) {
     return { kind: 'reclaim_list', min: RECLAIM_LIST_MIN, seeded: (collected.reclaimList ?? []).filter(Boolean) };
   }
   // THE DOORS BOARD (D5). Reconnect's doors stage opens with the framing and the board TOGETHER — recognition
@@ -1108,7 +1111,16 @@ interface GapScratch {
    */
   gapHeld?: boolean;
 }
-interface ReclaimScratch { reclaimNudged?: boolean; confirmBounces?: number }
+interface ReclaimScratch {
+  reclaimNudged?: boolean;
+  confirmBounces?: number;
+  /** The conversation is finished, so the builder may open to CONFIRM it. */
+  drawnOut?: boolean;
+  /** Draw-out turns so far — bounded by RECLAIM_DRAWOUT_MAX so it can never become a "what else?" march. */
+  drawTurns?: number;
+  /** Set by the runaway backstop when it ends a thin draw-out: gather owns the handoff, the backstop only calls it. */
+  forced?: boolean;
+}
 
 // SHARED anti-loop contract for the CONFIRM phase (torture harness, 2026-07-26). Every gather stage's GATHER phase is
 // bounded by its own floor/cap, but each stage's CONFIRM re-opened forever when a rambling member's reply never reads
@@ -1606,7 +1618,7 @@ const gapStage: StageDef = {
         b.stage = 'reclaim';
         b.awaitingConfirm = false;
         b.reply = receiveThen(b.modelText || gapReceipt(b.collected), reclaimOpening(b.collected));
-        return { reply: b.reply, state: beatState(b), complete: false, ...(nextExpects(b.arc, b.stage, false, 0, b.collected) ? { expects: nextExpects(b.arc, b.stage, false, 0, b.collected)! } : {}) };
+        return { reply: b.reply, state: beatState(b), complete: false, ...(nextExpects(b.arc, b.stage, false, 0, b.collected, b.awaitingConfirm, reclaimDrawnOut(b)) ? { expects: nextExpects(b.arc, b.stage, false, 0, b.collected, b.awaitingConfirm, reclaimDrawnOut(b))! } : {}) };
       }
       b.awaitingConfirm = false;
       b.reply = REOPEN_GAP;
@@ -1701,17 +1713,91 @@ function commitStructuredReclaim(b: Beat): Turn {
   return enterGrintaSurvey(b, false);
 }
 
+/** How many wants she can name before the builder arrives regardless — the cap that stops a "what else?" march. */
+const RECLAIM_DRAWOUT_MAX = 6;
+
+/** Has the conversation finished, so the builder may confirm it? Read by nextExpects at every call site. */
+function reclaimDrawnOut(b: Beat): boolean {
+  return b.stage === 'reclaim' && (b.scratch as ReclaimScratch).drawnOut === true;
+}
+
+// The hand-in TO the builder, once she has said her piece. It names what we already hold, so the form reads as a
+// receipt rather than a fresh demand — and says plainly that she can change any of it.
+function reclaimBuilderHandoff(c: Collected): string {
+  const n = (c.reclaimList ?? []).length;
+  return n
+    ? `I've got ${n === 1 ? 'that one' : `those ${n}`} written down. Have a look — change the wording, add anything I missed, take one off. This is your list.`
+    : `Put them down here in your own words — big or small, three to start is plenty. You can always add more later.`;
+}
+
 const reclaimStage: StageDef = {
   id: 'reclaim',
   mode: 'drawout', // unused for the structured turn; kept for the StageDef shape
   opener: (c) => reclaimOpening(c),
-  offersSubstance: () => true, // the list-builder submission is always a real answer
+  // A BUILDER SUBMISSION IS ALWAYS SUBSTANTIVE; A DRAW-OUT TURN IS NOT.
+  //
+  // This was `() => true`, which was correct while the beat WAS the submission — one turn, always real. With a
+  // conversational draw-out in front of it, always-true means the idle counter never increments, so the runaway
+  // backstop can never fire and a stalling member is trapped in the draw-out instead of being handed on. Found by
+  // the stall test the moment the draw-out landed.
+  offersSubstance: (message) => isBuilderSubmission(message) || shouldCaptureStagedReclaim(message),
+  // THE RUNAWAY BACKSTOP, which this stage never needed until now.
+  //
+  // While the beat WAS the builder submission there was nothing here to run away with: one turn, in and out. The
+  // draw-out puts a conversation in front of it, which means a member CAN now stall or spiral here — and the
+  // systemic backstop delegates to this hook, so with no hook the stall test's member was simply trapped in the
+  // draw-out forever. (Three tests caught it at once; the fall-through they were exercising was gather's.)
+  //
+  // Two exits, and which one she gets depends on whether her list can stand:
+  //   - at or above the floor → hand on, through the SAME chokepoint as every other path so the shape gate still
+  //     runs (Decision II: no path bypasses it), capturing whatever the stalling turn still offered first.
+  //   - below the floor → she is not finished, she is stuck. Open the builder, which is the thing that enforces
+  //     the floor. Handing a one-item list to the survey would break the ≥MIN contract to escape a stall.
+  forceProgress(b) {
+    const rs = b.scratch as ReclaimScratch;
+    if (b.pendingReclaimShape) return; // a parked proposal owns the turn — gather resolves it
+    if (!rs.drawnOut && (b.collected.reclaimList?.length ?? 0) < RECLAIM_LIST_MIN) {
+      rs.forced = true; // gather ends the draw-out; ONE construction of the handoff, so expects stays with it
+      return;
+    }
+    rs.drawnOut = true;
+    for (const item of parseReclaimListSubmission(b.memberMessage)) appendReclaim(b.collected, item);
+    return enterGrintaSurvey(b);
+  },
   // STRUCTURED CAPTURE (Jay, 2026-07-29): the Reclaim List is built in a list-builder UI, not extracted from
   // conversation (which proved ~30% lossy in testing). The submission arrives as a bulleted block; the engine stores
   // the member's EXACT entries VERBATIM (setStructuredReclaim), enforces the ≥MIN floor, then hands into the Grinta
   // baseline survey. There is no conversational gather or confirm: the builder IS the input AND the confirmation.
   gather(b) {
     if (b.pendingReclaimShape) return answerPendingShape(b);
+
+    // THE DRAW-OUT, then the builder. Conversation elicits; structure confirms.
+    //
+    // She is asked what she wants back and answers in her own words, one at a time, and the model tags each as it
+    // lands. When she is done — or at the cap — the builder opens ALREADY HOLDING them, so she never types the same
+    // thing twice and the list she signs off is still verbatim by construction.
+    //
+    // The ~30% loss that made this a builder in the first place was NOT conversation being lossy: the source
+    // records "the model drilled + re-tagged", one row in a table of four bugs with a single root cause. That
+    // steering is gone and verbatim capture is enforced, so the cause is addressed rather than avoided.
+    const rs = b.scratch as ReclaimScratch;
+    if (!rs.drawnOut && !isBuilderSubmission(b.memberMessage)) {
+      rs.drawTurns = (rs.drawTurns ?? 0) + 1;
+      const enough = memberClosingReclaim(b.memberMessage)
+        || b.model.replyIntent === 'done'
+        || rs.forced === true // the runaway backstop tripped above and handed the ending back here
+        || (rs.drawTurns ?? 0) >= RECLAIM_DRAWOUT_MAX;
+      if (!enough) {
+        // Her turn stands as the model wrote it — the engine appends nothing here, so there is no "what else?"
+        // march stacked on top of the model's own question (drawout-rhythm: the model owns the one question).
+        b.reply = b.modelText;
+        return;
+      }
+      rs.drawnOut = true;
+      b.reply = receiveThen(b.modelText, reclaimBuilderHandoff(b.collected));
+      return;
+    }
+
     // The LIVE reclaim surface is the structured builder (expects reclaim_list); its submission arrives as a "• "
     // bulleted block. Only that authoritative path gets verbatim capture + the ≥MIN floor. Anything else routes to the
     // retired conversational path (dead code a real member never hits — the builder is the only input; kept behind
@@ -1859,7 +1945,7 @@ function enterGrintaSurvey(b: Beat, gateShapes = true): Turn {
     b.stage = 'grinta';
     b.awaitingConfirm = false;
     b.reply = receiveThen(b.modelText || reclaimReceipt(b.collected), grintaSurveyOpener());
-    const ex = nextExpects(b.arc, b.stage, false, b.administeredResponses.length, b.collected, b.awaitingConfirm);
+    const ex = nextExpects(b.arc, b.stage, false, b.administeredResponses.length, b.collected, b.awaitingConfirm, reclaimDrawnOut(b));
     return { reply: b.reply, state: beatState(b), complete: false, ...(ex && { expects: ex }) };
   }
   const proposal = gateNextShape(b);
@@ -1874,7 +1960,7 @@ function enterGrintaSurvey(b: Beat, gateShapes = true): Turn {
   b.reply = receiveThen(b.modelText || reclaimReceipt(b.collected), grintaSurveyOpener());
   // W-24/W-48: this is the ONLY path into the grinta survey (natural confirm AND the runaway/ceiling backstop), so emit
   // the chip signal (+ "Question 1 of 12") here — otherwise a force-progressed member gets the text box for item 1.
-  const expects = nextExpects(b.arc, b.stage, false, b.administeredResponses.length, b.collected, b.awaitingConfirm);
+  const expects = nextExpects(b.arc, b.stage, false, b.administeredResponses.length, b.collected, b.awaitingConfirm, reclaimDrawnOut(b));
   return { reply: b.reply, state: beatState(b), complete: false, ...(expects && { expects }) };
 }
 
@@ -2083,7 +2169,7 @@ export function runArcTurn(
 
   // A handler may have emitted a structured turn directly (identity tap-to-pick chips); that wins. Otherwise derive
   // the expectation from the resulting stage (W-24/W-48: a draw-out handing INTO an administered stage delivers item 0).
-  const expects = b.expects ?? nextExpects(arc, b.stage, b.complete, b.administeredResponses.length, b.collected, b.awaitingConfirm);
+  const expects = b.expects ?? nextExpects(arc, b.stage, b.complete, b.administeredResponses.length, b.collected, b.awaitingConfirm, reclaimDrawnOut(b));
   return { reply: b.reply, state: beatState(b), complete: b.complete, ...(b.declined ? { declined: true } : {}), ...(expects && { expects }) };
 }
 
