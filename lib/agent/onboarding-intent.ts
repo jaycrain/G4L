@@ -321,8 +321,22 @@ export function memberRejectsReflection(message: string): boolean {
 // missed terse add is caught by the card.
 const AFFIRM_PREFIX_RE =
   /^(yeah|yes|yep|yup|sure|ok(ay)?|right|true|correct|exactly|totally|definitely|absolutely|for sure|i guess|kind of|sort of|mm+|uh[ -]?huh)[\s,.!—–-]*/i;
+// AGREEMENT VOCABULARY — stripped before the content words are counted, so a WORDY yes is still a yes.
+//
+// The mechanism is right: strip what is agreement, and whatever remains is new material. What keeps failing is
+// the vocabulary. The confirm asks "does that land — or is there more?", so members answer the first half with a
+// VERDICT ON OUR ACCURACY — "that's a fair picture of it", "you've captured it accurately" — and with none of
+// that listed, the length heuristic (>=25 chars, >=4 content words) read plain agreement as a fresh chapter and
+// the beat asked again. Live walk 2026-08-19: she said "That's a fair picture of it, yeah", was asked twice more,
+// and replied "didn't we just do that".
+//
+// THIRD INSTANCE OF ONE SHAPE — Jennifer's "Yes." re-asked three times, Donna's "It was primarily around those
+// three things", now this. Each earlier fix added the exact phrasing that had just failed. The FAMILY is what
+// needed adding: any assessment that we have represented it correctly carries no new material, however many words
+// it takes. What must still read as MORE is a reply that NAMES something new ("and my sister stopped speaking to
+// me that year") — those introduce an event; these only grade us.
 const GAP_CONFIRM_WORDS_RE =
-  /\b(you'?(ve|d| have)?\s*(got|nailed)\s*(it|that)|that'?s (it|right|me|correct|the one|spot on)|(it|that) (lands|fits|works|tracks)|spot on|exactly( right)?|absolutely|totally|definitely|perfect(ly)?|precisely|nailed it|got it|makes sense|understood|(?:it |that )?sounds? (?:great|good|right|perfect)|(?:it |that )?looks? (?:great|good|right|perfect)|(?:i )?love it|that'?s great|reads (?:great|good|right))\b/gi;
+  /\b(you'?(ve|d| have)?\s*(got|nailed|captured|described|summed)\s*(it|that|them|this|up)?|that'?s (it|right|me|correct|the one|spot on|fair|accurate|about right)|(a|the|pretty much the) (fair|good|accurate|decent|full|whole|right) (picture|summary|read|account)( of (it|that))?|(it|that|you) (lands|fits|works|tracks|covers it|describes it|sums it up)|captured (it|that)|sums? (it|that) up|describes (it|that)|spot on|exactly( right)?|absolutely|totally|definitely|perfect(ly)?|precisely|nailed it|got it|makes sense|understood|(?:it |that )?sounds? (?:great|good|right|perfect)|(?:it |that )?looks? (?:great|good|right|perfect)|(?:i )?love it|that'?s great|reads (?:great|good|right))\b/gi;
 export function memberAddingMoreGap(message: string): boolean {
   const m = (message ?? '').replace(/[‘’]/g, "'").trim();
   if (!m) return false;

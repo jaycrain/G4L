@@ -264,3 +264,37 @@ test('a repeated approval is still an approval — and a change request still is
     'a rejection is never overruled',
   );
 });
+
+// A WORDY YES IS STILL A YES — the third instance of one shape.
+//
+// The confirm asks "does that land — or is there more?", so members answer the first half with a verdict on our
+// accuracy. None of that vocabulary was listed, so the length heuristic read plain agreement as a fresh chapter
+// and the beat asked again. Jennifer's "Yes." was re-asked three times; Donna's "It was primarily around those
+// three things" cost a day; then "That's a fair picture of it, yeah" — after which she said "didn't we just do
+// that". Each earlier fix added the exact phrasing that had just failed, so this pins the FAMILY and its opposite.
+test('a verdict on our accuracy is agreement, however many words it takes', () => {
+  for (const m of [
+    "That's a fair picture of it, yeah.",
+    "You've captured it accurately I think.",
+    "That's pretty much the whole picture.",
+    'Yeah, that sums it up well.',
+    'That describes it well.',
+    'It was primarily around those three things.',
+    "I think you've got it.",
+  ]) {
+    assert.equal(resolveConfirmCorroborated(m, 'more', shouldCaptureStagedGap, 'anything_more'), 'done', `re-asked after: ${m}`);
+  }
+});
+
+test('...but naming something NEW still keeps the story open', () => {
+  // These do not grade us — they introduce an event. Losing this is the failure in the other direction, and it is
+  // the one that costs a member part of her story.
+  for (const m of [
+    'Yes, and my sister stopped speaking to me that year too.',
+    'Mostly, though the money side got bad after.',
+    'There was also the house — we nearly lost it.',
+    "Actually there's one more thing, my health went too.",
+  ]) {
+    assert.equal(resolveConfirmCorroborated(m, 'more', shouldCaptureStagedGap, 'anything_more'), 'addition', `stopped drawing out on: ${m}`);
+  }
+});
