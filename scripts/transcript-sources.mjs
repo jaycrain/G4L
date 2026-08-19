@@ -69,6 +69,9 @@ export const SECTIONS = [
   { title: 'The practice week & Playbook reads', files: ['lib/rewire/w3-entry.ts', 'lib/practice/mark.ts', 'app/momentum/week-grid.tsx', 'lib/playbook/reads.ts', 'app/quality-day/[memberId]/page.tsx', 'app/quality-day/quality-day-log.tsx'] },
   { title: 'Grinta baseline (the 12-item survey)', files: ['lib/grinta/survey/instrument.ts'] },
   { title: 'Session & phase summaries ("Why this matters")', files: ['lib/content/summaries.ts'] },
+  // WHERE IT LIVES — the line at every Session close naming what she made and where it went. Authored, and read
+  // at the end of all thirteen Sessions, so it is quotable and belongs in canon.
+  { title: 'The Session close — where it lives', files: ['lib/content/where-it-lives.ts'] },
   // The in-Session teaching layer (2026-08-17). "Why this matters" and "Explore the Science" stopped being
   // optional header widgets and became required beats INSIDE each Session — so this copy is now something every
   // member reads on the way through, not something a curious one opens. teaching.ts resolves the beats and holds

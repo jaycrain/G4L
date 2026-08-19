@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { ARTIFACT_REFRESH_EVENT, SESSION_COMPLETE_EVENT } from '../components/artifact-refresh.ts';
 import { chatDispatch, type SessionKey } from '../../lib/workspace/session-key.ts';
 import { reconnectStageTitle } from '../../lib/content/explore.ts';
+import { whereItLives } from '../../lib/content/where-it-lives.ts';
 import type { Artifact } from '../../lib/workspace/artifact.ts';
 import type { PostSessionNudge } from '../../lib/connect/post-session-nudge.ts';
 import type { RingPhaseState } from '../../lib/workspace/ring-state.ts';
@@ -240,6 +241,26 @@ export default function WorkspaceSession({
                 </div>
               ))}
             </div>
+            {/* WHERE IT LIVES — the middle third of the close (Donna's End-of-Session Flow, 2026-08-19). The card
+                already showed WHAT she built and HOW to leave; it never said where the thing went. That gap is
+                what produced two separate reports from her ("True Lines: no visibility after Session Complete",
+                "the Reclaim List referenced but not shown"), both of which are the same question: I made
+                something, where is it?
+
+                It sits ABOVE the human step and the CTA because it is about what she just did, and a member
+                reads downward from her own work. A checkpoint has no page to open — it names the reading
+                instead, which is precisely when a member assumes her answers went nowhere. */}
+            {(() => {
+              const w = whereItLives(sessionKey);
+              return (
+                <div className="ws-endcard-lives">
+                  <p className="ws-endcard-lives-line">{w.line}</p>
+                  {w.href && w.cta && (
+                    <a className="ws-endcard-lives-cta" href={w.href(memberId)}>{w.cta} →</a>
+                  )}
+                </div>
+              );
+            })()}
             {/* THE HUMAN STEP. Jay, 2026-08-17: "we want to emphasize the human side that exists on the app, and
                 it's a credibility builder for the Companion to encourage human interaction. Loss of connection is
                 a huge factor in midlife loneliness and identity loss."

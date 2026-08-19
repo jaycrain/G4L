@@ -1,6 +1,6 @@
 # G4L — Member Transcript (authored copy, verbatim)
 
-Stamp: `app @ d86e839 · 2026-08-19` · PART 1 of the Cowork release bundle.
+Stamp: `app @ 1e000dc · 2026-08-19` · PART 1 of the Cowork release bundle.
 
 **Quote from this.** Every line below is authored, fixed copy a member reads, in reading order by surface. It does
 **not** include the Companion's in-the-moment reflections (those are model-generated and vary per member — describe
@@ -897,6 +897,27 @@ _source: lib/content/summaries.ts_
 - Now the work turns to the body, and it stays grounded and small. You get clear on why this actually matters to you — the reasons that outlast guilt — take stock of the everyday skills that make change stick, and spend a week noticing how your real choices play out. No grand overhaul, nothing graded. Just the ordinary, repeatable moves that build fitness one decision at a time, with the mind-work from Rewire backing you up.
 - Grow into a bigger life as who you want to be.
 - Reclaim is where it widens out. You revisit what you set out to take back — now that you know yourself better — and check that your world is genuinely getting bigger: more open, more connected, more alive. You track the days that feel like the life you’re building, so a good day becomes something you can repeat on purpose. This is the wellness the whole arc was pointing at: a life you’ve grown back into, and keep growing.
+
+
+## The Session close — where it lives
+
+_source: lib/content/where-it-lives.ts_
+
+- Your Reclaim List, your Doors and your starting ID Score are on your dashboard — that is the ground everything else builds on.
+- Open your dashboard
+- Your true lines are in your Playbook, under Your Moves. Reach for them when the old voice starts up.
+- Open your Playbook
+- Your picture is in your Playbook. Five minutes with it each morning this week is the practice.
+- Your False Start Protocol is in your Playbook — the triggers you named and what you do about each one.
+- There is nothing to file from this one. Those six answers set your Rewire read, and it shows on your dashboard as part of your Grinta Index.
+- Your why is in your Playbook, in your own words — the reason that has to hold on the days you do not feel like it.
+- Your development map is in your Playbook: the skills you rated, and which family they fall into.
+- Your Lifestyle Pilot is in your Playbook, and this week you live it — mark the days as you go.
+- There is nothing to file from this one. Those answers set your Rebuild read, and it shows on your dashboard as part of your Grinta Index.
+- Your Reclaim List is on your dashboard, refined — the same list, seen with clearer eyes.
+- Your Bigger World Audit is in your Playbook: where your world can widen, and the one change you named for each.
+- Your Quality Days are in your Playbook — your non-negotiables, what helps, and what pulls a day down.
+- There is nothing to file from this one. Those answers set your Reclaim read, and it shows on your dashboard as part of your Grinta Index.
 
 
 ## The in-Session teaching layer (Frame · Understand)

@@ -542,6 +542,14 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .keeper-offer-btn:disabled { opacity: 0.55; cursor: default; }
 .keeper-offer-done { font-size: 12.5px; font-weight: 700; color: var(--teal-text); }
 
+/* WHERE IT LIVES — the end card's middle third. Quieter than the human step below it (which is an invitation) and
+   quieter than Continue (which is the way out): this is a statement about where her work went, so it reads as
+   information rather than as a third thing competing to be tapped. */
+.ws-endcard-lives { margin: 0.9rem 0 0.2rem; padding-top: 0.85rem; border-top: 1px solid #e3e2df; }
+.ws-endcard-lives-line { margin: 0 0 0.35rem; font-size: 14.5px; line-height: 1.55; color: var(--navy); }
+.ws-endcard-lives-cta { font-size: 13.5px; font-weight: 700; color: var(--teal-text); text-decoration: none; }
+.ws-endcard-lives-cta:hover { text-decoration: underline; }
+
 /* The gap confirm — chips + the Doors we heard, sitting ABOVE the composer (this is the one structured surface
    that does not replace the box). The weighting is the design: the Doors are a quiet line of prose she can
    correct, the chips are the answer. If the Doors ever read as a second question, they are too loud.
