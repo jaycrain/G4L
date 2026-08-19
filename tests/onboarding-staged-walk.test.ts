@@ -566,3 +566,34 @@ test('the gap→reclaim hand-in RECEIVES what she just said before opening the l
     'the receipt must come FIRST — receiving after inviting is not receiving',
   );
 });
+
+// THE HAND-IN CANNOT DEPEND ON THE MODEL HAVING SPOKEN.
+//
+// receiveThen falls back to "opener alone if no receipt", and at this hand-in the model regularly answers a close
+// with tool calls and no prose. She finished describing her father's coma and read a scripted bridge straight into
+// "add each thing below" — on about half of otherwise identical runs. That inconsistency IS the defect.
+test('gap→reclaim receives her Doors by name even when the model says NOTHING', () => {
+  const state: ConvState = {
+    stage: 'gap', awaitingConfirm: true,
+    collected: { identityNoun: 'Maker', doors: ['career_cliff', 'load_bearer'], gap: DONNA_GAP },
+  };
+  const turn = applyStagedTurn(state, [], "I think you've got it.", { text: '', replyIntent: 'done' });
+
+  assert.match(turn.reply, /Two things, close together\./, 'the engine supplies the receipt the model did not — as SHAPE, never as our labels');
+  assert.ok(
+    turn.reply.indexOf('Two things') < turn.reply.search(/that's a lot to have been carrying/i),
+    'and it comes FIRST — receiving after inviting is not receiving',
+  );
+  assert.match(turn.reply, /let's write down what you want back/i, 'the list still opens; no beat is added');
+  assert.equal(turn.state.stage, 'reclaim', 'and the bias to advance is untouched (4c5b416)');
+});
+
+test('gap→reclaim does NOT double up when the model DID speak', () => {
+  const state: ConvState = {
+    stage: 'gap', awaitingConfirm: true,
+    collected: { identityNoun: 'Maker', doors: ['career_cliff', 'load_bearer'], gap: DONNA_GAP },
+  };
+  const turn = applyStagedTurn(state, [], "That's the whole of it.", { text: 'Three things, close together.', replyIntent: 'done' });
+  assert.match(turn.reply, /Three things, close together\./);
+  assert.ok(!/Two things, close together/.test(turn.reply), 'her words beat our fallback — never both');
+});

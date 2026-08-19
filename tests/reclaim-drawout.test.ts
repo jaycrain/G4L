@@ -41,3 +41,15 @@ test('reclaim stage instruction · tagging survives, the retired beats do not', 
   assert.ok(!/MAKE EACH WANT CONCRETE/.test(s), 'sharpening moved to the rail, not a gate before the survey');
   assert.ok(!/ALWAYS end your turn with your single forward question/.test(s), 'no "what else?" march');
 });
+
+test('gap stage instruction · the CLOSING turn is a receipt, not another question', () => {
+  const s = stageInstruction('gap');
+  // The end-with-a-question rule had no exemption for the turn the member closes on, so the model asked one more,
+  // receiptOnly() stripped it, and receiveThen fell back to the bare bridge — she finished her story and read a
+  // scripted line straight into "add each thing below". Whether she got a beat depended on the model's sentence
+  // shape, which is why the same code passed and failed on alternate runs.
+  assert.match(s, /ALWAYS end your turn with your single forward question/, 'the rule still holds while drawing out');
+  assert.match(s, /ONE EXEMPTION: the turn they CLOSE the story/, 'and stops at the moment she has finished answering');
+  assert.match(s, /do NOT ask anything further/i);
+  assert.match(s, /RECEIPT/, 'that turn is what she reads before the next beat opens');
+});

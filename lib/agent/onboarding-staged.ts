@@ -22,7 +22,7 @@
 // behind the flag — the first live-eval gate.
 
 import { cleanIdentityNoun, displayIdentityNoun, identityLabel, sanitizeCoinedIdentity } from '../member/identity.ts';
-import { isDoorSlug, matchDoors, type DoorSlug } from '../doors.ts';
+import { isDoorSlug, matchDoors, DOORS, type DoorSlug } from '../doors.ts';
 import { RECLAIM_LIST_FLOOR, RECLAIM_LIST_MIN, RECLAIM_LIST_TARGET, reclaimAddIntent, isReclaimMetaFragment } from '../member/reclaim.ts';
 import { nextFollowUp } from './follow-up.ts';
 import type { SessionVisual } from './session-visual.ts';
@@ -473,6 +473,37 @@ export function tidyGapProse(s: string): string {
   t = t.replace(/(?<!\b[a-z])([.!?])(?=[A-Za-z])/gi, '$1 ');
   t = t.replace(/([.!?]\s+|^)([a-z])/g, (_m, pre: string, ch: string) => pre + ch.toUpperCase()); // capitalize sentence starts
   return /[.!?]$/.test(t) ? t : `${t}.`; // a closing period
+}
+
+// THE ENGINE'S OWN RECEIPT for the gap close — used when the model gave none.
+//
+// receiveThen falls back to "opener alone if no receipt", and at this hand-in the model regularly answers a close
+// with tool calls and no prose. So she finished describing her father's coma and read a scripted bridge straight
+// into "add each thing below" — on roughly half of otherwise identical runs, because it depended on whether the
+// model happened to produce text that turn. That inconsistency is the whole defect: the heaviest transition in
+// onboarding cannot be conditional on the model's sentence shape.
+//
+// NOT SOLVED BY HOLDING THE BEAT. 4c5b416 removed exactly that — Jay's walk had the confirm refusing to close,
+// "the engine stayed stuck in gap while the model moved on in its text, the stages desynced". The bias to advance
+// is deliberate and stays.
+//
+// The pattern already exists one hand-in later: enterGrintaSurvey does receiveThen(b.modelText || reclaimReceipt(…)).
+// This is the same idea for the hand-in that never had it — named from her COMMITTED Doors, so it is true by
+// construction and specific to her without the model having to say anything.
+function gapReceipt(c: Collected): string {
+  // THE SHAPE, NOT THE LABELS. The first version of this named her Doors — "The Career Cliff, The Aging Parents
+  // and The Relationship" — and a live walk protested it immediately. She had just described a job lost in a day,
+  // a partner who was not in it with her, and her father in a coma; answering with three product categories
+  // converts her life into our taxonomy at the one moment she needs to be heard. Specific, and in exactly the
+  // wrong register.
+  //
+  // When the model DOES speak here it says "Those three, close together" — the count and the clustering, no
+  // labels. That is the right instinct, so the fallback follows it rather than reaching for the words we happen
+  // to have. The Doors get named plenty of places; this is not one of them.
+  const n = (c.doors ?? []).length;
+  if (n < 2) return '';
+  const word = ['', '', 'Two', 'Three', 'Four', 'Five', 'Six'][Math.min(n, 6)] ?? String(n);
+  return `${word} things, close together.`;
 }
 
 // The reclaim-stage opener. If the member ALREADY parked wants earlier (front-loader), read them back —
@@ -1522,7 +1553,7 @@ const gapStage: StageDef = {
       if (confirmBounceExceeded(s)) {
         b.stage = 'reclaim';
         b.awaitingConfirm = false;
-        b.reply = receiveThen(b.modelText, reclaimOpening(b.collected));
+        b.reply = receiveThen(b.modelText || gapReceipt(b.collected), reclaimOpening(b.collected));
         return { reply: b.reply, state: beatState(b), complete: false, ...(nextExpects(b.arc, b.stage, false, 0, b.collected) ? { expects: nextExpects(b.arc, b.stage, false, 0, b.collected)! } : {}) };
       }
       b.awaitingConfirm = false;
@@ -1558,7 +1589,7 @@ const gapStage: StageDef = {
       // the card is the backstop for anything still missing.
       if (confirmBounceExceeded(s)) {
         b.stage = 'reclaim';
-        b.reply = receiveThen(b.modelText, reclaimOpening(b.collected));
+        b.reply = receiveThen(b.modelText || gapReceipt(b.collected), reclaimOpening(b.collected));
       } else {
         b.reply = withQuestion(b.modelText, gapMore(b.history));
       }
@@ -1579,7 +1610,7 @@ const gapStage: StageDef = {
       // The beat it deserved was already written. The model had a reflection of exactly what she had just said,
       // and the engine threw it away at the one moment in the conversation where a generic line cannot stand in
       // for a specific one. Nothing here changes pacing or capture: same turn count, same builder, same floor.
-      b.reply = receiveThen(b.modelText, reclaimOpening(b.collected));
+      b.reply = receiveThen(b.modelText || gapReceipt(b.collected), reclaimOpening(b.collected));
     }
   },
 };
@@ -2341,7 +2372,28 @@ export function stageInstruction(stage?: Stage, opts?: { gapHeld?: boolean }): s
       'ALWAYS end your turn with your single forward question — your drawing-out ask while gathering ("was there more ' +
       'around then — other things that landed at the same time?"), or your correctable check on the reflect turn ' +
       '("does that land, or is there more to it?"). NEVER end on a bare reflection or wrap-up coda with no ' +
-      'question ("let me make sure I have it right"), or the engine appends its own and the member sees a jumbled double-ask.'
+      'question ("let me make sure I have it right"), or the engine appends its own and the member sees a jumbled double-ask.\n' +
+      // THE ONE EXEMPTION, and it is why the heaviest transition in onboarding was inconsistent (2026-08-19).
+      //
+      // The rule above has no exception for the turn where the member CLOSES the beat. So on that turn the model
+      // obediently ends with another question — receiptOnly() strips it — and what is left is thin or empty. The
+      // gap→reclaim hand-in is receiveThen(modelText, reclaimOpening), which falls back to "opener alone if no
+      // receipt": she finishes describing her father's coma and reads a scripted bridge straight into "add each
+      // thing below". Whether she gets a beat depended on what shape the model's sentence happened to take, which
+      // is why Donna's persona failed on roughly half of identical runs.
+      //
+      // NOT FIXED BY ADDING A BEAT. Holding after she has closed is what 4c5b416 removed — Jay's walk: the confirm
+      // would not close, "the engine stayed stuck in gap while the model moved on in its text, the stages
+      // desynced". The bias to advance is deliberate. And a bridge-turn without the builder would leave her in a
+      // text box whose next message reclaimStage.gather sends straight to the Grinta survey.
+      //
+      // So the engine keeps advancing exactly as it does; the model simply stops asking one more question at the
+      // moment she has finished answering.
+      'ONE EXEMPTION: the turn they CLOSE the story. When they tell you that is the whole of it — "that was it", ' +
+      '"it was mostly those three things", a bare "no" to your check — do NOT ask anything further. That turn is ' +
+      'a RECEIPT: reflect what they actually just told you, in their words, specific to what they said, and STOP. ' +
+      'It is the last thing they read before the next beat opens, and after a story like this one, moving straight ' +
+      'on is the part that reads as not having listened. The engine opens what comes next — you do not have to.'
     );
   if (stage === 'reclaim')
     return (
