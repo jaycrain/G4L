@@ -945,16 +945,31 @@ const REFINE_TOOLS = [
       // input stay as wire identifiers — renaming them is churn with real regression risk and zero member value,
       // the same call we made for connect_*/Community. But every SENTENCE here is prose the model reads and then
       // paraphrases out loud, so "which play do you mean" reaches a member as surely as if we had authored it.
-      "Retire a kept Move from their Playbook when the member says it has stopped working for them ('the false " +
-      "start thing isn't helping anymore', 'drop that one'). The Playbook promises they can change it when it " +
-      "stops working — this is what makes that true. Pass `play` as the words they used for it. It is a RETIRE, " +
-      "never a delete: the entry is kept and can come back. Only call it once they have clearly said so, and if " +
-      "you are not certain WHICH Move they mean, ask instead of guessing — getting it wrong quietly edits their " +
-      "own manual. Reflect it back plainly; a Move that stopped working is information, never a failure.",
+      // WIDENED 2026-08-19 (Donna). This said "a kept Move", and the matcher underneath has always searched EVERY
+      // kept entry — so the only thing stopping the Companion from removing a mis-captured line was this sentence.
+      // She asked it to fix a bad entry in "What Lights You Up" and it told her it could not. It could; it did not
+      // know it could. Being told no by the thing that filed the wrong words about you is worse than the filing.
+      "Take an entry OUT of the member's Playbook — any entry, in any part of it, not only a Move. Two different " +
+      "reasons, and they are not the same conversation:\n" +
+      "· reason='stopped_working' — a Move that used to help and no longer does ('the false start thing isn't " +
+      "helping anymore'). The Playbook promises they can change it when it stops working; this is what makes that " +
+      "true.\n" +
+      "· reason='not_mine' — it should never have been in there. A question they asked you, an aside, something " +
+      "you recorded that is not what they meant ('that's not my picture, that was me asking you something'). Take " +
+      "it out without argument or explanation. Do NOT defend the capture, and do not ask them to justify it — it " +
+      "is their record of themselves and their say is final.\n" +
+      "Pass `entry` as the words they used for it. It is a RETIRE, never a delete: the row is kept and can come " +
+      "back. If you are not certain WHICH entry they mean, ask instead of guessing — getting it wrong quietly " +
+      "edits their own manual.",
     input_schema: {
       type: 'object',
       properties: {
-        play: { type: 'string', description: 'the Move to retire, in the member’s own words' },
+        play: { type: 'string', description: 'the entry to take out, in the member’s own words' },
+        reason: {
+          type: 'string',
+          enum: ['stopped_working', 'not_mine'],
+          description: 'why it is coming out — a Move that stopped helping, or something that was never theirs',
+        },
       },
       required: ['play'],
     },

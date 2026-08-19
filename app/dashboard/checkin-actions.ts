@@ -771,17 +771,30 @@ export async function sendCheckin(memberId: string, memberMessage: string): Prom
         // the member's own operating manual, which they may not notice for weeks. The messages below are read by the
         // MODEL and paraphrased to the member, so they say Move, not "play" (Cowork addendum, 2026-08-14).
         const phrase = String(input.play ?? '').trim();
-        if (!phrase) return { ok: false, message: 'Not retired — ask which Move they mean, then call it again.' };
+        // 'not_mine' — the entry should never have been there. Donna asked the Companion to fix a mis-captured
+        // line and was told it could not; the capability existed, the tool description just said "Move".
+        const notMine = String(input.reason ?? '') === 'not_mine';
+        const noun = notMine ? 'entry' : 'Move';
+        if (!phrase) return { ok: false, message: `Not removed — ask which ${noun} they mean, then call it again.` };
         const all = await listPlaybook(db, memberId);
         const { entry, ambiguous } = matchKeptEntry(all, phrase);
         if (ambiguous) {
-          return { ok: false, message: 'More than one Move matches that. Ask which one they mean — name them back — then call it again. Do not guess.' };
+          return { ok: false, message: `More than one ${noun} matches that. Ask which one they mean — name them back — then call it again. Do not guess.` };
         }
-        if (!entry) return { ok: false, message: "Couldn't find a kept Move by that name. Ask them to say which one, in their words." };
+        if (!entry) return { ok: false, message: `Couldn't find a kept ${noun} by that name. Ask them to say which one, in their words.` };
         const done = await dismissEntry(db, memberId, entry.id);
-        if (!done) return { ok: false, message: 'Not retired — try once more, or tell them it did not save.' };
+        if (!done) return { ok: false, message: 'Not removed — try once more, or tell them it did not save.' };
         mutated = true;
-        return { ok: true, message: `Retired "${entry.body.slice(0, 60)}" — it is kept and can come back anytime. Reflect it back plainly; a Move that stopped working is information, never a failure.` };
+        // THE TWO REASONS GET DIFFERENT VOICES, because they are different moments. "A Move that stopped working
+        // is information, never a failure" is exactly right for one and faintly absurd for the other — nobody
+        // needs reassurance that their own question was not a failure. A wrong capture gets no speech at all:
+        // taken out, no defence, no explanation of how it got there.
+        return {
+          ok: true,
+          message: notMine
+            ? `Removed "${entry.body.slice(0, 60)}" — it is out of their Playbook and can come back if they want it. Confirm it plainly and briefly, then carry on. Do NOT explain how it got captured, do not apologize at length, and do not ask them to justify it — their record, their say.`
+            : `Retired "${entry.body.slice(0, 60)}" — it is kept and can come back anytime. Reflect it back plainly; a Move that stopped working is information, never a failure.`,
+        };
       }
       if (name === 'retire_tracker') {
         // #79 — retire (archive) a tracker: kept as history + restorable, NEVER a hard delete.
