@@ -1,0 +1,191 @@
+# CHANGES — authored copy, v3.4.13 (since v3.4.12)
+
+App @ `f236cce`. 75 added · 104 removed, out of 1024 authored strings.
+
+**This is the reconciliation list.** A line that appears in both ADDED and REMOVED in a similar form is an
+edit, not a pair of separate changes — read them together.
+
+## Added (75)
+
+- Let's start with a simple question.  When did you feel most like yourself?  We’ll work together to pick just one word, a handle, to describe them. Someone we can refer to that says “this is still who I am underneath everything.” This isn’t a label set in stone. It just puts a name to who you’re trying to reclaim. We can always change it later.  So tell me, when DID you feel most like yourself? Tell me about them. Not the job title or just the role for which everyone knows you. Who were they? What were they doing? How did it feel to be them?
+- If you put that person in a single word — the Runner, the Writer, the Builder, the Friend — what would it be? It's a handle to hold onto, not a label set in stone, and we can change it.
+- No rush on the perfect word — and you don't have to land it today. If one comes — the Runner, the Builder, the Friend — say it. If not, that's completely fine; we'll find it together as you go. Want to leave it for now?
+- The word can wait. Some people know it straight away, some find it months in — both are normal. Shall we leave it open and come back when something fits?
+- You don't need a label to do this work. If nothing lands, we can move on and let it surface later — want to do that?
+- Here are a few words for who that was — tap the one that fits, or write your own. It’s a handle to hold onto, not a label set in stone, and we can change it anytime.
+- a diagnosis, a move, a job that swallowed you. More often it’s slower: an accumulation of what we call Doors — moments and seasons you walk through and barely notice, each one widening the gap. What’s been happening that caused that version of you to Fade? Tell me how it went for you.
+- Honestly? From everything you've shared, you're not carrying the kind of distance this program is built for — you're reaching forward, not trying to find your way back to someone you've lost. That's a genuinely good place to be, and it would be dishonest of me to manufacture a problem you don't have. G4L is for the season when that changes — when something real has pulled you away from who you were. If that day comes, this door stays open and I'll be right here. Until then — keep building.
+- Even one or two more — and they can be small: sleeping through the night, an old hobby, a friend you've lost touch with, ten quiet minutes that are yours. What comes to mind?
+- Great job getting here. Here’s what I’ve captured from our conversation — take a look. Does this look like you? Nothing’s saved yet, so if anything’s missing or off, we’ll fix it.
+- That's a real start, and there's no rush — your list is never locked, and you can add to it any time as more comes back to you. If even one more surfaces right now, tell me; if not, that's completely okay.
+- Before we go further, a quick baseline — twelve questions, a minute or two.  This sets your starting Grinta Index. Grinta is grit, and you don’t get to midlife without it — this just marks where yours stands today, so you can watch it climb.
+- Answer as you actually are right now, not who you’re aiming to be. For each, how true does it feel — 1 (not at all) to 5 (completely)?  Today:
+- Call this ONLY once you have genuinely DRAWN OUT the fade story — never on the first mention of what happened. It means: you explored HOW the distance opened (the sequence, when they first felt it, what it quietly cost them), stayed with one thread until it's particular and real, and checked whether more than one Door stacked on. It signals you're ready to reflect their WHOLE story back in their own words and move on. Naming several things briefly ('married, kids, work') is BREADTH, not depth — do NOT call this until you have something specific and true to reflect. (The system won't let you close the beat before it has genuinely breathed.)
+- Your answers, in your own words, filled the first pages of your Playbook. From here it keeps building itself — everything worth keeping lands there, ready when you need it. It’s uniquely yours.
+- Your Comeback runs in four phases — Reconnect, Rewire, Rebuild, Reclaim. Each is built from a few Sessions: guided conversations with your Companion, one at a time, at your pace. Finish a phase’s Sessions and a Checkpoint opens the next. Everything you do here builds your Playbook.
+- It comes from the IDQ — twenty-four questions, about every 60 days. It moves slowly on purpose, so when it moves, you know you earned it.
+- Grit is what carries you past where you stopped before. It climbs as you close phases, so you can watch yourself getting stronger.
+- You don’t get one for showing up. You get one for the moves that count — passing a stretch of grit, reclaiming something on your list, coming back after a miss. A passport that fills is a life being won back.
+- A single day tells you little. A few weeks tell you what your rhythm actually is — the thing worth seeing while you’re still building it.
+- Everything worth keeping lands here in your own words — the moves you’ll run again, and what you’re learning about yourself. It grows every week.
+- It feeds the same picture your Companion is building — so what shows up here shows up when you talk about how the body work is going.
+- What you write here is private — export it or close your account anytime. Set reminders to get as many nudges as helps, and no more.
+- Here's the shape of it: we'll walk back through the Door — or Doors — the distance came in through, take a fresh measure of where you are now, then look at what it quietly cost and the life you're reclaiming. It ends where your next phase begins. One thing at a time, at your pace — you set the depth, and you can stop whenever you want.
+- Before we go deeper, here is the whole set — every Door we see people come through. Mark the ones that are yours. There is no wrong answer here, and most people mark more than one.
+- Nothing there felt like yours — that's an answer, and a useful one. Then let's find it in your words instead. Take me back to when the distance started opening. What was going on?
+- You marked the quiet one — no single event, just years of it.
+- And one thing I skipped past: is any of them still open — one you're walking through right now, not looking back at?
+- So let's take stock — what has the Fade quietly cost you? Not a checklist — the ones you actually feel. Start wherever it's heaviest.
+- That's your inventory — what it cost, how far the Fade ran. Not to sit in — to push off from; I've kept it for you.  Now we look the other way — at the version of you that's still in there.
+- There's a window between who you are today and who you keep saying you'll be — most people never look through it. Today you look. Picture an ordinary Tuesday a year from now — but you've done the work, and the things on your Reclaim List are real. How do you wake up, what do you reach for? Not the highlight reel — the ordinary morning. Sit with that Tuesday for a second, and tell me what you see.
+- That Tuesday — that's the spark. Hold onto it; everything from here is about making it the real one. I've kept it for you.
+- That's the whole check-in — thank you for staying with it. I've got your baseline now. You'll see it take shape on your dashboard, and it's something we'll watch move together over time — never a grade.
+- A quick check-in before we close. Six short statements about what this work is making you think about. You're the one scoring these — it's your read on yourself, and I'll show you where it lands in a moment. Same as before: just tell me how true each feels right now. 1—not at all. 5—completely.
+- Use ONLY when the drawn-out story genuinely points to a DIFFERENT canonical Door than the one they named as primary — a real RE-SEEING, not a synonym or a second door. Propose it in THEIR words, OFFERED as a check they can reject (never asserted): name the shift and why the story fits the truer door, then let them decide. Pass from_slug (the Door they named) and to_slug (the truer one), both canonical Door slugs. Set flat_mislabel=true ONLY if it's an unambiguous tag-fix — they simply misspoke the label — NOT a genuine re-seeing; when in any doubt, leave it off.
+- Use when the drawn-out story surfaces an ADDITIONAL canonical Door alongside the one they named — the Fade went through more than one (kind='widen'), or a Door was quietly there all along and now gets named (kind='name'). This ADDS a Door; it does NOT replace the one they named (use propose_correction for a replacement). Propose it in THEIR words, OFFERED as a check they can reject, only when the material genuinely earns it. Pass slug (the canonical Door to add). Set mechanical=true ONLY for a routine add that carries no real new understanding — when it's a genuine re-seeing, leave it off.
+- Your body changed. The knees, the back, the shoulder that doesn't rotate like it used to. The physical identity you'd carried since high school started to feel like a memory instead of a reality. You didn't quit your sport. Your body quit it for you.
+- Someone died. A parent. A partner. The friend who knew you before you became whoever this is. You handled the arrangements and went back to work and everyone said how well you were doing. They held a version of you that nobody else was keeping. It went with them.
+- A doctor gave it a name. What your body had been doing quietly got a word, and the word came with rules — what to stop, what to watch for, what to take every morning now. You learned to say it out loud in waiting rooms. The person you were before that appointment is someone you describe in the past tense.
+- A parent got sick and needed you. Their care became the center of your days. Your own needs went to the back of the line. There was no time for you. No space for you.
+- Your friends faded. Moved away. Got busy. Stopped calling. The social circle that used to hold you up contracted until you realized you hadn't had a real conversation with someone outside your family in months.
+- The work ended. Laid off, forced out, restructured, or passed over until there was nothing left to move toward. The title that answered "what do you do" stopped being true, and you still reach for it when someone asks. You didn't leave the work. It closed behind you.
+- You became the one everyone leans on. The bills, the logistics, the call that comes when something goes wrong. You're the reason it holds together, and nobody asks how you're doing, because you're the one who's fine. Somewhere under all that carrying you set yourself down. You never picked yourself back up.
+- The family season swallowed you whole — young kids, the provider years, the relentless logistics. You’d give anything for them, and you did: your time, your body, the parts of you that used to be just yours. Nothing wrong with it. But you disappeared into it.
+- The kids left. The role that consumed every morning and every weekend for twenty years just ended. And you stood somewhere on a Tuesday afternoon and realized you didn't know what to do with yourself when nobody needed you to do anything.
+- A relationship ended, or changed so fundamentally that the person you were inside it doesn't exist anymore. Divorce, estrangement, the slow erosion of a marriage. Your identity as a partner came unmoored.
+- Your work consumed you. The startup, the promotion, the demanding role. Mornings that used to start with movement started with email. Evenings that used to end with stretching ended with spreadsheets. You built something impressive and lost yourself inside it.
+- The one nobody talks about, because it's not dramatic enough for a diagnosis. Decades of routine without reflection. Work, eat, sleep, repeat. You didn't choose to lose yourself. You just stopped paying attention. And one day you woke up and realized you had no idea who you were beyond your obligations.
+- Explore each Door and mark how familiar it feels. Mark every one that resonates — most people walk through several. There's no hierarchy; the Fade doesn't care how you got here, only that you recognize the room.
+- How much is this yours?
+- 0 1 auto
+- Which one did you walk through first?
+- Which weighs most on who you are today?
+- Is any of them still open — one you&rsquo;re walking through right now?
+- Continue →
+- None of these — continue →
+- You just did the real work of Rewire — you caught the lies, built the picture, wrote the protocol. Before we close the Phase, a quick read on where your commitment sits now. Six of these, one to five. No passing score — just an honest gauge of what you're building.
+- There's a simple place to start — your why. The reasons that are actually yours. Answer a few questions to get a read on where you stand today. For each statement, tell me how true it feels — 1 (not at all true for you) to 7 (very true for you).
+- That's your starting why. Some of it is already yours; some of it might still be the shoulds — and that's exactly the point. We're not grading it. We're marking where you stand today, so when you come back to these same questions down the road, you can watch your why become more your own. That shift is the real work of Rebuild. Your next step is on your dashboard.
+- During the Rebuild phase, we'll practice what makes a healthy life actually stick. But before you change anything, let's take stock of your current state. Review these statements and rate each one 1-strongly disagree to 4-strongly agree.  Let's start with Movement.
+- You'll pick one small movement change, and one small healthier eating change to try for a week. Just two things you're not already doing and small enough to actually stick.
+- Start tomorrow. Open This week in your Playbook each day and log how it went — a good call, a false start, or on track. It's a good time to talk with other Community members too. After a week of it, the Rebuild Checkpoint is where this Phase closes.
+- Let's start with movement. One small physical thing you could add this week — something you're not already doing. A 10-minute walk after dinner, five minutes of stretching, one short strength session. Small and real.
+- Now — one small change to how you eat, an upgrade rather than an overhaul. A vegetable at dinner, swapping one sugary drink for water, a fruit with breakfast. What feels doable?
+- You did the real work of Rebuild — you found your why, took honest stock of your skills, and ran the pilot in your own life. Before we close the Phase, a quick read on where your control sits now. A dozen of these, one to five. No passing score — just an honest gauge of what you've built.
+- Record the member's settled, refined Reclaim List so the app can show it back for confirmation. Pass every item as {original, text, tier} and the top3 refined texts. Only call once the refinement is settled in conversation.
+- In Reconnect, the IDQ showed how far you'd drifted across four areas of life. This is the other side of it — where you want your world to get BIGGER, and which area to push on first. I'll walk you through four areas — Physical, Self, Social, Outlook — and for each, a few quick reads, 1 to 10: where you are, where you want to be, how much it matters, how ready you feel, and how much progress there would lift the rest of your life. This is how you find which one to push on first.
+- There's no wrong answer here — whatever comes to mind first is usually the true one, even if it's a few words. And if now isn't the moment, you can leave this and come back whenever you like; your place is saved.
+- The idea is simple but powerful: quality days lead to a quality life, and a quality life makes more quality days possible.
+- We're going to define what a quality day actually looks like for YOU then track it for a week. You'll notice what makes a day feel like yours. Let's start by defining your quality day.
+- You did the real work of Reclaim — you revisited your list with clearer eyes, mapped where your world can get bigger, and defined what makes a day yours. Before we close the cycle, a quick read on where your challenge sits now — the pull toward what's possible. Six of these, one to five. No passing score — just an honest gauge.
+- Now that we’ve looked at all four areas, we can try to find some synergies and priorities. The goal is not to fix everything at once but to identify what matters most right now and where progress would create the biggest shift.
+- Your Doors
+- How the distance opened — the ones you named.
+- — the quiet one, no single event
+
+## Removed (104)
+
+- Let's start with a simple question.
+- When did you feel most like yourself?
+- We’ll work together to pick just one word, a handle, to describe them. Someone we can refer to that says
+- “this is still who I am underneath everything.” This isn’t a label set in stone. It just puts a name to who
+- If you put that person in a single word — the Runner, the Writer, the Builder, the Friend — what would it be?
+- It's a handle to hold onto, not a label set in stone, and we can change it.
+- Friend — say it. If not, that's completely fine; we'll find it together as you go. Want to leave it for now?
+- The word can wait. Some people know it straight away, some find it months in — both are normal. Shall we leave
+- You don't need a label to do this work. If nothing lands, we can move on and let it surface later — want to do
+- Here are a few words for who that was — tap the one that fits, or write your own. It’s a handle to hold onto,
+- Honestly? From everything you've shared, you're not carrying the kind of distance this program is built for —
+- Even one or two more — and they can be small: sleeping through the night, an old hobby, a friend you've
+- Great job getting here. Here’s what I’ve captured from our conversation — take a look. Does this look like you?
+- Nothing’s saved yet, so if anything’s missing or off, we’ll fix it.
+- Theme —
+- Before we go further, a quick baseline — twelve questions, a minute or two.
+- This sets your starting Grinta Index. Grinta is grit, and you don’t get to midlife without it — this just
+- Offer 2–4 candidate handle words for who the member was at their best, drawn FROM THEIR OWN LANGUAGE in this
+- Record the reclaimed-identity word directly, natural case (e.g. "Athlete") — ONLY when the member flatly names
+- Record how the distance opened — the fade story (the gap) — in the member's OWN FIRST-PERSON voice, keeping
+- GROWS with the new part; it does not repeat the whole arc again. Call this once they've told you how it went.
+- Call this ONLY once you have genuinely DRAWN OUT the fade story — never on the first mention of what happened.
+- It means: you explored HOW the distance opened (the sequence, when they first felt it, what it quietly cost
+- Record a Door that surfaces in the fade story — the life event that opened the distance. Call once per Door (it accumulates). Slugs:
+- Only note a Door the member actually describes — none is a valid outcome; never force one.
+- Call this when the member genuinely has NO Fade — no loss, no drift, no distance from who they were; they're
+- Record one thing the member wants back (a Reclaim-List item), in their words — the CONCRETE want itself, plainly.
+- "Fitness back — riding up to Brainard Lake". Call once per item; it accumulates.
+- If they volunteer one EARLY (before the reclaim stage), capture it here anyway so it's never lost — you'll bring it back at its stage.
+- ELABORATES the want you most recently added — that is the SAME want getting sharper ('about 25 lbs' after
+- 'lose weight'; '2-3 rides a week' after 'ride my bike'; 'a few days a week there too' after 'core work'). Fold
+- REPLACE the reclaim item you MOST RECENTLY added with a sharper, more complete version — pass the WHOLE new
+- ('ride my bike more' → 'ride my bike a couple times a week'); (2) whenever their reply just adds an amount,
+- ALWAYS end your turn with your single forward question — your drawing-out ask while gathering ("was there more
+- RECEIVE it: reflect it back, feel what it means to them, and (if vague) drill it concrete — then, and only then,
+- FINISH WHAT YOU PROMISE. Never say you will go through their wants "one at a time" or that "each one
+- — a partial read-back tells them you were only half listening.
+- MAKE EACH WANT CONCRETE (light touch): a Reclaim item should be something they could actually notice
+- THEIR WORDS to replace the vague one (do NOT add a second item). When they answer with a cadence, number,
+- ("lose 25 lbs") need no sharpening — leave them.
+- ALWAYS end your turn with your single forward question in your own words ("what else?" / "anything else
+- Your answers, in your own words, filled the first pages of your Playbook. From here it keeps building itself —
+- Your Comeback runs in four phases — Reconnect, Rewire, Rebuild, Reclaim. Each is built from a few Sessions:
+- Checkpoint opens the next. Everything you do here builds your Playbook.
+- Grit is what carries you past where you stopped before. It climbs as you close phases, so you can watch
+- You don’t get one for showing up. You get one for the moves that count — passing a stretch of grit,
+- A single day tells you little. A few weeks tell you what your rhythm actually is — the thing worth seeing
+- Everything worth keeping lands here in your own words — the moves you’ll run again, and what you’re learning
+- It feeds the same picture your Companion is building — so what shows up here shows up when you talk about
+- What you write here is private — export it or close your account anytime. Set reminders to get as many
+- Here's the shape of it: we'll walk back through the Door — or Doors — the distance came in through, take a fresh
+- So let's take stock — what has the Fade quietly cost you? Not a checklist — the ones you actually feel.
+- Start wherever it's heaviest.
+- There's a window between who you are today and who you keep saying you'll be — most people never look through
+- That Tuesday — that's the spark. Hold onto it; everything from here is about making it the real one.
+- I've kept it for you.
+- That's the whole check-in — thank you for staying with it. I've got your baseline now. You'll see it take shape
+- I'll ask you a few things and then draft it in your words, and you can change anything that isn't right.
+- A quick check-in before we close. Six short statements about what this work is making you think about.
+- You're the one scoring these — it's your read on yourself, and I'll show you where it lands in a moment.
+- Same as before: just tell me how true each feels right now. 1—not at all. 5—completely.
+- `body` and NOTHING else in your reply — the engine shows it to them and asks what they want changed.
+- Do not call it while you are still asking questions, and do not call it twice in a turn.
+- ONLY if it's an unambiguous tag-fix — they simply misspoke the label — NOT a genuine re-seeing; when in any
+- Use when the drawn-out story surfaces an ADDITIONAL canonical Door alongside the one they named — the Fade went
+- THEMSELVES, dated one year from today. Ask these, ONE PER TURN, in this order, skipping any already answered
+- VOICE IS THE WHOLE POINT: it must sound like THEM, not like us. Use their own words and images wherever
+- the possibilities". If they left something unanswered, leave that ground alone rather than inventing it.
+- End on the unfinished business if they named one; it is meant to stay open.
+- RIGHT NOW: the member just wrote a TRUE LINE (their honest counter to a lie). In ONE turn: (1) acknowledge
+- RIGHT NOW: the member just named their FIFTH and last self-lie — often the most vulnerable. Respond in ONE
+- ONE specific, vivid MOMENT inside it (a good evening with their spouse; the day the pressure lifts). One question.
+- RIGHT NOW: the member just gave the LAST piece of the scene. Reflect the WHOLE picture back to them as one
+- RIGHT NOW: the member just gave their bad-day line. Acknowledge it warmly in a line (don't rewrite it),
+- RIGHT NOW: you've drawn out enough triggers — do NOT ask for another. Reflect briefly, name the ONE or TWO
+- Reframe, Restart — so they see the shape, then pose the first: NAME IT, open with 'Redirect —' — what do you do
+- RIGHT NOW: the member just named a trigger. Reflect it warmly and specifically (their words, the real cost),
+- You just did the real work of Rewire — you caught the lies, built the picture, wrote the protocol. Before we close
+- (very true for you).
+- That's your starting why. Some of it is already yours; some of it might still be the shoulds — and that's exactly
+- During the Rebuild phase, we'll practice what makes a healthy life actually stick. But before you change anything,
+- You'll pick one small movement change, and one small healthier eating change to try for a week. Just two things
+- Start tomorrow. Open This week in your Playbook each day and log how it went — a good call, a false
+- Checkpoint is where this Phase closes.
+- Let's start with movement. One small physical thing you could add this week — something you're not already
+- Now — one small change to how you eat, an upgrade rather than an overhaul. A vegetable at dinner, swapping one
+- HOW TO COACH: one change at a time — movement first, then eating. One question per turn. Elicit their idea; if it's
+- At the start, you built this Reclaim List from who you were then. But, you've done a lot of work since then.
+- You've reconnected with who you are, seen what pulls you off course, and learned how your habits work. Let's
+- ('feel physically capable and steady again'), and merge items that belong together; (4) re-prioritize into four
+- RECORDING: once you've walked the refinement and the member has settled it, call record_refinement with the WHOLE
+- IF THEY NAMED SOMETHING THAT IS NOT ALREADY ON THE LIST — a goal that has newly emerged, which is step (2) — pass
+- Record the member's settled, refined Reclaim List so the app can show it back for confirmation. Pass every item
+- Only include something they actually said they want; never invent one to fill this out. Omit entirely if nothing new came up, which is the common case.
+- In Reconnect, the IDQ showed how far you'd drifted across four areas of life. This is the other side of it — where
+- There's no wrong answer here — whatever comes to mind first is usually the true one, even if it's a few words.
+- And if now isn't the moment, you can leave this and come back whenever you like; your place is saved.
+- The idea is simple but powerful: quality days lead to a quality life, and a quality life makes more quality days
+- We're going to define what a quality day actually looks like for YOU then track it for a week. You'll notice what
+- NEXT 3 contributors (they strongly help), and the TOP 2 disruptors (what most often pulls a day down); (3) play
+- RECORDING: once the definition is settled, call record_quality_day with nonNegotiables (up to 3), contributors (up
+- (988 US / local) and a human — always on.
+- You did the real work of Reclaim — you revisited your list with clearer eyes, mapped where your world can get
+- Now that we’ve looked at all four areas, we can try to find some synergies and priorities. The goal is not to fix

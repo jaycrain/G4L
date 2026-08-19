@@ -152,6 +152,52 @@ function termTextPairs(src) {
   return out;
 }
 
+/**
+ * Concatenation runs — `'a ' + 'b' + "c"` across several lines — returned as ONE joined string.
+ *
+ * Long member copy is authored this way; it is how any sentence past the line budget gets written here. Read per
+ * line, each fragment is its own candidate and the incomplete tails are correctly rejected as fragments — so the
+ * sentence reaches canon TRUNCATED at its first concatenation boundary, with no error raised anywhere.
+ *
+ * Found on the Doors board (2026-08-19): all eleven recognition cards landed cut off mid-clause and every ending
+ * was missing, including "You didn't quit your sport. Your body quit it for you." — the line the card exists for.
+ * Cowork quotes this transcript VERBATIM for marketing and the book, so it was shipping half-sentences to the one
+ * place that must not have them, and looking complete while doing it.
+ *
+ * It reads the JOINED TEXT rather than rewriting the source into a single literal, which was the first attempt:
+ * these runs mix quote styles ('...' + "...don't..."), so re-emitting one literal produces a string containing
+ * its own delimiter and the parse breaks on exactly the cards with apostrophes in them.
+ *
+ * Same failure class as the JSX fix earlier the same day: the extractor could only see copy shaped the way it
+ * expected, and everything else was silently absent rather than reported missing.
+ */
+function concatRuns(src) {
+  const LITERAL = /(['"])((?:\\.|(?!\1).)*)\1/y;
+  const out = [];
+  const lineAt = (i) => src.slice(0, i).split('\n').length;
+  for (let i = 0; i < src.length; i++) {
+    LITERAL.lastIndex = i;
+    const first = LITERAL.exec(src);
+    if (!first) continue;
+    let text = first[2];
+    let cursor = LITERAL.lastIndex;
+    let parts = 1;
+    for (;;) {
+      const plus = /^\s*\+\s*/.exec(src.slice(cursor));
+      if (!plus) break;
+      LITERAL.lastIndex = cursor + plus[0].length;
+      const nxt = LITERAL.exec(src);
+      if (!nxt) break;
+      text += nxt[2];
+      cursor = LITERAL.lastIndex;
+      parts++;
+    }
+    if (parts > 1) out.push({ at: lineAt(i), text });
+    i = cursor - 1;
+  }
+  return out;
+}
+
 function stringsInFile(rel, rejected) {
   let src;
   try { src = readFileSync(join(ROOT, rel), 'utf8'); } catch { return []; }
@@ -168,6 +214,14 @@ function stringsInFile(rel, rejected) {
     if (!spanning.has(n.at)) spanning.set(n.at, []);
     spanning.get(n.at).push(n.text);
   }
+  // A joined run SUPERSEDES its own fragments — without this the whole sentence and its opening piece both reach
+  // the transcript, and Cowork has two versions of one line with no way to tell which to quote.
+  const joined = concatRuns(src);
+  for (const n of joined) {
+    if (!spanning.has(n.at)) spanning.set(n.at, []);
+    spanning.get(n.at).push(n.text);
+  }
+  const supersededBy = (t) => joined.some((j) => j.text !== t && j.text.includes(t));
   lines.forEach((line, idx) => {
     // skip comment-only lines
     if (/^\s*(\/\/|\*|\/\*)/.test(line)) return;
@@ -178,6 +232,7 @@ function stringsInFile(rel, rejected) {
     for (const raw of cands) {
       const t = raw.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/\\n/g, ' ').replace(/\\u001E/g, ' / ').trim();
       if (!isMemberCopy(t)) continue;
+      if (supersededBy(t)) continue; // a piece of a sentence we already have whole
       if (looksLikeSystemPrompt(t) || isFragment(t) || isCodeArtifact(t)) { rejected.push([rel, t]); continue; }
       const key = t.toLowerCase();
       if (seen.has(key)) continue; // de-dup within a file only (keep reading order across the section)

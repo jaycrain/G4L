@@ -82,7 +82,6 @@ lib/agent/checkpoint-guide.ts
 lib/agent/crisis-escalation.ts
 lib/agent/governance.ts
 lib/agent/idq-conversation.ts
-lib/agent/memory.ts
 lib/agent/nudge.ts
 lib/agent/onboarding-harvest.ts
 lib/agent/onboarding-intent.ts
