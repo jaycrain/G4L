@@ -2566,28 +2566,47 @@ export function stageInstruction(stage?: Stage, opts?: { gapHeld?: boolean }): s
       //
       // Sharpening is gone from here on purpose too — see enterGrintaSurvey: it MOVED to the Companion rail,
       // member-initiated and non-blocking, instead of a gate standing between her and the rest of onboarding.
-      'THE LIST IS NOT BUILT IN CONVERSATION, AND NOT BY YOU. The engine opens a LIST-BUILDER: they type their own ' +
-      'items and submit them in one block, and those exact words ARE the list. So do NOT invite wants one at a ' +
-      'time, do NOT ask "what else?", do NOT gather them, and do NOT open by proposing or reciting a set of items ' +
-      '— not mined from their gap story, not from anywhere. Above all do NOT open this topic yourself: the engine ' +
-      'opens it. Asking what they want back before the builder appears is the single most common way this ' +
-      'beat fails: they answer you in chat, the builder never receives it, and they get asked for the same thing ' +
-      'twice.\n' +
+      // REWRITTEN 2026-08-19 with the draw-out. The block above replaced a conversational design with a
+      // builder-only one; this replaced the builder-only one with BOTH, in order. Same trap either way — the
+      // model follows what it reads, so steering that describes the previous design is not neutral, it is a bug
+      // with a delay on it. Conversation elicits, structure confirms: the model draws her out, the builder opens
+      // holding what she said. What must NOT come back is the drilling and re-tagging that lost ~30% of items.
+      'THE ENGINE OPENS THIS BEAT — NOT YOU. Do not ask what they want back until it has. Opening this topic ' +
+      'yourself is the single most common way this beat fails: they answer into a beat that is not running, and ' +
+      'get asked for the same thing twice.\n' +
+      'ONCE IT IS OPEN, DRAW THEM OUT — in conversation, one want at a time, and call add_reclaim_item the moment ' +
+      'each lands. Their words, exactly as they said them: do not sharpen, re-word, make it concrete, or split it ' +
+      'up. Do NOT propose or recite a set of items to them — not mined from their gap story, not from anywhere. ' +
+      'You are asking and receiving, never drafting. Ask about what they gave you, not what you expect to be ' +
+      'missing.\n' +
+      'THEN THE ENGINE OPENS A LIST-BUILDER, holding everything you tagged, and what they submit IS the list. It ' +
+      'decides when — not you. Never promise them a form, describe one, or tell them they will get to write it ' +
+      'down; if you name a step they cannot see yet and it does not arrive on your schedule, you have made the ' +
+      'product look broken.\n' +
       'WHEN THEIR SUBMISSION ARRIVES, RECEIVE IT. Your words on that turn are what they read back, so reflect the ' +
       'whole list — every item, in their words. A partial read-back tells them you were only half listening.\n' +
-      'TAG EVERY WANT THEY NAME EARLIER — this is load-bearing. If they name something they want back during an earlier beat — ' +
-      'the gap story especially — call add_reclaim_item the moment it lands. Those SEED the builder, so it opens ' +
-      'already holding what they told you and they never have to say it twice. That is what those calls are for; ' +
-      'the submission itself is authoritative and replaces the rest.\n' +
-      'FINISH WHAT YOU PROMISE. Never say you will go through their wants "one at a time" or that "each one ' +
-      'deserves" its own moment unless you then address EVERY item before moving on. The safer move is not to ' +
-      'promise a review at all: receive each want as it lands, and close by telling them the whole list is on ' +
-      'their dashboard and theirs to change anytime. If you DO reflect the list back, name every item you tagged ' +
-      '— a partial read-back tells them you were only half listening.\n' +
-      'TAG EVERY WANT — this is load-bearing. Call add_reclaim_item the MOMENT a want is named, including any they ' +
-      'volunteered earlier in the conversation (the gap beat). The Reclaim List is built ONLY from your tool calls, ' +
-      'never from your prose — so if you reflect or list wants back to the member, EVERY item you name must already ' +
-      'be an add_reclaim_item call. Never recite a list you have not tagged, or it silently vanishes from their card.\n' +
+      // ONE TAG RULE, not three. It was stated in three separate blocks that grew independently, and the draw-out
+      // above would have made a fourth. Same reason as everywhere else in this codebase: a rule restated N times
+      // has N-1 copies waiting to drift out of agreement, and in a prompt the model gets to pick which one it
+      // believes. Both exemplars are kept — they are what makes the rule legible.
+      'TAG EVERY WANT — this is load-bearing, and it applies from the FIRST beat, not just this one. Call ' +
+      'add_reclaim_item the MOMENT a want is named, including any they volunteered earlier (the gap story ' +
+      'especially). Those earlier ones SEED the builder, so it opens already holding what they told you and they ' +
+      'never have to say it twice. The Reclaim List is built ONLY from your tool calls, never from your prose — so ' +
+      'if you reflect or list wants back, EVERY item you name must already be an add_reclaim_item call. Never ' +
+      'recite a list you have not tagged, or it silently vanishes from their card.\n' +
+      // Reworded 2026-08-19, and the guard test is why it is worded THIS way. It used to forbid saying you would
+      // go through their wants "one at a time" — which now collides head-on with the draw-out above, where taking
+      // them one at a time is the instruction. Deleting Donna's phrase to resolve that would have thrown away the
+      // exemplar that makes the rule legible (the exact sentence she read), so the rule is split at its real
+      // seam instead: the PACING is fine and always was, ANNOUNCING a per-item ceremony is what broke.
+      'FINISH WHAT YOU PROMISE. Taking their wants one at a time is right — ANNOUNCING that you will is the ' +
+      'failure. "Let me take those one at a time — they each deserve it" was said, one want was addressed, and ' +
+      'the beat ended; this stage hands straight to the baseline survey, so there was never another turn to keep ' +
+      'it in. Do not offer a review you will not carry out unless you address EVERY item before moving on. The ' +
+      'safer move is not to promise one at all: receive each want as it lands, and close by telling them the ' +
+      'whole list is on their dashboard and theirs to change anytime. If you DO reflect the list back, name ' +
+      'every item you tagged — a partial read-back tells them you were only half listening.\n' +
       'NEVER ANNOUNCE THE MECHANICS — never say "let me make that concrete" or "before I capture that". Just ' +
       'receive what they gave you, in plain language.'
     );

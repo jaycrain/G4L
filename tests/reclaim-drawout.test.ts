@@ -11,15 +11,22 @@ test('reclaim stage instruction · draws it out, does NOT seed/propose from the 
   const s = stageInstruction('reclaim');
   assert.ok(!/SEED FROM THE GAP FIRST/.test(s), 'no gap-seeding front-load');
   assert.ok(!/NEVER start the list from zero/.test(s), 'no "never start from zero" push');
-  // The W-46 "vibe wins" revert — the protection this test exists for — STANDS.
-  assert.match(s, /do NOT open by proposing or reciting/, 'never opens by proposing/reciting a set of items');
-  // WHAT CHANGED (2026-08-19): "DRAW THIS OUT" and "One want at a time" are gone. They described the pre-builder
-  // design and survived three weeks past the 2026-07-29 switch to structured capture, instructing a multi-turn
-  // elicitation the surface makes impossible — and giving the model its reason to open the topic early, which is
-  // the run-ahead behind the "rushed" reports.
-  assert.ok(!/DRAW THIS OUT/.test(s), 'no conversational elicitation — the builder is the input');
-  assert.ok(!/One want at a time/.test(s), 'no one-at-a-time march');
-  assert.match(s, /do NOT open this topic yourself/, 'the engine opens the beat, not the model');
+  // The W-46 "vibe wins" revert — the protection this test exists for — STANDS. Asserted on MEANING, not on the
+  // old sentence: the rule is that the model never hands her a set of items, however the line is phrased.
+  assert.match(s, /Do NOT propose or recite a set of items/, 'never opens by proposing/reciting a set of items');
+  assert.match(s, /not mined from their gap story/, 'and specifically never mines the gap for them');
+  assert.match(s, /asking and receiving, never drafting/, 'the posture that rule protects');
+  // THE DESIGN CHANGED AGAIN (2026-08-19, the same day). The first edit deleted "DRAW THIS OUT"/"One want at a
+  // time" as dead pre-builder steering — correct at the time, since the builder opened cold and a multi-turn
+  // elicitation was impossible. Then the builder stopped opening cold: conversation elicits, structure confirms.
+  // So one-at-a-time is the instruction again, and these must be PRESENT. What stays dead is the model deciding
+  // when the beat starts and ends — that was always the actual run-ahead, not the pacing.
+  assert.match(s, /DRAW THEM OUT/, 'the Companion draws her out before the builder arrives');
+  assert.match(s, /one want at a time/, 'and takes them one at a time');
+  assert.match(s, /THE ENGINE OPENS THIS BEAT — NOT YOU/, 'the engine opens the beat, not the model');
+  assert.match(s, /It decides when — not you/, 'and the engine, not the model, decides when the builder arrives');
+  // The pacing instruction must never be read as licence to drill — that is what lost ~30% of items.
+  assert.match(s, /do not sharpen, re-word, make it concrete, or split it up/, 'her words, exactly as she said them');
 });
 
 test('reclaim stage instruction · coherent prose, no crossed fragments', () => {
@@ -30,10 +37,14 @@ test('reclaim stage instruction · coherent prose, no crossed fragments', () => 
 
 test('reclaim stage instruction · tagging survives, the retired beats do not', () => {
   const s = stageInstruction('reclaim');
-  // Tagging is still load-bearing, but for ONE reason now: wants named in an earlier beat SEED the builder, so it
-  // opens holding what she already said and she never has to say it twice.
-  assert.match(s, /TAG EVERY WANT THEY NAME EARLIER/, 'earlier wants still seed the builder');
+  // Tagging is still load-bearing, and it is now stated ONCE rather than in three blocks that grew apart — a rule
+  // repeated in a prompt gives the model copies to choose between. It must still cover BOTH reasons: the wants she
+  // names in this beat, and the ones from an earlier beat that seed the builder so she never says them twice.
+  assert.match(s, /TAG EVERY WANT/, 'the tag rule is present');
+  assert.match(s, /applies from the FIRST beat/, 'and reaches back to wants named in an earlier beat');
+  assert.match(s, /SEED the builder/, 'which is what stops her being asked the same thing twice');
   assert.match(s, /RECEIVE IT/, 'the model receives the submission — its text IS her read-back');
+  assert.equal(s.match(/TAG EVERY WANT/g)?.length, 1, 'stated once — N copies of a rule is N-1 chances to drift');
 
   // Both of these described beats that were deliberately REMOVED. Sharpening moved to the Companion rail
   // (member-initiated, non-blocking — see enterGrintaSurvey); the end-question rule was literally instructing the
