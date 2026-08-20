@@ -6,6 +6,7 @@ import { getActivitySeenAt } from '../../../lib/founder/state.ts';
 import { markActivitySeenAction } from './actions.ts';
 import { isAdmin } from '../../authz.ts';
 import ConsoleSubpage from '../console/subpage.tsx';
+import ActivityDays from './activity-days.tsx';
 import { relativeTime } from '../../../lib/admin/roster.ts';
 import { trackerDoors } from '../../../lib/admin/tracker-doors.ts';
 import type { Db } from '../../../lib/db/schema.ts';
@@ -15,20 +16,8 @@ import type { Db } from '../../../lib/db/schema.ts';
 // GROUPED BY DAY, because "what moved" is a question people ask about a stretch of time, not about a list.
 // Reading twenty undifferentiated rows to work out whether yesterday was busy is work the page should do.
 
-const TONE: Record<FeedItem['tone'], string> = { work: 'var(--teal)', win: 'var(--olive)', join: 'var(--navy)' };
 
-/** "Today" / "Yesterday" / a plain date — the register the rest of the app uses. */
-function dayLabel(iso: string, now: number): string {
-  const d = new Date(iso);
-  const startOf = (t: number) => { const x = new Date(t); x.setHours(0, 0, 0, 0); return x.getTime(); };
-  const days = Math.round((startOf(now) - startOf(d.getTime())) / 86_400_000);
-  if (days <= 0) return 'Today';
-  if (days === 1) return 'Yesterday';
-  if (days < 7) return `${days} days ago`;
-  return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
-}
 
-const time = (iso: string) => new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
 
 export default async function ActivityPage() {
   if (!(await isAdmin())) redirect('/admin/login');
@@ -47,15 +36,6 @@ export default async function ActivityPage() {
   // the rule something you can see rather than something you have to trust: nothing clears until you say so.
   const seenAt = await getActivitySeenAt(db);
   const { feed, unseen } = markUnseen(raw, seenAt);
-
-  // Group in order — the feed already arrives newest-first, so days come out newest-first too.
-  const days: Array<{ label: string; items: FeedItem[] }> = [];
-  for (const f of feed) {
-    const label = dayLabel(f.at, now);
-    const last = days[days.length - 1];
-    if (last && last.label === label) last.items.push(f);
-    else days.push({ label, items: [f] });
-  }
 
   return (
     <ConsoleSubpage
@@ -79,7 +59,7 @@ export default async function ActivityPage() {
           </form>
         )}
       </div>
-      {days.length === 0 ? (
+      {feed.length === 0 ? (
         <div className="card">
           {/* An empty feed used to mean a BROKEN READ (member_event has no `payload` column, and the catch
               swallowed it). Now the read logs its failures, so an empty page here is genuinely empty — but
@@ -91,19 +71,7 @@ export default async function ActivityPage() {
           </p>
         </div>
       ) : (
-        days.map((d) => (
-          <div className="card" key={d.label} style={{ marginTop: 18 }}>
-            <div className="fc-eyebrow">{d.label}</div>
-            <h3 className="fc-h">{d.items.length} thing{d.items.length === 1 ? '' : 's'} moved</h3>
-            {d.items.map((f, i) => (
-              <div className={`fc-evt${f.unseen ? ' unseen' : ''}`} key={`${f.memberId}-${i}`}>
-                <span className="fc-ea" style={{ background: TONE[f.tone] }}>{f.initials}</span>
-                <Link href={`/admin/member/${f.memberId}`} className="fc-el">{f.text}</Link>
-                <span className="fc-et">{time(f.at)}</span>
-              </div>
-            ))}
-          </div>
-        ))
+        <ActivityDays feed={feed} />
       )}
 
       <p className="fc-elsewhere">

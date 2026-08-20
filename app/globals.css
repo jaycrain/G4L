@@ -3349,6 +3349,27 @@ button.fcs-tab { font-family: inherit; cursor: pointer; }
 .fc-dark .muted, .fc-dark .fb-ctx, .fc-dark .roster-foot { color: var(--sec); }
 .fc-dark a { color: var(--teal-lift); }
 
+/* FORM LABELS. The global `label {}` rule pins colour to var(--navy), which is a MEMBER-app colour: on the
+   console's charcoal it measured 1.54:1 on the operator form and 1.68:1 on the admin login — navy on near-black,
+   effectively invisible. Jay reported it as "zero or very little contrast between copy and the ground colour".
+   One scoped rule rather than three per-form fixes: the cause is one global declaration reaching into a theme it
+   predates, and the next form added to the console would have inherited it too. */
+.fc-dark label { color: var(--ink); }
+
+/* The member-record lede sits on the console's dark ground and kept the member-app grey — 2.99:1 (Jay's report
+   on the member sub-page). --sec is the theme's own secondary text, already measured against this ground. */
+.fc-dark .wr-lede { color: var(--sec); }
+
+/* The version/build spans beside the footer text — same reason, same value. The footer element itself is fixed
+   at its own rule (body:has(.fc-dark)), NOT here: two rules for one fact is what made this take three attempts. */
+body:has(.fc-dark) .app-version,
+body:has(.fc-dark) .app-build { color: rgba(255, 255, 255, 0.62); }
+
+/* An error on the console's charcoal: --deep-red is a MEMBER-app colour measured against white, and lands at
+   2.1:1 here. The policy page's crisis-routing warning is the last text in the product that should be hard to
+   read. Lifted, not swapped — still unmistakably the red, just legible on this ground. */
+.fc-dark .error, .fc-dark p.error { color: #ff8f93; }
+
 /* Cards: raised by fill, edged faintly — never a hard line. */
 .fc-dark .card { background: var(--fill); border-color: var(--edge); }
 .fc-dark .fc-dcard { background: var(--fill-6); border: 1px solid var(--edge); }
@@ -3468,7 +3489,12 @@ body:has(.fc-dark) { background: var(--charcoal, #2A2A2A); }
 body:has(.fc-dark) main { background: var(--charcoal, #2A2A2A); }
 body:has(.fc-dark) .brand-bar { background: var(--charcoal, #2A2A2A); }
 body:has(.fc-dark) .confidential-footer {
-  background: var(--charcoal, #2A2A2A); color: rgba(255, 255, 255, .40); border-top-color: rgba(255, 255, 255, .08);
+  /* .40 measured 3.59:1 at 9.9px — under the 4.5:1 small text needs, and this is the legal line, which is exactly
+     the copy people assume nobody reads and therefore the copy that should not be unreadable. Raised to .62.
+     I first "fixed" this by ADDING a body:has(.fc-app) rule, which lost to this one on source order and left two
+     competing declarations in the sheet — the footer kept measuring 3.59 and I nearly went looking for a
+     Turbopack bug. Ask the browser which rules match before writing a new one. */
+  background: var(--charcoal, #2A2A2A); color: rgba(255, 255, 255, .62); border-top-color: rgba(255, 255, 255, .08);
 }
 /* The wordmark is navy artwork — invert it so it reads as the brand rather than a smudge. The BULLSEYE got
    the same treatment and read as a smudge anyway (concentric rings lose their figure when inverted), which

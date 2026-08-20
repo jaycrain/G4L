@@ -235,7 +235,20 @@ async function main() {
   // filled controls under Option A (2026-08-02), because white-on-brand-teal at 13px is 3.59:1. Pinning one
   // exact hex made this check fail on a deliberate palette decision — what it is actually guarding is that
   // Send stays a FILLED primary action rather than being flattened into chrome by a blanket theme rule.
-  const TEALS = ['rgb(59, 148, 149)', 'rgb(47, 122, 123)'];
+  // READ THE PALETTE, DO NOT RESTATE IT. This was a hardcoded pair of hexes, and it went red the day --teal-text
+  // was deliberately darkened for contrast (c346444, "The teal was measured against white, and shipped onto
+  // grey") — so a correct palette decision looked like a broken button, and the walk has been failing on it since.
+  // The guard's real subject is that Send stays a FILLED primary action rather than being flattened into chrome
+  // by a blanket theme rule; which exact teal fills it is the stylesheet's business.
+  const TEALS = await page.evaluate(() => {
+    const cs = getComputedStyle(document.documentElement);
+    const probe = document.createElement('span');
+    document.body.appendChild(probe);
+    const asRgb = (v: string) => { probe.style.color = v.trim(); return getComputedStyle(probe).color; };
+    const out = ['--teal', '--teal-text'].map((n) => asRgb(cs.getPropertyValue(n))).filter(Boolean);
+    probe.remove();
+    return out;
+  });
   const sendOk = !!sendPaint && TEALS.includes(sendPaint.bg);
   const ringOk = !!sendPaint && TEALS.includes(sendPaint.inputBorder);
   const sizeOk = !!sendPaint && sendPaint.dh < 1.5;
