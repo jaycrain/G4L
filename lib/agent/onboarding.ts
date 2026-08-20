@@ -110,7 +110,23 @@ export type Collected = {
     domains: Record<string, { subIssues?: string[]; gapNote?: string; obstacle?: string; earlyAction?: string }>;
     sort?: Record<string, string>;
   };
-  doors?: DoorSlug[]; // one or more
+  doors?: DoorSlug[]; // one or more — CONFIRMED. In onboarding nothing lands here until the member has ruled on it.
+  /**
+   * ONBOARDING ONLY — Doors we have INFERRED and not yet put to her. Propose → confirm → commit, the same contract
+   * as every other thing we touch about a member.
+   *
+   * The Door is the riskiest inference in the product: we read a life story and assert which event opened the
+   * Fade. Until 2026-08-20 that assertion went straight into `doors` the moment the model or the matcher tagged
+   * one, and the gap confirm offered a ✕ to undo something that was already true — assert-with-an-undo, not
+   * propose→confirm. The difference is not academic. Donna's card asserted The Full House over a story with no
+   * partner and no children in it (our own matcher, off the word "provider"), and the first she knew of it was
+   * reading it under "The Doors you came through that created your Fade".
+   *
+   * A proposal she never rules on is DROPPED, not promoted — R2's board opens with all eleven and is where an
+   * unconfirmed Door gets its proper hearing. Reconnect and the later phases do NOT use this field: they write
+   * `doors` directly, because by then every Door in the set has been through this gate or the board.
+   */
+  doorsProposed?: DoorSlug[];
   // The Grinta baseline — set when the "Introduction to Grinta" survey completes (composite + the 4 strand means).
   // Stashed here so the completion card can render the number and the action can persist it without re-scoring.
   grintaBaseline?: GrintaScore;
@@ -430,6 +446,24 @@ export function isAffirmation(message: string): boolean {
 // because the Reclaim List filled (nextStage flips to 'door' then, but the model may still be drawing
 // out Reclaim items). Counting from real Door material is what keeps the beat from wrapping on the
 // member's very first gap answer.
+/**
+ * Every Door we KNOW ABOUT — confirmed plus still-proposed. The signal reads, never the record reads.
+ *
+ * The propose→confirm split created two questions that had been one, and they have different answers:
+ *
+ *   "What is TRUE about her?"        → `c.doors`. The card, what we persist, what the Companion says out loud.
+ *   "What do we KNOW so far?"        → this. Whether her story shows a Fade at all, how rich it is, whether the
+ *                                      turn made progress — none of which wait on her ruling.
+ *
+ * Getting this wrong is not a cosmetic bug. The gap stage's admission gate reads "does she have a Door?" as its
+ * hard fade signal — the Doors ARE the fade taxonomy — so pointing it at the confirmed set alone would DECLINE a
+ * member whose story we had read correctly and simply not yet asked her about. Whenever a call site is asking
+ * about the STORY rather than about her record, it wants this.
+ */
+export function doorsKnown(c: Collected): DoorSlug[] {
+  return Array.from(new Set<DoorSlug>([...(c.doors ?? []), ...(c.doorsProposed ?? [])]));
+}
+
 export function doorEngaged(prev: Collected, next: Collected): boolean {
   const has = (c: Collected) => !!c.gap || (c.doors?.length ?? 0) >= 1;
   return has(prev) || has(next);

@@ -340,6 +340,37 @@ test('§7.2 collision — Load-Bearer yields to the specific load Door (Aging Pa
   assert.equal(withFullHouse.includes('load_bearer'), false, 'Load-Bearer yields to the specific Full House Door');
 });
 
+// ── "provider" is the Load-Bearer's word, not the Full House's (Donna's live walk, 2026-08-20) ────────────────
+//
+// She onboarded on prod and her card asserted The Full House over a story with no partner and no children in it.
+// The cause was ours, not the model's: DOOR_ALIASES.full_house contained the bare 'providing' and 'provider', and
+// she had written "about providing high-quality work to my leaders" and "I was our family's sole financial
+// provider" — one about her job, one about her money. The phantom then reached the §4 precedence rule and DELETED
+// load_bearer, the Door her story actually evidences; it survived to the card only because the model had tagged it
+// independently of the matcher. The rescue that should have caught that, STRONG_FINANCIAL_LOAD, read
+// `sole (earner|provider)` and so did not match "sole financial provider" — one adjective was enough to lose it.
+//
+// Her VERBATIM gap is the fixture, because the paraphrase is what hid this: every summary of her story says "she
+// was the family breadwinner", which the old matcher handled correctly. Only her actual sentences failed.
+const DONNA_GAP = `Two years ago I lost my job. It wasn't one loss — it was several at once. I lost my creative outlet, but I also lost my agency: people came to me for answers, for decisions, for creative problem solving. I felt good about giving my freelance team work, about providing high-quality work to my leaders and internal clients, about mentoring and growing my team members. And I felt good about the money — I was our family's sole financial provider. When the job went, our financial situation became dire, and we still haven't climbed back out of it. Around the same time, my dad got really sick and almost died. Twice. He's still here, but with diminished health.`;
+
+test('§7.3 — a job and a paycheque are not an active-family season (Donna, live walk)', () => {
+  const doors = matchDoors(DONNA_GAP);
+  assert.equal(doors.includes('full_house'), false, 'no partner and no children in this story — The Full House is not hers');
+  assert.ok(doors.includes('career_cliff'), 'the job that ended');
+  assert.ok(doors.includes('load_bearer'), 'sole financial provider is the load, and the §4 rescue must fire on it');
+});
+
+test('§7.3 — "sole financial provider" survives the qualifier the old rescue clause could not see', () => {
+  // The precedence rule deletes load_bearer next to a specific load Door UNLESS a distinct financial load is
+  // stated. Each of these states one; none may be read as no load at all.
+  for (const phrase of ['sole financial provider', 'sole provider', 'only financial provider', 'sole earner']) {
+    const doors = matchDoors(`I was caring for my aging mother, and I was the ${phrase} the whole time.`);
+    assert.ok(doors.includes('aging_parents'), `parent care still recognized alongside "${phrase}"`);
+    assert.ok(doors.includes('load_bearer'), `"${phrase}" is a load Aging Parents does not own`);
+  }
+});
+
 // ── The Acceptance: ACKNOWLEDGING age is not ACCEPTING it (OPEN — recorded 2026-08-09, fix deferred) ──────────
 //
 // The Acceptance is "the quiet surrender to age — deciding that slower, softer and less capable is simply how it

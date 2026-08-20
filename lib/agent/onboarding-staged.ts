@@ -33,6 +33,7 @@ import { scoreGrinta } from '../grinta/survey/scoring.ts';
 import { MEMBER_AGENT_SYSTEM_PROMPT } from './system-prompt.ts';
 import {
   augmentDoors,
+  doorsKnown,
   stripLeadingDisclosure,
   BEAT_SEP,
   type Collected,
@@ -514,7 +515,7 @@ function gapReceipt(c: Collected): string {
   // When the model DOES speak here it says "Those three, close together" — the count and the clustering, no
   // labels. That is the right instinct, so the fallback follows it rather than reaching for the words we happen
   // to have. The Doors get named plenty of places; this is not one of them.
-  const n = (c.doors ?? []).length;
+  const n = doorsKnown(c).length;
   if (n < 2) return '';
   const word = ['', '', 'Two', 'Three', 'Four', 'Five', 'Six'][Math.min(n, 6)] ?? String(n);
   return `${word} things, close together.`;
@@ -954,7 +955,10 @@ function nextExpects(arc: ArcConfig, stageId: StageId, complete: boolean, answer
     return {
       kind: 'gap_confirm',
       choices: GAP_CONFIRM_CHOICES.map((c) => ({ value: c.value, label: c.label })),
-      doorsHeard: (collected.doors ?? []).map((slug) => ({
+      // THE PROPOSAL, not her record. These are Doors we have inferred and not yet asserted — this line is the
+      // asking. Anything already in `collected.doors` was confirmed at an earlier pass of this same gate and is
+      // deliberately absent: re-offering a Door she has already ruled on reads as not having listened.
+      doorsHeard: (collected.doorsProposed ?? []).map((slug) => ({
         slug: slug as string,
         name: DOORS.find((d) => d.slug === slug)?.displayName ?? (slug as string),
       })),
@@ -988,10 +992,42 @@ export function affirmsReflection(message: string): boolean {
   return RECLAIM_AFFIRM_RE.test((message ?? '').trim());
 }
 
+/**
+ * ONBOARDING — grow the Door PROPOSAL from the story so far, without touching what she has already confirmed.
+ *
+ * Wraps augmentDoors (model tags ∪ the regex backstop, then the Full House / Empty Nest disambiguation) and adds
+ * the one rule the propose→confirm split needs: a Door she has already ruled on never returns to the pending set.
+ * Without it, every later turn would re-propose the Door she just took off, and the ✕ would look broken.
+ */
+function proposeDoors(c: Collected, corpus: string): DoorSlug[] {
+  const confirmed = new Set(c.doors ?? []);
+  return augmentDoors(c.doorsProposed ?? [], corpus).filter((d) => !confirmed.has(d));
+}
+
 // --- capture merge (the per-field tools' result, merged into Collected) ---------------------------------
 // The model's turn carries the per-field captures already merged into a Partial<Collected> (parseStagedTurn
 // does this on the live path; fixtures provide it directly). Only the early-beat fields exist in slice a.
-function mergeStaged(prev: Collected, rec?: Partial<Collected>, memberMaterial = ''): Collected {
+/**
+ * What a `note_door` tag is ALLOWED to do this turn.
+ *
+ *   'commit'  — write straight to `doors`. Every arc but onboarding: by then the set has been through the intake
+ *               gate or the R2 board, and those arcs have their own confirms.
+ *   'propose' — onboarding, IN the gap stage: park it in `doorsProposed` for her to rule on at the confirm.
+ *   'ignore'  — onboarding, PAST the gap stage: the tool is offered on every turn, so the model can tag a Door
+ *               during the Reclaim List or the survey. There is no gate left to rule at, so the tag is dropped
+ *               here rather than parked and swept later. Dropping it at the door (rather than merging it and
+ *               clearing it downstream) is what keeps the STALL DETECTOR honest: `grew` compares this turn's
+ *               Doors against last turn's, and a tag that lands and is then wiped every turn reads as fresh
+ *               progress forever — which would quietly disable the runaway backstop for a drifting member.
+ */
+type DoorPolicy = 'commit' | 'propose' | 'ignore';
+
+function doorPolicyFor(arcId: string, stage: string | undefined): DoorPolicy {
+  if (arcId !== 'onboarding') return 'commit';
+  return stage === 'gap' ? 'propose' : 'ignore';
+}
+
+function mergeStaged(prev: Collected, rec?: Partial<Collected>, memberMaterial = '', policy: DoorPolicy = 'commit'): Collected {
   if (!rec) return prev;
   // WHOSE LIFE — drop a Door the member's own words contradict before it is ever stored. The model tagged Jennifer
   // with Marriage from her FATHER'S divorce, in a story where she also said "My marriage is fine"; the prompt rule
@@ -1002,10 +1038,22 @@ function mergeStaged(prev: Collected, rec?: Partial<Collected>, memberMaterial =
   // Marriage tag was already stored by the time she said it, and nothing looked at it again. The member's words
   // outrank the guess whenever they arrive, so this re-runs every turn against everything they've told us.
   const material = [prev.gap ?? '', rec.gap ?? '', memberMaterial].filter(Boolean).join('\n');
-  const union = rec.doors !== undefined || prev.doors !== undefined
-    ? Array.from(new Set<DoorSlug>([...(prev.doors ?? []), ...(rec.doors ?? [])]))
+  // WHICH FIELD THE TAGS ACCUMULATE IN. In onboarding they are a PROPOSAL (`doorsProposed`) until the member
+  // rules at the gap confirm — see Collected.doorsProposed for why. Every other arc writes `doors` directly,
+  // because by the time they run, every Door in the set has already been through that gate or the R2 board.
+  const bucket: 'doors' | 'doorsProposed' = policy === 'propose' ? 'doorsProposed' : 'doors';
+  const held = prev[bucket];
+  // 'ignore' — the model's tags are dropped; anything already in the bucket is left exactly as it is.
+  const incoming = policy === 'ignore' ? undefined : rec.doors;
+  const union = incoming !== undefined || held !== undefined
+    ? Array.from(new Set<DoorSlug>([...(held ?? []), ...(incoming ?? [])]))
     : undefined;
-  const tagged = union !== undefined ? filterDoorsByAttribution(union, material) : undefined;
+  // Never re-propose a Door she has already confirmed — it is hers, and offering it back as a question would
+  // read as the product having forgotten. (No-op outside onboarding, where the two sets are the same one.)
+  const confirmed = new Set(policy === 'propose' ? prev.doors ?? [] : []);
+  const tagged = union !== undefined
+    ? filterDoorsByAttribution(union, material).filter((d) => !confirmed.has(d))
+    : undefined;
   const next: Collected = {
     ...prev,
     ...(rec.athleticPast !== undefined && { athleticPast: rec.athleticPast }),
@@ -1013,7 +1061,7 @@ function mergeStaged(prev: Collected, rec?: Partial<Collected>, memberMaterial =
     ...(rec.identitySkipped === true && { identitySkipped: true }),
     ...(rec.gap !== undefined && rec.gap !== '' && { gap: rec.gap }),
     // Doors accumulate — one note_door call per Door; union with what we already have (never drop one).
-    ...(tagged !== undefined && { doors: tagged }),
+    ...(tagged !== undefined && { [bucket]: tagged }),
   };
   // Reclaim items accumulate in lockstep with their categories, DEDUPED — an item volunteered early (front-loader)
   // parks here in the moment (never lost, re-surfaced at its stage), and a model re-tag of a listed want is a no-op.
@@ -1060,7 +1108,7 @@ function stageMaterialRich(stage: StagedStage, c: Collected): boolean {
   // A genuine one-door member still advances the moment they signal done (memberPushedPast); the very-long-narrative
   // fallback (2× the rich-char floor) is only a safety valve so an exhausted member is never trapped mid-story.
   if (stage === 'gap')
-    return gapIsNarrative(c.gap, c.reclaimList ?? []) && ((c.doors?.length ?? 0) >= 2 || (c.gap ?? '').length >= GAP_RICH_CHARS * 2);
+    return gapIsNarrative(c.gap, c.reclaimList ?? []) && (doorsKnown(c).length >= 2 || (c.gap ?? '').length >= GAP_RICH_CHARS * 2);
   return (c.reclaimList?.length ?? 0) >= RECLAIM_LIST_MIN; // several wants already on the table
 }
 
@@ -1333,6 +1381,26 @@ export function scaleExpects(arc: ArcConfig, stageId: StageId, complete: boolean
 // stage's scratch persists under the stage it BELONGS to (stageAtEntry), since a handler may have advanced b.stage
 // this turn; every other stage's scratch is carried through unchanged from baseScratch.
 function beatState(b: Beat): ConvState {
+  // A DOOR PROPOSAL CANNOT OUTLIVE THE GAP STAGE (systemic invariant — onboarding only).
+  //
+  // The gap confirm is the ONLY gate where a member rules on her Doors. The happy paths all reach it (a
+  // model-judged reflect, the depth cap, a member pushing past), but the anti-loop machinery does not:
+  // forceProgress on a stall and the dispute/addition bounce ceilings advance a stuck member to Reclaim
+  // mid-story, and every one of those is an EARLY RETURN. Written at the stage-transition site below, this rule
+  // would have covered some of them and silently missed the rest — which is the exact failure mode that comment
+  // is about. So it lives here, where a Beat becomes state and every path passes through exactly once.
+  //
+  // It also closes the other end: note_door is offered to the model on EVERY turn, so a tag can arrive during the
+  // Reclaim List or the survey, long after the gate. Such a tag has no path to a ruling, and keeping an assertion
+  // we can never ask her about is how it eventually gets "used" by some later reader.
+  //
+  // She may therefore finish intake holding NO Doors. That is the correct outcome, not a degraded one: Doors are
+  // explicitly not a completion requirement (null routing, Taxonomy Spec §1), her gap story — the thing she
+  // actually gave us — is kept in full, and R2's board opens with all eleven and re-derives from her record. An
+  // empty set she was never asked about is recoverable in a way a wrong assertion on her card is not.
+  if (b.arc.id === 'onboarding' && b.stage !== 'gap' && (b.collected.doorsProposed?.length ?? 0) > 0) {
+    b.collected.doorsProposed = [];
+  }
   return {
     stage: b.stage as StagedStage,
     collected: b.collected,
@@ -1511,7 +1579,7 @@ const gapStage: StageDef = {
     // taxonomy, so a committed Door outranks any vocabulary check). A genuine loss verb also admits + captures. (CAT-01/05/06)
     const gapCorpusNow = gapStageCorpus(b.history, b.memberMessage);
     const hardFadeSignal =
-      (b.collected.doors?.length ?? 0) > 0 || hasReductionLanguage(gapCorpusNow) || isAcceptanceFade(gapCorpusNow);
+      doorsKnown(b.collected).length > 0 || hasReductionLanguage(gapCorpusNow) || isAcceptanceFade(gapCorpusNow);
     const anyFadeSignal = hardFadeSignal || hasGenuineLoss(gapCorpusNow);
     // note_no_fade is a HINT, not authority: honored ONLY while NO fade signal is present, and RECONCILED every turn —
     // the moment a Door / reduction / loss surfaces, a stale no-fade flag clears for good. This kills the sticky-flag
@@ -1569,7 +1637,7 @@ const gapStage: StageDef = {
     }
     if (b.collected.gap) {
       // Real fade. Accumulate Doors across the WHOLE corpus, and RECEIVE the whole story before reflecting.
-      b.collected.doors = augmentDoors(b.collected.doors ?? [], gapStageCorpus(b.history, b.memberMessage));
+      b.collected.doorsProposed = proposeDoors(b.collected, gapStageCorpus(b.history, b.memberMessage));
       s.gapDepth = (s.gapDepth ?? 0) + 1; // one more drawing-out exchange with the story in hand
       // MODEL-JUDGED advance: the MODEL decides when the story is drawn out (reflect_gap), bounded by the engine —
       // a FLOOR (GAP_MIN_DEPTH) and a CAP (GAP_MAX_DEPTH). A member close overrides; the card is the backstop.
@@ -1606,19 +1674,30 @@ const gapStage: StageDef = {
     // answers and chose one; nothing we infer can be better evidence than that. Typed replies fall through to the
     // classifier exactly as before, so she is never forced through the chips.
     const tapped = parseGapConfirmChoice(b.memberMessage);
-    // SHE TOOK ONE OFF. Her word outranks the matcher, always — this is the same rule as the R2 board, applied at
-    // the moment we first guess rather than a phase later. Intersected with what she was actually shown, so a slug
-    // that was never offered cannot arrive through the wire and become part of her story.
-    if (tapped) {
-      const kept = parseGapConfirmDoors(b.memberMessage);
-      if (kept !== null) {
-        const shown = new Set(b.collected.doors ?? []);
-        b.collected.doors = (b.collected.doors ?? []).filter((d) => kept.includes(d) && shown.has(d));
-      }
-    }
     const intent = tapped
       ? gapConfirmIntent(tapped)
       : resolveConfirmCorroborated(b.memberMessage, b.model.replyIntent, shouldCaptureStagedGap);
+    // ── THE DOOR GATE — where a proposal becomes a fact about her life ────────────────────────────────────────
+    //
+    // Everything tagged so far sits in `doorsProposed` and is true of nothing. This is the one place in
+    // onboarding it can move into `doors`, and it moves only on HER ruling.
+    //
+    // Her word outranks the matcher, always. INTERSECTED WITH WHAT SHE WAS SHOWN, so a slug that was never
+    // offered cannot arrive through the wire and become part of her story — the same bound the R2 board uses.
+    //
+    // WHAT COUNTS AS RULING. A tap is a fact: she was shown the Doors by name alongside three answers and chose
+    // one, so any tap commits the proposal (minus anything she took off with the ✕). A TYPED close is the same
+    // statement in her own words and commits the same way. A dispute or an addition is NOT a ruling on the
+    // Doors — she is still telling the story — so the proposal stays pending and is put to her again at the next
+    // confirm, grown by whatever she just added.
+    if (intent === 'done') {
+      const proposed = b.collected.doorsProposed ?? [];
+      const kept = tapped ? parseGapConfirmDoors(b.memberMessage) : null;
+      const shown = new Set(proposed);
+      const ruled = kept !== null ? proposed.filter((d) => kept.includes(d) && shown.has(d)) : proposed;
+      b.collected.doors = Array.from(new Set([...(b.collected.doors ?? []), ...ruled]));
+      b.collected.doorsProposed = [];
+    }
     if (intent === 'dispute') {
       // wrong, no new content → reopen, but KEEP the gap + Doors (never wipe). ANTI-LOOP: count the bounce like
       // identity's confirm does — a member who keeps disputing must hit the SHARED ceiling and be moved on, not
@@ -1643,7 +1722,7 @@ const gapStage: StageDef = {
       const listItems = isListBlock(b.memberMessage) ? parseReclaimListSubmission(b.memberMessage) : [];
       if (listItems.length >= 2) {
         for (const item of listItems) appendReclaim(b.collected, item);
-        b.collected.doors = augmentDoors(b.collected.doors ?? [], gapStageCorpus(b.history, b.memberMessage));
+        b.collected.doorsProposed = proposeDoors(b.collected, gapStageCorpus(b.history, b.memberMessage));
         b.awaitingConfirm = true; // still at the confirm — we haven't heard more of the STORY yet
         b.reply = withQuestion(
           b.modelText,
@@ -1654,7 +1733,7 @@ const gapStage: StageDef = {
       // a new chapter (or a correction WITH content) → append it, re-derive Doors, and DRAW IT OUT.
       const modelTaggedGap = b.model.record?.gap !== undefined && b.model.record.gap !== '';
       if (!modelTaggedGap) b.collected.gap = joinGapChapters(b.collected.gap ?? '', b.memberMessage);
-      b.collected.doors = augmentDoors(b.collected.doors ?? [], gapStageCorpus(b.history, b.memberMessage));
+      b.collected.doorsProposed = proposeDoors(b.collected, gapStageCorpus(b.history, b.memberMessage));
       b.awaitingConfirm = false;
       // ANTI-LOOP (shared contract): a rambling / drifting member's every reply reads as an 'addition', so this
       // append → re-ask cycle never reaches a clean "done" and the confirm probe repeats ("…or is there more?" ×10).
@@ -2053,7 +2132,7 @@ export function runArcTurn(
   if ((state.awaitingConfirm ?? false) && memberIsConfused(memberMessage) && !alreadyClarified(history)) {
     return { reply: CLARIFY_REPLY, state, complete: false };
   }
-  const collected = mergeStaged({ ...state.collected }, model.record, memberMessage);
+  const collected = mergeStaged({ ...state.collected }, model.record, memberMessage, doorPolicyFor(arc.id, state.stage));
   // Light-touch measurability: the model sharpens a vague want by REPLACING its most-recent item in place —
   // never a second entry. Dedupe after, in case the sharpened text collides with an earlier want.
   const refinedThisTurn = !!model.refineReclaim && (collected.reclaimList?.length ?? 0) > 0;
@@ -2152,7 +2231,7 @@ export function runArcTurn(
   // the idle counter every turn they give something, so length never triggers the cap; only a true STALL does.
   const grew =
     (collected.gap?.length ?? 0) > (state.collected.gap?.length ?? 0) ||
-    (collected.doors?.length ?? 0) > (state.collected.doors?.length ?? 0) ||
+    doorsKnown(collected).length > doorsKnown(state.collected).length ||
     (collected.reclaimList?.length ?? 0) > (state.collected.reclaimList?.length ?? 0) ||
     (!!collected.identityNoun && !state.collected.identityNoun) ||
     (!!collected.athleticPast && !state.collected.athleticPast);

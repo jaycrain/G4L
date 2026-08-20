@@ -68,7 +68,9 @@ test('the gap confirm survives a refresh, with the Doors it had named', () => {
   const atConfirm: ConvState = {
     stage: 'gap',
     awaitingConfirm: true,
-    collected: { identityNoun: 'Maker', gap: 'A decade of it.', doors: ['career_cliff', 'aging_parents'] },
+    // PROPOSED, not confirmed. This beat is where she RULES on the Doors, so a refresh mid-gate must bring back
+    // the pending set; seeding `doors` here would be seeding the answer she has not given yet.
+    collected: { identityNoun: 'Maker', gap: 'A decade of it.', doorsProposed: ['career_cliff', 'aging_parents'] },
   };
   const resumed = expectsForResume(roundtrip(atConfirm));
   assert.equal(resumed?.kind, 'gap_confirm', 'the three chips come back');

@@ -17,6 +17,7 @@ import { scoreIdq } from '../idq/scoring.ts';
 import { identityLabel } from '../member/identity.ts';
 import { nextFollowUp } from './follow-up.ts';
 import { doorProvenance } from './door-provenance.ts';
+import { boardShownSlugs } from './doors-board-expectation.ts';
 import type { Db } from '../db/schema.ts';
 import { MEMBER_AGENT_SYSTEM_PROMPT } from './system-prompt.ts';
 import { resolveConfirmCorroborated, memberWantsToAdvance } from './onboarding-intent.ts';
@@ -390,12 +391,36 @@ const doorsStage: StageDef = {
     if (board) {
       b.collected.boardDone = true;
       b.boardSubmission = board;
-      // Her claims are Doors now, so the rest of the excavation talks about the set she just confirmed.
-      const marked = board.doors.map((d) => d.slug);
-      const union = Array.from(new Set([...(b.collected.doors ?? []), ...marked]));
+      // THE BOARD IS A RULING ON THE WHOLE SET, NOT AN ADD-ONLY FORM.
+      //
+      // This unioned her marks onto the Doors she already held, so a pre-lit Door she rated "not relevant" came
+      // straight back. The board client promises the opposite in its own comment — "She can still take one off:
+      // rating a pre-lit Door 'not relevant' removes it, because that is her correcting our matcher, which is the
+      // whole point of letting her claim them" — and the engine quietly discarded it. That made R2 the one place
+      // a wrong Door was supposed to be fixable, and the one place it could not be fixed (Donna, 2026-08-20: The
+      // Full House on her card over a story with no partner and no children in it).
+      //
+      // BOUNDED BY WHAT SHE WAS SHOWN. Removal only applies to the slugs the board actually rendered; a Door held
+      // but not on the board (no recognition copy) never reached her eyes, so her submission says nothing about
+      // it and it is kept. Same intersect-with-shown rule as the onboarding gap confirm — these are the only two
+      // surfaces where a member unmakes a Door, and neither may act on a card she never saw.
+      //
+      // THE DATABASE HALF IS ALREADY WRITTEN, and deliberately not duplicated here: persistRevision runs on this
+      // same turn and hands the new set to softSetMemberDoors, which soft-removes every active Door not in it.
+      // The removal rule therefore has ONE implementation. Adding a second write in the board's own action would
+      // be the same fact at two sites, which is how the two ever come to disagree.
+      const held = b.collected.doors ?? [];
+      const marked = new Set(board.doors.map((d) => d.slug));
+      const shown = new Set(boardShownSlugs());
+      const ruled = Array.from(new Set([...held.filter((d) => marked.has(d) || !shown.has(d)), ...marked]));
+      // MARKING NOTHING AT ALL is "none of these land for me" — NOT "delete my Doors". softSetMemberDoors REFUSES
+      // an empty set (the ≥1-Door contract), so zeroing her out here would leave the engine and her record
+      // disagreeing about her own life: the arc talking about no Doors while the Companion still reads three.
+      // She takes one off by marking the others, or in the excavation that follows.
+      const next = ruled.length ? ruled : held;
       // `c.doors` arrives PRIMARY-FIRST by convention, so ruling #8 — biggest-impact becomes primary — is
       // expressed here as ordering, not a second field. The DB half (is_primary + named_door) is the action's.
-      b.collected.doors = board.biggest ? [board.biggest, ...union.filter((d) => d !== board.biggest)] : union;
+      b.collected.doors = board.biggest ? [board.biggest, ...next.filter((d) => d !== board.biggest)] : next;
 
       // MARKING NOTHING IS AN ANSWER, and it must not read as a failed step. She gets the ordinary excavation.
       if (boardIsEmpty(board)) {

@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { applyStagedTurn, stagedOpening, correctsReflection, tidyGapProse, parseReclaimListSubmission } from '../lib/agent/onboarding-staged.ts';
 import { memberClosingReclaim } from '../lib/agent/onboarding-intent.ts';
-import { BEAT_SEP, type ConvMessage, type ConvState, type ModelTurn, type Turn } from '../lib/agent/onboarding.ts';
+import { serializeGapConfirmChoice } from '../lib/agent/gap-confirm-choice.ts';
+import { BEAT_SEP, doorsKnown, type ConvMessage, type ConvState, type ModelTurn, type Turn } from '../lib/agent/onboarding.ts';
 
 // Replay through the PURE staged engine (no API), the same discipline as tests/onboarding-replay.test.ts.
 type Step = { member: string; model: ModelTurn };
@@ -147,7 +148,7 @@ test('STAGED gap — depth FLOOR (v2.1): the engine holds the beat open even if 
     { stage: 'gap', collected: { athleticPast: 'a cyclist', identityNoun: 'Athlete' } },
   );
   assert.equal(turns[0]!.state.awaitingConfirm ?? false, false, 'floor holds — no reflect on turn 1, even on a rich multi-Door pass with reflect_gap');
-  assert.ok((turns[0]!.state.collected.doors ?? []).length >= 2, 'Doors still captured');
+  assert.ok(doorsKnown(turns[0]!.state.collected).length >= 2, 'Doors still captured (as a PROPOSAL until she rules)');
 });
 
 test('STAGED gap — model-judged advance (v2.1): drawn out over exchanges, THEN reflect_gap → reflect-confirm → reclaim', () => {
@@ -162,7 +163,7 @@ test('STAGED gap — model-judged advance (v2.1): drawn out over exchanges, THEN
   );
   // turn 1: gap + Door captured, but the engine keeps DRAWING OUT (a depth question, no reflect_gap yet).
   assert.equal(turns[0]!.state.awaitingConfirm ?? false, false, 'draws out — does not reflect on the first pass');
-  assert.deepEqual(turns[0]!.state.collected.doors, ['aging_parents'], 'Door tagged by the model is kept');
+  assert.deepEqual(doorsKnown(turns[0]!.state.collected), ['aging_parents'], 'Door tagged by the model is kept — pending her ruling');
   // turn 2: floor met + the model judges it drawn out (reflect_gap) → reflect-confirm.
   assert.equal(turns[1]!.state.awaitingConfirm, true, 'reflects once the model judges it drawn out (floor met)');
   assert.match(turns[1]!.reply, /does it land|is there more/i, 'a clear, non-generic confirm');
@@ -321,7 +322,7 @@ test('STAGED gap — set_gap captures the story, derives the Door, reflect-confi
   );
   // turn 1: gap captured + Door derived, but still RECEIVING (invites the rest before reflecting)
   assert.equal(turns[0]!.state.collected.gap, GAP_STORY);
-  assert.deepEqual(turns[0]!.state.collected.doors, ['aging_parents'], 'Door tagged by the model is kept');
+  assert.deepEqual(doorsKnown(turns[0]!.state.collected), ['aging_parents'], 'Door tagged by the model is kept — pending her ruling');
   assert.equal(turns[0]!.state.awaitingConfirm ?? false, false, 'gathers the whole story before reflecting');
   // turn 2: member signals the story whole ("that's the whole of it") → pushed-past → reflect-confirm.
   assert.equal(turns[1]!.state.awaitingConfirm, true, 'reflects once the member signals the story is whole');
@@ -346,7 +347,7 @@ test('STAGED gap — no Door tagged is a complete capture (recognition over rout
     atGap,
   );
   assert.equal(turns[1]!.state.awaitingConfirm, true, 'a gap with zero Doors still reflects once whole');
-  assert.deepEqual(turns[1]!.state.collected.doors ?? [], [], 'no Door invented when none was described');
+  assert.deepEqual(doorsKnown(turns[1]!.state.collected), [], 'no Door invented when none was described — not even as a proposal');
 });
 
 test('STAGED gap — never-strand (run-2 fix): short progressive turns the matcher misses still get captured', () => {
@@ -589,7 +590,7 @@ test('STAGED gap — a short dispute re-opens but NEVER wipes the gap or Doors (
   assert.equal(turn.state.stage, 'gap', 'stays in the gap stage on a dispute');
   assert.equal(turn.state.awaitingConfirm, false, 'clears the pending confirm');
   assert.equal(turn.state.collected.gap, GAP_STORY, 'KEEPS the gap (the card is the correction point, not a wipe)');
-  assert.deepEqual(turn.state.collected.doors, ['aging_parents'], 'keeps the Doors too');
+  assert.deepEqual(doorsKnown(turn.state.collected), ['aging_parents'], 'keeps the Doors too — a dispute is not a ruling on them');
   assert.match(turn.reply, /get this right|how it really went/i);
 });
 
@@ -608,8 +609,8 @@ test('STAGED gap — "there’s more" APPENDS the next chapter + accumulates Doo
   const turn = applyStagedTurn(atConfirm, history, more, { text: 'Thank you for telling me the rest.' });
   assert.match(turn.state.collected.gap!, /laid off/, 'kept the layoff chapter');
   assert.match(turn.state.collected.gap!, /coma|caregiver/, 'appended the parent-care chapter');
-  assert.ok(turn.state.collected.doors!.includes('career_cliff'), 'kept career_cliff');
-  assert.ok(turn.state.collected.doors!.includes('aging_parents'), 'picked up aging_parents from the new chapter');
+  assert.ok(doorsKnown(turn.state.collected).includes('career_cliff'), 'kept career_cliff');
+  assert.ok(doorsKnown(turn.state.collected).includes('aging_parents'), 'picked up aging_parents from the new chapter');
   assert.equal(turn.state.awaitingConfirm, false, 'DRAWS OUT the new chapter (v2.1: explore the thread, not an instant re-reflect)');
   assert.match(turn.reply, /\?\s*$/, 'ends on a question — keeps exploring, never a loop on the opening line');
 });
@@ -625,7 +626,7 @@ test('STAGED gap — a terse fragment with a clear Door IS captured (never stran
     atGap,
   );
   assert.equal(turns[0]!.state.collected.gap, 'Knee. Then divorce.', 'captured the terse fragment via its Door signal');
-  assert.ok(turns[0]!.state.collected.doors!.includes('marriage'), 'divorce → The Marriage');
+  assert.ok(doorsKnown(turns[0]!.state.collected).includes('marriage'), 'divorce → The Marriage');
   assert.equal(turns[1]!.state.awaitingConfirm, true, 'reflects once whole — does not strand on the opening question');
 });
 
@@ -815,7 +816,7 @@ test('STAGED fade gate — a RESIGNED member is admitted as a real Fade, and is 
   );
   assert.notEqual(turns.at(-1)!.declined, true, 'a resigned member is NOT declined');
   assert.equal(turns[0]!.state.stageScratch?.gap?.noFade ?? false, false, 'reclassified as a real Fade, not no-fade');
-  assert.equal((turns[0]!.state.collected.doors ?? []).includes('acceptance'), false,
+  assert.equal(doorsKnown(turns[0]!.state.collected).includes('acceptance' as never), false,
     'admitted on the resignation SIGNAL — never stamped with a surrender Door');
   assert.equal(turns[1]!.state.awaitingConfirm, true, 'proceeds to reflect-confirm like any real fade');
 });
@@ -855,4 +856,94 @@ test('stripping is bounded — it removes scaffolding, never the member\'s words
   // A real want is never eaten: only leading markers go, and the text after them is untouched.
   assert.deepEqual(parseReclaimListSubmission('• 1. ride my bike again'), ['ride my bike again']);
   assert.deepEqual(parseReclaimListSubmission('• be 20-minutes-a-day consistent'), ['be 20-minutes-a-day consistent']);
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════
+// DONNA'S WALK, 2026-08-20 — the Door that was never hers, end to end.
+//
+// She onboarded on prod and her summary card asserted four Doors under "The Doors you came through that created
+// your Fade". One of them, The Full House, described "marriage, young kids, everyone needing you" — over a story
+// with no partner and no children in it. Our own matcher produced it from the words "providing" and "provider",
+// which were about her JOB and her MONEY, and it then suppressed The Load-Bearer, the Door her story actually
+// evidences. She had no way to see any of it happen: the tagging was silent and the card was the first mention.
+//
+// This fixture replays her real gap text through the staged engine and pins both halves of the repair — the
+// matcher no longer invents the Door, and NOTHING reaches her record until she rules on what we heard.
+// ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════
+
+const DONNA_STORY = `Two years ago I lost my job. I lost my creative outlet, but I also lost my agency: people came to me for answers, for decisions, for creative problem solving. I felt good about providing high-quality work to my leaders and internal clients. And I felt good about the money — I was our family's sole financial provider. When the job went, our financial situation became dire. Around the same time, my dad got really sick and almost died.`;
+
+test('DONNA · the Doors we hear are a PROPOSAL — her record stays empty until she rules', () => {
+  const { turns } = replayStaged(
+    [
+      { member: DONNA_STORY, model: { text: 'What did that first year feel like?', record: { gap: DONNA_STORY } } },
+      { member: 'It was all at once, really.', model: { text: 'Here is what I heard.', gapReady: true } },
+    ],
+    { stage: 'gap', collected: { athleticPast: 'a maker', identityNoun: 'Maker' } },
+  );
+  const atConfirm = turns[1]!;
+  assert.equal(atConfirm.state.awaitingConfirm, true, 'the beat reflects and waits');
+  assert.deepEqual(atConfirm.state.collected.doors ?? [], [], 'nothing has been asserted about her life');
+  // The heart of it: she is SHOWN what we heard, by name, before any of it is true of her.
+  const heard = (atConfirm.expects as { doorsHeard?: { slug: string }[] }).doorsHeard?.map((d) => d.slug) ?? [];
+  assert.ok(heard.length > 0, 'and the Doors are put to her rather than filed');
+  assert.equal(heard.includes('full_house'), false, 'the Door that was never hers is not even proposed now');
+  assert.ok(heard.includes('load_bearer'), '"sole financial provider" is the load, and it survives to be offered');
+});
+
+test('DONNA · a Door she takes off never reaches her card', () => {
+  // The limit case that the old assert-then-undo could not express. Even if a wrong Door IS proposed — the
+  // matcher will always be imperfect — her ✕ is the last word, and the card renders her ruling, not our guess.
+  const atConfirm: ConvState = {
+    stage: 'gap',
+    awaitingConfirm: true,
+    collected: { identityNoun: 'Maker', gap: DONNA_STORY, doorsProposed: ['career_cliff', 'full_house', 'load_bearer'] },
+  };
+  const t = applyStagedTurn(atConfirm, [], serializeGapConfirmChoice('done', ['career_cliff', 'load_bearer']), { text: '' });
+  assert.deepEqual(t.state.collected.doors, ['career_cliff', 'load_bearer'], 'her ruling is the record');
+  assert.deepEqual(t.state.collected.doorsProposed, [], 'and nothing is left pending to leak into the card later');
+});
+
+test('DONNA · a Door tagged AFTER the gate cannot assert itself — the card is not a back door', () => {
+  // note_door is offered to the model on EVERY turn, so it can fire during the Reclaim List or the survey, long
+  // after the one gate where she can rule. That tag has no path to a ruling, so it is discarded rather than
+  // parked: keeping an assertion we can never ask her about is how it ends up quietly used by a later reader.
+  // Nothing of HERS is lost — her gap story is kept whole, and R2's board re-derives from her record.
+  const past: ConvState = {
+    stage: 'reclaim',
+    collected: { identityNoun: 'Maker', gap: DONNA_STORY, doors: ['career_cliff'] },
+  };
+  const t = applyStagedTurn(past, [], 'I want to get back to making things', { text: 'Tell me more.', record: { doors: ['full_house'] } });
+  assert.deepEqual(t.state.collected.doors, ['career_cliff'], 'her confirmed set is untouched by a late tag');
+  assert.deepEqual(t.state.collected.doorsProposed ?? [], [], 'and the late tag never becomes a pending assertion');
+});
+
+test('DONNA · a stuck member exits the gap holding NO Doors, never unruled ones', () => {
+  // The anti-loop exits (forceProgress on a stall, the dispute/addition bounce ceilings) leave the gap stage
+  // WITHOUT reaching the confirm. They used to carry every silently-tagged Door onto her card. Now the proposal
+  // is dropped: no Doors is honest and recoverable at R2, a wrong Door is neither.
+  const s: ConvState = {
+    stage: 'gap',
+    awaitingConfirm: true,
+    stageScratch: { gap: { confirmBounces: 9 } },
+    collected: { identityNoun: 'Maker', gap: DONNA_STORY, doorsProposed: ['full_house'] },
+  };
+  const t = applyStagedTurn(s, [], 'no, that’s not it either', { text: 'Okay.' });
+  assert.equal(t.state.stage, 'reclaim', 'the ceiling moves her on rather than ping-ponging');
+  assert.deepEqual(t.state.collected.doors ?? [], [], 'nothing she never ruled on reaches her record');
+  assert.deepEqual(t.state.collected.doorsProposed ?? [], [], 'and the proposal does not linger to leak later');
+});
+
+test('DONNA · a late tag cannot fake progress — the stall detector still sees a drifting member', () => {
+  // The subtle half of dropping late tags. If they merged and were swept downstream instead, `grew` would compare
+  // this turn's Doors against last turn's WIPED set and read a re-tag as fresh progress every single turn — which
+  // silently disables the runaway backstop for exactly the member who needs it. Found on a live persona walk.
+  let state: ConvState = { stage: 'reclaim', collected: { identityNoun: 'Maker', gap: DONNA_STORY, doors: ['career_cliff'] } };
+  const idle: number[] = [];
+  for (let i = 0; i < 3; i++) {
+    const t = applyStagedTurn(state, [], 'mm', { text: 'Say more?', record: { doors: ['full_house'] } });
+    idle.push(t.state.idleTurns ?? 0);
+    state = t.state;
+  }
+  assert.deepEqual(idle, [1, 2, 3], 'a deflecting member accrues idle turns even while the model keeps tagging Doors');
 });

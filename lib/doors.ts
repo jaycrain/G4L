@@ -51,7 +51,14 @@ const wordInText = (needle: string, haystack: string) =>
 // safety-net matcher; the live agent maps richer stories itself). Keyed only where the Door's title
 // isn't itself likely to appear — e.g. someone says "had kids", never "the full house".
 const DOOR_ALIASES: Partial<Record<DoorSlug, string[]>> = {
-  full_house: ['young kids', 'had kids', 'having kids', 'new baby', 'raising kids', 'small kids', 'little kids', 'new family', 'providing', 'provider'],
+  // 'providing' / 'provider' were HERE until 2026-08-20 and they were the Load-Bearer's words, not this Door's.
+  // Donna wrote "about providing high-quality work to my leaders" and "I was our family's sole financial
+  // provider" — one about her job, one about her money, neither about an active-family season — and this matcher
+  // returned The Full House for a story with no partner and no children in it. It then reached line ~187 and used
+  // that phantom to DELETE load_bearer, the one Door her story actually evidences; it survived only because the
+  // model had tagged it independently. A bare gerund is too thin a hook for a Door, and this one pointed at the
+  // wrong Door as well. The family season is named by the FAMILY, so every alias here names one.
+  full_house: ['young kids', 'had kids', 'having kids', 'new baby', 'raising kids', 'small kids', 'little kids', 'new family'],
   // Caregiving-for-a-parent, in their own words (kept precise — needs a caregiving verb or an elderly marker,
   // so a passing "my mom" doesn't trip it). This was the missed Door in testing.
   aging_parents: [
@@ -77,7 +84,11 @@ const DOOR_ALIASES: Partial<Record<DoorSlug, string[]>> = {
   grind: ['work took over', 'took over my life', 'crazy hours', 'longer hours', 'bigger job', 'more responsibility', 'grew bigger', 'global team', 'consumed me', 'all-consuming', 'work became everything', 'no room left for', 'ate everything', 'the grind'],
   // The Load-Bearer = carrying everyone's load (household/money/needs), outside parent-care or the
   // active-family season — incl. a partner's abdicated share.
-  load_bearer: ['carrying everyone', 'carry everyone', 'carry the load', 'carrying the load', 'held the financial', 'hold everything together', 'holding everything together', 'everyone leans on me', 'everyone needs me', 'on my shoulders', 'fell on me', 'more than my fair share', 'carry more than', 'left me holding', 'the one holding everything', 'carrying the household', 'do it all', 'sole breadwinner', 'breadwinner', 'sole earner', 'the only earner', 'paying all the bills', 'all the bills fell', 'carried us financially', 'kept us afloat', "didn't step up"],
+  load_bearer: ['carrying everyone', 'carry everyone', 'carry the load', 'carrying the load', 'held the financial', 'hold everything together', 'holding everything together', 'everyone leans on me', 'everyone needs me', 'on my shoulders', 'fell on me', 'more than my fair share', 'carry more than', 'left me holding', 'the one holding everything', 'carrying the household', 'do it all', 'sole breadwinner', 'breadwinner', 'sole earner', 'the only earner', 'paying all the bills', 'all the bills fell', 'carried us financially', 'kept us afloat', "didn't step up",
+    // Being THE provider — anchored, never the bare word. "provider" alone catches a healthcare provider and a
+    // service provider; "sole/only financial provider" catches the load. (Donna's own phrase, which this matcher
+    // was reading as The Full House.)
+    'sole provider', 'sole financial provider', 'only provider', 'only financial provider', 'the provider for'],
 };
 
 /**
@@ -183,7 +194,10 @@ export function matchDoors(message: string): DoorSlug[] {
   // A financial/spousal load is one Aging Parents / Full House do NOT own. Includes the explicit breadwinner
   // language AND a partner abdicating the share (the load fell to me) — both clearly distinct from parent-care.
   const STRONG_FINANCIAL_LOAD =
-    /\b(breadwinner|sole (earner|provider)|the only earner|all the bills|paying all the bills|carried us financially|kept us afloat|held the financial|did(n'?t| not) step up|wouldn'?t step up|savings (are |were |is )?(gone|going|wiped)|house (is |was )?at risk|lose the house|losing the house)\b/.test(m);
+    // `sole (earner|provider)` did NOT match "sole financial provider" — an adjective between the two words was
+    // enough to lose the rescue, so Donna's plainest statement of the load read as no load at all. Allow the
+    // qualifier, and accept "only" alongside "sole".
+    /\b(breadwinner|(sole|only) (financial |family |household )?(earner|provider)|the only earner|all the bills|paying all the bills|carried us financially|kept us afloat|held the financial|did(n'?t| not) step up|wouldn'?t step up|savings (are |were |is )?(gone|going|wiped)|house (is |was )?at risk|lose the house|losing the house)\b/.test(m);
   if (found.has('load_bearer') && (found.has('aging_parents') || found.has('full_house')) && !STRONG_FINANCIAL_LOAD) {
     found.delete('load_bearer');
   }

@@ -3,6 +3,8 @@ import { test } from 'node:test';
 import { reconnectCallback, reconnectOpening, applyReconnectTurn, reconnectEnabled } from '../lib/agent/reconnect.ts';
 import type { Collected, ConvMessage, ConvState } from '../lib/agent/onboarding.ts';
 import { TOTAL_ITEMS } from '../lib/idq/instrument.ts';
+import { boardShownSlugs } from '../lib/agent/doors-board-expectation.ts';
+import { DOORS } from '../lib/doors.ts';
 
 // ============================================================================================================
 // v2.2 Reconnect — SKELETON + callback (§2a). The callback READS the committed captures (never the transcript)
@@ -109,6 +111,38 @@ test('reconnect doors · entry hands into the BOARD, and does not pick a Door fo
   const after = applyReconnectTurn(turn.state, [], '[board] door:marriage=3 door:grind=2 biggest:marriage', { text: '' });
   assert.match(after.reply, /The Relationship/, 'now it names the Door, and it is the one she chose');
   assert.match(after.reply, /the real thing|actually|weighs most/i, 'invites the real story, not a summary');
+});
+
+// ── The board is a RULING on the whole set, not an add-only form (Donna, 2026-08-20) ─────────────────────────
+//
+// Her pre-lit Doors arrive marked and she can rate one "not relevant" to take it off — the board client says so in
+// its own comment, and that is the entire reason onboarding is allowed to stay quiet about Doors ("turn up R2, not
+// the intake"). The engine unioned her marks onto what she already held, so the removal was discarded and the
+// wrong Door came straight back. An affordance that renders and does nothing is the worst kind: she cannot tell it
+// failed, and she has already been told this is the place it gets fixed.
+test('reconnect doors · a pre-lit Door she does NOT mark is taken off — her ruling outranks our matcher', () => {
+  const atDoors: ConvState = { stage: 'doors', collected: { identityNoun: 'Maker', doors: ['career_cliff', 'full_house', 'load_bearer'] } };
+  // She marks the two that are hers and leaves The Full House unrated — our matcher's mistake, corrected.
+  const after = applyReconnectTurn(atDoors, [], '[board] door:career_cliff=3 door:load_bearer=3 biggest:load_bearer', { text: '' });
+  const doors = after.state.collected.doors ?? [];
+  assert.equal(doors.includes('full_house'), false, 'the Door she took off must not survive her ruling');
+  assert.ok(doors.includes('career_cliff') && doors.includes('load_bearer'), 'what she marked is kept');
+  assert.equal(doors[0], 'load_bearer', 'ruling #8 — biggest-impact leads the set');
+});
+
+test('reconnect doors · marking NOTHING is "none of these land", never "delete my Doors"', () => {
+  // softSetMemberDoors refuses an empty set (the ≥1-Door contract), so zeroing the engine here would leave the arc
+  // and her record disagreeing about her own life.
+  const atDoors: ConvState = { stage: 'doors', collected: { identityNoun: 'Maker', doors: ['career_cliff', 'load_bearer'] } };
+  const after = applyReconnectTurn(atDoors, [], '[board] quiet:1', { text: '' });
+  assert.deepEqual(after.state.collected.doors, ['career_cliff', 'load_bearer'], 'an empty board leaves her set intact');
+});
+
+test('reconnect doors · removal is bounded by what the board SHOWED her', () => {
+  // Every Door has recognition copy today, so the bound is currently a no-op — this is the tripwire for a future
+  // Door that ships without copy, which would be filtered off the board and must not be read as one she dropped.
+  const shown = new Set(boardShownSlugs());
+  assert.ok(DOORS.every((d) => shown.has(d.slug)), 'a Door missing from the board would be silently droppable');
 });
 
 test('reconnect doors · DEPTH FLOOR holds — reflect_door on the first exchange does NOT reflect (no insight w/o material)', () => {
