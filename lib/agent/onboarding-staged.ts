@@ -969,7 +969,11 @@ function nextExpects(arc: ArcConfig, stageId: StageId, complete: boolean, answer
   // arriving before she had said anything, which is structure doing the ELICITING and the beat Donna twice called
   // rushed. Now the Companion draws her out first and the builder arrives holding what she said.
   if (arc.id === 'onboarding' && stageId === 'reclaim' && !complete && drawnOut) {
-    return { kind: 'reclaim_list', min: RECLAIM_LIST_MIN, seeded: (collected.reclaimList ?? []).filter(Boolean) };
+    // HER OWN WORDS FIRST, THEN THE PROPOSALS. Both reach the form: an item captured verbatim is already hers,
+    // and a model-voiced seed is a want she named in phrasing she did not choose — she rules on it here, which is
+    // the only place the wording becomes authoritative. Seeding only reclaimList is what made the voice guard a
+    // silent drop; the whole point of holding a seed is that it arrives.
+    return { kind: 'reclaim_list', min: RECLAIM_LIST_MIN, seeded: reclaimSeedList(collected) };
   }
   // THE DOORS BOARD. Reconnect's doors stage opens with the framing and the board TOGETHER — recognition
   // before conversation, so the Companion draws out what she marked instead of fishing for it. Emitted only
@@ -1073,7 +1077,22 @@ function mergeStaged(prev: Collected, rec?: Partial<Collected>, memberMaterial =
     // would be the very inversion we keep having to undo. Provenance is the whole basis of the check, so it has
     // to sit where provenance is known. (Donna, 2026-08-19 — see lib/agent/reclaim-voice.ts.)
     rec.reclaimList.forEach((item, i) => {
-      if (isModelVoiced(item)) return; // the model drafted rather than quoted — drop the SEED, never her words
+      if (isModelVoiced(item)) {
+        // THE VOICE IS THE MODEL'S. THE WANT IS HERS. Do not confuse the two.
+        //
+        // This used to `return` — the item was discarded outright. That got the first half right (a sentence the
+        // model composed must never be stored as her words) and the second half exactly backwards: it threw away
+        // the want along with the phrasing. "Get your fitness back" is the model's wording of something she
+        // actually said, and dropping it means the builder opens WITHOUT it, so she either types the same thing
+        // twice or never notices it is gone. That is the ~30% loss the builder was built to end, reintroduced by
+        // a guard written to protect capture. Two of Donna's three wants were this shape (2026-08-20).
+        //
+        // So it is held as a SEED: it rides into the builder as a proposal, where what she submits is
+        // authoritative and verbatim. Never committed on the model's say-so, never lost. Propose → confirm.
+        const seeds = (next.reclaimSeeds ??= []);
+        if (!seeds.some((s) => s.toLowerCase() === item.toLowerCase())) seeds.push(item);
+        return;
+      }
       appendReclaim(next, item, rec.reclaimCategories?.[i] ?? '');
     });
   }
@@ -1783,6 +1802,10 @@ function setStructuredReclaim(c: Collected, items: string[]): void {
   }
   c.reclaimList = list;
   c.reclaimCategories = list.map(() => ''); // IDQ dimension is assigned later; keep the parallel array in lockstep
+  // SHE HAS NOW RULED. The seeds were proposals waiting for exactly this moment, and her submission is the answer
+  // — including for anything she deleted from the form, which is a deliberate NO and must not come back. Leaving
+  // them would re-seed a later render of the builder with a want she just removed.
+  delete c.reclaimSeeds;
 }
 
 // Reclaim → Grinta with the FLOOR enforced (CAT-13/14). The frozen data contract is a ≥RECLAIM_LIST_MIN list; that
@@ -1824,8 +1847,24 @@ function reclaimDrawnOut(b: Beat): boolean {
 
 // The hand-in TO the builder, once she has said her piece. It names what we already hold, so the form reads as a
 // receipt rather than a fresh demand — and says plainly that she can change any of it.
+/**
+ * Everything the builder opens holding — her verbatim items, then the model-voiced seeds she has not ruled on.
+ *
+ * ONE FUNCTION because the count and the contents must never disagree. The handoff says "I've got those three
+ * written down" and the form beneath it has to contain three; derived separately, a seed counted in one and
+ * missing from the other is precisely the kind of quiet mismatch nobody notices until a member does.
+ */
+function reclaimSeedList(c: Collected): string[] {
+  const items = (c.reclaimList ?? []).filter(Boolean);
+  const seen = new Set(items.map((s) => s.toLowerCase()));
+  for (const s of c.reclaimSeeds ?? []) {
+    if (s && !seen.has(s.toLowerCase())) { items.push(s); seen.add(s.toLowerCase()); }
+  }
+  return items;
+}
+
 function reclaimBuilderHandoff(c: Collected): string {
-  const n = (c.reclaimList ?? []).length;
+  const n = reclaimSeedList(c).length;
   return n
     ? `I've got ${n === 1 ? 'that one' : `those ${n}`} written down. Have a look — change the wording, add anything I missed, take one off. This is your list.`
     : `Put them down here in your own words — big or small, three to start is plenty. You can always add more later.`;

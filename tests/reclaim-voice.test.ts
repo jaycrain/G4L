@@ -108,3 +108,58 @@ test('SEAM — the BUILDER is untouchable: her own "you" survives', () => {
   );
   assert.deepEqual(t.state.collected.reclaimList, ['A rhythm that works for you', 'Lose the 20 lbs', 'Less conflict']);
 });
+
+// ── NEVER DROP WHAT SHE GAVE YOU ───────────────────────────────────────────────────────────────────────────────
+//
+// The guard above is right that a second-person sentence was composed by the model and must not be COMMITTED as
+// her words. It was wrong about what to do next: it discarded the item, and with it the want underneath.
+//
+// "Get your fitness back" is the model's phrasing of something she actually said. Dropping it means the builder
+// opens NOT holding it, so she has to say the same thing twice — or, if she doesn't notice the omission, the want
+// is simply gone. That is the ~30% loss the builder was introduced to end, reintroduced by a guard meant to
+// protect capture. (Donna, 2026-08-20: two of her three wants were this exact shape.)
+//
+// So a model-voiced item is not truth, but it IS a seed: it goes to the builder as a proposal she rules on, in
+// the one place where what she submits is authoritative and verbatim. Propose → confirm, exactly like the rest.
+
+
+test('a model-voiced want is SEEDED for her to confirm, never committed and never lost', () => {
+  const state: ConvState = { stage: 'reclaim', collected: { identityNoun: 'Maker', gap: 'A hard two years.' } };
+  const turn = applyStagedTurn(state, [], 'I want my fitness back and the weight off.', {
+    text: 'That matters. What else?',
+    record: { reclaimList: ['Get your fitness back', 'Lose the 20 lbs you gained'] },
+  });
+
+  // NOT committed on the model's authority — that part of the rule stands.
+  assert.deepEqual(turn.state.collected.reclaimList ?? [], [], 'model-voiced text must never become a stored item');
+
+  // …but NOT thrown away either. It must reach her.
+  const seeds = turn.state.collected.reclaimSeeds ?? [];
+  assert.deepEqual(seeds, ['Get your fitness back', 'Lose the 20 lbs you gained'], 'the wants must survive as seeds');
+});
+
+test('the builder opens HOLDING the seeds, so she never says the same thing twice', () => {
+  let state: ConvState = { stage: 'reclaim', collected: { identityNoun: 'Maker', gap: 'A hard two years.' } };
+  const t1 = applyStagedTurn(state, [], 'My fitness.', {
+    text: 'What else?',
+    record: { reclaimList: ['Get your fitness back'] },
+  });
+  state = t1.state;
+  // She closes the beat; the builder opens.
+  const t2 = applyStagedTurn(state, [], "That's everything.", { text: 'Understood.', replyIntent: 'done' });
+  assert.equal(t2.expects?.kind, 'reclaim_list');
+  const seeded = t2.expects?.kind === 'reclaim_list' ? t2.expects.seeded : [];
+  assert.ok(seeded.includes('Get your fitness back'), 'the want she named must be in the form when it opens');
+});
+
+test('HER OWN typing is never treated as model-voiced, even when it says "you"', () => {
+  // The guarantee the builder exists to provide. A submission is hers, whatever words are in it.
+  const state: ConvState = { stage: 'reclaim', collected: { identityNoun: 'Maker', gap: 'x' }, stageScratch: { reclaim: { drawnOut: true } } };
+  const turn = applyStagedTurn(state, [], '• work that pays you what you are worth\n• get my fitness back\n• peace at home', {
+    text: 'Got it.',
+  });
+  assert.ok(
+    (turn.state.collected.reclaimList ?? []).includes('work that pays you what you are worth'),
+    'she may write whatever she likes and it stands',
+  );
+});

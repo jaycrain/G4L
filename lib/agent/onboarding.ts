@@ -97,6 +97,12 @@ export type Collected = {
   identityNoun?: string; // the reclaimed identity, natural case (e.g. "Athlete")
   identitySkipped?: boolean; // the member chose not to name an identity yet (they'll find it at Identity Excavation)
   reclaimList?: string[]; // >= RECLAIM_LIST_MIN
+  // MODEL-VOICED WANTS, HELD FOR HER TO RULE ON — proposed, never committed. A second-person sentence ("get YOUR
+  // fitness back") is proof the model composed the line rather than quoting her, so it must not be stored as her
+  // words. It used to be DROPPED for that reason, which threw away the want underneath along with the phrasing:
+  // the builder then opened without it and she had to say the same thing twice, or lost it silently. These ride
+  // into the builder as seeds instead, where what she submits is authoritative and verbatim. Propose → confirm.
+  reclaimSeeds?: string[];
   reclaimCategories?: string[]; // IDQ-dimension category per item, same order (agent-inferred)
   // Decision II: whole-life VISION statements drawn out of the Reclaim List — preserved (never discarded), written
   // to the Playbook (Window/Legacy work) at finalize rather than living as a goal. Member-confirmed before the move.
