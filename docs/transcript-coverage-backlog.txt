@@ -71,7 +71,6 @@ app/rhythm/rhythm-setting.tsx
 app/session/[memberId]/[sessionId]/session-runner.tsx
 app/story/[memberId]/page.tsx
 app/workspace/workspace-session.tsx
-lib/admin/console.ts
 lib/admin/tracker-doors.ts
 lib/agent/checkin.ts
 lib/agent/checkpoint-guide.ts

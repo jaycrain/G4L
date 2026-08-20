@@ -1,4 +1,4 @@
-# Strings EXCLUDED from the member transcript (app @ 1e000dc · 2026-08-19)
+# Strings EXCLUDED from the member transcript (app @ b7a88e3 · 2026-08-20)
 # Not member copy: system prompts, multi-line fragments, code artifacts. Review when a real line goes missing.
 
 [app/page.tsx] Log in
@@ -132,6 +132,7 @@
 [app/reclaim/reclaim-chat.tsx] bubble ${m.role}
 [app/reclaim/reclaim-chat.tsx] Thinking…
 [app/reclaim/reclaim-chat.tsx] Enter
+[app/reconnect/reconnect-chat.tsx] [teaching] reconnect keep failed
 [app/reconnect/reconnect-chat.tsx] 0.75rem
 [app/reconnect/reconnect-chat.tsx] 0.85rem
 [app/reconnect/reconnect-chat.tsx] 0.5rem

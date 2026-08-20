@@ -123,6 +123,10 @@ function isCodeArtifact(s) {
   // itself is fine and is written out in full in the sync note, because the honest handling of a line the reader
   // cannot see is to SAY SO, not to let it appear whole-but-wrong. (The general limitation — the extractor
   // cannot capture a sentence that begins with an interpolation — is real and larger than this fix.)
+  // A LOG TAG. `[teaching] reconnect keep failed` is the first argument of a console.error, and it reached the
+  // v3.4.15 diff as authored member copy. Our logs are prefixed `[subsystem]` by convention and no member-facing
+  // sentence opens with a bracketed lowercase word, so the shape is unambiguous.
+  if (/^\[[a-z][a-z0-9-]*\]/.test(s)) return true;
   if (/^\}/.test(s)) return true;
   if (/^\?/.test(s)) return true;                                    // a sliced (?:…) group
   if (/\|/.test(s)) return true;                                     // alternation — never in member prose
