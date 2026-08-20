@@ -57,7 +57,11 @@ export function isPurgeable(email: string): boolean {
 
 type Queryable = { query: <T = unknown>(sql: string, params?: unknown[]) => Promise<{ rows: T[] }> };
 
-export type PurgeResult = { ok: true; memberId: string } | { ok: false; message: string };
+/**
+ * `memberId` is null when the purge removed an IN-FLIGHT onboarding and nothing else — she had not yet tapped
+ * through the card, so no member row ever existed. Still `ok: true`: everything she had is gone.
+ */
+export type PurgeResult = { ok: true; memberId: string | null } | { ok: false; message: string };
 
 /**
  * Delete a test account and everything it owns. Refuses anything not on the allowlist, and refuses to guess when
@@ -67,11 +71,30 @@ export async function purgeMemberByEmail(db: Queryable, email: string): Promise<
   const e = (email ?? '').trim();
   if (!isPurgeable(e)) return { ok: false, message: `Refusing: ${e || '(blank)'} is not a purgeable test account.` };
 
+  // AN IN-FLIGHT ONBOARDING IS AN ACCOUNT TOO — and it is keyed by EMAIL, not member_id, because no member row
+  // exists until she taps "This is me" on the summary card. So it hangs off nothing below and no cascade reaches
+  // it. Purging a tester who had stopped AT the card therefore reported success and changed nothing: she reopened
+  // the front door and resumed the same conversation, the same card, the same captures. (Donna, 2026-08-20.)
+  //
+  // Deleted first and unconditionally, so "start over" means it. Best-effort like the deletes below: a drifted DB
+  // missing this table must not abort a purge half-way through.
+  const sessions = await db
+    .query<{ email: string }>('delete from onboarding_session where lower(email) = lower($1) returning email', [e])
+    .then((r) => r.rows.length)
+    .catch((err: Error) => {
+      console.warn(`  ⚠ purge: could not clear onboarding_session: ${err.message.split('\n')[0]}`);
+      return 0;
+    });
+
   const found = await db.query<{ member_id: string }>(
     'select member_id from member_profile where lower(email) = lower($1)',
     [e],
   );
-  if (found.rows.length === 0) return { ok: false, message: `No account found for ${e} — nothing was deleted.` };
+  if (found.rows.length === 0) {
+    // She never finished, so the conversation WAS the account — and it is gone. That is a success, not a miss.
+    if (sessions > 0) return { ok: true, memberId: null };
+    return { ok: false, message: `No account or in-flight onboarding found for ${e} — nothing was deleted.` };
+  }
   // Never resolve an ambiguous match. Two rows means an assumption we are not entitled to make about which person.
   if (found.rows.length > 1) return { ok: false, message: `Found ${found.rows.length} accounts for ${e} — refusing to guess.` };
 

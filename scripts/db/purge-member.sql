@@ -13,6 +13,15 @@
 -- module's BLOCKING_TABLES change, change them here too; tests/purge-member.test.ts re-derives that list from the
 -- migrations and will tell you when it drifts.
 --
+-- AN IN-FLIGHT ONBOARDING IS AN ACCOUNT TOO, and it used to survive this script.
+--
+-- `onboarding_session` is keyed by EMAIL, not member_id — no member row exists until she taps "This is me" on the
+-- summary card — so it hangs off nothing this file was deleting and no cascade could reach it. Wiping a tester who
+-- had stopped at the card therefore looked like a success and changed nothing: she reopened the front door and
+-- resumed the same conversation, at the same card, with the same captures. Donna, 2026-08-20.
+--
+-- So the session is deleted FIRST and INDEPENDENTLY of the profile, and "nothing found" now means neither existed.
+--
 -- SAFE TO RE-RUN: a second run raises "No account found" and deletes nothing.
 -- EDIT ONE LINE: v_email, below. The account must be on PURGEABLE in lib/demo/purge-member.ts.
 
@@ -20,10 +29,16 @@ begin;
 
 do $$
 declare
-  v_email text := 'donnacrain19@gmail.com';   -- <<< the only line to change
-  v_id    uuid;
-  v_n     int;
+  v_email    text := 'donnacrain19@gmail.com';   -- <<< the only line to change
+  v_id       uuid;
+  v_n        int;
+  v_sessions int;
 begin
+  -- The in-flight conversation. Deleted whether or not she ever finished — this is the half that makes "start
+  -- over from the front door" mean what it says.
+  delete from onboarding_session where lower(email) = lower(v_email);
+  get diagnostics v_sessions = row_count;
+
   -- COUNT first, then FETCH. Never an aggregate over the uuid — min(uuid) does not exist, and reaching for it is
   -- how both previous attempts died. Counting first is also what makes the two refusals below possible.
   select count(*) into v_n
@@ -31,7 +46,12 @@ begin
 
   -- The two ways this could touch the wrong person, refused rather than guessed.
   if v_n = 0 then
-    raise exception 'No account found for % — nothing deleted.', v_email;
+    if v_sessions = 0 then
+      raise exception 'No account and no in-flight onboarding for % — nothing deleted.', v_email;
+    end if;
+    -- She had only got as far as the conversation. That IS the whole account; we are done.
+    raise notice 'Purged in-flight onboarding for % (no member row existed)', v_email;
+    return;
   elsif v_n > 1 then
     raise exception 'Found % accounts for % — refusing to guess.', v_n, v_email;
   end if;
@@ -56,7 +76,7 @@ begin
   -- tester's reports outlive their account. That is the schema's decision, not an oversight.
   delete from member_profile        where member_id = v_id;
 
-  raise notice 'Purged % (member_id %)', v_email, v_id;
+  raise notice 'Purged % (member_id %, % in-flight session(s))', v_email, v_id, v_sessions;
 end $$;
 
 commit;

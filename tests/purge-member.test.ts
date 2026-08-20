@@ -11,6 +11,8 @@ import assert from 'node:assert/strict';
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { BLOCKING_TABLES, ORPHAN_TABLES, isPurgeable, purgeMemberByEmail } from '../lib/demo/purge-member.ts';
+import { PGlite } from '@electric-sql/pglite';
+import { applySchema, type Db } from '../lib/db/schema.ts';
 
 const MIGRATIONS = join(process.cwd(), 'supabase', 'migrations');
 
@@ -106,4 +108,29 @@ test('purge refuses the three ways it could hit the wrong person', async () => {
     await purgeMemberByEmail(db, 'someone@real.com');
     assert.equal(db.deletes.length, 0, 'a refused purge must delete nothing at all');
   }
+});
+
+test('an IN-FLIGHT onboarding is purged too — it is keyed by email, so no cascade reaches it', async () => {
+  // The gap that made a wipe a no-op: she had stopped at the summary card, so no member row existed and there was
+  // nothing for the profile delete to hang off. The purge reported success; she reopened the front door and
+  // resumed the same conversation. (Donna, 2026-08-20.)
+  const db = new PGlite() as unknown as Db;
+  await applySchema(db);
+  await db.query(
+    `insert into onboarding_session (email, token, state, messages) values ($1,'tok','{}','[]')`,
+    ['donnacrain19@gmail.com'],
+  );
+
+  const res = await purgeMemberByEmail(db, 'donnacrain19@gmail.com');
+  assert.equal(res.ok, true, 'a conversation-only account is a real account to purge');
+  assert.equal(res.ok && res.memberId, null, 'and there was never a member_id to report');
+  const { rows } = await db.query<{ n: number }>('select count(*)::int n from onboarding_session');
+  assert.equal(rows[0]!.n, 0, 'she starts the front door as a stranger');
+});
+
+test('nothing at all is still a refusal — an empty wipe must never read as a success', async () => {
+  const db = new PGlite() as unknown as Db;
+  await applySchema(db);
+  const res = await purgeMemberByEmail(db, 'donnacrain19@gmail.com');
+  assert.equal(res.ok, false);
 });
