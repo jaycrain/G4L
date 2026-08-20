@@ -15,20 +15,33 @@ import { chooseScrollTarget } from '../../lib/teaching/scroll-target.ts';
 // Two scroll contexts, one behavior: in the workspace/dashboard rail `.chat` is itself the scroller (flex:1;
 // overflow-y:auto); on a standalone page the window scrolls. We use a getBoundingClientRect delta so the math is
 // correct regardless of which element is positioned. Pass the reactive values that should trigger a re-scroll as `deps`.
-export function useChatAutoscroll(deps: unknown[]) {
+/**
+ * @param opts which elements are bubbles, and which class marks the VIEWER's own.
+ *
+ * Parameterised 2026-08-20 so the Founder Console can use it. That thread had no autoscroll at all — Jay asked a
+ * question and the answer landed below the fold every time ("it disappears below the window and I have to
+ * continually scroll"), while the panel stayed parked at the top of a growing thread. The behaviour it needed was
+ * the one already written and tested here; only the class names differ (.fc-b / .me rather than .bubble /
+ * .member). Copying the effect would have given us two of them to keep in step.
+ */
+export function useChatAutoscroll(
+  deps: unknown[],
+  opts: { bubble?: string; mine?: string } = {},
+) {
+  const { bubble = '.bubble', mine = 'member' } = opts;
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
 
-    const bubbles = Array.from(el.querySelectorAll<HTMLElement>('.bubble'));
+    const bubbles = Array.from(el.querySelectorAll<HTMLElement>(bubble));
     const chatIsScroller = el.scrollHeight > el.clientHeight + 4;
     // The decision lives in lib/teaching/scroll-target.ts so it can be tested without a DOM. It used to anchor the
     // OPENER on arrival, which scrolled the "Why this matters" card — rendered above the first bubble — off the
     // top of the view (Donna, 2026-08-19). Now the first turn stays at the top: there is nothing to follow yet,
     // and the framing is what the member is meant to read first.
     const target = chooseScrollTarget(
-      bubbles.map((b) => (b.classList.contains('member') ? 'member' : 'agent')),
+      bubbles.map((b) => (b.classList.contains(mine) ? 'member' : 'agent')),
     );
 
     if (target.kind === 'top') {

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useChatAutoscroll } from '../../components/use-chat-autoscroll.ts';
 import type { CohortView, AttentionRow } from '../../../lib/admin/console.ts';
 import { askFounderCompanionAction, loadFounderThreadAction, clearFounderThreadAction } from './actions.ts';
 
@@ -93,6 +94,10 @@ export default function FounderCompanion({
   const [input, setInput] = useState('');
   const [pending, setPending] = useState(false);
   const restored = useRef(false);
+  // FOLLOW THE ANSWER. This thread had no scroll handling, so every reply landed below the fold and Jay was
+  // scrolling after each question. Same hook the member chat uses — the console's bubbles are .fc-b and his own
+  // are .me, which is the only difference.
+  const threadRef = useChatAutoscroll([thread.length, pending], { bubble: '.fc-b', mine: 'me' });
 
   useEffect(() => {
     // DURABLE FIRST, tab-local as the fallback (Jay, 2026-08-01: he checks the console from a bike ride and
@@ -203,7 +208,7 @@ export default function FounderCompanion({
         )}
       </div>
 
-      <div className="fc-thread">
+      <div className="fc-thread" ref={threadRef}>
         <div className="fc-b co">{opener}</div>
         {thread.map((t, i) => {
           const where = [...new Set(t.looked ?? [])].map((n) => LOOKED[n] ?? n);
