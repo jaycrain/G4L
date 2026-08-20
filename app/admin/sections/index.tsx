@@ -387,11 +387,19 @@ export function MembersTable({ roster, now }: { roster: RosterRow[]; now: number
                       ) : (
                         <span className="roster-score">
                           {Math.round(m.idScore)}
-                          <span className={dirClass}>
-                            {' '}
-                            {arrow}
-                            {delta != null && delta !== 0 ? ` ${delta > 0 ? '+' : ''}${delta}` : ''}
-                          </span>
+                          {/* A FLAT READING SAYS "even", NOT "–". Jay read "62 –" as a field that failed to
+                              fill, and he was right to: a bare en-dash is the same glyph this table uses for
+                              "we don't have this", so an unchanged score was indistinguishable from a missing
+                              one. The member record already words it "even"; the roster now matches rather than
+                              inventing a second vocabulary for the same fact.
+                              (My first pass here assumed the dash meant "no baseline to compare against". It
+                              does not — delta is 0, a real measurement. Reading the rendered value corrected
+                              a fix aimed at the wrong cause.) */}
+                          {delta != null && (
+                            <span className={dirClass}>
+                              {delta === 0 ? ' even' : ` ${arrow} ${delta > 0 ? '+' : ''}${delta}`}
+                            </span>
+                          )}
                         </span>
                       )}
                     </td>
@@ -411,16 +419,22 @@ export function MembersTable({ roster, now }: { roster: RosterRow[]; now: number
                     </td>
                     {/* Goals the member has marked back. Real signal, and it is THEIR claim, not our inference —
                         kept visible so the history is documented for us and for the Companion (Jay 7/31). */}
-                    <td className="num">{m.reclaimedGoals || <span className="muted">—</span>}</td>
-                    <td className="num">{m.checkinDays || <span className="muted">—</span>}</td>
+                    {/* ZERO IS A FACT, NOT A GAP (Jay, 2026-08-20). These read `x || —`, so a real 0 fell through
+                        the falsy check and rendered as an em-dash — the same glyph the table uses for "we don't
+                        have this". Every member showed a dash on both columns and it read as broken data when it
+                        was accurate data: nobody had marked a goal back yet. */}
+                    <td className="num">{m.reclaimedGoals}</td>
+                    <td className="num">{m.checkinDays}</td>
                     {/* "—" means NO TELEMETRY COVERAGE (null), not zero engagement — the distinction matters:
                         older accounts did their Sessions before session_open/close events existed. A real
                         zero (covered, but no time) still shows "—" but the title says so. (Jay 7/29) */}
                     <td className="num" title={m.engagedMinutes == null ? 'No session telemetry for this member — their Sessions predate the event log, or events did not land' : undefined}>
-                      {m.engagedMinutes != null && m.engagedMinutes > 0 ? (
+                      {m.engagedMinutes == null ? (
+                        <span className="muted">n/a</span>
+                      ) : m.engagedMinutes > 0 ? (
                         fmtMinutes(m.engagedMinutes)
                       ) : (
-                        <span className="muted">{m.engagedMinutes == null ? 'n/a' : '—'}</span>
+                        '0'
                       )}
                     </td>
                     {/* Same fraction the MEMBER sees on their own badges page — a bare count means nothing. */}

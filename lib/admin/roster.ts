@@ -233,8 +233,13 @@ export async function getRoster(db: Db): Promise<RosterRow[]> {
     // TIME ON TASK stays event-derived (only the event log carries duration), but report NO COVERAGE as null.
     // `hasSessionTelemetry` is the honest test: did the log carry any session open/close at all for this member?
     const hasSessionTelemetry = sessionTele.length > 0;
+    // CAPPED PER SESSION. This summed raw durations, and a Session left open in a tab runs until the close event
+    // that never comes — demo-tom showed 133h 26m, five and a half days of continuous use, which is not a number
+    // anyone can act on. A Session is designed to take twenty to forty minutes; ninety is generous enough that no
+    // real sitting is clipped and tight enough that an abandoned tab stops dominating the column.
+    const SESSION_CAP_MS = 90 * 60_000;
     const engagedMinutes = hasSessionTelemetry
-      ? Math.round(sessionTele.reduce((sum, s) => sum + (s.durationMs ?? 0), 0) / 60000)
+      ? Math.round(sessionTele.reduce((sum, s) => sum + Math.min(Math.max(s.durationMs ?? 0, 0), SESSION_CAP_MS), 0) / 60000)
       : null;
     return {
       memberId: r.member_id,
