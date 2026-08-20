@@ -7,7 +7,9 @@ import { logEvent } from '../../../../lib/telemetry/store.ts';
 import { getForecast } from '../../../../lib/curriculum/view.ts';
 import { deriveRingState } from '../../../../lib/workspace/ring-state.ts';
 import { readArtifact } from '../../../../lib/workspace/artifact.ts';
-import { isSessionKey } from '../../../../lib/workspace/session-key.ts';
+import { isSessionKey, chatDispatch, curriculumIdFor } from '../../../../lib/workspace/session-key.ts';
+import { getSessionProgress } from '../../../../lib/curriculum/store.ts';
+import { loadArcSession } from '../../../../lib/agent/arc-session.ts';
 import { sessionById, sessionsForPhase, PHASES, type Phase } from '../../../../lib/workspace/session-registry.ts';
 import { phaseEngineEnabled } from '../../../../lib/workspace/phase-enabled.ts';
 import { reclaimReadiness } from '../../../../lib/reclaim/readiness.ts';
@@ -47,6 +49,33 @@ export default async function WorkspacePage({
   // The Loop gate — no side door into Reclaim before it opens (readiness stays true once reached, so this only blocks
   // the genuinely-not-yet). Review mode is exempt (it reads committed state, not a live session).
   if (def.phase === 'reclaim' && !review && !(await reclaimReadiness(db, memberId)).ready) redirect(`/dashboard/${memberId}`);
+
+  // A FINISHED SESSION DOES NOT REOPEN AS A FRESH ONE.
+  //
+  // The arc session is DELETED the moment a Session completes or reaches its ceremony (clearArcSession —
+  // deliberate; the keepers and scores persist on their own). So in the window between the close and tapping
+  // Continue, a refresh finds nothing to resume and the client starts the conversation over: the member is put
+  // back at the opener of something they just finished, losing the close, the Why-it-works card and the
+  // hand-home. Nothing is corrupted — the gates and keepers are already written — but the experience says the
+  // work did not count.
+  //
+  // Normally that window is a few seconds and nobody reloads inside it. It stopped being theoretical on
+  // 2026-08-20, when I twice asked Jay to have Donna refresh mid-walk to pick up a deploy.
+  //
+  // CLOSED + NO LIVE STATE is the precise condition. Closed alone is not enough: re-running a Session with the
+  // Companion is a real affordance, and it writes arc state, so a live session must always win. Review mode is
+  // exempt because it IS the read-only path — sending it here would loop.
+  if (!review) {
+    const assetId = curriculumIdFor(sessionKey);
+    if (assetId) {
+      const [progress, live] = await Promise.all([
+        getSessionProgress(db, memberId, assetId).catch(() => null),
+        loadArcSession(db, memberId, chatDispatch(sessionKey).arc, chatDispatch(sessionKey).session).catch(() => null),
+      ]);
+      // Read-only rather than the dashboard: she asked for THIS session, and what she wants is what she built.
+      if (progress?.status === 'closed' && !live) redirect(`/workspace/${memberId}/${sessionKey}?review=1`);
+    }
+  }
 
   // Telemetry (data contract: asset started / time-on-asset / drop-off). The v3.0 workspace never emitted the
   // session lifecycle the legacy /session + /checkpoint pages did — so redesign sessions were invisible to QI. A live

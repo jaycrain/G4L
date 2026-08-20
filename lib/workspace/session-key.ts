@@ -1,3 +1,4 @@
+import { CURRICULUM } from '../curriculum/registry.ts';
 // Redesign Layer 3 — the WORKSPACE session key: the stable url token for a session running in the workspace shell, and
 // the crosswalk from the member's lit next step (the forecast) to that token, plus which chat client drives it. Pure +
 // testable. The keys ARE the session-registry ids, so the registry (label, phase, segments) resolves straight off them.
@@ -45,4 +46,30 @@ export function keyFromForecast(
     return phase === 'rewire' ? 'rewire-checkpoint' : phase === 'rebuild' ? 'b4' : phase === 'reclaim' ? 'c4' : null;
   }
   return isSessionKey(tok) ? tok : null;
+}
+
+/**
+ * The CURRICULUM asset id for a workspace session key ('w1' → 'RWR-W1'), derived from the route the curriculum
+ * already declares rather than hand-mapped.
+ *
+ * Two id spaces exist: the workspace routes on 'w1'/'b3'/'c2', and session closure records 'RWR-W1'/'RBLD-B3'.
+ * Each arc action already carries its own private map of the two (`session === 'w1' ? 'RWR-W1' : …`), and adding a
+ * third copy is how the pair drifts. The curriculum's own `route: '/rewire/{memberId}/w1'` ends in exactly the
+ * workspace key, so the crosswalk is a fact already in the data.
+ *
+ * Returns undefined for a key with no curriculum asset — Reconnect is one continuous arc rather than a closable
+ * session, and a caller must treat "no id" as "not closable", never as "not closed".
+ */
+export function curriculumIdFor(key: SessionKey): string | undefined {
+  const { arc } = chatDispatch(key);
+  // The route's LAST SEGMENT, which is the key itself except for the Rewire checkpoint — keyed
+  // 'rewire-checkpoint' here and routed '/rewire/{memberId}/checkpoint'. Matching the arc as well as the segment
+  // keeps 'checkpoint' from resolving to Rebuild's or Reclaim's.
+  const last = key.includes('-') ? key.slice(key.lastIndexOf('-') + 1) : key;
+  for (const a of CURRICULUM) {
+    const r = (a as { route?: string }).route;
+    if (!r || !r.startsWith(`/${arc}/`)) continue;
+    if (r.endsWith(`/${last}`)) return a.id;
+  }
+  return undefined;
 }
