@@ -92,3 +92,32 @@ test('HEAL — a protest already QUEUED as a keeper is never offered as a card',
   assert.equal(proposals.length, 1, 'the protest must not become a card');
   assert.equal(proposals[0]!.body, 'Feeling supported and cared for', 'and the real keeper still reaches her');
 });
+
+// ── THE ENGINE OPENS EVERY BEAT ────────────────────────────────────────────────────────────────────────────────
+//
+// Donna's worst moment started one beat before anyone was looking. Mid-DRIFT, the model ran ahead and asked the
+// WINDOW's question — picture an ordinary Tuesday a year out. She answered it properly. Then she confirmed the
+// drift reflection, the engine advanced to the Window beat, and its opener asked the same question as if new.
+//
+// Everything after was consequence: she protested, the protest was stored as her vision, became a keeper card
+// offering her own complaint back, and became the Legacy Letter's carried answer so that beat re-asked too.
+//
+// Onboarding's reclaim stage has carried this rule for weeks, with the cost written out. It was never copied to
+// this arc. That is the failure mode a test can actually prevent — not the model's behaviour on a given turn, but
+// a rule silently missing from a stage that needs it.
+
+test('the DRIFT beat forbids running ahead into the Window and the letter', () => {
+  const drift = stageInstructionReconnect('drift', { stage: 'drift', collected: {} } as never);
+  assert.match(drift, /ENGINE OPENS EVERY BEAT/, 'the rule must be present');
+  assert.match(drift, /Tuesday/i, 'and must name the specific question that was asked early');
+  assert.match(drift, /letter/i, 'and the letter, which it also promised ahead of the beat');
+});
+
+test('a protest cannot corroborate an ADDITION at the Window confirm', () => {
+  // resolveConfirmCorroborated uses isKeeperMaterial as its "is there new material?" test, so this is the seam
+  // that decides whether "we already did that" gets treated as her saying something new about her life.
+  assert.equal(isKeeperMaterial('I think we already did that and you were writing a letter for me?'), false);
+  assert.equal(isKeeperMaterial('You just asked me that. Can we move on?'), false);
+  // …and a real elaboration still counts, or the beat could never advance on genuine material.
+  assert.equal(isKeeperMaterial('It would start with coffee on the porch before anyone else is up, and I would not be dreading the day.'), true);
+});

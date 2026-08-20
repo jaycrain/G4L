@@ -1397,7 +1397,27 @@ export function stageInstructionReconnect(stage?: Stage, st?: ConvState): string
       'the PATTERN of the Fade (the recurring shape, the quiet thing they stopped noticing) IN THEIR WORDS, offered as ' +
       'a check — call reflect_drift ONLY once it is genuinely drawn out; if thin, keep drawing out (never manufacture a ' +
       'pattern). Name it to push OFF from, not to sit in. Once they confirm the pattern, accept it and let the beat ' +
-      'move — do not reflect it again or ask a further question. Do not diagnose.'
+      'move — do not reflect it again or ask a further question. Do not diagnose.\n' +
+      // THE RULE ONBOARDING HAS AND THIS ARC DID NOT (Donna, 2026-08-20). Her worst moment in the product started
+      // here, one beat before anyone was looking.
+      //
+      // The model, mid-drift, ran ahead and asked the Window's question — picture an ordinary Tuesday a year out.
+      // She answered it properly: the pedicure, peace and optimism as the default. Then she confirmed the drift
+      // reflection, the ENGINE advanced to the Window beat, and its opener asked the same question as though it
+      // were new. From where she sat the product had simply stopped listening.
+      //
+      // Everything after that was consequence. She protested; the protest was stored as her vision, became a
+      // keeper card offering her own complaint back, and became the letter's carried-forward answer, so the
+      // Legacy beat re-asked too. By the time she wrote "This is fucked up" she had been asked the same question
+      // three times by a Companion that kept agreeing with her and then doing it again.
+      //
+      // Onboarding's reclaim stage has carried this rule for a while, with the cost spelled out — "they answer
+      // into a beat that is not running, and get asked for the same thing twice". It was never copied here.
+      'THE ENGINE OPENS EVERY BEAT — NOT YOU. Do NOT ask them to picture a Tuesday a year from now, do not ask ' +
+      'them to imagine the version of themselves who did the work, and do not mention or promise a letter. Those ' +
+      'belong to the beats AFTER this one and the engine opens each with its own words. If you ask early they ' +
+      'will answer you, and then the real beat will ask them the same thing again — which reads as the product ' +
+      'not listening, and is the single most damaging thing that can happen in this conversation.'
     );
   if (stage === 'legacy')
     return (
