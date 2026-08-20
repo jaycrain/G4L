@@ -7,6 +7,7 @@ import { onboardingTurn, finalizeOnboardingAction, loadOnboardingSessionAction }
 import ScaleChips from '../components/scale-chips.tsx';
 import ReclaimListBuilder from './reclaim-list-builder.tsx';
 import GapConfirm from './gap-confirm.tsx';
+import { parseGapConfirmChoice, GAP_CONFIRM_CHOICES } from '../../lib/agent/gap-confirm-choice.ts';
 import IdentityPicker from './identity-picker.tsx';
 import OnboardingWelcome from './welcome.tsx';
 import type { ConvState, ConvMessage, Expectation } from '../../lib/agent/onboarding.ts';
@@ -34,7 +35,27 @@ const clearOnboardingStorage = () => { ls.del(LS.token); ls.del(LS.email); ls.de
 const SENTINEL_DISPLAY: Record<string, string> = {
   __identity_skip__: "I'm not sure yet.",
 };
-const displayFor = (text: string): string => SENTINEL_DISPLAY[text.trim().toLowerCase()] ?? text;
+
+/**
+ * What the member SEES for something she tapped rather than typed.
+ *
+ * The gap confirm sends a machine line — `[gap-confirm] done keep:career_cliff,aging_parents` — because the tap
+ * has to carry both her answer AND which Doors she left on. That string was being echoed into her own bubble, so
+ * every tap printed internal syntax into her transcript (Donna, mid-walk, 2026-08-20). It is the same leak as
+ * `__identity_skip__` three days earlier, and it lands at the same kind of moment: she has just finished telling
+ * the hardest part of her story, and the product answers in machine.
+ *
+ * The LABEL is the thing to show, and it comes from the same array the chips are built from — so a wording change
+ * moves both at once and they cannot drift apart.
+ */
+const displayFor = (text: string): string => {
+  const t = text.trim();
+  const sentinel = SENTINEL_DISPLAY[t.toLowerCase()];
+  if (sentinel) return sentinel;
+  const tapped = parseGapConfirmChoice(t);
+  if (tapped) return GAP_CONFIRM_CHOICES.find((c) => c.value === tapped)?.label ?? t;
+  return text;
+};
 
 export default function OnboardingChat({ welcomeEnabled = false }: { welcomeEnabled?: boolean }) {
   const router = useRouter();
@@ -228,7 +249,11 @@ export default function OnboardingChat({ welcomeEnabled = false }: { welcomeEnab
         setError(r.outageMessage ?? 'We’re having a brief technical hiccup on our end — try again in a minute.');
         return;
       }
-      setMessages([...prior, { role: 'member', text }, ...agentBubbles(r.reply)]);
+      // displayFor AGAIN, not the raw `text`. The optimistic bubble above was already humanised, and this line
+      // overwrote it with the wire string the moment the reply landed — so the fix for __identity_skip__ has been
+      // half-working since it shipped: correct for a second, then reverted. Anything the member did not type must
+      // pass through the same door on BOTH paths.
+      setMessages([...prior, { role: 'member', text: displayFor(text) }, ...agentBubbles(r.reply)]);
       setState(r.state);
       setExpects(r.expects ?? null); // W-24: the Grinta baseline items expect a fixed-scale pick → show the chips
       // Graceful decline (Decision E): a genuinely-thriving no-fade member is out of scope — show the terminal
