@@ -55,6 +55,7 @@ import { reconcileReclaimShapes, shapeKey, splitInlineEnumeration } from './recl
 import { filterDoorsByAttribution } from './door-attribution.ts';
 import { GAP_CONFIRM_CHOICES, parseGapConfirmChoice, parseGapConfirmDoors, gapConfirmIntent } from './gap-confirm-choice.ts';
 import { doorsBoardExpectation } from './doors-board-expectation.ts';
+import { claimsGateOutcome } from './gate-claims.ts';
 import { detectCrisis, CRISIS_RESPONSE_US } from './governance.ts';
 import { captureCreate } from './capture-model.ts';
 // The intent layer — the one place that decides what a member's utterance MEANS (see onboarding-intent.ts).
@@ -1801,6 +1802,18 @@ function commitStructuredReclaim(b: Beat): Turn {
   return enterGrintaSurvey(b, false);
 }
 
+/**
+ * What the Companion says when the MODEL says nothing — the floor under a blank bubble, never the normal path.
+ *
+ * Deliberately the smallest possible turn: a receipt of what just landed and one open door. It must not sound
+ * like a different Companion arriving, and it must not ask a second question on a turn where the model may have
+ * meant to ask one.
+ */
+function reclaimDrawoutFallback(c: Collected): string {
+  const last = (c.reclaimList ?? []).at(-1);
+  return last ? `Got it — ${last}. What else do you want back?` : 'What else do you want back?';
+}
+
 /** How many wants she can name before the builder arrives regardless — the cap that stops a "what else?" march. */
 const RECLAIM_DRAWOUT_MAX = 6;
 
@@ -1871,18 +1884,45 @@ const reclaimStage: StageDef = {
     const rs = b.scratch as ReclaimScratch;
     if (!rs.drawnOut && !isBuilderSubmission(b.memberMessage)) {
       rs.drawTurns = (rs.drawTurns ?? 0) + 1;
+      // THE MODEL CLOSED IN PROSE WHILE ITS SIGNAL SAID KEEP GOING — believe the prose.
+      //
+      // It has a structured way to end this beat (replyIntent 'done', below) and the engine has always honoured
+      // it. Donna's run is what happens when the two disagree: the model wrote "That's your Reclaim List. It
+      // lives on your dashboard now", then "That's plenty for today", and never once signalled. The engine had no
+      // opinion, so she got a goodbye, three turns of "is that it?", an invented "someone else will have to take
+      // you to your dashboard" — and then the builder, after she had emailed to report the product broken.
+      //
+      // Reading that close as the signal it plainly is turns the failure into the correct beat: the builder
+      // arrives in the SAME turn the model tries to wrap up, so the summary she just read is followed by the real
+      // thing instead of contradicted by it three turns later.
+      const modelClosed = claimsGateOutcome(b.modelText);
       const enough = memberClosingReclaim(b.memberMessage)
         || b.model.replyIntent === 'done'
+        || modelClosed
         || rs.forced === true // the runaway backstop tripped above and handed the ending back here
         || (rs.drawTurns ?? 0) >= RECLAIM_DRAWOUT_MAX;
       if (!enough) {
         // Her turn stands as the model wrote it — the engine appends nothing here, so there is no "what else?"
         // march stacked on top of the model's own question (drawout-rhythm: the model owns the one question).
-        b.reply = b.modelText;
+        //
+        // …UNLESS IT WROTE NOTHING AT ALL. A model turn that calls add_reclaim_item and emits no prose used to
+        // ship straight through as an EMPTY reply: a blank bubble and a conversation that has visibly stopped,
+        // with no way forward but for her to say something into the silence. Caught on a live walk (2026-08-20)
+        // right after she named the first thing she wanted back — the worst possible moment for the product to
+        // look like it had nothing to say.
+        //
+        // This does not weaken the drawout rhythm. That rule exists so the engine never stacks its question on
+        // top of the model's; where there is no question to talk over, a fallback is not interference, it is the
+        // only thing standing between her and a dead screen.
+        b.reply = b.modelText.trim() || reclaimDrawoutFallback(b.collected);
         return;
       }
       rs.drawnOut = true;
-      b.reply = receiveThen(b.modelText, reclaimBuilderHandoff(b.collected));
+      // A CLOSING TURN IS DROPPED, NOT RECEIPTED. receiveThen would carry the model's words in front of the
+      // handoff — and those words are the false claim itself ("that's your Reclaim List", "it lives on your
+      // dashboard now"). Printing them above the form that is about to ask her to build that same list is the
+      // contradiction she reported, just compressed into one screen. The handoff stands alone and is true.
+      b.reply = modelClosed ? reclaimBuilderHandoff(b.collected) : receiveThen(b.modelText, reclaimBuilderHandoff(b.collected));
       return;
     }
 
@@ -2709,6 +2749,23 @@ export function stageInstruction(stage?: Stage, opts?: { gapHeld?: boolean }): s
       'decides when — not you. Never promise them a form, describe one, or tell them they will get to write it ' +
       'down; if you name a step they cannot see yet and it does not arrive on your schedule, you have made the ' +
       'product look broken.\n' +
+      // THE OTHER HALF OF "THE ENGINE DECIDES WHEN" — and the half that was missing (Donna, 2026-08-20).
+      //
+      // The block above forbids OPENING the beat early. Nothing forbade CLOSING it early, so the model did: having
+      // heard three wants it wrote "So here's what you want back: … That's your Reclaim List. It lives on your
+      // dashboard now", and two turns later "That's plenty for today." Nothing was committed, there was no
+      // dashboard, there was no account, and the builder was still two turns out. She spent three turns asking
+      // "is that it?", was told the assessment would come later and that someone else would have to get her to
+      // her dashboard, and emailed to report the product broken. The engine now reads a close like that as the
+      // signal it plainly is and opens the builder on the spot — but the model should not be writing it at all.
+      'NEVER DECLARE THE LIST MADE, SAVED, OR THE SESSION OVER. Do not summarise their wants as a finished list, ' +
+      'do not tell them it is on their dashboard or saved to their account, and do not say goodbye or that this ' +
+      'is enough for today. None of it is true when you write it: nothing is stored until they submit the ' +
+      'builder, and onboarding is not over until a baseline assessment and a summary card they have not seen yet. ' +
+      'The exact shape to avoid, which shipped to a member: "So here\'s what you want back: — Lose the 20 lbs you ' +
+      'gained … That\'s your Reclaim List. It lives on your dashboard now." Ending the conversation is the ' +
+      'engine\'s to do, never yours — and if they ask what comes next, the next step arrives here in a moment; ' +
+      'never tell them someone else will have to help them reach it.\n' +
       'WHEN THEIR SUBMISSION ARRIVES, RECEIVE IT. Your words on that turn are what they read back, so reflect the ' +
       'whole list — every item, in their words. A partial read-back tells them you were only half listening.\n' +
       // ONE TAG RULE, not three. It was stated in three separate blocks that grew independently, and the draw-out

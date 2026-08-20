@@ -39,10 +39,20 @@ async function askJoanne(history: ConvMessage[]): Promise<string> {
     defaultHeaders: { 'accept-encoding': 'identity' },
   });
   // From Joanne's POV the companion is the 'user' and she is the 'assistant'.
-  const messages = history.map((m) => ({
-    role: (m.role === 'agent' ? 'user' : 'assistant') as 'user' | 'assistant',
-    content: readable(m.text),
-  }));
+  // AN EMPTY TURN KILLS THE WHOLE RUN, and it is not hypothetical: this harness died twice on 2026-08-20 with
+  // "messages.16: user messages must have non-empty content", both times mid-walk, both times taking the surface
+  // coverage report down with it — so the one check that was supposed to catch a missing surface produced a stack
+  // trace instead. A beat that emits an expectation and no prose (or nothing but BEAT_SEP) is a legitimate engine
+  // turn; it just cannot be replayed to the persona model as a bare empty string.
+  //
+  // Dropped rather than padded: inventing filler here would put words in the Companion's mouth that it never said
+  // and change what the persona is responding to.
+  const messages = history
+    .map((m) => ({
+      role: (m.role === 'agent' ? 'user' : 'assistant') as 'user' | 'assistant',
+      content: readable(m.text),
+    }))
+    .filter((m) => m.content.trim().length > 0);
   const res = await client.messages.create({
     model: 'claude-sonnet-4-6',
     max_tokens: 200,
@@ -222,12 +232,29 @@ async function main() {
   // reason this block exists. The four structured surfaces a member meets in onboarding are listed explicitly so
   // an ABSENT one is visible rather than silently missing.
   console.log('\n=== SURFACE COVERAGE ===');
+  const missing: string[] = [];
   for (const k of ['identity_pick', 'gap_confirm', 'reclaim_list', 'scale']) {
     const seen = surfacesSeen.has(k);
+    if (!seen) missing.push(k);
     console.log(`  ${seen ? (surfacesTapped.has(k) ? '✓ tapped ' : '! typed  ') : '✗ NEVER APPEARED'} ${k}`);
   }
   console.log('\n=== FINAL COLLECTED ===');
   console.log(JSON.stringify(state.collected, null, 1));
+
+  // A SIGNAL NOBODY IS OBLIGED TO ACT ON IS NOT A TEST.
+  //
+  // This block printed "✗ NEVER APPEARED  scale" on the morning of 2026-08-20 — the twelve-question baseline,
+  // absent — and it scrolled past in the output of a run that was about something else. Four hours later a real
+  // member reached the end of onboarding without it, was told the assessment would come later, and wrote in to
+  // report the product broken. The information was here the whole time and still cost her the walk.
+  //
+  // So it exits non-zero now. The offline gate is tests/onboarding-walk.test.ts and runs in CI; this one costs
+  // real API tokens and is run by hand before a walk — which is precisely when a missing surface still matters
+  // and nobody is reading carefully.
+  if (missing.length) {
+    console.error(`\nFAILED — the member was never handed: ${missing.join(', ')}`);
+    process.exit(1);
+  }
 }
 
 main().catch((e) => { console.error(e); process.exit(1); });
