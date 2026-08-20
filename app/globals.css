@@ -3285,7 +3285,13 @@ button.fcs-tab { font-family: inherit; cursor: pointer; }
    still look like the same list, because it is. */
 .fc-evt.unseen { box-shadow: inset 2px 0 0 var(--teal); padding-left: 8px; }
 /* The unseen count on the console's Activity panel. */
-.fc-new { margin-left: 8px; font-size: 11px; font-weight: 700; letter-spacing: .02em; text-transform: uppercase;
+/* A PILL MUST NOT BREAK ACROSS LINES. This is an inline span inside the h3, so at narrow widths "11 new" wrapped
+   between the number and the word — and a rounded background split across two line boxes renders as two broken
+   fragments, which is exactly what it looks like: a chip that failed to paint. Jay caught it on a narrow console
+   pane. inline-block + nowrap keeps the pill whole and lets it drop to its own line intact instead.
+   Same fix, same reason, as the Doors line on the gap confirm. */
+.fc-new { display: inline-block; white-space: nowrap;
+  margin-left: 8px; font-size: 11px; font-weight: 700; letter-spacing: .02em; text-transform: uppercase;
   color: #fff; background: var(--teal-text); border-radius: 999px; padding: 2px 8px; vertical-align: middle; }
 /* "Since you last looked" sits on one line with its own control — clearing is a tap, never a side effect. */
 .fca-since { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
@@ -3359,6 +3365,25 @@ button.fcs-tab { font-family: inherit; cursor: pointer; }
 /* The member-record lede sits on the console's dark ground and kept the member-app grey — 2.99:1 (Jay's report
    on the member sub-page). --sec is the theme's own secondary text, already measured against this ground. */
 .fc-dark .wr-lede { color: var(--sec); }
+
+/* THE ONBOARDING CAPTURE CARD. `.summary-list dd` is var(--charcoal) — charcoal text on the console's charcoal
+   ground, so the member's identity, their whole fade story, their Doors and their Reclaim List rendered
+   effectively invisible while the teal <dt> labels above each one stayed perfectly readable. Jay caught it on
+   prod; my DOM scan missed it because the local seed has no onboarding capture, so the card never rendered and
+   there was nothing to measure — the same "fixtures need a past" blind spot that let the practice-week grid ship
+   unexercised. */
+.fc-dark .summary-list dd { color: var(--ink); }
+
+/* The <dt> labels are --teal-text, the DARK teal measured for white grounds — 2.0:1 here. They read as the most
+   legible thing on the card only because the body beneath them was invisible; both were failing. --teal-lift is
+   the theme's own answer for exactly this ("teal on charcoal needs a step up"), already used by .tele-head. */
+.fc-dark .summary-list dt { color: var(--teal-lift); }
+
+/* The Door-provenance warning, which is the one line on that card an operator most needs to read. It was an
+   INLINE var(--deep-red) — 2.1:1 here, and inline styles are why a .error rule could not reach it. Now a class,
+   so the theme owns it rather than the JSX. */
+.wr-warn { color: var(--deep-red); }
+.fc-dark .wr-warn { color: #ff8f93; }
 
 /* The version/build spans beside the footer text — same reason, same value. The footer element itself is fixed
    at its own rule (body:has(.fc-dark)), NOT here: two rules for one fact is what made this take three attempts. */

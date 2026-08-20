@@ -144,7 +144,7 @@ export default async function AdminMember({ params }: { params: Promise<{ member
             <dd>
               {(obCard.doors ?? []).map((d) => d.displayName).filter(Boolean).join(', ') || '—'}
               {obDerivedNames.length > 0 && (
-                <span className="fb-ctx" style={{ display: 'block', marginTop: '0.3rem', color: 'var(--deep-red)' }}>
+                <span className="fb-ctx wr-warn" style={{ display: 'block', marginTop: '0.3rem' }}>
                   ⚠ {obDerivedNames.join(', ')} not clearly traceable to the fade story — confirm the companion raised it as a
                   Door (and the member affirmed it), rather than tacking it on from the Reclaim List.
                 </span>
