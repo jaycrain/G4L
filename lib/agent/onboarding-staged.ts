@@ -1980,6 +1980,40 @@ const ONBOARDING_ARC: ArcConfig = {
   onComplete: () => COMPLETE_HANDOFF,
 };
 
+/**
+ * WHICH STRUCTURED SURFACE A RESUMED SESSION SHOULD RENDER.
+ *
+ * The saved session carries `state` and `messages` and NOT the expectation — so on a refresh the client had
+ * nothing to render chips from and fell back to the text box. Donna hit it on the Grinta baseline: twelve items
+ * that can only be answered 1-5, and no 1-5 to tap (2026-08-20). It was live for every structured beat, not just
+ * that one: refresh at the gap confirm and the three chips vanish; refresh at the Reclaim builder and the form
+ * does. Anywhere a member is told to tap, a reload turned it into a box.
+ *
+ * DERIVED, NOT STORED. The expectation is a pure function of the state the engine already persists, so computing
+ * it on resume cannot disagree with what a live turn would have produced — whereas a second copy written into the
+ * session row is one more thing to keep in step, and it would be wrong for every session saved before it shipped.
+ */
+export function expectsForResume(state: ConvState): Expectation | undefined {
+  if (!state?.stage) return undefined;
+  return nextExpects(
+    ONBOARDING_ARC,
+    state.stage as StageId,
+    state.stage === 'complete',
+    state.administeredResponses?.length ?? 0,
+    state.collected ?? {},
+    state.awaitingConfirm ?? false,
+    reclaimDrawnOutFromState(state),
+  );
+}
+
+/** The draw-out flag lives in the reclaim stage's scratch; read it the same way the live turn does. */
+function reclaimDrawnOutFromState(state: ConvState): boolean {
+  const scratch = (state.stageScratch as Record<string, unknown> | undefined)?.reclaim as
+    | { drawnOut?: boolean }
+    | undefined;
+  return scratch?.drawnOut === true;
+}
+
 // --- the generic kernel: run one turn of ANY arc -------------------------------------------------------
 // The rephrase. It takes the blame, invites their own words, and adds NOTHING about their life — inventing
 // content for a member who just said they were lost is the worst available move. Kept as one line so

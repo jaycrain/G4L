@@ -202,6 +202,9 @@ export default function OnboardingChat({ welcomeEnabled = false }: { welcomeEnab
         tokenRef.current = token;
         setMessages(resumed.messages);
         setState(resumed.state);
+        // The structured surface she was on when she left. Without this a refresh turned every tap-only beat back
+        // into a text box (Donna, 2026-08-20, mid-Grinta).
+        setExpects(resumed.expects ?? null);
         // If they'd already reached the handoff, resume straight into the ready screen (still
         // reversible — they can keep talking or proceed).
         if (resumed.state.stage === 'complete') setReady(true);

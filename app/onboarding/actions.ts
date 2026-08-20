@@ -25,6 +25,7 @@ import { logEvent } from '../../lib/telemetry/store.ts';
 import { proposeEntry, addOwnEntry } from '../../lib/playbook/store.ts';
 import { addFacet } from '../../lib/curriculum/store.ts';
 import { consolidateReclaim } from '../../lib/member/reclaim.ts';
+import { expectsForResume } from '../../lib/agent/onboarding-staged.ts';
 import { escalateProspectCrisis } from '../../lib/agent/crisis-escalation.ts';
 import { createCredential, hasCredential } from '../../lib/auth/store.ts';
 import { sendVerificationEmail } from '../../lib/auth/verify-email.ts';
@@ -45,13 +46,19 @@ export type TurnInput = {
 export async function loadOnboardingSessionAction(
   email: string,
   token: string,
-): Promise<OnboardingSession | null> {
+): Promise<(OnboardingSession & { expects?: Expectation }) | null> {
   // Both are REQUIRED. A blank token used to "recover by email", which let anyone holding an email address read a
   // stranger's in-flight onboarding and take over the account. Fail closed. (2026-07-30)
   if (!email?.trim() || !token?.trim()) return null;
   try {
     const db = (await getDb()) as unknown as Db;
-    return await loadOnboardingSession(db, email.trim(), token.trim());
+    const saved = await loadOnboardingSession(db, email.trim(), token.trim());
+    if (!saved) return null;
+    // WHICH SURFACE TO RENDER. The session row holds state + messages and never held the expectation, so a refresh
+    // at any structured beat dropped the member back to a text box — Donna, on the Grinta baseline: twelve items
+    // answerable only 1-5, with no 1-5 to tap. Derived from the state rather than stored, so it cannot disagree
+    // with what a live turn would have produced, and it works for sessions saved before this shipped.
+    return { ...saved, expects: expectsForResume(saved.state) };
   } catch {
     return null;
   }
