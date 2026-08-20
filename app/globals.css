@@ -538,9 +538,25 @@ ul.program { list-style: none; padding: 0; margin: 0; }
   margin: 0; padding: 0.4rem 0.8rem; border: 1.5px solid var(--teal); border-radius: 8px; background: #fff;
   color: var(--teal-text); font-family: inherit; font-weight: 700; font-size: 13.5px; line-height: 1.2; cursor: pointer;
 }
-.keeper-offer-btn:hover:not(:disabled) { background: rgba(59, 148, 149, 0.12); }
+.keeper-offer-btn:hover:not(:disabled) { background-color: rgba(59, 148, 149, 0.12); }
 .keeper-offer-btn:disabled { opacity: 0.55; cursor: default; }
 .keeper-offer-done { font-size: 12.5px; font-weight: 700; color: var(--teal-text); }
+/* DECLINE — deliberately quieter than Keep. This is one offer with an easy no, not a two-option decision she has
+   to resolve; giving it equal weight would turn every card into a fork in the road. No border, muted text, and it
+   sits before the primary so the tap order reads "no thanks / keep it" rather than presenting a default. */
+.keeper-offer-skip {
+  margin: 0; padding: 0.4rem 0.55rem; border: none; border-radius: 8px; background: transparent;
+  color: var(--muted-grey); font-family: inherit; font-weight: 600; font-size: 13px; line-height: 1.2; cursor: pointer;
+}
+.keeper-offer-skip:hover:not(:disabled) { color: var(--navy); background-color: rgba(42, 42, 42, 0.06); }
+.keeper-offer-skip:disabled { opacity: 0.55; cursor: default; }
+/* Push the two buttons together at the end so the ASK stays left and the pair reads as one control group. */
+.keeper-offer-foot > .keeper-offer-ask { margin-right: auto; }
+
+/* THE BATCH — every keeper the session gathered, handed over once, at the close. Framed as an aside rather than a
+   step: the lead line offers, it does not instruct, and ignoring the whole group is still a complete answer. */
+.keeper-batch { margin: 1rem 0 0.4rem; padding-top: 0.9rem; border-top: 1px solid #e3e2df; }
+.keeper-batch-lead { margin: 0 0 0.2rem; font-size: 13.5px; color: var(--muted-grey); }
 
 /* WHERE IT LIVES — the end card's middle third. Quieter than the human step below it (which is an invitation) and
    quieter than Continue (which is the way out): this is a statement about where her work went, so it reads as

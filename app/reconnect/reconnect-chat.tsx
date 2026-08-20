@@ -51,6 +51,9 @@ export default function ReconnectChat({
   const [input, setInput] = useState('');
   const [pending, setPending] = useState(false);
   const [offers, setOffers] = useState<KeeperProposal[]>([]);
+  // The conversation has reached its end, so the held keepers may be offered. Set when the arc hands to the
+  // ceremony — the last authored beat before she leaves — not on any earlier "looks finished" guess.
+  const [closing, setClosing] = useState(false);
   // Stages whose science card she ALREADY acknowledged in an earlier sitting — never re-offered. Empty on a
   // fresh start, which is correct: nothing has been seen yet.
   const [scienceSeen, setScienceSeen] = useState<string[]>([]);
@@ -161,6 +164,7 @@ export default function ReconnectChat({
     notifyArtifactCommitted(); // push the workspace canvas to re-read now (identity/doors/list land on the left)
     // §2f — the arc reached the Ceremony: load the reveal data and fire the full-screen overlay.
     if (r.state.stage === 'ceremony') {
+      setClosing(true); // the close is reached — release whatever has been held all session
       const c = await reconnectCeremonyDataAction(memberId);
       // SHE OPENS THE CEREMONY; IT DOES NOT OPEN OVER HER (Donna, 2026-08-19).
       //
@@ -247,10 +251,30 @@ export default function ReconnectChat({
             ))}
           </Fragment>
         ))}
-        {/* Keeper OFFERS — nothing is in her Playbook until she taps Keep. */}
-        {offers.map((p) => (
-          <KeeperOffer key={p.momentId} memberId={memberId} proposal={p} />
-        ))}
+        {/* KEEPER OFFERS — HELD UNTIL THE CLOSE, then handed over together.
+            
+            They used to render the instant a turn produced one, which put a card in the middle of a sentence.
+            Donna, 2026-08-20: "right in the middle of a conversation is very jarring... if they could just show up
+            before you transition with a chance for you to dismiss them would be good." One of them interrupted the
+            Legacy Letter beat while she was already fighting a loop.
+            
+            So they accumulate silently and arrive at the session close — after the Companion's last word, before
+            she taps Continue and raises "Here's what you saw". That is the same instinct as the ceremony overlay
+            two beats down ("SHE OPENS THE CEREMONY; IT DOES NOT OPEN OVER HER"): the interruption was never the
+            card, it was the timing.
+            
+            Batching also makes the decline cheap. A set she rules on at a natural pause is a different object from
+            a card that jumps into a live conversation — the same offer, arriving when she has finished talking. */}
+        {closing && offers.length > 0 && (
+          <div className="keeper-batch">
+            <p className="keeper-batch-lead">
+              {offers.length === 1 ? 'One thing from today, if you want to keep it.' : 'A few things from today, if you want to keep them.'}
+            </p>
+            {offers.map((p) => (
+              <KeeperOffer key={p.momentId} memberId={memberId} proposal={p} />
+            ))}
+          </div>
+        )}
         {pending && <div className="typing">Thinking…</div>}
         {/* W-32 chips scroll WITH the thread (Jay's walk: not pinned to the bottom) — they answer the question above, autosend. */}
         {expects?.kind === 'doors_board' && <DoorsBoard expects={expects} disabled={pending || !state} onSubmit={(p) => void submit(p)} />}

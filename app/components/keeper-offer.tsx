@@ -19,9 +19,18 @@ import { keepProposalAction } from './keeper-actions.ts';
 // 1. HER EXACT WORDS ARE SHOWN. She is ruling on this text, so she has to see the text — not "I saved something
 //    from that." A summary would reproduce the original failure, where a thing was filed about her that she never
 //    read.
-// 2. IGNORING IT IS A REAL ANSWER, and the commonest one. There is no dismiss button to clear, no queue that
-//    fills up. She keeps what she wants; everything else evaporates when the conversation moves on. A proposal
-//    that survives being ignored is how you get back to a panel full of things she never chose.
+// 2. IGNORING IT IS A REAL ANSWER, and still the commonest one. Nothing is written unless she taps Keep, and a
+//    declined offer leaves no row behind — a proposal that survives being ignored is how you get back to a panel
+//    full of things she never chose.
+//
+// A DISMISS WAS ADDED 2026-08-20 (Jay's call, on Donna's report). The original reasoning — that ignoring IS the
+// decline, so a button is redundant — was sound in the abstract and wrong at the point of contact: she wrote
+// that a card had "no way to decline it," which means the affordance was not saying what we believed it said.
+// "Silently ignorable" is a property of the code; the member can only read what is on the card. Dismiss costs one
+// control and removes the sense that the Companion has put something in front of her she cannot answer.
+//
+// It is styled QUIETER than Keep on purpose. This is not a two-option decision she has to resolve — it is one
+// offer with an easy no.
 export default function KeeperOffer({
   memberId,
   proposal,
@@ -29,7 +38,7 @@ export default function KeeperOffer({
   memberId: string;
   proposal: KeeperProposal;
 }) {
-  const [state, setState] = useState<'offered' | 'saving' | 'kept'>('offered');
+  const [state, setState] = useState<'offered' | 'saving' | 'kept' | 'dismissed'>('offered');
 
   const keep = async () => {
     if (state !== 'offered') return;
@@ -39,6 +48,10 @@ export default function KeeperOffer({
     // when it is not is the same lie as filing something she never approved.
     setState(res.ok ? 'kept' : 'offered');
   };
+
+  // Dismissed disappears entirely rather than leaving a "you said no" marker. Her answer was to make it go away,
+  // and a tombstone in the thread is the opposite of that.
+  if (state === 'dismissed') return null;
 
   if (state === 'kept') {
     return (
@@ -57,6 +70,15 @@ export default function KeeperOffer({
       <div className="keeper-offer-foot">
         {/* Plain, and it asks rather than announces — "Saved to your Playbook" was the old lie. */}
         <span className="keeper-offer-ask">Keep this in your Playbook?</span>
+        {/* No server call: nothing was ever written, so declining is purely local. */}
+        <button
+          type="button"
+          className="keeper-offer-skip"
+          onClick={() => setState('dismissed')}
+          disabled={state === 'saving'}
+        >
+          No thanks
+        </button>
         <button type="button" className="keeper-offer-btn" onClick={() => void keep()} disabled={state === 'saving'}>
           {state === 'saving' ? 'Keeping…' : 'Keep it'}
         </button>

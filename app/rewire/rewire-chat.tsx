@@ -154,11 +154,25 @@ export default function RewireChat({ memberId, session = 'w1' }: { memberId: str
             {m.role === 'agent' ? <RichText text={m.text} /> : m.text}
           </div>
         ))}
-        {/* KEEPER OFFERS — in the thread, where the line was said, not in a tray somewhere else. Rendered before
-            the pending indicator so a new turn stacks below them rather than shunting them off-screen. */}
-        {offers.map((p) => (
-          <KeeperOffer key={p.momentId} memberId={memberId} proposal={p} />
-        ))}
+        {/* KEEPER OFFERS — in the thread, where the line was said, but HELD UNTIL THE CLOSE.
+            
+            They rendered the moment a turn produced one, which is a card arriving mid-sentence. Donna, 2026-08-20:
+            "right in the middle of a conversation is very jarring... if they could just show up before you
+            transition with a chance for you to dismiss them would be good." Same change in reconnect-chat; the
+            interruption was never the card, it was the timing.
+            
+            `done` is already the session's own end signal, so nothing new is being inferred here — the offers
+            simply wait for it. Still before the end card, which the member raises herself on Continue. */}
+        {done && offers.length > 0 && (
+          <div className="keeper-batch">
+            <p className="keeper-batch-lead">
+              {offers.length === 1 ? 'One thing from today, if you want to keep it.' : 'A few things from today, if you want to keep them.'}
+            </p>
+            {offers.map((p) => (
+              <KeeperOffer key={p.momentId} memberId={memberId} proposal={p} />
+            ))}
+          </div>
+        )}
         {pending && <div className="typing">Thinking…</div>}
         {/* chips scroll WITH the thread (Jay's walk: not pinned) — they answer the question above, autosend. */}
         {!done && expects?.kind === 'scale' && <ScaleChips expects={expects} disabled={pending || !state} onPick={(n) => void submit(String(n))} />}
