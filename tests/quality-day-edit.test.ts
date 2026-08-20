@@ -4,6 +4,7 @@ import { PGlite } from '@electric-sql/pglite';
 import { applySchema, type Db } from '../lib/db/schema.ts';
 import { logQualityDay, recentQualityDays } from '../lib/reclaim/quality-day-store.ts';
 import { canLogOn } from '../lib/practice/mark.ts';
+import { memberToday } from '../lib/time/zone-store.ts';
 
 // A SECOND LOG ON THE SAME DAY MUST NOT ERASE THE FIRST.
 //
@@ -24,6 +25,21 @@ async function member(): Promise<{ db: Db; memberId: string }> {
   return { db, memberId: r.rows[0]!.member_id };
 }
 const DAY = '2026-08-15';
+
+
+// DATES RELATIVE TO THE MEMBER'S TODAY, never hardcoded.
+//
+// These tests used fixed dates ('2026-08-13', '2026-08-14') against a window measured as `today - 6`. That is a
+// time bomb: it passes until the calendar walks far enough away, then fails on a day nobody changed anything.
+// One went off on 2026-08-20 mid-release, and the second was sitting exactly on the boundary, due to fail the
+// next day. A suite that goes red on the calendar teaches people to ignore red, which costs more than the test
+// is worth.
+const dayOffset = async (db: Db, memberId: string, back: number): Promise<string> => {
+  const today = await memberToday(db, memberId);
+  const d = new Date(`${today}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() - back);
+  return d.toISOString().slice(0, 10);
+};
 
 test('THE BUG: a partial second log replaces the day — which is why the form must seed', async () => {
   const { db, memberId } = await member();
@@ -58,8 +74,9 @@ test('and UNTICKING still works — the reason this is not a server-side merge',
 
 test('separate days stay separate — the grid can show more than one column', async () => {
   const { db, memberId } = await member();
-  await logQualityDay(db, memberId, { score: 6, present: ['bike ride'], loggedOn: '2026-08-13' });
-  await logQualityDay(db, memberId, { score: 9, present: ['Maple'], loggedOn: '2026-08-14' });
+  const [d1, d0] = [await dayOffset(db, memberId, 1), await dayOffset(db, memberId, 0)];
+  await logQualityDay(db, memberId, { score: 6, present: ['bike ride'], loggedOn: d1 });
+  await logQualityDay(db, memberId, { score: 9, present: ['Maple'], loggedOn: d0 });
   const rows = await recentQualityDays(db, memberId, 7);
   assert.equal(rows.length, 2, 'two days, two rows');
 });
@@ -90,11 +107,13 @@ test('a back-filled day does not disturb the day beside it', async () => {
   // Jay's report in one assertion: log today, then fill in yesterday, and today must be untouched. The old
   // dateless link made every write land on today, so the second log silently replaced the first.
   const { db, memberId } = await member();
-  await logQualityDay(db, memberId, { score: 8, present: ['bike ride'], loggedOn: '2026-08-15' });
-  await logQualityDay(db, memberId, { score: 4, present: ['Maple'], loggedOn: '2026-08-14' });
+  const today = await dayOffset(db, memberId, 0);
+  const yesterday = await dayOffset(db, memberId, 1);
+  await logQualityDay(db, memberId, { score: 8, present: ['bike ride'], loggedOn: today });
+  await logQualityDay(db, memberId, { score: 4, present: ['Maple'], loggedOn: yesterday });
   const rows = await recentQualityDays(db, memberId, 7);
   const byDate = new Map(rows.map((r) => [r.loggedOn, r]));
-  assert.equal(byDate.get('2026-08-15')?.score, 8, "today's score survived the back-fill");
-  assert.equal(byDate.get('2026-08-14')?.score, 4, 'and yesterday landed on its own day');
-  assert.deepEqual(byDate.get('2026-08-15')?.present, ['bike ride'], "today's elements are untouched");
+  assert.equal(byDate.get(today)?.score, 8, "today's score survived the back-fill");
+  assert.equal(byDate.get(yesterday)?.score, 4, 'and yesterday landed on its own day');
+  assert.deepEqual(byDate.get(today)?.present, ['bike ride'], "today's elements are untouched");
 });
