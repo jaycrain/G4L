@@ -4,6 +4,7 @@
 // blobs (arc transcripts, IDQ item responses, session answers) are reduced to counts/state so the
 // report stays legible and doesn't dump raw conversation. Same shape the inspect-*.sql produces.
 import type { Db } from '../db/schema.ts';
+import { isPurgeable } from '../demo/purge-member.ts';
 
 export type MemberMatch = { memberId: string; displayName: string; email: string; createdAt: string };
 
@@ -95,6 +96,47 @@ export async function findInFlightOnboarding(db: Db, q: string): Promise<InFligh
     reclaimCount: Number(r.reclaim_count ?? 0),
     doors: Array.isArray(r.doors) ? (r.doors as string[]) : [],
   }));
+}
+
+/**
+ * The RAW onboarding transcript — deliberately the narrowest thing in this file, and the only place the report
+ * returns a member's own words.
+ *
+ * WHY IT EXISTS. When a walk breaks mid-conversation, the metadata above says WHERE it stopped and nothing about
+ * WHY. On 2026-08-20 that cost a real walk: Donna stalled in the reclaim stage, I could not reproduce it offline,
+ * and I guessed twice at the cause — each guess a fresh round of her time and Jay's. The turn-by-turn is the only
+ * artifact that answers it.
+ *
+ * WHY IT IS ALLOWLISTED TO TESTERS, NOT TO OPERATORS. Everything else here drops the member's words on purpose:
+ * idq_retake omits `responses`, the Legacy Letter reports a character count and not a line of the letter, and the
+ * in-flight report is metadata only "because this is the most vulnerable moment in the product". That rule is
+ * right and it stays. What changes is not the rule but the SET it applies to — `isPurgeable` already names the
+ * handful of accounts that exist to walk the product and whose data we destroy on demand. Someone who signed up
+ * to test the intake is in a different category from someone using it, and that boundary is already written down,
+ * so this reuses it rather than inventing a second list that can drift from the first.
+ *
+ * A REAL MEMBER'S TRANSCRIPT IS NOT REACHABLE THROUGH THIS. Not by an operator, not with the token, not by asking
+ * differently. If we ever need one, that is a consent conversation and a different mechanism.
+ */
+export async function inFlightTranscript(
+  db: Db,
+  email: string,
+): Promise<{ ok: true; messages: { role: string; text: string }[]; state: unknown } | { ok: false; reason: string }> {
+  const e = (email ?? '').trim();
+  if (!isPurgeable(e)) return { ok: false, reason: 'transcripts are available for test accounts only' };
+  const { rows } = await db.query<{ messages: unknown; state: unknown }>(
+    'select messages, state from onboarding_session where lower(email) = lower($1)',
+    [e],
+  );
+  const r = rows[0];
+  if (!r) return { ok: false, reason: 'no in-flight onboarding for that address' };
+  const parse = (v: unknown) => (typeof v === 'string' ? JSON.parse(v) : v);
+  const messages = parse(r.messages);
+  return {
+    ok: true,
+    messages: Array.isArray(messages) ? (messages as { role: string; text: string }[]) : [],
+    state: parse(r.state),
+  };
 }
 
 // The report, parameterized by $1 = member_id. Mirrors scripts/db/inspect-donna.sql. FLAGS carries only

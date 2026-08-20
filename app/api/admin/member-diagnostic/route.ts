@@ -6,6 +6,7 @@ import {
   searchMembers,
   runMemberDiagnostic,
   findInFlightOnboarding,
+  inFlightTranscript,
   isSpecificEnough,
   DIAGNOSTIC_MIN_QUERY,
 } from '../../../../lib/admin/diagnostic.ts';
@@ -50,6 +51,16 @@ export async function GET(req: Request): Promise<Response> {
   // member_profile can't see them. Always report them: a prospect who stalled mid-onboarding is the drop-off we
   // most need visibility into, and without this "never started" and "we don't look" are indistinguishable.
   const inFlight = await findInFlightOnboarding(db, q).catch(() => []);
+
+  // ?transcript=1 — the turn-by-turn of an IN-FLIGHT onboarding, for TEST ACCOUNTS ONLY (see inFlightTranscript:
+  // it gates on the purge allowlist, so a real member's conversation is not reachable here by any argument).
+  // Opt-in rather than part of the default report, for the same reason the full record requires naming the
+  // member: reading someone's words has to be a decision, never a side effect of a lookup.
+  if (url.searchParams.get('transcript') === '1') {
+    const t = await inFlightTranscript(db, q);
+    return NextResponse.json({ query: q, transcript: t });
+  }
+
   if (matches.length === 0) return NextResponse.json({ query: q, matches: [], inFlight, report: null });
 
   // SEC-05 — NEVER AUTO-DUMP A FULL RECORD. This used to run the whole diagnostic on matches[0] for ANY search,
