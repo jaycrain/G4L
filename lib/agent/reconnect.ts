@@ -12,6 +12,7 @@
 //    and versioned — so this increment is purely additive: it writes nothing.
 
 import { DOORS, matchDoors, isDoorSlug, type DoorSlug } from '../doors.ts';
+import { isConversationalMeta } from './conversational-meta.ts';
 import { TOTAL_ITEMS, itemStem, DIMENSIONS, type Dimension } from '../idq/instrument.ts';
 import { scoreIdq } from '../idq/scoring.ts';
 import { identityLabel } from '../member/identity.ts';
@@ -278,6 +279,12 @@ export function isKeeperMaterial(text: string): boolean {
   const t = (text ?? '').trim();
   if (!t) return false;
   if (isProcessMetaOrAssent(t) || affirmsReflection(t)) return false;
+  // TALKING ABOUT THE CONVERSATION IS NOT TALKING ABOUT HER LIFE — the third occurrence of that shape, and the
+  // reason it now lives in one predicate. Every other check here reads a SURFACE feature (length, praise,
+  // assent), and a protest has none of their tells: Donna's was thirteen words, fluent, first person and
+  // squarely on topic. It became both "The spark" and the Legacy Letter's carried-forward Tuesday, from one
+  // stored value. See lib/agent/conversational-meta.ts.
+  if (isConversationalMeta(t)) return false;
   // A drift declaration or a Tuesday worth keeping is a sentence about their life. "Perfectly depicted!" is two words.
   if (t.split(/\s+/).length < 5) return false;
   return !PRAISE_REACTION_RE.test(t);
@@ -1356,10 +1363,21 @@ insight reflect-confirm, call member_reply to classify their reply (done / more 
 Reflect first, then exactly ONE question per turn. Never diagnose, label, or pathologize. This is a place it is safe
 to be honest with yourself.`;
 
-function stageInstructionReconnect(stage?: Stage, st?: ConvState): string {
+export function stageInstructionReconnect(stage?: Stage, st?: ConvState): string {
   // Their Window answer, handed to the model so prompt 1 is never re-asked. Lives on ConvState (like driftPayload),
   // not Collected — it is conversation state being threaded, not captured member data.
-  const tuesday = (st?.legacyTuesday ?? '').trim();
+  //
+  // HEAL ON READ, not only on write. isKeeperMaterial now stops a protest ever BECOMING the Tuesday — but a
+  // member mid-Reconnect is already carrying whatever the old rule stored, and state does not fix itself when
+  // code ships. Donna's session held legacyTuesday = "I think we already did that and you were writing a letter
+  // for me?", so shipping the write-side fix alone would have left her looping exactly as before, and made the
+  // fix look like a lie to the one person who reported it.
+  //
+  // Checking at the point of USE costs one call and makes a refresh genuinely sufficient: a poisoned value is
+  // treated as absent, the "they already answered" line drops out of the prompt, and the model asks the question
+  // properly instead of being handed nonsense and instructed to use it.
+  const storedTuesday = (st?.legacyTuesday ?? '').trim();
+  const tuesday = isConversationalMeta(storedTuesday) ? '' : storedTuesday;
   if (stage === 'doors')
     return (
       '\n\nCURRENT STAGE: the Doors excavation. Draw out the primary Door over a few exchanges, then reflect an ' +

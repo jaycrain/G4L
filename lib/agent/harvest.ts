@@ -7,6 +7,7 @@ import { randomUUID } from 'node:crypto';
 import type { Db } from '../db/schema.ts';
 import type { Collected } from './onboarding.ts';
 import { identityLabel } from '../member/identity.ts';
+import { isConversationalMeta } from './conversational-meta.ts';
 
 // The keeper taxonomy lives in CONFIG here (never a DB check-constraint — the 0019/0024 tax); the artifact's
 // keeper_type is authoritative, the event's meta.keeperType is intent-at-capture.
@@ -193,6 +194,16 @@ export async function drainHarvest(
   const priorN = prev.pendingHarvest?.length ?? 0;
   const out: KeeperProposal[] = [];
   for (const s of (next.pendingHarvest ?? []).slice(priorN)) {
+    // THE LAST GATE BEFORE A CARD IS PUT IN FRONT OF HER — and the one that has to hold for a member already
+    // mid-arc. The producers upstream now refuse to queue a protest, but a queue is STATE: Donna's session was
+    // carrying {label: "The spark", payloadRef: "I think we already did that and you were writing a letter for
+    // me?"} at the moment this shipped, so the write-side fix alone would still have shown her that card.
+    //
+    // Checked HERE rather than at each producer for the usual reason — a rule restated at N sites has N-1 copies
+    // waiting to drift apart — and because this is the single seam every arc's keepers cross on the way to a
+    // member's screen. Nothing is destroyed: the signal stays in the queue and in the QI event log. It simply is
+    // not OFFERED to her as an insight about her life.
+    if (isConversationalMeta(s.payloadRef)) continue;
     const p = await harvestSignal(db, memberId, s, surface);
     if (p) out.push(p);
   }
