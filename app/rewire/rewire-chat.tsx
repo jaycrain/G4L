@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { showComposer } from '../../lib/chat/composer.ts';
 import RichText from '../rich-text.tsx';
 import { useRouter } from 'next/navigation';
 import { startRewireAction, rewireTurnAction, rewireCeremonyDataAction, loadRewireSessionAction, type RewireSession } from './actions.ts';
@@ -39,6 +40,9 @@ export default function RewireChat({ memberId, session = 'w1' }: { memberId: str
   const [expects, setExpects] = useState<Expectation | null>(null); // W-24: administered turn (§2e checkpoint) → render the scale chips
   const [ceremony, setCeremony] = useState<RewireCeremonyData | null>(null); // R4: set when the checkpoint reaches 'ceremony'
   const [pendingCeremony, setPendingCeremony] = useState<RewireCeremonyData | null>(null); // loaded, waiting on her tap
+  // The beat is finished and the reveal is waiting behind a tap. The composer reads the SAME value the Continue
+  // button does, so the two can never disagree about whether she is being asked for words (Donna, 2026-08-20).
+  const awaitingContinue = !!pendingCeremony && !ceremony;
   const [error, setError] = useState<string | null>(null);
   // The teaching beats. `taught` gates the hand-home: the member acknowledges the science before they can leave,
   // which is the whole point of promoting it out of an opt-in widget. It is an acknowledgment, never a test — there
@@ -190,7 +194,7 @@ export default function RewireChat({ memberId, session = 'w1' }: { memberId: str
         <>
           {/* The text box is hidden on an administered turn (the chips render inline in the thread above); it returns
               on conversational turns. */}
-          {!expects && (
+          {showComposer(!!expects, awaitingContinue) && (
           <form className="chat-input" onSubmit={send}>
             <textarea
               value={input}
@@ -229,7 +233,7 @@ export default function RewireChat({ memberId, session = 'w1' }: { memberId: str
           read — with no way to scroll back". So the thread STAYS on screen and the reveal waits behind a tap.
           Rendered below the thread, deliberately: a gate that replaced the thread would hide the very message it
           exists to give her time to read. The data is already loaded, so the tap is instant. */}
-      {pendingCeremony && !ceremony && (
+      {awaitingContinue && (
         <div className="chat-continue">
           <button type="button" onClick={() => setCeremony(pendingCeremony)}>See where that landed →</button>
         </div>
