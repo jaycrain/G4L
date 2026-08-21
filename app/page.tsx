@@ -43,7 +43,11 @@ export default async function Home() {
             line does is promise the work leaves something behind, which is what makes the arc read as one thing
             rather than a program you attend. */}
         <p>
-          It starts with a real conversation. Just you and a companion built for this one thing, and nothing else.
+          {/* Capital C. The Companion is a product name, and this was the only lowercase instance anywhere in the
+              transcript — on the highest-traffic surface in the product, flagged twice by Cowork before it was
+              fixed. It reads as a common noun here precisely because the sentence is casual, which is how it
+              survived two passes. */}
+          It starts with a real conversation. Just you and a Companion built for this one thing, and nothing else.
           What you build here is private, and it stays with you.
         </p>
       </div>

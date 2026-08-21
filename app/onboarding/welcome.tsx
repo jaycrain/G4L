@@ -77,7 +77,13 @@ const BEATS: Beat[] = [
     head: ['Along the way you’ll build a Playbook', '& track your progress'],
     body: [],
     list: [
-      { term: 'Your Playbook', text: 'everything you do is recorded here. Your goals and progress recorded in your words, uniquely yours.' },
+      // "everything you do is recorded here" stopped being TRUE on 2026-08-20, when keepers became opt-in: nothing
+      // reaches the Playbook unless she taps Keep. A promise the product no longer honours is worst on THIS screen
+      // — it is made before she has signed up, and it is about what we do with her words.
+      //
+      // The replacement is a stronger claim, not a hedge: the Playbook is now the one place in the product that
+      // can only contain what she chose to put there. ("uniquely yours" goes with it — a retired possessive.)
+      { term: 'Your Playbook', text: 'the things you decide are worth keeping. Nothing lands here unless you say so — in your words.' },
       { term: 'ID Score & Grinta Index', text: 'you’ll see how far you’ve got to go and the grit you’re growing as you do it.' },
       // CLIP IN — the LATER wording wins. Donna's draft of this screen carried a short version; Jay rewrote it at
       // 12:50 and she tweaked it at 12:55, and this is that resolved text. The word is defined HERE and nowhere

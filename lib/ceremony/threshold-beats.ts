@@ -49,9 +49,16 @@ export const THRESHOLD_COPY = {
   // dashboard, so narrating a journey to where they are standing reads as filler.
   journey: 'Your Comeback starts with Reconnect — your first Session’s ready whenever you are.',
   // 6 — the Playbook, described plainly. Reordered to run BEFORE the "get to work" beat (Donna's Reconnect edits).
+  // "IT KEEPS BUILDING ITSELF" WAS THE WHOLE POINT OF THE LINE, and it is no longer how the product works. Keepers
+  // became opt-in on 2026-08-20: the Companion offers, and nothing is written unless she taps Keep. A Playbook
+  // that builds itself is exactly the behaviour a member reported as making the app feel broken — her own
+  // housekeeping question filed as an insight about her.
+  //
+  // So the beat now says the true thing, which is also the better one: this is the one place in the product that
+  // can only hold what she chose. ("uniquely yours" retired with it.)
   lasts:
-    'Your answers, in your own words, filled the first pages of your Playbook. From here it keeps building itself — ' +
-    'everything worth keeping lands there, ready when you need it. It’s uniquely yours.',
+    'Your answers, in your own words, filled the first pages of your Playbook. From here you decide what goes in — ' +
+    'anything you choose to keep lands there, ready when you need it, in your words.',
   // 7 — the hand-off. THIS BEAT NO LONGER EXPLAINS "clip in" (Cowork + Jay, 2026-08-14).
   //
   // The word stays everywhere — the daily clip-in, the clip-back-in move, the Grinta lines, the closer. What was
