@@ -119,7 +119,7 @@ export default function DoorsBoard({ expects, disabled, onSubmit }: Props) {
                         onClick={() => rate(c.slug, n)}
                         disabled={disabled}
                         aria-pressed={picked}
-                        className={`scale-chip${picked ? ' selected' : ''}`}
+                        className={`scale-chip${picked ? ' on' : ''}`}
                         style={{ flex: '0 1 auto', fontSize: '0.82rem', padding: '0.35rem 0.7rem' }}
                       >
                         {label}
@@ -166,7 +166,7 @@ export default function DoorsBoard({ expects, disabled, onSubmit }: Props) {
                 <button
                   key={c.slug}
                   type="button"
-                  className={`scale-chip${stillOpen.has(c.slug) ? ' selected' : ''}`}
+                  className={`scale-chip${stillOpen.has(c.slug) ? ' on' : ''}`}
                   disabled={disabled}
                   aria-pressed={stillOpen.has(c.slug)}
                   onClick={() => setStillOpen((s) => { const t = new Set(s); t.has(c.slug) ? t.delete(c.slug) : t.add(c.slug); return t; })}
@@ -204,7 +204,7 @@ function Pick({ label, options, value, onPick, disabled }: {
           <button
             key={c.slug}
             type="button"
-            className={`scale-chip${value === c.slug ? ' selected' : ''}`}
+            className={`scale-chip${value === c.slug ? ' on' : ''}`}
             disabled={disabled}
             aria-pressed={value === c.slug}
             onClick={() => onPick(value === c.slug ? null : c.slug)}

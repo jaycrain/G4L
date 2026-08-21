@@ -42,7 +42,7 @@ export default function DomainChips({
           <button
             key={label}
             type="button"
-            className={`scale-chip domain-chip${picked === label ? ' selected' : ''}`}
+            className={`scale-chip domain-chip${picked === label ? ' on' : ''}`} aria-pressed={picked === label}
             onClick={() => pick(label)}
             disabled={disabled || picked != null}
           >

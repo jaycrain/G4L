@@ -41,7 +41,7 @@ export default function ScaleChips({
           <button
             key={n}
             type="button"
-            className={`scale-chip${picked === n ? ' selected' : ''}`}
+            className={`scale-chip${picked === n ? ' on' : ''}`} aria-pressed={picked === n}
             onClick={() => pick(n)}
             disabled={disabled || picked != null}
             aria-label={

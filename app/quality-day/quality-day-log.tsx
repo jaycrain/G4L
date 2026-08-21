@@ -88,7 +88,7 @@ export default function QualityDayLog({
       <div className="qd-step-body">
         <div className="qd-score">
           {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
-            <button key={n} type="button" className={`qd-score-btn${score === n ? ' is-on' : ''}`} disabled={pending} onClick={() => setScore(n)}>
+            <button key={n} type="button" className={`qd-score-btn${score === n ? ' on' : ''}`} aria-pressed={score === n} disabled={pending} onClick={() => setScore(n)}>
               {n}
             </button>
           ))}
@@ -105,7 +105,7 @@ export default function QualityDayLog({
           <div className="qd-step-body">
             <div className="qd-elements-opts">
               {elements.map((el) => (
-                <button key={el} type="button" className={`qd-el-btn${present.has(el) ? ' is-on' : ''}`} disabled={pending} onClick={() => toggle(el)}>
+                <button key={el} type="button" className={`qd-el-btn${present.has(el) ? ' on' : ''}`} aria-pressed={present.has(el)} disabled={pending} onClick={() => toggle(el)}>
                   {el}
                 </button>
               ))}

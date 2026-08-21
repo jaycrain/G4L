@@ -180,6 +180,22 @@ button, .btn {
  * `filter` also applies to descendants, which is what makes it correct here: a row's title, subtitle and radio
  * all move together, so a ratio that passed at rest still passes on hover. Measured before and after on the
  * Account Settings cadence rows — titles 13.64 / 8.13, subtitles 4.56 / 4.57, all above 4.5. */
+/* ONE SELECTED HOOK: `.on`, PLUS aria-pressed (Donna, 2026-08-21).
+   Seven buttons showed "selected" four different ways — .selected, .on, .is-on, .current — and none of them told
+   a screen reader anything at all, because the state lived only in a class name. A member using VoiceOver could
+   not tell which day rating she had picked.
+   `.on` wins because it was already the plurality. `aria-pressed` is added at the call sites, so the visual state
+   and the announced state now come from the same condition and cannot drift apart.
+   TWO STATED EXCEPTIONS, and they are exceptions rather than strays: the Playbook and Founder-Console TABS use
+   navy, and the segmented control follows them. A tab is not a toggle — it says "you are here", not "this is
+   chosen" — and giving them the toggle colour would flatten a real distinction. Olive likewise stays as the
+   "a practice thing happened" semantic on week cells, playbook dots and movement badges. */
+
+/* HOVER IS INHERITED, NOT HAND-PICKED (Donna's tweaks, 2026-08-21).
+   Nine buttons each reimplemented the standard darkening with their own near-identical teal — #327f7e,
+   #347f80, #2f7a7b, #245c5d — and one darkened to OLIVE, the only hue change in the app. Every one of them
+   is a chance to invert contrast the way the old navy default did four times before it was replaced.
+   `filter: brightness(0.94)` moves text and ground together, so it cannot. Deleted; they inherit it now. */
 button, .btn { --btn-hover-bg: none; }
 button:hover, .btn:hover { filter: brightness(0.94); }
 /* The opt-in: only fires for a button that actually declares a colour. `none` is not a valid background-COLOR, so
@@ -238,7 +254,7 @@ button:disabled:hover, .btn:disabled:hover { filter: none; }
 .daily-beat-panel .db-foot { margin-top: 0.8rem; }
 .daily-beat-panel .db-keep { background: none; border: none; padding: 0; font: inherit; font-weight: 700; color: var(--teal-text); cursor: pointer; }
 .daily-beat-panel .db-keep:hover { text-decoration: underline; }
-.daily-beat-panel .db-keep:disabled { opacity: 0.6; cursor: default; }
+.daily-beat-panel .db-keep:disabled { opacity: 0.5; cursor: default; }
 .daily-beat-panel .db-kept { font-size: 0.85rem; font-weight: 700; color: var(--olive-text); }
 
 /* "More about…" sub-page explainers — readable, paced body copy. */
@@ -522,7 +538,6 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .rlb-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 0.7rem; flex-wrap: wrap; }
 .rlb-hint { font-size: 12.5px; color: var(--muted-grey); flex: 1; min-width: 180px; }
 .rlb-done { margin: 0; flex: 0 0 auto; background: var(--teal, #3b9495); color: #fff; border: 1px solid var(--teal, #3b9495); border-radius: 8px; font-weight: 700; }
-.rlb-done:hover:not(:disabled) { background: #327f7e; border-color: #327f7e; }
 .rlb-done:disabled, .rlb-addbtn:disabled { opacity: 0.5; cursor: default; }
 
 /* The keeper OFFER — the Companion showing a line and asking whether to keep it. Reads as a card in the thread,
@@ -539,7 +554,7 @@ ul.program { list-style: none; padding: 0; margin: 0; }
   color: var(--teal-text); font-family: inherit; font-weight: 700; font-size: 13.5px; line-height: 1.2; cursor: pointer;
 }
 .keeper-offer-btn:hover:not(:disabled) { background-color: rgba(59, 148, 149, 0.12); }
-.keeper-offer-btn:disabled { opacity: 0.55; cursor: default; }
+.keeper-offer-btn:disabled { opacity: 0.5; cursor: default; }
 .keeper-offer-done { font-size: 12.5px; font-weight: 700; color: var(--teal-text); }
 /* DECLINE — deliberately quieter than Keep. This is one offer with an easy no, not a two-option decision she has
    to resolve; giving it equal weight would turn every card into a fork in the road. No border, muted text, and it
@@ -549,7 +564,7 @@ ul.program { list-style: none; padding: 0; margin: 0; }
   color: var(--muted-grey); font-family: inherit; font-weight: 600; font-size: 13px; line-height: 1.2; cursor: pointer;
 }
 .keeper-offer-skip:hover:not(:disabled) { color: var(--navy); background-color: rgba(42, 42, 42, 0.06); }
-.keeper-offer-skip:disabled { opacity: 0.55; cursor: default; }
+.keeper-offer-skip:disabled { opacity: 0.5; cursor: default; }
 /* Push the two buttons together at the end so the ASK stays left and the pair reads as one control group. */
 .keeper-offer-foot > .keeper-offer-ask { margin-right: auto; }
 
@@ -609,7 +624,6 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .idp-coin { display: flex; gap: 0.5rem; align-items: stretch; margin-top: 0.7rem; }
 .idp-coin-input { flex: 1; margin: 0; box-sizing: border-box; }
 .idp-coin-btn { margin: 0; flex: 0 0 auto; background: var(--teal, #3b9495); color: #fff; border: 1px solid var(--teal, #3b9495); border-radius: 8px; font-weight: 700; }
-.idp-coin-btn:hover:not(:disabled) { background: #327f7e; border-color: #327f7e; }
 .idp-coin-btn:disabled { opacity: 0.5; cursor: default; }
 .idp-skip { margin: 0.55rem 0 0; padding: 0; background: none; border: none; color: var(--muted-grey); font-size: 12.5px; cursor: pointer; display: block; }
 .idp-skip:hover:not(:disabled) { color: var(--navy, #374f63); text-decoration: underline; }
@@ -630,7 +644,7 @@ ul.program { list-style: none; padding: 0; margin: 0; }
   cursor: pointer; transition: background 0.12s ease, color 0.12s ease;
 }
 .scale-chip:hover:not(:disabled) { background: rgba(59, 148, 149, 0.12); }
-.scale-chip.selected { background: var(--teal-text); color: #fff; }
+.scale-chip.on { background: var(--teal-text); color: #fff; }
 .scale-chip:disabled { cursor: default; }
 .scale-chip:disabled:not(.selected) { opacity: 0.5; }
 .scale-chips-anchors { display: flex; justify-content: space-between; gap: 0.75rem; margin-top: 0.4rem; }
@@ -800,7 +814,7 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .cer-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--grey); }
 .cer-dot.on { background: var(--teal); }
 .cer-btn { font: inherit; font-size: 0.95rem; font-weight: 600; border: none; cursor: pointer; border-radius: 10px; padding: 11px 28px; background: var(--teal-text); color: #fff; }
-.cer-btn:disabled { opacity: 0.6; cursor: default; }
+.cer-btn:disabled { opacity: 0.5; cursor: default; }
 
 /* Confidentiality footer — evaluation build; appears on every screen (root layout) */
 /* The version + build ref, sat with the proprietary notice. Quieter than the notice itself — a member should be
@@ -1176,8 +1190,7 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 /* Primary pill action with arrow — the shared standard behind "Talk to me" / "Open this Session". */
 .btn-pill { display: inline-flex; align-items: center; gap: 0.4rem; margin: 0; background: var(--teal-text); color: var(--white); font-weight: 600; font-size: 0.85rem; padding: 0.45rem 1rem; border-radius: 20px; text-decoration: none; }
 .btn-pill:hover { text-decoration: none; }
-.btn-pill:hover { background: #347f80; }
-.connect-cta:disabled, .btn-pill:disabled { opacity: 0.45; cursor: default; }
+.connect-cta:disabled, .btn-pill:disabled { opacity: 0.5; cursor: default; }
 .btn-pill:disabled:hover { background: var(--teal); }
 /* Shape modifier — rounded RECTANGLE instead of pill (matches the default/"Turn on notifications" button). Used on the
    Account Settings action buttons so they read consistent (Donna, 2026-07-28). Kept off global .btn-pill (Connect/etc.). */
@@ -1343,7 +1356,7 @@ html:has(.companion-hero), body:has(.companion-hero) { overflow-anchor: none; }
 .companion-hero.is-condensed .hero-talk { padding: 0.42rem 0.95rem; font-size: 0.85rem; margin: 0; }
 .hero-primary { display: inline-flex; align-items: center; background: var(--orange-text); color: var(--white); font-weight: 700; font-size: 0.9rem; padding: 0.55rem 1.15rem; border-radius: 22px; text-decoration: none; }
 .hero-talk { margin-left: auto; display: inline-flex; align-items: center; gap: 0.4rem; background: var(--teal-text); color: var(--white); border: none; font-weight: 700; font-size: 0.9rem; padding: 0.55rem 1.2rem; border-radius: 22px; cursor: pointer; transition: background 0.14s ease; }
-.hero-talk:hover, .hero-talk:focus-visible { background: #347f80; }
+.hero-talk:focus-visible { outline: 2px solid var(--teal-on-navy); outline-offset: 2px; }
 
 /* Full-story narrative (/story) — plain weight, with only the "You are someone" lead bold for effect */
 .story-narrative { font-size: 1.05rem; line-height: 1.6; color: var(--navy); font-weight: 400; margin: 0; }
@@ -1588,7 +1601,6 @@ html:has(.companion-hero), body:has(.companion-hero) { overflow-anchor: none; }
 .ckpt-nudge { font-size: 0.88rem; color: #f0d9cf; margin: 0.7rem 0 0; font-style: italic; }
 .ckpt-actions { display: flex; flex-wrap: wrap; gap: 0.7rem; margin-top: 1.2rem; }
 .ckpt-declare { background: var(--teal-text); color: #fff; font-weight: 700; font-size: 0.95rem; padding: 0.7rem 1.4rem; border-radius: 24px; border: none; cursor: pointer; width: auto; }
-.ckpt-declare:hover { background: var(--olive); }
 .ckpt-notyet { background: transparent; color: #C9D2DA; font-weight: 600; font-size: 0.9rem; padding: 0.7rem 1.1rem; border: 1px solid rgba(255,255,255,.22); border-radius: 24px; cursor: pointer; width: auto; }
 .ckpt-notyet:hover { background: rgba(255,255,255,.08); }
 .ckpt-crossed .ckpt-milestone { font-size: 0.78rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--teal-text); margin-bottom: 0.6rem; }
@@ -1644,9 +1656,8 @@ html:has(.companion-hero), body:has(.companion-hero) { overflow-anchor: none; }
   display: block; margin-top: 0.75rem; padding: 0.6rem 1.4rem; border: 0; border-radius: 8px;
   background: var(--teal-text); color: #fff; font-family: inherit; font-size: 14px; font-weight: 700; cursor: pointer;
 }
-.momentum-log-commit:hover:not(:disabled) { background: #327f7e; }
 /* Disabled until a call is picked — the affordance itself teaches the order (pick, then detail, then log). */
-.momentum-log-commit:disabled { opacity: 0.45; cursor: default; }
+.momentum-log-commit:disabled { opacity: 0.5; cursor: default; }
 .momentum-log-note {
   width: 100%; box-sizing: border-box; font-family: inherit; font-size: 0.9rem; color: var(--charcoal);
   border: 1px solid var(--light-grey, #e8e6e6); border-radius: 8px; padding: 0.55rem 0.7rem; resize: vertical;
@@ -1687,7 +1698,7 @@ html:has(.companion-hero), body:has(.companion-hero) { overflow-anchor: none; }
   padding: 0.35rem 0.85rem; cursor: pointer; transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
 }
 .momentum-domain-btn:hover:not(:disabled) { border-color: var(--teal-text); }
-.momentum-domain-btn.is-on { background: var(--teal-text); border-color: var(--teal-text); color: #fff; }
+.momentum-domain-btn.on { background: var(--teal-text); border-color: var(--teal-text); color: #fff; }
 .momentum-domain-btn:disabled { opacity: 0.5; cursor: default; }
 
 /* Reclaim C3 · Quality-Day daily log — a 1–10 score, element toggles, two reflections. Neutral pills, teal on select
@@ -1706,7 +1717,7 @@ html:has(.companion-hero), body:has(.companion-hero) { overflow-anchor: none; }
      CLEAR the button's own white background. The hover state here is the teal border, not a fill. */
 }
 .qd-score-btn:hover:not(:disabled) { border-color: var(--teal-text); }
-.qd-score-btn.is-on { background: var(--teal-text); border-color: var(--teal-text); color: #fff; --btn-hover-bg: var(--teal-text); }
+.qd-score-btn.on { background: var(--teal-text); border-color: var(--teal-text); color: #fff; --btn-hover-bg: var(--teal-text); }
 .qd-score-btn:disabled { opacity: 0.5; cursor: default; }
 .qd-elements { margin: 0.3rem 0 0.6rem; }
 .qd-elements-label { font-size: 0.82rem; color: var(--navy); opacity: 0.7; }
@@ -1719,7 +1730,7 @@ html:has(.companion-hero), body:has(.companion-hero) { overflow-anchor: none; }
   /* was `--btn-hover-bg: transparent` to cancel the old navy default — see .qd-score-btn above. */
 }
 .qd-el-btn:hover:not(:disabled) { border-color: var(--teal-text); }
-.qd-el-btn.is-on { background: var(--teal-text); border-color: var(--teal-text); color: #fff; --btn-hover-bg: var(--teal-text); }
+.qd-el-btn.on { background: var(--teal-text); border-color: var(--teal-text); color: #fff; --btn-hover-bg: var(--teal-text); }
 .qd-el-btn:disabled { opacity: 0.5; cursor: default; }
 
 /* THE DAY BAR — which day this form writes, and the week's average. The average used to live INSIDE the intro
@@ -1870,7 +1881,7 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
 .rr-cadence-btn { background: var(--teal-text); color: #fff; border: 0; font-family: inherit; font-size: 14px;
   font-weight: 600; padding: 8px 14px; cursor: pointer; --btn-hover-bg: #245b5c; }
 .rr-cadence-btn:hover:not(:disabled) { background: var(--btn-hover-bg); }
-.rr-cadence-btn:disabled { opacity: 0.6; cursor: default; }
+.rr-cadence-btn:disabled { opacity: 0.5; cursor: default; }
 /* Their own number, said back before they commit — so a misparse is visible at the moment it still costs nothing. */
 .rr-cadence-aim { font-size: 13px; font-weight: 600; color: var(--navy); }
 .rr-cadence-err { font-size: 13px; color: var(--deep-red); } /* the same red .error uses — no new variable */
@@ -2223,7 +2234,7 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
 .mv-sync { display: flex; align-items: center; gap: 12px; margin-top: 14px; }
 .mv-sync-btn { margin: 0; font: inherit; font-size: 13px; font-weight: 700; color: #2a6d6e; background: #E8E6E6; border: 1px solid var(--teal); border-radius: 8px; padding: 7px 16px; cursor: pointer; }
 .mv-sync-btn:hover:not(:disabled) { background: #dedcdc; }
-.mv-sync-btn:disabled { opacity: 0.6; cursor: default; }
+.mv-sync-btn:disabled { opacity: 0.5; cursor: default; }
 .mv-sync-note { font-size: 12px; color: var(--muted-grey); }
 .mv-week span { font-size: 12px; color: var(--muted-grey); }
 .mv-week b { display: block; font-size: 24px; color: var(--navy); }
@@ -2249,8 +2260,7 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
 .mv-log-type, .mv-log-date { margin: 0; flex: 0 0 auto; }
 .mv-log-note { margin: 0; flex: 1 1 200px; min-width: 160px; }
 .mv-log-btn { margin: 0; flex: 0 0 auto; background: var(--teal-text); color: #fff; border: none; font-weight: 700; padding: 0.5rem 1.1rem; border-radius: 8px; cursor: pointer; }
-.mv-log-btn:hover { background: #327f80; }
-.mv-log-btn:disabled { opacity: 0.6; cursor: default; }
+.mv-log-btn:disabled { opacity: 0.5; cursor: default; }
 @media (max-width: 700px) { .mv-source-grid { grid-template-columns: 1fr; } .mv-log-note { flex-basis: 100%; } }
 
 /* Ceremonial badge reveal (Decision WW) — the earned medal popping in as the ceremony climax. */
@@ -2677,7 +2687,7 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
 .rhythm-sugg { color: #8fd0d1; }
 .rhythm-reassure { color: rgba(255, 255, 255, 0.55); font-size: 13px; line-height: 1.5; margin: 16px 2px 22px; }
 .rhythm-confirm { width: 100%; min-height: 52px; border: none; border-radius: 28px; background: var(--teal-text); color: #fff; font-family: inherit; font-weight: 700; font-size: 17px; cursor: pointer; box-shadow: 0 10px 26px rgba(59, 148, 149, 0.35); }
-.rhythm-confirm:disabled { opacity: 0.6; cursor: default; }
+.rhythm-confirm:disabled { opacity: 0.5; cursor: default; }
 
 /* ============ Onboarding welcome (Slice B) — the meet-the-Companion billboard (desktop + mobile) ============ */
 .onbwel { min-height: 100dvh; display: flex; align-items: safe center; background: radial-gradient(120% 55% at 82% 6%, rgba(59, 148, 149, 0.24), transparent 55%), linear-gradient(180deg, #3d566b, var(--navy) 34%, #2c4152); }
@@ -2717,7 +2727,6 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
 .onbwel-heart-list .onbwel-list li { margin-bottom: 7px; }
 .onbwel-heart-list .onbwel-cta { margin-top: 20px; }
 .onbwel-cta { margin-top: 30px; display: inline-flex; align-items: center; background: var(--teal-text); color: #fff; font-family: inherit; font-weight: 700; font-size: 18px; padding: 16px 32px; border: none; border-radius: 8px; cursor: pointer; box-shadow: 0 12px 30px rgba(59, 148, 149, 0.4); transition: 0.15s; }
-.onbwel-cta:hover { background: var(--teal-d, #2f7a7b); }
 .onbwel-reassure { margin-top: 18px; color: rgba(255, 255, 255, 0.55); font-size: 14px; }
 
 /* Two opening tracks, one shown per breakpoint (no viewport-detection flash). BOTH now run hero → the five navy beats
@@ -2751,7 +2760,6 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
 .onbwel-d-signin a { color: #fff; font-weight: 700; text-decoration: underline; }
 .onboard-signin { margin-top: 1rem; }
 .onbwel-d-cta { margin-top: 26px; display: inline-flex; align-items: center; background: var(--teal-text); color: #fff; font-family: inherit; font-weight: 700; font-size: 18px; padding: 16px 32px; border: none; border-radius: 8px; cursor: pointer; box-shadow: 0 12px 30px rgba(59, 148, 149, 0.4); transition: 0.15s; }
-.onbwel-d-cta:hover { background: var(--teal-d, #2f7a7b); }
 .onbwel-d-reassure { margin-top: 20px; color: rgba(255, 255, 255, 0.6); font-size: 14px; }
 .onbwel-d-sub + .onbwel-d-sub { margin-top: 16px; } /* the hero now carries three intro paragraphs — tighten the gap between them */
 /* Full-bleed welcome (Jay 7/29): no header/footer/page-padding — the intro is a true one-screen image + message. */
@@ -3141,7 +3149,7 @@ body:has(.fc-app) .confidential-footer {
 .fc-send { flex:none; margin:0; height:var(--composer-h); font-family:inherit; font-weight:700; font-size:14px;
   box-sizing:border-box; border:1.5px solid var(--teal); border-radius:12px;
   padding:0 1.15rem; background: var(--teal-text); color:#fff; cursor:pointer; }
-.fc-send:disabled { opacity:.6; cursor:default; }
+.fc-send:disabled { opacity: 0.5; cursor:default; }
 
 .fc-need { display:flex; align-items:flex-start; gap:10px; padding:9px 0; border-top:1px solid rgba(55,79,99,.16); }
 .fc-need:first-of-type { border-top:0; }
@@ -3562,7 +3570,7 @@ body:has(.fc-dark) .brand-wordmark,
   padding: .25rem .7rem; border-radius: 999px; color: var(--navy); background: #fff;
   border: 1px solid var(--light-grey, #E8E6E6); white-space: nowrap; }
 .fch-signout:hover { background: #fff; border-color: var(--teal-text); color: var(--teal-text); }
-.fch-signout:disabled { opacity: .6; cursor: default; }
+.fch-signout:disabled { opacity: 0.5; cursor: default; }
 .fc-dark .fch-signout { background: transparent; color: rgba(255,255,255,.62); border-color: rgba(255,255,255,.18); }
 .fc-dark .fch-signout:hover { color: #fff; border-color: var(--teal-text); }
 
@@ -3753,7 +3761,6 @@ body:has(.fc-dark) .brand-wordmark,
   background: var(--teal-text); color: var(--white);
   font-family: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer; white-space: nowrap;
 }
-.teach-cta:hover { background: #245c5d; border-color: #245c5d; }
 
 /* ── B2's SELF-MANAGEMENT MAP — inside the Reads card, Playbook › What you've learned ──────────────────────────
    Greg's three families with their skills. NO number renders: "steady" is relative to this member's own profile
