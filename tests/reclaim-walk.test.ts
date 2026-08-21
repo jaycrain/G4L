@@ -49,12 +49,18 @@ const SESSIONS: { id: string; apply: SessionApply; opening: () => Turn }[] = [
 //
 // C1, C2 and C3 run the COACH gate (propose → confirm → commit), which needs answers shaped to whatever it just
 // proposed. The generic driver types substantive prose and plain affirmations, and neither satisfies that gate —
-// all three run to the turn cap. What I do NOT know is whether a real member fares better, and I am not going to
-// assert either way from a harness that cannot drive them: a green test here would claim coverage that does not
-// exist, and a red one would block the suite over an unproven claim.
+// all three run to the turn cap.
 //
-// So they are excluded from the completion check ONLY, still walked for every other invariant, and written down
-// here so the gap is visible instead of implied. Making the driver coach-gate-aware is the next piece of work.
+// THIS IS A LIMIT OF THE HARNESS, NOT A BUG IN THE PHASE — and that is now known rather than assumed. Donna
+// walked all three the same evening (2026-08-21 00:22Z, reclaim_checkpoint_passed), and C2 wrote a complete
+// Bigger World Audit: twenty items, computed priorities, her reflections in her own words. The sessions finish.
+//
+// Recorded here because the previous version of this comment said the answer was unknown, and a comment that
+// keeps claiming uncertainty after the uncertainty is resolved is the same failure as context that claims what it
+// stopped tracking — it sends the next reader to re-derive something already settled.
+//
+// So they are excluded from the completion check ONLY, still walked for every other invariant. Making the driver
+// coach-gate-aware is still worth doing: it would turn "a member got through once" into a standing guarantee.
 const CANNOT_DRIVE_TO_END = new Set(['C1 · the refine', 'C2 · the audit', 'C3 · quality days']);
 
 for (const s of SESSIONS) {
