@@ -934,17 +934,31 @@ const legacyStage: StageDef = {
   confirm(b) {
     const intent = resolveConfirmCorroborated(b.memberMessage, b.model.replyIntent, () => false, 'is_this_right');
     const rounds = b.legacyRevisions ?? 0;
+    // Set only on the capped-redraft path, so her final version is shown in the same turn it is saved.
+    let capPreamble = '';
 
     // A REDRAFT arriving this turn supersedes everything — the member asked for a change and the model made it.
+    //
+    // THE CAP BINDS BOTH SIDES. It used to bind only the member: the dispute/addition branch below checks
+    // `rounds < LEGACY_MAX_REVISIONS`, while this branch was unconditional and the cap changed nothing but the
+    // COPY. So a member who kept asking for changes was stopped, and a model that kept calling the tool was not —
+    // every redraft re-opened the confirm, and the beat could not end. Found by tests/reconnect-walk.test.ts
+    // before it went green (a model stub that drafted every turn walked straight into it).
+    //
+    // Past the cap we KEEP HER NEWEST DRAFT and commit it rather than asking again. Losing the latest revision to
+    // enforce a limit would be the wrong trade — she asked for that change, and it is her letter.
     if (b.model.legacyBody) {
       b.legacyDraft = b.model.legacyBody;
       b.legacyRevisions = rounds + 1;
-      b.reply =
-        rounds + 1 >= LEGACY_MAX_REVISIONS
-          ? `${b.model.legacyBody}${BEAT_SEP}${LEGACY_CAP_REACHED}`
-          : `${b.model.legacyBody}${BEAT_SEP}${LEGACY_ASK_REVISION}`;
-      b.awaitingConfirm = true;
-      return;
+      if (rounds + 1 < LEGACY_MAX_REVISIONS) {
+        b.reply = `${b.model.legacyBody}${BEAT_SEP}${LEGACY_ASK_REVISION}`;
+        b.awaitingConfirm = true;
+        return;
+      }
+      // At the cap: fall through to COMMIT below, carrying the new draft with it. Held in a local rather than
+      // written to b.reply, because the commit path REPLACES b.reply — assigning here would show her the letter
+      // for one line of code and then throw it away before the turn was emitted.
+      capPreamble = `${b.model.legacyBody}${BEAT_SEP}${LEGACY_CAP_REACHED}${BEAT_SEP}`;
     }
 
     if ((intent === 'dispute' || intent === 'addition') && rounds < LEGACY_MAX_REVISIONS) {
@@ -962,7 +976,7 @@ const legacyStage: StageDef = {
       // (see lib/time, the one authority). The action stamps it via memberToday when it persists; the reply says
       // "a year from today", which is true in every timezone.
       b.legacyLetter = { body, datedFor: '' };
-      b.reply = `${LEGACY_SAVED_1}${BEAT_SEP}${LEGACY_SAVED_2}${BEAT_SEP}${checkpointOpener()}`;
+      b.reply = `${capPreamble}${LEGACY_SAVED_1}${BEAT_SEP}${LEGACY_SAVED_2}${BEAT_SEP}${checkpointOpener()}`;
     } else {
       // No draft ever landed (the model never called the tool). Do not strand them in the beat and do not claim a
       // letter exists — move on quietly. A missing letter is recoverable; a false claim of one is not.
