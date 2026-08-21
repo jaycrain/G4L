@@ -298,6 +298,29 @@ function promptRegions(lines) {
   return inside;
 }
 
+// AN AUTHORING NOTE IS NOT MEMBER COPY, AND THE DECLARATION IT SITS IN CANNOT TELL YOU THAT.
+//
+// The location rule above works on whole declarations: everything inside STAGED_SYSTEM is instruction, so it all
+// goes. LEGACY_PROMPTS is the case that breaks it — the SAME object literal holds `prompt` (the six questions the
+// Legacy Letter actually asks her) and `note` (guidance for whoever edits them). One member copy, one internal,
+// side by side. Excluding the declaration would have taken her questions out of canon; including it leaked this:
+//
+//     note: 'Greg: "There should always be Unfinished Business. That\'s the point." Never resolved, never closed.'
+//
+// which reached Cowork's transcript, attributed a quote to a real person in the artifact the book quotes, and led
+// her to open a decision row asking whether the no-names ruling covered a surface no member has ever seen.
+//
+// So the discriminator here is the FIELD, not the declaration. A string literal assigned to `note:` in source is
+// authoring guidance, always.
+//
+// SAFE, AND I CHECKED RATHER THAN ASSUMED: `note` IS rendered to members — the Playbook, Momentum and Movement
+// all print `{d.note}`, `{c.note}`, `{e.note}`. But those are RUNTIME MEMBER DATA, a member's own note on a Move
+// or a movement entry. This reader only ever sees source literals, so it never touches them. The two share a word
+// and nothing else.
+//
+// Measured before shipping, as this file requires of itself: exactly one string moves.
+const NOTE_FIELD = /(^|[{,;\s])note\s*:\s*['"`]/;
+
 function stringsInFile(rel, rejected) {
   let src;
   try { src = readFileSync(join(ROOT, rel), 'utf8'); } catch { return []; }
@@ -347,7 +370,7 @@ function stringsInFile(rel, rejected) {
       const t = raw.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/\\n/g, ' ').replace(/\\u001E/g, ' / ').trim();
       if (!isMemberCopy(t)) continue;
       if (supersededBy(t)) continue; // a piece of a sentence we already have whole
-      if (promptLines.has(idx + 1) || looksLikeSystemPrompt(t) || isFragment(t) || isCodeArtifact(t)) { rejected.push([rel, t]); continue; }
+      if (NOTE_FIELD.test(line) || promptLines.has(idx + 1) || looksLikeSystemPrompt(t) || isFragment(t) || isCodeArtifact(t)) { rejected.push([rel, t]); continue; }
       const key = t.toLowerCase();
       if (seen.has(key)) continue; // de-dup within a file only (keep reading order across the section)
       seen.add(key);

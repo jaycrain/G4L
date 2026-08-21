@@ -1,4 +1,4 @@
-# Strings EXCLUDED from the member transcript (app @ ce3d1af · 2026-08-21)
+# Strings EXCLUDED from the member transcript (app @ a29feaa · 2026-08-21)
 # Not member copy: system prompts, multi-line fragments, code artifacts. Review when a real line goes missing.
 
 [app/page.tsx] Log in
@@ -108,7 +108,6 @@
 [app/onboarding/welcome.tsx] Grinta
 [app/onboarding/welcome.tsx] is Italian for grit — it’s what you build along the way.
 [app/onboarding/welcome.tsx] & track your progress
-[app/onboarding/welcome.tsx] everything you do is recorded here. Your goals and progress recorded in your words, uniquely yours.
 [app/onboarding/welcome.tsx] you’ll see how far you’ve got to go and the grit you’re growing as you do it.
 [app/onboarding/welcome.tsx] Clip in
 [app/onboarding/welcome.tsx] our founder’s cycling metaphor, and more than “let’s go.” Shoes locked to your pedals is a commitment. Every stroke drives power, and you ride farther and stronger. Everyone forgets to unclip and falls down once. You get up and clip back in.
@@ -239,6 +238,7 @@
 [lib/reconnect/legacy-letter.ts] the social dimension, asked as a person rather than a score
 [lib/reconnect/legacy-letter.ts] contribution — and the bridge toward other people
 [lib/reconnect/legacy-letter.ts] their own evidence, chosen by them, not a metric we assign
+[lib/reconnect/legacy-letter.ts] Greg: "There should always be Unfinished Business. That's the point." Never resolved, never closed.
 [lib/reconnect/legacy-letter.ts] - ${p.prompt}   THEY SAID: ${(answers[p.key] ?? '').trim()}
 [lib/reconnect/legacy-letter.ts] you've got this
 [lib/content/doors-board.ts] Autopilot

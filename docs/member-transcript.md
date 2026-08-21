@@ -1,6 +1,6 @@
 # G4L — Member Transcript (authored copy, verbatim)
 
-Stamp: `app @ ce3d1af · 2026-08-21` · PART 1 of the Cowork release bundle.
+Stamp: `app @ a29feaa · 2026-08-21` · PART 1 of the Cowork release bundle.
 
 **Quote from this.** Every line below is authored, fixed copy a member reads, in reading order by surface. It does
 **not** include the Companion's in-the-moment reflections (those are model-generated and vary per member — describe
@@ -15,7 +15,7 @@ _source: app/page.tsx_
 - You’re still in there.
 - The person you were before life got loud — before the job, the obligations, the hundred reasonable trade-offs that added up to someone you don’t quite recognize. That person didn’t disappear. They got crowded out.
 - Grinta for Life is how you find your way back. Together we’ll name who you’ve drifted from, look at how it happened — everyone walks through a Door or two into the Fade — and get clear on who you want to reclaim. Then we build the way back.
-- It starts with a real conversation. Just you and a companion built for this one thing, and nothing else. What you build here is private, and it stays with you.
+- It starts with a real conversation. Just you and a Companion built for this one thing, and nothing else. What you build here is private, and it stays with you.
 - Already started?
 
 
@@ -96,7 +96,8 @@ _source: app/onboarding/welcome.tsx_
 - You move through them one at a time, as fast or slow as your life allows.
 - Along the way you’ll build a Playbook
 - Your Playbook
-- Your Playbook — everything you do is recorded here. Your goals and progress recorded in your words, uniquely yours.
+- the things you decide are worth keeping. Nothing lands here unless you say so — in your words.
+- Your Playbook — the things you decide are worth keeping. Nothing lands here unless you say so — in your words.
 - ID Score & Grinta Index
 - ID Score & Grinta Index — you’ll see how far you’ve got to go and the grit you’re growing as you do it.
 - Clip in — our founder’s cycling metaphor, and more than “let’s go.” Shoes locked to your pedals is a commitment. Every stroke drives power, and you ride farther and stronger. Everyone forgets to unclip and falls down once. You get up and clip back in.
@@ -218,7 +219,7 @@ _source: lib/ceremony/threshold-beats.ts_
 - Your first pages are written.
 - These aren't answers to a form. They're the start of your Playbook — the record of what's working, which fills as you go.
 - Your Comeback starts with Reconnect — your first Session’s ready whenever you are.
-- Your answers, in your own words, filled the first pages of your Playbook. From here it keeps building itself — everything worth keeping lands there, ready when you need it. It’s uniquely yours.
+- Your answers, in your own words, filled the first pages of your Playbook. From here you decide what goes in — anything you choose to keep lands there, ready when you need it, in your words.
 - This is where it starts — a commitment to get going, and keep going.
 - Clip in →
 - Your G4L Companion
@@ -380,7 +381,6 @@ _source: lib/reconnect/legacy-letter.ts_
 - What have you given back? Who have you brought into the circle?
 - What does the measuring stick say? What is the data point that proves the next year was real?
 - What is your Unfinished Business?
-- Greg: "There should always be Unfinished Business. That's the point." Never resolved, never closed.
 
 _source: lib/content/doors-board.ts_
 
