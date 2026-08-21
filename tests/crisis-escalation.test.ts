@@ -101,7 +101,12 @@ test('an unset alert address is reported, not swallowed', async () => {
 
 test('988 still comes FIRST, and the escalation is disclosed', () => {
   assert.match(CRISIS_RESPONSE_US, /^If you're in crisis, please call or text 988/, '988 leads — always');
-  assert.match(CRISIS_RESPONSE_US, /let Jay know/, 'the member is told a human was alerted (Jay, 2026-08-07)');
+  // THE DISCLOSURE IS THE POINT, NOT THE NAME. This asserted the literal "let Jay know" until 2026-08-21, when
+  // no-real-names became absolute. The member must still be told a human was alerted — that was the 2026-08-07
+  // decision and it stands — but an unknown first name arriving in the worst moment of someone's week is not what
+  // makes it reassuring.
+  assert.match(CRISIS_RESPONSE_US, /let someone here know/i, 'the member is still told a human was alerted');
+  assert.doesNotMatch(CRISIS_RESPONSE_US, /\b(Jay|Greg)\b/, 'and no real person is named in it');
   assert.doesNotMatch(CRISIS_RESPONSE_US, /within 24|hours?\b/i, 'no response-time promise for them to hold in that moment');
   assert.ok(detectCrisis('I want to kill myself').flagged, 'the detector itself is unchanged');
   assert.equal(detectCrisis('I killed it at the gym today').flagged, false, 'and still not trigger-happy');

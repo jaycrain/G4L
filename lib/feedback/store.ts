@@ -1,6 +1,22 @@
-// Charter feedback store — reads/writes member_feedback. Capture is member-initiated (an explicit
-// "Send Feedback" affordance, never the Member Agent). The write tolerates bad input by rejecting it
+// Charter feedback store — reads/writes member_feedback. The write tolerates bad input by rejecting it
 // (returns false) rather than throwing into the member's face.
+//
+// CAPTURE WAS "MEMBER-INITIATED, NEVER THE MEMBER AGENT". That changed on 2026-08-21 (Jay), and the old rule is
+// recorded here rather than deleted, because it was a real decision and the reversal has a reason.
+//
+// The original fear was the agent filing things ABOUT a member that she never chose to send — the same shape as
+// keepers being written without a tap. What changed is that the Companion now has questions it genuinely cannot
+// answer. Asked who built the program, or what happens to her data, it improvised: warm, confident, invented
+// answers we could not stand behind, the worst of them a privacy assurance ("this is between us").
+//
+// The prompt now carries the facts, and `message_founder` carries everything else — so "I don't know, and I can
+// put that in front of the Founders" is an available answer instead of a guess.
+//
+// What makes it safe is that it inverts the original fear: it sends HER question, in her words, and the tool
+// requires the Companion to tell her it is doing so in the same turn. It is not the agent reporting on a member;
+// it is a member asking something through the agent. Both routes are tagged (`surface: 'companion'` vs the Send
+// Feedback button) so the two acts stay countable apart, and the Founder Agent's no-auto-send rule is untouched:
+// nothing here writes or sends anything in Jay's name.
 
 import type { Db } from '../db/schema.ts';
 

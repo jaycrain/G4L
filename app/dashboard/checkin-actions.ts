@@ -22,6 +22,7 @@ import { recentConsumedTitles } from '../../lib/bites/store.ts';
 import { getReclaimItems } from '../../lib/beats/store.ts';
 import { addReclaimItemForMember, addDoorForMember } from '../../lib/member/refine.ts';
 import { noteDoorProfile, doorProfile, describeDoorProfile, openDoors } from '../../lib/reconnect/door-profile.ts';
+import { logFeedback } from '../../lib/feedback/store.ts';
 import { quietDriftClaim } from '../../lib/reconnect/doors-board-claim.ts';
 import { getLegacyLetter } from '../../lib/reconnect/legacy-letter-store.ts';
 import { disconnectionContext } from '../../lib/agent/disconnection.ts';
@@ -570,6 +571,30 @@ export async function sendCheckin(memberId: string, memberMessage: string): Prom
           return { ok: false, message: 'Not saved — that Door is already recorded for them.' };
         }
         return { ok: false, message: "Couldn't map that to one of the Doors. Reflect what they said and ask a little more about what happened, then try again." };
+      }
+      if (name === 'message_founder') {
+        // THE COMPANION'S ONE OUTBOUND CHANNEL — onto the rail a person already works down, rather than a new
+        // surface nobody checks. member_feedback has a status workflow (new → triaged → resolved) and a console
+        // page; a bespoke table would have had neither on day one.
+        //
+        // `author` is the member's own display name, so whoever opens the queue sees WHO is asking before they
+        // read WHAT is asked. The surface tag separates these from the Send-Feedback button, which is a different
+        // act by a different route and should stay countable on its own.
+        const ask = String(input.ask ?? '').trim();
+        if (!ask) return { ok: false, message: 'Nothing was sent — the question came through empty. Ask them to say it again, then send their words.' };
+        const sent = await logFeedback(db, {
+          memberId,
+          author: ctx.displayName ?? null,
+          kind: 'question',
+          body: ask,
+          surface: 'companion',
+          context: { context: String(input.context ?? '').trim() || null },
+        }).catch((e: Error) => { console.error(`[checkin] message_founder failed for member=${memberId}:`, e); return false; });
+        // TOLD PLAINLY EITHER WAY. A model that believes it sent something will tell her it did, and a false "I've
+        // passed that on" about a question she cared enough to ask is its own small betrayal.
+        return sent
+          ? { ok: true, message: 'Sent to the Founders. Tell them plainly that you have passed it on, and do not promise when or whether they will hear back.' }
+          : { ok: false, message: "NOT sent — say you could not get it through rather than that you did, and suggest the Send Feedback link." };
       }
       if (name === 'note_door_detail') {
         // R2's profile. noteDoorProfile refuses a Door they don't hold, so a wrong slug is a no-op — the model is

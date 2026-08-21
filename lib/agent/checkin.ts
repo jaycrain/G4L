@@ -844,6 +844,35 @@ const REFINE_TOOLS = [
     },
   },
   {
+    // MESSAGE THE FOUNDERS — the Companion's one outbound channel, and the answer to a question it used to
+    // improvise. Asked things it has no grounding for ("who built this", "which company", "does anyone read my
+    // conversations"), it produced warm, confident, invented answers. The system prompt now carries the facts we
+    // can stand behind; this carries everything else, so "I don't know" has somewhere to go.
+    //
+    // DIRECTION MATTERS FOR GOVERNANCE. This is member → Founders. It is NOT the Founder Agent, which drafts in
+    // Jay's name and has no send tool by hard rule — nothing here writes or sends anything as him. It puts a
+    // member's own question into the review queue a person already works down.
+    name: 'message_founder',
+    description:
+      'Send the member\'s question or request to the Founders, when it is something you genuinely cannot answer: ' +
+      'how the program was built, who is behind it, what happens to their data beyond what you have been told, ' +
+      'billing, or anything about the business. ' +
+      'TELL THEM YOU ARE DOING IT, in the same turn, in your own words — never send silently and never imply a ' +
+      'reply is guaranteed or will be quick. ' +
+      'Send THEIR question, not your paraphrase of it: `ask` should be recognisable to them as the thing they ' +
+      'asked. `context` is one line for the person reading it — where in the program they are, or what prompted ' +
+      'the question. Never put anything in `context` they have not said to you. ' +
+      'Do NOT use this to escalate distress — crisis has its own route, above, and it is faster.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        ask: { type: 'string', description: 'The member\'s question, in their words.' },
+        context: { type: 'string', description: 'One line of context for the Founder reading it.' },
+      },
+      required: ['ask'],
+    },
+  },
+  {
     // The Door PROFILE (R2). Doors were a bare set — which of the eleven, one primary. This records what the
     // member says ABOUT them: how much each one bears on their own Fade, and where each sits in time. It can only
     // ever update a Door they already hold; it cannot create one (see lib/reconnect/door-profile.ts).
