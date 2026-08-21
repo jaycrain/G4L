@@ -1,6 +1,9 @@
 # The Community build — plan for review
 
-**Status:** DRAFT FOR JAY. Nothing here is built. **2026-08-21.**
+**Status:** DRAFT FOR JAY — **revision 2**, 2026-08-21 evening. Nothing here is built.
+**Changed since r1:** the pact is no longer framed as the keystone (Jay's correction) · the Companion connection is now a
+first-class slice (§8) · every slice has acceptance and an estimate (§6.2) · the current `/connect` page's fate is
+stated (§6.3) · §6.1 folds in Proactive Outreach · a stitched quote in §1 is un-stitched.
 **Input:** `~/g4l-handoffs/2026-08-21-Cowork-Community-rebuild-build-spec-for-CC.md` (Cowork with Jay)
 **Clock:** Big Sugar, 17 October 2026 — about eight weeks.
 
@@ -10,7 +13,7 @@
 
 The spec is the idea and the reasoning behind it. This is the build: what exists, what I'd make, in what
 order, and what I think is wrong. **It is written to be disagreed with.** The sections that most need your eye
-are §6 (what I'd cut), §7 (the data model calls) and §9 (decisions only you can make).
+are §6 (what I'd cut), §7 (the data model calls) and §10 (decisions only you can make).
 
 I have not written any code. That is deliberate — this plan exists so a wrong assumption costs half a day
 instead of five weeks.
@@ -19,11 +22,15 @@ instead of five weeks.
 
 ## 1 · What this is for
 
-Jay, 2026-08-21:
+Jay, 2026-08-21 (two separate remarks, quoted apart because the first was nearly mis-read as the second):
 
 > *"The Community has become a key feature in how the value of the G4L Program gets delivered and Members get
-> desired outcomes from their Reclaim Lists. So, if they win, I win. So that's the spirit, not building for the
-> sake of building."*
+> desired outcomes from their Reclaim Lists."*
+
+> *"If they win, I win. So that's the spirit, not building for the sake of building."*
+
+The second is about **business alignment** — members succeed, the business succeeds — and not, as I first read
+it, about pairing members with each other. Worth recording, because that misreading briefly produced a design.
 
 So the organising question for every slice below is not *does the spec list it* but **does it make a member
 more likely to get back something she said she wanted.** That is also our standing rule — every feature must
@@ -85,20 +92,30 @@ This is a trap, not a gift. See §7.1.
 ### 2.4 What does not exist at all
 
 **No billing.** Zero references to Stripe anywhere in the repo. Payments are a stack decision on paper and
-nothing more. §9.3.
+nothing more. §10.3.
 
 ---
 
 ## 3 · The shape of the build
 
-Three things, in dependency order. Everything in the spec sits on top of one of them.
+**Two things are load-bearing. A third is the mechanism this plan is most interested in, and it is not a
+dependency of the others.**
 
-1. **Entitlement** — who may see what. A security boundary. Nothing else can be built honestly first.
+1. **Entitlement** — who may see what. A security boundary, and genuinely first: nothing else can be built
+   honestly on top of a fake one.
 2. **Groups** — a bounded set of members who share a surface. Rooms are groups; a pact topic is a group of two.
-3. **The verb** — a member making a commitment and naming who holds her to it.
+3. **The Companion's connection to it** — the thing that turns a subpage into a delivery mechanism (§8).
+4. **The pact verb** — a member making a commitment and naming who holds her to it (§9).
 
-The spec's visible parts (three-column nav, Library, Live Room, What's-New) are all downstream of these, and
-all of them demo well while the layer underneath is fake. That is the sequencing risk.
+An earlier draft of this section said everything in the spec sat on top of these. **That was wrong, and Jay
+said so:** *"I'm not sure the whole spec rests on it, because there are other features in Community independent
+of it."* Topics, the Rooms shell, the Live Room and the story layer are all independent of the pact and of each
+other. Only the entitlement and group layers are true prerequisites — and the reason to name that precisely is
+that a plan which treats one mechanism as the keystone gets sequenced as though everything waits on it.
+
+The spec's visible parts (three-column nav, Library, Live Room, What's-New) sit on top of 1 and 2, and all of
+them demo well while the layer underneath is fake. **That is the sequencing risk**, and it is the argument for
+building the invisible thing first.
 
 ---
 
@@ -186,7 +203,9 @@ Cohort, Ride · **the Live Room with RTC and recording→Library** · the Librar
 story pages · the Dashboard What's-New spotlight.
 
 Against eight weeks, with no billing in the repo and entitlement unbuilt, that does not fit. What I would
-ship on 17 October:
+ship on 17 October — **and there is a rendered mockup of exactly this cut**, shared in conversation on
+2026-08-21, showing the three-column Rooms shell with the Live Room as an RSVP + join link and the deferred
+Rooms greyed rather than hidden:
 
 | Ships | Deferred | Why |
 |---|---|---|
@@ -194,12 +213,12 @@ ship on 17 October:
 | Rooms nav + three columns | — | The shell is cheap and it is what makes it feel real. |
 | Topics · The Cohort · The Ride | — | Discussion is the substance. |
 | **Live Room as a scheduled room + join link** | Embedded RTC, auto-recording | **The single biggest cut.** The value is the call happening and members knowing about it. Embedding it is ~90% of the risk for ~10% of the experience, and it is reversible — the room exists, a provider drops in later. |
-| The pact verb + joint topic (§8) | — | The mechanism the whole thesis rests on, and it is one missing verb. |
+| The pact verb + joint topic (§9) | — | The mechanism the whole thesis rests on, and it is one missing verb. |
 | Dashboard signal (conditional, §6.1) | — | Cheap, and it is what makes a member walk in. |
 | Welcome/orient page | Movement/story, steward kit | Orientation is needed Day 1. The story layer is a copy project, not a build one, and it is downstream of the messaging work Jay has in flight. |
 | — | Library as a course | Deferred on merit, not just time — see below. |
 | — | Book Time (1:1) | No 1:1 tier members exist yet. |
-| — | Seasons as a first-class object | Season one is hardcoded. **See §9.4 — this shortcut has a real expiry.** |
+| — | Seasons as a first-class object | Season one is hardcoded. **See §10.4 — this shortcut has a real expiry.** |
 
 **The Library is the one I would question on merit.** As a course it is *information*, and information is the
 thing this program is least short of. It earns its place if it answers "I am stuck on this specific item"
@@ -220,6 +239,48 @@ accent keeps meaning something; it does not compete with the Companion when ther
 
 And the ranking must be a **deterministic ladder with a test** — live call today > direct reply > unread
 posts — not a judgement. Every ranking problem in this product has failed the same way.
+
+**It may not be a new panel at all.** The spec itself says this "ties into the existing 'For you' notifications
+and nudge system" — and **Proactive Outreach is already built, dark behind `OUTREACH`**. If that is the right
+home, this stops being a dashboard change and becomes the notification rail finally having something worth
+saying, which is a materially smaller build and does not touch the triptych's hierarchy at all. I would look
+there before drawing a new panel.
+
+### 6.2 · Slices, acceptance, and what each one costs
+
+An earlier draft asked Jay to define acceptance per slice and then supplied none — blank work handed over and
+called a process. **These are proposals to correct, not questions to answer.** Same for the estimates: without
+them, the Day-1 table above is a list of things I would *like* to fit rather than a claim anyone can check.
+
+Estimates are calendar-days of my working time, and they are the least reliable numbers in this document —
+see §12.
+
+| # | Slice | Done when… | Est. |
+|---|---|---|---|
+| **1** | **Entitlement** | A free member cannot reach an Advisory room by URL, by server action, on a stale session, or after a downgrade — each proven by a test that failed first. A Charter member whose tier lapses keeps her charter-sourced rooms. | **6–8d** |
+| **2** | **Groups + the one reader** | Every read of `connect_post` goes through a single viewer-aware function, a test fails if a direct query appears anywhere else, and a member removed from a group loses its topics from the global feed too. | **4–5d** |
+| **3** | **Rooms shell** | The three-column layout renders, each Room has its own URL, locked Rooms show as locked rather than vanishing, and it works at mobile width. | **4–5d** |
+| **4** | **Topics · Cohort · Ride** | A member can post, reply and react inside a Room she is entitled to; moderation and crisis routing behave exactly as on the global feed. | **3–4d** |
+| **5** | **The pact verb + joint topic** | A member can commit from the Companion or the Community, the joint topic is created and visible to exactly two people, and "Your Accountability" shows a real row for a real member for the first time. | **4–5d** |
+| **6** | **Companion connection** (§8) | The Companion can name a Room she has access to and never one she doesn't, and can propose a pact grounded in a Reclaim item. Nothing crosses between two members — proven by test. | **3–4d** |
+| **7** | **Live Room as scheduled + link** | A call has a time, an RSVP and a join link; the dashboard says so when it's today. | **2d** |
+| **8** | **Dashboard signal** | Accents only when something is time-bound and unhandled; the ranking is deterministic and tested. | **2–3d** |
+| **9** | **Welcome / orient** | A member landing on Community for the first time is told what it is and what to do. | **2d** |
+
+**Total: 30–38 working days.** Against eight weeks that is 40 working days, so it fits **only if nothing goes
+wrong**, and something always does. Slices 1 and 2 are the ones I would protect; 7, 8 and 9 are the ones I
+would cut further if the first two run long — which is the right order, because they are the cheapest to add
+back after launch.
+
+**Slice 1 is also the calibration.** If entitlement takes twelve days instead of seven, we know in week two
+that the rest of this plan is wrong, and we still have six weeks to change it.
+
+### 6.3 · What happens to the current Community while this is built
+
+`/connect` is live and members use it. The build runs **behind a `COMMUNITY` flag on a branch**, so the current
+page stays exactly as it is until we flip. The existing Topics feed, cheers, reports and blocks are kept, not
+rebuilt — this is an extension, as the spec says. **No member loses a surface mid-build**, and the flip is
+reversible by removing the flag, the same as `REDESIGN` and `DASH_TRIPTYCH`.
 
 ---
 
@@ -257,7 +318,44 @@ of them talk. **Both surfaces, one shared object.**
 
 ---
 
-## 8 · The pact — the missing verb
+## 8 · The Companion's connection — first-class, not a fast-follow
+
+I told Jay I would write this in as a real slice rather than a nice-to-have, and the first draft did not. This
+is the correction.
+
+**Today the connection is one summary and one nudge.** `getConnectSummaryForAgent` hands the Companion a thin
+read; `postSessionNudge` produces one line after a Session. That is all.
+
+**Why it should be more than that.** Every platform we researched fails the same way at the same place: none of
+them can tell a member where to go. Circle's documented answer to wayfinding is an operator-authored "Start
+Here" space; its sidebar grows with the operator's content ambitions and tells the member nothing. Mighty
+Networks ships a browsable directory and calls it matchmaking. Their nav is a filing cabinet.
+
+**We have the one thing a filing cabinet cannot be.** The Companion knows her Reclaim List, her Doors, which
+dimension is weakest, where she has stalled, and what she committed to. That is the difference between a
+subpage a member visits and a mechanism that moves her list — and it is the direct answer to the organising
+question in §1.
+
+**What I would build, smallest useful version:**
+
+1. **The Companion can see the Rooms she has access to, and what is live in them** — entitlement-aware, so it
+   never points at a locked door. Reuses §4's `canAccess`; no new knowledge.
+2. **It can make a grounded introduction to a conversation** — not "check out the Community", but naming the
+   thing she said she wanted and the thread where it is being worked on. Cites its basis, like every other
+   recommendation it makes.
+3. **It can propose a pact** (§9), which it is already the natural place for: it knows the list, and the
+   commitment is one sentence long.
+
+**What it must NOT do**, and this is the boundary from §9 restated because it lives here: it may not carry
+anything from one member's conversation into another's. Not a name, not a paraphrase, not "someone else is
+working on that too" if the someone is identifiable. The pact and its topic are the only shared object.
+
+**Deliberately not in scope:** matching, ranking members, or suggesting people. Every platform that tried it
+built a directory and called it more. We are not better placed to do that, and it is not what moves a list.
+
+---
+
+## 9 · The pact — the missing verb
 
 The whole of §2.1 reduces to: a member cannot make a commitment. Everything else is built.
 
@@ -284,40 +382,40 @@ the neutral place to share voluntarily. Nothing in the design may make a partner
 which specifically means no "you have no partner" empty state framed as a deficiency.
 
 **What I do not know:** whether the partner should be notified, and how. The lightest thing that still means
-someone noticed. §9.5.
+someone noticed. §10.5.
 
 ---
 
-## 9 · Decisions only you can make
+## 10 · Decisions only you can make
 
 Each has my recommendation and a default, so silence is a real answer.
 
-**9.1 · Tier vocabulary and the dead column.** Migrate `membership_tier` to the new names, or leave it dead
+**10.1 · Tier vocabulary and the dead column.** Migrate `membership_tier` to the new names, or leave it dead
 and add a new one? The Companion's prompt references "the Direct tier" either way and needs updating.
 *Recommend: migrate, one truth. **Default: I migrate it.***
 
-**9.2 · Does a lapsed member lose the room or the content?** I propose: loses the view, keeps the content,
+**10.2 · Does a lapsed member lose the room or the content?** I propose: loses the view, keeps the content,
 restoring the source restores the view. *Recommend as stated. **Default: I build it that way.***
 
-**9.3 · Billing.** Not in the repo at all. For a comped Charter cohort we do not need it in October. But
+**10.3 · Billing.** Not in the repo at all. For a comped Charter cohort we do not need it in October. But
 "Advisory ~$500/mo" implies real payments, and that is a build with money and PCI in it. *Recommend: hand-set
 entitlement for Charter, defer Stripe to November, and treat it as its own plan. **Default: I defer it and
 raise it separately.*** **This is the one I would most like you to confirm rather than default.**
 
-**9.4 · Seasons.** I want to hardcode season one. That is wrong if a second cohort starts before spring —
+**10.4 · Seasons.** I want to hardcode season one. That is wrong if a second cohort starts before spring —
 retrofitting a season object after real data exists is materially harder. *Needs your read on the cohort
 calendar; I cannot infer it.*
 
-**9.5 · What does the partner get when a pact is made?** A notification, a name on a card, or only the topic
+**10.5 · What does the partner get when a pact is made?** A notification, a name on a card, or only the topic
 appearing on their page? *Recommend: the topic appears, plus one notification at creation and none after —
 the thread carries it from there. **Default: I build that.***
 
-**9.6 · "Rooms" is confirmed canon** (Jay, 2026-08-21: *"Correct, Rooms is a new term for a new feature"*).
+**10.6 · "Rooms" is confirmed canon** (Jay, 2026-08-21: *"Correct, Rooms is a new term for a new feature"*).
 Recorded here so it reaches the next Cowork bundle as a naming decision.
 
 ---
 
-## 10 · How I would work this, which is different from this week
+## 11 · How I would work this, which is different from this week
 
 This week was repair: a member reported something, I fixed it, pushed to `main`, verified live, repeated —
 eight pushes in one day, several into the live conversational engine while a member was inside it. That mode
@@ -338,10 +436,11 @@ rather say so here than quietly pick.
 
 ---
 
-## 11 · What I am most likely to have got wrong
+## 12 · What I am most likely to have got wrong
 
-- **The eight-week estimate.** I have never built this and my cut may still be too big. The first slice
-  (entitlement) will tell us, and it is the right first slice partly *because* it is the honest calibration.
+- **The estimates in §6.2.** These are the least reliable numbers here. I have not built entitlement in this
+  codebase, and 30–38 days against 40 available is not margin, it is a coin-flip that assumes nothing goes
+  wrong. Slice 1 is the honest calibration and it should be read as a measurement, not a milestone.
 - **That the Library is a shelf.** If you and Greg have a specific stuck-point it answers, I am wrong.
 - **The Companion's role.** I keep reaching for it as the connective tissue. That is either the insight of
   this build or my bias, and I cannot tell which from inside.
