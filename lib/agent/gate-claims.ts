@@ -44,6 +44,16 @@
  * Deliberately narrow. Three families, each anchored on a verb of completion or storage, because the cost of
  * casting wider is silencing the conversation this beat exists to have.
  */
+// PROVISIONAL FRAMINGS ARE THE OPPOSITE OF A CLAIM. "Here's your list AS IT STANDS" explicitly says the thing is
+// not finished, and Reclaim's C1 session opens with exactly that line while inviting her to change it. Flagged as
+// a premature close it would have been worse than a false alarm: the engine drops the model's prose on that path,
+// so a legitimate reflection would vanish and she would be handed the builder mid-thought.
+//
+// Found by tests/reclaim-walk.test.ts, in an arc this detector is not even wired into yet — which is the argument
+// for the walk gates in one line. Donna's real case is untouched: "That's your Reclaim List. It lives on your
+// dashboard now" carries no hedge and still trips two separate patterns.
+const PROVISIONAL = /^\s*(?:as it stands|so far|right now|at the moment|for now|today|as of now)\b/i;
+
 const CLAIMS = [
   // 1. THE LIST IS MADE. "That's your Reclaim List." / "So here's what you want back:" / "that's the list"
   /\b(that(?:'|’)?s|here(?:'|’)?s|this is)\s+(?:your|the)\s+(?:reclaim\s+)?list\b/i,
@@ -62,5 +72,10 @@ const CLAIMS = [
 export function claimsGateOutcome(text: string): boolean {
   const t = (text ?? '').trim();
   if (!t) return false;
-  return CLAIMS.some((re) => re.test(t));
+  return CLAIMS.some((re) => {
+    const m = re.exec(t);
+    // A hedge immediately after the phrase withdraws the claim — check what FOLLOWS the match rather than
+    // scanning the whole reply, so a provisional line elsewhere in a long turn cannot excuse a real close.
+    return m !== null && !PROVISIONAL.test(t.slice(m.index + m[0].length));
+  });
 }

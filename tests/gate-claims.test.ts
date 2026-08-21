@@ -37,3 +37,16 @@ test('CONVERSATION IS FREE — the beat is about her list, and must stay sayable
   ];
   for (const t of fine) assert.equal(claimsGateOutcome(t), false, `must NOT be caught: ${t.slice(0, 60)}`);
 });
+
+test('PROVISIONAL framings are not claims — they say the opposite', () => {
+  // Reclaim's C1 opens with this while inviting her to change the list. Flagged as a close it would be worse than
+  // a false alarm: the engine drops the model's prose on that path, so the reflection would vanish and she would
+  // be handed the builder mid-thought. Found by tests/reclaim-walk.test.ts.
+  assert.equal(claimsGateOutcome("Here's your list as it stands:\n\n• get my strength back"), false);
+  assert.equal(claimsGateOutcome("Here's your list so far — anything missing?"), false);
+  assert.equal(claimsGateOutcome("That's the list right now, and it can change."), false);
+
+  // …and the real close still trips, hedge or no hedge elsewhere in the turn.
+  assert.equal(claimsGateOutcome("That's your Reclaim List. It lives on your dashboard now."), true);
+  assert.equal(claimsGateOutcome("Here's your list as it stands. That's plenty for today."), true);
+});
