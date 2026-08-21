@@ -254,6 +254,50 @@ function concatRuns(src) {
   return out;
 }
 
+// WHERE A STRING LIVES BEATS WHAT IT SAYS — the fifth escape ends the content-guessing.
+//
+// Every rule above reads the TEXT and asks whether it sounds like steering. That works only while a steering
+// block is one string literal. Prompts here are built by concatenating a dozen of them, so the register signal
+// ("NEVER DECLARE THE LIST MADE…") sits on the FIRST fragment and the continuation sentences are separate
+// literals that open in ordinary prose. On 2026-08-20 one of those — `The exact shape to avoid, which shipped to
+// a member: "So here's what you want back…"` — passed CAPS_IMPERATIVE, the phrase denylist, the model-address
+// rule and the length rule, because it is a plain English sentence. It is also a quotation of a BUG, and it was
+// about to ship into the artifact the book quotes verbatim.
+//
+// Fifth escape, same shape each time: a filter that can only see the case it was written for. So this one does
+// not read the string at all. A literal inside a declaration whose NAME says "prompt" is never member copy,
+// however it is phrased — the author cannot accidentally write their way past it.
+//
+// Deliberately NOT file-level: onboarding-staged.ts holds the system prompt AND the openers a member reads.
+//
+// AND DELIBERATELY NOT MATCHING "PROMPT". The word means two opposite things here: STAGED_SYSTEM is steering, but
+// LEGACY_PROMPTS is the six questions the Legacy Letter beat ASKS HER — "What is your Unfinished Business?",
+// "What does a Tuesday look like for you one year from now?" — which is exactly the copy the book quotes. My
+// first version matched it and silently pulled 40 real member questions out of the transcript, including every
+// IDQ and audit item stem. Measured before shipping (the discipline this file already required of itself); the
+// list below is only the names that cannot mean anything but model instruction.
+const PROMPT_DECL =
+  /^\s*(?:export\s+)?(?:const|let|function)\s+([A-Za-z0-9_]*(?:_SYSTEM|SYSTEM_PROMPT|_TOOLS|STEERING|stageInstruction|systemFor)[A-Za-z0-9_]*)\b/;
+
+/** Line numbers (1-based) that fall inside a prompt-building declaration. */
+function promptRegions(lines) {
+  const inside = new Set();
+  let depth = 0;
+  let active = false;
+  lines.forEach((line, i) => {
+    if (!active && PROMPT_DECL.test(line)) { active = true; depth = 0; }
+    if (!active) return;
+    inside.add(i + 1);
+    for (const ch of line) {
+      if (ch === '(' || ch === '{' || ch === '[') depth++;
+      else if (ch === ')' || ch === '}' || ch === ']') depth--;
+    }
+    // A declaration ends when its brackets balance AND the line looks terminal — a bare `;` or a closing brace.
+    if (depth <= 0 && /[;}]\s*$/.test(line)) active = false;
+  });
+  return inside;
+}
+
 function stringsInFile(rel, rejected) {
   let src;
   try { src = readFileSync(join(ROOT, rel), 'utf8'); } catch { return []; }
@@ -291,6 +335,7 @@ function stringsInFile(rel, rejected) {
     spanning.get(n.at).push(n.text);
   }
   const supersededBy = (t) => joined.some((j) => j.text !== t && j.text.includes(t));
+  const promptLines = promptRegions(lines);
   lines.forEach((line, idx) => {
     // skip comment-only lines
     if (/^\s*(\/\/|\*|\/\*)/.test(line)) return;
@@ -302,7 +347,7 @@ function stringsInFile(rel, rejected) {
       const t = raw.replace(/\\'/g, "'").replace(/\\"/g, '"').replace(/\\n/g, ' ').replace(/\\u001E/g, ' / ').trim();
       if (!isMemberCopy(t)) continue;
       if (supersededBy(t)) continue; // a piece of a sentence we already have whole
-      if (looksLikeSystemPrompt(t) || isFragment(t) || isCodeArtifact(t)) { rejected.push([rel, t]); continue; }
+      if (promptLines.has(idx + 1) || looksLikeSystemPrompt(t) || isFragment(t) || isCodeArtifact(t)) { rejected.push([rel, t]); continue; }
       const key = t.toLowerCase();
       if (seen.has(key)) continue; // de-dup within a file only (keep reading order across the section)
       seen.add(key);
