@@ -18,7 +18,12 @@ insert into door (slug, display_name, descriptor, sort_order) values
   ('full_house',   'The Full House',  'The active-family season — marriage, young kids, everyone needing you — and no space left for yourself.', 9),
   ('grind',        'The Grind',       'The work or ambition that grew until it crowded out the person underneath.', 10),
   ('load_bearer',  'The Load-Bearer', 'Becoming the one who carries everyone — the household, the money, the needs — until there''s no room left for you.', 11),
-  ('acceptance',   'The Acceptance',  'The quiet surrender to age — deciding that slower, softer, and less capable is simply how it goes now, and expecting nothing else.', 12)
+  -- RETIRED as a Door 2026-08-15 (Decision C). The row stays so existing member_door rows remain valid; the code
+  -- never derives it. sort_order 99 moves it out of the live set's ordering.
+  ('acceptance',   'The Acceptance',  'The quiet surrender to age — deciding that slower, softer, and less capable is simply how it goes now, and expecting nothing else.', 99),
+  -- RESTORED as a Door 2026-08-22 (Jay), from Greg's R2 Gated Asset V4, which names it a required minimum.
+  -- Member-claimable only: no aliases, and matchDoors skips it outright — see lib/doors.ts.
+  ('autopilot',    'Autopilot',       'Decades of routine without reflection — you didn''t choose to lose yourself, you just stopped paying attention.', 12)
 on conflict (slug) do update
   set display_name = excluded.display_name,
       descriptor   = excluded.descriptor,

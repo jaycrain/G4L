@@ -5,7 +5,7 @@
 // "which expectation, when" rather than "and here is what is in it".
 
 import { DOORS, type DoorSlug } from '../doors.ts';
-import { BOARD_ORDER, BOARD_HEADER, QUIET_DRIFT_CARD, doorRecognition } from '../content/doors-board.ts';
+import { BOARD_ORDER, BOARD_HEADER, doorRecognition } from '../content/doors-board.ts';
 import type { DoorsBoardExpectation } from './onboarding.ts';
 
 /**
@@ -37,15 +37,11 @@ function visibleCards(): { slug: string; name: string; recognition: string }[] {
 export function doorsBoardExpectation(held: DoorSlug[] | string[]): DoorsBoardExpectation {
   const cards = visibleCards();
 
+  // No separate quietDrift card any more — Autopilot is the twelfth entry in `cards`, rated like the rest.
   return {
     kind: 'doors_board',
     cards,
     held: [...held].filter((s): s is string => typeof s === 'string'),
-    quietDrift: {
-      key: QUIET_DRIFT_CARD.key,
-      name: QUIET_DRIFT_CARD.displayName,
-      recognition: QUIET_DRIFT_CARD.recognition,
-    },
     header: BOARD_HEADER,
   };
 }

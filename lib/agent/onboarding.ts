@@ -304,8 +304,9 @@ export type DoorsBoardExpectation = {
   cards: { slug: string; name: string; recognition: string }[];
   /** Slugs she already holds, pre-lit. */
   held: string[];
-  /** Greg's quiet-drift card. NOT a Door — claiming it writes the resignation signal (Doors-board ruling #9). */
-  quietDrift: { key: string; name: string; recognition: string };
+  // The separate `quietDrift` card is gone (2026-08-22). Autopilot is the twelfth Door and rides in `cards`,
+  // rated like the rest — Greg's R2 asset names it a required minimum. See lib/doors.ts for why it is the one
+  // Door the matcher can never infer.
   header: string;
 };
 

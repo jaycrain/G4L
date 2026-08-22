@@ -15,9 +15,10 @@ import { RELEVANCE_ANCHORS } from '../../lib/reconnect/door-profile.ts';
 // IT NEVER BLOCKS HER (ruling #7). Continue is always live, with nothing marked if that is her answer. The three
 // temporal questions appear only once she holds two or more, because "which came first" is meaningless with one.
 //
-// THE QUIET-DRIFT CARD RENDERS IDENTICALLY to the Doors, deliberately. Making the quiet one look different would
-// tell her it counts less, and she is the member Greg was most concerned about. It differs only in where the
-// claim is stored — as the resignation signal, not a Door.
+// AUTOPILOT IS A DOOR (2026-08-22). It used to render below the loop as a separate card with a binary claim; it
+// is now the twelfth entry in `cards`, rated like the rest, which is what Greg's R2 asset specifies. The old card
+// already rendered identically on purpose — making the quiet one look different would tell her it counts less —
+// so a member sees the same thing plus the rating she should always have had.
 //
 // ABSENT IS NOT ZERO. An unrated Door shows no number at all. Rendering null as 0 would turn an invitation into a
 // chore, and this is exactly the data where that would sting.
@@ -47,7 +48,6 @@ export default function DoorsBoard({ expects, disabled, onSubmit }: Props) {
     ...expects.held.filter((slug) => (ratings[slug] ?? 2) >= 2),
     ...Object.entries(ratings).filter(([, n]) => n >= 2).map(([slug]) => slug),
   ]);
-  const [quiet, setQuiet] = useState(false);
   const [first, setFirst] = useState<string | null>(null);
   const [biggest, setBiggest] = useState<string | null>(null);
   const [stillOpen, setStillOpen] = useState<Set<string>>(new Set());
@@ -70,7 +70,11 @@ export default function DoorsBoard({ expects, disabled, onSubmit }: Props) {
   const submit = () =>
     onSubmit(serializeBoardSubmission({
       doors: mine.map((c) => ({ slug: c.slug as never, relevance: ratings[c.slug] ?? null })),
-      quietDrift: quiet,
+      // DERIVED, not a separate control. Autopilot is a Door now, so claiming it is an ordinary rating — but the
+      // resignation signal (`quiet_drift_claimed_at`) still rides on that claim, so nothing that was being
+      // recorded stops being recorded. Read the caveat in lib/content/doors-board.ts: this is now a weaker proxy
+      // than it was, because claiming Autopilot says "this Door is mine", not "I have given up".
+      quietDrift: mine.some((c) => c.slug === 'autopilot'),
       first: (first as never) ?? null,
       biggest: (biggest as never) ?? null,
       stillOpen: [...stillOpen] as never[],
@@ -132,27 +136,6 @@ export default function DoorsBoard({ expects, disabled, onSubmit }: Props) {
           );
         })}
 
-        <div
-          style={{
-            border: `1px solid ${quiet ? 'var(--teal)' : 'rgba(0,0,0,0.12)'}`,
-            borderRadius: 8,
-            background: quiet ? 'var(--grey)' : 'transparent',
-            padding: '0.7rem 0.9rem',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <button
-              type="button"
-              onClick={() => setQuiet((q) => !q)}
-              disabled={disabled}
-              aria-pressed={quiet}
-              style={{ flex: 1, textAlign: 'left', border: 'none', background: 'none', padding: 0, font: 'inherit', color: 'inherit', fontWeight: 600, cursor: 'pointer' }}
-            >
-              {quiet ? '✓ ' : ''}{expects.quietDrift.name}
-            </button>
-          </div>
-          <p style={{ margin: '0.35rem 0 0', lineHeight: 1.7, fontSize: '0.95rem' }}>{expects.quietDrift.recognition}</p>
-        </div>
       </div>
 
       {showReflections && (
@@ -183,7 +166,7 @@ export default function DoorsBoard({ expects, disabled, onSubmit }: Props) {
       {/* TEXT, NOT A PILL, BOTTOM LEFT — the .see-more standard the panels use for their foot link. A filled pill
           here read as the loudest thing on a page whose job is quiet browsing. */}
       <button type="button" className="see-more" onClick={submit} disabled={disabled} style={{ display: 'block', border: 'none', background: 'none', padding: 0, cursor: 'pointer', marginTop: '1.1rem' }}>
-        {marked.size || quiet ? 'Continue →' : 'None of these — continue →'}
+        {marked.size ? 'Continue →' : 'None of these — continue →'}
       </button>
     </div>
   );

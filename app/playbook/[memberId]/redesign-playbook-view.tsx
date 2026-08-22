@@ -338,7 +338,7 @@ export default function RedesignPlaybookView({
               Keep{ck ? ` in ${CHAPTER_LABEL[ck]}` : ''}
             </button>
             <button type="button" className="pb-btn" disabled={busy} onClick={() => { setExpandingId(e.id); setDraft(''); }}>Write about this →</button>
-            <button type="button" className="pb-btn ghost" disabled={busy} onClick={() => run(() => dismissEntryAction(memberId, e.id))}>Delete</button>
+            <button type="button" className="pb-btn ghost pb-del" disabled={busy} onClick={() => run(() => dismissEntryAction(memberId, e.id))}>Delete</button>
           </div>
         )}
       </div>

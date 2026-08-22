@@ -173,7 +173,7 @@ export default function PlaybookView({
           <button type="button" className="pb-btn keep" disabled={busy} onClick={() => run(() => keepEntryAction(memberId, e.id))}>
             Keep it
           </button>
-          <button type="button" className="pb-btn ghost" disabled={busy} onClick={() => run(() => dismissEntryAction(memberId, e.id))}>
+          <button type="button" className="pb-btn ghost pb-del" disabled={busy} onClick={() => run(() => dismissEntryAction(memberId, e.id))}>
             Not now
           </button>
         </div>

@@ -534,11 +534,13 @@ test('BOARD · the doors stage opens with the board, pre-lit with the Doors she 
   const turn = applyReconnectTurn(state, [], 'ok', { text: 'Here is where we go deeper.' });
 
   assert.equal(turn.expects?.kind, 'doors_board', 'recognition comes before the conversation');
-  const e = turn.expects as { cards: { slug: string }[]; held: string[]; quietDrift: { name: string } };
-  assert.equal(e.cards.length, 11, 'every Door is shown, not just hers');
+  const e = turn.expects as { cards: { slug: string }[]; held: string[] };
+  assert.equal(e.cards.length, 12, 'every Door is shown, not just hers');
   assert.equal(e.cards[0]!.slug, 'body', 'board order is the instrument, applied here and nowhere else');
   assert.deepEqual(e.held, ['career_cliff', 'load_bearer'], 'the board recognises her rather than starting blank');
-  assert.equal(e.quietDrift.name, 'Autopilot', "Greg's quiet Door is on the board");
+  // Autopilot is the twelfth Door as of 2026-08-22, not a separate quietDrift card — Greg's R2 asset names it a
+  // required minimum and rates it like the rest. It sits last because the prevalence ranking does not contain it.
+  assert.equal(e.cards[e.cards.length - 1]!.slug, 'autopilot', "Greg's quiet Door is on the board, as a Door");
 });
 
 test('BOARD · her taps become Doors, primary follows biggest-impact, and the board does not reappear', () => {

@@ -6,9 +6,26 @@
 //   2. THE TEMPORAL PATTERN — which they walked through first, which weighs most today, which is STILL OPEN.
 //   3. (the Community share — a separate surface, not this file)
 //
-// A CONTINUUM, NOT A CATEGORY. Greg's documents propose a 3-point scale; his 2026-08-08 email goes further than his
-// own documents and asks for a continuum, "a profile of issues instead of a singular one". So relevance is 1–10.
-// See migration 0085 for his verbatim words and the reasoning.
+// RELEVANCE IS 1–3, AND THIS COMMENT USED TO SAY 1–10 (corrected 2026-08-22).
+//
+// It read: "his 2026-08-08 email goes further than his own documents and asks for a continuum … So relevance is
+// 1–10." The column has never held anything but 1–3 — `normalizeRelevance` clamps at 3, the board sends three
+// anchors, `relevanceAnchor` can only name three. A file documenting a scale the product has never used is how
+// the next person builds on a number that cannot arrive.
+//
+// THE SCALE AND ITS REASONING LIVE AT `RELEVANCE_ANCHORS` BELOW — one fact, one site. Jay ruled back to three on
+// 2026-08-18; this header simply contradicted that ruling for four days.
+//
+// Re-confirmed 2026-08-22 with two facts the original ruling did not have. Nothing in the app COMPUTES with the
+// number: every consumer converts it straight back to a word through `relevanceAnchor`, and the board uses it
+// once as a threshold (>= 2 means it is hers), so ten points would yield seven values with no label and no
+// reader. And Greg's Science Check specifies three-point as well as his Companion Memo — under our own precedence
+// rule (Gated Asset + Science Check are SOURCE, the email is commentary) three FOLLOWS his spec rather than
+// overriding it.
+//
+// WHAT IT COSTS, said out loud because it is one-way: range not collected cannot be recovered. If the Door
+// profile is ever wanted as research data, three points is what will exist. Accepted deliberately — this is a
+// product signal and no part of the ID Score, which is the instrument that is actually frozen.
 //
 // THE HARD RULE THIS FILE ENFORCES: THE COMPANION PROPOSES, IT NEVER DECIDES. Every value here is something the
 // member said about their own life. The model may not infer that a Door is "probably still open" from tone, or
@@ -146,7 +163,8 @@ export async function doorProfile(db: Db, memberId: string): Promise<DoorProfile
         displayName: DOORS.find((d) => d.slug === r.door_slug)?.displayName ?? r.door_slug,
         isPrimary: r.is_primary,
         // Postgres returns int as a number, PGlite can hand back a string — normalize so a caller comparing
-        // `relevance >= 7` isn't quietly doing string comparison (jsonb-string-kills-sql-predicates, same shape).
+        // `relevance >= 2` isn't quietly doing string comparison (jsonb-string-kills-sql-predicates, same shape).
+        // (Was written as `>= 7`, from the 1–10 scale this file used to claim and never had.)
         relevance: r.relevance === null ? null : Number(r.relevance),
         openedFirst: r.opened_first,
         biggestImpact: r.biggest_impact,

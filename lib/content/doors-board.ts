@@ -56,6 +56,11 @@ export const BOARD_ORDER: readonly DoorSlug[] = [
   'empty_nest',
   'marriage',
   'grind',
+  // AUTOPILOT SITS LAST, and its position is the one place the prevalence ranking cannot speak. That research
+  // operationalizes every Door as a measurable life EVENT, so it does not contain Autopilot at all — absent, not
+  // ranked low. Last is therefore not a claim about how common it is; it is the honest position for the only card
+  // the ranking has nothing to say about, and it leaves the evidenced order above it undisturbed.
+  'autopilot',
 ];
 
 export const DOOR_RECOGNITION: readonly DoorRecognition[] = [
@@ -152,33 +157,34 @@ export const DOOR_RECOGNITION: readonly DoorRecognition[] = [
       'movement started with email. Evenings that used to end with stretching ended with spreadsheets. You built ' +
       'something impressive and lost yourself inside it.',
   },
+  {
+    // Greg's own copy, moved here verbatim from the retired QUIET_DRIFT_CARD — see the note above it.
+    slug: 'autopilot',
+    source: 'greg',
+    recognition:
+      "The one nobody talks about, because it's not dramatic enough for a diagnosis. Decades of routine without " +
+      "reflection. Work, eat, sleep, repeat. You didn't choose to lose yourself. You just stopped paying attention. " +
+      'And one day you woke up and realized you had no idea who you were beyond your obligations.',
+  },
 ];
 
-// THE QUIET-DRIFT CARD — Greg's Autopilot copy, and NOT A DOOR.
+// THE QUIET-DRIFT CARD IS RETIRED — Autopilot is a Door (2026-08-22, Jay).
 //
-// It renders identically to the other cards; a member cannot tell it apart, which is deliberate. Making the quiet
-// one look different would tell her it counts less, and she is the member Greg was most concerned about.
+// It shipped on 2026-08-18 as a special card that was deliberately NOT a Door, on the reasoning that it was a
+// stance in a taxonomy of events. Greg's R2 Gated Asset V4 says otherwise, in his own words: he names the
+// Autopilot Door three times, puts it in the required minimum ("at minimum Relationship, Social, Autopilot"), and
+// rates it for relevance like every other Door. Acceptance was a conclusion a member DREW; Autopilot is a pattern
+// he groups with caregiving and career absorption. The copy below is unchanged and now lives in DOOR_RECOGNITION
+// with the other eleven.
 //
-// WHAT CLAIMING IT DOES: writes the RESIGNATION SIGNAL, not a Door. There is no `acceptance` slug to write to —
-// Decision C removed it on 2026-08-15 because it was the only STANCE in a taxonomy of EVENTS, and that category
-// error is why it could never be matched. It fired on Donna's "at my age and in this economy, I was virtually
-// unhireable" — a woman describing being shut out of the job market, told she had quietly surrendered to aging.
-// The cues survive as isAcceptanceFade feeding the Stage-0 admission gate. This card lets her DECLARE what we
-// currently only INFER, which is strictly better than the thing that misread her.
+// ONE SENTENCE STAYS CUT FROM GREG'S COPY (Jay ruled, 2026-08-18, and it still holds). It opened "The most common
+// one." The prevalence research does not contain Autopilot at all — absent, not ranked low — because it
+// operationalizes every Door as a measurable life EVENT. The Body ranks first. "The one nobody talks about"
+// normalizes without ranking, which is the part that was doing the work.
 //
-// ONE SENTENCE CUT FROM GREG'S COPY (Jay ruled, 2026-08-18). It opened "The most common one." The prevalence
-// research ranks the whole taxonomy and does not contain Autopilot at all — not ranked low, absent — because it
-// operationalizes every Door as a measurable life EVENT, which a stance cannot be. The Body ranks first. The cut
-// is a factual correction, not a softening: "The one nobody talks about" still normalizes without ranking.
-export const QUIET_DRIFT_CARD = {
-  key: 'quiet_drift',
-  displayName: 'Autopilot',
-  source: 'greg' as const,
-  recognition:
-    "The one nobody talks about, because it's not dramatic enough for a diagnosis. Decades of routine without " +
-    "reflection. Work, eat, sleep, repeat. You didn't choose to lose yourself. You just stopped paying attention. " +
-    'And one day you woke up and realized you had no idea who you were beyond your obligations.',
-};
+// THE RESIGNATION SIGNAL still rides on this claim — see quiet_drift_claimed_at in lib/reconnect/doors-board-claim.ts.
+// It is written when she claims Autopilot, so nothing is lost, but it is now a WEAKER proxy than it was: claiming
+// Autopilot says "this Door is mine", not "I have given up". Giving that signal its own home is open (Jay, 8/22).
 
 // The board header. "Most people walk through several" is EVIDENCED, not asserted — ~86% of midlife women report
 // medium-to-high lifetime exposure to major stressful events, and midlife concentrates more co-occurring stressors

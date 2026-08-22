@@ -171,6 +171,13 @@ export const MIGRATIONS: Array<{ file: string; sentinel: Sentinel }> = [
   { file: 'migrations/0084_b3_daily_entry.sql', sentinel: 'b3_daily_entry' },
   { file: 'migrations/0085_door_profile.sql', sentinel: { table: 'member_door', column: 'still_open' } },
   { file: 'migrations/0086_quiet_drift_claim.sql', sentinel: { table: 'member_profile', column: 'quiet_drift_claimed_at' } },
+  // A DATA migration, not a schema one — so the sentinel asks whether the ROW is there. A {table,column} sentinel
+  // would be satisfied by the `door` table existing and would report a database that has never seen this
+  // migration as up to date, which is the exact way the drift checker has lied before.
+  {
+    file: 'migrations/0087_autopilot_door.sql',
+    sentinel: { sql: "select exists (select 1 from door where slug = 'autopilot') as e" },
+  },
 ];
 export const SEED_SQL = () => sqlFile('seed/0001_reference_data.sql');
 

@@ -121,8 +121,18 @@ test('every slug the code can derive exists in the seeded door table', async () 
   // why this guard permits it rather than demanding they match.
   const { readFileSync } = await import('node:fs');
   const seed = readFileSync('supabase/seed/0001_reference_data.sql', 'utf8');
-  const seeded = new Set([...seed.matchAll(/\(\s*'([a-z_]+)',\s*'The /g)].map((m) => m[1]!));
-  assert.ok(seeded.size >= 11, `parsed ${seeded.size} seeded doors — the parse broke, not the data`);
+  // PARSE THE DOOR STATEMENT, NOT THE WHOLE FILE. The first version matched `('slug', 'The ` anywhere in the
+  // seed, which quietly required every Door to be named "The Something". Autopilot is not, so on 2026-08-22 the
+  // guard reported it missing while the seed contained it — a guard failing on a naming convention rather than on
+  // the thing it exists to catch. Scope to the `insert into door` statement, then accept any slug inside it.
+  // Strip `--` comments FIRST. The statement is found by scanning to its terminating semicolon, and a prose
+  // comment inside the VALUES list containing a semicolon truncates the block mid-way — which is exactly what
+  // happened on 2026-08-22 ("…rows remain valid; the code never derives it"), reporting a Door as unseeded when
+  // the row was right there four lines below the cut.
+  const sql = seed.replace(/--[^\n]*/g, '');
+  const block = sql.match(/insert into door\b[\s\S]*?;/)?.[0] ?? '';
+  const seeded = new Set([...block.matchAll(/\(\s*'([a-z_]+)'\s*,/g)].map((m) => m[1]!));
+  assert.ok(seeded.size >= 12, `parsed ${seeded.size} seeded doors — the parse broke, not the data`);
   const missing = DOOR_SLUGS.filter((s) => !seeded.has(s));
   assert.deepEqual(
     missing, [],

@@ -55,6 +55,32 @@ Companion and the founder emails cannot disagree with each other.
 **9 · The quiet-drift card is NOT a Door.** Greg's Autopilot copy appears on the board; claiming it writes the
 **resignation signal**, not a Door.
 
+> ### ⚠️ REVERSED 2026-08-22 (Jay). Autopilot IS the 12th Door.
+>
+> Donna flagged the Autopilot screen as inconsistent with the other Doors — no relevance rating, questions running
+> together, a small Continue. Reading Greg's R2 source to answer her showed the inconsistency was ours, not a
+> build gap: **he names the Autopilot Door three times and puts it in the required minimum** — *"the door set
+> rendered in R2 includes at minimum Relationship, Social, Autopilot"* — rated for relevance like every other
+> Door. His Companion Memo example: *"you walked through the Autopilot Door and the Social Door — both very
+> relevant."*
+>
+> **The reasoning below was a category error.** It applies the Acceptance retirement — "a stance in a taxonomy of
+> events" — to a different door. Acceptance was a conclusion the member DREW ("I've made my peace"). Autopilot is
+> decades of routine without reflection, which Greg groups with caregiving and career absorption as a recurring
+> pattern. The two do not share the problem.
+>
+> **The real risk in this ruling was engineering, not taxonomy** — a new slug is a new MATCHER target, and a
+> matcher is what misread Donna on Acceptance. Ruling 4 above already resolves that: self-claim outranks the
+> matcher. So Autopilot ships with **no aliases and an explicit skip in `matchDoors`** — member-claimable, never
+> model-inferrable. It is the only Door with that property, and `tests/doors-board.test.ts` pins it.
+>
+> **The resignation signal survives but is weaker.** `quiet_drift_claimed_at` is still written when she claims
+> Autopilot, so nothing that was being recorded stops being recorded — but the claim now means "this Door is
+> mine", not "I have given up". Giving that signal its own home is **open**.
+>
+> Migration `0087_autopilot_door.sql`. Prevalence ordering puts it last, because the research does not contain it
+> at all — absent, not ranked low.
+
 > Cowork proposed a 12th Door on the basis that *"the acceptance slug and its gate are still live — only the label
 > was retired, so this is a relabel."* **That is false.** `DoorSlug` derives from `DOORS`, which has 11 entries and
 > no `acceptance`. What survived is the CUE LIST, repurposed as `isAcceptanceFade`, feeding the Stage-0 admission
@@ -69,9 +95,16 @@ Companion and the founder emails cannot disagree with each other.
 > upgrades that signal from **inferred to declared** — the member says it about herself instead of us concluding it
 > from cues. That is strictly better than what mis-fired on her.
 
-**Also settled:** 1–10 relevance (Greg's 2026-08-08 email supersedes Cowork's proposed 1–3 — logged watch-item from Cowork:
-check whether members use the range or cluster at the ends). The *"none of these — it was quieter than that"*
-free-text affordance stays. **No prevalence claims** — qualitative only.
+**Also settled: 3-point relevance** — Greg's own anchors, "1 = not relevant, 2 = somewhat relevant, 3 = very
+relevant". *This line said 1–10 until 2026-08-22 and was wrong when it was written:* Jay had already ruled back to
+three on 2026-08-18, once the built board showed ten dots wrapping to two rows per marked card. The 1–10 reading
+came from his 2026-08-08 email — which says "it isn't binary… a continuum on each one" and never names a number.
+His Science Check and Companion Memo both specify the three points, and under our own precedence rule the Gated
+Asset and Science Check are SOURCE while the email is commentary. Re-confirmed 2026-08-22: nothing in the app
+computes with the value — every consumer turns it back into a word via `relevanceAnchor`, and the board uses it
+once as a threshold. The scale and its reasoning live at `RELEVANCE_ANCHORS` in `lib/reconnect/door-profile.ts`;
+do not restate it anywhere else. The *"none of these — it was quieter than that"* free-text affordance stays.
+**No prevalence claims** — qualitative only.
 
 ---
 

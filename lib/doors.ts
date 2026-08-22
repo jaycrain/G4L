@@ -29,6 +29,23 @@ export const DOORS = [
   { slug: 'full_house',    displayName: 'The Full House',    descriptor: 'The active-family season — marriage, young kids, everyone needing you — and no space left for yourself.' },
   { slug: 'grind',         displayName: 'The Grind',         descriptor: 'The work or ambition that grew until it crowded out the person underneath.' },
   { slug: 'load_bearer',   displayName: 'The Load-Bearer',   descriptor: 'Becoming the one who carries everyone — the household, the money, the needs — until there’s no room left for you.' },
+  // v4.0 (Aug 22 2026): AUTOPILOT restored as a Door (Jay, after reading Greg's R2 source).
+  //
+  // It shipped 2026-08-18 as a special "quiet-drift card" that was deliberately NOT a Door, on the reasoning that
+  // it was "a stance in a taxonomy of events" — the reasoning that retired The Acceptance. That was a category
+  // error: Acceptance was a CONCLUSION a member drew ("I've made my peace"); Autopilot is decades of routine
+  // without reflection, which Greg groups with caregiving and career absorption as a recurring pattern.
+  //
+  // Greg's R2 Gated Asset V4 names it three times and makes it a required minimum — "the door set rendered in R2
+  // includes at minimum Relationship, Social, Autopilot" — rated for relevance like every other Door. His
+  // Companion Memo example: "you walked through the Autopilot Door and the Social Door — both very relevant."
+  //
+  // IT HAS NO ALIASES, AND THAT IS THE POINT. The real risk in the 8/18 ruling was never the taxonomy — it was
+  // that a new slug means a new MATCHER target, and a matcher is exactly what misread Donna on Acceptance. So this
+  // Door is member-claimable and never model-inferrable: `matchDoors` cannot return it, because there is nothing
+  // for it to match on. Decision 4 of the Doors board already says self-claim outranks the matcher; this is that
+  // rule doing the work. Do not add aliases here — that would re-create the failure the retirement was about.
+  { slug: 'autopilot',     displayName: 'Autopilot',         descriptor: 'Decades of routine without reflection — you didn’t choose to lose yourself, you just stopped paying attention.' },
 ] as const;
 
 export type DoorSlug = (typeof DOORS)[number]['slug'];
@@ -159,6 +176,17 @@ export function matchDoors(message: string): DoorSlug[] {
     }
   }
   for (const d of DOORS) {
+    // AUTOPILOT IS NEVER INFERRED — it is claimed or it is nothing (2026-08-22).
+    //
+    // It has no aliases, but that alone does not make it un-inferrable: the fallback below matches a Door's own
+    // NAME, and "autopilot" is an ordinary English phrase. "I've been on autopilot for years" would tag it, and
+    // so would a member echoing our own Rewire copy back at us ("the campaign, running on autopilot").
+    //
+    // Excluding it costs nothing, because the board presents every Door for rating — she SEES Autopilot and
+    // rates it herself. The matcher's job is to pre-light what her story already said; this is the one Door
+    // where a wrong pre-light is the exact failure that retired The Acceptance, and where she loses nothing by
+    // us staying quiet. Self-claim outranks the matcher (Doors board, decision 4).
+    if (d.slug === 'autopilot') continue;
     const aliases = DOOR_ALIASES[d.slug] ?? [];
     if (aliases.some((a) => m.includes(a))) {
       found.add(d.slug);

@@ -1,6 +1,6 @@
 import { assertDevOnly } from '../guard.ts';
 import { DOORS } from '../../../lib/doors.ts';
-import { BOARD_ORDER, BOARD_HEADER, QUIET_DRIFT_CARD, doorRecognition } from '../../../lib/content/doors-board.ts';
+import { BOARD_ORDER, BOARD_HEADER, doorRecognition } from '../../../lib/content/doors-board.ts';
 import BoardPreview from './board-preview.tsx';
 
 export const metadata = { title: 'Dev — the Doors board' };
@@ -30,7 +30,6 @@ export default async function DevDoorsBoardPage() {
           kind: 'doors_board',
           cards,
           held: ['career_cliff', 'load_bearer', 'aging_parents'],
-          quietDrift: { key: QUIET_DRIFT_CARD.key, name: QUIET_DRIFT_CARD.displayName, recognition: QUIET_DRIFT_CARD.recognition },
           header: BOARD_HEADER,
         }}
       />
