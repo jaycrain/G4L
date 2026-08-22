@@ -14,6 +14,10 @@ export const CONSOLE_NAV: NavItem[] = [
   { label: 'Activity', href: '/admin/activity' },
   { label: 'Review queue', href: '/admin/review' },
   { label: 'Moderation', href: '/admin/moderation' },
+  // Added 2026-08-22 with the page itself. Two server actions had been revalidating '/admin/connect' since 8/21
+  // and the route did not exist — so the Founders could not post, and the Session topics could not be created,
+  // while both actions sat in the codebase looking finished.
+  { label: 'Community', href: '/admin/connect' },
   { label: 'AI surfaces', href: '/admin/health' },
   { label: 'Feedback', href: '/admin/feedback' },
   { label: 'Operators', href: '/admin/operators' },
