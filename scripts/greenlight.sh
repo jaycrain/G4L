@@ -41,12 +41,16 @@ URL="${1:-https://g4l-ten.vercel.app}"
 # belt-and-braces — but EVERY tell must pass, so the un-minified spelling could never match and the gate
 # reported RED on a healthy prod. A tell is an exact literal against the BUILT stylesheet: check the built
 # form, don't hedge across variants.
-# THIS PUSH (v3.4.14): the gap-confirm chips + the Doors line. `.gapc-` is a brand-new prefix — it did not exist
-# anywhere in the sheet before this batch, so it cannot match the previous build, which is the property that
-# makes a tell honest. It lives in globals.css (loaded on every page, including the public /onboarding this gate
-# scans), and both are real CSS RULES rather than JSX-only class names — the false-RED trap from `pb-thisweek`.
-# The draw-out and the voice check are engine-side with no bundle footprint; the COMMIT CHECK is their proof.
-CSS_TELLS=(".gapc-chip" ".gapc-door-drop" ".teach-eyebrow")  # .teach-eyebrow → v3.4.6, kept as a sanity anchor that the sheet itself loaded
+# A TELL MUST BE UPDATED WHEN ITS CODE IS DELETED, and this gate went RED on 2026-08-22 proving it: the list
+# still held `.gapc-door-drop`, the ✕ button on the Doors confirm, which that day's work REMOVED in favour of
+# tappable chips. Prod was healthy; the gate was asserting a class we had deliberately retired. A tell that
+# outlives its feature reports a stale bundle on every future deploy — the exact false-RED this file warns about
+# two lines up, arriving from the other direction.
+#
+# THIS PUSH (v3.4.25): the Doors chip row and the ceremony badge size. Both are brand-new literals that cannot
+# match any previous build, both are real CSS RULES rather than JSX-only names, and both live in globals.css,
+# which every page loads including the public /onboarding this gate scans.
+CSS_TELLS=(".gapc-doorchips" ".bstamp-xl" ".teach-eyebrow")  # .teach-eyebrow → v3.4.6, kept as a sanity anchor that the sheet itself loaded
 # NOTE, learned the hard way (2026-08-11): a tell here is only visible if it lives in a chunk /onboarding LINKS TO.
 # I added "surfaced here" from the Reconnect doorbar — an AUTH-GATED surface — and the gate reported RED for two
 # builds on perfectly good code, because the chunk is never referenced from the public page it scans. A check that
