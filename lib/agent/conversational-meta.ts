@@ -61,3 +61,58 @@ export function isConversationalMeta(text: string): boolean {
   if (ASKS_US.test(t) && ADDRESSES_US.test(t)) return true;
   return false;
 }
+
+// ── TALKING TO US ABOUT THE PRODUCT ────────────────────────────────────────────────────────────────────────────
+//
+// A SECOND SHAPE, found in Donna's walk on 2026-08-22. `isConversationalMeta` catches a member answering the
+// Companion's process ("we just did that", "you already asked me"). It does not catch a member stepping out of
+// the conversation to talk about the SOFTWARE:
+//
+//   "This remains confusing and fucked up."
+//   "We need to make a change here to how the Reclaim List is populated"
+//   "20 lbs, and I can just show lbs lost"
+//
+// All three were committed to her Reclaim List as things she wanted back. The middle one is a bug report about
+// the Reclaim List, stored by the Reclaim List.
+//
+// THIS IS DELIBERATELY NARROW, and it is only ever used to filter OUR OWN PROPOSALS — the pre-filled seeds in the
+// builder, never something she typed and committed. That is what makes a false positive cheap: the worst case is
+// she types a line again in a form that is already open. A false positive on committed text would be data loss,
+// and this is never used there.
+//
+// Two signals must BOTH be present: a product noun (the thing she is talking about) and either a fix-verb aimed
+// at us or plain frustration. "I want my confusing life to change" has the frustration and no product noun;
+// "I want to write again" has neither. Neither is caught.
+
+/** Words that only appear when a member is talking about the SOFTWARE rather than her life. */
+const PRODUCT_NOUN =
+  /\b(app|screen|page|button|field|form|list|prompt|question|companion|chat|ui|interface|dashboard|playbook|reclaim list|onboarding|this thing)\b/i;
+
+/** A fix aimed at US — "we/you need to", "should be", "make it", "change this". */
+const FIX_AT_US =
+  /\b(we|you)\s+(need|should|could|have)\s+to\b|\b(needs?|should)\s+to\s+(be|change|say|show)\b|\bmake\s+(it|this|that)\b|\bchange\s+(it|this|that|how)\b|\bfix\s+(it|this|that)\b/i;
+
+/** Plain frustration ABOUT something, not a wish for something back. */
+const FRUSTRATION =
+  /\b(confusing|broken|buggy|glitch|doesn'?t work|not working|makes no sense|fucked up|messed up|annoying|weird|wrong)\b/i;
+
+/**
+ * Is this the member talking to us about the product, rather than naming something she wants back?
+ *
+ * Used ONLY on proposals we are about to put in front of her. Never on committed text.
+ */
+export function isAboutTheApp(text: string): boolean {
+  const t = (text ?? '').trim();
+  if (!t) return false;
+  if (PRODUCT_NOUN.test(t) && (FIX_AT_US.test(t) || FRUSTRATION.test(t))) return true;
+
+  // A BARE JUDGEMENT, with the product only implied — "This remains confusing and fucked up." (Donna, 2026-08-22).
+  // No product noun, because the referent is just "this"; no life content either. A reclaim item is something she
+  // WANTS BACK, so the tell is a deictic subject carrying a complaint and nothing of herself in it.
+  //
+  // The first-person escape is what keeps this narrow. "I want my confusing life to change" and "This is what I
+  // want back" both survive, because a sentence about her own life says so.
+  const bareJudgement = /^(this|that|it|these|those)\b/i.test(t) && FRUSTRATION.test(t);
+  const aboutHer = /\b(i|i'?m|my|me|myself|we're)\b/i.test(t) || /\bwant\b/i.test(t);
+  return bareJudgement && !aboutHer;
+}

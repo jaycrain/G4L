@@ -6,7 +6,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { isConversationalMeta } from '../lib/agent/conversational-meta.ts';
+import { isConversationalMeta, isAboutTheApp } from '../lib/agent/conversational-meta.ts';
 import { isKeeperMaterial } from '../lib/agent/reconnect.ts';
 
 test('META — the protest that became "The Spark" and poisoned the letter (Donna, verbatim)', () => {
@@ -120,4 +120,41 @@ test('a protest cannot corroborate an ADDITION at the Window confirm', () => {
   assert.equal(isKeeperMaterial('You just asked me that. Can we move on?'), false);
   // …and a real elaboration still counts, or the beat could never advance on genuine material.
   assert.equal(isKeeperMaterial('It would start with coffee on the porch before anyone else is up, and I would not be dreading the day.'), true);
+});
+
+// ── DONNA'S WALK, 2026-08-22 — the seeds that reached her committed list ────────────────────────────────────
+//
+// Four of her seven Reclaim items were conversation. The middle one is the whole diagnosis: she stopped and
+// typed us a bug report ABOUT the Reclaim List, and the Reclaim List stored it as something she wanted back.
+//
+// They arrived as SEEDS — the model called add_reclaim_item on her conversational turns, and the builder handed
+// them to her pre-filled, so by the time she submitted the form they were indistinguishable from her own typing.
+// The filter now runs on the seeds, which is the only place our guesses are still separable from her words.
+
+test('her four are filtered out of the builder seeds', () => {
+  for (const t of [
+    'Uhmmm, we just did that',
+    'This remains confusing and fucked up.',
+    'We need to make a change here to how the Reclaim List is populated',
+  ]) {
+    assert.ok(isConversationalMeta(t) || isAboutTheApp(t), `would still seed her list: ${t}`);
+  }
+});
+
+test('her three REAL items survive, and so does life that merely sounds like complaint', () => {
+  // The false-positive direction is the one that matters more. A filter that eats "my marriage feels broken and
+  // I want it back" has done something far worse than the bug it fixed — and that sentence is exactly what a
+  // member of this product writes.
+  for (const t of [
+    'A creative role that covers the bills and pays off debt',
+    'Lose 20 lbs and get my strength and fitness back',
+    'More peace and optimism, less conflict at home',
+    'I want my confusing life to change',
+    'My marriage feels broken and I want it back',
+    'Stop feeling broken all the time',
+    'This is what I want back',
+    'This time I want it to stick',
+  ]) {
+    assert.equal(isConversationalMeta(t) || isAboutTheApp(t), false, `wrongly dropped: ${t}`);
+  }
 });

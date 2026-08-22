@@ -23,6 +23,7 @@
 
 import { cleanIdentityNoun, displayIdentityNoun, identityLabel, sanitizeCoinedIdentity } from '../member/identity.ts';
 import { isDoorSlug, matchDoors, DOORS, type DoorSlug } from '../doors.ts';
+import { isConversationalMeta, isAboutTheApp } from './conversational-meta.ts';
 import { RECLAIM_LIST_FLOOR, RECLAIM_LIST_MIN, RECLAIM_LIST_TARGET, reclaimAddIntent, isReclaimMetaFragment } from '../member/reclaim.ts';
 import { nextFollowUp } from './follow-up.ts';
 import { isModelVoiced } from './reclaim-voice.ts';
@@ -1854,11 +1855,35 @@ function reclaimDrawnOut(b: Beat): boolean {
  * written down" and the form beneath it has to contain three; derived separately, a seed counted in one and
  * missing from the other is precisely the kind of quiet mismatch nobody notices until a member does.
  */
+/**
+ * The items the builder arrives PRE-FILLED with.
+ *
+ * A SEED IS OUR PROPOSAL, NOT HER STATEMENT — and that asymmetry is the whole reason it is safe to filter here.
+ * Dropping a bad seed costs nothing: the builder is right in front of her and she can type anything she wants.
+ * Dropping a COMMITTED item would be the dangerous direction, and this is not that. "Never drop what they gave
+ * you" is about her words; a seed is ours.
+ *
+ * DONNA, 2026-08-22 — the walk that made this necessary. Four of her seven committed items were conversation:
+ *   "Uhmmm, we just did that"
+ *   "This remains confusing and fucked up."
+ *   "We need to make a change here to how the Reclaim List is populated"
+ * She stopped and typed us a bug report about this list, and the list stored it as something she wanted back.
+ *
+ * They reached her because the model called `add_reclaim_item` on her conversational turns, those pushed into
+ * `collected.reclaimList`, and this function handed them to the builder already ticked. She then submitted the
+ * form — so by the time the authoritative path saw them they were indistinguishable from things she had typed.
+ * The guard existed (isConversationalMeta, built for exactly this shape) and was wired into Playbook keepers and
+ * Reconnect, never into the list.
+ *
+ * FILTERED HERE RATHER THAN AT COMMIT, deliberately. At commit we cannot tell her words from our guesses; here we
+ * can, because everything in this function is a guess by definition.
+ */
 function reclaimSeedList(c: Collected): string[] {
-  const items = (c.reclaimList ?? []).filter(Boolean);
+  const usable = (s: string): boolean => !!s && !isConversationalMeta(s) && !isAboutTheApp(s);
+  const items = (c.reclaimList ?? []).filter(usable);
   const seen = new Set(items.map((s) => s.toLowerCase()));
   for (const s of c.reclaimSeeds ?? []) {
-    if (s && !seen.has(s.toLowerCase())) { items.push(s); seen.add(s.toLowerCase()); }
+    if (usable(s) && !seen.has(s.toLowerCase())) { items.push(s); seen.add(s.toLowerCase()); }
   }
   return items;
 }
