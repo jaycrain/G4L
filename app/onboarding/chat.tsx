@@ -412,7 +412,11 @@ export default function OnboardingChat({ welcomeEnabled = false }: { welcomeEnab
 
   return (
     <>
-      <h1>Getting to Know You</h1>
+      {/* SENTENCE CASE, MATCHING ITS OWN EARLIER SCREEN (Donna, 2026-08-21). This read "Getting to Know You"
+          while the screen immediately before it reads "Getting to know you." — same words, same flow, two
+          conventions, and the title-case one arrives second. Every heading around it is sentence case with a full
+          stop: "Welcome back." · "First, your account." · "Your place is saved." */}
+      <h1>Getting to know you.</h1>
       <div className="chat">
         {messages.map((m, i) => (
           <div key={i} className={`bubble ${m.role}`}>

@@ -703,7 +703,12 @@ function composeProtocol(c: Collected): string {
     triggers.length ? `Triggers: ${triggers.join('; ')}` : '',
     (c.w3Redirect ?? '').trim() ? `Redirect — ${c.w3Redirect!.trim()}` : '',
     (c.w3Reframe ?? '').trim() ? `Reframe — “${c.w3Reframe!.trim()}”` : '',
-    `Restart — go back to your picture, standing in the goal you named.`,
+    // RESTART CARRIES HER PICTURE (2026-08-22). This line was hard-coded — the same sentence for every member, on
+    // the one move whose entire mechanism is a SPECIFIC image. Greg: "go back to the image from the Visualization
+    // Workshop. The person you're becoming. The scene. The feeling." Her scene is in w3Image, from W2, and was
+    // never used here. The generic line survives as the fallback for a member whose W2 image did not capture — a
+    // Restart with no image is still a Restart — but it stops being what everyone gets.
+    w3ImageOf(c) ? `Restart — go back to ${w3ImageOf(c)}` : 'Restart — go back to your picture, standing in the goal you named.',
   ];
   return parts.filter(Boolean).join('\n');
 }

@@ -56,7 +56,7 @@ test('W3 is tappable, and therefore points nowhere else', () => {
   assert.ok(logSurfaceFor('c3_quality', 'm'), 'and so it must say where the record IS written');
 });
 
-test('ticking "Noticed the day" records the day, and un-ticking takes it back', async () => {
+test('ticking "Checked in" records the day, and un-ticking takes it back', async () => {
   const { db, memberId } = await freshDb();
   const on = await toggleMark(db, memberId, WEEK, 'logged', 0, 'grid');
   assert.deepEqual(on, { ok: true, on: true });

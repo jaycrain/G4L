@@ -118,7 +118,6 @@ lib/measure/store.ts
 lib/member/refine.ts
 lib/playbook/runnable.ts
 lib/practice/close.ts
-lib/practice/grid.ts
 lib/practice/store.ts
 lib/reclaim/evidence-instrument.ts
 lib/reclaim/refinement-store.ts

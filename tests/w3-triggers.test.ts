@@ -71,7 +71,7 @@ test('a member who named nothing gets no rows and no error', async () => {
 // slice that changed w3Rows had to come here and confront it rather than quietly diverge. It did. This is the
 // flipped version.
 
-test('SEAM: the week renders "Noticed the day" first, then one row per NAMED trigger', async () => {
+test('SEAM: the week renders "Checked in" first, then one row per NAMED trigger', async () => {
   const { db, memberId } = await freshDb();
   await saveW3Triggers(db, memberId, ['late nights', 'travel']);
   await startPracticeWeek(db, memberId, 'w3_logging');
@@ -81,13 +81,13 @@ test('SEAM: the week renders "Noticed the day" first, then one row per NAMED tri
   assert.equal(grid.kind, 'w3_logging');
   assert.deepEqual(
     grid.rows.map((r) => r.label),
-    ['Noticed the day', 'late nights', 'travel'],
+    ['Checked in', 'late nights', 'travel'],
     'row 1 is tracking consistency; the triggers are their own words, in the order they named them',
   );
   assert.ok(grid.rows.every((r) => r.target === null), 'no adherence target anywhere in W3');
 });
 
-test('SEAM: a day logged with NO trigger still marks "Noticed the day"', async () => {
+test('SEAM: a day logged with NO trigger still marks "Checked in"', async () => {
   // The reason row 1 survives. If rows were only triggers, a day the member sat down and recorded a good call
   // would render as an empty column — the grid reporting nothing happened on a day they showed up, and quietly
   // becoming a record of things going wrong.
@@ -97,7 +97,7 @@ test('SEAM: a day logged with NO trigger still marks "Noticed the day"', async (
   await recordW3Entry(db, memberId, { goodCalls: 'walked instead of driving' }); // no trigger fired
 
   const grid = await weekGrid(db, memberId);
-  const noticed = grid!.rows.find((r) => r.label === 'Noticed the day')!;
+  const noticed = grid!.rows.find((r) => r.label === 'Checked in')!;
   const trigger = grid!.rows.find((r) => r.label === 'late nights')!;
   assert.equal(noticed.done, 1, 'they logged today — the grid must show it');
   assert.equal(trigger.done, 0, 'and must NOT claim a trigger fired when none did');
@@ -111,7 +111,7 @@ test('SEAM: a fired trigger ticks its own row, and only its own', async () => {
 
   const grid = await weekGrid(db, memberId);
   const byLabel = Object.fromEntries(grid!.rows.map((r) => [r.label, r.done]));
-  assert.equal(byLabel['Noticed the day'], 1);
+  assert.equal(byLabel['Checked in'], 1);
   assert.equal(byLabel['late nights'], 1, 'trigger-1 is the first they named');
   assert.equal(byLabel['travel'], 0);
 });
@@ -126,7 +126,7 @@ test('SEAM: the week no longer reads Momentum — a call logged there does not t
   await logCall(db, memberId, { type: 'good', note: 'went for a walk', source: 'grid' });
 
   const grid = await weekGrid(db, memberId);
-  const noticed = grid!.rows.find((r) => r.label === 'Noticed the day')!;
+  const noticed = grid!.rows.find((r) => r.label === 'Checked in')!;
   assert.equal(noticed.done, 0, 'a Momentum call is not a W3 monitoring entry');
 });
 
@@ -136,6 +136,6 @@ test('a member who named no triggers still gets a usable week', async () => {
   await recordW3Entry(db, memberId, { goodCalls: 'noticed the pull and said no' });
 
   const grid = await weekGrid(db, memberId);
-  assert.deepEqual(grid!.rows.map((r) => r.label), ['Noticed the day'], 'no invented placeholder rows');
+  assert.deepEqual(grid!.rows.map((r) => r.label), ['Checked in'], 'no invented placeholder rows');
   assert.equal(grid!.rows[0]!.done, 1);
 });

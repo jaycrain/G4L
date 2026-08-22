@@ -73,6 +73,16 @@ const BANNED: { re: RegExp; why: string; codeOnly?: boolean }[] = [
     re: /\bRe-(?:connect|wire|build|claim)\b/i,
     why: 'no hyphen either — Reconnect, Rewire, Rebuild, Reclaim',
   },
+  // THE SAME HOUSE STYLE, ON THE THREE PROTOCOL MOVES. Greg's REWIRE Gated Assets V4 writes W3's Step 2 as
+  // "ReDirect / ReFrame / ReStart", exactly as it writes ReBuild and ReClaim. The four Rs were guarded here; these
+  // three were not, and they arrive through the same door — every time someone opens that asset to check what W3
+  // requires, which is what happened on 2026-08-22. They are ordinary words with one capital, and the shipped copy
+  // already gets it right ("Redirect — …", "Reframe — …", "Restart — …"). Pinned so it stays that way now that
+  // W3's rows are about to carry these names. His spelling stays his inside verbatim quotation; docs/ is not scanned.
+  {
+    re: /\bRe(?:Direct|Frame|Start)\b/,
+    why: 'never camel-case the protocol moves — it is Redirect, Reframe, Restart (Greg\'s asset writes ReDirect etc: his house style, not ours)',
+  },
   // C1 was retitled "Looking Forward" (Greg, 2026-08-07) — "the term Readiness may not be a good fit anymore."
   { re: /Readiness Assessment/i, why: 'C1 is "Looking Forward" now — "Readiness Assessment" is the retired title' },
   // "The Resilience Pulse" is retired as a member-facing NAME (Jay, 2026-08-07: "keeps slipping through the

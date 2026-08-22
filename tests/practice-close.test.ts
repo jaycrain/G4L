@@ -166,13 +166,13 @@ const w3Row = (label: string, done: number) =>
 
 test('W3 · the close asks what they NOTICED, not how the week went', () => {
   // "Here's how it actually went" invites a verdict on a week that was explicitly not about performance.
-  const r = buildReview({ kind: 'w3_logging', rows: [w3Row('Noticed the day', 4), w3Row('late nights', 2)] });
+  const r = buildReview({ kind: 'w3_logging', rows: [w3Row('Checked in', 4), w3Row('late nights', 2)] });
   assert.match(r.opener, /what you noticed/i);
   assert.doesNotMatch(r.opener, /how it actually went/i);
 });
 
 test('W3 · using the protocol IS named — the one affirmation allowed', () => {
-  const rows = [w3Row('Noticed the day', 5), w3Row('late nights', 3)];
+  const rows = [w3Row('Checked in', 5), w3Row('late nights', 3)];
   const r = buildReview({ kind: 'w3_logging', rows }, { recoveryUsed: 2, daysLogged: 5 });
   assert.match(r.lines.join(' '), /used the protocol you wrote 2 times/i);
   assert.match(r.lines.join(' '), /that is the skill this week was for/i);
@@ -180,7 +180,7 @@ test('W3 · using the protocol IS named — the one affirmation allowed', () => 
 
 test('W3 · a week with no recovery used says NOTHING about it', () => {
   // The absence must not be remarked on. Silence is the correct treatment.
-  const r = buildReview({ kind: 'w3_logging', rows: [w3Row('Noticed the day', 3)] }, { recoveryUsed: 0, daysLogged: 3 });
+  const r = buildReview({ kind: 'w3_logging', rows: [w3Row('Checked in', 3)] }, { recoveryUsed: 0, daysLogged: 3 });
   assert.doesNotMatch(r.lines.join(' '), /protocol/i);
   assert.doesNotMatch(r.lines.join(' '), /didn't use|never used|no recovery/i);
 });
@@ -188,7 +188,7 @@ test('W3 · a week with no recovery used says NOTHING about it', () => {
 test('W3 · the close NEVER praises the absence of false starts', () => {
   // A clean week is the exact case where a product reaches for "great, no false starts!" — Greg forbids it.
   const r = buildReview(
-    { kind: 'w3_logging', rows: [w3Row('Noticed the day', 7), w3Row('late nights', 0), w3Row('travel', 0)] },
+    { kind: 'w3_logging', rows: [w3Row('Checked in', 7), w3Row('late nights', 0), w3Row('travel', 0)] },
     { recoveryUsed: 0, daysLogged: 7 },
   );
   const all = `${r.opener} ${r.lines.join(' ')}`;
@@ -204,7 +204,7 @@ test('W3 · a trigger that never fired reads as a fact, not a win or a miss', ()
 });
 
 test('W3 · an empty week is met without consoling and without scolding', () => {
-  const r = buildReview({ kind: 'w3_logging', rows: [w3Row('Noticed the day', 0)] });
+  const r = buildReview({ kind: 'w3_logging', rows: [w3Row('Checked in', 0)] });
   assert.match(r.opener, /nothing got written down/i);
   assert.match(r.opener, /either is worth knowing/i, 'both explanations are left standing');
   assert.doesNotMatch(r.opener, /don't worry|it's okay|next week|try again/i);

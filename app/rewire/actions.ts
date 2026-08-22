@@ -31,6 +31,7 @@ import { loadReconnectCaptures } from '../../lib/agent/reconnect.ts';
 import { drainHarvest, type KeeperProposal } from '../../lib/agent/harvest.ts';
 import { startPracticeWeek, latestImageKeeper } from '../../lib/practice/store.ts';
 import { saveW3Triggers } from '../../lib/rewire/w3-triggers.ts';
+import { saveW3Moves } from '../../lib/rewire/w3-moves.ts';
 import { getGrintaBaselineReading, latestGrintaReading, persistGrintaReading, commitmentCheckpointResponsesMap } from '../../lib/grinta/survey/store.ts';
 import { scoreCheckpointStrand, grintaChangePct, directionOf } from '../../lib/grinta/survey/scoring.ts';
 import { BASELINE_COMMITMENT_ITEMS, CHECKPOINT_COMMITMENT_ITEMS } from '../../lib/grinta/survey/instrument.ts';
@@ -294,6 +295,21 @@ export async function rewireTurnAction(
           if (named.length && !n) console.error(`w3 triggers: member=${memberId} named ${named.length}, saved 0`);
         } catch (e) {
           console.error(`w3 triggers persist failed for member=${memberId}:`, e);
+        }
+        // HER THREE MOVES BECOME THE WEEK'S ROWS (2026-08-22). Saved beside the triggers, in the same best-effort
+        // shape and for the same reason — a throw here must never cost her the session she just finished — and in
+        // its OWN try, so a trigger failure cannot take the moves down with it.
+        try {
+          const c = (turn.state?.collected ?? {}) as { w3Redirect?: string; w3Reframe?: string; w3Image?: string };
+          const saved = await saveW3Moves(db, memberId, {
+            redirect: c.w3Redirect ?? null,
+            reframe: c.w3Reframe ?? null,
+            // Restart's words are her W2 IMAGE — the scene Greg's Restart sends her back to.
+            restart: c.w3Image ?? null,
+          });
+          if (!saved) console.error(`w3 moves: member=${memberId} saved 0 of 3`);
+        } catch (e) {
+          console.error(`w3 moves persist failed for member=${memberId}:`, e);
         }
       }
     }

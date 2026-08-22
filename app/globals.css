@@ -2436,7 +2436,12 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
 .pb-tabframe > .pb-card { border: 0; border-radius: 0; margin: 0; }
 /* Several chapters can render inside one tab — a hairline keeps them apart now the boxes are gone. */
 .pb-tabframe > .pb-card + .pb-card { border-top: 1px solid var(--grey); }
-.pb-tabs { display: flex; gap: 6px; overflow-x: auto; padding: 12px; margin: 0 0 12px; border-bottom: 1px solid var(--grey);
+/* LESS AIR ABOVE THE TABS (Donna, 2026-08-21: "reduce space above the tabs, match standards to the rest of the
+   app"). `padding: 12px` applied on all four sides, so the row carried a full 12px above it on top of whatever
+   the heading already contributed — more headroom than any other control row on the page. The horizontal 12px
+   is load-bearing (it is the scroll gutter, and the first tab must not touch the edge); only the TOP comes off.
+   Bottom stays at 8px so the tabs are not crowded against their own underline. */
+.pb-tabs { display: flex; gap: 6px; overflow-x: auto; padding: 2px 12px 8px; margin: 0 0 12px; border-bottom: 1px solid var(--grey);
   -webkit-overflow-scrolling: touch; scrollbar-width: none; }
 .pb-tabs::-webkit-scrollbar { display: none; }
 /* SQUARED, like every other control (Jay, 2026-08-11: "we've had you change every pill you started with to our
@@ -3693,6 +3698,36 @@ body:has(.fc-dark) .brand-wordmark,
    Checkboxes and radios are excluded: they have no text to zoom toward. */
 @media (max-width: 1100px) {
   input:not([type='checkbox']):not([type='radio']), textarea, select { font-size: 16px !important; }
+}
+
+/* ── NO TAP TARGET UNDER 44px ────────────────────────────────────────────────────────────────────────────────
+   Donna asked for "one consistent height throughout the app — 88px, matching field height" (2026-08-21). Jay
+   ruled 44 (2026-08-22), and the distinction matters more than the number: 44×44 is iOS's minimum TARGET, not a
+   uniform button height. Android is 48dp, WCAG 2.2 puts the enhanced target at 44×44 — so 44 is the floor
+   everyone already agrees on.
+
+   A FLOOR, NOT AN EQUALIZER — it only ever raises. One fixed height would drag the rhythm confirm DOWN from its
+   deliberate 52px and make every button on the page the same weight; a minimum leaves what someone chose alone
+   and lifts only what is too small to hit. The Doors relevance chips DO get raised, and should: thirty-six
+   small chips on a phone is precisely the surface where a 44px target earns its place.
+
+   min-height, NOT height: a button whose content needs more room still grows. Applied on touch widths only,
+   because a mouse does not need a 44px target and desktop rows are denser on purpose. Inline text-style buttons
+   (`.see-more`, link buttons) are exempt — they are text, and padding them to 44px would put visible gaps in the
+   middle of a sentence.
+
+   `:where()` IS LOAD-BEARING, and this is the difference between a floor and an equalizer. Written as
+   `button:not(.a):not(.b):not(.c)…` the selector carries the specificity of every class inside the :not() —
+   (0,5,1), which beats any component's own `.rhythm-confirm { min-height: 52px }` (0,1,0). Measured: it dragged
+   the rhythm confirm DOWN to 44, which is precisely what the comment above promises this rule will never do.
+   `:where()` contributes ZERO specificity, so this lands at (0,0,1): it applies wherever nothing else declares
+   min-height (the chips, which is the point), and loses to any component that has deliberately chosen a taller
+   one. Do not rewrite this as `:not()`. */
+@media (max-width: 1100px) {
+  button:where(:not(.see-more, .pb-linkbtn, .teaser-x, .rail-x, .tour-skip)),
+  .btn:where(:not(.see-more)) {
+    min-height: 44px;
+  }
 }
 
 

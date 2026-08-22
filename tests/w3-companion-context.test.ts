@@ -27,7 +27,7 @@ const w3 = (over: Partial<NonNullable<CheckinContext['practiceWeek']>> = {}): Ch
     kind: 'w3_logging',
     day: 3,
     days: 7,
-    rows: [{ label: 'Noticed the day', target: null, done: 2, todayDone: false }],
+    rows: [{ label: 'Checked in', target: null, done: 2, todayDone: false }],
     tappable: false,
     triggers: ['late nights after a rough day', 'when I travel'],
     readyToClose: false,

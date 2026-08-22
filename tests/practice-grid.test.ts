@@ -149,7 +149,7 @@ test('W3 · reads its OWN daily entries, not momentum_call', async () => {
   // A real W3 entry does.
   await recordW3Entry(db, memberId, { goodCalls: 'caught the pull and named it' });
   const g = (await weekGrid(db, memberId))!;
-  assert.equal(g.rows[0]!.label, 'Noticed the day');
+  assert.equal(g.rows[0]!.label, 'Checked in');
   assert.equal(g.rows[0]!.done, 1);
   assert.equal((await db.query(`select 1 from practice_mark where member_id=$1`, [memberId])).rows.length, 0, 'no duplicate');
 });

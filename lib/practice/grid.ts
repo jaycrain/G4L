@@ -174,19 +174,49 @@ async function w3Rows(db: Db, memberId: string, window: MemberWeek): Promise<Gri
     w3Triggers(db, memberId),
   ]);
 
-  const noticed = buildRow('logged', 'Noticed the day', null, window, entries.map((e) => e.entryDate));
-  // One row per trigger, in the order the member named them, ticked on the days that trigger fired. A member who
-  // named none (skipped, or the capture missed) simply gets the one row — never a placeholder we invented.
-  const triggerRows = triggers.map((t) =>
-    buildRow(
-      t.slot,
-      t.label,
-      null,
-      window,
-      entries.filter((e) => e.triggerSlot === t.slot).map((e) => e.entryDate),
-    ),
+  const noticed = buildRow('logged', 'Checked in', null, window, entries.map((e) => e.entryDate));
+
+  // THE ROWS ARE HER THREE MOVES, NOT HER TRIGGERS (Donna 2026-08-21; Jay ruled 2026-08-22).
+  //
+  // Trigger rows recorded what went WRONG — the exact inversion the header of this function warns against. Greg's
+  // Step 2 has the member author three responses (Redirect / Reframe / Restart), and W3-33 already carries
+  // `recovery_used` — "whether the Member used the prepared response" — captured since August and never shown
+  // anywhere. So the week now tracks what she DID about a false start, in the words she wrote for it.
+  // See lib/rewire/w3-moves.ts.
+  //
+  // TRIGGERS ARE STILL CAPTURED, just not rendered here. `trigger_fired` is one of Greg's seven fields, the daily
+  // check-in still asks what set a false start off (W3-31), and B3 may read it. Their `trigger-N` rows stay in
+  // practice_commitment untouched — this changes the DISPLAY, it does not delete anything she named.
+  const { rows: moveRows } = await db.query<{ id: string; slot: string; label: string }>(
+    `select id, slot, label from practice_commitment
+      where member_id = $1 and kind = 'w3_logging' and slot like 'move-%'
+      order by sort_order`,
+    [memberId],
   );
-  return [noticed, ...triggerRows];
+
+  // A member who finished W3 BEFORE the moves existed has trigger rows and no move rows. She keeps her triggers
+  // rather than being left with one bare "Checked in" line: the old shape is worse than the new one, and an empty
+  // week is worse than either.
+  if (!moveRows.length) {
+    const triggerRows = triggers.map((t) =>
+      buildRow(t.slot, t.label, null, window, entries.filter((e) => e.triggerSlot === t.slot).map((e) => e.entryDate)),
+    );
+    return [noticed, ...triggerRows];
+  }
+
+  const marks = (
+    await db.query<{ commitment_id: string; marked_on: string }>(
+      `select commitment_id, marked_on::text as marked_on from practice_mark
+        where member_id = $1 and kind = 'w3_logging' and commitment_id is not null`,
+      [memberId],
+    )
+  ).rows;
+  return [
+    noticed,
+    ...moveRows.map((m) =>
+      buildRow(m.slot, m.label, null, window, marks.filter((k) => k.commitment_id === m.id).map((k) => k.marked_on)),
+    ),
+  ];
 }
 
 /** B2 · the noticing week — day-level notes, no commitments (its answer had nowhere to land before 0072). */

@@ -120,8 +120,14 @@ export default function QualityDayLog({
         <textarea className="momentum-log-note" value={valuable} onChange={(e) => setValuable(e.target.value)} placeholder={`What added the most value ${when}?`} rows={2} />
         <textarea className="momentum-log-note" value={missing} onChange={(e) => setMissing(e.target.value)} placeholder={`What was most missing ${when}?`} rows={2} />
       </div>
+      {/* THE SUBMIT USES THE SUBMIT CLASS (Donna, 2026-08-21: "Log today renders in an undocumented dark
+          navy/charcoal that matches none of the four button families").
+          It was `.momentum-log-btn` — the Momentum OPTION PICKER, a navy-outlined segmented control where navy is
+          right because choosing one fills it navy. Borrowed here for a submit, it made the only commit action on
+          the surface look like an unchosen option, and made the same "Log today" render navy here and teal on the
+          Playbook. `.momentum-log-commit` is the app's existing submit treatment, already used one file over. */}
       <div className="momentum-log-options">
-        <button type="button" className="momentum-log-btn" disabled={pending} onClick={submit}>
+        <button type="button" className="momentum-log-commit" disabled={pending} onClick={submit}>
           {isToday ? 'Log today' : `Log ${when}`}
         </button>
       </div>
