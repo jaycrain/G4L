@@ -4,12 +4,23 @@
 :root {
   --navy: #374f63;
   --orange: #ec6233;
+  /* THE BRAND TEAL — for shapes only. Dots, bars, radios, progress fills, borders.
+     NEVER as the ground under white text: that is 3.59:1 and fails AA. Use --teal-text (5.98:1), which despite
+     its name is the standard fill for any teal SURFACE, buttons included. The naming invites exactly the wrong
+     pick and has caused it six times (2026-08-22 sweep) — if you are about to write `background: var(--teal)`
+     on something with a label in it, you want --teal-text. Pinned by tests/button-hover.test.ts. */
   --teal: #3b9495;
   --olive: #919536;
   --indigo: #101045;
   --deep-red: #bb2127;
   --charcoal: #2a2a2a;
   --grey: #e8e6e6;
+  /* THE NEUTRAL SURFACE (Jay, 2026-08-22, option 1). A panel that needs to read as its own surface gets this
+     ground and puts its COLOUR ON THE EDGE — never a teal wash, which composites to mint over white and had
+     drifted to three different alphas. Not a new value: #f5f4f1 was already the app's de-facto panel tint in ten
+     places; it just had no name, which is why the next panel reached for teal instead. Ten raw uses remain and
+     can point here whenever someone is in the file. */
+  --wash: #f5f4f1;
   --white: #ffffff;
 
   /* ── TEXT VARIANTS OF THE THREE ACCENTS (Jay's call, 2026-08-02: "Option A") ────────────────────────────
@@ -173,9 +184,8 @@ button, .btn {
  * text and the ground together — a navy CTA darkens, a white list row darkens, and neither can ever end up dark
  * on dark. The bug class is gone rather than patched a fifth time.
  *
- * --btn-hover-bg SURVIVES as an OPT-IN for the handful of buttons that genuinely want a colour change on hover
- * (a ghost button filling in, a segmented control). It simply is not the default any more. A button that wants
- * one sets it; a button that says nothing gets the safe behaviour.
+ * (--btn-hover-bg was kept at this point as an opt-in for buttons wanting a colour change on hover. That is no
+ * longer true — it was deleted on 2026-08-22 because the opt-in itself was the bug. See the block below.)
  *
  * `filter` also applies to descendants, which is what makes it correct here: a row's title, subtitle and radio
  * all move together, so a ratio that passed at rest still passes on hover. Measured before and after on the
@@ -191,38 +201,36 @@ button, .btn {
    chosen" — and giving them the toggle colour would flatten a real distinction. Olive likewise stays as the
    "a practice thing happened" semantic on week cells, playbook dots and movement badges. */
 
-/* HOVER IS INHERITED, NOT HAND-PICKED (Donna's tweaks, 2026-08-21).
-   Nine buttons each reimplemented the standard darkening with their own near-identical teal — #327f7e,
-   #347f80, #2f7a7b, #245c5d — and one darkened to OLIVE, the only hue change in the app. Every one of them
-   is a chance to invert contrast the way the old navy default did four times before it was replaced.
-   `filter: brightness(0.94)` moves text and ground together, so it cannot. Deleted; they inherit it now. */
-button, .btn { --btn-hover-bg: none; }
+/* HOVER IS ONE RULE, AND THERE IS NO LONGER A GLOBAL FILL (2026-08-22).
+   Buttons darken. That is the whole mechanism.
+
+   WHY --btn-hover-bg IS GONE, and this is the third time this exact bug has been "fixed":
+   the default was `--btn-hover-bg: none`, read by `button:hover { background-color: var(--btn-hover-bg) }`.
+   A LITERAL `background-color: none` is invalid and gets dropped at parse time, leaving the element's own fill
+   alone — which is what the previous comment claimed, and it is true of a literal. It is NOT true through
+   `var()`: an invalid substitution is "invalid at computed-value time", which resets the property to its
+   INITIAL value. For background-color that is `transparent`. So every filled button without its own hover rule
+   went see-through under the cursor.
+
+     .a:hover { background-color: none; }       rgb(59,148,149) → rgb(59,148,149)   dropped
+     .b:hover { background-color: var(--h); }   rgb(59,148,149) → rgba(0,0,0,0)     --h: none
+
+   Fixing the shorthand→longhand on 2026-08-19 (f6cd733) changed which spec rule destroys the fill and nothing
+   else. Four buttons stayed broken through Donna's whole walk, the ceremony button among them. Batch 1 then
+   deleted the per-button `:hover { background: … }` rules that were masking it for ten more — they read as
+   redundant hand-picked teals and they were also the only thing holding those fills in place.
+
+   So the property is deleted rather than re-defaulted. A button that wants a different colour on hover now says
+   so in its own rule, next to the rest of its styling. There is no shared value left to substitute, which is the
+   only way this bug class actually ends. Pinned by tests/button-hover.test.ts. */
 button:hover, .btn:hover { filter: brightness(0.94); }
-/* The opt-in: only fires for a button that actually declares a colour. `none` is not a valid background-COLOR, so
-   the declaration is dropped and the element keeps its own — no fill, no override, nothing to remember.
-
-   IT MUST BE THE LONGHAND, and this was the bug Donna reported as "teal buttons turn white on hover, causing them
-   to visually disappear" (2026-08-19). Written as the SHORTHAND `background: none` the reasoning above is wrong:
-   `none` IS valid there (it is a background-image value) and the shorthand resets every background property,
-   including background-color, to its initial `transparent`. So every teal-filled button whose fill was not
-   re-declared on :hover went see-through against a white page, right at the moment the member moved to click it.
-   Measured, not reasoned: teal `rgb(59,148,149)` at rest → `rgba(0,0,0,0)` with the shorthand applied.
-
-   `background-color: none` is genuinely invalid, so the declaration is dropped and the element keeps its fill —
-   which is what the comment always claimed and what the longhand actually delivers. */
-button:hover, .btn:hover { background-color: var(--btn-hover-bg); }
 /* Disabled buttons already say "not now" through opacity; darkening them too reads as a response to a press
    that did not happen. */
 button:disabled:hover, .btn:disabled:hover { filter: none; }
 
-/* GHOST / LINK buttons — a plain-link button keeps its background on hover and shows the state some other way. */
-.idp-own, .idp-skip,
-.onboard-fresh button,
-.rlb-remove,
-.pb-tools button,
-.fb-status-row button {
-  --btn-hover-bg: none;
-}
+/* GHOST / LINK buttons — a plain-link button keeps its background on hover and shows the state some other way.
+   They no longer need to opt out of anything: with the global fill gone, keeping your own background IS the
+   default. Only the rules that actually DO something on hover remain. */
 .idp-own:hover:not(:disabled) { color: var(--navy); }
 .idp-skip:hover:not(:disabled) { color: var(--navy); text-decoration: underline; }
 .rlb-remove:hover { background: #eceae7; } /* keeps its own subtle chip wash */
@@ -288,7 +296,7 @@ button:disabled:hover, .btn:disabled:hover { filter: none; }
 .program-revisit h3 { margin: 0 0 0.35rem; }
 .revisit-list { list-style: none; margin: 0.8rem 0 0; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; }
 .revisit-link { display: flex; align-items: center; gap: 0.75rem; padding: 0.7rem 0.9rem; border: 1px solid var(--light-grey, #e8e6e6); border-radius: 10px; text-decoration: none; transition: border-color 0.12s ease, background 0.12s ease; }
-.revisit-link:hover { border-color: var(--teal-text); background: rgba(59, 148, 149, 0.05); }
+.revisit-link:hover { border-color: var(--teal-text); }
 .revisit-name { font-weight: 700; color: var(--navy); font-size: 0.98rem; }
 .revisit-phase { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--teal-text); }
 .revisit-arrow { margin-left: auto; color: var(--teal-text); font-weight: 800; }
@@ -343,7 +351,7 @@ button:disabled:hover, .btn:disabled:hover { filter: none; }
 .pw-toggle { position: absolute; right: 10px; background: none; border: none; color: var(--teal-text); font-weight: 600; font-size: 0.85rem; cursor: pointer; padding: 4px 6px; }
 .pw-toggle:hover { text-decoration: underline; }
 /* AI disclosure — its own framed beat at the top of the gate (governance: members always know it's AI). */
-.ai-disclosure { margin: 0 0 1.3rem; padding: 0.85rem 1rem; border-left: 4px solid var(--teal); border-radius: 8px; background: rgba(59, 148, 149, 0.07); color: var(--navy); line-height: 1.55; font-size: 0.95rem; }
+.ai-disclosure { margin: 0 0 1.3rem; padding: 0.85rem 1rem; border-left: 4px solid var(--teal-text); border-radius: 8px; background: var(--wash); color: var(--navy); line-height: 1.55; font-size: 0.95rem; }
 /* Onboarding primer — practical "before we start" orientation box on the gate. */
 .onboard-primer { margin: 0 0 1.4rem; padding: 1rem 1.2rem; border: 1px solid var(--light-grey, #E8E6E6); border-radius: 10px; background: #fff; }
 .onboard-primer h2 { font-size: 1.1rem; color: var(--navy); margin: 0 0 0.5rem; }
@@ -462,7 +470,7 @@ ul.reclaim li.reclaimed { color: var(--navy); }
   cursor: pointer; background: transparent; color: var(--teal-text);
   border: 1px dashed var(--teal); border-radius: 6px; font-family: inherit;
 }
-.track-this-btn:hover { background: rgba(59, 148, 149, 0.08); }
+.track-this-btn:hover { border-color: var(--teal-text); } /* stays dashed — only the colour firms */
 .track-this-form {
   margin: 0.5rem 0 0.7rem; padding: 0.55rem 0.7rem; background: #fff;
   border: 1px solid var(--panel-line); border-radius: 8px;
@@ -537,7 +545,7 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .rlb-addbtn:hover:not(:disabled) { background: #dedcdc; }
 .rlb-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 0.7rem; flex-wrap: wrap; }
 .rlb-hint { font-size: 12.5px; color: var(--muted-grey); flex: 1; min-width: 180px; }
-.rlb-done { margin: 0; flex: 0 0 auto; background: var(--teal, #3b9495); color: #fff; border: 1px solid var(--teal, #3b9495); border-radius: 8px; font-weight: 700; }
+.rlb-done { margin: 0; flex: 0 0 auto; background: var(--teal-text); color: #fff; border: 1px solid var(--teal-text); border-radius: 8px; font-weight: 700; }
 .rlb-done:disabled, .rlb-addbtn:disabled { opacity: 0.5; cursor: default; }
 
 /* The keeper OFFER — the Companion showing a line and asking whether to keep it. Reads as a card in the thread,
@@ -553,7 +561,12 @@ ul.program { list-style: none; padding: 0; margin: 0; }
   margin: 0; padding: 0.4rem 0.8rem; border: 1.5px solid var(--teal); border-radius: 8px; background: #fff;
   color: var(--teal-text); font-family: inherit; font-weight: 700; font-size: 13.5px; line-height: 1.2; cursor: pointer;
 }
-.keeper-offer-btn:hover:not(:disabled) { background-color: rgba(59, 148, 149, 0.12); }
+/* OUTLINED BUTTONS FIRM THEIR BORDER — they do not tint (Jay, 2026-08-22, option A).
+   Teal over white composites to #E7F2F2 at 12% — the "mint green" Donna flagged — and there were seven different
+   alphas of it (0.05 → 0.20) because there was no standard, so each site invented one. The wash is gone across
+   every interactive surface. What remains is one mechanic per KIND of button: filled darkens · outlined firms
+   its border · selected fills teal. Nothing tints, so there is no alpha left for the next button to guess at. */
+.keeper-offer-btn:hover:not(:disabled) { border-color: var(--teal-text); }
 .keeper-offer-btn:disabled { opacity: 0.5; cursor: default; }
 .keeper-offer-done { font-size: 12.5px; font-weight: 700; color: var(--teal-text); }
 /* DECLINE — deliberately quieter than Keep. This is one offer with an easy no, not a two-option decision she has
@@ -609,7 +622,7 @@ ul.program { list-style: none; padding: 0; margin: 0; }
   color: var(--teal-text); font-family: inherit; font-weight: 700; font-size: 14.5px; line-height: 1.2;
   cursor: pointer; transition: background 0.12s ease;
 }
-.gapc-chip:hover:not(:disabled) { background: rgba(59, 148, 149, 0.12); }
+.gapc-chip:hover:not(:disabled) { border-color: var(--teal-text); }
 .gapc-chip:disabled { opacity: 0.5; cursor: default; }
 
 /* Identity tap-to-pick — the candidate handles as chips + a write-your-own path. The tap IS the choice (captured
@@ -617,13 +630,13 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .idp { margin-top: 0.5rem; }
 .idp-chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .idp-chip { margin: 0; padding: 9px 16px; background: #fff; color: var(--navy, #374f63); border: 1.5px solid var(--teal, #3b9495); border-radius: 8px; font-size: 15px; font-weight: 700; cursor: pointer; }
-.idp-chip:hover:not(:disabled) { background: var(--teal, #3b9495); color: #fff; }
+.idp-chip:hover:not(:disabled) { background: var(--teal-text); color: #fff; }
 .idp-chip:disabled { opacity: 0.5; cursor: default; }
 .idp-own { margin: 0.7rem 0 0; padding: 0; background: none; border: none; color: var(--teal, #3b9495); font-size: 13.5px; font-weight: 600; text-decoration: underline; cursor: pointer; display: block; }
 .idp-own:disabled { opacity: 0.5; cursor: default; }
 .idp-coin { display: flex; gap: 0.5rem; align-items: stretch; margin-top: 0.7rem; }
 .idp-coin-input { flex: 1; margin: 0; box-sizing: border-box; }
-.idp-coin-btn { margin: 0; flex: 0 0 auto; background: var(--teal, #3b9495); color: #fff; border: 1px solid var(--teal, #3b9495); border-radius: 8px; font-weight: 700; }
+.idp-coin-btn { margin: 0; flex: 0 0 auto; background: var(--teal-text); color: #fff; border: 1px solid var(--teal-text); border-radius: 8px; font-weight: 700; }
 .idp-coin-btn:disabled { opacity: 0.5; cursor: default; }
 .idp-skip { margin: 0.55rem 0 0; padding: 0; background: none; border: none; color: var(--muted-grey); font-size: 12.5px; cursor: pointer; display: block; }
 .idp-skip:hover:not(:disabled) { color: var(--navy, #374f63); text-decoration: underline; }
@@ -643,7 +656,7 @@ ul.program { list-style: none; padding: 0; margin: 0; }
   color: var(--teal-text); font-family: inherit; font-weight: 700; font-size: 1.05rem; line-height: 1;
   cursor: pointer; transition: background 0.12s ease, color 0.12s ease;
 }
-.scale-chip:hover:not(:disabled) { background: rgba(59, 148, 149, 0.12); }
+.scale-chip:hover:not(:disabled) { border-color: var(--teal-text); }
 .scale-chip.on { background: var(--teal-text); color: #fff; }
 .scale-chip:disabled { cursor: default; }
 .scale-chip:disabled:not(.selected) { opacity: 0.5; }
@@ -894,7 +907,7 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .pb-add { margin-top: 0.6rem; display: flex; flex-direction: column; gap: 0.5rem; align-items: flex-start; }
 .pb-add .pb-btn { align-self: flex-end; border-radius: 8px; } /* Add note → rounded rectangle (Donna, 2026-07-28) */
 .pb-foot { font-size: 0.85rem; color: var(--muted, #6B7680); line-height: 1.55; max-width: 42rem; margin-top: 0.5rem; }
-.pb-gather-cta { background: rgba(59,148,149,0.07); border: 1px solid var(--teal); border-radius: 14px; padding: 1.1rem 1.25rem; margin-bottom: 1rem; }
+.pb-gather-cta { background: var(--wash); border: 1px solid var(--teal-text); border-radius: 14px; padding: 1.1rem 1.25rem; margin-bottom: 1rem; }
 .pb-gather-cta p { margin: 0 0 0.7rem; color: var(--navy); font-weight: 600; }
 .pb-gather { margin-bottom: 1rem; }
 .pb-gather-msg { font-size: 0.9rem; color: var(--teal-text); font-weight: 600; margin: 0 0 1rem; }
@@ -955,7 +968,8 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .roster-table th, .roster-table td { text-align: left; padding: 0.55rem 0.6rem; border-bottom: 1px solid var(--grey); vertical-align: middle; white-space: nowrap; }
 .roster-table th { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--navy); opacity: 0.82; font-weight: 700; }
 .roster-table th.num, .roster-table td.num { text-align: right; }
-.roster-table tbody tr:hover { background: rgba(59, 148, 149, 0.06); }
+/* A row highlight is wayfinding, not a teal state — neutral, matching .pb-strip-row:hover. */
+.roster-table tbody tr:hover { background: var(--wash); }
 .roster-member { display: inline-flex; align-items: center; gap: 0.6rem; text-decoration: none; }
 .roster-id { display: flex; flex-direction: column; line-height: 1.2; }
 .roster-name { font-weight: 600; color: var(--navy); }
@@ -974,7 +988,8 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .moment-buttons { display: flex; flex-wrap: wrap; gap: 0.5rem; }
 .moment-buttons form { margin: 0; }
 .moment-buttons button { margin: 0; background: var(--navy); }
-.moment-buttons button:hover { background: var(--teal); }
+/* Was `:hover { background: var(--teal) }` — a navy button SWAPPING to a lighter teal, which is both the
+   hue-change we removed everywhere else and white text at 3.59:1. It darkens like every other button now. */
 .draft-card { background: var(--white); }
 .draft-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem; }
 .draft-moment { text-transform: capitalize; font-weight: 600; color: var(--navy); }
@@ -1041,7 +1056,7 @@ ul.program { list-style: none; padding: 0; margin: 0; }
   border: 1px solid var(--panel-line); box-shadow: 0 2px 12px rgba(42, 42, 42, 0.16);
   font-family: var(--font-barlow); font-weight: 600; font-size: 0.82rem; cursor: pointer;
 }
-.fb-launch:hover { background: rgba(59, 148, 149, 0.08); border-color: var(--navy); }
+.fb-launch:hover { border-color: var(--navy); } /* already firmed its border; only the wash was extra */
 .fb-launch svg { color: var(--teal-text); }
 .fb-panel {
   position: fixed; left: 18px; bottom: 66px; z-index: 61;
@@ -1082,7 +1097,7 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .fb-status-row { display: flex; gap: 0.4rem; margin-top: 0.5rem; }
 .fb-status-row form { display: inline; }
 .fb-status-row button { font-size: 0.74rem; padding: 0.2rem 0.6rem; border-radius: 6px; border: 1px solid var(--panel-line); background: #fff; color: var(--navy); cursor: pointer; }
-.fb-status-row button:hover { background: rgba(59, 148, 149, 0.08); }
+.fb-status-row button:hover { border-color: var(--teal-text); }
 .draft-subject { margin: 0.3rem 0; }
 .draft-body { width: 100%; font: inherit; padding: 0.6rem; border: 1px solid var(--navy); border-radius: 6px; }
 .draft-actions { display: flex; gap: 0.6rem; margin-top: 0.6rem; }
@@ -1162,7 +1177,7 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .install-bar { position: sticky; top: 0; z-index: 60; display: flex; align-items: center; gap: 0.6rem; background: var(--navy); color: var(--white); padding: 0.5rem 0.8rem; padding-top: max(0.5rem, env(safe-area-inset-top)); font-size: 0.9rem; }
 .install-icon { border-radius: 6px; flex: 0 0 auto; }
 .install-text { flex: 1; line-height: 1.25; }
-.install-btn { margin: 0; background: var(--teal); padding: 0.4rem 0.9rem; border-radius: 8px; font-size: 0.85rem; flex: 0 0 auto; }
+.install-btn { margin: 0; background: var(--teal-text); padding: 0.4rem 0.9rem; border-radius: 8px; font-size: 0.85rem; flex: 0 0 auto; }
 .install-btn:hover { background: var(--white); color: var(--navy); }
 .install-x { background: none; border: none; color: var(--white); font-size: 1.25rem; line-height: 1; margin: 0; padding: 0 0.25rem; cursor: pointer; opacity: 0.7; flex: 0 0 auto; }
 
@@ -1191,7 +1206,9 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .btn-pill { display: inline-flex; align-items: center; gap: 0.4rem; margin: 0; background: var(--teal-text); color: var(--white); font-weight: 600; font-size: 0.85rem; padding: 0.45rem 1rem; border-radius: 20px; text-decoration: none; }
 .btn-pill:hover { text-decoration: none; }
 .connect-cta:disabled, .btn-pill:disabled { opacity: 0.5; cursor: default; }
-.btn-pill:disabled:hover { background: var(--teal); }
+/* Was `:disabled:hover { background: var(--teal) }` — a DISABLED button getting lighter under the cursor, which
+   reads as a response to a press that cannot happen. `button:disabled:hover { filter: none }` already holds it
+   still; nothing else is needed. */
 /* Shape modifier — rounded RECTANGLE instead of pill (matches the default/"Turn on notifications" button). Used on the
    Account Settings action buttons so they read consistent (Donna, 2026-07-28). Kept off global .btn-pill (Connect/etc.). */
 .btn-rect { border-radius: 8px; }
@@ -1299,11 +1316,13 @@ ul.program { list-style: none; padding: 0; margin: 0; }
    other nav) — not a floating edge widget, which reads as a generic ignorable site bot. */
 .companion-nav {
   position: relative; display: inline-flex; align-items: center; gap: 0.4rem;
-  background: rgba(59, 148, 149, 0.12); color: var(--teal-text); border: 1px solid rgba(59, 148, 149, 0.32);
+  background: var(--wash); color: var(--teal-text); border: 1px solid var(--teal-text);
   font-weight: 700; font-size: 0.9rem; padding: 0.35rem 0.8rem; border-radius: 20px; cursor: pointer;
   transition: background 0.14s ease, border-color 0.14s ease;
 }
-.companion-nav:hover, .companion-nav:focus-visible { background: rgba(59, 148, 149, 0.2); border-color: var(--teal-text); }
+/* DEAD CSS — zero call sites in app/ (the docked rail was retired 2026-07-15; see CLAUDE.md). Converted with the
+   rest rather than skipped, so reviving the component cannot revive the wash along with it. */
+.companion-nav:hover, .companion-nav:focus-visible { border-color: var(--teal-text); }
 .companion-nav-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--orange); }
 
 /* Post-Ceremony Tour — dim/spotlight walk + settle into the companion hero */
@@ -1506,7 +1525,8 @@ html:has(.companion-hero), body:has(.companion-hero) { overflow-anchor: none; }
 
 /* A refused tick says why, in the grid, in the member's line of sight — not a toast, not a console line. */
 .wk-refusal { margin: 0.5rem 0 0; font-size: 0.82rem; line-height: 1.45; color: var(--navy); }
-.practice-strip { margin: 0 0 0.75rem; padding: 0.6rem 0.8rem; background: rgba(59, 148, 149, 0.15); border-radius: 8px; font-size: 0.92rem; line-height: 1.45; color: var(--navy); font-weight: 600; }
+/* Had the loudest tint of the three (0.15). It carries the teal on its edge now, like the other two. */
+.practice-strip { margin: 0 0 0.75rem; padding: 0.6rem 0.8rem; background: var(--wash); border-left: 4px solid var(--teal-text); border-radius: 8px; font-size: 0.92rem; line-height: 1.45; color: var(--navy); font-weight: 600; }
 .see-more-inline { color: var(--teal-text); font-weight: 700; text-decoration: none; white-space: nowrap; }
 .see-more-inline:hover { text-decoration: underline; }
 .gcomp-gloss { font-size: 0.72rem; color: var(--charcoal); opacity: 0.7; margin: 0.2rem 0 0; }
@@ -1717,7 +1737,9 @@ html:has(.companion-hero), body:has(.companion-hero) { overflow-anchor: none; }
      CLEAR the button's own white background. The hover state here is the teal border, not a fill. */
 }
 .qd-score-btn:hover:not(:disabled) { border-color: var(--teal-text); }
-.qd-score-btn.on { background: var(--teal-text); border-color: var(--teal-text); color: #fff; --btn-hover-bg: var(--teal-text); }
+/* No --btn-hover-bg here any more: it existed only to stop the old global rule clearing this fill. Nothing
+   clears it now, and the inherited brightness(0.94) is the correct hover for a filled chip. */
+.qd-score-btn.on { background: var(--teal-text); border-color: var(--teal-text); color: #fff; }
 .qd-score-btn:disabled { opacity: 0.5; cursor: default; }
 .qd-elements { margin: 0.3rem 0 0.6rem; }
 .qd-elements-label { font-size: 0.82rem; color: var(--navy); opacity: 0.7; }
@@ -1730,7 +1752,7 @@ html:has(.companion-hero), body:has(.companion-hero) { overflow-anchor: none; }
   /* was `--btn-hover-bg: transparent` to cancel the old navy default — see .qd-score-btn above. */
 }
 .qd-el-btn:hover:not(:disabled) { border-color: var(--teal-text); }
-.qd-el-btn.on { background: var(--teal-text); border-color: var(--teal-text); color: #fff; --btn-hover-bg: var(--teal-text); }
+.qd-el-btn.on { background: var(--teal-text); border-color: var(--teal-text); color: #fff; } /* see .qd-score-btn.on */
 .qd-el-btn:disabled { opacity: 0.5; cursor: default; }
 
 /* THE DAY BAR — which day this form writes, and the week's average. The average used to live INSIDE the intro
@@ -1879,8 +1901,10 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
    throughout; --teal-text is the AA-checked pair (tests/contrast.test.ts), not the raw brand teal. */
 .rr-cadence { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 4px; }
 .rr-cadence-btn { background: var(--teal-text); color: #fff; border: 0; font-family: inherit; font-size: 14px;
-  font-weight: 600; padding: 8px 14px; cursor: pointer; --btn-hover-bg: #245b5c; }
-.rr-cadence-btn:hover:not(:disabled) { background: var(--btn-hover-bg); }
+  font-weight: 600; padding: 8px 14px; cursor: pointer; }
+/* Deeper teal rather than the inherited darkening: this one sits ON a teal ground, where brightness(0.94) is
+   nearly invisible. Stated here, in the button's own rule, not read from a shared property. */
+.rr-cadence-btn:hover:not(:disabled) { background: #245b5c; }
 .rr-cadence-btn:disabled { opacity: 0.5; cursor: default; }
 /* Their own number, said back before they commit — so a misparse is visible at the moment it still costs nothing. */
 .rr-cadence-aim { font-size: 13px; font-weight: 600; color: var(--navy); }
@@ -2331,7 +2355,9 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
    Two lines fix it, and the second one matters as much: the navy hover ALSO put the olive dots on a dark ground.
    This strip is a container that happens to be a button — it should not wear the CTA's hover at all. */
 .pb-strip-row { display: flex; align-items: center; gap: 18px; width: 100%; text-align: left; padding: 0.7rem 0.9rem; background: var(--white); border: 1px solid var(--panel-line, #e3e2df); border-radius: 12px; cursor: pointer; flex-wrap: wrap;
-  color: var(--navy); --btn-hover-bg: #f6f5f3; }
+  color: var(--navy); }
+/* A container that happens to be a button: it gets a faint wash, never the CTA's darkening. */
+.pb-strip-row:hover { background: var(--wash); }
 .pb-strip-item { display: inline-flex; align-items: center; gap: 8px; }
 .pb-strip-name { font-weight: 700; font-size: 0.9rem; text-transform: capitalize; }
 .pb-strip-dots { display: inline-flex; gap: 4px; }
@@ -2681,8 +2707,8 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
 .rhythm-opt.sel { background: rgba(59, 148, 149, 0.18); border-color: var(--teal-text); }
 /* The same control, on the dark onboarding ground — fixed in the same breath rather than waiting for someone to
    report it twice. A navy fill here is near-invisible against the navy backdrop AND kills the selected teal. */
-.rhythm-opt { --btn-hover-bg: rgba(255, 255, 255, 0.12); }
-.rhythm-opt.sel { --btn-hover-bg: rgba(59, 148, 149, 0.26); }
+.rhythm-opt:hover { background: rgba(255, 255, 255, 0.12); }
+.rhythm-opt.sel:hover { background: rgba(59, 148, 149, 0.26); }
 .rhythm-radio { width: 24px; height: 24px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, 0.35); flex: 0 0 auto; display: flex; align-items: center; justify-content: center; transition: 0.15s; }
 .rhythm-opt.sel .rhythm-radio { background: var(--teal); border-color: var(--teal-text); }
 .rhythm-radio svg { width: 13px; height: 13px; stroke: #fff; fill: none; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; opacity: 0; }

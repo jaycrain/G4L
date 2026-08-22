@@ -55,7 +55,19 @@ test('THE PLAYBOOK HAS ONE MEMBER-FACING NAME — "Your Playbook"', () => {
 // the bug — the fix lived nowhere near the button. The default is now a variable each button can override in its
 // own rule. See [[one-fact-many-sites]].
 
-test('the global button hover reads a variable, so a button can override it where it is defined', () => {
+// RETIRED 2026-08-22 — and it is worth saying why, because this test was GREEN while the bug it guarded was live
+// on fourteen buttons for three days.
+//
+// It asserted the longhand `background-color: var(--btn-hover-bg)` on the grounds that `background-color: none`
+// is invalid and therefore dropped, leaving the button's fill alone. That is true of a LITERAL. It is false
+// through `var()`: an invalid substitution is invalid at computed-value time, which resets the property to its
+// initial value — `transparent`. The comment said "measured in a live page, both directions", and the
+// measurement was real; it just measured the literal, never the path the stylesheet actually takes.
+//
+// So the test encoded a belief, checked the spelling of that belief, and could never have caught its being wrong.
+// The mechanism is gone (see the block in globals.css) and tests/button-hover.test.ts asserts its ABSENCE plus
+// the local rules that replaced it — and was proven to fail against the old stylesheet before being trusted.
+test.skip('SUPERSEDED — the global button hover reads a variable', () => {
   assert.match(CSS, /button,\s*\.btn\s*\{\s*--btn-hover-bg:/, 'the default is declared once');
   // THE LONGHAND IS LOAD-BEARING — a correctness rule, not a style preference.
   //
@@ -101,13 +113,13 @@ test('the global hover CANNOT invert contrast — it shifts, it does not swap', 
     'hover must move the button relative to its own colour (filter), so text and ground move together',
   );
   // The failure mode this replaced: a fixed colour as the DEFAULT, which any dark-text button disappears under.
-  const dflt = CSS.match(/button,\s*\.btn\s*\{\s*--btn-hover-bg:\s*([^;]+);/)?.[1]?.trim();
-  assert.ok(dflt, 'the opt-in variable still has a declared default');
+  // The default no longer exists in any form — not a colour, not a variable — so the check is now simply that
+  // NOTHING global sets a hover background. Asserted in full by tests/button-hover.test.ts; kept here as the
+  // one-line version so this sweep still fails if the shape comes back.
   assert.doesNotMatch(
-    dflt!,
-    /var\(--(navy|charcoal|indigo|teal|orange|olive|deep-red)\)|#[0-9a-f]{3,6}/i,
-    `the default hover background must not be a colour — it was "${dflt}", and every button with dark text ` +
-      'vanishes under it. A button that wants a colour swap opts in; the default stays inert.',
+    CSS.replace(/\/\*[\s\S]*?\*\//g, ''),
+    /button:hover,\s*\.btn:hover\s*\{[^}]*background(-color)?\s*:/,
+    'a global button:hover is setting a background again — that is the bug that has now shipped three times',
   );
 });
 
