@@ -1001,7 +1001,15 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .roster-table th, .roster-table td { text-align: left; padding: 0.55rem 0.6rem; border-bottom: 1px solid var(--grey); vertical-align: middle; white-space: nowrap; }
 .roster-table th { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--navy); opacity: 0.82; font-weight: 700; }
 .roster-table th.num, .roster-table td.num { text-align: right; }
-/* A row highlight is wayfinding, not a teal state — neutral, matching .pb-strip-row:hover. */
+/* A row highlight is wayfinding, not a teal state — neutral, matching .pb-strip-row:hover.
+   SCOPED AWAY FROM THE DARK CONSOLE, and this rule is the reason (Jay, 2026-08-22).
+   It was `rgba(59,148,149,.06)` — six percent teal, translucent, and therefore invisible over the Founder
+   Console's charcoal. The v3.4.18 sweep that removed teal washes replaced it with an OPAQUE light grey, and the
+   roster is the one table that renders on BOTH grounds. So the row under the cursor went white while its text
+   stayed white, and Jay could not read the member he was hovering.
+   Same failure as the disappearing button four hours earlier: a state changed the background and the foreground
+   did not follow. The dark console has its own row treatment (.fc-dark … tr:hover td) and only needed this rule
+   to stop reaching into it. */
 .roster-table tbody tr:hover { background: var(--wash); }
 .roster-member { display: inline-flex; align-items: center; gap: 0.6rem; text-decoration: none; }
 .roster-id { display: flex; flex-direction: column; line-height: 1.2; }
@@ -3557,6 +3565,14 @@ body:has(.fc-dark) .app-build { color: rgba(255, 255, 255, 0.62); }
 /* The member table — the biggest light surface in the console, and where a half-done dark mode shows. */
 .fc-dark .roster-table th { color: var(--faint); border-bottom-color: var(--edge); }
 .fc-dark .roster-table td { border-bottom-color: var(--edge); }
+/* THE DARK ROW MUST CANCEL THE LIGHT ONE, not just paint over it (Jay, 2026-08-22).
+   The rule above is unscoped and sets `background` on the TR; this one sets it on the TD. A td background of
+   rgba(255,255,255,.03) is very nearly transparent, so the tr's opaque #f5f4f1 showed straight through and the
+   hovered row went white under white text — Jay could not read the member he was reaching for.
+   `:not(.fc-dark)` on the light rule does NOT fix this and I tried it first: as a descendant scope it still
+   matches, because `body` is not `.fc-dark` and the ancestor test passes on any non-matching ancestor. Cancelling
+   the tr here is (0,2,2) against (0,1,2) and wins honestly. */
+.fc-dark .roster-table tbody tr:hover { background: transparent; }
 .fc-dark .roster-table tr:hover td { background: var(--fill); }
 .fc-dark .roster-name, .fc-dark .roster-phase, .fc-dark .roster-score { color: var(--ink); }
 .fc-dark .roster-email, .fc-dark .roster-time, .fc-dark .roster-door { color: var(--sec); }

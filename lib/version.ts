@@ -11,7 +11,7 @@
 // BUMP THIS AT EVERY PHASE FLIP (.N) or readiness pass (.N.x), in the same commit that flips it. A version string
 // that lags the deploy is worse than no version string: it tells a member — and the founder debugging their
 // report — something confidently false.
-export const APP_VERSION = 'v3.4.27';
+export const APP_VERSION = 'v3.4.28';
 
 /**
  * The exact build. Vercel sets VERCEL_GIT_COMMIT_SHA on every deploy; locally there is none, so it reads "dev".
