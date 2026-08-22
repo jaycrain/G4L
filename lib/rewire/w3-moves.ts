@@ -27,7 +27,8 @@
 // THE LABELS ARE HERS, VERBATIM. "The Member must author the protocol… The system cannot supply a trigger list or
 // a recovery script." So nothing here proposes or tidies. Where a move has no member words — Restart, whose card
 // text was hard-coded generic for everyone — the row falls back to her W2 IMAGE, which is still her words, and
-// only to a bare verb if even that is missing.
+// only to a bare verb if even that is missing. The row takes her FIRST LINE of that image, because the W2 answer
+// is a scene followed by a feeling and the row wants the scene; her whole image is untouched in the keeper.
 
 import type { Db } from '../db/schema.ts';
 
@@ -44,18 +45,41 @@ export type W3MoveSlot = (typeof W3_MOVES)[number]['slot'];
 export type W3MoveWords = { redirect?: string | null; reframe?: string | null; restart?: string | null };
 
 /**
- * The row label for one move: her verb plus her words.
+ * The row label for one move: her verb plus her words — her FIRST LINE of them (see firstLine).
  *
- * Truncation is a DISPLAY concern and happens in the UI, never here — a stored label that has been shortened is a
- * rewrite of what she said, and the whole point of this file is that it isn't.
+ * This used to say "truncation is a DISPLAY concern and happens in the UI, never here". That was written the same
+ * day and was wrong twice over: the UI does not truncate (it clamps to two lines and clips mid-sentence with no
+ * marker), and selecting which of her sentences names a row is not truncation.
  */
 export function moveLabel(slot: W3MoveSlot, words: W3MoveWords): string {
   const verb = W3_MOVES.find((m) => m.slot === slot)!.verb;
   const own = slot === 'move-redirect' ? words.redirect
     : slot === 'move-reframe' ? words.reframe
       : words.restart;
-  const text = (own ?? '').trim();
+  const text = firstLine(own);
   return text ? `${verb} — ${text}` : verb;
+}
+
+/**
+ * The first line of what she wrote — for Restart, that is her SCENE.
+ *
+ * DONNA, 2026-08-22. Her W2 image is three paragraphs and the whole thing became the row label:
+ *
+ *   Losing 20 lbs, regaining strength and fitness      <- the scene
+ *   Relief. Followed by confidence. And some pride...  <- how it feels
+ *   It feels good, and reachable, I just need...       <- her aside
+ *
+ * The W2 answer has that shape by design — the prompt asks for the picture AND the feeling — so using it whole
+ * as a row label was my mistake when I wired Restart to `w3Image` earlier the same day. The grid clamps to two
+ * lines with overflow hidden, so what she actually saw was her scene cut mid-sentence with no indication.
+ *
+ * SELECTING HER FIRST LINE IS NOT REWRITING IT. The header of this file says a stored label must never be tidied
+ * or reworded, and that still holds: no word changes, nothing is summarised, and her full image is untouched in
+ * the Playbook keeper the Restart move points at. This picks WHICH of her sentences names the row.
+ */
+function firstLine(v: string | null | undefined): string {
+  const lines = (v ?? '').split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  return lines[0] ?? '';
 }
 
 /**

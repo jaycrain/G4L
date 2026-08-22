@@ -687,6 +687,36 @@ const w3ImageOf = (c: Collected): string => (c.w3Image ?? '').trim();
 // one") means reuse THAT line (already kept — no new keeper); anything substantial is a NEW bad-day line (harvested).
 const W3_CONFIRM_OFFER_RE =
   /^(use (it|that( one)?)|that one|that works|that'?s (the one|it)|yes|yeah|yep|keep (it|that)|the first one|perfect|good|sounds good|i'?ll (use|take) (it|that)|let'?s use it)\b/i;
+/**
+ * SHE NAMED THE ARTIFACT INSTEAD OF WRITING ONE — a third way to accept the offer.
+ *
+ * DONNA, 2026-08-22: her stored Reframe came out as *"Let's use the true line that goes with that instead."*
+ * That is her telling the Companion which line to use, saved as the line itself — while her real true line sat
+ * in `collected`, offered and ignored.
+ *
+ * Neither existing test could catch it. W3_CONFIRM_OFFER_RE enumerates ways of saying yes and hers is not on the
+ * list (it never will be — that is what the second test is for). And `isMemberContent` reads it as substantive,
+ * which it is: it is a whole sentence with a preference in it. Substantive prose is exactly what a NEW line looks
+ * like, so the fallback stored it.
+ *
+ * THE TELL IS OUR OWN VOCABULARY IN HER ANSWER. "The true line" is what WE call the artifact. A member writing
+ * her actual bad-day line does not name the form — she writes the line. So a message that REFERS to the thing
+ * and expresses a choice about it is an instruction, not content.
+ *
+ * The same shape ran through her Reclaim List the same day ("we need to make a change to how the Reclaim List is
+ * populated", stored as something she wanted back), which is what makes this worth generalising rather than
+ * adding one more phrase to the yes-list.
+ *
+ * BOTH HALVES ARE REQUIRED, deliberately. "My true line is that I can start today" names the artifact but is
+ * plainly giving the line, and carries no directive — it stays a new line.
+ */
+const NAMES_THE_ARTIFACT = /\b(true line|that line|the line|the other one|the first one)\b/i;
+const DIRECTS_A_CHOICE = /\b(use|using|go with|pick|choose|keep|prefer|instead|rather)\b/i;
+function refersToTheOfferedLine(msg: string): boolean {
+  const t = (msg ?? '').trim();
+  return NAMES_THE_ARTIFACT.test(t) && DIRECTS_A_CHOICE.test(t);
+}
+
 function resolveReframe(msg: string, c: Collected): { line: string; reused: boolean } {
   const line0 = firstTrueLine(c);
   const m = msg.trim().replace(/[.,!?]+$/, '');
@@ -699,7 +729,9 @@ function resolveReframe(msg: string, c: Collected): { line: string; reused: bool
   // carries no content of its own CANNOT be a new true line. If there is a line on the table and they answered with
   // a reaction, they accepted it. So the enumeration stays for the phrasings it gets right, and isMemberContent —
   // the same vocabulary W1 and W2 now use — covers everything it doesn't.
-  if (line0 && (W3_CONFIRM_OFFER_RE.test(m) || !isMemberContent(msg))) return { line: line0, reused: true };
+  if (line0 && (W3_CONFIRM_OFFER_RE.test(m) || refersToTheOfferedLine(msg) || !isMemberContent(msg))) {
+    return { line: line0, reused: true };
+  }
   return { line: msg.trim(), reused: false };
 }
 // A DISPUTE at the Reframe — the member says the offered line wasn't theirs ("I didn't write this / where did that come

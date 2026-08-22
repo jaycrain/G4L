@@ -163,3 +163,22 @@ test('a cue too short to be an answer is refused rather than stored', async () =
   assert.equal(await saveW3CheckInCue(db, memberId, ' '), false);
   assert.equal(await saveW3CheckInCue(db, memberId, 'x'), false);
 });
+
+test("Restart takes her SCENE, not her whole W2 answer", () => {
+  // Donna, 2026-08-22. Her image is three paragraphs — the picture, then how it feels, then an aside — because
+  // that is what W2 asks for. The whole thing became the row label, and the grid clamps to two lines and clips
+  // mid-sentence, so what she saw was her own scene cut in half with no indication it had been.
+  const hers = [
+    'Losing 20 lbs, regaining strength and fitness',
+    'Relief. Followed by confidence. And some pride that I saw something hard through to an end.',
+    'It feels good, and reachable, I just need to get some momentum toward it',
+  ].join('\n');
+  assert.equal(moveLabel('move-restart', { restart: hers }), 'I restarted — Losing 20 lbs, regaining strength and fitness');
+});
+
+test('a one-line image is used whole, and no words are ever changed', () => {
+  assert.equal(moveLabel('move-restart', { restart: 'the trail at sunrise' }), 'I restarted — the trail at sunrise');
+  assert.equal(moveLabel('move-redirect', { redirect: 'Box breathing' }), 'I redirected — Box breathing');
+  // No image captured at all — the row still exists, because the three moves are a set.
+  assert.equal(moveLabel('move-restart', {}), 'I restarted');
+});

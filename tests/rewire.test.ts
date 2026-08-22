@@ -321,3 +321,29 @@ test('W3 · graceful degrade (no prior tools) still walks; a blank trigger is nu
   let skip = applyRewireW3Turn(t.state, [], 'ok', { text: '' });
   assert.equal(skip.complete, true, 'a completed arc stays completed');
 });
+
+test('W3 · she names the offered line instead of writing one — that is accepting it, not a new line', () => {
+  // DONNA, 2026-08-22. Her stored Reframe came out as "Let's use the true line that goes with that instead." —
+  // her instruction to the Companion, saved as the line, while her real true line sat in collected unused.
+  //
+  // Neither guard could catch it: W3_CONFIRM_OFFER_RE enumerates ways of saying yes and hers is not on the list,
+  // and isMemberContent reads a whole sentence with a preference in it as substantive, which it is. The tell is
+  // that she NAMES the artifact ("the true line") rather than writing one.
+  const walk = (reframeMsg: string): string | undefined => {
+    let t = rewireW3Opening({ trueLines: ['A slip is the toll, not the verdict'], image: 'the trail at sunrise', reclaimList: [], identityNoun: 'Maker' });
+    const say = (msg: string, text: string) => { t = applyRewireW3Turn(t.state, [], msg, { text, replyIntent: 'done' }); };
+    for (const x of ['late nights', 'travel', 'Sundays']) say(x, 'Say more.');
+    say('Box breathing', 'Good.');
+    say(reframeMsg, 'Noted.');
+    return t.state.collected.w3Reframe;
+  };
+
+  assert.equal(walk('Let’s use the true line that goes with that instead.'), 'A slip is the toll, not the verdict');
+  assert.equal(walk('use the other one'), 'A slip is the toll, not the verdict');
+
+  // AND THE FALSE-POSITIVE DIRECTION, which matters more. A real bad-day line must still be stored as written —
+  // including one that happens to mention the artifact while plainly GIVING the line, since that carries no
+  // directive.
+  assert.equal(walk('One bad day is not the story'), 'One bad day is not the story');
+  assert.equal(walk('My true line is that I can start today'), 'My true line is that I can start today');
+});
