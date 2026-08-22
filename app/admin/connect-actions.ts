@@ -6,6 +6,7 @@ import { getDb } from '../../lib/db/index.ts';
 import { isAdmin } from '../authz.ts';
 import { setContentStatus, resolveReport } from '../../lib/connect/moderation.ts';
 import { foundersAuthorId } from '../../lib/connect/founders.ts';
+import { seedSessionTopics } from '../../lib/connect/seed-session-topics.ts';
 import { createPost } from '../../lib/connect/write.ts';
 import type { Db } from '../../lib/db/schema.ts';
 
@@ -64,4 +65,23 @@ export async function postAsFoundersAction(
   if (!res.ok) return { ok: false, error: res.error };
   revalidatePath('/admin/connect');
   return { ok: true };
+}
+
+/**
+ * Create (or refresh) the four Founders-authored Session topics.
+ *
+ * WHY AN ACTION AND NOT A SCRIPT. The topics have existed as CONTENT since 2026-08-21 and as rows never — the
+ * nudge pointed at `?topic=w3`, nothing read the param, and no post was ever written, so the link that promised
+ * "there are people here doing this at the same time as you" landed on the general feed. Content plus a link is
+ * not a feature; something has to write the row, and an operator needs a way to do it that is not a shell.
+ *
+ * Idempotent: re-running updates the bodies rather than posting duplicates. Safe to click twice.
+ */
+export async function seedSessionTopicsAction(): Promise<{ ok: boolean; error?: string; summary?: string }> {
+  if (!(await isAdmin())) return { ok: false, error: 'Not authorized.' };
+  const db = (await getDb()) as unknown as Db;
+  const res = await seedSessionTopics(db);
+  if (res.error) return { ok: false, error: res.error };
+  revalidatePath('/admin/connect');
+  return { ok: true, summary: `${res.created} created, ${res.updated} refreshed.` };
 }

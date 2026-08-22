@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { getDb } from '../../../lib/db/index.ts';
 import { authorizeMember } from '../../authz.ts';
 import { logEvent } from '../../../lib/telemetry/store.ts';
+import { topicForSession } from '../../../lib/connect/session-topics.ts';
 import {
   getFeed,
   getRepliesFor,
@@ -36,11 +37,11 @@ export default async function ConnectPage({
   searchParams,
 }: {
   params: Promise<{ memberId: string }>;
-  searchParams: Promise<{ care?: string; notice?: string }>;
+  searchParams: Promise<{ care?: string; notice?: string; topic?: string }>;
 }) {
   const { memberId } = await params;
   if (!(await authorizeMember(memberId))) redirect('/login');
-  const { care, notice } = await searchParams;
+  const { care, notice, topic } = await searchParams;
   const db = (await getDb()) as unknown as Db;
   const [feed, pacts, profile, nameRow] = await Promise.all([
     getFeed(db, 50, memberId),
@@ -55,7 +56,11 @@ export default async function ConnectPage({
     getNotifications(db, memberId),
     listOpenRooms(db),
   ]);
-  await logEvent(db, memberId, 'page_view', { surface: 'connect' });
+  // The Session she came from, if she came from one. Resolved by KEY, not by post id, so the link survives the
+  // topic being re-seeded — and returns null for an unknown key rather than throwing, because a bad link in a
+  // nudge must degrade to the ordinary feed.
+  const sessionTopic = topicForSession(topic);
+  await logEvent(db, memberId, 'page_view', { surface: 'connect', ...(sessionTopic ? { topic } : {}) });
 
   const unreadCount = notifications.filter((n) => !n.read).length;
   const myName = nameRow.rows[0]?.display_name ?? 'my real name';
@@ -73,6 +78,19 @@ export default async function ConnectPage({
       )}
       {notice && (
         <p className="muted" role="status" style={{ border: '1px solid var(--line, #E8E6E6)', borderRadius: 8, padding: '0.6rem 0.9rem', marginBottom: '1rem' }}>{notice}</p>
+      )}
+
+      {/* SHE WAS SENT HERE FROM A SESSION, so say which one and put its thread in front of her.
+          The post-session nudge has built `?topic=<sessionKey>` since 2026-08-21 and nothing read it, so the link
+          that promised "there are people here doing this at the same time as you" dropped her on the general feed —
+          the exact complaint it was written to fix. Falls back silently to the plain feed when the key is unknown
+          or the topic has not been seeded: a member arriving from a Session must never meet an error about one. */}
+      {sessionTopic && (
+        <div className="card" style={{ marginBottom: '1.25rem', borderColor: 'var(--teal)' }}>
+          <p className="muted" style={{ margin: '0 0 0.35rem', fontSize: '0.85rem' }}>From the Session you just finished</p>
+          <h3 style={{ margin: '0 0 0.35rem' }}>{sessionTopic.title}</h3>
+          <p style={{ margin: 0, lineHeight: 1.6 }}>{sessionTopic.body}</p>
+        </div>
       )}
 
       <div className="card" style={{ marginBottom: '1.25rem' }}>
