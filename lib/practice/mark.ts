@@ -114,6 +114,45 @@ export async function toggleMark(
       await ensureW3Day(db, memberId, markedOn, source);
       return { ok: true, on: true };
     }
+    // A MOVE ROW — Redirect / Reframe / Restart. These arrived on 2026-08-22 and this branch did not exist, so a
+    // tap fell straight through to setW3Trigger below and wrote "move-redirect" into `trigger_fired`: the row was
+    // unmarkable AND it corrupted a different one of Greg's seven fields on the way. Shipped in v3.4.21; found
+    // while removing the "Checked in" row, which is the only reason this write path got read again.
+    //
+    // Moves live in practice_mark — they are commitments, like every other week's rows — and NOT in the daily
+    // entry, because `recovery_used` is one boolean and cannot say WHICH move she used.
+    //
+    // TICKING A MOVE ALSO ENSURES THE DAY EXISTS, and that is what keeps consistency tracked now that "Checked in"
+    // is gone as a row: an entry for the date is still what days_logged and the close review count, and using a
+    // move is unambiguously a day she showed up. Un-ticking removes only the mark, never the day — the day may
+    // carry her writing, and an un-tick must never delete that.
+    if (slot.startsWith('move-')) {
+      const commitment = (
+        await db.query<{ id: string }>(
+          `select id from practice_commitment where member_id = $1 and kind = 'w3_logging' and slot = $2`,
+          [memberId, slot],
+        )
+      ).rows[0];
+      if (!commitment) return { ok: false, error: 'That row is no longer part of this week.' };
+      const existing = (
+        await db.query<{ id: string }>(
+          `select id from practice_mark
+            where member_id = $1 and kind = 'w3_logging' and commitment_id = $2 and marked_on = $3`,
+          [memberId, commitment.id, markedOn],
+        )
+      ).rows[0];
+      if (existing) {
+        await db.query(`delete from practice_mark where id = $1`, [existing.id]);
+        return { ok: true, on: false };
+      }
+      if (!day.exists) await ensureW3Day(db, memberId, markedOn, source);
+      await db.query(
+        `insert into practice_mark (member_id, kind, commitment_id, marked_on, source)
+         values ($1, 'w3_logging', $2, $3, $4)`,
+        [memberId, commitment.id, markedOn, source],
+      );
+      return { ok: true, on: true };
+    }
     // A trigger row. Ticking the one already recorded clears it; ticking a different one moves the record, which
     // is the member correcting which trigger it was — singular is Greg's design, not a limitation to work around.
     const on = day.triggerSlot !== slot;
