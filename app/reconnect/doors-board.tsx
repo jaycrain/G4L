@@ -142,7 +142,7 @@ export default function DoorsBoard({ expects, disabled, onSubmit }: Props) {
         <div style={{ marginTop: '1.1rem', display: 'grid', gap: '0.8rem' }}>
           <Pick label="Which one did you walk through first?" options={mine} value={first} onPick={setFirst} disabled={disabled} />
           <Pick label="Which weighs most on who you are today?" options={mine} value={biggest} onPick={setBiggest} disabled={disabled} />
-          <div>
+          <div className="dbq">
             <p className="muted" style={{ margin: '0 0 0.35rem', fontSize: '0.85rem' }}>Is any of them still open — one you&rsquo;re walking through right now?</p>
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
               {mine.map((c) => (
@@ -163,9 +163,20 @@ export default function DoorsBoard({ expects, disabled, onSubmit }: Props) {
         </div>
       )}
 
-      {/* TEXT, NOT A PILL, BOTTOM LEFT — the .see-more standard the panels use for their foot link. A filled pill
-          here read as the loudest thing on a page whose job is quiet browsing. */}
-      <button type="button" className="see-more" onClick={submit} disabled={disabled} style={{ display: 'block', border: 'none', background: 'none', padding: 0, cursor: 'pointer', marginTop: '1.1rem' }}>
+      {/* FULL-WIDTH TEAL, matching "This is me — I'm ready →" (Donna, 2026-08-21: it was "small and
+          left-aligned"). It had been a quiet .see-more foot link on the reasoning that a filled pill would be the
+          loudest thing on a page whose job is quiet browsing. That reasoning held when this was a page to read; it
+          stopped holding once the page became a form she completes and leaves.
+          SQUARED, NOT A PILL (Jay, 2026-08-22). The first version reached for .rhythm-confirm, which is a 28px
+          pill — "we've had you change every pill you started with to our" squared standard, and the same note is
+          already written above .pb-tabs. The plain global button IS the standard: 8px, teal, white text. Only the
+          width is set here, so nothing bespoke exists to drift. */}
+      <button
+        type="button"
+        onClick={submit}
+        disabled={disabled}
+        style={{ width: '100%', marginTop: '1.25rem' }}
+      >
         {marked.size ? 'Continue →' : 'None of these — continue →'}
       </button>
     </div>
@@ -179,8 +190,12 @@ function Pick({ label, options, value, onPick, disabled }: {
   onPick: (v: string | null) => void;
   disabled?: boolean;
 }) {
+  // EACH QUESTION IN ITS OWN BOX (Donna, 2026-08-21: the three "run together with no visual separation"). Three
+  // chip rows stacked with only whitespace between them read as one long control — she could not tell where the
+  // answer to "which came first" ended and "which weighs most" began. Grey outline, not teal: these are
+  // containers, and the teal on this surface means "this one is mine".
   return (
-    <div>
+    <div className="dbq">
       <p className="muted" style={{ margin: '0 0 0.35rem', fontSize: '0.85rem' }}>{label}</p>
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
         {options.map((c) => (

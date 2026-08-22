@@ -630,15 +630,14 @@ ul.program { list-style: none; padding: 0; margin: 0; }
    row, close enough to the following Door to look like ITS control — a mis-tap that silently drops the wrong one
    on the one surface built for her to correct our inference. */
 .gapc-door { display: inline-block; white-space: nowrap; }
-.gapc-door-name { font-weight: 700; }
-.gapc-door.off .gapc-door-name { text-decoration: line-through; color: var(--muted-grey); font-weight: 600; }
-.gapc-door-drop, .gapc-door-undo {
-  margin: 0 0 0 4px; padding: 1px 5px; background: transparent; border: none; border-radius: 5px;
-  color: #9aa2a8; font-family: inherit; font-size: 11.5px; line-height: 1; cursor: pointer; vertical-align: baseline;
-}
-.gapc-door-drop:hover:not(:disabled) { color: var(--deep-red, #bb2127); background: #eceae7; }
-.gapc-door-undo { color: var(--teal-text); font-weight: 700; }
-.gapc-door-undo:hover:not(:disabled) { background: #eceae7; }
+/* THE DOORS AS TAPPABLE CHIPS (Jay, 2026-08-22). Reuses .idp-chip — the Identity picker's control — rather than
+   inventing a third selection pattern for the same act. `.on` is the app's one selected hook, so a Door we heard
+   arrives filled and a tap returns it to the outlined state.
+   Its own row, not inline after the lead: at 15px these no longer flow as prose, and a wrapped chip beside a
+   trailing sentence was how the ✕ ended up next to the WRONG Door on a phone. */
+.gapc-doorchips { display: flex; flex-wrap: wrap; gap: 8px; margin: 0.45rem 0 0.15rem; }
+.gapc-doorchips .idp-chip.on { background: var(--teal-text); color: #fff; border-color: var(--teal-text); }
+
 .gapc-doors-hint { display: block; font-size: 12.5px; color: var(--muted-grey); line-height: 1.5; margin-top: 0.15rem; }
 .gapc-row { display: flex; flex-wrap: wrap; gap: 8px; }
 .gapc-chip {
@@ -3929,3 +3928,17 @@ body:has(.fc-dark) .brand-wordmark,
 .pb-map-more > summary:hover { border-color: var(--field-line); }
 .pb-map-more-n { font-weight: 400; font-size: 12.5px; color: var(--navy); opacity: 0.72; }
 .pb-map-more[open] > summary { margin-bottom: 6px; }
+
+/* ── THE DOORS BOARD'S THREE FOLLOW-UP QUESTIONS ─────────────────────────────────────────────────────────────
+   Donna, 2026-08-21: they "run together with no visual separation between them". Three chip rows stacked with
+   only whitespace read as one long control — where the answer to "which one did you walk through first" ends and
+   "which weighs most" begins is invisible, and both draw from the same set of Door names.
+
+   GREY OUTLINE, NOT TEAL. These are containers. Teal on this surface means "this one is mine" (the marked cards,
+   the selected chips), and putting it on a box that holds a question would spend the one colour that carries a
+   meaning here on something that carries none. */
+.dbq {
+  border: 1px solid var(--panel-line, #e3e2df);
+  border-radius: 8px;
+  padding: 0.7rem 0.9rem;
+}

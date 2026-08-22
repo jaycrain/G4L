@@ -63,36 +63,46 @@ export default function GapConfirm({
     <div className="gapc">
       {expects.doorsHeard.length > 0 && (
         <div className="gapc-doors">
-          <span className="gapc-doors-lead">What I heard open it:</span>{' '}
-          {expects.doorsHeard.map((d, i) => {
-            const off = dropped.has(d.slug);
-            return (
-              <span key={d.slug} className={off ? 'gapc-door off' : 'gapc-door'}>
-                {i > 0 && <span className="gapc-door-sep" aria-hidden="true">· </span>}
-                <span className="gapc-door-name">{d.name}</span>
-                {off ? (
-                  <button type="button" className="gapc-door-undo" onClick={() => restore(d.slug)} disabled={disabled}>
-                    undo
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    className="gapc-door-drop"
-                    aria-label={`Not ${d.name}`}
-                    title={`Not ${d.name}`}
-                    onClick={() => drop(d.slug)}
-                    disabled={disabled}
-                  >
-                    ✕
-                  </button>
-                )}
-              </span>
-            );
-          })}
-          {/* Named as HERS to correct, not as a checklist to complete — and only once she has taken one off does
-              the surface acknowledge it, so the resting state stays a statement rather than a prompt. */}
+          {/* "Doors I think you walked through" (Donna, 2026-08-21). "What I heard open it" made her parse a
+              sentence — "it" is the gap, two turns earlier — before she could read the names. The new line says
+              what the list IS, and says the Companion THINKS rather than heard, which is the propose in
+              propose-confirm. */}
+          <span className="gapc-doors-lead">Doors I think you walked through:</span>
+          {/* TAP THE DOOR TO TAKE IT OFF — the same affordance as the Identity picker (Jay, 2026-08-22: "we don't
+              use those Xs anywhere else in the app. How do the selections appear in Identity in onboarding?").
+              He is right and the ✕ was mine: nowhere else does a member remove something with a delete glyph, and
+              introducing one on the first surface where she corrects us teaches a control she will never see
+              again. Identity is a row of squared chips you tap; so is this.
+              THEY ARRIVE SELECTED, because we are proposing them. Selected is the app's standard — teal fill,
+              white text, .on plus aria-pressed derived from the same condition — and tapping deselects to the
+              outlined state. A member who has used the Doors board or a scale row already knows how this works. */}
+          <div className="gapc-doorchips">
+            {expects.doorsHeard.map((d) => {
+              const on = !dropped.has(d.slug);
+              return (
+                <button
+                  key={d.slug}
+                  type="button"
+                  className={`idp-chip${on ? ' on' : ''}`}
+                  aria-pressed={on}
+                  onClick={() => (on ? drop(d.slug) : restore(d.slug))}
+                  disabled={disabled}
+                >
+                  {d.name}
+                </button>
+              );
+            })}
+          </div>
+          {/* Named as HERS to correct, not a checklist to complete — and only once she has taken one off does the
+              surface acknowledge it, so the resting state stays a statement rather than a prompt.
+              THE RESTING LINE NAMES THE CONTROL AND SETS THE HORIZON (Donna, 2026-08-21). "Take one off if it
+              isn't yours" never said HOW, and left the impression this was her last word on her Doors. It is not:
+              R2's board shows all twelve and she rates each one. Jay ruled the promise ships as written — the
+              program keeps it for anyone who continues, and someone who stops has lost nothing. */}
           <span className="gapc-doors-hint">
-            {dropped.size > 0 ? 'Taken off — I won’t count it.' : 'Take one off if it isn’t yours.'}
+            {dropped.size > 0
+              ? 'Taken off — I won’t count it.'
+              : 'Tap one to take it off if it doesn’t feel right. We’ll revisit these in more detail later.'}
           </span>
         </div>
       )}

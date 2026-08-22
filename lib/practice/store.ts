@@ -207,7 +207,13 @@ export async function practicePanelLine(db: Db, memberId: string): Promise<strin
     const pw = await activePracticeWeek(db, memberId);
     if (!pw) return null;
     if (pw.kind === 'w2_image') return 'This week: step into your picture — five minutes a day.';
-    if (pw.kind === 'w3_logging') return 'This week: log your calls as they come.';
+    // W3 NAMES THE PRACTICE, not the paperwork (Donna, 2026-08-21: neither the copy nor the tracked categories
+    // "give the member a clear, logical next step — it's unclear what she's supposed to actually be doing day to
+    // day"). "Log your calls as they come" describes the act of logging. Her replacement describes the WORK: the
+    // rows are her three protocol moves now, and this says to use them and note it when she does.
+    if (pw.kind === 'w3_logging') {
+      return 'This week: practice your False Start protocols — note each time you put one into practice.';
+    }
     if (pw.kind === 'b2_noticing') return 'This week: notice which skills carry you — and where a gap trips you.';
     if (pw.kind === 'b3_pilot') {
       const plan = (await activeCoachingPlan<RebuildPilotPayload>(db, memberId, 'rebuild'))?.payload ?? null;
