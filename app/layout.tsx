@@ -10,6 +10,23 @@ import { APP_VERSION, buildRef } from '../lib/version.ts';
 import BackToDashboard from './components/back-to-dashboard.tsx';
 import BrandHome from './components/brand-home.tsx';
 
+/**
+ * THE BODY FACE, AND THE ONLY FOUR WEIGHTS THAT EXIST.
+ *
+ * 400 · 600 · 700 · 800. Anything else in globals.css is fiction — the browser does not fail on a weight you did
+ * not load, it silently substitutes the nearest one it has, so the stylesheet says one thing and the screen shows
+ * another with nothing to warn you.
+ *
+ * That is exactly what had happened: five rules asked for 500 and every one of them rendered at 400 (CSS font
+ * matching, for a desired weight of 500 with no 500 available, walks DOWN before it walks up). Donna counted six
+ * weights in the source on 2026-08-21; only four were ever reaching a member. The five are now written as the 400
+ * they always were — the file tells the truth, and nothing on screen moved.
+ *
+ * If a surface genuinely needs a medium, add '500' HERE first. Do not write a weight the face does not carry.
+ *
+ * (The six 900s are not a fifth weight — they are Barlow Condensed below, a separate display family that does load
+ * 900. Counting them against this scale is what made it look like six.)
+ */
 const barlow = Barlow({
   subsets: ['latin'],
   weight: ['400', '600', '700', '800'],

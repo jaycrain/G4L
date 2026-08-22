@@ -86,8 +86,28 @@ main:has(.dock-open) { max-width: 1240px; }
 .brand-wordmark { height: 2.45rem; width: auto; display: block; flex: none; }
 .brand-mark { width: 39px; height: 39px; border-radius: 50%; display: block; flex: none; }
 
-h1, h2, h3 { color: var(--navy); font-weight: 600; line-height: 1.2; }
+/* THE HEADING SCALE, DECLARED (Donna, 2026-08-21).
+   Only h1 had a size. h2/h3/h4 fell through to the user agent's own defaults — which are expressed in `em`, so
+   they were sized off whatever their PARENT happened to be rather than off the document. Inside a card that sets
+   its own font-size, a UA h3 is a different number than the same h3 one level up, and nobody chose either. h4 was
+   worse: it was never in the colour rule at all, so eight of them rendered in the UA's near-black bold instead of
+   navy.
+   SIZES ARE DONNA'S 8-STEP SCALE, stage 1 only (Jay, 2026-08-22). Her full scale also moves Body, Small, Micro,
+   Eyebrow and retires the 800 weight — roughly 390 more sites, which is the layout-risky half and is deferred
+   until after Charter by Jay's call. Display is deliberately NOT tokenised: her table lists it as "34–48px", but
+   the real values are clamps running to 76px on the onboarding welcome and 68px on the auth hero, so a flat 40px
+   would halve the first screen a prospect sees.
+
+   h3 at 20px is the highest-value line here. 70 of the 77 <h3> in app/ carry no class, so today each one inherits
+   `1.17em` from whatever contains it — the same heading renders 18.7px in one card and 16.4px in another. Measured
+   live before shipping: 28 headings actually resize across Account, Community and Momentum; Journey, ID Score,
+   Grinta and Movement already computed to 20px by accident. Worst page-height change +11px, nothing wrapped, and
+   nothing overflowed at 1440 or 390. The dashboard is untouched — the triptych's headings are all classed. */
+h1, h2, h3, h4 { color: var(--navy); font-weight: 600; line-height: 1.2; }
 h1 { font-size: 2rem; margin: 0 0 0.5rem; }
+h2 { font-size: 1.5rem; }
+h3 { font-size: 1.25rem; }
+h4 { font-size: 1rem; }
 a { color: var(--teal-text); }
 
 .muted { color: var(--navy); opacity: 0.82; }  /* 0.75 was 4.37:1 — just under the line */
@@ -554,7 +574,7 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .keeper-offer { margin: 0.6rem 0; padding: 0.7rem 0.85rem; border: 1px dashed #cfd6da; border-radius: 10px; background: transparent; }
 .keeper-offer.kept { border-style: solid; border-color: #e3e2df; background: #f5f4f1; }
 .keeper-offer-label { display: block; font-size: 11.5px; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase; color: var(--muted-grey); margin-bottom: 0.3rem; }
-.keeper-offer-body { margin: 0 0 0.55rem; font-size: 15px; line-height: 1.5; color: var(--navy); }
+.keeper-offer-body { margin: 0 0 0.55rem; font-size: 16.5px; line-height: 1.5; color: var(--navy); } /* reading surface — see .rmsg */
 .keeper-offer-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
 .keeper-offer-ask { font-size: 13px; color: var(--muted-grey); }
 .keeper-offer-btn {
@@ -773,7 +793,7 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .cer-cluster { margin: 0.8rem 0 0; font-size: 0.95rem; line-height: 1.55; color: var(--charcoal); }
 .cer-cluster strong { color: var(--navy); }
 .cer-chips { display: flex; gap: 9px; flex-wrap: wrap; }
-.cer-chip { font-size: 0.82rem; font-weight: 500; color: var(--navy); background: var(--grey); padding: 6px 13px; border-radius: 20px; }
+.cer-chip { font-size: 0.82rem; font-weight: 400; color: var(--navy); background: var(--grey); padding: 6px 13px; border-radius: 20px; }
 .cer-chip.score { color: #fff; background: var(--teal-text); }
 /* close-ceremony reveals: a prominent facet chip + the earned badge stamp */
 .cer-facet { font-size: 1.1rem; font-weight: 700; color: #fff; background: var(--teal-text); padding: 8px 18px; border-radius: 20px; }
@@ -1984,7 +2004,14 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
 .rrail-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--olive); margin-right: 5px; vertical-align: 1px; }
 .rrail-discl { font-size: 11px; color: var(--muted-grey); margin-top: 6px; line-height: 1.4; }
 .rrail-stream { flex: 1; overflow-y: auto; padding: 16px 20px; display: flex; flex-direction: column; gap: 12px; }
-.rmsg { max-width: 88%; padding: 11px 14px; font-size: 14.5px; line-height: 1.45; overflow-wrap: anywhere; }
+/* THE FOUR READING SURFACES — 16px and 16.5px (Donna's decision B, stage 1; Jay 2026-08-22).
+   These four are the only places a member reads at LENGTH; the other ~600 type declarations are chrome — labels,
+   counts, badges, breadcrumbs — where nobody reads a paragraph. Donna's Body token would have missed all four,
+   because each carries an explicit size and so inherits nothing from `body`.
+   The two on navy go to 16 rather than 16.5: light text on a dark ground reads optically smaller AND slightly
+   softer at the same size, which is the argument for lifting them and also the reason not to overshoot. The two
+   dark-on-white surfaces sit at 16.5 — past that, prose starts reading as large-print rather than comfortable. */
+.rmsg { max-width: 88%; padding: 11px 14px; font-size: 16px; line-height: 1.45; overflow-wrap: anywhere; }
 .rmsg.agent { align-self: flex-start; background: #fff; border: 1px solid #e3e2df; border-radius: 4px 13px 13px 13px; }
 .rmsg.member { align-self: flex-end; background: var(--navy); color: #fff; border-radius: 13px 13px 4px 13px; }
 .rmsg.typing { align-self: flex-start; background: #fff; border: 1px solid #e3e2df; border-radius: 13px; color: var(--muted-grey-2); font-style: italic; }
@@ -2091,10 +2118,10 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
 .ws-slot-val.empty { font-style: italic; color: #b0aea8; }
 /* Committed lines read as KEPT — each with a teal tick, so the member watches their own words get immortalized. */
 .ws-slot-list { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 7px; }
-.ws-slot-line { position: relative; padding-left: 26px; font-size: 16.5px; line-height: 1.4; color: var(--charcoal); font-weight: 500; }
+.ws-slot-line { position: relative; padding-left: 26px; font-size: 16.5px; line-height: 1.4; color: var(--charcoal); font-weight: 400; }
 .ws-slot-tick { position: absolute; left: 0; top: 0; color: var(--teal-text); font-weight: 800; }
 .ws-slot.filled { background: var(--white); border-left-color: var(--olive-text); }
-.ws-slot.filled .ws-slot-val { color: var(--charcoal); font-weight: 500; }
+.ws-slot.filled .ws-slot-val { color: var(--charcoal); font-weight: 400; }
 .ws-art-foot { margin-top: 20px; font-size: 13px; color: var(--muted-grey); }
 
 /* ============ Single-column Session (2026-07-21, direction A) — one conversation column, no two-pane ============ */
@@ -2557,7 +2584,7 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
   .rhome-badge svg { width: 28px; height: 28px; stroke: #fff; fill: none; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
   .rhome-head { font-family: var(--font-condensed), var(--font-barlow), sans-serif; font-weight: 900; color: #fff; text-transform: uppercase;
     font-size: 40px; line-height: 0.92; letter-spacing: 0.5px; margin: 0; }
-  .rhome-sub { display: block; font-family: var(--font-barlow), sans-serif; font-weight: 500; font-size: 17px; letter-spacing: 0; text-transform: none; color: rgba(255, 255, 255, 0.62); margin-top: 10px; }
+  .rhome-sub { display: block; font-family: var(--font-barlow), sans-serif; font-weight: 400; font-size: 17px; letter-spacing: 0; text-transform: none; color: rgba(255, 255, 255, 0.62); margin-top: 10px; }
   .rhome-ctarow { display: flex; justify-content: flex-end; margin-top: 16px; }
   .rhome-pill { display: inline-flex; align-items: center; min-height: 44px; background: var(--teal-text); color: #fff; border-radius: 26px;
     font-weight: 700; font-size: 15px; padding: 0 20px; text-decoration: none; box-shadow: 0 6px 18px rgba(59, 148, 149, 0.35); }
@@ -2914,10 +2941,20 @@ body.onbwel-bleed main { max-width: none; margin: 0; padding: 0; }
      names the phase, so drop the ring's center label at this size. */
   .tri-hero { align-items: flex-start; gap: 12px; padding: 12px 18px; }
   .tri-hero-title { font-size: 22px; }
-  /* Fit the longest eyebrow ("Phase 4 · Reclaim · Session 3 of 3") on ONE line beside the ring — at 11px it wrapped
-     to an orphan "of 3" (Jay 7/28). 10px + tighter tracking clears it. (Higher specificity than the base rule, which
-     is defined LATER in the file and would otherwise win.) */
-  .tri-hero .tri-hero-eyebrow { font-size: 10px; letter-spacing: 0.04em; }
+  /* 11px, up from 10 (Donna, 2026-08-21 — "it's already lower-contrast at that size").
+     The 10px was a real fix, not a preference: at 11px the crumb wrapped to an orphan "of 3" beside the ring
+     (Jay 7/28), written against content that no longer exists — that string is now the "Program › Reclaim › …"
+     trail. MEASURED on prod at 375/414/768/999 rather than assumed (scripts/dev/crumb-measure.ts):
+
+       375 · 414   2 lines at 10px   →   2 lines at 11px
+       768 · 999   1 line  at 10px   →   1 line  at 11px
+
+     So 11px costs no new wrap anywhere, which is the question Donna's ask turns on. Note what the measurement
+     also showed and nobody had reported: on a phone this crumb ALREADY runs to two lines at 10px, because the
+     live state can be long ("practice week running"). Raising the size does not cause that and does not worsen
+     it — but the two-line crumb on mobile is a real thing, unrelated to this change, and open.
+     (Higher specificity than the base rule, which is defined LATER in the file and would otherwise win.) */
+  .tri-hero .tri-hero-crumb { font-size: 11px; letter-spacing: 0.04em; }
   .tri-hero-copy { margin-top: 6px; }
   .tri-hero-ctarow { margin-top: 12px; }
   .tri-hero-ring .redesign-ring { width: 58px !important; height: 58px !important; }
@@ -2934,7 +2971,7 @@ body.onbwel-bleed main { max-width: none; margin: 0; padding: 0; }
   .tri-companion.is-conversing .tri-hero-ring,
   .tri-companion.is-conversing .tri-keeper { display: none; }
   .tri-companion.is-conversing .tri-hero-ctarow { margin-top: 0; }
-  .tri-companion.is-conversing .tri-hero-eyebrow { margin-bottom: 4px; }
+  .tri-companion.is-conversing .tri-hero-crumb { margin-bottom: 4px; }
 }
 
 /* The navy hero — headline + guiding line + CTA, with the merged 4R ring beside it (phase + progress). */
@@ -2943,8 +2980,16 @@ body.onbwel-bleed main { max-width: none; margin: 0; padding: 0; }
 /* The hero BREADCRUMB (Jay 2026-08-08) — was an uppercase teal eyebrow ("PHASE 4 · RECLAIM"). Uppercase is wrong
    for a breadcrumb: it's mixed content ending in a state, and shouting the whole trail flattens the hierarchy the
    trail exists to show. Normal case, muted, with only the two ends carrying colour — the "Program" anchor and the
-   live state. */
-.tri-hero-eyebrow { font-size: 12px; font-weight: 600; letter-spacing: 0; color: rgba(255, 255, 255, 0.62); }
+   live state.
+
+   ALPHA IS 0.78 BECAUSE 0.62 FAILED (Donna, 2026-08-21). She read the middle crumbs as too faint to bother with,
+   and she was reading a real defect: white at 0.62 over the hero navy composites to #B3BCC4, which is 4.43:1 —
+   under the 4.5:1 floor, at 12px, where the large-text exemption does not apply. 0.78 gives 5.96:1, and it is
+   already this surface's established muted-on-navy value (.tri-hero-copy, .tri-keeper-eyebrow), so the fix is
+   consistency rather than a new number. Hierarchy still holds: the crumb is 12px against the copy's 14.5px, and
+   the "Program" anchor stays pure white and bold above it.
+   The separator stays at 0.32 — it is aria-hidden decoration, exempt, and letting it recede further is the point. */
+.tri-hero-crumb { font-size: 12px; font-weight: 600; letter-spacing: 0; color: rgba(255, 255, 255, 0.78); }
 .tri-crumb-sep { color: rgba(255, 255, 255, 0.32); }
 .tri-crumb-home { color: #fff; text-decoration: none; font-weight: 700; }
 .tri-crumb-home:hover { text-decoration: underline; }
@@ -2958,7 +3003,7 @@ body.onbwel-bleed main { max-width: none; margin: 0; padding: 0; }
 .pb-mostrun-label { font-size: 10.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted-grey); }
 .pb-mostrun-name { font-size: 13px; line-height: 1.3; color: var(--charcoal); }
 .tri-hero-title { margin: 6px 0 0; font-size: 27px; line-height: 1.1; font-weight: 800; color: #fff; }
-.tri-hero-copy { margin: 10px 0 0; font-size: 14.5px; line-height: 1.5; color: rgba(255, 255, 255, 0.78); max-width: 52ch; }
+.tri-hero-copy { margin: 10px 0 0; font-size: 16px; line-height: 1.5; color: rgba(255, 255, 255, 0.78); max-width: 52ch; } /* reading surface — see .rmsg */
 .tri-hero-ctarow { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; margin-top: 16px; }
 .tri-hero-cta { display: inline-block; background: var(--teal-text); color: #fff; font-weight: 700; font-size: 14px; text-decoration: none; padding: 10px 18px; border-radius: 10px; }
 .tri-hero-cta:hover { filter: brightness(1.06); }
@@ -2982,7 +3027,7 @@ body.onbwel-bleed main { max-width: none; margin: 0; padding: 0; }
 .tri-companion.is-conversing .tri-keeper { display: none; }
 .tri-companion.is-conversing .tri-hero { align-items: center; padding-top: 14px; padding-bottom: 12px; gap: 12px; }
 .tri-companion.is-conversing .tri-hero-ctarow { margin-top: 0; }
-.tri-companion.is-conversing .tri-hero-eyebrow { margin-bottom: 4px; }
+.tri-companion.is-conversing .tri-hero-crumb { margin-bottom: 4px; }
 
 /* "Where you stand" — the Companion's standing update, PINNED between the thread and the composer (flex 0 0 auto
    so it never shrinks when the thread grows). Same shape as the keeper so the two read as one family, but a TEAL
@@ -3031,7 +3076,7 @@ body.onbwel-bleed main { max-width: none; margin: 0; padding: 0; }
 /* No Longer Central — released items, kept + restorable, rendered quietly below the active list. */
 .reclaim-released { margin-top: 18px; }
 .reclaim-released .rc-h { color: var(--muted-grey); }
-.reclaim-released .reclaim-row-text.muted { font-weight: 500; color: var(--muted-grey); margin-bottom: 0; }
+.reclaim-released .reclaim-row-text.muted { font-weight: 400; color: var(--muted-grey); margin-bottom: 0; }
 
 /* ── FOUNDER CONSOLE ────────────────────────────────────────────────────────────────────────────────────────
    The operator surface, Companion-first — the same reflect ← ask → act spine as the member triptych.
@@ -3775,7 +3820,7 @@ body:has(.fc-dark) .brand-wordmark,
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
-.teach-body { margin: 7px 0 0; font-size: 15px; line-height: 1.55; color: var(--charcoal); }
+.teach-body { margin: 7px 0 0; font-size: 16.5px; line-height: 1.55; color: var(--charcoal); } /* reading surface — see .rmsg */
 /* Reset the default h3 margin inside a card — the dashboard standard, same reason (docs/dashboard-ui-standards.md). */
 .teach-lede { margin: 6px 0 10px; font-size: 16.5px; line-height: 1.3; color: var(--navy); font-weight: 600; }
 .teach-points { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; }

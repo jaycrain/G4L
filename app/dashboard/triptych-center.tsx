@@ -205,7 +205,7 @@ export default function TriptychCenter({
                 Program is the point: it makes the marketing word name the FRAME the member is inside rather
                 than a page they visit, which is what stops it competing with the Playbook. The first crumb
                 links; the rest are position, not navigation. */}
-            <span className="tri-hero-eyebrow">
+            <span className="tri-hero-crumb">
               {hero.crumbs.map((c, i) => (
                 <span key={c}>
                   {i > 0 && <span className="tri-crumb-sep" aria-hidden="true"> › </span>}
