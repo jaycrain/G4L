@@ -1,4 +1,4 @@
-# Strings EXCLUDED from the member transcript (app @ a29feaa · 2026-08-21)
+# Strings EXCLUDED from the member transcript (app @ 6c2c38b · 2026-08-22)
 # Not member copy: system prompts, multi-line fragments, code artifacts. Review when a real line goes missing.
 
 [app/page.tsx] Log in
@@ -121,8 +121,7 @@
 [app/onboarding/welcome.tsx] starts here.
 [app/onboarding/welcome.tsx] Log in
 [app/onboarding/identity-picker.tsx] Enter
-[app/onboarding/gap-confirm.tsx] Not ${d.name}
-[app/onboarding/gap-confirm.tsx] Not ${d.name}
+[app/onboarding/gap-confirm.tsx] idp-chip${on ? ' on' : ''}
 [lib/agent/gap-confirm-choice.ts] keep:${keptDoors.join(',')}
 [lib/agent/gap-confirm-choice.ts] keep:
 [lib/agent/gap-confirm-choice.ts] keep:
@@ -241,7 +240,6 @@
 [lib/reconnect/legacy-letter.ts] Greg: "There should always be Unfinished Business. That's the point." Never resolved, never closed.
 [lib/reconnect/legacy-letter.ts] - ${p.prompt}   THEY SAID: ${(answers[p.key] ?? '').trim()}
 [lib/reconnect/legacy-letter.ts] you've got this
-[lib/content/doors-board.ts] Autopilot
 [app/reconnect/doors-board.tsx] 0.5rem
 [app/reconnect/doors-board.tsx] 0 0 0.9rem
 [app/reconnect/doors-board.tsx] 1px solid ${on ? 'var(--teal)' : 'rgba(0,0,0,0.12)'}
@@ -251,24 +249,20 @@
 [app/reconnect/doors-board.tsx] 0.6rem
 [app/reconnect/doors-board.tsx] 0.8rem
 [app/reconnect/doors-board.tsx] 0.35rem
-[app/reconnect/doors-board.tsx] scale-chip${picked ? ' selected' : ''}
+[app/reconnect/doors-board.tsx] scale-chip${picked ? ' on' : ''}
 [app/reconnect/doors-board.tsx] 0.82rem
 [app/reconnect/doors-board.tsx] 0.35rem 0.7rem
-[app/reconnect/doors-board.tsx] 1px solid ${quiet ? 'var(--teal)' : 'rgba(0,0,0,0.12)'}
-[app/reconnect/doors-board.tsx] 0.7rem 0.9rem
-[app/reconnect/doors-board.tsx] 0.35rem 0 0
-[app/reconnect/doors-board.tsx] 0.95rem
 [app/reconnect/doors-board.tsx] 1.1rem
 [app/reconnect/doors-board.tsx] 0.8rem
 [app/reconnect/doors-board.tsx] 0 0 0.35rem
 [app/reconnect/doors-board.tsx] 0.85rem
-[app/reconnect/doors-board.tsx] scale-chip${stillOpen.has(c.slug) ? ' selected' : ''}
+[app/reconnect/doors-board.tsx] scale-chip${stillOpen.has(c.slug) ? ' on' : ''}
 [app/reconnect/doors-board.tsx] 0.85rem
 [app/reconnect/doors-board.tsx] 0.35rem 0.7rem
-[app/reconnect/doors-board.tsx] 1.1rem
+[app/reconnect/doors-board.tsx] 1.25rem
 [app/reconnect/doors-board.tsx] 0 0 0.35rem
 [app/reconnect/doors-board.tsx] 0.85rem
-[app/reconnect/doors-board.tsx] scale-chip${value === c.slug ? ' selected' : ''}
+[app/reconnect/doors-board.tsx] scale-chip${value === c.slug ? ' on' : ''}
 [app/reconnect/doors-board.tsx] 0.85rem
 [app/reconnect/doors-board.tsx] 0.35rem 0.7rem
 [lib/agent/rewire.ts] with it next month." The whole time his body was telling the truth — the weight, the hives, the blood markers.
@@ -486,6 +480,9 @@
 [lib/rewire/w3-entry.ts] entryDate
 [lib/rewire/w3-entry.ts] recordW3Entry failed for member=${memberId} date=${e.entryDate}:
 [lib/rewire/w3-entry.ts] w3_daily_entry.source
+[lib/rewire/w3-moves.ts] saveW3Moves: ${m.slot} failed for member=${memberId}:
+[lib/practice/mark.ts] select id from practice_commitment where member_id = $1 and kind = 'w3_logging' and slot = $2
+[lib/practice/mark.ts] delete from practice_mark where id = $1
 [lib/practice/mark.ts] delete from practice_mark where member_id=$1 and kind=$2 and commitment_id is null and marked_on=$3 returning id
 [lib/practice/mark.ts] insert into practice_mark (member_id, kind, marked_on, source) values ($1,$2,$3,$4) on conflict do nothing
 [lib/practice/mark.ts] select id from practice_commitment where member_id=$1 and kind=$2 and slot=$3
@@ -513,8 +510,8 @@
 [app/quality-day/[memberId]/page.tsx] en-GB
 [app/quality-day/[memberId]/page.tsx] Today
 [app/quality-day/quality-day-log.tsx] en-GB
-[app/quality-day/quality-day-log.tsx] qd-score-btn${score === n ? ' is-on' : ''}
-[app/quality-day/quality-day-log.tsx] qd-el-btn${present.has(el) ? ' is-on' : ''}
+[app/quality-day/quality-day-log.tsx] qd-score-btn${score === n ? ' on' : ''}
+[app/quality-day/quality-day-log.tsx] qd-el-btn${present.has(el) ? ' on' : ''}
 [app/quality-day/quality-day-log.tsx] What added the most value ${when}?
 [app/quality-day/quality-day-log.tsx] What was most missing ${when}?
 [lib/grinta/survey/instrument.ts] unknown Grinta item code: ${code}
@@ -772,6 +769,10 @@
 [app/connect/[memberId]/page.tsx] ${Math.round(hrs / 24)}d ago
 [app/connect/[memberId]/page.tsx] select display_name from member_profile where member_id = $1
 [app/connect/[memberId]/page.tsx] 0.6rem 0.9rem
+[app/connect/[memberId]/page.tsx] 1.25rem
+[app/connect/[memberId]/page.tsx] 0 0 0.35rem
+[app/connect/[memberId]/page.tsx] 0.85rem
+[app/connect/[memberId]/page.tsx] 0 0 0.35rem
 [app/connect/[memberId]/page.tsx] 1.25rem
 [app/connect/[memberId]/page.tsx] 0.7rem
 [app/connect/[memberId]/page.tsx] 0.55rem 0.6rem
