@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import { PGlite } from '@electric-sql/pglite';
 import { applySchema, type Db } from '../lib/db/schema.ts';
 import { logQualityDay, recentQualityDays } from '../lib/reclaim/quality-day-store.ts';
-import { canLogOn } from '../lib/practice/mark.ts';
 import { memberToday } from '../lib/time/zone-store.ts';
+import { canLogOn } from '../lib/practice/mark.ts';
 
 // A SECOND LOG ON THE SAME DAY MUST NOT ERASE THE FIRST.
 //
@@ -24,7 +24,16 @@ async function member(): Promise<{ db: Db; memberId: string }> {
   );
   return { db, memberId: r.rows[0]!.member_id };
 }
-const DAY = '2026-08-15';
+// THIS WAS `const DAY = '2026-08-15'` AND IT DETONATED AT UTC MIDNIGHT ON 2026-08-22.
+//
+// The reads below use recentQualityDays(db, memberId, 7) — a rolling seven-day window. A hardcoded date sits
+// inside that window until it does not, and then three tests fail with "Cannot read properties of undefined"
+// nowhere near the actual cause. The suite was green two hours earlier on the same commit.
+//
+// The header of this very file already said dates must be relative to the member's today, with the reasoning; a
+// later test hardcoded one anyway. So the fix is not a newer date — that is the same bomb with a longer fuse —
+// it is asking the store the same question the store asks itself.
+const dayFor = (db: Db, memberId: string) => memberToday(db, memberId);
 
 
 // DATES RELATIVE TO THE MEMBER'S TODAY, never hardcoded.
@@ -43,9 +52,10 @@ const dayOffset = async (db: Db, memberId: string, back: number): Promise<string
 
 test('THE BUG: a partial second log replaces the day — which is why the form must seed', async () => {
   const { db, memberId } = await member();
-  await logQualityDay(db, memberId, { score: 8, present: ['bike ride', 'Maple'], loggedOn: DAY });
+  const day = await dayFor(db, memberId);
+  await logQualityDay(db, memberId, { score: 8, present: ['bike ride', 'Maple'], loggedOn: day });
   // A form that started blank would send only the newly-ticked element. This is that submission.
-  await logQualityDay(db, memberId, { score: 8, present: ['Food as fuel'], loggedOn: DAY });
+  await logQualityDay(db, memberId, { score: 8, present: ['Food as fuel'], loggedOn: day });
 
   const [entry] = await recentQualityDays(db, memberId, 7);
   assert.deepEqual(entry!.present, ['Food as fuel'], 'the store REPLACES — this is by design, not the bug');
@@ -53,9 +63,10 @@ test('THE BUG: a partial second log replaces the day — which is why the form m
 
 test('the seeded form sends the whole record, so nothing is lost', async () => {
   const { db, memberId } = await member();
-  await logQualityDay(db, memberId, { score: 8, present: ['bike ride', 'Maple'], loggedOn: DAY });
+  const day = await dayFor(db, memberId);
+  await logQualityDay(db, memberId, { score: 8, present: ['bike ride', 'Maple'], loggedOn: day });
   // Seeded: the form arrives holding ['bike ride','Maple'] and the member adds one.
-  await logQualityDay(db, memberId, { score: 8, present: ['bike ride', 'Maple', 'Food as fuel'], loggedOn: DAY });
+  await logQualityDay(db, memberId, { score: 8, present: ['bike ride', 'Maple', 'Food as fuel'], loggedOn: day });
 
   const [entry] = await recentQualityDays(db, memberId, 7);
   assert.deepEqual(entry!.present.sort(), ['Food as fuel', 'Maple', 'bike ride'], 'all three survive');
@@ -65,8 +76,9 @@ test('and UNTICKING still works — the reason this is not a server-side merge',
   // A union-on-write would have been the tempting one-liner and would make this impossible: a member could
   // never correct something they logged by mistake. A tracker you cannot correct is worse than one that forgets.
   const { db, memberId } = await member();
-  await logQualityDay(db, memberId, { score: 7, present: ['bike ride', 'Maple'], loggedOn: DAY });
-  await logQualityDay(db, memberId, { score: 7, present: ['bike ride'], loggedOn: DAY });
+  const day = await dayFor(db, memberId);
+  await logQualityDay(db, memberId, { score: 7, present: ['bike ride', 'Maple'], loggedOn: day });
+  await logQualityDay(db, memberId, { score: 7, present: ['bike ride'], loggedOn: day });
 
   const [entry] = await recentQualityDays(db, memberId, 7);
   assert.deepEqual(entry!.present, ['bike ride'], 'Maple was removed on purpose and stayed removed');
@@ -74,6 +86,7 @@ test('and UNTICKING still works — the reason this is not a server-side merge',
 
 test('separate days stay separate — the grid can show more than one column', async () => {
   const { db, memberId } = await member();
+  const day = await dayFor(db, memberId);
   const [d1, d0] = [await dayOffset(db, memberId, 1), await dayOffset(db, memberId, 0)];
   await logQualityDay(db, memberId, { score: 6, present: ['bike ride'], loggedOn: d1 });
   await logQualityDay(db, memberId, { score: 9, present: ['Maple'], loggedOn: d0 });
@@ -107,6 +120,7 @@ test('a back-filled day does not disturb the day beside it', async () => {
   // Jay's report in one assertion: log today, then fill in yesterday, and today must be untouched. The old
   // dateless link made every write land on today, so the second log silently replaced the first.
   const { db, memberId } = await member();
+  const day = await dayFor(db, memberId);
   const today = await dayOffset(db, memberId, 0);
   const yesterday = await dayOffset(db, memberId, 1);
   await logQualityDay(db, memberId, { score: 8, present: ['bike ride'], loggedOn: today });

@@ -2145,9 +2145,15 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
    is a huge factor in midlife loneliness. So it gets real presence — a tinted panel and a rule in the brand
    orange — without becoming a second primary button competing with the way out. The CTA below stays the only
    filled button on the card; this one is a text link, deliberately quieter than the thing it sits above. */
+/* THE CONTAINER CAME OFF (Donna, 2026-08-21; Jay approved).
+   The tinted fill and the orange rule made this the only element on the card with its own box, and it pulled the
+   eye off Continue — the way out — at the moment the member is finished. Her note reads "remove the text and the
+   background and bracket"; the box is what was wrong, so the box is what goes.
+   THE LINE STAYS, and that is the part worth defending. It is the only bridge from a Session to a real person, and
+   three of its four branches name something that already happened — a pact going quiet, a reply waiting, a thread
+   she started. Deleting the container removes the visual noise; deleting the line would remove the bridge. */
 .ws-endcard-human {
-  margin-top: 22px; padding: 14px 16px; border-radius: 10px;
-  background: #f5f4f1; border-left: 3px solid var(--orange);
+  margin-top: 22px;
   text-align: left;
 }
 .ws-endcard-human-line { margin: 0; color: var(--charcoal); font-size: 15px; line-height: 1.45; }

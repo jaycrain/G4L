@@ -29,6 +29,7 @@
 // are true at any size.
 
 import type { ConnectAgentSummary } from './agent.ts';
+import { topicForSession } from './session-topics.ts';
 
 export type PostSessionNudge = {
   /** Which shape fired — for telemetry and for the tests that pin the ordering. */
@@ -62,12 +63,31 @@ function connectHref(memberId: string): string {
   return `/connect/${memberId}`;
 }
 
+/** The seeded topic's own URL. Resolved by session key so the link survives the post being re-seeded. */
+function topicHref(memberId: string, sessionKey: string): string {
+  return `/connect/${memberId}?topic=${encodeURIComponent(sessionKey)}`;
+}
+
 export function postSessionNudge(
   c: ConnectAgentSummary | null | undefined,
   memberId: string,
+  /** The Session just finished. When it has a seeded topic, the nudge lands on THAT rather than the room. */
+  sessionKey?: string | null,
 ): PostSessionNudge | null {
   if (!c) return null;
-  const href = connectHref(memberId);
+
+  // POINT AT THE THREAD, NOT THE ROOM (Jay, 2026-08-21).
+  //
+  // All four nudges used to resolve to `/connect/{memberId}` — the front page. So a member who had just built a
+  // False Start Protocol was told "there are people here doing this at the same time as you", tapped Look in, and
+  // arrived at a general feed with nothing about false starts on it. The invitation was true and the destination
+  // made it feel untrue, which is worse than not asking.
+  //
+  // The topic is the same for everyone who finishes that Session, which is the point: she arrives where the other
+  // people who just did this work are. Falls back to the room when a Session has no topic yet, so adding one is
+  // additive and forgetting one is harmless.
+  const topic = topicForSession(sessionKey);
+  const href = topic ? topicHref(memberId, topic.sessionKey) : connectHref(memberId);
 
   // 1 — a person is waiting, and it is tied to something they said they wanted back.
   const quiet = c.pacts

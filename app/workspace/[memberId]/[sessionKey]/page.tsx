@@ -115,7 +115,7 @@ export default async function WorkspacePage({
   // THE HUMAN STEP after the Session (Jay, 2026-08-17). Resolved here rather than in the client because it reads
   // their pacts and unread replies. Guarded like every supplementary read — losing it costs the one line, never
   // the Session — and it is null far more often than not, which is the design: nothing true to say, say nothing.
-  const nudge = postSessionNudge(await getConnectSummaryForAgent(db, memberId).catch(() => null), memberId);
+  const nudge = postSessionNudge(await getConnectSummaryForAgent(db, memberId).catch(() => null), memberId, sessionKey);
 
   return (
     <WorkspaceSession
