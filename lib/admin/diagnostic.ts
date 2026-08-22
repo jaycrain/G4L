@@ -181,7 +181,20 @@ const REPORT_SQL = `select jsonb_build_object(
   'playbook', (select coalesce(jsonb_agg(jsonb_build_object(
        'section', p.section, 'keeper_type', p.keeper_type, 'state', p.state, 'pinned', p.pinned,
        'source_kind', p.source_kind, 'source_ref', p.source_ref, 'source_label', p.source_label,
-       'body', left(p.body, 80)) order by p.section, p.sort_order), '[]')
+       -- 600, NOT 80 — and the 80 cost an hour on 2026-08-22. Reading Donna's finished walk, her False Start
+       -- Protocol came back as "Triggers: … \nRedirect — B" and I reported it to Jay as data loss: one field
+       -- holding two different values, which is impossible, so something was badly wrong. Nothing was wrong. The
+       -- protocol is one keeper carrying four lines, and this preview cut it mid-word at exactly 80.
+       --
+       -- The tell was there and I nearly missed it: TEN of her keepers were exactly 80 characters and none was
+       -- longer. A clean cap that lands on a round number is the query, never the member.
+       --
+       -- A DIAGNOSTIC THAT SILENTLY ABBREVIATES MANUFACTURES BUGS. This report exists to answer "what is actually
+       -- stored", and a truncation with no marker answers a different question while looking like the first one.
+       -- 600 fits the composed artifacts (protocol, identity paragraph, the long Reclaim items) whole; anything
+       -- longer than that is genuinely a preview and now says so with an ellipsis.
+       'body', case when length(p.body) > 600 then left(p.body, 600) || '…[truncated]' else p.body end)
+     order by p.section, p.sort_order), '[]')
      from playbook_entry p where p.member_id = $1),
   'badges', (select coalesce(jsonb_agg(to_jsonb(b) order by b.earned_at), '[]') from badge_earned b where b.member_id = $1),
   'rebuild_readings', jsonb_build_object(
