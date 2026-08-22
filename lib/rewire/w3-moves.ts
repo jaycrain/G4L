@@ -87,6 +87,33 @@ export async function saveW3Moves(db: Db, memberId: string, words: W3MoveWords):
   return saved;
 }
 
+/**
+ * Her check-in cue, stored as the label of the week's FIRST row.
+ *
+ * It lands in practice_commitment under slot 'logged' — the slot the grid already builds for "an entry exists for
+ * this date" — so the marks keep coming from day entries and only the LABEL comes from her. That also means the
+ * existing tap path (slot 'logged' → ensureW3Day) needs no change.
+ *
+ * Verbatim, like everything else here. "after I put the kids down" is the answer; tidying it into "Evening" would
+ * throw away the thing that makes the row hers.
+ */
+export async function saveW3CheckInCue(db: Db, memberId: string, cue: string): Promise<boolean> {
+  const label = (cue ?? '').trim();
+  if (label.length < 2) return false;
+  try {
+    await db.query(
+      `insert into practice_commitment (member_id, kind, slot, label, target_days, sort_order)
+       values ($1, 'w3_logging', 'logged', $2, null, 0)
+       on conflict (member_id, kind, slot) do update set label = excluded.label, updated_at = now()`,
+      [memberId, `Checked in — ${label}`],
+    );
+    return true;
+  } catch (e) {
+    console.error(`saveW3CheckInCue failed for member=${memberId}:`, e);
+    return false;
+  }
+}
+
 /** The member's three move rows, in Greg's order. Empty when W3's protocol was never built. */
 export async function w3Moves(db: Db, memberId: string): Promise<{ slot: string; label: string }[]> {
   try {

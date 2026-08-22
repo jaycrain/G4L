@@ -630,6 +630,28 @@ const W3_STEP3_1 =
   `every day and log your good calls, your false starts and the on-track days where not much happened.`;
 const W3_STEP3_2 =
   `And when a false start happens — it will — run your protocol. Redirect, Reframe, Restart.`;
+// ── STAGE 3 + STAGE 4 — the expectations, then the commitment (Greg's W3-29, W3-26, W3-30) ──────────────────
+//
+// NONE OF THIS EXISTED until 2026-08-22. The protocol finished and a tracking grid simply appeared: she was never
+// asked whether she was willing, never told when to check in, never told that forgetting is normal. Checked ask by
+// ask against his memos — all of Stage 3 and Stage 4 was absent.
+//
+// HIS WORDS, because the asks are the instrument. Stage 4's three are quoted from the Companion memo; Stage 3's
+// three expectations are his phrasing tightened to fit one beat.
+const W3_STAGE3 =
+  `Before you start — three things, so the week is what it's meant to be.${BEAT_SEP}` +
+  `Consistency beats completeness: a day with one line on it counts. A false start is data, not failure — you're ` +
+  `collecting information about your own week, not grading it. And forgetting a day is normal. It isn't a broken ` +
+  `streak, because there's no streak to break.`;
+const W3_WILLING = `Are you willing to track this for the next week — not perfectly, just consistently?`;
+// The cue. This is the one that fills the week's first row with HER words rather than our label.
+const W3_CUE_ASK = `When would be a natural time for you to check in on your day?`;
+const W3_CUE_NUDGE =
+  `Anything that already happens daily works — the kettle, the drive home, lights out. What's yours?`;
+// Stage 4's closing frame + the missed-day backup (W3-30), stated rather than asked: she has answered enough.
+const W3_BOTH_DATA =
+  `Good — that's your cue.${BEAT_SEP}You're tracking Smart Choices and False Starts. Both are data. Neither is a ` +
+  `verdict. And if you miss the cue, you pick it up at the next one — you don't start the week again.`;
 // ── Close — harvest + hand-off ──
 const W3_CLOSE_1 =
   `Grit isn't never falling. It's getting back on — now, today, the next meal, the next ride, the next morning. ` +
@@ -808,9 +830,10 @@ const protocolStage: StageDef = {
     // The receipt is a RECEIPT, not a prompt — strip any trailing question so the close doesn't pose one it steamrolls.
     b.pendingHarvest.push({ kind: 'protocol', keeperType: 'recovery_move', destinationIntent: 'keeper', payloadRef: composeProtocol(b.collected), label: 'Your False Start Protocol' });
     const receipt = dropTrailingQuestion(reply);
-    b.reply = `${receipt ? `${receipt}${BEAT_SEP}` : ''}${W3_STEP3_1}${BEAT_SEP}${W3_STEP3_2}${BEAT_SEP}${W3_CLOSE_1}${BEAT_SEP}${W3_CLOSE_2}`;
-    b.stage = 'complete';
-    b.complete = true;
+    // Step 3 (the monitoring target) then STAGE 3 (the expectations) and the first of Stage 4's asks. The close no
+    // longer fires here — she is asked to commit before the week starts, which is Greg's order and was missing.
+    b.reply = `${receipt ? `${receipt}${BEAT_SEP}` : ''}${W3_STEP3_1}${BEAT_SEP}${W3_STEP3_2}${BEAT_SEP}${W3_STAGE3}${BEAT_SEP}${W3_WILLING}`;
+    b.stage = 'commit';
   },
   confirm(b) {
     protocolStage.gather(b);
@@ -831,10 +854,53 @@ function restartFallback(c: Collected): string {
     : `${W3_RESTART} When you picture it — does it feel like enough to reach for on the hard day?`;
 }
 
+// STAGE 4 — the commitment turn. Two member answers: willing, then WHEN.
+//
+// IT NEVER BLOCKS HER, which is the same rule as the Doors board (#7) and the Independence Guarantee. "No" to the
+// willingness ask is a real answer and the week still opens — a member who says she cannot commit to a week is
+// telling us something true, and refusing to continue would punish the honesty the whole product asks for.
+//
+// THE CUE IS CAPTURED VERBATIM. It becomes the label on the week's first row, so a rewrite here is a rewrite of
+// what she said about her own day. Short answers are fine ("mornings") — that IS the cue.
+const commitStage: StageDef = {
+  id: 'commit',
+  mode: 'drawout',
+  opener: () => W3_WILLING,
+  offersSubstance: (message) => message.trim().length >= 2,
+  gather(b) {
+    const sc = b.scratch as { asked?: boolean };
+    const msg = b.memberMessage.trim();
+    const reply = (b.modelText ?? '').trim();
+
+    // Turn 1 — she answered the willingness ask. Acknowledge (model, question stripped) and ask for the cue. The
+    // ENGINE poses this one rather than the model: it is a specified instrument question whose answer we store,
+    // and the draw-out rule that the model owns the questions applies to exploration, not to a captured field.
+    if (!sc.asked) {
+      sc.asked = true;
+      const ack = dropTrailingQuestion(reply);
+      b.reply = `${ack ? `${ack}${BEAT_SEP}` : ''}${W3_CUE_ASK}`;
+      return;
+    }
+
+    // Turn 2 — the cue itself. Anything substantive is hers; a blank or a shrug gets one nudge, never a second.
+    if (msg.length < 2) {
+      b.reply = W3_CUE_NUDGE;
+      return;
+    }
+    b.collected.w3CheckInCue = msg;
+    b.reply = `${W3_BOTH_DATA}${BEAT_SEP}${W3_CLOSE_1}${BEAT_SEP}${W3_CLOSE_2}`;
+    b.stage = 'complete';
+    b.complete = true;
+  },
+  confirm(b) {
+    commitStage.gather(b);
+  },
+};
+
 export const REWIRE_W3_ARC: ArcConfig = {
   id: 'rewire-w3',
-  stageOrder: ['triggers', 'protocol'],
-  stages: { triggers: triggersStage, protocol: protocolStage },
+  stageOrder: ['triggers', 'protocol', 'commit'],
+  stages: { triggers: triggersStage, protocol: protocolStage, commit: commitStage },
   onComplete: () => W3_CLOSE_2,
 };
 

@@ -149,6 +149,8 @@ export type Collected = {
   w3Triggers?: string[];
   w3Redirect?: string;
   w3Reframe?: string;
+  /** When she said she would check in — Greg's W3-26/W3-30, her words. Becomes the monitoring week's first row. */
+  w3CheckInCue?: string;
   // Rebuild B3 (the Lifestyle Pilot, coach mode). The two small changes the member commits to for the pilot week —
   // set by the ENGINE from the model's record_plan locks (not mergeStaged), then persisted to the coaching_plan artifact.
   pilotActivity?: string;

@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { PGlite } from '@electric-sql/pglite';
 import { applySchema, type Db } from '../lib/db/schema.ts';
-import { saveW3Moves, moveLabel } from '../lib/rewire/w3-moves.ts';
+import { saveW3Moves, saveW3CheckInCue, moveLabel } from '../lib/rewire/w3-moves.ts';
 import { saveW3Triggers } from '../lib/rewire/w3-triggers.ts';
 import { weekGrid } from '../lib/practice/grid.ts';
 import { startPracticeWeek, activePracticeWeek } from '../lib/practice/store.ts';
@@ -136,4 +136,30 @@ test('a member who finished W3 before the moves existed keeps her triggers', asy
 
   const grid = await weekGrid(db, memberId);
   assert.deepEqual(grid!.rows.map((r) => r.label), ['Checked in', 'late nights', 'when I travel']);
+});
+
+test("the week's first row exists ONLY when she answered the cue, and wears her words", async () => {
+  // Greg's Stage 4, built 2026-08-22. The row was removed entirely on 8/22 because a generic "Checked in" sitting
+  // above three rows of her own words was the system talking over her (Jay: "we're putting it in too soon…
+  // remove it until it's filled with her answer"). This is the answer arriving.
+  const { db, memberId } = await freshDb();
+  await saveW3Moves(db, memberId, HERS);
+  await startPracticeWeek(db, memberId, 'w3_logging');
+
+  // No cue yet — three rows, no fourth. A member who skipped the question is not handed a label we invented.
+  let grid = await weekGrid(db, memberId);
+  assert.equal(grid!.rows.length, 3);
+  assert.ok(!grid!.rows.some((r) => r.slot === 'logged'));
+
+  await saveW3CheckInCue(db, memberId, 'after I put the kids down');
+  grid = await weekGrid(db, memberId);
+  assert.equal(grid!.rows.length, 4);
+  assert.equal(grid!.rows[0]!.slot, 'logged', 'it leads the week');
+  assert.equal(grid!.rows[0]!.label, 'Checked in — after I put the kids down', 'her words, untidied');
+});
+
+test('a cue too short to be an answer is refused rather than stored', async () => {
+  const { db, memberId } = await freshDb();
+  assert.equal(await saveW3CheckInCue(db, memberId, ' '), false);
+  assert.equal(await saveW3CheckInCue(db, memberId, 'x'), false);
 });

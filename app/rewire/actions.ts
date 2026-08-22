@@ -31,7 +31,7 @@ import { loadReconnectCaptures } from '../../lib/agent/reconnect.ts';
 import { drainHarvest, type KeeperProposal } from '../../lib/agent/harvest.ts';
 import { startPracticeWeek, latestImageKeeper } from '../../lib/practice/store.ts';
 import { saveW3Triggers } from '../../lib/rewire/w3-triggers.ts';
-import { saveW3Moves } from '../../lib/rewire/w3-moves.ts';
+import { saveW3Moves, saveW3CheckInCue } from '../../lib/rewire/w3-moves.ts';
 import { getGrintaBaselineReading, latestGrintaReading, persistGrintaReading, commitmentCheckpointResponsesMap } from '../../lib/grinta/survey/store.ts';
 import { scoreCheckpointStrand, grintaChangePct, directionOf } from '../../lib/grinta/survey/scoring.ts';
 import { BASELINE_COMMITMENT_ITEMS, CHECKPOINT_COMMITMENT_ITEMS } from '../../lib/grinta/survey/instrument.ts';
@@ -301,6 +301,10 @@ export async function rewireTurnAction(
         // its OWN try, so a trigger failure cannot take the moves down with it.
         try {
           const c = (turn.state?.collected ?? {}) as { w3Redirect?: string; w3Reframe?: string; w3Image?: string };
+          // HER CUE BECOMES THE WEEK'S FIRST ROW (Greg's Stage 4, built 2026-08-22). Absent when she skipped the
+          // question — the row simply does not render, rather than reappearing as a generic label.
+          const cue = (turn.state?.collected as { w3CheckInCue?: string })?.w3CheckInCue;
+          if (cue) await saveW3CheckInCue(db, memberId, cue);
           const saved = await saveW3Moves(db, memberId, {
             redirect: c.w3Redirect ?? null,
             reframe: c.w3Reframe ?? null,

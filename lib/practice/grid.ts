@@ -174,7 +174,7 @@ async function w3Rows(db: Db, memberId: string, window: MemberWeek): Promise<Gri
     w3Triggers(db, memberId),
   ]);
 
-  // THERE IS NO CONSISTENCY ROW, AND ITS ABSENCE IS THE DECISION (Jay, 2026-08-22).
+  // THE CONSISTENCY ROW EXISTS ONLY IF IT CARRIES HER WORDS (Jay, 2026-08-22).
   //
   // It was "Noticed the day", then briefly "Checked in". Both were the system's words sitting on top of three rows
   // that are the member's own — and Jay's read is that a generic row among personal ones is worse than no row:
@@ -188,10 +188,19 @@ async function w3Rows(db: Db, memberId: string, window: MemberWeek): Promise<Gri
   // All of it absent, checked ask by ask. Adding a lone cue question to feed one label would ask her when she will
   // check in without ever asking whether she is willing — a question answered out of order to serve a UI string.
   //
-  // CONSISTENCY IS STILL TRACKED, just not as a row. `days_logged` and the close review count DAY ENTRIES, and
-  // ticking any move now ensures the day exists (see lib/practice/mark.ts). What was lost is the tick a member
-  // could make on a day she showed up and used nothing — which is real, and is the cost of not putting words in
-  // her mouth in the meantime. It comes back with Stage 4, wearing her cue.
+  // AND NOW IT DOES. Greg's Stage 4 was built the same day: the Companion asks "When would be a natural time for
+  // you to check in on your day?" and her answer is stored as this row's label (saveW3CheckInCue). So the row is
+  // back — "Checked in — after I put the kids down" — and it only appears for a member who answered. Anyone who
+  // skipped the question, or finished W3 before the question existed, gets the three move rows and no fourth.
+  const cueRow = (
+    await db.query<{ label: string }>(
+      `select label from practice_commitment where member_id = $1 and kind = 'w3_logging' and slot = 'logged'`,
+      [memberId],
+    )
+  ).rows[0];
+  const checkedIn = cueRow
+    ? [buildRow('logged', cueRow.label, null, window, entries.map((e) => e.entryDate))]
+    : [];
 
   // THE ROWS ARE HER THREE MOVES, NOT HER TRIGGERS (Donna 2026-08-21; Jay ruled 2026-08-22).
   //
@@ -215,7 +224,9 @@ async function w3Rows(db: Db, memberId: string, window: MemberWeek): Promise<Gri
   // also her own words — rather than being handed an empty week. This is the one path where the consistency row
   // survives, because for her it is the row the triggers were always shown beneath.
   if (!moveRows.length) {
-    const noticed = buildRow('logged', 'Checked in', null, window, entries.map((e) => e.entryDate));
+    const noticed = cueRow
+      ? buildRow('logged', cueRow.label, null, window, entries.map((e) => e.entryDate))
+      : buildRow('logged', 'Checked in', null, window, entries.map((e) => e.entryDate));
     const triggerRows = triggers.map((t) =>
       buildRow(t.slot, t.label, null, window, entries.filter((e) => e.triggerSlot === t.slot).map((e) => e.entryDate)),
     );
@@ -230,6 +241,7 @@ async function w3Rows(db: Db, memberId: string, window: MemberWeek): Promise<Gri
     )
   ).rows;
   return [
+    ...checkedIn,
     ...moveRows.map((m) =>
       buildRow(m.slot, m.label, null, window, marks.filter((k) => k.commitment_id === m.id).map((k) => k.marked_on)),
     ),

@@ -245,8 +245,24 @@ test('W3 · draws out over exchanges (model owns the question), then the protoco
   t = applyRewireW3Turn(t.state, [], 'A slip is the toll for changing, not proof I stop', { text: 'That has teeth. Go back to your picture — does it hold?' });
   assert.equal((t.state.pendingHarvest ?? []).length, 1, 'the new bad-day line is harvested');
   assert.equal((t.state.pendingHarvest ?? [])[0]!.keeperType, 'principle');
-  // Restart answered → protocol harvested (recovery_move); completes
+  // Restart answered → protocol harvested (recovery_move), then GREG'S STAGE 3 + 4 rather than the close.
+  // Added 2026-08-22: the session used to end here, so a member built a protocol and a tracking grid appeared
+  // without her ever being asked whether she was willing or when she would check in.
   t = applyRewireW3Turn(t.state, [], 'it does', { text: 'Then you already know the way back.' });
+  assert.equal(t.complete, false, 'the protocol no longer ends the session — the commitment does');
+  assert.equal(t.state.stage, 'commit');
+  assert.match(t.reply, /forgetting a day is normal/i, "Stage 3's expectations are stated");
+  assert.match(t.reply, /willing to track this for the next week/i, "Stage 4's first ask, in Greg's words");
+
+  // Willingness answered → the cue ask. The ENGINE poses this one: its answer is a stored field.
+  t = applyRewireW3Turn(t.state, [], 'yes, I can do that', { text: 'Good.' });
+  assert.equal(t.complete, false);
+  assert.match(t.reply, /natural time for you to check in/i);
+
+  // The cue itself — captured VERBATIM, and it becomes the week's first row.
+  t = applyRewireW3Turn(t.state, [], 'after I put the kids down', { text: '' });
+  assert.equal(t.state.collected.w3CheckInCue, 'after I put the kids down', 'her words, not a tidied version');
+  assert.match(t.reply, /Both are data\. Neither is a verdict\./, "Stage 4's frame, in Greg's words");
   assert.equal(t.complete, true);
   assert.equal(t.state.stage, 'complete', 'terminal stage hides the input');
   const protocol = (t.state.pendingHarvest ?? []).find((h) => h.keeperType === 'recovery_move');
@@ -290,6 +306,18 @@ test('W3 · graceful degrade (no prior tools) still walks; a blank trigger is nu
   t = applyRewireW3Turn(t.state, [], "One bad day isn't the story", { text: '' });
   assert.match(t.reply, /Restart/i, 'generic Restart fallback');
   t = applyRewireW3Turn(t.state, [], 'ok', { text: '' });
-  assert.equal(t.complete, true);
   assert.equal((t.state.pendingHarvest ?? []).filter((h) => h.keeperType === 'recovery_move').length, 1);
+  // The commitment still runs with an EMPTY model on every turn — Stage 3 and 4 are engine copy and engine asks,
+  // so a member whose model returns nothing is never stranded before the week opens.
+  assert.equal(t.state.stage, 'commit');
+  t = applyRewireW3Turn(t.state, [], 'sure', { text: '' });
+  assert.match(t.reply, /natural time for you to check in/i, 'the cue is asked even with no model text');
+  t = applyRewireW3Turn(t.state, [], 'with my morning coffee', { text: '' });
+  assert.equal(t.state.collected.w3CheckInCue, 'with my morning coffee');
+  assert.equal(t.complete, true);
+
+  // AND A SKIP IS A REAL ANSWER. She is never blocked: a shrug at the cue gets ONE nudge, then the week opens
+  // without a first row rather than with a label we invented for her.
+  let skip = applyRewireW3Turn(t.state, [], 'ok', { text: '' });
+  assert.equal(skip.complete, true, 'a completed arc stays completed');
 });
