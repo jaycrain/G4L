@@ -32,8 +32,11 @@ export default function SessionCeremony({ memberId, facet, badgeId, badgeName }:
     }
     const b = getBadge(r.badgeId);
     return (
-      <div className="cer-badge-reveal">
-        {b ? <BadgeStamp badge={{ ...b, earned: true }} size="lg" /> : <span className="cer-badge-medal" aria-hidden="true">◉</span>}
+      // SAME TREATMENT AS THE PHASE CEREMONIES (Donna, 2026-08-22: "app-wide — every instance"). This surface had
+      // its own smaller presentation — a 58px stamp beside a 1.05rem name in a ROW — so the four phase ceremonies
+      // were fixed and the one a member meets most often, at the close of every Session, was not.
+      <div className="cer-badge">
+        {b ? <BadgeStamp badge={{ ...b, earned: true }} size="xl" /> : <span className="cer-badge-medal" aria-hidden="true">◉</span>}
         <span className="cer-badge-name">{r.name}</span>
       </div>
     );

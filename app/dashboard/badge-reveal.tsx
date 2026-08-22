@@ -17,12 +17,14 @@ export default function BadgeReveal({ name, badgeId }: { name: string; badgeId?:
   return (
     <div className="cer-badge">
       {badge ? (
-        <BadgeStamp badge={{ ...badge, earned: true }} size="lg" />
+        <BadgeStamp badge={{ ...badge, earned: true }} size="xl" />
       ) : (
         // Unknown id — the generic medal rather than nothing. A ceremony must never render an empty climax.
         <span className="cer-badge-medal" aria-hidden="true">◉</span>
       )}
-      <span className="cer-badge-eyebrow">Badge earned</span>
+      {/* NO "BADGE EARNED" LABEL (Donna, 2026-08-22): "redundant — the icon and name already communicate that
+          clearly", and the screen's heading now says it outright. The name moves up into its place, which is
+          where the eye was already going. */}
       <span className="cer-badge-name">{name}</span>
     </div>
   );

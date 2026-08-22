@@ -156,7 +156,10 @@ export default function CheckpointCeremony({
           <div className="ckpt-crossed">
             <div className="ckpt-milestone">✓ {MILESTONE[phase]}</div>
             <p className="ckpt-affirm">{result.affirmation}</p>
-            {result.badgeName && <p className="ckpt-badge">Badge earned · <strong>{result.badgeName}</strong></p>}
+            {/* "Badge earned ·" removed with the rest (Donna, 2026-08-22). This surface has no stamp — it is a
+                line inside the crossing, not the reveal screen — so the name carries it, and the sentence says
+                what happened rather than labelling it. */}
+            {result.badgeName && <p className="ckpt-badge">You earned the <strong>{result.badgeName}</strong> badge.</p>}
             {result.firstRewire ? (
               <p className="muted">{NEXT_PHASE_LABEL[phase]} is open — your next Session is <strong>{result.firstRewire.title}</strong>.</p>
             ) : (

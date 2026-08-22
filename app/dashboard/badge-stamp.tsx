@@ -11,7 +11,9 @@ export default function BadgeStamp({
   size = 'md',
 }: {
   badge: Badge & { earned: boolean };
-  size?: 'md' | 'lg';
+  // 'xl' is the CEREMONY size and exists only there — the moment a badge is earned, where it is the focus of the
+  // screen rather than one tile in a shelf (Donna, 2026-08-22).
+  size?: 'md' | 'lg' | 'xl';
 }) {
   const glyph = BADGE_GLYPHS[badge.icon] ?? BADGE_GLYPHS.spark;
   // The "Your Comeback" badges (Goals + Grinta) earn a WHITE tile — bstamp-journey adds the border + dark glyph.

@@ -94,10 +94,20 @@ export type Retained = {
  * (the disinformation statements) + W2 (the image); "summaries from Rebuild" → B1, B2, B3. Where a term names no
  * asset at all, see the note on `identity` below.
  *
- * `identity` IS DELIBERATELY UNRESOLVED. Four memos load it (B1, B3, C2, C3) and none says what it is — the IDQ
- * scores, the reclaimed identity noun, or the onboarding self-description are all plausible. Guessing would put
- * a wrong claim about a member in front of them, so R1 has no reader and no asset lists it. This is the one open
- * question from the read, and it needs Greg.
+ * `identity` IS RESOLVED — Greg, 2026-08-22 (docs/decisions/2026-08-22-greg-four-defaults.md).
+ *
+ * Four memos load it (B1, B3, C2, C3) and none says what it is. It was left deliberately unread rather than
+ * guessed, because guessing would put a wrong claim about a member in front of her in a later Session.
+ *
+ * IT IS THE IDENTITY SHE NAMED, plus HER REMEMBERED-SELF LANGUAGE from R1. It is NOT her IDQ scores or her
+ * largest gap domain: R2 and R3's memos name "R1 ratings, largest gap domain, remembered-self language" as
+ * separate items, which is how he writes it when he means both, and B1's memo says "identity DESCRIPTORS", not
+ * scores. No score crosses into a later Session — B1's "nothing renders as a number" holds here too.
+ *
+ * STILL NOT WIRED, deliberately. Giving `identity` a reader changes what the Companion says about a member in a
+ * later Session — the surface where being wrong is worst — so it gets its own pass rather than riding along with
+ * a decision record. Four Sessions are reading one fewer piece of context than his memos specify; absent has
+ * always been the safe side of that.
  */
 export const UPSTREAM: Partial<Record<string, RetainedAssetId[]>> = {
   // Reconnect's three beats live in ONE arc, so R2/R3 already hold R1 in the live thread. Listed for

@@ -800,10 +800,10 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .cer-chip.score { color: #fff; background: var(--teal-text); }
 /* close-ceremony reveals: a prominent facet chip + the earned badge stamp */
 .cer-facet { font-size: 1.1rem; font-weight: 700; color: #fff; background: var(--teal-text); padding: 8px 18px; border-radius: 20px; }
-.cer-badge-reveal { display: flex; align-items: center; gap: 0.7rem; }
-.cer-badge-stamp { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex: none; }
-.cer-badge-stamp svg { width: 20px; height: 20px; }
-.cer-badge-name { font-size: 1.05rem; font-weight: 700; color: #fff; }
+/* A SECOND `.cer-badge-name` lived here — `color: #fff`, no background, on a WHITE ceremony card. It was dead:
+   same specificity as the rule further down the file, which therefore won, so the name has always rendered navy.
+   Removed rather than left, because a reader finding it would reasonably believe this surface wants white text
+   and "fix" the working rule to match it. (The .cer-facet above is white ON a teal pill — that one is real.) */
 .cer-seed-tag { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted, #6B7680); margin: 0 0 8px; }
 .cer-seed { border-left: 3px solid var(--teal); padding: 6px 0 6px 14px; margin: 8px 0; font-size: 0.95rem; font-style: italic; color: var(--navy); line-height: 1.45; }
 
@@ -2002,6 +2002,9 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
 .bstamp { flex: none; display: grid; place-items: center; border-radius: 12px; color: #fff; }
 .bstamp-md { width: 48px; height: 48px; }
 .bstamp-lg { width: 58px; height: 58px; border-radius: 14px; }
+/* THE CEREMONY SIZE (Donna, 2026-08-22: "+50%" — the badge is "the visual and emotional focus of the screen" and
+   was rendering at the same 58px it uses in a list). 58 → 87, radius scaled with it so the tile keeps its shape. */
+.bstamp-xl { width: 87px; height: 87px; border-radius: 21px; }
 .bstamp svg { width: 54%; height: 54%; }
 .bstamp.earned { box-shadow: 0 2px 7px rgba(42, 42, 42, 0.17); }
 .bstamp.locked { background: #f4f3f0; border: 1.6px dashed #d8d6d1; color: #c3c1bb; box-shadow: none; }
@@ -2338,7 +2341,9 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
 .cer-badge-medal { width: 58px; height: 58px; border-radius: 15px; display: grid; place-items: center; font-size: 30px;
   background: var(--navy); color: #fff; animation: cerBadgePop .6s ease; }
 .cer-badge-eyebrow { font-weight: 800; text-transform: uppercase; letter-spacing: .06em; font-size: 11px; color: var(--olive-text); }
-.cer-badge-name { font-weight: 800; font-size: 18px; color: var(--navy); text-align: center; }
+/* +50% and directly under the icon, in the removed label's place (Donna, 2026-08-22). 18 → 27px: this is the
+   thing she just earned, and it was set smaller than the body copy above it. */
+.cer-badge-name { font-weight: 800; font-size: 27px; line-height: 1.15; color: var(--navy); text-align: center; }
 @keyframes cerBadgePop { 0% { transform: scale(.5); opacity: 0; } 45% { transform: scale(1.25); box-shadow: 0 0 0 8px rgba(145,149,54,.22); } 100% { transform: scale(1); opacity: 1; } }
 
 /* REDESIGN · phone widths — tighten the topbar + canvas so nothing overflows the viewport. */

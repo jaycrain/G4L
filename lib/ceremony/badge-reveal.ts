@@ -25,4 +25,13 @@ export function earnedBadgeReveal(phase: keyof typeof CEREMONY_BADGE): BadgeReve
 }
 
 // The spoken line that introduces the reveal — kept generic so all four ceremonies share it.
-export const BADGE_BEAT_COPY = 'This one marks who you’re becoming.';
+//
+// "You earned a new badge!" (Donna, 2026-08-22). It read "This one marks who you're becoming", which she called
+// "stiff and abstract" — and which was also doing something the voice rules forbid: telling a member who she is
+// BECOMING is a claim about her, made by us, at the moment she is meant to be handed a receipt.
+//
+// THE EXCLAMATION IS DELIBERATE, AND IT IS NOT PRAISE. "Never judge, grade or pathologize" has to stay compatible
+// with "let's not take the soul out of the Companion" (Jay, 2026-08-14). This acknowledges the MOMENT — she did a
+// thing, here is its marker — and says nothing about the person or the quality of her work. "Well done" or "great
+// progress" would be the verdict. This is the receipt.
+export const BADGE_BEAT_COPY = 'You earned a new badge!';
