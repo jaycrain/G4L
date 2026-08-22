@@ -178,22 +178,11 @@ const REPORT_SQL = `select jsonb_build_object(
      from arc_session a where a.member_id = $1),
   'phase_gates', (select coalesce(jsonb_agg(to_jsonb(g) order by g.set_at), '[]') from phase_gate g where g.member_id = $1),
   -- Playbook keepers — so a play's keeper_type/state/source_label is inspectable (e.g. "why no Run-it-again button?").
+  -- Body preview is 600, not 80. See the note above this query.
   'playbook', (select coalesce(jsonb_agg(jsonb_build_object(
        'section', p.section, 'keeper_type', p.keeper_type, 'state', p.state, 'pinned', p.pinned,
        'source_kind', p.source_kind, 'source_ref', p.source_ref, 'source_label', p.source_label,
-       -- 600, NOT 80 — and the 80 cost an hour on 2026-08-22. Reading Donna's finished walk, her False Start
-       -- Protocol came back as "Triggers: … \nRedirect — B" and I reported it to Jay as data loss: one field
-       -- holding two different values, which is impossible, so something was badly wrong. Nothing was wrong. The
-       -- protocol is one keeper carrying four lines, and this preview cut it mid-word at exactly 80.
-       --
-       -- The tell was there and I nearly missed it: TEN of her keepers were exactly 80 characters and none was
-       -- longer. A clean cap that lands on a round number is the query, never the member.
-       --
-       -- A DIAGNOSTIC THAT SILENTLY ABBREVIATES MANUFACTURES BUGS. This report exists to answer "what is actually
-       -- stored", and a truncation with no marker answers a different question while looking like the first one.
-       -- 600 fits the composed artifacts (protocol, identity paragraph, the long Reclaim items) whole; anything
-       -- longer than that is genuinely a preview and now says so with an ellipsis.
-       'body', case when length(p.body) > 600 then left(p.body, 600) || '…[truncated]' else p.body end)
+       'body', case when length(p.body) > 600 then left(p.body, 600) || '...[truncated]' else p.body end)
      order by p.section, p.sort_order), '[]')
      from playbook_entry p where p.member_id = $1),
   'badges', (select coalesce(jsonb_agg(to_jsonb(b) order by b.earned_at), '[]') from badge_earned b where b.member_id = $1),
@@ -323,6 +312,31 @@ export type MemberDiagnostic = Record<string, unknown> & { FLAGS: Record<string,
  * So the report now includes what the member's surface would actually RENDER, not just what it reads from. This is
  * [[existence-is-not-the-assertion]] built into the instrument: a row existing is not the assertion, the grid
  * appearing is.
+ */
+/**
+ * WHY THE PLAYBOOK BODY PREVIEW IS 600 AND NOT 80.
+ *
+ * It was `left(p.body, 80)`, and on 2026-08-22 that cost an hour and produced a false bug report about a real
+ * member's data. Reading Donna's finished walk, her False Start Protocol came back as:
+ *
+ *   Triggers: When I am tired. When I've gotten into conflict with Jay.
+ *   Redirect — B
+ *
+ * I told Jay her protocol was cut mid-word, and that one field was somehow holding two different values — "B" in
+ * the keeper and "Box breathing" in her week row — which is impossible, so something was badly wrong. Nothing was
+ * wrong. The protocol is one keeper carrying four lines and I was reading a preview.
+ *
+ * THE TELL WAS IN DATA I HAD ALREADY PRINTED: ten of her eighteen keepers were exactly 80 characters and none was
+ * longer. A clean cap landing on a round number is the query, never the member.
+ *
+ * A DIAGNOSTIC THAT SILENTLY ABBREVIATES MANUFACTURES BUGS. This report exists to answer "what is actually
+ * stored", and an unmarked truncation answers a different question while looking like the first one. 600 fits the
+ * composed artifacts whole (the protocol, the identity paragraph, long Reclaim items); past that it appends
+ * "...[truncated]" so it can never be mistaken for the value again.
+ *
+ * AND THE NOTE LIVES HERE, NOT IN THE SQL. The first version of this explanation went inside the query as `--`
+ * comments containing em-dashes, which broke it — three diagnostic tests went red with "syntax error at or near
+ * —". Prose belongs outside the string.
  */
 export async function runMemberDiagnostic(db: Db, memberId: string): Promise<MemberDiagnostic> {
   const { rows } = await db.query<{ report: MemberDiagnostic }>(REPORT_SQL, [memberId]);
