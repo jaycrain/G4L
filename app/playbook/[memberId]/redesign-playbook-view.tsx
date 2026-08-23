@@ -69,7 +69,7 @@ import {
 // gives the errand instead. Five clean beats four muddy.
 const TABS: { key: TabKey; label: string; intro: string }[] = [
   { key: 'thisweek', label: 'This week', intro: 'The week you’re practicing now.' },
-  { key: 'worked', label: 'What worked', intro: 'The moves that worked. Run them again.' },
+  { key: 'worked', label: 'What worked', intro: 'The moves that worked.' },
   { key: 'who', label: 'Who you are', intro: 'The self you’re reclaiming, in your words.' },
   { key: 'learned', label: "What you've learned", intro: 'Your reads: your patterns, your reasons, what convinced you.' },
   { key: 'journal', label: 'Journal', intro: 'A page of your own.' },
@@ -82,7 +82,7 @@ const REVIEW_PHASE_LABEL: Record<string, string> = { reconnect: 'Reconnect', rew
 const CHAPTERS: { key: ChapterKey; title: string; sub: string; empty: string }[] = [
   // The "tell your Companion" line is a PROMISE, and it only went in once retire_play existed — a page that
   // offers a capability the Companion does not have is worse than a page that offers nothing.
-  { key: 'plays', title: 'Your Moves', sub: 'The moves you tried and kept because they worked — run them again. When one stops working, tell your Companion and it comes off the list.', empty: 'Finish a practice week and what worked lands here — your go-to Moves, in your words.' },
+  { key: 'plays', title: 'Your Moves', sub: 'The moves you tried and kept because they worked. When one stops working, tell your Companion and it comes off the list.', empty: 'Finish a practice week and what worked lands here — your go-to Moves, in your words.' },
   { key: 'who', title: 'Who you are', sub: 'A reminder of who you were, and who you hope to be again.', empty: 'The identities you reclaim land here as you name them.' },
   { key: 'lights', title: 'What lights you up', sub: 'Where you found excitement and motivation. What moves you gets kept here.', empty: 'What still moves you gets kept here — your spark, in your words.' },
   { key: 'tells', title: 'Your tells', sub: 'The patterns worth catching early.', empty: 'The signs you’re drifting land here, so you can catch them sooner.' },
@@ -697,7 +697,7 @@ export default function RedesignPlaybookView({
           verbs, and if they ever merge it should be into one control with two modes rather than two links that
           look alike. */}
       {/* "Revisit a Session" lived here and was REMOVED 2026-08-13 (Cowork §8). It is an archive of finished
-          Sessions — a different errand from "the moves that worked, run them again" — and it is reachable from the
+          Sessions — a different errand from the moves that worked — and it is reachable from the
           Program, which is where a member goes to think about Sessions. The Playbook is what you run, not where
           you browse history. `reviewable` is still passed in; the Program surface is its home. */}
 
