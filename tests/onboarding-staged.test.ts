@@ -246,13 +246,12 @@ test('STAGED confirm bounce — SHARED ceiling stops the rambler loop in every s
   assert.equal(idDisputed.state.collected.identitySkipped, true, 'identity: skipped rather than committing a wrong name');
   assert.ok(!idDisputed.state.collected.identityNoun, 'identity: never names an unconfirmed identity (governance)');
 
-  // RECLAIM: every reply a late-want → re-reflect forever ("Anything missing?" ×N — the milie shape). Past → survey.
-  const rcConfirm: ConvState = {
-    stage: 'reclaim', awaitingConfirm: true, stageScratch: { reclaim: { confirmBounces: 4 } },
-    collected: { athleticPast: 'a cyclist', identityNoun: 'Free Spirit', gap: 'Kids and work crowded it out.', doors: ['grind'], reclaimList: ['Open-water swimming', 'Own my mornings', 'Play piano'] },
-  };
-  const rcRambled = applyStagedTurn(rcConfirm, [], 'oh and also I want to start painting again', { text: 'Noted.', replyIntent: 'more' });
-  assert.notEqual(rcRambled.state.stage, 'reclaim', 'reclaim: past the ceiling, a late-want advances instead of looping');
+  // RECLAIM IS NO LONGER PART OF THIS CONTRACT (2026-08-22, widget-first). Its section asserted that past the
+  // ceiling a late-want advances instead of re-reflecting forever — a real bug, in a loop that cannot occur now:
+  // the stage has no prose gather and no confirm bounce, because the builder is the only writer and it either
+  // meets the floor or re-opens. There is nothing to ramble at.
+  //
+  // The gap and identity halves above are untouched and still carry the shared contract.
 });
 
 test('STAGED gap — CAP (v2.1): a member who keeps giving is never looped forever — the beat closes by GAP_MAX_DEPTH', () => {
@@ -660,13 +659,13 @@ test('STAGED confirm — the model replyIntent drives the branch through the eng
   const done = applyStagedTurn(atGapConfirm, [], 'well, and there was the move too', { text: 'Okay.', replyIntent: 'done' });
   assert.equal(done.state.stage, 'reclaim', 'done signal advances even on an addition-sounding message');
 
-  const atReclaimConfirm: ConvState = { stage: 'reclaim', awaitingConfirm: true, collected: { athleticPast: 'a cyclist', identityNoun: 'Player', gap: 'The grind took over.', reclaimList: ['ride 3x a week', 'see friends', 'weekend hikes'] } };
-  // model tags "looks right" as MORE → reopen the gather, do NOT complete.
-  const more = applyStagedTurn(atReclaimConfirm, [], 'looks right', { text: 'Okay.', replyIntent: 'more' });
-  assert.equal(more.complete ?? false, false, 'more signal reopens the reclaim gather');
-  // model tags an ambiguous "hmm, actually" as DONE → settle Reclaim → hand into the survey.
-  const rdone = applyStagedTurn(atReclaimConfirm, [], 'hmm, actually', { text: 'Okay.', replyIntent: 'done' });
-  assertHandsToGrinta(rdone); // done signal settles Reclaim even on an ambiguous message
+  // THE RECLAIM HALF IS GONE (2026-08-22, widget-first). It asserted that the model's replyIntent drives the
+  // reclaim confirm branch — 'more' reopens the gather, 'done' settles it. Neither exists: the stage has no
+  // conversational confirm, so the model has no branch to drive. What settles the list is the member submitting
+  // the builder, which is not a signal anyone can mis-tag.
+  //
+  // The GAP half above is the real subject of this test and is untouched — that is where signal-over-regex still
+  // decides something.
 });
 
 test('STAGED gap→reclaim — a WARM bridge off the gap, not a cold pivot (Phase 2.3 / Cowork #5)', () => {
@@ -705,7 +704,16 @@ test('STAGED reclaim — the list stays CLEAN: drill fragments fold in, near-dup
   assert.equal(list.length, 3, 'three clean wants, not seven sloppy fragments');
 });
 
-test('STAGED reclaim confirm — "That looks great" is NOT captured as a want (Jay walk); it completes', () => {
+// ── RETIRED 2026-08-22 — these exercise the CONVERSATIONAL reclaim path, which no longer exists ──────────────
+//
+// Widget-first (docs/decisions/2026-08-22-reclaim-list-widget-first.md) removed the draw-out in front of the
+// builder. There is no prose gather on this stage and no `awaitingConfirm` loop to bounce in: the frame is one
+// engine turn, the builder is the only writer, and the recap is one question.
+//
+// KEPT AS SKIPPED RATHER THAN DELETED, because each one is a real bug's headstone — "That looks great" was
+// captured as a want on Jay's own walk, and a change request used to complete the stage instead of reopening it.
+// If a conversational path is ever reintroduced here, these are the failures it has to clear again.
+test.skip('STAGED reclaim confirm — "That looks great" is NOT captured as a want (Jay walk); it completes', () => {
   const atConfirm: ConvState = { stage: 'reclaim', awaitingConfirm: true, collected: { athleticPast: 'a runner', identityNoun: 'Runner', gap: 'The caregiving years took it.', reclaimList: ['My running', '2-3 runs per week', 'a local 5k'] } };
   // No model signal → the positive-ack regex must catch it (not append the confirmation as a list item).
   const noSig = applyStagedTurn(atConfirm, [], 'That looks great', { text: 'Great.' });
@@ -718,7 +726,7 @@ test('STAGED reclaim confirm — "That looks great" is NOT captured as a want (J
 });
 
 // --- slice c: the RECLAIM stage + end-to-end --------------------------------------------------------
-test('STAGED reclaim confirm — an explicit CHANGE request reopens the gather (not everything is done)', () => {
+test.skip('STAGED reclaim confirm — an explicit CHANGE request reopens the gather (not everything is done)', () => {
   const atConfirm: ConvState = {
     stage: 'reclaim',
     awaitingConfirm: true,

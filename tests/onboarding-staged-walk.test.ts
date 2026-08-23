@@ -113,7 +113,7 @@ test('RECLAIM/CAT-15 — deliberate near-duplicate entries are kept VERBATIM (no
   // "ride my bike" + "ride my bike a couple times a week" is a token-subset the conversational appendReclaim folds/drops.
   const t = applyStagedTurn(atReclaim(), [], '• ride my bike\n• ride my bike a couple times a week\n• see my friends', { text: '' });
   assert.deepEqual(t.state.collected.reclaimList, ['ride my bike', 'ride my bike a couple times a week', 'see my friends']);
-  assert.equal(t.state.stage, 'grinta', 'a valid ≥3 list advances');
+  assert.equal(t.state.stage, 'grinta', 'a valid ≥3 list advances — recap and handoff share one turn');
 });
 
 test('RECLAIM/CAT-16/17 — the submission is authoritative: model phantom/refine pollution is discarded, categories stay in lockstep', () => {
@@ -587,9 +587,12 @@ test('the gap→reclaim hand-in RECEIVES what she just said before opening the l
     atGapWithStory(),
   );
   assert.ok(last.reply.includes(receipt), `her moment must survive into the hand-in, got: ${last.reply.slice(0, 160)}`);
-  assert.match(last.reply, /let's write down what you want back/i, 'and the list still opens');
+  // The invitation's WORDING changed with widget-first (2026-08-22) — it asks what the Identity used to do
+  // rather than "let's write down what you want back". The ORDER is the invariant this test exists for, and it
+  // is unchanged: her moment is received before anything is asked of her.
+  assert.match(last.reply, /put them down as they come/i, 'and the list still opens');
   assert.ok(
-    last.reply.indexOf(receipt) < last.reply.search(/let's write down/i),
+    last.reply.indexOf(receipt) < last.reply.search(/put them down as they come/i),
     'the receipt must come FIRST — receiving after inviting is not receiving',
   );
 });
@@ -611,7 +614,7 @@ test('gap→reclaim receives her Doors by name even when the model says NOTHING'
     turn.reply.indexOf('Two things') < turn.reply.search(/that's a lot to have been carrying/i),
     'and it comes FIRST — receiving after inviting is not receiving',
   );
-  assert.match(turn.reply, /let's write down what you want back/i, 'the list still opens; no beat is added');
+  assert.match(turn.reply, /put them down as they come/i, 'the list still opens; no beat is added');
   assert.equal(turn.state.stage, 'reclaim', 'and the bias to advance is untouched (4c5b416)');
 });
 

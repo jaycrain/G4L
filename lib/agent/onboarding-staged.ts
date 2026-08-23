@@ -24,6 +24,7 @@
 import { cleanIdentityNoun, displayIdentityNoun, identityLabel, sanitizeCoinedIdentity } from '../member/identity.ts';
 import { isDoorSlug, matchDoors, DOORS, type DoorSlug } from '../doors.ts';
 import { isConversationalMeta, isAboutTheApp } from './conversational-meta.ts';
+import { isMemberContent } from './member-turn.ts';
 import { RECLAIM_LIST_FLOOR, RECLAIM_LIST_MIN, RECLAIM_LIST_TARGET, reclaimAddIntent, isReclaimMetaFragment } from '../member/reclaim.ts';
 import { nextFollowUp } from './follow-up.ts';
 import { isModelVoiced } from './reclaim-voice.ts';
@@ -333,15 +334,41 @@ function gapToReclaimBridge(c: Collected): string {
   );
 }
 
+/**
+ * THE FRAME — three beats, then the builder opens. Nothing else writes to this list.
+ *
+ * WIDGET-FIRST (Jay, 2026-08-22; docs/decisions/2026-08-22-reclaim-list-widget-first.md). A six-turn draw-out
+ * used to run in front of the builder and seed it with whatever the model tagged along the way. Donna's walk put
+ * four conversational fragments into her committed list, one of which was a bug report ABOUT the Reclaim List.
+ * The builder is now the only writer, so there is no judgement to get wrong in either direction.
+ *
+ * "WHAT DID THE IDENTITY DO?" IS A MEMORY QUESTION, and that is the whole point of the middle beat. "What do you
+ * want back?" asks her to invent an answer; asking what she was capable of asks her to RECALL one — she already
+ * knows it and simply has not said it aloud. Memories arrive concrete, so items come out closeable without
+ * anyone telling her to be specific. (Jay: "things that Identity did or was capable of that seem out of reach.")
+ *
+ * NO EXAMPLES IN THE FRAME. Naming what someone else might write narrows what she writes. The Door and the
+ * Identity are hers, already confirmed, and they are enough to write from.
+ */
 function reclaimOpen(c: Collected): string {
-  const identity = identityLabel(c.identityNoun);
-  // STRUCTURED builder (Jay, 2026-07-29): the warm line, then hand OFF to the list-builder UI (rendered below by the
-  // reclaim_list expectation). The member types each item and it's captured verbatim — no extraction, so nothing drops.
-  return (
-    `${gapToReclaimBridge(c)} Let's write down what you want back — ` +
-    `your Reclaim List, the thing the whole program works toward${identity ? `: the pieces of that life you miss most` : ''}. ` +
-    `Add each thing below — big or small. Three to start is plenty, and you can always add more later. Take your time.`
+  const beats = [gapToReclaimBridge(c)];
+  // SECOND PERSON, AND THE IDENTITY IS NOT NAMED HERE — caught twice by the naming guard within an hour of this
+  // being written, and it was right both times. The first draft asked "What did the Maker DO?" (third person, the
+  // thing CLAUDE.md forbids outright). The second said "You're reclaiming the Maker — so what did you DO?", which
+  // reads better but still puts the Identity on this turn: it may be named at the MOMENT SHE CLAIMS IT and at a
+  // real milestone, and this is neither.
+  //
+  // Jay's framing survives the constraint intact, because it was never about the word. "What did you DO, back
+  // when you were most yourself" is the same memory question — she recalls rather than invents — and it asks it
+  // of HER, which is stronger anyway.
+  beats.push(
+    `So here's the other direction. What did you DO, back when you were most yourself? The things you were good `
+      + `at, the ones that came easily, the ones that feel out of reach now. Those are what you want back.`,
   );
+  beats.push(
+    `Put them down as they come. Big or small, three to start is plenty, and you can add as many as you want.`,
+  );
+  return beats.join(BEAT_SEP);
 }
 
 // ROTATED so the "what else?" backstop NEVER repeats verbatim as the list grows (the same static line, appended by
@@ -942,7 +969,7 @@ export function isListBlock(message: string): boolean {
 // yet complete), tell the client to render the list builder — pre-filled with any wants volunteered earlier — instead
 // of the text box or the scale chips. Once submitted, the stage advances to 'grinta', so this stops firing. Everything
 // else defers to the scale-chip expectation.
-function nextExpects(arc: ArcConfig, stageId: StageId, complete: boolean, answered: number, collected: Collected, awaitingConfirm = false, drawnOut = false): Expectation | undefined {
+function nextExpects(arc: ArcConfig, stageId: StageId, complete: boolean, answered: number, collected: Collected, awaitingConfirm = false): Expectation | undefined {
   // THE GAP CONFIRM OFFERS ITS OWN ANSWERS (2026-08-19). We reflect her whole story and ask "have I got the shape
   // of it — or is there more?", then classified her free-text reply three ways with regex vocabulary. Five patches
   // in two days and it still leaked; one attempt matched "I said yes to the trip that summer", which would have
@@ -966,14 +993,22 @@ function nextExpects(arc: ArcConfig, stageId: StageId, complete: boolean, answer
       })),
     };
   }
-  // THE BUILDER CONFIRMS; IT DOES NOT ASK (2026-08-19). It used to open on the same turn as the bridge — a form
-  // arriving before she had said anything, which is structure doing the ELICITING and the beat Donna twice called
-  // rushed. Now the Companion draws her out first and the builder arrives holding what she said.
-  if (arc.id === 'onboarding' && stageId === 'reclaim' && !complete && drawnOut) {
-    // HER OWN WORDS FIRST, THEN THE PROPOSALS. Both reach the form: an item captured verbatim is already hers,
-    // and a model-voiced seed is a want she named in phrasing she did not choose — she rules on it here, which is
-    // the only place the wording becomes authoritative. Seeding only reclaimList is what made the voice guard a
-    // silent drop; the whole point of holding a seed is that it arrives.
+  // THE BUILDER OPENS WITH THE FRAME (2026-08-22, widget-first). It used to wait for `drawnOut` — a six-turn
+  // conversation that elicited items and seeded the form with them. That seeding is what carried Donna's
+  // conversational turns into her committed list, so the conversation in front of it is gone and the frame does
+  // the eliciting instead.
+  //
+  // THE 2026-08-19 NOTE THIS REPLACES said a form arriving before she had said anything is "structure doing the
+  // ELICITING", and that was true of the form ALONE. It is not true of a frame that names her Door and asks what
+  // her Identity used to do — the question is asked, and the form is where she answers it.
+  //
+  // SEEDING IS LEFT IN, and for one reason only: a member already mid-onboarding when this deploys has draw-out
+  // captures sitting in `collected.reclaimList`, and an empty builder would vanish them. Nothing writes to that
+  // field any more, so it is [] for everyone who starts after this. The v3.4.27 seed filter stays for the same
+  // window — it is what stops an in-flight member's captured protests from arriving pre-ticked.
+  // No recap flag needed: the submission advances the stage to `grinta` in the same turn, so a later turn is
+  // never `reclaim` unless she is still below the floor — where re-showing the builder is exactly right.
+  if (arc.id === 'onboarding' && stageId === 'reclaim' && !complete) {
     return { kind: 'reclaim_list', min: RECLAIM_LIST_MIN, seeded: reclaimSeedList(collected) };
   }
   // THE DOORS BOARD. Reconnect's doors stage opens with the framing and the board TOGETHER — recognition
@@ -1194,6 +1229,7 @@ interface ReclaimScratch {
   confirmBounces?: number;
   /** The conversation is finished, so the builder may open to CONFIRM it. */
   drawnOut?: boolean;
+
   /** Draw-out turns so far — bounded by RECLAIM_DRAWOUT_MAX so it can never become a "what else?" march. */
   drawTurns?: number;
   /** Set by the runaway backstop when it ends a thin draw-out: gather owns the handoff, the backstop only calls it. */
@@ -1727,7 +1763,7 @@ const gapStage: StageDef = {
         b.stage = 'reclaim';
         b.awaitingConfirm = false;
         b.reply = receiveThen(b.modelText || gapReceipt(b.collected), reclaimOpening(b.collected));
-        return { reply: b.reply, state: beatState(b), complete: false, ...(nextExpects(b.arc, b.stage, false, 0, b.collected, b.awaitingConfirm, reclaimDrawnOut(b)) ? { expects: nextExpects(b.arc, b.stage, false, 0, b.collected, b.awaitingConfirm, reclaimDrawnOut(b))! } : {}) };
+        return { reply: b.reply, state: beatState(b), complete: false, ...(nextExpects(b.arc, b.stage, false, 0, b.collected, b.awaitingConfirm) ? { expects: nextExpects(b.arc, b.stage, false, 0, b.collected, b.awaitingConfirm)! } : {}) };
       }
       b.awaitingConfirm = false;
       b.reply = REOPEN_GAP;
@@ -1812,6 +1848,52 @@ function setStructuredReclaim(c: Collected, items: string[]): void {
 // Reclaim → Grinta with the FLOOR enforced (CAT-13/14). The frozen data contract is a ≥RECLAIM_LIST_MIN list; that
 // floor lived ONLY in the dead v1 contractGaps, so the staged path advanced on an empty/short list. This is the single
 // reclaim→survey chokepoint: below the floor we HOLD and re-show the builder seeded with what they have.
+/**
+ * THE RECAP — read it back, recognise what she just did, then ONE question.
+ *
+ * She used to submit the builder and drop straight into the Grinta survey with no acknowledgement at all. Jay,
+ * 2026-08-22: "sandwiched by an intro and recap from the Companion."
+ *
+ * IT RECOGNISES THE ACT, NOT THE LIST. "That's a harder thing to write down than it looks" is about what she just
+ * did; "good list" would be a verdict on her answers, which is the line the voice rules draw. Nothing here praises
+ * and nothing claims her list is saved — the engine owns that (gate-claims, 2026-08-22).
+ *
+ * THE QUESTION IS ASKED OF THE WHOLE LIST, NOT ONE ITEM. The 2026-07-29 sharpening proposal wanted to sharpen
+ * items individually and flagged its own trap: turning "hanging out with friends" into "twice a month" converts
+ * something warm into an obligation she can fail at. Asking what the Identity would be DOING sidesteps that
+ * entirely — it produces a picture of the evidence without touching a single item she wrote, and it needs no
+ * heuristic deciding which of her goals is "a doing-goal", which would have been one more judgement to get wrong.
+ *
+ * NOT SMART GOALS. Jay's instruction is on record in that proposal: "not literally."
+ */
+function reclaimRecap(c: Collected): string {
+  // THE READ-BACK IS HERE AND IT IS DETERMINISTIC. `reclaimReceipt` also reads the list back one beat later, but
+  // only as a FALLBACK — `b.modelText || reclaimReceipt(...)` — so the moment the model writes anything, her list
+  // is never read back at all. Leaving it to the model is the exact dependence this redesign removes, so the
+  // recap owns it and enterGrintaSurvey is told to skip its own (withReceipt = false).
+  const list = (c.reclaimList ?? []).map((x) => x.trim()).filter(Boolean);
+  return [
+    // "That's YOUR LIST — …" is what this said, and claimsGateOutcome catches it: list-is-made is one of the three
+    // families the gate exists to stop, and it does not care who wrote the sentence. It had shipped inside
+    // reclaimReceipt as a FALLBACK — fired only when the model was silent — so no walk had ever exercised it.
+    // Making the read-back deterministic is what finally surfaced it.
+    //
+    // "Here's what you wrote" is the same information as a receipt of HER action rather than a declaration of
+    // ours, which is what it should have been either way.
+    list.length ? `Here's what you wrote — ${list.join(' · ')}.` : '',
+    // "This is the list the whole program is pointed at now" was the first draft, and claimsGateOutcome caught it
+    // — the gate built this morning, on copy written this evening. It reads as "your list is made", which is the
+    // engine's statement to make, not the Companion's. Saying where the WORK goes claims nothing about the list.
+    `That's a harder thing to write down than it looks. Most people can name what went wrong long before they can `
+      + `name what they want back. Everything from here points at these.`,
+    // THE EXPECTATION, SET WHERE SHE ACTUALLY IS (Cowork + Jay, 2026-08-23). Onboarding already had a line saying
+    // the list is a starting point — but it is CARD_LIST_SET, which only fires when a member tries to ADD a want
+    // after the summary card. An edge-case reply. Most members never see it, so nothing in the ordinary path told
+    // her this was a first draft. That is what let onboarding stay shallow without feeling thin.
+    `It's a starting point, not a contract — you'll sharpen it in your sessions, and change it any time.`,
+  ].filter(Boolean).join(BEAT_SEP);
+}
+
 function commitStructuredReclaim(b: Beat): Turn {
   setStructuredReclaim(b.collected, parseReclaimListSubmission(b.memberMessage));
   if ((b.collected.reclaimList?.length ?? 0) < RECLAIM_LIST_MIN) {
@@ -1822,8 +1904,23 @@ function commitStructuredReclaim(b: Beat): Turn {
       expects: { kind: 'reclaim_list', min: RECLAIM_LIST_MIN, seeded: (b.collected.reclaimList ?? []).filter(Boolean) },
     };
   }
+  // THE RECAP RIDES ON THE HANDOFF — one turn, not two (Cowork + Jay, 2026-08-23).
+  //
+  // It briefly held the stage open for an answer to an evidence question ("what would you be doing, on an ordinary
+  // week…"). That question is cut: W2's Visioning already builds an ordinary-day picture and opens on this very
+  // list, so asking it here was redundant depth in a step whose only job is a clean baseline.
+  //
+  // CUTTING IT CLOSED A HOLE STRUCTURALLY RATHER THAN BY A GUARD. Holding the stage gave the model one more turn
+  // after she had committed, and the record merge appended a phantom want to her authored list — the exact bug
+  // this redesign exists to remove, arriving through the door the redesign opened. I guarded it by restoring her
+  // committed list on that turn; with no turn there is nothing to guard. The guard, the scratch flag and the
+  // handler are all gone.
+  //
   // The member authored these entries herself. Nothing to reconcile — do NOT run the shape gate over her own words.
-  return enterGrintaSurvey(b, false);
+  const survey = enterGrintaSurvey(b, false, false);
+  const reply = `${reclaimRecap(b.collected)}${BEAT_SEP}${survey.reply}`;
+  b.reply = reply;
+  return { ...survey, reply, state: beatState(b) };
 }
 
 /**
@@ -1841,10 +1938,6 @@ function reclaimDrawoutFallback(c: Collected): string {
 /** How many wants she can name before the builder arrives regardless — the cap that stops a "what else?" march. */
 const RECLAIM_DRAWOUT_MAX = 6;
 
-/** Has the conversation finished, so the builder may confirm it? Read by nextExpects at every call site. */
-function reclaimDrawnOut(b: Beat): boolean {
-  return b.stage === 'reclaim' && (b.scratch as ReclaimScratch).drawnOut === true;
-}
 
 // The hand-in TO the builder, once she has said her piece. It names what we already hold, so the form reads as a
 // receipt rather than a fresh demand — and says plainly that she can change any of it.
@@ -1934,75 +2027,32 @@ const reclaimStage: StageDef = {
   // the member's EXACT entries VERBATIM (setStructuredReclaim), enforces the ≥MIN floor, then hands into the Grinta
   // baseline survey. There is no conversational gather or confirm: the builder IS the input AND the confirmation.
   gather(b) {
+    // An in-flight session that was already holding a shape proposal when widget-first shipped. Nothing creates
+    // one any more — a builder submission never did — so this only ever runs for a member mid-onboarding at the
+    // cut-over, and it hands her straight on.
     if (b.pendingReclaimShape) return answerPendingShape(b);
 
-    // THE DRAW-OUT, then the builder. Conversation elicits; structure confirms.
+    // THE BUILDER IS THE ONLY WRITER (2026-08-22, widget-first).
     //
-    // She is asked what she wants back and answers in her own words, one at a time, and the model tags each as it
-    // lands. When she is done — or at the cap — the builder opens ALREADY HOLDING them, so she never types the same
-    // thing twice and the list she signs off is still verbatim by construction.
+    // The six-turn draw-out that used to live here is gone, and with it `add_reclaim_item`, `reclaimSeeds`, the
+    // runaway backstop this stage needed only because a member could stall in a conversation, and the
+    // model-closed handling that existed because the model could try to end a beat it did not own. Every one of
+    // those was a fix for a problem the conversation created.
     //
-    // The ~30% loss that made this a builder in the first place was NOT conversation being lossy: the source
-    // records "the model drilled + re-tagged", one row in a table of four bugs with a single root cause. That
-    // steering is gone and verbatim capture is enforced, so the cause is addressed rather than avoided.
-    const rs = b.scratch as ReclaimScratch;
-    if (!rs.drawnOut && !isBuilderSubmission(b.memberMessage)) {
-      rs.drawTurns = (rs.drawTurns ?? 0) + 1;
-      // THE MODEL CLOSED IN PROSE WHILE ITS SIGNAL SAID KEEP GOING — believe the prose.
-      //
-      // It has a structured way to end this beat (replyIntent 'done', below) and the engine has always honoured
-      // it. Donna's run is what happens when the two disagree: the model wrote "That's your Reclaim List. It
-      // lives on your dashboard now", then "That's plenty for today", and never once signalled. The engine had no
-      // opinion, so she got a goodbye, three turns of "is that it?", an invented "someone else will have to take
-      // you to your dashboard" — and then the builder, after she had emailed to report the product broken.
-      //
-      // Reading that close as the signal it plainly is turns the failure into the correct beat: the builder
-      // arrives in the SAME turn the model tries to wrap up, so the summary she just read is followed by the real
-      // thing instead of contradicted by it three turns later.
-      const modelClosed = claimsGateOutcome(b.modelText);
-      const enough = memberClosingReclaim(b.memberMessage)
-        || b.model.replyIntent === 'done'
-        || modelClosed
-        || rs.forced === true // the runaway backstop tripped above and handed the ending back here
-        || (rs.drawTurns ?? 0) >= RECLAIM_DRAWOUT_MAX;
-      if (!enough) {
-        // Her turn stands as the model wrote it — the engine appends nothing here, so there is no "what else?"
-        // march stacked on top of the model's own question (drawout-rhythm: the model owns the one question).
-        //
-        // …UNLESS IT WROTE NOTHING AT ALL. A model turn that calls add_reclaim_item and emits no prose used to
-        // ship straight through as an EMPTY reply: a blank bubble and a conversation that has visibly stopped,
-        // with no way forward but for her to say something into the silence. Caught on a live walk (2026-08-20)
-        // right after she named the first thing she wanted back — the worst possible moment for the product to
-        // look like it had nothing to say.
-        //
-        // This does not weaken the drawout rhythm. That rule exists so the engine never stacks its question on
-        // top of the model's; where there is no question to talk over, a fallback is not interference, it is the
-        // only thing standing between her and a dead screen.
-        b.reply = b.modelText.trim() || reclaimDrawoutFallback(b.collected);
-        return;
-      }
-      rs.drawnOut = true;
-      // A CLOSING TURN IS DROPPED, NOT RECEIPTED. receiveThen would carry the model's words in front of the
-      // handoff — and those words are the false claim itself ("that's your Reclaim List", "it lives on your
-      // dashboard now"). Printing them above the form that is about to ask her to build that same list is the
-      // contradiction she reported, just compressed into one screen. The handoff stands alone and is true.
-      b.reply = modelClosed ? reclaimBuilderHandoff(b.collected) : receiveThen(b.modelText, reclaimBuilderHandoff(b.collected));
-      return;
-    }
-
-    // The LIVE reclaim surface is the structured builder (expects reclaim_list); its submission arrives as a "• "
-    // bulleted block. Only that authoritative path gets verbatim capture + the ≥MIN floor. Anything else routes to the
-    // retired conversational path (dead code a real member never hits — the builder is the only input; kept behind
-    // this guard until its dedicated cleanup so nothing churns).
+    // Nothing but her typing reaches the list now, so there is no judgement to get wrong in either direction.
+    // Donna's bug report about the Reclaim List could not have entered it, because the model never writes.
     if (isBuilderSubmission(b.memberMessage)) return commitStructuredReclaim(b);
-    for (const item of parseReclaimListSubmission(b.memberMessage)) appendReclaim(b.collected, item);
-    return enterGrintaSurvey(b);
+
+    // SHE IS NOT SUPPOSED TO BE ABLE TO GET HERE. The builder is an `expects`, and the composer is hidden while
+    // one is outstanding (lib/chat/composer.ts), so there is no text box to type into. If something does arrive —
+    // a stale client, a resumed session, a replay — the right answer is to put the form back in front of her, NOT
+    // to capture it conversationally. Capturing it is precisely the bug this redesign removes.
+    b.reply = reclaimBuilderHandoff(b.collected);
+    return { reply: b.reply, state: beatState(b), complete: false,
+      expects: { kind: 'reclaim_list', min: RECLAIM_LIST_MIN, seeded: reclaimSeedList(b.collected) } };
   },
   confirm(b) {
-    if (b.pendingReclaimShape) return answerPendingShape(b);
-    if (isBuilderSubmission(b.memberMessage)) return commitStructuredReclaim(b);
-    for (const item of parseReclaimListSubmission(b.memberMessage)) appendReclaim(b.collected, item);
-    return enterGrintaSurvey(b);
+    return reclaimStage.gather(b);
   },
 };
 
@@ -2117,10 +2167,12 @@ const grintaStage: StageDef = administeredStage({
 function reclaimReceipt(c: Collected): string {
   const list = (c.reclaimList ?? []).map((x) => x.trim()).filter(Boolean);
   if (!list.length) return '';
-  return `That's your list — ${list.join(' · ')}.`;
+  // Same correction as the recap's read-back above: "That's your list" trips the list-is-made gate. This is the
+  // fallback path (model silent), which is why it went unnoticed for so long.
+  return `Here's what you wrote — ${list.join(' · ')}.`;
 }
 
-function enterGrintaSurvey(b: Beat, gateShapes = true): Turn {
+function enterGrintaSurvey(b: Beat, gateShapes = true, withReceipt = true): Turn {
   // DECISION II CHOKEPOINT — now scoped to the RETIRED CONVERSATIONAL PATH ONLY (Jay, 2026-07-30).
   //
   // The shape gate is extraction-era machinery: it existed because conversational capture produced sloppy lists that
@@ -2136,8 +2188,8 @@ function enterGrintaSurvey(b: Beat, gateShapes = true): Turn {
   if (!gateShapes) {
     b.stage = 'grinta';
     b.awaitingConfirm = false;
-    b.reply = receiveThen(b.modelText || reclaimReceipt(b.collected), grintaSurveyOpener());
-    const ex = nextExpects(b.arc, b.stage, false, b.administeredResponses.length, b.collected, b.awaitingConfirm, reclaimDrawnOut(b));
+    b.reply = receiveThen(withReceipt ? (b.modelText || reclaimReceipt(b.collected)) : b.modelText, grintaSurveyOpener());
+    const ex = nextExpects(b.arc, b.stage, false, b.administeredResponses.length, b.collected, b.awaitingConfirm);
     return { reply: b.reply, state: beatState(b), complete: false, ...(ex && { expects: ex }) };
   }
   const proposal = gateNextShape(b);
@@ -2149,10 +2201,10 @@ function enterGrintaSurvey(b: Beat, gateShapes = true): Turn {
   }
   b.stage = 'grinta';
   b.awaitingConfirm = false;
-  b.reply = receiveThen(b.modelText || reclaimReceipt(b.collected), grintaSurveyOpener());
+  b.reply = receiveThen(withReceipt ? (b.modelText || reclaimReceipt(b.collected)) : b.modelText, grintaSurveyOpener());
   // W-24/W-48: this is the ONLY path into the grinta survey (natural confirm AND the runaway/ceiling backstop), so emit
   // the chip signal (+ "Question 1 of 12") here — otherwise a force-progressed member gets the text box for item 1.
-  const expects = nextExpects(b.arc, b.stage, false, b.administeredResponses.length, b.collected, b.awaitingConfirm, reclaimDrawnOut(b));
+  const expects = nextExpects(b.arc, b.stage, false, b.administeredResponses.length, b.collected, b.awaitingConfirm);
   return { reply: b.reply, state: beatState(b), complete: false, ...(expects && { expects }) };
 }
 
@@ -2185,17 +2237,10 @@ export function expectsForResume(state: ConvState): Expectation | undefined {
     state.administeredResponses?.length ?? 0,
     state.collected ?? {},
     state.awaitingConfirm ?? false,
-    reclaimDrawnOutFromState(state),
   );
 }
 
 /** The draw-out flag lives in the reclaim stage's scratch; read it the same way the live turn does. */
-function reclaimDrawnOutFromState(state: ConvState): boolean {
-  const scratch = (state.stageScratch as Record<string, unknown> | undefined)?.reclaim as
-    | { drawnOut?: boolean }
-    | undefined;
-  return scratch?.drawnOut === true;
-}
 
 // --- the generic kernel: run one turn of ANY arc -------------------------------------------------------
 // The rephrase. It takes the blame, invites their own words, and adds NOTHING about their life — inventing
@@ -2395,7 +2440,7 @@ export function runArcTurn(
 
   // A handler may have emitted a structured turn directly (identity tap-to-pick chips); that wins. Otherwise derive
   // the expectation from the resulting stage (W-24/W-48: a draw-out handing INTO an administered stage delivers item 0).
-  const expects = b.expects ?? nextExpects(arc, b.stage, b.complete, b.administeredResponses.length, b.collected, b.awaitingConfirm, reclaimDrawnOut(b));
+  const expects = b.expects ?? nextExpects(arc, b.stage, b.complete, b.administeredResponses.length, b.collected, b.awaitingConfirm);
   return { reply: b.reply, state: beatState(b), complete: b.complete, ...(b.declined ? { declined: true } : {}), ...(expects && { expects }) };
 }
 
