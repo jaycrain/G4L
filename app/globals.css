@@ -2219,6 +2219,24 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
 .ws-col-body > * { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
 .ws-col-body .chat { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
 .ws-col-body .chat-input, .ws-col-body form { flex: 0 0 auto; }
+
+/* THE COMPANION'S SIDE SQUARES UP WITH THE CARDS (Donna item 9; Jay approved 2026-08-23).
+   In a Session the column carries FULL-WIDTH teaching cards -- .teach-card is align-self:stretch, and its own
+   comment says the flex column "would otherwise shrink it toward the bubbles' width". So a 100% card sat directly
+   above an 85% bubble and the right edge went ragged, which is what her screenshot shows.
+
+   HER WORDS SAID "text-entry field" AND HER PICTURE SAID BUBBLES. I read the word twice, went to the composer
+   twice, and put a tradeoff to Jay -- move Send below the field, costing a row of vertical space every turn --
+   about an element she had never mentioned. His earlier "don't change it" was a ruling on my misdescription.
+   Third time in one day that opening her screenshot changed the answer; her images are reliable, her vocabulary
+   is not.
+
+   AGENT ONLY. The member's own replies stay right-aligned at 85%, because that is what makes the column read as a
+   dialogue -- it was never the Companion's ragged edge doing that work. And in a Session the Companion's side is
+   mostly long teaching prose, which reads better at full measure anyway.
+
+   SCOPED TO THE WORKSPACE. The dashboard rail has no full-width cards to align against, so it keeps the 85%. */
+.ws-col-body .bubble.agent { max-width: 100%; }
 /* Review / end summary card — every kept answer in one place. */
 .ws-built { background: var(--white); border: 1px solid #e3e2df; border-radius: 16px; padding: 26px 28px; margin-top: 6px; }
 .ws-built-title { font-weight: 800; font-size: 24px; color: var(--navy); margin: 0; }
