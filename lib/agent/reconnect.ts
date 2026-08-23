@@ -764,7 +764,7 @@ const windowStage: StageDef = {
         // Same contract as the drift beat: out of probes and nothing to reflect → close the beat rather than
         // keep asking. The Window hands into the Checkpoint.
         b.stage = 'legacy';
-        b.reply = `${windowClose()}\n\n${legacyOpener(b.collected)}`;
+        b.reply = `${windowClose()}\n\n${legacyOpener(b.collected, !!b.legacyTuesday)}`;
         b.awaitingConfirm = false;
       }
     }
@@ -789,7 +789,7 @@ const windowStage: StageDef = {
       if (payload) b.legacyTuesday = payload;
       b.driftPayload = undefined;
       b.stage = 'legacy'; // hand into R3's Legacy Letter — the last thing they MAKE before the Checkpoint
-      b.reply = `${windowClose()}\n\n${legacyOpener(b.collected)}`;
+      b.reply = `${windowClose()}\n\n${legacyOpener(b.collected, !!b.legacyTuesday)}`;
     }
   },
 };
@@ -928,8 +928,31 @@ const LEGACY_SAVED_2 =
 const LEGACY_CAP_REACHED =
   "That's yours now. You can keep shaping it any time from your Playbook — for now, want me to save it?";
 
-function legacyOpener(c: Collected): string {
-  return LEGACY_OPEN.split('${SEP}').join(BEAT_SEP);
+/**
+ * THE OPENER ENDS ON THE FIRST QUESTION, not on a promise to ask one.
+ *
+ * DONNA, 2026-08-22, item 12: the flow "stalls on a declarative statement with no clear next step, requiring the
+ * user to prompt it forward". Her transcript shows her typing "Ok, what questions do you have?" to unblock it.
+ *
+ * It stalled BY CONSTRUCTION. LEGACY_OPEN ended "I'll ask you a few things and then draft it in your words" and
+ * then stopped. The model does not get a turn until the member speaks, so the beat announced an intention and
+ * waited for her to act on OUR promise. Asking the first thing immediately is what the sentence already claims we
+ * are about to do, and it removes a dead turn rather than adding a "ready?".
+ *
+ * WHICH question depends on what she has already given us. The Window beat draws out the ordinary Tuesday a year
+ * out, which IS prompt one — so when it has been carried across we open on prompt two instead. Asking a member to
+ * describe the same Tuesday twice in one session is the product not listening the first time (the reason the
+ * carry exists at all, see the Window handoff).
+ *
+ * THIS DOES NOT BREAK THE DRAW-OUT RHYTHM. That rule — the model owns the one question per turn, the engine never
+ * appends its own — governs gather(), where an engine question would race a model that has just asked one. An
+ * OPENER is engine copy that starts the beat before the model has spoken, and every other draw-out stage here
+ * opens with a question (the Door, the Window, the check-in cue).
+ */
+function legacyOpener(_c: Collected, tuesdayCarried = false): string {
+  const first = tuesdayCarried ? LEGACY_PROMPTS[1] : LEGACY_PROMPTS[0];
+  const opener = LEGACY_OPEN.split('${SEP}').join(BEAT_SEP);
+  return first ? `${opener}${BEAT_SEP}${first.prompt}` : opener;
 }
 
 /** Shown with the draft. Never "is this good?" — an appraisal question invites a polite yes on the one artifact

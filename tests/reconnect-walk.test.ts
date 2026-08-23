@@ -210,3 +210,33 @@ test('a model that never stops redrafting cannot trap her in the letter beat', (
   assert.ok(saved, 'a letter must actually be committed, not silently dropped to escape the loop');
   assert.match(saved!.state.legacyLetter!.body, /Draft again/, 'and it is the most recent version she was shown');
 });
+
+// THE LEGACY LETTER OPENS ON A QUESTION — Donna, 2026-08-22, item 12.
+//
+// "Stalls on a declarative statement with no clear next step, requiring the user to prompt it forward." Her
+// transcript has her typing "Ok, what questions do you have?" to unblock a beat that had just promised to ask.
+//
+// It stalled by construction: the opener ended on "I'll ask you a few things and then draft it" and then waited,
+// because the model gets no turn until the member speaks. This asserts the beat hands her something to answer.
+test('the Legacy Letter opener ends on a question, and skips the Tuesday when it was carried', async () => {
+  const { LEGACY_PROMPTS } = await import('../lib/reconnect/legacy-letter.ts');
+  const tuesday = LEGACY_PROMPTS[0]!.prompt;
+  const second = LEGACY_PROMPTS[1]!.prompt;
+
+  // Her transcript's actual path: the Window reflects, she confirms ("That's the one"), and THAT hands into the
+  // letter. Driving it any shorter just keeps the Window drawing out, which is what my first version of this
+  // test did — a broken probe, not a broken product.
+  const atConfirm: any = {
+    stage: 'window',
+    awaitingConfirm: true,
+    legacyTuesday: 'up early, out on the bike before the kids wake',
+    collected: { identityNoun: 'Maker', gap: 'the job went', doors: ['career_cliff'] },
+  };
+  const turn = applyReconnectTurn(atConfirm, [], "That's the one", { text: '', replyIntent: 'done' });
+
+  assert.equal(turn.state.stage, 'legacy', 'confirming the Window must hand into the Legacy Letter');
+  const reply = turn.reply;
+  assert.match(reply.trim(), /\?\s*$/, `the beat must end on a question, not a statement:\n${reply}`);
+  assert.ok(!reply.includes(tuesday), 'the carried Tuesday was asked again — the product not listening the first time');
+  assert.ok(reply.includes(second), `expected the beat to open on prompt two:\n${reply}`);
+});
