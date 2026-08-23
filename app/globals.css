@@ -2813,7 +2813,7 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
 .onbwel-kick { color: #8fd0d1; font-size: 13px; font-weight: 700; letter-spacing: 1.8px; text-transform: uppercase; margin-bottom: 16px; }
 /* MIXED CASE, not all caps (Donna, 2026-08-17): the billboard headings were uppercased in CSS while the source
    strings were sentence case, so every screen shouted. */
-.onbwel-head { font-family: var(--font-condensed), var(--font-barlow), sans-serif; font-weight: 900; color: #fff; font-size: clamp(46px, 8.5vw, 76px); line-height: 0.9; letter-spacing: 0.5px; margin: 0; text-shadow: 0 2px 20px rgba(0, 0, 0, 0.22); }
+.onbwel-head { font-family: var(--font-condensed), var(--font-barlow), sans-serif; font-weight: 800; color: #fff; font-size: clamp(46px, 8.5vw, 76px); line-height: 0.9; letter-spacing: 0.5px; margin: 0; text-shadow: 0 2px 20px rgba(0, 0, 0, 0.22); }
 .onbwel-head-line { display: block; }
 .onbwel-road { margin: 28px 0 4px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 16px; padding: 16px 16px 14px; }
 .onbwel-road-h { color: rgba(255, 255, 255, 0.55); font-size: 11px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; margin-bottom: 12px; }
@@ -2861,7 +2861,7 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
   .onbwel-track-d { display: block; }
   .onbwel-track-m { display: none; }
 }
-.onbwel-d-hero { min-height: 100dvh; max-height: 100dvh; display: flex; flex-direction: column; justify-content: center; position: relative; padding: 84px 8vw 44px; overflow-y: auto; /* auto, NOT hidden: this is the FRONT DOOR — on a short laptop the copy exceeds one screen and a hard clip made
+.onbwel-d-hero { min-height: 100dvh; max-height: 100dvh; display: flex; flex-direction: column; justify-content: center; position: relative; padding: 128px 8vw 44px; overflow-y: auto; /* auto, NOT hidden: this is the FRONT DOOR — on a short laptop the copy exceeds one screen and a hard clip made
     the 'Sign up' CTA physically unreachable. Still one screen whenever it fits; scrolls only when it can't. */
   /* Layers, top→bottom: the dark-left→clear-right OVERLAY (keeps the headline legible over the photo) · a warm radial
      lift on the subject side · the HERO PHOTO (public/brand/onboarding-hero.jpg — person holding the app) · a fallback
@@ -2873,7 +2873,7 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
     linear-gradient(150deg, #26333f 0%, #4f6668 46%, #9aa06a 100%); }
 .onbwel-d-heart { max-width: 640px; }
 .onbwel-d-kick { color: #f2c9a0; font-size: 15px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 16px; }
-.onbwel-d-head { font-family: var(--font-condensed), var(--font-barlow), sans-serif; font-weight: 900; color: #fff; text-transform: uppercase; font-size: clamp(42px, 4.6vw, 62px); line-height: 0.92; letter-spacing: 0.5px; margin: 0; text-shadow: 0 2px 20px rgba(0, 0, 0, 0.25); }
+.onbwel-d-head { font-family: var(--font-condensed), var(--font-barlow), sans-serif; font-weight: 800; color: #fff; text-transform: uppercase; font-size: clamp(42px, 4.6vw, 62px); line-height: 0.92; letter-spacing: 0.5px; margin: 0; text-shadow: 0 2px 20px rgba(0, 0, 0, 0.25); }
 .onbwel-d-sub { color: rgba(255, 255, 255, 0.9); font-size: 18px; line-height: 1.45; margin-top: 18px; max-width: 560px; }
 /* Front-door sign-in affordance — "/" lands on the welcome hero now, so a RETURNING member needs a visible way
    through it. Quiet on purpose: the primary action is still Sign up. (Jay 7/29, entry narrowing) */
@@ -2908,12 +2908,15 @@ body.onbwel-bleed .confidential-footer {
 }
 body.onbwel-bleed main { max-width: none; margin: 0; padding: 0; }
 /* The wordmark sits tonally on the photo, top-left, in place of the header. */
-.onbwel-d-wordmark { position: absolute; top: clamp(20px, 4vh, 40px); left: 8vw; height: 24px; width: auto; filter: brightness(0) invert(1); opacity: 0.85; z-index: 2; }
+/* 2.5x (Donna item 1): 24px -> 60px. IT IS position:absolute, so it reserves NO space — the hero's top padding
+   is what clears it, and those two numbers are coupled. At 24px the old 84px/52px padding was enough; at 60px the
+   mark landed on top of "YOUR COMEBACK" on the top-aligned narrow layout. Change one, check the other. */
+.onbwel-d-wordmark { position: absolute; top: clamp(20px, 4vh, 40px); left: 8vw; height: 60px; width: auto; filter: brightness(0) invert(1); opacity: 0.85; z-index: 2; }
 /* The hero on mobile (Jay: fold the hero into mobile). A full-width dark scrim over the centered photo keeps the copy
    legible on a narrow screen; top-aligned with scroll room for the three intro paragraphs, tighter type. */
 @media (max-width: 1000px) {
   .onbwel-d-hero { min-height: 100dvh; justify-content: flex-start;
-    padding: calc(env(safe-area-inset-top, 0px) + 52px) 26px calc(env(safe-area-inset-bottom, 0px) + 40px);
+    padding: calc(env(safe-area-inset-top, 0px) + 116px) 26px calc(env(safe-area-inset-bottom, 0px) + 40px);
     background:
       linear-gradient(180deg, rgba(19, 27, 35, 0.88) 0%, rgba(22, 31, 40, 0.74) 52%, rgba(28, 38, 46, 0.66) 100%),
       url('/brand/onboarding-hero.jpg') center 22% / cover no-repeat,
