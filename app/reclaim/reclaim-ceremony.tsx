@@ -1,9 +1,10 @@
 'use client';
 
-import { useMemo, type ReactNode } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import CeremonySurface from '../dashboard/ceremony-surface.tsx';
 import BadgeReveal from '../dashboard/badge-reveal.tsx';
+import RichText from '../rich-text.tsx';
 import { COMPANION_LABEL } from '../../lib/ceremony/threshold-beats.ts';
 import {
   buildReclaimCeremonyBeats,
@@ -19,6 +20,20 @@ const MOVE_ARROW: Record<string, string> = { up: '↑', down: '↓', flat: '→'
 // generic CeremonySurface. The Grinta reveal FOREGROUNDS the Challenge component (Ave1→Ave2); down renders grey (HH).
 // The final reveal is the whole 4Rs Journey COMPLETE — the Loop. "Share your story →" hands to the dashboard (the
 // Community Success Story surface wiring is a follow-up); the member's full cycle is behind them.
+/**
+ * "August 2027" — the month the letter is addressed to.
+ *
+ * PARSED AS PARTS, not `new Date(iso)`. A bare "2027-08-23" is parsed as UTC midnight and rendered in the viewer's
+ * zone, which in Boulder is the evening of the 22nd — the same off-by-one that lib/time exists for, and it would
+ * retitle her letter by a day at the one moment she is being handed it back.
+ */
+function formatLetterMonth(iso: string): string {
+  const [y, m] = (iso ?? '').split('-').map(Number);
+  if (!y || !m) return 'a year on';
+  const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  return `${MONTHS[m - 1] ?? ''} ${y}`.trim();
+}
+
 export default function ReclaimCeremony({ memberId, data }: { memberId: string; data: ReclaimCeremonyData }) {
   const router = useRouter();
   const beats = useMemo(() => buildReclaimCeremonyBeats(data), [data]);
@@ -27,6 +42,9 @@ export default function ReclaimCeremony({ memberId, data }: { memberId: string; 
     router.refresh(); // pull fresh dashboard state (new phase lit, ring advanced) so it is not a beat behind
     router.push(`/dashboard/${memberId}`);
   }
+
+  // Collapsed until she taps. Ceremony-local: it must not persist, so re-entering the beat offers rather than shows.
+  const [letterOpen, setLetterOpen] = useState(false);
 
   function renderReveal(r: ReclaimCeremonyReveal): ReactNode {
     if (r.kind === 'badge') return <BadgeReveal name={r.name} badgeId={r.badgeId} />;
@@ -44,6 +62,24 @@ export default function ReclaimCeremony({ memberId, data }: { memberId: string; 
           </div>
           {r.componentBaseline != null && <p className="cer-grinta-from">from your starting line of {r.componentBaseline} / 5</p>}
           <p className="cer-grinta-overall">Your overall Grinta Index reads {r.composite} / 5.</p>
+        </div>
+      );
+    }
+    if (r.kind === 'legacy') {
+      // SHE OPENS IT. The letter is the one thing in the product written by her, to herself, and the Member Agent
+      // is told never to produce it unprompted — "a letter someone wrote to themselves is not a lever". So the
+      // ceremony hands her the door rather than the contents. One tap, and it is right here rather than a trip to
+      // the Playbook that would drop her out of the ceremony.
+      return (
+        <div className="cer-legacy">
+          <p className="cer-seed-tag">Your letter · for {formatLetterMonth(r.datedFor)}</p>
+          {letterOpen ? (
+            <div className="cer-legacy-body"><RichText text={r.body} /></div>
+          ) : (
+            <button type="button" className="cer-legacy-open" onClick={(e) => { e.stopPropagation(); setLetterOpen(true); }}>
+              Read it →
+            </button>
+          )}
         </div>
       );
     }

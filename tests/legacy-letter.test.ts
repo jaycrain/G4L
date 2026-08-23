@@ -190,3 +190,40 @@ test('an edit is not a creation path, and a blank letter is refused', async () =
   assert.equal(blank.reason, 'empty');
   assert.equal((await getLegacyLetter(db, id))!.body, 'Real.', 'a blank save must not destroy the letter');
 });
+
+// RECLAIM FINALLY REVISITS THE LETTER.
+//
+// This beat used to point at "the words you wrote near the start", with a note in the source explaining that the
+// Legacy Letter "isn't wired into the live arc, so this beat pointed at something they never made". Closing this
+// loop is the REASON Greg moved the letter into Reconnect: a member should leave the first R holding a
+// destination, so Reclaim can be a reflection on what was accomplished.
+test('the Reclaim ceremony revisits the actual letter when there is one', async () => {
+  const { buildReclaimCeremonyBeats, RECLAIM_CEREMONY_COPY } = await import('../lib/ceremony/reclaim-ceremony-beats.ts');
+
+  const beats = buildReclaimCeremonyBeats({
+    grinta: null,
+    keepers: ['Ride the century'],
+    legacyLetter: { body: 'I hope you kept riding.', datedFor: '2027-08-23' },
+  });
+
+  const legacy = beats.find((b) => b.reveal?.kind === 'legacy');
+  assert.ok(legacy, 'no legacy revisit beat was produced');
+  assert.equal(legacy!.text, RECLAIM_CEREMONY_COPY.legacy);
+  assert.equal((legacy!.reveal as { body: string }).body, 'I hope you kept riding.');
+
+  // IT MUST NOT REPRODUCE THE LETTER IN THE SPOKEN BEAT. The Member Agent is told never to quote it unprompted —
+  // "a letter someone wrote to themselves is not a lever". The beat names it; the reveal is behind her tap.
+  assert.ok(!legacy!.text.includes('I hope you kept riding.'),
+    'the ceremony read her private letter aloud instead of offering it');
+});
+
+test('a member with no letter still gets a Legacy beat — the old copy, not a blank', async () => {
+  const { buildReclaimCeremonyBeats, RECLAIM_CEREMONY_COPY } = await import('../lib/ceremony/reclaim-ceremony-beats.ts');
+
+  // Everyone who came through before the letter existed lands here, so this is the ORDINARY case, not an edge.
+  const beats = buildReclaimCeremonyBeats({ grinta: null, keepers: [], legacyLetter: null });
+
+  assert.ok(!beats.some((b) => b.reveal?.kind === 'legacy'), 'offered a letter that does not exist');
+  assert.ok(beats.some((b) => b.text === RECLAIM_CEREMONY_COPY.legacyNone),
+    'the Legacy beat vanished entirely for a member without a letter');
+});

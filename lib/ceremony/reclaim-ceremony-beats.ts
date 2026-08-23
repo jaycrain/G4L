@@ -16,6 +16,8 @@ export type ReclaimCeremonyReveal =
       composite: number; // the overall Grinta Index — background/context
     }
   | { kind: 'playbook'; keepers: string[] } // what they clarified in Reclaim (their top priorities), in their words
+  // The Legacy Letter she wrote in Reconnect, offered back — NEVER reproduced unasked. See the beat copy below.
+  | { kind: 'legacy'; body: string; datedFor: string }
   | { kind: 'cycle_complete' } // the 4Rs Journey — all four complete, the Loop begins again
   | { kind: 'badge'; name: string; badgeId: string }; // the earned milestone medal (redesign; Decision WW)
 
@@ -30,6 +32,8 @@ export type ReclaimCeremonyData = {
     composite: number;
   } | null; // null until the Checkpoint moves it (no baseline → the flat framing, no number)
   keepers: string[]; // the priorities they clarified in Reclaim (top-tier Reclaim List items), in their own words
+  /** R3's Legacy Letter, when they wrote one. Null is the ordinary case for anyone who started before it existed. */
+  legacyLetter?: { body: string; datedFor: string } | null;
   badge?: BadgeRevealData | null; // the earned milestone medal — redesign only (Decision WW)
 };
 
@@ -44,11 +48,24 @@ export const RECLAIM_CEREMONY_COPY = {
   playbook:
     "Here's what you're taking with you, saved to your Playbook: the priorities you clarified, the quality day you defined, the bigger world you mapped. That's your kit for what comes next.",
   playbookEmpty: 'Everything you clarified in Reclaim lives in your Playbook — your kit, ready to reach for.',
-  // NOTE (Donna's walk): the conversational Reconnect flow doesn't yet have the member WRITE a "Legacy Letter" (it's a
-  // defined asset, not wired into the live arc), so this beat pointed at something they never made. Interim: point them
-  // at their own early words in the Playbook (which DO exist). DECISION for Jay/Greg: build the Legacy Letter into
-  // Reconnect, or keep this repointed.
+  // THE LEGACY REVISIT — now pointed at the actual letter (2026-08-23).
+  //
+  // This beat used to say "go back through your Playbook to the words you wrote near the start", with a note
+  // explaining that the Legacy Letter "isn't wired into the live arc, so this beat pointed at something they never
+  // made". It is wired in now, and closing this loop is the REASON Greg moved the letter into Reconnect: a member
+  // should leave the first R holding a destination, so that Reclaim can be a reflection on what was accomplished.
+  //
+  // IT OFFERS, IT DOES NOT PRODUCE. The Member Agent's own instructions say never to quote this letter unprompted —
+  // "a letter someone wrote to themselves is not a lever, and producing it uninvited turns something private into
+  // something we are holding over them." A ceremony is a designed moment rather than a chat turn, but the principle
+  // is the same, so the beat NAMES the letter and she taps to open it. Invited, and right there.
+  //
+  // NO CLAIM ABOUT WHAT IT SAYS. We do not know whether she is closer to that Tuesday or further from it, and this
+  // is the wrong moment to guess. The beat says the letter exists and that she is the one who gets to judge.
   legacy:
+    "One more thing. In Reconnect you wrote a letter to yourself, dated a year out. You haven't read it since.",
+  // For anyone who came through before the letter existed, or who moved past that beat without writing one.
+  legacyNone:
     "And one more thing — go back through your Playbook to the words you wrote near the start. You're not the same person who wrote them. Read them, and see how far you've come.",
   cycle:
     "You've closed your first full cycle — Reconnect, Rewire, Rebuild, Reclaim. That's rare air. The Loop doesn't end here; it begins again, deeper. And you're not doing it alone — share your Success Story with the community, and help someone standing where you started.",
@@ -70,8 +87,12 @@ export function buildReclaimCeremonyBeats(d: ReclaimCeremonyData): ReclaimCeremo
       ? { text: c.playbook, reveal: { kind: 'playbook', keepers: d.keepers.slice(0, 3) } }
       : { text: c.playbookEmpty, small: true },
   );
-  // The Legacy revisit (a reflective beat, no reveal).
-  beats.push({ text: c.legacy });
+  // The Legacy revisit — the real letter when there is one, her early Playbook words when there is not.
+  beats.push(
+    d.legacyLetter?.body
+      ? { text: c.legacy, reveal: { kind: 'legacy', body: d.legacyLetter.body, datedFor: d.legacyLetter.datedFor } }
+      : { text: c.legacyNone },
+  );
   // Cycle complete + the Community Success Story invite + the CTA.
   beats.push({ text: c.cycle, reveal: { kind: 'cycle_complete' } });
   if (d.badge) beats.push({ text: BADGE_BEAT_COPY, reveal: { kind: 'badge', name: d.badge.name, badgeId: d.badge.badgeId } });

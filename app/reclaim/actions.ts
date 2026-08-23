@@ -30,6 +30,7 @@ import {
 import { BEAT_SEP } from '../../lib/agent/onboarding.ts';
 import { scaleExpects, type ArcConfig } from '../../lib/agent/onboarding-staged.ts';
 import { saveArcSession, loadArcSession, clearArcSession } from '../../lib/agent/arc-session.ts';
+import { getLegacyLetter } from '../../lib/reconnect/legacy-letter-store.ts';
 import { getReclaimItems, liveReclaimTexts } from '../../lib/beats/store.ts';
 import { commitRefinement, resolveRefinement, isTier, type Tier } from '../../lib/reclaim/refinement-store.ts';
 import { persistBiggerWorldReading, type AuditReflections } from '../../lib/reclaim/bigger-world-store.ts';
@@ -389,10 +390,14 @@ export async function reclaimCeremonyDataAction(memberId: string): Promise<{ ok:
   if (!(await authorizeMember(memberId))) return { ok: false, error: 'Not authorized.' };
   try {
     const db = (await getDb()) as unknown as Db;
-    const [latest, base, keepers] = await Promise.all([
+    const [latest, base, keepers, letter] = await Promise.all([
       latestGrintaReading(db, memberId),
       getGrintaBaselineReading(db, memberId),
       loadReclaimCeremonyKeepers(db, memberId),
+      // Her Legacy Letter, for the revisit beat. Best-effort and NEVER fatal: a ceremony that fails to open
+      // because a letter could not be read would cost her the close of a whole cycle. Null falls back to the
+      // early-Playbook-words copy, which is what everyone who started before the letter existed will get.
+      getLegacyLetter(db, memberId).catch(() => null),
     ]);
     let grinta: ReclaimCeremonyData['grinta'] = null;
     if (latest && latest.strands.reclaim != null) {
@@ -401,7 +406,15 @@ export async function reclaimCeremonyDataAction(memberId: string): Promise<{ ok:
       const changePct = grintaChangePct(now, baseline);
       grinta = { componentNow: now, componentBaseline: baseline, componentChangePct: changePct, direction: changePct == null ? null : directionOf(changePct), composite: latest.composite };
     }
-    return { ok: true, data: { grinta, keepers, badge: earnedBadgeReveal('reclaim') } };
+    return {
+      ok: true,
+      data: {
+        grinta,
+        keepers,
+        badge: earnedBadgeReveal('reclaim'),
+        legacyLetter: letter?.body ? { body: letter.body, datedFor: letter.datedFor } : null,
+      },
+    };
   } catch {
     return { ok: false, error: 'Could not load the ceremony.' };
   }
