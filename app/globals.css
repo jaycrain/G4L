@@ -2836,7 +2836,13 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
    wrong for one carrying six glossary entries: at full size the glossary pushed its own "Next →" below the fold,
    so on that one screen the button appeared to vanish. Measured on a 734px viewport — the beat needed 824px.
    Trim the headline and tighten the list ONLY on these beats; the short beats keep the drama. */
-.onbwel-heart-list .onbwel-head { font-size: clamp(34px, 6vw, 52px); }
+/* THE LIST SCREEN'S HEADLINE IS THE LONGEST OF THE FOUR, so it caps lower (Donna, item 2).
+   At 52px "Playbook & track your progress" measures 642px inside a 584px column, so it wrapped no matter where
+   the authored break fell: breaking after "Playbook" orphaned Playbook, breaking before it orphaned "progress".
+   There is no two-way split of this sentence that fits at 52px -- the size is the constraint, not the break.
+   46px puts both authored lines inside the column with room to spare. The other three screens are unchanged;
+   this variant already carried its own clamp, so this is a smaller number, not a new exception. */
+.onbwel-heart-list .onbwel-head { font-size: clamp(34px, 6vw, 46px); }
 .onbwel-heart-list .onbwel-body { font-size: 16px; margin-top: 16px; }
 .onbwel-heart-list .onbwel-list { font-size: 15.5px; line-height: 1.45; margin-top: 14px; }
 .onbwel-heart-list .onbwel-list li { margin-bottom: 7px; }
@@ -2877,11 +2883,24 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
 .onbwel-d-cta { margin-top: 26px; display: inline-flex; align-items: center; background: var(--teal-text); color: #fff; font-family: inherit; font-weight: 700; font-size: 18px; padding: 16px 32px; border: none; border-radius: 8px; cursor: pointer; box-shadow: 0 12px 30px rgba(59, 148, 149, 0.4); transition: 0.15s; }
 .onbwel-d-reassure { margin-top: 20px; color: rgba(255, 255, 255, 0.6); font-size: 14px; }
 .onbwel-d-sub + .onbwel-d-sub { margin-top: 16px; } /* the hero now carries three intro paragraphs — tighten the gap between them */
-/* Full-bleed welcome (Jay 7/29): no header/footer/page-padding — the intro is a true one-screen image + message. */
+/* Full-bleed welcome (Jay 7/29): no header/footer/page-padding — the intro is a true one-screen image + message.
+
+   THE BRAND BAR IS HIDDEN, NOT MOVED (Donna item 1; Jay, 2026-08-23: "the branded footer, not the copyright
+   lines, needs to be removed on all opening screens").
+
+   It used to sit in the comma-list below, so it inherited `position: fixed; bottom: 0` along with the notice —
+   and .brand-bar is justify-content: space-between, so it pinned the wordmark bottom-LEFT and the rings
+   bottom-RIGHT, straddling the copyright. That is what Donna reported as "two redundant/unnecessary logo elements
+   in the footer": not a second logo someone added, but the HEADER, re-anchored to the bottom of the page.
+
+   The comment on that rule always said "no header/footer". The intent was right; the rule positioned instead of
+   hiding, and a comma-grouped selector made one declaration serve three elements that needed two behaviours.
+   The intro carries its own wordmark (.onbwel-d-wordmark, top-left over the photo) — that one stays. */
 body.onbwel-bleed .brand-bar,
-body.onbwel-bleed .back-dash,
+body.onbwel-bleed .back-dash { display: none; }
+
 /* The onboarding welcome is a full-bleed cover; the notice rides on top of it rather than being dropped
-   (Jay 2026-08-08: every screen). Translucent so it does not fight the artwork. */
+   (Jay 2026-08-08: every screen). Translucent so it does not fight the artwork. THE COPYRIGHT LINES STAY. */
 body.onbwel-bleed .confidential-footer {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; max-width: none; margin: 0;
   padding: 5px 14px calc(5px + env(safe-area-inset-bottom));
@@ -3027,7 +3046,13 @@ body.onbwel-bleed main { max-width: none; margin: 0; padding: 0; }
   .tri-companion.is-conversing .tri-hero-ring,
   .tri-companion.is-conversing .tri-keeper { display: none; }
   .tri-companion.is-conversing .tri-hero-ctarow { margin-top: 0; }
-  .tri-companion.is-conversing .tri-hero-crumb { margin-bottom: 4px; }
+  /* BREATHING ROOM BETWEEN THE CRUMB AND THE BUTTON (Donna, 2026-08-22, item 8).
+   In the conversing state the hero collapses -- .tri-hero-title and .tri-hero-copy are display:none and the CTA
+   row's margin-top is zeroed -- so the crumb and "Open this Session" become adjacent, which they never are in the
+   full hero. 4px was the whole gap, and it reads as none: her words were "sits directly against ... with no
+   visible gap". Raised at both call sites (mobile block and desktop) so the two cannot drift.
+   The margin does apply despite this being a <span>: .tri-hero is a flex column, so the child is blockified. */
+.tri-companion.is-conversing .tri-hero-crumb { margin-bottom: 12px; }
 }
 
 /* The navy hero — headline + guiding line + CTA, with the merged 4R ring beside it (phase + progress). */
@@ -3083,7 +3108,13 @@ body.onbwel-bleed main { max-width: none; margin: 0; padding: 0; }
 .tri-companion.is-conversing .tri-keeper { display: none; }
 .tri-companion.is-conversing .tri-hero { align-items: center; padding-top: 14px; padding-bottom: 12px; gap: 12px; }
 .tri-companion.is-conversing .tri-hero-ctarow { margin-top: 0; }
-.tri-companion.is-conversing .tri-hero-crumb { margin-bottom: 4px; }
+/* BREATHING ROOM BETWEEN THE CRUMB AND THE BUTTON (Donna, 2026-08-22, item 8).
+   In the conversing state the hero collapses -- .tri-hero-title and .tri-hero-copy are display:none and the CTA
+   row's margin-top is zeroed -- so the crumb and "Open this Session" become adjacent, which they never are in the
+   full hero. 4px was the whole gap, and it reads as none: her words were "sits directly against ... with no
+   visible gap". Raised at both call sites (mobile block and desktop) so the two cannot drift.
+   The margin does apply despite this being a <span>: .tri-hero is a flex column, so the child is blockified. */
+.tri-companion.is-conversing .tri-hero-crumb { margin-bottom: 12px; }
 
 /* "Where you stand" — the Companion's standing update, PINNED between the thread and the composer (flex 0 0 auto
    so it never shrinks when the thread grows). Same shape as the keeper so the two read as one family, but a TEAL

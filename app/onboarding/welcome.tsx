@@ -74,7 +74,17 @@ const BEATS: Beat[] = [
   // The series is 5 screens now, not 6.
   {
     kick: 'Part 1 of 4 · Getting ready',
-    head: ['Along the way you’ll build a Playbook', '& track your progress'],
+    // TWO LINES, NOTHING STRANDED (Donna, 2026-08-22, item 2). The break used to fall after "Playbook", which
+    // combined with the natural wrap to render THREE lines with "Playbook" alone on the middle one:
+    //     Along the way you'll build a
+    //     Playbook
+    //     & track your progress
+    // She reported the symptom as "& track your progress wrapping onto its own line"; the orphan was the worse
+    // half. Splitting before "Playbook" keeps it with what it belongs to and fits each line as written.
+    // The FONT was not the problem: .onbwel-head resolves to Barlow Condensed 900 and document.fonts confirms
+    // that face loads. Her note said these "aren't rendering in Barlow Condensed Bold" -- they are Condensed,
+    // just Black rather than Bold, and Bold (700) is not among the weights layout.tsx requests.
+    head: ['Along the way you’ll build a', 'Playbook & track your progress'],
     body: [],
     list: [
       // "everything you do is recorded here" stopped being TRUE on 2026-08-20, when keepers became opt-in: nothing
