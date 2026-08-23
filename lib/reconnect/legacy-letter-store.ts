@@ -70,6 +70,43 @@ export async function saveLegacyLetter(
 }
 
 /**
+ * EDIT THE BODY, AND ONLY THE BODY.
+ *
+ * THE PRODUCT HAS BEEN PROMISING THIS SINCE THE LETTER SHIPPED. The save beat says "change it whenever it stops
+ * being true", and the Member Agent's own context repeats it — with no way to do it. The Playbook rendered the
+ * letter read-only and nothing but the Reconnect commit ever wrote to this table. A promise the product does not
+ * keep is the same fault as a claim it cannot support; it just takes longer for the member to find out.
+ *
+ * NOT saveLegacyLetter, and the difference is the whole reason this exists:
+ *
+ *   THE DATE MUST NOT MOVE. The letter is addressed to a specific day one year from when she WROTE it. Re-stamping
+ *   on every edit would walk that date forward forever, so the letter she opens "in a year" would always be a year
+ *   away — the one promise it makes to itself, broken by the act of tidying a sentence.
+ *
+ *   HER ANSWERS MUST SURVIVE. saveLegacyLetter upserts `answers = excluded.answers`, so calling it with a body and
+ *   no answers would silently blank the six prompt answers the letter was drafted from. Data loss with no error.
+ *
+ * Returns ok:false when there is no letter to edit rather than inserting one — an edit is not a creation path, and
+ * a letter with no date and no answers is not a Legacy Letter.
+ */
+export async function updateLegacyLetterBody(
+  db: Db,
+  memberId: string,
+  body: string,
+): Promise<{ ok: boolean; reason?: string }> {
+  const text = (body ?? '').trim();
+  if (!text) return { ok: false, reason: 'empty' }; // a blank letter is not a letter
+  // RETURNING rather than rowCount: this Db type exposes only `rows`, and returning the id works identically on
+  // PGlite and prod Postgres.
+  const { rows } = await db.query<{ member_id: string }>(
+    `update legacy_letter set body = $2, updated_at = now() where member_id = $1 returning member_id`,
+    [memberId, text],
+  );
+  if (!rows.length) return { ok: false, reason: 'no_letter' };
+  return { ok: true };
+}
+
+/**
  * The ONE sentence they chose to share with the Community. Invited, never pressured (Greg), so this is only ever
  * called from an explicit member action — and it stores the sentence alone. The letter itself never leaves.
  */

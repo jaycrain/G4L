@@ -37,6 +37,7 @@ import {
   expandEntryAction,
   removeEntryAction,
   gatherFromHistoryAction,
+  editLegacyLetterAction,
 } from './actions.ts';
 
 // Redesign Playbook (Decision ZZ) — the same data + CRUD as the live PlaybookView, reorganized by what each line is FOR:
@@ -176,6 +177,11 @@ export default function RedesignPlaybookView({
   };
   const [busy, setBusy] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  // The Legacy Letter is its own prop (loaded server-side), NOT part of `entries` — so refresh() cannot bring an
+  // edit back. Held locally so her save is on screen the moment it succeeds.
+  const [letterBody, setLetterBody] = useState(legacyLetter?.body ?? '');
+  const [editingLetter, setEditingLetter] = useState(false);
+  const [letterDraft, setLetterDraft] = useState('');
   const [expandingId, setExpandingId] = useState<string | null>(null);
   const [draft, setDraft] = useState('');
   const [note, setNote] = useState('');
@@ -542,13 +548,63 @@ export default function RedesignPlaybookView({
           NOT LOCKED until its date. Jay, 2026-08-17: keep it a year out but make it accessible — so the date is a
           dedication, not a timer. A locked letter would also be unrevisable, and it has to stay editable: a member
           who accepted a draft to end a long session must be able to fix it when they reread it cold. */}
-      {tab === 'who' && legacyLetter?.body && (
+      {/* EDITABLE, AT LAST. The comment above has said since this shipped that the letter "has to stay editable",
+          the save beat tells her "change it whenever it stops being true", and the Member Agent's context repeats
+          it — and there was no way to do it. A promise the product does not keep is the same fault as a claim it
+          cannot support; it just takes the member longer to find out.
+
+          THE DATE IS NOT PART OF THE EDIT. editLegacyLetterAction writes the body alone: the letter is addressed
+          to a specific day a year out, and re-stamping it on every edit would keep that day permanently a year
+          away — breaking the one promise the letter makes to itself. Her six prompt answers are left alone for
+          the same reason (see updateLegacyLetterBody). */}
+      {tab === 'who' && letterBody && (
         <section className="pb-card pb-hero">
           <div className="pb-sec">Your Legacy Letter</div>
-          <div className="pb-sec-d">Written by you, to you — for {formatLetterDate(legacyLetter.datedFor)}.</div>
-          <div className="pb-narr">
-            <RichText text={legacyLetter.body} />
-          </div>
+          <div className="pb-sec-d">Written by you, to you — for {formatLetterDate(legacyLetter?.datedFor ?? '')}.</div>
+          {editingLetter ? (
+            <div className="pb-edit">
+              <textarea
+                value={letterDraft}
+                onChange={(e) => setLetterDraft(e.target.value)}
+                rows={12}
+                aria-label="Your Legacy Letter"
+              />
+              <span className="pb-tools">
+                <button
+                  type="button"
+                  className="pb-btn keep"
+                  disabled={busy || !letterDraft.trim()}
+                  onClick={() => {
+                    const next = letterDraft.trim();
+                    void run(async () => {
+                      const res = await editLegacyLetterAction(memberId, next);
+                      // Only show it as saved if it SAVED. Swapping the text on an optimistic assumption is how a
+                      // member ends up reading an edit that never reached the table.
+                      if (res.ok) { setLetterBody(next); setEditingLetter(false); }
+                    });
+                  }}
+                >
+                  Save
+                </button>
+                <button type="button" className="pb-btn ghost" onClick={() => setEditingLetter(false)}>Cancel</button>
+              </span>
+            </div>
+          ) : (
+            <>
+              <div className="pb-narr">
+                <RichText text={letterBody} />
+              </div>
+              <span className="pb-tools">
+                <button
+                  type="button"
+                  onClick={() => { setLetterDraft(letterBody); setEditingLetter(true); }}
+                  disabled={busy}
+                >
+                  Edit
+                </button>
+              </span>
+            </>
+          )}
         </section>
       )}
 

@@ -10,7 +10,7 @@ import { applySchema, type Db } from '../lib/db/schema.ts';
 import {
   LEGACY_PROMPTS, letterDateFor, remainingPrompts, readyToDraft, draftInstruction,
 } from '../lib/reconnect/legacy-letter.ts';
-import { getLegacyLetter, saveLegacyLetter, shareLegacyLine } from '../lib/reconnect/legacy-letter-store.ts';
+import { getLegacyLetter, saveLegacyLetter, shareLegacyLine, updateLegacyLetterBody } from '../lib/reconnect/legacy-letter-store.ts';
 
 async function member(): Promise<{ db: Db; id: string }> {
   const db = new PGlite() as unknown as Db;
@@ -127,8 +127,66 @@ test('the letter is written by the arc, dated by the action, and rendered in the
 
   // 3. It renders, on the Who you are tab, and is not gated on its own date.
   const view = readFileSync('app/playbook/[memberId]/redesign-playbook-view.tsx', 'utf8');
-  assert.match(view, /tab === 'who' && legacyLetter\?\.body/, 'renders on Who you are');
+  // Matches `letterBody`, the local state the card renders from since the letter became editable (the prop seeds
+  // it, and a successful save replaces it so her edit is on screen immediately). The title assertion is the
+  // durable half — it survives the next rename, which this one did not.
+  assert.match(view, /tab === 'who' && letterBody/, 'renders on Who you are');
+  assert.match(view, /Your Legacy Letter/, 'the card is still titled');
+  assert.match(view, /editLegacyLetterAction\(memberId/, 'and it is editable — the product promises this twice');
   assert.doesNotMatch(view, /legacyLetter[^\n]*(?:new Date\(\)|Date\.now)/, 'never gated on today — the date is a dedication, not a timer');
   const page = readFileSync('app/playbook/[memberId]/page.tsx', 'utf8');
   assert.match(page, /getLegacyLetter\(db, memberId\)/, 'the page loads it');
+});
+
+
+// EDITING THE LETTER KEEPS ITS DATE AND HER ANSWERS.
+//
+// The product promised this from the day the letter shipped -- "change it whenever it stops being true", said on
+// save and repeated in the Member Agent's context -- with no way to do it. These pin the two things that made a
+// naive edit path dangerous, both of which would have failed silently.
+test('editing the letter does NOT move its date — the day it is addressed to is the promise', async () => {
+  const { db, id } = await member();
+  await saveLegacyLetter(db, id, {
+    body: 'The first draft.',
+    answers: { tuesday: 'up early, out on the bike', unfinished: 'the century ride' },
+    datedFor: '2027-08-23',
+  });
+
+  const ok = await updateLegacyLetterBody(db, id, 'The version I actually meant.');
+  assert.equal(ok.ok, true);
+
+  const after = await getLegacyLetter(db, id);
+  assert.equal(after!.body, 'The version I actually meant.');
+  // If this ever re-stamps, the letter she opens "in a year" is always a year away.
+  assert.equal(after!.datedFor, '2027-08-23', 'the edit moved the date the letter is addressed to');
+});
+
+test('editing the letter does NOT wipe the answers it was drafted from', async () => {
+  const { db, id } = await member();
+  await saveLegacyLetter(db, id, {
+    body: 'Draft.',
+    answers: { tuesday: 'up early, out on the bike', unfinished: 'the century ride' },
+    datedFor: '2027-08-23',
+  });
+
+  await updateLegacyLetterBody(db, id, 'Revised.');
+
+  const after = await getLegacyLetter(db, id);
+  // saveLegacyLetter upserts `answers = excluded.answers`, so reusing it for an edit would blank these with no
+  // error. That is why the edit path is its own function.
+  assert.deepEqual(after!.answers, { tuesday: 'up early, out on the bike', unfinished: 'the century ride' });
+});
+
+test('an edit is not a creation path, and a blank letter is refused', async () => {
+  const { db, id } = await member();
+  const none = await updateLegacyLetterBody(db, id, 'Trying to edit a letter that was never written.');
+  assert.equal(none.ok, false);
+  assert.equal(none.reason, 'no_letter');
+  assert.equal(await getLegacyLetter(db, id), null, 'an edit must never conjure a letter with no date or answers');
+
+  await saveLegacyLetter(db, id, { body: 'Real.', answers: {}, datedFor: '2027-08-23' });
+  const blank = await updateLegacyLetterBody(db, id, '   ');
+  assert.equal(blank.ok, false);
+  assert.equal(blank.reason, 'empty');
+  assert.equal((await getLegacyLetter(db, id))!.body, 'Real.', 'a blank save must not destroy the letter');
 });

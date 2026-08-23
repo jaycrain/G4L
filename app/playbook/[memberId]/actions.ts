@@ -1,6 +1,7 @@
 'use server';
 
 import { getDb } from '../../../lib/db/index.ts';
+import { updateLegacyLetterBody } from '../../../lib/reconnect/legacy-letter-store.ts';
 import { authorizeMember } from '../../authz.ts';
 import {
   listPlaybook,
@@ -73,6 +74,24 @@ export async function editEntryAction(memberId: string, id: string, body: string
   const text = (body ?? '').trim();
   if (!text) return { ok: false };
   return { ok: await editEntry(await db(), memberId, id, text) };
+}
+
+/**
+ * Edit the Legacy Letter. Same authorization as every other write here.
+ *
+ * This exists because the product already PROMISED it — "change it whenever it stops being true", said when the
+ * letter is saved and again in the Member Agent's context, with no way to do it until now.
+ *
+ * Body only. updateLegacyLetterBody deliberately does not touch `dated_for` or `answers`: the letter is addressed
+ * to a specific day a year out, and re-stamping it on every edit would keep that day permanently a year away.
+ */
+export async function editLegacyLetterAction(memberId: string, body: string): Promise<{ ok: boolean }> {
+  if (!(await authorizeMember(memberId))) return { ok: false };
+  const text = (body ?? '').trim();
+  if (!text) return { ok: false };
+  const res = await updateLegacyLetterBody(await db(), memberId, text);
+  if (!res.ok) console.error(`editLegacyLetterAction refused for member=${memberId}: ${res.reason}`);
+  return { ok: res.ok };
 }
 
 export async function removeEntryAction(memberId: string, id: string): Promise<{ ok: boolean }> {
