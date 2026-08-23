@@ -365,11 +365,22 @@ function boardReceipt(board: BoardSubmission, c: Collected, askOpen: boolean): s
   const list = marked.length === 1 ? marked[0]! : `${marked.slice(0, -1).join(', ')} and ${marked[marked.length - 1]}`;
 
   const parts: string[] = [];
-  parts.push(board.quietDrift && marked.length === 0
-    ? "You marked the quiet one — no single event, just years of it."
-    : board.quietDrift
-      ? `${list} — and the quiet one alongside them.`
-      : `${list}.`);
+  // AUTOPILOT IS NAMED ONCE, BY `list`, LIKE EVERY OTHER DOOR.
+  //
+  // This used to append "— and the quiet one alongside them" whenever board.quietDrift was set, from when quiet
+  // drift was a SEPARATE card sitting beside the Doors. It stopped being separate on 2026-08-22: Autopilot became
+  // the twelfth Door, and `quietDrift` is now DERIVED from it (doors-board.tsx: `mine.some(c => c.slug ===
+  // 'autopilot')`). So the flag can only be true when Autopilot is already in `board.doors` — and the receipt read
+  // "The Body, Career Cliff and Autopilot — and the quiet one alongside them", naming one Door twice in one
+  // sentence. The `marked.length === 0` branch became unreachable for the same reason.
+  //
+  // Donna reported the visible half (item 15, the Playbook listing Autopilot twice). This half is worse: it is the
+  // Companion speaking, and appending "the quiet one" to a list that already contains it reads as the product
+  // having lost track of what she just told it.
+  //
+  // `quietDrift` STAYS ON THE WIRE. It still drives `quiet_drift_claimed_at`, which six Sessions read. Nothing
+  // stops being recorded here — it just stops being narrated a second time.
+  parts.push(`${list}.`);
 
   // Lead the conversation with the one she says WEIGHS MOST, not the one that came first. The heaviest is where
   // the excavation has something to find; chronology is context, not the subject.
@@ -599,8 +610,9 @@ function driftToWindowBridge(c: Collected): string {
     // "the drift" as a NOUN was the Fade under a second name (Jay, 2026-08-15). This is the LIVE line — the
     // twin in lib/curriculum/content/reconnect.ts is read only by Explore the Science. Verb uses and the Drift
     // Quiz are untouched; see the function name above, which describes a seam rather than addressing a member.
-    "That's your inventory — what it cost, how far the Fade ran. Not to sit in — to push off from; I've kept it for " +
-    "you.\n\nNow we look the other way — at the version of you that's still in there.\n\n" +
+    // NO SAVE CLAIM — this is a harvest OFFER, not a commit. See windowClose below for the full note.
+    "That's your inventory — what it cost, how far the Fade ran. Not to sit in — to push off from." +
+    "\n\nNow we look the other way — at the version of you that's still in there.\n\n" +
     windowOpen(c)
   );
 }
@@ -706,11 +718,22 @@ function reflectWindow(modelText: string): string | null {
 }
 const REOPEN_WINDOW = "Then it's not quite the one yet — say more. What would the Tuesday worth chasing actually look like?";
 // The close — name that Tuesday as the spark, and hold onto it. Ends on HOPE; hands to the Checkpoint.
+//
+// IT CLAIMS NO SAVE, because there is none to claim yet. This said "I've kept it for you", and the drift bridge
+// above said the same thing — both untrue at the moment they were read. app/reconnect/actions.ts is explicit about
+// why: "Nothing is committed here any more — these come back as OFFERS the member keeps inline." The drift and the
+// window are harvest CANDIDATES; the keeper card the member taps is the write path, and `state='kept'` is what the
+// Playbook query actually selects on.
+//
+// FOUND BY GENERALISING DONNA'S ITEM 19, not by her. She reported the Rewire W2 close ("I've saved your picture to
+// your Playbook", immediately followed by a keep/discard card for that picture). Writing the guard for that one
+// shape turned up three more instances of it — here, the drift bridge, and two Session closes in
+// lib/curriculum/content. Four sites, one fault, and the two she never saw were in Reconnect: the first arc a new
+// member meets.
+//
+// The member is told what she now HAS. Where it lives is the engine's to state, once it is true.
 function windowClose(): string {
-  return (
-    "That Tuesday — that's the spark. Hold onto it; everything from here is about making it the real one. " +
-    "I've kept it for you."
-  );
+  return "That Tuesday — that's the spark. Hold onto it; everything from here is about making it the real one.";
 }
 
 const windowStage: StageDef = {

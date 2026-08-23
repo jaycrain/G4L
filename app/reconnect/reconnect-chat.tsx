@@ -3,6 +3,7 @@
 import { Fragment, useEffect, useRef, useState } from 'react';
 import { showComposer } from '../../lib/chat/composer.ts';
 import RichText from '../rich-text.tsx';
+import { memberDisplay } from '../../lib/agent/member-display.ts';
 import { startReconnectAction, reconnectTurnAction, reconnectCeremonyDataAction, loadReconnectSessionAction } from './actions.ts';
 import ScaleChips from '../components/scale-chips.tsx';
 import DoorsBoard from './doors-board.tsx';
@@ -248,7 +249,7 @@ export default function ReconnectChat({
               <TeachingUnderstand key={a} sessionKey="reconnect" stage={LAST_BEAT[a]} onAcknowledge={() => keepReconnectScience(LAST_BEAT[a])} />
             ))}
             <div className={`bubble ${m.role}`}>
-              {m.role === 'agent' ? <RichText text={m.text} /> : m.text}
+              {m.role === 'agent' ? <RichText text={m.text} /> : memberDisplay(m.text)}
             </div>
             {(placement.after.get(i) ?? []).map((a) => (
               <TeachingUnderstand key={a} sessionKey="reconnect" stage={LAST_BEAT[a]} onAcknowledge={() => keepReconnectScience(LAST_BEAT[a])} />

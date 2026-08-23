@@ -140,7 +140,14 @@ export async function heroCard(db: Db, memberId: string): Promise<HeroCard> {
   return {
     eyebrow: hero.eyebrow,
     crumbs: baseCrumbs,
-    crumbState: ringSub === 'checkpoint' ? 'Checkpoint ready' : ringSub === 'coming' ? 'opens later' : null,
+    // NO "Checkpoint ready" CRUMB (Donna, item 19). It rendered "Program › Rewire › Checkpoint ready" with the
+    // state in orange, on a screen whose headline already reads "You did it! You finished False Start Protocol
+    // today." Two faults in one crumb: orange is the needs-input/incomplete colour and this is a COMPLETED state,
+    // and the crumb restates the headline. Her call — "this text isn't necessary, it doesn't appear elsewhere."
+    //
+    // 'opens later' STAYS. She did not flag it, and it earns its place: it marks a phase the member cannot enter
+    // yet, which nothing else on the card says.
+    crumbState: ringSub === 'coming' ? 'opens later' : null,
     title: hero.title,
     accomplishment,
     copy: hero.copy,

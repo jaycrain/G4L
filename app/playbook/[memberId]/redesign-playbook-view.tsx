@@ -523,11 +523,14 @@ export default function RedesignPlaybookView({
                 {d.note && <span className="muted"> — {d.note}</span>}
               </li>
             ))}
-            {quietDrift && (
-              <li style={{ marginBottom: '0.35rem', lineHeight: 1.7 }}>
-                Autopilot<span className="muted"> — the quiet one, no single event</span>
-              </li>
-            )}
+            {/* NO SEPARATE AUTOPILOT LINE. Donna, item 15: Autopilot appeared twice — once as "Autopilot —
+                somewhat relevant" from doorLines, and again here as "Autopilot — the quiet one, no single event",
+                two entries with conflicting descriptions for one Door.
+
+                This block predates 2026-08-22, when quiet drift was its own card beside the Doors. Autopilot is
+                the twelfth Door now and arrives in doorLines like the rest, so this rendered the same claim a
+                second time. The `quietDrift` prop stays — `quiet_drift_claimed_at` is still a real signal that
+                Sessions read; it just isn't a line on this list. */}
           </ul>
         </section>
       )}

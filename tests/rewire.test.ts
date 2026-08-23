@@ -155,7 +155,14 @@ test('W2 · the reveal → practice + close, harvesting the finished image as ON
   const t = applyRewireW2Turn(state, [], 'that lands', { text: 'Hold onto it.' });
   assert.equal(t.complete, true, 'W2 completes after the member sits with the reveal');
   assert.equal(t.state.stage, 'complete', 'terminal stage so the chat hides the input');
-  assert.match(t.reply, /saved your picture to your Playbook/i, 'the close names the keeper');
+  // THE CLOSE CLAIMS NO SAVE (Donna, 2026-08-22, item 19). This asserted the OPPOSITE — that the close said
+  // "saved your picture to your Playbook" — which pinned the bug in place. The very next beat offers a keep/discard
+  // card for that same picture, so the claim was false when she read it and contradicted by the card that followed.
+  // A test asserting the wrong behaviour is worse than no test: it makes the fix look like the regression.
+  //
+  // The harvest assertions below are the real guarantee, and they are unchanged — the keeper is still offered.
+  assert.doesNotMatch(t.reply, /saved your picture|saved it to your Playbook/i,
+    'the close must not claim a save the keeper card has not made yet');
   const harvest = t.state.pendingHarvest ?? [];
   assert.equal(harvest.length, 1, 'the finished image is ONE keeper (not four)');
   assert.equal(harvest[0]!.keeperType, 'lights_you_up', 'the image is a lights-you-up keeper');

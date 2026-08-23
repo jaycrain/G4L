@@ -7,7 +7,7 @@ import { onboardingTurn, finalizeOnboardingAction, loadOnboardingSessionAction }
 import ScaleChips from '../components/scale-chips.tsx';
 import ReclaimListBuilder from './reclaim-list-builder.tsx';
 import GapConfirm from './gap-confirm.tsx';
-import { parseGapConfirmChoice, GAP_CONFIRM_CHOICES } from '../../lib/agent/gap-confirm-choice.ts';
+import { memberDisplay } from '../../lib/agent/member-display.ts';
 import IdentityPicker from './identity-picker.tsx';
 import OnboardingWelcome from './welcome.tsx';
 import type { ConvState, ConvMessage, Expectation } from '../../lib/agent/onboarding.ts';
@@ -30,33 +30,10 @@ const ls = {
 };
 const clearOnboardingStorage = () => { ls.del(LS.token); ls.del(LS.email); ls.del(LS.name); ls.del(LS.draft); };
 
-// A sentinel is an instruction to the engine, never a sentence the member wrote. Rendering one verbatim tells them
-// the machine leaked — and in the identity flow it lands at the exact moment they have admitted they are not ready.
-const SENTINEL_DISPLAY: Record<string, string> = {
-  __identity_skip__: "I'm not sure yet.",
-};
-
-/**
- * What the member SEES for something she tapped rather than typed.
- *
- * The gap confirm sends a machine line — `[gap-confirm] done keep:career_cliff,aging_parents` — because the tap
- * has to carry both her answer AND which Doors she left on. That string was being echoed into her own bubble, so
- * every tap printed internal syntax into her transcript (Donna, mid-walk, 2026-08-20). It is the same leak as
- * `__identity_skip__` three days earlier, and it lands at the same kind of moment: she has just finished telling
- * the hardest part of her story, and the product answers in machine.
- *
- * The LABEL is the thing to show, and it comes from the same array the chips are built from — so a wording change
- * moves both at once and they cannot drift apart.
- */
-const displayFor = (text: string): string => {
-  const t = text.trim();
-  const sentinel = SENTINEL_DISPLAY[t.toLowerCase()];
-  if (sentinel) return sentinel;
-  const tapped = parseGapConfirmChoice(t);
-  if (tapped) return GAP_CONFIRM_CHOICES.find((c) => c.value === tapped)?.label ?? t;
-  return text;
-};
-
+// What the member SEES for something she tapped rather than typed. The mapping used to live here, which is exactly
+// why Reconnect leaked the Doors board anyway — it is a different chat surface with its own bubble list and it knew
+// none of this. It now lives in lib/agent/member-display.ts, with a test that fails when a new machine format is
+// added without one. See that file for the three leaks that led here.
 export default function OnboardingChat({ welcomeEnabled = false }: { welcomeEnabled?: boolean }) {
   const router = useRouter();
   // The welcome comes BEFORE the gate (forecast + safety first, so signing up reads as a good decision). A fresh
@@ -238,7 +215,7 @@ export default function OnboardingChat({ welcomeEnabled = false }: { welcomeEnab
     // sentinel, and echoing it verbatim printed `__identity_skip__` into the transcript as if the member had
     // typed it (Donna's walk, 2026-08-17). The engine still needs the sentinel — it is how the skip is
     // recognised — so only the DISPLAYED text changes. Anything the member did not type gets a human face here.
-    setMessages([...prior, { role: 'member', text: displayFor(text) }]);
+    setMessages([...prior, { role: 'member', text: memberDisplay(text) }]);
     setInput('');
     setPending(true);
     setError(null);
@@ -256,7 +233,7 @@ export default function OnboardingChat({ welcomeEnabled = false }: { welcomeEnab
       // overwrote it with the wire string the moment the reply landed — so the fix for __identity_skip__ has been
       // half-working since it shipped: correct for a second, then reverted. Anything the member did not type must
       // pass through the same door on BOTH paths.
-      setMessages([...prior, { role: 'member', text: displayFor(text) }, ...agentBubbles(r.reply)]);
+      setMessages([...prior, { role: 'member', text: memberDisplay(text) }, ...agentBubbles(r.reply)]);
       setState(r.state);
       setExpects(r.expects ?? null); // W-24: the Grinta baseline items expect a fixed-scale pick → show the chips
       // Graceful decline (Decision E): a genuinely-thriving no-fade member is out of scope — show the terminal

@@ -102,7 +102,7 @@ export default function GapConfirm({
           <span className="gapc-doors-hint">
             {dropped.size > 0
               ? 'Taken off — I won’t count it.'
-              : 'Tap one to take it off if it doesn’t feel right. We’ll revisit these in more detail later.'}
+              : 'Tap one to deselect it. We’ll revisit these in more detail later.'}
           </span>
         </div>
       )}

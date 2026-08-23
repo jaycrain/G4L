@@ -61,7 +61,7 @@ export const RECLAIM_SESSIONS: Asset[] = [
       },
     ],
     close: {
-      companion: 'That\'s your story now, in your own words. I\'ve saved it to your Playbook to keep or cut.',
+      companion: 'That\'s your story now, in your own words.',
       prompt: 'Keep this one close?',
       options: ['Yes', 'Not yet'],
       to_playbook: true,

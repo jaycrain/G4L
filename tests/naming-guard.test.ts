@@ -311,3 +311,52 @@ test('arc copy never hardcodes a badge announcement — the client beat owns it'
   }
   assert.deepEqual(hits, [], `a second badge announcement lives here:\n${hits.join('\n')}`);
 });
+
+// ── AND ITS MIRROR: COPY NEVER CLAIMS A SAVE THE KEEPER CARD OWNS ───────────────────────────────────────────────
+//
+// The test above bans copy that DENIES what the engine does. This bans the opposite lie, which turns out to be the
+// more common one: authored copy announcing that something was saved when the save has not happened.
+//
+// TWICE NOW, both in Rewire. W1's close said "Here's your counter-campaign, saved to your Playbook" (fixed
+// 2026-07-26). W2's close said "I've saved your picture to your Playbook — there whenever you want it", and the
+// next beat offered a keep/discard card for that same picture (Donna, 2026-08-22, item 19). Both were false at the
+// moment they were read: the keeper card IS the write path, so a member who tapped Delete had just been told it
+// was already kept.
+//
+// WHY A GUARD RATHER THAN A THIRD FIX. lib/agent/gate-claims.ts already stops the MODEL doing this — it was built
+// after Donna's 8/20 walk, where the model announced a Reclaim List that did not exist. It cannot help here,
+// because this copy is AUTHORED: a human wrote it, a human reviewed it, and it still shipped the same fault twice.
+// The engine owns what is stored; neither the model nor the copy gets to announce it.
+//
+// NARROW ON PURPOSE. "your place is saved" (session resume) is TRUE and stays — that is the engine's own
+// guarantee, not a claim about a keeper. What is banned is a first-person claim to have put a piece of the
+// member's content somewhere.
+test('authored copy never claims to have saved a keeper — the card owns that', () => {
+  const CLAIMS = [
+    /I(?:'ve| have) (?:saved|kept|added|put) (?:your|that|it|this)/i,
+    /(?:saved|added) (?:it |that |your \w+ )?to your (?:Playbook|collection)/i,
+  ];
+  // Member-facing arc copy. Model instructions are excluded for the same reason as the mirror test: a system
+  // prompt that TELLS the model how saving works legitimately contains the phrasing it is regulating.
+  const roots = ['lib/agent', 'lib/curriculum', 'lib/content', 'lib/rebuild', 'lib/reclaim'];
+  const GUIDES = /(guide|system-prompt|checkin)\.ts$/;
+
+  const hits: string[] = [];
+  for (const root of roots) {
+    if (!existsSync(root)) continue;
+    for (const file of walk(root)) {
+      if (GUIDES.test(file)) continue;
+      let inLog = false;
+      readFileSync(file, 'utf8').split('\n').forEach((line, i) => {
+        if (/console\.(log|warn|error|info|debug)\s*\(/.test(line)) inLog = true;
+        const wasLog = inLog;
+        if (inLog && /\)\s*;?\s*$/.test(line)) inLog = false;
+        if (wasLog) return;
+        if (line.trim().startsWith('//') || line.trim().startsWith('*')) return; // comments explain the ban
+        for (const re of CLAIMS) if (re.test(line)) hits.push(`${file}:${i + 1} — ${line.trim().slice(0, 120)}`);
+      });
+    }
+  }
+  assert.deepEqual(hits, [],
+    `copy claims a save the engine has not made — the keeper card is the write path:\n${hits.join('\n')}`);
+});

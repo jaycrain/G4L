@@ -15,18 +15,14 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { serializeGapConfirmChoice, parseGapConfirmChoice, GAP_CONFIRM_CHOICES } from '../lib/agent/gap-confirm-choice.ts';
+import { serializeGapConfirmChoice, GAP_CONFIRM_CHOICES } from '../lib/agent/gap-confirm-choice.ts';
+import { memberDisplay } from '../lib/agent/member-display.ts';
 
-// The same resolution the chat uses. Kept in step by the source assertions below rather than by copying.
-const SENTINEL: Record<string, string> = { __identity_skip__: "I'm not sure yet." };
-const displayFor = (text: string): string => {
-  const t = text.trim();
-  const s = SENTINEL[t.toLowerCase()];
-  if (s) return s;
-  const tapped = parseGapConfirmChoice(t);
-  if (tapped) return GAP_CONFIRM_CHOICES.find((c) => c.value === tapped)?.label ?? t;
-  return text;
-};
+// THE REAL RESOLVER, IMPORTED. This file used to carry its own copy of it — a second implementation of the rule,
+// sitting in the test that exists to defend the rule. It passed while Reconnect leaked, because the copy was
+// correct and the product had two render paths and only one of them knew. It now lives in one place
+// (lib/agent/member-display.ts) and this asserts against that.
+const displayFor = memberDisplay;
 
 test('every gap-confirm tap renders as the label she tapped, never the wire line', () => {
   const doors = ['career_cliff', 'aging_parents', 'full_house', 'load_bearer'];
@@ -56,13 +52,35 @@ test('anything she actually TYPED passes through untouched', () => {
   }
 });
 
-test('BOTH render paths humanise — the half-fix is what let this ship twice', () => {
-  // The optimistic bubble AND the post-reply rebuild. The 2026-08-17 fix did only the first, so the raw string
-  // reappeared the instant the Companion answered.
-  const src = readFileSync(new URL('../app/onboarding/chat.tsx', import.meta.url), 'utf8');
-  const bubbles = src.match(/setMessages\(\[\.\.\.prior, \{ role: 'member', text[^}]*\}/g) ?? [];
+test('EVERY chat surface humanises — one file was the half-fix that let this ship a third time', () => {
+  // THIS TEST PASSED WHILE THE BUG SHIPPED. It read "BOTH render paths" and checked the two member-bubble writes
+  // inside app/onboarding/chat.tsx — two bubbles in ONE file. The other render path was a different FILE:
+  // app/reconnect/reconnect-chat.tsx, with its own bubble list, which knew none of this. So the Doors board
+  // printed `[board] door:body=2 …` into Donna's transcript on 2026-08-22 (item 11) with this guard green.
+  //
+  // The lesson is the file's own lesson one level up: a half-fix is not "one of two lines", it is "one of the
+  // places this can happen". So this enumerates the SURFACES.
+  // Listed explicitly. A new chat surface is a deliberate act, and adding it here is the moment to ask whether
+  // it renders member text — which is the question that was never asked when Reconnect got its own bubble list.
+  const surfaces = ['../app/onboarding/chat.tsx', '../app/reconnect/reconnect-chat.tsx'];
+
+  for (const rel of surfaces) {
+    const src = readFileSync(new URL(rel, import.meta.url), 'utf8');
+
+    // COARSE ON PURPOSE. The first version of this matched each surface's bubble JSX with its own regex, and broke
+    // on the nested braces in `<RichText text={m.text} />` — a failing probe reporting a healthy product. What
+    // actually matters is not the shape of the render, it is that the surface routes member text through the one
+    // resolver at all. That is a question a substring can answer and a regex kept getting wrong.
+    assert.match(src, /import \{ memberDisplay \}/, `${rel}: does not import the resolver at all`);
+    assert.match(src, /memberDisplay\(/, `${rel}: imports the resolver but never renders through it`);
+  }
+
+  // Onboarding additionally has TWO member-bubble writes — the optimistic one and the post-reply rebuild. The
+  // 2026-08-17 fix did only the first, so the raw string reappeared the instant the Companion answered.
+  const onboarding = readFileSync(new URL('../app/onboarding/chat.tsx', import.meta.url), 'utf8');
+  const bubbles = onboarding.match(/setMessages\(\[\.\.\.prior, \{ role: 'member', text[^}]*\}/g) ?? [];
   assert.ok(bubbles.length >= 2, `expected both member-bubble writes, found ${bubbles.length}`);
   for (const b of bubbles) {
-    assert.match(b, /displayFor\(text\)/, `a member bubble writes the RAW text: ${b}`);
+    assert.match(b, /memberDisplay\(text\)/, `a member bubble writes the RAW text: ${b}`);
   }
 });

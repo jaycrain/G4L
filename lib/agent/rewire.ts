@@ -357,9 +357,26 @@ const W2_PRACTICE_3 =
   `Add a little more detail each day. By the end of the week, you should be able to close your eyes and step right ` +
   `into it.`;
 // ── Close — harvest ──
+// NO SAVE CLAIM HERE — the keeper card that follows is what saves it.
+//
+// Donna, 2026-08-22, item 19: this said "I've saved your picture to your Playbook — there whenever you want it",
+// and then the very next beat offered "One thing from today, if you want to keep it" with a keep/discard card.
+// The Companion announced the save, then asked permission for it. Her words: it "undermines trust in what the app
+// is actually doing and confuses the member about whether the content is saved or still pending a decision."
+//
+// The claim was also simply FALSE. Nothing is written at this point; the keeper card is the write path, so a
+// member who tapped Delete had just been told it was already kept.
+//
+// THE CLAIMS GATE DOES NOT COVER THIS, and that is the useful part. gate-claims stops the MODEL announcing an
+// outcome the engine owns — this is AUTHORED copy, reviewed by a person, which is precisely how it got past. Same
+// fault, different author.
+//
+// W1 ALREADY HAD THIS SHAPE AND WAS ALREADY FIXED (see W1_CLOSE above — its save claim came out on 2026-07-26,
+// leaving only the value statement). This is the second occurrence, so it is fixed the same way rather than
+// reworded: state what she now HAS, claim nothing about where it lives.
 const W2_CLOSE =
-  `I've saved your picture to your Playbook — there whenever you want it. You've got both tools now: the lines that ` +
-  `answer the lies, and the image that's stronger than them. That's Rewire starting to hold.`;
+  `You've got both tools now: the lines that answer the lies, and the image that's stronger than them. ` +
+  `That's Rewire starting to hold.`;
 
 function w2Opening(): string {
   return `${W2_OPEN_1}${BEAT_SEP}${W2_OPEN_2}${BEAT_SEP}${W2_ANCHOR_LEAD}${BEAT_SEP}${W2_ANCHOR_PICK}`;

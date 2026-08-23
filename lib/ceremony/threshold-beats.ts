@@ -58,7 +58,7 @@ export const THRESHOLD_COPY = {
   // can only hold what she chose. ("uniquely yours" retired with it.)
   lasts:
     'Your answers, in your own words, filled the first pages of your Playbook. From here you decide what goes in — ' +
-    'anything you choose to keep lands there, ready when you need it, in your words.',
+    'anything you choose to keep lands there, ready when you need it.',
   // 7 — the hand-off. THIS BEAT NO LONGER EXPLAINS "clip in" (Cowork + Jay, 2026-08-14).
   //
   // The word stays everywhere — the daily clip-in, the clip-back-in move, the Grinta lines, the closer. What was

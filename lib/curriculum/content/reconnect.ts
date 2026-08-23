@@ -124,7 +124,7 @@ export const RECONNECT_SESSIONS: Asset[] = [
       },
     ],
     close: {
-      companion: 'That second Tuesday is the spark. Hold onto it — everything from here is about making it the real one. I\'ve saved it to your Playbook to keep or cut.',
+      companion: 'That second Tuesday is the spark. Hold onto it — everything from here is about making it the real one.',
       prompt: 'Ready to turn it into something you can chase?',
       options: ['Yes', 'Give me a second'],
       to_playbook: true,

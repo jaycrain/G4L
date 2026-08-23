@@ -126,7 +126,12 @@ export default function DoorsBoard({ expects, disabled, onSubmit }: Props) {
                         className={`scale-chip${picked ? ' on' : ''}`}
                         style={{ flex: '0 1 auto', fontSize: '0.82rem', padding: '0.35rem 0.7rem' }}
                       >
-                        {label}
+                        {/* SENTENCE CASE AT DISPLAY ONLY (Donna, item 10). RELEVANCE_ANCHORS is Greg's R2-04
+                            instrument, verbatim — "1 = not relevant, 2 = somewhat relevant, 3 = very relevant" —
+                            and door-profile.ts string-compares against 'not relevant'. Capitalising the constant
+                            would both edit his wording and silently break that comparison, so the capital is put
+                            on here, where it is a button-label convention rather than a change to what is asked. */}
+                        {label.charAt(0).toUpperCase() + label.slice(1)}
                       </button>
                     );
                   })}

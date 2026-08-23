@@ -99,3 +99,38 @@ test('the header invites multiple Doors — the evidenced design, not a convenie
   assert.match(BOARD_HEADER, /most people walk through several/i);
   assert.match(BOARD_HEADER, /no hierarchy/i);
 });
+
+// AUTOPILOT IS NAMED ONCE — Donna, 2026-08-22, item 15.
+//
+// She saw it in the Playbook ("Autopilot — somewhat relevant" and "Autopilot — the quiet one, no single event",
+// two entries with conflicting descriptions for one Door). The same double-count was in the Companion's SPOKEN
+// receipt, which is worse: the reply read "…and Autopilot — and the quiet one alongside them."
+//
+// The cause is a leftover from when quiet drift was a separate card. Autopilot became the twelfth Door on
+// 2026-08-22 and `quietDrift` is now DERIVED from it, so the flag can only be true when Autopilot is already in
+// the list. This drives the real engine rather than the private helper, because the bug was in how the two
+// composed, not in either one.
+test('the board receipt names Autopilot once — the quiet-drift line no longer doubles it', async () => {
+  const { applyReconnectTurn } = await import('../lib/agent/reconnect.ts');
+  const { serializeBoardSubmission } = await import('../lib/reconnect/doors-board-claim.ts');
+
+  const submission = serializeBoardSubmission({
+    doors: [
+      { slug: 'body' as DoorSlug, relevance: 2 },
+      { slug: 'career_cliff' as DoorSlug, relevance: 3 },
+      { slug: 'autopilot' as DoorSlug, relevance: 2 },
+    ],
+    quietDrift: true, // derived from Autopilot being marked — exactly what the board sends
+    first: 'career_cliff' as DoorSlug,
+    biggest: 'career_cliff' as DoorSlug,
+    stillOpen: [],
+  });
+
+  // Walk to the board the way the client does, then submit it.
+  let state: any = { stage: 'doors', collected: { identityNoun: 'Maker', gap: 'the job went' } };
+  const turn = applyReconnectTurn(state, [], submission, { text: '' });
+
+  const autopilotMentions = turn.reply.split(/Autopilot/i).length - 1;
+  assert.equal(autopilotMentions, 1, `Autopilot named ${autopilotMentions}× in one receipt:\n${turn.reply}`);
+  assert.doesNotMatch(turn.reply, /quiet one alongside/i, 'the redundant quiet-drift clause is gone');
+});
