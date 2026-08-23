@@ -21,15 +21,22 @@ export default function IdqRadar({
   current,
   previous = null,
   size = 300,
+  labelSize = 13,
   withLabels = true,
 }: {
   current: Dims;
   previous?: Dims | null;
   size?: number;
+  /** Axis-label size in viewBox units (= CSS px at natural width). A PROP, not derived from `size`:
+   *  labels render in exactly two places — the Reconnect ceremony and the "More about your ID Score" page —
+   *  so a formula would have silently resized the score page when the ceremony chart grew (Donna item 13). */
+  labelSize?: number;
   withLabels?: boolean;
 }) {
   // Pad the viewBox horizontally so the side axis labels (Self / Outlook) never clip at the edge.
-  const padX = withLabels ? 46 : 0;
+  // Clear the side labels ("Outlook" is the widest) so they never clip at the viewBox edge. 46 was sized by hand
+  // for 13px text; it has to grow with the label or the ceremony's 16px labels run off the left edge.
+  const padX = withLabels ? Math.ceil(46 * (labelSize / 13)) : 0;
   const vw = size + padX * 2;
   const cx = vw / 2;
   const cy = size / 2;
@@ -69,10 +76,10 @@ export default function IdqRadar({
       {/* axis labels (names only — the numbers live in the table beside the chart) */}
       {withLabels &&
         AXES.map((ax) => {
-          const [x, y] = at(ax.angle, r + 16);
+          const [x, y] = at(ax.angle, r + 16 * (labelSize / 13));
           const anchor = ax.angle === 0 ? 'start' : ax.angle === 180 ? 'end' : 'middle';
           return (
-            <text key={ax.key} x={x} y={y} textAnchor={anchor} dominantBaseline="middle" fontSize={13} fontWeight={600} fill="#374F63" fontFamily="Barlow, system-ui, sans-serif">
+            <text key={ax.key} x={x} y={y} textAnchor={anchor} dominantBaseline="middle" fontSize={labelSize} fontWeight={600} fill="#374F63" fontFamily="Barlow, system-ui, sans-serif">
               {ax.label}
             </text>
           );

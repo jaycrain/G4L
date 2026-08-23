@@ -39,7 +39,7 @@ export default function ReconnectCeremony({ memberId, data, mobile = false }: { 
         <div className="cer-score">
           {/* +20% (Donna item 13): 160 -> 192. "The chart is undersized for the visual weight this ceremony
               moment deserves" — this is the beat that hands the member their baseline ID Score. */}
-          {r.dimensions && <IdqRadar current={r.dimensions} size={192} withLabels />}
+          {r.dimensions && <IdqRadar current={r.dimensions} size={192} labelSize={16} withLabels />}
           {r.idScore !== null && <span className="cer-chip score">ID Score {Math.round(r.idScore)}</span>}
         </div>
       );
