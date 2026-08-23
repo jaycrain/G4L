@@ -851,13 +851,9 @@ ul.program { list-style: none; padding: 0; margin: 0; }
    Removed rather than left, because a reader finding it would reasonably believe this surface wants white text
    and "fix" the working rule to match it. (The .cer-facet above is white ON a teal pill — that one is real.) */
 .cer-seed-tag { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted, #6B7680); margin: 0 0 8px; }
-/* THE LEGACY REVISIT — offered, not produced. Collapsed behind a tap so she opens her own letter rather than
-   having it handed to her (see the beat copy in lib/ceremony/reclaim-ceremony-beats.ts). */
+/* THE LEGACY REVISIT — her letter, shown. No tap (Jay, 2026-08-23); the beat exists so she reads it again, and a
+   button she might not press means she never does. */
 .cer-legacy { margin: 8px 0 0; }
-.cer-legacy-open {
-  margin: 6px 0 0; padding: 0.45rem 0.9rem; border: 1.5px solid var(--teal-text); border-radius: 8px;
-  background: none; color: var(--teal-text); font-family: inherit; font-weight: 700; font-size: 0.9rem; cursor: pointer;
-}
 .cer-legacy-body {
   margin: 8px 0 0; padding: 10px 0 2px 14px; border-left: 3px solid var(--teal);
   font-size: 0.95rem; line-height: 1.6; color: var(--navy); white-space: pre-wrap;

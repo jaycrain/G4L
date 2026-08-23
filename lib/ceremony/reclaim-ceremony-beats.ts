@@ -55,10 +55,14 @@ export const RECLAIM_CEREMONY_COPY = {
   // made". It is wired in now, and closing this loop is the REASON Greg moved the letter into Reconnect: a member
   // should leave the first R holding a destination, so that Reclaim can be a reflection on what was accomplished.
   //
-  // IT OFFERS, IT DOES NOT PRODUCE. The Member Agent's own instructions say never to quote this letter unprompted —
-  // "a letter someone wrote to themselves is not a lever, and producing it uninvited turns something private into
-  // something we are holding over them." A ceremony is a designed moment rather than a chat turn, but the principle
-  // is the same, so the beat NAMES the letter and she taps to open it. Invited, and right there.
+  // THE LETTER IS SHOWN, not offered behind a tap (Jay, 2026-08-23: "just show it and let the chips fall").
+  //
+  // The Member Agent is told never to quote this letter unprompted — "a letter someone wrote to themselves is not
+  // a lever". That governs the COMPANION IN CONVERSATION. This is a designed beat at the close of a full cycle
+  // whose whole purpose is that she reads it again, and a tap she might not press means she never does.
+  //
+  // The SPOKEN beat still does not contain the letter — the copy names it, the reveal renders it. A test pins
+  // that, so this never becomes the Companion reciting her private words back at her.
   //
   // NO CLAIM ABOUT WHAT IT SAYS. We do not know whether she is closer to that Tuesday or further from it, and this
   // is the wrong moment to guess. The beat says the letter exists and that she is the one who gets to judge.

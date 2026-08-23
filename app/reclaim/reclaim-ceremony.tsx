@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState, type ReactNode } from 'react';
+import { useMemo, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import CeremonySurface from '../dashboard/ceremony-surface.tsx';
 import BadgeReveal from '../dashboard/badge-reveal.tsx';
@@ -43,9 +43,6 @@ export default function ReclaimCeremony({ memberId, data }: { memberId: string; 
     router.push(`/dashboard/${memberId}`);
   }
 
-  // Collapsed until she taps. Ceremony-local: it must not persist, so re-entering the beat offers rather than shows.
-  const [letterOpen, setLetterOpen] = useState(false);
-
   function renderReveal(r: ReclaimCeremonyReveal): ReactNode {
     if (r.kind === 'badge') return <BadgeReveal name={r.name} badgeId={r.badgeId} />;
     if (r.kind === 'grinta') {
@@ -66,20 +63,21 @@ export default function ReclaimCeremony({ memberId, data }: { memberId: string; 
       );
     }
     if (r.kind === 'legacy') {
-      // SHE OPENS IT. The letter is the one thing in the product written by her, to herself, and the Member Agent
-      // is told never to produce it unprompted — "a letter someone wrote to themselves is not a lever". So the
-      // ceremony hands her the door rather than the contents. One tap, and it is right here rather than a trip to
-      // the Playbook that would drop her out of the ceremony.
+      // SHOWN OUTRIGHT — no tap (Jay, 2026-08-23: "we need to just show it and let the chips fall").
+      //
+      // It was built behind a "Read it →" first, on the reasoning that the Member Agent is told never to produce
+      // this letter unprompted ("a letter someone wrote to themselves is not a lever"). That rule governs the
+      // COMPANION IN CONVERSATION, where producing it uninvited would be using her words as leverage mid-chat.
+      // This is a designed beat at the close of a full cycle whose entire purpose is that she reads it again.
+      //
+      // And the tap had a real cost: a member who does not press it never re-reads the letter, which is the one
+      // thing this beat exists to make happen. Protecting her from her own words by hiding them behind a button
+      // is not the posture — the product's whole claim is that it is safe to be honest with yourself. She may be
+      // nowhere near that Tuesday. That is information, and it is hers.
       return (
         <div className="cer-legacy">
           <p className="cer-seed-tag">Your letter · for {formatLetterMonth(r.datedFor)}</p>
-          {letterOpen ? (
-            <div className="cer-legacy-body"><RichText text={r.body} /></div>
-          ) : (
-            <button type="button" className="cer-legacy-open" onClick={(e) => { e.stopPropagation(); setLetterOpen(true); }}>
-              Read it →
-            </button>
-          )}
+          <div className="cer-legacy-body"><RichText text={r.body} /></div>
         </div>
       );
     }
