@@ -1044,8 +1044,11 @@ const LOG_CALL_TOOL = {
 // Movement logging — an activity the member did OFF any connected device, told to the companion in conversation. Lands
 // in their Movement history (source 'companion'). Offered only when REDESIGN is staged (that's where Movement lives).
 
-// "Tap a day when you do one — or just tell me and I'll mark it." That sentence is printed on the member's grid, so
-// this tool is not a nicety: without it the UI makes a promise the Companion can't keep. Offered only for weeks
+// THE GRID NO LONGER ADVERTISES THIS, and the tool is still right. Until 2026-08-23 the grid printed "…or just
+// tell me and I'll mark it", and this tool existed to keep that promise. The line was cut (Donna item 23) because
+// as an INSTRUCTION it sent the member the long way round — leave the grid, find the Companion, then recall which
+// line and which day. The capability is the opposite case: she is already in conversation and says "did my 15
+// minutes", and marking it there is the short way. Kept for that. Offered only for weeks
 // whose cells the member owns outright (B3/B2) — a W3 or C3 cell mirrors an entry carrying their own written note,
 // and the agent must not be able to overwrite that from a chat message (see lib/practice/mark.ts).
 const MARK_PRACTICE_DAY_TOOL = {

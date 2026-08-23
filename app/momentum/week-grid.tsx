@@ -254,15 +254,27 @@ export default function WeekGridPanel({ memberId, grid }: { memberId: string; gr
         </tbody>
       </table>
       {error && <p className="wk-refusal">{error}</p>}
-      <p className="wk-foot">
-        {tappable
-          ? 'Tap the day beside a line when you did that one — or tell me and I\u2019ll mark it.'
-          : dayLed
+      {/* NO FOOT LINE ON A TAPPABLE GRID (Donna item 23; Jay, 2026-08-23: "we can safely cut both").
+          It read "Tap the day beside a line when you did that one — or tell me and I'll mark it."
+
+          The second clause was the reason to cut rather than shorten. Telling the Companion DOES work — the
+          mark_practice_day tool exists — but as a suggestion here it is worse than the tap it offers to replace:
+          Jay walked it out as "tap back to Dashboard to access the Companion, then have to remember the line
+          description and day and explain it to the Companion". A route we advertise should not be the long way
+          round. The tool stays, because it is right in the other direction: the member is already in conversation
+          and says "did my 15 minutes".
+
+          The other three variants keep their line — they point at a DIFFERENT action (rate the day, open the log)
+          or explain that the grid is a read-only mirror, and none was reported. */}
+      {!tappable && (
+        <p className="wk-foot">
+          {dayLed
             ? 'Tap a day to rate it and mark what showed up.'
           : logTo
             ? 'Tap any day to open your log — the grid mirrors what you write there.'
             : 'This mirrors what you\u2019ve told your Companion, so you can see the week at a glance.'}
-      </p>
+        </p>
+      )}
       {/* THE WAY BACK (Jay, 2026-08-14: "you can't get right back to the subpage easily"). These rows came FROM
           the Reclaim List, so the list is where a member goes to change what is being tracked — reword an item,
           track another, stop one. Only for this kind: every other week originates in a Session, and pointing

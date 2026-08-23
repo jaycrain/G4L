@@ -586,8 +586,8 @@ export default function RedesignPlaybookView({
               <div className="pb-sec">This week</div>
               <div className="pb-sec-d">
                 {grids.length === 1
-                  ? `Day ${grids[0]!.day} of 7. A blank day is a day. This is for noticing what helps.`
-                  : `${grids.length} weeks running. A blank day is a day. This is for noticing what helps.`}
+                  ? `Day ${grids[0]!.day} of 7.`
+                  : `${grids.length} weeks running.`}
               </div>
               {grids.map((g) => (
                 <div key={g.kind} className="pb-week">

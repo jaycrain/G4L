@@ -831,8 +831,9 @@ export async function sendCheckin(memberId: string, memberMessage: string): Prom
         return { ok: false, message: "Couldn't find a tracker by that name to retire." };
       }
       if (name === 'mark_practice_day') {
-        // The grid tells the member "or just tell me and I'll mark it". This is what makes that true — without it
-        // the UI prints a promise the Companion cannot keep.
+        // The grid stopped printing "or just tell me and I'll mark it" on 2026-08-23 (Donna item 23), but this
+        // stays: the promise was never the reason it is good. Marking a day mid-conversation, when she has just
+        // said she did the thing, is the short path — being TOLD to go and do it from the grid was the long one.
         const label = typeof input.commitment === 'string' ? input.commitment.trim() : '';
         if (!label) return { ok: false, message: 'Not marked — no commitment was named.' };
         // THE COMMITMENT NAMES ITS WEEK — not "the newest week", which is what this used to assume.
