@@ -547,7 +547,13 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 /* min-height fits a comfortable single line WITH padding — 46px clipped a wrapped placeholder on a phone.
    The box still grows with typing (JS autogrow + field-sizing) up to max-height, then scrolls. (Jay 7/29) */
 .chat-input textarea { flex: 1; margin: 0; resize: none; overflow-y: auto; line-height: 1.4; min-height: 54px; max-height: 160px; field-sizing: content; box-sizing: border-box; }
-.chat-input button { margin: 0; }
+/* THE SEND BUTTON MATCHES THE FIELD (Donna, 2026-08-22, item 3). The textarea sets min-height 54px; the button
+   took the global 0.7rem padding and landed near 44px, so it sat visibly short of the field beside it — in the one
+   control a member touches on every single turn of every session.
+   min-height, not height: the composer is align-items:flex-end, so when the textarea grows the button stays put at
+   the bottom rather than stretching into a 160px-tall Send. One rule covers every arc, because .chat-input is the
+   shared composer (reconnect / rewire / rebuild / reclaim) — which is what "everywhere this pattern occurs" meant. */
+.chat-input button { margin: 0; min-height: 54px; }
 .chat-continue { margin-top: 0.75rem; }
 .chat-continue button { margin: 0; width: 100%; }
 
@@ -815,7 +821,13 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .cer-reclaim { margin: 1rem 0 0; }
 .cer-reclaim-list { margin: 0; padding: 0; list-style: none; }
 .cer-reclaim-list li { position: relative; padding: 7px 0 7px 20px; font-size: 1.05rem; font-weight: 600; color: var(--navy); line-height: 1.4; }
-.cer-reclaim-list li::before { content: ''; position: absolute; left: 0; top: 15px; width: 8px; height: 8px; border-radius: 50%; background: var(--orange); }
+/* TEAL BULLETS, not orange (Donna, 2026-08-22, item 6). Orange is the needs-input/incomplete colour in this
+   product; these are the things she is TAKING BACK, at the highest-visibility moment in onboarding. Teal is the
+   palette's interactive/affirmative colour and is what the rest of the ceremony uses.
+   (Her second half of this item — remove the ring around Continue — is deliberately NOT done: that ring is the
+   app-wide button:focus-visible outline, which appears because she advanced the ceremony by keyboard. It is not a
+   one-off style, and this stylesheet's focus block says why it is never removed.) */
+.cer-reclaim-list li::before { content: ''; position: absolute; left: 0; top: 15px; width: 8px; height: 8px; border-radius: 50%; background: var(--teal-text); }
 /* §2e Grinta movement reveal — the Grinta Index on its own /5 scale (olive, distinct from the teal ID Score), the
    first movement, and the four strands with grit stepped up. */
 .cer-grinta { display: flex; flex-direction: column; align-items: center; gap: 14px; }
@@ -915,7 +927,13 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .pb-proposed { background: #fff; border: 1.5px dashed var(--teal); border-radius: 12px; padding: 0.8rem 0.95rem; margin: 0.7rem 0; }
 .pb-prop-head { font-size: 0.78rem; font-weight: 700; color: var(--teal-text); margin-bottom: 0.4rem; }
 .pb-actions { display: flex; gap: 0.6rem; margin-top: 0.5rem; }
-.pb-btn { font: inherit; font-size: 0.85rem; font-weight: 600; border-radius: 20px; padding: 0.35rem 1rem; cursor: pointer; border: 1px solid var(--teal); }
+/* ROUNDED RECTANGLE, LIKE EVERY OTHER BUTTON (Donna, items 17 and 21) — 8px, matching `button, .btn` above.
+   At 20px against this padding these rendered as full pills: Save/Cancel in the Playbook composer, and the
+   Keep/Write/Delete row on the "Waiting on you" cards.
+   THIS IS THE SECOND REPORT. She raised the same pill on 2026-07-28 and it was patched for ONE context — see
+   `.pb-add .pb-btn` below, which overrode the radius for the Add-note button alone and left every other .pb-btn a
+   pill. Fixing the context instead of the rule is what put it back in front of her; the base is the fix. */
+.pb-btn { font: inherit; font-size: 0.85rem; font-weight: 600; border-radius: 8px; padding: 0.35rem 1rem; cursor: pointer; border: 1px solid var(--teal); }
 .pb-btn.keep { background: var(--teal-text); color: #fff; }
 /* GHOST IS TEAL, NOT GREY (Jay, 2026-08-22: "make Delete teal, it looks inactive").
    Grey text on a grey border reads as disabled — and a live control that looks disabled is worse than a loud one,
@@ -938,7 +956,7 @@ ul.program { list-style: none; padding: 0; margin: 0; }
 .pb-week-day { font-weight: 600; color: var(--muted, #6B7680); margin-left: 8px; letter-spacing: 0; }
 .pb-edit textarea, .pb-add textarea { width: 100%; resize: vertical; font: inherit; padding: 0.5rem 0.65rem; border: 1px solid var(--field-line); border-radius: 8px; }
 .pb-add { margin-top: 0.6rem; display: flex; flex-direction: column; gap: 0.5rem; align-items: flex-start; }
-.pb-add .pb-btn { align-self: flex-end; border-radius: 8px; } /* Add note → rounded rectangle (Donna, 2026-07-28) */
+.pb-add .pb-btn { align-self: flex-end; } /* radius now comes from the base rule — see .pb-btn */
 .pb-foot { font-size: 0.85rem; color: var(--muted, #6B7680); line-height: 1.55; max-width: 42rem; margin-top: 0.5rem; }
 .pb-gather-cta { background: var(--wash); border: 1px solid var(--teal-text); border-radius: 14px; padding: 1.1rem 1.25rem; margin-bottom: 1rem; }
 .pb-gather-cta p { margin: 0 0 0.7rem; color: var(--navy); font-weight: 600; }
@@ -2568,8 +2586,15 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
 
 /* THE QUEUE, inside the Journal. Tinted so it reads as the one part of the page with a decision attached, but
    NOT as a different room — these are the member's own words and the entries below them are too. */
-.pb-jq { border: 1px solid #e4e7c8; background: #fcfdf6; border-radius: 14px; padding: 16px 18px; margin: 0 0 20px; }
-.pb-jq-h { font-weight: 800; text-transform: uppercase; letter-spacing: .06em; font-size: 11.5px; color: var(--olive-text); }
+/* "Waiting on you" — NEUTRAL, not olive (Donna, 2026-08-22, items 16/17).
+   Olive is semantic here: it means a practice/movement thing happened (the week grid, logged cells, the Momentum
+   count). This card is a queue of things she SAID, so an olive wash told her something about movement that was not
+   true, and read as a different kind of card than every other content surface. Her reasoning is the file's own
+   rule — a colour that carries meaning cannot double as decoration.
+   The eyebrow moves with the background for the same reason: olive type on a neutral card keeps the wrong claim,
+   just smaller. It now matches .pb-sec, which is what every other section header on this page uses. */
+.pb-jq { border: 1px solid var(--light-grey, #e8e6e6); background: var(--wash); border-radius: 14px; padding: 16px 18px; margin: 0 0 20px; }
+.pb-jq-h { font-weight: 800; text-transform: uppercase; letter-spacing: .06em; font-size: 11.5px; color: var(--navy); }
 .pb-jq-d { font-size: 13px; color: #5f6a73; line-height: 1.5; margin: 5px 0 14px; }
 /* The expand composer sits inside the card it grew from, so the line stays visible while they write into it —
    that line IS the prompt, and hiding it would take the prompt away. */
