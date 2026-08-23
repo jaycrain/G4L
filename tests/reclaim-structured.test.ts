@@ -71,3 +71,32 @@ test('neither the frame nor the recap names her Identity in the third person', (
   const recap = applyStagedTurn(frame.state, [], '• A creative job\n• Lose 20 lbs\n• Peace at home', { text: '' });
   assert.doesNotMatch(recap.reply, /the Maker/, 'and neither does the recap');
 });
+
+// DONNA'S TRIPLE READ-BACK, 2026-08-23. "Worked well, straightforward with no hiccups, but did repeat the list so
+// it's showing 3 times. What I typed in, then it reiterated it 2x after that."
+//
+// Her list appeared as her own submission, then in the recap's read-back, then a THIRD time because the model was
+// still handed a turn and used it to reflect the list back.
+//
+// THE DUPLICATION WAS THE REPORTED BUG; THE SAME BUBBLE CARRIED TWO WORSE ONES. It said "the first goes straight
+// back to the Maker" — the member in the third person by her Identity, the exact rule we spent 8/22 enforcing in
+// engine copy. And "that's a clear, honest list" appraises her ANSWER, which is a verdict rather than a receipt.
+// Three defects, one cause: the model got a turn where it has no job.
+//
+// The model text below is hers verbatim from that walk, so this fails the way she saw it.
+test('structured reclaim — the model is SILENT on the recap turn (list read back once, no Identity, no verdict)', () => {
+  const at: ConvState = { stage: 'reclaim', collected: { identityNoun: 'Maker', gap: 'the job went', doors: ['career_cliff'] } };
+  const t = applyStagedTurn(at, [], '• A creative job that pays the bills\n• Lose 20 lbs\n• Peace at home', {
+    text: "That's a clear, honest list. Let me reflect it back: - A creative job - Lose 20 lbs - Peace at home. "
+      + 'Each of those is worth wanting. The first goes straight back to the Maker — the room where you were most yourself.',
+  });
+
+  const reply = t.reply;
+  // ONE read-back. Counting an item's occurrences is the assertion because that is precisely what she counted.
+  assert.equal(reply.split('Lose 20 lbs').length - 1, 1, 'her list is read back exactly once, not twice');
+  assert.match(reply, /Here's what you wrote/, 'the engine recap is what does the reading back');
+
+  // The model's whole turn is dropped — so neither of the rule breaks it carried can reach her.
+  assert.doesNotMatch(reply, /Maker/, 'her Identity is never spoken in the third person');
+  assert.doesNotMatch(reply, /clear, honest list/, 'her answer is never appraised');
+});

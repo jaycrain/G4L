@@ -75,7 +75,11 @@ VOICE (Brand Standards — Member-facing register)
   sentence is nearly always stronger without it.
   · "quiet" / "quietly" — cut, unless it is the verb ("quiet the noise" is fine; "a quiet moment", "quietly cost
     you" are not). This one is the worst offender because it sounds thoughtful.
-  · "holding" and "lands" — cut. No "holding space", no "that lands", no "sitting with".
+  · "holding" and "lands" — cut. No "holding space", no "that lands", no "sitting with". Not "does that land"
+    either — ask "is that right".
+  · "carry" / "carrying" for enduring — "what you've been carrying" is a paraphrase of her life in YOUR words.
+    Use hers, or say what happened: "what you've been through", "two years of that".
+  · "the shape of it" / "its shape" — says nothing. Name the thing: "what it looked like", "how it went".
   · "earned, not given" — never. It is a slogan, and slogans are the opposite of talking to someone.
   · "no scores" / "no scoring" — never say either; this is the same reassurance tic as above, in another coat.
   · "it's yours to ___" ("yours to keep", "yours to define") — never. Say the thing plainly instead.

@@ -25,6 +25,7 @@ import { cleanIdentityNoun, displayIdentityNoun, identityLabel, sanitizeCoinedId
 import { isDoorSlug, matchDoors, DOORS, type DoorSlug } from '../doors.ts';
 import { isConversationalMeta, isAboutTheApp } from './conversational-meta.ts';
 import { isMemberContent } from './member-turn.ts';
+import { applyVoiceGate } from './voice-gate.ts';
 import { RECLAIM_LIST_FLOOR, RECLAIM_LIST_MIN, RECLAIM_LIST_TARGET, reclaimAddIntent, isReclaimMetaFragment } from '../member/reclaim.ts';
 import { nextFollowUp } from './follow-up.ts';
 import { isModelVoiced } from './reclaim-voice.ts';
@@ -1917,7 +1918,21 @@ function commitStructuredReclaim(b: Beat): Turn {
   // handler are all gone.
   //
   // The member authored these entries herself. Nothing to reconcile — do NOT run the shape gate over her own words.
-  const survey = enterGrintaSurvey(b, false, false);
+  // THE MODEL IS SILENT ON THIS TURN (Donna, 2026-08-23: "it repeated the list so it's showing 3 times").
+  //
+  // Her list appeared as her own submission, then in the recap's read-back, then a THIRD time because the model
+  // still got a turn and used it to reflect the list back: "That's a clear, honest list. Let me reflect it back:
+  // - A - B - C."
+  //
+  // The duplication is the reported bug, but the same bubble carried two worse things. It said "the first goes
+  // straight back to the Maker" — the member in the third person by her Identity, the rule we had just spent a
+  // day enforcing in engine copy. And "that's a clear, honest list" APPRAISES her answer, which is a verdict
+  // rather than a receipt, using "honest" as precisely the filler the voice section bans.
+  //
+  // One cause: the model was handed a turn where it has no job. She submitted a form; the engine reads it back,
+  // recognises the act and sets the expectation. There is nothing left to say, so anything the model says here is
+  // either redundant or a rule it gets to break. It is dropped — not gated, not filtered. Silence is the design.
+  const survey = enterGrintaSurvey(b, false, true);
   const reply = `${reclaimRecap(b.collected)}${BEAT_SEP}${survey.reply}`;
   b.reply = reply;
   return { ...survey, reply, state: beatState(b) };
@@ -2172,7 +2187,11 @@ function reclaimReceipt(c: Collected): string {
   return `Here's what you wrote — ${list.join(' · ')}.`;
 }
 
-function enterGrintaSurvey(b: Beat, gateShapes = true, withReceipt = true): Turn {
+/**
+ * @param engineSpoke the caller has already written this turn's prose, so the MODEL's text is dropped rather than
+ *   carried. Only the Reclaim recap sets it, and Donna's walk is why.
+ */
+function enterGrintaSurvey(b: Beat, gateShapes = true, engineSpoke = false): Turn {
   // DECISION II CHOKEPOINT — now scoped to the RETIRED CONVERSATIONAL PATH ONLY (Jay, 2026-07-30).
   //
   // The shape gate is extraction-era machinery: it existed because conversational capture produced sloppy lists that
@@ -2188,7 +2207,7 @@ function enterGrintaSurvey(b: Beat, gateShapes = true, withReceipt = true): Turn
   if (!gateShapes) {
     b.stage = 'grinta';
     b.awaitingConfirm = false;
-    b.reply = receiveThen(withReceipt ? (b.modelText || reclaimReceipt(b.collected)) : b.modelText, grintaSurveyOpener());
+    b.reply = receiveThen(engineSpoke ? '' : (b.modelText || reclaimReceipt(b.collected)), grintaSurveyOpener());
     const ex = nextExpects(b.arc, b.stage, false, b.administeredResponses.length, b.collected, b.awaitingConfirm);
     return { reply: b.reply, state: beatState(b), complete: false, ...(ex && { expects: ex }) };
   }
@@ -2201,7 +2220,7 @@ function enterGrintaSurvey(b: Beat, gateShapes = true, withReceipt = true): Turn
   }
   b.stage = 'grinta';
   b.awaitingConfirm = false;
-  b.reply = receiveThen(withReceipt ? (b.modelText || reclaimReceipt(b.collected)) : b.modelText, grintaSurveyOpener());
+  b.reply = receiveThen(engineSpoke ? '' : (b.modelText || reclaimReceipt(b.collected)), grintaSurveyOpener());
   // W-24/W-48: this is the ONLY path into the grinta survey (natural confirm AND the runaway/ceiling backstop), so emit
   // the chip signal (+ "Question 1 of 12") here — otherwise a force-progressed member gets the text box for item 1.
   const expects = nextExpects(b.arc, b.stage, false, b.administeredResponses.length, b.collected, b.awaitingConfirm);
@@ -2307,7 +2326,11 @@ export function runArcTurn(
     history,
     memberMessage,
     model,
-    modelText: stripLeadingDisclosure(model.text).trim(),
+    // THE VOICE GATE, at the one seam where model prose enters a beat (Donna 2026-08-22, Jay approved 08-23).
+    // stripLeadingDisclosure already establishes that this is where the model's text gets cleaned; the tells she
+    // reported go through the same door. Deletions only — see lib/agent/voice-gate.ts for why substitution was
+    // tried, mangled a sentence in its own test, and was cut.
+    modelText: applyVoiceGate(stripLeadingDisclosure(model.text).trim()).text,
     refinedThisTurn,
     priorReclaimLen: state.collected.reclaimList?.length ?? 0,
     arc,
