@@ -5,7 +5,26 @@ Method, per `docs/dev-todo.md`: **every claim about what is built is read out of
 and every candidate gap is checked against the frozen contracts and the decision log **before** being written as a
 gap. Quotes from the Aug 6 extraction carry forward; its conclusions do not.
 
-**Verdicts used:** `GAP` (real, unbuilt) · `NOT A GAP` (built, or a decision) · `DECISION` (settled; do not re-open).
+**Verdicts used:** `GAP` (real, unbuilt) · `NOT A GAP` (built, or a decision) · `DECISION` (settled; do not re-open)
+· `✅ SHIPPED (was GAP)` (closed since).
+
+> ## THE HEADING IS THE FINDING. Fix it where it is, or it will lie.
+>
+> **2026-08-23.** Two headings in this file read `GAP` for work that had shipped, each corrected further down the
+> same document — B3's daily tracker (corrected in STILL OPEN, item 1) and R2's Doors (corrected 26 lines above
+> it). A third, on the Legacy Letter, said "nothing does, yet" about a feature that is now wired end to end.
+>
+> I read the B3 heading, believed it, and was one step from building a duplicate `b3_daily_entry` table — against
+> a document I wrote myself, on a day I had already caught the same class of error twice.
+>
+> **A finding corrected in one place and left standing in another is worse than one never written down:** it
+> carries the authority of the audit while being false, and the reader has no way to know which half to trust. So:
+>
+> 1. When something closes, **change its heading in place** — do not only note it in a list at the foot.
+> 2. Keep the original body, unedited, under the corrected heading. The reasoning is usually still the design.
+> 3. **STILL OPEN at the foot is the load-bearing list.** If a heading and that list disagree, the list is right
+>    and the heading is a bug — report it as one.
+> 4. Before acting on any `GAP` here, **open the file it names.** Every one of these was answerable in a minute.
 
 ---
 
@@ -27,7 +46,21 @@ His Engineering Memo names the storage: `activity_backup`, `dietary_backup`, `an
 **Why it matters, in his terms:** the backup is the mechanism that keeps the week alive after the first miss. Without
 it a member who misses Tuesday has nothing to fall back to, which is the failure B3 exists to teach recovery from.
 
-## GAP · B3 — the daily record is a boolean tick, not Greg's seven-field tracker
+## ✅ SHIPPED (was GAP) · B3 — the daily record is a boolean tick, not Greg's seven-field tracker
+
+> **CLOSED 8/17, and this heading said GAP until 2026-08-23 — which cost real time.** Item 1 of STILL OPEN at the
+> foot of this file has recorded it as shipped since the day it shipped. The two disagreed, and on 8/23 I read the
+> heading, believed it, and was one step from building a duplicate `b3_daily_entry` table before opening the file.
+> A finding that is corrected in one place and left standing in another is worse than a finding that was never
+> written down: it carries the authority of the document while being false.
+>
+> **Shipped:** migration `0084_b3_daily_entry.sql` + `lib/rebuild/b3-entry.ts` (all seven free-text fields),
+> `record_b3_day` + its handler (the Companion writes the day), and the read-back into MEMBER CONTEXT.
+> **Extended 2026-08-23:** migration `0088_b3_habit_status.sql` adds Greg's two habit statuses — "Physical activity
+> habit / Dietary habit — Completed / Partial / Missed" — which `0084` had omitted, so the week recorded what she
+> NOTICED and never what she DID. The grid renders all three states. **Applied to prod 8/23** (`applied: 88`).
+>
+> The original finding follows, unedited, because the reasoning in it is still the reasoning for the design.
 
 **Greg (SOURCE, B3 in-app summary):** the member tracks "Smart Choices, False Starts, obstacles, **thoughts,
 feelings**, and how eating and movement influence one another." His Engineering Memo's tracker fields:
@@ -71,7 +104,25 @@ a *tier for an existing item*, not a slot for a new one — easy to mistake for 
 > already names the storage — `new_goal_text` + `emergence_source` — so the shape is specified; the care needed is
 > in the commit path, not the design.
 
-## NOT A GAP · W2 does not read the Legacy Letter — because nothing does, yet
+## ✅ SHIPPED · the Legacy Letter — written, saved, editable, and revisited in Reclaim
+
+> **SUPERSEDED 2026-08-23.** This section reads "because nothing does, yet" and describes a store with no arc
+> wiring, which was true when it was written. It has since been wired end to end and this heading would now send a
+> reader looking for work that is done — the same trap the B3 and R2 headings above set for me today.
+>
+> **Now built:** the R3 beat asks Greg's prompts and drafts from her answers (`lib/agent/reconnect.ts`, the legacy
+> stage), the action persists it dated from HER today, it renders in the Playbook under "Who you are", the Member
+> Agent holds it with an explicit rule never to quote it unprompted, and the **Reclaim ceremony revisits it** —
+> which is the reason Greg moved the letter into Reconnect in the first place.
+>
+> **Two faults closed the same day:** the beat used to stall on a statement instead of opening on a question
+> (Donna, item 12), and the product promised "change it whenever it stops being true" with **no way to edit it**
+> for as long as the letter has existed. There is now an edit path that preserves the date it is addressed to and
+> the answers it was drafted from.
+>
+> The original finding follows, unedited.
+
+## ~~NOT A GAP~~ (superseded) · W2 does not read the Legacy Letter — because nothing does, yet
 
 **Greg (SOURCE, W2 Science Check, twice):** W2 works "by asking the person to **return to earlier reflections**."
 The R3 memo routes the letter to W2 as `prior_module_context`.
@@ -177,7 +228,15 @@ conversation is the capture path today. Original finding kept below.
 
 ### (original finding)
 
-## GAP · R2 — Doors are a SET, with no relevance, no continuum, and no temporal pattern
+## ✅ SHIPPED (was GAP) · R2 — Doors are a SET, with no relevance, no continuum, and no temporal pattern
+
+> **CLOSED 8/17 — see the section immediately above, which says so.** Same self-contradiction as the B3 heading:
+> the correction was written 26 lines earlier and this heading was left reading GAP. Shipped as migration
+> `0085_door_profile.sql` + `lib/reconnect/door-profile.ts` + the `note_door_detail` tool, with relevance on a
+> continuum and the temporal pattern, captured in conversation and read into the agent's context. **Applied to
+> prod** (`applied: 88`, verified 2026-08-23).
+>
+> Greg's requirement follows, unedited — it is what the tests pin.
 
 **Greg (SOURCE, R2 Science Check):** "For each door, the member rates its relevance to their personal Fade on a
 **simple three-point scale**" and is "explicitly invited to **mark more than one**." Plus the temporal frame —
@@ -238,17 +297,35 @@ today it promises the first and delivers the second.
 
 ---
 
-## STILL OPEN — the real remaining list (2026-08-17)
+## STILL OPEN — the real remaining list (updated 2026-08-23)
+
+> **THIS LIST IS THE ONE TO TRUST** (see the rule in the header). Items 1, 2 and 4 below closed on 8/17 and their
+> migrations are **applied to prod** — `applied: 88, pending: []`, read from the live diagnostic on 8/23.
+>
+> **Added 2026-08-23, and genuinely open:**
+>
+> **A. A member cannot read her own monitoring week back.** B3 stores seven free-text fields in her words and W3
+> stores its own seven; both reach the Companion and the carry-forward, and neither reaches a surface she can
+> open. Same shape as the B2 map before 8/17 — material she gave us that only we can see. Greg's B3 has an
+> end-of-week review step, which makes the shape of the answer his call rather than ours.
+>
+> **B. Reconnect has no claims gate.** `claimsGateOutcome` was built after Donna's 8/20 onboarding walk and wired
+> into onboarding alone, so the model can announce an outcome the engine owns in the first arc a new member meets
+> — which she then hit (item 12, the Legacy Letter announced two beats early). A **detector** ships dark as of
+> 8/23 (`detectReconnectClaims`, logged as `RECONNECT_CLAIM`); read the logs after a walk, then gate what actually
+> fires rather than guessing at families.
+
+### The 8/17 list, with current status
 
 1. ~~**B3's daily record is still a boolean tick.**~~ **STORAGE SHIPPED 8/17** — migration `0084_b3_daily_entry.sql`
    + `lib/rebuild/b3-entry.ts`, mirroring W3's proven shape (`0074`). All seven of Greg's fields round-trip, an
    empty form is not a logged day, and an amendment adds rather than erases. **Capture shipped 8/17 too** — the
    Companion writes the day through `record_b3_day`, mirroring W3's conversational path (Greg makes the daily
-   check-in the primary interface, so it is not a form). The migration **still needs hand-applying to prod**.
+   check-in the primary interface, so it is not a form). **Applied to prod 2026-08-23** — `applied: 88, pending: []`, read from the live diagnostic.
 2. ~~**R2's Doors**~~ **SHIPPED 8/17** — migration `0085_door_profile.sql` + `lib/reconnect/door-profile.ts` +
    the `note_door_detail` Companion tool. Relevance on a 1–10 continuum and the full temporal pattern, captured in
    conversation and read back into the agent's context. See the section above for the rules the tests pin. Also
-   pending the prod migration.
+   **applied to prod 2026-08-23** (same check).
 3. **The Community share — RE-SCOPED BY JAY 2026-08-17: it is NOT about Doors.** I had read Greg's R2 as asking
    members to share their Door, raised the privacy problem, and Jay answered by moving the feature rather than
    answering the question:
