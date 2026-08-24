@@ -469,8 +469,33 @@ export function hasGenuineLoss(text: string): boolean {
 // "everything had to fit around the kids", "shifted my priorities", "put myself last"). A HARD real-fade signal. (CAT-01)
 const REDUCTION_RE =
   /\b(anymore|no (more )?time (for|to)\b|no (space|room)( left)? for (myself|me|us)|had to fit (it|them|everything|around)|crowded out|squeezed out|less time for|put (myself|me|it|them) (on hold|aside|last|second|on the back ?burner)|on the back ?burner|gave up|stopped (doing|going|playing|training|riding|making time)|slipped away|fell away|lost touch|shifted (my |our )?priorities|no longer (have|had|do|make|had time)|don'?t (have|make) (the )?time)\b/i;
+// THREE MORE REGISTERS OF THE ORDINARY FADE, added 2026-08-24 after measuring how many real phrasings carried NO
+// signal at all. REDUCTION_RE above is keyed on things getting SQUEEZED — time, space, priorities. These are the
+// same fade told three other ways, and all three were invisible:
+//
+//   NON-RECOGNITION   "I don't recognise the guy in the photos" — the Fade stated as a stranger in the mirror.
+//                     This is arguably the purest expression of identity distance and it had no matcher at all.
+//   TAKEOVER          "work just took over" — something ELSE became the whole life. The Career Cliff and the
+//                     Load-Bearer both usually arrive in this register rather than as a loss verb.
+//   RESIGNED EVENT    "the kids came and that was that" — an event, then a shrug. The shrug IS the fade; the
+//                     member is reporting a door closing without ever calling it a loss.
+//
+// WHY IT MATTERS BEYOND THE DECLINE GATE: these same signals decide whether a gap is CAPTURED. A member who says
+// "work just took over" has handed us a Door and a story, and we registered nothing — so it was never drawn out
+// and never reached her record. Missing the signal costs the capture, not only the admission.
+//
+// KEPT TIGHT, and tested against thriving phrasings so a good life does not read as a fade: "I took over the
+// team", "the kids came and it was the best thing" and similar must stay clear.
+const FADE_REGISTER_RE =
+  /\b(?:(?:don'?t|do not|barely|hardly|no longer)\s+(?:recognise|recognize|know)\s+(?:the\s+)?(?:guy|girl|man|woman|person|face|myself|him|her|me)\b|not the same (?:person|guy|man|woman)\b|(?:a )?stranger in the mirror\b)/i;
+const TAKEOVER_RE =
+  /\b(?:(?:work|the job|the kids|caregiving|life|it|everything)\s+(?:just\s+)?(?:took over|swallowed|consumed|ate)\b|became (?:my )?(?:whole|entire) (?:life|world)\b|all[- ]consuming\b)/i;
+const RESIGNED_EVENT_RE =
+  /\b(?:and that was (?:that|it)|and (?:i|we) never (?:went back|did|got back)|that was the end of (?:that|it)|never picked it (?:back )?up (?:again)?)\b/i;
+
 export function hasReductionLanguage(text: string): boolean {
-  return REDUCTION_RE.test(text ?? '');
+  const t = text ?? '';
+  return REDUCTION_RE.test(t) || FADE_REGISTER_RE.test(t) || TAKEOVER_RE.test(t) || RESIGNED_EVENT_RE.test(t);
 }
 
 // An AFFIRMATIVE no-fade DECLARATION — the genuine forward optimizer positively asserting there's no loss/drift and

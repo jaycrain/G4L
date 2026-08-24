@@ -3,6 +3,8 @@ import { test } from 'node:test';
 import {
   correctsReflection,
   hasGenuineLoss,
+  hasReductionLanguage,
+  hasLossSignal,
   isAcceptanceFade,
   isAnaphoricClose,
   isForwardAmbition,
@@ -310,5 +312,39 @@ test('a real rejection is still a rejection — the guard must not swallow dispu
   // failure in the other direction and it is worse, so it gets its own pin.
   for (const m of ['No, that is not really it at all.', "That's not quite right — it was the other way round."]) {
     assert.equal(resolveConfirmCorroborated(m, 'done', shouldCaptureStagedGap, 'is_this_right'), 'dispute', `swallowed a dispute: ${m}`);
+  }
+});
+
+// THREE REGISTERS OF THE ORDINARY FADE — added 2026-08-24 (Jay: "are we proposing too narrow a phrasing?").
+//
+// REDUCTION_RE was keyed on things getting SQUEEZED. These are the same fade told three other ways, and all three
+// carried no signal at all — which cost the CAPTURE as much as the admission: a member who says "work just took
+// over" has handed us a Door and a story, and we registered nothing, so it was never drawn out.
+//
+// The sentences here are SYNTHETIC — mine, not any member's. Real corpus phrasings should replace them as walks
+// produce them.
+test('the fade is heard when it is told without loss verbs', () => {
+  const heard = (t: string) => hasGenuineLoss(t) || hasReductionLanguage(t) || hasLossSignal(t);
+  for (const said of [
+    'I dont recognise the guy in the photos.',   // non-recognition — the purest identity distance, previously unmatched
+    'Im not the same person I was.',
+    'Work just took over.',                       // takeover — how the Career Cliff usually actually arrives
+    'Caregiving became my whole life.',
+    'The kids came and that was that.',           // resigned event — the shrug IS the fade
+    'I stopped riding and never picked it back up.',
+  ]) {
+    assert.ok(heard(said), `a real fade went unheard: "${said}"`);
+  }
+});
+
+test('and a good life is still not mistaken for one', () => {
+  // The risk of widening: turning contentment into a diagnosis. "took over" is a promotion as often as a fade.
+  const heard = (t: string) => hasGenuineLoss(t) || hasReductionLanguage(t) || hasLossSignal(t);
+  for (const said of [
+    'I took over the team last year and I love it.',
+    'The kids came and it was the best thing that ever happened.',
+    'Work is great, Im all in.',
+  ]) {
+    assert.equal(heard(said), false, `a good life read as a fade: "${said}"`);
   }
 });
