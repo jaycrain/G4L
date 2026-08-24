@@ -202,7 +202,14 @@ export const SKIP_OFFER = SKIP_OFFER_VARIANTS[0]!; // the first variant, exporte
 
 const SKIP_ACK = "That's completely fine — you'll find your way back to them through the work, no rush.";
 
-const REOPEN_IDENTITY = "My mistake — let's get it right. What word feels truer for who she was?";
+// DE-GENDERED (2026-08-24, Jay). This shipped saying "who SHE was" — the exact bug the rule three hundred lines
+// down already records as fixed once: "'her' was wrong for a male member." It reaches a member at the worst
+// possible moment: right after they told us the handle we offered was wrong, we misgender them while apologising
+// for getting it wrong.
+//
+// "That version of you" also beats any pronoun here, gendered or not — it is the member's own past self, and the
+// second person keeps it theirs rather than a character we are discussing.
+const REOPEN_IDENTITY = "My mistake — let's get it right. What word feels truer for that version of you?";
 
 // Identity tap-to-pick (Jay, 2026-07-29): once the past self is drawn out, the model offers 2–4 candidate handle
 // words FROM THE MEMBER'S OWN LANGUAGE (offer_identity_words); the client renders them as chips + a "write your own"
@@ -2835,11 +2842,14 @@ export function stageInstruction(stage?: Stage, opts?: { gapHeld?: boolean }): s
       // were sometimes asked for it again at the builder.
       //
       // This does NOT invite wants — the sentence above still forbids that, and it is the rule that stops the
-      // run-ahead. It only says: if she offers one unprompted while telling you how it happened, keep it.
-      'IF SHE VOLUNTEERS SOMETHING SHE WANTS BACK WHILE TELLING YOU THIS — "I miss riding", "I want to sleep ' +
+      // run-ahead. It only says: if they offer one unprompted while telling you how it happened, keep it.
+      // DE-GENDERED 2026-08-24. This taught the model a female default for every member ("IF SHE VOLUNTEERS...",
+      // "her list"), which is how a guessed pronoun reaches a real one — the failure the identity rule already
+      // records: "'her' was wrong for a male member."
+      'IF THEY VOLUNTEER SOMETHING THEY WANT BACK WHILE TELLING YOU THIS — "I miss riding", "I want to sleep ' +
       'again" — call add_reclaim_item the moment it lands, and carry on with the story. Do NOT ask for more of ' +
-      'them and do NOT change the subject to her list: this beat is still how it happened. Tagging it here is ' +
-      'what makes her Reclaim List open already holding it, so she never has to say the same thing twice.\n' +
+      'them and do NOT change the subject to their list: this beat is still how it happened. Tagging it here is ' +
+      'what makes their Reclaim List open already holding it, so they never have to say the same thing twice.\n' +
       'time; do not compress it. Capture with set_gap as it grows, note_door for EACH door named (none is valid). Call ' +
       'reflect_gap ONLY once the FULLER picture is genuinely drawn out — usually after they have named more than one ' +
       'door or clearly told you that is the whole of it — and reflect their whole story back in their words on that turn. ' +

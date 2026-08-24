@@ -360,3 +360,58 @@ test('authored copy never claims to have saved a keeper — the card owns that',
   assert.deepEqual(hits, [],
     `copy claims a save the engine has not made — the keeper card is the write path:\n${hits.join('\n')}`);
 });
+
+// ── MEMBER-FACING COPY NEVER GUESSES A GENDER ───────────────────────────────────────────────────────────────────
+//
+// The rule already existed in a comment — "De-gendered (1b): reference the identity by name, never a guessed
+// pronoun ('her' was wrong for a male member)" — and was already recorded as fixed once. On 2026-08-24 it was
+// still shipping in REOPEN_IDENTITY: "What word feels truer for who SHE was?", reaching a member at the worst
+// possible moment, misgendering them in the middle of apologising for getting their handle wrong.
+//
+// A rule in a comment is a rule with no defence. This is the defence.
+//
+// SCOPE IS MEMBER-FACING COPY ONLY. Model INSTRUCTIONS legitimately contain gendered example stories ("he
+// semi-retired and I carried the financial weight") — those are illustrations of a member's own words, and
+// stripping gender from an example makes it a worse example. What is banned is the product speaking TO someone
+// and guessing.
+test('member-facing copy never guesses a gender', () => {
+  const PRONOUN = /\b(she|her|hers|herself|he|him|his|himself)\b/i;
+  const roots = ['lib/agent', 'lib/content', 'lib/curriculum', 'lib/ceremony', 'lib/rebuild', 'lib/reclaim', 'lib/rewire'];
+  // System prompts and tool descriptions TEACH the model, often with examples. Excluded for the same reason the
+  // "denies a reading" guard excludes them.
+  const INSTRUCTIONS = /(guide|system-prompt|checkin|onboarding-intent)\.ts$/;
+
+  // EXAMPLE STORIES ARE ALLOWED TO HAVE A GENDER, and stripping it makes them worse examples. Each line here is a
+  // model INSTRUCTION illustrating a member's own words — "he semi-retired and I carried the financial weight" —
+  // not the product speaking to anyone. Listed one by one rather than pattern-matched, so adding to this list is a
+  // decision someone writes down.
+  const EXAMPLE_STORIES = [
+    'got laid off, which hit her hard',        // set_gap: showing that HER words are kept verbatim, not rewritten
+    "or a guessed 'he/she'",                    // the instruction that forbids guessing, which must name the guess
+    'he semi-retired and I carried the financial weight',
+    "man who stopped believing he's allowed to want anything",
+  ];
+
+  const offenders: string[] = [];
+  for (const root of roots) {
+    if (!existsSync(root)) continue;
+    for (const file of walk(root)) {
+      if (INSTRUCTIONS.test(file)) continue;
+      readFileSync(file, 'utf8').split('\n').forEach((line, i) => {
+        const t = line.trim();
+        if (t.startsWith('//') || t.startsWith('*') || t.startsWith('/*')) return; // comments explain the rule
+        // Long string literals only — short ones are ids, slugs and keys, not sentences shown to a person.
+        for (const m of line.matchAll(/'([^'\\]{25,})'|"([^"\\]{25,})"/g)) {
+          const s = m[1] ?? m[2] ?? '';
+          // A tool/instruction fragment quoted inside a longer prompt string still teaches by example — those live
+          // in the excluded files. Anything left here is prose a member reads.
+          if (!PRONOUN.test(s)) continue;
+          if (EXAMPLE_STORIES.some((ex) => s.includes(ex))) continue;
+          offenders.push(`${file}:${i + 1} — ${s.slice(0, 100)}`);
+        }
+      });
+    }
+  }
+  assert.deepEqual(offenders, [],
+    'member-facing copy guesses a gender. Use the identity by NAME, or "that version of you":\n' + offenders.join('\n'));
+});
