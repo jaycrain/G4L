@@ -134,3 +134,49 @@ test('A-02 · a completed/wiped session demotes (the exact account-wipe false-pr
   const s = await loadOnboardingSession(d, 'jay@x.com', 'tok-1');
   assert.equal(gateWouldResume(s), false);
 });
+
+// ── THE GATE NAME (0090) ──────────────────────────────────────────────────────────────────────────────────
+//
+// This is here because of the SHAPE, not the feature. On 2026-08-12 a metric added to an INSERT on a member
+// path took down Quality-Day logging between the deploy and a hand-run migration, and the failure was silent —
+// swallowed by the same kind of best-effort try/catch that wraps this save. Adding display_name to this insert
+// is that shape again. If the column write is wrong, nobody sees an error; every member silently loses RESUME.
+
+test('the gate name is stored and does not disturb the round-trip', async () => {
+  const d = await db();
+  await saveOnboardingSession(d, 'tim@example.test', 'tok', state, messages, 'Tim Carlin');
+
+  const { rows } = await d.query<{ display_name: string | null }>(
+    'select display_name from onboarding_session where email = $1', ['tim@example.test'],
+  );
+  assert.equal(rows[0]?.display_name, 'Tim Carlin');
+
+  // The transcript and state must survive untouched — the whole point of the save.
+  const back = await loadOnboardingSession(d, 'tim@example.test', 'tok');
+  assert.equal(back?.messages.length, 2);
+  assert.equal(back?.state.collected.identityNoun, 'Cyclist');
+});
+
+test('a later save with no name does not erase the name we already have', async () => {
+  const d = await db();
+  await saveOnboardingSession(d, 'tim@example.test', 'tok', state, messages, 'Tim Carlin');
+  // Every caller that predates 0090 omits the argument. Without the coalesce on the update path, the FIRST such
+  // save would blank a name we had already collected — and it would look like the gate never captured one.
+  await saveOnboardingSession(d, 'tim@example.test', 'tok', state, messages);
+
+  const { rows } = await d.query<{ display_name: string | null }>(
+    'select display_name from onboarding_session where email = $1', ['tim@example.test'],
+  );
+  assert.equal(rows[0]?.display_name, 'Tim Carlin');
+});
+
+test('a blank name is stored as null, never as an empty string', async () => {
+  const d = await db();
+  await saveOnboardingSession(d, 'x@example.test', 'tok', state, messages, '   ');
+  const { rows } = await d.query<{ display_name: string | null }>(
+    'select display_name from onboarding_session where email = $1', ['x@example.test'],
+  );
+  // The console renders the name only when it is truthy; an empty string would render a blank line where a
+  // person's name belongs, which reads as a rendering bug rather than as missing data.
+  assert.equal(rows[0]?.display_name, null);
+});
