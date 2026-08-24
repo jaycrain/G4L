@@ -337,7 +337,13 @@ function practiceWeekLine(c: CheckinContext): string | null {
         'through their mind — write it down with record_b3_day, in their words. Take whatever they offer and stop ' +
         'there: one Smart Choice is a complete day, and going back for the rest turns a conversation into a form. ' +
         'If they mention that eating and moving affected each other, record that too — but never ask for it. ' +
-        "They don't have to find a connection every day. "
+        "They don't have to find a connection every day. " +
+        // Greg's daily script asks these two FIRST and in these words. One light question, both habits, then let
+        // the conversation go where she takes it — his own framing is "the goal is not to judge the day".
+        'If the day has not come up at all, you may ask once, lightly: how the movement habit went and how the ' +
+        'eating habit went — completed, partial, or missed. Take PARTIAL as a real answer and a good one; a ' +
+        'smaller backup version that kept them going is partial, never a miss. Do not ask twice, and never infer ' +
+        'a miss from silence. '
       : '') +
     'NEVER present this as compliance or a score. A blank day is a day, not a miss, and the whole point is noticing what helps — not hitting a number.'
   ) + otherWeeksLine(c);
@@ -1118,10 +1124,18 @@ const RECORD_B3_DAY_TOOL = {
     'they say. fuel_to_move: whether eating and moving affected each other — RECORD ONLY IF THEY RAISE IT, and ' +
     'never ask for it; they do not have to find a connection every day. reflection: anything else worth keeping. ' +
     'A False Start is DATA, not failure — record it exactly as evenly as a good call, and never treat one as ' +
-    'better news.',
+    'better news.\n\n' +
+    // Greg's daily worksheet opens on these two, in these words, before any of the free text. PARTIAL is why they
+    // are not booleans: his tone spec says to reinforce that "backup versions still count", and a member who
+    // planned twenty minutes and walked ten has no honest answer on a tick.
+    'activity_status / diet_status: how the habit itself went — "completed", "partial" or "missed". Record ' +
+    'whichever they tell you, and take "partial" at face value: a smaller version that kept them going IS ' +
+    'partial, not a miss. Leave the field out if they did not say — never infer a miss from silence.',
   input_schema: {
     type: 'object',
     properties: {
+      activity_status: { type: 'string', enum: ['completed', 'partial', 'missed'], description: 'how their physical-activity habit went today, only if they say' },
+      diet_status: { type: 'string', enum: ['completed', 'partial', 'missed'], description: 'how their dietary habit went today, only if they say' },
       good_calls: { type: 'string', description: 'their words for what went well today' },
       false_starts: { type: 'string', description: "their words for what didn't" },
       contributed: { type: 'string', description: 'what made it easy or hard, in their words' },

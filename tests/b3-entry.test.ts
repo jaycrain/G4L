@@ -100,3 +100,65 @@ test('WHAT THE COMPANION WRITES, THE COMPANION CAN READ — B3 is not write-only
   assert.match(ctx, /c\.b3Recent\?\.length/, 'rendered only when they actually wrote something');
   assert.match(ctx, /never read it back as a log or count the days/, 'and governed — B3 forbids tallies');
 });
+
+// GREG'S TWO HABIT STATUSES — the last two fields of his daily worksheet, added 2026-08-23 (migration 0088).
+//
+// His log opens on them before any free text: "Physical activity habit — Completed / Partial / Missed", and the
+// same for diet. 0084 built the six free-text fields and stopped, so B3's week recorded what a member NOTICED and
+// never what she DID.
+//
+// PARTIAL IS WHY A BOOLEAN COULD NOT STAND IN. His tone spec for this phase says to reinforce that "backup
+// versions still count" and to avoid "all-or-nothing interpretations". A member who planned twenty minutes and
+// walked ten has an honest answer here; on a tick she must claim a day she did not have or record a failure she
+// did not have either.
+test('the two habit statuses round-trip, and partial is a first-class answer', async () => {
+  const db = new PGlite() as unknown as Db;
+  await applySchema(db);
+  const m = await member(db);
+
+  assert.equal(await recordB3Entry(db, m, { activityStatus: 'partial', dietStatus: 'completed' }), true);
+  const [day] = await b3Entries(db, m);
+  assert.equal(day!.activityStatus, 'partial');
+  assert.equal(day!.dietStatus, 'completed');
+});
+
+test('a status ALONE is a complete day — she said something', async () => {
+  const db = new PGlite() as unknown as Db;
+  await applySchema(db);
+  const m = await member(db);
+  // "Missed my walk" and nothing else is a real entry. Requiring free text would drop the honest short days.
+  assert.equal(await recordB3Entry(db, m, { activityStatus: 'missed' }), true);
+  assert.equal((await b3Entries(db, m))[0]!.activityStatus, 'missed');
+});
+
+test('NULL means "didn\'t say" — never inferred as a miss', async () => {
+  const db = new PGlite() as unknown as Db;
+  await applySchema(db);
+  const m = await member(db);
+  await recordB3Entry(db, m, { goodCalls: 'took the stairs' });
+  const [day] = await b3Entries(db, m);
+  // Defaulting to 'missed' would record a failure the member never reported — the same rule as w3 recovery_used.
+  assert.equal(day!.activityStatus, null);
+  assert.equal(day!.dietStatus, null);
+});
+
+test('an unrecognised status is dropped, not stored', async () => {
+  const db = new PGlite() as unknown as Db;
+  await applySchema(db);
+  const m = await member(db);
+  // A value we cannot interpret would render on the grid as a state she never chose. Dropped at the store, so the
+  // check constraint is a backstop rather than the only defence.
+  assert.equal(await recordB3Entry(db, m, { activityStatus: 'sort of' as never, goodCalls: 'walked' }), true);
+  assert.equal((await b3Entries(db, m))[0]!.activityStatus, null);
+});
+
+test('amending a day cannot blank a status she already gave, but she can correct it', async () => {
+  const db = new PGlite() as unknown as Db;
+  await applySchema(db);
+  const m = await member(db);
+  await recordB3Entry(db, m, { activityStatus: 'partial' });
+  await recordB3Entry(db, m, { goodCalls: 'and I stretched' });          // later amendment, no status
+  assert.equal((await b3Entries(db, m))[0]!.activityStatus, 'partial', 'the amendment must not erase it');
+  await recordB3Entry(db, m, { activityStatus: 'completed' });           // she corrects it
+  assert.equal((await b3Entries(db, m))[0]!.activityStatus, 'completed', 'but a real correction lands');
+});

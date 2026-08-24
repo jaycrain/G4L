@@ -178,6 +178,7 @@ export const MIGRATIONS: Array<{ file: string; sentinel: Sentinel }> = [
     file: 'migrations/0087_autopilot_door.sql',
     sentinel: { sql: "select exists (select 1 from door where slug = 'autopilot') as e" },
   },
+  { file: 'migrations/0088_b3_habit_status.sql', sentinel: { table: 'b3_daily_entry', column: 'activity_status' } },
 ];
 export const SEED_SQL = () => sqlFile('seed/0001_reference_data.sql');
 

@@ -942,7 +942,12 @@ export async function sendCheckin(memberId: string, memberMessage: string): Prom
           return { ok: false, message: 'Not recorded — their Lifestyle Pilot week is not open right now.' };
         }
         const str = (v: unknown) => (typeof v === 'string' && v.trim() ? v.trim() : undefined);
+        // Greg's two habit statuses. The STORE validates the value against his three, so an unexpected string is
+        // dropped rather than stored — a status we cannot interpret would render as a state she never chose.
+        const status = (v: unknown) => (typeof v === 'string' && v.trim() ? (v.trim().toLowerCase() as never) : undefined);
         const wrote = await recordB3Entry(db, memberId, {
+          activityStatus: status(input.activity_status),
+          dietStatus: status(input.diet_status),
           goodCalls: str(input.good_calls),
           falseStarts: str(input.false_starts),
           contributed: str(input.contributed),
