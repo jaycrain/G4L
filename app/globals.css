@@ -2730,7 +2730,9 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
     color: #fff; font-family: inherit; font-size: 16px; padding: 0 18px; outline: none; }
   .rhome-composer input:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; border-color: var(--teal-text); }
   .rhome-composer input::placeholder { color: rgba(255, 255, 255, 0.5); }
-  .rhome-composer .rrail-send { border-radius: 24px; height: 46px; padding: 0 18px; }
+  /* 8px, like every other button (caught by tests/button-shape-standard.test.ts, which is the point of it —
+     this one survived the 8/23 sweep because I fixed the pills I had noticed rather than the ones that existed). */
+  .rhome-composer .rrail-send { border-radius: 8px; height: 46px; padding: 0 18px; }
   .rhome-godash { flex: 0 0 auto; display: flex; align-items: center; justify-content: center; gap: 6px; border: none; cursor: pointer;
     height: 48px; padding-bottom: env(safe-area-inset-bottom, 0px); background: #2c4152; color: #8fd0d1; font-family: inherit; font-size: 14px; font-weight: 600; letter-spacing: 0.4px; }
 

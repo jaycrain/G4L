@@ -82,7 +82,20 @@ Two parts:
 
 - **Corner radii (as built):** 6px (inputs/small), 8px (buttons, standard blocks), 10–12px (cards/panels),
   14px (chat bubbles), 20–22px (large surfaces), 999px (pills/tags). **Chips are rounded squares (8px), not circles.**
-- **Buttons:** teal fill, white text, `border-radius: 8px`, padding `0.7rem 1.4rem`, weight 600; **hover → navy fill.**
+- **Buttons:** teal fill, white text, `border-radius: 8px`, padding `0.7rem 1.4rem`, weight 600.
+  **ENFORCED — `tests/button-shape-standard.test.ts` fails on any action control with a radius ≥ 16px.** Donna
+  reported this shape three times in one batch (items 3/17/21) because each report was fixed where it was found;
+  the sweep then turned up three more, and the guard immediately caught a fourth the sweep had missed. If a new
+  control is *deliberately* a pill, add it to `DELIBERATE_PILLS` in that test **with the reason** — the exceptions
+  are meant to be argued about, not inherited. Currently allowlisted: `.fb-launch` (floating ghost launcher),
+  `.tri-seg-btn` (segmented control, where the pill is the convention), `.fca-seen-btn` (operator-only).
+- **Button hover — one mechanic per KIND, and nothing tints** (Jay, 2026-08-22): **filled darkens**
+  (`filter: brightness(0.94)`, applied globally to `button, .btn`) · **outlined firms its border** · **selected
+  fills teal**. The older "hover → navy fill" is retired: a colour jump is a different button, not the same button
+  pressed, and the teal-over-white wash it replaced had seven different alphas because no standard existed.
+- **Grey is the DISABLED signal, so a live control never wears it** (Jay, 2026-08-23: "grey never looks active").
+  Tappable text is `--teal-text` (#2a6d6e, 5.98:1 on white) — never `--teal` (#3b9495, 3.59:1, fails AA). Static
+  muted text (hints, labels, timestamps) stays grey; that is what muted is for.
 - **Inputs:** solid navy outline (`--field-line`), `border-radius: 6px`.
 - **Cards/panels:** white, `1px solid var(--panel-line)`, radius 10–12px; reset the default `<h3>` top margin inside.
 - **Page column:** `max-width: 720px`, centered, generous bottom runway (4rem) so the Talk dock never traps content.
