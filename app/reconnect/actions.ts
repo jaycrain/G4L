@@ -8,6 +8,7 @@ import { logEvent } from '../../lib/telemetry/store.ts';
 import { maybeTriggerDraft } from '../../lib/founder/triggers.ts';
 import type { Db } from '../../lib/db/schema.ts';
 import type { ConvMessage, ConvState, Expectation, Turn } from '../../lib/agent/onboarding.ts';
+import { detectReconnectClaims } from '../../lib/agent/gate-claims.ts';
 import { liveTurnReconnect, loadReconnectCaptures, reconnectEnabled, reconnectOpening, reconnectMeasurementClose, driftOpen, RECONNECT_ARC, BEAT_SEP } from '../../lib/agent/reconnect.ts';
 import { scaleExpects } from '../../lib/agent/onboarding-staged.ts';
 import { saveArcSession, loadArcSession, clearArcSession } from '../../lib/agent/arc-session.ts';
@@ -190,6 +191,34 @@ async function persistDoorsBoard(db: Db, memberId: string, turn: Turn): Promise<
     await setQuietDriftClaim(db, memberId, board.quietDrift);
   } catch (err) {
     console.error(`persistDoorsBoard FAILED for member=${memberId} — her taps did not reach her record:`, err);
+  }
+}
+
+/**
+ * MEASURE WHAT THE MODEL CLAIMS IN RECONNECT. Reports only — nothing here can change a reply.
+ *
+ * Reconnect is the first arc a new member meets and has never had a claims gate: claimsGateOutcome was built
+ * after Donna's 2026-08-20 onboarding walk and wired into onboarding alone. She then hit the same shape here
+ * (item 12) — the model announced the Legacy Letter two beats before the engine opens it, saying "give me a
+ * moment" for something that was not coming.
+ *
+ * WHY NOT JUST BLOCK IT. One duplicated sentence is untidy rather than harmful, and nobody knows yet whether it
+ * is a stray or a pattern — we found it because she screenshotted it. Enforcing against families I guessed at is
+ * how the voice gate produced "is that right the way it happened?" on 2026-08-23, a mangled question shipped to
+ * a member mid-story. So this logs on real walks first, and we gate what actually fires.
+ *
+ * SYNCHRONOUS AND TOTALLY GUARDED. It runs on the member's turn, so a regex fault here must never cost her the
+ * reply — the whole body is inside a catch that swallows. It is also the reason this is not awaited on anything.
+ */
+function logReconnectClaims(memberId: string, stage: string | undefined, reply: string): void {
+  try {
+    const hits = detectReconnectClaims(reply);
+    if (!hits.length) return;
+    // Grep target: RECONNECT_CLAIM. The member's prose is NEVER logged — families and stage only, because these
+    // turns carry the hardest part of someone's story and a log line is not the place for it.
+    console.warn(`[RECONNECT_CLAIM] member=${memberId} stage=${stage ?? 'unknown'} families=${hits.join(',')}`);
+  } catch {
+    // Detection is a diagnostic. It does not get to break a conversation.
   }
 }
 
@@ -380,6 +409,7 @@ export async function reconnectTurnAction(
     // in the model's voice (listen-first), then the engine hands into the Doors excavation as a second beat. (Was
     // deterministic with empty model text, which is why the acknowledgment never appeared and it jumped to the Door.)
     const turn = await liveTurnReconnect(state, history, message);
+    logReconnectClaims(memberId, state.stage, turn.reply);
     // Committed side-effects this turn persist to the DB (best-effort): a re-seeing (§2b) + a completed IDQ (§2c).
     const db = (await getDb()) as unknown as Db;
     await persistRevision(db, memberId, state, turn);

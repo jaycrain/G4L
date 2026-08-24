@@ -11,6 +11,14 @@ import { memberWeekReport, PLAYBOOK_HISTORY_FROM } from '../lib/report/member-we
 // missing history that reads as a quiet week. Both would send Jay into a conversation with a false picture.
 
 const WINDOW = { start: '2026-08-17', days: 7 } as unknown as Parameters<typeof memberWeekReport>[2];
+// A DAY INSIDE THE WINDOW, used for every row these tests create.
+//
+// These two tests used `now()` for the practice week and let created_at default, and passed only while the real
+// clock happened to sit inside 17–23 August. They started failing at 00:00 UTC on the 24th — permanently, and on
+// a machine whose local date was still the 23rd, which is the same UTC-vs-member-local confusion lib/time exists
+// for. The product is right: memberWeekReport deliberately excludes commitments created after the window, so a
+// July week does not list August commitments at "0 of 5". The fixture was the thing lying.
+const IN_WINDOW = '2026-08-18';
 
 async function member(): Promise<{ db: Db; memberId: string }> {
   const db = new PGlite() as unknown as Db;
@@ -24,10 +32,10 @@ async function member(): Promise<{ db: Db; memberId: string }> {
 test('a commitment that was made and NOT done still appears, at zero', async () => {
   // The one that matters most. Dropping empty rows would make every week look like a good week.
   const { db, memberId } = await member();
-  await db.query("insert into practice_week (member_id, kind, started_at) values ($1,'b3_pilot',now())", [memberId]);
+  await db.query("insert into practice_week (member_id, kind, started_at) values ($1,'b3_pilot',$2::date)", [memberId, IN_WINDOW]);
   await db.query(
-    "insert into practice_commitment (member_id, kind, slot, label, target_days) values ($1,'b3_pilot','s1','Half a piece of bread',5)",
-    [memberId],
+    "insert into practice_commitment (member_id, kind, slot, label, target_days, created_at) values ($1,'b3_pilot','s1','Half a piece of bread',5,$2::date)",
+    [memberId, IN_WINDOW],
   );
   const r = await memberWeekReport(db, memberId, WINDOW);
   assert.equal(r.commitments.length, 1, 'the commitment is reported');
@@ -38,10 +46,10 @@ test('a commitment that was made and NOT done still appears, at zero', async () 
 
 test('marks land on the right days, and only inside the window', async () => {
   const { db, memberId } = await member();
-  await db.query("insert into practice_week (member_id, kind, started_at) values ($1,'b3_pilot',now())", [memberId]);
+  await db.query("insert into practice_week (member_id, kind, started_at) values ($1,'b3_pilot',$2::date)", [memberId, IN_WINDOW]);
   const { rows: c } = await db.query<{ id: string }>(
-    "insert into practice_commitment (member_id, kind, slot, label, target_days) values ($1,'b3_pilot','s1','Walk',3) returning id",
-    [memberId],
+    "insert into practice_commitment (member_id, kind, slot, label, target_days, created_at) values ($1,'b3_pilot','s1','Walk',3,$2::date) returning id",
+    [memberId, IN_WINDOW],
   );
   const cid = c[0]!.id;
   for (const d of ['2026-08-17', '2026-08-19', '2026-08-23']) {

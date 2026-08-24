@@ -79,3 +79,73 @@ export function claimsGateOutcome(text: string): boolean {
     return m !== null && !PROVISIONAL.test(t.slice(m.index + m[0].length));
   });
 }
+
+
+// ── RECONNECT: DETECTION ONLY, FOR NOW ───────────────────────────────────────────────────────────────────────────
+//
+// WHY THIS EXISTS. claimsGateOutcome above was built after Donna's 2026-08-20 onboarding walk, where the model
+// announced a Reclaim List that did not exist. It was wired into onboarding and nowhere else — so RECONNECT, the
+// first arc a new member meets, has never had a gate at all.
+//
+// She then hit the same shape there (item 12, 2026-08-22). Two beats before the engine opens the Legacy Letter,
+// the model wrote: "Let me put all of it into your own words — a letter from you, to you. Give me a moment."
+// Nothing was coming. The engine was still in the Window beat, and her next screen asked about her Tuesday. When
+// the real announcement arrived she had been told twice, which is what she reported: "announces the letter is
+// coming twice... undermines confidence that the flow knows where it is."
+//
+// WHY IT DETECTS RATHER THAN BLOCKS. One duplicated sentence is untidy, not harmful, and I do not yet know
+// whether it is a stray or a pattern — we only found it because she screenshotted it. Guessing at the families
+// and enforcing them is how this morning's voice gate produced "is that right the way it happened?", a mangled
+// question shipped to a member mid-story. So: measure on real walks, then gate what actually fires. Same order as
+// detectVoiceTells — report first, enforce what is provably safe.
+//
+// NOTHING HERE TOUCHES A REPLY. It returns names for a log line. If that ever changes, the enforcement must be
+// deletion of a whole sentence at a known boundary, never substitution.
+
+const RECONNECT_CLAIMS: { family: string; re: RegExp }[] = [
+  // 1. THE LEGACY LETTER, announced before the engine opens that beat. Donna's actual case.
+  {
+    family: 'legacy_letter_early',
+    re: /\ba letter from you,?\s*to you\b|\blet me put (?:all of )?(?:it|this|that) into your own words\b|\bI(?:'|’)?(?:ll| will) (?:write|draft) (?:you )?(?:a|the|your) letter\b/i,
+  },
+  // 2. THE ID SCORE. The engine administers the IDQ and computes this; a model that reports one has invented it.
+  {
+    family: 'id_score',
+    re: /\byour (?:baseline )?ID Score is\b|\bthat(?:'|’)?s your (?:baseline )?ID Score\b|\byou scored\b/i,
+  },
+  // 3. THE DOORS ARE RECORDED. The board writes them; prose saying so before the board is a claim about storage.
+  {
+    family: 'doors_saved',
+    re: /\byour doors? (?:are|is|have been) (?:now )?(?:saved|recorded|locked in|set)\b/i,
+  },
+  // 4. THE ARC IS OVER. The engine ends Reconnect at the Checkpoint and hands to the ceremony.
+  {
+    family: 'arc_done',
+    re: /\bthat(?:'|’)?s (?:reconnect|the whole of reconnect) (?:done|finished|complete)\b|\bwe(?:'|’)?re done with reconnect\b/i,
+  },
+];
+
+/**
+ * Which engine-owned outcomes this model turn claims. Empty for an ordinary turn.
+ *
+ * Talking ABOUT any of these is fine and expected — the beats exist to discuss them. Each pattern is anchored on a
+ * verb of completion, storage or intent, and a PROVISIONAL hedge immediately after withdraws the claim, exactly as
+ * in claimsGateOutcome.
+ */
+export function detectReconnectClaims(text: string): string[] {
+  const t = (text ?? '').trim();
+  if (!t) return [];
+  const hits: string[] = [];
+  for (const { family, re } of RECONNECT_CLAIMS) {
+    const m = re.exec(t);
+    if (!m) continue;
+    // The hedge usually arrives after punctuation — "Your Doors are set, for now" — and PROVISIONAL anchors at
+    // ^\s*, so a comma or dash would hide it. Stripped HERE rather than in PROVISIONAL itself: that matcher is
+    // shared with claimsGateOutcome, which is live in onboarding and DROPS the model's prose when it fires.
+    // Loosening it would excuse more claims on a guard built after a real incident, and that is a change to make
+    // with evidence, not at the end of an evening.
+    const after = t.slice(m.index + m[0].length).replace(/^[\s,;:—–-]+/, '');
+    if (!PROVISIONAL.test(after)) hits.push(family);
+  }
+  return [...new Set(hits)];
+}
