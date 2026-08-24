@@ -18,6 +18,7 @@ import {
   SKILLS_SCALE_MAX,
   scoreSkills,
   skillHighlights,
+  skillLabel,
 } from '../rebuild/skills-instrument.ts';
 import { grintaStem, CHECKPOINT_CONTROL_ITEMS } from '../grinta/survey/instrument.ts';
 import { confirmsProposal } from './onboarding-intent.ts';
@@ -158,7 +159,11 @@ function b2Close(strongest: string, growthEdge: string): string {
 // otherwise (the skill name orients the member; the statement IS the ask — administered, no draw-out).
 function skillsDeliver(index: number): string {
   const item = SKILL_ITEMS[index]!;
-  const line = `${item.skill}: ${item.stem}`;
+  // THE HEADER IS THE MEMBER'S WORD FOR THE SKILL, not Greg's construct name (Jay, 2026-08-23). She rated
+  // "Consumer skills" here and her Playbook map later called the same thing "Finding good information"; nothing
+  // told her they were one skill. The STEM is untouched verbatim science and the scoring is unaffected — only the
+  // label above it changes. Greg's construct name stays on the item, in the codes, and in every stored score.
+  const line = `${skillLabel(item.skillNo, item.skill)}: ${item.stem}`;
   if (index === 0) return `Movement first.\n\n${line}`;
   if (index === SKILLS_DOMAIN_SPLIT) return `${B2_DIET_TURN}\n\n${line}`;
   return line;

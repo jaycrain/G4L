@@ -1,5 +1,6 @@
 import { test } from 'node:test';
-const SEP = String.fromCharCode(30); // BEAT_SEP — the frame arrives as several bubbles
+const SEP = String.fromCharCode(30);
+import { SKILL_LABEL as SKILL_LABEL_CHECK } from '../lib/rebuild/skills-instrument.ts'; // BEAT_SEP — the frame arrives as several bubbles
 import assert from 'node:assert/strict';
 import { rebuildB2Opening, applyRebuildB2Turn } from '../lib/agent/rebuild.ts';
 import {
@@ -80,9 +81,20 @@ test('skillHighlights · names the strongest + growth-edge skill by two-domain m
   const iPA10 = SKILL_ITEMS.findIndex((it) => it.code === 'B2-PA10');
   const iDI10 = SKILL_ITEMS.findIndex((it) => it.code === 'B2-DI10');
   r[iPA3] = 4; r[iDI3] = 4; r[iPA10] = 1; r[iDI10] = 1;
-  const hl = skillHighlights(scoreSkills(r));
-  assert.equal(hl.strongest, 'Goal setting');
-  assert.equal(hl.growthEdge, 'Relapse prevention');
+  const score = scoreSkills(r);
+  const hl = skillHighlights(score);
+
+  // THE RANKING is the thing this test exists to prove — skill 3 highest, skill 10 lowest, by two-domain mean.
+  const ranked = [...score.perSkill].sort((a, b) => b.mean - a.mean || a.no - b.no);
+  assert.equal(ranked[0]!.no, 3, 'goal setting ranks strongest');
+  assert.equal(ranked[ranked.length - 1]!.no, 10, 'relapse prevention ranks weakest');
+
+  // AND IT RETURNS THE MEMBER'S WORDS. This asserted Greg's construct names ('Goal setting' / 'Relapse
+  // prevention') — which is what the close and the Companion then said to a person, while her Playbook map called
+  // the same skills something else. skillHighlights feeds both of those surfaces, so it speaks her language now.
+  assert.equal(hl.strongest, SKILL_LABEL_CHECK[3], 'the close names it the way the map does');
+  assert.equal(hl.growthEdge, SKILL_LABEL_CHECK[10]);
+  assert.equal(hl.growthEdge, 'Getting back on after a slip');
 });
 
 test('scoreSkills · rejects a wrong response count (guards the persist path)', () => {
@@ -100,4 +112,41 @@ test('practicePrompt · b2_noticing nudge is observational, not a gate', () => {
   const nudge = practicePrompt('b2_noticing', {});
   assert.match(nudge!, /notice/i);
   assert.doesNotMatch(nudge!, /missed|failed|must/i, 'productive-default, non-judgmental');
+});
+
+// ONE SKILL, ONE NAME, ON EVERY SURFACE A MEMBER MEETS.
+//
+// The product spoke two languages about the same thing. She RATED "Consumer skills", the Session close told her
+// "consumer skills is a strength of yours", the Companion's context said the same — and her Playbook map called it
+// "Finding good information". Four surfaces, three in Greg's construct language and one in hers, with nothing
+// connecting them. (Jay, 2026-08-23: honouring Greg's approach is what makes it hang together.)
+//
+// GREG'S NAMES ARE NOT GONE. They stay on the item, in the code, and in every stored score — which is what HE
+// reads. Only what a member hears changed, and the rated stems are verbatim either way.
+test('the assessment, the close, the Companion and the map all call a skill the same thing', async () => {
+  const inst = await import('../lib/rebuild/skills-instrument.ts');
+  const { buildSkillsMap } = await import('../lib/rebuild/skills-map.ts');
+
+  // Skill 8 = "Consumer skills" — the one whose construct name reads as jargon. Make it the clear growth edge.
+  const responses = inst.SKILL_ITEMS.map((it) => (it.skillNo === 8 ? 1 : 4));
+  const score = inst.scoreSkills(responses);
+  const expected = inst.SKILL_LABEL[8]!;
+
+  const item = inst.SKILL_ITEMS.find((i) => i.skillNo === 8 && i.domain === 'activity')!;
+  assert.equal(inst.skillLabel(item.skillNo, item.skill), expected, 'the assessment header');
+  assert.equal(inst.skillHighlights(score).growthEdge, expected, 'the close + the Companion context');
+  assert.ok(JSON.stringify(buildSkillsMap(score)).includes(expected), 'the Playbook map');
+
+  // The construct survives where the science lives.
+  assert.equal(item.skill, 'Consumer skills', "Greg's construct name is still on the item");
+  assert.match(item.code, /^B2-PA8$/, 'and the code is unchanged');
+  assert.match(item.stem, /find and interpret information/, 'the rated stem is untouched verbatim');
+});
+
+test('every one of the twelve skills has a member-facing name', () => {
+  // A missing label would silently fall back to the construct, reintroducing the split one skill at a time.
+  for (let no = 1; no <= 12; no++) {
+    const label = SKILL_LABEL_CHECK[no];
+    assert.ok(label && label.length > 3, `skill ${no} has no member-facing label`);
+  }
 });

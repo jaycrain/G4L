@@ -106,9 +106,45 @@ export function scoreSkills(responses: number[]): SkillScore {
 
 // The strongest skill + the growth edge (lowest), by the two-domain mean — the plain-language reflection at the close
 // (never a table of numbers). Ties break to the lower skill number (stable). Returns the skill NAMES.
+/**
+ * THE MEMBER'S WORDS FOR EACH SKILL. Greg's names are the CONSTRUCT ("Consumer skills", "Relapse prevention");
+ * these are what a person would call the same thing.
+ *
+ * MOVED HERE 2026-08-23, from skills-map.ts, because the product was speaking two languages about one thing. The
+ * member RATED "Consumer skills", the Session close told her "consumer skills is a strength of yours", the
+ * Companion said the same — and then her Playbook map called it "Finding good information". Same skill, three
+ * surfaces in Greg's construct language and one in hers, with nothing anywhere connecting them.
+ *
+ * The construct names are untouched: they stay on SkillItem.skill, in the codes, and in every stored score, which
+ * is what Greg reads. Only what a MEMBER hears changes. The rated stems are verbatim either way, so nothing about
+ * the instrument or its scoring moves.
+ */
+export const SKILL_LABEL: Record<number, string> = {
+  1: 'Sizing up what you need',
+  2: 'Watching how it is going',
+  3: 'Setting goals',
+  4: 'Making a plan',
+  5: 'The practical know-how',
+  6: 'Staying positive about your efforts',
+  7: 'Overcoming barriers',
+  8: 'Finding good information',
+  9: 'Asking people for support',
+  10: 'Getting back on after a slip',
+  11: 'Managing your time',
+  12: 'Confidence and motivation',
+};
+
+/** What a member should hear this skill called. Falls back to the construct name rather than rendering nothing. */
+export function skillLabel(no: number, fallback: string): string {
+  return SKILL_LABEL[no] ?? fallback;
+}
+
 export function skillHighlights(score: SkillScore): { strongest: string; growthEdge: string } {
   const ranked = [...score.perSkill].sort((a, b) => b.mean - a.mean || a.no - b.no);
-  return { strongest: ranked[0]!.skill, growthEdge: ranked[ranked.length - 1]!.skill };
+  // THE MEMBER'S WORDS, not the construct. This feeds the B2 close ("... is a strength of yours") and the
+  // Companion's MEMBER CONTEXT, both of which were saying "consumer skills" to a person.
+  const top = ranked[0]!, bottom = ranked[ranked.length - 1]!;
+  return { strongest: skillLabel(top.no, top.skill), growthEdge: skillLabel(bottom.no, bottom.skill) };
 }
 
 // The per-item response map (code → value) stored alongside the computed scores, so a re-score from raw is always

@@ -20,7 +20,7 @@
 // distinctive strength of B2 ("good at planning movement but poor at managing eating cues"), but printing it on all
 // twelve rows would bury the one or two places it means something.
 
-import { META_BY_SKILL, type SkillMeta, type SkillScore } from './skills-instrument.ts';
+import { META_BY_SKILL, SKILL_LABEL, type SkillMeta, type SkillScore } from './skills-instrument.ts';
 
 /** The three families in Greg's order — getting ready → taking action → staying with it. */
 export const FAMILY_ORDER: SkillMeta[] = ['predisposing', 'enabling', 'reinforcing'];
@@ -32,21 +32,8 @@ export const FAMILY_LABEL: Record<SkillMeta, { name: string; gloss: string }> = 
   reinforcing: { name: 'Staying with it', gloss: 'what keeps it going after the first miss' },
 };
 
-/** Plain-language skill names. The instrument's own labels are the construct; these are the member's words. */
-const SKILL_LABEL: Record<number, string> = {
-  1: 'Sizing up what you need',
-  2: 'Watching how it is going',
-  3: 'Setting goals',
-  4: 'Making a plan',
-  5: 'The practical know-how',
-  6: 'Staying positive about your efforts',
-  7: 'Overcoming barriers',
-  8: 'Finding good information',
-  9: 'Asking people for support',
-  10: 'Getting back on after a slip',
-  11: 'Managing your time',
-  12: 'Confidence and motivation',
-};
+// SKILL_LABEL lives in skills-instrument.ts now — one list, so the assessment, the close, the Companion and
+// this map cannot drift into calling the same skill different things.
 
 export type MapRow = {
   no: number;
