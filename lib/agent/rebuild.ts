@@ -125,8 +125,11 @@ export function liveTurnRebuildB1(state: ConvState, history: ConvMessage[], memb
 // BEAT_SEP, NOT \n\n. B3 opens on three paced bubbles and B2 opened on one dense block, which is a second reason
 // it read as thinner than its neighbours. The frame arrives at the speed a person reads it.
 const B2_OPEN =
-  "Rebuild is where you build the things that make a healthy life hold — and underneath the eating and the moving " +
-  "there is a set of skills doing the work. They're the ones that get you where you want to go." + BEAT_SEP +
+  // DOES NOT RE-ARGUE THE CARD. "Why this matters" sits directly above this and already makes the case that the
+  // practical skills are what create change. Opening by saying it again is the same fault as the Reclaim recap
+  // reading her list twice — two surfaces, one point, and the second one reads as the product not knowing what it
+  // already said. This bridges from the card into the act instead.
+  "So before you change anything: which of those skills are already yours, and which are thin?" + BEAT_SEP +
   "They aren't fixed. A skill is something you practice and get better at, so where you stand today is a starting " +
   "mark rather than a verdict on you." + BEAT_SEP +
   "There are twelve of them. You'll rate each one twice — once for movement, once for eating — from 1 (strongly " +
