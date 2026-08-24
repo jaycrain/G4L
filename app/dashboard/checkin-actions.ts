@@ -55,6 +55,7 @@ import { getGrinta } from '../../lib/grinta/index.ts';
 import { latestGrintaReading } from '../../lib/grinta/survey/store.ts';
 import { latestWhyReading, latestSkillsReading } from '../../lib/rebuild/store.ts';
 import { skillHighlights } from '../../lib/rebuild/skills-instrument.ts';
+import { setAsidePhrase, pickReturnReflection } from '../../lib/member/language-history.ts';
 import { activeCoachingPlan, type RebuildPilotPayload } from '../../lib/rebuild/plan-store.ts';
 import { latestBiggerWorldReading, firstFocus, closingLines } from '../../lib/reclaim/bigger-world-store.ts';
 import { AUDIT_DOMAIN_LABEL } from '../../lib/reclaim/bigger-world-instrument.ts';
@@ -292,6 +293,22 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
   } catch {
     recentChanges = []; // a malformed stored snapshot must not sink the whole context
   }
+  // THE RETURN MOMENT — computed BEFORE the snapshot is written, because writing it is what makes this fire once.
+  //
+  // The trigger is the change-detection that already exists: diffSnapshot emits "Finished X" the first time it
+  // sees a Session closed since her last visit, and never again once the new snapshot lands. So this needs no
+  // "have we said this yet" flag of its own — a whole class of bug avoided by reusing the mechanism.
+  //
+  // Best-effort and silent on failure: if the language history cannot be read, the Companion simply opens the way
+  // it always did. A reflection is a gift, never load-bearing.
+  let returnReflection: Awaited<ReturnType<typeof pickReturnReflection>> = null;
+  try {
+    const finished = recentChanges.find((ch) => ch.startsWith('Finished '))?.slice('Finished '.length);
+    if (finished) returnReflection = await pickReturnReflection(db, memberId, finished, lastSessionId ?? null);
+  } catch (e) {
+    console.error(`returnReflection failed for member=${memberId}:`, e);
+  }
+
   await db
     .query('update member_profile set dashboard_snapshot=$1::text::jsonb, dashboard_snapshot_at=now() where member_id=$2', [
       JSON.stringify(currSnapshot),
@@ -388,6 +405,7 @@ async function buildContext(db: Db, memberId: string): Promise<CheckinContext | 
     // framing (CLAUDE.md: nothing the member sees is invisible to the agent). Guarded to the 4 real phase keys.
     currentPhaseWhy: isPhaseKey(activePhaseKey) ? phaseSummary(activePhaseKey).short : null,
     lastCompletedAsset, // most-recently completed curriculum Session (Identity Excavation, …)
+    returnReflection, // one phrase of HERS to reflect back — null on an ordinary visit
     reclaimList: dash.reclaimList,
     reclaimAnchor: dash.reclaimAnchor,
     grintaScore: grinta.score,
@@ -930,6 +948,16 @@ export async function sendCheckin(memberId: string, memberMessage: string): Prom
             "it honestly, or used their recovery move — never the absence of a false start, and never a tally. A false " +
             "start is data, not failure: meet it as evenly as a good call, with no consoling and no reframe rushed on top.",
         };
+      }
+      if (name === 'set_aside_phrase') {
+        // "Don't use that." Honoured immediately, with no confirmation step and nothing asked in return — Jay's
+        // ruling is that she can say it "unimpeded conversationally", and a boundary that has to be justified is
+        // not unimpeded. Soft: nothing leaves her Playbook.
+        const phrase = typeof input.phrase === 'string' ? input.phrase : '';
+        const ok = await setAsidePhrase(db, memberId, phrase);
+        if (!ok) return { ok: false, message: 'Not set aside — no phrase was given.' };
+        mutated = true;
+        return { ok: true, message: "Set aside. Acknowledge in one plain sentence and move on — don't ask why, don't defend it, and never treat it as a setback." };
       }
       if (name === 'record_b3_day') {
         // B3's Lifestyle Pilot week, written by CONVERSATION — the same path as record_w3_day, because Greg's two

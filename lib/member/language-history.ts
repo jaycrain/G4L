@@ -191,3 +191,52 @@ export async function setAsidePhrase(db: Db, memberId: string, phrase: string): 
     return false;
   }
 }
+
+// ─── THE RETURN MOMENT ────────────────────────────────────────────────────────────────────────────────────────
+
+export type ReturnReflection = {
+  /** HER WORDS. Handed to the model to quote verbatim — never to paraphrase, and never authored by it. */
+  quote: string;
+  /** When she said it (YYYY-MM-DD), so the reflection can place it in time honestly. */
+  said: string;
+  /** What she has just finished, which is the thing the quote must be pointed AT. */
+  finished: string;
+};
+
+/**
+ * Pick ONE phrase to reflect back after she finishes something. Null when there is nothing honest to say.
+ *
+ * THE ENGINE PICKS AND THE ENGINE QUOTES. The model frames a sentence around this; it never chooses the phrase and
+ * never writes it. A model that can phrase a quote can invent one — which is not hypothetical: on 2026-08-23 it
+ * called a member by her Identity in the third person and appraised her answer as "a clear, honest list" in the
+ * same turn. The standing update is computed for exactly this reason.
+ *
+ * THE RULE IS OLDEST-FIRST, and it is the whole design in one line. Greg's C1-22 is about recognising growth
+ * "across three modules" and using it as evidence of capability, so the phrase that does work is the one from
+ * FURTHEST BACK — the distance between then and what she just built IS the evidence. The newest phrase would only
+ * prove she was recently in a Session.
+ *
+ * AND NOTHING FROM WHAT SHE JUST FINISHED. Quoting a line from the Session she closed ten minutes ago is not
+ * growth, it is a recap of the last ten minutes — which is the thing Donna already told us has no value.
+ */
+export async function pickReturnReflection(
+  db: Db,
+  memberId: string,
+  finished: string,
+  finishedRef?: string | null,
+): Promise<ReturnReflection | null> {
+  const phrases = await memberLanguage(db, memberId);
+  if (!phrases.length) return null;
+
+  const candidates = phrases
+    // Not from the thing she just closed.
+    .filter((p) => !finishedRef || p.crossReference.ref !== finishedRef)
+    // Long enough to carry meaning when read back. A four-word fragment quoted at someone reads as a stunt.
+    .filter((p) => p.memberLanguage.trim().length >= 20)
+    // Oldest first — the distance is the point.
+    .sort((a, b) => a.crossReference.at.localeCompare(b.crossReference.at));
+
+  const pick = candidates[0];
+  if (!pick) return null;
+  return { quote: pick.memberLanguage.trim(), said: pick.crossReference.at, finished };
+}

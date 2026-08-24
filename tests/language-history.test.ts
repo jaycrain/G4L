@@ -102,3 +102,70 @@ test('normalise() and the migration describe the SAME rule', () => {
   assert.equal(normalise('  Peace,  and   OPTIMISM at home! '), 'peace and optimism at home');
   assert.equal(normalise('“It’s the quiet one.”'), 'its the quiet one');
 });
+
+// ─── THE RETURN MOMENT ────────────────────────────────────────────────────────────────────────────────────────
+
+test('it reaches back to the OLDEST phrase — the distance is the evidence', async () => {
+  const db = new PGlite() as unknown as Db;
+  await applySchema(db);
+  const m = await member(db);
+  const { pickReturnReflection } = await import('../lib/member/language-history.ts');
+
+  await db.query(
+    `insert into playbook_entry (member_id, section, body, authorship, state, keeper_type, created_at)
+     values ($1,'what_works','I stopped pretending I was fine at work','gathered','kept','tell', now() - interval '40 days'),
+            ($1,'what_works','This week I caught it before it caught me','gathered','kept','principle', now() - interval '1 day')`,
+    [m],
+  );
+
+  const r = await pickReturnReflection(db, m, 'False Start Protocol');
+  // Greg's C1-22 is growth "across three modules". The NEWEST line would only prove she was recently in a
+  // Session; the oldest is what makes the distance visible.
+  assert.equal(r!.quote, 'I stopped pretending I was fine at work');
+  assert.equal(r!.finished, 'False Start Protocol');
+});
+
+test('it never quotes a line from the Session she just closed', async () => {
+  const db = new PGlite() as unknown as Db;
+  await applySchema(db);
+  const m = await member(db);
+  const { pickReturnReflection } = await import('../lib/member/language-history.ts');
+
+  await db.query(
+    `insert into playbook_entry (member_id, section, body, authorship, state, keeper_type, source_ref)
+     values ($1,'what_works','Something I said ten minutes ago in this very session','gathered','kept','tell','RWIR-W3')`,
+    [m],
+  );
+  // Quoting the Session she just finished is a recap of the last ten minutes — the thing Donna said has no value.
+  assert.equal(await pickReturnReflection(db, m, 'False Start Protocol', 'RWIR-W3'), null);
+});
+
+test('a phrase she set aside is never chosen for the return moment', async () => {
+  const db = new PGlite() as unknown as Db;
+  await applySchema(db);
+  const m = await member(db);
+  const { pickReturnReflection } = await import('../lib/member/language-history.ts');
+  const words = 'I stopped pretending I was fine at work';
+  await keep(db, m, words, 'tell');
+  await setAsidePhrase(db, m, words);
+  // The filter lives in memberLanguage, so every consumer inherits it — no caller has to remember.
+  assert.equal(await pickReturnReflection(db, m, 'False Start Protocol'), null);
+});
+
+test('a member with nothing kept gets no reflection — silence, not a generic line', async () => {
+  const db = new PGlite() as unknown as Db;
+  await applySchema(db);
+  const m = await member(db);
+  const { pickReturnReflection } = await import('../lib/member/language-history.ts');
+  // "How did that land?" was the old fallback and it has no value (Jay). Nothing honest to say → say nothing.
+  assert.equal(await pickReturnReflection(db, m, 'False Start Protocol'), null);
+});
+
+test('a fragment is never quoted back', async () => {
+  const db = new PGlite() as unknown as Db;
+  await applySchema(db);
+  const m = await member(db);
+  const { pickReturnReflection } = await import('../lib/member/language-history.ts');
+  await keep(db, m, 'the bike', 'lights_you_up'); // true, hers, and meaningless read aloud
+  assert.equal(await pickReturnReflection(db, m, 'False Start Protocol'), null);
+});

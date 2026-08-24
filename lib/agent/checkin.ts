@@ -74,6 +74,11 @@ export type CheckinContext = {
   currentFocus: string | null;
   currentPhaseWhy?: string | null; // the "why this matters" for the active phase, in the exact words the member sees on the canvas
   lastCompletedAsset: string | null;
+  /**
+   * THE RETURN MOMENT — one phrase of HERS, chosen by the engine, to reflect back after she finishes something.
+   * Null on an ordinary visit. See lib/member/language-history.ts for why the engine picks and quotes.
+   */
+  returnReflection?: { quote: string; said: string; finished: string } | null;
   reclaimList: string[]; // anchor first
   /**
    * The `top`-tier Reclaim List item C1 named — the one the rest of the list organizes around.
@@ -473,6 +478,30 @@ export function contextBlock(c: CheckinContext): string {
       : c.identityNoun
         ? `Reclaiming: the ${c.identityNoun}`
         : null,
+    // THE RETURN MOMENT (Donna, 2026-08-23: coming back after a Session, she expected the Companion to say
+    // something, and got a signpost to the next step).
+    //
+    // GREG'S PURPOSE, C1-22: help her "recognize that growth and use it as evidence of capability" — with his own
+    // limit in the same requirement, "WITHOUT OVERSTATING IT".
+    //
+    // THE QUOTE IS THE ENGINE'S, NOT YOURS. It is picked deterministically and passed here verbatim; the model
+    // writes ONE sentence around it. Every instruction below exists because the alternative was worse:
+    //   · quoting her with no forward use is surveillance, not memory;
+    //   · "you've transformed" is a verdict, which every one of Greg's memos forbids;
+    //   · asking "how did that land" was the old behaviour and Jay's judgement on it is that it has no value.
+    c.returnReflection
+      ? `THEY HAVE JUST FINISHED ${c.returnReflection.finished}, and this is the first time you have seen them since.\n` +
+        `Something THEY said on ${c.returnReflection.said}, in their own words: "${c.returnReflection.quote}"\n` +
+        'Open with ONE short reflection that puts those two together — their earlier words, and the thing they ' +
+        'just did — and then let them talk. Rules, all of them load-bearing: quote their line EXACTLY as written ' +
+        'above (never tidy it, shorten it or improve it); point it FORWARD at what they just built or what is ' +
+        'next, because a quote with no forward use is just proof we were watching; stay tentative — "sounds ' +
+        'like", "maybe" — and never announce that they have changed, grown or transformed. Say it once, do not ' +
+        'repeat it later in the conversation, and do not ask them to confirm it. ' +
+        'IF THEY PUSH BACK in any way — "don\'t use that", "that\'s not accurate", "stop quoting me" — call ' +
+        'set_aside_phrase with their line immediately. No argument, no asking why, no "are you sure": one plain ' +
+        'acknowledgment and move on. They are not making a case.'
+      : null,
     c.completedSessions && c.completedSessions.length ? `Sessions they've completed: ${c.completedSessions.join(', ')}` : null,
     c.nextStep && c.nextStep.openable
       ? `Their next step on the path (ready now — the "Open this Session" button is at the top of their dashboard): ${
@@ -1148,6 +1177,24 @@ const RECORD_B3_DAY_TOOL = {
   },
 };
 
+const SET_ASIDE_PHRASE_TOOL = {
+  name: 'set_aside_phrase',
+  description:
+    "Stop quoting one of the member's own phrases back to them, the moment they ask. Call this whenever they " +
+    "object to something you quoted — \"don't use that\", \"that's not accurate\", \"that's not me anymore\", " +
+    "\"stop quoting me\" — or show any discomfort at being quoted. Pass the phrase EXACTLY as it was given to you. " +
+    'Then acknowledge in one plain sentence and move on. Do NOT ask why, do NOT ask them to confirm, do NOT ' +
+    'defend the quote or explain where it came from, and do NOT treat it as a setback. They are drawing a line, ' +
+    'not making a case. Nothing is deleted from their Playbook — the line simply stops being quoted.',
+  input_schema: {
+    type: 'object' as const,
+    properties: {
+      phrase: { type: 'string', description: 'the phrase to stop using, exactly as it was given to you' },
+    },
+    required: ['phrase'],
+  },
+};
+
 const LOG_MOVEMENT_TOOL = {
   name: 'log_movement',
   description:
@@ -1216,6 +1263,10 @@ async function liveReply(
   canRecordW3Day = false,
   // And whether B3's Lifestyle Pilot week is open. Independent of the W3 flag — both weeks can run at once.
   canRecordB3Day = false,
+  // Whether a phrase of HERS was quoted to her this turn. A capability, like the others: set_aside_phrase only
+  // makes sense when there is something to set aside, and an agent holding it otherwise would reach for it by
+  // asking whether she minds being quoted — which plants the doubt the Drift-line rule forbids naming.
+  didQuotePhrase = false,
 ): Promise<{ reply: string; toolNames: string[] }> {
   const called: string[] = []; // client tools the model actually invoked this turn (for the engine backstop)
   const { default: Anthropic } = await import('@anthropic-ai/sdk');
@@ -1261,6 +1312,10 @@ async function liveReply(
     ...(canMarkPracticeDay ? [MARK_PRACTICE_DAY_TOOL] : []),
     // Same discipline for W3: offered ONLY while the monitoring week is running.
     ...(canRecordW3Day ? [RECORD_W3_DAY_TOOL] : []),
+    // Offered ONLY on the turn where a phrase of theirs was actually quoted. Same discipline as the week tools:
+    // an agent holding a tool it has no use for is an agent looking for a reason to use it — and this one would
+    // mean asking whether she minds being quoted, which plants the doubt the Drift-line rule forbids naming.
+    ...(didQuotePhrase ? [SET_ASIDE_PHRASE_TOOL] : []),
     // ...and for B3's Lifestyle Pilot week. The two weeks can BOTH be open at once — Jay is explicit that running
     // several trackers at the same time is intended — so these are independent flags, never an either/or.
     ...(canRecordB3Day ? [RECORD_B3_DAY_TOOL] : []),
@@ -1434,6 +1489,8 @@ export async function checkinReply(
         // Overlapping weeks are intended (Jay, 2026-08-11), so both flags read the full set.
         hasOpenWeek(c, 'w3_logging'),
         hasOpenWeek(c, 'b3_pilot'),
+        // Only when a phrase of hers was actually quoted this turn — see the flag's note on liveReply.
+        Boolean(c.returnReflection),
       );
       // ENGINE GUARD (#6): the member clearly asked to ADD a want but the model didn't call add_reclaim_item —
       // it acknowledged in prose and moved on ("that's a good one — anything else?"), silently losing the add.
