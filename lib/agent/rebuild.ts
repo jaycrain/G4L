@@ -100,10 +100,42 @@ export function liveTurnRebuildB1(state: ConvState, history: ConvMessage[], memb
 // The profile is stored (self_management_reading) and reflected back in plain language at the close (strongest skill
 // + growth edge — never a table of numbers). COPY: directional placeholder (Cowork wordsmiths), built from Greg's
 // member-shown intro. The action scores + stores the reading and opens the noticing week on completion.
+// B2's SET-UP, restored from Greg's own "Introduction (Shown to Member)".
+//
+// DONNA, 2026-08-23: the Rebuild Sessions "don't feel as developed as Reconnect and Rewire... don't have any
+// set-up. Especially Strengths and Weaknesses — the content is good, it just needs more context."
+//
+// She is describing a placeholder. The comment on this constant said so itself — "COPY: directional placeholder
+// (Cowork wordsmiths), built from Greg's member-shown intro" — and it never got wordsmithed. What survived was two
+// sentences; what he wrote carries four things they dropped, each of which is the reason a member would answer
+// honestly rather than tidily:
+//
+//   1. WHAT these skills are, and why they matter — "these are the skills that will get you were you want to go".
+//   2. That a skill is PRACTISED, not owned — "as with learning any skill, you need to practice it to improve it".
+//      Without it, twenty-four items rating your own capability read as a verdict on the person.
+//   3. The SCOPE — twelve skills, rated twice. Nobody consented to a 24-item form they could not see the end of.
+//   4. What happens NEXT — "you will evaluate your use of these skills... The focus is not on monitoring your
+//      behaviors but rather to notice the self-management skills that help or hinder your efforts." That framing
+//      only existed in the close, which is a strange place to learn what you agreed to.
+//
+// HIS CONTENT, OUR VOICE. Not pasted: his prose is a research introduction ("Thus, the next step is to take
+// stock...") and the Companion does not talk like that. Same call as W3_STAGE3, where his three expectations were
+// "his phrasing tightened to fit one beat".
+//
+// BEAT_SEP, NOT \n\n. B3 opens on three paced bubbles and B2 opened on one dense block, which is a second reason
+// it read as thinner than its neighbours. The frame arrives at the speed a person reads it.
 const B2_OPEN =
-  "During the Rebuild phase, we'll practice what makes a healthy life actually stick. But before you change anything, " +
-  "let's take stock of your current state. Review these statements and rate each one 1-strongly disagree to 4-strongly " +
-  "agree.\n\nLet's start with Movement.";
+  "Rebuild is where you build the things that make a healthy life hold — and underneath the eating and the moving " +
+  "there is a set of skills doing the work. They're the ones that get you where you want to go." + BEAT_SEP +
+  "They aren't fixed. A skill is something you practice and get better at, so where you stand today is a starting " +
+  "mark rather than a verdict on you." + BEAT_SEP +
+  "There are twelve of them. You'll rate each one twice — once for movement, once for eating — from 1 (strongly " +
+  "disagree) to 4 (strongly agree). Answer honestly rather than well; none of it is graded." + BEAT_SEP +
+  // NOT "which ones carry you" — b2Close already says "when a strong skill carries you", and carry/carrying is one
+  // of the four words Donna flagged as reading like AI (2026-08-22). One use in a Session is voice; the same word
+  // opening and closing it is the density she reported.
+  "Then this week you'll watch them turn up in your actual life. Not changing anything yet — just noticing which " +
+  "ones help and which ones get in your way.";
 const B2_DIET_TURN = "That's movement. Same skills now, for eating.";
 // HAND THEM TO THE WEEK THIS CLOSE JUST OPENED. It used to end "you can find it at the top of your Dashboard",
 // which was true until 2026-08-08, when the practice week moved to the Playbook's This week tab — so the close
@@ -129,7 +161,9 @@ function skillsDeliver(index: number): string {
   return line;
 }
 function skillsOpener(): string {
-  return `${B2_OPEN}\n\n${skillsDeliver(0)}`;
+  // BEAT_SEP: the frame and the first item are separate bubbles. (The old join also said "Let's start with
+  // Movement." one line above skillsDeliver's "Movement first." — the member was told twice.)
+  return `${B2_OPEN}${BEAT_SEP}${skillsDeliver(0)}`;
 }
 
 const skillsStage: StageDef = administeredStage({
@@ -181,12 +215,21 @@ export function liveTurnRebuildB2(state: ConvState, history: ConvMessage[], memb
 // Cycle 2 run on this same mode. COPY: directional placeholder (Cowork wordsmiths), built from Greg's B3 setup script.
 const B3_OPEN_1 =
   "You've identified your why, and you've taken stock of your skills. Now we'll put it into practice.";
+// FROM GREG'S "Companion AI setup script" (B3), which existed verbatim and had never been used. Two lines of his
+// were doing work ours wasn't:
+//   "realistic enough to practice on a normal week, not just on your best week" — the sentence that stops a member
+//   designing for the version of themselves who is well rested and free on Thursday, and
+//   "We're not looking for a full overhaul... two small changes that will help you notice how healthier decisions
+//   actually happen in your life" — which says what the week is FOR. Ours said what to do and never why.
 const B3_OPEN_2 =
-  "You'll pick one small movement change, and one small healthier eating change to try for a week. Just two things " +
-  "you're not already doing and small enough to actually stick.";
-const B3_OPEN_3 = "We'll start with movement — what's one small change you could try this week?";
+  "You'll pick one small movement change and one small healthier eating change to try for a week. Two things you're " +
+  "not already doing — and realistic on a normal week, not just on your best one.";
+const B3_OPEN_3 =
+  "This isn't an overhaul. Two small changes are enough to show you how healthier decisions actually happen in your " +
+  "life.";
+const B3_OPEN_4 = "We'll start with movement — what's one small change you could try this week?";
 function b3Opening(): string {
-  return `${B3_OPEN_1}${BEAT_SEP}${B3_OPEN_2}${BEAT_SEP}${B3_OPEN_3}`;
+  return `${B3_OPEN_1}${BEAT_SEP}${B3_OPEN_2}${BEAT_SEP}${B3_OPEN_3}${BEAT_SEP}${B3_OPEN_4}`;
 }
 
 const B3_PLAN_CONFIRMED_1 =
@@ -369,7 +412,21 @@ const B3_SYSTEM =
   "the turn going in the same reply — acknowledge it in a few words and pivot straight to coaching the other change; " +
   "never end your turn on just an acknowledgment while a change is still open. Once BOTH are locked, stop and give a " +
   "brief warm acknowledgment — the app shows the member their plan to confirm. If a distress or crisis signal appears, " +
-  "drop the exercise and route to support (988 US / local) and a human — always on.";
+  "drop the exercise and route to support (988 US / local) and a human — always on.\n\n" +
+  // GREG'S OWN "Companion tone and stance" FOR REBUILD (Gated Assets V4, B3), which had never reached a prompt.
+  //
+  // Donna, 2026-08-23: the Rebuild Sessions "don't feel as conversational or warm" as Reconnect and Rewire. Part of
+  // that is structural and correct — B1 and B2 are administered instruments and B4 is deterministic, so B3 is the
+  // ONLY place a model speaks in this whole phase. Which makes it the only place the phase's warmth can come from,
+  // and it was running on the generic stance while Rewire's warmth is hand-written into nine conversational beats.
+  //
+  // He wrote the answer and we never used it. Carried close to verbatim because it is a STANCE, not prose a member
+  // reads — the reason to tighten his wording elsewhere does not apply.
+  "TONE AND STANCE (Greg's, for this phase). Be practical, steady, curious, encouraging, non-shaming.\n" +
+  "AVOID: all-or-nothing interpretations; moralizing around food; treating a miss as failure; making the member " +
+  "feel graded.\n" +
+  "REINFORCE: small wins matter; backup versions still count; false starts are information; reset moves are part " +
+  "of success; awareness is the skill being built.";
 
 const RECORD_PLAN_TOOL = {
   name: 'record_plan',
@@ -503,16 +560,33 @@ export function composePilotPlan(activity: string, diet: string): string {
 // IDQ/§2e/R4 read) → a hold into the ceremony (the reveal overlay fires from the chat). The ACTION pairwise-averages
 // the 12 → 6, scores the Control component (Ave1→Ave2), writes the Checkpoint grinta_reading, and sets the
 // rebuild_checkpoint_passed gate (→ Reclaim lit). Items VERBATIM (CHECKPOINT_CONTROL_ITEMS, RB-2 resolved). Copy: B4 doc.
+// FROM GREG'S B4 "Introduction (Shown to Member)", which had never been used.
+//
+// Ours opened on mechanics — "a quick read on where your control sits now" — and skipped the part that tells a
+// member what they are about to do and why it is not a weigh-in. His introduction carries three things ours did
+// not: that four weeks of change is easy to under-notice, that this checkpoint asks whether Rebuild went BEYOND
+// the numbers, and what the move into Reclaim actually is — "not about hitting a target weight or completing a
+// specific event... the moment you realize your world has gotten bigger because you changed."
+//
+// ONE DEPARTURE FROM HIS WORDS: he opens "You pedal." Kept as "you move" — Movement here is walking and lifting
+// and the rest, and a member who does not cycle should not read the phase's closing beat as addressed to someone
+// else. The cycling metaphor stays where it is earned, at Clip in.
 const B4_CHECKPOINT_OPEN =
-  "You did the real work of Rebuild — you found your why, took honest stock of your skills, and ran the pilot in your " +
-  "own life. Before we close the Phase, a quick read on where your control sits now. A dozen of these, one to five. " +
-  "They set your Rebuild read — you'll see how it moved your Grinta Index at the close.";
+  "Rebuilding is physical. You move, you eat better, you watch the numbers change. It's hard, but it's tangible." +
+  BEAT_SEP +
+  "Four weeks in, the easiest thing to miss is what changed underneath the numbers — your motivation, your habits, " +
+  "the things you've stopped having to decide." + BEAT_SEP +
+  "So this checkpoint asks whether Rebuild went past the numbers. The move into Reclaim isn't hitting a target " +
+  "weight or finishing an event; it's the point where you notice your world got bigger because you changed." +
+  BEAT_SEP +
+  "A dozen of these, one to five. They set your Rebuild read, and you'll see how it moved your Grinta Index at the " +
+  "close.";
 const B4_CHECKPOINT_CLOSE = "That's the read. Hold on — let me show you what you just built.";
 function rebuildCheckpointDeliver(index: number): string {
   return grintaStem(CHECKPOINT_CONTROL_ITEMS[index]!);
 }
 function rebuildCheckpointOpener(): string {
-  return `${B4_CHECKPOINT_OPEN}\n\n${rebuildCheckpointDeliver(0)}`;
+  return `${B4_CHECKPOINT_OPEN}${BEAT_SEP}${rebuildCheckpointDeliver(0)}`;
 }
 
 const rebuildCheckpointStage: StageDef = administeredStage({

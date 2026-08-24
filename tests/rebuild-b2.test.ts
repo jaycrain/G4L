@@ -1,4 +1,5 @@
 import { test } from 'node:test';
+const SEP = String.fromCharCode(30); // BEAT_SEP — the frame arrives as several bubbles
 import assert from 'node:assert/strict';
 import { rebuildB2Opening, applyRebuildB2Turn } from '../lib/agent/rebuild.ts';
 import {
@@ -17,8 +18,18 @@ import { practicePrompt } from '../lib/practice/store.ts';
 test('B2 arc · warm frame → movement pass → diet transition at 12 → plain-language close (no numbers)', () => {
   let t = rebuildB2Opening();
   assert.equal(t.state.stage, 'skills');
-  assert.match(t.reply, /take stock of your current state/i, 'the warm frame');
-  assert.match(t.reply, /1-strongly disagree to 4-strongly agree/i, 'the 1–4 scale');
+  // THE FRAME BY ITS JOB, NOT ITS WORDING. This pinned the exact sentence ("take stock of your current state") and
+  // so failed the moment the set-up was rewritten from Greg's own member-shown introduction (Donna, 2026-08-23:
+  // Rebuild "doesn't have any set-up"). A test that breaks when copy IMPROVES teaches people to edit the test.
+  // What must survive is what the frame is FOR — the four things a member needs before rating 24 items about
+  // herself.
+  const frame = t.reply.split(SEP).slice(0, -1).join(' '); // everything before the first item
+  assert.ok(frame.split(SEP).length >= 1 && frame.length > 200, 'there is a real set-up, not one line');
+  assert.match(frame, /practice|get better/i, 'a skill is practised, not a fixed trait');
+  assert.match(frame, /twelve|12/i, 'the scope — she can see the end of the form');
+  assert.match(frame, /1 \(strongly disagree\)|1-strongly disagree/i, 'the 1–4 scale');
+  assert.match(frame, /not.{0,20}graded|honestly/i, 'honest answers, not good ones');
+  assert.match(frame, /this week|noticing/i, 'what the assessment leads to');
   assert.ok(t.reply.includes(SKILL_ITEMS[0]!.stem), 'item 0 verbatim');
 
   for (let i = 0; i < SKILLS_ITEM_COUNT; i++) {
