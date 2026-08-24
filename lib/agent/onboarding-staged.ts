@@ -113,6 +113,18 @@ export function receiveThen(modelText: string | undefined, opener: string): stri
 // (each sets the next stage explicitly via its opener), so there's no central STAGE_ORDER walker any more.
 type StagedStage = 'identity' | 'gap' | 'reclaim' | 'complete' | 'declined';
 
+/**
+ * How much a member must actually SAY before the model's no-fade hint may end their intake.
+ *
+ * Not a tuning knob — a floor under a judgement. Tim gave the gap stage eleven words across three replies and was
+ * declined on the model's read of them. Forty is roughly two real sentences: still terse, but enough that "no fade
+ * here" is a finding rather than a guess at someone who did not want to answer.
+ *
+ * Deliberately does NOT gate the member's own declaration. Someone who says plainly that nothing is missing is
+ * out of scope immediately, however briefly they say it — we never manufacture a fade to admit anyone.
+ */
+const NO_FADE_MIN_WORDS = 40;
+
 // After this many identity gather-turns, offer the explicit "find it later" skip (even with no past-self yet).
 const IDENTITY_SKIP_OFFER_AFTER = 2;
 // Hard never-strand escape: after this many, skip identity outright and move on (recovered at Excavation).
@@ -1680,12 +1692,29 @@ const gapStage: StageDef = {
     // no-loss declaration (or a reconciled model no-fade judgement) — AND NO hard fade signal (Door/reduction/
     // Acceptance) AND NO genuine loss anywhere. Absence of a fade is never enough on its own: we never fabricate a
     // fade to admit, and — the failure that turned away our own demographic — never turn away a real one. (CAT-01/03)
+    // TERSE IS NOT THRIVING — the rule this gate was missing (Tim Carlin, declined 2026-08-14, 13 turns).
+    //
+    // He never said he was fine. `declaresThriving` returns FALSE on every word he typed. What he actually gave the
+    // gap stage was eleven words — "Never happened", a joke about spelling — after answering "Living" and then
+    // "Done." A man shutting a conversation down, which the model read as contentment and the engine executed as a
+    // decline. That is the failure named two lines up: "never turn away a real one."
+    //
+    // AND IT IS THIS CODEBASE'S OLDEST SHAPE: the engine acting on a model JUDGEMENT that contradicts what the
+    // member plainly said. Her own words outrank the model's read, every time.
+    //
+    // TURNS WERE THE WRONG UNIT. The old guard asked for "a beat first" and counted two gap TURNS — which a terse
+    // member spends in nine words. Absence of a fade is not evidence of no fade, and the comment above already
+    // says absence must never be enough on its own; counting turns let it be enough anyway.
+    //
+    // So the model's hint now needs SUBSTANCE behind it: enough said in the gap stage to have actually judged. Her
+    // own affirmative declaration still decides immediately and is untouched — someone who says "honestly, nothing
+    // is missing, I just want more" is out of scope on the first turn, as they should be.
+    const gapWords = gapCorpus.trim().split(/\s+/).filter(Boolean).length;
+    const enoughToJudge = gapWords >= NO_FADE_MIN_WORDS;
     const thrivingDecline =
       !hardFadeSignal &&
       !hasGenuineLoss(gapCorpus) &&
-      // The member's OWN affirmative thriving declaration decides it immediately; a bare model no-fade HINT needs a
-      // beat first, so one premature note_no_fade on a vague opener never terminates before the fade can surface. (CAT-04)
-      (declaresThriving(gapCorpus) || (s.noFade && (s.gapTurns ?? 0) >= 2));
+      (declaresThriving(gapCorpus) || (s.noFade && (s.gapTurns ?? 0) >= 2 && enoughToJudge));
     if (thrivingDecline) {
       // Out of scope; the door stays open. Terminal — no card, no reclaim. We never fabricate a fade to admit them.
       b.stage = 'declined';

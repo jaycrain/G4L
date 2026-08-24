@@ -437,13 +437,29 @@ const LOSS_RE =
 // is NOT stripped. (CAT-03/CAT-06)
 const NEG_LOSS_RE =
   /\b(?:no|not|without|zero|not carrying(?: any)?|don'?t (?:have|feel)(?: any)?|haven'?t (?:felt|had)(?: any)?)\s+(?:real\s+|a\s+|any\s+|sense of\s+)*(?:loss|drift|distance|regret|gap|hardship|crisis|fade)\b/gi;
+// NOTHING/NEVER + a loss VERB. The rule above only strips negations of loss NOUNS, so the plainest way anyone
+// actually declares no-fade — "nothing has faded", "nothing went wrong", "I never lost myself" — survived it and
+// tripped LOSS_RE as evidence of the very thing it denied.
+//
+// THE CONSEQUENCE WAS NOT COSMETIC (found 2026-08-24, tracing Tim Carlin's decline). The decline gate requires
+// `!hasGenuineLoss`, so a thriving member saying so plainly could not be released by their OWN words — and the
+// decision fell through to the model's no-fade HINT instead. Measured on five natural phrasings, the member-words
+// branch fired on two; the negation blindness was quietly routing intake decisions onto the riskier branch, which
+// is the one that turned Tim away.
+//
+// STILL TIGHT. The subject must be nothing/never and the loss word must follow within a couple of words, so a real
+// loss carrying an incidental negation is untouched: "can't stop thinking about the loss", "I never got over
+// losing her", "nothing prepared me for the divorce" all still read as loss. Tested both directions. (CAT-03/06)
+const NEG_LOSS_VERB_RE =
+  /\b(?:nothing|never)\s+(?:really\s+|ever\s+|has\s+|had\s+|have\s+|was\s+|is\s+|felt\s+)*(?:faded?|fading|lost|losing|missing|gone wrong|went wrong|slipped away|fell away)\b/gi;
 // Real loss LANGUAGE, ignoring explicit "no loss / nothing wrong" declarations. Keyed on loss VERBS/events, NOT a
 // Door-name match — "marriage is genuinely good" mentions "marriage" but is not a loss.
 export function hasGenuineLoss(text: string): boolean {
   // Strip ALL "no loss / no drift" declarations (global) — a corpus can repeat them, and a leftover would trip LOSS_RE.
   const stripped = (text ?? '')
     .replace(new RegExp(NO_LOSS_RE.source, NO_LOSS_RE.flags + 'g'), ' ')
-    .replace(NEG_LOSS_RE, ' ');
+    .replace(NEG_LOSS_RE, ' ')
+    .replace(NEG_LOSS_VERB_RE, ' ');
   return LOSS_RE.test(stripped);
 }
 

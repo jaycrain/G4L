@@ -9,7 +9,7 @@ import {
   type Turn,
 } from '../lib/agent/onboarding.ts';
 import { contractMet } from '../lib/agent/onboarding-contract.ts';
-import { stageInstruction } from '../lib/agent/onboarding-staged.ts';
+import { stageInstruction, applyStagedTurn } from '../lib/agent/onboarding-staged.ts';
 
 // ============================================================================
 // ONBOARDING REPLAY HARNESS
@@ -352,4 +352,39 @@ test('the reclaim stage may not promise a per-item review it cannot finish', () 
   assert.match(s, /FINISH WHAT YOU PROMISE/, 'the rule is still in the reclaim steering');
   assert.match(s, /one at a time/, 'and still names the exact phrase that broke');
   assert.match(s, /name every item you tagged|every item you tagged/i, 'a partial read-back is the same failure');
+});
+
+// TERSE IS NOT THRIVING — Tim Carlin, declined 2026-08-14 after 13 turns.
+//
+// He never said he was fine: declaresThriving is FALSE on every word he typed. He gave the gap stage ELEVEN
+// words — "Never happened", then a joke about spelling — after answering "Living" and then "Done." A man shutting
+// a conversation down, read as contentment and shown the door.
+//
+// This is the failure the gate's own comment names ("never turn away a real one") and the codebase's oldest
+// shape: the engine acting on a model judgement that contradicts what the member plainly said.
+test('a terse member is NOT declined on the model\'s hint alone (Tim, 2026-08-14)', () => {
+  const at: ConvState = { stage: 'gap', collected: { identityNoun: null }, stageScratch: {} };
+
+  // Turn 1 of the gap stage — the model already reads him as no-fade.
+  let t = applyStagedTurn(at, [], 'Never happened', { text: '', noFade: true });
+  assert.notEqual(t.state.stage, 'declined', 'one hint on two words must never end an intake');
+
+  // Turn 2 — the old gate declined here, on turn count alone.
+  t = applyStagedTurn(t.state, [], 'Not trying to get back to anywhere...maybe learn to spell.',
+    { text: '', noFade: true });
+  assert.notEqual(t.state.stage, 'declined',
+    'eleven words is an absence of data, not a finding of no fade — absence is never enough');
+});
+
+// The other half: someone who genuinely IS out of scope must still be let go, briefly and without a fabricated
+// hardship. Turning the gate up is only correct if it does not trap the people it was built to release.
+test('an affirmative thriving declaration still declines immediately, however brief', () => {
+  const at: ConvState = { stage: 'gap', collected: { identityNoun: null }, stageScratch: {} };
+  // Phrasing that trips the member-words branch. (Deliberately NOT "nothing has faded" — that no longer reads as
+  // a loss after 2026-08-24, but it is not in THRIVING_RE either, so it admits rather than releases. After Tim,
+  // erring toward admitting is the correct direction and widening the thriving list is not.)
+  const t = applyStagedTurn(at, [],
+    "Nothing is missing — life is great and I just want more.",
+    { text: '' });
+  assert.equal(t.state.stage, 'declined', 'her OWN words decide it on the first turn — we never manufacture a fade');
 });
