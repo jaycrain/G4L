@@ -21,6 +21,7 @@
 // it is paid once, here, behind one function.
 
 import type { Db } from '../db/schema.ts';
+import type { HabitStatus } from '../rebuild/b3-entry.ts';
 import { PRACTICE_WINDOW_DAYS, type PracticeKind, type ActivePractice } from './store.ts';
 import { columnFor, addDays, type MemberWeek } from '../time/member-clock.ts';
 
@@ -36,6 +37,19 @@ export type GridRow = {
   target: number | null; // the MEMBER's number ("5 days"); null = nothing to hit, just noticing
   marks: boolean[]; // length = the window's days (7, or fewer for a partial first week)
   done: number; // marks.filter(Boolean).length — precomputed so the UI never recounts
+  /**
+   * B3 ONLY — Greg's three-state habit answer per day: 'completed' | 'partial' | 'missed', null where she did not
+   * say. Indexed like `marks`.
+   *
+   * WHY A THIRD STATE EXISTS AT ALL. His daily worksheet asks "Physical activity habit — Completed / Partial /
+   * Missed", and his tone spec for the phase says to reinforce that "backup versions still count" and to avoid
+   * "all-or-nothing interpretations". A tick offers a member who planned twenty minutes and walked ten a choice
+   * between a day she did not have and a failure she did not have either. (Migration 0088.)
+   *
+   * Left undefined for every other kind, exactly like `scores` — no other week has a three-state answer, and an
+   * optional field they all carried as null would invite a UI that renders a dead column for them.
+   */
+  states?: (HabitStatus | null)[];
 };
 
 export type WeekGrid = {
@@ -120,9 +134,33 @@ async function commitmentRows(db: Db, memberId: string, kind: PracticeKind, wind
       [memberId, kind],
     )
   ).rows;
-  return rows.map((c) =>
+  const built = rows.map((c) =>
     buildRow(c.slot, c.label, c.target_days, window, marks.filter((m) => m.commitment_id === c.id).map((m) => m.marked_on)),
   );
+
+  // B3's habit statuses ride on top of the ticks. The two commitment slots are 'activity' and 'diet'
+  // (setPilotCommitments), which map one-to-one onto Greg's two worksheet questions.
+  //
+  // ADDITIVE, NOT A REPLACEMENT: `marks` still comes from practice_mark, so nothing that already worked stops
+  // working and a member who only ever taps the grid is unaffected. `states` is the richer answer when the
+  // Companion captured one, and the UI prefers it where present.
+  if (kind === 'b3_pilot') {
+    const { b3Entries } = await import('../rebuild/b3-entry.ts');
+    const entries = await b3Entries(db, memberId, RUN_LOOKBACK_DAYS).catch(() => []);
+    for (const row of built) {
+      const which = row.slot === 'activity' ? 'activityStatus' : row.slot === 'diet' ? 'dietStatus' : null;
+      if (!which) continue;
+      // dayIndex is the same primitive buildRow uses to place a mark, so a status and a tick for one day can
+      // never land in different columns.
+      const states: (HabitStatus | null)[] = Array.from({ length: window.days }, () => null);
+      for (const e of entries) {
+        const i = dayIndex(window, e.entryDate);
+        if (i >= 0) states[i] = e[which] ?? null;
+      }
+      row.states = states;
+    }
+  }
+  return built;
 }
 
 /** C3 · Quality Days — the day's 1–10 score per column (null where the day was not logged). See WeekGrid.scores. */

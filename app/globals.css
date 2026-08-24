@@ -1561,6 +1561,15 @@ html:has(.companion-hero), body:has(.companion-hero) { overflow-anchor: none; }
    "-text" because that was its first use, but the VALUE is the sanctioned darker olive and this is what it is for.
    (The alternative, an indigo check on brand olive, reaches 5.55:1 but a dark tick reads far less like "done".) */
 .wk-cell.on { background: var(--olive-text); border-color: var(--olive-text); color: #fff; }
+/* B3'S THIRD AND FOURTH STATES — Greg's "Partial" and "Missed" (migration 0088).
+   PARTIAL reads as a lighter version of done: the olive outline, the olive glyph, no fill. It is the same colour
+   family because it IS the same kind of day — "a smaller backup version still counts as a Smart Choice if it kept
+   you engaged" is his own line.
+   MISSED IS DELIBERATELY NOT RED, and deliberately not empty either. His tone spec forbids treating a miss as
+   failure or making the member feel graded, so it is a quiet grey dash: the record that she told us, which is
+   different information from a blank cell meaning she said nothing. Nothing here scores, counts or totals. */
+.wk-cell.wk-partial { background: var(--white); border-color: var(--olive-text); color: var(--olive-text); font-weight: 700; }
+.wk-cell.wk-missed { background: var(--white); border-color: #e3e2df; color: var(--muted-grey); font-weight: 700; }
 .wk-cell.today { border: 2px solid var(--teal); }
 .wk-cell.ahead { background: #fafaf9; border-color: #f1efee; cursor: default; }
 /* A MIRROR CELL MUST NOT LOOK LIKE A CONTROL. W3/C3 mirror a log written elsewhere and were only marked by

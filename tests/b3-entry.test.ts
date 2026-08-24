@@ -162,3 +162,50 @@ test('amending a day cannot blank a status she already gave, but she can correct
   await recordB3Entry(db, m, { activityStatus: 'completed' });           // she corrects it
   assert.equal((await b3Entries(db, m))[0]!.activityStatus, 'completed', 'but a real correction lands');
 });
+
+// THE GRID SHOWS WHAT SHE SAID — the statuses reach the surface, on the right row and the right day.
+//
+// A status recorded and never rendered is the fault the B2 map had for eight days: the computation was right and
+// the display was absent, while the outcome strip told her she had a reading she could not see.
+test('the week grid carries the habit statuses onto the activity and diet rows', async () => {
+  const db = new PGlite() as unknown as Db;
+  await applySchema(db);
+  const m = await member(db);
+  const { setPilotCommitments } = await import('../lib/practice/mark.ts');
+  const { startPracticeWeek } = await import('../lib/practice/store.ts');
+  const { weekGrids } = await import('../lib/practice/grid.ts');
+  const { memberToday } = await import('../lib/time/zone-store.ts');
+
+  await setPilotCommitments(db, m, { activityChange: 'A 10-minute walk after dinner', dietChange: 'A vegetable at dinner' });
+  await startPracticeWeek(db, m, 'b3_pilot');
+
+  const today = await memberToday(db, m);
+  await recordB3Entry(db, m, { entryDate: today, activityStatus: 'partial', dietStatus: 'missed' });
+
+  const grid = (await weekGrids(db, m)).find((g) => g.kind === 'b3_pilot');
+  assert.ok(grid, 'the pilot week is open');
+
+  const activity = grid!.rows.find((r) => r.slot === 'activity')!;
+  const diet = grid!.rows.find((r) => r.slot === 'diet')!;
+  const i = grid!.day - 1; // today's column
+
+  assert.equal(activity.states?.[i], 'partial', 'her partial day is on the activity row');
+  assert.equal(diet.states?.[i], 'missed', 'and her miss is on the diet row — not swapped');
+
+  // A day she said nothing about stays null — not inferred as missed.
+  const other = i === 0 ? 1 : 0;
+  assert.equal(activity.states?.[other] ?? null, null);
+});
+
+test('weeks that are not B3 carry no states at all', async () => {
+  const db = new PGlite() as unknown as Db;
+  await applySchema(db);
+  const m = await member(db);
+  const { startPracticeWeek } = await import('../lib/practice/store.ts');
+  const { weekGrids } = await import('../lib/practice/grid.ts');
+  await startPracticeWeek(db, m, 'w3_logging');
+  const grid = (await weekGrids(db, m)).find((g) => g.kind === 'w3_logging');
+  // Undefined, not an array of nulls — an optional field every kind carried would invite a UI that renders a dead
+  // column for all of them. Same rule as WeekGrid.scores.
+  for (const r of grid?.rows ?? []) assert.equal(r.states, undefined);
+});

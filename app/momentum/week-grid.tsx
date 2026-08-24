@@ -7,6 +7,18 @@ import Link from 'next/link';
 import { isTappable, logSurfaceFor, dateForDay, canLogOn } from '../../lib/practice/mark.ts';
 import { toggleMarkAction } from './actions.ts';
 
+// B3'S THREE-STATE DAY — Greg's "Completed / Partial / Missed" (migration 0088).
+//
+// A MISS IS A DASH, NEVER A CROSS. His tone spec for the phase forbids treating a miss as failure and forbids
+// making the member feel graded; a ✗ is a mark against her, and it would sit in the same column as the ✓ that
+// means she did it. The dash says "she told us" — which is genuinely different from an empty cell meaning "she
+// didn't say", and that difference is the information, not a verdict.
+const GLYPH: Record<string, string> = { done: '✓', partial: '◔', missed: '–', none: '' };
+/** ...and what a screen reader hears. Greg's own words from the worksheet. */
+const STATE_WORD: Record<string, string> = {
+  done: ', completed', partial: ', partial', missed: ', missed', none: '',
+};
+
 // THE WEEK GRID — Greg's tracker (2026-08-07): the member's committed goals as rows, seven day columns, ticked when
 // done, with the number they aimed for beside them. "It would help to show progress during the week to maintain
 // motivation."
@@ -204,7 +216,23 @@ export default function WeekGridPanel({ memberId, grid }: { memberId: string; gr
               <tr key={r.slot}>
                 <td className="wk-lab" title={r.label}>{r.label}</td>
                 {marks.map((on, i) => {
-                  const cls = `wk-cell${on ? ' on' : ''}${i === today ? ' today' : ''}${i > today ? ' ahead' : ''}${tappable ? '' : ' wk-readonly'}`;
+                  // B3 ONLY — Greg's three-state habit answer, when the Companion captured one (migration 0088).
+                  //
+                  // PARTIAL IS WHY THIS ROW EXISTS. His tone spec says reinforce that "backup versions still
+                  // count" and avoid "all-or-nothing interpretations"; a tick can only say yes or nothing.
+                  //
+                  // MISSED IS NOT RED, and is not styled as a failure. He is explicit that a miss is not failure
+                  // and that the member must never feel graded, so a recorded miss reads as a quiet mark — the
+                  // difference between "she said she missed it" and "she said nothing", which is real information
+                  // and not a verdict. The local optimistic tick still wins where she taps.
+                  const state = local[r.slot] ? null : r.states?.[i] ?? null;
+                  const shown = state === 'completed' || (on && state === null) ? 'done'
+                    : state === 'partial' ? 'partial'
+                    : state === 'missed' ? 'missed'
+                    : null;
+                  const cls = `wk-cell${shown === 'done' ? ' on' : ''}${shown === 'partial' ? ' wk-partial' : ''}`
+                    + `${shown === 'missed' ? ' wk-missed' : ''}`
+                    + `${i === today ? ' today' : ''}${i > today ? ' ahead' : ''}${tappable ? '' : ' wk-readonly'}`;
                   // A day that hasn't happened is never a target — not to tick, not to navigate to.
                   const ahead = i > today;
                   // C3: a READOUT, not a switch. A bordered box invites a tap and Jay took it — he logged a week
@@ -226,9 +254,9 @@ export default function WeekGridPanel({ memberId, grid }: { memberId: string; gr
                         <Link
                           href={logSurfaceFor(grid.kind, memberId, dateForDay(grid.window, i))!.href}
                           className={`${cls} wk-cell-link`}
-                          aria-label={`${r.label} — day ${i + 1}${on ? ', logged' : ''}. Open your log.`}
+                          aria-label={`${r.label} — day ${i + 1}${STATE_WORD[shown ?? 'none']}. Open your log.`}
                         >
-                          {on ? '✓' : ''}
+                          {GLYPH[shown ?? 'none']}
                         </Link>
                       ) : (
                         <button
@@ -237,9 +265,9 @@ export default function WeekGridPanel({ memberId, grid }: { memberId: string; gr
                           onClick={() => toggle(r.slot, i)}
                           disabled={!tappable || ahead}
                           aria-pressed={tappable ? on : undefined}
-                          aria-label={`${r.label} — day ${i + 1}${on ? ', done' : ''}`}
+                          aria-label={`${r.label} — day ${i + 1}${STATE_WORD[shown ?? 'none']}`}
                         >
-                          {on ? '✓' : ''}
+                          {GLYPH[shown ?? 'none']}
                         </button>
                       )}
                     </td>
