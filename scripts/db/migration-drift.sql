@@ -177,6 +177,16 @@ from (
   select '0084' as migration, coalesce(to_regclass('public.b3_daily_entry') is not null, false) as applied
   union all
   select '0085' as migration, coalesce(exists(select 1 from information_schema.columns where table_schema='public' and table_name='member_door' and column_name='still_open'), false) as applied
+  union all
+  select '0086' as migration, coalesce(exists(select 1 from information_schema.columns where table_schema='public' and table_name='member_profile' and column_name='quiet_drift_claimed_at'), false) as applied
+  union all
+  select '0087' as migration, coalesce((exists (select 1 from door where slug = 'autopilot')), false) as applied
+  union all
+  select '0088' as migration, coalesce(exists(select 1 from information_schema.columns where table_schema='public' and table_name='b3_daily_entry' and column_name='activity_status'), false) as applied
+  union all
+  select '0089' as migration, coalesce(to_regclass('public.member_language_suppressed') is not null, false) as applied
+  union all
+  select '0090' as migration, coalesce(exists(select 1 from information_schema.columns where table_schema='public' and table_name='onboarding_session' and column_name='display_name'), false) as applied
 ) t
-where applied = false   -- show ONLY the gaps; delete this line to see all 85
+where applied = false   -- show ONLY the gaps; delete this line to see all 90
 order by migration;
