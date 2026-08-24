@@ -110,20 +110,56 @@ export async function findInFlightOnboarding(db: Db, q: string): Promise<InFligh
  * WHY IT IS ALLOWLISTED TO TESTERS, NOT TO OPERATORS. Everything else here drops the member's words on purpose:
  * idq_retake omits `responses`, the Legacy Letter reports a character count and not a line of the letter, and the
  * in-flight report is metadata only "because this is the most vulnerable moment in the product". That rule is
- * right and it stays. What changes is not the rule but the SET it applies to — `isPurgeable` already names the
- * handful of accounts that exist to walk the product and whose data we destroy on demand. Someone who signed up
- * to test the intake is in a different category from someone using it, and that boundary is already written down,
- * so this reuses it rather than inventing a second list that can drift from the first.
+ * right and it stays. What changes is not the rule but the SET it applies to.
+ *
+ * THIS USED TO REUSE `isPurgeable`, on the argument that a second list could drift from the first. That argument
+ * was wrong, and 2026-08-24 is when it cost something: a real prospect was declined at intake, and the only way to
+ * SEE WHY was to add him to a list whose other job is destroying accounts. Reading someone's conversation and
+ * being allowed to erase them are different acts, and binding them together made "leave him alone" and "make him
+ * wipeable" the same decision.
+ *
+ * The drift worry does not survive the split, because these are genuinely different sets and neither direction is
+ * dangerous: a tester we can wipe but need not read, and a person we need to understand but must never wipe. What
+ * IS load-bearing is that a member on NEITHER list stays unreachable — asserted in tests/transcript-access.test.ts.
  *
  * A REAL MEMBER'S TRANSCRIPT IS NOT REACHABLE THROUGH THIS. Not by an operator, not with the token, not by asking
  * differently. If we ever need one, that is a consent conversation and a different mechanism.
  */
+/**
+ * WHOSE CONVERSATION AN OPERATOR MAY READ. Separate from PURGEABLE, and the split is the point.
+ *
+ * Until 2026-08-24 this gated on the purge allowlist, so the only way to UNDERSTAND what happened to someone was
+ * to also make their account destroyable. Those are not the same act, and conflating them made the safer choice
+ * (leave them alone) and the more dangerous one (make them wipeable) the same decision.
+ *
+ * It surfaced when a real prospect was declined at intake and we could not see why without putting him on a list
+ * built for resetting testers.
+ *
+ * READING IS STILL THE HIGHER BAR IN PRACTICE: this is the hardest part of somebody's life, told to a product on
+ * the promise that it was safe to be honest. A line here needs a NAME and a REASON, and should come off when the
+ * reason expires. `.test` fixtures are always readable — they are nobody.
+ */
+export const TRANSCRIPT_READABLE = [
+  'donnacrain19@gmail.com',   // Donna — charter tester; walks onboarding end-to-end on every intake change.
+  'dctestemail@mac.com',      // Donna's second address, used for short single-feature walks.
+  'tim@carlin.com',           // Tim Carlin — DECLINED at intake 2026-08-14 after 13 turns. Reading it to find out
+                              // whether the no-fade gate turned away a real member. REMOVE once that is answered.
+] as const;
+
+/** May an operator read this conversation? `.test` fixtures always; real addresses only by name. */
+export function isTranscriptReadable(email: string): boolean {
+  const e = (email ?? '').trim().toLowerCase();
+  if (!e) return false;
+  if (/\.test$/i.test(e)) return true;
+  return (TRANSCRIPT_READABLE as readonly string[]).some((a) => a.toLowerCase() === e);
+}
+
 export async function inFlightTranscript(
   db: Db,
   email: string,
 ): Promise<{ ok: true; messages: { role: string; text: string }[]; state: unknown } | { ok: false; reason: string }> {
   const e = (email ?? '').trim();
-  if (!isPurgeable(e)) return { ok: false, reason: 'transcripts are available for test accounts only' };
+  if (!isTranscriptReadable(e)) return { ok: false, reason: 'transcripts are readable only for named accounts' };
   const { rows } = await db.query<{ messages: unknown; state: unknown }>(
     'select messages, state from onboarding_session where lower(email) = lower($1)',
     [e],
