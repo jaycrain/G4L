@@ -124,7 +124,9 @@ export async function onboardingTurn(input: TurnInput): Promise<TurnOutput> {
   // where they are, handoff and all. Best-effort; never fail a turn over a save.
   if (email && input.token) {
     try {
-      await saveOnboardingSession(db, email, input.token, turn.state, messages);
+      // The gate's name rides every turn in ctx and used to stop at the browser. It is the difference between
+      // the console offering an operator "Tim Carlin" and offering them "tim@carlin.com" (0090).
+      await saveOnboardingSession(db, email, input.token, turn.state, messages, input.ctx.name);
     } catch (e) {
       console.warn('onboarding session save failed (non-fatal):', (e as Error).message);
     }

@@ -40,6 +40,9 @@ export type ProspectStatus =
 
 export type Prospect = {
   email: string;
+  /** The name they typed at the gate (0090). Null for anyone who started before that shipped — there is nowhere
+   *  to recover it from, so the surface says the email and does not guess. */
+  name: string | null;
   stage: string | null;
   turns: number;
   updatedAt: string;
@@ -93,6 +96,7 @@ export async function listProspects(db: Db, now: Date = new Date()): Promise<Pro
   // mistaken for real drop-off, which is exactly the kind of thing that quietly corrupts a funnel number.
   const { rows } = await db.query<{
     email: string;
+    display_name: string | null;
     stage: string | null;
     turns: number;
     updated_at: string;
@@ -103,6 +107,7 @@ export async function listProspects(db: Db, now: Date = new Date()): Promise<Pro
     crisis_flagged_at: string | null;
   }>(
     `select s.email,
+            s.display_name,
             s.state->>'stage'                                                  as stage,
             coalesce(jsonb_array_length(s.messages), 0)                        as turns,
             s.updated_at,
@@ -126,6 +131,7 @@ export async function listProspects(db: Db, now: Date = new Date()): Promise<Pro
     const hoursAgo = Math.max(0, (now.getTime() - new Date(r.updated_at).getTime()) / 3_600_000);
     const base = {
       email: r.email,
+      name: r.display_name?.trim() || null,
       stage: r.stage,
       turns: Number(r.turns) || 0,
       updatedAt,
@@ -140,6 +146,30 @@ export async function listProspects(db: Db, now: Date = new Date()): Promise<Pro
   });
 
   return sortProspects(list);
+}
+
+/**
+ * The one "Needs you" row for prospects — PURE, so what counts as needing him is testable.
+ *
+ * ONLY THE STATUSES WITH SOMETHING TO DO. `active` is someone typing right now: they do not need the founder,
+ * they need ten more minutes. `stalled` is ambiguous — a lunch break looks identical to walking away — and a
+ * queue that fills with maybes is a queue he stops reading. What is left is the three he can act on today:
+ * a person in distress, a person who did the whole conversation and stopped one tap short, and a person we
+ * turned away who may have been turned away wrongly (which is exactly what happened on 2026-08-14).
+ */
+export function prospectAttention(
+  s: Record<ProspectStatus, number>,
+): { kind: 'prospect'; label: string; count: number; href: string } {
+  const parts: string[] = [];
+  if (s.crisis) parts.push(`${s.crisis} needing a human`);
+  if (s.ready) parts.push(`${s.ready} finished without signing up`);
+  if (s.declined) parts.push(`${s.declined} turned away at the gate`);
+  return {
+    kind: 'prospect',
+    label: parts.length ? parts.join(' · ') : 'nobody waiting at the door',
+    count: s.crisis + s.ready + s.declined,
+    href: '/admin/prospects',
+  };
 }
 
 /** The counts the console header needs, without a second query. */

@@ -14,17 +14,24 @@ export async function saveOnboardingSession(
   token: string,
   state: ConvState,
   messages: ConvMessage[],
+  /** The name typed at the signup gate (migration 0090). Optional so every existing caller and test still
+   *  compiles — and so a save that genuinely has no name writes nothing rather than blanking one it already
+   *  holds. `coalesce(excluded, existing)` below is what makes that true on the update path. */
+  displayName?: string | null,
 ): Promise<void> {
   // Cast the already-stringified JSON through ::text::jsonb. Without the explicit ::text, the prod
   // driver (postgres.js) re-encodes a JSON string param as a jsonb *scalar string* (double-encoding);
   // ::text forces it to parse the JSON once, storing a real jsonb object/array on both drivers.
   // (loadOnboardingSession still defensively re-parses, so a legacy double-encoded row reads fine too.)
+  const name = displayName?.trim() || null;
   await db.query(
-    `insert into onboarding_session (email, token, state, messages, updated_at)
-     values ($1,$2,$3::text::jsonb,$4::text::jsonb, now())
+    `insert into onboarding_session (email, token, state, messages, display_name, updated_at)
+     values ($1,$2,$3::text::jsonb,$4::text::jsonb,$5, now())
      on conflict (email) do update
-       set token = excluded.token, state = excluded.state, messages = excluded.messages, updated_at = now()`,
-    [email, token, JSON.stringify(state), JSON.stringify(messages)],
+       set token = excluded.token, state = excluded.state, messages = excluded.messages,
+           display_name = coalesce(excluded.display_name, onboarding_session.display_name),
+           updated_at = now()`,
+    [email, token, JSON.stringify(state), JSON.stringify(messages), name],
   );
 }
 

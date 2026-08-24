@@ -3341,6 +3341,13 @@ body:has(.fc-app) .confidential-footer {
 .fc-kpi { border:1px solid rgba(55,79,99,.16); border-radius:11px; padding:11px 12px; }
 .fc-kpi .n { font-size:24px; font-weight:800; color:#2F7A7B; line-height:1; }
 .fc-kpi .l { font-size:11.5px; color:var(--fc-muted); margin-top:4px; }
+/* Not a fifth KPI — a footnote to the four above it, because these people are not members. Orange because it is
+   the needs-input colour and drop-off is exactly that: a number with something behind it to do. */
+.fc-kpi-aside { display:flex; align-items:baseline; gap:8px; margin-top:10px; padding-top:9px;
+  border-top:1px solid rgba(55,79,99,.16); text-decoration:none; }
+.fc-kpi-aside .n { font-size:19px; font-weight:800; color:#EC6233; line-height:1; }
+.fc-kpi-aside .l { font-size:12px; color:var(--fc-muted); }
+.fc-kpi-aside:hover .l { text-decoration:underline; }
 .fc-dist { margin-top:14px; }
 .fc-r { display:flex; align-items:center; gap:9px; font-size:13px; padding:5px 0; }
 .fc-pl { width:66px; }
@@ -3972,6 +3979,10 @@ body:has(.fc-dark) .brand-wordmark,
 .pros-row { border: 1px solid var(--line, #E8E6E6); border-radius: 8px; padding: 10px 12px; }
 .pros-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; }
 .pros-email { font-weight: 600; }
+/* The name leads when we have one (0090). It is a PERSON at the door, and an operator deciding whether to reach
+   out reads a name faster than an address — the email drops to the meta line beside the turn count, which is
+   where the identifying detail belongs once there is something human above it. */
+.pros-name { font-weight: 600; font-size: 15px; }
 .pros-meta { color: var(--muted-grey); font-size: 12px; }
 .pros-drop { margin: 4px 0 8px; font-size: 14px; }
 .pros-tag { font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; padding: 2px 7px; border-radius: 999px; border: 1px solid currentColor; }

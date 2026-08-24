@@ -26,6 +26,10 @@ export type CohortView = {
   sessionsClosed: number;
   avgIdScore: number | null; // null when nobody has an ID Score yet — never render 0 as if it were a score
   scoredMembers: number; // how many the average is actually built from (honesty about the denominator)
+  /** People mid-onboarding or stopped in it — NOT members, and deliberately not folded into `members`.
+   *  It sits on the cohort card because it is the other half of the same question: how many came, and how
+   *  many of them made it. Passed in rather than derived, because the population lives in a different table. */
+  prospects: number;
   byPhase: PhaseCount[];
 };
 
@@ -37,7 +41,12 @@ const PHASES = ['Reconnect', 'Rewire', 'Rebuild', 'Reclaim'];
  * Demo personas are excluded: a seeded .test account is not a member and would quietly inflate every number
  * on the page, including the average ID Score.
  */
-export function cohortView(rows: RosterRow[], summary: RosterSummary, now = Date.now()): CohortView {
+export function cohortView(
+  rows: RosterRow[],
+  summary: RosterSummary,
+  now = Date.now(),
+  prospects = 0,
+): CohortView {
   const real = rows.filter((r) => !r.isDemo);
   const scored = real.filter((r) => typeof r.idScore === 'number');
   const byPhase = PHASES.map((phase) => ({ phase, count: real.filter((r) => r.phase === phase).length }));
@@ -51,11 +60,12 @@ export function cohortView(rows: RosterRow[], summary: RosterSummary, now = Date
     // An average over nobody is not 0, it is nothing. Saying "0" would read as "the cohort is failing".
     avgIdScore: scored.length ? Math.round(scored.reduce((a, r) => a + (r.idScore ?? 0), 0) / scored.length) : null,
     scoredMembers: scored.length,
+    prospects,
     byPhase,
   };
 }
 
-export type AttentionKind = 'crisis' | 'draft' | 'milestone' | 'stalled' | 'quiet';
+export type AttentionKind = 'crisis' | 'draft' | 'milestone' | 'stalled' | 'quiet' | 'prospect';
 export type AttentionRow = {
   kind: AttentionKind;
   label: string; // what it is, in plain words

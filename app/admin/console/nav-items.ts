@@ -10,6 +10,8 @@ export type NavItem = { label: string; href: string };
 export const CONSOLE_NAV: NavItem[] = [
   { label: 'Console', href: '/admin' },
   { label: 'Members', href: '/admin/members' },
+  // Next to Members on purpose: the two halves of one question — who made it in, and who is still at the door.
+  { label: 'Prospects', href: '/admin/prospects' },
   { label: 'Attention', href: '/admin/attention' },
   { label: 'Activity', href: '/admin/activity' },
   { label: 'Review queue', href: '/admin/review' },

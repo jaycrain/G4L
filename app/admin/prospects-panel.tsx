@@ -10,6 +10,9 @@ import { revealProspectAction } from './prospect-actions.ts';
 
 type Prospect = {
   email: string;
+  /** The gate name (0090). Null for anyone who started before it shipped — we show the email alone rather than
+   *  inventing a display name out of the local-part, which would read as a fact we do not have. */
+  name: string | null;
   turns: number;
   hoursAgo: number;
   identityNoun: string | null;
@@ -48,10 +51,10 @@ function Row({ p }: { p: Prospect }) {
   return (
     <li className={`pros-row pros-${p.status}`}>
       <div className="pros-head">
-        <span className="pros-email">{p.email}</span>
+        {p.name && <span className="pros-name">{p.name}</span>}
         <span className={`pros-tag pros-tag-${p.status}`}>{LABEL[p.status]}</span>
         <span className="pros-meta">
-          {p.turns} turns · {ago(p.hoursAgo)}
+          {p.email} · {p.turns} turns · {ago(p.hoursAgo)}
           {p.identityNoun ? ` · “${p.identityNoun}”` : ''}
         </span>
       </div>

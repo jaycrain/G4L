@@ -13,7 +13,7 @@ import { cohortView, rosterAttention, activityFeed, markUnseen } from '../../lib
 import { getActivitySeenAt, getConsoleTheme } from '../../lib/founder/state.ts';
 import ConsoleShell from './console/console-shell.tsx';
 import ProspectsPanel from './prospects-panel.tsx';
-import { listProspects, summarizeProspects, dropOffLabel } from '../../lib/admin/prospects.ts';
+import { listProspects, summarizeProspects, dropOffLabel, prospectAttention } from '../../lib/admin/prospects.ts';
 import { isPaneKey } from './console/nav-items.ts';
 import { HealthSection, ModerationSection, ReviewSection, MembersSection, FeedbackSection } from './sections/index.tsx';
 import type { Db } from '../../lib/db/schema.ts';
@@ -38,7 +38,7 @@ export default async function AdminHome({ searchParams }: { searchParams?: Promi
   const prospectRows = await listProspects(db);
   const prospectSummary = summarizeProspects(prospectRows);
   const prospects = prospectRows.map((p) => ({
-    email: p.email, turns: p.turns, hoursAgo: p.hoursAgo, identityNoun: p.identityNoun,
+    email: p.email, name: p.name, turns: p.turns, hoursAgo: p.hoursAgo, identityNoun: p.identityNoun,
     status: p.status, dropOff: dropOffLabel(p),
   }));
 
@@ -53,10 +53,15 @@ export default async function AdminHome({ searchParams }: { searchParams?: Promi
     // `seenAt` rides along so the Companion's opener can say WHEN he last looked instead of just asserting it.
     const [rawFeed, seenAt, theme] = await Promise.all([activityFeed(db), getActivitySeenAt(db), getConsoleTheme(db)]);
     const { feed, unseen } = markUnseen(rawFeed, seenAt);
-    const cohort = cohortView(roster, summary, now);
+    // THE CONSOLE GETS THE PROSPECTS. Until 2026-08-24 it did not: they were computed above on every render and
+    // then dropped on the floor, because the section that renders them sits BELOW this early return, on the
+    // pre-console page nobody takes any more. The panel shipped 2026-08-15 and was seen by no one for nine days
+    // while a real prospect sat in the table. A feature that exists is not a feature that renders.
+    const cohort = cohortView(roster, summary, now, prospectSummary.total);
     const attention = [
       { kind: 'crisis' as const, label: modCount.safety > 0 ? `${modCount.safety} safety report${modCount.safety === 1 ? '' : 's'} open` : 'nothing flagged', count: modCount.safety },
       { kind: 'draft' as const, label: pending.length ? `${pending.length} draft${pending.length === 1 ? '' : 's'} waiting on you` : 'no drafts waiting', count: pending.length },
+      prospectAttention(prospectSummary),
       ...rosterAttention(roster, now),
     ];
     // Below the fold one pane owns the screen. A link from a subpage says which — so "Cohort" tapped on the

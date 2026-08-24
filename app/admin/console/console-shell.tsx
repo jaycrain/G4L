@@ -70,6 +70,14 @@ function CohortPanel({ cohort }: { cohort: CohortView }) {
           </div>
         </div>
       </div>
+      {/* THE OTHER HALF OF THE SAME QUESTION. Every number above counts people who made it; this counts the ones
+          still at the door or stopped in it. It sits BELOW the members row rather than inside it so it can never
+          be read as a fifth member metric — they are not members — and it links, because a drop-off number you
+          cannot open is the kind of number you learn to scroll past. */}
+      <Link className="fc-kpi-aside" href="/admin/prospects">
+        <span className="n">{cohort.prospects}</span>
+        <span className="l">Started, not finished</span>
+      </Link>
       <div className="fc-dist">
         <div className="fc-eyebrow" style={{ color: 'var(--fc-muted)' }}>By phase</div>
         {cohort.byPhase.map((p) => (
@@ -107,6 +115,7 @@ function NeedsYouPanel({
           const href = a.href ?? (a.count > 0
             ? a.kind === 'draft' ? '/admin/review'
             : a.kind === 'crisis' ? '/admin/moderation'
+            : a.kind === 'prospect' ? '/admin/prospects'
             : '/admin/attention'
             : null);
           return href
