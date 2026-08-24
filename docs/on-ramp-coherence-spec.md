@@ -6,6 +6,20 @@ map of the engine. This is about what a member MEETS, in order, from the front d
 **Status:** beats 1, 4 and 7 are settled and buildable. Beat 5 is the reorder and is **blocked on two rulings**
 (Jay's, Greg's). Beat 8 falls out of beat 5. Nothing here has shipped.
 
+> **HELD PENDING JAY'S OWN WALK — 2026-08-25.** Nothing in this spec gets built until he has walked the current
+> version himself. His reason, and it outranks everything below: *"We've made so many changes together from the
+> outside in that only Donna's walked and no one has walked the current version… I need to make all of these
+> decisions from the inside."*
+>
+> Every decision recorded here was reached by reading code, measuring strings, and reasoning about transcripts —
+> **not by anyone experiencing the product.** That is a real difference in authority and it is the correct
+> objection to raise before touching the most load-bearing surface we have.
+>
+> **On the 2026-08-14 prospect:** do NOT over-index on him. Jay's read is that he did not take the walk
+> seriously, so his behaviour is weak evidence on its own. What makes it worth anything is that **his reaction
+> connected dots across Greg's, Jennifer's and Donna's walks** — it is corroboration of a pattern, not a finding.
+> This spec leans on him harder than that in places; read those parts accordingly.
+
 ---
 
 ## Why this exists
@@ -196,6 +210,38 @@ desirable. It must be a decision, not a side effect of reordering.
 Chips, board, or conversational offer. **Recommendation: the R2 board**, because it exists and already reads as
 recognition. Cowork's own warning bites here — an asked list of life events is one decision away from a clinical
 checklist. The board's framing is what keeps it recognition.
+
+### TWO WAYS TO BUILD BEAT 5 — and the second one is now preferred
+
+**Option 1 · Reorder the stage machine.** Add `doors` to the onboarding arc's stage map at the front, move
+`identity` later. Faithful to Cowork's beat sheet. **This is the risky one**, and the risk is not in any single
+edit — it is that stage ORDER is load-bearing in ways that only appear when a real person walks it, three turns
+deep, in a transcript, a week later. On the one file whose standing rule is *revert regressions, don't patch
+them*.
+
+**Option 2 · Put the Doors board IN FRONT of the conversation. Change no stages at all.**
+
+A structured, tap-to-mark screen where the ramp sits — the same shape as the Grinta survey, which is already an
+administered structured surface pre-dating any conversational turn. Then the conversation opens FROM what they
+marked.
+
+- **`applyStagedTurn` is untouched.** `identity, gap, reclaim, grinta` stays exactly as it is. No new stage, no
+  reorder, no control-flow change.
+- **Recognition still comes first.** They have marked three real things about their life before anyone asks them
+  to admit anything — which is the entire point of the proposal.
+- **The identity question stops being cold.** It opens from their marks rather than from nothing. That is a
+  **prompt** change, replayable through fixtures, rather than a control-flow change.
+- **The Doors get better data.** Today they are inferred from the gap story and ruled on at the confirm. Marked
+  upfront, inference becomes augmentation — *"you marked three, the story surfaced a fourth."*
+
+**What remains risky in Option 2**, stated plainly so it is not sold as free: the identity stage's opening prompt
+IS load-bearing and it would change. And D2 does not go away — Doors known earlier still changes what the decline
+gate sees.
+
+**Unverified, and to check before promising it works:** whether marking Doors upfront collides with the existing
+propose-at-confirm flow, and whether the board needs the member to *talk* about their marks or whether the
+following conversation can carry that. Cowork's beat 2 says they "mark and talk about" them; Option 2 moves the
+talking into the conversation immediately after.
 
 ## Beat 8 — the R2 re-mark · falls out of beat 5
 
