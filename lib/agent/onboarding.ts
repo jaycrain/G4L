@@ -320,7 +320,10 @@ export type GapConfirmExpectation = { kind: 'gap_confirm'; choices: { value: str
 /** A drawout beat asking to be ruled on — the general form of the gap confirm. `prompt` is what the CHIPS are
  *  answering, shown above them, so a member who scrolled can see the question without the engine writing one into
  *  the Companion's turn. See lib/agent/beat-confirm.ts. */
-export type BeatConfirmExpectation = { kind: 'beat_confirm'; choices: { value: string; label: string }[]; prompt?: string };
+export type BeatConfirmExpectation = { kind: 'beat_confirm'; choices: { value: string; label: string }[]; prompt?: string;
+  /** Which named choice set these labels came from, so the tap can carry it back and the member's bubble
+   *  shows the words that were on the button. See lib/agent/beat-confirm.ts. */
+  set?: 'default' | 'legacy' };
 
 export type Expectation =
   | BeatConfirmExpectation

@@ -22,7 +22,7 @@ import { boardShownSlugs } from './doors-board-expectation.ts';
 import type { Db } from '../db/schema.ts';
 import { MEMBER_AGENT_SYSTEM_PROMPT } from './system-prompt.ts';
 import { resolveConfirmCorroborated, memberWantsToAdvance } from './onboarding-intent.ts';
-import { BEAT_CONFIRM_CHOICES, parseBeatConfirm } from './beat-confirm.ts';
+import { beatConfirmChoices, parseBeatConfirm, type BeatConfirmSet } from './beat-confirm.ts';
 import { LEGACY_PROMPTS, letterDateFor } from '../reconnect/legacy-letter.ts';
 import { parseBoardSubmission, boardIsEmpty, type BoardSubmission } from '../reconnect/doors-board-claim.ts';
 import { runArcTurn, administeredStage, drawoutShouldReflect, receiveThen, isProcessMetaOrAssent, affirmsReflection, type ArcConfig, type StageDef } from './onboarding-staged.ts';
@@ -183,8 +183,8 @@ const DOOR_MAX_DEPTH = 5; // anti-loop cap
 const NOTHING_LEFT_TO_ASK = 'Take your time — say more whenever you\'re ready.';
 /** The ruling a drawout beat needs, offered as chips instead of a question the engine writes into the model's
  *  turn. `prompt` is what the chips answer — shown with them, never appended to the Companion's words. */
-function beatConfirmExpectation(prompt: string): Expectation {
-  return { kind: 'beat_confirm', choices: BEAT_CONFIRM_CHOICES.map((c) => ({ value: c.value, label: c.label })), prompt };
+function beatConfirmExpectation(prompt: string, set: BeatConfirmSet = 'default'): Expectation {
+  return { kind: 'beat_confirm', choices: beatConfirmChoices(set).map((c) => ({ value: c.value, label: c.label })), prompt, set };
 }
 
 function withQuestion(modelText: string, probe: string | null): string {
@@ -1034,6 +1034,8 @@ const legacyStage: StageDef = {
       b.legacyDraft = b.model.legacyBody;
       b.reply = `${b.model.legacyBody}${BEAT_SEP}${LEGACY_ASK_REVISION}`;
       b.awaitingConfirm = true;
+      // TWO chips, and "That's mine" rather than "That's it" — see LEGACY_CONFIRM_CHOICES.
+      b.expects = beatConfirmExpectation(LEGACY_ASK_REVISION, 'legacy');
       return;
     }
     // Otherwise the model is still asking its prompts — let its question stand. The engine never appends one of
@@ -1041,7 +1043,9 @@ const legacyStage: StageDef = {
     b.reply = b.modelText;
   },
   confirm(b) {
-    const intent = resolveConfirmCorroborated(b.memberMessage, b.model.replyIntent, () => false, 'is_this_right');
+    // A tap is a fact. Typed replies still fall through to the classifier untouched.
+    const intent = parseBeatConfirm(b.memberMessage)
+      ?? resolveConfirmCorroborated(b.memberMessage, b.model.replyIntent, () => false, 'is_this_right');
     const rounds = b.legacyRevisions ?? 0;
     // Set only on the capped-redraft path, so her final version is shown in the same turn it is saved.
     let capPreamble = '';
@@ -1062,6 +1066,8 @@ const legacyStage: StageDef = {
       if (rounds + 1 < LEGACY_MAX_REVISIONS) {
         b.reply = `${b.model.legacyBody}${BEAT_SEP}${LEGACY_ASK_REVISION}`;
         b.awaitingConfirm = true;
+        // TWO chips, and "That's mine" rather than "That's it" — see LEGACY_CONFIRM_CHOICES.
+        b.expects = beatConfirmExpectation(LEGACY_ASK_REVISION, 'legacy');
         return;
       }
       // At the cap: fall through to COMMIT below, carrying the new draft with it. Held in a local rather than

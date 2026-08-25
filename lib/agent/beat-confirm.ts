@@ -56,12 +56,58 @@ export const BEAT_CONFIRM_CHOICES: readonly BeatConfirmOption[] = [
   { value: 'dispute', label: 'Not quite right' },
 ];
 
+/**
+ * THE LEGACY LETTER'S OWN TWO, and the labels are the whole decision.
+ *
+ * TWO, NOT THREE. Everywhere else "there's more" and "not quite right" are different acts — one adds, one
+ * corrects. On a letter they are the same act: you are going back in to change it. The stage already treats them
+ * identically (`intent === 'dispute' || intent === 'addition'` → stay on the draft and ask what). A third chip
+ * would be a distinction the member has to think about for nothing.
+ *
+ * "THAT'S MINE", NOT "THAT'S IT". This beat deliberately never asks whether the letter is GOOD — the rule on
+ * LEGACY_ASK_REVISION is that "an appraisal question invites a polite yes on the one artifact that has to be
+ * theirs." Dropping the standard "That's it" chip here would quietly reintroduce exactly what that rule exists to
+ * prevent. Ownership is the question that matters for a letter someone wrote to themselves; quality is not.
+ *
+ * WHY IT NEEDED A SET OF ITS OWN. Jay, 2026-08-25: he answered "That's great" and the entire letter reprinted —
+ * any round that does not cleanly close redraws the whole artifact, so a misread here costs a page of the
+ * member's own words handed back with the implication we were not listening. Donna hit the same beat on 8/18
+ * ("I just said, it sounds great!") and the Companion's own reply was the diagnosis: "You did — I circled back one
+ * time too many." That produced a patch for the "I just said" prefix; Jay's phrasing had no prefix and walked
+ * straight through. Seventh instance. The list cannot be finished, so the gate stops being a guess.
+ */
+export const LEGACY_CONFIRM_CHOICES: readonly BeatConfirmOption[] = [
+  { value: 'addition', label: 'Change a line' },
+  { value: 'done', label: 'That’s mine' },
+];
+
+/** Named choice sets. A tap carries WHICH set it came from, so the member's bubble always shows the label they
+ *  actually tapped — never another set's word for the same intent. */
+export type BeatConfirmSet = 'default' | 'legacy';
+const SETS: Record<BeatConfirmSet, readonly BeatConfirmOption[]> = {
+  default: BEAT_CONFIRM_CHOICES,
+  legacy: LEGACY_CONFIRM_CHOICES,
+};
+export const beatConfirmChoices = (set: BeatConfirmSet = 'default') => SETS[set];
+
 // A DISTINCT WIRE MARKER, for the same reason the Doors board and the gap confirm have their own: taps and prose
 // cross the same channel, and the engine must never mistake one for the other in either direction.
 const PREFIX = '[beat-confirm]';
 
-export function serializeBeatConfirm(intent: BeatConfirmIntent): string {
-  return `${PREFIX} ${intent}`;
+/** `set:` rides as a second token rather than inside the marker (`[beat-confirm:legacy]`), matching gap-confirm's
+ *  `keep:` convention — and keeping the marker a plain `[tag]`, which is the shape looksLikeMachineLine detects. */
+export function serializeBeatConfirm(intent: BeatConfirmIntent, set: BeatConfirmSet = 'default'): string {
+  return set === 'default' ? `${PREFIX} ${intent}` : `${PREFIX} ${intent} set:${set}`;
+}
+
+/** Which choice set a tap came from. Defaults rather than failing: an unknown set still resolves its intent, and
+ *  the display falls back to the default wording instead of showing the member a wire string. */
+export function parseBeatConfirmSet(message: string): BeatConfirmSet {
+  const m = (message ?? '').trim();
+  if (!m.startsWith(PREFIX)) return 'default';
+  const tok = m.slice(PREFIX.length).trim().split(/\s+/).find((t) => t.startsWith('set:'));
+  const name = tok?.slice('set:'.length);
+  return name && name in SETS ? (name as BeatConfirmSet) : 'default';
 }
 
 /**
@@ -82,5 +128,9 @@ export function parseBeatConfirm(message: string): BeatConfirmIntent | null {
  *  a tap is never prose, anywhere. */
 export function beatConfirmDisplay(message: string): string | null {
   const intent = parseBeatConfirm(message);
-  return intent ? (BEAT_CONFIRM_CHOICES.find((c) => c.value === intent)?.label ?? null) : null;
+  if (!intent) return null;
+  // Resolved from the SET the tap carried, so the bubble shows the words that were on the button. Without this a
+  // member who tapped "That's mine" on their own letter would be shown "That's it" — another set's word for the
+  // same intent, and an appraisal where they had made a statement of ownership.
+  return beatConfirmChoices(parseBeatConfirmSet(message)).find((c) => c.value === intent)?.label ?? null;
 }

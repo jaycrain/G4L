@@ -6,6 +6,7 @@ import { TOTAL_ITEMS } from '../lib/idq/instrument.ts';
 import { boardShownSlugs } from '../lib/agent/doors-board-expectation.ts';
 import { DOORS } from '../lib/doors.ts';
 import { BEAT_SEP } from '../lib/agent/onboarding.ts';
+import { serializeBeatConfirm } from '../lib/agent/beat-confirm.ts';
 
 // ============================================================================================================
 // v2.2 Reconnect — SKELETON + callback (§2a). The callback READS the committed captures (never the transcript)
@@ -705,4 +706,44 @@ test('the ruling is still offered — as chips, with the question as their promp
 
   assert.equal(turn.expects?.kind, 'beat_confirm', 'the member has no way to rule on the reflection');
   assert.equal(turn.state.awaitingConfirm, true);
+});
+
+// ── THE LEGACY LETTER CONFIRM IS A TAP (Q17, 2026-08-25) ──────────────────────────────────────────────────────
+//
+// Jay answered "That's great" and the ENTIRE letter reprinted. Any round that does not cleanly close redraws the
+// whole artifact, so a misread here hands a member a page of their own words back with the implication we were
+// not listening. Donna hit the same beat on 8/18 — "I just said, it sounds great!" — and the Companion's own
+// reply was the diagnosis: "You did — I circled back one time too many." That produced a patch for the "I just
+// said" prefix; Jay's phrasing had no prefix and walked straight through. Seventh instance of one shape.
+//
+// The gap confirm solved this exact problem by becoming three buttons: "a better classifier is a better guess, a
+// tap is a fact." This is that fix, applied to the beat with the highest cost per miss.
+
+test('the letter draft offers the ruling as a tap, in its OWN two words', () => {
+  const atLegacy: ConvState = { stage: 'legacy', collected: { identityNoun: 'Player', doors: ['grind'] } };
+  const turn = applyReconnectTurn(atLegacy, [], 'that sounds right', {
+    text: '',
+    legacyBody: 'A year from today. I am writing this from an ordinary Tuesday.',
+  } as never);
+
+  assert.equal(turn.expects?.kind, 'beat_confirm');
+  const labels = (turn.expects as { choices: { label: string }[] }).choices.map((c) => c.label);
+  assert.deepEqual(labels, ['Change a line', 'That’s mine']);
+  // The appraisal rule: this beat must never ask whether the letter is good.
+  assert.ok(!labels.includes('That’s it'), 'an appraisal chip invites the polite yes the beat exists to avoid');
+});
+
+test('tapping "That’s mine" COMMITS — it does not redraft the letter back at them', () => {
+  const atLegacy: ConvState = {
+    stage: 'legacy',
+    awaitingConfirm: true,
+    legacyDraft: 'A year from today. I am writing this from an ordinary Tuesday.',
+    collected: { identityNoun: 'Player', doors: ['grind'] },
+  } as unknown as ConvState;
+
+  // The tap, not prose. This is the turn where Jay typed "That's great" and got the whole letter again.
+  const turn = applyReconnectTurn(atLegacy, [], serializeBeatConfirm('done', 'legacy'), { text: '' } as never);
+
+  assert.notEqual(turn.state.stage, 'legacy', 'a clean acceptance moves off the letter beat');
+  assert.doesNotMatch(turn.reply, /Read it back\. What's not right/, 'it must not ask for a revision they declined');
 });

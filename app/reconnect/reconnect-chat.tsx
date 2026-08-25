@@ -312,7 +312,7 @@ export default function ReconnectChat({
                   type="button"
                   className="idp-chip"
                   disabled={pending || !state}
-                  onClick={() => void submit(serializeBeatConfirm(c.value as BeatConfirmIntent))}
+                  onClick={() => void submit(serializeBeatConfirm(c.value as BeatConfirmIntent, expects.set ?? 'default'))}
                 >
                   {c.label}
                 </button>
