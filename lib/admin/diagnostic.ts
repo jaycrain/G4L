@@ -56,7 +56,17 @@ export type InFlightOnboarding = {
   identityNoun: string | null;
   hasGap: boolean;
   reclaimCount: number;
+  /** CONFIRMED Doors — she has ruled on these at the gap confirm. */
   doors: string[];
+  /** PENDING Doors — heard, shown, not yet ruled on.
+   *
+   *  This field was missing until 2026-08-25 and its absence made the report LIE BY OMISSION. Through the whole
+   *  gap stage every Door lives here and `doors` is empty, so the diagnostic answered "doors: []" for a member
+   *  who had been shown one — indistinguishable from a member for whom we had matched nothing. Jay asked, mid-walk,
+   *  why a Door had vanished; the instrument I reached for could not see the field he was asking about, and it
+   *  reported an empty array with total confidence. An operator surface that cannot tell "none" from "not looked
+   *  at" is worse than one that says nothing. */
+  doorsProposed: string[];
 };
 
 /**
@@ -71,6 +81,7 @@ export async function findInFlightOnboarding(db: Db, q: string): Promise<InFligh
   const { rows } = await db.query<{
     email: string; updated_at: string; stage: string | null; turns: number;
     identity_noun: string | null; has_gap: boolean; reclaim_count: number; doors: unknown;
+    doors_proposed: unknown;
   }>(
     `select email,
             updated_at,
@@ -79,7 +90,8 @@ export async function findInFlightOnboarding(db: Db, q: string): Promise<InFligh
             state->'collected'->>'identityNoun'                          as identity_noun,
             coalesce(length(state->'collected'->>'gap') > 0, false)      as has_gap,
             coalesce(jsonb_array_length(state->'collected'->'reclaimList'), 0) as reclaim_count,
-            coalesce(state->'collected'->'doors', '[]'::jsonb)           as doors
+            coalesce(state->'collected'->'doors', '[]'::jsonb)           as doors,
+            coalesce(state->'collected'->'doorsProposed', '[]'::jsonb)   as doors_proposed
        from onboarding_session
       where email ilike '%'||$1||'%' escape '\\'
       order by updated_at desc
@@ -95,6 +107,7 @@ export async function findInFlightOnboarding(db: Db, q: string): Promise<InFligh
     hasGap: !!r.has_gap,
     reclaimCount: Number(r.reclaim_count ?? 0),
     doors: Array.isArray(r.doors) ? (r.doors as string[]) : [],
+    doorsProposed: Array.isArray(r.doors_proposed) ? (r.doors_proposed as string[]) : [],
   }));
 }
 
@@ -144,6 +157,9 @@ export const TRANSCRIPT_READABLE = [
   'dctestemail@mac.com',      // Donna's second address, used for short single-feature walks.
   'tim@carlin.com',           // Tim Carlin — DECLINED at intake 2026-08-14 after 13 turns. Reading it to find out
                               // whether the no-fade gate turned away a real member. REMOVE once that is answered.
+  'jaycrain@mac.com',         // Jay's own charter walk, 2026-08-25 — added at his explicit request WHILE walking,
+                              // to diagnose Door under-matching from what he actually typed rather than from a
+                              // summary of it. His own words about his own life, and he is the one asking.
 ] as const;
 
 /** May an operator read this conversation? `.test` fixtures always; real addresses only by name. */
