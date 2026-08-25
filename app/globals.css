@@ -3141,8 +3141,13 @@ body.onbwel-bleed main { max-width: none; margin: 0; padding: 0; }
    row's margin-top is zeroed -- so the crumb and "Open this Session" become adjacent, which they never are in the
    full hero. 4px was the whole gap, and it reads as none: her words were "sits directly against ... with no
    visible gap". Raised at both call sites (mobile block and desktop) so the two cannot drift.
-   The margin does apply despite this being a <span>: .tri-hero is a flex column, so the child is blockified. */
-.tri-companion.is-conversing .tri-hero-crumb { margin-bottom: 12px; }
+   THE FIX NEVER APPLIED UNTIL 2026-08-25. The comment here used to claim "the margin does apply despite this
+   being a <span>: .tri-hero is a flex column, so the child is blockified." That reasoning is wrong twice over:
+   .tri-hero is a flex ROW, and the crumb is not its child -- it sits inside .tri-hero-text, a plain block. So
+   the span stayed inline, vertical margins were silently ignored, and the measured gap was 4px of line-height
+   leading against 13px below. Jay saw the same thing three days later and read it as the button needing to be
+   centred. `display: block` is what makes the margin real; 10px against the 12px padding-bottom centres it. */
+.tri-companion.is-conversing .tri-hero-crumb { display: block; margin-bottom: 12px; }
 }
 
 /* The navy hero — headline + guiding line + CTA, with the merged 4R ring beside it (phase + progress). */
@@ -3213,8 +3218,13 @@ body.onbwel-bleed main { max-width: none; margin: 0; padding: 0; }
    row's margin-top is zeroed -- so the crumb and "Open this Session" become adjacent, which they never are in the
    full hero. 4px was the whole gap, and it reads as none: her words were "sits directly against ... with no
    visible gap". Raised at both call sites (mobile block and desktop) so the two cannot drift.
-   The margin does apply despite this being a <span>: .tri-hero is a flex column, so the child is blockified. */
-.tri-companion.is-conversing .tri-hero-crumb { margin-bottom: 12px; }
+   THE FIX NEVER APPLIED UNTIL 2026-08-25. The comment here used to claim "the margin does apply despite this
+   being a <span>: .tri-hero is a flex column, so the child is blockified." That reasoning is wrong twice over:
+   .tri-hero is a flex ROW, and the crumb is not its child -- it sits inside .tri-hero-text, a plain block. So
+   the span stayed inline, vertical margins were silently ignored, and the measured gap was 4px of line-height
+   leading against 13px below. Jay saw the same thing three days later and read it as the button needing to be
+   centred. `display: block` is what makes the margin real; 10px against the 12px padding-bottom centres it. */
+.tri-companion.is-conversing .tri-hero-crumb { display: block; margin-bottom: 12px; }
 
 /* "Where you stand" — the Companion's standing update, PINNED between the thread and the composer (flex 0 0 auto
    so it never shrinks when the thread grows). Same shape as the keeper so the two read as one family, but a TEAL
