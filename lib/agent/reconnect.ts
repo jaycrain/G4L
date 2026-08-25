@@ -22,12 +22,13 @@ import { boardShownSlugs } from './doors-board-expectation.ts';
 import type { Db } from '../db/schema.ts';
 import { MEMBER_AGENT_SYSTEM_PROMPT } from './system-prompt.ts';
 import { resolveConfirmCorroborated, memberWantsToAdvance } from './onboarding-intent.ts';
+import { BEAT_CONFIRM_CHOICES, parseBeatConfirm } from './beat-confirm.ts';
 import { LEGACY_PROMPTS, letterDateFor } from '../reconnect/legacy-letter.ts';
 import { parseBoardSubmission, boardIsEmpty, type BoardSubmission } from '../reconnect/doors-board-claim.ts';
 import { runArcTurn, administeredStage, drawoutShouldReflect, receiveThen, isProcessMetaOrAssent, affirmsReflection, type ArcConfig, type StageDef } from './onboarding-staged.ts';
 import { captureCreate } from './capture-model.ts';
 import { CHECKPOINT_GRIT_ITEMS, grintaStem } from '../grinta/survey/instrument.ts';
-import type { Collected, ConvMessage, ConvState, DoorRevision, ModelTurn, ReplyIntent, Turn, Stage } from './onboarding.ts';
+import type { Collected, ConvMessage, ConvState, DoorRevision, Expectation, ModelTurn, ReplyIntent, Turn, Stage } from './onboarding.ts';
 
 import { BEAT_SEP } from './onboarding.ts';
 export { BEAT_SEP }; // re-export so the reconnect action + chat keep importing it from here
@@ -180,6 +181,12 @@ const DOOR_MAX_DEPTH = 5; // anti-loop cap
 // is the whole reply, which is where the draw-out's questions are meant to come from anyway. The terminal line
 // exists for the one case that would otherwise emit nothing: no model text AND no probe left.
 const NOTHING_LEFT_TO_ASK = 'Take your time — say more whenever you\'re ready.';
+/** The ruling a drawout beat needs, offered as chips instead of a question the engine writes into the model's
+ *  turn. `prompt` is what the chips answer — shown with them, never appended to the Companion's words. */
+function beatConfirmExpectation(prompt: string): Expectation {
+  return { kind: 'beat_confirm', choices: BEAT_CONFIRM_CHOICES.map((c) => ({ value: c.value, label: c.label })), prompt };
+}
+
 function withQuestion(modelText: string, probe: string | null): string {
   const t = (modelText ?? '').trim();
   if (!t) return probe ?? NOTHING_LEFT_TO_ASK;
@@ -631,10 +638,10 @@ const DRIFT_CONFIRM = 'Does that name the shape of it — or is it different?';
 // NULL means "the model gave us nothing to reflect". Returning a fixed sentence here instead was the bug: the caller
 // then had a constant to emit, and a constant re-emits VERBATIM for as long as the model keeps coming back empty.
 function reflectDrift(modelText: string): string | null {
+  // Decision B — see reflectWindow. Same shape, same fault: appending a confirm to a model turn that has no
+  // question mark fires hardest on the turns that are COMPLETE. The ruling moves to chips.
   const t = (modelText ?? '').trim();
-  if (!t) return null;
-  if (/\?\s*$/.test(t)) return t;
-  return `${t}\n\n${DRIFT_CONFIRM}`;
+  return t || null;
 }
 const REOPEN_DRIFT = "Then I've not got it yet — say it your way. What's the real shape of what the Fade cost you?";
 // The BRIDGE (V3): the turn toward hope, at the drift→window seam. LIFT starts HERE — the bridge hands straight into
@@ -678,6 +685,7 @@ const driftStage: StageDef = {
       if (reflected) {
         b.reply = reflected;
         b.awaitingConfirm = true;
+        b.expects = beatConfirmExpectation(DRIFT_CONFIRM);
       } else if (probe) {
         b.reply = probe;
         b.awaitingConfirm = false;
@@ -692,7 +700,10 @@ const driftStage: StageDef = {
     }
   },
   confirm(b) {
-    const intent = resolveConfirmCorroborated(b.memberMessage, b.model.replyIntent, isKeeperMaterial, 'is_this_right');
+    // A tap resolves before the classifier is consulted (see the window confirm). Typed replies fall
+    // through untouched.
+    const intent = parseBeatConfirm(b.memberMessage)
+      ?? resolveConfirmCorroborated(b.memberMessage, b.model.replyIntent, isKeeperMaterial, 'is_this_right');
     if (intent === 'dispute') {
       b.awaitingConfirm = false;
       b.reply = REOPEN_DRIFT; // they rejected the pattern — take it, don't defend
@@ -743,12 +754,24 @@ function windowMore(history: ConvMessage[]): string | null {
   return nextFollowUp(WINDOW_MORE_VARIANTS, history);
 }
 const WINDOW_CONFIRM = 'Is that the one worth chasing — or not quite it yet?';
-// NULL means nothing to reflect — see reflectDrift. Same contract, same reason.
+/**
+ * THE ENGINE NO LONGER MANUFACTURES THE QUESTION (Jay, 2026-08-25 — Decision B).
+ *
+ * This used to staple WINDOW_CONFIRM onto any model turn that did not end in "?". It fired on the one thing it
+ * most needed to recognise: a CLOSE is a complete turn precisely BECAUSE it has no question. Jay's model wrote
+ * "We'll leave it there for today. When you're ready, the next phase starts turning that morning into a plan."
+ * — and the engine appended "Is that the one worth chasing?", which he had answered two turns earlier with
+ * "Absolutely". `drawoutShouldReflect` had advanced BECAUSE it read the model as wrapped up; appending a question
+ * un-wrapped the very signal it acted on.
+ *
+ * The ruling is still needed — the reflection has to be rulable. It is offered as CHIPS instead, with
+ * WINDOW_CONFIRM as their prompt. The model owns the words, the engine owns the gate.
+ *
+ * NULL still means nothing to reflect — see reflectDrift. Same contract, same reason.
+ */
 function reflectWindow(modelText: string): string | null {
   const t = (modelText ?? '').trim();
-  if (!t) return null;
-  if (/\?\s*$/.test(t)) return t;
-  return `${t}\n\n${WINDOW_CONFIRM}`;
+  return t || null;
 }
 const REOPEN_WINDOW = "Then it's not quite the one yet — say more. What would the Tuesday worth chasing actually look like?";
 // The close — name that Tuesday as the spark, and hold onto it. Ends on HOPE; hands to the Checkpoint.
@@ -791,6 +814,9 @@ const windowStage: StageDef = {
       if (reflected) {
         b.reply = reflected;
         b.awaitingConfirm = true;
+        // THE RULING, AS A TAP. The prompt rides on the chips rather than being written into the Companion's turn,
+        // so a model that closed its own beat is not contradicted by a question it did not ask.
+        b.expects = beatConfirmExpectation(WINDOW_CONFIRM);
       } else if (probe) {
         b.reply = probe;
         b.awaitingConfirm = false;
@@ -804,7 +830,10 @@ const windowStage: StageDef = {
     }
   },
   confirm(b) {
-    const intent = resolveConfirmCorroborated(b.memberMessage, b.model.replyIntent, isKeeperMaterial, 'is_this_right');
+    // A TAP IS A FACT — it resolves before the classifier is consulted at all. Typed replies still fall through to
+    // resolveConfirmCorroborated untouched, so the chips are an easy path rather than a gate.
+    const intent = parseBeatConfirm(b.memberMessage)
+      ?? resolveConfirmCorroborated(b.memberMessage, b.model.replyIntent, isKeeperMaterial, 'is_this_right');
     if (intent === 'dispute') {
       b.awaitingConfirm = false;
       b.reply = REOPEN_WINDOW; // not the right vision yet — keep looking, don't force it

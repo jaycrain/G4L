@@ -55,7 +55,12 @@ export const SECTIONS = [
     // The board's own UI copy — the rating prompt and the three temporal questions she reads while tapping.
     // The CARD text lives in lib/content/doors-board.ts; these are the words around it, and a member reads
     // both. Added 2026-08-18, the day the surface was written.
-    'app/reconnect/doors-board.tsx'] },
+    'app/reconnect/doors-board.tsx',
+    // The drawout confirm chips — "There's more" / "That's it" / "Not quite right". Added 2026-08-25 with the
+    // surface, in the same commit: the engine stopped writing its confirm question into the Companion's turn, so
+    // these three labels are now what a member taps to rule on a reflection. Member-facing words, so canon sees
+    // them. Same treatment as gap-confirm-choice.ts, which is registered under Onboarding for the same reason.
+    'lib/agent/beat-confirm.ts'] },
   { title: 'Rewire — mind', files: ['lib/agent/rewire.ts', 'lib/curriculum/content/rewire.ts', 'lib/ceremony/rewire-ceremony-beats.ts'] },
   { title: 'Rebuild — body', files: ['lib/agent/rebuild.ts', 'lib/rebuild/why-instrument.ts', 'lib/rebuild/skills-instrument.ts', 'lib/ceremony/rebuild-ceremony-beats.ts'] },
   { title: 'Reclaim — the outcome', files: ['lib/agent/reclaim.ts', 'lib/reclaim/bigger-world-instrument.ts', 'lib/ceremony/reclaim-ceremony-beats.ts'] },

@@ -4120,3 +4120,11 @@ body:has(.fc-dark) .brand-wordmark,
   border-radius: 8px;
   padding: 0.7rem 0.9rem;
 }
+
+/* THE BEAT CONFIRM — the ruling a drawout beat needs, as a tap (Jay, 2026-08-25). Deliberately the same chip as
+   the identity picker and the gap confirm: a member who has used either already knows how this works, and a third
+   affordance for the same act would be a third thing to learn. The prompt sits ABOVE the chips rather than inside
+   the Companion's bubble, which is the whole change — the engine no longer writes questions into the model's turn. */
+.beatc { margin: 0.5rem 0 0.15rem; }
+.beatc-prompt { display: block; font-size: 13px; color: var(--muted-grey); line-height: 1.5; margin-bottom: 0.4rem; }
+.beatc-chips { display: flex; flex-wrap: wrap; gap: 8px; }

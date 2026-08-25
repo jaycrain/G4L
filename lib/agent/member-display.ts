@@ -33,6 +33,7 @@
 // never summarises, interprets, or improves on a choice she made.
 
 import { GAP_CONFIRM_CHOICES, parseGapConfirmChoice } from './gap-confirm-choice.ts';
+import { BEAT_CONFIRM_CHOICES, parseBeatConfirm } from './beat-confirm.ts';
 import { parseBoardSubmission } from '../reconnect/doors-board-claim.ts';
 
 /** Bare sentinels — a whole message that is one instruction word. */
@@ -58,6 +59,18 @@ const FORMATS: { id: string; display: (t: string) => string | null }[] = [
       const choice = parseGapConfirmChoice(t);
       if (!choice) return null;
       return GAP_CONFIRM_CHOICES.find((c) => c.value === choice)?.label ?? null;
+    },
+  },
+  {
+    // The drawout beat confirm (2026-08-25) — the general form of [gap-confirm], added when the engine stopped
+    // writing its confirm question into the Companion's turn. Registered HERE in the same commit that introduced
+    // the marker, which is the whole point of this file: the fourth leak reached Jay's permanent record because a
+    // format shipped before its display rule.
+    id: '[beat-confirm]',
+    display: (t) => {
+      const intent = parseBeatConfirm(t);
+      if (!intent) return null;
+      return BEAT_CONFIRM_CHOICES.find((c) => c.value === intent)?.label ?? null;
     },
   },
   {

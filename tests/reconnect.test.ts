@@ -438,7 +438,12 @@ test('reconnect drawout · TIC FIX — a declarative reflection past the floor a
   const atDrift: ConvState = { stage: 'drift', stageScratch: { drift: { driftDepth: 2 } }, collected: { doors: ['grind'] } };
   const turn = applyReconnectTurn(atDrift, [], 'yeah, all of it went quiet', { text: 'The drift kept taking the things that were just yours, one reasonable decision at a time.' });
   assert.equal(turn.state.awaitingConfirm, true, 'recognizes the declarative reflection and moves to the check');
-  assert.match(turn.reply, /name the shape|is it different/i, 'appends the confirm question, not another draw-out probe');
+  // DECISION B, 2026-08-25. What this test protects is that the beat ADVANCES to a check rather than circling with
+  // another draw-out probe — and that still holds. What changed is where the check lives: the engine no longer
+  // appends its confirm question to the model's turn, because that rule fired hardest on turns that were already
+  // complete. The check is chips now, and the reply must NOT be a fresh probe.
+  assert.equal(turn.expects?.kind, 'beat_confirm', 'moves to the check');
+  assert.doesNotMatch(turn.reply, /\?\s*$/, 'not another draw-out probe, and not a manufactured question');
 });
 
 test('reconnect drawout · TIC FIX still respects the floor — a declarative statement on turn 1 does NOT advance', () => {
@@ -657,4 +662,47 @@ test('accepting a re-seeing lands the Door AND hands forward — never a dead en
       `${kind}: a scripted landing that ends the turn with no question strands the member —\n${reply}`,
     );
   }
+});
+
+// ── THE ENGINE NO LONGER MANUFACTURES THE CONFIRM QUESTION (Decision B, 2026-08-25) ───────────────────────────
+//
+// Jay was asked "Does that Tuesday feel like the one worth chasing — or is there more to it?", answered
+// "Absolutely", and the next turn ended "Is that the one worth chasing — or not quite it yet?".
+//
+// The MODEL asked that first question, so awaitingConfirm was never set — the engine only raises it when IT emits
+// a reflection. His answer went to `gather`, which advanced BECAUSE drawoutShouldReflect read the model as having
+// wrapped up (declarative, no "?"), and then reflectWindow stapled a question on, un-wrapping the very signal it
+// had just acted on. A close is a complete turn PRECISELY because it has no question.
+
+test('a model turn that wrapped up is left alone — the engine adds no question of its own', () => {
+  const close =
+    "That's the day. Lean and rested, the work in, the ride on the calendar. " +
+    "We'll leave it there for today. When you're ready, the next phase starts turning that morning into a plan.";
+  const atWindow: ConvState = {
+    stage: 'window',
+    collected: { identityNoun: 'Player', doors: ['grind'] },
+    stageScratch: { window: { windowDepth: 3 } },
+  } as unknown as ConvState;
+
+  const turn = applyReconnectTurn(atWindow, [], 'Absolutely', { text: close, depthReady: true } as never);
+
+  assert.ok(
+    !turn.reply.includes('worth chasing — or not quite it yet'),
+    `the engine appended its confirm to a close the member had already answered:\n${turn.reply}`,
+  );
+  assert.match(turn.reply, /leave it there for today/, "the model's own words stand");
+});
+
+test('the ruling is still offered — as chips, with the question as their prompt', () => {
+  // B is not "stop asking". The reflection still has to be rulable; the ruling just stops being a sentence the
+  // engine writes into the Companion's mouth.
+  const atWindow: ConvState = {
+    stage: 'window',
+    collected: { identityNoun: 'Player', doors: ['grind'] },
+    stageScratch: { window: { windowDepth: 3 } },
+  } as unknown as ConvState;
+  const turn = applyReconnectTurn(atWindow, [], 'Absolutely', { text: 'That is the day, and it is ordinary.', depthReady: true } as never);
+
+  assert.equal(turn.expects?.kind, 'beat_confirm', 'the member has no way to rule on the reflection');
+  assert.equal(turn.state.awaitingConfirm, true);
 });

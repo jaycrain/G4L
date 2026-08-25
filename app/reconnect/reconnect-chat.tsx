@@ -4,6 +4,7 @@ import { Fragment, useEffect, useRef, useState } from 'react';
 import { showComposer } from '../../lib/chat/composer.ts';
 import RichText from '../rich-text.tsx';
 import { memberDisplay } from '../../lib/agent/member-display.ts';
+import { serializeBeatConfirm, type BeatConfirmIntent } from '../../lib/agent/beat-confirm.ts';
 import { startReconnectAction, reconnectTurnAction, reconnectCeremonyDataAction, loadReconnectSessionAction } from './actions.ts';
 import ScaleChips from '../components/scale-chips.tsx';
 import DoorsBoard from './doors-board.tsx';
@@ -296,6 +297,29 @@ export default function ReconnectChat({
         {/* W-32 chips scroll WITH the thread (Jay's walk: not pinned to the bottom) — they answer the question above, autosend. */}
         {expects?.kind === 'doors_board' && <DoorsBoard expects={expects} disabled={pending || !state} onSubmit={(p) => void submit(p)} />}
         {expects?.kind === 'scale' && <ScaleChips expects={expects} disabled={pending || !state} onPick={(n) => void submit(String(n))} />}
+        {/* THE RULING, AS A TAP (Jay, 2026-08-25). The engine used to write this question into the Companion's turn
+            whenever the model's text lacked a "?" — which fired on closes, because a close has no question BY
+            DESIGN. He answered "Absolutely" and was asked the same thing again. The prompt now rides on the chips,
+            so the model's words are never contradicted by a question it did not ask, and the member still has an
+            unambiguous way to rule. The composer stays: typed replies fall through to the classifier as before. */}
+        {expects?.kind === 'beat_confirm' && (
+          <div className="beatc">
+            {expects.prompt && <span className="beatc-prompt">{expects.prompt}</span>}
+            <div className="beatc-chips">
+              {expects.choices.map((c) => (
+                <button
+                  key={c.value}
+                  type="button"
+                  className="idp-chip"
+                  disabled={pending || !state}
+                  onClick={() => void submit(serializeBeatConfirm(c.value as BeatConfirmIntent))}
+                >
+                  {c.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
       {error && <p className="error">{error}</p>}
       {/* The text box is hidden on an administered turn (the chips above ARE the input); it returns on conversational turns. */}

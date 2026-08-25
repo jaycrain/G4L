@@ -86,6 +86,12 @@ for (const stage of ['drift', 'window'] as const) {
       depthReady: true,
     });
     assert.equal(turn.state.awaitingConfirm, true, 'a real reflection still opens the confirm gate');
-    assert.match(turn.reply, /\?/, 'and ends on a check the member can answer');
+    // DECISION B, 2026-08-25 — this used to assert the reply ENDS ON A "?", because the engine stapled its confirm
+    // onto any model turn without one. That fired hardest on the turns that were COMPLETE: Jay's model wrote a
+    // close, the engine appended "Is that the one worth chasing?", and he had answered exactly that two turns
+    // earlier. The check did not go away — it moved off the Companion's words and onto chips. The member still has
+    // an unambiguous way to rule, which is what this test was protecting.
+    assert.equal(turn.expects?.kind, 'beat_confirm', 'and offers a check the member can answer');
+    assert.doesNotMatch(turn.reply, /\?\s*$/, 'the engine no longer writes its question into the model’s turn');
   });
 }
