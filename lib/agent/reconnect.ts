@@ -531,8 +531,21 @@ const doorsStage: StageDef = {
       }
       // R2: a correct RE-OPENS the insight — reset depth so a fresh one forms on the corrected door, never a stale one.
       (b.scratch as { doorDepth?: number }).doorDepth = 0;
-      // Accepted-and-added-more → keep drawing out; a clean acceptance → let it land (copy differs correct vs add).
-      b.reply = intent === 'addition' ? withQuestion(b.modelText, doorMore(b.history)) : reseeingLanded(rev.toSlug, rev.kind);
+      // Accepted-and-added-more → keep drawing out; a clean acceptance → land it AND hand forward.
+      //
+      // THE LANDING USED TO BE THE WHOLE TURN, AND IT WAS A DEAD END (Jay, 2026-08-25 — he hit it twice in one
+      // Session). Both variants of reseeingLanded end "Let's keep going" / "we'll keep going from there" and then
+      // stop: no question, empty box, nothing to answer. The stage does not advance here either — doorDepth is
+      // reset just above so the draw-out continues on the corrected Door — so the member is left holding a turn
+      // that promised to continue and didn't. It fires once per Door accepted, so a member who surfaces three
+      // Doors in conversation hits three dead ends, at exactly the beats meant to open them up.
+      //
+      // withQuestion (not a rewrite of the landing): the deliberate copy stays, and the SAME forward probe the
+      // addition branch uses is appended. It is also a no-op when the text already ends on a question, so this
+      // cannot double-ask.
+      b.reply = intent === 'addition'
+        ? withQuestion(b.modelText, doorMore(b.history))
+        : withQuestion(reseeingLanded(rev.toSlug, rev.kind), doorMore(b.history));
       return;
     }
     // (2) A re-seeing may surface AT the insight confirm too (they dispute + the model proposes the truer door here).

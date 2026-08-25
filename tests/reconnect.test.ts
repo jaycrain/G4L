@@ -624,3 +624,37 @@ test('the echo is the second-pass framing, never the jolt', () => {
   assert.ok(!text.includes('we go find them'), 'a returning member is not starting to look for the first time');
   assert.ok(text.includes('go back properly'), 'the echo should frame this as the deeper second pass');
 });
+
+// ── NO SCRIPTED SUBSTITUTION MAY STRAND THE MEMBER ────────────────────────────────────────────────────────────
+//
+// Jay hit this TWICE in one Session (2026-08-25). Accepting a Door the Companion had surfaced produced "The
+// Load-Bearer, too — I'll hold that alongside the one you named. Both are part of it. Let's keep going." — and
+// then an empty text box. Both variants of reseeingLanded end on a promise to continue and then terminate.
+//
+// It is not a one-off: the branch fires ONCE PER DOOR ACCEPTED, so a member who surfaces three Doors in
+// conversation meets three dead ends, at precisely the beats meant to draw them out.
+//
+// SECOND INSTANCE OF ONE SHAPE. The gap→reclaim hand-in had it first ("this site discarded the model's turn
+// entirely and substituted the scripted bridge") and was fixed with receiveThen. A scripted reply must either
+// carry a question or hand back to the model — never both replace the turn AND end it.
+
+test('accepting a re-seeing lands the Door AND hands forward — never a dead end', () => {
+  for (const kind of ['widen', 'name', 'correct'] as const) {
+    const pending: ConvState = {
+      stage: 'doors',
+      awaitingConfirm: true,
+      pendingRevision: { kind, toSlug: 'load_bearer', ...(kind === 'correct' ? { fromSlug: 'grind' } : {}) },
+      collected: { identityNoun: 'Player', doors: ['grind'] },
+    };
+    // A CLEAN acceptance — the branch Jay hit. `replyIntent: 'done'` is the model agreeing it was a plain yes,
+    // and `text: ''` is what the model actually gives on a bare confirm: nothing to carry.
+    const turn = applyReconnectTurn(pending, [], 'Yes', { text: '', replyIntent: 'done' });
+    const reply = turn.reply.split(BEAT_SEP).join('\n');
+
+    assert.match(reply, /Load-Bearer/, `${kind}: the Door is named back`);
+    assert.ok(
+      /\?/.test(reply),
+      `${kind}: a scripted landing that ends the turn with no question strands the member —\n${reply}`,
+    );
+  }
+});
