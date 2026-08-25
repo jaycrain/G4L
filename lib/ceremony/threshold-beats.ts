@@ -47,7 +47,10 @@ export const THRESHOLD_COPY = {
   //     panel is merged into the Companion center — Jay 2026-07-26), reordered AFTER the Playbook beat below.
   // The doc's version ends "…and that's where we're headed now." Dropped: the ceremony already runs ON the
   // dashboard, so narrating a journey to where they are standing reads as filler.
-  journey: 'Your Comeback starts with Reconnect — your first Session’s ready whenever you are.',
+  // "Session is", not "Session's" (Jay, mid-walk 2026-08-25). The contraction makes a capitalised product noun
+  // possessive-looking at a glance — "your first Session's ready" reads for a beat as something belonging to the
+  // Session. Write it out where a real name takes the verb.
+  journey: 'Your Comeback starts with Reconnect — your first Session is ready whenever you are.',
   // 6 — the Playbook, described plainly. Reordered to run BEFORE the "get to work" beat (Donna's Reconnect edits).
   // "IT KEEPS BUILDING ITSELF" WAS THE WHOLE POINT OF THE LINE, and it is no longer how the product works. Keepers
   // became opt-in on 2026-08-20: the Companion offers, and nothing is written unless she taps Keep. A Playbook
