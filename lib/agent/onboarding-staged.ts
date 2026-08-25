@@ -1455,6 +1455,42 @@ function administeredStuckHelp(max: number): string {
 // the opener (item 0), each delivered item, and a re-prompt all leave b.stage on the administered stage → emit its
 // scale; completion advances b.stage off it (or sets complete) → no chips (the close is prose). This is why the signal
 // is computed from state, not per-reply-path: it can't miss an ask or leak onto a close.
+/**
+ * WHAT SURFACE A SAVED STATE OWES THE MEMBER. The one owner, so RESUME can never disagree with a live turn.
+ *
+ * Every arc's resume path recomputed this itself by calling `scaleExpects` directly — which is the FALLBACK inside
+ * `nextExpects`, reached only after the structured branches have declined. So resume could return scale chips and
+ * nothing else, and any richer surface simply vanished.
+ *
+ * WHAT THAT COST, from Jay's walk (2026-08-25): Reconnect's doors stage opens "with the framing and the board
+ * TOGETHER — recognition before conversation, so the Companion draws out what she marked instead of fishing for
+ * it." He got the framing, stepped away, came back — and the board was gone, because `scaleExpects` cannot see
+ * the branch that emits it. He typed "Got it" to a text box; the model read that as a conversational turn and
+ * moved on to drawing out; the board then arrived a beat late, beside a question that assumed it had already
+ * happened. **It does not merely hide a widget — it desynchronises the stage**, and the Companion ends up fishing
+ * for exactly what the board exists to prevent.
+ *
+ * And it is not an edge case. Reconnect runs 65+ minutes; a member stepping away and returning IS the normal path.
+ *
+ * TAKES THE WHOLE STATE, not (stage, complete, answered) spread across four call sites. `collected` and
+ * `awaitingConfirm` are what the structured branches read, and a signature that lets a caller omit them is a
+ * signature that invites this bug back. The seam is closed by removing the choice.
+ */
+export function expectsForState(arc: ArcConfig, state: ConvState, answered = 0): Expectation | undefined {
+  return nextExpects(
+    arc,
+    state.stage as StageId,
+    false, // a resumable session is by definition not complete
+    answered,
+    state.collected ?? {},
+    state.awaitingConfirm ?? false,
+  );
+}
+
+// W-24 — the chip signal for a turn, derived from the RESULTING active stage. One rule covers every administered ask:
+// the opener (item 0), each delivered item, and a re-prompt all leave b.stage on the administered stage → emit its
+// scale; completion advances b.stage off it (or sets complete) → no chips (the close is prose). This is why the signal
+// is computed from state, not per-reply-path: it can't miss an ask or leak onto a close.
 export function scaleExpects(arc: ArcConfig, stageId: StageId, complete: boolean, answered = 0): ScaleExpectation | undefined {
   if (complete) return undefined;
   const s = arc.stages[stageId];

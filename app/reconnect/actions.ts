@@ -10,7 +10,7 @@ import type { Db } from '../../lib/db/schema.ts';
 import type { ConvMessage, ConvState, Expectation, Turn } from '../../lib/agent/onboarding.ts';
 import { detectReconnectClaims } from '../../lib/agent/gate-claims.ts';
 import { liveTurnReconnect, loadReconnectCaptures, reconnectEnabled, reconnectOpening, reconnectMeasurementClose, driftOpen, RECONNECT_ARC, BEAT_SEP } from '../../lib/agent/reconnect.ts';
-import { scaleExpects } from '../../lib/agent/onboarding-staged.ts';
+import { expectsForState } from '../../lib/agent/onboarding-staged.ts';
 import { saveArcSession, loadArcSession, clearArcSession } from '../../lib/agent/arc-session.ts';
 import { softSetMemberDoors, getMemberDoorNames } from '../../lib/member/refine.ts';
 import type { ReconnectCeremonyData } from '../../lib/ceremony/reconnect-ceremony-beats.ts';
@@ -377,7 +377,7 @@ export async function loadReconnectSessionAction(
     const db = (await getDb()) as unknown as Db;
     const saved = await loadArcSession(db, memberId, 'reconnect');
     if (!saved || saved.messages.length === 0) return { ok: true }; // nothing to resume → the client starts fresh
-    const expects = scaleExpects(RECONNECT_ARC, saved.state.stage as never, false);
+    const expects = expectsForState(RECONNECT_ARC, saved.state);
     // WHAT SHE HAS ALREADY SEEN. Which cards are "taught" is derived from the stage, which says how far she got —
     // not what she was shown. On a resume the component has no memory of the earlier cards, so without this all
     // three re-render at the end of the thread, after the Legacy Letter (Donna, 2026-08-19).

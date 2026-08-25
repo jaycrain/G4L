@@ -26,7 +26,7 @@ import {
   REBUILD_CHECKPOINT_ARC,
 } from '../../lib/agent/rebuild.ts';
 import { BEAT_SEP } from '../../lib/agent/onboarding.ts';
-import { scaleExpects, type ArcConfig } from '../../lib/agent/onboarding-staged.ts';
+import { expectsForState, type ArcConfig } from '../../lib/agent/onboarding-staged.ts';
 import { saveArcSession, loadArcSession, clearArcSession } from '../../lib/agent/arc-session.ts';
 import { persistWhyReading, persistSkillsReading } from '../../lib/rebuild/store.ts';
 import { persistCoachingPlan } from '../../lib/rebuild/plan-store.ts';
@@ -168,7 +168,7 @@ export async function loadRebuildSessionAction(
     const saved = await loadArcSession(db, memberId, 'rebuild', session);
     if (!saved || saved.messages.length === 0) return { ok: true };
     const answered = saved.state.administeredResponses?.length ?? 0;
-    const expects = scaleExpects(rebuildArcFor(session), saved.state.stage as never, false, answered);
+    const expects = expectsForState(rebuildArcFor(session), saved.state, answered);
     return { ok: true, session: { state: saved.state, messages: saved.messages, expects } };
   } catch {
     return { ok: false, error: 'Could not load your session.' };

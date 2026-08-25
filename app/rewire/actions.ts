@@ -25,7 +25,7 @@ import {
   type W3Callback,
 } from '../../lib/agent/rewire.ts';
 import { BEAT_SEP } from '../../lib/agent/onboarding.ts';
-import { scaleExpects, type ArcConfig } from '../../lib/agent/onboarding-staged.ts';
+import { expectsForState, type ArcConfig } from '../../lib/agent/onboarding-staged.ts';
 import { saveArcSession, loadArcSession, clearArcSession } from '../../lib/agent/arc-session.ts';
 import { loadReconnectCaptures } from '../../lib/agent/reconnect.ts';
 import { drainHarvest, type KeeperProposal } from '../../lib/agent/harvest.ts';
@@ -215,7 +215,7 @@ export async function loadRewireSessionAction(
     const saved = await loadArcSession(db, memberId, 'rewire', session);
     if (!saved || saved.messages.length === 0) return { ok: true }; // nothing to resume → the client starts fresh
     const answered = saved.state.administeredResponses?.length ?? 0;
-    const expects = scaleExpects(rewireArcFor(session), saved.state.stage as never, false, answered);
+    const expects = expectsForState(rewireArcFor(session), saved.state, answered);
     return { ok: true, session: { state: saved.state, messages: saved.messages, expects } };
   } catch {
     return { ok: false, error: 'Could not load your session.' };
