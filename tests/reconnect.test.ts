@@ -5,6 +5,7 @@ import type { Collected, ConvMessage, ConvState } from '../lib/agent/onboarding.
 import { TOTAL_ITEMS } from '../lib/idq/instrument.ts';
 import { boardShownSlugs } from '../lib/agent/doors-board-expectation.ts';
 import { DOORS } from '../lib/doors.ts';
+import { BEAT_SEP } from '../lib/agent/onboarding.ts';
 
 // ============================================================================================================
 // v2.2 Reconnect — SKELETON + callback (§2a). The callback READS the committed captures (never the transcript)
@@ -583,4 +584,43 @@ test('BOARD · marking nothing is an ANSWER, not a failed step', () => {
   assert.equal(turn.state.collected.boardDone, true, 'she answered; do not hand it back to her');
   assert.match(turn.reply, /that's an answer/i);
   assert.ok(!/still open/i.test(turn.reply), 'nothing to ask about when she marked nothing');
+});
+
+// ── THE ENTRANCE ECHO ─────────────────────────────────────────────────────────────────────────────────────────
+//
+// The product had exactly ONE line saying what Reconnect is FOR, and it fired at the EXIT — "Reconnect, the
+// seeing, is behind you" — to a member who no longer needed telling. The precondition itself scored zero across
+// 1,141 authored strings. Jay's walk (2026-08-25) is what surfaced it: 65 minutes of an unbroken arc whose reason
+// was never stated at the front.
+//
+// It is asserted on EVERY opener path because the three paths degrade separately — a member with no Door, or with
+// nothing but a gap story, needs the reason as much as the richest case does, and it would be easy to add it to
+// the one path anybody tests.
+
+test('the entrance echo opens every Reconnect path, before the forecast', () => {
+  const cases: Array<[string, Collected]> = [
+    ['a named Door', { identityNoun: 'Player', doors: ['grind'], gap: 'the film took over' }],
+    ['gap only, no Door', { identityNoun: 'Player', gap: 'the film took over' }],
+    ['thin capture', {}],
+  ];
+  for (const [label, collected] of cases) {
+    const beats = reconnectCallback(collected).split(BEAT_SEP);
+    const echo = beats.findIndex((b) => b.includes("you can't change what you haven't seen"));
+    const forecast = beats.findIndex((b) => b.includes("Here's the shape of it"));
+
+    assert.ok(echo >= 0, `${label}: the entrance echo is missing`);
+    assert.ok(forecast >= 0, `${label}: the forecast is missing`);
+    // Order is the whole point: the echo is the REASON for the shape the forecast then describes.
+    assert.ok(echo < forecast, `${label}: the echo must come BEFORE the forecast, not after`);
+  }
+});
+
+test('the echo is the second-pass framing, never the jolt', () => {
+  // Cowork's first draft opened "Reconnect is that jolt, on purpose… so first, we go find them". A member here has
+  // ALREADY been jolted — named an identity, built a Reclaim List, signed up — so that copy restarts a
+  // conversation they finished. The jolt belongs at the front door and the ramp. This guards the distinction.
+  const text = reconnectCallback({ identityNoun: 'Player', doors: ['grind'] }).toLowerCase();
+  assert.ok(!text.includes('the jolt'), 'the jolt framing belongs at the front door, not at the second pass');
+  assert.ok(!text.includes('we go find them'), 'a returning member is not starting to look for the first time');
+  assert.ok(text.includes('go back properly'), 'the echo should frame this as the deeper second pass');
 });

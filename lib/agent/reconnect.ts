@@ -65,6 +65,7 @@ export function reconnectCallback(c: Collected): string {
     return [
       `${identity ? `Last time, we found who you're reclaiming — ${identity} — and it` : 'When we last talked, it'} ` +
         `felt like the distance started with ${doorPhrase}. This time, we go deeper into all of it.`,
+      ENTRANCE_ECHO,
       RECONNECT_FORECAST,
       `Does that still feel like where it began — or has something shifted since?`,
     ].join(BEAT_SEP);
@@ -73,6 +74,7 @@ export function reconnectCallback(c: Collected): string {
     // No Door tagged, but the gap story is in hand → open on the story, still revisable.
     return [
       `Last time, you started to tell me how the distance opened${identity ? ` from ${identity}` : ''}. I've been holding it, and I want to go deeper into it with you now.`,
+      ENTRANCE_ECHO,
       RECONNECT_FORECAST,
       `Does it still feel the way it did — or has it moved?`,
     ].join(BEAT_SEP);
@@ -80,10 +82,29 @@ export function reconnectCallback(c: Collected): string {
   // Thin/null: don't fake continuity. A warm, honest cold-ish open into the deeper work.
   return [
     `Let's pick up where we left off${identity ? ` — ${identity} is who we're bringing back` : ''}. This time we go deeper into how the distance opened.`,
+    ENTRANCE_ECHO,
     RECONNECT_FORECAST,
     `No rush — start wherever it feels true.`,
   ].join(BEAT_SEP);
 }
+
+// THE ENTRANCE ECHO (Jay, 2026-08-25; drafted with Cowork, approved as drawn).
+//
+// The product has exactly ONE line saying what Reconnect is FOR — "Reconnect — the seeing — is behind you. Rewire
+// is next: it's where seeing turns into changing" — and it fires on the way OUT, to a member who no longer needs
+// telling. At the entrance they got mechanics: four phases, Sessions, a Checkpoint opens the next. Across 1,141
+// authored member-facing strings the precondition itself — you can't change what you haven't seen — scored ZERO.
+//
+// IT IS THE SECOND-PASS FRAMING, NOT THE JOLT. Cowork's draft opened "Reconnect is that jolt, on purpose… so
+// first, we go find them", which would reach someone who has ALREADY been jolted: they named an identity, built a
+// Reclaim List and signed up before they ever arrived here. That restarts a conversation they finished. The jolt
+// language belongs at the front door and the onboarding ramp; only the precondition carries across, and it is
+// aimed at why we are going BACK rather than at starting to look.
+//
+// Its own beat, immediately before the forecast, because it is the REASON for the shape the forecast describes.
+// "because" dropped from the draft — it lands harder as two clauses than as an explanation.
+const ENTRANCE_ECHO =
+  "You looked once already. This is where we go back properly — you can't change what you haven't seen.";
 
 // The forecast beat (Jay + Greg): the first Reconnect session must tell the member the SHAPE of the work up front —
 // without it, the drawing-out feels pointless and endless. Maps honestly to the arc: Doors → a fresh measure (IDQ) →
