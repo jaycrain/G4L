@@ -1007,10 +1007,19 @@ function nextExpects(arc: ArcConfig, stageId: StageId, complete: boolean, answer
       // THE PROPOSAL, not her record. These are Doors we have inferred and not yet asserted — this line is the
       // asking. Anything already in `collected.doors` was confirmed at an earlier pass of this same gate and is
       // deliberately absent: re-offering a Door she has already ruled on reads as not having listened.
-      doorsHeard: (collected.doorsProposed ?? []).map((slug) => ({
-        slug: slug as string,
-        name: DOORS.find((d) => d.slug === slug)?.displayName ?? (slug as string),
-      })),
+      // THE DESCRIPTOR RIDES WITH THE NAME (Jay, mid-walk 2026-08-25). He was shown "The Grind" and had to ASK
+      // the Companion what it meant — mid-intake, about a Door we had just told him was his. The sentence that
+      // answers him already exists on every Door and already ships to R2's board; only this surface withheld it.
+      // The Doors CONCEPT is explained twice before this beat; the individual names never were, and a name we
+      // assert without meaning is the one thing this gate exists to prevent.
+      doorsHeard: (collected.doorsProposed ?? []).map((slug) => {
+        const d = DOORS.find((x) => x.slug === slug);
+        return {
+          slug: slug as string,
+          name: d?.displayName ?? (slug as string),
+          descriptor: d?.descriptor,
+        };
+      }),
     };
   }
   // THE BUILDER OPENS WITH THE FRAME (2026-08-22, widget-first). It used to wait for `drawnOut` — a six-turn

@@ -65,10 +65,15 @@ export const GRINTA_ITEMS: Record<string, GrintaItem> = {
   G1Q3: { code: 'G1Q3', strand: 'reconnect', subscale: 'G1', stem: "I am aware of the notion of an 'identity gap' between my idealized self and my actual self" },
   // Excavation (the Drift)
   G2Q2: { code: 'G2Q2', strand: 'reconnect', subscale: 'G2', stem: 'I appreciate how life circumstances shaped my past lifestyle (and how they influence my current one)' },
-  G2Q3: { code: 'G2Q3', strand: 'reconnect', subscale: 'G2', stem: 'I appreciate that I have agency and control over how these doors affect me' },
+  // DISPLAY CASE ONLY, NOT WORDING (Jay, mid-walk 2026-08-25). These three stems held the only lowercase uses of
+  // "Doors" and "the Fade" anywhere in the product. A member meets them capitalised everywhere else — Jay hit
+  // "these doors" twenty minutes after marking seven of them on a board titled with the capital. Same words, two
+  // presentations, one sitting, and the lowercase flattens a term the product spends the whole phase teaching.
+  // Not a word has moved and no response can score differently; Greg is told it is case, not wording.
+  G2Q3: { code: 'G2Q3', strand: 'reconnect', subscale: 'G2', stem: 'I appreciate that I have agency and control over how these Doors affect me' },
   // Spark (the Window)
-  G3Q2: { code: 'G3Q2', strand: 'reconnect', subscale: 'G3', stem: 'I recognize how small daily choices may contribute to my fade' },
-  G3Q3: { code: 'G3Q3', strand: 'reconnect', subscale: 'G3', stem: 'I recognize various attributions and justifications that may contribute to my fade' },
+  G3Q2: { code: 'G3Q2', strand: 'reconnect', subscale: 'G3', stem: 'I recognize how small daily choices may contribute to my Fade' },
+  G3Q3: { code: 'G3Q3', strand: 'reconnect', subscale: 'G3', stem: 'I recognize various attributions and justifications that may contribute to my Fade' },
 
   // §R4 Rewire Checkpoint — six MORE commitment items (commitment → Rewire), one pair per Rewire session. VERBATIM
   // from Greg's Measurement Canvas V4b (Decision EE) — a validated instrument; do NOT reword. With the three

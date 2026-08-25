@@ -188,7 +188,19 @@ export default function ReconnectChat({
 
   // Show ALL the Doors the member named — not just the primary (they rarely came through one, Jay + Greg).
   const doorList = (state?.collected.doors ?? []).map((s) => doorName(s)).filter(Boolean) as string[];
-  const lastReseen = state?.reseeingTells?.[state.reseeingTells.length - 1];
+  // EVERY DOOR THAT CAME OUT OF THE TALKING, NOT JUST THE LATEST (Jay, mid-walk 2026-08-25).
+  //
+  // This read `reseeingTells[length - 1]`. Jay watched "The Load-Bearer surfaced here" get silently REPLACED by
+  // "The Vanishing surfaced here" — an acknowledgment he had been given, taken back without a word, while both
+  // tells sat in the array. On a phase where several Doors surface in one sitting that is the normal case, and
+  // each new one erases the last.
+  //
+  // "SURFACED HERE" ALSO COULD NOT BE DECODED. It draws a line between a Door MARKED on the board and one that
+  // EMERGED in conversation — a distinction we never explain, printed under a row holding both kinds. Jay's read
+  // was that it credited one Door and ignored the rest. The line now says which it means.
+  const reseen = (state?.reseeingTells ?? []);
+  const corrections = reseen.filter((t) => doorName(t.fromSlug));
+  const surfaced = reseen.filter((t) => !doorName(t.fromSlug)).map((t) => doorName(t.toSlug)).filter(Boolean) as string[];
 
   // §2f — once the arc reaches the Ceremony, the overlay takes over the whole surface.
   if (ceremony) return <ReconnectCeremony memberId={memberId} data={ceremony} mobile={mobile} />;
@@ -204,16 +216,16 @@ export default function ReconnectChat({
               rendered "✓ re-seen from" and then stopped, because doorName(undefined) is null (Jay, 2026-08-11:
               "What does 're-seen from' mean?" — on his walk it meant nothing; it was a sentence cut in half).
               Each case now says its own true thing, and names the Door so the chip stands alone. */}
-          {lastReseen &&
-            (doorName(lastReseen.fromSlug) ? (
-              <span style={{ color: 'var(--teal, #3B9495)', marginLeft: '0.5rem' }}>
-                ✓ re-seen from {doorName(lastReseen.fromSlug)}
-              </span>
-            ) : (
-              <span style={{ color: 'var(--teal, #3B9495)', marginLeft: '0.5rem' }}>
-                ✓ {doorName(lastReseen.toSlug)} surfaced here
-              </span>
-            ))}
+          {corrections.map((t) => (
+            <span key={`c-${t.toSlug}`} style={{ color: 'var(--teal, #3B9495)', marginLeft: '0.5rem' }}>
+              ✓ re-seen from {doorName(t.fromSlug)}
+            </span>
+          ))}
+          {surfaced.length > 0 && (
+            <span style={{ color: 'var(--teal, #3B9495)', marginLeft: '0.5rem' }}>
+              ✓ {surfaced.join(' · ')} came out of talking
+            </span>
+          )}
         </div>
       )}
       <div className="chat" ref={chatRef}>

@@ -15,7 +15,9 @@ const JENNIFER_DOORS = ['marriage', 'aging_parents', 'career_cliff'] as const;
 
 export default async function DevGapConfirmPage() {
   assertDevOnly();
-  const name = new Map(DOORS.map((d) => [d.slug, d.displayName]));
+  // Built from the REAL Door rows, descriptor included (2026-08-25). The fixture used to map only the display
+  // name, so this preview would have shown a passing surface for a change whose whole point is the descriptor.
+  const door = new Map(DOORS.map((d) => [d.slug, d]));
 
   return (
     <main className="onboard-page" style={{ maxWidth: 640, margin: '0 auto', padding: '2rem 1rem' }}>
@@ -32,7 +34,11 @@ export default async function DevGapConfirmPage() {
         expects={{
           kind: 'gap_confirm',
           choices: GAP_CONFIRM_CHOICES.map((c) => ({ value: c.value, label: c.label })),
-          doorsHeard: JENNIFER_DOORS.map((slug) => ({ slug, name: name.get(slug) ?? slug })),
+          doorsHeard: JENNIFER_DOORS.map((slug) => ({
+            slug,
+            name: door.get(slug)?.displayName ?? slug,
+            descriptor: door.get(slug)?.descriptor,
+          })),
         }}
       />
     </main>

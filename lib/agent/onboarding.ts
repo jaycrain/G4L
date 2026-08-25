@@ -313,7 +313,9 @@ export type DoorsBoardExpectation = {
 };
 
 /** The gap confirm's own answers — see lib/agent/gap-confirm-choice.ts for why this stopped being a guess. */
-export type GapConfirmExpectation = { kind: 'gap_confirm'; choices: { value: string; label: string }[]; doorsHeard: { slug: string; name: string }[] };
+// `descriptor` is OPTIONAL: a Door we cannot resolve still renders its name rather than nothing, and every replay
+// fixture written before 2026-08-25 stays valid without a rewrite.
+export type GapConfirmExpectation = { kind: 'gap_confirm'; choices: { value: string; label: string }[]; doorsHeard: { slug: string; name: string; descriptor?: string }[] };
 
 export type Expectation =
   | GapConfirmExpectation

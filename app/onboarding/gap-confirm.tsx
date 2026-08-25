@@ -76,20 +76,28 @@ export default function GapConfirm({
               THEY ARRIVE SELECTED, because we are proposing them. Selected is the app's standard — teal fill,
               white text, .on plus aria-pressed derived from the same condition — and tapping deselects to the
               outlined state. A member who has used the Doors board or a scale row already knows how this works. */}
+          {/* THE MEANING SITS WITH THE NAME (Jay, mid-walk 2026-08-25). He was shown "The Grind" and had to stop
+              and ask the Companion what it meant, about a Door we had just asserted was his. Every Door already
+              carries this sentence and R2's board already shows it; this surface alone withheld it, at the one
+              moment the member is being asked to RULE on the name. A label you cannot decode is not a proposal.
+              It stays quiet — no chips row, no invitation to collect Doors (Jay, 2026-08-19) — it just stops the
+              name being a word he has to take on trust. */}
           <div className="gapc-doorchips">
             {expects.doorsHeard.map((d) => {
               const on = !dropped.has(d.slug);
               return (
-                <button
-                  key={d.slug}
-                  type="button"
-                  className={`idp-chip${on ? ' on' : ''}`}
-                  aria-pressed={on}
-                  onClick={() => (on ? drop(d.slug) : restore(d.slug))}
-                  disabled={disabled}
-                >
-                  {d.name}
-                </button>
+                <span key={d.slug} className="gapc-door">
+                  <button
+                    type="button"
+                    className={`idp-chip${on ? ' on' : ''}`}
+                    aria-pressed={on}
+                    onClick={() => (on ? drop(d.slug) : restore(d.slug))}
+                    disabled={disabled}
+                  >
+                    {d.name}
+                  </button>
+                  {d.descriptor && <span className="gapc-door-desc">{d.descriptor}</span>}
+                </span>
               );
             })}
           </div>
@@ -99,10 +107,15 @@ export default function GapConfirm({
               isn't yours" never said HOW, and left the impression this was her last word on her Doors. It is not:
               R2's board shows all twelve and she rates each one. Jay ruled the promise ships as written — the
               program keeps it for anyone who continues, and someone who stops has lost nothing. */}
+          {/* "THE REST STAY" ANSWERS A DISAPPEARANCE WE CANNOT SHOW HIM (Jay, mid-walk 2026-08-25). Tapping
+              "There's more" clears awaitingConfirm, so the next turn renders no confirm surface and the Doors
+              leave the screen — they are still held (proposeDoors seeds from the existing set) and they come
+              back at the next confirm, but nothing on screen says so, and Jay reasonably read it as lost. The
+              fix has to land BEFORE the tap, because after it there is no surface left to reassure him on. */}
           <span className="gapc-doors-hint">
             {dropped.size > 0
               ? 'Taken off — I won’t count it.'
-              : 'Tap one to deselect it. We’ll revisit these in more detail later.'}
+              : 'Tap one to deselect it. The rest stay while you keep talking, and we revisit them in more detail later.'}
           </span>
         </div>
       )}

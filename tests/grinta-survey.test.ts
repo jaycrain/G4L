@@ -84,7 +84,11 @@ test('grinta §2e · the Checkpoint adds six GRIT items (all reconnect strand), 
     assert.equal(strandForCode(code), 'reconnect', `${code} is a grit item`);
   }
   assert.equal(grintaStem('G1Q2'), "I am aware of what constructs and dimensions make up my 'identity'");
-  assert.equal(grintaStem('G3Q3'), 'I recognize various attributions and justifications that may contribute to my fade');
+  // CASE ONLY, 2026-08-25 (Jay, mid-walk). "my fade" → "my Fade": these three stems held the only lowercase uses
+  // of the Fade and the Doors in the product, and a member meets both capitalised everywhere else. The WORDING is
+  // Greg's and is untouched — this assertion is the tripwire that proves it, so it moves deliberately rather than
+  // being loosened to a case-insensitive compare, which would stop guarding his words at all.
+  assert.equal(grintaStem('G3Q3'), 'I recognize various attributions and justifications that may contribute to my Fade');
 });
 
 test('grinta §2e · Checkpoint recomputes grit from NINE items, carries the other strands, moves the composite up', () => {

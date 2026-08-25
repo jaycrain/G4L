@@ -652,7 +652,13 @@ ul.program { list-style: none; padding: 0; margin: 0; }
    arrives filled and a tap returns it to the outlined state.
    Its own row, not inline after the lead: at 15px these no longer flow as prose, and a wrapped chip beside a
    trailing sentence was how the ✕ ended up next to the WRONG Door on a phone. */
-.gapc-doorchips { display: flex; flex-wrap: wrap; gap: 8px; margin: 0.45rem 0 0.15rem; }
+/* One Door per ROW now, because each carries its meaning underneath (Jay, mid-walk 2026-08-25 — he was shown
+   "The Grind" and had to ask what it meant). Chips side-by-side cannot hold a sentence each. */
+.gapc-doorchips { display: flex; flex-direction: column; gap: 10px; margin: 0.45rem 0 0.15rem; align-items: flex-start; }
+.gapc-door { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; }
+/* Quieter than the name and quieter than the hint: it explains, it does not compete with the thing being ruled
+   on. Indented to the chip's own text so it reads as belonging to it rather than as a new line of copy. */
+.gapc-door-desc { font-size: 12.5px; color: var(--muted-grey); line-height: 1.45; padding-left: 2px; max-width: 46ch; }
 .gapc-doorchips .idp-chip.on { background: var(--teal-text); color: #fff; border-color: var(--teal-text); }
 
 .gapc-doors-hint { display: block; font-size: 12.5px; color: var(--muted-grey); line-height: 1.5; margin-top: 0.15rem; }
@@ -2272,7 +2278,11 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
 /* The conversation fills the rest of the column; the chat scrolls, the composer stays at the foot. */
 .ws-col-body { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; padding: 6px 0 10px; }
 .ws-col-body > * { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
-.ws-col-body .chat { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+/* RESERVE THE GUTTER (Jay, mid-walk 2026-08-25: "scroll bar won't dismiss"). With macOS set to always-show, the
+   bar sits ON the thread and clips the right edge of the bubbles — his "Got it" was cut in half by it. Hiding it
+   would be wrong: a vertical thread needs to advertise that it scrolls. `stable` keeps the space whether or not
+   the bar is drawn, so the column never reflows when it appears either. */
+.ws-col-body .chat { flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-gutter: stable; }
 .ws-col-body .chat-input, .ws-col-body form { flex: 0 0 auto; }
 
 /* THE COMPANION'S SIDE SQUARES UP WITH THE CARDS (Donna item 9; Jay approved 2026-08-23).
