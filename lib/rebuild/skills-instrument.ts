@@ -75,7 +75,25 @@ export type SkillScore = {
   meta: Record<SkillMeta, SkillMetaScore>;
 };
 
-const pct = (sum: number, max: number): number => Math.round((sum / max) * 100);
+/**
+ * A share of the maximum, and it CANNOT leave 0-100.
+ *
+ * It used to be the bare arithmetic, and a dev fixture carrying 5s on this four-point instrument produced a
+ * category reading 125% (2026-08-26). Nothing caught it for weeks because no surface displayed the figure — the
+ * fault was invisible until Greg's profile block put the number in front of a member.
+ *
+ * Clamped rather than thrown: this runs inside a member's Session close, and an impossible percentage is a bad
+ * number on a screen while an exception is a lost B2. Logged, though — a clamp that fires is always a fault
+ * upstream, and a silent clamp would just move the invisibility one layer down.
+ */
+const pct = (sum: number, max: number): number => {
+  const raw = Math.round((sum / max) * 100);
+  if (raw < 0 || raw > 100) {
+    console.error(`skills pct out of range (${sum}/${max} → ${raw}%) — responses outside the 1–${SKILLS_SCALE_MAX} scale`);
+    return Math.max(0, Math.min(100, raw));
+  }
+  return raw;
+};
 
 // Score the 24 responses (administration order) into per-domain totals (%), a per-skill profile (activity + diet +
 // their mean), and the 3 meta-category totals. Greg's math: 4-point items, per-domain sum out of 48, normalized to a

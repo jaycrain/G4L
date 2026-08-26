@@ -44,8 +44,17 @@ test('the skills read speaks plain language and never a number', async () => {
   assert.equal(r.label, 'your map', 'the label matches the outcome card word-for-word — one vocabulary or none');
   assert.equal(r.from, 'Strengths & Weaknesses');
   const text = r.lines.join(' ');
-  // THE RULE. Any digit here means a score reached a surface that promised not to show one.
-  assert.doesNotMatch(text, /\d/, 'a read is plain language — no number, ever');
+  // THE RULE, NARROWED ON 2026-08-26 AND STILL LOAD-BEARING. A read's PROSE stays wordless — no digit in the
+  // sentence a member reads about themselves. What changed is that the map now carries a separate PROFILE block
+  // with Greg's three category percentages, because he asked for it twice and Jay ruled the no-number rule was
+  // being applied too widely ("on a macro level we don't do it. On a micro level, it's ok to pick our spots").
+  // The line between them is the point: a shape you can see is not a grade you can fail, and this assertion
+  // guards the half that must never change.
+  assert.doesNotMatch(text, /\d/, 'a read is plain language — no number in the prose, ever');
+  // ...and this fixture stores a scores blob with ONLY perSkill — the shape of a reading written before `meta`
+  // existed. It is why the profile degrades to null instead of throwing: reading it blind took the entire read
+  // card down for anyone scored early.
+  assert.equal(r.map?.profile ?? null, null, 'an early reading yields no profile, and still yields its read');
   assert.doesNotMatch(text, /weak|poor|low|failing|behind/i, 'a growth edge is a skill to practise, never a verdict');
   // Their strongest skill IS named — but in OUR words, not Greg's. This asserted /monitoring/i, the raw instrument
   // name, which the plain-language labels deliberately replaced ("Monitoring" -> "Watching how it is going"). The

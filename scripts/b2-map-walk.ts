@@ -68,11 +68,33 @@ async function main(): Promise<void> {
   if (fams.join('|') === 'Predisposing|Enabling|Reinforcing') ok(`three families, in Greg's order — ${fams.join(' → ')}`);
   else bad(`families wrong or out of order: ${JSON.stringify(fams)}`);
 
-  // THE ONE THAT MATTERS. A number on this surface turns a development map into a report card.
-  const mapText = await map.innerText();
-  const digits = mapText.match(/\d/g);
-  if (!digits) ok('no digit anywhere in the map');
-  else bad(`a number leaked into the map: ${mapText.match(/.{0,40}\d.{0,40}/)?.[0]}`);
+  // THIS USED TO ASSERT "no digit anywhere in the map", and that decision was REVERSED on 2026-08-26. Greg had
+  // asked twice for the member to see their profile; Jay ruled the no-numbers rule was being applied too widely
+  // ("on a macro level we don't do it. On a micro level, I think it's ok to pick our spots. This is one").
+  //
+  // Inverted rather than deleted, so what replaced it is pinned: the ROWS stay wordless — steady / worth
+  // practicing, no per-skill figure — and the numbers live only in the profile block above them. A percentage
+  // beside an individual skill is the report card we still do not want.
+  const rowsText = (await map.innerText().catch(() => '')) || '';
+  const rowDigits = rowsText.match(/\d/g);
+  if (!rowDigits) ok('the twelve rows carry no number — steady / worth practicing only');
+  else bad(`a number leaked into the skill rows: ${rowsText.match(/.{0,40}\d.{0,40}/)?.[0]}`);
+
+  const prof = page.locator('.pb-profile'); // sibling of .pb-map, not a child — it sits ABOVE the rows
+  if (await prof.count()) {
+    const t = (await prof.innerText()).replace(/\s+/g, ' ');
+    const pcts = t.match(/\d+%/g) ?? [];
+    // COUNT IS NOT ENOUGH, and this walk proved it: the first version asserted "at least five figures" and
+    // passed while printing 125%. A percentage is only meaningful if it is one.
+    const nums = pcts.map((x) => parseInt(x, 10));
+    const impossible = nums.filter((n) => n < 0 || n > 100);
+    if (pcts.length >= 5) ok(`the profile shows the three categories + the domain split — ${pcts.join(' ')}`);
+    else bad(`the profile is missing figures (saw ${pcts.length}): ${t.slice(0, 90)}`);
+    if (!impossible.length) ok('every figure is a real percentage');
+    else bad(`IMPOSSIBLE PERCENTAGE on the member's profile: ${impossible.join(', ')}`);
+    if (/against its own maximum/i.test(t)) ok('and it says what the numbers are measured against');
+    else bad('the profile prints figures with nothing to read them against');
+  } else bad('the profile block did not render');
 
   const b2 = page.locator('.pb-read').filter({ has: page.locator('.pb-map') });
   const lead = await b2.locator('.pb-read-line').first().innerText();

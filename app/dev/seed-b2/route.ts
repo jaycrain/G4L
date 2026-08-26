@@ -24,11 +24,15 @@ import { persistSkillsReading } from '../../../lib/rebuild/store.ts';
 //   · Staying with it (2,9,10)     → thin    — what the lead line should name
 // Skill 11 (time management) carries a 2-point movement/eating split, so the divergence note has something to
 // render; every other skill is level, so exactly one row should show it.
+// EVERY VALUE IS 1-4. The previous fixture used 5s — B2 is a FOUR-point Likert (SD, D, A, SA), so it was planting
+// responses no member can give, and the scorer happily normalized them into a category reading 125%. It went
+// unnoticed for weeks because nothing displayed the percentage; the moment Greg's profile block shipped, the walk
+// printed it. A fixture that cannot occur in the product proves nothing about the product.
 const RESPONSES = [
   // activity, skills 1-12
-  4, 2, 5, 4, 4, 5, 5, 3, 2, 2, 5, 5,
+  3, 2, 3, 3, 3, 4, 4, 3, 2, 1, 4, 3,
   // diet, skills 1-12
-  4, 2, 5, 4, 3, 5, 5, 3, 2, 2, 3, 5,
+  3, 2, 3, 3, 3, 4, 4, 3, 2, 1, 2, 3,
 ];
 
 export async function POST(): Promise<NextResponse> {

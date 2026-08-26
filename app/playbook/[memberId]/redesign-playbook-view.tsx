@@ -7,6 +7,9 @@ import { chapterKey, TAB_FOR_CHAPTER, type ChapterKey, type TabKey } from '../..
 import type { Outcome } from '../../../lib/dashboard/outcomes.ts';
 import type { Read } from '../../../lib/playbook/reads.ts';
 import type { WeekGrid } from '../../../lib/practice/grid.ts';
+// The three category names come from the ONE table that owns them — the map's own labels, so the profile above
+// the rows and the headings below it can never disagree about what a family is called.
+import { FAMILY_LABEL } from '../../../lib/rebuild/skills-map.ts';
 import WeekGridPanel from '../../momentum/week-grid.tsx';
 import RichText from '../../rich-text.tsx';
 
@@ -683,6 +686,40 @@ export default function RedesignPlaybookView({
                   "steady" is relative to THIS member's own profile (skills-map.ts), which is what makes the shape
                   showable at all. Taking action carries six skills, so its tail collapses behind a control that
                   names what is inside it rather than a bare "show more". */}
+              {/* THE PROFILE, IN NUMBERS — Greg asked for it twice and we showed none of it (Jay, 2026-08-26:
+                  "you might be taking the grade/score thing too far… on a micro level it's ok to pick our
+                  spots. This is one"). It sits ABOVE the twelve rows because it is the shape the rows then
+                  explain: a member should see "strong at getting started, thin at keeping going" before
+                  reading a list, not have to assemble it from one.
+
+                  MEASURED AGAINST THEMSELVES, and the caption says so. These are each category against its own
+                  maximum — there is no cohort, no target and nothing to fail, which is the whole difference
+                  between this and the score the no-numbers rule exists to prevent.
+
+                  The movement/eating line is the ONLY place a member meets that split now: Greg's V5 took it
+                  out of the Checkpoint, and B2 is where the twelve skills are still rated twice. */}
+              {r.map?.profile && (
+                <div className="pb-profile">
+                  {(['predisposing', 'enabling', 'reinforcing'] as const).map((k) => {
+                    const pct = r.map!.profile!.meta[k];
+                    const thin = r.map!.thinnest === k;
+                    return (
+                      <div key={k} className="pb-profile-row">
+                        <div className="pb-profile-head">
+                          <span className="pb-profile-name">{FAMILY_LABEL[k].name}</span>
+                          <span className="pb-profile-pct">{pct}%</span>
+                        </div>
+                        <div className="pb-profile-track">
+                          <div className={`pb-profile-fill${thin ? ' is-thin' : ''}`} style={{ width: `${pct}%` }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                  <p className="pb-profile-foot">
+                    Each against its own maximum — your three, measured against each other. Movement {r.map.profile.movement}% · Eating {r.map.profile.eating}%
+                  </p>
+                </div>
+              )}
               {r.map && (
                 <div className="pb-map">
                   {/* EVERY ROW, ALWAYS (Jay, 2026-08-26: "this disclosure is unnecessary, it's just three more

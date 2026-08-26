@@ -4222,3 +4222,25 @@ body:has(.fc-dark) .brand-wordmark,
 .beatc { margin: 0.5rem 0 0.15rem; }
 .beatc-prompt { display: block; font-size: 13px; color: var(--muted-grey); line-height: 1.5; margin-bottom: 0.4rem; }
 .beatc-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* ── B2'S PROFILE, IN NUMBERS ────────────────────────────────────────────────────────────────────────────────
+   Greg asked twice for the member to SEE their profile — "a report with plots that summarize Enabling,
+   Predisposing and Reinforcing" — and we showed none of it, reading never-a-bare-number as a blanket ban.
+   Jay, 2026-08-26: "you might be taking the grade/score thing too far… on a macro level we don't do it. On a
+   micro level, I think it's ok to pick our spots. This is one."
+
+   THE THIN ONE IS ORANGE, NOT RED, and that is the same call as the practice grid's dash-instead-of-a-cross.
+   Orange is this product's needs-attention colour; deep red is failure, and the thinnest category is where
+   practice pays, not where a member fell short. Everything else is teal.
+
+   Percentages are each category against its OWN maximum, and the caption says so — there is no cohort and no
+   target, which is the difference between a shape and a grade. */
+.pb-profile { margin: 0.7rem 0 1rem; padding: 13px 14px; background: #f7f6f5; border-radius: 10px; }
+.pb-profile-row + .pb-profile-row { margin-top: 11px; }
+.pb-profile-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 5px; }
+.pb-profile-name { font-size: 13px; font-weight: 700; color: var(--navy); }
+.pb-profile-pct { font-size: 15px; font-weight: 700; color: var(--navy); }
+.pb-profile-track { height: 9px; background: var(--grey); border-radius: 5px; overflow: hidden; }
+.pb-profile-fill { height: 100%; background: var(--teal); border-radius: 5px; }
+.pb-profile-fill.is-thin { background: var(--orange); }
+.pb-profile-foot { margin: 11px 0 0; font-size: 12px; line-height: 1.5; color: var(--muted-grey); }

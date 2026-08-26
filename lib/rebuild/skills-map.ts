@@ -77,6 +77,27 @@ export type SkillsMap = {
    * about a person. The lead now carries both, and a test asserts the skill is named.
    */
   strongest: string | null;
+  /**
+   * THE PROFILE, AS NUMBERS — Greg's normalization, shown to the member (Jay, 2026-08-26).
+   *
+   * He asked for it twice: "show a summary of the scores and how to interpret them", and "a report with plots
+   * that summarize Enabling, Predisposing and Reinforcing so that they can see their profile." We computed every
+   * figure and displayed none of them, on a blanket reading of never-a-bare-number.
+   *
+   * JAY'S CORRECTION, which is why this exists: *"You might be taking the grade/score thing too far. If Greg is
+   * asking for it there must be a reason… On a macro level, we don't do it. On a micro level, I think it's ok to
+   * pick our spots. This is one."* The rule protects a member from being GRADED — a score against a target, a
+   * percentage of compliance, a number they can fail. Their own three categories measured against each other is
+   * a different object: it is the shape of them, and that shape is what B2 exists to hand over.
+   *
+   * `meta` is per category against its own maximum; `movement`/`eating` are the two domain totals — the only
+   * place a member meets the activity/diet split at all, since it left the Checkpoint with Greg's V5.
+   */
+  profile: {
+    meta: Record<SkillMeta, number>;
+    movement: number;
+    eating: number;
+  } | null;
 };
 
 /**
@@ -85,6 +106,13 @@ export type SkillsMap = {
  * distinction the member did not make.
  */
 const DIVERGENCE_MIN = 2;
+
+/** Every figure the profile needs, present and numeric — see the note on SkillsMap.profile. */
+function hasProfile(score: SkillScore): boolean {
+  const m = score.meta as Partial<Record<SkillMeta, { pct?: number }>> | undefined;
+  const domainsOk = typeof score.activity?.pct === 'number' && typeof score.diet?.pct === 'number';
+  return domainsOk && FAMILY_ORDER.every((k) => typeof m?.[k]?.pct === 'number');
+}
 
 export function buildSkillsMap(score: SkillScore): SkillsMap {
   // The median of THEIR twelve means is the divide. A fixed cutoff (say 3.5) would import an external standard,
@@ -132,6 +160,25 @@ export function buildSkillsMap(score: SkillScore): SkillsMap {
     thinnest: flat ? null : ranked[0]!.key,
     steadiest: flat ? null : ranked[ranked.length - 1]!.key,
     strongest: best ? (SKILL_LABEL[best.no] ?? best.skill) : null,
+    // Greg's own normalization, straight off the score — no second arithmetic here, so the number a member reads
+    // is the number the instrument computed.
+    //
+    // NULL WHEN THE STORED READING PREDATES IT, and that is not defensiveness for its own sake: `meta` was added
+    // to the score after the first readings were written, so a member scored before it exists has a row with no
+    // meta block. Reading it blind threw and took the WHOLE read card down — the map, the lead line, the twelve
+    // rows — for a member whose only fault was being early. Same degrade posture as the rest of this file: a
+    // missing part costs that part, never the surface.
+    profile: hasProfile(score)
+      ? {
+          meta: {
+            predisposing: score.meta.predisposing.pct,
+            enabling: score.meta.enabling.pct,
+            reinforcing: score.meta.reinforcing.pct,
+          },
+          movement: score.activity.pct,
+          eating: score.diet.pct,
+        }
+      : null,
   };
 }
 
