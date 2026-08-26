@@ -214,7 +214,15 @@ export const ASSET_EXPLORE: Partial<Record<AssetId, Explore>> = {
     ],
   },
   c1: {
-    lede: 'Why revisiting your list is the work, not a detour from it',
+    // DECLARE IT (Jay, 2026-08-26: "a little cringey — 'not a detour'"). This read "…is the work, not a detour
+    // from it", which invents an objection nobody raised in order to knock it down. Nothing in C1 suggests a
+    // member thinks revisiting their list is a detour; the clause exists to sound insightful, and a reader can
+    // feel the manufactured strawman even when they can't name it.
+    //
+    // THE RULE IS NOT "NEVER NEGATE" — see b2's lede four entries up, which is KEPT: "Why this is a set of skills,
+    // not a question of willpower." That negates a belief the member genuinely arrives holding, so the clause is
+    // carrying content. The line is whether the thing being denied is something they actually think.
+    lede: 'Why revisiting your list is the work',
     points: [
       {
         head: 'Goals you actually chose hold up longer',
