@@ -3156,6 +3156,15 @@ body.onbwel-bleed main { max-width: none; margin: 0; padding: 0; }
 .tri-companion.is-hero-collapsed .tri-hero-text {
   display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%;
 }
+/* ONE LINE, INCLUDING ON A PHONE. Captured at 390px the collapsed bar wrapped twice — the crumb over two lines
+   and "Open this Session →" over two more — which spent back a third of what the collapse had just reclaimed, on
+   the width where the reclaim matters most (Jay: "will really make a difference on mobile").
+   The chip never wraps; the crumb gives up its tail instead, because the chip is the ACTION and a truncated
+   breadcrumb still answers "where am I" while half a button answers nothing. */
+.tri-companion.is-hero-collapsed .tri-hero-cta { white-space: nowrap; flex: 0 0 auto; }
+.tri-companion.is-hero-collapsed .tri-hero-crumb {
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; flex: 1 1 auto;
+}
 /* A member who scrolls back up should see it RETURN, not blink into place. Height is not animatable here (the
    children are display:none), so the padding carries the movement — enough to read as motion, short enough not
    to lag the scroll. */
