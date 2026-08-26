@@ -16,6 +16,19 @@ export type SkillMeta = 'predisposing' | 'enabling' | 'reinforcing';
 
 export type SkillItem = { code: string; skillNo: number; skill: string; domain: SkillDomain; meta: SkillMeta; stem: string };
 
+// THREE STEMS DIFFER FROM GREG'S GATED ASSETS V4, AND ALL THREE ARE GRAMMAR REPAIRS. Recorded because a silent
+// correction to an expert's instrument is indistinguishable from a transcription error, and the next person to
+// diff this against his document should not have to work out which it was (Jay, 2026-08-26 — he asked, and it
+// cost an hour to answer):
+//
+//   B2-PA5   his: "I possess skills needed to perform a physical activities I enjoy"   ← stray article
+//   B2-PA6   his: "I can stay positive about my efforts to being active"               ← verb form
+//   B2-DI11  his: "I can manage time needed to buy prepare nutritious food"            ← missing conjunction
+//
+// Same construct, same domain, same direction in every case; nothing here moves what is measured. The other 21
+// are verbatim. Same hand that wrote "dietarty" in the V5 canvas — these are working-document typos, not wording
+// we disagreed with, and if he ever wants them back the originals are right here.
+
 export const SKILLS_SCALE_MAX = 4; // 1 = strongly disagree → 4 = strongly agree
 export const SKILLS_SCALE_ANCHORS = '1 (strongly disagree) to 4 (strongly agree)';
 
