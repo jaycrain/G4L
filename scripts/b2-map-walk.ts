@@ -72,11 +72,7 @@ async function main(): Promise<void> {
   const mapText = await map.innerText();
   const digits = mapText.match(/\d/g);
   if (!digits) ok('no digit anywhere in the map');
-  else if (mapText.match(/Show the other \d/)) {
-    const withoutControl = mapText.replace(/Show the other \d/g, '');
-    if (!/\d/.test(withoutControl)) ok('the only digit is the disclosure count ("Show the other 3")');
-    else bad(`a number leaked into the map: ${withoutControl.match(/.{0,40}\d.{0,40}/)?.[0]}`);
-  } else bad(`a number leaked into the map: ${mapText.match(/.{0,40}\d.{0,40}/)?.[0]}`);
+  else bad(`a number leaked into the map: ${mapText.match(/.{0,40}\d.{0,40}/)?.[0]}`);
 
   const b2 = page.locator('.pb-read').filter({ has: page.locator('.pb-map') });
   const lead = await b2.locator('.pb-read-line').first().innerText();
@@ -89,12 +85,15 @@ async function main(): Promise<void> {
   if (split.length === 1 && /movement more than eating/.test(split[0]!)) ok(`exactly one domain split, where it is real — "${split[0]!.trim()}"`);
   else bad(`expected one movement/eating split, got ${split.length}: ${JSON.stringify(split)}`);
 
-  const more = page.locator('.pb-map-more > summary');
-  if (await more.count()) {
-    const t = (await more.first().innerText()).replace(/\s+/g, ' ');
-    if (/making a plan|finding good information|practical know-how/i.test(t)) ok(`the disclosure names what is behind it — "${t.slice(0, 78)}…"`);
-    else bad(`the disclosure is unlabelled: ${t}`);
-  } else bad('Taking action has six skills — it should collapse the tail');
+  // NOTHING IS HIDDEN (Jay, 2026-08-26: "display all the rows"). This used to assert the OPPOSITE — that a
+  // six-skill family collapsed its tail behind a labelled disclosure. Inverted rather than deleted, so the
+  // control cannot quietly come back: twelve rows, all visible, no <details> anywhere in the map.
+  const hidden = await page.locator('.pb-map details').count();
+  if (hidden === 0) ok('nothing in the map is behind a disclosure');
+  else bad(`${hidden} part(s) of the map are still collapsed`);
+  const rowCount = await page.locator('.pb-map-row').count();
+  if (rowCount === 12) ok('all twelve skills render');
+  else bad(`expected twelve skill rows, saw ${rowCount}`);
 
   await page.screenshot({ path: 'docs/screenshots/b2-map.png', fullPage: false });
   ok('screenshot → docs/screenshots/b2-map.png');

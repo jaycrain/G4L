@@ -685,48 +685,31 @@ export default function RedesignPlaybookView({
                   names what is inside it rather than a bare "show more". */}
               {r.map && (
                 <div className="pb-map">
-                  {r.map.families.map((f) => {
-                    const lead = f.rows.slice(0, 3);
-                    const rest = f.rows.slice(3);
-                    return (
-                      <div key={f.key} className="pb-map-fam">
-                        <div className="pb-map-fam-h">
-                          <span className="pb-map-fam-n">{f.name}</span>
-                          <span className="pb-map-fam-g">{f.gloss}</span>
-                        </div>
-                        {lead.map((row) => (
-                          <div key={row.no} className="pb-map-row">
-                            <span className="pb-map-skill">
-                              {row.label}
-                              {row.divergence && <span className="pb-map-split"> · {row.divergence}</span>}
-                            </span>
-                            <span className={`pb-map-tag${row.steady ? ' is-steady' : ''}`}>
-                              {row.steady ? 'steady' : 'worth practicing'}
-                            </span>
-                          </div>
-                        ))}
-                        {rest.length > 0 && (
-                          <details className="pb-map-more">
-                            <summary>
-                              Show the other {rest.length}
-                              <span className="pb-map-more-n">{rest.map((x) => x.label.toLowerCase()).join(' · ')}</span>
-                            </summary>
-                            {rest.map((row) => (
-                              <div key={row.no} className="pb-map-row">
-                                <span className="pb-map-skill">
-                                  {row.label}
-                                  {row.divergence && <span className="pb-map-split"> · {row.divergence}</span>}
-                                </span>
-                                <span className={`pb-map-tag${row.steady ? ' is-steady' : ''}`}>
-                                  {row.steady ? 'steady' : 'worth practicing'}
-                                </span>
-                              </div>
-                            ))}
-                          </details>
-                        )}
+                  {/* EVERY ROW, ALWAYS (Jay, 2026-08-26: "this disclosure is unnecessary, it's just three more
+                      lines — display all the rows"). Taking action carries six skills and the tail used to sit
+                      behind a "Show the other 3" control that then LISTED the three skill names in its own label.
+                      So the disclosure cost a tap and a decision to hide nothing: the member could already read
+                      what was inside it, just without the one thing that makes a row worth reading — whether it
+                      is steady or worth practicing. A control that hides only the answer is worse than no control. */}
+                  {r.map.families.map((f) => (
+                    <div key={f.key} className="pb-map-fam">
+                      <div className="pb-map-fam-h">
+                        <span className="pb-map-fam-n">{f.name}</span>
+                        <span className="pb-map-fam-g">{f.gloss}</span>
                       </div>
-                    );
-                  })}
+                      {f.rows.map((row) => (
+                        <div key={row.no} className="pb-map-row">
+                          <span className="pb-map-skill">
+                            {row.label}
+                            {row.divergence && <span className="pb-map-split"> · {row.divergence}</span>}
+                          </span>
+                          <span className={`pb-map-tag${row.steady ? ' is-steady' : ''}`}>
+                            {row.steady ? 'steady' : 'worth practicing'}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  ))}
                 </div>
               )}
             </div>

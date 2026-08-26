@@ -4119,19 +4119,9 @@ body:has(.fc-dark) .brand-wordmark,
   background: var(--white); border: 1px solid var(--panel-line); color: var(--navy);
 }
 .pb-map-tag.is-steady { background: #e8f2f0; border-color: #cfe3df; color: var(--teal-text); font-weight: 600; }
-/* The disclosure NAMES what is behind it (Jay, 2026-08-17: make the expansion more visible) — a bare "show more"
-   makes a member decide whether to spend a tap on an unknown. */
-.pb-map-more > summary {
-  cursor: pointer; list-style: none; padding: 9px 12px; border: 1px solid var(--panel-line); border-radius: 8px;
-  font-size: 13px; font-weight: 600; color: var(--navy);
-  display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap;
-}
-.pb-map-more > summary::-webkit-details-marker { display: none; }
-.pb-map-more > summary::after { content: '▾'; margin-left: auto; opacity: 0.7; }
-.pb-map-more[open] > summary::after { content: '▴'; }
-.pb-map-more > summary:hover { border-color: var(--field-line); }
-.pb-map-more-n { font-weight: 400; font-size: 12.5px; color: var(--navy); opacity: 0.72; }
-.pb-map-more[open] > summary { margin-bottom: 6px; }
+/* The map shows EVERY row (Jay, 2026-08-26). The old `.pb-map-more` disclosure is gone — see the note in
+   redesign-playbook-view.tsx. It hid three lines whose names it printed on its own label, so the only thing
+   actually behind the tap was the steady/worth-practicing tag: the answer. */
 
 /* ── THE DOORS BOARD'S THREE FOLLOW-UP QUESTIONS ─────────────────────────────────────────────────────────────
    Donna, 2026-08-21: they "run together with no visual separation between them". Three chip rows stacked with
