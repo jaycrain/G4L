@@ -155,6 +155,28 @@ export const BASELINE_CONTROL_ITEMS: readonly string[] = ['B1Q1', 'B2Q1', 'B3Q1'
 // The §B4 Rebuild Checkpoint reading — six control items in administration order (Foundation → Structure →
 // Elevation, Q2 then Q3). A CLEAN 6 since V5 (2026-08-14): what is administered is what is scored, so there is no
 // longer a reduction step between them and no way for the two lists to drift out of step.
+//
+// THE PROVENANCE, because it was questioned and the answer was hard to find. This is GREG'S change, made by him,
+// in writing, with his reason. Emailing Jay on 2026-08-14 with V5 attached:
+//
+//   "Please note that I removed the a and b options for items in Rebuild so the averaging and separate scoring of
+//    diet and activity in Rebuild are no longer needed. I think it will be cleaner to keep it parallel
+//    throughout."   — Greg Welk, thread 19ff32e51b8d563e
+//
+// (Quoted verbatim except the phase name, which he camel-cases as his house style. The naming guard caught the
+// raw quote — correctly, and for the second time on a quotation of his. Normalising one capital is the smallest
+// edit that keeps both the meaning and the brand rule, and saying so is what keeps it a quote.)
+//
+// "Parallel throughout" = parallel with Rewire and Reclaim, which are six apiece.
+//
+// AND THE DIET COVERAGE DID NOT SHRINK, which is the question this raises. V4b had twelve items as six a/b pairs,
+// of which only TWO were genuinely activity/diet (B1Q2a/b, B3Q2a/b); the other four paired unrelated concepts and
+// meaned them — B2Q2a "self-monitoring" with B2Q2b "self-planning and time management" — so a member strong at
+// one and weak at the other scored identically to the reverse. V5 keeps the split where it is behavioural (B3Q2
+// activity, B3Q3 diet, each now scored on its OWN rather than averaged away) and folds B1's pair into one stem
+// naming both domains. Diet-specific items went 2-of-12 → 1-of-6: the same share. B2's 24-item skills instrument
+// still rates every skill twice, once for movement and once for eating — the split was removed from the
+// CHECKPOINT only, never from the phase.
 export const CHECKPOINT_CONTROL_ITEMS: readonly string[] = [
   'B1Q2', 'B1Q3', // Foundation — motivations, and that motivations decide whether a change survives
   'B2Q2', 'B2Q3', // Structure — explain the skills, then locate yourself in them
