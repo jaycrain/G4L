@@ -600,7 +600,7 @@ function rebuildCheckpointOpener(): string {
 
 const rebuildCheckpointStage: StageDef = administeredStage({
   id: 'checkpoint',
-  itemCount: CHECKPOINT_CONTROL_ITEMS.length, // 12 (scaleMax defaults to 5)
+  itemCount: CHECKPOINT_CONTROL_ITEMS.length, // 6 since Greg's V5 (was 12 activity/diet pairs); scaleMax defaults to 5
   minLabel: 'not at all', // W-24: chip anchors — the frozen Grinta 1–5 poles
   maxLabel: 'completely',
   opener: () => rebuildCheckpointOpener(),

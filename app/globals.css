@@ -2288,7 +2288,23 @@ body.redesign-on { --conf-h: calc(24px + env(safe-area-inset-bottom)); }
    bar sits ON the thread and clips the right edge of the bubbles — his "Got it" was cut in half by it. Hiding it
    would be wrong: a vertical thread needs to advertise that it scrolls. `stable` keeps the space whether or not
    the bar is drawn, so the column never reflows when it appears either. */
-.ws-col-body .chat { flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-gutter: stable; }
+/* THE SCROLLBAR SITS ON THE MEMBER'S ANSWERS, AND `scrollbar-gutter` ALONE DOES NOT FIX IT.
+   Reported twice (Jay, 2026-08-25 and again 2026-08-26 at the Rebuild Checkpoint: "the scroll bar isn't
+   dismissing here either"). The first pass added `scrollbar-gutter: stable`, which was reasonable and only half
+   right: a gutter is reserved for CLASSIC scrollbars only. Under macOS OVERLAY scrollbars it reserves nothing —
+   measured here, `offsetWidth - clientWidth` is 0 — and the bar is painted straight over the content.
+
+   And this chat autoscrolls on every turn, so the overlay bar is effectively always visible rather than fading.
+   Its lane is exactly where the answer chips live: `padding-right` was 0 and every child — agent bubbles, member
+   bubbles and .scale-chips — measured flush to the content edge at the same pixel. So the member's own answered
+   value is the thing the bar covers.
+
+   Real padding fixes both modes; the gutter stays so classic scrollbars still do not shift the column when they
+   appear. Fixing only the mode you happen to be testing in is how this came back a second time. */
+.ws-col-body .chat {
+  flex: 1 1 auto; min-height: 0; overflow-y: auto;
+  scrollbar-gutter: stable; padding-right: 10px;
+}
 .ws-col-body .chat-input, .ws-col-body form { flex: 0 0 auto; }
 
 /* THE COMPANION'S SIDE SQUARES UP WITH THE CARDS (Donna item 9; Jay approved 2026-08-23).
